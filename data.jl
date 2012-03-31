@@ -13,12 +13,24 @@ type DataVec{T}
     data::Vector{T}
     na::AbstractVector{Bool} # TODO use a bit array
     
-    # sanity check lengths
-    DataVec{T}(d::Vector{T}, m::Vector{Bool}) = (length(d) != length(m)) ? 
-                                                error("data and mask vectors not the same length!") :
-                                                new(d,m)
+    filter::Bool
+    replace::Bool # replace supercedes filter, if both true
+    replaceVal::T
+    
+    # sanity checks
+    function DataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T) 
+        if (length(d) != length(m))
+            error("data and mask vectors not the same length!")
+        elseif (f && r)
+            error("please don't set both the filter and replace flags in a DataVec")
+        end   
+        new(d,m,f,r,v)
+    end
 end
-DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, m)
+# the usual partial constructor
+DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, m, false, false, zero(T))
+# a full constructor (why is this necessary?)
+DataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T) = DataVec{T}(d, m, f, r, v)
 
 type NAtype; end
 const NA = NAtype()
@@ -201,36 +213,51 @@ assign{T}(x::DataVec{T}, n::NAtype, rng::Range1) = begin (x.na[rng] = true); x[r
 nafilter{T}(v::DataVec{T}) = v.data[!v.na]
 nareplace{T}(v::DataVec{T}, r::T) = [v.na[i] ? r : v.data[i] | i = 1:length(v.data)]
 
-# naFilter is just a type that wraps a DataVec in something that allows start/next/done
-# TODO: I think this should maybe descend from a common abstract type, to allow indexing
-# and such to work? or maybe it shouldn't...
-type FilteredDataVec{T}
-    datavec::DataVec{T}
-end
-naFilter{T}(v::DataVec{T}) = FilteredDataVec{T}(v)
-# start starts at the beginning. Next iterates until it finds something, or throws an
-# error. Done iterates until it finds something, or returns true.
-start(x::FilteredDataVec) = 1
-function next(x::FilteredDataVec, state::Int)
-    for i = state:length(x.datavec)
-        if !x.datavec.na[i]
-            return (x.datavec.data[i], i+1)
-        end
-    end
-    error("called next(FilteredDataVec) without calling done() first")
-end
-function done(x::FilteredDataVec, state::Int)
-    for i = state:length(x.datavec)
-        if !x.datavec.na[i]
-            return false
-        end
-    end
-    return true
-end
+# naFilter redefines a new DataVec with a flipped bit that determines how start/next/done operate
+naFilter{T}(v::DataVec{T}) = DataVec(v.data, v.na, true, false, v.replaceVal)
 
-#naFilter TODO
-# naReplace is similar, but it uses a type constructor with a value that gets stored
-#naReplace TODO
+# naReplace is similar to naFilter, but with a replacement value
+naReplace{T}(v::DataVec{T}, rv::T) = DataVec(v.data, v.na, false, true, rv)
+
+# If neither the filter or replace flags are set, the iterator will return an NA
+# when it hits an NA. If one or the other are set, it'll skip/replace the NA.
+start(x::DataVec) = 1
+function next(x::DataVec, state::Int)
+    # if filter is set, iterate til we find a non-NA value
+    if x.filter
+        for i = state:length(x.data)
+            if !x.na[i]
+                return (x.data[i], i+1)
+            end
+        end
+        error("called next(DataVec) without calling done() first")
+    elseif x.replace
+        if x.na[state]
+            return (x.replaceVal, state+1)
+        else
+            return (x.data[state], state+1)
+        end
+    else
+        if x.na[state]
+            return(NA, state+1)
+        else
+            return(x.data[state], state+1)
+        end
+    end
+end
+function done(x::DataVec, state::Int)
+    # if filter is set, iterate til we find a non-NA value
+    if x.filter
+        for i = state:length(x.data)
+            if !x.na[i]
+                return false
+            end
+        end
+        return true
+    else # just check lengths
+        return state > length(x.data)
+    end
+end
 
 # can promote in theory based on data type
 promote_rule{S,T}(::Type{DataVec{S}}, ::Type{T}) = promote_rule(S, T)
@@ -245,18 +272,8 @@ function convert{T}(::Type{T}, x::DataVec{T})
     end
 end
 
-# TODO for common functions on vectors, try to convert to the base type, then dispatch
-# sum
-# prod
-# mean
-# norm
-
-# iterator returning Union{T,NAtype}
-start(x::DataVec) = 1
-function next(x::DataVec, state::Int)
-    (x.na[state] ? NA : x.data[state], state+1)
-end
-done(x::DataVec, state::Int) = state > length(x.data)
+# a DataVec is not a StridedArray, so sum() and similar picks up the itr version, which will work without 
+# additional code
 
 # print
 show(x::DataVec) = show_comma_array(x, '[', ']') 
