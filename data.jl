@@ -31,6 +31,8 @@ end
 DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, m, false, false, zero(T))
 # a full constructor (why is this necessary?)
 DataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T) = DataVec{T}(d, m, f, r, v)
+# a no-op constructor
+DataVec(d::DataVec) = d
 
 type NAtype; end
 const NA = NAtype()
@@ -278,8 +280,117 @@ end
 # print
 show(x::DataVec) = show_comma_array(x, '[', ']') 
 
-# ## DataTable - a list of heterogeneous Data vectors with row and col names
+# TODO: vectorizable math functions like sqrt, sin, trunc, etc., which should return a DataVec{T}
+
+# TODO: vectorizable comparison operators like > which should return a DataVec{Bool}
+
+# TODO: div(dat, 2) works, but zz ./ 2 doesn't
+
+
+
+
+# ## DataFrame - a list of heterogeneous Data vectors with row and col names
+# columns are a vector, which means that operations that insert/delete columns
+# are O(n)
+type DataFrame{RT,CT}
+    columns::Vector{Any}
+    rownames::Vector{RT}
+    colnames::Vector{CT}
+    
+    function DataFrame(cols, rn, cn)
+        # if cols is a vector of DataVecs, we're good
+        # if cols is a vector of something else, we're not good
+        # otherwise, convert it to a single DataVec
+        if !all([isa(x, DataVec) | x = cols])
+            cols = {DataVec(cols)}
+        end 
+        
+        # all columns have to be the same length
+        if !all(map(length, cols) == length(cols[1]))
+            error("all columns in a DataFrame have to be the same length")
+        end
+        
+        # rownames has to be the same length as the columns, or 0
+        if length(rn) > 0 && (length(rn) != length(cols[1]))
+            error("rownames must be the same length as columns")
+        end
+        
+        # colnames has to be the same length as columns vector, or 0
+        if length(cn) > 0 && (length(cn) != length(cols))
+            error("colnames must be the same length as the number of columns")
+        end
+        
+        new(cols, rn, cn)
+    end
+end
+# constructors 
+# if we already have DataVecs, but no names
+DataFrame(cs::Vector) = DataFrame(cs, Array(ASCIIString,0), Array(ASCIIString,0))
+# if we have DataVecs and names
+DataFrame{RT,CT}(cs::Vector, rn::Vector{RT}, cn::Vector{CT}) = DataFrame{RT,CT}(cs, rn, cn)
+# if we have something else, convert each value in this tuple to a DataVec and pass it in
+DataFrame(vals...) = DataFrame([DataVec(x) | x = vals])
+# if we have a matrix, create a tuple of columns and pass that in
+DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) | i = 1:size(m)[2]])
 # 
 # 
-# 
+
+# TODO: move
+function idxFirstEqual{T}(x::Vector{T}, y::T)
+    for i = 1:length(x)
+        if x[i] == y
+            return i
+        end
+    end
+    return nothing
+end
+
+
+nrow(df::DataFrame) = length(df.columns[1])
+ncol(df::DataFrame) = length(df.columns)
+names(df::DataFrame) = colnames(df::DataFrame)
+colnames(df::DataFrame) = df.colnames
+rownames(df::DataFrame) = df.rownames
+size(df::DataFrame) = (nrow(df), ncol(df))
+size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
+
+# get columns by name, position
+ref(df::DataFrame, i::Int) = df.columns[i]
+ref{RT,CT}(df::DataFrame{RT,CT}, name::CT) = df.columns[idxFirstEqual(df.colnames, name)] # TODO make faster
+ref(df::DataFrame, is::Vector{Int}) = DataFrame(df.columns[is], df.rownames, df.colnames[is])
+ref(df::DataFrame, rng::Range1) = DataFrame(df.columns[rng], df.rownames, df.colnames[rng])
+ref(df::DataFrame, pos::Vector{Bool}) = DataFrame(df.columns[pos], df.rownames, df.colnames[pos])
+
+# get slices
+# row slices
+ref(df::DataFrame, r::Int, rng::Range1) = DataFrame({DataVec[df.columns[c][r]] | c = rng}, 
+                                                    [df.rownames[r]], 
+                                                    df.colnames[rng])
+ref(df::DataFrame, r::Int, cs::Vector{Int}) = DataFrame({DataVec[df.columns[c][r]] | c = cs}, 
+                                                        [df.rownames[r]], 
+                                                        df.colnames[cs])
+ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cs::Vector{CT}) = DataFrame({DataVec[df[c][r]] | c = cs}, 
+                                                                     [df.rownames[r]], 
+                                                                     df.colnames[[idxFirstEqual(df.colnames, c)::Int | c = cs]])
+ref(df::DataFrame, r::Int, cs::Vector{Bool}) = df[cs][r,:] # possibly slow, but pretty
+
+# 2-D slices
+ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Int}) = DataFrame({DataVec(df.columns[c][rs]) | c = cs}, 
+                                                                 df.rownames[rs], 
+                                                                 df.colnames[cs])
+ref(df::DataFrame, rs::Vector{Int}, rng::Range1) = DataFrame({DataVec(df.columns[c][rs]) | c = rng}, 
+                                                             df.rownames[rs], 
+                                                             df.colnames[rng])
+ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Bool}) = df[cs][rs,:]
+
+# get singletons. TODO: nicer error handling
+# TODO: deal with oddness if row/col types are ints
+ref(df::DataFrame, r::Int, c::Int) = df.columns[c][r]
+ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, c::Int) = df.columns[c][idxFirstEqual(df.rownames, rn)]
+ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cn::CT) = df.columns[idxFirstEqual(df.colnames, cn)][r]
+ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, cn::CT) = df.columns[idxFirstEqual(df.colnames, cn)][idxFirstEqual(df.rownames, rn)]
+
+
+
+
 
