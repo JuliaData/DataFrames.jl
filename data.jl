@@ -399,9 +399,10 @@ ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, cn::CT) = df.columns[idxFirstEqual(df.c
 # then row-by-row print with an appropriate buffer
 maxShowLength(v::Vector) = max([length(string(x)) | x = v])
 maxShowLength(dv::DataVec) = max([length(string(x)) | x = dv])
+# TODO: make work with null rownames and/or colnames!
 function show(df::DataFrame)
     rownameWidth = maxShowLength(df.rownames)
-    colWidths = [maxShowLength(c) | c = df.columns]
+    colWidths = [max(length(df.colnames[c]), maxShowLength(df.columns[c])) | c = 1:ncol(df)]
     
     header = strcat(repeat(" ", rownameWidth+1),
                     join([lpad(string(df.colnames[i]), colWidths[i]+1, " ") | i = 1:ncol(df)], ""))
