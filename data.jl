@@ -410,6 +410,7 @@ function show(df::DataFrame)
     rownameWidth = maxShowLength(rowNames)
     
     # if we don't have columns names, use indexes
+    # note that column names in R are obligatory
     if length(df.colnames) == 0
         colNames = [sprintf("[,%d]", c) | c = 1:ncol(df)]
     else
@@ -429,5 +430,47 @@ function show(df::DataFrame)
         println(line)
     end
 end
+
+# get the structure of a DF
+function str(df::DataFrame)
+    println(sprintf("%d observations of %d variables", nrow(df), ncol(df)))
+
+    if length(df.colnames) == 0
+        colNames = [sprintf("[,%d]", c) | c = 1:ncol(df)]
+    else
+        colNames = df.colnames
+    end
+    
+    # foreach column, print the column name or index, the type, and then print the first elements of 
+    # the column until the total column width would exceed a constant
+    maxPrintedWidth = 60
+    for c in 1:ncol(df)
+        printedWidth = 0
+        colstr = strcat(string(colNames[c]), ": ", string(eltype(df[c])), " ")
+        print(colstr)
+        printedWidth += length(colstr)
+        
+        for r in 1:nrow(df)
+            elemstr = strcat(string(df[r,c]), " ")
+            if printedWidth + length(elemstr) > maxPrintedWidth
+                print("...")
+                break
+            end
+            print(elemstr)
+            printedWidth += length(elemstr)
+        end
+        println("")
+    end
+end
+
+# TODO: summarize the columns of a DF
+# if the column's base type derives from Number, 
+# compute min, 1st quantile, median, mean, 3rd quantile, and max
+# filtering NAs, which are reported separately
+# if boolean, report trues, falses, and NAs
+# summary(df::DataFrame)
+
+
+
 
 
