@@ -463,14 +463,83 @@ function str(df::DataFrame)
     end
 end
 
-# TODO: summarize the columns of a DF
+# summarize the columns of a DF
 # if the column's base type derives from Number, 
 # compute min, 1st quantile, median, mean, 3rd quantile, and max
 # filtering NAs, which are reported separately
 # if boolean, report trues, falses, and NAs
-# summary(df::DataFrame)
+# if anything else, punt.
+# Note that R creates a summary object, which has a print method. That's
+# a reasonable alternative to this.
+function summary{T<:Number}(dv::DataVec{T})
+    filtered = nafilter(dv)
+    qs = quantile(filtered, [0, .25, .5, .75, 1])
+    statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
+    statVals = [qs[1:3], mean(filtered), qs[4:5]]
+    for i = 1:6
+        println(strcat(rpad(statNames[i], 8, " "), " ", string(statVals[i])))
+    end
+    nas = sum(isna(dv))
+    if nas > 0
+        println("NAs      $nas")
+    end
+end
+# function summary{T<:Bool}(dv::DataVec{T})
+#     error("todo")
+# end
+function summary{T}(dv::DataVec{T})
+    # if nothing else, just give the length and element type and NA count
+    println("Length: $(length(dv))")
+    println("Type  : $(string(eltype(dv)))")
+    println("NAs   : $(sum(isna(dv)))")
+end
+
+function summary(df::DataFrame)
+    for c in 1:ncol(df)
+        col = df[c]
+        println(df.colnames[c])
+        summary(col)
+        println("")
+    end
+end
 
 
-
-
+# for now, use csvread to pull CSV data from disk
+function _remove_quotes(s)
+    m = match(r"^\"(.*)\"$", s)
+    if m != nothing
+        return m.captures[1]::ASCIIString
+    else
+        return s::ASCIIString
+    end
+end
+function csvDataFrame(filename)
+    dat = csvread(filename)
+    
+    # if the first row looks like strings, chop it off and process it as the 
+    # column names
+    if all([typeof(x)==ASCIIString | x = dat[1,:]])
+        colNames = [_remove_quotes(x) | x = dat[1,:]]
+        dat = dat[2:,:]
+    else
+        # null column names
+        colNames = []
+    end
+    
+    # foreach column, if everything is either numeric or empty string, then build a numeric DataVec
+    # otherwise build a string DataVec
+    cols = Array(Any, size(dat,2))
+    for c = 1:size(dat,2)
+        nas = [x == "" | x = dat[:,c]]
+        numCol = [isa(x, Number) || x == "" | x = dat[:,c]]
+        if (all(numCol))
+            cols[c] = DataVec([x == "" ? 0 : x::Number | x = dat[:,c]], nas)
+        else
+            cols[c] = DataVec([string(x) | x = dat[:,c]], nas)
+        end
+    end
+    
+    # combine the columns into a DataFrame and return
+    DataFrame(cols, [], colNames)
+end
 
