@@ -382,6 +382,8 @@ ref(df::DataFrame, rs::Vector{Int}, rng::Range1) = DataFrame({DataVec(df.columns
                                                              df.rownames[rs], 
                                                              df.colnames[rng])
 ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Bool}) = df[cs][rs,:]
+ref{RT,CT}(df::DataFrame{RT,CT}, rs::Vector{Int}, cs::Vector{CT}) = df[cs][rs,:]
+# TODO: other types of row indexing with 2-D slices
 
 # get singletons. TODO: nicer error handling
 # TODO: deal with oddness if row/col types are ints
@@ -391,6 +393,25 @@ ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cn::CT) = df.columns[idxFirstEqual(df.c
 ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, cn::CT) = df.columns[idxFirstEqual(df.colnames, cn)][idxFirstEqual(df.rownames, rn)]
 
 
-
+# to print a DataFrame, find the max string length of each column
+# and get the max rowname width
+# then print the column names with an appropriate buffer
+# then row-by-row print with an appropriate buffer
+maxShowLength(v::Vector) = max([length(string(x)) | x = v])
+maxShowLength(dv::DataVec) = max([length(string(x)) | x = dv])
+function show(df::DataFrame)
+    rownameWidth = maxShowLength(df.rownames)
+    colWidths = [maxShowLength(c) | c = df.columns]
+    
+    header = strcat(repeat(" ", rownameWidth+1),
+                    join([lpad(string(df.colnames[i]), colWidths[i]+1, " ") | i = 1:ncol(df)], ""))
+    println(header)
+    
+    for i = 1:min(100, nrow(df))
+        line = strcat(rpad(string(df.rownames[i]), rownameWidth+1, " "),
+                      join([lpad(string(df[i,c]), colWidths[c]+1, " ") | c = 1:ncol(df)], ""))
+        println(line)
+    end
+end
 
 
