@@ -531,11 +531,33 @@ function csvDataFrame(filename)
     cols = Array(Any, size(dat,2))
     for c = 1:size(dat,2)
         nas = [x == "" | x = dat[:,c]]
-        numCol = [isa(x, Number) || x == "" | x = dat[:,c]]
-        if (all(numCol))
-            cols[c] = DataVec([x == "" ? 0 : x::Number | x = dat[:,c]], nas)
-        else
-            cols[c] = DataVec([string(x) | x = dat[:,c]], nas)
+        # iterate over the column, ignoring null strings, promoting as we go, until we're done
+        # or we hit a non-numeric value, in which case short-circuit
+        colType = None
+        colIsNum = true
+        for r = 1:size(dat,1)
+            v = dat[r,c]
+            if v != ""
+                if isa(v,Number)
+                    colType = promote_type(colType, typeof(v))
+                else
+                    colIsNum = false
+                    break
+                end
+            end
+        end
+        # build DataVecs
+        # TODO: special-case booleans
+        if (colIsNum && colType != None)
+            # this is annoying to have to pre-allocate the array, but comprehensions don't
+            # seem to get the type right
+            tmpcol = Array(colType, size(dat,1))
+            for r = 1:length(tmpcol)
+                tmpcol[r] = dat[r,c] == "" ? false : dat[r,c] # false is the smallest numeric 0
+            end
+            cols[c] = DataVec(tmpcol, nas)
+        else # TODO: other types of strings?
+            cols[c] = DataVec([string(_remove_quotes(x))::ASCIIString | x = dat[:,c]], nas)
         end
     end
     
