@@ -44,6 +44,8 @@ end
 
 length(x::NAtype) = 0
 size(x::NAtype) = (0,)
+isna(x::NAtype) = true
+isna(x) = false
 
 # TODO: Move me to a more appropriate spot
 # this allows zero(String) to work
@@ -348,9 +350,9 @@ end
 
 nrow(df::DataFrame) = length(df.columns[1])
 ncol(df::DataFrame) = length(df.columns)
-names(df::DataFrame) = colnames(df::DataFrame)
-colnames(df::DataFrame) = df.colnames
-rownames(df::DataFrame) = df.rownames
+names(df::DataFrame) = colnames(df)
+colnames(df::DataFrame) = length(df.colnames) > 0 ? df.colnames : nothing
+rownames(df::DataFrame) = length(df.rownames) > 0 ? df.rownames : nothing
 size(df::DataFrame) = (nrow(df), ncol(df))
 size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
 
@@ -494,6 +496,7 @@ function summary{T}(dv::DataVec{T})
     println("NAs   : $(sum(isna(dv)))")
 end
 
+# TODO: clever layout in rows
 function summary(df::DataFrame)
     for c in 1:ncol(df)
         col = df[c]
