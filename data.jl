@@ -291,21 +291,23 @@ show(x::DataVec) = show_comma_array(x, '[', ']')
 
 
 
-# ## DataFrame - a list of heterogeneous Data vectors with row and col names
+# ## DataFrame - a list of heterogeneous Data vectors with row and col names.
 # columns are a vector, which means that operations that insert/delete columns
-# are O(n)
+# are O(n).
+# row and col names must be the right length, but can be "nothing".
 type DataFrame{RT,CT}
-    columns::Vector{Any}
+    columns::Vector{DataVec}
     rownames::Vector{RT}
     colnames::Vector{CT}
     
-    function DataFrame(cols, rn, cn)
-        # if cols is a vector of DataVecs, we're good
-        # if cols is a vector of something else, we're not good
-        # otherwise, convert it to a single DataVec
-        if !all([isa(x, DataVec) | x = cols])
-            cols = {DataVec(cols)}
-        end 
+    # inner constructor requires everything to be the right types, checks lengths
+    function DataFrame(cols::Vector{DataVec}, rn::Vector{RT}, cn::Vector{CT})
+        # # if cols is a vector of DataVecs, we're good
+        # # if cols is a vector of something else, we're not good
+        # # otherwise, convert it to a single DataVec
+        # if !all([isa(x, DataVec) | x = cols])
+        #     cols = {DataVec(cols)}
+        # end 
         
         # all columns have to be the same length
         if !all(map(length, cols) == length(cols[1]))
@@ -327,10 +329,14 @@ type DataFrame{RT,CT}
 end
 # constructors 
 # if we already have DataVecs, but no names
-DataFrame(cs::Vector) = DataFrame(cs, Array(ASCIIString,0), Array(ASCIIString,0))
+nothings(n) = fill(nothing, n)
+DataFrame(cs::Vector{DataVec}) = DataFrame(cs, nothings(length(cs[1])), nothings(length(cs[1])))
 # if we have DataVecs and names
-DataFrame{RT,CT}(cs::Vector, rn::Vector{RT}, cn::Vector{CT}) = DataFrame{RT,CT}(cs, rn, cn)
-# if we have something else, convert each value in this tuple to a DataVec and pass it in
+DataFrame{RT,CT}(cs::Vector{DataVec}, rn::Vector{RT}, cn::Vector{CT}) = DataFrame{RT,CT}(cs, rn, cn)
+# if we have DataVecs and colnames (note can't just have rownames -- hm)
+DataFrame{RT,CT}(cs::Vector{DataVec}, cn::Vector{CT}) = DataFrame{RT,CT}(cs, nothings(length(cs[1])), cn)
+
+# if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
 DataFrame(vals...) = DataFrame([DataVec(x) | x = vals])
 # if we have a matrix, create a tuple of columns and pass that in
 DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) | i = 1:size(m)[2]])
@@ -375,6 +381,7 @@ ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cs::Vector{CT}) = DataFrame({DataVec[df
                                                                      [df.rownames[r]], 
                                                                      df.colnames[[idxFirstEqual(df.colnames, c)::Int | c = cs]])
 ref(df::DataFrame, r::Int, cs::Vector{Bool}) = df[cs][r,:] # possibly slow, but pretty
+# TODO: Int, CT
 
 # 2-D slices
 ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Int}) = DataFrame({DataVec(df.columns[c][rs]) | c = cs}, 
@@ -386,6 +393,8 @@ ref(df::DataFrame, rs::Vector{Int}, rng::Range1) = DataFrame({DataVec(df.columns
 ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Bool}) = df[cs][rs,:]
 ref{RT,CT}(df::DataFrame{RT,CT}, rs::Vector{Int}, cs::Vector{CT}) = df[cs][rs,:]
 # TODO: other types of row indexing with 2-D slices
+# rows are range, vector of booleans, name, or vector of names
+# is there a macro way to define all of these??
 
 # get singletons. TODO: nicer error handling
 # TODO: deal with oddness if row/col types are ints
@@ -403,7 +412,7 @@ maxShowLength(v::Vector) = length(v) > 0 ? max([length(string(x)) | x = v]) : 0
 maxShowLength(dv::DataVec) = max([length(string(x)) | x = dv])
 function show(df::DataFrame)
     # if we don't have row names, use indexes
-    if length(df.rownames) == 0
+    if eltype(df.rownames) == Nothing
         rowNames = [sprintf("[%d,]", r) | r = 1:nrow(df)]
     else
         rowNames = df.rownames
@@ -413,7 +422,7 @@ function show(df::DataFrame)
     
     # if we don't have columns names, use indexes
     # note that column names in R are obligatory
-    if length(df.colnames) == 0
+    if eltype(df.colnames) == Nothing
         colNames = [sprintf("[,%d]", c) | c = 1:ncol(df)]
     else
         colNames = df.colnames
@@ -437,7 +446,7 @@ end
 function str(df::DataFrame)
     println(sprintf("%d observations of %d variables", nrow(df), ncol(df)))
 
-    if length(df.colnames) == 0
+    if eltype(df.colnames) == Nothing
         colNames = [sprintf("[,%d]", c) | c = 1:ncol(df)]
     else
         colNames = df.colnames
@@ -487,7 +496,7 @@ function summary{T<:Number}(dv::DataVec{T})
     end
 end
 # function summary{T<:Bool}(dv::DataVec{T})
-#     error("todo")
+#     error("TODO")
 # end
 function summary{T}(dv::DataVec{T})
     # if nothing else, just give the length and element type and NA count
