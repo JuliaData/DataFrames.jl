@@ -18,7 +18,7 @@ type DataVec{T}
     replaceVal::T
     
     # sanity checks
-    function DataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T) 
+    function DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, f::Bool, r::Bool, v::T) 
         if (length(d) != length(m))
             error("data and mask vectors not the same length!")
         elseif (f && r)
@@ -30,7 +30,7 @@ end
 # the usual partial constructor
 DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, m, false, false, zero(T))
 # a full constructor (why is this necessary?)
-DataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T) = DataVec{T}(d, m, f, r, v)
+DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, f::Bool, r::Bool, v::T) = DataVec{T}(d, m, f, r, v)
 # a no-op constructor
 DataVec(d::DataVec) = d
 
@@ -296,31 +296,29 @@ show(x::DataVec) = show_comma_array(x, '[', ']')
 # are O(n).
 # row and col names must be the right length, but can be "nothing".
 type DataFrame{RT,CT}
-    columns::Vector{DataVec}
+    columns::Vector{Any}
     rownames::Vector{RT}
     colnames::Vector{CT}
     
     # inner constructor requires everything to be the right types, checks lengths
-    function DataFrame(cols::Vector{DataVec}, rn::Vector{RT}, cn::Vector{CT})
-        # # if cols is a vector of DataVecs, we're good
-        # # if cols is a vector of something else, we're not good
-        # # otherwise, convert it to a single DataVec
-        # if !all([isa(x, DataVec) | x = cols])
-        #     cols = {DataVec(cols)}
-        # end 
-        
+    function DataFrame(cols::Vector, rn::Vector{RT}, cn::Vector{CT})  
+        # all cols
+        if !all([isa(c, DataVec) | c = cols])
+            error("DataFrame inner constructor requires all columns be DataVecs already")
+        end
+          
         # all columns have to be the same length
         if !all(map(length, cols) == length(cols[1]))
             error("all columns in a DataFrame have to be the same length")
         end
         
-        # rownames has to be the same length as the columns, or 0
-        if length(rn) > 0 && (length(rn) != length(cols[1]))
+        # rownames has to be the same length as the columns
+        if length(rn) != length(cols[1])
             error("rownames must be the same length as columns")
         end
         
-        # colnames has to be the same length as columns vector, or 0
-        if length(cn) > 0 && (length(cn) != length(cols))
+        # colnames has to be the same length as columns vector
+        if length(cn) != length(cols)
             error("colnames must be the same length as the number of columns")
         end
         
@@ -329,12 +327,12 @@ type DataFrame{RT,CT}
 end
 # constructors 
 # if we already have DataVecs, but no names
-nothings(n) = fill(nothing, n)
-DataFrame(cs::Vector{DataVec}) = DataFrame(cs, nothings(length(cs[1])), nothings(length(cs[1])))
+nothings(n) = fill(nothing, n) # TODO: move elsewhere?
+DataFrame(cs::Vector) = DataFrame(cs, nothings(length(cs[1])), nothings(length(cs)))
 # if we have DataVecs and names
-DataFrame{RT,CT}(cs::Vector{DataVec}, rn::Vector{RT}, cn::Vector{CT}) = DataFrame{RT,CT}(cs, rn, cn)
+DataFrame{RT,CT}(cs::Vector, rn::Vector{RT}, cn::Vector{CT}) = DataFrame{RT,CT}(cs, rn, cn)
 # if we have DataVecs and colnames (note can't just have rownames -- hm)
-DataFrame{RT,CT}(cs::Vector{DataVec}, cn::Vector{CT}) = DataFrame{RT,CT}(cs, nothings(length(cs[1])), cn)
+DataFrame{RT,CT}(cs::Vector, cn::Vector{CT}) = DataFrame{RT,CT}(cs, nothings(length(cs[1])), cn)
 
 # if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
 DataFrame(vals...) = DataFrame([DataVec(x) | x = vals])
@@ -357,8 +355,8 @@ end
 nrow(df::DataFrame) = length(df.columns[1])
 ncol(df::DataFrame) = length(df.columns)
 names(df::DataFrame) = colnames(df)
-colnames(df::DataFrame) = length(df.colnames) > 0 ? df.colnames : nothing
-rownames(df::DataFrame) = length(df.rownames) > 0 ? df.rownames : nothing
+colnames(df::DataFrame) = df.colnames
+rownames(df::DataFrame) = df.rownames
 size(df::DataFrame) = (nrow(df), ncol(df))
 size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
 
@@ -377,21 +375,23 @@ ref(df::DataFrame, r::Int, rng::Range1) = DataFrame({DataVec[df.columns[c][r]] |
 ref(df::DataFrame, r::Int, cs::Vector{Int}) = DataFrame({DataVec[df.columns[c][r]] | c = cs}, 
                                                         [df.rownames[r]], 
                                                         df.colnames[cs])
-ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cs::Vector{CT}) = DataFrame({DataVec[df[c][r]] | c = cs}, 
+ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cs::Vector{CT}) = DataFrame({DataVec[df.columns[c][r]] | c = cs}, 
                                                                      [df.rownames[r]], 
                                                                      df.colnames[[idxFirstEqual(df.colnames, c)::Int | c = cs]])
 ref(df::DataFrame, r::Int, cs::Vector{Bool}) = df[cs][r,:] # possibly slow, but pretty
-# TODO: Int, CT
 
 # 2-D slices
+# rows are vector of indexes
 ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Int}) = DataFrame({DataVec(df.columns[c][rs]) | c = cs}, 
                                                                  df.rownames[rs], 
                                                                  df.colnames[cs])
 ref(df::DataFrame, rs::Vector{Int}, rng::Range1) = DataFrame({DataVec(df.columns[c][rs]) | c = rng}, 
                                                              df.rownames[rs], 
                                                              df.colnames[rng])
-ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Bool}) = df[cs][rs,:]
-ref{RT,CT}(df::DataFrame{RT,CT}, rs::Vector{Int}, cs::Vector{CT}) = df[cs][rs,:]
+ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Bool}) = df[cs][rs,:] # slow way
+ref{RT,CT}(df::DataFrame{RT,CT}, rs::Vector{Int}, cs::Vector{CT}) = df[cs][rs,:] # slow way
+ref(df::DataFrame, rs::Vector{Int}, c::Int) = df[c][rs,:] # slow way
+ref{RT,CT}(df::DataFrame, rs::Vector{Int}, name::CT) = df[name][rs,:]
 # TODO: other types of row indexing with 2-D slices
 # rows are range, vector of booleans, name, or vector of names
 # is there a macro way to define all of these??
@@ -434,8 +434,8 @@ function show(df::DataFrame)
                     join([lpad(string(colNames[i]), colWidths[i]+1, " ") | i = 1:ncol(df)], ""))
     println(header)
     
-    for i = 1:min(100, nrow(df))
-        rowname = length(rowNames) > 0 ? rpad(string(rowNames[i]), rownameWidth+1, " ") : " "
+    for i = 1:min(100, nrow(df)) # TODO
+        rowname = rpad(string(rowNames[i]), rownameWidth+1, " ")
         line = strcat(rowname,
                       join([lpad(string(df[i,c]), colWidths[c]+1, " ") | c = 1:ncol(df)], ""))
         println(line)
@@ -470,7 +470,7 @@ function str(df::DataFrame)
             print(elemstr)
             printedWidth += length(elemstr)
         end
-        println("")
+        println()
     end
 end
 
@@ -511,7 +511,7 @@ function summary(df::DataFrame)
         col = df[c]
         println(df.colnames[c])
         summary(col)
-        println("")
+        println()
     end
 end
 
@@ -574,6 +574,6 @@ function csvDataFrame(filename)
     end
     
     # combine the columns into a DataFrame and return
-    DataFrame(cols, [], colNames)
+    DataFrame(cols, nothings(size(dat,1)), colNames)
 end
 
