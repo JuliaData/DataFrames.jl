@@ -363,6 +363,7 @@ size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("Da
 # get columns by name, position
 ref(df::DataFrame, i::Int) = df.columns[i]
 ref{RT,CT}(df::DataFrame{RT,CT}, name::CT) = df.columns[idxFirstEqual(df.colnames, name)] # TODO make faster
+ref{RT,CT}(df::DataFrame{RT,CT}, names::Vector{CT}) = df[[idxFirstEqual(df.colnames, n)::Int | n = names]]
 ref(df::DataFrame, is::Vector{Int}) = DataFrame(df.columns[is], df.rownames, df.colnames[is])
 ref(df::DataFrame, rng::Range1) = DataFrame(df.columns[rng], df.rownames, df.colnames[rng])
 ref(df::DataFrame, pos::Vector{Bool}) = DataFrame(df.columns[pos], df.rownames, df.colnames[pos])
@@ -390,11 +391,21 @@ ref(df::DataFrame, rs::Vector{Int}, rng::Range1) = DataFrame({DataVec(df.columns
                                                              df.colnames[rng])
 ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Bool}) = df[cs][rs,:] # slow way
 ref{RT,CT}(df::DataFrame{RT,CT}, rs::Vector{Int}, cs::Vector{CT}) = df[cs][rs,:] # slow way
-ref(df::DataFrame, rs::Vector{Int}, c::Int) = df[c][rs,:] # slow way
-ref{RT,CT}(df::DataFrame, rs::Vector{Int}, name::CT) = df[name][rs,:]
+ref(df::DataFrame, rs::Vector{Int}, c::Int) = df[rs, [c]] # delegate
+ref{RT,CT}(df::DataFrame{RT,CT}, rs::Vector{Int}, name::CT) = df[rs, [name]] # delegate
 # TODO: other types of row indexing with 2-D slices
 # rows are range, vector of booleans, name, or vector of names
 # is there a macro way to define all of these??
+ref(df::DataFrame, rr::Range1, cr::Range1) = DataFrame({DataVec(df.columns[c][rr]) | c = cr}, 
+                                                             df.rownames[rr], 
+                                                             df.colnames[cr])
+
+
+head(df::DataFrame, r::Int) = df[1:r, :]
+head(df::DataFrame) = head(df, 6)
+tail(df::DataFrame, r::Int) = df[(nrow(df)-r+1):nrow(df), :]
+tail(df::DataFrame) = tail(df, 6)
+
 
 # get singletons. TODO: nicer error handling
 # TODO: deal with oddness if row/col types are ints
