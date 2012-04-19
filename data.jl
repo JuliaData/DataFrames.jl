@@ -42,10 +42,14 @@ type NAException <: Exception
     msg::String
 end
 
-length(x::NAtype) = 0
-size(x::NAtype) = (0,)
+length(x::NAtype) = 1
+size(x::NAtype) = ()
 isna(x::NAtype) = true
 isna(x) = false
+
+==(na::NAtype, na2::NAtype) = NA
+==(na::NAtype, b) = NA
+==(a, na::NAtype) = NA
 
 # TODO: Move me to a more appropriate spot
 # this allows zero(String) to work
@@ -58,7 +62,7 @@ function ref(::Type{DataVec}, vals...)
     # first, iterate over vals to find the most generic non-NA type
     toptype = None
     for i = 1:lenvals
-        if vals[i] != NA
+        if !isna(vals[i])
             toptype = promote_type(toptype, typeof(vals[i]))
         end
     end
@@ -69,7 +73,7 @@ function ref(::Type{DataVec}, vals...)
     ret = DataVec(Array(toptype, lenvals), falses(lenvals))
     # copy from vals into data and mask
     for i = 1:lenvals
-        if vals[i] == NA
+        if isna(vals[i])
             ret.data[i] = zero(toptype)
             ret.na[i] = true
         else
