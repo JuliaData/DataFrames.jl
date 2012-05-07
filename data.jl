@@ -36,7 +36,7 @@ DataVec(d::DataVec) = d
 
 type NAtype; end
 const NA = NAtype()
-show(x::NAtype) = print("NA")
+show(io, x::NAtype) = print(io, "NA")
 
 type NAException <: Exception
     msg::String
@@ -284,7 +284,7 @@ end
 # additional code
 
 # print
-show(x::DataVec) = show_comma_array(x, '[', ']') 
+show(io, x::DataVec) = show_comma_array(io, x, '[', ']') 
 
 # TODO: vectorizable math functions like sqrt, sin, trunc, etc., which should return a DataVec{T}
 
@@ -425,7 +425,7 @@ ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, cn::CT) = df.columns[idxFirstEqual(df.c
 # then row-by-row print with an appropriate buffer
 maxShowLength(v::Vector) = length(v) > 0 ? max([length(string(x)) | x = v]) : 0
 maxShowLength(dv::DataVec) = max([length(string(x)) | x = dv])
-function show(df::DataFrame)
+function show(io, df::DataFrame)
     # if we don't have row names, use indexes
     if eltype(df.rownames) == Nothing
         rowNames = [sprintf("[%d,]", r) | r = 1:nrow(df)]
@@ -447,19 +447,21 @@ function show(df::DataFrame)
     
     header = strcat(repeat(" ", rownameWidth+1),
                     join([lpad(string(colNames[i]), colWidths[i]+1, " ") | i = 1:ncol(df)], ""))
-    println(header)
+    println(io, header)
     
     for i = 1:min(100, nrow(df)) # TODO
         rowname = rpad(string(rowNames[i]), rownameWidth+1, " ")
         line = strcat(rowname,
                       join([lpad(string(df[i,c]), colWidths[c]+1, " ") | c = 1:ncol(df)], ""))
-        println(line)
+        println(io, line)
     end
 end
 
 # get the structure of a DF
-function str(df::DataFrame)
-    println(sprintf("%d observations of %d variables", nrow(df), ncol(df)))
+# TODO: return a string or something instead of printing?
+str(df::DataFrame) = str(OUTPUT_STREAM::IOStream, df)
+function str(io, df::DataFrame)
+    println(io, sprintf("%d observations of %d variables", nrow(df), ncol(df)))
 
     if eltype(df.colnames) == Nothing
         colNames = [sprintf("[,%d]", c) | c = 1:ncol(df)]
@@ -473,19 +475,19 @@ function str(df::DataFrame)
     for c in 1:ncol(df)
         printedWidth = 0
         colstr = strcat(string(colNames[c]), ": ", string(eltype(df[c])), " ")
-        print(colstr)
+        print(io, colstr)
         printedWidth += length(colstr)
         
         for r in 1:nrow(df)
             elemstr = strcat(string(df[r,c]), " ")
             if printedWidth + length(elemstr) > maxPrintedWidth
-                print("...")
+                print(io, "...")
                 break
             end
-            print(elemstr)
+            print(io, elemstr)
             printedWidth += length(elemstr)
         end
-        println()
+        println(io)
     end
 end
 
@@ -496,39 +498,44 @@ end
 # if boolean, report trues, falses, and NAs
 # if anything else, punt.
 # Note that R creates a summary object, which has a print method. That's
-# a reasonable alternative to this.
-function summary{T<:Number}(dv::DataVec{T})
+# a reasonable alternative to this. The summary() functions in show.jl
+# return a string.
+summary(dv::DataVec) = summary(OUTPUT_STREAM::IOStream, dv)
+summary(df::DataFrame) = summary(OUTPUT_STREAM::IOStream, df)
+function summary{T<:Number}(io, dv::DataVec{T})
     filtered = nafilter(dv)
     qs = quantile(filtered, [0, .25, .5, .75, 1])
     statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
     statVals = [qs[1:3], mean(filtered), qs[4:5]]
     for i = 1:6
-        println(strcat(rpad(statNames[i], 8, " "), " ", string(statVals[i])))
+        println(io, strcat(rpad(statNames[i], 8, " "), " ", string(statVals[i])))
     end
     nas = sum(isna(dv))
     if nas > 0
-        println("NAs      $nas")
+        println(io, "NAs      $nas")
     end
 end
 # function summary{T<:Bool}(dv::DataVec{T})
 #     error("TODO")
 # end
-function summary{T}(dv::DataVec{T})
+function summary{T}(io, dv::DataVec{T})
     # if nothing else, just give the length and element type and NA count
-    println("Length: $(length(dv))")
-    println("Type  : $(string(eltype(dv)))")
-    println("NAs   : $(sum(isna(dv)))")
+    println(io, "Length: $(length(dv))")
+    println(io, "Type  : $(string(eltype(dv)))")
+    println(io, "NAs   : $(sum(isna(dv)))")
 end
 
 # TODO: clever layout in rows
-function summary(df::DataFrame)
+function summary(io, df::DataFrame)
     for c in 1:ncol(df)
         col = df[c]
-        println(df.colnames[c])
-        summary(col)
-        println()
+        println(io, df.colnames[c])
+        summary(io, col)
+        println(io, )
     end
 end
+
+
 
 
 # for now, use csvread to pull CSV data from disk
