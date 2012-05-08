@@ -116,7 +116,7 @@ oftype(::Type{ASCIIString},c) = repeat(" ",c)
 
 # constructor from type
 function _dv_most_generic_type(vals)
-    # iterate over vals to find the most generic non-NA type
+    # iterate over vals tuple to find the most generic non-NA type
     toptype = None
     for i = 1:length(vals)
         if !isna(vals[i])
@@ -150,7 +150,7 @@ function ref(::Type{PooledDataVec}, vals...)
     # for now, just create a DataVec and then convert it
     # TODO: rewrite for speed
     
-    PooledDataVec[DataVec[vals]]
+    PooledDataVec(DataVec[vals...])
 end
 
 # constructor from base type object
@@ -168,9 +168,11 @@ length(v::DataVec) = length(v.data)
 length(v::PooledDataVec) = length(v.refs)
 isna(v::DataVec) = v.na
 isna(v::PooledDataVec) = v.refs == 0
+ndims(v::AbstractDataVec) = 1
+numel(v::AbstractDataVec) = length(v)
 eltype{T}(v::AbstractDataVec{T}) = T
 
-# equality, respecting NAs, should be pretty fast
+# equality, respecting NAs
 function =={T}(a::DataVec{T}, b::DataVec{T})
     if (length(a) != length(b))
         return false
@@ -179,6 +181,20 @@ function =={T}(a::DataVec{T}, b::DataVec{T})
             if (a.na[i] != b.na[i])
                 return false
             elseif (!a.na[i] && !b.na[i] && a.data[i] != b.data[i])
+                return false
+            end
+        end
+    end
+    return true
+end
+function =={T}(a::AbstractDataVec{T}, b::AbstractDataVec{T})
+    if (length(a) != length(b))
+        return false
+    else
+        for i = 1:length(a)
+            if isna(a[i]) != isna(b[i])
+                return false
+            elseif !isna(a[i]) && a[i] != b[i]
                 return false
             end
         end
@@ -223,6 +239,7 @@ ref(x::PooledDataVec, i::Number) = x.refs[i] == 0 ? NA : x.pool[x.refs[i]]
 function ref(x::DataVec, r::Range1)
     DataVec(x.data[r], x.na[r], x.filter, x.replace, x.replaceVal)
 end
+# TODO: PooledDataVec -- be sure copy the pool!
 
 # logical access -- note that unlike Array logical access, this throws an error if
 # the index vector is not the same size as the data vector
@@ -232,11 +249,13 @@ function ref(x::DataVec, ind::Vector{Bool})
     end
     DataVec(x.data[ind], x.na[ind], x.filter, x.replace, x.replaceVal)
 end
+# TODO: PooledDataVec
 
 # array index access
 function ref(x::DataVec, ind::Vector{Int})
     DataVec(x.data[ind], x.na[ind], x.filter, x.replace, x.replaceVal)
 end
+# TODO: PooledDataVec
 
 # assign variants
 function assign{T}(x::DataVec{T}, v::T, i::Int)
@@ -296,53 +315,49 @@ nareplace{T}(v::DataVec{T}, r::T) = [v.na[i] ? r : v.data[i] for i = 1:length(v.
 
 # naFilter redefines a new DataVec with a flipped bit that determines how start/next/done operate
 naFilter{T}(v::DataVec{T}) = DataVec(v.data, v.na, true, false, v.replaceVal)
+naFilter{T}(v::PooledDataVec{T}) = PooledDataVec(v.refs, v.pool, true, false, v.replaceVal)
 
 # naReplace is similar to naFilter, but with a replacement value
 naReplace{T}(v::DataVec{T}, rv::T) = DataVec(v.data, v.na, false, true, rv)
+naReplace{T}(v::PooledDataVec{T}, rv::T) = PooledDataVec(v.refs, v.pool, false, true, rv)
 
 # If neither the filter or replace flags are set, the iterator will return an NA
 # when it hits an NA. If one or the other are set, it'll skip/replace the NA.
-start(x::DataVec) = 1
-function next(x::DataVec, state::Int)
+# Pooled and not share an implementation.
+start(x::AbstractDataVec) = 1
+function next(x::AbstractDataVec, state::Int)
     # if filter is set, iterate til we find a non-NA value
     if x.filter
-        for i = state:length(x.data)
-            if !x.na[i]
-                return (x.data[i], i+1)
+        for i = state:length(x)
+            if !isna(x[i])
+                return (x[i], i+1)
             end
         end
-        error("called next(DataVec) without calling done() first")
+        error("called next(AbstractDataVec) without calling done() first")
     elseif x.replace
-        if x.na[state]
-            return (x.replaceVal, state+1)
-        else
-            return (x.data[state], state+1)
-        end
+        return (isna(x[state]) ? x.replaceVal : x[state], state + 1)
     else
-        if x.na[state]
-            return(NA, state+1)
-        else
-            return(x.data[state], state+1)
-        end
+        return (x[state], state+1)
     end
 end
-function done(x::DataVec, state::Int)
+function done(x::AbstractDataVec, state::Int)
     # if filter is set, iterate til we find a non-NA value
     if x.filter
-        for i = state:length(x.data)
-            if !x.na[i]
+        for i = state:length(x)
+            if !isna(x[i])
                 return false
             end
         end
         return true
     else # just check lengths
-        return state > length(x.data)
+        return state > length(x)
     end
 end
 
 # can promote in theory based on data type
-promote_rule{S,T}(::Type{DataVec{S}}, ::Type{T}) = promote_rule(S, T)
-promote_rule{T}(::Type{DataVec{T}}, ::Type{T}) = T
+promote_rule{S,T}(::Type{AbstractDataVec{S}}, ::Type{T}) = promote_rule(S, T)
+promote_rule{T}(::Type{AbstractDataVec{T}}, ::Type{T}) = T
+# TODO: Abstract? Pooled?
 
 # convert to the base type, but only if there are no NAs
 function convert{T}(::Type{T}, x::DataVec{T})
@@ -352,12 +367,23 @@ function convert{T}(::Type{T}, x::DataVec{T})
         return x.data
     end
 end
+function convert{T}(::Type{T}, x::AbstractDataVec{T})
+    try
+        [i::T for i in x]
+    catch ee
+        if isa(ee, TypeError)
+            throw(NAException("Cannot convert AbstractDataVec with NAs to base type -- naFilter or naReplace them first"))
+        else
+            throw(ee)
+        end
+    end
+end
 
 # a DataVec is not a StridedArray, so sum() and similar picks up the itr version, which will work without 
 # additional code
 
 # print
-show(io, x::DataVec) = show_comma_array(io, x, '[', ']') 
+show(io, x::AbstractDataVec) = show_comma_array(io, x, '[', ']') 
 
 # TODO: vectorizable math functions like sqrt, sin, trunc, etc., which should return a DataVec{T}
 
