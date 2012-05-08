@@ -4,12 +4,17 @@
 ## Panda's discussion of NAs: http://pandas.pydata.org/pandas-docs/stable/missing_data.html
 ## NumPy's analysis of the issue: https://github.com/numpy/numpy/blob/master/doc/neps/missing-data.rst
 
-## Abstract type is DataVec, which is a parameterized type that wraps an vector of a type and a (bit) array
+## Abstract type supports NAs and indexing
+
+## Primary actual type is DataVec, which is a parameterized type that wraps an vector of a type and a (bit) array
 ## for the mask. 
 
-bitstype 64 Mask # TODO
+## Secondary type is a PooledDataVec, which is a parameterized type that wraps a vector of UInts and a vector of
+## the type, indexed by the main vector. NAs are 0s in the UInt vector. 
 
-type DataVec{T}
+abstract AbstractDataVec{T}
+
+type DataVec{T} <: AbstractDataVec{T}
     data::Vector{T}
     na::AbstractVector{Bool} # TODO use a bit array
     
@@ -34,6 +39,59 @@ DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, f::Bool, r::Bool, v::T) = Data
 # a no-op constructor
 DataVec(d::DataVec) = d
 
+type PooledDataVec{T} <: AbstractDataVec{T}
+    refs::Vector{Uint64}
+    pool::Vector{T}
+    # TODO: ordering
+    # TODO: meta-data for dummy conversion
+    
+    filter::Bool
+    replace::Bool
+    replaceVal::T
+    
+    function PooledDataVec{T}(refs::Vector{Uint64}, pool::Vector{T}, f::Bool, r::Bool, v::T)
+        # refs mustn't overflow pool
+        if (max(refs) > length(pool))
+            error("reference vector points beyond the end of the pool!")
+        elseif (f && r)
+            error("please don't set both the filter and replace flags in a PooledDataVec")
+        end   
+        new(refs,pool,f,r,v)
+    end
+end
+# a full constructor (why is this necessary?)
+PooledDataVec{T}(re::Vector{Uint64}, p::Vector{T}, f::Bool, r::Bool, v::T) = PooledDataVec{T}(re, p, f, r, v)
+
+# how do you construct one? well, from the same sigs as a DataVec!
+PooledDataVec{T}(d::Vector{T}, m::AbstractVector{Bool}) = PooledDataVec{T}(d, m, false, false, zero(T))
+function PooledDataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, f::Bool, r::Bool, v::T)  
+    # algorithm... start with a null pool and a pre-allocated refs, plus hash from T to Int.
+    # iterate over d. If in pool already, set the refs accordingly. If new, add to pool then set refs.
+    newrefs = Array(Uint64, length(d))
+    newpool = Array(T, 0)
+    poolref = Dict{T,Uint64}(0)
+    maxref = 0
+    
+    for i = 1:length(d)
+        if m[i]
+            newrefs[i] = 0
+        else
+            existing = get(poolref, d[i], 0)
+            if existing == 0
+                maxref += 1
+                poolref[d[i]] = maxref 
+                push(newpool, d[i])
+                newrefs[i] = maxref
+            else
+                newrefs[i] = existing
+            end
+        end
+    end
+    PooledDataVec(newrefs, newpool, f, r, v)
+end
+PooledDataVec(dv::DataVec) = PooledDataVec(dv.data, dv.na, dv.filter, dv.replace, dv.replaceVal)
+PooledDataVec(d::PooledDataVec) = d
+
 type NAtype; end
 const NA = NAtype()
 show(io, x::NAtype) = print(io, "NA")
@@ -57,19 +115,23 @@ oftype(::Type{ASCIIString},c) = repeat(" ",c)
 
 
 # constructor from type
-function ref(::Type{DataVec}, vals...)
-    lenvals = length(vals)
-    # first, iterate over vals to find the most generic non-NA type
+function _dv_most_generic_type(vals)
+    # iterate over vals to find the most generic non-NA type
     toptype = None
-    for i = 1:lenvals
+    for i = 1:length(vals)
         if !isna(vals[i])
             toptype = promote_type(toptype, typeof(vals[i]))
         end
     end
-    
     # TODO: confirm that this type has a zero() 
+    toptype
+end
+function ref(::Type{DataVec}, vals...)
+    # first, get the most generic non-NA type
+    toptype = _dv_most_generic_type(vals)
     
     # then, allocate vectors
+    lenvals = length(vals)
     ret = DataVec(Array(toptype, lenvals), falses(lenvals))
     # copy from vals into data and mask
     for i = 1:lenvals
@@ -84,9 +146,16 @@ function ref(::Type{DataVec}, vals...)
     
     return ret
 end
+function ref(::Type{PooledDataVec}, vals...)
+    # for now, just create a DataVec and then convert it
+    # TODO: rewrite for speed
+    
+    PooledDataVec[DataVec[vals]]
+end
 
 # constructor from base type object
 DataVec(x::Vector) = DataVec(x, falses(length(x)))
+PooledDataVec(x::Vector) = PooledDataVec(DataVec(x, falses(length(x))))
 
 # TODO: copy_to
 # TODO: similar
@@ -94,9 +163,12 @@ DataVec(x::Vector) = DataVec(x, falses(length(x)))
 
 # properties
 size(v::DataVec) = size(v.data)
+size(v::PooledDataVec) = size(v.refs)
 length(v::DataVec) = length(v.data)
+length(v::PooledDataVec) = length(v.refs)
 isna(v::DataVec) = v.na
-eltype{T}(v::DataVec{T}) = T
+isna(v::PooledDataVec) = v.refs == 0
+eltype{T}(v::AbstractDataVec{T}) = T
 
 # equality, respecting NAs, should be pretty fast
 function =={T}(a::DataVec{T}, b::DataVec{T})
@@ -145,10 +217,11 @@ end
 
 # single-element access
 ref(x::DataVec, i::Number) = x.na[i] ? NA : x.data[i]
+ref(x::PooledDataVec, i::Number) = x.refs[i] == 0 ? NA : x.pool[x.refs[i]]
 
 # range access
 function ref(x::DataVec, r::Range1)
-    DataVec(x.data[r], x.na[r])
+    DataVec(x.data[r], x.na[r], x.filter, x.replace, x.replaceVal)
 end
 
 # logical access -- note that unlike Array logical access, this throws an error if
@@ -157,12 +230,12 @@ function ref(x::DataVec, ind::Vector{Bool})
     if length(x) != length(ind)
         throw(ArgumentError("boolean index is not the same size as the DataVec"))
     end
-    DataVec(x.data[ind], x.na[ind])
+    DataVec(x.data[ind], x.na[ind], x.filter, x.replace, x.replaceVal)
 end
 
 # array index access
 function ref(x::DataVec, ind::Vector{Int})
-    DataVec(x.data[ind], x.na[ind])
+    DataVec(x.data[ind], x.na[ind], x.filter, x.replace, x.replaceVal)
 end
 
 # assign variants
@@ -219,7 +292,7 @@ assign{T}(x::DataVec{T}, n::NAtype, rng::Range1) = begin (x.na[rng] = true); x[r
 # things to deal with unwanted NAs -- lower case returns the base type, with overhead,
 # mixed case returns an iterator
 nafilter{T}(v::DataVec{T}) = v.data[!v.na]
-nareplace{T}(v::DataVec{T}, r::T) = [v.na[i] ? r : v.data[i] | i = 1:length(v.data)]
+nareplace{T}(v::DataVec{T}, r::T) = [v.na[i] ? r : v.data[i] for i = 1:length(v.data)]
 
 # naFilter redefines a new DataVec with a flipped bit that determines how start/next/done operate
 naFilter{T}(v::DataVec{T}) = DataVec(v.data, v.na, true, false, v.replaceVal)
