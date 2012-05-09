@@ -18,6 +18,7 @@ type DataVec{T} <: AbstractDataVec{T}
     data::Vector{T}
     na::AbstractVector{Bool} # TODO use a bit array
     
+    # TODO: these three should probably be a single type structure
     filter::Bool
     replace::Bool # replace supercedes filter, if both true
     replaceVal::T
@@ -239,7 +240,12 @@ ref(x::PooledDataVec, i::Number) = x.refs[i] == 0 ? NA : x.pool[x.refs[i]]
 function ref(x::DataVec, r::Range1)
     DataVec(x.data[r], x.na[r], x.filter, x.replace, x.replaceVal)
 end
-# TODO: PooledDataVec -- be sure copy the pool!
+# PooledDataVec -- be sure copy the pool!
+function ref(x::PooledDataVec, r::Range1)
+    # TODO: copy the whole pool or just the items in the range?
+    # for now, the whole pool
+    PooledDataVec(x.refs[r], copy(x.pool), x.filter, x.replace, x.replaceVal)
+end
 
 # logical access -- note that unlike Array logical access, this throws an error if
 # the index vector is not the same size as the data vector
@@ -249,25 +255,64 @@ function ref(x::DataVec, ind::Vector{Bool})
     end
     DataVec(x.data[ind], x.na[ind], x.filter, x.replace, x.replaceVal)
 end
-# TODO: PooledDataVec
+# PooledDataVec
+function ref(x::PooledDataVec, ind::Vector{Bool})
+    if length(x) != length(ind)
+        throw(ArgumentError("boolean index is not the same size as the PooledDataVec"))
+    end
+    PooledDataVec(x.refs[ind], copy(x.pool), x.filter, x.replace, x.replaceVal)
+end
 
 # array index access
 function ref(x::DataVec, ind::Vector{Int})
     DataVec(x.data[ind], x.na[ind], x.filter, x.replace, x.replaceVal)
 end
-# TODO: PooledDataVec
+# PooledDataVec
+function ref(x::PooledDataVec, ind::Vector{Int})
+    PooledDataVec(x.refs[ind], copy(x.pool), x.filter, x.replace, x.replaceVal)
+end
+
+function _find_first(x, v)
+    for i = 1:length(x)
+        if (x[i] == v)
+            return i
+        end
+    end
+    return 0
+end
 
 # assign variants
+# x[3] = "cat"
 function assign{T}(x::DataVec{T}, v::T, i::Int)
     x.data[i] = v
     x.na[i] = false
     return x[i]
 end
+function assign{T}(x::PooledDataVec{T}, v::T, i::Int)
+    # note: NA replacement comes for free here
+    
+    # find the index of v in the pool
+    pool_idx = _find_first(x.pool, v)
+    if pool_idx > 0
+        # new item is in the pool
+        x.refs[i] = pool_idx
+    else
+        # new item is not in the pool; add it
+        push(x.pool, v)
+        x.refs[i] = length(x.pool)
+    end
+    return x[i]
+end
+
+# x[[3, 4]] = "cat"
 function assign{T}(x::DataVec{T}, v::T, is::Vector{Int})
     x.data[is] = v
     x.na[is] = false
     return x[is] # this could get slow -- maybe not...
 end
+# TODO: PooledDataVec
+
+# x[[3, 4]] = ["cat", "dog"]
 function assign{T}(x::DataVec{T}, vs::Vector{T}, is::Vector{Int})
     if length(is) != length(vs)
         throw(ArgumentError("can't assign when index and data vectors are different length"))
@@ -276,11 +321,17 @@ function assign{T}(x::DataVec{T}, vs::Vector{T}, is::Vector{Int})
     x.na[is] = false
     return x[is]
 end
+# TODO: PooledDataVec
+
+# x[[true, false, true]] = "cat"
 function assign{T}(x::DataVec{T}, v::T, mask::Vector{Bool})
     x.data[mask] = v
     x.na[mask] = false
     return x[mask]
 end
+# TODO: PooledDataVec
+
+# x[[true, false, true]] = ["cat", "dog"]
 function assign{T}(x::DataVec{T}, vs::Vector{T}, mask::Vector{Bool})
     if sum(mask) != length(vs)
         throw(ArgumentError("can't assign when boolean trues and data vectors are different length"))
@@ -289,11 +340,17 @@ function assign{T}(x::DataVec{T}, vs::Vector{T}, mask::Vector{Bool})
     x.na[mask] = false
     return x[mask]
 end
+# TODO: PooledDataVec
+
+# x[2:3] = "cat"
 function assign{T}(x::DataVec{T}, v::T, rng::Range1)
     x.data[rng] = v
     x.na[rng] = false
     return x[rng]
 end
+# TODO: PooledDataVec
+
+# x[2:3] = ["cat", "dog"]
 function assign{T}(x::DataVec{T}, vs::Vector{T}, rng::Range1)
     if length(rng) != length(vs)
         throw(ArgumentError("can't assign when index and data vectors are different length"))
@@ -302,16 +359,32 @@ function assign{T}(x::DataVec{T}, vs::Vector{T}, rng::Range1)
     x.na[rng] = false
     return x[rng]
 end
-assign{T}(x::DataVec{T}, n::NAtype, i::Int) = begin (x.na[i] = true); return x[i]; end
-assign{T}(x::DataVec{T}, n::NAtype, is::Vector{Int}) = begin (x.na[is] = true); x[is]; end
-assign{T}(x::DataVec{T}, n::NAtype, mask::Vector{Bool}) = begin (x.na[mask] = true); x[mask]; end
-assign{T}(x::DataVec{T}, n::NAtype, rng::Range1) = begin (x.na[rng] = true); x[rng]; end
+# TODO: PooledDataVec
 
+# x[3] = NA
+assign{T}(x::DataVec{T}, n::NAtype, i::Int) = begin (x.na[i] = true); return x[i]; end
+# TODO: PooledDataVec
+
+# x[[3,5]] = NA
+assign{T}(x::DataVec{T}, n::NAtype, is::Vector{Int}) = begin (x.na[is] = true); x[is]; end
+# TODO: PooledDataVec
+
+# x[[true, false, true]] = NA
+assign{T}(x::DataVec{T}, n::NAtype, mask::Vector{Bool}) = begin (x.na[mask] = true); x[mask]; end
+# TODO: PooledDataVec
+
+# x[2:3] = NA
+assign{T}(x::DataVec{T}, n::NAtype, rng::Range1) = begin (x.na[rng] = true); x[rng]; end
+# TODO: PooledDataVec
+
+# TODO: replace!(x::PooledDataVec{T}, from::T, to::T)
+# and similar to and from NA
 
 # things to deal with unwanted NAs -- lower case returns the base type, with overhead,
 # mixed case returns an iterator
 nafilter{T}(v::DataVec{T}) = v.data[!v.na]
 nareplace{T}(v::DataVec{T}, r::T) = [v.na[i] ? r : v.data[i] for i = 1:length(v.data)]
+# TODO PooledDataVec
 
 # naFilter redefines a new DataVec with a flipped bit that determines how start/next/done operate
 naFilter{T}(v::DataVec{T}) = DataVec(v.data, v.na, true, false, v.replaceVal)
