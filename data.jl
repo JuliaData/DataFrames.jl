@@ -310,7 +310,13 @@ function assign{T}(x::DataVec{T}, v::T, is::Vector{Int})
     x.na[is] = false
     return x[is] # this could get slow -- maybe not...
 end
-# TODO: PooledDataVec
+# PooledDataVec can use a possibly-slower generic approach
+function assign{T}(x::AbstractDataVec{T}, v::T, is::Vector{Int})
+    for i in is
+        x[i] = v
+    end
+    return x[is]
+end
 
 # x[[3, 4]] = ["cat", "dog"]
 function assign{T}(x::DataVec{T}, vs::Vector{T}, is::Vector{Int})
@@ -321,7 +327,16 @@ function assign{T}(x::DataVec{T}, vs::Vector{T}, is::Vector{Int})
     x.na[is] = false
     return x[is]
 end
-# TODO: PooledDataVec
+# PooledDataVec can use a possibly-slower generic approach
+function assign{T}(x::AbstractDataVec{T}, vs::Vector{T}, is::Vector{Int})
+    if length(is) != length(vs)
+        throw(ArgumentError("can't assign when index and data vectors are different length"))
+    end
+    for vi in zip(vs, is)
+        x[vi[2]] = vi[1]
+    end
+    return x[is]
+end
 
 # x[[true, false, true]] = "cat"
 function assign{T}(x::DataVec{T}, v::T, mask::Vector{Bool})
@@ -329,7 +344,15 @@ function assign{T}(x::DataVec{T}, v::T, mask::Vector{Bool})
     x.na[mask] = false
     return x[mask]
 end
-# TODO: PooledDataVec
+# PooledDataVec can use a possibly-slower generic approach
+function assign{T}(x::AbstractDataVec{T}, v::T, mask::Vector{Bool})
+    for i = 1:length(x)
+        if mask[i] == true
+            x[i] = v
+        end
+    end
+    return x[mask]
+end
 
 # x[[true, false, true]] = ["cat", "dog"]
 function assign{T}(x::DataVec{T}, vs::Vector{T}, mask::Vector{Bool})
@@ -340,7 +363,21 @@ function assign{T}(x::DataVec{T}, vs::Vector{T}, mask::Vector{Bool})
     x.na[mask] = false
     return x[mask]
 end
-# TODO: PooledDataVec
+# PooledDataVec can use a possibly-slower generic approach
+function assign{T}(x::AbstractDataVec{T}, vs::Vector{T}, mask::Vector{Bool})
+    if sum(mask) != length(vs)
+        throw(ArgumentError("can't assign when boolean trues and data vectors are different length"))
+    end
+    ivs = 1
+    # walk through mask. whenever true, assign and increment vs index
+    for i = 1:length(mask)
+        if mask[i] == true
+            x[i] = vs[ivs]
+            ivs += 1
+        end
+    end
+    return x[mask]
+end
 
 # x[2:3] = "cat"
 function assign{T}(x::DataVec{T}, v::T, rng::Range1)
@@ -348,7 +385,13 @@ function assign{T}(x::DataVec{T}, v::T, rng::Range1)
     x.na[rng] = false
     return x[rng]
 end
-# TODO: PooledDataVec
+# PooledDataVec can use a possibly-slower generic approach
+function assign{T}(x::AbstractDataVec{T}, v::T, rng::Range1)
+    for i in rng
+        x[i] = v
+    end
+end
+
 
 # x[2:3] = ["cat", "dog"]
 function assign{T}(x::DataVec{T}, vs::Vector{T}, rng::Range1)
@@ -359,26 +402,85 @@ function assign{T}(x::DataVec{T}, vs::Vector{T}, rng::Range1)
     x.na[rng] = false
     return x[rng]
 end
-# TODO: PooledDataVec
+# PooledDataVec can use a possibly-slower generic approach
+function assign{T}(x::AbstractDataVec{T}, vs::Vector{T}, rng::Range1)
+    if length(rng) != length(vs)
+        throw(ArgumentError("can't assign when index and data vectors are different length"))
+    end
+    ivs = 1
+    # walk through rng. assign and increment vs index
+    for i in rng
+        x[i] = vs[ivs]
+        ivs += 1
+    end
+    return x[rng]
+end
 
 # x[3] = NA
-assign{T}(x::DataVec{T}, n::NAtype, i::Int) = begin (x.na[i] = true); return x[i]; end
-# TODO: PooledDataVec
+assign{T}(x::DataVec{T}, n::NAtype, i::Int) = begin (x.na[i] = true); return NA; end
+assign{T}(x::PooledDataVec{T}, n::NAtype, i::Int) = begin (x.refs[i] = 0); return NA; end
 
 # x[[3,5]] = NA
-assign{T}(x::DataVec{T}, n::NAtype, is::Vector{Int}) = begin (x.na[is] = true); x[is]; end
-# TODO: PooledDataVec
+assign{T}(x::DataVec{T}, n::NAtype, is::Vector{Int}) = begin (x.na[is] = true); return x[is]; end
+assign{T}(x::PooledDataVec{T}, n::NAtype, is::Vector{Int}) = begin (x.refs[is] = 0); return x[is]; end
 
 # x[[true, false, true]] = NA
-assign{T}(x::DataVec{T}, n::NAtype, mask::Vector{Bool}) = begin (x.na[mask] = true); x[mask]; end
-# TODO: PooledDataVec
+assign{T}(x::DataVec{T}, n::NAtype, mask::Vector{Bool}) = begin (x.na[mask] = true); return x[mask]; end
+assign{T}(x::PooledDataVec{T}, n::NAtype, mask::Vector{Bool}) = begin (x.refs[mask] = 0); return x[mask]; end
 
 # x[2:3] = NA
-assign{T}(x::DataVec{T}, n::NAtype, rng::Range1) = begin (x.na[rng] = true); x[rng]; end
-# TODO: PooledDataVec
+assign{T}(x::DataVec{T}, n::NAtype, rng::Range1) = begin (x.na[rng] = true); return x[rng]; end
+assign{T}(x::PooledDataVec{T}, n::NAtype, rng::Range1) = begin (x.refs[rng] = 0); return x[rng]; end
+
+# TODO: Abstract assignment of a union of T's and NAs
+# x[3:5] = {"cat", NA, "dog"}
+# x[3:5] = DataVec["cat", NA, "dog"]
 
 # TODO: replace!(x::PooledDataVec{T}, from::T, to::T)
 # and similar to and from NA
+function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::T)
+    # throw error if fromval isn't in the pool
+    fromidx = _find_first(x.pool, fromval)
+    if fromidx == 0
+        error("can't replace a value not in the pool in a PooledDataVec!")
+    end
+        
+    # if toval is in the pool too, use that and remove fromval from the pool
+    toidx = _find_first(x.pool, toval)
+    if toidx != 0
+        x.refs[x.refs == fromidx] = toidx
+        #x.pool[fromidx] = None    TODO: what to do here??
+    else
+        # otherwise, toval is new, swap it in
+        x.pool[fromidx] = toval
+    end
+    
+    return toval
+end
+replace!(x::PooledDataVec{NAtype}, fromval::NAtype, toval::NAtype) = NA # no-op to deal with warning
+function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::NAtype)
+    fromidx = _find_first(x.pool, fromval)
+    if fromidx == 0
+        error("can't replace a value not in the pool in a PooledDataVec!")
+    end
+    
+    x.refs[x.refs == fromidx] = 0
+    
+    return NA
+end
+function replace!{T}(x::PooledDataVec{T}, fromval::NAtype, toval::T)
+    toidx = _find_first(x.pool, toval)
+    # if toval is in the pool, just do the assignment
+    if toidx != 0
+        x.refs[x.refs == 0] = toidx
+    else
+        # otherwise, toval is new, add it to the pool
+        push(x.pool, toval)
+        x.refs[x.refs == 0] = length(x.pool)
+    end
+    
+    return toval
+end
 
 # things to deal with unwanted NAs -- lower case returns the base type, with overhead,
 # mixed case returns an iterator
