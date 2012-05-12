@@ -12,6 +12,8 @@
 ## Secondary type is a PooledDataVec, which is a parameterized type that wraps a vector of UInts and a vector of
 ## the type, indexed by the main vector. NAs are 0s in the UInt vector. 
 
+load("options.jl")
+
 abstract AbstractDataVec{T}
 
 type DataVec{T} <: AbstractDataVec{T}
@@ -41,7 +43,7 @@ DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, f::Bool, r::Bool, v::T) = Data
 DataVec(d::DataVec) = d
 
 type PooledDataVec{T} <: AbstractDataVec{T}
-    refs::Vector{Uint64}
+    refs::Vector{Uint16} # TODO: make sure we don't overflow
     pool::Vector{T}
     # TODO: ordering
     # TODO: meta-data for dummy conversion
@@ -50,7 +52,7 @@ type PooledDataVec{T} <: AbstractDataVec{T}
     replace::Bool
     replaceVal::T
     
-    function PooledDataVec{T}(refs::Vector{Uint64}, pool::Vector{T}, f::Bool, r::Bool, v::T)
+    function PooledDataVec{T}(refs::Vector{Uint16}, pool::Vector{T}, f::Bool, r::Bool, v::T)
         # refs mustn't overflow pool
         if (max(refs) > length(pool))
             error("reference vector points beyond the end of the pool!")
@@ -61,16 +63,16 @@ type PooledDataVec{T} <: AbstractDataVec{T}
     end
 end
 # a full constructor (why is this necessary?)
-PooledDataVec{T}(re::Vector{Uint64}, p::Vector{T}, f::Bool, r::Bool, v::T) = PooledDataVec{T}(re, p, f, r, v)
+PooledDataVec{T}(re::Vector{Uint16}, p::Vector{T}, f::Bool, r::Bool, v::T) = PooledDataVec{T}(re, p, f, r, v)
 
 # how do you construct one? well, from the same sigs as a DataVec!
-PooledDataVec{T}(d::Vector{T}, m::AbstractVector{Bool}) = PooledDataVec{T}(d, m, false, false, zero(T))
-function PooledDataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, f::Bool, r::Bool, v::T)  
+PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, false, false, zero(T))
+function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
     # algorithm... start with a null pool and a pre-allocated refs, plus hash from T to Int.
     # iterate over d. If in pool already, set the refs accordingly. If new, add to pool then set refs.
-    newrefs = Array(Uint64, length(d))
+    newrefs = Array(Uint16, length(d))
     newpool = Array(T, 0)
-    poolref = Dict{T,Uint64}(0)
+    poolref = Dict{T,Uint16}(0)
     maxref = 0
     
     for i = 1:length(d)
@@ -574,15 +576,15 @@ show(io, x::AbstractDataVec) = show_comma_array(io, x, '[', ']')
 # are O(n).
 # row and col names must be the right length, but can be "nothing".
 type DataFrame{RT,CT}
-    columns::Vector{Any}
+    columns::Vector{Any} # actually Vector{AbstractDataVec{*}}
     rownames::Vector{RT}
     colnames::Vector{CT}
     
     # inner constructor requires everything to be the right types, checks lengths
     function DataFrame(cols::Vector, rn::Vector{RT}, cn::Vector{CT})  
         # all cols
-        if !all([isa(c, DataVec) | c = cols])
-            error("DataFrame inner constructor requires all columns be DataVecs already")
+        if !all([isa(c, AbstractDataVec) | c = cols])
+            error("DataFrame inner constructor requires all columns be AbstractDataVecs already")
         end
           
         # all columns have to be the same length
@@ -619,15 +621,15 @@ DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) | i = 1:size(m
 # 
 # 
 
-# TODO: move
-function idxFirstEqual{T}(x::Vector{T}, y::T)
-    for i = 1:length(x)
-        if x[i] == y
-            return i
-        end
-    end
-    return nothing
-end
+# # TODO: move
+# function idxFirstEqual{T}(x::Vector{T}, y::T)
+#     for i = 1:length(x)
+#         if x[i] == y
+#             return i
+#         end
+#     end
+#     return nothing
+# end
 
 
 nrow(df::DataFrame) = length(df.columns[1])
@@ -639,32 +641,32 @@ size(df::DataFrame) = (nrow(df), ncol(df))
 size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
 
 # get columns by name, position
+# first two return the DataVec
 ref(df::DataFrame, i::Int) = df.columns[i]
-ref{RT,CT}(df::DataFrame{RT,CT}, name::CT) = df.columns[idxFirstEqual(df.colnames, name)] # TODO make faster
-ref{RT,CT}(df::DataFrame{RT,CT}, names::Vector{CT}) = df[[idxFirstEqual(df.colnames, n)::Int | n = names]]
+ref{RT,CT}(df::DataFrame{RT,CT}, name::CT) = df.columns[_find_first(df.colnames, name)] # TODO make faster
+# these all return another DF
+ref{RT,CT}(df::DataFrame{RT,CT}, names::Vector{CT}) = df[[_find_first(df.colnames, n)::Int | n = names]] # calls the next one
 ref(df::DataFrame, is::Vector{Int}) = DataFrame(df.columns[is], df.rownames, df.colnames[is])
 ref(df::DataFrame, rng::Range1) = DataFrame(df.columns[rng], df.rownames, df.colnames[rng])
 ref(df::DataFrame, pos::Vector{Bool}) = DataFrame(df.columns[pos], df.rownames, df.colnames[pos])
 
 # get slices
 # row slices
-ref(df::DataFrame, r::Int, rng::Range1) = DataFrame({DataVec[df.columns[c][r]] | c = rng}, 
+ref(df::DataFrame, r::Int, rng::Range1) = DataFrame({x[[r]] for x in df.columns[rng]}, 
                                                     [df.rownames[r]], 
                                                     df.colnames[rng])
-ref(df::DataFrame, r::Int, cs::Vector{Int}) = DataFrame({DataVec[df.columns[c][r]] | c = cs}, 
+ref(df::DataFrame, r::Int, cs::Vector{Int}) = DataFrame({x[[r]] for x in df.columns[cs]}, 
                                                         [df.rownames[r]], 
                                                         df.colnames[cs])
-ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cs::Vector{CT}) = DataFrame({DataVec[df.columns[c][r]] | c = cs}, 
-                                                                     [df.rownames[r]], 
-                                                                     df.colnames[[idxFirstEqual(df.colnames, c)::Int | c = cs]])
+ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cs::Vector{CT}) = df[r, [_find_first(df.colnames, n)::Int for c = cs]]
 ref(df::DataFrame, r::Int, cs::Vector{Bool}) = df[cs][r,:] # possibly slow, but pretty
 
 # 2-D slices
 # rows are vector of indexes
-ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Int}) = DataFrame({DataVec(df.columns[c][rs]) | c = cs}, 
+ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Int}) = DataFrame({x[rs] for x in df.columns[cs]}, 
                                                                  df.rownames[rs], 
                                                                  df.colnames[cs])
-ref(df::DataFrame, rs::Vector{Int}, rng::Range1) = DataFrame({DataVec(df.columns[c][rs]) | c = rng}, 
+ref(df::DataFrame, rs::Vector{Int}, rng::Range1) = DataFrame({x[rs] for x in df.columns[rng]}, 
                                                              df.rownames[rs], 
                                                              df.colnames[rng])
 ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Bool}) = df[cs][rs,:] # slow way
@@ -674,8 +676,7 @@ ref{RT,CT}(df::DataFrame{RT,CT}, rs::Vector{Int}, name::CT) = df[rs, [name]] # d
 # TODO: other types of row indexing with 2-D slices
 # rows are range, vector of booleans, name, or vector of names
 # is there a macro way to define all of these??
-ref(df::DataFrame, rr::Range1, cr::Range1) = DataFrame({DataVec(df.columns[c][rr]) | c = cr}, 
-                                                             df.rownames[rr], 
+ref(df::DataFrame, rr::Range1, cr::Range1) = DataFrame({x[rr] for x in df.columns[cr]}, df.rownames[rr], 
                                                              df.colnames[cr])
 
 
@@ -688,9 +689,9 @@ tail(df::DataFrame) = tail(df, 6)
 # get singletons. TODO: nicer error handling
 # TODO: deal with oddness if row/col types are ints
 ref(df::DataFrame, r::Int, c::Int) = df.columns[c][r]
-ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, c::Int) = df.columns[c][idxFirstEqual(df.rownames, rn)]
-ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cn::CT) = df.columns[idxFirstEqual(df.colnames, cn)][r]
-ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, cn::CT) = df.columns[idxFirstEqual(df.colnames, cn)][idxFirstEqual(df.rownames, rn)]
+ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, c::Int) = df.columns[c][_find_first(df.rownames, rn)]
+ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cn::CT) = df.columns[_find_first(df.colnames, cn)][r]
+ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, cn::CT) = df.columns[_find_first(df.colnames, cn)][_find_first(df.rownames, rn)]
 
 
 # to print a DataFrame, find the max string length of each column
@@ -698,7 +699,7 @@ ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, cn::CT) = df.columns[idxFirstEqual(df.c
 # then print the column names with an appropriate buffer
 # then row-by-row print with an appropriate buffer
 maxShowLength(v::Vector) = length(v) > 0 ? max([length(string(x)) | x = v]) : 0
-maxShowLength(dv::DataVec) = max([length(string(x)) | x = dv])
+maxShowLength(dv::AbstractDataVec) = max([length(string(x)) | x = dv])
 function show(io, df::DataFrame)
     # if we don't have row names, use indexes
     if eltype(df.rownames) == Nothing
@@ -718,8 +719,8 @@ function show(io, df::DataFrame)
     end
     
     colWidths = [max(length(string(colNames[c])), maxShowLength(df.columns[c])) | c = 1:ncol(df)]
-    
-    header = strcat(repeat(" ", rownameWidth+1),
+
+    header = strcat(" " ^ (rownameWidth+1),
                     join([lpad(string(colNames[i]), colWidths[i]+1, " ") | i = 1:ncol(df)], ""))
     println(io, header)
     
@@ -748,7 +749,8 @@ function str(io, df::DataFrame)
     maxPrintedWidth = 60
     for c in 1:ncol(df)
         printedWidth = 0
-        colstr = strcat(string(colNames[c]), ": ", string(eltype(df[c])), " ")
+        ispooled = isa(df[c], PooledDataVec) ? "Pooled " : ""
+        colstr = strcat(string(colNames[c]), " [", ispooled, string(eltype(df[c])), "] ")
         print(io, colstr)
         printedWidth += length(colstr)
         
@@ -774,9 +776,9 @@ end
 # Note that R creates a summary object, which has a print method. That's
 # a reasonable alternative to this. The summary() functions in show.jl
 # return a string.
-summary(dv::DataVec) = summary(OUTPUT_STREAM::IOStream, dv)
+summary(dv::AbstractDataVec) = summary(OUTPUT_STREAM::IOStream, dv)
 summary(df::DataFrame) = summary(OUTPUT_STREAM::IOStream, df)
-function summary{T<:Number}(io, dv::DataVec{T})
+function summary{T<:Number}(io, dv::AbstractDataVec{T})
     filtered = nafilter(dv)
     qs = quantile(filtered, [0, .25, .5, .75, 1])
     statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
@@ -792,10 +794,11 @@ end
 # function summary{T<:Bool}(dv::DataVec{T})
 #     error("TODO")
 # end
-function summary{T}(io, dv::DataVec{T})
+function summary{T}(io, dv::AbstractDataVec{T})
+    ispooled = isa(dv, PooledDataVec) ? "Pooled " : ""
     # if nothing else, just give the length and element type and NA count
     println(io, "Length: $(length(dv))")
-    println(io, "Type  : $(string(eltype(dv)))")
+    println(io, "Type  : $(ispooled)$(string(eltype(dv)))")
     println(io, "NAs   : $(sum(isna(dv)))")
 end
 
@@ -821,42 +824,70 @@ function _remove_quotes(s)
         return s::ASCIIString
     end
 end
-function csvDataFrame(filename)
+
+function _same_set(a, b)
+    # there are definitely MUCH faster ways of doing this
+    length(a) == length(b) && all(sort(a) == sort(b))
+end
+
+# colnames = "true", "false", "check" (default)
+# poolstrings = "check" (default), "never" 
+function csvDataFrame(filename, o::Options)
+    @defaults o colnames="check" poolstrings="check"
+    # TODO
+    # for now, use the built-in csvread that creates a matrix of Anys, functionally numbers and strings. 
+    # Ideally, we'd probably save RAM by doing a two-pass read over the file, once to determine types and
+    # once to build the data structures.
     dat = csvread(filename)
     
     # if the first row looks like strings, chop it off and process it as the 
     # column names
-    if all([typeof(x)==ASCIIString | x = dat[1,:]])
-        colNames = [_remove_quotes(x) | x = dat[1,:]]
+    if colnames == "check"
+        colnames = all([typeof(x)==ASCIIString | x = dat[1,:]]) ? "true" : "false"
+    end
+    if colnames == "true"
+        columnNames = [_remove_quotes(x) | x = dat[1,:]]
         dat = dat[2:,:]
     else
         # null column names
-        colNames = []
+        columnNames = []
     end
     
     # foreach column, if everything is either numeric or empty string, then build a numeric DataVec
     # otherwise build a string DataVec
-    cols = Array(Any, size(dat,2))
+    cols = Array(AbstractDataVec, size(dat,2)) # elements will be #undef initially
     for c = 1:size(dat,2)
-        nas = [x == "" | x = dat[:,c]]
-        # iterate over the column, ignoring null strings, promoting as we go, until we're done
-        # or we hit a non-numeric value, in which case short-circuit
+        nas = [(x == "")::Bool | x = dat[:,c]]
+        # iterate over the column, ignoring null strings, promoting through numeric types as we go, until we're done
+        # simultaneously, collect a hash of up to 64K defined elements (which might look like
+        # numbers, in case we have a heterogeneous column)
+        # never short-circuit, as we need the full list of keys to test for booleans
         colType = None
         colIsNum = true
+        colStrings = Dict{String,Bool}(0)
+        colPoolStrings = poolstrings == "check" 
         for r = 1:size(dat,1)
             v = dat[r,c]
             if v != ""
-                if isa(v,Number)
+                if isa(v,Number) && colIsNum
                     colType = promote_type(colType, typeof(v))
                 else
                     colIsNum = false
-                    break
                 end
+                # store that we saw this string
+                colStrings[string(v)] = true # do we need a count here?
             end
         end
+        if colPoolStrings && length(keys(colStrings)) > typemax(Uint16)
+            # we've ran past the limit of pooled strings!
+            colPoolStrings = false
+        end
+        
         # build DataVecs
-        # TODO: special-case booleans
-        if (colIsNum && colType != None)
+        if _same_set(keys(colStrings), ["0", "1"])
+            # boolean
+            cols[c] = DataVec(dat[:,c] == "1", nas)
+        elseif (colIsNum && colType != None)
             # this is annoying to have to pre-allocate the array, but comprehensions don't
             # seem to get the type right
             tmpcol = Array(colType, size(dat,1))
@@ -864,12 +895,21 @@ function csvDataFrame(filename)
                 tmpcol[r] = dat[r,c] == "" ? false : dat[r,c] # false is the smallest numeric 0
             end
             cols[c] = DataVec(tmpcol, nas)
-        else # TODO: other types of strings?
+        elseif _same_set(keys(colStrings), ["TRUE", "FALSE"])
+            # boolean 
+            cols[c] = DataVec(dat[:,c] == "TRUE", nas)
+        elseif colPoolStrings
+            # TODO: if we're trying to pool, build the underlying refs and pool as we check, rather
+            # than throwing away eveything and starting over! we've got a perfectly nice constructor...
+            cols[c] = PooledDataVec([string(_remove_quotes(x))::ASCIIString | x = dat[:,c]], nas)
+        else
             cols[c] = DataVec([string(_remove_quotes(x))::ASCIIString | x = dat[:,c]], nas)
         end
     end
     
+    @check_used o
+    
     # combine the columns into a DataFrame and return
-    DataFrame(cols, nothings(size(dat,1)), colNames)
+    DataFrame(cols, nothings(size(dat,1)), columnNames)
 end
-
+csvDataFrame(filename) = csvDataFrame(filename, Options())
