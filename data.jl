@@ -170,7 +170,7 @@ size(v::PooledDataVec) = size(v.refs)
 length(v::DataVec) = length(v.data)
 length(v::PooledDataVec) = length(v.refs)
 isna(v::DataVec) = v.na
-isna(v::PooledDataVec) = v.refs == 0
+isna(v::PooledDataVec) = v.refs .== 0
 ndims(v::AbstractDataVec) = 1
 numel(v::AbstractDataVec) = length(v)
 eltype{T}(v::AbstractDataVec{T}) = T
@@ -450,7 +450,7 @@ function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::T)
     # if toval is in the pool too, use that and remove fromval from the pool
     toidx = _find_first(x.pool, toval)
     if toidx != 0
-        x.refs[x.refs == fromidx] = toidx
+        x.refs[x.refs .== fromidx] = toidx
         #x.pool[fromidx] = None    TODO: what to do here??
     else
         # otherwise, toval is new, swap it in
@@ -466,7 +466,7 @@ function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::NAtype)
         error("can't replace a value not in the pool in a PooledDataVec!")
     end
     
-    x.refs[x.refs == fromidx] = 0
+    x.refs[x.refs .== fromidx] = 0
     
     return NA
 end
@@ -474,11 +474,11 @@ function replace!{T}(x::PooledDataVec{T}, fromval::NAtype, toval::T)
     toidx = _find_first(x.pool, toval)
     # if toval is in the pool, just do the assignment
     if toidx != 0
-        x.refs[x.refs == 0] = toidx
+        x.refs[x.refs .== 0] = toidx
     else
         # otherwise, toval is new, add it to the pool
         push(x.pool, toval)
-        x.refs[x.refs == 0] = length(x.pool)
+        x.refs[x.refs .== 0] = length(x.pool)
     end
     
     return toval
@@ -583,12 +583,12 @@ type DataFrame{RT,CT}
     # inner constructor requires everything to be the right types, checks lengths
     function DataFrame(cols::Vector, rn::Vector{RT}, cn::Vector{CT})  
         # all cols
-        if !all([isa(c, AbstractDataVec) | c = cols])
+        if !all([isa(c, AbstractDataVec) for c = cols])
             error("DataFrame inner constructor requires all columns be AbstractDataVecs already")
         end
           
         # all columns have to be the same length
-        if !all(map(length, cols) == length(cols[1]))
+        if !all(map(length, cols) .== length(cols[1]))
             error("all columns in a DataFrame have to be the same length")
         end
         
@@ -615,9 +615,9 @@ DataFrame{RT,CT}(cs::Vector, rn::Vector{RT}, cn::Vector{CT}) = DataFrame{RT,CT}(
 DataFrame{RT,CT}(cs::Vector, cn::Vector{CT}) = DataFrame{RT,CT}(cs, nothings(length(cs[1])), cn)
 
 # if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
-DataFrame(vals...) = DataFrame([DataVec(x) | x = vals])
+DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
 # if we have a matrix, create a tuple of columns and pass that in
-DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) | i = 1:size(m)[2]])
+DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) for i = 1:size(m)[2]])
 # 
 # 
 
@@ -645,7 +645,7 @@ size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("Da
 ref(df::DataFrame, i::Int) = df.columns[i]
 ref{RT,CT}(df::DataFrame{RT,CT}, name::CT) = df.columns[_find_first(df.colnames, name)] # TODO make faster
 # these all return another DF
-ref{RT,CT}(df::DataFrame{RT,CT}, names::Vector{CT}) = df[[_find_first(df.colnames, n)::Int | n = names]] # calls the next one
+ref{RT,CT}(df::DataFrame{RT,CT}, names::Vector{CT}) = df[[_find_first(df.colnames, n)::Int for n = names]] # calls the next one
 ref(df::DataFrame, is::Vector{Int}) = DataFrame(df.columns[is], df.rownames, df.colnames[is])
 ref(df::DataFrame, rng::Range1) = DataFrame(df.columns[rng], df.rownames, df.colnames[rng])
 ref(df::DataFrame, pos::Vector{Bool}) = DataFrame(df.columns[pos], df.rownames, df.colnames[pos])
@@ -698,12 +698,12 @@ ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, cn::CT) = df.columns[_find_first(df.col
 # and get the max rowname width
 # then print the column names with an appropriate buffer
 # then row-by-row print with an appropriate buffer
-maxShowLength(v::Vector) = length(v) > 0 ? max([length(string(x)) | x = v]) : 0
-maxShowLength(dv::AbstractDataVec) = max([length(string(x)) | x = dv])
+maxShowLength(v::Vector) = length(v) > 0 ? max([length(string(x)) for x = v]) : 0
+maxShowLength(dv::AbstractDataVec) = max([length(string(x)) for x = dv])
 function show(io, df::DataFrame)
     # if we don't have row names, use indexes
     if eltype(df.rownames) == Nothing
-        rowNames = [sprintf("[%d,]", r) | r = 1:nrow(df)]
+        rowNames = [sprintf("[%d,]", r) for r = 1:nrow(df)]
     else
         rowNames = df.rownames
     end
@@ -713,21 +713,21 @@ function show(io, df::DataFrame)
     # if we don't have columns names, use indexes
     # note that column names in R are obligatory
     if eltype(df.colnames) == Nothing
-        colNames = [sprintf("[,%d]", c) | c = 1:ncol(df)]
+        colNames = [sprintf("[,%d]", c) for c = 1:ncol(df)]
     else
         colNames = df.colnames
     end
     
-    colWidths = [max(length(string(colNames[c])), maxShowLength(df.columns[c])) | c = 1:ncol(df)]
+    colWidths = [max(length(string(colNames[c])), maxShowLength(df.columns[c])) for c = 1:ncol(df)]
 
     header = strcat(" " ^ (rownameWidth+1),
-                    join([lpad(string(colNames[i]), colWidths[i]+1, " ") | i = 1:ncol(df)], ""))
+                    join([lpad(string(colNames[i]), colWidths[i]+1, " ") for i = 1:ncol(df)], ""))
     println(io, header)
     
     for i = 1:min(100, nrow(df)) # TODO
         rowname = rpad(string(rowNames[i]), rownameWidth+1, " ")
         line = strcat(rowname,
-                      join([lpad(string(df[i,c]), colWidths[c]+1, " ") | c = 1:ncol(df)], ""))
+                      join([lpad(string(df[i,c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
         println(io, line)
     end
 end
@@ -739,7 +739,7 @@ function str(io, df::DataFrame)
     println(io, sprintf("%d observations of %d variables", nrow(df), ncol(df)))
 
     if eltype(df.colnames) == Nothing
-        colNames = [sprintf("[,%d]", c) | c = 1:ncol(df)]
+        colNames = [sprintf("[,%d]", c) for c = 1:ncol(df)]
     else
         colNames = df.colnames
     end
@@ -843,10 +843,10 @@ function csvDataFrame(filename, o::Options)
     # if the first row looks like strings, chop it off and process it as the 
     # column names
     if colnames == "check"
-        colnames = all([typeof(x)==ASCIIString | x = dat[1,:]]) ? "true" : "false"
+        colnames = all([typeof(x)==ASCIIString for x = dat[1,:]]) ? "true" : "false"
     end
     if colnames == "true"
-        columnNames = [_remove_quotes(x) | x = dat[1,:]]
+        columnNames = [_remove_quotes(x) for x = dat[1,:]]
         dat = dat[2:,:]
     else
         # null column names
@@ -857,7 +857,7 @@ function csvDataFrame(filename, o::Options)
     # otherwise build a string DataVec
     cols = Array(AbstractDataVec, size(dat,2)) # elements will be #undef initially
     for c = 1:size(dat,2)
-        nas = [(x == "")::Bool | x = dat[:,c]]
+        nas = [(x == "")::Bool for x = dat[:,c]]
         # iterate over the column, ignoring null strings, promoting through numeric types as we go, until we're done
         # simultaneously, collect a hash of up to 64K defined elements (which might look like
         # numbers, in case we have a heterogeneous column)
@@ -901,9 +901,9 @@ function csvDataFrame(filename, o::Options)
         elseif colPoolStrings
             # TODO: if we're trying to pool, build the underlying refs and pool as we check, rather
             # than throwing away eveything and starting over! we've got a perfectly nice constructor...
-            cols[c] = PooledDataVec([string(_remove_quotes(x))::ASCIIString | x = dat[:,c]], nas)
+            cols[c] = PooledDataVec([string(_remove_quotes(x))::ASCIIString for x = dat[:,c]], nas)
         else
-            cols[c] = DataVec([string(_remove_quotes(x))::ASCIIString | x = dat[:,c]], nas)
+            cols[c] = DataVec([string(_remove_quotes(x))::ASCIIString for x = dat[:,c]], nas)
         end
     end
     
