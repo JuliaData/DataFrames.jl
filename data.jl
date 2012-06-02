@@ -215,6 +215,9 @@ function .=={T}(a::AbstractDataVec{T}, v::T)
     ret
 end
 # TODO: fast version for PooledDataVec
+# TODO: a::AbstractDataVec{T}, b::AbstractArray{T}
+# TODO: a::AbstractDataVec{T}, b::AbstractDataVec{T}
+# TODO: a::AbstractDataVec{T}, NA
 
 # for arithmatic, NAs propogate
 for f in (:+, :-, :.*, :div, :mod, :&, :|, :$)
@@ -583,17 +586,16 @@ show(io, x::AbstractDataVec) = show_comma_array(io, x, '[', ']')
 
 
 
-# ## DataFrame - a list of heterogeneous Data vectors with row and col names.
+# ## DataFrame - a list of heterogeneous Data vectors with col names.
 # columns are a vector, which means that operations that insert/delete columns
 # are O(n).
-# row and col names must be the right length, but can be "nothing".
-type DataFrame{RT,CT}
+# col names must be the right length, but can be "nothing".
+type DataFrame{CT}
     columns::Vector{Any} # actually Vector{AbstractDataVec{*}}
-    rownames::Vector{RT}
     colnames::Vector{CT}
     
     # inner constructor requires everything to be the right types, checks lengths
-    function DataFrame(cols::Vector, rn::Vector{RT}, cn::Vector{CT})  
+    function DataFrame(cols::Vector, cn::Vector{CT})  
         # all cols
         if !all([isa(c, AbstractDataVec) for c = cols])
             error("DataFrame inner constructor requires all columns be AbstractDataVecs already")
@@ -604,27 +606,20 @@ type DataFrame{RT,CT}
             error("all columns in a DataFrame have to be the same length")
         end
         
-        # rownames has to be the same length as the columns
-        if length(rn) != length(cols[1])
-            error("rownames must be the same length as columns")
-        end
-        
-        # colnames has to be the same length as columns vector
+         # colnames has to be the same length as columns vector
         if length(cn) != length(cols)
             error("colnames must be the same length as the number of columns")
         end
         
-        new(cols, rn, cn)
+        new(cols, cn)
     end
 end
 # constructors 
 # if we already have DataVecs, but no names
 nothings(n) = fill(nothing, n) # TODO: move elsewhere?
-DataFrame(cs::Vector) = DataFrame(cs, nothings(length(cs[1])), nothings(length(cs)))
+DataFrame(cs::Vector) = DataFrame(cs, nothings(length(cs)))
 # if we have DataVecs and names
-DataFrame{RT,CT}(cs::Vector, rn::Vector{RT}, cn::Vector{CT}) = DataFrame{RT,CT}(cs, rn, cn)
-# if we have DataVecs and colnames (note can't just have rownames -- hm)
-DataFrame{RT,CT}(cs::Vector, cn::Vector{CT}) = DataFrame{RT,CT}(cs, nothings(length(cs[1])), cn)
+DataFrame{CT}(cs::Vector, cn::Vector{CT}) = DataFrame{CT}(cs, cn)
 
 # if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
 DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
@@ -648,47 +643,42 @@ nrow(df::DataFrame) = length(df.columns[1])
 ncol(df::DataFrame) = length(df.columns)
 names(df::DataFrame) = colnames(df)
 colnames(df::DataFrame) = df.colnames
-rownames(df::DataFrame) = df.rownames
 size(df::DataFrame) = (nrow(df), ncol(df))
 size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
 
 # get columns by name, position
 # first two return the DataVec
 ref(df::DataFrame, i::Int) = df.columns[i]
-ref{RT,CT}(df::DataFrame{RT,CT}, name::CT) = df.columns[_find_first(df.colnames, name)] # TODO make faster
+ref{CT}(df::DataFrame{CT}, name::CT) = df.columns[_find_first(df.colnames, name)] # TODO make faster
 # these all return another DF
-ref{RT,CT}(df::DataFrame{RT,CT}, names::Vector{CT}) = df[[_find_first(df.colnames, n)::Int for n = names]] # calls the next one
-ref(df::DataFrame, is::Vector{Int}) = DataFrame(df.columns[is], df.rownames, df.colnames[is])
-ref(df::DataFrame, rng::Range1) = DataFrame(df.columns[rng], df.rownames, df.colnames[rng])
-ref(df::DataFrame, pos::Vector{Bool}) = DataFrame(df.columns[pos], df.rownames, df.colnames[pos])
+ref{CT}(df::DataFrame{CT}, names::Vector{CT}) = df[[_find_first(df.colnames, n)::Int for n = names]] # calls the next one
+ref(df::DataFrame, is::Vector{Int}) = DataFrame(df.columns[is], df.colnames[is])
+ref(df::DataFrame, rng::Range1) = DataFrame(df.columns[rng], df.colnames[rng])
+ref(df::DataFrame, pos::Vector{Bool}) = DataFrame(df.columns[pos], df.colnames[pos])
 
 # get slices
 # row slices
 ref(df::DataFrame, r::Int, rng::Range1) = DataFrame({x[[r]] for x in df.columns[rng]}, 
-                                                    [df.rownames[r]], 
                                                     df.colnames[rng])
 ref(df::DataFrame, r::Int, cs::Vector{Int}) = DataFrame({x[[r]] for x in df.columns[cs]}, 
-                                                        [df.rownames[r]], 
                                                         df.colnames[cs])
-ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cs::Vector{CT}) = df[r, [_find_first(df.colnames, n)::Int for c = cs]]
+ref{CT}(df::DataFrame{CT}, r::Int, cs::Vector{CT}) = df[r, [_find_first(df.colnames, n)::Int for c = cs]]
 ref(df::DataFrame, r::Int, cs::Vector{Bool}) = df[cs][r,:] # possibly slow, but pretty
 
 # 2-D slices
 # rows are vector of indexes
 ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Int}) = DataFrame({x[rs] for x in df.columns[cs]}, 
-                                                                 df.rownames[rs], 
                                                                  df.colnames[cs])
 ref(df::DataFrame, rs::Vector{Int}, rng::Range1) = DataFrame({x[rs] for x in df.columns[rng]}, 
-                                                             df.rownames[rs], 
                                                              df.colnames[rng])
 ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Bool}) = df[cs][rs,:] # slow way
-ref{RT,CT}(df::DataFrame{RT,CT}, rs::Vector{Int}, cs::Vector{CT}) = df[cs][rs,:] # slow way
+ref{CT}(df::DataFrame{CT}, rs::Vector{Int}, cs::Vector{CT}) = df[cs][rs,:] # slow way
 ref(df::DataFrame, rs::Vector{Int}, c::Int) = df[rs, [c]] # delegate
-ref{RT,CT}(df::DataFrame{RT,CT}, rs::Vector{Int}, name::CT) = df[rs, [name]] # delegate
+ref{CT}(df::DataFrame{CT}, rs::Vector{Int}, name::CT) = df[rs, [name]] # delegate
 # TODO: other types of row indexing with 2-D slices
-# rows are range, vector of booleans, name, or vector of names
+# rows are range, vector of booleans
 # is there a macro way to define all of these??
-ref(df::DataFrame, rr::Range1, cr::Range1) = DataFrame({x[rr] for x in df.columns[cr]}, df.rownames[rr], 
+ref(df::DataFrame, rr::Range1, cr::Range1) = DataFrame({x[rr] for x in df.columns[cr]},
                                                              df.colnames[cr])
 
 
@@ -701,24 +691,17 @@ tail(df::DataFrame) = tail(df, 6)
 # get singletons. TODO: nicer error handling
 # TODO: deal with oddness if row/col types are ints
 ref(df::DataFrame, r::Int, c::Int) = df.columns[c][r]
-ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, c::Int) = df.columns[c][_find_first(df.rownames, rn)]
-ref{RT,CT}(df::DataFrame{RT,CT}, r::Int, cn::CT) = df.columns[_find_first(df.colnames, cn)][r]
-ref{RT,CT}(df::DataFrame{RT,CT}, rn::RT, cn::CT) = df.columns[_find_first(df.colnames, cn)][_find_first(df.rownames, rn)]
+ref{CT}(df::DataFrame{CT}, r::Int, cn::CT) = df.columns[_find_first(df.colnames, cn)][r]
 
 
 # to print a DataFrame, find the max string length of each column
-# and get the max rowname width
 # then print the column names with an appropriate buffer
 # then row-by-row print with an appropriate buffer
 maxShowLength(v::Vector) = length(v) > 0 ? max([length(string(x)) for x = v]) : 0
 maxShowLength(dv::AbstractDataVec) = max([length(string(x)) for x = dv])
 function show(io, df::DataFrame)
-    # if we don't have row names, use indexes
-    if eltype(df.rownames) == Nothing
-        rowNames = [sprintf("[%d,]", r) for r = 1:nrow(df)]
-    else
-        rowNames = df.rownames
-    end
+    # we don't have row names -- use indexes
+    rowNames = [sprintf("[%d,]", r) for r = 1:nrow(df)]
     
     rownameWidth = maxShowLength(rowNames)
     
@@ -922,6 +905,10 @@ function csvDataFrame(filename, o::Options)
     @check_used o
     
     # combine the columns into a DataFrame and return
-    DataFrame(cols, nothings(size(dat,1)), columnNames)
+    DataFrame(cols, columnNames)
 end
 csvDataFrame(filename) = csvDataFrame(filename, Options())
+
+
+# a SubDataFrame is a lightweight wrapper around a DataFrame used most frequently in
+# split/apply sorts of operations.
