@@ -584,13 +584,14 @@ show(io, x::AbstractDataVec) = show_comma_array(io, x, '[', ']')
 # TODO: div(dat, 2) works, but zz ./ 2 doesn't
 
 
-
+# Abstract DF includes DataFrame and SubDataFrame
+abstract AbstractDataFrame{CT}
 
 # ## DataFrame - a list of heterogeneous Data vectors with col names.
 # columns are a vector, which means that operations that insert/delete columns
 # are O(n).
 # col names must be the right length, but can be "nothing".
-type DataFrame{CT}
+type DataFrame{CT} <: AbstractDataFrame{CT}
     columns::Vector{Any} # actually Vector{AbstractDataVec{*}}
     colnames::Vector{CT}
     
@@ -662,7 +663,7 @@ ref(df::DataFrame, r::Int, rng::Range1) = DataFrame({x[[r]] for x in df.columns[
                                                     df.colnames[rng])
 ref(df::DataFrame, r::Int, cs::Vector{Int}) = DataFrame({x[[r]] for x in df.columns[cs]}, 
                                                         df.colnames[cs])
-ref{CT}(df::DataFrame{CT}, r::Int, cs::Vector{CT}) = df[r, [_find_first(df.colnames, n)::Int for c = cs]]
+ref{CT}(df::DataFrame{CT}, r::Int, cs::Vector{CT}) = df[r, [_find_first(df.colnames, c)::Int for c = cs]]
 ref(df::DataFrame, r::Int, cs::Vector{Bool}) = df[cs][r,:] # possibly slow, but pretty
 
 # 2-D slices
@@ -912,3 +913,97 @@ csvDataFrame(filename) = csvDataFrame(filename, Options())
 
 # a SubDataFrame is a lightweight wrapper around a DataFrame used most frequently in
 # split/apply sorts of operations.
+type SubDataFrame{CT} <: AbstractDataFrame{CT}
+    parent::DataFrame{CT}
+    rows::Vector{Int} # maps from subdf row indexes to parent row indexes
+    cols::Vector{Int} # maps from subdf col indexes to parent col indexes
+    allcols::Bool     # if all cols included, ignore cols mapping
+    
+    # TODO: constructor to check params
+end
+
+
+sub{CT}(D::DataFrame{CT}, rs::Vector{Int}) = SubDataFrame(D, rs, Array(Int,0), true)
+sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{Int}) = SubDataFrame(D, rs, cs, false)
+
+# should use metaprogramming to make all of the below constructors!
+sub{CT}(D::DataFrame{CT}, r::Int) = sub(D, [r])
+sub{CT}(D::DataFrame{CT}, rng::Range1) = sub(D, [rng])
+sub{CT}(D::DataFrame{CT}, b::Vector{Bool}) = sub(D, [1:nrow(D)][b])
+
+sub{CT}(D::DataFrame{CT}, r::Int, c::Int) = sub(D, [r], [c])
+sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, c::Int) = sub(D, rs, [c])
+sub{CT}(D::DataFrame{CT}, rng::Range1, c::Int) = sub(D, [rng], [c])
+sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, c::Int) = sub(D, [1:nrow(D)][b], [c])
+
+sub{CT}(D::DataFrame{CT}, r::Int, cs::Vector{Int}) = sub(D, [r], c)
+#sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{Int}) = sub(D, r, [c])
+sub{CT}(D::DataFrame{CT}, rng::Range1, cs::Vector{Int}) = sub(D, [r], c)
+sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, cs::Vector{Int}) = sub(D, [1:nrow(D)][b], c)
+
+sub{CT}(D::DataFrame{CT}, r::Int, crng::Range1) = sub(D, [r], [crng])
+sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, crng::Range1) = sub(D, rs, [crng])
+sub{CT}(D::DataFrame{CT}, rng::Range1, crng::Range1) = sub(D, [rng], [crng])
+sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, crng::Range1) = sub(D, [1:nrow(D)][b], [crng])
+
+sub{CT}(D::DataFrame{CT}, r::Int, cb::Vector{Bool}) = sub(D, [r], [1:ncol(D)][cb])
+sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cb::Vector{Bool}) = sub(D, rs, [1:ncol(D)][cb])
+sub{CT}(D::DataFrame{CT}, rng::Range1, cb::Vector{Bool}) = sub(D, [rng], [1:ncol(D)][cb])
+sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, cb::Vector{Bool}) = sub(D, [1:nrow(D)][b], [1:ncol(D)][cb])
+
+sub{CT}(D::DataFrame{CT}, r::Int, c::CT) = sub(D, [r], [_find_first(D.colnames, c)])
+sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, c::CT) = sub(D, rs, [_find_first(D.colnames, c)])
+sub{CT}(D::DataFrame{CT}, rng::Range1, c::CT) = sub(D, [rng], [_find_first(D.colnames, c)])
+sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, c::CT) = sub(D, [1:nrow(D)][b], [_find_first(D.colnames, c)])
+
+# TODO: subs of subs
+
+
+nrow(df::SubDataFrame) = length(df.rows)
+ncol(df::SubDataFrame) = df.allcols ? ncol(df.parent) : length(df.cols)
+names(df::SubDataFrame) = colnames(df)
+colnames(df::SubDataFrame) = df.allcols ? colnames(df.parent) : colnames(df.parent)[df.cols]
+size(df::AbstractDataFrame) = (nrow(df), ncol(df))
+size(df::AbstractDataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
+
+# tons of refs...
+# get columns by name, position
+ref(df::SubDataFrame, i::Int) = ref(df.parent, df.rows, df.cols[i])
+ref{CT}(df::SubDataFrame{CT}, name::CT) = ref(df.parent, df.rows, name)
+ref{CT}(df::SubDataFrame{CT}, names::Vector{CT}) = ref(df.parent, df.rows, names)
+ref(df::SubDataFrame, ixs::Vector{Int}) = ref(df.parent, df.rows, df.cols[ixs])
+ref(df::SubDataFrame, rng::Range1) = ref(df.parent, df.rows, df.cols[rng])
+ref(df::SubDataFrame, pos::Vector{Bool}) = ref(df.parent, df.rows, df.cols[pos])
+
+# get slices
+# row slices
+ref(df::SubDataFrame, r::Int, rng::Range1) = ref(df.parent, df.rows[r], df.allcols ? rng : df.cols[rng])
+ref(df::SubDataFrame, r::Int, cs::Vector{Int}) = ref(df.parent, df.rows[r], df.allcols ? cs : df.cols[cs])
+ref{CT}(df::SubDataFrame{CT}, r::Int, cs::Vector{CT}) = ref(df.parent, df.rows[r], cs)
+ref(df::SubDataFrame, r::Int, cs::Vector{Bool}) = ref(df.parent, df.rows[r], df.allcols ? cs : df.cols[cs])
+
+# 2-D slices
+# rows are vector of indexes
+ref(df::SubDataFrame, rs::Vector{Int}, cs::Vector{Int}) = ref(df.parent, df.rows[rs], df.allcols ? cs : df.cols[cs])
+ref(df::SubDataFrame, rs::Vector{Int}, rng::Range1) = ref(df.parent, df.rows[rs], df.allcols ? rng : df.cols[rng])
+ref(df::SubDataFrame, rs::Vector{Int}, cs::Vector{Bool}) = ref(df.parent, df.rows[rs], df.allcols ? cs : df.cols[cs])
+ref{CT}(df::SubDataFrame{CT}, rs::Vector{Int}, cs::Vector{CT}) = ref(df.parent, df.rows[rs], cs)
+ref(df::SubDataFrame, rs::Vector{Int}, c::Int) = ref(df.parent, df.rows[rs], df.allcols ? c : df.cols[c])
+ref{CT}(df::SubDataFrame{CT}, rs::Vector{Int}, name::CT) = ref(df.parent, df.rows[rs], df.allcols ? c : df.cols[c]) 
+# TODO: other types of row indexing with 2-D slices
+# rows are range, vector of booleans
+# is there a macro way to define all of these??
+ref(df::SubDataFrame, rr::Range1, cr::Range1) = ref(df.parent, df.rows[rr], df.allcols ? cr : df.cols[cr])
+
+
+head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
+head(df::AbstractDataFrame) = head(df, 6)
+tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
+tail(df::AbstractDataFrame) = tail(df, 6)
+
+
+# get singletons. TODO: nicer error handling
+ref(df::SubDataFrame, r::Int, c::Int) = ref(df.parent, df.rows[r], df.allcols ? c : df.cols[c])
+ref{CT}(df::SubDataFrame{CT}, r::Int, cn::CT) = ref(df.parent, df.rows[r], cn)
+
+
