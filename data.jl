@@ -205,6 +205,17 @@ function =={T}(a::AbstractDataVec{T}, b::AbstractDataVec{T})
     return true
 end
 
+# element-wise equality
+function .=={T}(a::AbstractDataVec{T}, v::T)
+    # allocate a DataVec for the return value, then assign into it
+    ret = DataVec(Array(Bool,length(a)), Array(Bool,length(a)), false, false, false)
+    for i = 1:length(a)
+        ret[i] = isna(a[i]) ? NA : (a[i] == v)
+    end
+    ret
+end
+# TODO: fast version for PooledDataVec
+
 # for arithmatic, NAs propogate
 for f in (:+, :-, :.*, :div, :mod, :&, :|, :$)
     @eval begin
@@ -489,6 +500,7 @@ end
 nafilter{T}(v::DataVec{T}) = v.data[!v.na]
 nareplace{T}(v::DataVec{T}, r::T) = [v.na[i] ? r : v.data[i] for i = 1:length(v.data)]
 # TODO PooledDataVec
+# TODO nareplace! does in-place change; nafilter! shouldn't exist, as it doesn't apply with DataFrames
 
 # naFilter redefines a new DataVec with a flipped bit that determines how start/next/done operate
 naFilter{T}(v::DataVec{T}) = DataVec(v.data, v.na, true, false, v.replaceVal)
