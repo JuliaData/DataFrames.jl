@@ -730,6 +730,7 @@ end
 
 # get the structure of a DF
 # TODO: return a string or something instead of printing?
+# TODO: AbstractDataFrame
 str(df::DataFrame) = str(OUTPUT_STREAM::IOStream, df)
 function str(io, df::DataFrame)
     println(io, sprintf("%d observations of %d variables", nrow(df), ncol(df)))
@@ -799,6 +800,7 @@ function summary{T}(io, dv::AbstractDataVec{T})
 end
 
 # TODO: clever layout in rows
+# TODO: AbstractDataFrame
 function summary(io, df::DataFrame)
     for c in 1:ncol(df)
         col = df[c]
@@ -807,6 +809,7 @@ function summary(io, df::DataFrame)
         println(io, )
     end
 end
+
 
 
 
@@ -1005,5 +1008,34 @@ tail(df::AbstractDataFrame) = tail(df, 6)
 # get singletons. TODO: nicer error handling
 ref(df::SubDataFrame, r::Int, c::Int) = ref(df.parent, df.rows[r], df.allcols ? c : df.cols[c])
 ref{CT}(df::SubDataFrame{CT}, r::Int, cn::CT) = ref(df.parent, df.rows[r], cn)
+
+
+# DF column operations
+# df[1] = replace column
+# df[1:3] = (replace columns)
+# df["new"] = append new column
+# df[["new", "newer"]] = (new columns)
+# df[1] = nothing
+# del!(df, 1)
+# del!(df, "old")
+# df2 = del(df, 1) new DF, minus vectors
+# df2 = cbind(df...) any combination of dfs and dvs and vectors
+
+
+# DF row operations -- delete and append
+# df[1] = nothing
+# df[1:3] = nothing
+# df3 = rbind(df1, df2...)
+# rbind!(df1, df2...)
+
+
+# split-apply-combine
+# co(ap(myfun,
+#    sp(df, ["region", "product"])))
+
+# how do we add col names to the name space?
+# transform(df, :(cat=dog*2, clean=proc(dirty)))
+# summarize(df, :(cat=sum(dog), all=strcat(strs)))
+
 
 
