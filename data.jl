@@ -160,6 +160,10 @@ end
 DataVec(x::Vector) = DataVec(x, falses(length(x)))
 PooledDataVec(x::Vector) = PooledDataVec(DataVec(x, falses(length(x))))
 
+# copy everything
+copy{T}(dv::DataVec{T}) = DataVec{T}(copy(dv.data), copy(dv.na), dv.filter, dv.replace, dv.replaceVal)
+copy{T}(dv::PooledDataVec{T}) = PooledDataVec{T}(copy(dv.refs), copy(dv.pool), dv.filter, dv.replace, dv.replaceVal)
+
 # TODO: copy_to
 # TODO: similar
 
@@ -1011,14 +1015,69 @@ ref{CT}(df::SubDataFrame{CT}, r::Int, cn::CT) = ref(df.parent, df.rows[r], cn)
 
 
 # DF column operations
+######################
+
+# assignments return the complete object...
+
 # df[1] = replace column
-# df[1:3] = (replace columns)
+function assign(df::DataFrame, newcol::AbstractDataVec, icol::Integer)
+    if icol > 0 && icol <= ncol(df)
+        df.columns[icol] = newcol
+    else
+        throw(ArgumentError("Can't replace a non-existent DataFrame column"))
+    end
+    df
+end
+assign{T}(df::DataFrame, newcol::Vector{T}, icol::Integer) = assign(df, DataVec(newcol), icol)
+
+# df["old"] = replace old columns
 # df["new"] = append new column
+function assign{T}(df::DataFrame{T}, newcol::AbstractDataVec, colname::T)
+    icol = _find_first(df.colnames, colname)
+    if icol > 0
+        # existing
+        assign(df, newcol, icol)
+    else
+        # new
+        push(df.colnames, colname)
+        push(df.columns, newcol)
+    end
+    df
+end
+assign{CT, T}(df::DataFrame{CT}, newcol::Vector{T}, colname::CT) = assign(df, DataVec(newcol), colname)
+
+# do I care about vectorized assignment? maybe not...
+# df[1:3] = (replace columns) eh...
 # df[["new", "newer"]] = (new columns)
+
 # df[1] = nothing
+assign(df::DataFrame, x::Nothing, icol::Integer) = del!(df, icol)
+
 # del!(df, 1)
 # del!(df, "old")
+function del!(df::DataFrame, icol::Integer)
+    if icol > 0 && icol <= ncol(df)
+        del(df.columns, icol)
+        del(df.colnames, icol)
+    else
+        throw(ArgumentError("Can't delete a non-existent DataFrame column"))
+    end
+    df
+end
+del!{CT}(df::DataFrame{CT}, colname::CT) = del!(df, _find_first(colnames(df), colname))
+
 # df2 = del(df, 1) new DF, minus vectors
+function del(df::DataFrame, icol::Integer)
+    if icol > 0 && icol <= ncol(df)
+        cols = del(copy(df.columns), icol)
+        colnames = del(copy(df.colnames), icol)
+        ret = DataFrame(cols, colnames)
+    else
+        throw(ArgumentError("Can't delete a non-existent DataFrame column"))
+    end
+end
+del{CT}(df::DataFrame{CT}, colname::CT) = del(df, _find_first(colnames(df), colname))
+
 # df2 = cbind(df...) any combination of dfs and dvs and vectors
 
 
