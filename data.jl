@@ -160,7 +160,7 @@ end
 DataVec(x::Vector) = DataVec(x, falses(length(x)))
 PooledDataVec(x::Vector) = PooledDataVec(DataVec(x, falses(length(x))))
 
-# copy everything
+# copy does a deep copy
 copy{T}(dv::DataVec{T}) = DataVec{T}(copy(dv.data), copy(dv.na), dv.filter, dv.replace, dv.replaceVal)
 copy{T}(dv::PooledDataVec{T}) = PooledDataVec{T}(copy(dv.refs), copy(dv.pool), dv.filter, dv.replace, dv.replaceVal)
 
@@ -633,6 +633,13 @@ DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) for i = 1:size
 # 
 # 
 
+# copy of a data frame does a deep copy
+copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], copy(df.colnames))
+
+
+# dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
+# changing the in one df can break the other.
+
 # # TODO: move
 # function idxFirstEqual{T}(x::Vector{T}, y::T)
 #     for i = 1:length(x)
@@ -1078,8 +1085,96 @@ function del(df::DataFrame, icol::Integer)
 end
 del{CT}(df::DataFrame{CT}, colname::CT) = del(df, _find_first(colnames(df), colname))
 
-# df2 = cbind(df...) any combination of dfs and dvs and vectors
 
+#### cbind, rbind, hcat, vcat
+# cbind!(df, ...) will append to an existing df
+# cbind!(not df, ...) will maintain the data, creating a new df
+# cbind(...) always makes copies
+# hcat() is just cbind()
+# rbind(df, ...) only accepts data frames. Finds union of columns, maintaining order
+# of first df. Missing data becomes NAs.
+# vcat() is just rbind()
+ 
+
+# df2 = cbind!(things...) any combination of dfs and dvs and vectors
+# arguments can be either dfs, or {"colname", vector} or {"colname", DataVec} cell arrays,
+# or {"colname", scalar} cell arrays
+# item lengths have to either be the same
+# colname types have to promotable
+
+# two-argument form, one df, clobbering the argument
+function cbind!{CT}(df::DataFrame{CT}, pair::Vector{Any})
+    newcolname = pair[1]
+    newcol = pair[2]
+    if isa(newcol, Vector)
+        if length(newcol) == nrow(df)
+            newcol = DataVec(newcol)
+        else
+            error("Can't cbind vector to DataFrame of different length!")
+        end
+    elseif isa(newcol, AbstractDataVec)
+        if length(newcol) != nrow(df)
+            error("Can't cbind vector to DataFrame of different length!")
+        end            
+    else # try to build a DataVec out of this presumably singleton
+        if isa(newcol, String)
+            newcol_bytes = strlen(newcol)
+        else
+            newcol_bytes = sizeof(newcol)
+        end
+        if newcol_bytes > sizeof(Uint16)
+            # cheaper to make this a pooled DV
+            newcol = PooledDataVec(fill(newcol, nrow(df)))
+        else
+            newcol = DataVec(fill(newcol, nrow(df)))
+        end
+    end
+    push(df.columns, newcol)
+    
+    push(df.colnames, convert(CT, newcolname))
+    
+    df
+end
+
+# TODO: move to set.jl? call nointer or nodupes?
+# reasonably fast approach: foreach argument, iterate over
+# the (presumed) set, checking for duplicates, adding to a hash table as we go
+function nointer(ss...)
+    d = Dict{Any,Int}(0)
+    for s in ss
+        for item in s
+            ct = get(d, item, 0)
+            if ct == 0 # we're good, add it
+                d[item] = 1
+            else
+                return false
+            end
+        end
+    end
+    return true
+end
+
+
+# two-argument form, two dfs, references only
+function cbind!{CT1, CT2}(df1::DataFrame{CT1}, df2::DataFrame{CT2})
+    # this only works if the column names can be promoted
+    newcolnames = convert(CT1, df2.colnames)
+    # and if there are no duplicate column names
+    if !nointer(df1.colnames, newcolnames)
+        error("can't cbind dataframes with overlapping column names!")
+    end
+    df1.colnames = [df1.colnames newcolnames]
+    df1.columns = [df1.columns df2.columns]
+    df1
+end
+    
+    
+# three-plus-argument form recurses
+cbind!(a, b, c...) = cbind!(cbind(a, b), c...)
+
+# without a bang, just copy then bind
+cbind(a, b) = cbind!(copy(a), copy(b))
+cbind(a, b, c...) = cbind(cbind(a,b), c...)
 
 # DF row operations -- delete and append
 # df[1] = nothing
@@ -1091,7 +1186,10 @@ del{CT}(df::DataFrame{CT}, colname::CT) = del(df, _find_first(colnames(df), coln
 # split-apply-combine
 # co(ap(myfun,
 #    sp(df, ["region", "product"])))
-
+# (|)(x, f::Function) = f(x)
+# split(df, ["region", "product"]) | (apply(nrow)) | mean
+# apply(f::function) = (x -> map(f, x))
+# split(df, ["region", "product"]) | @@@)) | mean
 # how do we add col names to the name space?
 # transform(df, :(cat=dog*2, clean=proc(dirty)))
 # summarize(df, :(cat=sum(dog), all=strcat(strs)))
