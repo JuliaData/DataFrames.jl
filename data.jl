@@ -685,8 +685,10 @@ ref(df::DataFrame, rs::Vector{Int}, rng::Range1) = DataFrame({x[rs] for x in df.
                                                              df.colnames[rng])
 ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Bool}) = df[cs][rs,:] # slow way
 ref{CT}(df::DataFrame{CT}, rs::Vector{Int}, cs::Vector{CT}) = df[cs][rs,:] # slow way
-ref(df::DataFrame, rs::Vector{Int}, c::Int) = df[rs, [c]] # delegate
-ref{CT}(df::DataFrame{CT}, rs::Vector{Int}, name::CT) = df[rs, [name]] # delegate
+# col slices
+ref(df::DataFrame, rs::Vector{Int}, c::Int) = df[c][rs]
+ref{CT}(df::DataFrame{CT}, rs::Vector{Int}, name::CT) = df[name][rs]
+
 # TODO: other types of row indexing with 2-D slices
 # rows are range, vector of booleans
 # is there a macro way to define all of these??
@@ -952,7 +954,7 @@ sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, c::Int) = sub(D, [1:nrow(D)][b], [c])
 
 sub{CT}(D::DataFrame{CT}, r::Int, cs::Vector{Int}) = sub(D, [r], c)
 #sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{Int}) = sub(D, r, [c])
-sub{CT}(D::DataFrame{CT}, rng::Range1, cs::Vector{Int}) = sub(D, [r], c)
+sub{CT}(D::DataFrame{CT}, rng::Range1, cs::Vector{Int}) = sub(D, [rng], cs)
 sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, cs::Vector{Int}) = sub(D, [1:nrow(D)][b], c)
 
 sub{CT}(D::DataFrame{CT}, r::Int, crng::Range1) = sub(D, [r], [crng])
