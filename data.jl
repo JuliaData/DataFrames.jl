@@ -607,7 +607,7 @@ type DataFrame{CT} <: AbstractDataFrame{CT}
         ## end
           
         # all columns have to be the same length
-        if !all(map(length, cols) .== length(cols[1]))
+        if length(cols) > 1 && !all(map(length, cols) .== length(cols[1]))
             error("all columns in a DataFrame have to be the same length")
         end
         
@@ -631,7 +631,9 @@ DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
 # if we have a matrix, create a tuple of columns and pass that in
 DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) for i = 1:size(m)[2]])
 # 
-# 
+
+# Blank DataFrame
+DataFrame() = DataFrame({}, ASCIIString[])
 
 # copy of a data frame does a deep copy
 copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], copy(df.colnames))
@@ -1236,6 +1238,41 @@ end
 
 within(x, args...) = within!(copy(x), args...)
 
+function summarize(df::AbstractDataFrame, ex::Expr)
+    # By-column operation within a DataFrame.
+    # Returns a new DataFrame.
+    
+    # helper function to replace symbols in ex with a reference to the
+    # appropriate column in a new df
+    replace_symbols(x, syms::Dict) = x
+    function replace_symbols(e::Expr, syms::Dict)
+        if e.head == :(=) # replace left-hand side of assignments:
+            Expr(e.head,
+                 vcat({:(_newDF[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end])),
+                 e.typ)
+        else
+            Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args), e.typ)
+        end
+    end
+    function replace_symbols(s::Symbol, syms::Dict)
+        if contains(keys(syms), string(s))
+            :(_DF[$(syms[string(s)])])
+        else
+            s
+        end
+    end
+    # Make a dict of colnames and column positions
+    cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
+    ex = replace_symbols(ex, cn_dict)
+    f = @eval (_DF) -> begin
+        _newDF = DataFrame()
+        $ex
+        _newDF
+    end
+    f(df)
+end
+
+
 function with(df::AbstractDataFrame, ex::Expr)
     # By-column operation with the columns of a DataFrame.
     # Returns the result of evaluating ex.
@@ -1265,6 +1302,7 @@ transform!(df::AbstractDataFrame, colname::String, ex::Expr) =
 with(e::Expr) = x -> with(x, e)
 within(e::Expr) = x -> within(x, e)
 within!(e::Expr) = x -> within!(x, e)
+summarize(e::Expr) = x -> summarize(x, e)
 
 # allow pipelining straight to an expression using within!:
 (|)(x::AbstractDataFrame, e::Expr) = within!(x, e)
@@ -1363,6 +1401,11 @@ function within!(gd::GroupedDataFrame, e::Expr)   # should this be within (vs. w
 end
 
 within!(x::SubDataFrame, e::Expr) = within!(x[:,:], e)
+
+# summarize() sweeps along groups and applies summarise to each group
+function summarize(gd::GroupedDataFrame, e::Expr)   # should this be within (vs. within!) or both?
+    [summarize(d, e) for d in gd]
+end
 
 # default pipelines:
 map(f::Function, x::SubDataFrame) = f(x)
