@@ -1234,6 +1234,8 @@ function within!(df::AbstractDataFrame, ex::Expr)
     f(df)
 end
 
+within(x, args...) = within!(copy(x), args...)
+
 function with(df::AbstractDataFrame, ex::Expr)
     # By-column operation with the columns of a DataFrame.
     # Returns the result of evaluating ex.
@@ -1261,6 +1263,7 @@ transform!(df::AbstractDataFrame, colname::String, ex::Expr) =
 
 # add function curries to ease pipelining:
 with(e::Expr) = x -> with(x, e)
+within(e::Expr) = x -> within(x, e)
 within!(e::Expr) = x -> within!(x, e)
 
 # allow pipelining straight to an expression using within!:
@@ -1355,7 +1358,7 @@ function with(gd::GroupedDataFrame, e::Expr)
 end
 
 # within() sweeps along groups and applies within to each group
-function within!(gd::GroupedDataFrame, e::Expr)   # should this be within (vs. within!)?
+function within!(gd::GroupedDataFrame, e::Expr)   # should this be within (vs. within!) or both?
     [within!(d[:,:], e) for d in gd]
 end
 
@@ -1363,7 +1366,7 @@ within!(x::SubDataFrame, e::Expr) = within!(x[:,:], e)
 
 # default pipelines:
 map(f::Function, x::SubDataFrame) = f(x)
-(|)(x::GroupedDataFrame, e::Expr) = with(x, e)   # use with or within! here?
+(|)(x::GroupedDataFrame, e::Expr) = within!(x, e)   # use with or within! here?
 (|)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
