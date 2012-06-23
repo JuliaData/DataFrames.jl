@@ -602,9 +602,9 @@ type DataFrame{CT} <: AbstractDataFrame{CT}
     # inner constructor requires everything to be the right types, checks lengths
     function DataFrame(cols::Vector, cn::Vector{CT})  
         # all cols
-        if !all([isa(c, AbstractDataVec) for c = cols])
-            error("DataFrame inner constructor requires all columns be AbstractDataVecs already")
-        end
+        ## if !all([isa(c, AbstractDataVec) for c = cols])
+        ##     error("DataFrame inner constructor requires all columns be AbstractDataVecs already")
+        ## end
           
         # all columns have to be the same length
         if !all(map(length, cols) .== length(cols[1]))
@@ -939,7 +939,7 @@ type SubDataFrame{CT} <: AbstractDataFrame{CT}
 end
 
 
-sub{CT}(D::DataFrame{CT}, rs::Vector{Int}) = SubDataFrame(D, rs, Array(Int,0), true)
+sub{CT}(D::DataFrame{CT}, rs::Vector{Int}) = SubDataFrame(D, rs, [1:nrow(D)], true)
 sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{Int}) = SubDataFrame(D, rs, cs, false)
 
 # should use metaprogramming to make all of the below constructors!
@@ -952,10 +952,10 @@ sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, c::Int) = sub(D, rs, [c])
 sub{CT}(D::DataFrame{CT}, rng::Range1, c::Int) = sub(D, [rng], [c])
 sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, c::Int) = sub(D, [1:nrow(D)][b], [c])
 
-sub{CT}(D::DataFrame{CT}, r::Int, cs::Vector{Int}) = sub(D, [r], c)
+sub{CT}(D::DataFrame{CT}, r::Int, cs::Vector{Int}) = sub(D, [r], cs)
 #sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{Int}) = sub(D, r, [c])
 sub{CT}(D::DataFrame{CT}, rng::Range1, cs::Vector{Int}) = sub(D, [rng], cs)
-sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, cs::Vector{Int}) = sub(D, [1:nrow(D)][b], c)
+sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, cs::Vector{Int}) = sub(D, [1:nrow(D)][b], cs)
 
 sub{CT}(D::DataFrame{CT}, r::Int, crng::Range1) = sub(D, [r], [crng])
 sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, crng::Range1) = sub(D, rs, [crng])
@@ -1196,5 +1196,71 @@ cbind(a, b, c...) = cbind(cbind(a,b), c...)
 # transform(df, :(cat=dog*2, clean=proc(dirty)))
 # summarize(df, :(cat=sum(dog), all=strcat(strs)))
 
+
+
+function within!(df::AbstractDataFrame, ex::Expr)
+    # By-column operation within a DataFrame that allows replacing or adding columns.
+    # Returns the transformed DataFrame.
+    
+    # helper function to replace symbols in ex with a reference to the
+    # appropriate column in df
+    replace_symbols(x, syms::Dict) = x
+    function replace_symbols(e::Expr, syms::Dict)
+        if e.head == :(=) # replace left-hand side of assignments:
+            Expr(e.head,
+                 vcat({:(_DF[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end])),
+                 e.typ)
+        else
+            Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args), e.typ)
+        end
+    end
+    function replace_symbols(s::Symbol, syms::Dict)
+        if contains(keys(syms), string(s))
+            :(_DF[$(syms[string(s)])])
+        else
+            s
+        end
+    end
+    # Make a dict of colnames and column positions
+    cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
+    ex = replace_symbols(ex, cn_dict)
+    f = @eval (_DF) -> begin
+        $ex
+        _DF
+    end
+    f(df)
+end
+
+function with(df::AbstractDataFrame, ex::Expr)
+    # By-column operation with the columns of a DataFrame.
+    # Returns the result of evaluating ex.
+    
+    # helper function to replace symbols in ex with a reference to the
+    # appropriate column in df
+    replace_symbols(x, syms::Dict) = x
+    replace_symbols(e::Expr, syms::Dict) = Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args), e.typ)
+    function replace_symbols(s::Symbol, syms::Dict)
+        if contains(keys(syms), string(s))
+            :(_DF[$(syms[string(s)])])
+        else
+            s
+        end
+    end
+    # Make a dict of colnames and column positions
+    cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
+    ex = replace_symbols(ex, cn_dict)
+    f = @eval (_DF) -> $ex
+    f(df)
+end
+
+transform!(df::AbstractDataFrame, colname::String, ex::Expr) = 
+    df[colname] = with(df, ex)
+
+# add function curries to ease pipelining:
+with(e::Expr) = x -> with(x, e)
+within!(e::Expr) = x -> within!(x, e)
+
+# allow pipelining straight to an expression using within!:
+(|)(x::AbstractDataFrame, e::Expr) = within!(x, e)
 
 
