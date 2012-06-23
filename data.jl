@@ -1359,6 +1359,8 @@ function within!(gd::GroupedDataFrame, e::Expr)   # should this be within (vs. w
     [within!(d[:,:], e) for d in gd]
 end
 
+within!(x::SubDataFrame, e::Expr) = within!(x[:,:], e)
+
 # default pipelines:
 map(f::Function, x::SubDataFrame) = f(x)
 (|)(x::GroupedDataFrame, e::Expr) = with(x, e)   # use with or within! here?
