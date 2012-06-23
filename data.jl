@@ -779,6 +779,18 @@ function str(io, df::DataFrame)
     end
 end
 
+function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
+    println(io, typeof(x), sprintf("  %d observations of %d variables", nrow(x), ncol(x)))
+    if n > 0
+        for col in names(x)[1:min(10,end)]
+            print(io, indent, "  ", col, ": ")
+            dump(io, x[col], n - 1, strcat(indent, "  "))
+        end
+    end
+end
+dump(io::IOStream, x::AbstractDataVec, n::Int, indent) =
+    println(io, typeof(x), "(", length(x), ") ", x[1:min(4, end)])
+
 # summarize the columns of a DF
 # if the column's base type derives from Number, 
 # compute min, 1st quantile, median, mean, 3rd quantile, and max
