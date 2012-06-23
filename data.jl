@@ -972,6 +972,9 @@ sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, c::CT) = sub(D, rs, [_find_first(D.co
 sub{CT}(D::DataFrame{CT}, rng::Range1, c::CT) = sub(D, [rng], [_find_first(D.colnames, c)])
 sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, c::CT) = sub(D, [1:nrow(D)][b], [_find_first(D.colnames, c)])
 
+sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{CT}) =
+    sub(D, rs, [_find_first(D.colnames, c)::Int for c = cs])
+
 # TODO: subs of subs
 
 
@@ -1264,3 +1267,106 @@ within!(e::Expr) = x -> within!(x, e)
 (|)(x::AbstractDataFrame, e::Expr) = within!(x, e)
 
 
+#
+#  Split - Apply - Combine operations
+#
+
+
+function groupsort_indexer(x::Vector, ngroups::Integer)
+    ## translated from Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
+
+    ## count group sizes, location 0 for NA
+    n = length(x)
+    ## counts = x.pool
+    counts = fill(0, ngroups + 1)
+    for i = 1:n
+        counts[x[i] + 1] += 1
+    end
+
+    ## mark the start of each contiguous group of like-indexed data
+    where = fill(1, ngroups + 1)
+    for i = 2:ngroups+1
+        where[i] = where[i - 1] + counts[i - 1]
+    end
+    
+    ## this is our indexer
+    result = fill(0, n)
+    for i = 1:n
+        label = x[i] + 1
+        result[where[label]] = i
+        where[label] += 1
+    end
+    result, where
+end
+
+
+type GroupedDataFrame{T}
+    parent::DataFrame{T}
+    cols::Vector{T}      # columns used for sorting
+    idx::Vector{Int}     # indexing vector when sorted by the given columns
+    starts::Vector{Int}  # starts of groups
+    ends::Vector{Int}    # ends of groups 
+end
+
+#
+# Split
+#
+function groupby(df::DataFrame{ASCIIString}, cols::Vector{ASCIIString})
+    ## a subset of Wes McKinney's algorithm here:
+    ##     http://wesmckinney.com/blog/?p=489
+    dv = PooledDataVec(df[cols[1]])
+    x = copy(dv.refs)
+    ngroups = length(dv.pool)
+    for j = 2:length(cols)
+        dv = PooledDataVec(df[cols[j]])
+        for i = 1:nrow(df)
+            x[i] += (dv.refs[i] - 1) * ngroups
+        end
+        ngroups = ngroups * length(dv.pool)
+        # TODO if ngroups is really big, shrink it
+    end
+    (idx, starts) = groupsort_indexer(x, ngroups)
+    ends = [starts[2:end] - 1]
+    GroupedDataFrame(df, cols, idx, starts[1:end-1], ends)
+end
+groupby(d::DataFrame{ASCIIString}, cols::ASCIIString) = groupby(d, [cols])
+
+# add a function curry
+groupby(cols::Vector{ASCIIString}) = x -> groupby(x, cols)
+
+
+
+start(gd::GroupedDataFrame) = 1
+next(gd::GroupedDataFrame, state::Int) = 
+    (sub(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
+     state + 1)
+done(gd::GroupedDataFrame, state::Int) = state == length(gd.starts)
+length(gd::GroupedDataFrame) = length(gd.starts) - 1
+ref(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]]) 
+
+# map() sweeps along groups
+function map(f::Function, gd::GroupedDataFrame)
+    [f(d) for d in gd]
+end
+
+# with() sweeps along groups and applies with to each group
+function with(gd::GroupedDataFrame, e::Expr)
+    [with(d, e) for d in gd]
+end
+
+# within() sweeps along groups and applies within to each group
+function within!(gd::GroupedDataFrame, e::Expr)   # should this be within (vs. within!)?
+    [within!(d[:,:], e) for d in gd]
+end
+
+# default pipelines:
+map(f::Function, x::SubDataFrame) = f(x)
+(|)(x::GroupedDataFrame, e::Expr) = with(x, e)   # use with or within! here?
+(|)(x::GroupedDataFrame, f::Function) = map(f, x)
+
+# apply a function to each column in a DataFrame
+colwise(f::Function, d::AbstractDataFrame) = [f(d[idx]) for idx in 1:ncol(d)]
+colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
+colwise(f::Function) = x -> colwise(f, x)
+
+# TODO add the combine parts
