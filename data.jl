@@ -1317,6 +1317,8 @@ within(e::Expr) = x -> within(x, e)
 within!(e::Expr) = x -> within!(x, e)
 summarize(e::Expr) = x -> summarize(x, e)
 
+# TODO add versions of each of these for Dict's
+
 # allow pipelining straight to an expression using within!:
 (|)(x::AbstractDataFrame, e::Expr) = within!(x, e)
 
@@ -1440,5 +1442,10 @@ map(f::Function, x::SubDataFrame) = f(x)
 colwise(f::Function, d::AbstractDataFrame) = [f(d[idx]) for idx in 1:ncol(d)]
 colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
+
+# by() convenience function
+by(d::AbstractDataFrame, cols::Vector{ASCIIString}, f::Function) = map(f, groupby(d, cols))
+by(d::AbstractDataFrame, cols::Vector{ASCIIString}, e::Expr) = within!(groupby(d, cols), e)
+by(d::AbstractDataFrame, cols::ASCIIString, x) = by(d, [cols], x)
 
 # TODO add the combine parts
