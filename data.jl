@@ -1446,6 +1446,5 @@ colwise(f::Function) = x -> colwise(f, x)
 # by() convenience function
 by(d::AbstractDataFrame, cols::Vector{ASCIIString}, f::Function) = map(f, groupby(d, cols))
 by(d::AbstractDataFrame, cols::Vector{ASCIIString}, e::Expr) = within!(groupby(d, cols), e)
-by(d::AbstractDataFrame, cols::ASCIIString, x) = by(d, [cols], x)
 
 # TODO add the combine parts
