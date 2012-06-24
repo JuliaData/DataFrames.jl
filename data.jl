@@ -1408,14 +1408,20 @@ function with(gd::GroupedDataFrame, e::Expr)
 end
 
 # within() sweeps along groups and applies within to each group
-function within!(gd::GroupedDataFrame, e::Expr)   # should this be within (vs. within!) or both?
+function within!(gd::GroupedDataFrame, e::Expr)   
     [within!(d[:,:], e) for d in gd]
 end
 
 within!(x::SubDataFrame, e::Expr) = within!(x[:,:], e)
 
+function within(gd::GroupedDataFrame, e::Expr)  
+    [within(d, e) for d in gd]
+end
+
+within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
+
 # summarize() sweeps along groups and applies summarise to each group
-function summarize(gd::GroupedDataFrame, e::Expr)   # should this be within (vs. within!) or both?
+function summarize(gd::GroupedDataFrame, e::Expr)  
     [summarize(d, e) for d in gd]
 end
 
