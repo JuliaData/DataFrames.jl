@@ -1422,7 +1422,7 @@ end
 # default pipelines:
 map(f::Function, x::SubDataFrame) = f(x)
 (|)(x::GroupedDataFrame, e::Expr) = within!(x, e)   # use with or within! here?
-(|)(x::GroupedDataFrame, f::Function) = map(f, x)
+## (|)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
 colwise(f::Function, d::AbstractDataFrame) = [f(d[idx]) for idx in 1:ncol(d)]
