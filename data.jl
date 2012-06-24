@@ -1215,7 +1215,8 @@ cbind(a, b, c...) = cbind(cbind(a,b), c...)
 
 
 
-function within!(df::AbstractDataFrame, ex::Expr)
+## function within!(df::AbstractDataFrame, ex::Expr)
+function within!(df, ex::Expr)
     # By-column operation within a DataFrame that allows replacing or adding columns.
     # Returns the transformed DataFrame.
     
@@ -1396,6 +1397,11 @@ next(gd::GroupedDataFrame, state::Int) =
 done(gd::GroupedDataFrame, state::Int) = state == length(gd.starts)
 length(gd::GroupedDataFrame) = length(gd.starts) - 1
 ref(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]]) 
+
+function show(io, gd::GroupedDataFrame)
+    println(io, typeof(gd), " ", length(gd.starts), " groups in DataFrame:")
+    show(io, gd.parent)
+end
 
 # map() sweeps along groups
 function map(f::Function, gd::GroupedDataFrame)
