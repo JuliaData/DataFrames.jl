@@ -1369,8 +1369,6 @@ function with(df::AbstractDataFrame, ex::Expr)
     f(df)
 end
 
-transform!(df::AbstractDataFrame, colname::String, ex::Expr) = 
-    df[colname] = with(df, ex)
 
 # add function curries to ease pipelining:
 with(e::Expr) = x -> with(x, e)
@@ -1500,6 +1498,7 @@ function summarise(gd::GroupedDataFrame, ex::Expr)
     x = [summarise(d, ex) for d in gd]
     # There must be a better way to do this.
     ## idx = [fill(gdx, nrow(x[gdx])) for gdx in 1:length(x)]  # not quite right - an array in an array
+    # In R, it's: rep(1:length(a), sapply(a,length))
     Nrow = sum(nrow, x)
     idx = fill(0, Nrow)
     i = 1
