@@ -1522,6 +1522,9 @@ map(f::Function, x::SubDataFrame) = f(x)
 colwise(f::Function, d::AbstractDataFrame) = [f(d[idx]) for idx in 1:ncol(d)]
 colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
+colwise(fns::Vector{Function}, d::AbstractDataFrame) = [f(d[idx]) for f in fns, idx in 1:ncol(d)]
+colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(f), d)
+colwise(fns::Vector{Function}) = x -> colwise(f, x)
 
 # by() convenience function
 by(d::AbstractDataFrame, cols::Vector{ASCIIString}, f::Function) = map(f, groupby(d, cols))
