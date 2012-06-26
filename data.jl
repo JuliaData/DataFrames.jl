@@ -165,7 +165,6 @@ copy{T}(dv::DataVec{T}) = DataVec{T}(copy(dv.data), copy(dv.na), dv.filter, dv.r
 copy{T}(dv::PooledDataVec{T}) = PooledDataVec{T}(copy(dv.refs), copy(dv.pool), dv.filter, dv.replace, dv.replaceVal)
 
 # TODO: copy_to
-# TODO: similar
 
 
 # properties
@@ -506,6 +505,8 @@ end
 # mixed case returns an iterator
 nafilter{T}(v::DataVec{T}) = v.data[!v.na]
 nareplace{T}(v::DataVec{T}, r::T) = [v.na[i] ? r : v.data[i] for i = 1:length(v.data)]
+nafilter{T}(v::DataVec{T}) = v.data[!v.na]
+nafilter(v::DataVec) = PooledDataVec(v.refs[map(isna, v)], v.pool, v.filter, v.replace, v.replaceVal)
 # TODO PooledDataVec
 # TODO nareplace! does in-place change; nafilter! shouldn't exist, as it doesn't apply with DataFrames
 
@@ -632,6 +633,29 @@ DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
 DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) for i = 1:size(m)[2]])
 # 
 
+function DataFrame(d::Associative)
+    # Find the first position with maximum length in the Dict.
+    # I couldn't get findmax to work here.
+    ## (Nrow,maxpos) = findmax(map(length, values(d)))
+    lengths = map(length, values(d))
+    maxpos = find(lengths .== max(lengths))[1]
+    keymaxlen = keys(d)[maxpos]
+    Nrow = length(d[keymaxlen])
+    # Start with a blank DataFrame
+    df = DataFrame()
+    # Assign the longest column to set the overall nrows.
+    df[string(keymaxlen)] = d[keymaxlen]
+    # Now assign them all.
+    for (k,v) in d
+        if contains([1,Nrow], length(v))
+            df[string(k)] = v     # string(k) forces string column names
+        else
+            println("Warning: Column $(string(k)) ignored: mismatched column lengths")
+        end
+    end
+    df
+end
+
 # Blank DataFrame
 DataFrame() = DataFrame({}, ASCIIString[])
 
@@ -690,6 +714,20 @@ ref{CT}(df::DataFrame{CT}, rs::Vector{Int}, cs::Vector{CT}) = df[cs][rs,:] # slo
 # col slices
 ref(df::DataFrame, rs::Vector{Int}, c::Int) = df[c][rs]
 ref{CT}(df::DataFrame{CT}, rs::Vector{Int}, name::CT) = df[name][rs]
+
+# Bool's along rows
+# TODO add more combinations
+ref(df::DataFrame, r::Vector{Bool}, c) = DataFrame({x[r] for x in df.columns[c]},
+                                                        [df.colnames[c]])
+# TODO fix the following for NA's
+ref(df::DataFrame, r::DataVec, c) = df[r.data, c]
+ref(df::DataFrame, r::DataVec) = df[r.data, :]
+
+
+# data.table-style indexing of rows based on column values
+# d[:(col1 > 2)]
+ref(df::DataFrame, ex::Expr, c) = df[with(df, ex), c]
+ref(df::DataFrame, ex::Expr) = df[with(df, ex), :]  # special case where 1 argument selects rows not columns
 
 # TODO: other types of row indexing with 2-D slices
 # rows are range, vector of booleans
@@ -1180,6 +1218,7 @@ end
 # two-argument form, two dfs, references only
 function cbind!{CT1, CT2}(df1::DataFrame{CT1}, df2::DataFrame{CT2})
     # this only works if the column names can be promoted
+    # TODO fix this
     ## newcolnames = convert(Vector{CT1}, df2.colnames)
     newcolnames = df2.colnames
     # and if there are no duplicate column names
@@ -1220,6 +1259,8 @@ function rbind{CT}(dfs::DataFrame{CT}...)
     Ncol = ncol(dfs[1])
     res = similar(dfs[1], Nrow)
     # TODO fix PooledDataVec columns with different pools.
+    # TODO check to see that the number of columns are the same and the colnames are the same.
+    # TODO check to see that the colnames are the same.
     idx = 1
     for df in dfs
         for kdx in 1:nrow(df)
@@ -1322,29 +1363,6 @@ function summarise(df::AbstractDataFrame, ex::Expr)
         DataFrame(_col_dict)
     end
     f(df)
-end
-
-function DataFrame(d::Associative)
-    # Find the first position with maximum length in the Dict.
-    # I couldn't get findmax to work here.
-    ## (Nrow,maxpos) = findmax(map(length, values(d)))
-    lengths = map(length, values(d))
-    maxpos = find(lengths .== max(lengths))[1]
-    keymaxlen = keys(d)[maxpos]
-    Nrow = length(d[keymaxlen])
-    # Start with a blank DataFrame
-    df = DataFrame()
-    # Assign the longest column to set the overall nrows.
-    df[string(keymaxlen)] = d[keymaxlen]
-    # Now assign them all.
-    for (k,v) in d
-        if contains([1,Nrow], length(v))
-            df[string(k)] = v     # string(k) forces string column names
-        else
-            println("Warning: Column $(string(k)) ignored: mismatched column lengths")
-        end
-    end
-    df
 end
 
 function with(df::AbstractDataFrame, ex::Expr)
@@ -1522,6 +1540,7 @@ map(f::Function, x::SubDataFrame) = f(x)
 colwise(f::Function, d::AbstractDataFrame) = [f(d[idx]) for idx in 1:ncol(d)]
 colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
+# apply several functions to each column in a DataFrame
 colwise(fns::Vector{Function}, d::AbstractDataFrame) = [f(d[idx]) for f in fns, idx in 1:ncol(d)]
 colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(fns::Vector{Function}) = x -> colwise(f, x)
