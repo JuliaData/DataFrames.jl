@@ -653,10 +653,10 @@ copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], copy(df.colnames)
 # end
 
 
-nrow(df::DataFrame) = length(df.columns[1])
+nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
 ncol(df::DataFrame) = length(df.columns)
 names(df::DataFrame) = colnames(df)
-colnames(df::DataFrame) = df.colnames
+colnames(df::DataFrame) = copy(df.colnames)
 size(df::DataFrame) = (nrow(df), ncol(df))
 size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
 
@@ -1072,6 +1072,9 @@ function assign{T}(df::DataFrame{T}, newcol::AbstractDataVec, colname::T)
 end
 assign{CT, T}(df::DataFrame{CT}, newcol::Vector{T}, colname::CT) = assign(df, DataVec(newcol), colname)
 
+assign{T}(df::DataFrame{T}, newcol, colname::T) =
+    nrow(df) > 0 ? assign(df, DataVec(fill(newcol, nrow(df))), colname) : assign(df, DataVec([newcol]), colname)
+
 # do I care about vectorized assignment? maybe not...
 # df[1:3] = (replace columns) eh...
 # df[["new", "newer"]] = (new columns)
@@ -1177,13 +1180,14 @@ end
 # two-argument form, two dfs, references only
 function cbind!{CT1, CT2}(df1::DataFrame{CT1}, df2::DataFrame{CT2})
     # this only works if the column names can be promoted
-    newcolnames = convert(CT1, df2.colnames)
+    ## newcolnames = convert(Vector{CT1}, df2.colnames)
+    newcolnames = df2.colnames
     # and if there are no duplicate column names
     if !nointer(df1.colnames, newcolnames)
         error("can't cbind dataframes with overlapping column names!")
     end
-    df1.colnames = [df1.colnames newcolnames]
-    df1.columns = [df1.columns df2.columns]
+    df1.colnames = [df1.colnames, df2.colnames]
+    df1.columns = [df1.columns, df2.columns]
     df1
 end
     
@@ -1194,6 +1198,40 @@ cbind!(a, b, c...) = cbind!(cbind(a, b), c...)
 # without a bang, just copy then bind
 cbind(a, b) = cbind!(copy(a), copy(b))
 cbind(a, b, c...) = cbind(cbind(a,b), c...)
+
+similar{T}(dv::DataVec{T}, dims) =
+    DataVec(similar(dv.data, dims), similar(dv.na, dims), dv.filter, dv.replace, dv.replaceVal)  
+
+similar{T}(dv::PooledDataVec{T}, dims) =
+    PooledDataVec(fill(uint16(1), dims), dv.pool, dv.filter, dv.replace, dv.replaceVal)  
+
+similar{CT}(df::DataFrame{CT}, dims) = 
+    DataFrame([similar(x, dims) for x in df.columns], colnames(df)) 
+
+similar{CT}(df::SubDataFrame{CT}, dims) = 
+    DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
+
+function assign{CT,T}(df::DataFrame{CT}, col::T, i::Int, j::Int)
+    df.column[i][]
+end
+
+function rbind{CT}(dfs::DataFrame{CT}...)
+    Nrow = sum(nrow, dfs)
+    Ncol = ncol(dfs[1])
+    res = similar(dfs[1], Nrow)
+    # TODO fix PooledDataVec columns with different pools.
+    idx = 1
+    for df in dfs
+        for kdx in 1:nrow(df)
+            for jdx in 1:Ncol
+                res[jdx][idx] = df[kdx, jdx]
+            end
+            idx += 1
+        end
+    end
+    res
+end
+
 
 # DF row operations -- delete and append
 # df[1] = nothing
@@ -1211,7 +1249,7 @@ cbind(a, b, c...) = cbind(cbind(a,b), c...)
 # split(df, ["region", "product"]) | @@@)) | mean
 # how do we add col names to the name space?
 # transform(df, :(cat=dog*2, clean=proc(dirty)))
-# summarize(df, :(cat=sum(dog), all=strcat(strs)))
+# summarise(df, :(cat=sum(dog), all=strcat(strs)))
 
 
 
@@ -1219,7 +1257,7 @@ cbind(a, b, c...) = cbind(cbind(a,b), c...)
 function within!(df, ex::Expr)
     # By-column operation within a DataFrame that allows replacing or adding columns.
     # Returns the transformed DataFrame.
-    
+    #   
     # helper function to replace symbols in ex with a reference to the
     # appropriate column in df
     replace_symbols(x, syms::Dict) = x
@@ -1251,7 +1289,7 @@ end
 
 within(x, args...) = within!(copy(x), args...)
 
-function summarize(df::AbstractDataFrame, ex::Expr)
+function summarise(df::AbstractDataFrame, ex::Expr)
     # By-column operation within a DataFrame.
     # Returns a new DataFrame.
     
@@ -1261,7 +1299,7 @@ function summarize(df::AbstractDataFrame, ex::Expr)
     function replace_symbols(e::Expr, syms::Dict)
         if e.head == :(=) # replace left-hand side of assignments:
             Expr(e.head,
-                 vcat({:(_newDF[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end])),
+                 vcat({:(_col_dict[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end])),
                  e.typ)
         else
             Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args), e.typ)
@@ -1277,14 +1315,37 @@ function summarize(df::AbstractDataFrame, ex::Expr)
     # Make a dict of colnames and column positions
     cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
     ex = replace_symbols(ex, cn_dict)
+    global _ex = ex
     f = @eval (_DF) -> begin
-        _newDF = DataFrame()
+        _col_dict = Dict()
         $ex
-        _newDF
+        DataFrame(_col_dict)
     end
     f(df)
 end
 
+function DataFrame(d::Associative)
+    # Find the first position with maximum length in the Dict.
+    # I couldn't get findmax to work here.
+    ## (Nrow,maxpos) = findmax(map(length, values(d)))
+    lengths = map(length, values(d))
+    maxpos = find(lengths .== max(lengths))[1]
+    keymaxlen = keys(d)[maxpos]
+    Nrow = length(d[keymaxlen])
+    # Start with a blank DataFrame
+    df = DataFrame()
+    # Assign the longest column to set the overall nrows.
+    df[string(keymaxlen)] = d[keymaxlen]
+    # Now assign them all.
+    for (k,v) in d
+        if contains([1,Nrow], length(v))
+            df[string(k)] = v     # string(k) forces string column names
+        else
+            println("Warning: Column $(string(k)) ignored: mismatched column lengths")
+        end
+    end
+    df
+end
 
 function with(df::AbstractDataFrame, ex::Expr)
     # By-column operation with the columns of a DataFrame.
@@ -1315,7 +1376,7 @@ transform!(df::AbstractDataFrame, colname::String, ex::Expr) =
 with(e::Expr) = x -> with(x, e)
 within(e::Expr) = x -> within(x, e)
 within!(e::Expr) = x -> within!(x, e)
-summarize(e::Expr) = x -> summarize(x, e)
+summarise(e::Expr) = x -> summarise(x, e)
 
 # TODO add versions of each of these for Dict's
 
@@ -1396,14 +1457,18 @@ start(gd::GroupedDataFrame) = 1
 next(gd::GroupedDataFrame, state::Int) = 
     (sub(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
      state + 1)
-done(gd::GroupedDataFrame, state::Int) = state == length(gd.starts)
-length(gd::GroupedDataFrame) = length(gd.starts) - 1
+done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
+length(gd::GroupedDataFrame) = length(gd.starts)
 ref(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]]) 
 
 function show(io, gd::GroupedDataFrame)
     println(io, typeof(gd), " ", length(gd.starts), " groups in DataFrame:")
     show(io, gd.parent)
 end
+
+#
+# Apply / map
+#
 
 # map() sweeps along groups
 function map(f::Function, gd::GroupedDataFrame)
@@ -1417,25 +1482,41 @@ end
 
 # within() sweeps along groups and applies within to each group
 function within!(gd::GroupedDataFrame, e::Expr)   
-    [within!(d[:,:], e) for d in gd]
+    x = [within!(d[:,:], e) for d in gd]
+    rbind(x...)
 end
 
 within!(x::SubDataFrame, e::Expr) = within!(x[:,:], e)
 
 function within(gd::GroupedDataFrame, e::Expr)  
-    [within(d, e) for d in gd]
+    x = [within(d, e) for d in gd]
+    rbind(x...)
 end
 
 within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
 
-# summarize() sweeps along groups and applies summarise to each group
-function summarize(gd::GroupedDataFrame, e::Expr)  
-    [summarize(d, e) for d in gd]
+# summarise() sweeps along groups and applies summarise to each group
+function summarise(gd::GroupedDataFrame, ex::Expr)  
+    x = [summarise(d, ex) for d in gd]
+    # There must be a better way to do this.
+    ## idx = [fill(gdx, nrow(x[gdx])) for gdx in 1:length(x)]  # not quite right - an array in an array
+    Nrow = sum(nrow, x)
+    idx = fill(0, Nrow)
+    i = 1
+    for gdx in 1:length(x)
+        for kdx in 1:nrow(x[gdx])
+            idx[i] = gdx
+            i += 1
+        end
+    end
+    keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
+    resdf = rbind(x...)
+    cbind(keydf, resdf)
 end
 
 # default pipelines:
 map(f::Function, x::SubDataFrame) = f(x)
-(|)(x::GroupedDataFrame, e::Expr) = within!(x, e)   # use with or within! here?
+(|)(x::GroupedDataFrame, e::Expr) = summarise(x, e)   
 ## (|)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
@@ -1445,6 +1526,5 @@ colwise(f::Function) = x -> colwise(f, x)
 
 # by() convenience function
 by(d::AbstractDataFrame, cols::Vector{ASCIIString}, f::Function) = map(f, groupby(d, cols))
-by(d::AbstractDataFrame, cols::Vector{ASCIIString}, e::Expr) = within!(groupby(d, cols), e)
+by(d::AbstractDataFrame, cols::Vector{ASCIIString}, e::Expr) = summarise(groupby(d, cols), e)
 
-# TODO add the combine parts
