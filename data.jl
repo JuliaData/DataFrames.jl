@@ -1544,8 +1544,6 @@ map(f::Function, x::SubDataFrame) = f(x)
 ## (|)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
-# TODO change colwise(f::Function, ...) to map(f, ...). map() should
-# be equivalent to lapply for a DataFrame.
 colwise(f::Function, d::AbstractDataFrame) = [f(d[idx]) for idx in 1:ncol(d)]
 colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
