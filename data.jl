@@ -633,7 +633,7 @@ DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
 DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) for i = 1:size(m)[2]])
 # 
 
-function DataFrame(d::Associative)
+function DataFrame{K,V}(d::Associative{K,V})
     # Find the first position with maximum length in the Dict.
     # I couldn't get findmax to work here.
     ## (Nrow,maxpos) = findmax(map(length, values(d)))
@@ -642,13 +642,13 @@ function DataFrame(d::Associative)
     keymaxlen = keys(d)[maxpos]
     Nrow = length(d[keymaxlen])
     # Start with a blank DataFrame
-    df = DataFrame()
+    df = DataFrame(K)
     # Assign the longest column to set the overall nrows.
-    df[string(keymaxlen)] = d[keymaxlen]
+    df[keymaxlen] = d[keymaxlen]
     # Now assign them all.
     for (k,v) in d
         if contains([1,Nrow], length(v))
-            df[string(k)] = v     # string(k) forces string column names
+            df[k] = v  
         else
             println("Warning: Column $(string(k)) ignored: mismatched column lengths")
         end
@@ -657,7 +657,8 @@ function DataFrame(d::Associative)
 end
 
 # Blank DataFrame
-DataFrame() = DataFrame({}, ASCIIString[])
+DataFrame{T}(::Type{T}) = DataFrame({}, T[])
+DataFrame() = DataFrame(ASCIIString)
 
 # copy of a data frame does a deep copy
 copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], copy(df.colnames))
@@ -1258,10 +1259,6 @@ similar{CT}(df::DataFrame{CT}, dims) =
 
 similar{CT}(df::SubDataFrame{CT}, dims) = 
     DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
-
-function assign{CT,T}(df::DataFrame{CT}, col::T, i::Int, j::Int)
-    df.column[i][]
-end
 
 function rbind{CT}(dfs::DataFrame{CT}...)
     Nrow = sum(nrow, dfs)
