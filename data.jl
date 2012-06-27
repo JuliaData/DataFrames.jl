@@ -676,6 +676,15 @@ copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], copy(df.colnames)
 #     return nothing
 # end
 
+# Equality
+function ==(df1::AbstractDataFrame, df2::AbstractDataFrame)
+    for idx in 1:ncol(df1)
+        if !(df1[idx] == df2[idx])
+            return false
+        end
+    end
+    return true
+end
 
 nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
 ncol(df::DataFrame) = length(df.columns)
@@ -1538,6 +1547,8 @@ map(f::Function, x::SubDataFrame) = f(x)
 ## (|)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
+# TODO change colwise(f::Function, ...) to map(f, ...). map() should
+# be equivalent to lapply for a DataFrame.
 colwise(f::Function, d::AbstractDataFrame) = [f(d[idx]) for idx in 1:ncol(d)]
 colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
@@ -1582,3 +1593,8 @@ by(d::AbstractDataFrame, cols, e::Expr) = summarise(groupby(d, cols), e)
 by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
 by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
 
+##
+## Extras
+##
+const letters = split("abcdefghijklmnopqrstuvwxyz", "")
+const LETTERS = split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "")
