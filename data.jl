@@ -633,7 +633,7 @@ DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
 DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) for i = 1:size(m)[2]])
 # 
 
-function DataFrame(d::Associative)
+function DataFrame{K,V}(d::Associative{K,V})
     # Find the first position with maximum length in the Dict.
     # I couldn't get findmax to work here.
     ## (Nrow,maxpos) = findmax(map(length, values(d)))
@@ -642,13 +642,13 @@ function DataFrame(d::Associative)
     keymaxlen = keys(d)[maxpos]
     Nrow = length(d[keymaxlen])
     # Start with a blank DataFrame
-    df = DataFrame()
+    df = DataFrame(K)
     # Assign the longest column to set the overall nrows.
-    df[string(keymaxlen)] = d[keymaxlen]
+    df[keymaxlen] = d[keymaxlen]
     # Now assign them all.
     for (k,v) in d
         if contains([1,Nrow], length(v))
-            df[string(k)] = v     # string(k) forces string column names
+            df[k] = v  
         else
             println("Warning: Column $(string(k)) ignored: mismatched column lengths")
         end
