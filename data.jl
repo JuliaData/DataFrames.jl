@@ -642,7 +642,7 @@ function DataFrame{K,V}(d::Associative{K,V})
     keymaxlen = keys(d)[maxpos]
     Nrow = length(d[keymaxlen])
     # Start with a blank DataFrame
-    df = DataFrame(K)
+    df = K == Any ? DataFrame() : DataFrame(K)   # kludgy
     # Assign the longest column to set the overall nrows.
     df[keymaxlen] = d[keymaxlen]
     # Now assign them all.
