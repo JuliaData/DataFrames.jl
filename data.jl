@@ -1260,10 +1260,6 @@ similar{CT}(df::DataFrame{CT}, dims) =
 similar{CT}(df::SubDataFrame{CT}, dims) = 
     DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
 
-function assign{CT,T}(df::DataFrame{CT}, col::T, i::Int, j::Int)
-    df.column[i][]
-end
-
 function rbind{CT}(dfs::DataFrame{CT}...)
     Nrow = sum(nrow, dfs)
     Ncol = ncol(dfs[1])
