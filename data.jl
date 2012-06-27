@@ -1456,15 +1456,22 @@ end
 function groupby(df::DataFrame{ASCIIString}, cols::Vector{ASCIIString})
     ## a subset of Wes McKinney's algorithm here:
     ##     http://wesmckinney.com/blog/?p=489
+    
+    # use the pool trick to get a set of integer references for each unique item
     dv = PooledDataVec(df[cols[1]])
-    x = copy(dv.refs)
-    ngroups = length(dv.pool)
+    # if there are NAs, add 1 to the refs to avoid underflows in x later
+    dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
+    x = copy(dv.refs) + dv_has_nas
+    # also compute the number of groups, which is the product of the set lengths
+    ngroups = length(dv.pool) + dv_has_nas
+    # if there's more than 1 column, do roughly the same thing repeatedly
     for j = 2:length(cols)
         dv = PooledDataVec(df[cols[j]])
+        dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
         for i = 1:nrow(df)
-            x[i] += (dv.refs[i] - 1) * ngroups
+            x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
         end
-        ngroups = ngroups * length(dv.pool)
+        ngroups = ngroups * (length(dv.pool) + dv_has_nas)
         # TODO if ngroups is really big, shrink it
     end
     (idx, starts) = groupsort_indexer(x, ngroups)
