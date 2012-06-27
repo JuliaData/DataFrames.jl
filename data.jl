@@ -1462,7 +1462,8 @@ function groupby(df::DataFrame{ASCIIString}, cols::Vector{ASCIIString})
     ends = [starts[2:end] - 1]
     GroupedDataFrame(df, cols, idx, starts[1:end-1], ends)
 end
-groupby(d::DataFrame{ASCIIString}, cols::ASCIIString) = groupby(d, [cols])
+groupby(d::DataFrame{ASCIIString}, cols::ASCIIString, cn) = groupby(d, [cols])
+groupby(d::DataFrame{ASCIIString}, cols) = groupby(d, [cols])
 
 # add a function curry
 groupby(cols::Vector{ASCIIString}) = x -> groupby(x, cols)
@@ -1540,12 +1541,44 @@ map(f::Function, x::SubDataFrame) = f(x)
 colwise(f::Function, d::AbstractDataFrame) = [f(d[idx]) for idx in 1:ncol(d)]
 colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
+colwise(f) = x -> colwise(f, x)
 # apply several functions to each column in a DataFrame
-colwise(fns::Vector{Function}, d::AbstractDataFrame) = [f(d[idx]) for f in fns, idx in 1:ncol(d)]
-colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(f), d)
-colwise(fns::Vector{Function}) = x -> colwise(f, x)
+colwise(fns::Vector{Function}, d::AbstractDataFrame) = [f(d[idx]) for f in fns, idx in 1:ncol(d)][:]
+colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(fns), d)
+colwise(fns::Vector{Function}, d::GroupedDataFrame, cn::Vector{String}) = map(colwise(fns), d)
+colwise(fns::Vector{Function}) = x -> colwise(fns, x)
+
+function colwise{T}(d::AbstractDataFrame{T}, s::Vector{Symbol}, cn::Vector{T})
+    header = [s2 * "_" * string(s1) for s1 in s, s2 in cn][:]
+    payload = colwise(map(eval, s), d)
+    df = DataFrame()
+    # TODO fix this to assign the longest column first
+    for i in 1:length(header)
+        df[header[i]] = payload[i]
+    end
+    df
+end
+colwise(d::AbstractDataFrame, s::Symbol, x) = colwise(d, [s], x)
+colwise(d::AbstractDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
+colwise(d::AbstractDataFrame, s::Symbol) = colwise(d, [s], colnames(d))
+colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
+
+# TODO add a way to specify which columns to apply funs to
+# TODO exclude grouping key columns
+# TODO make this faster by applying the header just once.
+colwise{T}(gd::GroupedDataFrame{T}, s::Vector{Symbol}) = rbind(map(x -> colwise(x,s), gd)...)
+colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
+colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
+colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
+colwise(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
+(|)(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
+(|)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
+colnames(d::GroupedDataFrame) = colnames(d.parent)
+
 
 # by() convenience function
-by(d::AbstractDataFrame, cols::Vector{ASCIIString}, f::Function) = map(f, groupby(d, cols))
-by(d::AbstractDataFrame, cols::Vector{ASCIIString}, e::Expr) = summarise(groupby(d, cols), e)
+by(d::AbstractDataFrame, cols, f::Function) = map(f, groupby(d, cols))
+by(d::AbstractDataFrame, cols, e::Expr) = summarise(groupby(d, cols), e)
+by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
+by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
 
