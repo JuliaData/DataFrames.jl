@@ -1450,7 +1450,7 @@ end
 #
 # Split
 #
-function groupby(df::DataFrame{ASCIIString}, cols::Vector{ASCIIString})
+function groupby{T}(df::DataFrame{T}, cols::Vector{T})
     ## a subset of Wes McKinney's algorithm here:
     ##     http://wesmckinney.com/blog/?p=489
     dv = PooledDataVec(df[cols[1]])
@@ -1468,11 +1468,11 @@ function groupby(df::DataFrame{ASCIIString}, cols::Vector{ASCIIString})
     ends = [starts[2:end] - 1]
     GroupedDataFrame(df, cols, idx, starts[1:end-1], ends)
 end
-groupby(d::DataFrame{ASCIIString}, cols::ASCIIString, cn) = groupby(d, [cols])
-groupby(d::DataFrame{ASCIIString}, cols) = groupby(d, [cols])
+groupby{T}(d::DataFrame{T}, cols::T, cn) = groupby(d, [cols])
+groupby{T}(d::DataFrame{T}, cols) = groupby(d, [cols])
 
 # add a function curry
-groupby(cols::Vector{ASCIIString}) = x -> groupby(x, cols)
+groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
 
 
 
