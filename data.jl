@@ -657,7 +657,8 @@ function DataFrame(d::Associative)
 end
 
 # Blank DataFrame
-DataFrame() = DataFrame({}, ASCIIString[])
+DataFrame{T}(::Type{T}) = DataFrame({}, T[])
+DataFrame() = DataFrame(ASCIIString)
 
 # copy of a data frame does a deep copy
 copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], copy(df.colnames))
