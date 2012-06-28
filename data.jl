@@ -589,43 +589,124 @@ show(io, x::AbstractDataVec) = show_comma_array(io, x, '[', ']')
 # TODO: div(dat, 2) works, but zz ./ 2 doesn't
 
 
-# Abstract DF includes DataFrame and SubDataFrame
-abstract AbstractDataFrame{CT}
+abstract AbstractIndex
+index(x::AbstractIndex, idx::Int) = idx
+index(x::AbstractIndex, idx::Vector{Int}) = idx
+index(x::AbstractIndex, idx::Range1) = idx
+index(x::AbstractIndex, idx::Vector{Bool}) = [1:length(x)][idx]
+index(x::AbstractIndex, idx::AbstractDataVec{Bool}) = index(x, nareplace(idx, false)) 
+index(x::AbstractIndex, idx::AbstractDataVec{Int}) = index(x, nafilter(idx)) 
 
-# ## DataFrame - a list of heterogeneous Data vectors with col names.
-# columns are a vector, which means that operations that insert/delete columns
+type Index <: AbstractIndex   # an OrderedDict would be nice here...
+    lookup::Dict      # name => names array position
+    names::Vector
+end
+Index(x::Vector) = Index(dict(tuple(x...), tuple([1:length(x)]...)), x)
+Index() = Index(Dict(), {})
+length(x::Index) = length(x.names)
+names(x::Index) = x.names
+# I don't know why I needed to duplicate the following, but they were
+# needed to get rid of warnings.
+index(x::Index, idx::Vector{Int}) = idx
+index(x::Index, idx::Range1) = [idx]
+index(x::Index, idx::Vector{Bool}) = [1:length(x)][idx]
+index(x::Index, idx::Int) = idx
+index(x::Index, idx::AbstractDataVec{Bool}) = index(x, nareplace(idx, false)) 
+index(x::Index, idx::AbstractDataVec{Int}) = index(x, nafilter(idx)) 
+index(x::Index, idx::Vector) = convert(Vector{Int}, [x.lookup[i] for i in idx])
+index(x::Index, idx) = x.lookup[idx]
+
+type SimpleIndex <: AbstractIndex
+    length::Integer
+end
+SimpleIndex() = SimpleIndex(0)
+length(x::SimpleIndex) = x.length
+names(x::SimpleIndex) = nothing
+
+# Abstract DF includes DataFrame and SubDataFrame
+abstract AbstractDataFrame
+
+# ## DataFrame - a list of heterogeneous Data vectors with col and row indexs.
+# Columns are a vector, which means that operations that insert/delete columns
 # are O(n).
-# col names must be the right length, but can be "nothing".
-type DataFrame{CT} <: AbstractDataFrame{CT}
-    columns::Vector{Any} # actually Vector{AbstractDataVec{*}}
-    colnames::Vector{CT}
-    
-    # inner constructor requires everything to be the right types, checks lengths
-    function DataFrame(cols::Vector, cn::Vector{CT})  
-        # all cols
-        ## if !all([isa(c, AbstractDataVec) for c = cols])
-        ##     error("DataFrame inner constructor requires all columns be AbstractDataVecs already")
-        ## end
-          
+type DataFrame <: AbstractDataFrame
+    columns::Vector{Any} 
+    colindex::AbstractIndex
+    rowindex::AbstractIndex
+    function DataFrame(cols::Vector, colindex::AbstractIndex, rowindex::AbstractIndex)
         # all columns have to be the same length
         if length(cols) > 1 && !all(map(length, cols) .== length(cols[1]))
             error("all columns in a DataFrame have to be the same length")
         end
-        
-         # colnames has to be the same length as columns vector
-        if length(cn) != length(cols)
-            error("colnames must be the same length as the number of columns")
+        # colnames has to be the same length as columns vector
+        if length(colindex) != length(cols)
+            error("column names/index must be the same length as the number of columns")
         end
-        
-        new(cols, cn)
+        # similarly, check row lengths
+        if length(cols) > 1 && length(rowindex) != length(cols[1])
+            error("row index must be the same length as the number of columns")
+        end
+        new(cols, colindex, rowindex)
     end
 end
-# constructors 
-# if we already have DataVecs, but no names
-nothings(n) = fill(nothing, n) # TODO: move elsewhere?
-DataFrame(cs::Vector) = DataFrame(cs, nothings(length(cs)))
-# if we have DataVecs and names
-DataFrame{CT}(cs::Vector, cn::Vector{CT}) = DataFrame{CT}(cs, cn)
+
+# constructors
+DataFrame(cs::Vector) = DataFrame(cs, SimpleIndex(length(cs)), SimpleIndex(length(cs[1])))
+DataFrame(cs::Vector, cn::Vector) = DataFrame(cs, Index(cn), SimpleIndex(length(cs[1])))
+
+colnames(df::DataFrame) = names(df.colindex)
+ncol(df::DataFrame) = length(df.colindex)
+nrow(df::DataFrame) = length(df.rowindex)
+size(df::DataFrame) = (nrow(df), ncol(df))
+size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
+length(df::DataFrame) = ncol(df)
+
+ref(df::DataFrame, c) = df[index(df.colindex, c)]
+ref(df::DataFrame, c::Integer) = df.columns[c]
+ref(df::DataFrame, c::Vector{Int}) = DataFrame(df.columns[c], colnames(df)[c])
+
+ref(df::DataFrame, r, c) = df[index(df.rowindex, r), index(df.colindex, c)]
+ref(df::DataFrame, r, c::Int) = df[c][index(df.rowindex, r)]
+ref(df::DataFrame, r, c::Vector{Int}) =
+    DataFrame({x[r] for x in df.columns[c]}, 
+              colnames(df)[c])
+
+# testing...
+d1 = PooledDataVec(randi(3,20))
+d1[1] = NA
+d2 = PooledDataVec(randi(2,20))
+d3 = DataVec(randn(20))
+d = DataFrame({d1,d2,d3}, ["d1","d2","d3"])
+
+d[1]
+d["d3"]
+d[[1,2]]
+d[["d1","d3", "d2"]]
+d[:]
+d[1:2]
+d[2:end]
+d[[true,false,true]]
+d[:,1]
+d[1:3,1]
+d[10:end,1]
+d[[1,2,3],1]
+d[d["d1"] .== 1,1]
+d[DataVec([1:3]),1]
+d[1:3,1]
+d[10:end,1]
+d[1:3,1]
+d[1:3,"d3"]
+d[1:3,[1,2]]
+d[1:3,["d1","d3", "d2"]]
+d[1:3,:]
+d[1:3,1:2]
+d[1:3,2:end]
+d[1:3,[true,false,true]]
+
+stophere!()
+
+
+
 
 # if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
 DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
