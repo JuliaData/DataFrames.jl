@@ -672,6 +672,7 @@ ref(df::DataFrame, r, c::Vector{Int}) =
               colnames(df)[c])
 
 # testing...
+srand(1)
 d1 = PooledDataVec(randi(3,20))
 d1[1] = NA
 d2 = PooledDataVec(randi(2,20))
@@ -702,8 +703,13 @@ d[1:3,:]
 d[1:3,1:2]
 d[1:3,2:end]
 d[1:3,[true,false,true]]
+d[:,:]
+
+
 
 stophere!()
+
+
 
 
 
