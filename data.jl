@@ -1364,7 +1364,7 @@ function within!(d::Associative, ex::Expr)
     f(d)
 end
 
-function summarise(d::Associative, ex::Expr)
+function based_on(d::Associative, ex::Expr)
     # Note: keys must by symbols
     replace_symbols(x, d::Dict) = x
     function replace_symbols(e::Expr, d::Dict)
@@ -1427,7 +1427,7 @@ end
 
 within(x, args...) = within!(copy(x), args...)
 
-function summarise_f(df::AbstractDataFrame, ex::Expr)
+function based_on_f(df::AbstractDataFrame, ex::Expr)
     # Returns a function for use on an AbstractDataFrame
     
     # helper function to replace symbols in ex with a reference to the
@@ -1458,10 +1458,10 @@ function summarise_f(df::AbstractDataFrame, ex::Expr)
         DataFrame(_col_dict)
     end
 end
-function summarise(df::AbstractDataFrame, ex::Expr)
+function based_on(df::AbstractDataFrame, ex::Expr)
     # By-column operation within a DataFrame.
     # Returns a new DataFrame.
-    f = summarise_f(df, ex)
+    f = based_on_f(df, ex)
     f(df)
 end
 
@@ -1491,7 +1491,7 @@ end
 with(e::Expr) = x -> with(x, e)
 within(e::Expr) = x -> within(x, e)
 within!(e::Expr) = x -> within!(x, e)
-summarise(e::Expr) = x -> summarise(x, e)
+based_on(e::Expr) = x -> based_on(x, e)
 
 # TODO add versions of each of these for Dict's
 
@@ -1645,9 +1645,9 @@ function fill(x::Vector, lengths::Vector{Int})
     res
 end
 
-# summarise() sweeps along groups and applies summarise to each group
-function summarise(gd::GroupedDataFrame, ex::Expr)  
-    f = summarise_f(gd.parent, ex)
+# based_on() sweeps along groups and applies based_on to each group
+function based_on(gd::GroupedDataFrame, ex::Expr)  
+    f = based_on_f(gd.parent, ex)
     x = [f(d) for d in gd]
     idx = fill([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
@@ -1657,7 +1657,7 @@ end
 
 # default pipelines:
 map(f::Function, x::SubDataFrame) = f(x)
-(|)(x::GroupedDataFrame, e::Expr) = summarise(x, e)   
+(|)(x::GroupedDataFrame, e::Expr) = based_on(x, e)   
 ## (|)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
@@ -1702,7 +1702,7 @@ colnames(d::GroupedDataFrame) = colnames(d.parent)
 
 # by() convenience function
 by(d::AbstractDataFrame, cols, f::Function) = map(f, groupby(d, cols))
-by(d::AbstractDataFrame, cols, e::Expr) = summarise(groupby(d, cols), e)
+by(d::AbstractDataFrame, cols, e::Expr) = based_on(groupby(d, cols), e)
 by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
 by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
 
