@@ -1318,6 +1318,80 @@ end
 # summarise(df, :(cat=sum(dog), all=strcat(strs)))
 
 
+function with(d::Associative, ex::Expr)
+    # Note: keys must by symbols
+    replace_symbols(x, d::Dict) = x
+    replace_symbols(e::Expr, d::Dict) = Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
+    function replace_symbols{K,V}(s::Symbol, d::Dict{K,V})
+        if (K == Any || K == Symbol) && has(d, s)
+            :(_D[$expr(:quote,s)])
+        elseif (K == Any || K <: String) && has(d, string(s))
+            :(_D[$string(s)])
+        else
+            s
+        end
+    end
+    ex = replace_symbols(ex, d)
+    global _ex = ex
+    f = @eval (_D) -> $ex
+    f(d)
+end
+
+function within!(d::Associative, ex::Expr)
+    # Note: keys must by symbols
+    replace_symbols(x, d::Dict) = x
+    function replace_symbols(e::Expr, d::Dict)
+        if e.head == :(=) # replace left-hand side of assignments:
+            Expr(e.head,
+                 vcat({:(_D[$expr(:quote, e.args[1])])}, map(x -> replace_symbols(x, d), e.args[2:end])),
+                 e.typ)
+        else
+            Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
+        end
+    end
+    function replace_symbols(s::Symbol, d::Dict)
+        if has(d, s)
+            :(_D[$expr(:quote,s)])
+        else
+            s
+        end
+    end
+    ex = replace_symbols(ex, d)
+    f = @eval (_D) -> begin
+        $ex
+        _D
+    end
+    f(d)
+end
+
+function summarise(d::Associative, ex::Expr)
+    # Note: keys must by symbols
+    replace_symbols(x, d::Dict) = x
+    function replace_symbols(e::Expr, d::Dict)
+        if e.head == :(=) # replace left-hand side of assignments:
+            Expr(e.head,
+                 vcat({:(_ND[$(expr(:quote, e.args[1]))])}, map(x -> replace_symbols(x, d), e.args[2:end])),
+                 e.typ)
+        else
+            Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
+        end
+    end
+    function replace_symbols(s::Symbol, d::Dict)
+        if has(d, s)
+            :(_D[$expr(:quote,s)])
+        else
+            s
+        end
+    end
+    ex = replace_symbols(ex, d)
+    f = @eval (_D) -> begin
+        _ND = Dict()
+        $ex
+        _ND
+    end
+    f(d)
+end
+
 function within!(df::AbstractDataFrame, ex::Expr)
     # By-column operation within a DataFrame that allows replacing or adding columns.
     # Returns the transformed DataFrame.
