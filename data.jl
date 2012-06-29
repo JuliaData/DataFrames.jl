@@ -729,9 +729,13 @@ ref{CT}(df::DataFrame{CT}, rs::Vector{Int}, name::CT) = df[name][rs]
 # TODO add more combinations
 ref(df::DataFrame, r::Vector{Bool}, c) = DataFrame({x[r] for x in df.columns[c]},
                                                         [df.colnames[c]])
-# TODO fix the following for NA's
+# TODO do something different if you want an NA to return an NA row.
 ref(df::DataFrame, r::DataVec, c) = df[r.data, c]
 ref(df::DataFrame, r::DataVec) = df[r.data, :]
+ref(df::DataFrame, r::DataVec{Bool}, c) = df[nareplace(r, false), c]
+ref(df::DataFrame, r::DataVec{Integer}, c) = df[nafilter(r), c]
+ref(df::DataFrame, r::DataVec{Bool}) = df[nareplace(r, false), :]
+ref(df::DataFrame, r::DataVec{Integer}) = df[nafilter(r), :]
 
 
 # data.table-style indexing of rows based on column values
@@ -1573,6 +1577,7 @@ groupby{T}(d::DataFrame{T}, cols) = groupby(d, [cols])
 
 # add a function curry
 groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
+groupby(cols) = x -> groupby(x, cols)
 
 
 
