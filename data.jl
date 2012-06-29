@@ -1001,7 +1001,7 @@ type SubDataFrame{CT} <: AbstractDataFrame{CT}
 end
 
 
-sub{CT}(D::DataFrame{CT}, rs::Vector{Int}) = SubDataFrame(D, rs, [1:nrow(D)], true)
+sub{CT}(D::DataFrame{CT}, rs::Vector{Int}) = SubDataFrame(D, rs, [1:ncol(D)], true)
 sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{Int}) = SubDataFrame(D, rs, cs, false)
 
 # should use metaprogramming to make all of the below constructors!
@@ -1265,6 +1265,25 @@ function rbind{CT}(dfs::DataFrame{CT}...)
     Ncol = ncol(dfs[1])
     res = similar(dfs[1], Nrow)
     # TODO fix PooledDataVec columns with different pools.
+    # TODO check to see that the number of columns are the same.
+    # TODO check to see that the colnames are the same.
+    idx = 1
+    for df in dfs
+        for kdx in 1:nrow(df)
+            for jdx in 1:Ncol
+                res[jdx][idx] = df[kdx, jdx]
+            end
+            idx += 1
+        end
+    end
+    res
+end
+
+function rbind(dfs::Vector)   # for a Vector of DataFrame's
+    Nrow = sum(nrow, dfs)
+    Ncol = ncol(dfs[1])
+    res = similar(dfs[1], Nrow)
+    # TODO fix PooledDataVec columns with different pools.
     # TODO check to see that the number of columns are the same and the colnames are the same.
     # TODO check to see that the colnames are the same.
     idx = 1
@@ -1297,7 +1316,6 @@ end
 # how do we add col names to the name space?
 # transform(df, :(cat=dog*2, clean=proc(dirty)))
 # summarise(df, :(cat=sum(dog), all=strcat(strs)))
-
 
 
 ## function within!(df::AbstractDataFrame, ex::Expr)
@@ -1336,9 +1354,8 @@ end
 
 within(x, args...) = within!(copy(x), args...)
 
-function summarise(df::AbstractDataFrame, ex::Expr)
-    # By-column operation within a DataFrame.
-    # Returns a new DataFrame.
+function summarise_f(df::AbstractDataFrame, ex::Expr)
+    # Returns a function for use on an AbstractDataFrame
     
     # helper function to replace symbols in ex with a reference to the
     # appropriate column in a new df
@@ -1363,11 +1380,16 @@ function summarise(df::AbstractDataFrame, ex::Expr)
     cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
     ex = replace_symbols(ex, cn_dict)
     global _ex = ex
-    f = @eval (_DF) -> begin
+    @eval (_DF) -> begin
         _col_dict = Dict()
         $ex
         DataFrame(_col_dict)
     end
+end
+function summarise(df::AbstractDataFrame, ex::Expr)
+    # By-column operation within a DataFrame.
+    # Returns a new DataFrame.
+    f = summarise_f(df, ex)
     f(df)
 end
 
@@ -1392,7 +1414,6 @@ function with(df::AbstractDataFrame, ex::Expr)
     f = @eval (_DF) -> $ex
     f(df)
 end
-
 
 # add function curries to ease pipelining:
 with(e::Expr) = x -> with(x, e)
@@ -1504,6 +1525,16 @@ end
 function map(f::Function, gd::GroupedDataFrame)
     [f(d) for d in gd]
 end
+## function map(f::Function, gd::GroupedDataFrame)
+##     # preallocate based on the results on the first one
+##     x = f(gd[1])
+##     res = Array(typeof(x), length(gd))
+##     res[1] = x
+##     for idx in 2:length(gd)
+##         res[idx] = f(gd[idx])
+##     end
+##     res
+## end
 
 # with() sweeps along groups and applies with to each group
 function with(gd::GroupedDataFrame, e::Expr)
@@ -1525,24 +1556,32 @@ end
 
 within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
 
-# summarise() sweeps along groups and applies summarise to each group
-function summarise(gd::GroupedDataFrame, ex::Expr)  
-    x = [summarise(d, ex) for d in gd]
-    # There must be a better way to do this.
-    ## idx = [fill(gdx, nrow(x[gdx])) for gdx in 1:length(x)]  # not quite right - an array in an array
-    # In R, it's: rep(1:length(a), sapply(a,length))
-    Nrow = sum(nrow, x)
-    idx = fill(0, Nrow)
+# MAYBE try to get in base?
+function fill(x::Vector, lengths::Vector{Int})
+    if length(x) != length(lengths)
+        error("vector lengths must match")
+    end
+    res = similar(x, sum(lengths))
     i = 1
-    for gdx in 1:length(x)
-        for kdx in 1:nrow(x[gdx])
-            idx[i] = gdx
+    for idx in 1:length(x)
+        tmp = x[idx]
+        for kdx in 1:lengths[idx]
+            res[i] = tmp
             i += 1
         end
     end
+    res
+end
+
+# Second try:
+# summarise() sweeps along groups and applies summarise to each group
+function summarise(gd::GroupedDataFrame, ex::Expr)  
+    f = summarise_f(gd.parent, ex)
+    x = [f(d) for d in gd]
+    idx = fill([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
-    resdf = rbind(x...)
-    cbind(keydf, resdf)
+    resdf = rbind(x)
+    cbind!(keydf, resdf)
 end
 
 # default pipelines:
@@ -1565,7 +1604,8 @@ function colwise{T}(d::AbstractDataFrame{T}, s::Vector{Symbol}, cn::Vector{T})
     header = [s2 * "_" * string(s1) for s1 in s, s2 in cn][:]
     payload = colwise(map(eval, s), d)
     df = DataFrame()
-    # TODO fix this to assign the longest column first
+    # TODO fix this to assign the longest column first or preallocate
+    # based on the maximum length.
     for i in 1:length(header)
         df[header[i]] = payload[i]
     end
