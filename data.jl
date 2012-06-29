@@ -1318,8 +1318,7 @@ end
 # summarise(df, :(cat=sum(dog), all=strcat(strs)))
 
 
-## function within!(df::AbstractDataFrame, ex::Expr)
-function within!(df, ex::Expr)
+function within!(df::AbstractDataFrame, ex::Expr)
     # By-column operation within a DataFrame that allows replacing or adding columns.
     # Returns the transformed DataFrame.
     #   
@@ -1379,7 +1378,6 @@ function summarise_f(df::AbstractDataFrame, ex::Expr)
     # Make a dict of colnames and column positions
     cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
     ex = replace_symbols(ex, cn_dict)
-    global _ex = ex
     @eval (_DF) -> begin
         _col_dict = Dict()
         $ex
@@ -1573,7 +1571,6 @@ function fill(x::Vector, lengths::Vector{Int})
     res
 end
 
-# Second try:
 # summarise() sweeps along groups and applies summarise to each group
 function summarise(gd::GroupedDataFrame, ex::Expr)  
     f = summarise_f(gd.parent, ex)
