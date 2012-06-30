@@ -582,21 +582,19 @@ show(io, x::AbstractDataVec) = show_comma_array(io, x, '[', ']')
 
 # TODO: div(dat, 2) works, but zz ./ 2 doesn't
 
+# an AbstractIndex is a thing that can be used to look up ordered things by name, but that
+# will also accept a position or set of positions or range or other things and pass them
+# through cleanly.
+# an Index is the usual implementation.
+# a SimpleIndex only works if the things are integer indexes, which is weird.
+abstract AbstractIndex{T}
 
-abstract AbstractIndex
-index(x::AbstractIndex, idx::Int) = idx
-index(x::AbstractIndex, idx::Vector{Int}) = idx
-index(x::AbstractIndex, idx::Range1) = [idx]
-index(x::AbstractIndex, idx::Vector{Bool}) = [1:length(x)][idx]
-index(x::AbstractIndex, idx::AbstractDataVec{Bool}) = index(x, nareplace(idx, false)) 
-index(x::AbstractIndex, idx::AbstractDataVec{Int}) = index(x, nafilter(idx)) 
-
-type Index <: AbstractIndex   # an OrderedDict would be nice here...
-    lookup::Dict      # name => names array position
-    names::Vector
+type Index{T} <: AbstractIndex{T}   # an OrderedDict would be nice here...
+    lookup::Dict{T,Int}      # name => names array position
+    names::Vector{T}
 end
 Index(x::Vector) = Index(dict(tuple(x...), tuple([1:length(x)]...)), x)
-Index() = Index(Dict(), {})
+#Index() = Index(Dict(), {})
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
 function push(x::Index, nm)
@@ -618,16 +616,17 @@ function del(x::Index, nm)
     idx = x.lookup[nm]
     del(x, idx)
 end
-# I don't know why I needed to duplicate the following, but they were
-# needed to get rid of warnings.
-index(x::Index, idx::Vector{Int}) = idx
-index(x::Index, idx::Range1) = [idx]
-index(x::Index, idx::Vector{Bool}) = [1:length(x)][idx]
-index(x::Index, idx::Int) = idx
-index(x::Index, idx::AbstractDataVec{Bool}) = index(x, nareplace(idx, false)) 
-index(x::Index, idx::AbstractDataVec{Int}) = index(x, nafilter(idx)) 
-index(x::Index, idx::Vector) = convert(Vector{Int}, [x.lookup[i] for i in idx])
-index(x::Index, idx) = x.lookup[idx]
+
+ref{T}(x::Index{T}, idx::Vector{T}) = convert(Vector{Int}, [x.lookup[i] for i in idx])
+ref{T}(x::Index{T}, idx::T) = x.lookup[idx]
+
+# fall-throughs, when something other than the index type is passed
+ref(x::AbstractIndex, idx::Int) = idx
+ref(x::AbstractIndex, idx::Vector{Int}) = idx
+ref(x::AbstractIndex, idx::Range1) = [idx]
+ref(x::AbstractIndex, idx::Vector{Bool}) = [1:length(x)][idx]
+ref(x::AbstractIndex, idx::AbstractDataVec{Bool}) = x[nareplace(idx, false)]
+ref(x::AbstractIndex, idx::AbstractDataVec{Int}) = x[nafilter(idx)]
 
 type SimpleIndex <: AbstractIndex
     length::Integer
@@ -644,8 +643,8 @@ abstract AbstractDataFrame
 # are O(n).
 type DataFrame <: AbstractDataFrame
     columns::Vector{Any} 
-    colindex::AbstractIndex
-    function DataFrame(cols::Vector, colindex::AbstractIndex)
+    colindex::Index
+    function DataFrame(cols::Vector, colindex::Index)
         # all columns have to be the same length
         if length(cols) > 1 && !all(map(length, cols) .== length(cols[1]))
             error("all columns in a DataFrame have to be the same length")
@@ -659,7 +658,7 @@ type DataFrame <: AbstractDataFrame
 end
 
 # constructors
-DataFrame(cs::Vector) = DataFrame(cs, SimpleIndex(length(cs)))
+#DataFrame(cs::Vector) = DataFrame(cs, SimpleIndex(length(cs))) # TODO: replace with default colnames
 DataFrame(cs::Vector, cn::Vector) = DataFrame(cs, Index(cn))
 
 colnames(df::DataFrame) = names(df.colindex)
@@ -670,11 +669,11 @@ size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 size(df::AbstractDataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
 length(df::AbstractDataFrame) = ncol(df)
 
-ref(df::DataFrame, c) = df[index(df.colindex, c)]
+ref(df::DataFrame, c) = df[df.colindex[c]]
 ref(df::DataFrame, c::Integer) = df.columns[c]
 ref(df::DataFrame, c::Vector{Int}) = DataFrame(df.columns[c], colnames(df)[c])
 
-ref(df::DataFrame, r, c) = df[r, index(df.colindex, c)]
+ref(df::DataFrame, r, c) = df[r, df.colindex[c]]
 ref(df::DataFrame, r, c::Int) = df[c][r]
 ref(df::DataFrame, r, c::Vector{Int}) =
     DataFrame({x[r] for x in df.columns[c]}, 
@@ -682,52 +681,13 @@ ref(df::DataFrame, r, c::Vector{Int}) =
 
 # special cases
 ref(df::DataFrame, r::Int, c::Int) = df[c][r]
-ref(df::DataFrame, r::Int, c) = df[r, index(df.colindex, c)]
 ref(df::DataFrame, r::Int, c::Vector{Int}) = df[[r], c]
+ref(df::DataFrame, r::Int, c) = df[r, df.colindex[c]]
 ref(df::DataFrame, dv::AbstractDataVec) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr) = df[with(df, ex), :]  
 ref(df::DataFrame, ex::Expr, c::Int) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c::Vector{Int}) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c) = df[with(df, ex), c]
-
-
-
-
-# testing...
-srand(1)
-d1 = PooledDataVec(randi(3,20))
-d1[1] = NA
-d2 = PooledDataVec(randi(2,20))
-d3 = DataVec(randn(20))
-d = DataFrame({d1,d2,d3}, ["d1","d2","d3"])
-
-d[1]
-d["d3"]
-d[[1,2]]
-d[["d1","d3", "d2"]]
-d[:]
-d[1:2]
-d[2:end]
-d[[true,false,true]]
-d[:,1]
-d[1:3,1]
-d[10:end,1]
-d[[1,2,3],1]
-d[d["d1"] .== 1,1]
-## d[DataVec([1:3]),1]
-d[1,1]
-d[1,1:3]
-d[10:end,1]
-d[1:3,1]
-d[1:3,"d3"]
-d[1:3,[1,2]]
-d[1:3,["d1","d3", "d2"]]
-d[1:3,:]
-d[1:3,1:2]
-d[1:3,2:end]
-d[1:3,[true,false,true]]
-d[:,:]
-
 
 
 # if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
@@ -1043,13 +1003,13 @@ sub(D::DataFrame, r, c) = sub(D[[c]], r)    # If columns are given, pass in a su
                                             # Columns are not copies, so it's not expensive.
 sub(D::DataFrame, r::Int) = sub(D, [r])
 sub(D::DataFrame, rs::Vector{Int}) = SubDataFrame(D, rs)
-sub(D::DataFrame, r) = sub(D, index(SimpleIndex(nrow(D)), r))
+sub(D::DataFrame, r) = sub(D, ref(SimpleIndex(nrow(D)), r)) # this is a wacky fall-through that uses light-weight fake indexes!
 sub(D::DataFrame, ex::Expr) = sub(D, with(D, ex))
 
 sub(D::SubDataFrame, r, c) = sub(D[[c]], r)
 sub(D::SubDataFrame, r::Int) = sub(D, [r])
 sub(D::SubDataFrame, rs::Vector{Int}) = SubDataFrame(D.parent, D.rows[rs])
-sub(D::SubDataFrame, r) = sub(D, index(SimpleIndex(nrow(D)), r))
+sub(D::SubDataFrame, r) = sub(D, ref(SimpleIndex(nrow(D)), r)) # another wacky fall-through
 sub(D::SubDataFrame, ex::Expr) = sub(D, with(D, ex))
 
 ref(df::SubDataFrame, c) = df.parent[df.rows, c]
@@ -1121,7 +1081,7 @@ function del!(df::DataFrame, icols::Vector{Int})
     df
 end
 del!(df::DataFrame, c::Int) = del!(df, [c])
-del!(df::DataFrame, c) = del!(df, index(df.colindex, c))
+del!(df::DataFrame, c) = del!(df, df.colindex[c])
 
 # df2 = del(df, 1) new DF, minus vectors
 function del(df::DataFrame, icols::Vector{Int})
@@ -1139,7 +1099,7 @@ function del(df::DataFrame, icols::Vector{Int})
     df[newcols]
 end
 del(df::DataFrame, i::Int) = del(df, [i])
-del(df::DataFrame, c) = del(df, index(df.colindex, c))
+del(df::DataFrame, c) = del(df, df.colindex[c])
 
 
 #### cbind, rbind, hcat, vcat
