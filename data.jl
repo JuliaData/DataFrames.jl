@@ -291,6 +291,9 @@ function ref(x::PooledDataVec, ind::Vector{Int})
     PooledDataVec(x.refs[ind], copy(x.pool), x.filter, x.replace, x.replaceVal)
 end
 
+ref(x::AbstractDataVec, ind::AbstractDataVec{Bool}) = x[nareplace(ind, false)]
+ref(x::AbstractDataVec, ind::AbstractDataVec{Integer}) = x[nafilter(ind)]
+
 # assign variants
 # x[3] = "cat"
 function assign{T}(x::DataVec{T}, v::T, i::Int)
@@ -580,43 +583,152 @@ show(io, x::AbstractDataVec) = show_comma_array(io, x, '[', ']')
 # TODO: div(dat, 2) works, but zz ./ 2 doesn't
 
 
-# Abstract DF includes DataFrame and SubDataFrame
-abstract AbstractDataFrame{CT}
+abstract AbstractIndex
+index(x::AbstractIndex, idx::Int) = idx
+index(x::AbstractIndex, idx::Vector{Int}) = idx
+index(x::AbstractIndex, idx::Range1) = [idx]
+index(x::AbstractIndex, idx::Vector{Bool}) = [1:length(x)][idx]
+index(x::AbstractIndex, idx::AbstractDataVec{Bool}) = index(x, nareplace(idx, false)) 
+index(x::AbstractIndex, idx::AbstractDataVec{Int}) = index(x, nafilter(idx)) 
 
-# ## DataFrame - a list of heterogeneous Data vectors with col names.
-# columns are a vector, which means that operations that insert/delete columns
+type Index <: AbstractIndex   # an OrderedDict would be nice here...
+    lookup::Dict      # name => names array position
+    names::Vector
+end
+Index(x::Vector) = Index(dict(tuple(x...), tuple([1:length(x)]...)), x)
+Index() = Index(Dict(), {})
+length(x::Index) = length(x.names)
+names(x::Index) = copy(x.names)
+function push(x::Index, nm)
+    x.lookup[nm] = length(x) + 1
+    push(x.names, nm)
+end
+function del(x::Index, idx::Integer)
+    # reset the lookup's beyond the deleted item
+    for i in idx+1:length(x.names)
+        x.lookup[x.names[i]] = i - 1
+    end
+    del(x.lookup, x.names[idx])
+    del(x.names, idx)
+end
+function del(x::Index, nm)
+    if !has(x.lookup, nm)
+        return
+    end
+    idx = x.lookup[nm]
+    del(x, idx)
+end
+# I don't know why I needed to duplicate the following, but they were
+# needed to get rid of warnings.
+index(x::Index, idx::Vector{Int}) = idx
+index(x::Index, idx::Range1) = [idx]
+index(x::Index, idx::Vector{Bool}) = [1:length(x)][idx]
+index(x::Index, idx::Int) = idx
+index(x::Index, idx::AbstractDataVec{Bool}) = index(x, nareplace(idx, false)) 
+index(x::Index, idx::AbstractDataVec{Int}) = index(x, nafilter(idx)) 
+index(x::Index, idx::Vector) = convert(Vector{Int}, [x.lookup[i] for i in idx])
+index(x::Index, idx) = x.lookup[idx]
+
+type SimpleIndex <: AbstractIndex
+    length::Integer
+end
+SimpleIndex() = SimpleIndex(0)
+length(x::SimpleIndex) = x.length
+names(x::SimpleIndex) = nothing
+
+# Abstract DF includes DataFrame and SubDataFrame
+abstract AbstractDataFrame
+
+# ## DataFrame - a list of heterogeneous Data vectors with col and row indexs.
+# Columns are a vector, which means that operations that insert/delete columns
 # are O(n).
-# col names must be the right length, but can be "nothing".
-type DataFrame{CT} <: AbstractDataFrame{CT}
-    columns::Vector{Any} # actually Vector{AbstractDataVec{*}}
-    colnames::Vector{CT}
-    
-    # inner constructor requires everything to be the right types, checks lengths
-    function DataFrame(cols::Vector, cn::Vector{CT})  
-        # all cols
-        ## if !all([isa(c, AbstractDataVec) for c = cols])
-        ##     error("DataFrame inner constructor requires all columns be AbstractDataVecs already")
-        ## end
-          
+type DataFrame <: AbstractDataFrame
+    columns::Vector{Any} 
+    colindex::AbstractIndex
+    function DataFrame(cols::Vector, colindex::AbstractIndex)
         # all columns have to be the same length
         if length(cols) > 1 && !all(map(length, cols) .== length(cols[1]))
             error("all columns in a DataFrame have to be the same length")
         end
-        
-         # colnames has to be the same length as columns vector
-        if length(cn) != length(cols)
-            error("colnames must be the same length as the number of columns")
+        # colindex has to be the same length as columns vector
+        if length(colindex) != length(cols)
+            error("column names/index must be the same length as the number of columns")
         end
-        
-        new(cols, cn)
+        new(cols, colindex)
     end
 end
-# constructors 
-# if we already have DataVecs, but no names
-nothings(n) = fill(nothing, n) # TODO: move elsewhere?
-DataFrame(cs::Vector) = DataFrame(cs, nothings(length(cs)))
-# if we have DataVecs and names
-DataFrame{CT}(cs::Vector, cn::Vector{CT}) = DataFrame{CT}(cs, cn)
+
+# constructors
+DataFrame(cs::Vector) = DataFrame(cs, SimpleIndex(length(cs)))
+DataFrame(cs::Vector, cn::Vector) = DataFrame(cs, Index(cn))
+
+colnames(df::DataFrame) = names(df.colindex)
+ncol(df::DataFrame) = length(df.colindex)
+nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
+names(df::AbstractDataFrame) = colnames(df)
+size(df::AbstractDataFrame) = (nrow(df), ncol(df))
+size(df::AbstractDataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
+length(df::AbstractDataFrame) = ncol(df)
+
+ref(df::DataFrame, c) = df[index(df.colindex, c)]
+ref(df::DataFrame, c::Integer) = df.columns[c]
+ref(df::DataFrame, c::Vector{Int}) = DataFrame(df.columns[c], colnames(df)[c])
+
+ref(df::DataFrame, r, c) = df[r, index(df.colindex, c)]
+ref(df::DataFrame, r, c::Int) = df[c][r]
+ref(df::DataFrame, r, c::Vector{Int}) =
+    DataFrame({x[r] for x in df.columns[c]}, 
+              colnames(df)[c])
+
+# special cases
+ref(df::DataFrame, r::Int, c::Int) = df[c][r]
+ref(df::DataFrame, r::Int, c) = df[r, index(df.colindex, c)]
+ref(df::DataFrame, r::Int, c::Vector{Int}) = df[[r], c]
+ref(df::DataFrame, dv::AbstractDataVec) = df[with(df, ex), c]
+ref(df::DataFrame, ex::Expr) = df[with(df, ex), :]  
+ref(df::DataFrame, ex::Expr, c::Int) = df[with(df, ex), c]
+ref(df::DataFrame, ex::Expr, c::Vector{Int}) = df[with(df, ex), c]
+ref(df::DataFrame, ex::Expr, c) = df[with(df, ex), c]
+
+
+
+
+# testing...
+srand(1)
+d1 = PooledDataVec(randi(3,20))
+d1[1] = NA
+d2 = PooledDataVec(randi(2,20))
+d3 = DataVec(randn(20))
+d = DataFrame({d1,d2,d3}, ["d1","d2","d3"])
+
+d[1]
+d["d3"]
+d[[1,2]]
+d[["d1","d3", "d2"]]
+d[:]
+d[1:2]
+d[2:end]
+d[[true,false,true]]
+d[:,1]
+d[1:3,1]
+d[10:end,1]
+d[[1,2,3],1]
+d[d["d1"] .== 1,1]
+## d[DataVec([1:3]),1]
+d[1,1]
+d[1,1:3]
+d[10:end,1]
+d[1:3,1]
+d[1:3,"d3"]
+d[1:3,[1,2]]
+d[1:3,["d1","d3", "d2"]]
+d[1:3,:]
+d[1:3,1:2]
+d[1:3,2:end]
+d[1:3,[true,false,true]]
+d[:,:]
+
+
 
 # if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
 DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
@@ -633,7 +745,7 @@ function DataFrame{K,V}(d::Associative{K,V})
     keymaxlen = keys(d)[maxpos]
     Nrow = length(d[keymaxlen])
     # Start with a blank DataFrame
-    df = DataFrame(K)
+    df = K == Any ? DataFrame() : DataFrame(K)   # kludgy
     # Assign the longest column to set the overall nrows.
     df[keymaxlen] = d[keymaxlen]
     # Now assign them all.
@@ -648,11 +760,10 @@ function DataFrame{K,V}(d::Associative{K,V})
 end
 
 # Blank DataFrame
-DataFrame{T}(::Type{T}) = DataFrame({}, T[])
-DataFrame() = DataFrame(ASCIIString)
+DataFrame() = DataFrame({}, {})
 
 # copy of a data frame does a deep copy
-copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], copy(df.colnames))
+copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df))
 
 
 # dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
@@ -670,6 +781,9 @@ copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], copy(df.colnames)
 
 # Equality
 function ==(df1::AbstractDataFrame, df2::AbstractDataFrame)
+    if ncol(df1) != ncol(df2)
+        return false
+    end
     for idx in 1:ncol(df1)
         if !(df1[idx] == df2[idx])
             return false
@@ -678,75 +792,11 @@ function ==(df1::AbstractDataFrame, df2::AbstractDataFrame)
     return true
 end
 
-nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
-ncol(df::DataFrame) = length(df.columns)
-names(df::DataFrame) = colnames(df)
-colnames(df::DataFrame) = copy(df.colnames)
-size(df::DataFrame) = (nrow(df), ncol(df))
-size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
-
-# get columns by name, position
-# first two return the DataVec
-ref(df::DataFrame, i::Int) = df.columns[i]
-ref{CT}(df::DataFrame{CT}, name::CT) = df.columns[findfirst(df.colnames, name)] # TODO make faster
-# these all return another DF
-ref{CT}(df::DataFrame{CT}, names::Vector{CT}) = df[[findfirst(df.colnames, n)::Int for n = names]] # calls the next one
-ref(df::DataFrame, is::Vector{Int}) = DataFrame(df.columns[is], df.colnames[is])
-ref(df::DataFrame, rng::Range1) = DataFrame(df.columns[rng], df.colnames[rng])
-ref(df::DataFrame, pos::Vector{Bool}) = DataFrame(df.columns[pos], df.colnames[pos])
-
-# get slices
-# row slices
-ref(df::DataFrame, r::Int, rng::Range1) = DataFrame({x[[r]] for x in df.columns[rng]}, 
-                                                    df.colnames[rng])
-ref(df::DataFrame, r::Int, cs::Vector{Int}) = DataFrame({x[[r]] for x in df.columns[cs]}, 
-                                                        df.colnames[cs])
-ref{CT}(df::DataFrame{CT}, r::Int, cs::Vector{CT}) = df[r, [findfirst(df.colnames, c)::Int for c = cs]]
-ref(df::DataFrame, r::Int, cs::Vector{Bool}) = df[cs][r,:] # possibly slow, but pretty
-
-# 2-D slices
-# rows are vector of indexes
-ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Int}) = DataFrame({x[rs] for x in df.columns[cs]}, 
-                                                                 df.colnames[cs])
-ref(df::DataFrame, rs::Vector{Int}, rng::Range1) = DataFrame({x[rs] for x in df.columns[rng]}, 
-                                                             df.colnames[rng])
-ref(df::DataFrame, rs::Vector{Int}, cs::Vector{Bool}) = df[cs][rs,:] # slow way
-ref{CT}(df::DataFrame{CT}, rs::Vector{Int}, cs::Vector{CT}) = df[cs][rs,:] # slow way
-# col slices
-ref(df::DataFrame, rs::Vector{Int}, c::Int) = df[c][rs]
-ref{CT}(df::DataFrame{CT}, rs::Vector{Int}, name::CT) = df[name][rs]
-
-# Bool's along rows
-# TODO add more combinations
-ref(df::DataFrame, r::Vector{Bool}, c) = DataFrame({x[r] for x in df.columns[c]},
-                                                        [df.colnames[c]])
-# TODO fix the following for NA's
-ref(df::DataFrame, r::DataVec, c) = df[r.data, c]
-ref(df::DataFrame, r::DataVec) = df[r.data, :]
-
-
-# data.table-style indexing of rows based on column values
-# d[:(col1 > 2)]
-ref(df::DataFrame, ex::Expr, c) = df[with(df, ex), c]
-ref(df::DataFrame, ex::Expr) = df[with(df, ex), :]  # special case where 1 argument selects rows not columns
-
-# TODO: other types of row indexing with 2-D slices
-# rows are range, vector of booleans
-# is there a macro way to define all of these??
-ref(df::DataFrame, rr::Range1, cr::Range1) = DataFrame({x[rr] for x in df.columns[cr]},
-                                                             df.colnames[cr])
-
-
 head(df::DataFrame, r::Int) = df[1:r, :]
 head(df::DataFrame) = head(df, 6)
 tail(df::DataFrame, r::Int) = df[(nrow(df)-r+1):nrow(df), :]
 tail(df::DataFrame) = tail(df, 6)
 
-
-# get singletons. TODO: nicer error handling
-# TODO: deal with oddness if row/col types are ints
-ref(df::DataFrame, r::Int, c::Int) = df.columns[c][r]
-ref{CT}(df::DataFrame{CT}, r::Int, cn::CT) = df.columns[findfirst(df.colnames, cn)][r]
 
 
 # to print a DataFrame, find the max string length of each column
@@ -762,10 +812,10 @@ function show(io, df::DataFrame)
     
     # if we don't have columns names, use indexes
     # note that column names in R are obligatory
-    if eltype(df.colnames) == Nothing
+    if eltype(colnames(df)) == Nothing
         colNames = [sprintf("[,%d]", c) for c = 1:ncol(df)]
     else
-        colNames = df.colnames
+        colNames = colnames(df)
     end
     
     colWidths = [max(length(string(colNames[c])), maxShowLength(df.columns[c])) for c = 1:ncol(df)]
@@ -789,10 +839,10 @@ str(df::DataFrame) = str(OUTPUT_STREAM::IOStream, df)
 function str(io, df::DataFrame)
     println(io, sprintf("%d observations of %d variables", nrow(df), ncol(df)))
 
-    if eltype(df.colnames) == Nothing
+    if eltype(colnames(df)) == Nothing
         colNames = [sprintf("[,%d]", c) for c = 1:ncol(df)]
     else
-        colNames = df.colnames
+        colNames = colnames(df)
     end
     
     # foreach column, print the column name or index, the type, and then print the first elements of 
@@ -870,7 +920,7 @@ end
 function summary(io, df::DataFrame)
     for c in 1:ncol(df)
         col = df[c]
-        println(io, df.colnames[c])
+        println(io, colnames(df)[c])
         summary(io, col)
         println(io, )
     end
@@ -982,101 +1032,37 @@ csvDataFrame(filename) = csvDataFrame(filename, Options())
 
 # a SubDataFrame is a lightweight wrapper around a DataFrame used most frequently in
 # split/apply sorts of operations.
-type SubDataFrame{CT} <: AbstractDataFrame{CT}
-    parent::DataFrame{CT}
+type SubDataFrame <: AbstractDataFrame
+    parent::DataFrame
     rows::Vector{Int} # maps from subdf row indexes to parent row indexes
-    cols::Vector{Int} # maps from subdf col indexes to parent col indexes
-    allcols::Bool     # if all cols included, ignore cols mapping
     
     # TODO: constructor to check params
 end
 
+sub(D::DataFrame, r, c) = sub(D[[c]], r)    # If columns are given, pass in a subsetted parent D.
+                                            # Columns are not copies, so it's not expensive.
+sub(D::DataFrame, r::Int) = sub(D, [r])
+sub(D::DataFrame, rs::Vector{Int}) = SubDataFrame(D, rs)
+sub(D::DataFrame, r) = sub(D, index(SimpleIndex(nrow(D)), r))
+sub(D::DataFrame, ex::Expr) = sub(D, with(D, ex))
 
-sub{CT}(D::DataFrame{CT}, rs::Vector{Int}) = SubDataFrame(D, rs, [1:nrow(D)], true)
-sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{Int}) = SubDataFrame(D, rs, cs, false)
+sub(D::SubDataFrame, r, c) = sub(D[[c]], r)
+sub(D::SubDataFrame, r::Int) = sub(D, [r])
+sub(D::SubDataFrame, rs::Vector{Int}) = SubDataFrame(D.parent, D.rows[rs])
+sub(D::SubDataFrame, r) = sub(D, index(SimpleIndex(nrow(D)), r))
+sub(D::SubDataFrame, ex::Expr) = sub(D, with(D, ex))
 
-# should use metaprogramming to make all of the below constructors!
-sub{CT}(D::DataFrame{CT}, r::Int) = sub(D, [r])
-sub{CT}(D::DataFrame{CT}, rng::Range1) = sub(D, [rng])
-sub{CT}(D::DataFrame{CT}, b::Vector{Bool}) = sub(D, [1:nrow(D)][b])
-
-sub{CT}(D::DataFrame{CT}, r::Int, c::Int) = sub(D, [r], [c])
-sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, c::Int) = sub(D, rs, [c])
-sub{CT}(D::DataFrame{CT}, rng::Range1, c::Int) = sub(D, [rng], [c])
-sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, c::Int) = sub(D, [1:nrow(D)][b], [c])
-
-sub{CT}(D::DataFrame{CT}, r::Int, cs::Vector{Int}) = sub(D, [r], cs)
-#sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{Int}) = sub(D, r, [c])
-sub{CT}(D::DataFrame{CT}, rng::Range1, cs::Vector{Int}) = sub(D, [rng], cs)
-sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, cs::Vector{Int}) = sub(D, [1:nrow(D)][b], cs)
-
-sub{CT}(D::DataFrame{CT}, r::Int, crng::Range1) = sub(D, [r], [crng])
-sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, crng::Range1) = sub(D, rs, [crng])
-sub{CT}(D::DataFrame{CT}, rng::Range1, crng::Range1) = sub(D, [rng], [crng])
-sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, crng::Range1) = sub(D, [1:nrow(D)][b], [crng])
-
-sub{CT}(D::DataFrame{CT}, r::Int, cb::Vector{Bool}) = sub(D, [r], [1:ncol(D)][cb])
-sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cb::Vector{Bool}) = sub(D, rs, [1:ncol(D)][cb])
-sub{CT}(D::DataFrame{CT}, rng::Range1, cb::Vector{Bool}) = sub(D, [rng], [1:ncol(D)][cb])
-sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, cb::Vector{Bool}) = sub(D, [1:nrow(D)][b], [1:ncol(D)][cb])
-
-sub{CT}(D::DataFrame{CT}, r::Int, c::CT) = sub(D, [r], [findfirst(D.colnames, c)])
-sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, c::CT) = sub(D, rs, [findfirst(D.colnames, c)])
-sub{CT}(D::DataFrame{CT}, rng::Range1, c::CT) = sub(D, [rng], [findfirst(D.colnames, c)])
-sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, c::CT) = sub(D, [1:nrow(D)][b], [findfirst(D.colnames, c)])
-
-sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{CT}) =
-    sub(D, rs, [findfirst(D.colnames, c)::Int for c = cs])
-
-# TODO: subs of subs
-
+ref(df::SubDataFrame, c) = df.parent[df.rows, c]
+ref(df::SubDataFrame, r, c) = df.parent[df.rows[r], c]
 
 nrow(df::SubDataFrame) = length(df.rows)
-ncol(df::SubDataFrame) = df.allcols ? ncol(df.parent) : length(df.cols)
-names(df::SubDataFrame) = colnames(df)
-colnames(df::SubDataFrame) = df.allcols ? colnames(df.parent) : colnames(df.parent)[df.cols]
-size(df::AbstractDataFrame) = (nrow(df), ncol(df))
-size(df::AbstractDataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
-
-# tons of refs...
-# get columns by name, position
-ref(df::SubDataFrame, i::Int) = ref(df.parent, df.rows, df.cols[i])
-ref{CT}(df::SubDataFrame{CT}, name::CT) = ref(df.parent, df.rows, name)
-ref{CT}(df::SubDataFrame{CT}, names::Vector{CT}) = ref(df.parent, df.rows, names)
-ref(df::SubDataFrame, ixs::Vector{Int}) = ref(df.parent, df.rows, df.cols[ixs])
-ref(df::SubDataFrame, rng::Range1) = ref(df.parent, df.rows, df.cols[rng])
-ref(df::SubDataFrame, pos::Vector{Bool}) = ref(df.parent, df.rows, df.cols[pos])
-
-# get slices
-# row slices
-ref(df::SubDataFrame, r::Int, rng::Range1) = ref(df.parent, df.rows[r], df.allcols ? rng : df.cols[rng])
-ref(df::SubDataFrame, r::Int, cs::Vector{Int}) = ref(df.parent, df.rows[r], df.allcols ? cs : df.cols[cs])
-ref{CT}(df::SubDataFrame{CT}, r::Int, cs::Vector{CT}) = ref(df.parent, df.rows[r], cs)
-ref(df::SubDataFrame, r::Int, cs::Vector{Bool}) = ref(df.parent, df.rows[r], df.allcols ? cs : df.cols[cs])
-
-# 2-D slices
-# rows are vector of indexes
-ref(df::SubDataFrame, rs::Vector{Int}, cs::Vector{Int}) = ref(df.parent, df.rows[rs], df.allcols ? cs : df.cols[cs])
-ref(df::SubDataFrame, rs::Vector{Int}, rng::Range1) = ref(df.parent, df.rows[rs], df.allcols ? rng : df.cols[rng])
-ref(df::SubDataFrame, rs::Vector{Int}, cs::Vector{Bool}) = ref(df.parent, df.rows[rs], df.allcols ? cs : df.cols[cs])
-ref{CT}(df::SubDataFrame{CT}, rs::Vector{Int}, cs::Vector{CT}) = ref(df.parent, df.rows[rs], cs)
-ref(df::SubDataFrame, rs::Vector{Int}, c::Int) = ref(df.parent, df.rows[rs], df.allcols ? c : df.cols[c])
-ref{CT}(df::SubDataFrame{CT}, rs::Vector{Int}, name::CT) = ref(df.parent, df.rows[rs], df.allcols ? c : df.cols[c]) 
-# TODO: other types of row indexing with 2-D slices
-# rows are range, vector of booleans
-# is there a macro way to define all of these??
-ref(df::SubDataFrame, rr::Range1, cr::Range1) = ref(df.parent, df.rows[rr], df.allcols ? cr : df.cols[cr])
-
+ncol(df::SubDataFrame) = ncol(df.parent)
+colnames(df::SubDataFrame) = colnames(df.parent) 
 
 head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
 head(df::AbstractDataFrame) = head(df, 6)
 tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
 tail(df::AbstractDataFrame) = tail(df, 6)
-
-
-# get singletons. TODO: nicer error handling
-ref(df::SubDataFrame, r::Int, c::Int) = ref(df.parent, df.rows[r], df.allcols ? c : df.cols[c])
-ref{CT}(df::SubDataFrame{CT}, r::Int, cn::CT) = ref(df.parent, df.rows[r], cn)
 
 
 # DF column operations
@@ -1097,21 +1083,21 @@ assign{T}(df::DataFrame, newcol::Vector{T}, icol::Integer) = assign(df, DataVec(
 
 # df["old"] = replace old columns
 # df["new"] = append new column
-function assign{T}(df::DataFrame{T}, newcol::AbstractDataVec, colname::T)
-    icol = findfirst(df.colnames, colname)
+function assign(df::DataFrame, newcol::AbstractDataVec, colname)
+    icol = get(df.colindex.lookup, colname, 0)
     if icol > 0
         # existing
         assign(df, newcol, icol)
     else
         # new
-        push(df.colnames, colname)
+        push(df.colindex, colname)
         push(df.columns, newcol)
     end
     df
 end
-assign{CT, T}(df::DataFrame{CT}, newcol::Vector{T}, colname::CT) = assign(df, DataVec(newcol), colname)
+assign{T}(df::DataFrame, newcol::Vector{T}, colname) = assign(df, DataVec(newcol), colname)
 
-assign{T}(df::DataFrame{T}, newcol, colname::T) =
+assign(df::DataFrame, newcol, colname) =
     nrow(df) > 0 ? assign(df, DataVec(fill(newcol, nrow(df))), colname) : assign(df, DataVec([newcol]), colname)
 
 # do I care about vectorized assignment? maybe not...
@@ -1123,28 +1109,37 @@ assign(df::DataFrame, x::Nothing, icol::Integer) = del!(df, icol)
 
 # del!(df, 1)
 # del!(df, "old")
-function del!(df::DataFrame, icol::Integer)
-    if icol > 0 && icol <= ncol(df)
-        del(df.columns, icol)
-        del(df.colnames, icol)
-    else
-        throw(ArgumentError("Can't delete a non-existent DataFrame column"))
+function del!(df::DataFrame, icols::Vector{Int})
+    for icol in icols 
+        if icol > 0 && icol <= ncol(df)
+            del(df.columns, icol)
+            del(df.colindex, icol)
+        else
+            throw(ArgumentError("Can't delete a non-existent DataFrame column"))
+        end
     end
     df
 end
-del!{CT}(df::DataFrame{CT}, colname::CT) = del!(df, findfirst(colnames(df), colname))
+del!(df::DataFrame, c::Int) = del!(df, [c])
+del!(df::DataFrame, c) = del!(df, index(df.colindex, c))
 
 # df2 = del(df, 1) new DF, minus vectors
-function del(df::DataFrame, icol::Integer)
-    if icol > 0 && icol <= ncol(df)
-        cols = del(copy(df.columns), icol)
-        colnames = del(copy(df.colnames), icol)
-        ret = DataFrame(cols, colnames)
-    else
+function del(df::DataFrame, icols::Vector{Int})
+    # newcols = setdiff([1:ncol(df)], icols) would make the following a one-liner
+    newcols = [1:ncol(df)]
+    for i in icols
+        if contains(newcols, i)
+            del(newcols, findfirst(newcols, i))
+        end
+    end
+    if length(newcols) == 0
         throw(ArgumentError("Can't delete a non-existent DataFrame column"))
     end
+    # Note: this does not copy columns.
+    df[newcols]
 end
-del{CT}(df::DataFrame{CT}, colname::CT) = del(df, findfirst(colnames(df), colname))
+del(df::DataFrame, i::Int) = del(df, [i])
+del(df::DataFrame, c) = del(df, index(df.colindex, c))
 
 
 #### cbind, rbind, hcat, vcat
@@ -1164,7 +1159,7 @@ del{CT}(df::DataFrame{CT}, colname::CT) = del(df, findfirst(colnames(df), colnam
 # colname types have to promotable
 
 # two-argument form, one df, clobbering the argument
-function cbind!{CT}(df::DataFrame{CT}, pair::Vector{Any})
+function cbind!(df::DataFrame, pair::Vector{Any})
     newcolname = pair[1]
     newcol = pair[2]
     if isa(newcol, Vector)
@@ -1192,7 +1187,7 @@ function cbind!{CT}(df::DataFrame{CT}, pair::Vector{Any})
     end
     push(df.columns, newcol)
     
-    push(df.colnames, convert(CT, newcolname))
+    push(df.colindex, convert(CT, newcolname))
     
     df
 end
@@ -1215,18 +1210,32 @@ function nointer(ss...)
     return true
 end
 
+function concat{T1,T2}(v1::Vector{T1}, v2::Vector{T2})
+    # concatenate vectors, converting to type Any if needed.
+    if T1 == T2 && T1 != Any
+        [v1, v2]
+    else
+        res = Array(Any, length(v1) + length(v2))
+        res[1:length(v1)] = v1
+        res[length(v1)+1 : length(v1)+length(v2)] = v2
+        res
+    end
+end
+
 
 # two-argument form, two dfs, references only
-function cbind!{CT1, CT2}(df1::DataFrame{CT1}, df2::DataFrame{CT2})
+function cbind!(df1::DataFrame, df2::DataFrame)
     # this only works if the column names can be promoted
     # TODO fix this
     ## newcolnames = convert(Vector{CT1}, df2.colnames)
-    newcolnames = df2.colnames
+    newcolnames = colnames(df2)
     # and if there are no duplicate column names
-    if !nointer(df1.colnames, newcolnames)
+    if !nointer(colnames(df1), newcolnames)
         error("can't cbind dataframes with overlapping column names!")
     end
-    df1.colnames = [df1.colnames, df2.colnames]
+    global _df1 = df1
+    global _df2 = df2
+    df1.colindex = Index(concat(colnames(df1), colnames(df2)))
     df1.columns = [df1.columns, df2.columns]
     df1
 end
@@ -1245,13 +1254,13 @@ similar{T}(dv::DataVec{T}, dims) =
 similar{T}(dv::PooledDataVec{T}, dims) =
     PooledDataVec(fill(uint16(1), dims), dv.pool, dv.filter, dv.replace, dv.replaceVal)  
 
-similar{CT}(df::DataFrame{CT}, dims) = 
+similar(df::DataFrame, dims) = 
     DataFrame([similar(x, dims) for x in df.columns], colnames(df)) 
 
-similar{CT}(df::SubDataFrame{CT}, dims) = 
+similar(df::SubDataFrame, dims) = 
     DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
 
-function rbind{CT}(dfs::DataFrame{CT}...)
+function rbind(dfs::DataFrame...)
     Nrow = sum(nrow, dfs)
     Ncol = ncol(dfs[1])
     res = similar(dfs[1], Nrow)
@@ -1430,9 +1439,9 @@ function groupsort_indexer(x::Vector, ngroups::Integer)
 end
 
 
-type GroupedDataFrame{T}
-    parent::DataFrame{T}
-    cols::Vector{T}      # columns used for sorting
+type GroupedDataFrame
+    parent::DataFrame
+    cols::Vector         # columns used for sorting
     idx::Vector{Int}     # indexing vector when sorted by the given columns
     starts::Vector{Int}  # starts of groups
     ends::Vector{Int}    # ends of groups 
@@ -1441,7 +1450,7 @@ end
 #
 # Split
 #
-function groupby(df::DataFrame{ASCIIString}, cols::Vector{ASCIIString})
+function groupby{T}(df::DataFrame, cols::Vector{T})
     ## a subset of Wes McKinney's algorithm here:
     ##     http://wesmckinney.com/blog/?p=489
     
@@ -1466,11 +1475,10 @@ function groupby(df::DataFrame{ASCIIString}, cols::Vector{ASCIIString})
     ends = [starts[2:end] - 1]
     GroupedDataFrame(df, cols, idx, starts[1:end-1], ends)
 end
-groupby(d::DataFrame{ASCIIString}, cols::ASCIIString, cn) = groupby(d, [cols])
-groupby(d::DataFrame{ASCIIString}, cols) = groupby(d, [cols])
+groupby(d::DataFrame, cols) = groupby(d, [cols])
 
 # add a function curry
-groupby(cols::Vector{ASCIIString}) = x -> groupby(x, cols)
+groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
 
 
 
@@ -1542,8 +1550,6 @@ map(f::Function, x::SubDataFrame) = f(x)
 ## (|)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
-# TODO change colwise(f::Function, ...) to map(f, ...). map() should
-# be equivalent to lapply for a DataFrame.
 colwise(f::Function, d::AbstractDataFrame) = [f(d[idx]) for idx in 1:ncol(d)]
 colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
@@ -1554,7 +1560,7 @@ colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(fns), d)
 colwise(fns::Vector{Function}, d::GroupedDataFrame, cn::Vector{String}) = map(colwise(fns), d)
 colwise(fns::Vector{Function}) = x -> colwise(fns, x)
 
-function colwise{T}(d::AbstractDataFrame{T}, s::Vector{Symbol}, cn::Vector{T})
+function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
     header = [s2 * "_" * string(s1) for s1 in s, s2 in cn][:]
     payload = colwise(map(eval, s), d)
     df = DataFrame()
@@ -1572,11 +1578,10 @@ colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
 # TODO add a way to specify which columns to apply funs to
 # TODO exclude grouping key columns
 # TODO make this faster by applying the header just once.
-colwise{T}(gd::GroupedDataFrame{T}, s::Vector{Symbol}) = rbind(map(x -> colwise(x,s), gd)...)
+colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(x,s), d)...)
 colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
 colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
-colwise(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
 (|)(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
 (|)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
 colnames(d::GroupedDataFrame) = colnames(d.parent)
