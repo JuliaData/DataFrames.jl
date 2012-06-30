@@ -1265,6 +1265,25 @@ function rbind(dfs::DataFrame...)
     Ncol = ncol(dfs[1])
     res = similar(dfs[1], Nrow)
     # TODO fix PooledDataVec columns with different pools.
+    # TODO check to see that the number of columns are the same.
+    # TODO check to see that the colnames are the same.
+    idx = 1
+    for df in dfs
+        for kdx in 1:nrow(df)
+            for jdx in 1:Ncol
+                res[jdx][idx] = df[kdx, jdx]
+            end
+            idx += 1
+        end
+    end
+    res
+end
+
+function rbind(dfs::Vector)   # for a Vector of DataFrame's
+    Nrow = sum(nrow, dfs)
+    Ncol = ncol(dfs[1])
+    res = similar(dfs[1], Nrow)
+    # TODO fix PooledDataVec columns with different pools.
     # TODO check to see that the number of columns are the same and the colnames are the same.
     # TODO check to see that the colnames are the same.
     idx = 1
@@ -1299,9 +1318,81 @@ end
 # summarise(df, :(cat=sum(dog), all=strcat(strs)))
 
 
+function with(d::Associative, ex::Expr)
+    # Note: keys must by symbols
+    replace_symbols(x, d::Dict) = x
+    replace_symbols(e::Expr, d::Dict) = Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
+    function replace_symbols{K,V}(s::Symbol, d::Dict{K,V})
+        if (K == Any || K == Symbol) && has(d, s)
+            :(_D[$expr(:quote,s)])
+        elseif (K == Any || K <: String) && has(d, string(s))
+            :(_D[$string(s)])
+        else
+            s
+        end
+    end
+    ex = replace_symbols(ex, d)
+    global _ex = ex
+    f = @eval (_D) -> $ex
+    f(d)
+end
 
-## function within!(df::AbstractDataFrame, ex::Expr)
-function within!(df, ex::Expr)
+function within!(d::Associative, ex::Expr)
+    # Note: keys must by symbols
+    replace_symbols(x, d::Dict) = x
+    function replace_symbols(e::Expr, d::Dict)
+        if e.head == :(=) # replace left-hand side of assignments:
+            Expr(e.head,
+                 vcat({:(_D[$expr(:quote, e.args[1])])}, map(x -> replace_symbols(x, d), e.args[2:end])),
+                 e.typ)
+        else
+            Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
+        end
+    end
+    function replace_symbols(s::Symbol, d::Dict)
+        if has(d, s)
+            :(_D[$expr(:quote,s)])
+        else
+            s
+        end
+    end
+    ex = replace_symbols(ex, d)
+    f = @eval (_D) -> begin
+        $ex
+        _D
+    end
+    f(d)
+end
+
+function based_on(d::Associative, ex::Expr)
+    # Note: keys must by symbols
+    replace_symbols(x, d::Dict) = x
+    function replace_symbols(e::Expr, d::Dict)
+        if e.head == :(=) # replace left-hand side of assignments:
+            Expr(e.head,
+                 vcat({:(_ND[$(expr(:quote, e.args[1]))])}, map(x -> replace_symbols(x, d), e.args[2:end])),
+                 e.typ)
+        else
+            Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
+        end
+    end
+    function replace_symbols(s::Symbol, d::Dict)
+        if has(d, s)
+            :(_D[$expr(:quote,s)])
+        else
+            s
+        end
+    end
+    ex = replace_symbols(ex, d)
+    f = @eval (_D) -> begin
+        _ND = Dict()
+        $ex
+        _ND
+    end
+    f(d)
+end
+
+function within!(df::AbstractDataFrame, ex::Expr)
     # By-column operation within a DataFrame that allows replacing or adding columns.
     # Returns the transformed DataFrame.
     #   
@@ -1336,9 +1427,8 @@ end
 
 within(x, args...) = within!(copy(x), args...)
 
-function summarise(df::AbstractDataFrame, ex::Expr)
-    # By-column operation within a DataFrame.
-    # Returns a new DataFrame.
+function based_on_f(df::AbstractDataFrame, ex::Expr)
+    # Returns a function for use on an AbstractDataFrame
     
     # helper function to replace symbols in ex with a reference to the
     # appropriate column in a new df
@@ -1362,12 +1452,16 @@ function summarise(df::AbstractDataFrame, ex::Expr)
     # Make a dict of colnames and column positions
     cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
     ex = replace_symbols(ex, cn_dict)
-    global _ex = ex
-    f = @eval (_DF) -> begin
+    @eval (_DF) -> begin
         _col_dict = Dict()
         $ex
         DataFrame(_col_dict)
     end
+end
+function based_on(df::AbstractDataFrame, ex::Expr)
+    # By-column operation within a DataFrame.
+    # Returns a new DataFrame.
+    f = based_on_f(df, ex)
     f(df)
 end
 
@@ -1393,12 +1487,11 @@ function with(df::AbstractDataFrame, ex::Expr)
     f(df)
 end
 
-
 # add function curries to ease pipelining:
 with(e::Expr) = x -> with(x, e)
 within(e::Expr) = x -> within(x, e)
 within!(e::Expr) = x -> within!(x, e)
-summarise(e::Expr) = x -> summarise(x, e)
+based_on(e::Expr) = x -> based_on(x, e)
 
 # TODO add versions of each of these for Dict's
 
@@ -1479,6 +1572,7 @@ groupby(d::DataFrame, cols) = groupby(d, [cols])
 
 # add a function curry
 groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
+groupby(cols) = x -> groupby(x, cols)
 
 
 
@@ -1503,6 +1597,16 @@ end
 function map(f::Function, gd::GroupedDataFrame)
     [f(d) for d in gd]
 end
+## function map(f::Function, gd::GroupedDataFrame)
+##     # preallocate based on the results on the first one
+##     x = f(gd[1])
+##     res = Array(typeof(x), length(gd))
+##     res[1] = x
+##     for idx in 2:length(gd)
+##         res[idx] = f(gd[idx])
+##     end
+##     res
+## end
 
 # with() sweeps along groups and applies with to each group
 function with(gd::GroupedDataFrame, e::Expr)
@@ -1524,29 +1628,36 @@ end
 
 within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
 
-# summarise() sweeps along groups and applies summarise to each group
-function summarise(gd::GroupedDataFrame, ex::Expr)  
-    x = [summarise(d, ex) for d in gd]
-    # There must be a better way to do this.
-    ## idx = [fill(gdx, nrow(x[gdx])) for gdx in 1:length(x)]  # not quite right - an array in an array
-    # In R, it's: rep(1:length(a), sapply(a,length))
-    Nrow = sum(nrow, x)
-    idx = fill(0, Nrow)
+# MAYBE try to get in base?
+function fill(x::Vector, lengths::Vector{Int})
+    if length(x) != length(lengths)
+        error("vector lengths must match")
+    end
+    res = similar(x, sum(lengths))
     i = 1
-    for gdx in 1:length(x)
-        for kdx in 1:nrow(x[gdx])
-            idx[i] = gdx
+    for idx in 1:length(x)
+        tmp = x[idx]
+        for kdx in 1:lengths[idx]
+            res[i] = tmp
             i += 1
         end
     end
+    res
+end
+
+# based_on() sweeps along groups and applies based_on to each group
+function based_on(gd::GroupedDataFrame, ex::Expr)  
+    f = based_on_f(gd.parent, ex)
+    x = [f(d) for d in gd]
+    idx = fill([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
-    resdf = rbind(x...)
-    cbind(keydf, resdf)
+    resdf = rbind(x)
+    cbind!(keydf, resdf)
 end
 
 # default pipelines:
 map(f::Function, x::SubDataFrame) = f(x)
-(|)(x::GroupedDataFrame, e::Expr) = summarise(x, e)   
+(|)(x::GroupedDataFrame, e::Expr) = based_on(x, e)   
 ## (|)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
@@ -1564,7 +1675,8 @@ function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
     header = [s2 * "_" * string(s1) for s1 in s, s2 in cn][:]
     payload = colwise(map(eval, s), d)
     df = DataFrame()
-    # TODO fix this to assign the longest column first
+    # TODO fix this to assign the longest column first or preallocate
+    # based on the maximum length.
     for i in 1:length(header)
         df[header[i]] = payload[i]
     end
@@ -1589,7 +1701,7 @@ colnames(d::GroupedDataFrame) = colnames(d.parent)
 
 # by() convenience function
 by(d::AbstractDataFrame, cols, f::Function) = map(f, groupby(d, cols))
-by(d::AbstractDataFrame, cols, e::Expr) = summarise(groupby(d, cols), e)
+by(d::AbstractDataFrame, cols, e::Expr) = based_on(groupby(d, cols), e)
 by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
 by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
 
