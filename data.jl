@@ -291,15 +291,6 @@ function ref(x::PooledDataVec, ind::Vector{Int})
     PooledDataVec(x.refs[ind], copy(x.pool), x.filter, x.replace, x.replaceVal)
 end
 
-function _find_first(x, v)
-    for i = 1:length(x)
-        if (x[i] == v)
-            return i
-        end
-    end
-    return 0
-end
-
 # assign variants
 # x[3] = "cat"
 function assign{T}(x::DataVec{T}, v::T, i::Int)
@@ -311,7 +302,7 @@ function assign{T}(x::PooledDataVec{T}, v::T, i::Int)
     # note: NA replacement comes for free here
     
     # find the index of v in the pool
-    pool_idx = _find_first(x.pool, v)
+    pool_idx = findfirst(x.pool, v)
     if pool_idx > 0
         # new item is in the pool
         x.refs[i] = pool_idx
@@ -459,13 +450,13 @@ assign{T}(x::PooledDataVec{T}, n::NAtype, rng::Range1) = begin (x.refs[rng] = 0)
 # and similar to and from NA
 function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::T)
     # throw error if fromval isn't in the pool
-    fromidx = _find_first(x.pool, fromval)
+    fromidx = findfirst(x.pool, fromval)
     if fromidx == 0
         error("can't replace a value not in the pool in a PooledDataVec!")
     end
         
     # if toval is in the pool too, use that and remove fromval from the pool
-    toidx = _find_first(x.pool, toval)
+    toidx = findfirst(x.pool, toval)
     if toidx != 0
         x.refs[x.refs .== fromidx] = toidx
         #x.pool[fromidx] = None    TODO: what to do here??
@@ -478,7 +469,7 @@ function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::T)
 end
 replace!(x::PooledDataVec{NAtype}, fromval::NAtype, toval::NAtype) = NA # no-op to deal with warning
 function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::NAtype)
-    fromidx = _find_first(x.pool, fromval)
+    fromidx = findfirst(x.pool, fromval)
     if fromidx == 0
         error("can't replace a value not in the pool in a PooledDataVec!")
     end
@@ -488,7 +479,7 @@ function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::NAtype)
     return NA
 end
 function replace!{T}(x::PooledDataVec{T}, fromval::NAtype, toval::T)
-    toidx = _find_first(x.pool, toval)
+    toidx = findfirst(x.pool, toval)
     # if toval is in the pool, just do the assignment
     if toidx != 0
         x.refs[x.refs .== 0] = toidx
@@ -697,9 +688,9 @@ size(df::DataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("Da
 # get columns by name, position
 # first two return the DataVec
 ref(df::DataFrame, i::Int) = df.columns[i]
-ref{CT}(df::DataFrame{CT}, name::CT) = df.columns[_find_first(df.colnames, name)] # TODO make faster
+ref{CT}(df::DataFrame{CT}, name::CT) = df.columns[findfirst(df.colnames, name)] # TODO make faster
 # these all return another DF
-ref{CT}(df::DataFrame{CT}, names::Vector{CT}) = df[[_find_first(df.colnames, n)::Int for n = names]] # calls the next one
+ref{CT}(df::DataFrame{CT}, names::Vector{CT}) = df[[findfirst(df.colnames, n)::Int for n = names]] # calls the next one
 ref(df::DataFrame, is::Vector{Int}) = DataFrame(df.columns[is], df.colnames[is])
 ref(df::DataFrame, rng::Range1) = DataFrame(df.columns[rng], df.colnames[rng])
 ref(df::DataFrame, pos::Vector{Bool}) = DataFrame(df.columns[pos], df.colnames[pos])
@@ -710,7 +701,7 @@ ref(df::DataFrame, r::Int, rng::Range1) = DataFrame({x[[r]] for x in df.columns[
                                                     df.colnames[rng])
 ref(df::DataFrame, r::Int, cs::Vector{Int}) = DataFrame({x[[r]] for x in df.columns[cs]}, 
                                                         df.colnames[cs])
-ref{CT}(df::DataFrame{CT}, r::Int, cs::Vector{CT}) = df[r, [_find_first(df.colnames, c)::Int for c = cs]]
+ref{CT}(df::DataFrame{CT}, r::Int, cs::Vector{CT}) = df[r, [findfirst(df.colnames, c)::Int for c = cs]]
 ref(df::DataFrame, r::Int, cs::Vector{Bool}) = df[cs][r,:] # possibly slow, but pretty
 
 # 2-D slices
@@ -755,7 +746,7 @@ tail(df::DataFrame) = tail(df, 6)
 # get singletons. TODO: nicer error handling
 # TODO: deal with oddness if row/col types are ints
 ref(df::DataFrame, r::Int, c::Int) = df.columns[c][r]
-ref{CT}(df::DataFrame{CT}, r::Int, cn::CT) = df.columns[_find_first(df.colnames, cn)][r]
+ref{CT}(df::DataFrame{CT}, r::Int, cn::CT) = df.columns[findfirst(df.colnames, cn)][r]
 
 
 # to print a DataFrame, find the max string length of each column
@@ -1029,13 +1020,13 @@ sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cb::Vector{Bool}) = sub(D, rs, [1:nco
 sub{CT}(D::DataFrame{CT}, rng::Range1, cb::Vector{Bool}) = sub(D, [rng], [1:ncol(D)][cb])
 sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, cb::Vector{Bool}) = sub(D, [1:nrow(D)][b], [1:ncol(D)][cb])
 
-sub{CT}(D::DataFrame{CT}, r::Int, c::CT) = sub(D, [r], [_find_first(D.colnames, c)])
-sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, c::CT) = sub(D, rs, [_find_first(D.colnames, c)])
-sub{CT}(D::DataFrame{CT}, rng::Range1, c::CT) = sub(D, [rng], [_find_first(D.colnames, c)])
-sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, c::CT) = sub(D, [1:nrow(D)][b], [_find_first(D.colnames, c)])
+sub{CT}(D::DataFrame{CT}, r::Int, c::CT) = sub(D, [r], [findfirst(D.colnames, c)])
+sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, c::CT) = sub(D, rs, [findfirst(D.colnames, c)])
+sub{CT}(D::DataFrame{CT}, rng::Range1, c::CT) = sub(D, [rng], [findfirst(D.colnames, c)])
+sub{CT}(D::DataFrame{CT}, b::Vector{Bool}, c::CT) = sub(D, [1:nrow(D)][b], [findfirst(D.colnames, c)])
 
 sub{CT}(D::DataFrame{CT}, rs::Vector{Int}, cs::Vector{CT}) =
-    sub(D, rs, [_find_first(D.colnames, c)::Int for c = cs])
+    sub(D, rs, [findfirst(D.colnames, c)::Int for c = cs])
 
 # TODO: subs of subs
 
@@ -1107,7 +1098,7 @@ assign{T}(df::DataFrame, newcol::Vector{T}, icol::Integer) = assign(df, DataVec(
 # df["old"] = replace old columns
 # df["new"] = append new column
 function assign{T}(df::DataFrame{T}, newcol::AbstractDataVec, colname::T)
-    icol = _find_first(df.colnames, colname)
+    icol = findfirst(df.colnames, colname)
     if icol > 0
         # existing
         assign(df, newcol, icol)
@@ -1141,7 +1132,7 @@ function del!(df::DataFrame, icol::Integer)
     end
     df
 end
-del!{CT}(df::DataFrame{CT}, colname::CT) = del!(df, _find_first(colnames(df), colname))
+del!{CT}(df::DataFrame{CT}, colname::CT) = del!(df, findfirst(colnames(df), colname))
 
 # df2 = del(df, 1) new DF, minus vectors
 function del(df::DataFrame, icol::Integer)
@@ -1153,7 +1144,7 @@ function del(df::DataFrame, icol::Integer)
         throw(ArgumentError("Can't delete a non-existent DataFrame column"))
     end
 end
-del{CT}(df::DataFrame{CT}, colname::CT) = del(df, _find_first(colnames(df), colname))
+del{CT}(df::DataFrame{CT}, colname::CT) = del(df, findfirst(colnames(df), colname))
 
 
 #### cbind, rbind, hcat, vcat
