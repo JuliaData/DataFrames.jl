@@ -690,7 +690,10 @@ ref(df::DataFrame, r, c::Vector{Int}) =
     DataFrame({x[r] for x in df.columns[c]}, 
               colnames(df)[c])
 
-# special cases where 1 argument indexes by rows:
+# special cases
+ref(df::DataFrame, r::Int, c::Int) = df[c][r]
+ref(df::DataFrame, r::Int, c) = df[r, index(df.colindex, c)]
+ref(df::DataFrame, r::Int, c::Vector{Int}) = df[[r], c]
 ref(df::DataFrame, dv::AbstractDataVec) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr) = df[with(df, ex), :]  
 ref(df::DataFrame, ex::Expr, c::Int) = df[with(df, ex), c]
@@ -720,9 +723,10 @@ d[:,1]
 d[1:3,1]
 d[10:end,1]
 d[[1,2,3],1]
-## d[d["d1"] .== 1,1]
+d[d["d1"] .== 1,1]
 ## d[DataVec([1:3]),1]
-d[1:3,1]
+d[1,1]
+d[1,1:3]
 d[10:end,1]
 d[1:3,1]
 d[1:3,"d3"]
