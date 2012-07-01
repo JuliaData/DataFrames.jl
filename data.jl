@@ -649,7 +649,7 @@ length(x::SimpleIndex) = x.length
 names(x::SimpleIndex) = nothing
 
 # Abstract DF includes DataFrame and SubDataFrame
-abstract AbstractDataFrame
+abstract AbstractDataFrame <: Associative{Any,Any}
 
 # ## DataFrame - a list of heterogeneous Data vectors with col and row indexs.
 # Columns are a vector, which means that operations that insert/delete columns
@@ -951,7 +951,7 @@ end
 
 # TODO: clever layout in rows
 # TODO: AbstractDataFrame
-function summary(io, df::DataFrame)
+function summary(io, df::AbstractDataFrame)
     for c in 1:ncol(df)
         col = df[c]
         println(io, colnames(df)[c])
@@ -1166,7 +1166,7 @@ del!(df::DataFrame, c::Int) = del!(df, [c])
 del!(df::DataFrame, c) = del!(df, index(df.colindex, c))
 
 # df2 = del(df, 1) new DF, minus vectors
-function del(df::DataFrame, icols::Vector{Int})
+function del(df::AbstractDataFrame, icols::Vector{Int})
     # newcols = setdiff([1:ncol(df)], icols) would make the following a one-liner
     newcols = [1:ncol(df)]
     for i in icols
@@ -1180,8 +1180,9 @@ function del(df::DataFrame, icols::Vector{Int})
     # Note: this does not copy columns.
     df[newcols]
 end
-del(df::DataFrame, i::Int) = del(df, [i])
+del(df::AbstractDataFrame, i::Int) = del(df, [i])
 del(df::DataFrame, c) = del(df, index(df.colindex, c))
+del(df::SubDataFrame, c) = SubDataFrame(del(df.parent, c), df.rows)
 
 
 #### cbind, rbind, hcat, vcat
@@ -1304,9 +1305,12 @@ function rbind(dfs::DataFrame...)
     Nrow = sum(nrow, dfs)
     Ncol = ncol(dfs[1])
     res = similar(dfs[1], Nrow)
-    # TODO fix PooledDataVec columns with different pools.
-    # TODO check to see that the number of columns are the same and the colnames are the same.
-    # TODO check to see that the colnames are the same.
+    for idx in 1:length(dfs)-1
+        if colnames(dfs[1]) != colnames(dfs[idx])
+            error("DataFrame column names must match.")
+        end
+    end
+    # TODO fix PooledDataVec columns with different pools. Maybe that's assign's problem.
     idx = 1
     for df in dfs
         for kdx in 1:nrow(df)
@@ -1439,7 +1443,6 @@ within(e::Expr) = x -> within(x, e)
 within!(e::Expr) = x -> within!(x, e)
 summarise(e::Expr) = x -> summarise(x, e)
 
-# TODO add versions of each of these for Dict's
 
 # allow pipelining straight to an expression using within!:
 (|)(x::AbstractDataFrame, e::Expr) = within!(x, e)
@@ -1617,15 +1620,18 @@ function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
     end
     df
 end
+## function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
+##     header = [s2 * "_" * string(s1) for s1 in s, s2 in cn][:]
+##     payload = colwise(map(eval, s), d)
+##     DataFrame(payload, header)
+## end
 colwise(d::AbstractDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::AbstractDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
 colwise(d::AbstractDataFrame, s::Symbol) = colwise(d, [s], colnames(d))
 colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
 
-# TODO add a way to specify which columns to apply funs to
-# TODO exclude grouping key columns
 # TODO make this faster by applying the header just once.
-colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(x,s), d)...)
+colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(del(x, d.cols),s), d)...)
 colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
 colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
