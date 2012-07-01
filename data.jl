@@ -849,22 +849,20 @@ function show(io, df::AbstractDataFrame)
         colNames = colnames(df)
     end
     
-    colWidths = [max(length(string(colNames[c])), maxShowLength(df[c])) for c = 1:ncol(df)]
+    colWidths = [max(length(string(colNames[c])), maxShowLength(df[rowrng,c])) for c = 1:ncol(df)]
 
     header = strcat(" " ^ (rownameWidth+1),
                     join([lpad(string(colNames[i]), colWidths[i]+1, " ") for i = 1:ncol(df)], ""))
     println(io, header)
 
-    k = 1
-    for i = rowrng
-        rowname = rpad(string(rowNames[k]), rownameWidth+1, " ")
+    for i = 1:length(rowrng)
+        rowname = rpad(string(rowNames[i]), rownameWidth+1, " ")
         line = strcat(rowname,
-                      join([lpad(string(df[i,c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
+                      join([lpad(string(df[rowrng[i],c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
         println(io, line)
         if i == 10 && N > 20
             println(io, "  :")
         end
-        k += 1
     end
 end
 
