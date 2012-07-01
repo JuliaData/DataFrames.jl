@@ -609,6 +609,8 @@ Index(x::Vector) = Index(dict(tuple(x...), tuple([1:length(x)]...)), x)
 Index() = Index(Dict(), {})
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
+has(x::Index, key) = has(x.lookup, key)
+keys(x::Index) = names(x)
 function push(x::Index, nm)
     x.lookup[nm] = length(x) + 1
     push(x.names, nm)
@@ -700,8 +702,18 @@ ref(df::DataFrame, ex::Expr, c::Int) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c::Vector{Int}) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c) = df[with(df, ex), c]
 
-
-
+# Associative methods:
+has(df::DataFrame, key) = has(df.colindex, key)
+get(df::DataFrame, key, default) = has(df, key) ? df[key] : default
+keys(df::DataFrame) = keys(df.colindex)
+values(df::DataFrame, key) = keys(df.colindex)
+del_all(df::DataFrame) = DataFrame()
+# Collection methods:
+start(df::AbstractDataFrame) = 1
+done(df::AbstractDataFrame, i) = i > ncol(df)
+next(df::AbstractDataFrame, i) = (df[i], i + 1)
+numel(df::AbstractDataFrame) = ncol(df)
+isempty(df::AbstractDataFrame) = ncol(df) == 0
 
 # testing...
 srand(1)
@@ -816,9 +828,16 @@ tail(df::DataFrame) = tail(df, 6)
 # then row-by-row print with an appropriate buffer
 maxShowLength(v::Vector) = length(v) > 0 ? max([length(string(x)) for x = v]) : 0
 maxShowLength(dv::AbstractDataVec) = max([length(string(x)) for x = dv])
-function show(io, df::DataFrame)
+function show(io, df::AbstractDataFrame)
+    println(io, "$(typeof(df))  $(size(df))")
+    N = nrow(df)
+    if N <= 20
+        rowrng = 1:min(20,N)
+    else
+        rowrng = [1:10, N-9:N]
+    end
     # we don't have row names -- use indexes
-    rowNames = [sprintf("[%d,]", r) for r = 1:nrow(df)]
+    rowNames = [sprintf("[%d,]", r) for r = rowrng]
     
     rownameWidth = maxShowLength(rowNames)
     
@@ -830,17 +849,22 @@ function show(io, df::DataFrame)
         colNames = colnames(df)
     end
     
-    colWidths = [max(length(string(colNames[c])), maxShowLength(df.columns[c])) for c = 1:ncol(df)]
+    colWidths = [max(length(string(colNames[c])), maxShowLength(df[c])) for c = 1:ncol(df)]
 
     header = strcat(" " ^ (rownameWidth+1),
                     join([lpad(string(colNames[i]), colWidths[i]+1, " ") for i = 1:ncol(df)], ""))
     println(io, header)
-    
-    for i = 1:min(100, nrow(df)) # TODO
-        rowname = rpad(string(rowNames[i]), rownameWidth+1, " ")
+
+    k = 1
+    for i = rowrng
+        rowname = rpad(string(rowNames[k]), rownameWidth+1, " ")
         line = strcat(rowname,
                       join([lpad(string(df[i,c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
         println(io, line)
+        if i == 10 && N > 20
+            println(io, "  :")
+        end
+        k += 1
     end
 end
 
@@ -1076,6 +1100,14 @@ head(df::AbstractDataFrame) = head(df, 6)
 tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
 tail(df::AbstractDataFrame) = tail(df, 6)
 
+# Associative methods:
+has(df::SubDataFrame, key) = has(df.colindex, key)
+get(df::SubDataFrame, key, default) = has(df, key) ? df[key] : default
+keys(df::SubDataFrame) = keys(df.colindex)
+values(df::SubDataFrame, key) = keys(df.colindex)
+del_all(df::SubDataFrame) = DataFrame()
+
+
 
 # DF column operations
 ######################
@@ -1245,8 +1277,6 @@ function cbind!(df1::DataFrame, df2::DataFrame)
     if !nointer(colnames(df1), newcolnames)
         error("can't cbind dataframes with overlapping column names!")
     end
-    global _df1 = df1
-    global _df2 = df2
     df1.colindex = Index(concat(colnames(df1), colnames(df2)))
     df1.columns = [df1.columns, df2.columns]
     df1
@@ -1374,7 +1404,6 @@ function summarise(df::AbstractDataFrame, ex::Expr)
     # Make a dict of colnames and column positions
     cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
     ex = replace_symbols(ex, cn_dict)
-    global _ex = ex
     f = @eval (_DF) -> begin
         _col_dict = Dict()
         $ex
@@ -1503,8 +1532,16 @@ length(gd::GroupedDataFrame) = length(gd.starts)
 ref(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]]) 
 
 function show(io, gd::GroupedDataFrame)
-    println(io, typeof(gd), " ", length(gd.starts), " groups in DataFrame:")
-    show(io, gd.parent)
+    N = length(gd)
+    println(io, "$(typeof(gd))  $N groups with keys: $(gd.cols)")
+    println(io, "First Group:")
+    show(io, gd[1])
+    if N > 1
+        println(io, "       :")
+        println(io, "       :")
+        println(io, "Last Group:")
+        show(io, gd[N])
+    end
 end
 
 #
