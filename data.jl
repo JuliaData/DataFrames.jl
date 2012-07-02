@@ -675,6 +675,9 @@ DataFrame(cs::Vector) = DataFrame(cs, SimpleIndex(length(cs)))
 DataFrame(cs::Vector, cn::Vector) = DataFrame(cs, Index(cn))
 # TODO expand the following to allow unequal lengths that are rep'd to the longest length.
 DataFrame(ex::Expr) = within(DataFrame(), ex)
+DataFrame{T}(x::Array{T,2}, cn::Vector) = DataFrame({x[:,i] for i in 1:length(cn)}, cn)
+DataFrame{T}(x::Array{T,2}) = DataFrame(x, [strcat("x", i) for i in 1:size(x,2)])
+
 
 colnames(df::DataFrame) = names(df.colindex)
 ncol(df::DataFrame) = length(df.colindex)
@@ -683,16 +686,6 @@ names(df::AbstractDataFrame) = colnames(df)
 size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 size(df::AbstractDataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
 length(df::AbstractDataFrame) = ncol(df)
-
-ref(df::DataFrame, c) = df[index(df.colindex, c)]
-ref(df::DataFrame, c::Integer) = df.columns[c]
-ref(df::DataFrame, c::Vector{Int}) = DataFrame(df.columns[c], colnames(df)[c])
-
-ref(df::DataFrame, r, c) = df[r, index(df.colindex, c)]
-ref(df::DataFrame, r, c::Int) = df[c][r]
-ref(df::DataFrame, r, c::Vector{Int}) =
-    DataFrame({x[r] for x in df.columns[c]}, 
-              colnames(df)[c])
 
 # special cases
 ref(df::DataFrame, r::Int, c::Int) = df[c][r]
@@ -703,6 +696,19 @@ ref(df::DataFrame, ex::Expr) = df[with(df, ex), :]
 ref(df::DataFrame, ex::Expr, c::Int) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c::Vector{Int}) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c) = df[with(df, ex), c]
+
+# columns
+ref(df::DataFrame, c) = df[index(df.colindex, c)]
+ref(df::DataFrame, c::Integer) = df.columns[c]
+ref(df::DataFrame, c::Vector{Int}) = DataFrame(df.columns[c], colnames(df)[c])
+
+# rows and columns
+ref(df::DataFrame, r, c) = df[r, index(df.colindex, c)]
+ref(df::DataFrame, r, c::Int) = df[c][r]
+ref(df::DataFrame, r, c::Vector{Int}) =
+    DataFrame({x[r] for x in df.columns[c]}, 
+              colnames(df)[c])
+
 
 # Associative methods:
 has(df::DataFrame, key) = has(df.colindex, key)
@@ -1169,7 +1175,7 @@ del!(df::DataFrame, c::Int) = del!(df, [c])
 del!(df::DataFrame, c) = del!(df, index(df.colindex, c))
 
 # df2 = del(df, 1) new DF, minus vectors
-function del(df::AbstractDataFrame, icols::Vector{Int})
+function del(df::DataFrame, icols::Vector{Int})
     # newcols = setdiff([1:ncol(df)], icols) would make the following a one-liner
     newcols = [1:ncol(df)]
     for i in icols
@@ -1183,7 +1189,7 @@ function del(df::AbstractDataFrame, icols::Vector{Int})
     # Note: this does not copy columns.
     df[newcols]
 end
-del(df::AbstractDataFrame, i::Int) = del(df, [i])
+del(df::DataFrame, i::Int) = del(df, [i])
 del(df::DataFrame, c) = del(df, index(df.colindex, c))
 del(df::SubDataFrame, c) = SubDataFrame(del(df.parent, c), df.rows)
 
