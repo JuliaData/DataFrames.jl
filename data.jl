@@ -698,7 +698,7 @@ values(x::NamedArray) = x.data
 # Collection methods:
 start(x::NamedArray) = 1
 done(x::NamedArray, i) = i > length(x.data)
-next(x::NamedArray, i) = (x[i], i + 1)
+next(x::NamedArray, i) = ((x.idx.names[i], x[i]), i + 1)
 numel(x::NamedArray) = length(x.data)
 isempty(x::NamedArray) = length(x.data) == 0
 
@@ -837,7 +837,7 @@ function DataFrame{K,V}(d::Associative{K,V})
         if length(v) == Nrow
             df[k] = v  
         elseif rem(Nrow, length(v)) == 0    # Nrow is a multiple of length(v)
-            df[k] = rep(v, Nrow / length(v))
+            df[k] = vcat(fill(v, div(Nrow, length(v)))...)
         else
             println("Warning: Column $(string(k)) ignored: mismatched column lengths")
         end
