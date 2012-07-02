@@ -1377,31 +1377,40 @@ end
 
 function based_on(d::Associative, ex::Expr)
     # Note: keys must by symbols
-    replace_symbols(x, d::Dict) = x
-    function replace_symbols(e::Expr, d::Dict)
+    replace_symbols(x, d::Associative) = x
+    function replace_symbols{K,V}(e::Expr, d::Associative{K,V})
         if e.head == :(=) # replace left-hand side of assignments:
+            if (K == Symbol || (K == Any && isa(keys(d)[1], Symbol)))
+                exref = expr(:quote, e.args[1])
+            else
+                exref = string(e.args[1])
+            end
             Expr(e.head,
-                 vcat({:(_ND[$(expr(:quote, e.args[1]))])}, map(x -> replace_symbols(x, d), e.args[2:end])),
+                 vcat({:(_ND[$exref])}, map(x -> replace_symbols(x, d), e.args[2:end])),
                  e.typ)
         else
             Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
         end
     end
-    function replace_symbols(s::Symbol, d::Dict)
-        if has(d, s)
+    function replace_symbols{K,V}(s::Symbol, d::Associative{K,V})
+        if (K == Any || K == Symbol) && has(d, s)
             :(_D[$expr(:quote,s)])
+        elseif (K == Any || K <: String) && has(d, string(s))
+            :(_D[$string(s)])
         else
             s
         end
     end
     ex = replace_symbols(ex, d)
     f = @eval (_D) -> begin
-        _ND = Dict()
+        _ND = similar(_D)
         $ex
         _ND
     end
     f(d)
 end
+
+similar{K,V}(d::Dict{K,V}) = Dict{K,V}(length(d.keys))
 
 function within!(df::AbstractDataFrame, ex::Expr)
     # By-column operation within a DataFrame that allows replacing or adding columns.
