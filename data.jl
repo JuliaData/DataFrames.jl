@@ -673,6 +673,8 @@ end
 # constructors
 DataFrame(cs::Vector) = DataFrame(cs, SimpleIndex(length(cs)))
 DataFrame(cs::Vector, cn::Vector) = DataFrame(cs, Index(cn))
+# TODO expand the following to allow unequal lengths that are rep'd to the longest length.
+DataFrame(ex::Expr) = within(DataFrame(), ex)
 
 colnames(df::DataFrame) = names(df.colindex)
 ncol(df::DataFrame) = length(df.colindex)
@@ -1132,6 +1134,7 @@ function assign(df::DataFrame, newcol::AbstractDataVec, colname)
         assign(df, newcol, icol)
     else
         # new
+        # TODO check lengths
         push(df.colindex, colname)
         push(df.columns, newcol)
     end
@@ -1354,6 +1357,9 @@ function within!(df, ex::Expr)
     replace_symbols(x, syms::Dict) = x
     function replace_symbols(e::Expr, syms::Dict)
         if e.head == :(=) # replace left-hand side of assignments:
+            if !has(syms, string(e.args[1]))
+                syms[string(e.args[1])] = length(syms) + 1
+            end
             Expr(e.head,
                  vcat({:(_DF[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end])),
                  e.typ)
@@ -1389,6 +1395,9 @@ function summarise(df::AbstractDataFrame, ex::Expr)
     replace_symbols(x, syms::Dict) = x
     function replace_symbols(e::Expr, syms::Dict)
         if e.head == :(=) # replace left-hand side of assignments:
+            if !has(syms, string(e.args[1]))
+                syms[string(e.args[1])] = length(syms) + 1
+            end
             Expr(e.head,
                  vcat({:(_col_dict[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end])),
                  e.typ)
