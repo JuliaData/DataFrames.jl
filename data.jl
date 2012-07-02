@@ -648,6 +648,60 @@ SimpleIndex() = SimpleIndex(0)
 length(x::SimpleIndex) = x.length
 names(x::SimpleIndex) = nothing
 
+
+type NamedArray <: Associative{Any,Any}
+    data::Vector{Any} 
+    idx::AbstractIndex
+    function NamedArray(data::Vector, idx::AbstractIndex)
+        if length(idx) != length(data)
+            error("index/names must be the same length as the data")
+        end
+        new(data, idx)
+    end
+end
+NamedArray() = NamedArray({}, Index({}))
+
+length(x::NamedArray) = length(x.idx)
+names(x::NamedArray) = names(x.idx)
+
+ref(x::NamedArray, c) = x[index(x.idx, c)]
+ref(x::NamedArray, c::Integer) = x.data[c]
+ref(x::NamedArray, c::Vector{Int}) = NamedArray(x.data[c], names(x)[c])
+
+function assign(x::NamedArray, newdata, ipos::Integer)
+    if ipos > 0 && ipos <= length(x)
+        x.data[ipos] = newdata
+    else
+        throw(ArgumentError("Can't replace a non-existent array position"))
+    end
+    x
+end
+function assign(x::NamedArray, newdata, name)
+    ipos = get(x.idx.lookup, name, 0)
+    if ipos > 0
+        # existing
+        assign(x, newdata, ipos)
+    else
+        # new
+        push(x.idx, name)
+        push(x.data, newdata)
+    end
+    x
+end
+
+
+# Associative methods:
+has(x::NamedArray, key) = has(x.idx, key)
+get(x::NamedArray, key, default) = has(x, key) ? x[key] : default
+keys(x::NamedArray) = keys(x.idx)
+values(x::NamedArray) = x.data
+# Collection methods:
+start(x::NamedArray) = 1
+done(x::NamedArray, i) = i > length(x.data)
+next(x::NamedArray, i) = (x[i], i + 1)
+numel(x::NamedArray) = length(x.data)
+isempty(x::NamedArray) = length(x.data) == 0
+
 # Abstract DF includes DataFrame and SubDataFrame
 abstract AbstractDataFrame <: Associative{Any,Any}
 
@@ -714,7 +768,7 @@ ref(df::DataFrame, r, c::Vector{Int}) =
 has(df::DataFrame, key) = has(df.colindex, key)
 get(df::DataFrame, key, default) = has(df, key) ? df[key] : default
 keys(df::DataFrame) = keys(df.colindex)
-values(df::DataFrame, key) = keys(df.colindex)
+values(df::DataFrame) = df.columns
 del_all(df::DataFrame) = DataFrame()
 # Collection methods:
 start(df::AbstractDataFrame) = 1
@@ -775,13 +829,15 @@ function DataFrame{K,V}(d::Associative{K,V})
     keymaxlen = keys(d)[maxpos]
     Nrow = length(d[keymaxlen])
     # Start with a blank DataFrame
-    df = K == Any ? DataFrame() : DataFrame(K)   # kludgy
+    df = DataFrame() 
     # Assign the longest column to set the overall nrows.
     df[keymaxlen] = d[keymaxlen]
     # Now assign them all.
     for (k,v) in d
-        if contains([1,Nrow], length(v))
+        if length(v) == Nrow
             df[k] = v  
+        elseif rem(Nrow, length(v)) == 0    # Nrow is a multiple of length(v)
+            df[k] = rep(v, Nrow / length(v))
         else
             println("Warning: Column $(string(k)) ignored: mismatched column lengths")
         end
