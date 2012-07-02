@@ -728,7 +728,7 @@ end
 DataFrame(cs::Vector) = DataFrame(cs, SimpleIndex(length(cs)))
 DataFrame(cs::Vector, cn::Vector) = DataFrame(cs, Index(cn))
 # TODO expand the following to allow unequal lengths that are rep'd to the longest length.
-DataFrame(ex::Expr) = within(DataFrame(), ex)
+DataFrame(ex::Expr) = summarise(DataFrame(), ex)
 DataFrame{T}(x::Array{T,2}, cn::Vector) = DataFrame({x[:,i] for i in 1:length(cn)}, cn)
 DataFrame{T}(x::Array{T,2}) = DataFrame(x, [strcat("x", i) for i in 1:size(x,2)])
 
@@ -830,9 +830,6 @@ function DataFrame{K,V}(d::Associative{K,V})
     Nrow = length(d[keymaxlen])
     # Start with a blank DataFrame
     df = DataFrame() 
-    # Assign the longest column to set the overall nrows.
-    df[keymaxlen] = d[keymaxlen]
-    # Now assign them all.
     for (k,v) in d
         if length(v) == Nrow
             df[k] = v  
@@ -1191,12 +1188,14 @@ assign{T}(df::DataFrame, newcol::Vector{T}, icol::Integer) = assign(df, DataVec(
 # df["new"] = append new column
 function assign(df::DataFrame, newcol::AbstractDataVec, colname)
     icol = get(df.colindex.lookup, colname, 0)
+    if length(newcol) != nrow(df) && nrow(df) != 0
+        error("length of data doesn't match the number of rows.")
+    end
     if icol > 0
         # existing
         assign(df, newcol, icol)
     else
         # new
-        # TODO check lengths
         push(df.colindex, colname)
         push(df.columns, newcol)
     end
@@ -1478,7 +1477,7 @@ function summarise(df::AbstractDataFrame, ex::Expr)
     cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
     ex = replace_symbols(ex, cn_dict)
     f = @eval (_DF) -> begin
-        _col_dict = Dict()
+        _col_dict = NamedArray()
         $ex
         DataFrame(_col_dict)
     end
