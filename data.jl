@@ -1348,8 +1348,15 @@ function within!(d::Associative, ex::Expr)
         if e.head == :(=) # replace left-hand side of assignments:
             if (K == Symbol || (K == Any && isa(keys(d)[1], Symbol)))
                 exref = expr(:quote, e.args[1])
+                if !has(d, e.args[1]) # Dummy assignment to reserve a slot.
+                                      # I'm not sure how expensive this is.
+                    d[e.args[1]] = values(d)[1]
+                end
             else
                 exref = string(e.args[1])
+                if !has(d, exref) # dummy assignment to reserve a slot
+                    d[exref] = values(d)[1]
+                end
             end
             Expr(e.head,
                  vcat({:(_D[$exref])}, map(x -> replace_symbols(x, d), e.args[2:end])),
@@ -1382,8 +1389,15 @@ function based_on(d::Associative, ex::Expr)
         if e.head == :(=) # replace left-hand side of assignments:
             if (K == Symbol || (K == Any && isa(keys(d)[1], Symbol)))
                 exref = expr(:quote, e.args[1])
+                if !has(d, e.args[1]) # Dummy assignment to reserve a slot.
+                                      # I'm not sure how expensive this is.
+                    d[e.args[1]] = values(d)[1]
+                end
             else
                 exref = string(e.args[1])
+                if !has(d, exref) # dummy assignment to reserve a slot
+                    d[exref] = values(d)[1]
+                end
             end
             Expr(e.head,
                  vcat({:(_ND[$exref])}, map(x -> replace_symbols(x, d), e.args[2:end])),
