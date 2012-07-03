@@ -609,6 +609,31 @@ Index(x::Vector) = Index(dict(tuple(x...), tuple([1:length(x)]...)), x)
 Index() = Index(Dict(), {})
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
+copy(x::Index) = Index(copy(x.lookup), copy(x.names))
+
+function names!(x::Index, nm::Vector)
+    if length(nm) != length(x)
+        error("lengths don't match.")
+    end
+    x.names = nm
+end
+
+function replace_names!(x::Index, from::Vector, to::Vector)
+    if length(from) != length(to)
+        error("lengths of from and to don't match.")
+    end
+    for idx in 1:length(from)
+        if has(x, from[idx]) && !has(x, to[idx])
+            x.lookup[to[idx]] = x.lookup[from[idx]]
+            x.names[x.lookup[from[idx]]] = to[idx]
+            del(x.lookup, from[idx])
+        end
+    end
+    x.names
+end
+replace_names!(x::Index, from, to) = replace_names!(copy(x), [from], [to])
+replace_names(x::Index, from, to) = replace_names!(copy(x), from, to)
+
 has(x::Index, key) = has(x.lookup, key)
 keys(x::Index) = names(x)
 function push(x::Index, nm)
@@ -734,6 +759,10 @@ DataFrame{T}(x::Array{T,2}) = DataFrame(x, [strcat("x", i) for i in 1:size(x,2)]
 
 
 colnames(df::DataFrame) = names(df.colindex)
+names!(df::DataFrame, vals) = names!(df.colindex, vals)
+colnames!(df::DataFrame, vals) = names!(df.colindex, vals)
+replace_names!(df::DataFrame, from, to) = replace_names!(df.colindex, from, to)
+replace_names(df::DataFrame, from, to) = replace_names(df.colindex, from, to)
 ncol(df::DataFrame) = length(df.colindex)
 nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
 names(df::AbstractDataFrame) = colnames(df)
