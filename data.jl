@@ -574,6 +574,11 @@ end
 show(io, x::AbstractDataVec) = show_comma_array(io, x, '[', ']') 
 
 # TODO: vectorizable math functions like sqrt, sin, trunc, etc., which should return a DataVec{T}
+# not sure if this is the best approach, but works for a demo
+function log{T}(x::DataVec{T})
+    newx = log(x.data)
+    DataVec(newx, x.na, x.filter, x.replace, convert(eltype(newx), x.replaceVal))
+end
 
 # TODO: vectorizable comparison operators like > which should return a DataVec{Bool}
 
@@ -1384,6 +1389,8 @@ function with(df::AbstractDataFrame, ex::Expr)
     f(df)
 end
 
+with(df::AbstractDataFrame, s::Symbol) = df[string(s)]
+    
 
 # add function curries to ease pipelining:
 with(e::Expr) = x -> with(x, e)
