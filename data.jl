@@ -1760,14 +1760,28 @@ const letters = split("abcdefghijklmnopqrstuvwxyz", "")
 const LETTERS = split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "")
 
 
-setdiff(a::Vector, b::Vector) = elements(Set(a...) - Set(b...))
-
 ##
 ## Reshaping
 ##
 
+
+# slow, but maintains order and seems to work:
+function _setdiff(a::Vector, b::Vector)
+    idx = Int[]
+    for i in 1:length(a)
+        if !contains(b, a[i])
+            push(idx, i)
+        end
+    end
+    a[idx]
+end
+
+## Issue: this doesn't maintain the order in a:
+## setdiff(a::Vector, b::Vector) = elements(Set(a...) - Set(b...))
+
+
 function stack(df::AbstractDataFrame, icols::Vector{Int})
-    remainingcols = setdiff([1:ncol(df)], icols)
+    remainingcols = _setdiff([1:ncol(df)], icols)
     res = rbind([insert(df[[i, remainingcols]], 1, colnames(df)[i], "key") for i in icols]...)
     replace_names!(res, colnames(res)[2], "value")
     res 
