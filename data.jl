@@ -1268,13 +1268,7 @@ del!(df::DataFrame, c) = del!(df, index(df.colindex, c))
 
 # df2 = del(df, 1) new DF, minus vectors
 function del(df::DataFrame, icols::Vector{Int})
-    # newcols = setdiff([1:ncol(df)], icols) would make the following a one-liner
-    newcols = [1:ncol(df)]
-    for i in icols
-        if contains(newcols, i)
-            del(newcols, findfirst(newcols, i))
-        end
-    end
+    newcols = _setdiff([1:ncol(df)], icols) 
     if length(newcols) == 0
         throw(ArgumentError("Can't delete a non-existent DataFrame column"))
     end
