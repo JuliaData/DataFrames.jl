@@ -631,7 +631,7 @@ function replace_names!(x::Index, from::Vector, to::Vector)
     end
     x.names
 end
-replace_names!(x::Index, from, to) = replace_names!(copy(x), [from], [to])
+replace_names!(x::Index, from, to) = replace_names!(x, [from], [to])
 replace_names(x::Index, from, to) = replace_names!(copy(x), from, to)
 
 has(x::Index, key) = has(x.lookup, key)
@@ -806,6 +806,14 @@ next(df::AbstractDataFrame, i) = (df[i], i + 1)
 numel(df::AbstractDataFrame) = ncol(df)
 isempty(df::AbstractDataFrame) = ncol(df) == 0
 
+function insert(df::DataFrame, index::Integer, item, name)
+    @assert 0 < index <= ncol(df) + 1
+    df = shallowcopy(df)
+    df[name] = item
+    # rearrange:
+    df[[1:index-1, end, index:end-1]]
+end
+
 # testing...
 srand(1)
 d1 = PooledDataVec(randi(3,20))
@@ -876,7 +884,7 @@ DataFrame() = DataFrame({}, {})
 
 # copy of a data frame does a deep copy
 copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df))
-
+shallowcopy(df::DataFrame) = DataFrame(df.columns, colnames(df))
 
 # dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
 # changing the in one df can break the other.
@@ -1750,3 +1758,17 @@ by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
 ##
 const letters = split("abcdefghijklmnopqrstuvwxyz", "")
 const LETTERS = split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "")
+
+
+setdiff(a::Vector, b::Vector) = elements(Set(a...) - Set(b...))
+
+##
+## Reshaping
+##
+
+function stack(df::AbstractDataFrame, icols::Vector{Int})
+    remainingcols = setdiff([1:ncol(df)], icols)
+    res = rbind([insert(df[[i, remainingcols]], 1, colnames(df)[i], "key") for i in icols]...)
+    replace_names!(res, colnames(res)[2], "value")
+    res 
+end
