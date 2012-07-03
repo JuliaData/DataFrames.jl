@@ -1780,3 +1780,28 @@ function stack(df::AbstractDataFrame, icols::Vector{Int})
     replace_names!(res, colnames(res)[2], "value")
     res 
 end
+
+function unstack(df::AbstractDataFrame, ikey::Int, ivalue::Int, irefkey::Int)
+    keycol = PooledDataVec(df[ikey])
+    valuecol = df[ivalue]
+    refkeycol = PooledDataVec(df[irefkey])
+    remainingcols = _setdiff([1:ncol(df)], [ikey, ivalue])
+    Nrow = length(refkeycol.pool)
+    Ncol = length(keycol.pool)
+    # TODO make fillNA(type, length) 
+    payload = DataFrame({DataVec([fill(valuecol[1],Nrow)], fill(true, Nrow))  for i in 1:Ncol}, map(string, keycol.pool))
+    nowarning = true 
+    for k in 1:nrow(df)
+        j = int(keycol.refs[k])
+        i = int(refkeycol.refs[k])
+        if i > 0 && j > 0
+            if nowarning && !isna(payload[j][i]) 
+                println("Warning: duplicate entries in unstack.")
+                nowarning = false
+            end
+            payload[j][i]  = valuecol[k]
+        end
+    end
+    insert(payload, 1, refkeycol.pool, colnames(df)[irefkey])
+end
+
