@@ -684,7 +684,7 @@ type NamedArray <: Associative{Any,Any}
         new(data, idx)
     end
 end
-NamedArray() = NamedArray({}, Index({}))
+NamedArray() = NamedArray({}, Index())
 
 length(x::NamedArray) = length(x.idx)
 names(x::NamedArray) = names(x.idx)
@@ -880,7 +880,7 @@ function DataFrame{K,V}(d::Associative{K,V})
 end
 
 # Blank DataFrame
-DataFrame() = DataFrame({}, {})
+DataFrame() = DataFrame({}, Index())
 
 # copy of a data frame does a deep copy
 copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df))
@@ -1615,6 +1615,8 @@ function groupby{T}(df::DataFrame, cols::Vector{T})
         # TODO if ngroups is really big, shrink it
     end
     (idx, starts) = groupsort_indexer(x, ngroups)
+    # Remove zero-length groupings
+    starts = _uniqueofsorted(starts) 
     ends = [starts[2:end] - 1]
     GroupedDataFrame(df, cols, idx, starts[1:end-1], ends)
 end
@@ -1623,7 +1625,32 @@ groupby(d::DataFrame, cols) = groupby(d, [cols])
 # add a function curry
 groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
 
+function unique(x::Vector)
+    idx = fill(true, length(x))
+    d = Dict()
+    d[x[1]] = true
+    for i = 2:length(x)
+        if has(d, x[i])
+            idx[i] = false
+        else
+            d[x[i]] = true
+        end
+    end
+    x[idx]
+end
 
+function _uniqueofsorted(x::Vector)
+    idx = fill(true, length(x))
+    lastx = x[1]
+    for i = 2:length(x)
+        if lastx == x[i]
+            idx[i] = false
+        else
+            lastx = x[i]
+        end
+    end
+    x[idx]
+end
 
 start(gd::GroupedDataFrame) = 1
 next(gd::GroupedDataFrame, state::Int) = 
@@ -1732,6 +1759,8 @@ colwise(d::AbstractDataFrame, s::Symbol) = colwise(d, [s], colnames(d))
 colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
 
 # TODO make this faster by applying the header just once.
+# BUG zero-rowed groupings cause problems here, because a sum of a zero-length
+# DataVec is 0 (not 0.0).
 colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(del(x, d.cols),s), d)...)
 colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
@@ -1805,3 +1834,32 @@ function unstack(df::AbstractDataFrame, ikey::Int, ivalue::Int, irefkey::Int)
     insert(payload, 1, refkeycol.pool, colnames(df)[irefkey])
 end
 
+function paste{T<:String}(s::Union(Vector{T},T)...)
+    sa = {s...}
+    N = max(length, sa)
+    res = fill("", N)
+    for i in 1:length(sa)
+        if length(sa[i]) == N
+            for j = 1:N
+                res[j] = strcat(res[j], sa[i][j])
+            end
+        elseif length(sa[i]) == 1
+            for j = 1:N
+                res[j] = strcat(res[j], sa[i][1])
+            end
+        end
+    end
+    res
+end
+
+function cut{T}(x::Vector{T}, breaks::Vector{T})
+    refs = fill(uint16(0), length(x))
+    for i in 1:length(x)
+        refs[i] = searchsorted(breaks, x[i])
+    end
+    from = map(string,[min(x), breaks])
+    to = map(string,[breaks, max(x)])
+    pool = paste(["[", fill("(", length(breaks))], from, ",", to, "]")
+    PooledDataVec(refs, pool, false, false, "")
+end
+cut(x::Vector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
