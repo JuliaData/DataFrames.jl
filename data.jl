@@ -74,20 +74,28 @@ function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)
     newpool = Array(T, 0)
     poolref = Dict{T,Uint16}(0)
     maxref = 0
-    
+
+    # loop through once to fill the dict
+    for i = 1:length(d)
+        if !m[i]
+            poolref[d[i]] = 0
+        end
+    end
+
+    # fill positions in poolref
+    newpool = sort(keys(poolref))
+    i = 1
+    for p in newpool 
+        poolref[p] = i
+        i += 1
+    end
+
+    # fill in newrefs
     for i = 1:length(d)
         if m[i]
             newrefs[i] = 0
         else
-            existing = get(poolref, d[i], 0)
-            if existing == 0
-                maxref += 1
-                poolref[d[i]] = maxref 
-                push(newpool, d[i])
-                newrefs[i] = maxref
-            else
-                newrefs[i] = existing
-            end
+            newrefs[i] = poolref[d[i]]
         end
     end
     PooledDataVec(newrefs, newpool, f, r, v)
