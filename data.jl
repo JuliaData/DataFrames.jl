@@ -928,12 +928,14 @@ _string(x) = sprint(showcompact, x)
 maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) : 0
 maxShowLength(dv::AbstractDataVec) = max([length(_string(x)) for x = dv])
 function show(io, df::AbstractDataFrame)
+    ## TODO use alignment() like print_matrix in show.jl.
     println(io, "$(typeof(df))  $(size(df))")
     N = nrow(df)
-    if N <= 20
-        rowrng = 1:min(20,N)
+    Nmx = 20   # maximum head and tail lengths
+    if N <= 2Nmx
+        rowrng = 1:min(2Nmx,N)
     else
-        rowrng = [1:10, N-9:N]
+        rowrng = [1:Nmx, N-Nmx+1:N]
     end
     # we don't have row names -- use indexes
     rowNames = [sprintf("[%d,]", r) for r = rowrng]
@@ -959,7 +961,7 @@ function show(io, df::AbstractDataFrame)
         line = strcat(rowname,
                       join([lpad(_string(df[rowrng[i],c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
         println(io, line)
-        if i == 10 && N > 20
+        if i == Nmx && N > 2Nmx
             println(io, "  :")
         end
     end
