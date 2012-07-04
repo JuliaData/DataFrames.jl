@@ -924,8 +924,9 @@ tail(df::DataFrame) = tail(df, 6)
 # to print a DataFrame, find the max string length of each column
 # then print the column names with an appropriate buffer
 # then row-by-row print with an appropriate buffer
-maxShowLength(v::Vector) = length(v) > 0 ? max([length(string(x)) for x = v]) : 0
-maxShowLength(dv::AbstractDataVec) = max([length(string(x)) for x = dv])
+_string(x) = sprint(showcompact, x)
+maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) : 0
+maxShowLength(dv::AbstractDataVec) = max([length(_string(x)) for x = dv])
 function show(io, df::AbstractDataFrame)
     println(io, "$(typeof(df))  $(size(df))")
     N = nrow(df)
@@ -956,7 +957,7 @@ function show(io, df::AbstractDataFrame)
     for i = 1:length(rowrng)
         rowname = rpad(string(rowNames[i]), rownameWidth+1, " ")
         line = strcat(rowname,
-                      join([lpad(string(df[rowrng[i],c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
+                      join([lpad(_string(df[rowrng[i],c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
         println(io, line)
         if i == 10 && N > 20
             println(io, "  :")
