@@ -1776,12 +1776,6 @@ by(d::AbstractDataFrame, cols, e::Expr) = summarise(groupby(d, cols), e)
 by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
 by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
 
-##
-## Extras
-##
-const letters = split("abcdefghijklmnopqrstuvwxyz", "")
-const LETTERS = split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "")
-
 
 ##
 ## Reshaping
@@ -1834,6 +1828,15 @@ function unstack(df::AbstractDataFrame, ikey::Int, ivalue::Int, irefkey::Int)
     insert(payload, 1, refkeycol.pool, colnames(df)[irefkey])
 end
 
+
+##
+## Extras
+##
+
+
+const letters = split("abcdefghijklmnopqrstuvwxyz", "")
+const LETTERS = split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "")
+
 function paste{T<:String}(s::Union(Vector{T},T)...)
     sa = {s...}
     N = max(length, sa)
@@ -1857,8 +1860,8 @@ function cut{T}(x::Vector{T}, breaks::Vector{T})
     for i in 1:length(x)
         refs[i] = searchsorted(breaks, x[i])
     end
-    from = map(string,[min(x), breaks])
-    to = map(string,[breaks, max(x)])
+    from = map(x -> sprint(showcompact, x), [min(x), breaks])
+    to = map(x -> sprint(showcompact, x), [breaks, max(x)])
     pool = paste(["[", fill("(", length(breaks))], from, ",", to, "]")
     PooledDataVec(refs, pool, false, false, "")
 end
