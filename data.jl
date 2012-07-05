@@ -75,7 +75,7 @@ function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)
     poolref = Dict{T,Uint16}(0)
     maxref = 0
 
-    # loop through once to fill the dict
+    # loop through once to fill the poolref dict
     for i = 1:length(d)
         if !m[i]
             poolref[d[i]] = 0
@@ -320,6 +320,7 @@ function assign{T}(x::DataVec{T}, v::T, i::Int)
     return x[i]
 end
 function assign{T}(x::PooledDataVec{T}, v::T, i::Int)
+    # TODO handle pool ordering
     # note: NA replacement comes for free here
     
     # find the index of v in the pool
