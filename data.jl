@@ -1013,7 +1013,7 @@ function str(io, df::DataFrame)
 end
 
 function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
-    println(io, typeof(x), sprintf("  %d observations of %d variables", nrow(x), ncol(x)))
+    println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
     if n > 0
         for col in names(x)[1:min(10,end)]
             print(io, indent, "  ", col, ": ")
@@ -1845,6 +1845,32 @@ end
 ## Join / merge
 ##
 
+N = 10000
+indics = Array(ASCIIString, N)
+indics2 = Array(ASCIIString, N)
+for i in 1:N
+  indics[i] = join(letters[randi(26, 10)])
+  indics2[i] = join(letters[randi(26, 10)])
+end
+rep(x, n) = vcat(fill(x, n)...)
+left = DataFrame(quote
+    key=rep(indics[1:8000], 10)
+    key2=rep(indics2[1:8000], 10)
+    value=randn(80000)
+end)
+right = DataFrame(quote
+    key=indics[2001:10000]
+    key2a=indics2[2001:10000]
+    valuea=randn(8000)
+end)
+right2 = DataFrame(quote
+    key=rep(right["key"].data, 2)
+    key2a=rep(right["key2a"].data, 2)
+    valuea=randn(16000)
+end)
+
+
+@profile begin
 function full_outer_join(left, right, max_groups)
     ## translated from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
 
@@ -1985,19 +2011,20 @@ function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
     ## Return two PooledDataVecs sharing the same pool
     refs1 = Array(Uint16, length(v1))
     refs2 = Array(Uint16, length(v2))
-    poolref = Dict{T,Uint16}(0)
+    poolref = Dict{T,Uint16}(length(v1))
     maxref = 0
 
     # loop through once to fill the poolref dict
     for i = 1:length(v1)
-        if !isna(v1[i])
+        ## TODO see if we really need the NA checking here.
+        ## if !isna(v1[i])
             poolref[v1[i]] = 0
-        end
+        ## end
     end
     for i = 1:length(v2)
-        if !isna(v2[i])
+        ## if !isna(v2[i])
             poolref[v2[i]] = 0
-        end
+        ## end
     end
 
     # fill positions in poolref
@@ -2010,18 +2037,18 @@ function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
 
     # fill in newrefs
     for i = 1:length(v1)
-        if isna(v1[i])
-            refs1[i] = 0
-        else
+        ## if isna(v1[i])
+        ##     refs1[i] = 0
+        ## else
             refs1[i] = poolref[v1[i]]
-        end
+        ## end
     end
     for i = 1:length(v2)
-        if isna(v2[i])
-            refs2[i] = 0
-        else
+        ## if isna(v2[i])
+        ##     refs2[i] = 0
+        ## else
             refs2[i] = poolref[v2[i]]
-        end
+        ## end
     end
     (PooledDataVec(refs1, pool, false, false, zero(T)),
      PooledDataVec(refs2, pool, false, false, zero(T)))
@@ -2036,10 +2063,14 @@ function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol)
 
     # inner join:
     cbind!(df1[left_indexer,:], del(df2, bycol)[right_indexer,:])
-    # TODO: left/right join, outer join - needs better
-    #       NA indexing or a way to create NA DataFrames.
+    # TODO left/right join, outer join - needs better
+    #      NA indexing or a way to create NA DataFrames.
+    # TODO add support for multiple columns
 end
 
+merge(left, right, "key")
+merge(left, right2, "key")
+end
 
 
 ##
