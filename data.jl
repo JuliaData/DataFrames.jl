@@ -1845,32 +1845,6 @@ end
 ## Join / merge
 ##
 
-N = 10000
-indics = Array(ASCIIString, N)
-indics2 = Array(ASCIIString, N)
-for i in 1:N
-  indics[i] = join(letters[randi(26, 10)])
-  indics2[i] = join(letters[randi(26, 10)])
-end
-rep(x, n) = vcat(fill(x, n)...)
-left = DataFrame(quote
-    key=rep(indics[1:8000], 10)
-    key2=rep(indics2[1:8000], 10)
-    value=randn(80000)
-end)
-right = DataFrame(quote
-    key=indics[2001:10000]
-    key2a=indics2[2001:10000]
-    valuea=randn(8000)
-end)
-right2 = DataFrame(quote
-    key=rep(right["key"].data, 2)
-    key2a=rep(right["key2a"].data, 2)
-    valuea=randn(16000)
-end)
-
-
-@profile begin
 function full_outer_join(left, right, max_groups)
     ## translated from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
 
@@ -2068,9 +2042,6 @@ function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol)
     # TODO add support for multiple columns
 end
 
-merge(left, right, "key")
-merge(left, right2, "key")
-end
 
 
 ##
