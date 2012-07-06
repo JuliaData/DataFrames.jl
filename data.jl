@@ -1592,7 +1592,7 @@ function groupsort_indexer(x::Vector, ngroups::Integer)
     end
     result, where, counts
 end
-
+groupsort_indexer(pv::PooledDataVec) = groupsort_indexer(pv.refs, length(pv.pool))
 
 type GroupedDataFrame
     parent::DataFrame
@@ -1663,6 +1663,10 @@ function _uniqueofsorted(x::Vector)
     end
     x[idx]
 end
+
+unique(pd::PooledDataVec) = pd.pool
+sort(pd::PooledDataVec) = pd[order(pd)]
+order(pd::PooledDataVec) = groupsort_indexer(pd)[1]
 
 start(gd::GroupedDataFrame) = 1
 next(gd::GroupedDataFrame, state::Int) = 
@@ -1845,69 +1849,6 @@ end
 ## Join / merge
 ##
 
-function full_outer_join(left, right, max_groups)
-    ## translated from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
-
-    # NA group in location 0
-
-    left_sorter, where, left_count = groupsort_indexer(left, max_groups)
-    right_sorter, where, right_count = groupsort_indexer(right, max_groups)
-
-    # First pass, determine size of result set, do not use the NA group
-    count = 0
-    for i in 2 : max_groups + 1
-        lc = left_count[i]
-        rc = right_count[i]
-
-        if rc > 0 && lc > 0
-            count += lc * rc
-        else
-            count += lc + rc
-        end
-    end
-    
-    # group 0 is the NA group
-    position = 0
-
-    # exclude the NA group
-    left_pos = left_count[1]
-    right_pos = right_count[1]
-
-    left_indexer = Array(Int, count)
-    right_indexer = Array(Int, count)
-
-    for i in 1 : max_groups + 1
-        lc = left_count[i]
-        rc = right_count[i]
-
-        if rc == 0
-            for j in 1:lc
-                left_indexer[position + j] = left_pos + j
-                right_indexer[position + j] = 0
-            end
-            position += lc
-        elseif lc == 0
-            for j in 1:rc
-                left_indexer[position + j] = 0
-                right_indexer[position + j] = right_pos + j
-            end
-            position += rc
-        else
-            for j in 1:lc
-                offset = position + j * rc - 1
-                for k in 1:rc
-                    left_indexer[offset + k] = left_pos + j
-                    right_indexer[offset + k] = right_pos + k
-                end
-            end
-            position += lc * rc
-        end
-        left_pos += lc
-        right_pos += rc
-    end
-
-    (left_sorter, left_indexer, right_sorter, right_indexer)
-end
 
 function join_idx(left, right, max_groups)
     ## adapted from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
