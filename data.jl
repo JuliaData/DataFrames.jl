@@ -1397,7 +1397,7 @@ cbind(a, b) = cbind!(copy(a), copy(b))
 cbind(a, b, c...) = cbind(cbind(a,b), c...)
 
 similar{T}(dv::DataVec{T}, dims) =
-    DataVec(similar(dv.data, dims), similar(dv.na, dims), dv.filter, dv.replace, dv.replaceVal)  
+    DataVec(similar(dv.data, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
 
 similar{T}(dv::PooledDataVec{T}, dims) =
     PooledDataVec(fill(uint16(1), dims), dv.pool, dv.filter, dv.replace, dv.replaceVal)  
@@ -1590,7 +1590,7 @@ function groupsort_indexer(x::Vector, ngroups::Integer)
         result[where[label]] = i
         where[label] += 1
     end
-    result, where
+    result, where, counts
 end
 
 
@@ -1839,6 +1839,207 @@ function unstack(df::AbstractDataFrame, ikey::Int, ivalue::Int, irefkey::Int)
     end
     insert(payload, 1, refkeycol.pool, colnames(df)[irefkey])
 end
+
+
+##
+## Join / merge
+##
+
+function full_outer_join(left, right, max_groups)
+    ## translated from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
+
+    # NA group in location 0
+
+    left_sorter, where, left_count = groupsort_indexer(left, max_groups)
+    right_sorter, where, right_count = groupsort_indexer(right, max_groups)
+
+    # First pass, determine size of result set, do not use the NA group
+    count = 0
+    for i in 2 : max_groups + 1
+        lc = left_count[i]
+        rc = right_count[i]
+
+        if rc > 0 && lc > 0
+            count += lc * rc
+        else
+            count += lc + rc
+        end
+    end
+    
+    # group 0 is the NA group
+    position = 0
+
+    # exclude the NA group
+    left_pos = left_count[1]
+    right_pos = right_count[1]
+
+    left_indexer = Array(Int, count)
+    right_indexer = Array(Int, count)
+
+    for i in 1 : max_groups + 1
+        lc = left_count[i]
+        rc = right_count[i]
+
+        if rc == 0
+            for j in 1:lc
+                left_indexer[position + j] = left_pos + j
+                right_indexer[position + j] = 0
+            end
+            position += lc
+        elseif lc == 0
+            for j in 1:rc
+                left_indexer[position + j] = 0
+                right_indexer[position + j] = right_pos + j
+            end
+            position += rc
+        else
+            for j in 1:lc
+                offset = position + j * rc - 1
+                for k in 1:rc
+                    left_indexer[offset + k] = left_pos + j
+                    right_indexer[offset + k] = right_pos + k
+                end
+            end
+            position += lc * rc
+        end
+        left_pos += lc
+        right_pos += rc
+    end
+
+    (left_sorter, left_indexer, right_sorter, right_indexer)
+end
+
+function join_idx(left, right, max_groups)
+    ## adapted from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
+
+    # NA group in location 0
+
+    left_sorter, where, left_count = groupsort_indexer(left, max_groups)
+    right_sorter, where, right_count = groupsort_indexer(right, max_groups)
+
+    # First pass, determine size of result set, do not use the NA group
+    count = 0
+    rcount = 0
+    lcount = 0
+    for i in 2 : max_groups + 1
+        lc = left_count[i]
+        rc = right_count[i]
+
+        if rc > 0 && lc > 0
+            count += lc * rc
+        elseif rc > 0
+            rcount += rc
+        else
+            lcount += lc
+        end
+    end
+    
+    # group 0 is the NA group
+    position = 0
+    lposition = 0
+    rposition = 0
+
+    # exclude the NA group
+    left_pos = left_count[1]
+    right_pos = right_count[1]
+
+    left_indexer = Array(Int, count)
+    right_indexer = Array(Int, count)
+    leftonly_indexer = Array(Int, lcount)
+    rightonly_indexer = Array(Int, rcount)
+    for i in 1 : max_groups + 1
+        lc = left_count[i]
+        rc = right_count[i]
+
+        if rc == 0
+            for j in 1:lc
+                leftonly_indexer[lposition + j] = left_pos + j
+            end
+            lposition += lc
+        elseif lc == 0
+            for j in 1:rc
+                rightonly_indexer[rposition + j] = right_pos + j
+            end
+            rposition += rc
+        else
+            for j in 1:lc
+                offset = position + (j-1) * rc
+                for k in 1:rc
+                    left_indexer[offset + k] = left_pos + j
+                    right_indexer[offset + k] = right_pos + k
+                end
+            end
+            position += lc * rc
+        end
+        left_pos += lc
+        right_pos += rc
+    end
+
+    ## (left_sorter, left_indexer, leftonly_indexer,
+    ##  right_sorter, right_indexer, rightonly_indexer)
+    (left_sorter[left_indexer], left_sorter[leftonly_indexer],
+     right_sorter[right_indexer], right_sorter[rightonly_indexer])
+end
+
+function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
+    ## Return two PooledDataVecs sharing the same pool
+    refs1 = Array(Uint16, length(v1))
+    refs2 = Array(Uint16, length(v2))
+    poolref = Dict{T,Uint16}(0)
+    maxref = 0
+
+    # loop through once to fill the poolref dict
+    for i = 1:length(v1)
+        if !isna(v1[i])
+            poolref[v1[i]] = 0
+        end
+    end
+    for i = 1:length(v2)
+        if !isna(v2[i])
+            poolref[v2[i]] = 0
+        end
+    end
+
+    # fill positions in poolref
+    pool = sort(keys(poolref))
+    i = 1
+    for p in pool 
+        poolref[p] = i
+        i += 1
+    end
+
+    # fill in newrefs
+    for i = 1:length(v1)
+        if isna(v1[i])
+            refs1[i] = 0
+        else
+            refs1[i] = poolref[v1[i]]
+        end
+    end
+    for i = 1:length(v2)
+        if isna(v2[i])
+            refs2[i] = 0
+        else
+            refs2[i] = poolref[v2[i]]
+        end
+    end
+    (PooledDataVec(refs1, pool, false, false, zero(T)),
+     PooledDataVec(refs2, pool, false, false, zero(T)))
+end
+
+function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol)
+
+    dv1, dv2 = PooledDataVecs(df1[bycol], df2[bycol])
+    left_indexer, leftonly_indexer,
+    right_indexer, rightonly_indexer =
+        join_idx(dv1.refs, dv2.refs, length(dv1.pool))
+
+    # inner join:
+    cbind!(df1[left_indexer,:], del(df2, bycol)[right_indexer,:])
+    # TODO: left/right join, outer join - needs better
+    #       NA indexing or a way to create NA DataFrames.
+end
+
 
 
 ##
