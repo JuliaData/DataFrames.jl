@@ -74,20 +74,28 @@ function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)
     newpool = Array(T, 0)
     poolref = Dict{T,Uint16}(0)
     maxref = 0
-    
+
+    # loop through once to fill the poolref dict
+    for i = 1:length(d)
+        if !m[i]
+            poolref[d[i]] = 0
+        end
+    end
+
+    # fill positions in poolref
+    newpool = sort(keys(poolref))
+    i = 1
+    for p in newpool 
+        poolref[p] = i
+        i += 1
+    end
+
+    # fill in newrefs
     for i = 1:length(d)
         if m[i]
             newrefs[i] = 0
         else
-            existing = get(poolref, d[i], 0)
-            if existing == 0
-                maxref += 1
-                poolref[d[i]] = maxref 
-                push(newpool, d[i])
-                newrefs[i] = maxref
-            else
-                newrefs[i] = existing
-            end
+            newrefs[i] = poolref[d[i]]
         end
     end
     PooledDataVec(newrefs, newpool, f, r, v)
@@ -302,6 +310,7 @@ function assign{T}(x::DataVec{T}, v::T, i::Int)
     return x[i]
 end
 function assign{T}(x::PooledDataVec{T}, v::T, i::Int)
+    # TODO handle pool ordering
     # note: NA replacement comes for free here
     
     # find the index of v in the pool
@@ -599,9 +608,36 @@ type Index{T} <: AbstractIndex{T}   # an OrderedDict would be nice here...
     names::Vector{T}
 end
 Index(x::Vector) = Index(dict(tuple(x...), tuple([1:length(x)]...)), x)
-#Index() = Index(Dict(), {})
+Index() = Index(Dict{Any,Int}(), {})
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
+copy(x::Index) = Index(copy(x.lookup), copy(x.names))
+
+function names!(x::Index, nm::Vector)
+    if length(nm) != length(x)
+        error("lengths don't match.")
+    end
+    x.names = nm
+end
+
+function replace_names!(x::Index, from::Vector, to::Vector)
+    if length(from) != length(to)
+        error("lengths of from and to don't match.")
+    end
+    for idx in 1:length(from)
+        if has(x, from[idx]) && !has(x, to[idx])
+            x.lookup[to[idx]] = x.lookup[from[idx]]
+            x.names[x.lookup[from[idx]]] = to[idx]
+            del(x.lookup, from[idx])
+        end
+    end
+    x.names
+end
+replace_names!(x::Index, from, to) = replace_names!(x, [from], [to])
+replace_names(x::Index, from, to) = replace_names!(copy(x), from, to)
+
+has(x::Index, key) = has(x.lookup, key)
+keys(x::Index) = names(x)
 function push(x::Index, nm)
     x.lookup[nm] = length(x) + 1
     push(x.names, nm)
@@ -640,8 +676,70 @@ SimpleIndex() = SimpleIndex(0)
 length(x::SimpleIndex) = x.length
 names(x::SimpleIndex) = nothing
 
+# A NamedArray is like a list in R or a DataFrame in Julia without the
+# requirement that columns be of equal length. The main reason for its
+# existence is to allow creation of a DataFrame from unequal column
+# lengths like the following:
+#   DataFrame(quote
+#       a = 1
+#       b = [1:5]
+#       c = [1:10]
+#   end)
+type NamedArray <: Associative{Any,Any}
+    data::Vector{Any} 
+    idx::AbstractIndex
+    function NamedArray(data::Vector, idx::AbstractIndex)
+        if length(idx) != length(data)
+            error("index/names must be the same length as the data")
+        end
+        new(data, idx)
+    end
+end
+NamedArray() = NamedArray({}, Index())
+
+length(x::NamedArray) = length(x.idx)
+names(x::NamedArray) = names(x.idx)
+
+ref(x::NamedArray, c) = x[x.idx[c]]
+ref(x::NamedArray, c::Integer) = x.data[c]
+ref(x::NamedArray, c::Vector{Int}) = NamedArray(x.data[c], names(x)[c])
+
+function assign(x::NamedArray, newdata, ipos::Integer)
+    if ipos > 0 && ipos <= length(x)
+        x.data[ipos] = newdata
+    else
+        throw(ArgumentError("Can't replace a non-existent array position"))
+    end
+    x
+end
+function assign(x::NamedArray, newdata, name)
+    ipos = get(x.idx.lookup, name, 0)
+    if ipos > 0
+        # existing
+        assign(x, newdata, ipos)
+    else
+        # new
+        push(x.idx, name)
+        push(x.data, newdata)
+    end
+    x
+end
+
+
+# Associative methods:
+has(x::NamedArray, key) = has(x.idx, key)
+get(x::NamedArray, key, default) = has(x, key) ? x[key] : default
+keys(x::NamedArray) = keys(x.idx)
+values(x::NamedArray) = x.data
+# Collection methods:
+start(x::NamedArray) = 1
+done(x::NamedArray, i) = i > length(x.data)
+next(x::NamedArray, i) = ((x.idx.names[i], x[i]), i + 1)
+numel(x::NamedArray) = length(x.data)
+isempty(x::NamedArray) = length(x.data) == 0
+
 # Abstract DF includes DataFrame and SubDataFrame
-abstract AbstractDataFrame
+abstract AbstractDataFrame <: Associative{Any,Any}
 
 # ## DataFrame - a list of heterogeneous Data vectors with col and row indexs.
 # Columns are a vector, which means that operations that insert/delete columns
@@ -665,8 +763,17 @@ end
 # constructors
 #DataFrame(cs::Vector) = DataFrame(cs, SimpleIndex(length(cs))) # TODO: replace with default colnames
 DataFrame(cs::Vector, cn::Vector) = DataFrame(cs, Index(cn))
+# TODO expand the following to allow unequal lengths that are rep'd to the longest length.
+DataFrame(ex::Expr) = based_on(DataFrame(), ex)
+DataFrame{T}(x::Array{T,2}, cn::Vector) = DataFrame({x[:,i] for i in 1:length(cn)}, cn)
+DataFrame{T}(x::Array{T,2}) = DataFrame(x, [strcat("x", i) for i in 1:size(x,2)])
+
 
 colnames(df::DataFrame) = names(df.colindex)
+names!(df::DataFrame, vals) = names!(df.colindex, vals)
+colnames!(df::DataFrame, vals) = names!(df.colindex, vals)
+replace_names!(df::DataFrame, from, to) = replace_names!(df.colindex, from, to)
+replace_names(df::DataFrame, from, to) = replace_names(df.colindex, from, to)
 ncol(df::DataFrame) = length(df.colindex)
 nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
 names(df::AbstractDataFrame) = colnames(df)
@@ -695,6 +802,28 @@ ref(df::DataFrame, ex::Expr, c::Vector{Int}) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c) = df[with(df, ex), c]
 
 
+
+# Associative methods:
+has(df::DataFrame, key) = has(df.colindex, key)
+get(df::DataFrame, key, default) = has(df, key) ? df[key] : default
+keys(df::DataFrame) = keys(df.colindex)
+values(df::DataFrame) = df.columns
+del_all(df::DataFrame) = DataFrame()
+# Collection methods:
+start(df::AbstractDataFrame) = 1
+done(df::AbstractDataFrame, i) = i > ncol(df)
+next(df::AbstractDataFrame, i) = (df[i], i + 1)
+numel(df::AbstractDataFrame) = ncol(df)
+isempty(df::AbstractDataFrame) = ncol(df) == 0
+
+function insert(df::DataFrame, index::Integer, item, name)
+    @assert 0 < index <= ncol(df) + 1
+    df = shallowcopy(df)
+    df[name] = item
+    # rearrange:
+    df[[1:index-1, end, index:end-1]]
+end
+
 # if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
 DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
 # if we have a matrix, create a tuple of columns and pass that in
@@ -710,13 +839,12 @@ function DataFrame{K,V}(d::Associative{K,V})
     keymaxlen = keys(d)[maxpos]
     Nrow = length(d[keymaxlen])
     # Start with a blank DataFrame
-    df = K == Any ? DataFrame() : DataFrame(K)   # kludgy
-    # Assign the longest column to set the overall nrows.
-    df[keymaxlen] = d[keymaxlen]
-    # Now assign them all.
+    df = DataFrame() 
     for (k,v) in d
-        if contains([1,Nrow], length(v))
+        if length(v) == Nrow
             df[k] = v  
+        elseif rem(Nrow, length(v)) == 0    # Nrow is a multiple of length(v)
+            df[k] = vcat(fill(v, div(Nrow, length(v)))...)
         else
             println("Warning: Column $(string(k)) ignored: mismatched column lengths")
         end
@@ -725,13 +853,11 @@ function DataFrame{K,V}(d::Associative{K,V})
 end
 
 # Blank DataFrame
-DataFrame{T}(::Type{T}) = DataFrame({}, T[])
-DataFrame() = DataFrame(ASCIIString)
-#DataFrame() = DataFrame({}, {})
+DataFrame() = DataFrame({}, Index())
 
 # copy of a data frame does a deep copy
 copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df))
-
+shallowcopy(df::DataFrame) = DataFrame(df.columns, colnames(df))
 
 # dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
 # changing the in one df can break the other.
@@ -769,11 +895,21 @@ tail(df::DataFrame) = tail(df, 6)
 # to print a DataFrame, find the max string length of each column
 # then print the column names with an appropriate buffer
 # then row-by-row print with an appropriate buffer
-maxShowLength(v::Vector) = length(v) > 0 ? max([length(string(x)) for x = v]) : 0
-maxShowLength(dv::AbstractDataVec) = max([length(string(x)) for x = dv])
-function show(io, df::DataFrame)
+_string(x) = sprint(showcompact, x)
+maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) : 0
+maxShowLength(dv::AbstractDataVec) = max([length(_string(x)) for x = dv])
+function show(io, df::AbstractDataFrame)
+    ## TODO use alignment() like print_matrix in show.jl.
+    println(io, "$(typeof(df))  $(size(df))")
+    N = nrow(df)
+    Nmx = 20   # maximum head and tail lengths
+    if N <= 2Nmx
+        rowrng = 1:min(2Nmx,N)
+    else
+        rowrng = [1:Nmx, N-Nmx+1:N]
+    end
     # we don't have row names -- use indexes
-    rowNames = [sprintf("[%d,]", r) for r = 1:nrow(df)]
+    rowNames = [sprintf("[%d,]", r) for r = rowrng]
     
     rownameWidth = maxShowLength(rowNames)
     
@@ -785,17 +921,20 @@ function show(io, df::DataFrame)
         colNames = colnames(df)
     end
     
-    colWidths = [max(length(string(colNames[c])), maxShowLength(df.columns[c])) for c = 1:ncol(df)]
+    colWidths = [max(length(string(colNames[c])), maxShowLength(df[rowrng,c])) for c = 1:ncol(df)]
 
     header = strcat(" " ^ (rownameWidth+1),
                     join([lpad(string(colNames[i]), colWidths[i]+1, " ") for i = 1:ncol(df)], ""))
     println(io, header)
-    
-    for i = 1:min(100, nrow(df)) # TODO
+
+    for i = 1:length(rowrng)
         rowname = rpad(string(rowNames[i]), rownameWidth+1, " ")
         line = strcat(rowname,
-                      join([lpad(string(df[i,c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
+                      join([lpad(_string(df[rowrng[i],c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
         println(io, line)
+        if i == Nmx && N > 2Nmx
+            println(io, "  :")
+        end
     end
 end
 
@@ -836,7 +975,7 @@ function str(io, df::DataFrame)
 end
 
 function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
-    println(io, typeof(x), sprintf("  %d observations of %d variables", nrow(x), ncol(x)))
+    println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
     if n > 0
         for col in names(x)[1:min(10,end)]
             print(io, indent, "  ", col, ": ")
@@ -884,7 +1023,7 @@ end
 
 # TODO: clever layout in rows
 # TODO: AbstractDataFrame
-function summary(io, df::DataFrame)
+function summary(io, df::AbstractDataFrame)
     for c in 1:ncol(df)
         col = df[c]
         println(io, colnames(df)[c])
@@ -1031,6 +1170,14 @@ head(df::AbstractDataFrame) = head(df, 6)
 tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
 tail(df::AbstractDataFrame) = tail(df, 6)
 
+# Associative methods:
+has(df::SubDataFrame, key) = has(df.colindex, key)
+get(df::SubDataFrame, key, default) = has(df, key) ? df[key] : default
+keys(df::SubDataFrame) = keys(df.colindex)
+values(df::SubDataFrame, key) = keys(df.colindex)
+del_all(df::SubDataFrame) = DataFrame()
+
+
 
 # DF column operations
 ######################
@@ -1052,6 +1199,9 @@ assign{T}(df::DataFrame, newcol::Vector{T}, icol::Integer) = assign(df, DataVec(
 # df["new"] = append new column
 function assign(df::DataFrame, newcol::AbstractDataVec, colname)
     icol = get(df.colindex.lookup, colname, 0)
+    if length(newcol) != nrow(df) && nrow(df) != 0
+        error("length of data doesn't match the number of rows.")
+    end
     if icol > 0
         # existing
         assign(df, newcol, icol)
@@ -1092,13 +1242,7 @@ del!(df::DataFrame, c) = del!(df, df.colindex[c])
 
 # df2 = del(df, 1) new DF, minus vectors
 function del(df::DataFrame, icols::Vector{Int})
-    # newcols = setdiff([1:ncol(df)], icols) would make the following a one-liner
-    newcols = [1:ncol(df)]
-    for i in icols
-        if contains(newcols, i)
-            del(newcols, findfirst(newcols, i))
-        end
-    end
+    newcols = _setdiff([1:ncol(df)], icols) 
     if length(newcols) == 0
         throw(ArgumentError("Can't delete a non-existent DataFrame column"))
     end
@@ -1107,6 +1251,7 @@ function del(df::DataFrame, icols::Vector{Int})
 end
 del(df::DataFrame, i::Int) = del(df, [i])
 del(df::DataFrame, c) = del(df, df.colindex[c])
+del(df::SubDataFrame, c) = SubDataFrame(del(df.parent, c), df.rows)
 
 
 #### cbind, rbind, hcat, vcat
@@ -1200,8 +1345,6 @@ function cbind!(df1::DataFrame, df2::DataFrame)
     if !nointer(colnames(df1), newcolnames)
         error("can't cbind dataframes with overlapping column names!")
     end
-    global _df1 = df1
-    global _df2 = df2
     df1.colindex = Index(concat(colnames(df1), colnames(df2)))
     df1.columns = [df1.columns, df2.columns]
     df1
@@ -1216,7 +1359,7 @@ cbind(a, b) = cbind!(copy(a), copy(b))
 cbind(a, b, c...) = cbind(cbind(a,b), c...)
 
 similar{T}(dv::DataVec{T}, dims) =
-    DataVec(similar(dv.data, dims), similar(dv.na, dims), dv.filter, dv.replace, dv.replaceVal)  
+    DataVec(similar(dv.data, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
 
 similar{T}(dv::PooledDataVec{T}, dims) =
     PooledDataVec(fill(uint16(1), dims), dv.pool, dv.filter, dv.replace, dv.replaceVal)  
@@ -1232,8 +1375,11 @@ function rbind(dfs::DataFrame...)
     Ncol = ncol(dfs[1])
     res = similar(dfs[1], Nrow)
     # TODO fix PooledDataVec columns with different pools.
-    # TODO check to see that the number of columns are the same.
-    # TODO check to see that the colnames are the same.
+    for idx in 2:length(dfs)
+        if colnames(dfs[1]) != colnames(dfs[idx])
+            error("DataFrame column names must match.")
+        end
+    end
     idx = 1
     for df in dfs
         for kdx in 1:nrow(df)
@@ -1251,8 +1397,11 @@ function rbind(dfs::Vector)   # for a Vector of DataFrame's
     Ncol = ncol(dfs[1])
     res = similar(dfs[1], Nrow)
     # TODO fix PooledDataVec columns with different pools.
-    # TODO check to see that the number of columns are the same and the colnames are the same.
-    # TODO check to see that the colnames are the same.
+    for idx in 2:length(dfs)
+        if colnames(dfs[1]) != colnames(dfs[idx])
+            error("DataFrame column names must match.")
+        end
+    end
     idx = 1
     for df in dfs
         for kdx in 1:nrow(df)
@@ -1398,6 +1547,9 @@ function within!(df::AbstractDataFrame, ex::Expr)
     replace_symbols(x, syms::Dict) = x
     function replace_symbols(e::Expr, syms::Dict)
         if e.head == :(=) # replace left-hand side of assignments:
+            if !has(syms, string(e.args[1]))
+                syms[string(e.args[1])] = length(syms) + 1
+            end
             Expr(e.head,
                  vcat({:(_DF[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end])),
                  e.typ)
@@ -1432,6 +1584,9 @@ function based_on_f(df::AbstractDataFrame, ex::Expr)
     replace_symbols(x, syms::Dict) = x
     function replace_symbols(e::Expr, syms::Dict)
         if e.head == :(=) # replace left-hand side of assignments:
+            if !has(syms, string(e.args[1]))
+                syms[string(e.args[1])] = length(syms) + 1
+            end
             Expr(e.head,
                  vcat({:(_col_dict[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end])),
                  e.typ)
@@ -1450,7 +1605,7 @@ function based_on_f(df::AbstractDataFrame, ex::Expr)
     cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
     ex = replace_symbols(ex, cn_dict)
     @eval (_DF) -> begin
-        _col_dict = Dict()
+        _col_dict = NamedArray()
         $ex
         DataFrame(_col_dict)
     end
@@ -1492,7 +1647,6 @@ within(e::Expr) = x -> within(x, e)
 within!(e::Expr) = x -> within!(x, e)
 based_on(e::Expr) = x -> based_on(x, e)
 
-# TODO add versions of each of these for Dict's
 
 # allow pipelining straight to an expression using within!:
 (|)(x::AbstractDataFrame, e::Expr) = within!(x, e)
@@ -1527,9 +1681,9 @@ function groupsort_indexer(x::Vector, ngroups::Integer)
         result[where[label]] = i
         where[label] += 1
     end
-    result, where
+    result, where, counts
 end
-
+groupsort_indexer(pv::PooledDataVec) = groupsort_indexer(pv.refs, length(pv.pool))
 
 type GroupedDataFrame
     parent::DataFrame
@@ -1564,6 +1718,8 @@ function groupby{T}(df::DataFrame, cols::Vector{T})
         # TODO if ngroups is really big, shrink it
     end
     (idx, starts) = groupsort_indexer(x, ngroups)
+    # Remove zero-length groupings
+    starts = _uniqueofsorted(starts) 
     ends = [starts[2:end] - 1]
     GroupedDataFrame(df, cols, idx, starts[1:end-1], ends)
 end
@@ -1573,7 +1729,36 @@ groupby(d::DataFrame, cols) = groupby(d, [cols])
 groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
 groupby(cols) = x -> groupby(x, cols)
 
+function unique(x::Vector)
+    idx = fill(true, length(x))
+    d = Dict()
+    d[x[1]] = true
+    for i = 2:length(x)
+        if has(d, x[i])
+            idx[i] = false
+        else
+            d[x[i]] = true
+        end
+    end
+    x[idx]
+end
 
+function _uniqueofsorted(x::Vector)
+    idx = fill(true, length(x))
+    lastx = x[1]
+    for i = 2:length(x)
+        if lastx == x[i]
+            idx[i] = false
+        else
+            lastx = x[i]
+        end
+    end
+    x[idx]
+end
+
+unique(pd::PooledDataVec) = pd.pool
+sort(pd::PooledDataVec) = pd[order(pd)]
+order(pd::PooledDataVec) = groupsort_indexer(pd)[1]
 
 start(gd::GroupedDataFrame) = 1
 next(gd::GroupedDataFrame, state::Int) = 
@@ -1584,8 +1769,16 @@ length(gd::GroupedDataFrame) = length(gd.starts)
 ref(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]]) 
 
 function show(io, gd::GroupedDataFrame)
-    println(io, typeof(gd), " ", length(gd.starts), " groups in DataFrame:")
-    show(io, gd.parent)
+    N = length(gd)
+    println(io, "$(typeof(gd))  $N groups with keys: $(gd.cols)")
+    println(io, "First Group:")
+    show(io, gd[1])
+    if N > 1
+        println(io, "       :")
+        println(io, "       :")
+        println(io, "Last Group:")
+        show(io, gd[N])
+    end
 end
 
 #
@@ -1681,15 +1874,20 @@ function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
     end
     df
 end
+## function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
+##     header = [s2 * "_" * string(s1) for s1 in s, s2 in cn][:]
+##     payload = colwise(map(eval, s), d)
+##     DataFrame(payload, header)
+## end
 colwise(d::AbstractDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::AbstractDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
 colwise(d::AbstractDataFrame, s::Symbol) = colwise(d, [s], colnames(d))
 colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
 
-# TODO add a way to specify which columns to apply funs to
-# TODO exclude grouping key columns
 # TODO make this faster by applying the header just once.
-colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(x,s), d)...)
+# BUG zero-rowed groupings cause problems here, because a sum of a zero-length
+# DataVec is 0 (not 0.0).
+colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(del(x, d.cols),s), d)...)
 colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
 colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
@@ -1704,8 +1902,233 @@ by(d::AbstractDataFrame, cols, e::Expr) = based_on(groupby(d, cols), e)
 by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
 by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
 
+
+##
+## Reshaping
+##
+
+
+# slow, but maintains order and seems to work:
+function _setdiff(a::Vector, b::Vector)
+    idx = Int[]
+    for i in 1:length(a)
+        if !contains(b, a[i])
+            push(idx, i)
+        end
+    end
+    a[idx]
+end
+
+## Issue: this doesn't maintain the order in a:
+## setdiff(a::Vector, b::Vector) = elements(Set(a...) - Set(b...))
+
+
+function stack(df::AbstractDataFrame, icols::Vector{Int})
+    remainingcols = _setdiff([1:ncol(df)], icols)
+    res = rbind([insert(df[[i, remainingcols]], 1, colnames(df)[i], "key") for i in icols]...)
+    replace_names!(res, colnames(res)[2], "value")
+    res 
+end
+
+function unstack(df::AbstractDataFrame, ikey::Int, ivalue::Int, irefkey::Int)
+    keycol = PooledDataVec(df[ikey])
+    valuecol = df[ivalue]
+    refkeycol = PooledDataVec(df[irefkey])
+    remainingcols = _setdiff([1:ncol(df)], [ikey, ivalue])
+    Nrow = length(refkeycol.pool)
+    Ncol = length(keycol.pool)
+    # TODO make fillNA(type, length) 
+    payload = DataFrame({DataVec([fill(valuecol[1],Nrow)], fill(true, Nrow))  for i in 1:Ncol}, map(string, keycol.pool))
+    nowarning = true 
+    for k in 1:nrow(df)
+        j = int(keycol.refs[k])
+        i = int(refkeycol.refs[k])
+        if i > 0 && j > 0
+            if nowarning && !isna(payload[j][i]) 
+                println("Warning: duplicate entries in unstack.")
+                nowarning = false
+            end
+            payload[j][i]  = valuecol[k]
+        end
+    end
+    insert(payload, 1, refkeycol.pool, colnames(df)[irefkey])
+end
+
+
+##
+## Join / merge
+##
+
+
+function join_idx(left, right, max_groups)
+    ## adapted from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
+
+    # NA group in location 0
+
+    left_sorter, where, left_count = groupsort_indexer(left, max_groups)
+    right_sorter, where, right_count = groupsort_indexer(right, max_groups)
+
+    # First pass, determine size of result set, do not use the NA group
+    count = 0
+    rcount = 0
+    lcount = 0
+    for i in 2 : max_groups + 1
+        lc = left_count[i]
+        rc = right_count[i]
+
+        if rc > 0 && lc > 0
+            count += lc * rc
+        elseif rc > 0
+            rcount += rc
+        else
+            lcount += lc
+        end
+    end
+    
+    # group 0 is the NA group
+    position = 0
+    lposition = 0
+    rposition = 0
+
+    # exclude the NA group
+    left_pos = left_count[1]
+    right_pos = right_count[1]
+
+    left_indexer = Array(Int, count)
+    right_indexer = Array(Int, count)
+    leftonly_indexer = Array(Int, lcount)
+    rightonly_indexer = Array(Int, rcount)
+    for i in 1 : max_groups + 1
+        lc = left_count[i]
+        rc = right_count[i]
+
+        if rc == 0
+            for j in 1:lc
+                leftonly_indexer[lposition + j] = left_pos + j
+            end
+            lposition += lc
+        elseif lc == 0
+            for j in 1:rc
+                rightonly_indexer[rposition + j] = right_pos + j
+            end
+            rposition += rc
+        else
+            for j in 1:lc
+                offset = position + (j-1) * rc
+                for k in 1:rc
+                    left_indexer[offset + k] = left_pos + j
+                    right_indexer[offset + k] = right_pos + k
+                end
+            end
+            position += lc * rc
+        end
+        left_pos += lc
+        right_pos += rc
+    end
+
+    ## (left_sorter, left_indexer, leftonly_indexer,
+    ##  right_sorter, right_indexer, rightonly_indexer)
+    (left_sorter[left_indexer], left_sorter[leftonly_indexer],
+     right_sorter[right_indexer], right_sorter[rightonly_indexer])
+end
+
+function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
+    ## Return two PooledDataVecs sharing the same pool
+    refs1 = Array(Uint16, length(v1))
+    refs2 = Array(Uint16, length(v2))
+    poolref = Dict{T,Uint16}(length(v1))
+    maxref = 0
+
+    # loop through once to fill the poolref dict
+    for i = 1:length(v1)
+        ## TODO see if we really need the NA checking here.
+        ## if !isna(v1[i])
+            poolref[v1[i]] = 0
+        ## end
+    end
+    for i = 1:length(v2)
+        ## if !isna(v2[i])
+            poolref[v2[i]] = 0
+        ## end
+    end
+
+    # fill positions in poolref
+    pool = sort(keys(poolref))
+    i = 1
+    for p in pool 
+        poolref[p] = i
+        i += 1
+    end
+
+    # fill in newrefs
+    for i = 1:length(v1)
+        ## if isna(v1[i])
+        ##     refs1[i] = 0
+        ## else
+            refs1[i] = poolref[v1[i]]
+        ## end
+    end
+    for i = 1:length(v2)
+        ## if isna(v2[i])
+        ##     refs2[i] = 0
+        ## else
+            refs2[i] = poolref[v2[i]]
+        ## end
+    end
+    (PooledDataVec(refs1, pool, false, false, zero(T)),
+     PooledDataVec(refs2, pool, false, false, zero(T)))
+end
+
+function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol)
+
+    dv1, dv2 = PooledDataVecs(df1[bycol], df2[bycol])
+    left_indexer, leftonly_indexer,
+    right_indexer, rightonly_indexer =
+        join_idx(dv1.refs, dv2.refs, length(dv1.pool))
+
+    # inner join:
+    cbind!(df1[left_indexer,:], del(df2, bycol)[right_indexer,:])
+    # TODO left/right join, outer join - needs better
+    #      NA indexing or a way to create NA DataFrames.
+    # TODO add support for multiple columns
+end
+
+
+
 ##
 ## Extras
 ##
+
+
 const letters = split("abcdefghijklmnopqrstuvwxyz", "")
 const LETTERS = split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "")
+
+function paste{T<:String}(s::Union(Vector{T},T)...)
+    sa = {s...}
+    N = max(length, sa)
+    res = fill("", N)
+    for i in 1:length(sa)
+        if length(sa[i]) == N
+            for j = 1:N
+                res[j] = strcat(res[j], sa[i][j])
+            end
+        elseif length(sa[i]) == 1
+            for j = 1:N
+                res[j] = strcat(res[j], sa[i][1])
+            end
+        end
+    end
+    res
+end
+
+function cut{T}(x::Vector{T}, breaks::Vector{T})
+    refs = fill(uint16(0), length(x))
+    for i in 1:length(x)
+        refs[i] = searchsorted(breaks, x[i])
+    end
+    from = map(x -> sprint(showcompact, x), [min(x), breaks])
+    to = map(x -> sprint(showcompact, x), [breaks, max(x)])
+    pool = paste(["[", fill("(", length(breaks))], from, ",", to, "]")
+    PooledDataVec(refs, pool, false, false, "")
+end
+cut(x::Vector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
