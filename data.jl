@@ -762,7 +762,7 @@ type DataFrame <: AbstractDataFrame
 end
 
 # constructors
-#DataFrame(cs::Vector) = DataFrame(cs, SimpleIndex(length(cs))) # TODO: replace with default colnames
+DataFrame(cs::Vector) = DataFrame(cs, paste("x", map(string,[1:length(cs)])))
 DataFrame(cs::Vector, cn::Vector) = DataFrame(cs, Index(cn))
 # TODO expand the following to allow unequal lengths that are rep'd to the longest length.
 DataFrame(ex::Expr) = based_on(DataFrame(), ex)
