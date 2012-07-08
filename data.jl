@@ -601,14 +601,15 @@ end
 # through cleanly.
 # an Index is the usual implementation.
 # a SimpleIndex only works if the things are integer indexes, which is weird.
-abstract AbstractIndex{T}
+abstract AbstractIndex
 
-type Index{T} <: AbstractIndex{T}   # an OrderedDict would be nice here...
-    lookup::Dict{T,Int}      # name => names array position
-    names::Vector{T}
+type Index <: AbstractIndex   # an OrderedDict would be nice here...
+    lookup::Dict{ByteString,Int}      # name => names array position
+    names::Vector{ByteString}
 end
-Index(x::Vector) = Index(dict(tuple(x...), tuple([1:length(x)]...)), x)
-Index() = Index(Dict{Any,Int}(), {})
+Index{T<:ByteString}(x::Vector{T}) = Index(Dict{ByteString, Int}(tuple(x...), tuple([1:length(x)]...)),
+                                           convert(Vector{ByteString}, x))
+Index() = Index(Dict{ByteString,Int}(), ByteString[])
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
 copy(x::Index) = Index(copy(x.lookup), copy(x.names))
@@ -658,8 +659,8 @@ function del(x::Index, nm)
     del(x, idx)
 end
 
-ref{T}(x::Index{T}, idx::Vector{T}) = convert(Vector{Int}, [x.lookup[i] for i in idx])
-ref{T}(x::Index{T}, idx::T) = x.lookup[idx]
+ref{T<:ByteString}(x::Index, idx::Vector{T}) = convert(Vector{Int}, [x.lookup[i] for i in idx])
+ref{T<:ByteString}(x::Index, idx::T) = x.lookup[idx]
 
 # fall-throughs, when something other than the index type is passed
 ref(x::AbstractIndex, idx::Int) = idx
@@ -783,13 +784,13 @@ length(df::AbstractDataFrame) = ncol(df)
 
 ref(df::DataFrame, c) = df[df.colindex[c]]
 ref(df::DataFrame, c::Integer) = df.columns[c]
-ref(df::DataFrame, c::Vector{Int}) = DataFrame(df.columns[c], colnames(df)[c])
+ref(df::DataFrame, c::Vector{Int}) = DataFrame(df.columns[c], convert(Vector{ByteString}, colnames(df)[c]))
 
 ref(df::DataFrame, r, c) = df[r, df.colindex[c]]
 ref(df::DataFrame, r, c::Int) = df[c][r]
 ref(df::DataFrame, r, c::Vector{Int}) =
     DataFrame({x[r] for x in df.columns[c]}, 
-              colnames(df)[c])
+              convert(Vector{ByteString}, colnames(df)[c]))
 
 # special cases
 ref(df::DataFrame, r::Int, c::Int) = df[c][r]
@@ -2033,7 +2034,8 @@ function join_idx(left, right, max_groups)
 end
 
 function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
-    ## Return two PooledDataVecs sharing the same pool
+    ## Return two PooledDataVecs that share the same pool.
+    
     refs1 = Array(Uint16, length(v1))
     refs2 = Array(Uint16, length(v2))
     poolref = Dict{T,Uint16}(length(v1))
