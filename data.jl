@@ -1376,11 +1376,11 @@ function rbind(dfs::DataFrame...)
     Ncol = ncol(dfs[1])
     res = similar(dfs[1], Nrow)
     # TODO fix PooledDataVec columns with different pools.
-    for idx in 2:length(dfs)
-        if colnames(dfs[1]) != colnames(dfs[idx])
-            error("DataFrame column names must match.")
-        end
-    end
+    # for idx in 2:length(dfs)
+    #     if colnames(dfs[1]) != colnames(dfs[idx])
+    #         error("DataFrame column names must match.")
+    #     end
+    # end
     idx = 1
     for df in dfs
         for kdx in 1:nrow(df)
@@ -1398,11 +1398,11 @@ function rbind(dfs::Vector)   # for a Vector of DataFrame's
     Ncol = ncol(dfs[1])
     res = similar(dfs[1], Nrow)
     # TODO fix PooledDataVec columns with different pools.
-    for idx in 2:length(dfs)
-        if colnames(dfs[1]) != colnames(dfs[idx])
-            error("DataFrame column names must match.")
-        end
-    end
+    # for idx in 2:length(dfs)
+    #     if colnames(dfs[1]) != colnames(dfs[idx])
+    #         error("DataFrame column names must match.")
+    #     end
+    # end
     idx = 1
     for df in dfs
         for kdx in 1:nrow(df)
@@ -1924,16 +1924,18 @@ end
 ## setdiff(a::Vector, b::Vector) = elements(Set(a...) - Set(b...))
 
 
-function stack(df::AbstractDataFrame, icols::Vector{Int})
+function stack(df::DataFrame, icols::Vector{Int})
     remainingcols = _setdiff([1:ncol(df)], icols)
     res = rbind([insert(df[[i, remainingcols]], 1, colnames(df)[i], "key") for i in icols]...)
     replace_names!(res, colnames(res)[2], "value")
     res 
 end
+stack(df::DataFrame, icols) = stack(df, [df.colindex[icols]])
 
-function unstack(df::AbstractDataFrame, ikey::Int, ivalue::Int, irefkey::Int)
+function unstack(df::DataFrame, ikey::Int, ivalue::Int, irefkey::Int)
     keycol = PooledDataVec(df[ikey])
     valuecol = df[ivalue]
+    # TODO make a version with a default refkeycol
     refkeycol = PooledDataVec(df[irefkey])
     remainingcols = _setdiff([1:ncol(df)], [ikey, ivalue])
     Nrow = length(refkeycol.pool)
@@ -1954,7 +1956,8 @@ function unstack(df::AbstractDataFrame, ikey::Int, ivalue::Int, irefkey::Int)
     end
     insert(payload, 1, refkeycol.pool, colnames(df)[irefkey])
 end
-
+unstack(df::DataFrame, ikey, ivalue, irefkey) =
+    unstack(df, df.colindex[ikey], df.colindex[ivalue], df.colindex[irefkey])
 
 ##
 ## Join / merge
