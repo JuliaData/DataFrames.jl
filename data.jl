@@ -2105,31 +2105,45 @@ end
 ##
 
 
-const letters = split("abcdefghijklmnopqrstuvwxyz", "")
-const LETTERS = split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "")
+const letters = convert(Vector{ASCIIString}, split("abcdefghijklmnopqrstuvwxyz", ""))
+const LETTERS = convert(Vector{ASCIIString}, split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", ""))
 
-function paste{T<:String}(s::Union(Vector{T},T)...)
+# Like string(s), but preserves Vector{String} and converts
+# Vector{Any} to Vector{String}.
+_vstring(s) = string(s)
+_vstring(s::Vector) = map(_vstring, s)
+_vstring{T<:String}(s::T) = s
+_vstring{T<:String}(s::Vector{T}) = s
+    
+function paste{T<:String}(s::Vector{T}...)
     sa = {s...}
     N = max(length, sa)
     res = fill("", N)
     for i in 1:length(sa)
-        if length(sa[i]) == N
-            for j = 1:N
-                res[j] = strcat(res[j], sa[i][j])
-            end
-        elseif length(sa[i]) == 1
-            for j = 1:N
-                res[j] = strcat(res[j], sa[i][1])
+        Ni = length(sa[i])
+        k = 1
+        for j = 1:N
+            res[j] = strcat(res[j], sa[i][k])
+            if k == Ni   # This recycles array elements.
+                k = 1
+            else
+                k += 1
             end
         end
     end
     res
 end
+# The following converts all arguments to Vector{<:String} before
+# calling paste.
+function paste(s...)
+    converted = map(vcat * _vstring, {s...})
+    paste(converted...)
+end
 
 function cut{T}(x::Vector{T}, breaks::Vector{T})
     refs = fill(uint16(0), length(x))
     for i in 1:length(x)
-        refs[i] = searchsorted(breaks, x[i])
+        refs[i] = search_sorted(breaks, x[i])
     end
     from = map(x -> sprint(showcompact, x), [min(x), breaks])
     to = map(x -> sprint(showcompact, x), [breaks, max(x)])
