@@ -49,30 +49,35 @@ function model_frame(f::Formula, d::DataFrame)
     # where each literal may be a simple transforming function
     
     cols = {}
-    colnames = Array(ASCIIString,0)
+    col_names = Array(ASCIIString,0)
     
     # so, foreach element in the lhs, evaluate it in the context of the df
     for ll = 1:length(f.lhs)
         push(cols, with(d, f.lhs[ll]))
-        push(colnames, string(f.lhs[ll]))
+        push(col_names, string(f.lhs[ll]))
     end
     y_indexes = [1:length(f.lhs)]
     
     # and foreach element in the rhs, do the same
     
     # if it's a disjunction, get the pieces, otherwise it's just itself
-    if f.rhs[1].args[1] == :+
-        rhs = f.rhs[1].args[2:end]
+    # FAILS IF RHS HAS ONLY 1 ELEMENT, SO RHS IS A SYMBOL
+    if typeof(f.rhs) == Array{Symbol,1}
+      push(cols, with(d, f.rhs[1]))
+      push(col_names, string(f.rhs[1]))
     else
-        rhs = r.rhs[1]
+      if f.rhs[1].args[1] == :+
+          rhs = f.rhs[1].args[2:end]
+      else
+          rhs = r.rhs[1]
+      end
+      for rr = 1:length(rhs)
+          push(cols, with(d, rhs[rr]))
+          push(col_names, string(rhs[rr]))
+      end
     end
-    for rr = 1:length(rhs)
-        push(cols, with(d, rhs[rr]))
-        push(colnames, string(rhs[rr]))
-    end
-    
     # bind together and return
-    ModelFrame(DataFrame(cols, colnames), y_indexes, f)
+    ModelFrame(DataFrame(cols, col_names), y_indexes, f)
 end
 
 # a ModelMatrix is a wrapper around a matrix, with column names.
@@ -125,6 +130,10 @@ function model_matrix(mfarg::ModelFrame)
             [push(mnames, nc) for nc in newcolname]
         end
     end
+    include_intercept = true
+    if include_intercept
+      m = hcat(ones(nrow(df)), m)
+      unshift(mnames, "(Intercept)")
+    end
     return ModelMatrix(m, r, mnames, rnames)
 end
-
