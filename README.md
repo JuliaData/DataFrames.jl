@@ -24,6 +24,8 @@ df[1:2, ["A", "B"]]
 # Use the with() function to evaluate expressions relative to a DataFrame.
 with(df, :(A + C))
 ```
+[Output here.](https://github.com/HarlanH/JuliaData/blob/master/demo/demo1.out.jl)
+
 
 ## Demo 2
 
@@ -58,3 +60,4 @@ mf = model_frame(f, df)
 # Generate a ModelMatrix object.
 mm = model_matrix(mf)
 ```
+[Output here.](https://github.com/HarlanH/JuliaData/blob/master/demo/demo2.out.jl)
