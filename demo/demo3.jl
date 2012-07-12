@@ -4,9 +4,12 @@ load("src/init.jl")
 # Load a CSV file into a DataFrame.
 df = csvDataFrame("demo/toy_example.csv")
 
-# Look at data structure
-# dump() is like R's str()
+# Look at the data structure.
+# dump() is like R's str().
 dump(df)
+
+# Look at the internal data structure.
+idump(df)
 
 # Print out a summary of each column.
 summary(df)

@@ -13,15 +13,71 @@ DataFrame  (6,3)
 
 julia> 
 
-julia> # Look at data structure
+julia> # Look at the data structure.
 
-julia> # dump() is like R's str()
+julia> # dump() is like R's str().
 
 julia> dump(df)
 DataFrame  6 observations of 3 variables
   A: DataVec{Float64}(6) [2.5,3.6,3.5,4.5]
   B: PooledDataVec{ASCIIString}(6) ["One","One","Two","Two"]
   C: DataVec{Float64}(6) [3.0,5.0,3.0,5.0]
+
+julia> 
+
+julia> # Look at the internal data structure.
+
+julia> idump(df)
+DataFrame 
+  columns: Array(Any,(3,))
+    1: DataVec{Float64} 
+      data: Array(Float64,(6,)) [2.5, 3.6, 3.5, 4.5]
+      na: Array(Bool,(6,)) [false, false, false, false]
+      filter: Bool false
+      replace: Bool false
+      replaceVal: Float64 0.0
+    2: PooledDataVec{ASCIIString} 
+      refs: Array(Uint16,(6,)) [0x0001, 0x0001, 0x0003, 0x0003]
+      pool: Array(ASCIIString,(3,)) ["One", "Three", "Two"]
+      filter: Bool false
+      replace: Bool false
+      replaceVal: ASCIIString 
+        data: Array(Uint8,(0,)) []
+    3: DataVec{Float64} 
+      data: Array(Float64,(6,)) [3.0, 5.0, 3.0, 5.0]
+      na: Array(Bool,(6,)) [false, false, false, false]
+      filter: Bool false
+      replace: Bool false
+      replaceVal: Float64 0.0
+  colindex: Index 
+    lookup: Dict{Union(UTF8String,ASCIIString),Int64} 
+      keys: Array(Any,(16,))
+        1: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        2: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        3: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        4: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        5: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        6: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        7: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        8: ASCIIString 
+          data: Array(Uint8,(1,)) [0x42]
+        9: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        10: ASCIIString 
+          data: Array(Uint8,(1,)) [0x41]
+      vals: Array(Any,(16,))
+        1: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        2: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        3: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        4: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        5: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        6: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        7: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        8: Int64 2
+        9: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
+        10: Int64 1
+      ndel: Int64 0
+      deleter: identity
+    names: Array(Union(UTF8String,ASCIIString),(3,)) {"A", "B", "C"}
 
 julia> 
 
