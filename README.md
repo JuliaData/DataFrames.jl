@@ -7,6 +7,7 @@ Library for working with tabular data in Julia using `DataFrame`'s.
 
 Basic demo of `DataFrame` usage:
 
+```julia
     # Load DataFrame package.
     load("src/init.jl")
 
@@ -22,11 +23,13 @@ Basic demo of `DataFrame` usage:
 
     # Use the with() function to evaluate expressions relative to a DataFrame.
     with(df, :(A + C))
+```
 
 ## Demo 2
 
 Demo of using `DataFrame`'s for regression modeling:
 
+```julia
     # Load DataFrame package.
     load("src/init.jl")
 
@@ -54,3 +57,4 @@ Demo of using `DataFrame`'s for regression modeling:
 
     # Generate a ModelMatrix object.
     mm = model_matrix(mf)
+```
