@@ -147,17 +147,17 @@ test_context("DataFrames")
 
 test_group("constructors")
 df1 = DataFrame({dvint, dvstr}, ["Ints", "Strs"])
-#df2 = DataFrame({dvint, dvstr}) put back when we have default col names
-#df3 = DataFrame({dvint})
-#df4 = DataFrame([1:4 1:4])
-#df5 = DataFrame({DataVec[1,2,3,4], dvstr})
+df2 = DataFrame({dvint, dvstr}) 
+df3 = DataFrame({dvint})
+df4 = DataFrame([1:4 1:4])
+df5 = DataFrame({DataVec[1,2,3,4], dvstr})
 df6 = DataFrame({dvint, dvint, dvstr}, ["A", "B", "C"])
 
 test_group("description functions")
 @test nrow(df6) == 4
 @test ncol(df6) == 3
 @test all(names(df6) == ["A", "B", "C"])
-#@test all(names(df2) == [nothing, nothing])
+@test all(names(df2) == ["x1", "x2"])
 
 test_group("ref")
 @test df6[2,3] == "two"
@@ -172,7 +172,7 @@ test_group("ref")
 # lots more to do
 
 test_group("show")
-@test sshow(df1) == "      Ints Strs\n[1,]     1  one\n[2,]     2  two\n[3,]    NA   NA\n[4,]     4 four\n"
+@test sshow(df1) == "DataFrame  (4,2)\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
 
 test_group("assign")
 df6[3] = DataVec["un", "deux", "troix", "quatre"]
@@ -204,6 +204,7 @@ test_group("ref")
 test_context("Within")
 test_group("Associative")
 
+srand(1)
 a1 = {:a => [1,2], :b => [3,4], :c => [5,6]}
 a2 = {"a" => [1,2], "b" => [3,4], "c" => [5,6]}
 a3 = {"a" => [1,2], "b" => [3,4], :c => [5,6]}
@@ -217,11 +218,23 @@ a4 = within(a1, :( d = a + b ))
 @assert a4[:d] == a1[:a] + a1[:b]
 @assert a4[:a] == a1[:a]
 
+a4 = within(a2, :( d = a + b ))
+@assert a4["d"] == a2["a"] + a2["b"]
+@assert a4["a"] == a2["a"]
+
+a4 = within(a3, :( d = a + b ))
+@assert a4[:d] == a3["a"] + a3["b"]
+@assert a4["a"] == a3["a"]
+
 a4 = based_on(a1, :( d = a + b ))
 @assert a4[:d] == a1[:a] + a1[:b]
 
-## a4 = within(a2, :( d = a + b ))   # doesn't work - keys must be symbols
-## a4 = based_on(a3, :( d = a + b ))   # doesn't work - keys must be symbols
+a4 = based_on(a2, :( d = a + b ))
+@assert a4["d"] == a2["a"] + a2["b"]
+
+a4 = based_on(a3, :( d = a + b ))
+@assert a4[:d] == a3["a"] + a3["b"]
+
 
 test_group("DataFrame")
 
@@ -289,14 +302,64 @@ df8 = within(groupby(df7, "d2"),
 df8 = colwise(df7[[1,3]], :sum)
 @assert df8[1,"d1_sum"] == sum(df7["d1"])
 
-df8 = colwise(groupby(df7[[1,3]], "d1"), [:sum, :length])
-@assert nrow(df8) == 2
+df8 = colwise(groupby(df7, "d2"), [:sum, :length])
+@assert nrow(df8) == 3
 @assert ncol(df8) == 4
-@assert df8[1,"d1_sum"] == 12
+@assert df8[1,"d1_sum"] == 13
 @assert df8[2,"d1_length"] == 8
 
-df9 = df7[[1,3]] | groupby("d1") | [:sum, :length]
+df9 = df7 | groupby(["d2"]) | [:sum, :length]
 @assert df9 == df8
-df9 = by(df7[[1,3]], "d1", [:sum, :length])
+df9 = by(df7, "d2", [:sum, :length])
 @assert df9 == df8
+
+test_group("reshape")
+
+d1 = DataFrame(quote
+    a = [1:3]
+    b = [1:4]
+    c = randn(12)
+    d = randn(12)
+end)
+
+d1s = stack(d1, ["a", "b"])
+d1s2 = stack(d1, ["c", "d"])
+@assert d1s[1:12,"c"] == d1["c"]
+@assert d1s[13:24,"c"] == d1["c"]
+@assert colnames(d1s) == ["key", "value", "c", "d"]
+
+d1s["idx"] = [1:12, 1:12]
+d1s2["idx"] = [1:12, 1:12]
+d1us = unstack(d1s, "key", "value", "idx")
+d1us2 = unstack(d1s2, "key", "value", "idx")
+@assert d1us["a"] == d1["a"]
+@assert d1us2["d"] == d1["d"]
+
+test_group("merge")
+
+srand(1)
+df1 = DataFrame(quote
+    a = shuffle([1:10])
+    b = ["A","B"][randi(2,10)]
+    v1 = randn(10)
+end)
+
+df2 = DataFrame(quote
+    a = shuffle(reverse([1:5]))
+    b2 = ["A","B","C"][randi(3,5)]
+    v2 = randn(5)
+end)
+
+m1 = merge(df1, df2, "a")
+@assert m1["b"] == DataVec["B", "A", "B", "A", "B"]
+
+test_group("extras")
+
+srand(1)
+x = randi(10,10) - 4.0
+# a1 = cut(x, 4)     # BROKEN probable quantile bug related to .<
+a2 = cut(x, [-2, 3, 4.0])
+@assert a2[1] == "[-3.0,-2.0]"
+@assert a2[2] == "(-2.0,3.0]"
+@assert a2[4] == "(4.0,6.0]"
 
