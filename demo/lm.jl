@@ -1,4 +1,4 @@
-load(path_expand("~/julia/base/distributions.jl"))
+## load(path_expand("~/julia/base/distributions.jl"))
 
 type OLSResults
   call::Formula

@@ -1,3 +1,17 @@
+julia> # Load DataFrame package.
+
+julia> load("src/init.jl")
+Warning: New definition ==(NAtype,Any) is ambiguous with ==(Any,AbstractArray{T,N}).
+         Make sure ==(NAtype,AbstractArray{T,N}) is defined first.
+Warning: New definition ==(Any,NAtype) is ambiguous with ==(AbstractArray{T,N},Any).
+         Make sure ==(AbstractArray{T,N},NAtype) is defined first.
+Warning: New definition .==(AbstractDataVec{T},T) is ambiguous with .==(Any,AbstractArray{T,N}).
+         Make sure .==(AbstractDataVec{AbstractArray{T,N}},AbstractArray{T,N}) is defined first.
+Warning: New definition promote_rule(Type{AbstractDataVec{T}},Type{T}) is ambiguous with promote_rule(Type{AbstractDataVec{S}},Type{T}).
+         Make sure promote_rule(Type{AbstractDataVec{T}},Type{T}) is defined first.
+
+julia> 
+
 julia> # Load a CSV file into a DataFrame.
 
 julia> df = csvDataFrame("demo/toy_example.csv")
@@ -77,7 +91,7 @@ DataFrame
         10: Int64 1
       ndel: Int64 0
       deleter: identity
-    names: Array(Union(UTF8String,ASCIIString),(3,)) {"A", "B", "C"}
+    names: Array(Union(UTF8String,ASCIIString),(3,)) ["A", "B", "C"]
 
 julia> 
 
@@ -204,19 +218,36 @@ julia> # Create a new DataFrame based on operations on another DataFrame.
 
 julia> # This is similar to plyr's summarise().
 
-julia> based_on(df, quote
-           AC = A + C
+julia> df3 = based_on(df, quote
+           ct = cut(nafilter(A), 3)
            sum_A = sum(A)
        end)
 DataFrame  (6,2)
-          AC sum_A
-[1,]     5.5  24.1
-[2,]     8.6  24.1
-[3,]     6.5  24.1
-[4,]     9.5  24.1
-[5,]     7.5  24.1
-[6,]    10.5  24.1
+                     ct sum_A
+[1,]    "[2.5,3.56667]"  24.1
+[2,]    "(3.56667,4.5]"  24.1
+[3,]    "[2.5,3.56667]"  24.1
+[4,]    "(3.56667,4.5]"  24.1
+[5,]    "(3.56667,4.5]"  24.1
+[6,]        "(4.5,5.5]"  24.1
 
+
+julia> 
+
+julia> # cut makes a PooledDataVec that is like R's factors, but
+
+julia> # PooledDataVecs can contain more than just strings. Here's
+
+julia> # the internal structure of a PooledDataVec:
+
+julia> idump(df3["ct"])
+PooledDataVec{ASCIIString} 
+  refs: Array(Uint16,(6,)) [0x0001, 0x0002, 0x0001, 0x0002]
+  pool: Array(ASCIIString,(3,)) ["[2.5,3.56667]", "(3.56667,4.5]", "(4.5,5.5]"]
+  filter: Bool false
+  replace: Bool false
+  replaceVal: ASCIIString 
+    data: Array(Uint8,(0,)) []
 
 julia> 
 
@@ -224,7 +255,7 @@ julia> # In DataFrame, copies of data are minimized, especially for column
 
 julia> # operations.
 
-julia> # These are both the same entity change one, and you change the other.
+julia> # These are both the same entity; change one, and you change the other:
 
 julia> df2 = df 
 DataFrame  (6,5)

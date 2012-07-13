@@ -7,6 +7,8 @@ Warning: New definition ==(Any,NAtype) is ambiguous with ==(AbstractArray{T,N},A
          Make sure ==(AbstractArray{T,N},NAtype) is defined first.
 Warning: New definition .==(AbstractDataVec{T},T) is ambiguous with .==(Any,AbstractArray{T,N}).
          Make sure .==(AbstractDataVec{AbstractArray{T,N}},AbstractArray{T,N}) is defined first.
+Warning: New definition assign(AbstractDataVec{T},Array{T,1},Array{Int64,1}) is ambiguous with assign(DataVec{T},T,Array{Int64,1}).
+         Make sure assign(DataVec{Array{T,1}},Array{T,1},Array{Int64,1}) is defined first.
 Warning: New definition promote_rule(Type{AbstractDataVec{T}},Type{T}) is ambiguous with promote_rule(Type{AbstractDataVec{S}},Type{T}).
          Make sure promote_rule(Type{AbstractDataVec{T}},Type{T}) is defined first.
 
@@ -52,15 +54,15 @@ OLSResults(Formula([A],[+(B,C)]),6x4 Float64 Array:
  0.983333
  1.95    
  0.95    
- 0.516667,[0.00527778, 0.00166667, 0.00166667, 0.000277778],4x1 Float64 Array:
-  456.379
- 2865.9  
- 1396.21 
- 4556.05 ,4x1 Float64 Array:
-  456.379
- 2865.9  
- 1396.21 
- 4556.05 ,6x1 Float64 Array:
+ 0.516667,[0.0726483, 0.0408248, 0.0408248, 0.0166667],4x1 Float64 Array:
+ 13.5355
+ 47.765 
+ 23.2702
+ 31.0   ,4x1 Float64 Array:
+ 0.00541392
+ 0.00043802
+ 0.00184162
+ 0.00103896,6x1 Float64 Array:
  2.53333
  3.56667
  3.48333
@@ -81,17 +83,20 @@ julia> # Print out a summary of the results.
 julia> print(lm_fit)
 
 
-Call to lm(): Formula([A],[+(B,C)])
+Call:
+lm(Formula([A],[+(B,C)]))
 
-Fitted Model:
+Coefficients:
 
-             Term  Estimate  Std. Error         t   p-Value
-      (Intercept)  0.9833333  0.0052778  456.3786152  456.3786152
-          B:Three  1.9500000  0.0016667  2865.9029991  2865.9029991
-            B:Two  0.9500000  0.0016667  1396.2091534  1396.2091534
-                C  0.5166667  0.0002778  4556.0509216  4556.0509216
+             Term     Estimate   Std. Error      t value     Pr(>|t|)
+      (Intercept)        0.98333        0.07265     13.53553         0.00541 **
+          B:Three       1.95000        0.04082     47.76505          0.00044 ***
+            B:Two        0.95000        0.04082     23.27015         0.00184 **
+                C        0.51667        0.01667     31.00000         0.00104 **
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
-R-squared: 0.9985
+Adjusted R-squared: 0.9985
 
 
 julia> 
