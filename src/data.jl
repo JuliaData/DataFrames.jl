@@ -1342,11 +1342,11 @@ function cbind!(df1::DataFrame, df2::DataFrame)
     # TODO fix this
     ## newcolnames = convert(Vector{CT1}, df2.colnames)
     newcolnames = colnames(df2)
-    # and if there are no duplicate column names
-    if !nointer(colnames(df1), newcolnames)
-        error("can't cbind dataframes with overlapping column names!")
-    end
-    df1.colindex = Index(concat(colnames(df1), colnames(df2)))
+    ## # and if there are no duplicate column names
+    ## if !nointer(colnames(df1), newcolnames)
+    ##     error("can't cbind dataframes with overlapping column names!")
+    ## end
+    df1.colindex = Index(make_unique(concat(colnames(df1), colnames(df2))))
     df1.columns = [df1.columns, df2.columns]
     df1
 end
@@ -1755,6 +1755,34 @@ function _uniqueofsorted(x::Vector)
         end
     end
     x[idx]
+end
+
+function make_unique{S<:ByteString}(names::Vector{S})
+    x = Index()
+    names = copy(names)
+    dups = Int[]
+    for i in 1:length(names)
+        if has(x, names[i])
+            push(dups, i)
+        else
+            push(x, names[i])
+        end
+    end
+    for i in dups
+        nm = names[i]
+        newnm = nm
+        k = 1
+        while true
+            newnm = "$(nm)_$k"
+            if !has(x, newnm)
+                push(x, newnm)
+                break
+            end
+            k += 1
+        end
+        names[i] = newnm
+    end
+    names
 end
 
 unique(pd::PooledDataVec) = pd.pool
