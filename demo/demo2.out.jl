@@ -7,18 +7,12 @@ Warning: New definition ==(Any,NAtype) is ambiguous with ==(AbstractArray{T,N},A
          Make sure ==(AbstractArray{T,N},NAtype) is defined first.
 Warning: New definition .==(AbstractDataVec{T},T) is ambiguous with .==(Any,AbstractArray{T,N}).
          Make sure .==(AbstractDataVec{AbstractArray{T,N}},AbstractArray{T,N}) is defined first.
-Warning: New definition assign(AbstractDataVec{T},Array{T,1},Array{Int64,1}) is ambiguous with assign(DataVec{T},T,Array{Int64,1}).
-         Make sure assign(DataVec{Array{T,1}},Array{T,1},Array{Int64,1}) is defined first.
 Warning: New definition promote_rule(Type{AbstractDataVec{T}},Type{T}) is ambiguous with promote_rule(Type{AbstractDataVec{S}},Type{T}).
          Make sure promote_rule(Type{AbstractDataVec{T}},Type{T}) is defined first.
-
-julia> 
 
 julia> # Load a very simple lm() function.
 
 julia> load("demo/lm.jl")
-
-julia> 
 
 julia> # Load a CSV file into a DataFrame.
 
@@ -31,9 +25,6 @@ DataFrame  (6,3)
 [4,]    4.5   "Two" 5.0
 [5,]    4.5 "Three" 3.0
 [6,]    5.5 "Three" 5.0
-
-
-julia> 
 
 julia> # Run a simple linear model that predicts A using B and C.
 
@@ -76,8 +67,6 @@ OLSResults(Formula([A],[+(B,C)]),6x4 Float64 Array:
   0.0166667
  -0.0166667,0.9984591679506933)
 
-julia> 
-
 julia> # Print out a summary of the results.
 
 julia> print(lm_fit)
@@ -88,18 +77,16 @@ lm(Formula([A],[+(B,C)]))
 
 Coefficients:
 
-             Term     Estimate   Std. Error      t value     Pr(>|t|)
-      (Intercept)        0.98333        0.07265     13.53553         0.00541 **
-          B:Three       1.95000        0.04082     47.76505          0.00044 ***
-            B:Two        0.95000        0.04082     23.27015         0.00184 **
-                C        0.51667        0.01667     31.00000         0.00104 **
+        Term     Estimate   Std. Error      t value     Pr(>|t|)
+ (Intercept)       0.983333       0.072648    13.535528        0.005414 **
+     B:Three      1.950000       0.040825    47.765050         0.000438 ***
+       B:Two       0.950000       0.040825    23.270153        0.001842 **
+           C       0.516667       0.016667    31.000000        0.001039 **
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
 Adjusted R-squared: 0.9985
 
-
-julia> 
 
 julia> #
 
@@ -114,8 +101,6 @@ julia> # Generate a Formula object.
 julia> f = Formula(:(A ~ B + C))
 Formula([A],[+(B,C)])
 
-julia> 
-
 julia> # Generate a ModelFrame object.
 
 julia> mf = model_frame(f, df)
@@ -128,8 +113,6 @@ ModelFrame(DataFrame  (6,3)
 [5,]    4.5 "Three" 3.0
 [6,]    5.5 "Three" 5.0
 ,[1],Formula([A],[+(B,C)]))
-
-julia> 
 
 julia> # Generate a ModelMatrix object.
 

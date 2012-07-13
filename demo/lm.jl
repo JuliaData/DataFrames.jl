@@ -1,4 +1,4 @@
-## load(path_expand("~/julia/base/distributions.jl"))
+load(strcat(basename(ENV["_"]), "base/distributions.jl"))
 
 type OLSResults
   call::Formula
@@ -35,11 +35,11 @@ function print(results::OLSResults)
   println()
   println("Coefficients:")
   println()
-  printf(" %16.s %12s %12s %12s %12s\n", "Term", "Estimate", "Std. Error", "t value", "Pr(>|t|)")
+  printf(" %12.s %12s %12s %12s %12s\n", "Term", "Estimate", "Std. Error", "t value", "Pr(>|t|)")
   N = size(results.coefficients, 1)
   for i = 1:N
-    printf(" %16.s  ", results.predictor_names[i])
-    print(join(map(z -> sprintf("%12.5f", z),
+    printf(" %12.s  ", results.predictor_names[i])
+    print(join(map(z -> sprintf("%12f", z),
                     {results.coefficients[i, 1],
                      results.std_errors[i, 1],
                      results.t_stats[i, 1],
@@ -72,8 +72,8 @@ function lm(ex::Expr, df::DataFrame)
   residuals = y - predictions
   degrees = n - p
   sigma = sum(residuals.^2) / degrees
-  covariance = (sigma * inv(x' * x)).^(1/2)
-  t_values = coefficients ./ diag(covariance)
+  covariance = sigma * inv(x' * x)
+  t_values = coefficients ./ diag(covariance).^(1/2)
   p_values = map(t -> 2 * (1 - cdf(TDist(degrees), t)), t_values)
   r_squared = 1.0 - sigma / var(y)
   OLSResults(call,
@@ -81,7 +81,7 @@ function lm(ex::Expr, df::DataFrame)
              mm.model_colnames,
              y,
              coefficients,
-             diag(covariance),
+             diag(covariance).^(1/2),
              t_values,
              p_values,
              predictions,
