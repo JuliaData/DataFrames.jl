@@ -215,15 +215,20 @@ function =={T}(a::AbstractDataVec{T}, b::AbstractDataVec{T})
     return true
 end
 
-# element-wise equality
-function .=={T}(a::AbstractDataVec{T}, v::T)
-    # allocate a DataVec for the return value, then assign into it
-    ret = DataVec(Array(Bool,length(a)), Array(Bool,length(a)), false, false, false)
-    for i = 1:length(a)
-        ret[i] = isna(a[i]) ? NA : (a[i] == v)
+# element-wise (in)equality operators
+for (f,scalarf) in ((:(.==),:(==)), (:.<, :<), (:.>, :>), (:.!=,:!=), (:.<=,:<=), (:.>=, :>=))
+    @eval begin    
+        function ($f){T}(a::AbstractDataVec{T}, v::T)
+            # allocate a DataVec for the return value, then assign into it
+            ret = DataVec(Array(Bool,length(a)), Array(Bool,length(a)), false, false, false)
+            for i = 1:length(a)
+                ret[i] = isna(a[i]) ? NA : ($scalarf)(a[i], v)
+            end
+            ret
+        end
     end
-    ret
 end
+
 # TODO: fast version for PooledDataVec
 # TODO: a::AbstractDataVec{T}, b::AbstractArray{T}
 # TODO: a::AbstractDataVec{T}, b::AbstractDataVec{T}
