@@ -508,6 +508,56 @@ function replace!{T}(x::PooledDataVec{T}, fromval::NAtype, toval::T)
     return toval
 end
 
+
+function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
+    ## Return two PooledDataVecs that share the same pool.
+    
+    refs1 = Array(Uint16, length(v1))
+    refs2 = Array(Uint16, length(v2))
+    poolref = Dict{T,Uint16}(length(v1))
+    maxref = 0
+
+    # loop through once to fill the poolref dict
+    for i = 1:length(v1)
+        ## TODO see if we really need the NA checking here.
+        ## if !isna(v1[i])
+            poolref[v1[i]] = 0
+        ## end
+    end
+    for i = 1:length(v2)
+        ## if !isna(v2[i])
+            poolref[v2[i]] = 0
+        ## end
+    end
+
+    # fill positions in poolref
+    pool = sort(keys(poolref))
+    i = 1
+    for p in pool 
+        poolref[p] = i
+        i += 1
+    end
+
+    # fill in newrefs
+    for i = 1:length(v1)
+        ## if isna(v1[i])
+        ##     refs1[i] = 0
+        ## else
+            refs1[i] = poolref[v1[i]]
+        ## end
+    end
+    for i = 1:length(v2)
+        ## if isna(v2[i])
+        ##     refs2[i] = 0
+        ## else
+            refs2[i] = poolref[v2[i]]
+        ## end
+    end
+    (PooledDataVec(refs1, pool, false, false, zero(T)),
+     PooledDataVec(refs2, pool, false, false, zero(T)))
+end
+
+
 # things to deal with unwanted NAs -- lower case returns the base type, with overhead,
 # mixed case returns an iterator
 nafilter{T}(v::DataVec{T}) = v.data[!v.na]

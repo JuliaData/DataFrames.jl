@@ -200,8 +200,7 @@ function show(io, df::AbstractDataFrame)
 end
 
 # get the structure of a DF
-# TODO: return a string or something instead of printing?
-# TODO: AbstractDataFrame
+# TODO: get rid of me -- superceded by dump() and idump()
 str(df::DataFrame) = str(OUTPUT_STREAM::IOStream, df)
 function str(io, df::DataFrame)
     println(io, sprintf("%d observations of %d variables", nrow(df), ncol(df)))
@@ -298,19 +297,6 @@ end
 
 
 # for now, use csvread to pull CSV data from disk
-function _remove_quotes(s)
-    m = match(r"^\"(.*)\"$", s)
-    if m != nothing
-        return m.captures[1]::ASCIIString
-    else
-        return s::ASCIIString
-    end
-end
-
-function _same_set(a, b)
-    # there are definitely MUCH faster ways of doing this
-    length(a) == length(b) && all(sort(a) == sort(b))
-end
 
 # colnames = "true", "false", "check" (default)
 # poolstrings = "check" (default), "never" 
@@ -565,35 +551,6 @@ function cbind!(df::DataFrame, pair::Vector{Any})
     df
 end
 
-# TODO: move to set.jl? call nointer or nodupes?
-# reasonably fast approach: foreach argument, iterate over
-# the (presumed) set, checking for duplicates, adding to a hash table as we go
-function nointer(ss...)
-    d = Dict{Any,Int}(0)
-    for s in ss
-        for item in s
-            ct = get(d, item, 0)
-            if ct == 0 # we're good, add it
-                d[item] = 1
-            else
-                return false
-            end
-        end
-    end
-    return true
-end
-
-function concat{T1,T2}(v1::Vector{T1}, v2::Vector{T2})
-    # concatenate vectors, converting to type Any if needed.
-    if T1 == T2 && T1 != Any
-        [v1, v2]
-    else
-        res = Array(Any, length(v1) + length(v2))
-        res[1:length(v1)] = v1
-        res[length(v1)+1 : length(v1)+length(v2)] = v2
-        res
-    end
-end
 
 
 # two-argument form, two dfs, references only
@@ -797,7 +754,6 @@ function based_on(d::Associative, ex::Expr)
     f(d)
 end
 
-similar{K,V}(d::Dict{K,V}) = Dict{K,V}(length(d.keys))
 
 function within!(df::AbstractDataFrame, ex::Expr)
     # By-column operation within a DataFrame that allows replacing or adding columns.
@@ -990,60 +946,6 @@ groupby(d::DataFrame, cols) = groupby(d, [cols])
 groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
 groupby(cols) = x -> groupby(x, cols)
 
-function unique(x::Vector)
-    idx = fill(true, length(x))
-    d = Dict()
-    d[x[1]] = true
-    for i = 2:length(x)
-        if has(d, x[i])
-            idx[i] = false
-        else
-            d[x[i]] = true
-        end
-    end
-    x[idx]
-end
-
-function _uniqueofsorted(x::Vector)
-    idx = fill(true, length(x))
-    lastx = x[1]
-    for i = 2:length(x)
-        if lastx == x[i]
-            idx[i] = false
-        else
-            lastx = x[i]
-        end
-    end
-    x[idx]
-end
-
-function make_unique{S<:ByteString}(names::Vector{S})
-    x = Index()
-    names = copy(names)
-    dups = Int[]
-    for i in 1:length(names)
-        if has(x, names[i])
-            push(dups, i)
-        else
-            push(x, names[i])
-        end
-    end
-    for i in dups
-        nm = names[i]
-        newnm = nm
-        k = 1
-        while true
-            newnm = "$(nm)_$k"
-            if !has(x, newnm)
-                push(x, newnm)
-                break
-            end
-            k += 1
-        end
-        names[i] = newnm
-    end
-    names
-end
 
 unique(pd::PooledDataVec) = pd.pool
 sort(pd::PooledDataVec) = pd[order(pd)]
@@ -1109,22 +1011,6 @@ end
 
 within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
 
-# MAYBE try to get in base?
-function fill(x::Vector, lengths::Vector{Int})
-    if length(x) != length(lengths)
-        error("vector lengths must match")
-    end
-    res = similar(x, sum(lengths))
-    i = 1
-    for idx in 1:length(x)
-        tmp = x[idx]
-        for kdx in 1:lengths[idx]
-            res[i] = tmp
-            i += 1
-        end
-    end
-    res
-end
 
 # based_on() sweeps along groups and applies based_on to each group
 function based_on(gd::GroupedDataFrame, ex::Expr)  
@@ -1197,19 +1083,6 @@ by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
 ##
 
 
-# slow, but maintains order and seems to work:
-function _setdiff(a::Vector, b::Vector)
-    idx = Int[]
-    for i in 1:length(a)
-        if !contains(b, a[i])
-            push(idx, i)
-        end
-    end
-    a[idx]
-end
-
-## Issue: this doesn't maintain the order in a:
-## setdiff(a::Vector, b::Vector) = elements(Set(a...) - Set(b...))
 
 
 function stack(df::DataFrame, icols::Vector{Int})
@@ -1322,54 +1195,6 @@ function join_idx(left, right, max_groups)
     ##  right_sorter, right_indexer, rightonly_indexer)
     (left_sorter[left_indexer], left_sorter[leftonly_indexer],
      right_sorter[right_indexer], right_sorter[rightonly_indexer])
-end
-
-function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
-    ## Return two PooledDataVecs that share the same pool.
-    
-    refs1 = Array(Uint16, length(v1))
-    refs2 = Array(Uint16, length(v2))
-    poolref = Dict{T,Uint16}(length(v1))
-    maxref = 0
-
-    # loop through once to fill the poolref dict
-    for i = 1:length(v1)
-        ## TODO see if we really need the NA checking here.
-        ## if !isna(v1[i])
-            poolref[v1[i]] = 0
-        ## end
-    end
-    for i = 1:length(v2)
-        ## if !isna(v2[i])
-            poolref[v2[i]] = 0
-        ## end
-    end
-
-    # fill positions in poolref
-    pool = sort(keys(poolref))
-    i = 1
-    for p in pool 
-        poolref[p] = i
-        i += 1
-    end
-
-    # fill in newrefs
-    for i = 1:length(v1)
-        ## if isna(v1[i])
-        ##     refs1[i] = 0
-        ## else
-            refs1[i] = poolref[v1[i]]
-        ## end
-    end
-    for i = 1:length(v2)
-        ## if isna(v2[i])
-        ##     refs2[i] = 0
-        ## else
-            refs2[i] = poolref[v2[i]]
-        ## end
-    end
-    (PooledDataVec(refs1, pool, false, false, zero(T)),
-     PooledDataVec(refs2, pool, false, false, zero(T)))
 end
 
 function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol)
