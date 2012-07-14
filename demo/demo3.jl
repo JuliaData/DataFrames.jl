@@ -16,7 +16,8 @@ summary(df)
 
 # head/tail of a DataFrame:
 head(df)
-tail(df)
+head(df,3)
+tail(df,2)
 
 # Select all rows where column A is greater than 4.0.
 # Element-wise operators in Julia usually have a leading ".".
@@ -39,7 +40,7 @@ dump(df)
 # Create a new DataFrame based on operations on another DataFrame.
 # This is similar to plyr's summarise().
 df3 = based_on(df, quote
-    ct = cut(nafilter(A), 3)
+    ct = cut(nareplace(A,0.0), 3) # cut() doesn't operator on DataVecs yet; no NAs here
     sum_A = sum(A)
 end)
 
