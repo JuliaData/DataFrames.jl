@@ -438,6 +438,9 @@ assign(df::DataFrame, newcol, colname) =
 # df[1] = nothing
 assign(df::DataFrame, x::Nothing, icol::Integer) = del!(df, icol)
 
+# at least some of the elementwise assignments
+assign(df::DataFrame, v, rows, cols) = assign(df[cols], v, rows)
+
 # del!(df, 1)
 # del!(df, "old")
 function del!(df::DataFrame, icols::Vector{Int})
