@@ -114,7 +114,11 @@ end)
 # inner join
 m1 = merge(df1, df2, "a")
 
-# TODO: visualization
+# visualization -- requires a Gaston installation. YMMV.
+push(LOAD_PATH, "../gaston-0.5.4/")
+load("gaston.jl")
+set_terminal("x11")
+with(df1, :(plot(nafilter(a), nafilter(v1)), "plotstyle", "points")))
 
 # DataFrames and Formula can be used to do things like linear models
 
