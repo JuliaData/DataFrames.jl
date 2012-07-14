@@ -200,39 +200,6 @@ function show(io, df::AbstractDataFrame)
 end
 
 # get the structure of a DF
-# TODO: get rid of me -- superceded by dump() and idump()
-str(df::DataFrame) = str(OUTPUT_STREAM::IOStream, df)
-function str(io, df::DataFrame)
-    println(io, sprintf("%d observations of %d variables", nrow(df), ncol(df)))
-
-    if eltype(colnames(df)) == Nothing
-        colNames = [sprintf("[,%d]", c) for c = 1:ncol(df)]
-    else
-        colNames = colnames(df)
-    end
-    
-    # foreach column, print the column name or index, the type, and then print the first elements of 
-    # the column until the total column width would exceed a constant
-    maxPrintedWidth = 60
-    for c in 1:ncol(df)
-        printedWidth = 0
-        ispooled = isa(df[c], PooledDataVec) ? "Pooled " : ""
-        colstr = strcat(string(colNames[c]), " [", ispooled, string(eltype(df[c])), "] ")
-        print(io, colstr)
-        printedWidth += length(colstr)
-        
-        for r in 1:nrow(df)
-            elemstr = strcat(string(df[r,c]), " ")
-            if printedWidth + length(elemstr) > maxPrintedWidth
-                print(io, "...")
-                break
-            end
-            print(io, elemstr)
-            printedWidth += length(elemstr)
-        end
-        println(io)
-    end
-end
 
 function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
     println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
