@@ -321,7 +321,7 @@ df8 = colwise(df7[[1,3]], :sum)
 
 df8 = colwise(groupby(df7, "d2"), [:sum, :length])
 @assert nrow(df8) == 3
-@assert ncol(df8) == 4
+@assert ncol(df8) == 5
 @assert df8[1,"d1_sum"] == 13
 @assert df8[2,"d1_length"] == 8
 
