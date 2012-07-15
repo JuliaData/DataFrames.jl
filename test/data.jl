@@ -180,9 +180,12 @@ dfc = cbind(df3, df4)
 @assert colnames(dfc) == ["x1", "x1_1", "x2"] 
 @assert dfc["x1"] == df3["x1"] 
 
+@assert dfc == [df3 df4]
+
 dfr = rbind(df4, df4)
 @assert nrow(dfr) == 8
 @assert colnames(df4) == colnames(dfr)
+@assert dfr == [df4, df4]
 
 
 test_group("show")

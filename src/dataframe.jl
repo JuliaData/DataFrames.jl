@@ -459,54 +459,11 @@ del(df::SubDataFrame, c) = SubDataFrame(del(df.parent, c), df.rows)
 
 
 #### cbind, rbind, hcat, vcat
-# cbind!(df, ...) will append to an existing df
-# cbind!(not df, ...) will maintain the data, creating a new df
-# cbind(...) always makes copies
 # hcat() is just cbind()
 # rbind(df, ...) only accepts data frames. Finds union of columns, maintaining order
 # of first df. Missing data becomes NAs.
 # vcat() is just rbind()
  
-
-# df2 = cbind!(things...) any combination of dfs and dvs and vectors
-# arguments can be either dfs, or {"colname", vector} or {"colname", DataVec} cell arrays,
-# or {"colname", scalar} cell arrays
-# item lengths have to either be the same
-# colname types have to promotable
-
-# two-argument form, one df, clobbering the argument
-function cbind!(df::DataFrame, pair::Vector{Any})
-    newcolname = pair[1]
-    newcol = pair[2]
-    if isa(newcol, Vector)
-        if length(newcol) == nrow(df)
-            newcol = DataVec(newcol)
-        else
-            error("Can't cbind vector to DataFrame of different length!")
-        end
-    elseif isa(newcol, AbstractDataVec)
-        if length(newcol) != nrow(df)
-            error("Can't cbind vector to DataFrame of different length!")
-        end            
-    else # try to build a DataVec out of this presumably singleton
-        if isa(newcol, String)
-            newcol_bytes = strlen(newcol)
-        else
-            newcol_bytes = sizeof(newcol)
-        end
-        if newcol_bytes > sizeof(Uint16)
-            # cheaper to make this a pooled DV
-            newcol = PooledDataVec(fill(newcol, nrow(df)))
-        else
-            newcol = DataVec(fill(newcol, nrow(df)))
-        end
-    end
-    push(df.columns, newcol)
-    
-    push(df.colindex, convert(CT, newcolname))
-    
-    df
-end
 
 # two-argument form, two dfs, references only
 function cbind(df1::DataFrame, df2::DataFrame)
@@ -518,6 +475,8 @@ end
     
 # three-plus-argument form recurses
 cbind(a, b, c...) = cbind(cbind(a, b), c...)
+hcat(dfs::DataFrame...) = cbind(dfs...)
+
 
 similar{T}(dv::DataVec{T}, dims) =
     DataVec(similar(dv.data, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
@@ -552,6 +511,7 @@ function rbind(dfs::DataFrame...)
     end
     res
 end
+vcat(dfs::DataFrame...) = rbind(dfs...)
 
 function rbind(dfs::Vector)   # for a Vector of DataFrame's
     Nrow = sum(nrow, dfs)
