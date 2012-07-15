@@ -119,10 +119,6 @@ isna(x) = false
 ==(na::NAtype, b) = NA
 ==(a, na::NAtype) = NA
 
-# TODO: Move me to a more appropriate spot
-# this allows zero(String) to work
-oftype(::Type{ASCIIString},c) = repeat(" ",c)
-
 
 # constructor from type
 function _dv_most_generic_type(vals)

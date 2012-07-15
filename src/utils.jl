@@ -131,3 +131,7 @@ function _same_set(a, b)
     # there are definitely MUCH faster ways of doing this
     length(a) == length(b) && all(sort(a) == sort(b))
 end
+
+# TODO: Move me to a more appropriate spot
+# this allows zero(String) to work
+oftype(::Type{ASCIIString},c) = repeat(" ",c)

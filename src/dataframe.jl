@@ -123,16 +123,6 @@ shallowcopy(df::DataFrame) = DataFrame(df.columns, colnames(df))
 # dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
 # changing the in one df can break the other.
 
-# # TODO: move
-# function idxFirstEqual{T}(x::Vector{T}, y::T)
-#     for i = 1:length(x)
-#         if x[i] == y
-#             return i
-#         end
-#     end
-#     return nothing
-# end
-
 # Equality
 function ==(df1::AbstractDataFrame, df2::AbstractDataFrame)
     if ncol(df1) != ncol(df2)
@@ -237,9 +227,6 @@ function summary{T<:Number}(io, dv::AbstractDataVec{T})
         println(io, "NAs      $nas")
     end
 end
-# function summary{T<:Bool}(dv::DataVec{T})
-#     error("TODO")
-# end
 function summary{T}(io, dv::AbstractDataVec{T})
     ispooled = isa(dv, PooledDataVec) ? "Pooled " : ""
     # if nothing else, just give the length and element type and NA count
