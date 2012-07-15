@@ -42,7 +42,7 @@ dfcopy[2:3, "B"] = "One and a half"
 # Use the with() function to evaluate expressions relative to a DataFrame.
 with(df, :(A + C))
 
-# Make a new column using within.
+# Make a copy of df with a new column using within().
 df2 = within(df, :( D = A + C ))
 
 # This is similar, but now changes apply directly to df.
@@ -55,7 +55,9 @@ dump(df)
 
 # Create a new DataFrame based on operations on another DataFrame.
 # This is similar to plyr's summarise().
-# Almost, but not quite the same as within().
+# This is similar to within(), but the result from based_on() does not include the
+# original columns like within().
+# The number or rows may or may not match that of the original.
 df3 = based_on(df, quote
     ct = cut(nareplace(A,0.0), 3) # cut() doesn't operator on DataVecs yet; no NAs here
     sum_A = sum(A)
