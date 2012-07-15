@@ -508,30 +508,16 @@ function cbind!(df::DataFrame, pair::Vector{Any})
     df
 end
 
-
-
 # two-argument form, two dfs, references only
-function cbind!(df1::DataFrame, df2::DataFrame)
-    # this only works if the column names can be promoted
-    # TODO fix this
-    ## newcolnames = convert(Vector{CT1}, df2.colnames)
-    newcolnames = colnames(df2)
-    ## # and if there are no duplicate column names
-    ## if !nointer(colnames(df1), newcolnames)
-    ##     error("can't cbind dataframes with overlapping column names!")
-    ## end
-    df1.colindex = Index(make_unique(concat(colnames(df1), colnames(df2))))
-    df1.columns = [df1.columns, df2.columns]
-    df1
+function cbind(df1::DataFrame, df2::DataFrame)
+    # If df1 had metadata, we should copy that.
+    colindex = Index(make_unique(concat(colnames(df1), colnames(df2))))
+    columns = [df1.columns, df2.columns]
+    DataFrame(columns, colindex)
 end
     
-    
 # three-plus-argument form recurses
-cbind!(a, b, c...) = cbind!(cbind(a, b), c...)
-
-# without a bang, just copy then bind
-cbind(a, b) = cbind!(copy(a), copy(b))
-cbind(a, b, c...) = cbind(cbind(a,b), c...)
+cbind(a, b, c...) = cbind(cbind(a, b), c...)
 
 similar{T}(dv::DataVec{T}, dims) =
     DataVec(similar(dv.data, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
@@ -976,7 +962,7 @@ function based_on(gd::GroupedDataFrame, ex::Expr)
     idx = fill([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
     resdf = rbind(x)
-    cbind!(keydf, resdf)
+    cbind(keydf, resdf)
 end
 
 # default pipelines:
@@ -1162,7 +1148,7 @@ function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol)
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
 
     # inner join:
-    cbind!(df1[left_indexer,:], del(df2, bycol)[right_indexer,:])
+    cbind(df1[left_indexer,:], del(df2, bycol)[right_indexer,:])
     # TODO left/right join, outer join - needs better
     #      NA indexing or a way to create NA DataFrames.
     # TODO add support for multiple columns

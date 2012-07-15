@@ -172,6 +172,19 @@ test_group("ref")
 @test size(head(df6,2)) == (2,3)
 # lots more to do
 
+
+test_group("combining")
+
+dfc = cbind(df3, df4)
+@assert ncol(dfc) == 3
+@assert colnames(dfc) == ["x1", "x1_1", "x2"] 
+@assert dfc["x1"] == df3["x1"] 
+
+dfr = rbind(df4, df4)
+@assert nrow(dfr) == 8
+@assert colnames(df4) == colnames(dfr)
+
+
 test_group("show")
 @test sshow(df1) == "DataFrame  (4,2)\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
 
