@@ -343,7 +343,15 @@ type SubDataFrame <: AbstractDataFrame
     parent::DataFrame
     rows::Vector{Int} # maps from subdf row indexes to parent row indexes
     
-    # TODO: constructor to check params
+    function SubDataFrame(parent::DataFrame, rows::Vector{Int})
+        if any(rows .< 1)
+            error("all SubDataFrame indices must be > 0")
+        end
+        if max(rows) > nrow(parent)
+            error("all SubDataFrame indices must be <= the number of rows of the DataFrame")
+        end
+        new(parent, rows)
+    end
 end
 
 sub(D::DataFrame, r, c) = sub(D[[c]], r)    # If columns are given, pass in a subsetted parent D.
