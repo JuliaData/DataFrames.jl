@@ -107,7 +107,16 @@ function DataFrame{K,V}(d::Associative{K,V})
         elseif rem(Nrow, length(v)) == 0    # Nrow is a multiple of length(v)
             df[k] = vcat(fill(v, div(Nrow, length(v)))...)
         else
-            println("Warning: Column $(string(k)) ignored: mismatched column lengths")
+            vec = fill(v[1], Nrow)
+            j = 1
+            for i = 1:Nrow
+                vec[i] = v[j]
+                j += 1
+                if j > length(v)
+                    j = 1
+                end
+            end
+            df[k] = vec
         end
     end
     df
