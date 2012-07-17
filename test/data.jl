@@ -364,7 +364,7 @@ end)
 df2 = DataFrame(quote
     a = shuffle(reverse([1:5]))
     b2 = ["A","B","C"][randi(3,5)]
-    v2 = randn(5)
+    v2 = randn(3)    # test unequal lengths in the constructor
 end)
 
 m1 = merge(df1, df2, "a")
@@ -374,7 +374,7 @@ test_group("extras")
 
 srand(1)
 x = randi(10,10) - 4.0
-# a1 = cut(x, 4)     # BROKEN probable quantile bug related to .<
+a1 = cut(x, 4)
 a2 = cut(x, [-2, 3, 4.0])
 @assert a2[1] == "[-3.0,-2.0]"
 @assert a2[2] == "(-2.0,3.0]"
