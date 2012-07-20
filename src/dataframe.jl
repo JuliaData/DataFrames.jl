@@ -77,8 +77,6 @@ done(df::AbstractDataFrame, i) = i > ncol(df)
 next(df::AbstractDataFrame, i) = (df[i], i + 1)
 ## numel(df::AbstractDataFrame) = ncol(df)
 isempty(df::AbstractDataFrame) = ncol(df) == 0
-# Column groups
-add_group(d::DataFrame, newgroup, names) = add_group(d.colindex, newgroup, names)
 
 function insert(df::DataFrame, index::Integer, item, name)
     @assert 0 < index <= ncol(df) + 1

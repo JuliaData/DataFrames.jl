@@ -7,12 +7,12 @@
 abstract AbstractIndex
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...
-    lookup::Dict{ByteString,Indices}      # name => names array position
+    lookup::Dict{ByteString,Int}      # name => names array position
     names::Vector{ByteString}
 end
-Index{T<:ByteString}(x::Vector{T}) = Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)),
+Index{T<:ByteString}(x::Vector{T}) = Index(Dict{ByteString, Int}(tuple(x...), tuple([1:length(x)]...)),
                                            convert(Vector{ByteString}, x))
-Index() = Index(Dict{ByteString,Indices}(), ByteString[])
+Index() = Index(Dict{ByteString,Int}(), ByteString[])
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
 copy(x::Index) = Index(copy(x.lookup), copy(x.names))
@@ -62,7 +62,7 @@ function del(x::Index, nm)
     del(x, idx)
 end
 
-ref{T<:ByteString}(x::Index, idx::Vector{T}) = [[x.lookup[i] for i in idx]...]
+ref{T<:ByteString}(x::Index, idx::Vector{T}) = convert(Vector{Int}, [x.lookup[i] for i in idx])
 ref{T<:ByteString}(x::Index, idx::T) = x.lookup[idx]
 
 # fall-throughs, when something other than the index type is passed
@@ -79,6 +79,3 @@ end
 SimpleIndex() = SimpleIndex(0)
 length(x::SimpleIndex) = x.length
 names(x::SimpleIndex) = nothing
-
-# Chris's idea of namespaces adapted by Harlan for column groups
-add_group(idx::Index, newgroup, names) = idx.lookup[newgroup] = [[idx.lookup[nm] for nm in names]...]
