@@ -68,7 +68,8 @@ ref{T<:ByteString}(x::Index, idx::T) = x.lookup[idx]
 # fall-throughs, when something other than the index type is passed
 ref(x::AbstractIndex, idx::Int) = idx
 ref(x::AbstractIndex, idx::Vector{Int}) = idx
-ref(x::AbstractIndex, idx::Range1) = [idx]
+ref(x::AbstractIndex, idx::Range{Int}) = [idx]
+ref(x::AbstractIndex, idx::Range1{Int}) = [idx]
 ref(x::AbstractIndex, idx::Vector{Bool}) = [1:length(x)][idx]
 ref(x::AbstractIndex, idx::AbstractDataVec{Bool}) = x[nareplace(idx, false)]
 ref(x::AbstractIndex, idx::AbstractDataVec{Int}) = x[nafilter(idx)]
