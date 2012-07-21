@@ -47,6 +47,7 @@ ref(df::DataFrame, c) = df[df.colindex[c]]
 ref(df::DataFrame, c::Integer) = df.columns[c]
 ref(df::DataFrame, c::Vector{Int}) = DataFrame(df.columns[c], convert(Vector{ByteString}, colnames(df)[c]))
 
+ref(df::DataFrame, r::Range, c) = ref(df, [r], c)
 ref(df::DataFrame, r, c) = df[r, df.colindex[c]]
 ref(df::DataFrame, r, c::Int) = df[c][r]
 ref(df::DataFrame, r, c::Vector{Int}) =
