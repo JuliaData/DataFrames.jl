@@ -40,8 +40,8 @@ nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
 names(df::AbstractDataFrame) = colnames(df)
 size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 size(df::AbstractDataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
-## length(df::AbstractDataFrame) = ncol(df)
-length(df::AbstractDataFrame) = nrow(df) * ncol(df)
+length(df::AbstractDataFrame) = ncol(df)
+ndims(::AbstractDataFrame) = 2
 
 ref(df::DataFrame, c) = df[df.colindex[c]]
 ref(df::DataFrame, c::Integer) = df.columns[c]
