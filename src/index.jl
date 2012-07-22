@@ -51,8 +51,14 @@ function del(x::Index, idx::Integer)
     for i in idx+1:length(x.names)
         x.lookup[x.names[i]] = i - 1
     end
+    gr = get_groups(x)
     del(x.lookup, x.names[idx])
     del(x.names, idx)
+    # fix groups:
+    for (k,v) in gr
+        newv = [[has(x, vv) ? vv : ASCIIString[] for vv in v]...]
+        set_group(x, k, newv)
+    end
 end
 function del(x::Index, nm)
     if !has(x.lookup, nm)
@@ -81,4 +87,24 @@ length(x::SimpleIndex) = x.length
 names(x::SimpleIndex) = nothing
 
 # Chris's idea of namespaces adapted by Harlan for column groups
-add_group(idx::Index, newgroup, names) = idx.lookup[newgroup] = [[idx.lookup[nm] for nm in names]...]
+function set_group(idx::Index, newgroup, names)
+    if !has(idx, newgroup) || isa(idx.lookup[newgroup], Array)
+        idx.lookup[newgroup] = [[idx.lookup[nm] for nm in names]...]
+    end
+end
+function set_groups(idx::Index, gr::Dict{ByteString,Vector{ByteString}})
+    for (k,v) in gr
+        if !has(idx, k) 
+            idx.lookup[k] = [[idx.lookup[nm] for nm in v]...]
+        end
+    end
+end
+function get_groups(idx::Index)
+    gr = Dict{ByteString,Vector{ByteString}}()
+    for (k,v) in idx.lookup
+        if isa(v,Array)
+            gr[k] = idx.names[v]
+        end
+    end
+    gr
+end

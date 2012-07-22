@@ -78,7 +78,9 @@ next(df::AbstractDataFrame, i) = (df[i], i + 1)
 ## numel(df::AbstractDataFrame) = ncol(df)
 isempty(df::AbstractDataFrame) = ncol(df) == 0
 # Column groups
-add_group(d::DataFrame, newgroup, names) = add_group(d.colindex, newgroup, names)
+set_group(d::DataFrame, newgroup, names) = set_group(d.colindex, newgroup, names)
+set_groups(d::DataFrame, gr::Dict{ByteString,Vector{ByteString}}) = set_groups(d.colindex, gr)
+get_groups(d::DataFrame) = get_groups(d.colindex)
 
 function insert(df::DataFrame, index::Integer, item, name)
     @assert 0 < index <= ncol(df) + 1
@@ -163,7 +165,9 @@ maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) :
 maxShowLength(dv::AbstractDataVec) = max([length(_string(x)) for x = dv])
 function show(io, df::AbstractDataFrame)
     ## TODO use alignment() like print_matrix in show.jl.
-    println(io, "$(typeof(df))  $(size(df))")
+    print(io, "$(typeof(df))  $(size(df))")
+    gr = get_groups(df)
+    length(gr) > 0 ? println(io, "; Column groups: ", gr) : println(io)
     N = nrow(df)
     Nmx = 20   # maximum head and tail lengths
     if N <= 2Nmx
@@ -204,7 +208,9 @@ end
 # get the structure of a DF
 
 function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
-    println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
+    print(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
+    gr = get_groups(x)
+    length(gr) > 0 ? println(io, "; Column groups: ", gr) : println(io)
     if n > 0
         for col in names(x)[1:min(10,end)]
             print(io, indent, "  ", col, ": ")
