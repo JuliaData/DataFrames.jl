@@ -98,5 +98,5 @@ end
 Nrow = 55
 d = DataFrame({randn(Nrow), randn(Nrow)})
 ds = DataFrameDataStream(d, 10)
-colwise(df, :mean)
+colwise(d, :mean)
 colmeans(ds)
