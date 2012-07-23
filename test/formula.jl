@@ -10,6 +10,30 @@ test_context("Formula")
 
 d = DataFrame()
 d["y"] = [1:4]
+d["x1"] = PooledDataVec([5:8])
+d["x2"] = [9:12]
+d["x3"] = [11:14]
+f = Formula(:(y ~ x1 * (log(x2) + x3)))
+mf = model_frame(f, d)
+mm = model_matrix(mf)
+@assert mm.model_colnames == [
+ "(Intercept)"
+ "x1:6"        
+ "x1:7"        
+ "x1:8"        
+ "log(x2)"     
+ "x3"          
+ "x1:6&log(x2)"
+ "x1:6&x3"     
+ "x1:7&log(x2)"
+ "x1:7&x3"     
+ "x1:8&log(x2)"
+ "x1:8&x3" ]
+ 
+test_context("Basic tests")
+
+d = DataFrame()
+d["y"] = [1:4]
 d["x1"] = [5:8]
 d["x2"] = [9:12]
 
@@ -113,6 +137,28 @@ f = Formula(:(y ~ x1 + log(x2)))
 mf = model_frame(f, df)
 mm = model_matrix(mf)
 @assert mm.model == [ones(4) x1 log(x2)]
+
+d = DataFrame()
+d["y"] = [1:4]
+d["x1"] = PooledDataVec([5:8])
+d["x2"] = [9:12]
+d["x3"] = [11:14]
+f = Formula(:(y ~ x1 * (log(x2) + x3)))
+mf = model_frame(f, d)
+mm = model_matrix(mf)
+@assert mm.model_colnames == [
+ "(Intercept)"
+ "x1:6"        
+ "x1:7"        
+ "x1:8"        
+ "log(x2)"     
+ "x3"          
+ "x1:6&log(x2)"
+ "x1:6&x3"     
+ "x1:7&log(x2)"
+ "x1:7&x3"     
+ "x1:8&log(x2)"
+ "x1:8&x3" ]
 
 ## test_group("Include all terms")
 

@@ -178,7 +178,7 @@ function expand_helper(ex, df::DataFrame)
       r = DataFrame()
       r[string(ex)] = a
     else 
-      r = expand(ex.args, df)
+      r = expand(ex, df)
     end
   else
     error("could not expand formula to a DataFrame")
@@ -190,7 +190,7 @@ end
 # + includes both columns
 # & includes the elementwise product of every pair of columns
 # * both of the above
-function expand(ex, df)
+function expand(ex, df::DataFrame)
   # Recurse on left and right children of provided Expression
   a = expand_helper(ex.args[2], df)
   b = expand_helper(ex.args[3], df)
