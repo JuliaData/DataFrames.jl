@@ -7,12 +7,12 @@
 abstract AbstractIndex
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...
-    lookup::Dict{ByteString,Int}      # name => names array position
+    lookup::Dict{ByteString,Indices}      # name => names array position
     names::Vector{ByteString}
 end
-Index{T<:ByteString}(x::Vector{T}) = Index(Dict{ByteString, Int}(tuple(x...), tuple([1:length(x)]...)),
+Index{T<:ByteString}(x::Vector{T}) = Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)),
                                            convert(Vector{ByteString}, x))
-Index() = Index(Dict{ByteString,Int}(), ByteString[])
+Index() = Index(Dict{ByteString,Indices}(), ByteString[])
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
 copy(x::Index) = Index(copy(x.lookup), copy(x.names))
@@ -51,8 +51,14 @@ function del(x::Index, idx::Integer)
     for i in idx+1:length(x.names)
         x.lookup[x.names[i]] = i - 1
     end
+    gr = get_groups(x)
     del(x.lookup, x.names[idx])
     del(x.names, idx)
+    # fix groups:
+    for (k,v) in gr
+        newv = [[has(x, vv) ? vv : ASCIIString[] for vv in v]...]
+        set_group(x, k, newv)
+    end
 end
 function del(x::Index, nm)
     if !has(x.lookup, nm)
@@ -62,7 +68,7 @@ function del(x::Index, nm)
     del(x, idx)
 end
 
-ref{T<:ByteString}(x::Index, idx::Vector{T}) = convert(Vector{Int}, [x.lookup[i] for i in idx])
+ref{T<:ByteString}(x::Index, idx::Vector{T}) = [[x.lookup[i] for i in idx]...]
 ref{T<:ByteString}(x::Index, idx::T) = x.lookup[idx]
 
 # fall-throughs, when something other than the index type is passed
@@ -80,3 +86,26 @@ end
 SimpleIndex() = SimpleIndex(0)
 length(x::SimpleIndex) = x.length
 names(x::SimpleIndex) = nothing
+
+# Chris's idea of namespaces adapted by Harlan for column groups
+function set_group(idx::Index, newgroup, names)
+    if !has(idx, newgroup) || isa(idx.lookup[newgroup], Array)
+        idx.lookup[newgroup] = [[idx.lookup[nm] for nm in names]...]
+    end
+end
+function set_groups(idx::Index, gr::Dict{ByteString,Vector{ByteString}})
+    for (k,v) in gr
+        if !has(idx, k) 
+            idx.lookup[k] = [[idx.lookup[nm] for nm in v]...]
+        end
+    end
+end
+function get_groups(idx::Index)
+    gr = Dict{ByteString,Vector{ByteString}}()
+    for (k,v) in idx.lookup
+        if isa(v,Array)
+            gr[k] = idx.names[v]
+        end
+    end
+    gr
+end
