@@ -44,41 +44,48 @@ type ModelFrame
     formula::Formula 
 end
 
+# Temporary version.  Replace using unique_symbols(Formula)?
 function model_frame(f::Formula, d::DataFrame)
-    # for now, assume the lhs and rhs are a simple disjunction/summation of literal clauses,
-    # where each literal may be a simple transforming function
-    
-    cols = {}
-    col_names = Array(ASCIIString,0)
-    
-    # so, foreach element in the lhs, evaluate it in the context of the df
-    for ll = 1:length(f.lhs)
-        push(cols, with(d, f.lhs[ll]))
-        push(col_names, string(f.lhs[ll]))
-    end
-    y_indexes = [1:length(f.lhs)]
-    
-    # and foreach element in the rhs, do the same
-    
-    # if it's a disjunction, get the pieces, otherwise it's just itself
-    # FAILS IF RHS HAS ONLY 1 ELEMENT, SO RHS IS A SYMBOL
-    if typeof(f.rhs) == Array{Symbol,1}
-      push(cols, with(d, f.rhs[1]))
-      push(col_names, string(f.rhs[1]))
-    else
-      if f.rhs[1].args[1] == :+
-          rhs = f.rhs[1].args[2:end]
-      else
-          rhs = r.rhs[1]
-      end
-      for rr = 1:length(rhs)
-          push(cols, with(d, rhs[rr]))
-          push(col_names, string(rhs[rr]))
-      end
-    end
-    # bind together and return
-    ModelFrame(DataFrame(cols, col_names), y_indexes, f)
+    ModelFrame(d, [1], f)
 end
+
+## # Create a DataFrame containing only variables required by the Formula
+## function model_frame(f::Formula, d::DataFrame)
+##     # for now, assume the lhs and rhs are a simple disjunction/summation of literal clauses,
+##     # where each literal may be a simple transforming function
+    
+##     cols = {}
+##     col_names = Array(ASCIIString,0)
+    
+##     # so, foreach element in the lhs, evaluate it in the context of the df
+##     for ll = 1:length(f.lhs)
+##         push(cols, with(d, f.lhs[ll]))
+##         push(col_names, string(f.lhs[ll]))
+##     end
+##     y_indexes = [1:length(f.lhs)]
+    
+##     # and foreach element in the rhs, do the same
+    
+##     # if it's a disjunction, get the pieces, otherwise it's just itself
+##     # FAILS IF RHS HAS ONLY 1 ELEMENT, SO RHS IS A SYMBOL
+##     if typeof(f.rhs) == Array{Symbol,1}
+##       push(cols, with(d, f.rhs[1]))
+##       push(col_names, string(f.rhs[1]))
+##     else
+##       if f.rhs[1].args[1] == :+
+##           rhs = f.rhs[1].args[2:end]
+##       else
+##           rhs = r.rhs[1]
+##       end
+##       for rr = 1:length(rhs)
+##           push(cols, with(d, rhs[rr]))
+##           push(col_names, string(rhs[rr]))
+##       end
+##     end
+##     # bind together and return
+##     ModelFrame(DataFrame(cols, col_names), y_indexes, f)
+## end
+
 
 # a ModelMatrix is a wrapper around a matrix, with column names.
 # construct with mm::ModelMatrix = model_matrix(mf::ModelFrame, ...)
@@ -95,45 +102,124 @@ type ModelMatrix{T}
     response::Array{Float64}
     model_colnames::Array{T}
     response_colnames::Array{T}
-    
 end
 
-function model_matrix(mfarg::ModelFrame)
-    df = mfarg.df[complete_cases(mfarg.df),:]
-    
-    # for every model column or response column, if it's a non-number, generate
-    # dummies, otherwise create a simple numeric matrix
-    m = Array(Float64,nrow(df),0); r = Array(Float64,nrow(df),0)
-    mnames = {}; rnames = {}
-    for c in 1:ncol(df)
-        local newcol, newcolname
-        try
-            newcol = [convert(Float64, x)::Float64 for x in df[c]]
-            newcolname = [names(df)[c]]
-        catch
-            # ok, it can't be converted to a float. we need it to be a PooledDataVec
-            if !isa(df[c], PooledDataVec)
-                poolcol = PooledDataVec(df[c])
-            else
-                poolcol = df[c]
-            end
-            # now, create a matrix of n-1 columns of dummy variables
-            newcol = reduce(hcat, [[convert(Float64,x)::Float64 for x in (poolcol.refs .== i)] for i in 2:length(poolcol.pool)])
-            newcolname = [strcat(names(df)[c], ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
-        end
-        # if this is a response column...
-        if contains(mfarg.y_indexes, c)
-            r = hcat(r, newcol)
-            [push(rnames, nc) for nc in newcolname] # TODO: make this not stupid
-        else
-            m = hcat(m, newcol)
-            [push(mnames, nc) for nc in newcolname]
-        end
+# Expand dummy variables and equations
+function model_matrix(mf::ModelFrame)
+    ex = mf.formula.rhs[1]
+    df = mf.df[complete_cases(mf.df),1:ncol(mf.df)]
+    rdf = df[mf.y_indexes]
+    mdf = expand(ex, df)
+
+    # TODO: Convert to Array{Float64} in a cleaner way
+    rnames = colnames(rdf)
+    mnames = colnames(mdf)
+    r = Array(Float64,nrow(rdf),ncol(rdf))
+    m = Array(Float64,nrow(mdf),ncol(mdf))
+    for i = 1:nrow(rdf)
+      for j = 1:ncol(rdf)
+        r[i,j] = float(rdf[i,j])
+      end
+      for j = 1:ncol(mdf)
+        m[i,j] = float(mdf[i,j])
+      end
     end
+    
     include_intercept = true
     if include_intercept
-      m = hcat(ones(nrow(df)), m)
+      m = hcat(ones(nrow(mdf)), m)
       unshift(mnames, "(Intercept)")
     end
-    return ModelMatrix(m, r, mnames, rnames)
+
+    ModelMatrix(m, r, mnames, rnames)
+    ## mnames = {}
+    ## rnames = {}
+    ## for c in 1:ncol(rdf)
+    ##   r = hcat(r, float(rdf[c]))
+    ##   push(rnames, colnames(rdf)[c])
+    ## end
+    ## for c in 1:ncol(mdf)
+    ##   m = hcat(m, mdf[c])
+    ##   push(mnames, colnames(mdf)[c])
+    ## end
+end
+
+
+
+# TODO: Be able to extract information about each column name
+function interaction_design_matrix(a::DataFrame, b::DataFrame)
+   cols = {}
+   col_names = Array(ASCIIString,0)
+   for i in 1:ncol(a)
+       for j in 1:ncol(b)
+          push(cols, DataVec(a[:,i] .* b[:,j]))
+          push(col_names, strcat(colnames(a)[i],"&",colnames(b)[j]))
+       end
+   end
+   DataFrame(cols, col_names)
+end
+
+
+# Take an Expr/Symbol
+function expand_helper(ex, df::DataFrame)
+  if isa(ex, Symbol)
+    a = with(df, ex)
+    if isa(a, PooledDataVec)
+      r = expand(a, string(ex))
+    elseif isa(a, DataVec)
+      r = DataFrame()
+      r[string(ex)] = a
+    else
+      error("could not expand symbol to a DataFrame")
+    end
+  elseif isa(ex, Expr)
+    if length(ex.args) == 2  # e.g. log(x2)
+      a = with(df, ex)
+      r = DataFrame()
+      r[string(ex)] = a
+    else 
+      r = expand(ex.args, df)
+    end
+  else
+    error("could not expand formula to a DataFrame")
+  end
+  return r
+end
+
+# Expand an Expression (with +, &, or *) using the provided DataFrame
+# + includes both columns
+# & includes the elementwise product of every pair of columns
+# * both of the above
+function expand(ex, df)
+  # Recurse on left and right children of provided Expression
+  a = expand_helper(ex.args[2], df)
+  b = expand_helper(ex.args[3], df)
+
+  # Combine according to formula
+  if ex.args[1] == :+
+    return cbind(a,b)
+  elseif ex.args[1] == :&
+    return interaction_design_matrix(a,b)
+  elseif ex.args[1] == :*
+    return cbind(a, b, interaction_design_matrix(a,b))
+  else
+    error("Unknown operation in formula")
+  end
+end
+
+
+# Expand a PooledDataVector into a matrix of indicators for each dummy variable
+# TODO: account for NAs?
+function expand(poolcol::PooledDataVec, colname::String)
+    newcol = reduce(hcat, [[convert(Float64,x)::Float64 for x in (poolcol.refs .== i)] for i in 2:length(poolcol.pool)])
+    newcolname = [strcat(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
+    # TODO: grabbed from csvReader... confused why I need it
+    columnNames = [_remove_quotes(x) for x = newcolname]   
+    # TEMP: Construct dataframe by pushing DataVecs on
+    #       (normal constructor doesn't convert)
+    cols = {}
+    for i = 1:size(newcol)[2]
+        push(cols, DataVec(newcol[:,i]))
+    end
+    DataFrame(cols, columnNames)
 end
