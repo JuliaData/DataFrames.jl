@@ -30,6 +30,11 @@ abstract DataStream
 # Concrete Types
 #
 
+type DataFrameDataStream <: DataStream
+  dataframe::DataFrame
+  minibatch_size::Int
+end
+
 type MatrixDataStream <: DataStream
   matrix::Matrix
   minibatch_size::Int
@@ -58,7 +63,22 @@ type SQLDataStream <: DataStream
 end
 
 #
-# Functions
+# DataFrame
+#
+
+DataFrameDataStream(df::DataFrame) = DataFrameDataStream(df, 1)
+
+start(::DataFrameDataStream) = 1
+
+function next(dfds::DataFrameDataStream, index::Int)
+  index_set = index : min(index + dfds.minibatch_size - 1, nrow(dfds.dataframe))
+  (dfds.dataframe[index_set , :], index + dfds.minibatch_size)
+end
+
+done(dfds::DataFrameDataStream, index::Int) = index > nrow(dfds.dataframe)
+
+#
+# Matrix
 #
 
 function MatrixDataStream(m::Matrix)
@@ -170,4 +190,27 @@ function done(wds::WSVDataStream, line::String)
     close(wds.stream)
     return true
   end
+end
+
+
+
+#
+# Functions
+#
+
+function colmeans(ds::DataStream)
+    (df, i) = next(ds, 1)
+    res = colwise(df, :mean)
+    totallength = nrow(df)
+    N = ncol(df)
+    while !done(ds, i)
+        (df, i) = next(ds, i)
+        df_means = colwise(df, :mean)
+        nrow_df = nrow(df)
+        for k in 1:N
+            res[1,k] = (res[1,k] * totallength + df_means[1,k] * nrow_df) / (totallength + nrow_df)
+        end
+        totallength += nrow_df
+    end
+    res
 end

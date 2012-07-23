@@ -89,3 +89,14 @@ done(wds, line)
 for row in wds
   println(row)
 end
+
+
+#
+# colmeans
+#
+
+Nrow = 55
+d = DataFrame({randn(Nrow), randn(Nrow)})
+ds = DataFrameDataStream(d, 10)
+colwise(df, :mean)
+colmeans(ds)
