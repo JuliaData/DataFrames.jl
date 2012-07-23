@@ -161,8 +161,7 @@ end
 
 
 # Take an Expr/Symbol
-function expand_helper(ex, df::DataFrame)
-  if isa(ex, Symbol)
+function expand_helper(ex::Symbol, df::DataFrame)
     a = with(df, ex)
     if isa(a, PooledDataVec)
       r = expand(a, string(ex))
@@ -172,7 +171,10 @@ function expand_helper(ex, df::DataFrame)
     else
       error("could not expand symbol to a DataFrame")
     end
-  elseif isa(ex, Expr)
+    return r
+end
+
+function expand_helper(ex::Expr, df::DataFrame)
     if length(ex.args) == 2  # e.g. log(x2)
       a = with(df, ex)
       r = DataFrame()
@@ -180,10 +182,7 @@ function expand_helper(ex, df::DataFrame)
     else 
       r = expand(ex, df)
     end
-  else
-    error("could not expand formula to a DataFrame")
-  end
-  return r
+    return r
 end
 
 # Expand an Expression (with +, &, or *) using the provided DataFrame

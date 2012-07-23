@@ -2,6 +2,7 @@
 # - grouped variables in formulas with interactions
 # - is it fast?  Can expand() handle DataFrames?
 # - deal with intercepts
+# - support more transformations with I()?
 
 # Load files
 load("src/init.jl")
