@@ -165,9 +165,13 @@ maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) :
 maxShowLength(dv::AbstractDataVec) = max([length(_string(x)) for x = dv])
 function show(io, df::AbstractDataFrame)
     ## TODO use alignment() like print_matrix in show.jl.
-    print(io, "$(typeof(df))  $(size(df))")
+    println(io, "$(typeof(df))  $(size(df))")
     gr = get_groups(df)
-    length(gr) > 0 ? println(io, "; Column groups: ", gr) : println(io)
+    if length(gr) > 0
+        #print(io, "Column groups: ")
+        pretty_show(io, gr)
+        println(io)
+    end
     N = nrow(df)
     Nmx = 20   # maximum head and tail lengths
     if N <= 2Nmx
@@ -208,9 +212,12 @@ end
 # get the structure of a DF
 
 function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
-    print(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
+    println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
     gr = get_groups(x)
-    length(gr) > 0 ? println(io, "; Column groups: ", gr) : println(io)
+    if length(gr) > 0
+        pretty_show(io, gr)
+        println(io)
+    end
     if n > 0
         for col in names(x)[1:min(10,end)]
             print(io, indent, "  ", col, ": ")

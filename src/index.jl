@@ -108,3 +108,15 @@ function get_groups(idx::Index)
     end
     gr
 end
+
+# special pretty-printer for groups, which are just Dicts.
+function pretty_show(io, gr::Dict{ByteString,Vector{ByteString}})
+    allkeys = keys(gr)
+    for k = allkeys
+        print(io, "$(k): ")
+        print(io, join(gr[k], ", "))
+        if k != last(allkeys)
+            print(io, "; ")
+        end
+    end
+end
