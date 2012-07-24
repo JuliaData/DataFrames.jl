@@ -210,15 +210,7 @@ end
 # Expand a PooledDataVector into a matrix of indicators for each dummy variable
 # TODO: account for NAs?
 function expand(poolcol::PooledDataVec, colname::String)
-    newcol = reduce(hcat, [[convert(Float64,x)::Float64 for x in (poolcol.refs .== i)] for i in 2:length(poolcol.pool)])
+    newcol = {DataVec([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
     newcolname = [strcat(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
-    # TODO: grabbed from csvReader... confused why I need it
-    columnNames = [_remove_quotes(x) for x = newcolname]   
-    # TEMP: Construct dataframe by pushing DataVecs on
-    #       (normal constructor doesn't convert)
-    cols = {}
-    for i = 1:size(newcol)[2]
-        push(cols, DataVec(newcol[:,i]))
-    end
-    DataFrame(cols, columnNames)
+    DataFrame(newcol, convert(Vector{ByteString}, newcolname))
 end
