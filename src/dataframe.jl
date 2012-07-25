@@ -342,7 +342,11 @@ function csvDataFrame(filename, o::Options)
     @check_used o
     
     # combine the columns into a DataFrame and return
-    DataFrame(cols, columnNames)
+    if columnNames == []
+        DataFrame(cols)
+    else
+        DataFrame(cols, columnNames)
+    end
 end
 csvDataFrame(filename) = csvDataFrame(filename, Options())
 

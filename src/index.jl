@@ -21,6 +21,10 @@ function names!(x::Index, nm::Vector)
     if length(nm) != length(x)
         error("lengths don't match.")
     end
+    for i in 1:length(nm)
+        del(x.lookup, x.names[i])
+        x.lookup[nm[i]] = i
+    end
     x.names = nm
 end
 
