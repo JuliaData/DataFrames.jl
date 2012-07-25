@@ -77,6 +77,10 @@ done(df::AbstractDataFrame, i) = i > ncol(df)
 next(df::AbstractDataFrame, i) = (df[i], i + 1)
 ## numel(df::AbstractDataFrame) = ncol(df)
 isempty(df::AbstractDataFrame) = ncol(df) == 0
+# Column groups
+set_group(d::DataFrame, newgroup, names) = set_group(d.colindex, newgroup, names)
+set_groups(d::DataFrame, gr::Dict{ByteString,Vector{ByteString}}) = set_groups(d.colindex, gr)
+get_groups(d::DataFrame) = get_groups(d.colindex)
 
 function insert(df::DataFrame, index::Integer, item, name)
     @assert 0 < index <= ncol(df) + 1
@@ -162,6 +166,12 @@ maxShowLength(dv::AbstractDataVec) = max([length(_string(x)) for x = dv])
 function show(io, df::AbstractDataFrame)
     ## TODO use alignment() like print_matrix in show.jl.
     println(io, "$(typeof(df))  $(size(df))")
+    gr = get_groups(df)
+    if length(gr) > 0
+        #print(io, "Column groups: ")
+        pretty_show(io, gr)
+        println(io)
+    end
     N = nrow(df)
     Nmx = 20   # maximum head and tail lengths
     if N <= 2Nmx
@@ -203,6 +213,11 @@ end
 
 function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
     println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
+    gr = get_groups(x)
+    if length(gr) > 0
+        pretty_show(io, gr)
+        println(io)
+    end
     if n > 0
         for col in names(x)[1:min(10,end)]
             print(io, indent, "  ", col, ": ")
