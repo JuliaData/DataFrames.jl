@@ -2,6 +2,7 @@
 # - grouped variables in formulas with interactions
 # - is it fast?  Can expand() handle DataFrames?
 # - deal with intercepts
+# - implement ^2 for datavecs
 # - support more transformations with I()?
 
 # Load files
@@ -30,6 +31,8 @@ mm = model_matrix(mf)
  "x1:7&x3"     
  "x1:8&log(x2)"
  "x1:8&x3" ]
+
+tmp = d["x2"]
  
 # # test_group("Basic tests")
 
@@ -45,7 +48,7 @@ mf = model_frame(f, d)
 mm = model_matrix(mf)
 @assert mm.response_colnames == ["y"]
 @assert mm.model_colnames == ["(Intercept)","x1","x2"]
-#@assert mm.response == [1 2 3 4]' # FAILS: why is y auto converted to float?
+@assert mm.response == [1. 2 3 4]'
 @assert mm.model[:,1] == ones(4)
 @assert mm.model[:,2:3] == [x1 x2]
 
@@ -160,6 +163,14 @@ mm = model_matrix(mf)
  "x1:7&x3"     
  "x1:8&log(x2)"
  "x1:8&x3" ]
+
+# test_group("Model frame response variables")
+
+f = Formula(:(x1 + x2 ~ y + x3))
+mf = model_frame(f, d)
+@assert mf.y_indexes == [1, 2]
+@assert isequal(mf.formula.lhs, [:(x1 + x2)])
+@assert isequal(mf.formula.rhs, [:(y + x3)])
 
 ## test_group("Include all terms")
 

@@ -44,47 +44,45 @@ type ModelFrame
     formula::Formula 
 end
 
-# Temporary version.  Replace using unique_symbols(Formula)?
-function model_frame(f::Formula, d::DataFrame)
-    ModelFrame(d, [1], f)
+function unique_symbols(ex::Expr)
+
 end
 
-## # Create a DataFrame containing only variables required by the Formula
-## function model_frame(f::Formula, d::DataFrame)
-##     # for now, assume the lhs and rhs are a simple disjunction/summation of literal clauses,
-##     # where each literal may be a simple transforming function
+# Obtain Array of Symbols used in an Expr 
+function unique_symbols(ex::Expr)
+    if length(ex.args) == 2
+        return [unique_symbols(ex.args[2])]  # I() case
+    else
+        return [unique_symbols(ex.args[2]), unique_symbols(ex.args[3])]
+    end
+end
+unique_symbols(ex::Array{Expr,1}) = [unique_symbols(ex[1])]
+unique_symbols(ex::Symbol) = [ex]
+unique_symbols(ex::Array{Symbol,1}) = [ex[1]]
+
+# Create a DataFrame containing only variables required by the Formula
+function model_frame(f::Formula, d::DataFrame)
+    cols = {}
+    col_names = Array(ASCIIString,0)
+
+    lhs = unique_symbols(f.lhs)
+    rhs = unique_symbols(f.rhs)
     
-##     cols = {}
-##     col_names = Array(ASCIIString,0)
+    # so, foreach element in the lhs, evaluate it in the context of the df
+    for ll = 1:length(lhs)
+        push(cols, with(d, lhs[ll]))
+        push(col_names, string(lhs[ll]))
+    end
+    y_indexes = [1:length(lhs)]
     
-##     # so, foreach element in the lhs, evaluate it in the context of the df
-##     for ll = 1:length(f.lhs)
-##         push(cols, with(d, f.lhs[ll]))
-##         push(col_names, string(f.lhs[ll]))
-##     end
-##     y_indexes = [1:length(f.lhs)]
-    
-##     # and foreach element in the rhs, do the same
-    
-##     # if it's a disjunction, get the pieces, otherwise it's just itself
-##     # FAILS IF RHS HAS ONLY 1 ELEMENT, SO RHS IS A SYMBOL
-##     if typeof(f.rhs) == Array{Symbol,1}
-##       push(cols, with(d, f.rhs[1]))
-##       push(col_names, string(f.rhs[1]))
-##     else
-##       if f.rhs[1].args[1] == :+
-##           rhs = f.rhs[1].args[2:end]
-##       else
-##           rhs = r.rhs[1]
-##       end
-##       for rr = 1:length(rhs)
-##           push(cols, with(d, rhs[rr]))
-##           push(col_names, string(rhs[rr]))
-##       end
-##     end
-##     # bind together and return
-##     ModelFrame(DataFrame(cols, col_names), y_indexes, f)
-## end
+    # and foreach unique symbol in the rhs, do the same
+    for rr = 1:length(rhs)
+       push(cols, with(d, rhs[rr]))
+       push(col_names, string(rhs[rr]))
+    end
+    # bind together and return
+    ModelFrame(DataFrame(cols, col_names), y_indexes, f)
+end
 
 
 # a ModelMatrix is a wrapper around a matrix, with column names.
