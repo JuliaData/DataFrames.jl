@@ -15,6 +15,7 @@ d["y"] = [1:4]
 d["x1"] = PooledDataVec([5:8])
 d["x2"] = [9:12]
 d["x3"] = [11:14]
+d["x4"] = [12:15]
 f = Formula(:(y ~ x1 * (log(x2) + x3)))
 mf = model_frame(f, d)
 mm = model_matrix(mf)

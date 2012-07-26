@@ -50,11 +50,7 @@ end
 
 # Obtain Array of Symbols used in an Expr 
 function unique_symbols(ex::Expr)
-    if length(ex.args) == 2
-        return [unique_symbols(ex.args[2])]  # I() case
-    else
-        return [unique_symbols(ex.args[2]), unique_symbols(ex.args[3])]
-    end
+    [[unique_symbols(a) for a in ex.args[2:end]]...]
 end
 unique_symbols(ex::Array{Expr,1}) = [unique_symbols(ex[1])]
 unique_symbols(ex::Symbol) = [ex]
@@ -172,42 +168,58 @@ function expand_helper(ex::Symbol, df::DataFrame)
     return r
 end
 
-function expand_helper(ex::Expr, df::DataFrame)
-    if length(ex.args) == 2  # e.g. log(x2)
-      a = with(df, ex)
-      r = DataFrame()
-      r[string(ex)] = a
-    else 
-      r = expand(ex, df)
+#
+# The main expression to DataFrame expansion function.
+# Returns a DataFrame.
+#
+function expand(ex::Expr, df::DataFrame)
+    f = eval(ex.args[1])
+    if method_exists(f, (FormulaExpander, Vector{Any}, DataFrame))
+        # These are specialized expander functions (+, *, &, etc.)
+        f(FormulaExpander(), ex.args[2:end], df)
+    else
+        # Everything else is called recursively:
+    println("B", ex, )
+        expand(with(df, ex), string(ex), df)
     end
-    return r
+end
+function expand(s::Symbol, df::DataFrame)
+    expand(with(df, s), string(s), df)
+end
+function expand(x, name::ByteString, df::DataFrame)
+    # This is the default for expansion: put it right in to a DataFrame.
+    DataFrame({x}, [name])
 end
 
-# Expand an Expression (with +, &, or *) using the provided DataFrame
-# + includes both columns
-# & includes the elementwise product of every pair of columns
-# * both of the above
-function expand(ex, df::DataFrame)
-  # Recurse on left and right children of provided Expression
-  a = expand_helper(ex.args[2], df)
-  b = expand_helper(ex.args[3], df)
+#
+# Methods for Formula expansion
+#
+type FormulaExpander; end # This is an indictor type.
 
-  # Combine according to formula
-  if ex.args[1] == :+
-    return cbind(a,b)
-  elseif ex.args[1] == :&
-    return interaction_design_matrix(a,b)
-  elseif ex.args[1] == :*
-    return cbind(a, b, interaction_design_matrix(a,b))
-  else
-    error("Unknown operation in formula")
-  end
+function +(::FormulaExpander, args::Vector{Any}, df::DataFrame)
+    d = DataFrame()
+    for a in args
+        insert(d, expand(a, df))
+    end
+    d
+end
+function &(::FormulaExpander, args::Vector{Any}, df::DataFrame)
+    interaction_design_matrix(expand(args[1], df), expand(args[2], df))
+end
+function *(::FormulaExpander, args::Vector{Any}, df::DataFrame)
+    d = +(FormulaExpander(), args, df)
+    # TODO still not right - need all combinations here for a*b*c:
+    insert(d, interaction_design_matrix(expand(args[1], df), expand(args[2], df)))
+    d
 end
 
+#
+# Methods for expansion of specific data types
+#
 
 # Expand a PooledDataVector into a matrix of indicators for each dummy variable
 # TODO: account for NAs?
-function expand(poolcol::PooledDataVec, colname::String)
+function expand(poolcol::PooledDataVec, colname::ByteString, df::DataFrame)
     newcol = {DataVec([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
     newcolname = [strcat(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
     DataFrame(newcol, convert(Vector{ByteString}, newcolname))
