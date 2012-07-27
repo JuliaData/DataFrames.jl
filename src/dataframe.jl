@@ -1155,3 +1155,17 @@ function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol)
     #      NA indexing or a way to create NA DataFrames.
     # TODO add support for multiple columns
 end
+
+
+##
+## Miscellaneous
+##
+
+function complete_cases(df::AbstractDataFrame)
+    ## Returns a Vector{Bool} of indexes of complete cases (rows with no NA's).
+    res = !isna(df[1])
+    for i in 2:ncol(df)
+        res &= !isna(df[i])
+    end
+    res
+end
