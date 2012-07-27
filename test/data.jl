@@ -204,6 +204,9 @@ df6b = del(df6, 1)
 @test ncol(df6) == 3
 @test ncol(df6b) == 2
 
+test_group("NA handling")
+@test nrow(df5[complete_cases(df5),:]) == 3
+
 test_context("SubDataFrames")
 
 test_group("constructors")
