@@ -85,13 +85,29 @@ ref(x::AbstractVector, i::NegIndexer) = x[_setdiff([1:end], i.idx)]
 .=={T}(a::IndexedVec{T}, v::T) = Indexer(a.idx[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], length(a))
 .>={T}(a::IndexedVec{T}, v::T) = Indexer(a.idx[search_sorted_first(a.x, v, a.idx) : end], length(a))
 .<={T}(a::IndexedVec{T}, v::T) = Indexer(a.idx[1 : search_sorted_last(a.x, v, a.idx)], length(a))
-.>{T}(a::IndexedVec{T}, v::T) = !(a .<= v)
-.<{T}(a::IndexedVec{T}, v::T) = !(a .>= v)
+.>{T}(a::IndexedVec{T}, v::T) = Indexer(a.idx[search_sorted_first_gt(a.x, v, a.idx) : end], length(a))
+.<{T}(a::IndexedVec{T}, v::T) = Indexer(a.idx[1 : search_sorted_last_lt(a.x, v, a.idx)], length(a))
 .=={T}(v::T, a::IndexedVec{T}) = Indexer(a.idx[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], length(a))
 .>={T}(v::T, a::IndexedVec{T}) = Indexer(a.idx[search_sorted_first(a.x, v, a.idx) : end], length(a))
 .<={T}(v::T, a::IndexedVec{T}) = Indexer(a.idx[1 : search_sorted_last(a.x, v, a.idx)], length(a))
 .>{T}(v::T, a::IndexedVec{T}) = !(v .<= a)
 .<{T}(v::T, a::IndexedVec{T}) = !(v .>= a) 
+
+function search_sorted_first_gt{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
+    res = search_sorted_last(a, x, idx)
+    if res == 0 return 1 end
+    if res == length(a) && a[idx[res]] != x return(length(a)+1) end 
+    a[idx[res]] == x ? res + 1 : res
+end
+function search_sorted_last_lt{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
+    res = search_sorted_first(a, x, idx)
+    if res > length(a) return length(a) end
+    if res == 1 && a[idx[res]] != x return(0) end 
+    a[idx[res]] == x ? res - 1 : res
+end
+
+eps(i::Int64) = 1
+eps(i::Int32) = int32(1)
 
 function in{T}(a::IndexedVec{T}, y::Vector{T})
     res = similar({}, length(y))
@@ -100,6 +116,8 @@ function in{T}(a::IndexedVec{T}, y::Vector{T})
     end
     vcat(res...)
 end
+
+between{T}(a::IndexedVec{T}, v1::T, v2::T, ) = Indexer(a.idx[search_sorted_first(a.x, v1, a.idx) : search_sorted_last(a.x, v2, a.idx)], length(a))
 
 size(a::IndexedVec) = size(a.x)
 length(a::IndexedVec) = length(a.x)
