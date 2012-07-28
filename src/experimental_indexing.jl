@@ -46,52 +46,50 @@ order(x::IndexedVec) = x.idx
 sort(x::IndexedVec) = x.x[x.idx]   # Return regular array?
 sort(x::IndexedVec) = IndexedVec(x.x[x.idx], 1:length(x.x))   # or keep this an IndexedVec, like this?
 
-type Indexer
-    idx::Indices
-    len::Int
+type Indexer{T<:Union(Vector{Int}, Range1{Int})}
+    r::T
+    iv::IndexedVec
 end
-type NegIndexer
-    idx::Indices
-    len::Int
-end
-!(x::Indexer) = NegIndexer(x.idx, x.len)
-!(x::NegIndexer) = Indexer(x.idx, x.len)
-|(x1::Indexer, x2::Indexer) = Indexer(_set_union(x1.idx, x2.idx), max(x1.len, x2.len))
-|(x1::Indexer, x2::Indices) = Indexer(_set_union(x1.idx, x2), x1.len)
-|(x1::Indices, x2::Indexer) = Indexer(_set_union(x1, x2.idx), x2.len)
-|(x1::Indexer, x2::NegIndexer) = Indexer(_set_union(x1.idx, _setdiff([1:x2.len], x2.idx)), max(x1.len, x2.len))
-|(x1::Indices, x2::NegIndexer) = Indexer(_set_union(x1, _setdiff([1:x2.len], x2.idx)), x2.len)
-|(x1::NegIndexer, x2::NegIndexer) = NegIndexer(_set_union(x1.idx, x2.idx), max(x1.len, x2.len))
-|(x1::NegIndexer, x2::Indexer) = Indexer(_set_union(_setdiff([1:x1.len], x1.idx), x2.idx), max(x1.len, x2.len)) # wrong
-function |(x1::Indexer, x2::AbstractVector{Bool})
-    x2 = copy(x2)
-    x2[x1.idx] = true
-    x2
-end
-(&)(x1::Indexer, x2::Indexer) = Indexer(_set_and(x1.idx, x2.idx), max(x1.len, x2.len))
-(&)(x1::Indexer, x2::Indices) = Indexer(_set_and(x1.idx, x2), x1.len)
-(&)(x1::Indices, x2::Indexer) = Indexer(_set_and(x1, x2.idx), x2.len)
-(&)(x1::Indexer, x2::NegIndexer) = Indexer(_set_and(x1.idx, _setdiff([1:x2.len], x2.idx)), max(x1.len, x2.len))
-(&)(x1::Indices, x2::NegIndexer) = Indexer(_set_and(x1, _setdiff([1:x2.len], x2.idx)), x2.len)
-(&)(x1::NegIndexer, x2::NegIndexer) = NegIndexer(_set_and(x1.idx, x2.idx), max(x1.len, x2.len))
-(&)(x1::NegIndexer, x2::Indexer) = Indexer(_set_and(_setdiff([1:x1.len], x1.idx), x2.idx), max(x1.len, x2.len)) # wrong
 
-ref(x::AbstractVector, i::Indexer) = x[i.idx]
-ref(x::AbstractVector, i::NegIndexer) = x[_setdiff([1:end], i.idx)]
+function (&)(x1::Indexer{Range1{Int}}, x2::Indexer{Range1{Int}})
+    if x1.iv == x2.iv
+        Indexer(max(x1.r[1], x2.r[1]):min(x1.r[end], x2.r[end]), x1.iv)
+    else
+        Indexer(max(x1.r[1], x2.r[1]):min(x1.r[end], x2.r[end]), x1.iv)
+    end
+end
+
+function (|)(x1::Indexer{Range1{Int}}, x2::Indexer{Range1{Int}})
+    if x1.iv == x2.iv
+        isoverlap = (x1.r[end] < x2.r[1] && x2.r[1] < x1.r[1]) || (x2.r[end] < x1.r[1] && x1.r[1] < x2.r[1])
+        if isoverlap
+            Indexer(min(x1.r[1], x2.r[1]):max(x1.r[end], x2.r[end]), x1.iv)
+        else
+            Indexer([x1.r, x2.r], x1.iv) # convert Ranges to Vectors
+        end
+    else
+    end
+end
+# check for overlap?
+function (|)(x1::Indexer{Vector{Int}}, x2::Indexer{Range1{Int}}) = Indexer(unique([x1.r, x2.r]), x1.iv)
+function (|)(x1::Indexer{Range1{Int}}, x2::Indexer{Vector{Int}}) = |(x2, x1)
+
+ref(x::AbstractVector, i::Indexer) = x[i.iv.idx[i.r]]
 
 # element-wise (in)equality operators
 # these may need range checks
 # Should these be sorted? Could be a counting sort.
-.=={T}(a::IndexedVec{T}, v::T) = Indexer(a.idx[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], length(a))
-.>={T}(a::IndexedVec{T}, v::T) = Indexer(a.idx[search_sorted_first(a.x, v, a.idx) : end], length(a))
-.<={T}(a::IndexedVec{T}, v::T) = Indexer(a.idx[1 : search_sorted_last(a.x, v, a.idx)], length(a))
-.>{T}(a::IndexedVec{T}, v::T) = Indexer(a.idx[search_sorted_first_gt(a.x, v, a.idx) : end], length(a))
-.<{T}(a::IndexedVec{T}, v::T) = Indexer(a.idx[1 : search_sorted_last_lt(a.x, v, a.idx)], length(a))
-.=={T}(v::T, a::IndexedVec{T}) = Indexer(a.idx[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], length(a))
-.>={T}(v::T, a::IndexedVec{T}) = Indexer(a.idx[search_sorted_first(a.x, v, a.idx) : end], length(a))
-.<={T}(v::T, a::IndexedVec{T}) = Indexer(a.idx[1 : search_sorted_last(a.x, v, a.idx)], length(a))
-.>{T}(v::T, a::IndexedVec{T}) = !(v .<= a)
-.<{T}(v::T, a::IndexedVec{T}) = !(v .>= a) 
+.=={T}(a::IndexedVec{T}, v::T) = Indexer(search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx), a)
+.=={T}(v::T, a::IndexedVec{T}) = Indexer(search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx), a)
+.>={T}(a::IndexedVec{T}, v::T) = Indexer(search_sorted_first(a.x, v, a.idx) : length(a), a)
+.<={T}(a::IndexedVec{T}, v::T) = Indexer(1 : search_sorted_last(a.x, v, a.idx), a)
+.>={T}(v::T, a::IndexedVec{T}) = Indexer(1 : search_sorted_last(a.x, v, a.idx), a)
+.<={T}(v::T, a::IndexedVec{T}) = Indexer(search_sorted_first(a.x, v, a.idx) : length(a), a)
+.>{T}(a::IndexedVec{T}, v::T) = Indexer(search_sorted_first_gt(a.x, v, a.idx) : length(a), a)
+.<{T}(a::IndexedVec{T}, v::T) = Indexer(1 : search_sorted_last_lt(a.x, v, a.idx), a)
+.<{T}(v::T, a::IndexedVec{T}) = Indexer(search_sorted_first_gt(a.x, v, a.idx) : length(a), a)
+.>{T}(v::T, a::IndexedVec{T}) = Indexer(1 : search_sorted_last_lt(a.x, v, a.idx), a)
+
 
 function search_sorted_first_gt{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
     res = search_sorted_last(a, x, idx)
@@ -106,13 +104,10 @@ function search_sorted_last_lt{I<:Integer}(a::AbstractVector, x, idx::AbstractVe
     a[idx[res]] == x ? res - 1 : res
 end
 
-eps(i::Int64) = 1
-eps(i::Int32) = int32(1)
-
 function in{T}(a::IndexedVec{T}, y::Vector{T})
     res = similar({}, length(y))
     for i in 1:length(y)
-        res[i] = (a .== y[i]).idx
+        res[i] = (a .== y[i])
     end
     vcat(res...)
 end
