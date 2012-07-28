@@ -44,10 +44,6 @@ type ModelFrame
     formula::Formula 
 end
 
-function unique_symbols(ex::Expr)
-
-end
-
 # Obtain Array of Symbols used in an Expr 
 function unique_symbols(ex::Expr)
     [[unique_symbols(a) for a in ex.args[2:end]]...]
@@ -139,7 +135,7 @@ function model_matrix(mf::ModelFrame)
 end
 
 
-
+# TODO: Make a more general version of these functions
 # TODO: Be able to extract information about each column name
 function interaction_design_matrix(a::DataFrame, b::DataFrame)
    cols = {}
@@ -153,20 +149,54 @@ function interaction_design_matrix(a::DataFrame, b::DataFrame)
    DataFrame(cols, col_names)
 end
 
-
-# Take an Expr/Symbol
-function expand_helper(ex::Symbol, df::DataFrame)
-    a = with(df, ex)
-    if isa(a, PooledDataVec)
-      r = expand(a, string(ex))
-    elseif isa(a, DataVec)
-      r = DataFrame()
-      r[string(ex)] = a
-    else
-      error("could not expand symbol to a DataFrame")
-    end
-    return r
+function interaction_design_matrix(a::DataFrame, b::DataFrame, c::DataFrame)
+   cols = {}
+   col_names = Array(ASCIIString,0)
+   for i in 1:ncol(a)
+       for j in 1:ncol(b)
+           for k in 1:ncol(b)
+              push(cols, DataVec(a[:,i] .* b[:,j] .* c[:,k]))
+              push(col_names, strcat(colnames(a)[i],"&",colnames(b)[j],"&",colnames(c)[k]))
+           end
+       end
+   end
+   DataFrame(cols, col_names)
 end
+
+function interaction(dfs::Array{Any, 1})
+   d = DataFrame()
+   insert(d, interaction(dfs[1], dfs[2:end]))
+   d
+end
+
+function interaction(df::DataFrame, dfs::Array{Any, 1})
+   d = DataFrame()
+   insert(d, interaction(df, dfs[1]))   
+   insert(d, interaction(d, dfs[2:end]))
+   d
+end
+
+# Temporary: Manually describe the interactions needed for DataFrame Array.
+function all_interactions(dfs::Array{Any,1})
+    d = DataFrame()
+    if length(dfs) == 2
+      combos = ([1,2],)
+    elseif length(dfs) == 3
+      combos = ([1,2], [1,3], [2,3], [1,2,3])
+    else
+      error("interactions with more than 3 terms not implemented (yet)")
+    end
+    for combo in combos
+       if length(combo) == 2
+         a = interaction_design_matrix(dfs[combo[1]],dfs[combo[2]])
+       elseif length(combo) == 3
+         a = interaction_design_matrix(dfs[combo[1]],dfs[combo[2]],dfs[combo[3]])
+       end
+       insert(d, a)
+    end
+    return d
+end
+
 
 #
 # The main expression to DataFrame expansion function.
@@ -179,17 +209,37 @@ function expand(ex::Expr, df::DataFrame)
         f(FormulaExpander(), ex.args[2:end], df)
     else
         # Everything else is called recursively:
-    println("B", ex, )
+        #println("B", ex, )
         expand(with(df, ex), string(ex), df)
     end
 end
+
 function expand(s::Symbol, df::DataFrame)
     expand(with(df, s), string(s), df)
 end
+
+# TODO: make this array{symbol}?
+function expand(args::Array{Any}, df::DataFrame)
+    [expand(x, df) for x in args]
+end
+
 function expand(x, name::ByteString, df::DataFrame)
     # This is the default for expansion: put it right in to a DataFrame.
     DataFrame({x}, [name])
 end
+
+#
+# Methods for expansion of specific data types
+#
+
+# Expand a PooledDataVector into a matrix of indicators for each dummy variable
+# TODO: account for NAs?
+function expand(poolcol::PooledDataVec, colname::ByteString, df::DataFrame)
+    newcol = {DataVec([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
+    newcolname = [strcat(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
+    DataFrame(newcol, convert(Vector{ByteString}, newcolname))
+end
+
 
 #
 # Methods for Formula expansion
@@ -208,19 +258,6 @@ function &(::FormulaExpander, args::Vector{Any}, df::DataFrame)
 end
 function *(::FormulaExpander, args::Vector{Any}, df::DataFrame)
     d = +(FormulaExpander(), args, df)
-    # TODO still not right - need all combinations here for a*b*c:
-    insert(d, interaction_design_matrix(expand(args[1], df), expand(args[2], df)))
+    insert(d, all_interactions(expand(args, df)))
     d
-end
-
-#
-# Methods for expansion of specific data types
-#
-
-# Expand a PooledDataVector into a matrix of indicators for each dummy variable
-# TODO: account for NAs?
-function expand(poolcol::PooledDataVec, colname::ByteString, df::DataFrame)
-    newcol = {DataVec([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
-    newcolname = [strcat(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
-    DataFrame(newcol, convert(Vector{ByteString}, newcolname))
 end

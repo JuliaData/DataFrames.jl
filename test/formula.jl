@@ -41,9 +41,13 @@ d = DataFrame()
 d["y"] = [1:4]
 d["x1"] = [5:8]
 d["x2"] = [9:12]
+d["x3"] = [13:16]
+d["x4"] = [17:20]
 
 x1 = [5.:8]
 x2 = [9.:12]
+x3 = [13.:16]
+x4 = [17.:20]
 f = Formula(:(y ~ x1 + x2))
 mf = model_frame(f, d)
 mm = model_matrix(mf)
@@ -55,7 +59,7 @@ mm = model_matrix(mf)
 
 # test_group("expanding a PooledVec into a design matrix of indicators for each dummy variable")
 
-a = expand(PooledDataVec(x1), "x1")
+a = expand(PooledDataVec(x1), "x1", DataFrame())
 @assert a[:,1] == DataVec([0, 1., 0, 0])
 @assert a[:,2] == DataVec([0, 0, 1., 0])
 @assert a[:,3] == DataVec([0, 0, 0, 1.])
@@ -73,14 +77,13 @@ df = interaction_design_matrix(a,b)
 # test_group("expanding an singleton expression/symbol into a DataFrame")
 
 df = copy(d)
-ex = :(x2)
-r = expand_helper(ex, df)
+r = expand(:x2, df)
 @assert isa(r, DataFrame)
-@assert r[:,1] == DataVec([9,10,11,12])
+@assert r[:,1] == DataVec([9,10,11,12])  # TODO: test float vs int return
 
 df = copy(d)
 ex = :(log(x2))
-r = expand_helper(ex, df)
+r = expand(ex, df)
 @assert isa(r, DataFrame)
 @assert r[:,1] == DataVec(log([9,10,11,12]))
 
@@ -97,23 +100,23 @@ r = expand(:(x1 + x2), df)
 @assert r[:,2] == DataVec(df["x2"])
 
 df["x1"] = PooledDataVec(x1)
-r = expand_helper(:(x1), df)
+r = expand(:x1, df)
 @assert isa(r, DataFrame)
 @assert ncol(r) == 3
-@assert r == expand(PooledDataVec(x1),"x1")
+@assert r == expand(PooledDataVec(x1), "x1", DataFrame())
 
 r = expand(:(x1 + x2), df)
 @assert isa(r, DataFrame)
 @assert ncol(r) == 4
-@assert r[:,1:3] == expand(PooledDataVec(x1),"x1")
+@assert r[:,1:3] == expand(PooledDataVec(x1), "x1", DataFrame())
 @assert r[:,4] == DataVec(df["x2"])
 
 df["x2"] = PooledDataVec(x2)
 r = expand(:(x1 + x2), df)
 @assert isa(r, DataFrame)
 @assert ncol(r) == 6
-@assert r[:,1:3] == expand(PooledDataVec(x1),"x1")
-@assert r[:,4:6] == expand(PooledDataVec(x2),"x2")
+@assert r[:,1:3] == expand(PooledDataVec(x1), "x1", DataFrame())
+@assert r[:,4:6] == expand(PooledDataVec(x2), "x2", DataFrame())
 
 # test_group("Creating a model matrix using full formulas: y ~ x1 + x2, etc")
 
@@ -143,13 +146,10 @@ mf = model_frame(f, df)
 mm = model_matrix(mf)
 @assert mm.model == [ones(4) x1 log(x2)]
 
-d = DataFrame()
-d["y"] = [1:4]
-d["x1"] = PooledDataVec([5:8])
-d["x2"] = [9:12]
-d["x3"] = [11:14]
+df = copy(d)
+df["x1"] = PooledDataVec([5:8])
 f = Formula(:(y ~ x1 * (log(x2) + x3)))
-mf = model_frame(f, d)
+mf = model_frame(f, df)
 mm = model_matrix(mf)
 @assert mm.model_colnames == [
  "(Intercept)"
@@ -173,18 +173,70 @@ mf = model_frame(f, d)
 @assert isequal(mf.formula.lhs, [:(x1 + x2)])
 @assert isequal(mf.formula.rhs, [:(y + x3)])
 
+
+f = Formula(:(x1 + x2 ~ y + x3))
+mf = model_frame(f, d)
+@assert mf.y_indexes == [1, 2]
+@assert isequal(mf.formula.lhs, [:(x1 + x2)])
+@assert isequal(mf.formula.rhs, [:(y + x3)])
+
+# unique_symbol tests
+#@assert unique_symbols(:(x1 + x2)) ==  {"x1"=>:x1, "x2"=>:x2}
+#unique_symbols(:(y ~ x1 + x2 + x3))
+
+# additional tests from Tom
+y = [1., 2, 3, 4]
+mm = model_matrix(model_frame(Formula(:(y ~ x2)), d))
+@assert mm.model == [ones(4) x2]
+@assert mm.response == y''
+
+df = copy(d)
+df["x1"] = PooledDataVec(df["x1"])
+
+mm = model_matrix(model_frame(Formula(:(y ~ x2 + x3 + x3*x2)), df))
+@assert mm.model == [ones(4) x2 x3 x2.*x3]
+mm = model_matrix(model_frame(Formula(:(y ~ x3*x2 + x2 + x3)), df))
+@assert mm.model == [ones(4) x3 x2 x2.*x3]
+mm = model_matrix(model_frame(Formula(:(y ~ x1 + x2 + x3 + x4)), df))
+@assert mm.model[:,2] == [0, 1., 0, 0]
+@assert mm.model[:,3] == [0, 0, 1., 0]
+@assert mm.model[:,4] == [0, 0, 0, 1.]
+@assert mm.model[:,5] == x2
+@assert mm.model[:,6] == x3
+@assert mm.model[:,7] == x4
+
+mm = model_matrix(model_frame(Formula(:(y ~ x2 + x3 + x4)), df))
+@assert mm.model == [ones(4) x2 x3 x4]
+mm = model_matrix(model_frame(Formula(:(y ~ x2 + x2)), df))
+@assert mm.model == [ones(4) x2]
+mm = model_matrix(model_frame(Formula(:(y ~ x2*x3 + x2&x3)), df))
+@assert mm.model == [ones(4) x2 x3 x2.*x3]
+mm = model_matrix(model_frame(Formula(:(y ~ x2*x3*x4)), df))
+@assert mm.model == [ones(4) x2 x3 x4 x2.*x3 x2.*x4 x3.*x4 x2.*x3.*x4]
+mm = model_matrix(model_frame(Formula(:(y ~ x2&x3 + x2*x3)), df))
+@assert mm.model == [ones(4) x2.*x3 x2 x3]  # TODO This disagrees with R
+mm = model_matrix(model_frame(Formula(:(y ~ x2 & x3 & x4)), df))
+@assert mm.model == [ones(4) x2.*x3.*x4]
+
+# TODO:
+## mm = model_matrix(model_frame(Formula(:(y ~ I(x2))), df))
+
+f = Formula(:(y ~ x2*x3*x4))
+ex = :(x2*x3*x4)
+args = f.rhs[1].args[2:end]
+dfs = expand(args, d)
+@assert length(dfs) == 3
+
+
+## mf = model_frame(f, d)
+## mm = model_matrix(mf)
+## interaction_design_matrix(dfs[[1,2,3]])
+
 ## test_group("Include all terms")
 
 ## f = Formula(:(y ~ .))
 ## mm = model_matrix(model_frame(f,d))
 ## @assert mm.model == [ones(4) x1 x2]
-
-
-## test_group("Do not include same term twice")
-
-## f = Formula(:(y ~ x1 + x1))
-## mm = model_matrix(model_frame(f,d))
-## @assert error?
 
 ## test_group("Intercept options")
 
