@@ -46,49 +46,73 @@ order(x::IndexedVec) = x.idx
 sort(x::IndexedVec) = x.x[x.idx]   # Return regular array?
 sort(x::IndexedVec) = IndexedVec(x.x[x.idx], 1:length(x.x))   # or keep this an IndexedVec, like this?
 
-type Indexer{T<:Union(Vector{Int}, Range1{Int})}
-    r::T
+type Indexer
+    r::Vector{Range1}
     iv::IndexedVec
 end
 
-function (&)(x1::Indexer{Range1{Int}}, x2::Indexer{Range1{Int}})
-    if x1.iv == x2.iv
-        Indexer(max(x1.r[1], x2.r[1]):min(x1.r[end], x2.r[end]), x1.iv)
-    else
-        Indexer(max(x1.r[1], x2.r[1]):min(x1.r[end], x2.r[end]), x1.iv)
+function (!)(x::Indexer)
+    res = Vector{Range1}(length(x.r) + 1)
+    res = Range1[1 : x.r[1][1] - 1]
+    for i in 1:length(x.r) - 1
+        push(res, x.r[i][end] + 1 : x.r[i + 1][1] - 1)
     end
+    push(res, x.r[end][end] + 1 : length(x.iv))
+    res
 end
 
-function (|)(x1::Indexer{Range1{Int}}, x2::Indexer{Range1{Int}})
+function (&)(x1::Indexer, x2::Indexer)
     if x1.iv == x2.iv
-        isoverlap = (x1.r[end] < x2.r[1] && x2.r[1] < x1.r[1]) || (x2.r[end] < x1.r[1] && x1.r[1] < x2.r[1])
-        if isoverlap
-            Indexer(min(x1.r[1], x2.r[1]):max(x1.r[end], x2.r[end]), x1.iv)
-        else
-            Indexer([x1.r, x2.r], x1.iv) # convert Ranges to Vectors
+        if length(x1.r) == 1 && length(x2.r) == 1
+            Indexer(Range1[max(x1.r[1][1], x2.r[1][1]):min(x1.r[1][end], x2.r[1][end])], x1.iv)
         end
     else
+        bool(x1) & bool(x2)
     end
 end
-# check for overlap?
-function (|)(x1::Indexer{Vector{Int}}, x2::Indexer{Range1{Int}}) = Indexer(unique([x1.r, x2.r]), x1.iv)
-function (|)(x1::Indexer{Range1{Int}}, x2::Indexer{Vector{Int}}) = |(x2, x1)
+(&)(x1::Vector{Bool}, x2::Indexer) = x1 & bool(x2)
+(&)(x1::Indexer, x2::Vector{Bool}) = x2 & bool(x1)
 
-ref(x::AbstractVector, i::Indexer) = x[i.iv.idx[i.r]]
+function (|)(x1::Indexer, x2::Indexer)
+    if x1.iv == x2.iv
+        if length(x1.r) == 1 && length(x2.r) == 1
+            isoverlap = !((x1.r[1][1] > x2.r[1][end]) | (x2.r[1][1] > x1.r[1][end]))
+            if isoverlap
+                Indexer(Range1[min(x1.r[1][1], x2.r[1][1]):max(x1.r[1][end], x2.r[1][end])], x1.iv)
+            else
+                Indexer(Range1[x1.r[1], x2.r[1]], x1.iv) 
+            end
+        end
+    else
+        bool(x1) | bool(x2)
+    end
+end
+(|)(x1::Vector{Bool}, x2::Indexer) = x1 | bool(x2)
+(|)(x1::Indexer, x2::Vector{Bool}) = x2 | bool(x1)
+
+function bool(ix::Indexer)
+    res = fill(false, length(ix.iv.idx))
+    for i in ix.iv.idx[[ix.r...]]
+        res[i] = true
+    end
+    res
+end
+
+ref(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 
 # element-wise (in)equality operators
 # these may need range checks
 # Should these be sorted? Could be a counting sort.
-.=={T}(a::IndexedVec{T}, v::T) = Indexer(search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx), a)
-.=={T}(v::T, a::IndexedVec{T}) = Indexer(search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx), a)
-.>={T}(a::IndexedVec{T}, v::T) = Indexer(search_sorted_first(a.x, v, a.idx) : length(a), a)
-.<={T}(a::IndexedVec{T}, v::T) = Indexer(1 : search_sorted_last(a.x, v, a.idx), a)
-.>={T}(v::T, a::IndexedVec{T}) = Indexer(1 : search_sorted_last(a.x, v, a.idx), a)
-.<={T}(v::T, a::IndexedVec{T}) = Indexer(search_sorted_first(a.x, v, a.idx) : length(a), a)
-.>{T}(a::IndexedVec{T}, v::T) = Indexer(search_sorted_first_gt(a.x, v, a.idx) : length(a), a)
-.<{T}(a::IndexedVec{T}, v::T) = Indexer(1 : search_sorted_last_lt(a.x, v, a.idx), a)
-.<{T}(v::T, a::IndexedVec{T}) = Indexer(search_sorted_first_gt(a.x, v, a.idx) : length(a), a)
-.>{T}(v::T, a::IndexedVec{T}) = Indexer(1 : search_sorted_last_lt(a.x, v, a.idx), a)
+.=={T}(a::IndexedVec{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
+.=={T}(v::T, a::IndexedVec{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
+.>={T}(a::IndexedVec{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a)], a)
+.<={T}(a::IndexedVec{T}, v::T) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
+.>={T}(v::T, a::IndexedVec{T}) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
+.<={T}(v::T, a::IndexedVec{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a)], a)
+.>{T}(a::IndexedVec{T}, v::T) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a)], a)
+.<{T}(a::IndexedVec{T}, v::T) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
+.<{T}(v::T, a::IndexedVec{T}) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a)], a)
+.>{T}(v::T, a::IndexedVec{T}) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
 
 
 function search_sorted_first_gt{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
@@ -112,7 +136,7 @@ function in{T}(a::IndexedVec{T}, y::Vector{T})
     vcat(res...)
 end
 
-between{T}(a::IndexedVec{T}, v1::T, v2::T, ) = Indexer(a.idx[search_sorted_first(a.x, v1, a.idx) : search_sorted_last(a.x, v2, a.idx)], length(a))
+between{T}(a::IndexedVec{T}, v1::T, v2::T, ) = Indexer(Range1[search_sorted_first(a.x, v1, a.idx) : search_sorted_last(a.x, v2, a.idx)], a)
 
 size(a::IndexedVec) = size(a.x)
 length(a::IndexedVec) = length(a.x)
@@ -191,6 +215,7 @@ end
 srand(1)
 a = randi(5,20)
 ia = IndexedVec(a)
+ia2 = IndexedVec(randi(4,20))
 ia .== 4
 v = [1:20]
 v[ia .== 4]
@@ -200,17 +225,25 @@ v[ia .== 4]
 v[(ia .== 4) | (ia .== 5)]
 
 v[(ia .>= 4) | (ia .== 5)] | println
-ia[(ia .>= 4) | (ia .== 5)].x | println
+ia[(ia .>= 4) | (ia .== 5)] | println
 v[(ia .>= 4) & (ia .== 5)] | println
-ia[(ia .>= 4) & (ia .== 5)].x | println
+ia[(ia .>= 4) & (ia .== 5)] | println
+
+(ia .== 4) | dump 
+(ia .== 4) & (ia .>= 3) | dump 
+
+(ia .== 4) | (ia .== 3) | dump # wrong
+(ia .== 4) | (ia .== 3) | (ia .== 1) | dump
+
 
 # the following was needed for show(df)
 maxShowLength(v::IndexedVec) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
 
 df = DataFrame({IndexedVec(vcat(fill([1:5],4)...)), IndexedVec(vcat(fill(letters[1:10],2)...))})
 
-df[:(x2 .== "a")]
+df[:(x2 .== "a")] 
 df[:( (x2 .== "a") | (x1 .== 2) )] 
 df[:( ("b" .<= x2 .<= "c") | (x1 .== 5) )]
 df[:( (x1 .== 1) & (x2 .== "a") )]
+
 df[:( in(x2, ["c","e"]) )]
