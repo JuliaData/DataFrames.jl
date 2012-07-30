@@ -32,8 +32,6 @@ type IndexedVec{T} <: AbstractVector{T}
     idx::Vector{Int}
 end
 IndexedVec(x::AbstractVector) = IndexedVec(x, order(x))
-IndexedVec(x::Number) = x   # don't make indexes here
-IndexedVec(x::String) = x
 
 ref{T,I<:Integer}(v::IndexedVec{T},i::AbstractVector{I}) = IndexedVec(v.x[i])
 ref{T}(v::IndexedVec{T},i::Integer) = v.x[i]
@@ -47,15 +45,6 @@ sort(x::IndexedVec) = IndexedVec(x.x[x.idx], 1:length(x.x))   # or keep this an 
 type Indexer
     r::Vector{Range1}
     iv::IndexedVec
-end
-
-function (!)(x::Indexer)
-    res = Range1[1 : x.r[1][1] - 1]
-    for i in 1:length(x.r) - 1
-        push(res, x.r[i][end] + 1 : x.r[i + 1][1] - 1)
-    end
-    push(res, x.r[end][end] + 1 : length(x.iv))
-    Indexer(res, x.iv)
 end
 
 function intersect(v1::Vector{Range1}, v2::Vector{Range1})
@@ -157,6 +146,7 @@ function bool(ix::Indexer)
 end
 
 ref(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
+ref(x::AbstractDataVec, i::Indexer) = x[i.iv.idx[[i.r...]]]
 
 # element-wise (in)equality operators
 # these may need range checks
