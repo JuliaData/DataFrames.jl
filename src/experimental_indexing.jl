@@ -25,8 +25,6 @@
 #     IndexedVec(DataVec[1,2,3,NA])
 # because DataVecs are not AbstractVectors. I hope we move to that.
 #
-# Note: some of the set operations (like _set_and) might be pretty slow.
-# These might negate the advantages of indexing for complicated logic.
 
 
 type IndexedVec{T} <: AbstractVector{T}
@@ -52,20 +50,87 @@ type Indexer
 end
 
 function (!)(x::Indexer)
-    res = Vector{Range1}(length(x.r) + 1)
     res = Range1[1 : x.r[1][1] - 1]
     for i in 1:length(x.r) - 1
         push(res, x.r[i][end] + 1 : x.r[i + 1][1] - 1)
     end
     push(res, x.r[end][end] + 1 : length(x.iv))
+    Indexer(res, x.iv)
+end
+
+function intersect(v1::Vector{Range1}, v2::Vector{Range1})
+    # Assumes that the Range1's in each vector are sorted and don't overlap.
+    # (Actually, it doesn't, but it should to get more speed.)
+    res = Range1[]
+    # This does more work than it needs to.
+    for r1 in v1
+        for r2 in v2
+            isoverlap = !((r1[1] > r2[end]) | (r2[1] > r1[end]))
+            if isoverlap
+                push(res, max(r1[1], r2[1]):min(r1[end], r2[end]))
+            end
+        end
+    end
     res
+end
+
+function union(v1::Vector{Range1}, v2::Vector{Range1})
+    # Assumes that the Range1's in each vector are sorted and don't overlap.
+    # (Actually, it doesn't, but it should to get more speed.)
+    # TODO Check for zero length.
+    compare(v1, v2) = (v1[end][end] > v2[end][end] ? v2 : v1,
+                       v1[end][end] > v2[end][end] ? v1 : v2)
+    res = Range1[]
+    v1 = copy(v1) # Destructively operate on these
+    v2 = copy(v2)
+    while length(v1) > 0 && length(v2) > 0
+        # right part, working right to left
+        (left, right) = compare(v1, v2)
+        while length(right) > 0 && right[end][1] > left[end][end]
+            push(res, pop(right))
+        end
+        if length(right) == 0 break; end
+        # overlap
+        r_end = max(right[end][end], left[end][end])  
+        overlap = false
+        while length(left) > 0 && length(right) > 0 && right[end][end] > left[end][1]
+            r_start = min(right[end][1], left[end][1])
+            overlap = true
+            (left, right) = compare(v1, v2)
+            if right[end][1] >= r_start
+                pop(right)
+            end
+        end
+        if overlap
+            if length(right) == 0 && length(left) > 0 && r_start <= left[end][1]
+                r_start = left[end][1]
+                pop(left)
+            end
+            push(res, r_start : r_end)
+        end
+    end
+    # Rest of v1 or v2 (no overlaps here)
+    while length(v1) > 0
+        push(res, pop(v1))
+    end
+    while length(v2) > 0
+        push(res, pop(v2))
+    end
+    reverse(res)
+end
+
+function (!)(x::Indexer)
+    res = Range1[1 : x.r[1][1] - 1]
+    for i in 1:length(x.r) - 1
+        push(res, x.r[i][end] + 1 : x.r[i + 1][1] - 1)
+    end
+    push(res, x.r[end][end] + 1 : length(x.iv))
+    Indexer(!x.r, x.iv)
 end
 
 function (&)(x1::Indexer, x2::Indexer)
     if x1.iv == x2.iv
-        if length(x1.r) == 1 && length(x2.r) == 1
-            Indexer(Range1[max(x1.r[1][1], x2.r[1][1]):min(x1.r[1][end], x2.r[1][end])], x1.iv)
-        end
+        Indexer(intersect(x1.r, x2.r), x1.iv)
     else
         bool(x1) & bool(x2)
     end
@@ -75,14 +140,7 @@ end
 
 function (|)(x1::Indexer, x2::Indexer)
     if x1.iv == x2.iv
-        if length(x1.r) == 1 && length(x2.r) == 1
-            isoverlap = !((x1.r[1][1] > x2.r[1][end]) | (x2.r[1][1] > x1.r[1][end]))
-            if isoverlap
-                Indexer(Range1[min(x1.r[1][1], x2.r[1][1]):max(x1.r[1][end], x2.r[1][end])], x1.iv)
-            else
-                Indexer(Range1[x1.r[1], x2.r[1]], x1.iv) 
-            end
-        end
+        Indexer(union(x1.r, x2.r), x1.iv)
     else
         bool(x1) | bool(x2)
     end
@@ -129,11 +187,11 @@ function search_sorted_last_lt{I<:Integer}(a::AbstractVector, x, idx::AbstractVe
 end
 
 function in{T}(a::IndexedVec{T}, y::Vector{T})
-    res = similar({}, length(y))
-    for i in 1:length(y)
-        res[i] = (a .== y[i])
+    res = a .== y[1]
+    for i in 2:length(y)
+        res = res | (a .== y[i])
     end
-    vcat(res...)
+    res
 end
 
 between{T}(a::IndexedVec{T}, v1::T, v2::T, ) = Indexer(Range1[search_sorted_first(a.x, v1, a.idx) : search_sorted_last(a.x, v2, a.idx)], a)
@@ -184,31 +242,6 @@ function search_sorted_first{I<:Integer}(a::AbstractVector, x, idx::AbstractVect
     hi
 end
 
-# Should the sort's be included?
-_set_union(x1, x2) = sort(unique([x1, x2]))
-_set_diff(x1, x2) = sort(_setdiff(x1, x2))
-function _set_and(x1::AbstractVector, x2::AbstractVector)
-    if length(x1) < length(x2)
-        res = x1
-        base = x2
-    else
-        res = x2
-        base = x1
-    end
-    N = length(res)
-    d = Dict(N)
-    for i in 1:length(base)
-        d[base[i]] = 1
-    end
-    idx = fill(false, N)
-    for i in 1:length(res)
-        if has(d, res[i])
-            idx[i] = true
-        end
-    end
-    sort(res[idx])
-end
-
 
 
 # Examples
@@ -229,10 +262,13 @@ ia[(ia .>= 4) | (ia .== 5)] | println
 v[(ia .>= 4) & (ia .== 5)] | println
 ia[(ia .>= 4) & (ia .== 5)] | println
 
+!(ia .== 4) | dump
+ia[!(ia .== 4)] | println
+
 (ia .== 4) | dump 
 (ia .== 4) & (ia .>= 3) | dump 
 
-(ia .== 4) | (ia .== 3) | dump # wrong
+(ia .== 4) | (ia .== 3) | dump 
 (ia .== 4) | (ia .== 3) | (ia .== 1) | dump
 
 
