@@ -835,7 +835,7 @@ end
 groupsort_indexer(pv::PooledDataVec) = groupsort_indexer(pv.refs, length(pv.pool))
 
 type GroupedDataFrame
-    parent::DataFrame
+    parent::AbstractDataFrame
     cols::Vector         # columns used for sorting
     idx::Vector{Int}     # indexing vector when sorted by the given columns
     starts::Vector{Int}  # starts of groups
@@ -845,7 +845,7 @@ end
 #
 # Split
 #
-function groupby{T}(df::DataFrame, cols::Vector{T})
+function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     ## a subset of Wes McKinney's algorithm here:
     ##     http://wesmckinney.com/blog/?p=489
     
@@ -872,7 +872,7 @@ function groupby{T}(df::DataFrame, cols::Vector{T})
     ends = [starts[2:end] - 1]
     GroupedDataFrame(df, cols, idx, starts[1:end-1], ends)
 end
-groupby(d::DataFrame, cols) = groupby(d, [cols])
+groupby(d::AbstractDataFrame, cols) = groupby(d, [cols])
 
 # add a function curry
 groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
