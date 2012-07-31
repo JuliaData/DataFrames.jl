@@ -1161,3 +1161,17 @@ function complete_cases(df::AbstractDataFrame)
     end
     res
 end
+
+function array(d::AbstractDataFrame)
+    # DataFrame -> Array{Any}
+    if nrow(d) == 1  # collapse to one element
+       [el[1] for el in d[1,:]]
+    else
+       [col for col in d]
+    end
+end
+
+# DataFrame -> Array{promoted_type, 2}
+# Note: this doesn't work yet for DataVecs. It might once promotion
+# with Arrays is added (work needed).
+matrix(d::AbstractDataFrame) = reshape([d...],size(d))
