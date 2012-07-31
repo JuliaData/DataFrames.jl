@@ -63,12 +63,12 @@ ref(df::DataFrame, ex::Expr, c::Int) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c::Vector{Int}) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c) = df[with(df, ex), c]
 
-
+index(df::DataFrame) = df.colindex
 
 # Associative methods:
-has(df::DataFrame, key) = has(df.colindex, key)
-get(df::DataFrame, key, default) = has(df, key) ? df[key] : default
-keys(df::DataFrame) = keys(df.colindex)
+has(df::AbstractDataFrame, key) = has(index(df), key)
+get(df::AbstractDataFrame, key, default) = has(df, key) ? df[key] : default
+keys(df::AbstractDataFrame) = keys(index(df))
 values(df::DataFrame) = df.columns
 del_all(df::DataFrame) = DataFrame()
 # Collection methods:
@@ -78,9 +78,9 @@ next(df::AbstractDataFrame, i) = (df[i], i + 1)
 ## numel(df::AbstractDataFrame) = ncol(df)
 isempty(df::AbstractDataFrame) = ncol(df) == 0
 # Column groups
-set_group(d::DataFrame, newgroup, names) = set_group(d.colindex, newgroup, names)
-set_groups(d::DataFrame, gr::Dict{ByteString,Vector{ByteString}}) = set_groups(d.colindex, gr)
-get_groups(d::DataFrame) = get_groups(d.colindex)
+set_group(d::AbstractDataFrame, newgroup, names) = set_group(index(d), newgroup, names)
+set_groups(d::AbstractDataFrame, gr::Dict{ByteString,Vector{ByteString}}) = set_groups(index(d), gr)
+get_groups(d::AbstractDataFrame) = get_groups(index(d))
 
 function insert(df::DataFrame, index::Integer, item, name)
     @assert 0 < index <= ncol(df) + 1
@@ -150,10 +150,11 @@ function ==(df1::AbstractDataFrame, df2::AbstractDataFrame)
     return true
 end
 
-head(df::DataFrame, r::Int) = df[1:r, :]
-head(df::DataFrame) = head(df, 6)
-tail(df::DataFrame, r::Int) = df[(nrow(df)-r+1):nrow(df), :]
-tail(df::DataFrame) = tail(df, 6)
+head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
+head(df::AbstractDataFrame) = head(df, 6)
+tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
+tail(df::AbstractDataFrame) = tail(df, 6)
+
 
 
 
@@ -403,17 +404,8 @@ nrow(df::SubDataFrame) = length(df.rows)
 ncol(df::SubDataFrame) = ncol(df.parent)
 colnames(df::SubDataFrame) = colnames(df.parent) 
 
-head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
-head(df::AbstractDataFrame) = head(df, 6)
-tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
-tail(df::AbstractDataFrame) = tail(df, 6)
-
 # Associative methods:
-has(df::SubDataFrame, key) = has(df.colindex, key)
-get(df::SubDataFrame, key, default) = has(df, key) ? df[key] : default
-keys(df::SubDataFrame) = keys(df.colindex)
-values(df::SubDataFrame, key) = keys(df.colindex)
-del_all(df::SubDataFrame) = DataFrame()
+index(df::SubDataFrame) = index(df.parent)
 
 
 
