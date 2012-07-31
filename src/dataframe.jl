@@ -1175,3 +1175,32 @@ end
 # Note: this doesn't work yet for DataVecs. It might once promotion
 # with Arrays is added (work needed).
 matrix(d::AbstractDataFrame) = reshape([d...],size(d))
+
+function duplicated(df::AbstractDataFrame)
+    # Return a Vector{Bool} indicated whether the row is a duplicate
+    # of a prior row.
+    res = fill(false, nrow(df))
+    di = Dict()
+    for i in 1:nrow(df)
+        if has(di, array(df[i,:]))
+            res[i] = true
+        else
+            di[array(df[i,:])] = 1 
+        end
+    end
+    res
+end
+
+# Unique rows of an AbstractDataFrame.        
+unique(df::AbstractDataFrame) = df[!duplicated(df), :] 
+
+function duplicatedkey(df::AbstractDataFrame)
+    # Here's another (probably a lot faster) way to do `duplicated`
+    # by grouping on all columns. It will fail if columns cannot be
+    # made into PooledDataVec's.
+    gd = groupby(df, colnames(df))
+    idx = [1:length(gd.idx)][gd.idx][gd.starts]
+    res = fill(true, nrow(df))
+    res[idx] = false
+    res
+end
