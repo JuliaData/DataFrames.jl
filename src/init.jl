@@ -1,4 +1,6 @@
 require("options.jl")
+import OptionsMod.*
+
 load("src/datavec.jl")
 load("src/index.jl")
 load("src/namedarray.jl")

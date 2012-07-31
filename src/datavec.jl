@@ -636,7 +636,7 @@ end
 # additional code
 
 # print
-show(io, x::AbstractDataVec) = show_comma_array(io, x, '[', ']') 
+show(io, x::AbstractDataVec) = Base.show_comma_array(io, x, '[', ']') 
 
 # TODO: vectorizable math functions like sqrt, sin, trunc, etc., which should return a DataVec{T}
 # not sure if this is the best approach, but works for a demo
