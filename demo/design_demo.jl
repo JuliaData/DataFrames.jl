@@ -105,6 +105,43 @@ ii["mammals"]
 set_group(df1, "IVs", ["a", "v1"])
 print(df1)
 df1["IVs"]
+# note that this expansion should work in Formulas
+
+
+# rbind and cbind should eventually work like their R equivalents; hcat and vcat are
+# Julian aliases. They're methods need fleshing out at the moment
+cbind(df1, DataFrame({"cat"=>[5:14]}))
+rbind(df1, DataFrame({"a"=>99, "b"=>"B", "v1"=>3.1415})) # broken?
+
+# a SubDataFrame is a lightweight wrapper around a DataFrame used most frequently in
+# split/apply sorts of operations.
+df1 = DataFrame(quote
+    a = shuffle([1:10])
+    b = ["A","B"][randi(2,10)]
+    v1 = randn(10)
+end)
+sub(df1, [1:5])
+sub(df1, [1:5], "v1")
+
+# TODO: groupedDataFrame
+
+
+# TODO: grouping operations
+
+# with
+ref(df1, :(a .> 5))
+df1[:(a .> 5)]
+
+
+# TODO: based_on
+
+
+# TODO: pipelining
+
+# TODO: by, colwise
+
+
+# TODO: stack, unstack
 
 
 

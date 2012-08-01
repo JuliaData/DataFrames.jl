@@ -81,6 +81,7 @@ isempty(df::AbstractDataFrame) = ncol(df) == 0
 set_group(d::DataFrame, newgroup, names) = set_group(d.colindex, newgroup, names)
 set_groups(d::DataFrame, gr::Dict{ByteString,Vector{ByteString}}) = set_groups(d.colindex, gr)
 get_groups(d::DataFrame) = get_groups(d.colindex)
+get_groups(sd::SubDataFrame) = get_groups(sd.parent)
 
 function insert(df::DataFrame, index::Integer, item, name)
     @assert 0 < index <= ncol(df) + 1
