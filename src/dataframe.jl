@@ -90,6 +90,14 @@ function insert(df::DataFrame, index::Integer, item, name)
     df[[1:index-1, end, index:end-1]]
 end
 
+function insert(df::DataFrame, df2::DataFrame)
+    @assert nrow(df) == nrow(df2) || nrow(df) == 0
+    for n in colnames(df2)
+        df[n] = df2[n]
+    end
+    df
+end
+
 # if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
 DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
 # if we have a matrix, create a tuple of columns and pass that in
