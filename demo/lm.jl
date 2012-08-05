@@ -1,4 +1,4 @@
-load(strcat(basename(ENV["_"]), "base/distributions.jl"))
+load("distributions.jl")
 
 type OLSResults
   call::Formula
