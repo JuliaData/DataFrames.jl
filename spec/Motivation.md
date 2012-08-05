@@ -65,7 +65,7 @@ Unfortunately, dealing with `NA`'s is actually more complex than this simple poi
 
 ## Design
 
-As noted before, nearly all interesting statistical methods work on objects that are more complex than simple vectors, even if those vectors have been augmented to express missingness. In addition to an `NA` type, one needs the ability to express the notion that a set of variables have all been measured for a specific case so that statistical analysis can proceed by treating each case as an organic whole. For example, in regression this case-by-variables approach allows us to assert that one variable `z`'s value depend on a case-by-case basis on the values of two other variables, `x` and `y`.
+As noted before, nearly all interesting statistical methods work on objects that are more complex than simple vectors, even if those vectors have been augmented to express missingness. In addition to an `NA` type, one needs the ability to express the notion that a set of variables have all been measured for a specific case so that statistical analysis can proceed by treating each case as an organic whole. For example, in regression this case-by-variables approach allows us to assert that one variable `z`'s value depends _on a case-by-case basis_ on the values of two other variables, `x` and `y`.
 
 In most statistical enviroments, this cases-by-variables approach to data analysis is accomplished using a tabular data structure. Some examples include:
 
@@ -73,9 +73,15 @@ In most statistical enviroments, this cases-by-variables approach to data analys
 * The data table type in Python's pandas library. (NB: pandas seems to go further than a simple tabular data structure.)
 * The `data.frame` and `data.table` types in R.
 
-In general, such tabular data structures can be viewed as instances of relational model of data underlying SQL. DataFrame functions in Julia should therefore provide a method for organizing tabular data, indexing into and performing computations on it.
+In general, such tabular data structures can be viewed as instances of the relational model of data that also underlies the design of SQL. Like SQL, Julia should also provide a method for organizing tabular data, indexing into it and performing computations on it. We propose to call the resulting new type a `DataFrame`.
 
-We note that the relational model as a design makes no stipulation about implementation details like row-orientation or column-orientation of a tabular data structure. And, like the relational model, Julian DataFrame's must allow missing data.
+We note that the relational model as a design makes no stipulation about implementation details like row-orientation or column-orientation of a tabular data structure. And, like the relational model, Julian DataFrame's must allow missing data. What is essential are the following requirements:
+
+* All elements within a column have a constant typ. This is really not a problematic restriction; if you want to allow both strings and characters in Column V, simply insist that the type of elements of V be Any.
+* Different columns may have different types. This is why a DataFrame is not a Matrix.
+* Optional names for rows and columns.
+* Optional groupings of rows and columns.
+* Ability to index into DataFrame using row indices / row names and/or column indices / column names.
 
 A DataFrame (or maybe DataTable is a better name) type, of heterogeneous *Data columns, complete with rownames and colnames. We should find out more about what John Chambers thinks about data.frames in S/R and how they should be done better. We should also look at the data.table implementation and also at what Pandas is doing.
 
