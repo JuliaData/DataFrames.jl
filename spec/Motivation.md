@@ -39,11 +39,8 @@ Unfortunately, dealing with `NA`'s is more complex than this: most statistical s
 
 ## Implementation
 
-One approach involves implementing everything using `AbstractArray`'s of `Union` types.
-
-This approach is feasible in Julia using a variant of Union types and could, in principle, be constructed using macros. But it might be quite inefficieint.
-
-Another is to use appropriate `BitsType`'s.
+* One approach to provide `NA` support in Julia involves implementing everything using `AbstractArray`'s of `Union` types. This approach is feasible in Julia and could, in principle, be extended to any types we wish to augment with `NA` by using macros. But this approach might be quite inefficient.
+* Another different approach is to use appropriate `BitsType`'s to encode missingness. In done appropriately, this could plausibly be much more efficient than the `Union` type, but seems to be more complex to get right.
 
 ## Ongoing Debates
 
@@ -52,19 +49,13 @@ Another is to use appropriate `BitsType`'s.
   * For operations on `data.frames`'s, `NA`'s are absolutely poisonous on a column-by-column basis by default.
   * Every function should provide as `na.rm` option that allows one to ignore `NA`'s. Essentially this involves replacing `NA` by the identity element for that function: `sum(na.rm = TRUE)` replaces `NA`'s with `0`, while `prod(na.rm = TRUE)` replaces `NA`'s with `1`.
 * Should there be multiple types of missingness?
-* How does missingness different from NaN for `Float`'s?
-
-### Types of Missingeness
-
-
-
-
-There is the fact of missingness and the cause of missingness. While systems like SAS features, we feel that a statistical programming language should: 
-For good references on this topic, see Rubin and others.
-
-
-  * To give one example, I have recently worked with a data set containing 100,000's of rows 100,000's or columns. In this data set, 100% of rows contained at least one column with a missing value. Discarding incomplete data would transform a problem that is perfectly soluble using well-established statistical methods into one with no answer. This is unacceptable.
-  * It is well known that ignoring missing data leads to incorrect conclusions about estimated quantities. (Two variable correlation example.)
+  * For example, SAS distinguishes between:
+    * Numeric missing values
+    * Character missing values
+    * Special numeric missing values
+  * In statistical theory, while the _fact_ of missingness is a simple fact and does not have multiple types, the _cause_ of missingness can be different and lead to different appropriate procedures. See, for example, the different suggestions about how to treat data that has entries missing completely at random (MCAR) vs. data that has entries missing at random (MAR) in Little and Rubin (2002). Should we be providing tools for handling this? External data sources will almost never provide this information, but multiple dispatch means that one could insure that the appropriate computations are performed for properly typed data sets without the end-user ever understanding.
+* How is missingness different from `NaN` for `Float`'s? Both share poisonous behavior and `NaN` propagation is very efficient in modern computers.
+* Should cleverness ever be allowed in propagation of `NA`? In section 3.3.4 of the R Language Definition, they note that in cases where the result of an operation would be the same for all possible values that an `NA` value could take on, the operation may return this constant value rather than `NA`. For example, `FALSE & NA` is `FALSE` while `TRUE | NA` is `TRUE`. This seems like a can-of-worms to me.
 
 # Tabular Data Structures: DataFrames
 
