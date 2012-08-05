@@ -4,9 +4,9 @@
 
 # Introduction
 
-We want to use Julia for statistical programming. Julia is already a very powerful tool for general mathematical programming, but it is missing several features that are essential for statistical programming.
+We want to use Julia for statistical programming. Julia is already a very powerful tool for general mathematical programming, but it is missing several features that are essential for statistical programming. We believe the changes that must be made to prepare Julia for statistical programming can be implemented using only Julian modules/packages and will not require changes to the core language. As such, we are building a package called `DataFrame` that implements the necessary changes.
 
-To explain why these missing features are essential and to motivate the changes that need to be made to Julia to make up for their absence (which we believe are possible using only modules/packages rather than changes to the core language), we can consider several examples of increasing complexity that involve calculating means:
+To (1) explain why the missing features implemented by `DataFrame` are essential and (2) motivate the changes that need to be made to Julia to make up for their absence, we describe several examples of increasing complexity below that involve calculating various types of means:
 
 * _Case 1_: We want to calculate the mean of a list of 5 numbers: `x1`, `x2`, `x3`, `x4` and `x5`. We can represent these numbers as a vector `v = [x1, x2, x3, x4, x5]`. We can compute the mean of `v` in Julia using the `mean()` function from `base/statistics.jl` by calling `mean(v)`. For this sort of computation, Julia shines.
 * _Case 2_: The approach taken above works well unless one or more of the values `x1` through `x5` is missing. Most real world data sets contain missing values, but the approach for computing means used above has no ability to handle even a single missing value. There are two problems:
@@ -75,44 +75,63 @@ In most statistical enviroments, this cases-by-variables approach to data analys
 
 In general, such tabular data structures can be viewed as instances of the relational model of data that also underlies the design of SQL. Like SQL, Julia should also provide a method for organizing tabular data, indexing into it and performing computations on it. We propose to call the resulting new type a `DataFrame`.
 
-We note that the relational model as a design makes no stipulation about implementation details like row-orientation or column-orientation of a tabular data structure. And, like the relational model, Julian DataFrame's must allow missing data. What is essential are the following requirements:
+We note that the relational model as a design makes no stipulation about implementation details like row-orientation or column-orientation of a tabular data structure. And, like the relational model, Julian DataFrame's must allow missing data, which is why we introduced methods for handling missing data before introducing the `DataFrame`. What is essential for the behavior of `DataFrame`'s are the following design requirements:
 
-* All elements within a column have a constant typ. This is really not a problematic restriction; if you want to allow both strings and characters in Column V, simply insist that the type of elements of V be Any.
-* Different columns may have different types. This is why a DataFrame is not a Matrix.
-* Optional names for rows and columns.
-* Optional groupings of rows and columns.
-* Ability to index into DataFrame using row indices / row names and/or column indices / column names.
+* A `DataFrame` is two-dimensional data structure that contains _m_ rows and _n_ columns.
+* All elements within one column of a `DataFrame` have a constant type. This is not a substantive restriction, because the type of a column could be the `Any` type.
+* Two different columns may contain elements with two different types. This is why a `DataFrame` is not a `Matrix` or an `Array{Any, 2}`.
+* Both the rows and columns of a `DataFrame` may have names in addition to numeric indices.
+* One can specify groups of rows and/or groups of columns of a `DataFrame` using indices.
+* One can index into the entries of a `DataFrame` using row indices / row names / row groups and/or column indices / column names / column groups.
 
-A DataFrame (or maybe DataTable is a better name) type, of heterogeneous *Data columns, complete with rownames and colnames. We should find out more about what John Chambers thinks about data.frames in S/R and how they should be done better. We should also look at the data.table implementation and also at what Pandas is doing.
-
-The power of reshape2 is severely limited by the asymmetric treatment of row and column variables in a data.drame. New data type should treat column and row variables symmetrically, and may be a better name would be data.matrix or even data.array. A related limitation of R's data.frame is that values in a column must have same type. Pandas corrected for this issue in the implementation of the data frame by have symmetrical treatment for rows and columns.
+Thus a `DataFrame` can be viewed as a grouping of heterogeneous columns, each of which has length _m_.
 
 ## Implementation
 
-A data frame is a list of vectors, factors, and/or matrices all having the same length (number of rows in the case of matrices). In addition, a data frame generally has a names attribute labeling the variables and a row.names attribute for labeling the cases.
-
-A data frame can contain a list that is the same length as the other components. The list can contain elements of differing lengths thereby providing a data structure for ragged arrays. However, as of this writing such arrays are not generally handled correctly.
+DETAILS NEEDED
 
 ## Ongoing Debates
 
-Indexing
-Symmetric rows and columns
-* It is said that John Chambers has many complaints about the design of R's `data.frame` type. Yet those complaints are not clear. It would be valuable to have access to his criticisms. Right now we have nothing.
+* How should database-style indices be implemented? What is most efficient?
+* How should `DataFrame`'s be distributed for parallel processing.
+* How should we insure a symmetric treatment of rows and columns?
+
+## Ongoing Questions
+
+* It is said that John Chambers has many complaints about the design of R's `data.frame` type. Yet those complaints are not clear. It would be valuable to have access to his criticisms. Right now we have no definite informatoin.
 
 # Model Formulas
 
 ## Design
 
-Formulas will probably be explicitly quoted expression in Julia, ala lm(:(y ~ x), dat). So we just need a set of conventions (and maybe an extra operator or two).
+Once support for missing data and tabular data structures are in place, we need to begin to develop a version of the model formulas "syntax" used by R. In reality, it is better to regard this "syntax" as a complete domain-specific language (DSL) for describing linear models. For those unfamilar with this DSL, we show some examples below and then elaborate upon them to demonstrate ways in which Julia might move beyond R's formulas.
 
-Interactions
-Hierarchical indexing
+Let's consider the simplest sort of regression model: how does the height of a child depend upon the height of the child's mother and father? If we let the variable `C` denote the height of the child, `M` the height of the mother and `F` the height of the father, the standard linear model approach in statistics would try to model their relationship using the following equation: `C = a + bM + cF + epsilon`, where `a`, `b` and `c` are fixed constants and `epsilon` is a normally distributed noise term that accounts for the imperfect match between any specific child's height and the predictions based solely on the mother's and father's heights.
 
-model.matrix and related equivalent methods on formulas.
+In practice, we would fit such a model using a function that performs linear regression: to do this in R, we would write `lm(C ~ M + F, data = heights.data)` to fit this model assuming that `heights.data` refers to a tabular data structure containing the heights of many children, mothers and fathers.
+
+If we wanted to see how the child's height depends only on the mother's height, we would write `lm(C ~ M)`. If we were concerned only about dependence on the father's height, we would write `lm(C ~ H)`. As you can see, we perform many different statistical analyses using a very consise language for describing those analyses.
+
+What is that language? The R formula language allows one to specify linear models by specifying the terms that should be included. The language is defined by a very small number of constructs:
+
+* The `~` operator: The `~` operator separates the pieces of a Formula. For linear models, this means that one specifies the outputs to be predicted on the left-hand side of the `~` and the inputs to be used to make predictions on the right-hand side.
+* The `+` operator: If you wish to include multiple predictors in a linear model, you use the `+` operator. To include both the columns `A` and `B` while predicting `C`, you write: `C ~ A + B`.
+* The `:` operator: The `:` operator computes interaction terms, which are really an entirely new column created by combining two existing columns. For example, `C ~ A:B` describes a linear model with only one predictor. The values of this predictor at row `i` is exactly `A[i] * B[i]`, where `*` is the standard arithmetic multiplication operation.
+* The `*` operator: The `*` operator is really shorthand because `C ~ A*B` expands to `C ~ A + B + A:B`. In other words, in a DSL with only three operators, the `*` is technically syntactic sugar.
+
+In addition to these operators, the model formulas DSL typically allows us to include simple functions of single columns such as in the example, `C ~ A + log(B)`.
+
+For Julia, this DSL will be handled by constructing an object of type `Formula`. It will be possible to generate a `Formula` using explicitly quoted expression, as in `lm(:(y ~ x), heights_data)`. A `Formula` object describes how one should convert the columns of a `DataFrame` into a `ModelMatrix`, which fully specifies a linear model. [MORE DETAILS NEEDED ABOUT HOW `ModelMatrix` WORKS.]
+
+How can Julia move beyond R? The primary improvement Julia can offer over involves the use of hierarchical indexing of columns to the inclusion of groups of columns as predictors. For example, a text regression model that uses word counts as columns might involve writing `IsSpam ~ Pronouns + Prepositions + Verbs` to exclude most nouns from the analysis. In addition, we might to exploit some of the tricks R provides for writing hierarchical models in which each value of a categorical predictor gets its own coefficients -- as commonly occurs in hierarchical regression models.
 
 ## Implementation
 
+DETAILS NEEDED
+
 ## Ongoing Debates
+
+None at present.
 
 # Factors
 
@@ -145,3 +164,10 @@ Processing data without represnting the entire data set in memory is well-studie
 ## Online Data Analysis
 
 For many applications, a method for handling a data stream is not sufficient: in practice, we often require that an algorithm not only be able to work with limited memory, but provide interim results before it has finished analyzing a data stream. Methods that provide interim answers while processing a data stream are called online learning methods and are essential for modern businesses that must process and act upon data in real time. We would like for Julia to be used to build such systems whenever possible.
+
+# References and Inspiration
+
+* John Chambers e-mail describing better `data.frame`'s.
+* The design of Python's pandas library.
+* R's `data.frame`.
+* R's `data.table`.
