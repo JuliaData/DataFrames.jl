@@ -189,14 +189,14 @@ function show(io, df::AbstractDataFrame)
         rowrng = [1:Nmx, N-Nmx+1:N]
     end
     # we don't have row names -- use indexes
-    rowNames = [sprintf("[%d,]", r) for r = rowrng]
+    rowNames = [@sprintf("[%d,]", r) for r = rowrng]
     
     rownameWidth = maxShowLength(rowNames)
     
     # if we don't have columns names, use indexes
     # note that column names in R are obligatory
     if eltype(colnames(df)) == Nothing
-        colNames = [sprintf("[,%d]", c) for c = 1:ncol(df)]
+        colNames = [@sprintf("[,%d]", c) for c = 1:ncol(df)]
     else
         colNames = colnames(df)
     end

@@ -35,11 +35,11 @@ function print(results::OLSResults)
   println()
   println("Coefficients:")
   println()
-  printf(" %12.s %12s %12s %12s %12s\n", "Term", "Estimate", "Std. Error", "t value", "Pr(>|t|)")
+  @printf(" %12.s %12s %12s %12s %12s\n", "Term", "Estimate", "Std. Error", "t value", "Pr(>|t|)")
   N = size(results.coefficients, 1)
   for i = 1:N
-    printf(" %12.s  ", results.predictor_names[i])
-    print(join(map(z -> sprintf("%12f", z),
+    @printf(" %12.s  ", results.predictor_names[i])
+    print(join(map(z -> @sprintf("%12f", z),
                     {results.coefficients[i, 1],
                      results.std_errors[i, 1],
                      results.t_stats[i, 1],
@@ -50,7 +50,7 @@ function print(results::OLSResults)
   println("---")
   println("Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1")
   println()  
-  printf("Adjusted R-squared: %0.4f", results.r_squared)
+  @printf("Adjusted R-squared: %0.4f", results.r_squared)
   println()
   println()
   #Residual standard error: 0.04082 on 2 degrees of freedom
