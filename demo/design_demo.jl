@@ -62,7 +62,7 @@ print(x)
 # certain operations. To create a new DataVec object (with the same data
 # and mask objects) that looks as if the NAs are ignored, use naFilter; to 
 # define a replacement value, use naReplace.
-sum(dvint) # fails
+try sum(dvint) end # fails now -- eventually, this should work.
 sum(naFilter(dvint))
 sum(naReplace(dvint, 100))
 
@@ -71,8 +71,7 @@ sum(naReplace(dvint, 100))
 # the case of a large number of repeated elements. A common use is repeated 
 # strings. PDVs don't have a mask -- they can use a 0-index to represent the NA.
 pdvstr = PooledDataVec["one", "one", "two", "two", NA, "one", "one"]
-print(pdvstr.pool)
-print(pdvstr.refs)
+idump(pdvstr)  # show the internal structure of a PooledDataVec
 # some operations, such as csvDataFrame which loads a CSV file into a DataFrame
 # will try to created a PooledDataVec when possible.
 
@@ -86,6 +85,9 @@ df1 = DataFrame(quote
     v1 = randn(10)
 end)
 typeof(df1["a"])
+
+# Let's look at the structure of the data (`dump` is like R's `str`).
+dump(df1)
 
 # The names of the columns in a DF are stored in a new type called an Index (possibly
 # needs a less-generic name?)
@@ -101,6 +103,8 @@ ii[2:3]
 # Even better, you can define meta-names
 set_group(ii, "mammals", ["cat", "dog"])
 ii["mammals"]
+# Here is the structure of an index, a Dict pointing to a list of names:
+dump(ii)
 # and this can be very useful shorthand for DFs
 set_group(df1, "IVs", ["a", "v1"])
 print(df1)
@@ -110,8 +114,8 @@ df1["IVs"]
 
 # rbind and cbind should eventually work like their R equivalents; hcat and vcat are
 # Julian aliases. They're methods need fleshing out at the moment
-cbind(df1, DataFrame({"cat"=>[5:14]}))
-rbind(df1, DataFrame({"a"=>99, "b"=>"B", "v1"=>3.1415})) # broken?
+cbind(df1, DataFrame(:("cat"=[5:14])))
+rbind(df1, DataFrame(:("a"=99; "b"="B"; "v1"=3.1415)))
 
 # a SubDataFrame is a lightweight wrapper around a DataFrame used most frequently in
 # split/apply sorts of operations.
@@ -123,20 +127,53 @@ end)
 sub(df1, [1:5])
 sub(df1, [1:5], "v1")
 
+# Here is the structure of a SubDataFrame:
+idump( sub(df1, [1:5]), 2)
+
+
+# Expressions are used in many places in JuliaData. The functions
+# `with`, `within`, and `based_on` evaluate an expression within a
+# DataFrame. `with` returns the result of the evaluation. These all
+# work by traversing the expression and replacing terms that are in
+# the DataFrame and then eval'ing the expression.
+with(df1, :( a + sum(v1) ))
+# Because `eval` acts globally, it can pull in global variables but
+# not local variables. To insert those, they must be escaped.
+a2local = df1["a"] + df1["a"]
+with(df1, :( a + $a2local))
+
+# `within(df)` returns the a copy of `df` after evaluating the
+# expression. This is most useful for creating new columns from
+# existing columns. `within!` is the same but changes the original
+# DataFrame.
+within(df1, :( a2 = 2 + a ))
+
+# `based_on(df)` evaluates to a new DataFrame using the contents of `df`. 
+df2 = based_on(df1, quote
+    a = a + 2
+    v1sum = sum(v1)
+end)
+
+# Rows of DataFrames may also be selected based on the results of an
+# expression, somewhat like R's data.table package.
+df1[:( a .> 5 )]
+# equivalent to:
+df1[with(df1, :(a .> 5)), :]
+
 # TODO: groupedDataFrame
 
 
 # TODO: grouping operations
 
-# with
-ref(df1, :(a .> 5))
-df1[:(a .> 5)]
-
-
-# TODO: based_on
 
 
 # TODO: pipelining
+# The pipeline operator (`|`) is useful for many JuliaData operations.
+# This is handy at the REPL to evaluate the structure of a result:
+df1[:( a .> 5 )] | dump
+
+
+
 
 # TODO: by, colwise
 
