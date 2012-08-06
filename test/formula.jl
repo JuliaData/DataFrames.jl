@@ -218,54 +218,14 @@ mm = model_matrix(model_frame(Formula(:(y ~ x2&x3 + x2*x3)), df))
 mm = model_matrix(model_frame(Formula(:(y ~ x2 & x3 & x4)), df))
 @assert mm.model == [ones(4) x2.*x3.*x4]
 
-# TODO:
-## mm = model_matrix(model_frame(Formula(:(y ~ I(x2))), df))
-
-f = Formula(:(y ~ x2*x3*x4))
-ex = :(x2*x3*x4)
-args = f.rhs[1].args[2:end]
-dfs = expand(args, d)
-@assert length(dfs) == 3
-
-
-## mf = model_frame(f, d)
-## mm = model_matrix(mf)
-## interaction_design_matrix(dfs[[1,2,3]])
-
-## test_group("Include all terms")
-
-## f = Formula(:(y ~ .))
-## mm = model_matrix(model_frame(f,d))
-## @assert mm.model == [ones(4) x1 x2]
-
-## test_group("Intercept options")
-
-## f = Formula(:(y ~ 1))
-## mm = model_matrix(model_frame(f,d))
-## @assert mm.model == [ones(4)]
-
-## f = Formula(:(y ~ x1 + 0))
-## mm = model_matrix(model_frame(f,d))
-## @assert mm.model == x1
-
-## f = Formula(:(y ~ x1 - 1))
-## mm = model_matrix(model_frame(f,d))
-## @assert mm.model == x1
-
-## f = Formula(:(y ~ x1 + x2 - 1))
-## mm = model_matrix(model_frame(f,d))
-## @assert mm.model == [x1 x2]
-
-## f = Formula(:(y ~ . - 1))
-## mm = model_matrix(model_frame(f,d))
-## @assert mm.model == [x1 x2]
-
-## # Should throw errors since there the model would be empty
-## f = Formula(:(y ~ - 1))
-## mm = model_matrix(model_frame(f,d))
-## @assert error
-
-## # Should throw errors since there the model would be empty
-## f = Formula(:(y ~ 0))
-## mm = model_matrix(model_frame(f,d))
-## @assert error
+# test_group("Column groups in formulas")
+set_group(d, "odd_predictors", ["x1","x3"])
+@assert expand(:odd_predictors, d) == d["odd_predictors"]
+mf = model_frame(Formula(:(y ~ odd_predictors)), d)
+@assert mf.df[:,1] == d["y"]
+@assert mf.df[:,2] == d["x1"]
+@assert mf.df[:,3] == d["x3"]
+@assert ncol(mf.df) == 3
+mf = model_frame(Formula(:(y ~ odd_predictors * x2)), d)
+mm = model_matrix(mf)
+@assert mm.model == [ones(4) x1 x3 x2 x1.*x2 x3.*x2]
