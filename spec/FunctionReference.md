@@ -1,3 +1,4 @@
+# JuliaData Package  
 
 ## DataFrames
 
@@ -318,10 +319,9 @@ An Index with names `s`. An Index is like an Associative type. An
 Index is used for column indexing of DataFrames. An Index maps
 ByteStrings and Vector{ByteStrings} to Indices.
 
-#### `length(x::Index)`, `copy(x::Index)`, `has(x::Index, key)`,
-     `keys(x::Index)`, `push(x::Index)`,
+#### `length(x::Index)`, `copy(x::Index)`, `has(x::Index, key)`, `keys(x::Index)`, `push(x::Index, name)`
 
-Normal meaning.
+Normal meanings.
 
 #### `del(x::Index, idx::Integer)`,  `del(x::Index, s::ByteString)`,  
 
@@ -396,10 +396,51 @@ Return an `NA` value appropriate for the type of `x`.
 
 ## DataVecs
 
-...
+#### `DataVec(x::Vector)`
+#### `DataVec(x::Vector, m::Vector{Bool})`
 
+Create a DataVec from `x`, with `m` optionally indicating which values
+are NA. DataVecs are like Julia Vectors with support for NA's. `x` may
+be any type of Vector.
 
+#### `PooledDataVec(x::Vector)`
+#### `PooledDataVec(x::Vector, m::Vector{Bool})`
+
+Create a PooledDataVec from `x`, with `m` optionally indicating which
+values are NA. PooledDataVecs contain a pool of values with references
+to those values. This is useful in a similar manner to an R array of
+factors.
+
+#### `size`, `length`, `ndims`, `ref`, `assign`, `start`, `next`, `done`
+
+All normal Vector operations including array referencing should work.
+
+#### `isna(x)`, `nafilter(x)`, `nareplace(x, val)`, `naFilter(x)`, `naReplace(x, val)`
+
+All NA-related methods are supported.
+
+## Utilities
+
+#### `cut(x::Vector, breaks::Vector)`
+
+Returns a PooledDataVec with length equal to `x` that divides values in `x`
+based on the divisions given by `breaks`.
 
 ## Formulas and Models
 
-...
+#### `Formula(ex::Expr)`
+
+Return a Formula object based on `ex`. Formulas are two-sided
+expressions separated by `~`, like `:(y ~ w*x + z + i&v)`.
+
+#### `model_frame(f::Formula, d::DataFrame)`
+
+A ModelFrame based on `d` and `f`.
+
+#### `model_matrix(mf::ModelFrame)`
+
+A ModelMatrix based on `mf`.
+
+#### `lm(ex::Expr, df::DataFrame)`
+
+Linear model results (type OLSResults) based on formula `ex` and `df`.
