@@ -73,6 +73,10 @@ First `i` rows of `df`. Defaults to 6.
 
 Last `i` rows of `df`. Defaults to 6.
 
+#### `show(io, df::AbstractDataFrame)`
+
+Standard pretty-printer of `df`. Called by `print()` and the REPL.
+
 #### `dump(df::AbstractDataFrame)`
 
 Show the structure of `df`. Like R's `str`.
@@ -361,14 +365,17 @@ Set groups in `idx` based on the mapping given by `gr`.
 
 ## Missing Values
 
+Missing value behavior is implemented by instantiations of the `AbstractDataVec`
+abstract type. 
+
 #### `NA`
 
 A constant indicating a missing value.
   
 #### `isna(x)`
 
-Return a `Bool` or `Array{Bool}` that is `true` for elements with
-missing values.
+Return a `Bool` or `Array{Bool}` (if `x` is an `AbstractDataVec`)
+that is `true` for elements with missing values.
 
 #### `nafilter(x)`
 
