@@ -112,8 +112,6 @@ end
 
 length(x::NAtype) = 1
 size(x::NAtype) = ()
-isna(x::NAtype) = true
-isna(x) = false
 
 ==(na::NAtype, na2::NAtype) = NA
 ==(na::NAtype, b) = NA
@@ -175,11 +173,15 @@ size(v::DataVec) = size(v.data)
 size(v::PooledDataVec) = size(v.refs)
 length(v::DataVec) = length(v.data)
 length(v::PooledDataVec) = length(v.refs)
-isna(v::DataVec) = v.na
-isna(v::PooledDataVec) = v.refs .== 0
 ndims(v::AbstractDataVec) = 1
 numel(v::AbstractDataVec) = length(v)
 eltype{T}(v::AbstractDataVec{T}) = T
+
+isna(x::NAtype) = true
+isna(v::DataVec) = v.na
+isna(v::PooledDataVec) = v.refs .== 0
+isna(x::AbstractArray) = falses(size(x))
+isna(x) = false
 
 # equality, respecting NAs
 function =={T}(a::DataVec{T}, b::DataVec{T})
