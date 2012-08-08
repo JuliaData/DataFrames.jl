@@ -221,7 +221,6 @@ function expand(ex::Expr, df::DataFrame)
         f(FormulaExpander(), ex.args[2:end], df)
     else
         # Everything else is called recursively:
-        #println("B", ex, )
         expand(with(df, ex), string(ex), df)
     end
 end
@@ -240,7 +239,7 @@ function expand(x, name::ByteString, df::DataFrame)
     if is_group(name, df)
       preds = get_groups(df)[name]
       dfs = [expand(symbol(x), df) for x in preds]
-      return hcat(dfs)
+      return cbind(dfs...) 
     end
     # This is the default for expansion: put it right in to a DataFrame.
     DataFrame({x}, [name])

@@ -514,29 +514,7 @@ end
 cbind(a, b, c...) = cbind(cbind(a, b), c...)
 hcat(dfs::DataFrame...) = cbind(dfs...)
 
-# Arrays of DataFrames
-function hcat(dfs::Array{DataFrame,1})
-  hcat(dfs[1], dfs[2:end])
-end
-function hcat(df::DataFrame, dfs::Array{DataFrame,1})
-  a = 0
-  if length(dfs) == 0  error("length 0 array") end
-  if length(dfs) == 1
-    a = hcat(df, dfs[1])
-  else
-    a = hcat(df, dfs)
-  end
-  return a
-end
-
-# Grouped columns helper functions
-function is_group(name::ByteString, df::DataFrame)
-  if has(df.colindex, name)
-    return isa(df.colindex.lookup[name], Array)
-  else
-    return false
-  end
-end
+is_group(name::ByteString, df::DataFrame) = is_group(df.colindex, name)
 
 similar{T}(dv::DataVec{T}, dims) =
     DataVec(similar(dv.data, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
