@@ -53,27 +53,52 @@ unique_symbols(ex::Symbol) = [ex]
 unique_symbols(ex::Array{Symbol,1}) = [ex[1]]
 
 # Create a DataFrame containing only variables required by the Formula
+# Include grouped indexes present in original DataFrame that are in Formula
+# TODO: Split GroupedDataFrame away from this function?
 function model_frame(f::Formula, d::DataFrame)
     cols = {}
     col_names = Array(ASCIIString,0)
+    gidx = Dict{Union(UTF8String,ASCIIString),Array{Union(UTF8String,ASCIIString),1}}()
 
     lhs = unique_symbols(f.lhs)
     rhs = unique_symbols(f.rhs)
-    
+
     # so, foreach element in the lhs, evaluate it in the context of the df
     for ll = 1:length(lhs)
-        push(cols, with(d, lhs[ll]))
-        push(col_names, string(lhs[ll]))
+      s = lhs[ll]
+      if is_group(string(s), d)
+        for a = get_groups(d)[string(s)]
+          push(cols, with(d, symbol(a)))
+          push(col_names, a)
+        end
+        gidx[string(s)] = get_groups(d)[string(s)]
+      else 
+        push(cols, with(d, s))
+        push(col_names, string(s))
+      end
     end
     y_indexes = [1:length(lhs)]
     
     # and foreach unique symbol in the rhs, do the same
     for rr = 1:length(rhs)
-       push(cols, with(d, rhs[rr]))
-       push(col_names, string(rhs[rr]))
+      s = rhs[rr]
+      if is_group(string(s), d)
+        for a = get_groups(d)[string(s)]
+          push(cols, with(d, symbol(a)))
+          push(col_names, a)
+        end
+        gidx[string(s)] = get_groups(d)[string(s)]
+      else
+        push(cols, with(d, s))
+        push(col_names, string(s))
+      end   
     end
     # bind together and return
-    ModelFrame(DataFrame(cols, col_names), y_indexes, f)
+    df = DataFrame(cols, col_names)
+    if length(gidx) > 0
+        set_groups(df, gidx)
+    end
+    ModelFrame(df, y_indexes, f)
 end
 
 
@@ -97,7 +122,8 @@ end
 # Expand dummy variables and equations
 function model_matrix(mf::ModelFrame)
     ex = mf.formula.rhs[1]
-    df = mf.df[complete_cases(mf.df),1:ncol(mf.df)]
+    # BUG: complete_cases doesn't preserve grouped columns
+    df = mf.df#[complete_cases(mf.df),1:ncol(mf.df)]  
     rdf = df[mf.y_indexes]
     mdf = expand(ex, df)
 
@@ -163,19 +189,6 @@ function interaction_design_matrix(a::DataFrame, b::DataFrame, c::DataFrame)
    DataFrame(cols, col_names)
 end
 
-function interaction(dfs::Array{Any, 1})
-   d = DataFrame()
-   insert(d, interaction(dfs[1], dfs[2:end]))
-   d
-end
-
-function interaction(df::DataFrame, dfs::Array{Any, 1})
-   d = DataFrame()
-   insert(d, interaction(df, dfs[1]))   
-   insert(d, interaction(d, dfs[2:end]))
-   d
-end
-
 # Temporary: Manually describe the interactions needed for DataFrame Array.
 function all_interactions(dfs::Array{Any,1})
     d = DataFrame()
@@ -197,7 +210,6 @@ function all_interactions(dfs::Array{Any,1})
     return d
 end
 
-
 #
 # The main expression to DataFrame expansion function.
 # Returns a DataFrame.
@@ -209,7 +221,6 @@ function expand(ex::Expr, df::DataFrame)
         f(FormulaExpander(), ex.args[2:end], df)
     else
         # Everything else is called recursively:
-        #println("B", ex, )
         expand(with(df, ex), string(ex), df)
     end
 end
@@ -224,6 +235,12 @@ function expand(args::Array{Any}, df::DataFrame)
 end
 
 function expand(x, name::ByteString, df::DataFrame)
+    # If this happens to be a column group, then expand each and concatenate
+    if is_group(name, df)
+      preds = get_groups(df)[name]
+      dfs = [expand(symbol(x), df) for x in preds]
+      return cbind(dfs...) 
+    end
     # This is the default for expansion: put it right in to a DataFrame.
     DataFrame({x}, [name])
 end
