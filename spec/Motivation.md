@@ -50,8 +50,9 @@ Unfortunately, dealing with `NA`'s is actually more complex than this simple poi
 
 ## Implementation
 
-* One approach to providing `NA` support in Julia involves implementing everything using `AbstractArray`'s of `Union` types. This approach is feasible in Julia and could, in principle, be extended to any types we wish to augment with `NA` by using macros. But this approach might be quite inefficient.
-* Another different approach is to use appropriate `BitsType`'s to encode missingness. If done appropriately, this could plausibly be much more efficient than the `Union` type, but seems to be more complex to get right.
+* The approach currently being taken is to use a mask, which accompanies each vector of data `V` with an additional vector `M` that specifies when entries of `V` are missing. Essentially, one can think of this as a type with an extra boolean attached to every item.
+* Another approach to providing `NA` support in Julia involves implementing everything using `AbstractArray`'s of `Union` types. This approach is feasible in Julia and could, in principle, be extended to any types we wish to augment with `NA` by using macros. But this approach might be quite inefficient.
+* Yet another approach is to use appropriate `BitsType`'s to encode missingness. If done appropriately, this could plausibly be much more efficient than the `Union` type, but seems to be more complex to get right.
 
 ## Ongoing Debates
 
@@ -84,11 +85,12 @@ In general, such tabular data structures can be viewed as instances of the relat
 
 We note that the relational model as a design makes no stipulation about implementation details like row-orientation or column-orientation of a tabular data structure. And, like the relational model, Julian DataFrame's must allow missing data, which is why we introduced methods for handling missing data before introducing the `DataFrame`. What is essential for the behavior of `DataFrame`'s are the following design requirements:
 
-* A `DataFrame` is a two-dimensional data structure that contains _m_ rows and _n_ columns.
+* A `DataFrame` is a two-dimensional data structure that contains _m_ rows and _n_ columns. The rows have a well-defined order that does not depend upon the entries of the `DataFrame`: effectively each row of a `DataFrame` is supplemented with a primary key that specifies the position of that row in the ordering of all row.
 * All elements within one column of a `DataFrame` have a constant type. This is not a substantive restriction, because the type of a column could be the `Any` type.
 * Two different columns may contain elements with two different types. This is why a `DataFrame` is not a `Matrix` of any specific type.
-* Both the rows and columns of a `DataFrame` may have names in addition to numeric indices.
-* One can specify groups of rows and/or groups of columns of a `DataFrame` using specialized indexes as in a RDBMS.
+* The columns of a `DataFrame` may have names in addition to numeric indices.
+* One can specify groupings of rows and/or groupings of columns of a `DataFrame` using hierarchical names for groups of columns. For example, in a `DataFrame` with columns called `Jan2012`, ... `Dec2012`, one could add a grouping of columns called `Winter`, `Spring`, ...
+* One can specify an index of the sort used in a RDBMS to allow for efficient searching and subsetting of a `DataFrame`.
 * One can index into the entries of a `DataFrame` using row indices/row names/row groups and/or column indices/column names/column groups.
 
 Thus a `DataFrame` can be viewed as an aggregate of _n_ heterogeneous columns, each of which has length _m_.
@@ -101,7 +103,6 @@ DETAILS NEEDED
 
 * How should RDBMS-like indices be implemented? What is most efficient? How can we avoid the inefficient vector searches that R uses?
 * How should `DataFrame`'s be distributed for parallel processing?
-* How should we insure a symmetric treatment of rows and columns?
 
 ## Ongoing Questions
 
@@ -123,14 +124,14 @@ What is that language? The R formula language allows one to specify linear model
 
 * The `~` operator: The `~` operator separates the pieces of a Formula. For linear models, this means that one specifies the outputs to be predicted on the left-hand side of the `~` and the inputs to be used to make predictions on the right-hand side.
 * The `+` operator: If you wish to include multiple predictors in a linear model, you use the `+` operator. To include both the columns `A` and `B` while predicting `C`, you write: `C ~ A + B`.
-* The `:` operator: The `:` operator computes interaction terms, which are really an entirely new column created by combining two existing columns. For example, `C ~ A:B` describes a linear model with only one predictor. The values of this predictor at row `i` is exactly `A[i] * B[i]`, where `*` is the standard arithmetic multiplication operation.
+* The `&` operator: The `&` operator is equivalent to `:` in R. It computes interaction terms, which are really an entirely new column created by combining two existing columns. For example, `C ~ A&B` describes a linear model with only one predictor. The values of this predictor at row `i` is exactly `A[i] * B[i]`, where `*` is the standard arithmetic multiplication operation. Because of the precedence rules for Julia, it was not possible to use a `:` operator without writing a custom parser.
 * The `*` operator: The `*` operator is really shorthand because `C ~ A*B` expands to `C ~ A + B + A:B`. In other words, in a DSL with only three operators, the `*` is just syntactic sugar.
 
 In addition to these operators, the model formulas DSL typically allows us to include simple functions of single columns such as in the example, `C ~ A + log(B)`.
 
 For Julia, this DSL will be handled by constructing an object of type `Formula`. It will be possible to generate a `Formula` using explicitly quoted expression. For example, we might write the Julian equivalent of the models above as `lm(:(C ~ M + F), heights_data)`. A `Formula` object describes how one should convert the columns of a `DataFrame` into a `ModelMatrix`, which fully specifies a linear model. [MORE DETAILS NEEDED ABOUT HOW `ModelMatrix` WORKS.]
 
-How can Julia move beyond R? The primary improvement Julia can offer over R's model formula approach involves the use of hierarchical indexing of columns to control the inclusion of groups of columns as predictors. For example, a text regression model that uses word counts for thousands of different words as columns in a `DataFrame` might involve writing `IsSpam ~ Pronouns + Prepositions + Verbs` to exclude most words from the analysis except for those included in the `Pronouns`, `Prepositions` and `Verbs` groups. In addition, we might try to improve upon some of the tricks R provides for writing hierarchical models in which each value of a categorical predictor gets its own coefficients. This occurs, for example, in hierarchical regression models.
+How can Julia move beyond R? The primary improvement Julia can offer over R's model formula approach involves the use of hierarchical indexing of columns to control the inclusion of groups of columns as predictors. For example, a text regression model that uses word counts for thousands of different words as columns in a `DataFrame` might involve writing `IsSpam ~ Pronouns + Prepositions + Verbs` to exclude most words from the analysis except for those included in the `Pronouns`, `Prepositions` and `Verbs` groups. In addition, we might try to improve upon some of the tricks R provides for writing hierarchical models in which each value of a categorical predictor gets its own coefficients. This occurs, for example, in hierarchical regression models of the sort implemented by R's `lmer` function. In addition, there are plans to support multiple LHS and RHS components of a `Formula` using a `|` operator.
 
 ## Implementation
 
@@ -154,7 +155,7 @@ In addition to the general `Factor` type, we might also introduce a subtype of t
 
 ## Implementation
 
-We have a `Factor` type that handles `NA`s. This type is currently implemented using `PooledVec`'s.
+We have a `Factor` type that handles `NA`s. This type is currently implemented using `PooledDataVec`'s.
 
 ## Ongoing Debates
 
