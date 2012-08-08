@@ -83,9 +83,8 @@ library.
 
 # Documentation
 
-* [Library-style function reference](https://github.com/doobwa/JuliaData/blob/spec/FunctionReference.md)
-
-* [Background and motivation](https://github.com/doobwa/JuliaData/blob/spec/Motivation.md)
+* [Library-style function reference](https://github.com/HarlanH/JuliaData/blob/master/spec/FunctionReference.md)
+* [Background and motivation](https://github.com/HarlanH/JuliaData/blob/master/spec/Motivation.md)
 
 
 # Development work
