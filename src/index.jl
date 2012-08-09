@@ -113,6 +113,14 @@ function get_groups(idx::Index)
     end
     gr
 end
+function is_group(idx::Index, name::ByteString)
+  if has(idx, name)
+    return isa(idx.lookup[name], Array)
+  else
+    return false
+  end
+end
+
 
 # special pretty-printer for groups, which are just Dicts.
 function pretty_show(io, gr::Dict{ByteString,Vector{ByteString}})
