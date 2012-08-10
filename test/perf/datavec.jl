@@ -34,12 +34,14 @@ perf_test["mean(naFilter(dvna)): DataVec with NA's"] = () -> f6(dv)
 
 
 for (name, f) in perf_test
-    res = try
-        @elapsed f()
-    catch
-        NA
+    for i in 1:3     # do each three times
+        res = try
+            @elapsed f()
+        catch
+            NA
+        end
+        println(name, ", ", res, ", ", strftime("%Y-%m-%d %H:%M:%S",int(time())))
     end
-    println(name, ", ", res, ", ", strftime("%Y-%m-%d %H:%M:%S",int(time())))
 end
 
 
