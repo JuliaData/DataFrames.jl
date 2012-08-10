@@ -309,9 +309,11 @@ column names in the result. `ivalue` indicates the value column.
 not given by `ikey`, `ivalue`, or `irefkey` are currently ignored.
 
 #### `merge(df1::DataFrame, df2::DataFrame, bycol)`
+#### `merge(df1::DataFrame, df2::DataFrame, bycol, jointype)`
 
-Return the inner join of `df1` and `df2` based on the column `bycol`.
-Currently only a single merge key is supported.
+Return the database join of `df1` and `df2` based on the column `bycol`.
+Currently only a single merge key is supported. Supports `jointype` of
+"inner" (the default), "left", "right", or "outer".
 
 
 ## Index
@@ -400,6 +402,10 @@ will replace NAs with `val`.
 
 Return an `NA` value appropriate for the type of `x`.
 
+#### `nas(x, dim)`
+
+Return an object like `x` filled with `NA`'s with size `dim`.
+
 
 ## DataVecs
 
@@ -440,14 +446,17 @@ based on the divisions given by `breaks`.
 Return a Formula object based on `ex`. Formulas are two-sided
 expressions separated by `~`, like `:(y ~ w*x + z + i&v)`.
 
-#### `model_frame(f::Formula, d::DataFrame)`
+#### `model_frame(f::Formula, d::AbstractDataFrame)`
+#### `model_frame(ex::Expr, d::AbstractDataFrame)`
 
-A ModelFrame based on `d` and `f`.
+A ModelFrame.
 
 #### `model_matrix(mf::ModelFrame)`
+#### `model_matrix(f::Formula, d::AbstractDataFrame)`
+#### `model_matrix(ex::Expr, d::AbstractDataFrame)`
 
-A ModelMatrix based on `mf`.
+A ModelMatrix based on `mf`, `f` and `d`, or `ex` and `d`.
 
-#### `lm(ex::Expr, df::DataFrame)`
+#### `lm(ex::Expr, df::AbstractDataFrame)`
 
 Linear model results (type OLSResults) based on formula `ex` and `df`.
