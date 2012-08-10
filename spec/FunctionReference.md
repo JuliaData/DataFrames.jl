@@ -22,12 +22,11 @@ An empty DataFrame.
 
 #### `copy(df::DataFrame)`
 
-A deep copy of `df`. TODO change to a shallow copy to reflect
-the recent change in Julia.
-
-#### `shallowcopy(df::DataFrame)`
-
 A shallow copy of `df`. Columns are referenced, not copied.
+
+#### `deepcopy(df::DataFrame)`
+
+A deep copy of `df`. Copies of each column are made.
 
 #### `similar(df::DataFrame, nrow)`
 
