@@ -11,7 +11,7 @@ type Index <: AbstractIndex   # an OrderedDict would be nice here...
     names::Vector{ByteString}
 end
 Index{T<:ByteString}(x::Vector{T}) = Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)),
-                                           convert(Vector{ByteString}, x))
+                                           make_unique(convert(Vector{ByteString}, x)))
 Index() = Index(Dict{ByteString,Indices}(), ByteString[])
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
