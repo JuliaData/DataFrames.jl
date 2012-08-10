@@ -39,7 +39,7 @@ end
 
 # minimal first version: support y ~ x1 + x2 + log(x3)
 type ModelFrame
-    df::DataFrame
+    df::AbstractDataFrame
     y_indexes::Vector{Int}
     formula::Formula 
 end
@@ -55,7 +55,7 @@ unique_symbols(ex::Array{Symbol,1}) = [ex[1]]
 # Create a DataFrame containing only variables required by the Formula
 # Include grouped indexes present in original DataFrame that are in Formula
 # TODO: Split GroupedDataFrame away from this function?
-function model_frame(f::Formula, d::DataFrame)
+function model_frame(f::Formula, d::AbstractDataFrame)
     cols = {}
     col_names = Array(ASCIIString,0)
     gidx = Dict{Union(UTF8String,ASCIIString),Array{Union(UTF8String,ASCIIString),1}}()
@@ -161,12 +161,12 @@ function model_matrix(mf::ModelFrame)
     ## end
 end
 
-model_matrix(f::Formula, d::DataFrame) = model_matrix(model_frame(f, d))
-model_matrix(ex::Expr, d::DataFrame) = model_matrix(model_frame(Formula(ex), d))
+model_matrix(f::Formula, d::AbstractDataFrame) = model_matrix(model_frame(f, d))
+model_matrix(ex::Expr, d::AbstractDataFrame) = model_matrix(model_frame(Formula(ex), d))
 
 # TODO: Make a more general version of these functions
 # TODO: Be able to extract information about each column name
-function interaction_design_matrix(a::DataFrame, b::DataFrame)
+function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame)
    cols = {}
    col_names = Array(ASCIIString,0)
    for i in 1:ncol(a)
@@ -178,7 +178,7 @@ function interaction_design_matrix(a::DataFrame, b::DataFrame)
    DataFrame(cols, col_names)
 end
 
-function interaction_design_matrix(a::DataFrame, b::DataFrame, c::DataFrame)
+function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame, c::AbstractDataFrame)
    cols = {}
    col_names = Array(ASCIIString,0)
    for i in 1:ncol(a)
@@ -217,7 +217,7 @@ end
 # The main expression to DataFrame expansion function.
 # Returns a DataFrame.
 #
-function expand(ex::Expr, df::DataFrame)
+function expand(ex::Expr, df::AbstractDataFrame)
     f = eval(ex.args[1])
     if method_exists(f, (FormulaExpander, Vector{Any}, DataFrame))
         # These are specialized expander functions (+, *, &, etc.)
@@ -228,16 +228,16 @@ function expand(ex::Expr, df::DataFrame)
     end
 end
 
-function expand(s::Symbol, df::DataFrame)
+function expand(s::Symbol, df::AbstractDataFrame)
     expand(with(df, s), string(s), df)
 end
 
 # TODO: make this array{symbol}?
-function expand(args::Array{Any}, df::DataFrame)
+function expand(args::Array{Any}, df::AbstractDataFrame)
     [expand(x, df) for x in args]
 end
 
-function expand(x, name::ByteString, df::DataFrame)
+function expand(x, name::ByteString, df::AbstractDataFrame)
     # If this happens to be a column group, then expand each and concatenate
     if is_group(name, df)
       preds = get_groups(df)[name]
@@ -254,7 +254,7 @@ end
 
 # Expand a PooledDataVector into a matrix of indicators for each dummy variable
 # TODO: account for NAs?
-function expand(poolcol::PooledDataVec, colname::ByteString, df::DataFrame)
+function expand(poolcol::PooledDataVec, colname::ByteString, df::AbstractDataFrame)
     newcol = {DataVec([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
     newcolname = [strcat(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
     DataFrame(newcol, convert(Vector{ByteString}, newcolname))
@@ -266,17 +266,17 @@ end
 #
 type FormulaExpander; end # This is an indictor type.
 
-function +(::FormulaExpander, args::Vector{Any}, df::DataFrame)
+function +(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     d = DataFrame()
     for a in args
         insert(d, expand(a, df))
     end
     d
 end
-function &(::FormulaExpander, args::Vector{Any}, df::DataFrame)
+function &(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     interaction_design_matrix(expand(args[1], df), expand(args[2], df))
 end
-function *(::FormulaExpander, args::Vector{Any}, df::DataFrame)
+function *(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     d = +(FormulaExpander(), args, df)
     insert(d, all_interactions(expand(args, df)))
     d

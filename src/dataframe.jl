@@ -514,7 +514,7 @@ end
 cbind(a, b, c...) = cbind(cbind(a, b), c...)
 hcat(dfs::DataFrame...) = cbind(dfs...)
 
-is_group(name::ByteString, df::DataFrame) = is_group(df.colindex, name)
+is_group(name::ByteString, df::AbstractDataFrame) = is_group(index(df), name)
 
 similar{T}(dv::DataVec{T}, dims) =
     DataVec(zeros(T, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
