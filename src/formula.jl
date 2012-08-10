@@ -101,7 +101,7 @@ function model_frame(f::Formula, d::AbstractDataFrame)
     ModelFrame(df, y_indexes, f)
 end
 
-model_frame(ex::Expr, d::DataFrame) = model_frame(Formula(ex), d)
+model_frame(ex::Expr, d::AbstractDataFrame) = model_frame(Formula(ex), d)
 
 # a ModelMatrix is a wrapper around a matrix, with column names.
 # construct with mm::ModelMatrix = model_matrix(mf::ModelFrame, ...)
