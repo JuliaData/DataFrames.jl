@@ -114,7 +114,7 @@ function (!)(x::Indexer)
         push(res, x.r[i][end] + 1 : x.r[i + 1][1] - 1)
     end
     push(res, x.r[end][end] + 1 : length(x.iv))
-    Indexer(!x.r, x.iv)
+    Indexer(res, x.iv)
 end
 
 function (&)(x1::Indexer, x2::Indexer)
