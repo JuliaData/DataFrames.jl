@@ -372,6 +372,8 @@ end)
 
 m1 = merge(df1, df2, "a")
 @assert m1["b"] == DataVec["B", "A", "B", "A", "B"]
+m2 = merge(df1, df2, "a", "outer")
+@assert m2["b2"] == DataVec["A", "B", "C", "C", "C", NA, NA, NA, NA, NA]
 
 test_group("extras")
 

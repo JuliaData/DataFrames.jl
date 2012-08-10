@@ -517,7 +517,7 @@ hcat(dfs::DataFrame...) = cbind(dfs...)
 is_group(name::ByteString, df::DataFrame) = is_group(df.colindex, name)
 
 similar{T}(dv::DataVec{T}, dims) =
-    DataVec(similar(dv.data, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
+    DataVec(zeros(T, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
 
 similar{T}(dv::PooledDataVec{T}, dims) =
     PooledDataVec(fill(uint16(1), dims), dv.pool, dv.filter, dv.replace, dv.replaceVal)  
@@ -527,6 +527,21 @@ similar(df::DataFrame, dims) =
 
 similar(df::SubDataFrame, dims) = 
     DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
+
+nas{T}(dv::DataVec{T}, dims) =
+    DataVec(zeros(T, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
+
+zeros{T<:ByteString}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
+    
+nas{T}(dv::PooledDataVec{T}, dims) =
+    PooledDataVec(fill(uint16(1), dims), dv.pool, dv.filter, dv.replace, dv.replaceVal)  
+
+nas(df::DataFrame, dims) = 
+    DataFrame([nas(x, dims) for x in df.columns], colnames(df)) 
+
+nas(df::SubDataFrame, dims) = 
+    DataFrame([nas(df[x], dims) for x in colnames(df)], colnames(df)) 
+
 
 function rbind(dfs::DataFrame...)
     Nrow = sum(nrow, dfs)
@@ -1143,20 +1158,37 @@ function join_idx(left, right, max_groups)
      right_sorter[right_indexer], right_sorter[rightonly_indexer])
 end
 
-function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol)
+function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol, jointype)
 
     dv1, dv2 = PooledDataVecs(df1[bycol], df2[bycol])
     left_indexer, leftonly_indexer,
     right_indexer, rightonly_indexer =
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
 
-    # inner join:
-    cbind(df1[left_indexer,:], del(df2, bycol)[right_indexer,:])
-    # TODO left/right join, outer join - needs better
-    #      NA indexing or a way to create NA DataFrames.
+    if jointype == "inner"
+        return cbind(df1[left_indexer,:], del(df2, bycol)[right_indexer,:])
+    elseif jointype == "left"
+        left = df1[[left_indexer,leftonly_indexer],:]
+        right = rbind(del(df2, bycol)[right_indexer,:],
+                      nas(del(df2, bycol), length(leftonly_indexer)))
+        return cbind(left, right)
+    elseif jointype == "right"
+        left = rbind(df1[left_indexer,:],
+                     nas(df1, length(rightonly_indexer)))
+        right = del(df2, bycol)[[right_indexer,rightonly_indexer],:]
+        return cbind(left, right)
+    elseif jointype == "outer"
+        left = rbind(df1[[left_indexer,leftonly_indexer],:],
+                     nas(df1, length(rightonly_indexer)))
+        right = rbind(del(df2, bycol)[right_indexer,:],
+                      nas(del(df2, bycol), length(leftonly_indexer)),
+                      del(df2, bycol)[rightonly_indexer,:])
+        return cbind(left, right)
+    end
     # TODO add support for multiple columns
 end
 
+merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol) = merge(df1, df2, bycol, "inner")
 
 ##
 ## Miscellaneous
