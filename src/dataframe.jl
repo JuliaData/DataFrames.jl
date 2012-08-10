@@ -82,16 +82,17 @@ set_group(d::AbstractDataFrame, newgroup, names) = set_group(index(d), newgroup,
 set_groups(d::AbstractDataFrame, gr::Dict{ByteString,Vector{ByteString}}) = set_groups(index(d), gr)
 get_groups(d::AbstractDataFrame) = get_groups(index(d))
 
-function insert(df::DataFrame, index::Integer, item, name)
+function insert(df::AbstractDataFrame, index::Integer, item, name)
     @assert 0 < index <= ncol(df) + 1
-    df = shallowcopy(df)
+    df = copy(df)
     df[name] = item
     # rearrange:
     df[[1:index-1, end, index:end-1]]
 end
 
-function insert(df::DataFrame, df2::DataFrame)
+function insert(df::AbstractDataFrame, df2::AbstractDataFrame)
     @assert nrow(df) == nrow(df2) || nrow(df) == 0
+    df = copy(df)
     for n in colnames(df2)
         df[n] = df2[n]
     end
@@ -138,9 +139,9 @@ end
 # Blank DataFrame
 DataFrame() = DataFrame({}, Index())
 
-# copy of a data frame does a deep copy
-copy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df))
-shallowcopy(df::DataFrame) = DataFrame(df.columns, colnames(df))
+# copy of a data frame does a shallow copy
+deepcopy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df))
+copy(df::DataFrame) = DataFrame(df.columns, colnames(df))
 
 # dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
 # changing the in one df can break the other.
