@@ -99,6 +99,45 @@ function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)
     end
     PooledDataVec(newrefs, newpool, f, r, v)
 end
+
+# Allow a pool to be provided
+function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
+    newrefs = Array(Uint16, length(d))
+    poolref = Dict{T,Uint16}(0)
+    maxref = 0
+
+    # loop through once to fill the poolref dict
+    for i = 1:length(pool)
+        if !m[i]
+            poolref[pool[i]] = 0
+        end
+    end
+
+    # fill positions in poolref
+    newpool = sort(keys(poolref))
+    i = 1
+    for p in newpool 
+        poolref[p] = i
+        i += 1
+    end
+
+    # fill in newrefs
+    for i = 1:length(d)
+        if m[i]
+            newrefs[i] = 0
+        else
+            if has(poolref, d[i])
+              newrefs[i] = poolref[d[i]]
+            else
+              error("vector contains elements not in provided pool")
+            end
+        end
+    end
+    PooledDataVec(newrefs, newpool, f, r, v)
+end
+
+PooledDataVec{T}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(pool)), false, false, zero(T))
+
 PooledDataVec(dv::DataVec) = PooledDataVec(dv.data, dv.na, dv.filter, dv.replace, dv.replaceVal)
 PooledDataVec(d::PooledDataVec) = d
 
