@@ -76,12 +76,12 @@ df = interaction_design_matrix(a,b)
 
 # test_group("expanding an singleton expression/symbol into a DataFrame")
 
-df = copy(d)
+df = deepcopy(d)
 r = expand(:x2, df)
 @assert isa(r, DataFrame)
 @assert r[:,1] == DataVec([9,10,11,12])  # TODO: test float vs int return
 
-df = copy(d)
+df = deepcopy(d)
 ex = :(log(x2))
 r = expand(ex, df)
 @assert isa(r, DataFrame)
@@ -120,7 +120,7 @@ r = expand(:(x1 + x2), df)
 
 # test_group("Creating a model matrix using full formulas: y ~ x1 + x2, etc")
 
-df = copy(d)
+df = deepcopy(d)
 f = Formula(:(y ~ x1 & x2))
 mf = model_frame(f, df)
 mm = model_matrix(mf)
@@ -140,13 +140,13 @@ mm = model_matrix(mf)
 
 # test_group("Basic transformations")
 
-df = copy(d)
+df = deepcopy(d)
 f = Formula(:(y ~ x1 + log(x2)))
 mf = model_frame(f, df)
 mm = model_matrix(mf)
 @assert mm.model == [ones(4) x1 log(x2)]
 
-df = copy(d)
+df = deepcopy(d)
 df["x1"] = PooledDataVec([5:8])
 f = Formula(:(y ~ x1 * (log(x2) + x3)))
 mf = model_frame(f, df)
@@ -190,7 +190,7 @@ mm = model_matrix(model_frame(Formula(:(y ~ x2)), d))
 @assert mm.model == [ones(4) x2]
 @assert mm.response == y''
 
-df = copy(d)
+df = deepcopy(d)
 df["x1"] = PooledDataVec(df["x1"])
 
 mm = model_matrix(model_frame(Formula(:(y ~ x2 + x3 + x3*x2)), df))

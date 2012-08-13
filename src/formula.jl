@@ -208,7 +208,7 @@ function all_interactions(dfs::Array{Any,1})
        elseif length(combo) == 3
          a = interaction_design_matrix(dfs[combo[1]],dfs[combo[2]],dfs[combo[3]])
        end
-       insert(d, a)
+       d = insert(d, a)
     end
     return d
 end
@@ -269,7 +269,7 @@ type FormulaExpander; end # This is an indictor type.
 function +(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     d = DataFrame()
     for a in args
-        insert(d, expand(a, df))
+        d = insert(d, expand(a, df))
     end
     d
 end
@@ -278,6 +278,6 @@ function &(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
 end
 function *(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     d = +(FormulaExpander(), args, df)
-    insert(d, all_interactions(expand(args, df)))
+    d = insert(d, all_interactions(expand(args, df)))
     d
 end
