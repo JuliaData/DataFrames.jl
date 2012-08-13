@@ -108,9 +108,7 @@ function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, f::Boo
 
     # loop through once to fill the poolref dict
     for i = 1:length(pool)
-        if !m[i]
-            poolref[pool[i]] = 0
-        end
+        poolref[pool[i]] = 0
     end
 
     # fill positions in poolref
@@ -136,7 +134,7 @@ function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, f::Boo
     PooledDataVec(newrefs, newpool, f, r, v)
 end
 
-PooledDataVec{T}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(pool)), false, false, zero(T))
+PooledDataVec{T}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(d)), false, false, zero(T))
 
 PooledDataVec(dv::DataVec) = PooledDataVec(dv.data, dv.na, dv.filter, dv.replace, dv.replaceVal)
 PooledDataVec(d::PooledDataVec) = d
