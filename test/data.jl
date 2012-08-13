@@ -28,6 +28,16 @@ pdvstr = PooledDataVec["one", "one", "two", "two", NA, "one", "one"]
 @test throws_exception(PooledDataVec["one", "one", 9], Exception)
 @test PooledDataVec(pdvstr) == pdvstr
 
+test_group("PooledDataVec creation with predetermined pool")
+pdvpp = PooledDataVec([1,2,2,3], [1,2,3,4])
+@test pdvpp.pool == [1,2,3,4]
+@test string(pdvpp) == "[1,2,2,3]"
+@test throws_exception(PooledDataVec([1,2,3], [1,2]), Exception)
+pdvpp = PooledDataVec(["one","two","two"], ["one","two","three"])
+@test pdvpp.pool == ["one","three","two"]
+@test string(pdvpp) == "[\"one\",\"two\",\"two\"]"
+@test throws_exception(PooledDataVec(["one","two","four"], ["one","two","three"]), Exception)
+
 test_group("DataVec access")
 @test dvint[1] == 1
 @test isna(dvint[3])
