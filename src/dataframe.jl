@@ -139,8 +139,16 @@ end
 # Blank DataFrame
 DataFrame() = DataFrame({}, Index())
 
+# Construct with groupings
+function DataFrame(cs::Vector, cn::Vector, gr::Dict{ByteString,Vector{ByteString}})
+  d = DataFrame(cs, cn)
+  set_groups(index(d), gr)
+  return d
+end
+
 # copy of a data frame does a shallow copy
 deepcopy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df))
+deepcopy_with_groups(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df), get_groups(df))
 copy(df::DataFrame) = DataFrame(df.columns, colnames(df))
 
 # dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
@@ -508,14 +516,17 @@ function cbind(df1::DataFrame, df2::DataFrame)
     # If df1 had metadata, we should copy that.
     colindex = Index(make_unique(concat(colnames(df1), colnames(df2))))
     columns = [df1.columns, df2.columns]
-    DataFrame(columns, colindex)
+    d = DataFrame(columns, colindex)  
+    set_groups(d, get_groups(df1))
+    set_groups(d, get_groups(df2))
+    return d
 end
-    
+   
 # three-plus-argument form recurses
 cbind(a, b, c...) = cbind(cbind(a, b), c...)
 hcat(dfs::DataFrame...) = cbind(dfs...)
 
-is_group(name::ByteString, df::AbstractDataFrame) = is_group(index(df), name)
+is_group(df::AbstractDataFrame, name::ByteString) = is_group(index(df), name)
 
 similar{T}(dv::DataVec{T}, dims) =
     DataVec(zeros(T, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
@@ -562,6 +573,7 @@ function rbind(dfs::DataFrame...)
             end
             idx += 1
         end
+        set_groups(res, get_groups(df))
     end
     res
 end
@@ -585,10 +597,12 @@ function rbind(dfs::Vector)   # for a Vector of DataFrame's
             end
             idx += 1
         end
+        set_groups(res, get_groups(df))
     end
     res
 end
 
+rbind(df1::DataFrame, df2::DataFrame) = rbind({df1, df2})
 
 # DF row operations -- delete and append
 # df[1] = nothing

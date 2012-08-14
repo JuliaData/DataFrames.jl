@@ -66,7 +66,7 @@ function model_frame(f::Formula, d::AbstractDataFrame)
     # so, foreach element in the lhs, evaluate it in the context of the df
     for ll = 1:length(lhs)
       s = lhs[ll]
-      if is_group(string(s), d)
+      if is_group(d, string(s))
         for a = get_groups(d)[string(s)]
           push(cols, with(d, symbol(a)))
           push(col_names, a)
@@ -82,7 +82,7 @@ function model_frame(f::Formula, d::AbstractDataFrame)
     # and foreach unique symbol in the rhs, do the same
     for rr = 1:length(rhs)
       s = rhs[rr]
-      if is_group(string(s), d)
+      if is_group(d, string(s))
         for a = get_groups(d)[string(s)]
           push(cols, with(d, symbol(a)))
           push(col_names, a)
@@ -239,7 +239,7 @@ end
 
 function expand(x, name::ByteString, df::AbstractDataFrame)
     # If this happens to be a column group, then expand each and concatenate
-    if is_group(name, df)
+    if is_group(df, name)
       preds = get_groups(df)[name]
       dfs = [expand(symbol(x), df) for x in preds]
       return cbind(dfs...) 

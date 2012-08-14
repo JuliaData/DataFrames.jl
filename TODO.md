@@ -8,7 +8,7 @@
     * Split-Apply-Combine
     * Join/merge
     * Visualization
-    * Linear regression modeling.
+    * (Generalized) linear regression modeling using formulas
 
 * Design/lower-level demo:
     * type hierarchy
@@ -24,4 +24,5 @@
     * by, colwise
     * stack/unstack
     
-    
+* Bugs
+    * expand doesn't work with PooledDataVecs with pool of length 1
