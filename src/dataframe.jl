@@ -43,15 +43,43 @@ size(df::AbstractDataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : e
 length(df::AbstractDataFrame) = ncol(df)
 ndims(::AbstractDataFrame) = 2
 
+
+# these are the underlying ref functions that create a new DF object with references to the
+# existing columns. The column index needs to be rebuilt with care, so that groups are preserved
+# to the extent possible
+function ref(df::DataFrame, c::Vector{Int})
+	newdf = DataFrame(df.columns[c], convert(Vector{ByteString}, colnames(df)[c]))
+	reconcile_groups(df, newdf)
+end
+function ref(df::DataFrame, r, c::Vector{Int})
+	newdf = DataFrame({x[r] for x in df.columns[c]}, convert(Vector{ByteString}, colnames(df)[c]))
+	reconcile_groups(df, newdf)
+end
+
+function reconcile_groups(olddf, newdf)
+	# foreach group, restrict range to intersection with newdf colnames
+	# add back any groups with non-null range
+	old_groups = get_groups(olddf)
+	for key in keys(old_groups)
+		# this is clunky -- there are better/faster ways of doing this intersection operation
+		match_vals = ByteString[]
+		for val in old_groups[key]
+			if contains(colnames(newdf), val)
+				push(match_vals, val)
+			end
+		end
+		if !isempty(match_vals)
+			set_group(newdf, key, match_vals)
+		end
+	end
+	newdf
+end
+
+# all other ref() implementations call the above
 ref(df::DataFrame, c) = df[df.colindex[c]]
 ref(df::DataFrame, c::Integer) = df.columns[c]
-ref(df::DataFrame, c::Vector{Int}) = DataFrame(df.columns[c], convert(Vector{ByteString}, colnames(df)[c]))
-
 ref(df::DataFrame, r, c) = df[r, df.colindex[c]]
 ref(df::DataFrame, r, c::Int) = df[c][r]
-ref(df::DataFrame, r, c::Vector{Int}) =
-    DataFrame({x[r] for x in df.columns[c]}, 
-              convert(Vector{ByteString}, colnames(df)[c]))
 
 # special cases
 ref(df::DataFrame, r::Int, c::Int) = df[c][r]

@@ -34,8 +34,11 @@ del!(x, "a")
 @test colnames(x) == ["b"]
 @test get_groups(x)["group1"] == ["b"]
 
-## BUG: del doesn't modify groupings
-## y = del(y, "c")
-## @test colnames(y) == ["d"]
-## @test get_groups(y)["group2"] == ["d"]
+## del calls ref, which properly deals with groupings
+y = del(y, "c")
+@test colnames(y) == ["d"]
+@test get_groups(y)["group2"] == ["d"]
+z1 = z[[1]]
+@test colnames(z1) == ["a"]
+@test get_groups(z1)["group1"] == ["a"]
 
