@@ -139,6 +139,18 @@ PooledDataVec{T}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(
 PooledDataVec(dv::DataVec) = PooledDataVec(dv.data, dv.na, dv.filter, dv.replace, dv.replaceVal)
 PooledDataVec(d::PooledDataVec) = d
 
+function table{T}(d::PooledDataVec{T})
+    poolref = Dict{T,Int64}(0)
+    for i = 1:length(d)
+        if has(poolref, d[i])
+            poolref[d[i]] += 1
+        else
+            poolref[d[i]] = 1
+        end
+    end
+    return poolref
+end
+
 type NAtype; end
 const NA = NAtype()
 show(io, x::NAtype) = print(io, "NA")
