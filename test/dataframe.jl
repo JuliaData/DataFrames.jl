@@ -12,7 +12,7 @@ end)
 set_group(x, "group1", ["a", "b"])
 set_group(y, "group2", ["c", "d"])
 
-z = deepcopy_with_groups(x)  # TODO: merge with deepcopy?
+z = deepcopy(x)  
 @test is_group(z, "group1")
 
 z = cbind(x, y)

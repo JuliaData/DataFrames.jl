@@ -175,9 +175,15 @@ function DataFrame(cs::Vector, cn::Vector, gr::Dict{ByteString,Vector{ByteString
 end
 
 # copy of a data frame does a shallow copy
-deepcopy(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df))
-deepcopy_with_groups(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df), get_groups(df))
-copy(df::DataFrame) = DataFrame(df.columns, colnames(df))
+function deepcopy(df::DataFrame) 
+	newdf = DataFrame([copy(x) for x in df.columns], colnames(df))
+	reconcile_groups(df, newdf)
+end
+#deepcopy_with_groups(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df), get_groups(df))
+function copy(df::DataFrame)
+	newdf = DataFrame(df.columns, colnames(df))
+	reconcile_groups(df, newdf)
+end
 
 # dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
 # changing the in one df can break the other.
