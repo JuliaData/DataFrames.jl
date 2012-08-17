@@ -81,8 +81,6 @@ ref(x::AbstractIndex, idx::Vector{Int}) = idx
 ref(x::AbstractIndex, idx::Range{Int}) = [idx]
 ref(x::AbstractIndex, idx::Range1{Int}) = [idx]
 ref(x::AbstractIndex, idx::Vector{Bool}) = [1:length(x)][idx]
-ref(x::AbstractIndex, idx::AbstractDataVec{Bool}) = x[nareplace(idx, false)]
-ref(x::AbstractIndex, idx::AbstractDataVec{Int}) = x[nafilter(idx)]
 
 type SimpleIndex <: AbstractIndex
     length::Integer

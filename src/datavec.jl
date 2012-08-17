@@ -344,6 +344,9 @@ end
 ref(x::AbstractDataVec, ind::AbstractDataVec{Bool}) = x[nareplace(ind, false)]
 ref(x::AbstractDataVec, ind::AbstractDataVec{Integer}) = x[nafilter(ind)]
 
+ref(x::AbstractIndex, idx::AbstractDataVec{Bool}) = x[nareplace(idx, false)]
+ref(x::AbstractIndex, idx::AbstractDataVec{Int}) = x[nafilter(idx)]
+
 # assign variants
 # x[3] = "cat"
 function assign{T}(x::DataVec{T}, v::T, i::Int)
