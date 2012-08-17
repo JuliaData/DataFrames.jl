@@ -27,6 +27,8 @@ Library for working with tabular data in Julia using `DataFrame`'s.
 Here's a minimal demo showing some grouping operations:
 
 ```julia
+julia> load("src/init.jl")     # run from JuliaData directory. will be replaced when packages arrive.
+
 julia> d = DataFrame(quote     # expressions are one way to create a DataFrame
            x = randn(10)
            y = randn(10)

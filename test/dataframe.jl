@@ -42,3 +42,6 @@ z1 = z[[1]]
 @test colnames(z1) == ["a"]
 @test get_groups(z1)["group1"] == ["a"]
 
+z2 = z[:,[1,1,2]]
+@test colnames(z2) == ["a", "a_1", "b"]
+@test get_groups(z2)["group1"] == ["a_1", "b"]

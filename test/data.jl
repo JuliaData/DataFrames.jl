@@ -83,7 +83,7 @@ test_group("DataVec to something else")
 @test all(convert(Int, dvint2) == [5:8])
 @test all([i+1 for i=dvint2] == [6:9]) # iterator test
 @test all([length(x)::Int for x=dvstr] == [3,3,1,4])
-@test sshow(dvint) == "[1,2,NA,4]"
+@test repr(dvint) == "[1,2,NA,4]"
 
 test_group("PooledDataVec to something else")
 #@test all(nafilter(pdvstr) == ["one", "one", "two", "two", "one", "one"])
@@ -202,7 +202,7 @@ dfr = rbind(df4, df4)
 
 
 test_group("show")
-@test sshow(df1) == "DataFrame  (4,2)\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
+@test repr(df1) == "DataFrame  (4,2)\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
 
 test_group("assign")
 df6[3] = DataVec["un", "deux", "troix", "quatre"]
