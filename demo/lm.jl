@@ -11,7 +11,7 @@ type OLSResults
   p_values::Matrix
   predictions::Matrix
   residuals::Matrix
-  r_squared::Float
+  r_squared::Float64
 end
 
 function print(results::OLSResults)
