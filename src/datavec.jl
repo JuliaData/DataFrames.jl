@@ -57,7 +57,7 @@ type PooledDataVec{T} <: AbstractDataVec{T}
             error("reference vector points beyond the end of the pool!")
         elseif (f && r)
             error("please don't set both the filter and replace flags in a PooledDataVec")
-        end   
+        end 
         new(refs,pool,f,r,v)
     end
 end
@@ -102,6 +102,8 @@ end
 
 # Allow a pool to be provided
 function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
+
+    # TODO: check if pool greater than 2^16
     newrefs = Array(Uint16, length(d))
     poolref = Dict{T,Uint16}(0)
     maxref = 0
@@ -691,6 +693,12 @@ end
 
 # print
 show(io, x::AbstractDataVec) = Base.show_comma_array(io, x, '[', ']') 
+
+function show(io, x::PooledDataVec)
+    Base.show_vector(io, x.pool[x.refs+1], "[","]")
+    print("\n")
+    Base.show_vector(io, x.refs, "[", "]")
+end
 
 # TODO: vectorizable math functions like sqrt, sin, trunc, etc., which should return a DataVec{T}
 # not sure if this is the best approach, but works for a demo
