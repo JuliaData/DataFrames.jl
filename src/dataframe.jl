@@ -1294,3 +1294,17 @@ function duplicatedkey(df::AbstractDataFrame)
     res[idx] = false
     res
 end
+
+# Wrappers for serialization
+function save(filename, d)
+    f = open(filename, "w")
+    serialize(f, d)
+    close(f)
+end
+
+function load_df(filename)
+    f = open(filename)
+    dd = deserialize(f)()
+    close(f)
+    return dd
+end
