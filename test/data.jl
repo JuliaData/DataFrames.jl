@@ -41,6 +41,10 @@ pdvpp = PooledDataVec(["one","two","two"], ["one","two","three"])
 @test string(pdvpp) == "[\"one\",\"two\",\"two\"]"
 @test throws_exception(PooledDataVec(["one","two","four"], ["one","two","three"]), Exception)
 
+test_group("PooledDataVec utf8 support")
+pdvpp = PooledDataVec([utf8("hello")],[false],false,false,utf8(""))
+@test typeof(pdvpp[1]) == UTF8String
+
 test_group("DataVec access")
 @test dvint[1] == 1
 @test isna(dvint[3])
