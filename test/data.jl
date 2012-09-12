@@ -37,6 +37,9 @@ pdvpp = PooledDataVec([1,2,2,3,2,1], [1,2,3,4])
 @test pdvpp.pool == [1,2,3,4]
 @test string(pdvpp) == "[1,2,2,3,2,1]"
 pdvpp = PooledDataVec(["one","two","two"], ["one","two","three"])
+@test all(values(pdvpp) .== ["one","two","two"])
+@test all(indices(pdvpp) .== uint32([1,3,3]))
+@test all(levels(pdvpp) .== ["one","three","two"])
 @test pdvpp.pool == ["one","three","two"]
 @test string(pdvpp) == "[one,two,two]"
 @test throws_exception(PooledDataVec(["one","two","four"], ["one","two","three"]), Exception)
