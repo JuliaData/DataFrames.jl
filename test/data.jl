@@ -38,7 +38,7 @@ pdvpp = PooledDataVec([1,2,2,3,2,1], [1,2,3,4])
 @test string(pdvpp) == "[1,2,2,3,2,1]"
 pdvpp = PooledDataVec(["one","two","two"], ["one","two","three"])
 @test pdvpp.pool == ["one","three","two"]
-@test string(pdvpp) == "[\"one\",\"two\",\"two\"]"
+@test string(pdvpp) == "[one,two,two]"
 @test throws_exception(PooledDataVec(["one","two","four"], ["one","two","three"]), Exception)
 
 test_group("PooledDataVec utf8 support")
@@ -93,7 +93,7 @@ test_group("PooledDataVec to something else")
 #@test all(nafilter(pdvstr) == ["one", "one", "two", "two", "one", "one"])
 #@test all(nareplace(pdvstr, "nine") == ["one", "one", "two", "two", "nine", "one", "one"])
 @test all([length(i)::Int for i in pdvstr] == [3, 3, 3, 3, 1, 3, 3])
-@test string(pdvstr[1:3]) == "[\"one\",\"one\",\"two\"]"
+@test string(pdvstr[1:3]) == "[one,one,two]"
 
 test_group("DataVec Filter and Replace")
 @test naFilter(dvint) == dvint

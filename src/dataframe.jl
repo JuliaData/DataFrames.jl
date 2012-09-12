@@ -377,7 +377,7 @@ function csvDataFrame(filename, o::Options)
                 colStrings[string(v)] = true # do we need a count here?
             end
         end
-        if colPoolStrings && length(keys(colStrings)) > typemax(Uint16)
+        if colPoolStrings && length(keys(colStrings)) > typemax(Uint32)
             # we've ran past the limit of pooled strings!
             colPoolStrings = false
         end
@@ -566,7 +566,7 @@ similar{T}(dv::DataVec{T}, dims) =
     DataVec(zeros(T, dims), fill(true, dims), dv.filter, dv.replace, dv.replaceVal)  
 
 similar{T}(dv::PooledDataVec{T}, dims) =
-    PooledDataVec(fill(uint16(1), dims), dv.pool, dv.filter, dv.replace, dv.replaceVal)  
+    PooledDataVec(fill(uint32(1), dims), dv.pool, dv.filter, dv.replace, dv.replaceVal)  
 
 similar(df::DataFrame, dims) = 
     DataFrame([similar(x, dims) for x in df.columns], colnames(df)) 
