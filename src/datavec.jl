@@ -65,7 +65,6 @@ end
 PooledDataVec{T}(re::Vector{Uint32}, p::Vector{T}, f::Bool, r::Bool, v::T) = PooledDataVec{T}(re, p, f, r, v)
 
 # how do you construct one? well, from the same sigs as a DataVec!
-PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, false, false, zero(T))
 function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
     # algorithm... start with a null pool and a pre-allocated refs, plus hash from T to Int.
     # iterate over d. If in pool already, set the refs accordingly. If new, add to pool then set refs.
@@ -135,7 +134,8 @@ function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, f::Boo
     end
     PooledDataVec(newrefs, newpool, f, r, v)
 end
-
+PooledDataVec{T<:String}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, false, false, convert(T,""))
+PooledDataVec{T<:Number}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, false, false, convert(T,0))
 PooledDataVec{T<:String}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(d)), false, false, convert(T,""))
 PooledDataVec{T<:Number}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(d)), false, false, convert(T,0))
 
@@ -235,7 +235,7 @@ end
 
 # constructor from base type object
 DataVec(x::Vector) = DataVec(x, falses(length(x)))
-PooledDataVec(x::Vector) = PooledDataVec(DataVec(x, falses(length(x))))
+PooledDataVec(x::Vector) = PooledDataVec(x, falses(length(x)))
 
 # copy does a deep copy
 copy{T}(dv::DataVec{T}) = DataVec{T}(copy(dv.data), copy(dv.na), dv.filter, dv.replace, dv.replaceVal)
