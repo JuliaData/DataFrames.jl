@@ -63,6 +63,9 @@ type PooledDataVec{T} <: AbstractDataVec{T}
 end
 # a full constructor (why is this necessary?)
 PooledDataVec{T}(re::Vector{Uint32}, p::Vector{T}, f::Bool, r::Bool, v::T) = PooledDataVec{T}(re, p, f, r, v)
+# allow 0 for default number, "" for default string
+PooledDataVec{T <: Number}(re::Vector{Uint32}, p::Vector{T}, f::Bool, r::Bool) = PooledDataVec{T}(re, p, f, r, convert(T,0))
+PooledDataVec{T <: String}(re::Vector{Uint32}, p::Vector{T}, f::Bool, r::Bool) = PooledDataVec{T}(re, p, f, r, convert(T,""))
 
 # how do you construct one? well, from the same sigs as a DataVec!
 function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
@@ -633,8 +636,8 @@ function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
             refs2[i] = poolref[v2[i]]
         ## end
     end
-    (PooledDataVec(refs1, pool, false, false, zero(T)),
-     PooledDataVec(refs2, pool, false, false, zero(T)))
+    (PooledDataVec(refs1, pool, false, false),
+     PooledDataVec(refs2, pool, false, false))
 end
 
 
