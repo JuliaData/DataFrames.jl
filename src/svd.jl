@@ -80,7 +80,7 @@ end
 
 # Must select rank k of SVD to use.
 function missing_svd(D::DataFrame, k::Int)
-  df = copy(D)
+  df = deepcopy(D)
 
   tolerance = 10e-4
 
