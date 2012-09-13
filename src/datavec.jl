@@ -42,7 +42,7 @@ DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, f::Bool, r::Bool, v::T) = Data
 DataVec(d::DataVec) = d
 
 type PooledDataVec{T} <: AbstractDataVec{T}
-    refs::Vector{Uint32} # TODO: make sure we don't overflow
+    refs::Vector{Uint16} # TODO: make sure we don't overflow
     pool::Vector{T}
     # TODO: ordering
     # TODO: meta-data for dummy conversion
@@ -51,7 +51,7 @@ type PooledDataVec{T} <: AbstractDataVec{T}
     replace::Bool
     replaceVal::T
     
-    function PooledDataVec{T}(refs::Vector{Uint32}, pool::Vector{T}, f::Bool, r::Bool, v::T)
+    function PooledDataVec{T}(refs::Vector{Uint16}, pool::Vector{T}, f::Bool, r::Bool, v::T)
         # refs mustn't overflow pool
         if (max(refs) > length(pool))
             error("reference vector points beyond the end of the pool!")
@@ -62,18 +62,18 @@ type PooledDataVec{T} <: AbstractDataVec{T}
     end
 end
 # a full constructor (why is this necessary?)
-PooledDataVec{T}(re::Vector{Uint32}, p::Vector{T}, f::Bool, r::Bool, v::T) = PooledDataVec{T}(re, p, f, r, v)
+PooledDataVec{T}(re::Vector{Uint16}, p::Vector{T}, f::Bool, r::Bool, v::T) = PooledDataVec{T}(re, p, f, r, v)
 # allow 0 for default number, "" for default string
-PooledDataVec{T <: Number}(re::Vector{Uint32}, p::Vector{T}, f::Bool, r::Bool) = PooledDataVec{T}(re, p, f, r, convert(T,0))
-PooledDataVec{T <: String}(re::Vector{Uint32}, p::Vector{T}, f::Bool, r::Bool) = PooledDataVec{T}(re, p, f, r, convert(T,""))
+PooledDataVec{T <: Number}(re::Vector{Uint16}, p::Vector{T}, f::Bool, r::Bool) = PooledDataVec{T}(re, p, f, r, convert(T,0))
+PooledDataVec{T <: String}(re::Vector{Uint16}, p::Vector{T}, f::Bool, r::Bool) = PooledDataVec{T}(re, p, f, r, convert(T,""))
 
 # how do you construct one? well, from the same sigs as a DataVec!
 function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
     # algorithm... start with a null pool and a pre-allocated refs, plus hash from T to Int.
     # iterate over d. If in pool already, set the refs accordingly. If new, add to pool then set refs.
-    newrefs = Array(Uint32, length(d))
+    newrefs = Array(Uint16, length(d))
     newpool = Array(T, 0)
-    poolref = Dict{T,Uint32}(0)
+    poolref = Dict{T,Uint16}(0)
     maxref = 0
 
     # loop through once to fill the poolref dict
@@ -106,8 +106,8 @@ end
 function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
 
     # TODO: check if pool greater than 2^16
-    newrefs = Array(Uint32, length(d))
-    poolref = Dict{T,Uint32}(0)
+    newrefs = Array(Uint16, length(d))
+    poolref = Dict{T,Uint16}(0)
     maxref = 0
 
     # loop through once to fill the poolref dict
@@ -154,16 +154,16 @@ levels{T}(x::PooledDataVec{T}) = x.pool
 indices{T}(x::PooledDataVec{T}) = x.refs
 
 function level_to_index{T}(x::PooledDataVec{T})
-    d = Dict{Uint32, T}()
-    for i in uint32(1:length(x.pool))
+    d = Dict{Uint16, T}()
+    for i in uint16(1:length(x.pool))
         d[i] = x.pool[i]
     end
     d
 end
 
 function index_to_level{T}(x::PooledDataVec{T})
-    d = Dict{T, Uint32}()
-    for i in uint32(1:length(x.pool))
+    d = Dict{T, Uint16}()
+    for i in uint16(1:length(x.pool))
         d[x.pool[i]] = i
     end
     d
@@ -595,9 +595,9 @@ end
 function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
     ## Return two PooledDataVecs that share the same pool.
     
-    refs1 = Array(Uint32, length(v1))
-    refs2 = Array(Uint32, length(v2))
-    poolref = Dict{T,Uint32}(length(v1))
+    refs1 = Array(Uint16, length(v1))
+    refs2 = Array(Uint16, length(v2))
+    poolref = Dict{T,Uint16}(length(v1))
     maxref = 0
 
     # loop through once to fill the poolref dict
@@ -788,7 +788,7 @@ function paste(s...)
 end
 
 function cut{T}(x::Vector{T}, breaks::Vector{T})
-    refs = fill(uint32(0), length(x))
+    refs = fill(uint16(0), length(x))
     for i in 1:length(x)
         refs[i] = search_sorted(breaks, x[i])
     end
