@@ -57,15 +57,17 @@ type PooledDataVec{T} <: AbstractDataVec{T}
             error("reference vector points beyond the end of the pool!")
         elseif (f && r)
             error("please don't set both the filter and replace flags in a PooledDataVec")
-        end   
+        end 
         new(refs,pool,f,r,v)
     end
 end
 # a full constructor (why is this necessary?)
 PooledDataVec{T}(re::Vector{Uint16}, p::Vector{T}, f::Bool, r::Bool, v::T) = PooledDataVec{T}(re, p, f, r, v)
+# allow 0 for default number, "" for default string
+PooledDataVec{T <: Number}(re::Vector{Uint16}, p::Vector{T}, f::Bool, r::Bool) = PooledDataVec{T}(re, p, f, r, convert(T,0))
+PooledDataVec{T <: String}(re::Vector{Uint16}, p::Vector{T}, f::Bool, r::Bool) = PooledDataVec{T}(re, p, f, r, convert(T,""))
 
 # how do you construct one? well, from the same sigs as a DataVec!
-PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, false, false, zero(T))
 function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
     # algorithm... start with a null pool and a pre-allocated refs, plus hash from T to Int.
     # iterate over d. If in pool already, set the refs accordingly. If new, add to pool then set refs.
@@ -102,6 +104,8 @@ end
 
 # Allow a pool to be provided
 function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
+
+    # TODO: check if pool greater than 2^16
     newrefs = Array(Uint16, length(d))
     poolref = Dict{T,Uint16}(0)
     maxref = 0
@@ -133,11 +137,37 @@ function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, f::Boo
     end
     PooledDataVec(newrefs, newpool, f, r, v)
 end
-
-PooledDataVec{T}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(d)), false, false, zero(T))
+PooledDataVec{T<:String}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, false, false, convert(T,""))
+PooledDataVec{T<:Number}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, false, false, convert(T,0))
+PooledDataVec{T<:String}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(d)), false, false, convert(T,""))
+PooledDataVec{T<:Number}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(d)), false, false, convert(T,0))
 
 PooledDataVec(dv::DataVec) = PooledDataVec(dv.data, dv.na, dv.filter, dv.replace, dv.replaceVal)
 PooledDataVec(d::PooledDataVec) = d
+
+# Utilities
+
+values{T}(x::PooledDataVec{T}) = [x.pool[r] for r in x.refs]
+
+levels{T}(x::PooledDataVec{T}) = x.pool
+
+indices{T}(x::PooledDataVec{T}) = x.refs
+
+function level_to_index{T}(x::PooledDataVec{T})
+    d = Dict{Uint16, T}()
+    for i in uint16(1:length(x.pool))
+        d[i] = x.pool[i]
+    end
+    d
+end
+
+function index_to_level{T}(x::PooledDataVec{T})
+    d = Dict{T, Uint16}()
+    for i in uint16(1:length(x.pool))
+        d[x.pool[i]] = i
+    end
+    d
+end
 
 function table{T}(d::PooledDataVec{T})
     poolref = Dict{T,Int64}(0)
@@ -208,7 +238,7 @@ end
 
 # constructor from base type object
 DataVec(x::Vector) = DataVec(x, falses(length(x)))
-PooledDataVec(x::Vector) = PooledDataVec(DataVec(x, falses(length(x))))
+PooledDataVec(x::Vector) = PooledDataVec(x, falses(length(x)))
 
 # copy does a deep copy
 copy{T}(dv::DataVec{T}) = DataVec{T}(copy(dv.data), copy(dv.na), dv.filter, dv.replace, dv.replaceVal)
@@ -606,8 +636,8 @@ function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
             refs2[i] = poolref[v2[i]]
         ## end
     end
-    (PooledDataVec(refs1, pool, false, false, zero(T)),
-     PooledDataVec(refs2, pool, false, false, zero(T)))
+    (PooledDataVec(refs1, pool, false, false),
+     PooledDataVec(refs2, pool, false, false))
 end
 
 
@@ -691,6 +721,18 @@ end
 
 # print
 show(io, x::AbstractDataVec) = Base.show_comma_array(io, x, '[', ']') 
+function string(x::AbstractDataVec)
+    tmp = join(x, ",")
+    return "[$tmp]"
+end
+
+function show(io, x::PooledDataVec)
+    print("values: ")
+    Base.show_vector(io, values(x), "[","]")
+    print("\n")
+    print("levels: ")
+    Base.show_vector(io, levels(x), "[", "]")
+end
 
 # TODO: vectorizable math functions like sqrt, sin, trunc, etc., which should return a DataVec{T}
 # not sure if this is the best approach, but works for a demo
