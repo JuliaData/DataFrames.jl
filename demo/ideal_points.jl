@@ -12,8 +12,8 @@ imputed_df, u, d, v = missing_svd(df, 2)
 
 u = u * diagm(d)
 
-f = open("demo/ideal_points.tsv", "w")
-for i = 1:nrow(df)
-  println(f, join([senator_names[i], string(u[i, 1]), string(u[i, 2])], "\t"))
+open("demo/ideal_points.tsv", "w") do f
+  for i = 1:nrow(df)
+    println(f, join([senator_names[i], string(u[i, 1]), string(u[i, 2])], "\t"))
+  end
 end
-close(f)
