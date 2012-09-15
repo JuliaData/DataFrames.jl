@@ -153,7 +153,7 @@ levels{T}(x::PooledDataVec{T}) = x.pool
 
 indices{T}(x::PooledDataVec{T}) = x.refs
 
-function level_to_index{T}(x::PooledDataVec{T})
+function index_to_level{T}(x::PooledDataVec{T})
     d = Dict{Uint16, T}()
     for i in uint16(1:length(x.pool))
         d[i] = x.pool[i]
@@ -161,7 +161,7 @@ function level_to_index{T}(x::PooledDataVec{T})
     d
 end
 
-function index_to_level{T}(x::PooledDataVec{T})
+function level_to_index{T}(x::PooledDataVec{T})
     d = Dict{T, Uint16}()
     for i in uint16(1:length(x.pool))
         d[x.pool[i]] = i
