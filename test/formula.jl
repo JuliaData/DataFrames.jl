@@ -227,3 +227,18 @@ mf = model_frame(Formula(:(y ~ odd_predictors)), d)
 mf = model_frame(Formula(:(y ~ odd_predictors * x2)), d)
 mm = model_matrix(mf)
 @test mm.model == [ones(4) x1 x3 x2 x1.*x2 x3.*x2]
+
+test_group("poly model terms")
+mm = model_matrix(:(y ~ x2 + poly(x1, 3)), d) ## orthogonal basis
+@test dot(mm.model[:,3], mm.model[:,4]) < eps(Float64)
+@test dot(mm.model[:,4], mm.model[:,5]) < eps(Float64)
+@test dot(mm.model[:,3], mm.model[:,5]) < eps(Float64)
+mm = model_matrix(:(y ~ x2 + poly(x1, 3, false)), d) ## monomial basis
+@test mm.model[:,4] == [25., 36., 49., 64.]
+@test mm.model_colnames == ["(Intercept)", "x2", "poly(x1,1)", "poly(x1,2)", "poly(x1,3)"]
+dfloat = deepcopy(d)  ## Test with floats
+dfloat["x1"] = [5., 6., 7., 8.]
+mm = model_matrix(:(y ~ x2 + poly(x1, 3, true)), dfloat)
+@test dot(mm.model[:,3], mm.model[:,4]) < eps(Float64)
+@test dot(mm.model[:,4], mm.model[:,5]) < eps(Float64)
+@test dot(mm.model[:,3], mm.model[:,5]) < eps(Float64)

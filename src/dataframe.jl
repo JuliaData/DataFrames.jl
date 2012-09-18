@@ -1324,3 +1324,44 @@ function load_df(filename)
     close(f)
     return dd
 end
+
+function poly(df::AbstractDataFrame, degree::Int, orthog::Bool)
+    if ncol(df) > 1
+        error("argument to poly should have exactly one column.")
+    end
+    d = poly(df[:,1], degree, orthog)
+    name = names(df)[1]
+    names!(d, ["poly($name,$k)" for k=1:degree])
+    d
+end
+poly(x::AbstractDataFrame, degree::Int) = poly(x, degree, true)
+
+function poly_orthog(x::Vector{Float64}, degree::Int)
+    #####################################################
+    ## In order to generate a design matrix using the same transformation
+    ## for new data (x_new) as in a prediction task,
+    ## we need to return R^-1 and x_bar from the
+    ## original orthogonalization.
+    ## Then (x_new - x_bar) * R^-1 will give the new predictors.
+    #####################################################
+    n = degree + 1
+    xbar = mean(x)
+    x = x - xbar
+    X = float([a^b for a=x,b=0:degree])
+    Q,R = qr(X)
+    if rank(X) < degree
+        error("'degree' must be less than rank of X")
+    end
+    Q[:,2:end]
+end
+poly_orthog(x::Vector{Int}, degree::Int) = poly_orthog(float64(x), degree)
+
+function poly{T}(x::DataVec{T}, degree::Int, orthog::Bool)
+    if !orthog
+        dvs = [DataFrame(x.^n) for n=1:degree]
+        return cbind(dvs...)
+    else
+        return DataFrame(poly_orthog(x.data, degree))
+    end
+end
+poly{T}(x::DataVec{T}, degree::Int) = poly(x, degree, true)
