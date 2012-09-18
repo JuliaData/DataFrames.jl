@@ -35,7 +35,9 @@ function replace_names!(x::Index, from::Vector, to::Vector)
     for idx in 1:length(from)
         if has(x, from[idx]) && !has(x, to[idx])
             x.lookup[to[idx]] = x.lookup[from[idx]]
-            x.names[x.lookup[from[idx]]] = to[idx]
+            if !isa(x.lookup[from[idx]], Array)
+                x.names[x.lookup[from[idx]]] = to[idx]
+            end
             del(x.lookup, from[idx])
         end
     end

@@ -109,6 +109,7 @@ isempty(df::AbstractDataFrame) = ncol(df) == 0
 set_group(d::AbstractDataFrame, newgroup, names) = set_group(index(d), newgroup, names)
 set_groups(d::AbstractDataFrame, gr::Dict{ByteString,Vector{ByteString}}) = set_groups(index(d), gr)
 get_groups(d::AbstractDataFrame) = get_groups(index(d))
+rename_group!(d::AbstractDataFrame,a,b) =  replace_names!(index(d), a, b)
 
 function insert(df::AbstractDataFrame, index::Integer, item, name)
     @assert 0 < index <= ncol(df) + 1
