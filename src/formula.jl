@@ -213,10 +213,19 @@ function all_interactions(dfs::Array{Any,1})
     return d
 end
 
+# string(Expr) now quotes, which we don't want. This hacks around that, stealing
+# from print_to_string
+function formula_string(ex::Expr)
+    s = memio(0, false)
+    Base.show_unquoted(s, ex)
+    takebuf_string(s)
+end
+
 #
 # The main expression to DataFrame expansion function.
 # Returns a DataFrame.
 #
+
 function expand(ex::Expr, df::AbstractDataFrame)
     f = eval(ex.args[1])
     if method_exists(f, (FormulaExpander, Vector{Any}, DataFrame))
@@ -224,7 +233,7 @@ function expand(ex::Expr, df::AbstractDataFrame)
         f(FormulaExpander(), ex.args[2:end], df)
     else
         # Everything else is called recursively:
-        expand(with(df, ex), string(ex), df)
+        expand(with(df, ex), formula_string(ex), df)
     end
 end
 
@@ -273,9 +282,9 @@ function +(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     end
     d
 end
-function &(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
-    interaction_design_matrix(expand(args[1], df), expand(args[2], df))
-end
+# function &(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
+#     interaction_design_matrix(expand(args[1], df), expand(args[2], df))
+# end
 function *(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     d = +(FormulaExpander(), args, df)
     d = insert(d, all_interactions(expand(args, df)))

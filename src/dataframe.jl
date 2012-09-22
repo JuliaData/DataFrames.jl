@@ -664,9 +664,9 @@ function with(d::Associative, ex::Expr)
     replace_symbols(e::Expr, d::Dict) = Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
     function replace_symbols{K,V}(s::Symbol, d::Dict{K,V})
         if (K == Any || K == Symbol) && has(d, s)
-            :(_D[$expr(:quote,s)])
+            :(_D[$(expr(:quote,s))])
         elseif (K == Any || K <: String) && has(d, string(s))
-            :(_D[$string(s)])
+            :(_D[$(string(s))])
         else
             s
         end
@@ -703,9 +703,9 @@ function within!(d::Associative, ex::Expr)
     end
     function replace_symbols{K,V}(s::Symbol, d::Associative{K,V})
         if (K == Any || K == Symbol) && has(d, s)
-            :(_D[$expr(:quote,s)])
+            :(_D[$(expr(:quote,s))])
         elseif (K == Any || K <: String) && has(d, string(s))
-            :(_D[$string(s)])
+            :(_D[$(string(s))])
         else
             s
         end
@@ -744,9 +744,9 @@ function based_on(d::Associative, ex::Expr)
     end
     function replace_symbols{K,V}(s::Symbol, d::Associative{K,V})
         if (K == Any || K == Symbol) && has(d, s)
-            :(_D[$expr(:quote,s)])
+            :(_D[$(expr(:quote,s))])
         elseif (K == Any || K <: String) && has(d, string(s))
-            :(_D[$string(s)])
+            :(_D[$(string(s))])
         else
             s
         end
