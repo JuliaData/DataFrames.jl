@@ -51,7 +51,7 @@ mf = model_frame(f, d)
 mm = model_matrix(mf)
 @test mm.response_colnames == ["y"]
 @test mm.model_colnames == ["(Intercept)","x1","x2"]
-@test mm.response == [1. 2 3 4]'
+@test mm.response == transpose([1. 2 3 4])
 @test mm.model[:,1] == ones(4)
 @test mm.model[:,2:3] == [x1 x2]
 
@@ -118,7 +118,7 @@ r = expand(:(x1 + x2), df)
 
 test_group("Creating a model matrix using full formulas: y ~ x1 + x2, etc")
 
-# df = deepcopy(d)
+df = deepcopy(d)
 # f = Formula(:(y ~ x1 & x2))
 # mf = model_frame(f, df)
 # mm = model_matrix(mf)
