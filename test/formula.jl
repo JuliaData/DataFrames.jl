@@ -119,10 +119,10 @@ r = expand(:(x1 + x2), df)
 test_group("Creating a model matrix using full formulas: y ~ x1 + x2, etc")
 
 df = deepcopy(d)
-# f = Formula(:(y ~ x1 & x2))
-# mf = model_frame(f, df)
-# mm = model_matrix(mf)
-# @test mm.model == [ones(4) x1.*x2]
+f = Formula(:(y ~ x1 & x2))
+mf = model_frame(f, df)
+mm = model_matrix(mf)
+@test mm.model == [ones(4) x1.*x2]
 
 f = Formula(:(y ~ x1 * x2))
 mf = model_frame(f, df)
@@ -207,14 +207,14 @@ mm = model_matrix(model_frame(Formula(:(y ~ x2 + x3 + x4)), df))
 @test mm.model == [ones(4) x2 x3 x4]
 mm = model_matrix(model_frame(Formula(:(y ~ x2 + x2)), df))
 @test mm.model == [ones(4) x2]
-# mm = model_matrix(model_frame(Formula(:(y ~ x2*x3 + x2&x3)), df))
-# @test mm.model == [ones(4) x2 x3 x2.*x3]
+mm = model_matrix(model_frame(Formula(:(y ~ x2*x3 + x2&x3)), df))
+@test mm.model == [ones(4) x2 x3 x2.*x3]
 mm = model_matrix(model_frame(Formula(:(y ~ x2*x3*x4)), df))
 @test mm.model == [ones(4) x2 x3 x4 x2.*x3 x2.*x4 x3.*x4 x2.*x3.*x4]
-# mm = model_matrix(model_frame(Formula(:(y ~ x2&x3 + x2*x3)), df))
-# @test mm.model == [ones(4) x2.*x3 x2 x3]  # TODO This disagrees with R
-# mm = model_matrix(model_frame(Formula(:(y ~ x2 & x3 & x4)), df))
-# @test mm.model == [ones(4) x2.*x3.*x4]
+mm = model_matrix(model_frame(Formula(:(y ~ x2&x3 + x2*x3)), df))
+@test mm.model == [ones(4) x2.*x3 x2 x3]  # TODO This disagrees with R
+mm = model_matrix(model_frame(Formula(:(y ~ x2 & x3 & x4)), df))
+@test mm.model == [ones(4) x2.*x3.*x4]
 
 test_group("Column groups in formulas")
 set_group(d, "odd_predictors", ["x1","x3"])

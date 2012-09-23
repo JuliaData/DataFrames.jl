@@ -282,9 +282,9 @@ function +(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     end
     d
 end
-# function &(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
-#     interaction_design_matrix(expand(args[1], df), expand(args[2], df))
-# end
+function (&)(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
+    interaction_design_matrix(expand(args[1], df), expand(args[2], df))
+end
 function *(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     d = +(FormulaExpander(), args, df)
     d = insert(d, all_interactions(expand(args, df)))
