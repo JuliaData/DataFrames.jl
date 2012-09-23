@@ -13,6 +13,7 @@
 ## the type, indexed by the main vector. NAs are 0s in the UInt vector. 
 
 require("enum.jl")
+require("bitarray.jl")
 
 abstract AbstractDataVec{T}
 
@@ -21,13 +22,13 @@ bitstype 8 NARule
 
 type DataVec{T} <: AbstractDataVec{T}
     data::Vector{T}
-    na::AbstractVector{Bool} # TODO use a bit array
+    na::BitVector
     
     naRule::NARule
     replaceVal::T
     
     # sanity checks
-    function DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, nar::NARule, v::T) 
+    function DataVec{T}(d::Vector{T}, m::BitVector, nar::NARule, v::T) 
         if (length(d) != length(m))
             error("data and mask vectors not the same length!")
         end   
@@ -35,9 +36,11 @@ type DataVec{T} <: AbstractDataVec{T}
     end
 end
 # the usual partial constructor
-DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, m, KEEP, zero(T))
+DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec(d, bitpack(m))
+DataVec{T}(d::Vector{T}, m::BitVector) = DataVec{T}(d, m, KEEP, zero(T))
 # a full constructor (why is this necessary?)
-DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, nar::NARule, v::T) = DataVec{T}(d, m, nar, v)
+DataVec{T}(d::Vector{T}, m::Vector{Bool}, nar::NARule, v::T) = DataVec(d, bitpack(m), nar, v)
+DataVec{T}(d::Vector{T}, m::BitVector, nar::NARule, v::T) = DataVec{T}(d, m, nar, v)
 # a no-op constructor
 DataVec(d::DataVec) = d
 
@@ -65,7 +68,7 @@ PooledDataVec{T <: Number}(re::Vector{Uint16}, p::Vector{T}, nar::NARule) = Pool
 PooledDataVec{T <: String}(re::Vector{Uint16}, p::Vector{T}, nar::NARule) = PooledDataVec{T}(re, p, nar, convert(T,""))
 
 # how do you construct one? well, from the same sigs as a DataVec!
-function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, nar::NARule, v::T)  
+function PooledDataVec{T}(d::Vector{T}, m::AbstractArray{Bool,1}, nar::NARule, v::T)  
     # algorithm... start with a null pool and a pre-allocated refs, plus hash from T to Int.
     # iterate over d. If in pool already, set the refs accordingly. If new, add to pool then set refs.
     newrefs = Array(Uint16, length(d))
@@ -215,7 +218,7 @@ function ref(::Type{DataVec}, vals...)
     
     # then, allocate vectors
     lenvals = length(vals)
-    ret = DataVec(Array(toptype, lenvals), falses(lenvals))
+    ret = DataVec(Array(toptype, lenvals), BitArray(lenvals))
     # copy from vals into data and mask
     for i = 1:lenvals
         if isna(vals[i])
@@ -237,7 +240,7 @@ function ref(::Type{PooledDataVec}, vals...)
 end
 
 # constructor from base type object
-DataVec(x::Vector) = DataVec(x, falses(length(x)))
+DataVec(x::Vector) = DataVec(x, BitArray(length(x)))
 PooledDataVec(x::Vector) = PooledDataVec(x, falses(length(x)))
 
 # copy does a deep copy
@@ -297,7 +300,7 @@ for (f,scalarf) in ((:(.==),:(==)), (:.<, :<), (:.>, :>), (:.!=,:!=), (:.<=,:<=)
     @eval begin    
         function ($f){T}(a::AbstractDataVec{T}, v::T)
             # allocate a DataVec for the return value, then assign into it
-            ret = DataVec(Array(Bool,length(a)), Array(Bool,length(a)), naRule(a), false)
+            ret = DataVec(Array(Bool,length(a)), BitArray(length(a)), naRule(a), false)
             for i = 1:length(a)
                 ret[i] = isna(a[i]) ? NA : ($scalarf)(a[i], v)
             end
@@ -316,7 +319,7 @@ for f in (:+, :-, :.*, :div, :mod, :&, :|, :$)
     @eval begin
         function ($f){S,T}(A::DataVec{S}, B::DataVec{T})
             if (length(A) != length(B)) error("DataVec lengths must match"); end
-            F = DataVec(Array(promote_type(S,T), length(A)), Array(Bool, length(A)))
+            F = DataVec(Array(promote_type(S,T), length(A)), BitArray(length(A)))
             for i=1:length(A)
                 F.na[i] = (A.na[i] || B.na[i])
                 F.data[i] = ($f)(A.data[i], B.data[i])
