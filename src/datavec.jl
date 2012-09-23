@@ -12,32 +12,32 @@
 ## Secondary type is a PooledDataVec, which is a parameterized type that wraps a vector of UInts and a vector of
 ## the type, indexed by the main vector. NAs are 0s in the UInt vector. 
 
+require("enum.jl")
 
 abstract AbstractDataVec{T}
+
+bitstype 8 NARule
+@enum NARule KEEP FILTER REPLACE
 
 type DataVec{T} <: AbstractDataVec{T}
     data::Vector{T}
     na::AbstractVector{Bool} # TODO use a bit array
     
-    # TODO: these three should probably be a single type structure
-    filter::Bool
-    replace::Bool # replace supercedes filter, if both true
+    naRule::NARule
     replaceVal::T
     
     # sanity checks
-    function DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, f::Bool, r::Bool, v::T) 
+    function DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, nar::NARule, v::T) 
         if (length(d) != length(m))
             error("data and mask vectors not the same length!")
-        elseif (f && r)
-            error("please don't set both the filter and replace flags in a DataVec")
         end   
-        new(d,m,f,r,v)
+        new(d,m,nar,v)
     end
 end
 # the usual partial constructor
-DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, m, false, false, zero(T))
+DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, m, KEEP, zero(T))
 # a full constructor (why is this necessary?)
-DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, f::Bool, r::Bool, v::T) = DataVec{T}(d, m, f, r, v)
+DataVec{T}(d::Vector{T}, m::AbstractVector{Bool}, nar::NARule, v::T) = DataVec{T}(d, m, nar, v)
 # a no-op constructor
 DataVec(d::DataVec) = d
 
@@ -47,28 +47,25 @@ type PooledDataVec{T} <: AbstractDataVec{T}
     # TODO: ordering
     # TODO: meta-data for dummy conversion
     
-    filter::Bool
-    replace::Bool
+    naRule::NARule
     replaceVal::T
     
-    function PooledDataVec{T}(refs::Vector{Uint16}, pool::Vector{T}, f::Bool, r::Bool, v::T)
+    function PooledDataVec{T}(refs::Vector{Uint16}, pool::Vector{T}, nar::NARule, v::T)
         # refs mustn't overflow pool
         if (max(refs) > length(pool))
             error("reference vector points beyond the end of the pool!")
-        elseif (f && r)
-            error("please don't set both the filter and replace flags in a PooledDataVec")
         end 
-        new(refs,pool,f,r,v)
+        new(refs,pool,nar,v)
     end
 end
 # a full constructor (why is this necessary?)
-PooledDataVec{T}(re::Vector{Uint16}, p::Vector{T}, f::Bool, r::Bool, v::T) = PooledDataVec{T}(re, p, f, r, v)
+PooledDataVec{T}(re::Vector{Uint16}, p::Vector{T}, nar::NARule, v::T) = PooledDataVec{T}(re, p, nar, v)
 # allow 0 for default number, "" for default string
-PooledDataVec{T <: Number}(re::Vector{Uint16}, p::Vector{T}, f::Bool, r::Bool) = PooledDataVec{T}(re, p, f, r, convert(T,0))
-PooledDataVec{T <: String}(re::Vector{Uint16}, p::Vector{T}, f::Bool, r::Bool) = PooledDataVec{T}(re, p, f, r, convert(T,""))
+PooledDataVec{T <: Number}(re::Vector{Uint16}, p::Vector{T}, nar::NARule) = PooledDataVec{T}(re, p, nar, convert(T,0))
+PooledDataVec{T <: String}(re::Vector{Uint16}, p::Vector{T}, nar::NARule) = PooledDataVec{T}(re, p, nar, convert(T,""))
 
 # how do you construct one? well, from the same sigs as a DataVec!
-function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
+function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, nar::NARule, v::T)  
     # algorithm... start with a null pool and a pre-allocated refs, plus hash from T to Int.
     # iterate over d. If in pool already, set the refs accordingly. If new, add to pool then set refs.
     newrefs = Array(Uint16, length(d))
@@ -99,11 +96,11 @@ function PooledDataVec{T}(d::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)
             newrefs[i] = poolref[d[i]]
         end
     end
-    PooledDataVec(newrefs, newpool, f, r, v)
+    PooledDataVec(newrefs, newpool, nar, v)
 end
 
 # Allow a pool to be provided
-function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, f::Bool, r::Bool, v::T)  
+function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, nar::NARule, v::T)  
 
     # TODO: check if pool greater than 2^16
     newrefs = Array(Uint16, length(d))
@@ -135,15 +132,18 @@ function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool}, f::Boo
             end
         end
     end
-    PooledDataVec(newrefs, newpool, f, r, v)
+    PooledDataVec(newrefs, newpool, nar, v)
 end
-PooledDataVec{T<:String}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, false, false, convert(T,""))
-PooledDataVec{T<:Number}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, false, false, convert(T,0))
-PooledDataVec{T<:String}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(d)), false, false, convert(T,""))
-PooledDataVec{T<:Number}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(d)), false, false, convert(T,0))
+PooledDataVec{T<:String}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, KEEP, convert(T,""))
+PooledDataVec{T<:Number}(d::Vector{T}, m::Vector{Bool}) = PooledDataVec(d, m, KEEP, convert(T,0))
+PooledDataVec{T<:String}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(d)), KEEP, convert(T,""))
+PooledDataVec{T<:Number}(d::Vector{T}, pool::Vector{T}) = PooledDataVec(d, pool, falses(length(d)), KEEP, convert(T,0))
 
-PooledDataVec(dv::DataVec) = PooledDataVec(dv.data, dv.na, dv.filter, dv.replace, dv.replaceVal)
+PooledDataVec(dv::DataVec) = PooledDataVec(dv.data, dv.na, dv.naRule, dv.replaceVal)
 PooledDataVec(d::PooledDataVec) = d
+
+naRule(dv::DataVec) = dv.naRule
+naRule(pdv::PooledDataVec) = pdv.naRule
 
 # Utilities
 
@@ -241,8 +241,8 @@ DataVec(x::Vector) = DataVec(x, falses(length(x)))
 PooledDataVec(x::Vector) = PooledDataVec(x, falses(length(x)))
 
 # copy does a deep copy
-copy{T}(dv::DataVec{T}) = DataVec{T}(copy(dv.data), copy(dv.na), dv.filter, dv.replace, dv.replaceVal)
-copy{T}(dv::PooledDataVec{T}) = PooledDataVec{T}(copy(dv.refs), copy(dv.pool), dv.filter, dv.replace, dv.replaceVal)
+copy{T}(dv::DataVec{T}) = DataVec{T}(copy(dv.data), copy(dv.na), dv.naRule, dv.replaceVal)
+copy{T}(dv::PooledDataVec{T}) = PooledDataVec{T}(copy(dv.refs), copy(dv.pool), dv.naRule, dv.replaceVal)
 
 # TODO: copy_to
 
@@ -297,7 +297,7 @@ for (f,scalarf) in ((:(.==),:(==)), (:.<, :<), (:.>, :>), (:.!=,:!=), (:.<=,:<=)
     @eval begin    
         function ($f){T}(a::AbstractDataVec{T}, v::T)
             # allocate a DataVec for the return value, then assign into it
-            ret = DataVec(Array(Bool,length(a)), Array(Bool,length(a)), false, false, false)
+            ret = DataVec(Array(Bool,length(a)), Array(Bool,length(a)), naRule(a), false)
             for i = 1:length(a)
                 ret[i] = isna(a[i]) ? NA : ($scalarf)(a[i], v)
             end
@@ -346,16 +346,16 @@ ref(x::PooledDataVec, i::Number) = x.refs[i] == 0 ? NA : x.pool[x.refs[i]]
 
 # range access
 function ref(x::DataVec, r::Range1)
-    DataVec(x.data[r], x.na[r], x.filter, x.replace, x.replaceVal)
+    DataVec(x.data[r], x.na[r], x.naRule, x.replaceVal)
 end
 function ref(x::DataVec, r::Range)
-    DataVec(x.data[r], x.na[r], x.filter, x.replace, x.replaceVal)
+    DataVec(x.data[r], x.na[r], x.naRule, x.replaceVal)
 end
 # PooledDataVec -- be sure copy the pool!
 function ref(x::PooledDataVec, r::Range1)
     # TODO: copy the whole pool or just the items in the range?
     # for now, the whole pool
-    PooledDataVec(x.refs[r], copy(x.pool), x.filter, x.replace, x.replaceVal)
+    PooledDataVec(x.refs[r], copy(x.pool), x.naRule, x.replaceVal)
 end
 
 # logical access -- note that unlike Array logical access, this throws an error if
@@ -364,23 +364,23 @@ function ref(x::DataVec, ind::Vector{Bool})
     if length(x) != length(ind)
         throw(ArgumentError("boolean index is not the same size as the DataVec"))
     end
-    DataVec(x.data[ind], x.na[ind], x.filter, x.replace, x.replaceVal)
+    DataVec(x.data[ind], x.na[ind], x.naRule, x.replaceVal)
 end
 # PooledDataVec
 function ref(x::PooledDataVec, ind::Vector{Bool})
     if length(x) != length(ind)
         throw(ArgumentError("boolean index is not the same size as the PooledDataVec"))
     end
-    PooledDataVec(x.refs[ind], copy(x.pool), x.filter, x.replace, x.replaceVal)
+    PooledDataVec(x.refs[ind], copy(x.pool), x.naRule, x.replaceVal)
 end
 
 # array index access
 function ref(x::DataVec, ind::Vector{Int})
-    DataVec(x.data[ind], x.na[ind], x.filter, x.replace, x.replaceVal)
+    DataVec(x.data[ind], x.na[ind], x.naRule, x.replaceVal)
 end
 # PooledDataVec
 function ref(x::PooledDataVec, ind::Vector{Int})
-    PooledDataVec(x.refs[ind], copy(x.pool), x.filter, x.replace, x.replaceVal)
+    PooledDataVec(x.refs[ind], copy(x.pool), x.naRule, x.replaceVal)
 end
 
 ref(x::AbstractDataVec, ind::AbstractDataVec{Bool}) = x[nareplace(ind, false)]
@@ -636,8 +636,8 @@ function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
             refs2[i] = poolref[v2[i]]
         ## end
     end
-    (PooledDataVec(refs1, pool, false, false),
-     PooledDataVec(refs2, pool, false, false))
+    (PooledDataVec(refs1, pool, naRule(v1)),
+     PooledDataVec(refs2, pool, naRule(v2)))
 end
 
 
@@ -646,17 +646,17 @@ end
 nafilter{T}(v::DataVec{T}) = v.data[!v.na]
 nareplace{T}(v::DataVec{T}, r::T) = [v.na[i] ? r : v.data[i] for i = 1:length(v.data)]
 nafilter{T}(v::DataVec{T}) = v.data[!v.na]
-nafilter(v::DataVec) = PooledDataVec(v.refs[map(isna, v)], v.pool, v.filter, v.replace, v.replaceVal)
+nafilter(v::DataVec) = PooledDataVec(v.refs[map(isna, v)], v.pool, v.naRule, v.replaceVal)
 # TODO PooledDataVec
 # TODO nareplace! does in-place change; nafilter! shouldn't exist, as it doesn't apply with DataFrames
 
 # naFilter redefines a new DataVec with a flipped bit that determines how start/next/done operate
-naFilter{T}(v::DataVec{T}) = DataVec(v.data, v.na, true, false, v.replaceVal)
-naFilter{T}(v::PooledDataVec{T}) = PooledDataVec(v.refs, v.pool, true, false, v.replaceVal)
+naFilter{T}(v::DataVec{T}) = DataVec(v.data, v.na, FILTER, v.replaceVal)
+naFilter{T}(v::PooledDataVec{T}) = PooledDataVec(v.refs, v.pool, FILTER, v.replaceVal)
 
 # naReplace is similar to naFilter, but with a replacement value
-naReplace{T}(v::DataVec{T}, rv::T) = DataVec(v.data, v.na, false, true, rv)
-naReplace{T}(v::PooledDataVec{T}, rv::T) = PooledDataVec(v.refs, v.pool, false, true, rv)
+naReplace{T}(v::DataVec{T}, rv::T) = DataVec(v.data, v.na, REPLACE, rv)
+naReplace{T}(v::PooledDataVec{T}, rv::T) = PooledDataVec(v.refs, v.pool, REPLACE, rv)
 
 # If neither the filter or replace flags are set, the iterator will return an NA
 # when it hits an NA. If one or the other are set, it'll skip/replace the NA.
@@ -664,14 +664,14 @@ naReplace{T}(v::PooledDataVec{T}, rv::T) = PooledDataVec(v.refs, v.pool, false, 
 start(x::AbstractDataVec) = 1
 function next(x::AbstractDataVec, state::Int)
     # if filter is set, iterate til we find a non-NA value
-    if x.filter
+    if naRule(x) == FILTER
         for i = state:length(x)
             if !isna(x[i])
                 return (x[i], i+1)
             end
         end
         error("called next(AbstractDataVec) without calling done() first")
-    elseif x.replace
+    elseif naRule(x) == REPLACE
         return (isna(x[state]) ? x.replaceVal : x[state], state + 1)
     else
         return (x[state], state+1)
@@ -679,7 +679,7 @@ function next(x::AbstractDataVec, state::Int)
 end
 function done(x::AbstractDataVec, state::Int)
     # if filter is set, iterate til we find a non-NA value
-    if x.filter
+    if naRule(x) == FILTER
         for i = state:length(x)
             if !isna(x[i])
                 return false
@@ -738,7 +738,7 @@ end
 # not sure if this is the best approach, but works for a demo
 function log{T}(x::DataVec{T})
     newx = log(x.data)
-    DataVec(newx, x.na, x.filter, x.replace, convert(eltype(newx), x.replaceVal))
+    DataVec(newx, x.na, x.naRule, convert(eltype(newx), x.replaceVal))
 end
 
 # TODO: vectorizable comparison operators like > which should return a DataVec{Bool}
@@ -795,6 +795,6 @@ function cut{T}(x::Vector{T}, breaks::Vector{T})
     from = map(x -> sprint(showcompact, x), [min(x), breaks])
     to = map(x -> sprint(showcompact, x), [breaks, max(x)])
     pool = paste(["[", fill("(", length(breaks))], from, ",", to, "]")
-    PooledDataVec(refs, pool, false, false, "")
+    PooledDataVec(refs, pool, KEEP, "")
 end
 cut(x::Vector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
