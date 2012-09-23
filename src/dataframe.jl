@@ -509,6 +509,21 @@ assign(df::DataFrame, x::Nothing, icol::Integer) = del!(df, icol)
 # at least some of the elementwise assignments
 assign(df::DataFrame, v, rows, cols) = assign(df[cols], v, rows)
 
+## Multicolumn assignment like df2[1:2,:] = df2[4:5,:]
+function assign(df1::DataFrame, df2::DataFrame, rows, cols)
+    nr = length(rows)
+    nc = length(cols)
+    if ncol(df2) != nc || nrow(df2) != nr
+        error("Dimensions do not match in assignment.")
+    end
+    for i=1:nr
+        for j=1:nc
+            assign(df1, df2[i,j], rows[i], cols[j])
+        end
+    end
+    df1
+end
+
 # del!(df, 1)
 # del!(df, "old")
 function del!(df::DataFrame, icols::Vector{Int})

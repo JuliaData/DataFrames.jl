@@ -45,3 +45,17 @@ z1 = z[[1]]
 z2 = z[:,[1,1,2]]
 @test colnames(z2) == ["a", "a_1", "b"]
 @test get_groups(z2)["group1"] == ["a_1", "b"]
+
+test_group("DataFrame assignment")
+df1 = DataFrame(quote
+    a = 1:5
+    b2 = letters[1:5]
+    v2 = randn(5) 
+end)
+df2 = DataFrame(quote
+    a = reverse([1:5])
+    b2 = reverse(letters)[1:5]
+    v2 = randn(5)
+end)
+df1[1:2,:] = df2[4:5,:]
+@test df1[1:2,:] == df2[4:5,:]
