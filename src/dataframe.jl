@@ -339,7 +339,7 @@ function csvDataFrame(filename, o::Options)
     # for now, use the built-in csvread that creates a matrix of Anys, functionally numbers and strings. 
     # Ideally, we'd probably save RAM by doing a two-pass read over the file, once to determine types and
     # once to build the data structures.
-    dat = dlmread(filename, ',')
+    dat = dlmread(filename, sep)
     
     # if the first row looks like strings, chop it off and process it as the 
     # column names
