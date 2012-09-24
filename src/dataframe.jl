@@ -332,13 +332,14 @@ end
 
 # colnames = "true", "false", "check" (default)
 # poolstrings = "check" (default), "never" 
+# sep = ',' (default), '\t', ' '
 function csvDataFrame(filename, o::Options)
-    @defaults o colnames="check" poolstrings="check"
+    @defaults o colnames="check" poolstrings="check" sep=','
     # TODO
     # for now, use the built-in csvread that creates a matrix of Anys, functionally numbers and strings. 
     # Ideally, we'd probably save RAM by doing a two-pass read over the file, once to determine types and
     # once to build the data structures.
-    dat = csvread(filename)
+    dat = dlmread(filename, ',')
     
     # if the first row looks like strings, chop it off and process it as the 
     # column names
