@@ -293,7 +293,7 @@ dump(io::IOStream, x::AbstractDataVec, n::Int, indent) =
 summary(dv::AbstractDataVec) = summary(OUTPUT_STREAM::IOStream, dv)
 summary(df::DataFrame) = summary(OUTPUT_STREAM::IOStream, df)
 function summary{T<:Number}(io, dv::AbstractDataVec{T})
-    filtered = nafilter(dv)
+    filtered = float(nafilter(dv))
     qs = quantile(filtered, [0, .25, .5, .75, 1])
     statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
     statVals = [qs[1:3], mean(filtered), qs[4:5]]
