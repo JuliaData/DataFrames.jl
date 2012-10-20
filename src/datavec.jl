@@ -295,8 +295,8 @@ function =={T}(a::AbstractDataVec{T}, b::AbstractDataVec{T})
     return true
 end
 
-# element-wise (in)equality operators
-for (f,scalarf) in ((:(.==),:(==)), (:.<, :<), (:.>, :>), (:.!=,:!=), (:.<=,:<=), (:.>=, :>=))
+# element-wise symmetric (in)equality operators
+for (f,scalarf) in ((:(.==),:(==)), (:.!=,:!=))
     @eval begin    
         function ($f){T}(a::AbstractDataVec{T}, v::T)
             # allocate a DataVec for the return value, then assign into it
@@ -307,6 +307,28 @@ for (f,scalarf) in ((:(.==),:(==)), (:.<, :<), (:.>, :>), (:.!=,:!=), (:.<=,:<=)
             ret
         end
         ($f){T}(v::T, a::AbstractDataVec{T}) = ($f)(a::AbstractDataVec{T}, v::T)
+    end
+end
+
+# element-wise antisymmetric (in)equality operators
+for (f,scalarf,scalarantif) in ((:.<, :<, :>), (:.>, :>, :<), (:.<=,:<=, :>=), (:.>=, :>=, :<=))
+    @eval begin    
+        function ($f){T}(a::AbstractDataVec{T}, v::T)
+            # allocate a DataVec for the return value, then assign into it
+            ret = DataVec(Array(Bool,length(a)), BitArray(length(a)), naRule(a), false)
+            for i = 1:length(a)
+                ret[i] = isna(a[i]) ? NA : ($scalarf)(a[i], v)
+            end
+            ret
+        end
+        function ($f){T}(v::T, a::AbstractDataVec{T})
+            # allocate a DataVec for the return value, then assign into it
+            ret = DataVec(Array(Bool,length(a)), BitArray(length(a)), naRule(a), false)
+            for i = 1:length(a)
+                ret[i] = isna(a[i]) ? NA : ($scalarantif)(a[i], v)
+            end
+            ret
+        end
     end
 end
 
