@@ -306,6 +306,7 @@ for (f,scalarf) in ((:(.==),:(==)), (:.<, :<), (:.>, :>), (:.!=,:!=), (:.<=,:<=)
             end
             ret
         end
+        ($f){T}(v::T, a::AbstractDataVec{T}) = ($f)(a::AbstractDataVec{T}, v::T)
     end
 end
 
