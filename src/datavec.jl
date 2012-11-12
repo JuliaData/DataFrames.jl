@@ -12,9 +12,6 @@
 ## Secondary type is a PooledDataVec, which is a parameterized type that wraps a vector of UInts and a vector of
 ## the type, indexed by the main vector. NAs are 0s in the UInt vector. 
 
-require("enum.jl")
-require("bitarray.jl")
-
 abstract AbstractDataVec{T}
 
 bitstype 8 NARule

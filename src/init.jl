@@ -1,3 +1,13 @@
+require("enum.jl")
+require("bitarray.jl")
+
+import Base.*
+import Base.start
+import Base.next
+import Base.done
+import Base.map
+import Base.string
+
 require("options.jl")
 import OptionsMod.*
 
