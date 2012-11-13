@@ -145,6 +145,7 @@ function bool(ix::Indexer)
     res
 end
 
+ref(x::IndexedVec, i::Indexer) = x[i.iv.idx[[i.r...]]]
 ref(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 ref(x::AbstractDataVec, i::Indexer) = x[i.iv.idx[[i.r...]]]
 
@@ -232,44 +233,44 @@ function search_sorted_first{I<:Integer}(a::AbstractVector, x, idx::AbstractVect
     hi
 end
 
-
-
-# Examples
-srand(1)
-a = randi(5,20)
-ia = IndexedVec(a)
-ia2 = IndexedVec(randi(4,20))
-ia .== 4
-v = [1:20]
-v[ia .== 4]
-
-(ia .== 4) | (ia .== 5)
-
-v[(ia .== 4) | (ia .== 5)]
-
-v[(ia .>= 4) | (ia .== 5)] | println
-ia[(ia .>= 4) | (ia .== 5)] | println
-v[(ia .>= 4) & (ia .== 5)] | println
-ia[(ia .>= 4) & (ia .== 5)] | println
-
-!(ia .== 4) | dump
-ia[!(ia .== 4)] | println
-
-(ia .== 4) | dump 
-(ia .== 4) & (ia .>= 3) | dump 
-
-(ia .== 4) | (ia .== 3) | dump 
-(ia .== 4) | (ia .== 3) | (ia .== 1) | dump
-
-
 # the following was needed for show(df)
 maxShowLength(v::IndexedVec) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
 
-df = DataFrame({IndexedVec(vcat(fill([1:5],4)...)), IndexedVec(vcat(fill(letters[1:10],2)...))})
 
-df[:(x2 .== "a")] 
-df[:( (x2 .== "a") | (x1 .== 2) )] 
-df[:( ("b" .<= x2 .<= "c") | (x1 .== 5) )]
-df[:( (x1 .== 1) & (x2 .== "a") )]
+## # Examples
+## srand(1)
+## a = randi(5,20)
+## ia = IndexedVec(a)
+## ia2 = IndexedVec(randi(4,20))
+## ia .== 4
+## v = [1:20]
+## v[ia .== 4]
 
-df[:( in(x2, ["c","e"]) )]
+## (ia .== 4) | (ia .== 5)
+
+## v[(ia .== 4) | (ia .== 5)]
+
+## v[(ia .>= 4) | (ia .== 5)] | println
+## ia[(ia .>= 4) | (ia .== 5)] | println
+## v[(ia .>= 4) & (ia .== 5)] | println
+## ia[(ia .>= 4) & (ia .== 5)] | println
+
+## !(ia .== 4) | dump
+## ia[!(ia .== 4)] | println
+
+## (ia .== 4) | dump 
+## (ia .== 4) & (ia .>= 3) | dump 
+
+## (ia .== 4) | (ia .== 3) | dump 
+## (ia .== 4) | (ia .== 3) | (ia .== 1) | dump
+
+
+
+## df = DataFrame({IndexedVec(vcat(fill([1:5],4)...)), IndexedVec(vcat(fill(letters[1:10],2)...))})
+
+## df[:(x2 .== "a")] 
+## df[:( (x2 .== "a") | (x1 .== 2) )] 
+## df[:( ("b" .<= x2 .<= "c") | (x1 .== 5) )]
+## df[:( (x1 .== 1) & (x2 .== "a") )]
+
+## df[:( in(x2, ["c","e"]) )]

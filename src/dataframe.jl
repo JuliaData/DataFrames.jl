@@ -591,7 +591,7 @@ similar(df::DataFrame, dims) =
 similar(df::SubDataFrame, dims) = 
     DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
 
-nas{T}(dv::DataVec{T}, dims) =
+nas{T}(dv::DataVec{T}, dims) =   # TODO move to datavec.jl?
     DataVec(zeros(T, dims), fill(true, dims), naRule(dv), dv.replaceVal)  
 
 zeros{T<:ByteString}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
@@ -804,7 +804,7 @@ function within!(df::AbstractDataFrame, ex::Expr)
         end
     end
     # Make a dict of colnames and column positions
-    cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
+    cn_dict = Dict(colnames(df), 1:ncol(df))
     ex = replace_symbols(ex, cn_dict)
     f = @eval (_DF) -> begin
         $ex
@@ -841,7 +841,7 @@ function based_on_f(df::AbstractDataFrame, ex::Expr)
         end
     end
     # Make a dict of colnames and column positions
-    cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
+    cn_dict = Dict(colnames(df), [1:ncol(df)])
     ex = replace_symbols(ex, cn_dict)
     @eval (_DF) -> begin
         _col_dict = NamedArray()
@@ -872,7 +872,7 @@ function with(df::AbstractDataFrame, ex::Expr)
         end
     end
     # Make a dict of colnames and column positions
-    cn_dict = dict(tuple(colnames(df)...), tuple([1:ncol(df)]...))
+    cn_dict = Dict(colnames(df), [1:ncol(df)])
     ex = replace_symbols(ex, cn_dict)
     f = @eval (_DF) -> $ex
     f(df)
