@@ -108,12 +108,12 @@ export model_frame, model_matrix, interaction_design_matrix
 ## export in, between
  
 
-load("index.jl")
-load("datavec.jl")
-load("namedarray.jl")
-load("dataframe.jl")
-load("formula.jl")
-load("utils.jl")
+load("DataFrames/src/index.jl")
+load("DataFrames/src/datavec.jl")
+load("DataFrames/src/namedarray.jl")
+load("DataFrames/src/dataframe.jl")
+load("DataFrames/src/formula.jl")
+load("DataFrames/src/utils.jl")
 
 ## load("dlmread.jl")
 ## load("indexing.jl")
