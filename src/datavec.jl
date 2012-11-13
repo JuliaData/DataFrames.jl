@@ -34,12 +34,15 @@ type DataVec{T} <: AbstractDataVec{T}
 end
 # the usual partial constructor
 DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec(d, bitpack(m))
-DataVec{T}(d::Vector{T}, m::BitVector) = DataVec{T}(d, m, KEEP, zero(T))
+DataVec{T}(d::Vector{T}, m::BitVector) = DataVec{T}(d, m, KEEP, baseval(T))
 # a full constructor (why is this necessary?)
 DataVec{T}(d::Vector{T}, m::Vector{Bool}, nar::NARule, v::T) = DataVec(d, bitpack(m), nar, v)
 DataVec{T}(d::Vector{T}, m::BitVector, nar::NARule, v::T) = DataVec{T}(d, m, nar, v)
 # a no-op constructor
 DataVec(d::DataVec) = d
+
+baseval(x) = zero(x)
+baseval{T <: String}(s::Type{T}) = ""
 
 type PooledDataVec{T} <: AbstractDataVec{T}
     refs::Vector{Uint16} # TODO: make sure we don't overflow
@@ -206,7 +209,7 @@ function _dv_most_generic_type(vals)
             toptype = promote_type(toptype, typeof(vals[i]))
         end
     end
-    # TODO: confirm that this type has a zero() 
+    # TODO: confirm that this type has a baseval() 
     toptype
 end
 function ref(::Type{DataVec}, vals...)
@@ -219,7 +222,7 @@ function ref(::Type{DataVec}, vals...)
     # copy from vals into data and mask
     for i = 1:lenvals
         if isna(vals[i])
-            ret.data[i] = zero(toptype)
+            ret.data[i] = baseval(toptype)
             ret.na[i] = true
         else
             ret.data[i] = vals[i]
