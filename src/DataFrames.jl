@@ -2,7 +2,7 @@ module DataFrames
 
 using Base
 import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote, Base.promote_rule,
-       Base.similar, Base.fill!, Base.one, Base.copy_to, Base.reshape,
+       Base.similar, Base.fill, Base.fill!, Base.one, Base.copy_to, Base.reshape,
        Base.convert, Base.reinterpret, Base.ref, Base.assign, Base.check_bounds,
        Base.push, Base.append!, Base.grow, Base.pop, Base.enqueue, Base.shift,
        Base.insert, Base.del, Base.del_all, Base.~, Base.-, Base.sign, Base.real,
@@ -20,9 +20,9 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.write, Base.read, Base.msync, Base.findn_nzs, Base.reverse,
        Base.iround, Base.itrunc, Base.ifloor, Base.iceil, Base.abs,
        Base.string, Base.show,
-       Base.isnan, Base.isinf, Base.cmp, Base.sqrt, Base.min, Base.max, Base.isless, Base.atan2,
+       Base.isnan, Base.isinf, Base.cmp, Base.sqrt, Base.min, Base.max, Base.isless, Base.atan2, Base.log,
        Base.start, Base.next, Base.done,
-       Base.isempty,
+       Base.isempty, Base.expand,
        Base.map,
        Base.string,
        Base.intersect, Base.union,
@@ -60,7 +60,9 @@ export isna, naRule, levels, indices,
        nafilter, nareplace, naFilter, naReplace,
        cut
 ## Specials
-export NA, letters, LETTERS
+export NA,
+       KEEP, FILTER, REPLACE,
+       letters, LETTERS
 
 ## ---- namedarray.jl ----
 ## Types
@@ -91,8 +93,8 @@ export colnames, names!, replace_names, replace_names!,
 ## Types
 export Formula, ModelFrame, ModelMatrix
 ## Methods
-export model_frame, model_matrix
-## all_interactions, expand, interaction_design_matrix # These look internal to me. Uncomment if they should be exported.
+export model_frame, model_matrix, interaction_design_matrix 
+## all_interactions # looks internal to me. Uncomment if it should be exported.
      
 ## ---- utils.jl ----
 ## None of the methods in utils look like they should be exported.
