@@ -1,4 +1,4 @@
-module JuliaData
+module DataFrames
 
 using Base
 import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote, Base.promote_rule,
@@ -116,4 +116,4 @@ load("utils.jl")
 ## load("dlmread.jl")
 ## load("indexing.jl")
 
-end # Module JuliaData
+end # module DataFrames
