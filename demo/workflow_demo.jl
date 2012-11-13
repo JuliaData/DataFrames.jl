@@ -1,5 +1,6 @@
-# Load DataFrame package.
-load("src/init.jl")
+# Load DataFrames.jl package.
+load("DataFrames.jl")
+using DataFrames
 
 # Load a CSV file into a DataFrame.
 df = csvDataFrame("demo/toy_example.csv")

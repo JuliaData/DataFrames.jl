@@ -1,7 +1,28 @@
-JuliaData
+DataFrames.jl
 =========
 
-Library for working with tabular data in Julia using `DataFrame`'s.
+Package for working with tabular data in Julia using `DataFrame`'s.
+
+# Installation
+
+DataFrames.jl is now an installable package. If you have not
+initialized the package system before, you will need to do the
+following:
+
+```julia
+load("pkg.jl")
+Pkg.init()
+```
+
+To install DataFrames.jl, use the following:
+
+```julia
+load("pkg.jl")   # if not done previously
+Pkg.add("DataFrames")
+```
+
+DataFrames.jl has one main module named `DataFrames`.
+
 
 # Features
 
@@ -27,7 +48,9 @@ Library for working with tabular data in Julia using `DataFrame`'s.
 Here's a minimal demo showing some grouping operations:
 
 ```julia
-julia> load("src/init.jl")     # run from JuliaData directory. will be replaced when packages arrive.
+julia> load("DataFrames.jl")
+
+julia> using DataFrames
 
 julia> d = DataFrame(quote     # expressions are one way to create a DataFrame
            x = randn(10)
@@ -77,33 +100,33 @@ DataFrame  (3,4)
 [3,]    3 0.319517  1.03072     2
 ```
 
-See [demo/workflow_demo.jl](https://github.com/HarlanH/JuliaData/blob/master/demo/workflow_demo.jl) for a basic demo of the parts of a Julian data workflow.
+See [demo/workflow_demo.jl](https://github.com/HarlanH/DataFrames.jl/blob/master/demo/workflow_demo.jl) for a basic demo of the parts of a Julian data workflow.
 
-See [demo/design_demo.jl](https://github.com/HarlanH/JuliaData/blob/master/demo/design_demo.jl) for a more in-depth demo of DataFrame and related types and
+See [demo/design_demo.jl](https://github.com/HarlanH/DataFrames.jl/blob/master/demo/design_demo.jl) for a more in-depth demo of DataFrame and related types and
 library.
 
 
 # Documentation
 
-* [Library-style function reference](https://github.com/HarlanH/JuliaData/blob/master/spec/FunctionReference.md)
-* [Background and motivation](https://github.com/HarlanH/JuliaData/blob/master/spec/Motivation.md)
+* [Library-style function reference](https://github.com/HarlanH/DataFrames.jl/blob/master/spec/FunctionReference.md)
+* [Background and motivation](https://github.com/HarlanH/DataFrames.jl/blob/master/spec/Motivation.md)
 
 
 # Development work
 
-The [Issues](https://github.com/HarlanH/JuliaData/issues) highlight a
+The [Issues](https://github.com/HarlanH/DataFrames.jl/issues) highlight a
 number of issues and ideas for enhancements. Here are some particular
 enhancements under way or under discussion:
 
 * _Data Streams:_
-[issue 34](https://github.com/HarlanH/JuliaData/issues/34), [doc](https://github.com/HarlanH/JuliaData/blob/master/spec/DataStream.md)
+[issue 34](https://github.com/HarlanH/DataFrames.jl/issues/34), [doc](https://github.com/HarlanH/DataFrames.jl/blob/master/spec/DataStream.md)
 
-* _Distributed DataFrames:_ [issue 26](https://github.com/HarlanH/JuliaData/issues/26)
+* _Distributed DataFrames:_ [issue 26](https://github.com/HarlanH/DataFrames.jl/issues/26)
 
 * _Fast vector indexing:_
-  [issue 24](https://github.com/HarlanH/JuliaData/issues/24), [commit](https://github.com/HarlanH/JuliaData/commit/268faa1c3b9fa2aa3e0c1199d626fe5a83ad1604)
+  [issue 24](https://github.com/HarlanH/DataFrames.jl/issues/24), [commit](https://github.com/HarlanH/DataFrames.jl/commit/268faa1c3b9fa2aa3e0c1199d626fe5a83ad1604)
 
-* _Bitstypes with NA support:_ [issue 45](https://github.com/HarlanH/JuliaData/issues/45), [doc](https://github.com/tshort/JuliaData/blob/bitstypeNA/spec/MissingValues.md)
+* _Bitstypes with NA support:_ [issue 45](https://github.com/HarlanH/DataFrames.jl/issues/45), [doc](https://github.com/tshort/DataFrames.jl/blob/bitstypeNA/spec/MissingValues.md)
 
 # Possible changes to Julia
 
@@ -112,7 +135,7 @@ improve the user experience, including keyword function arguments
 [(Julia issue 485)](https://github.com/JuliaLang/julia/issues/485),
 `"~"` for easier expression syntax, and overloading `"."` for easier
 column access (df.colA). See
-[here](https://github.com/HarlanH/JuliaData/blob/master/spec/JuliaChanges.md)
+[here](https://github.com/HarlanH/DataFrames.jl/blob/master/spec/JuliaChanges.md)
 for a bit more information.
 
 # Current status

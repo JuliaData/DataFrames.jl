@@ -1,6 +1,7 @@
 
 # there are some warnings here that need to be addressed...
-load("src/init.jl")
+load("DataFrames.jl")
+using DataFrames
 
 # The current DataFrame type hierarchy relatively transparently implements
 # the notion of a set of named, equal-length, heterogeneous-typed vectors that may include
@@ -44,7 +45,7 @@ load("src/init.jl")
 # use, the type-referencing constructor is handy, and the NA literal is supported.
 dvint = DataVec[1, 2, NA, 4]
 # DataVecs can also be contructed from existing arrays. Note that the existing
-# array is referenced, not copied. In general, the JuliaData philosophy is 
+# array is referenced, not copied. In general, the DataFrames.jl philosophy is 
 # similar to the overall Julia philosophy -- don't copy data unless requested by 
 # the user or otherwise necessary.
 x = [5:8]
@@ -131,7 +132,7 @@ sub(df1, [1:5], "v1")
 idump( sub(df1, [1:5]), 2)
 
 
-# Expressions are used in many places in JuliaData. The functions
+# Expressions are used in many places in DataFrames.jl. The functions
 # `with`, `within`, and `based_on` evaluate an expression within a
 # DataFrame. `with` returns the result of the evaluation. These all
 # work by traversing the expression and replacing terms that are in
@@ -168,7 +169,7 @@ df1[with(df1, :(a .> 5)), :]
 
 
 # TODO: pipelining
-# The pipeline operator (`|`) is useful for many JuliaData operations.
+# The pipeline operator (`|`) is useful for many DataFrames.jl operations.
 # This is handy at the REPL to evaluate the structure of a result:
 df1[:( a .> 5 )] | dump
 
