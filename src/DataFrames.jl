@@ -4,6 +4,8 @@ require("Options.jl")
 module DataFrames
 
 using Base
+using Base.Intrinsics
+
 import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote, Base.promote_rule,
        Base.similar, Base.fill, Base.fill!, Base.one, Base.copy_to, Base.reshape,
        Base.convert, Base.reinterpret, Base.ref, Base.assign, Base.check_bounds,
