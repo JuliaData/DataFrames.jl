@@ -1,3 +1,6 @@
+require("Options.jl")   
+
+
 module DataFrames
 
 using Base
@@ -32,15 +35,14 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.copy, Base.deepcopy,
        Base.dump, Base.summary,
        Base.sub,
-       Base.zeros
+       Base.zeros,
+       Base.box, Base.unbox
 
+using OptionsMod
 
 require("enum.jl")
 require("bitarray.jl")
 
-## require("options.jl")   ## to load the extras version
-require("Options.jl")   ## to load the package version
-using OptionsMod
 
 ## ---- index.jl ----
 ## Types
