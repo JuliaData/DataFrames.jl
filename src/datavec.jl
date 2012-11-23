@@ -527,7 +527,6 @@ function assign{T}(x::AbstractDataVec{T}, v::T, rng::Range1)
     end
 end
 
-
 # x[2:3] = ["cat", "dog"]
 function assign{T}(x::DataVec{T}, vs::Vector{T}, rng::Range1)
     if length(rng) != length(vs)
@@ -771,7 +770,33 @@ end
 
 # TODO: div(dat, 2) works, but zz ./ 2 doesn't
 
+function DataVec(t::Type, n::Int64)
+    data = Array(t, n)
+    is_missing = Array(Bool, n)
+    for i in 1:n
+        data[i] = baseval(t)
+        is_missing[i] = true
+    end
+    DataVec(data, is_missing)
+end
 
+function dvzeros(n::Int64)
+    data = zeros(n)
+    is_missing = Array(Bool, n)
+    for i in 1:n
+        is_missing[i] = false
+    end
+    DataVec(data, is_missing)
+end
+
+function dvones(n::Int64)
+    data = ones(n)
+    is_missing = Array(Bool, n)
+    for i in 1:n
+        is_missing[i] = false
+    end
+    DataVec(data, is_missing)
+end
 
 ##
 ## Extras

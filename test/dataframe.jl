@@ -59,3 +59,45 @@ df2 = DataFrame(quote
 end)
 df1[1:2,:] = df2[4:5,:]
 @test df1[1:2,:] == df2[4:5,:]
+
+test_group("Empty DataFrame constructors")
+df = DataFrame(10, 5)
+@assert nrow(df) == 10
+@assert ncol(df) == 5
+@assert typeof(df[:, 1]) == DataVec{Float64}
+
+df = DataFrame(Int64, 10, 3)
+@assert nrow(df) == 10
+@assert ncol(df) == 3
+@assert typeof(df[:, 1]) == DataVec{Int64}
+@assert typeof(df[:, 2]) == DataVec{Int64}
+@assert typeof(df[:, 3]) == DataVec{Int64}
+
+df = DataFrame({Int64, Float64, ASCIIString}, 100)
+@assert nrow(df) == 100
+@assert ncol(df) == 3
+@assert typeof(df[:, 1]) == DataVec{Int64}
+@assert typeof(df[:, 2]) == DataVec{Float64}
+@assert typeof(df[:, 3]) == DataVec{ASCIIString}
+
+df = DataFrame({Int64, Float64, ASCIIString}, ["A", "B", "C"], 100)
+@assert nrow(df) == 100
+@assert ncol(df) == 3
+@assert typeof(df[:, 1]) == DataVec{Int64}
+@assert typeof(df[:, 2]) == DataVec{Float64}
+@assert typeof(df[:, 3]) == DataVec{ASCIIString}
+
+df = dfzeros(10, 5)
+@assert nrow(df) == 10
+@assert ncol(df) == 5
+@assert typeof(df[:, 1]) == DataVec{Float64}
+
+df = dfones(10, 5)
+@assert nrow(df) == 10
+@assert ncol(df) == 5
+@assert typeof(df[:, 1]) == DataVec{Float64}
+
+df = dfeye(10, 5)
+@assert nrow(df) == 10
+@assert ncol(df) == 5
+@assert typeof(df[:, 1]) == DataVec{Float64}

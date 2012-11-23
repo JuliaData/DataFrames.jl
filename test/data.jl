@@ -407,3 +407,13 @@ a2 = cut(x, [-2, 3, 4.0])
 @assert a2[2] == "(-2.0,3.0]"
 @assert a2[4] == "(4.0,6.0]"
 
+# TODO: Test new constructors
+test_group("New DataVec constructors")
+dv = DataVec(Int64, 5)
+@assert all(isna(dv))
+dv = DataVec(Float64, 5)
+@assert all(isna(dv))
+dv = dvzeros(5)
+@assert all(dv .== 0.0)
+dv = dvones(5)
+@assert all(dv .== 1.0)
