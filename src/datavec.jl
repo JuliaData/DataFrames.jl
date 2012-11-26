@@ -824,3 +824,8 @@ function cut{T}(x::Vector{T}, breaks::Vector{T})
     PooledDataVec(refs, pool, KEEP, "")
 end
 cut(x::Vector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
+
+function .^{T}(x::DataVec{T}, degree::Int)
+    newx = x.data.^degree
+    DataVec(newx, x.na, x.naRule, convert(eltype(newx), x.replaceVal))
+end

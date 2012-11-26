@@ -51,6 +51,10 @@ end
 unique_symbols(ex::Array{Expr,1}) = [unique_symbols(ex[1])]
 unique_symbols(ex::Symbol) = [ex]
 unique_symbols(ex::Array{Symbol,1}) = [ex[1]]
+unique_symbols(ex::Int) = []      ## Added so that numeric arguments can be passed to formula
+unique_symbols(ex::Float64) = []  ## expansion functions like poly or spline
+unique_symbols(ex::Bool) = []     ## 
+
 
 # Create a DataFrame containing only variables required by the Formula
 # Include grouped indexes present in original DataFrame that are in Formula
@@ -269,7 +273,6 @@ function expand(poolcol::PooledDataVec, colname::ByteString, df::AbstractDataFra
     DataFrame(newcol, convert(Vector{ByteString}, newcolname))
 end
 
-
 #
 # Methods for Formula expansion
 #
@@ -290,3 +293,7 @@ function *(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     d = insert(d, all_interactions(expand(args, df)))
     d
 end
+
+function poly(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
+     poly(expand(args[1], df), args[2:end]...)
+ end
