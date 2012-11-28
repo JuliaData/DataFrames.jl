@@ -417,3 +417,7 @@ dv = dvzeros(5)
 @assert all(dv .== 0.0)
 dv = dvones(5)
 @assert all(dv .== 1.0)
+
+# No more NA corruption
+df = dfones(10_000, 10)
+@assert !any(isna(df))

@@ -240,7 +240,7 @@ function ref(::Type{PooledDataVec}, vals...)
 end
 
 # constructor from base type object
-DataVec(x::Vector) = DataVec(x, BitArray(length(x)))
+DataVec(x::Vector) = DataVec(x, bitfalses(length(x)))
 PooledDataVec(x::Vector) = PooledDataVec(x, falses(length(x)))
 
 # copy does a deep copy
