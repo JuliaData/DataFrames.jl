@@ -1,216 +1,244 @@
-#
-# Code for *SV types can be more abstract.
-# Could add intermediate types.
-# Could use macros.
-#
+abstract AbstractDataStream
 
-#
-# Temporary hack to work with CSV, TSV and WSV files.
-#
-
-function parse_csv_line(line)
-  map(x -> float(x), split(line, ","))
-end
-
-function parse_tsv_line(line)
-  map(x -> float(x), split(line, "\t"))
-end
-
-function parse_wsv_line(line)
-  map(x -> float(x), split(line, r"\s+"))
-end
-
-#
-# Abstract Type
-#
-
-abstract DataStream
-
-#
-# Concrete Types
-#
-
-type DataFrameDataStream <: DataStream
-  dataframe::DataFrame
-  minibatch_size::Int
-end
-
-type MatrixDataStream <: DataStream
-  matrix::Matrix
-  minibatch_size::Int
-end
-
-type CSVDataStream <: DataStream
+type DataStream <: AbstractDataStream
   filename::String
   stream::IOStream
-  minibatch_size::Int
+  separator::Char
+  quotation_character::Char
+  missingness_indicators::Vector
+  header::Bool
+  column_names::Vector
+  column_types::Vector
+  minibatch_size::Int64
 end
 
-type TSVDataStream <: DataStream
-  filename::String
-  stream::IOStream
-  minibatch_size::Int
+function DataStream{T <: String}(filename::T, minibatch_size::Int64)
+  stream = open(filename, "r")
+  separator = DataFrames.determine_separator(filename)
+  quotation_character = '"'
+  missingness_indicators = ["", "NA"]
+  header = true
+  # Will need to guess metadata in the future for huge data sets
+  (column_names, column_types, nrows) =
+   DataFrames.determine_metadata(filename,
+                                   separator,
+                                   quotation_character,
+                                   missingness_indicators,
+                                   header)
+  DataStream(filename, stream, separator, quotation_character,
+             missingness_indicators, header, column_names,
+             column_types, minibatch_size)
 end
 
-type WSVDataStream <: DataStream
-  filename::String
-  stream::IOStream
-  minibatch_size::Int
+function DataStream{T <: String}(filename::T)
+  DataStream(filename, 1)
 end
 
-type SQLDataStream <: DataStream
-  minibatch_size::Int
+function start(ds::DataStream)
+  ds.stream = open(ds.filename, "r")
+
+  # Read one line to remove header in advance
+  if ds.header
+    readline(ds.stream)
+  end
+
+  return DataFrame(1, 1)
 end
 
-#
-# DataFrame
-#
-
-DataFrameDataStream(df::DataFrame) = DataFrameDataStream(df, 1)
-
-start(::DataFrameDataStream) = 1
-
-function next(dfds::DataFrameDataStream, index::Int)
-  index_set = index : min(index + dfds.minibatch_size - 1, nrow(dfds.dataframe))
-  (dfds.dataframe[index_set , :], index + dfds.minibatch_size)
+function next(ds::DataStream, df::DataFrame)
+  df = read_minibatch(ds.stream,
+                      ds.separator,
+                      ds.quotation_character,
+                      ds.missingness_indicators,
+                      ds.column_names,
+                      ds.column_types,
+                      ds.minibatch_size)
+  (df, df)
 end
 
-done(dfds::DataFrameDataStream, index::Int) = index > nrow(dfds.dataframe)
-
-#
-# Matrix
-#
-
-function MatrixDataStream(m::Matrix)
-  MatrixDataStream(m, 1)
-end
-
-function start(mds::MatrixDataStream)
-  1
-end
-
-function next(mds::MatrixDataStream, index::Int)
-  index_set = index:(index + mds.minibatch_size - 1)
-  # May attept to index past boundary. Need to handle properly.
-  (mds.matrix[index_set , :], index + mds.minibatch_size)
-end
-
-function done(mds::MatrixDataStream, index::Int)
-  index > size(mds.matrix, 1)
-end
-
-#
-# CSV
-#
-
-function CSVDataStream(filename::String, minibatch_size::Int)
-  CSVDataStream(filename, open(filename, "r"), minibatch_size)
-end
-
-function CSVDataStream(filename::String)
-  CSVDataStream(filename, open(filename, "r"), 1)
-end
-
-function start(cds::CSVDataStream)
-  cds.stream = open(cds.filename, "r")
-  seek(cds.stream, 0)
-  readline(cds.stream)
-end
-
-function next(cds::CSVDataStream, line::String)
-  (parse_csv_line(chomp(line)), readline(cds.stream))
-end
-
-function done(cds::CSVDataStream, line::String)
-  if !isempty(line)
-    return false
-  else
-    close(cds.stream)
+function done(ds::DataStream, df::DataFrame)
+  if nrow(df) == 0
+    close(ds.stream)
     return true
+  else
+    return false
   end
 end
 
 #
-# TSV
-#
-
-function TSVDataStream(filename::String, minibatch_size::Int)
-  TSVDataStream(filename, open(filename, "r"), minibatch_size)
-end
-
-function TSVDataStream(filename::String)
-  TSVDataStream(filename, open(filename, "r"), 1)
-end
-
-function start(tds::TSVDataStream)
-  tds.stream = open(tds.filename, "r")
-  seek(tds.stream, 0)
-  readline(tds.stream)
-end
-
-function next(tds::TSVDataStream, line::String)
-  (parse_tsv_line(chomp(line)), readline(tds.stream))
-end
-
-function done(tds::TSVDataStream, line::String)
-  if !isempty(line)
-    return false
-  else
-    close(tds.stream)
-    return true
-  end
-end
-
-#
-# WSV
-#
-
-function WSVDataStream(filename::String, minibatch_size::Int)
-  WSVDataStream(filename, open(filename, "r"), minibatch_size)
-end
-
-function WSVDataStream(filename::String)
-  WSVDataStream(filename, open(filename, "r"), 1)
-end
-
-function start(wds::WSVDataStream)
-  wds.stream = open(wds.filename, "r")
-  seek(wds.stream, 0)
-  readline(wds.stream)
-end
-
-function next(wds::WSVDataStream, line::String)
-  (parse_wsv_line(chomp(line)), readline(wds.stream))
-end
-
-function done(wds::WSVDataStream, line::String)
-  if !isempty(line)
-    return false
-  else
-    close(wds.stream)
-    return true
-  end
-end
-
-
-
-#
-# Functions
+# Streaming data functions
 #
 
 function colmeans(ds::DataStream)
-    (df, i) = next(ds, 1)
-    res = colwise(df, :mean)
-    totallength = nrow(df)
-    N = ncol(df)
-    while !done(ds, i)
-        (df, i) = next(ds, i)
-        df_means = colwise(df, :mean)
-        nrow_df = nrow(df)
-        for k in 1:N
-            res[1,k] = (res[1,k] * totallength + df_means[1,k] * nrow_df) / (totallength + nrow_df)
+  p = length(ds.column_types)
+  sums = zeros(p)
+  ns = zeros(Int64, p)
+
+  for minibatch in ds
+    for row_index in 1:nrow(minibatch)
+      for column_index in 1:p
+        if ds.column_types[column_index] <: Real && !isna(minibatch[row_index, column_index])
+          sums[column_index] += minibatch[row_index, column_index]
+          ns[column_index] += 1
         end
-        totallength += nrow_df
+      end
     end
-    res
+  end
+
+  result_types = copy(ds.column_types)
+  for j in 1:p
+    if result_types[j] == Int64
+      result_types[j] = Float64
+    end
+  end
+  results = DataFrame(result_types, ds.column_names, 1)
+
+  for column_index in 1:p
+    if ds.column_types[column_index] <: Real && ns[column_index] != 0
+      results[1, column_index] = sums[column_index] / ns[column_index]
+    end
+  end
+
+  return results
 end
+
+function colvars(ds::DataStream)
+  p = length(ds.column_types)
+  means = zeros(p)
+  deltas = zeros(p)
+  m2s = zeros(p)
+  vars = zeros(p)
+  ns = zeros(Int64, p)
+
+  for minibatch in ds
+    for row_index in 1:nrow(minibatch)
+      for column_index in 1:p
+        if ds.column_types[column_index] <: Real && !isna(minibatch[row_index, column_index])
+          ns[column_index] += 1
+          deltas[column_index] = minibatch[row_index, column_index] - means[column_index]
+          means[column_index] += deltas[column_index] / ns[column_index]
+          m2s[column_index] = m2s[column_index] + deltas[column_index] * (minibatch[row_index, column_index] - means[column_index])
+          vars[column_index] = m2s[column_index] / (ns[column_index] - 1)
+        end
+      end
+    end
+  end
+
+  result_types = copy(ds.column_types)
+  for j in 1:p
+    if result_types[j] == Int64
+      result_types[j] = Float64
+    end
+  end
+  results = DataFrame(result_types, ds.column_names, 1)
+
+  for column_index in 1:p
+    if ds.column_types[column_index] <: Real && ns[column_index] != 0
+      results[1, column_index] = vars[column_index]
+    end
+  end
+
+  return results
+end
+
+function colranges(ds::DataStream)
+  p = length(ds.column_types)
+  mins = [Inf for i in 1:p]
+  maxs = [-Inf for i in 1:p]
+  ns = zeros(Int64, p)
+
+  for minibatch in ds
+    for row_index in 1:nrow(minibatch)
+      for column_index in 1:p
+        if ds.column_types[column_index] <: Real && !isna(minibatch[row_index, column_index])
+          ns[column_index] += 1
+          if minibatch[row_index, column_index] < mins[column_index]
+            mins[column_index] = minibatch[row_index, column_index]
+          end
+          if minibatch[row_index, column_index] > maxs[column_index]
+            maxs[column_index] = minibatch[row_index, column_index]
+          end
+        end
+      end
+    end
+  end
+
+  result_types = copy(ds.column_types)
+  for j in 1:p
+    if result_types[j] == Int64
+      result_types[j] = Float64
+    end
+  end
+  df_mins = DataFrame(result_types, ds.column_names, 1)
+  df_maxs = DataFrame(result_types, ds.column_names, 1)
+
+  for column_index in 1:p
+    if ds.column_types[column_index] <: Real && ns[column_index] != 0
+      df_mins[1, column_index] = mins[column_index]
+      df_maxs[1, column_index] = maxs[column_index]
+    end
+  end
+
+  return (df_mins, df_maxs)
+end
+
+# Two-pass algorithm
+function cov(ds::DataStream)
+  p = length(ds.column_types)
+
+  # Make one pass to compute means
+  means = colmeans(ds)
+
+  # Now compute covariances during second pass
+  ns = zeros(Int64, p, p)
+  covariances = dfzeros(p, p)
+ 
+  for minibatch in ds
+    for row_index in 1:nrow(minibatch)
+      for column_index in 1:p
+        for alt_column_index in 1:p
+          if ds.column_types[column_index] <: Real &&
+                !isna(minibatch[row_index, column_index]) &&
+                ds.column_types[alt_column_index] <: Real &&
+                !isna(minibatch[row_index, alt_column_index])
+            ns[column_index, alt_column_index] += 1
+            n = ns[column_index, alt_column_index]
+            a = minibatch[row_index, column_index] - means[1, column_index]
+            b = minibatch[row_index, alt_column_index] - means[1, alt_column_index]
+            covariances[column_index, alt_column_index] = ((n - 1) / n) * covariances[column_index, alt_column_index] + (a * b) / n
+          end
+        end
+      end
+    end
+  end
+
+  # Scale estimates by (n / (n - 1))
+  for i in 1:p
+    for j in 1:p
+      if !(ds.column_types[i] <: Real) || !(ds.column_types[j] <: Real)
+        covariances[i, j] = NA
+      else
+        n = ns[i, j]
+        covariances[i, j] *= (n / (n - 1))
+      end
+    end
+  end
+
+  colnames!(covariances, ds.column_names)
+
+  return covariances
+end
+
+function cor(ds::DataStream)
+  covariances = cov(ds)
+  correlations = deepcopy(covariances)
+  p = nrow(correlations)
+  for i in 1:p
+    for j in 1:p
+      correlations[i, j] = covariances[i, j] / sqrt(covariances[i, i] * covariances[j, j])
+    end
+  end
+  return correlations
+end
+
+# TODO: Implement indexing into DataStream's

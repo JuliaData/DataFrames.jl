@@ -131,3 +131,31 @@ function _same_set(a, b)
     # there are definitely MUCH faster ways of doing this
     length(a) == length(b) && all(sort(a) == sort(b))
 end
+
+function int_able(s::String)
+  ismatch(r"^(-)?\d+$", s)
+end
+
+function float_able(s::String)
+  ismatch(r"^(-)?\d+(\.\d+(e(-?)\d+)?)?$", s)
+end
+
+function tightest_type(s::String, t::Any)
+  if t == ASCIIString
+    return(ASCIIString)
+  elseif t == Float64
+    if float_able(s)
+      return Float64
+    else
+      return ASCIIString
+    end
+  elseif t == Int64
+    if int_able(s)
+      return Int64
+    elseif float_able(s)
+      return Float64
+    else
+      return ASCIIString
+    end
+  end
+end

@@ -1281,7 +1281,21 @@ end
 # DataFrame -> Array{promoted_type, 2}
 # Note: this doesn't work yet for DataVecs. It might once promotion
 # with Arrays is added (work needed).
-matrix(d::AbstractDataFrame) = reshape([d...],size(d))
+# matrix(d::AbstractDataFrame) = reshape([d...],size(d))
+function matrix(df::DataFrame)
+    n, p = size(df)
+    m = zeros(n, p)
+    for i in 1:n
+        for j in 1:p
+            if isna(df[i, j])
+                error("DataFrame's with missing entries cannot be converted")
+            else
+                m[i, j] = df[i, j]
+            end
+        end
+    end
+    return m
+end
 
 function duplicated(df::AbstractDataFrame)
     # Return a Vector{Bool} indicated whether the row is a duplicate
@@ -1325,3 +1339,118 @@ function load_df(filename)
     close(f)
     return dd
 end
+
+# Initialize empty DataFrame objects of arbitrary size
+# Fill with Float64-typed NA's
+function DataFrame(n::Int64, p::Int64)
+  columns = Array(Any, p)
+  names = Array(ByteString, p)
+  for j in 1:p
+    names[j] = "x$(j)"
+    columns[j] = DataVec(Array(Float64, n), Array(Bool, n))
+    for i in 1:n
+      columns[j][i] = NA
+    end
+  end
+  DataFrame(columns, Index(names))
+end
+
+function DataFrame(column_types::Vector, column_names::Vector, n::Int64)
+  p = length(column_types)
+  columns = Array(Any, p)
+
+  if column_names == []
+    names = Array(ByteString, p)
+    for j in 1:p
+      names[j] = "x$j"
+    end
+  else
+    names = column_names
+  end
+
+  for j in 1:p
+    columns[j] = DataVec(Array(column_types[j], n), Array(Bool, n))
+    for i in 1:n
+      columns[j][i] = baseval(column_types[j])
+      columns[j][i] = NA
+    end
+  end
+
+  DataFrame(columns, Index(names))
+end
+
+function DataFrame(column_types::Vector, nrows::Int64)
+    p = length(column_types)
+    column_names = Array(ByteString, 0)
+    DataFrame(column_types, column_names, nrows)
+end
+
+# t is a Type
+function DataFrame(t::Any, nrows::Int64, ncols::Int64)
+    column_types = Array(Any, ncols)
+    for i in 1:ncols
+        column_types[i] = t
+    end
+    column_names = Array(ByteString, 0)
+    DataFrame(column_types, column_names, nrows)
+end
+
+# Initialize standard DataFrame's with non-NA Float64 entries
+function dfzeros(n::Int64, p::Int64)
+    data = zeros(n, p)
+    is_missing = Array(Bool, n, p)
+    for i in 1:n
+        for j in 1:p
+            is_missing[i, j] = false
+        end
+    end
+    #DataFrame(data, is_missing)
+    DataFrame(data)
+end
+
+function dfones(n::Int64, p::Int64)
+    data = ones(n, p)
+    is_missing = Array(Bool, n, p)
+    for i in 1:n
+        for j in 1:p
+            is_missing[i, j] = false
+        end
+    end
+    #DataFrame(data, is_missing)
+    DataFrame(data)
+end
+
+function dfeye(n::Int64, p::Int64)
+    data = eye(n, p)
+    is_missing = Array(Bool, n, p)
+    for i in 1:n
+        for j in 1:p
+            is_missing[i, j] = false
+        end
+    end
+    #DataFrame(data, is_missing)
+    DataFrame(data)
+end
+
+function dfeye(n::Int64)
+    data = eye(n, n)
+    is_missing = Array(Bool, n, n)
+    for i in 1:n
+        for j in 1:p
+            is_missing[i, j] = false
+        end
+    end
+    #DataFrame(data, is_missing)
+    DataFrame(data)
+end
+
+function isna(df::DataFrame)
+    results = Array(Bool, size(df))
+    for i in 1:nrow(df)
+        for j in 1:ncol(df)
+            results[i, j] = isna(df[i, j])
+        end
+    end
+    return results
+end
+

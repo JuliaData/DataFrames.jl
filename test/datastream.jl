@@ -1,102 +1,83 @@
-# Load files
-load("src/init.jl")
-load("src/datastream.jl")
+load("DataFrames")
+using DataFrames
 
-#
-# MatrixDataStream
-#
+# Need to deal with no header cleanly
+filename = file_path(julia_pkgdir(),"DataFrames/test/data/sample_data.csv")
 
-# Create a MatrixDataStream
-m = eye(3)
-mds = MatrixDataStream(m)
+ds = DataStream(filename)
+df = start(ds)
+(new_df, new_df) = next(ds, df)
+@assert done(ds, new_df) == false
+(new_df, new_df) = next(ds, new_df)
+@assert done(ds, new_df) == false
+(new_df, new_df) = next(ds, new_df)
+@assert done(ds, new_df) == false
+(new_df, new_df) = next(ds, new_df)
+@assert done(ds, new_df) == true
 
-# Initialize
-i = start(mds)
+filename = file_path(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
 
-# Row 1
-(state, i) = next(mds, i)
-done(mds, i)
+ds = DataStream(filename, 100)
+df = start(ds)
+(new_df, new_df) = next(ds, df)
+@assert done(ds, new_df) == false
 
-# Row 2
-(state, i) = next(mds, i)
-done(mds, i)
+ds = DataStream(filename, 5)
 
-# Row 3
-(state, i) = next(mds, i)
-done(mds, i)
-
-# An explicit for loop
-for row = mds
-  println(row)
+for minibatch in ds
+  println(" ** Current Minibatch ** ")
+  print(minibatch)
+  println()
+  println()
 end
 
-#
-# CSVDataStream
-#
+means = DataFrames.colmeans(ds)
+@assert abs(means[1, 4] - (-0.005686449)) < 10e-4
+@assert abs(means[1, 5] - 19.01197) < 10e-4
 
-cds = CSVDataStream("test/data/sample_data.csv")
+vars = DataFrames.colvars(ds)
+@assert abs(vars[1, 4] - 0.98048) < 10e-4
+@assert abs(vars[1, 5] - 0.989416) < 10e-4
 
-line = start(cds)
-(df, line) = next(cds, line)
-done(cds, line)
+(mins, maxs) = DataFrames.colranges(ds)
+@assert abs(mins[1, 4] - (-4.33635)) < 10e-4
+@assert abs(mins[1, 5] - 15.6219) < 10e-4
+@assert abs(maxs[1, 4] - 3.86857) < 10e-4
+@assert abs(maxs[1, 5] - 22.574) < 10e-4
 
-(df, line) = next(cds, line)
-done(cds, line)
+covariances = DataFrames.cov(ds)
+for i in ncol(covariances)
+  @assert abs(covariances[i, i] - vars[1, i]) < 10e-4
+end
+@assert abs(covariances[4, 4] - 0.980479916) < 10e-4
+@assert abs(covariances[4, 5] - 0.009823644) < 10e-4
+@assert abs(covariances[5, 4] - 0.009823644) < 10e-4
+@assert abs(covariances[5, 5] - 0.989415811) < 10e-4
 
-(df, line) = next(cds, line)
-done(cds, line)
+# Need to wait for upgraded arithmetic operations for NA, DV's, DF's
+# correlations = DataFrames.cor(ds)
+# for i in ncol(correlations)
+#   for j in ncol(correlations)
+#     true_value = covariances[i, j] / sqrt(covariances[i, i] * covariances[j, j])
+#     @assert abs(correlations[i, j] - true_value) < 10e-4
+#   end
+# end
 
-for row in cds
-  println(row)
+# Deal with different delimiters
+filename = file_path(julia_pkgdir(),"DataFrames/test/data/sample_data.csv")
+ds = DataStream(filename)
+for row in ds
+  print(row)
 end
 
-#
-# TSVDataStream
-#
-
-tds = TSVDataStream("test/data/sample_data.tsv")
-
-line = start(tds)
-(df, line) = next(tds, line)
-done(tds, line)
-
-(df, line) = next(tds, line)
-done(tds, line)
-
-(df, line) = next(tds, line)
-done(tds, line)
-
-for row in tds
-  println(row)
+filename = file_path(julia_pkgdir(),"DataFrames/test/data/sample_data.tsv")
+ds = DataStream(filename)
+for row in ds
+  print(row)
 end
 
-#
-# WSVDataStream
-#
-
-wds = WSVDataStream("test/data/sample_data.wsv")
-
-line = start(wds)
-(df, line) = next(wds, line)
-done(wds, line)
-
-(df, line) = next(wds, line)
-done(wds, line)
-
-(df, line) = next(wds, line)
-done(wds, line)
-
-for row in wds
-  println(row)
+filename = file_path(julia_pkgdir(),"DataFrames/test/data/sample_data.wsv")
+ds = DataStream(filename)
+for row in ds
+  print(row)
 end
-
-
-#
-# colmeans
-#
-
-Nrow = 55
-d = DataFrame({randn(Nrow), randn(Nrow)})
-ds = DataFrameDataStream(d, 10)
-colwise(d, :mean)
-colmeans(ds)

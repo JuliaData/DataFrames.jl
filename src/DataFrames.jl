@@ -1,10 +1,12 @@
 require("Options.jl")   
 
-
 module DataFrames
 
 using Base
 using Base.Intrinsics
+
+# TODO: Fix all arithmetic for DataVec's and DataFrame's
+# import Base.dot, Base.mean, Base.median, Base.var, Base.std
 
 import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote, Base.promote_rule,
        Base.similar, Base.fill, Base.fill!, Base.one, Base.copy_to, Base.reshape,
@@ -44,7 +46,6 @@ using OptionsMod
 
 require("enum.jl")
 require("bitarray.jl")
-
 
 ## ---- index.jl ----
 ## Types
@@ -99,7 +100,7 @@ export Formula, ModelFrame, ModelMatrix
 ## Methods
 export model_frame, model_matrix, interaction_design_matrix 
 ## all_interactions # looks internal to me. Uncomment if it should be exported.
-     
+
 ## ---- utils.jl ----
 ## None of the methods in utils look like they should be exported.
 
@@ -110,7 +111,6 @@ export model_frame, model_matrix, interaction_design_matrix
 ## export IndexedVec, Indexer
 ## ## Methods
 ## export in, between
- 
 
 load("DataFrames/src/index.jl")
 load("DataFrames/src/datavec.jl")
@@ -121,5 +121,23 @@ load("DataFrames/src/utils.jl")
 
 ## load("dlmread.jl")
 ## load("indexing.jl")
+
+# New I/O operations
+export read_minibatch, read_table, write_table
+load("DataFrames/src/io.jl")
+
+# New DataStream operations
+import Base.start, Base.next, Base.done
+export DataStream
+load("DataFrames/src/datastream.jl")
+
+# New initialized constructors
+export dvzeros, dvones
+export dfzeros, dfones, dfeye
+
+# Improved arithmetic
+# Still need dmzeros, dmones, dmeye for DataMatrix
+# load("DataFrames/src/arithmetic.jl")
+# export dot # Not clear why this line had to be written
 
 end # module DataFrames
