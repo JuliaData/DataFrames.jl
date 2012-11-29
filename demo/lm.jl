@@ -1,4 +1,5 @@
-load("distributions.jl")
+load("Distributions")
+using Distributions
 
 type OLSResults
   call::Formula
@@ -59,7 +60,7 @@ function print(results::OLSResults)
 end
 
 # minimal first version: support y ~ x1 + x2 + log(x3)
-function lm(ex::Expr, df::DataFrame)
+function lm(ex::Expr, df::AbstractDataFrame)
   call = Formula(ex)
   mf = model_frame(call, df)
   mm = model_matrix(mf)

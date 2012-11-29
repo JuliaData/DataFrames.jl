@@ -999,8 +999,11 @@ end
 #
 
 # map() sweeps along groups
+## function map(f::Function, gd::GroupedDataFrame)
+##     [f(d) for d in gd]
+## end
 function map(f::Function, gd::GroupedDataFrame)
-    [f(d) for d in gd]
+    [g[1,gd.cols] => f(g) for g in gd]
 end
 ## function map(f::Function, gd::GroupedDataFrame)
 ##     # preallocate based on the results on the first one
