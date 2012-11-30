@@ -221,6 +221,21 @@ for f in (:(!), :(+), :(-))
     end
 end
 
+# Base functions
+# These provide an additional mechanism for vectorizing
+# DataVec and DataFrame operations. Should try out performance
+for f in (:abs, :sign, :acos, :acosh, :asin, :asinh,
+          :atan, :atan2, :atanh, :sin, :sinh, :cos,
+          :cosh, :tan, :tanh, :ceil, :floor,
+          :round, :trunc, :signif, :exp, :log,
+          :log10, :log1p, :log2, :logb, :sqrt)
+    @eval begin
+        function ($f)(d::NAtype)
+            return NA
+        end
+    end
+end
+
 # Missing binary operators on NA's
 for f in (:(==), :(!=), :(<), :(>), :(<=), :(>=), :(.>), :(.>=),
           :max, :min,
@@ -524,12 +539,12 @@ ref(x::AbstractIndex, idx::AbstractDataVec{Int}) = x[nafilter(idx)]
 
 # assign variants
 # x[3] = "cat"
-function assign{T}(x::DataVec{T}, v::T, i::Int)
+function assign{S, T}(x::DataVec{S}, v::T, i::Int)
     x.data[i] = v
     x.na[i] = false
     return x[i]
 end
-function assign{T}(x::PooledDataVec{T}, v::T, i::Int)
+function assign{S, T}(x::PooledDataVec{S}, v::T, i::Int)
     # TODO handle pool ordering
     # note: NA replacement comes for free here
     
@@ -547,13 +562,13 @@ function assign{T}(x::PooledDataVec{T}, v::T, i::Int)
 end
 
 # x[[3, 4]] = "cat"
-function assign{T}(x::DataVec{T}, v::T, is::Vector{Int})
+function assign{S, T}(x::DataVec{S}, v::T, is::Vector{Int})
     x.data[is] = v
     x.na[is] = false
     return x[is] # this could get slow -- maybe not...
 end
 # PooledDataVec can use a possibly-slower generic approach
-function assign{T}(x::AbstractDataVec{T}, v::T, is::Vector{Int})
+function assign{S, T}(x::AbstractDataVec{S}, v::T, is::Vector{Int})
     for i in is
         x[i] = v
     end
@@ -561,7 +576,7 @@ function assign{T}(x::AbstractDataVec{T}, v::T, is::Vector{Int})
 end
 
 # x[[3, 4]] = ["cat", "dog"]
-function assign{T}(x::DataVec{T}, vs::Vector{T}, is::Vector{Int})
+function assign{S, T}(x::DataVec{S}, vs::Vector{T}, is::Vector{Int})
     if length(is) != length(vs)
         throw(ArgumentError("can't assign when index and data vectors are different length"))
     end
@@ -570,7 +585,7 @@ function assign{T}(x::DataVec{T}, vs::Vector{T}, is::Vector{Int})
     return x[is]
 end
 # PooledDataVec can use a possibly-slower generic approach
-function assign{T}(x::AbstractDataVec{T}, vs::Vector{T}, is::Vector{Int})
+function assign{S, T}(x::AbstractDataVec{S}, vs::Vector{T}, is::Vector{Int})
     if length(is) != length(vs)
         throw(ArgumentError("can't assign when index and data vectors are different length"))
     end
@@ -581,13 +596,13 @@ function assign{T}(x::AbstractDataVec{T}, vs::Vector{T}, is::Vector{Int})
 end
 
 # x[[true, false, true]] = "cat"
-function assign{T}(x::DataVec{T}, v::T, mask::Vector{Bool})
+function assign{S, T}(x::DataVec{S}, v::T, mask::Vector{Bool})
     x.data[mask] = v
     x.na[mask] = false
     return x[mask]
 end
 # PooledDataVec can use a possibly-slower generic approach
-function assign{T}(x::AbstractDataVec{T}, v::T, mask::Vector{Bool})
+function assign{S, T}(x::AbstractDataVec{S}, v::T, mask::Vector{Bool})
     for i = 1:length(x)
         if mask[i] == true
             x[i] = v
@@ -597,7 +612,7 @@ function assign{T}(x::AbstractDataVec{T}, v::T, mask::Vector{Bool})
 end
 
 # x[[true, false, true]] = ["cat", "dog"]
-function assign{T}(x::DataVec{T}, vs::Vector{T}, mask::Vector{Bool})
+function assign{S, T}(x::DataVec{S}, vs::Vector{T}, mask::Vector{Bool})
     if sum(mask) != length(vs)
         throw(ArgumentError("can't assign when boolean trues and data vectors are different length"))
     end
@@ -606,7 +621,7 @@ function assign{T}(x::DataVec{T}, vs::Vector{T}, mask::Vector{Bool})
     return x[mask]
 end
 # PooledDataVec can use a possibly-slower generic approach
-function assign{T}(x::AbstractDataVec{T}, vs::Vector{T}, mask::Vector{Bool})
+function assign{S, T}(x::AbstractDataVec{S}, vs::Vector{T}, mask::Vector{Bool})
     if sum(mask) != length(vs)
         throw(ArgumentError("can't assign when boolean trues and data vectors are different length"))
     end
@@ -622,20 +637,20 @@ function assign{T}(x::AbstractDataVec{T}, vs::Vector{T}, mask::Vector{Bool})
 end
 
 # x[2:3] = "cat"
-function assign{T}(x::DataVec{T}, v::T, rng::Range1)
+function assign{S, T}(x::DataVec{S}, v::T, rng::Range1)
     x.data[rng] = v
     x.na[rng] = false
     return x[rng]
 end
 # PooledDataVec can use a possibly-slower generic approach
-function assign{T}(x::AbstractDataVec{T}, v::T, rng::Range1)
+function assign{S, T}(x::AbstractDataVec{S}, v::T, rng::Range1)
     for i in rng
         x[i] = v
     end
 end
 
 # x[2:3] = ["cat", "dog"]
-function assign{T}(x::DataVec{T}, vs::Vector{T}, rng::Range1)
+function assign{S, T}(x::DataVec{S}, vs::Vector{T}, rng::Range1)
     if length(rng) != length(vs)
         throw(ArgumentError("can't assign when index and data vectors are different length"))
     end
@@ -644,7 +659,7 @@ function assign{T}(x::DataVec{T}, vs::Vector{T}, rng::Range1)
     return x[rng]
 end
 # PooledDataVec can use a possibly-slower generic approach
-function assign{T}(x::AbstractDataVec{T}, vs::Vector{T}, rng::Range1)
+function assign{S, T}(x::AbstractDataVec{S}, vs::Vector{T}, rng::Range1)
     if length(rng) != length(vs)
         throw(ArgumentError("can't assign when index and data vectors are different length"))
     end
@@ -679,7 +694,7 @@ assign{T}(x::PooledDataVec{T}, n::NAtype, rng::Range1) = begin (x.refs[rng] = 0)
 
 # TODO: replace!(x::PooledDataVec{T}, from::T, to::T)
 # and similar to and from NA
-function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::T)
+function replace!{R, S, T}(x::PooledDataVec{R}, fromval::S, toval::T)
     # throw error if fromval isn't in the pool
     fromidx = findfirst(x.pool, fromval)
     if fromidx == 0
@@ -699,7 +714,7 @@ function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::T)
     return toval
 end
 replace!(x::PooledDataVec{NAtype}, fromval::NAtype, toval::NAtype) = NA # no-op to deal with warning
-function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::NAtype)
+function replace!{S, T}(x::PooledDataVec{S}, fromval::T, toval::NAtype)
     fromidx = findfirst(x.pool, fromval)
     if fromidx == 0
         error("can't replace a value not in the pool in a PooledDataVec!")
@@ -709,7 +724,7 @@ function replace!{T}(x::PooledDataVec{T}, fromval::T, toval::NAtype)
     
     return NA
 end
-function replace!{T}(x::PooledDataVec{T}, fromval::NAtype, toval::T)
+function replace!{S, T}(x::PooledDataVec{S}, fromval::NAtype, toval::T)
     toidx = findfirst(x.pool, toval)
     # if toval is in the pool, just do the assignment
     if toidx != 0
@@ -723,7 +738,7 @@ function replace!{T}(x::PooledDataVec{T}, fromval::NAtype, toval::T)
     return toval
 end
 
-function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
+function PooledDataVecs{S, T}(v1::AbstractDataVec{S}, v2::AbstractDataVec{T})
     ## Return two PooledDataVecs that share the same pool.
     
     refs1 = Array(Uint16, length(v1))
@@ -823,11 +838,13 @@ function done(x::AbstractDataVec, state::Int)
 end
 
 # can promote in theory based on data type
-promote_rule{S,T}(::Type{AbstractDataVec{S}}, ::Type{T}) = promote_rule(S, T)
+promote_rule{S, T}(::Type{AbstractDataVec{S}}, ::Type{T}) = promote_rule(S, T)
 promote_rule{T}(::Type{AbstractDataVec{T}}, ::Type{T}) = T
 # TODO: Abstract? Pooled?
 
 # convert to the base type, but only if there are no NAs
+# TODO: Add convert{S, T}(::Type{S}, x::DataVec{T})
+# TODO: Add convert{S, T}(::Type{S}, x::AbstractDataVec{T})
 function convert{T}(::Type{T}, x::DataVec{T})
     if (any(x.na))
         throw(NAException("Cannot convert DataVec with NAs to base type -- naFilter or naReplace them first"))
@@ -937,7 +954,7 @@ function paste(s...)
     paste(converted...)
 end
 
-function cut{T}(x::Vector{T}, breaks::Vector{T})
+function cut{S, T}(x::Vector{S}, breaks::Vector{T})
     refs = fill(uint16(0), length(x))
     for i in 1:length(x)
         refs[i] = search_sorted(breaks, x[i])
@@ -1039,6 +1056,26 @@ for f in (:cor_pearson, :cov_pearson,
             else
                 return ($f)(dv1.data, dv2.data)
             end
+        end
+    end
+end
+
+# Conversion convenience functions
+for f in (:int, :float, :bool)
+    @eval begin
+        function ($f){T}(dv::DataVec{T})
+            if !any(isna(dv))
+                ($f)(dv.data)
+            else
+                error("Conversion impossible with NA's present")
+            end
+        end
+    end
+end
+for (f, basef) in ((:dvint, :int), (:dvfloat, :float), (:dvbool, :bool))
+    @eval begin
+        function ($f){T}(dv::DataVec{T})
+            DataVec(($basef)(dv.data), dv.na)
         end
     end
 end

@@ -50,7 +50,8 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.std, Base.var,
        Base.cor_pearson, Base.cov_pearson,
        Base.cor_spearman, Base.cov_spearman,
-       Base.fft, Base.norm
+       Base.fft, Base.norm,
+       Base.int, Base.float, Base.bool
 
 using OptionsMod
 
@@ -144,5 +145,8 @@ load("DataFrames/src/datastream.jl")
 # New initialized constructors
 export dvzeros, dvones
 export dfzeros, dfones, dfeye
+
+# Conversion functions
+export dvint, dvfloat, dvbool
 
 end # module DataFrames
