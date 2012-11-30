@@ -1454,3 +1454,102 @@ function isna(df::DataFrame)
     return results
 end
 
+# Scalar-DF + DF-Scalar operators
+# Scalar <: Real or Scalar is NA
+# Maybe add DataNumber = Union(Number, NAtype)?
+for f in (:(+), :(.+), :(-), :(.-), :(*), :(.*),
+          :(/), :(./), :(^), :(.^))
+    @eval begin
+        function ($f)(df::DataFrame, x::Union(Number, NAtype))
+            n, p = nrow(df), ncol(df)
+            # Tries to preserve types
+            results = deepcopy(df)
+            # Could instead do and only return Float64
+            # results = DataFrame(Float64, n, p)
+            for j in 1:p
+                if typeof(df[j]).parameters[1] <: Real
+                    for i in 1:n
+                        results[i, j] = ($f)(df[i, j], x)
+                    end
+                else
+                    for i in 1:n
+                        results[i, j] = NA
+                    end
+                end
+            end
+            return results
+        end
+        function ($f)(x::Union(Number, NAtype), df::DataFrame)
+            n, p = nrow(df), ncol(df)
+            # Tries to preserve types
+            results = deepcopy(df)
+            # Could instead do and only return Float64
+            # results = DataFrame(Float64, n, p)
+            for j in 1:p
+                if typeof(df[j]).parameters[1] <: Real
+                    for i in 1:n
+                        results[i, j] = ($f)(x, df[i, j])
+                    end
+                else
+                    for i in 1:n
+                        results[i, j] = NA
+                    end
+                end
+            end
+            return results
+        end
+    end
+end
+
+# DF-DF operators
+for f in (:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^))
+    @eval begin
+        function ($f)(a::DataFrame, b::DataFrame)
+            n, p = nrow(a), ncol(a)
+            if n != nrow(b) || p != ncol(b)
+                error("DataFrames must have matching sizes for arithmetic")
+            end
+            # Tries to preserve types from a
+            results = deepcopy(a)
+            for j in 1:p
+                if typeof(a[j]).parameters[1] <: Real
+                    for i in 1:n
+                        results[i, j] = ($f)(a[i, j], b[i, j])
+                    end
+                else
+                    for i in 1:n
+                        results[i, j] = NA
+                    end
+                end
+            end
+            return results
+        end
+    end
+end
+
+# Unary operators and Base functions on DataFrame's
+for f in (:(!), :(+), :(-),
+          :abs, :sign, :acos, :acosh, :asin, :asinh,
+          :atan, :atan2, :atanh, :sin, :sinh, :cos,
+          :cosh, :tan, :tanh, :ceil, :floor,
+          :round, :trunc, :signif, :exp, :log,
+          :log10, :log1p, :log2, :logb, :sqrt)
+    @eval begin
+        function ($f)(df::DataFrame)
+            res = deepcopy(df)
+            n, p = nrow(df), ncol(df)
+            for j in 1:p
+                if typeof(df[j]).parameters[1] <: Real
+                    for i in 1:n
+                        res[i, j] = ($f)(df[i, j])
+                    end
+                else
+                    for i in 1:n
+                        res[i, j] = NA
+                    end
+                end
+            end
+            return res
+        end
+    end
+end
