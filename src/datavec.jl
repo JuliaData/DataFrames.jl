@@ -914,6 +914,19 @@ function dvones(n::Int64)
     DataVec(data, is_missing)
 end
 
+function DataVec{T}(r::Range1{T})
+    n = length(r)
+    data = Array(T, n)
+    is_missing = Array(Bool, n)
+    i = 0
+    for item in r
+        i += 1
+        data[i] = item
+        is_missing[i] = false
+    end
+    DataVec(data, is_missing)
+end
+
 ##
 ## Extras
 ##
@@ -1077,5 +1090,14 @@ for (f, basef) in ((:dvint, :int), (:dvfloat, :float), (:dvbool, :bool))
         function ($f){T}(dv::DataVec{T})
             DataVec(($basef)(dv.data), dv.na)
         end
+    end
+end
+
+function vector(dv::DataVec)
+    # TODO: Implement naRule magic
+    if !any(isna(dv))
+        dv.data
+    else
+        error("Can't convert DataVec containing NA's to a vector")
     end
 end

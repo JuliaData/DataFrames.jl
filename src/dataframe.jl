@@ -1553,3 +1553,28 @@ for f in (:(!), :(+), :(-),
         end
     end
 end
+
+const subset = sub
+
+# Quick isless hack
+# Need to pass NA's for non-numeric columns
+function isless{T}(a::DataFrame, v::T)
+    ret = DataFrame(Array(Bool, size(a)))#, BitArray(size(a)))
+    n, p = nrow(a), ncol(a)
+    for i = 1:n
+        for j in 1:p
+            ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
+        end
+    end
+    return ret
+end
+function isless{T}(v::T, a::DataFrame)
+    ret = DataFrame(Array(Bool, size(a)))#, BitArray(size(a)))
+    n, p = nrow(a), ncol(a)
+    for i = 1:n
+        for j in 1:p
+            ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
+        end
+    end
+    return ret
+end

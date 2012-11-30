@@ -88,7 +88,7 @@ export NamedArray
 ## Types
 export AbstractDataFrame, DataFrame, SubDataFrame, GroupedDataFrame
 ## Methods
-export colnames, names!, replace_names, replace_names!,
+export colnames, colnames!, names!, replace_names, replace_names!,
        nrow, ncol,
        # reconcile_groups,  
        index,
@@ -102,8 +102,9 @@ export colnames, names!, replace_names, replace_names!,
        groupby, colwise, by,
        stack, unstack, merge,
        unique, complete_cases, duplicated,
-       array, matrix,
-       save, load_df
+       array, matrix, vector,
+       save, load_df,
+       subset
 
 ## ---- formula.jl ----
 ## Types
