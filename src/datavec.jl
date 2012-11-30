@@ -853,7 +853,6 @@ for f in (:abs, :sign, :acos, :acosh, :asin, :asinh,
         function ($f)(adv::AbstractDataVec)
             ret = deepcopy(adv)
             for i = 1:length(adv)
-                ret[i] =
                 if isna(adv[i])
                     ret[i] = NA
                 else
