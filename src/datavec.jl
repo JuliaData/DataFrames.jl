@@ -224,7 +224,8 @@ end
 # Missing binary operators on NA's
 for f in (:(==), :(!=), :(<), :(>), :(<=), :(>=), :(.>), :(.>=),
           :max, :min,
-          :(+), :(*), :(&), :(|), :(\), :(./), :(.\), :(.*), :(.^),
+          :(+), :(-), :(*), :(/), :(^),
+          :(&), :(|), :(\), :(./), :(.\), :(.*), :(.^),
           :(.+), :(.-), :(.==), :(.!=), :(.<), :(.<=),
           :div, :fld, :rem, :mod)
     @eval begin
@@ -393,8 +394,10 @@ end
 # TODO: a::AbstractDataVec{T}, b::AbstractDataVec{T}
 # TODO: a::AbstractDataVec{T}, NA
 
-# for arithmatic, NAs propogate
-for f in (:+, :-, :.*, :div, :mod, :&, :|, :$)
+# for arithmetic, NAs propagate
+for f in (:+, :.+, :-, :.-, :.*, :./, :.^,
+          :div, :mod, :fld, :rem, :max, :min,
+          :&, :|, :$)
     @eval begin
         function ($f){S,T}(A::DataVec{S}, B::DataVec{T})
             if (length(A) != length(B)) error("DataVec lengths must match"); end
@@ -421,6 +424,54 @@ for f in (:+, :-, :.*, :div, :mod, :&, :|, :$)
         end
     end
 end
+
+for f in (:*, :/)
+    @eval begin
+        function ($f){T}(A::Number, B::DataVec{T})
+            F = DataVec(Array(promote_type(typeof(A),T), length(B)), B.na)
+            for i=1:length(B)
+                F.data[i] = ($f)(A, B.data[i])
+            end
+            return F
+        end
+        function ($f){T}(A::DataVec{T}, B::Number)
+            F = DataVec(Array(promote_type(typeof(B),T), length(A)), A.na)
+            for i=1:length(A)
+                F.data[i] = ($f)(A.data[i], B)
+            end
+            return F
+        end
+    end
+end
+
+for f in (:^, )
+    @eval begin
+        function ($f){T}(A::Number, B::DataVec{T})
+            F = DataVec(Array(promote_type(typeof(A),T), length(B)), B.na)
+            for i=1:length(B)
+                F.data[i] = ($f)(A, B.data[i])
+            end
+            return F
+        end
+    end
+end
+
+# Multiplication is a special case
+function (*){S, T}(A::DataVec{S}, B::DataVec{T})
+    n = length(A)
+    if n != length(B)
+        error("DataVec's must have the same length")
+    end
+    res = 0.0
+    for i in 1:n
+        if isna(A[i]) || isna(B[i])
+            return NA
+        end
+        res += A[i] * B[i]
+    end
+    return res
+end
+dot{S, T}(A::DataVec{S}, B::DataVec{T}) = (*){S, T}(A::DataVec{S}, B::DataVec{T})
 
 # single-element access
 ref(x::DataVec, i::Number) = x.na[i] ? NA : x.data[i]
@@ -671,7 +722,6 @@ function replace!{T}(x::PooledDataVec{T}, fromval::NAtype, toval::T)
     
     return toval
 end
-
 
 function PooledDataVecs{T}(v1::AbstractDataVec{T}, v2::AbstractDataVec{T})
     ## Return two PooledDataVecs that share the same pool.
@@ -965,7 +1015,8 @@ end
 # Tolerate no NA's
 for f in (:min, :prod, :sum,
           :mean, :median,
-          :std, :var)
+          :std, :var,
+          :fft, :norm)
     @eval begin
         function ($f)(dv::DataVec)
             if any(isna(dv))
@@ -979,7 +1030,8 @@ end
 
 # Two-column arithmetic operations
 # Tolerate no NA's in either column
-for f in (:cor_pearson, :cov_pearson)
+for f in (:cor_pearson, :cov_pearson,
+          :cor_spearman, :cov_spearman)
     @eval begin
         function ($f)(dv1::DataVec, dv2::DataVec)
             if any(isna(dv1)) || any(isna(dv2))

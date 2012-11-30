@@ -48,7 +48,9 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.min, Base.prod, Base.sum,
        Base.mean, Base.median,
        Base.std, Base.var,
-       Base.cor_pearson, Base.cov_pearson
+       Base.cor_pearson, Base.cov_pearson,
+       Base.cor_spearman, Base.cov_spearman,
+       Base.fft, Base.norm
 
 using OptionsMod
 
