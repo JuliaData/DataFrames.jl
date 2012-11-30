@@ -199,6 +199,43 @@ size(x::NAtype) = ()
 ==(na::NAtype, b) = NA
 ==(a, na::NAtype) = NA
 
+# Missing unary operators on NA's
+for f in (:(!), :(+), :(-))
+    @eval begin
+        function ($f)(d::NAtype)
+            return NA
+        end
+    end
+end
+
+# Missing unary operators on DataVec's
+for f in (:(!), :(+), :(-))
+    @eval begin
+        function ($f)(dv::DataVec)
+            res = deepcopy(dv)
+            for i in 1:length(dv)
+                res[i] = ($f)(dv[i])
+            end
+            return res
+        end
+    end
+end
+
+# Missing binary operators on NA's
+for f in (:(==), :(!=), :(<), :(>), :(<=), :(>=), :(.>), :(.>=),
+          :max, :min,
+          :(+), :(*), :(&), :(|), :(\), :(./), :(.\), :(.*), :(.^),
+          :(.+), :(.-), :(.==), :(.!=), :(.<), :(.<=),
+          :div, :fld, :rem, :mod)
+    @eval begin
+        function ($f)(d::NAtype, x)
+            return NA
+        end
+        function ($f)(x, d::NAtype)
+            return NA
+        end
+    end
+end
 
 # constructor from type
 function _dv_most_generic_type(vals)
@@ -295,10 +332,26 @@ function =={T}(a::AbstractDataVec{T}, b::AbstractDataVec{T})
     return true
 end
 
+# Quick isless hack
+function isless{S, T}(a::AbstractDataVec{S}, v::T)
+    ret = DataVec(Array(Bool, length(a)), BitArray(length(a)), naRule(a), false)
+    for i = 1:length(a)
+        ret[i] = isna(a[i]) ? NA : isless(a[i], v)
+    end
+    ret
+end
+function isless{S, T}(v::S, a::AbstractDataVec{T})
+    ret = DataVec(Array(Bool, length(a)), BitArray(length(a)), naRule(a), false)
+    for i = 1:length(a)
+        ret[i] = isna(a[i]) ? NA : isless(v, a[i])
+    end
+    ret
+end
+
 # element-wise symmetric (in)equality operators
-for (f,scalarf) in ((:(.==),:(==)), (:.!=,:!=))
+for (f, scalarf) in ((:(.==), :(==)), (:(.!=), :(!=)))
     @eval begin    
-        function ($f){T}(a::AbstractDataVec{T}, v::T)
+        function ($f){S, T}(a::AbstractDataVec{S}, v::T)
             # allocate a DataVec for the return value, then assign into it
             ret = DataVec(Array(Bool,length(a)), BitArray(length(a)), naRule(a), false)
             for i = 1:length(a)
@@ -306,14 +359,17 @@ for (f,scalarf) in ((:(.==),:(==)), (:.!=,:!=))
             end
             ret
         end
-        ($f){T}(v::T, a::AbstractDataVec{T}) = ($f)(a::AbstractDataVec{T}, v::T)
+        ($f){S, T}(v::S, a::AbstractDataVec{T}) = ($f)(a::AbstractDataVec{T}, v::S)
     end
 end
 
 # element-wise antisymmetric (in)equality operators
-for (f,scalarf,scalarantif) in ((:.<, :<, :>), (:.>, :>, :<), (:.<=,:<=, :>=), (:.>=, :>=, :<=))
+for (f, scalarf, scalarantif) in ((:(.<), :(<), :(>)),
+                                  (:(.>), :(>), :(<)),
+                                  (:(.<=),:(<=), :(>=)),
+                                  (:(.>=), :(>=), :(<=)))
     @eval begin    
-        function ($f){T}(a::AbstractDataVec{T}, v::T)
+        function ($f){S, T}(a::AbstractDataVec{S}, v::T)
             # allocate a DataVec for the return value, then assign into it
             ret = DataVec(Array(Bool,length(a)), BitArray(length(a)), naRule(a), false)
             for i = 1:length(a)
@@ -321,7 +377,7 @@ for (f,scalarf,scalarantif) in ((:.<, :<, :>), (:.>, :>, :<), (:.<=,:<=, :>=), (
             end
             ret
         end
-        function ($f){T}(v::T, a::AbstractDataVec{T})
+        function ($f){S, T}(v::S, a::AbstractDataVec{T})
             # allocate a DataVec for the return value, then assign into it
             ret = DataVec(Array(Bool,length(a)), BitArray(length(a)), naRule(a), false)
             for i = 1:length(a)
