@@ -1101,3 +1101,10 @@ function vector(dv::DataVec)
         error("Can't convert DataVec containing NA's to a vector")
     end
 end
+
+function repl_show(io::IO, dv::DataVec)
+    n = length(dv)
+    println("$n-element $(typeof(dv))")
+    println()
+    show(dv)
+end
