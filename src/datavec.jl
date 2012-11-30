@@ -759,13 +759,6 @@ function show(io, x::PooledDataVec)
     Base.show_vector(io, levels(x), "[", "]")
 end
 
-# TODO: vectorizable math functions like sqrt, sin, trunc, etc., which should return a DataVec{T}
-# not sure if this is the best approach, but works for a demo
-function log{T}(x::DataVec{T})
-    newx = log(x.data)
-    DataVec(newx, x.na, x.naRule, convert(eltype(newx), x.replaceVal))
-end
-
 # TODO: vectorizable comparison operators like > which should return a DataVec{Bool}
 
 # TODO: div(dat, 2) works, but zz ./ 2 doesn't
@@ -849,3 +842,96 @@ function cut{T}(x::Vector{T}, breaks::Vector{T})
     PooledDataVec(refs, pool, KEEP, "")
 end
 cut(x::Vector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
+
+# Vectorized arithmetic operations
+for f in (:abs, :sign, :acos, :acosh, :asin, :asinh,
+          :atan, :atan2, :atanh, :sin, :sinh, :cos,
+          :cosh, :tan, :tanh, :ceil, :floor,
+          :round, :trunc, :signif, :exp, :log,
+          :log10, :log1p, :log2, :logb, :sqrt)
+    @eval begin
+        function ($f)(adv::AbstractDataVec)
+            ret = deepcopy(adv)
+            for i = 1:length(adv)
+                ret[i] =
+                if isna(adv[i])
+                    ret[i] = NA
+                else
+                    ret[i] = ($f)(adv[i])
+                end
+            end
+            return ret
+        end
+    end
+end
+
+# Dyadic arithmetic operations
+for f in (:diff, )
+    @eval begin
+        function ($f)(dv::DataVec)
+            n = length(dv)
+            new_data = ($f)(dv.data)
+            new_na = bitfalses(n - 1)
+            for i = 2:(n - 1)
+                if isna(dv[i])
+                    new_na[i - 1] = true
+                    new_na[i] = true
+                end
+            end
+            if isna(dv[n])
+                new_na[n - 1] = true
+            end
+            return DataVec(new_data, new_na)
+        end
+    end
+end
+
+# Sequential arithmetic operations
+for f in (:cumprod, :cumsum, :cumsum_kbn)
+    @eval begin
+        function ($f)(dv::DataVec)
+            new_data = ($f)(dv.data)
+            new_na = bitfalses(length(dv))
+            hitna = false
+            for i = 1:length(dv)
+                if isna(dv[i])
+                    hitna = true
+                end
+                if hitna
+                    new_na[i] = true
+                end
+            end
+            return DataVec(new_data, new_na)
+        end
+    end
+end
+
+# Global arithmetic operations
+# Tolerate no NA's
+for f in (:min, :prod, :sum,
+          :mean, :median,
+          :std, :var)
+    @eval begin
+        function ($f)(dv::DataVec)
+            if any(isna(dv))
+                return NA
+            else
+                return ($f)(dv.data)
+            end
+        end
+    end
+end
+
+# Two-column arithmetic operations
+# Tolerate no NA's in either column
+for f in (:cor_pearson, :cov_pearson)
+    @eval begin
+        function ($f)(dv1::DataVec, dv2::DataVec)
+            if any(isna(dv1)) || any(isna(dv2))
+                return NA
+            else
+                return ($f)(dv1.data, dv2.data)
+            end
+        end
+    end
+end

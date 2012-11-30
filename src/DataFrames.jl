@@ -2,11 +2,7 @@ require("Options.jl")
 
 module DataFrames
 
-using Base
 using Base.Intrinsics
-
-# TODO: Fix all arithmetic for DataVec's and DataFrame's
-# import Base.dot, Base.mean, Base.median, Base.var, Base.std
 
 import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote, Base.promote_rule,
        Base.similar, Base.fill, Base.fill!, Base.one, Base.copy_to, Base.reshape,
@@ -40,7 +36,19 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.dump, Base.summary,
        Base.sub,
        Base.zeros,
-       Base.box, Base.unbox
+       Base.box, Base.unbox,
+       Base.abs, Base.sign, Base.acos, Base.acosh, Base.asin,
+       Base.asinh, Base.atan, Base.atan2, Base.atanh, Base.sin,
+       Base.sinh, Base.cos, Base.cosh, Base.tan, Base.tanh,
+       Base.ceil, Base.floor, Base.round, Base.trunc, Base.signif,
+       Base.exp, Base.log, Base.log10, Base.log1p, Base.log2,
+       Base.logb, Base.sqrt,
+       Base.diff,
+       Base.cumprod, Base.cumsum, Base.cumsum_kbn,
+       Base.min, Base.prod, Base.sum,
+       Base.mean, Base.median,
+       Base.std, Base.var,
+       Base.cor_pearson, Base.cov_pearson
 
 using OptionsMod
 
@@ -134,10 +142,5 @@ load("DataFrames/src/datastream.jl")
 # New initialized constructors
 export dvzeros, dvones
 export dfzeros, dfones, dfeye
-
-# Improved arithmetic
-# Still need dmzeros, dmones, dmeye for DataMatrix
-# load("DataFrames/src/arithmetic.jl")
-# export dot # Not clear why this line had to be written
 
 end # module DataFrames
