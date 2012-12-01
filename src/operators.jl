@@ -560,3 +560,31 @@ for f in (:(==), :(!=), :(<), :(>), :(<=), :(>=), :(.>), :(.>=),
     end
 end
 
+function all{T}(dv::DataVec{T})
+    for i in 1:length(dv)
+        if isna(dv[i])
+            return NA
+        end
+        if !dv[i]
+            return false
+        end
+    end
+    return true
+end
+
+function any{T}(dv::DataVec{T})
+    all_na = true
+    for i in 1:length(dv)
+        if !isna(dv[i])
+            all_na = false
+            if dv[i]
+                return true
+            end
+        end
+    end
+    if all_na
+        return NA
+    else
+        return false
+    end
+end
