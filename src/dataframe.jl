@@ -1454,6 +1454,24 @@ function isna(df::DataFrame)
     return results
 end
 
+function isnan(df::DataFrame)
+    p = ncol(df)
+    res_columns = Array(Any, p)
+    for j in 1:p
+        res_columns[j] = isnan(df[j])
+    end
+    return DataFrame(res_columns, colnames(df))
+end
+
+function isfinite(df::DataFrame)
+    p = ncol(df)
+    res_columns = Array(Any, p)
+    for j in 1:p
+        res_columns[j] = isfinite(df[j])
+    end
+    return DataFrame(res_columns, colnames(df))
+end
+
 const subset = sub
 
 function coltypes(df::DataFrame)

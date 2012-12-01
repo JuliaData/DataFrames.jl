@@ -867,3 +867,13 @@ function repl_show(io::IO, dv::DataVec)
     println()
     show(dv)
 end
+
+function isnan(dv::DataVec)
+    new_data = isnan(dv.data)
+    DataVec(new_data, dv.na)
+end
+
+function isfinite(dv::DataVec)
+    new_data = isfinite(dv.data)
+    DataVec(new_data, dv.na)
+end
