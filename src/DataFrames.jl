@@ -144,10 +144,16 @@ export DataStream
 load("DataFrames/src/datastream.jl")
 
 # New initialized constructors
-export dvzeros, dvones
+export dvzeros, dvones, dvfalses, dvtrues
 export dfzeros, dfones, dfeye
 
 # Conversion functions
 export dvint, dvfloat, dvbool
+
+export colmins, colmaxs, colprods, colsums,
+       colmeans, colmedians, colstds, colvars,
+       colffts, colnorms
+
+export coltypes
 
 end # module DataFrames

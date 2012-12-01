@@ -1556,25 +1556,164 @@ end
 
 const subset = sub
 
-# Quick isless hack
+# Quick isless hack(s)
 # Need to pass NA's for non-numeric columns
-function isless{T}(a::DataFrame, v::T)
-    ret = DataFrame(Array(Bool, size(a)))#, BitArray(size(a)))
+function isless{T <: Number}(a::DataFrame, v::T)
+    ret = DataFrame(Array(Bool, size(a)))
     n, p = nrow(a), ncol(a)
-    for i = 1:n
-        for j in 1:p
-            ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
+    for j in 1:p
+        if typeof(a[j]).parameters[1] <: Number
+            for i in 1:n
+                ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
+            end
+        else
+            for i in 1:n
+                ret[i, j] = NA
+            end
         end
     end
     return ret
 end
-function isless{T}(v::T, a::DataFrame)
-    ret = DataFrame(Array(Bool, size(a)))#, BitArray(size(a)))
+function isless{T <: Number}(v::T, a::DataFrame)
+    ret = DataFrame(Array(Bool, size(a)))
     n, p = nrow(a), ncol(a)
-    for i = 1:n
-        for j in 1:p
-            ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
+    for j in 1:p
+        if typeof(a[j]).parameters[1] <: Number
+            for i = 1:n
+                ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
+            end
+        else
+            for i = 1:n
+                ret[i, j] = NA
+            end
         end
     end
     return ret
+end
+function isless{T <: String}(a::DataFrame, v::T)
+    ret = DataFrame(Array(Bool, size(a)))
+    n, p = nrow(a), ncol(a)
+    for j in 1:p
+        if typeof(a[j]).parameters[1] <: String
+            for i in 1:n
+                ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
+            end
+        else
+            for i in 1:n
+                ret[i, j] = NA
+            end
+        end
+    end
+    return ret
+end
+function isless{T <: String}(v::T, a::DataFrame)
+    ret = DataFrame(Array(Bool, size(a)))
+    n, p = nrow(a), ncol(a)
+    for j in 1:p
+        if typeof(a[j]).parameters[1] <: String
+            for i = 1:n
+                ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
+            end
+        else
+            for i = 1:n
+                ret[i, j] = NA
+            end
+        end
+    end
+    return ret
+end
+
+for f in (:(.==), :(.!=), :(.<), :(.<=), :(.>), :(.>=))
+    @eval begin
+        function ($f){T <: Number}(a::DataFrame, v::T)
+            ret = DataFrame(Array(Bool, size(a)))
+            n, p = nrow(a), ncol(a)
+            for j in 1:p
+                if typeof(a[j]).parameters[1] <: Number
+                    for i in 1:n
+                        ret[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                    end
+                else
+                    for i in 1:n
+                        ret[i, j] = NA
+                    end
+                end
+            end
+            return ret
+        end
+        function ($f){T <: Number}(v::T, a::DataFrame)
+            ret = DataFrame(Array(Bool, size(a)))
+            n, p = nrow(a), ncol(a)
+            for j in 1:p
+                if typeof(a[j]).parameters[1] <: Number
+                    for i = 1:n
+                        ret[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                    end
+                else
+                    for i = 1:n
+                        ret[i, j] = NA
+                    end
+                end
+            end
+            return ret
+        end
+        function ($f){T <: String}(a::DataFrame, v::T)
+            ret = DataFrame(Array(Bool, size(a)))
+            n, p = nrow(a), ncol(a)
+            for j in 1:p
+                if typeof(a[j]).parameters[1] <: String
+                    for i in 1:n
+                        ret[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                    end
+                else
+                    for i in 1:n
+                        ret[i, j] = NA
+                    end
+                end
+            end
+            return ret
+        end
+        function ($f){T <: String}(v::T, a::DataFrame)
+            ret = DataFrame(Array(Bool, size(a)))
+            n, p = nrow(a), ncol(a)
+            for j in 1:p
+                if typeof(a[j]).parameters[1] <: String
+                    for i = 1:n
+                        ret[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                    end
+                else
+                    for i = 1:n
+                        ret[i, j] = NA
+                    end
+                end
+            end
+            return ret
+        end
+    end
+end
+
+for (f, colf) in ((:min, :colmins),
+                  (:max, :colmaxs),
+                  (:prod, :colprods),
+                  (:sum, :colsums),
+                  (:mean, :colmeans),
+                  (:median, :colmedians),
+                  (:std, :colstds),
+                  (:var, :colvars),
+                  (:fft, :colffts),
+                  (:norm, :colnorms))
+    @eval begin
+        function ($colf)(df::DataFrame)
+            res = DataFrame(coltypes(df), colnames(df), 1)
+            p = ncol(df)
+            for j in 1:p
+                res[:, p] = ($f)(df[:, p])
+            end
+            return res
+        end
+    end
+end
+
+function coltypes(df::DataFrame)
+    {typeof(df[i]).parameters[1] for i in 1:ncol(df)}
 end

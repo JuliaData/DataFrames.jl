@@ -891,10 +891,16 @@ function DataVec(t::Type, n::Int64)
     is_missing = Array(Bool, n)
     for i in 1:n
         data[i] = baseval(t)
+        # We don't have baseval's for enough types, so we'll
+        # need to make sure that NA's with undefined underling
+        # values don't kill functions like show()
         is_missing[i] = true
     end
     DataVec(data, is_missing)
 end
+
+# TODO: Generate all of the following initialized constructors
+# using macros
 
 function dvzeros(n::Int64)
     data = zeros(n)
@@ -905,8 +911,44 @@ function dvzeros(n::Int64)
     DataVec(data, is_missing)
 end
 
+function dvzeros(t::Type, n::Int64)
+    data = zeros(t, n)
+    is_missing = Array(Bool, n)
+    for i in 1:n
+        is_missing[i] = false
+    end
+    DataVec(data, is_missing)
+end
+
 function dvones(n::Int64)
     data = ones(n)
+    is_missing = Array(Bool, n)
+    for i in 1:n
+        is_missing[i] = false
+    end
+    DataVec(data, is_missing)
+end
+
+function dvones(t::Type, n::Int64)
+    data = ones(t, n)
+    is_missing = Array(Bool, n)
+    for i in 1:n
+        is_missing[i] = false
+    end
+    DataVec(data, is_missing)
+end
+
+function dvfalses(n::Int64)
+    data = falses(n)
+    is_missing = Array(Bool, n)
+    for i in 1:n
+        is_missing[i] = false
+    end
+    DataVec(data, is_missing)
+end
+
+function dvtrues(n::Int64)
+    data = trues(n)
     is_missing = Array(Bool, n)
     for i in 1:n
         is_missing[i] = false
@@ -1043,7 +1085,7 @@ end
 
 # Global arithmetic operations
 # Tolerate no NA's
-for f in (:min, :prod, :sum,
+for f in (:min, :max, :prod, :sum,
           :mean, :median,
           :std, :var,
           :fft, :norm)
