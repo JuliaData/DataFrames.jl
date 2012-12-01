@@ -156,4 +156,8 @@ export colmins, colmaxs, colprods, colsums,
 
 export coltypes
 
+# Define operators after all data structures are in place
+# Then we can order things properly
+load("DataFrames/src/operators.jl")
+
 end # module DataFrames
