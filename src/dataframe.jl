@@ -1477,3 +1477,38 @@ const subset = sub
 function coltypes(df::DataFrame)
     {typeof(df[i]).parameters[1] for i in 1:ncol(df)}
 end
+
+# Pandas-style Dict of Vectors -> DataFrame constructors
+#  w/ and w/o explicit column names
+function DataFrame(d::Dict)
+    column_names = sort(convert(Array{ByteString, 1}, keys(d)))
+    p = length(column_names)
+    if p == 0
+        DataFrame(0, 0)
+    end
+    n = length(d[column_names[1]])
+    columns = Array(Any, p)
+    for j in 1:p
+        if length(d[column_names[j]]) != n
+            error("All inputs must have the same length")
+        end
+        columns[j] = DataVec(d[column_names[j]])
+    end
+    return DataFrame(columns, Index(column_names))
+end
+
+function DataFrame(d::Dict, column_names::Vector)
+    p = length(column_names)
+    if p == 0
+        DataFrame(0, 0)
+    end
+    n = length(d[column_names[1]])
+    columns = Array(Any, p)
+    for j in 1:p
+        if length(d[column_names[j]]) != n
+            error("All inputs must have the same length")
+        end
+        columns[j] = DataVec(d[column_names[j]])
+    end
+    return DataFrame(columns, Index(column_names))
+end

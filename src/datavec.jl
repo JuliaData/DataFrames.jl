@@ -877,3 +877,11 @@ function isfinite(dv::DataVec)
     new_data = isfinite(dv.data)
     DataVec(new_data, dv.na)
 end
+
+function unique{T}(dv::DataVec{T})
+  values = Dict()
+  for i in 1:length(dv)
+    values[dv[i]] = 0
+  end
+  return keys(values)
+end
