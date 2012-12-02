@@ -1,15 +1,65 @@
-# Missing unary operators on NA's
-for f in (:(!), :(+), :(-))
+unary_operators = [:(+), :(-), :(!)]
+
+numeric_unary_operators = [:(+), :(-)]
+
+logical_unary_operators = [:(!)]
+
+elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
+                        :asinh, :atan, :atanh, :sin, :sinh,
+                        :cos, :cosh, :tan, :tanh, :ceil, :floor,
+                        :round, :trunc, :exp, :log, :log10, :log1p,
+                        :log2, :logb, :sqrt]
+
+comparison_operators = [:(==), :(.==), :(!=), :(.!=), :isless,
+                        :(>), :(.>), :(>=), :(.>=), :(<), :(.<),
+                        :(<=), :(.<=)]
+
+scalar_comparison_operators = [:(==), :(!=), :isless, :(>), :(>=),
+                               :(<), :(<=)]
+
+array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
+
+binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
+                    :(^), :(.^), :(div), :(mod), :(fld), :(rem),
+                    :(&), :(|), :($)]
+
+arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
+                        :(^), :(.^), :(div), :(mod), :(fld), :(rem)]
+
+biscalar_operators = [:(max), :(min)]
+
+scalar_arithmetic_operators = [:(+), :(-), :(*), :(/), :(^),
+                               :(div), :(mod), :(fld), :(rem)]
+
+array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^)]
+
+bit_operators = [:(&), :(|), :($)]
+
+unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
+                          :var, :norm]
+
+pairwise_vector_operators = [:diff]
+
+cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn]
+
+ffts = [:fft]
+
+binary_vector_operators = [:dot, :cor_pearson, :cov_pearson,
+                           :cor_spearman, :cov_spearman]
+
+columnar_operators = [:colmins, :colmaxs, :colprods, :colsums,
+                      :colmeans, :colmedians, :colstds, :colvars,
+                      :colffts, :colnorms]
+
+boolean_operators = [:any, :all]
+
+# ^ is a special case as it's defined in terms of *
+
+for f in unary_operators
     @eval begin
         function ($f)(d::NAtype)
             return NA
         end
-    end
-end
-
-# Missing unary operators on DataVec's
-for f in (:(!), :(+), :(-))
-    @eval begin
         function ($f)(dv::DataVec)
             res = deepcopy(dv)
             for i in 1:length(dv)
@@ -17,361 +67,11 @@ for f in (:(!), :(+), :(-))
             end
             return res
         end
-    end
-end
-
-# Base functions
-# These provide an additional mechanism for vectorizing
-# DataVec and DataFrame operations. Should try out performance
-for f in (:abs, :sign, :acos, :acosh, :asin, :asinh,
-          :atan, :atan2, :atanh, :sin, :sinh, :cos,
-          :cosh, :tan, :tanh, :ceil, :floor,
-          :round, :trunc, :signif, :exp, :log,
-          :log10, :log1p, :log2, :logb, :sqrt)
-    @eval begin
-        function ($f)(d::NAtype)
-            return NA
-        end
-    end
-end
-
-# Quick isless hack
-function isless{S, T}(a::AbstractDataVec{S}, v::T)
-    ret = DataVec(Array(Bool, length(a)), BitArray(length(a)), naRule(a), false)
-    for i = 1:length(a)
-        ret[i] = isna(a[i]) ? NA : isless(a[i], v)
-    end
-    ret
-end
-function isless{S, T}(v::S, a::AbstractDataVec{T})
-    ret = DataVec(Array(Bool, length(a)), BitArray(length(a)), naRule(a), false)
-    for i = 1:length(a)
-        ret[i] = isna(a[i]) ? NA : isless(v, a[i])
-    end
-    ret
-end
-
-# element-wise symmetric (in)equality operators
-for (f, scalarf) in ((:(.==), :(==)), (:(.!=), :(!=)))
-    @eval begin    
-        function ($f){S, T}(a::AbstractDataVec{S}, v::T)
-            # allocate a DataVec for the return value, then assign into it
-            ret = DataVec(Array(Bool,length(a)), BitArray(length(a)), naRule(a), false)
-            for i = 1:length(a)
-                ret[i] = isna(a[i]) ? NA : ($scalarf)(a[i], v)
-            end
-            ret
-        end
-        ($f){S, T}(v::S, a::AbstractDataVec{T}) = ($f)(a::AbstractDataVec{T}, v::S)
-    end
-end
-
-# element-wise antisymmetric (in)equality operators
-for (f, scalarf, scalarantif) in ((:(.<), :(<), :(>)),
-                                  (:(.>), :(>), :(<)),
-                                  (:(.<=),:(<=), :(>=)),
-                                  (:(.>=), :(>=), :(<=)))
-    @eval begin    
-        function ($f){S, T}(a::AbstractDataVec{S}, v::T)
-            # allocate a DataVec for the return value, then assign into it
-            ret = DataVec(Array(Bool,length(a)), BitArray(length(a)), naRule(a), false)
-            for i = 1:length(a)
-                ret[i] = isna(a[i]) ? NA : ($scalarf)(a[i], v)
-            end
-            ret
-        end
-        function ($f){S, T}(v::S, a::AbstractDataVec{T})
-            # allocate a DataVec for the return value, then assign into it
-            ret = DataVec(Array(Bool,length(a)), BitArray(length(a)), naRule(a), false)
-            for i = 1:length(a)
-                ret[i] = isna(a[i]) ? NA : ($scalarantif)(a[i], v)
-            end
-            ret
-        end
-    end
-end
-
-# for arithmetic, NAs propagate
-for f in (:+, :.+, :-, :.-, :.*, :./, :.^,
-          :div, :mod, :fld, :rem, :max, :min,
-          :&, :|, :$)
-    @eval begin
-        function ($f){S,T}(A::DataVec{S}, B::DataVec{T})
-            if (length(A) != length(B)) error("DataVec lengths must match"); end
-            F = DataVec(Array(promote_type(S,T), length(A)), BitArray(length(A)))
-            for i=1:length(A)
-                F.na[i] = (A.na[i] || B.na[i])
-                F.data[i] = ($f)(A.data[i], B.data[i])
-            end
-            return F
-        end
-        function ($f){T}(A::Number, B::DataVec{T})
-            F = DataVec(Array(promote_type(typeof(A),T), length(B)), B.na)
-            for i=1:length(B)
-                F.data[i] = ($f)(A, B.data[i])
-            end
-            return F
-        end
-        function ($f){T}(A::DataVec{T}, B::Number)
-            F = DataVec(Array(promote_type(typeof(B),T), length(A)), A.na)
-            for i=1:length(A)
-                F.data[i] = ($f)(A.data[i], B)
-            end
-            return F
-        end
-    end
-end
-
-for f in (:+, :.+, :-, :.-, :*, :.*, :/, :./, :^, :.^,
-          :div, :mod, :fld, :rem, :max, :min,
-          :&, :|, :$)
-    @eval begin
-        function ($f){T}(A::NAtype, B::DataVec{T})
-            res = deepcopy(B)
-            for i in 1:length(B)
-                res[i] = ($f)(A, B[i])
-            end
-            return res
-        end
-        function ($f){T}(A::DataVec{T}, B::NAtype)
-            res = deepcopy(A)
-            for i in 1:length(A)
-                res[i] = ($f)(A[i], B)
-            end
-            return res
-        end
-    end
-end
-
-for f in (:*, :/)
-    @eval begin
-        function ($f){T}(A::Number, B::DataVec{T})
-            F = DataVec(Array(promote_type(typeof(A),T), length(B)), B.na)
-            for i=1:length(B)
-                F.data[i] = ($f)(A, B.data[i])
-            end
-            return F
-        end
-        function ($f){T}(A::DataVec{T}, B::Number)
-            F = DataVec(Array(promote_type(typeof(B),T), length(A)), A.na)
-            for i=1:length(A)
-                F.data[i] = ($f)(A.data[i], B)
-            end
-            return F
-        end
-    end
-end
-
-for f in (:^, )
-    @eval begin
-        function ($f){T}(A::Number, B::DataVec{T})
-            F = DataVec(Array(promote_type(typeof(A),T), length(B)), B.na)
-            for i=1:length(B)
-                F.data[i] = ($f)(A, B.data[i])
-            end
-            return F
-        end
-    end
-end
-
-# Inner products are a special case
-function dot{S, T}(A::DataVec{S}, B::DataVec{T})
-    n = length(A)
-    if n != length(B)
-        error("DataVec's must have the same length")
-    end
-    res = 0.0
-    for i in 1:n
-        if isna(A[i]) || isna(B[i])
-            return NA
-        end
-        res += A[i] * B[i]
-    end
-    return res
-end
-
-# Vectorized arithmetic operations
-for f in (:abs, :sign, :acos, :acosh, :asin, :asinh,
-          :atan, :atan2, :atanh, :sin, :sinh, :cos,
-          :cosh, :tan, :tanh, :ceil, :floor,
-          :round, :trunc, :signif, :exp, :log,
-          :log10, :log1p, :log2, :logb, :sqrt)
-    @eval begin
-        function ($f)(adv::AbstractDataVec)
-            ret = deepcopy(adv)
-            for i = 1:length(adv)
-                if isna(adv[i])
-                    ret[i] = NA
-                else
-                    ret[i] = ($f)(adv[i])
-                end
-            end
-            return ret
-        end
-    end
-end
-
-# Dyadic arithmetic operations
-for f in (:diff, )
-    @eval begin
-        function ($f)(dv::DataVec)
-            n = length(dv)
-            new_data = ($f)(dv.data)
-            new_na = bitfalses(n - 1)
-            for i = 2:(n - 1)
-                if isna(dv[i])
-                    new_na[i - 1] = true
-                    new_na[i] = true
-                end
-            end
-            if isna(dv[n])
-                new_na[n - 1] = true
-            end
-            return DataVec(new_data, new_na)
-        end
-    end
-end
-
-# Sequential arithmetic operations
-for f in (:cumprod, :cumsum, :cumsum_kbn)
-    @eval begin
-        function ($f)(dv::DataVec)
-            new_data = ($f)(dv.data)
-            new_na = bitfalses(length(dv))
-            hitna = false
-            for i = 1:length(dv)
-                if isna(dv[i])
-                    hitna = true
-                end
-                if hitna
-                    new_na[i] = true
-                end
-            end
-            return DataVec(new_data, new_na)
-        end
-    end
-end
-
-# Global arithmetic operations
-# Tolerate no NA's
-for f in (:min, :max, :prod, :sum,
-          :mean, :median,
-          :std, :var,
-          :fft, :norm)
-    @eval begin
-        function ($f)(dv::DataVec)
-            if any(isna(dv))
-                return NA
-            else
-                return ($f)(dv.data)
-            end
-        end
-    end
-end
-
-# Two-column arithmetic operations
-# Tolerate no NA's in either column
-for f in (:cor_pearson, :cov_pearson,
-          :cor_spearman, :cov_spearman)
-    @eval begin
-        function ($f)(dv1::DataVec, dv2::DataVec)
-            if any(isna(dv1)) || any(isna(dv2))
-                return NA
-            else
-                return ($f)(dv1.data, dv2.data)
-            end
-        end
-    end
-end
-
-# Scalar-DF + DF-Scalar operators
-# Scalar <: Real or Scalar is NA
-# Maybe add DataNumber = Union(Number, NAtype)?
-for f in (:(+), :(.+), :(-), :(.-), :(*), :(.*),
-          :(/), :(./), :(^), :(.^),
-          :(div), :(mod), :(fld), :(rem),
-          :(max), :(min))
-    @eval begin
-        function ($f)(df::DataFrame, x::Union(Number, NAtype))
-            n, p = nrow(df), ncol(df)
-            # Tries to preserve types
-            results = deepcopy(df)
-            # Could instead do and only return Float64
-            # results = DataFrame(Float64, n, p)
-            for j in 1:p
-                if typeof(df[j]).parameters[1] <: Real
-                    for i in 1:n
-                        results[i, j] = ($f)(df[i, j], x)
-                    end
-                else
-                    for i in 1:n
-                        results[i, j] = NA
-                    end
-                end
-            end
-            return results
-        end
-        function ($f)(x::Union(Number, NAtype), df::DataFrame)
-            n, p = nrow(df), ncol(df)
-            # Tries to preserve types
-            results = deepcopy(df)
-            # Could instead do and only return Float64
-            # results = DataFrame(Float64, n, p)
-            for j in 1:p
-                if typeof(df[j]).parameters[1] <: Real
-                    for i in 1:n
-                        results[i, j] = ($f)(x, df[i, j])
-                    end
-                else
-                    for i in 1:n
-                        results[i, j] = NA
-                    end
-                end
-            end
-            return results
-        end
-    end
-end
-
-# DF-DF operators
-for f in (:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^))
-    @eval begin
-        function ($f)(a::DataFrame, b::DataFrame)
-            n, p = nrow(a), ncol(a)
-            if n != nrow(b) || p != ncol(b)
-                error("DataFrames must have matching sizes for arithmetic")
-            end
-            # Tries to preserve types from a
-            results = deepcopy(a)
-            for j in 1:p
-                if typeof(a[j]).parameters[1] <: Real
-                    for i in 1:n
-                        results[i, j] = ($f)(a[i, j], b[i, j])
-                    end
-                else
-                    for i in 1:n
-                        results[i, j] = NA
-                    end
-                end
-            end
-            return results
-        end
-    end
-end
-
-# Unary operators and Base functions on DataFrame's
-for f in (:(!), :(+), :(-),
-          :abs, :sign, :acos, :acosh, :asin, :asinh,
-          :atan, :atan2, :atanh, :sin, :sinh, :cos,
-          :cosh, :tan, :tanh, :ceil, :floor,
-          :round, :trunc, :signif, :exp, :log,
-          :log10, :log1p, :log2, :logb, :sqrt)
-    @eval begin
         function ($f)(df::DataFrame)
             res = deepcopy(df)
             n, p = nrow(df), ncol(df)
             for j in 1:p
-                if typeof(df[j]).parameters[1] <: Real
+                if typeof(df[j]).parameters[1] <: Number
                     for i in 1:n
                         res[i, j] = ($f)(df[i, j])
                     end
@@ -386,75 +86,82 @@ for f in (:(!), :(+), :(-),
     end
 end
 
-# Quick isless hack(s)
-# Need to pass NA's for non-numeric columns
-function isless{T <: Number}(a::DataFrame, v::T)
-    ret = DataFrame(Array(Bool, size(a)))
-    n, p = nrow(a), ncol(a)
-    for j in 1:p
-        if typeof(a[j]).parameters[1] <: Number
-            for i in 1:n
-                ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
+for f in elementary_functions
+    @eval begin
+        function ($f)(d::NAtype)
+            return NA
+        end
+        function ($f){T}(adv::AbstractDataVec{T})
+            res = deepcopy(adv)
+            for i = 1:length(adv)
+                if isna(adv[i])
+                    res[i] = NA
+                else
+                    res[i] = ($f)(adv[i])
+                end
             end
-        else
-            for i in 1:n
-                ret[i, j] = NA
+            return res
+        end
+        function ($f)(df::DataFrame)
+            res = deepcopy(df)
+            n, p = nrow(df), ncol(df)
+            for j in 1:p
+                if typeof(df[j]).parameters[1] <: Number
+                    for i in 1:n
+                        res[i, j] = ($f)(df[i, j])
+                    end
+                else
+                    for i in 1:n
+                        res[i, j] = NA
+                    end
+                end
             end
+            return res
         end
     end
-    return ret
-end
-function isless{T <: Number}(v::T, a::DataFrame)
-    ret = DataFrame(Array(Bool, size(a)))
-    n, p = nrow(a), ncol(a)
-    for j in 1:p
-        if typeof(a[j]).parameters[1] <: Number
-            for i = 1:n
-                ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
-            end
-        else
-            for i = 1:n
-                ret[i, j] = NA
-            end
-        end
-    end
-    return ret
-end
-function isless{T <: String}(a::DataFrame, v::T)
-    ret = DataFrame(Array(Bool, size(a)))
-    n, p = nrow(a), ncol(a)
-    for j in 1:p
-        if typeof(a[j]).parameters[1] <: String
-            for i in 1:n
-                ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
-            end
-        else
-            for i in 1:n
-                ret[i, j] = NA
-            end
-        end
-    end
-    return ret
-end
-function isless{T <: String}(v::T, a::DataFrame)
-    ret = DataFrame(Array(Bool, size(a)))
-    n, p = nrow(a), ncol(a)
-    for j in 1:p
-        if typeof(a[j]).parameters[1] <: String
-            for i = 1:n
-                ret[i, j] = isna(a[i, j]) ? NA : isless(a[i, j], v)
-            end
-        else
-            for i = 1:n
-                ret[i, j] = NA
-            end
-        end
-    end
-    return ret
 end
 
-for f in (:(.==), :(.!=), :(.<), :(.<=), :(.>), :(.>=))
+for f in comparison_operators
     @eval begin
+        function ($f)(d::NAtype, e::NAtype)
+            return NA
+        end
+        function ($f){T <: Union(String, Number)}(d::NAtype, x::T)
+            return NA
+        end
+        function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
+            return NA
+        end
+        function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
+            res = DataVec(Array(Bool, length(a)),
+                          BitArray(length(a)),
+                          naRule(a),
+                          false)
+            for i in 1:length(a)
+                res[i] = isna(a[i]) ? NA : ($f)(a[i], b[i])
+            end
+            return res
+        end
+        function ($f){S, T <: Union(String, Number)}(a::AbstractDataVec{S}, v::T)
+            res = DataVec(Array(Bool,length(a)),
+                          BitArray(length(a)),
+                          naRule(a),
+                          false)
+            for i in 1:length(a)
+                res[i] = isna(a[i]) ? NA : ($f)(a[i], v)
+            end
+            return res
+        end
+        function ($f){S <: Union(String, Number), T}(v::S, a::AbstractDataVec{T})
+            res = DataVec(Array(Bool, length(a)),
+                          BitArray(length(a)),
+                          naRule(a),
+                          false)
+            for i in 1:length(a)
+                res[i] = isna(a[i]) ? NA : ($f)(v, a[i])
+            end
+            res
+        end
         function ($f){T <: Number}(a::DataFrame, v::T)
             ret = DataFrame(Array(Bool, size(a)))
             n, p = nrow(a), ncol(a)
@@ -522,6 +229,218 @@ for f in (:(.==), :(.!=), :(.<), :(.<=), :(.>), :(.>=))
     end
 end
 
+for f in binary_operators
+    @eval begin
+        function ($f)(d::NAtype, e::NAtype)
+            return NA
+        end
+        function ($f){T <: Union(Number, String)}(d::NAtype, x::T)
+            return NA
+        end
+        function ($f){T <: Union(Number, String)}(x::T, d::NAtype)
+            return NA
+        end
+        function ($f){T}(A::Number, B::DataVec{T})
+            res = DataVec(Array(promote_type(typeof(A),T), length(B)), B.na)
+            for i in 1:length(B)
+                res.data[i] = ($f)(A, B.data[i])
+            end
+            return res
+        end
+        function ($f){T}(A::DataVec{T}, B::Number)
+            res = DataVec(Array(promote_type(typeof(B),T), length(A)), A.na)
+            for i in 1:length(A)
+                res.data[i] = ($f)(A.data[i], B)
+            end
+            return res
+        end
+        function ($f){T}(A::NAtype, B::DataVec{T})
+            res = DataVec(Array(typeof(B).parameters[1], length(B)), B.na)
+            for i in 1:length(B)
+                res.data[i] = B.data[i]
+                res.na[i] = true
+            end
+            return res
+        end
+        function ($f){T}(A::DataVec{T}, B::NAtype)
+            res = DataVec(Array(typeof(A).parameters[1], length(A)), A.na)
+            for i in 1:length(A)
+                res.data[i] = A.data[i]
+                res.na[i] = true
+            end
+            return res
+        end
+        function ($f)(df::DataFrame, x::Union(Number, NAtype))
+            n, p = nrow(df), ncol(df)
+            # Tries to preserve types
+            results = deepcopy(df)
+            for j in 1:p
+                if typeof(df[j]).parameters[1] <: Number
+                    for i in 1:n
+                        results[i, j] = ($f)(df[i, j], x)
+                    end
+                else
+                    for i in 1:n
+                        results[i, j] = NA
+                    end
+                end
+            end
+            return results
+        end
+        function ($f)(x::Union(Number, NAtype), df::DataFrame)
+            n, p = nrow(df), ncol(df)
+            # Tries to preserve types
+            results = deepcopy(df)
+            for j in 1:p
+                if typeof(df[j]).parameters[1] <: Number
+                    for i in 1:n
+                        results[i, j] = ($f)(x, df[i, j])
+                    end
+                else
+                    for i in 1:n
+                        results[i, j] = NA
+                    end
+                end
+            end
+            return results
+        end
+        function ($f){T <: Union(String, Number)}(d::NAtype, x::T)
+            return NA
+        end
+        function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
+            return NA
+        end
+    end
+end
+
+# for arithmetic, NAs propagate
+for f in array_arithmetic_operators
+    @eval begin
+        function ($f){S, T}(A::DataVec{S}, B::DataVec{T})
+            if (length(A) != length(B))
+                error("DataVec lengths must match")
+            end
+            res = DataVec(Array(promote_type(S, T),
+                                length(A)),
+                          BitArray(length(A)))
+            for i in 1:length(A)
+                res.na[i] = (A.na[i] || B.na[i])
+                res.data[i] = ($f)(A.data[i], B.data[i])
+            end
+            return res
+        end
+        function ($f)(a::DataFrame, b::DataFrame)
+            n, p = nrow(a), ncol(a)
+            if n != nrow(b) || p != ncol(b)
+                error("DataFrames must have matching sizes for arithmetic")
+            end
+            # Tries to preserve types from a
+            results = deepcopy(a)
+            for j in 1:p
+                if typeof(a[j]).parameters[1] <: Number
+                    for i in 1:n
+                        results[i, j] = ($f)(a[i, j], b[i, j])
+                    end
+                else
+                    for i in 1:n
+                        results[i, j] = NA
+                    end
+                end
+            end
+            return results
+        end
+    end
+end
+
+for f in biscalar_operators
+    @eval begin
+        function ($f)(d::NAtype, e::NAtype)
+            return NA
+        end
+        function ($f){T <: Number}(d::NAtype, x::T)
+            return NA
+        end
+        function ($f){T <: Number}(x::T, d::NAtype)
+            return NA
+        end
+    end
+end
+
+for f in pairwise_vector_operators
+    @eval begin
+        function ($f)(dv::DataVec)
+            n = length(dv)
+            new_data = ($f)(dv.data)
+            new_na = bitfalses(n - 1)
+            for i = 2:(n - 1)
+                if isna(dv[i])
+                    new_na[i - 1] = true
+                    new_na[i] = true
+                end
+            end
+            if isna(dv[n])
+                new_na[n - 1] = true
+            end
+            return DataVec(new_data, new_na)
+        end
+    end
+end
+
+for f in cumulative_vector_operators
+    @eval begin
+        function ($f)(dv::DataVec)
+            new_data = ($f)(dv.data)
+            new_na = bitfalses(length(dv))
+            hitna = false
+            for i = 1:length(dv)
+                if isna(dv[i])
+                    hitna = true
+                end
+                if hitna
+                    new_na[i] = true
+                end
+            end
+            return DataVec(new_data, new_na)
+        end
+    end
+end
+
+for f in unary_vector_operators
+    @eval begin
+        function ($f)(dv::DataVec)
+            if any(isna(dv))
+                return NA
+            else
+                return ($f)(dv.data)
+            end
+        end
+    end
+end
+
+for f in ffts
+    @eval begin
+        function ($f)(dv::DataVec)
+            if any(isna(dv))
+                return NA
+            else
+                return ($f)(dv.data)
+            end
+        end
+    end
+end
+
+for f in binary_vector_operators
+    @eval begin
+        function ($f)(dv1::DataVec, dv2::DataVec)
+            if any(isna(dv1)) || any(isna(dv2))
+                return NA
+            else
+                return ($f)(dv1.data, dv2.data)
+            end
+        end
+    end
+end
+
 for (f, colf) in ((:min, :colmins),
                   (:max, :colmaxs),
                   (:prod, :colprods),
@@ -544,25 +463,9 @@ for (f, colf) in ((:min, :colmins),
     end
 end
 
-# Missing binary operators on NA's
-for f in (:(==), :(!=), :isless, :(<), :(>), :(<=), :(>=), :(.>), :(.>=),
-          :max, :min,
-          :(+), :(-), :(*), :(/), :(^),
-          :(&), :(|), :($), :(\), :(./), :(.\), :(.*), :(.^),
-          :(.+), :(.-), :(.==), :(.!=), :(.<), :(.<=),
-          :div, :fld, :rem, :mod)
-    @eval begin
-        function ($f){T}(d::NAtype, e::NAtype)
-            return NA
-        end
-        function ($f){T}(d::NAtype, x::T)
-            return NA
-        end
-        function ($f){T}(x::T, d::NAtype)
-            return NA
-        end
-    end
-end
+#
+# Boolean operators
+#
 
 function all{T}(dv::DataVec{T})
     for i in 1:length(dv)

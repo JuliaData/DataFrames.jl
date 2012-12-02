@@ -24,7 +24,8 @@ array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
 
 arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
                         :(^), :(.^), :(div), :(mod), :(fld), :(rem)]
-                        # :(max), :(min)] Where do these really belong?
+
+biscalar_operators = [:(max), :(min)]
 
 scalar_arithmetic_operators = [:(+), :(-), :(*), :(/), :(^),
                                :(div), :(mod), :(fld), :(rem)]
