@@ -54,7 +54,8 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.fft, Base.norm,
        Base.int, Base.float, Base.bool,
        Base.all, Base.any,
-       Base.fld, Base.rem
+       Base.fld, Base.rem,
+       Base.dot
 
 using OptionsMod
 

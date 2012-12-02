@@ -174,8 +174,8 @@ for f in (:^, )
     end
 end
 
-# Multiplication is a special case
-function (*){S, T}(A::DataVec{S}, B::DataVec{T})
+# Inner products are a special case
+function dot{S, T}(A::DataVec{S}, B::DataVec{T})
     n = length(A)
     if n != length(B)
         error("DataVec's must have the same length")
@@ -189,7 +189,6 @@ function (*){S, T}(A::DataVec{S}, B::DataVec{T})
     end
     return res
 end
-dot{S, T}(A::DataVec{S}, B::DataVec{T}) = (*){S, T}(A::DataVec{S}, B::DataVec{T})
 
 # Vectorized arithmetic operations
 for f in (:abs, :sign, :acos, :acosh, :asin, :asinh,
@@ -289,7 +288,9 @@ end
 # Scalar <: Real or Scalar is NA
 # Maybe add DataNumber = Union(Number, NAtype)?
 for f in (:(+), :(.+), :(-), :(.-), :(*), :(.*),
-          :(/), :(./), :(^), :(.^))
+          :(/), :(./), :(^), :(.^),
+          :(div), :(mod), :(fld), :(rem),
+          :(max), :(min))
     @eval begin
         function ($f)(df::DataFrame, x::Union(Number, NAtype))
             n, p = nrow(df), ncol(df)
@@ -576,16 +577,51 @@ function all{T}(dv::DataVec{T})
 end
 
 function any{T}(dv::DataVec{T})
-    all_na = true
+    has_na = false
     for i in 1:length(dv)
         if !isna(dv[i])
-            all_na = false
             if dv[i]
                 return true
             end
+        else
+            has_na = true
         end
     end
-    if all_na
+    if has_na
+        return NA
+    else
+        return false
+    end
+end
+
+function all(df::DataFrame)
+    for i in 1:nrow(df)
+        for j in 1:ncol(df)
+            if isna(df[i, j])
+                return NA
+            end
+            if !df[i, j]
+                return false
+            end
+        end
+    end
+    return true
+end
+
+function any(df::DataFrame)
+    has_na = false
+    for i in 1:nrow(df)
+        for j in 1:ncol(df)
+            if !isna(df[i, j])
+                if df[i, j]
+                    return true
+                end
+            else
+                has_na = true
+            end
+        end
+    end
+    if has_na
         return NA
     else
         return false
