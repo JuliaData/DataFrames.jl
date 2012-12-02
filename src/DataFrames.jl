@@ -53,7 +53,8 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.cor_spearman, Base.cov_spearman,
        Base.fft, Base.norm,
        Base.int, Base.float, Base.bool,
-       Base.all, Base.any
+       Base.all, Base.any,
+       Base.fld, Base.rem
 
 using OptionsMod
 

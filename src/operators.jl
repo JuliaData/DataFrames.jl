@@ -544,13 +544,16 @@ for (f, colf) in ((:min, :colmins),
 end
 
 # Missing binary operators on NA's
-for f in (:(==), :(!=), :(<), :(>), :(<=), :(>=), :(.>), :(.>=),
+for f in (:(==), :(!=), :isless, :(<), :(>), :(<=), :(>=), :(.>), :(.>=),
           :max, :min,
           :(+), :(-), :(*), :(/), :(^),
-          :(&), :(|), :(\), :(./), :(.\), :(.*), :(.^),
+          :(&), :(|), :($), :(\), :(./), :(.\), :(.*), :(.^),
           :(.+), :(.-), :(.==), :(.!=), :(.<), :(.<=),
           :div, :fld, :rem, :mod)
     @eval begin
+        function ($f){T}(d::NAtype, e::NAtype)
+            return NA
+        end
         function ($f){T}(d::NAtype, x::T)
             return NA
         end
