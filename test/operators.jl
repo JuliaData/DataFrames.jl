@@ -22,15 +22,27 @@ scalar_comparison_operators = [:(==), :(!=), :isless, :(>), :(>=),
 
 array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
 
+binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
+                    :(div), :(mod), :(fld), :(rem),
+                    :(&), :(|), :($)]
+
+induced_binary_operators = [:(^), :(.^)]
+
 arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
-                        :(^), :(.^), :(div), :(mod), :(fld), :(rem)]
+                        :(div), :(mod), :(fld), :(rem)]
+
+induced_arithmetic_operators = [:(^), :(.^)]
 
 biscalar_operators = [:(max), :(min)]
 
-scalar_arithmetic_operators = [:(+), :(-), :(*), :(/), :(^),
+scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
                                :(div), :(mod), :(fld), :(rem)]
 
-array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^)]
+induced_scalar_arithmetic_operators = [:(^)]
+
+array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./)]
+
+induced_array_arithmetic_operators = [:(.^)]
 
 bit_operators = [:(&), :(|), :($)]
 
@@ -413,3 +425,6 @@ df = DataFrame(quote
 df[1, 1] = NA
 @assert isna(any(dv))
 @assert isna(all(dv))
+
+# TODO: Confirm that this is not true any longer:
+# no method .^(NAtype,Int64)

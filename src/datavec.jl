@@ -195,10 +195,6 @@ end
 length(x::NAtype) = 1
 size(x::NAtype) = ()
 
-==(na::NAtype, na2::NAtype) = NA
-==(na::NAtype, b) = NA
-==(a, na::NAtype) = NA
-
 # constructor from type
 function _dv_most_generic_type(vals)
     # iterate over vals tuple to find the most generic non-NA type
@@ -505,6 +501,7 @@ assign{T}(x::PooledDataVec{T}, n::NAtype, rng::Range1) = begin (x.refs[rng] = 0)
 
 # TODO: replace!(x::PooledDataVec{T}, from::T, to::T)
 # and similar to and from NA
+replace!{R}(x::PooledDataVec{R}, fromval::NAtype, toval::NAtype) = NA # no-op to deal with warning
 function replace!{R, S, T}(x::PooledDataVec{R}, fromval::S, toval::T)
     # throw error if fromval isn't in the pool
     fromidx = findfirst(x.pool, fromval)
@@ -649,6 +646,7 @@ function done(x::AbstractDataVec, state::Int)
 end
 
 # can promote in theory based on data type
+promote_rule{T, T}(::Type{AbstractDataVec{T}}, ::Type{T}) = promote_rule(T, T)
 promote_rule{S, T}(::Type{AbstractDataVec{S}}, ::Type{T}) = promote_rule(S, T)
 promote_rule{T}(::Type{AbstractDataVec{T}}, ::Type{T}) = T
 # TODO: Abstract? Pooled?

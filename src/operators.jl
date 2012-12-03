@@ -20,18 +20,26 @@ scalar_comparison_operators = [:(==), :(!=), :isless, :(>), :(>=),
 array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
 
 binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
-                    :(^), :(.^), :(div), :(mod), :(fld), :(rem),
+                    :(div), :(mod), :(fld), :(rem),
                     :(&), :(|), :($)]
 
+induced_binary_operators = [:(^), :(.^)]
+
 arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
-                        :(^), :(.^), :(div), :(mod), :(fld), :(rem)]
+                        :(div), :(mod), :(fld), :(rem)]
+
+induced_arithmetic_operators = [:(^), :(.^)]
 
 biscalar_operators = [:(max), :(min)]
 
-scalar_arithmetic_operators = [:(+), :(-), :(*), :(/), :(^),
+scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
                                :(div), :(mod), :(fld), :(rem)]
 
-array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^)]
+induced_scalar_arithmetic_operators = [:(^)]
+
+array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./)]
+
+induced_array_arithmetic_operators = [:(.^)]
 
 bit_operators = [:(&), :(|), :($)]
 
@@ -53,7 +61,7 @@ columnar_operators = [:colmins, :colmaxs, :colprods, :colsums,
 
 boolean_operators = [:any, :all]
 
-# ^ is a special case as it's defined in terms of *
+# TODO :(^) is a special case as it's defined in terms of :(*)
 
 for f in unary_operators
     @eval begin
@@ -308,6 +316,23 @@ for f in binary_operators
             return NA
         end
         function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
+            return NA
+        end
+        function ($f){T,N}(a::AbstractArray{T,N}, d::NAtype)
+            return NA
+        end
+        function ($f){T,N}(d::NAtype, a::AbstractArray{T,N})
+            return NA
+        end
+    end
+end
+
+for f in induced_binary_operators
+    @eval begin
+        function ($f)(d::NAtype, e::NAtype)
+            return NA
+        end
+        function ($f)(d::Union(String, Number), e::NAtype)
             return NA
         end
     end
