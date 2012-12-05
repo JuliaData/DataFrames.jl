@@ -23,15 +23,15 @@ scalar_comparison_operators = [:(==), :(!=), :isless, :(>), :(>=),
 array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
 
 binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
-                    :(div), :(mod), :(fld), :(rem),
+                    :(.^), :(div), :(mod), :(fld), :(rem),
                     :(&), :(|), :($)]
 
-induced_binary_operators = [:(^), :(.^)]
+induced_binary_operators = [:(^)]
 
 arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
-                        :(div), :(mod), :(fld), :(rem)]
+                        :(.^), :(div), :(mod), :(fld), :(rem)]
 
-induced_arithmetic_operators = [:(^), :(.^)]
+induced_arithmetic_operators = [:(^)]
 
 biscalar_operators = [:(max), :(min)]
 
@@ -40,9 +40,7 @@ scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
 
 induced_scalar_arithmetic_operators = [:(^)]
 
-array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./)]
-
-induced_array_arithmetic_operators = [:(.^)]
+array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^)]
 
 bit_operators = [:(&), :(|), :($)]
 
@@ -173,8 +171,8 @@ end
 # Elementary functions on DataFrames's
 N = 5
 df = DataFrame(quote
-                 A = dvones(N)
-                 B = dvones(N)
+                 A = dvones($(N))
+                 B = dvones($(N))
                end)
 for f in elementary_functions
   @eval begin
@@ -225,8 +223,8 @@ end
 # Broadcasting operations between NA's and DataFrames's
 N = 5
 df = DataFrame(quote
-                 A = dvones(N)
-                 B = dvones(N)
+                 A = dvones($(N))
+                 B = dvones($(N))
                end)
 for f in arithmetic_operators
   @eval begin
@@ -242,8 +240,8 @@ end
 # Broadcasting operations between scalars and DataFrames's
 N = 5
 df = DataFrame(quote
-                 A = dvones(N)
-                 B = dvones(N)
+                 A = dvones($(N))
+                 B = dvones($(N))
                end)
 for f in arithmetic_operators
   @eval begin
@@ -273,8 +271,8 @@ end
 # TODO: Test in the presence of in-operable types like Strings
 N = 5
 df = DataFrame(quote
-                 A = dvones(N)
-                 B = dvones(N)
+                 A = dvones($(N))
+                 B = dvones($(N))
                end)
 for f in array_arithmetic_operators
   @eval begin
@@ -390,7 +388,7 @@ dv[1] = NA
 # Boolean operators on DataFrames's
 N = 5
 df = DataFrame(quote
-                 A = dvfalses(N)
+                 A = dvfalses($(N))
                end)
 @assert any(df) == false
 @assert any(!df) == true
@@ -398,14 +396,14 @@ df = DataFrame(quote
 @assert all(!df) == true
 
 df = DataFrame(quote
-                 A = dvfalses(N)
+                 A = dvfalses($(N))
                end)
 df[3, 1] = true
 @assert any(df) == true
 @assert all(df) == false
 
 df = DataFrame(quote
-                 A = dvfalses(N)
+                 A = dvfalses($(N))
                end)
 df[2, 1] = NA
 df[3, 1] = true
@@ -413,18 +411,15 @@ df[3, 1] = true
 @assert all(df) == false
 
 df = DataFrame(quote
-                 A = dvfalses(N)
+                 A = dvfalses($(N))
                end)
 df[2, 1] = NA
 @assert isna(any(df))
 @assert all(df) == false
 
 df = DataFrame(quote
-                 A = dvfalses(N)
+                 A = dvfalses($(N))
                end)
 df[1, 1] = NA
 @assert isna(any(dv))
 @assert isna(all(dv))
-
-# TODO: Confirm that this is not true any longer:
-# no method .^(NAtype,Int64)

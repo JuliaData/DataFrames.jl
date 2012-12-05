@@ -20,15 +20,15 @@ scalar_comparison_operators = [:(==), :(!=), :isless, :(>), :(>=),
 array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
 
 binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
-                    :(div), :(mod), :(fld), :(rem),
+                    :(.^), :(div), :(mod), :(fld), :(rem),
                     :(&), :(|), :($)]
 
-induced_binary_operators = [:(^), :(.^)]
+induced_binary_operators = [:(^)]
 
 arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
-                        :(div), :(mod), :(fld), :(rem)]
+                        :(.^), :(div), :(mod), :(fld), :(rem)]
 
-induced_arithmetic_operators = [:(^), :(.^)]
+induced_arithmetic_operators = [:(^)]
 
 biscalar_operators = [:(max), :(min)]
 
@@ -37,9 +37,7 @@ scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
 
 induced_scalar_arithmetic_operators = [:(^)]
 
-array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./)]
-
-induced_array_arithmetic_operators = [:(.^)]
+array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^)]
 
 bit_operators = [:(&), :(|), :($)]
 
@@ -60,8 +58,6 @@ columnar_operators = [:colmins, :colmaxs, :colprods, :colsums,
                       :colffts, :colnorms]
 
 boolean_operators = [:any, :all]
-
-# TODO :(^) is a special case as it's defined in terms of :(*)
 
 for f in unary_operators
     @eval begin
