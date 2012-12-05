@@ -108,7 +108,9 @@ export colnames, colnames!, names!, replace_names, replace_names!,
        unique, complete_cases, duplicated,
        array, matrix, vector,
        save, load_df,
-       subset
+       subset,
+       failNA, removeNA, replaceNA,
+       each_failNA, each_removeNA, each_replaceNA
 
 ## ---- formula.jl ----
 ## Types
