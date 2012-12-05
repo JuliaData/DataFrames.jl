@@ -331,6 +331,9 @@ for f in induced_binary_operators
         function ($f)(d::Union(String, Number), e::NAtype)
             return NA
         end
+        function ($f)(d::NAtype, e::FloatingPoint)
+            return NA
+        end
     end
 end
 

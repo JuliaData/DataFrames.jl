@@ -423,3 +423,6 @@ df = DataFrame(quote
 df[1, 1] = NA
 @assert isna(any(dv))
 @assert isna(all(dv))
+
+# Is this a genuine special case?
+@assert isna(NA ^ 2.0)
