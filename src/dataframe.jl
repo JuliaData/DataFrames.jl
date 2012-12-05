@@ -580,10 +580,10 @@ hcat(dfs::DataFrame...) = cbind(dfs...)
 is_group(df::AbstractDataFrame, name::ByteString) = is_group(index(df), name)
 
 similar{T}(dv::DataVec{T}, dims) =
-    DataVec(zeros(T, dims), fill(true, dims), naRule(dv), dv.replaceVal)  
+    DataVec(zeros(T, dims), fill(true, dims))
 
 similar{T}(dv::PooledDataVec{T}, dims) =
-    PooledDataVec(fill(uint16(1), dims), dv.pool, naRule(dv), dv.replaceVal)  
+    PooledDataVec(fill(uint16(1), dims), dv.pool)
 
 similar(df::DataFrame, dims) = 
     DataFrame([similar(x, dims) for x in df.columns], colnames(df)) 
@@ -592,12 +592,12 @@ similar(df::SubDataFrame, dims) =
     DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
 
 nas{T}(dv::DataVec{T}, dims) =   # TODO move to datavec.jl?
-    DataVec(zeros(T, dims), fill(true, dims), naRule(dv), dv.replaceVal)  
+    DataVec(zeros(T, dims), fill(true, dims))
 
 zeros{T<:ByteString}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
     
 nas{T}(dv::PooledDataVec{T}, dims) =
-    PooledDataVec(fill(uint16(1), dims), dv.pool, naRule(dv), dv.replaceVal)  
+    PooledDataVec(fill(uint16(1), dims), dv.pool)
 
 nas(df::DataFrame, dims) = 
     DataFrame([nas(x, dims) for x in df.columns], colnames(df)) 
