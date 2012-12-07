@@ -24,12 +24,12 @@ df = start(ds)
 
 ds = DataStream(filename, 5)
 
-for minibatch in ds
-  println(" ** Current Minibatch ** ")
-  print(minibatch)
-  println()
-  println()
-end
+# for minibatch in ds
+#   println(" ** Current Minibatch ** ")
+#   print(minibatch)
+#   println()
+#   println()
+# end
 
 means = DataFrames.colmeans(ds)
 @assert abs(means[1, 4] - (-0.005686449)) < 10e-4
@@ -66,18 +66,18 @@ end
 # Deal with different delimiters
 filename = file_path(julia_pkgdir(),"DataFrames/test/data/sample_data.csv")
 ds = DataStream(filename)
-for row in ds
-  print(row)
-end
+# for row in ds
+#   print(row)
+# end
 
 filename = file_path(julia_pkgdir(),"DataFrames/test/data/sample_data.tsv")
 ds = DataStream(filename)
-for row in ds
-  print(row)
-end
+# for row in ds
+#   print(row)
+# end
 
 filename = file_path(julia_pkgdir(),"DataFrames/test/data/sample_data.wsv")
 ds = DataStream(filename)
-for row in ds
-  print(row)
-end
+# for row in ds
+#   print(row)
+# end

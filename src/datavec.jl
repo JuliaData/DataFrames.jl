@@ -762,11 +762,10 @@ function convert{S, T}(::Type{S}, x::AbstractDataVec{T})
     end
 end
 
-# Should this be left in?
-# Gets used in dfzeros() and dfones().
-# function convert{T}(::Type{DataVec{T}},a::Array{T,1})
-#     DataVec(a, falses(length(a)))
-# end
+# Should this be left in? Could be risky.
+function convert{T}(::Type{DataVec{T}}, a::Array{T,1})
+    DataVec(a, falses(length(a)))
+end
 
 #
 # Conversion convenience functions
@@ -814,8 +813,11 @@ end
 
 function repl_show(io::IO, dv::DataVec)
     n = length(dv)
-    print("$n-element $(typeof(dv))\n\n")
-    show(dv)
+    print("$n-element $(typeof(dv))\n")
+    for i in 1:(n - 1)
+        println(strcat(' ', dv[i]))
+    end
+    print(strcat(' ', dv[n]))
 end
 
 ##############################################################################
