@@ -1,12 +1,8 @@
 load("DataFrames")
 using DataFrames
 
-dv = DataVec([1, 2, 3], [false, false, false])
+dv = DataVec([1, 2, 3], bitpack([false, false, false]))
 
-fn = "/Users/johnmyleswhite/julia/extras/bitarray.jl"
-include(fn)
-
-DataVec([1, 2, 3], bitpack([false, false, false]))
 dv = DataVec([1, 2, 3], [false, false, false])
 
 failNA(dv)
@@ -37,9 +33,11 @@ for v in each_replaceNA(dv, 3)
 	println(v)
 end
 
-DataVec(ComplexPair, 5)
+dv = DataVec(ComplexPair, 5)
+
 type MyType
 	a::Int64
 	b::Int64
 end
-DataVec(MyType, 5)
+
+dv = DataVec(MyType, 5)

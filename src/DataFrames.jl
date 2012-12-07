@@ -1,6 +1,10 @@
 require("Options.jl")   
 
+require("bitarray.jl")
+
 module DataFrames
+
+import Main.BitArray, Main.BitVector, Main.bittrues, Main.bitfalses
 
 using Base.Intrinsics
 
@@ -58,9 +62,6 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.dot
 
 using OptionsMod
-
-require("enum.jl")
-require("bitarray.jl")
 
 ## ---- index.jl ----
 ## Types
