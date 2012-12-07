@@ -81,7 +81,7 @@ end
 DataVec{T}(d::Vector{T}, n::BitVector) = DataVec{T}(d, n)
 
 # Convert Vector{Bool}'s to BitArray's to save space
-DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec(d, bitpack(m))
+DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, bitpack(m))
 
 # Convert an existing vector to a DataVec w/ no NA's
 DataVec(x::Vector) = DataVec(x, bitfalses(length(x)))
@@ -762,6 +762,12 @@ function convert{S, T}(::Type{S}, x::AbstractDataVec{T})
     end
 end
 
+# Should this be left in?
+# Gets used in dfzeros() and dfones().
+# function convert{T}(::Type{DataVec{T}},a::Array{T,1})
+#     DataVec(a, falses(length(a)))
+# end
+
 #
 # Conversion convenience functions
 #
@@ -792,7 +798,7 @@ end
 ##############################################################################
 
 function string(x::AbstractDataVec)
-    tmp = join(x, ",")
+    tmp = join(x, ", ")
     return "[$tmp]"
 end
 

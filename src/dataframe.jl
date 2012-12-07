@@ -131,7 +131,8 @@ end
 # if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
 DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
 # if we have a matrix, create a tuple of columns and pass that in
-DataFrame{T}(m::Array{T,2}) = DataFrame([DataVec(squeeze(m[:,i])) for i = 1:size(m)[2]])
+# This broke with changes in list comprehensions
+DataFrame{T}(m::Array{T,2}) = DataFrame({DataVec(squeeze(m[:,i])) for i = 1:size(m, 2)})
 # 
 
 function DataFrame{K,V}(d::Associative{K,V})
