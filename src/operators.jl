@@ -138,9 +138,7 @@ for f in comparison_operators
         end
         function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
             res = DataVec(Array(Bool, length(a)),
-                          BitArray(length(a)),
-                          naRule(a),
-                          false)
+                          BitArray(length(a)))
             for i in 1:length(a)
                 res[i] = isna(a[i]) ? NA : ($f)(a[i], b[i])
             end
@@ -148,9 +146,7 @@ for f in comparison_operators
         end
         function ($f){S, T <: Union(String, Number)}(a::AbstractDataVec{S}, v::T)
             res = DataVec(Array(Bool,length(a)),
-                          BitArray(length(a)),
-                          naRule(a),
-                          false)
+                          BitArray(length(a)))
             for i in 1:length(a)
                 res[i] = isna(a[i]) ? NA : ($f)(a[i], v)
             end
@@ -158,9 +154,7 @@ for f in comparison_operators
         end
         function ($f){S <: Union(String, Number), T}(v::S, a::AbstractDataVec{T})
             res = DataVec(Array(Bool, length(a)),
-                          BitArray(length(a)),
-                          naRule(a),
-                          false)
+                          BitArray(length(a)))
             for i in 1:length(a)
                 res[i] = isna(a[i]) ? NA : ($f)(v, a[i])
             end
@@ -554,3 +548,36 @@ function any(df::DataFrame)
         return false
     end
 end
+
+# TODO: Decide whether this definition has any value
+# Equality respecting NAs
+# * If missingness differs, underlying values are irrelevant
+# * If both entries are NA, underlying values are irrelevant
+# function =={T}(a::DataVec{T}, b::DataVec{T})
+#     if length(a) != length(b)
+#         return false
+#     else
+#         for i = 1:length(a)
+#             if a.na[i] != b.na[i]
+#                 return false
+#             elseif !a.na[i] && !b.na[i] && (a.data[i] != b.data[i])
+#                 return false
+#             end
+#         end
+#     end
+#     return true
+# end
+# function =={T}(a::AbstractDataVec{T}, b::AbstractDataVec{T})
+#     if length(a) != length(b)
+#         return false
+#     else
+#         for i = 1:length(a)
+#             if isna(a[i]) != isna(b[i])
+#                 return false
+#             elseif !isna(a[i]) && a[i] != b[i]
+#                 return false
+#             end
+#         end
+#     end
+#     return true
+# end
