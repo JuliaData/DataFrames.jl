@@ -646,7 +646,7 @@ function isequal{T}(a::PooledDataVec{T}, b::PooledDataVec{T})
     else
         for i = 1:length(a)
             # Will we speed this up by looking under hood?
-            if isna(a[1])
+            if isna(a[i])
                 if !isna(b[i])
                     return false
                 end
@@ -667,7 +667,7 @@ function isequal{T}(a::AbstractDataVec{T}, b::AbstractDataVec{T})
         return false
     else
         for i = 1:length(a)
-            if isna(a[1])
+            if isna(a[i])
                 if !isna(b[i])
                     return false
                 end

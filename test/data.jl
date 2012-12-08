@@ -24,19 +24,15 @@ dvstr = DataVec["one", "two", NA, "four"]
 @assert isa(dvint3, DataVec{Int64})
 @assert isa(dvflt, DataVec{Float64})
 @assert isa(dvstr, DataVec{ASCIIString})
-# TODO: Restore this test?
-#@assert throws_exception(DataVec[[5:8], falses(2)], Exception) 
 @test throws_exception(DataVec([5:8], falses(2)), Exception) 
 
 @assert isequal(DataVec(dvint), dvint)
 
 test_group("PooledDataVec creation")
 pdvstr = PooledDataVec["one", "one", "two", "two", NA, "one", "one"]
-# show() fails
 @assert isa(pdvstr, PooledDataVec{ASCIIString})
 @test throws_exception(PooledDataVec["one", "one", 9], Exception)
-# TODO: Make this pass
-# @assert isequal(PooledDataVec(pdvstr), pdvstr)
+@assert isequal(PooledDataVec(pdvstr), pdvstr)
 
 test_group("PooledDataVec creation with predetermined pool")
 pdvpp = PooledDataVec([1, 2, 2, 3], [1, 2, 3, 4])
@@ -47,9 +43,9 @@ pdvpp = PooledDataVec([1, 2, 2, 3, 2, 1], [1, 2, 3, 4])
 @assert isequal(pdvpp.pool, [1, 2, 3, 4])
 @assert string(pdvpp) == "[1, 2, 2, 3, 2, 1]"
 pdvpp = PooledDataVec(["one", "two", "two"], ["one", "two", "three"])
-@assert all(values(pdvpp) .== ["one", "two", "two"])
+@assert isequal(values(pdvpp), DataVec["one", "two", "two"])
 @assert all(indices(pdvpp) .== uint16([1, 3, 3]))
-@assert all(levels(pdvpp) .== ["one", "three", "two"])
+@assert isequal(levels(pdvpp), DataVec["one", "three", "two"])
 @assert isequal(pdvpp.pool, ["one", "three", "two"])
 @assert string(pdvpp) == "[one, two, two]"
 @test throws_exception(PooledDataVec(["one", "two", "four"], ["one", "two", "three"]), Exception)
@@ -72,8 +68,7 @@ test_group("PooledDataVec access")
 @assert pdvstr[1] == "one"
 @assert isna(pdvstr[5])
 @assert isequal(pdvstr[1:3], DataVec["one", "one", "two"])
-# TODO: Why does this test fail?
-#@assert isequal(pdvstr[[true, false, true, false, true, false, true]], DataVec["one", "two", NA, "one"])
+@assert isequal(pdvstr[[true, false, true, false, true, false, true]], PooledDataVec["one", "two", NA, "one"])
 @assert isequal(pdvstr[[1, 3, 1, 2]], DataVec["one", "two", "one", "one"])
 
 test_group("DataVec methods")
@@ -109,8 +104,8 @@ test_group("DataVec to something else")
 
 test_group("PooledDataVec to something else")
 # TODO: Implement removeNA for PooledDataVec
-# @assert all(removeNA(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
-# @assert all(replaceNA(pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
+@assert all(removeNA(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
+@assert all(replaceNA(pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
 @assert all([length(i)::Int for i in pdvstr] .== [3, 3, 3, 3, 1, 3, 3])
 @assert string(pdvstr[1:3]) == "[one, one, two]"
 
@@ -121,9 +116,8 @@ test_group("DataVec Filter and Replace")
 @assert sum(replaceNA(dvint, 7)) == 14
 
 test_group("PooledDataVec Filter and Replace")
-# TODO: Restore tests
-# @test reduce(strcat, "", removeNA(pdvstr)) == "oneonetwotwooneone"
-# @test reduce(strcat, "", replaceNA(pdvstr,"!")) == "oneonetwotwo!oneone"
+@assert reduce(strcat, "", removeNA(pdvstr)) == "oneonetwotwooneone"
+@assert reduce(strcat, "", replaceNA(pdvstr,"!")) == "oneonetwotwo!oneone"
 
 test_group("DataVec assignment")
 assigntest = DataVec[1, 2, NA, 4]
@@ -312,9 +306,8 @@ x = df7 | with(:( d3 + d3 ))
 @assert isequal(x, df7["d3"] + df7["d3"])
 
 df8 = within(df7, :(d4 = d3 + d3 + 1))
-# TODO: Make this pass
-# @assert isequal(df7, df8[1:3])
-# @assert isequal(df8["d4"], df7["d3"] + df7["d3"] + 1)
+@assert isequal(df7, df8[1:3])
+@assert isequal(df8["d4"], df7["d3"] + df7["d3"] + 1)
 within!(df8, :( d4 = d1 ))
 @assert isequal(df8["d1"], df8["d4"])
 
@@ -333,8 +326,7 @@ test_group("groupby")
 
 gd = groupby(df7, "d1")
 @assert length(gd) == 2
-# TODO: Get this to pass
-# @assert isequal(gd[2]["d2"], PooledDataVec["A", "B", NA, "A", NA, NA, NA, NA])
+@assert isequal(gd[2]["d2"], PooledDataVec["A", "B", NA, "A", NA, NA, NA, NA])
 @assert sum(gd[2]["d3"]) == sum(df7["d3"][removeNA(df7["d1"] .== 2)])
 
 g1 = groupby(df7, ["d1", "d2"])
@@ -348,13 +340,11 @@ end
 @assert res == sum(df7["d1"])
 
 df8 = df7 | groupby(["d2"]) | :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) )
-# TODO: Make this pass
-# @assert isequal(df8["d2"], PooledDataVec[NA, "A", "B"])
+@assert isequal(df8["d2"], PooledDataVec[NA, "A", "B"])
 
-# TODO: Make this pass
-# df9 = based_on(groupby(df7, "d2"),
-#                :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) ))
-# @assert isequal(df9, df8)
+df9 = based_on(groupby(df7, "d2"),
+               :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) ))
+@assert isequal(df9, df8)
 
 # TODO: Make this pass
 # df8 = within(groupby(df7, "d2"),
@@ -367,18 +357,16 @@ df8 = df7 | groupby(["d2"]) | :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) )
 df8 = colwise(df7[[1, 3]], :sum)
 @assert df8[1, "d1_sum"] == sum(df7["d1"])
 
-# TODO: Make this pass
-# df8 = colwise(groupby(df7, "d2"), [:sum, :length])
-# @assert nrow(df8) == 3
-# @assert ncol(df8) == 5
-# @assert df8[1, "d1_sum"] == 13
-# @assert df8[2, "d1_length"] == 8
+df8 = colwise(groupby(df7, "d2"), [:sum, :length])
+@assert nrow(df8) == 3
+@assert ncol(df8) == 5
+@assert df8[1, "d1_sum"] == 13
+@assert df8[2, "d1_length"] == 8
 
-# TODO: Make these pass
-# df9 = df7 | groupby(["d2"]) | [:sum, :length]
-# @assert isequal(df9, df8)
-# df9 = by(df7, "d2", [:sum, :length])
-# @assert isequal(df9, df8)
+df9 = df7 | groupby(["d2"]) | [:sum, :length]
+@assert isequal(df9, df8)
+df9 = by(df7, "d2", [:sum, :length])
+@assert isequal(df9, df8)
 
 test_group("reshape")
 
@@ -432,7 +420,6 @@ a2 = cut(x, [-2, 3, 4.0])
 @assert a2[2] == "(-2.0,3.0]"
 @assert a2[4] == "(4.0,6.0]"
 
-# TODO: Test new constructors
 test_group("New DataVec constructors")
 dv = DataVec(Int64, 5)
 @assert all(isna(dv))
