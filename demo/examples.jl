@@ -2,6 +2,7 @@ load("DataFrames")
 using DataFrames
 
 # FAILS ON JULIA BUG
+# DataFrames includes a temporary workaround
 # load("bitarray.jl")
 
 ##############################################################################
@@ -131,7 +132,7 @@ dvtrues(5)
 
 dv = DataVec(Int64, 5)
 dv = DataVec(Float64, 5)
-# dv = DataVec(ComplexPair, 5) # NEED TO MAKE THIS WORK
+dv = DataVec(ComplexPair, 5)
 
 #
 # While DataVec's are a very powerful tool for dealing with missing data,
@@ -222,16 +223,6 @@ df = DataFrame({Int64, Float64}, 4)
 DataFrame({Int64, Float64}, ["A", "B"], 10)
 
 # DataFrame({Int64, Float64}, Index(["A", "B"]), 10) NEED TO MAKE THIS WORK
-
-#
-# At present it is possible to create initialized DataFrame's, but this is
-# likely to go away.
-#
-
-df = dfzeros(10, 4)
-df = dfones(10, 4)
-df = dfeye(10, 4)
-df = dfeye(10)
 
 #
 # A more uniquely Julian way of creating DataFrame's exploits Julia's ability to
@@ -352,8 +343,6 @@ df = DataFrame(quote
 				 a = 1:5
 			   end)
 
-# NEARLY ALL OF THE NA INTERACTIONS ARE BROKEN!
-
 #
 # NA's with NA's
 #
@@ -425,7 +414,7 @@ NA .< 1
 NA .== dv
 
 dv .< NA
-dv .< "a" # SHOULD THIS WORK?
+dv .< "a"
 dv .< 1
 dv .== dv
 

@@ -99,7 +99,7 @@ DataVec(t::Type, n::Int64) = DataVec(Array(t, n), bittrues(n))
 for (f, basef) in ((:dvzeros, :zeros), (:dvones, :ones))
     @eval begin
         ($f)(n::Int64) = DataVec(($basef)(n), bitfalses(n))
-        ($f)(t::Type, n::Int64) = DatavVec(($basef)(t, n), bitfalses(n))
+        ($f)(t::Type, n::Int64) = DataVec(($basef)(t, n), bitfalses(n))
     end
 end
 
@@ -232,6 +232,11 @@ PooledDataVec(dv::DataVec) = PooledDataVec(dv.data, dv.na)
 
 # Convert a vector to a PooledDataVec
 PooledDataVec(x::Vector) = PooledDataVec(x, falses(length(x)))
+
+# Specify just a vector and a pool
+function PooledDataVec{T}(d::Vector{T}, pool::Vector{T})
+    PooledDataVec(d, pool, falses(length(d)))
+end
 
 # A no-op constructor
 PooledDataVec(d::PooledDataVec) = d
@@ -624,13 +629,13 @@ end
 ##
 ## Editing Functions:
 ##
-## * failNA: Operations should die on the presence of NA's. Like KEEP?
+## * failNA: Operations should die on the presence of NA's.
 ## * removeNA: What was once called FILTER.
 ## * replaceNA: What was once called REPLACE.
 ##
 ## Iterator Functions:
 ##
-## * each_failNA: Operations should die on the presence of NA's. Like KEEP?
+## * each_failNA: Operations should die on the presence of NA's.
 ## * each_removeNA: What was once called FILTER.
 ## * each_replaceNA: What was once called REPLACE.
 ##
@@ -715,7 +720,9 @@ function next(itr::EachReplaceNA, ind::Int)
     end
 end
 
-vector(dv) = failNA(dv.data)
+vector(dv::DataVec) = failNA(dv.data)
+
+# Need to implement these for PooledDataVec's
 
 ##############################################################################
 ##
@@ -945,7 +952,7 @@ function cut{S, T}(x::Vector{S}, breaks::Vector{T})
     from = map(x -> sprint(showcompact, x), [min(x), breaks])
     to = map(x -> sprint(showcompact, x), [breaks, max(x)])
     pool = paste(["[", fill("(", length(breaks))], from, ",", to, "]")
-    PooledDataVec(refs, pool, KEEP, "")
+    PooledDataVec(refs, pool)
 end
 cut(x::Vector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
 
@@ -958,6 +965,14 @@ cut(x::Vector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroup
 function any_na(dv::DataVec)
     for i in 1:length(dv)
         if dv.na[i]
+            return true
+        end
+    end
+    return false
+end
+function any_na(dv::PooledDataVec)
+    for i in 1:length(dv)
+        if isna(dv[i])
             return true
         end
     end

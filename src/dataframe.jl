@@ -359,18 +359,6 @@ end
 # dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
 # changing the in one df can break the other.
 
-# Equality
-function ==(df1::AbstractDataFrame, df2::AbstractDataFrame)
-    if ncol(df1) != ncol(df2)
-        return false
-    end
-    for idx in 1:ncol(df1)
-        if !(df1[idx] == df2[idx])
-            return false
-        end
-    end
-    return true
-end
 
 head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
 head(df::AbstractDataFrame) = head(df, 6)

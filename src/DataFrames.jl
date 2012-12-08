@@ -4,7 +4,7 @@ require("bitarray.jl")
 
 module DataFrames
 
-import Main.BitArray, Main.BitVector, Main.bittrues, Main.bitfalses
+import Main.BitArray, Main.BitVector, Main.bittrues, Main.bitfalses, Main.bitpack
 
 using Base.Intrinsics
 
@@ -152,7 +152,7 @@ load("DataFrames/src/datastream.jl")
 
 # New initialized constructors
 export dvzeros, dvones, dvfalses, dvtrues
-export dfzeros, dfones, dfeye
+export dmzeros, dmones, dmeye, dmdiag
 
 # Conversion functions
 export dvint, dvfloat, dvbool
@@ -166,5 +166,9 @@ export coltypes
 # Define operators after all data structures are in place
 # Then we can order things properly
 load("DataFrames/src/operators.jl")
+
+# Data Array's
+load("DataFrames/src/dataarray.jl")
+load("DataFrames/src/datamatrix.jl")
 
 end # module DataFrames
