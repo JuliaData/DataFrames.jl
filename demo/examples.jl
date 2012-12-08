@@ -91,6 +91,14 @@ dv = DataVec([1, 2, 3])
 dv = DataVec(1:3)
 
 #
+# To order to provide a very concise constructor, we've hacked in
+# a very cute constructor for DataVec's using a trick involving
+# their ref() method.
+#
+
+dv = DataVec[1, 2, NA, 4]
+
+#
 # Because the missingness of a DataVec is stored in metadata rather than
 # using existing values like NaN's, it is easy to create DataVec's
 # that store arbitrary Julia types like ComplexPair's and Bool's.

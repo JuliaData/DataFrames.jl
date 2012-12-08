@@ -1080,7 +1080,9 @@ end
 ##     [f(d) for d in gd]
 ## end
 function map(f::Function, gd::GroupedDataFrame)
-    [g[1,gd.cols] => f(g) for g in gd]
+    #[g[1,gd.cols] => f(g) for g in gd]
+    # List comprehensions have changed
+    [f(g) for g in gd]
 end
 ## function map(f::Function, gd::GroupedDataFrame)
 ##     # preallocate based on the results on the first one
