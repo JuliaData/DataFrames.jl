@@ -8,7 +8,7 @@
 #       b = [1:5]
 #       c = [1:10]
 #   end)
-type NamedArray <: Associative{Any,Any}
+type NamedArray <: Associative{String,Any}
     data::Vector{Any} 
     idx::AbstractIndex
     function NamedArray(data::Vector, idx::AbstractIndex)

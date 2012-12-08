@@ -1,6 +1,6 @@
 
 # Abstract DF includes DataFrame and SubDataFrame
-abstract AbstractDataFrame <: Associative{Any,Any}
+abstract AbstractDataFrame <: Associative{String,Any}
 
 # ## DataFrame - a list of heterogeneous Data vectors with col and row indexs.
 # Columns are a vector, which means that operations that insert/delete columns
@@ -734,6 +734,47 @@ function within!(d::Associative, ex::Expr)
     f(d)
 end
 
+
+
+myref(d, key) = ref(d, key)
+myref{K<:String,V}(d::Associative{K,V}, key) = ref(d, string(key))
+
+myhas(d, key) = has(d, key)
+myhas{K<:String,V}(d::Associative{K,V}, key) = has(d, string(key))
+
+bestkey(d, key) = key
+bestkey{K<:String,V}(d::Associative{K,V}, key) = string(key)
+bestkey(d::NamedArray, key) = string(key)
+
+replace_syms(x) = x
+replace_syms(s::Symbol) = :( myhas(d, $(quot(s))) ? myref(d, $(quot(s))) : $(esc(s)) )
+replace_syms(e::Expr) = Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_syms(x), e.args), e.typ)
+
+quot(value) = expr(:quote, value)  # Toivo special
+
+function transform_helper(d, args...)
+    exa = {:(local d = $(esc(d)))}
+    for ex in args
+        left = ex.args[1]
+        right = replace_syms(ex.args[2])
+        push(exa,
+            :(d[bestkey(d, $(quot(left)))] = $(right)))
+    end
+    push(exa, :d)
+    Expr(:block, exa, Any)
+end
+
+macro transform(df, args...)
+    transform_helper(df, args...)
+end
+
+macro DataFrame(args...)
+    :(DataFrame( @transform(NamedArray(), $(map(esc, args)...)) ))
+end
+
+
+
+    
 function based_on(d::Associative, ex::Expr)
     # Note: keys must by symbols
     replace_symbols(x, d::Associative) = x

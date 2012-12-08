@@ -109,6 +109,8 @@ export colnames, colnames!, names!, replace_names, replace_names!,
        array, matrix, vector,
        save, load_df,
        subset
+## Macros
+export @transform, @DataFrame
 
 ## ---- formula.jl ----
 ## Types
