@@ -110,6 +110,40 @@ for (f, basef) in ((:dvfalses, :falses), (:dvtrues, :trues))
     end
 end
 
+# Super-hacked out constructor: DataVec[1, 2, NA]
+# Need to do type inference
+function _dv_most_generic_type(vals)
+    # iterate over vals tuple to find the most generic non-NA type
+    toptype = None
+    for i = 1:length(vals)
+        if !isna(vals[i])
+            toptype = promote_type(toptype, typeof(vals[i]))
+        end
+    end
+    # TODO: confirm that this type has a baseval()
+    toptype
+end
+function ref(::Type{DataVec}, vals...)
+    # first, get the most generic non-NA type
+    toptype = _dv_most_generic_type(vals)
+
+    # then, allocate vectors
+    lenvals = length(vals)
+    ret = DataVec(Array(toptype, lenvals), BitArray(lenvals))
+    # copy from vals into data and mask
+    for i = 1:lenvals
+        if isna(vals[i])
+            ret.data[i] = baseval(toptype)
+            ret.na[i] = true
+        else
+            ret.data[i] = vals[i]
+            # ret.na[i] = false (default)
+        end
+    end
+
+    return ret
+end
+
 ##############################################################################
 ##
 ## PooledDataVec type definition
@@ -241,15 +275,47 @@ end
 # A no-op constructor
 PooledDataVec(d::PooledDataVec) = d
 
+# Super hacked-out constructor: PooledDataVec[1, 2, 2, NA]
+function ref(::Type{PooledDataVec}, vals...)
+    # for now, just create a DataVec and then convert it
+    # TODO: rewrite for speed
+    PooledDataVec(DataVec[vals...])
+end
+
 ##############################################################################
 ##
 ## PooledDataVec utilities
 ##
 ##############################################################################
 
-values{T}(x::PooledDataVec{T}) = [x.pool[r] for r in x.refs]
+function values{T}(x::PooledDataVec{T})
+    n = length(x)
+    res = DataVec(T, n)
+    for i in 1:n
+        r = x.refs[i]
+        if r == 0
+            res[i] = NA
+        else
+            res[i] = x.pool[r]
+        end
+    end
+    return res
+end
 
-levels{T}(x::PooledDataVec{T}) = x.pool
+function levels{T}(x::PooledDataVec{T})
+    if any(x.refs .== 0)
+        n = length(x.pool)
+        d = Array(T, n + 1)
+        for i in 1:n
+            d[i] = x.pool[i]
+        end
+        m = bitfalses(n + 1)
+        m[n + 1] = true
+        DataVec(d, m)
+    else
+        DataVec(copy(x.pool), bitfalses(length(x)))
+    end
+end
 
 indices{T}(x::PooledDataVec{T}) = x.refs
 
@@ -279,47 +345,6 @@ function table{T}(d::PooledDataVec{T})
         end
     end
     return poolref
-end
-
-# Constructor from type
-function _dv_most_generic_type(vals)
-    # iterate over vals tuple to find the most generic non-NA type
-    toptype = None
-    for i = 1:length(vals)
-        if !isna(vals[i])
-            toptype = promote_type(toptype, typeof(vals[i]))
-        end
-    end
-    # TODO: confirm that this type has a baseval()
-    toptype
-end
-
-
-function ref(::Type{DataVec}, vals...)
-    # first, get the most generic non-NA type
-    toptype = _dv_most_generic_type(vals)
-
-    # then, allocate vectors
-    lenvals = length(vals)
-    ret = DataVec(Array(toptype, lenvals), BitArray(lenvals))
-    # copy from vals into data and mask
-    for i = 1:lenvals
-        if isna(vals[i])
-            ret.data[i] = baseval(toptype)
-            ret.na[i] = true
-        else
-            ret.data[i] = vals[i]
-            # ret.na[i] = false (default)
-        end
-    end
-
-    return ret
-end
-function ref(::Type{PooledDataVec}, vals...)
-    # for now, just create a DataVec and then convert it
-    # TODO: rewrite for speed
-
-    PooledDataVec(DataVec[vals...])
 end
 
 # copy does a deep copy
@@ -673,56 +698,82 @@ function replaceNA{S, T}(dv::DataVec{S}, replacement_val::T)
 end
 
 type EachFailNA{T}
-    dv::DataVec{T}
+    dv::AbstractDataVec{T}
 end
-each_failNA{T}(dv::DataVec{T}) = EachFailNA(dv)
+each_failNA{T}(dv::AbstractDataVec{T}) = EachFailNA(dv)
 start(itr::EachFailNA) = 1
 function done(itr::EachFailNA, ind::Int)
     return ind > length(itr.dv)
 end
 function next(itr::EachFailNA, ind::Int)
-    if itr.dv.na[ind]
+    if isna(itr.dv[ind])
         error("NA's encountered. Failing...")
     else
-        (itr.dv.data[ind], ind + 1)
+        (itr.dv[ind], ind + 1)
     end
 end
 
 type EachRemoveNA{T}
-    dv::DataVec{T}
+    dv::AbstractDataVec{T}
 end
-each_removeNA{T}(dv::DataVec{T}) = EachRemoveNA(dv)
+each_removeNA{T}(dv::AbstractDataVec{T}) = EachRemoveNA(dv)
 start(itr::EachRemoveNA) = 1
 function done(itr::EachRemoveNA, ind::Int)
     return ind > length(itr.dv)
 end
 function next(itr::EachRemoveNA, ind::Int)
-    while ind <= length(itr.dv) && itr.dv.na[ind]
+    while ind <= length(itr.dv) && isna(itr.dv[ind])
         ind += 1
     end
-    (itr.dv.data[ind], ind + 1)
+    (itr.dv[ind], ind + 1)
 end
 
 type EachReplaceNA{T}
-    dv::DataVec{T}
+    dv::AbstractDataVec{T}
     replacement_val::T
 end
-each_replaceNA{T}(dv::DataVec{T}, v::T) = EachReplaceNA(dv, v)
+each_replaceNA{T}(dv::AbstractDataVec{T}, v::T) = EachReplaceNA(dv, v)
 start(itr::EachReplaceNA) = 1
 function done(itr::EachReplaceNA, ind::Int)
     return ind > length(itr.dv)
 end
 function next(itr::EachReplaceNA, ind::Int)
-    if itr.dv.na[ind]
+    if isna(itr.dv[ind])
         (itr.replacement_val, ind + 1)
     else
-        (itr.dv.data[ind], ind + 1)
+        (itr.dv[ind], ind + 1)
     end
 end
 
-vector(dv::DataVec) = failNA(dv.data)
+# TODO: Re-implement these methods more efficently
+function failNA{T}(dv::PooledDataVec{T})
+    n = length(dv)
+    for i in 1:n
+        if isna(dv[i])
+            error("NA's encountered. Failing...")
+        end
+    end
+    return convert(Vector{T}, [x::T for x in dv])
+end
 
-# Need to implement these for PooledDataVec's
+function removeNA{T}(dv::PooledDataVec{T})
+    return convert(Vector{T}, [x::T for x in dv[!isna(dv)]])
+end
+
+function replaceNA{S, T}(dv::PooledDataVec{S}, replacement_val::T)
+    n = length(dv)
+    res = Array(S, n)
+    for i in 1:n
+        if isna(dv[i])
+            res[i] = replacement_val
+        else
+            res[i] = dv[i]
+        end
+    end
+    return res
+end
+
+vector(dv::AbstractDataVec) = failNA(dv)
 
 ##############################################################################
 ##
@@ -835,10 +886,10 @@ show(io, x::AbstractDataVec) = Base.show_comma_array(io, x, '[', ']')
 
 function show(io, x::PooledDataVec)
     print("values: ")
-    Base.show_vector(io, values(x), "[","]")
+    print(values(x))
     print("\n")
     print("levels: ")
-    Base.show_vector(io, levels(x), "[", "]")
+    print(levels(x))
 end
 
 function repl_show(io::IO, dv::DataVec)
@@ -848,6 +899,17 @@ function repl_show(io::IO, dv::DataVec)
         println(strcat(' ', dv[i]))
     end
     print(strcat(' ', dv[n]))
+end
+
+function repl_show(io::IO, dv::PooledDataVec)
+    n = length(dv)
+    print("$n-element $(typeof(dv))\n")
+    for i in 1:(n - 1)
+        println(strcat(' ', dv[i]))
+    end
+    println(strcat(' ', dv[n]))
+    print("levels: ")
+    print(levels(dv))
 end
 
 ##############################################################################
