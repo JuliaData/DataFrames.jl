@@ -159,7 +159,7 @@ export dvint, dvfloat, dvbool
 
 export colmins, colmaxs, colprods, colsums,
        colmeans, colmedians, colstds, colvars,
-       colffts, colnorms
+       colffts, colnorms, colranges
 
 export coltypes
 
