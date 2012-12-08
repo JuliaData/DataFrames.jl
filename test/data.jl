@@ -103,7 +103,6 @@ test_group("DataVec to something else")
 @assert repr(dvint) == "[1,2,NA,4]"
 
 test_group("PooledDataVec to something else")
-# TODO: Implement removeNA for PooledDataVec
 @assert all(removeNA(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
 @assert all(replaceNA(pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
 @assert all([length(i)::Int for i in pdvstr] .== [3, 3, 3, 3, 1, 3, 3])
