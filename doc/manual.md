@@ -8,11 +8,23 @@ This manual is meant to introduce new users to the DataFrame package for Julia, 
 	load("DataFrames")
 	using DataFrames
 
- Overview of Basic Types for Working with Data
+# Overview of Basic Types for Working with Data
+
+There are four new types introduced by the current generation of the DataFrames package:
+
+* NAType: A scalar value that represents a single missing piece of data. This value behaves much like `NA` in R.
+* DataVec: A vector that can contain values of a specific type as well as `NA`'s.
+* PooledDataVec: An alternative to DataVec's that can be more memory-efficient if a small number of distinc values are present in the underlying vector of data.
+* DataFrame: A tabular data structure that is similar to R's `data.frame` and Pandas' `DataFrame`.
+
+In the future, we will also be introducing generic Arrays of arbitrary dimension. After this, we will provide two new types:
+
+* DataMatrix: A matrix that can contain values of a specific type as well as `NA`'s.
+* DataFrame: An array that can contain values of a specific type as well as `NA`'s.
 
 # The NA Type
 
-The core problem with using the data structures built into Julia for data analysis is that there is no mechanism for expressing the absence of data. Traditional database systems express the absence of data using a `NULL` value, while data analysis packages typically follow the tradition set by S and use `NA` for this purpose.
+The core problem with using the data structures built into Julia for data analysis is that there is no mechanism for expressing the absence of data. Traditional database systems express the absence of data using a `NULL` value, while data analysis packages typically follow the tradition set by S and use `NA` for this purpose when referring to data. (NB: _In S and R, `NULL` is present in addition to `NA`, but it refers to the absence of any specific value for a variable in code, rather than the absence of any specific value for something inside of a data set._)
 
 The DataFrames package expresses the absence of data by introducing a new type called `NAtype`. This value is used everywhere to indicate missingness in the underlying data set.
 
@@ -23,10 +35,12 @@ To see this value, you can type
 in the Julia REPL. You can learn more about the nature of this new type using standard Julia functions for navigating Julia's type system:
 
 	typeof(NAtype)
+
 	super(NAtype)
+
 	dump(NAtype)
 
-While the `NAtype` provides the essential type needed to express missingness, the practical way that missing data is denoted using a special constant `NA`, which is an instance of `NAtype`:
+While the `NAtype` provides the essential type needed to express missingness, the practical way that missing data is denoted uses a special constant `NA`, which is an instance of `NAtype`:
 
 	NA
 	NAtype()
@@ -34,9 +48,10 @@ While the `NAtype` provides the essential type needed to express missingness, th
 You can explore this value to confirm that `NA` is just an instance of the `NAtype`:
 
 	typeof(NA)
+
 	dump(NA)
 
-Simply being able to express the notion that a data point is missing is important, but we're ultimately not interested in just expressing data: we want to build tools for interacting with data that may be missing. In a later section, we'll describe the details of interacting with `NA`, but for now we'll state the defining property of `NA`: because it expresses ignorance about the value of something, every interaction with `NA` corrupts known values and transforms them into `NA`'s:
+Simply being able to express the notion that a data point is missing is important, but we're ultimately not interested in just expressing data: we want to build tools for interacting with data that may be missing. In a later section, we'll describe the details of interacting with `NA`, but for now we'll state the defining property of `NA`: _because `NA` expresses ignorance about the value of something, every interaction with `NA` corrupts known values and transforms them into `NA`'s. Below we show how this works for addition:
 
 	1 + NA
 
@@ -44,7 +59,7 @@ We'll discuss the subtleties of `NA`'s ability to corrupt known values in a late
 
 # The DataVec Type
 
-To express the notion that complex data structure like an `Array` contains missing entries, we need to construct a new data structure that can contain standard Julia values like `Float64` while also allowing the presence of `NA` values.
+To express the notion that a complex data structure like an `Array` contains missing entries, we need to construct a new data structure that can contain standard Julia values like `Float64` while also allowing the presence of `NA` values.
 
 Of course, a Julian `Array{Any}` would allow us to do this:
 
@@ -52,11 +67,11 @@ Of course, a Julian `Array{Any}` would allow us to do this:
 
 But consistently using `Any` arrays would make Julia much less efficient. Instead, we want to provide a new data structure that parallels a standard Julia `Array`, while allowing exactly one additional value: `NA`.
 
-This new data structure is the `DataVec` type:
+This new data structure is the `DataVec` type. You can construct your first `DataVec` using the following code:
 
 	DataVec[1, NA, 3]
 
-As you'll see when entering this into the REPL, this snippet of code creates a `3-element DataVec{Int64}`. This type of `DataVec` can store `Int64` values or an `NA`.
+As you'll see when entering this into the REPL, this snippet of code creates a `3-element DataVec{Int64}`. A `DataVec` of type `DataVec{Int64}` can store `Int64` values or `NA`'s. In general, a `DataVec` of type `DataVec{T}` can store values of type `T` or `NA`'s.
 
 This is achieved by a very simple mechanism: a `DataVec{T}` is a new parametric composite type that we've added to Julia that wraps around a standard Julia `Vector` and complements this basic vector with a metadata store that indicates whether any entry of the wrapped vector is missing. In essence, a `DataVec` of type `T` is defined as:
 
@@ -70,10 +85,13 @@ This allows us to assess whether any entry of the vector is `NA` at the cost of 
 Instead, you can simply focus on the behavior of the `DataVec` type. Let's start off by exploring the basic properties of this new type:
 
 	DataVec
+
 	typeof(DataVec)
 	typeof(DataVec{Int64})
+
 	super(DataVec)
 	super(super(DataVec))
+
 	DataVec.names
 
 If you want to drill down further, you can always run `dump()`:
@@ -82,7 +100,9 @@ If you want to drill down further, you can always run `dump()`:
 
 We're quite proud that the definition of `DataVec`'s is so simple: it makes it easier for end-users to start contributing code to the DataFrames package.
 
-But let's focus on ways that you can use these `DataVec`'s. The simplest possible constructor requires the end-user to directly specify both the underlying data values and the missingness metadata as a `BitVector`:
+# Constructing DataVec's
+
+Let's focus on ways that you can create new `DataVec`'s. The simplest possible constructor requires the end-user to directly specify both the underlying data values and the missingness metadata as a `BitVector`:
 
 	dv = DataVec([1, 2, 3], falses(3))
 
@@ -98,17 +118,18 @@ When the values you wish to store in a `DataVec` are sequential, you can cut dow
 
 	dv = DataVec(1:3)
 
-In contrast, when some of the values in the new `DataVec` are missing, we've constructed a very special constructor:
+In contrast to these normal-looking constructors, when some of the values in the new `DataVec` are missing, there is a very special type of constructor you can use:
 
 	dv = DataVec[1, 2, NA, 4]
 
-_Technical Note_: This special type of constructor is defined by defining the `ref()` function to apply to values of type `DataVec`.
+_Technical Note_: This special type of constructor is defined by overloading the `ref()` function to apply to values of type `DataVec`.
 
 # DataVec's with Special Types
 
 One of the virtues of using metadata to represent missingness instead of sentinel values like `NaN` is that we can easily define `DataVec`'s over arbitrary types. For example, we can create `DataVec`'s that store arbitrary Julia types like `ComplexPair`'s and `Bool`'s:
 
 	dv = DataVec([1 + 2im, 3 - 1im])
+
 	dv = DataVec([true, false])
 
 In fact, we can add a new type of our own and then wrap it inside of a new sort of `DataVec`:
@@ -130,14 +151,16 @@ Of course, specializing the types of `DataVec`'s means that we sometimes need to
 Using these, we can naturally convert between types:
 
 	dv = DataVec([1.0, 2.0])
+
 	dvint(dv)
 
 In the opposite direction, we sometimes want to create arbitrary length `DataVec`'s that have a specific type before we insert values:
 
 	dv = DataVec(Float64, 5)
+
 	dv[1] = 1
 
-`DataVec`'s created in this way have `NA` in all entries. If you instead wish to initialize a `DataVec` with standard initial values, you can several functions:
+`DataVec`'s created in this way have `NA` in all entries. If you instead wish to initialize a `DataVec` with standard initial values, you can use one of several functions:
 
 * dvzeros()
 * dvones()
@@ -148,71 +171,78 @@ Like the similar functions in Julia's Base, we can specify the length and type o
 
 	dv = dvzeros(5)
 	dv = dvzeros(Int64, 5)
+
 	dv = dvones(5)
 	dv = dvones(Int64, 5)
+
 	dv = dvfalses(5)
+
 	dv = dvtrues(5)
+
+# The PooledDataVec Type
+
+_TO BE FILLED IN_
 
 # The DataFrame Type
 
-While `DataVec`'s are a very powerful tool for dealing with missing data, they only bring us part of the way towards representing real-world data in Julia. The final missing data structure is a simple tabular data structure like those used in relational databases or spreadsheet software.
+While `DataVec`'s are a very powerful tool for dealing with missing data, they only bring us part of the way towards representing real-world data in Julia. The final missing data structure is a tabular data structure of the sort used in relational databases and spreadsheet software.
 
 To represent these kinds of tabular data sets, the DataFrames package provides the `DataFrame` type. The `DataFrame` type is a new Julian composite type with just two fields:
 
-* `columns`: A Julia `Vector{Any}`, each element of which will be a single column of the tabular data. The typical column is of type `DataVec{T}`, but this is not currently enforced.
-* `colindex`: An `Index` object that allows one to access entries in the columns using both numeric indexing (like a standard `Array`) or key-valued indexing (like a standard `Dict`). The details of the `Inded` type will be described later; for now, we just note that an `Index` can easily be constructed from any array of `ByteString`'s that specify the names of the columns.
+* `columns`: A Julia `Vector{Any}`, each element of which will be a single column of the tabular data. The typical column is of type `DataVec{T}`, but this is not strictly required.
+* `colindex`: An `Index` object that allows one to access entries in the columns using both numeric indexing (like a standard Julian `Array`) or key-valued indexing (like a standard Julian `Dict`). The details of the `Index` type will be described later; for now, we just note that an `Index` can easily be constructed from any array of `ByteString`'s. This array is assumed to specify the names of the columns. For example, you might create an index as follows: `Index(["ColumnA", "ColumnB"])`.
 
-In practice, there are many different types of `DataFrame`-like constructs. But all objects that behave like a `DataFrame` will behave according to the following rules:
+In the future, we hope that there will be many different types of `DataFrame`-like constructs. But all objects that behave like a `DataFrame` will behave according to the following rules that are enforced by an `AbstractDataFrame` protocol:
 
 * A DataFrame-like object is a table with `M` rows and `N` columns.
 * Every column of a DataFrame-like object has its own type. This heterogeneity of types is the reason that a DataFrame cannot simply be represented using a matrix of `DataVec`'s.
 * Each columns of a DataFrame-like object is guaranteed to have length `M`.
-* Each columns of a DataFrame-like object is guaranteed to be capable of storing an `NA` value if one is ever inserted. NB: _There is ongoing debate about whether the columns of a DataFrame should always be `DataVec`'s or whether the columns should only be converted to `DataVec`'s if an `NA` is introduced by an assignment operation.
+* Each columns of a DataFrame-like object is guaranteed to be capable of storing an `NA` value if one is ever inserted. NB: _There is ongoing debate about whether the columns of a DataFrame should always be `DataVec`'s or whether the columns should only be converted to `DataVec`'s if an `NA` is introduced by an assignment operation._
+
+# Constructing DataFrame's
+
+Now that you understand what a `DataFrame` is, let's build one:
 
 	df_columns = {dvzeros(5), dvfalses(5)}
 	df_colindex = Index(["A", "B"])
 
 	df = DataFrame(df_columns, df_colindex)
 
-In practice, many other constructors are more convenient to use. The simplest is to provide only the columns, which will produce default names for all the columns.
+In practice, many other constructors are more convenient to use than this basic one. The simplest convenience constructors is to provide only the columns, which will produce default names for all the columns.
 
 	df = DataFrame(df_columns)
 
-One often would like to construct DataFrame's from columns which may not yet be DataVec's. This is possible using the same type of constructor. All columns that are not yet DataVec's will be converted to DataVec's. (THIS LAST CLAIM IS NOT YET TRUE AND TOM DOES NOT WANT IT.)
-
+One often would like to construct `DataFrame`'s from columns which may not yet be `DataVec`'s. This is possible using the same type of constructor. All columns that are not yet `DataVec`'s will be converted to `DataVec`'s:
 
 	df = DataFrame({ones(5), falses(5)})
 
-Often one wishes to convert an existing matrix into a DataFrame. This is also possible.
+Often one wishes to convert an existing matrix into a `DataFrame`. This is also possible:
 
 	df = DataFrame(ones(5, 3))
 
-Like DataVec's, it is possible to create empty DataFrame's in which all of the default values are NA.
-
-In the simplest version, we specify a type, the number of rows and the number of columns.
+Like `DataVec`'s, it is possible to create empty `DataFrame`'s in which all of the default values are `NA`. In the simplest version, we specify a type, the number of rows and the number of columns:
 
 	df = DataFrame(Int64, 10, 5)
 
-Alternatively, one can specify a Vector of types. This implicitly defines the number of columns, but one must still specify the number of rows.
+Alternatively, one can specify a `Vector` of types. This implicitly defines the number of columns, but one must still explicitly specify the number of rows:
 
 	df = DataFrame({Int64, Float64}, 4)
 
-When you know what the names of the columns will be, but not the values it is possible to specify them as well. SHOULD THIS BE DataFrame(types, nrow, names) INSTEAD?
+When you know what the names of the columns will be, but not the values, it is possible to specify the column names at the time of construction.
 
+_SHOULD THIS BE `DataFrame(types, nrow, names)` INSTEAD?_
 
 	DataFrame({Int64, Float64}, ["A", "B"], 10)
-	DataFrame({Int64, Float64}, Index(["A", "B"]), 10) NEED TO MAKE THIS WORK
+	DataFrame({Int64, Float64}, Index(["A", "B"]), 10) # STILL NEED TO MAKE THIS WORK
 
-A more uniquely Julian way of creating DataFrame's exploits Julia's ability to quote Expressions in order to produce behavior like R's delayed evaluation strategy.
-
+A more uniquely Julian way of creating `DataFrame`'s exploits Julia's ability to quote `Expression`'s in order to produce behavior like R's delayed evaluation strategy.
 
 	df = DataFrame(quote
 	 				 A = rand(5)
 	 				 B = dvtrues(5)
 				   end)
 
-
-## Accessing and Assigning Elements of DataVec's and DataFrame's
+# Accessing and Assigning Elements of DataVec's and DataFrame's
 
 Because a DataVec is a 1-dimensional Array, indexing into it is trivial and behaves exactly like indexing into a standard Julia vector.
 
@@ -230,16 +260,16 @@ Because a DataVec is a 1-dimensional Array, indexing into it is trivial and beha
 	dv[[true, true, false, false, false]] = dvones(2) # SHOULD WE MAKE THIS WORK?
 
 
-In contrast, a DataFrame is a random-access data structure that can be indexing into and assigned to in many different ways. We walk through them one-by-one below.
+In contrast, a DataFrame is a random-access data structure that can be indexed into and assigned to in many different ways. We walk through many of them below.
 
-### Simple Numeric Indexing
+## Simple Numeric Indexing
 
 	df = DataFrame(Int64, 5, 3)
 	df[1, 3]
 	df[1]
 
 
-### Range-Based Numeric Indexing
+## Range-Based Numeric Indexing
 
 	df = DataFrame(Int64, 5, 3)
 
@@ -249,7 +279,7 @@ In contrast, a DataFrame is a random-access data structure that can be indexing 
 	df[1, 1:3]
 	df[:, :]
 
-### Column Name Indexing
+## Column Name Indexing
 
 	df["x1"]
 	df[1, "x1"]
@@ -259,14 +289,16 @@ In contrast, a DataFrame is a random-access data structure that can be indexing 
 	df[1, ["x1", "x2"]]
 	df[1:3, ["x1", "x2"]]
 
-## Unary Operators for NA, DataVec's and DataFrame's
+# Unary Operators for NA, DataVec's and DataFrame's
+
+In practice, we want to compute with these new types. The first requirement is to define the basic unary operators:
 
 * `+`
 * `-`
 * `!`
-* MISSING: The transpose unary operator
+* _MISSING: The transpose unary operator_
 
-You can see these in action:
+You can see these operators in action below:
 
 	+NA
 	-NA
@@ -278,9 +310,13 @@ You can see these in action:
 
 ## Binary Operators
 
-* Arithmetic Operators: +, .+, -, .-, *, .*, /, ./, ^, .^
-* Bit Operators: MISSING
-* Comparison Operators: ==, !=, <, <=, >, >=, .==, .!=, .<, .<=, .>, .>=
+* Arithmetic Operators:
+	* Scalar Arithmetic: `+`, `-`, `*`, `/`, `^`,
+	* Array Arithmetic: `+`, `.+`, `-`, `.-`, `.*`, `./`, `.^`
+* Bit Operators: `&`, `|`, `$`
+* Comparison Operators:
+	* Scalar Comparisons: `==`, `!=`, `<`, `<=`, `>`, `>=`
+	* Array Comparisons: `.==`, `.!=`, `.<`, `.<=`, `.>`, `.>=`
 
 The standard arithmetic operators work on DataVec's when they interact with Number's, NA's or other DataVec's.
 
@@ -290,7 +326,7 @@ The standard arithmetic operators work on DataVec's when they interact with Numb
 					 a = 1:5
 				   end)
 
-### NA's with NA's
+## NA's with NA's
 
 	NA + NA
 	NA .+ NA
@@ -298,7 +334,7 @@ The standard arithmetic operators work on DataVec's when they interact with Numb
 And so on for -, .- , *, .*, /, ./, ^, .^ 
 
 
-### NA's with Scalars and Scalars with NA's
+## NA's with Scalars and Scalars with NA's
 
 	1 + NA
 	1 .+ NA
@@ -307,7 +343,7 @@ And so on for -, .- , *, .*, /, ./, ^, .^
 
 And so on for -, .- , *, .*, /, ./, ^, .^ 
 
-### NA's with DataVec's
+## NA's with DataVec's
 
 	dv + NA
 	dv .+ NA
@@ -316,21 +352,21 @@ And so on for -, .- , *, .*, /, ./, ^, .^
 
 And so on for -, .- , *, .*, /, ./, ^, .^ 
 
-### DataVec's with Scalars
+## DataVec's with Scalars
 
 	dv + 1
 	dv .+ 1
 
 And so on for -, .- , .*, ./, .^ 
 
-### Scalars with DataVec's
+## Scalars with DataVec's
 
 	1 + dv
 	1 .+ dv
 
 And so on for -, .- , *, .*, /, ./, ^, .^ 
 
-HOW MUCH SHOULD WE HAVE OPERATIONS W/ DATAFRAMES?
+_HOW MUCH SHOULD WE HAVE OPERATIONS W/ DATAFRAMES?_
 
 	NA + df
 	df + NA
@@ -342,9 +378,11 @@ HOW MUCH SHOULD WE HAVE OPERATIONS W/ DATAFRAMES?
 
 And so on for -, .- , .*, ./, .^ 
 
-The standard bit operators work on DataVec's: MISSING
+The standard bit operators work on `DataVec`'s:
 
-The standard comparison operators work on DataVec's:
+_TO BE FILLED IN_
+
+The standard comparison operators work on `DataVec`'s:
 
 	NA .< NA
 	NA .< "a"
@@ -392,11 +430,11 @@ The standard comparison operators work on DataVec's:
 * `logb`
 * `sqrt`
 
-Standard functions that apply to scalar values of type Number return NA when applied to NA:
+Standard functions that apply to scalar values of type `Number` return `NA` when applied to `NA`:
 
 	abs(NA)
 
-Standard functions are broadcast to the elements of DataVec's and DataFrame's for elementwise application:
+Standard functions are broadcast to the elements of `DataVec`'s and `DataFrame`'s for elementwise application:
 
 	dv = dvones(5)
 	df = DataFrame({dv})
@@ -408,7 +446,7 @@ Standard functions are broadcast to the elements of DataVec's and DataFrame's fo
 
 * `diff`
 
-Functions that operate on pairs of entries of a Vector work on DataVec's and insert NA where it would be produced by other operator rules:
+Functions that operate on pairs of entries of a `Vector` work on `DataVec`'s and insert `NA` where it would be produced by other operator rules:
 
 	diff(dv)
 
@@ -420,7 +458,7 @@ Functions that operate on pairs of entries of a Vector work on DataVec's and ins
 * MISSING: `cummin`
 * MISSING: `cummax`
 
-Functions that operate cumulatively on the entries of a Vector work on DataVec's and insert NA where it would be produced by other operator rules:
+Functions that operate cumulatively on the entries of a `Vector` work on `DataVec`'s and insert `NA` where it would be produced by other operator rules:
 
 	cumprod(dv)
 	cumsum(dv)
@@ -439,6 +477,8 @@ Functions that operate cumulatively on the entries of a Vector work on DataVec's
 * `fft`
 * `norm`
 
+You can see these in action:
+
 	min(dv)
 
 To broadcast these to individual columns, use the `col*s` versions:
@@ -454,6 +494,8 @@ To broadcast these to individual columns, use the `col*s` versions:
 * `colffts`
 * `colnorms`
 
+You can see these in action:
+
 	colmins(df)
 
 # Loading Standard Data Sets
@@ -467,22 +509,22 @@ The DataFrames package is easiest to explore if you also install the RDatasets p
 
 # Split-Apply-Combine
 
-The basic mechanism for spliting data is the groupby() function, which will produce a GroupedDataFrame() object that is easiest to interact with by iterating over its entries:
+The basic mechanism for spliting data is the `groupby()` function, which will produce a `GroupedDataFrame` object that is easiest to interact with by iterating over its entries:
 
 	for df in groupby(iris, "Species")
 		println("A DataFrame with $(nrow(df)) rows")
 	end
 
-The `|` (pipe) operator for GroupedDataFrame's allows you to run simple functions on the columns of the induced DataFrame's. You pass a simple function by producing a symbol with its name:
+The `|` (pipe) operator for `GroupedDataFrame`'s allows you to run simple functions on the columns of the induced `DataFrame`'s. You pass a simple function by producing a symbol with its name:
  
 	groupby(iris, "Species") | :mean
 
-Another simple way to split-and-apply (without clear combining) is to use the map() function:
+Another simple way to split-and-apply (without clear combining) is to use the `map()` function:
 
 	map(df -> mean(df[1]), groupby(iris, "Species"))
 
 # Reshaping
 
-If you are looking for the equivalent of the R "Reshape" packages melt() and cast() functions, you can use stack() and unstack(). Note that these functions have exactly the oppposite syntax as melt() and cast():
+If you are looking for the equivalent of the R "Reshape" packages `melt()` and `cast()` functions, you can use `stack()` and `unstack()`. Note that these functions have exactly the oppposite syntax as `melt()` and `cast()`:
 
 	stack(iris, ["Petal.Length", "Petal.Width"])
