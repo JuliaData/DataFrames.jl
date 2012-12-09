@@ -463,7 +463,7 @@ for f in pairwise_vector_operators
         function ($f)(dv::DataVec)
             n = length(dv)
             new_data = ($f)(dv.data)
-            new_na = bitfalses(n - 1)
+            new_na = falses(n - 1)
             for i = 2:(n - 1)
                 if isna(dv[i])
                     new_na[i - 1] = true
@@ -482,7 +482,7 @@ for f in cumulative_vector_operators
     @eval begin
         function ($f)(dv::DataVec)
             new_data = ($f)(dv.data)
-            new_na = bitfalses(length(dv))
+            new_na = falses(length(dv))
             hitna = false
             for i = 1:length(dv)
                 if isna(dv[i])

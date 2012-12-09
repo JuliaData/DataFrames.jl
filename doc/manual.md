@@ -84,7 +84,7 @@ We're quite proud that the definition of `DataVec`'s is so simple: it makes it e
 
 But let's focus on ways that you can use these `DataVec`'s. The simplest possible constructor requires the end-user to directly specify both the underlying data values and the missingness metadata as a `BitVector`:
 
-	dv = DataVec([1, 2, 3], bitfalses(3))
+	dv = DataVec([1, 2, 3], falses(3))
 
 This is rather ugly, so we've defined many additional constructors that make it easier to create a new `DataVec`. The first simplification is to ignore the distinction between a `BitVector{Bool}` and an `Array{Bool, 1}` by allowing users to specify `Bool` values directly:
 

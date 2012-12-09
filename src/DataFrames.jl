@@ -1,12 +1,10 @@
 require("Options.jl")   
 
-require("bitarray.jl")
-
 module DataFrames
 
-import Main.BitArray, Main.BitVector, Main.bittrues, Main.bitfalses, Main.bitpack
-
 using Base.Intrinsics
+
+import Base.BitArray, Base.BitMatrix, Base.BitVector, Base.bitpack
 
 import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote, Base.promote_rule,
        Base.similar, Base.fill, Base.fill!, Base.one, Base.copy_to, Base.reshape,

@@ -1,10 +1,6 @@
 load("DataFrames")
 using DataFrames
 
-# FAILS ON JULIA BUG
-# DataFrames includes a temporary workaround
-# load("bitarray.jl")
-
 ##############################################################################
 #
 # Introduction to Basic Types and Constructors
@@ -73,7 +69,7 @@ DataVec.names
 # other metadata to be set to defaults.
 #
 
-dv = DataVec([1, 2, 3], bitfalses(3))
+dv = DataVec([1, 2, 3], falses(3))
 
 #
 # A simpler type of constructor assumes that no data is missing and

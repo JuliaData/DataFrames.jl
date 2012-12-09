@@ -38,13 +38,13 @@ DataArray{T}(d::Array{T}, n::BitArray) = DataArray{T}(d, n)
 DataArray{T}(d::Array{T}, m::Array{Bool}) = DataArray{T}(d, bitpack(m))
 
 # Explicitly convert an existing array to a DataArray w/ no NA's
-DataArray(x::Array) = DataArray(x, bitfalses(size(x)))
+DataArray(x::Array) = DataArray(x, falses(size(x)))
 
 # A no-op constructor
 DataArray(d::DataArray) = d
 
 # Construct an all-NA DataArray of a specific type
-DataArray(t::Type, n::Int64, p::Int64) = DataArray(Array(t, n, p), bittrues(n, p))
+DataArray(t::Type, n::Int64, p::Int64) = DataArray(Array(t, n, p), trues(n, p))
 
 # copy does a deep copy
 copy{T}(dm::DataArray{T}) = DataArray{T}(copy(dm.data), copy(dm.na))

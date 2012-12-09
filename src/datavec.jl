@@ -59,11 +59,11 @@ baseval{T <: String}(s::Type{T}) = ""
 abstract AbstractDataVec{T}
 
 type DataVec{T} <: AbstractDataVec{T}
-    data::Vector{T}
+    data::AbstractVector{T}
     na::BitVector{Bool}
 
     # Sanity check that new data values and missingness metadata match
-    function DataVec(new_data::Vector{T}, is_missing::BitVector{Bool})
+    function DataVec(new_data::AbstractVector{T}, is_missing::BitVector{Bool})
         if length(new_data) != length(is_missing)
             error("data and missingness vectors not the same length!")
         end
@@ -78,35 +78,38 @@ end
 ##############################################################################
 
 # Need to redefine inner constructor as outer constuctor
-DataVec{T}(d::Vector{T}, n::BitVector) = DataVec{T}(d, n)
+DataVec{T}(d::AbstractVector{T}, n::BitVector) = DataVec{T}(d, n)
 
 # Convert Vector{Bool}'s to BitArray's to save space
 DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, bitpack(m))
 
 # Explicitly convert an existing vector to a DataVec w/ no NA's
-DataVec(x::Vector) = DataVec(x, bitfalses(length(x)))
+DataVec(x::Vector) = DataVec(x, falses(length(x)))
+
+# # Explicitly convert a BitArray to a DataVec w/ no NA's
+# DataVec{T}(x::AbstractVector{T}) = DataVec{T}(convert(Vector{T}, x), falses(length(x)))
 
 # Explicitly convert a Range1 into a DataVec
-DataVec{T}(r::Range1{T}) = DataVec([r], bitfalses(length(r)))
+DataVec{T}(r::Range1{T}) = DataVec([r], falses(length(r)))
 
 # A no-op constructor
 DataVec(d::DataVec) = d
 
 # Construct an all-NA DataVec of a specific type
-DataVec(t::Type, n::Int64) = DataVec(Array(t, n), bittrues(n))
+DataVec(t::Type, n::Int64) = DataVec(Array(t, n), trues(n))
 
 # Initialized constructors with 0's, 1's
 for (f, basef) in ((:dvzeros, :zeros), (:dvones, :ones))
     @eval begin
-        ($f)(n::Int64) = DataVec(($basef)(n), bitfalses(n))
-        ($f)(t::Type, n::Int64) = DataVec(($basef)(t, n), bitfalses(n))
+        ($f)(n::Int64) = DataVec(($basef)(n), falses(n))
+        ($f)(t::Type, n::Int64) = DataVec(($basef)(t, n), falses(n))
     end
 end
 
 # Initialized constructors with false's or true's
 for (f, basef) in ((:dvfalses, :falses), (:dvtrues, :trues))
     @eval begin
-        ($f)(n::Int64) = DataVec(($basef)(n), bitfalses(n))
+        ($f)(n::Int64) = DataVec(($basef)(n), falses(n))
     end
 end
 
@@ -223,7 +226,7 @@ function PooledDataVec{T}(d::Vector{T}, m::AbstractArray{Bool,1})
 end
 
 # Allow a pool to be provided by the user
-function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::Vector{Bool})
+function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::AbstractVector{Bool})
     if length(pool) > typemax(POOLTYPE)
         error("Cannot construct a PooledDataVec with such a large pool")
     end
@@ -309,11 +312,11 @@ function levels{T}(x::PooledDataVec{T})
         for i in 1:n
             d[i] = x.pool[i]
         end
-        m = bitfalses(n + 1)
+        m = falses(n + 1)
         m[n + 1] = true
         DataVec(d, m)
     else
-        DataVec(copy(x.pool), bitfalses(length(x)))
+        DataVec(copy(x.pool), falses(length(x)))
     end
 end
 
