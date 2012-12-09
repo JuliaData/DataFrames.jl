@@ -59,11 +59,11 @@ baseval{T <: String}(s::Type{T}) = ""
 abstract AbstractDataVec{T}
 
 type DataVec{T} <: AbstractDataVec{T}
-    data::AbstractVector{T}
+    data::Vector{T}
     na::BitVector{Bool}
 
     # Sanity check that new data values and missingness metadata match
-    function DataVec(new_data::AbstractVector{T}, is_missing::BitVector{Bool})
+    function DataVec(new_data::Vector{T}, is_missing::BitVector{Bool})
         if length(new_data) != length(is_missing)
             error("data and missingness vectors not the same length!")
         end
@@ -86,8 +86,11 @@ DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, bitpack(m))
 # Explicitly convert an existing vector to a DataVec w/ no NA's
 DataVec(x::Vector) = DataVec(x, falses(length(x)))
 
-# # Explicitly convert a BitArray to a DataVec w/ no NA's
-# DataVec{T}(x::AbstractVector{T}) = DataVec{T}(convert(Vector{T}, x), falses(length(x)))
+# Explicitly convert a BitArray to a Vector before wrapping with a DataVec
+DataVec{T}(x::BitVector{T}, m::BitVector) = DataVec{T}(convert(Vector{T}, x), m)
+
+# Explicitly convert a BitArray to a DataVec w/ no NA's
+DataVec{T}(x::BitVector{T}) = DataVec{T}(convert(Vector{T}, x), falses(length(x)))
 
 # Explicitly convert a Range1 into a DataVec
 DataVec{T}(r::Range1{T}) = DataVec([r], falses(length(r)))
@@ -454,8 +457,12 @@ function assign{S, T}(x::PooledDataVec{S}, v::T, i::Int)
     # note: NA replacement comes for free here
 
     # find the index of v in the pool
+    # This is broken if v can be converted to T
+    # EXAMPLE:
+    # pdv = PooledDataVec[1, 1, NA]
+    # findfirst(pdv.pool, true) => 1
     pool_idx = findfirst(x.pool, v)
-    if pool_idx > 0
+    if pool_idx > 0 && isequal(x.pool[pool_idx], v)
         # new item is in the pool
         x.refs[i] = pool_idx
     else

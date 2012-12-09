@@ -1,3 +1,7 @@
+# TODO: Remove the following!
+# Monkey-patch Base Julia's comparison operators
+(.==){S <: String, T <: String}(a::S, b::T) = (==)(a, b)
+
 unary_operators = [:(+), :(-), :(!)]
 
 numeric_unary_operators = [:(+), :(-)]
@@ -136,7 +140,7 @@ for f in comparison_operators
         function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
             return NA
         end
-        function ($f){S, T <: Union(String, Number)}(a::AbstractDataVec{S}, v::T)
+        function ($f){S, T <: Union(String, Number)}(a::DataVec{S}, v::T)
             res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i])
@@ -147,7 +151,7 @@ for f in comparison_operators
             end
             return res
         end
-        function ($f){S <: Union(String, Number), T}(v::S, a::AbstractDataVec{T})
+        function ($f){S <: Union(String, Number), T}(v::S, a::DataVec{T})
             res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i])
@@ -156,7 +160,29 @@ for f in comparison_operators
                     res[i] = ($f)(v, a[i])
                 end
             end
-            res
+            return res
+        end
+        function ($f){S, T <: Union(String, Number)}(a::PooledDataVec{S}, v::T)
+            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                if isna(a[i])
+                    res[i] = NA
+                else
+                    res[i] = ($f)(a[i], v)
+                end
+            end
+            return res
+        end
+        function ($f){S <: Union(String, Number), T}(v::S, a::PooledDataVec{T})
+            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                if isna(a[i])
+                    res[i] = NA
+                else
+                    res[i] = ($f)(v, a[i])
+                end
+            end
+            return res
         end
         function ($f){T}(a::AbstractDataVec{T}, v::NAtype)
             res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
@@ -167,6 +193,20 @@ for f in comparison_operators
         end
         function ($f){T}(v::NAtype, a::AbstractDataVec{T})
             res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                res[i] = NA
+            end
+            res
+        end
+        function ($f){T}(a::PooledDataVec{T}, v::NAtype)
+            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                res[i] = NA
+            end
+            res
+        end
+        function ($f){T}(v::NAtype, a::PooledDataVec{T})
+            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 res[i] = NA
             end

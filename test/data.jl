@@ -94,7 +94,6 @@ test_group("PooledDataVec operations")
 # @assert isequal(pdvstr .== "two", PooledDataVec[false, false, true, true, NA, false, false])
 
 test_group("DataVec to something else")
-# TODO: test.jl should grok all(a == b)
 @assert all(removeNA(dvint) .== [1, 2, 4])
 @assert all(replaceNA(dvint, 0) .== [1, 2, 0, 4])
 @assert all(convert(Int, dvint2) .== [5:8])
@@ -432,3 +431,13 @@ dv = dvones(5)
 # No more NA corruption
 dv = dvones(10_000)
 @assert !any(isna(dv))
+
+# TODO: Get this to work
+# PooledDataVec(convert(Array{Bool}, falses(2)), falses(2))
+PooledDataVec(convert(Array{Bool}, falses(2)), trues(2))
+
+# Simplest example of failure
+# DataVec[1, 2, NA] .== 1
+# PooledDataVec[1, 2, NA] .== 1
+# DataVec["1", "2", NA] .== "1"
+# PooledDataVec["1", "2", NA] .== "1"
