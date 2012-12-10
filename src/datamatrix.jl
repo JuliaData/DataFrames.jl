@@ -244,6 +244,7 @@ function convert{T}(::Type{T}, x::DataMatrix{T})
         return x.data
     end
 end
+
 function convert{S, T}(::Type{S}, x::DataMatrix{T})
     if any_na(x)
         err = "Cannot convert DataMatrix with NA's to base type"
@@ -251,6 +252,23 @@ function convert{S, T}(::Type{S}, x::DataMatrix{T})
     else
         return convert(S, x.data)
     end
+end
+
+function DataMatrix(df::DataFrame)
+    ts = coltypes(df)
+    for t in ts
+        if !(t <: Number)
+            error("Convert convert a non-numeric DataFrame to a DataMatrix")
+        end
+    end
+    n, p = size(df)
+    dm = dmzeros(n, p)
+    for i in 1:n
+        for j in 1:p
+            dm[i, j] = df[i, j]
+        end
+    end
+    return dm
 end
 
 ##############################################################################

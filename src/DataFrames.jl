@@ -166,6 +166,7 @@ export coltypes
 load("DataFrames/src/operators.jl")
 
 # DataMatrix's
+export DataMatrix
 load("DataFrames/src/datamatrix.jl")
 
 # Linear algebra over DataMatrix's

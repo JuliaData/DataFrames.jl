@@ -1,14 +1,12 @@
-# Load DataFrame package.
-load("src/init.jl")
-load("src/svd.jl")
+load("DataFrames")
+using DataFrames
 
-# Load a CSV file into a DataFrame.
-df = csvDataFrame("demo/senate112.csv")
+df = read_table("demo/senate112.csv")
 senator_names = df[:, 425]
 
-df = df[:, 1:424]
+dm = DataMatrix(df[:, 1:424])
 
-imputed_df, u, d, v = missing_svd(df, 2)
+imputed_df, u, d, v = svd(dm, 2)
 
 u = u * diagm(d)
 
