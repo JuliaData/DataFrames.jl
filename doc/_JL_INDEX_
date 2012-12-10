@@ -1,0 +1,98 @@
+DataFrames                                manual  A package for working with tabular data in Julia
+DataFrames-motivation                     manual#motivation  Motivation
+DataFrames-introduction                   manual#introduction  Introduction
+DataFrames-basic-types                    manual#overview-of-basic-types-for-working-with-data  Overview of Basic Types for Working with Data
+DataFrames-na                             manual#the-na-type           The NA Type
+DataFrames-datavec                        manual#the-datavec-type  The DataVec Type
+DataFrames-constructing-datavecs          manual#constructing-datavecs  Constructing DataVec's
+DataFrames-datavecs-with-special-types    manual#datavecs-with-special-types  DataVec's with Special Types
+DataFrames-pooleddatavec                  manual#the-pooleddatavec-type  The PooledDataVec Type
+DataFrames-dataframe                      manual#the-dataframe-type  The DataFrame Type
+DataFrames-constructing-dataframes        manual#constructing-dataframes  Constructing DataFrame's
+DataFrames-indexing_data                  manual#accessing-and-assigning-elements-of-datavecs-and-dataframes  Accessing and Assigning Elements of DataVec's and DataFrame's
+DataFrames-unary-operators                manual#unary-operators-for-na-datavecs-and-dataframes  Unary Operators for NA, DataVec's and DataFrame's
+DataFrames-loading-data-sets              manual#loading-standard-data-sets  Loading Standard Data Sets
+DataFrames-split-apply-combine            manual#split-apply-combine  Split-Apply-Combine
+DataFrames-reshaping                      manual#reshaping  Reshaping
+DataFrames-model-formulas                 manual#model-formulas  Model Formulas
+DataFrames-factors                        manual#factors  Factors
+DataFrames-datastreams                    manual#datastreams  DataStreams
+DataFrames-ongoing-debates                manual#ongoing-debates-about-nas  Ongoing Debates about NA's
+DataFrames-function-reference             manual#function-reference-guide  Function Reference Guide
+DataFrames-Reference-dataframes           manual#dataframes  DataFrames
+DataFrame                                 manual#dataframes  DataFrame type and constructor for tabular data
+copy                                      manual#dataframes  Shallow copy of an object
+deepcopy                                  manual#dataframes  Deep copy of an object
+similar                                   manual#dataframes  A similar object; zero rows for DataFrames
+size                                      manual#dataframes  Number of rows and columns
+has                                       manual#dataframes  Check for presence of a column 
+start                                     manual#dataframes  Iteration
+ncol                                      manual#dataframes  Number of columns
+nrow                                      manual#dataframes  Number of rows
+length                                    manual#dataframes  Number of columns
+isempty                                   manual#dataframes  Empty if there are no columns
+head                                      manual#dataframes  The first few lines of the data
+tail                                      manual#dataframes  The last few lines of the data
+show                                      manual#dataframes  Printing
+dump                                      manual#dataframes  Structural view of the data; like R's str
+summary                                   manual#dataframes  Data summary
+complete_cases                            manual#dataframes  The index of rows without missing values; a bool vector
+duplicated                                manual#dataframes  A Vector{Bool} indicating whether the row is a duplicated by a prior row
+unique                                    manual#dataframes  Unique rows of an AbstractDataFrame
+ref                                       manual#dataframes  ref(df::DataFrame, ind) or ref(df::DataFrame, irow, icol)
+index                                     manual#dataframes  The Index of the DataFrame
+set_group                                 manual#dataframes  Set group of an Index
+get_groups                                manual#dataframes  Get groups of an Index
+set_groups                                manual#dataframes  Set groups of an Index
+colnames                                  manual#dataframes  Column names
+assign                                    manual#dataframes  Assignment into a DataFrame
+insert                                    manual#dataframes  Insertion into a DataFrame
+del                                       manual#dataframes  Deletion of columns in a DataFrame
+cbind                                     manual#dataframes  Bind columns
+rbind                                     manual#dataframes  Bind rows
+with                                      manual#dataframes  with(df::AbstractDataFrame, ex::Expr)
+within                                    manual#dataframes  within(df::AbstractDataFrame, ex::Expr)
+based_on                                  manual#dataframes  based_on(df::AbstractDataFrame, ex::Expr)
+colwise                                   manual#dataframes  Column-wise operations on AbstractDataFrames
+sub                                       manual#dataframes  Subsetting of an AbstractDataFrame (no copies); returns a SubDataFrame
+groupby                                   manual#dataframes  groupby(df::AbstractDataFrame, cols)
+start                                     manual#dataframes  start(gd)
+ref                                       manual#dataframes  ref(gd::GroupedDataFrame, idx)
+with                                      manual#dataframes  with(gd::GroupedDataFrame, ex::Expr)
+within                                    manual#dataframes  within(gd::GroupedDataFrame, ex::Expr)
+based_on                                  manual#dataframes  based_on(gd::GroupedDataFrame, ex::Expr)
+map                                       manual#dataframes  map(f::Function, gd::GroupedDataFrame)
+colwise                                   manual#dataframes  colwise(f::Function, gd::GroupedDataFrame)
+by                                        manual#dataframes  by(df::AbstractDataFrame, cols, s::Symbol)
+stack                                     manual#dataframes  stack(df::DataFrame, cols)
+unstack                                   manual#dataframes  unstack(df::DataFrame, ikey, ivalue, irefkey)
+merge                                     manual#dataframes  merge(df1::DataFrame, df2::DataFrame, bycol)
+DataFrames-Reference-index                manual#index  Index
+Index                                     manual#index  Index(s::Vector{ByteString})
+length                                    manual#index  length(x::Index)
+del                                       manual#index  del(x::Index, idx::Integer)
+names                                     manual#index  names(x::Index)
+replace_names                             manual#index  replace_names(x::Index, from::Vector, to::Vector)
+ref                                       manual#index  ref(x::Index, idx)
+set_group                                 manual#index  set_group(idx::Index, newgroup, names::Vector{ByteString})
+get_groups                                manual#index  get_groups(idx::Index)
+set_groups                                manual#index  set_groups(idx::Index, gr::Dict)
+DataFrames-Reference-missing-values       manual#missing-values  Missing Values
+isna                                      manual#missing-values  isna(x)
+nafilter                                  manual#missing-values  nafilter(x)
+nareplace                                 manual#missing-values  nareplace(x, val)
+naFilter                                  manual#missing-values  naFilter(x)
+naReplace                                 manual#missing-values  naReplace(x, val)
+na                                        manual#missing-values  na(x)
+nas                                       manual#missing-values  nas(x, dim)
+DataFrames-Reference-datavecs             manual#datavecs  DataVecs
+DataVec                                   manual#datavecs  DataVec(x::Vector)
+PooledDataVec                             manual#datavecs  PooledDataVec(x::Vector)
+isna                                      manual#datavecs  isna(x)
+DataFrames-Reference-utilities            manual#utilities  Utilities
+cut                                       manual#utilities  cut(x::Vector, breaks::Vector)
+DataFrames-Reference-formulas-and-models  manual#formulas-and-models  Formulas and Models
+Formula                                   manual#formulas-and-models  Formula(ex::Expr)
+model_frame                               manual#formulas-and-models  model_frame(f::Formula, d::AbstractDataFrame)
+model_matrix                              manual#formulas-and-models  model_matrix(mf::ModelFrame)
+lm                                        manual#formulas-and-models  lm(ex::Expr, df::AbstractDataFrame)
