@@ -1,19 +1,18 @@
-# Load DataFrame package.
-load("src/init.jl")
-load("src/svd.jl")
+load("DataFrames")
+using DataFrames
 
-# Load a CSV file into a DataFrame.
-df = csvDataFrame("demo/senate112.csv")
+df = read_table("demo/senate112.csv")
 senator_names = df[:, 425]
 
-df = df[:, 1:424]
+dm = DataMatrix(df[:, 1:424])
 
-imputed_df, u, d, v = missing_svd(df, 2)
+u, d, v = svd(dm, 2)
 
-u = u * diagm(d)
+ideal_points = u * diagm(d)
 
-open("demo/ideal_points.tsv", "w") do f
-  for i = 1:nrow(df)
-    println(f, join([senator_names[i], string(u[i, 1]), string(u[i, 2])], "\t"))
-  end
-end
+df = DataFrame()
+df["Senator"] = senator_names
+df["X"] = DataVec(ideal_points[:, 1])
+df["Y"] = DataVec(ideal_points[:, 2])
+
+write_table(df, "demo/ideal_points.tsv")

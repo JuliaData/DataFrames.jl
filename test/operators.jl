@@ -1,3 +1,5 @@
+require("extras/test.jl")
+
 load("DataFrames")
 using DataFrames
 
@@ -426,3 +428,37 @@ df[1, 1] = NA
 
 # Is this a genuine special case?
 @assert isna(NA ^ 2.0)
+
+#
+# Equality tests
+#
+
+dv = DataVec[1, NA]
+alt_dv = DataVec[2, NA]
+df = DataFrame({dv})
+alt_df = DataFrame({alt_dv})
+
+@assert isna(NA == NA)
+@assert isna(NA != NA)
+
+# @assert isna(dv == dv) # SHOULD RAISE ERROR
+# @assert isna(dv != dv) # SHOULD RAISE ERROR
+
+# @assert isna(df == df) # SHOULD RAISE ERROR
+# @assert isna(df != df) # SHOULD RAISE ERROR
+
+@assert isequal(dv, dv)
+@assert isequal(df, df)
+
+@assert !isequal(dv, alt_dv)
+@assert !isequal(df, alt_df)
+
+@assert isequal(DataVec[1, NA] .== DataVec[1, NA], DataVec[true, NA])
+@assert isequal(PooledDataVec[1, NA] .== PooledDataVec[1, NA], DataVec[true, NA])
+@assert isequal(DataFrame({dv}) .== DataFrame({dv}), DataFrame({DataVec[true, NA]}))
+
+@assert all(isna(NA .== dvones(5)))
+@assert all(isna(dvones(5) .== NA))
+
+@assert all(isna(NA .== df))
+@assert all(isna(df .== NA))

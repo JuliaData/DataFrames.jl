@@ -288,3 +288,19 @@ function write_table{T <: String}(df::DataFrame, filename::T)
   quotation_character = '"'
   write_table(df, filename, separator, quotation_character)
 end
+
+# Binary serialization
+
+# Wrappers for serialization
+function save(filename, d)
+    f = open(filename, "w")
+    serialize(f, d)
+    close(f)
+end
+
+function load_df(filename)
+    f = open(filename)
+    dd = deserialize(f)()
+    close(f)
+    return dd
+end

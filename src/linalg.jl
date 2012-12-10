@@ -1,11 +1,8 @@
+#
 # Calculates the SVD of a data matrix containing missing entries.
 #
-# This should really be done with a DataMatrix{Int64} or a 
-# DataMatrix{Float64}, but it's currently being done with generic
-# DataFrame's that should be edited in advance to insure that the
-# algorithm won't crash.
-
 # Uses the iterative algorithm of Hastie et al. 1999
+#
 
 # Calculate the rank-k SVD approximation to a matrix given the
 # full SVD.
@@ -34,7 +31,7 @@ function impute(m::Matrix{Float64}, missing_entries, u, d, v, k::Int64)
 end
 
 # Should be done with a proper N-dimensional Int64 array.
-function ind_na(df::DataFrame)
+function ind_na{T}(df::DataMatrix{T})
   indices = {}
   for i = 1:nrow(df)
     for j = 1:ncol(df)
@@ -47,7 +44,7 @@ function ind_na(df::DataFrame)
 end
 
 # Kind of a nutty method without DataMatrix.
-function mean(df::DataFrame)
+function mean{T}(df::DataMatrix{T})
   mu = 0.0
   n = 0
   for i = 1:nrow(df)
@@ -62,7 +59,7 @@ function mean(df::DataFrame)
 end
 
 # This will crash if a row is missing all entries.
-function row_means(df::DataFrame)
+function rowmeans{T}(df::DataMatrix{T})
   mus = zeros(nrow(df))
   for i = 1:nrow(df)
     mu = 0.0
@@ -79,8 +76,11 @@ function row_means(df::DataFrame)
 end
 
 # Must select rank k of SVD to use.
-function missing_svd(D::DataFrame, k::Int)
+# TODO: Default to failure in the face of NA's
+function svd{T}(D::DataMatrix{T}, k::Int)
   df = deepcopy(D)
+
+  print_trace = false
 
   tolerance = 10e-4
 
@@ -91,11 +91,13 @@ function missing_svd(D::DataFrame, k::Int)
   # Estimate missingness and print a message.
   missing_entries = ind_na(df)
   missingness = length(missing_entries) / (nrow(df) * ncol(df))
-  println("Matrix is missing $(missingness * 100)% of entries")
+  if print_trace
+    println("Matrix is missing $(missingness * 100)% of entries")
+  end
 
   # Initial imputation uses row means.
   global_mu = mean(df)
-  mu_i = row_means(df)
+  mu_i = rowmeans(df)
 
   for i = 1:n
     for j = 1:p
@@ -130,8 +132,10 @@ function missing_svd(D::DataFrame, k::Int)
 
   # Iterate until imputation stops changing up to a tolerance of 10e-6.
   while change > tolerance
-    println("Iteration $i")
-    println("Change $change")
+    if print_trace
+      println("Iteration $i")
+      println("Change $change")
+    end
 
     # Impute missing entries using current SVD.
     previous_df = copy(current_df)
@@ -146,9 +150,20 @@ function missing_svd(D::DataFrame, k::Int)
   end
 
   # Tell the user how many iterations were required to impute matrix.
-  println("Tolerance achieved after $i iterations")
+  if print_trace
+    println("Tolerance achieved after $i iterations")
+  end
   
   # Return both df and the SVD of df with all entries imputed.
   u, d, v = svd(current_df)
-  (current_df, u[:, 1:k], d[1:k], v[1:k, :])
+
+  # Only return the SVD entries, not the imputation
+  return (u[:, 1:k], d[1:k], v[1:k, :])
+end
+
+svd{T}(D::DataMatrix{T}) = svd(D, min(nrow(D), ncol(D)))
+
+function eig{T}(D::DataMatrix{T})
+  u, d, v = svd(D)
+  eig(u * diagm(d) * v)
 end

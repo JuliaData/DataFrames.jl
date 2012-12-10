@@ -19,6 +19,10 @@ scalar_comparison_operators = [:(==), :(!=), :isless, :(>), :(>=),
 
 array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
 
+vectorized_comparison_operators = [(:(.==), :(==)), (:(.!=), :(!=)),
+                                   (:(.>), :(>)), (:(.>=), :(>=)),
+                                   (:(.<), :(<)), (:(.<=), :(<=))]
+
 binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
                     :(.^), :(div), :(mod), :(fld), :(rem),
                     :(&), :(|), :($)]
@@ -136,99 +140,208 @@ for f in comparison_operators
         function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
             return NA
         end
-        function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
-            res = DataVec(Array(Bool, length(a)),
-                          BitArray(length(a)),
-                          naRule(a),
-                          false)
+    end
+end
+
+for (f, scalarf) in vectorized_comparison_operators
+    @eval begin
+        function ($f){S, T <: Union(String, Number)}(a::DataVec{S}, v::T)
+            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
-                res[i] = isna(a[i]) ? NA : ($f)(a[i], b[i])
+                if isna(a[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], v)
+                end
             end
             return res
         end
-        function ($f){S, T <: Union(String, Number)}(a::AbstractDataVec{S}, v::T)
-            res = DataVec(Array(Bool,length(a)),
-                          BitArray(length(a)),
-                          naRule(a),
-                          false)
+        function ($f){S <: Union(String, Number), T}(v::S, a::DataVec{T})
+            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
-                res[i] = isna(a[i]) ? NA : ($f)(a[i], v)
+                if isna(a[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(v, a[i])
+                end
             end
             return res
         end
-        function ($f){S <: Union(String, Number), T}(v::S, a::AbstractDataVec{T})
-            res = DataVec(Array(Bool, length(a)),
-                          BitArray(length(a)),
-                          naRule(a),
-                          false)
+        function ($f){S, T <: Union(String, Number)}(a::PooledDataVec{S}, v::T)
+            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
-                res[i] = isna(a[i]) ? NA : ($f)(v, a[i])
+                if isna(a[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], v)
+                end
+            end
+            return res
+        end
+        function ($f){S <: Union(String, Number), T}(v::S, a::PooledDataVec{T})
+            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                if isna(a[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(v, a[i])
+                end
+            end
+            return res
+        end
+        function ($f){T}(a::AbstractDataVec{T}, v::NAtype)
+            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                res[i] = NA
+            end
+            res
+        end
+        function ($f){T}(v::NAtype, a::AbstractDataVec{T})
+            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                res[i] = NA
+            end
+            res
+        end
+        function ($f){T}(a::PooledDataVec{T}, v::NAtype)
+            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                res[i] = NA
+            end
+            res
+        end
+        function ($f){T}(v::NAtype, a::PooledDataVec{T})
+            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                res[i] = NA
             end
             res
         end
         function ($f){T <: Number}(a::DataFrame, v::T)
-            ret = DataFrame(Array(Bool, size(a)))
+            res = DataFrame(Array(Bool, size(a)))
             n, p = nrow(a), ncol(a)
             for j in 1:p
                 if typeof(a[j]).parameters[1] <: Number
                     for i in 1:n
-                        ret[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
                     end
                 else
                     for i in 1:n
-                        ret[i, j] = NA
+                        res[i, j] = NA
                     end
                 end
             end
-            return ret
+            return res
         end
         function ($f){T <: Number}(v::T, a::DataFrame)
-            ret = DataFrame(Array(Bool, size(a)))
+            res = DataFrame(Array(Bool, size(a)))
             n, p = nrow(a), ncol(a)
             for j in 1:p
                 if typeof(a[j]).parameters[1] <: Number
                     for i = 1:n
-                        ret[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
                     end
                 else
                     for i = 1:n
-                        ret[i, j] = NA
+                        res[i, j] = NA
                     end
                 end
             end
-            return ret
+            return res
         end
         function ($f){T <: String}(a::DataFrame, v::T)
-            ret = DataFrame(Array(Bool, size(a)))
+            res = DataFrame(Array(Bool, size(a)))
             n, p = nrow(a), ncol(a)
             for j in 1:p
                 if typeof(a[j]).parameters[1] <: String
                     for i in 1:n
-                        ret[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
                     end
                 else
                     for i in 1:n
-                        ret[i, j] = NA
+                        res[i, j] = NA
                     end
                 end
             end
-            return ret
+            return res
         end
         function ($f){T <: String}(v::T, a::DataFrame)
-            ret = DataFrame(Array(Bool, size(a)))
+            res = DataFrame(Array(Bool, size(a)))
             n, p = nrow(a), ncol(a)
             for j in 1:p
                 if typeof(a[j]).parameters[1] <: String
                     for i = 1:n
-                        ret[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
                     end
                 else
                     for i = 1:n
-                        ret[i, j] = NA
+                        res[i, j] = NA
                     end
                 end
             end
-            return ret
+            return res
+        end
+        function ($f)(a::DataFrame, v::NAtype)
+            res = DataFrame(Array(Bool, size(a)))
+            n, p = nrow(a), ncol(a)
+            for j in 1:p
+                for i in 1:n
+                    res[i, j] = NA
+                end
+            end
+            return res
+        end
+        function ($f)(v::NAtype, a::DataFrame)
+            res = DataFrame(Array(Bool, size(a)))
+            n, p = nrow(a), ncol(a)
+            for j in 1:p
+                for i = 1:n
+                    res[i, j] = NA
+                end
+            end
+            return res
+        end
+    end
+end
+
+for f in scalar_comparison_operators
+    @eval begin
+        function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
+            error(strcat(string($f), " not defined for DataVecs. Try .", string($f)))
+        end
+        function ($f)(a::AbstractDataFrame, b::AbstractDataFrame)
+            error(strcat(string($f), " not defined for DataFrames. Try .", string($f)))
+        end
+    end
+end
+
+for f in array_comparison_operators
+    @eval begin
+        function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
+            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                if isna(a[i]) || isna(b[i])
+                    res[i] = NA
+                else
+                    res[i] = ($f)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f)(a::DataFrame, b::DataFrame)
+            n, p = nrow(a), ncol(a)
+            if n != nrow(b) || p != ncol(b)
+                error("DataFrames must have matching sizes for comparisons")
+            end
+            # Tries to preserve types from a
+            results = DataFrame(Array(Bool, size(a)))
+            # TODO: Test that types match across a and b
+            for j in 1:p
+                for i in 1:n
+                    results[i, j] = ($f)(a[i, j], b[i, j])
+                end
+            end
+            return results
         end
     end
 end
@@ -395,7 +508,7 @@ for f in pairwise_vector_operators
         function ($f)(dv::DataVec)
             n = length(dv)
             new_data = ($f)(dv.data)
-            new_na = bitfalses(n - 1)
+            new_na = falses(n - 1)
             for i = 2:(n - 1)
                 if isna(dv[i])
                     new_na[i - 1] = true
@@ -414,7 +527,7 @@ for f in cumulative_vector_operators
     @eval begin
         function ($f)(dv::DataVec)
             new_data = ($f)(dv.data)
-            new_na = bitfalses(length(dv))
+            new_na = falses(length(dv))
             hitna = false
             for i = 1:length(dv)
                 if isna(dv[i])
@@ -553,4 +666,76 @@ function any(df::DataFrame)
     else
         return false
     end
+end
+
+# isequal() should for Data*
+# * If missingness differs, underlying values are irrelevant
+# * If both entries are NA, underlying values are irrelevant
+function isequal{T}(a::DataVec{T}, b::DataVec{T})
+    if length(a) != length(b)
+        return false
+    else
+        for i = 1:length(a)
+            if a.na[i] != b.na[i]
+                return false
+            elseif !a.na[i] && !b.na[i] && (a.data[i] != b.data[i])
+                return false
+            end
+        end
+    end
+    return true
+end
+function isequal{T}(a::PooledDataVec{T}, b::PooledDataVec{T})
+    if length(a) != length(b)
+        return false
+    else
+        for i = 1:length(a)
+            # Will we speed this up by looking under hood?
+            if isna(a[i])
+                if !isna(b[i])
+                    return false
+                end
+            else
+                if isna(b[i])
+                    return false
+                end
+                if a[i] != b[i]
+                    return false
+                end
+            end
+        end
+    end
+    return true
+end
+function isequal{T}(a::AbstractDataVec{T}, b::AbstractDataVec{T})
+    if length(a) != length(b)
+        return false
+    else
+        for i = 1:length(a)
+            if isna(a[i])
+                if !isna(b[i])
+                    return false
+                end
+            else
+                if isna(b[i])
+                    return false
+                end
+                if a[i] != b[i]
+                    return false
+                end
+            end
+        end
+    end
+    return true
+end
+function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
+    if ncol(df1) != ncol(df2)
+        return false
+    end
+    for idx in 1:ncol(df1)
+        if !isequal(df1[idx], df2[idx])
+            return false
+        end
+    end
+    return true
 end
