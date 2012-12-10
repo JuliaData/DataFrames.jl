@@ -873,7 +873,7 @@ for f in (:int, :float, :bool)
         end
     end
 end
-for (f, basef) in ((:dvint, :int), (:dvfloat, :float), (:dvbool, :bool))
+for (f, basef) in ((:dvint, :int), (:dvfloat, :float64), (:dvbool, :bool))
     @eval begin
         function ($f){T}(dv::DataVec{T})
             DataVec(($basef)(dv.data), dv.na)
