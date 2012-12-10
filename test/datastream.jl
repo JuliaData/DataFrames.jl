@@ -79,3 +79,14 @@ ds = DataStream(filename)
 for row in ds
   @assert nrow(row) <= 1
 end
+
+# DataFrame to DataStream conversion
+df = DataFrame(quote A = 1:25 end)
+
+ds = DataStream(df, 5)
+
+for mini in ds
+	@assert nrow(mini) <= 5
+end
+
+colmeans(ds)

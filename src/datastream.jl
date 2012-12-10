@@ -58,22 +58,22 @@ function start(ds::FileDataStream)
     readline(ds.stream)
   end
 
-  return DataFrame(1, 1)
+  return 1
 end
 
-function next(ds::FileDataStream, df::DataFrame)
+function next(ds::FileDataStream, nrows_read::Int)
   df = read_minibatch(ds.stream,
                       ds.separator,
                       ds.quotation_character,
                       ds.missingness_indicators,
-                      ds.column_names,
-                      ds.column_types,
+                      colnames(ds),
+                      coltypes(ds),
                       ds.minibatch_size)
-  (df, df)
+  (df, nrow(df))
 end
 
-function done(ds::FileDataStream, df::DataFrame)
-  if nrow(df) == 0
+function done(ds::FileDataStream, nrows_read::Int)
+  if nrows_read == 0
     close(ds.stream)
     return true
   else
@@ -81,19 +81,46 @@ function done(ds::FileDataStream, df::DataFrame)
   end
 end
 
+coltypes(ds::FileDataStream) = ds.column_types
+colnames(ds::FileDataStream) = ds.column_names
+
+type DataFrameDataStream <: AbstractDataStream
+  df::DataFrame
+  minibatch_size::Int
+end
+
+function start(ds::DataFrameDataStream)
+  return 1
+end
+
+function next(ds::DataFrameDataStream, i::Int)
+  (ds.df[i:(i + ds.minibatch_size - 1), :], i + ds.minibatch_size)
+end
+
+function done(ds::DataFrameDataStream, i::Int)
+  return i > nrow(ds.df)
+end
+
+DataStream(df::DataFrame, minibatch_size::Int) = DataFrameDataStream(df, minibatch_size)
+
+DataStream(df::DataFrame) = DataFrameDataStream(df, 1)
+
+coltypes(ds::DataFrameDataStream) = coltypes(ds.df)
+colnames(ds::DataFrameDataStream) = colnames(ds.df)
+
 #
 # Streaming data functions
 #
 
 function colsums(ds::AbstractDataStream)
-  p = length(ds.column_types)
+  p = length(coltypes(ds))
   sums = zeros(p)
   ns = zeros(Int64, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
       for column_index in 1:p
-        if ds.column_types[column_index] <: Real && !isna(minibatch[row_index, column_index])
+        if coltypes(ds)[column_index] <: Real && !isna(minibatch[row_index, column_index])
           sums[column_index] += minibatch[row_index, column_index]
           ns[column_index] += 1
         end
@@ -101,16 +128,16 @@ function colsums(ds::AbstractDataStream)
     end
   end
 
-  result_types = copy(ds.column_types)
+  result_types = copy(coltypes(ds))
   for j in 1:p
     if result_types[j] == Int64
       result_types[j] = Float64
     end
   end
-  results = DataFrame(result_types, ds.column_names, 1)
+  results = DataFrame(result_types, colnames(ds), 1)
 
   for column_index in 1:p
-    if ds.column_types[column_index] <: Real && ns[column_index] != 0
+    if coltypes(ds)[column_index] <: Real && ns[column_index] != 0
       results[1, column_index] = sums[column_index]
     end
   end
@@ -119,14 +146,14 @@ function colsums(ds::AbstractDataStream)
 end
 
 function colprods(ds::AbstractDataStream)
-  p = length(ds.column_types)
+  p = length(coltypes(ds))
   prods = zeros(p)
   ns = ones(Int64, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
       for column_index in 1:p
-        if ds.column_types[column_index] <: Real && !isna(minibatch[row_index, column_index])
+        if coltypes(ds)[column_index] <: Real && !isna(minibatch[row_index, column_index])
           prods[column_index] *= minibatch[row_index, column_index]
           ns[column_index] += 1
         end
@@ -134,16 +161,16 @@ function colprods(ds::AbstractDataStream)
     end
   end
 
-  result_types = copy(ds.column_types)
+  result_types = copy(coltypes(ds))
   for j in 1:p
     if result_types[j] == Int64
       result_types[j] = Float64
     end
   end
-  results = DataFrame(result_types, ds.column_names, 1)
+  results = DataFrame(result_types, colnames(ds), 1)
 
   for column_index in 1:p
-    if ds.column_types[column_index] <: Real && ns[column_index] != 0
+    if coltypes(ds)[column_index] <: Real && ns[column_index] != 0
       results[1, column_index] = prods[column_index]
     end
   end
@@ -152,14 +179,14 @@ function colprods(ds::AbstractDataStream)
 end
 
 function colmeans(ds::AbstractDataStream)
-  p = length(ds.column_types)
+  p = length(coltypes(ds))
   sums = zeros(p)
   ns = zeros(Int64, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
       for column_index in 1:p
-        if ds.column_types[column_index] <: Real && !isna(minibatch[row_index, column_index])
+        if coltypes(ds)[column_index] <: Real && !isna(minibatch[row_index, column_index])
           sums[column_index] += minibatch[row_index, column_index]
           ns[column_index] += 1
         end
@@ -167,16 +194,16 @@ function colmeans(ds::AbstractDataStream)
     end
   end
 
-  result_types = copy(ds.column_types)
+  result_types = copy(coltypes(ds))
   for j in 1:p
     if result_types[j] == Int64
       result_types[j] = Float64
     end
   end
-  results = DataFrame(result_types, ds.column_names, 1)
+  results = DataFrame(result_types, colnames(ds), 1)
 
   for column_index in 1:p
-    if ds.column_types[column_index] <: Real && ns[column_index] != 0
+    if coltypes(ds)[column_index] <: Real && ns[column_index] != 0
       results[1, column_index] = sums[column_index] / ns[column_index]
     end
   end
@@ -185,7 +212,7 @@ function colmeans(ds::AbstractDataStream)
 end
 
 function colvars(ds::AbstractDataStream)
-  p = length(ds.column_types)
+  p = length(coltypes(ds))
   means = zeros(p)
   deltas = zeros(p)
   m2s = zeros(p)
@@ -195,7 +222,7 @@ function colvars(ds::AbstractDataStream)
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
       for column_index in 1:p
-        if ds.column_types[column_index] <: Real && !isna(minibatch[row_index, column_index])
+        if coltypes(ds)[column_index] <: Real && !isna(minibatch[row_index, column_index])
           ns[column_index] += 1
           deltas[column_index] = minibatch[row_index, column_index] - means[column_index]
           means[column_index] += deltas[column_index] / ns[column_index]
@@ -206,16 +233,16 @@ function colvars(ds::AbstractDataStream)
     end
   end
 
-  result_types = copy(ds.column_types)
+  result_types = copy(coltypes(ds))
   for j in 1:p
     if result_types[j] == Int64
       result_types[j] = Float64
     end
   end
-  results = DataFrame(result_types, ds.column_names, 1)
+  results = DataFrame(result_types, colnames(ds), 1)
 
   for column_index in 1:p
-    if ds.column_types[column_index] <: Real && ns[column_index] != 0
+    if coltypes(ds)[column_index] <: Real && ns[column_index] != 0
       results[1, column_index] = vars[column_index]
     end
   end
@@ -236,14 +263,14 @@ function colstds(ds::AbstractDataStream)
 end
 
 function colmins(ds::AbstractDataStream)
-  p = length(ds.column_types)
+  p = length(coltypes(ds))
   mins = [Inf for i in 1:p]
   ns = zeros(Int64, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
       for column_index in 1:p
-        if ds.column_types[column_index] <: Real && !isna(minibatch[row_index, column_index])
+        if coltypes(ds)[column_index] <: Real && !isna(minibatch[row_index, column_index])
           if minibatch[row_index, column_index] < mins[column_index]
             mins[column_index] = minibatch[row_index, column_index]
             ns[column_index] += 1
@@ -253,11 +280,11 @@ function colmins(ds::AbstractDataStream)
     end
   end
 
-  result_types = copy(ds.column_types)
-  df = DataFrame(result_types, ds.column_names, 1)
+  result_types = copy(coltypes(ds))
+  df = DataFrame(result_types, colnames(ds), 1)
 
   for column_index in 1:p
-    if ds.column_types[column_index] <: Real && ns[column_index] != 0
+    if coltypes(ds)[column_index] <: Real && ns[column_index] != 0
       df[1, column_index] = mins[column_index]
     end
   end
@@ -266,14 +293,14 @@ function colmins(ds::AbstractDataStream)
 end
 
 function colmaxs(ds::AbstractDataStream)
-  p = length(ds.column_types)
+  p = length(coltypes(ds))
   maxs = [-Inf for i in 1:p]
   ns = zeros(Int64, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
       for column_index in 1:p
-        if ds.column_types[column_index] <: Real && !isna(minibatch[row_index, column_index])
+        if coltypes(ds)[column_index] <: Real && !isna(minibatch[row_index, column_index])
           if minibatch[row_index, column_index] > maxs[column_index]
             maxs[column_index] = minibatch[row_index, column_index]
             ns[column_index] += 1
@@ -283,11 +310,11 @@ function colmaxs(ds::AbstractDataStream)
     end
   end
 
-  result_types = copy(ds.column_types)
-  df = DataFrame(result_types, ds.column_names, 1)
+  result_types = copy(coltypes(ds))
+  df = DataFrame(result_types, colnames(ds), 1)
 
   for column_index in 1:p
-    if ds.column_types[column_index] <: Real && ns[column_index] != 0
+    if coltypes(ds)[column_index] <: Real && ns[column_index] != 0
       df[1, column_index] = maxs[column_index]
     end
   end
@@ -296,7 +323,7 @@ function colmaxs(ds::AbstractDataStream)
 end
 
 function colranges(ds::AbstractDataStream)
-  p = length(ds.column_types)
+  p = length(coltypes(ds))
   mins = [Inf for i in 1:p]
   maxs = [-Inf for i in 1:p]
   ns = zeros(Int64, p)
@@ -304,7 +331,7 @@ function colranges(ds::AbstractDataStream)
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
       for column_index in 1:p
-        if ds.column_types[column_index] <: Real && !isna(minibatch[row_index, column_index])
+        if coltypes(ds)[column_index] <: Real && !isna(minibatch[row_index, column_index])
           ns[column_index] += 1
           if minibatch[row_index, column_index] < mins[column_index]
             mins[column_index] = minibatch[row_index, column_index]
@@ -317,17 +344,17 @@ function colranges(ds::AbstractDataStream)
     end
   end
 
-  result_types = copy(ds.column_types)
+  result_types = copy(coltypes(ds))
   for j in 1:p
     if result_types[j] == Int64
       result_types[j] = Float64
     end
   end
-  df_mins = DataFrame(result_types, ds.column_names, 1)
-  df_maxs = DataFrame(result_types, ds.column_names, 1)
+  df_mins = DataFrame(result_types, colnames(ds), 1)
+  df_maxs = DataFrame(result_types, colnames(ds), 1)
 
   for column_index in 1:p
-    if ds.column_types[column_index] <: Real && ns[column_index] != 0
+    if coltypes(ds)[column_index] <: Real && ns[column_index] != 0
       df_mins[1, column_index] = mins[column_index]
       df_maxs[1, column_index] = maxs[column_index]
     end
@@ -338,7 +365,7 @@ end
 
 # Two-pass algorithm
 function cov_pearson(ds::AbstractDataStream)
-  p = length(ds.column_types)
+  p = length(coltypes(ds))
 
   # Make one pass to compute means
   means = colmeans(ds)
@@ -351,9 +378,9 @@ function cov_pearson(ds::AbstractDataStream)
     for row_index in 1:nrow(minibatch)
       for column_index in 1:p
         for alt_column_index in 1:p
-          if ds.column_types[column_index] <: Real &&
+          if coltypes(ds)[column_index] <: Real &&
                 !isna(minibatch[row_index, column_index]) &&
-                ds.column_types[alt_column_index] <: Real &&
+                coltypes(ds)[alt_column_index] <: Real &&
                 !isna(minibatch[row_index, alt_column_index])
             ns[column_index, alt_column_index] += 1
             n = ns[column_index, alt_column_index]
@@ -369,7 +396,7 @@ function cov_pearson(ds::AbstractDataStream)
   # Scale estimates by (n / (n - 1))
   for i in 1:p
     for j in 1:p
-      if !(ds.column_types[i] <: Real) || !(ds.column_types[j] <: Real)
+      if !(coltypes(ds)[i] <: Real) || !(coltypes(ds)[j] <: Real)
         covariances[i, j] = NA
       else
         n = ns[i, j]
@@ -378,7 +405,7 @@ function cov_pearson(ds::AbstractDataStream)
     end
   end
 
-  colnames!(covariances, ds.column_names)
+  colnames!(covariances, colnames(ds))
 
   return covariances
 end
@@ -396,6 +423,17 @@ function cor_pearson(ds::AbstractDataStream)
 end
 
 # TODO: Implement indexing into DataStream's
+
+function ref(ds::AbstractDataStream, i::Int)
+  cur_i = 0
+  for df in ds
+    if cur_i + nrow(df) > i
+      return df[i - cur_i, :]
+    end
+  end
+  error("Did not find requested row")
+end
+
 # TODO: Stop returning empty DataFrame at the end of a stream
 # TODO: Implement
 #        * colentropys
