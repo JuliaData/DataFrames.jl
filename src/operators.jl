@@ -1,7 +1,3 @@
-# TODO: Remove the following!
-# Monkey-patch Base Julia's comparison operators
-(.==){S <: String, T <: String}(a::S, b::T) = (==)(a, b)
-
 unary_operators = [:(+), :(-), :(!)]
 
 numeric_unary_operators = [:(+), :(-)]
@@ -22,6 +18,10 @@ scalar_comparison_operators = [:(==), :(!=), :isless, :(>), :(>=),
                                :(<), :(<=)]
 
 array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
+
+vectorized_comparison_operators = [(:(.==), :(==)), (:(.!=), :(!=)),
+                                   (:(.>), :(>)), (:(.>=), :(>=)),
+                                   (:(.<), :(<)), (:(.<=), :(<=))]
 
 binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
                     :(.^), :(div), :(mod), :(fld), :(rem),
@@ -140,13 +140,18 @@ for f in comparison_operators
         function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
             return NA
         end
+    end
+end
+
+for (f, scalarf) in vectorized_comparison_operators
+    @eval begin
         function ($f){S, T <: Union(String, Number)}(a::DataVec{S}, v::T)
             res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i])
                     res[i] = NA
                 else
-                    res[i] = ($f)(a[i], v)
+                    res[i] = ($scalarf)(a[i], v)
                 end
             end
             return res
@@ -157,7 +162,7 @@ for f in comparison_operators
                 if isna(a[i])
                     res[i] = NA
                 else
-                    res[i] = ($f)(v, a[i])
+                    res[i] = ($scalarf)(v, a[i])
                 end
             end
             return res
@@ -168,7 +173,7 @@ for f in comparison_operators
                 if isna(a[i])
                     res[i] = NA
                 else
-                    res[i] = ($f)(a[i], v)
+                    res[i] = ($scalarf)(a[i], v)
                 end
             end
             return res
@@ -179,7 +184,7 @@ for f in comparison_operators
                 if isna(a[i])
                     res[i] = NA
                 else
-                    res[i] = ($f)(v, a[i])
+                    res[i] = ($scalarf)(v, a[i])
                 end
             end
             return res
@@ -218,7 +223,7 @@ for f in comparison_operators
             for j in 1:p
                 if typeof(a[j]).parameters[1] <: Number
                     for i in 1:n
-                        res[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
                     end
                 else
                     for i in 1:n
@@ -234,7 +239,7 @@ for f in comparison_operators
             for j in 1:p
                 if typeof(a[j]).parameters[1] <: Number
                     for i = 1:n
-                        res[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
                     end
                 else
                     for i = 1:n
@@ -250,7 +255,7 @@ for f in comparison_operators
             for j in 1:p
                 if typeof(a[j]).parameters[1] <: String
                     for i in 1:n
-                        res[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
                     end
                 else
                     for i in 1:n
@@ -266,7 +271,7 @@ for f in comparison_operators
             for j in 1:p
                 if typeof(a[j]).parameters[1] <: String
                     for i = 1:n
-                        res[i, j] = isna(a[i, j]) ? NA : ($f)(a[i, j], v)
+                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
                     end
                 else
                     for i = 1:n

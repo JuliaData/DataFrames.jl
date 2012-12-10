@@ -90,8 +90,7 @@ test_group("DataVec operations")
 @assert isequal(dvint .> 1, DataVec[false, true, NA, true])
 
 test_group("PooledDataVec operations")
-# TODO: Make this pass
-# @assert isequal(pdvstr .== "two", PooledDataVec[false, false, true, true, NA, false, false])
+@assert isequal(pdvstr .== "two", PooledDataVec[false, false, true, true, NA, false, false])
 
 test_group("DataVec to something else")
 @assert all(removeNA(dvint) .== [1, 2, 4])
@@ -316,9 +315,8 @@ df8 = df7 | based_on(:( d1 = d3 ))
 df8 = based_on(df7, :( sum_d3 = sum(d3) ))
 @assert isequal(df8[1,1], sum(df7["d3"]))
 
-# No method .==(ASCIIString, ASCIIString)
-# @assert df7[:( d2 .== "B" )]["d1"] == PooledDataVec([1,2,1,1]) 
-# @assert df7[:( d2 .== "B" ), "d1"] == PooledDataVec([1,2,1,1]) 
+@assert all(df7[:( d2 .== "B" )]["d1"] .== PooledDataVec([1,2,1,1]))
+@assert all(df7[:( d2 .== "B" ), "d1"] .== PooledDataVec([1,2,1,1]))
 
 test_group("groupby")
 
@@ -344,13 +342,11 @@ df9 = based_on(groupby(df7, "d2"),
                :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) ))
 @assert isequal(df9, df8)
 
-# TODO: Make this pass
-# df8 = within(groupby(df7, "d2"),
-#              :( d4 = d3 + 1; d1sum = sum(d1) ))
-# @assert all(df8[:( d2 .== "C" )]["d1sum"] .== 13)
+df8 = within(groupby(df7, "d2"),
+             :( d4 = d3 + 1; d1sum = sum(d1) ))
+@assert all(df8[:( d2 .== "C" )]["d1sum"] .== 13)
  
-# TODO: Figure out what this test meant and get it to work under modern Julia syntax            
-# @assert all(with(g1, :( sum(d1) )) .== map(x -> sum(x["d1"]), g1))
+@assert all(with(g1, :( sum(d1) )) .== map(x -> sum(x["d1"]), g1))
 
 df8 = colwise(df7[[1, 3]], :sum)
 @assert df8[1, "d1_sum"] == sum(df7["d1"])
@@ -436,8 +432,8 @@ dv = dvones(10_000)
 # PooledDataVec(convert(Array{Bool}, falses(2)), falses(2))
 PooledDataVec(convert(Array{Bool}, falses(2)), trues(2))
 
-# Simplest example of failure
-# DataVec[1, 2, NA] .== 1
-# PooledDataVec[1, 2, NA] .== 1
-# DataVec["1", "2", NA] .== "1"
-# PooledDataVec["1", "2", NA] .== "1"
+# Test vectorized comparisons work for DataVec's and PooledDataVec's
+DataVec[1, 2, NA] .== 1
+PooledDataVec[1, 2, NA] .== 1
+DataVec["1", "2", NA] .== "1"
+PooledDataVec["1", "2", NA] .== "1"
