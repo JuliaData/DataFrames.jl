@@ -1,3 +1,35 @@
+# Motivation
+
+We want to use Julia for statistical programming. Julia is already a very powerful tool for general mathematical programming, but it is missing several features that are essential for statistical programming. We believe the changes that must be made to prepare Julia for statistical programming can be implemented using only Julian modules/packages and will not require changes to the core language. As such, we are building a package called `DataFrame` that implements the necessary changes.
+
+To (1) explain why the missing features implemented by `DataFrame` are essential and (2) motivate the changes that need to be made to Julia to make up for their absence in the core language, we describe several examples of increasing complexity below that involve calculating various types of means:
+
+* _Case 1_: We want to calculate the mean of a list of 5 numbers: `x1`, `x2`, `x3`, `x4` and `x5`. We can represent these numbers as a vector `v = [x1, x2, x3, x4, x5]`. We can compute the mean of `v` in Julia using the `mean()` function from `base/statistics.jl` by calling `mean(v)`. For this sort of computation, Julia shines.
+* _Case 2_: The approach taken above works well unless one or more of the values `x1` through `x5` is missing. Most real world data sets contain missing values, but the approach for computing means used above has no ability to handle even a single missing value. There are two problems:
+    * None of the default numeric types in Julia that could be used to encode the values `x1` through `x5` provide any mechanism for encoding missingness.
+    * The function `mean()` used above would not know how to handle missing data points even if the values `x1` through `x5` were capable of expressing missingness.
+* _Case 3_: Even if we introduce new types for expressing missingness and overload functions like `mean()` to handle missing data, we still have no tools for calculating the mean of some variable `z` conditional on the values of two other variables `x` and `y`. This more general problem of calculating means conditional on other information is called regression and is one of the core analytic tools provided by statistical theory. To express conditional means, we need two things: a data structure in which we can store the values of several different variables simultaneously and a method for performing regressions by specifying which variables are being conditioned on. The data structure we want to use in order to solve the first problem is a tabular, cases-by-variables representation of data that is ubiquitous in statistical computing and is largely equivalent to the concept of a relational database. In order to solve the latter problem, we want to have a type of domain-specific language called model formulas that allows us to concisely specify the variable(s) we want to predict and the variable(s) we want to use to perform predictions. This syntax is as valuable for statistical programming as regular expressions are for processing string.
+
+From these example, we see that performing statistical computation in Julia will require abstract methods for dealing with all of the following:
+
+* Missing Data
+* Tabular Data Structures
+* Model Formulas
+
+While explaining how tabular data and model formulas should work in greater detail, we'll see that we also need one more change to Julia: a `Factor` type like that found in R. A `Factor` type is valuable for two reasons:
+
+* A `Factor` type can reduce the amount of memory required to represent data by representing a finite set of values using an efficient encoding that is expanded into full values only when necessary. Essentially this means that `Factor`'s behave like enumeration types and that they perform a role similar to database normalization.
+* A `Factor` type can be used to inform a statistical algorithm that an input or output variable is categorical. This is particularly important when specifying regression models in which a single categorical variable encoded using `Factor`'s will be replaced with an entire matrix of indicator variables that allows pure numerical computation to be done to estimate a regression model. This conversion of categorical data into numerical data is among the most important tasks that a statistical system performs since it is error-prone if the programmer performs it for themselves using ad hoc code.
+
+Taken together, this means we actually need to add four pieces to Julia to prepare it for statistical programming:
+
+* Missing Data
+* Tabular Data Structures
+* Model Formulas
+* Factors
+
+With that overview of our four basic additions to Julia in mind, we now proceed to introduce them in greater detail. We then describe our current design, our current implementations of this design and our long-term goals.
+
 # Introduction
 
 This manual is meant to introduce new users to the DataFrame package for Julia, which provides the basic data structures needed for real-world data analysis. In everything that follows, we'll assume that you've installed and loaded the DataFrames package using the following commands:
@@ -528,3 +560,602 @@ Another simple way to split-and-apply (without clear combining) is to use the `m
 If you are looking for the equivalent of the R "Reshape" packages `melt()` and `cast()` functions, you can use `stack()` and `unstack()`. Note that these functions have exactly the oppposite syntax as `melt()` and `cast()`:
 
 	stack(iris, ["Petal.Length", "Petal.Width"])
+
+# Model Formulas
+
+## Design
+
+Once support for missing data and tabular data structures are in place, we need to begin to develop a version of the model formulas "syntax" used by R. In reality, it is better to regard this "syntax" as a complete domain-specific language (DSL) for describing linear models. For those unfamilar with this DSL, we show some examples below and then elaborate upon them to demonstrate ways in which Julia might move beyond R's formula system.
+
+Let's consider the simplest sort of linear regression model: how does the height of a child depend upon the height of the child's mother and father? If we let the variable `C` denote the height of the child, `M` the height of the mother and `F` the height of the father, the standard linear model approach in statistics would try to model their relationship using the following equation: `C = a + bM + cF + epsilon`, where `a`, `b` and `c` are fixed constants and `epsilon` is a normally distributed noise term that accounts for the imperfect match between any specific child's height and the predictions based solely on the heights of that child's mother and father.
+
+In practice, we would fit such a model using a function that performs linear regression for us based on information about the model and the data source. For example, in R we would write `lm(C ~ M + F, data = heights.data)` to fit this model, assuming that `heights.data` refers to a tabular data structure containing the heights of the children, mothers and fathers for which we have data.
+
+If we wanted to see how the child's height depends only on the mother's height, we would write `lm(C ~ M)`. If we were concerned only about dependence on the father's height, we would write `lm(C ~ H)`. As you can see, we can perform many different statistical analyses using a very consise language for describing those analyses.
+
+What is that language? The R formula language allows one to specify linear models by specifying the terms that should be included. The language is defined by a very small number of constructs:
+
+* The `~` operator: The `~` operator separates the pieces of a Formula. For linear models, this means that one specifies the outputs to be predicted on the left-hand side of the `~` and the inputs to be used to make predictions on the right-hand side.
+* The `+` operator: If you wish to include multiple predictors in a linear model, you use the `+` operator. To include both the columns `A` and `B` while predicting `C`, you write: `C ~ A + B`.
+* The `&` operator: The `&` operator is equivalent to `:` in R. It computes interaction terms, which are really an entirely new column created by combining two existing columns. For example, `C ~ A&B` describes a linear model with only one predictor. The values of this predictor at row `i` is exactly `A[i] * B[i]`, where `*` is the standard arithmetic multiplication operation. Because of the precedence rules for Julia, it was not possible to use a `:` operator without writing a custom parser.
+* The `*` operator: The `*` operator is really shorthand because `C ~ A*B` expands to `C ~ A + B + A:B`. In other words, in a DSL with only three operators, the `*` is just syntactic sugar.
+
+In addition to these operators, the model formulas DSL typically allows us to include simple functions of single columns such as in the example, `C ~ A + log(B)`.
+
+For Julia, this DSL will be handled by constructing an object of type `Formula`. It will be possible to generate a `Formula` using explicitly quoted expression. For example, we might write the Julian equivalent of the models above as `lm(:(C ~ M + F), heights_data)`. A `Formula` object describes how one should convert the columns of a `DataFrame` into a `ModelMatrix`, which fully specifies a linear model. [MORE DETAILS NEEDED ABOUT HOW `ModelMatrix` WORKS.]
+
+How can Julia move beyond R? The primary improvement Julia can offer over R's model formula approach involves the use of hierarchical indexing of columns to control the inclusion of groups of columns as predictors. For example, a text regression model that uses word counts for thousands of different words as columns in a `DataFrame` might involve writing `IsSpam ~ Pronouns + Prepositions + Verbs` to exclude most words from the analysis except for those included in the `Pronouns`, `Prepositions` and `Verbs` groups. In addition, we might try to improve upon some of the tricks R provides for writing hierarchical models in which each value of a categorical predictor gets its own coefficients. This occurs, for example, in hierarchical regression models of the sort implemented by R's `lmer` function. In addition, there are plans to support multiple LHS and RHS components of a `Formula` using a `|` operator.
+
+## Implementation
+
+DETAILS NEEDED
+
+# Factors
+
+## Design
+
+As noted above, statistical data often involves that are not quantitative, but qualitative. Such variables are typically called categorical variables and can take on only a finite number of different values. For example, a data set about people might contain demographic information such as gender or nationality for which we can know the entire set of possible values in advance. Both gender and nationality are categorical variables and should not be represented using quantitative codes unless required as this is confusing to the user and mathematically suspect since the numbering used is entirely artificial.
+
+In general, we can require that a `Factor` type allow us to express variables that can take on a known, finite list of values. This finite list is called the levels of a `Factor`. In this sense, a `Factor` is like an enumeration type.
+
+What makes a `Factor` more specialized than an enumeration type is that modeling tools can interpret factors using indicator variables. This is very important for specifying regression models. For example, if we run a regression in which the right-hand side includes a gender `Factor`, the regression function can replace this factor with two dummy variable columns that encode the levels of this factor. (In practice, there are additional complications because of issues of identifiability or collinearity, but we ignore those for the time being and address them in the Implementation section.)
+
+In addition to the general `Factor` type, we might also introduce a subtype of the `Factor` type that encodes ordinal variables, which are categorical variables that encode a definite ordering such as the values, "very unhappy", "unhappy", "indifferent", "happy" and "very happy". By introducing an `OrdinalFactor` type in which the levels of this sort of ordinal factor are represented in their proper ordering, we can provide specialized functionality like ordinal logistic regression that go beyond what is possible with `Factor` types alone.
+
+## Implementation
+
+We have a `Factor` type that handles `NA`s. This type is currently implemented using `PooledDataVec`'s.
+
+# DataStreams
+
+## Specification of DataStream as an Abstract Protocol
+
+A `DataStream` object allows one to abstractly write code that processes streaming data, which can be used for many things:
+
+* Analysis of massive data sets that cannot fit in memory
+* Online analysis in which interim answers are required while an analysis is still underway
+
+Before we begin to discuss the use of `DataStream`'s in Julia, we need to distinguish between streaming data and online analysis:
+
+* Streaming data involves low memory usage access to a data source. Typically, one demands that a streaming data algorithm use much less memory than would be required to simply represent the full raw data source in main memory.
+* Online analysis involves computations on data for which interim answers must be available. For example, given a list of a trillion numbers, one would like to have access to the estimated mean after seeing only the first _N_ elements of this list. Online estimation is essential for building practical statistical systems that will be deployed in the wild. Online analysis is the _sine qua non_ of active learning, in which a statistical system selects which data points it will observe next.
+
+In Julia, a `DataStream` is really an abstract protocol implemented by all subtypes of the abstract type, `AbstractDataStream`. This protocol assumes the following:
+
+* A `DataStream` provides a connection to an immutable source of data that implements the standard iterator protocol use throughout Julia:
+	 * `start(iter)`: Get initial iteration state.
+	 * `next(iter, state)`: For a given iterable object and iteration state, return the current item and the next iteration state.
+	 * `done(iter, state)`: Test whether we are done iterating.
+* Each call to `next()` causes the `DataStream` object to read in a chunk of rows of tabular data from the streaming source and store these in a `DataFrame`. This chunk of data is called a minibatch and its maximum size is specified at the time the DataStream is created. It defaults to _1_ if no size is explicitly specified.
+* All rows from the data source must use the same tabular schema. Entries may be missing, but this missingness must be represented explicitly by the `DataStream` using `NA`'s.
+
+Ultimately, we hope to implement a variety of `DataStream` types that wrap access to many different data sources like CSV files and SQL databases. At present, have only implemented the `FileDataStream` type, which wraps access to a delimited file. In the future, we hope to implement:
+
+* MatrixDataStream
+* DataFrameDataStream
+* SQLDataStream
+* Other tabular data sources like Fixed Width Files
+
+Thankfully the abstact `DataStream` protocol allows one to specify algorithms without regard for the specific type of `DataStream` being used. NB: _NoSQL databases are likely to be difficult to support because of their flexible schemas. We will need to think about how to interface with such systems in the future._
+
+## Constructing DataStreams
+
+The easiest way to construct a `DataStream` is to specify a filename:
+
+	ds = DataStream("my_data_set.csv")
+
+You can then iterate over this `DataStream` to see how things work:
+
+	for df in ds
+		print(ds)
+	end
+
+## Use Cases for DataStreams:
+
+We can compute many useful quantities using `DataStream`'s:
+
+* _Means_: `colmeans(ds)`
+* _Variances_: `colvars(ds)`
+* _Covariances_: `cov(ds)`
+* _Correlations_: `cor(ds)`
+* _Unique element lists and counts_: _MISSING_
+* _Linear models_: _MISSING_
+* _Entropy_: _MISSING_
+
+## Advice on Deploying DataStreams
+
+* Many useful computations in statistics can be done online:
+  * Estimation of means, including implicit estimation of means in Reinforcement Learning
+  * Estimation of entropy
+  * Estimation of linear regression models
+* But many other computations cannot be done online because they require completing a full pass through the data before quantities can be computed exactly.
+* Before writing a DataStream algorith, ask yourself: "what is the performance of this algorithm if I only allow it to make one pass through the data?"
+
+## References
+
+* McGregor: Crash Course on Data Stream Algorithms
+* Muthukrishnan : Data Streams - Algorithms and Applications
+* Chakrabarti: CS85 - Data Stream Algorithms
+* Knuth: Art of Computer Programming
+
+# Ongoing Debates about NA's
+
+* What are the proper rules for the propagation of missingness? It is clear that there is no simple absolute rule we can follow, but we need to formulate some general principles for how to set reasonable defaults. R's strategy seems to be:
+    * For operations on vectors, `NA`'s are absolutely poisonous by default.
+    * For operations on `data.frames`'s, `NA`'s are absolutely poisonous on a column-by-column basis by default. This stems from a more general which assumes that most operations on `data.frame` reduce to the aggregation of the same operation performed on each column independently.
+    * Every function should provide an `na.rm` option that allows one to ignore `NA`'s. Essentially this involves replacing `NA` by the identity element for that function: `sum(na.rm = TRUE)` replaces `NA`'s with `0`, while `prod(na.rm = TRUE)` replaces `NA`'s with `1`.
+* Should there be multiple types of missingness?
+    * For example, SAS distinguishes between:
+        * Numeric missing values
+        * Character missing values
+        * Special numeric missing values
+    * In statistical theory, while the _fact_ of missingness is simple and does not involve multiple types of `NA`'s, the _cause_ of missingness can be different for different data sets, which leads to very different procedures that can appropriately be used. See, for example, the different suggestions in Little and Rubin (2002) about how to treat data that has entries missing completely at random (MCAR) vs. data that has entries missing at random (MAR). Should we be providing tools for handling this? External data sources will almost never provide this information, but multiple dispatch means that Julian statistical functions could insure that the appropriate computations are performed for properly typed data sets without the end-user ever understanding the process that goes on under the hood.
+* How is missingness different from `NaN` for `Float`'s? Both share poisonous behavior and `NaN` propagation is very efficient in modern computers. This can provide a clever method for making `NA` fast for `Float`'s, but does not apply to other types and seems potentially problematic as two different concepts are now aliased. For example, we are not uncertain about the value of `0/0` and should not allow any method to impute a value for it -- which any imputation method will do if we treat every `NaN` as equivalent to a `NA`.
+* Should cleverness ever be allowed in propagation of `NA`? In section 3.3.4 of the R Language Definition, they note that in cases where the result of an operation would be the same for all possible values that an `NA` value could take on, the operation may return this constant value rather than return `NA`. For example, `FALSE & NA` returns `FALSE` while `TRUE | NA` returns `TRUE`. This sort of cleverness seems like a can-of-worms.
+
+## Ongoing Debates about DataFrame's
+
+* How should RDBMS-like indices be implemented? What is most efficient? How can we avoid the inefficient vector searches that R uses?
+* How should `DataFrame`'s be distributed for parallel processing?
+
+# Function Reference Guide
+
+## DataFrames
+
+#### `DataFrame(cols::Vector, colnames::Vector{ByteString})`
+
+Construct a DataFrame from the columns given by `cols` with the index
+generated by `colnames`. A DataFrame inherits from
+`Associative{Any,Any}`, so Associative operations should work. Columns
+are vector-like objects. Normally these are AbstractDataVecs (DataVecs
+or PooledDataVecs), but they can also (currently) include standard
+Julia Vectors.
+
+#### `DataFrame(cols::Vector)`
+
+Construct a DataFrame from the columns given by `cols` with default
+column names.
+
+#### `DataFrame()`
+
+An empty DataFrame.
+
+#### `copy(df::DataFrame)`
+
+A shallow copy of `df`. Columns are referenced, not copied.
+
+#### `deepcopy(df::DataFrame)`
+
+A deep copy of `df`. Copies of each column are made.
+
+#### `similar(df::DataFrame, nrow)`
+
+A new DataFrame with `nrow` rows and the same column names and types as `df`. 
+
+
+### Basics
+
+#### `size(df)`, `ndims(df)`
+
+Same meanings as for Arrays.
+
+#### `has(df, key)`, `get(df, key, default)`, `keys(df)`, and `values(df)`
+
+Same meanings as Associative operations. `keys` are column names;
+`values` are column contents.
+
+#### `start(df)`, `done(df,i)`, and `next(df,i)`
+
+Methods to iterate over columns.
+
+#### `ncol(df::AbstractDataFrame)`
+
+Number of columns in `df`.
+
+#### `nrow(df::AbstractDataFrame)`
+
+Number of rows in `df`.
+
+#### `length(df::AbstractDataFrame)` or `numel(df::AbstractDataFrame)`
+
+Number of columns in `df`.
+
+#### `isempty(df::AbstractDataFrame)`
+
+Whether the number of columns equals zero.
+
+#### `head(df::AbstractDataFrame)` and `head(df::AbstractDataFrame, i::Int)` 
+
+First `i` rows of `df`. Defaults to 6.
+
+#### `tail(df::AbstractDataFrame)` and `tail(df::AbstractDataFrame, i::Int)` 
+
+Last `i` rows of `df`. Defaults to 6.
+
+#### `show(io, df::AbstractDataFrame)`
+
+Standard pretty-printer of `df`. Called by `print()` and the REPL.
+
+#### `dump(df::AbstractDataFrame)`
+
+Show the structure of `df`. Like R's `str`.
+
+#### `summary(df::AbstractDataFrame)`
+
+Show a summary of each column of `df`.
+
+#### `complete_cases(df::AbstractDataFrame)`
+
+A Vector{Bool} of indexes of complete cases in `df` (rows with no
+NA's).
+
+#### `duplicated(df::AbstractDataFrame)`
+
+A Vector{Bool} of indexes indicating rows that are duplicates of prior
+rows.
+
+#### `unique(df::AbstractDataFrame)`
+
+DataFrame with unique rows in `df`.
+
+
+### Indexing, Assignment, and Concatenation
+
+DataFrames are indexed like a Matrix and like an Associative. Columns
+may be indexed by column name. Rows do not have names. Referencing
+with one argument normally indexes by columns: `df["col"]`,
+`df[["col1","col3"]]` or `df[i]`. With two arguments, rows and columns
+are selected. Indexing along rows works like Matrix indexing. Indexing
+along columns works like Matrix indexing with the addition of column
+name access. 
+
+#### `ref(df::DataFrame, ind)`  or `df[ind]`
+
+Returns a subset of the columns of `df` as specified by `ind`, which
+may be an `Int`, a `Range`, a `Vector{Int}`, `ByteString`, or
+`Vector{ByteString}`. Columns are referenced, not copied. For a
+single-element `ind`, the column by itself is returned.
+
+#### `ref(df::DataFrame, irow, icol)`  or `df[irow,icol]`
+
+Returns a subset of `df` as specified by `irow` and `icol`. `irow` may
+be an `Int`, a `Range`, or a `Vector{Int}`. `icol` may be an `Int`, a
+`Range`, or a `Vector{Int}`, `ByteString`, or, `ByteString`, or
+`Vector{ByteString}`. For a single-element `ind`, the column subset by
+itself is returned.
+
+#### `index(df::DataFrame)`
+
+Returns the column `Index` for `df`.
+
+#### `set_group(df::DataFrame, newgroup, names::Vector{ByteString})`
+#### `get_groups(df::DataFrame)`
+#### `set_groups(df::DataFrame, gr::Dict)`
+
+See the Indexing section for these operations on column indexes.
+
+#### `colnames(df::DataFrame)` or `names(df::DataFrame)` 
+
+The column names as an `Array{ByteString}`
+
+#### `assign(df::DataFrame, newcol, colname)` or `df[colname] = newcol`
+
+Replace or add a new column with name `colname` and contents `newcol`.
+Arrays are converted to DataVecs. Values are recycled to match the
+number of rows in `df`.
+
+#### `insert(df::DataFrame, index::Integer, item, name)`
+
+Insert a column of name `name` and with contents `item` into `df` at
+position `index`.
+
+#### `insert(df::DataFrame, df2::DataFrame)`
+
+Insert columns of `df2` into `df1`.
+
+#### `del!(df::DataFrame, cols)`
+
+Delete columns in `df` at positions given by `cols` (noted with any
+means that columns can be referenced).
+
+#### `del(df::DataFrame, cols)`
+
+Nondestructive version. Return a DataFrame based on the columns in
+`df` after deleting columns specified by `cols`.
+
+#### `cbind(df1, df2, ...)` or `hcat(df1, df2, ...)` or `[df1 df2 ...]`  
+
+Concatenate columns. Duplicated column names are adjusted.
+
+#### `rbind(df1, df2, ...)` or `vcat(df1, df2, ...)` or `[df1, df2, ...]`  
+
+Concatenate rows.
+
+### I/O
+
+#### `csvDataFrame(filename, o::Options)`
+
+Return a DataFrame from file `filename`. Options `o` include
+`colnames` [`"true"`, `"false"`, or `"check"` (the default)] and
+`poolstrings` [`"check"` (default) or `"never"`].
+
+### Expression/Function Evaluation in a DataFrame
+
+#### `with(df::AbstractDataFrame, ex::Expr)`
+
+Evaluate expression `ex` with the columns in `df`.
+
+#### `within(df::AbstractDataFrame, ex::Expr)`
+
+Return a copy of `df` after evaluating expression `ex` with the
+columns in `df`.
+
+#### `within!(df::AbstractDataFrame, ex::Expr)`
+
+Modify `df` by evaluating expression `ex` with the columns in `df`.
+
+#### `based_on(df::AbstractDataFrame, ex::Expr)`
+
+Return a new DataFrame based on evaluating expression `ex` with the
+columns in `df`. Often used for summarizing operations.
+
+#### `colwise(f::Function, df::AbstractDataFrame)`
+#### `colwise(f::Vector{Function}, df::AbstractDataFrame)`
+
+Apply `f` to each column of `df`, and return the results as an
+Array{Any}.
+
+#### `colwise(df::AbstractDataFrame, s::Symbol)`
+#### `colwise(df::AbstractDataFrame, s::Vector{Symbol})`
+
+Apply the function specified by Symbol `s` to each column of `df`, and
+return the results as a DataFrame.
+
+### SubDataFrames
+
+#### `sub(df::DataFrame, r, c)`
+#### `sub(df::DataFrame, r)`
+
+Return a SubDataFrame with references to rows and columns of `df`.
+
+
+#### `sub(sd::SubDataFrame, r, c)`
+#### `sub(sd::SubDataFrame, r)`
+
+Return a SubDataFrame with references to rows and columns of `df`.
+
+#### `ref(sd::SubDataFrame, r, c)` or `sd[r,c]`
+#### `ref(sd::SubDataFrame, c)` or `sd[c]`
+
+Referencing should work the same as DataFrames.
+
+
+### Grouping
+
+#### `groupby(df::AbstractDataFrame, cols)`
+
+Return a GroupedDataFrame based on unique groupings indicated by the
+columns with one or more names given in `cols`.
+
+#### `start(gd)`, `done(gd,i)`, and `next(gd,i)`
+
+Methods to iterate over GroupedDataFrame groupings.
+
+#### `ref(gd::GroupedDataFrame, idx)` or `gd[idx]`
+
+Reference a particular grouping. Referencing returns a SubDataFrame.
+
+#### `with(gd::GroupedDataFrame, ex::Expr)`
+
+Evaluate expression `ex` with the columns in `gd` in each grouping.
+
+#### `within(gd::GroupedDataFrame, ex::Expr)`
+#### `within!(gd::GroupedDataFrame, ex::Expr)`
+
+Return a DataFrame with the results of evaluating expression `ex` with
+the columns in `gd` in each grouping.
+
+#### `based_on(gd::GroupedDataFrame, ex::Expr)`
+
+Sweeps along groups and applies `based_on` to each group. Returns a
+DataFrame.
+
+#### `map(f::Function, gd::GroupedDataFrame)`
+
+Apply `f` to each grouping of `gd` and return the results in an Array.
+
+#### `colwise(f::Function, gd::GroupedDataFrame)`
+#### `colwise(f::Vector{Function}, gd::GroupedDataFrame)`
+
+Apply `f` to each column in each grouping of `gd`, and return the
+results as an Array{Any}.
+
+#### `colwise(gd::GroupedDataFrame, s::Symbol)`
+#### `colwise(gd::GroupedDataFrame, s::Vector{Symbol})`
+
+Apply the function specified by Symbol `s` to each column of in each
+grouping of `gd`, and return the results as a DataFrame.
+
+#### `by(df::AbstractDataFrame, cols, s::Symbol)` or `groupby(df, cols) | s`
+#### `by(df::AbstractDataFrame, cols, s::Vector{Symbol})`
+
+Return a DataFrame with the results of grouping on `cols` and
+`colwise` evaluation based on `s`. Equivalent to `colwise(groupby(df,
+cols), s)`.
+
+#### `by(df::AbstractDataFrame, cols, e::Expr)` or `groupby(df, cols) | e`
+
+Return a DataFrame with the results of grouping on `cols` and
+evaluation of `e` in each grouping. Equivalent to `based_on(groupby(df,
+cols), e)`.
+
+### Reshaping / Merge
+
+#### `stack(df::DataFrame, cols)`
+
+For conversion from wide to long format. Returns a DataFrame with
+stacked columns indicated by `cols`. The result has column `"key"`
+with column names from `df` and column `"value"` with the values from
+`df`. Columns in `df` not included in `cols` are duplicated along the
+stack.
+
+#### `unstack(df::DataFrame, ikey, ivalue, irefkey)`
+
+For conversion from long to wide format. Returns a DataFrame. `ikey`
+indicates the key column--unique values in column `ikey` will be
+column names in the result. `ivalue` indicates the value column.
+`irefkey` is the column with a unique identifier for that . Columns
+not given by `ikey`, `ivalue`, or `irefkey` are currently ignored.
+
+#### `merge(df1::DataFrame, df2::DataFrame, bycol)`
+#### `merge(df1::DataFrame, df2::DataFrame, bycol, jointype)`
+
+Return the database join of `df1` and `df2` based on the column `bycol`.
+Currently only a single merge key is supported. Supports `jointype` of
+"inner" (the default), "left", "right", or "outer".
+
+
+## Index
+
+#### `Index()`
+#### `Index(s::Vector{ByteString})`
+
+An Index with names `s`. An Index is like an Associative type. An
+Index is used for column indexing of DataFrames. An Index maps
+ByteStrings and Vector{ByteStrings} to Indices.
+
+#### `length(x::Index)`, `copy(x::Index)`, `has(x::Index, key)`, `keys(x::Index)`, `push(x::Index, name)`
+
+Normal meanings.
+
+#### `del(x::Index, idx::Integer)`,  `del(x::Index, s::ByteString)`,  
+
+Delete the name `s` or name at position `idx` in `x`.
+
+#### `names(x::Index)`
+
+A Vector{ByteString} with the names of `x`.
+
+#### `names!(x::Index, nm::Vector{ByteString})`
+
+Set names `nm` in `x`.
+
+#### `replace_names(x::Index, from::Vector, to::Vector)`
+
+Replace names `from` with `to` in `x`.
+
+#### `ref(x::Index, idx)` or `x[idx]`
+
+This does the mapping from name(s) to Indices (positions). `idx` may
+be ByteString, Vector{ByteString}, Int, Vector{Int}, Range{Int},
+Vector{Bool}, AbstractDataVec{Bool}, or AbstractDataVec{Int}.
+
+#### `set_group(idx::Index, newgroup, names::Vector{ByteString})`
+
+Add a group to `idx` with name `newgroup` that includes the names in
+the vector `names`.  
+
+#### `get_groups(idx::Index)`
+
+A Dict that maps the name of each group to the names in the group.
+
+#### `set_groups(idx::Index, gr::Dict)`
+
+Set groups in `idx` based on the mapping given by `gr`.
+
+
+## Missing Values
+
+Missing value behavior is implemented by instantiations of the `AbstractDataVec`
+abstract type. 
+
+#### `NA`
+
+A constant indicating a missing value.
+  
+#### `isna(x)`
+
+Return a `Bool` or `Array{Bool}` (if `x` is an `AbstractDataVec`)
+that is `true` for elements with missing values.
+
+#### `nafilter(x)`
+
+Return a copy of `x` after removing missing values. 
+
+#### `nareplace(x, val)`
+
+Return a copy of `x` after replacing missing values with `val`.
+
+#### `naFilter(x)`
+
+Return an object based on `x` such that future operations like `mean`
+will not include missing values. This can be an iterator or other
+object.
+
+#### `naReplace(x, val)`
+
+Return an object based on `x` such that future operations like `mean`
+will replace NAs with `val`.
+
+#### `na(x)`
+
+Return an `NA` value appropriate for the type of `x`.
+
+#### `nas(x, dim)`
+
+Return an object like `x` filled with `NA`'s with size `dim`.
+
+
+## DataVecs
+
+#### `DataVec(x::Vector)`
+#### `DataVec(x::Vector, m::Vector{Bool})`
+
+Create a DataVec from `x`, with `m` optionally indicating which values
+are NA. DataVecs are like Julia Vectors with support for NA's. `x` may
+be any type of Vector.
+
+#### `PooledDataVec(x::Vector)`
+#### `PooledDataVec(x::Vector, m::Vector{Bool})`
+
+Create a PooledDataVec from `x`, with `m` optionally indicating which
+values are NA. PooledDataVecs contain a pool of values with references
+to those values. This is useful in a similar manner to an R array of
+factors.
+
+#### `size`, `length`, `ndims`, `ref`, `assign`, `start`, `next`, `done`
+
+All normal Vector operations including array referencing should work.
+
+#### `isna(x)`, `nafilter(x)`, `nareplace(x, val)`, `naFilter(x)`, `naReplace(x, val)`
+
+All NA-related methods are supported.
+
+## Utilities
+
+#### `cut(x::Vector, breaks::Vector)`
+
+Returns a PooledDataVec with length equal to `x` that divides values in `x`
+based on the divisions given by `breaks`.
+
+## Formulas and Models
+
+#### `Formula(ex::Expr)`
+
+Return a Formula object based on `ex`. Formulas are two-sided
+expressions separated by `~`, like `:(y ~ w*x + z + i&v)`.
+
+#### `model_frame(f::Formula, d::AbstractDataFrame)`
+#### `model_frame(ex::Expr, d::AbstractDataFrame)`
+
+A ModelFrame.
+
+#### `model_matrix(mf::ModelFrame)`
+#### `model_matrix(f::Formula, d::AbstractDataFrame)`
+#### `model_matrix(ex::Expr, d::AbstractDataFrame)`
+
+A ModelMatrix based on `mf`, `f` and `d`, or `ex` and `d`.
+
+#### `lm(ex::Expr, df::AbstractDataFrame)`
+
+Linear model results (type OLSResults) based on formula `ex` and `df`.
