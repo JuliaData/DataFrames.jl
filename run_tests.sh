@@ -10,3 +10,4 @@ julia test/operators.jl
 julia test/io.jl
 # julia test/formula.jl
 julia test/datastream.jl
+julia test/datamatrix.jl

@@ -35,7 +35,7 @@ end
 DataMatrix{T}(d::Matrix{T}, n::BitMatrix) = DataMatrix{T}(d, n)
 
 # Convert Vector{Bool}'s to BitArray's to save space
-DataMatrix{T}(d::Matrix{T}, m::Vector{Bool}) = DataMatrix{T}(d, bitpack(m))
+DataMatrix{T}(d::Matrix{T}, m::Matrix{Bool}) = DataMatrix{T}(d, bitpack(m))
 
 # Explicitly convert an existing matrix to a DataMatrix w/ no NA's
 DataMatrix(x::Matrix) = DataMatrix(x, falses(size(x)))
@@ -122,6 +122,16 @@ ref{T}(a::DataMatrix{T}, i::Int, j::Int) = a.na[i, j] ? NA : a.data[i, j]
 
 # single-element access without regard to size
 ref{T}(a::DataMatrix{T}, i::Int) = a.na[i] ? NA : a.data[i]
+
+# int w/ range access
+function ref(x::DataMatrix, i::Int, r2::Range1)
+    DataMatrix(x.data[i, r2], x.na[i, r2])
+end
+
+# range w/ int access
+function ref(x::DataMatrix, r1::Range1, j::Int)
+    DataVec(x.data[r1, j], x.na[r1, j])
+end
 
 # range access
 function ref(x::DataMatrix, r1::Range1, r2::Range1)

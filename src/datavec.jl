@@ -894,7 +894,7 @@ end
 
 show(io, x::AbstractDataVec) = Base.show_comma_array(io, x, '[', ']')
 
-function show(io, x::PooledDataVec)
+function show{T}(io, x::PooledDataVec{T})
     print("values: ")
     print(values(x))
     print("\n")
@@ -902,18 +902,18 @@ function show(io, x::PooledDataVec)
     print(levels(x))
 end
 
-function repl_show(io::IO, dv::DataVec)
+function repl_show{T}(io::IO, dv::DataVec{T})
     n = length(dv)
-    print("$n-element $(typeof(dv))\n")
+    print("$n-element $T DataVec\n")
     for i in 1:(n - 1)
         println(strcat(' ', dv[i]))
     end
     print(strcat(' ', dv[n]))
 end
 
-function repl_show(io::IO, dv::PooledDataVec)
+function repl_show{T}(io::IO, dv::PooledDataVec{T})
     n = length(dv)
-    print("$n-element $(typeof(dv))\n")
+    print("$n-element $T DataVec\n")
     for i in 1:(n - 1)
         println(strcat(' ', dv[i]))
     end
