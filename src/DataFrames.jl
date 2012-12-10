@@ -168,6 +168,10 @@ load("DataFrames/src/operators.jl")
 # DataMatrix's
 load("DataFrames/src/datamatrix.jl")
 
+# Linear algebra over DataMatrix's
+import Base.svd
+load("DataFrames/src/linalg.jl")
+
 # TODO: Finish generic DataArray's
 # load("DataFrames/src/dataarray.jl")
 

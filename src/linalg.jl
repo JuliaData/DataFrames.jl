@@ -1,11 +1,8 @@
+#
 # Calculates the SVD of a data matrix containing missing entries.
 #
-# This should really be done with a DataMatrix{Int64} or a 
-# DataMatrix{Float64}, but it's currently being done with generic
-# DataFrame's that should be edited in advance to insure that the
-# algorithm won't crash.
-
 # Uses the iterative algorithm of Hastie et al. 1999
+#
 
 # Calculate the rank-k SVD approximation to a matrix given the
 # full SVD.
@@ -34,7 +31,7 @@ function impute(m::Matrix{Float64}, missing_entries, u, d, v, k::Int64)
 end
 
 # Should be done with a proper N-dimensional Int64 array.
-function ind_na(df::DataFrame)
+function ind_na{T}(df::DataMatrix{T})
   indices = {}
   for i = 1:nrow(df)
     for j = 1:ncol(df)
@@ -47,7 +44,7 @@ function ind_na(df::DataFrame)
 end
 
 # Kind of a nutty method without DataMatrix.
-function mean(df::DataFrame)
+function mean{T}(df::DataMatrix{T})
   mu = 0.0
   n = 0
   for i = 1:nrow(df)
@@ -62,7 +59,7 @@ function mean(df::DataFrame)
 end
 
 # This will crash if a row is missing all entries.
-function row_means(df::DataFrame)
+function rowmeans{T}(df::DataMatrix{T})
   mus = zeros(nrow(df))
   for i = 1:nrow(df)
     mu = 0.0
@@ -79,7 +76,7 @@ function row_means(df::DataFrame)
 end
 
 # Must select rank k of SVD to use.
-function missing_svd(D::DataFrame, k::Int)
+function svd{T}(D::DataMatrix{T}, k::Int)
   df = deepcopy(D)
 
   tolerance = 10e-4
@@ -95,7 +92,7 @@ function missing_svd(D::DataFrame, k::Int)
 
   # Initial imputation uses row means.
   global_mu = mean(df)
-  mu_i = row_means(df)
+  mu_i = rowmeans(df)
 
   for i = 1:n
     for j = 1:p
@@ -152,3 +149,5 @@ function missing_svd(D::DataFrame, k::Int)
   u, d, v = svd(current_df)
   (current_df, u[:, 1:k], d[1:k], v[1:k, :])
 end
+
+svd{T}(D::DataMatrix{T}) = svd(D, min(nrow(D), ncol(D)))

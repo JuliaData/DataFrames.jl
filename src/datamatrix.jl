@@ -304,5 +304,7 @@ function isfinite(dm::DataMatrix)
     DataMatrix(new_data, dm.na)
 end
 
-
 # TODO: Implement diag{T}(dm::DataMatrix{T})
+
+nrow{T}(dm::DataMatrix{T}) = size(dm, 1)
+ncol{T}(dm::DataMatrix{T}) = size(dm, 2)
