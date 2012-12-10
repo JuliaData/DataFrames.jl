@@ -60,6 +60,13 @@ for (f, basef) in ((:dmzeros, :zeros), (:dmones, :ones), (:dmeye, :eye))
     end
 end
 
+# Single-argument dmeye
+for (f, basef) in ((:dmeye, :eye), )
+    @eval begin
+        ($f)(n::Int64) = DataMatrix(($basef)(n), falses(n, n))
+    end
+end
+
 # Initialized constructors with false's or true's
 for (f, basef) in ((:dmfalses, :falses), (:dmtrues, :trues))
     @eval begin

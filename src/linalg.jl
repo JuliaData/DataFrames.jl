@@ -76,8 +76,11 @@ function rowmeans{T}(df::DataMatrix{T})
 end
 
 # Must select rank k of SVD to use.
+# TODO: Default to failure in the face of NA's
 function svd{T}(D::DataMatrix{T}, k::Int)
   df = deepcopy(D)
+
+  print_trace = false
 
   tolerance = 10e-4
 
@@ -88,7 +91,9 @@ function svd{T}(D::DataMatrix{T}, k::Int)
   # Estimate missingness and print a message.
   missing_entries = ind_na(df)
   missingness = length(missing_entries) / (nrow(df) * ncol(df))
-  println("Matrix is missing $(missingness * 100)% of entries")
+  if print_trace
+    println("Matrix is missing $(missingness * 100)% of entries")
+  end
 
   # Initial imputation uses row means.
   global_mu = mean(df)
@@ -127,8 +132,10 @@ function svd{T}(D::DataMatrix{T}, k::Int)
 
   # Iterate until imputation stops changing up to a tolerance of 10e-6.
   while change > tolerance
-    println("Iteration $i")
-    println("Change $change")
+    if print_trace
+      println("Iteration $i")
+      println("Change $change")
+    end
 
     # Impute missing entries using current SVD.
     previous_df = copy(current_df)
@@ -143,11 +150,20 @@ function svd{T}(D::DataMatrix{T}, k::Int)
   end
 
   # Tell the user how many iterations were required to impute matrix.
-  println("Tolerance achieved after $i iterations")
+  if print_trace
+    println("Tolerance achieved after $i iterations")
+  end
   
   # Return both df and the SVD of df with all entries imputed.
   u, d, v = svd(current_df)
-  (current_df, u[:, 1:k], d[1:k], v[1:k, :])
+
+  # Only return the SVD entries, not the imputation
+  return (u[:, 1:k], d[1:k], v[1:k, :])
 end
 
 svd{T}(D::DataMatrix{T}) = svd(D, min(nrow(D), ncol(D)))
+
+function eig{T}(D::DataMatrix{T})
+  u, d, v = svd(D)
+  eig(u * diagm(d) * v)
+end

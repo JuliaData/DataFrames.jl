@@ -170,7 +170,7 @@ export DataMatrix
 load("DataFrames/src/datamatrix.jl")
 
 # Linear algebra over DataMatrix's
-import Base.svd
+import Base.svd, Base.eig
 load("DataFrames/src/linalg.jl")
 
 # TODO: Finish generic DataArray's
