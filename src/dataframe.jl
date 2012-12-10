@@ -1,6 +1,6 @@
 
 # Abstract DF includes DataFrame and SubDataFrame
-abstract AbstractDataFrame <: Associative{String,Any}
+abstract AbstractDataFrame <: Associative{Any,Any}
 
 # ## DataFrame - a list of heterogeneous Data vectors with col and row indexs.
 # Columns are a vector, which means that operations that insert/delete columns
@@ -744,6 +744,7 @@ myhas{K<:String,V}(d::Associative{K,V}, key) = has(d, string(key))
 
 bestkey(d, key) = key
 bestkey{K<:String,V}(d::Associative{K,V}, key) = string(key)
+bestkey(d::AbstractDataFrame, key) = string(key)
 bestkey(d::NamedArray, key) = string(key)
 
 replace_syms(x) = x
