@@ -1074,3 +1074,25 @@ function unique{T}(dv::DataVec{T})
   end
   return keys(values)
 end
+
+##############################################################################
+##
+## head() and tail()
+##
+##############################################################################
+
+function head{T}(dv::DataVec{T})
+    if length(dv) > 6
+        repl_show(dv[1:6])
+    else
+        repl_show(dv[1:end])
+    end
+end
+
+function tail{T}(dv::DataVec{T})
+    if length(dv) > 6
+        repl_show(dv[(end - 6):end])
+    else
+        repl_show(dv[1:end])
+    end
+end
