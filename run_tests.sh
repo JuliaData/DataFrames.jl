@@ -10,9 +10,3 @@ julia test/operators.jl
 julia test/io.jl
 # julia test/formula.jl
 julia test/datastream.jl
-
-#
-# Optional time-consuming Benchmarks
-#
-
-# julia test/perf/datavec.jl

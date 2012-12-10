@@ -150,7 +150,7 @@ load("DataFrames/src/datastream.jl")
 
 # New initialized constructors
 export dvzeros, dvones, dvfalses, dvtrues
-export dmzeros, dmones, dmeye, dmdiag
+export dmzeros, dmones, dmeye, dmdiagm
 
 # Conversion functions
 export dvint, dvfloat, dvbool
@@ -165,8 +165,10 @@ export coltypes
 # Then we can order things properly
 load("DataFrames/src/operators.jl")
 
-# Data Array's
-load("DataFrames/src/dataarray.jl")
+# DataMatrix's
 load("DataFrames/src/datamatrix.jl")
+
+# TODO: Finish generic DataArray's
+# load("DataFrames/src/dataarray.jl")
 
 end # module DataFrames
