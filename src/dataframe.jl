@@ -540,21 +540,31 @@ index(df::SubDataFrame) = index(df.parent)
 
 # df[1] = replace column
 function assign(df::DataFrame, newcol::AbstractDataVec, icol::Integer)
+    if length(newcol) != nrow(df) && nrow(df) != 0
+        throw(ArgumentError("Can't insert new DataFrame column of improper length"))
+    end
     if icol > 0 && icol <= ncol(df)
         df.columns[icol] = newcol
     else
-        throw(ArgumentError("Can't replace a non-existent DataFrame column"))
+        if icol == ncol(df) + 1
+            i = ncol(df) + 1
+            push(df.colindex, "x$i")
+            push(df.columns, newcol)
+        else
+            throw(ArgumentError("Can't insert new DataFrame column into a non-existent slot"))
+        end
     end
-    df
+    return df
 end
 assign{T}(df::DataFrame, newcol::Vector{T}, icol::Integer) = assign(df, DataVec(newcol), icol)
+assign{T}(df::DataFrame, newcol::Range1{T}, icol::Integer) = assign(df, DataVec(newcol), icol)
 
 # df["old"] = replace old columns
 # df["new"] = append new column
 function assign(df::DataFrame, newcol::AbstractDataVec, colname)
     icol = get(df.colindex.lookup, colname, 0)
     if length(newcol) != nrow(df) && nrow(df) != 0
-        error("length of data doesn't match the number of rows.")
+        throw(ArgumentError("Can't insert new DataFrame column of improper length"))
     end
     if icol > 0
         # existing
@@ -567,9 +577,10 @@ function assign(df::DataFrame, newcol::AbstractDataVec, colname)
     df
 end
 assign{T}(df::DataFrame, newcol::Vector{T}, colname) = assign(df, DataVec(newcol), colname)
+assign{T}(df::DataFrame, newcol::Range1{T}, colname) = assign(df, DataVec(newcol), colname)
 
-assign(df::DataFrame, newcol, colname) =
-    nrow(df) > 0 ? assign(df, DataVec(fill(newcol, nrow(df))), colname) : assign(df, DataVec([newcol]), colname)
+# assign(df::DataFrame, newcol, colname) =
+#     nrow(df) > 0 ? assign(df, DataVec(fill(newcol, nrow(df))), colname) : assign(df, DataVec([newcol]), colname)
 
 # do I care about vectorized assignment? maybe not...
 # df[1:3] = (replace columns) eh...
@@ -578,22 +589,89 @@ assign(df::DataFrame, newcol, colname) =
 # df[1] = nothing
 assign(df::DataFrame, x::Nothing, icol::Integer) = del!(df, icol)
 
-# at least some of the elementwise assignments
-assign(df::DataFrame, v, rows, cols) = assign(df[cols], v, rows)
-
 ## Multicolumn assignment like df2[1:2,:] = df2[4:5,:]
-function assign(df1::DataFrame, df2::DataFrame, rows, cols)
-    nr = length(rows)
-    nc = length(cols)
-    if ncol(df2) != nc || nrow(df2) != nr
+function assign(df1::DataFrame, df2::DataFrame, row::Int, cols::Range1)
+    if ncol(df2) != length(cols)
         error("Dimensions do not match in assignment.")
     end
-    for i=1:nr
-        for j=1:nc
-            assign(df1, df2[i,j], rows[i], cols[j])
+    for col in cols
+        df1[row, col] = df2[row, col]
+    end
+    return df1
+end
+
+function assign(df1::DataFrame, df2::DataFrame, rows::Range1, col::Int)
+    if nrow(df2) != length(rows)
+        error("Dimensions do not match in assignment.")
+    end
+    for row in rows
+        df1[row, col] = df2[row, col]
+    end
+    return df1
+end
+
+function assign(df1::DataFrame, df2::DataFrame, rows::Range1, cols::Range1)
+    if nrow(df2) != length(rows) || ncol(df2) != length(cols)
+        error("Dimensions do not match in assignment.")
+    end
+    for row in rows
+        for col in cols
+            df1[row, col] = df2[row, col]
         end
     end
-    df1
+    return df1
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, i::Int, j::Int)
+    df.columns[j][i] = x
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, row::Int, cols::Range1)
+    for col in cols
+        df.columns[col][row] = x
+    end
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, rows::Range1, col::Int)
+    df.columns[col][rows] = x
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, rows::Range1, cols::Range1)
+    for col in cols
+        df.columns[col][rows] = x
+    end
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, j::Int)
+    for i in 1:nrow(df)
+        df.columns[j][i] = x
+    end
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, colname::String)
+    j = get(df.colindex.lookup, colname, 0)
+    n = nrow(df)
+    if j == 0
+        if n == 0
+            n = 1
+        end
+        newcol = DataVec(Array(T, n), falses(n))
+        for i in 1:n
+            newcol[i] = x
+        end
+        push(df.colindex, colname)
+        push(df.columns, newcol)
+    else
+        for i in 1:n
+            df.columns[j][i] = x
+        end
+    end
+    return df
 end
 
 # del!(df, 1)
@@ -676,30 +754,47 @@ nas(df::DataFrame, dims) =
 nas(df::SubDataFrame, dims) = 
     DataFrame([nas(df[x], dims) for x in colnames(df)], colnames(df)) 
 
+rbind(df::DataFrame) = df
 
-function rbind(dfs::DataFrame...)
-    Nrow = sum(nrow, dfs)
-    Ncol = ncol(dfs[1])
-    res = similar(dfs[1], Nrow)
-    # TODO fix PooledDataVec columns with different pools.
-    # for idx in 2:length(dfs)
-    #     if colnames(dfs[1]) != colnames(dfs[idx])
-    #         error("DataFrame column names must match.")
-    #     end
-    # end
-    idx = 1
-    for df in dfs
-        for kdx in 1:nrow(df)
-            for jdx in 1:Ncol
-                res[jdx][idx] = df[kdx, jdx]
-            end
-            idx += 1
-        end
-        set_groups(res, get_groups(df))
+function rbind(df1::DataFrame, df2::DataFrame)
+    if size(df1) == (0, 0) && size(df2) == (0, 0)
+        return DataFrame(0, 0)
     end
-    res
+    if size(df1) == (0, 0) && size(df2) != (0, 0)
+        return df2
+    end
+    if size(df1) != (0, 0) && size(df2) == (0, 0)
+        return df1
+    end
+    if ncol(df1) != ncol(df2)
+        error("Cannot rbind dissimilar DataFrames")
+    end
+    res = DataFrame(coltypes(df1), nrow(df1) + nrow(df2))
+    colnames!(res, colnames(df1))
+    ind = 0
+    for i in 1:nrow(df1)
+        ind += 1
+        for j in 1:ncol(df1)
+            res[ind, j] = df1[i, j]
+        end
+    end
+    for i in 1:nrow(df2)
+        ind += 1
+        for j in 1:ncol(df1)
+            res[ind, j] = df2[i, j]
+        end
+    end
+    return res
 end
-vcat(dfs::DataFrame...) = rbind(dfs...)
+
+# Use induction to define results for arbitrary lengths?
+function rbind(dfs::DataFrame...)
+    res = dfs[1]
+    for j in 2:length(dfs)
+        res = rbind(res, dfs[j])
+    end
+    return res
+end
 
 function rbind(dfs::Vector)   # for a Vector of DataFrame's
     Nrow = sum(nrow, dfs)
@@ -724,7 +819,45 @@ function rbind(dfs::Vector)   # for a Vector of DataFrame's
     res
 end
 
-rbind(df1::DataFrame, df2::DataFrame) = rbind({df1, df2})
+# function rbind(dfs::DataFrame...)
+#     L = length(dfs)
+#     T = 0
+#     total_rows = 0
+#     real_cols = 0
+#     non_empty_dfs = Array(Any, L)
+#     for i in 1:L
+#         df = dfs[i]
+#         if nrow(df) > 0
+#             T += 1
+#             non_empty_dfs[T] = df
+#         end
+#     end
+#     if T == 0
+#         return DataFrame(0, 0)
+#     end
+#     dfs = non_empty_dfs[1:T]
+#     Nrow = sum(nrow, dfs)
+#     Ncol = max(ncol, dfs)
+#     res = similar(dfs[1], Nrow)
+#     # TODO fix PooledDataVec columns with different pools.
+#     # for idx in 2:length(dfs)
+#     #     if colnames(dfs[1]) != colnames(dfs[idx])
+#     #         error("DataFrame column names must match.")
+#     #     end
+#     # end
+#     idx = 1
+#     for df in dfs
+#         for kdx in 1:nrow(df)
+#             for jdx in 1:Ncol
+#                 res[jdx][idx] = df[kdx, jdx]
+#             end
+#             idx += 1
+#         end
+#         set_groups(res, get_groups(df))
+#     end
+#     res
+# end
+vcat(dfs::DataFrame...) = rbind(dfs...)
 
 # DF row operations -- delete and append
 # df[1] = nothing
