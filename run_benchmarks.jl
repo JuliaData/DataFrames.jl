@@ -6,7 +6,8 @@
 
 benchmarks = ["test/perf/datavec.jl",
               "test/perf/io.jl",
-              "test/perf/datastreams.jl"]
+              "test/perf/datastreams.jl",
+              "test/perf/datamatrix.jl"]
 
 println("Running benchmarks:")
 

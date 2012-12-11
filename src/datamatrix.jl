@@ -339,7 +339,17 @@ function isfinite(dm::DataMatrix)
     DataMatrix(new_data, dm.na)
 end
 
-# TODO: Implement diag{T}(dm::DataMatrix{T})
+function diag{T}(dm::DataMatrix{T})
+    return DataVec(diag(dm.data), diag(dm.na))
+end
 
 nrow{T}(dm::DataMatrix{T}) = size(dm, 1)
 ncol{T}(dm::DataMatrix{T}) = size(dm, 2)
+
+function matrix{T}(dm::DataMatrix{T})
+    if any_na(dm)
+        error("Can't convert a DataMatrix with missing entries")
+    else
+        return dm.data
+    end
+end

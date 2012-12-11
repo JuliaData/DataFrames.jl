@@ -57,6 +57,10 @@ ffts = [:fft]
 binary_vector_operators = [:dot, :cor_pearson, :cov_pearson,
                            :cor_spearman, :cov_spearman]
 
+rowwise_operators = [:rowmins, :rowmaxs, :rowprods, :rowsums,
+                     :rowmeans, :rowmedians, :rowstds, :rowvars,
+                     :rowffts, :rownorms]
+
 columnar_operators = [:colmins, :colmaxs, :colprods, :colsums,
                       :colmeans, :colmedians, :colstds, :colvars,
                       :colffts, :colnorms]
@@ -101,7 +105,7 @@ for f in unary_operators
     end
 end
 
-# Treat ctranspose and * in a special way
+# Treat ctranspose and * in a special way for now
 function ctranspose{T}(dv::DataVec{T})
     return DataMatrix(dv.data', dv.na')
 end
@@ -110,7 +114,7 @@ function ctranspose{T}(dm::DataMatrix{T})
     return DataMatrix(dm.data', dm.na')
 end
 
-# TODO: Use a proper algorithm
+# TODO: Check there are no better algorithms
 function (*){S <: Real, T <: Real}(a::DataVec{S}, b::DataMatrix{T})
     if size(b, 1) != 1
         error("DataVec w/ DataMatrix * error")
@@ -125,7 +129,7 @@ function (*){S <: Real, T <: Real}(a::DataVec{S}, b::DataMatrix{T})
     return res
 end
 
-# TODO: Use a proper algorithm
+# TODO: Check there are no better algorithms
 function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataVec{T})
     if size(a, 2) != length(b)
         error("The number of columns of the DataMatrix must match the length of the DataVec")
@@ -141,19 +145,32 @@ function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataVec{T})
     return res
 end
 
-# TODO: Use a proper algorithm
+# Propagates NA's
+# For a dissenting view,
+# http://radfordneal.wordpress.com/2011/05/21/slowing-down-matrix-multiplication-in-r/
+# But we're getting 10x R while maintaining NA's
 function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataMatrix{T})
-    insize = size(a, 2)
-    if insize != size(b, 1)
+    n1, p1 = size(a)
+    n2, p2 = size(b)
+    if p1 != n2
         error("DataMatrix sizes must align for matrix multiplication")
     end
-    n, p = size(a, 1), size(b, 2)
-    res = dmzeros(n, p)
-    for i in 1:n
-        for j in 1:p
-            res[i, j] = 0.0
-            for k in 1:insize
-                res[i, j] += a[i, k] * b[k, j]
+    res = DataMatrix(a.data * b.data, falses(n1, p2))
+    for i in 1:n1
+        for j in 1:p1
+            if a.na[i, j]
+                # Propagate NA's
+                # Corrupt all rows based on i
+                res.na[i, :] = true
+            end
+        end
+    end
+    for i in 1:n2
+        for j in 1:p2
+            if b.na[i, j]
+                # Propagate NA's
+                # Corrupt all columns based on j
+                res.na[:, j] = true
             end
         end
     end
@@ -697,6 +714,36 @@ for (f, colf) in ((:min, :colmins),
             p = ncol(df)
             for j in 1:p
                 res[:, p] = ($f)(df[:, p])
+            end
+            return res
+        end
+        function ($colf){T}(dm::DataMatrix{T})
+            n, p = nrow(dm), ncol(dm)
+            res = dvzeros(p)
+            for j in 1:p
+                res[j] = ($f)(DataVec(dm.data[:, j], dm.na[:, j]))
+            end
+            return res
+        end
+    end
+end
+
+for (f, rowf) in ((:min, :rowmins),
+                  (:max, :rowmaxs),
+                  (:prod, :rowprods),
+                  (:sum, :rowsums),
+                  (:mean, :rowmeans),
+                  (:median, :rowmedians),
+                  (:std, :rowstds),
+                  (:var, :rowvars),
+                  (:fft, :rowffts),
+                  (:norm, :rownorms))
+    @eval begin
+        function ($rowf){T}(dm::DataMatrix{T})
+            n, p = nrow(dm), ncol(dm)
+            res = dvzeros(n)
+            for i in 1:n
+                res[i] = ($f)(DataVec(reshape(dm.data[i, :], p), reshape(dm.na[i, :], p)))
             end
             return res
         end
