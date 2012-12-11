@@ -161,10 +161,6 @@ export colmins, colmaxs, colprods, colsums,
 
 export coltypes
 
-# Define operators after all data structures are in place
-# Then we can order things properly
-load("DataFrames/src/operators.jl")
-
 # DataMatrix's
 export DataMatrix
 load("DataFrames/src/datamatrix.jl")
@@ -175,5 +171,9 @@ load("DataFrames/src/linalg.jl")
 
 # TODO: Finish generic DataArray's
 # load("DataFrames/src/dataarray.jl")
+
+# Define operators after all data structures are in place
+# Then we can order things properly
+load("DataFrames/src/operators.jl")
 
 end # module DataFrames

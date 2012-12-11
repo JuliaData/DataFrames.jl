@@ -68,10 +68,17 @@ for f in unary_operators
         function ($f)(d::NAtype)
             return NA
         end
-        function ($f)(dv::DataVec)
+        function ($f){T}(dv::DataVec{T})
             res = deepcopy(dv)
             for i in 1:length(dv)
                 res[i] = ($f)(dv[i])
+            end
+            return res
+        end
+        function ($f){T}(dv::DataMatrix{T})
+            res = deepcopy(dm)
+            for i in 1:numel(dm)
+                res[i] = ($f)(dm[i])
             end
             return res
         end
@@ -94,6 +101,65 @@ for f in unary_operators
     end
 end
 
+# Treat ctranspose and * in a special way
+function ctranspose{T}(dv::DataVec{T})
+    return DataMatrix(dv.data', dv.na')
+end
+
+function ctranspose{T}(dm::DataMatrix{T})
+    return DataMatrix(dm.data', dm.na')
+end
+
+# TODO: Use a proper algorithm
+function (*){S <: Real, T <: Real}(a::DataVec{S}, b::DataMatrix{T})
+    if size(b, 1) != 1
+        error("DataVec w/ DataMatrix * error")
+    end
+    n, p = length(a), size(b, 2)
+    res = dmzeros(n, p)
+    for i in 1:n
+        for j in 1:p
+            res[i, j] = a[i] * b[j]
+        end
+    end
+    return res
+end
+
+# TODO: Use a proper algorithm
+function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataVec{T})
+    if size(a, 2) != length(b)
+        error("The number of columns of the DataMatrix must match the length of the DataVec")
+    end
+    n, p = size(a, 1), length(b)
+    res = dvzeros(n)
+    for i in 1:n
+        res[i] = 0.0
+        for j in 1:p
+            res[i] += a[i, j] * b[j]
+        end
+    end
+    return res
+end
+
+# TODO: Use a proper algorithm
+function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataMatrix{T})
+    insize = size(a, 2)
+    if insize != size(b, 1)
+        error("DataMatrix sizes must align for matrix multiplication")
+    end
+    n, p = size(a, 1), size(b, 2)
+    res = dmzeros(n, p)
+    for i in 1:n
+        for j in 1:p
+            res[i, j] = 0.0
+            for k in 1:insize
+                res[i, j] += a[i, k] * b[k, j]
+            end
+        end
+    end
+    return res
+end
+
 for f in elementary_functions
     @eval begin
         function ($f)(d::NAtype)
@@ -106,6 +172,17 @@ for f in elementary_functions
                     res[i] = NA
                 else
                     res[i] = ($f)(adv[i])
+                end
+            end
+            return res
+        end
+        function ($f){T}(dm::DataMatrix{T})
+            res = deepcopy(dm)
+            for i = 1:numel(dm)
+                if isna(dm[i])
+                    res[i] = NA
+                else
+                    res[i] = ($f)(dm[i])
                 end
             end
             return res
@@ -309,6 +386,9 @@ for f in scalar_comparison_operators
         function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
             error(strcat(string($f), " not defined for DataVecs. Try .", string($f)))
         end
+        function ($f){S, T}(a::DataMatrix{S}, b::DataMatrix{T})
+            error(strcat(string($f), " not defined for DataMatrix's. Try .", string($f)))
+        end
         function ($f)(a::AbstractDataFrame, b::AbstractDataFrame)
             error(strcat(string($f), " not defined for DataFrames. Try .", string($f)))
         end
@@ -320,6 +400,17 @@ for f in array_comparison_operators
         function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
             res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
+                if isna(a[i]) || isna(b[i])
+                    res[i] = NA
+                else
+                    res[i] = ($f)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f){S, T}(a::DataMatrix{S}, b::DataMatrix{T})
+            res = DataMatrix(Array(Bool, size(a)), BitArray(size(a)))
+            for i in 1:numel(a)
                 if isna(a[i]) || isna(b[i])
                     res[i] = NA
                 else
@@ -461,6 +552,18 @@ for f in array_arithmetic_operators
                                 length(A)),
                           BitArray(length(A)))
             for i in 1:length(A)
+                res.na[i] = (A.na[i] || B.na[i])
+                res.data[i] = ($f)(A.data[i], B.data[i])
+            end
+            return res
+        end
+        function ($f){S, T}(A::DataMatrix{S}, B::DataMatrix{T})
+            if size(A) != size(B)
+                error("DataMatrix sizes must match")
+            end
+            res = DataMatrix(Array(promote_type(S, T), size(A)),
+                             BitArray(size(A)))
+            for i in 1:numel(A)
                 res.na[i] = (A.na[i] || B.na[i])
                 res.data[i] = ($f)(A.data[i], B.data[i])
             end
