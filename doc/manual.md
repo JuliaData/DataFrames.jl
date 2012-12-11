@@ -109,7 +109,7 @@ This is achieved by a very simple mechanism: a `DataVec{T}` is a new parametric 
 
 	type DataVec{T}
 		data::Vector{T}
-		na::BitVector{Bool}
+		na::BitVector
 	end
 
 This allows us to assess whether any entry of the vector is `NA` at the cost of exactly one additional bit per item. We are able to save space by using `BitArray`'s instead of an `Array{Bool}`. At present, we store the non-missing data values in a vector called `data` and we store the metadata that indicates which values are missing in a vector called `na`. But end-users should not worry about these implementation details.
@@ -138,7 +138,7 @@ Let's focus on ways that you can create new `DataVec`'s. The simplest possible c
 
 	dv = DataVec([1, 2, 3], falses(3))
 
-This is rather ugly, so we've defined many additional constructors that make it easier to create a new `DataVec`. The first simplification is to ignore the distinction between a `BitVector{Bool}` and an `Array{Bool, 1}` by allowing users to specify `Bool` values directly:
+This is rather ugly, so we've defined many additional constructors that make it easier to create a new `DataVec`. The first simplification is to ignore the distinction between a `BitVector` and an `Array{Bool, 1}` by allowing users to specify `Bool` values directly:
 
 	dv = DataVec([1, 2, 3], [false, false, false])
 

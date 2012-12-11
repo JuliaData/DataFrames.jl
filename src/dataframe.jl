@@ -561,7 +561,7 @@ assign{T}(df::DataFrame, newcol::Range1{T}, icol::Integer) = assign(df, DataVec(
 
 # df["old"] = replace old columns
 # df["new"] = append new column
-function assign(df::DataFrame, newcol::AbstractDataVec, colname)
+function assign(df::DataFrame, newcol::AbstractDataVec, colname::String)
     icol = get(df.colindex.lookup, colname, 0)
     if length(newcol) != nrow(df) && nrow(df) != 0
         throw(ArgumentError("Can't insert new DataFrame column of improper length"))
@@ -576,8 +576,31 @@ function assign(df::DataFrame, newcol::AbstractDataVec, colname)
     end
     df
 end
-assign{T}(df::DataFrame, newcol::Vector{T}, colname) = assign(df, DataVec(newcol), colname)
-assign{T}(df::DataFrame, newcol::Range1{T}, colname) = assign(df, DataVec(newcol), colname)
+assign{T}(df::DataFrame, newcol::Vector{T}, colname::String) = assign(df, DataVec(newcol), colname)
+assign{T}(df::DataFrame, newcol::Range1{T}, colname::String) = assign(df, DataVec(newcol), colname)
+
+# df[:, "old"] = replace old columns
+# df[:, "new"] = append new column
+function assign(df::DataFrame, newcol::AbstractDataVec, rows::Range1, colname::String)
+    if length(rows) != nrow(df) && start(rows) != 1
+        error("Whole-column assignment must specify all existing rows")
+    end
+    icol = get(df.colindex.lookup, colname, 0)
+    if length(newcol) != nrow(df) && nrow(df) != 0
+        throw(ArgumentError("Can't insert new DataFrame column of improper length"))
+    end
+    if icol > 0
+        # existing
+        assign(df, newcol, icol)
+    else
+        # new
+        push(df.colindex, colname)
+        push(df.columns, newcol)
+    end
+    df
+end
+assign{T}(df::DataFrame, newcol::Vector{T}, rows::Range1, colname::String) = assign(df, DataVec(newcol), rows, colname)
+assign{T}(df::DataFrame, newcol::Range1{T}, rows::Range1, colname::String) = assign(df, DataVec(newcol), rows, colname)
 
 # assign(df::DataFrame, newcol, colname) =
 #     nrow(df) > 0 ? assign(df, DataVec(fill(newcol, nrow(df))), colname) : assign(df, DataVec([newcol]), colname)
@@ -766,7 +789,7 @@ function rbind(df1::DataFrame, df2::DataFrame)
     if size(df1) != (0, 0) && size(df2) == (0, 0)
         return df1
     end
-    if ncol(df1) != ncol(df2)
+    if any(coltypes(df1) .!= coltypes(df2)) || any(colnames(df1) .!= colnames(df2))
         error("Cannot rbind dissimilar DataFrames")
     end
     res = DataFrame(coltypes(df1), nrow(df1) + nrow(df2))

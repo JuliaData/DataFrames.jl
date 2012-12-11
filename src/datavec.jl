@@ -60,10 +60,10 @@ abstract AbstractDataVec{T}
 
 type DataVec{T} <: AbstractDataVec{T}
     data::Vector{T}
-    na::BitVector{Bool}
+    na::BitVector
 
     # Sanity check that new data values and missingness metadata match
-    function DataVec(new_data::Vector{T}, is_missing::BitVector{Bool})
+    function DataVec(new_data::Vector{T}, is_missing::BitVector)
         if length(new_data) != length(is_missing)
             error("data and missingness vectors not the same length!")
         end
@@ -87,10 +87,10 @@ DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, bitpack(m))
 DataVec(x::Vector) = DataVec(x, falses(length(x)))
 
 # Explicitly convert a BitArray to a Vector before wrapping with a DataVec
-DataVec{T}(x::BitVector{T}, m::BitVector) = DataVec{T}(convert(Vector{T}, x), m)
+DataVec(x::BitVector, m::BitVector) = DataVec(convert(Vector{Bool}, x), m)
 
 # Explicitly convert a BitArray to a DataVec w/ no NA's
-DataVec{T}(x::BitVector{T}) = DataVec{T}(convert(Vector{T}, x), falses(length(x)))
+DataVec{T}(x::BitVector) = DataVec{T}(convert(Vector{T}, x), falses(length(x)))
 
 # Explicitly convert a Range1 into a DataVec
 DataVec{T}(r::Range1{T}) = DataVec([r], falses(length(r)))
@@ -422,8 +422,20 @@ function ref(x::DataVec, ind::Vector{Bool})
     end
     DataVec(x.data[ind], x.na[ind])
 end
+function ref(x::DataVec, ind::BitVector)
+    if length(x) != length(ind)
+        throw(ArgumentError("boolean index is not the same size as the DataVec"))
+    end
+    DataVec(x.data[ind], x.na[ind])
+end
 # PooledDataVec
 function ref(x::PooledDataVec, ind::Vector{Bool})
+    if length(x) != length(ind)
+        throw(ArgumentError("boolean index is not the same size as the PooledDataVec"))
+    end
+    PooledDataVec(x.refs[ind], copy(x.pool))
+end
+function ref(x::PooledDataVec, ind::BitVector)
     if length(x) != length(ind)
         throw(ArgumentError("boolean index is not the same size as the PooledDataVec"))
     end
