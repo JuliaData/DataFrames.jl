@@ -23,8 +23,7 @@ m_b = eye(3, 3)
 #
 # DataMatrix * DataVec
 #
-# TODO: Make this pass
-# @assert all(b * a .== m_b * v_a)
+@assert all(b * a .== m_b * v_a)
 @assert all(vector(b * a) .== m_b * v_a)
 
 #
@@ -103,3 +102,22 @@ res = dmeye(3) * b
 @assert isna(res[3, 1])
 @assert !isna(res[3, 2])
 @assert !isna(res[3, 3])
+
+# Test row operations
+dm = dmeye(6, 2)
+rowmeans(dm)
+
+# Test column operations
+dm = dmeye(6, 2)
+colmeans(dm)
+
+# Test linear algebra
+du, dd, dv = svd(dmeye(3, 3))
+u, d, v = svd(eye(3, 3))
+@assert all(du .== u)
+@assert all(dd .== d)
+@assert all(dv .== v)
+
+# Test elementary functions
+dm = -dmeye(5, 5)
+@assert all(abs(dm) .== eye(5, 5))

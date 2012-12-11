@@ -162,7 +162,11 @@ export colmins, colmaxs, colprods, colsums,
 export coltypes
 
 # DataMatrix's
+import Base.diag
 export DataMatrix
+export rowmins, rowmaxs, rowprods, rowsums,
+       rowmeans, rowmedians, rowstds, rowvars,
+       rowffts, rownorms, rowranges
 load("DataFrames/src/datamatrix.jl")
 
 # Linear algebra over DataMatrix's

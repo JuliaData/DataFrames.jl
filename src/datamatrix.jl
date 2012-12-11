@@ -158,25 +158,31 @@ end
 # Assignment of NA's
 #
 
-# x[3] = NA
+# single-element access without regard to size
+function assign{T}(a::DataMatrix{T}, n::NAtype, i::Int)
+    a.na[i] = true
+    return NA
+end
+
+# x[3, 1] = NA
 function assign{T}(x::DataMatrix{T}, n::NAtype, i::Int, j::Int)
 	x.na[i, j] = true
 	return NA
 end
 
-# x[[3,5]] = NA
+# x[[3,5], [1, 1]] = NA
 function assign{T}(x::DataMatrix{T}, n::NAtype, ind1::Vector{Int}, ind2::Vector{Int})
 	x.na[ind1, ind2] = true
 	return NA
 end
 
-# x[[true, false, true]] = NA
+# x[[true, false, true], [true, true, true]] = NA
 function assign{T}(x::DataMatrix{T}, n::NAtype, ind1::Vector{Bool}, ind2::Vector{Bool})
 	x.na[ind1, ind2] = true
 	return NA
 end
 
-# x[2:3] = NA
+# x[2:3, 1:2] = NA
 function assign{T}(x::DataMatrix{T}, n::NAtype, ind1::Range1, ind2::Range1)
 	x.na[ind1, ind2] = true
 	return NA
@@ -187,48 +193,55 @@ end
 #
 
 # x[3] = "cat"
+function assign{S, T}(a::DataMatrix{S}, v::T, i::Int)
+    a.data[i] = v
+    a.na[i] = false
+    return NA
+end
+
+# x[3, 1] = "cat"
 function assign{S, T}(x::DataMatrix{S}, v::T, i::Int, j::Int)
     x.data[i, j] = v
     x.na[i, j] = false
     return x[i, j]
 end
 
-# x[[3, 4]] = "cat"
+# x[[3, 4], [1, 2]] = "cat"
 function assign{S, T}(x::DataMatrix{S}, v::T, ind1::Vector{Int}, ind2::Vector{Int})
     x.data[ind1, ind2] = v
     x.na[ind1, ind2] = false
     return x[ind1, ind2]
 end
 
-# x[[3, 4]] = ["cat", "dog"]
+# x[[3, 4], [1, 2]] = ["cat", "dog"]
 function assign{S, T}(x::DataMatrix{S}, vals::Vector{T}, ind1::Vector{Int}, ind2::Vector{Int})
     x.data[ind1, ind2] = vals
     x.na[ind1, ind2] = false
     return x[ind1, ind2]
 end
 
-# x[[true, false, true]] = "cat"
+# x[[true, false, true], [false, false]] = "cat"
 function assign{S, T}(x::DataMatrix{S}, v::T, ind1::Vector{Bool}, ind2::Vector{Bool})
     x.data[ind1, ind2] = v
     x.na[ind1, ind2] = false
     return x[ind1, ind2]
 end
 
-# x[[true, false, true]] = ["cat", "dog"]
+# x[[true, false, true], [false, false]] = ["cat", "dog"]
 function assign{S, T}(x::DataMatrix{S}, vals::Vector{T}, ind1::Vector{Bool}, ind2::Vector{Bool})
     x.data[ind1, ind2] = vals
     x.na[ind1, ind2] = false
     return x[ind1, ind2]
 end
 
-# x[2:3] = "cat"
+# x[2:3, 1:2] = "cat"
 function assign{S, T}(x::DataMatrix{S}, v::T, ind1::Range1, ind2::Range1)
     x.data[ind1, ind2] = v
     x.na[ind1, ind2] = false
     return x[ind1, ind2]
 end
 
-# x[2:3] = ["cat", "dog"]
+# x[2:3, 1:2] = ["cat", "dog"]
 function assign{S, T}(x::DataMatrix{S}, vals::Vector{T}, ind1::Range1, ind2::Range1)
     x.data[ind1, ind2] = vals
     x.na[ind1, ind2] = false
@@ -339,7 +352,17 @@ function isfinite(dm::DataMatrix)
     DataMatrix(new_data, dm.na)
 end
 
-# TODO: Implement diag{T}(dm::DataMatrix{T})
+function diag{T}(dm::DataMatrix{T})
+    return DataVec(diag(dm.data), diag(dm.na))
+end
 
 nrow{T}(dm::DataMatrix{T}) = size(dm, 1)
 ncol{T}(dm::DataMatrix{T}) = size(dm, 2)
+
+function matrix{T}(dm::DataMatrix{T})
+    if any_na(dm)
+        error("Can't convert a DataMatrix with missing entries")
+    else
+        return dm.data
+    end
+end
