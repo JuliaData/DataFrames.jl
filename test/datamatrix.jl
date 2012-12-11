@@ -23,8 +23,7 @@ m_b = eye(3, 3)
 #
 # DataMatrix * DataVec
 #
-# TODO: Make this pass
-# @assert all(b * a .== m_b * v_a)
+@assert all(b * a .== m_b * v_a)
 @assert all(vector(b * a) .== m_b * v_a)
 
 #
@@ -118,3 +117,7 @@ u, d, v = svd(eye(3, 3))
 @assert all(du .== u)
 @assert all(dd .== d)
 @assert all(dv .== v)
+
+# Test elementary functions
+dm = -dmeye(5, 5)
+@assert all(abs(dm) .== eye(5, 5))

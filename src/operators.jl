@@ -79,7 +79,7 @@ for f in unary_operators
             end
             return res
         end
-        function ($f){T}(dv::DataMatrix{T})
+        function ($f){T}(dm::DataMatrix{T})
             res = deepcopy(dm)
             for i in 1:numel(dm)
                 res[i] = ($f)(dm[i])
@@ -117,7 +117,21 @@ end
 # TODO: Check there are no better algorithms
 function (*){S <: Real, T <: Real}(a::DataVec{S}, b::DataMatrix{T})
     if size(b, 1) != 1
-        error("DataVec w/ DataMatrix * error")
+        error("DataVec and matrix sizes must match")
+    end
+    n, p = length(a), size(b, 2)
+    res = dmzeros(n, p)
+    for i in 1:n
+        for j in 1:p
+            res[i, j] = a[i] * b[j]
+        end
+    end
+    return res
+end
+
+function (*){S <: Real, T <: Real}(a::Vector{S}, b::DataMatrix{T})
+    if size(b, 1) != 1
+        error("Vector and matrix sizes must match")
     end
     n, p = length(a), size(b, 2)
     res = dmzeros(n, p)
@@ -133,6 +147,22 @@ end
 function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataVec{T})
     if size(a, 2) != length(b)
         error("The number of columns of the DataMatrix must match the length of the DataVec")
+    end
+    n, p = size(a, 1), length(b)
+    res = dvzeros(n)
+    for i in 1:n
+        res[i] = 0.0
+        for j in 1:p
+            res[i] += a[i, j] * b[j]
+        end
+    end
+    return res
+end
+
+# TODO: Check there are no better algorithms
+function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::Vector{T})
+    if size(a, 2) != length(b)
+        error("The number of columns of the DataMatrix must match the length of the Vector")
     end
     n, p = size(a, 1), length(b)
     res = dvzeros(n)
@@ -165,6 +195,44 @@ function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataMatrix{T})
             end
         end
     end
+    for i in 1:n2
+        for j in 1:p2
+            if b.na[i, j]
+                # Propagate NA's
+                # Corrupt all columns based on j
+                res.na[:, j] = true
+            end
+        end
+    end
+    return res
+end
+
+function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::Matrix{T})
+    n1, p1 = size(a)
+    n2, p2 = size(b)
+    if p1 != n2
+        error("DataMatrix and Matrix sizes must align for matrix multiplication")
+    end
+    res = DataMatrix(a.data * b, falses(n1, p2))
+    for i in 1:n1
+        for j in 1:p1
+            if a.na[i, j]
+                # Propagate NA's
+                # Corrupt all rows based on i
+                res.na[i, :] = true
+            end
+        end
+    end
+    return res
+end
+
+function (*){S <: Real, T <: Real}(a::Matrix{S}, b::DataMatrix{T})
+    n1, p1 = size(a)
+    n2, p2 = size(b)
+    if p1 != n2
+        error("Matrix and DataMatrix sizes must align for matrix multiplication")
+    end
+    res = DataMatrix(a * b.data, falses(n1, p2))
     for i in 1:n2
         for j in 1:p2
             if b.na[i, j]
@@ -412,7 +480,7 @@ for f in scalar_comparison_operators
     end
 end
 
-for f in array_comparison_operators
+for (f, scalarf) in vectorized_comparison_operators
     @eval begin
         function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
             res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
@@ -420,7 +488,29 @@ for f in array_comparison_operators
                 if isna(a[i]) || isna(b[i])
                     res[i] = NA
                 else
-                    res[i] = ($f)(a[i], b[i])
+                    res[i] = ($scalarf)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f){S, T}(a::AbstractDataVec{S}, b::Vector{T})
+            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                if isna(a[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f){S, T}(a::Vector{S}, b::AbstractDataVec{T})
+            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                if isna(b[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], b[i])
                 end
             end
             return res
@@ -431,7 +521,29 @@ for f in array_comparison_operators
                 if isna(a[i]) || isna(b[i])
                     res[i] = NA
                 else
-                    res[i] = ($f)(a[i], b[i])
+                    res[i] = ($scalarf)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f){S, T}(a::DataMatrix{S}, b::Matrix{T})
+            res = DataMatrix(Array(Bool, size(a)), BitArray(size(a)))
+            for i in 1:numel(a)
+                if isna(a[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f){S, T}(a::Matrix{S}, b::DataMatrix{T})
+            res = DataMatrix(Array(Bool, size(a)), BitArray(size(a)))
+            for i in 1:numel(a)
+                if isna(b[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], b[i])
                 end
             end
             return res
@@ -446,7 +558,7 @@ for f in array_comparison_operators
             # TODO: Test that types match across a and b
             for j in 1:p
                 for i in 1:n
-                    results[i, j] = ($f)(a[i, j], b[i, j])
+                    results[i, j] = ($scalarf)(a[i, j], b[i, j])
                 end
             end
             return results
