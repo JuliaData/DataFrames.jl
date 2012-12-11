@@ -14,10 +14,10 @@ abstract AbstractDataArray{T}
 
 type DataArray{T} <: AbstractDataArray{T}
     data::Array{T}
-    na::BitArray{Bool}
+    na::BitArray
 
     # Sanity check that new data values and missingness metadata match
-    function DataArray(new_data::Array{T}, is_missing::BitArray{Bool})
+    function DataArray(new_data::Array{T}, is_missing::BitArray)
         if size(new_data) != size(is_missing)
             error("Data and missingness arrays must be the same size!")
         end

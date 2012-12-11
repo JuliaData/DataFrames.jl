@@ -25,3 +25,16 @@ rbind(null_df, df)
 rbind(df, null_df)
 rbind(df, df)
 rbind(df, df, df)
+
+alt_df = deepcopy(df)
+rbind(df, alt_df)
+df[1] = dvzeros(Int, nrow(df))
+# Fail on non-matching types
+rbind(df, alt_df)
+
+alt_df = deepcopy(df)
+colnames!(alt_df, ["A", "B", "C"])
+# Fail on non-matching names
+rbind(df, alt_df)
+
+# df[:, 1] = dvzeros(Int, nrow(df))

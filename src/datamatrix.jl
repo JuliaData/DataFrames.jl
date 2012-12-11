@@ -14,10 +14,10 @@ abstract AbstractDataMatrix{T} <: AbstractMatrix{T}
 
 type DataMatrix{T} <: AbstractDataMatrix{T}
     data::Matrix{T}
-    na::Matrix{Bool}
+    na::BitMatrix
 
     # Sanity check that new data values and missingness metadata match
-    function DataMatrix(new_data::Matrix{T}, is_missing::BitMatrix{Bool})
+    function DataMatrix(new_data::Matrix{T}, is_missing::BitMatrix)
         if size(new_data) != size(is_missing)
             error("Data and missingness matrices must be the same size!")
         end
@@ -258,11 +258,11 @@ promote_rule{T, T}(::Type{DataMatrix{T}}, ::Type{T}) = promote_rule(T, T)
 promote_rule{S, T}(::Type{DataMatrix{S}}, ::Type{T}) = promote_rule(S, T)
 promote_rule{T}(::Type{DataMatrix{T}}, ::Type{T}) = T
 
-function convert{S,N}(::Type{BitArray{S,N}}, dm::DataMatrix{BitArray{S,N}})
+function convert{N}(::Type{BitArray{N}}, dm::DataMatrix{BitArray{N}})
 	error("How in the world did you get here?!")
 end
 
-function convert{S,N,T}(::Type{BitArray{S,N}}, dm::DataMatrix{T})
+function convert{N,T}(::Type{BitArray{N}}, dm::DataMatrix{T})
 	error("Don't try to convert a DataMatrix to a BitArray")
 end
 
