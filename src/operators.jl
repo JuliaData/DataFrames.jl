@@ -1003,3 +1003,8 @@ function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     end
     return true
 end
+
+function range{T}(dv::DataVec{T})
+    return DataVec([min(dv), max(dv)], falses(2))
+end
+

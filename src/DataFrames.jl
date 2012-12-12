@@ -178,6 +178,7 @@ load("DataFrames/src/linalg.jl")
 
 # Define operators after all data structures are in place
 # Then we can order things properly
+export range
 load("DataFrames/src/operators.jl")
 
 end # module DataFrames
