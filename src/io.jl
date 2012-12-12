@@ -83,7 +83,7 @@ function determine_metadata{T <: String}(filename::String,
     i = 1
   else
     # Set standard column names, then prepare to reread first line
-    column_names = convert(Array{ASCIIString}, map(i -> "x$i", 1:ncols))
+    column_names = generate_column_names(ncols)
     seek(f, 0)
     i = 0
   end

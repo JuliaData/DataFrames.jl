@@ -428,9 +428,8 @@ dv = dvones(5)
 dv = dvones(10_000)
 @assert !any(isna(dv))
 
-# TODO: Get this to work
-# PooledDataVec(convert(Array{Bool}, falses(2)), falses(2))
-PooledDataVec(convert(Array{Bool}, falses(2)), trues(2))
+PooledDataVec(falses(2), falses(2))
+PooledDataVec(falses(2), trues(2))
 
 # Test vectorized comparisons work for DataVec's and PooledDataVec's
 DataVec[1, 2, NA] .== 1

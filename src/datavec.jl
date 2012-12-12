@@ -267,11 +267,21 @@ function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::AbstractVector{Bool}
     return PooledDataVec(newrefs, newpool)
 end
 
-# Convert a DataVec to a PooledDataVec
-PooledDataVec(dv::DataVec) = PooledDataVec(dv.data, dv.na)
+# Convert a BitVector to a Vector{Bool} w/ specified missingness
+function PooledDataVec(d::BitVector, m::AbstractArray{Bool,1})
+    PooledDataVec(convert(Vector{Bool}, d), m)
+end
 
-# Convert a vector to a PooledDataVec
-PooledDataVec(x::Vector) = PooledDataVec(x, falses(length(x)))
+# Convert a DataVec to a PooledDataVec
+PooledDataVec{T}(dv::DataVec{T}) = PooledDataVec(dv.data, dv.na)
+
+# Convert a Vector{T} to a PooledDataVec
+PooledDataVec{T}(x::Vector{T}) = PooledDataVec(x, falses(length(x)))
+
+# Convert a BitVector to a Vector{Bool} w/o specified missingness
+function PooledDataVec(x::BitVector)
+    PooledDataVec(convert(Vector{Bool}, x), falses(length(x)))
+end
 
 # Specify just a vector and a pool
 function PooledDataVec{T}(d::Vector{T}, pool::Vector{T})
@@ -319,7 +329,7 @@ function levels{T}(x::PooledDataVec{T})
         m[n + 1] = true
         DataVec(d, m)
     else
-        DataVec(copy(x.pool), falses(length(x)))
+        DataVec(copy(x.pool), falses(length(x.pool)))
     end
 end
 
@@ -1086,6 +1096,10 @@ function unique{T}(dv::DataVec{T})
   end
   return keys(values)
 end
+
+unique(pd::PooledDataVec) = pd.pool
+sort(pd::PooledDataVec) = pd[order(pd)]
+order(pd::PooledDataVec) = groupsort_indexer(pd)[1]
 
 ##############################################################################
 ##
