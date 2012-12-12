@@ -10,6 +10,8 @@
 * Formal Specification of DataFrames
 * Function Reference Guide
 
+\newpage
+
 ---
 
 # Why Use the DataFrames Package?
@@ -65,6 +67,8 @@ Part of the power of the R programming language is that it provides a coherent m
     Z ~ X + Y
 
 Julia, by default, provides no similar sort of mini-language for describing the mathematical structure of statistical models. To remedy this, we have added a `Formula` type to Julia that provides a simple DSL for describing linear models in Julia.
+
+\newpage
 
 ---
 
@@ -164,6 +168,7 @@ If you'd like to get your hands on more data to play with, we strongly encourage
 
 Once that's done, you can use the `data()` function to gain access to data sets like Fisher's Iris data:
 
+
 	iris = RDatasets.data("datasets", "iris")
 	head(iris)
 
@@ -176,6 +181,8 @@ The Iris data set is really interesting for examining contrasts between groups. 
 	end
 
 As you can see, we can do quite complex data manipulations using DataFrames. To really dig in, we're now going to describe the design of the DataFrames package in greater depth.
+
+\newpage
 
 ---
 
@@ -862,6 +869,8 @@ We can compute many useful quantities using `DataStream`'s:
 * How should RDBMS-like indices be implemented? What is most efficient? How can we avoid the inefficient vector searches that R uses?
 * How should `DataFrame`'s be distributed for parallel processing?
 
+\newpage
+
 ---
 
 # Formal Specification of DataFrames Data Structures
@@ -878,6 +887,9 @@ We can compute many useful quantities using `DataStream`'s:
 	* Comparison Operators:
 		* Scalar Comparisons: `==`, `!=`, `<`, `<=`, `>`, `>=`
 		* Array Comparisons: `.==`, `.!=`, `.<`, `.<=`, `.>`, `.>=`
+* Broadcasting
+* Recycling
+* Type Promotion and Conversion
 
 ## The NAtype
 
@@ -890,6 +902,8 @@ The unary operators
 The unary operators
 
 ### Behavior under Arithmetic Operators
+
+\newpage
 
 ---
 
