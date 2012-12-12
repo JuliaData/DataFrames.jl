@@ -1,3 +1,5 @@
+require("extras/test.jl")
+
 load("DataFrames")
 using DataFrames
 

@@ -1,9 +1,6 @@
 load("DataFrames")
 using DataFrames
 
-# FAILS ON JULIA BUG
-# load("bitarray.jl")
-
 ##############################################################################
 #
 # Introduction to Basic Types and Constructors
@@ -72,7 +69,7 @@ DataVec.names
 # other metadata to be set to defaults.
 #
 
-dv = DataVec([1, 2, 3], bitfalses(3))
+dv = DataVec([1, 2, 3], falses(3))
 
 #
 # A simpler type of constructor assumes that no data is missing and
@@ -88,6 +85,14 @@ dv = DataVec([1, 2, 3])
 #
 
 dv = DataVec(1:3)
+
+#
+# To order to provide a very concise constructor, we've hacked in
+# a very cute constructor for DataVec's using a trick involving
+# their ref() method.
+#
+
+dv = DataVec[1, 2, NA, 4]
 
 #
 # Because the missingness of a DataVec is stored in metadata rather than
@@ -131,7 +136,7 @@ dvtrues(5)
 
 dv = DataVec(Int64, 5)
 dv = DataVec(Float64, 5)
-# dv = DataVec(ComplexPair, 5) # NEED TO MAKE THIS WORK
+dv = DataVec(ComplexPair, 5)
 
 #
 # While DataVec's are a very powerful tool for dealing with missing data,
@@ -222,16 +227,6 @@ df = DataFrame({Int64, Float64}, 4)
 DataFrame({Int64, Float64}, ["A", "B"], 10)
 
 # DataFrame({Int64, Float64}, Index(["A", "B"]), 10) NEED TO MAKE THIS WORK
-
-#
-# At present it is possible to create initialized DataFrame's, but this is
-# likely to go away.
-#
-
-df = dfzeros(10, 4)
-df = dfones(10, 4)
-df = dfeye(10, 4)
-df = dfeye(10)
 
 #
 # A more uniquely Julian way of creating DataFrame's exploits Julia's ability to
@@ -352,8 +347,6 @@ df = DataFrame(quote
 				 a = 1:5
 			   end)
 
-# NEARLY ALL OF THE NA INTERACTIONS ARE BROKEN!
-
 #
 # NA's with NA's
 #
@@ -425,7 +418,7 @@ NA .< 1
 NA .== dv
 
 dv .< NA
-dv .< "a" # SHOULD THIS WORK?
+dv .< "a"
 dv .< 1
 dv .== dv
 
