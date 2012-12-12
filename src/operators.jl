@@ -188,12 +188,14 @@ function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataMatrix{T})
     res = DataMatrix(a.data * b.data, falses(n1, p2))
     # Propagation can be made more efficient by storing record of corrupt
     # rows and columns, then doing fast edits.
+    corrupt_rows = falses(n1)
+    corrupt_cols = falses(p2)
     for i in 1:n1
         for j in 1:p1
             if a.na[i, j]
                 # Propagate NA's
                 # Corrupt all rows based on i
-                res.na[i, :] = true
+                corrupt_rows[i] = true
             end
         end
     end
@@ -202,8 +204,18 @@ function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataMatrix{T})
             if b.na[i, j]
                 # Propagate NA's
                 # Corrupt all columns based on j
-                res.na[:, j] = true
+                corrupt_cols[j] = true
             end
+        end
+    end
+    for i in 1:n1
+        if corrupt_rows[i]
+            res.na[i, :] = true
+        end
+    end
+    for j in 1:p2
+        if corrupt_cols[j]
+            res.na[:, j] = true
         end
     end
     return res
