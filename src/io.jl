@@ -255,30 +255,40 @@ end
 
 # write_table should do more to react to the type of each column
 # Increase precision of floats
-function write_table{T <: String}(df::DataFrame,
-                                  filename::T,
-                                  separator::Char,
-                                  quotation_character::Char)
-  file = open(filename, "w")
+function print_table(df::DataFrame, io::IOStream, separator::Char, quotation_character::Char)
   n, p = nrow(df), ncol(df)
   for j in 1:p
     if j < p
-      print(file, in_quotes(colnames(df)[j], quotation_character))
-      print(file, separator)
+      print(io, in_quotes(colnames(df)[j], quotation_character))
+      print(io, separator)
     else
-      println(file, in_quotes(colnames(df)[j], quotation_character))
+      println(io, in_quotes(colnames(df)[j], quotation_character))
     end
   end
   for i in 1:n
     for j in 1:p
       if j < p
-        print(file, in_quotes(df[i, j], quotation_character))
-        print(file, separator)
+        print(io, in_quotes(df[i, j], quotation_character))
+        print(io, separator)
       else
-        println(file, in_quotes(df[i, j], quotation_character))
+        println(io, in_quotes(df[i, j], quotation_character))
       end
     end
   end
+end
+
+function print_table(df::DataFrame, separator::Char, quotation_character::Char)
+  print_table(df, OUTPUT_STREAM, separator, quotation_character)
+end
+
+print_table(df::DataFrame) = print_table(df, OUTPUT_STREAM, ',', '"')
+
+function write_table{T <: String}(df::DataFrame,
+                                  filename::T,
+                                  separator::Char,
+                                  quotation_character::Char)
+  file = open(filename, "w")
+  print_table(df, file, separator, quotation_character)
   close(file)
 end
 
@@ -287,4 +297,20 @@ function write_table{T <: String}(df::DataFrame, filename::T)
   separator = DataFrames.determine_separator(filename)
   quotation_character = '"'
   write_table(df, filename, separator, quotation_character)
+end
+
+# Binary serialization
+
+# Wrappers for serialization
+function save(filename, d)
+    f = open(filename, "w")
+    serialize(f, d)
+    close(f)
+end
+
+function load_df(filename)
+    f = open(filename)
+    dd = deserialize(f)()
+    close(f)
+    return dd
 end

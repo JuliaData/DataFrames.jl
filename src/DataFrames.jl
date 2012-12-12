@@ -4,6 +4,8 @@ module DataFrames
 
 using Base.Intrinsics
 
+import Base.BitArray, Base.BitMatrix, Base.BitVector, Base.bitpack
+
 import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote, Base.promote_rule,
        Base.similar, Base.fill, Base.fill!, Base.one, Base.copy_to, Base.reshape,
        Base.convert, Base.reinterpret, Base.ref, Base.assign, Base.check_bounds,
@@ -59,9 +61,6 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
 
 using OptionsMod
 
-require("enum.jl")
-require("bitarray.jl")
-
 ## ---- index.jl ----
 ## Types
 export AbstractIndex, Index, SimpleIndex
@@ -108,7 +107,9 @@ export colnames, colnames!, names!, replace_names, replace_names!,
        unique, complete_cases, duplicated,
        array, matrix, vector,
        save, load_df,
-       subset
+       subset,
+       failNA, removeNA, replaceNA,
+       each_failNA, each_removeNA, each_replaceNA
 
 ## ---- formula.jl ----
 ## Types
@@ -139,7 +140,7 @@ load("DataFrames/src/utils.jl")
 ## load("indexing.jl")
 
 # New I/O operations
-export read_minibatch, read_table, write_table
+export read_minibatch, read_table, print_table, write_table
 load("DataFrames/src/io.jl")
 
 # New DataStream operations
@@ -149,19 +150,35 @@ load("DataFrames/src/datastream.jl")
 
 # New initialized constructors
 export dvzeros, dvones, dvfalses, dvtrues
-export dfzeros, dfones, dfeye
+export dmzeros, dmones, dmeye, dmdiagm
 
 # Conversion functions
 export dvint, dvfloat, dvbool
 
 export colmins, colmaxs, colprods, colsums,
        colmeans, colmedians, colstds, colvars,
-       colffts, colnorms
+       colffts, colnorms, colranges
 
 export coltypes
 
+# DataMatrix's
+import Base.diag
+export DataMatrix
+export rowmins, rowmaxs, rowprods, rowsums,
+       rowmeans, rowmedians, rowstds, rowvars,
+       rowffts, rownorms, rowranges
+load("DataFrames/src/datamatrix.jl")
+
+# Linear algebra over DataMatrix's
+import Base.svd, Base.eig
+load("DataFrames/src/linalg.jl")
+
+# TODO: Finish generic DataArray's
+# load("DataFrames/src/dataarray.jl")
+
 # Define operators after all data structures are in place
 # Then we can order things properly
+export range
 load("DataFrames/src/operators.jl")
 
 end # module DataFrames

@@ -1,3 +1,8 @@
+require("extras/test.jl")
+
+load("DataFrames")
+using DataFrames
+
 test_group("Operations on DataFrames that have column groupings")
 
 x = DataFrame(quote
@@ -87,17 +92,17 @@ df = DataFrame({Int64, Float64, ASCIIString}, ["A", "B", "C"], 100)
 @assert typeof(df[:, 2]) == DataVec{Float64}
 @assert typeof(df[:, 3]) == DataVec{ASCIIString}
 
-df = dfzeros(10, 5)
+df = DataFrame(zeros(10, 5))
 @assert nrow(df) == 10
 @assert ncol(df) == 5
 @assert typeof(df[:, 1]) == DataVec{Float64}
 
-df = dfones(10, 5)
+df = DataFrame(ones(10, 5))
 @assert nrow(df) == 10
 @assert ncol(df) == 5
 @assert typeof(df[:, 1]) == DataVec{Float64}
 
-df = dfeye(10, 5)
+df = DataFrame(eye(10, 5))
 @assert nrow(df) == 10
 @assert ncol(df) == 5
 @assert typeof(df[:, 1]) == DataVec{Float64}
