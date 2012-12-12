@@ -140,7 +140,7 @@ load("DataFrames/src/utils.jl")
 ## load("indexing.jl")
 
 # New I/O operations
-export read_minibatch, read_table, write_table
+export read_minibatch, read_table, print_table, write_table
 load("DataFrames/src/io.jl")
 
 # New DataStream operations

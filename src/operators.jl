@@ -186,6 +186,8 @@ function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataMatrix{T})
         error("DataMatrix sizes must align for matrix multiplication")
     end
     res = DataMatrix(a.data * b.data, falses(n1, p2))
+    # Propagation can be made more efficient by storing record of corrupt
+    # rows and columns, then doing fast edits.
     for i in 1:n1
         for j in 1:p1
             if a.na[i, j]
