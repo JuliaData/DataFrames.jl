@@ -193,6 +193,45 @@ function DataFrame(column_types::Vector, nrows::Int64)
     DataFrame(column_types, column_names, nrows)
 end
 
+# Initialize from a Vector of Associatives (aka list of dicts)
+function DataFrame{D<:Associative}(ds::Vector{D})
+    ks = unique([k for k in [keys(d) for d in ds]])
+    DataFrame(ds, ks)
+end
+
+# Initialize from a Vector of Associatives (aka list of dicts)
+DataFrame{D<:Associative,T<:String}(ds::Vector{D}, ks::Vector{T}) = 
+    invoke(DataFrame, (Vector{D}, Vector), ds, ks)
+function DataFrame{D<:Associative}(ds::Vector{D}, ks::Vector)
+    #get column types
+    col_types = Any[None for i = 1:length(ks)]
+    for d in ds
+        for (i,k) in enumerate(ks)
+            # TODO: check for user-defined "NA" values, ala pandas
+            if has(d, k) && !isna(d[k])
+                try
+                    col_types[i] = promote_type(col_types[i], typeof(d[k]))
+                catch
+                    col_types[i] = Any
+                end
+            end
+        end
+    end
+    col_types[col_types .== None] = Any
+
+    # create empty DataFrame, and fill
+    df = DataFrame(col_types, ks, length(ds))
+    for (i,d) in enumerate(ds)
+        for (j,k) in enumerate(ks)
+            df[i,j] = get(d, k, NA)
+        end
+    end
+
+    df
+end
+
+
+
 ##
 ## Basic properties of a DataFrame
 ##
