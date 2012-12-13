@@ -150,7 +150,8 @@ load("DataFrames/src/datastream.jl")
 
 # New initialized constructors
 export dvzeros, dvones, dvfalses, dvtrues
-export dmzeros, dmones, dmeye, dmdiagm
+export pdvzeros, pdvones, pdvfalses, pdvtrues
+export dmzeros, dmones, dmfalses, dmtrues, dmeye, dmdiagm
 
 # Conversion functions
 export dvint, dvfloat, dvbool
@@ -180,5 +181,7 @@ load("DataFrames/src/linalg.jl")
 # Then we can order things properly
 export range
 load("DataFrames/src/operators.jl")
+
+export any_na
 
 end # module DataFrames

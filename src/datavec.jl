@@ -90,7 +90,7 @@ DataVec(x::Vector) = DataVec(x, falses(length(x)))
 DataVec(x::BitVector, m::BitVector) = DataVec(convert(Vector{Bool}, x), m)
 
 # Explicitly convert a BitArray to a DataVec w/ no NA's
-DataVec{T}(x::BitVector) = DataVec{T}(convert(Vector{T}, x), falses(length(x)))
+DataVec(x::BitVector) = DataVec(convert(Vector{Bool}, x), falses(length(x)))
 
 # Explicitly convert a Range1 into a DataVec
 DataVec{T}(r::Range1{T}) = DataVec([r], falses(length(r)))
@@ -100,6 +100,12 @@ DataVec(d::DataVec) = d
 
 # Construct an all-NA DataVec of a specific type
 DataVec(t::Type, n::Int64) = DataVec(Array(t, n), trues(n))
+
+# Construct an all-NA DataVec of Float64's
+DataVec(n::Int64) = DataVec(Array(Float64, n), trues(n))
+
+# Construct an all-NA DataVec of Float64's length 0
+DataVec() = DataVec(Array(Float64, 0), trues(0))
 
 # Initialized constructors with 0's, 1's
 for (f, basef) in ((:dvzeros, :zeros), (:dvones, :ones))
@@ -283,6 +289,18 @@ function PooledDataVec(x::BitVector)
     PooledDataVec(convert(Vector{Bool}, x), falses(length(x)))
 end
 
+# Explicitly convert a Range1 into a PooledDataVec
+PooledDataVec{T}(r::Range1{T}) = PooledDataVec([r], falses(length(r)))
+
+# Construct an all-NA PooledDataVec of a specific type
+PooledDataVec(t::Type, n::Int64) = PooledDataVec(Array(t, n), trues(n))
+
+# Construct an all-NA PooledDataVec of Float64's
+PooledDataVec(n::Int64) = PooledDataVec(Array(Float64, n), trues(n))
+
+# Construct an all-NA PooledDataVec of Float64's length 0
+PooledDataVec() = PooledDataVec(Array(Float64, 0), trues(0))
+
 # Specify just a vector and a pool
 function PooledDataVec{T}(d::Vector{T}, pool::Vector{T})
     PooledDataVec(d, pool, falses(length(d)))
@@ -290,6 +308,21 @@ end
 
 # A no-op constructor
 PooledDataVec(d::PooledDataVec) = d
+
+# Initialized constructors with 0's, 1's
+for (f, basef) in ((:pdvzeros, :zeros), (:pdvones, :ones))
+    @eval begin
+        ($f)(n::Int64) = PooledDataVec(($basef)(n), falses(n))
+        ($f)(t::Type, n::Int64) = PooledDataVec(($basef)(t, n), falses(n))
+    end
+end
+
+# Initialized constructors with false's or true's
+for (f, basef) in ((:pdvfalses, :falses), (:pdvtrues, :trues))
+    @eval begin
+        ($f)(n::Int64) = PooledDataVec(($basef)(n), falses(n))
+    end
+end
 
 # Super hacked-out constructor: PooledDataVec[1, 2, 2, NA]
 function ref(::Type{PooledDataVec}, vals...)
@@ -929,22 +962,28 @@ end
 
 function repl_show{T}(io::IO, dv::DataVec{T})
     n = length(dv)
-    print("$n-element $T DataVec\n")
-    for i in 1:(n - 1)
-        println(strcat(' ', dv[i]))
+    print(io, "$n-element $T DataVec\n")
+    if n == 0
+        return
     end
-    print(strcat(' ', dv[n]))
+    for i in 1:(n - 1)
+        println(io, strcat(' ', dv[i]))
+    end
+    print(io, strcat(' ', dv[n]))
 end
 
 function repl_show{T}(io::IO, dv::PooledDataVec{T})
     n = length(dv)
-    print("$n-element $T PooledDataVec\n")
-    for i in 1:(n - 1)
-        println(strcat(' ', dv[i]))
+    print(io, "$n-element $T PooledDataVec\n")
+    if n == 0
+        return
     end
-    println(strcat(' ', dv[n]))
-    print("levels: ")
-    print(levels(dv))
+    for i in 1:(n - 1)
+        println(io, strcat(' ', dv[i]))
+    end
+    println(io, strcat(' ', dv[n]))
+    print(io, "levels: ")
+    print(io, levels(dv))
 end
 
 ##############################################################################

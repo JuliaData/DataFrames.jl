@@ -59,18 +59,13 @@ DataFrame(ex::Expr) = based_on(DataFrame(), ex)
 
 # Convert a standard Matrix to a DataFrame w/ pre-specified names
 function DataFrame{T}(x::Matrix{T}, cn::Vector)
-    DataFrame({x[:, i] for i in 1:length(cn)}, cn)
+    DataFrame({DataVec(x[:, i]) for i in 1:length(cn)}, cn)
 end
 
 # Convert a standard Matrix to a DataFrame w/o pre-specified names
 function DataFrame{T}(x::Matrix{T})
     DataFrame(x, generate_column_names(size(x, 2)))
 end
-
-# if we have a matrix, create a tuple of columns and pass that in
-# This broke with changes in list comprehensions
-# TODO: Understand why this is needed given previous definition for Matrix{T}
-DataFrame{T}(m::Array{T,2}) = DataFrame({DataVec(squeeze(m[:,i])) for i = 1:size(m, 2)})
 
 # If we have something a tuple, convert each value in the tuple to a
 # DataVec and then pass the converted columns in, hoping for the best

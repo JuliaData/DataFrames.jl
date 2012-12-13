@@ -10,7 +10,8 @@ tests = ["test/data.jl",
          "test/io.jl",
          # "test/formula.jl",
          "test/datastream.jl",
-         "test/datamatrix.jl"]
+         "test/datamatrix.jl",
+         "test/constructors.jl"]
 
 println("Running tests:")
 

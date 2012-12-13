@@ -41,16 +41,25 @@ DataMatrix{T}(d::Matrix{T}, m::Matrix{Bool}) = DataMatrix{T}(d, bitpack(m))
 DataMatrix(x::Matrix) = DataMatrix(x, falses(size(x)))
 
 # Explicitly convert a BitMatrix to a Matrix before wrapping with a DataMatrix
-DataMatrix{T}(x::BitMatrix{T}, m::BitMatrix) = DataVec{T}(convert(Matrix{T}, x), m)
+DataMatrix(x::BitMatrix, m::BitMatrix) = DataMatrix(convert(Matrix{Bool}, x), m)
 
 # Explicitly convert a BitMatrix to a DataMatrix w/ no NA's
-DataMatrix{T}(x::BitMatrix{T}) = DataMatrix{T}(convert(Matrix{T}, x), falses(size(x)))
+DataMatrix(x::BitMatrix) = DataMatrix(convert(Matrix{Bool}, x), falses(size(x)))
 
 # A no-op constructor
 DataMatrix(d::DataMatrix) = d
 
 # Construct an all-NA DataMatrix of a specific type
-DataMatrix(t::Type, n::Int64, p::Int64) = DataMatrix(Matrix(t, n, p), trues(n, p))
+DataMatrix(t::Type, n::Int64, p::Int64) = DataMatrix(Array(t, n, p), trues(n, p))
+
+# Construct an all-NA DataMatrix of Float64's
+DataMatrix(n::Int64, p::Int64) = DataMatrix(Array(Float64, n, p), trues(n, p))
+
+# Construct an empty DataMatrix of a specific type
+DataMatrix(t::Type) = DataMatrix(Array(t, 0, 0), trues(0, 0))
+
+# Construct an empty DataMatrix of Float64's
+DataMatrix() = DataMatrix(Array(Float64, 0, 0), trues(0, 0))
 
 # Initialized constructors with 0's, 1's
 for (f, basef) in ((:dmzeros, :zeros), (:dmones, :ones), (:dmeye, :eye))
@@ -60,17 +69,17 @@ for (f, basef) in ((:dmzeros, :zeros), (:dmones, :ones), (:dmeye, :eye))
     end
 end
 
-# Single-argument dmeye
-for (f, basef) in ((:dmeye, :eye), )
-    @eval begin
-        ($f)(n::Int64) = DataMatrix(($basef)(n), falses(n, n))
-    end
-end
-
 # Initialized constructors with false's or true's
 for (f, basef) in ((:dmfalses, :falses), (:dmtrues, :trues))
     @eval begin
         ($f)(n::Int64, p::Int64) = DataMatrix(($basef)(n, p), falses(n, p))
+    end
+end
+
+# Single-argument dmeye
+for (f, basef) in ((:dmeye, :eye), )
+    @eval begin
+        ($f)(n::Int64) = DataMatrix(($basef)(n), falses(n, n))
     end
 end
 
