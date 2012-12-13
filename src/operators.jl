@@ -264,6 +264,14 @@ for f in elementary_functions
         function ($f)(d::NAtype)
             return NA
         end
+        function ($f){T}(dv::DataVec{T})
+            n = length(dv)
+            res = DataVec(Array(T, n), falses(n))
+            for i = 1:n
+                res[i] = ($f)(dv[i])
+            end
+            return res
+        end
         function ($f){T}(adv::AbstractDataVec{T})
             res = deepcopy(adv)
             for i = 1:length(adv)
@@ -276,21 +284,17 @@ for f in elementary_functions
             return res
         end
         function ($f){T}(dm::DataMatrix{T})
-            res = deepcopy(dm)
+            res = DataMatrix(Array(T, size(dm)), falses(size(dm)))
             for i = 1:numel(dm)
-                if isna(dm[i])
-                    res[i] = NA
-                else
-                    res[i] = ($f)(dm[i])
-                end
+                res[i] = ($f)(dm[i])
             end
             return res
         end
         function ($f)(df::DataFrame)
-            res = deepcopy(df)
             n, p = nrow(df), ncol(df)
+            res = DataFrame(coltypes(df), colnames(df), n)
             for j in 1:p
-                if typeof(df[j]).parameters[1] <: Number
+                if eltype(df[j]) <: Number
                     for i in 1:n
                         res[i, j] = ($f)(df[i, j])
                     end
