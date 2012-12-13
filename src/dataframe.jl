@@ -1556,3 +1556,17 @@ function isfinite(df::DataFrame)
     end
     return DataFrame(res_columns, colnames(df))
 end
+
+function sort_by(df::DataFrame, colname::String)
+    return df[order(df[colname]), :]
+end
+
+# TODO: Use cor_pearson and cov_pearson for DataMatrix to do this
+function cor_pearson(df::DataFrame)
+    numeric_cols = find(map(t -> t <: Number, coltypes(df)))
+    cor_pearson(matrix(df[:, numeric_cols]))
+end
+function cov_pearson(df::DataFrame)
+    numeric_cols = find(map(t -> t <: Number, coltypes(df)))
+    cov_pearson(matrix(df[:, numeric_cols]))
+end

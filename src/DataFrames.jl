@@ -17,7 +17,7 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.(.==), Base.==, Base.(.<), Base.<, Base.(.!=), Base.!=,
        Base.(.<=), Base.<= ,
        Base.>=, Base.<, Base.>,
-       Base.order, Base.sort,
+       Base.order, Base.sort, Base.sort_by,
        Base.nnz, Base.find, Base.findn, Base.nonzeros,
        Base.areduce, Base.max, Base.min, Base.sum, Base.prod, Base.map_to,
        Base.filter, Base.transpose, Base.ctranspose, Base.permute, Base.hcat,
