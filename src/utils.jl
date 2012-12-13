@@ -86,8 +86,6 @@ function make_unique{S<:ByteString}(names::Vector{S})
     names
 end
 
-similar{K,V}(d::Dict{K,V}) = Dict{K,V}(length(d.keys))
-
 # TODO: move to set.jl? call nointer or nodupes?
 # reasonably fast approach: foreach argument, iterate over
 # the (presumed) set, checking for duplicates, adding to a hash table as we go

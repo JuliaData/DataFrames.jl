@@ -221,7 +221,7 @@ dfr = rbind(df4, df4)
 @assert isequal(dfr, [df4, df4])
 
 test_group("show")
-@assert repr(df1) == "DataFrame  (4,2)\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
+@assert repr(df1) == "4x2 DataFrame:\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
 
 test_group("assign")
 df6[3] = DataVec["un", "deux", "troix", "quatre"]

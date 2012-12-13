@@ -347,7 +347,8 @@ maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) :
 maxShowLength(dv::AbstractDataVec) = max([length(_string(x)) for x = dv])
 function show(io, df::AbstractDataFrame)
     ## TODO use alignment() like print_matrix in show.jl.
-    println(io, "$(typeof(df))  $(size(df))")
+    nrowz, ncolz = size(df)
+    println(io, "$(nrowz)x$(ncolz) $(typeof(df)):")
     gr = get_groups(df)
     if length(gr) > 0
         #print(io, "Column groups: ")
