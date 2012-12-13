@@ -184,4 +184,10 @@ load("DataFrames/src/operators.jl")
 
 export any_na
 
+# TODO: Remove these definitions
+nafilter(x...) = error("Function removed. Please use removeNA")
+nareplace(x...) = error("Function removed. Please use replaceNA")
+naFilter(x...) = error("Function removed. Please use each_removeNA")
+naReplace(x...) = error("Function removed. Please use each_replaceNA")
+
 end # module DataFrames
