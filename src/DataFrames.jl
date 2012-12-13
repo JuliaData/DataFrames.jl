@@ -21,7 +21,7 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.nnz, Base.find, Base.findn, Base.nonzeros,
        Base.areduce, Base.max, Base.min, Base.sum, Base.prod, Base.map_to,
        Base.filter, Base.transpose, Base.ctranspose, Base.permute, Base.hcat,
-       Base.vcat, Base.cat, Base.isequal, Base.cumsum, Base.cumprod,
+       Base.vcat, Base.cat, Base.isequal, Base.cumsum, Base.cumprod, Base.cummin, Base.cummax,
        Base.write, Base.read, Base.msync, Base.findn_nzs, Base.reverse,
        Base.iround, Base.itrunc, Base.ifloor, Base.iceil, Base.abs,
        Base.string, Base.show,

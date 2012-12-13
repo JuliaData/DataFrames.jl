@@ -51,7 +51,7 @@ unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
 
 pairwise_vector_operators = [:diff]
 
-cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn]
+cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
 
 ffts = [:fft]
 
