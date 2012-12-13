@@ -1514,7 +1514,7 @@ function duplicatedkey(df::AbstractDataFrame)
 end
 
 function isna(df::DataFrame)
-    results = Array(Bool, size(df))
+    results = BitArray(size(df))
     for i in 1:nrow(df)
         for j in 1:ncol(df)
             results[i, j] = isna(df[i, j])
