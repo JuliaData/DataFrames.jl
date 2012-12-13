@@ -1125,3 +1125,54 @@ function tail{T}(dv::DataVec{T})
         repl_show(dv[1:end])
     end
 end
+
+##############################################################################
+##
+## Container operations
+##
+##############################################################################
+
+# TODO: Fill in definitions for PooledDataVec's
+# TODO: Macroize these definitions
+
+function push{T}(dv::DataVec{T}, v::NAtype)
+    push(dv.data, baseval(T))
+    push(dv.na, true)
+    return v
+end
+
+function push{S, T}(dv::DataVec{S}, v::T)
+    push(dv.data, v)
+    push(dv.na, false)
+    return v
+end
+
+function pop{T}(dv::DataVec{T})
+    d, m = pop(dv.data), pop(dv.na)
+    if m
+        return NA
+    else
+        return d
+    end
+end
+
+function enqueue{T}(dv::DataVec{T}, v::NAtype)
+    enqueue(dv.data, baseval(T))
+    enqueue(dv.na, true)
+    return v
+end
+
+function enqueue{S, T}(dv::DataVec{S}, v::T)
+    enqueue(dv.data, v)
+    enqueue(dv.na, false)
+    return v
+end
+
+function shift{T}(dv::DataVec{T})
+    d, m = shift(dv.data), shift(dv.na)
+    if m
+        return NA
+    else
+        return d
+    end
+end
