@@ -298,6 +298,9 @@ function ref(::Type{PooledDataVec}, vals...)
     PooledDataVec(DataVec[vals...])
 end
 
+# Conversion from PooledDataVec to DataVec
+DataVec(pdv::PooledDataVec) = values(pdv)
+
 ##############################################################################
 ##
 ## PooledDataVec utilities
@@ -935,7 +938,7 @@ end
 
 function repl_show{T}(io::IO, dv::PooledDataVec{T})
     n = length(dv)
-    print("$n-element $T DataVec\n")
+    print("$n-element $T PooledDataVec\n")
     for i in 1:(n - 1)
         println(strcat(' ', dv[i]))
     end
