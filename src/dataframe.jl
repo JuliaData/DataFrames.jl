@@ -1439,6 +1439,21 @@ end
 
 merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol) = merge(df1, df2, bycol, "inner")
 
+# TODO: Make this method work with multiple columns
+#       Will need to fix PooledDataVecs for that
+function merge(df1::AbstractDataFrame, df2::AbstractDataFrame)
+    s1 = Set{ByteString}()
+    for coln in colnames(df1)
+        add(s1, coln)
+    end
+    s2 = Set{ByteString}()
+    for coln in colnames(df2)
+        add(s2, coln)
+    end
+    bycol = first(elements(intersect(s1, s2)))
+    merge(df1, df2, bycol, "inner")
+end
+
 ##
 ## Miscellaneous
 ##
@@ -1493,6 +1508,11 @@ function duplicated(df::AbstractDataFrame)
         end
     end
     res
+end
+
+function drop_duplicates!(df::AbstractDataFrame)
+    df = df[!duplicated(df), :]
+    return
 end
 
 # Unique rows of an AbstractDataFrame.        
