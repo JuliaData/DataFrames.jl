@@ -144,6 +144,10 @@ dm = DataMatrix()
 @assert isequal(dmfalses(2, 2), DataMatrix(falses(2, 2)))
 @assert isequal(dmtrues(2, 2), DataMatrix(trues(2, 2)))
 
+@assert isequal(dmeye(3, 2), DataMatrix(eye(3, 2)))
+@assert isequal(dmeye(2), DataMatrix(eye(2)))
+@assert isequal(dmdiagm([pi, pi]), DataMatrix(diagm([pi, pi])))
+
 #
 # DataFrame
 #
