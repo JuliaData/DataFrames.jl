@@ -23,8 +23,10 @@ Pkg.add("DataFrames")
 
 DataFrames.jl has one main module named `DataFrames`. You can load it as:
 
+```julia
 load("DataFrames")
 using DataFrames
+```
 
 # Features
 
