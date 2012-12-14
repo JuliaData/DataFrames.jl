@@ -183,6 +183,7 @@ function DataFrame(column_types::Vector, column_names::Vector, n::Int64)
     end
   end
 
+  println(names)
   DataFrame(columns, Index(names))
 end
 
@@ -195,7 +196,7 @@ end
 
 # Initialize from a Vector of Associatives (aka list of dicts)
 function DataFrame{D<:Associative}(ds::Vector{D})
-    ks = unique([k for k in [keys(d) for d in ds]])
+    ks = [Set([[k for k in [keys(d) for d in ds]]...]...)...]
     DataFrame(ds, ks)
 end
 

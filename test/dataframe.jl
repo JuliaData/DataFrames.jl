@@ -106,3 +106,10 @@ df = DataFrame(eye(10, 5))
 @assert nrow(df) == 10
 @assert ncol(df) == 5
 @assert typeof(df[:, 1]) == DataVec{Float64}
+
+test_group("Other DataFrame constructors")
+df = DataFrame([{"a"=>1, "b"=>'c'}, {"a"=>3, "b"=>'d'}, {"a"=>5}])
+@assert nrow(df) == 3
+@assert ncol(df) == 2
+@assert typeof(df[:,"a"]) == DataVec{Int}
+@assert typeof(df[:,"b"]) == DataVec{Char}
