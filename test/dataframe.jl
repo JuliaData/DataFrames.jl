@@ -113,3 +113,9 @@ df = DataFrame([{"a"=>1, "b"=>'c'}, {"a"=>3, "b"=>'d'}, {"a"=>5}])
 @assert ncol(df) == 2
 @assert typeof(df[:,"a"]) == DataVec{Int}
 @assert typeof(df[:,"b"]) == DataVec{Char}
+
+df = DataFrame([{"a"=>1, "b"=>'c'}, {"a"=>3, "b"=>'d'}, {"a"=>5}], ["a", "b"])
+@assert nrow(df) == 3
+@assert ncol(df) == 2
+@assert typeof(df[:,"a"]) == DataVec{Int}
+@assert typeof(df[:,"b"]) == DataVec{Char}

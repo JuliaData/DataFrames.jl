@@ -183,7 +183,6 @@ function DataFrame(column_types::Vector, column_names::Vector, n::Int64)
     end
   end
 
-  println(names)
   DataFrame(columns, Index(names))
 end
 
@@ -745,7 +744,19 @@ function cbind(df1::DataFrame, df2::DataFrame)
     set_groups(d, get_groups(df2))
     return d
 end
-   
+
+function cbind{T}(df::DataFrame, x::DataVec{T})
+    cbind(df, DataFrame({x}))
+end
+
+function cbind{T}(df::DataFrame, x::Vector{T})
+    cbind(df, DataFrame({DataVec(x)}))
+end
+
+function cbind{T}(df::DataFrame, x::T)
+    cbind(df, DataFrame({DataVec([x])}))
+end
+
 # three-plus-argument form recurses
 cbind(a, b, c...) = cbind(cbind(a, b), c...)
 hcat(dfs::DataFrame...) = cbind(dfs...)
