@@ -678,6 +678,15 @@ function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, j::Int)
     return df
 end
 
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, i::Int, colname::String)
+    j = get(df.colindex.lookup, colname, 0)
+    if j == 0
+        error("Cannot assign to non-existent column")
+    end
+    df.columns[j][i] = x
+    return df
+end
+
 function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, colname::String)
     j = get(df.colindex.lookup, colname, 0)
     n = nrow(df)

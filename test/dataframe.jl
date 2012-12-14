@@ -119,3 +119,12 @@ df = DataFrame([{"a"=>1, "b"=>'c'}, {"a"=>3, "b"=>'d'}, {"a"=>5}], ["a", "b"])
 @assert ncol(df) == 2
 @assert typeof(df[:,"a"]) == DataVec{Int}
 @assert typeof(df[:,"b"]) == DataVec{Char}
+
+data = {"A" => [1, 2], "C" => ["1", "2"], "B" => [3, 4]}
+df = DataFrame(data)
+# Specify column_names
+df = DataFrame(data, ["C", "A", "B"])
+
+# This assignment was missing before
+df = DataFrame(quote Column = ["A"] end)
+df[1, "Column"] = "Testing"

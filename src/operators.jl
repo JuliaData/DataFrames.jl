@@ -1,3 +1,23 @@
+# This is multiplicative analog of diff
+function reldiff{T}(v::Vector{T})
+    n = length(v)
+    res = Array(T, n - 1)
+    for i in 2:n
+        res[i - 1] = v[i] / v[i - 1]
+    end
+    return res
+end
+
+# Diff scaled by previous value
+function percent_change{T}(v::Vector{T})
+    n = length(v)
+    res = Array(T, n - 1)
+    for i in 2:n
+        res[i - 1] = (v[i] - v[i - 1]) / v[i - 1]
+    end
+    return res
+end
+
 unary_operators = [:(+), :(-), :(!)]
 
 numeric_unary_operators = [:(+), :(-)]
@@ -48,7 +68,7 @@ bit_operators = [:(&), :(|), :($)]
 unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
                           :var, :norm]
 
-pairwise_vector_operators = [:diff]
+pairwise_vector_operators = [:diff, :reldiff, :percent_change]
 
 cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
 

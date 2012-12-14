@@ -190,4 +190,6 @@ nareplace(x...) = error("Function removed. Please use replaceNA")
 naFilter(x...) = error("Function removed. Please use each_removeNA")
 naReplace(x...) = error("Function removed. Please use each_replaceNA")
 
+export reldiff, percent_change
+
 end # module DataFrames

@@ -48,22 +48,22 @@ end
 @assert DataFrames.tightest_type("-1234", Int64) == Int64
 @assert DataFrames.tightest_type("1234.2", Int64) == Float64
 @assert DataFrames.tightest_type("-1234.2", Int64) == Float64
-@assert DataFrames.tightest_type("1234AFX", Int64) == ASCIIString
-@assert DataFrames.tightest_type("-1234AFX", Int64) == ASCIIString
+@assert DataFrames.tightest_type("1234AFX", Int64) == UTF8String
+@assert DataFrames.tightest_type("-1234AFX", Int64) == UTF8String
 
 @assert DataFrames.tightest_type("1234", Float64) == Float64
 @assert DataFrames.tightest_type("-1234", Float64) == Float64
 @assert DataFrames.tightest_type("1234.2", Float64) == Float64
 @assert DataFrames.tightest_type("-1234.2", Float64) == Float64
-@assert DataFrames.tightest_type("1234AFX", Float64) == ASCIIString
-@assert DataFrames.tightest_type("-1234AFX", Float64) == ASCIIString
+@assert DataFrames.tightest_type("1234AFX", Float64) == UTF8String
+@assert DataFrames.tightest_type("-1234AFX", Float64) == UTF8String
 
-@assert DataFrames.tightest_type("1234", ASCIIString) == ASCIIString
-@assert DataFrames.tightest_type("-1234", ASCIIString) == ASCIIString
-@assert DataFrames.tightest_type("1234.2", ASCIIString) == ASCIIString
-@assert DataFrames.tightest_type("-1234.2", ASCIIString) == ASCIIString
-@assert DataFrames.tightest_type("1234AFX", ASCIIString) == ASCIIString
-@assert DataFrames.tightest_type("-1234AFX", ASCIIString) == ASCIIString
+@assert DataFrames.tightest_type("1234", UTF8String) == UTF8String
+@assert DataFrames.tightest_type("-1234", UTF8String) == UTF8String
+@assert DataFrames.tightest_type("1234.2", UTF8String) == UTF8String
+@assert DataFrames.tightest_type("-1234.2", UTF8String) == UTF8String
+@assert DataFrames.tightest_type("1234AFX", UTF8String) == UTF8String
+@assert DataFrames.tightest_type("-1234AFX", UTF8String) == UTF8String
 
 filename = file_path(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
 separator = ','
@@ -78,7 +78,7 @@ missingness_indicators = ["", "NA"]
                                missingness_indicators,
                                header)
 @assert column_names == ["A", "B", "C", "D", "E"]
-@assert column_types == {ASCIIString, ASCIIString, ASCIIString, Float64, Float64}
+@assert column_types == {UTF8String, UTF8String, UTF8String, Float64, Float64}
 
 # From now on, files do not have headers
 header = false
@@ -103,7 +103,7 @@ filename = file_path(julia_pkgdir(),"DataFrames/test/data/simple_data.csv")
                                missingness_indicators,
                                header)
 @assert column_names == ["x1", "x2", "x3", "x4", "x5"]
-@assert column_types == {ASCIIString, ASCIIString, ASCIIString, Float64, Int64}
+@assert column_types == {UTF8String, UTF8String, UTF8String, Float64, Int64}
 
 filename = file_path(julia_pkgdir(),"DataFrames/test/data/complex_data.csv")
 
@@ -114,7 +114,7 @@ filename = file_path(julia_pkgdir(),"DataFrames/test/data/complex_data.csv")
                                missingness_indicators,
                                header)
 @assert column_names == ["x1", "x2", "x3", "x4", "x5"]
-@assert column_types == {ASCIIString, ASCIIString, ASCIIString, Float64, Int64}
+@assert column_types == {UTF8String, UTF8String, UTF8String, Float64, Int64}
 
 # Test reading
 @assert DataFrames.determine_separator("blah.csv") == ','
@@ -164,3 +164,7 @@ close(file)
 @assert typeof(df[:, 3]) == DataVec{column_types[3]}
 @assert typeof(df[:, 4]) == DataVec{column_types[4]}
 @assert typeof(df[:, 5]) == DataVec{column_types[5]}
+
+# Test UTF8 support
+# TODO: Make this work in Julia's core
+# df = read_table("test/data/utf8.csv")
