@@ -1215,3 +1215,12 @@ function shift{T}(dv::DataVec{T})
         return d
     end
 end
+
+function map{T}(f::Function, dv::DataVec{T})
+    n = length(dv)
+    res = DataVec(Any, n)
+    for i in 1:n
+        res[i] = f(dv[i])
+    end
+    return res
+end
