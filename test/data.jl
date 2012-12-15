@@ -385,6 +385,13 @@ d1 = DataFrame(quote
     d = randn(12)
 end)
 
+d1c = @DataFrame(a => [1:3],
+                 b => [1:4],
+                 c => randn(12),
+                 d => randn(12))
+                 
+@assert isequal(d1[1:2], d1c[1:2])
+
 d1s = stack(d1, ["a", "b"])
 d1s2 = stack(d1, ["c", "d"])
 @assert isequal(d1s[1:12, "c"], d1["c"])
