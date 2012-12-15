@@ -257,8 +257,8 @@ test_context("Within")
 test_group("Associative")
 
 srand(1)
-a1 = {:a => [1, 2], :b => [3, 4], :c => [5, 6]}
-a2 = {"a" => [1, 2], "b" => [3, 4], "c" => [5, 6]}
+a1 = [:a => [1, 2], :b => [3, 4], :c => [5, 6]]
+a2 = ["a" => [1, 2], "b" => [3, 4], "c" => [5, 6]]
 a3 = {"a" => [1, 2], "b" => [3, 4], :c => [5, 6]}
 
 @assert isequal(with(a1, :(c + 1)), a1[:c] + 1)
@@ -270,13 +270,24 @@ a4 = within(a1, :( d = a + b ))
 @assert isequal(a4[:d], a1[:a] + a1[:b])
 @assert isequal(a4[:a], a1[:a])
 
+a4c = @transform(copy(a1), d => a + b )
+@assert isequal(a4[:d], a4c[:d])
+
 a4 = within(a2, :( d = a + b ))
 @assert isequal(a4["d"], a2["a"] + a2["b"])
 @assert isequal(a4["a"], a2["a"])
 
+a4c = @transform(copy(a2), d => a + b )
+@assert isequal(a4c["d"], a4["d"])
+
 a4 = within(a3, :( d = a + b ))
 @assert isequal(a4[:d], a3["a"] + a3["b"])
 @assert isequal(a4["a"], a3["a"])
+
+# Note: The following won't work. 
+#       @transform will only find the keys that are symbols.
+## a4c = @transform(copy(a3), d => a + b )
+## @assert isequal(a4c[:d], a4[:d])
 
 a4 = based_on(a1, :( d = a + b ))
 @assert isequal(a4[:d], a1[:a] + a1[:b])
@@ -307,6 +318,9 @@ df8 = within(df7, :(d4 = d3 + d3 + 1))
 @assert isequal(df8["d4"], df7["d3"] + df7["d3"] + 1)
 within!(df8, :( d4 = d1 ))
 @assert isequal(df8["d1"], df8["d4"])
+
+df8 = @transform(copy(df7), d4 => d3 + 1)
+@assert isequal(df7, df8[1:3])
 
 df8 = based_on(df7, :( d1 = d3 ))
 @assert isequal(df8["d1"], df7["d3"])
@@ -370,6 +384,13 @@ d1 = DataFrame(quote
     c = randn(12)
     d = randn(12)
 end)
+
+d1c = @DataFrame(a => [1:3],
+                 b => [1:4],
+                 c => randn(12),
+                 d => randn(12))
+                 
+@assert isequal(d1[1:2], d1c[1:2])
 
 d1s = stack(d1, ["a", "b"])
 d1s2 = stack(d1, ["c", "d"])
