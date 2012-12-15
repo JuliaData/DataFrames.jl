@@ -1328,12 +1328,21 @@ within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
 # based_on() sweeps along groups and applies based_on to each group
 function based_on(gd::GroupedDataFrame, ex::Expr)  
     f = based_on_f(gd.parent, ex)
-    x = [f(d) for d in gd]
+    x = {f(d) for d in gd}
     idx = fill([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
     resdf = rbind(x)
     cbind(keydf, resdf)
 end
+
+function based_on(gd::GroupedDataFrame, f::Function)
+    x = {f(d) for d in gd}
+    idx = fill([1:length(x)], convert(Vector{Int}, map(nrow, x)))
+    keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
+    resdf = rbind(x)
+    cbind(keydf, resdf)
+end
+
 
 # default pipelines:
 map(f::Function, x::SubDataFrame) = f(x)
@@ -1389,7 +1398,7 @@ colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
 colnames(d::GroupedDataFrame) = colnames(d.parent)
 
 # by() convenience function
-by(d::AbstractDataFrame, cols, f::Function) = map(f, groupby(d, cols))
+by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
 by(d::AbstractDataFrame, cols, e::Expr) = based_on(groupby(d, cols), e)
 by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
 by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
