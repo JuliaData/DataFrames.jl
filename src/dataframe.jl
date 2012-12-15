@@ -356,7 +356,7 @@ end
 
 # copy of a data frame does a shallow copy
 function copy(df::DataFrame)
-	newdf = DataFrame(df.columns, colnames(df))
+	newdf = DataFrame(copy(df.columns), colnames(df))
 	reconcile_groups(df, newdf)
 end
 function deepcopy(df::DataFrame)
@@ -982,6 +982,48 @@ function within!(d::Associative, ex::Expr)
     f(d)
 end
 
+
+
+myref(d, key) = ref(d, key)
+myref{K<:String,V}(d::Associative{K,V}, key) = ref(d, string(key))
+
+myhas(d, key) = has(d, key)
+myhas{K<:String,V}(d::Associative{K,V}, key) = has(d, string(key))
+
+bestkey(d, key) = key
+bestkey{K<:String,V}(d::Associative{K,V}, key) = string(key)
+bestkey(d::AbstractDataFrame, key) = string(key)
+bestkey(d::NamedArray, key) = string(key)
+
+replace_syms(x) = x
+replace_syms(s::Symbol) = :( myhas(d, $(quot(s))) ? myref(d, $(quot(s))) : $(esc(s)) )
+replace_syms(e::Expr) = Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_syms(x), e.args), e.typ)
+
+quot(value) = expr(:quote, value)  # Toivo special
+
+function transform_helper(d, args...)
+    exa = {:(local d = $(esc(d)))}
+    for ex in args
+        left = ex.args[1]
+        right = replace_syms(ex.args[2])
+        push(exa,
+            :(d[bestkey(d, $(quot(left)))] = $(right)))
+    end
+    push(exa, :d)
+    Expr(:block, exa, Any)
+end
+
+macro transform(df, args...)
+    transform_helper(df, args...)
+end
+
+macro DataFrame(args...)
+    :(DataFrame( @transform(NamedArray(), $(map(esc, args)...)) ))
+end
+
+
+
+    
 function based_on(d::Associative, ex::Expr)
     # Note: keys must by symbols
     replace_symbols(x, d::Associative) = x

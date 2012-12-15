@@ -110,6 +110,8 @@ export colnames, colnames!, names!, replace_names, replace_names!,
        subset,
        failNA, removeNA, replaceNA,
        each_failNA, each_removeNA, each_replaceNA
+## Macros
+export @transform, @DataFrame
 
 ## ---- formula.jl ----
 ## Types
