@@ -356,7 +356,7 @@ end
 
 # copy of a data frame does a shallow copy
 function copy(df::DataFrame)
-	newdf = DataFrame(df.columns, colnames(df))
+	newdf = DataFrame(copy(df.columns), colnames(df))
 	reconcile_groups(df, newdf)
 end
 function deepcopy(df::DataFrame)
