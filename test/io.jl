@@ -76,7 +76,8 @@ missingness_indicators = ["", "NA"]
                                separator,
                                quotation_symbol,
                                missingness_indicators,
-                               header)
+                               header,
+                               false)
 @assert column_names == ["A", "B", "C", "D", "E"]
 @assert column_types == {UTF8String, UTF8String, UTF8String, Float64, Float64}
 
@@ -90,7 +91,8 @@ filename = file_path(julia_pkgdir(),"DataFrames/test/data/sample_data.csv")
                                separator,
                                quotation_symbol,
                                missingness_indicators,
-                               header)
+                               header,
+                               false)
 @assert column_names == ["x1", "x2", "x3"]
 @assert column_types == {Int64, Int64, Int64}
 
@@ -101,7 +103,8 @@ filename = file_path(julia_pkgdir(),"DataFrames/test/data/simple_data.csv")
                                separator,
                                quotation_symbol,
                                missingness_indicators,
-                               header)
+                               header,
+                               false)
 @assert column_names == ["x1", "x2", "x3", "x4", "x5"]
 @assert column_types == {UTF8String, UTF8String, UTF8String, Float64, Int64}
 
@@ -112,7 +115,8 @@ filename = file_path(julia_pkgdir(),"DataFrames/test/data/complex_data.csv")
                                separator,
                                quotation_symbol,
                                missingness_indicators,
-                               header)
+                               header,
+                               false)
 @assert column_names == ["x1", "x2", "x3", "x4", "x5"]
 @assert column_types == {UTF8String, UTF8String, UTF8String, Float64, Int64}
 
@@ -132,7 +136,8 @@ column_names, column_types = DataFrames.determine_metadata(filename,
 	                                                       separator,
 	                                                       quotation_character,
 	                                                       missingness_indicators,
-	                                                       header)
+	                                                       header,
+                                                         false)
 minibatch_size = 10
 
 file = open(filename, "r")
@@ -155,7 +160,7 @@ minibatch = read_minibatch(file,
 close(file)
 
 @elapsed df = read_table(filename)
-@elapsed md = DataFrames.determine_metadata(filename, ',', '"', ["", "NA"], true)
+@elapsed md = DataFrames.determine_metadata(filename, ',', '"', ["", "NA"], true, false)
 @assert nrow(df) == 10_000
 @assert ncol(df) == 5
 @assert colnames(df) == column_names
@@ -168,3 +173,89 @@ close(file)
 # Test UTF8 support
 # TODO: Make this work in Julia's core
 # df = read_table("test/data/utf8.csv")
+
+# TODO: Split apart methods that perform seek() from those that don't
+text_data = ["1" "3" "A"; "2" "3" "NA"; "3" "3.1" "C"]
+inferred_types = DataFrames.infer_column_types(text_data, ["", "NA"])
+@assert inferred_types == {Int64, Float64, UTF8String}
+
+true_df = DataFrame(quote
+                      x1 = DataVec[1, 2, 3]
+                      x2 = DataVec[3, 3, 3.1]
+                      x3 = DataVec["A", NA, "C"]
+                    end)
+df = DataFrames.convert_to_dataframe(text_data,
+                                     ["", "NA"],
+                                     {Int64, Float64, ASCIIString},
+                                     ["x1", "x2", "x3"])
+@assert isequal(df, true_df)
+@assert isequal(eltype(df["x1"]), Int64)
+df = DataFrames.convert_to_dataframe(text_data,
+                                     ["", "NA"],
+                                     {Int64, Float64, UTF8String},
+                                     ["x1", "x2", "x3"])
+@assert isequal(eltype(df["x3"]), UTF8String)
+df = DataFrames.convert_to_dataframe(text_data,
+                                     ["", "NA"],
+                                     {Float64, Float64, UTF8String},
+                                     ["x1", "x2", "x3"])
+@assert isequal(eltype(df["x1"]), Float64)
+df = DataFrames.convert_to_dataframe(text_data,
+                                     ["", "NA"],
+                                     {UTF8String, Float64, UTF8String},
+                                     ["x1", "x2", "x3"])
+@assert isequal(eltype(df["x1"]), UTF8String)
+
+filename = file_path(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
+separator = DataFrames.determine_separator(filename)
+quotation_character = '"'
+missingness_indicators = ["", "NA"]
+header = true
+
+nrows = DataFrames.determine_nrows(filename, header)
+@assert nrows == 10_000
+ncols = DataFrames.determine_ncols(filename, separator, quotation_character)
+@assert ncols == 5
+
+io = open(filename, "r")
+
+column_names = DataFrames.determine_column_names(io, separator, quotation_character, header)
+@assert column_names == UTF8String["A", "B", "C", "D", "E"]
+
+seek(io, 0)
+if header
+  readline(io)
+end
+text_data = DataFrames.read_separated_text(io, nrows, ncols, separator, quotation_character)
+@assert eltype(text_data) == UTF8String
+@assert size(text_data) == (10_000, 5)
+
+df = read_table(io,
+                separator,
+                quotation_character,
+                missingness_indicators,
+                header,
+                column_names,
+                nrows)
+@assert nrow(df) == 10_000
+@assert ncol(df) == 5
+@assert colnames(df) == column_names
+@assert eltype(df[:, 1]) == UTF8String
+@assert eltype(df[:, 2]) == UTF8String
+@assert eltype(df[:, 3]) == UTF8String
+@assert eltype(df[:, 4]) == Float64
+@assert eltype(df[:, 5]) == Float64
+
+df = read_table(filename)
+@assert nrow(df) == 10_000
+@assert ncol(df) == 5
+@assert colnames(df) == column_names
+@assert eltype(df[:, 1]) == UTF8String
+@assert eltype(df[:, 2]) == UTF8String
+@assert eltype(df[:, 3]) == UTF8String
+@assert eltype(df[:, 4]) == Float64
+@assert eltype(df[:, 5]) == Float64
+
+# TODO: Add test case in which data file has header, but no rows
+# Example "RDatasets/data/Zelig/sna.ex.csv"
+# "","Var1","Var2","Var3","Var4","Var5"

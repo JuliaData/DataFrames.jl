@@ -32,7 +32,8 @@ function FileDataStream{T <: String}(filename::T, minibatch_size::Int64)
                        separator,
                        quotation_character,
                        missingness_indicators,
-                       header)
+                       header,
+                       true)
   FileDataStream(filename, stream, separator,
                  quotation_character, missingness_indicators,
                  header, column_names, column_types,
