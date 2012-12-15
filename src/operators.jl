@@ -1,3 +1,23 @@
+# This is multiplicative analog of diff
+function reldiff{T}(v::Vector{T})
+    n = length(v)
+    res = Array(T, n - 1)
+    for i in 2:n
+        res[i - 1] = v[i] / v[i - 1]
+    end
+    return res
+end
+
+# Diff scaled by previous value
+function percent_change{T}(v::Vector{T})
+    n = length(v)
+    res = Array(T, n - 1)
+    for i in 2:n
+        res[i - 1] = (v[i] - v[i - 1]) / v[i - 1]
+    end
+    return res
+end
+
 unary_operators = [:(+), :(-), :(!)]
 
 numeric_unary_operators = [:(+), :(-)]
@@ -48,14 +68,18 @@ bit_operators = [:(&), :(|), :($)]
 unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
                           :var, :norm]
 
-pairwise_vector_operators = [:diff]
+pairwise_vector_operators = [:diff, :reldiff, :percent_change]
 
-cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn]
+cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
 
 ffts = [:fft]
 
 binary_vector_operators = [:dot, :cor_pearson, :cov_pearson,
                            :cor_spearman, :cov_spearman]
+
+rowwise_operators = [:rowmins, :rowmaxs, :rowprods, :rowsums,
+                     :rowmeans, :rowmedians, :rowstds, :rowvars,
+                     :rowffts, :rownorms]
 
 columnar_operators = [:colmins, :colmaxs, :colprods, :colsums,
                       :colmeans, :colmedians, :colstds, :colvars,
@@ -68,10 +92,17 @@ for f in unary_operators
         function ($f)(d::NAtype)
             return NA
         end
-        function ($f)(dv::DataVec)
+        function ($f){T}(dv::DataVec{T})
             res = deepcopy(dv)
             for i in 1:length(dv)
                 res[i] = ($f)(dv[i])
+            end
+            return res
+        end
+        function ($f){T}(dm::DataMatrix{T})
+            res = deepcopy(dm)
+            for i in 1:numel(dm)
+                res[i] = ($f)(dm[i])
             end
             return res
         end
@@ -94,10 +125,172 @@ for f in unary_operators
     end
 end
 
+# Treat ctranspose and * in a special way for now
+function ctranspose{T}(dv::DataVec{T})
+    return DataMatrix(dv.data', dv.na')
+end
+
+function ctranspose{T}(dm::DataMatrix{T})
+    return DataMatrix(dm.data', dm.na')
+end
+
+# TODO: Check there are no better algorithms
+function (*){S <: Real, T <: Real}(a::DataVec{S}, b::DataMatrix{T})
+    if size(b, 1) != 1
+        error("DataVec and matrix sizes must match")
+    end
+    n, p = length(a), size(b, 2)
+    res = dmzeros(n, p)
+    for i in 1:n
+        for j in 1:p
+            res[i, j] = a[i] * b[j]
+        end
+    end
+    return res
+end
+
+function (*){S <: Real, T <: Real}(a::Vector{S}, b::DataMatrix{T})
+    if size(b, 1) != 1
+        error("Vector and matrix sizes must match")
+    end
+    n, p = length(a), size(b, 2)
+    res = dmzeros(n, p)
+    for i in 1:n
+        for j in 1:p
+            res[i, j] = a[i] * b[j]
+        end
+    end
+    return res
+end
+
+# TODO: Check there are no better algorithms
+function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataVec{T})
+    if size(a, 2) != length(b)
+        error("The number of columns of the DataMatrix must match the length of the DataVec")
+    end
+    n, p = size(a, 1), length(b)
+    res = dvzeros(n)
+    for i in 1:n
+        res[i] = 0.0
+        for j in 1:p
+            res[i] += a[i, j] * b[j]
+        end
+    end
+    return res
+end
+
+# TODO: Check there are no better algorithms
+function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::Vector{T})
+    if size(a, 2) != length(b)
+        error("The number of columns of the DataMatrix must match the length of the Vector")
+    end
+    n, p = size(a, 1), length(b)
+    res = dvzeros(n)
+    for i in 1:n
+        res[i] = 0.0
+        for j in 1:p
+            res[i] += a[i, j] * b[j]
+        end
+    end
+    return res
+end
+
+# Propagates NA's
+# For a dissenting view,
+# http://radfordneal.wordpress.com/2011/05/21/slowing-down-matrix-multiplication-in-r/
+# But we're getting 10x R while maintaining NA's
+function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataMatrix{T})
+    n1, p1 = size(a)
+    n2, p2 = size(b)
+    if p1 != n2
+        error("DataMatrix sizes must align for matrix multiplication")
+    end
+    res = DataMatrix(a.data * b.data, falses(n1, p2))
+    # Propagation can be made more efficient by storing record of corrupt
+    # rows and columns, then doing fast edits.
+    corrupt_rows = falses(n1)
+    corrupt_cols = falses(p2)
+    for i in 1:n1
+        for j in 1:p1
+            if a.na[i, j]
+                # Propagate NA's
+                # Corrupt all rows based on i
+                corrupt_rows[i] = true
+            end
+        end
+    end
+    for i in 1:n2
+        for j in 1:p2
+            if b.na[i, j]
+                # Propagate NA's
+                # Corrupt all columns based on j
+                corrupt_cols[j] = true
+            end
+        end
+    end
+    for i in 1:n1
+        if corrupt_rows[i]
+            res.na[i, :] = true
+        end
+    end
+    for j in 1:p2
+        if corrupt_cols[j]
+            res.na[:, j] = true
+        end
+    end
+    return res
+end
+
+function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::Matrix{T})
+    n1, p1 = size(a)
+    n2, p2 = size(b)
+    if p1 != n2
+        error("DataMatrix and Matrix sizes must align for matrix multiplication")
+    end
+    res = DataMatrix(a.data * b, falses(n1, p2))
+    for i in 1:n1
+        for j in 1:p1
+            if a.na[i, j]
+                # Propagate NA's
+                # Corrupt all rows based on i
+                res.na[i, :] = true
+            end
+        end
+    end
+    return res
+end
+
+function (*){S <: Real, T <: Real}(a::Matrix{S}, b::DataMatrix{T})
+    n1, p1 = size(a)
+    n2, p2 = size(b)
+    if p1 != n2
+        error("Matrix and DataMatrix sizes must align for matrix multiplication")
+    end
+    res = DataMatrix(a * b.data, falses(n1, p2))
+    for i in 1:n2
+        for j in 1:p2
+            if b.na[i, j]
+                # Propagate NA's
+                # Corrupt all columns based on j
+                res.na[:, j] = true
+            end
+        end
+    end
+    return res
+end
+
 for f in elementary_functions
     @eval begin
         function ($f)(d::NAtype)
             return NA
+        end
+        function ($f){T}(dv::DataVec{T})
+            n = length(dv)
+            res = DataVec(Array(T, n), falses(n))
+            for i = 1:n
+                res[i] = ($f)(dv[i])
+            end
+            return res
         end
         function ($f){T}(adv::AbstractDataVec{T})
             res = deepcopy(adv)
@@ -110,11 +303,18 @@ for f in elementary_functions
             end
             return res
         end
+        function ($f){T}(dm::DataMatrix{T})
+            res = DataMatrix(Array(T, size(dm)), falses(size(dm)))
+            for i = 1:numel(dm)
+                res[i] = ($f)(dm[i])
+            end
+            return res
+        end
         function ($f)(df::DataFrame)
-            res = deepcopy(df)
             n, p = nrow(df), ncol(df)
+            res = DataFrame(coltypes(df), colnames(df), n)
             for j in 1:p
-                if typeof(df[j]).parameters[1] <: Number
+                if eltype(df[j]) <: Number
                     for i in 1:n
                         res[i, j] = ($f)(df[i, j])
                     end
@@ -309,13 +509,16 @@ for f in scalar_comparison_operators
         function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
             error(strcat(string($f), " not defined for DataVecs. Try .", string($f)))
         end
+        function ($f){S, T}(a::DataMatrix{S}, b::DataMatrix{T})
+            error(strcat(string($f), " not defined for DataMatrix's. Try .", string($f)))
+        end
         function ($f)(a::AbstractDataFrame, b::AbstractDataFrame)
             error(strcat(string($f), " not defined for DataFrames. Try .", string($f)))
         end
     end
 end
 
-for f in array_comparison_operators
+for (f, scalarf) in vectorized_comparison_operators
     @eval begin
         function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
             res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
@@ -323,7 +526,62 @@ for f in array_comparison_operators
                 if isna(a[i]) || isna(b[i])
                     res[i] = NA
                 else
-                    res[i] = ($f)(a[i], b[i])
+                    res[i] = ($scalarf)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f){S, T}(a::AbstractDataVec{S}, b::Vector{T})
+            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                if isna(a[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f){S, T}(a::Vector{S}, b::AbstractDataVec{T})
+            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+            for i in 1:length(a)
+                if isna(b[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f){S, T}(a::DataMatrix{S}, b::DataMatrix{T})
+            res = DataMatrix(Array(Bool, size(a)), BitArray(size(a)))
+            for i in 1:numel(a)
+                if isna(a[i]) || isna(b[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f){S, T}(a::DataMatrix{S}, b::Matrix{T})
+            res = DataMatrix(Array(Bool, size(a)), BitArray(size(a)))
+            for i in 1:numel(a)
+                if isna(a[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], b[i])
+                end
+            end
+            return res
+        end
+        function ($f){S, T}(a::Matrix{S}, b::DataMatrix{T})
+            res = DataMatrix(Array(Bool, size(a)), BitArray(size(a)))
+            for i in 1:numel(a)
+                if isna(b[i])
+                    res[i] = NA
+                else
+                    res[i] = ($scalarf)(a[i], b[i])
                 end
             end
             return res
@@ -338,7 +596,7 @@ for f in array_comparison_operators
             # TODO: Test that types match across a and b
             for j in 1:p
                 for i in 1:n
-                    results[i, j] = ($f)(a[i, j], b[i, j])
+                    results[i, j] = ($scalarf)(a[i, j], b[i, j])
                 end
             end
             return results
@@ -461,6 +719,18 @@ for f in array_arithmetic_operators
                                 length(A)),
                           BitArray(length(A)))
             for i in 1:length(A)
+                res.na[i] = (A.na[i] || B.na[i])
+                res.data[i] = ($f)(A.data[i], B.data[i])
+            end
+            return res
+        end
+        function ($f){S, T}(A::DataMatrix{S}, B::DataMatrix{T})
+            if size(A) != size(B)
+                error("DataMatrix sizes must match")
+            end
+            res = DataMatrix(Array(promote_type(S, T), size(A)),
+                             BitArray(size(A)))
+            for i in 1:numel(A)
                 res.na[i] = (A.na[i] || B.na[i])
                 res.data[i] = ($f)(A.data[i], B.data[i])
             end
@@ -594,6 +864,36 @@ for (f, colf) in ((:min, :colmins),
             p = ncol(df)
             for j in 1:p
                 res[:, p] = ($f)(df[:, p])
+            end
+            return res
+        end
+        function ($colf){T}(dm::DataMatrix{T})
+            n, p = nrow(dm), ncol(dm)
+            res = dvzeros(p)
+            for j in 1:p
+                res[j] = ($f)(DataVec(dm.data[:, j], dm.na[:, j]))
+            end
+            return res
+        end
+    end
+end
+
+for (f, rowf) in ((:min, :rowmins),
+                  (:max, :rowmaxs),
+                  (:prod, :rowprods),
+                  (:sum, :rowsums),
+                  (:mean, :rowmeans),
+                  (:median, :rowmedians),
+                  (:std, :rowstds),
+                  (:var, :rowvars),
+                  (:fft, :rowffts),
+                  (:norm, :rownorms))
+    @eval begin
+        function ($rowf){T}(dm::DataMatrix{T})
+            n, p = nrow(dm), ncol(dm)
+            res = dvzeros(n)
+            for i in 1:n
+                res[i] = ($f)(DataVec(reshape(dm.data[i, :], p), reshape(dm.na[i, :], p)))
             end
             return res
         end
@@ -739,3 +1039,8 @@ function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     end
     return true
 end
+
+function range{T}(dv::DataVec{T})
+    return DataVec([min(dv), max(dv)], falses(2))
+end
+

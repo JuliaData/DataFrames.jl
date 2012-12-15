@@ -1,18 +1,24 @@
-# Abstract DF includes DataFrame and SubDataFrame
-abstract AbstractDataFrame <: Associative{Any,Any}
+##############################################################################
+##
+## AbstractDataFrame includes DataFrame and SubDataFrame
+##
+##############################################################################
+
+abstract AbstractDataFrame <: Associative{Any, Any}
 
 ##############################################################################
 ##
 ## Basic DataFrame definition
 ##
-## A DataFrame is a list of heterogeneous Data vectors with col and row
-## indexes. Columns are a vector, which means that operations that
-## insert/delete columns are O(n).
+## A DataFrame is a vector of heterogeneous DataVec's that be accessed using
+## numeric indexing for both rows and columns and name-based indexing for
+## columns. The columns are stored in a vector, which means that operations
+## that insert/delete columns are O(n).
 ##
 ##############################################################################
 
 type DataFrame <: AbstractDataFrame
-    columns::Vector{Any} 
+    columns::Vector{Any}
     colindex::Index
     function DataFrame(cols::Vector, colindex::Index)
         # all columns have to be the same length
@@ -33,32 +39,37 @@ end
 ##
 ##############################################################################
 
-# Convert an arbitrary vector with pre-specified names
-DataFrame(cs::Vector, cn::Vector) = DataFrame(cs, Index(cn))
+# TODO: Move this into utils.jl
+function generate_column_names(n::Int)
+    convert(Vector{ByteString}, map(i -> "x" * string(i), 1:n))
+end
+
+# The empty DataFrame
+DataFrame() = DataFrame({}, Index())
+
+# Convert an arbitrary vector w/ pre-specified names
+DataFrame{T <: String}(cs::Vector, cn::Vector{T}) = DataFrame(cs, Index(cn))
 
 # Convert an arbitrary vector w/o pre-specified names
-DataFrame(cs::Vector) = DataFrame(cs, paste("x", map(string,[1:length(cs)])))
+DataFrame(cs::Vector) = DataFrame(cs, Index(generate_column_names(length(cs))))
 
 # Build a DataFrame from an expression
 # TODO expand the following to allow unequal lengths that are rep'd to the longest length.
 DataFrame(ex::Expr) = based_on(DataFrame(), ex)
 
-# Convert a standard Matrix to a DataFrame with pre-specified names
+# Convert a standard Matrix to a DataFrame w/ pre-specified names
 function DataFrame{T}(x::Matrix{T}, cn::Vector)
-    DataFrame({x[:, i] for i in 1:length(cn)}, cn)
+    DataFrame({DataVec(x[:, i]) for i in 1:length(cn)}, cn)
 end
 
 # Convert a standard Matrix to a DataFrame w/o pre-specified names
 function DataFrame{T}(x::Matrix{T})
-    DataFrame(x, [strcat("x", i) for i in 1:size(x, 2)])
+    DataFrame(x, generate_column_names(size(x, 2)))
 end
 
-# if we have something else, convert each value in this tuple to a DataVec and pass it in, hoping for the best
+# If we have something a tuple, convert each value in the tuple to a
+# DataVec and then pass the converted columns in, hoping for the best
 DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
-# if we have a matrix, create a tuple of columns and pass that in
-# This broke with changes in list comprehensions
-DataFrame{T}(m::Array{T,2}) = DataFrame({DataVec(squeeze(m[:,i])) for i = 1:size(m, 2)})
-# 
 
 function DataFrame{K,V}(d::Associative{K,V})
     # Find the first position with maximum length in the Dict.
@@ -91,18 +102,14 @@ function DataFrame{K,V}(d::Associative{K,V})
     df
 end
 
-# Blank DataFrame
-DataFrame() = DataFrame({}, Index())
-
-# Construct with groupings
+# Construct a DataFrame with groupings over the columns
 function DataFrame(cs::Vector, cn::Vector, gr::Dict{ByteString,Vector{ByteString}})
   d = DataFrame(cs, cn)
   set_groups(index(d), gr)
   return d
 end
 
-# Pandas-style Dict of Vectors -> DataFrame constructors
-#  w/ and w/o explicit column names
+# Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
 function DataFrame(d::Dict)
     column_names = sort(convert(Array{ByteString, 1}, keys(d)))
     p = length(column_names)
@@ -120,6 +127,7 @@ function DataFrame(d::Dict)
     return DataFrame(columns, Index(column_names))
 end
 
+# Pandas' Dict of Vectors -> DataFrame constructor w/o explicit column names
 function DataFrame(d::Dict, column_names::Vector)
     p = length(column_names)
     if p == 0
@@ -137,20 +145,23 @@ function DataFrame(d::Dict, column_names::Vector)
 end
 
 # Initialize empty DataFrame objects of arbitrary size
-# Fill with Float64-typed NA's
-function DataFrame(n::Int64, p::Int64)
-  columns = Array(Any, p)
-  names = Array(ByteString, p)
-  for j in 1:p
-    names[j] = "x$(j)"
-    columns[j] = DataVec(Array(Float64, n), Array(Bool, n))
-    for i in 1:n
-      columns[j][i] = NA
+# t is a Type
+function DataFrame(t::Any, nrows::Int64, ncols::Int64)
+    column_types = Array(Any, ncols)
+    for i in 1:ncols
+        column_types[i] = t
     end
-  end
-  DataFrame(columns, Index(names))
+    column_names = Array(ByteString, 0)
+    DataFrame(column_types, column_names, nrows)
 end
 
+# Initialize empty DataFrame objects of arbitrary size
+# Default to Float64 as the type
+function DataFrame(nrows::Int64, ncols::Int64)
+    DataFrame(Float64, nrows::Int64, ncols::Int64)
+end
+
+# Initialize an empty DataFrame with specific types and names
 function DataFrame(column_types::Vector, column_names::Vector, n::Int64)
   p = length(column_types)
   columns = Array(Any, p)
@@ -175,90 +186,86 @@ function DataFrame(column_types::Vector, column_names::Vector, n::Int64)
   DataFrame(columns, Index(names))
 end
 
+# Initialize an empty DataFrame with specific types
 function DataFrame(column_types::Vector, nrows::Int64)
     p = length(column_types)
     column_names = Array(ByteString, 0)
     DataFrame(column_types, column_names, nrows)
 end
 
-# t is a Type
-function DataFrame(t::Any, nrows::Int64, ncols::Int64)
-    column_types = Array(Any, ncols)
-    for i in 1:ncols
-        column_types[i] = t
-    end
-    column_names = Array(ByteString, 0)
-    DataFrame(column_types, column_names, nrows)
+# Initialize from a Vector of Associatives (aka list of dicts)
+function DataFrame{D<:Associative}(ds::Vector{D})
+    ks = [Set([[k for k in [keys(d) for d in ds]]...]...)...]
+    DataFrame(ds, ks)
 end
 
-# Initialize standard DataFrame's with non-NA Float64 entries
-function dfzeros(n::Int64, p::Int64)
-    data = zeros(n, p)
-    is_missing = Array(Bool, n, p)
-    for i in 1:n
-        for j in 1:p
-            is_missing[i, j] = false
+# Initialize from a Vector of Associatives (aka list of dicts)
+DataFrame{D<:Associative,T<:String}(ds::Vector{D}, ks::Vector{T}) = 
+    invoke(DataFrame, (Vector{D}, Vector), ds, ks)
+function DataFrame{D<:Associative}(ds::Vector{D}, ks::Vector)
+    #get column types
+    col_types = Any[None for i = 1:length(ks)]
+    for d in ds
+        for (i,k) in enumerate(ks)
+            # TODO: check for user-defined "NA" values, ala pandas
+            if has(d, k) && !isna(d[k])
+                try
+                    col_types[i] = promote_type(col_types[i], typeof(d[k]))
+                catch
+                    col_types[i] = Any
+                end
+            end
         end
     end
-    #DataFrame(data, is_missing)
-    DataFrame(data)
+    col_types[col_types .== None] = Any
+
+    # create empty DataFrame, and fill
+    df = DataFrame(col_types, ks, length(ds))
+    for (i,d) in enumerate(ds)
+        for (j,k) in enumerate(ks)
+            df[i,j] = get(d, k, NA)
+        end
+    end
+
+    df
 end
 
-function dfones(n::Int64, p::Int64)
-    data = ones(n, p)
-    is_missing = Array(Bool, n, p)
-    for i in 1:n
-        for j in 1:p
-            is_missing[i, j] = false
-        end
-    end
-    #DataFrame(data, is_missing)
-    DataFrame(data)
-end
 
-function dfeye(n::Int64, p::Int64)
-    data = eye(n, p)
-    is_missing = Array(Bool, n, p)
-    for i in 1:n
-        for j in 1:p
-            is_missing[i, j] = false
-        end
-    end
-    #DataFrame(data, is_missing)
-    DataFrame(data)
-end
-
-function dfeye(n::Int64)
-    data = eye(n, n)
-    is_missing = Array(Bool, n, n)
-    for i in 1:n
-        for j in 1:n
-            is_missing[i, j] = false
-        end
-    end
-    #DataFrame(data, is_missing)
-    DataFrame(data)
-end
 
 ##
 ## Basic properties of a DataFrame
 ##
 
 colnames(df::DataFrame) = names(df.colindex)
-names!(df::DataFrame, vals) = names!(df.colindex, vals)
 colnames!(df::DataFrame, vals) = names!(df.colindex, vals)
-replace_names!(df::DataFrame, from, to) = replace_names!(df.colindex, from, to)
-replace_names(df::DataFrame, from, to) = replace_names(df.colindex, from, to)
-ncol(df::DataFrame) = length(df.colindex)
-nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
-names(df::AbstractDataFrame) = colnames(df)
-size(df::AbstractDataFrame) = (nrow(df), ncol(df))
-size(df::AbstractDataFrame, i::Integer) = i==1 ? nrow(df) : (i==2 ? ncol(df) : error("DataFrames have two dimensions only"))
-length(df::AbstractDataFrame) = ncol(df)
-ndims(::AbstractDataFrame) = 2
+
 function coltypes(df::DataFrame)
     {typeof(df[i]).parameters[1] for i in 1:ncol(df)}
 end
+
+names(df::AbstractDataFrame) = colnames(df)
+names!(df::DataFrame, vals) = names!(df.colindex, vals)
+
+replace_names(df::DataFrame, from, to) = replace_names(df.colindex, from, to)
+replace_names!(df::DataFrame, from, to) = replace_names!(df.colindex, from, to)
+
+nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
+ncol(df::DataFrame) = length(df.colindex)
+
+size(df::AbstractDataFrame) = (nrow(df), ncol(df))
+function size(df::AbstractDataFrame, i::Integer)
+    if i == 1
+        nrow(df)
+    elseif i == 2
+        ncol(df)
+    else
+        error("DataFrames have two dimensions only")
+    end
+end
+
+length(df::AbstractDataFrame) = ncol(df)
+
+ndims(::AbstractDataFrame) = 2
 
 # these are the underlying ref functions that create a new DF object with references to the
 # existing columns. The column index needs to be rebuilt with care, so that groups are preserved
@@ -315,12 +322,15 @@ get(df::AbstractDataFrame, key, default) = has(df, key) ? df[key] : default
 keys(df::AbstractDataFrame) = keys(index(df))
 values(df::DataFrame) = df.columns
 del_all(df::DataFrame) = DataFrame()
+
 # Collection methods:
 start(df::AbstractDataFrame) = 1
 done(df::AbstractDataFrame, i) = i > ncol(df)
 next(df::AbstractDataFrame, i) = (df[i], i + 1)
+
 ## numel(df::AbstractDataFrame) = ncol(df)
 isempty(df::AbstractDataFrame) = ncol(df) == 0
+
 # Column groups
 set_group(d::AbstractDataFrame, newgroup, names) = set_group(index(d), newgroup, names)
 set_groups(d::AbstractDataFrame, gr::Dict{ByteString,Vector{ByteString}}) = set_groups(index(d), gr)
@@ -344,29 +354,24 @@ function insert(df::AbstractDataFrame, df2::AbstractDataFrame)
     df
 end
 
-
 # copy of a data frame does a shallow copy
-function deepcopy(df::DataFrame) 
-	newdf = DataFrame([copy(x) for x in df.columns], colnames(df))
-	reconcile_groups(df, newdf)
-end
-#deepcopy_with_groups(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df), get_groups(df))
 function copy(df::DataFrame)
 	newdf = DataFrame(df.columns, colnames(df))
 	reconcile_groups(df, newdf)
 end
+function deepcopy(df::DataFrame)
+    newdf = DataFrame([copy(x) for x in df.columns], colnames(df))
+    reconcile_groups(df, newdf)
+end
+#deepcopy_with_groups(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df), get_groups(df))
 
 # dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
 # changing the in one df can break the other.
-
 
 head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
 head(df::AbstractDataFrame) = head(df, 6)
 tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
 tail(df::AbstractDataFrame) = tail(df, 6)
-
-
-
 
 # to print a DataFrame, find the max string length of each column
 # then print the column names with an appropriate buffer
@@ -376,7 +381,8 @@ maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) :
 maxShowLength(dv::AbstractDataVec) = max([length(_string(x)) for x = dv])
 function show(io, df::AbstractDataFrame)
     ## TODO use alignment() like print_matrix in show.jl.
-    println(io, "$(typeof(df))  $(size(df))")
+    nrowz, ncolz = size(df)
+    println(io, "$(nrowz)x$(ncolz) $(typeof(df)):")
     gr = get_groups(df)
     if length(gr) > 0
         #print(io, "Column groups: ")
@@ -421,7 +427,6 @@ function show(io, df::AbstractDataFrame)
 end
 
 # get the structure of a DF
-
 function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
     println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
     gr = get_groups(x)
@@ -482,7 +487,6 @@ function summary(io, df::AbstractDataFrame)
     end
 end
 
-
 ##############################################################################
 ##
 ## We use SubDataFrame's to maintain a reference to a subset of a DataFrame
@@ -531,8 +535,6 @@ colnames(df::SubDataFrame) = colnames(df.parent)
 # Associative methods:
 index(df::SubDataFrame) = index(df.parent)
 
-
-
 # DF column operations
 ######################
 
@@ -540,21 +542,31 @@ index(df::SubDataFrame) = index(df.parent)
 
 # df[1] = replace column
 function assign(df::DataFrame, newcol::AbstractDataVec, icol::Integer)
+    if length(newcol) != nrow(df) && nrow(df) != 0
+        throw(ArgumentError("Can't insert new DataFrame column of improper length"))
+    end
     if icol > 0 && icol <= ncol(df)
         df.columns[icol] = newcol
     else
-        throw(ArgumentError("Can't replace a non-existent DataFrame column"))
+        if icol == ncol(df) + 1
+            i = ncol(df) + 1
+            push(df.colindex, "x$i")
+            push(df.columns, newcol)
+        else
+            throw(ArgumentError("Can't insert new DataFrame column into a non-existent slot"))
+        end
     end
-    df
+    return df
 end
 assign{T}(df::DataFrame, newcol::Vector{T}, icol::Integer) = assign(df, DataVec(newcol), icol)
+assign{T}(df::DataFrame, newcol::Range1{T}, icol::Integer) = assign(df, DataVec(newcol), icol)
 
 # df["old"] = replace old columns
 # df["new"] = append new column
-function assign(df::DataFrame, newcol::AbstractDataVec, colname)
+function assign(df::DataFrame, newcol::AbstractDataVec, colname::String)
     icol = get(df.colindex.lookup, colname, 0)
     if length(newcol) != nrow(df) && nrow(df) != 0
-        error("length of data doesn't match the number of rows.")
+        throw(ArgumentError("Can't insert new DataFrame column of improper length"))
     end
     if icol > 0
         # existing
@@ -566,10 +578,34 @@ function assign(df::DataFrame, newcol::AbstractDataVec, colname)
     end
     df
 end
-assign{T}(df::DataFrame, newcol::Vector{T}, colname) = assign(df, DataVec(newcol), colname)
+assign{T}(df::DataFrame, newcol::Vector{T}, colname::String) = assign(df, DataVec(newcol), colname)
+assign{T}(df::DataFrame, newcol::Range1{T}, colname::String) = assign(df, DataVec(newcol), colname)
 
-assign(df::DataFrame, newcol, colname) =
-    nrow(df) > 0 ? assign(df, DataVec(fill(newcol, nrow(df))), colname) : assign(df, DataVec([newcol]), colname)
+# df[:, "old"] = replace old columns
+# df[:, "new"] = append new column
+function assign(df::DataFrame, newcol::AbstractDataVec, rows::Range1, colname::String)
+    if length(rows) != nrow(df) && start(rows) != 1
+        error("Whole-column assignment must specify all existing rows")
+    end
+    icol = get(df.colindex.lookup, colname, 0)
+    if length(newcol) != nrow(df) && nrow(df) != 0
+        throw(ArgumentError("Can't insert new DataFrame column of improper length"))
+    end
+    if icol > 0
+        # existing
+        assign(df, newcol, icol)
+    else
+        # new
+        push(df.colindex, colname)
+        push(df.columns, newcol)
+    end
+    df
+end
+assign{T}(df::DataFrame, newcol::Vector{T}, rows::Range1, colname::String) = assign(df, DataVec(newcol), rows, colname)
+assign{T}(df::DataFrame, newcol::Range1{T}, rows::Range1, colname::String) = assign(df, DataVec(newcol), rows, colname)
+
+# assign(df::DataFrame, newcol, colname) =
+#     nrow(df) > 0 ? assign(df, DataVec(fill(newcol, nrow(df))), colname) : assign(df, DataVec([newcol]), colname)
 
 # do I care about vectorized assignment? maybe not...
 # df[1:3] = (replace columns) eh...
@@ -578,22 +614,98 @@ assign(df::DataFrame, newcol, colname) =
 # df[1] = nothing
 assign(df::DataFrame, x::Nothing, icol::Integer) = del!(df, icol)
 
-# at least some of the elementwise assignments
-assign(df::DataFrame, v, rows, cols) = assign(df[cols], v, rows)
-
 ## Multicolumn assignment like df2[1:2,:] = df2[4:5,:]
-function assign(df1::DataFrame, df2::DataFrame, rows, cols)
-    nr = length(rows)
-    nc = length(cols)
-    if ncol(df2) != nc || nrow(df2) != nr
+function assign(df1::DataFrame, df2::DataFrame, row::Int, cols::Range1)
+    if ncol(df2) != length(cols)
         error("Dimensions do not match in assignment.")
     end
-    for i=1:nr
-        for j=1:nc
-            assign(df1, df2[i,j], rows[i], cols[j])
+    for col in cols
+        df1[row, col] = df2[row, col]
+    end
+    return df1
+end
+
+function assign(df1::DataFrame, df2::DataFrame, rows::Range1, col::Int)
+    if nrow(df2) != length(rows)
+        error("Dimensions do not match in assignment.")
+    end
+    for row in rows
+        df1[row, col] = df2[row, col]
+    end
+    return df1
+end
+
+function assign(df1::DataFrame, df2::DataFrame, rows::Range1, cols::Range1)
+    if nrow(df2) != length(rows) || ncol(df2) != length(cols)
+        error("Dimensions do not match in assignment.")
+    end
+    for row in rows
+        for col in cols
+            df1[row, col] = df2[row, col]
         end
     end
-    df1
+    return df1
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, i::Int, j::Int)
+    df.columns[j][i] = x
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, row::Int, cols::Range1)
+    for col in cols
+        df.columns[col][row] = x
+    end
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, rows::Range1, col::Int)
+    df.columns[col][rows] = x
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, rows::Range1, cols::Range1)
+    for col in cols
+        df.columns[col][rows] = x
+    end
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, j::Int)
+    for i in 1:nrow(df)
+        df.columns[j][i] = x
+    end
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, i::Int, colname::String)
+    j = get(df.colindex.lookup, colname, 0)
+    if j == 0
+        error("Cannot assign to non-existent column")
+    end
+    df.columns[j][i] = x
+    return df
+end
+
+function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, colname::String)
+    j = get(df.colindex.lookup, colname, 0)
+    n = nrow(df)
+    if j == 0
+        if n == 0
+            n = 1
+        end
+        newcol = DataVec(Array(T, n), falses(n))
+        for i in 1:n
+            newcol[i] = x
+        end
+        push(df.colindex, colname)
+        push(df.columns, newcol)
+    else
+        for i in 1:n
+            df.columns[j][i] = x
+        end
+    end
+    return df
 end
 
 # del!(df, 1)
@@ -625,14 +737,12 @@ del(df::DataFrame, i::Int) = del(df, [i])
 del(df::DataFrame, c) = del(df, df.colindex[c])
 del(df::SubDataFrame, c) = SubDataFrame(del(df.parent, c), df.rows)
 
-
 #### cbind, rbind, hcat, vcat
 # hcat() is just cbind()
 # rbind(df, ...) only accepts data frames. Finds union of columns, maintaining order
 # of first df. Missing data becomes NAs.
 # vcat() is just rbind()
  
-
 # two-argument form, two dfs, references only
 function cbind(df1::DataFrame, df2::DataFrame)
     # If df1 had metadata, we should copy that.
@@ -643,7 +753,19 @@ function cbind(df1::DataFrame, df2::DataFrame)
     set_groups(d, get_groups(df2))
     return d
 end
-   
+
+function cbind{T}(df::DataFrame, x::DataVec{T})
+    cbind(df, DataFrame({x}))
+end
+
+function cbind{T}(df::DataFrame, x::Vector{T})
+    cbind(df, DataFrame({DataVec(x)}))
+end
+
+function cbind{T}(df::DataFrame, x::T)
+    cbind(df, DataFrame({DataVec([x])}))
+end
+
 # three-plus-argument form recurses
 cbind(a, b, c...) = cbind(cbind(a, b), c...)
 hcat(dfs::DataFrame...) = cbind(dfs...)
@@ -676,30 +798,48 @@ nas(df::DataFrame, dims) =
 nas(df::SubDataFrame, dims) = 
     DataFrame([nas(df[x], dims) for x in colnames(df)], colnames(df)) 
 
+rbind(df::DataFrame) = df
 
-function rbind(dfs::DataFrame...)
-    Nrow = sum(nrow, dfs)
-    Ncol = ncol(dfs[1])
-    res = similar(dfs[1], Nrow)
-    # TODO fix PooledDataVec columns with different pools.
-    # for idx in 2:length(dfs)
-    #     if colnames(dfs[1]) != colnames(dfs[idx])
-    #         error("DataFrame column names must match.")
-    #     end
-    # end
-    idx = 1
-    for df in dfs
-        for kdx in 1:nrow(df)
-            for jdx in 1:Ncol
-                res[jdx][idx] = df[kdx, jdx]
-            end
-            idx += 1
-        end
-        set_groups(res, get_groups(df))
+function rbind(df1::DataFrame, df2::DataFrame)
+    if size(df1) == (0, 0) && size(df2) == (0, 0)
+        return DataFrame(0, 0)
     end
-    res
+    if size(df1) == (0, 0) && size(df2) != (0, 0)
+        return df2
+    end
+    if size(df1) != (0, 0) && size(df2) == (0, 0)
+        return df1
+    end
+    # Tolerate permutations of the same columns?
+    # if any(coltypes(df1) .!= coltypes(df2)) || any(colnames(df1) .!= colnames(df2))
+    #     error("Cannot rbind dissimilar DataFrames")
+    # end
+    res = DataFrame(coltypes(df1), nrow(df1) + nrow(df2))
+    colnames!(res, colnames(df1))
+    ind = 0
+    for i in 1:nrow(df1)
+        ind += 1
+        for j in 1:ncol(df1)
+            res[ind, j] = df1[i, j]
+        end
+    end
+    for i in 1:nrow(df2)
+        ind += 1
+        for j in 1:ncol(df1)
+            res[ind, j] = df2[i, j]
+        end
+    end
+    return res
 end
-vcat(dfs::DataFrame...) = rbind(dfs...)
+
+# Use induction to define results for arbitrary lengths?
+function rbind(dfs::DataFrame...)
+    res = dfs[1]
+    for j in 2:length(dfs)
+        res = rbind(res, dfs[j])
+    end
+    return res
+end
 
 function rbind(dfs::Vector)   # for a Vector of DataFrame's
     Nrow = sum(nrow, dfs)
@@ -724,7 +864,45 @@ function rbind(dfs::Vector)   # for a Vector of DataFrame's
     res
 end
 
-rbind(df1::DataFrame, df2::DataFrame) = rbind({df1, df2})
+# function rbind(dfs::DataFrame...)
+#     L = length(dfs)
+#     T = 0
+#     total_rows = 0
+#     real_cols = 0
+#     non_empty_dfs = Array(Any, L)
+#     for i in 1:L
+#         df = dfs[i]
+#         if nrow(df) > 0
+#             T += 1
+#             non_empty_dfs[T] = df
+#         end
+#     end
+#     if T == 0
+#         return DataFrame(0, 0)
+#     end
+#     dfs = non_empty_dfs[1:T]
+#     Nrow = sum(nrow, dfs)
+#     Ncol = max(ncol, dfs)
+#     res = similar(dfs[1], Nrow)
+#     # TODO fix PooledDataVec columns with different pools.
+#     # for idx in 2:length(dfs)
+#     #     if colnames(dfs[1]) != colnames(dfs[idx])
+#     #         error("DataFrame column names must match.")
+#     #     end
+#     # end
+#     idx = 1
+#     for df in dfs
+#         for kdx in 1:nrow(df)
+#             for jdx in 1:Ncol
+#                 res[jdx][idx] = df[kdx, jdx]
+#             end
+#             idx += 1
+#         end
+#         set_groups(res, get_groups(df))
+#     end
+#     res
+# end
+vcat(dfs::DataFrame...) = rbind(dfs...)
 
 # DF row operations -- delete and append
 # df[1] = nothing
@@ -743,7 +921,6 @@ rbind(df1::DataFrame, df2::DataFrame) = rbind({df1, df2})
 # how do we add col names to the name space?
 # transform(df, :(cat=dog*2, clean=proc(dirty)))
 # summarise(df, :(cat=sum(dog), all=strcat(strs)))
-
 
 function with(d::Associative, ex::Expr)
     # Note: keys must by symbols
@@ -889,7 +1066,6 @@ function based_on(d::Associative, ex::Expr)
     f(d)
 end
 
-
 function within!(df::AbstractDataFrame, ex::Expr)
     # By-column operation within a DataFrame that allows replacing or adding columns.
     # Returns the transformed DataFrame.
@@ -999,15 +1175,12 @@ within(e::Expr) = x -> within(x, e)
 within!(e::Expr) = x -> within!(x, e)
 based_on(e::Expr) = x -> based_on(x, e)
 
-
 # allow pipelining straight to an expression using within!:
 (|)(x::AbstractDataFrame, e::Expr) = within!(x, e)
-
 
 #
 #  Split - Apply - Combine operations
 #
-
 
 function groupsort_indexer(x::Vector, ngroups::Integer)
     ## translated from Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
@@ -1087,11 +1260,6 @@ groupby(d::AbstractDataFrame, cols) = groupby(d, [cols])
 groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
 groupby(cols) = x -> groupby(x, cols)
 
-
-unique(pd::PooledDataVec) = pd.pool
-sort(pd::PooledDataVec) = pd[order(pd)]
-order(pd::PooledDataVec) = groupsort_indexer(pd)[1]
-
 start(gd::GroupedDataFrame) = 1
 next(gd::GroupedDataFrame, state::Int) = 
     (sub(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
@@ -1157,7 +1325,6 @@ end
 
 within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
 
-
 # based_on() sweeps along groups and applies based_on to each group
 function based_on(gd::GroupedDataFrame, ex::Expr)  
     f = based_on_f(gd.parent, ex)
@@ -1221,20 +1388,15 @@ colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
 (|)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
 colnames(d::GroupedDataFrame) = colnames(d.parent)
 
-
 # by() convenience function
 by(d::AbstractDataFrame, cols, f::Function) = map(f, groupby(d, cols))
 by(d::AbstractDataFrame, cols, e::Expr) = based_on(groupby(d, cols), e)
 by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
 by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
 
-
 ##
 ## Reshaping
 ##
-
-
-
 
 function stack(df::DataFrame, icols::Vector{Int})
     remainingcols = _setdiff([1:ncol(df)], icols)
@@ -1274,7 +1436,6 @@ unstack(df::DataFrame, ikey, ivalue, irefkey) =
 ##
 ## Join / merge
 ##
-
 
 function join_idx(left, right, max_groups)
     ## adapted from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
@@ -1380,6 +1541,21 @@ end
 
 merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol) = merge(df1, df2, bycol, "inner")
 
+# TODO: Make this method work with multiple columns
+#       Will need to fix PooledDataVecs for that
+function merge(df1::AbstractDataFrame, df2::AbstractDataFrame)
+    s1 = Set{ByteString}()
+    for coln in colnames(df1)
+        add(s1, coln)
+    end
+    s2 = Set{ByteString}()
+    for coln in colnames(df2)
+        add(s2, coln)
+    end
+    bycol = first(elements(intersect(s1, s2)))
+    merge(df1, df2, bycol, "inner")
+end
+
 ##
 ## Miscellaneous
 ##
@@ -1436,6 +1612,11 @@ function duplicated(df::AbstractDataFrame)
     res
 end
 
+function drop_duplicates!(df::AbstractDataFrame)
+    df = df[!duplicated(df), :]
+    return
+end
+
 # Unique rows of an AbstractDataFrame.        
 unique(df::AbstractDataFrame) = df[!duplicated(df), :] 
 
@@ -1451,7 +1632,7 @@ function duplicatedkey(df::AbstractDataFrame)
 end
 
 function isna(df::DataFrame)
-    results = Array(Bool, size(df))
+    results = BitArray(size(df))
     for i in 1:nrow(df)
         for j in 1:ncol(df)
             results[i, j] = isna(df[i, j])
@@ -1476,4 +1657,18 @@ function isfinite(df::DataFrame)
         res_columns[j] = isfinite(df[j])
     end
     return DataFrame(res_columns, colnames(df))
+end
+
+function sort_by(df::DataFrame, colname::String)
+    return df[order(df[colname]), :]
+end
+
+# TODO: Use cor_pearson and cov_pearson for DataMatrix to do this
+function cor_pearson(df::DataFrame)
+    numeric_cols = find(map(t -> t <: Number, coltypes(df)))
+    cor_pearson(matrix(df[:, numeric_cols]))
+end
+function cov_pearson(df::DataFrame)
+    numeric_cols = find(map(t -> t <: Number, coltypes(df)))
+    cov_pearson(matrix(df[:, numeric_cols]))
 end

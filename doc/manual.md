@@ -1,46 +1,217 @@
-# Motivation
+# Table of Contents
 
-We want to use Julia for statistical programming. Julia is already a very powerful tool for general mathematical programming, but it is missing several features that are essential for statistical programming. We believe the changes that must be made to prepare Julia for statistical programming can be implemented using only Julian modules/packages and will not require changes to the core language. As such, we are building a package called `DataFrame` that implements the necessary changes.
+* Why Use the DataFrames Package?
+	*  Missing Data Points
+	*  Data Structures for Storing Missing Data Points
+	*  Tabular Data Structures
+	*  A Language for Expressing Statistical Models
+* Getting Started
+* The Design of DataFrames
+* Formal Specification of DataFrames
+* Function Reference Guide
 
-To (1) explain why the missing features implemented by `DataFrame` are essential and (2) motivate the changes that need to be made to Julia to make up for their absence in the core language, we describe several examples of increasing complexity below that involve calculating various types of means:
+\newpage
 
-* _Case 1_: We want to calculate the mean of a list of 5 numbers: `x1`, `x2`, `x3`, `x4` and `x5`. We can represent these numbers as a vector `v = [x1, x2, x3, x4, x5]`. We can compute the mean of `v` in Julia using the `mean()` function from `base/statistics.jl` by calling `mean(v)`. For this sort of computation, Julia shines.
-* _Case 2_: The approach taken above works well unless one or more of the values `x1` through `x5` is missing. Most real world data sets contain missing values, but the approach for computing means used above has no ability to handle even a single missing value. There are two problems:
-    * None of the default numeric types in Julia that could be used to encode the values `x1` through `x5` provide any mechanism for encoding missingness.
-    * The function `mean()` used above would not know how to handle missing data points even if the values `x1` through `x5` were capable of expressing missingness.
-* _Case 3_: Even if we introduce new types for expressing missingness and overload functions like `mean()` to handle missing data, we still have no tools for calculating the mean of some variable `z` conditional on the values of two other variables `x` and `y`. This more general problem of calculating means conditional on other information is called regression and is one of the core analytic tools provided by statistical theory. To express conditional means, we need two things: a data structure in which we can store the values of several different variables simultaneously and a method for performing regressions by specifying which variables are being conditioned on. The data structure we want to use in order to solve the first problem is a tabular, cases-by-variables representation of data that is ubiquitous in statistical computing and is largely equivalent to the concept of a relational database. In order to solve the latter problem, we want to have a type of domain-specific language called model formulas that allows us to concisely specify the variable(s) we want to predict and the variable(s) we want to use to perform predictions. This syntax is as valuable for statistical programming as regular expressions are for processing string.
+---
 
-From these example, we see that performing statistical computation in Julia will require abstract methods for dealing with all of the following:
+# Why Use the DataFrames Package?
 
-* Missing Data
-* Tabular Data Structures
-* Model Formulas
+We want to use Julia for statistical programming. While Julia is a very powerful tool for general mathematical programming, it is missing several basic features that are essential for statistical applications. This introductory section describes some of the features that are missing from Julia's core. The rest of the manual describes the ways in which the DataFrames package extends Julia to make up for those missing features.
 
-While explaining how tabular data and model formulas should work in greater detail, we'll see that we also need one more change to Julia: a `Factor` type like that found in R. A `Factor` type is valuable for two reasons:
+## Missing Data Points
 
-* A `Factor` type can reduce the amount of memory required to represent data by representing a finite set of values using an efficient encoding that is expanded into full values only when necessary. Essentially this means that `Factor`'s behave like enumeration types and that they perform a role similar to database normalization.
-* A `Factor` type can be used to inform a statistical algorithm that an input or output variable is categorical. This is particularly important when specifying regression models in which a single categorical variable encoded using `Factor`'s will be replaced with an entire matrix of indicator variables that allows pure numerical computation to be done to estimate a regression model. This conversion of categorical data into numerical data is among the most important tasks that a statistical system performs since it is error-prone if the programmer performs it for themselves using ad hoc code.
+Suppose that we want to calculate the mean of a list of five `Float64` numbers: `x1`, `x2`, `x3`, `x4` and `x5`. We would normally do this in Julia as follows:
 
-Taken together, this means we actually need to add four pieces to Julia to prepare it for statistical programming:
+* Represent these five numbers as a `Vector`: `v = [x1, x2, x3, x4, x5]`.
+* Compute the mean of `v` using the `mean()` function.
 
-* Missing Data
-* Tabular Data Structures
-* Model Formulas
-* Factors
+_But what if one of the five numbers were missing?_
 
-With that overview of our four basic additions to Julia in mind, we now proceed to introduce them in greater detail. We then describe our current design, our current implementations of this design and our long-term goals.
+The concept of a missing data point cannot be directly expressed in Julia because there is no `NULL` value. In the statistically focused languages S and R, missing data points are described using the `NA` value. Adding an `NA` value to Julia is the DataFrames package's first extension of Julia's core type system.
 
-# Introduction
+## Data Structures for Storing Missing Data Points
 
-This manual is meant to introduce new users to the DataFrame package for Julia, which provides the basic data structures needed for real-world data analysis. In everything that follows, we'll assume that you've installed and loaded the DataFrames package using the following commands:
+Even if we can express the notion that the value of the number `x2` is unknown by using a new `NA` value, there is little that we can do with this new value because it cannot be directly stored in a standard Julian `Vector` unless that `Vector` has no type constraints on its entries. While we could use a `Vector{Any}`, this produces very inefficient code.
+
+Instead of using generic data structures, we have created extensions of the core Julia `Vector` and `Matrix` data structures. These augmented data structures are called `DataVec`'s and `DataMatrix`'s. Both `DataVec`'s and `DataMatrix`'s can contain either (a) values of any specific type or (b) our new `NA` type.
+
+For example, a standard `Vector{Float64}` can contain `Float64`'s and nothing else. Our new `DataVec{Float64}` can contain `Float64`'s or `NA`'s, but nothing else. This makes the new data types much more efficient than using generic containers like `Vector{Any}` or `Matrix{Any}`.
+
+## Tabular Data Structures
+
+`DataVec`'s and `DataMatrix`'s are very powerful data structures, but they are not sufficient for describing most real world data sets. Although most standard data sets are easily described using a simple table of data, these kinds of tables are generally not like matrices. The table of data shown below highlights some of the ways in which a data set is not like a `DataMatrix`:
+
+![Tabular Data](figures/data.pdf)
+
+We highlight three major differences below:
+
+* The columns of a tabular data set may have different types. A `DataMatrix` can only contain values of one type: these might all be `String`'s or `Int`'s, but we cannot have one column of `String`'s and another column of `Int`'s.
+* The values of the entries within a column generally have a consistent type. This means that a single column could be represented using a `DataVec`. Unfortunately, the heterogeneity of types between columns means that we need someway of wrapping a group of columns together into a coherent whole. We could use a `Vector` to wrap up all of the columns of the table, but this will not enforce one constraint imposed by our intuitions: _every column of a tabular data set has the same length as all of the other columns_.
+* The columns of a tabular data set are typically named using `String`'s. Most programs for working with data can access the columns of a data set using these names in addition to simple numeric indices. In other words, a tabular data structure can sometimes behave like an `Array` and can sometimes behave like a `Dict`.
+
+We can summarize these concerns by noting that we face four problems when with working with tabular data sets that are not well solved by existing Julian data structures:
+
+* Tabular data sets may have heterogeneous types of columns.
+* Each column of a tabular data set has a consistent type.
+* Each column of a tabular data set has a consistent length, although some entries may be missing.
+* The columns of a tabular data set should be addressable by both name and index.
+
+We solve all of these four problems by adding a `DataFrame` type to Julia. This type will be familiar to anyone who has worked with R's `data.frame` type or with Pandas' `DataFrame` type. Even if you have never used R or Python to work with data, this tabular data structure will be similar to many of the intuitions that you've developed while working with spreadsheet programs like Excel.
+
+## A Language for Expressing Statistical Models
+
+Statistical programming is generally focused on answering substantive questions about the properties of a data set. We are generally not interested in thinking about algorithms, but instead want to spend our time thinking about mathematical models.
+
+Part of the power of the R programming language is that it provides a coherent mini-language for talking about various types of linear models ranging from ANOVA's to GLM's. For example, R describes a regression in which a variable `Z` is regressed against the variables `X` and `Y` using the notation:
+
+    Z ~ X + Y
+
+Julia, by default, provides no similar sort of mini-language for describing the mathematical structure of statistical models. To remedy this, we have added a `Formula` type to Julia that provides a simple DSL for describing linear models in Julia.
+
+\newpage
+
+---
+
+# Getting Started
+
+## Installation
+
+The DataFrames package is available through the Julia package system. If you've never used the package syste, before, you'll need to run the following:
+
+	require("pkg")
+	Pkg.init()
+	Pkg.add("DataFrames")
+
+If you have an existing library of packages, you can pull the DataFrames package into your library using similar commands:
 
 	require("pkg")
 	Pkg.add("DataFrames")
 
+## Loading the DataFrames Package
+
+In all of the examples that follow, we're going to assume that you've already loaded the DataFrames package. You can do that by typing the following two commands before trying any of our examples:
+
 	load("DataFrames")
 	using DataFrames
 
-# Overview of Basic Types for Working with Data
+## Some Basic Examples
+
+As we described in the introduction, the first thing you'll want to do is to confirm that we have a new type that represents a missing value. Type the following into the REPL to see that this is working for you:
+
+	NA
+
+One of the essential properties of `NA` is that it poisons other items. To see this, try to add something to `NA`:
+
+	1 + NA
+
+As we described earlier, you'll get a lot more power out of `NA`'s when they can occur in other data structures. Let's create our first `DataVec` now:
+
+	dv = DataVec([1, 3, 2, 5, 4])
+	dv[1] = NA
+
+To see how `NA` poisons even complex calculations, let's try to take the mean of those five numbers:
+
+	mean(dv)
+
+In many cases we're willing to just ignore `NA`'s and remove them from our vector. We can do that using the `removeNA` function:
+
+	removeNA(dv)
+	mean(removeNA(dv))
+
+Dealing with `NA`'s is a constant challenge. The presence of `NA`'s poisons matrix operations in the same way that it poisons vector operations. To see that, we'll create our first `DataMatrix`:
+
+	dm = DataMatrix([1.0 0.0; 0.0 1.0])
+	dm[1, 1] = NA
+	dm * dm
+
+As we said before, working with simple `DataVec`'s and `DataMatrix`'s gets boring after a while. To express interesting types of tabular data sets, we'll create a simple `DataFrame` piece-by-piece:
+
+	df = DataFrame()
+	df["A"] = 1:4
+	df["B"] = ["M", "F", "F", "M"]
+	df
+
+In practice, we're more likely to use an existing data set than to construct one from scratch. To load a more interesting data set, we can use the `read_table()` function. To make use of it, we'll need a data set. There are some simple examples included with the DataFrames package. We can find them using basic file operations in Julia:
+
+	require("pkg")
+	mydir = file_path(Pkg.package_directory("DataFrames"), "test", "data")
+	filenames = readdir(mydir)
+	df = read_table(file_path(mydir, filenames[1]))
+
+The resulting `DataFrame` is pretty large. We can check its size using the `nrow` and `ncol` commands:
+
+	nrow(df)
+	ncol(df)
+
+We can look at simpler subsets of the data in a couple of ways:
+
+	head(df)
+	tail(df)
+
+	df[1:3, :]
+
+We can summarize this data set by looking at means and medians of the columns:
+
+	colmeans(df)
+	colmedians(df)
+
+Alternatively, we can look at columns one-by-one:
+
+	mean(df["E"])
+	range(df["E"])
+
+If you'd like to get your hands on more data to play with, we strongly encourage you to try out the RDatasets package. This package supplements the DataFrames package by providing access to 570 classical data sets. You can install and load it using the Julia package manager:
+
+	require("pkg")
+	Pkg.add("RDatasets")
+	load("RDatasets")
+
+Once that's done, you can use the `data()` function to gain access to data sets like Fisher's Iris data:
+
+
+	iris = RDatasets.data("datasets", "iris")
+	head(iris)
+
+The Iris data set is really interesting for examining contrasts between groups. To get at those, we can split apart our data set based on the species of flower being studied and analyze them separately. To do that, we use the Split-Apply-Combine strategy made popular by R's plyr library:
+
+	for df in groupby(iris, "Species")
+		println({unique(df["Species"]),
+				 mean(df["Petal.Length"]),
+				 mean(df["Petal.Width"])})
+	end
+
+As you can see, we can do quite complex data manipulations using DataFrames. To really dig in, we're now going to describe the design of the DataFrames package in greater depth.
+
+\newpage
+
+---
+
+# The Design of DataFrames
+
+## The Type Hierarchy
+
+Before we do anything else, let's go through the hierarchy of types introduced by the DataFrames package. This type hierarchy is depicated visually in the figures at the end of this section and can be summarized in a simple nested list:
+
+* NAtype
+* AbstractDataVec
+	* DataVec
+	* PooledDataVec
+* AbstractMatrix
+	* DataMatrix
+* AbstractDataFrame
+	* DataFrame
+* AbstractDataStream
+	* FileDataStream
+	* DataFrameDataStream
+	* MatrixDataStream
+
+We'll step through each element of this hierarchy in turn in the following sections.
+
+![Scalar and Array Types](figures/types1.pdf)
+
+![Tabular Data Types](figures/types2.pdf)
+
+## Overview of Basic Types for Working with Data
 
 There are four new types introduced by the current generation of the DataFrames package:
 
@@ -109,7 +280,7 @@ This is achieved by a very simple mechanism: a `DataVec{T}` is a new parametric 
 
 	type DataVec{T}
 		data::Vector{T}
-		na::BitVector{Bool}
+		na::BitVector
 	end
 
 This allows us to assess whether any entry of the vector is `NA` at the cost of exactly one additional bit per item. We are able to save space by using `BitArray`'s instead of an `Array{Bool}`. At present, we store the non-missing data values in a vector called `data` and we store the metadata that indicates which values are missing in a vector called `na`. But end-users should not worry about these implementation details.
@@ -138,7 +309,7 @@ Let's focus on ways that you can create new `DataVec`'s. The simplest possible c
 
 	dv = DataVec([1, 2, 3], falses(3))
 
-This is rather ugly, so we've defined many additional constructors that make it easier to create a new `DataVec`. The first simplification is to ignore the distinction between a `BitVector{Bool}` and an `Array{Bool, 1}` by allowing users to specify `Bool` values directly:
+This is rather ugly, so we've defined many additional constructors that make it easier to create a new `DataVec`. The first simplification is to ignore the distinction between a `BitVector` and an `Array{Bool, 1}` by allowing users to specify `Bool` values directly:
 
 	dv = DataVec([1, 2, 3], [false, false, false])
 
@@ -154,7 +325,7 @@ In contrast to these normal-looking constructors, when some of the values in the
 
 	dv = DataVec[1, 2, NA, 4]
 
-_Technical Note_: This special type of constructor is defined by overloading the `ref()` function to apply to values of type `DataVec`.
+_Technical Note: This special type of constructor is defined by overloading the `ref()` function to apply to values of type `DataVec`.
 
 # DataVec's with Special Types
 
@@ -654,13 +825,13 @@ You can then iterate over this `DataStream` to see how things work:
 
 We can compute many useful quantities using `DataStream`'s:
 
-* _Means_: `colmeans(ds)`
-* _Variances_: `colvars(ds)`
-* _Covariances_: `cov(ds)`
-* _Correlations_: `cor(ds)`
-* _Unique element lists and counts_: _MISSING_
-* _Linear models_: _MISSING_
-* _Entropy_: _MISSING_
+* _Means: `colmeans(ds)`
+* _Variances: `colvars(ds)`
+* _Covariances: `cov(ds)`
+* _Correlations: `cor(ds)`
+* _Unique element lists and counts: _MISSING_
+* _Linear models: _MISSING_
+* _Entropy: _MISSING_
 
 ## Advice on Deploying DataStreams
 
@@ -697,6 +868,197 @@ We can compute many useful quantities using `DataStream`'s:
 
 * How should RDBMS-like indices be implemented? What is most efficient? How can we avoid the inefficient vector searches that R uses?
 * How should `DataFrame`'s be distributed for parallel processing?
+
+\newpage
+
+---
+
+# Formal Specification of DataFrames Data Structures
+
+* Type Definitions and Type Hierarchy
+* Constructors
+* Indexing (Refs / Assigns)
+* Operators
+	* Unary Operators:
+		* `+`, `-`, `!`, `'`
+	* Elementary Unary Functions
+		* `abs`, ...
+	* Binary Operators:
+		* Arithmetic Operators:
+			* Scalar Arithmetic: `+`, `-`, `*`, `/`, `^`,
+			* Array Arithmetic: `+`, `.+`, `-`, `.-`, `.*`, `./`, `.^`
+		* Bit Operators: `&`, `|`, `$`
+		* Comparison Operators:
+			* Scalar Comparisons: `==`, `!=`, `<`, `<=`, `>`, `>=`
+			* Array Comparisons: `.==`, `.!=`, `.<`, `.<=`, `.>`, `.>=`
+* Container Operations
+* Broadcasting / Recycling
+* Type Promotion and Conversion
+* String Representations
+* IO
+* Copying
+* Properties
+	* size
+	* length
+	* ndims
+	* numel
+	* eltype
+* Predicates
+* Handling NA's
+* Iteration
+* Miscellaneous
+
+## The NAtype
+
+### Behavior under Unary Operators
+
+The unary operators
+
+### Behavior under Unary Operators
+
+The unary operators
+
+### Behavior under Arithmetic Operators
+
+# Constructors
+
+* NA's
+	* Constructor: `NAtype()`
+	* Const alias: `NA`
+* DataVec's
+	* From (Vector, BitVector): `DataVec([1, 2, 3], falses(3))`
+	* From (Vector, Vector{Bool}): `DataVec([1, 2, 3], [false, false, false])`
+	* From (Vector): `DataVec([1, 2, 3])`
+	* From (BitVector, BitVector): `DataVec(trues(3), falses(3))`
+	* From (BitVector): `DataVec(trues(3))`
+	* From (Range1): `DataVec(1:3)`
+	* From (DataVec): `DataVec(DataVec([1, 2, 3]))`
+	* From (Type, Int): `DataVec(Int64, 3)`
+	* From (Int): `DataVec(3)` (Type defaults to Float64)
+	* From (): `DataVec()` (Type defaults to Float64, length defaults to 0)
+	* Initialized with Float64 zeros: `dvzeros(3)`
+	* Initialized with typed zeros: `dvzeros(Int64, 3)`
+	* Initialized with Float64 ones: `dvones(3)`
+	* Initialized with typed ones: `dvones(Int64, 3)`
+	* Initialized with falses: `dvfalses(3)`
+	* Initialized with trues: `dvtrues(3)`
+	* Literal syntax: `DataVec[1, 2, NA]`
+* PooledDataVec's
+	* From (Vector, BitVector): `PooledDataVec([1, 2, 3], falses(3))`
+	* From (Vector, Vector{Bool}): `PooledDataVec([1, 2, 3], [false, false, false])`
+	* From (Vector): `PooledDataVec([1, 2, 3])`
+	* From (BitVector, BitVector): `PooledDataVec(trues(3), falses(3))`
+	* From (BitVector, Vector{Bool}): `PooledDataVec(trues(3), [false, false, false])`
+	* From (BitVector): `PooledDataVec(trues(3))`
+	* From (Range1): `PooledDataVec(1:3)`
+	* From (DataVec): `PooledDataVec(DataVec([1, 2, 3]))`
+	* From (Type, Int): `PooledDataVec(Int64, 3)`
+	* From (Int): `PooledDataVec(3)` (Type defaults to Float64)
+	* From (): `PooledDataVec()` (Type defaults to Float64, length defaults to 0)
+	* Initialized with Float64 zeros: `pdvzeros(3)`
+	* Initialized with typed zeros: `pdvzeros(Int64, 3)`
+	* Initialized with Float64 ones: `pdvones(3)`
+	* Initialized with typed ones: `pdvones(Int64, 3)`
+	* Initialized with falses: `pdvfalses(3)`
+	* Initialized with trues: `pdvtrues(3)`
+	* Literal syntax: `PooledDataVec[1, 2, NA]`
+* DataMatrix
+	* From (Array, BitArray): `DataMatrix([1 2; 3 4], falses(2, 2))`
+	* From (Array, Array{Bool}): `DataMatrix([1 2; 3 4], [false false; false false])`
+	* From (Array): `DataMatrix([1 2; 3 4])`
+	* From (BitArray, BitArray): `DataMatrix(trues(2, 2), falses(2, 2))`
+	* From (BitArray): `DataMatrix(trues(2, 2))`
+	* From (DataVec...): `DataMatrix(DataVec[1, NA], DataVec[NA, 2])`
+	* From (Range1...): `DataMatrix(1:3, 1:3)`
+	* From (DataMatrix): `DataMatrix(DataVec([1 2; 3 4]))`
+	* From (Type, Int, Int): `DataMatrix(Int64, 2, 2)`
+	* From (Int, Int): `DataMatrix(2, 2)` (Type defaults to Float64)
+	* From (): `DataMatrix()` (Type defaults to Float64, length defaults to (0, 0))
+	* Initialized with Float64 zeros: `dmzeros(2, 2)`
+	* Initialized with typed zeros: `dmzeros(Int64, 2, 2)`
+	* Initialized with Float64 ones: `dmones(2, 2)`
+	* Initialized with typed ones: `dmones(Int64, 2, 2)`
+	* Initialized with falses: `dmfalses(2, 2)`
+	* Initialized with trues: `dmtrues(2, 2)`
+	* Initialized identity matrix: `dmeye(2, 2)`
+	* Initialized identity matrix: `dmeye(2)`
+	* Initialized diagonal matrix: `dmdiagm([2, 1])`
+	* Literal syntax: `DataMatrix[1 2; NA 2]`
+* DataFrame
+	* From (): `DataFrame()`
+	* From (Vector{Any}, Index): `DataFrame({dvzeros(3), dvones(3)}, Index(["A", "B"]))`
+	* From (Vector{Any}): `DataFrame({dvzeros(3), dvones(3)})
+	* From (Expr): `DataFrame(quote A = [1, 2, 3, 4] end)`
+	* From (Matrix, Vector{String}): `DataFrame([1 2; 3 4], ["A", "B"])`
+	* From (Matrix): `DataFrame([1 2; 3 4])`
+	* From (Tuple): `DataFrame(dvones(2), dzfalses(2))`
+	* From (Associative): ???
+	* From (Vector, Vector, Groupings): ???
+	* From (Dict of Vectors): `DataFrame({"A" => [1, 3], "B" => [2, 4]})`
+	* From (Dict of Vectors, Vector{String}): `DataFrame({"A" => [1, 3], "B" => [2, 4]}, ["A"])`
+	* From (Type, Int, Int): `DataFrame(Int64, 2, 2)`
+	* From (Int, Int): `DataFrame(2, 2)`
+	* From (Vector{Types}, Vector{String}, Int): `DataFrame({Int64, Float64}, ["A", "B"], 2)`
+	* From (Vector{Types}, Int): `DataFrame({Int64, Float64}, 2)`
+
+# Indexing
+
+NA
+
+dv = dvzeros(10)
+
+dv[1]
+
+dv[1:2]
+
+dv[:]
+
+dv[[1, 2 3]]
+
+dv[[false, false, true, false, false]]
+
+dmzeros(10)
+
+Indexers: Int, Range, Colon, Vector{Int}, Vector{Bool}, String, Vector{String}
+
+DataVec's and PooledDataVec's implement:
+
+* Int
+* Range
+* Colon
+* Vector{Int}
+* Vector{Bool}
+
+DataMatrix's implement the Cartesian product:
+
+* Int, Int
+* Int, Range
+* Int, Colon
+* Int, Vector{Int}
+* Int, Vector{Bool}
+...
+* Vector{Bool}, Int
+* Vector{Bool}, Range
+* Vector{Bool}, Colon
+* Vector{Bool}, Vector{Int}
+* Vector{Bool}, Vector{Bool}
+
+Single Int access?
+
+DataFrame's add two new indexer types:
+
+* String
+* Vector{String}
+
+These can only occur as (a) the only indexer or (b) in the second slot of a paired indexer
+
+Anything that can be ref()'d can also be assign()'d
+
+Where do we allow Expr indexing?
+
+\newpage
+
+---
 
 # Function Reference Guide
 

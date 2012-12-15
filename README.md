@@ -21,8 +21,12 @@ load("pkg.jl")   # if not done previously
 Pkg.add("DataFrames")
 ```
 
-DataFrames.jl has one main module named `DataFrames`.
+DataFrames.jl has one main module named `DataFrames`. You can load it as:
 
+```julia
+load("DataFrames")
+using DataFrames
+```
 
 # Features
 
@@ -48,7 +52,7 @@ DataFrames.jl has one main module named `DataFrames`.
 Here's a minimal demo showing some grouping operations:
 
 ```julia
-julia> load("DataFrames.jl")
+julia> load("DataFrames")
 
 julia> using DataFrames
 

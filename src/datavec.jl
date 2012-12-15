@@ -60,10 +60,10 @@ abstract AbstractDataVec{T}
 
 type DataVec{T} <: AbstractDataVec{T}
     data::Vector{T}
-    na::BitVector{Bool}
+    na::BitVector
 
     # Sanity check that new data values and missingness metadata match
-    function DataVec(new_data::Vector{T}, is_missing::BitVector{Bool})
+    function DataVec(new_data::Vector{T}, is_missing::BitVector)
         if length(new_data) != length(is_missing)
             error("data and missingness vectors not the same length!")
         end
@@ -87,10 +87,10 @@ DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, bitpack(m))
 DataVec(x::Vector) = DataVec(x, falses(length(x)))
 
 # Explicitly convert a BitArray to a Vector before wrapping with a DataVec
-DataVec{T}(x::BitVector{T}, m::BitVector) = DataVec{T}(convert(Vector{T}, x), m)
+DataVec(x::BitVector, m::BitVector) = DataVec(convert(Vector{Bool}, x), m)
 
 # Explicitly convert a BitArray to a DataVec w/ no NA's
-DataVec{T}(x::BitVector{T}) = DataVec{T}(convert(Vector{T}, x), falses(length(x)))
+DataVec(x::BitVector) = DataVec(convert(Vector{Bool}, x), falses(length(x)))
 
 # Explicitly convert a Range1 into a DataVec
 DataVec{T}(r::Range1{T}) = DataVec([r], falses(length(r)))
@@ -100,6 +100,12 @@ DataVec(d::DataVec) = d
 
 # Construct an all-NA DataVec of a specific type
 DataVec(t::Type, n::Int64) = DataVec(Array(t, n), trues(n))
+
+# Construct an all-NA DataVec of Float64's
+DataVec(n::Int64) = DataVec(Array(Float64, n), trues(n))
+
+# Construct an all-NA DataVec of Float64's length 0
+DataVec() = DataVec(Array(Float64, 0), trues(0))
 
 # Initialized constructors with 0's, 1's
 for (f, basef) in ((:dvzeros, :zeros), (:dvones, :ones))
@@ -267,11 +273,33 @@ function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::AbstractVector{Bool}
     return PooledDataVec(newrefs, newpool)
 end
 
-# Convert a DataVec to a PooledDataVec
-PooledDataVec(dv::DataVec) = PooledDataVec(dv.data, dv.na)
+# Convert a BitVector to a Vector{Bool} w/ specified missingness
+function PooledDataVec(d::BitVector, m::AbstractArray{Bool,1})
+    PooledDataVec(convert(Vector{Bool}, d), m)
+end
 
-# Convert a vector to a PooledDataVec
-PooledDataVec(x::Vector) = PooledDataVec(x, falses(length(x)))
+# Convert a DataVec to a PooledDataVec
+PooledDataVec{T}(dv::DataVec{T}) = PooledDataVec(dv.data, dv.na)
+
+# Convert a Vector{T} to a PooledDataVec
+PooledDataVec{T}(x::Vector{T}) = PooledDataVec(x, falses(length(x)))
+
+# Convert a BitVector to a Vector{Bool} w/o specified missingness
+function PooledDataVec(x::BitVector)
+    PooledDataVec(convert(Vector{Bool}, x), falses(length(x)))
+end
+
+# Explicitly convert a Range1 into a PooledDataVec
+PooledDataVec{T}(r::Range1{T}) = PooledDataVec([r], falses(length(r)))
+
+# Construct an all-NA PooledDataVec of a specific type
+PooledDataVec(t::Type, n::Int64) = PooledDataVec(Array(t, n), trues(n))
+
+# Construct an all-NA PooledDataVec of Float64's
+PooledDataVec(n::Int64) = PooledDataVec(Array(Float64, n), trues(n))
+
+# Construct an all-NA PooledDataVec of Float64's length 0
+PooledDataVec() = PooledDataVec(Array(Float64, 0), trues(0))
 
 # Specify just a vector and a pool
 function PooledDataVec{T}(d::Vector{T}, pool::Vector{T})
@@ -281,12 +309,30 @@ end
 # A no-op constructor
 PooledDataVec(d::PooledDataVec) = d
 
+# Initialized constructors with 0's, 1's
+for (f, basef) in ((:pdvzeros, :zeros), (:pdvones, :ones))
+    @eval begin
+        ($f)(n::Int64) = PooledDataVec(($basef)(n), falses(n))
+        ($f)(t::Type, n::Int64) = PooledDataVec(($basef)(t, n), falses(n))
+    end
+end
+
+# Initialized constructors with false's or true's
+for (f, basef) in ((:pdvfalses, :falses), (:pdvtrues, :trues))
+    @eval begin
+        ($f)(n::Int64) = PooledDataVec(($basef)(n), falses(n))
+    end
+end
+
 # Super hacked-out constructor: PooledDataVec[1, 2, 2, NA]
 function ref(::Type{PooledDataVec}, vals...)
     # for now, just create a DataVec and then convert it
     # TODO: rewrite for speed
     PooledDataVec(DataVec[vals...])
 end
+
+# Conversion from PooledDataVec to DataVec
+DataVec(pdv::PooledDataVec) = values(pdv)
 
 ##############################################################################
 ##
@@ -319,7 +365,7 @@ function levels{T}(x::PooledDataVec{T})
         m[n + 1] = true
         DataVec(d, m)
     else
-        DataVec(copy(x.pool), falses(length(x)))
+        DataVec(copy(x.pool), falses(length(x.pool)))
     end
 end
 
@@ -422,8 +468,20 @@ function ref(x::DataVec, ind::Vector{Bool})
     end
     DataVec(x.data[ind], x.na[ind])
 end
+function ref(x::DataVec, ind::BitVector)
+    if length(x) != length(ind)
+        throw(ArgumentError("boolean index is not the same size as the DataVec"))
+    end
+    DataVec(x.data[ind], x.na[ind])
+end
 # PooledDataVec
 function ref(x::PooledDataVec, ind::Vector{Bool})
+    if length(x) != length(ind)
+        throw(ArgumentError("boolean index is not the same size as the PooledDataVec"))
+    end
+    PooledDataVec(x.refs[ind], copy(x.pool))
+end
+function ref(x::PooledDataVec, ind::BitVector)
     if length(x) != length(ind)
         throw(ArgumentError("boolean index is not the same size as the PooledDataVec"))
     end
@@ -894,7 +952,7 @@ end
 
 show(io, x::AbstractDataVec) = Base.show_comma_array(io, x, '[', ']')
 
-function show(io, x::PooledDataVec)
+function show{T}(io, x::PooledDataVec{T})
     print("values: ")
     print(values(x))
     print("\n")
@@ -902,24 +960,30 @@ function show(io, x::PooledDataVec)
     print(levels(x))
 end
 
-function repl_show(io::IO, dv::DataVec)
+function repl_show{T}(io::IO, dv::DataVec{T})
     n = length(dv)
-    print("$n-element $(typeof(dv))\n")
-    for i in 1:(n - 1)
-        println(strcat(' ', dv[i]))
+    print(io, "$n-element $T DataVec\n")
+    if n == 0
+        return
     end
-    print(strcat(' ', dv[n]))
+    for i in 1:(n - 1)
+        println(io, strcat(' ', dv[i]))
+    end
+    print(io, strcat(' ', dv[n]))
 end
 
-function repl_show(io::IO, dv::PooledDataVec)
+function repl_show{T}(io::IO, dv::PooledDataVec{T})
     n = length(dv)
-    print("$n-element $(typeof(dv))\n")
-    for i in 1:(n - 1)
-        println(strcat(' ', dv[i]))
+    print(io, "$n-element $T PooledDataVec\n")
+    if n == 0
+        return
     end
-    println(strcat(' ', dv[n]))
-    print("levels: ")
-    print(levels(dv))
+    for i in 1:(n - 1)
+        println(io, strcat(' ', dv[i]))
+    end
+    println(io, strcat(' ', dv[n]))
+    print(io, "levels: ")
+    print(io, levels(dv))
 end
 
 ##############################################################################
@@ -1075,6 +1139,10 @@ function unique{T}(dv::DataVec{T})
   return keys(values)
 end
 
+unique(pd::PooledDataVec) = pd.pool
+sort(pd::PooledDataVec) = pd[order(pd)]
+order(pd::PooledDataVec) = groupsort_indexer(pd)[1]
+
 ##############################################################################
 ##
 ## head() and tail()
@@ -1094,5 +1162,56 @@ function tail{T}(dv::DataVec{T})
         repl_show(dv[(end - 6):end])
     else
         repl_show(dv[1:end])
+    end
+end
+
+##############################################################################
+##
+## Container operations
+##
+##############################################################################
+
+# TODO: Fill in definitions for PooledDataVec's
+# TODO: Macroize these definitions
+
+function push{T}(dv::DataVec{T}, v::NAtype)
+    push(dv.data, baseval(T))
+    push(dv.na, true)
+    return v
+end
+
+function push{S, T}(dv::DataVec{S}, v::T)
+    push(dv.data, v)
+    push(dv.na, false)
+    return v
+end
+
+function pop{T}(dv::DataVec{T})
+    d, m = pop(dv.data), pop(dv.na)
+    if m
+        return NA
+    else
+        return d
+    end
+end
+
+function enqueue{T}(dv::DataVec{T}, v::NAtype)
+    enqueue(dv.data, baseval(T))
+    enqueue(dv.na, true)
+    return v
+end
+
+function enqueue{S, T}(dv::DataVec{S}, v::T)
+    enqueue(dv.data, v)
+    enqueue(dv.na, false)
+    return v
+end
+
+function shift{T}(dv::DataVec{T})
+    d, m = shift(dv.data), shift(dv.na)
+    if m
+        return NA
+    else
+        return d
     end
 end

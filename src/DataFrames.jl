@@ -17,11 +17,11 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.(.==), Base.==, Base.(.<), Base.<, Base.(.!=), Base.!=,
        Base.(.<=), Base.<= ,
        Base.>=, Base.<, Base.>,
-       Base.order, Base.sort,
+       Base.order, Base.sort, Base.sort_by,
        Base.nnz, Base.find, Base.findn, Base.nonzeros,
        Base.areduce, Base.max, Base.min, Base.sum, Base.prod, Base.map_to,
        Base.filter, Base.transpose, Base.ctranspose, Base.permute, Base.hcat,
-       Base.vcat, Base.cat, Base.isequal, Base.cumsum, Base.cumprod,
+       Base.vcat, Base.cat, Base.isequal, Base.cumsum, Base.cumprod, Base.cummin, Base.cummax,
        Base.write, Base.read, Base.msync, Base.findn_nzs, Base.reverse,
        Base.iround, Base.itrunc, Base.ifloor, Base.iceil, Base.abs,
        Base.string, Base.show,
@@ -104,7 +104,7 @@ export colnames, colnames!, names!, replace_names, replace_names!,
        with, within, within!, based_on,
        groupby, colwise, by,
        stack, unstack, merge,
-       unique, complete_cases, duplicated,
+       unique, complete_cases, duplicated, drop_duplicates!,
        array, matrix, vector,
        save, load_df,
        subset,
@@ -142,7 +142,7 @@ load("DataFrames/src/utils.jl")
 ## load("indexing.jl")
 
 # New I/O operations
-export read_minibatch, read_table, write_table
+export read_minibatch, read_table, print_table, write_table
 load("DataFrames/src/io.jl")
 
 # New DataStream operations
@@ -152,7 +152,8 @@ load("DataFrames/src/datastream.jl")
 
 # New initialized constructors
 export dvzeros, dvones, dvfalses, dvtrues
-export dmzeros, dmones, dmeye, dmdiagm
+export pdvzeros, pdvones, pdvfalses, pdvtrues
+export dmzeros, dmones, dmfalses, dmtrues, dmeye, dmdiagm
 
 # Conversion functions
 export dvint, dvfloat, dvbool
@@ -163,12 +164,12 @@ export colmins, colmaxs, colprods, colsums,
 
 export coltypes
 
-# Define operators after all data structures are in place
-# Then we can order things properly
-load("DataFrames/src/operators.jl")
-
 # DataMatrix's
+import Base.diag
 export DataMatrix
+export rowmins, rowmaxs, rowprods, rowsums,
+       rowmeans, rowmedians, rowstds, rowvars,
+       rowffts, rownorms, rowranges
 load("DataFrames/src/datamatrix.jl")
 
 # Linear algebra over DataMatrix's
@@ -177,5 +178,20 @@ load("DataFrames/src/linalg.jl")
 
 # TODO: Finish generic DataArray's
 # load("DataFrames/src/dataarray.jl")
+
+# Define operators after all data structures are in place
+# Then we can order things properly
+export range
+load("DataFrames/src/operators.jl")
+
+export any_na
+
+# TODO: Remove these definitions
+nafilter(x...) = error("Function removed. Please use removeNA")
+nareplace(x...) = error("Function removed. Please use replaceNA")
+naFilter(x...) = error("Function removed. Please use each_removeNA")
+naReplace(x...) = error("Function removed. Please use each_replaceNA")
+
+export reldiff, percent_change
 
 end # module DataFrames

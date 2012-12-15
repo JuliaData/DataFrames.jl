@@ -221,7 +221,7 @@ dfr = rbind(df4, df4)
 @assert isequal(dfr, [df4, df4])
 
 test_group("show")
-@assert repr(df1) == "DataFrame  (4,2)\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
+@assert repr(df1) == "4x2 DataFrame:\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
 
 test_group("assign")
 df6[3] = DataVec["un", "deux", "troix", "quatre"]
@@ -428,9 +428,8 @@ dv = dvones(5)
 dv = dvones(10_000)
 @assert !any(isna(dv))
 
-# TODO: Get this to work
-# PooledDataVec(convert(Array{Bool}, falses(2)), falses(2))
-PooledDataVec(convert(Array{Bool}, falses(2)), trues(2))
+PooledDataVec(falses(2), falses(2))
+PooledDataVec(falses(2), trues(2))
 
 # Test vectorized comparisons work for DataVec's and PooledDataVec's
 DataVec[1, 2, NA] .== 1

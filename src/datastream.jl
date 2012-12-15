@@ -1,8 +1,9 @@
+#
 # DataStream() should just convert things to appropriate
 # type of DataStream, each of which implements the AbstractDataStream
-# protocol. For now, the only example is a FileDataStream
-#
-# TODO: Add MatrixDataStream, DataFrameDataStream
+# protocol. At present this can be done using a file on disk through
+# the FileDataStream type or using an in-memory DataFrame through the
+# the DataFrameDataStream type.
 #
 
 abstract AbstractDataStream
@@ -31,7 +32,7 @@ function FileDataStream{T <: String}(filename::T, minibatch_size::Int64)
                        separator,
                        quotation_character,
                        missingness_indicators,
-                      header)
+                       header)
   FileDataStream(filename, stream, separator,
                  quotation_character, missingness_indicators,
                  header, column_names, column_types,
@@ -372,7 +373,7 @@ function cov_pearson(ds::AbstractDataStream)
 
   # Now compute covariances during second pass
   ns = zeros(Int64, p, p)
-  covariances = dfzeros(p, p)
+  covariances = dmzeros(p, p)
  
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
@@ -405,8 +406,6 @@ function cov_pearson(ds::AbstractDataStream)
     end
   end
 
-  colnames!(covariances, colnames(ds))
-
   return covariances
 end
 
@@ -421,8 +420,6 @@ function cor_pearson(ds::AbstractDataStream)
   end
   return correlations
 end
-
-# TODO: Implement indexing into DataStream's
 
 function ref(ds::AbstractDataStream, i::Int)
   cur_i = 0

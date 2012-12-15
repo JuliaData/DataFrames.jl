@@ -49,9 +49,9 @@ bit_operators = [:(&), :(|), :($)]
 unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
                           :var, :norm]
 
-pairwise_vector_operators = [:diff]
+pairwise_vector_operators = [:diff, :percent_change]
 
-cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn]
+cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
 
 ffts = [:fft]
 
