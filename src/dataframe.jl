@@ -1687,3 +1687,12 @@ function clean_colnames!(df::DataFrame)
     colnames!(df, new_names)
     return
 end
+
+function flipud(df::DataFrame)
+    return df[reverse(1:nrow(df)), :]
+end
+
+function flipud!(df::DataFrame)
+    df[1:nrow(df), :] = df[reverse(1:nrow(df)), :]
+    return
+end

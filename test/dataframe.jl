@@ -128,3 +128,10 @@ df = DataFrame(data, ["C", "A", "B"])
 # This assignment was missing before
 df = DataFrame(quote Column = ["A"] end)
 df[1, "Column"] = "Testing"
+
+# flipud() tests
+df = DataFrame(quote A = 1:4 end)
+@assert isequal(flipud(df), DataFrame(quote A = [4, 3, 2, 1] end))
+@assert isequal(df, DataFrame(quote A = [1, 2, 3, 4] end))
+flipud!(df)
+@assert isequal(df, DataFrame(quote A = [4, 3, 2, 1] end))

@@ -82,6 +82,7 @@ export isna, naRule, levels, indices,
 export NA,
        KEEP, FILTER, REPLACE,
        letters, LETTERS
+export flipud, flipud!
 
 ## ---- namedarray.jl ----
 ## Types
