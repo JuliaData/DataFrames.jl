@@ -13,13 +13,15 @@ quotation_characters = ['\'', '"']
 
 # Test all-entries-quoted for all quote characters and separators
 items = {"a", "b", "c,d", "1.0", "1"}
+item_buffer = Array(UTF8String, length(items))
 
 for separator in separators
   for quotation_character in quotation_characters
     line = join(map(x -> strcat(quotation_character, x, quotation_character),
                     items),
                 separator)
-    split_results = DataFrames.split_separated_line(line, separator, quotation_character)
+    current_item_buffer = Array(Uint8, strlen(line))
+    split_results = DataFrames.split_separated_line(line, separator, quotation_character, item_buffer, current_item_buffer)
     @assert all(split_results .== items)
   end
 end
@@ -44,26 +46,30 @@ end
 @assert DataFrames.float_able("1234a") == false
 @assert DataFrames.float_able("blah") == false
 
-@assert DataFrames.tightest_type("1234", Int64) == Int64
-@assert DataFrames.tightest_type("-1234", Int64) == Int64
-@assert DataFrames.tightest_type("1234.2", Int64) == Float64
-@assert DataFrames.tightest_type("-1234.2", Int64) == Float64
-@assert DataFrames.tightest_type("1234AFX", Int64) == UTF8String
-@assert DataFrames.tightest_type("-1234AFX", Int64) == UTF8String
+import DataFrames.INT64TYPE
+import DataFrames.FLOAT64TYPE
+import DataFrames.UTF8TYPE
 
-@assert DataFrames.tightest_type("1234", Float64) == Float64
-@assert DataFrames.tightest_type("-1234", Float64) == Float64
-@assert DataFrames.tightest_type("1234.2", Float64) == Float64
-@assert DataFrames.tightest_type("-1234.2", Float64) == Float64
-@assert DataFrames.tightest_type("1234AFX", Float64) == UTF8String
-@assert DataFrames.tightest_type("-1234AFX", Float64) == UTF8String
+@assert DataFrames.tightest_type("1234", INT64TYPE) == INT64TYPE
+@assert DataFrames.tightest_type("-1234", INT64TYPE) == INT64TYPE
+@assert DataFrames.tightest_type("1234.2", INT64TYPE) == FLOAT64TYPE
+@assert DataFrames.tightest_type("-1234.2", INT64TYPE) == FLOAT64TYPE
+@assert DataFrames.tightest_type("1234AFX", INT64TYPE) == UTF8TYPE
+@assert DataFrames.tightest_type("-1234AFX", INT64TYPE) == UTF8TYPE
 
-@assert DataFrames.tightest_type("1234", UTF8String) == UTF8String
-@assert DataFrames.tightest_type("-1234", UTF8String) == UTF8String
-@assert DataFrames.tightest_type("1234.2", UTF8String) == UTF8String
-@assert DataFrames.tightest_type("-1234.2", UTF8String) == UTF8String
-@assert DataFrames.tightest_type("1234AFX", UTF8String) == UTF8String
-@assert DataFrames.tightest_type("-1234AFX", UTF8String) == UTF8String
+@assert DataFrames.tightest_type("1234", FLOAT64TYPE) == FLOAT64TYPE
+@assert DataFrames.tightest_type("-1234", FLOAT64TYPE) == FLOAT64TYPE
+@assert DataFrames.tightest_type("1234.2", FLOAT64TYPE) == FLOAT64TYPE
+@assert DataFrames.tightest_type("-1234.2", FLOAT64TYPE) == FLOAT64TYPE
+@assert DataFrames.tightest_type("1234AFX", FLOAT64TYPE) == UTF8TYPE
+@assert DataFrames.tightest_type("-1234AFX", FLOAT64TYPE) == UTF8TYPE
+
+@assert DataFrames.tightest_type("1234", UTF8TYPE) == UTF8TYPE
+@assert DataFrames.tightest_type("-1234", UTF8TYPE) == UTF8TYPE
+@assert DataFrames.tightest_type("1234.2", UTF8TYPE) == UTF8TYPE
+@assert DataFrames.tightest_type("-1234.2", UTF8TYPE) == UTF8TYPE
+@assert DataFrames.tightest_type("1234AFX", UTF8TYPE) == UTF8TYPE
+@assert DataFrames.tightest_type("-1234AFX", UTF8TYPE) == UTF8TYPE
 
 filename = file_path(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
 separator = ','
