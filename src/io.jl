@@ -1,3 +1,7 @@
+# require("profile")
+# using Profile
+# @profile begin
+
 ##############################################################################
 #
 # Low-level text parsing
@@ -20,6 +24,9 @@ function split_separated_line{T <: String}(line::T,
   inside_quotes = false
   total_items = 0
   i = 0
+  if strlen(line) > length(current_item)
+    current_item = Array(Uint8, strlen(line))
+  end
   for chr in line
     i += 1
     if inside_quotes
@@ -80,7 +87,7 @@ function determine_ncols{T <: String}(filename::T,
                                       separator::Char,
                                       quotation_character::Char)
   io = open(filename, "r")
-  line = chomp(readline(io))
+  line = Base.chomp!(readline(io))
   close(io)
   items = Array(UTF8String, strlen(line))
   current_item = Array(Uint8, strlen(line))
@@ -92,7 +99,7 @@ function determine_column_names(io::IOStream,
                                 quotation_character::Char,
                                 header::Bool)
   seek(io, 0)
-  line = chomp(readline(io))
+  line = Base.chomp!(readline(io))
 
   if length(line) == 0
     error("Failed to determine column names from an empty data source")
@@ -121,12 +128,11 @@ function read_separated_text(io::IOStream,
   text_data = Array(UTF8String, nrows, ncols)
 
   items = Array(UTF8String, ncols)
+  current_item = Array(Uint8, ncols)
 
   i = 0
   while i < nrows
-    line = chomp(readline(io))
-    # In principle, need to reallocate for each line since there might be an anomalous line.
-    current_item = Array(Uint8, strlen(line))
+    line = Base.chomp!(readline(io))
     if length(line) == 0
       break
     end
@@ -147,20 +153,43 @@ function infer_column_types{S <: String, T <: String}(text_data::Matrix{S},
 
   # Default to Int64 for all column types until we have to demote them
   # Use numeric codes for types
+  # Reminder table below:
   # const INT64TYPE = 1
   # const FLOAT64TYPE = 2
   # const UTF8TYPE = 3
-  column_types = ones(Int64, ncols)
+  column_types = Array(Int64, ncols)
+  for j in 1:ncols
+    column_types[j] = INT64TYPE
+  end
 
+  profiling = false
+  mtime, itime = 0.0, 0.0
   for j in 1:ncols
     for i in 1:nrows
-      if column_types[j] >= UTF8TYPE #<: String
+      if column_types[j] == UTF8TYPE
         break
       end
-      if !contains(missingness_indicators, text_data[i, j])
-        column_types[j] = tightest_type(text_data[i, j], column_types[j])
+      mtime += @elapsed value_missing = contains(missingness_indicators, text_data[i, j])
+      itime += @elapsed if !value_missing
+        if column_types[j] == FLOAT64TYPE
+          if !float_able(text_data[i, j])
+            column_types[j] = UTF8TYPE
+          end
+        elseif column_types[j] == INT64TYPE
+          if !int_able(text_data[i, j])
+            if float_able(text_data[i, j])
+              column_types[j] = FLOAT64TYPE
+            else
+              column_types[j] = UTF8TYPE
+            end
+          end
+        end
       end
     end
+  end
+  if profiling
+    println("Missingness Step: $mtime")
+    println("Tightest Type Step: $itime")
   end
 
   # Convert to real types now
@@ -239,7 +268,8 @@ function convert_to_dataframe{R <: String,
   for j in 1:ncols
     is_missing = BitVector(nrows)
     for i in 1:nrows
-      if contains(missingness_indicators, text_data[i, j])
+      value_missing = contains(missingness_indicators, text_data[i, j])
+      if value_missing
         text_data[i, j] = string(baseval(column_types[j]))
         is_missing[i] = true
       else
@@ -359,6 +389,8 @@ function read_table{T <: String}(filename::T)
                   column_names,
                   nrows)
   close(io)
+  # @profile report
+  # @profile clear
   return df
 end
 
@@ -451,3 +483,5 @@ function load_df(filename)
     close(f)
     return dd
 end
+
+# end
