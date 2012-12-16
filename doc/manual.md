@@ -27,36 +27,36 @@ Suppose that we want to calculate the mean of a list of five `Float64` numbers: 
 
 _But what if one of the five numbers were missing?_
 
-The concept of a missing data point cannot be directly expressed in Julia because there is no `NULL` value. In the statistically focused languages S and R, missing data points are described using the `NA` value. Adding an `NA` value to Julia is the DataFrames package's first extension of Julia's core type system.
+The concept of a missing data point cannot be directly expressed in Julia because there is no scalar value to denote missingness. While Java has a `NULL` value and R has an `NA` value, there is, _by design_, nothing equivalent in Julia. As such, the DataFrames package's first extension of Julia's core type system is to add a new `NA` value.
 
 ## Data Structures for Storing Missing Data Points
 
-Even if we can express the notion that the value of the number `x2` is unknown by using a new `NA` value, there is little that we can do with this new value because it cannot be directly stored in a standard Julian `Vector` unless that `Vector` has no type constraints on its entries. While we could use a `Vector{Any}`, this produces very inefficient code.
+Even if we can express the notion that the value of the numeric variable `x2` is unknown by using a new `NA` value, there is little that we can do with this new value because it cannot be directly stored in a standard Julian `Vector` unless that `Vector` has no type constraints on its entries. While we could use a `Vector{Any}` to work around this, that approach would produce very inefficient code.
 
-Instead of using generic data structures, we have created extensions of the core Julia `Vector` and `Matrix` data structures. These augmented data structures are called `DataVec`'s and `DataMatrix`'s. Both `DataVec`'s and `DataMatrix`'s can contain either (a) values of any specific type or (b) our new `NA` type.
+Instead of trying to use overly generic data structures, we have created extensions of the core Julia `Vector` and `Matrix` data structures that can store `NA`'s. These augmented data structures are called `DataVec`'s and `DataMatrix`'s. Both `DataVec{T}`'s and `DataMatrix{T}`'s can contain either (a) values of any specific type `T` or (b) values of our new `NA` type.
 
 For example, a standard `Vector{Float64}` can contain `Float64`'s and nothing else. Our new `DataVec{Float64}` can contain `Float64`'s or `NA`'s, but nothing else. This makes the new data types much more efficient than using generic containers like `Vector{Any}` or `Matrix{Any}`.
 
 ## Tabular Data Structures
 
-`DataVec`'s and `DataMatrix`'s are very powerful data structures, but they are not sufficient for describing most real world data sets. Although most standard data sets are easily described using a simple table of data, these kinds of tables are generally not like matrices. The table of data shown below highlights some of the ways in which a data set is not like a `DataMatrix`:
+`DataVec`'s and `DataMatrix`'s are very powerful data structures, but they are not sufficient for describing most real world data sets. Although most standard data sets are easily described using a simple table of data, these kinds of tables are generally not like matrices. The example table of data shown below highlights some of the ways in which a data set is not like a `DataMatrix`:
 
 ![Tabular Data](figures/data.pdf)
 
 We highlight three major differences below:
 
 * The columns of a tabular data set may have different types. A `DataMatrix` can only contain values of one type: these might all be `String`'s or `Int`'s, but we cannot have one column of `String`'s and another column of `Int`'s.
-* The values of the entries within a column generally have a consistent type. This means that a single column could be represented using a `DataVec`. Unfortunately, the heterogeneity of types between columns means that we need someway of wrapping a group of columns together into a coherent whole. We could use a `Vector` to wrap up all of the columns of the table, but this will not enforce one constraint imposed by our intuitions: _every column of a tabular data set has the same length as all of the other columns_.
-* The columns of a tabular data set are typically named using `String`'s. Most programs for working with data can access the columns of a data set using these names in addition to simple numeric indices. In other words, a tabular data structure can sometimes behave like an `Array` and can sometimes behave like a `Dict`.
+* The values of the entries within a column generally have a consistent type. This means that a single column could be represented using a `DataVec`. Unfortunately, the heterogeneity of types between columns means that we need someway of wrapping a group of columns together into a coherent whole. We could use a `Vector` to wrap up all of the columns of the table, but this will not enforce an important constraint imposed by our intuitions: _every column of a tabular data set has the same length as all of the other columns_. A tabular data set is not just a haphazard collection of vectors.
+* The columns of a tabular data set are typically named using `String`'s. Most programs for working with data can access the columns of a data set using these names in addition to simple numeric indices. In other words, a tabular data structure can sometimes behave like an `Array` and can sometimes behave like a `Dict`. This dual indexing strategy makes it particular easy to work with tabular data.
 
 We can summarize these concerns by noting that we face four problems when with working with tabular data sets that are not well solved by existing Julian data structures:
 
 * Tabular data sets may have heterogeneous types of columns.
 * Each column of a tabular data set has a consistent type.
-* Each column of a tabular data set has a consistent length, although some entries may be missing.
-* The columns of a tabular data set should be addressable by both name and index.
+* All columns of a tabular data set have a consistent length, although some entries within columns may be missing.
+* The columns of a tabular data set should be addressable by both name and numeric index.
 
-We solve all of these four problems by adding a `DataFrame` type to Julia. This type will be familiar to anyone who has worked with R's `data.frame` type or with Pandas' `DataFrame` type. Even if you have never used R or Python to work with data, this tabular data structure will be similar to many of the intuitions that you've developed while working with spreadsheet programs like Excel.
+We solve all of these four problems by adding a `DataFrame` type to Julia. This type will be familiar to anyone who has worked with R's `data.frame` type or with Pandas' `DataFrame` type. Even if you have never used R or Python to work with data, this tabular data structure will be satisfy many of the intuitions that you've developed while working with spreadsheet programs like Excel.
 
 ## A Language for Expressing Statistical Models
 
@@ -76,7 +76,7 @@ Julia, by default, provides no similar sort of mini-language for describing the 
 
 ## Installation
 
-The DataFrames package is available through the Julia package system. If you've never used the package syste, before, you'll need to run the following:
+The DataFrames package is available through the Julia package system. If you've never used the package system before, you'll need to run the following:
 
 	require("pkg")
 	Pkg.init()
@@ -89,7 +89,7 @@ If you have an existing library of packages, you can pull the DataFrames package
 
 ## Loading the DataFrames Package
 
-In all of the examples that follow, we're going to assume that you've already loaded the DataFrames package. You can do that by typing the following two commands before trying any of our examples:
+In all of the examples that follow, we're going to assume that you've already loaded the DataFrames package. You can do that by typing the following two commands before trying out any of the examples in this manual:
 
 	load("DataFrames")
 	using DataFrames
@@ -118,11 +118,26 @@ In many cases we're willing to just ignore `NA`'s and remove them from our vecto
 	removeNA(dv)
 	mean(removeNA(dv))
 
-Dealing with `NA`'s is a constant challenge. The presence of `NA`'s poisons matrix operations in the same way that it poisons vector operations. To see that, we'll create our first `DataMatrix`:
+Instead of removing `NA`'s, you can try to ignore them using the `failNA` function. The `failNA` function attempt to convert a `DataVec{T}` to a `Vector{T}` and will throw an error if any `NA`'s are encountered. If we were dealing with a vector like the following, `failNA` will work just right:
+
+	dv = DataVec([1, 3, 2, 5, 4])
+	mean(failNA(dv))
+
+In addition to removing or ignoring `NA`'s, it's possible to replace them using the `replaceNA` function:
+
+	dv = DataVec([1, 3, 2, 5, 4])
+	dv[1] = NA
+	mean(replaceNA(dv, 11))
+
+Which strategy for dealing with `NA`'s is most appropriate will typically depend on the details of your situation.
+
+In modern data analysis `NA`'s don't simply arise in vector-like data. The `DataMatrix` and `DataFrame` structures are also capable of handling `NA`'s. You can confirm for yourself that the presence of `NA`'s poisons matrix operations in the same way that it poisons vector operations by creating a simple `DataMatrix` and trying to perform matrix multiplication:
 
 	dm = DataMatrix([1.0 0.0; 0.0 1.0])
 	dm[1, 1] = NA
 	dm * dm
+
+## Working with Tabular Data Sets
 
 As we said before, working with simple `DataVec`'s and `DataMatrix`'s gets boring after a while. To express interesting types of tabular data sets, we'll create a simple `DataFrame` piece-by-piece:
 
@@ -131,48 +146,81 @@ As we said before, working with simple `DataVec`'s and `DataMatrix`'s gets borin
 	df["B"] = ["M", "F", "F", "M"]
 	df
 
-In practice, we're more likely to use an existing data set than to construct one from scratch. To load a more interesting data set, we can use the `read_table()` function. To make use of it, we'll need a data set. There are some simple examples included with the DataFrames package. We can find them using basic file operations in Julia:
+In practice, we're more likely to use an existing data set than to construct one from scratch. To load a more interesting data set, we can use the `read_table()` function. To make use of it, we'll need a data set stored in a simple format like the comma separated values (CSV) standard. There are some simple examples of CSV files included with the DataFrames package. We can find them using basic file operations in Julia:
 
 	require("pkg")
 	mydir = file_path(Pkg.package_directory("DataFrames"), "test", "data")
 	filenames = readdir(mydir)
 	df = read_table(file_path(mydir, filenames[1]))
 
-The resulting `DataFrame` is pretty large. We can check its size using the `nrow` and `ncol` commands:
+The resulting `DataFrame` has a large number of similar rows. We can check its size using the `nrow` and `ncol` commands:
 
 	nrow(df)
 	ncol(df)
 
-We can look at simpler subsets of the data in a couple of ways:
+We can also look at small subsets of the data in a couple of ways:
 
 	head(df)
 	tail(df)
 
 	df[1:3, :]
 
-We can summarize this data set by looking at means and medians of the columns:
+Having seen what some of the rows look like, we can try to summarize the entire data set using:
+
+	summary(df)
+
+To focus our search, we start looking at just the means and medians of the columns:
 
 	colmeans(df)
 	colmedians(df)
 
-Alternatively, we can look at columns one-by-one:
+Or, alternatively, we can look at the columns one-by-one:
 
 	mean(df["E"])
 	range(df["E"])
 
-If you'd like to get your hands on more data to play with, we strongly encourage you to try out the RDatasets package. This package supplements the DataFrames package by providing access to 570 classical data sets. You can install and load it using the Julia package manager:
+If you'd like to get your hands on more data to play with, we strongly encourage you to try out the RDatasets package. This package supplements the DataFrames package by providing access to 570 classical data sets that will be familiar to R programmers. You can install and load the RDatasets package using the Julia package manager:
 
 	require("pkg")
 	Pkg.add("RDatasets")
 	load("RDatasets")
 
-Once that's done, you can use the `data()` function to gain access to data sets like Fisher's Iris data:
-
+Once that's done, you can use the `data()` function from RDatasets to gain access to data sets like Fisher's Iris data:
 
 	iris = RDatasets.data("datasets", "iris")
 	head(iris)
 
-The Iris data set is really interesting for examining contrasts between groups. To get at those, we can split apart our data set based on the species of flower being studied and analyze them separately. To do that, we use the Split-Apply-Combine strategy made popular by R's plyr library:
+The Iris data set is a really interesting testbed for examining simple contrasts between groups. To get at those kind of group differences, we can split apart our data set based on the species of flower being studied and then analyze each group separately. To do that, we'll use the Split-Apply-Combine strategy made popular by R's plyr library. In Julia, we do this using the `by` function:
+
+	function g(df)
+		res = DataFrame()
+		res["nrows"] = nrow(df)
+		res["MeanPetalLength"] = mean(df["Petal.Length"])
+		res["MeanPetalWidth"] = mean(df["Petal.Width"])
+		return res
+	end
+
+	by(iris, "Species", g)
+
+Instead of passing in a function that constructs a `DataFrame` piece-by-piece to summarize each group, you can pass in a Julia expression that will construct columns one-by-one. The simplest example looks like:
+
+	by(iris, "Species", :(NewColumn = 1))
+
+This example is admittedly a little silly. The reason we've started with something trivial is that it's quite difficult to work with our current version of the `iris` `DataFrame` because the current set of column names includes names like `"Petal.Length"`, which are not valid Julia variable names. As such, we can't use these names in Julia expressions. To work around that, the DataFrames package provides a function called `clean_colnames!()` which will replace non-alphanumeric characters with underscores in order to produce valid Julia identifiers:
+
+	clean_colnames!(iris)
+	colnames(iris)
+
+Now that the column names are clean, we can put the expression-based
+
+	by(iris, "Species", :(MeanPetalLength = mean(Petal_Length)))
+	by(iris, "Species", :(MeanPetalWidth = mean(Petal_Width)))
+
+This style of expression-based manipulation is quite handy once you get used to it. But sometimes you need to summarize groups based on properties of the entire group-level `DataFrame` rather than something describable using just the column names alone. In that case, you can exploit the fact that each group-level DataFrame is temporarily given the name `_DF`:
+
+	by(iris, "Species", :(N = nrow(_DF)))
+
+If none of these ways of working with individual groups of data appeal to you, you can also use the `groupby` function to produce an iterable set of `DataFrame`'s that you can step though one-by-one:
 
 	for df in groupby(iris, "Species")
 		println({unique(df["Species"]),
@@ -180,7 +228,7 @@ The Iris data set is really interesting for examining contrasts between groups. 
 				 mean(df["Petal.Width"])})
 	end
 
-As you can see, we can do quite complex data manipulations using DataFrames. To really dig in, we're now going to describe the design of the DataFrames package in greater depth.
+We hope this brief tutorial introduction has convinced you that you can do quite complex data manipulations using the DataFrames package. To really dig in, we're now going to describe the design of the DataFrames package in greater depth.
 
 \newpage
 

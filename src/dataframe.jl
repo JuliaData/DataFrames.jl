@@ -1681,3 +1681,9 @@ function cov_pearson(df::DataFrame)
     numeric_cols = find(map(t -> t <: Number, coltypes(df)))
     cov_pearson(matrix(df[:, numeric_cols]))
 end
+
+function clean_colnames!(df::DataFrame)
+    new_names = map(n -> replace(n, r"\W", "_"), colnames(df))
+    colnames!(df, new_names)
+    return
+end

@@ -91,7 +91,7 @@ export NamedArray
 ## Types
 export AbstractDataFrame, DataFrame, SubDataFrame, GroupedDataFrame
 ## Methods
-export colnames, colnames!, names!, replace_names, replace_names!,
+export colnames, colnames!, names!, replace_names, replace_names!, clean_colnames!,
        nrow, ncol,
        # reconcile_groups,  
        index,
