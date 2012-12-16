@@ -1,1 +1,1 @@
-pandoc manual*.md -o manual.pdf
+pandoc sections/*.md -o manual.pdf
