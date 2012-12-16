@@ -5,23 +5,23 @@ title: DataFrames.jl - Tools for working with data in Julia
 
 # DataFrames.jl
 
-DataFrames.jl is a Julia package that provides many essential tools for working with real-world data sets:
+DataFrames.jl is a Julia package that provides many essential tools for working with real-world data sets, including
 
-* An `NA` value for expressing missing data
+(1) An `NA` value for expressing missing data:
 
 	isna(NA)
 
-* A DataFrame type for working with tabular data:
+(2) A DataFrame type for working with tabular data:
 
 	df = DataFrame()
 	df["MyFirstColumn"] = [1, 2, 3, 4]
 	show(df)
 
-* DataFrame I/O routines for reading and writing DataFrames from/to standard formats:
+(3) DataFrame I/O routines for reading and writing DataFrames from/to standard formats:
 
 	df = read_table("my_dataset.csv")
 
-* Split-Apply-Combine routines:
+(4) Split-Apply-Combine routines:
 
 	by(iris, "Species", :(MeanPetalLength = mean(Petal_Length)))
 
