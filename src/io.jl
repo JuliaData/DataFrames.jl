@@ -13,10 +13,11 @@
 # strings that use single Char encodings
 function split_separated_line{T <: String}(line::T,
                                            separator::Char,
-                                           quotation_character::Char)
+                                           quotation_character::Char,
+                                           items::Vector{UTF8String},
+                                           current_item::Vector{Uint8})
+
   inside_quotes = false
-  items = Array(UTF8String, strlen(line))
-  current_item = Array(Uint8, strlen(line))
   total_items = 0
   i = 0
   for chr in line
@@ -37,7 +38,6 @@ function split_separated_line{T <: String}(line::T,
           total_items += 1
           items[total_items] = bytestring(current_item[1:(i - 1)])
           i = 0
-          current_item = Array(Uint8, strlen(line))
         else
           current_item[i] = chr
         end
@@ -82,7 +82,9 @@ function determine_ncols{T <: String}(filename::T,
   io = open(filename, "r")
   line = chomp(readline(io))
   close(io)
-  return length(split_separated_line(line, separator, quotation_character))
+  items = Array(UTF8String, strlen(line))
+  current_item = Array(Uint8, strlen(line))
+  return length(split_separated_line(line, separator, quotation_character, items, current_item))
 end
 
 function determine_column_names(io::IOStream,
@@ -96,7 +98,9 @@ function determine_column_names(io::IOStream,
     error("Failed to determine column names from an empty data source")
   end
 
-  fields = split_separated_line(line, separator, quotation_character)
+  items = Array(UTF8String, strlen(line))
+  current_item = Array(Uint8, strlen(line))
+  fields = split_separated_line(line, separator, quotation_character, items, current_item)
 
   if header
     seek(io, 0)
@@ -116,14 +120,18 @@ function read_separated_text(io::IOStream,
                              quotation_character::Char)
   text_data = Array(UTF8String, nrows, ncols)
 
+  items = Array(UTF8String, ncols)
+
   i = 0
   while i < nrows
     line = chomp(readline(io))
+    # In principle, need to reallocate for each line since there might be an anomalous line.
+    current_item = Array(Uint8, strlen(line))
     if length(line) == 0
       break
     end
     i += 1
-    text_data[i, 1:ncols] = split_separated_line(line, separator, quotation_character)
+    text_data[i, 1:ncols] = split_separated_line(line, separator, quotation_character, items, current_item)
   end
 
   if i == 0
@@ -138,15 +146,15 @@ function infer_column_types{S <: String, T <: String}(text_data::Matrix{S},
   nrows, ncols = size(text_data)
 
   # Default to Int64 for all column types until we have to demote them
-  # May want to shift to using numeric codes for types
-  column_types = Array(Any, ncols)
-  for i in 1:ncols
-    column_types[i] = Int64
-  end
+  # Use numeric codes for types
+  # const INT64TYPE = 1
+  # const FLOAT64TYPE = 2
+  # const UTF8TYPE = 3
+  column_types = ones(Int64, ncols)
 
   for j in 1:ncols
     for i in 1:nrows
-      if column_types[j] <: String
+      if column_types[j] >= UTF8TYPE #<: String
         break
       end
       if !contains(missingness_indicators, text_data[i, j])
@@ -155,7 +163,14 @@ function infer_column_types{S <: String, T <: String}(text_data::Matrix{S},
     end
   end
 
-  return column_types
+  # Convert to real types now
+  true_column_types = Array(Any, ncols)
+  type_scheme = {Int64, Float64, UTF8String}
+  for j in 1:ncols
+    true_column_types[j] = type_scheme[column_types[j]]
+  end
+
+  return true_column_types
 end
 
 # TODO: Split this into determine_column_names and infer_column_types
@@ -237,7 +252,7 @@ function convert_to_dataframe{R <: String,
       values = float(text_data[1:nrows, j])
     elseif column_types[j] == UTF8String
       values = convert(Array{UTF8String, 1}, text_data[1:nrows, j])
-    elseif column_types[j] == ASCIIString
+    elseif column_types[j] == ASCIIString # TODO: Stop supporting this
       values = convert(Array{ASCIIString, 1}, text_data[1:nrows, j])
     else
       error("Column cannot be converted to type: $(column_types[j])")
@@ -266,7 +281,7 @@ function read_minibatch{R <: String,
                            missingness_indicators::Vector{R},
                            column_names::Vector{S},
                            column_types::Vector{T},
-                           minibatch_size::Int64)
+                           minibatch_size::Int)
   # Keep a record of number of columns
   ncols = length(column_types)
 
@@ -286,7 +301,10 @@ function read_table{R <: String,
                                  missingness_indicators::Vector{R},
                                  header::Bool,
                                  column_names::Vector{S},
-                                 nrows::Int64)
+                                 nrows::Int)
+  # Profiling
+  profiling = false
+
   # Return to start of stream
   seek(io, 0)
 
@@ -299,7 +317,10 @@ function read_table{R <: String,
   ncols = length(column_names)
 
   # Represent data as an array of strings before type conversion
-  text_data = read_separated_text(io, nrows, ncols, separator, quotation_character)
+  rtime = @elapsed text_data = read_separated_text(io, nrows, ncols, separator, quotation_character)
+  if profiling
+    println("Read and Separate Step: $rtime")
+  end
 
   # Short-circuit if data set is empty except for a header line
   if size(text_data, 1) == 0
@@ -308,10 +329,17 @@ function read_table{R <: String,
   end
 
   # Infer column types
-  column_types = infer_column_types(text_data, missingness_indicators)
+  itime = @elapsed column_types = infer_column_types(text_data, missingness_indicators)
+  if profiling
+    println("Type Inference Step: $itime")
+  end
 
   # Convert text data to a DataFrame
-  return convert_to_dataframe(text_data, missingness_indicators, column_types, column_names)
+  ctime = @elapsed df = convert_to_dataframe(text_data, missingness_indicators, column_types, column_names)
+  if profiling
+    println("DataFrame Conversion Step: $ctime")
+  end
+  return df
 end
 
 function read_table{T <: String}(filename::T)

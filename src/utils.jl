@@ -131,22 +131,26 @@ function float_able{T <: String}(s::T)
   ismatch(FLOATREGEX, s)
 end
 
-function tightest_type{S <: String, T}(s::S, t::T)
-  if t == UTF8String
-    return(UTF8String)
-  elseif t == Float64
+# const INT64TYPE = 1
+# const FLOAT64TYPE = 2
+# const UTF8TYPE = 3
+
+function tightest_type{S <: String}(s::S, t::Int)
+  if t == UTF8TYPE
+    return UTF8TYPE
+  elseif t == FLOAT64TYPE
     if float_able(s)
-      return Float64
+      return FLOAT64TYPE
     else
-      return UTF8String
+      return UTF8TYPE
     end
-  elseif t == Int64
+  elseif t == INT64TYPE
     if int_able(s)
-      return Int64
+      return INT64TYPE
     elseif float_able(s)
-      return Float64
+      return FLOAT64TYPE
     else
-      return UTF8String
+      return UTF8TYPE
     end
   end
 end

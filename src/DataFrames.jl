@@ -2,6 +2,10 @@ require("Options.jl")
 
 module DataFrames
 
+const INT64TYPE = 1
+const FLOAT64TYPE = 2
+const UTF8TYPE = 3
+
 using Base.Intrinsics
 
 import Base.BitArray, Base.BitMatrix, Base.BitVector, Base.bitpack
