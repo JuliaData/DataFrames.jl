@@ -160,3 +160,8 @@ If none of these ways of working with individual groups of data appeal to you, y
 	end
 
 We hope this brief tutorial introduction has convinced you that you can do quite complex data manipulations using the DataFrames package. To really dig in, we're now going to describe the design of the DataFrames package in greater depth.
+
+# Table of Contents
+
+* [Table of Contents](http://harlanh.github.com/DataFrames.jl/index.html)
+* [Getting Started](http://harlanh.github.com/DataFrames.jl/getting_started.html)
