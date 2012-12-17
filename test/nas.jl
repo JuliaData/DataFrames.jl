@@ -1,6 +1,3 @@
-load("DataFrames")
-using DataFrames
-
 dv = DataVec([1, 2, 3], bitpack([false, false, false]))
 
 dv = DataVec([1, 2, 3], [false, false, false])

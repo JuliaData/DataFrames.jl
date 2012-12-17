@@ -168,7 +168,8 @@ function int_able{T <: String}(s::T)
         end
     end
     while p <= length(d)
-        if !contains("1234567890", d[p])
+        if !('0' <= d[p] <= '9')
+        #if !contains("1234567890", d[p])
             return false
         end
         p += 1
@@ -191,7 +192,8 @@ function float_able{T <: String}(s::T)
     dot = false
     exp = false
     while p <= length(d)
-        if !contains("1234567890", d[p])
+        if !('0' <= d[p] <= '9')
+        #if !contains("1234567890", d[p])
             if d[p] == 'e'
                 if p == 1 || d[p-1] == '-'
                     return false

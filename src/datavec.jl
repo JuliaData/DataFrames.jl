@@ -78,6 +78,9 @@ end
 ##############################################################################
 
 # Need to redefine inner constructor as outer constuctor
+DataVec{T}(d::Vector{T}, n::BitVector) = DataVec{T}(d, n)
+
+# Need to redefine inner constructor as outer constuctor
 DataVec{T}(d::AbstractVector{T}, n::BitVector) = DataVec{T}(d, n)
 
 # Convert Vector{Bool}'s to BitArray's to save space

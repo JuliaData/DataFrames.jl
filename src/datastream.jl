@@ -63,13 +63,14 @@ function start(ds::FileDataStream)
   return 1
 end
 
+# TODO: Allow minibatch to force type conversion after initial read?
 function next(ds::FileDataStream, nrows_read::Int)
   df = read_minibatch(ds.stream,
                       ds.separator,
                       ds.quotation_character,
                       ds.missingness_indicators,
                       colnames(ds),
-                      coltypes(ds),
+                      #coltypes(ds),
                       ds.minibatch_size)
   (df, nrow(df))
 end

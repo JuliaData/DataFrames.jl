@@ -1,8 +1,3 @@
-require("extras/test.jl")
-
-load("DataFrames")
-using DataFrames
-
 # TODO:
 # - grouped variables in formulas with interactions
 # - is it fast?  Can expand() handle DataFrames?

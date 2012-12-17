@@ -1,6 +1,3 @@
-load("DataFrames")
-using DataFrames
-
 #
 # NA's
 #

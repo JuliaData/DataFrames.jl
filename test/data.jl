@@ -1,8 +1,3 @@
-require("extras/test.jl")
-
-load("DataFrames")
-using DataFrames
-
 test_context("Data types and NA's")
 
 test_group("NA's")

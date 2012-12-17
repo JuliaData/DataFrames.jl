@@ -162,15 +162,13 @@ function infer_column_types{S <: String, T <: String}(text_data::Matrix{S},
     column_types[j] = INT64TYPE
   end
 
-  profiling = false
-  mtime, itime = 0.0, 0.0
   for j in 1:ncols
     for i in 1:nrows
       if column_types[j] == UTF8TYPE
         break
       end
-      mtime += @elapsed value_missing = contains(missingness_indicators, text_data[i, j])
-      itime += @elapsed if !value_missing
+      value_missing = contains(missingness_indicators, text_data[i, j])
+      if !value_missing
         if column_types[j] == FLOAT64TYPE
           if !float_able(text_data[i, j])
             column_types[j] = UTF8TYPE
@@ -186,10 +184,6 @@ function infer_column_types{S <: String, T <: String}(text_data::Matrix{S},
         end
       end
     end
-  end
-  if profiling
-    println("Missingness Step: $mtime")
-    println("Tightest Type Step: $itime")
   end
 
   # Convert to real types now
@@ -245,19 +239,19 @@ function convert_to_dataframe{R <: String,
                               S <: String,
                               T <: String}(text_data::Matrix{R},
                                            missingness_indicators::Vector{S},
-                                           column_types::Vector,
                                            column_names::Vector{T})
   # Keep a record of number of rows and columns
   nrows, ncols = size(text_data)
 
   # Short-circuit if the text data is empty
   if nrows == 0
+    column_types = {Any for i in 1:length(column_names)}
     return DataFrame(column_types, column_names, 0)
   end
 
-  # Make sure that the user has specified coherent types and names
-  if ncols != length(column_types) || ncols != length(column_names)
-    error("Column types and names do not match the input data's size")
+  # Make sure that the user has specified coherent names
+  if ncols != length(column_names)
+    error("Column names do not match the input data's size")
   end
 
   # Store the columns as a set of DataVec's inside an Array of Any's
@@ -265,27 +259,32 @@ function convert_to_dataframe{R <: String,
 
   # Convert each column of text into a DataVec of the
   # appropriate type
+  dtime = 0.0
   for j in 1:ncols
     is_missing = BitVector(nrows)
     for i in 1:nrows
       value_missing = contains(missingness_indicators, text_data[i, j])
       if value_missing
-        text_data[i, j] = string(baseval(column_types[j]))
+        text_data[i, j] = utf8("0")
         is_missing[i] = true
       else
         is_missing[i] = false
       end
     end
-    if column_types[j] == Int64
-      values = int(text_data[1:nrows, j])
-    elseif column_types[j] == Float64
-      values = float(text_data[1:nrows, j])
-    elseif column_types[j] == UTF8String
-      values = convert(Array{UTF8String, 1}, text_data[1:nrows, j])
-    elseif column_types[j] == ASCIIString # TODO: Stop supporting this
-      values = convert(Array{ASCIIString, 1}, text_data[1:nrows, j])
-    else
-      error("Column cannot be converted to type: $(column_types[j])")
+    values = Array(Int64, nrows)
+    try
+      for i in 1:nrows
+        values[i] = parse_int(text_data[i, j])
+      end
+    catch
+      try
+        values = Array(Float64, nrows)
+        for i in 1:nrows
+          values[i] = parse_float(text_data[i, j])
+        end
+      catch
+        values = text_data[:, j]
+      end
     end
     columns[j] = DataVec(values, is_missing)
   end
@@ -304,22 +303,20 @@ end
 # Read at most N lines from an IOStream
 # Then return a minibatch of at most N rows as a DataFrame
 function read_minibatch{R <: String,
-                        S <: String,
-                        T}(io::IOStream,
-                           separator::Char,
-                           quotation_character::Char,
-                           missingness_indicators::Vector{R},
-                           column_names::Vector{S},
-                           column_types::Vector{T},
-                           minibatch_size::Int)
+                        S <: String}(io::IOStream,
+                                     separator::Char,
+                                     quotation_character::Char,
+                                     missingness_indicators::Vector{R},
+                                     column_names::Vector{S},
+                                     minibatch_size::Int)
   # Keep a record of number of columns
-  ncols = length(column_types)
+  ncols = length(column_names)
 
   # Represent data as an array of strings before type conversion
   text_data = read_separated_text(io, minibatch_size, ncols, separator, quotation_character)
 
   # Convert text data to a DataFrame
-  return convert_to_dataframe(text_data, missingness_indicators, column_types, column_names)
+  return convert_to_dataframe(text_data, missingness_indicators, column_names)
 end
 
 # Read an entire data set into a DataFrame from an IOStream
@@ -332,9 +329,6 @@ function read_table{R <: String,
                                  header::Bool,
                                  column_names::Vector{S},
                                  nrows::Int)
-  # Profiling
-  profiling = false
-
   # Return to start of stream
   seek(io, 0)
 
@@ -347,10 +341,7 @@ function read_table{R <: String,
   ncols = length(column_names)
 
   # Represent data as an array of strings before type conversion
-  rtime = @elapsed text_data = read_separated_text(io, nrows, ncols, separator, quotation_character)
-  if profiling
-    println("Read and Separate Step: $rtime")
-  end
+  text_data = read_separated_text(io, nrows, ncols, separator, quotation_character)
 
   # Short-circuit if data set is empty except for a header line
   if size(text_data, 1) == 0
@@ -358,17 +349,8 @@ function read_table{R <: String,
     return DataFrame(column_types, column_names, 0)
   end
 
-  # Infer column types
-  itime = @elapsed column_types = infer_column_types(text_data, missingness_indicators)
-  if profiling
-    println("Type Inference Step: $itime")
-  end
-
   # Convert text data to a DataFrame
-  ctime = @elapsed df = convert_to_dataframe(text_data, missingness_indicators, column_types, column_names)
-  if profiling
-    println("DataFrame Conversion Step: $ctime")
-  end
+  df = convert_to_dataframe(text_data, missingness_indicators, column_names)
   return df
 end
 

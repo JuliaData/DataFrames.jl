@@ -1,6 +1,3 @@
-load("DataFrames")
-using DataFrames
-
 dv = dvones(3)
 push(dv, 3.0)
 push(dv, NA)

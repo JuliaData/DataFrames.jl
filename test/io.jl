@@ -1,8 +1,3 @@
-require("extras/test.jl")
-
-load("DataFrames")
-using DataFrames
-
 # Test separated line splitting
 #
 # TODO: Test minimially-quoted
@@ -153,7 +148,6 @@ minibatch = read_minibatch(file,
 	                       quotation_character,
 	                       missingness_indicators,
 	                       column_names,
-	                       column_types,
 	                       minibatch_size)
 @assert nrow(minibatch) == minibatch_size
 @assert ncol(minibatch) == length(column_names)
@@ -181,36 +175,22 @@ close(file)
 # df = read_table("test/data/utf8.csv")
 
 # TODO: Split apart methods that perform seek() from those that don't
-text_data = ["1" "3" "A"; "2" "3" "NA"; "3" "3.1" "C"]
+text_data = convert(Array{UTF8String, 2}, (["1" "3" "A"; "2" "3" "NA"; "3" "3.1" "C"]))
 inferred_types = DataFrames.infer_column_types(text_data, ["", "NA"])
 @assert inferred_types == {Int64, Float64, UTF8String}
 
 true_df = DataFrame(quote
                       x1 = DataVec[1, 2, 3]
                       x2 = DataVec[3, 3, 3.1]
-                      x3 = DataVec["A", NA, "C"]
+                      x3 = DataVec(UTF8String["A", "", "C"], [false, true, false])
                     end)
 df = DataFrames.convert_to_dataframe(text_data,
                                      ["", "NA"],
-                                     {Int64, Float64, ASCIIString},
                                      ["x1", "x2", "x3"])
 @assert isequal(df, true_df)
 @assert isequal(eltype(df["x1"]), Int64)
-df = DataFrames.convert_to_dataframe(text_data,
-                                     ["", "NA"],
-                                     {Int64, Float64, UTF8String},
-                                     ["x1", "x2", "x3"])
+@assert isequal(eltype(df["x2"]), Float64)
 @assert isequal(eltype(df["x3"]), UTF8String)
-df = DataFrames.convert_to_dataframe(text_data,
-                                     ["", "NA"],
-                                     {Float64, Float64, UTF8String},
-                                     ["x1", "x2", "x3"])
-@assert isequal(eltype(df["x1"]), Float64)
-df = DataFrames.convert_to_dataframe(text_data,
-                                     ["", "NA"],
-                                     {UTF8String, Float64, UTF8String},
-                                     ["x1", "x2", "x3"])
-@assert isequal(eltype(df["x1"]), UTF8String)
 
 filename = file_path(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
 separator = DataFrames.determine_separator(filename)

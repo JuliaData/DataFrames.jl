@@ -1,6 +1,3 @@
-load("DataFrames")
-using DataFrames
-
 null_df = DataFrame(0, 0)
 df = DataFrame(Int, 4, 3)
 

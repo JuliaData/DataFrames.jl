@@ -1,8 +1,3 @@
-require("extras/test.jl")
-
-load("DataFrames")
-using DataFrames
-
 test_group("Operations on DataFrames that have column groupings")
 
 x = DataFrame(quote

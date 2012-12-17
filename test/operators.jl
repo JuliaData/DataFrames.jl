@@ -1,8 +1,3 @@
-require("extras/test.jl")
-
-load("DataFrames")
-using DataFrames
-
 unary_operators = [:(+), :(-), :(!)]
 
 numeric_unary_operators = [:(+), :(-)]

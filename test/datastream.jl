@@ -1,21 +1,16 @@
-require("extras/test.jl")
-
-load("DataFrames")
-using DataFrames
-
 # Need to deal with no header cleanly
 filename = file_path(julia_pkgdir(), "DataFrames/test/data/sample_data.csv")
 
 ds = DataStream(filename)
-df = start(ds)
-(new_df, new_df) = next(ds, df)
-@assert done(ds, new_df) == false
-(new_df, new_df) = next(ds, new_df)
-@assert done(ds, new_df) == false
-(new_df, new_df) = next(ds, new_df)
-@assert done(ds, new_df) == false
-(new_df, new_df) = next(ds, new_df)
-@assert done(ds, new_df) == true
+i = start(ds)
+(df, i) = next(ds, i)
+@assert done(ds, i) == false
+(df, i) = next(ds, i)
+@assert done(ds, i) == false
+(df, i) = next(ds, i)
+@assert done(ds, i) == false
+(df, i) = next(ds, i)
+@assert done(ds, i) == true
 
 filename = file_path(julia_pkgdir(), "DataFrames/test/data/big_data.csv")
 

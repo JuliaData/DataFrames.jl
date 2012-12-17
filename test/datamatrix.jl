@@ -1,6 +1,3 @@
-load("DataFrames")
-using DataFrames
-
 a = DataVec[1.0, 2.0, 3.0]
 v_a = [1.0, 2.0, 3.0]
 
