@@ -31,3 +31,7 @@ To learn more, you can read through the rest of the DataFrames manual. The Table
 
 * [Table of Contents](http://harlanh.github.com/DataFrames.jl/index.html)
 * [Getting Started](http://harlanh.github.com/DataFrames.jl/getting_started.html)
+
+# Offline Reading
+
+If you prefer reading documentation offline, you can download a copy of our [PDF manual](http://harlanh.github.com/DataFrames.jl/downloads/manual.pdf).

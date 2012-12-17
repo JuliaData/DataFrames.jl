@@ -1,10 +1,3 @@
----
-
-layout: slate
-title: Getting Started
-
----
-
 # Getting Started
 
 ## Installation
