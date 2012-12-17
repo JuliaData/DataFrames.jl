@@ -1,3 +1,6 @@
+# Synchronize documentation files with the master branch
+run(`git checkout master -- doc`)
+
 # To build the PDF manual, first concatenate all of the sections together
 # into one large markdown file. Split sections using the Pandoc-specific
 #
@@ -17,7 +20,7 @@ pdf_sections = ["00_table_of_contents.md",
 
 pandoc_page_break = "\n\n\\newpage\n\n---\n\n"
 
-text = join(map(pdf_section -> readall(file_path("sections", pdf_section)),
+text = join(map(pdf_section -> readall(file_path("doc", "sections", pdf_section)),
 				pdf_sections),
 			pandoc_page_break)
 
@@ -74,6 +77,6 @@ for i in 1:n
 	println(io, "")
 	println(io, "---")
 	println(io, "")
-	print(io, readall(file_path("sections", web_section)))
+	print(io, readall(file_path("doc", "sections", web_section)))
 	close(io)
 end
