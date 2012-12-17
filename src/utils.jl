@@ -121,15 +121,15 @@ function _same_set(a, b)
     length(a) == length(b) && all(sort(a) == sort(b))
 end
 
-const INTREGEX = r"^(-)?\d+$"
-function int_able{T <: String}(s::T)
-  ismatch(INTREGEX, s)
-end
+# const INTREGEX = r"^(-)?\d+$"
+# function int_able{T <: String}(s::T)
+#   ismatch(INTREGEX, s)
+# end
 
-const FLOATREGEX = r"^(-)?\d+(\.\d+(e(-?)\d+)?)?$"
-function float_able{T <: String}(s::T)
-  ismatch(FLOATREGEX, s)
-end
+# const FLOATREGEX = r"^(-)?\d+(\.\d+(e(-?)\d+)?)?$"
+# function float_able{T <: String}(s::T)
+#   ismatch(FLOATREGEX, s)
+# end
 
 # const INT64TYPE = 1
 # const FLOAT64TYPE = 2
@@ -153,4 +153,73 @@ function tightest_type{S <: String}(s::S, t::Int)
       return UTF8TYPE
     end
   end
+end
+
+function int_able{T <: String}(s::T)
+    d = s.data
+    if length(d) == 0
+        return false
+    end
+    p = 1
+    if d[p] == '-'
+        p += 1
+        if length(d) == 1
+            return false
+        end
+    end
+    while p <= length(d)
+        if !contains("1234567890", d[p])
+            return false
+        end
+        p += 1
+    end        
+    return true
+end
+
+function float_able{T <: String}(s::T)
+    d = s.data
+    if length(d) == 0
+        return false
+    end
+    p = 1
+    if d[p] == '-'
+        p += 1
+        if length(d) < p
+            return false
+        end
+    end
+    dot = false
+    exp = false
+    while p <= length(d)
+        if !contains("1234567890", d[p])
+            if d[p] == 'e'
+                if p == 1 || d[p-1] == '-'
+                    return false
+                end
+                if exp
+                    return false
+                end
+                exp = true
+                p += 1
+                if length(d) < p
+                    return false
+                end
+                if d[p] == '-'
+                    p += 1
+                    if length(d) < p
+                        return false
+                    end
+                end
+            elseif d[p] == '.' && exp == false
+                if dot
+                    return false
+                end
+                dot = true
+            else
+                return false
+            end
+        end
+        p += 1
+    end
+    return true
 end
