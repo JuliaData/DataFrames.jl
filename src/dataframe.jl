@@ -986,9 +986,11 @@ end
 
 myref(d, key) = ref(d, key)
 myref{K<:String,V}(d::Associative{K,V}, key) = ref(d, string(key))
+myref(d::AbstractDataFrame, key::Symbol) = ref(d, string(key))
 
 myhas(d, key) = has(d, key)
 myhas{K<:String,V}(d::Associative{K,V}, key) = has(d, string(key))
+myhas(d::AbstractDataFrame, key::Symbol) = has(d, string(key))
 
 bestkey(d, key) = key
 bestkey{K<:String,V}(d::Associative{K,V}, key) = string(key)
