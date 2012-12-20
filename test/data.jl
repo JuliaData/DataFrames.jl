@@ -355,7 +355,7 @@ df8 = within(groupby(df7, "d2"),
              :( d4 = d3 + 1; d1sum = sum(d1) ))
 @assert all(df8[:( d2 .== "C" )]["d1sum"] .== 13)
  
-@assert all(with(g1, :( sum(d1) )) .== map(x -> sum(x["d1"]), g1))
+@assert isequal(with(g1, :( sum(d1) )), map(x -> sum(x["d1"]), g1))
 
 df8 = colwise(df7[[1, 3]], :sum)
 @assert df8[1, "d1_sum"] == sum(df7["d1"])
