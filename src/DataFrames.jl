@@ -136,24 +136,25 @@ export model_frame, model_matrix, interaction_design_matrix
 ## ## Methods
 ## export in, between
 
-load("DataFrames/src/index.jl")
-load("DataFrames/src/datavec.jl")
-load("DataFrames/src/namedarray.jl")
-load("DataFrames/src/dataframe.jl")
-load("DataFrames/src/formula.jl")
-load("DataFrames/src/utils.jl")
+require("DataFrames/src/index.jl")
+require("DataFrames/src/datavec.jl")
+require("DataFrames/src/namedarray.jl")
+require("DataFrames/src/dataframe.jl")
+require("DataFrames/src/grouping.jl")
+require("DataFrames/src/formula.jl")
+require("DataFrames/src/utils.jl")
 
 ## load("dlmread.jl")
 ## load("indexing.jl")
 
 # New I/O operations
 export read_minibatch, read_table, print_table, write_table
-load("DataFrames/src/io.jl")
+require("DataFrames/src/io.jl")
 
 # New DataStream operations
 import Base.start, Base.next, Base.done
 export DataStream
-load("DataFrames/src/datastream.jl")
+require("DataFrames/src/datastream.jl")
 
 # New initialized constructors
 export dvzeros, dvones, dvfalses, dvtrues
@@ -175,11 +176,11 @@ export DataMatrix
 export rowmins, rowmaxs, rowprods, rowsums,
        rowmeans, rowmedians, rowstds, rowvars,
        rowffts, rownorms, rowranges
-load("DataFrames/src/datamatrix.jl")
+require("DataFrames/src/datamatrix.jl")
 
 # Linear algebra over DataMatrix's
 import Base.svd, Base.eig
-load("DataFrames/src/linalg.jl")
+require("DataFrames/src/linalg.jl")
 
 # TODO: Finish generic DataArray's
 # load("DataFrames/src/dataarray.jl")
@@ -187,7 +188,7 @@ load("DataFrames/src/linalg.jl")
 # Define operators after all data structures are in place
 # Then we can order things properly
 export range
-load("DataFrames/src/operators.jl")
+require("DataFrames/src/operators.jl")
 
 export any_na
 
