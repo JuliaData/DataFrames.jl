@@ -27,7 +27,7 @@ logical_unary_operators = [:(!)]
 elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
                         :asinh, :atan, :atanh, :sin, :sinh,
                         :cos, :cosh, :tan, :tanh, :ceil, :floor,
-                        :round, :trunc, :exp, :log, :log10, :log1p,
+                        :round, :trunc, :exp, :expm1, :log, :log10, :log1p,
                         :log2, :logb, :sqrt]
 
 comparison_operators = [:(==), :(.==), :(!=), :(.!=), :isless,
