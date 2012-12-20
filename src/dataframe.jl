@@ -259,7 +259,7 @@ nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
 ncol(df::DataFrame) = length(df.colindex)
 
 size(df::AbstractDataFrame) = (nrow(df), ncol(df))
-function size(df::AbstractDataFrame, i::Integer)
+function size(df::AbstractDataFrame, i::Int)
     if i == 1
         nrow(df)
     elseif i == 2
@@ -306,7 +306,7 @@ end
 
 # all other ref() implementations call the above
 ref(df::DataFrame, c) = df[df.colindex[c]]
-ref(df::DataFrame, c::Integer) = df.columns[c]
+ref(df::DataFrame, c::Int) = df.columns[c]
 ref(df::DataFrame, r, c) = df[r, df.colindex[c]]
 ref(df::DataFrame, r, c::Int) = df[c][r]
 
@@ -319,6 +319,17 @@ ref(df::DataFrame, ex::Expr) = df[with(df, ex), :]
 ref(df::DataFrame, ex::Expr, c::Int) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c::Vector{Int}) = df[with(df, ex), c]
 ref(df::DataFrame, ex::Expr, c) = df[with(df, ex), c]
+function ref{T <: Union(String,Number)}(df::DataFrame, cols::Vector{T})
+    n = length(cols)
+    js = Array(Int, n)
+    for i in 1:n
+        js[i] = df.colindex[cols[i]]
+        if js[i] < 1
+            error("No such column: $(cols[i])")
+        end
+    end
+    return df[:, js]
+end
 
 index(df::DataFrame) = df.colindex
 
@@ -343,7 +354,7 @@ set_groups(d::AbstractDataFrame, gr::Dict{ByteString,Vector{ByteString}}) = set_
 get_groups(d::AbstractDataFrame) = get_groups(index(d))
 rename_group!(d::AbstractDataFrame,a,b) =  replace_names!(index(d), a, b)
 
-function insert(df::AbstractDataFrame, index::Integer, item, name)
+function insert(df::AbstractDataFrame, index::Int, item, name)
     @assert 0 < index <= ncol(df) + 1
     df = copy(df)
     df[name] = item
@@ -547,7 +558,7 @@ index(df::SubDataFrame) = index(df.parent)
 # assignments return the complete object...
 
 # df[1] = replace column
-function assign(df::DataFrame, newcol::AbstractDataVec, icol::Integer)
+function assign(df::DataFrame, newcol::AbstractDataVec, icol::Int)
     if length(newcol) != nrow(df) && nrow(df) != 0
         throw(ArgumentError("Can't insert new DataFrame column of improper length"))
     end
@@ -564,8 +575,8 @@ function assign(df::DataFrame, newcol::AbstractDataVec, icol::Integer)
     end
     return df
 end
-assign{T}(df::DataFrame, newcol::Vector{T}, icol::Integer) = assign(df, DataVec(newcol), icol)
-assign{T}(df::DataFrame, newcol::Range1{T}, icol::Integer) = assign(df, DataVec(newcol), icol)
+assign{T}(df::DataFrame, newcol::Vector{T}, icol::Int) = assign(df, DataVec(newcol), icol)
+assign{T}(df::DataFrame, newcol::Range1{T}, icol::Int) = assign(df, DataVec(newcol), icol)
 
 # df["old"] = replace old columns
 # df["new"] = append new column
@@ -618,7 +629,7 @@ assign{T}(df::DataFrame, newcol::Range1{T}, rows::Range1, colname::String) = ass
 # df[["new", "newer"]] = (new columns)
 
 # df[1] = nothing
-assign(df::DataFrame, x::Nothing, icol::Integer) = del!(df, icol)
+assign(df::DataFrame, x::Nothing, icol::Int) = del!(df, icol)
 
 ## Multicolumn assignment like df2[1:2,:] = df2[4:5,:]
 function assign(df1::DataFrame, df2::DataFrame, row::Int, cols::Range1)

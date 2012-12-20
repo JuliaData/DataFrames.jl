@@ -61,7 +61,8 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.int, Base.float, Base.bool,
        Base.all, Base.any,
        Base.fld, Base.rem,
-       Base.dot
+       Base.dot, Base.gamma, Base.lgamma, Base.digamma, Base.factorial,
+       Base.erf, Base.erfc, Base.square
 
 using OptionsMod
 
@@ -206,5 +207,8 @@ naFilter(x...) = error("Function removed. Please use each_removeNA")
 naReplace(x...) = error("Function removed. Please use each_replaceNA")
 
 export reldiff, percent_change
+
+require("DataFrames/src/statistics.jl")
+export autocor, mad, dist, skewness, kurtosis, iqr, rle, inverse_rle
 
 end # module DataFrames
