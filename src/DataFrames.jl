@@ -42,7 +42,7 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.asinh, Base.atan, Base.atan2, Base.atanh, Base.sin,
        Base.sinh, Base.cos, Base.cosh, Base.tan, Base.tanh,
        Base.ceil, Base.floor, Base.round, Base.trunc, Base.signif,
-       Base.exp, Base.log, Base.log10, Base.log1p, Base.log2,
+       Base.exp, Base.expm1, Base.log, Base.log10, Base.log1p, Base.log2,
        Base.logb, Base.sqrt,
        Base.diff,
        Base.cumprod, Base.cumsum, Base.cumsum_kbn,
