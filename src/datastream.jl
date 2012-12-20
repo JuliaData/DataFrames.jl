@@ -8,6 +8,14 @@
 
 abstract AbstractDataStream
 
+##############################################################################
+#
+# FileDataStream
+#
+##############################################################################
+
+# TODO: Decide whether to keep column types. Reader no longer supports
+# explicit a priori type information.
 type FileDataStream <: AbstractDataStream
   filename::String
   stream::IOStream
@@ -17,23 +25,23 @@ type FileDataStream <: AbstractDataStream
   header::Bool
   column_names::Vector
   column_types::Vector
-  minibatch_size::Int64
+  minibatch_size::Int
 end
 
-function FileDataStream{T <: String}(filename::T, minibatch_size::Int64)
-  stream = open(filename, "r")
+function FileDataStream{T <: String}(filename::T, minibatch_size::Int)
+  stream = OUTPUT_STREAM # A filler IOStream
   separator = determine_separator(filename)
-  quotation_character = '"'
-  missingness_indicators = ["", "NA"]
+  quotation_character = DEFAULT_QUOTATION_CHARACTER
+  missingness_indicators = DEFAULT_MISSINGNESS_INDICATORS
   header = true
-  # Will need to guess metadata in the future for huge data sets
+  short_circuit = true
   (column_names, column_types, nrows) =
     determine_metadata(filename,
                        separator,
                        quotation_character,
                        missingness_indicators,
                        header,
-                       true)
+                       short_circuit)
   FileDataStream(filename, stream, separator,
                  quotation_character, missingness_indicators,
                  header, column_names, column_types,
@@ -44,7 +52,7 @@ function FileDataStream{T <: String}(filename::T)
   FileDataStream(filename, 1)
 end
 
-function DataStream{T <: String}(filename::T, minibatch_size::Int64)
+function DataStream{T <: String}(filename::T, minibatch_size::Int)
   FileDataStream(filename, minibatch_size)
 end
 
@@ -60,17 +68,15 @@ function start(ds::FileDataStream)
     readline(ds.stream)
   end
 
-  return 1
+  return -1
 end
 
-# TODO: Allow minibatch to force type conversion after initial read?
 function next(ds::FileDataStream, nrows_read::Int)
   df = read_minibatch(ds.stream,
                       ds.separator,
                       ds.quotation_character,
                       ds.missingness_indicators,
                       colnames(ds),
-                      #coltypes(ds),
                       ds.minibatch_size)
   (df, nrow(df))
 end
@@ -86,6 +92,99 @@ end
 
 coltypes(ds::FileDataStream) = ds.column_types
 colnames(ds::FileDataStream) = ds.column_names
+
+##############################################################################
+#
+# IODataStream
+#
+##############################################################################
+
+type IODataStream <: AbstractDataStream
+  stream::IOStream
+  separator::Char
+  quotation_character::Char
+  missingness_indicators::Vector
+  header::Bool
+  column_names::Vector
+  minibatch_size::Int
+end
+
+function IODataStream(io::IOStream, minibatch_size::Int)
+  stream = io
+  separator = DEFAULT_SEPARATOR
+  quotation_character = DEFAULT_QUOTATION_CHARACTER
+  missingness_indicators = DEFAULT_MISSINGNESS_INDICATORS
+  header = true
+  column_names = ["FILLER"]
+  short_circuit = true
+  IODataStream(stream, separator,
+               quotation_character, missingness_indicators,
+               header, column_names, minibatch_size)
+end
+
+function IODataStream(io::IOStream)
+  IODataStream(io, 1)
+end
+
+function DataStream(io::IOStream, minibatch_size::Int)
+  IODataStream(io, minibatch_size)
+end
+
+function DataStream(io::IOStream)
+  IODataStream(io, 1)
+end
+
+function start(ds::IODataStream)
+  # Seek to the start of the stream
+  # May be impossible for some streams like STDIN
+  try
+    seek(ds.stream, 0)
+  catch
+    println("WARNING: Could not seek to the start of the input stream")
+  end
+
+  # Read one line to remove header in advance
+  if ds.header
+    line = chomp(readline(ds.stream))
+    if strlen(line) == 0
+      error("Empty header line")
+    end
+    items = Array(UTF8String, strlen(line))
+    current_field = Array(Char, strlen(line))
+    ds.column_names = split_separated_line(line, ds.separator, ds.quotation_character, items, current_field)
+  else
+    error("Currently only IODataStream's with headers are supported")
+  end
+
+  return -1
+end
+
+function next(ds::IODataStream, nrows_read::Int)
+  df = read_minibatch(ds.stream,
+                      ds.separator,
+                      ds.quotation_character,
+                      ds.missingness_indicators,
+                      colnames(ds),
+                      ds.minibatch_size)
+  (df, nrow(df))
+end
+
+function done(ds::IODataStream, nrows_read::Int)
+  if nrows_read == 0
+    return true
+  else
+    return false
+  end
+end
+
+coltypes(ds::IODataStream) = ds.column_types
+colnames(ds::IODataStream) = ds.column_names
+
+##############################################################################
+#
+# DataFrameDataStream
+#
+##############################################################################
 
 type DataFrameDataStream <: AbstractDataStream
   df::DataFrame
@@ -111,14 +210,46 @@ DataStream(df::DataFrame) = DataFrameDataStream(df, 1)
 coltypes(ds::DataFrameDataStream) = coltypes(ds.df)
 colnames(ds::DataFrameDataStream) = colnames(ds.df)
 
+##############################################################################
+#
+# MatrixDataStream
+#
+##############################################################################
+
+type MatrixDataStream{T} <: AbstractDataStream
+  m::Matrix{T}
+  minibatch_size::Int
+end
+
+function start(ds::MatrixDataStream)
+  return 1
+end
+
+function next(ds::MatrixDataStream, i::Int)
+  (DataFrame(ds.m[i:(i + ds.minibatch_size - 1), :]), i + ds.minibatch_size)
+end
+
+function done(ds::MatrixDataStream, i::Int)
+  return i > size(ds.m, 1)
+end
+
+DataStream{T}(m::Matrix{T}, minibatch_size::Int) = MatrixDataStream{T}(m, minibatch_size)
+
+DataStream{T}(m::Matrix{T}) = MatrixDataStream(m, 1)
+
+coltypes{T}(ds::MatrixDataStream{T}) = {T for i in 1:size(ds.m, 2)}
+colnames(ds::MatrixDataStream) = generate_column_names(size(ds.m, 2))
+
+##############################################################################
 #
 # Streaming data functions
 #
+##############################################################################
 
 function colsums(ds::AbstractDataStream)
   p = length(coltypes(ds))
   sums = zeros(p)
-  ns = zeros(Int64, p)
+  ns = zeros(Int, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
@@ -133,7 +264,7 @@ function colsums(ds::AbstractDataStream)
 
   result_types = copy(coltypes(ds))
   for j in 1:p
-    if result_types[j] == Int64
+    if result_types[j] <: Int
       result_types[j] = Float64
     end
   end
@@ -151,7 +282,7 @@ end
 function colprods(ds::AbstractDataStream)
   p = length(coltypes(ds))
   prods = zeros(p)
-  ns = ones(Int64, p)
+  ns = ones(Int, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
@@ -166,7 +297,7 @@ function colprods(ds::AbstractDataStream)
 
   result_types = copy(coltypes(ds))
   for j in 1:p
-    if result_types[j] == Int64
+    if result_types[j] <: Int
       result_types[j] = Float64
     end
   end
@@ -184,7 +315,7 @@ end
 function colmeans(ds::AbstractDataStream)
   p = length(coltypes(ds))
   sums = zeros(p)
-  ns = zeros(Int64, p)
+  ns = zeros(Int, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
@@ -199,7 +330,7 @@ function colmeans(ds::AbstractDataStream)
 
   result_types = copy(coltypes(ds))
   for j in 1:p
-    if result_types[j] == Int64
+    if result_types[j] <: Int
       result_types[j] = Float64
     end
   end
@@ -220,7 +351,7 @@ function colvars(ds::AbstractDataStream)
   deltas = zeros(p)
   m2s = zeros(p)
   vars = zeros(p)
-  ns = zeros(Int64, p)
+  ns = zeros(Int, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
@@ -238,7 +369,7 @@ function colvars(ds::AbstractDataStream)
 
   result_types = copy(coltypes(ds))
   for j in 1:p
-    if result_types[j] == Int64
+    if result_types[j] <: Int
       result_types[j] = Float64
     end
   end
@@ -268,7 +399,7 @@ end
 function colmins(ds::AbstractDataStream)
   p = length(coltypes(ds))
   mins = [Inf for i in 1:p]
-  ns = zeros(Int64, p)
+  ns = zeros(Int, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
@@ -298,7 +429,7 @@ end
 function colmaxs(ds::AbstractDataStream)
   p = length(coltypes(ds))
   maxs = [-Inf for i in 1:p]
-  ns = zeros(Int64, p)
+  ns = zeros(Int, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
@@ -329,7 +460,7 @@ function colranges(ds::AbstractDataStream)
   p = length(coltypes(ds))
   mins = [Inf for i in 1:p]
   maxs = [-Inf for i in 1:p]
-  ns = zeros(Int64, p)
+  ns = zeros(Int, p)
 
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
@@ -349,7 +480,7 @@ function colranges(ds::AbstractDataStream)
 
   result_types = copy(coltypes(ds))
   for j in 1:p
-    if result_types[j] == Int64
+    if result_types[j] <: Int
       result_types[j] = Float64
     end
   end
@@ -366,7 +497,7 @@ function colranges(ds::AbstractDataStream)
   return (df_mins, df_maxs)
 end
 
-# Two-pass algorithm
+# Two-pass algorithm for covariance and correlation
 function cov_pearson(ds::AbstractDataStream)
   p = length(coltypes(ds))
 
@@ -374,7 +505,7 @@ function cov_pearson(ds::AbstractDataStream)
   means = colmeans(ds)
 
   # Now compute covariances during second pass
-  ns = zeros(Int64, p, p)
+  ns = zeros(Int, p, p)
   covariances = dmzeros(p, p)
  
   for minibatch in ds
@@ -434,6 +565,7 @@ function ref(ds::AbstractDataStream, i::Int)
 end
 
 # TODO: Stop returning empty DataFrame at the end of a stream
+#       (NOTE: Probably not possible because we don't know nrows.)
 # TODO: Implement
 #        * colentropys
 #        * colcardinalities
