@@ -882,14 +882,6 @@ function convert{T}(::Type{T}, x::DataVec{T})
         return x.data
     end
 end
-function convert{S, T}(::Type{S}, x::DataVec{T})
-    if any_na(x)
-        err = "Cannot convert DataVec with NA's to base type"
-        throw(NAException(err))
-    else
-        return convert(S, x.data)
-    end
-end
 
 function convert{T}(::Type{T}, x::AbstractDataVec{T})
     try
@@ -901,14 +893,6 @@ function convert{T}(::Type{T}, x::AbstractDataVec{T})
         else
             throw(ee)
         end
-    end
-end
-function convert{S, T}(::Type{S}, x::AbstractDataVec{T})
-    if any_na(x)
-        err = "Cannot convert DataVec with NA's to base type"
-        throw(NAException(err))
-    else
-        return [i::S for i in x]
     end
 end
 
