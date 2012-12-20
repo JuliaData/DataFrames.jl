@@ -48,7 +48,7 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.asinh, Base.atan, Base.atan2, Base.atanh, Base.sin,
        Base.sinh, Base.cos, Base.cosh, Base.tan, Base.tanh,
        Base.ceil, Base.floor, Base.round, Base.trunc, Base.signif,
-       Base.exp, Base.expm1, Base.log, Base.log10, Base.log1p, Base.log2,
+       Base.exp, Base.exp2, Base.expm1, Base.log, Base.log10, Base.log1p, Base.log2,
        Base.logb, Base.sqrt,
        Base.diff,
        Base.cumprod, Base.cumsum, Base.cumsum_kbn,
@@ -61,7 +61,7 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.int, Base.float, Base.bool,
        Base.all, Base.any,
        Base.fld, Base.rem,
-       Base.dot, Base.gamma, Base.lgamma, Base.digamma, Base.factorial,
+       Base.dot, Base.gamma, Base.lgamma, Base.digamma,
        Base.erf, Base.erfc, Base.square
 
 using OptionsMod

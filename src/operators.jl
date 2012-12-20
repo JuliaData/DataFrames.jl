@@ -29,7 +29,7 @@ elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
                         :cos, :cosh, :tan, :tanh, :ceil, :floor,
                         :round, :trunc, :exp, :exp2, :expm1, :log, :log10, :log1p,
                         :log2, :logb, :sqrt, :gamma, :lgamma, :digamma,
-                        :factorial, :erf, :erfc, :square]
+                        :erf, :erfc, :square]
 
 comparison_operators = [:(==), :(.==), :(!=), :(.!=), :isless,
                         :(>), :(.>), :(>=), :(.>=), :(<), :(.<),
