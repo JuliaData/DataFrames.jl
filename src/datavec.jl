@@ -501,7 +501,7 @@ function ref(x::PooledDataVec, ind::Vector{Int})
 end
 
 ref(x::AbstractDataVec, ind::AbstractDataVec{Bool}) = x[replaceNA(ind, false)]
-ref(x::AbstractDataVec, ind::AbstractDataVec{Integer}) = x[removeNA(ind)]
+ref(x::AbstractDataVec, ind::AbstractDataVec{Int}) = x[removeNA(ind)]
 
 ref(x::AbstractIndex, idx::AbstractDataVec{Bool}) = x[replaceNA(idx, false)]
 ref(x::AbstractIndex, idx::AbstractDataVec{Int}) = x[removeNA(idx)]
@@ -1084,16 +1084,39 @@ function paste(s...)
 end
 
 function cut{S, T}(x::Vector{S}, breaks::Vector{T})
+    if !issorted(breaks)
+        sort!(breaks)
+    end
+    min_x, max_x = min(x), max(x)
+    if breaks[1] > min_x
+        unshift(breaks, min_x)
+    end
+    if breaks[end] < max_x
+        push(breaks, max_x)
+    end
     refs = fill(POOLCONV(0), length(x))
     for i in 1:length(x)
-        refs[i] = search_sorted(breaks, x[i])
+        if x[i] == min_x
+            refs[i] = 1
+        else
+            refs[i] = search_sorted(breaks, x[i]) - 1
+        end
     end
-    from = map(x -> sprint(showcompact, x), [min(x), breaks])
-    to = map(x -> sprint(showcompact, x), [breaks, max(x)])
-    pool = paste(["[", fill("(", length(breaks))], from, ",", to, "]")
+    n = length(breaks)
+    from = map(x -> sprint(showcompact, x), breaks[1:(n - 1)])
+    to = map(x -> sprint(showcompact, x), breaks[2:n])
+    pool = Array(ASCIIString, n - 1)
+    if breaks[1] == min_x
+        pool[1] = strcat("[", from[1], ",", to[1], "]")
+    else
+        pool[1] = strcat("(", from[1], ",", to[1], "]")
+    end
+    for i in 2:(n - 1)
+        pool[i] = strcat("(", from[i], ",", to[i], "]")
+    end
     PooledDataVec(refs, pool)
 end
-cut(x::Vector, ngroups::Integer) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
+cut(x::Vector, ngroups::Int) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
 
 ##############################################################################
 ##

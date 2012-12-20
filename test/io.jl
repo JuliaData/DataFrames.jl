@@ -15,7 +15,7 @@ for separator in separators
     line = join(map(x -> strcat(quotation_character, x, quotation_character),
                     items),
                 separator)
-    current_item_buffer = Array(Uint8, strlen(line))
+    current_item_buffer = Array(Char, strlen(line))
     split_results = DataFrames.split_separated_line(line, separator, quotation_character, item_buffer, current_item_buffer)
     @assert all(split_results .== items)
   end
@@ -245,3 +245,19 @@ df = read_table(filename)
 # TODO: Add test case in which data file has header, but no rows
 # Example "RDatasets/data/Zelig/sna.ex.csv"
 # "","Var1","Var2","Var3","Var4","Var5"
+
+# Additional data sets
+
+@elapsed df = read_table("test/data/big_data.csv")
+# TODO: Make this fast enough to include in testing
+#@elapsed df = read_table("test/data/movies.csv")
+# TODO: Release this data set publicly
+#@elapsed df = read_table("test/data/bigrams.tsv")
+@elapsed df = read_table("test/data/utf8.csv")
+@elapsed df = read_table("test/data/bool.csv")
+@elapsed df = read_table("test/data/types.csv")
+@elapsed df = read_table("test/data/space_after_delimiter.csv")
+@elapsed df = read_table("test/data/space_before_delimiter.csv")
+@elapsed df = read_table("test/data/space_around_delimiter.csv")
+# TODO: Make this pass
+#@elapsed df = read_table("test/data/corrupt_utf8.csv")

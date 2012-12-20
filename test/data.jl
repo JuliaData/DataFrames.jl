@@ -430,6 +430,24 @@ a2 = cut(x, [-2, 3, 4.0])
 @assert a2[2] == "(-2.0,3.0]"
 @assert a2[4] == "(4.0,6.0]"
 
+test_group("cut()")
+@assert isequal(cut([2, 3, 5], [1, 3, 6]), PooledDataVec(["(1,3]", "(1,3]", "(3,6]"]))
+@assert isequal(cut([2, 3, 5], [3, 6]), PooledDataVec(["[2,3]", "[2,3]", "(3,6]"]))
+@assert isequal(cut([2, 3, 5, 6], [3, 6]), PooledDataVec(["[2,3]", "[2,3]", "(3,6]", "(3,6]"]))
+@assert isequal(cut([1, 2, 4], [1, 3, 6]), PooledDataVec(["[1,3]", "[1,3]", "(3,6]"]))
+@assert isequal(cut([1, 2, 4], [3, 6]), PooledDataVec(["[1,3]", "[1,3]", "(3,6]"]))
+@assert isequal(cut([1, 2, 4], [3]), PooledDataVec(["[1,3]", "[1,3]", "(3,4]"]))
+@assert isequal(cut([1, 5, 7], [3, 6]), PooledDataVec(["[1,3]", "(3,6]", "(6,7]"]))
+
+ages = [20, 22, 25, 27, 21, 23, 37, 31, 61, 45, 41, 32]
+bins = [18, 25, 35, 60, 100]
+cats = cut(ages, bins)
+pdv = PooledDataVec(["(18,25]", "(18,25]", "(18,25]",
+                     "(25,35]", "(18,25]", "(18,25]",
+                     "(35,60]", "(25,35]", "(60,100]",
+                     "(35,60]", "(35,60]", "(25,35]"])
+@assert isequal(cats, pdv)
+
 test_group("New DataVec constructors")
 dv = DataVec(Int64, 5)
 @assert all(isna(dv))
