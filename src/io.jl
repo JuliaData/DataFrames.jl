@@ -2,49 +2,82 @@
 # using Profile
 # @profile begin
 
+const DEFAULT_MISSINGNESS_INDICATORS = ["", "NA", "#NA", "N/A", "#N/A", "NULL"]
+const DEFAULT_BOOLEAN_STRINGS = ["T", "F", "t", "f", "TRUE", "FALSE", "true", "false"]
+const DEFAULT_TRUE_STRINGS = ["T", "t", "TRUE", "true"]
+const DEFAULT_FALSE_STRINGS = ["F", "f", "FALSE", "false"]
+const DEFAULT_QUOTATION_CHARACTER = '"'
+const DEFAULT_SEPARATOR = ','
+
+const SINGLE_CHARACTER_TYPE = Char
+
+function parse_bool(x::String)
+  if contains(DEFAULT_TRUE_STRINGS, x)
+    return true
+  elseif contains(DEFAULT_FALSE_STRINGS, x)
+    return false
+  else
+    error("Could not parse bool")
+  end
+end
+
+const OUT_QUOTE_STATE = 1
+const IN_QUOTE_STATE = 2
+const POST_DELIMITER_STATE = 3
+
 ##############################################################################
 #
 # Low-level text parsing
 #
 ##############################################################################
 
-# Implements a very simple two-state machine that splits *-separated
-# lines on the single character `separator`, but ignores occurrences
-# of `separator` when they occur inside a region bounded by
-# `quotation_character`
-#
-# For now, we're going to restrict things to only handle incoming
-# strings that use single Char encodings
+# If there's space right before a delimiter, we ignore it by default
+# If there's space after a delimiter, we ignore it by default
 function split_separated_line{T <: String}(line::T,
                                            separator::Char,
                                            quotation_character::Char,
                                            items::Vector{UTF8String},
-                                           current_item::Vector{Uint8})
+                                           current_item::Vector{SINGLE_CHARACTER_TYPE})
 
-  inside_quotes = false
+  state = OUT_QUOTE_STATE
   total_items = 0
   i = 0
   if strlen(line) > length(current_item)
-    current_item = Array(Uint8, strlen(line))
+    current_item = Array(SINGLE_CHARACTER_TYPE, strlen(line))
   end
   for chr in line
+    if state == POST_DELIMITER_STATE
+      if chr == ' '
+        continue
+      else
+        state = OUT_QUOTE_STATE
+      end
+    end
     i += 1
-    if inside_quotes
+    if state == IN_QUOTE_STATE
       if chr == quotation_character
-        inside_quotes = false
+        state = OUT_QUOTE_STATE
         i -= 1
       else
         current_item[i] = chr
       end
     else
       if chr == quotation_character
-        inside_quotes = true
+        state = IN_QUOTE_STATE
         i -= 1
       else
         if chr == separator
           total_items += 1
-          items[total_items] = bytestring(current_item[1:(i - 1)])
+          #items[total_items] = bytestring(current_item[1:(i - 1)])
+          #items[total_items] = utf8(join(current_item[1:(i - 1)]))
+          #items[total_items] = UTF8String(current_item[1:(i - 1)])
+          if i > 1 && current_item[i - 1] == ' '
+            items[total_items] = bytestring(CharString(current_item[1:(i - 2)]))
+          else
+            items[total_items] = bytestring(CharString(current_item[1:(i - 1)]))
+          end
           i = 0
+          state = POST_DELIMITER_STATE
         else
           current_item[i] = chr
         end
@@ -52,7 +85,10 @@ function split_separated_line{T <: String}(line::T,
     end
   end
   total_items += 1
-  items[total_items] = bytestring(current_item[1:i])
+  #items[total_items] = bytestring(current_item[1:i])
+  #items[total_items] = utf8(join(current_item[1:i]))
+  #items[total_items] = UTF8String(current_item[1:i])
+  items[total_items] = bytestring(CharString(current_item[1:i]))
   return items[1:total_items]
 end
 
@@ -90,7 +126,7 @@ function determine_ncols{T <: String}(filename::T,
   line = Base.chomp!(readline(io))
   close(io)
   items = Array(UTF8String, strlen(line))
-  current_item = Array(Uint8, strlen(line))
+  current_item = Array(SINGLE_CHARACTER_TYPE, strlen(line))
   return length(split_separated_line(line, separator, quotation_character, items, current_item))
 end
 
@@ -106,7 +142,7 @@ function determine_column_names(io::IOStream,
   end
 
   items = Array(UTF8String, strlen(line))
-  current_item = Array(Uint8, strlen(line))
+  current_item = Array(SINGLE_CHARACTER_TYPE, strlen(line))
   fields = split_separated_line(line, separator, quotation_character, items, current_item)
 
   if header
@@ -128,7 +164,7 @@ function read_separated_text(io::IOStream,
   text_data = Array(UTF8String, nrows, ncols)
 
   items = Array(UTF8String, ncols)
-  current_item = Array(Uint8, ncols)
+  current_item = Array(SINGLE_CHARACTER_TYPE, ncols)
 
   i = 0
   while i < nrows
@@ -231,7 +267,7 @@ function determine_metadata{T <: String}(filename::String,
                                          header::Bool,
                                          short_circuit::Bool)
   separator = determine_separator(filename)
-  quotation_character = '"'
+  quotation_character = DEFAULT_QUOTATION_CHARACTER
   determine_metadata(filename, separator, quotation_character, missingness_indicators, header, short_circuit)
 end
 
@@ -283,7 +319,14 @@ function convert_to_dataframe{R <: String,
           values[i] = parse_float(text_data[i, j])
         end
       catch
-        values = text_data[:, j]
+        try
+          values = Array(Bool, nrows)
+          for i in 1:nrows
+            values[i] = parse_bool(text_data[i, j])
+          end
+        catch
+          values = text_data[:, j]
+        end
       end
     end
     columns[j] = DataVec(values, is_missing)
@@ -357,8 +400,8 @@ end
 function read_table{T <: String}(filename::T)
   # Do inference for missing configuration settings
   separator = determine_separator(filename)
-  quotation_character = '"'
-  missingness_indicators = ["", "NA"]
+  quotation_character = DEFAULT_QUOTATION_CHARACTER
+  missingness_indicators = DEFAULT_MISSINGNESS_INDICATORS
   header = true
   nrows = determine_nrows(filename, header)
   io = open(filename, "r")
@@ -428,7 +471,7 @@ function print_table(df::DataFrame, separator::Char, quotation_character::Char)
   print_table(df, OUTPUT_STREAM, separator, quotation_character)
 end
 
-print_table(df::DataFrame) = print_table(df, OUTPUT_STREAM, ',', '"')
+print_table(df::DataFrame) = print_table(df, OUTPUT_STREAM, DEFAULT_SEPARATOR, DEFAULT_QUOTATION_CHARACTER)
 
 function write_table{T <: String}(df::DataFrame,
                                   filename::T,
@@ -442,7 +485,7 @@ end
 # Infer configuration settings from filename
 function write_table{T <: String}(df::DataFrame, filename::T)
   separator = determine_separator(filename)
-  quotation_character = '"'
+  quotation_character = DEFAULT_QUOTATION_CHARACTER
   write_table(df, filename, separator, quotation_character)
 end
 
