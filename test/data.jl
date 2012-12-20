@@ -470,3 +470,12 @@ DataVec[1, 2, NA] .== 1
 PooledDataVec[1, 2, NA] .== 1
 DataVec["1", "2", NA] .== "1"
 PooledDataVec["1", "2", NA] .== "1"
+
+# Test unique()
+test_group("unique()")
+dv = DataVec(1:4)
+dv[4] = NA
+@assert contains(unique(dv), 1)
+@assert contains(unique(dv), 2)
+@assert contains(unique(dv), 3)
+@assert contains(unique(dv), NA)
