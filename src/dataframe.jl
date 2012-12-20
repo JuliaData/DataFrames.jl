@@ -44,8 +44,14 @@ function generate_column_names(n::Int)
     convert(Vector{ByteString}, map(i -> "x" * string(i), 1:n))
 end
 
+# Unity
+DataFrame(x::DataFrame) = x
+
 # The empty DataFrame
 DataFrame() = DataFrame({}, Index())
+
+# A single numeric value (what about others, like strings?)
+DataFrame(x::Number) = DataFrame(DataVec([x]))
 
 # Convert an arbitrary vector w/ pre-specified names
 DataFrame{T <: String}(cs::Vector, cn::Vector{T}) = DataFrame(cs, Index(cn))

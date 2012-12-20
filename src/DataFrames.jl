@@ -107,7 +107,6 @@ export colnames, colnames!, names!, replace_names, replace_names!, clean_colname
        cbind, rbind,
        nas,
        with, within, within!, based_on,
-       groupby, colwise, by,
        stack, unstack, merge,
        unique, complete_cases, duplicated, drop_duplicates!,
        array, matrix, vector,
@@ -117,6 +116,14 @@ export colnames, colnames!, names!, replace_names, replace_names!, clean_colname
        each_failNA, each_removeNA, each_replaceNA
 ## Macros
 export @transform, @DataFrame
+
+
+## ---- grouping.jl ----
+## Types
+export GroupedDataFrame
+## Methods
+export groupby, colwise, combine, by
+
 
 ## ---- formula.jl ----
 ## Types

@@ -108,9 +108,11 @@ end
 
 # map() sweeps along groups
 function map(f::Function, gd::GroupedDataFrame)
-    ## [g[1,gd.cols] => f(g) for g in gd]
-    # List comprehensions have changed
-    [f(g) for g in gd]
+    ## [d[1,gd.cols] => f(d) for d in gd]
+    ## [f(g) for g in gd]
+    keys = [d[1,gd.cols] for d in gd]
+    vals = [f(d) for d in gd]
+    (keys,vals)
 end
 ## function map(f::Function, gd::GroupedDataFrame)
 ##     # preallocate based on the results on the first one
@@ -125,8 +127,28 @@ end
 
 # with() sweeps along groups and applies with to each group
 function with(gd::GroupedDataFrame, e::Expr)
-    [g[1,gd.cols] => with(d, e) for d in gd]
+    # Generating a Dict messes up the ordering.
+    # We really need a better Associative type to return.
+    # NamedArray doesn't work because that only allows bytestring keys.
+    ## [d[1,gd.cols] => with(d, e) for d in gd]
+    # So, let's just return a tuple with two vectors:
+    # the first is a vector of the grouping DataFrames, and
+    # the second is a vector of the results.
+    # TODO: make a better structure to hold these results.
+    keys = [d[1,gd.cols] for d in gd]
+    vals = {with(d, e) for d in gd}
+    (keys,vals)
 end
+
+function combine(x)   # expecting (keys,vals) with keys to be DataFrames and values are what are to be combined
+    keys = copy(x[1])
+    vals = map(DataFrame, x[2])
+    for i in 1:length(keys)
+        keys[i] = rbind(fill(copy(keys[i]), nrow(vals[i])))
+    end
+    cbind(rbind(keys), rbind(vals))
+end
+
 
 # within() sweeps along groups and applies within to each group
 function within!(gd::GroupedDataFrame, e::Expr)   
@@ -154,14 +176,6 @@ function based_on(gd::GroupedDataFrame, ex::Expr)
 end
 
 function based_on(gd::GroupedDataFrame, f::Function)
-    x = {DataFrame(f(d)) for d in gd}
-    idx = fill([1:length(x)], convert(Vector{Int}, map(nrow, x)))
-    keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
-    resdf = rbind(x)
-    cbind(keydf, resdf)
-end
-
-function combine(d::Dict)   # expecting 
     x = {DataFrame(f(d)) for d in gd}
     idx = fill([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
@@ -228,3 +242,18 @@ by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
 by(d::AbstractDataFrame, cols, e::Expr) = based_on(groupby(d, cols), e)
 by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
 by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
+function by(d, x::Union(Function,Expr)...)
+    res = d
+    for e in x
+        if isa(e, Function)
+            res = e(res)
+        else
+            res = with(res, e)
+        end
+    end
+    res
+end
+        
+
+        
+            
