@@ -30,7 +30,7 @@ To learn more, you can read through the rest of the DataFrames manual. The Table
 # Table of Contents
 
 * [Table of Contents](http://harlanh.github.com/DataFrames.jl/index.html)
-* [why Use the DataFrames Package?](http://harlanh.github.com/DataFrames.jl/introduction.html)
+* [Why Use the DataFrames Package?](http://harlanh.github.com/DataFrames.jl/introduction.html)
 * [Getting Started](http://harlanh.github.com/DataFrames.jl/getting_started.html)
 * [Merging and Indexing](http://harlanh.github.com/DataFrames.jl/merging_and_indexing.html)
 * [Reshaping and Pivoting](http://harlanh.github.com/DataFrames.jl/reshaping_and_pivoting.html)
