@@ -102,6 +102,26 @@ function show(io, gd::GroupedDataFrame)
     end
 end
 
+##############################################################################
+##
+## GroupApplied...
+##    the result of a split-apply operation
+##    TODOs:
+##      - better name?
+##      - ref
+##      - keys, vals
+##      - length
+##      - start, next, done -- should this return (k,v) or just v?
+##      - make it a real associative type? Is there a need to look up key columns?
+##
+##############################################################################
+
+type GroupApplied
+    keys
+    vals
+end
+
+
 #
 # Apply / map
 #
@@ -112,8 +132,14 @@ function map(f::Function, gd::GroupedDataFrame)
     ## [f(g) for g in gd]
     keys = [d[1,gd.cols] for d in gd]
     vals = [f(d) for d in gd]
-    (keys,vals)
+    GroupApplied(keys,vals)
 end
+
+with(x::GroupApplied, e::Expr) = GroupApplied(x.keys, map(with(e), x.vals))
+map(f::Function, x::GroupApplied) = GroupApplied(x.keys, map(f, x.vals))
+
+
+
 ## function map(f::Function, gd::GroupedDataFrame)
 ##     # preallocate based on the results on the first one
 ##     x = f(gd[1])
@@ -127,22 +153,14 @@ end
 
 # with() sweeps along groups and applies with to each group
 function with(gd::GroupedDataFrame, e::Expr)
-    # Generating a Dict messes up the ordering.
-    # We really need a better Associative type to return.
-    # NamedArray doesn't work because that only allows bytestring keys.
-    ## [d[1,gd.cols] => with(d, e) for d in gd]
-    # So, let's just return a tuple with two vectors:
-    # the first is a vector of the grouping DataFrames, and
-    # the second is a vector of the results.
-    # TODO: make a better structure to hold these results.
     keys = [d[1,gd.cols] for d in gd]
     vals = {with(d, e) for d in gd}
-    (keys,vals)
+    GroupApplied(keys,vals)
 end
 
 function combine(x)   # expecting (keys,vals) with keys to be DataFrames and values are what are to be combined
-    keys = copy(x[1])
-    vals = map(DataFrame, x[2])
+    keys = copy(x.keys)
+    vals = map(DataFrame, x.vals)
     for i in 1:length(keys)
         keys[i] = rbind(fill(copy(keys[i]), nrow(vals[i])))
     end
@@ -187,6 +205,7 @@ end
 # default pipelines:
 map(f::Function, x::SubDataFrame) = f(x)
 (|)(x::GroupedDataFrame, e::Expr) = based_on(x, e)   
+(|)(x::GroupApplied, e::Expr) = with(x, e)   
 ## (|)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
@@ -226,8 +245,8 @@ colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
 # DataVec is 0 (not 0.0).
 colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(del(x, d.cols),s), d)...)
 function colwise(gd::GroupedDataFrame, s::Vector{Symbol})
-    key,val = map(x -> colwise(del(x, gd.cols),s), gd)
-    cbind(rbind(key), rbind(val))
+    x = map(x -> colwise(del(x, gd.cols),s), gd)
+    cbind(rbind(x.keys), rbind(x.vals))
 end
 colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])

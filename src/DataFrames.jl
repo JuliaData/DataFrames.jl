@@ -121,7 +121,7 @@ export @transform, @DataFrame
 
 ## ---- grouping.jl ----
 ## Types
-export GroupedDataFrame
+export GroupedDataFrame, GroupApplied
 ## Methods
 export groupby, colwise, combine, by
 
