@@ -1,21 +1,5 @@
-# This is multiplicative analog of diff
-function reldiff{T}(v::Vector{T})
-    n = length(v)
-    res = Array(T, n - 1)
-    for i in 2:n
-        res[i - 1] = v[i] / v[i - 1]
-    end
-    return res
-end
-
-# Diff scaled by previous value
-function percent_change{T}(v::Vector{T})
-    n = length(v)
-    res = Array(T, n - 1)
-    for i in 2:n
-        res[i - 1] = (v[i] - v[i - 1]) / v[i - 1]
-    end
-    return res
+function autocor{T}(dv::DataVec{T})
+    cor(dv[1:(end-1)], dv[2:end])
 end
 
 unary_operators = [:(+), :(-), :(!)]
@@ -864,7 +848,7 @@ for (f, colf) in ((:min, :colmins),
             res = DataFrame(coltypes(df), colnames(df), 1)
             p = ncol(df)
             for j in 1:p
-                res[:, j] = ($f)(df[:, p])
+                res[:, j] = ($f)(df[:, j])
             end
             return res
         end
