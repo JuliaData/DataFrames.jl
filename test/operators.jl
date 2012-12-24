@@ -43,7 +43,7 @@ array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^)]
 bit_operators = [:(&), :(|), :($)]
 
 unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
-                          :var, :norm]
+                          :var, :mad, :norm, :skewness, :kurtosis]
 
 pairwise_vector_operators = [:diff, :percent_change]
 
@@ -288,7 +288,11 @@ N = 5
 dv = dvones(5)
 for f in unary_vector_operators
   @eval begin
-    @assert ($f)(dv) == ($f)(dv.data)
+    if isnan(($f)(dv.data))
+      @assert isnan(($f)(dv))
+    else
+      @assert ($f)(dv) == ($f)(dv.data)
+    end
   end
 end
 dv[1] = NA

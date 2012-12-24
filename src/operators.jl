@@ -1,7 +1,3 @@
-function autocor{T}(dv::DataVec{T})
-    cor(dv[1:(end-1)], dv[2:end])
-end
-
 unary_operators = [:(+), :(-), :(!)]
 
 numeric_unary_operators = [:(+), :(-)]
@@ -51,7 +47,9 @@ array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^)]
 bit_operators = [:(&), :(|), :($)]
 
 unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
-                          :var, :norm]
+                          :var, :mad, :norm, :skewness, :kurtosis]
+
+# TODO: dist, iqr, rle, inverse_rle
 
 pairwise_vector_operators = [:diff, :reldiff, :percent_change]
 

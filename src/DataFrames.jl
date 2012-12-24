@@ -62,7 +62,9 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.all, Base.any,
        Base.fld, Base.rem,
        Base.dot, Base.gamma, Base.lgamma, Base.digamma,
-       Base.erf, Base.erfc, Base.square
+       Base.erf, Base.erfc, Base.square,
+       Base.autocor, Base.mad, Base.dist,
+       Base.skewness, Base.kurtosis, Base.iqr, Base.rle, Base.inverse_rle
 
 using OptionsMod
 
@@ -209,6 +211,5 @@ naReplace(x...) = error("Function removed. Please use each_replaceNA")
 export reldiff, percent_change
 
 require("DataFrames/src/statistics.jl")
-export autocor, mad, dist, skewness, kurtosis, iqr, rle, inverse_rle
 
 end # module DataFrames
