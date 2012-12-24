@@ -857,14 +857,14 @@ for (f, colf) in ((:min, :colmins),
                   (:median, :colmedians),
                   (:std, :colstds),
                   (:var, :colvars),
-                  (:fft, :colffts),
+                  (:fft, :colffts), # TODO: Remove and/or fix
                   (:norm, :colnorms))
     @eval begin
         function ($colf)(df::DataFrame)
             res = DataFrame(coltypes(df), colnames(df), 1)
             p = ncol(df)
             for j in 1:p
-                res[:, p] = ($f)(df[:, p])
+                res[:, j] = ($f)(df[:, p])
             end
             return res
         end
@@ -887,7 +887,7 @@ for (f, rowf) in ((:min, :rowmins),
                   (:median, :rowmedians),
                   (:std, :rowstds),
                   (:var, :rowvars),
-                  (:fft, :rowffts),
+                  (:fft, :rowffts), # TODO: Remove and/or fix
                   (:norm, :rownorms))
     @eval begin
         function ($rowf){T}(dm::DataMatrix{T})
@@ -1044,4 +1044,3 @@ end
 function range{T}(dv::DataVec{T})
     return DataVec([min(dv), max(dv)], falses(2))
 end
-
