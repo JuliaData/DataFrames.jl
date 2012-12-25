@@ -11,11 +11,13 @@ elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
                         :log2, :logb, :sqrt, :gamma, :lgamma, :digamma,
                         :erf, :erfc, :square]
 
-comparison_operators = [:(==), :(.==), :(!=), :(.!=), :isless,
+special_comparison_operators = [:isless]
+
+comparison_operators = [:(==), :(.==), :(!=), :(.!=),
                         :(>), :(.>), :(>=), :(.>=), :(<), :(.<),
                         :(<=), :(.<=)]
 
-scalar_comparison_operators = [:(==), :(!=), :isless, :(>), :(>=),
+scalar_comparison_operators = [:(==), :(!=), :(>), :(>=),
                                :(<), :(<=)]
 
 array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
@@ -308,6 +310,17 @@ for f in elementary_functions
                 end
             end
             return res
+        end
+    end
+end
+
+for f in special_comparison_operators
+    @eval begin
+        function ($f){T <: Union(String, Number)}(d::NAtype, x::T)
+            return true
+        end
+        function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
+            return f
         end
     end
 end

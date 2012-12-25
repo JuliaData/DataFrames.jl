@@ -14,7 +14,8 @@ my_tests = ["test/data.jl",
             # "test/formula.jl",
             "test/datastream.jl",
             "test/datamatrix.jl",
-            "test/constructors.jl"]
+            "test/constructors.jl",
+            "test/abstractarray.jl"]
 
 println("Running tests:")
 

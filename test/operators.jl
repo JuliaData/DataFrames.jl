@@ -11,11 +11,13 @@ elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
                         :log2, :logb, :sqrt, :gamma, :lgamma, :digamma,
                         :erf, :erfc, :square]
 
-comparison_operators = [:(==), :(.==), :(!=), :(.!=), :isless,
+special_comparison_operators = [:isless]
+
+comparison_operators = [:(==), :(.==), :(!=), :(.!=),
                         :(>), :(.>), :(>=), :(.>=), :(<), :(.<),
                         :(<=), :(.<=)]
 
-scalar_comparison_operators = [:(==), :(!=), :isless, :(>), :(>=),
+scalar_comparison_operators = [:(==), :(!=), :(>), :(>=),
                                :(<), :(<=)]
 
 array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
