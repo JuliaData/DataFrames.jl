@@ -40,7 +40,7 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.print, Base.repl_show,
        Base.has, Base.get, Base.keys, Base.values,
        Base.copy, Base.deepcopy,
-       Base.dump, Base.summary,
+       Base.dump,
        Base.sub,
        Base.zeros,
        Base.box, Base.unbox,
@@ -63,7 +63,7 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.fld, Base.rem,
        Base.dot, Base.gamma, Base.lgamma, Base.digamma,
        Base.erf, Base.erfc, Base.square,
-       Base.autocor, Base.mad, Base.dist,
+       Base.autocor, Base.mad, Base.distance_matrix,
        Base.skewness, Base.kurtosis, Base.iqr, Base.rle, Base.inverse_rle
 
 using OptionsMod
@@ -73,6 +73,7 @@ using OptionsMod
 export AbstractIndex, Index, SimpleIndex
 ## Methods
 export names!, replace_names!, replace_names, set_group, set_groups, get_groups, is_group
+export describe
 
 ## ---- datavec.jl ----
 ## Types

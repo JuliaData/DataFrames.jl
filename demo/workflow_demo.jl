@@ -11,7 +11,7 @@ head(df,3)
 tail(df)
 
 # Print out a summary of each column.
-summary(df)
+describe(df)
 
 # Look at the data structure.
 # dump() is like R's str().

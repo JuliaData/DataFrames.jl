@@ -12,7 +12,7 @@ dump(df)
 idump(df)
 
 # Print out a summary of each column.
-summary(df)
+describe(df)
 
 # head/tail of a DataFrame:
 head(df)

@@ -56,7 +56,8 @@ baseval{T <: String}(s::Type{T}) = ""
 ##
 ##############################################################################
 
-abstract AbstractDataVec{T}
+# This can be turned on easily
+abstract AbstractDataVec{T} <: AbstractVector{T}
 
 type DataVec{T} <: AbstractDataVec{T}
     data::Vector{T}
@@ -446,8 +447,8 @@ isna(x::Any) = false
 ##############################################################################
 
 # single-element access
-ref(x::DataVec, i::Number) = x.na[i] ? NA : x.data[i]
-ref(x::PooledDataVec, i::Number) = x.refs[i] == 0 ? NA : x.pool[x.refs[i]]
+ref(x::DataVec, i::Int) = x.na[i] ? NA : x.data[i]
+ref(x::PooledDataVec, i::Int) = x.refs[i] == 0 ? NA : x.pool[x.refs[i]]
 
 # range access
 function ref(x::DataVec, r::Range1)
@@ -874,6 +875,9 @@ promote_rule{T, T}(::Type{AbstractDataVec{T}}, ::Type{T}) = promote_rule(T, T)
 promote_rule{S, T}(::Type{AbstractDataVec{S}}, ::Type{T}) = promote_rule(S, T)
 promote_rule{T}(::Type{AbstractDataVec{T}}, ::Type{T}) = T
 
+convert{N}(::Type{BitArray{N}}, x::DataVec{BitArray{N}}) = error("Invalid DataVec")
+convert{N}(::Type{BitArray{N}}, x::AbstractDataVec{BitArray{N}}) = error("Invalid AbstractDataVec")
+
 function convert{T}(::Type{T}, x::DataVec{T})
     if any_na(x)
         err = "Cannot convert DataVec with NA's to base type"
@@ -953,10 +957,28 @@ function repl_show{T}(io::IO, dv::DataVec{T})
     if n == 0
         return
     end
-    for i in 1:(n - 1)
-        println(io, strcat(' ', dv[i]))
+    max_lines = tty_rows() - 4
+    head_lim = fld(max_lines, 2)
+    if mod(max_lines, 2) == 0
+        tail_lim = (n - fld(max_lines, 2)) + 2
+    else
+        tail_lim = (n - fld(max_lines, 2)) + 1
     end
-    print(io, strcat(' ', dv[n]))
+    if n > max_lines
+        for i in 1:head_lim
+            println(io, strcat(' ', dv[i]))
+        end
+        println(io, " \u22ee")
+        for i in tail_lim:(n - 1)
+            println(io, strcat(' ', dv[i]))
+        end
+        print(io, strcat(' ', dv[n]))
+    else
+        for i in 1:(n - 1)
+            println(io, strcat(' ', dv[i]))
+        end
+        print(io, strcat(' ', dv[n]))
+    end
 end
 
 function repl_show{T}(io::IO, dv::PooledDataVec{T})
@@ -965,10 +987,28 @@ function repl_show{T}(io::IO, dv::PooledDataVec{T})
     if n == 0
         return
     end
-    for i in 1:(n - 1)
-        println(io, strcat(' ', dv[i]))
+    max_lines = tty_rows() - 5
+    head_lim = fld(max_lines, 2)
+    if mod(max_lines, 2) == 0
+        tail_lim = (n - fld(max_lines, 2)) + 2
+    else
+        tail_lim = (n - fld(max_lines, 2)) + 1
     end
-    println(io, strcat(' ', dv[n]))
+    if n > max_lines
+        for i in 1:head_lim
+            println(io, strcat(' ', dv[i]))
+        end
+        println(io, " \u22ee")
+        for i in tail_lim:(n - 1)
+            println(io, strcat(' ', dv[i]))
+        end
+        println(io, strcat(' ', dv[n]))
+    else
+        for i in 1:(n - 1)
+            println(io, strcat(' ', dv[i]))
+        end
+        println(io, strcat(' ', dv[n]))
+    end
     print(io, "levels: ")
     print(io, levels(dv))
 end
@@ -1234,3 +1274,13 @@ function map{T}(f::Function, dv::DataVec{T})
     end
     return res
 end
+
+#
+# similar()
+#
+
+similar{T}(dv::DataVec{T}, dim::Int) = DataVec(Array(T, dim), trues(dim))
+similar{T}(dv::DataVec{T}, dims::Dims) = DataVec(Array(T, dims), trues(dims))
+
+similar{T}(dv::PooledDataVec{T}, dim::Int) = PooledDataVec(fill(uint16(0), dim), dv.pool)
+similar{T}(dv::PooledDataVec{T}, dims::Dims) = PooledDataVec(fill(uint16(0), dims), dv.pool)

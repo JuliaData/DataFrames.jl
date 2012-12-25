@@ -468,11 +468,11 @@ dump(io::IOStream, x::AbstractDataVec, n::Int, indent) =
 # if boolean, report trues, falses, and NAs
 # if anything else, punt.
 # Note that R creates a summary object, which has a print method. That's
-# a reasonable alternative to this. The summary() functions in show.jl
+# a reasonable alternative to this. The describe() functions in show.jl
 # return a string.
-summary(dv::AbstractDataVec) = summary(OUTPUT_STREAM::IOStream, dv)
-summary(df::DataFrame) = summary(OUTPUT_STREAM::IOStream, df)
-function summary{T<:Number}(io, dv::AbstractDataVec{T})
+describe(dv::AbstractDataVec) = describe(OUTPUT_STREAM::IOStream, dv)
+describe(df::DataFrame) = describe(OUTPUT_STREAM::IOStream, df)
+function describe{T<:Number}(io, dv::AbstractDataVec{T})
     filtered = float(removeNA(dv))
     qs = quantile(filtered, [0, .25, .5, .75, 1])
     statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
@@ -485,7 +485,7 @@ function summary{T<:Number}(io, dv::AbstractDataVec{T})
         println(io, "NAs      $nas")
     end
 end
-function summary{T}(io, dv::AbstractDataVec{T})
+function describe{T}(io, dv::AbstractDataVec{T})
     ispooled = isa(dv, PooledDataVec) ? "Pooled " : ""
     # if nothing else, just give the length and element type and NA count
     println(io, "Length: $(length(dv))")
@@ -495,11 +495,11 @@ end
 
 # TODO: clever layout in rows
 # TODO: AbstractDataFrame
-function summary(io, df::AbstractDataFrame)
+function describe(io, df::AbstractDataFrame)
     for c in 1:ncol(df)
         col = df[c]
         println(io, colnames(df)[c])
-        summary(io, col)
+        describe(io, col)
         println(io, )
     end
 end
@@ -788,12 +788,6 @@ cbind(a, b, c...) = cbind(cbind(a, b), c...)
 hcat(dfs::DataFrame...) = cbind(dfs...)
 
 is_group(df::AbstractDataFrame, name::ByteString) = is_group(index(df), name)
-
-similar{T}(dv::DataVec{T}, dims) =
-    DataVec(zeros(T, dims), fill(true, dims))
-
-similar{T}(dv::PooledDataVec{T}, dims) =
-    PooledDataVec(fill(uint16(1), dims), dv.pool)
 
 similar(df::DataFrame, dims) = 
     DataFrame([similar(x, dims) for x in df.columns], colnames(df)) 

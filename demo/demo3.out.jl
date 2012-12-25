@@ -97,7 +97,7 @@ julia>
 
 julia> # Print out a summary of each column.
 
-julia> summary(df)
+julia> describe(df)
 A
 Min      2.5
 1st Qu.  3.525

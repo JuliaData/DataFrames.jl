@@ -43,7 +43,7 @@ using DataFrames
 * Basic `merge` functionality
 * `stack` and `unstack` for long/wide conversions
 * Pipelining support (`|`) for many operations
-* Several typical R-style functions, including `head`, `tail`, `summary`,
+* Several typical R-style functions, including `head`, `tail`, `describe`,
   `unique`, `duplicated`, `with`, `within`, and more
 * Formula and design matrix implementation
 
