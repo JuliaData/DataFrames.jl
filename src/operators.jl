@@ -11,6 +11,8 @@ elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
                         :log2, :logb, :sqrt, :gamma, :lgamma, :digamma,
                         :erf, :erfc, :square]
 
+two_argument_elementary_functions = [:round, :ceil, :floor, :trunc]
+
 special_comparison_operators = [:isless]
 
 comparison_operators = [:(==), :(.==), :(!=), :(.!=),
@@ -308,6 +310,19 @@ for f in elementary_functions
                         res[i, j] = NA
                     end
                 end
+            end
+            return res
+        end
+    end
+end
+
+for f in two_argument_elementary_functions
+    @eval begin
+        function ($f){T}(dv::DataVec{T}, arg2)
+            n = length(dv)
+            res = DataVec(Array(T, n), falses(n))
+            for i = 1:n
+                res[i] = ($f)(dv[i], arg2)
             end
             return res
         end
