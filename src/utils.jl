@@ -12,7 +12,6 @@ end
 ## Issue: this doesn't maintain the order in a:
 ## setdiff(a::Vector, b::Vector) = elements(Set(a...) - Set(b...))
 
-
 # MAYBE try to get in base?
 function fill(x::Vector, lengths::Vector{Int})
     if length(x) != length(lengths)
@@ -28,21 +27,6 @@ function fill(x::Vector, lengths::Vector{Int})
         end
     end
     res
-end
-
-
-function unique(x::Vector)
-    idx = fill(true, length(x))
-    d = Dict()
-    d[x[1]] = true
-    for i = 2:length(x)
-        if has(d, x[i])
-            idx[i] = false
-        else
-            d[x[i]] = true
-        end
-    end
-    x[idx]
 end
 
 function _uniqueofsorted(x::Vector)
@@ -121,107 +105,6 @@ function _same_set(a, b)
     length(a) == length(b) && all(sort(a) == sort(b))
 end
 
-# const INTREGEX = r"^(-)?\d+$"
-# function int_able{T <: String}(s::T)
-#   ismatch(INTREGEX, s)
-# end
-
-# const FLOATREGEX = r"^(-)?\d+(\.\d+(e(-?)\d+)?)?$"
-# function float_able{T <: String}(s::T)
-#   ismatch(FLOATREGEX, s)
-# end
-
-# const INT64TYPE = 1
-# const FLOAT64TYPE = 2
-# const UTF8TYPE = 3
-
-function tightest_type{S <: String}(s::S, t::Int)
-  if t == UTF8TYPE
-    return UTF8TYPE
-  elseif t == FLOAT64TYPE
-    if float_able(s)
-      return FLOAT64TYPE
-    else
-      return UTF8TYPE
-    end
-  elseif t == INT64TYPE
-    if int_able(s)
-      return INT64TYPE
-    elseif float_able(s)
-      return FLOAT64TYPE
-    else
-      return UTF8TYPE
-    end
-  end
-end
-
-function int_able{T <: String}(s::T)
-    d = s.data
-    if length(d) == 0
-        return false
-    end
-    p = 1
-    if d[p] == '-'
-        p += 1
-        if length(d) == 1
-            return false
-        end
-    end
-    while p <= length(d)
-        if !('0' <= d[p] <= '9')
-        #if !contains("1234567890", d[p])
-            return false
-        end
-        p += 1
-    end        
-    return true
-end
-
-function float_able{T <: String}(s::T)
-    d = s.data
-    if length(d) == 0
-        return false
-    end
-    p = 1
-    if d[p] == '-'
-        p += 1
-        if length(d) < p
-            return false
-        end
-    end
-    dot = false
-    exp = false
-    while p <= length(d)
-        if !('0' <= d[p] <= '9')
-        #if !contains("1234567890", d[p])
-            if d[p] == 'e'
-                if p == 1 || d[p-1] == '-'
-                    return false
-                end
-                if exp
-                    return false
-                end
-                exp = true
-                p += 1
-                if length(d) < p
-                    return false
-                end
-                if d[p] == '-'
-                    p += 1
-                    if length(d) < p
-                        return false
-                    end
-                end
-            elseif d[p] == '.' && exp == false
-                if dot
-                    return false
-                end
-                dot = true
-            else
-                return false
-            end
-        end
-        p += 1
-    end
-    return true
+function generate_column_names(n::Int)
+    convert(Vector{ByteString}, map(i -> "x" * string(i), 1:n))
 end
