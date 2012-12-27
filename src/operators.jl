@@ -1090,3 +1090,58 @@ end
 function range{T}(dv::DataVec{T})
     return DataVec([min(dv), max(dv)], falses(2))
 end
+
+function rle{T}(v::DataVec{T})
+    n = length(v)
+    current_value = v[1]
+    current_length = 1
+    values = DataVec(T, n)
+    total_values = 1
+    lengths = Array(Int16, n)
+    total_lengths = 1
+    for i in 2:n
+        if isna(v[i]) || isna(current_value)
+            if isna(v[i]) && isna(current_value)
+                current_length += 1
+            else
+                values[total_values] = current_value
+                total_values += 1
+                lengths[total_lengths] = current_length
+                total_lengths += 1
+                current_value = v[i]
+                current_length = 1
+            end
+        else
+            if v[i] == current_value
+                current_length += 1
+            else
+                values[total_values] = current_value
+                total_values += 1
+                lengths[total_lengths] = current_length
+                total_lengths += 1
+                current_value = v[i]
+                current_length = 1
+            end
+        end
+    end
+    values[total_values] = current_value
+    lengths[total_lengths] = current_length
+    return (values[1:total_values], lengths[1:total_lengths])
+end
+
+## inverse run-length encoding
+function inverse_rle{T}(values::DataVec{T}, lengths::Vector{Int16})
+    total_n = sum(lengths)
+    pos = 0
+    res = DataVec(T, total_n)
+    n = length(values)
+    for i in 1:n
+        v = values[i]
+        l = lengths[i]
+        for j in 1:l
+            pos += 1
+            res[pos] = v
+        end
+    end
+    return res
+end

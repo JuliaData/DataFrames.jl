@@ -21,106 +21,6 @@ for separator in separators
   end
 end
 
-# Test type inference heuristic
-
-@assert DataFrames.int_able("1234") == true
-@assert DataFrames.int_able("-1234") == true
-@assert DataFrames.int_able("1234.13") == false
-@assert DataFrames.int_able("-1234.13") == false
-@assert DataFrames.int_able("1.13e1") == false
-@assert DataFrames.int_able("-1.13e1") == false
-@assert DataFrames.int_able("1234a") == false
-@assert DataFrames.int_able("blah") == false
-
-@assert DataFrames.float_able("1234") == true
-@assert DataFrames.float_able("-1234") == true
-@assert DataFrames.float_able("1234.13") == true
-@assert DataFrames.float_able("-1234.13") == true
-@assert DataFrames.float_able("1.13e1") == true
-@assert DataFrames.float_able("-1.13e1") == true
-@assert DataFrames.float_able("1234a") == false
-@assert DataFrames.float_able("blah") == false
-
-import DataFrames.INT64TYPE
-import DataFrames.FLOAT64TYPE
-import DataFrames.UTF8TYPE
-
-@assert DataFrames.tightest_type("1234", INT64TYPE) == INT64TYPE
-@assert DataFrames.tightest_type("-1234", INT64TYPE) == INT64TYPE
-@assert DataFrames.tightest_type("1234.2", INT64TYPE) == FLOAT64TYPE
-@assert DataFrames.tightest_type("-1234.2", INT64TYPE) == FLOAT64TYPE
-@assert DataFrames.tightest_type("1234AFX", INT64TYPE) == UTF8TYPE
-@assert DataFrames.tightest_type("-1234AFX", INT64TYPE) == UTF8TYPE
-
-@assert DataFrames.tightest_type("1234", FLOAT64TYPE) == FLOAT64TYPE
-@assert DataFrames.tightest_type("-1234", FLOAT64TYPE) == FLOAT64TYPE
-@assert DataFrames.tightest_type("1234.2", FLOAT64TYPE) == FLOAT64TYPE
-@assert DataFrames.tightest_type("-1234.2", FLOAT64TYPE) == FLOAT64TYPE
-@assert DataFrames.tightest_type("1234AFX", FLOAT64TYPE) == UTF8TYPE
-@assert DataFrames.tightest_type("-1234AFX", FLOAT64TYPE) == UTF8TYPE
-
-@assert DataFrames.tightest_type("1234", UTF8TYPE) == UTF8TYPE
-@assert DataFrames.tightest_type("-1234", UTF8TYPE) == UTF8TYPE
-@assert DataFrames.tightest_type("1234.2", UTF8TYPE) == UTF8TYPE
-@assert DataFrames.tightest_type("-1234.2", UTF8TYPE) == UTF8TYPE
-@assert DataFrames.tightest_type("1234AFX", UTF8TYPE) == UTF8TYPE
-@assert DataFrames.tightest_type("-1234AFX", UTF8TYPE) == UTF8TYPE
-
-filename = file_path(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
-separator = ','
-quotation_symbol = '"'
-header = true
-missingness_indicators = ["", "NA"]
-
-(column_names, column_types, nrows) =
- DataFrames.determine_metadata(filename,
-                               separator,
-                               quotation_symbol,
-                               missingness_indicators,
-                               header,
-                               false)
-@assert column_names == ["A", "B", "C", "D", "E"]
-@assert column_types == {UTF8String, UTF8String, UTF8String, Float64, Float64}
-
-# From now on, files do not have headers
-header = false
-
-filename = file_path(julia_pkgdir(),"DataFrames/test/data/sample_data.csv")
-
-(column_names, column_types) =
- DataFrames.determine_metadata(filename,
-                               separator,
-                               quotation_symbol,
-                               missingness_indicators,
-                               header,
-                               false)
-@assert column_names == ["x1", "x2", "x3"]
-@assert column_types == {Int64, Int64, Int64}
-
-filename = file_path(julia_pkgdir(),"DataFrames/test/data/simple_data.csv")
-
-(column_names, column_types) =
- DataFrames.determine_metadata(filename,
-                               separator,
-                               quotation_symbol,
-                               missingness_indicators,
-                               header,
-                               false)
-@assert column_names == ["x1", "x2", "x3", "x4", "x5"]
-@assert column_types == {UTF8String, UTF8String, UTF8String, Float64, Int64}
-
-filename = file_path(julia_pkgdir(),"DataFrames/test/data/complex_data.csv")
-
-(column_names, column_types) =
- DataFrames.determine_metadata(filename,
-                               separator,
-                               quotation_symbol,
-                               missingness_indicators,
-                               header,
-                               false)
-@assert column_names == ["x1", "x2", "x3", "x4", "x5"]
-@assert column_types == {UTF8String, UTF8String, UTF8String, Float64, Int64}
-
 # Test reading
 @assert DataFrames.determine_separator("blah.csv") == ','
 @assert DataFrames.determine_separator("blah.tsv") == '\t'
@@ -133,12 +33,7 @@ separator = DataFrames.determine_separator(filename)
 quotation_character = '"'
 missingness_indicators = ["", "NA"]
 header = true
-column_names, column_types = DataFrames.determine_metadata(filename,
-	                                                       separator,
-	                                                       quotation_character,
-	                                                       missingness_indicators,
-	                                                       header,
-                                                         false)
+column_names = UTF8String["A", "B", "C", "D", "E"]
 minibatch_size = 10
 
 file = open(filename, "r")
@@ -152,32 +47,25 @@ minibatch = read_minibatch(file,
 @assert nrow(minibatch) == minibatch_size
 @assert ncol(minibatch) == length(column_names)
 @assert colnames(minibatch) == column_names
-@assert typeof(minibatch[:, 1]) == DataVec{column_types[1]}
-@assert typeof(minibatch[:, 2]) == DataVec{column_types[2]}
-@assert typeof(minibatch[:, 3]) == DataVec{column_types[3]}
-@assert typeof(minibatch[:, 4]) == DataVec{column_types[4]}
-@assert typeof(minibatch[:, 5]) == DataVec{column_types[5]}
+@assert eltype(minibatch[:, 1]) == UTF8String
+@assert eltype(minibatch[:, 2]) == UTF8String
+@assert eltype(minibatch[:, 3]) == UTF8String
+@assert eltype(minibatch[:, 4]) == Float64
+@assert eltype(minibatch[:, 5]) == Float64
 close(file)
 
 @elapsed df = read_table(filename)
-@elapsed md = DataFrames.determine_metadata(filename, ',', '"', ["", "NA"], true, false)
 @assert nrow(df) == 10_000
 @assert ncol(df) == 5
 @assert colnames(df) == column_names
-@assert typeof(df[:, 1]) == DataVec{column_types[1]}
-@assert typeof(df[:, 2]) == DataVec{column_types[2]}
-@assert typeof(df[:, 3]) == DataVec{column_types[3]}
-@assert typeof(df[:, 4]) == DataVec{column_types[4]}
-@assert typeof(df[:, 5]) == DataVec{column_types[5]}
-
-# Test UTF8 support
-# TODO: Make this work in Julia's core
-# df = read_table("test/data/utf8.csv")
+@assert typeof(df[:, 1]) == DataVec{UTF8String}
+@assert typeof(df[:, 2]) == DataVec{UTF8String}
+@assert typeof(df[:, 3]) == DataVec{UTF8String}
+@assert typeof(df[:, 4]) == DataVec{Float64}
+@assert typeof(df[:, 5]) == DataVec{Float64}
 
 # TODO: Split apart methods that perform seek() from those that don't
 text_data = convert(Array{UTF8String, 2}, (["1" "3" "A"; "2" "3" "NA"; "3" "3.1" "C"]))
-inferred_types = DataFrames.infer_column_types(text_data, ["", "NA"])
-@assert inferred_types == {Int64, Float64, UTF8String}
 
 true_df = DataFrame(quote
                       x1 = DataVec[1, 2, 3]

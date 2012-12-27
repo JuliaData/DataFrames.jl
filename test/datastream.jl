@@ -40,8 +40,12 @@ vars = colvars(ds)
 @assert abs(maxs[1, 5] - 22.574) < 10e-4
 
 covariances = cov(ds)
-for i in ncol(covariances)
-  @assert abs(covariances[i, i] - vars[1, i]) < 10e-4
+for i in 1:ncol(covariances)
+  if isna(covariances[i, i])
+    @assert isna(vars[1, i])
+  else
+    @assert abs(covariances[i, i] - vars[1, i]) < 10e-4
+  end
 end
 @assert abs(covariances[4, 4] - 0.980479916) < 10e-4
 @assert abs(covariances[4, 5] - 0.009823644) < 10e-4
@@ -52,7 +56,11 @@ correlations = cor(ds)
 for i in ncol(correlations)
   for j in ncol(correlations)
     true_value = covariances[i, j] / sqrt(covariances[i, i] * covariances[j, j])
-    @assert abs(correlations[i, j] - true_value) < 10e-4
+    if isna(true_value)
+      @assert isna(correlations[i, j])
+    else
+      @assert abs(correlations[i, j] - true_value) < 10e-4
+    end
   end
 end
 
