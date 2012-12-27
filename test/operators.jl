@@ -464,3 +464,14 @@ alt_df = DataFrame({alt_dv})
 
 @assert all(isna(NA .== df))
 @assert all(isna(df .== NA))
+
+# Run length encoding
+dv = dvones(5)
+dv[3] = NA
+
+v, l = rle(dv)
+@assert isequal(v, DataVec[1.0, NA, 1.0])
+@assert isequal(l, [2, 1, 2])
+
+rdv = inverse_rle(v, l)
+@assert isequal(dv, rdv)

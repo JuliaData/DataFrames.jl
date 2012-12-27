@@ -183,94 +183,6 @@ function read_separated_text(io::IOStream,
   end
 end
 
-function infer_column_types{S <: String, T <: String}(text_data::Matrix{S},
-                                         missingness_indicators::Vector{T})
-  nrows, ncols = size(text_data)
-
-  # Default to Int64 for all column types until we have to demote them
-  # Use numeric codes for types
-  # Reminder table below:
-  # const INT64TYPE = 1
-  # const FLOAT64TYPE = 2
-  # const UTF8TYPE = 3
-  column_types = Array(Int64, ncols)
-  for j in 1:ncols
-    column_types[j] = INT64TYPE
-  end
-
-  for j in 1:ncols
-    for i in 1:nrows
-      if column_types[j] == UTF8TYPE
-        break
-      end
-      value_missing = contains(missingness_indicators, text_data[i, j])
-      if !value_missing
-        if column_types[j] == FLOAT64TYPE
-          if !float_able(text_data[i, j])
-            column_types[j] = UTF8TYPE
-          end
-        elseif column_types[j] == INT64TYPE
-          if !int_able(text_data[i, j])
-            if float_able(text_data[i, j])
-              column_types[j] = FLOAT64TYPE
-            else
-              column_types[j] = UTF8TYPE
-            end
-          end
-        end
-      end
-    end
-  end
-
-  # Convert to real types now
-  true_column_types = Array(Any, ncols)
-  type_scheme = {Int64, Float64, UTF8String}
-  for j in 1:ncols
-    true_column_types[j] = type_scheme[column_types[j]]
-  end
-
-  return true_column_types
-end
-
-# TODO: Split this into determine_column_names and infer_column_types
-# Short-circuit option allows one to just guess metadata for massive files
-# Currently maxes out after 1,000 lines
-function determine_metadata{T <: String}(filename::String,
-                                         separator::Char,
-                                         quotation_character::Char,
-                                         missingness_indicators::Vector{T},
-                                         header::Bool,
-                                         short_circuit::Bool)
-
-  nrows = determine_nrows(filename, header)
-  maxlines = nrows
-  if short_circuit
-    maxlines = min(nrows, 1_000)
-  end
-
-  io = open(filename, "r")
-  column_names = determine_column_names(io, separator, quotation_character, header)
-  ncols = length(column_names)
-  if header # Skip the header for type inference
-    readline(io)
-  end
-  text_data = read_separated_text(io, maxlines, ncols, separator, quotation_character)
-  close(io)
-
-  column_types = infer_column_types(text_data, missingness_indicators)
-
-  # Return the inferred column names and types
-  return (column_names, column_types, nrows)
-end
-
-function determine_metadata{T <: String}(filename::String,
-                                         header::Bool,
-                                         short_circuit::Bool)
-  separator = determine_separator(filename)
-  quotation_character = DEFAULT_QUOTATION_CHARACTER
-  determine_metadata(filename, separator, quotation_character, missingness_indicators, header, short_circuit)
-end
-
 function convert_to_dataframe{R <: String,
                               S <: String,
                               T <: String}(text_data::Matrix{R},
@@ -345,6 +257,7 @@ end
 
 # Read at most N lines from an IOStream
 # Then return a minibatch of at most N rows as a DataFrame
+# Add column_types, force_types option
 function read_minibatch{R <: String,
                         S <: String}(io::IOStream,
                                      separator::Char,
