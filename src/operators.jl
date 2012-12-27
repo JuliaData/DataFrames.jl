@@ -615,6 +615,42 @@ for (f, scalarf) in vectorized_comparison_operators
     end
 end
 
+#
+# Bit operators
+#
+
+function (&)(a::NAtype, b::Bool)
+    if b
+        return NA
+    else
+        return false
+    end
+end
+
+function (&)(a::Bool, b::NAtype)
+    if a
+        return NA
+    else
+        return false
+    end
+end
+
+function (|)(a::NAtype, b::Bool)
+    if b
+        return true
+    else
+        return NA
+    end
+end
+
+function (|)(a::Bool, b::NAtype)
+    if a
+        return true
+    else
+        return NA
+    end
+end
+
 for f in binary_operators
     @eval begin
         function ($f)(d::NAtype, e::NAtype)
