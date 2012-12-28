@@ -1,6 +1,5 @@
 #require("profile")
 #using Profile
-# @profile begin
 
 const DEFAULT_MISSINGNESS_INDICATORS = ["", "NA", "#NA", "N/A", "#N/A", "NULL"]
 const DEFAULT_BOOLEAN_STRINGS = ["T", "F", "t", "f", "TRUE", "FALSE", "true", "false"]
@@ -26,25 +25,39 @@ end
 # Low-level text parsing
 #
 ##############################################################################
-
+const nullset = Set()
+let extract_cache = memio(500, false)
+global extract_string
+#@profile begin
 function extract_string(this, left, right, omitlist)
-    # variant of print_to_string...
-    if length(this) >= 1  
-        s = memio(right - left + 1 - length(omitlist), false)
+    if right - left > length(extract_cache.ios)
+        extract_cache_size = right - left
+        #println("extending cache to ", extract_cache_size)
+        extract_cache = memio(extract_cache_size,false)
+    end
+    seek(extract_cache,0) #necessary?
+    if length(this) >= 1
+        while isvalid(this, right) && right > left && this[right] == ' '
+            right -= 1
+        end
         i = left
         while i <= right
             lasti = i
             ch, i = next(this, i)
             if !has(omitlist, lasti)
-                print(s, ch)
+                print(extract_cache, ch)
             end
         end
-        return rstrip(takebuf_string(s))
+        return takebuf_string(extract_cache)
     else
         return ""
     end
 end
-extract_string(this, left, right) = extract_string(this, left, right, Set())
+#end #profile
+end #let
+
+extract_string(this, left, right) = extract_string(this, left, right, nullset)
+
 
 const STATE_EXPECTING_VALUE = 0
 const STATE_IN_BARE = 1
@@ -52,14 +65,16 @@ const STATE_IN_QUOTED = 2
 const STATE_POSSIBLE_EOQUOTED = 3
 const STATE_EXPECTING_SEP = 4
 
+#@profile begin
 function read_separated_line(io,
                              separator::Char,
                              quotation_character::Char)
     # indexes into the current line for the current item
     left = 0
     right = 0
-    # use RopeString for efficient appends
-    this = RopeString(Base.chomp!(readline(io)))
+    # was using RopeString for efficient appends, but rare case and makes 
+    # UTF-8 processing harder.
+    this = Base.chomp!(readline(io))
     # 5-state machine...
     state = STATE_EXPECTING_VALUE
     # index of characters to remove
@@ -99,7 +114,7 @@ function read_separated_line(io,
             if eol
                 right = this_i # we didn't bump this_i above, so not -1
                 num_elems += 1
-                push(ret, this[left:right])
+                push(ret, extract_string(this, left, right))
                 break
             elseif this_char == separator
                 right = this_i - 1
@@ -111,7 +126,7 @@ function read_separated_line(io,
             end
         elseif state == STATE_IN_QUOTED
             if eol
-                this = RopeString(RopeString(this, "\n"), Base.chomp!(readline(io)))
+                this = strcat(this, "\n", Base.chomp!(readline(io)))
             elseif this_char == quotation_character
                 state = STATE_POSSIBLE_EOQUOTED
             else
@@ -155,6 +170,7 @@ function read_separated_line(io,
     end
     ret
 end
+#end #profile
 
 ##############################################################################
 #

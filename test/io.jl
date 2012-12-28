@@ -1,5 +1,5 @@
 # unit tests of extract_string
-x = RopeString("1234", "5678")
+x = "12345678"
 @assert DataFrames.extract_string(x, 3, 6) == "3456"
 @assert DataFrames.extract_string(x, 3, 3) == "3"
 @assert DataFrames.extract_string(x, 3, 6, Set(3)) == "456"
