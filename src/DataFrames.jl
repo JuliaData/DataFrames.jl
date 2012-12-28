@@ -63,7 +63,7 @@ import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote
        Base.fld, Base.rem,
        Base.dot, Base.gamma, Base.lgamma, Base.digamma,
        Base.erf, Base.erfc, Base.square,
-       Base.autocor, Base.mad, Base.distance_matrix,
+       Base.autocor, Base.mad, Base.dist,
        Base.skewness, Base.kurtosis, Base.iqr, Base.rle, Base.inverse_rle
 
 using OptionsMod
@@ -147,25 +147,25 @@ export model_frame, model_matrix, interaction_design_matrix
 ## ## Methods
 ## export in, between
 
-require("DataFrames/src/index.jl")
-require("DataFrames/src/datavec.jl")
-require("DataFrames/src/namedarray.jl")
-require("DataFrames/src/dataframe.jl")
-require("DataFrames/src/grouping.jl")
-require("DataFrames/src/formula.jl")
-require("DataFrames/src/utils.jl")
+include(file_path(julia_pkgdir(), "DataFrames", "src", "index.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "datavec.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "namedarray.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "dataframe.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "grouping.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "formula.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "utils.jl"))
 
 ## load("dlmread.jl")
 ## load("indexing.jl")
 
 # New I/O operations
 export read_minibatch, read_table, print_table, write_table
-require("DataFrames/src/io.jl")
+include(file_path(julia_pkgdir(), "DataFrames", "src", "io.jl"))
 
 # New DataStream operations
 import Base.start, Base.next, Base.done
 export DataStream
-require("DataFrames/src/datastream.jl")
+include(file_path(julia_pkgdir(), "DataFrames", "src", "datastream.jl"))
 
 # New initialized constructors
 export dvzeros, dvones, dvfalses, dvtrues
@@ -187,11 +187,11 @@ export DataMatrix
 export rowmins, rowmaxs, rowprods, rowsums,
        rowmeans, rowmedians, rowstds, rowvars,
        rowffts, rownorms, rowranges
-require("DataFrames/src/datamatrix.jl")
+include(file_path(julia_pkgdir(), "DataFrames", "src", "datamatrix.jl"))
 
 # Linear algebra over DataMatrix's
 import Base.svd, Base.eig
-require("DataFrames/src/linalg.jl")
+include(file_path(julia_pkgdir(), "DataFrames", "src", "linalg.jl"))
 
 # TODO: Finish generic DataArray's
 # load("DataFrames/src/dataarray.jl")
@@ -199,7 +199,7 @@ require("DataFrames/src/linalg.jl")
 # Define operators after all data structures are in place
 # Then we can order things properly
 export range
-require("DataFrames/src/operators.jl")
+include(file_path(julia_pkgdir(), "DataFrames", "src", "operators.jl"))
 
 export any_na
 
@@ -211,6 +211,6 @@ naReplace(x...) = error("Function removed. Please use each_replaceNA")
 
 export reldiff, percent_change
 
-require("DataFrames/src/statistics.jl")
+include(file_path(julia_pkgdir(), "DataFrames", "src", "statistics.jl"))
 
 end # module DataFrames
