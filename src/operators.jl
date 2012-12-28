@@ -46,7 +46,7 @@ scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
 
 induced_scalar_arithmetic_operators = [:(^)]
 
-array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^)]
+array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^), :(&), :(|), :($)]
 
 bit_operators = [:(&), :(|), :($)]
 
