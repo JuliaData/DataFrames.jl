@@ -452,7 +452,7 @@ function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
         println(io)
     end
     if n > 0
-        for col in names(x)[1:min(10,end)]
+        for col in names(x)[1:end]
             print(io, indent, "  ", col, ": ")
             dump(io, x[col], n - 1, strcat(indent, "  "))
         end
