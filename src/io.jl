@@ -1,5 +1,5 @@
-# require("profile")
-# using Profile
+#require("profile")
+#using Profile
 # @profile begin
 
 const DEFAULT_MISSINGNESS_INDICATORS = ["", "NA", "#NA", "N/A", "#N/A", "NULL"]
@@ -21,75 +21,139 @@ function parse_bool(x::String)
   end
 end
 
-const OUT_QUOTE_STATE = 1
-const IN_QUOTE_STATE = 2
-const POST_DELIMITER_STATE = 3
-
 ##############################################################################
 #
 # Low-level text parsing
 #
 ##############################################################################
 
-# If there's space right before a delimiter, we ignore it by default
-# If there's space after a delimiter, we ignore it by default
-function split_separated_line{T <: String}(line::T,
-                                           separator::Char,
-                                           quotation_character::Char,
-                                           items::Vector{UTF8String},
-                                           current_item::Vector{SINGLE_CHARACTER_TYPE})
-
-  state = OUT_QUOTE_STATE
-  total_items = 0
-  i = 0
-  if strlen(line) > length(current_item)
-    current_item = Array(SINGLE_CHARACTER_TYPE, strlen(line))
-  end
-  for chr in line
-    if state == POST_DELIMITER_STATE
-      if chr == ' '
-        continue
-      else
-        state = OUT_QUOTE_STATE
-      end
-    end
-    i += 1
-    if state == IN_QUOTE_STATE
-      if chr == quotation_character
-        state = OUT_QUOTE_STATE
-        i -= 1
-      else
-        current_item[i] = chr
-      end
-    else
-      if chr == quotation_character
-        state = IN_QUOTE_STATE
-        i -= 1
-      else
-        if chr == separator
-          total_items += 1
-          #items[total_items] = bytestring(current_item[1:(i - 1)])
-          #items[total_items] = utf8(join(current_item[1:(i - 1)]))
-          #items[total_items] = UTF8String(current_item[1:(i - 1)])
-          if i > 1 && current_item[i - 1] == ' '
-            items[total_items] = bytestring(CharString(current_item[1:(i - 2)]))
-          else
-            items[total_items] = bytestring(CharString(current_item[1:(i - 1)]))
-          end
-          i = 0
-          state = POST_DELIMITER_STATE
-        else
-          current_item[i] = chr
+function extract_string(this, left, right, omitlist)
+    # variant of print_to_string...
+    if length(this) >= 1  
+        s = memio(right - left + 1 - length(omitlist), false)
+        i = left
+        while i <= right
+            lasti = i
+            ch, i = next(this, i)
+            if !has(omitlist, lasti)
+                print(s, ch)
+            end
         end
-      end
+        return rstrip(takebuf_string(s))
+    else
+        return ""
     end
-  end
-  total_items += 1
-  #items[total_items] = bytestring(current_item[1:i])
-  #items[total_items] = utf8(join(current_item[1:i]))
-  #items[total_items] = UTF8String(current_item[1:i])
-  items[total_items] = bytestring(CharString(current_item[1:i]))
-  return items[1:total_items]
+end
+extract_string(this, left, right) = extract_string(this, left, right, Set())
+
+const STATE_EXPECTING_VALUE = 0
+const STATE_IN_BARE = 1
+const STATE_IN_QUOTED = 2
+const STATE_POSSIBLE_EOQUOTED = 3
+const STATE_EXPECTING_SEP = 4
+
+function read_separated_line(io,
+                             separator::Char,
+                             quotation_character::Char)
+    # indexes into the current line for the current item
+    left = 0
+    right = 0
+    # use RopeString for efficient appends
+    this = RopeString(Base.chomp!(readline(io)))
+    # 5-state machine...
+    state = STATE_EXPECTING_VALUE
+    # index of characters to remove
+    omitlist = Set()
+    # where are we
+    i = start(this)
+    eol = false
+    # will eventually return a Vector of strings
+    num_elems = 0
+    ret = Array(ByteString,0)
+
+    # off we go! use manual loops because this can grow
+    while true
+        eol = done(this, i)
+        if !eol
+            this_i = i
+            this_char, i = next(this, i)
+        end
+        if state == STATE_EXPECTING_VALUE
+            if eol
+                num_elems += 1
+                push(ret, "")
+                break
+            elseif this_char == ' '
+                continue
+            elseif this_char == separator
+                num_elems += 1
+                push(ret, "")
+            elseif this_char == quotation_character
+                left = this_i + 1
+                state = STATE_IN_QUOTED
+            else
+                left = this_i
+                state = STATE_IN_BARE
+            end
+        elseif state == STATE_IN_BARE
+            if eol
+                right = this_i # we didn't bump this_i above, so not -1
+                num_elems += 1
+                push(ret, this[left:right])
+                break
+            elseif this_char == separator
+                right = this_i - 1
+                num_elems += 1
+                push(ret, extract_string(this, left, right))
+                state = STATE_EXPECTING_VALUE
+            else
+                continue
+            end
+        elseif state == STATE_IN_QUOTED
+            if eol
+                this = RopeString(RopeString(this, "\n"), Base.chomp!(readline(io)))
+            elseif this_char == quotation_character
+                state = STATE_POSSIBLE_EOQUOTED
+            else
+                continue
+            end
+        elseif state == STATE_POSSIBLE_EOQUOTED
+            if eol
+                right = this_i - 1 # we didn't bump this_i above, so not -2
+                num_elems += 1
+                push(ret, extract_string(this, left, right, omitlist))
+                break
+            elseif this_char == quotation_character
+                add(omitlist, this_i)
+                state = STATE_IN_QUOTED
+            elseif this_char == separator
+                right = this_i - 2
+                num_elems += 1
+                push(ret, extract_string(this, left, right, omitlist))
+                del_all(omitlist)
+                state = STATE_EXPECTING_VALUE
+            elseif this_char == ' '
+                right = this_i - 2
+                num_elems += 1
+                push(ret, extract_string(this, left, right, omitlist))
+                del_all(omitlist)
+                state = STATE_EXPECTING_SEP
+            else
+                error("unexpected character after a quote")
+            end
+        elseif state == STATE_EXPECTING_SEP
+            if eol
+                break
+            elseif this_char == ' '
+                continue
+            elseif this_char == separator
+                state = STATE_EXPECTING_VALUE
+            else
+                error("expecting a separator but got something else")
+            end
+        end
+    end
+    ret
 end
 
 ##############################################################################
@@ -122,12 +186,9 @@ end
 function determine_ncols{T <: String}(filename::T,
                                       separator::Char,
                                       quotation_character::Char)
-  io = open(filename, "r")
-  line = Base.chomp!(readline(io))
-  close(io)
-  items = Array(UTF8String, strlen(line))
-  current_item = Array(SINGLE_CHARACTER_TYPE, strlen(line))
-  return length(split_separated_line(line, separator, quotation_character, items, current_item))
+    open(filename, "r") do io
+        length(read_separated_line(io, separator, quotation_character))
+    end
 end
 
 function determine_column_names(io::IOStream,
@@ -135,23 +196,15 @@ function determine_column_names(io::IOStream,
                                 quotation_character::Char,
                                 header::Bool)
   seek(io, 0)
-  line = Base.chomp!(readline(io))
+  fields = read_separated_line(io, separator, quotation_character)
 
-  if length(line) == 0
+  if length(fields) == 0
     error("Failed to determine column names from an empty data source")
   end
 
-  items = Array(UTF8String, strlen(line))
-  current_item = Array(SINGLE_CHARACTER_TYPE, strlen(line))
-  fields = split_separated_line(line, separator, quotation_character, items, current_item)
-
-  if header
-    seek(io, 0)
-    return fields
-  else
-    seek(io, 0)
-    column_names = generate_column_names(length(fields))
-  end
+  column_names = header ? fields : generate_column_names(length(fields))
+  seek(io, 0)
+  return column_names
 end
 
 # Read data line-by-line
@@ -168,12 +221,13 @@ function read_separated_text(io::IOStream,
 
   i = 0
   while i < nrows
-    line = Base.chomp!(readline(io))
-    if length(line) == 0
-      break
+    sp = read_separated_line(io, separator, quotation_character)
+    if length(sp) == ncols
+        i += 1
+        text_data[i, :] = sp 
+    else
+        break
     end
-    i += 1
-    text_data[i, 1:ncols] = split_separated_line(line, separator, quotation_character, items, current_item)
   end
 
   if i == 0
@@ -331,6 +385,7 @@ function read_table{T <: String}(filename::T)
   # @profile clear
   return df
 end
+
 
 ##############################################################################
 #
