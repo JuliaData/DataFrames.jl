@@ -147,8 +147,8 @@ export model_frame, model_matrix, interaction_design_matrix
 ## ## Methods
 ## export in, between
 
-include(file_path(julia_pkgdir(), "DataFrames", "src", "datavec.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "index.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "datavec.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "namedarray.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "dataframe.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "grouping.jl"))
