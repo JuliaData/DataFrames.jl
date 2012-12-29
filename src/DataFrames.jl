@@ -1,216 +1,402 @@
-require("Options.jl")   
+require("Options")
 
 module DataFrames
 
-const INT64TYPE = 1
-const FLOAT64TYPE = 2
-const UTF8TYPE = 3
+##############################################################################
+##
+## Dependencies
+##
+##############################################################################
 
 using Base.Intrinsics
-
-import Base.BitArray, Base.BitMatrix, Base.BitVector, Base.bitpack
-
-import Base.length, Base.eltype, Base.ndims, Base.numel, Base.size, Base.promote, Base.promote_rule,
-       Base.similar, Base.fill, Base.fill!, Base.one, Base.copy_to, Base.reshape,
-       Base.convert, Base.reinterpret, Base.ref, Base.assign, Base.check_bounds,
-       Base.push, Base.append!, Base.grow, Base.pop, Base.enqueue, Base.shift,
-       Base.insert, Base.del, Base.del_all, Base.~, Base.-, Base.sign, Base.real,
-       Base.imag, Base.conj!, Base.conj, Base.!, Base.+, Base.div, Base.mod,
-       Base.-, Base.*, Base./, Base.^, Base.&, Base.|,
-       Base.(./), Base.(.^), Base./, Base.\, Base.&, Base.|, Base.$, Base.(.*),
-       Base.(.==), Base.==, Base.(.<), Base.<, Base.(.!=), Base.!=,
-       Base.(.<=), Base.<= ,
-       Base.>=, Base.<, Base.>,
-       Base.order, Base.sort, Base.sort_by,
-       Base.nnz, Base.find, Base.findn, Base.nonzeros,
-       Base.areduce, Base.max, Base.min, Base.sum, Base.prod, Base.map_to,
-       Base.filter, Base.transpose, Base.ctranspose, Base.permute, Base.hcat,
-       Base.vcat, Base.cat, Base.isequal, Base.cumsum, Base.cumprod, Base.cummin, Base.cummax,
-       Base.write, Base.read, Base.msync, Base.findn_nzs, Base.reverse,
-       Base.iround, Base.itrunc, Base.ifloor, Base.iceil, Base.abs,
-       Base.string, Base.show,
-       Base.isnan, Base.isnan, Base.isfinite,
-       Base.isinf, Base.cmp, Base.sqrt, Base.min, Base.max, Base.isless, Base.atan2, Base.log,
-       Base.start, Base.next, Base.done,
-       Base.isempty, Base.expand,
-       Base.map,
-       Base.string,
-       Base.intersect, Base.union,
-       Base.bool,
-       Base.print, Base.repl_show,
-       Base.has, Base.get, Base.keys, Base.values,
-       Base.copy, Base.deepcopy,
-       Base.dump,
-       Base.sub,
-       Base.zeros,
-       Base.box, Base.unbox,
-       Base.abs, Base.sign, Base.acos, Base.acosh, Base.asin,
-       Base.asinh, Base.atan, Base.atan2, Base.atanh, Base.sin,
-       Base.sinh, Base.cos, Base.cosh, Base.tan, Base.tanh,
-       Base.ceil, Base.floor, Base.round, Base.trunc, Base.signif,
-       Base.exp, Base.exp2, Base.expm1, Base.log, Base.log10, Base.log1p, Base.log2,
-       Base.logb, Base.sqrt,
-       Base.diff,
-       Base.cumprod, Base.cumsum, Base.cumsum_kbn,
-       Base.min, Base.prod, Base.sum,
-       Base.mean, Base.median,
-       Base.std, Base.var,
-       Base.cor_pearson, Base.cov_pearson,
-       Base.cor_spearman, Base.cov_spearman,
-       Base.fft, Base.norm,
-       Base.int, Base.float, Base.bool,
-       Base.all, Base.any,
-       Base.fld, Base.rem,
-       Base.dot, Base.gamma, Base.lgamma, Base.digamma,
-       Base.erf, Base.erfc, Base.square,
-       Base.autocor, Base.mad, Base.dist,
-       Base.skewness, Base.kurtosis, Base.iqr, Base.rle, Base.inverse_rle
-
 using OptionsMod
 
-## ---- index.jl ----
-## Types
-export AbstractIndex, Index, SimpleIndex
-## Methods
-export names!, replace_names!, replace_names, set_group, set_groups, get_groups, is_group
-export describe
+##############################################################################
+##
+## Global constants
+##
+##############################################################################
 
-## ---- datavec.jl ----
-## Types
-export AbstractDataVec, NARule, DataVec, PooledDataVec, NAException, NAtype
-## Methods
-export isna, naRule, levels, indices,
-       index_to_level, level_to_index,  # export needed?
-       table,
-       replace!,
-       PooledDataVecs,  # The capitalization and/or name for this is a bit inconsistent (merge_pools, maybe?). Do we want to export?
-       nafilter, nareplace, naFilter, naReplace,
-       cut
-## Specials
-export NA,
-       KEEP, FILTER, REPLACE,
-       letters, LETTERS
-export flipud, flipud!
+const DEFAULT_COLUMN_TYPE = Float64
+const POOLED_DATA_VEC_REF_TYPE = Uint16
+const POOLED_DATA_VEC_REF_CONVERTER = uint16
 
-## ---- namedarray.jl ----
-## Types
-export NamedArray
+##############################################################################
+##
+## Overwritten and/or extended methods
+##
+##############################################################################
 
-## ---- dataframe.jl ----
-## Types
-export AbstractDataFrame, DataFrame, SubDataFrame, GroupedDataFrame
-## Methods
-export colnames, colnames!, names!, replace_names, replace_names!, clean_colnames!,
-       nrow, ncol,
-       # reconcile_groups,  
+import Base.(!),
+       Base.(!=),
+       Base.($),
+       Base.(&),
+       Base.(.!=),
+       Base.(.*),
+       Base.(./),
+       Base.(.<),
+       Base.(.<=),
+       Base.(.==),
+       Base.(.^),
+       Base.(*),
+       Base.(+),
+       Base.(-),
+       Base.(/),
+       Base.(<),
+       Base.(<= ),
+       Base.(==),
+       Base.(>),
+       Base.(>=),
+       Base.(\),
+       Base.(^),
+       Base.abs,
+       Base.acos,
+       Base.acosh,
+       Base.all,
+       Base.any,
+       Base.append!,
+       Base.areduce,
+       Base.asin,
+       Base.asinh,
+       Base.assign,
+       Base.atan,
+       Base.atan2,
+       Base.atanh,
+       Base.autocor,
+       Base.BitArray,
+       Base.BitMatrix,
+       Base.bitpack,
+       Base.BitVector,
+       Base.bool,
+       Base.box,
+       Base.cat,
+       Base.ceil,
+       Base.check_bounds,
+       Base.cmp,
+       Base.conj!,
+       Base.conj,
+       Base.convert,
+       Base.copy,
+       Base.copy_to,
+       Base.cor_pearson,
+       Base.cor_spearman,
+       Base.cos,
+       Base.cosh,
+       Base.cov_pearson,
+       Base.cov_spearman,
+       Base.ctranspose,
+       Base.cummax,
+       Base.cummin,
+       Base.cumprod,
+       Base.cumsum,
+       Base.cumsum_kbn,
+       Base.deepcopy,
+       Base.del,
+       Base.del_all,
+       Base.diag,
+       Base.diff,
+       Base.digamma,
+       Base.dist,
+       Base.div,
+       Base.done,
+       Base.dot,
+       Base.dump,
+       Base.eig,
+       Base.eltype,
+       Base.enqueue,
+       Base.erf,
+       Base.erfc,
+       Base.exp,
+       Base.exp2,
+       Base.expand,
+       Base.expm1,
+       Base.fft,
+       Base.fill!,
+       Base.fill,
+       Base.filter,
+       Base.find,
+       Base.findn,
+       Base.findn_nzs,
+       Base.fld,
+       Base.float,
+       Base.floor,
+       Base.gamma,
+       Base.get,
+       Base.grow,
+       Base.has,
+       Base.hcat,
+       Base.iceil,
+       Base.ifloor,
+       Base.imag,
+       Base.insert,
+       Base.int,
+       Base.intersect,
+       Base.inverse_rle,
+       Base.iqr,
+       Base.iround,
+       Base.isempty,
+       Base.isequal,
+       Base.isfinite,
+       Base.isinf,
+       Base.isless,
+       Base.isnan,
+       Base.isnan,
+       Base.itrunc,
+       Base.keys,
+       Base.kurtosis,
+       Base.length,
+       Base.lgamma,
+       Base.log,
+       Base.log10,
+       Base.log1p,
+       Base.log2,
+       Base.logb,
+       Base.mad,
+       Base.map,
+       Base.map_to,
+       Base.max,
+       Base.max,
+       Base.mean,
+       Base.median,
+       Base.min,
+       Base.mod,
+       Base.msync,
+       Base.ndims,
+       Base.next,
+       Base.nnz,
+       Base.nonzeros,
+       Base.norm,
+       Base.numel,
+       Base.one,
+       Base.order,
+       Base.permute,
+       Base.pop,
+       Base.print,
+       Base.prod,
+       Base.promote,
+       Base.promote_rule,
+       Base.push,
+       Base.read,
+       Base.real,
+       Base.ref,
+       Base.reinterpret,
+       Base.rem,
+       Base.repl_show,
+       Base.reshape,
+       Base.reverse,
+       Base.rle,
+       Base.round,
+       Base.shift,
+       Base.show,
+       Base.sign,
+       Base.signif,
+       Base.similar,
+       Base.sin,
+       Base.sinh,
+       Base.size,
+       Base.skewness,
+       Base.sort,
+       Base.sort_by,
+       Base.sqrt,
+       Base.square,
+       Base.start,
+       Base.std,
+       Base.string,
+       Base.sub,
+       Base.sum,
+       Base.svd,
+       Base.tan,
+       Base.tanh,
+       Base.transpose,
+       Base.trunc,
+       Base.unbox,
+       Base.union,
+       Base.values,
+       Base.var,
+       Base.vcat,
+       Base.write,
+       Base.zeros,
+       Base.|,
+       Base.~
+
+##############################################################################
+##
+## Exported methods and types
+##
+##############################################################################
+
+export # reconcile_groups,
+       @DataFrame,
+       @transform,
+       AbstractIndex,
+       AbstractDataFrame,
+       AbstractDataVec,
+       any_na,
+       array,
+       based_on,
+       between,
+       by,
+       cbind,
+       clean_colnames!,
+       colffts,
+       colmaxs,
+       colmeans,
+       colmedians,
+       colmins,
+       colnames!,
+       colnames,
+       colnorms,
+       colprods,
+       colranges,
+       colstds,
+       colsums,
+       coltypes,
+       colvars,
+       colwise,
+       combine,
+       complete_cases,
+       cut,
+       DataFrame,
+       DataMatrix,
+       DataStream,
+       DataVec,
+       del!, # Should we only have `del` to match Base.del?
+       describe,
+       dmdiagm,
+       dmeye,
+       dmfalses,
+       dmones,
+       dmtrues,
+       dmzeros,
+       drop_duplicates!,
+       duplicated,
+       dvbool,
+       dvfalses,
+       dvfloat,
+       dvint,
+       dvones,
+       dvtrues,
+       dvzeros,
+       each_failNA,
+       each_removeNA,
+       each_replaceNA,
+       failNA,
+       flipud!,
+       flipud,
+       Formula,
+       get_groups,
+       GroupApplied,
+       groupby,
+       GroupedDataFrame,
+       head,
+       in,
+       Index,
        index,
-       set_group, set_groups, get_groups, rename_group!,
-       head, tail,
-       csvDataFrame,   # Inconsistent naming/capitalization?
-       del!,  # Should we only have `del` to match Base.del?
-       cbind, rbind,
+       index_to_level,
+       IndexedVec,
+       Indexer,
+       get_indices,
+       interaction_design_matrix,
+       is_group,
+       isna,
+       letters,
+       LETTERS,
+       level_to_index,
+       levels,
+       load_df,
+       matrix,
+       merge,
+       model_frame,
+       model_matrix,
+       ModelFrame,
+       ModelMatrix,
+       NA,
+       NAException,
+       nafilter,
+       naFilter,
+       NamedArray,
+       names!,
+       nareplace,
+       naReplace,
        nas,
-       with, within, within!, based_on,
-       stack, unstack, merge,
-       unique, complete_cases, duplicated, drop_duplicates!,
-       array, matrix, vector,
-       save, load_df,
+       NAtype,
+       ncol,
+       nrow,
+       pdvfalses,
+       pdvones,
+       pdvtrues,
+       pdvzeros,
+       percent_change,
+       PooledDataVec,
+       PooledDataVecs, # The capitalization and/or name for this is a bit inconsistent (merge_pools, maybe?). Do we want to export?
+       print_table,
+       range,
+       rbind,
+       read_minibatch,
+       read_table,
+       reldiff,
+       removeNA,
+       rename_group!,
+       replace!,
+       replace_names!,
+       replace_names,
+       replaceNA,
+       rowffts,
+       rowmaxs,
+       rowmeans,
+       rowmedians,
+       rowmins,
+       rownorms,
+       rowprods,
+       rowranges,
+       rowstds,
+       rowsums,
+       rowvars,
+       save,
+       set_group,
+       set_groups,
+       SimpleIndex,
+       stack,
+       SubDataFrame,
        subset,
-       failNA, removeNA, replaceNA,
-       each_failNA, each_removeNA, each_replaceNA
-## Macros
-export @transform, @DataFrame
+       table,
+       tail,
+       unique,
+       unstack,
+       vector,
+       with,
+       within!,
+       within,
+       write_table
 
+##############################################################################
+##
+## Load files
+##
+##############################################################################
 
-## ---- grouping.jl ----
-## Types
-export GroupedDataFrame, GroupApplied
-## Methods
-export groupby, colwise, combine, by
-
-
-## ---- formula.jl ----
-## Types
-export Formula, ModelFrame, ModelMatrix
-## Methods
-export model_frame, model_matrix, interaction_design_matrix 
-## all_interactions # looks internal to me. Uncomment if it should be exported.
-
-## ---- utils.jl ----
-## None of the methods in utils look like they should be exported.
-
-## ---- indexing.jl ----
-## Nothing is currently exported because this is still experimental. 
-## The following shows what would be exported.
-## ## Types
-## export IndexedVec, Indexer
-## ## Methods
-## export in, between
-
+include(file_path(julia_pkgdir(), "DataFrames", "src", "utils.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "index.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "datavec.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "namedarray.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "dataframe.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "grouping.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "formula.jl"))
-include(file_path(julia_pkgdir(), "DataFrames", "src", "utils.jl"))
-
-## load("dlmread.jl")
-## load("indexing.jl")
-
-# New I/O operations
-export read_minibatch, read_table, print_table, write_table
 include(file_path(julia_pkgdir(), "DataFrames", "src", "io.jl"))
-
-# New DataStream operations
-import Base.start, Base.next, Base.done
-export DataStream
 include(file_path(julia_pkgdir(), "DataFrames", "src", "datastream.jl"))
-
-# New initialized constructors
-export dvzeros, dvones, dvfalses, dvtrues
-export pdvzeros, pdvones, pdvfalses, pdvtrues
-export dmzeros, dmones, dmfalses, dmtrues, dmeye, dmdiagm
-
-# Conversion functions
-export dvint, dvfloat, dvbool
-
-export colmins, colmaxs, colprods, colsums,
-       colmeans, colmedians, colstds, colvars,
-       colffts, colnorms, colranges
-
-export coltypes
-
-# DataMatrix's
-import Base.diag
-export DataMatrix
-export rowmins, rowmaxs, rowprods, rowsums,
-       rowmeans, rowmedians, rowstds, rowvars,
-       rowffts, rownorms, rowranges
 include(file_path(julia_pkgdir(), "DataFrames", "src", "datamatrix.jl"))
-
-# Linear algebra over DataMatrix's
-import Base.svd, Base.eig
 include(file_path(julia_pkgdir(), "DataFrames", "src", "linalg.jl"))
-
-# TODO: Finish generic DataArray's
-# load("DataFrames/src/dataarray.jl")
-
-# Define operators after all data structures are in place
-# Then we can order things properly
-export range
 include(file_path(julia_pkgdir(), "DataFrames", "src", "operators.jl"))
-
-export any_na
+include(file_path(julia_pkgdir(), "DataFrames", "src", "statistics.jl"))
+# TODO: Get DataArray working
+# include(file_path(julia_pkgdir(), "DataFrames", "src", "dataarray.jl"))
+# TODO: Get indexing working
+# include(file_path(julia_pkgdir(), "DataFrames", "src", "indexing.jl"))
 
 # TODO: Remove these definitions
 nafilter(x...) = error("Function removed. Please use removeNA")
 nareplace(x...) = error("Function removed. Please use replaceNA")
 naFilter(x...) = error("Function removed. Please use each_removeNA")
 naReplace(x...) = error("Function removed. Please use each_replaceNA")
-
-export reldiff, percent_change
-
-include(file_path(julia_pkgdir(), "DataFrames", "src", "statistics.jl"))
 
 end # module DataFrames

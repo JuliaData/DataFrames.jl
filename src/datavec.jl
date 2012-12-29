@@ -1,6 +1,6 @@
 ##############################################################################
 ##
-## Definitions for Data* types which can contain NA's
+## Definitions for 1D Data* types which can contain NA's
 ##
 ## Inspirations:
 ##  * R's NA's
@@ -40,23 +40,10 @@ size(x::NAtype) = ()
 
 ##############################################################################
 ##
-## Default values for unspecified objects
-##
-## Sometimes needed when dealing with NA's for which some value must exist in
-## the underlying data vector
-##
-##############################################################################
-
-baseval(x) = zero(x)
-baseval{T <: String}(s::Type{T}) = ""
-
-##############################################################################
-##
 ## DataVec type definition
 ##
 ##############################################################################
 
-# This can be turned on easily
 abstract AbstractDataVec{T} <: AbstractVector{T}
 
 type DataVec{T} <: AbstractDataVec{T}
@@ -66,7 +53,7 @@ type DataVec{T} <: AbstractDataVec{T}
     # Sanity check that new data values and missingness metadata match
     function DataVec(new_data::Vector{T}, is_missing::BitVector)
         if length(new_data) != length(is_missing)
-            error("data and missingness vectors not the same length!")
+            error("Data and missingness vectors not the same length!")
         end
         new(new_data, is_missing)
     end
@@ -78,51 +65,53 @@ end
 ##
 ##############################################################################
 
-# Need to redefine inner constructor as outer constuctor
+# Need to redefine inner constructor as outer constuctor for parametric types
 DataVec{T}(d::Vector{T}, n::BitVector) = DataVec{T}(d, n)
 
-# Need to redefine inner constructor as outer constuctor
-DataVec{T}(d::AbstractVector{T}, n::BitVector) = DataVec{T}(d, n)
+# Need to redefine inner constructor as outer constuctor for parametric types
+function DataVec{T}(d::AbstractVector{T}, n::BitVector)
+    DataVec{T}(convert(Vector{T}, d), n)
+end
 
-# Convert Vector{Bool}'s to BitArray's to save space
+# Convert Vector{Bool}'s to BitVector's to save space
 DataVec{T}(d::Vector{T}, m::Vector{Bool}) = DataVec{T}(d, bitpack(m))
 
-# Explicitly convert an existing vector to a DataVec w/ no NA's
-DataVec(x::Vector) = DataVec(x, falses(length(x)))
+# Convert an existing vector to a DataVec w/ no NA's
+DataVec{T}(x::Vector{T}) = DataVec(x, falses(length(x)))
 
-# Explicitly convert a BitArray to a Vector before wrapping with a DataVec
-DataVec(x::BitVector, m::BitVector) = DataVec(convert(Vector{Bool}, x), m)
+# Convert a BitVector to a Vector{Bool} before making a DataVec
+DataVec(d::BitVector, m::BitVector) = DataVec(convert(Vector{Bool}, d), m)
 
-# Explicitly convert a BitArray to a DataVec w/ no NA's
-DataVec(x::BitVector) = DataVec(convert(Vector{Bool}, x), falses(length(x)))
+# Convert a BitVector to a DataVec w/ no NA's
+DataVec(d::BitVector) = DataVec(convert(Vector{Bool}, d), falses(length(d)))
 
-# Explicitly convert a Range1 into a DataVec
-DataVec{T}(r::Range1{T}) = DataVec([r], falses(length(r)))
+# Convert a Ranges into a DataVec
+DataVec{T}(r::Ranges{T}) = DataVec([r], falses(length(r)))
 
 # A no-op constructor
 DataVec(d::DataVec) = d
 
 # Construct an all-NA DataVec of a specific type
-DataVec(t::Type, n::Int64) = DataVec(Array(t, n), trues(n))
+DataVec(t::Type, n::Int) = DataVec(Array(t, n), trues(n))
 
-# Construct an all-NA DataVec of Float64's
-DataVec(n::Int64) = DataVec(Array(Float64, n), trues(n))
+# Construct an all-NA DataVec of the default column type
+DataVec(n::Int) = DataVec(Array(DEFAULT_COLUMN_TYPE, n), trues(n))
 
-# Construct an all-NA DataVec of Float64's length 0
-DataVec() = DataVec(Array(Float64, 0), trues(0))
+# Construct an all-NA DataVec of the default column type with length 0
+DataVec() = DataVec(Array(DEFAULT_COLUMN_TYPE, 0), trues(0))
 
 # Initialized constructors with 0's, 1's
 for (f, basef) in ((:dvzeros, :zeros), (:dvones, :ones))
     @eval begin
-        ($f)(n::Int64) = DataVec(($basef)(n), falses(n))
-        ($f)(t::Type, n::Int64) = DataVec(($basef)(t, n), falses(n))
+        ($f)(n::Int) = DataVec(($basef)(n), falses(n))
+        ($f)(t::Type, n::Int) = DataVec(($basef)(t, n), falses(n))
     end
 end
 
 # Initialized constructors with false's or true's
 for (f, basef) in ((:dvfalses, :falses), (:dvtrues, :trues))
     @eval begin
-        ($f)(n::Int64) = DataVec(($basef)(n), falses(n))
+        ($f)(n::Int) = DataVec(($basef)(n), falses(n))
     end
 end
 
@@ -136,53 +125,54 @@ function _dv_most_generic_type(vals)
             toptype = promote_type(toptype, typeof(vals[i]))
         end
     end
-    # TODO: confirm that this type has a baseval()
-    toptype
+    if !method_exists(baseval, (toptype, ))
+        error("No baseval exists for type: $(toptype)")
+    end
+    return toptype
 end
 function ref(::Type{DataVec}, vals...)
-    # first, get the most generic non-NA type
+    # Get the most generic non-NA type
     toptype = _dv_most_generic_type(vals)
 
-    # then, allocate vectors
+    # Allocate an empty DataVec
     lenvals = length(vals)
-    ret = DataVec(Array(toptype, lenvals), BitArray(lenvals))
-    # copy from vals into data and mask
+    res = DataVec(Array(toptype, lenvals), BitVector(lenvals))
+
+    # Copy from vals into data and mask
     for i = 1:lenvals
         if isna(vals[i])
-            ret.data[i] = baseval(toptype)
-            ret.na[i] = true
+            res.data[i] = baseval(toptype)
+            res.na[i] = true
         else
-            ret.data[i] = vals[i]
-            # ret.na[i] = false (default)
+            res.data[i] = vals[i]
+            res.na[i] = false
         end
     end
 
-    return ret
+    return res
 end
 
 ##############################################################################
 ##
 ## PooledDataVec type definition
 ##
+## A DataVec with efficient storage when values are repeated
+## TODO: Make sure we don't overflow from refs being Uint16
+## TODO: Allow ordering of factor levels
+## TODO: Add metadata for dummy conversion
+##
 ##############################################################################
 
-# A DataVec with efficient storage when values are repeated
-# TODO: Make sure we don't overflow from refs being Uint16
-# TODO: Allow ordering of factor levels
-# TODO: Add metadata for dummy conversion
-const POOLTYPE = Uint16
-const POOLCONV = uint16
-
 type PooledDataVec{T} <: AbstractDataVec{T}
-    refs::Vector{POOLTYPE}
+    refs::Vector{POOLED_DATA_VEC_REF_TYPE}
     pool::Vector{T}
 
-    function PooledDataVec{T}(refs::Vector{POOLTYPE}, pool::Vector{T})
+    function PooledDataVec{T}(rs::Vector{POOLED_DATA_VEC_REF_TYPE}, p::Vector{T})
         # refs mustn't overflow pool
-        if max(refs) > length(pool)
-            error("reference vector points beyond the end of the pool!")
+        if max(rs) > length(p)
+            error("Reference vector points beyond the end of the pool")
         end
-        new(refs, pool)
+        new(rs, p)
     end
 end
 
@@ -192,8 +182,13 @@ end
 ##
 ##############################################################################
 
+# A no-op constructor
+PooledDataVec(d::PooledDataVec) = d
+
 # Echo inner constructor as an outer constructor
-PooledDataVec{T}(refs::Vector{POOLTYPE}, pool::Vector{T}) = PooledDataVec{T}(refs, pool)
+function PooledDataVec{T}(refs::Vector{POOLED_DATA_VEC_REF_TYPE}, pool::Vector{T})
+    PooledDataVec{T}(refs, pool)
+end
 
 # How do you construct a PooledDataVec from a Vector?
 # From the same sigs as a DataVec!
@@ -206,9 +201,9 @@ PooledDataVec{T}(refs::Vector{POOLTYPE}, pool::Vector{T}) = PooledDataVec{T}(ref
 #   * If value of d in pool already, set the refs accordingly
 #   * If value is new, add it to the pool, then set refs
 function PooledDataVec{T}(d::Vector{T}, m::AbstractArray{Bool,1})
-    newrefs = Array(POOLTYPE, length(d))
+    newrefs = Array(POOLED_DATA_VEC_REF_TYPE, length(d))
     newpool = Array(T, 0)
-    poolref = Dict{T, POOLTYPE}(0) # Why isn't this a set?
+    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}(0) # Why isn't this a set?
     maxref = 0
 
     # Loop through once to fill the poolref dict
@@ -240,12 +235,12 @@ end
 
 # Allow a pool to be provided by the user
 function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::AbstractVector{Bool})
-    if length(pool) > typemax(POOLTYPE)
+    if length(pool) > typemax(POOLED_DATA_VEC_REF_TYPE)
         error("Cannot construct a PooledDataVec with such a large pool")
     end
 
-    newrefs = Array(POOLTYPE, length(d))
-    poolref = Dict{T, POOLTYPE}(0)
+    newrefs = Array(POOLED_DATA_VEC_REF_TYPE, length(d))
+    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}(0)
     maxref = 0
 
     # loop through once to fill the poolref dict
@@ -269,7 +264,7 @@ function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::AbstractVector{Bool}
             if has(poolref, d[i])
               newrefs[i] = poolref[d[i]]
             else
-              error("vector contains elements not in provided pool")
+              error("Vector contains elements not in provided pool")
             end
         end
     end
@@ -278,7 +273,7 @@ function PooledDataVec{T}(d::Vector{T}, pool::Vector{T}, m::AbstractVector{Bool}
 end
 
 # Convert a BitVector to a Vector{Bool} w/ specified missingness
-function PooledDataVec(d::BitVector, m::AbstractArray{Bool,1})
+function PooledDataVec(d::BitVector, m::AbstractVector{Bool})
     PooledDataVec(convert(Vector{Bool}, d), m)
 end
 
@@ -293,121 +288,44 @@ function PooledDataVec(x::BitVector)
     PooledDataVec(convert(Vector{Bool}, x), falses(length(x)))
 end
 
-# Explicitly convert a Range1 into a PooledDataVec
-PooledDataVec{T}(r::Range1{T}) = PooledDataVec([r], falses(length(r)))
+# Explicitly convert Ranges into a PooledDataVec
+PooledDataVec{T}(r::Ranges{T}) = PooledDataVec([r], falses(length(r)))
 
 # Construct an all-NA PooledDataVec of a specific type
-PooledDataVec(t::Type, n::Int64) = PooledDataVec(Array(t, n), trues(n))
+PooledDataVec(t::Type, n::Int) = PooledDataVec(Array(t, n), trues(n))
 
-# Construct an all-NA PooledDataVec of Float64's
-PooledDataVec(n::Int64) = PooledDataVec(Array(Float64, n), trues(n))
+# Construct an all-NA PooledDataVec of the default column type
+PooledDataVec(n::Int) = PooledDataVec(Array(DEFAULT_COLUMN_TYPE, n), trues(n))
 
-# Construct an all-NA PooledDataVec of Float64's length 0
-PooledDataVec() = PooledDataVec(Array(Float64, 0), trues(0))
+# Construct an all-NA PooledDataVec of the default column type with length 0
+PooledDataVec() = PooledDataVec(Array(DEFAULT_COLUMN_TYPE, 0), trues(0))
 
 # Specify just a vector and a pool
 function PooledDataVec{T}(d::Vector{T}, pool::Vector{T})
     PooledDataVec(d, pool, falses(length(d)))
 end
 
-# A no-op constructor
-PooledDataVec(d::PooledDataVec) = d
-
 # Initialized constructors with 0's, 1's
 for (f, basef) in ((:pdvzeros, :zeros), (:pdvones, :ones))
     @eval begin
-        ($f)(n::Int64) = PooledDataVec(($basef)(n), falses(n))
-        ($f)(t::Type, n::Int64) = PooledDataVec(($basef)(t, n), falses(n))
+        ($f)(n::Int) = PooledDataVec(($basef)(n), falses(n))
+        ($f)(t::Type, n::Int) = PooledDataVec(($basef)(t, n), falses(n))
     end
 end
 
 # Initialized constructors with false's or true's
 for (f, basef) in ((:pdvfalses, :falses), (:pdvtrues, :trues))
     @eval begin
-        ($f)(n::Int64) = PooledDataVec(($basef)(n), falses(n))
+        ($f)(n::Int) = PooledDataVec(($basef)(n), falses(n))
     end
 end
 
 # Super hacked-out constructor: PooledDataVec[1, 2, 2, NA]
 function ref(::Type{PooledDataVec}, vals...)
-    # for now, just create a DataVec and then convert it
-    # TODO: rewrite for speed
+    # For now, just create a DataVec and then convert it
+    # TODO: Rewrite for speed
     PooledDataVec(DataVec[vals...])
 end
-
-# Conversion from PooledDataVec to DataVec
-DataVec(pdv::PooledDataVec) = values(pdv)
-
-##############################################################################
-##
-## PooledDataVec utilities
-##
-##############################################################################
-
-function values{T}(x::PooledDataVec{T})
-    n = length(x)
-    res = DataVec(T, n)
-    for i in 1:n
-        r = x.refs[i]
-        if r == 0
-            res[i] = NA
-        else
-            res[i] = x.pool[r]
-        end
-    end
-    return res
-end
-
-function levels{T}(x::PooledDataVec{T})
-    if any(x.refs .== 0)
-        n = length(x.pool)
-        d = Array(T, n + 1)
-        for i in 1:n
-            d[i] = x.pool[i]
-        end
-        m = falses(n + 1)
-        m[n + 1] = true
-        DataVec(d, m)
-    else
-        DataVec(copy(x.pool), falses(length(x.pool)))
-    end
-end
-
-indices{T}(x::PooledDataVec{T}) = x.refs
-
-function index_to_level{T}(x::PooledDataVec{T})
-    d = Dict{POOLTYPE, T}()
-    for i in POOLCONV(1:length(x.pool))
-        d[i] = x.pool[i]
-    end
-    d
-end
-
-function level_to_index{T}(x::PooledDataVec{T})
-    d = Dict{T, POOLTYPE}()
-    for i in POOLCONV(1:length(x.pool))
-        d[x.pool[i]] = i
-    end
-    d
-end
-
-function table{T}(d::PooledDataVec{T})
-    poolref = Dict{T,Int64}(0)
-    for i = 1:length(d)
-        if has(poolref, d[i])
-            poolref[d[i]] += 1
-        else
-            poolref[d[i]] = 1
-        end
-    end
-    return poolref
-end
-
-# copy does a deep copy
-copy{T}(dv::DataVec{T}) = DataVec{T}(copy(dv.data), copy(dv.na))
-copy{T}(dv::PooledDataVec{T}) = PooledDataVec{T}(copy(dv.refs), copy(dv.pool))
-
-# TODO: copy_to
 
 ##############################################################################
 ##
@@ -425,300 +343,134 @@ eltype{T}(v::AbstractDataVec{T}) = T
 
 ##############################################################################
 ##
-## A new predicate: isna()
+## Copying Data* objects
 ##
 ##############################################################################
 
+copy{T}(dv::DataVec{T}) = DataVec{T}(copy(dv.data), copy(dv.na))
+copy{T}(dv::PooledDataVec{T}) = PooledDataVec{T}(copy(dv.refs), copy(dv.pool))
+# TODO: Implement copy_to()
+
+##############################################################################
+##
+## Predicates, including the new isna()
+##
+##############################################################################
+
+function isnan{T}(dv::DataVec{T})
+    DataVec(isnan(dv.data), copy(dv.na))
+end
+
+function isnan{T}(pdv::PooledDataVec{T})
+    PooledDataVec(copy(pdv.refs), isnan(dv.pool))
+end
+
+function isfinite{T}(dv::DataVec{T})
+    DataVec(isfinite(dv.data), copy(dv.na))
+end
+
+function isfinite{T}(dv::PooledDataVec{T})
+    PooledDataVec(copy(pdv.refs), isfinite(dv.pool))
+end
+
 isna(x::NAtype) = true
-isna(v::DataVec) = v.na
+isna(v::DataVec) = copy(v.na)
 isna(v::PooledDataVec) = v.refs .== 0
 isna(x::AbstractArray) = falses(size(x))
 isna(x::Any) = false
 
-# TODO: fast version for PooledDataVec
-# TODO: a::AbstractDataVec{T}, b::AbstractArray{T}
-# TODO: a::AbstractDataVec{T}, b::AbstractDataVec{T}
-# TODO: a::AbstractDataVec{T}, NA
+function any_na{T}(dv::AbstractDataVec{T})
+    for i in 1:length(dv)
+        if isna(dv)[i]
+            return true
+        end
+    end
+    return false
+end
 
 ##############################################################################
 ##
-## ref()/assign() definitions
+## PooledDataVec utilities
+##
+## TODO: Add methods with these names for DataVec's
+##       Decide whether levels() or unique() is primitive. Make the other
+##       an alias.
 ##
 ##############################################################################
 
-# single-element access
-ref(x::DataVec, i::Int) = x.na[i] ? NA : x.data[i]
-ref(x::PooledDataVec, i::Int) = x.refs[i] == 0 ? NA : x.pool[x.refs[i]]
-
-# range access
-function ref(x::DataVec, r::Range1)
-    DataVec(x.data[r], x.na[r])
-end
-function ref(x::DataVec, r::Range)
-    DataVec(x.data[r], x.na[r])
-end
-# PooledDataVec -- be sure copy the pool!
-function ref(x::PooledDataVec, r::Range1)
-    # TODO: copy the whole pool or just the items in the range?
-    # for now, the whole pool
-    PooledDataVec(x.refs[r], copy(x.pool))
-end
-
-# logical access -- note that unlike Array logical access, this throws an error if
-# the index vector is not the same size as the data vector
-function ref(x::DataVec, ind::Vector{Bool})
-    if length(x) != length(ind)
-        throw(ArgumentError("boolean index is not the same size as the DataVec"))
+# Convert a PooledDataVec{T} to a DataVec{T}
+function values{T}(x::PooledDataVec{T})
+    n = length(x)
+    res = DataVec(T, n)
+    for i in 1:n
+        r = x.refs[i]
+        if r == 0
+            res[i] = NA
+        else
+            res[i] = x.pool[r]
+        end
     end
-    DataVec(x.data[ind], x.na[ind])
+    return res
 end
-function ref(x::DataVec, ind::BitVector)
-    if length(x) != length(ind)
-        throw(ArgumentError("boolean index is not the same size as the DataVec"))
-    end
-    DataVec(x.data[ind], x.na[ind])
-end
-# PooledDataVec
-function ref(x::PooledDataVec, ind::Vector{Bool})
-    if length(x) != length(ind)
-        throw(ArgumentError("boolean index is not the same size as the PooledDataVec"))
-    end
-    PooledDataVec(x.refs[ind], copy(x.pool))
-end
-function ref(x::PooledDataVec, ind::BitVector)
-    if length(x) != length(ind)
-        throw(ArgumentError("boolean index is not the same size as the PooledDataVec"))
-    end
-    PooledDataVec(x.refs[ind], copy(x.pool))
-end
+DataVec(pdv::PooledDataVec) = values(pdv)
+values{T}(dv::DataVec{T}) = copy(dv)
 
-# array index access
-function ref(x::DataVec, ind::Vector{Int})
-    DataVec(x.data[ind], x.na[ind])
-end
-# PooledDataVec
-function ref(x::PooledDataVec, ind::Vector{Int})
-    PooledDataVec(x.refs[ind], copy(x.pool))
-end
-
-ref(x::AbstractDataVec, ind::AbstractDataVec{Bool}) = x[replaceNA(ind, false)]
-ref(x::AbstractDataVec, ind::AbstractDataVec{Int}) = x[removeNA(ind)]
-
-ref(x::AbstractIndex, idx::AbstractDataVec{Bool}) = x[replaceNA(idx, false)]
-ref(x::AbstractIndex, idx::AbstractDataVec{Int}) = x[removeNA(idx)]
-
-# assign variants
-# x[3] = "cat"
-function assign{S, T}(x::DataVec{S}, v::T, i::Int)
-    x.data[i] = v
-    x.na[i] = false
-    return x[i]
-end
-function assign{S, T}(x::PooledDataVec{S}, v::T, i::Int)
-    # TODO handle pool ordering
-    # note: NA replacement comes for free here
-
-    # find the index of v in the pool
-    # This is broken if v can be converted to T
-    # EXAMPLE:
-    # pdv = PooledDataVec[1, 1, NA]
-    # findfirst(pdv.pool, true) => 1
-    pool_idx = findfirst(x.pool, v)
-    if pool_idx > 0 && isequal(x.pool[pool_idx], v)
-        # new item is in the pool
-        x.refs[i] = pool_idx
+function unique{T}(x::PooledDataVec{T})
+    if any(x.refs .== 0)
+        n = length(x.pool)
+        d = Array(T, n + 1)
+        for i in 1:n
+            d[i] = x.pool[i]
+        end
+        m = falses(n + 1)
+        m[n + 1] = true
+        return DataVec(d, m)
     else
-        # new item is not in the pool; add it
-        push(x.pool, v)
-        x.refs[i] = length(x.pool)
+        return DataVec(copy(x.pool), falses(length(x.pool)))
     end
-    return x[i]
+end
+levels{T}(pdv::PooledDataVec{T}) = unique(pdv)
+
+function unique{T}(adv::AbstractDataVec{T})
+  values = Dict{Union(T, NAtype), Bool}()
+  for i in 1:length(adv)
+    values[adv[i]] = true
+  end
+  unique_values = keys(values)
+  res = DataVec(T, length(unique_values))
+  for i in 1:length(unique_values)
+    res[i] = unique_values[i]
+  end
+  return res
+end
+levels{T}(adv::AbstractDataVec{T}) = unique(adv)
+
+get_indices{T}(x::PooledDataVec{T}) = x.refs
+
+function index_to_level{T}(x::PooledDataVec{T})
+    d = Dict{POOLED_DATA_VEC_REF_TYPE, T}()
+    for i in POOLED_DATA_VEC_REF_CONVERTER(1:length(x.pool))
+        d[i] = x.pool[i]
+    end
+    return d
 end
 
-# x[[3, 4]] = "cat"
-function assign{S, T}(x::DataVec{S}, v::T, is::Vector{Int})
-    x.data[is] = v
-    x.na[is] = false
-    return x[is] # this could get slow -- maybe not...
-end
-# PooledDataVec can use a possibly-slower generic approach
-function assign{S, T}(x::AbstractDataVec{S}, v::T, is::Vector{Int})
-    for i in is
-        x[i] = v
+function level_to_index{T}(x::PooledDataVec{T})
+    d = Dict{T, POOLED_DATA_VEC_REF_TYPE}()
+    for i in POOLED_DATA_VEC_REF_CONVERTER(1:length(x.pool))
+        d[x.pool[i]] = i
     end
-    return x[is]
+    d
 end
-
-# x[[3, 4]] = ["cat", "dog"]
-function assign{S, T}(x::DataVec{S}, vs::Vector{T}, is::Vector{Int})
-    if length(is) != length(vs)
-        throw(ArgumentError("can't assign when index and data vectors are different length"))
-    end
-    x.data[is] = vs
-    x.na[is] = false
-    return x[is]
-end
-# PooledDataVec can use a possibly-slower generic approach
-function assign{S, T}(x::AbstractDataVec{S}, vs::Vector{T}, is::Vector{Int})
-    if length(is) != length(vs)
-        throw(ArgumentError("can't assign when index and data vectors are different length"))
-    end
-    for vi in zip(vs, is)
-        x[vi[2]] = vi[1]
-    end
-    return x[is]
-end
-
-# x[[true, false, true]] = "cat"
-function assign{S, T}(x::DataVec{S}, v::T, mask::Vector{Bool})
-    x.data[mask] = v
-    x.na[mask] = false
-    return x[mask]
-end
-# PooledDataVec can use a possibly-slower generic approach
-function assign{S, T}(x::AbstractDataVec{S}, v::T, mask::Vector{Bool})
-    for i = 1:length(x)
-        if mask[i] == true
-            x[i] = v
-        end
-    end
-    return x[mask]
-end
-
-# x[[true, false, true]] = ["cat", "dog"]
-function assign{S, T}(x::DataVec{S}, vs::Vector{T}, mask::Vector{Bool})
-    if sum(mask) != length(vs)
-        throw(ArgumentError("can't assign when boolean trues and data vectors are different length"))
-    end
-    x.data[mask] = vs
-    x.na[mask] = false
-    return x[mask]
-end
-# PooledDataVec can use a possibly-slower generic approach
-function assign{S, T}(x::AbstractDataVec{S}, vs::Vector{T}, mask::Vector{Bool})
-    if sum(mask) != length(vs)
-        throw(ArgumentError("can't assign when boolean trues and data vectors are different length"))
-    end
-    ivs = 1
-    # walk through mask. whenever true, assign and increment vs index
-    for i = 1:length(mask)
-        if mask[i] == true
-            x[i] = vs[ivs]
-            ivs += 1
-        end
-    end
-    return x[mask]
-end
-
-# x[2:3] = "cat"
-function assign{S, T}(x::DataVec{S}, v::T, rng::Range1)
-    x.data[rng] = v
-    x.na[rng] = false
-    return x[rng]
-end
-# PooledDataVec can use a possibly-slower generic approach
-function assign{S, T}(x::AbstractDataVec{S}, v::T, rng::Range1)
-    for i in rng
-        x[i] = v
-    end
-end
-
-# x[2:3] = ["cat", "dog"]
-function assign{S, T}(x::DataVec{S}, vs::Vector{T}, rng::Range1)
-    if length(rng) != length(vs)
-        throw(ArgumentError("can't assign when index and data vectors are different length"))
-    end
-    x.data[rng] = vs
-    x.na[rng] = false
-    return x[rng]
-end
-# PooledDataVec can use a possibly-slower generic approach
-function assign{S, T}(x::AbstractDataVec{S}, vs::Vector{T}, rng::Range1)
-    if length(rng) != length(vs)
-        throw(ArgumentError("can't assign when index and data vectors are different length"))
-    end
-    ivs = 1
-    # walk through rng. assign and increment vs index
-    for i in rng
-        x[i] = vs[ivs]
-        ivs += 1
-    end
-    return x[rng]
-end
-
-# x[3] = NA
-assign{T}(x::DataVec{T}, n::NAtype, i::Int) = begin (x.na[i] = true); return NA; end
-assign{T}(x::PooledDataVec{T}, n::NAtype, i::Int) = begin (x.refs[i] = 0); return NA; end
-
-# x[[3,5]] = NA
-assign{T}(x::DataVec{T}, n::NAtype, is::Vector{Int}) = begin (x.na[is] = true); return x[is]; end
-assign{T}(x::PooledDataVec{T}, n::NAtype, is::Vector{Int}) = begin (x.refs[is] = 0); return x[is]; end
-
-# x[[true, false, true]] = NA
-assign{T}(x::DataVec{T}, n::NAtype, mask::Vector{Bool}) = begin (x.na[mask] = true); return x[mask]; end
-assign{T}(x::PooledDataVec{T}, n::NAtype, mask::Vector{Bool}) = begin (x.refs[mask] = 0); return x[mask]; end
-
-# x[2:3] = NA
-assign{T}(x::DataVec{T}, n::NAtype, rng::Range1) = begin (x.na[rng] = true); return x[rng]; end
-assign{T}(x::PooledDataVec{T}, n::NAtype, rng::Range1) = begin (x.refs[rng] = 0); return x[rng]; end
-
-# TODO: Abstract assignment of a union of T's and NAs
-# x[3:5] = {"cat", NA, "dog"}
-# x[3:5] = DataVec["cat", NA, "dog"]
 
 ##############################################################################
 ##
-## PooledDataVecs: EXPLANATION SHOULD GO HERE
+## find()
 ##
 ##############################################################################
 
-function PooledDataVecs{S, T}(v1::AbstractDataVec{S}, v2::AbstractDataVec{T})
-    ## Return two PooledDataVecs that share the same pool.
-
-    refs1 = Array(POOLTYPE, length(v1))
-    refs2 = Array(POOLTYPE, length(v2))
-    poolref = Dict{T,POOLTYPE}(length(v1))
-    maxref = 0
-
-    # loop through once to fill the poolref dict
-    for i = 1:length(v1)
-        ## TODO see if we really need the NA checking here.
-        ## if !isna(v1[i])
-            poolref[v1[i]] = 0
-        ## end
-    end
-    for i = 1:length(v2)
-        ## if !isna(v2[i])
-            poolref[v2[i]] = 0
-        ## end
-    end
-
-    # fill positions in poolref
-    pool = sort(keys(poolref))
-    i = 1
-    for p in pool
-        poolref[p] = i
-        i += 1
-    end
-
-    # fill in newrefs
-    for i = 1:length(v1)
-        ## if isna(v1[i])
-        ##     refs1[i] = 0
-        ## else
-            refs1[i] = poolref[v1[i]]
-        ## end
-    end
-    for i = 1:length(v2)
-        ## if isna(v2[i])
-        ##     refs2[i] = 0
-        ## else
-            refs2[i] = poolref[v2[i]]
-        ## end
-    end
-    (PooledDataVec(refs1, pool),
-     PooledDataVec(refs2, pool))
-end
+find(dv::DataVec) = find(dv.data)
+find(pdv::PooledDataVec) = find(values(pdv))
 
 ##############################################################################
 ##
@@ -748,14 +500,14 @@ function failNA{T}(dv::DataVec{T})
     n = length(dv)
     for i in 1:n
         if dv.na[i]
-            error("NA's encountered. Failing...")
+            error("Failing after encountering an NA")
         end
     end
     return copy(dv.data)
 end
 
 function removeNA{T}(dv::DataVec{T})
-    return dv.data[!dv.na]
+    return copy(dv.data[!dv.na])
 end
 
 function replaceNA{S, T}(dv::DataVec{S}, replacement_val::T)
@@ -768,6 +520,37 @@ function replaceNA{S, T}(dv::DataVec{S}, replacement_val::T)
     end
     return res
 end
+
+# TODO: Re-implement these methods more efficently
+function failNA{T}(dv::AbstractDataVec{T})
+    n = length(dv)
+    for i in 1:n
+        if isna(dv[i])
+            error("Failing after encountering an NA")
+        end
+    end
+    return convert(Vector{T}, [x::T for x in dv])
+end
+
+function removeNA{T}(dv::AbstractDataVec{T})
+    return convert(Vector{T}, [x::T for x in dv[!isna(dv)]])
+end
+
+function replaceNA{S, T}(dv::AbstractDataVec{S}, replacement_val::T)
+    n = length(dv)
+    res = Array(S, n)
+    for i in 1:n
+        if isna(dv[i])
+            res[i] = replacement_val
+        else
+            res[i] = dv[i]
+        end
+    end
+    return res
+end
+
+# TODO: Remove this?
+vector{T}(dv::AbstractDataVec{T}) = failNA(dv)
 
 type EachFailNA{T}
     dv::AbstractDataVec{T}
@@ -817,35 +600,181 @@ function next(itr::EachReplaceNA, ind::Int)
     end
 end
 
-# TODO: Re-implement these methods more efficently
-function failNA{T}(dv::PooledDataVec{T})
-    n = length(dv)
-    for i in 1:n
-        if isna(dv[i])
-            error("NA's encountered. Failing...")
-        end
+##############################################################################
+##
+## similar()
+##
+##############################################################################
+
+# TODO: Make these work using DataArray
+function similar{T}(dv::DataVec{T}, dim::Int)
+    DataVec(Array(T, dim), trues(dim))
+end
+
+function similar{T}(dv::DataVec{T}, dims::Dims)
+    DataVec(Array(T, dims), trues(dims))
+end
+
+function similar{T}(dv::PooledDataVec{T}, dim::Int)
+    PooledDataVec(fill(uint16(0), dim), dv.pool)
+end
+
+function similar{T}(dv::PooledDataVec{T}, dims::Dims)
+    PooledDataVec(fill(uint16(0), dims), dv.pool)
+end
+
+##############################################################################
+##
+## ref()
+##
+##############################################################################
+
+# dv[SingleItemIndex]
+function ref(x::DataVec, ind::Integer)
+    if x.na[ind]
+        return NA
+    else
+        return x.data[ind]
     end
-    return convert(Vector{T}, [x::T for x in dv])
 end
-
-function removeNA{T}(dv::PooledDataVec{T})
-    return convert(Vector{T}, [x::T for x in dv[!isna(dv)]])
-end
-
-function replaceNA{S, T}(dv::PooledDataVec{S}, replacement_val::T)
-    n = length(dv)
-    res = Array(S, n)
-    for i in 1:n
-        if isna(dv[i])
-            res[i] = replacement_val
-        else
-            res[i] = dv[i]
-        end
+function ref(x::PooledDataVec, ind::Integer)
+    if x.refs[ind] == 0
+        return NA
+    else
+        return x.pool[x.refs[ind]]
     end
-    return res
 end
 
-vector(dv::AbstractDataVec) = failNA(dv)
+# dv[MultiItemIndex]
+function ref(x::DataVec, inds::AbstractDataVec{Bool})
+    inds = find(replaceNA(inds, false))
+    return DataVec(x.data[inds], x.na[inds])
+end
+function ref(x::PooledDataVec, inds::AbstractDataVec{Bool})
+    inds = find(replaceNA(inds, false))
+    return PooledDataVec(x.refs[inds], copy(x.pool))
+end
+function ref(x::DataVec, inds::AbstractDataVec)
+    inds = removeNA(inds)
+    return DataVec(x.data[inds], x.na[inds])
+end
+function ref(x::PooledDataVec, inds::AbstractDataVec)
+    inds = removeNA(inds)
+    return PooledDataVec(x.refs[inds], copy(x.pool))
+end
+# TODO: Find a way to get these next two functions to use AbstractVector
+function ref(x::DataVec, inds::Union(Vector, BitVector, Ranges))
+    return DataVec(x.data[inds], x.na[inds])
+end
+function ref(x::PooledDataVec, inds::Union(Vector, BitVector, Ranges))
+    return PooledDataVec(x.refs[inds], copy(x.pool))
+end
+
+# v[dv]
+function ref(x::Vector, inds::AbstractDataVec{Bool})
+    inds = find(replaceNA(inds, false))
+    return x[inds]
+end
+function ref{S, T}(x::Vector{S}, inds::AbstractDataVec{T})
+    inds = removeNA(inds)
+    return x[inds]
+end
+
+##############################################################################
+##
+## assign() definitions
+##
+##############################################################################
+
+# x[SingleIndex] = NA
+function assign(x::DataVec, val::NAtype, ind::Integer)
+    x.na[ind] = true
+    return NA
+end
+# TODO: Delete values from pool that no longer exist?
+function assign(x::PooledDataVec, val::NAtype, ind::Integer)
+    x.refs[ind] = 0
+    return NA
+end
+
+# x[SingleIndex] = Single Item
+function assign(x::DataVec, val::Any, ind::Integer)
+    x.data[ind] = val
+    x.na[ind] = false
+    return val
+end
+# TODO: Delete values from pool that no longer exist?
+function assign(x::PooledDataVec, val::Any, ind::Integer)
+    val = convert(eltype(x), val)
+    pool_idx = findfirst(x.pool, val)
+    if pool_idx > 0
+        x.refs[ind] = pool_idx
+    else
+        push(x.pool, val)
+        x.refs[ind] = length(x.pool)
+    end
+    return val
+end
+
+# x[MultiIndex] = NA
+# TODO: Find a way to delete the next four methods
+function assign(x::DataVec{NAtype}, val::NAtype, inds::AbstractVector{Bool})
+    error("Don't use DataVec{NAtype}'s")
+end
+function assign(x::PooledDataVec{NAtype}, val::NAtype, inds::AbstractVector{Bool})
+    error("Don't use PooledDataVec{NAtype}'s")
+end
+function assign(x::DataVec{NAtype}, val::NAtype, inds::AbstractVector)
+    error("Don't use DataVec{NAtype}'s")
+end
+function assign(x::PooledDataVec{NAtype}, val::NAtype, inds::AbstractVector)
+    error("Don't use PooledDataVec{NAtype}'s")
+end
+
+# x[MultiIndex] = NA
+function assign(x::DataVec, val::NAtype, inds::AbstractVector)
+    x.na[inds] = true
+    return NA
+end
+# TODO: Delete values from pool that no longer exist?
+function assign(x::PooledDataVec, val::NAtype, inds::AbstractVector)
+    x.refs[inds] = 0
+    return NA
+end
+
+# x[MultiIndex] = Multiple Values
+# TODO: Delete values from pool that no longer exist?
+function assign(x::AbstractDataVec,
+                vals::AbstractVector,
+                inds::AbstractVector{Bool})
+    assign(x, vals, find(inds))
+end
+function assign(x::AbstractDataVec,
+                vals::AbstractVector,
+                inds::AbstractVector)
+    for (val, ind) in zip(vals, inds)
+        x[ind] = val
+    end
+    return vals
+end
+
+# x[MultiIndex] = Single Item
+# Single item can be a Number, String or the eltype of the AbstractDataVec
+# TODO: Delete values from pool that no longer exist?
+function assign{T}(x::AbstractDataVec{T},
+                   val::Union(Number, String, T),
+                   inds::AbstractVector{Bool})
+    assign(x, val, find(inds))
+end
+function assign{T}(x::AbstractDataVec{T},
+                   val::Union(Number, String, T),
+                   inds::AbstractVector)
+    val = convert(eltype(x), val)
+    for ind in inds
+        x[ind] = val
+    end
+    return val
+end
 
 ##############################################################################
 ##
@@ -863,20 +792,27 @@ end
 
 ##############################################################################
 ##
-## Conversion and promotion
+## Promotion rules
 ##
 ##############################################################################
-
-# TODO: Abstract? Pooled?
-
-# Can promote in theory based on data type
 
 promote_rule{T, T}(::Type{AbstractDataVec{T}}, ::Type{T}) = promote_rule(T, T)
 promote_rule{S, T}(::Type{AbstractDataVec{S}}, ::Type{T}) = promote_rule(S, T)
 promote_rule{T}(::Type{AbstractDataVec{T}}, ::Type{T}) = T
 
-convert{N}(::Type{BitArray{N}}, x::DataVec{BitArray{N}}) = error("Invalid DataVec")
-convert{N}(::Type{BitArray{N}}, x::AbstractDataVec{BitArray{N}}) = error("Invalid AbstractDataVec")
+##############################################################################
+##
+## Conversion rules
+##
+##############################################################################
+
+# TODO: Get rid of these
+function convert{N}(::Type{BitArray{N}}, x::DataVec{BitArray{N}})
+    error("Invalid DataVec")
+end
+function convert{N}(::Type{BitArray{N}}, x::AbstractDataVec{BitArray{N}})
+    error("Invalid AbstractDataVec")
+end
 
 function convert{T}(::Type{T}, x::DataVec{T})
     if any_na(x)
@@ -900,11 +836,6 @@ function convert{T}(::Type{T}, x::AbstractDataVec{T})
     end
 end
 
-# Should this be left in? Could be risky.
-function convert{T}(::Type{DataVec{T}}, a::Array{T,1})
-    DataVec(a, falses(length(a)))
-end
-
 ##############################################################################
 ##
 ## Conversion convenience functions
@@ -925,7 +856,7 @@ end
 for (f, basef) in ((:dvint, :int), (:dvfloat, :float64), (:dvbool, :bool))
     @eval begin
         function ($f){T}(dv::DataVec{T})
-            DataVec(($basef)(dv.data), dv.na)
+            DataVec(($basef)(dv.data), copy(dv.na))
         end
     end
 end
@@ -933,6 +864,8 @@ end
 ##############################################################################
 ##
 ## String representations and printing
+##
+## TODO: Inherit these from AbstractArray after implementing DataArray
 ##
 ##############################################################################
 
@@ -1013,207 +946,9 @@ function repl_show{T}(io::IO, dv::PooledDataVec{T})
     print(io, levels(dv))
 end
 
-##############################################################################
-##
-## Replacement operations
-##
-##############################################################################
+head{T}(dv::DataVec{T}) = repl_show(dv[1:min(6, length(dv))])
 
-# TODO: replace!(x::PooledDataVec{T}, from::T, to::T)
-# and similar to and from NA
-replace!{R}(x::PooledDataVec{R}, fromval::NAtype, toval::NAtype) = NA # no-op to deal with warning
-function replace!{R, S, T}(x::PooledDataVec{R}, fromval::S, toval::T)
-    # throw error if fromval isn't in the pool
-    fromidx = findfirst(x.pool, fromval)
-    if fromidx == 0
-        error("can't replace a value not in the pool in a PooledDataVec!")
-    end
-
-    # if toval is in the pool too, use that and remove fromval from the pool
-    toidx = findfirst(x.pool, toval)
-    if toidx != 0
-        x.refs[x.refs .== fromidx] = toidx
-        #x.pool[fromidx] = None    TODO: what to do here??
-    else
-        # otherwise, toval is new, swap it in
-        x.pool[fromidx] = toval
-    end
-
-    return toval
-end
-replace!(x::PooledDataVec{NAtype}, fromval::NAtype, toval::NAtype) = NA # no-op to deal with warning
-function replace!{S, T}(x::PooledDataVec{S}, fromval::T, toval::NAtype)
-    fromidx = findfirst(x.pool, fromval)
-    if fromidx == 0
-        error("can't replace a value not in the pool in a PooledDataVec!")
-    end
-
-    x.refs[x.refs .== fromidx] = 0
-
-    return NA
-end
-function replace!{S, T}(x::PooledDataVec{S}, fromval::NAtype, toval::T)
-    toidx = findfirst(x.pool, toval)
-    # if toval is in the pool, just do the assignment
-    if toidx != 0
-        x.refs[x.refs .== 0] = toidx
-    else
-        # otherwise, toval is new, add it to the pool
-        push(x.pool, toval)
-        x.refs[x.refs .== 0] = length(x.pool)
-    end
-
-    return toval
-end
-
-##############################################################################
-##
-## Extras
-##
-##############################################################################
-
-const letters = convert(Vector{ASCIIString}, split("abcdefghijklmnopqrstuvwxyz", ""))
-const LETTERS = convert(Vector{ASCIIString}, split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", ""))
-
-# Like string(s), but preserves Vector{String} and converts
-# Vector{Any} to Vector{String}.
-_vstring(s) = string(s)
-_vstring(s::Vector) = map(_vstring, s)
-_vstring{T<:String}(s::T) = s
-_vstring{T<:String}(s::Vector{T}) = s
-
-function paste{T<:String}(s::Vector{T}...)
-    sa = {s...}
-    N = max(length, sa)
-    res = fill("", N)
-    for i in 1:length(sa)
-        Ni = length(sa[i])
-        k = 1
-        for j = 1:N
-            res[j] = strcat(res[j], sa[i][k])
-            if k == Ni   # This recycles array elements.
-                k = 1
-            else
-                k += 1
-            end
-        end
-    end
-    res
-end
-# The following converts all arguments to Vector{<:String} before
-# calling paste.
-function paste(s...)
-    converted = map(vcat * _vstring, {s...})
-    paste(converted...)
-end
-
-function cut{S, T}(x::Vector{S}, breaks::Vector{T})
-    if !issorted(breaks)
-        sort!(breaks)
-    end
-    min_x, max_x = min(x), max(x)
-    if breaks[1] > min_x
-        unshift(breaks, min_x)
-    end
-    if breaks[end] < max_x
-        push(breaks, max_x)
-    end
-    refs = fill(POOLCONV(0), length(x))
-    for i in 1:length(x)
-        if x[i] == min_x
-            refs[i] = 1
-        else
-            refs[i] = search_sorted(breaks, x[i]) - 1
-        end
-    end
-    n = length(breaks)
-    from = map(x -> sprint(showcompact, x), breaks[1:(n - 1)])
-    to = map(x -> sprint(showcompact, x), breaks[2:n])
-    pool = Array(ASCIIString, n - 1)
-    if breaks[1] == min_x
-        pool[1] = strcat("[", from[1], ",", to[1], "]")
-    else
-        pool[1] = strcat("(", from[1], ",", to[1], "]")
-    end
-    for i in 2:(n - 1)
-        pool[i] = strcat("(", from[i], ",", to[i], "]")
-    end
-    PooledDataVec(refs, pool)
-end
-cut(x::Vector, ngroups::Int) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
-
-##############################################################################
-##
-## Convenience predicates: any_na, isnan, isfinite
-##
-##############################################################################
-
-function any_na(dv::DataVec)
-    for i in 1:length(dv)
-        if dv.na[i]
-            return true
-        end
-    end
-    return false
-end
-function any_na(dv::PooledDataVec)
-    for i in 1:length(dv)
-        if isna(dv[i])
-            return true
-        end
-    end
-    return false
-end
-
-function isnan(dv::DataVec)
-    new_data = isnan(dv.data)
-    DataVec(new_data, dv.na)
-end
-
-function isfinite(dv::DataVec)
-    new_data = isfinite(dv.data)
-    DataVec(new_data, dv.na)
-end
-
-##############################################################################
-##
-## NA-aware unique
-##
-##############################################################################
-
-function unique{T}(dv::DataVec{T})
-  values = Dict()
-  for i in 1:length(dv)
-    values[dv[i]] = 0
-  end
-  return keys(values)
-end
-
-unique(pd::PooledDataVec) = pd.pool
-sort(pd::PooledDataVec) = pd[order(pd)]
-order(pd::PooledDataVec) = groupsort_indexer(pd)[1]
-
-##############################################################################
-##
-## head() and tail()
-##
-##############################################################################
-
-function head{T}(dv::DataVec{T})
-    if length(dv) > 6
-        repl_show(dv[1:6])
-    else
-        repl_show(dv[1:end])
-    end
-end
-
-function tail{T}(dv::DataVec{T})
-    if length(dv) > 6
-        repl_show(dv[(end - 6):end])
-    else
-        repl_show(dv[1:end])
-    end
-end
+tail{T}(dv::DataVec{T}) = repl_show(dv[max(length(dv) - 6, 1):length(dv)])
 
 ##############################################################################
 ##
@@ -1275,12 +1010,222 @@ function map{T}(f::Function, dv::DataVec{T})
     return res
 end
 
-#
-# similar()
-#
+##############################################################################
+##
+## Replacement operations
+##
+##############################################################################
 
-similar{T}(dv::DataVec{T}, dim::Int) = DataVec(Array(T, dim), trues(dim))
-similar{T}(dv::DataVec{T}, dims::Dims) = DataVec(Array(T, dims), trues(dims))
+function replace!(x::PooledDataVec{NAtype}, fromval::NAtype, toval::NAtype)
+    NA # no-op to deal with warning
+end
+function replace!{R}(x::PooledDataVec{R}, fromval::NAtype, toval::NAtype)
+    NA # no-op to deal with warning
+end
+function replace!{S, T}(x::PooledDataVec{S}, fromval::T, toval::NAtype)
+    fromidx = findfirst(x.pool, fromval)
+    if fromidx == 0
+        error("can't replace a value not in the pool in a PooledDataVec!")
+    end
 
-similar{T}(dv::PooledDataVec{T}, dim::Int) = PooledDataVec(fill(uint16(0), dim), dv.pool)
-similar{T}(dv::PooledDataVec{T}, dims::Dims) = PooledDataVec(fill(uint16(0), dims), dv.pool)
+    x.refs[x.refs .== fromidx] = 0
+
+    return NA
+end
+function replace!{S, T}(x::PooledDataVec{S}, fromval::NAtype, toval::T)
+    toidx = findfirst(x.pool, toval)
+    # if toval is in the pool, just do the assignment
+    if toidx != 0
+        x.refs[x.refs .== 0] = toidx
+    else
+        # otherwise, toval is new, add it to the pool
+        push(x.pool, toval)
+        x.refs[x.refs .== 0] = length(x.pool)
+    end
+
+    return toval
+end
+function replace!{R, S, T}(x::PooledDataVec{R}, fromval::S, toval::T)
+    # throw error if fromval isn't in the pool
+    fromidx = findfirst(x.pool, fromval)
+    if fromidx == 0
+        error("can't replace a value not in the pool in a PooledDataVec!")
+    end
+
+    # if toval is in the pool too, use that and remove fromval from the pool
+    toidx = findfirst(x.pool, toval)
+    if toidx != 0
+        x.refs[x.refs .== fromidx] = toidx
+        #x.pool[fromidx] = None    TODO: what to do here??
+    else
+        # otherwise, toval is new, swap it in
+        x.pool[fromidx] = toval
+    end
+
+    return toval
+end
+
+##############################################################################
+##
+## Sorting
+##
+## TODO: Remove
+##
+##############################################################################
+
+sort(pd::PooledDataVec) = pd[order(pd)]
+order(pd::PooledDataVec) = groupsort_indexer(pd)[1]
+
+##############################################################################
+##
+## Tabulation
+##
+##############################################################################
+
+function table{T}(d::AbstractDataVec{T})
+    counts = Dict{Union(T, NAtype), Int}(0)
+    for i = 1:length(d)
+        if has(counts, d[i])
+            counts[d[i]] += 1
+        else
+            counts[d[i]] = 1
+        end
+    end
+    return counts
+end
+
+##############################################################################
+##
+## paste()
+##
+##############################################################################
+
+const letters = convert(Vector{ASCIIString}, split("abcdefghijklmnopqrstuvwxyz", ""))
+const LETTERS = convert(Vector{ASCIIString}, split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", ""))
+
+# Like string(s), but preserves Vector{String} and converts
+# Vector{Any} to Vector{String}.
+_vstring{T <: String}(s::T) = s
+_vstring{T <: String}(s::Vector{T}) = s
+_vstring(s::Vector) = map(_vstring, s)
+_vstring(s::Any) = string(s)
+
+function paste{T<:String}(s::Vector{T}...)
+    sa = {s...}
+    N = max(length, sa)
+    res = fill("", N)
+    for i in 1:length(sa)
+        Ni = length(sa[i])
+        k = 1
+        for j = 1:N
+            res[j] = strcat(res[j], sa[i][k])
+            if k == Ni   # This recycles array elements.
+                k = 1
+            else
+                k += 1
+            end
+        end
+    end
+    res
+end
+# The following converts all arguments to Vector{<:String} before
+# calling paste.
+function paste(s...)
+    converted = map(vcat * _vstring, {s...})
+    paste(converted...)
+end
+
+##############################################################################
+##
+## cut()
+##
+##############################################################################
+
+function cut{S, T}(x::Vector{S}, breaks::Vector{T})
+    if !issorted(breaks)
+        sort!(breaks)
+    end
+    min_x, max_x = min(x), max(x)
+    if breaks[1] > min_x
+        unshift(breaks, min_x)
+    end
+    if breaks[end] < max_x
+        push(breaks, max_x)
+    end
+    refs = fill(POOLED_DATA_VEC_REF_CONVERTER(0), length(x))
+    for i in 1:length(x)
+        if x[i] == min_x
+            refs[i] = 1
+        else
+            refs[i] = search_sorted(breaks, x[i]) - 1
+        end
+    end
+    n = length(breaks)
+    from = map(x -> sprint(showcompact, x), breaks[1:(n - 1)])
+    to = map(x -> sprint(showcompact, x), breaks[2:n])
+    pool = Array(ASCIIString, n - 1)
+    if breaks[1] == min_x
+        pool[1] = strcat("[", from[1], ",", to[1], "]")
+    else
+        pool[1] = strcat("(", from[1], ",", to[1], "]")
+    end
+    for i in 2:(n - 1)
+        pool[i] = strcat("(", from[i], ",", to[i], "]")
+    end
+    PooledDataVec(refs, pool)
+end
+cut(x::Vector, ngroups::Int) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
+
+##############################################################################
+##
+## PooledDataVecs: EXPLANATION SHOULD GO HERE
+##
+##############################################################################
+
+function PooledDataVecs{S, T}(v1::AbstractDataVec{S}, v2::AbstractDataVec{T})
+    ## Return two PooledDataVecs that share the same pool.
+
+    refs1 = Array(POOLED_DATA_VEC_REF_TYPE, length(v1))
+    refs2 = Array(POOLED_DATA_VEC_REF_TYPE, length(v2))
+    poolref = Dict{T,POOLED_DATA_VEC_REF_TYPE}(length(v1))
+    maxref = 0
+
+    # loop through once to fill the poolref dict
+    for i = 1:length(v1)
+        ## TODO see if we really need the NA checking here.
+        ## if !isna(v1[i])
+            poolref[v1[i]] = 0
+        ## end
+    end
+    for i = 1:length(v2)
+        ## if !isna(v2[i])
+            poolref[v2[i]] = 0
+        ## end
+    end
+
+    # fill positions in poolref
+    pool = sort(keys(poolref))
+    i = 1
+    for p in pool
+        poolref[p] = i
+        i += 1
+    end
+
+    # fill in newrefs
+    for i = 1:length(v1)
+        ## if isna(v1[i])
+        ##     refs1[i] = 0
+        ## else
+            refs1[i] = poolref[v1[i]]
+        ## end
+    end
+    for i = 1:length(v2)
+        ## if isna(v2[i])
+        ##     refs2[i] = 0
+        ## else
+            refs2[i] = poolref[v2[i]]
+        ## end
+    end
+    (PooledDataVec(refs1, pool),
+     PooledDataVec(refs2, pool))
+end

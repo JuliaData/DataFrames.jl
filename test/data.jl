@@ -39,7 +39,7 @@ pdvpp = PooledDataVec([1, 2, 2, 3, 2, 1], [1, 2, 3, 4])
 @assert string(pdvpp) == "[1, 2, 2, 3, 2, 1]"
 pdvpp = PooledDataVec(["one", "two", "two"], ["one", "two", "three"])
 @assert isequal(values(pdvpp), DataVec["one", "two", "two"])
-@assert all(indices(pdvpp) .== uint16([1, 3, 3]))
+@assert all(get_indices(pdvpp) .== uint16([1, 3, 3]))
 @assert isequal(levels(pdvpp), DataVec["one", "three", "two"])
 @assert isequal(pdvpp.pool, ["one", "three", "two"])
 @assert string(pdvpp) == "[one, two, two]"

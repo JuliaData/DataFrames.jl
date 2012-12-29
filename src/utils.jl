@@ -1,3 +1,15 @@
+##############################################################################
+##
+## Default values for unspecified objects
+##
+## Sometimes needed when dealing with NA's for which some value must exist in
+## the underlying data vector
+##
+##############################################################################
+
+baseval{T <: String}(s::Type{T}) = ""
+baseval(x::Any) = zero(x)
+
 # slow, but maintains order and seems to work:
 function _setdiff(a::Vector, b::Vector)
     idx = Int[]
