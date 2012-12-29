@@ -469,8 +469,20 @@ end
 ##
 ##############################################################################
 
-find(dv::DataVec) = find(dv.data)
-find(pdv::PooledDataVec) = find(values(pdv))
+function find(dv::DataVec{Bool})
+    n = length(dv)
+    res = Array(Int, n)
+    bound = 0
+    for i in 1:length(dv)
+        if !dv.na[i] && dv.data[i]
+            bound += 1
+            res[bound] = i
+        end
+    end
+    return res[1:bound]
+end
+
+find(pdv::PooledDataVec{Bool}) = find(values(pdv))
 
 ##############################################################################
 ##
