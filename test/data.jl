@@ -225,7 +225,7 @@ df6["B"] = [4, 3, 2, 1]
 @assert df6[1,2] == 4
 df6["D"] = [true, false, true, false]
 @assert df6[1,4] == true
-del!(df6, "D")
+del(df6, "D")
 @assert all(colnames(df6) .== ["A", "B", "C"])
 df6b = del(df6, 1)
 @assert ncol(df6) == 3

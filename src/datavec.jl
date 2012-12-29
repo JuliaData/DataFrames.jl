@@ -381,7 +381,7 @@ isna(x::Any) = false
 
 function any_na{T}(dv::AbstractDataVec{T})
     for i in 1:length(dv)
-        if isna(dv)[i]
+        if isna(dv[i])
             return true
         end
     end

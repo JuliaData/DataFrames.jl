@@ -629,7 +629,7 @@ assign{T}(df::DataFrame, newcol::Range1{T}, rows::Range1, colname::String) = ass
 # df[["new", "newer"]] = (new columns)
 
 # df[1] = nothing
-assign(df::DataFrame, x::Nothing, icol::Int) = del!(df, icol)
+assign(df::DataFrame, x::Nothing, icol::Int) = del(df, icol)
 
 ## Multicolumn assignment like df2[1:2,:] = df2[4:5,:]
 function assign(df1::DataFrame, df2::DataFrame, row::Int, cols::Range1)
@@ -725,9 +725,9 @@ function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, colname
     return df
 end
 
-# del!(df, 1)
-# del!(df, "old")
-function del!(df::DataFrame, icols::Vector{Int})
+# del(df, 1)
+# del(df, "old")
+function del(df::DataFrame, icols::Vector{Int})
     for icol in icols 
         if icol > 0 && icol <= ncol(df)
             del(df.columns, icol)
@@ -738,8 +738,8 @@ function del!(df::DataFrame, icols::Vector{Int})
     end
     df
 end
-del!(df::DataFrame, c::Int) = del!(df, [c])
-del!(df::DataFrame, c) = del!(df, df.colindex[c])
+del(df::DataFrame, c::Int) = del(df, [c])
+del(df::DataFrame, c) = del(df, df.colindex[c])
 
 # df2 = del(df, 1) new DF, minus vectors
 function del(df::DataFrame, icols::Vector{Int})

@@ -260,7 +260,7 @@ export # reconcile_groups,
        DataMatrix,
        DataStream,
        DataVec,
-       del!, # Should we only have `del` to match Base.del?
+       del,
        describe,
        dmdiagm,
        dmeye,
