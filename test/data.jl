@@ -479,3 +479,16 @@ dv[4] = NA
 @assert contains(unique(dv), 2)
 @assert contains(unique(dv), 3)
 @assert contains(unique(dv), NA)
+
+test_group("find()")
+dv = DataVec([true, false, true])
+@assert isequal(find(dv), [1, 3])
+
+pdv = PooledDataVec([true, false, true])
+@assert isequal(find(pdv), [1, 3])
+
+dv[1] = NA
+@assert isequal(find(dv), [3])
+
+pdv[1] = NA
+@assert isequal(find(pdv), [3])
