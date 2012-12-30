@@ -120,3 +120,18 @@ end
 function generate_column_names(n::Int)
     convert(Vector{ByteString}, map(i -> "x" * string(i), 1:n))
 end
+
+function repeat(dv::AbstractVector, n::Int)
+    m = length(dv)
+    if rem(n, m) != 0
+        error("New size must be a multiple of input vector's length")
+    end
+    new_dv = similar(dv, n)
+    for i in 0:(fld(n, m) - 1)
+        for j in 1:m
+            new_j = i * m + j
+            new_dv[new_j] = dv[j]
+        end
+    end
+    return new_dv
+end

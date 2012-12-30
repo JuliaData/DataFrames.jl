@@ -9,42 +9,42 @@ y = DataFrame(quote
   d = [4,5,6]
 end)
 
-set_group(x, "group1", ["a", "b"])
-set_group(y, "group2", ["c", "d"])
+# set_group(x, "group1", ["a", "b"])
+# set_group(y, "group2", ["c", "d"])
 
 z = deepcopy(x)  
-@test is_group(z, "group1")
+# @test is_group(z, "group1")
 
 z = cbind(x, y)
-@test is_group(z, "group1")
-@test is_group(z, "group2")
+# @test is_group(z, "group1")
+# @test is_group(z, "group2")
 
 v = DataFrame(quote
   a = [5,6,7]
   b = [8,9,10]
 end)
 z = rbind({v, x})
-@test is_group(z, "group1")
+# @test is_group(z, "group1")
 
 z = rbind(v,x)
-@test is_group(z, "group1")
+# @test is_group(z, "group1")
 
 # Deleting columns removes any mention from groupings
 del(x, "a")
-@test colnames(x) == ["b"]
-@test get_groups(x)["group1"] == ["b"]
+# @test colnames(x) == ["b"]
+# @test get_groups(x)["group1"] == ["b"]
 
 ## del calls ref, which properly deals with groupings
 y = without(y, "c")
 @test colnames(y) == ["d"]
-@test get_groups(y)["group2"] == ["d"]
+#@test get_groups(y)["group2"] == ["d"]
 z1 = z[[1]]
 @test colnames(z1) == ["a"]
-@test get_groups(z1)["group1"] == ["a"]
+#@test get_groups(z1)["group1"] == ["a"]
 
 z2 = z[:,[1,1,2]]
 @test colnames(z2) == ["a", "a_1", "b"]
-@test get_groups(z2)["group1"] == ["a_1", "b"]
+#@test get_groups(z2)["group1"] == ["a_1", "b"]
 
 test_group("DataFrame assignment")
 df1 = DataFrame(quote

@@ -20,16 +20,16 @@ abstract AbstractDataFrame <: Associative{Any, Any}
 type DataFrame <: AbstractDataFrame
     columns::Vector{Any}
     colindex::Index
-    function DataFrame(cols::Vector, colindex::Index)
+    function DataFrame(cols::Vector, colind::Index)
         # all columns have to be the same length
         if length(cols) > 1 && !all(map(length, cols) .== length(cols[1]))
             error("all columns in a DataFrame have to be the same length")
         end
         # colindex has to be the same length as columns vector
-        if length(colindex) != length(cols)
+        if length(colind) != length(cols)
             error("column names/index must be the same length as the number of columns")
         end
-        new(cols, colindex)
+        new(cols, colind)
     end
 end
 
@@ -39,16 +39,11 @@ end
 ##
 ##############################################################################
 
-# TODO: Move this into utils.jl
-function generate_column_names(n::Int)
-    convert(Vector{ByteString}, map(i -> "x" * string(i), 1:n))
-end
-
-# Unity
-DataFrame(x::DataFrame) = x
-
 # The empty DataFrame
 DataFrame() = DataFrame({}, Index())
+
+# No-op given a DataFrame
+DataFrame(x::DataFrame) = x
 
 # A single numeric value (what about others, like strings?)
 DataFrame(x::Number) = DataFrame(DataVec([x]))
@@ -82,7 +77,7 @@ function DataFrame{K,V}(d::Associative{K,V})
     # I couldn't get findmax to work here.
     ## (Nrow,maxpos) = findmax(map(length, values(d)))
     lengths = map(length, values(d))
-    maxpos = find(lengths .== max(lengths))[1]
+    maxpos = findfirst(lengths .== max(lengths))
     keymaxlen = keys(d)[maxpos]
     Nrow = length(d[keymaxlen])
     # Start with a blank DataFrame
@@ -236,18 +231,16 @@ function DataFrame{D<:Associative}(ds::Vector{D}, ks::Vector)
     df
 end
 
-
-
+##############################################################################
 ##
 ## Basic properties of a DataFrame
 ##
+##############################################################################
 
 colnames(df::DataFrame) = names(df.colindex)
 colnames!(df::DataFrame, vals) = names!(df.colindex, vals)
 
-function coltypes(df::DataFrame)
-    {typeof(df[i]).parameters[1] for i in 1:ncol(df)}
-end
+coltypes(df::DataFrame) = {eltype(df[i]) for i in 1:ncol(df)}
 
 names(df::AbstractDataFrame) = colnames(df)
 names!(df::DataFrame, vals) = names!(df.colindex, vals)
@@ -273,6 +266,14 @@ length(df::AbstractDataFrame) = ncol(df)
 
 ndims(::AbstractDataFrame) = 2
 
+index(df::DataFrame) = df.colindex
+
+##############################################################################
+##
+## Tools for working with groups of columsn
+##
+##############################################################################
+
 function reconcile_groups(olddf, newdf)
 	# foreach group, restrict range to intersection with newdf colnames
 	# add back any groups with non-null range
@@ -294,6 +295,28 @@ end
 
 # TODO: reconcile_groups
 
+##############################################################################
+##
+## ref() definitions
+##
+##############################################################################
+
+# Cases:
+#
+# df[SingleColumnIndex] => AbstractDataVec
+# df[MultiColumnIndex] => (Sub)?DataFrame
+# df[SingleRowIndex, SingleColumnIndex] => Scalar
+# df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
+# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVec
+# df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
+#
+# General Strategy:
+#
+# Let ref(df.colindex, col_inds) from Index() handle the resolution
+#  of column indices
+# Let ref(df.columns[j], row_inds) from AbstractDataVec() handle
+#  the resolution of row indices
+
 typealias ColumnIndex Union(Real, String, Symbol)
 
 # df[SingleColumnIndex] => AbstractDataVec
@@ -302,7 +325,7 @@ function ref(df::DataFrame, col_ind::ColumnIndex)
     return df.columns[selected_column]
 end
 
-# df[MultiColumnIndex] => DataFrame
+# df[MultiColumnIndex] => (Sub)?DataFrame
 function ref{T <: ColumnIndex}(df::DataFrame, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = df.columns[selected_columns]
@@ -315,20 +338,20 @@ function ref(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
     return df.columns[selected_column][row_ind]
 end
 
-# df[SingleRowIndex, MultiColumnIndex] => DataFrame
+# df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
 function ref{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = {dv[[row_ind]] for dv in df.columns[selected_columns]}
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
 end
 
-# df[MultiRowIndex, SingleColumnIndex] => AbstractDataVec
+# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVec
 function ref{T <: Real}(df::DataFrame, row_inds::AbstractVector{T}, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column][row_inds]
 end
 
-# df[MultiRowIndex, MultiColumnIndex] => DataFrame
+# df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
 function ref{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = {dv[row_inds] for dv in df.columns[selected_columns]}
@@ -343,7 +366,384 @@ ref(df::DataFrame, c::Real, ex::Expr) = ref(df, c, with(df, ex))
 ref{T <: Real}(df::DataFrame, c::AbstractVector{T}, ex::Expr) = ref(df, c, with(df, ex))
 ref(df::DataFrame, ex1::Expr, ex2::Expr) = ref(df, with(df, ex1), with(df, ex2))
 
-index(df::DataFrame) = df.colindex
+##############################################################################
+##
+## assign()
+##
+##############################################################################
+
+function create_new_column_from_scalar(df::DataFrame, val::NAtype)
+    n = max(nrow(df), 1)
+    return DataVec(Array(DEFAULT_COLUMN_TYPE, n), trues(n))
+end
+
+function create_new_column_from_scalar(df::DataFrame, val::Any)
+    n = max(nrow(df), 1)
+    col_data = Array(typeof(val), n)
+    for i in 1:n
+        col_data[i] = val
+    end
+    return DataVec(col_data, falses(n))
+end
+
+isnextcol(df::DataFrame, col_ind::String) = true
+isnextcol(df::DataFrame, col_ind::Symbol) = true
+function isnextcol(df::DataFrame, col_ind::Real)
+    return ncol(df) + 1 == int(col_ind)
+end
+
+function nextcolname(df::DataFrame)
+    return strcat("x", string(ncol(df) + 1))
+end
+
+# Will automatically add a new column if needed
+# TODO: Automatically enlarge column to required size?
+function insert_single_column!(df::DataFrame,
+                               dv::AbstractDataVec,
+                               col_ind::ColumnIndex)
+    dv_n, df_n = length(dv), nrow(df)
+    if df_n != 0
+        if dv_n != df_n
+            #dv = repeat(dv, df_n)
+            error("New columns must have the same length as old columns")
+        end
+    end
+    if has(df.colindex, col_ind)
+        j = df.colindex[col_ind]
+        df.columns[j] = dv
+    else
+        if typeof(col_ind) <: String || typeof(col_ind) <: Symbol
+            push(df.colindex, col_ind)
+            push(df.columns, dv)
+        else
+            if isnextcol(df, col_ind)
+                push(df.colindex, nextcolname(df))
+                push(df.columns, dv)
+            else
+                println("Column does not exist: $col_ind")
+                error("Cannot assign to non-existent column")
+            end
+        end
+    end
+    return dv
+end
+
+# Will automatically enlarge a scalar to a DataVec if needed
+function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
+    if nrow(df) <= 1
+        dv = DataVec([v], falses(1))
+        insert_single_column!(df, dv, col_ind)
+        return dv
+    else
+        try
+            df.columns[df.colindex[col_ind]][row_ind] = v
+            return v
+        catch
+            df.columns[df.colindex[col_ind]][row_ind] = NA
+            return NA
+        end
+    end
+end
+
+upgrade_vector(v::Vector) = DataVec(v, falses(length(v)))
+upgrade_vector(v::Ranges) = DataVec([v], falses(length(v)))
+upgrade_vector(v::BitVector) = DataVec(convert(Array{Bool}, v), falses(length(v)))
+upgrade_vector(adv::AbstractDataVec) = adv
+function upgrade_scalar(df::DataFrame, v::Any)
+    n = max(nrow(df), 1)
+    DataVec(fill(v, n), falses(n))
+end
+
+# df[SingleColumnIndex] = AbstractVector
+function assign(df::DataFrame,
+                v::AbstractVector,
+                col_ind::ColumnIndex)
+    insert_single_column!(df, upgrade_vector(v), col_ind)
+end
+
+# df[SingleColumnIndex] = Scalar (EXPANDS TO MAX(NROW(DF), 1))
+function assign(df::DataFrame,
+                v::Any,
+                col_ind::ColumnIndex)
+    insert_single_column!(df, upgrade_scalar(df, v), col_ind)
+end
+
+# df[MultiColumnIndex] = DataFrame
+function assign(df::DataFrame,
+                new_df::DataFrame,
+                col_inds::AbstractVector{Bool})
+    assign(df, new_df, find(col_inds))
+end
+function assign{T <: ColumnIndex}(df::DataFrame,
+                                  new_df::DataFrame,
+                                  col_inds::AbstractVector{T})
+    for i in 1:length(col_inds)
+        insert_single_column!(df, new_df[i], col_inds[i])
+    end
+    return new_df
+end
+
+# df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
+function assign(df::DataFrame,
+                v::AbstractVector,
+                col_inds::AbstractVector{Bool})
+    assign(df, v, find(col_inds))
+end
+function assign{T <: ColumnIndex}(df::DataFrame,
+                                  v::AbstractVector,
+                                  col_inds::AbstractVector{T})
+    dv = upgrade_vector(v)
+    for col_ind in col_inds
+        insert_single_column!(df, dv, col_ind)
+    end
+    return dv
+end
+
+# df[MultiColumnIndex] = Scalar (REPEATED FOR EACH COLUMN; EXPANDS TO MAX(NROW(DF), 1))
+function assign(df::DataFrame,
+                val::Any,
+                col_inds::AbstractVector{Bool})
+    assign(df, val, find(col_inds))
+end
+function assign{T <: ColumnIndex}(df::DataFrame,
+                                  val::Any,
+                                  col_inds::AbstractVector{T})
+    dv = upgrade_scalar(df, val)
+    for col_ind in col_inds
+        insert_single_column!(df, dv, col_ind)
+    end
+    return dv
+end
+
+# df[SingleRowIndex, SingleColumnIndex] = Scalar
+function assign(df::DataFrame,
+                v::Any,
+                row_ind::Real,
+                col_ind::ColumnIndex)
+    insert_single_entry!(df, v, row_ind, col_ind)
+end
+
+# df[SingleRowIndex, MultiColumnIndex] = Scalar (EXPANDS TO MAX(NROW(DF), 1))
+function assign(df::DataFrame,
+                v::Any,
+                row_ind::Real,
+                col_inds::AbstractVector{Bool})
+    assign(df, v, row_ind, find(col_inds))
+end
+function assign{T <: ColumnIndex}(df::DataFrame,
+                                  v::Any,
+                                  row_ind::Real,
+                                  col_inds::AbstractVector{T})
+    for col_ind in col_inds
+        insert_single_entry!(df, v, row_ind, col_ind)
+    end
+    return v
+end
+
+# df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
+function assign(df::DataFrame,
+                new_df::DataFrame,
+                row_ind::Real,
+                col_inds::AbstractVector{Bool})
+    assign(df, new_df, row_ind, find(col_inds))
+end
+
+function assign{T <: ColumnIndex}(df::DataFrame,
+                                  new_df::DataFrame,
+                                  row_ind::Real,
+                                  col_inds::AbstractVector{T})
+    for j in 1:length(col_inds)
+        col_ind = col_inds[j]
+        if has(df.colindex, col_ind)
+            df.columns[df.colindex[col_ind]][row_ind] = new_df[j][1]
+        else
+            error("Cannot assign into a non-existent position")
+        end
+    end
+    return new_df
+end
+
+# df[MultiRowIndex, SingleColumnIndex] = AbstractVector
+function assign(df::DataFrame,
+                v::AbstractVector,
+                row_inds::AbstractVector{Bool},
+                col_ind::ColumnIndex)
+    assign(df, v, find(row_inds), col_ind)
+end
+function assign{T <: Real}(df::DataFrame,
+                           v::AbstractVector,
+                           row_inds::AbstractVector{T},
+                           col_ind::ColumnIndex)
+    dv = upgrade_vector(v)
+    if has(df.colindex, col_ind)
+        df.columns[df.colindex[col_ind]][row_inds] = dv
+    else
+        error("Cannot assign into a non-existent position")
+    end
+    return dv
+end
+
+# df[MultiRowIndex, SingleColumnIndex] = Single Value
+function assign(df::DataFrame,
+                v::Any,
+                row_inds::AbstractVector{Bool},
+                col_ind::ColumnIndex)
+    assign(df, v, find(row_inds), col_ind)
+end
+function assign{T <: Real}(df::DataFrame,
+                           v::Any,
+                           row_inds::AbstractVector{T},
+                           col_ind::ColumnIndex)
+    if has(df.colindex, col_ind)
+        try
+            df.columns[df.colindex[col_ind]][row_inds] = v
+            return v
+        catch
+            df.columns[df.colindex[col_ind]][row_inds] = NA
+            return NA
+        end
+    else
+        error("Cannot assign into a non-existent position")
+    end
+end
+
+# df[MultiRowIndex, MultiColumnIndex] = DataFrame
+function assign(df::DataFrame,
+                new_df::DataFrame,
+                row_inds::AbstractVector{Bool},
+                col_inds::AbstractVector{Bool})
+    assign(df, new_df, find(row_inds), find(col_inds))
+end
+function assign{T <: ColumnIndex}(df::DataFrame,
+                                  new_df::DataFrame,
+                                  row_inds::AbstractVector{Bool},
+                                  col_inds::AbstractVector{T})
+    assign(df, new_df, find(row_inds), col_inds)
+end
+function assign{R <: Real}(df::DataFrame,
+                           new_df::DataFrame,
+                           row_inds::AbstractVector{R},
+                           col_inds::AbstractVector{Bool})
+    assign(df, new_df, row_inds, find(col_inds))
+end
+function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
+                                             new_df::DataFrame,
+                                             row_inds::AbstractVector{R},
+                                             col_inds::AbstractVector{T})
+    for j in 1:length(col_inds)
+        col_ind = col_inds[j]
+        if has(df.colindex, col_ind)
+            df.columns[df.colindex[col_ind]][row_inds] = new_df[:, j]
+        else
+            error("Cannot assign into a non-existent position")
+        end
+    end
+    return new_df
+end
+
+# df[MultiRowIndex, MultiColumnIndex] = AbstractVector
+function assign(df::DataFrame,
+                v::AbstractVector,
+                row_inds::AbstractVector{Bool},
+                col_inds::AbstractVector{Bool})
+    assign(df, v, find(row_inds), find(col_inds))
+end
+function assign{T <: ColumnIndex}(df::DataFrame,
+                                  v::AbstractVector,
+                                  row_inds::AbstractVector{Bool},
+                                  col_inds::AbstractVector{T})
+    assign(df, v, find(row_inds), col_inds)
+end
+function assign{R <: Real}(df::DataFrame,
+                           v::AbstractVector,
+                           row_inds::AbstractVector{R},
+                           col_inds::AbstractVector{Bool})
+    assign(df, v, row_inds, find(col_inds))
+end
+function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
+                                             v::AbstractVector,
+                                             row_inds::AbstractVector{R},
+                                             col_inds::AbstractVector{T})
+    dv = upgrade_vector(v)
+    for j in 1:length(col_inds)
+        col_ind = col_inds[j]
+        if has(df.colindex, col_ind)
+            df.columns[df.colindex[col_ind]][row_inds] = dv
+        else
+            error("Cannot assign into a non-existent position")
+        end
+    end
+    return dv
+end
+
+# df[MultiRowIndex, MultiColumnIndex] = Single Item
+function assign(df::DataFrame,
+                v::Any,
+                row_inds::AbstractVector{Bool},
+                col_inds::AbstractVector{Bool})
+    assign(df, v, find(row_inds), find(col_inds))
+end
+function assign{T <: ColumnIndex}(df::DataFrame,
+                                  v::Any,
+                                  row_inds::AbstractVector{Bool},
+                                  col_inds::AbstractVector{T})
+    assign(df, v, find(row_inds), col_inds)
+end
+function assign{R <: Real}(df::DataFrame,
+                           v::Any,
+                           row_inds::AbstractVector{R},
+                           col_inds::AbstractVector{Bool})
+    assign(df, v, row_inds, find(col_inds))
+end
+function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
+                                             v::Any,
+                                             row_inds::AbstractVector{R},
+                                             col_inds::AbstractVector{T})
+    for j in 1:length(col_inds)
+        col_ind = col_inds[j]
+        if has(df.colindex, col_ind)
+            try
+                df.columns[df.colindex[col_ind]][row_inds] = v
+                return v
+            catch
+                df.columns[df.colindex[col_ind]][row_inds] = NA
+                return NA
+            end
+        else
+            error("Cannot assign into a non-existent position")
+        end
+    end
+end
+
+# Special deletion assignment
+assign(df::DataFrame, x::Nothing, icol::Int) = del(df, icol)
+
+# Special cases involving expressions
+function assign(df::DataFrame, val::Any, ex::Expr)
+    assign(df, val, with(df, ex))
+end
+function assign(df::DataFrame, val::Any, ex::Expr, c::ColumnIndex)
+    assign(df, val, with(df, ex), c)
+end
+function assign{T <: ColumnIndex}(df::DataFrame, val::Any, ex::Expr, c::AbstractVector{T})
+    assign(df, val, with(df, ex), c)
+end
+function assign(df::DataFrame, val::Any, c::Real, ex::Expr)
+    assign(df, val, c, with(df, ex))
+end
+function assign{T <: Real}(df::DataFrame, val::Any, c::AbstractVector{T}, ex::Expr)
+    assign(df, val, c, with(df, ex))
+end
+function assign(df::DataFrame, val::Any, ex1::Expr, ex2::Expr)
+    assign(df, val, with(df, ex1), with(df, ex2))
+end
+
+#
+#
+#
+#
+#
+#
 
 # Associative methods:
 has(df::AbstractDataFrame, key) = has(index(df), key)
@@ -563,179 +963,6 @@ colnames(df::SubDataFrame) = colnames(df.parent)
 
 # Associative methods:
 index(df::SubDataFrame) = index(df.parent)
-
-# DF column operations
-######################
-
-# assignments return the complete object...
-
-# df[1] = replace column
-function assign(df::DataFrame, newcol::AbstractDataVec, icol::Int)
-    if length(newcol) != nrow(df) && nrow(df) != 0
-        throw(ArgumentError("Can't insert new DataFrame column of improper length"))
-    end
-    if icol > 0 && icol <= ncol(df)
-        df.columns[icol] = newcol
-    else
-        if icol == ncol(df) + 1
-            i = ncol(df) + 1
-            push(df.colindex, "x$i")
-            push(df.columns, newcol)
-        else
-            throw(ArgumentError("Can't insert new DataFrame column into a non-existent slot"))
-        end
-    end
-    return df
-end
-assign{T}(df::DataFrame, newcol::Vector{T}, icol::Int) = assign(df, DataVec(newcol), icol)
-assign{T}(df::DataFrame, newcol::Range1{T}, icol::Int) = assign(df, DataVec(newcol), icol)
-
-# df["old"] = replace old columns
-# df["new"] = append new column
-function assign(df::DataFrame, newcol::AbstractDataVec, colname::String)
-    icol = get(df.colindex.lookup, colname, 0)
-    if length(newcol) != nrow(df) && nrow(df) != 0
-        throw(ArgumentError("Can't insert new DataFrame column of improper length"))
-    end
-    if icol > 0
-        # existing
-        assign(df, newcol, icol)
-    else
-        # new
-        push(df.colindex, colname)
-        push(df.columns, newcol)
-    end
-    df
-end
-assign{T}(df::DataFrame, newcol::Vector{T}, colname::String) = assign(df, DataVec(newcol), colname)
-assign{T}(df::DataFrame, newcol::Range1{T}, colname::String) = assign(df, DataVec(newcol), colname)
-
-# df[:, "old"] = replace old columns
-# df[:, "new"] = append new column
-function assign(df::DataFrame, newcol::AbstractDataVec, rows::Range1, colname::String)
-    if length(rows) != nrow(df) && start(rows) != 1
-        error("Whole-column assignment must specify all existing rows")
-    end
-    icol = get(df.colindex.lookup, colname, 0)
-    if length(newcol) != nrow(df) && nrow(df) != 0
-        throw(ArgumentError("Can't insert new DataFrame column of improper length"))
-    end
-    if icol > 0
-        # existing
-        assign(df, newcol, icol)
-    else
-        # new
-        push(df.colindex, colname)
-        push(df.columns, newcol)
-    end
-    df
-end
-assign{T}(df::DataFrame, newcol::Vector{T}, rows::Range1, colname::String) = assign(df, DataVec(newcol), rows, colname)
-assign{T}(df::DataFrame, newcol::Range1{T}, rows::Range1, colname::String) = assign(df, DataVec(newcol), rows, colname)
-
-# assign(df::DataFrame, newcol, colname) =
-#     nrow(df) > 0 ? assign(df, DataVec(fill(newcol, nrow(df))), colname) : assign(df, DataVec([newcol]), colname)
-
-# do I care about vectorized assignment? maybe not...
-# df[1:3] = (replace columns) eh...
-# df[["new", "newer"]] = (new columns)
-
-# df[1] = nothing
-assign(df::DataFrame, x::Nothing, icol::Int) = del(df, icol)
-
-## Multicolumn assignment like df2[1:2,:] = df2[4:5,:]
-function assign(df1::DataFrame, df2::DataFrame, row::Int, cols::Range1)
-    if ncol(df2) != length(cols)
-        error("Dimensions do not match in assignment.")
-    end
-    for col in cols
-        df1[row, col] = df2[row, col]
-    end
-    return df1
-end
-
-function assign(df1::DataFrame, df2::DataFrame, rows::Range1, col::Int)
-    if nrow(df2) != length(rows)
-        error("Dimensions do not match in assignment.")
-    end
-    for row in rows
-        df1[row, col] = df2[row, col]
-    end
-    return df1
-end
-
-function assign(df1::DataFrame, df2::DataFrame, rows::Range1, cols::Range1)
-    if nrow(df2) != length(rows) || ncol(df2) != length(cols)
-        error("Dimensions do not match in assignment.")
-    end
-    for row in rows
-        for col in cols
-            df1[row, col] = df2[row, col]
-        end
-    end
-    return df1
-end
-
-function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, i::Int, j::Int)
-    df.columns[j][i] = x
-    return df
-end
-
-function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, row::Int, cols::Range1)
-    for col in cols
-        df.columns[col][row] = x
-    end
-    return df
-end
-
-function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, rows::Range1, col::Int)
-    df.columns[col][rows] = x
-    return df
-end
-
-function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, rows::Range1, cols::Range1)
-    for col in cols
-        df.columns[col][rows] = x
-    end
-    return df
-end
-
-function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, j::Int)
-    for i in 1:nrow(df)
-        df.columns[j][i] = x
-    end
-    return df
-end
-
-function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, i::Int, colname::String)
-    j = get(df.colindex.lookup, colname, 0)
-    if j == 0
-        error("Cannot assign to non-existent column")
-    end
-    df.columns[j][i] = x
-    return df
-end
-
-function assign{T <: Union(String, Number, NAtype)}(df::DataFrame, x::T, colname::String)
-    j = get(df.colindex.lookup, colname, 0)
-    n = nrow(df)
-    if j == 0
-        if n == 0
-            n = 1
-        end
-        newcol = DataVec(Array(T, n), falses(n))
-        for i in 1:n
-            newcol[i] = x
-        end
-        push(df.colindex, colname)
-        push(df.columns, newcol)
-    else
-        for i in 1:n
-            df.columns[j][i] = x
-        end
-    end
-    return df
-end
 
 # del(df, 1)
 # del(df, "old")

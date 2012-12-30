@@ -1,6 +1,3 @@
-require("DataFrames")
-using DataFrames
-
 #
 # DataVec and PooledDataVec Indexing
 #
@@ -150,7 +147,7 @@ for column_index in column_indices
     df[column_index] = 1
     df[column_index] = 1.0
     df[column_index] = "A"
-    # Mass assign a whole new column to one or more columns
+    df[column_index] = DataVec([1 + 0im, 2 + 1im])
 end
  
 # Only assign into columns for which new value is type compatible
@@ -160,5 +157,6 @@ for row_index in row_indices
     df[row_index, column_index] = 1
     df[row_index, column_index] = 1.0
     df[row_index, column_index] = "A"
+    df[row_index, column_index] = DataVec([1 + 0im, 2 + 1im])
   end
 end

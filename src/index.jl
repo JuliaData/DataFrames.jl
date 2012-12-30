@@ -3,6 +3,8 @@
 # through cleanly.
 # an Index is the usual implementation.
 # a SimpleIndex only works if the things are integer indexes, which is weird.
+typealias Indices Union(Real, AbstractVector{Real})
+
 abstract AbstractIndex
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...

@@ -642,14 +642,14 @@ end
 ##############################################################################
 
 # dv[SingleItemIndex]
-function ref(x::DataVec, ind::Integer)
+function ref(x::DataVec, ind::Real)
     if x.na[ind]
         return NA
     else
         return x.data[ind]
     end
 end
-function ref(x::PooledDataVec, ind::Integer)
+function ref(x::PooledDataVec, ind::Real)
     if x.refs[ind] == 0
         return NA
     else
@@ -699,24 +699,24 @@ end
 ##############################################################################
 
 # x[SingleIndex] = NA
-function assign(x::DataVec, val::NAtype, ind::Integer)
+function assign(x::DataVec, val::NAtype, ind::Real)
     x.na[ind] = true
     return NA
 end
 # TODO: Delete values from pool that no longer exist?
-function assign(x::PooledDataVec, val::NAtype, ind::Integer)
+function assign(x::PooledDataVec, val::NAtype, ind::Real)
     x.refs[ind] = 0
     return NA
 end
 
 # x[SingleIndex] = Single Item
-function assign(x::DataVec, val::Any, ind::Integer)
+function assign(x::DataVec, val::Any, ind::Real)
     x.data[ind] = val
     x.na[ind] = false
     return val
 end
 # TODO: Delete values from pool that no longer exist?
-function assign(x::PooledDataVec, val::Any, ind::Integer)
+function assign(x::PooledDataVec, val::Any, ind::Real)
     val = convert(eltype(x), val)
     pool_idx = findfirst(x.pool, val)
     if pool_idx > 0
