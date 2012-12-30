@@ -772,14 +772,43 @@ end
 
 # x[MultiIndex] = Single Item
 # Single item can be a Number, String or the eltype of the AbstractDataVec
+# Should be val::Union(Number, String, T), but that doesn't work
 # TODO: Delete values from pool that no longer exist?
 function assign{T}(x::AbstractDataVec{T},
-                   val::Union(Number, String, T),
+                   val::Number,
                    inds::AbstractVector{Bool})
     assign(x, val, find(inds))
 end
 function assign{T}(x::AbstractDataVec{T},
-                   val::Union(Number, String, T),
+                   val::Number,
+                   inds::AbstractVector)
+    val = convert(eltype(x), val)
+    for ind in inds
+        x[ind] = val
+    end
+    return val
+end
+function assign{T}(x::AbstractDataVec{T},
+                   val::String,
+                   inds::AbstractVector{Bool})
+    assign(x, val, find(inds))
+end
+function assign{T}(x::AbstractDataVec{T},
+                   val::String,
+                   inds::AbstractVector)
+    val = convert(eltype(x), val)
+    for ind in inds
+        x[ind] = val
+    end
+    return val
+end
+function assign{T}(x::AbstractDataVec{T},
+                   val::T,
+                   inds::AbstractVector{Bool})
+    assign(x, val, find(inds))
+end
+function assign{T}(x::AbstractDataVec{T},
+                   val::T,
                    inds::AbstractVector)
     val = convert(eltype(x), val)
     for ind in inds

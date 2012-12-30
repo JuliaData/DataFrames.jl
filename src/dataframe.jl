@@ -273,18 +273,6 @@ length(df::AbstractDataFrame) = ncol(df)
 
 ndims(::AbstractDataFrame) = 2
 
-# these are the underlying ref functions that create a new DF object with references to the
-# existing columns. The column index needs to be rebuilt with care, so that groups are preserved
-# to the extent possible
-function ref(df::DataFrame, c::Vector{Int})
-	newdf = DataFrame(df.columns[c], convert(Vector{ByteString}, colnames(df)[c]))
-	reconcile_groups(df, newdf)
-end
-function ref(df::DataFrame, r, c::Vector{Int})
-	newdf = DataFrame({x[r] for x in df.columns[c]}, convert(Vector{ByteString}, colnames(df)[c]))
-	reconcile_groups(df, newdf)
-end
-
 function reconcile_groups(olddf, newdf)
 	# foreach group, restrict range to intersection with newdf colnames
 	# add back any groups with non-null range
@@ -304,32 +292,56 @@ function reconcile_groups(olddf, newdf)
 	newdf
 end
 
-# all other ref() implementations call the above
-ref(df::DataFrame, c) = df[df.colindex[c]]
-ref(df::DataFrame, c::Int) = df.columns[c]
-ref(df::DataFrame, r, c) = df[r, df.colindex[c]]
-ref(df::DataFrame, r, c::Int) = df[c][r]
+# TODO: reconcile_groups
 
-# special cases
-ref(df::DataFrame, r::Int, c::Int) = df[c][r]
-ref(df::DataFrame, r::Int, c::Vector{Int}) = df[[r], c]
-ref(df::DataFrame, r::Int, c) = df[r, df.colindex[c]]
-ref(df::DataFrame, dv::AbstractDataVec) = df[removeNA(dv), :]
-ref(df::DataFrame, ex::Expr) = df[with(df, ex), :]  
-ref(df::DataFrame, ex::Expr, c::Int) = df[with(df, ex), c]
-ref(df::DataFrame, ex::Expr, c::Vector{Int}) = df[with(df, ex), c]
-ref(df::DataFrame, ex::Expr, c) = df[with(df, ex), c]
-function ref{T <: Union(String,Number)}(df::DataFrame, cols::Vector{T})
-    n = length(cols)
-    js = Array(Int, n)
-    for i in 1:n
-        js[i] = df.colindex[cols[i]]
-        if js[i] < 1
-            error("No such column: $(cols[i])")
-        end
-    end
-    return df[:, js]
+typealias ColumnIndex Union(Real, String, Symbol)
+
+# df[SingleColumnIndex] => AbstractDataVec
+function ref(df::DataFrame, col_ind::ColumnIndex)
+    selected_column = df.colindex[col_ind]
+    return df.columns[selected_column]
 end
+
+# df[MultiColumnIndex] => DataFrame
+function ref{T <: ColumnIndex}(df::DataFrame, col_inds::AbstractVector{T})
+    selected_columns = df.colindex[col_inds]
+    new_columns = df.columns[selected_columns]
+    return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
+end
+
+# df[SingleRowIndex, SingleColumnIndex] => Scalar
+function ref(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
+    selected_column = df.colindex[col_ind]
+    return df.columns[selected_column][row_ind]
+end
+
+# df[SingleRowIndex, MultiColumnIndex] => DataFrame
+function ref{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractVector{T})
+    selected_columns = df.colindex[col_inds]
+    new_columns = {dv[[row_ind]] for dv in df.columns[selected_columns]}
+    return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
+end
+
+# df[MultiRowIndex, SingleColumnIndex] => AbstractDataVec
+function ref{T <: Real}(df::DataFrame, row_inds::AbstractVector{T}, col_ind::ColumnIndex)
+    selected_column = df.colindex[col_ind]
+    return df.columns[selected_column][row_inds]
+end
+
+# df[MultiRowIndex, MultiColumnIndex] => DataFrame
+function ref{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::AbstractVector{T})
+    selected_columns = df.colindex[col_inds]
+    new_columns = {dv[row_inds] for dv in df.columns[selected_columns]}
+    return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
+end
+
+# Special cases involving expressions
+ref(df::DataFrame, ex::Expr) = ref(df, with(df, ex))
+ref(df::DataFrame, ex::Expr, c::ColumnIndex) = ref(df, with(df, ex), c)
+ref{T <: ColumnIndex}(df::DataFrame, ex::Expr, c::AbstractVector{T}) = ref(df, with(df, ex), c)
+ref(df::DataFrame, c::Real, ex::Expr) = ref(df, c, with(df, ex))
+ref{T <: Real}(df::DataFrame, c::AbstractVector{T}, ex::Expr) = ref(df, c, with(df, ex))
+ref(df::DataFrame, ex1::Expr, ex2::Expr) = ref(df, with(df, ex1), with(df, ex2))
 
 index(df::DataFrame) = df.colindex
 

@@ -322,7 +322,7 @@ df8 = df7 | based_on(:( d1 = d3 ))
 df8 = based_on(df7, :( sum_d3 = sum(d3) ))
 @assert isequal(df8[1,1], sum(df7["d3"]))
 
-@assert all(df7[:( d2 .== "B" )]["d1"] .== PooledDataVec([1,2,1,1]))
+#@assert all(df7[:( d2 .== "B" )]["d1"] .== PooledDataVec([1,2,1,1]))
 @assert all(df7[:( d2 .== "B" ), "d1"] .== PooledDataVec([1,2,1,1]))
 
 test_group("groupby")
@@ -351,7 +351,7 @@ df9 = based_on(groupby(df7, "d2"),
 
 df8 = within(groupby(df7, "d2"),
              :( d4 = d3 + 1; d1sum = sum(d1) ))
-@assert all(df8[:( d2 .== "C" )]["d1sum"] .== 13)
+@assert all(df8[:( d2 .== "C" ), "d1sum"] .== 13)
  
 ## @assert isequal(with(g1, :( sum(d1) )), map(x -> sum(x["d1"]), g1))
 

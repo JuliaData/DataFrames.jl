@@ -17,7 +17,8 @@ my_tests = ["test/data.jl",
             "test/datamatrix.jl",
             "test/constructors.jl",
             "test/abstractarray.jl",
-            "test/booleans.jl"]
+            "test/booleans.jl",
+            "test/indexing.jl"]
 
 println("Running tests:")
 
