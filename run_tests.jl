@@ -8,6 +8,7 @@ load("DataFrames")
 using DataFrames
 
 my_tests = ["test/data.jl",
+            "test/index.jl",
             "test/dataframe.jl",
             "test/operators.jl",
             "test/io.jl",

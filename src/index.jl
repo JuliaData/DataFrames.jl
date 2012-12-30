@@ -1,4 +1,3 @@
-
 # an AbstractIndex is a thing that can be used to look up ordered things by name, but that
 # will also accept a position or set of positions or range or other things and pass them
 # through cleanly.
@@ -7,16 +6,19 @@
 abstract AbstractIndex
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...
-    lookup::Dict{ByteString,Indices}      # name => names array position
+    lookup::Dict{ByteString, Indices}      # name => names array position
     names::Vector{ByteString}
 end
-Index{T<:ByteString}(x::Vector{T}) = Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)),
-                                           make_unique(convert(Vector{ByteString}, x)))
-Index() = Index(Dict{ByteString,Indices}(), ByteString[])
+Index{T <: ByteString}(x::Vector{T}) =
+    Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)),
+          make_unique(convert(Vector{ByteString}, x)))
+Index() = Index(Dict{ByteString, Indices}(), ByteString[])
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
 copy(x::Index) = Index(copy(x.lookup), copy(x.names))
+deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
 
+# I think this should be Vector{T <: String}
 function names!(x::Index, nm::Vector)
     if length(nm) != length(x)
         error("lengths don't match.")
@@ -46,15 +48,17 @@ end
 replace_names!(x::Index, from, to) = replace_names!(x, [from], [to])
 replace_names(x::Index, from, to) = replace_names!(copy(x), from, to)
 
-has(x::Index, key) = has(x.lookup, key)
+has(x::Index, key::String) = has(x.lookup, key)
+has(x::Index, key::Symbol) = has(x.lookup, string(key))
+has(x::Index, key::Real) = 1 <= key <= length(x.names)
 keys(x::Index) = names(x)
-function push(x::Index, nm)
+function push(x::Index, nm::String)
     x.lookup[nm] = length(x) + 1
     push(x.names, nm)
 end
 function del(x::Index, idx::Integer)
     # reset the lookup's beyond the deleted item
-    for i in idx+1:length(x.names)
+    for i in (idx + 1):length(x.names)
         x.lookup[x.names[i]] = i - 1
     end
     gr = get_groups(x)
@@ -66,7 +70,7 @@ function del(x::Index, idx::Integer)
         set_group(x, k, newv)
     end
 end
-function del(x::Index, nm)
+function del(x::Index, nm::String)
     if !has(x.lookup, nm)
         return
     end
@@ -74,15 +78,16 @@ function del(x::Index, nm)
     del(x, idx)
 end
 
-ref{T<:ByteString}(x::Index, idx::Vector{T}) = [[x.lookup[i] for i in idx]...]
-ref{T<:ByteString}(x::Index, idx::T) = x.lookup[idx]
-
-# fall-throughs, when something other than the index type is passed
-ref(x::AbstractIndex, idx::Int) = idx
-ref(x::AbstractIndex, idx::Vector{Int}) = idx
-ref(x::AbstractIndex, idx::Range{Int}) = [idx]
-ref(x::AbstractIndex, idx::Range1{Int}) = [idx]
-ref(x::AbstractIndex, idx::Vector{Bool}) = [1:length(x)][idx]
+ref(x::Index, idx::String) = x.lookup[idx]
+ref(x::Index, idx::Symbol) = x.lookup[string(idx)]
+ref(x::AbstractIndex, idx::Real) = int(idx)
+ref(x::AbstractIndex, idx::AbstractDataVec{Bool}) = ref(x, replaceNA(idx, false))
+ref{T}(x::AbstractIndex, idx::AbstractDataVec{T}) = ref(x, removeNA(idx))
+ref(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
+ref(x::AbstractIndex, idx::Ranges) = [idx]
+ref{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)
+ref{T <: String}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[i] for i in idx]...]
+ref{T <: Symbol}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[string(i)] for i in idx]...]
 
 type SimpleIndex <: AbstractIndex
     length::Integer
@@ -120,7 +125,6 @@ function is_group(idx::Index, name::ByteString)
     return false
   end
 end
-
 
 # special pretty-printer for groups, which are just Dicts.
 function pretty_show(io, gr::Dict{ByteString,Vector{ByteString}})
