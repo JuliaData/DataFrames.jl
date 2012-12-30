@@ -227,9 +227,7 @@ df6["D"] = [true, false, true, false]
 @assert df6[1,4] == true
 del(df6, "D")
 @assert all(colnames(df6) .== ["A", "B", "C"])
-df6b = del(df6, 1)
 @assert ncol(df6) == 3
-@assert ncol(df6b) == 2
 
 test_group("NA handling")
 @assert nrow(df5[complete_cases(df5), :]) == 3

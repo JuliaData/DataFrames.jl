@@ -243,9 +243,9 @@ colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
 # TODO make this faster by applying the header just once.
 # BUG zero-rowed groupings cause problems here, because a sum of a zero-length
 # DataVec is 0 (not 0.0).
-colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(del(x, d.cols),s), d)...)
+colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(without(x, d.cols),s), d)...)
 function colwise(gd::GroupedDataFrame, s::Vector{Symbol})
-    x = map(x -> colwise(del(x, gd.cols),s), gd)
+    x = map(x -> colwise(without(x, gd.cols),s), gd)
     cbind(rbind(x.keys), rbind(x.vals))
 end
 colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)

@@ -35,7 +35,7 @@ del(x, "a")
 @test get_groups(x)["group1"] == ["b"]
 
 ## del calls ref, which properly deals with groupings
-y = del(y, "c")
+y = without(y, "c")
 @test colnames(y) == ["d"]
 @test get_groups(y)["group2"] == ["d"]
 z1 = z[[1]]

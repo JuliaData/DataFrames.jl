@@ -1,3 +1,4 @@
+Change unique() to return present elements, while levels() returns dead elements as well
 
 * Workflow demo:
     * `csvDataFrame()` loading

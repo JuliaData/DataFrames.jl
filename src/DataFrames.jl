@@ -260,7 +260,6 @@ export # reconcile_groups,
        DataMatrix,
        DataStream,
        DataVec,
-       del,
        describe,
        dmdiagm,
        dmeye,
@@ -367,6 +366,7 @@ export # reconcile_groups,
        with,
        within!,
        within,
+       without,
        write_table
 
 ##############################################################################
