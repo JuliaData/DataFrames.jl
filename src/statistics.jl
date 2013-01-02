@@ -18,5 +18,5 @@ function percent_change{T}(v::Vector{T})
     return res
 end
 
-autocor{T}(dv::DataVec{T}, lag::Int) = cor(dv[1:(end - lag)], dv[(1 + lag):end])
-autocor{T}(dv::DataVec{T}) = autocor(dv, 1)
+autocor{T}(dv::DataVector{T}, lag::Int) = cor(dv[1:(end - lag)], dv[(1 + lag):end])
+autocor{T}(dv::DataVector{T}) = autocor(dv, 1)

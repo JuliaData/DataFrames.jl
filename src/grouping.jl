@@ -29,7 +29,7 @@ function groupsort_indexer(x::Vector, ngroups::Integer)
     end
     result, where, counts
 end
-groupsort_indexer(pv::PooledDataVec) = groupsort_indexer(pv.refs, length(pv.pool))
+groupsort_indexer(pv::PooledDataVector) = groupsort_indexer(pv.refs, length(pv.pool))
 
 ##############################################################################
 ##
@@ -53,7 +53,7 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     ##     http://wesmckinney.com/blog/?p=489
     
     # use the pool trick to get a set of integer references for each unique item
-    dv = PooledDataVec(df[cols[1]])
+    dv = PooledDataVector(df[cols[1]])
     # if there are NAs, add 1 to the refs to avoid underflows in x later
     dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
     x = copy(dv.refs) + dv_has_nas
@@ -61,7 +61,7 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     ngroups = length(dv.pool) + dv_has_nas
     # if there's more than 1 column, do roughly the same thing repeatedly
     for j = 2:length(cols)
-        dv = PooledDataVec(df[cols[j]])
+        dv = PooledDataVector(df[cols[j]])
         dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
         for i = 1:nrow(df)
             x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
@@ -242,7 +242,7 @@ colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
 
 # TODO make this faster by applying the header just once.
 # BUG zero-rowed groupings cause problems here, because a sum of a zero-length
-# DataVec is 0 (not 0.0).
+# DataVector is 0 (not 0.0).
 colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(without(x, d.cols),s), d)...)
 function colwise(gd::GroupedDataFrame, s::Vector{Symbol})
     x = map(x -> colwise(without(x, gd.cols),s), gd)

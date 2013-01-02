@@ -2,8 +2,8 @@
 # DataVec and PooledDataVec Indexing
 #
 
-dv = DataVec([1, 2])
-pdv = PooledDataVec([1, 2])
+dv = DataArray([1, 2])
+pdv = PooledDataVector([1, 2])
 
 adv_indices = {1,
                1.0,
@@ -15,9 +15,9 @@ adv_indices = {1,
                [1.0, 2.0],
                [true, true],
                trues(2),
-               DataVec[1, 2],
-               DataVec[1.0, 2.0],
-               DataVec[true, true]}
+               DataVector[1, 2],
+               DataVector[1.0, 2.0],
+               DataVector[true, true]}
 
 single_adv_indices = {1,
                       1.0}
@@ -30,9 +30,9 @@ multi_adv_indices = {1:2,
                      [1.0, 2.0],
                      [true, true],
                      trues(2),
-                     DataVec[1, 2],
-                     DataVec[1.0, 2.0],
-                     DataVec[true, true]}
+                     DataVector[1, 2],
+                     DataVector[1.0, 2.0],
+                     DataVector[true, true]}
 
 # avd[Index]
 for adv_index in adv_indices
@@ -90,9 +90,9 @@ row_indices = {1,
                [1.0, 2.0],
                [true, false],
                trues(2),
-               DataVec[1, 2],
-               DataVec[1.0, 2.0],
-               DataVec[true, false],
+               DataVector[1, 2],
+               DataVector[1.0, 2.0],
+               DataVector[true, false],
                :(A .== 1)}
 
 column_indices = {1,
@@ -104,10 +104,10 @@ column_indices = {1,
                   [true, false],
                   trues(2),
                   ["A", "B"],
-                  DataVec[1, 2],
-                  DataVec[1.0, 2.0],
-                  DataVec[true, false],
-                  DataVec["A", "B"],
+                  DataVector[1, 2],
+                  DataVector[1.0, 2.0],
+                  DataVector[true, false],
+                  DataVector["A", "B"],
                   :(colnames(_DF) .== "B")}
 
 #
@@ -147,7 +147,7 @@ for column_index in column_indices
     df[column_index] = 1
     df[column_index] = 1.0
     df[column_index] = "A"
-    df[column_index] = DataVec([1 + 0im, 2 + 1im])
+    df[column_index] = DataArray([1 + 0im, 2 + 1im])
 end
  
 # Only assign into columns for which new value is type compatible
@@ -157,6 +157,6 @@ for row_index in row_indices
     df[row_index, column_index] = 1
     df[row_index, column_index] = 1.0
     df[row_index, column_index] = "A"
-    df[row_index, column_index] = DataVec([1 + 0im, 2 + 1im])
+    df[row_index, column_index] = DataArray([1 + 0im, 2 + 1im])
   end
 end

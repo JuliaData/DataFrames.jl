@@ -10,7 +10,7 @@ test_group("Formula")
 
 d = DataFrame()
 d["y"] = [1:4]
-d["x1"] = PooledDataVec([5:8])
+d["x1"] = PooledDataVector([5:8])
 d["x2"] = [9:12]
 d["x3"] = [11:14]
 d["x4"] = [12:15]
@@ -57,33 +57,33 @@ mm = model_matrix(mf)
 
 test_group("expanding a PooledVec into a design matrix of indicators for each dummy variable")
 
-a = expand(PooledDataVec(x1), "x1", DataFrame())
-@test a[:,1] == DataVec([0, 1., 0, 0])
-@test a[:,2] == DataVec([0, 0, 1., 0])
-@test a[:,3] == DataVec([0, 0, 0, 1.])
+a = expand(PooledDataVector(x1), "x1", DataFrame())
+@test a[:,1] == DataVector([0, 1., 0, 0])
+@test a[:,2] == DataVector([0, 0, 1., 0])
+@test a[:,3] == DataVector([0, 0, 0, 1.])
 @test colnames(a) == ["x1:6.0", "x1:7.0", "x1:8.0"]
 
 test_group("create a design matrix from interactions from two DataFrames")
 
 b = DataFrame()
-b["x2"] = DataVec(x2)
+b["x2"] = DataVector(x2)
 df = interaction_design_matrix(a,b)
-@test df[:,1] == DataVec([0, 10., 0, 0])
-@test df[:,2] == DataVec([0, 0, 11., 0])
-@test df[:,3] == DataVec([0, 0, 0, 12.])
+@test df[:,1] == DataVector([0, 10., 0, 0])
+@test df[:,2] == DataVector([0, 0, 11., 0])
+@test df[:,3] == DataVector([0, 0, 0, 12.])
 
 test_group("expanding an singleton expression/symbol into a DataFrame")
 
 df = deepcopy(d)
 r = expand(:x2, df)
 @test isa(r, DataFrame)
-@test r[:,1] == DataVec([9,10,11,12])  # TODO: test float vs int return
+@test r[:,1] == DataVector([9,10,11,12])  # TODO: test float vs int return
 
 df = deepcopy(d)
 ex = :(log(x2))
 r = expand(ex, df)
 @test isa(r, DataFrame)
-@test r[:,1] == DataVec(log([9,10,11,12]))
+@test r[:,1] == DataVector(log([9,10,11,12]))
 
 # ex = :(x1 & x2)
 # r = expand(ex, df)
@@ -94,27 +94,27 @@ r = expand(ex, df)
 r = expand(:(x1 + x2), df)
 @test isa(r, DataFrame)
 @test ncol(r) == 2
-@test r[:,1] == DataVec(df["x1"])
-@test r[:,2] == DataVec(df["x2"])
+@test r[:,1] == DataVector(df["x1"])
+@test r[:,2] == DataVector(df["x2"])
 
-df["x1"] = PooledDataVec(x1)
+df["x1"] = PooledDataVector(x1)
 r = expand(:x1, df)
 @test isa(r, DataFrame)
 @test ncol(r) == 3
-@test r == expand(PooledDataVec(x1), "x1", DataFrame())
+@test r == expand(PooledDataVector(x1), "x1", DataFrame())
 
 r = expand(:(x1 + x2), df)
 @test isa(r, DataFrame)
 @test ncol(r) == 4
-@test r[:,1:3] == expand(PooledDataVec(x1), "x1", DataFrame())
-@test r[:,4] == DataVec(df["x2"])
+@test r[:,1:3] == expand(PooledDataVector(x1), "x1", DataFrame())
+@test r[:,4] == DataVector(df["x2"])
 
-df["x2"] = PooledDataVec(x2)
+df["x2"] = PooledDataVector(x2)
 r = expand(:(x1 + x2), df)
 @test isa(r, DataFrame)
 @test ncol(r) == 6
-@test r[:,1:3] == expand(PooledDataVec(x1), "x1", DataFrame())
-@test r[:,4:6] == expand(PooledDataVec(x2), "x2", DataFrame())
+@test r[:,1:3] == expand(PooledDataVector(x1), "x1", DataFrame())
+@test r[:,4:6] == expand(PooledDataVector(x2), "x2", DataFrame())
 
 test_group("Creating a model matrix using full formulas: y ~ x1 + x2, etc")
 
@@ -145,7 +145,7 @@ mm = model_matrix(mf)
 @test mm.model == [ones(4) x1 log(x2)]
 
 df = deepcopy(d)
-df["x1"] = PooledDataVec([5:8])
+df["x1"] = PooledDataVector([5:8])
 f = Formula(:(y ~ x1 * (log(x2) + x3)))
 mf = model_frame(f, df)
 mm = model_matrix(mf)
@@ -189,7 +189,7 @@ mm = model_matrix(model_frame(Formula(:(y ~ x2)), d))
 @test mm.response == y''
 
 df = deepcopy(d)
-df["x1"] = PooledDataVec(df["x1"])
+df["x1"] = PooledDataVector(df["x1"])
 
 mm = model_matrix(model_frame(Formula(:(y ~ x2 + x3 + x3*x2)), df))
 @test mm.model == [ones(4) x2 x3 x2.*x3]

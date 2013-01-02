@@ -7,171 +7,171 @@ test_group("NA's")
 @assert isna(NA == 3)
 @assert isna(NA == NA)
 
-test_group("DataVec creation")
-dvint = DataVec[1, 2, NA, 4]
-dvint2 = DataVec([5:8])
-dvint3 = DataVec(5:8)
-dvflt = DataVec[1.0, 2, NA, 4]
-dvstr = DataVec["one", "two", NA, "four"]
+test_group("DataVector creation")
+dvint = DataVector[1, 2, NA, 4]
+dvint2 = DataArray([5:8])
+dvint3 = DataArray(5:8)
+dvflt = DataVector[1.0, 2, NA, 4]
+dvstr = DataVector["one", "two", NA, "four"]
 
-@assert isa(dvint, DataVec{Int64})
-@assert isa(dvint2, DataVec{Int64})
-@assert isa(dvint3, DataVec{Int64})
-@assert isa(dvflt, DataVec{Float64})
-@assert isa(dvstr, DataVec{ASCIIString})
-@test throws_exception(DataVec([5:8], falses(2)), Exception) 
+@assert isa(dvint, DataVector{Int64})
+@assert isa(dvint2, DataVector{Int64})
+@assert isa(dvint3, DataVector{Int64})
+@assert isa(dvflt, DataVector{Float64})
+@assert isa(dvstr, DataVector{ASCIIString})
+@test throws_exception(DataArray([5:8], falses(2)), Exception) 
 
-@assert isequal(DataVec(dvint), dvint)
+@assert isequal(DataArray(dvint), dvint)
 
-test_group("PooledDataVec creation")
-pdvstr = PooledDataVec["one", "one", "two", "two", NA, "one", "one"]
-@assert isa(pdvstr, PooledDataVec{ASCIIString})
-@test throws_exception(PooledDataVec["one", "one", 9], Exception)
-@assert isequal(PooledDataVec(pdvstr), pdvstr)
+test_group("PooledDataVector creation")
+pdvstr = PooledDataVector["one", "one", "two", "two", NA, "one", "one"]
+@assert isa(pdvstr, PooledDataVector{ASCIIString})
+@test throws_exception(PooledDataVector["one", "one", 9], Exception)
+@assert isequal(PooledDataVector(pdvstr), pdvstr)
 
-test_group("PooledDataVec creation with predetermined pool")
-pdvpp = PooledDataVec([1, 2, 2, 3], [1, 2, 3, 4])
+test_group("PooledDataVector creation with predetermined pool")
+pdvpp = PooledDataVector([1, 2, 2, 3], [1, 2, 3, 4])
 @assert isequal(pdvpp.pool, [1, 2, 3, 4])
 @assert string(pdvpp) == "[1, 2, 2, 3]"
-@test throws_exception(PooledDataVec([1, 2, 3], [1, 2]), Exception)
-pdvpp = PooledDataVec([1, 2, 2, 3, 2, 1], [1, 2, 3, 4])
+@test throws_exception(PooledDataVector([1, 2, 3], [1, 2]), Exception)
+pdvpp = PooledDataVector([1, 2, 2, 3, 2, 1], [1, 2, 3, 4])
 @assert isequal(pdvpp.pool, [1, 2, 3, 4])
 @assert string(pdvpp) == "[1, 2, 2, 3, 2, 1]"
-pdvpp = PooledDataVec(["one", "two", "two"], ["one", "two", "three"])
-@assert isequal(values(pdvpp), DataVec["one", "two", "two"])
+pdvpp = PooledDataVector(["one", "two", "two"], ["one", "two", "three"])
+@assert isequal(values(pdvpp), DataVector["one", "two", "two"])
 @assert all(get_indices(pdvpp) .== uint16([1, 3, 3]))
-@assert isequal(levels(pdvpp), DataVec["one", "three", "two"])
+@assert isequal(levels(pdvpp), DataVector["one", "three", "two"])
 @assert isequal(pdvpp.pool, ["one", "three", "two"])
 @assert string(pdvpp) == "[one, two, two]"
-@test throws_exception(PooledDataVec(["one", "two", "four"], ["one", "two", "three"]), Exception)
+@test throws_exception(PooledDataVector(["one", "two", "four"], ["one", "two", "three"]), Exception)
 
-test_group("PooledDataVec utf8 support")
-pdvpp = PooledDataVec([utf8("hello")], [false])
+test_group("PooledDataVector utf8 support")
+pdvpp = PooledDataVector([utf8("hello")], [false])
 @assert isa(pdvpp[1], UTF8String)
-pdvpp = PooledDataVec([utf8("hello")])
+pdvpp = PooledDataVector([utf8("hello")])
 @assert isa(pdvpp[1], UTF8String)
 
-test_group("DataVec access")
+test_group("DataVector access")
 @assert dvint[1] == 1
 @assert isna(dvint[3])
-@assert isequal(dvflt[3:4], DataVec[NA, 4.0])
-@assert isequal(dvint[[true, false, true, false]], DataVec[1, NA])
-@assert isequal(dvstr[[1, 2, 1, 4]], DataVec["one", "two", "one", "four"])
-@assert isequal(dvstr[[1, 2, 1, 3]], DataVec["one", "two", "one", NA])
+@assert isequal(dvflt[3:4], DataVector[NA, 4.0])
+@assert isequal(dvint[[true, false, true, false]], DataVector[1, NA])
+@assert isequal(dvstr[[1, 2, 1, 4]], DataVector["one", "two", "one", "four"])
+@assert isequal(dvstr[[1, 2, 1, 3]], DataVector["one", "two", "one", NA])
 
-test_group("PooledDataVec access")
+test_group("PooledDataVector access")
 @assert pdvstr[1] == "one"
 @assert isna(pdvstr[5])
-@assert isequal(pdvstr[1:3], DataVec["one", "one", "two"])
-@assert isequal(pdvstr[[true, false, true, false, true, false, true]], PooledDataVec["one", "two", NA, "one"])
-@assert isequal(pdvstr[[1, 3, 1, 2]], DataVec["one", "two", "one", "one"])
+@assert isequal(pdvstr[1:3], DataVector["one", "one", "two"])
+@assert isequal(pdvstr[[true, false, true, false, true, false, true]], PooledDataVector["one", "two", NA, "one"])
+@assert isequal(pdvstr[[1, 3, 1, 2]], DataVector["one", "two", "one", "one"])
 
-test_group("DataVec methods")
+test_group("DataVector methods")
 @assert size(dvint) == (4,)
 @assert length(dvint) == 4
 @assert sum(isna(dvint)) == 1
 @assert eltype(dvint) == Int64
 
-test_group("PooledDataVec methods")
+test_group("PooledDataVector methods")
 @assert size(pdvstr) == (7,)
 @assert length(pdvstr) == 7
 @assert sum(isna(pdvstr)) == 1
 @assert eltype(pdvstr) == ASCIIString
 
-test_group("DataVec operations")
-@assert isequal(dvint + 1, DataVec([2, 3, 4, 5], [false, false, true, false]))
-@assert isequal(dvint .* 2, DataVec[2, 4, NA, 8])
-@assert isequal(dvint .== 2, DataVec[false, true, NA, false])
-@assert isequal(dvint .> 1, DataVec[false, true, NA, true])
+test_group("DataVector operations")
+@assert isequal(dvint + 1, DataArray([2, 3, 4, 5], [false, false, true, false]))
+@assert isequal(dvint .* 2, DataVector[2, 4, NA, 8])
+@assert isequal(dvint .== 2, DataVector[false, true, NA, false])
+@assert isequal(dvint .> 1, DataVector[false, true, NA, true])
 
-test_group("PooledDataVec operations")
-@assert isequal(pdvstr .== "two", PooledDataVec[false, false, true, true, NA, false, false])
+test_group("PooledDataVector operations")
+@assert isequal(pdvstr .== "two", PooledDataVector[false, false, true, true, NA, false, false])
 
-test_group("DataVec to something else")
+test_group("DataVector to something else")
 @assert all(removeNA(dvint) .== [1, 2, 4])
 @assert all(replaceNA(dvint, 0) .== [1, 2, 0, 4])
-@assert all(convert(Int, dvint2) .== [5:8])
+@assert all(convert(Vector{Int}, dvint2) .== [5:8])
 @assert all([i + 1 for i in dvint2] .== [6:9])
 @assert all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
 @assert repr(dvint) == "[1,2,NA,4]"
 
-test_group("PooledDataVec to something else")
+test_group("PooledDataVector to something else")
 @assert all(removeNA(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
 @assert all(replaceNA(pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
 @assert all([length(i)::Int for i in pdvstr] .== [3, 3, 3, 3, 1, 3, 3])
 @assert string(pdvstr[1:3]) == "[one, one, two]"
 
-test_group("DataVec Filter and Replace")
+test_group("DataVector Filter and Replace")
 @assert isequal(removeNA(dvint), [1, 2, 4])
 @assert isequal(replaceNA(dvint, 7), [1, 2, 7, 4])
 @assert sum(removeNA(dvint)) == 7
 @assert sum(replaceNA(dvint, 7)) == 14
 
-test_group("PooledDataVec Filter and Replace")
+test_group("PooledDataVector Filter and Replace")
 @assert reduce(strcat, "", removeNA(pdvstr)) == "oneonetwotwooneone"
 @assert reduce(strcat, "", replaceNA(pdvstr,"!")) == "oneonetwotwo!oneone"
 
-test_group("DataVec assignment")
-assigntest = DataVec[1, 2, NA, 4]
+test_group("DataVector assignment")
+assigntest = DataVector[1, 2, NA, 4]
 assigntest[1] = 8
-@assert isequal(assigntest, DataVec[8, 2, NA, 4])
+@assert isequal(assigntest, DataVector[8, 2, NA, 4])
 assigntest[1:2] = 9
-@assert isequal(assigntest, DataVec[9, 9, NA, 4])
+@assert isequal(assigntest, DataVector[9, 9, NA, 4])
 assigntest[[1,3]] = 10
-@assert isequal(assigntest, DataVec[10, 9, 10, 4])
+@assert isequal(assigntest, DataVector[10, 9, 10, 4])
 assigntest[[true, false, true, true]] = 11
-@assert isequal(assigntest, DataVec[11, 9, 11, 11])
+@assert isequal(assigntest, DataVector[11, 9, 11, 11])
 assigntest[1:2] = [12, 13]
-@assert isequal(assigntest, DataVec[12, 13, 11, 11])
+@assert isequal(assigntest, DataVector[12, 13, 11, 11])
 assigntest[[1, 4]] = [14, 15]
-@assert isequal(assigntest, DataVec[14, 13, 11, 15])
+@assert isequal(assigntest, DataVector[14, 13, 11, 15])
 assigntest[[true, false, true, false]] = [16, 17]
-@assert isequal(assigntest, DataVec[16, 13, 17, 15])
+@assert isequal(assigntest, DataVector[16, 13, 17, 15])
 assigntest[1] = NA
-@assert isequal(assigntest, DataVec[NA, 13, 17, 15])
+@assert isequal(assigntest, DataVector[NA, 13, 17, 15])
 assigntest[[1, 2]] = NA
-@assert isequal(assigntest, DataVec[NA, NA, 17, 15])
+@assert isequal(assigntest, DataVector[NA, NA, 17, 15])
 assigntest[[true, false, true, false]] = NA
-@assert isequal(assigntest, DataVec[NA, NA, NA, 15])
+@assert isequal(assigntest, DataVector[NA, NA, NA, 15])
 assigntest[1] = 1
 assigntest[2:4] = NA
-@assert isequal(assigntest, DataVec[1, NA, NA, NA])
+@assert isequal(assigntest, DataVector[1, NA, NA, NA])
 
-test_group("PooledDataVec assignment")
+test_group("PooledDataVector assignment")
 ret = (pdvstr[2] = "three")
 @assert ret == "three"
 @assert pdvstr[2] == "three"
 ret = pdvstr[[1,2]] = "two"
 @assert ret == "two"
 @assert pdvstr[2] == "two"
-pdvstr2 = PooledDataVec["one", "one", "two", "two"]
+pdvstr2 = PooledDataVector["one", "one", "two", "two"]
 ret = (pdvstr2[[true, false, true, false]] = "three")
 @assert ret == "three"
 @assert pdvstr2[1] == "three"
 ret = (pdvstr2[[false, true, false, true]] = ["four", "five"]) 
 @assert isequal(ret, ["four", "five"])
-@assert isequal(pdvstr2[3:4], DataVec["three", "five"])
-pdvstr2 = PooledDataVec["one", "one", "two", "two"]
+@assert isequal(pdvstr2[3:4], DataVector["three", "five"])
+pdvstr2 = PooledDataVector["one", "one", "two", "two"]
 ret = (pdvstr2[2:3] = "three")
 @assert ret == "three"
-@assert isequal(pdvstr2[3:4], DataVec["three", "two"])
+@assert isequal(pdvstr2[3:4], DataVector["three", "two"])
 ret = (pdvstr2[2:3] = ["four", "five"])
 @assert ret == ["four", "five"]
-@assert isequal(pdvstr2[1:2], DataVec["one", "four"])
-pdvstr2 = PooledDataVec["one", "one", "two", "two", "three"]
+@assert isequal(pdvstr2[1:2], DataVector["one", "four"])
+pdvstr2 = PooledDataVector["one", "one", "two", "two", "three"]
 @assert isna(begin pdvstr2[1] = NA end)
 @assert all(isna(begin pdvstr2[[1, 2]] = NA end))
 @assert all(isna(begin pdvstr2[[false, false, true, false, false]] = NA end))
 @assert all(isna(begin pdvstr2[4:5] = NA end))
 @assert all(isna(pdvstr2))
 
-test_group("PooledDataVec replace!")
-pdvstr2 = PooledDataVec["one", "one", "two", "two", "three"]
+test_group("PooledDataVector replace!")
+pdvstr2 = PooledDataVector["one", "one", "two", "two", "three"]
 @assert replace!(pdvstr2, "two", "four") == "four"
 @assert replace!(pdvstr2, "three", "four") == "four"
 @assert isna(replace!(pdvstr2, "one", NA))
 @assert replace!(pdvstr2, NA, "five") == "five"
-@assert isequal(pdvstr2, DataVec["five", "five", "four", "four", "four"])
+@assert isequal(pdvstr2, DataVector["five", "five", "four", "four", "four"])
 
 test_context("DataFrames")
 
@@ -180,7 +180,7 @@ df1 = DataFrame({dvint, dvstr}, ["Ints", "Strs"])
 df2 = DataFrame({dvint, dvstr}) 
 df3 = DataFrame({dvint})
 df4 = DataFrame([1:4 1:4])
-df5 = DataFrame({DataVec[1,2,3,4], dvstr})
+df5 = DataFrame({DataVector[1,2,3,4], dvstr})
 df6 = DataFrame({dvint, dvint, dvstr}, ["A", "B", "C"])
 
 test_group("description functions")
@@ -219,7 +219,7 @@ test_group("show")
 @assert repr(df1) == "4x2 DataFrame:\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
 
 test_group("assign")
-df6[3] = DataVec["un", "deux", "troix", "quatre"]
+df6[3] = DataVector["un", "deux", "troix", "quatre"]
 @assert df6[1, 3] == "un"
 df6["B"] = [4, 3, 2, 1]
 @assert df6[1,2] == 4
@@ -295,10 +295,10 @@ test_group("DataFrame")
 
 srand(1)
 N = 20
-d1 = PooledDataVec(randi(2, N))
-d2 = PooledDataVec["A", "B", NA][randi(3, N)]
-d3 = DataVec(randn(N))
-d4 = DataVec(randn(N))
+d1 = PooledDataVector(randi(2, N))
+d2 = PooledDataVector["A", "B", NA][randi(3, N)]
+d3 = DataArray(randn(N))
+d4 = DataArray(randn(N))
 df7 = DataFrame({d1, d2, d3}, ["d1", "d2", "d3"])
 
 @assert isequal(with(df7, :(d3 + d3)), df7["d3"] + df7["d3"])
@@ -322,14 +322,14 @@ df8 = df7 | based_on(:( d1 = d3 ))
 df8 = based_on(df7, :( sum_d3 = sum(d3) ))
 @assert isequal(df8[1,1], sum(df7["d3"]))
 
-#@assert all(df7[:( d2 .== "B" )]["d1"] .== PooledDataVec([1,2,1,1]))
-@assert all(df7[:( d2 .== "B" ), "d1"] .== PooledDataVec([1,2,1,1]))
+#@assert all(df7[:( d2 .== "B" )]["d1"] .== PooledDataVector([1,2,1,1]))
+@assert all(df7[:( d2 .== "B" ), "d1"] .== PooledDataVector([1,2,1,1]))
 
 test_group("groupby")
 
 gd = groupby(df7, "d1")
 @assert length(gd) == 2
-@assert isequal(gd[2]["d2"], PooledDataVec["A", "B", NA, "A", NA, NA, NA, NA])
+@assert isequal(gd[2]["d2"], PooledDataVector["A", "B", NA, "A", NA, NA, NA, NA])
 @assert sum(gd[2]["d3"]) == sum(df7["d3"][removeNA(df7["d1"] .== 2)])
 
 g1 = groupby(df7, ["d1", "d2"])
@@ -343,7 +343,7 @@ end
 @assert res == sum(df7["d1"])
 
 df8 = df7 | groupby(["d2"]) | :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) )
-@assert isequal(df8["d2"], PooledDataVec[NA, "A", "B"])
+@assert isequal(df8["d2"], PooledDataVector[NA, "A", "B"])
 
 df9 = based_on(groupby(df7, "d2"),
                :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) ))
@@ -414,9 +414,9 @@ df2 = DataFrame(quote
 end)
 
 m1 = merge(df1, df2, "a")
-@assert isequal(m1["b"], DataVec["B", "A", "B", "A", "B"])
+@assert isequal(m1["b"], DataVector["B", "A", "B", "A", "B"])
 m2 = merge(df1, df2, "a", "outer")
-@assert isequal(m2["b2"], DataVec["B", "C", "A", "A", "A", NA, NA, NA, NA, NA])
+@assert isequal(m2["b2"], DataVector["B", "C", "A", "A", "A", NA, NA, NA, NA, NA])
 
 test_group("extras")
 
@@ -429,49 +429,49 @@ a2 = cut(x, [-2, 3, 4.0])
 @assert a2[4] == "(4.0,6.0]"
 
 test_group("cut()")
-@assert isequal(cut([2, 3, 5], [1, 3, 6]), PooledDataVec(["(1,3]", "(1,3]", "(3,6]"]))
-@assert isequal(cut([2, 3, 5], [3, 6]), PooledDataVec(["[2,3]", "[2,3]", "(3,6]"]))
-@assert isequal(cut([2, 3, 5, 6], [3, 6]), PooledDataVec(["[2,3]", "[2,3]", "(3,6]", "(3,6]"]))
-@assert isequal(cut([1, 2, 4], [1, 3, 6]), PooledDataVec(["[1,3]", "[1,3]", "(3,6]"]))
-@assert isequal(cut([1, 2, 4], [3, 6]), PooledDataVec(["[1,3]", "[1,3]", "(3,6]"]))
-@assert isequal(cut([1, 2, 4], [3]), PooledDataVec(["[1,3]", "[1,3]", "(3,4]"]))
-@assert isequal(cut([1, 5, 7], [3, 6]), PooledDataVec(["[1,3]", "(3,6]", "(6,7]"]))
+@assert isequal(cut([2, 3, 5], [1, 3, 6]), PooledDataVector(["(1,3]", "(1,3]", "(3,6]"]))
+@assert isequal(cut([2, 3, 5], [3, 6]), PooledDataVector(["[2,3]", "[2,3]", "(3,6]"]))
+@assert isequal(cut([2, 3, 5, 6], [3, 6]), PooledDataVector(["[2,3]", "[2,3]", "(3,6]", "(3,6]"]))
+@assert isequal(cut([1, 2, 4], [1, 3, 6]), PooledDataVector(["[1,3]", "[1,3]", "(3,6]"]))
+@assert isequal(cut([1, 2, 4], [3, 6]), PooledDataVector(["[1,3]", "[1,3]", "(3,6]"]))
+@assert isequal(cut([1, 2, 4], [3]), PooledDataVector(["[1,3]", "[1,3]", "(3,4]"]))
+@assert isequal(cut([1, 5, 7], [3, 6]), PooledDataVector(["[1,3]", "(3,6]", "(6,7]"]))
 
 ages = [20, 22, 25, 27, 21, 23, 37, 31, 61, 45, 41, 32]
 bins = [18, 25, 35, 60, 100]
 cats = cut(ages, bins)
-pdv = PooledDataVec(["(18,25]", "(18,25]", "(18,25]",
-                     "(25,35]", "(18,25]", "(18,25]",
-                     "(35,60]", "(25,35]", "(60,100]",
-                     "(35,60]", "(35,60]", "(25,35]"])
+pdv = PooledDataVector(["(18,25]", "(18,25]", "(18,25]",
+                        "(25,35]", "(18,25]", "(18,25]",
+                        "(35,60]", "(25,35]", "(60,100]",
+                        "(35,60]", "(35,60]", "(25,35]"])
 @assert isequal(cats, pdv)
 
-test_group("New DataVec constructors")
-dv = DataVec(Int64, 5)
+test_group("New DataVector constructors")
+dv = DataArray(Int64, 5)
 @assert all(isna(dv))
-dv = DataVec(Float64, 5)
+dv = DataArray(Float64, 5)
 @assert all(isna(dv))
-dv = dvzeros(5)
+dv = dzeros(5)
 @assert all(dv .== 0.0)
-dv = dvones(5)
+dv = dones(5)
 @assert all(dv .== 1.0)
 
 # No more NA corruption
-dv = dvones(10_000)
+dv = dones(10_000)
 @assert !any(isna(dv))
 
-PooledDataVec(falses(2), falses(2))
-PooledDataVec(falses(2), trues(2))
+PooledDataVector(falses(2), falses(2))
+PooledDataVector(falses(2), trues(2))
 
-# Test vectorized comparisons work for DataVec's and PooledDataVec's
-DataVec[1, 2, NA] .== 1
-PooledDataVec[1, 2, NA] .== 1
-DataVec["1", "2", NA] .== "1"
-PooledDataVec["1", "2", NA] .== "1"
+# Test vectorized comparisons work for DataVector's and PooledDataVector's
+DataVector[1, 2, NA] .== 1
+PooledDataVector[1, 2, NA] .== 1
+DataVector["1", "2", NA] .== "1"
+PooledDataVector["1", "2", NA] .== "1"
 
 # Test unique()
 test_group("unique()")
-dv = DataVec(1:4)
+dv = DataArray(1:4)
 dv[4] = NA
 @assert contains(unique(dv), 1)
 @assert contains(unique(dv), 2)
@@ -479,10 +479,10 @@ dv[4] = NA
 @assert contains(unique(dv), NA)
 
 test_group("find()")
-dv = DataVec([true, false, true])
+dv = DataArray([true, false, true])
 @assert isequal(find(dv), [1, 3])
 
-pdv = PooledDataVec([true, false, true])
+pdv = PooledDataVector([true, false, true])
 @assert isequal(find(pdv), [1, 3])
 
 dv[1] = NA

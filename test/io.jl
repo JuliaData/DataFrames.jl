@@ -126,19 +126,19 @@ close(file)
 @assert nrow(df) == 10_000
 @assert ncol(df) == 5
 @assert colnames(df) == column_names
-@assert typeof(df[:, 1]) == DataVec{UTF8String}
-@assert typeof(df[:, 2]) == DataVec{UTF8String}
-@assert typeof(df[:, 3]) == DataVec{UTF8String}
-@assert typeof(df[:, 4]) == DataVec{Float64}
-@assert typeof(df[:, 5]) == DataVec{Float64}
+@assert typeof(df[:, 1]) == DataVector{UTF8String}
+@assert typeof(df[:, 2]) == DataVector{UTF8String}
+@assert typeof(df[:, 3]) == DataVector{UTF8String}
+@assert typeof(df[:, 4]) == DataVector{Float64}
+@assert typeof(df[:, 5]) == DataVector{Float64}
 
 # TODO: Split apart methods that perform seek() from those that don't
 text_data = convert(Array{UTF8String, 2}, (["1" "3" "A"; "2" "3" "NA"; "3" "3.1" "C"]))
 
 true_df = DataFrame(quote
-                      x1 = DataVec[1, 2, 3]
-                      x2 = DataVec[3, 3, 3.1]
-                      x3 = DataVec(UTF8String["A", "", "C"], [false, true, false])
+                      x1 = DataArray([1, 2, 3])
+                      x2 = DataArray([3, 3, 3.1])
+                      x3 = DataArray(UTF8String["A", "", "C"], [false, true, false])
                     end)
 df = DataFrames.convert_to_dataframe(text_data,
                                      ["", "NA"],

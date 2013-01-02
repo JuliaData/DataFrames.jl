@@ -241,8 +241,9 @@ export # reconcile_groups,
        @DataFrame,
        @transform,
        AbstractIndex,
+       AbstractDataArray,
        AbstractDataFrame,
-       AbstractDataVec,
+       AbstractDataVector,
        any_na,
        array,
        based_on,
@@ -268,26 +269,27 @@ export # reconcile_groups,
        combine,
        complete_cases,
        cut,
+       DataArray,
        DataFrame,
        DataMatrix,
        DataStream,
-       DataVec,
+       DataVector,
        describe,
-       dmdiagm,
-       dmeye,
-       dmfalses,
-       dmones,
-       dmtrues,
-       dmzeros,
+       ddiagm,
+       deye,
+       dfalses,
+       dones,
+       dtrues,
+       dzeros,
        drop_duplicates!,
        duplicated,
        dvbool,
-       dvfalses,
+       dfalses,
        dvfloat,
        dvint,
-       dvones,
-       dvtrues,
-       dvzeros,
+       dones,
+       dtrues,
+       dzeros,
        each_failNA,
        each_removeNA,
        each_replaceNA,
@@ -304,7 +306,7 @@ export # reconcile_groups,
        Index,
        index,
        index_to_level,
-       IndexedVec,
+       IndexedVector,
        Indexer,
        get_indices,
        interaction_design_matrix,
@@ -333,12 +335,12 @@ export # reconcile_groups,
        NAtype,
        ncol,
        nrow,
-       pdvfalses,
-       pdvones,
-       pdvtrues,
-       pdvzeros,
+       pdfalses,
+       pdones,
+       pdtrues,
+       pdzeros,
        percent_change,
-       PooledDataVec,
+       PooledDataVector,
        PooledDataVecs, # The capitalization and/or name for this is a bit inconsistent (merge_pools, maybe?). Do we want to export?
        print_table,
        range,
@@ -388,7 +390,10 @@ export # reconcile_groups,
 ##############################################################################
 
 include(file_path(julia_pkgdir(), "DataFrames", "src", "utils.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "natype.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "dataarray.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "datavec.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "datamatrix.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "index.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "namedarray.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "dataframe.jl"))
@@ -396,13 +401,10 @@ include(file_path(julia_pkgdir(), "DataFrames", "src", "grouping.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "formula.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "io.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "datastream.jl"))
-include(file_path(julia_pkgdir(), "DataFrames", "src", "datamatrix.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "linalg.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "operators.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "statistics.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "predicates.jl"))
-# TODO: Get DataArray working
-# include(file_path(julia_pkgdir(), "DataFrames", "src", "dataarray.jl"))
 # TODO: Get indexing working
 # include(file_path(julia_pkgdir(), "DataFrames", "src", "indexing.jl"))
 

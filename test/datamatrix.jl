@@ -1,12 +1,13 @@
-a = DataVec[1.0, 2.0, 3.0]
+a = DataVector[1.0, 2.0, 3.0]
 v_a = [1.0, 2.0, 3.0]
 
-b = dmeye(3, 3)
+b = deye(3, 3)
 m_b = eye(3, 3)
 
 #
 # Transposes
 #
+
 @assert all(a' .== v_a')
 @assert all(a'' .== v_a'') #'
 @assert all(b' .== m_b')
@@ -15,11 +16,13 @@ m_b = eye(3, 3)
 #
 # DataVec * DataMatrix
 #
+
 @assert all(a * b[1, :] .== v_a * m_b[1, :])
 
 #
 # DataMatrix * DataVec
 #
+
 @assert all(b * a .== m_b * v_a)
 @assert all(vector(b * a) .== m_b * v_a)
 
@@ -69,7 +72,7 @@ res = b * b
 @assert !isna(res[3, 2])
 @assert !isna(res[3, 3])
 
-res = b * dmeye(3)
+res = b * deye(3)
 # 3x3 Float64 DataMatrix:
 #   NA   NA   NA
 #  0.0  1.0  0.0
@@ -84,8 +87,8 @@ res = b * dmeye(3)
 @assert !isna(res[3, 2])
 @assert !isna(res[3, 3])
 
-res = dmeye(3) * b
-# julia> dmeye(3) * b
+res = deye(3) * b
+# julia> deye(3) * b
 # 3x3 Float64 DataMatrix:
 #  NA  0.0  0.0
 #  NA  1.0  0.0
@@ -101,20 +104,20 @@ res = dmeye(3) * b
 @assert !isna(res[3, 3])
 
 # Test row operations
-dm = dmeye(6, 2)
+dm = deye(6, 2)
 rowmeans(dm)
 
 # Test column operations
-dm = dmeye(6, 2)
+dm = deye(6, 2)
 colmeans(dm)
 
 # Test linear algebra
-du, dd, dv = svd(dmeye(3, 3))
+du, dd, dv = svd(deye(3, 3))
 u, d, v = svd(eye(3, 3))
 @assert all(du .== u)
 @assert all(dd .== d)
 @assert all(dv .== v)
 
 # Test elementary functions
-dm = -dmeye(5, 5)
+dm = -deye(5, 5)
 @assert all(abs(dm) .== eye(5, 5))

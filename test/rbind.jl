@@ -9,7 +9,7 @@ df[1:2, :] = df[1:2, :]
 df[1, :] = 1
 
 # Assignment of columns
-df[1] = dvzeros(4)
+df[1] = dzeros(4)
 
 # Broadcasting assignment of columns
 df[:, 1] = 1
@@ -25,7 +25,7 @@ rbind(df, df, df)
 
 alt_df = deepcopy(df)
 rbind(df, alt_df)
-df[1] = dvzeros(Int, nrow(df))
+df[1] = dzeros(Int, nrow(df))
 # Fail on non-matching types
 rbind(df, alt_df)
 

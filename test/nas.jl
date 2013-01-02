@@ -1,6 +1,6 @@
-dv = DataVec([1, 2, 3], bitpack([false, false, false]))
+dv = DataArray([1, 2, 3], bitpack([false, false, false]))
 
-dv = DataVec([1, 2, 3], [false, false, false])
+dv = DataArray([1, 2, 3], [false, false, false])
 
 failNA(dv)
 removeNA(dv)
@@ -30,11 +30,11 @@ for v in each_replaceNA(dv, 3)
 	println(v)
 end
 
-dv = DataVec(ComplexPair, 5)
+dv = DataArray(ComplexPair, 5)
 
 type MyType
 	a::Int64
 	b::Int64
 end
 
-dv = DataVec(MyType, 5)
+dv = DataArray(MyType, 5)
