@@ -808,7 +808,9 @@ tail(df::AbstractDataFrame) = tail(df, 6)
 _string(x) = sprint(showcompact, x)
 maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) : 0
 maxShowLength(dv::AbstractDataVector) = max([length(_string(x)) for x = dv])
-function show(io, df::AbstractDataFrame)
+show(io, df::AbstractDataFrame) = show(io, df, 20)
+showall(io, df::AbstractDataFrame) = show(io, df, nrow(df))
+function show(io, df::AbstractDataFrame, Nmx::Integer)
     ## TODO use alignment() like print_matrix in show.jl.
     nrowz, ncolz = size(df)
     println(io, "$(nrowz)x$(ncolz) $(typeof(df)):")
@@ -819,7 +821,7 @@ function show(io, df::AbstractDataFrame)
         println(io)
     end
     N = nrow(df)
-    Nmx = 20   # maximum head and tail lengths
+    Nmx = Nmx   # maximum head and tail lengths
     if N <= 2Nmx
         rowrng = 1:min(2Nmx,N)
     else
