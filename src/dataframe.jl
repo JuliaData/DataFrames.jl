@@ -45,13 +45,15 @@ DataFrame() = DataFrame({}, Index())
 # No-op given a DataFrame
 DataFrame(x::DataFrame) = x
 
-# A single numeric value (what about others, like strings?)
-DataFrame(x::Number) = DataFrame(DataArray([x]))
+# Wrap a scalar in a DataArray, then a DataFrame
+function DataFrame(x::Union(Number, String))
+    DataFrame({DataArray([x], falses(1))}, Index(generate_column_names(1)))
+end
 
-# Convert an arbitrary vector w/ pre-specified names
+# Convert an arbitrary set of columns w/ pre-specified names
 DataFrame{T <: String}(cs::Vector, cn::Vector{T}) = DataFrame(cs, Index(cn))
 
-# Convert an arbitrary vector w/o pre-specified names
+# Convert an arbitrary set of columns w/o pre-specified names
 DataFrame(cs::Vector) = DataFrame(cs, Index(generate_column_names(length(cs))))
 
 # Build a DataFrame from an expression
@@ -59,18 +61,14 @@ DataFrame(cs::Vector) = DataFrame(cs, Index(generate_column_names(length(cs))))
 DataFrame(ex::Expr) = based_on(DataFrame(), ex)
 
 # Convert a standard Matrix to a DataFrame w/ pre-specified names
-function DataFrame{T}(x::Matrix{T}, cn::Vector)
+function DataFrame(x::Matrix, cn::Vector)
     DataFrame({DataArray(x[:, i]) for i in 1:length(cn)}, cn)
 end
 
 # Convert a standard Matrix to a DataFrame w/o pre-specified names
-function DataFrame{T}(x::Matrix{T})
+function DataFrame(x::Matrix)
     DataFrame(x, generate_column_names(size(x, 2)))
 end
-
-# If we have something a tuple, convert each value in the tuple to a
-# DataVector and then pass the converted columns in, hoping for the best
-DataFrame(vals...) = DataFrame([DataArray(x) for x = vals])
 
 function DataFrame{K,V}(d::Associative{K,V})
     # Find the first position with maximum length in the Dict.
@@ -195,14 +193,16 @@ function DataFrame(column_types::Vector, nrows::Int64)
 end
 
 # Initialize from a Vector of Associatives (aka list of dicts)
-function DataFrame{D<:Associative}(ds::Vector{D})
+function DataFrame{D <: Associative}(ds::Vector{D})
     ks = [Set([[k for k in [keys(d) for d in ds]]...]...)...]
     DataFrame(ds, ks)
 end
 
 # Initialize from a Vector of Associatives (aka list of dicts)
-DataFrame{D<:Associative,T<:String}(ds::Vector{D}, ks::Vector{T}) = 
+function DataFrame{D <: Associative, T <: String}(ds::Vector{D}, ks::Vector{T})
     invoke(DataFrame, (Vector{D}, Vector), ds, ks)
+end
+
 function DataFrame{D<:Associative}(ds::Vector{D}, ks::Vector)
     #get column types
     col_types = Any[None for i = 1:length(ks)]
@@ -229,6 +229,22 @@ function DataFrame{D<:Associative}(ds::Vector{D}, ks::Vector)
     end
 
     df
+end
+
+# If we have a tuple, convert each value in the tuple to a
+# DataVector and then pass the converted columns in, hoping for the best
+function DataFrame(vals::Any...)
+    p = length(vals)
+    columns = Array(Any, p)
+    for j in 1:p
+        if typeof(vals[j]) <: AbstractDataVector
+            columns[j] = vals[j]
+        else
+            columns[j] = DataArray(vals[j])
+        end
+    end
+    column_names = generate_column_names(p)
+    DataFrame(columns, Index(column_names))
 end
 
 ##############################################################################
@@ -1730,7 +1746,7 @@ function matrix(df::DataFrame)
         end
     end
     n, p = size(df)
-    dm = dmzeros(n, p)
+    dm = dzeros(n, p)
     for i in 1:n
         for j in 1:p
             dm[i, j] = df[i, j]
