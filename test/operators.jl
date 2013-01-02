@@ -109,10 +109,10 @@ for f in bit_operators
   end
 end
 
-# Unary operators on DataVec's should be equivalent to elementwise
+# Unary operators on DataVector's should be equivalent to elementwise
 # application of those same operators
 N = 5
-dv = dvones(N)
+dv = dones(N)
 for f in numeric_unary_operators
   @eval begin
     for i in 1:length(dv)
@@ -120,7 +120,7 @@ for f in numeric_unary_operators
     end
   end
 end
-dv = dvtrues(N)
+dv = dtrues(N)
 for f in logical_unary_operators
   @eval begin
     for i in 1:length(dv)
@@ -157,9 +157,9 @@ for f in logical_unary_operators
   end
 end
 
-# Elementary functions on DataVec's
+# Elementary functions on DataVector's
 N = 5
-dv = dvones(N)
+dv = dones(N)
 for f in elementary_functions
   @eval begin
     for i in 1:length(dv)
@@ -171,8 +171,8 @@ end
 # Elementary functions on DataFrames's
 N = 5
 df = DataFrame(quote
-                 A = dvones($(N))
-                 B = dvones($(N))
+                 A = dones($(N))
+                 B = dones($(N))
                end)
 for f in elementary_functions
   @eval begin
@@ -184,9 +184,9 @@ for f in elementary_functions
   end
 end
 
-# Broadcasting operations between NA's and DataVec's
+# Broadcasting operations between NA's and DataVector's
 N = 5
-dv = dvones(N)
+dv = dones(N)
 for f in arithmetic_operators
   @eval begin
     for i in 1:length(dv)
@@ -196,9 +196,9 @@ for f in arithmetic_operators
   end
 end
 
-# Broadcasting operations between NA's and DataVec's
+# Broadcasting operations between NA's and DataVector's
 N = 5
-dv = dvones(N)
+dv = dones(N)
 for f in arithmetic_operators
   @eval begin
     for i in 1:length(dv)
@@ -208,9 +208,9 @@ for f in arithmetic_operators
   end
 end
 
-# Broadcasting operations between scalars and DataVec's
+# Broadcasting operations between scalars and DataVector's
 N = 5
-dv = dvones(N)
+dv = dones(N)
 for f in arithmetic_operators
   @eval begin
     for i in 1:length(dv)
@@ -223,8 +223,8 @@ end
 # Broadcasting operations between NA's and DataFrames's
 N = 5
 df = DataFrame(quote
-                 A = dvones($(N))
-                 B = dvones($(N))
+                 A = dones($(N))
+                 B = dones($(N))
                end)
 for f in arithmetic_operators
   @eval begin
@@ -240,8 +240,8 @@ end
 # Broadcasting operations between scalars and DataFrames's
 N = 5
 df = DataFrame(quote
-                 A = dvones($(N))
-                 B = dvones($(N))
+                 A = dones($(N))
+                 B = dones($(N))
                end)
 for f in arithmetic_operators
   @eval begin
@@ -254,9 +254,9 @@ for f in arithmetic_operators
   end
 end
 
-# Binary operations on pairs of DataVec's
+# Binary operations on pairs of DataVector's
 N = 5
-dv = dvones(N)
+dv = dones(N)
 dv[1] = NA
 for f in array_arithmetic_operators
   @eval begin
@@ -271,8 +271,8 @@ end
 # TODO: Test in the presence of in-operable types like Strings
 N = 5
 df = DataFrame(quote
-                 A = dvones($(N))
-                 B = dvones($(N))
+                 A = dones($(N))
+                 B = dones($(N))
                end)
 for f in array_arithmetic_operators
   @eval begin
@@ -285,9 +285,9 @@ for f in array_arithmetic_operators
   end
 end
 
-# Unary vector operators on DataVec's
+# Unary vector operators on DataVector's
 N = 5
-dv = dvones(5)
+dv = dones(5)
 for f in unary_vector_operators
   @eval begin
     if isnan(($f)(dv.data))
@@ -304,11 +304,11 @@ for f in unary_vector_operators
   end
 end
 
-# TODO: Pairwise vector operators on DataVec's
+# TODO: Pairwise vector operators on DataVector's
 
-# Cumulative vector operators on DataVec's
+# Cumulative vector operators on DataVector's
 N = 5
-dv = dvones(N)
+dv = dones(N)
 for f in cumulative_vector_operators
   @eval begin
     for i in 1:length(dv)
@@ -328,9 +328,9 @@ for f in cumulative_vector_operators
   end
 end
 
-# FFT's on DataVec's
+# FFT's on DataVector's
 N = 5
-dv = dvones(5)
+dv = dones(5)
 for f in ffts
   @eval begin
     @assert ($f)(dv) == ($f)(dv.data)
@@ -343,9 +343,9 @@ for f in ffts
   end
 end
 
-# Binary vector operators on DataVec's
+# Binary vector operators on DataVector's
 N = 5
-dv = dvones(5)
+dv = dones(5)
 for f in binary_vector_operators
   @eval begin
     @assert (($f)(dv, dv) == ($f)(dv.data, dv.data)) ||
@@ -361,30 +361,30 @@ end
 
 # TODO: Columnar operators on DataFrame's
 
-# Boolean operators on DataVec's
+# Boolean operators on DataVector's
 N = 5
-@assert any(dvfalses(N)) == false
-@assert any(dvtrues(N)) == true
-@assert all(dvfalses(N)) == false
-@assert all(dvtrues(N)) == true
+@assert any(dfalses(N)) == false
+@assert any(dtrues(N)) == true
+@assert all(dfalses(N)) == false
+@assert all(dtrues(N)) == true
 
-dv = dvfalses(N)
+dv = dfalses(N)
 dv[3] = true
 @assert any(dv) == true
 @assert all(dv) == false
 
-dv = dvfalses(N)
+dv = dfalses(N)
 dv[2] = NA
 dv[3] = true
 @assert any(dv) == true
 @assert all(dv) == false
 
-dv = dvfalses(N)
+dv = dfalses(N)
 dv[2] = NA
 @assert isna(any(dv))
 @assert all(dv) == false
 
-dv = dvfalses(1)
+dv = dfalses(1)
 dv[1] = NA
 @assert isna(any(dv))
 @assert isna(all(dv))
@@ -392,7 +392,7 @@ dv[1] = NA
 # Boolean operators on DataFrames's
 N = 5
 df = DataFrame(quote
-                 A = dvfalses($(N))
+                 A = dfalses($(N))
                end)
 @assert any(df) == false
 @assert any(!df) == true
@@ -400,14 +400,14 @@ df = DataFrame(quote
 @assert all(!df) == true
 
 df = DataFrame(quote
-                 A = dvfalses($(N))
+                 A = dfalses($(N))
                end)
 df[3, 1] = true
 @assert any(df) == true
 @assert all(df) == false
 
 df = DataFrame(quote
-                 A = dvfalses($(N))
+                 A = dfalses($(N))
                end)
 df[2, 1] = NA
 df[3, 1] = true
@@ -415,14 +415,14 @@ df[3, 1] = true
 @assert all(df) == false
 
 df = DataFrame(quote
-                 A = dvfalses($(N))
+                 A = dfalses($(N))
                end)
 df[2, 1] = NA
 @assert isna(any(df))
 @assert all(df) == false
 
 df = DataFrame(quote
-                 A = dvfalses($(N))
+                 A = dfalses($(N))
                end)
 df[1, 1] = NA
 @assert isna(any(dv))
@@ -435,8 +435,8 @@ df[1, 1] = NA
 # Equality tests
 #
 
-dv = DataVec[1, NA]
-alt_dv = DataVec[2, NA]
+dv = DataVector[1, NA]
+alt_dv = DataVector[2, NA]
 df = DataFrame({dv})
 alt_df = DataFrame({alt_dv})
 
@@ -455,22 +455,22 @@ alt_df = DataFrame({alt_dv})
 @assert !isequal(dv, alt_dv)
 @assert !isequal(df, alt_df)
 
-@assert isequal(DataVec[1, NA] .== DataVec[1, NA], DataVec[true, NA])
-@assert isequal(PooledDataVec[1, NA] .== PooledDataVec[1, NA], DataVec[true, NA])
-@assert isequal(DataFrame({dv}) .== DataFrame({dv}), DataFrame({DataVec[true, NA]}))
+@assert isequal(DataVector[1, NA] .== DataVector[1, NA], DataVector[true, NA])
+@assert isequal(PooledDataVector[1, NA] .== PooledDataVector[1, NA], DataVector[true, NA])
+@assert isequal(DataFrame({dv}) .== DataFrame({dv}), DataFrame({DataVector[true, NA]}))
 
-@assert all(isna(NA .== dvones(5)))
-@assert all(isna(dvones(5) .== NA))
+@assert all(isna(NA .== dones(5)))
+@assert all(isna(dones(5) .== NA))
 
 @assert all(isna(NA .== df))
 @assert all(isna(df .== NA))
 
 # Run length encoding
-dv = dvones(5)
+dv = dones(5)
 dv[3] = NA
 
 v, l = rle(dv)
-@assert isequal(v, DataVec[1.0, NA, 1.0])
+@assert isequal(v, DataVector[1.0, NA, 1.0])
 @assert isequal(l, [2, 1, 2])
 
 rdv = inverse_rle(v, l)

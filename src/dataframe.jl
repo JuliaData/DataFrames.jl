@@ -10,7 +10,7 @@ abstract AbstractDataFrame <: Associative{Any, Any}
 ##
 ## Basic DataFrame definition
 ##
-## A DataFrame is a vector of heterogeneous DataVec's that be accessed using
+## A DataFrame is a vector of heterogeneous AbstractDataVector's that be accessed using
 ## numeric indexing for both rows and columns and name-based indexing for
 ## columns. The columns are stored in a vector, which means that operations
 ## that insert/delete columns are O(n).
@@ -46,7 +46,7 @@ DataFrame() = DataFrame({}, Index())
 DataFrame(x::DataFrame) = x
 
 # A single numeric value (what about others, like strings?)
-DataFrame(x::Number) = DataFrame(DataVec([x]))
+DataFrame(x::Number) = DataFrame(DataArray([x]))
 
 # Convert an arbitrary vector w/ pre-specified names
 DataFrame{T <: String}(cs::Vector, cn::Vector{T}) = DataFrame(cs, Index(cn))
@@ -60,7 +60,7 @@ DataFrame(ex::Expr) = based_on(DataFrame(), ex)
 
 # Convert a standard Matrix to a DataFrame w/ pre-specified names
 function DataFrame{T}(x::Matrix{T}, cn::Vector)
-    DataFrame({DataVec(x[:, i]) for i in 1:length(cn)}, cn)
+    DataFrame({DataArray(x[:, i]) for i in 1:length(cn)}, cn)
 end
 
 # Convert a standard Matrix to a DataFrame w/o pre-specified names
@@ -69,8 +69,8 @@ function DataFrame{T}(x::Matrix{T})
 end
 
 # If we have something a tuple, convert each value in the tuple to a
-# DataVec and then pass the converted columns in, hoping for the best
-DataFrame(vals...) = DataFrame([DataVec(x) for x = vals])
+# DataVector and then pass the converted columns in, hoping for the best
+DataFrame(vals...) = DataFrame([DataArray(x) for x = vals])
 
 function DataFrame{K,V}(d::Associative{K,V})
     # Find the first position with maximum length in the Dict.
@@ -123,7 +123,7 @@ function DataFrame(d::Dict)
         if length(d[column_names[j]]) != n
             error("All inputs must have the same length")
         end
-        columns[j] = DataVec(d[column_names[j]])
+        columns[j] = DataArray(d[column_names[j]])
     end
     return DataFrame(columns, Index(column_names))
 end
@@ -140,7 +140,7 @@ function DataFrame(d::Dict, column_names::Vector)
         if length(d[column_names[j]]) != n
             error("All inputs must have the same length")
         end
-        columns[j] = DataVec(d[column_names[j]])
+        columns[j] = DataArray(d[column_names[j]])
     end
     return DataFrame(columns, Index(column_names))
 end
@@ -177,7 +177,7 @@ function DataFrame(column_types::Vector, column_names::Vector, n::Int64)
   end
 
   for j in 1:p
-    columns[j] = DataVec(Array(column_types[j], n), Array(Bool, n))
+    columns[j] = DataArray(Array(column_types[j], n), Array(Bool, n))
     for i in 1:n
       columns[j][i] = baseval(column_types[j])
       columns[j][i] = NA
@@ -303,23 +303,23 @@ end
 
 # Cases:
 #
-# df[SingleColumnIndex] => AbstractDataVec
+# df[SingleColumnIndex] => AbstractDataVector
 # df[MultiColumnIndex] => (Sub)?DataFrame
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
 # df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVec
+# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
 # df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
 #
 # General Strategy:
 #
 # Let ref(df.colindex, col_inds) from Index() handle the resolution
 #  of column indices
-# Let ref(df.columns[j], row_inds) from AbstractDataVec() handle
+# Let ref(df.columns[j], row_inds) from AbstractDataVector() handle
 #  the resolution of row indices
 
 typealias ColumnIndex Union(Real, String, Symbol)
 
-# df[SingleColumnIndex] => AbstractDataVec
+# df[SingleColumnIndex] => AbstractDataVector
 function ref(df::DataFrame, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column]
@@ -345,7 +345,7 @@ function ref{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractV
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
 end
 
-# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVec
+# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
 function ref{T <: Real}(df::DataFrame, row_inds::AbstractVector{T}, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column][row_inds]
@@ -374,7 +374,7 @@ ref(df::DataFrame, ex1::Expr, ex2::Expr) = ref(df, with(df, ex1), with(df, ex2))
 
 function create_new_column_from_scalar(df::DataFrame, val::NAtype)
     n = max(nrow(df), 1)
-    return DataVec(Array(DEFAULT_COLUMN_TYPE, n), trues(n))
+    return DataArray(Array(DEFAULT_COLUMN_TYPE, n), trues(n))
 end
 
 function create_new_column_from_scalar(df::DataFrame, val::Any)
@@ -383,7 +383,7 @@ function create_new_column_from_scalar(df::DataFrame, val::Any)
     for i in 1:n
         col_data[i] = val
     end
-    return DataVec(col_data, falses(n))
+    return DataArray(col_data, falses(n))
 end
 
 isnextcol(df::DataFrame, col_ind::String) = true
@@ -399,7 +399,7 @@ end
 # Will automatically add a new column if needed
 # TODO: Automatically enlarge column to required size?
 function insert_single_column!(df::DataFrame,
-                               dv::AbstractDataVec,
+                               dv::AbstractDataVector,
                                col_ind::ColumnIndex)
     dv_n, df_n = length(dv), nrow(df)
     if df_n != 0
@@ -428,10 +428,10 @@ function insert_single_column!(df::DataFrame,
     return dv
 end
 
-# Will automatically enlarge a scalar to a DataVec if needed
+# Will automatically enlarge a scalar to a DataVector if needed
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
     if nrow(df) <= 1
-        dv = DataVec([v], falses(1))
+        dv = DataArray([v], falses(1))
         insert_single_column!(df, dv, col_ind)
         return dv
     else
@@ -445,13 +445,13 @@ function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::Col
     end
 end
 
-upgrade_vector(v::Vector) = DataVec(v, falses(length(v)))
-upgrade_vector(v::Ranges) = DataVec([v], falses(length(v)))
-upgrade_vector(v::BitVector) = DataVec(convert(Array{Bool}, v), falses(length(v)))
-upgrade_vector(adv::AbstractDataVec) = adv
+upgrade_vector(v::Vector) = DataArray(v, falses(length(v)))
+upgrade_vector(v::Ranges) = DataArray([v], falses(length(v)))
+upgrade_vector(v::BitVector) = DataArray(convert(Array{Bool}, v), falses(length(v)))
+upgrade_vector(adv::AbstractDataArray) = adv
 function upgrade_scalar(df::DataFrame, v::Any)
     n = max(nrow(df), 1)
-    DataVec(fill(v, n), falses(n))
+    DataArray(fill(v, n), falses(n))
 end
 
 # df[SingleColumnIndex] = AbstractVector
@@ -807,7 +807,7 @@ tail(df::AbstractDataFrame) = tail(df, 6)
 # then row-by-row print with an appropriate buffer
 _string(x) = sprint(showcompact, x)
 maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) : 0
-maxShowLength(dv::AbstractDataVec) = max([length(_string(x)) for x = dv])
+maxShowLength(dv::AbstractDataVector) = max([length(_string(x)) for x = dv])
 show(io, df::AbstractDataFrame) = show(io, df, 20)
 showall(io, df::AbstractDataFrame) = show(io, df, nrow(df))
 function show(io, df::AbstractDataFrame, Nmx::Integer)
@@ -872,7 +872,7 @@ function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
         end
     end
 end
-dump(io::IOStream, x::AbstractDataVec, n::Int, indent) =
+dump(io::IOStream, x::AbstractDataVector, n::Int, indent) =
     println(io, typeof(x), "(", length(x), ") ", x[1:min(4, end)])
 
 # summarize the columns of a DF
@@ -884,9 +884,9 @@ dump(io::IOStream, x::AbstractDataVec, n::Int, indent) =
 # Note that R creates a summary object, which has a print method. That's
 # a reasonable alternative to this. The describe() functions in show.jl
 # return a string.
-describe(dv::AbstractDataVec) = describe(OUTPUT_STREAM::IOStream, dv)
+describe(dv::AbstractDataVector) = describe(OUTPUT_STREAM::IOStream, dv)
 describe(df::DataFrame) = describe(OUTPUT_STREAM::IOStream, df)
-function describe{T<:Number}(io, dv::AbstractDataVec{T})
+function describe{T<:Number}(io, dv::AbstractDataVector{T})
     filtered = float(removeNA(dv))
     qs = quantile(filtered, [0, .25, .5, .75, 1])
     statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
@@ -899,8 +899,8 @@ function describe{T<:Number}(io, dv::AbstractDataVec{T})
         println(io, "NAs      $nas")
     end
 end
-function describe{T}(io, dv::AbstractDataVec{T})
-    ispooled = isa(dv, PooledDataVec) ? "Pooled " : ""
+function describe{T}(io, dv::AbstractDataVector{T})
+    ispooled = isa(dv, PooledDataVector) ? "Pooled " : ""
     # if nothing else, just give the length and element type and NA count
     println(io, "Length: $(length(dv))")
     println(io, "Type  : $(ispooled)$(string(eltype(dv)))")
@@ -1011,16 +1011,16 @@ function cbind(df1::DataFrame, df2::DataFrame)
     return d
 end
 
-function cbind{T}(df::DataFrame, x::DataVec{T})
+function cbind{T}(df::DataFrame, x::DataVector{T})
     cbind(df, DataFrame({x}))
 end
 
 function cbind{T}(df::DataFrame, x::Vector{T})
-    cbind(df, DataFrame({DataVec(x)}))
+    cbind(df, DataFrame({DataArray(x)}))
 end
 
 function cbind{T}(df::DataFrame, x::T)
-    cbind(df, DataFrame({DataVec([x])}))
+    cbind(df, DataFrame({DataArray([x])}))
 end
 
 # three-plus-argument form recurses
@@ -1035,13 +1035,13 @@ similar(df::DataFrame, dims) =
 similar(df::SubDataFrame, dims) = 
     DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
 
-nas{T}(dv::DataVec{T}, dims) =   # TODO move to datavec.jl?
-    DataVec(zeros(T, dims), fill(true, dims))
+nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavec.jl?
+    DataArray(zeros(T, dims), fill(true, dims))
 
 zeros{T<:ByteString}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
     
-nas{T}(dv::PooledDataVec{T}, dims) =
-    PooledDataVec(fill(uint16(1), dims), dv.pool)
+nas{T}(dv::PooledDataVector{T}, dims) =
+    PooledDataVector(fill(uint16(1), dims), dv.pool)
 
 nas(df::DataFrame, dims) = 
     DataFrame([nas(x, dims) for x in df.columns], colnames(df)) 
@@ -1445,15 +1445,15 @@ end
 stack(df::DataFrame, icols) = stack(df, [df.colindex[icols]])
 
 function unstack(df::DataFrame, ikey::Int, ivalue::Int, irefkey::Int)
-    keycol = PooledDataVec(df[ikey])
+    keycol = PooledDataVector(df[ikey])
     valuecol = df[ivalue]
     # TODO make a version with a default refkeycol
-    refkeycol = PooledDataVec(df[irefkey])
+    refkeycol = PooledDataVector(df[irefkey])
     remainingcols = _setdiff([1:ncol(df)], [ikey, ivalue])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     # TODO make fillNA(type, length) 
-    payload = DataFrame({DataVec([fill(valuecol[1],Nrow)], fill(true, Nrow))  for i in 1:Ncol}, map(string, keycol.pool))
+    payload = DataFrame({DataArray([fill(valuecol[1],Nrow)], fill(true, Nrow))  for i in 1:Ncol}, map(string, keycol.pool))
     nowarning = true 
     for k in 1:nrow(df)
         j = int(keycol.refs[k])
@@ -1617,7 +1617,7 @@ function array(d::AbstractDataFrame)
 end
 
 # DataFrame -> Array{promoted_type, 2}
-# Note: this doesn't work yet for DataVecs. It might once promotion
+# Note: this doesn't work yet for DataVectors. It might once promotion
 # with Arrays is added (work needed).
 # matrix(d::AbstractDataFrame) = reshape([d...],size(d))
 function matrix(df::DataFrame)
@@ -1661,7 +1661,7 @@ unique(df::AbstractDataFrame) = df[!duplicated(df), :]
 function duplicatedkey(df::AbstractDataFrame)
     # Here's another (probably a lot faster) way to do `duplicated`
     # by grouping on all columns. It will fail if columns cannot be
-    # made into PooledDataVec's.
+    # made into PooledDataVector's.
     gd = groupby(df, colnames(df))
     idx = [1:length(gd.idx)][gd.idx][gd.starts]
     res = fill(true, nrow(df))
@@ -1725,3 +1725,22 @@ function flipud!(df::DataFrame)
     df[1:nrow(df), :] = df[reverse(1:nrow(df)), :]
     return
 end
+
+### TODO: Position this appropriately.
+function matrix(df::DataFrame)
+    ts = coltypes(df)
+    for t in ts
+        if !(t <: Number)
+            error("Convert convert a non-numeric DataFrame to a DataMatrix")
+        end
+    end
+    n, p = size(df)
+    dm = dmzeros(n, p)
+    for i in 1:n
+        for j in 1:p
+            dm[i, j] = df[i, j]
+        end
+    end
+    return dm
+end
+

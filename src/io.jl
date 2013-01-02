@@ -272,7 +272,7 @@ function convert_to_dataframe{R <: String,
     error("Column names do not match the input data's size")
   end
 
-  # Store the columns as a set of DataVec's inside an Array of Any's
+  # Store the columns as a set of DataVector's inside an Array of Any's
   columns = Array(Any, ncols)
 
   # Convert each column of text into a DataVec of the
@@ -311,7 +311,7 @@ function convert_to_dataframe{R <: String,
         end
       end
     end
-    columns[j] = DataVec(values, is_missing)
+    columns[j] = DataArray(values, is_missing)
   end
 
   # Prepare the DataFrame we'll return

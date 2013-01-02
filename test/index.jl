@@ -14,16 +14,16 @@ inds = {1,
 		1.0:1.0,
 		["A"],
 		[:A],
-		DataVec[true],
-		DataVec[1],
-		DataVec[1.0],
-		DataVec["A"],
-		DataVec[:A],
-		PooledDataVec[true],
-		PooledDataVec[1],
-		PooledDataVec[1.0],
-		PooledDataVec["A"],
-		PooledDataVec[:A]}
+		DataVector[true],
+		DataVector[1],
+		DataVector[1.0],
+		DataVector["A"],
+		DataVector[:A],
+		PooledDataVector[true],
+		PooledDataVector[1],
+		PooledDataVector[1.0],
+		PooledDataVector["A"],
+		PooledDataVector[:A]}
 
 for ind in inds
 	if isequal(ind, "A") || isequal(ind, :A) || ndims(ind) == 0

@@ -34,7 +34,7 @@ end
 # construct with mf::ModelFrame = model_frame(f::Formula, d::DataFrame)
 # this unpacks the formula, extracts the columns from the DataFrame, and
 # applies the ^, &, *, / operators, and evaluates any other expressions 
-# in the context of the df. Note that columns remain DataVecs, and NAs are 
+# in the context of the df. Note that columns remain DataVectors, and NAs are 
 # preserved through this step.
 
 # minimal first version: support y ~ x1 + x2 + log(x3)
@@ -171,7 +171,7 @@ function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame)
    col_names = Array(ASCIIString,0)
    for i in 1:ncol(a)
        for j in 1:ncol(b)
-          push(cols, DataVec(a[:,i] .* b[:,j]))
+          push(cols, DataArray(a[:,i] .* b[:,j]))
           push(col_names, strcat(colnames(a)[i],"&",colnames(b)[j]))
        end
    end
@@ -184,7 +184,7 @@ function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame, c
    for i in 1:ncol(a)
        for j in 1:ncol(b)
            for k in 1:ncol(b)
-              push(cols, DataVec(a[:,i] .* b[:,j] .* c[:,k]))
+              push(cols, DataArray(a[:,i] .* b[:,j] .* c[:,k]))
               push(col_names, strcat(colnames(a)[i],"&",colnames(b)[j],"&",colnames(c)[k]))
            end
        end
@@ -263,8 +263,8 @@ end
 
 # Expand a PooledDataVector into a matrix of indicators for each dummy variable
 # TODO: account for NAs?
-function expand(poolcol::PooledDataVec, colname::ByteString, df::AbstractDataFrame)
-    newcol = {DataVec([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
+function expand(poolcol::PooledDataVector, colname::ByteString, df::AbstractDataFrame)
+    newcol = {DataArray([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
     newcolname = [strcat(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
     DataFrame(newcol, convert(Vector{ByteString}, newcolname))
 end

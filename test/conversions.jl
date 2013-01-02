@@ -1,1 +1,1 @@
-@assert isequal(DataVec[1, 2, NA], DataVec(PooledDataVec[1, 2, NA]))
+@assert isequal(DataVector[1, 2, NA], DataArray(PooledDataVector[1, 2, NA]))

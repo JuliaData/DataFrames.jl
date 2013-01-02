@@ -79,7 +79,7 @@ for f in unary_operators
         function ($f)(d::NAtype)
             return NA
         end
-        function ($f){T}(dv::DataVec{T})
+        function ($f){T}(dv::DataVector{T})
             res = deepcopy(dv)
             for i in 1:length(dv)
                 res[i] = ($f)(dv[i])
@@ -113,21 +113,17 @@ for f in unary_operators
 end
 
 # Treat ctranspose and * in a special way for now
-function ctranspose{T}(dv::DataVec{T})
-    return DataMatrix(dv.data', dv.na')
-end
-
-function ctranspose{T}(dm::DataMatrix{T})
-    return DataMatrix(dm.data', dm.na')
+function ctranspose(d::DataArray)
+    return DataArray(d.data', d.na')
 end
 
 # TODO: Check there are no better algorithms
-function (*){S <: Real, T <: Real}(a::DataVec{S}, b::DataMatrix{T})
+function (*){S <: Real, T <: Real}(a::DataVector{S}, b::DataMatrix{T})
     if size(b, 1) != 1
-        error("DataVec and matrix sizes must match")
+        error("DataVector and matrix sizes must match")
     end
     n, p = length(a), size(b, 2)
-    res = dmzeros(n, p)
+    res = dzeros(n, p)
     for i in 1:n
         for j in 1:p
             res[i, j] = a[i] * b[j]
@@ -141,7 +137,7 @@ function (*){S <: Real, T <: Real}(a::Vector{S}, b::DataMatrix{T})
         error("Vector and matrix sizes must match")
     end
     n, p = length(a), size(b, 2)
-    res = dmzeros(n, p)
+    res = dzeros(n, p)
     for i in 1:n
         for j in 1:p
             res[i, j] = a[i] * b[j]
@@ -151,12 +147,12 @@ function (*){S <: Real, T <: Real}(a::Vector{S}, b::DataMatrix{T})
 end
 
 # TODO: Check there are no better algorithms
-function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataVec{T})
+function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataVector{T})
     if size(a, 2) != length(b)
-        error("The number of columns of the DataMatrix must match the length of the DataVec")
+        error("The number of columns of the DataMatrix must match the length of the DataVector")
     end
     n, p = size(a, 1), length(b)
-    res = dvzeros(n)
+    res = dzeros(n)
     for i in 1:n
         res[i] = 0.0
         for j in 1:p
@@ -172,7 +168,7 @@ function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::Vector{T})
         error("The number of columns of the DataMatrix must match the length of the Vector")
     end
     n, p = size(a, 1), length(b)
-    res = dvzeros(n)
+    res = dzeros(n)
     for i in 1:n
         res[i] = 0.0
         for j in 1:p
@@ -192,7 +188,7 @@ function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataMatrix{T})
     if p1 != n2
         error("DataMatrix sizes must align for matrix multiplication")
     end
-    res = DataMatrix(a.data * b.data, falses(n1, p2))
+    res = DataArray(a.data * b.data, falses(n1, p2))
     # Propagation can be made more efficient by storing record of corrupt
     # rows and columns, then doing fast edits.
     corrupt_rows = falses(n1)
@@ -234,7 +230,7 @@ function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::Matrix{T})
     if p1 != n2
         error("DataMatrix and Matrix sizes must align for matrix multiplication")
     end
-    res = DataMatrix(a.data * b, falses(n1, p2))
+    res = DataArray(a.data * b, falses(n1, p2))
     for i in 1:n1
         for j in 1:p1
             if a.na[i, j]
@@ -253,7 +249,7 @@ function (*){S <: Real, T <: Real}(a::Matrix{S}, b::DataMatrix{T})
     if p1 != n2
         error("Matrix and DataMatrix sizes must align for matrix multiplication")
     end
-    res = DataMatrix(a * b.data, falses(n1, p2))
+    res = DataArray(a * b.data, falses(n1, p2))
     for i in 1:n2
         for j in 1:p2
             if b.na[i, j]
@@ -271,15 +267,15 @@ for f in elementary_functions
         function ($f)(d::NAtype)
             return NA
         end
-        function ($f){T}(dv::DataVec{T})
+        function ($f){T}(dv::DataVector{T})
             n = length(dv)
-            res = DataVec(Array(T, n), falses(n))
+            res = DataArray(Array(T, n), falses(n))
             for i = 1:n
                 res[i] = ($f)(dv[i])
             end
             return res
         end
-        function ($f){T}(adv::AbstractDataVec{T})
+        function ($f){T}(adv::AbstractDataVector{T})
             res = deepcopy(adv)
             for i = 1:length(adv)
                 if isna(adv[i])
@@ -291,7 +287,7 @@ for f in elementary_functions
             return res
         end
         function ($f){T}(dm::DataMatrix{T})
-            res = DataMatrix(Array(T, size(dm)), falses(size(dm)))
+            res = DataArray(Array(T, size(dm)), falses(size(dm)))
             for i = 1:numel(dm)
                 res[i] = ($f)(dm[i])
             end
@@ -318,9 +314,9 @@ end
 
 for f in two_argument_elementary_functions
     @eval begin
-        function ($f){T}(dv::DataVec{T}, arg2)
+        function ($f){T}(dv::DataVector{T}, arg2)
             n = length(dv)
-            res = DataVec(Array(T, n), falses(n))
+            res = DataArray(Array(T, n), falses(n))
             for i = 1:n
                 res[i] = ($f)(dv[i], arg2)
             end
@@ -356,8 +352,8 @@ end
 
 for (f, scalarf) in vectorized_comparison_operators
     @eval begin
-        function ($f){S, T <: Union(String, Number)}(a::DataVec{S}, v::T)
-            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){S, T <: Union(String, Number)}(a::DataVector{S}, v::T)
+            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i])
                     res[i] = NA
@@ -367,8 +363,8 @@ for (f, scalarf) in vectorized_comparison_operators
             end
             return res
         end
-        function ($f){S <: Union(String, Number), T}(v::S, a::DataVec{T})
-            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){S <: Union(String, Number), T}(v::S, a::DataVector{T})
+            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i])
                     res[i] = NA
@@ -378,8 +374,8 @@ for (f, scalarf) in vectorized_comparison_operators
             end
             return res
         end
-        function ($f){S, T <: Union(String, Number)}(a::PooledDataVec{S}, v::T)
-            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){S, T <: Union(String, Number)}(a::PooledDataVector{S}, v::T)
+            res = PooledDataVector(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i])
                     res[i] = NA
@@ -389,8 +385,8 @@ for (f, scalarf) in vectorized_comparison_operators
             end
             return res
         end
-        function ($f){S <: Union(String, Number), T}(v::S, a::PooledDataVec{T})
-            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){S <: Union(String, Number), T}(v::S, a::PooledDataVector{T})
+            res = PooledDataVector(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i])
                     res[i] = NA
@@ -400,29 +396,29 @@ for (f, scalarf) in vectorized_comparison_operators
             end
             return res
         end
-        function ($f){T}(a::AbstractDataVec{T}, v::NAtype)
-            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){T}(a::AbstractDataVector{T}, v::NAtype)
+            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 res[i] = NA
             end
             res
         end
-        function ($f){T}(v::NAtype, a::AbstractDataVec{T})
-            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){T}(v::NAtype, a::AbstractDataVector{T})
+            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 res[i] = NA
             end
             res
         end
-        function ($f){T}(a::PooledDataVec{T}, v::NAtype)
-            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){T}(a::PooledDataVector{T}, v::NAtype)
+            res = PooledDataVector(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 res[i] = NA
             end
             res
         end
-        function ($f){T}(v::NAtype, a::PooledDataVec{T})
-            res = PooledDataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){T}(v::NAtype, a::PooledDataVector{T})
+            res = PooledDataVector(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 res[i] = NA
             end
@@ -517,8 +513,8 @@ end
 
 for f in scalar_comparison_operators
     @eval begin
-        function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
-            error(strcat(string($f), " not defined for DataVecs. Try .", string($f)))
+        function ($f){S, T}(a::AbstractDataVector{S}, b::AbstractDataVector{T})
+            error(strcat(string($f), " not defined for DataVectors. Try .", string($f)))
         end
         function ($f){S, T}(a::DataMatrix{S}, b::DataMatrix{T})
             error(strcat(string($f), " not defined for DataMatrix's. Try .", string($f)))
@@ -531,8 +527,8 @@ end
 
 for (f, scalarf) in vectorized_comparison_operators
     @eval begin
-        function ($f){S, T}(a::AbstractDataVec{S}, b::AbstractDataVec{T})
-            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){S, T}(a::AbstractDataVector{S}, b::AbstractDataVector{T})
+            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i]) || isna(b[i])
                     res[i] = NA
@@ -542,8 +538,8 @@ for (f, scalarf) in vectorized_comparison_operators
             end
             return res
         end
-        function ($f){S, T}(a::AbstractDataVec{S}, b::Vector{T})
-            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){S, T}(a::AbstractDataVector{S}, b::Vector{T})
+            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i])
                     res[i] = NA
@@ -553,8 +549,8 @@ for (f, scalarf) in vectorized_comparison_operators
             end
             return res
         end
-        function ($f){S, T}(a::Vector{S}, b::AbstractDataVec{T})
-            res = DataVec(Array(Bool, length(a)), BitArray(length(a)))
+        function ($f){S, T}(a::Vector{S}, b::AbstractDataVector{T})
+            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(b[i])
                     res[i] = NA
@@ -565,7 +561,7 @@ for (f, scalarf) in vectorized_comparison_operators
             return res
         end
         function ($f){S, T}(a::DataMatrix{S}, b::DataMatrix{T})
-            res = DataMatrix(Array(Bool, size(a)), BitArray(size(a)))
+            res = DataArray(Array(Bool, size(a)), BitArray(size(a)))
             for i in 1:numel(a)
                 if isna(a[i]) || isna(b[i])
                     res[i] = NA
@@ -576,7 +572,7 @@ for (f, scalarf) in vectorized_comparison_operators
             return res
         end
         function ($f){S, T}(a::DataMatrix{S}, b::Matrix{T})
-            res = DataMatrix(Array(Bool, size(a)), BitArray(size(a)))
+            res = DataArray(Array(Bool, size(a)), BitArray(size(a)))
             for i in 1:numel(a)
                 if isna(a[i])
                     res[i] = NA
@@ -587,7 +583,7 @@ for (f, scalarf) in vectorized_comparison_operators
             return res
         end
         function ($f){S, T}(a::Matrix{S}, b::DataMatrix{T})
-            res = DataMatrix(Array(Bool, size(a)), BitArray(size(a)))
+            res = DataArray(Array(Bool, size(a)), BitArray(size(a)))
             for i in 1:numel(a)
                 if isna(b[i])
                     res[i] = NA
@@ -662,30 +658,30 @@ for f in binary_operators
         function ($f){T <: Union(Number, String)}(x::T, d::NAtype)
             return NA
         end
-        function ($f){T}(A::Number, B::DataVec{T})
-            res = DataVec(Array(promote_type(typeof(A),T), length(B)), B.na)
+        function ($f){T}(A::Number, B::DataVector{T})
+            res = DataArray(Array(promote_type(typeof(A),T), length(B)), B.na)
             for i in 1:length(B)
                 res.data[i] = ($f)(A, B.data[i])
             end
             return res
         end
-        function ($f){T}(A::DataVec{T}, B::Number)
-            res = DataVec(Array(promote_type(typeof(B),T), length(A)), A.na)
+        function ($f){T}(A::DataVector{T}, B::Number)
+            res = DataArray(Array(promote_type(typeof(B),T), length(A)), A.na)
             for i in 1:length(A)
                 res.data[i] = ($f)(A.data[i], B)
             end
             return res
         end
-        function ($f){T}(A::NAtype, B::DataVec{T})
-            res = DataVec(Array(typeof(B).parameters[1], length(B)), B.na)
+        function ($f){T}(A::NAtype, B::DataVector{T})
+            res = DataArray(Array(typeof(B).parameters[1], length(B)), B.na)
             for i in 1:length(B)
                 res.data[i] = B.data[i]
                 res.na[i] = true
             end
             return res
         end
-        function ($f){T}(A::DataVec{T}, B::NAtype)
-            res = DataVec(Array(typeof(A).parameters[1], length(A)), A.na)
+        function ($f){T}(A::DataVector{T}, B::NAtype)
+            res = DataArray(Array(typeof(A).parameters[1], length(A)), A.na)
             for i in 1:length(A)
                 res.data[i] = A.data[i]
                 res.na[i] = true
@@ -758,13 +754,13 @@ end
 # for arithmetic, NAs propagate
 for f in array_arithmetic_operators
     @eval begin
-        function ($f){S, T}(A::DataVec{S}, B::DataVec{T})
+        function ($f){S, T}(A::DataVector{S}, B::DataVector{T})
             if (length(A) != length(B))
-                error("DataVec lengths must match")
+                error("DataVector lengths must match")
             end
-            res = DataVec(Array(promote_type(S, T),
-                                length(A)),
-                          BitArray(length(A)))
+            res = DataArray(Array(promote_type(S, T),
+                                  length(A)),
+                            BitArray(length(A)))
             for i in 1:length(A)
                 res.na[i] = (A.na[i] || B.na[i])
                 res.data[i] = ($f)(A.data[i], B.data[i])
@@ -775,8 +771,8 @@ for f in array_arithmetic_operators
             if size(A) != size(B)
                 error("DataMatrix sizes must match")
             end
-            res = DataMatrix(Array(promote_type(S, T), size(A)),
-                             BitArray(size(A)))
+            res = DataArray(Array(promote_type(S, T), size(A)),
+                            BitArray(size(A)))
             for i in 1:numel(A)
                 res.na[i] = (A.na[i] || B.na[i])
                 res.data[i] = ($f)(A.data[i], B.data[i])
@@ -822,7 +818,7 @@ end
 
 for f in pairwise_vector_operators
     @eval begin
-        function ($f)(dv::DataVec)
+        function ($f)(dv::DataVector)
             n = length(dv)
             new_data = ($f)(dv.data)
             new_na = falses(n - 1)
@@ -835,14 +831,14 @@ for f in pairwise_vector_operators
             if isna(dv[n])
                 new_na[n - 1] = true
             end
-            return DataVec(new_data, new_na)
+            return DataArray(new_data, new_na)
         end
     end
 end
 
 for f in cumulative_vector_operators
     @eval begin
-        function ($f)(dv::DataVec)
+        function ($f)(dv::DataVector)
             new_data = ($f)(dv.data)
             new_na = falses(length(dv))
             hitna = false
@@ -854,14 +850,14 @@ for f in cumulative_vector_operators
                     new_na[i] = true
                 end
             end
-            return DataVec(new_data, new_na)
+            return DataArray(new_data, new_na)
         end
     end
 end
 
 for f in unary_vector_operators
     @eval begin
-        function ($f)(dv::DataVec)
+        function ($f)(dv::DataVector)
             if any(isna(dv))
                 return NA
             else
@@ -873,7 +869,7 @@ end
 
 for f in ffts
     @eval begin
-        function ($f)(dv::DataVec)
+        function ($f)(dv::DataVector)
             if any(isna(dv))
                 return NA
             else
@@ -885,7 +881,7 @@ end
 
 for f in binary_vector_operators
     @eval begin
-        function ($f)(dv1::DataVec, dv2::DataVec)
+        function ($f)(dv1::DataVector, dv2::DataVector)
             if any(isna(dv1)) || any(isna(dv2))
                 return NA
             else
@@ -916,9 +912,9 @@ for (f, colf) in ((:min, :colmins),
         end
         function ($colf){T}(dm::DataMatrix{T})
             n, p = nrow(dm), ncol(dm)
-            res = dvzeros(p)
+            res = dzeros(p)
             for j in 1:p
-                res[j] = ($f)(DataVec(dm.data[:, j], dm.na[:, j]))
+                res[j] = ($f)(DataArray(dm.data[:, j], dm.na[:, j]))
             end
             return res
         end
@@ -938,9 +934,9 @@ for (f, rowf) in ((:min, :rowmins),
     @eval begin
         function ($rowf){T}(dm::DataMatrix{T})
             n, p = nrow(dm), ncol(dm)
-            res = dvzeros(n)
+            res = dzeros(n)
             for i in 1:n
-                res[i] = ($f)(DataVec(reshape(dm.data[i, :], p), reshape(dm.na[i, :], p)))
+                res[i] = ($f)(DataArray(reshape(dm.data[i, :], p), reshape(dm.na[i, :], p)))
             end
             return res
         end
@@ -951,7 +947,7 @@ end
 # Boolean operators
 #
 
-function all{T}(dv::DataVec{T})
+function all{T}(dv::DataArray{T})
     for i in 1:length(dv)
         if isna(dv[i])
             return NA
@@ -963,7 +959,7 @@ function all{T}(dv::DataVec{T})
     return true
 end
 
-function any{T}(dv::DataVec{T})
+function any{T}(dv::DataArray{T})
     has_na = false
     for i in 1:length(dv)
         if !isna(dv[i])
@@ -1018,7 +1014,7 @@ end
 # isequal() should for Data*
 # * If missingness differs, underlying values are irrelevant
 # * If both entries are NA, underlying values are irrelevant
-function isequal{T}(a::DataVec{T}, b::DataVec{T})
+function isequal{T}(a::DataVector{T}, b::DataVector{T})
     if length(a) != length(b)
         return false
     else
@@ -1032,7 +1028,7 @@ function isequal{T}(a::DataVec{T}, b::DataVec{T})
     end
     return true
 end
-function isequal{T}(a::PooledDataVec{T}, b::PooledDataVec{T})
+function isequal{T}(a::PooledDataVector{T}, b::PooledDataVector{T})
     if length(a) != length(b)
         return false
     else
@@ -1054,7 +1050,7 @@ function isequal{T}(a::PooledDataVec{T}, b::PooledDataVec{T})
     end
     return true
 end
-function isequal{T}(a::AbstractDataVec{T}, b::AbstractDataVec{T})
+function isequal{T}(a::AbstractDataVector{T}, b::AbstractDataVector{T})
     if length(a) != length(b)
         return false
     else
@@ -1087,15 +1083,15 @@ function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     return true
 end
 
-function range{T}(dv::DataVec{T})
-    return DataVec([min(dv), max(dv)], falses(2))
+function range{T}(dv::DataVector{T})
+    return DataArray([min(dv), max(dv)], falses(2))
 end
 
-function rle{T}(v::DataVec{T})
+function rle{T}(v::DataVector{T})
     n = length(v)
     current_value = v[1]
     current_length = 1
-    values = DataVec(T, n)
+    values = DataArray(T, n)
     total_values = 1
     lengths = Array(Int16, n)
     total_lengths = 1
@@ -1130,10 +1126,10 @@ function rle{T}(v::DataVec{T})
 end
 
 ## inverse run-length encoding
-function inverse_rle{T}(values::DataVec{T}, lengths::Vector{Int16})
+function inverse_rle{T}(values::DataVector{T}, lengths::Vector{Int16})
     total_n = sum(lengths)
     pos = 0
-    res = DataVec(T, total_n)
+    res = DataArray(T, total_n)
     n = length(values)
     for i in 1:n
         v = values[i]
