@@ -327,11 +327,14 @@ end
 
 for f in special_comparison_operators
     @eval begin
+        function ($f)(d::NAtype, e::NAtype)
+            return false
+        end
         function ($f){T <: Union(String, Number)}(d::NAtype, x::T)
             return true
         end
         function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
-            return f
+            return false
         end
     end
 end
