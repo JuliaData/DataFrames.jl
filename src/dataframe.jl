@@ -752,11 +752,6 @@ keys(df::AbstractDataFrame) = keys(index(df))
 values(df::DataFrame) = df.columns
 del_all(df::DataFrame) = DataFrame()
 
-# Collection methods:
-start(df::AbstractDataFrame) = 1
-done(df::AbstractDataFrame, i) = i > ncol(df)
-next(df::AbstractDataFrame, i) = (df[i], i + 1)
-
 ## numel(df::AbstractDataFrame) = ncol(df)
 isempty(df::AbstractDataFrame) = ncol(df) == 0
 
@@ -1744,3 +1739,37 @@ function matrix(df::DataFrame)
     return dm
 end
 
+##############################################################################
+##
+## Iteration: EachRow, EachCol
+##
+##############################################################################
+
+# Iteration by rows
+type DFRowIterator
+    df::DataFrame
+end
+EachRow(df::DataFrame) = DFRowIterator(df)
+start(itr::DFRowIterator) = 1
+done(itr::DFRowIterator, i::Int) = i > nrow(itr.df)
+next(itr::DFRowIterator, i::Int) = (itr.df[i, :], i + 1)
+
+# Iteration by columns
+type DFColumnIterator
+    df::DataFrame
+end
+EachCol(df::DataFrame) = DFColumnIterator(df)
+start(itr::DFColumnIterator) = 1
+done(itr::DFColumnIterator, j::Int) = j > ncol(itr.df)
+next(itr::DFColumnIterator, j::Int) = (itr.df[:, j], j + 1)
+
+# Iteration by elements is not allowed
+function start(df::AbstractDataFrame)
+    error("To iterate over DataFrames, use EachRow or EachCol")
+end
+function done(df::AbstractDataFrame, i::Any)
+    error("To iterate over DataFrames, use EachRow or EachCol")
+end
+function next(df::AbstractDataFrame, i::Any)
+    error("To iterate over DataFrames, use EachRow or EachCol")
+end
