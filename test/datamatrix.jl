@@ -1,7 +1,7 @@
 a = DataVector[1.0, 2.0, 3.0]
 v_a = [1.0, 2.0, 3.0]
 
-b = deye(3, 3)
+b = dataeye(3, 3)
 m_b = eye(3, 3)
 
 #
@@ -72,7 +72,7 @@ res = b * b
 @assert !isna(res[3, 2])
 @assert !isna(res[3, 3])
 
-res = b * deye(3)
+res = b * dataeye(3)
 # 3x3 Float64 DataMatrix:
 #   NA   NA   NA
 #  0.0  1.0  0.0
@@ -87,8 +87,8 @@ res = b * deye(3)
 @assert !isna(res[3, 2])
 @assert !isna(res[3, 3])
 
-res = deye(3) * b
-# julia> deye(3) * b
+res = dataeye(3) * b
+# julia> dataeye(3) * b
 # 3x3 Float64 DataMatrix:
 #  NA  0.0  0.0
 #  NA  1.0  0.0
@@ -104,20 +104,20 @@ res = deye(3) * b
 @assert !isna(res[3, 3])
 
 # Test row operations
-dm = deye(6, 2)
+dm = dataeye(6, 2)
 rowmeans(dm)
 
 # Test column operations
-dm = deye(6, 2)
+dm = dataeye(6, 2)
 colmeans(dm)
 
 # Test linear algebra
-du, dd, dv = svd(deye(3, 3))
+du, dd, dv = svd(dataeye(3, 3))
 u, d, v = svd(eye(3, 3))
 @assert all(du .== u)
 @assert all(dd .== d)
 @assert all(dv .== v)
 
 # Test elementary functions
-dm = -deye(5, 5)
+dm = -dataeye(5, 5)
 @assert all(abs(dm) .== eye(5, 5))

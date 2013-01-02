@@ -4,13 +4,13 @@
 ##
 ##############################################################################
 
-for (f, basef) in ((:deye, :eye), )
+for (f, basef) in ((:dataeye, :eye), )
     @eval begin
         ($f)(n::Int) = DataArray(($basef)(n), falses(n, n))
         ($f)(n::Int, p::Int) = DataArray(($basef)(n, p), falses(n, p))
     end
 end
-for (f, basef) in ((:ddiagm, :diagm), )
+for (f, basef) in ((:datadiagm, :diagm), )
     @eval begin
         ($f)(vals::Vector) = DataArray(($basef)(vals), falses(length(vals), length(vals)))
     end

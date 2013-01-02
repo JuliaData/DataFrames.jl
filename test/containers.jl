@@ -1,4 +1,4 @@
-dv = dones(3)
+dv = dataones(3)
 push(dv, 3.0)
 push(dv, NA)
 
