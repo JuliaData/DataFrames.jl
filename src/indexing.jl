@@ -1,9 +1,9 @@
 # This is an experiment in adding indexing to vectors. The idea is
 # that if a DataFrame column is indexed, the following will have fast
 # lookups:
-#     df[:(2 .< col1 .< 7)]
+#     df[:(2 .< col1 .< 7), :]
 #     df[:( datecol .>= "2011-01-01" ), "col3"]
-#     df[:( col .== "red" )]
+#     df[:( col .== "red" ), :]
 #
 # Keeping indexing with columns has advantages:
 #     - Column ordering is less likely to be messed up inadvertantly.
@@ -18,13 +18,25 @@
 #       keys in a sorted DataFrame. It should still be pretty fast (no
 #       speed checks, yet).
 #     - You can't do data.table/pandas shortcuts like df["A"] for
-#       df[:( keycol .== "A" )]. (But, df["A"] is less descriptive if
+#       df[:( keycol .== "A" ), :]. (But, df["A"] is less descriptive if
 #       you don't know what df's keys are.)
-# 
-# Right now, you can't do:
-#     IndexedVector(DataVector[1,2,3,NA])
-# because DataVectors are not AbstractVectortors. I hope we move to that.
+
+
+
+# An IndexedVector is a pointer to the original column along with an
+# indexing vector equal to `order(orig)`. A comparison operation like
+# `idv .> 3` returns an Indexer type. The Indexer type includes a
+# pointer to the IndexedVector along with a vector of Range1's.
+# DataVecs and DataFrames can be indexed with Indexers. It's fast
+# because you're using a slice of the already indexed vector.
+
+# Indexer's can be combined with `|` and `&`. In the case where the
+# IndexedVector is the same, the Indexer is reduced or expanded as
+# appropriate. This includes: `0 .< idv .< 3` or `idv .== 1 | idv .==
+# 4`. If Indexers have different IndexedVectors (like `idv1 .== 1 |
+# idv2 .== 1`), then the result is converted to a BitVector.
 #
+
 
 type IndexedVector{T} <: AbstractVector{T}
     x::AbstractVector{T}
@@ -73,7 +85,7 @@ end
 
 order(x::IndexedVector) = x.idx
 sort(x::IndexedVector) = x.x[x.idx]   # Return regular array?
-sort(x::IndexedVector) = IndexedVector(x.x[x.idx], 1:length(x.x))   # or keep this an IndexedVector, like this?
+## sort(x::IndexedVector) = IndexedVector(x.x[x.idx], 1:length(x.x))   # or keep this an IndexedVector, like this?
 
 type Indexer
     r::Vector{Range1}
@@ -141,7 +153,7 @@ function union(v1::Vector{Range1}, v2::Vector{Range1})
     reverse(res)
 end
 
-function (!)(x::Indexer)
+function (!)(x::Indexer)   # Negate the Indexer
     res = Range1[1 : x.r[1][1] - 1]
     for i in 1:length(x.r) - 1
         push(res, x.r[i][end] + 1 : x.r[i + 1][1] - 1)
@@ -178,6 +190,8 @@ function bool(ix::Indexer)
     res
 end
 
+# `ref` -- each Range1 of the Indexer (i.r...) is applied to the indexing vector (i.iv.idx)
+
 ref(x::IndexedVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 ref(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 ref(x::AbstractDataVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
@@ -199,7 +213,7 @@ typealias ComparisonTypes Union(Number, String)   # defined mainly to avoid warn
 
 # element-wise (in)equality operators
 # these may need range checks
-# Should these be sorted? Could be a counting sort.
+# Should these results be sorted? Could be a counting sort.
 .=={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
 .=={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
 .>={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a)], a)
@@ -251,7 +265,7 @@ function search_sorted_last{I<:Integer}(a::AbstractVector, x, idx::AbstractVecto
     ## idx is an indexing vector equal in length to a that sorts a 
     @assert length(a) == length(idx)
     lo = 0
-    hi = length(a) + 1
+    hi = length(idx) + 1
     while lo < hi-1
         i = (lo+hi)>>>1
         if isless(x,a[idx[i]])
@@ -269,7 +283,7 @@ function search_sorted_first{I<:Integer}(a::AbstractVector, x, idx::AbstractVect
     ## idx is an indexing vector equal in length to a that sorts a
     @assert length(a) == length(idx)
     lo = 0
-    hi = length(a) + 1
+    hi = length(idx) + 1
     while lo < hi-1
         i = (lo+hi)>>>1
         if isless(a[idx[i]],x)
