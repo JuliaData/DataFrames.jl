@@ -290,7 +290,20 @@ index(df::DataFrame) = df.colindex
 ##
 ##############################################################################
 
-function reconcile_groups(olddf, newdf)
+function set_group(df::AbstractDataFrame, newgroup, names)
+    set_group(index(df), newgroup, names)
+end
+function set_groups(df::AbstractDataFrame, gr::Dict{ByteString, Vector{ByteString}})
+    set_groups(index(df), gr)
+end
+function get_groups(df::AbstractDataFrame)
+    get_groups(index(df))
+end
+function rename_group!(df::AbstractDataFrame, a, b)
+    replace_names!(index(df), a, b)
+end
+
+function reconcile_groups(olddf::AbstractDataFrame, newdf::AbstractDataFrame)
 	# foreach group, restrict range to intersection with newdf colnames
 	# add back any groups with non-null range
 	old_groups = get_groups(olddf)
@@ -309,7 +322,7 @@ function reconcile_groups(olddf, newdf)
 	newdf
 end
 
-# TODO: reconcile_groups
+# TODO: Restore calls to reconcile_groups()
 
 ##############################################################################
 ##
@@ -768,14 +781,9 @@ keys(df::AbstractDataFrame) = keys(index(df))
 values(df::DataFrame) = df.columns
 del_all(df::DataFrame) = DataFrame()
 
-## numel(df::AbstractDataFrame) = ncol(df)
+# Stack should not depend upon a broken definition of numel(df)
+## numel(df::AbstractDataFrame) = nrow(df) * ncol(df)
 isempty(df::AbstractDataFrame) = ncol(df) == 0
-
-# Column groups
-set_group(d::AbstractDataFrame, newgroup, names) = set_group(index(d), newgroup, names)
-set_groups(d::AbstractDataFrame, gr::Dict{ByteString,Vector{ByteString}}) = set_groups(index(d), gr)
-get_groups(d::AbstractDataFrame) = get_groups(index(d))
-rename_group!(d::AbstractDataFrame,a,b) =  replace_names!(index(d), a, b)
 
 function insert(df::AbstractDataFrame, index::Int, item, name)
     @assert 0 < index <= ncol(df) + 1
@@ -807,6 +815,12 @@ end
 
 # dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
 # changing the in one df can break the other.
+
+##############################################################################
+##
+## String representations
+##
+##############################################################################
 
 head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
 head(df::AbstractDataFrame) = head(df, 6)
