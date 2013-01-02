@@ -294,6 +294,8 @@ export # reconcile_groups,
        each_failNA,
        each_removeNA,
        each_replaceNA,
+       EachRow,
+       EachCol,
        failNA,
        flipud!,
        flipud,
@@ -393,8 +395,9 @@ export # reconcile_groups,
 include(file_path(julia_pkgdir(), "DataFrames", "src", "utils.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "natype.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "dataarray.jl"))
-include(file_path(julia_pkgdir(), "DataFrames", "src", "datavec.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "datavector.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "datamatrix.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "pooleddatavector.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "index.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "namedarray.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "dataframe.jl"))
