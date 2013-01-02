@@ -38,6 +38,39 @@ ref{T}(v::IndexedVector{T}, i) = IndexedVector(v.x[i])
 assign(v::IndexedVector, i, val::Real) = IndexedVector(assign(v.x, i, val))
 assign(v::IndexedVector, i, val) = IndexedVector(assign(v.x, i, val))
 
+# to make assign in a DataFrame work:
+upgrade_vector{T}(v::IndexedVector{T}) = v
+function insert_single_column!{T}(df::DataFrame,
+                               dv::IndexedVector{T},
+                               col_ind::ColumnIndex)
+    dv_n, df_n = length(dv), nrow(df)
+    if df_n != 0
+        if dv_n != df_n
+            #dv = repeat(dv, df_n)
+            error("New columns must have the same length as old columns")
+        end
+    end
+    if has(df.colindex, col_ind)
+        j = df.colindex[col_ind]
+        df.columns[j] = dv
+    else
+        if typeof(col_ind) <: String || typeof(col_ind) <: Symbol
+            push(df.colindex, col_ind)
+            push(df.columns, dv)
+        else
+            if isnextcol(df, col_ind)
+                push(df.colindex, nextcolname(df))
+                push(df.columns, dv)
+            else
+                println("Column does not exist: $col_ind")
+                error("Cannot assign to non-existent column")
+            end
+        end
+    end
+    return dv
+end
+
+
 order(x::IndexedVector) = x.idx
 sort(x::IndexedVector) = x.x[x.idx]   # Return regular array?
 sort(x::IndexedVector) = IndexedVector(x.x[x.idx], 1:length(x.x))   # or keep this an IndexedVector, like this?
@@ -147,17 +180,16 @@ end
 
 ref(x::IndexedVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 ref(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
-## ref(x::AbstractDataVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
-ref(x::AbstractDataVec, i::Indexer) = x[i.iv.idx[[i.r...]]]
+ref(x::AbstractDataVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 
 # df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVec
-function ref{T <: Real}(df::DataFrame, row_inds::Indexer, col_ind::ColumnIndex)
+function ref(df::DataFrame, row_inds::Indexer, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column][row_inds.iv.idx[[row_inds.r...]]]
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-function ref{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::Indexer, col_inds::AbstractVector{T})
+function ref{T <: ColumnIndex}(df::DataFrame, row_inds::Indexer, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = {dv[row_inds.iv.idx[[row_inds.r...]]] for dv in df.columns[selected_columns]}
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
@@ -251,44 +283,6 @@ end
 
 
 
-# the following was needed for show(df)
-## maxShowLength(v::IndexedVector) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
+# the following is needed for show(df)
+maxShowLength(v::IndexedVector) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
 
-
-## # Examples
-## srand(1)
-## a = randi(5,20)
-## ia = IndexedVector(a)
-## ia2 = IndexedVector(randi(4,20))
-## ia .== 4
-## v = [1:20]
-## v[ia .== 4]
-
-## (ia .== 4) | (ia .== 5)
-
-## v[(ia .== 4) | (ia .== 5)]
-
-## v[(ia .>= 4) | (ia .== 5)] | println
-## ia[(ia .>= 4) | (ia .== 5)] | println
-## v[(ia .>= 4) & (ia .== 5)] | println
-## ia[(ia .>= 4) & (ia .== 5)] | println
-
-## !(ia .== 4) | dump
-## ia[!(ia .== 4)] | println
-
-## (ia .== 4) | dump 
-## (ia .== 4) & (ia .>= 3) | dump 
-
-## (ia .== 4) | (ia .== 3) | dump 
-## (ia .== 4) | (ia .== 3) | (ia .== 1) | dump
-
-
-
-## df = DataFrame({IndexedVector(vcat(fill([1:5],4)...)), IndexedVector(vcat(fill(letters[1:10],2)...))})
-
-## df[:(x2 .== "a")] 
-## df[:( (x2 .== "a") | (x1 .== 2) )] 
-## df[:( ("b" .<= x2 .<= "c") | (x1 .== 5) )]
-## df[:( (x1 .== 1) & (x2 .== "a") )]
-
-## df[:( in(x2, ["c","e"]) )]
