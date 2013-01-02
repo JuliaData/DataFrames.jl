@@ -409,8 +409,7 @@ include(file_path(julia_pkgdir(), "DataFrames", "src", "linalg.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "operators.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "statistics.jl"))
 include(file_path(julia_pkgdir(), "DataFrames", "src", "predicates.jl"))
-# TODO: Get indexing working
-# include(file_path(julia_pkgdir(), "DataFrames", "src", "indexing.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "indexing.jl"))
 
 # TODO: Remove these definitions
 nafilter(x...) = error("Function removed. Please use removeNA")
