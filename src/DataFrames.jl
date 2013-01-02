@@ -305,7 +305,7 @@ export # reconcile_groups,
        Index,
        index,
        index_to_level,
-       IndexedVec,
+       IndexedVector,
        Indexer,
        get_indices,
        interaction_design_matrix,
@@ -405,7 +405,7 @@ include(file_path(julia_pkgdir(), "DataFrames", "src", "predicates.jl"))
 # TODO: Get DataArray working
 # include(file_path(julia_pkgdir(), "DataFrames", "src", "dataarray.jl"))
 # TODO: Get indexing working
-# include(file_path(julia_pkgdir(), "DataFrames", "src", "indexing.jl"))
+include(file_path(julia_pkgdir(), "DataFrames", "src", "indexing.jl"))
 
 # TODO: Remove these definitions
 nafilter(x...) = error("Function removed. Please use removeNA")

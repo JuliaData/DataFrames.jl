@@ -22,29 +22,29 @@
 #       you don't know what df's keys are.)
 # 
 # Right now, you can't do:
-#     IndexedVec(DataVec[1,2,3,NA])
-# because DataVecs are not AbstractVectors. I hope we move to that.
+#     IndexedVector(DataVector[1,2,3,NA])
+# because DataVectors are not AbstractVectortors. I hope we move to that.
 #
 
-
-type IndexedVec{T} <: AbstractVector{T}
+type IndexedVector{T} <: AbstractVector{T}
     x::AbstractVector{T}
     idx::Vector{Int}
 end
-IndexedVec(x::AbstractVector) = IndexedVec(x, order(x))
+IndexedVector(x::AbstractVector) = IndexedVector(x, order(x))
 
-ref{T,I<:Integer}(v::IndexedVec{T},i::AbstractVector{I}) = IndexedVec(v.x[i])
-ref{T}(v::IndexedVec{T},i::Integer) = v.x[i]
-ref{T}(v::IndexedVec{T}, i) = IndexedVec(v.x[i])
-assign(v::IndexedVec, i, val) = IndexedVec(assign(v.x, i, val))
+ref{T,I<:Real}(v::IndexedVector{T},i::AbstractVector{I}) = IndexedVector(v.x[i])
+ref{T}(v::IndexedVector{T},i::Real) = v.x[i]
+ref{T}(v::IndexedVector{T}, i) = IndexedVector(v.x[i])
+assign(v::IndexedVector, i, val::Real) = IndexedVector(assign(v.x, i, val))
+assign(v::IndexedVector, i, val) = IndexedVector(assign(v.x, i, val))
 
-order(x::IndexedVec) = x.idx
-sort(x::IndexedVec) = x.x[x.idx]   # Return regular array?
-sort(x::IndexedVec) = IndexedVec(x.x[x.idx], 1:length(x.x))   # or keep this an IndexedVec, like this?
+order(x::IndexedVector) = x.idx
+sort(x::IndexedVector) = x.x[x.idx]   # Return regular array?
+sort(x::IndexedVector) = IndexedVector(x.x[x.idx], 1:length(x.x))   # or keep this an IndexedVector, like this?
 
 type Indexer
     r::Vector{Range1}
-    iv::IndexedVec
+    iv::IndexedVector
 end
 
 function intersect(v1::Vector{Range1}, v2::Vector{Range1})
@@ -124,8 +124,8 @@ function (&)(x1::Indexer, x2::Indexer)
         bool(x1) & bool(x2)
     end
 end
-(&)(x1::Vector{Bool}, x2::Indexer) = x1 & bool(x2)
-(&)(x1::Indexer, x2::Vector{Bool}) = x2 & bool(x1)
+(&)(x1::BitVector, x2::Indexer) = x1 & bool(x2)
+(&)(x1::Indexer, x2::BitVector) = x2 & bool(x1)
 
 function (|)(x1::Indexer, x2::Indexer)
     if x1.iv == x2.iv
@@ -134,34 +134,50 @@ function (|)(x1::Indexer, x2::Indexer)
         bool(x1) | bool(x2)
     end
 end
-(|)(x1::Vector{Bool}, x2::Indexer) = x1 | bool(x2)
-(|)(x1::Indexer, x2::Vector{Bool}) = x2 | bool(x1)
+(|)(x1::BitVector, x2::Indexer) = x1 | bool(x2)
+(|)(x1::Indexer, x2::BitVector) = x2 | bool(x1)
 
 function bool(ix::Indexer)
-    res = fill(false, length(ix.iv.idx))
+    res = falses(length(ix.iv.idx))
     for i in ix.iv.idx[[ix.r...]]
         res[i] = true
     end
     res
 end
 
-ref(x::IndexedVec, i::Indexer) = x[i.iv.idx[[i.r...]]]
+ref(x::IndexedVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 ref(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
+## ref(x::AbstractDataVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 ref(x::AbstractDataVec, i::Indexer) = x[i.iv.idx[[i.r...]]]
+
+# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVec
+function ref{T <: Real}(df::DataFrame, row_inds::Indexer, col_ind::ColumnIndex)
+    selected_column = df.colindex[col_ind]
+    return df.columns[selected_column][row_inds.iv.idx[[row_inds.r...]]]
+end
+
+# df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
+function ref{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::Indexer, col_inds::AbstractVector{T})
+    selected_columns = df.colindex[col_inds]
+    new_columns = {dv[row_inds.iv.idx[[row_inds.r...]]] for dv in df.columns[selected_columns]}
+    return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
+end
+
+typealias ComparisonTypes Union(Number, String)   # defined mainly to avoid warnings
 
 # element-wise (in)equality operators
 # these may need range checks
 # Should these be sorted? Could be a counting sort.
-.=={T}(a::IndexedVec{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
-.=={T}(v::T, a::IndexedVec{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
-.>={T}(a::IndexedVec{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a)], a)
-.<={T}(a::IndexedVec{T}, v::T) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
-.>={T}(v::T, a::IndexedVec{T}) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
-.<={T}(v::T, a::IndexedVec{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a)], a)
-.>{T}(a::IndexedVec{T}, v::T) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a)], a)
-.<{T}(a::IndexedVec{T}, v::T) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
-.<{T}(v::T, a::IndexedVec{T}) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a)], a)
-.>{T}(v::T, a::IndexedVec{T}) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
+.=={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
+.=={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
+.>={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a)], a)
+.<={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
+.>={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
+.<={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a)], a)
+.>{T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a)], a)
+.<{T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
+.<{T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a)], a)
+.>{T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
 
 
 function search_sorted_first_gt{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
@@ -177,7 +193,7 @@ function search_sorted_last_lt{I<:Integer}(a::AbstractVector, x, idx::AbstractVe
     a[idx[res]] == x ? res - 1 : res
 end
 
-function in{T}(a::IndexedVec{T}, y::Vector{T})
+function in{T}(a::IndexedVector{T}, y::Vector{T})
     res = a .== y[1]
     for i in 2:length(y)
         res = res | (a .== y[i])
@@ -185,17 +201,17 @@ function in{T}(a::IndexedVec{T}, y::Vector{T})
     res
 end
 
-between{T}(a::IndexedVec{T}, v1::T, v2::T, ) = Indexer(Range1[search_sorted_first(a.x, v1, a.idx) : search_sorted_last(a.x, v2, a.idx)], a)
+between{T}(a::IndexedVector{T}, v1::T, v2::T, ) = Indexer(Range1[search_sorted_first(a.x, v1, a.idx) : search_sorted_last(a.x, v2, a.idx)], a)
 
-size(a::IndexedVec) = size(a.x)
-length(a::IndexedVec) = length(a.x)
-ndims(a::IndexedVec) = 1
-numel(a::IndexedVec) = length(a.x)
-eltype{T}(a::IndexedVec{T}) = T
+size(a::IndexedVector) = size(a.x)
+length(a::IndexedVector) = length(a.x)
+ndims(a::IndexedVector) = 1
+numel(a::IndexedVector) = length(a.x)
+eltype{T}(a::IndexedVector{T}) = T
 
-print(io, a::IndexedVec) = print(io, a.x)
-show(io, a::IndexedVec) = show(io, a.x)
-repl_show(io, a::IndexedVec) = repl_show(io, a.x)
+## print(io, a::IndexedVector) = print(io, a.x)
+show(io, a::IndexedVector) = show(io, a.x)
+repl_show(io, a::IndexedVector) = repl_show(io, a.x)
 
 function search_sorted_last{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
     ## Index of the last value of vector a that is less than or equal to x.
@@ -233,15 +249,17 @@ function search_sorted_first{I<:Integer}(a::AbstractVector, x, idx::AbstractVect
     hi
 end
 
+
+
 # the following was needed for show(df)
-maxShowLength(v::IndexedVec) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
+## maxShowLength(v::IndexedVector) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
 
 
 ## # Examples
 ## srand(1)
 ## a = randi(5,20)
-## ia = IndexedVec(a)
-## ia2 = IndexedVec(randi(4,20))
+## ia = IndexedVector(a)
+## ia2 = IndexedVector(randi(4,20))
 ## ia .== 4
 ## v = [1:20]
 ## v[ia .== 4]
@@ -266,7 +284,7 @@ maxShowLength(v::IndexedVec) = length(v) > 0 ? max([length(_string(x)) for x = v
 
 
 
-## df = DataFrame({IndexedVec(vcat(fill([1:5],4)...)), IndexedVec(vcat(fill(letters[1:10],2)...))})
+## df = DataFrame({IndexedVector(vcat(fill([1:5],4)...)), IndexedVector(vcat(fill(letters[1:10],2)...))})
 
 ## df[:(x2 .== "a")] 
 ## df[:( (x2 .== "a") | (x1 .== 2) )] 
