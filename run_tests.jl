@@ -20,6 +20,7 @@ my_tests = ["test/dataarray.jl",
             "test/abstractarray.jl",
             "test/booleans.jl",
             "test/indexing.jl",
+            "test/indexedvector.jl",
             "test/iteration.jl"]
 
 println("Running tests:")
