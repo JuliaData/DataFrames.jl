@@ -29,18 +29,6 @@ end
 ##
 ## DataVector and DataMatrix are typealiases for 1D and 2D DataArray's
 ##
-##
-## Definitions for 1D Data* types which can contain NA's
-##
-## AbstractDataVector's are an abstract type that can contain NA's:
-##  * The core derived composite type is DataVector, which is a parameterized type
-##    that wraps an vector of a type and a Boolean (bit) array for the mask.
-##  * A secondary derived composite type is a PooledDataVector, which is a
-##    parameterized type that wraps a vector of UInts and a vector of one type,
-##    indexed by the main vector. NA's are 0's in the UInt vector.
-##
-## DataMatrix is a 2D generalization of DataVec
-##
 ##############################################################################
 
 typealias AbstractDataVector{T} AbstractDataArray{T, 1}
@@ -76,8 +64,8 @@ DataArray(d::BitArray) = DataArray(convert(Array{Bool}, d), falses(size(d)))
 DataArray(r::Ranges) = DataArray([r], falses(length(r)))
 
 # Construct an all-NA DataArray of a specific type
-DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...), trues(dims...))
-#DataArray(t::Type, dims::Dims) = DataArray(Array(t, dims), trues(dims))
+DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...),
+                                                 trues(dims...))
 
 # Wrap a scalar in a DataArray
 function DataArray(val::Any, dims::Integer...)
@@ -87,12 +75,7 @@ function DataArray(val::Any, dims::Integer...)
     end
     DataArray(vals, falses(dims...))
 end
-
-function DataArray(val::Any)
-    vals = Array(typeof(val), 1)
-    vals[1] = val
-    DataArray(vals, falses(1))
-end
+DataArray(val::Any) = DataArray([val], falses(1))
 
 ##############################################################################
 ##
@@ -104,7 +87,8 @@ end
 for (f, basef) in ((:dzeros, :zeros), (:dones, :ones))
     @eval begin
         ($f)(dims::Int...) = DataArray(($basef)(dims...), falses(dims...))
-        ($f)(t::Type, dims::Int...) = DataArray(($basef)(t, dims...), falses(dims...))
+        ($f)(t::Type, dims::Int...) = DataArray(($basef)(t, dims...),
+                                                falses(dims...))
     end
 end
 
@@ -532,43 +516,64 @@ function assign(x::DataMatrix, val::Any, i::Real, j::Real)
 end
 
 # dm[MultiItemIndex, SingleItemIndex] = NA
-function assign(x::DataMatrix, val::NAtype, row_inds::Union(Vector, BitVector, Ranges), j::Real)
+function assign(x::DataMatrix,
+                val::NAtype,
+                row_inds::Union(Vector, BitVector, Ranges),
+                j::Real)
     x.na[row_inds, j] = true
     return NA
 end
 # dm[MultiItemIndex, SingleItemIndex] = Multiple Items
-function assign{S, T}(x::DataMatrix{S}, vals::Vector{T}, row_inds::Union(Vector, BitVector, Ranges), j::Real)
+function assign{S, T}(x::DataMatrix{S},
+                      vals::Vector{T},
+                      row_inds::Union(Vector, BitVector, Ranges),
+                      j::Real)
     x.data[row_inds, j] = vals
     x.na[row_inds, j] = false
     return val
 end
 # dm[MultiItemIndex, SingleItemIndex] = Single Item
-function assign(x::DataMatrix, val::Any, row_inds::Union(Vector, BitVector, Ranges), j::Real)
+function assign(x::DataMatrix,
+                val::Any,
+                row_inds::Union(Vector, BitVector, Ranges),
+                j::Real)
     x.data[row_inds, j] = val
     x.na[row_inds, j] = false
     return val
 end
 
 # dm[SingleItemIndex, MultiItemIndex] = NA
-function assign(x::DataMatrix, val::NAtype, i::Real, col_inds::Union(Vector, BitVector, Ranges))
+function assign(x::DataMatrix,
+                val::NAtype,
+                i::Real,
+                col_inds::Union(Vector, BitVector, Ranges))
     x.na[i, col_inds] = true
     return NA
 end
 # dm[SingleItemIndex, MultiItemIndex] = Multiple Items
-function assign{S, T}(x::DataMatrix{S}, vals::Vector{T}, i::Real, col_inds::Union(Vector, BitVector, Ranges))
+function assign{S, T}(x::DataMatrix{S},
+                      vals::Vector{T},
+                      i::Real,
+                      col_inds::Union(Vector, BitVector, Ranges))
     x.data[i, col_inds] = vals
     x.na[i, col_inds] = false
     return val
 end
 # dm[SingleItemIndex, MultiItemIndex] = Single Item
-function assign(x::DataMatrix, val::Any, i::Real, col_inds::Union(Vector, BitVector, Ranges))
+function assign(x::DataMatrix,
+                val::Any,
+                i::Real,
+                col_inds::Union(Vector, BitVector, Ranges))
     x.data[i, col_inds] = val
     x.na[i, col_inds] = false
     return val
 end
 
 # dm[MultiItemIndex, MultiItemIndex] = NA
-function assign(x::DataMatrix, val::NAtype, row_inds::Union(Vector, BitVector, Ranges), col_inds::Union(Vector, BitVector, Ranges))
+function assign(x::DataMatrix,
+                val::NAtype,
+                row_inds::Union(Vector, BitVector, Ranges),
+                col_inds::Union(Vector, BitVector, Ranges))
     x.na[row_inds, col_inds] = true
     return NA
 end
@@ -582,7 +587,10 @@ function assign{S, T}(x::DataMatrix{S},
     return val
 end
 # dm[MultiItemIndex, MultiItemIndex] = Single Item
-function assign(x::DataMatrix, val::Any, row_inds::Union(Vector, BitVector, Ranges), col_inds::Union(Vector, BitVector, Ranges))
+function assign(x::DataMatrix,
+                val::Any,
+                row_inds::Union(Vector, BitVector, Ranges),
+                col_inds::Union(Vector, BitVector, Ranges))
     x.data[row_inds, col_inds] = val
     x.na[row_inds, col_inds] = false
     return val
@@ -611,7 +619,7 @@ end
 
 ##############################################################################
 ##
-## Generic iteration over AbstractDataVector's
+## Generic iteration over AbstractDataArray's
 ##
 ##############################################################################
 
@@ -629,8 +637,10 @@ end
 ##
 ##############################################################################
 
-promote_rule{T, T}(::Type{AbstractDataArray{T}}, ::Type{T}) = promote_rule(T, T)
-promote_rule{S, T}(::Type{AbstractDataArray{S}}, ::Type{T}) = promote_rule(S, T)
+promote_rule{T, T}(::Type{AbstractDataArray{T}},
+                   ::Type{T}) = promote_rule(T, T)
+promote_rule{S, T}(::Type{AbstractDataArray{S}},
+                   ::Type{T}) = promote_rule(S, T)
 promote_rule{T}(::Type{AbstractDataArray{T}}, ::Type{T}) = T
 
 ##############################################################################

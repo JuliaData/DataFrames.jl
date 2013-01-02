@@ -2,7 +2,10 @@
 ##
 ## PooledDataVector type definition
 ##
-## A DataVector with efficient storage when values are repeated
+## An AbstractDataVector with efficient storage when values are repeated. A
+## PDV wraps a vector of UInt8's, which are used to index into a compressed
+## pool of values. NA's are 0's in the UInt vector.
+##
 ## TODO: Make sure we don't overflow from refs being Uint16
 ## TODO: Allow ordering of factor levels
 ## TODO: Add metadata for dummy conversion
@@ -13,7 +16,8 @@ type PooledDataVector{T} <: AbstractDataVector{T}
     refs::Vector{POOLED_DATA_VEC_REF_TYPE}
     pool::Vector{T}
 
-    function PooledDataVector{T}(rs::Vector{POOLED_DATA_VEC_REF_TYPE}, p::Vector{T})
+    function PooledDataVector{T}(rs::Vector{POOLED_DATA_VEC_REF_TYPE},
+                                 p::Vector{T})
         # refs mustn't overflow pool
         if max(rs) > length(p)
             error("Reference vector points beyond the end of the pool")
@@ -32,7 +36,8 @@ end
 PooledDataVector(d::PooledDataVector) = d
 
 # Echo inner constructor as an outer constructor
-function PooledDataVector{T}(refs::Vector{POOLED_DATA_VEC_REF_TYPE}, pool::Vector{T})
+function PooledDataVector{T}(refs::Vector{POOLED_DATA_VEC_REF_TYPE},
+                             pool::Vector{T})
     PooledDataVector{T}(refs, pool)
 end
 
@@ -80,7 +85,9 @@ function PooledDataVector{T}(d::Vector{T}, m::AbstractVector{Bool})
 end
 
 # Allow a pool to be provided by the user
-function PooledDataVector{T}(d::Vector{T}, pool::Vector{T}, m::AbstractVector{Bool})
+function PooledDataVector{T}(d::Vector{T},
+                             pool::Vector{T},
+                             m::AbstractVector{Bool})
     if length(pool) > typemax(POOLED_DATA_VEC_REF_TYPE)
         error("Cannot construct a PooledDataVec with such a large pool")
     end
@@ -140,12 +147,6 @@ PooledDataVector{T}(r::Ranges{T}) = PooledDataVector([r], falses(length(r)))
 # Construct an all-NA PooledDataVector of a specific type
 PooledDataVector(t::Type, n::Int) = PooledDataVector(Array(t, n), trues(n))
 
-# Construct an all-NA PooledDataVector of the default column type
-PooledDataVector(n::Int) = PooledDataVector(Array(DEFAULT_COLUMN_TYPE, n), trues(n))
-
-# Construct an all-NA PooledDataVector of the default column type with length 0
-PooledDataVector() = PooledDataVector(Array(DEFAULT_COLUMN_TYPE, 0), trues(0))
-
 # Specify just a vector and a pool
 function PooledDataVector{T}(d::Vector{T}, pool::Vector{T})
     PooledDataVector(d, pool, falses(length(d)))
@@ -188,7 +189,8 @@ length(v::PooledDataVector) = length(v.refs)
 ##
 ##############################################################################
 
-copy{T}(dv::PooledDataVector{T}) = PooledDataVector{T}(copy(dv.refs), copy(dv.pool))
+copy(dv::PooledDataVector) = PooledDataVector(copy(dv.refs),
+                                              copy(dv.pool))
 # TODO: Implement copy_to()
 
 ##############################################################################
@@ -361,10 +363,14 @@ end
 
 # x[MultiIndex] = NA
 # TODO: Find a way to delete the next four methods
-function assign(x::PooledDataVector{NAtype}, val::NAtype, inds::AbstractVector{Bool})
+function assign(x::PooledDataVector{NAtype},
+                val::NAtype,
+                inds::AbstractVector{Bool})
     error("Don't use PooledDataVector{NAtype}'s")
 end
-function assign(x::PooledDataVector{NAtype}, val::NAtype, inds::AbstractVector)
+function assign(x::PooledDataVector{NAtype},
+                val::NAtype,
+                inds::AbstractVector)
     error("Don't use PooledDataVector{NAtype}'s")
 end
 
@@ -498,7 +504,8 @@ order(pd::PooledDataVector) = groupsort_indexer(pd)[1]
 ##
 ##############################################################################
 
-function PooledDataVecs{S, T}(v1::AbstractDataVector{S}, v2::AbstractDataVector{T})
+function PooledDataVecs{S, T}(v1::AbstractDataVector{S},
+                              v2::AbstractDataVector{T})
     ## Return two PooledDataVecs that share the same pool.
 
     refs1 = Array(POOLED_DATA_VEC_REF_TYPE, length(v1))
