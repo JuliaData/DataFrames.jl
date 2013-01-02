@@ -36,12 +36,12 @@ dv = DataArray(Int64, 3)
 # @assert isequal(eltype(dv), Float64)
 # @assert isequal(dv.na, trues(0))
 
-@assert isequal(dzeros(3), DataArray(zeros(3)))
-@assert isequal(dzeros(Int64, 3), DataArray(zeros(Int64, 3)))
-@assert isequal(dones(3), DataArray(ones(3)))
-@assert isequal(dones(Int64, 3), DataArray(ones(Int64, 3)))
-@assert isequal(dfalses(3), DataArray(falses(3)))
-@assert isequal(dtrues(3), DataArray(trues(3)))
+@assert isequal(datazeros(3), DataArray(zeros(3)))
+@assert isequal(datazeros(Int64, 3), DataArray(zeros(Int64, 3)))
+@assert isequal(dataones(3), DataArray(ones(3)))
+@assert isequal(dataones(Int64, 3), DataArray(ones(Int64, 3)))
+@assert isequal(datafalses(3), DataArray(falses(3)))
+@assert isequal(datatrues(3), DataArray(trues(3)))
 
 dv = DataVector[1, 2, NA]
 @assert dv[1] == 1
@@ -81,12 +81,12 @@ pdv = PooledDataVector(Int64, 3)
 # @assert isequal(eltype(pdv), Float64)
 # @assert all(isna(pdv) .== trues(0))
 
-@assert isequal(pdzeros(3), PooledDataVector(zeros(3)))
-@assert isequal(pdzeros(Int64, 3), PooledDataVector(zeros(Int64, 3)))
-@assert isequal(pdones(3), PooledDataVector(ones(3)))
-@assert isequal(pdones(Int64, 3), PooledDataVector(ones(Int64, 3)))
-@assert isequal(pdfalses(3), PooledDataVector(falses(3)))
-@assert isequal(pdtrues(3), PooledDataVector(trues(3)))
+@assert isequal(pdatazeros(3), PooledDataVector(zeros(3)))
+@assert isequal(pdatazeros(Int64, 3), PooledDataVector(zeros(Int64, 3)))
+@assert isequal(pdataones(3), PooledDataVector(ones(3)))
+@assert isequal(pdataones(Int64, 3), PooledDataVector(ones(Int64, 3)))
+@assert isequal(pdatafalses(3), PooledDataVector(falses(3)))
+@assert isequal(pdatatrues(3), PooledDataVector(trues(3)))
 
 pdv = PooledDataVector[1, 2, NA]
 @assert pdv[1] == 1
@@ -132,18 +132,18 @@ dm = DataArray(Int64, 2, 2)
 # @assert isequal(eltype(dm), Float64)
 # @assert isequal(dm.na, trues(0, 0))
 
-@assert isequal(dzeros(2, 2), DataArray(zeros(2, 2)))
-@assert isequal(dzeros(Int64, 2, 2), DataArray(zeros(Int64, 2, 2)))
+@assert isequal(datazeros(2, 2), DataArray(zeros(2, 2)))
+@assert isequal(datazeros(Int64, 2, 2), DataArray(zeros(Int64, 2, 2)))
 
-@assert isequal(dones(2, 2), DataArray(ones(2, 2)))
-@assert isequal(dones(Int64, 2, 2), DataArray(ones(Int64, 2, 2)))
+@assert isequal(dataones(2, 2), DataArray(ones(2, 2)))
+@assert isequal(dataones(Int64, 2, 2), DataArray(ones(Int64, 2, 2)))
 
-@assert isequal(dfalses(2, 2), DataArray(falses(2, 2)))
-@assert isequal(dtrues(2, 2), DataArray(trues(2, 2)))
+@assert isequal(datafalses(2, 2), DataArray(falses(2, 2)))
+@assert isequal(datatrues(2, 2), DataArray(trues(2, 2)))
 
-@assert isequal(deye(3, 2), DataArray(eye(3, 2)))
-@assert isequal(deye(2), DataArray(eye(2)))
-@assert isequal(ddiagm([pi, pi]), DataArray(diagm([pi, pi])))
+@assert isequal(dataeye(3, 2), DataArray(eye(3, 2)))
+@assert isequal(dataeye(2), DataArray(eye(2)))
+@assert isequal(datadiagm([pi, pi]), DataArray(diagm([pi, pi])))
 
 #
 # DataFrame
@@ -154,17 +154,17 @@ df = DataFrame()
 # TODO: Get this to work
 #@assert isequal(df.colindex, Index())
 
-df = DataFrame({dzeros(3), dones(3)}, Index(["x1", "x2"]))
+df = DataFrame({datazeros(3), dataones(3)}, Index(["x1", "x2"]))
 @assert nrow(df) == 3
 @assert ncol(df) == 2
 
 # TODO: Make isequal fail if colnames don't match
-@assert isequal(df, DataFrame({dzeros(3), dones(3)}))
+@assert isequal(df, DataFrame({datazeros(3), dataones(3)}))
 @assert isequal(df, DataFrame(quote x1 = [0.0, 0.0, 0.0]; x2 = [1.0, 1.0, 1.0] end))
 
 @assert isequal(df, DataFrame([0.0 1.0; 0.0 1.0; 0.0 1.0], ["x1", "x2"]))
 @assert isequal(df, DataFrame([0.0 1.0; 0.0 1.0; 0.0 1.0]))
-@assert isequal(df, DataFrame(dzeros(3), dones(3)))
+@assert isequal(df, DataFrame(datazeros(3), dataones(3)))
 
 # TODO: Fill these in
 # From (Associative): ???

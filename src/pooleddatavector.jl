@@ -153,7 +153,7 @@ function PooledDataVector{T}(d::Vector{T}, pool::Vector{T})
 end
 
 # Initialized constructors with 0's, 1's
-for (f, basef) in ((:pdzeros, :zeros), (:pdones, :ones))
+for (f, basef) in ((:pdatazeros, :zeros), (:pdataones, :ones))
     @eval begin
         ($f)(n::Int) = PooledDataVector(($basef)(n), falses(n))
         ($f)(t::Type, n::Int) = PooledDataVector(($basef)(t, n), falses(n))
@@ -161,7 +161,7 @@ for (f, basef) in ((:pdzeros, :zeros), (:pdones, :ones))
 end
 
 # Initialized constructors with false's or true's
-for (f, basef) in ((:pdfalses, :falses), (:pdtrues, :trues))
+for (f, basef) in ((:pdatafalses, :falses), (:pdatatrues, :trues))
     @eval begin
         ($f)(n::Int) = PooledDataVector(($basef)(n), falses(n))
     end

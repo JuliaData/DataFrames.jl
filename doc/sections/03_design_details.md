@@ -159,15 +159,15 @@ In fact, we can add a new type of our own and then wrap it inside of a new sort 
 
 Of course, specializing the types of `DataVec`'s means that we sometimes need to convert between types. Just as Julia has several specialized conversion functions for doing this, the DataFrames package provides conversion functions as well. For now, we have three such functions:
 
-* `dvint()`
-* `dvfloat()`
-* `dvbool()`
+* `dataint()`
+* `datafloat()`
+* `databool()`
 
 Using these, we can naturally convert between types:
 
 	dv = DataVec([1.0, 2.0])
 
-	dvint(dv)
+	dataint(dv)
 
 In the opposite direction, we sometimes want to create arbitrary length `DataVec`'s that have a specific type before we insert values:
 

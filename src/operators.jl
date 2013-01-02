@@ -123,7 +123,7 @@ function (*){S <: Real, T <: Real}(a::DataVector{S}, b::DataMatrix{T})
         error("DataVector and matrix sizes must match")
     end
     n, p = length(a), size(b, 2)
-    res = dzeros(n, p)
+    res = datazeros(n, p)
     for i in 1:n
         for j in 1:p
             res[i, j] = a[i] * b[j]
@@ -137,7 +137,7 @@ function (*){S <: Real, T <: Real}(a::Vector{S}, b::DataMatrix{T})
         error("Vector and matrix sizes must match")
     end
     n, p = length(a), size(b, 2)
-    res = dzeros(n, p)
+    res = datazeros(n, p)
     for i in 1:n
         for j in 1:p
             res[i, j] = a[i] * b[j]
@@ -152,7 +152,7 @@ function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataVector{T})
         error("The number of columns of the DataMatrix must match the length of the DataVector")
     end
     n, p = size(a, 1), length(b)
-    res = dzeros(n)
+    res = datazeros(n)
     for i in 1:n
         res[i] = 0.0
         for j in 1:p
@@ -168,7 +168,7 @@ function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::Vector{T})
         error("The number of columns of the DataMatrix must match the length of the Vector")
     end
     n, p = size(a, 1), length(b)
-    res = dzeros(n)
+    res = datazeros(n)
     for i in 1:n
         res[i] = 0.0
         for j in 1:p
@@ -915,7 +915,7 @@ for (f, colf) in ((:min, :colmins),
         end
         function ($colf){T}(dm::DataMatrix{T})
             n, p = nrow(dm), ncol(dm)
-            res = dzeros(p)
+            res = datazeros(p)
             for j in 1:p
                 res[j] = ($f)(DataArray(dm.data[:, j], dm.na[:, j]))
             end
@@ -937,7 +937,7 @@ for (f, rowf) in ((:min, :rowmins),
     @eval begin
         function ($rowf){T}(dm::DataMatrix{T})
             n, p = nrow(dm), ncol(dm)
-            res = dzeros(n)
+            res = datazeros(n)
             for i in 1:n
                 res[i] = ($f)(DataArray(reshape(dm.data[i, :], p), reshape(dm.na[i, :], p)))
             end

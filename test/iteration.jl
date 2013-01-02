@@ -1,6 +1,6 @@
 dv = DataVector[1, 2, NA]
 dm = DataArray([1 2; 3 4])
-dt = dzeros(2, 2, 2)
+dt = datazeros(2, 2, 2)
 
 df = DataFrame(quote
                  A = 1:2

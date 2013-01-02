@@ -451,13 +451,13 @@ dv = DataArray(Int64, 5)
 @assert all(isna(dv))
 dv = DataArray(Float64, 5)
 @assert all(isna(dv))
-dv = dzeros(5)
+dv = datazeros(5)
 @assert all(dv .== 0.0)
-dv = dones(5)
+dv = dataones(5)
 @assert all(dv .== 1.0)
 
 # No more NA corruption
-dv = dones(10_000)
+dv = dataones(10_000)
 @assert !any(isna(dv))
 
 PooledDataVector(falses(2), falses(2))

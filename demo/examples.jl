@@ -112,9 +112,9 @@ dv = DataVec([true, false])
 
 dv = DataVec([1.1, 2.1])
 
-dvbool(dv)
-dvint(dv)
-dvfloat(dv)
+databool(dv)
+dataint(dv)
+datafloat(dv)
 # dvstring(dv) # SHOULD WE MAKE THIS WORK?
 
 #

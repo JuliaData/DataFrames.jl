@@ -84,7 +84,7 @@ DataArray(val::Any) = DataArray([val], falses(1))
 ##############################################################################
 
 # Initialized constructors with 0's, 1's
-for (f, basef) in ((:dzeros, :zeros), (:dones, :ones))
+for (f, basef) in ((:datazeros, :zeros), (:dataones, :ones))
     @eval begin
         ($f)(dims::Int...) = DataArray(($basef)(dims...), falses(dims...))
         ($f)(t::Type, dims::Int...) = DataArray(($basef)(t, dims...),
@@ -93,7 +93,7 @@ for (f, basef) in ((:dzeros, :zeros), (:dones, :ones))
 end
 
 # Initialized constructors with false's or true's
-for (f, basef) in ((:dfalses, :falses), (:dtrues, :trues))
+for (f, basef) in ((:datafalses, :falses), (:datatrues, :trues))
     @eval begin
         ($f)(dims::Int...) = DataArray(($basef)(dims...), falses(dims...))
     end
@@ -692,7 +692,7 @@ for f in (:int, :float, :bool)
         end
     end
 end
-for (f, basef) in ((:dint, :int), (:dfloat, :float64), (:dbool, :bool))
+for (f, basef) in ((:dataint, :int), (:datafloat, :float64), (:databool, :bool))
     @eval begin
         function ($f){T}(dv::DataArray{T})
             DataArray(($basef)(dv.data), copy(dv.na))

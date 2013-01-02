@@ -1760,7 +1760,7 @@ function matrix(df::DataFrame)
         end
     end
     n, p = size(df)
-    dm = dzeros(n, p)
+    dm = datazeros(n, p)
     for i in 1:n
         for j in 1:p
             dm[i, j] = df[i, j]

@@ -481,7 +481,7 @@ function cov_pearson(ds::AbstractDataStream)
 
   # Now compute covariances during second pass
   ns = zeros(Int, p, p)
-  covariances = dzeros(p, p)
+  covariances = datazeros(p, p)
  
   for minibatch in ds
     for row_index in 1:nrow(minibatch)
