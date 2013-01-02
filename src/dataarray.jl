@@ -79,6 +79,21 @@ DataArray(r::Ranges) = DataArray([r], falses(length(r)))
 DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...), trues(dims...))
 #DataArray(t::Type, dims::Dims) = DataArray(Array(t, dims), trues(dims))
 
+# Wrap a scalar in a DataArray
+function DataArray(val::Any, dims::Integer...)
+    vals = Array(typeof(val), dims...)
+    for i in 1:numel(vals)
+        vals[i] = val
+    end
+    DataArray(vals, falses(dims...))
+end
+
+function DataArray(val::Any)
+    vals = Array(typeof(val), 1)
+    vals[1] = val
+    DataArray(vals, falses(1))
+end
+
 ##############################################################################
 ##
 ## Initialized constructors
