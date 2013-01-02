@@ -35,14 +35,24 @@
 # appropriate. This includes: `0 .< idv .< 3` or `idv .== 1 | idv .==
 # 4`. If Indexers have different IndexedVectors (like `idv1 .== 1 |
 # idv2 .== 1`), then the result is converted to a BitVector.
-#
+
+# We handle NA's by excluding them from the index. `order` puts NA's
+# at the front. We use the following function to exclude those. This
+# does make the indexing a little trickier as the length of the index
+# can be less than the length of the DataArray.
+
+indexorder(x) = order(x)
+function indexorder{T}(v::AbstractDataVector{T})
+    Nna = sum(isna(v))
+    order(v)[Nna + 1 : end]
+end
 
 
 type IndexedVector{T} <: AbstractVector{T}
     x::AbstractVector{T}
     idx::Vector{Int}
 end
-IndexedVector(x::AbstractVector) = IndexedVector(x, order(x))
+IndexedVector(x::AbstractVector) = IndexedVector(x, indexorder(x))
 
 ref{T,I<:Real}(v::IndexedVector{T},i::AbstractVector{I}) = IndexedVector(v.x[i])
 ref{T}(v::IndexedVector{T},i::Real) = v.x[i]
@@ -158,12 +168,12 @@ function (!)(x::Indexer)   # Negate the Indexer
     for i in 1:length(x.r) - 1
         push(res, x.r[i][end] + 1 : x.r[i + 1][1] - 1)
     end
-    push(res, x.r[end][end] + 1 : length(x.iv))
+    push(res, x.r[end][end] + 1 : length(x.iv.idx))
     Indexer(res, x.iv)
 end
 
 function (&)(x1::Indexer, x2::Indexer)
-    if x1.iv == x2.iv
+    if is(x1.iv, x2.iv)
         Indexer(intersect(x1.r, x2.r), x1.iv)
     else
         bool(x1) & bool(x2)
@@ -173,7 +183,7 @@ end
 (&)(x1::Indexer, x2::BitVector) = x2 & bool(x1)
 
 function (|)(x1::Indexer, x2::Indexer)
-    if x1.iv == x2.iv
+    if is(x1.iv, x2.iv)
         Indexer(union(x1.r, x2.r), x1.iv)
     else
         bool(x1) | bool(x2)
@@ -216,13 +226,13 @@ typealias ComparisonTypes Union(Number, String)   # defined mainly to avoid warn
 # Should these results be sorted? Could be a counting sort.
 .=={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
 .=={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
-.>={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a)], a)
+.>={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a.idx)], a)
 .<={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
 .>={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
-.<={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a)], a)
-.>{T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a)], a)
+.<={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a.idx)], a)
+.>{T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a.idx)], a)
 .<{T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
-.<{T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a)], a)
+.<{T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a.idx)], a)
 .>{T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
 
 
@@ -234,7 +244,7 @@ function search_sorted_first_gt{I<:Integer}(a::AbstractVector, x, idx::AbstractV
 end
 function search_sorted_last_lt{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
     res = search_sorted_first(a, x, idx)
-    if res > length(a) return length(a) end
+    if res > length(idx) return length(idx) end
     if res == 1 && a[idx[res]] != x return(0) end 
     a[idx[res]] == x ? res - 1 : res
 end
@@ -263,7 +273,7 @@ function search_sorted_last{I<:Integer}(a::AbstractVector, x, idx::AbstractVecto
     ## Index of the last value of vector a that is less than or equal to x.
     ## Returns 0 if x is less than all values of a.
     ## idx is an indexing vector equal in length to a that sorts a 
-    @assert length(a) == length(idx)
+    ## @assert length(a) == length(idx)
     lo = 0
     hi = length(idx) + 1
     while lo < hi-1
@@ -281,7 +291,7 @@ function search_sorted_first{I<:Integer}(a::AbstractVector, x, idx::AbstractVect
     ## Index of the first value of vector a that is greater than or equal to x.
     ## Returns length(a) + 1 if x is greater than all values in a.
     ## idx is an indexing vector equal in length to a that sorts a
-    @assert length(a) == length(idx)
+    ## @assert length(a) == length(idx)
     lo = 0
     hi = length(idx) + 1
     while lo < hi-1
