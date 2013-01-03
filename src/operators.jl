@@ -906,18 +906,19 @@ for (f, colf) in ((:min, :colmins),
                   (:norm, :colnorms))
     @eval begin
         function ($colf)(df::DataFrame)
-            res = DataFrame(coltypes(df), colnames(df), 1)
             p = ncol(df)
+            res = DataFrame()
             for j in 1:p
-                res[:, j] = ($f)(df[:, j])
+                res[j] = DataArray(($f)(df[j]))
             end
+            colnames!(res, colnames(df))
             return res
         end
-        function ($colf){T}(dm::DataMatrix{T})
+        function ($colf)(dm::DataMatrix)
             n, p = nrow(dm), ncol(dm)
             res = datazeros(p)
             for j in 1:p
-                res[j] = ($f)(DataArray(dm.data[:, j], dm.na[:, j]))
+                res[j] = ($f)(dm[:, j])
             end
             return res
         end
@@ -935,7 +936,7 @@ for (f, rowf) in ((:min, :rowmins),
                   (:fft, :rowffts), # TODO: Remove and/or fix
                   (:norm, :rownorms))
     @eval begin
-        function ($rowf){T}(dm::DataMatrix{T})
+        function ($rowf)(dm::DataMatrix)
             n, p = nrow(dm), ncol(dm)
             res = datazeros(n)
             for i in 1:n
