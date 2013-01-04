@@ -32,54 +32,54 @@ using DataFrames
 #    rows::Vector{Int} # maps from subdf row indexes to parent row indexes
 # ...
 
-# The typical column type is a DataVectortortor, which inherits from AbstractDataVectortortor. A 
-# DataVectortortor is a vector of some type, along with a Boolean vector that acts as
+# The typical column type is a DataVector, which inherits from AbstractDataVector. A 
+# DataVector is a vector of some type, along with a Boolean vector that acts as
 # a mask for missing data. The decision to use a mask instead of a particular
 # value (e.g., NaN + a particular payload for floats) remains contentious, 
 # as it is in all other statistical programming languages and frameworks. 
-#type DataVectortortor{T} <: AbstractDataVectortortor{T}
+#type DataVector{T} <: AbstractDataVector{T}
 #    data::Vector{T}
 #    na::AbstractVector{Bool} 
 
-# DataVectortortors can be built and used independently of DataFrames. For interactive
+# DataVectors can be built and used independently of DataFrames. For interactive
 # use, the type-referencing constructor is handy, and the NA literal is supported.
-dvint = DataVectortortor[1, 2, NA, 4]
-# DataVectortortors can also be contructed from existing arrays. Note that the existing
+dvint = DataVector[1, 2, NA, 4]
+# DataVectors can also be contructed from existing arrays. Note that the existing
 # array is referenced, not copied. In general, the DataFrames.jl philosophy is 
 # similar to the overall Julia philosophy -- don't copy data unless requested by 
 # the user or otherwise necessary.
 x = [5:8]
-dvint2 = DataVectortortor(x)
+dvint2 = DataVector(x)
 dvint2[1] = 10
 print(x)
-# Note that assignment of NA to a DataVectortortor does not affect the underlying
+# Note that assignment of NA to a DataVector does not affect the underlying
 # vector, just the mask.
 dvint2[2] = NA
 print(dvint2)
 print(x)
 
-# an aspect of DataVectortortors that needs to be revisited and likely redesigned is that
+# an aspect of DataVectors that needs to be revisited and likely redesigned is that
 # they contain meta-data specifying how the NAs should be treated under 
-# certain operations. To create a new DataVectortortor object (with the same data
+# certain operations. To create a new DataVector object (with the same data
 # and mask objects) that looks as if the NAs are ignored, use naFilter; to 
 # define a replacement value, use naReplace.
 try sum(dvint) end # fails now -- eventually, this should work.
 sum(naFilter(dvint))
 sum(naReplace(dvint, 100))
 
-# A PooledDataVectortortor is an implementation of AbstractDataVectortortor that uses indexes into
+# A PooledDataVector is an implementation of AbstractDataVector that uses indexes into
 # a pool of values instead of an array of values, which is space efficient in 
 # the case of a large number of repeated elements. A common use is repeated 
 # strings. PDVs don't have a mask -- they can use a 0-index to represent the NA.
-pdvstr = PooledDataVectortortor["one", "one", "two", "two", NA, "one", "one"]
-idump(pdvstr)  # show the internal structure of a PooledDataVectortortor
+pdvstr = PooledDataVector["one", "one", "two", "two", NA, "one", "one"]
+idump(pdvstr)  # show the internal structure of a PooledDataVector
 # some operations, such as csvDataFrame which loads a CSV file into a DataFrame
-# will try to created a PooledDataVectortortor when possible.
+# will try to created a PooledDataVector when possible.
 
-# A DataFrame is a mix of DataVectortortors, PooledDataVectortortors, and (maybe) other vectors
+# A DataFrame is a mix of DataVectors, PooledDataVectors, and (maybe) other vectors
 
 # this useful constructor from an expression unpacks the assignments, converts the LHSs
-# to column names, and converts the RHS to DataVectortortors.
+# to column names, and converts the RHS to DataVectors.
 df1 = DataFrame(quote
     a = shuffle([1:10])
     b = ["A","B"][randi(2,10)]
