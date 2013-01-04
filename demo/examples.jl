@@ -122,12 +122,12 @@ datafloat(dv)
 # vectors with standard values. 
 #
 
-dvzeros(5)
-dvzeros(Int64, 5)
-dvones(5)
-dvones(Int64, 5)
-dvfalses(5)
-dvtrues(5)
+datazeros(5)
+datazeros(Int64, 5)
+dataones(5)
+dataones(Int64, 5)
+datafalses(5)
+datatrues(5)
 
 #
 # If you know the type of the DataVector you want to create, but not the values
@@ -170,7 +170,7 @@ dv = DataVector(ComplexPair, 5)
 #   a DataVector if an NA is introduced by assignment operations.)
 #
 
-df_columns = {dvzeros(5), dvfalses(5)}
+df_columns = {datazeros(5), datafalses(5)}
 df_colindex = Index(["A", "B"])
 
 df = DataFrame(df_columns, df_colindex)
@@ -236,7 +236,7 @@ DataFrame({Int64, Float64}, ["A", "B"], 10)
 
 df = DataFrame(quote
 				A = rand(5)
-				B = dvtrues(5)
+				B = datatrues(5)
 			   end)
 
 ##############################################################################
@@ -250,7 +250,7 @@ df = DataFrame(quote
 # behaves exactly like indexing into a standard Julia vector.
 # 
 
-dv = dvones(5)
+dv = dataones(5)
 dv[1]
 dv[5]
 dv[end]
@@ -261,7 +261,7 @@ dv[1] = 3
 dv[5] = 5.3
 dv[end] = 2.1
 dv[1:3] = [3.2, 3.2, 3.1]
-# dv[[true, true, false, false, false]] = dvones(2) # SHOULD WE MAKE THIS WORK?
+# dv[[true, true, false, false, false]] = dataones(2) # SHOULD WE MAKE THIS WORK?
 
 #
 # In contrast, a DataFrame is a random-access data structure that can be
@@ -317,9 +317,9 @@ df[1:3, ["x1", "x2"]]
 -NA
 !NA
 
-+dvones(5)
--dvones(5)
-!dvfalses(5)
++dataones(5)
+-dataones(5)
+!datafalses(5)
 
 ##############################################################################
 #
@@ -341,7 +341,7 @@ df[1:3, ["x1", "x2"]]
 # they interact with Number's, NA's or other DataVector's.
 #
 
-dv = dvones(5)
+dv = dataones(5)
 dv[1] = NA
 df = DataFrame(quote
 				 a = 1:5
@@ -450,7 +450,7 @@ abs(NA)
 # DataFrame's for elementwise application.
 #
 
-dv = dvones(5)
+dv = dataones(5)
 df = DataFrame({dv})
 
 abs(dv)
