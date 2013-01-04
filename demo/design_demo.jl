@@ -49,7 +49,7 @@ dvint = DataVector[1, 2, NA, 4]
 # similar to the overall Julia philosophy -- don't copy data unless requested by 
 # the user or otherwise necessary.
 x = [5:8]
-dvint2 = DataVector(x)
+dvint2 = DataArray(x)
 dvint2[1] = 10
 print(x)
 # Note that assignment of NA to a DataVector does not affect the underlying

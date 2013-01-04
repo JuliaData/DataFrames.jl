@@ -69,14 +69,14 @@ DataVector.names
 # other metadata to be set to defaults.
 #
 
-dv = DataVector([1, 2, 3], falses(3))
+dv = DataArray([1, 2, 3], falses(3))
 
 #
 # A simpler type of constructor assumes that no data is missing and
 # only specifies the vector of non-missing values.
 #
 
-dv = DataVector([1, 2, 3])
+dv = DataArray([1, 2, 3])
 
 #
 # Yet another constructor, which is conveniently brief, converts
@@ -84,7 +84,7 @@ dv = DataVector([1, 2, 3])
 # this in a DataVector.
 #
 
-dv = DataVector(1:3)
+dv = DataArray(1:3)
 
 #
 # To order to provide a very concise constructor, we've hacked in
@@ -100,8 +100,8 @@ dv = DataVector[1, 2, NA, 4]
 # that store arbitrary Julia types like ComplexPair's and Bool's.
 #
 
-dv = DataVector([1 + 2im, 3 - 1im])
-dv = DataVector([true, false])
+dv = DataArray([1 + 2im, 3 - 1im])
+dv = DataArray([true, false])
 
 #
 # Sometimes you want to convert all of the values inside a DataVector to
@@ -110,7 +110,7 @@ dv = DataVector([true, false])
 # them in the REPL
 #
 
-dv = DataVector([1.1, 2.1])
+dv = DataArray([1.1, 2.1])
 
 databool(dv)
 dataint(dv)
@@ -134,9 +134,9 @@ datatrues(5)
 # you can create DataVector's of length N that are NA everywhere
 #
 
-dv = DataVector(Int64, 5)
-dv = DataVector(Float64, 5)
-dv = DataVector(ComplexPair, 5)
+dv = DataArray(Int64, 5)
+dv = DataArray(Float64, 5)
+dv = DataArray(ComplexPair, 5)
 
 #
 # While DataVector's are a very powerful tool for dealing with missing data,
