@@ -4,7 +4,7 @@ using DataFrames
 df = read_table("demo/senate112.csv")
 senator_names = df[:, 425]
 
-dm = DataMatrix(df[:, 1:424])
+dm = DataArray(df[:, 1:424])
 
 u, d, v = svd(dm, 2)
 
