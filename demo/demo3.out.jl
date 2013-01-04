@@ -5,10 +5,10 @@ Warning: New definition ==(NAtype,Any) is ambiguous with ==(Any,AbstractArray{T,
          Make sure ==(NAtype,AbstractArray{T,N}) is defined first.
 Warning: New definition ==(Any,NAtype) is ambiguous with ==(AbstractArray{T,N},Any).
          Make sure ==(AbstractArray{T,N},NAtype) is defined first.
-Warning: New definition .==(AbstractDataVec{T},T) is ambiguous with .==(Any,AbstractArray{T,N}).
-         Make sure .==(AbstractDataVec{AbstractArray{T,N}},AbstractArray{T,N}) is defined first.
-Warning: New definition promote_rule(Type{AbstractDataVec{T}},Type{T}) is ambiguous with promote_rule(Type{AbstractDataVec{S}},Type{T}).
-         Make sure promote_rule(Type{AbstractDataVec{T}},Type{T}) is defined first.
+Warning: New definition .==(AbstractDataVector{T},T) is ambiguous with .==(Any,AbstractArray{T,N}).
+         Make sure .==(AbstractDataVector{AbstractArray{T,N}},AbstractArray{T,N}) is defined first.
+Warning: New definition promote_rule(Type{AbstractDataVector{T}},Type{T}) is ambiguous with promote_rule(Type{AbstractDataVector{S}},Type{T}).
+         Make sure promote_rule(Type{AbstractDataVector{T}},Type{T}) is defined first.
 
 julia> 
 
@@ -33,9 +33,9 @@ julia> # dump() is like R's str().
 
 julia> dump(df)
 DataFrame  6 observations of 3 variables
-  A: DataVec{Float64}(6) [2.5,3.6,3.5,4.5]
-  B: PooledDataVec{ASCIIString}(6) ["One","One","Two","Two"]
-  C: DataVec{Float64}(6) [3.0,5.0,3.0,5.0]
+  A: DataVector{Float64}(6) [2.5,3.6,3.5,4.5]
+  B: PooledDataVector{ASCIIString}(6) ["One","One","Two","Two"]
+  C: DataVector{Float64}(6) [3.0,5.0,3.0,5.0]
 
 julia> 
 
@@ -44,20 +44,20 @@ julia> # Look at the internal data structure.
 julia> idump(df)
 DataFrame 
   columns: Array(Any,(3,))
-    1: DataVec{Float64} 
+    1: DataVector{Float64} 
       data: Array(Float64,(6,)) [2.5, 3.6, 3.5, 4.5]
       na: Array(Bool,(6,)) [false, false, false, false]
       filter: Bool false
       replace: Bool false
       replaceVal: Float64 0.0
-    2: PooledDataVec{ASCIIString} 
+    2: PooledDataVector{ASCIIString} 
       refs: Array(Uint16,(6,)) [0x0001, 0x0001, 0x0003, 0x0003]
       pool: Array(ASCIIString,(3,)) ["One", "Three", "Two"]
       filter: Bool false
       replace: Bool false
       replaceVal: ASCIIString 
         data: Array(Uint8,(0,)) []
-    3: DataVec{Float64} 
+    3: DataVector{Float64} 
       data: Array(Float64,(6,)) [3.0, 5.0, 3.0, 5.0]
       na: Array(Bool,(6,)) [false, false, false, false]
       filter: Bool false
@@ -153,7 +153,7 @@ julia> # Select all rows where column A is greater than 4.0.
 julia> # Element-wise operators in Julia usually have a leading ".".
 
 julia> df[:( A .> 4.0 )]
-no method isless(Float64,DataVec{Float64})
+no method isless(Float64,DataVector{Float64})
  in method_missing at base.jl:60
  in .> at operators.jl:66
  in anonymous at no file
@@ -165,7 +165,7 @@ julia>
 julia> # This is equivalent to:
 
 julia> df[df["A"] .> 4.0, :]
-no method isless(Float64,DataVec{Float64})
+no method isless(Float64,DataVector{Float64})
  in method_missing at base.jl:60
  in .> at operators.jl:66
 
@@ -206,11 +206,11 @@ julia>
 
 julia> dump(df)
 DataFrame  6 observations of 5 variables
-  A: DataVec{Float64}(6) [2.5,3.6,3.5,4.5]
-  B: PooledDataVec{ASCIIString}(6) ["One","One","Two","Two"]
-  C: DataVec{Float64}(6) [3.0,5.0,3.0,5.0]
-  D: DataVec{Float64}(6) [5.5,8.6,6.5,9.5]
-  E: DataVec{Float64}(6) [26.5,27.6,27.5,28.5]
+  A: DataVector{Float64}(6) [2.5,3.6,3.5,4.5]
+  B: PooledDataVector{ASCIIString}(6) ["One","One","Two","Two"]
+  C: DataVector{Float64}(6) [3.0,5.0,3.0,5.0]
+  D: DataVector{Float64}(6) [5.5,8.6,6.5,9.5]
+  E: DataVector{Float64}(6) [26.5,27.6,27.5,28.5]
 
 julia> 
 
@@ -234,14 +234,14 @@ DataFrame  (6,2)
 
 julia> 
 
-julia> # cut makes a PooledDataVec that is like R's factors, but
+julia> # cut makes a PooledDataVector that is like R's factors, but
 
-julia> # PooledDataVecs can contain more than just strings. Here's
+julia> # PooledDataVectors can contain more than just strings. Here's
 
-julia> # the internal structure of a PooledDataVec:
+julia> # the internal structure of a PooledDataVector:
 
 julia> idump(df3["ct"])
-PooledDataVec{ASCIIString} 
+PooledDataVector{ASCIIString} 
   refs: Array(Uint16,(6,)) [0x0001, 0x0002, 0x0001, 0x0002]
   pool: Array(ASCIIString,(3,)) ["[2.5,3.56667]", "(3.56667,4.5]", "(4.5,5.5]"]
   filter: Bool false

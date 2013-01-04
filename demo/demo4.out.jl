@@ -219,9 +219,9 @@ julia> # Look at the structure of a GroupedDataFrame.
 julia> dump(gd)
 GroupedDataFrame 
   parent: DataFrame  50 observations of 3 variables
-    a: DataVec{ASCIIString}(50) ["B","C","J","I"]
-    b: DataVec{ASCIIString}(50) ["a","b","b","e"]
-    x: DataVec{Float64}(50) [-0.9161768852275985,0.48376352282942453,0.7267382683529503,1.0790964781651111]
+    a: DataVector{ASCIIString}(50) ["B","C","J","I"]
+    b: DataVector{ASCIIString}(50) ["a","b","b","e"]
+    x: DataVector{Float64}(50) [-0.9161768852275985,0.48376352282942453,0.7267382683529503,1.0790964781651111]
   cols: Array(ASCIIString,(1,)) ["b"]
   idx: Array(Int64,(50,)) [1, 14, 15, 16]
   starts: Array(Int64,(5,)) [1, 11, 20, 29]
@@ -235,29 +235,29 @@ julia> # first group.
 
 julia> dump(gd[1])
 SubDataFrame  10 observations of 3 variables
-  a: DataVec{ASCIIString}(10) ["B","I","F","G"]
-  b: DataVec{ASCIIString}(10) ["a","a","a","a"]
-  x: DataVec{Float64}(10) [-0.9161768852275985,-0.02752775061478325,-2.5878352798283024,0.03171114873790696]
+  a: DataVector{ASCIIString}(10) ["B","I","F","G"]
+  b: DataVector{ASCIIString}(10) ["a","a","a","a"]
+  x: DataVector{Float64}(10) [-0.9161768852275985,-0.02752775061478325,-2.5878352798283024,0.03171114873790696]
 
 julia> idump(gd[1])
 SubDataFrame 
   parent: DataFrame 
     columns: Array(Any,(3,))
-      1: DataVec{ASCIIString} 
+      1: DataVector{ASCIIString} 
         data: Array(ASCIIString,(50,)) ["B", "C", "J", "I"]
         na: Array(Bool,(50,)) [false, false, false, false]
         filter: Bool false
         replace: Bool false
         replaceVal: ASCIIString 
           data: Array(Uint8,(0,)) []
-      2: DataVec{ASCIIString} 
+      2: DataVector{ASCIIString} 
         data: Array(ASCIIString,(50,)) ["a", "b", "b", "e"]
         na: Array(Bool,(50,)) [false, false, false, false]
         filter: Bool false
         replace: Bool false
         replaceVal: ASCIIString 
           data: Array(Uint8,(0,)) []
-      3: DataVec{Float64} 
+      3: DataVector{Float64} 
         data: Array(Float64,(50,)) [-0.916177, 0.483764, 0.726738, 1.0791]
         na: Array(Bool,(50,)) [false, false, false, false]
         filter: Bool false
