@@ -60,7 +60,7 @@ dump(df)
 # original columns like within().
 # The number or rows may or may not match that of the original.
 df3 = based_on(df, quote
-    ct = cut(nareplace(A,0.0), 3) # cut() doesn't operator on DataVecs yet; no NAs here
+    ct = cut(nareplace(A,0.0), 3) # cut() doesn't operator on DataVectortortors yet; no NAs here
     sum_A = sum(A)
 end)
 

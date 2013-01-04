@@ -40,13 +40,13 @@ dump(df)
 # Create a new DataFrame based on operations on another DataFrame.
 # This is similar to plyr's summarise().
 df3 = based_on(df, quote
-    ct = cut(nareplace(A,0.0), 3) # cut() doesn't operator on DataVecs yet; no NAs here
+    ct = cut(nareplace(A,0.0), 3) # cut() doesn't operator on DataVectortortors yet; no NAs here
     sum_A = sum(A)
 end)
 
-# cut makes a PooledDataVec that is like R's factors, but
-# PooledDataVecs can contain more than just strings. Here's
-# the internal structure of a PooledDataVec:
+# cut makes a PooledDataVectortortor that is like R's factors, but
+# PooledDataVectortortors can contain more than just strings. Here's
+# the internal structure of a PooledDataVectortortor:
 idump(df3["ct"])
 
 # In DataFrame, copies of data are minimized, especially for column

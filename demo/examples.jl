@@ -42,75 +42,75 @@ NA + 1
 # with missingness, we've define a new set of Data* array-like
 # objects.
 #
-# For now, we've only defined the DataVec type, a parametric composite
+# For now, we've only defined the DataVectortortor type, a parametric composite
 # type that wraps a standard Julia vector and complements
 # this Julia vector with an additional bit vector specifying which entries
 # of the primary vector are missing.
 #
-# These two core components are stored in a DataVec's data and isna
+# These two core components are stored in a DataVectortortor's data and isna
 # fields respectively. To save space, the isna field is always a BitArray.
 #
-# At present, a DataVec also contains metadata about how to replace NA's,
+# At present, a DataVectortortor also contains metadata about how to replace NA's,
 # although this metadata can be safely ignored if you understand how
 # the data and isna fields work.
 #
 
-DataVec
-typeof(DataVec)
-typeof(DataVec{Int64})
-super(DataVec)
-super(super(DataVec))
-dump(DataVec)
-DataVec.names
+DataVectortortor
+typeof(DataVectortortor)
+typeof(DataVectortortor{Int64})
+super(DataVectortortor)
+super(super(DataVectortortor))
+dump(DataVectortortor)
+DataVectortortor.names
 
 #
-# The simplest constructor for a DataVec specifies the data
+# The simplest constructor for a DataVectortortor specifies the data
 # values and the missingness metadata, while allowing the
 # other metadata to be set to defaults.
 #
 
-dv = DataVec([1, 2, 3], falses(3))
+dv = DataVectortortor([1, 2, 3], falses(3))
 
 #
 # A simpler type of constructor assumes that no data is missing and
 # only specifies the vector of non-missing values.
 #
 
-dv = DataVec([1, 2, 3])
+dv = DataVectortortor([1, 2, 3])
 
 #
 # Yet another constructor, which is conveniently brief, converts
 # a Julian Range1 object into a standard Julia Vector and wraps
-# this in a DataVec.
+# this in a DataVectortortor.
 #
 
-dv = DataVec(1:3)
+dv = DataVectortortor(1:3)
 
 #
 # To order to provide a very concise constructor, we've hacked in
-# a very cute constructor for DataVec's using a trick involving
+# a very cute constructor for DataVectortortor's using a trick involving
 # their ref() method.
 #
 
-dv = DataVec[1, 2, NA, 4]
+dv = DataVectortortor[1, 2, NA, 4]
 
 #
-# Because the missingness of a DataVec is stored in metadata rather than
-# using existing values like NaN's, it is easy to create DataVec's
+# Because the missingness of a DataVectortortor is stored in metadata rather than
+# using existing values like NaN's, it is easy to create DataVectortortor's
 # that store arbitrary Julia types like ComplexPair's and Bool's.
 #
 
-dv = DataVec([1 + 2im, 3 - 1im])
-dv = DataVec([true, false])
+dv = DataVectortortor([1 + 2im, 3 - 1im])
+dv = DataVectortortor([true, false])
 
 #
-# Sometimes you want to convert all of the values inside a DataVec to
+# Sometimes you want to convert all of the values inside a DataVectortortor to
 # a new type while preserving missingness. Where Julia has specialized
-# conversion functions, DataVec's mimic them. Use the dv* prefix to find
+# conversion functions, DataVectortortor's mimic them. Use the dv* prefix to find
 # them in the REPL
 #
 
-dv = DataVec([1.1, 2.1])
+dv = DataVectortortor([1.1, 2.1])
 
 databool(dv)
 dataint(dv)
@@ -130,16 +130,16 @@ dvfalses(5)
 dvtrues(5)
 
 #
-# If you know the type of the DataVec you want to create, but not the values
-# you can create DataVec's of length N that are NA everywhere
+# If you know the type of the DataVectortortor you want to create, but not the values
+# you can create DataVectortortor's of length N that are NA everywhere
 #
 
-dv = DataVec(Int64, 5)
-dv = DataVec(Float64, 5)
-dv = DataVec(ComplexPair, 5)
+dv = DataVectortortor(Int64, 5)
+dv = DataVectortortor(Float64, 5)
+dv = DataVectortortor(ComplexPair, 5)
 
 #
-# While DataVec's are a very powerful tool for dealing with missing data,
+# While DataVectortortor's are a very powerful tool for dealing with missing data,
 # they only bring us part of the way towards representing real-world data
 # sets in Julia. The missing piece is a tabular data structure like those
 # found in relational databases or spreadsheets.
@@ -148,7 +148,7 @@ dv = DataVec(ComplexPair, 5)
 # DataFrame type is a new composite type with two fields:
 #
 # * columns: A Julia Vector{Any}, each element of which is a single
-#            column. The typical column is a DataVec.
+#            column. The typical column is a DataVectortortor.
 #
 # * colindex: An Index object that allows one to access entries in the
 #             columns. An Index can be constructed from an array of
@@ -160,14 +160,14 @@ dv = DataVec(ComplexPair, 5)
 # * df is a table with M rows and N columns.
 #
 # * Every column of df has its own type, which is why a DataFrame is not
-#   a matrix of DataVec's.
+#   a matrix of DataVectortortor's.
 #
 # * All columns of df are guaranteed to be of length M.
 #
 # * All columns of df are guaranteed to be capable of storing NA if it
 #   is ever inserted. (NB: There is ongoing debate about whether a column
-#	should always be a DataVec or whether it should only be converted to
-#   a DataVec if an NA is introduced by assignment operations.)
+#	should always be a DataVectortortor or whether it should only be converted to
+#   a DataVectortortor if an NA is introduced by assignment operations.)
 #
 
 df_columns = {dvzeros(5), dvfalses(5)}
@@ -185,9 +185,9 @@ df = DataFrame(df_columns)
 
 #
 # One often would like to construct DataFrame's from columns which may
-# not yet be DataVec's. This is possible using the same type of
-# constructor. All columns that are not yet DataVec's will be converted
-# to DataVec's. (THIS LAST CLAIM IS NOT YET TRUE AND TOM DOES NOT WANT IT.)
+# not yet be DataVectortortor's. This is possible using the same type of
+# constructor. All columns that are not yet DataVectortortor's will be converted
+# to DataVectortortor's. (THIS LAST CLAIM IS NOT YET TRUE AND TOM DOES NOT WANT IT.)
 #
 
 df = DataFrame({ones(5), falses(5)})
@@ -200,7 +200,7 @@ df = DataFrame({ones(5), falses(5)})
 df = DataFrame(ones(5, 3))
 
 #
-# Like DataVec's, it is possible to create empty DataFrame's in which
+# Like DataVectortortor's, it is possible to create empty DataFrame's in which
 # all of the default values are NA.
 #
 # In the simplest version, we specify a type, the number of rows
@@ -246,7 +246,7 @@ df = DataFrame(quote
 ##############################################################################
 
 #
-# Because a DataVec is a 1-dimensional Array, indexing into it is trivial and
+# Because a DataVectortortor is a 1-dimensional Array, indexing into it is trivial and
 # behaves exactly like indexing into a standard Julia vector.
 # 
 
@@ -303,7 +303,7 @@ df[1:3, ["x1", "x2"]]
 
 ##############################################################################
 #
-# Unary Operators for NA, DataVec's and DataFrame's
+# Unary Operators for NA, DataVectortortor's and DataFrame's
 #
 # +
 # -
@@ -337,8 +337,8 @@ df[1:3, ["x1", "x2"]]
 ##############################################################################
 
 #
-# The standard arithmetic operators work on DataVec's when
-# they interact with Number's, NA's or other DataVec's.
+# The standard arithmetic operators work on DataVectortortor's when
+# they interact with Number's, NA's or other DataVectortortor's.
 #
 
 dv = dvones(5)
@@ -366,7 +366,7 @@ NA .+ 1
 # And so on for -, .- , *, .*, /, ./, ^, .^ 
 
 #
-# NA's with DataVec's
+# NA's with DataVectortortor's
 #
 
 dv + NA
@@ -376,7 +376,7 @@ NA .+ dv
 # And so on for -, .- , *, .*, /, ./, ^, .^ 
 
 #
-# DataVec's with scalars
+# DataVectortortor's with scalars
 #
 
 dv + 1
@@ -384,7 +384,7 @@ dv .+ 1
 # And so on for -, .- , .*, ./, .^ 
 
 #
-# Scalars with DataVec's
+# Scalars with DataVectortortor's
 #
 
 1 + dv
@@ -403,13 +403,13 @@ df + df
 # And so on for -, .- , .*, ./, .^ 
 
 #
-# The standard bit operators work on DataVec's
+# The standard bit operators work on DataVectortortor's
 #
 
 # MISSING
 
 #
-# The standard comparison operators work on DataVec's
+# The standard comparison operators work on DataVectortortor's
 #
 
 NA .< NA
@@ -446,7 +446,7 @@ df .== df
 abs(NA)
 
 #
-# Standard functions are broadcast to the elements of DataVec's and
+# Standard functions are broadcast to the elements of DataVectortortor's and
 # DataFrame's for elementwise application.
 #
 
@@ -465,7 +465,7 @@ abs(df)
 ##############################################################################
 
 #
-# Functions that operate on pairs of entries of a Vector work on DataVec's
+# Functions that operate on pairs of entries of a Vector work on DataVectortortor's
 # and insert NA where it would be produced by other operator rules
 #
 
@@ -483,7 +483,7 @@ diff(dv)
 
 #
 # Functions that operate cumulatively on the entries of a Vector work on
-# DataVec's and insert NA where it would be produced by other operator rules
+# DataVectortortor's and insert NA where it would be produced by other operator rules
 #
 
 cumprod(dv)
