@@ -12,7 +12,7 @@ ideal_points = u * diagm(d)
 
 df = DataFrame()
 df["Senator"] = senator_names
-df["X"] = DataVec(ideal_points[:, 1])
-df["Y"] = DataVec(ideal_points[:, 2])
+df["X"] = DataVector(ideal_points[:, 1])
+df["Y"] = DataVector(ideal_points[:, 2])
 
 write_table(df, "demo/ideal_points.tsv")

@@ -5,10 +5,10 @@ Warning: New definition ==(NAtype,Any) is ambiguous with ==(Any,AbstractArray{T,
          Make sure ==(NAtype,AbstractArray{T,N}) is defined first.
 Warning: New definition ==(Any,NAtype) is ambiguous with ==(AbstractArray{T,N},Any).
          Make sure ==(AbstractArray{T,N},NAtype) is defined first.
-Warning: New definition .==(AbstractDataVec{T},T) is ambiguous with .==(Any,AbstractArray{T,N}).
-         Make sure .==(AbstractDataVec{AbstractArray{T,N}},AbstractArray{T,N}) is defined first.
-Warning: New definition promote_rule(Type{AbstractDataVec{T}},Type{T}) is ambiguous with promote_rule(Type{AbstractDataVec{S}},Type{T}).
-         Make sure promote_rule(Type{AbstractDataVec{T}},Type{T}) is defined first.
+Warning: New definition .==(AbstractDataVector{T},T) is ambiguous with .==(Any,AbstractArray{T,N}).
+         Make sure .==(AbstractDataVector{AbstractArray{T,N}},AbstractArray{T,N}) is defined first.
+Warning: New definition promote_rule(Type{AbstractDataVector{T}},Type{T}) is ambiguous with promote_rule(Type{AbstractDataVector{S}},Type{T}).
+         Make sure promote_rule(Type{AbstractDataVector{T}},Type{T}) is defined first.
 
 julia> 
 
