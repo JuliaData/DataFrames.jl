@@ -100,7 +100,7 @@ We can also look at small subsets of the data in a couple of ways:
 
 Having seen what some of the rows look like, we can try to summarize the entire data set using:
 
-	summary(df)
+	describe(df)
 
 To focus our search, we start looking at just the means and medians of the columns:
 

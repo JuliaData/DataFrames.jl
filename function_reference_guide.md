@@ -87,9 +87,9 @@ Standard pretty-printer of `df`. Called by `print()` and the REPL.
 
 Show the structure of `df`. Like R's `str`.
 
-#### `summary(df::AbstractDataFrame)`
+#### `describe(df::AbstractDataFrame)`
 
-Show a summary of each column of `df`.
+Show a description of each column of `df`.
 
 #### `complete_cases(df::AbstractDataFrame)`
 
