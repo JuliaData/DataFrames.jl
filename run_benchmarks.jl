@@ -4,10 +4,10 @@
 
 # TODO: Load DataFrames just once for all benchmarks
 
-benchmarks = ["test/perf/datavec.jl",
-              "test/perf/io.jl",
-              "test/perf/datastreams.jl",
-              "test/perf/datamatrix.jl"]
+benchmarks = ["benchmarks/datavector.jl",
+              "benchmarks/datamatrix.jl",
+              "benchmarks/io.jl",
+              "benchmarks/datastreams.jl"]
 
 println("Running benchmarks:")
 

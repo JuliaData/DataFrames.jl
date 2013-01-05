@@ -1,5 +1,5 @@
 # Need to deal with no header cleanly
-filename = file_path(julia_pkgdir(), "DataFrames/test/data/sample_data.csv")
+filename = joinpath(julia_pkgdir(), "DataFrames/test/data/sample_data.csv")
 
 ds = DataStream(filename)
 i = start(ds)
@@ -12,7 +12,7 @@ i = start(ds)
 (df, i) = next(ds, i)
 @assert done(ds, i) == true
 
-filename = file_path(julia_pkgdir(), "DataFrames/test/data/big_data.csv")
+filename = joinpath(julia_pkgdir(), "DataFrames/test/data/big_data.csv")
 
 ds = DataStream(filename, 100)
 df = start(ds)
@@ -65,19 +65,19 @@ for i in ncol(correlations)
 end
 
 # Deal with different delimiters
-filename = file_path(julia_pkgdir(), "DataFrames/test/data/sample_data.csv")
+filename = joinpath(julia_pkgdir(), "DataFrames/test/data/sample_data.csv")
 ds = DataStream(filename)
 for row in ds
   @assert nrow(row) <= 1
 end
 
-filename = file_path(julia_pkgdir(), "DataFrames/test/data/sample_data.tsv")
+filename = joinpath(julia_pkgdir(), "DataFrames/test/data/sample_data.tsv")
 ds = DataStream(filename)
 for row in ds
   @assert nrow(row) <= 1
 end
 
-filename = file_path(julia_pkgdir(), "DataFrames/test/data/sample_data.wsv")
+filename = joinpath(julia_pkgdir(), "DataFrames/test/data/sample_data.wsv")
 ds = DataStream(filename)
 for row in ds
   @assert nrow(row) <= 1

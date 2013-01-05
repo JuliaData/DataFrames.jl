@@ -7,8 +7,8 @@ using DataFrames
 a = eye(100)
 b = eye(100)
 
-dm_a = dmeye(100)
-dm_b = dmeye(100)
+dm_a = dataeye(100)
+dm_b = dataeye(100)
 
 dm_a_na = deepcopy(dm_a)
 dm_a_na[:, :] = NA

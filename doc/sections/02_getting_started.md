@@ -75,9 +75,9 @@ As we said before, working with simple `DataVec`'s and `DataMatrix`'s gets borin
 In practice, we're more likely to use an existing data set than to construct one from scratch. To load a more interesting data set, we can use the `read_table()` function. To make use of it, we'll need a data set stored in a simple format like the comma separated values (CSV) standard. There are some simple examples of CSV files included with the DataFrames package. We can find them using basic file operations in Julia:
 
 	require("pkg")
-	mydir = file_path(Pkg.package_directory("DataFrames"), "test", "data")
+	mydir = joinpath(Pkg.package_directory("DataFrames"), "test", "data")
 	filenames = readdir(mydir)
-	df = read_table(file_path(mydir, filenames[1]))
+	df = read_table(joinpath(mydir, filenames[1]))
 
 The resulting `DataFrame` has a large number of similar rows. We can check its size using the `nrow` and `ncol` commands:
 

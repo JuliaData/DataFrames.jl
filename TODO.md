@@ -13,9 +13,9 @@ Change unique() to return present elements, while levels() returns dead elements
 
 * Design/lower-level demo:
     * type hierarchy
-    * DataVecs and NAs
-    * PooledDataVecs
-    * DataFrames
+    * DataVector's and NAs
+    * PooledDataVector's
+    * DataFrame's
     * Indexes for column names
     * rbind, cbind
     * based_on?

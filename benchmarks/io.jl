@@ -5,7 +5,7 @@ using DataFrames
 # Simple Data Sets
 #
 
-simple_filename = file_path(julia_pkgdir(),"DataFrames/test/data/simple_data.csv")
+simple_data_filename = joinpath(julia_pkgdir(), "DataFrames", "test", "data", "simple_data.csv")
 
 N = 100
 
@@ -19,7 +19,7 @@ println(join({"Reading Simple Data Sets", N, total_time / N}, "\t"))
 # Bigger Data Sets
 #
 
-big_filename = file_path(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
+big_filename = joinpath(julia_pkgdir(), "DataFrames", "test", "data", "big_data.csv")
 
 N = 10
 

@@ -65,13 +65,13 @@ julia> d = DataFrame(quote     # expressions are one way to create a DataFrame
 
 julia> dump(d)    # dump() is like R's str()
 DataFrame  10 observations of 4 variables
-  x: DataVec{Float64}(10) [-0.22496343871037897,-0.4033933555989207,0.6027847717547058,0.06671669747901597]
-  y: DataVec{Float64}(10) [0.21904975091285417,-1.3275512477731726,2.266353546459277,-0.19840910239041679]
-  i: DataVec{Int64}(10) [2,1,3,1]
-  j: DataVec{Int64}(10) [3,2,1,2]
+  x: DataArray{Float64,1}(10) [-0.22496343871037897,-0.4033933555989207,0.6027847717547058,0.06671669747901597]
+  y: DataArray{Float64,1}(10) [0.21904975091285417,-1.3275512477731726,2.266353546459277,-0.19840910239041679]
+  i: DataArray{Int64,1}(10) [2,1,3,1]
+  j: DataArray{Int64,1}(10) [3,2,1,2]
 
 julia> head(d)
-DataFrame  (6,4)
+6x4 DataFrame:
                 x         y i j
 [1,]    -0.224963   0.21905 2 3
 [2,]    -0.403393  -1.32755 1 2
@@ -81,7 +81,7 @@ DataFrame  (6,4)
 [6,]     0.346034   1.68227 2 1
 
 julia> d[1:3, ["x","y"]]     # indexing is similar to R's
-DataFrame  (3,2)
+3x2 DataFrame
                 x        y
 [1,]    -0.224963  0.21905
 [2,]    -0.403393 -1.32755
@@ -90,14 +90,14 @@ DataFrame  (3,2)
 julia> # Group on column i, and pipe (|) that result to an expression
 julia> # that creates the column x_sum. 
 julia> groupby(d, "i") | :(x_sum = sum(x))     
-DataFrame  (3,2)
+3x2 DataFrame
         i    x_sum
 [1,]    1  2.06822
 [2,]    2 -1.80867
 [3,]    3 0.319517
 
 julia> groupby(d, "i") | :sum   # Another way to operate on a grouping
-DataFrame  (3,4)
+3x4 DataFrame
         i    x_sum    y_sum j_sum
 [1,]    1  2.06822 -2.73985     8
 [2,]    2 -1.80867  1.83489     7

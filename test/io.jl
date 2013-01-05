@@ -56,7 +56,7 @@ test10 = IOString("1,2,3,,")
 res10 = DataFrames.read_separated_line(test10, ',', '"')
 @assert length(res10) == 5
 
-filename = file_path(julia_pkgdir(),"DataFrames/test/data/simple_data.csv")
+filename = joinpath(julia_pkgdir(),"DataFrames/test/data/simple_data.csv")
 open(filename,"r") do io
     t1 = read_table(io, ',', '"', DataFrames.DEFAULT_MISSINGNESS_INDICATORS, false, ["1","2","3","4","5"], 2)
     @assert nrow(t1) == 2
@@ -96,7 +96,7 @@ item_buffer = Array(UTF8String, length(items))
 # @assert DataFrames.determine_separator("blah.txt")
 # Need to change to use @expects to test that error gets raised
 
-filename = file_path(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
+filename = joinpath(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
 separator = DataFrames.determine_separator(filename)
 quotation_character = '"'
 missingness_indicators = ["", "NA"]
@@ -148,7 +148,7 @@ df = DataFrames.convert_to_dataframe(text_data,
 @assert isequal(eltype(df["x2"]), Float64)
 @assert isequal(eltype(df["x3"]), UTF8String)
 
-filename = file_path(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
+filename = joinpath(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
 separator = DataFrames.determine_separator(filename)
 quotation_character = '"'
 missingness_indicators = ["", "NA"]

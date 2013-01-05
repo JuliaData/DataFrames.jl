@@ -1,7 +1,7 @@
 load("DataFrames")
 using DataFrames
 
-filename = file_path(julia_pkgdir(),"DataFrames/test/data/big_data.csv")
+filename = joinpath(julia_pkgdir(), "DataFrames", "test", "data", "big_data.csv")
 
 minibatch_sizes = [1, 5, 10, 25, 50, 100, 250, 500, 1_000, 2_500, 5_000, 10_000]
 
