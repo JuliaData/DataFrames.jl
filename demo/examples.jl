@@ -69,14 +69,14 @@ DataVector.names
 # other metadata to be set to defaults.
 #
 
-dv = DataVector([1, 2, 3], falses(3))
+dv = DataArray([1, 2, 3], falses(3))
 
 #
 # A simpler type of constructor assumes that no data is missing and
 # only specifies the vector of non-missing values.
 #
 
-dv = DataVector([1, 2, 3])
+dv = DataArray([1, 2, 3])
 
 #
 # Yet another constructor, which is conveniently brief, converts
@@ -84,7 +84,7 @@ dv = DataVector([1, 2, 3])
 # this in a DataVector.
 #
 
-dv = DataVector(1:3)
+dv = DataArray(1:3)
 
 #
 # To order to provide a very concise constructor, we've hacked in
@@ -100,8 +100,8 @@ dv = DataVector[1, 2, NA, 4]
 # that store arbitrary Julia types like ComplexPair's and Bool's.
 #
 
-dv = DataVector([1 + 2im, 3 - 1im])
-dv = DataVector([true, false])
+dv = DataArray([1 + 2im, 3 - 1im])
+dv = DataArray([true, false])
 
 #
 # Sometimes you want to convert all of the values inside a DataVector to
@@ -110,7 +110,7 @@ dv = DataVector([true, false])
 # them in the REPL
 #
 
-dv = DataVector([1.1, 2.1])
+dv = DataArray([1.1, 2.1])
 
 databool(dv)
 dataint(dv)
@@ -122,21 +122,21 @@ datafloat(dv)
 # vectors with standard values. 
 #
 
-dvzeros(5)
-dvzeros(Int64, 5)
-dvones(5)
-dvones(Int64, 5)
-dvfalses(5)
-dvtrues(5)
+datazeros(5)
+datazeros(Int64, 5)
+dataones(5)
+dataones(Int64, 5)
+datafalses(5)
+datatrues(5)
 
 #
 # If you know the type of the DataVector you want to create, but not the values
 # you can create DataVector's of length N that are NA everywhere
 #
 
-dv = DataVector(Int64, 5)
-dv = DataVector(Float64, 5)
-dv = DataVector(ComplexPair, 5)
+dv = DataArray(Int64, 5)
+dv = DataArray(Float64, 5)
+dv = DataArray(ComplexPair, 5)
 
 #
 # While DataVector's are a very powerful tool for dealing with missing data,
@@ -170,7 +170,7 @@ dv = DataVector(ComplexPair, 5)
 #   a DataVector if an NA is introduced by assignment operations.)
 #
 
-df_columns = {dvzeros(5), dvfalses(5)}
+df_columns = {datazeros(5), datafalses(5)}
 df_colindex = Index(["A", "B"])
 
 df = DataFrame(df_columns, df_colindex)
@@ -236,7 +236,7 @@ DataFrame({Int64, Float64}, ["A", "B"], 10)
 
 df = DataFrame(quote
 				A = rand(5)
-				B = dvtrues(5)
+				B = datatrues(5)
 			   end)
 
 ##############################################################################
@@ -250,7 +250,7 @@ df = DataFrame(quote
 # behaves exactly like indexing into a standard Julia vector.
 # 
 
-dv = dvones(5)
+dv = dataones(5)
 dv[1]
 dv[5]
 dv[end]
@@ -261,7 +261,7 @@ dv[1] = 3
 dv[5] = 5.3
 dv[end] = 2.1
 dv[1:3] = [3.2, 3.2, 3.1]
-# dv[[true, true, false, false, false]] = dvones(2) # SHOULD WE MAKE THIS WORK?
+# dv[[true, true, false, false, false]] = dataones(2) # SHOULD WE MAKE THIS WORK?
 
 #
 # In contrast, a DataFrame is a random-access data structure that can be
@@ -317,9 +317,9 @@ df[1:3, ["x1", "x2"]]
 -NA
 !NA
 
-+dvones(5)
--dvones(5)
-!dvfalses(5)
++dataones(5)
+-dataones(5)
+!datafalses(5)
 
 ##############################################################################
 #
@@ -341,7 +341,7 @@ df[1:3, ["x1", "x2"]]
 # they interact with Number's, NA's or other DataVector's.
 #
 
-dv = dvones(5)
+dv = dataones(5)
 dv[1] = NA
 df = DataFrame(quote
 				 a = 1:5
@@ -450,7 +450,7 @@ abs(NA)
 # DataFrame's for elementwise application.
 #
 
-dv = dvones(5)
+dv = dataones(5)
 df = DataFrame({dv})
 
 abs(dv)
