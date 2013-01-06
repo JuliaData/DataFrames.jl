@@ -57,52 +57,52 @@ The unary operators
 * NA's
 	* Constructor: `NAtype()`
 	* Const alias: `NA`
-* DataVec's
-	* From (Vector, BitVector): `DataVec([1, 2, 3], falses(3))`
-	* From (Vector, Vector{Bool}): `DataVec([1, 2, 3], [false, false, false])`
-	* From (Vector): `DataVec([1, 2, 3])`
-	* From (BitVector, BitVector): `DataVec(trues(3), falses(3))`
-	* From (BitVector): `DataVec(trues(3))`
-	* From (Range1): `DataVec(1:3)`
-	* From (DataVec): `DataVec(DataVec([1, 2, 3]))`
-	* From (Type, Int): `DataVec(Int64, 3)`
-	* From (Int): `DataVec(3)` (Type defaults to Float64)
-	* From (): `DataVec()` (Type defaults to Float64, length defaults to 0)
-	* Initialized with Float64 zeros: `dvzeros(3)`
-	* Initialized with typed zeros: `dvzeros(Int64, 3)`
-	* Initialized with Float64 ones: `dvones(3)`
-	* Initialized with typed ones: `dvones(Int64, 3)`
-	* Initialized with falses: `dvfalses(3)`
-	* Initialized with trues: `dvtrues(3)`
-	* Literal syntax: `DataVec[1, 2, NA]`
-* PooledDataVec's
-	* From (Vector, BitVector): `PooledDataVec([1, 2, 3], falses(3))`
-	* From (Vector, Vector{Bool}): `PooledDataVec([1, 2, 3], [false, false, false])`
-	* From (Vector): `PooledDataVec([1, 2, 3])`
-	* From (BitVector, BitVector): `PooledDataVec(trues(3), falses(3))`
-	* From (BitVector, Vector{Bool}): `PooledDataVec(trues(3), [false, false, false])`
-	* From (BitVector): `PooledDataVec(trues(3))`
-	* From (Range1): `PooledDataVec(1:3)`
-	* From (DataVec): `PooledDataVec(DataVec([1, 2, 3]))`
-	* From (Type, Int): `PooledDataVec(Int64, 3)`
-	* From (Int): `PooledDataVec(3)` (Type defaults to Float64)
-	* From (): `PooledDataVec()` (Type defaults to Float64, length defaults to 0)
-	* Initialized with Float64 zeros: `pdvzeros(3)`
-	* Initialized with typed zeros: `pdvzeros(Int64, 3)`
-	* Initialized with Float64 ones: `pdvones(3)`
-	* Initialized with typed ones: `pdvones(Int64, 3)`
-	* Initialized with falses: `pdvfalses(3)`
-	* Initialized with trues: `pdvtrues(3)`
-	* Literal syntax: `PooledDataVec[1, 2, NA]`
+* DataVector's
+	* From (Vector, BitVector): `DataArray([1, 2, 3], falses(3))`
+	* From (Vector, Vector{Bool}): `DataArray([1, 2, 3], [false, false, false])`
+	* From (Vector): `DataArray([1, 2, 3])`
+	* From (BitVector, BitVector): `DataArray(trues(3), falses(3))`
+	* From (BitVector): `DataArray(trues(3))`
+	* From (Range1): `DataArray(1:3)`
+	* From (DataVector): `DataArray(DataArray([1, 2, 3]))`
+	* From (Type, Int): `DataArray(Int64, 3)`
+	* From (Int): `DataArray(3)` (Type defaults to Float64)
+	* From (): `DataArray()` (Type defaults to Float64, length defaults to 0)
+	* Initialized with Float64 zeros: `datazeros(3)`
+	* Initialized with typed zeros: `datazeros(Int64, 3)`
+	* Initialized with Float64 ones: `dataones(3)`
+	* Initialized with typed ones: `dataones(Int64, 3)`
+	* Initialized with falses: `datafalses(3)`
+	* Initialized with trues: `datatrues(3)`
+	* Literal syntax: `DataVector[1, 2, NA]`
+* PooledDataVector's
+	* From (Vector, BitVector): `PooledDataVector([1, 2, 3], falses(3))`
+	* From (Vector, Vector{Bool}): `PooledDataVector([1, 2, 3], [false, false, false])`
+	* From (Vector): `PooledDataVector([1, 2, 3])`
+	* From (BitVector, BitVector): `PooledDataVector(trues(3), falses(3))`
+	* From (BitVector, Vector{Bool}): `PooledDataVector(trues(3), [false, false, false])`
+	* From (BitVector): `PooledDataVector(trues(3))`
+	* From (Range1): `PooledDataVector(1:3)`
+	* From (DataVector): `PooledDataVector(DataArray([1, 2, 3]))`
+	* From (Type, Int): `PooledDataVector(Int64, 3)`
+	* From (Int): `PooledDataVector(3)` (Type defaults to Float64)
+	* From (): `PooledDataVector()` (Type defaults to Float64, length defaults to 0)
+	* Initialized with Float64 zeros: `pdatazeros(3)`
+	* Initialized with typed zeros: `pdatazeros(Int64, 3)`
+	* Initialized with Float64 ones: `pdataones(3)`
+	* Initialized with typed ones: `pdataones(Int64, 3)`
+	* Initialized with falses: `pdatafalses(3)`
+	* Initialized with trues: `pdatatrues(3)`
+	* Literal syntax: `PooledDataVector[1, 2, NA]`
 * DataMatrix
 	* From (Array, BitArray): `DataMatrix([1 2; 3 4], falses(2, 2))`
 	* From (Array, Array{Bool}): `DataMatrix([1 2; 3 4], [false false; false false])`
 	* From (Array): `DataMatrix([1 2; 3 4])`
 	* From (BitArray, BitArray): `DataMatrix(trues(2, 2), falses(2, 2))`
 	* From (BitArray): `DataMatrix(trues(2, 2))`
-	* From (DataVec...): `DataMatrix(DataVec[1, NA], DataVec[NA, 2])`
+	* From (DataVector...): `DataMatrix(DataVector[1, NA], DataVector[NA, 2])`
 	* From (Range1...): `DataMatrix(1:3, 1:3)`
-	* From (DataMatrix): `DataMatrix(DataVec([1 2; 3 4]))`
+	* From (DataMatrix): `DataMatrix(DataArray([1 2; 3 4]))`
 	* From (Type, Int, Int): `DataMatrix(Int64, 2, 2)`
 	* From (Int, Int): `DataMatrix(2, 2)` (Type defaults to Float64)
 	* From (): `DataMatrix()` (Type defaults to Float64, length defaults to (0, 0))
@@ -118,12 +118,12 @@ The unary operators
 	* Literal syntax: `DataMatrix[1 2; NA 2]`
 * DataFrame
 	* From (): `DataFrame()`
-	* From (Vector{Any}, Index): `DataFrame({dvzeros(3), dvones(3)}, Index(["A", "B"]))`
-	* From (Vector{Any}): `DataFrame({dvzeros(3), dvones(3)})
+	* From (Vector{Any}, Index): `DataFrame({datazeros(3), dataones(3)}, Index(["A", "B"]))`
+	* From (Vector{Any}): `DataFrame({datazeros(3), dataones(3)})
 	* From (Expr): `DataFrame(quote A = [1, 2, 3, 4] end)`
 	* From (Matrix, Vector{String}): `DataFrame([1 2; 3 4], ["A", "B"])`
 	* From (Matrix): `DataFrame([1 2; 3 4])`
-	* From (Tuple): `DataFrame(dvones(2), dzfalses(2))`
+	* From (Tuple): `DataFrame(dataones(2), datafalses(2))`
 	* From (Associative): ???
 	* From (Vector, Vector, Groupings): ???
 	* From (Dict of Vectors): `DataFrame({"A" => [1, 3], "B" => [2, 4]})`
@@ -137,7 +137,7 @@ The unary operators
 
 NA
 
-dv = dvzeros(10)
+dv = datazeros(10)
 
 dv[1]
 
@@ -153,7 +153,7 @@ dmzeros(10)
 
 Indexers: Int, Range, Colon, Vector{Int}, Vector{Bool}, String, Vector{String}
 
-DataVec's and PooledDataVec's implement:
+DataVector's and PooledDataVector's implement:
 
 * Int
 * Range

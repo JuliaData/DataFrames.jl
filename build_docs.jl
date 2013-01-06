@@ -23,7 +23,7 @@ pdf_sections = ["00_table_of_contents.md",
 
 pandoc_page_break = "\n\n\\newpage\n\n---\n\n"
 
-text = join(map(pdf_section -> readall(file_path("doc", "sections", pdf_section)),
+text = join(map(pdf_section -> readall(joinpath("doc", "sections", pdf_section)),
 				pdf_sections),
 			pandoc_page_break)
 
@@ -89,6 +89,6 @@ for i in 1:n
 	println(io, "")
 	println(io, "---")
 	println(io, "")
-	print(io, readall(file_path("doc", "sections", web_section)))
+	print(io, readall(joinpath("doc", "sections", web_section)))
 	close(io)
 end

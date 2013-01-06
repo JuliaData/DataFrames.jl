@@ -1,7 +1,7 @@
 function make_help_index(manual_name::String, output_file_dir::String)
     #
     
-    output_file_name = file_path(output_file_dir, "_JL_INDEX_")
+    output_file_name = joinpath(output_file_dir, "_JL_INDEX_")
     #    
     f = open(output_file_name, "w")
     println(f, "DataFrames  manual  A package for working with tabular data in Julia")
@@ -48,8 +48,8 @@ function make_help_index(manual_name::String, output_file_dir::String)
     close(f)
     
 end
-make_help_index(name::String) = make_help_index(name, file_path(julia_pkgdir(), "DataFrames", "doc"))
-make_help_index() = make_help_index(file_path(julia_pkgdir(), "DataFrames", "doc", "manual.md"), file_path(julia_pkgdir(), "DataFrames", "doc"))
+make_help_index(name::String) = make_help_index(name, joinpath(julia_pkgdir(), "DataFrames", "doc"))
+make_help_index() = make_help_index(joinpath(julia_pkgdir(), "DataFrames", "doc", "manual.md"), joinpath(julia_pkgdir(), "DataFrames", "doc"))
 
-manual_name = file_path(julia_pkgdir(), "DataFrames", "doc", "manual.md")
-output_file_dir = file_path(julia_pkgdir(), "DataFrames", "doc")
+manual_name = joinpath(julia_pkgdir(), "DataFrames", "doc", "manual.md")
+output_file_dir = joinpath(julia_pkgdir(), "DataFrames", "doc")

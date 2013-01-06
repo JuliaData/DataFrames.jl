@@ -30,9 +30,9 @@ One of the essential properties of `NA` is that it poisons other items. To see t
 
 	1 + NA
 
-As we described earlier, you'll get a lot more power out of `NA`'s when they can occur in other data structures. Let's create our first `DataVec` now:
+As we described earlier, you'll get a lot more power out of `NA`'s when they can occur in other data structures. Let's create our first `DataVector` now:
 
-	dv = DataVec([1, 3, 2, 5, 4])
+	dv = DataArray([1, 3, 2, 5, 4])
 	dv[1] = NA
 
 To see how `NA` poisons even complex calculations, let's try to take the mean of those five numbers:
@@ -44,14 +44,14 @@ In many cases we're willing to just ignore `NA`'s and remove them from our vecto
 	removeNA(dv)
 	mean(removeNA(dv))
 
-Instead of removing `NA`'s, you can try to ignore them using the `failNA` function. The `failNA` function attempt to convert a `DataVec{T}` to a `Vector{T}` and will throw an error if any `NA`'s are encountered. If we were dealing with a vector like the following, `failNA` will work just right:
+Instead of removing `NA`'s, you can try to ignore them using the `failNA` function. The `failNA` function attempt to convert a `DataVector{T}` to a `Vector{T}` and will throw an error if any `NA`'s are encountered. If we were dealing with a vector like the following, `failNA` will work just right:
 
-	dv = DataVec([1, 3, 2, 5, 4])
+	dv = DataArray([1, 3, 2, 5, 4])
 	mean(failNA(dv))
 
 In addition to removing or ignoring `NA`'s, it's possible to replace them using the `replaceNA` function:
 
-	dv = DataVec([1, 3, 2, 5, 4])
+	dv = DataArray([1, 3, 2, 5, 4])
 	dv[1] = NA
 	mean(replaceNA(dv, 11))
 
@@ -59,13 +59,13 @@ Which strategy for dealing with `NA`'s is most appropriate will typically depend
 
 In modern data analysis `NA`'s don't simply arise in vector-like data. The `DataMatrix` and `DataFrame` structures are also capable of handling `NA`'s. You can confirm for yourself that the presence of `NA`'s poisons matrix operations in the same way that it poisons vector operations by creating a simple `DataMatrix` and trying to perform matrix multiplication:
 
-	dm = DataMatrix([1.0 0.0; 0.0 1.0])
+	dm = DataArray([1.0 0.0; 0.0 1.0])
 	dm[1, 1] = NA
 	dm * dm
 
 ## Working with Tabular Data Sets
 
-As we said before, working with simple `DataVec`'s and `DataMatrix`'s gets boring after a while. To express interesting types of tabular data sets, we'll create a simple `DataFrame` piece-by-piece:
+As we said before, working with simple `DataVector`'s and `DataMatrix`'s gets boring after a while. To express interesting types of tabular data sets, we'll create a simple `DataFrame` piece-by-piece:
 
 	df = DataFrame()
 	df["A"] = 1:4
@@ -75,9 +75,9 @@ As we said before, working with simple `DataVec`'s and `DataMatrix`'s gets borin
 In practice, we're more likely to use an existing data set than to construct one from scratch. To load a more interesting data set, we can use the `read_table()` function. To make use of it, we'll need a data set stored in a simple format like the comma separated values (CSV) standard. There are some simple examples of CSV files included with the DataFrames package. We can find them using basic file operations in Julia:
 
 	require("pkg")
-	mydir = file_path(Pkg.package_directory("DataFrames"), "test", "data")
+	mydir = joinpath(Pkg.package_directory("DataFrames"), "test", "data")
 	filenames = readdir(mydir)
-	df = read_table(file_path(mydir, filenames[1]))
+	df = read_table(joinpath(mydir, filenames[1]))
 
 The resulting `DataFrame` has a large number of similar rows. We can check its size using the `nrow` and `ncol` commands:
 
