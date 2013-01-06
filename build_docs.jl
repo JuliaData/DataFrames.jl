@@ -19,7 +19,8 @@ pdf_sections = ["00_table_of_contents.md",
 				"05_function_reference_guide.md",
 				"06_merging_and_indexing.md",
 				"07_reshaping_and_pivoting.md",
-				"08_split_apply_combine.md"]
+				"08_split_apply_combine.md",
+				"09_datastreams.md"]
 
 pandoc_page_break = "\n\n\\newpage\n\n---\n\n"
 
@@ -52,7 +53,8 @@ web_sections = ["01_introduction.md",
 				"05_function_reference_guide.md",
 				"06_merging_and_indexing.md",
 				"07_reshaping_and_pivoting.md",
-				"08_split_apply_combine.md"]
+				"08_split_apply_combine.md",
+				"09_datastreams.md"]
 
 web_titles = ["Why Use the DataFrames Package?",
 			  "Getting Started",
@@ -61,7 +63,8 @@ web_titles = ["Why Use the DataFrames Package?",
 			  "Function Reference Guide",
 			  "Merging and Indexing",
 			  "Reshaping and Pivoting",
-			  "Split-Apply-Combine Operations"]
+			  "Split-Apply-Combine Operations",
+			  "Streaming Data Analysis"]
 
 web_urls = ["introduction.md",
 			"getting_started.md",
@@ -70,7 +73,8 @@ web_urls = ["introduction.md",
 			"function_reference_guide.md",
 			"merging_and_indexing.md",
 			"reshaping_and_pivoting.md",
-			"split_apply_combine.md"]
+			"split_apply_combine.md",
+			"datastreams.md"]
 
 n = length(web_sections)
 if n != length(web_titles) || n != length(web_urls)

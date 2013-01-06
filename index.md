@@ -35,6 +35,7 @@ To learn more, you can read through the rest of the DataFrames manual. The Table
 * [Merging and Indexing](http://harlanh.github.com/DataFrames.jl/merging_and_indexing.html)
 * [Reshaping and Pivoting](http://harlanh.github.com/DataFrames.jl/reshaping_and_pivoting.html)
 * [Split-Apply-Combine Operations](http://harlanh.github.com/DataFrames.jl/split_apply_combine.html)
+* [Streaming Data Analysis](http://harlanh.github.com/DataFrames.jl/datastreams.html)
 
 # Offline Reading
 
