@@ -4,7 +4,7 @@
 
 require("extras/test.jl")
 
-load("DataFrames")
+require("DataFrames")
 using DataFrames
 
 my_tests = ["test/dataarray.jl",

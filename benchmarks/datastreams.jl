@@ -1,4 +1,4 @@
-load("DataFrames")
+require("DataFrames")
 using DataFrames
 
 filename = joinpath(julia_pkgdir(), "DataFrames", "test", "data", "big_data.csv")

@@ -519,7 +519,7 @@ You can see these in action:
 
 The DataFrames package is easiest to explore if you also install the RDatasets package, which provides access to 570 classic data sets:
 
-	load("RDatasets")
+	require("RDatasets")
 
 	iris = RDatasets.data("datasets", "iris")
 	dia = RDatasets.data("ggplot2", "diamonds")

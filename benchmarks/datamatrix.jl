@@ -1,7 +1,7 @@
-load("Benchmark")
+require("Benchmark")
 using Benchmark
 
-load("DataFrames")
+require("DataFrames")
 using DataFrames
 
 a = eye(100)

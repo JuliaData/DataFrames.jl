@@ -1,5 +1,5 @@
-# Load DataFrames.jl package.
-load("DataFrames.jl")
+# Load DataFrames
+require("DataFrames")
 using DataFrames
 
 # Load a CSV file into a DataFrame.
@@ -119,14 +119,14 @@ m1 = merge(df1, df2, "a")
 
 # visualization -- requires a Gaston installation. YMMV.
 push(LOAD_PATH, "../gaston-0.5.4/")
-load("gaston.jl")
+require("gaston.jl")
 set_terminal("x11")
 with(df1, :(plot(nafilter(a), nafilter(v1)), "plotstyle", "points")))
 
 # DataFrames and Formula can be used to do things like linear models
 
 # Load a very simple lm() function.
-load("demo/lm.jl")
+require("demo/lm.jl")
 
 # Load a CSV file into a DataFrame.
 df = csvDataFrame("demo/toy_example.csv")

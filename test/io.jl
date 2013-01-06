@@ -8,6 +8,11 @@ x = "\"Güerín\",\"Sí\",\"No\""
 @assert DataFrames.extract_string(x, 2, 7, Set(3)) == "Gerí"
 @assert DataFrames.extract_string("", 0,0,Set()) == ""
 
+# Handle the empty string properly
+test0 = IOString("")
+res0 = DataFrames.read_separated_line(test0, ',', '"')
+@assert isempty(res0)
+
 test1 = IOString("I'm A,I'm B,I'm C,-0.3932755625236671,20.157657978753534")
 res1 = DataFrames.read_separated_line(test1, ',', '"')
 @assert res1[2] == "I'm B"
@@ -39,9 +44,10 @@ res6 = DataFrames.read_separated_line(test6, ',', '"')
 @assert res6[3] == "a\nb"
 @assert res6[4] == "TRUE"
 
-test7 = IOString("")
-res7 = DataFrames.read_separated_line(test7, ',', '"')
-@assert length(res7) == 1
+# Should this be one NA?
+# test7 = IOString("")
+# res7 = DataFrames.read_separated_line(test7, ',', '"')
+# @assert length(res7) == 1
 
 test8 = IOString("a,\"b\",\"cd\",1.0,1\na,\"b\",\"cd\",1.0,1")
 res8 = DataFrames.read_separated_line(test8, ',', '"')
@@ -156,8 +162,6 @@ header = true
 
 nrows = DataFrames.determine_nrows(filename, header)
 @assert nrows == 10_000
-ncols = DataFrames.determine_ncols(filename, separator, quotation_character)
-@assert ncols == 5
 
 io = open(filename, "r")
 
@@ -168,7 +172,7 @@ seek(io, 0)
 if header
   readline(io)
 end
-text_data = DataFrames.read_separated_text(io, nrows, ncols, separator, quotation_character)
+text_data = DataFrames.read_separated_text(io, nrows, separator, quotation_character)
 @assert eltype(text_data) == UTF8String
 @assert size(text_data) == (10_000, 5)
 
@@ -205,8 +209,8 @@ df = read_table(filename)
 # Additional data sets
 
 @elapsed df = read_table("test/data/big_data.csv")
-# TODO: Make this fast enough to include in testing
-#@elapsed df = read_table("test/data/movies.csv")
+# TODO: Make this faster
+@elapsed df = read_table("test/data/movies.csv")
 # TODO: Release this data set publicly
 #@elapsed df = read_table("test/data/bigrams.tsv")
 @elapsed df = read_table("test/data/utf8.csv")

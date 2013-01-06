@@ -1,6 +1,4 @@
-
-# there are some warnings here that need to be addressed...
-load("DataFrames.jl")
+require("DataFrames")
 using DataFrames
 
 # The current DataFrame type hierarchy relatively transparently implements

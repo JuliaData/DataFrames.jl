@@ -1,4 +1,4 @@
-load("DataFrames")
+require("DataFrames")
 using DataFrames
 
 ##############################################################################
@@ -39,34 +39,26 @@ NA + 1
 
 #
 # NA's represent missingness for scalar data. To express Arrays
-# with missingness, we've define a new set of Data* array-like
-# objects.
+# with missingness, we've define a new set of DataArray objects,
+# a new parametric composite type that wraps a standard Julia array
+# and complements this Julia array with an additional bit vector
+# specifying which entries of the primary vector are missing.
 #
-# For now, we've only defined the DataVector type, a parametric composite
-# type that wraps a standard Julia vector and complements
-# this Julia vector with an additional bit vector specifying which entries
-# of the primary vector are missing.
-#
-# These two core components are stored in a DataVector's data and isna
+# These two core components are stored in a DataArray's data and isna
 # fields respectively. To save space, the isna field is always a BitArray.
 #
-# At present, a DataVector also contains metadata about how to replace NA's,
-# although this metadata can be safely ignored if you understand how
-# the data and isna fields work.
-#
 
-DataVector
-typeof(DataVector)
-typeof(DataVector{Int64})
-super(DataVector)
-super(super(DataVector))
-dump(DataVector)
-DataVector.names
+DataArray
+typeof(DataArray)
+typeof(DataArray{Int64})
+super(DataArray)
+super(super(DataArray))
+dump(DataArray)
+DataArray.names
 
 #
-# The simplest constructor for a DataVector specifies the data
-# values and the missingness metadata, while allowing the
-# other metadata to be set to defaults.
+# The fundamental constructor for a DataArray specifies the data
+# values and the missingness metadata
 #
 
 dv = DataArray([1, 2, 3], falses(3))
@@ -81,7 +73,7 @@ dv = DataArray([1, 2, 3])
 #
 # Yet another constructor, which is conveniently brief, converts
 # a Julian Range1 object into a standard Julia Vector and wraps
-# this in a DataVector.
+# this in a DataArray.
 #
 
 dv = DataArray(1:3)
@@ -106,7 +98,7 @@ dv = DataArray([true, false])
 #
 # Sometimes you want to convert all of the values inside a DataVector to
 # a new type while preserving missingness. Where Julia has specialized
-# conversion functions, DataVector's mimic them. Use the dv* prefix to find
+# conversion functions, DataArray's mimic them. Use the data* prefix to find
 # them in the REPL
 #
 
@@ -115,7 +107,6 @@ dv = DataArray([1.1, 2.1])
 databool(dv)
 dataint(dv)
 datafloat(dv)
-# dvstring(dv) # SHOULD WE MAKE THIS WORK?
 
 #
 # Julia also provides convenience functions for generating initialized
@@ -130,8 +121,8 @@ datafalses(5)
 datatrues(5)
 
 #
-# If you know the type of the DataVector you want to create, but not the values
-# you can create DataVector's of length N that are NA everywhere
+# If you know the type of the DataArray you want to create, but not the values
+# you can create DataArray's of length N that are NA everywhere
 #
 
 dv = DataArray(Int64, 5)
@@ -139,7 +130,7 @@ dv = DataArray(Float64, 5)
 dv = DataArray(ComplexPair, 5)
 
 #
-# While DataVector's are a very powerful tool for dealing with missing data,
+# While DataArray's are a very powerful tool for dealing with missing data,
 # they only bring us part of the way towards representing real-world data
 # sets in Julia. The missing piece is a tabular data structure like those
 # found in relational databases or spreadsheets.
@@ -190,7 +181,7 @@ df = DataFrame(df_columns)
 # to DataVector's. (THIS LAST CLAIM IS NOT YET TRUE AND TOM DOES NOT WANT IT.)
 #
 
-df = DataFrame({ones(5), falses(5)})
+df = DataFrame({ones(5), zeros(5)})
 
 #
 # Often one wishes to convert an existing matrix into a DataFrame.
@@ -519,7 +510,7 @@ colmins(df)
 # RDatasets package, which provides access to 570 classic data sets.
 #
 
-load("RDatasets")
+require("RDatasets")
 
 iris = RDatasets.data("datasets", "iris")
 dia = RDatasets.data("ggplot2", "diamonds")

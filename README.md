@@ -10,21 +10,21 @@ initialized the package system before, you will need to do the
 following:
 
 ```julia
-load("pkg.jl")
+require("pkg.jl")
 Pkg.init()
 ```
 
 To install DataFrames.jl, use the following:
 
 ```julia
-load("pkg.jl")   # if not done previously
+require("pkg.jl")   # if not done previously
 Pkg.add("DataFrames")
 ```
 
 DataFrames.jl has one main module named `DataFrames`. You can load it as:
 
 ```julia
-load("DataFrames")
+require("DataFrames")
 using DataFrames
 ```
 
@@ -52,7 +52,7 @@ using DataFrames
 Here's a minimal demo showing some grouping operations:
 
 ```julia
-julia> load("DataFrames")
+julia> require("DataFrames")
 
 julia> using DataFrames
 

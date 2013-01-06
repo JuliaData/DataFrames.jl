@@ -1,21 +1,15 @@
-julia> # Load DataFrame package.
+julia> # Load DataFrame package
 
-julia> load("src/init.jl")
-Warning: New definition ==(NAtype,Any) is ambiguous with ==(Any,AbstractArray{T,N}).
-         Make sure ==(NAtype,AbstractArray{T,N}) is defined first.
-Warning: New definition ==(Any,NAtype) is ambiguous with ==(AbstractArray{T,N},Any).
-         Make sure ==(AbstractArray{T,N},NAtype) is defined first.
-Warning: New definition .==(AbstractDataVector{T},T) is ambiguous with .==(Any,AbstractArray{T,N}).
-         Make sure .==(AbstractDataVector{AbstractArray{T,N}},AbstractArray{T,N}) is defined first.
-Warning: New definition promote_rule(Type{AbstractDataVector{T}},Type{T}) is ambiguous with promote_rule(Type{AbstractDataVector{S}},Type{T}).
-         Make sure promote_rule(Type{AbstractDataVector{T}},Type{T}) is defined first.
+julia> require("DataFrames")
+
+julia> using DataFrames
 
 julia> 
 
-julia> # Load a CSV file into a DataFrame.
+julia> # Load a CSV file into a DataFrame
 
-julia> df = csvDataFrame("demo/toy_example.csv")
-DataFrame  (6,3)
+julia> df = read_table("demo/toy_example.csv")
+6x3 DataFrame:
           A       B   C
 [1,]    2.5   "One" 3.0
 [2,]    3.6   "One" 5.0
@@ -27,25 +21,33 @@ DataFrame  (6,3)
 
 julia> 
 
-julia> # Basic indexing.
+julia> # Basic indexing
 
 julia> df[1, :]
-DataFrame  (1,3)
+1x3 DataFrame:
           A     B   C
 [1,]    2.5 "One" 3.0
 
 
 julia> df["A"]
-[2.5,3.6,3.5,4.5,4.5,5.5]
+6-element Float64 DataArray
+ 2.5
+ 3.6
+ 3.5
+ 4.5
+ 4.5
+ 5.5
 
 julia> df[1, "A"]
 2.5
 
 julia> df[1:2, "A"]
-[2.5,3.6]
+2-element Float64 DataArray
+ 2.5
+ 3.6
 
 julia> df[1:2, ["A", "B"]]
-DataFrame  (2,2)
+2x2 DataFrame:
           A     B
 [1,]    2.5 "One"
 [2,]    3.6 "One"
@@ -53,7 +55,15 @@ DataFrame  (2,2)
 
 julia> 
 
-julia> # Use the with() function to evaluate expressions relative to a DataFrame.
+julia> # Use the with() function to evaluate expressions relative to a DataFrame 
 
 julia> with(df, :(A + C))
-[5.5,8.6,6.5,9.5,7.5,10.5]
+6-element Float64 DataArray
+ 5.5
+ 8.6
+ 6.5
+ 9.5
+ 7.5
+ 10.5
+
+julia> 

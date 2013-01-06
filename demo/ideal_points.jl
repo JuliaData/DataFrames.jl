@@ -1,4 +1,4 @@
-load("DataFrames")
+require("DataFrames")
 using DataFrames
 
 df = read_table("demo/senate112.csv")

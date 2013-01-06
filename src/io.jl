@@ -1,14 +1,11 @@
-#require("profile")
-#using Profile
-
-const DEFAULT_MISSINGNESS_INDICATORS = ["", "NA", "#NA", "N/A", "#N/A", "NULL"]
 const DEFAULT_BOOLEAN_STRINGS = ["T", "F", "t", "f", "TRUE", "FALSE", "true", "false"]
 const DEFAULT_TRUE_STRINGS = ["T", "t", "TRUE", "true"]
 const DEFAULT_FALSE_STRINGS = ["F", "f", "FALSE", "false"]
+
 const DEFAULT_QUOTATION_CHARACTER = '"'
 const DEFAULT_SEPARATOR = ','
 
-const SINGLE_CHARACTER_TYPE = Char
+const DEFAULT_MISSINGNESS_INDICATORS = ["", "NA", "#NA", "N/A", "#N/A", "NULL"]
 
 function parse_bool(x::String)
   if contains(DEFAULT_TRUE_STRINGS, x)
@@ -25,39 +22,36 @@ end
 # Low-level text parsing
 #
 ##############################################################################
-const nullset = Set()
+
 let extract_cache = memio(500, false)
-global extract_string
-#@profile begin
-function extract_string(this, left, right, omitlist)
-    if right - left > length(extract_cache.ios)
-        extract_cache_size = right - left
-        #println("extending cache to ", extract_cache_size)
-        extract_cache = memio(extract_cache_size,false)
-    end
-    seek(extract_cache,0) #necessary?
-    if length(this) >= 1
-        while isvalid(this, right) && right > left && this[right] == ' '
-            right -= 1
+    global extract_string
+    function extract_string(this, left::Int, right::Int, omitlist::Set)
+        if right - left > length(extract_cache.ios)
+            extract_cache_size = right - left
+            extract_cache = memio(extract_cache_size,false)
         end
-        i = left
-        while i <= right
-            lasti = i
-            ch, i = next(this, i)
-            if !has(omitlist, lasti)
-                print(extract_cache, ch)
+        seek(extract_cache, 0) # necessary?
+        if length(this) >= 1
+            while isvalid(this, right) && right > left && this[right] == ' '
+                right -= 1
             end
+            i = left
+            while i <= right
+                lasti = i
+                ch, i = next(this, i)
+                if !has(omitlist, lasti)
+                    print(extract_cache, ch)
+                end
+            end
+            return takebuf_string(extract_cache)
+        else
+            return ""
         end
-        return takebuf_string(extract_cache)
-    else
-        return ""
     end
 end
-#end #profile
-end #let
 
-extract_string(this, left, right) = extract_string(this, left, right, nullset)
-
+const NULLSET = Set()
+extract_string(this, left::Int, right::Int) = extract_string(this, left, right, NULLSET)
 
 const STATE_EXPECTING_VALUE = 0
 const STATE_IN_BARE = 1
@@ -65,26 +59,37 @@ const STATE_IN_QUOTED = 2
 const STATE_POSSIBLE_EOQUOTED = 3
 const STATE_EXPECTING_SEP = 4
 
-#@profile begin
+# Read one line of delimited text
+# This is complex because delimited text can contain EOL inside quoted fields
 function read_separated_line(io,
                              separator::Char,
                              quotation_character::Char)
-    # indexes into the current line for the current item
+    # Indexes into the current line for the current item
     left = 0
     right = 0
-    # was using RopeString for efficient appends, but rare case and makes 
-    # UTF-8 processing harder.
+
+    # Was using RopeString for efficient appends, but rare case and makes 
+    # UTF-8 processing harder
     this = Base.chomp!(readline(io))
-    # 5-state machine...
+
+    # Short-circuit on the empty line
+    if this == ""
+      return Array(UTF8String, 0)
+    end
+
+    # 5-state machine. See list of possible states above
     state = STATE_EXPECTING_VALUE
-    # index of characters to remove
+
+    # Index of characters to remove
     omitlist = Set()
-    # where are we
+
+    # Where are we
     i = start(this)
     eol = false
-    # will eventually return a Vector of strings
+
+    # Will eventually return a Vector of strings
     num_elems = 0
-    ret = Array(ByteString,0)
+    ret = Array(ByteString, 0)
 
     # off we go! use manual loops because this can grow
     while true
@@ -112,7 +117,7 @@ function read_separated_line(io,
             end
         elseif state == STATE_IN_BARE
             if eol
-                right = this_i # we didn't bump this_i above, so not -1
+                right = this_i
                 num_elems += 1
                 push(ret, extract_string(this, left, right))
                 break
@@ -134,7 +139,7 @@ function read_separated_line(io,
             end
         elseif state == STATE_POSSIBLE_EOQUOTED
             if eol
-                right = this_i - 1 # we didn't bump this_i above, so not -2
+                right = this_i - 1
                 num_elems += 1
                 push(ret, extract_string(this, left, right, omitlist))
                 break
@@ -170,7 +175,40 @@ function read_separated_line(io,
     end
     ret
 end
-#end #profile
+
+# Read data line-by-line
+function read_separated_text(io::IOStream,
+                             nrows::Int,
+                             separator::Char,
+                             quotation_character::Char)
+    # Read one line to determine the number of columns
+    i = 1
+    sp = read_separated_line(io, separator, quotation_character)
+    ncols = length(sp)
+
+    # If the line is blank, return a 0x0 array to signify this
+    if ncols == 0
+        return Array(UTF8String, 0, 0)
+    end
+
+    # Otherwise, allocate an array to store all of the text we'll read
+    text_data = Array(UTF8String, nrows, ncols)
+    text_data[i, :] = sp
+
+    # Loop until we've read nrows of text or run out of text
+    while i < nrows
+        sp = read_separated_line(io, separator, quotation_character)
+        if length(sp) == ncols
+            i += 1
+            text_data[i, :] = sp 
+        else
+            break
+        end
+    end
+
+    # Return as much text as we read
+    return text_data[1:i, :]
+end
 
 ##############################################################################
 #
@@ -199,14 +237,6 @@ function determine_nrows{T <: String}(filename::T, header::Bool)
   end
 end
 
-function determine_ncols{T <: String}(filename::T,
-                                      separator::Char,
-                                      quotation_character::Char)
-    open(filename, "r") do io
-        length(read_separated_line(io, separator, quotation_character))
-    end
-end
-
 function determine_column_names(io::IOStream,
                                 separator::Char,
                                 quotation_character::Char,
@@ -223,53 +253,18 @@ function determine_column_names(io::IOStream,
   return column_names
 end
 
-# Read data line-by-line
-# Line-by-line reading may be IO-bound
-function read_separated_text(io::IOStream,
-                             nrows::Int,
-                             ncols::Int,
-                             separator::Char,
-                             quotation_character::Char)
-  text_data = Array(UTF8String, nrows, ncols)
-
-  items = Array(UTF8String, ncols)
-  current_item = Array(SINGLE_CHARACTER_TYPE, ncols)
-
-  i = 0
-  while i < nrows
-    sp = read_separated_line(io, separator, quotation_character)
-    if length(sp) == ncols
-        i += 1
-        text_data[i, :] = sp 
-    else
-        break
-    end
-  end
-
-  if i == 0
-    return Array(UTF8String, 0, 0)
-  else
-    return text_data[1:i, :]
-  end
-end
-
 function convert_to_dataframe{R <: String,
                               S <: String,
                               T <: String}(text_data::Matrix{R},
                                            missingness_indicators::Vector{S},
                                            column_names::Vector{T})
   # Keep a record of number of rows and columns
-  nrows, ncols = size(text_data)
+  nrows, ncols = size(text_data, 1), length(column_names)
 
   # Short-circuit if the text data is empty
   if nrows == 0
-    column_types = {Any for i in 1:length(column_names)}
+    column_types = {Any for i in 1:ncols}
     return DataFrame(column_types, column_names, 0)
-  end
-
-  # Make sure that the user has specified coherent names
-  if ncols != length(column_names)
-    error("Column names do not match the input data's size")
   end
 
   # Store the columns as a set of DataVector's inside an Array of Any's
@@ -335,11 +330,8 @@ function read_minibatch{R <: String,
                                      missingness_indicators::Vector{R},
                                      column_names::Vector{S},
                                      minibatch_size::Int)
-  # Keep a record of number of columns
-  ncols = length(column_names)
-
   # Represent data as an array of strings before type conversion
-  text_data = read_separated_text(io, minibatch_size, ncols, separator, quotation_character)
+  text_data = read_separated_text(io, minibatch_size, separator, quotation_character)
 
   # Convert text data to a DataFrame
   return convert_to_dataframe(text_data, missingness_indicators, column_names)
@@ -363,21 +355,18 @@ function read_table{R <: String,
     readline(io)
   end
 
-  # Keep a record of number of columns
-  ncols = length(column_names)
-
   # Represent data as an array of strings before type conversion
-  text_data = read_separated_text(io, nrows, ncols, separator, quotation_character)
+  text_data = read_separated_text(io, nrows, separator, quotation_character)
 
   # Short-circuit if data set is empty except for a header line
   if size(text_data, 1) == 0
-    column_types = {Any for i in 1:ncols}
+    column_types = {Any for i in 1:length(column_names)}
     return DataFrame(column_types, column_names, 0)
+  else
+    # Convert text data to a DataFrame
+    df = convert_to_dataframe(text_data, missingness_indicators, column_names)
+    return df
   end
-
-  # Convert text data to a DataFrame
-  df = convert_to_dataframe(text_data, missingness_indicators, column_names)
-  return df
 end
 
 function read_table{T <: String}(filename::T)
@@ -397,8 +386,6 @@ function read_table{T <: String}(filename::T)
                   column_names,
                   nrows)
   close(io)
-  # @profile report
-  # @profile clear
   return df
 end
 
@@ -413,15 +400,37 @@ end
 # Quote all string fields
 # Don't quote real-valued fields
 # Quote non-string, non-real-valued fields
-function in_quotes{T <: String}(val::T, quotation_character::Char)
+function in_quotes(val::String, quotation_character::Char)
   strcat(quotation_character, val, quotation_character)
 end
-function in_quotes{T <: Real}(val::T, quotation_character::Char)
+function in_quotes(val::Real, quotation_character::Char)
   string(val)
 end
-function in_quotes{T <: Any}(val::T, quotation_character::Char)
+function in_quotes(val::Any, quotation_character::Char)
   strcat(quotation_character, string(val), quotation_character)
 end
+function csvwrite(a::Matrix, io::IOStream,
+                  separator::Char, quotation_character::Char)
+  n, p = size(a)
+  for i in 1:n
+    for j in 1:p
+      if j < p
+        print(io, in_quotes(a[i, j], quotation_character))
+        print(io, separator)
+      else
+        println(io, in_quotes(a[i, j], quotation_character))
+      end
+    end
+  end
+end
+function csvwrite(a::Matrix, filename::String,
+                  separator::Char, quotation_character::Char)
+    io = open(filename, "w")
+    csvwrite(a, io, separator, quotation_character)
+    close(io)
+end
+csvwrite(a::Matrix, io::IOStream) = csvwrite(a, io, ',', '"')
+csvwrite(a::Matrix, filename::String) = csvwrite(a, io, ',', '"')
 
 # TODO: write_table should do more to react to the type of each column
 # Need to increase precision of string representation of Float64's
@@ -455,19 +464,24 @@ function print_table(df::DataFrame, separator::Char, quotation_character::Char)
   print_table(df, OUTPUT_STREAM, separator, quotation_character)
 end
 
-print_table(df::DataFrame) = print_table(df, OUTPUT_STREAM, DEFAULT_SEPARATOR, DEFAULT_QUOTATION_CHARACTER)
+function print_table(df::DataFrame)
+    print_table(df,
+                OUTPUT_STREAM,
+                DEFAULT_SEPARATOR,
+                DEFAULT_QUOTATION_CHARACTER)
+end
 
-function write_table{T <: String}(df::DataFrame,
-                                  filename::T,
-                                  separator::Char,
-                                  quotation_character::Char)
+function write_table(df::DataFrame,
+                     filename::String,
+                     separator::Char,
+                     quotation_character::Char)
   io = open(filename, "w")
   print_table(df, io, separator, quotation_character)
   close(io)
 end
 
 # Infer configuration settings from filename
-function write_table{T <: String}(df::DataFrame, filename::T)
+function write_table(df::DataFrame, filename::String)
   separator = determine_separator(filename)
   quotation_character = DEFAULT_QUOTATION_CHARACTER
   write_table(df, filename, separator, quotation_character)

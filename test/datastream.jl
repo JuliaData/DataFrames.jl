@@ -1,5 +1,7 @@
-# Need to deal with no header cleanly
-filename = joinpath(julia_pkgdir(), "DataFrames/test/data/sample_data.csv")
+require("DataFrames")
+using DataFrames
+
+filename = joinpath(julia_pkgdir(), "DataFrames", "test", "data", "sample_data.csv")
 
 ds = DataStream(filename)
 i = start(ds)

@@ -43,7 +43,7 @@ In Julia, this can be addressed by piping new data into Julia using standard
 UNIX pipes. To see how to work with data that comes in from a UNIX pipe,
 copy the  following code into a program called streaming.jl:
 
-	load("DataFrames")
+	require("DataFrames")
 	using DataFrames
 
 	ds = DataStream(stdin_stream, 2)

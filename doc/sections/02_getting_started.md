@@ -17,7 +17,7 @@ If you have an existing library of packages, you can pull the DataFrames package
 
 In all of the examples that follow, we're going to assume that you've already loaded the DataFrames package. You can do that by typing the following two commands before trying out any of the examples in this manual:
 
-	load("DataFrames")
+	require("DataFrames")
 	using DataFrames
 
 ## Some Basic Examples
@@ -109,7 +109,7 @@ If you'd like to get your hands on more data to play with, we strongly encourage
 
 	require("pkg")
 	Pkg.add("RDatasets")
-	load("RDatasets")
+	require("RDatasets")
 
 Once that's done, you can use the `data()` function from RDatasets to gain access to data sets like Fisher's Iris data:
 

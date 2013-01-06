@@ -1,123 +1,133 @@
-julia> srand(1) # Set the seed.
+julia> # Load DataFrame package
+
+julia> require("DataFrames")
+
+julia> using DataFrames
 
 julia> 
 
-julia> # DataFrames can also be created with an expression.
+julia> # Set the seed
 
-julia> # Columns are repeated to the longest column.
+julia> srand(1)
+
+julia> 
+
+julia> # DataFrames can also be created with an expression
+
+julia> # Columns are repeated to the longest column
 
 julia> df = DataFrame(quote
            a = shuffle(LETTERS[1:10])
            b = letters[randi(5,50)]
            x = randn(50)
        end)
-DataFrame  (50,3)
+50x3 DataFrame:
            a   b          x
-[1,]     "B" "a"  -0.916177
-[2,]     "C" "b"   0.483764
-[3,]     "J" "b"   0.726738
-[4,]     "I" "e"     1.0791
-[5,]     "F" "b"   0.037687
-[6,]     "G" "c"   -0.13161
-[7,]     "H" "c"    1.49355
-[8,]     "E" "b"   -1.09661
-[9,]     "D" "e"  -0.953266
-[10,]    "A" "c"   -2.61105
-[11,]    "B" "b"     1.2224
-[12,]    "C" "c"   0.571747
-[13,]    "J" "e"  -0.906974
-[14,]    "I" "a" -0.0275278
-[15,]    "F" "a"   -2.58784
-[16,]    "G" "a"  0.0317111
-[17,]    "H" "d"   0.830985
-[18,]    "E" "e"  -0.540067
-[19,]    "D" "a"  -0.570632
-[20,]    "A" "d"    1.14635
+[1,]     "G" "a"   0.631291
+[2,]     "I" "d"   -1.23373
+[3,]     "D" "c"  -0.858585
+[4,]     "A" "b"   0.258266
+[5,]     "C" "a"   -1.45999
+[6,]     "J" "d"   0.509527
+[7,]     "B" "b"    -1.2459
+[8,]     "F" "e"   -1.33165
+[9,]     "H" "d"   -1.36073
+[10,]    "E" "a"   0.542924
+[11,]    "G" "e"   -2.63399
+[12,]    "I" "a"   0.149901
+[13,]    "D" "c"   -1.65878
+[14,]    "A" "e"    -2.7486
+[15,]    "C" "e"  -0.418066
+[16,]    "J" "c"   -1.43133
+[17,]    "B" "d"    1.15406
+[18,]    "F" "a"  -0.485528
+[19,]    "H" "a"   0.775438
+[20,]    "E" "d"    0.75606
   :
-[31,]    "B" "e"   0.323304
-[32,]    "C" "a"    0.83458
-[33,]    "J" "d"   -1.49795
-[34,]    "I" "d"    1.31029
-[35,]    "F" "e"  -0.772302
-[36,]    "G" "c"    1.11484
-[37,]    "H" "b"    1.14469
-[38,]    "E" "a"  -0.364733
-[39,]    "D" "e"  -0.564778
-[40,]    "A" "e"  -0.124774
-[41,]    "B" "a"  -0.722285
-[42,]    "C" "d"    -1.0093
-[43,]    "J" "b"  -0.856457
-[44,]    "I" "d"   0.223723
-[45,]    "F" "e" -0.0164157
-[46,]    "G" "e"    0.28588
-[47,]    "H" "a"  -0.366278
-[48,]    "E" "e"    1.07446
-[49,]    "D" "e"   0.465938
-[50,]    "A" "d"   0.598922
+[31,]    "G" "b"  -0.906487
+[32,]    "I" "b"   -0.97022
+[33,]    "D" "a"  -0.768929
+[34,]    "A" "d"  -0.395993
+[35,]    "C" "b"   0.475183
+[36,]    "J" "c"   0.638632
+[37,]    "B" "a"  -0.398748
+[38,]    "F" "c" -0.0803466
+[39,]    "H" "a"    1.00184
+[40,]    "E" "b"  -0.704845
+[41,]    "G" "a"   -1.43405
+[42,]    "I" "a"   0.434751
+[43,]    "D" "a" -0.0922058
+[44,]    "A" "b"  -0.464083
+[45,]    "C" "b"    2.18783
+[46,]    "J" "b"   0.579141
+[47,]    "B" "c"  -0.914724
+[48,]    "F" "b"   -0.15506
+[49,]    "H" "d"  0.0607178
+[50,]    "E" "e"  -0.270859
 
 
-julia> 
+julia> # Grouping by column b, find the sum and length of each group
 
-julia> # Grouping by column b, find the sum and length of each group.
-
-julia> by(df, "b", :( x_sum = sum(x); x_len = length(x) )) 
-DataFrame  (5,3)
+julia> by(df, "b", :( x_sum = sum(x); x_len = length(x)))
+5x3 DataFrame:
           b    x_sum x_len
-[1,]    "a" -6.47425    10
-[2,]    "b"  2.42707     9
-[3,]    "c"  1.24855     9
-[4,]    "d"  2.75966     8
-[5,]    "e" -1.00391    14
+[1,]    "a" -3.01026    14
+[2,]    "b" 0.851169    11
+[3,]    "c" -5.45193     8
+[4,]    "d"  0.60101     9
+[5,]    "e" -6.39996     8
 
 
 julia> 
 
 julia> # Group by a and b:
 
-julia> by(df, ["a", "b"], :( x_sum = sum(x); x_len = length(x) )) 
-DataFrame  (34,4)
-           a   b      x_sum x_len
-[1,]     "B" "a"   -1.63846     2
-[2,]     "C" "a"    0.83458     1
-[3,]     "D" "a"  -0.570632     1
-[4,]     "E" "a"   -2.14981     2
-[5,]     "F" "a"   -2.58784     1
-[6,]     "G" "a"  0.0317111     1
-[7,]     "H" "a"  -0.366278     1
-[8,]     "I" "a" -0.0275278     1
-[9,]     "A" "b" -0.0360266     1
-[10,]    "B" "b"     1.2224     1
-[11,]    "C" "b"   0.483764     1
-[12,]    "E" "b"   -1.09661     1
-[13,]    "F" "b"   0.037687     1
-[14,]    "H" "b"    1.14469     1
-[15,]    "J" "b"   0.671162     3
-[16,]    "A" "c"   -2.61105     1
-[17,]    "C" "c"   0.255827     2
-[18,]    "G" "c"   0.819058     3
-[19,]    "H" "c"     1.7849     2
-[20,]    "I" "c"   0.999815     1
-[21,]    "A" "d"    1.74527     2
-[22,]    "C" "d"    -1.0093     1
-[23,]    "F" "d"    1.15665     1
-[24,]    "H" "d"   0.830985     1
-[25,]    "I" "d"    1.53401     2
-[26,]    "J" "d"   -1.49795     1
-[27,]    "A" "e"  -0.124774     1
-[28,]    "B" "e" -0.0247522     2
-[29,]    "D" "e"   -1.05807     4
-[30,]    "E" "e"   0.534396     2
-[31,]    "F" "e"  -0.788718     2
-[32,]    "G" "e"    0.28588     1
-[33,]    "I" "e"     1.0791     1
-[34,]    "J" "e"  -0.906974     1
+julia> by(df, ["a", "b"], :( x_sum = sum(x); x_len = length(x) ))
+36x4 DataFrame:
+           a   b     x_sum x_len
+[1,]     "A" "a" -0.448951     1
+[2,]     "B" "a" -0.398748     1
+[3,]     "C" "a"  -1.45999     1
+[4,]     "D" "a" -0.861135     2
+[5,]     "E" "a"  0.542924     1
+[6,]     "F" "a" -0.485528     1
+[7,]     "G" "a" -0.802759     2
+[8,]     "H" "a"  0.319276     3
+[9,]     "I" "a"  0.584652     2
+[10,]    "A" "b" -0.205817     2
+[11,]    "B" "b"   -1.2459     1
+[12,]    "C" "b"   2.66301     2
+[13,]    "E" "b"    1.0925     2
+[14,]    "F" "b"  -0.15506     1
+[15,]    "G" "b" -0.906487     1
+[16,]    "I" "b"  -0.97022     1
+[17,]    "J" "b"  0.579141     1
+[18,]    "B" "c" -0.914724     1
+[19,]    "D" "c"  -2.51736     2
+[20,]    "F" "c" -0.282469     2
+[21,]    "I" "c" -0.944684     1
+[22,]    "J" "c" -0.792694     2
+[23,]    "A" "d" -0.395993     1
+[24,]    "B" "d"   1.08004     2
+[25,]    "C" "d"   1.18512     1
+[26,]    "E" "d"   0.75606     1
+[27,]    "H" "d"  -1.30002     2
+[28,]    "I" "d"  -1.23373     1
+[29,]    "J" "d"  0.509527     1
+[30,]    "A" "e"   -2.7486     1
+[31,]    "C" "e" -0.418066     1
+[32,]    "D" "e"  0.658323     1
+[33,]    "E" "e" -0.270859     1
+[34,]    "F" "e"  -1.33165     1
+[35,]    "G" "e"  -4.26072     2
+[36,]    "J" "e"   1.97162     1
 
 
 julia> 
 
 julia> #
 
-julia> # Digging deeper.
+julia> # Digging deeper
 
 julia> #
 
@@ -125,222 +135,200 @@ julia>
 
 julia> # by is a shortcut for the following:
 
-julia> based_on(groupby(df, "b"), :( x_sum = sum(x); x_len = length(x) )) 
-DataFrame  (5,3)
+julia> based_on(groupby(df, "b"), :( x_sum = sum(x); x_len = length(x) ))
+5x3 DataFrame:
           b    x_sum x_len
-[1,]    "a" -6.47425    10
-[2,]    "b"  2.42707     9
-[3,]    "c"  1.24855     9
-[4,]    "d"  2.75966     8
-[5,]    "e" -1.00391    14
+[1,]    "a" -3.01026    14
+[2,]    "b" 0.851169    11
+[3,]    "c" -5.45193     8
+[4,]    "d"  0.60101     9
+[5,]    "e" -6.39996     8
 
 
 julia> 
 
 julia> # You can also use the piping operator for the same thing.
 
-julia> df | groupby("b") | :( x_sum = sum(x); x_len = length(x) ) 
-DataFrame  (5,3)
+julia> df | groupby("b") | :( x_sum = sum(x); x_len = length(x) )
+5x3 DataFrame:
           b    x_sum x_len
-[1,]    "a" -6.47425    10
-[2,]    "b"  2.42707     9
-[3,]    "c"  1.24855     9
-[4,]    "d"  2.75966     8
-[5,]    "e" -1.00391    14
+[1,]    "a" -3.01026    14
+[2,]    "b" 0.851169    11
+[3,]    "c" -5.45193     8
+[4,]    "d"  0.60101     9
+[5,]    "e" -6.39996     8
 
 
 julia> 
 
-julia> # groupby returns a GroupedDataFrame.
+julia> # groupby returns a GroupedDataFrame
 
 julia> gd = groupby(df, "b")
 GroupedDataFrame  5 groups with keys: ["b"]
 First Group:
-SubDataFrame  (10,3)
+14x3 SubDataFrame:
            a   b          x
-[1,]     "B" "a"  -0.916177
-[2,]     "I" "a" -0.0275278
-[3,]     "F" "a"   -2.58784
-[4,]     "G" "a"  0.0317111
-[5,]     "D" "a"  -0.570632
-[6,]     "E" "a"   -1.78508
-[7,]     "C" "a"    0.83458
-[8,]     "E" "a"  -0.364733
-[9,]     "B" "a"  -0.722285
-[10,]    "H" "a"  -0.366278
+[1,]     "G" "a"   0.631291
+[2,]     "C" "a"   -1.45999
+[3,]     "E" "a"   0.542924
+[4,]     "I" "a"   0.149901
+[5,]     "F" "a"  -0.485528
+[6,]     "H" "a"   0.775438
+[7,]     "A" "a"  -0.448951
+[8,]     "H" "a"     -1.458
+[9,]     "D" "a"  -0.768929
+[10,]    "B" "a"  -0.398748
+[11,]    "H" "a"    1.00184
+[12,]    "G" "a"   -1.43405
+[13,]    "I" "a"   0.434751
+[14,]    "D" "a" -0.0922058
        :
        :
 Last Group:
-SubDataFrame  (14,3)
-           a   b           x
-[1,]     "I" "e"      1.0791
-[2,]     "D" "e"   -0.953266
-[3,]     "J" "e"   -0.906974
-[4,]     "E" "e"   -0.540067
-[5,]     "B" "e"   -0.348056
-[6,]     "D" "e" -0.00596024
-[7,]     "B" "e"    0.323304
-[8,]     "F" "e"   -0.772302
-[9,]     "D" "e"   -0.564778
-[10,]    "A" "e"   -0.124774
-[11,]    "F" "e"  -0.0164157
-[12,]    "G" "e"     0.28588
-[13,]    "E" "e"     1.07446
-[14,]    "D" "e"    0.465938
+8x3 SubDataFrame:
+          a   b         x
+[1,]    "F" "e"  -1.33165
+[2,]    "G" "e"  -2.63399
+[3,]    "A" "e"   -2.7486
+[4,]    "C" "e" -0.418066
+[5,]    "G" "e"  -1.62673
+[6,]    "D" "e"  0.658323
+[7,]    "J" "e"   1.97162
+[8,]    "E" "e" -0.270859
 
-
-julia> 
 
 julia> # Iterations or references to a GroupedDataFrame return a
 
 julia> # SubDataFrame, a very useful way to subset a DataFrame without
 
-julia> # copies.
+julia> # copies
 
 julia> gd[1]
-SubDataFrame  (10,3)
+14x3 SubDataFrame:
            a   b          x
-[1,]     "B" "a"  -0.916177
-[2,]     "I" "a" -0.0275278
-[3,]     "F" "a"   -2.58784
-[4,]     "G" "a"  0.0317111
-[5,]     "D" "a"  -0.570632
-[6,]     "E" "a"   -1.78508
-[7,]     "C" "a"    0.83458
-[8,]     "E" "a"  -0.364733
-[9,]     "B" "a"  -0.722285
-[10,]    "H" "a"  -0.366278
+[1,]     "G" "a"   0.631291
+[2,]     "C" "a"   -1.45999
+[3,]     "E" "a"   0.542924
+[4,]     "I" "a"   0.149901
+[5,]     "F" "a"  -0.485528
+[6,]     "H" "a"   0.775438
+[7,]     "A" "a"  -0.448951
+[8,]     "H" "a"     -1.458
+[9,]     "D" "a"  -0.768929
+[10,]    "B" "a"  -0.398748
+[11,]    "H" "a"    1.00184
+[12,]    "G" "a"   -1.43405
+[13,]    "I" "a"   0.434751
+[14,]    "D" "a" -0.0922058
 
 
 julia> 
 
-julia> # Look at the structure of a GroupedDataFrame.
+julia> # Look at the structure of a GroupedDataFrame
 
 julia> dump(gd)
 GroupedDataFrame 
   parent: DataFrame  50 observations of 3 variables
-    a: DataVector{ASCIIString}(50) ["B","C","J","I"]
-    b: DataVector{ASCIIString}(50) ["a","b","b","e"]
-    x: DataVector{Float64}(50) [-0.9161768852275985,0.48376352282942453,0.7267382683529503,1.0790964781651111]
+    a: DataArray{ASCIIString,1}(50) ["G","I","D","A"]
+    b: DataArray{ASCIIString,1}(50) ["a","d","c","b"]
+    x: DataArray{Float64,1}(50) [0.6312912597615505,-1.233726144013923,-0.8585845030585529,0.25826607803995216]
   cols: Array(ASCIIString,(1,)) ["b"]
-  idx: Array(Int64,(50,)) [1, 14, 15, 16]
-  starts: Array(Int64,(5,)) [1, 11, 20, 29]
-  ends: Array(Int64,(5,)) [10, 19, 28, 36]
+  idx: Array(Int64,(50,)) [1, 5, 10, 12, 18, 19, 24, 29, 33, 37  …  49, 8, 11, 14, 15, 21, 23, 26, 50]
+  starts: Array(Int64,(5,)) [1, 15, 26, 34, 43]
+  ends: Array(Int64,(5,)) [14, 25, 33, 42, 50]
 
 julia> 
 
 julia> # Look at the structure and internals of the SubDataFrame for the
 
-julia> # first group.
+julia> # first group
 
 julia> dump(gd[1])
-SubDataFrame  10 observations of 3 variables
-  a: DataVector{ASCIIString}(10) ["B","I","F","G"]
-  b: DataVector{ASCIIString}(10) ["a","a","a","a"]
-  x: DataVector{Float64}(10) [-0.9161768852275985,-0.02752775061478325,-2.5878352798283024,0.03171114873790696]
+SubDataFrame  14 observations of 3 variables
+  a: DataArray{ASCIIString,1}(14) ["G","C","E","I"]
+  b: DataArray{ASCIIString,1}(14) ["a","a","a","a"]
+  x: DataArray{Float64,1}(14) [0.6312912597615505,-1.459989295058019,0.5429237557634455,0.14990144064954639]
 
 julia> idump(gd[1])
 SubDataFrame 
   parent: DataFrame 
     columns: Array(Any,(3,))
-      1: DataVector{ASCIIString} 
-        data: Array(ASCIIString,(50,)) ["B", "C", "J", "I"]
-        na: Array(Bool,(50,)) [false, false, false, false]
-        filter: Bool false
-        replace: Bool false
-        replaceVal: ASCIIString 
-          data: Array(Uint8,(0,)) []
-      2: DataVector{ASCIIString} 
-        data: Array(ASCIIString,(50,)) ["a", "b", "b", "e"]
-        na: Array(Bool,(50,)) [false, false, false, false]
-        filter: Bool false
-        replace: Bool false
-        replaceVal: ASCIIString 
-          data: Array(Uint8,(0,)) []
-      3: DataVector{Float64} 
-        data: Array(Float64,(50,)) [-0.916177, 0.483764, 0.726738, 1.0791]
-        na: Array(Bool,(50,)) [false, false, false, false]
-        filter: Bool false
-        replace: Bool false
-        replaceVal: Float64 0.0
+      1: DataArray{ASCIIString,1} 
+        data: Array(ASCIIString,(50,)) ["G", "I", "D", "A", "C", "J", "B"  …  "A", "C", "J", "B", "F", "H", "E"]
+        na: BitArray{1} 
+          chunks: Array(Uint64,(1,)) [0x0000000000000000]
+          dims: Array(Int64,(1,)) [50]
+      2: DataArray{ASCIIString,1} 
+        data: Array(ASCIIString,(50,)) ["a", "d", "c", "b", "a", "d", "b"  …  "b", "b", "b", "c", "b", "d", "e"]
+        na: BitArray{1} 
+          chunks: Array(Uint64,(1,)) [0x0000000000000000]
+          dims: Array(Int64,(1,)) [50]
+      3: DataArray{Float64,1} 
+        data: Array(Float64,(50,)) [0.631291, -1.23373, -0.858585, 0.258266  …  -0.15506, 0.0607178, -0.270859]
+        na: BitArray{1} 
+          chunks: Array(Uint64,(1,)) [0x0000000000000000]
+          dims: Array(Int64,(1,)) [50]
     colindex: Index 
-      lookup: Dict{Union(UTF8String,ASCIIString),Int64} 
-        keys: Array(Any,(16,))
-          1: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          2: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          3: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          4: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          5: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          6: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          7: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          8: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          9: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          10: ASCIIString 
-        vals: Array(Any,(16,))
-          1: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          2: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          3: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          4: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          5: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          6: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          7: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          8: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          9: Symbol __c782dbf1cf4d6a2e5e3865d7e95634f2e09b5902__
-          10: Int64 1
+      lookup: Dict{Union(ASCIIString,UTF8String),Union(Real,AbstractArray{Real,1})} 
+        slots: Array(Uint8,(16,)) [0x00, 0x00, 0x00, 0x00, 0x00, 0x00  …  0x01, 0x01, 0x00, 0x00, 0x00, 0x00]
+        keys: Array(Union(ASCIIString,UTF8String),(16,)) [#undef, #undef, #undef, #undef  …  "x", #undef, #undef, #undef, #undef]
+        vals: Array(Union(Real,AbstractArray{Real,1}),(16,)) [#undef, #undef, #undef, #undef  …  3, #undef, #undef, #undef, #undef]
         ndel: Int64 0
+        count: Int64 3
         deleter: identity
-      names: Array(Union(UTF8String,ASCIIString),(3,)) {"a", "b", "x"}
-  rows: Array(Int64,(10,)) [1, 14, 15, 16]
+      names: Array(Union(ASCIIString,UTF8String),(3,)) ["a", "b", "x"]
+  rows: Array(Int64,(14,)) [1, 5, 10, 12, 18, 19, 24, 29, 33, 37, 39, 41, 42, 43]
 
 julia> 
 
-julia> # You can iterate over a GroupedDataFrame or perform other operations.
+julia> # You can iterate over a GroupedDataFrame or perform other operations
 
-julia> # Here's within.
-
-julia> 
+julia> # Here's within:
 
 julia> within(gd, :( x_sum = sum(x) ))
-DataFrame  (50,4)
-           a   b           x    x_sum
-[1,]     "B" "a"   -0.916177 -6.47425
-[2,]     "I" "a"  -0.0275278 -6.47425
-[3,]     "F" "a"    -2.58784 -6.47425
-[4,]     "G" "a"   0.0317111 -6.47425
-[5,]     "D" "a"   -0.570632 -6.47425
-[6,]     "E" "a"    -1.78508 -6.47425
-[7,]     "C" "a"     0.83458 -6.47425
-[8,]     "E" "a"   -0.364733 -6.47425
-[9,]     "B" "a"   -0.722285 -6.47425
-[10,]    "H" "a"   -0.366278 -6.47425
-[11,]    "C" "b"    0.483764  2.42707
-[12,]    "J" "b"    0.726738  2.42707
-[13,]    "F" "b"    0.037687  2.42707
-[14,]    "E" "b"    -1.09661  2.42707
-[15,]    "B" "b"      1.2224  2.42707
-[16,]    "J" "b"     0.80088  2.42707
-[17,]    "A" "b"  -0.0360266  2.42707
-[18,]    "H" "b"     1.14469  2.42707
-[19,]    "J" "b"   -0.856457  2.42707
-[20,]    "G" "c"    -0.13161  1.24855
+50x4 DataFrame:
+           a   b          x    x_sum
+[1,]     "G" "a"   0.631291 -3.01026
+[2,]     "C" "a"   -1.45999 -3.01026
+[3,]     "E" "a"   0.542924 -3.01026
+[4,]     "I" "a"   0.149901 -3.01026
+[5,]     "F" "a"  -0.485528 -3.01026
+[6,]     "H" "a"   0.775438 -3.01026
+[7,]     "A" "a"  -0.448951 -3.01026
+[8,]     "H" "a"     -1.458 -3.01026
+[9,]     "D" "a"  -0.768929 -3.01026
+[10,]    "B" "a"  -0.398748 -3.01026
+[11,]    "H" "a"    1.00184 -3.01026
+[12,]    "G" "a"   -1.43405 -3.01026
+[13,]    "I" "a"   0.434751 -3.01026
+[14,]    "D" "a" -0.0922058 -3.01026
+[15,]    "A" "b"   0.258266 0.851169
+[16,]    "B" "b"    -1.2459 0.851169
+[17,]    "E" "b"    1.79734 0.851169
+[18,]    "G" "b"  -0.906487 0.851169
+[19,]    "I" "b"   -0.97022 0.851169
+[20,]    "C" "b"   0.475183 0.851169
   :
-[31,]    "F" "d"     1.15665  2.75966
-[32,]    "J" "d"    -1.49795  2.75966
-[33,]    "I" "d"     1.31029  2.75966
-[34,]    "C" "d"     -1.0093  2.75966
-[35,]    "I" "d"    0.223723  2.75966
-[36,]    "A" "d"    0.598922  2.75966
-[37,]    "I" "e"      1.0791 -1.00391
-[38,]    "D" "e"   -0.953266 -1.00391
-[39,]    "J" "e"   -0.906974 -1.00391
-[40,]    "E" "e"   -0.540067 -1.00391
-[41,]    "B" "e"   -0.348056 -1.00391
-[42,]    "D" "e" -0.00596024 -1.00391
-[43,]    "B" "e"    0.323304 -1.00391
-[44,]    "F" "e"   -0.772302 -1.00391
-[45,]    "D" "e"   -0.564778 -1.00391
-[46,]    "A" "e"   -0.124774 -1.00391
-[47,]    "F" "e"  -0.0164157 -1.00391
-[48,]    "G" "e"     0.28588 -1.00391
-[49,]    "E" "e"     1.07446 -1.00391
-[50,]    "D" "e"    0.465938 -1.00391
+[31,]    "J" "c"   0.638632 -5.45193
+[32,]    "F" "c" -0.0803466 -5.45193
+[33,]    "B" "c"  -0.914724 -5.45193
+[34,]    "I" "d"   -1.23373  0.60101
+[35,]    "J" "d"   0.509527  0.60101
+[36,]    "H" "d"   -1.36073  0.60101
+[37,]    "B" "d"    1.15406  0.60101
+[38,]    "E" "d"    0.75606  0.60101
+[39,]    "C" "d"    1.18512  0.60101
+[40,]    "B" "d" -0.0740195  0.60101
+[41,]    "A" "d"  -0.395993  0.60101
+[42,]    "H" "d"  0.0607178  0.60101
+[43,]    "F" "e"   -1.33165 -6.39996
+[44,]    "G" "e"   -2.63399 -6.39996
+[45,]    "A" "e"    -2.7486 -6.39996
+[46,]    "C" "e"  -0.418066 -6.39996
+[47,]    "G" "e"   -1.62673 -6.39996
+[48,]    "D" "e"   0.658323 -6.39996
+[49,]    "J" "e"    1.97162 -6.39996
+[50,]    "E" "e"  -0.270859 -6.39996
+
+
+julia> 

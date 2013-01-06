@@ -1,4 +1,4 @@
-load("Distributions")
+require("Distributions")
 using Distributions
 
 type OLSResults
