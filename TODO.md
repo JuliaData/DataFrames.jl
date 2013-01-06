@@ -26,4 +26,4 @@ Change unique() to return present elements, while levels() returns dead elements
     * stack/unstack
     
 * Bugs
-    * expand doesn't work with PooledDataVecs with pool of length 1
+    * expand doesn't work with PooledDataVector's with pool of length 1

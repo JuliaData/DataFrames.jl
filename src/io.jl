@@ -275,7 +275,7 @@ function convert_to_dataframe{R <: String,
   # Store the columns as a set of DataVector's inside an Array of Any's
   columns = Array(Any, ncols)
 
-  # Convert each column of text into a DataVec of the
+  # Convert each column of text into a DataVector of the
   # appropriate type
   dtime = 0.0
   for j in 1:ncols

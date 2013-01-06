@@ -1060,7 +1060,7 @@ similar(df::DataFrame, dims) =
 similar(df::SubDataFrame, dims) = 
     DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
 
-nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavec.jl?
+nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavector.jl?
     DataArray(zeros(T, dims), fill(true, dims))
 
 zeros{T<:ByteString}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
@@ -1121,7 +1121,7 @@ function rbind(dfs::Vector)   # for a Vector of DataFrame's
     Nrow = sum(nrow, dfs)
     Ncol = ncol(dfs[1])
     res = similar(dfs[1], Nrow)
-    # TODO fix PooledDataVec columns with different pools.
+    # TODO fix PooledDataVector columns with different pools.
     # for idx in 2:length(dfs)
     #     if colnames(dfs[1]) != colnames(dfs[idx])
     #         error("DataFrame column names must match.")
@@ -1160,7 +1160,7 @@ end
 #     Nrow = sum(nrow, dfs)
 #     Ncol = max(ncol, dfs)
 #     res = similar(dfs[1], Nrow)
-#     # TODO fix PooledDataVec columns with different pools.
+#     # TODO fix PooledDataVector columns with different pools.
 #     # for idx in 2:length(dfs)
 #     #     if colnames(dfs[1]) != colnames(dfs[idx])
 #     #         error("DataFrame column names must match.")

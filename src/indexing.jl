@@ -27,7 +27,7 @@
 # indexing vector equal to `order(orig)`. A comparison operation like
 # `idv .> 3` returns an Indexer type. The Indexer type includes a
 # pointer to the IndexedVector along with a vector of Range1's.
-# DataVecs and DataFrames can be indexed with Indexers. It's fast
+# DataVector's and DataFrame's can be indexed with Indexers. It's fast
 # because you're using a slice of the already indexed vector.
 
 # Indexer's can be combined with `|` and `&`. In the case where the
@@ -206,7 +206,7 @@ ref(x::IndexedVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 ref(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 ref(x::AbstractDataVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 
-# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVec
+# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
 function ref(df::DataFrame, row_inds::Indexer, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column][row_inds.iv.idx[[row_inds.r...]]]

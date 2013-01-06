@@ -89,7 +89,7 @@ function PooledDataVector{T}(d::Vector{T},
                              pool::Vector{T},
                              m::AbstractVector{Bool})
     if length(pool) > typemax(POOLED_DATA_VEC_REF_TYPE)
-        error("Cannot construct a PooledDataVec with such a large pool")
+        error("Cannot construct a PooledDataVector with such a large pool")
     end
 
     newrefs = Array(POOLED_DATA_VEC_REF_TYPE, length(d))

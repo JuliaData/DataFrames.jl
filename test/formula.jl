@@ -2,7 +2,7 @@
 # - grouped variables in formulas with interactions
 # - is it fast?  Can expand() handle DataFrames?
 # - deal with intercepts
-# - implement ^2 for datavecs
+# - implement ^2 for datavector's
 # - support more transformations with I()?
 
 test_context("Formula")
@@ -89,7 +89,7 @@ r = expand(ex, df)
 # r = expand(ex, df)
 # @test isa(r, DataFrame)
 # @test ncol(r) == 1
-# @test r[:,1] == DataVec([45, 60, 77, 96])
+# @test r[:,1] == DataArray([45, 60, 77, 96])
 
 r = expand(:(x1 + x2), df)
 @test isa(r, DataFrame)
@@ -129,7 +129,7 @@ mf = model_frame(f, df)
 mm = model_matrix(mf)
 @test mm.model == [ones(4) x1 x2 x1.*x2]
 
-df["x1"] = PooledDataVec(x1)
+df["x1"] = PooledDataVector(x1)
 x1e = [[0, 1, 0, 0] [0, 0, 1, 0] [0, 0, 0, 1]]
 f = Formula(:(y ~ x1 * x2))
 mf = model_frame(f, df)

@@ -6,7 +6,7 @@
 @assert isna(NA)
 
 #
-# DataVec's
+# DataVector's
 #
 
 dv = DataArray([1, 2, 3], falses(3))
@@ -50,7 +50,7 @@ dv = DataVector[1, 2, NA]
 @assert isequal(eltype(dv), Int64)
 
 #
-# PooledDataVec's
+# PooledDataVector's
 #
 
 pdv = PooledDataVector([1, 2, 3], falses(3))

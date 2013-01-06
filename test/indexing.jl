@@ -1,5 +1,5 @@
 #
-# DataVec and PooledDataVec Indexing
+# DataVector and PooledDataVector Indexing
 #
 
 dv = DataArray([1, 2])

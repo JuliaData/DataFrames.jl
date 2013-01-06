@@ -14,13 +14,13 @@ m_b = eye(3, 3)
 @assert all(b'' .== m_b'') #'
 
 #
-# DataVec * DataMatrix
+# DataVector * DataMatrix
 #
 
 @assert all(a * b[1, :] .== v_a * m_b[1, :])
 
 #
-# DataMatrix * DataVec
+# DataMatrix * DataVector
 #
 
 @assert all(b * a .== m_b * v_a)
@@ -33,7 +33,7 @@ m_b = eye(3, 3)
 @assert all(b * b .== m_b * m_b)
 
 #
-# DataVec * DataMatrix w/ NA's
+# DataVector * DataMatrix w/ NA's
 #
 
 b[1, 1] = NA
@@ -45,7 +45,7 @@ res = a * b[2, :]
 @assert all(!isna(res))
 
 #
-# DataMatrix w NA's * DataVec
+# DataMatrix w NA's * DataVector
 #
 
 res = b * a
