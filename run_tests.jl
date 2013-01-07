@@ -22,7 +22,8 @@ my_tests = ["test/dataarray.jl",
             "test/indexing.jl",
             "test/indexedvector.jl",
             "test/iteration.jl",
-            "test/colfuncs.jl"]
+            "test/colfuncs.jl",
+            "test/duplicates.jl"]
 
 println("Running tests:")
 

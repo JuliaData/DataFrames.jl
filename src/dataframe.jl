@@ -991,6 +991,7 @@ colnames(df::SubDataFrame) = colnames(df.parent)
 # Associative methods:
 index(df::SubDataFrame) = index(df.parent)
 
+# del() deletes columns; delrows() deletes rows
 # del(df, 1)
 # del(df, "old")
 function del(df::DataFrame, inds::Vector{Int})
@@ -1007,6 +1008,13 @@ end
 del(df::DataFrame, c::Int) = del(df, [c])
 del(df::DataFrame, c::Any) = del(df, df.colindex[c])
 del(df::SubDataFrame, c::Any) = SubDataFrame(del(df.parent, c), df.rows)
+
+# delrows()
+function delrows(df::DataFrame, keep_inds::Vector{Int})
+    for i in 1:ncol(df)
+        df.columns[i] = df.columns[i][keep_inds]
+    end
+end
 
 function without(df::DataFrame, icols::Vector{Int})
     newcols = _setdiff([1:ncol(df)], icols)
@@ -1632,13 +1640,21 @@ function complete_cases(df::AbstractDataFrame)
     res
 end
 
-function array(d::AbstractDataFrame)
+function array(adf::AbstractDataFrame)
     # DataFrame -> Array{Any}
-    if nrow(d) == 1  # collapse to one element
-       [el[1] for el in d[1,:]]
-    else
-       [col for col in d]
+    n, p = size(adf)
+    res = Array(Any, n, p)
+    for i in 1:n
+        for j in 1:p
+            res[i, j] = adf[i, j]
+        end
     end
+    return res
+    # if nrow(d) == 1  # collapse to one element
+    #   [el[1] for el in d[1,:]]
+    # else
+    #   [col for col in d]
+    # end
 end
 
 # DataFrame -> Array{promoted_type, 2}
@@ -1676,8 +1692,7 @@ function duplicated(df::AbstractDataFrame)
 end
 
 function drop_duplicates!(df::AbstractDataFrame)
-    df = df[!duplicated(df), :]
-    return
+    delrows(df, find(!duplicated(df)))
 end
 
 # Unique rows of an AbstractDataFrame.        
