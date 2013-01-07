@@ -699,3 +699,16 @@ for (f, basef) in ((:dataint, :int), (:datafloat, :float64), (:databool, :bool))
         end
     end
 end
+
+##
+## padNA
+##
+
+function padNA(dv::AbstractDataVector, front::Int, back::Int)
+  n = length(dv)
+  res = similar(dv, front + n + back)
+  for i in 1:n
+    res[i + front] = dv[i]
+  end
+  return res
+end
