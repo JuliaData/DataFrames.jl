@@ -36,7 +36,7 @@ function ind_na{T}(df::DataMatrix{T})
   for i = 1:nrow(df)
     for j = 1:ncol(df)
       if isna(df[i, j])
-        push(indices, [i, j])
+        push!(indices, [i, j])
       end
     end
   end

@@ -30,7 +30,7 @@ z = rbind(v,x)
 # @test is_group(z, "group1")
 
 # Deleting columns removes any mention from groupings
-del(x, "a")
+delete!(x, "a")
 # @test colnames(x) == ["b"]
 # @test get_groups(x)["group1"] == ["b"]
 

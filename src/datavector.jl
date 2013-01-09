@@ -121,19 +121,19 @@ tail{T}(dv::DataVector{T}) = repl_show(dv[max(length(dv) - 6, 1):length(dv)])
 # TODO: Macroize these definitions
 
 function push{T}(dv::DataVector{T}, v::NAtype)
-    push(dv.data, baseval(T))
-    push(dv.na, true)
+    push!(dv.data, baseval(T))
+    push!(dv.na, true)
     return v
 end
 
 function push{S, T}(dv::DataVector{S}, v::T)
-    push(dv.data, v)
-    push(dv.na, false)
+    push!(dv.data, v)
+    push!(dv.na, false)
     return v
 end
 
 function pop{T}(dv::DataVector{T})
-    d, m = pop(dv.data), pop(dv.na)
+    d, m = pop!(dv.data), pop!(dv.na)
     if m
         return NA
     else
@@ -142,14 +142,14 @@ function pop{T}(dv::DataVector{T})
 end
 
 function enqueue{T}(dv::DataVector{T}, v::NAtype)
-    enqueue(dv.data, baseval(T))
-    enqueue(dv.na, true)
+    enqueue!(dv.data, baseval(T))
+    enqueue!(dv.na, true)
     return v
 end
 
 function enqueue{S, T}(dv::DataVector{S}, v::T)
-    enqueue(dv.data, v)
-    enqueue(dv.na, false)
+    enqueue!(dv.data, v)
+    enqueue!(dv.na, false)
     return v
 end
 
@@ -242,10 +242,10 @@ function cut{S, T}(x::Vector{S}, breaks::Vector{T})
     end
     min_x, max_x = min(x), max(x)
     if breaks[1] > min_x
-        unshift(breaks, min_x)
+        unshift!(breaks, min_x)
     end
     if breaks[end] < max_x
-        push(breaks, max_x)
+        push!(breaks, max_x)
     end
     refs = fill(POOLED_DATA_VEC_REF_CONVERTER(0), length(x))
     for i in 1:length(x)

@@ -15,7 +15,7 @@ function _setdiff(a::Vector, b::Vector)
     idx = Int[]
     for i in 1:length(a)
         if !contains(b, a[i])
-            push(idx, i)
+            push!(idx, i)
         end
     end
     a[idx]
@@ -60,9 +60,9 @@ function make_unique{S<:ByteString}(names::Vector{S})
     dups = Int[]
     for i in 1:length(names)
         if has(x, names[i])
-            push(dups, i)
+            push!(dups, i)
         else
-            push(x, names[i])
+            push!(x, names[i])
         end
     end
     for i in dups
@@ -72,7 +72,7 @@ function make_unique{S<:ByteString}(names::Vector{S})
         while true
             newnm = "$(nm)_$k"
             if !has(x, newnm)
-                push(x, newnm)
+                push!(x, newnm)
                 break
             end
             k += 1

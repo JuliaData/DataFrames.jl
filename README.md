@@ -88,8 +88,8 @@ julia> d[1:3, ["x","y"]]     # indexing is similar to R's
 [3,]     0.602785  2.26635
 
 julia> # Group on column i, and pipe (|) that result to an expression
-julia> # that creates the column x_sum. 
-julia> groupby(d, "i") | :(x_sum = sum(x))     
+julia> # that creates the column x_sum.
+julia> groupby(d, "i") | :(x_sum = sum(x))
 3x2 DataFrame
         i    x_sum
 [1,]    1  2.06822

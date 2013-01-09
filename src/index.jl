@@ -26,7 +26,7 @@ function names!(x::Index, nm::Vector)
         error("lengths don't match.")
     end
     for i in 1:length(nm)
-        del(x.lookup, x.names[i])
+        delete!(x.lookup, x.names[i])
         x.lookup[nm[i]] = i
     end
     x.names = nm
@@ -42,7 +42,7 @@ function replace_names!(x::Index, from::Vector, to::Vector)
             if !isa(x.lookup[from[idx]], Array)
                 x.names[x.lookup[from[idx]]] = to[idx]
             end
-            del(x.lookup, from[idx])
+            delete!(x.lookup, from[idx])
         end
     end
     x.names
@@ -54,30 +54,30 @@ has(x::Index, key::String) = has(x.lookup, key)
 has(x::Index, key::Symbol) = has(x.lookup, string(key))
 has(x::Index, key::Real) = 1 <= key <= length(x.names)
 keys(x::Index) = names(x)
-function push(x::Index, nm::String)
+function push!(x::Index, nm::String)
     x.lookup[nm] = length(x) + 1
-    push(x.names, nm)
+    push!(x.names, nm)
 end
-function del(x::Index, idx::Integer)
+function delete!(x::Index, idx::Integer)
     # reset the lookup's beyond the deleted item
     for i in (idx + 1):length(x.names)
         x.lookup[x.names[i]] = i - 1
     end
     gr = get_groups(x)
-    del(x.lookup, x.names[idx])
-    del(x.names, idx)
+    delete!(x.lookup, x.names[idx])
+    delete!(x.names, idx)
     # fix groups:
     for (k,v) in gr
         newv = [[has(x, vv) ? vv : ASCIIString[] for vv in v]...]
         set_group(x, k, newv)
     end
 end
-function del(x::Index, nm::String)
+function delete!(x::Index, nm::String)
     if !has(x.lookup, nm)
         return
     end
     idx = x.lookup[nm]
-    del(x, idx)
+    delete!(x, idx)
 end
 
 ref(x::Index, idx::String) = x.lookup[idx]

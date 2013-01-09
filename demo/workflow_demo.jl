@@ -118,7 +118,7 @@ end)
 m1 = merge(df1, df2, "a")
 
 # visualization -- requires a Gaston installation. YMMV.
-push(LOAD_PATH, "../gaston-0.5.4/")
+push!(LOAD_PATH, "../gaston-0.5.4/")
 require("gaston.jl")
 set_terminal("x11")
 with(df1, :(plot(nafilter(a), nafilter(v1)), "plotstyle", "points")))

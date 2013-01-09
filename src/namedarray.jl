@@ -42,8 +42,8 @@ function assign(x::NamedArray, newdata, name)
         assign(x, newdata, ipos)
     else
         # new
-        push(x.idx, name)
-        push(x.data, newdata)
+        push!(x.idx, name)
+        push!(x.data, newdata)
     end
     x
 end

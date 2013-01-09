@@ -1,6 +1,6 @@
 i = Index()
-push(i, "A")
-push(i, "B")
+push!(i, "A")
+push!(i, "B")
 
 inds = {1,
 		1.0,

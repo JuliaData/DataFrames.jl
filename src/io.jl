@@ -101,13 +101,13 @@ function read_separated_line(io,
         if state == STATE_EXPECTING_VALUE
             if eol
                 num_elems += 1
-                push(ret, "")
+                push!(ret, "")
                 break
             elseif this_char == ' '
                 continue
             elseif this_char == separator
                 num_elems += 1
-                push(ret, "")
+                push!(ret, "")
             elseif this_char == quotation_character
                 left = this_i + 1
                 state = STATE_IN_QUOTED
@@ -119,12 +119,12 @@ function read_separated_line(io,
             if eol
                 right = this_i
                 num_elems += 1
-                push(ret, extract_string(this, left, right))
+                push!(ret, extract_string(this, left, right))
                 break
             elseif this_char == separator
                 right = this_i - 1
                 num_elems += 1
-                push(ret, extract_string(this, left, right))
+                push!(ret, extract_string(this, left, right))
                 state = STATE_EXPECTING_VALUE
             else
                 continue
@@ -141,7 +141,7 @@ function read_separated_line(io,
             if eol
                 right = this_i - 1
                 num_elems += 1
-                push(ret, extract_string(this, left, right, omitlist))
+                push!(ret, extract_string(this, left, right, omitlist))
                 break
             elseif this_char == quotation_character
                 add(omitlist, this_i)
@@ -149,14 +149,14 @@ function read_separated_line(io,
             elseif this_char == separator
                 right = this_i - 2
                 num_elems += 1
-                push(ret, extract_string(this, left, right, omitlist))
-                del_all(omitlist)
+                push!(ret, extract_string(this, left, right, omitlist))
+                empty!(omitlist)
                 state = STATE_EXPECTING_VALUE
             elseif this_char == ' '
                 right = this_i - 2
                 num_elems += 1
-                push(ret, extract_string(this, left, right, omitlist))
-                del_all(omitlist)
+                push!(ret, extract_string(this, left, right, omitlist))
+                empty!(omitlist)
                 state = STATE_EXPECTING_SEP
             else
                 error("unexpected character after a quote")

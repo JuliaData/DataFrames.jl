@@ -77,12 +77,12 @@ function insert_single_column!{T}(df::DataFrame,
         df.columns[j] = dv
     else
         if typeof(col_ind) <: String || typeof(col_ind) <: Symbol
-            push(df.colindex, col_ind)
-            push(df.columns, dv)
+            push!(df.colindex, col_ind)
+            push!(df.columns, dv)
         else
             if isnextcol(df, col_ind)
-                push(df.colindex, nextcolname(df))
-                push(df.columns, dv)
+                push!(df.colindex, nextcolname(df))
+                push!(df.columns, dv)
             else
                 println("Column does not exist: $col_ind")
                 error("Cannot assign to non-existent column")
@@ -111,7 +111,7 @@ function intersect(v1::Vector{Range1}, v2::Vector{Range1})
         for r2 in v2
             isoverlap = !((r1[1] > r2[end]) | (r2[1] > r1[end]))
             if isoverlap
-                push(res, max(r1[1], r2[1]):min(r1[end], r2[end]))
+                push!(res, max(r1[1], r2[1]):min(r1[end], r2[end]))
             end
         end
     end
@@ -131,7 +131,7 @@ function union(v1::Vector{Range1}, v2::Vector{Range1})
         # right part, working right to left
         (left, right) = compare(v1, v2)
         while length(right) > 0 && right[end][1] > left[end][end]
-            push(res, pop(right))
+            push!(res, pop!(right))
         end
         if length(right) == 0 break; end
         # overlap
@@ -142,23 +142,23 @@ function union(v1::Vector{Range1}, v2::Vector{Range1})
             overlap = true
             (left, right) = compare(v1, v2)
             if right[end][1] >= r_start
-                pop(right)
+                pop!(right)
             end
         end
         if overlap
             if length(right) == 0 && length(left) > 0 && r_start <= left[end][1]
                 r_start = left[end][1]
-                pop(left)
+                pop!(left)
             end
-            push(res, r_start : r_end)
+            push!(res, r_start : r_end)
         end
     end
     # Rest of v1 or v2 (no overlaps here)
     while length(v1) > 0
-        push(res, pop(v1))
+        push!(res, pop!(v1))
     end
     while length(v2) > 0
-        push(res, pop(v2))
+        push!(res, pop!(v2))
     end
     reverse(res)
 end
@@ -166,9 +166,9 @@ end
 function (!)(x::Indexer)   # Negate the Indexer
     res = Range1[1 : x.r[1][1] - 1]
     for i in 1:length(x.r) - 1
-        push(res, x.r[i][end] + 1 : x.r[i + 1][1] - 1)
+        push!(res, x.r[i][end] + 1 : x.r[i + 1][1] - 1)
     end
-    push(res, x.r[end][end] + 1 : length(x.iv.idx))
+    push!(res, x.r[end][end] + 1 : length(x.iv.idx))
     Indexer(res, x.iv)
 end
 

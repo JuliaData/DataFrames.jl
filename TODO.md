@@ -1,4 +1,11 @@
+Formulas
+Parsing
+Model matrix
+Get dummies
+Factors
+
 Change unique() to return present elements, while levels() returns dead elements as well
+cut(dv::DataVector)
 
 * Workflow demo:
     * `csvDataFrame()` loading
@@ -24,6 +31,6 @@ Change unique() to return present elements, while levels() returns dead elements
     * pipelining
     * by, colwise
     * stack/unstack
-    
+
 * Bugs
     * expand doesn't work with PooledDataVector's with pool of length 1

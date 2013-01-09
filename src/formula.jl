@@ -68,13 +68,13 @@ function model_frame(f::Formula, d::AbstractDataFrame)
       s = lhs[ll]
       if is_group(d, string(s))
         for a = get_groups(d)[string(s)]
-          push(cols, with(d, symbol(a)))
-          push(col_names, a)
+          push!(cols, with(d, symbol(a)))
+          push!(col_names, a)
         end
         gidx[string(s)] = get_groups(d)[string(s)]
       else 
-        push(cols, with(d, s))
-        push(col_names, string(s))
+        push!(cols, with(d, s))
+        push!(col_names, string(s))
       end
     end
     y_indexes = [1:length(lhs)]
@@ -84,13 +84,13 @@ function model_frame(f::Formula, d::AbstractDataFrame)
       s = rhs[rr]
       if is_group(d, string(s))
         for a = get_groups(d)[string(s)]
-          push(cols, with(d, symbol(a)))
-          push(col_names, a)
+          push!(cols, with(d, symbol(a)))
+          push!(col_names, a)
         end
         gidx[string(s)] = get_groups(d)[string(s)]
       else
-        push(cols, with(d, s))
-        push(col_names, string(s))
+        push!(cols, with(d, s))
+        push!(col_names, string(s))
       end   
     end
     # bind together and return
@@ -145,7 +145,7 @@ function model_matrix(mf::ModelFrame)
     include_intercept = true
     if include_intercept
       m = hcat(ones(nrow(mdf)), m)
-      unshift(mnames, "(Intercept)")
+      unshift!(mnames, "(Intercept)")
     end
 
     ModelMatrix(m, r, mnames, rnames)
@@ -153,11 +153,11 @@ function model_matrix(mf::ModelFrame)
     ## rnames = {}
     ## for c in 1:ncol(rdf)
     ##   r = hcat(r, float(rdf[c]))
-    ##   push(rnames, colnames(rdf)[c])
+    ##   push!(rnames, colnames(rdf)[c])
     ## end
     ## for c in 1:ncol(mdf)
     ##   m = hcat(m, mdf[c])
-    ##   push(mnames, colnames(mdf)[c])
+    ##   push!(mnames, colnames(mdf)[c])
     ## end
 end
 
@@ -171,8 +171,8 @@ function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame)
    col_names = Array(ASCIIString,0)
    for i in 1:ncol(a)
        for j in 1:ncol(b)
-          push(cols, DataArray(a[:,i] .* b[:,j]))
-          push(col_names, strcat(colnames(a)[i],"&",colnames(b)[j]))
+          push!(cols, DataArray(a[:,i] .* b[:,j]))
+          push!(col_names, strcat(colnames(a)[i],"&",colnames(b)[j]))
        end
    end
    DataFrame(cols, col_names)
@@ -184,8 +184,8 @@ function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame, c
    for i in 1:ncol(a)
        for j in 1:ncol(b)
            for k in 1:ncol(b)
-              push(cols, DataArray(a[:,i] .* b[:,j] .* c[:,k]))
-              push(col_names, strcat(colnames(a)[i],"&",colnames(b)[j],"&",colnames(c)[k]))
+              push!(cols, DataArray(a[:,i] .* b[:,j] .* c[:,k]))
+              push!(col_names, strcat(colnames(a)[i],"&",colnames(b)[j],"&",colnames(c)[k]))
            end
        end
    end
@@ -208,7 +208,7 @@ function all_interactions(dfs::Array{Any,1})
        elseif length(combo) == 3
          a = interaction_design_matrix(dfs[combo[1]],dfs[combo[2]],dfs[combo[3]])
        end
-       d = insert(d, a)
+       d = insert!(d, a)
     end
     return d
 end
@@ -278,7 +278,7 @@ type FormulaExpander; end # This is an indictor type.
 function +(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     d = DataFrame()
     for a in args
-        d = insert(d, expand(a, df))
+        d = insert!(d, expand(a, df))
     end
     d
 end
@@ -287,6 +287,6 @@ function (&)(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
 end
 function *(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
     d = +(FormulaExpander(), args, df)
-    d = insert(d, all_interactions(expand(args, df)))
+    d = insert!(d, all_interactions(expand(args, df)))
     d
 end

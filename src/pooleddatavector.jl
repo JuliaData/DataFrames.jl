@@ -355,7 +355,7 @@ function assign(x::PooledDataVector, val::Any, ind::Real)
     if pool_idx > 0
         x.refs[ind] = pool_idx
     else
-        push(x.pool, val)
+        push!(x.pool, val)
         x.refs[ind] = length(x.pool)
     end
     return val
@@ -461,7 +461,7 @@ function replace!{S, T}(x::PooledDataVector{S}, fromval::NAtype, toval::T)
         x.refs[x.refs .== 0] = toidx
     else
         # otherwise, toval is new, add it to the pool
-        push(x.pool, toval)
+        push!(x.pool, toval)
         x.refs[x.refs .== 0] = length(x.pool)
     end
 

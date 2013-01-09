@@ -144,12 +144,12 @@ Replace or add a new column with name `colname` and contents `newcol`.
 Arrays are converted to DataVector's. Values are recycled to match the
 number of rows in `df`.
 
-#### `insert(df::DataFrame, index::Integer, item, name)`
+#### `insert!(df::DataFrame, index::Integer, item, name)`
 
 Insert a column of name `name` and with contents `item` into `df` at
 position `index`.
 
-#### `insert(df::DataFrame, df2::DataFrame)`
+#### `insert!(df::DataFrame, df2::DataFrame)`
 
 Insert columns of `df2` into `df1`.
 
@@ -324,7 +324,7 @@ An Index with names `s`. An Index is like an Associative type. An
 Index is used for column indexing of DataFrames. An Index maps
 ByteStrings and Vector{ByteStrings} to Indices.
 
-#### `length(x::Index)`, `copy(x::Index)`, `has(x::Index, key)`, `keys(x::Index)`, `push(x::Index, name)`
+#### `length(x::Index)`, `copy(x::Index)`, `has(x::Index, key)`, `keys(x::Index)`, `push!(x::Index, name)`
 
 Normal meanings.
 

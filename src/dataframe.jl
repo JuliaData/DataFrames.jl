@@ -312,7 +312,7 @@ function reconcile_groups(olddf::AbstractDataFrame, newdf::AbstractDataFrame)
 		match_vals = ByteString[]
 		for val in old_groups[key]
 			if contains(colnames(newdf), val)
-				push(match_vals, val)
+				push!(match_vals, val)
 			end
 		end
 		if !isempty(match_vals)
@@ -442,12 +442,12 @@ function insert_single_column!(df::DataFrame,
         df.columns[j] = dv
     else
         if typeof(col_ind) <: String || typeof(col_ind) <: Symbol
-            push(df.colindex, col_ind)
-            push(df.columns, dv)
+            push!(df.colindex, col_ind)
+            push!(df.columns, dv)
         else
             if isnextcol(df, col_ind)
-                push(df.colindex, nextcolname(df))
-                push(df.columns, dv)
+                push!(df.colindex, nextcolname(df))
+                push!(df.columns, dv)
             else
                 println("Column does not exist: $col_ind")
                 error("Cannot assign to non-existent column")
@@ -745,7 +745,7 @@ function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
 end
 
 # Special deletion assignment
-assign(df::DataFrame, x::Nothing, icol::Int) = del(df, icol)
+assign(df::DataFrame, x::Nothing, icol::Int) = delete!(df, icol)
 
 # Special cases involving expressions
 function assign(df::DataFrame, val::Any, ex::Expr)
@@ -779,13 +779,13 @@ has(df::AbstractDataFrame, key) = has(index(df), key)
 get(df::AbstractDataFrame, key, default) = has(df, key) ? df[key] : default
 keys(df::AbstractDataFrame) = keys(index(df))
 values(df::DataFrame) = df.columns
-del_all(df::DataFrame) = DataFrame()
+empty!(df::DataFrame) = DataFrame() # TODO: Make this work right
 
 # Stack should not depend upon a broken definition of numel(df)
 ## numel(df::AbstractDataFrame) = nrow(df) * ncol(df)
 isempty(df::AbstractDataFrame) = ncol(df) == 0
 
-function insert(df::AbstractDataFrame, index::Int, item, name)
+function insert!(df::AbstractDataFrame, index::Int, item, name)
     @assert 0 < index <= ncol(df) + 1
     df = copy(df)
     df[name] = item
@@ -793,7 +793,7 @@ function insert(df::AbstractDataFrame, index::Int, item, name)
     df[[1:index-1, end, index:end-1]]
 end
 
-function insert(df::AbstractDataFrame, df2::AbstractDataFrame)
+function insert!(df::AbstractDataFrame, df2::AbstractDataFrame)
     @assert nrow(df) == nrow(df2) || nrow(df) == 0
     df = copy(df)
     for n in colnames(df2)
@@ -991,23 +991,23 @@ colnames(df::SubDataFrame) = colnames(df.parent)
 # Associative methods:
 index(df::SubDataFrame) = index(df.parent)
 
-# del() deletes columns; delrows() deletes rows
-# del(df, 1)
-# del(df, "old")
-function del(df::DataFrame, inds::Vector{Int})
+# delete!() deletes columns; delrows() deletes rows
+# delete!(df, 1)
+# delete!(df, "old")
+function delete!(df::DataFrame, inds::Vector{Int})
     for ind in inds
         if 1 <= ind <= ncol(df)
-            del(df.columns, ind)
-            del(df.colindex, ind)
+            delete!(df.columns, ind)
+            delete!(df.colindex, ind)
         else
             throw(ArgumentError("Can't delete a non-existent DataFrame column"))
         end
     end
     return df
 end
-del(df::DataFrame, c::Int) = del(df, [c])
-del(df::DataFrame, c::Any) = del(df, df.colindex[c])
-del(df::SubDataFrame, c::Any) = SubDataFrame(del(df.parent, c), df.rows)
+delete!(df::DataFrame, c::Int) = delete!(df, [c])
+delete!(df::DataFrame, c::Any) = delete!(df, df.colindex[c])
+delete!(df::SubDataFrame, c::Any) = SubDataFrame(del(df.parent, c), df.rows)
 
 # delrows()
 function delrows(df::DataFrame, keep_inds::Vector{Int})
@@ -1292,10 +1292,10 @@ function transform_helper(d, args...)
     for ex in args
         left = ex.args[1]
         right = replace_syms(ex.args[2])
-        push(exa,
+        push!(exa,
             :(d[bestkey(d, $(quot(left)))] = $(right)))
     end
-    push(exa, :d)
+    push!(exa, :d)
     Expr(:block, exa, Any)
 end
 
@@ -1471,7 +1471,7 @@ based_on(e::Expr) = x -> based_on(x, e)
 
 function stack(df::DataFrame, icols::Vector{Int})
     remainingcols = _setdiff([1:ncol(df)], icols)
-    res = rbind([insert(df[[i, remainingcols]], 1, colnames(df)[i], "key") for i in icols]...)
+    res = rbind([insert!(df[[i, remainingcols]], 1, colnames(df)[i], "key") for i in icols]...)
     replace_names!(res, colnames(res)[2], "value")
     res 
 end
@@ -1499,7 +1499,7 @@ function unstack(df::DataFrame, ikey::Int, ivalue::Int, irefkey::Int)
             payload[j][i]  = valuecol[k]
         end
     end
-    insert(payload, 1, refkeycol.pool, colnames(df)[irefkey])
+    insert!(payload, 1, refkeycol.pool, colnames(df)[irefkey])
 end
 unstack(df::DataFrame, ikey, ivalue, irefkey) =
     unstack(df, df.colindex[ikey], df.colindex[ivalue], df.colindex[irefkey])
@@ -1640,7 +1640,24 @@ function complete_cases(df::AbstractDataFrame)
     res
 end
 
-function array(adf::AbstractDataFrame)
+# DataFrame -> Array{TightestType}
+# function array(df::DataFrame)
+#     n, p = size(df)
+#     t = reduce(tunion, coltypes(df))
+#     a = Array(t, n, p)
+#     for i in 1:n
+#         for j in 1:p
+#             if isna(df[i, j])
+#                 error("DataFrame's with missing entries cannot be converted")
+#             else
+#                 a[i, j] = df[i, j]
+#             end
+#         end
+#     end
+#     return a
+# end
+
+function arrayNA(adf::AbstractDataFrame)
     # DataFrame -> Array{Any}
     n, p = size(adf)
     res = Array(Any, n, p)
@@ -1657,23 +1674,34 @@ function array(adf::AbstractDataFrame)
     # end
 end
 
-# DataFrame -> Array{promoted_type, 2}
-# Note: this doesn't work yet for DataVectors. It might once promotion
-# with Arrays is added (work needed).
-# matrix(d::AbstractDataFrame) = reshape([d...],size(d))
-function matrix(df::DataFrame)
+# ### TODO: Position this appropriately.
+# function matrix(df::DataFrame)
+#     ts = coltypes(df)
+#     for t in ts
+#         if !(t <: Number)
+#             error("Convert convert a non-numeric DataFrame to a DataMatrix")
+#         end
+#     end
+#     n, p = size(df)
+#     dm = datazeros(n, p)
+#     for i in 1:n
+#         for j in 1:p
+#             dm[i, j] = df[i, j]
+#         end
+#     end
+#     return dm
+# end
+
+function DataArray(df::DataFrame)
     n, p = size(df)
-    m = zeros(n, p)
+    t = reduce(tintersect, coltypes(df))
+    dm = DataArray(t, n, p)
     for i in 1:n
         for j in 1:p
-            if isna(df[i, j])
-                error("DataFrame's with missing entries cannot be converted")
-            else
-                m[i, j] = df[i, j]
-            end
+            dm[i, j] = df[i, j]
         end
     end
-    return m
+    return dm
 end
 
 function duplicated(df::AbstractDataFrame)
@@ -1682,10 +1710,10 @@ function duplicated(df::AbstractDataFrame)
     res = fill(false, nrow(df))
     di = Dict()
     for i in 1:nrow(df)
-        if has(di, array(df[i,:]))
+        if has(di, arrayNA(df[i,:]))
             res[i] = true
         else
-            di[array(df[i,:])] = 1 
+            di[arrayNA(df[i,:])] = 1
         end
     end
     res
@@ -1764,24 +1792,6 @@ end
 function flipud!(df::DataFrame)
     df[1:nrow(df), :] = df[reverse(1:nrow(df)), :]
     return
-end
-
-### TODO: Position this appropriately.
-function matrix(df::DataFrame)
-    ts = coltypes(df)
-    for t in ts
-        if !(t <: Number)
-            error("Convert convert a non-numeric DataFrame to a DataMatrix")
-        end
-    end
-    n, p = size(df)
-    dm = datazeros(n, p)
-    for i in 1:n
-        for j in 1:p
-            dm[i, j] = df[i, j]
-        end
-    end
-    return dm
 end
 
 ##############################################################################
