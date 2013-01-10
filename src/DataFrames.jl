@@ -299,6 +299,7 @@ export # reconcile_groups,
        Formula,
        get_groups,
        get_indices,
+       gl,
        GroupApplied,
        groupby,
        GroupedDataFrame,
@@ -382,7 +383,9 @@ export # reconcile_groups,
        within!,
        within,
        without,
-       write_table
+       write_table,
+       xtab,
+       xtabs
 
 ##############################################################################
 ##
