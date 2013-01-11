@@ -267,6 +267,6 @@ function cut{S, T}(x::Vector{S}, breaks::Vector{T})
     for i in 2:(n - 1)
         pool[i] = strcat("(", from[i], ",", to[i], "]")
     end
-    PooledDataVector(refs, pool)
+    PooledDataArray(refs, pool)
 end
 cut(x::Vector, ngroups::Int) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))

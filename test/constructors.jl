@@ -50,43 +50,43 @@ dv = DataVector[1, 2, NA]
 @assert isequal(eltype(dv), Int64)
 
 #
-# PooledDataVector's
+# PooledDataArray's
 #
 
-pdv = PooledDataVector([1, 2, 3], falses(3))
+pdv = PooledDataArray([1, 2, 3], falses(3))
 @assert all(pdv .== [1, 2, 3])
 @assert all(isna(pdv) .== falses(3))
 
-@assert isequal(pdv, PooledDataVector([1, 2, 3], [false, false, false]))
-@assert isequal(pdv, PooledDataVector([1, 2, 3]))
+@assert isequal(pdv, PooledDataArray([1, 2, 3], [false, false, false]))
+@assert isequal(pdv, PooledDataArray([1, 2, 3]))
 
-pdv = PooledDataVector(trues(3), falses(3))
+pdv = PooledDataArray(trues(3), falses(3))
 @assert all(pdv .== [true, true, true])
 @assert all(isna(pdv) .== falses(3))
-@assert isequal(pdv, PooledDataVector(trues(3)))
+@assert isequal(pdv, PooledDataArray(trues(3)))
 
-pdv = PooledDataVector([1, 2, 3], falses(3))
-@assert isequal(pdv, PooledDataVector(1:3))
-@assert isequal(pdv, PooledDataVector(PooledDataVector([1, 2, 3])))
+pdv = PooledDataArray([1, 2, 3], falses(3))
+@assert isequal(pdv, PooledDataArray(1:3))
+@assert isequal(pdv, PooledDataArray(PooledDataArray([1, 2, 3])))
 
-pdv = PooledDataVector(Int64, 3)
+pdv = PooledDataArray(Int64, 3)
 @assert isequal(eltype(pdv), Int64)
 @assert all(isna(pdv) .== trues(3))
 
-# pdv = PooledDataVector(3)
+# pdv = PooledDataArray(3)
 # @assert isequal(eltype(pdv), Float64)
 # @assert all(isna(pdv) .== trues(3))
 
-# pdv = PooledDataVector()
+# pdv = PooledDataArray()
 # @assert isequal(eltype(pdv), Float64)
 # @assert all(isna(pdv) .== trues(0))
 
-@assert isequal(pdatazeros(3), PooledDataVector(zeros(3)))
-@assert isequal(pdatazeros(Int64, 3), PooledDataVector(zeros(Int64, 3)))
-@assert isequal(pdataones(3), PooledDataVector(ones(3)))
-@assert isequal(pdataones(Int64, 3), PooledDataVector(ones(Int64, 3)))
-@assert isequal(pdatafalses(3), PooledDataVector(falses(3)))
-@assert isequal(pdatatrues(3), PooledDataVector(trues(3)))
+@assert isequal(pdatazeros(3), PooledDataArray(zeros(3)))
+@assert isequal(pdatazeros(Int64, 3), PooledDataArray(zeros(Int64, 3)))
+@assert isequal(pdataones(3), PooledDataArray(ones(3)))
+@assert isequal(pdataones(Int64, 3), PooledDataArray(ones(Int64, 3)))
+@assert isequal(pdatafalses(3), PooledDataArray(falses(3)))
+@assert isequal(pdatatrues(3), PooledDataArray(trues(3)))
 
 pdv = PooledDataVector[1, 2, NA]
 @assert pdv[1] == 1

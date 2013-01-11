@@ -1074,7 +1074,7 @@ nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavector.jl?
 zeros{T<:ByteString}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
     
 nas{T}(dv::PooledDataVector{T}, dims) =
-    PooledDataVector(fill(uint16(1), dims), dv.pool)
+    PooledDataArray(fill(uint16(1), dims), dv.pool)
 
 nas(df::DataFrame, dims) = 
     DataFrame([nas(x, dims) for x in df.columns], colnames(df)) 
@@ -1478,10 +1478,10 @@ end
 stack(df::DataFrame, icols) = stack(df, [df.colindex[icols]])
 
 function unstack(df::DataFrame, ikey::Int, ivalue::Int, irefkey::Int)
-    keycol = PooledDataVector(df[ikey])
+    keycol = PooledDataArray(df[ikey])
     valuecol = df[ivalue]
     # TODO make a version with a default refkeycol
-    refkeycol = PooledDataVector(df[irefkey])
+    refkeycol = PooledDataArray(df[irefkey])
     remainingcols = _setdiff([1:ncol(df)], [ikey, ivalue])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)

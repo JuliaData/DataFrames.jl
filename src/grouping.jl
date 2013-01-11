@@ -53,7 +53,7 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     ##     http://wesmckinney.com/blog/?p=489
     
     # use the pool trick to get a set of integer references for each unique item
-    dv = PooledDataVector(df[cols[1]])
+    dv = PooledDataArray(df[cols[1]])
     # if there are NAs, add 1 to the refs to avoid underflows in x later
     dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
     x = copy(dv.refs) + dv_has_nas
@@ -61,7 +61,7 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     ngroups = length(dv.pool) + dv_has_nas
     # if there's more than 1 column, do roughly the same thing repeatedly
     for j = 2:length(cols)
-        dv = PooledDataVector(df[cols[j]])
+        dv = PooledDataArray(df[cols[j]])
         dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
         for i = 1:nrow(df)
             x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups

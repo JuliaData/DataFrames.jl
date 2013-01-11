@@ -343,6 +343,8 @@ export # reconcile_groups,
        pdatazeros,
        percent_change,
        PooledDataVecs, # The capitalization and/or name for this is a bit inconsistent (merge_pools, maybe?). Do we want to export?
+       PooledDataArray,
+       PooledDataMatrix,
        PooledDataVector,
        print_table,
        range,
@@ -398,7 +400,7 @@ include(joinpath(julia_pkgdir(), "DataFrames", "src", "natype.jl"))
 include(joinpath(julia_pkgdir(), "DataFrames", "src", "dataarray.jl"))
 include(joinpath(julia_pkgdir(), "DataFrames", "src", "datavector.jl"))
 include(joinpath(julia_pkgdir(), "DataFrames", "src", "datamatrix.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "pooleddatavector.jl"))
+include(joinpath(julia_pkgdir(), "DataFrames", "src", "pooleddataarray.jl"))
 include(joinpath(julia_pkgdir(), "DataFrames", "src", "index.jl"))
 include(joinpath(julia_pkgdir(), "DataFrames", "src", "namedarray.jl"))
 include(joinpath(julia_pkgdir(), "DataFrames", "src", "dataframe.jl"))

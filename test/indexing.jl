@@ -3,7 +3,7 @@
 #
 
 dv = DataArray([1, 2])
-pdv = PooledDataVector([1, 2])
+pdv = PooledDataArray([1, 2])
 
 adv_indices = {1,
                1.0,

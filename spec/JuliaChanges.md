@@ -14,7 +14,7 @@ DataFrame creation would be cleaner:
 
 ```julia
 d = DataFrame(a = [1:20],
-              b = PooledDataVector([1:20]))
+              b = PooledDataArray([1:20]))
 ```              
 
 In addition, a number of existing and planned functions are calling

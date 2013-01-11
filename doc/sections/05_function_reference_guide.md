@@ -415,8 +415,8 @@ Create a DataVector from `x`, with `m` optionally indicating which values
 are NA. DataVector's are like Julia Vectors with support for NA's. `x` may
 be any type of Vector.
 
-#### `PooledDataVector(x::Vector)`
-#### `PooledDataVector(x::Vector, m::Vector{Bool})`
+#### `PooledDataArray(x::Vector)`
+#### `PooledDataArray(x::Vector, m::Vector{Bool})`
 
 Create a PooledDataVector from `x`, with `m` optionally indicating which
 values are NA. PooledDataVector's contain a pool of values with references

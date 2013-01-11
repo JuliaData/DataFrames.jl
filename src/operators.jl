@@ -378,7 +378,7 @@ for (f, scalarf) in vectorized_comparison_operators
             return res
         end
         function ($f){S, T <: Union(String, Number)}(a::PooledDataVector{S}, v::T)
-            res = PooledDataVector(Array(Bool, length(a)), BitArray(length(a)))
+            res = PooledDataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i])
                     res[i] = NA
@@ -389,7 +389,7 @@ for (f, scalarf) in vectorized_comparison_operators
             return res
         end
         function ($f){S <: Union(String, Number), T}(v::S, a::PooledDataVector{T})
-            res = PooledDataVector(Array(Bool, length(a)), BitArray(length(a)))
+            res = PooledDataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 if isna(a[i])
                     res[i] = NA
@@ -414,14 +414,14 @@ for (f, scalarf) in vectorized_comparison_operators
             res
         end
         function ($f){T}(a::PooledDataVector{T}, v::NAtype)
-            res = PooledDataVector(Array(Bool, length(a)), BitArray(length(a)))
+            res = PooledDataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 res[i] = NA
             end
             res
         end
         function ($f){T}(v::NAtype, a::PooledDataVector{T})
-            res = PooledDataVector(Array(Bool, length(a)), BitArray(length(a)))
+            res = PooledDataArray(Array(Bool, length(a)), BitArray(length(a)))
             for i in 1:length(a)
                 res[i] = NA
             end
