@@ -26,7 +26,6 @@
 	* size
 	* length
 	* ndims
-	* numel
 	* eltype
 * Predicates
 * Handling NA's

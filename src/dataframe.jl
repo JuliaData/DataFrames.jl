@@ -781,8 +781,6 @@ keys(df::AbstractDataFrame) = keys(index(df))
 values(df::DataFrame) = df.columns
 empty!(df::DataFrame) = DataFrame() # TODO: Make this work right
 
-# Stack should not depend upon a broken definition of numel(df)
-## numel(df::AbstractDataFrame) = nrow(df) * ncol(df)
 isempty(df::AbstractDataFrame) = ncol(df) == 0
 
 function insert!(df::AbstractDataFrame, index::Int, item, name)

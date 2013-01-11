@@ -262,7 +262,6 @@ between{T}(a::IndexedVector{T}, v1::T, v2::T, ) = Indexer(Range1[search_sorted_f
 size(a::IndexedVector) = size(a.x)
 length(a::IndexedVector) = length(a.x)
 ndims(a::IndexedVector) = 1
-numel(a::IndexedVector) = length(a.x)
 eltype{T}(a::IndexedVector{T}) = T
 
 ## print(io, a::IndexedVector) = print(io, a.x)

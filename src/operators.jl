@@ -88,7 +88,7 @@ for f in unary_operators
         end
         function ($f){T}(dm::DataMatrix{T})
             res = deepcopy(dm)
-            for i in 1:numel(dm)
+            for i in 1:length(dm)
                 res[i] = ($f)(dm[i])
             end
             return res
@@ -288,7 +288,7 @@ for f in elementary_functions
         end
         function ($f){T}(dm::DataMatrix{T})
             res = DataArray(Array(T, size(dm)), falses(size(dm)))
-            for i = 1:numel(dm)
+            for i = 1:length(dm)
                 res[i] = ($f)(dm[i])
             end
             return res
@@ -565,7 +565,7 @@ for (f, scalarf) in vectorized_comparison_operators
         end
         function ($f){S, T}(a::DataMatrix{S}, b::DataMatrix{T})
             res = DataArray(Array(Bool, size(a)), BitArray(size(a)))
-            for i in 1:numel(a)
+            for i in 1:length(a)
                 if isna(a[i]) || isna(b[i])
                     res[i] = NA
                 else
@@ -576,7 +576,7 @@ for (f, scalarf) in vectorized_comparison_operators
         end
         function ($f){S, T}(a::DataMatrix{S}, b::Matrix{T})
             res = DataArray(Array(Bool, size(a)), BitArray(size(a)))
-            for i in 1:numel(a)
+            for i in 1:length(a)
                 if isna(a[i])
                     res[i] = NA
                 else
@@ -587,7 +587,7 @@ for (f, scalarf) in vectorized_comparison_operators
         end
         function ($f){S, T}(a::Matrix{S}, b::DataMatrix{T})
             res = DataArray(Array(Bool, size(a)), BitArray(size(a)))
-            for i in 1:numel(a)
+            for i in 1:length(a)
                 if isna(b[i])
                     res[i] = NA
                 else
@@ -776,7 +776,7 @@ for f in array_arithmetic_operators
             end
             res = DataArray(Array(promote_type(S, T), size(A)),
                             BitArray(size(A)))
-            for i in 1:numel(A)
+            for i in 1:length(A)
                 res.na[i] = (A.na[i] || B.na[i])
                 res.data[i] = ($f)(A.data[i], B.data[i])
             end

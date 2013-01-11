@@ -56,7 +56,7 @@ Number of columns in `df`.
 
 Number of rows in `df`.
 
-#### `length(df::AbstractDataFrame)` or `numel(df::AbstractDataFrame)`
+#### `length(df::AbstractDataFrame)`
 
 Number of columns in `df`.
 

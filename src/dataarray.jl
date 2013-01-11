@@ -70,7 +70,7 @@ DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...),
 # Wrap a scalar in a DataArray
 function DataArray(val::Any, dims::Integer...)
     vals = Array(typeof(val), dims...)
-    for i in 1:numel(vals)
+    for i in 1:length(vals)
         vals[i] = val
     end
     DataArray(vals, falses(dims...))
@@ -133,7 +133,6 @@ end
 
 size(d::DataArray) = size(d.data)
 ndims(d::DataArray) = ndims(d.data)
-numel(d::DataArray) = numel(d.data)
 eltype{T, N}(d::DataArray{T, N}) = T
 
 ##############################################################################
@@ -609,7 +608,7 @@ isnan(d::DataArray) = DataArray(isnan(dv.data), copy(dv.na))
 isfinite(dv::DataArray) = DataArray(isfinite(dv.data), copy(dv.na))
 
 function any_na(d::AbstractDataArray)
-    for i in 1:numel(d)
+    for i in 1:length(d)
         if isna(d[i])
             return true
         end

@@ -58,5 +58,5 @@ values(x::NamedArray) = x.data
 start(x::NamedArray) = 1
 done(x::NamedArray, i) = i > length(x.data)
 next(x::NamedArray, i) = ((x.idx.names[i], x[i]), i + 1)
-numel(x::NamedArray) = length(x.data)
+length(x::NamedArray) = length(x.data)
 isempty(x::NamedArray) = length(x.data) == 0
