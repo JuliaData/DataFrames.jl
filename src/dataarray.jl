@@ -212,9 +212,6 @@ function replaceNA{S, T}(dv::AbstractDataVector{S}, replacement_val::T)
     return res
 end
 
-# TODO: Remove this?
-vector(dv::AbstractDataVector) = failNA(dv)
-
 type EachFailNA{T}
     dv::AbstractDataVector{T}
 end
@@ -716,6 +713,18 @@ end
 ## Conversion
 ##
 
+function vector(adv::AbstractDataVector, t::Type, replacement_val::Any)
+    n = length(adv)
+    res = Array(t, n)
+    for i in 1:n
+        if isna(adv[i])
+            res[i] = replacement_val
+        else
+            res[i] = adv[i]
+        end
+    end
+    return res
+end
 function vector(adv::AbstractDataVector, t::Type)
     n = length(adv)
     res = Array(t, n)
@@ -726,6 +735,20 @@ function vector(adv::AbstractDataVector, t::Type)
 end
 vector(adv::AbstractDataVector) = vector(adv, eltype(adv))
 
+function matrix(adm::AbstractDataMatrix, t::Type, replacement_val::Any)
+    n, p = size(adm)
+    res = Array(t, n, p)
+    for i in 1:n
+        for j in 1:p
+            if isna(adm[i, j])
+                res[i, j] = replacement_val
+            else
+                res[i, j] = adm[i, j]
+            end
+        end
+    end
+    return res
+end
 function matrix(adm::AbstractDataMatrix, t::Type)
     n, p = size(adm)
     res = Array(t, n, p)

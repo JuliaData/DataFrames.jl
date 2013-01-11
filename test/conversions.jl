@@ -10,6 +10,7 @@ dv[1] = NA
 # vector(dv)
 # convert(Vector{Float64}, dv)
 @assert isa(vector(dv, Any), Vector{Any})
+@assert isnan(vector(dv, Float64, NaN)[1])
 
 dm = dataones(3, 3)
 @assert isa(matrix(dm), Matrix{Float64})
@@ -19,6 +20,7 @@ dm[1, 1] = NA
 # matrix(dm)
 # convert(Matrix{Float64}, dm)
 @assert isa(matrix(dm, Any), Matrix{Any})
+@assert isnan(matrix(dm, Float64, NaN)[1, 1])
 
 df = DataFrame()
 df["A"] = 1:5
