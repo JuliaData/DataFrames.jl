@@ -254,6 +254,22 @@ for f in arithmetic_operators
   end
 end
 
+# Binary operations on (DataVector, Vector) or (Vector, DataVector)
+N = 5
+v = ones(N)
+dv = dataones(N)
+dv[1] = NA
+for f in array_arithmetic_operators
+  @eval begin
+    for i in 1:length(dv)
+      @assert isna(($f)(v, dv)[i]) && isna(dv[i]) ||
+              (($f)(v, dv))[i] == ($f)(v[i], dv[i])
+      @assert isna(($f)(dv, v)[i]) && isna(dv[i]) ||
+              (($f)(dv, v))[i] == ($f)(dv[i], v[i])
+    end
+  end
+end
+
 # Binary operations on pairs of DataVector's
 N = 5
 dv = dataones(N)

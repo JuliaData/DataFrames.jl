@@ -757,6 +757,30 @@ end
 # for arithmetic, NAs propagate
 for f in array_arithmetic_operators
     @eval begin
+        function ($f){S, T}(A::DataVector{S}, B::Vector{T})
+            n_A, n_B = length(A), length(B)
+            if n_A != n_B
+                error("DataVector and Vector lengths must match")
+            end
+            res = DataArray(Array(promote_type(S, T), n_A), BitArray(n_A))
+            for i in 1:n_A
+                res.na[i] = A.na[i]
+                res.data[i] = ($f)(A.data[i], B[i])
+            end
+            return res
+        end
+        function ($f){S, T}(A::Vector{S}, B::DataVector{T})
+            n_A, n_B = length(A), length(B)
+            if n_A != n_B
+                error("Vector and DataVector lengths must match")
+            end
+            res = DataArray(Array(promote_type(S, T), n_A), BitArray(n_A))
+            for i in 1:n_A
+                res.na[i] = B.na[i]
+                res.data[i] = ($f)(A[i], B.data[i])
+            end
+            return res
+        end
         function ($f){S, T}(A::DataVector{S}, B::DataVector{T})
             if (length(A) != length(B))
                 error("DataVector lengths must match")
