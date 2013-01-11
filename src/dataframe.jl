@@ -1638,68 +1638,36 @@ function complete_cases(df::AbstractDataFrame)
     res
 end
 
-# DataFrame -> Array{TightestType}
-# function array(df::DataFrame)
-#     n, p = size(df)
-#     t = reduce(tunion, coltypes(df))
-#     a = Array(t, n, p)
-#     for i in 1:n
-#         for j in 1:p
-#             if isna(df[i, j])
-#                 error("DataFrame's with missing entries cannot be converted")
-#             else
-#                 a[i, j] = df[i, j]
-#             end
-#         end
-#     end
-#     return a
-# end
-
-function arrayNA(adf::AbstractDataFrame)
-    # DataFrame -> Array{Any}
+function matrix(adf::AbstractDataFrame, t::Type)
     n, p = size(adf)
-    res = Array(Any, n, p)
+    res = Array(t, n, p)
     for i in 1:n
         for j in 1:p
             res[i, j] = adf[i, j]
         end
     end
     return res
-    # if nrow(d) == 1  # collapse to one element
-    #   [el[1] for el in d[1,:]]
-    # else
-    #   [col for col in d]
-    # end
+end
+function matrix(adf::AbstractDataFrame)
+    # TODO: Replace when tunion() is added to Base
+    t = reduce(earliest_common_ancestor, coltypes(adf))
+    matrix(adf, t)
 end
 
-# ### TODO: Position this appropriately.
-# function matrix(df::DataFrame)
-#     ts = coltypes(df)
-#     for t in ts
-#         if !(t <: Number)
-#             error("Convert convert a non-numeric DataFrame to a DataMatrix")
-#         end
-#     end
-#     n, p = size(df)
-#     dm = datazeros(n, p)
-#     for i in 1:n
-#         for j in 1:p
-#             dm[i, j] = df[i, j]
-#         end
-#     end
-#     return dm
-# end
-
-function DataArray(df::DataFrame)
+function DataArray(adf::AbstractDataFrame, t::Type)
     n, p = size(df)
-    t = reduce(tintersect, coltypes(df))
     dm = DataArray(t, n, p)
     for i in 1:n
         for j in 1:p
-            dm[i, j] = df[i, j]
+            dm[i, j] = adf[i, j]
         end
     end
     return dm
+end
+function DataArray(adf::AbstractDataFrame)
+    # TODO: Replace when tunion() is added to Base
+    t = reduce(earliest_common_ancestor, coltypes(adf))
+    DataArray(adf, t)
 end
 
 function duplicated(df::AbstractDataFrame)
@@ -1708,10 +1676,10 @@ function duplicated(df::AbstractDataFrame)
     res = fill(false, nrow(df))
     di = Dict()
     for i in 1:nrow(df)
-        if has(di, arrayNA(df[i,:]))
+        if has(di, matrix(df[i, :], Any))
             res[i] = true
         else
-            di[arrayNA(df[i,:])] = 1
+            di[matrix(df[i, :], Any)] = 1
         end
     end
     res

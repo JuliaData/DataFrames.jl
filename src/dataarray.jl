@@ -711,3 +711,31 @@ function padNA(dv::AbstractDataVector, front::Int, back::Int)
   end
   return res
 end
+
+##
+## Conversion
+##
+
+function vector(adv::AbstractDataVector, t::Type)
+    n = length(adv)
+    res = Array(t, n)
+    for i in 1:n
+        res[i] = adv[i]
+    end
+    return res
+end
+vector(adv::AbstractDataVector) = vector(adv, eltype(adv))
+
+function matrix(adm::AbstractDataMatrix, t::Type)
+    n, p = size(adm)
+    res = Array(t, n, p)
+    for i in 1:n
+        for j in 1:p
+            res[i, j] = adm[i, j]
+        end
+    end
+    return res
+end
+matrix(adm::AbstractDataMatrix) = matrix(adm, eltype(adm))
+
+# TODO: Implement for arbitrary rank tensors

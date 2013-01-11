@@ -135,3 +135,18 @@ function repeat(dv::AbstractVector, n::Int)
     end
     return new_dv
 end
+
+function ancestors(t::Type)
+    a = {t}
+    while t != Any
+        t = super(t)
+        push!(a, t)
+    end
+    return a
+end
+
+function common_ancestors(s::Type, t::Type)
+    return filter(e -> contains(ancestors(s), e), ancestors(t))
+end
+
+earliest_common_ancestor(s::Type, t::Type) = first(common_ancestors(s, t))
