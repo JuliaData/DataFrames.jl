@@ -30,6 +30,10 @@ function Formula(ex::Expr)
     end
 end
 
+function show(io::Any, f::Formula)
+    print(io, strcat("Formula: ", join(f.lhs, ", "), " ~ ", join(f.rhs, " +")))
+end
+
 # a ModelFrame is just a wrapper around a DataFrame
 # construct with mf::ModelFrame = model_frame(f::Formula, d::DataFrame)
 # this unpacks the formula, extracts the columns from the DataFrame, and
