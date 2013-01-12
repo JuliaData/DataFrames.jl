@@ -690,6 +690,9 @@ for f in (:int, :float, :bool)
 end
 for (f, basef) in ((:dataint, :int), (:datafloat, :float64), (:databool, :bool))
     @eval begin
+        function ($f){T}(a::Array{T})
+            DataArray(($basef)(a))
+        end
         function ($f){T}(dv::DataArray{T})
             DataArray(($basef)(dv.data), copy(dv.na))
         end
