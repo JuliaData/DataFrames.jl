@@ -279,6 +279,7 @@ function size(df::AbstractDataFrame, i::Int)
 end
 
 length(df::AbstractDataFrame) = ncol(df)
+endof(df::AbstractDataFrame) = ncol(df)
 
 ndims(::AbstractDataFrame) = 2
 
@@ -989,7 +990,7 @@ colnames(df::SubDataFrame) = colnames(df.parent)
 # Associative methods:
 index(df::SubDataFrame) = index(df.parent)
 
-# delete!() deletes columns; delrows() deletes rows
+# delete!() deletes columns; deleterows!() deletes rows
 # delete!(df, 1)
 # delete!(df, "old")
 function delete!(df::DataFrame, inds::Vector{Int})
@@ -1007,8 +1008,8 @@ delete!(df::DataFrame, c::Int) = delete!(df, [c])
 delete!(df::DataFrame, c::Any) = delete!(df, df.colindex[c])
 delete!(df::SubDataFrame, c::Any) = SubDataFrame(del(df.parent, c), df.rows)
 
-# delrows()
-function delrows(df::DataFrame, keep_inds::Vector{Int})
+# deleterows!()
+function deleterows!(df::DataFrame, keep_inds::Vector{Int})
     for i in 1:ncol(df)
         df.columns[i] = df.columns[i][keep_inds]
     end
@@ -1638,6 +1639,8 @@ function complete_cases(df::AbstractDataFrame)
     res
 end
 
+complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(complete_cases(df)))
+
 function matrix(adf::AbstractDataFrame, t::Type)
     n, p = size(adf)
     res = Array(t, n, p)
@@ -1686,7 +1689,7 @@ function duplicated(df::AbstractDataFrame)
 end
 
 function drop_duplicates!(df::AbstractDataFrame)
-    delrows(df, find(!duplicated(df)))
+    deleterows!(df, find(!duplicated(df)))
 end
 
 # Unique rows of an AbstractDataFrame.        
