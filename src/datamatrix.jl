@@ -32,13 +32,5 @@ end
 ##
 ##############################################################################
 
-nrow{T}(dm::DataMatrix{T}) = size(dm, 1)
-ncol{T}(dm::DataMatrix{T}) = size(dm, 2)
-
-function matrix{T}(dm::DataMatrix{T})
-    if any_na(dm)
-        error("Can't convert a DataMatrix with missing entries")
-    else
-        return dm.data
-    end
-end
+nrow(dm::DataMatrix) = size(dm, 1)
+ncol(dm::DataMatrix) = size(dm, 2)

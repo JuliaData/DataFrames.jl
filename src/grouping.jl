@@ -1,4 +1,3 @@
-
 #
 #  Split - Apply - Combine operations
 #
@@ -271,7 +270,3 @@ function by(d, x::Union(Function,Expr)...)
     end
     res
 end
-        
-
-        
-            

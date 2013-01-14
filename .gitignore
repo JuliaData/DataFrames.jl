@@ -1,3 +1,4 @@
 .DS_Store
 doc/manual.pdf
 test/data/bigrams.tsv
+benchmarks/results.csv

@@ -1,29 +1,33 @@
-require("Benchmark")
-using Benchmark
-
-require("DataFrames")
-using DataFrames
-
 a = eye(100)
 b = eye(100)
 
 dm_a = dataeye(100)
 dm_b = dataeye(100)
 
-dm_a_na = deepcopy(dm_a)
+dm_a_na = dataeye(100)
 dm_a_na[:, :] = NA
-dm_b_na = deepcopy(dm_b)
+dm_b_na = dataeye(100)
 dm_b_na[:, :] = NA
 
 f1() = *(a, b)
 f2() = *(dm_a, dm_b)
 f3() = *(dm_a_na, dm_b_na)
 
-df1 = benchmark(f1, "Linear Algebra", "Matrix Multiplication w/ No NA's", 10)
-df2 = benchmark(f2, "Linear Algebra", "DataMatrix Multiplication w/ No NA's", 10)
-df3 = benchmark(f3, "Linear Algebra", "DataMatrix Multiplication w/ NA's", 10)
+df1 = benchmark(f1,
+	            "Linear Algebra",
+                "Matrix Multiplication w/ No NA's",
+                1_000)
+df2 = benchmark(f2,
+	            "Linear Algebra",
+                "DataMatrix Multiplication w/ No NA's",
+                1_000)
+df3 = benchmark(f3,
+	            "Linear Algebra",
+                "DataMatrix Multiplication w/ NA's",
+                1_000)
 
-print_table(rbind(df1, df2, df3))
+# TODO: Keep permanent record
+print_table(stdout_stream, rbind(df1, df2, df3), ',', '"', false)
 
 # Compare with R
 # We're 10x as fast!

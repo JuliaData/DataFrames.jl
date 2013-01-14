@@ -186,6 +186,7 @@ end
 
 size(pda::PooledDataArray) = size(pda.refs)
 length(pda::PooledDataArray) = length(pda.refs)
+endof(pda::PooledDataArray) = endof(pda.refs)
 
 ##############################################################################
 ##
@@ -398,6 +399,11 @@ end
 ## show() and similar methods
 ##
 ##############################################################################
+
+function string(x::PooledDataVector)
+    tmp = join(x, ", ")
+    return "[$tmp]"
+end
 
 function show(io, x::PooledDataVector)
     print(io, "values: ")

@@ -18,7 +18,7 @@ abstract AbstractDataStream
 # explicit a priori type information.
 type FileDataStream <: AbstractDataStream
   filename::String
-  stream::IOStream
+  stream::IOStream # Any
   separator::Char
   quotation_character::Char
   missingness_indicators::Vector

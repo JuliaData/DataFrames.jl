@@ -1,20 +1,25 @@
-require("DataFrames")
-using DataFrames
+filename = joinpath(julia_pkgdir(),
+                    "DataFrames",
+                    "test",
+                    "data",
+                    "big_data.csv")
 
-filename = joinpath(julia_pkgdir(), "DataFrames", "test", "data", "big_data.csv")
+minibatch_sizes = [1, 5, 25, 100, 1_000, 10_000]
 
-minibatch_sizes = [1, 5, 10, 25, 50, 100, 250, 500, 1_000, 2_500, 5_000, 10_000]
-
-for (f) in (:colmeans, :colmins, :colmaxs, :colsums, :colprods, :colvars, :colstds, :cov, :cor)
-	@eval begin
-		for minibatch_size in minibatch_sizes
-			ds = DataStream(filename, minibatch_size)
-			N = 10
-			res = ($f)(ds)
-			total_time = @elapsed for iter in 1:N
-			    res = ($f)(ds)
-			end
-			println(join({"$(string($f)) from a FileDataStream", N, total_time / N, minibatch_size}, "\t"))
-		end
+for f in (colmeans, colvars, cor)
+	for minibatch_size in minibatch_sizes
+		ds = DataStream(filename, minibatch_size)
+		N = 10
+		df = benchmark(f,
+			           "DataStream Functions",
+			           join({
+			           	      string(f),
+			           	      "w/ minibatches of",
+			           	      minibatch_size,
+			           	      "rows"
+			           	    }, " "),
+			           N)
+		# TODO: Keep permanent record
+		print_table(stdout_stream, df, false, ',', '"', false)
 	end
 end

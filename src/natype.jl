@@ -17,7 +17,7 @@
 type NAtype; end
 const NA = NAtype()
 
-show(io, x::NAtype) = print(io, "NA")
+show(io::Any, x::NAtype) = print(io, "NA")
 
 type NAException <: Exception
     msg::String

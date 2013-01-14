@@ -2,16 +2,20 @@
 # Optional time-consuming Benchmarks
 #
 
-# TODO: Load DataFrames just once for all benchmarks
+using DataFrames
+using Benchmark
 
 benchmarks = ["benchmarks/datavector.jl",
               "benchmarks/datamatrix.jl",
-              "benchmarks/io.jl",
-              "benchmarks/datastreams.jl"]
+              "benchmarks/io.jl"]
+              # TODO: Restores DataStream
+              #"benchmarks/datastreams.jl"]
 
-println("Running benchmarks:")
+# TODO: Print summary to stdout_stream, while printing results
+#       to file with appends.
+#println("Running benchmarks:")
 
 for benchmark in benchmarks
-    println(" * $(benchmark)")
-    run(`julia $(benchmark)`)
+#    println(" * $(benchmark)")
+    include(benchmark)
 end

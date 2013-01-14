@@ -15,4 +15,4 @@ df["Senator"] = senator_names
 df["X"] = DataArray(ideal_points[:, 1])
 df["Y"] = DataArray(ideal_points[:, 2])
 
-write_table(df, "demo/ideal_points.tsv")
+write_table("demo/ideal_points.tsv", df)

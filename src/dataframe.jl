@@ -10,24 +10,27 @@ abstract AbstractDataFrame <: Associative{Any, Any}
 ##
 ## Basic DataFrame definition
 ##
-## A DataFrame is a vector of heterogeneous AbstractDataVector's that be accessed using
-## numeric indexing for both rows and columns and name-based indexing for
-## columns. The columns are stored in a vector, which means that operations
-## that insert/delete columns are O(n).
+## A DataFrame is a vector of heterogeneous AbstractDataVector's that be
+## accessed using numeric indexing for both rows and columns and name-based
+## indexing for columns. The columns are stored in a vector, which means that
+## operations that insert/delete columns are O(n).
 ##
 ##############################################################################
 
 type DataFrame <: AbstractDataFrame
     columns::Vector{Any}
     colindex::Index
-    function DataFrame(cols::Vector, colind::Index)
+
+    function DataFrame(cols::Vector{Any}, colind::Index)
         # all columns have to be the same length
         if length(cols) > 1 && !all(map(length, cols) .== length(cols[1]))
-            error("all columns in a DataFrame have to be the same length")
+            msg = "All columns in a DataFrame must be the same length"
+            throw(ArgumentError(msg))
         end
         # colindex has to be the same length as columns vector
         if length(colind) != length(cols)
-            error("column names/index must be the same length as the number of columns")
+            msg = "Colums and column index must be the same length"
+            throw(ArgumentError(msg))
         end
         new(cols, colind)
     end
@@ -43,26 +46,38 @@ end
 DataFrame() = DataFrame({}, Index())
 
 # No-op given a DataFrame
-DataFrame(x::DataFrame) = x
+DataFrame(df::DataFrame) = df
 
 # Wrap a scalar in a DataArray, then a DataFrame
 function DataFrame(x::Union(Number, String))
-    DataFrame({DataArray([x], falses(1))}, Index(generate_column_names(1)))
+    cols = {DataArray([x], falses(1))}
+    colind = Index(generate_column_names(1))
+    return DataFrame(cols, colind)
 end
 
 # Convert an arbitrary set of columns w/ pre-specified names
-DataFrame{T <: String}(cs::Vector, cn::Vector{T}) = DataFrame(cs, Index(cn))
+function DataFrame{T <: String}(cs::Vector{Any}, cn::Vector{T})
+    return DataFrame(cs, Index(cn))
+end
 
 # Convert an arbitrary set of columns w/o pre-specified names
-DataFrame(cs::Vector) = DataFrame(cs, Index(generate_column_names(length(cs))))
+function DataFrame(cs::Vector{Any})
+    return DataFrame(cs, Index(generate_column_names(length(cs))))
+end
 
 # Build a DataFrame from an expression
-# TODO expand the following to allow unequal lengths that are rep'd to the longest length.
+# TODO: Expand the following to allow unequal lengths that are rep'd
+#       to the longest length.
 DataFrame(ex::Expr) = based_on(DataFrame(), ex)
 
 # Convert a standard Matrix to a DataFrame w/ pre-specified names
 function DataFrame(x::Matrix, cn::Vector)
-    DataFrame({DataArray(x[:, i]) for i in 1:length(cn)}, cn)
+    n = length(cn)
+    cols = Array(Any, n)
+    for i in 1:n
+        cols[i] = DataArray(x[:, i])
+    end
+    return DataFrame(cols, Index(cn))
 end
 
 # Convert a standard Matrix to a DataFrame w/o pre-specified names
@@ -70,25 +85,24 @@ function DataFrame(x::Matrix)
     DataFrame(x, generate_column_names(size(x, 2)))
 end
 
-function DataFrame{K,V}(d::Associative{K,V})
+function DataFrame{K, V}(d::Associative{K, V})
     # Find the first position with maximum length in the Dict.
-    # I couldn't get findmax to work here.
-    ## (Nrow,maxpos) = findmax(map(length, values(d)))
     lengths = map(length, values(d))
-    maxpos = findfirst(lengths .== max(lengths))
+    max_length = max(lengths)
+    maxpos = findfirst(lengths .== max_length)
     keymaxlen = keys(d)[maxpos]
-    Nrow = length(d[keymaxlen])
+    nrows = max_length
     # Start with a blank DataFrame
     df = DataFrame() 
-    for (k,v) in d
-        if length(v) == Nrow
+    for (k, v) in d
+        if length(v) == nrows
             df[k] = v  
-        elseif rem(Nrow, length(v)) == 0    # Nrow is a multiple of length(v)
-            df[k] = vcat(fill(v, div(Nrow, length(v)))...)
+        elseif rem(nrows, length(v)) == 0    # nrows is a multiple of length(v)
+            df[k] = vcat(fill(v, div(nrows, length(v)))...)
         else
-            vec = fill(v[1], Nrow)
+            vec = fill(v[1], nrows)
             j = 1
-            for i = 1:Nrow
+            for i = 1:nrows
                 vec[i] = v[j]
                 j += 1
                 if j > length(v)
@@ -102,10 +116,13 @@ function DataFrame{K,V}(d::Associative{K,V})
 end
 
 # Construct a DataFrame with groupings over the columns
-function DataFrame(cs::Vector, cn::Vector, gr::Dict{ByteString,Vector{ByteString}})
-  d = DataFrame(cs, cn)
-  set_groups(index(d), gr)
-  return d
+# TODO: Restore grouping
+function DataFrame(cs::Vector,
+                   cn::Vector,
+                   gr::Dict{ByteString, Vector{ByteString}})
+    d = DataFrame(cs, cn)
+    set_groups(index(d), gr)
+    return d
 end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
@@ -113,13 +130,13 @@ function DataFrame(d::Dict)
     column_names = sort(convert(Array{ByteString, 1}, keys(d)))
     p = length(column_names)
     if p == 0
-        DataFrame(0, 0)
+        DataFrame()
     end
     n = length(d[column_names[1]])
     columns = Array(Any, p)
     for j in 1:p
         if length(d[column_names[j]]) != n
-            error("All inputs must have the same length")
+            throw(ArgumentError("All columns must have the same length"))
         end
         columns[j] = DataArray(d[column_names[j]])
     end
@@ -130,7 +147,7 @@ end
 function DataFrame(d::Dict, column_names::Vector)
     p = length(column_names)
     if p == 0
-        DataFrame(0, 0)
+        DataFrame()
     end
     n = length(d[column_names[1]])
     columns = Array(Any, p)
@@ -145,51 +162,57 @@ end
 
 # Initialize empty DataFrame objects of arbitrary size
 # t is a Type
-function DataFrame(t::Any, nrows::Int64, ncols::Int64)
-    column_types = Array(Any, ncols)
+function DataFrame(t::Any, nrows::Integer, ncols::Integer)
+    columns = Array(Any, ncols)
     for i in 1:ncols
-        column_types[i] = t
+        columns[i] = DataArray(t, nrows)
     end
-    column_names = Array(ByteString, 0)
-    DataFrame(column_types, column_names, nrows)
+    column_names = generate_column_names(ncols)
+    return DataFrame(columns, Index(column_names))
 end
 
 # Initialize empty DataFrame objects of arbitrary size
-# Default to Float64 as the type
-function DataFrame(nrows::Int64, ncols::Int64)
-    DataFrame(Float64, nrows::Int64, ncols::Int64)
+# Use the default column type
+function DataFrame(nrows::Integer, ncols::Integer)
+    columns = Array(Any, ncols)
+    for i in 1:ncols
+        columns[i] = DataArray(DEFAULT_COLUMN_TYPE, nrows)
+    end
+    column_names = generate_column_names(ncols)
+    return DataFrame(columns, Index(column_names))
 end
 
 # Initialize an empty DataFrame with specific types and names
-function DataFrame(column_types::Vector, column_names::Vector, n::Int64)
-  p = length(column_types)
-  columns = Array(Any, p)
-
-  if column_names == []
-    names = Array(ByteString, p)
+function DataFrame(column_types::Vector, column_names::Vector, nrows::Integer)
+    p = length(column_types)
+    columns = Array(Any, p)
     for j in 1:p
-      names[j] = "x$j"
+        columns[j] = DataArray(column_types[j], nrows)
+        for i in 1:nrows
+            # TODO: Find a way to get rid of this line
+            # Problem may be in show()
+            columns[j][i] = baseval(column_types[j])
+            columns[j][i] = NA
+        end
     end
-  else
-    names = column_names
-  end
-
-  for j in 1:p
-    columns[j] = DataArray(Array(column_types[j], n), Array(Bool, n))
-    for i in 1:n
-      columns[j][i] = baseval(column_types[j])
-      columns[j][i] = NA
-    end
-  end
-
-  DataFrame(columns, Index(names))
+    return DataFrame(columns, Index(column_names))
 end
 
 # Initialize an empty DataFrame with specific types
-function DataFrame(column_types::Vector, nrows::Int64)
+function DataFrame(column_types::Vector, nrows::Integer)
     p = length(column_types)
-    column_names = Array(ByteString, 0)
-    DataFrame(column_types, column_names, nrows)
+    columns = Array(Any, p)
+    column_names = generate_column_names(p)
+    for j in 1:p
+        columns[j] = DataArray(column_types[j], nrows)
+        for i in 1:nrows
+            # TODO: Find a way to get rid of this line
+            # Problem may be in show()
+            columns[j][i] = baseval(column_types[j])
+            columns[j][i] = NA
+        end
+    end
+    return DataFrame(columns, Index(column_names))
 end
 
 # Initialize from a Vector of Associatives (aka list of dicts)
@@ -203,7 +226,7 @@ function DataFrame{D <: Associative, T <: String}(ds::Vector{D}, ks::Vector{T})
     invoke(DataFrame, (Vector{D}, Vector), ds, ks)
 end
 
-function DataFrame{D<:Associative}(ds::Vector{D}, ks::Vector)
+function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
     #get column types
     col_types = Any[None for i = 1:length(ks)]
     for d in ds
@@ -237,7 +260,7 @@ function DataFrame(vals::Any...)
     p = length(vals)
     columns = Array(Any, p)
     for j in 1:p
-        if typeof(vals[j]) <: AbstractDataVector
+        if isa(vals[j], AbstractDataVector)
             columns[j] = vals[j]
         else
             columns[j] = DataArray(vals[j])
@@ -258,23 +281,27 @@ colnames!(df::DataFrame, vals) = names!(df.colindex, vals)
 
 coltypes(df::DataFrame) = {eltype(df[i]) for i in 1:ncol(df)}
 
-names(df::AbstractDataFrame) = colnames(df)
-names!(df::DataFrame, vals) = names!(df.colindex, vals)
+names(df::AbstractDataFrame) = error("Use colnames()")
+names!(df::DataFrame, vals::Any) = error("Use colnames!()")
 
-replace_names(df::DataFrame, from, to) = replace_names(df.colindex, from, to)
-replace_names!(df::DataFrame, from, to) = replace_names!(df.colindex, from, to)
+function replace_names(df::DataFrame, from::Any, to::Any)
+    replace_names(df.colindex, from, to)
+end
+function replace_names!(df::DataFrame, from::Any, to::Any)
+    replace_names!(df.colindex, from, to)
+end
 
 nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
 ncol(df::DataFrame) = length(df.colindex)
 
 size(df::AbstractDataFrame) = (nrow(df), ncol(df))
-function size(df::AbstractDataFrame, i::Int)
+function size(df::AbstractDataFrame, i::Integer)
     if i == 1
         nrow(df)
     elseif i == 2
         ncol(df)
     else
-        error("DataFrames have two dimensions only")
+        throw(ArgumentError("DataFrames have only two dimensions"))
     end
 end
 
@@ -768,23 +795,21 @@ function assign(df::DataFrame, val::Any, ex1::Expr, ex2::Expr)
     assign(df, val, with(df, ex1), with(df, ex2))
 end
 
-#
-#
-#
-#
-#
-#
+##############################################################################
+##
+## Associative methods
+##
+##############################################################################
 
-# Associative methods:
-has(df::AbstractDataFrame, key) = has(index(df), key)
-get(df::AbstractDataFrame, key, default) = has(df, key) ? df[key] : default
+has(df::AbstractDataFrame, key::Any) = has(index(df), key)
+get(df::AbstractDataFrame, key::Any, default::Any) = has(df, key) ? df[key] : default
 keys(df::AbstractDataFrame) = keys(index(df))
 values(df::DataFrame) = df.columns
 empty!(df::DataFrame) = DataFrame() # TODO: Make this work right
 
 isempty(df::AbstractDataFrame) = ncol(df) == 0
 
-function insert!(df::AbstractDataFrame, index::Int, item, name)
+function insert!(df::AbstractDataFrame, index::Int, item::Any, name::Any)
     @assert 0 < index <= ncol(df) + 1
     df = copy(df)
     df[name] = item
@@ -801,6 +826,12 @@ function insert!(df::AbstractDataFrame, df2::AbstractDataFrame)
     df
 end
 
+##############################################################################
+##
+## Copying
+##
+##############################################################################
+
 # copy of a data frame does a shallow copy
 function copy(df::DataFrame)
 	newdf = DataFrame(copy(df.columns), colnames(df))
@@ -812,12 +843,9 @@ function deepcopy(df::DataFrame)
 end
 #deepcopy_with_groups(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df), get_groups(df))
 
-# dimilar of a data frame creates new vectors, but with the same columns. Dangerous, as 
-# changing the in one df can break the other.
-
 ##############################################################################
 ##
-## String representations
+## head() and tail()
 ##
 ##############################################################################
 
@@ -825,6 +853,12 @@ head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
 head(df::AbstractDataFrame) = head(df, 6)
 tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
 tail(df::AbstractDataFrame) = tail(df, 6)
+
+##############################################################################
+##
+## String representations
+##
+##############################################################################
 
 # to print a DataFrame, find the max string length of each column
 # then print the column names with an appropriate buffer
@@ -906,8 +940,7 @@ dump(io::IOStream, x::AbstractDataVector, n::Int, indent) =
 # if boolean, report trues, falses, and NAs
 # if anything else, punt.
 # Note that R creates a summary object, which has a print method. That's
-# a reasonable alternative to this. The describe() functions in show.jl
-# return a string.
+# a reasonable alternative to this.
 describe(dv::AbstractDataVector) = describe(OUTPUT_STREAM::IOStream, dv)
 describe(df::DataFrame) = describe(OUTPUT_STREAM::IOStream, df)
 function describe{T<:Number}(io, dv::AbstractDataVector{T})

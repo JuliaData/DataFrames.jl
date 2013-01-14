@@ -397,9 +397,6 @@ end
 ##############################################################################
 
 # Quotation rules
-# Quote all string fields
-# Don't quote real-valued fields
-# Quote non-string, non-real-valued fields
 function in_quotes(val::String, quotation_character::Char)
   strcat(quotation_character, val, quotation_character)
 end
@@ -409,43 +406,24 @@ end
 function in_quotes(val::Any, quotation_character::Char)
   strcat(quotation_character, string(val), quotation_character)
 end
-function csvwrite(a::Matrix, io::IOStream,
-                  separator::Char, quotation_character::Char)
-  n, p = size(a)
-  for i in 1:n
-    for j in 1:p
-      if j < p
-        print(io, in_quotes(a[i, j], quotation_character))
-        print(io, separator)
-      else
-        println(io, in_quotes(a[i, j], quotation_character))
-      end
-    end
-  end
-end
-function csvwrite(a::Matrix, filename::String,
-                  separator::Char, quotation_character::Char)
-    io = open(filename, "w")
-    csvwrite(a, io, separator, quotation_character)
-    close(io)
-end
-csvwrite(a::Matrix, io::IOStream) = csvwrite(a, io, ',', '"')
-csvwrite(a::Matrix, filename::String) = csvwrite(a, io, ',', '"')
 
 # TODO: write_table should do more to react to the type of each column
 # Need to increase precision of string representation of Float64's
-function print_table(df::DataFrame,
-                     io::IOStream,
+function print_table(io::Any,
+                     df::DataFrame,
                      separator::Char,
-                     quotation_character::Char)
+                     quotation_character::Char,
+                     header::Bool)
   n, p = nrow(df), ncol(df)
-  column_names = colnames(df)
-  for j in 1:p
-    if j < p
-      print(io, in_quotes(column_names[j], quotation_character))
-      print(io, separator)
-    else
-      println(io, in_quotes(column_names[j], quotation_character))
+  if header
+    column_names = colnames(df)
+    for j in 1:p
+      if j < p
+        print(io, in_quotes(column_names[j], quotation_character))
+        print(io, separator)
+      else
+        println(io, in_quotes(column_names[j], quotation_character))
+      end
     end
   end
   for i in 1:n
@@ -460,31 +438,39 @@ function print_table(df::DataFrame,
   end
 end
 
+function print_table(io::Any,
+                     df::DataFrame,
+                     separator::Char,
+                     quotation_character::Char)
+  print_table(io, df, separator, quotation_character, true)
+end
+
 function print_table(df::DataFrame, separator::Char, quotation_character::Char)
-  print_table(df, OUTPUT_STREAM, separator, quotation_character)
+  print_table(OUTPUT_STREAM, df, separator, quotation_character, true)
 end
 
 function print_table(df::DataFrame)
-    print_table(df,
-                OUTPUT_STREAM,
+    print_table(OUTPUT_STREAM,
+                df,
                 DEFAULT_SEPARATOR,
-                DEFAULT_QUOTATION_CHARACTER)
+                DEFAULT_QUOTATION_CHARACTER,
+                true)
 end
 
-function write_table(df::DataFrame,
-                     filename::String,
+function write_table(filename::String,
+                     df::DataFrame,
                      separator::Char,
                      quotation_character::Char)
   io = open(filename, "w")
-  print_table(df, io, separator, quotation_character)
+  print_table(io, df, separator, quotation_character)
   close(io)
 end
 
 # Infer configuration settings from filename
-function write_table(df::DataFrame, filename::String)
+function write_table(filename::String, df::DataFrame)
   separator = determine_separator(filename)
   quotation_character = DEFAULT_QUOTATION_CHARACTER
-  write_table(df, filename, separator, quotation_character)
+  write_table(filename, df, separator, quotation_character)
 end
 
 ##############################################################################

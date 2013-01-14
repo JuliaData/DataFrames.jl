@@ -1,11 +1,8 @@
-require("DataFrames")
-using DataFrames
-
 srand(1)
-N = 10_000_000
+N = 1_000_000
 v = randn(N)
 dv = DataArray(v)
-dvna = copy(dv)
+dvna = deepcopy(dv)
 dvna[randi(N, 10_000)] = NA
 idxv = shuffle([1:N])
 idxdv = DataArray(idxv)
@@ -52,19 +49,8 @@ perf_test["v[idxv] : Vector"] = () -> f9(v, idxv)
 perf_test["dv[idxv] : DataVector and Vector indexing"] = () -> f9(dv, idxv)
 perf_test["dv[idxdv] : DataVector and DataVector indexing"] = () -> f9(dv, idxdv)
 
-tm = strftime("%Y-%m-%d %H:%M:%S", int(time()))
-
 for (name, f) in perf_test
-    for i in 1:3     # do each three times
-        res = try
-            @elapsed f()
-        catch
-            NA
-        end
-        println(name, ", ", res, ", ", tm)
-    end
+    res = benchmark(f, "DataArray Operations", name, 10)
+	# TODO: Keep permanent record
+	print_table(stdout_stream, res, ',', '"', false)
 end
-
-# We could write what's above to a file periodically. Then, we could
-# write a DataStream to iterate over the files. It would make a good
-# test case.

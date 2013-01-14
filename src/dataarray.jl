@@ -19,7 +19,8 @@ type DataArray{T, N} <: AbstractDataArray{T, N}
     # Sanity check that new data values and missingness metadata match
     function DataArray(d::Array{T, N}, m::BitArray{N})
         if size(d) != size(m)
-            error("Data and missingness arrays must be the same size")
+            msg = "Data and missingness arrays must be the same size"
+            throw(ArgumentError(msg))
         end
         new(d, m)
     end
@@ -67,7 +68,7 @@ DataArray(r::Ranges) = DataArray([r], falses(length(r)))
 DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...),
                                                  trues(dims...))
 
-# Wrap a scalar in a DataArray
+# Wrap a scalar in a DataArray w/ repetition
 function DataArray(val::Any, dims::Integer...)
     vals = Array(typeof(val), dims...)
     for i in 1:length(vals)
@@ -75,6 +76,8 @@ function DataArray(val::Any, dims::Integer...)
     end
     DataArray(vals, falses(dims...))
 end
+
+# Wrap a scalar in a DataArray w/o repetition
 DataArray(val::Any) = DataArray([val], falses(1))
 
 ##############################################################################
@@ -107,7 +110,14 @@ end
 
 copy(d::DataArray) = DataArray(copy(d.data), copy(d.na))
 deepcopy(d::DataArray) = DataArray(deepcopy(d.data), deepcopy(d.na))
-# TODO: copy_to()
+function copy_to(dest::DataArray, src::Any)
+    i = 1
+    for x in src
+        dest[i] = x
+        i += 1
+    end
+    return dest
+end
 
 ##############################################################################
 ##
@@ -115,7 +125,7 @@ deepcopy(d::DataArray) = DataArray(deepcopy(d.data), deepcopy(d.na))
 ##
 ##############################################################################
 
-similar{T}(d::DataArray{T}) = d
+similar(d::DataArray) = d
 
 function similar{T}(d::DataArray{T}, dims::Int...)
     DataArray(Array(T, dims...), trues(dims...))
@@ -133,6 +143,8 @@ end
 
 size(d::DataArray) = size(d.data)
 ndims(d::DataArray) = ndims(d.data)
+length(d::DataArray) = length(d.data)
+endof(d::DataArray) = endof(d.data)
 eltype{T, N}(d::DataArray{T, N}) = T
 
 ##############################################################################
@@ -159,104 +171,119 @@ eltype{T, N}(d::DataArray{T, N}) = T
 ##
 ##############################################################################
 
-function failNA(dv::DataVector)
-    n = length(dv)
-    for i in 1:n
-        if dv.na[i]
-            error("Failing after encountering an NA")
-        end
+function failNA(da::DataArray)
+    if anyna(da)
+        throw(NAException())
+    else
+        return copy(da.data)
     end
-    return copy(dv.data)
 end
 
-function removeNA(dv::DataVector)
-    return copy(dv.data[!dv.na])
+# Can do strange things on DataArray of rank > 1
+function removeNA(da::DataArray)
+    return copy(da.data[!da.na])
 end
 
-function replaceNA(dv::DataVector, replacement_val::Any)
-    n = length(dv)
-    res = copy(dv.data)
-    for i in 1:n
-        if dv.na[i]
+function replaceNA(da::DataArray, replacement_val::Any)
+    res = copy(da.data)
+    for i in 1:length(da)
+        if da.na[i]
             res[i] = replacement_val
         end
     end
     return res
 end
 
-# TODO: Re-implement these methods more efficently
-function failNA{T}(dv::AbstractDataVector{T})
-    n = length(dv)
+# TODO: Re-implement these methods for PooledDataArray's
+function failNA{T}(da::AbstractDataArray{T})
+    if anyna(da)
+        throw(NAException())
+    else
+        res = Array(T, size(da))
+        for i in 1:length(da)
+            res[i] = da[i]
+        end
+        return res
+    end
+end
+
+# TODO: Figure out how to make this work for Array's
+function removeNA{T}(da::AbstractDataVector{T})
+    n = length(da)
+    res = Array(T, n)
+    total = 0
     for i in 1:n
-        if isna(dv[i])
-            error("Failing after encountering an NA")
+        if !isna(da[i])
+            total += 1
+            res[total] = convert(T, da[i])
         end
     end
-    return convert(Vector{T}, [x::T for x in dv])
+    return res[1:total]
 end
 
-function removeNA{T}(dv::AbstractDataVector{T})
-    return convert(Vector{T}, [x::T for x in dv[!isna(dv)]])
-end
-
-function replaceNA{S, T}(dv::AbstractDataVector{S}, replacement_val::T)
-    n = length(dv)
-    res = Array(S, n)
-    for i in 1:n
-        if isna(dv[i])
+function replaceNA{S, T}(da::AbstractDataArray{S}, replacement_val::T)
+    res = Array(S, size(da))
+    for i in 1:length(da)
+        if isna(da[i])
             res[i] = replacement_val
         else
-            res[i] = dv[i]
+            res[i] = da[i]
         end
     end
     return res
 end
 
+##
+## NA-aware iterators
+##
+
 type EachFailNA{T}
-    dv::AbstractDataVector{T}
+    da::AbstractDataArray{T}
 end
-each_failNA{T}(dv::AbstractDataVector{T}) = EachFailNA(dv)
+each_failNA{T}(da::AbstractDataArray{T}) = EachFailNA(da)
 start(itr::EachFailNA) = 1
-function done(itr::EachFailNA, ind::Int)
-    return ind > length(itr.dv)
+function done(itr::EachFailNA, ind::Integer)
+    return ind > length(itr.da)
 end
-function next(itr::EachFailNA, ind::Int)
-    if isna(itr.dv[ind])
-        error("NA's encountered. Failing...")
+function next(itr::EachFailNA, ind::Integer)
+    if isna(itr.da[ind])
+        throw(NAException())
     else
-        (itr.dv[ind], ind + 1)
+        (itr.da[ind], ind + 1)
     end
 end
 
 type EachRemoveNA{T}
-    dv::AbstractDataVector{T}
+    da::AbstractDataArray{T}
 end
-each_removeNA{T}(dv::AbstractDataVector{T}) = EachRemoveNA(dv)
+each_removeNA{T}(da::AbstractDataArray{T}) = EachRemoveNA(da)
 start(itr::EachRemoveNA) = 1
-function done(itr::EachRemoveNA, ind::Int)
-    return ind > length(itr.dv)
+function done(itr::EachRemoveNA, ind::Integer)
+    return ind > length(itr.da)
 end
-function next(itr::EachRemoveNA, ind::Int)
-    while ind <= length(itr.dv) && isna(itr.dv[ind])
+function next(itr::EachRemoveNA, ind::Integer)
+    while ind <= length(itr.da) && isna(itr.da[ind])
         ind += 1
     end
-    (itr.dv[ind], ind + 1)
+    (itr.da[ind], ind + 1)
 end
 
-type EachReplaceNA{T}
-    dv::AbstractDataVector{T}
+type EachReplaceNA{S, T}
+    da::AbstractDataArray{S}
     replacement_val::T
 end
-each_replaceNA{T}(dv::AbstractDataVector{T}, v::T) = EachReplaceNA(dv, v)
-start(itr::EachReplaceNA) = 1
-function done(itr::EachReplaceNA, ind::Int)
-    return ind > length(itr.dv)
+function each_replaceNA(da::AbstractDataArray, val::Any)
+    EachReplaceNA(da, convert(eltype(da), val))
 end
-function next(itr::EachReplaceNA, ind::Int)
-    if isna(itr.dv[ind])
+start(itr::EachReplaceNA) = 1
+function done(itr::EachReplaceNA, ind::Integer)
+    return ind > length(itr.da)
+end
+function next(itr::EachReplaceNA, ind::Integer)
+    if isna(itr.da[ind])
         (itr.replacement_val, ind + 1)
     else
-        (itr.dv[ind], ind + 1)
+        (itr.da[ind], ind + 1)
     end
 end
 
@@ -284,14 +311,18 @@ function ref(d::DataArray, i::Real)
 end
 
 # d[MultiItemIndex]
+# TODO: Return SubDataArray
 function ref(d::DataArray, inds::AbstractDataVector{Bool})
     inds = find(replaceNA(inds, false))
     return DataArray(d.data[inds], d.na[inds])
 end
+# TODO: Return SubDataArray
 function ref(d::DataArray, inds::AbstractDataVector)
     inds = removeNA(inds)
     return DataArray(d.data[inds], d.na[inds])
 end
+# TODO: Return SubDataArray
+# TODO: Make inds::AbstractVector
 function ref(d::DataArray, inds::Union(Vector, BitVector, Ranges))
     return DataArray(d.data[inds], d.na[inds])
 end
@@ -312,6 +343,7 @@ end
 function ref(x::DataMatrix, i::Real, col_inds::AbstractDataVector)
     ref(x, i, removeNA(col_inds))
 end
+# TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              i::Real,
              col_inds::Union(Vector, BitVector, Ranges))
@@ -325,6 +357,7 @@ end
 function ref(x::DataMatrix, row_inds::AbstractVector, j::Real)
     ref(x, removeNA(row_inds), j)
 end
+# TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
              j::Real)
@@ -342,6 +375,7 @@ function ref(x::DataMatrix,
              col_inds::AbstractDataVector)
     ref(x, find(replaceNA(row_inds, false)), removeNA(col_inds))
 end
+# TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              row_inds::AbstractDataVector{Bool},
              col_inds::Union(Vector, BitVector, Ranges))
@@ -357,21 +391,25 @@ function ref(x::DataMatrix,
              col_inds::AbstractDataVector)
     ref(x, removeNA(row_inds), removeNA(col_inds))
 end
+# TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              row_inds::AbstractDataVector,
              col_inds::Union(Vector, BitVector, Ranges))
     ref(x, removeNA(row_inds), col_inds)
 end
+# TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::AbstractDataVector{Bool})
     ref(x, row_inds, find(replaceNA(col_inds, false)))
 end
+# TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::AbstractDataVector)
     ref(x, row_inds, removeNA(col_inds))
 end
+# TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::Union(Vector, BitVector, Ranges))
@@ -385,42 +423,42 @@ end
 ##############################################################################
 
 # d[SingleItemIndex] = NA
-function assign(d::DataArray, val::NAtype, i::Real)
-	d.na[i] = true
+function assign(da::DataArray, val::NAtype, i::Real)
+	da.na[i] = true
 end
 # d[SingleItemIndex] = Single Item
-function assign(d::DataArray, val::Any, i::Real)
-	d.data[i] = val
-	d.na[i] = false
+function assign(da::DataArray, val::Any, i::Real)
+	da.data[i] = val
+	da.na[i] = false
 end
 
 # d[MultiIndex] = NA
-function assign(d::DataArray{NAtype}, val::NAtype, inds::AbstractVector{Bool})
-    error("Don't use DataVector{NAtype}'s")
+function assign(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector{Bool})
+    throw(ArgumentError("DataArray{NAtype} is incoherent"))
 end
-function assign(d::DataArray{NAtype}, val::NAtype, inds::AbstractVector)
-    error("Don't use DataVector{NAtype}'s")
+function assign(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector)
+    throw(ArgumentError("DataArray{NAtype} is incoherent"))
 end
-function assign(d::DataArray, val::NAtype, inds::AbstractVector{Bool})
-    d.na[find(inds)] = true
+function assign(da::DataArray, val::NAtype, inds::AbstractVector{Bool})
+    da.na[find(inds)] = true
     return NA
 end
-function assign(d::DataArray, val::NAtype, inds::AbstractVector)
-    d.na[inds] = true
+function assign(da::DataArray, val::NAtype, inds::AbstractVector)
+    da.na[inds] = true
     return NA
 end
 
 # d[MultiIndex] = Multiple Values
-function assign(d::AbstractDataArray,
+function assign(da::AbstractDataArray,
                 vals::AbstractVector,
                 inds::AbstractVector{Bool})
-    assign(d, vals, find(inds))
+    assign(da, vals, find(inds))
 end
-function assign(d::AbstractDataArray,
+function assign(da::AbstractDataArray,
                 vals::AbstractVector,
                 inds::AbstractVector)
     for (val, ind) in zip(vals, inds)
-        d[ind] = val
+        da[ind] = val
     end
     return vals
 end
@@ -428,167 +466,167 @@ end
 # x[MultiIndex] = Single Item
 # Single item can be a Number, String or the eltype of the AbstractDataVector
 # Should be val::Union(Number, String, T), but that doesn't work
-function assign{T}(x::AbstractDataArray{T},
+function assign{T}(da::AbstractDataArray{T},
                    val::Number,
                    inds::AbstractVector{Bool})
-    assign(x, val, find(inds))
+    assign(da, val, find(inds))
 end
-function assign{T}(x::AbstractDataArray{T},
+function assign{T}(da::AbstractDataArray{T},
                    val::Number,
                    inds::AbstractVector)
-    val = convert(eltype(x), val)
+    val = convert(T, val)
     for ind in inds
-        x[ind] = val
+        da[ind] = val
     end
     return val
 end
-function assign{T}(x::AbstractDataArray{T},
+function assign{T}(da::AbstractDataArray{T},
                    val::String,
                    inds::AbstractVector{Bool})
-    assign(x, val, find(inds))
+    assign(da, val, find(inds))
 end
-function assign{T}(x::AbstractDataArray{T},
+function assign{T}(da::AbstractDataArray{T},
                    val::String,
                    inds::AbstractVector)
-    val = convert(eltype(x), val)
+    val = convert(T, val)
     for ind in inds
-        x[ind] = val
+        da[ind] = val
     end
     return val
 end
-function assign{T <: Number}(x::AbstractDataArray{T},
-                   val::T,
-                   inds::AbstractVector{Bool})
-    assign(x, val, find(inds))
+function assign{T <: Number}(da::AbstractDataArray{T},
+                             val::T,
+                             inds::AbstractVector{Bool})
+    assign(da, val, find(inds))
 end
-function assign{T <: Number}(x::AbstractDataArray{T},
-                   val::T,
-                   inds::AbstractVector)
-    val = convert(eltype(x), val)
+function assign{T <: Number}(da::AbstractDataArray{T},
+                             val::T,
+                             inds::AbstractVector)
+    val = convert(T, val)
     for ind in inds
-        x[ind] = val
+        da[ind] = val
     end
     return val
 end
-function assign{T <: String}(x::AbstractDataArray{T},
-                   val::T,
-                   inds::AbstractVector{Bool})
-    assign(x, val, find(inds))
+function assign{T <: String}(da::AbstractDataArray{T},
+                             val::T,
+                             inds::AbstractVector{Bool})
+    assign(da, val, find(inds))
 end
-function assign{T <: String}(x::AbstractDataArray{T},
-                   val::T,
-                   inds::AbstractVector)
-    val = convert(eltype(x), val)
+function assign{T <: String}(da::AbstractDataArray{T},
+                             val::T,
+                             inds::AbstractVector)
+    val = convert(T, val)
     for ind in inds
-        x[ind] = val
+        da[ind] = val
     end
     return val
 end
-function assign(x::AbstractDataArray,
+function assign(da::AbstractDataArray,
                 val::Any,
                 inds::AbstractVector{Bool})
-    assign(x, val, find(inds))
+    assign(da, val, find(inds))
 end
-function assign(x::AbstractDataArray,
-                val::Any,
-                inds::AbstractVector)
-    val = convert(eltype(x), val)
+function assign{T}(da::AbstractDataArray{T},
+                   val::Any,
+                   inds::AbstractVector)
+    val = convert(T, val)
     for ind in inds
-        x[ind] = val
+        da[ind] = val
     end
     return val
 end
 
 # dm[SingleItemIndex, SingleItemIndex] = NA
-function assign(x::DataMatrix, val::NAtype, i::Real, j::Real)
-    x.na[i, j] = true
+function assign(dm::DataMatrix, val::NAtype, i::Real, j::Real)
+    dm.na[i, j] = true
     return NA
 end
 # dm[SingleItemIndex, SingleItemIndex] = Single Item
-function assign(x::DataMatrix, val::Any, i::Real, j::Real)
-    x.data[i, j] = val
-    x.na[i, j] = false
+function assign(dm::DataMatrix, val::Any, i::Real, j::Real)
+    dm.data[i, j] = val
+    dm.na[i, j] = false
     return val
 end
 
 # dm[MultiItemIndex, SingleItemIndex] = NA
-function assign(x::DataMatrix,
+function assign(dm::DataMatrix,
                 val::NAtype,
                 row_inds::Union(Vector, BitVector, Ranges),
                 j::Real)
-    x.na[row_inds, j] = true
+    dm.na[row_inds, j] = true
     return NA
 end
 # dm[MultiItemIndex, SingleItemIndex] = Multiple Items
-function assign{S, T}(x::DataMatrix{S},
+function assign{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
                       row_inds::Union(Vector, BitVector, Ranges),
                       j::Real)
-    x.data[row_inds, j] = vals
-    x.na[row_inds, j] = false
+    dm.data[row_inds, j] = vals
+    dm.na[row_inds, j] = false
     return val
 end
 # dm[MultiItemIndex, SingleItemIndex] = Single Item
-function assign(x::DataMatrix,
+function assign(dm::DataMatrix,
                 val::Any,
                 row_inds::Union(Vector, BitVector, Ranges),
                 j::Real)
-    x.data[row_inds, j] = val
-    x.na[row_inds, j] = false
+    dm.data[row_inds, j] = val
+    dm.na[row_inds, j] = false
     return val
 end
 
 # dm[SingleItemIndex, MultiItemIndex] = NA
-function assign(x::DataMatrix,
+function assign(dm::DataMatrix,
                 val::NAtype,
                 i::Real,
                 col_inds::Union(Vector, BitVector, Ranges))
-    x.na[i, col_inds] = true
+    dm.na[i, col_inds] = true
     return NA
 end
 # dm[SingleItemIndex, MultiItemIndex] = Multiple Items
-function assign{S, T}(x::DataMatrix{S},
+function assign{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
                       i::Real,
                       col_inds::Union(Vector, BitVector, Ranges))
-    x.data[i, col_inds] = vals
-    x.na[i, col_inds] = false
+    dm.data[i, col_inds] = vals
+    dm.na[i, col_inds] = false
     return val
 end
 # dm[SingleItemIndex, MultiItemIndex] = Single Item
-function assign(x::DataMatrix,
+function assign(dm::DataMatrix,
                 val::Any,
                 i::Real,
                 col_inds::Union(Vector, BitVector, Ranges))
-    x.data[i, col_inds] = val
-    x.na[i, col_inds] = false
+    dm.data[i, col_inds] = val
+    dm.na[i, col_inds] = false
     return val
 end
 
 # dm[MultiItemIndex, MultiItemIndex] = NA
-function assign(x::DataMatrix,
+function assign(dm::DataMatrix,
                 val::NAtype,
                 row_inds::Union(Vector, BitVector, Ranges),
                 col_inds::Union(Vector, BitVector, Ranges))
-    x.na[row_inds, col_inds] = true
+    dm.na[row_inds, col_inds] = true
     return NA
 end
 # dm[MultiIndex, MultiIndex] = Multiple Items
-function assign{S, T}(x::DataMatrix{S},
+function assign{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
                       row_inds::Union(Vector, BitVector, Ranges),
                       col_inds::Union(Vector, BitVector, Ranges))
-    x.data[row_inds, col_inds] = vals
-    x.na[row_inds, col_inds] = false
+    dm.data[row_inds, col_inds] = vals
+    dm.na[row_inds, col_inds] = false
     return val
 end
 # dm[MultiItemIndex, MultiItemIndex] = Single Item
-function assign(x::DataMatrix,
+function assign(dm::DataMatrix,
                 val::Any,
                 row_inds::Union(Vector, BitVector, Ranges),
                 col_inds::Union(Vector, BitVector, Ranges))
-    x.data[row_inds, col_inds] = val
-    x.na[row_inds, col_inds] = false
+    dm.data[row_inds, col_inds] = val
+    dm.na[row_inds, col_inds] = false
     return val
 end
 
@@ -598,13 +636,13 @@ end
 ##
 ##############################################################################
 
-isna(d::DataArray) = copy(d.na)
-isna(x::AbstractArray) = falses(size(x))
+isna(da::DataArray) = copy(da.na)
+isna(a::AbstractArray) = falses(size(a))
 
-isnan(d::DataArray) = DataArray(isnan(dv.data), copy(dv.na))
-isfinite(dv::DataArray) = DataArray(isfinite(dv.data), copy(dv.na))
+isnan(da::DataArray) = DataArray(isnan(da.data), copy(da.na))
+isfinite(da::DataArray) = DataArray(isfinite(da.data), copy(da.na))
 
-function any_na(d::AbstractDataArray)
+function anyna(d::AbstractDataArray)
     for i in 1:length(d)
         if isna(d[i])
             return true
@@ -612,6 +650,7 @@ function any_na(d::AbstractDataArray)
     end
     return false
 end
+anyna(a::AbstractArray) = false
 
 ##############################################################################
 ##
@@ -620,10 +659,10 @@ end
 ##############################################################################
 
 start(x::AbstractDataArray) = 1
-function next(x::AbstractDataArray, state::Int)
+function next(x::AbstractDataArray, state::Integer)
     return (x[state], state + 1)
 end
-function done(x::AbstractDataArray, state::Int)
+function done(x::AbstractDataArray, state::Integer)
     return state > length(x)
 end
 
@@ -646,15 +685,15 @@ promote_rule{T}(::Type{AbstractDataArray{T}}, ::Type{T}) = T
 ##############################################################################
 
 function convert{N}(::Type{BitArray{N}}, d::DataArray{BitArray{N}, N})
-    error("Don't try to convert a DataArray to a BitArray")
+    throw(ArgumentError("Can't convert to BitArray"))
 end
 
 function convert{T, N}(::Type{BitArray{N}}, d::DataArray{T, N})
-    error("Don't try to convert a DataArray to a BitArray")
+    throw(ArgumentError("Can't convert to BitArray"))
 end
 
 function convert{T, N}(::Type{Array{T, N}}, x::DataArray{T, N})
-    if any_na(x)
+    if anyna(x)
         err = "Cannot convert DataArray with NA's to base type"
         throw(NAException(err))
     else
@@ -663,7 +702,7 @@ function convert{T, N}(::Type{Array{T, N}}, x::DataArray{T, N})
 end
 
 function convert{S, T, N}(::Type{Array{S, N}}, x::DataArray{T, N})
-    if any_na(x)
+    if anyna(x)
         err = "Cannot convert DataArray with NA's to desired type"
         throw(NAException(err))
     else
@@ -679,11 +718,12 @@ end
 
 for f in (:int, :float, :bool)
     @eval begin
-        function ($f){T}(dv::DataArray{T})
-            if !any_na(dv)
-                ($f)(dv.data)
+        function ($f){T}(da::DataArray{T})
+            if anyna(da)
+                err = "Cannot convert DataArray with NA's to desired type"
+                throw(NAException(err))
             else
-                error("Conversion impossible with NA's present")
+                ($f)(dv.data)
             end
         end
     end
@@ -704,12 +744,12 @@ end
 ##
 
 function padNA(dv::AbstractDataVector, front::Int, back::Int)
-  n = length(dv)
-  res = similar(dv, front + n + back)
-  for i in 1:n
-    res[i + front] = dv[i]
-  end
-  return res
+    n = length(dv)
+    res = similar(dv, front + n + back)
+    for i in 1:n
+        res[i + front] = dv[i]
+    end
+    return res
 end
 
 ##
@@ -736,7 +776,7 @@ function vector(adv::AbstractDataVector, t::Type)
     end
     return res
 end
-vector(adv::AbstractDataVector) = vector(adv, eltype(adv))
+vector{T}(adv::AbstractDataVector{T}) = vector(adv, T)
 
 function matrix(adm::AbstractDataMatrix, t::Type, replacement_val::Any)
     n, p = size(adm)
@@ -762,6 +802,4 @@ function matrix(adm::AbstractDataMatrix, t::Type)
     end
     return res
 end
-matrix(adm::AbstractDataMatrix) = matrix(adm, eltype(adm))
-
-# TODO: Implement for arbitrary rank tensors
+matrix{T}(adm::AbstractDataMatrix{T}) = matrix(adm, T)
