@@ -29,8 +29,7 @@ vectorized_comparison_operators = [(:(.==), :(==)), (:(.!=), :(!=)),
                                    (:(.<), :(<)), (:(.<=), :(<=))]
 
 binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
-                    :(.^), :(div), :(mod), :(fld), :(rem),
-                    :(&), :(|), :($)]
+                    :(.^), :(div), :(mod), :(fld), :(rem)]
 
 induced_binary_operators = [:(^)]
 
@@ -46,7 +45,7 @@ scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
 
 induced_scalar_arithmetic_operators = [:(^)]
 
-array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^), :(&), :(|), :($)]
+array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^)]
 
 bit_operators = [:(&), :(|), :($)]
 
@@ -353,6 +352,54 @@ for f in comparison_operators
     end
 end
 
+#
+# Bit operators
+#
+
+(&)(a::NAtype, b::NAtype) = NA
+(&)(a::NAtype, b::Bool) = b ? NA : false
+(&)(a::Bool, b::NAtype) = a ? NA : false
+(&)(a::NAtype, b::Real) = NA
+(&)(a::Real, b::NAtype) = NA
+
+(|)(a::NAtype, b::NAtype) = NA
+(|)(a::NAtype, b::Bool) = b ? true : NA
+(|)(a::Bool, b::NAtype) = a ? true : NA
+(|)(a::NAtype, b::Real) = NA
+(|)(a::Real, b::NAtype) = NA
+
+($)(a::NAtype, b::NAtype) = NA
+($)(a::NAtype, b::Bool) = NA
+($)(a::Bool, b::NAtype) = NA
+($)(a::NAtype, b::Real) = NA
+($)(a::Real, b::NAtype) = NA
+
+for f in bit_operators
+    @eval begin
+        function ($f)(a::Array, b::AbstractDataArray)
+            res = similar(b, size(b))
+            for i in 1:length(res)
+                res[i] = ($f)(a[i], b[i])
+            end
+            return res
+        end
+        function ($f)(a::AbstractDataArray, b::Array)
+            res = similar(a, size(a))
+            for i in 1:length(res)
+                res[i] = ($f)(a[i], b[i])
+            end
+            return res
+        end
+        function ($f)(a::AbstractDataArray, b::AbstractDataArray)
+            res = similar(a, size(a))
+            for i in 1:length(res)
+                res[i] = ($f)(a[i], b[i])
+            end
+            return res
+        end
+    end
+end
+
 for (f, scalarf) in vectorized_comparison_operators
     @eval begin
         function ($f){S, T <: Union(String, Number)}(a::DataVector{S}, v::T)
@@ -611,42 +658,6 @@ for (f, scalarf) in vectorized_comparison_operators
             end
             return results
         end
-    end
-end
-
-#
-# Bit operators
-#
-
-function (&)(a::NAtype, b::Bool)
-    if b
-        return NA
-    else
-        return false
-    end
-end
-
-function (&)(a::Bool, b::NAtype)
-    if a
-        return NA
-    else
-        return false
-    end
-end
-
-function (|)(a::NAtype, b::Bool)
-    if b
-        return true
-    else
-        return NA
-    end
-end
-
-function (|)(a::Bool, b::NAtype)
-    if a
-        return true
-    else
-        return NA
     end
 end
 
