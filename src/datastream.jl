@@ -18,7 +18,7 @@ abstract AbstractDataStream
 # explicit a priori type information.
 type FileDataStream <: AbstractDataStream
   filename::String
-  stream::IOStream # Any
+  stream::IO # Any
   separator::Char
   quotation_character::Char
   missingness_indicators::Vector
@@ -29,7 +29,7 @@ type FileDataStream <: AbstractDataStream
 end
 
 function FileDataStream{T <: String}(filename::T, minibatch_size::Int)
-  stream = OUTPUT_STREAM # A filler IOStream
+  stream = OUTPUT_STREAM
   separator = determine_separator(filename)
   quotation_character = DEFAULT_QUOTATION_CHARACTER
   missingness_indicators = DEFAULT_MISSINGNESS_INDICATORS
@@ -68,21 +68,28 @@ function start(ds::FileDataStream)
     readline(ds.stream)
   end
 
-  return -1
+  next_df = read_minibatch(ds.stream,
+                           ds.separator,
+                           ds.quotation_character,
+                           ds.missingness_indicators,
+                           colnames(ds),
+                           ds.minibatch_size)
+
+  return next_df
 end
 
-function next(ds::FileDataStream, nrows_read::Int)
-  df = read_minibatch(ds.stream,
-                      ds.separator,
-                      ds.quotation_character,
-                      ds.missingness_indicators,
-                      colnames(ds),
-                      ds.minibatch_size)
-  (df, nrow(df))
+function next(ds::FileDataStream, df::DataFrame)
+  next_df = read_minibatch(ds.stream,
+                           ds.separator,
+                           ds.quotation_character,
+                           ds.missingness_indicators,
+                           colnames(ds),
+                           ds.minibatch_size)
+  (df, next_df)
 end
 
-function done(ds::FileDataStream, nrows_read::Int)
-  if nrows_read == 0
+function done(ds::FileDataStream, df::DataFrame)
+  if nrow(df) == 0
     close(ds.stream)
     return true
   else
@@ -100,7 +107,7 @@ colnames(ds::FileDataStream) = ds.column_names
 ##############################################################################
 
 type IODataStream <: AbstractDataStream
-  stream::IOStream
+  stream::IO
   separator::Char
   quotation_character::Char
   missingness_indicators::Vector
@@ -109,7 +116,7 @@ type IODataStream <: AbstractDataStream
   minibatch_size::Int
 end
 
-function IODataStream(io::IOStream, minibatch_size::Int)
+function IODataStream(io::IO, minibatch_size::Int)
   stream = io
   separator = DEFAULT_SEPARATOR
   quotation_character = DEFAULT_QUOTATION_CHARACTER
@@ -122,15 +129,15 @@ function IODataStream(io::IOStream, minibatch_size::Int)
                header, column_names, minibatch_size)
 end
 
-function IODataStream(io::IOStream)
+function IODataStream(io::IO)
   IODataStream(io, 1)
 end
 
-function DataStream(io::IOStream, minibatch_size::Int)
+function DataStream(io::IO, minibatch_size::Int)
   IODataStream(io, minibatch_size)
 end
 
-function DataStream(io::IOStream)
+function DataStream(io::IO)
   IODataStream(io, 1)
 end
 
@@ -140,7 +147,7 @@ function start(ds::IODataStream)
   try
     seek(ds.stream, 0)
   catch
-    println("WARNING: Could not seek to the start of the input stream")
+    warn("Could not seek to the start of the input stream")
   end
 
   # Read one line to remove header in advance
@@ -156,21 +163,28 @@ function start(ds::IODataStream)
     error("Currently only IODataStream's with headers are supported")
   end
 
-  return -1
-end
-
-function next(ds::IODataStream, nrows_read::Int)
   df = read_minibatch(ds.stream,
                       ds.separator,
                       ds.quotation_character,
                       ds.missingness_indicators,
                       colnames(ds),
                       ds.minibatch_size)
-  (df, nrow(df))
+
+  return df
 end
 
-function done(ds::IODataStream, nrows_read::Int)
-  if nrows_read == 0
+function next(ds::IODataStream, df::DataFrame)
+  next_df = read_minibatch(ds.stream,
+                           ds.separator,
+                           ds.quotation_character,
+                           ds.missingness_indicators,
+                           colnames(ds),
+                           ds.minibatch_size)
+  (df, next_df)
+end
+
+function done(ds::IODataStream, df::DataFrame)
+  if nrow(df) == 0
     return true
   else
     return false

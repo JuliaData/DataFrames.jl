@@ -27,7 +27,7 @@ df3 = benchmark(f3,
                 1_000)
 
 # TODO: Keep permanent record
-print_table(stdout_stream, rbind(df1, df2, df3), ',', '"', false)
+print_table(STDOUT, rbind(df1, df2, df3), ',', '"', false)
 
 # Compare with R
 # We're 10x as fast!

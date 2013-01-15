@@ -4,7 +4,6 @@
 
 require("extras/test.jl")
 
-require("DataFrames")
 using DataFrames
 
 my_tests = ["test/dataarray.jl",
@@ -14,7 +13,7 @@ my_tests = ["test/dataarray.jl",
             "test/operators.jl",
             "test/io.jl",
             # "test/formula.jl",
-            # "test/datastream.jl",
+            "test/datastream.jl",
             "test/datamatrix.jl",
             "test/constructors.jl",
             "test/abstractarray.jl",

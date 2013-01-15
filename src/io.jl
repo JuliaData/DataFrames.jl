@@ -177,7 +177,7 @@ function read_separated_line(io,
 end
 
 # Read data line-by-line
-function read_separated_text(io::IOStream,
+function read_separated_text(io::IO,
                              nrows::Int,
                              separator::Char,
                              quotation_character::Char)
@@ -237,7 +237,7 @@ function determine_nrows{T <: String}(filename::T, header::Bool)
   end
 end
 
-function determine_column_names(io::IOStream,
+function determine_column_names(io::IO,
                                 separator::Char,
                                 quotation_character::Char,
                                 header::Bool)
@@ -320,11 +320,11 @@ end
 #
 ##############################################################################
 
-# Read at most N lines from an IOStream
+# Read at most N lines from an IO object
 # Then return a minibatch of at most N rows as a DataFrame
 # Add column_types, force_types option
 function read_minibatch{R <: String,
-                        S <: String}(io::IOStream,
+                        S <: String}(io::IO,
                                      separator::Char,
                                      quotation_character::Char,
                                      missingness_indicators::Vector{R},
@@ -337,10 +337,10 @@ function read_minibatch{R <: String,
   return convert_to_dataframe(text_data, missingness_indicators, column_names)
 end
 
-# Read an entire data set into a DataFrame from an IOStream
+# Read an entire data set into a DataFrame from an IO
 # TODO: Do only IO-pass through the data
 function read_table{R <: String,
-                    S <: String}(io::IOStream,
+                    S <: String}(io::IO,
                                  separator::Char,
                                  quotation_character::Char,
                                  missingness_indicators::Vector{R},

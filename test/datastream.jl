@@ -1,25 +1,20 @@
-require("DataFrames")
-using DataFrames
-
 filename = joinpath(julia_pkgdir(), "DataFrames", "test", "data", "sample_data.csv")
 
 ds = DataStream(filename)
-i = start(ds)
-(df, i) = next(ds, i)
-@assert done(ds, i) == false
-(df, i) = next(ds, i)
-@assert done(ds, i) == false
-(df, i) = next(ds, i)
-@assert done(ds, i) == false
-(df, i) = next(ds, i)
-@assert done(ds, i) == true
+next_df = start(ds)
+(df, next_df) = next(ds, next_df)
+@assert done(ds, next_df) == false
+(df, next_df) = next(ds, next_df)
+@assert done(ds, next_df) == false
+(df, next_df) = next(ds, next_df)
+@assert done(ds, next_df) == true
 
 filename = joinpath(julia_pkgdir(), "DataFrames", "test", "data", "big_data.csv")
 
 ds = DataStream(filename, 100)
-df = start(ds)
-(new_df, new_df) = next(ds, df)
-@assert done(ds, new_df) == false
+next_df = start(ds)
+(df, next_df) = next(ds, next_df)
+@assert done(ds, next_df) == false
 
 ds = DataStream(filename, 5)
 

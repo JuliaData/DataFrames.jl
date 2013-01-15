@@ -11,5 +11,5 @@ for filename in filenames
 	                                filename,
 	                                N)
 	# TODO: Keep permanent record
-	print_table(stdout_stream, df, ',', '"', false)
+	print_table(STDOUT, df, ',', '"', false)
 end

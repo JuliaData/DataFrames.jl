@@ -9,8 +9,8 @@ minibatch_sizes = [1, 5, 25, 100, 1_000, 10_000]
 for f in (colmeans, colvars, cor)
 	for minibatch_size in minibatch_sizes
 		ds = DataStream(filename, minibatch_size)
-		N = 10
-		df = benchmark(f,
+		N = 3
+		df = benchmark(() -> apply(f, (ds,)),
 			           "DataStream Functions",
 			           join({
 			           	      string(f),
@@ -20,6 +20,6 @@ for f in (colmeans, colvars, cor)
 			           	    }, " "),
 			           N)
 		# TODO: Keep permanent record
-		print_table(stdout_stream, df, false, ',', '"', false)
+		print_table(STDOUT, df, ',', '"', false)
 	end
 end

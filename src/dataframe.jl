@@ -916,7 +916,7 @@ function show(io, df::AbstractDataFrame, Nmx::Integer)
 end
 
 # get the structure of a DF
-function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
+function dump(io::IO, x::AbstractDataFrame, n::Int, indent)
     println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
     gr = get_groups(x)
     if length(gr) > 0
@@ -930,7 +930,7 @@ function dump(io::IOStream, x::AbstractDataFrame, n::Int, indent)
         end
     end
 end
-dump(io::IOStream, x::AbstractDataVector, n::Int, indent) =
+dump(io::IO, x::AbstractDataVector, n::Int, indent) =
     println(io, typeof(x), "(", length(x), ") ", x[1:min(4, end)])
 
 # summarize the columns of a DF
@@ -941,8 +941,8 @@ dump(io::IOStream, x::AbstractDataVector, n::Int, indent) =
 # if anything else, punt.
 # Note that R creates a summary object, which has a print method. That's
 # a reasonable alternative to this.
-describe(dv::AbstractDataVector) = describe(OUTPUT_STREAM::IOStream, dv)
-describe(df::DataFrame) = describe(OUTPUT_STREAM::IOStream, df)
+describe(dv::AbstractDataVector) = describe(OUTPUT_STREAM, dv)
+describe(df::DataFrame) = describe(OUTPUT_STREAM, df)
 function describe{T<:Number}(io, dv::AbstractDataVector{T})
     filtered = float(removeNA(dv))
     qs = quantile(filtered, [0, .25, .5, .75, 1])
