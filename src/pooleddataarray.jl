@@ -225,22 +225,21 @@ isna(pda::PooledDataArray) = pda.refs .== 0
 ##############################################################################
 
 # Convert a PooledDataVector{T} to a DataVector{T}
-# TODO: Make this work for Array's
-function values{T}(x::PooledDataVector{T})
-    n = length(x)
-    res = DataArray(T, n)
-    for i in 1:n
-        r = x.refs[i]
+function values{T}(pda::PooledDataArray{T})
+    res = DataArray(T, size(pda)...)
+    for i in 1:length(pda)
+        r = pda.refs[i]
         if r == 0
             res[i] = NA
         else
-            res[i] = x.pool[r]
+            res[i] = pda.pool[r]
         end
     end
     return res
 end
 DataArray(pda::PooledDataArray) = values(pda)
 values(da::DataArray) = copy(da)
+values(a::Array) = copy(a)
 
 function unique{T}(x::PooledDataArray{T})
     if any(x.refs .== 0)
@@ -274,7 +273,7 @@ levels{T}(adv::AbstractDataVector{T}) = unique(adv)
 
 get_indices{T}(x::PooledDataArray{T}) = x.refs
 
-function index_to_level{T}(x::PooledDataVector{T})
+function index_to_level{T}(x::PooledDataArray{T})
     d = Dict{POOLED_DATA_VEC_REF_TYPE, T}()
     for i in POOLED_DATA_VEC_REF_CONVERTER(1:length(x.pool))
         d[i] = x.pool[i]
@@ -282,7 +281,7 @@ function index_to_level{T}(x::PooledDataVector{T})
     return d
 end
 
-function level_to_index{T}(x::PooledDataVector{T})
+function level_to_index{T}(x::PooledDataArray{T})
     d = Dict{T, POOLED_DATA_VEC_REF_TYPE}()
     for i in POOLED_DATA_VEC_REF_CONVERTER(1:length(x.pool))
         d[x.pool[i]] = i
@@ -295,6 +294,8 @@ end
 ## similar()
 ##
 ##############################################################################
+
+similar(pda::PooledDataArray) = pda
 
 function similar(pda::PooledDataArray, dims::Int...)
     PooledDataArray(fill(uint16(0), dims...), pda.pool)

@@ -391,24 +391,28 @@ function ref(x::DataMatrix,
              col_inds::AbstractDataVector)
     ref(x, removeNA(row_inds), removeNA(col_inds))
 end
+
 # TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              row_inds::AbstractDataVector,
              col_inds::Union(Vector, BitVector, Ranges))
     ref(x, removeNA(row_inds), col_inds)
 end
+
 # TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::AbstractDataVector{Bool})
     ref(x, row_inds, find(replaceNA(col_inds, false)))
 end
+
 # TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::AbstractDataVector)
     ref(x, row_inds, removeNA(col_inds))
 end
+
 # TODO: Make inds::AbstractVector
 function ref(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
@@ -426,6 +430,7 @@ end
 function assign(da::DataArray, val::NAtype, i::Real)
 	da.na[i] = true
 end
+
 # d[SingleItemIndex] = Single Item
 function assign(da::DataArray, val::Any, i::Real)
 	da.data[i] = val
@@ -464,8 +469,6 @@ function assign(da::AbstractDataArray,
 end
 
 # x[MultiIndex] = Single Item
-# Single item can be a Number, String or the eltype of the AbstractDataVector
-# Should be val::Union(Number, String, T), but that doesn't work
 function assign{T}(da::AbstractDataArray{T},
                    val::Union(Number, String, T),
                    inds::AbstractVector{Bool})
@@ -500,6 +503,7 @@ function assign(dm::DataMatrix, val::NAtype, i::Real, j::Real)
     dm.na[i, j] = true
     return NA
 end
+
 # dm[SingleItemIndex, SingleItemIndex] = Single Item
 function assign(dm::DataMatrix, val::Any, i::Real, j::Real)
     dm.data[i, j] = val
@@ -515,6 +519,7 @@ function assign(dm::DataMatrix,
     dm.na[row_inds, j] = true
     return NA
 end
+
 # dm[MultiItemIndex, SingleItemIndex] = Multiple Items
 function assign{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
@@ -524,6 +529,7 @@ function assign{S, T}(dm::DataMatrix{S},
     dm.na[row_inds, j] = false
     return val
 end
+
 # dm[MultiItemIndex, SingleItemIndex] = Single Item
 function assign(dm::DataMatrix,
                 val::Any,
@@ -542,6 +548,7 @@ function assign(dm::DataMatrix,
     dm.na[i, col_inds] = true
     return NA
 end
+
 # dm[SingleItemIndex, MultiItemIndex] = Multiple Items
 function assign{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
@@ -551,6 +558,7 @@ function assign{S, T}(dm::DataMatrix{S},
     dm.na[i, col_inds] = false
     return val
 end
+
 # dm[SingleItemIndex, MultiItemIndex] = Single Item
 function assign(dm::DataMatrix,
                 val::Any,
@@ -569,6 +577,7 @@ function assign(dm::DataMatrix,
     dm.na[row_inds, col_inds] = true
     return NA
 end
+
 # dm[MultiIndex, MultiIndex] = Multiple Items
 function assign{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
@@ -578,6 +587,7 @@ function assign{S, T}(dm::DataMatrix{S},
     dm.na[row_inds, col_inds] = false
     return val
 end
+
 # dm[MultiItemIndex, MultiItemIndex] = Single Item
 function assign(dm::DataMatrix,
                 val::Any,
@@ -595,11 +605,8 @@ end
 ##############################################################################
 
 isna(da::DataArray) = copy(da.na)
-isna(a::AbstractArray) = falses(size(a))
-
 isnan(da::DataArray) = DataArray(isnan(da.data), copy(da.na))
 isfinite(da::DataArray) = DataArray(isfinite(da.data), copy(da.na))
-
 function anyna(d::AbstractDataArray)
     for i in 1:length(d)
         if isna(d[i])
@@ -616,6 +623,8 @@ function allna(d::AbstractDataArray)
     end
     return true
 end
+
+isna(a::AbstractArray) = falses(size(a))
 anyna(a::AbstractArray) = false
 allna(a::AbstractArray) = false
 
@@ -626,9 +635,11 @@ allna(a::AbstractArray) = false
 ##############################################################################
 
 start(x::AbstractDataArray) = 1
+
 function next(x::AbstractDataArray, state::Integer)
     return (x[state], state + 1)
 end
+
 function done(x::AbstractDataArray, state::Integer)
     return state > length(x)
 end
@@ -706,9 +717,11 @@ for (f, basef) in ((:dataint, :int), (:datafloat, :float64), (:databool, :bool))
     end
 end
 
+##############################################################################
 ##
 ## padNA
 ##
+##############################################################################
 
 function padNA(dv::AbstractDataVector, front::Int, back::Int)
     n = length(dv)
@@ -719,9 +732,11 @@ function padNA(dv::AbstractDataVector, front::Int, back::Int)
     return res
 end
 
+##############################################################################
 ##
 ## Conversion
 ##
+##############################################################################
 
 function vector(adv::AbstractDataVector, t::Type, replacement_val::Any)
     n = length(adv)
@@ -770,3 +785,19 @@ function matrix(adm::AbstractDataMatrix, t::Type)
     return res
 end
 matrix{T}(adm::AbstractDataMatrix{T}) = matrix(adm, T)
+
+##############################################################################
+##
+## Hashing
+##
+## Make sure this agrees with is_equals()
+##
+##############################################################################
+
+function hash(a::AbstractDataArray)
+    h = hash(size(a)) + 1
+    for i in 1:length(a)
+        h = bitmix(h, int(hash(a[i])))
+    end
+    return uint(h)
+end

@@ -1830,3 +1830,19 @@ end
 function next(df::AbstractDataFrame, i::Any)
     error("To iterate over DataFrames, use EachRow or EachCol")
 end
+
+##############################################################################
+##
+## Hashing
+##
+## Make sure this agrees with is_equals()
+##
+##############################################################################
+
+function hash(a::AbstractDataFrame)
+    h = hash(size(a)) + 1
+    for i in 1:prod(size(a))
+        h = bitmix(h, int(hash(a[i])))
+    end
+    return uint(h)
+end
