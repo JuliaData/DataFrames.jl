@@ -1767,7 +1767,7 @@ function isfinite(df::DataFrame)
     return DataFrame(res_columns, colnames(df))
 end
 
-function sort_by(df::DataFrame, colname::String)
+function sortby(df::DataFrame, colname::String)
     return df[order(df[colname]), :]
 end
 
