@@ -608,7 +608,16 @@ function anyna(d::AbstractDataArray)
     end
     return false
 end
+function allna(d::AbstractDataArray)
+    for i in 1:length(d)
+        if !isna(d[i])
+            return false
+        end
+    end
+    return true
+end
 anyna(a::AbstractArray) = false
+allna(a::AbstractArray) = false
 
 ##############################################################################
 ##
