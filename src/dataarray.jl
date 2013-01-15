@@ -467,55 +467,13 @@ end
 # Single item can be a Number, String or the eltype of the AbstractDataVector
 # Should be val::Union(Number, String, T), but that doesn't work
 function assign{T}(da::AbstractDataArray{T},
-                   val::Number,
+                   val::Union(Number, String, T),
                    inds::AbstractVector{Bool})
     assign(da, val, find(inds))
 end
 function assign{T}(da::AbstractDataArray{T},
-                   val::Number,
+                   val::Union(Number, String, T),
                    inds::AbstractVector)
-    val = convert(T, val)
-    for ind in inds
-        da[ind] = val
-    end
-    return val
-end
-function assign{T}(da::AbstractDataArray{T},
-                   val::String,
-                   inds::AbstractVector{Bool})
-    assign(da, val, find(inds))
-end
-function assign{T}(da::AbstractDataArray{T},
-                   val::String,
-                   inds::AbstractVector)
-    val = convert(T, val)
-    for ind in inds
-        da[ind] = val
-    end
-    return val
-end
-function assign{T <: Number}(da::AbstractDataArray{T},
-                             val::T,
-                             inds::AbstractVector{Bool})
-    assign(da, val, find(inds))
-end
-function assign{T <: Number}(da::AbstractDataArray{T},
-                             val::T,
-                             inds::AbstractVector)
-    val = convert(T, val)
-    for ind in inds
-        da[ind] = val
-    end
-    return val
-end
-function assign{T <: String}(da::AbstractDataArray{T},
-                             val::T,
-                             inds::AbstractVector{Bool})
-    assign(da, val, find(inds))
-end
-function assign{T <: String}(da::AbstractDataArray{T},
-                             val::T,
-                             inds::AbstractVector)
     val = convert(T, val)
     for ind in inds
         da[ind] = val

@@ -242,7 +242,7 @@ end
 DataArray(pda::PooledDataArray) = values(pda)
 values(da::DataArray) = copy(da)
 
-function unique{T}(x::PooledDataVector{T})
+function unique{T}(x::PooledDataArray{T})
     if any(x.refs .== 0)
         n = length(x.pool)
         d = Array(T, n + 1)
@@ -256,7 +256,7 @@ function unique{T}(x::PooledDataVector{T})
         return DataArray(copy(x.pool), falses(length(x.pool)))
     end
 end
-levels{T}(pdv::PooledDataVector{T}) = unique(pdv)
+levels{T}(pdv::PooledDataArray{T}) = unique(pdv)
 
 function unique{T}(adv::AbstractDataVector{T})
   values = Dict{Union(T, NAtype), Bool}()
@@ -318,29 +318,119 @@ find(pdv::PooledDataVector{Bool}) = find(values(pdv))
 ##
 ##############################################################################
 
-# dv[SingleItemIndex]
-function ref(x::PooledDataVector, ind::Real)
-    if x.refs[ind] == 0
+# pda[SingleItemIndex]
+function ref(pda::PooledDataArray, i::Real)
+    if pda.refs[i] == 0
         return NA
     else
-        return x.pool[x.refs[ind]]
+        return pda.pool[pda.refs[i]]
     end
 end
 
-# dv[MultiItemIndex]
-function ref(x::PooledDataVector, inds::AbstractDataVector{Bool})
+# pda[MultiItemIndex]
+function ref(pda::PooledDataArray, inds::AbstractDataVector{Bool})
     inds = find(replaceNA(inds, false))
-    return PooledDataArray(x.refs[inds], copy(x.pool))
+    return PooledDataArray(pda.refs[inds], copy(pda.pool))
 end
-function ref(x::PooledDataVector, inds::AbstractDataVector)
+function ref(pda::PooledDataArray, inds::AbstractDataVector)
     inds = removeNA(inds)
-    return PooledDataArray(x.refs[inds], copy(x.pool))
+    return PooledDataArray(pda.refs[inds], copy(pda.pool))
 end
-function ref(x::PooledDataVector, inds::Union(Vector, BitVector, Ranges))
-    return PooledDataArray(x.refs[inds], copy(x.pool))
+function ref(pda::PooledDataArray, inds::Union(Vector, BitVector, Ranges))
+    return PooledDataArray(pda.refs[inds], copy(pda.pool))
 end
 
-# TODO: Fill in other methods from DataArray
+# pdm[SingleItemIndex, SingleItemIndex)
+function ref(pda::PooledDataArray, i::Real, j::Real)
+    if pda.refs[i, j] == 0
+        return NA
+    else
+        return pda.pool[pda.refs[i, j]]
+    end
+end
+
+# pda[SingleItemIndex, MultiItemIndex]
+function ref(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector{Bool})
+    ref(pda, i, find(replaceNA(col_inds, false)))
+end
+function ref(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector)
+    ref(pda, i, removeNA(col_inds))
+end
+# TODO: Make inds::AbstractVector
+function ref(pda::PooledDataArray,
+             i::Real,
+             col_inds::Union(Vector, BitVector, Ranges))
+    error("not yet implemented")
+    PooledDataArray(pda.refs[i, col_inds], pda.pool[i, col_inds])
+end
+
+# pda[MultiItemIndex, SingleItemIndex]
+function ref(pda::PooledDataArray, row_inds::AbstractDataVector{Bool}, j::Real)
+    ref(pda, find(replaceNA(row_inds, false)), j)
+end
+function ref(pda::PooledDataArray, row_inds::AbstractVector, j::Real)
+    ref(pda, removeNA(row_inds), j)
+end
+# TODO: Make inds::AbstractVector
+function ref(pda::PooledDataArray,
+             row_inds::Union(Vector, BitVector, Ranges),
+             j::Real)
+    error("not yet implemented")
+    PooledDataArray(pda.refs[row_inds, j], pda.pool[row_inds, j])
+end
+
+# pda[MultiItemIndex, MultiItemIndex]
+function ref(pda::PooledDataArray,
+             row_inds::AbstractDataVector{Bool},
+             col_inds::AbstractDataVector{Bool})
+    ref(pda, find(replaceNA(row_inds, false)), find(replaceNA(col_inds, false)))
+end
+function ref(pda::PooledDataArray,
+             row_inds::AbstractDataVector{Bool},
+             col_inds::AbstractDataVector)
+    ref(pda, find(replaceNA(row_inds, false)), removeNA(col_inds))
+end
+# TODO: Make inds::AbstractVector
+function ref(pda::PooledDataArray,
+             row_inds::AbstractDataVector{Bool},
+             col_inds::Union(Vector, BitVector, Ranges))
+    ref(pda, find(replaceNA(row_inds, false)), col_inds)
+end
+function ref(pda::PooledDataArray,
+             row_inds::AbstractDataVector,
+             col_inds::AbstractDataVector{Bool})
+    ref(pda, removeNA(row_inds), find(replaceNA(col_inds, false)))
+end
+function ref(pda::PooledDataArray,
+             row_inds::AbstractDataVector,
+             col_inds::AbstractDataVector)
+    ref(pda, removeNA(row_inds), removeNA(col_inds))
+end
+# TODO: Make inds::AbstractVector
+function ref(pda::PooledDataArray,
+             row_inds::AbstractDataVector,
+             col_inds::Union(Vector, BitVector, Ranges))
+    ref(pda, removeNA(row_inds), col_inds)
+end
+# TODO: Make inds::AbstractVector
+function ref(pda::PooledDataArray,
+             row_inds::Union(Vector, BitVector, Ranges),
+             col_inds::AbstractDataVector{Bool})
+    ref(pda, row_inds, find(replaceNA(col_inds, false)))
+end
+# TODO: Make inds::AbstractVector
+function ref(pda::PooledDataArray,
+             row_inds::Union(Vector, BitVector, Ranges),
+             col_inds::AbstractDataVector)
+    ref(pda, row_inds, removeNA(col_inds))
+end
+# TODO: Make inds::AbstractVector
+function ref(pda::PooledDataArray,
+             row_inds::Union(Vector, BitVector, Ranges),
+             col_inds::Union(Vector, BitVector, Ranges))
+    error("not yet implemented")
+    PooledDataArray(pda.refs[row_inds, col_inds], pda.pool[row_inds, col_inds])
+end
 
 ##############################################################################
 ##
@@ -350,14 +440,14 @@ end
 
 # x[SingleIndex] = NA
 # TODO: Delete values from pool that no longer exist?
-function assign(x::PooledDataVector, val::NAtype, ind::Real)
+function assign(x::PooledDataArray, val::NAtype, ind::Real)
     x.refs[ind] = 0
     return NA
 end
 
 # x[SingleIndex] = Single Item
 # TODO: Delete values from pool that no longer exist?
-function assign(x::PooledDataVector, val::Any, ind::Real)
+function assign(x::PooledDataArray, val::Any, ind::Real)
     val = convert(eltype(x), val)
     pool_idx = findfirst(x.pool, val)
     if pool_idx > 0
@@ -371,27 +461,57 @@ end
 
 # x[MultiIndex] = NA
 # TODO: Find a way to delete the next four methods
-function assign(x::PooledDataVector{NAtype},
+function assign(x::PooledDataArray{NAtype},
                 val::NAtype,
                 inds::AbstractVector{Bool})
     error("Don't use PooledDataVector{NAtype}'s")
 end
-function assign(x::PooledDataVector{NAtype},
+function assign(x::PooledDataArray{NAtype},
                 val::NAtype,
                 inds::AbstractVector)
     error("Don't use PooledDataVector{NAtype}'s")
 end
-
-# x[MultiIndex] = NA
-# TODO: Delete values from pool that no longer exist?
-function assign(x::PooledDataVector, val::NAtype, inds::AbstractVector{Bool})
+function assign(x::PooledDataArray, val::NAtype, inds::AbstractVector{Bool})
     inds = find(inds)
     x.refs[inds] = 0
     return NA
 end
-function assign(x::PooledDataVector, val::NAtype, inds::AbstractVector)
+function assign(x::PooledDataArray, val::NAtype, inds::AbstractVector)
     x.refs[inds] = 0
     return NA
+end
+
+# pda[MultiIndex] = Multiple Values
+function assign(pda::PooledDataArray,
+                vals::AbstractVector,
+                inds::AbstractVector{Bool})
+    assign(pda, vals, find(inds))
+end
+function assign(pda::PooledDataArray,
+                vals::AbstractVector,
+                inds::AbstractVector)
+    for (val, ind) in zip(vals, inds)
+        pda[ind] = val
+    end
+    return vals
+end
+
+# pda[SingleItemIndex, SingleItemIndex] = NA
+function assign(pda::PooledDataMatrix, val::NAtype, i::Real, j::Real)
+    pda.refs[i, j] = POOLED_DATA_VEC_REF_CONVERTER(0)
+    return NA
+end
+# pda[SingleItemIndex, SingleItemIndex] = Single Item
+function assign{T}(pda::PooledDataMatrix{T}, val::Any, i::Real, j::Real)
+    val = convert(T, val)
+    pool_idx = findfirst(x.pool, val)
+    if pool_idx > 0
+        pda.refs[i, j] = pool_idx
+    else
+        push!(pda.pool, val)
+        pda.refs[i, j] = length(pda.pool)
+    end
+    return val
 end
 
 ##############################################################################
@@ -405,44 +525,11 @@ function string(x::PooledDataVector)
     return "[$tmp]"
 end
 
-function show(io, x::PooledDataVector)
-    print(io, "values: ")
-    print(io, values(x))
-    print(io, "\n")
-    print(io, "levels: ")
-    print(io, levels(x))
-end
-
-function repl_show{T}(io::IO, dv::PooledDataVector{T})
-    n = length(dv)
-    print(io, "$n-element $T PooledDataVector\n")
-    if n == 0
-        return
-    end
-    max_lines = tty_rows() - 5
-    head_lim = fld(max_lines, 2)
-    if mod(max_lines, 2) == 0
-        tail_lim = (n - fld(max_lines, 2)) + 2
-    else
-        tail_lim = (n - fld(max_lines, 2)) + 1
-    end
-    if n > max_lines
-        for i in 1:head_lim
-            println(io, strcat(' ', dv[i]))
-        end
-        println(io, " \u22ee")
-        for i in tail_lim:(n - 1)
-            println(io, strcat(' ', dv[i]))
-        end
-        println(io, strcat(' ', dv[n]))
-    else
-        for i in 1:(n - 1)
-            println(io, strcat(' ', dv[i]))
-        end
-        println(io, strcat(' ', dv[n]))
-    end
-    print(io, "levels: ")
-    print(io, levels(dv))
+# Need assign()'s to make this work
+function show(io::Any, pda::PooledDataArray)
+    invoke(show, (Any, AbstractArray), io, pda)
+    print(io, "\nlevels: ")
+    print(io, levels(pda))
 end
 
 ##############################################################################
@@ -502,14 +589,12 @@ end
 
 ##############################################################################
 ##
-## Sorting
-##
-## TODO: Remove
+## Sorting can use the pool to speed things up
 ##
 ##############################################################################
 
-order(pd::PooledDataArray) = groupsort_indexer(pd)[1]
-sort(pd::PooledDataArray) = pd[order(pd)]
+order(pda::PooledDataArray) = groupsort_indexer(pda)[1]
+sort(pda::PooledDataArray) = pd[order(pda)]
 
 ##############################################################################
 ##
@@ -519,6 +604,7 @@ sort(pd::PooledDataArray) = pd[order(pd)]
 
 function PooledDataVecs{S, T}(v1::AbstractDataVector{S},
                               v2::AbstractDataVector{T})
+
     ## Return two PooledDataVecs that share the same pool.
 
     refs1 = Array(POOLED_DATA_VEC_REF_TYPE, length(v1))
@@ -528,15 +614,10 @@ function PooledDataVecs{S, T}(v1::AbstractDataVector{S},
 
     # loop through once to fill the poolref dict
     for i = 1:length(v1)
-        ## TODO see if we really need the NA checking here.
-        ## if !isna(v1[i])
-            poolref[v1[i]] = 0
-        ## end
+        poolref[v1[i]] = 0
     end
     for i = 1:length(v2)
-        ## if !isna(v2[i])
-            poolref[v2[i]] = 0
-        ## end
+        poolref[v2[i]] = 0
     end
 
     # fill positions in poolref
@@ -549,19 +630,12 @@ function PooledDataVecs{S, T}(v1::AbstractDataVector{S},
 
     # fill in newrefs
     for i = 1:length(v1)
-        ## if isna(v1[i])
-        ##     refs1[i] = 0
-        ## else
-            refs1[i] = poolref[v1[i]]
-        ## end
+        refs1[i] = poolref[v1[i]]
     end
     for i = 1:length(v2)
-        ## if isna(v2[i])
-        ##     refs2[i] = 0
-        ## else
-            refs2[i] = poolref[v2[i]]
-        ## end
+        refs2[i] = poolref[v2[i]]
     end
-    (PooledDataArray(refs1, pool),
-     PooledDataArray(refs2, pool))
+
+    return (PooledDataArray(refs1, pool),
+            PooledDataArray(refs2, pool))
 end
