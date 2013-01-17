@@ -129,7 +129,7 @@ function is_group(idx::Index, name::ByteString)
 end
 
 # special pretty-printer for groups, which are just Dicts.
-function pretty_show(io, gr::Dict{ByteString,Vector{ByteString}})
+function pretty_show(io::IO, gr::Dict{ByteString,Vector{ByteString}})
     allkeys = keys(gr)
     for k = allkeys
         print(io, "$(k): ")

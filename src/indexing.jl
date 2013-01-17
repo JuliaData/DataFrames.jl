@@ -265,8 +265,8 @@ ndims(a::IndexedVector) = 1
 eltype{T}(a::IndexedVector{T}) = T
 
 ## print(io, a::IndexedVector) = print(io, a.x)
-show(io, a::IndexedVector) = show(io, a.x)
-repl_show(io, a::IndexedVector) = repl_show(io, a.x)
+show(io::IO, a::IndexedVector) = show(io, a.x)
+repl_show(io::IO, a::IndexedVector) = repl_show(io, a.x)
 
 function search_sorted_last{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
     ## Index of the last value of vector a that is less than or equal to x.

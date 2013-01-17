@@ -88,7 +88,7 @@ done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
 length(gd::GroupedDataFrame) = length(gd.starts)
 ref(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]]) 
 
-function show(io, gd::GroupedDataFrame)
+function show(io::IO, gd::GroupedDataFrame)
     N = length(gd)
     println(io, "$(typeof(gd))  $N groups with keys: $(gd.cols)")
     println(io, "First Group:")
