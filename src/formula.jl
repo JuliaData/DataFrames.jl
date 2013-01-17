@@ -30,7 +30,7 @@ function Formula(ex::Expr)
     end
 end
 
-function show(io::Any, f::Formula)
+function show(io::IO, f::Formula)
     print(io, strcat("Formula: ", join(f.lhs, ", "), " ~ ", join(f.rhs, " +")))
 end
 

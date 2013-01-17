@@ -527,7 +527,7 @@ function string(x::PooledDataVector)
 end
 
 # Need assign()'s to make this work
-function show(io::Any, pda::PooledDataArray)
+function show(io::IO, pda::PooledDataArray)
     invoke(show, (Any, AbstractArray), io, pda)
     print(io, "\nlevels: ")
     print(io, levels(pda))

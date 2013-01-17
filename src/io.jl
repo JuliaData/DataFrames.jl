@@ -409,7 +409,7 @@ end
 
 # TODO: write_table should do more to react to the type of each column
 # Need to increase precision of string representation of Float64's
-function print_table(io::Any,
+function print_table(io::IO,
                      df::DataFrame,
                      separator::Char,
                      quotation_character::Char,
@@ -438,7 +438,7 @@ function print_table(io::Any,
   end
 end
 
-function print_table(io::Any,
+function print_table(io::IO,
                      df::DataFrame,
                      separator::Char,
                      quotation_character::Char)
