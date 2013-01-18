@@ -2,7 +2,7 @@
 # Correctness Tests
 #
 
-require("extras/test.jl")
+require("test.jl")
 
 using DataFrames
 

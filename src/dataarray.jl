@@ -607,22 +607,8 @@ end
 isna(da::DataArray) = copy(da.na)
 isnan(da::DataArray) = DataArray(isnan(da.data), copy(da.na))
 isfinite(da::DataArray) = DataArray(isfinite(da.data), copy(da.na))
-function anyna(d::AbstractDataArray)
-    for i in 1:length(d)
-        if isna(d[i])
-            return true
-        end
-    end
-    return false
-end
-function allna(d::AbstractDataArray)
-    for i in 1:length(d)
-        if !isna(d[i])
-            return false
-        end
-    end
-    return true
-end
+anyna(d::AbstractDataArray) = anyp(isna, d)
+allna(d::AbstractDataArray) = allp(isna, d)
 
 isna(a::AbstractArray) = falses(size(a))
 anyna(a::AbstractArray) = false
