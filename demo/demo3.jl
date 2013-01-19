@@ -3,7 +3,7 @@ require("DataFrames")
 using DataFrames
 
 # Load a CSV file into a DataFrame
-df = read_table(joinpath(julia_pkgdir(), "DataFrames", "demo", "toy_example.csv"))
+df = read_table(Pkg.dir("DataFrames", "demo", "toy_example.csv"))
 
 # Look at the data structure
 # dump() is like R's str()

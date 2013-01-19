@@ -8,13 +8,13 @@ julia>
 
 julia> # Load a very simple lm() function
 
-julia> require(joinpath(julia_pkgdir(), "DataFrames", "demo", "lm.jl"))
+julia> require(Pkg.dir("DataFrames", "demo", "lm.jl"))
 
 julia> 
 
 julia> # Load a CSV file into a DataFrame
 
-julia> df = read_table(joinpath(julia_pkgdir(), "DataFrames", "demo", "toy_example.csv"))
+julia> df = read_table(Pkg.dir("DataFrames", "demo", "toy_example.csv"))
 6x3 DataFrame:
           A       B   C
 [1,]    2.5   "One" 3.0

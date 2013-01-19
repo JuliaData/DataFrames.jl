@@ -1,8 +1,4 @@
-filename = joinpath(julia_pkgdir(),
-                    "DataFrames",
-                    "test",
-                    "data",
-                    "big_data.csv")
+filename = Pkg.dir("DataFrames", "test", "data", "big_data.csv")
 
 minibatch_sizes = [1, 5, 25, 100, 1_000, 10_000]
 

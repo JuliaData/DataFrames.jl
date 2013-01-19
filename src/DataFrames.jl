@@ -23,7 +23,7 @@ const POOLED_DATA_VEC_REF_CONVERTER = uint16
 
 ##############################################################################
 ##
-## Overwritten and/or extended methods
+## Extend methods in Base by default
 ##
 ##############################################################################
 
@@ -193,25 +193,25 @@ export # reconcile_groups,
 ##
 ##############################################################################
 
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "utils.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "natype.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "dataarray.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "datavector.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "datamatrix.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "pooleddataarray.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "index.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "namedarray.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "dataframe.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "grouping.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "formula.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "io.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "datastream.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "linalg.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "operators.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "statistics.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "predicates.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "indexing.jl"))
-include(joinpath(julia_pkgdir(), "DataFrames", "src", "extras.jl"))
+include("utils.jl")
+include("natype.jl")
+include("dataarray.jl")
+include("datavector.jl")
+include("datamatrix.jl")
+include("pooleddataarray.jl")
+include("index.jl")
+include("namedarray.jl")
+include("dataframe.jl")
+include("grouping.jl")
+include("formula.jl")
+include("io.jl")
+include("datastream.jl")
+include("linalg.jl")
+include("operators.jl")
+include("statistics.jl")
+include("predicates.jl")
+include("indexing.jl")
+include("extras.jl")
 
 # TODO: Remove these definitions
 nafilter(x...) = error("Function removed. Please use removeNA")
