@@ -391,6 +391,13 @@ d1s2 = stack(d1, ["c", "d"])
 @assert isequal(d1s[1:12, "c"], d1["c"])
 @assert isequal(d1s[13:24, "c"], d1["c"])
 @assert all(colnames(d1s) .== ["key", "value", "c", "d"])
+d1s_df = stack_df(d1, ["a", "b"])
+@assert isequal(d1s["key"], d1s_df["key"][:])
+@assert isequal(d1s["value"], d1s_df["value"][:])
+@assert isequal(d1s["c"], d1s_df["c"][:])
+@assert isequal(d1s[1,:], d1s_df[1,:])
+
+
 
 d1s["idx"] = [1:12, 1:12]
 d1s2["idx"] = [1:12, 1:12]

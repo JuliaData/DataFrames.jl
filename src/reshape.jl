@@ -96,6 +96,9 @@ length(v::StackedVector) = sum(map(length, v.components))
 ndims(v::StackedVector) = 1
 eltype(v::StackedVector) = eltype(v.components[1])
 
+show(io::IO, v::StackedVector) = internal_show_vector(io, v)
+repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
+
 function ref{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
     j = mod(i - 1, length(v.parent)) + 1
     v.parent[j]
@@ -110,6 +113,9 @@ size(v::RepeatedVector) = (length(v),)
 length(v::RepeatedVector) = v.n * length(v.parent)
 ndims(v::RepeatedVector) = 1
 eltype{T}(v::RepeatedVector{T}) = T
+
+show(io::IO, v::RepeatedVector) = internal_show_vector(io, v)
+repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
 
 
 function ref{T}(v::EachRepeatedVector{T},i::Real)
@@ -127,8 +133,31 @@ length(v::EachRepeatedVector) = v.n * length(v.parent)
 ndims(v::EachRepeatedVector) = 1
 eltype{T}(v::EachRepeatedVector{T}) = T
 
-## show(io::IO, a::EachRepeatedVector) = show(io, a.x)
-## repl_show(io::IO, a::EachRepeatedVector) = repl_show(io, a.x)
+show(io::IO, v::EachRepeatedVector) = internal_show_vector(io, v)
+repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
+
+
+# The default values of show and repl_show don't work because
+# both try to reshape the vector into a matrix, and these
+# types do not support that.
+
+function internal_show_vector(io::IO, v::AbstractVector)
+    Base.show_delim_array(io, v, '[', ',', ']', true)
+end
+
+function internal_repl_show_vector(io::IO, v::AbstractVector)
+    print(io, summary(v))
+    if length(v) < 21
+        print_matrix(io, v[:]'')    # the double transpose ('') reshapes to a matrix
+    else
+        println(io)
+        print_matrix(io, v[1:10]'')
+        println(io)
+        println(io, "  \u22ee")
+        print_matrix(io, v[end - 9:end]'')
+    end
+end
+
 
 ##############################################################################
 ##
