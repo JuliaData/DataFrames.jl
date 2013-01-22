@@ -189,7 +189,9 @@ export # reconcile_groups,
        stack_df,
        StackedVector,
        RepeatedVector,
-       EachRepeatedVector
+       EachRepeatedVector,
+       melt,
+       melt_df
 
 ##############################################################################
 ##

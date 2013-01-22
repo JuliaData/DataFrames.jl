@@ -4,13 +4,17 @@
 ##
 ##############################################################################
 
-function stack(df::DataFrame, icols::Vector{Int})
-    remainingcols = _setdiff([1:ncol(df)], icols)
-    res = rbind([insert!(df[[i, remainingcols]], 1, colnames(df)[i], "key") for i in icols]...)
+function stack(df::DataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
+    remainingcols = _setdiff([1:ncol(df)], measure_vars)
+    res = rbind([insert!(df[[i, id_vars]], 1, colnames(df)[i], "key") for i in measure_vars]...)
     replace_names!(res, colnames(res)[2], "value")
     res 
 end
-stack(df::DataFrame, icols) = stack(df, [df.colindex[icols]])
+stack(df::DataFrame, measure_vars, id_vars) = stack(df, [df.colindex[measure_vars]], [df.colindex[id_vars]])
+stack(df::DataFrame, measure_vars) = stack(df, [df.colindex[measure_vars]], _setdiff([1:ncol(df)], [df.colindex[measure_vars]]))
+
+melt(df::DataFrame, id_vars) = stack(df, _setdiff([1:ncol(df)], df.colindex[id_vars]))
+melt(df::DataFrame, id_vars, measure_vars) = stack(df, measure_vars, id_vars)
 
 function unstack(df::DataFrame, ikey::Int, ivalue::Int, irefkey::Int)
     keycol = PooledDataArray(df[ikey])
@@ -50,7 +54,6 @@ unstack(df::DataFrame, ikey, ivalue, irefkey) =
 ##
 ##############################################################################
 
-import Base.ref
 ## StackedVector({[1,2], [9,10], [11,12]}) is equivalent to [1,2,9,10,11,12]
 type StackedVector <: AbstractVector{Any}
     components::Vector{Any}
@@ -168,16 +171,22 @@ end
 
 # Same as `stack`, but uses references
 # I'm not sure the name is very good
-function stack_df(df::AbstractDataFrame, icols::Vector{Int})
-    N = length(icols)
-    remainingcols = _setdiff([1:ncol(df)], icols)
-    names = colnames(df)[remainingcols]
+function stack_df(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
+    N = length(measure_vars)
+    remainingcols = _setdiff([1:ncol(df)], measure_vars)
+    names = colnames(df)[id_vars]
     insert!(names, 1, "value")
     insert!(names, 1, "key")
-    DataFrame({EachRepeatedVector(colnames(df)[icols], nrow(df)),       # key
-               StackedVector({df[:,c] for c in 1:N}),                   # value
-               ## RepeatedVector([1:nrow(df)], N),                      # idx - do we want this?
-               [RepeatedVector(df[:,c], N) for c in remainingcols]...}, # remaining columns
+    DataFrame({EachRepeatedVector(colnames(df)[measure_vars], nrow(df)), # key
+               StackedVector({df[:,c] for c in 1:N}),                    # value
+               ## RepeatedVector([1:nrow(df)], N),                       # idx - do we want this?
+               [RepeatedVector(df[:,c], N) for c in id_vars]...},        # id_var columns
               names)
 end
-stack_df(df::AbstractDataFrame, icols) = stack_df(df, [df.colindex[icols]])
+stack_df(df::AbstractDataFrame, measure_vars) = stack_df(df, [index(df)[measure_vars]])
+
+stack_df(df::AbstractDataFrame, measure_vars, id_vars) = stack_df(df, [index(df)[measure_vars]], [index(df)[id_vars]])
+stack_df(df::AbstractDataFrame, measure_vars) = stack_df(df, [index(df)[measure_vars]], _setdiff([1:ncol(df)], [index(df)[measure_vars]]))
+
+melt_df(df::AbstractDataFrame, id_vars) = stack_df(df, _setdiff([1:ncol(df)], index(df)[id_vars]))
+melt_df(df::AbstractDataFrame, id_vars, measure_vars) = stack_df(df, measure_vars, id_vars)
