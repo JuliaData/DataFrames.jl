@@ -185,7 +185,11 @@ export # reconcile_groups,
        without,
        write_table,
        xtab,
-       xtabs
+       xtabs,
+       stack_df,
+       StackedVector,
+       RepeatedVector,
+       EachRepeatedVector
 
 ##############################################################################
 ##
@@ -203,6 +207,7 @@ include("index.jl")
 include("namedarray.jl")
 include("dataframe.jl")
 include("grouping.jl")
+include("reshape.jl")
 include("formula.jl")
 include("io.jl")
 include("datastream.jl")

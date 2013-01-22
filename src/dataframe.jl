@@ -1497,44 +1497,6 @@ based_on(e::Expr) = x -> based_on(x, e)
 (|)(x::AbstractDataFrame, e::Expr) = within!(x, e)
 
 
-##
-## Reshaping
-##
-
-function stack(df::DataFrame, icols::Vector{Int})
-    remainingcols = _setdiff([1:ncol(df)], icols)
-    res = rbind([insert!(df[[i, remainingcols]], 1, colnames(df)[i], "key") for i in icols]...)
-    replace_names!(res, colnames(res)[2], "value")
-    res 
-end
-stack(df::DataFrame, icols) = stack(df, [df.colindex[icols]])
-
-function unstack(df::DataFrame, ikey::Int, ivalue::Int, irefkey::Int)
-    keycol = PooledDataArray(df[ikey])
-    valuecol = df[ivalue]
-    # TODO make a version with a default refkeycol
-    refkeycol = PooledDataArray(df[irefkey])
-    remainingcols = _setdiff([1:ncol(df)], [ikey, ivalue])
-    Nrow = length(refkeycol.pool)
-    Ncol = length(keycol.pool)
-    # TODO make fillNA(type, length) 
-    payload = DataFrame({DataArray([fill(valuecol[1],Nrow)], fill(true, Nrow))  for i in 1:Ncol}, map(string, keycol.pool))
-    nowarning = true 
-    for k in 1:nrow(df)
-        j = int(keycol.refs[k])
-        i = int(refkeycol.refs[k])
-        if i > 0 && j > 0
-            if nowarning && !isna(payload[j][i]) 
-                println("Warning: duplicate entries in unstack.")
-                nowarning = false
-            end
-            payload[j][i]  = valuecol[k]
-        end
-    end
-    insert!(payload, 1, refkeycol.pool, colnames(df)[irefkey])
-end
-unstack(df::DataFrame, ikey, ivalue, irefkey) =
-    unstack(df, df.colindex[ikey], df.colindex[ivalue], df.colindex[irefkey])
 
 ##
 ## Join / merge
