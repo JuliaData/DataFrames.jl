@@ -2,7 +2,7 @@
 #  Split - Apply - Combine operations
 #
 
-function groupsort_indexer(x::Vector, ngroups::Integer)
+function groupsort_indexer(x::AbstractVector, ngroups::Int)
     ## translated from Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
 
     ## count group sizes, location 0 for NA

@@ -390,21 +390,36 @@ d1s = stack(d1, ["a", "b"])
 d1s2 = stack(d1, ["c", "d"])
 @assert isequal(d1s[1:12, "c"], d1["c"])
 @assert isequal(d1s[13:24, "c"], d1["c"])
-@assert all(colnames(d1s) .== ["key", "value", "c", "d"])
+@assert all(colnames(d1s) .== ["variable", "value", "c", "d"])
 d1s_df = stack_df(d1, ["a", "b"])
-@assert isequal(d1s["key"], d1s_df["key"][:])
+@assert isequal(d1s["variable"], d1s_df["variable"][:])
 @assert isequal(d1s["value"], d1s_df["value"][:])
 @assert isequal(d1s["c"], d1s_df["c"][:])
 @assert isequal(d1s[1,:], d1s_df[1,:])
 
-
-
 d1s["idx"] = [1:12, 1:12]
 d1s2["idx"] = [1:12, 1:12]
-d1us = unstack(d1s, "key", "value", "idx")
-d1us2 = unstack(d1s2, "key", "value", "idx")
+d1us = unstack(d1s, "variable", "idx", "value")
+d1us2 = unstack(d1s2, "variable", "idx", "value")
 @assert isequal(d1us["a"], d1["a"])
 @assert isequal(d1us2["d"], d1["d"])
+
+d = DataFrame(quote
+    a = letters[5:8]
+    b = LETTERS[10:11]
+    c = LETTERS[13 + [1, 1, 2, 2, 2, 1, 1, 2, 1, 2, 2, 1, 1, 2]]
+    d = pi * [1:14]
+end)
+
+dpv = pivot_table(d, ["a", "b"], "c", "d")
+@assert( dpv[1,"O"] == d[5,"d"])
+@assert( nrow(dpv) == 4 )
+
+dpv2 = pivot_table(d, ["a"], ["c", "b"], "d")
+@assert( dpv2[1,"O_J"] == d[5,"d"])
+
+dpv3 = pivot_table(d, ["a"], ["c", "b"], "d", length)
+@assert( dpv3[1,"O_J"] == 1.0)
 
 test_group("merge")
 

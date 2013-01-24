@@ -191,7 +191,8 @@ export # reconcile_groups,
        RepeatedVector,
        EachRepeatedVector,
        melt,
-       melt_df
+       melt_df,
+       pivot_table
 
 ##############################################################################
 ##
