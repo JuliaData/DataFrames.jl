@@ -59,8 +59,8 @@ julia> using DataFrames
 julia> d = DataFrame(quote     # expressions are one way to create a DataFrame
            x = randn(10)
            y = randn(10)
-           i = randi(3,10)
-           j = randi(3,10)
+           i = rand(1:3,10)
+           j = rand(1:3,10)
        end);
 
 julia> dump(d)    # dump() is like R's str()

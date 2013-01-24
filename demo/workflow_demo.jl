@@ -82,7 +82,7 @@ srand(1) # Set the seed.
 # Columns are repeated to the longest column.
 df = DataFrame(quote
     a = shuffle(LETTERS[1:10])
-    b = letters[randi(5,50)]
+    b = letters[rand(1:5,50)]
     x = randn(50)
 end)
 
@@ -104,13 +104,13 @@ df | groupby("b") | :( x_sum = sum(x); x_len = length(x) )
 srand(1)
 df1 = DataFrame(quote
     a = shuffle([1:10])
-    b = ["A","B"][randi(2,10)]
+    b = ["A","B"][rand(1:2,10)]
     v1 = randn(10)
 end)
 
 df2 = DataFrame(quote
     a = shuffle(reverse([1:5]))
-    b2 = ["A","B","C"][randi(3,5)]
+    b2 = ["A","B","C"][rand(1:3,5)]
     v2 = randn(5)
 end)
 

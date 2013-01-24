@@ -3,7 +3,7 @@ N = 1_000_000
 v = randn(N)
 dv = DataArray(v)
 dvna = deepcopy(dv)
-dvna[randi(N, 10_000)] = NA
+dvna[rand(1:N, 10_000)] = NA
 idxv = shuffle([1:N])
 idxdv = DataArray(idxv)
 

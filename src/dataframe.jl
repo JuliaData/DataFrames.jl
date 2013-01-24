@@ -1511,15 +1511,15 @@ function join_idx(left, right, max_groups)
     right_sorter, where, right_count = groupsort_indexer(right, max_groups)
 
     # First pass, determine size of result set, do not use the NA group
-    count = 0
+    tcount = 0
     rcount = 0
     lcount = 0
-    for i in 2 : max_groups + 1
+    for i in 2:(max_groups + 1)
         lc = left_count[i]
         rc = right_count[i]
 
         if rc > 0 && lc > 0
-            count += lc * rc
+            tcount += lc * rc
         elseif rc > 0
             rcount += rc
         else
@@ -1528,7 +1528,7 @@ function join_idx(left, right, max_groups)
     end
     
     # group 0 is the NA group
-    position = 0
+    tposition = 0
     lposition = 0
     rposition = 0
 
@@ -1536,11 +1536,11 @@ function join_idx(left, right, max_groups)
     left_pos = left_count[1]
     right_pos = right_count[1]
 
-    left_indexer = Array(Int, count)
-    right_indexer = Array(Int, count)
+    left_indexer = Array(Int, tcount)
+    right_indexer = Array(Int, tcount)
     leftonly_indexer = Array(Int, lcount)
     rightonly_indexer = Array(Int, rcount)
-    for i in 1 : max_groups + 1
+    for i in 1:(max_groups + 1)
         lc = left_count[i]
         rc = right_count[i]
 
@@ -1556,13 +1556,13 @@ function join_idx(left, right, max_groups)
             rposition += rc
         else
             for j in 1:lc
-                offset = position + (j-1) * rc
+                offset = tposition + (j-1) * rc
                 for k in 1:rc
                     left_indexer[offset + k] = left_pos + j
                     right_indexer[offset + k] = right_pos + k
                 end
             end
-            position += lc * rc
+            tposition += lc * rc
         end
         left_pos += lc
         right_pos += rc
@@ -1574,11 +1574,11 @@ function join_idx(left, right, max_groups)
      right_sorter[right_indexer], right_sorter[rightonly_indexer])
 end
 
+# TODO add support for multiple columns
 function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol, jointype)
 
     dv1, dv2 = PooledDataVecs(df1[bycol], df2[bycol])
-    left_indexer, leftonly_indexer,
-    right_indexer, rightonly_indexer =
+    left_indexer, leftonly_indexer, right_indexer, rightonly_indexer =
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
 
     if jointype == "inner"
@@ -1589,19 +1589,20 @@ function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol, jointype)
                       nas(without(df2, bycol), length(leftonly_indexer)))
         return cbind(left, right)
     elseif jointype == "right"
-        left = rbind(df1[left_indexer,:],
-                     nas(df1, length(rightonly_indexer)))
-        right = without(df2, bycol)[[right_indexer,rightonly_indexer],:]
+        left = rbind(without(df1, bycol)[left_indexer, :],
+                     nas(without(df1, bycol), length(rightonly_indexer)))
+        right = df2[[right_indexer,rightonly_indexer],:]
         return cbind(left, right)
     elseif jointype == "outer"
-        left = rbind(df1[[left_indexer,leftonly_indexer],:],
-                     nas(df1, length(rightonly_indexer)))
-        right = rbind(without(df2, bycol)[right_indexer,:],
-                      nas(without(df2, bycol), length(leftonly_indexer)),
-                      without(df2, bycol)[rightonly_indexer,:])
-        return cbind(left, right)
+        mixed = cbind(df1[left_indexer, :], without(df2, bycol)[right_indexer, :])
+        leftonly = cbind(df1[leftonly_indexer, :],
+                         nas(without(df2, bycol), length(leftonly_indexer)))
+        leftonly = leftonly[:, colnames(mixed)]
+        rightonly = cbind(nas(without(df1, bycol), length(rightonly_indexer)),
+                          df2[rightonly_indexer, :])
+        rightonly = rightonly[:, colnames(mixed)]
+        return rbind(mixed, leftonly, rightonly)
     end
-    # TODO add support for multiple columns
 end
 
 merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol) = merge(df1, df2, bycol, "inner")

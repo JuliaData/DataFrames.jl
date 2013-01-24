@@ -9,7 +9,7 @@ srand(1)
 # Columns are repeated to the longest column
 df = DataFrame(quote
     a = shuffle(LETTERS[1:10])
-    b = letters[randi(5,50)]
+    b = letters[rand(1:5,50)]
     x = randn(50)
 end)
 

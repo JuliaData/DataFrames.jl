@@ -3,10 +3,10 @@
 #
 
 srand(1)
-a = DataArray(randi(5,20))
+a = DataArray(rand(1:5,20))
 a[1:2] = NA
 ia = IndexedVector(a)
-ia2 = IndexedVector(randi(4,20))
+ia2 = IndexedVector(rand(1:4,20))
 
 ia .== 4
 v = [1:20]

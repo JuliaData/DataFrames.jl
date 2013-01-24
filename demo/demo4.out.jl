@@ -18,7 +18,7 @@ julia> # Columns are repeated to the longest column
 
 julia> df = DataFrame(quote
            a = shuffle(LETTERS[1:10])
-           b = letters[randi(5,50)]
+           b = letters[rand(1:5,50)]
            x = randn(50)
        end)
 50x3 DataFrame:

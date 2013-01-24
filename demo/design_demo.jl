@@ -80,7 +80,7 @@ idump(pdvstr)  # show the internal structure of a PooledDataVector
 # to column names, and converts the RHS to DataVectors.
 df1 = DataFrame(quote
     a = shuffle([1:10])
-    b = ["A","B"][randi(2,10)]
+    b = ["A","B"][rand(1:2,10)]
     v1 = randn(10)
 end)
 typeof(df1["a"])
@@ -120,7 +120,7 @@ rbind(df1, DataFrame(:("a"=99; "b"="B"; "v1"=3.1415)))
 # split/apply sorts of operations.
 df1 = DataFrame(quote
     a = shuffle([1:10])
-    b = ["A","B"][randi(2,10)]
+    b = ["A","B"][rand(1:2,10)]
     v1 = randn(10)
 end)
 sub(df1, [1:5])
