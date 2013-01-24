@@ -425,13 +425,13 @@ test_group("merge")
 
 srand(1)
 df1 = DataFrame(quote
-    a = shuffle([1:10])
+    a = shuffle!([1:10])
     b = ["A","B"][rand(1:2, 10)]
     v1 = randn(10)
 end)
 
 df2 = DataFrame(quote
-    a = shuffle(reverse([1:5]))
+    a = shuffle!(reverse([1:5]))
     b2 = ["A","B","C"][rand(1:3, 5)]
     v2 = randn(3)    # test unequal lengths in the constructor
 end)

@@ -88,7 +88,7 @@ function cut{S, T}(x::Vector{S}, breaks::Vector{T})
         if x[i] == min_x
             refs[i] = 1
         else
-            refs[i] = search_sorted(breaks, x[i]) - 1
+            refs[i] = searchsortedfirst(breaks, x[i]) - 1
         end
     end
     n = length(breaks)

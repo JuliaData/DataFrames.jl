@@ -132,7 +132,7 @@ end
 function ref(v::StackedVector,i::Real)
     lengths = [length(x)::Int for x in v.components]
     cumlengths = [0, cumsum(lengths)]
-    j = search_sorted_last(cumlengths + 1, i)
+    j = searchsortedlast(cumlengths + 1, i)
     if j > length(cumlengths)
         error("indexing bounds error")
     end
