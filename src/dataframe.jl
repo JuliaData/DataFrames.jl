@@ -1767,18 +1767,18 @@ end
 
 # Iteration by rows
 type DFRowIterator
-    df::DataFrame
+    df::AbstractDataFrame
 end
-EachRow(df::DataFrame) = DFRowIterator(df)
+EachRow(df::AbstractDataFrame) = DFRowIterator(df)
 start(itr::DFRowIterator) = 1
 done(itr::DFRowIterator, i::Int) = i > nrow(itr.df)
 next(itr::DFRowIterator, i::Int) = (itr.df[i, :], i + 1)
 
 # Iteration by columns
 type DFColumnIterator
-    df::DataFrame
+    df::AbstractDataFrame
 end
-EachCol(df::DataFrame) = DFColumnIterator(df)
+EachCol(df::AbstractDataFrame) = DFColumnIterator(df)
 start(itr::DFColumnIterator) = 1
 done(itr::DFColumnIterator, j::Int) = j > ncol(itr.df)
 next(itr::DFColumnIterator, j::Int) = (itr.df[:, j], j + 1)

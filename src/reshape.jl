@@ -2,26 +2,44 @@
 ##
 ## Reshaping
 ##
+## Also, see issue # ??
+##
+##############################################################################
+
+##############################################################################
+##
+## stack()
+## melt()
+##
 ##############################################################################
 
 function stack(df::DataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
     remainingcols = _setdiff([1:ncol(df)], measure_vars)
-    res = rbind([insert!(df[[i, id_vars]], 1, colnames(df)[i], "key") for i in measure_vars]...)
+    res = rbind([insert!(df[[i, id_vars]], 1, colnames(df)[i], "variable") for i in measure_vars]...)
     replace_names!(res, colnames(res)[2], "value")
     res 
 end
 stack(df::DataFrame, measure_vars, id_vars) = stack(df, [df.colindex[measure_vars]], [df.colindex[id_vars]])
 stack(df::DataFrame, measure_vars) = stack(df, [df.colindex[measure_vars]], _setdiff([1:ncol(df)], [df.colindex[measure_vars]]))
 
-melt(df::DataFrame, id_vars) = stack(df, _setdiff([1:ncol(df)], df.colindex[id_vars]))
+melt(df::DataFrame, id_vars) = stack(df, _setdiff([1:ncol(df)], [df.colindex[id_vars]]))
 melt(df::DataFrame, id_vars, measure_vars) = stack(df, measure_vars, id_vars)
 
-function unstack(df::DataFrame, ikey::Int, ivalue::Int, irefkey::Int)
-    keycol = PooledDataArray(df[ikey])
-    valuecol = df[ivalue]
+##############################################################################
+##
+## unstack()
+##
+##############################################################################
+
+function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
+    # `rowkey` integer indicating which column to place along rows
+    # `colkey` integer indicating which column to place along column headers
+    # `value` integer indicating which column has values
+    keycol = PooledDataArray(df[rowkey])
+    valuecol = df[value]
     # TODO make a version with a default refkeycol
-    refkeycol = PooledDataArray(df[irefkey])
-    remainingcols = _setdiff([1:ncol(df)], [ikey, ivalue])
+    refkeycol = PooledDataArray(df[colkey])
+    remainingcols = _setdiff([1:ncol(df)], [rowkey, value])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     # TODO make fillNA(type, length) 
@@ -38,10 +56,50 @@ function unstack(df::DataFrame, ikey::Int, ivalue::Int, irefkey::Int)
             payload[j][i]  = valuecol[k]
         end
     end
-    insert!(payload, 1, refkeycol.pool, colnames(df)[irefkey])
+    insert!(payload, 1, refkeycol.pool, colnames(df)[colkey])
 end
-unstack(df::DataFrame, ikey, ivalue, irefkey) =
-    unstack(df, df.colindex[ikey], df.colindex[ivalue], df.colindex[irefkey])
+unstack(df::AbstractDataFrame, rowkey, value, colkey) =
+    unstack(df, index(df)[rowkey], index(df)[value], index(df)[colkey])
+
+##############################################################################
+##
+## pivot_table()
+##
+##############################################################################
+
+# Limitations:
+#  - only one `value` column is allowed (same as dcast)
+#  - `fun` must reduce to one value
+#  - no margins
+#  - can't have zero rows or zero columns
+#  - the resulting data part is Float64 (`payload` below) 
+
+function pivot_table(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int}, value::Int, fun::Function)
+    # `rows` vector indicating which columns are keys placed in rows
+    # `cols` vector indicating which columns are keys placed as column headers
+    # `value` integer indicating which column has values
+    # `fun` function applied to the value column during aggregation
+    cmb_df = by(df, [rows, cols], d->fun(d[value]))
+    row_pdv = PooledDataArray(paste_columns(cmb_df[[length(rows):-1:1]]))  # the :-1: is to reverse the columns for sorting
+    row_idxs = int(row_pdv.refs)
+    Nrow = length(row_pdv.pool)
+    col_pdv = PooledDataArray(paste_columns(cmb_df[[length(rows) + (1:length(cols))]]))
+    col_idxs = int(col_pdv.refs)
+    Ncol = length(col_pdv.pool)
+    # `payload` is the main "data holding" part of the resulting DataFrame
+    payload = DataFrame(Nrow, Ncol)
+    colnames!(payload, col_pdv.pool)
+    for i in 1:length(row_idxs)
+        payload[row_idxs[i], col_idxs[i]] = cmb_df[i,"x1"]
+    end
+    # find the "row" key DataFrame
+    g = groupby(cmb_df[[1:length(rows)]], [1:length(rows)])
+    row_key_df = g.parent[g.idx[g.starts],:]
+    cbind(row_key_df, payload)
+end
+# `mean` is the default aggregation function:
+pivot_table(df::AbstractDataFrame, rows, cols, value) = pivot_table(df, rows, cols, value, mean)
+pivot_table(df::AbstractDataFrame, rows, cols, value, fun) = pivot_table(df, [index(df)[rows]], [index(df)[cols]], index(df)[value], fun)
 
     
 ##############################################################################
@@ -102,6 +160,8 @@ eltype(v::StackedVector) = eltype(v.components[1])
 show(io::IO, v::StackedVector) = internal_show_vector(io, v)
 repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
 
+PooledDataArray(v::StackedVector) = PooledDataArray(v[:])
+
 function ref{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
     j = mod(i - 1, length(v.parent)) + 1
     v.parent[j]
@@ -120,6 +180,9 @@ eltype{T}(v::RepeatedVector{T}) = T
 show(io::IO, v::RepeatedVector) = internal_show_vector(io, v)
 repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
 
+unique(v::RepeatedVector) = unique(v.parent)
+
+PooledDataArray(v::RepeatedVector) = [fill(PooledDataArray(v.parent), v.n)...]
 
 function ref{T}(v::EachRepeatedVector{T},i::Real)
     j = div(i - 1, v.n) + 1
@@ -138,6 +201,10 @@ eltype{T}(v::EachRepeatedVector{T}) = T
 
 show(io::IO, v::EachRepeatedVector) = internal_show_vector(io, v)
 repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
+
+unique(v::EachRepeatedVector) = unique(v.parent)
+
+PooledDataArray(v::EachRepeatedVector) = PooledDataArray(a[:], unique(v.parent))
 
 
 # The default values of show and repl_show don't work because
@@ -165,6 +232,7 @@ end
 ##############################################################################
 ##
 ## stack_df()
+## melt_df()
 ## Reshaping using referencing (issue #145), using the above vector types
 ##
 ##############################################################################
@@ -176,8 +244,8 @@ function stack_df(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vec
     remainingcols = _setdiff([1:ncol(df)], measure_vars)
     names = colnames(df)[id_vars]
     insert!(names, 1, "value")
-    insert!(names, 1, "key")
-    DataFrame({EachRepeatedVector(colnames(df)[measure_vars], nrow(df)), # key
+    insert!(names, 1, "variable")
+    DataFrame({EachRepeatedVector(colnames(df)[measure_vars], nrow(df)), # variable
                StackedVector({df[:,c] for c in 1:N}),                    # value
                ## RepeatedVector([1:nrow(df)], N),                       # idx - do we want this?
                [RepeatedVector(df[:,c], N) for c in id_vars]...},        # id_var columns
