@@ -81,9 +81,8 @@ test_group("PooledDataVector methods")
 test_group("DataVector operations")
 @assert isequal(dvint + 1, DataArray([2, 3, 4, 5], [false, false, true, false]))
 @assert isequal(dvint .* 2, DataVector[2, 4, NA, 8])
-# TODO: Restore this after promote_type changes in Base.
-# @assert isequal(dvint .== 2, DataVector[false, true, NA, false])
-# @assert isequal(dvint .> 1, DataVector[false, true, NA, true])
+@assert isequal(dvint .== 2, DataVector[false, true, NA, false])
+@assert isequal(dvint .> 1, DataVector[false, true, NA, true])
 
 test_group("PooledDataVector operations")
 # @assert isequal(pdvstr .== "two", PooledDataVector[false, false, true, true, NA, false, false])
@@ -331,7 +330,7 @@ test_group("groupby")
 
 gd = groupby(df7, "d1")
 @assert length(gd) == 2
-#@assert isequal(gd[2]["d2"], PooledDataArray["A", "B", NA, "A", NA, NA, NA, NA])
+# @assert isequal(gd[2]["d2"], PooledDataVector["A", "B", NA, "A", NA, NA, NA, NA])
 @assert sum(gd[2]["d3"]) == sum(df7["d3"][removeNA(df7["d1"] .== 2)])
 
 g1 = groupby(df7, ["d1", "d2"])

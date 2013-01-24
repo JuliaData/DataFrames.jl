@@ -16,9 +16,8 @@ adv_indices = {1,
                [true, true],
                trues(2),
                DataVector[1, 2],
-               DataVector[1.0, 2.0]}
-               # TODO: Restore
-               #DataVector[true, true]}
+               DataVector[1.0, 2.0],
+               DataVector[true, true]}
 
 single_adv_indices = {1,
                       1.0}
@@ -32,9 +31,8 @@ multi_adv_indices = {1:2,
                      [true, true],
                      trues(2),
                      DataVector[1, 2],
-                     DataVector[1.0, 2.0]}
-                     # TODO: Restore
-                     #DataVector[true, true]}
+                     DataVector[1.0, 2.0],
+                     DataVector[true, true]}
 
 # avd[Index]
 for adv_index in adv_indices
@@ -94,8 +92,7 @@ row_indices = {1,
                trues(2),
                DataVector[1, 2],
                DataVector[1.0, 2.0],
-               # TODO: Restore
-               #DataVector[true, false],
+               DataVector[true, false],
                :(A .== 1)}
 
 column_indices = {1,
@@ -109,8 +106,7 @@ column_indices = {1,
                   ["A", "B"],
                   DataVector[1, 2],
                   DataVector[1.0, 2.0],
-                  # TODO: Restore
-                  #DataVector[true, false],
+                  DataVector[true, false],
                   DataVector["A", "B"],
                   :(colnames(_DF) .== "B")}
 

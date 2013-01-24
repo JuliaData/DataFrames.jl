@@ -471,10 +471,9 @@ alt_df = DataFrame({alt_dv})
 @assert !isequal(dv, alt_dv)
 @assert !isequal(df, alt_df)
 
-# TODO: Restore afer changes in base
-# @assert isequal(DataVector[1, NA] .== DataVector[1, NA], DataVector[true, NA])
-# @assert isequal(PooledDataVector[1, NA] .== PooledDataVector[1, NA], DataVector[true, NA])
-# @assert isequal(DataFrame({dv}) .== DataFrame({dv}), DataFrame({DataVector[true, NA]}))
+@assert isequal(DataVector[1, NA] .== DataVector[1, NA], DataVector[true, NA])
+@assert isequal(PooledDataVector[1, NA] .== PooledDataVector[1, NA], DataVector[true, NA])
+@assert isequal(DataFrame({dv}) .== DataFrame({dv}), DataFrame({DataVector[true, NA]}))
 
 @assert all(isna(NA .== dataones(5)))
 @assert all(isna(dataones(5) .== NA))
