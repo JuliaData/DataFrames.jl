@@ -441,6 +441,8 @@ end
 
 # x[SingleIndex] = NA
 # TODO: Delete values from pool that no longer exist?
+# Not a good idea.  Add another function called drop_unused_levels to do this.
+# R has the convention that if f is a factor then factor(f) drops unused levels
 function assign(x::PooledDataArray, val::NAtype, ind::Real)
     x.refs[ind] = 0
     return NA

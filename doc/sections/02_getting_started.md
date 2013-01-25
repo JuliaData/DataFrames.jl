@@ -2,22 +2,14 @@
 
 ## Installation
 
-The DataFrames package is available through the Julia package system. If you've never used the package system before, you'll need to run the following:
+The DataFrames package is available through the Julia package system. The first time you use it you will need to run
 
-	require("pkg")
-	Pkg.init()
-	Pkg.add("DataFrames")
-
-If you have an existing library of packages, you can pull the DataFrames package into your library using similar commands:
-
-	require("pkg")
 	Pkg.add("DataFrames")
 
 ## Loading the DataFrames Package
 
-In all of the examples that follow, we're going to assume that you've already loaded the DataFrames package. You can do that by typing the following two commands before trying out any of the examples in this manual:
+In all of the examples that follow, we're going to assume that you've already loaded the DataFrames package. You can do that by typing the following commands before trying out any of the examples in this manual:
 
-	require("DataFrames")
 	using DataFrames
 
 ## Some Basic Examples

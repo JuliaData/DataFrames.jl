@@ -2,7 +2,7 @@
 
 ## The Type Hierarchy
 
-Before we do anything else, let's go through the hierarchy of types introduced by the DataFrames package. This type hierarchy is depicated visually in the figures at the end of this section and can be summarized in a simple nested list:
+Before we do anything else, let's go through the hierarchy of types introduced by the DataFrames package. This type hierarchy is depicted visually in the figures at the end of this section and can be summarized in a simple nested list:
 
 * NAtype
 * AbstractDataVector
