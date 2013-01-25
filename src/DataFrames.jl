@@ -192,7 +192,18 @@ export # reconcile_groups,
        EachRepeatedVector,
        melt,
        melt_df,
-       pivot_table
+       pivot_table,
+       RComplex,     # Vector{Complex128}
+       RInteger,     # Vector{Int32} plus BitVector of NA indicators
+       RLogical,     # BitVector of values and BitVector of NA indicators
+       RNumeric,     # Vector{Float64}
+       RList,        # Vector{Any}
+       RString,      # Vector{ASCIIString}
+       RSymbol,      # Symbol stored as an String b/c of embedded '.'
+
+       class,                              # in the S3 sense of "class"
+       inherits,
+       read_rda
 
 ##############################################################################
 ##
@@ -220,6 +231,7 @@ include("statistics.jl")
 include("predicates.jl")
 include("indexing.jl")
 include("extras.jl")
+include("RDA.jl")
 
 # TODO: Remove these definitions
 nafilter(x...) = error("Function removed. Please use removeNA")
