@@ -131,7 +131,7 @@ function read_separated_line(io,
             end
         elseif state == STATE_IN_QUOTED
             if eol
-                this = strcat(this, "\n", Base.chomp!(readline(io)))
+                this = string(this, "\n", Base.chomp!(readline(io)))
             elseif this_char == quotation_character
                 state = STATE_POSSIBLE_EOQUOTED
             else
@@ -144,7 +144,7 @@ function read_separated_line(io,
                 push!(ret, extract_string(this, left, right, omitlist))
                 break
             elseif this_char == quotation_character
-                add(omitlist, this_i)
+                add!(omitlist, this_i)
                 state = STATE_IN_QUOTED
             elseif this_char == separator
                 right = this_i - 2
@@ -398,13 +398,13 @@ end
 
 # Quotation rules
 function in_quotes(val::String, quotation_character::Char)
-  strcat(quotation_character, val, quotation_character)
+  string(quotation_character, val, quotation_character)
 end
 function in_quotes(val::Real, quotation_character::Char)
   string(val)
 end
 function in_quotes(val::Any, quotation_character::Char)
-  strcat(quotation_character, string(val), quotation_character)
+  string(quotation_character, string(val), quotation_character)
 end
 
 # TODO: write_table should do more to react to the type of each column

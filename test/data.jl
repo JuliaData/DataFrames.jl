@@ -108,8 +108,8 @@ test_group("DataVector Filter and Replace")
 @assert sum(replaceNA(dvint, 7)) == 14
 
 test_group("PooledDataVector Filter and Replace")
-@assert reduce(strcat, "", removeNA(pdvstr)) == "oneonetwotwooneone"
-@assert reduce(strcat, "", replaceNA(pdvstr,"!")) == "oneonetwotwo!oneone"
+@assert reduce(string, "", removeNA(pdvstr)) == "oneonetwotwooneone"
+@assert reduce(string, "", replaceNA(pdvstr,"!")) == "oneonetwotwo!oneone"
 
 test_group("DataVector assignment")
 assigntest = DataVector[1, 2, NA, 4]

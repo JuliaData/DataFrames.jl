@@ -86,7 +86,7 @@ item_buffer = Array(UTF8String, length(items))
 # TODO: make this work with new splitting code
 # for separator in separators
 #   for quotation_character in quotation_characters
-#     line = join(map(x -> strcat(quotation_character, x, quotation_character),
+#     line = join(map(x -> string(quotation_character, x, quotation_character),
 #                     items),
 #                 separator)
 #     current_item_buffer = Array(Char, strlen(line))

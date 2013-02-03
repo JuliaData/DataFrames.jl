@@ -41,7 +41,7 @@ function paste(s...)
         Ni = length(sa[i])
         k = 1
         for j = 1:N
-            res[j] = strcat(res[j], sa[i][k])
+            res[j] = string(res[j], sa[i][k])
             if k == Ni   # This recycles array elements.
                 k = 1
             else
@@ -96,12 +96,12 @@ function cut{S, T}(x::Vector{S}, breaks::Vector{T})
     to = map(x -> sprint(showcompact, x), breaks[2:n])
     pool = Array(ASCIIString, n - 1)
     if breaks[1] == min_x
-        pool[1] = strcat("[", from[1], ",", to[1], "]")
+        pool[1] = string("[", from[1], ",", to[1], "]")
     else
-        pool[1] = strcat("(", from[1], ",", to[1], "]")
+        pool[1] = string("(", from[1], ",", to[1], "]")
     end
     for i in 2:(n - 1)
-        pool[i] = strcat("(", from[i], ",", to[i], "]")
+        pool[i] = string("(", from[i], ",", to[i], "]")
     end
     PooledDataArray(refs, pool)
 end
