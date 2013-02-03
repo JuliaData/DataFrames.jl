@@ -564,13 +564,13 @@ end
 for f in scalar_comparison_operators
     @eval begin
         function ($f){S, T}(a::AbstractDataVector{S}, b::AbstractDataVector{T})
-            error(strcat(string($f), " not defined for DataVectors. Try .", string($f)))
+            error(string(string($f), " not defined for DataVectors. Try .", string($f)))
         end
         function ($f){S, T}(a::DataMatrix{S}, b::DataMatrix{T})
-            error(strcat(string($f), " not defined for DataMatrix's. Try .", string($f)))
+            error(string(string($f), " not defined for DataMatrix's. Try .", string($f)))
         end
         function ($f)(a::AbstractDataFrame, b::AbstractDataFrame)
-            error(strcat(string($f), " not defined for DataFrames. Try .", string($f)))
+            error(string(string($f), " not defined for DataFrames. Try .", string($f)))
         end
     end
 end

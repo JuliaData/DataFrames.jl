@@ -450,7 +450,7 @@ function isnextcol(df::DataFrame, col_ind::Real)
 end
 
 function nextcolname(df::DataFrame)
-    return strcat("x", string(ncol(df) + 1))
+    return string("x", ncol(df) + 1)
 end
 
 # Will automatically add a new column if needed
@@ -900,13 +900,13 @@ function show(io::IO, df::AbstractDataFrame, Nmx::Integer)
     
     colWidths = [max(length(string(colNames[c])), maxShowLength(df[rowrng,c])) for c = 1:ncol(df)]
 
-    header = strcat(" " ^ (rownameWidth+1),
+    header = string(" " ^ (rownameWidth+1),
                     join([lpad(string(colNames[i]), colWidths[i]+1, " ") for i = 1:ncol(df)], ""))
     println(io, header)
 
     for i = 1:length(rowrng)
         rowname = rpad(string(rowNames[i]), rownameWidth+1, " ")
-        line = strcat(rowname,
+        line = string(rowname,
                       join([lpad(_string(df[rowrng[i],c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
         println(io, line)
         if i == Nmx && N > 2Nmx
@@ -926,7 +926,7 @@ function dump(io::IO, x::AbstractDataFrame, n::Int, indent)
     if n > 0
         for col in colnames(x)[1:end]
             print(io, indent, "  ", col, ": ")
-            dump(io, x[col], n - 1, strcat(indent, "  "))
+            dump(io, x[col], n - 1, string(indent, "  "))
         end
     end
 end
@@ -949,7 +949,7 @@ function describe{T<:Number}(io, dv::AbstractDataVector{T})
     statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
     statVals = [qs[1:3], mean(filtered), qs[4:5]]
     for i = 1:6
-        println(io, strcat(rpad(statNames[i], 8, " "), " ", string(statVals[i])))
+        println(io, string(rpad(statNames[i], 8, " "), " ", string(statVals[i])))
     end
     nas = sum(isna(dv))
     if nas > 0
@@ -1236,7 +1236,7 @@ vcat(dfs::DataFrame...) = rbind(dfs...)
 # split(df, ["region", "product"]) | @@@)) | mean
 # how do we add col names to the name space?
 # transform(df, :(cat=dog*2, clean=proc(dirty)))
-# summarise(df, :(cat=sum(dog), all=strcat(strs)))
+# summarise(df, :(cat=sum(dog), all=string(strs)))
 
 function with(d::Associative, ex::Expr)
     # Note: keys must by symbols
@@ -1612,13 +1612,13 @@ merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol) = merge(df1, df2, b
 function merge(df1::AbstractDataFrame, df2::AbstractDataFrame)
     s1 = Set{ByteString}()
     for coln in colnames(df1)
-        add(s1, coln)
+        add!(s1, coln)
     end
     s2 = Set{ByteString}()
     for coln in colnames(df2)
-        add(s2, coln)
+        add!(s2, coln)
     end
-    bycol = first(elements(intersect(s1, s2)))
+    bycol = first(collect(intersect(s1, s2)))
     merge(df1, df2, bycol, "inner")
 end
 
