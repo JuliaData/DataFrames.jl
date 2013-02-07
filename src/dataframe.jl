@@ -4,7 +4,7 @@
 ##
 ##############################################################################
 
-abstract AbstractDataFrame <: Associative{Any, Any}
+abstract AbstractDataFrame <: Associative{String, Any}
 
 ##############################################################################
 ##

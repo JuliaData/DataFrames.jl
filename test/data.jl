@@ -363,7 +363,7 @@ df8 = colwise(groupby(df7, "d2"), [:sum, :length])
 @assert nrow(df8) == 3
 @assert ncol(df8) == 5
 #@assert df8[1, "d1_sum"] == 13
-@assert df8[2, "d1_length"] == 8
+@assert df8[2, "d1_length"] == 7
 
 df9 = df7 | groupby(["d2"]) | [:sum, :length]
 @assert isequal(df9, df8)
@@ -439,7 +439,7 @@ end)
 m1 = merge(df1, df2, "a")
 @assert isequal(m1["a"], DataVector[1, 2, 3, 4, 5])
 m2 = merge(df1, df2, "a", "outer")
-@assert isequal(m2["b2"], DataVector["B", "B", "B", "C", "B", NA, NA, NA, NA, NA])
+@assert isequal(m2["b2"], DataVector["A", "B", "B", "B", "B", NA, NA, NA, NA, NA])
 
 df1 = DataFrame({"a" => [1, 2, 3],
                  "b" => ["America", "Europe", "Africa"]})
