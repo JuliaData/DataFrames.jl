@@ -58,7 +58,7 @@ PooledDataArray(d::PooledDataArray) = d
 function PooledDataArray{T, N}(d::Array{T, N}, m::AbstractArray{Bool, N})
     newrefs = Array(POOLED_DATA_VEC_REF_TYPE, size(d))
     #newpool = Array(T, 0)
-    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}(0) # Why isn't this a set?
+    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}() # Why isn't this a set?
     maxref = 0
 
     # Loop through once to fill the poolref dict
@@ -97,7 +97,7 @@ function PooledDataArray{T, N}(d::Array{T, N},
     end
 
     newrefs = Array(POOLED_DATA_VEC_REF_TYPE, size(d))
-    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}(0)
+    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}()
     maxref = 0
 
     # loop through once to fill the poolref dict
@@ -597,8 +597,8 @@ end
 ##
 ##############################################################################
 
-order(pda::PooledDataArray) = groupsort_indexer(pda)[1]
-sort(pda::PooledDataArray) = pd[order(pda)]
+sortperm(pda::PooledDataArray) = groupsort_indexer(pda)[1]
+sort(pda::PooledDataArray) = pd[sortperm(pda)]
 
 ##############################################################################
 ##
@@ -613,7 +613,7 @@ function PooledDataVecs{S, T}(v1::AbstractDataVector{S},
 
     refs1 = Array(POOLED_DATA_VEC_REF_TYPE, length(v1))
     refs2 = Array(POOLED_DATA_VEC_REF_TYPE, length(v2))
-    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}(length(v1))
+    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}()
     maxref = 0
 
     # loop through once to fill the poolref dict

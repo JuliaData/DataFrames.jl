@@ -41,10 +41,10 @@
 # does make the indexing a little trickier as the length of the index
 # can be less than the length of the DataArray.
 
-indexorder(x) = order(x)
+indexorder(x) = sortperm(x)
 function indexorder{T}(v::AbstractDataVector{T})
     Nna = sum(isna(v))
-    order(v)[Nna + 1 : end]
+    sortperm(v)[Nna + 1 : end]
 end
 
 
@@ -93,7 +93,7 @@ function insert_single_column!{T}(df::DataFrame,
 end
 
 
-order(x::IndexedVector) = x.idx
+sortperm(x::IndexedVector) = x.idx
 sort(x::IndexedVector) = x.x[x.idx]   # Return regular array?
 ## sort(x::IndexedVector) = IndexedVector(x.x[x.idx], 1:length(x.x))   # or keep this an IndexedVector, like this?
 
