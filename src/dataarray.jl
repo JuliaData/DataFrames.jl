@@ -194,6 +194,8 @@ function replaceNA(da::DataArray, replacement_val::Any)
     return res
 end
 
+replaceNA(replacement_val::Any) = x -> replaceNA(x, replacement_val)
+
 # TODO: Re-implement these methods for PooledDataArray's
 function failNA{T}(da::AbstractDataArray{T})
     if anyna(da)
@@ -274,6 +276,9 @@ type EachReplaceNA{S, T}
 end
 function each_replaceNA(da::AbstractDataArray, val::Any)
     EachReplaceNA(da, convert(eltype(da), val))
+end
+function each_replaceNA(val::Any)
+    x -> each_replaceNA(x, val)
 end
 start(itr::EachReplaceNA) = 1
 function done(itr::EachReplaceNA, ind::Integer)
