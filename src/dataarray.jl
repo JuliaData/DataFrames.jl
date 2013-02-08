@@ -692,7 +692,7 @@ for f in (:int, :float, :bool)
                 err = "Cannot convert DataArray with NA's to desired type"
                 throw(NAException(err))
             else
-                ($f)(dv.data)
+                ($f)(da.data)
             end
         end
     end
@@ -702,8 +702,8 @@ for (f, basef) in ((:dataint, :int), (:datafloat, :float64), (:databool, :bool))
         function ($f){T}(a::Array{T})
             DataArray(($basef)(a))
         end
-        function ($f){T}(dv::DataArray{T})
-            DataArray(($basef)(dv.data), copy(dv.na))
+        function ($f){T}(da::DataArray{T})
+            DataArray(($basef)(da.data), copy(da.na))
         end
     end
 end

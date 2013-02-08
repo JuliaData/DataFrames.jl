@@ -618,10 +618,14 @@ function PooledDataVecs{S, T}(v1::AbstractDataVector{S},
 
     # loop through once to fill the poolref dict
     for i = 1:length(v1)
-        poolref[v1[i]] = 0
+        if !isna(v1[i])
+            poolref[v1[i]] = 0
+        end
     end
     for i = 1:length(v2)
-        poolref[v2[i]] = 0
+        if !isna(v2[i])
+            poolref[v2[i]] = 0
+        end
     end
 
     # fill positions in poolref
@@ -634,10 +638,18 @@ function PooledDataVecs{S, T}(v1::AbstractDataVector{S},
 
     # fill in newrefs
     for i = 1:length(v1)
-        refs1[i] = poolref[v1[i]]
+        if isna(v1[i])
+            refs1[i] = POOLED_DATA_VEC_REF_CONVERTER(0)
+        else
+            refs1[i] = poolref[v1[i]]
+        end
     end
     for i = 1:length(v2)
-        refs2[i] = poolref[v2[i]]
+        if isna(v2[i])
+            refs2[i] = POOLED_DATA_VEC_REF_CONVERTER(0)
+        else
+            refs2[i] = poolref[v2[i]]
+        end
     end
 
     return (PooledDataArray(refs1, pool),

@@ -1654,7 +1654,7 @@ function matrix(adf::AbstractDataFrame)
 end
 
 function DataArray(adf::AbstractDataFrame, t::Type)
-    n, p = size(df)
+    n, p = size(adf)
     dm = DataArray(t, n, p)
     for i in 1:n
         for j in 1:p
