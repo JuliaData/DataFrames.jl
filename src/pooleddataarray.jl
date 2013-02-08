@@ -598,7 +598,7 @@ end
 ##############################################################################
 
 sortperm(pda::PooledDataArray) = groupsort_indexer(pda)[1]
-sort(pda::PooledDataArray) = pd[sortperm(pda)]
+sort(pda::PooledDataArray) = pda[sortperm(pda)]
 
 ##############################################################################
 ##
