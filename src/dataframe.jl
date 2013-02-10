@@ -314,7 +314,7 @@ index(df::DataFrame) = df.colindex
 
 ##############################################################################
 ##
-## Tools for working with groups of columsn
+## Tools for working with groups of columns
 ##
 ##############################################################################
 
