@@ -1894,3 +1894,40 @@ function hash(a::AbstractDataFrame)
     end
     return uint(h)
 end
+
+##############################################################################
+##
+## Dict conversion
+##
+## Try to insure this invertible.
+## Allow option to flatten a single row.
+##
+##############################################################################
+
+function dict(adf::AbstractDataFrame, flatten::Bool)
+    # TODO: Make flatten an option
+    # TODO: Provide a de-data option that makes Vector's, not
+    #       DataVector's
+    if flatten
+        res = Dict{UTF8String, Any}()
+        for colname in colnames(adf)
+            res[colname] = adf[colname][1]
+        end
+    else
+        res = Dict{UTF8String, DataVector}()
+        for colname in colnames(adf)
+            res[colname] = adf[colname]
+        end
+    end
+    return res
+end
+dict(adf::AbstractDataFrame) = dict(adf, false)
+
+# TODO: Add proper tests
+# adf = DataFrame(quote A = 1:4; B = ["A", "B", "C", "D"] end)
+# DataFrames.dict(adf)
+# ["B"=>["A", "B", "C", "D"],"A"=>[1, 2, 3, 4]]
+# DataFrames.dict(adf[1, :])
+# ["B"=>["A"],"A"=>[1]]
+# DataFrames.dict(adf[1, :], true)
+# ["B"=>"A","A"=>1]
