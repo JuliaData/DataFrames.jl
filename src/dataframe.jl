@@ -1908,13 +1908,12 @@ function dict(adf::AbstractDataFrame, flatten::Bool)
     # TODO: Make flatten an option
     # TODO: Provide a de-data option that makes Vector's, not
     #       DataVector's
-    if flatten
-        res = Dict{UTF8String, Any}()
+    res = Dict{UTF8String, Any}()
+    if flatten && nrow(adf) == 1
         for colname in colnames(adf)
             res[colname] = adf[colname][1]
         end
     else
-        res = Dict{UTF8String, DataVector}()
         for colname in colnames(adf)
             res[colname] = adf[colname]
         end
