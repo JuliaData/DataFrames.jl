@@ -27,4 +27,7 @@ for col in EachCol(df)
     @assert isa(col, AbstractDataVector)
 end
 
+@assert isequal(map(x -> min(matrix(x)), EachRow(df)), {1,2})
+@assert isequal(map(min, EachCol(df)), DataFrame(quote A = 1; B = 2 end))
+
 # @test_fail for x in df; end # Raises an error

@@ -1858,6 +1858,11 @@ EachRow(df::AbstractDataFrame) = DFRowIterator(df)
 start(itr::DFRowIterator) = 1
 done(itr::DFRowIterator, i::Int) = i > nrow(itr.df)
 next(itr::DFRowIterator, i::Int) = (itr.df[i, :], i + 1)
+size(itr::DFRowIterator) = (nrow(itr.df), )
+length(itr::DFRowIterator) = nrow(itr.df)
+ref(itr::DFRowIterator, i::Any) = itr.df[i, :]
+map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
+
 
 # Iteration by columns
 type DFColumnIterator
@@ -1867,6 +1872,19 @@ EachCol(df::AbstractDataFrame) = DFColumnIterator(df)
 start(itr::DFColumnIterator) = 1
 done(itr::DFColumnIterator, j::Int) = j > ncol(itr.df)
 next(itr::DFColumnIterator, j::Int) = (itr.df[:, j], j + 1)
+size(itr::DFColumnIterator) = (ncol(itr.df), )
+length(itr::DFColumnIterator) = ncol(itr.df)
+ref(itr::DFColumnIterator, j::Any) = itr.df[:, j]
+function map(f::Function, dfri::DFColumnIterator)
+    # note: `f` must return a consistent length
+    res = DataFrame()
+    for i = 1:ncol(dfri.df)
+        res[i] = f(dfri[i])
+    end
+    colnames!(res, colnames(dfri.df))
+    res
+end
+        
 
 # Iteration by elements is not allowed
 function start(df::AbstractDataFrame)
@@ -1908,13 +1926,12 @@ function dict(adf::AbstractDataFrame, flatten::Bool)
     # TODO: Make flatten an option
     # TODO: Provide a de-data option that makes Vector's, not
     #       DataVector's
-    if flatten
-        res = Dict{UTF8String, Any}()
+    res = Dict{UTF8String, Any}()
+    if flatten && nrow(adf) == 1
         for colname in colnames(adf)
             res[colname] = adf[colname][1]
         end
     else
-        res = Dict{UTF8String, DataVector}()
         for colname in colnames(adf)
             res[colname] = adf[colname]
         end
