@@ -487,7 +487,7 @@ function colranges(ds::AbstractDataStream)
 end
 
 # Two-pass algorithm for covariance and correlation
-function cov_pearson(ds::AbstractDataStream)
+function cov(ds::AbstractDataStream)
   p = length(colnames(ds))
 
   # Make one pass to compute means
@@ -531,7 +531,7 @@ function cov_pearson(ds::AbstractDataStream)
   return covariances
 end
 
-function cor_pearson(ds::AbstractDataStream)
+function cor(ds::AbstractDataStream)
   covariances = cov(ds)
   correlations = deepcopy(covariances)
   p = nrow(correlations)

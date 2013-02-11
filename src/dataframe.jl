@@ -1730,14 +1730,14 @@ function isfinite(df::DataFrame)
     return DataFrame(res_columns, colnames(df))
 end
 
-# TODO: Use cor_pearson and cov_pearson for DataMatrix to do this
-function cor_pearson(df::DataFrame)
+# TODO: Use cor and cov for DataMatrix to do this
+function cor(df::DataFrame)
     numeric_cols = find(map(t -> t <: Number, coltypes(df)))
-    cor_pearson(matrix(df[:, numeric_cols]))
+    cor(matrix(df[:, numeric_cols]))
 end
-function cov_pearson(df::DataFrame)
+function cov(df::DataFrame)
     numeric_cols = find(map(t -> t <: Number, coltypes(df)))
-    cov_pearson(matrix(df[:, numeric_cols]))
+    cov(matrix(df[:, numeric_cols]))
 end
 
 function clean_colnames!(df::DataFrame)
