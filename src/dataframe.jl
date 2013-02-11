@@ -1886,16 +1886,11 @@ function map(f::Function, dfri::DFColumnIterator)
 end
         
 
-# Iteration by elements is not allowed
-function start(df::AbstractDataFrame)
-    error("To iterate over DataFrames, use EachRow or EachCol")
-end
-function done(df::AbstractDataFrame, i::Any)
-    error("To iterate over DataFrames, use EachRow or EachCol")
-end
-function next(df::AbstractDataFrame, i::Any)
-    error("To iterate over DataFrames, use EachRow or EachCol")
-end
+# Iteration matches that of Associative types (experimental)
+start(df::AbstractDataFrame) = 1
+done(df::AbstractDataFrame, i) = i > ncol(df)
+next(df::AbstractDataFrame, i) = ((colnames(df)[i], df[i]), i + 1)
+
 
 ##############################################################################
 ##
