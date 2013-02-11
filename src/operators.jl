@@ -60,7 +60,7 @@ cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
 
 ffts = [:fft]
 
-binary_vector_operators = [:dot, :cor_pearson, :cov_pearson,
+binary_vector_operators = [:dot, :cor, :cov,
                            :cor_spearman, :cov_spearman]
 
 rowwise_operators = [:rowmins, :rowmaxs, :rowprods, :rowsums,

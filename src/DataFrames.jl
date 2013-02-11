@@ -1,5 +1,7 @@
 require("Options")
 
+using Stats
+
 module DataFrames
 
 ##############################################################################
@@ -10,6 +12,7 @@ module DataFrames
 
 using Base.Intrinsics
 using OptionsMod
+using Stats
 
 ##############################################################################
 ##
@@ -28,6 +31,7 @@ const POOLED_DATA_VEC_REF_CONVERTER = uint16
 ##############################################################################
 
 importall Base
+importall Stats
 
 ##############################################################################
 ##
