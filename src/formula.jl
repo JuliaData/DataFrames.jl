@@ -31,7 +31,7 @@ function Formula(ex::Expr)
 end
 
 function show(io::IO, f::Formula)
-    print(io, strcat("Formula: ", join(f.lhs, ", "), " ~ ", join(f.rhs, " +")))
+    print(io, string("Formula: ", join(f.lhs, ", "), " ~ ", join(f.rhs, " +")))
 end
 
 # a ModelFrame is just a wrapper around a DataFrame
@@ -176,7 +176,7 @@ function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame)
    for i in 1:ncol(a)
        for j in 1:ncol(b)
           push!(cols, DataArray(a[:,i] .* b[:,j]))
-          push!(col_names, strcat(colnames(a)[i],"&",colnames(b)[j]))
+          push!(col_names, string(colnames(a)[i],"&",colnames(b)[j]))
        end
    end
    DataFrame(cols, col_names)
@@ -189,7 +189,7 @@ function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame, c
        for j in 1:ncol(b)
            for k in 1:ncol(b)
               push!(cols, DataArray(a[:,i] .* b[:,j] .* c[:,k]))
-              push!(col_names, strcat(colnames(a)[i],"&",colnames(b)[j],"&",colnames(c)[k]))
+              push!(col_names, string(colnames(a)[i],"&",colnames(b)[j],"&",colnames(c)[k]))
            end
        end
    end
@@ -269,7 +269,7 @@ end
 # TODO: account for NAs?
 function expand(poolcol::PooledDataVector, colname::ByteString, df::AbstractDataFrame)
     newcol = {DataArray([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
-    newcolname = [strcat(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
+    newcolname = [string(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
     DataFrame(newcol, convert(Vector{ByteString}, newcolname))
 end
 
