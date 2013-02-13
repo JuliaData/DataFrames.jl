@@ -606,8 +606,8 @@ sort(pda::PooledDataArray) = pda[sortperm(pda)]
 ##
 ##############################################################################
 
-function PooledDataVecs{S, T}(v1::AbstractDataVector{S},
-                              v2::AbstractDataVector{T})
+function PooledDataVecs{S, T}(v1::AbstractVector{S},
+                              v2::AbstractVector{T})
 
     ## Return two PooledDataVecs that share the same pool.
 
