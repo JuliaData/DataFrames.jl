@@ -1802,8 +1802,7 @@ function lt(o::DFPerm, a, b)
     false
 end
 
-# TODO: move [1:nrow(df)] first if/when julia pull #2179 is applied
-sortperm(df::AbstractDataFrame, a::Algorithm, o::Union(Perm,DFPerm)) = sort!(a, o, [1:nrow(df)])
+sortperm(df::AbstractDataFrame, a::Algorithm, o::Union(Perm,DFPerm)) = sort!([1:nrow(df)], a, o)
 sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) = sortperm(df, a, DFPerm(o,df))
 sort    (df::AbstractDataFrame, a::Algorithm, o::Ordering) = df[sortperm(df, a, o),:]
 
