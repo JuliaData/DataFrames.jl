@@ -100,6 +100,15 @@ sort(x::IndexedVector) = x.x[x.idx]   # Return regular array?
 type Indexer
     r::Vector{Range1}
     iv::IndexedVector
+    function Indexer(r::Vector{Range1}, iv::IndexedVector)
+        for i in 1:length(r)
+            ri = r[i]
+            if length(ri) < 1 || ri[1] < 1 || ri[end] > length(iv)
+                delete!(r, i)
+            end
+        end
+        new(r, iv)
+    end
 end
 
 function intersect(v1::Vector{Range1}, v2::Vector{Range1})
@@ -193,7 +202,7 @@ end
 (|)(x1::Indexer, x2::BitVector) = x2 | bool(x1)
 
 function bool(ix::Indexer)
-    res = falses(length(ix.iv.idx))
+    res = falses(length(ix.iv))
     for i in ix.iv.idx[[ix.r...]]
         res[i] = true
     end
@@ -249,16 +258,17 @@ function search_sorted_last_lt{I<:Integer}(a::AbstractVector, x, idx::AbstractVe
     a[idx[res]] == x ? res - 1 : res
 end
 
-function in{T}(a::IndexedVector{T}, y::Vector{T})
-    res = a .== y[1]
-    for i in 2:length(y)
-        res = res | (a .== y[i])
+findin(a::IndexedVector,r::Range1) = findin(a, [r])
+findin(a::IndexedVector,v::Real) = findin(a, [v])
+function findin(a::IndexedVector, b::AbstractVector)
+    ## Returns an Indexer with the elements in "a" that appear in "b"
+    res = a .== b[1]
+    for i in 2:length(b)
+        res = res | (a .== b[i])
     end
     res
 end
-
-between{T}(a::IndexedVector{T}, v1::T, v2::T, ) = Indexer(Range1[search_sorted_first(a.x, v1, a.idx) : search_sorted_last(a.x, v2, a.idx)], a)
-
+        
 size(a::IndexedVector) = size(a.x)
 length(a::IndexedVector) = length(a.x)
 ndims(a::IndexedVector) = 1
