@@ -5,7 +5,7 @@ const DEFAULT_FALSE_STRINGS = ["F", "f", "FALSE", "false"]
 const DEFAULT_QUOTATION_CHARACTER = '"'
 const DEFAULT_SEPARATOR = ','
 
-const DEFAULT_MISSINGNESS_INDICATORS = ["", "NA", "#NA", "N/A", "#N/A", "NULL"]
+const DEFAULT_MISSINGNESS_INDICATORS = ["", "NA", "#NA", "N/A", "#N/A", "NULL", "."]
 
 function parse_bool(x::String)
   if contains(DEFAULT_TRUE_STRINGS, x)
