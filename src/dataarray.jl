@@ -67,6 +67,8 @@ DataArray(r::Ranges) = DataArray([r], falses(length(r)))
 # Construct an all-NA DataArray of a specific type
 DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...),
                                                  trues(dims...))
+DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(Array(t, dims),
+                                                 trues(dims...))
 
 # Wrap a scalar in a DataArray w/ repetition
 function DataArray(val::Any, dims::Integer...)
