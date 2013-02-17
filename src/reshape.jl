@@ -14,9 +14,10 @@
 ##############################################################################
 
 function stack(df::DataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
-    remainingcols = _setdiff([1:ncol(df)], measure_vars)
-    res = rbind([insert!(df[[i, id_vars]], 1, colnames(df)[i], "variable") for i in measure_vars]...)
-    replace_names!(res, colnames(res)[2], "value")
+    res = [insert!(df[[i, id_vars]], 1, colnames(df)[i], "variable") for i in measure_vars]
+    # fix column names
+    map(x -> colnames!(x, ["variable", "value", colnames(df[id_vars])]), res)
+    res = rbind(res)
     res 
 end
 stack(df::DataFrame, measure_vars, id_vars) = stack(df, [df.colindex[measure_vars]], [df.colindex[id_vars]])
@@ -155,7 +156,8 @@ ref(v::StackedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = ref(v, [i])
 size(v::StackedVector) = (length(v),)
 length(v::StackedVector) = sum(map(length, v.components))
 ndims(v::StackedVector) = 1
-eltype(v::StackedVector) = eltype(v.components[1])
+eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
+vecbind_type(v::StackedVector) = vecbind_promote_type(map(vecbind_type, v.components)...)
 
 show(io::IO, v::StackedVector) = internal_show_vector(io, v)
 repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
@@ -176,6 +178,7 @@ size(v::RepeatedVector) = (length(v),)
 length(v::RepeatedVector) = v.n * length(v.parent)
 ndims(v::RepeatedVector) = 1
 eltype{T}(v::RepeatedVector{T}) = T
+vecbind_type(v::RepeatedVector) = vecbind_type(v.parent)
 
 show(io::IO, v::RepeatedVector) = internal_show_vector(io, v)
 repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
@@ -198,6 +201,7 @@ size(v::EachRepeatedVector) = (length(v),)
 length(v::EachRepeatedVector) = v.n * length(v.parent)
 ndims(v::EachRepeatedVector) = 1
 eltype{T}(v::EachRepeatedVector{T}) = T
+vecbind_type(v::EachRepeatedVector) = vecbind_type(v.parent)
 
 show(io::IO, v::EachRepeatedVector) = internal_show_vector(io, v)
 repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)

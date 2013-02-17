@@ -215,6 +215,11 @@ dfr = rbind(df4, df4)
 @assert all(colnames(df4) .== colnames(dfr))
 @assert isequal(dfr, [df4, df4])
 
+dfr = rbind(df2, df3)
+@assert size(dfr) == (8,2)
+@assert all(colnames(df2) .== colnames(dfr))
+@assert isna(dfr[8,"x2"])
+
 test_group("show")
 @assert repr(df1) == "4x2 DataFrame:\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
 

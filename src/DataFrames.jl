@@ -206,7 +206,8 @@ export # reconcile_groups,
 
        class,                              # in the S3 sense of "class"
        inherits,
-       read_rda
+       read_rda,
+       vecbind
 
 ##############################################################################
 ##

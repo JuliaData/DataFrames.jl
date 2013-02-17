@@ -1114,110 +1114,64 @@ nas(df::DataFrame, dims) =
 nas(df::SubDataFrame, dims) = 
     DataFrame([nas(df[x], dims) for x in colnames(df)], colnames(df)) 
 
-rbind(df::DataFrame) = df
+vecbind_type{T}(::Vector{T}) = Vector{T}
+vecbind_type{T<:AbstractVector}(x::T) = Vector{eltype(x)}
+vecbind_type{T<:AbstractDataVector}(x::T) = DataVector{eltype(x)}
+vecbind_type{T}(::PooledDataVector{T}) = DataVector{T}
 
-function rbind(df1::DataFrame, df2::DataFrame)
-    if size(df1) == (0, 0) && size(df2) == (0, 0)
-        return DataFrame(0, 0)
-    end
-    if size(df1) == (0, 0) && size(df2) != (0, 0)
-        return df2
-    end
-    if size(df1) != (0, 0) && size(df2) == (0, 0)
-        return df1
-    end
-    # Tolerate permutations of the same columns?
-    # if any(coltypes(df1) .!= coltypes(df2)) || any(colnames(df1) .!= colnames(df2))
-    #     error("Cannot rbind dissimilar DataFrames")
-    # end
-    res = DataFrame(coltypes(df1), nrow(df1) + nrow(df2))
-    colnames!(res, colnames(df1))
-    ind = 0
-    for i in 1:nrow(df1)
-        ind += 1
-        for j in 1:ncol(df1)
-            res[ind, j] = df1[i, j]
+vecbind_promote_type{T1,T2}(x::Type{Vector{T1}}, y::Type{Vector{T2}}) = Array{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type{T1,T2}(x::Type{DataVector{T1}}, y::Type{DataVector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type{T1,T2}(x::Type{Vector{T1}}, y::Type{DataVector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type{T1,T2}(x::Type{DataVector{T1}}, y::Type{Vector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type(a, b, c, ds...) = vecbind_promote_type(a, vecbind_promote_type(b, c, ds...))
+vecbind_promote_type(a, b, c) = vecbind_promote_type(a, vecbind_promote_type(b, c))
+
+constructor{T}(::Type{Vector{T}}, args...) = Array(T, args...)
+constructor{T}(::Type{DataVector{T}}, args...) = DataArray(T, args...)
+
+function vecbind(xs::AbstractVector...)
+    V = vecbind_promote_type(map(vecbind_type, xs)...)
+    len = sum(length, xs)
+    res = constructor(V, len)
+    k = 1
+    for i in 1:length(xs)
+        for j in 1:length(xs[i])
+            res[k] = xs[i][j]
+            k += 1
         end
     end
-    for i in 1:nrow(df2)
-        ind += 1
-        for j in 1:ncol(df1)
-            res[ind, j] = df2[i, j]
-        end
-    end
-    return res
+    res
+end
+function vecbind(xs::PooledDataVector...)
+    vecbind(map(DataArray, xs)...)
 end
 
-# Use induction to define results for arbitrary lengths?
-function rbind(dfs::DataFrame...)
-    res = dfs[1]
-    for j in 2:length(dfs)
-        res = rbind(res, dfs[j])
-    end
-    return res
-end
-
-function rbind(dfs::Vector)   # for a Vector of DataFrame's
+rbind(df::AbstractDataFrame) = df
+rbind(dfs::Vector) = rbind(dfs...)
+function rbind(dfs::AbstractDataFrame...)
     Nrow = sum(nrow, dfs)
-    Ncol = ncol(dfs[1])
-    res = similar(dfs[1], Nrow)
-    # TODO fix PooledDataVector columns with different pools.
-    # for idx in 2:length(dfs)
-    #     if colnames(dfs[1]) != colnames(dfs[idx])
-    #         error("DataFrame column names must match.")
-    #     end
-    # end
-    idx = 1
-    for df in dfs
-        for kdx in 1:nrow(df)
-            for jdx in 1:Ncol
-                res[jdx][idx] = df[kdx, jdx]
+    # build up column names and types
+    colnams = colnames(dfs[1])
+    for i in 2:length(dfs)
+        for j in 1:ncol(dfs[i])
+            cn = colnames(dfs[i])[j]
+            if length(findin([cn], colnams)) == 0  # new column
+                push!(colnams, cn)
             end
-            idx += 1
         end
-        set_groups(res, get_groups(df))
+    end
+    Ncol = length(colnams)
+    res = DataFrame()
+    for i in 1:Ncol
+        coldata = {}
+        for df in dfs
+            push!(coldata, get(df, colnams[i], DataArray(NA, nrow(df))))
+        end
+        res[colnams[i]] = vecbind(coldata...)
     end
     res
 end
 
-# function rbind(dfs::DataFrame...)
-#     L = length(dfs)
-#     T = 0
-#     total_rows = 0
-#     real_cols = 0
-#     non_empty_dfs = Array(Any, L)
-#     for i in 1:L
-#         df = dfs[i]
-#         if nrow(df) > 0
-#             T += 1
-#             non_empty_dfs[T] = df
-#         end
-#     end
-#     if T == 0
-#         return DataFrame(0, 0)
-#     end
-#     dfs = non_empty_dfs[1:T]
-#     Nrow = sum(nrow, dfs)
-#     Ncol = max(ncol, dfs)
-#     res = similar(dfs[1], Nrow)
-#     # TODO fix PooledDataVector columns with different pools.
-#     # for idx in 2:length(dfs)
-#     #     if colnames(dfs[1]) != colnames(dfs[idx])
-#     #         error("DataFrame column names must match.")
-#     #     end
-#     # end
-#     idx = 1
-#     for df in dfs
-#         for kdx in 1:nrow(df)
-#             for jdx in 1:Ncol
-#                 res[jdx][idx] = df[kdx, jdx]
-#             end
-#             idx += 1
-#         end
-#         set_groups(res, get_groups(df))
-#     end
-#     res
-# end
 vcat(dfs::DataFrame...) = rbind(dfs...)
 
 # DF row operations -- delete and append
