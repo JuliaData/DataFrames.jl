@@ -14,9 +14,10 @@
 ##############################################################################
 
 function stack(df::DataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
-    remainingcols = _setdiff([1:ncol(df)], measure_vars)
-    res = rbind([insert!(df[[i, id_vars]], 1, colnames(df)[i], "variable") for i in measure_vars]...)
-    replace_names!(res, colnames(res)[2], "value")
+    res = [insert!(df[[i, id_vars]], 1, colnames(df)[i], "variable") for i in measure_vars]
+    # fix column names
+    map(x -> colnames!(x, ["variable", "value", colnames(df[id_vars])]), res)
+    res = rbind(res)
     res 
 end
 stack(df::DataFrame, measure_vars, id_vars) = stack(df, [df.colindex[measure_vars]], [df.colindex[id_vars]])
