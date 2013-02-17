@@ -1114,10 +1114,15 @@ nas(df::DataFrame, dims) =
 nas(df::SubDataFrame, dims) = 
     DataFrame([nas(df[x], dims) for x in colnames(df)], colnames(df)) 
 
+vecbind_type{T}(::Vector{T}) = Vector{T}
+vecbind_type{T<:AbstractVector}(x::T) = Vector{eltype(x)}
+vecbind_type{T<:AbstractDataVector}(x::T) = DataVector{eltype(x)}
+vecbind_type{T}(::PooledDataVector{T}) = DataVector{T}
 
-vecbind_promote_type(x::Type{Vector}, y::Type{Vector}) = Array{promote_type(eltype(x), eltype(y)),1}
-vecbind_promote_type{T1<:AbstractVector}(x::Type{T1}, y::Type{T1})                    = T1{promote_type(eltype(x), eltype(y)),1}
-vecbind_promote_type{T1<:AbstractVector,T2<:AbstractVector}(x::Type{T1}, y::Type{T2}) = DataArray{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type{T1,T2}(x::Type{Vector{T1}}, y::Type{Vector{T2}}) = Array{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type{T1,T2}(x::Type{DataVector{T1}}, y::Type{DataVector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type{T1,T2}(x::Type{Vector{T1}}, y::Type{DataVector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type{T1,T2}(x::Type{DataVector{T1}}, y::Type{Vector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
 vecbind_promote_type(a, b, c, ds...) = vecbind_promote_type(a, vecbind_promote_type(b, c, ds...))
 vecbind_promote_type(a, b, c) = vecbind_promote_type(a, vecbind_promote_type(b, c))
 
@@ -1125,7 +1130,7 @@ constructor{T}(::Type{Vector{T}}, args...) = Array(T, args...)
 constructor{T}(::Type{DataVector{T}}, args...) = DataArray(T, args...)
 
 function vecbind(xs::AbstractVector...)
-    V = vecbind_promote_type(map(typeof, xs)...)
+    V = vecbind_promote_type(map(vecbind_type, xs)...)
     len = sum(length, xs)
     res = constructor(V, len)
     k = 1

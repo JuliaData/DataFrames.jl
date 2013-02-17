@@ -60,6 +60,8 @@ ref{T}(v::IndexedVector{T}, i) = IndexedVector(v.x[i])
 assign(v::IndexedVector, i, val::Real) = IndexedVector(assign(v.x, i, val))
 assign(v::IndexedVector, i, val) = IndexedVector(assign(v.x, i, val))
 
+vecbind_type(x::IndexedVector) = vecbind_type(x.x)
+
 # to make assign in a DataFrame work:
 upgrade_vector{T}(v::IndexedVector{T}) = v
 function insert_single_column!{T}(df::DataFrame,
