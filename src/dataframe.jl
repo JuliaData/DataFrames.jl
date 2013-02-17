@@ -1165,7 +1165,7 @@ function rbind(dfs::AbstractDataFrame...)
     for i in 1:Ncol
         coldata = {}
         for df in dfs
-            push!(coldata, get(df, colnams[i], [NA for i in 1:nrow(df)]))
+            push!(coldata, get(df, colnams[i], DataArray(NA, nrow(df))))
         end
         res[colnams[i]] = vecbind(coldata...)
     end

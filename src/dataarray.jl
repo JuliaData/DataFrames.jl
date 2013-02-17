@@ -65,9 +65,9 @@ DataArray(d::BitArray) = DataArray(convert(Array{Bool}, d), falses(size(d)))
 DataArray(r::Ranges) = DataArray([r], falses(length(r)))
 
 # Construct an all-NA DataArray of a specific type
-DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...),
+DataArray(t::Type, dims::Integer...) = DataArray(fill!(Array(t, dims...), baseval(t)),
                                                  trues(dims...))
-DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(Array(t, dims),
+DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(fill!(Array(t, dims...), baseval(t)),
                                                  trues(dims...))
 
 # Wrap a scalar in a DataArray w/ repetition
