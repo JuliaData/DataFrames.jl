@@ -643,11 +643,11 @@ end
 ##
 ##############################################################################
 
-promote_rule{T, T}(::Type{AbstractDataArray{T}},
-                   ::Type{T}) = promote_rule(T, T)
-promote_rule{S, T}(::Type{AbstractDataArray{S}},
-                   ::Type{T}) = promote_rule(S, T)
-promote_rule{T}(::Type{AbstractDataArray{T}}, ::Type{T}) = T
+## promote_rule{T, T}(::Type{AbstractDataArray{T}},
+##                    ::Type{T}) = promote_rule(T, T)
+## promote_rule{S, T}(::Type{AbstractDataArray{S}},
+##                    ::Type{T}) = promote_rule(S, T)
+## promote_rule{T}(::Type{AbstractDataArray{T}}, ::Type{T}) = T
 
 ##############################################################################
 ##
