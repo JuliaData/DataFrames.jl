@@ -28,3 +28,6 @@ size(x::NAtype) = ()
 ndims(x::NAtype) = 0
 
 isna(x::NAtype) = true
+
+promote_rule{T}(::Type{T}, ::Type{NAtype} ) = T
+baseval(::Type{NAtype}) = NA
