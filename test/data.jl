@@ -459,6 +459,23 @@ m3 = merge(df1, df2, "a", "right")
 m4 = merge(df1, df2, "a", "outer")
 @assert isequal(m4["a"], DataVector[1, 2, 3, 4])
 
+# test with NAs (issue #185)
+df1 = DataFrame()
+df1["A"] = DataVector["a", "b", "a", NA]
+df1["B"] = DataVector[1, 2, 1, 3]
+
+df2 = DataFrame()
+df2["A"] = DataVector["a", NA, "c"]
+df2["C"] = DataVector[1, 2, 4]
+
+m1 = merge(df1, df2, "A")
+@assert size(m1) == (3,3) 
+@assert isequal(m1["A"], DataVector[NA,"a","a"])
+m2 = merge(df1, df2, "A", "outer")
+@assert size(m2) == (5,3) 
+@assert isequal(m2["A"], DataVector[NA,"a","a","b","c"])
+
+
 test_group("extras")
 
 srand(1)

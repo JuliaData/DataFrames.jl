@@ -1464,11 +1464,11 @@ function join_idx(left, right, max_groups)
     left_sorter, where, left_count = groupsort_indexer(left, max_groups)
     right_sorter, where, right_count = groupsort_indexer(right, max_groups)
 
-    # First pass, determine size of result set, do not use the NA group
+    # First pass, determine size of result set
     tcount = 0
     rcount = 0
     lcount = 0
-    for i in 2:(max_groups + 1)
+    for i in 1:(max_groups + 1)
         lc = left_count[i]
         rc = right_count[i]
 
@@ -1486,9 +1486,8 @@ function join_idx(left, right, max_groups)
     lposition = 0
     rposition = 0
 
-    # exclude the NA group
-    left_pos = left_count[1]
-    right_pos = right_count[1]
+    left_pos = 0
+    right_pos = 0
 
     left_indexer = Array(Int, tcount)
     right_indexer = Array(Int, tcount)
@@ -1497,7 +1496,6 @@ function join_idx(left, right, max_groups)
     for i in 1:(max_groups + 1)
         lc = left_count[i]
         rc = right_count[i]
-
         if rc == 0
             for j in 1:lc
                 leftonly_indexer[lposition + j] = left_pos + j
