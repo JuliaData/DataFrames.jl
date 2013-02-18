@@ -13,6 +13,7 @@ dvint2 = DataArray([5:8])
 dvint3 = DataArray(5:8)
 dvflt = DataVector[1.0, 2, NA, 4]
 dvstr = DataVector["one", "two", NA, "four"]
+dvdict = DataArray(Dict,4)    # for issue #199
 
 @assert isa(dvint, DataVector{Int64})
 @assert isa(dvint2, DataVector{Int64})

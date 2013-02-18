@@ -65,9 +65,9 @@ DataArray(d::BitArray) = DataArray(convert(Array{Bool}, d), falses(size(d)))
 DataArray(r::Ranges) = DataArray([r], falses(length(r)))
 
 # Construct an all-NA DataArray of a specific type
-DataArray(t::Type, dims::Integer...) = DataArray(fill!(Array(t, dims...), baseval(t)),
+DataArray(t::Type, dims::Integer...) = DataArray(Array(t, dims...),
                                                  trues(dims...))
-DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(fill!(Array(t, dims...), baseval(t)),
+DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(Array(t, dims...), 
                                                  trues(dims...))
 
 # Wrap a scalar in a DataArray w/ repetition
@@ -330,8 +330,26 @@ function ref(d::DataArray, inds::AbstractDataVector)
 end
 # TODO: Return SubDataArray
 # TODO: Make inds::AbstractVector
-function ref(d::DataArray, inds::Union(Vector, BitVector, Ranges))
-    return DataArray(d.data[inds], d.na[inds])
+function ref(d::DataArray, inds::Union(BitVector, Vector{Bool}))
+    res = similar(d, sum(inds))
+    j = 1
+    for i in 1:length(inds)
+        if !d.na[i] && inds[i]
+            res[j] = d.data[i]
+            j += 1
+        end
+    end
+    res
+end
+function ref(d::DataArray, inds::Union(Vector, Ranges))
+    res = similar(d, length(inds))
+    for i in 1:length(inds)
+        ix = inds[i]
+        if !d.na[ix]
+            res[i] = d.data[ix]
+        end
+    end
+    res
 end
 
 # dm[SingleItemIndex, SingleItemIndex)
