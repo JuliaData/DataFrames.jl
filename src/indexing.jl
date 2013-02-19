@@ -42,10 +42,10 @@
 # can be less than the length of the DataArray.
 
 indexorder(x) = sortperm(x)
-function indexorder{T}(v::AbstractDataVector{T})
-    Nna = sum(isna(v))
-    sortperm(v)[Nna + 1 : end]
-end
+## function indexorder{T}(v::AbstractDataVector{T})
+##     Nna = sum(isna(v))
+##     sortperm(v)[Nna + 1 : end]
+## end
 
 
 type IndexedVector{T} <: AbstractVector{T}
@@ -96,8 +96,9 @@ end
 
 
 sortperm(x::IndexedVector) = x.idx
-sort(x::IndexedVector) = x.x[x.idx]   # Return regular array?
-## sort(x::IndexedVector) = IndexedVector(x.x[x.idx], 1:length(x.x))   # or keep this an IndexedVector, like this?
+sortperm(x::IndexedVector, ::Sort.Reverse) = reverse(x.idx)
+sort(x::IndexedVector) = x.x[x.idx] 
+sort(x::IndexedVector, ::Sort.Reverse) = x.x[reverse(x.idx)]
 
 type Indexer
     r::Vector{Range1}
@@ -321,3 +322,36 @@ end
 # the following is needed for show(df)
 maxShowLength(v::IndexedVector) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
 
+# Methods to speed up grouping and merging
+function PooledDataArray{T}(d::IndexedVector{T})
+    refs = zeros(POOLED_DATA_VEC_REF_TYPE, size(d))
+    oneval = one(POOLED_DATA_VEC_REF_TYPE)
+    pool = Array(T, 0)
+    # skip over NAs
+    nna = 0
+    while isna(d.x[d.idx[nna + 1]])
+        nna += 1
+    end
+    if nna >= length(d)
+        return PooledDataArray(refs, pool)
+    end
+    lastval = d.x[d.idx[nna+1]]
+    push!(pool, d.x[d.idx[nna+1]])
+    poolidx = oneval
+    for i = nna + 1 : length(d)
+        idx = d.idx[i]
+        if d.x[idx] != lastval
+            push!(pool, d.x[idx])
+            poolidx += oneval
+        end
+        refs[idx] = poolidx
+        lastval = d.x[idx]
+    end
+    return PooledDataArray(refs, pool)
+end
+
+function PooledDataVecs{S}(v1::IndexedVector{S},
+                           v2::IndexedVector{S})
+    return PooledDataVecs(PooledDataArray(v1),
+                          PooledDataArray(v2))
+end

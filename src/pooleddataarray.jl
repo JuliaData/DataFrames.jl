@@ -598,7 +598,9 @@ end
 ##############################################################################
 
 sortperm(pda::PooledDataArray) = groupsort_indexer(pda)[1]
+sortperm(pda::PooledDataArray, ::Sort.Reverse) = reverse(groupsort_indexer(pda)[1])
 sort(pda::PooledDataArray) = pda[sortperm(pda)]
+sort(pda::PooledDataArray, ::Sort.Reverse) = pda[reverse(sortperm(pda))]
 
 ##############################################################################
 ##
@@ -654,4 +656,36 @@ function PooledDataVecs{S, T}(v1::AbstractVector{S},
 
     return (PooledDataArray(refs1, pool),
             PooledDataArray(refs2, pool))
+end
+
+function PooledDataVecs{S}(v1::PooledDataArray{S},
+                           v2::PooledDataArray{S})
+    pool = sort(unique([v1.pool, v2.pool]))
+    tidx1 = POOLED_DATA_VEC_REF_CONVERTER(findin(pool, v1.pool))
+    tidx2 = POOLED_DATA_VEC_REF_CONVERTER(findin(pool, v2.pool))
+    refs1 = zeros(POOLED_DATA_VEC_REF_TYPE, length(v1))
+    refs2 = zeros(POOLED_DATA_VEC_REF_TYPE, length(v2))
+    for i in 1:length(refs1)
+        if v1.refs[i] != 0
+            refs1[i] = tidx1[v1.refs[i]]
+        end
+    end
+    for i in 1:length(refs2)
+        if v2.refs[i] != 0
+            refs2[i] = tidx2[v2.refs[i]]
+        end
+    end
+    return (PooledDataArray(refs1, pool),
+            PooledDataArray(refs2, pool))
+end
+
+function PooledDataVecs{S}(v1::PooledDataArray{S},
+                           v2::AbstractArray{S})
+    return PooledDataVecs(v1,
+                          PooledDataArray(v2))
+end
+function PooledDataVecs{S}(v1::AbstractArray{S},
+                           v2::PooledDataArray{S})
+    return PooledDataVecs(PooledDataArray(v1),
+                          v2)
 end
