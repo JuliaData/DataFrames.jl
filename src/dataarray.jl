@@ -321,12 +321,12 @@ end
 # TODO: Return SubDataArray
 function ref(d::DataArray, inds::AbstractDataVector{Bool})
     inds = find(replaceNA(inds, false))
-    return DataArray(d.data[inds], d.na[inds])
+    return d[inds]
 end
 # TODO: Return SubDataArray
 function ref(d::DataArray, inds::AbstractDataVector)
     inds = removeNA(inds)
-    return DataArray(d.data[inds], d.na[inds])
+    return d[inds]
 end
 # TODO: Return SubDataArray
 # TODO: Make inds::AbstractVector
