@@ -41,32 +41,26 @@
 # does make the indexing a little trickier as the length of the index
 # can be less than the length of the DataArray.
 
-indexorder(x) = sortperm(x)
-## function indexorder{T}(v::AbstractDataVector{T})
-##     Nna = sum(isna(v))
-##     sortperm(v)[Nna + 1 : end]
-## end
 
-
-type IndexedVector{T} <: AbstractVector{T}
-    x::AbstractVector{T}
+type IndexedVector{T,S<:AbstractVector} <: AbstractVector{T}
+    x::S
     idx::Vector{Int}
 end
-IndexedVector(x::AbstractVector) = IndexedVector(x, indexorder(x))
+IndexedVector{T}(x::AbstractVector{T}) = IndexedVector{T,typeof(x)}(x, sortperm(x))
 
-ref{T,I<:Real}(v::IndexedVector{T},i::AbstractVector{I}) = IndexedVector(v.x[i])
-ref{T,I<:Real}(v::IndexedVector{T},i::I) = v.x[i]
-ref{T}(v::IndexedVector{T},i::Int) = v.x[i]
-ref{T}(v::IndexedVector{T}, i) = IndexedVector(v.x[i])
+ref{I<:Real}(v::IndexedVector,i::AbstractVector{I}) = IndexedVector(v.x[i])
+ref{I<:Real}(v::IndexedVector,i::I) = v.x[i]
+ref(v::IndexedVector,i::Int) = v.x[i]
+ref(v::IndexedVector, i) = IndexedVector(v.x[i])
 assign{I<:Real}(v::IndexedVector, i, val::I) = IndexedVector(assign(v.x, i, val))
 assign(v::IndexedVector, i, val) = IndexedVector(assign(v.x, i, val))
 
 vecbind_type(x::IndexedVector) = vecbind_type(x.x)
 
 # to make assign in a DataFrame work:
-upgrade_vector{T}(v::IndexedVector{T}) = v
-function insert_single_column!{T}(df::DataFrame,
-                               dv::IndexedVector{T},
+upgrade_vector(v::IndexedVector) = v
+function insert_single_column!(df::DataFrame,
+                               dv::IndexedVector,
                                col_ind::ColumnIndex)
     dv_n, df_n = length(dv), nrow(df)
     if df_n != 0
@@ -277,7 +271,7 @@ end
 size(a::IndexedVector) = size(a.x)
 length(a::IndexedVector) = length(a.x)
 ndims(a::IndexedVector) = 1
-eltype{T}(a::IndexedVector{T}) = T
+eltype{T}(a::IndexedVector) = eltype(a.x)
 
 ## print(io, a::IndexedVector) = print(io, a.x)
 show(io::IO, a::IndexedVector) = show(io, a.x)
@@ -327,13 +321,13 @@ maxShowLength(v::IndexedVector) = length(v) > 0 ? max([length(_string(x)) for x 
 # Methods to speed up grouping and merging
 # This is slower than the original!!
 # I don't see how, but it is. -- Looks like all IndexedVector indexing is slow.
-function PooledDataArray{T}(d::IndexedVector{T})
+function PooledDataArray(d::IndexedVector)
     refs = zeros(POOLED_DATA_VEC_REF_TYPE, size(d))
     oneval = one(POOLED_DATA_VEC_REF_TYPE)
     local idx::Int
     ## local lastval::T
     local poolidx::POOLED_DATA_VEC_REF_TYPE
-    pool = Array(T, 0)
+    pool = Array(eltype(d), 0)
     # skip over NAs
     nna = 0
     while isna(d.x[d.idx[nna + 1]])
@@ -346,14 +340,15 @@ function PooledDataArray{T}(d::IndexedVector{T})
     push!(pool, d.x[d.idx[nna+1]])
     poolidx = oneval
     for i = nna + 1 : length(d)
-        ## if d.x[d.idx[i]] != lastval
-        ##     push!(pool, d.x[d.idx[i]])
-        ##     poolidx += oneval
-        ## end
-        refs[d.idx[i]::Int] = poolidx::POOLED_DATA_VEC_REF_TYPE
-        lastval::T = d.x[d.idx[i]::Int]::T
+        idx = d.idx[i]
+        val = d.x[idx]
+        if val != lastval
+            push!(pool, val)
+            poolidx += oneval
+            lastval = val
+        end
+        refs[idx] = poolidx
     end
-    return 1
     return PooledDataArray(refs, pool)
 end
 
