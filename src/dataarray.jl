@@ -330,6 +330,10 @@ function ref(d::DataArray, inds::AbstractDataVector)
 end
 # TODO: Return SubDataArray
 # TODO: Make inds::AbstractVector
+## # The following assumes that T<:Number won't have #undefs
+function ref{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector{Real}, Ranges))
+    DataArray(d.data[inds], d.na[inds])
+end
 function ref(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     res = similar(d, sum(inds))
     j = 1
