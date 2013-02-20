@@ -601,6 +601,17 @@ sortperm(pda::PooledDataArray) = groupsort_indexer(pda)[1]
 sortperm(pda::PooledDataArray, ::Sort.Reverse) = reverse(groupsort_indexer(pda)[1])
 sort(pda::PooledDataArray) = pda[sortperm(pda)]
 sort(pda::PooledDataArray, ::Sort.Reverse) = pda[reverse(sortperm(pda))]
+import Sort.Perm
+type FastPerm{O<:Sort.Ordering,V<:AbstractVector} <: Sort.Ordering
+    ord::O
+    vec::V
+end
+FastPerm{O<:Sort.Ordering,V<:AbstractVector}(o::O,v::V) = FastPerm{O,V}(o,v)
+sortperm{V}(x::AbstractVector, a::Sort.Algorithm, o::FastPerm{Sort.Forward,V}) = x[sortperm(o.vec)]
+sortperm{V}(x::AbstractVector, a::Sort.Algorithm, o::FastPerm{Sort.Reverse,V}) = x[reverse(sortperm(o.vec))]
+Perm{O<:Sort.Ordering}(o::O, v::PooledDataVector) = FastPerm(o, v)
+
+
 
 ##############################################################################
 ##
@@ -658,8 +669,8 @@ function PooledDataVecs{S, T}(v1::AbstractVector{S},
             PooledDataArray(refs2, pool))
 end
 
-function PooledDataVecs{S}(v1::PooledDataArray{S},
-                           v2::PooledDataArray{S})
+function PooledDataVecs{S,N}(v1::PooledDataArray{S,N},
+                             v2::PooledDataArray{S,N})
     pool = sort(unique([v1.pool, v2.pool]))
     tidx1 = POOLED_DATA_VEC_REF_CONVERTER(findin(pool, v1.pool))
     tidx2 = POOLED_DATA_VEC_REF_CONVERTER(findin(pool, v2.pool))
@@ -679,10 +690,20 @@ function PooledDataVecs{S}(v1::PooledDataArray{S},
             PooledDataArray(refs2, pool))
 end
 
+function PooledDataVecs{S}(v1::PooledDataVector{S},
+                           v2::AbstractVector{S})
+    return PooledDataVecs(v1,
+                          PooledDataArray(v2))
+end
 function PooledDataVecs{S}(v1::PooledDataArray{S},
                            v2::AbstractArray{S})
     return PooledDataVecs(v1,
                           PooledDataArray(v2))
+end
+function PooledDataVecs{S}(v1::AbstractVector{S},
+                           v2::PooledDataVector{S})
+    return PooledDataVecs(PooledDataArray(v1),
+                          v2)
 end
 function PooledDataVecs{S}(v1::AbstractArray{S},
                            v2::PooledDataArray{S})

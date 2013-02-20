@@ -55,9 +55,10 @@ end
 IndexedVector(x::AbstractVector) = IndexedVector(x, indexorder(x))
 
 ref{T,I<:Real}(v::IndexedVector{T},i::AbstractVector{I}) = IndexedVector(v.x[i])
-ref{T}(v::IndexedVector{T},i::Real) = v.x[i]
+ref{T,I<:Real}(v::IndexedVector{T},i::I) = v.x[i]
+ref{T}(v::IndexedVector{T},i::Int) = v.x[i]
 ref{T}(v::IndexedVector{T}, i) = IndexedVector(v.x[i])
-assign(v::IndexedVector, i, val::Real) = IndexedVector(assign(v.x, i, val))
+assign{I<:Real}(v::IndexedVector, i, val::I) = IndexedVector(assign(v.x, i, val))
 assign(v::IndexedVector, i, val) = IndexedVector(assign(v.x, i, val))
 
 vecbind_type(x::IndexedVector) = vecbind_type(x.x)
@@ -99,6 +100,7 @@ sortperm(x::IndexedVector) = x.idx
 sortperm(x::IndexedVector, ::Sort.Reverse) = reverse(x.idx)
 sort(x::IndexedVector) = x.x[x.idx] 
 sort(x::IndexedVector, ::Sort.Reverse) = x.x[reverse(x.idx)]
+Perm{O<:Sort.Ordering}(o::O, v::IndexedVector) = FastPerm(o, v)
 
 type Indexer
     r::Vector{Range1}
@@ -323,9 +325,14 @@ end
 maxShowLength(v::IndexedVector) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
 
 # Methods to speed up grouping and merging
+# This is slower than the original!!
+# I don't see how, but it is. -- Looks like all IndexedVector indexing is slow.
 function PooledDataArray{T}(d::IndexedVector{T})
     refs = zeros(POOLED_DATA_VEC_REF_TYPE, size(d))
     oneval = one(POOLED_DATA_VEC_REF_TYPE)
+    local idx::Int
+    ## local lastval::T
+    local poolidx::POOLED_DATA_VEC_REF_TYPE
     pool = Array(T, 0)
     # skip over NAs
     nna = 0
@@ -339,16 +346,50 @@ function PooledDataArray{T}(d::IndexedVector{T})
     push!(pool, d.x[d.idx[nna+1]])
     poolidx = oneval
     for i = nna + 1 : length(d)
-        idx = d.idx[i]
-        if d.x[idx] != lastval
-            push!(pool, d.x[idx])
-            poolidx += oneval
-        end
-        refs[idx] = poolidx
-        lastval = d.x[idx]
+        ## if d.x[d.idx[i]] != lastval
+        ##     push!(pool, d.x[d.idx[i]])
+        ##     poolidx += oneval
+        ## end
+        refs[d.idx[i]::Int] = poolidx::POOLED_DATA_VEC_REF_TYPE
+        lastval::T = d.x[d.idx[i]::Int]::T
     end
+    return 1
     return PooledDataArray(refs, pool)
 end
+
+## # Methods to speed up grouping and merging
+## # This is slower than the original!!
+## # I don't see how, but it is.
+## function PooledDataArray{T}(d::IndexedVector{T})
+##     refs = zeros(POOLED_DATA_VEC_REF_TYPE, size(d))
+##     oneval = one(POOLED_DATA_VEC_REF_TYPE)
+##     pool = Array(T, 0)
+##     # skip over NAs
+##     nna = 0
+##     while isna(d.x[d.idx[nna + 1]])
+##         nna += 1
+##     end
+##     if nna >= length(d)
+##         return PooledDataArray(refs, pool)
+##     end
+##     lastval = d.x[d.idx[nna+1]]
+##     push!(pool, d.x[d.idx[nna+1]])
+##     poolidx = oneval
+##     IDX = d.idx::Array{Int,1}
+##     X = d.x
+##     for i = nna + 1 : length(d)
+##         idx = IDX[i]
+##         val = X[idx]
+##         ## if val != lastval
+##         ##     push!(pool, val)
+##         ##     poolidx += 1
+##         ##     lastval = val
+##         ## end
+##         refs[idx] = poolidx
+##     end
+##     return 1
+##     return PooledDataArray(POOLED_DATA_VEC_REF_CONVERTER(refs), pool)
+## end
 
 function PooledDataVecs{S}(v1::IndexedVector{S},
                            v2::IndexedVector{S})

@@ -1795,6 +1795,10 @@ for (sb,s) in {(:sortby!, :sort!), (:sortby, :sort)}
     end
 end
 
+# Extras to speed up sorting
+sortperm{V}(d::AbstractDataFrame, a::Sort.Algorithm, o::FastPerm{Sort.Forward,V}) = sortperm(o.vec)
+sortperm{V}(d::AbstractDataFrame, a::Sort.Algorithm, o::FastPerm{Sort.Reverse,V}) = reverse(sortperm(o.vec))
+
 ##############################################################################
 ##
 ## Iteration: EachRow, EachCol
