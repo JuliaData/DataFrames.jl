@@ -619,13 +619,56 @@ Perm{O<:Sort.Ordering}(o::O, v::PooledDataVector) = FastPerm(o, v)
 ##
 ##############################################################################
 
-function PooledDataVecs{S, T}(v1::AbstractVector{S},
-                              v2::AbstractVector{T})
+
+function PooledDataVecs{S,N}(v1::PooledDataArray{S,N},
+                             v2::PooledDataArray{S,N})
+    pool = sort(unique([v1.pool, v2.pool]))
+    tidx1 = POOLED_DATA_VEC_REF_CONVERTER(findin(pool, v1.pool))
+    tidx2 = POOLED_DATA_VEC_REF_CONVERTER(findin(pool, v2.pool))
+    refs1 = zeros(POOLED_DATA_VEC_REF_TYPE, length(v1))
+    refs2 = zeros(POOLED_DATA_VEC_REF_TYPE, length(v2))
+    for i in 1:length(refs1)
+        if v1.refs[i] != 0
+            refs1[i] = tidx1[v1.refs[i]]
+        end
+    end
+    for i in 1:length(refs2)
+        if v2.refs[i] != 0
+            refs2[i] = tidx2[v2.refs[i]]
+        end
+    end
+    return (PooledDataArray(refs1, pool),
+            PooledDataArray(refs2, pool))
+end
+
+function PooledDataVecs{S,N}(v1::PooledDataArray{S,N},
+                           v2::AbstractArray{S,N})
+    return PooledDataVecs(v1,
+                          PooledDataArray(v2))
+end
+function PooledDataVecs{S,N}(v1::PooledDataArray{S,N},
+                           v2::AbstractArray{S,N})
+    return PooledDataVecs(v1,
+                          PooledDataArray(v2))
+end
+function PooledDataVecs{S,N}(v1::AbstractArray{S,N},
+                           v2::PooledDataArray{S,N})
+    return PooledDataVecs(PooledDataArray(v1),
+                          v2)
+end
+function PooledDataVecs{S,N}(v1::AbstractArray{S,N},
+                           v2::PooledDataArray{S,N})
+    return PooledDataVecs(PooledDataArray(v1),
+                          v2)
+end
+
+function PooledDataVecs(v1::AbstractArray,
+                        v2::AbstractArray)
 
     ## Return two PooledDataVecs that share the same pool.
 
-    refs1 = Array(POOLED_DATA_VEC_REF_TYPE, length(v1))
-    refs2 = Array(POOLED_DATA_VEC_REF_TYPE, length(v2))
+    refs1 = Array(POOLED_DATA_VEC_REF_TYPE, size(v1))
+    refs2 = Array(POOLED_DATA_VEC_REF_TYPE, size(v2))
     poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}()
     maxref = 0
 
@@ -667,46 +710,4 @@ function PooledDataVecs{S, T}(v1::AbstractVector{S},
 
     return (PooledDataArray(refs1, pool),
             PooledDataArray(refs2, pool))
-end
-
-function PooledDataVecs{S,N}(v1::PooledDataArray{S,N},
-                             v2::PooledDataArray{S,N})
-    pool = sort(unique([v1.pool, v2.pool]))
-    tidx1 = POOLED_DATA_VEC_REF_CONVERTER(findin(pool, v1.pool))
-    tidx2 = POOLED_DATA_VEC_REF_CONVERTER(findin(pool, v2.pool))
-    refs1 = zeros(POOLED_DATA_VEC_REF_TYPE, length(v1))
-    refs2 = zeros(POOLED_DATA_VEC_REF_TYPE, length(v2))
-    for i in 1:length(refs1)
-        if v1.refs[i] != 0
-            refs1[i] = tidx1[v1.refs[i]]
-        end
-    end
-    for i in 1:length(refs2)
-        if v2.refs[i] != 0
-            refs2[i] = tidx2[v2.refs[i]]
-        end
-    end
-    return (PooledDataArray(refs1, pool),
-            PooledDataArray(refs2, pool))
-end
-
-function PooledDataVecs{S}(v1::PooledDataVector{S},
-                           v2::AbstractVector{S})
-    return PooledDataVecs(v1,
-                          PooledDataArray(v2))
-end
-function PooledDataVecs{S}(v1::PooledDataArray{S},
-                           v2::AbstractArray{S})
-    return PooledDataVecs(v1,
-                          PooledDataArray(v2))
-end
-function PooledDataVecs{S}(v1::AbstractVector{S},
-                           v2::PooledDataVector{S})
-    return PooledDataVecs(PooledDataArray(v1),
-                          v2)
-end
-function PooledDataVecs{S}(v1::AbstractArray{S},
-                           v2::PooledDataArray{S})
-    return PooledDataVecs(PooledDataArray(v1),
-                          v2)
 end

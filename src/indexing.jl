@@ -50,10 +50,9 @@ IndexedVector{T}(x::AbstractVector{T}) = IndexedVector{T,typeof(x)}(x, sortperm(
 
 ref{I<:Real}(v::IndexedVector,i::AbstractVector{I}) = IndexedVector(v.x[i])
 ref{I<:Real}(v::IndexedVector,i::I) = v.x[i]
-ref(v::IndexedVector,i::Int) = v.x[i]
-ref(v::IndexedVector, i) = IndexedVector(v.x[i])
-assign{I<:Real}(v::IndexedVector, i, val::I) = IndexedVector(assign(v.x, i, val))
-assign(v::IndexedVector, i, val) = IndexedVector(assign(v.x, i, val))
+ref(v::IndexedVector,i::Real) = v.x[i]
+assign(v::IndexedVector, val::Any, i::Real) = IndexedVector(assign(v.x, val, i))
+assign(v::IndexedVector, val::Any, inds::AbstractVector) = IndexedVector(assign(v.x, val, inds))
 
 vecbind_type(x::IndexedVector) = vecbind_type(x.x)
 
