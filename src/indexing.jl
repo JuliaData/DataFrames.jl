@@ -42,11 +42,19 @@
 # can be less than the length of the DataArray.
 
 
+# Note that the following leaves out NA's.
+indexorder(x) = sortperm(x)
+function indexorder(v::AbstractDataVector)
+    Nna = sum(isna(v))
+    sortperm(v)[Nna + 1 : end]
+end
+
+
 type IndexedVector{T,S<:AbstractVector} <: AbstractVector{T}
     x::S
     idx::Vector{Int}
 end
-IndexedVector{T}(x::AbstractVector{T}) = IndexedVector{T,typeof(x)}(x, sortperm(x))
+IndexedVector{T}(x::AbstractVector{T}) = IndexedVector{T,typeof(x)}(x, indexorder(x))
 
 ref{I<:Real}(v::IndexedVector,i::AbstractVector{I}) = IndexedVector(v.x[i])
 ref{I<:Real}(v::IndexedVector,i::I) = v.x[i]
@@ -89,10 +97,11 @@ function insert_single_column!(df::DataFrame,
 end
 
 
-sortperm(x::IndexedVector) = x.idx
+sortperm{S,A<:AbstractDataVector}(x::IndexedVector{S,A}) = [findin(x.x, [NA]), x.idx]
+sortperm(x::IndexedVector) = x.idx 
 sortperm(x::IndexedVector, ::Sort.Reverse) = reverse(x.idx)
-sort(x::IndexedVector) = x.x[x.idx] 
-sort(x::IndexedVector, ::Sort.Reverse) = x.x[reverse(x.idx)]
+sort(x::IndexedVector) = x.x[sortperm(x)]
+sort(x::IndexedVector, ::Sort.Reverse) = x.x[reverse(sortperm(x))]
 Perm{O<:Sort.Ordering}(o::O, v::IndexedVector) = FastPerm(o, v)
 
 type Indexer
@@ -328,17 +337,14 @@ function PooledDataArray(d::IndexedVector)
     local poolidx::POOLED_DATA_VEC_REF_TYPE
     pool = Array(eltype(d), 0)
     # skip over NAs
-    nna = 0
-    while isna(d.x[d.idx[nna + 1]])
-        nna += 1
-    end
-    if nna >= length(d)
+    nna = length(d) - length(d.x)
+    if nna == length(d)
         return PooledDataArray(refs, pool)
     end
     lastval = d.x[d.idx[nna+1]]
     push!(pool, d.x[d.idx[nna+1]])
     poolidx = oneval
-    for i = nna + 1 : length(d)
+    for i = 1 : length(d.idx)
         idx = d.idx[i]
         val = d.x[idx]
         if val != lastval
@@ -351,39 +357,7 @@ function PooledDataArray(d::IndexedVector)
     return PooledDataArray(refs, pool)
 end
 
-## # Methods to speed up grouping and merging
-## # This is slower than the original!!
-## # I don't see how, but it is.
-## function PooledDataArray{T}(d::IndexedVector{T})
-##     refs = zeros(POOLED_DATA_VEC_REF_TYPE, size(d))
-##     oneval = one(POOLED_DATA_VEC_REF_TYPE)
-##     pool = Array(T, 0)
-##     # skip over NAs
-##     nna = 0
-##     while isna(d.x[d.idx[nna + 1]])
-##         nna += 1
-##     end
-##     if nna >= length(d)
-##         return PooledDataArray(refs, pool)
-##     end
-##     lastval = d.x[d.idx[nna+1]]
-##     push!(pool, d.x[d.idx[nna+1]])
-##     poolidx = oneval
-##     IDX = d.idx::Array{Int,1}
-##     X = d.x
-##     for i = nna + 1 : length(d)
-##         idx = IDX[i]
-##         val = X[idx]
-##         ## if val != lastval
-##         ##     push!(pool, val)
-##         ##     poolidx += 1
-##         ##     lastval = val
-##         ## end
-##         refs[idx] = poolidx
-##     end
-##     return 1
-##     return PooledDataArray(POOLED_DATA_VEC_REF_CONVERTER(refs), pool)
-## end
+DataArray(d::IndexedVector) = DataArray(x.x)
 
 function PooledDataVecs{S}(v1::IndexedVector{S},
                            v2::IndexedVector{S})

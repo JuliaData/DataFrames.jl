@@ -669,7 +669,7 @@ function PooledDataVecs(v1::AbstractArray,
 
     refs1 = Array(POOLED_DATA_VEC_REF_TYPE, size(v1))
     refs2 = Array(POOLED_DATA_VEC_REF_TYPE, size(v2))
-    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}()
+    poolref = Dict{promote_type(eltype(v1), eltype(v2)), POOLED_DATA_VEC_REF_TYPE}()
     maxref = 0
 
     # loop through once to fill the poolref dict
