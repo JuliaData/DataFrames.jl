@@ -5,26 +5,17 @@ Package for working with tabular data in Julia using `DataFrame`'s.
 
 # Installation
 
-DataFrames.jl is now an installable package. If you have not
-initialized the package system before, you will need to do the
-following:
-
-```julia
-require("pkg.jl")
-Pkg.init()
-```
+DataFrames.jl is now an installable package. 
 
 To install DataFrames.jl, use the following:
 
 ```julia
-require("pkg.jl")   # if not done previously
 Pkg.add("DataFrames")
 ```
 
 DataFrames.jl has one main module named `DataFrames`. You can load it as:
 
 ```julia
-require("DataFrames")
 using DataFrames
 ```
 
@@ -52,7 +43,6 @@ using DataFrames
 Here's a minimal demo showing some grouping operations:
 
 ```julia
-julia> require("DataFrames")
 
 julia> using DataFrames
 
