@@ -289,6 +289,23 @@ function level_to_index{T}(x::PooledDataArray{T})
     d
 end
 
+function unique!{T}(x::PooledDataArray{T}, newpool::Any)
+    newpool = T[l for l in newpool]
+    newpoolidx = Dict(newpool, 1:length(newpool))
+    for i in 1:length(x.refs)
+        if x.refs[i] != 0
+            if has(newpoolidx, x.pool[x.refs[i]])
+                x.refs[i] = newpoolidx[x.pool[x.refs[i]]]
+            else
+                x.refs[i] = 0
+            end
+        end
+    end
+    x.pool = newpool
+end
+levels!(x::PooledDataArray, newpool) = unique!(x, newpool)
+
+
 ##############################################################################
 ##
 ## similar()
