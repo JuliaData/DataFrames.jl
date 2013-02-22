@@ -308,7 +308,7 @@ end
 function PooledDataArray{S,N}(x::PooledDataArray{S,N},
                               newpool::Vector{S})
     tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(x.pool, newpool))
-    refs = Array(POOLED_DATA_VEC_REF_TYPE, length(x))
+    refs = zeros(POOLED_DATA_VEC_REF_TYPE, length(x))
     for i in 1:length(refs)
         if x.refs[i] != 0 
             refs[i] = tidx[x.refs[i]]
@@ -321,27 +321,20 @@ myunique(x::AbstractVector) = x[sort(unique(findat(x, x)))]  # gets the ordering
 myunique(x::AbstractDataVector) = myunique(removeNA(x))   # gets the ordering right; removes NAs
 
 function levels!(x::PooledDataArray, newpool::AbstractVector)
-    return PooledDataArray(x.refs, newpool)
-end
-function levels!(x::PooledDataArray, newpool::AbstractDataVector)
-    if !any(isna(newpool))
-        return PooledDataArray(x.refs, newpool)
-    else # handle NA's 
-        pool = myunique(newpool)
-        refs = Array(POOLED_DATA_VEC_REF_TYPE, length(x))
-        tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(newpool, pool))
-        tidx[isna(newpool)] = 0
-        for i in 1:length(refs)
-            if x.refs[i] != 0
-                refs[i] = tidx[x.refs[i]]
-            end
+    pool = myunique(newpool)
+    refs = zeros(POOLED_DATA_VEC_REF_TYPE, length(x))
+    tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(newpool, pool))
+    tidx[isna(newpool)] = 0
+    for i in 1:length(refs)
+        if x.refs[i] != 0
+            refs[i] = tidx[x.refs[i]]
         end
-        return PooledDataArray(refs, pool)
     end
+    return PooledDataArray(refs, pool)
 end
 
 function levels!(x::PooledDataArray, d::Dict)
-    newpool = DataArray(x.pool)
+    newpool = copy(DataArray(x.pool))
     # An NA in `v` is put in the pool; that will cause it to become NA
     for (k,v) in d
         idx = findin(newpool, [k])

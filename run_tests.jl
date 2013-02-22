@@ -7,6 +7,7 @@ require("test.jl")
 using DataFrames
 
 my_tests = ["test/dataarray.jl",
+            "test/pooleddataarray.jl",
             "test/data.jl",
             "test/index.jl",
             "test/dataframe.jl",
@@ -21,7 +22,6 @@ my_tests = ["test/dataarray.jl",
             "test/indexedvector.jl",
             "test/sort.jl",
             "test/iteration.jl",
-            "test/pooleddataarray.jl",
             "test/colfuncs.jl",
             "test/duplicates.jl",
             "test/padding.jl",
