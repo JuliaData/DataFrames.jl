@@ -130,7 +130,7 @@ function map(f::Function, gd::GroupedDataFrame)
     ## [d[1,gd.cols] => f(d) for d in gd]
     ## [f(g) for g in gd]
     keys = [d[1,gd.cols] for d in gd]
-    vals = [f(d) for d in gd]
+    vals = {f(d) for d in gd}
     GroupApplied(keys,vals)
 end
 
@@ -208,7 +208,7 @@ map(f::Function, x::SubDataFrame) = f(x)
 ## (|)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
-colwise(f::Function, d::AbstractDataFrame) = [f(d[idx]) for idx in 1:ncol(d)]
+colwise(f::Function, d::AbstractDataFrame) = {[f(d[idx])] for idx in 1:ncol(d)}
 colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
 colwise(f) = x -> colwise(f, x)
@@ -242,7 +242,6 @@ colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
 # TODO make this faster by applying the header just once.
 # BUG zero-rowed groupings cause problems here, because a sum of a zero-length
 # DataVector is 0 (not 0.0).
-colwise(d::GroupedDataFrame, s::Vector{Symbol}) = rbind(map(x -> colwise(without(x, d.cols),s), d)...)
 function colwise(gd::GroupedDataFrame, s::Vector{Symbol})
     x = map(x -> colwise(without(x, gd.cols),s), gd)
     cbind(rbind(x.keys), rbind(x.vals))

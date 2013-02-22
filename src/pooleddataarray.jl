@@ -255,7 +255,7 @@ function unique{T}(x::PooledDataArray{T})
         return DataArray(copy(x.pool), falses(length(x.pool)))
     end
 end
-levels{T}(pdv::PooledDataArray{T}) = unique(pdv)
+levels{T}(pdv::PooledDataArray{T}) = pdv.pool
 
 function unique{T}(adv::AbstractDataVector{T})
   values = Dict{Union(T, NAtype), Bool}()
@@ -289,21 +289,76 @@ function level_to_index{T}(x::PooledDataArray{T})
     d
 end
 
-function unique!{T}(x::PooledDataArray{T}, newpool::Any)
-    newpool = T[l for l in newpool]
-    newpoolidx = Dict(newpool, 1:length(newpool))
-    for i in 1:length(x.refs)
-        if x.refs[i] != 0
-            if has(newpoolidx, x.pool[x.refs[i]])
-                x.refs[i] = newpoolidx[x.pool[x.refs[i]]]
-            else
-                x.refs[i] = 0
-            end
+# like findin but returns the position in `b` that matches `a` (0 if no match)
+function findat(a, b) 
+    res = Array(Int, length(a))
+    # bdict's value is the index of the first occurrence of the key
+    bdict = Dict{Any, Int}()
+    for i in 1:length(b)
+        if !has(bdict, b[i])
+            bdict[b[i]] = i
         end
     end
-    x.pool = newpool
+    for i = 1:length(a)
+        res[i] = get(bdict, a[i], 0) 
+    end
+    res
 end
-levels!(x::PooledDataArray, newpool) = unique!(x, newpool)
+
+function PooledDataArray{S,N}(x::PooledDataArray{S,N},
+                              newpool::Vector{S})
+    tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(x.pool, newpool))
+    refs = Array(POOLED_DATA_VEC_REF_TYPE, length(x))
+    for i in 1:length(refs)
+        if x.refs[i] != 0 
+            refs[i] = tidx[x.refs[i]]
+        end
+    end
+    PooledDataArray(refs, newpool)
+end
+
+myunique(x::AbstractVector) = x[sort(unique(findat(x, x)))]  # gets the ordering right
+myunique(x::AbstractDataVector) = myunique(removeNA(x))   # gets the ordering right; removes NAs
+
+function levels!(x::PooledDataArray, newpool::AbstractVector)
+    return PooledDataArray(x.refs, newpool)
+end
+function levels!(x::PooledDataArray, newpool::AbstractDataVector)
+    if !any(isna(newpool))
+        return PooledDataArray(x.refs, newpool)
+    else # handle NA's 
+        pool = myunique(newpool)
+        refs = Array(POOLED_DATA_VEC_REF_TYPE, length(x))
+        tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(newpool, pool))
+        tidx[isna(newpool)] = 0
+        for i in 1:length(refs)
+            if x.refs[i] != 0
+                refs[i] = tidx[x.refs[i]]
+            end
+        end
+        return PooledDataArray(refs, pool)
+    end
+end
+
+function levels!(x::PooledDataArray, d::Dict)
+    newpool = DataArray(x.pool)
+    # An NA in `v` is put in the pool; that will cause it to become NA
+    for (k,v) in d
+        idx = findin(newpool, [k])
+        if length(idx) == 1
+            newpool[idx[1]] = v
+        end
+    end
+    levels!(x, newpool)
+end
+
+reorder!(x::PooledDataArray)  = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
+
+reorder!(x::PooledDataArray, y::AbstractVector...) = reorder!(mean, x, y...)
+
+reorder!(fun::Function, x::PooledDataArray, y::AbstractVector...) =
+    reorder!(fun, x, DataFrame({y...}))
+
 
 
 ##############################################################################
@@ -614,8 +669,17 @@ end
 ##
 ##############################################################################
 
+# TODO handle sortperm for non-sorted keys
 sortperm(pda::PooledDataArray) = groupsort_indexer(pda)[1]
-sortperm(pda::PooledDataArray, ::Sort.Reverse) = reverse(groupsort_indexer(pda)[1])
+function sortperm(pda::PooledDataArray)
+    if issorted(pda.pool)
+        return groupsort_indexer(pda)[1]
+    else
+        return sortperm(reorder!(copy(pda)))
+    end 
+end 
+        
+sortperm(pda::PooledDataArray, ::Sort.Reverse) = reverse(sortperm(pda))
 sort(pda::PooledDataArray) = pda[sortperm(pda)]
 sort(pda::PooledDataArray, ::Sort.Reverse) = pda[reverse(sortperm(pda))]
 import Sort.Perm
