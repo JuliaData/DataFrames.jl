@@ -59,7 +59,6 @@ function PooledDataArray{T, N}(d::Array{T, N}, m::AbstractArray{Bool, N})
     newrefs = Array(POOLED_DATA_VEC_REF_TYPE, size(d))
     #newpool = Array(T, 0)
     poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}() # Why isn't this a set?
-    maxref = 0
 
     # Loop through once to fill the poolref dict
     for i = 1:length(d)
@@ -98,19 +97,10 @@ function PooledDataArray{T, N}(d::Array{T, N},
 
     newrefs = Array(POOLED_DATA_VEC_REF_TYPE, size(d))
     poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}()
-    maxref = 0
 
     # loop through once to fill the poolref dict
     for i = 1:length(pool)
-        poolref[pool[i]] = 0
-    end
-
-    # fill positions in poolref
-    newpool = sort(keys(poolref))
-    i = 1
-    for p in newpool
-        poolref[p] = i
-        i += 1
+        poolref[pool[i]] = i
     end
 
     # fill in newrefs
@@ -119,14 +109,14 @@ function PooledDataArray{T, N}(d::Array{T, N},
             newrefs[i] = 0
         else
             if has(poolref, d[i])
-              newrefs[i] = poolref[d[i]]
+                newrefs[i] = poolref[d[i]]
             else
-              error("Vector contains elements not in provided pool")
+                newrefs[i] = 0
             end
         end
     end
 
-    return PooledDataArray(newrefs, newpool)
+    return PooledDataArray(newrefs, pool)
 end
 
 # Convert a BitArray to an Array{Bool} w/ specified missingness
@@ -320,7 +310,7 @@ end
 myunique(x::AbstractVector) = x[sort(unique(findat(x, x)))]  # gets the ordering right
 myunique(x::AbstractDataVector) = myunique(removeNA(x))   # gets the ordering right; removes NAs
 
-function levels!(x::PooledDataArray, newpool::AbstractVector)
+function set_levels(x::PooledDataArray, newpool::AbstractVector)
     pool = myunique(newpool)
     refs = zeros(POOLED_DATA_VEC_REF_TYPE, length(x))
     tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(newpool, pool))
@@ -333,7 +323,7 @@ function levels!(x::PooledDataArray, newpool::AbstractVector)
     return PooledDataArray(refs, pool)
 end
 
-function levels!(x::PooledDataArray, d::Dict)
+function set_levels(x::PooledDataArray, d::Dict)
     newpool = copy(DataArray(x.pool))
     # An NA in `v` is put in the pool; that will cause it to become NA
     for (k,v) in d
@@ -342,15 +332,15 @@ function levels!(x::PooledDataArray, d::Dict)
             newpool[idx[1]] = v
         end
     end
-    levels!(x, newpool)
+    set_levels(x, newpool)
 end
 
-reorder!(x::PooledDataArray)  = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
+reorder(x::PooledDataArray)  = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
 
-reorder!(x::PooledDataArray, y::AbstractVector...) = reorder!(mean, x, y...)
+reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 
-reorder!(fun::Function, x::PooledDataArray, y::AbstractVector...) =
-    reorder!(fun, x, DataFrame({y...}))
+reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
+    reorder(fun, x, DataFrame({y...}))
 
 
 

@@ -34,17 +34,16 @@ test_group("PooledDataVector creation with predetermined pool")
 pdvpp = PooledDataArray([1, 2, 2, 3], [1, 2, 3, 4])
 @assert isequal(pdvpp.pool, [1, 2, 3, 4])
 @assert string(pdvpp) == "[1, 2, 2, 3]"
-@test throws_exception(PooledDataArray([1, 2, 3], [1, 2]), Exception)
 pdvpp = PooledDataArray([1, 2, 2, 3, 2, 1], [1, 2, 3, 4])
 @assert isequal(pdvpp.pool, [1, 2, 3, 4])
 @assert string(pdvpp) == "[1, 2, 2, 3, 2, 1]"
 pdvpp = PooledDataArray(["one", "two", "two"], ["one", "two", "three"])
 @assert isequal(values(pdvpp), DataVector["one", "two", "two"])
-@assert all(get_indices(pdvpp) .== uint16([1, 3, 3]))
-@assert isequal(levels(pdvpp), DataVector["one", "three", "two"])
-@assert isequal(pdvpp.pool, ["one", "three", "two"])
+@assert all(get_indices(pdvpp) .== uint16([1, 2, 2]))
+@assert isequal(levels(pdvpp), DataVector["one", "two", "three"])
+@assert isequal(pdvpp.pool, ["one", "two", "three"])
 @assert string(pdvpp) == "[one, two, two]"
-@test throws_exception(PooledDataArray(["one", "two", "four"], ["one", "two", "three"]), Exception)
+@assert string(PooledDataArray(["one", "two", "four"], ["one", "two", "three"])) == "[one, two, NA]"
 
 test_group("PooledDataVector utf8 support")
 pdvpp = PooledDataArray([utf8("hello")], [false])

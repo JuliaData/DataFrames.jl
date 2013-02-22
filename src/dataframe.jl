@@ -1800,14 +1800,14 @@ sortperm{V}(d::AbstractDataFrame, a::Sort.Algorithm, o::FastPerm{Sort.Forward,V}
 sortperm{V}(d::AbstractDataFrame, a::Sort.Algorithm, o::FastPerm{Sort.Reverse,V}) = reverse(sortperm(o.vec))
 
 # reorder! for factors by specifying a DataFrame
-function reorder!(fun::Function, x::PooledDataArray, df::AbstractDataFrame)
+function reorder(fun::Function, x::PooledDataArray, df::AbstractDataFrame)
     dfc = copy(df)
     dfc["__key__"] = x
     gd = by(dfc, "__key__", df -> colwise(fun, without(df, "__key__")))
     idx = sortperm(gd[[2:ncol(gd)]])
     return PooledDataArray(x, removeNA(gd[idx,1]))
 end
-reorder!(x::PooledDataArray, df::AbstractDataFrame) = reorder!(:mean, x, df)
+reorder(x::PooledDataArray, df::AbstractDataFrame) = reorder(:mean, x, df)
 
 ##############################################################################
 ##
