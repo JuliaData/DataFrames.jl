@@ -297,6 +297,7 @@ end
 
 function PooledDataArray{S,N}(x::PooledDataArray{S,N},
                               newpool::Vector{S})
+    # QUESTION: should we have a ! version of this? If so, needs renaming?
     tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(x.pool, newpool))
     refs = zeros(POOLED_DATA_VEC_REF_TYPE, length(x))
     for i in 1:length(refs)
@@ -323,6 +324,23 @@ function set_levels(x::PooledDataArray, newpool::AbstractVector)
     return PooledDataArray(refs, pool)
 end
 
+function set_levels!{T}(x::PooledDataArray{T}, newpool::AbstractVector{T})
+    if newpool == myunique(newpool) # no NAs or duplicates
+        x.pool = newpool
+        return x
+    else
+        x.pool = myunique(newpool)
+        tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(newpool, x.pool))
+        tidx[isna(newpool)] = 0
+        for i in 1:length(x.refs)
+            if x.refs[i] != 0
+                x.refs[i] = tidx[x.refs[i]]
+            end
+        end
+        return x
+    end
+end
+
 function set_levels(x::PooledDataArray, d::Dict)
     newpool = copy(DataArray(x.pool))
     # An NA in `v` is put in the pool; that will cause it to become NA
@@ -333,6 +351,28 @@ function set_levels(x::PooledDataArray, d::Dict)
         end
     end
     set_levels(x, newpool)
+end
+
+function set_levels!{T}(x::PooledDataArray{T}, d::Dict{T,T})
+    for (k,v) in d
+        idx = findin(x.pool, [k])
+        if length(idx) == 1
+            x.pool[idx[1]] = v
+        end
+    end
+    x
+end
+
+function set_levels!{T}(x::PooledDataArray{T}, d::Dict{T,Any}) # this version handles NAs in d's values
+    newpool = copy(DataArray(x.pool))
+    # An NA in `v` is put in the pool; that will cause it to become NA
+    for (k,v) in d
+        idx = findin(newpool, [k])
+        if length(idx) == 1
+            newpool[idx[1]] = v
+        end
+    end
+    set_levels!(x, newpool)
 end
 
 reorder(x::PooledDataArray)  = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool

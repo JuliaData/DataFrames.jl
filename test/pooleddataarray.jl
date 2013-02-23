@@ -18,3 +18,10 @@ v = [1:6]
 df = @DataFrame(v => v, x => rand(6))
 @assert levels(reorder(min, p, df)) == [9,8,1] 
 @assert isequal(p, pcopy)
+
+@assert levels(set_levels!(copy(p), [10,80,90])) == [10, 80, 90]
+@assert levels(set_levels!(copy(p), [1,8,1])) == [1, 8]
+@assert levels(set_levels!(copy(p), DataVector[1,8,NA])) == [1, 8]
+@assert levels(set_levels!(copy(p), [1,8,9, 10])) == [1, 8, 9, 10]
+@assert levels(set_levels!(copy(p), [1 => 111])) == [111, 8, 9]
+@assert levels(set_levels!(copy(p), [1 => 111, 8 => NA])) == [111, 9]
