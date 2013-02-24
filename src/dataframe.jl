@@ -1763,7 +1763,7 @@ function sort!(df::AbstractDataFrame, a::Algorithm, o::Ordering)
     pp = similar(p)
     for col in df.columns
         copy!(pp,p)
-        permute!!(col, pp)
+        Base.permute!!(col, pp)
     end
     df
 end
