@@ -475,6 +475,57 @@ m2 = merge(df1, df2, "A", "outer")
 @assert size(m2) == (5,3) 
 @assert isequal(m2["A"], DataVector[NA,"a","a","b","c"])
 
+srand(1)
+df1 = DataFrame(quote
+    a = ["x","y"][rand(1:2, 10)]
+    b = ["A","B"][rand(1:2, 10)]
+    v1 = randn(10)
+end)
+
+df2 = DataFrame(quote
+    a = ["x","y"][[1,2,1,1,2]]
+    b = ["A","B","C"][[1,1,1,2,3]]
+    v2 = randn(5)    
+end)
+df2[1,"a"] = NA
+
+m1 = merge(df1, df2, ["a","b"])
+@assert isequal(m1["a"], DataArray(["x", "x", "y", "y", fill("x", 5)]))
+m2 = merge(df1, df2, ["a","b"], "outer")
+@assert isequal(m2[10,"v2"], NA)
+@assert isequal(m2["a"], DataVector["x", "x", "y", "y", "x", "x", "x", "x", "x", "y", NA, "y"])
+
+m1a = merge(within(df1, :(key = PooledDataArray(_DF[["a","b"]]))),
+            based_on(df2, :(key = PooledDataArray(_DF[["a","b"]]); v2 = v2)),
+            "key")
+m2a = merge(within(df1, :(key = PooledDataArray(_DF[["a","b"]]))),
+            based_on(df2, :(key = PooledDataArray(_DF[["a","b"]]); v2 = v2)),
+            "key",
+            "outer")
+@assert isequal(sort(m1["b"]), sort(m1a["b"]))
+
+srand(1)
+function spltdf(d)
+    d["x1"] = map(x -> x[1], d["a"])
+    d["x2"] = map(x -> x[2], d["a"])
+    d["x3"] = map(x -> x[3], d["a"])
+    d
+end
+df1 = DataFrame(quote
+    a = ["abc","abx", "axz", "def", "dfr"]
+    v1 = randn(5)
+end)
+df1 = spltdf(df1)
+df2 = DataFrame(quote
+    a = ["def", "abc","abx", "axz", "xyz"]
+    v2 = randn(5)    
+end)
+df2 = spltdf(df2)
+
+m1 = merge(df1, df2, "a")
+m2 = merge(df1, df2, ["x1", "x2", "x3"])
+@assert isequal(sort(m1["a"]), sort(m2["a"]))
+
 
 test_group("extras")
 

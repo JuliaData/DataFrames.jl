@@ -327,8 +327,6 @@ end
 maxShowLength(v::IndexedVector) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
 
 # Methods to speed up grouping and merging
-# This is slower than the original!!
-# I don't see how, but it is. -- Looks like all IndexedVector indexing is slow.
 function PooledDataArray(d::IndexedVector)
     refs = zeros(POOLED_DATA_VEC_REF_TYPE, size(d))
     oneval = one(POOLED_DATA_VEC_REF_TYPE)

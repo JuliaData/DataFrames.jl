@@ -1,0 +1,171 @@
+
+##
+## Join / merge
+##
+
+function join_idx(left, right, max_groups)
+    ## adapted from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
+
+    # NA group in location 0
+
+    left_sorter, where, left_count = groupsort_indexer(left, max_groups)
+    right_sorter, where, right_count = groupsort_indexer(right, max_groups)
+
+    # First pass, determine size of result set
+    tcount = 0
+    rcount = 0
+    lcount = 0
+    for i in 1:(max_groups + 1)
+        lc = left_count[i]
+        rc = right_count[i]
+
+        if rc > 0 && lc > 0
+            tcount += lc * rc
+        elseif rc > 0
+            rcount += rc
+        else
+            lcount += lc
+        end
+    end
+    
+    # group 0 is the NA group
+    tposition = 0
+    lposition = 0
+    rposition = 0
+
+    left_pos = 0
+    right_pos = 0
+
+    left_indexer = Array(Int, tcount)
+    right_indexer = Array(Int, tcount)
+    leftonly_indexer = Array(Int, lcount)
+    rightonly_indexer = Array(Int, rcount)
+    for i in 1:(max_groups + 1)
+        lc = left_count[i]
+        rc = right_count[i]
+        if rc == 0
+            for j in 1:lc
+                leftonly_indexer[lposition + j] = left_pos + j
+            end
+            lposition += lc
+        elseif lc == 0
+            for j in 1:rc
+                rightonly_indexer[rposition + j] = right_pos + j
+            end
+            rposition += rc
+        else
+            for j in 1:lc
+                offset = tposition + (j-1) * rc
+                for k in 1:rc
+                    left_indexer[offset + k] = left_pos + j
+                    right_indexer[offset + k] = right_pos + k
+                end
+            end
+            tposition += lc * rc
+        end
+        left_pos += lc
+        right_pos += rc
+    end
+
+    ## (left_sorter, left_indexer, leftonly_indexer,
+    ##  right_sorter, right_indexer, rightonly_indexer)
+    (left_sorter[left_indexer], left_sorter[leftonly_indexer],
+     right_sorter[right_indexer], right_sorter[rightonly_indexer])
+end
+
+
+function PooledDataVecs(df1::AbstractDataFrame,
+                        df2::AbstractDataFrame)
+    # This method exists to allow merge to work with multiple columns.
+    # It takes the columns of each DataFrame and returns a DataArray
+    # with a merged pool that "keys" the combination of column values.
+    # The pools of the result don't really mean anything.
+    dv1, dv2 = PooledDataVecs(df1[1], df2[1])
+    refs1 = dv1.refs + 1   # the + 1 handles NA's
+    refs2 = dv2.refs + 1
+    ngroups = length(dv1.pool) + 1
+    for j = 2:ncol(df1)
+        dv1, dv2 = PooledDataVecs(df1[j], df2[j])
+        for i = 1:length(refs1)
+            refs1[i] += (dv1.refs[i]) * ngroups
+        end
+        for i = 1:length(refs2)
+            refs2[i] += (dv2.refs[i]) * ngroups
+        end
+        ngroups = ngroups * (length(dv1.pool) + 1)
+    end
+    pool = [1:ngroups]
+    (PooledDataArray(refs1, pool), PooledDataArray(refs2, pool))
+end
+
+function PooledDataArray(df::AbstractDataFrame)
+    # This method exists to allow another way for merge to work with
+    # multiple columns. It takes the columns of the DataFrame and
+    # returns a DataArray with a merged pool that "keys" the
+    # combination of column values.
+    # Notes:
+    #   - I skipped the sort to make it faster.
+    #   - Converting each individual one-row DataFrame to a Tuple
+    #     might be faster.
+    refs = zeros(POOLED_DATA_VEC_REF_TYPE, nrow(df))
+    poolref = Dict{AbstractDataFrame, Int}()
+    pool = Array(Uint64, 0)
+    j = 1
+    for i = 1:nrow(df)
+        val = df[i,:] 
+        if has(poolref, val)
+            refs[i] = poolref[val]
+        else
+            push!(pool, hash(val))
+            refs[i] = j
+            poolref[val] = j
+            j += 1
+        end
+    end
+    return PooledDataArray(refs, pool)
+end
+
+function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol, jointype)
+
+    dv1, dv2 = PooledDataVecs(df1[bycol], df2[bycol])
+    left_indexer, leftonly_indexer, right_indexer, rightonly_indexer =
+        join_idx(dv1.refs, dv2.refs, length(dv1.pool))
+
+    if jointype == "inner"
+        return cbind(df1[left_indexer,:], without(df2, bycol)[right_indexer,:])
+    elseif jointype == "left"
+        left = df1[[left_indexer,leftonly_indexer],:]
+        right = rbind(without(df2, bycol)[right_indexer,:],
+                      nas(without(df2, bycol), length(leftonly_indexer)))
+        return cbind(left, right)
+    elseif jointype == "right"
+        left = rbind(without(df1, bycol)[left_indexer, :],
+                     nas(without(df1, bycol), length(rightonly_indexer)))
+        right = df2[[right_indexer,rightonly_indexer],:]
+        return cbind(left, right)
+    elseif jointype == "outer"
+        mixed = cbind(df1[left_indexer, :], without(df2, bycol)[right_indexer, :])
+        leftonly = cbind(df1[leftonly_indexer, :],
+                         nas(without(df2, bycol), length(leftonly_indexer)))
+        leftonly = leftonly[:, colnames(mixed)]
+        rightonly = cbind(nas(without(df1, bycol), length(rightonly_indexer)),
+                          df2[rightonly_indexer, :])
+        rightonly = rightonly[:, colnames(mixed)]
+        return rbind(mixed, leftonly, rightonly)
+    end
+end
+
+merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol) = merge(df1, df2, bycol, "inner")
+
+function merge(df1::AbstractDataFrame, df2::AbstractDataFrame)
+    s1 = Set{ByteString}()
+    for coln in colnames(df1)
+        add!(s1, coln)
+    end
+    s2 = Set{ByteString}()
+    for coln in colnames(df2)
+        add!(s2, coln)
+    end
+    bycol = first(collect(intersect(s1, s2)))
+    merge(df1, df2, bycol, "inner")
+end
