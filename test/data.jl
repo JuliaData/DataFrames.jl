@@ -393,9 +393,11 @@ d1c = @DataFrame(a => [1:3],
 
 d1s = stack(d1, ["a", "b"])
 d1s2 = stack(d1, ["c", "d"])
+d1s3 = melt(d1, ["c", "d"])
 @assert isequal(d1s[1:12, "c"], d1["c"])
 @assert isequal(d1s[13:24, "c"], d1["c"])
 @assert all(colnames(d1s) .== ["variable", "value", "c", "d"])
+@assert isequal(d1s, d1s3)
 d1s_df = stack_df(d1, ["a", "b"])
 @assert isequal(d1s["variable"], d1s_df["variable"][:])
 @assert isequal(d1s["value"], d1s_df["value"][:])
@@ -526,34 +528,6 @@ m1 = merge(df1, df2, "a")
 m2 = merge(df1, df2, ["x1", "x2", "x3"])
 @assert isequal(sort(m1["a"]), sort(m2["a"]))
 
-
-test_group("extras")
-
-srand(1)
-x = rand(1:10,10) - 4.0
-a1 = cut(x, 4)
-a2 = cut(x, [-2, 3, 4.0])
-#@assert a2[1] == "[-3.0,-2.0]"
-#@assert a2[2] == "(-2.0,3.0]"
-#@assert a2[4] == "(4.0,6.0]"
-
-test_group("cut()")
-@assert isequal(cut([2, 3, 5], [1, 3, 6]), PooledDataArray(["(1,3]", "(1,3]", "(3,6]"]))
-@assert isequal(cut([2, 3, 5], [3, 6]), PooledDataArray(["[2,3]", "[2,3]", "(3,6]"]))
-@assert isequal(cut([2, 3, 5, 6], [3, 6]), PooledDataArray(["[2,3]", "[2,3]", "(3,6]", "(3,6]"]))
-@assert isequal(cut([1, 2, 4], [1, 3, 6]), PooledDataArray(["[1,3]", "[1,3]", "(3,6]"]))
-@assert isequal(cut([1, 2, 4], [3, 6]), PooledDataArray(["[1,3]", "[1,3]", "(3,6]"]))
-@assert isequal(cut([1, 2, 4], [3]), PooledDataArray(["[1,3]", "[1,3]", "(3,4]"]))
-@assert isequal(cut([1, 5, 7], [3, 6]), PooledDataArray(["[1,3]", "(3,6]", "(6,7]"]))
-
-ages = [20, 22, 25, 27, 21, 23, 37, 31, 61, 45, 41, 32]
-bins = [18, 25, 35, 60, 100]
-cats = cut(ages, bins)
-pdv = PooledDataArray(["(18,25]", "(18,25]", "(18,25]",
-                       "(25,35]", "(18,25]", "(18,25]",
-                       "(35,60]", "(25,35]", "(60,100]",
-                       "(35,60]", "(35,60]", "(25,35]"])
-@assert isequal(cats, pdv)
 
 test_group("New DataVector constructors")
 dv = DataArray(Int64, 5)

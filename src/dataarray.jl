@@ -225,6 +225,10 @@ function removeNA{T}(da::AbstractDataVector{T})
     return res[1:total]
 end
 
+function removeNA(a::AbstractArray)
+    return a
+end
+
 function replaceNA{S, T}(da::AbstractDataArray{S}, replacement_val::T)
     res = Array(S, size(da))
     for i in 1:length(da)

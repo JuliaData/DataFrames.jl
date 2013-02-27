@@ -186,7 +186,7 @@ within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
 function based_on(gd::GroupedDataFrame, ex::Expr)  
     f = based_on_f(gd.parent, ex)
     x = {f(d) for d in gd}
-    idx = fill([1:length(x)], convert(Vector{Int}, map(nrow, x)))
+    idx = rep([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
     resdf = rbind(x)
     cbind(keydf, resdf)
@@ -194,7 +194,7 @@ end
 
 function based_on(gd::GroupedDataFrame, f::Function)
     x = {DataFrame(f(d)) for d in gd}
-    idx = fill([1:length(x)], convert(Vector{Int}, map(nrow, x)))
+    idx = rep([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
     resdf = rbind(x)
     cbind(keydf, resdf)

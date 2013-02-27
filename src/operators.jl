@@ -940,7 +940,7 @@ for (f, colf) in ((:min, :colmins),
                   (:fft, :colffts), # TODO: Remove and/or fix
                   (:norm, :colnorms))
     @eval begin
-        function ($colf)(df::DataFrame)
+        function ($colf)(df::AbstractDataFrame)
             p = ncol(df)
             res = DataFrame()
             for j in 1:p
@@ -949,7 +949,7 @@ for (f, colf) in ((:min, :colmins),
             colnames!(res, colnames(df))
             return res
         end
-        function ($colf)(dm::DataMatrix)
+        function ($colf)(dm::AbstractDataMatrix)
             n, p = nrow(dm), ncol(dm)
             res = datazeros(p)
             for j in 1:p
@@ -986,7 +986,7 @@ end
 # Boolean operators
 #
 
-function all{T}(dv::DataArray{T})
+function all{T}(dv::AbstractDataArray{T})
     for i in 1:length(dv)
         if isna(dv[i])
             return NA
@@ -998,7 +998,7 @@ function all{T}(dv::DataArray{T})
     return true
 end
 
-function any{T}(dv::DataArray{T})
+function any{T}(dv::AbstractDataArray{T})
     has_na = false
     for i in 1:length(dv)
         if !isna(dv[i])
@@ -1016,7 +1016,7 @@ function any{T}(dv::DataArray{T})
     end
 end
 
-function all(df::DataFrame)
+function all(df::AbstractDataFrame)
     for i in 1:nrow(df)
         for j in 1:ncol(df)
             if isna(df[i, j])
@@ -1030,7 +1030,7 @@ function all(df::DataFrame)
     return true
 end
 
-function any(df::DataFrame)
+function any(df::AbstractDataFrame)
     has_na = false
     for i in 1:nrow(df)
         for j in 1:ncol(df)
@@ -1122,11 +1122,40 @@ function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     return true
 end
 
-function range{T}(dv::DataVector{T})
-    return DataArray([min(dv), max(dv)], falses(2))
+function range{T}(dv::AbstractVector{T})
+    return [min(dv), max(dv)]
 end
 
-function rle{T}(v::DataVector{T})
+function range{T}(dv::AbstractDataVector{T})
+    return DataVector[min(dv), max(dv)]
+end
+
+function rle{T}(v::AbstractVector{T})
+    n = length(v)
+    current_value = v[1]
+    current_length = 1
+    values = similar(v, n)
+    total_values = 1
+    lengths = Array(Int16, n)
+    total_lengths = 1
+    for i in 2:n
+        if v[i] == current_value
+            current_length += 1
+        else
+            values[total_values] = current_value
+            total_values += 1
+            lengths[total_lengths] = current_length
+            total_lengths += 1
+            current_value = v[i]
+            current_length = 1
+        end
+    end
+    values[total_values] = current_value
+    lengths[total_lengths] = current_length
+    return (values[1:total_values], lengths[1:total_lengths])
+end
+
+function rle{T}(v::AbstractDataVector{T})
     n = length(v)
     current_value = v[1]
     current_length = 1
@@ -1165,10 +1194,10 @@ function rle{T}(v::DataVector{T})
 end
 
 ## inverse run-length encoding
-function inverse_rle{T}(values::DataVector{T}, lengths::Vector{Int16})
+function inverse_rle{T, I <: Integer}(values::AbstractVector{T}, lengths::Vector{I})
     total_n = sum(lengths)
     pos = 0
-    res = DataArray(T, total_n)
+    res = similar(values, total_n)
     n = length(values)
     for i in 1:n
         v = values[i]

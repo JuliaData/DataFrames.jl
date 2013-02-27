@@ -158,11 +158,12 @@ length(v::StackedVector) = sum(map(length, v.components))
 ndims(v::StackedVector) = 1
 eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
 vecbind_type(v::StackedVector) = vecbind_promote_type(map(vecbind_type, v.components)...)
+similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
 
 show(io::IO, v::StackedVector) = internal_show_vector(io, v)
 repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
 
-PooledDataArray(v::StackedVector) = PooledDataArray(v[:])
+PooledDataArray(v::StackedVector) = PooledDataArray(v[:]) # could be more efficient
 
 function ref{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
     j = mod(i - 1, length(v.parent)) + 1
@@ -179,13 +180,19 @@ length(v::RepeatedVector) = v.n * length(v.parent)
 ndims(v::RepeatedVector) = 1
 eltype{T}(v::RepeatedVector{T}) = T
 vecbind_type(v::RepeatedVector) = vecbind_type(v.parent)
+reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.n)
+similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 
 show(io::IO, v::RepeatedVector) = internal_show_vector(io, v)
 repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
 
 unique(v::RepeatedVector) = unique(v.parent)
 
-PooledDataArray(v::RepeatedVector) = [fill(PooledDataArray(v.parent), v.n)...]
+function PooledDataArray(v::RepeatedVector)
+    res = PooledDataArray(v.parent)
+    res.refs = rep(res.refs, v.n)
+    res
+end
 
 function ref{T}(v::EachRepeatedVector{T},i::Real)
     j = div(i - 1, v.n) + 1
@@ -202,13 +209,21 @@ length(v::EachRepeatedVector) = v.n * length(v.parent)
 ndims(v::EachRepeatedVector) = 1
 eltype{T}(v::EachRepeatedVector{T}) = T
 vecbind_type(v::EachRepeatedVector) = vecbind_type(v.parent)
+reverse(v::EachRepeatedVector) = EachRepeatedVector(reverse(v.parent), v.n)
+similar(v::EachRepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 
 show(io::IO, v::EachRepeatedVector) = internal_show_vector(io, v)
 repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
 
 unique(v::EachRepeatedVector) = unique(v.parent)
 
-PooledDataArray(v::EachRepeatedVector) = PooledDataArray(a[:], unique(v.parent))
+PooledDataArray(v::EachRepeatedVector) = PooledDataArray(v[:], removeNA(unique(v.parent)))
+
+function PooledDataArray(v::EachRepeatedVector)
+    res = PooledDataArray(v.parent)
+    res.refs = rep(res.refs, rep(v.n,length(res.refs)))
+    res
+end
 
 
 # The default values of show and repl_show don't work because

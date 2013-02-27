@@ -110,7 +110,7 @@ function shift!{T}(dv::DataVector{T})
     end
 end
 
-function map(f::Function, dv::DataVector)
+function map(f::Function, dv::DataVector)   # should this be an AbstractDataVector, so it works with PDV's?
     n = length(dv)
     res = DataArray(Any, n)
     for i in 1:n
@@ -118,3 +118,6 @@ function map(f::Function, dv::DataVector)
     end
     return res
 end
+
+reverse(x::AbstractDataVector) = x[end:-1:1]
+

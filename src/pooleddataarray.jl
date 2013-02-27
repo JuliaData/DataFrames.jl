@@ -55,7 +55,7 @@ PooledDataArray(d::PooledDataArray) = d
 # * Iterate over d
 #   * If value of d in pool already, set the refs accordingly
 #   * If value is new, add it to the pool, then set refs
-function PooledDataArray{T, N}(d::Array{T, N}, m::AbstractArray{Bool, N})
+function PooledDataArray{T, N}(d::AbstractArray{T, N}, m::AbstractArray{Bool, N})
     newrefs = Array(POOLED_DATA_VEC_REF_TYPE, size(d))
     #newpool = Array(T, 0)
     poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}() # Why isn't this a set?
@@ -88,7 +88,7 @@ function PooledDataArray{T, N}(d::Array{T, N}, m::AbstractArray{Bool, N})
 end
 
 # Allow a pool to be provided by the user
-function PooledDataArray{T, N}(d::Array{T, N},
+function PooledDataArray{T, N}(d::AbstractArray{T, N},
                                pool::Vector{T},
                                m::AbstractArray{Bool, N})
     if length(pool) > typemax(POOLED_DATA_VEC_REF_TYPE)
@@ -126,6 +126,9 @@ end
 
 # Convert a DataArray to a PooledDataArray
 PooledDataArray{T}(da::DataArray{T}) = PooledDataArray(da.data, da.na)
+
+# Convert a DataArray to a PooledDataArray
+PooledDataArray{T}(da::DataArray{T}, pool::Vector{T}) = PooledDataArray(da.data, pool, da.na)
 
 # Convert a Array{T} to a PooledDataArray
 PooledDataArray{T}(a::Array{T}) = PooledDataArray(a, falses(size(a)))
@@ -211,6 +214,9 @@ isna(pda::PooledDataArray) = pda.refs .== 0
 ## TODO: Add methods with these names for DataArray's
 ##       Decide whether levels() or unique() is primitive. Make the other
 ##       an alias.
+##  Tom: I don't think levels and unique are the same. R doesn't include NA's
+##       with levels, but it does with unique. Having these different is
+##       useful.
 ##
 ##############################################################################
 
@@ -245,7 +251,7 @@ function unique{T}(x::PooledDataArray{T})
         return DataArray(copy(x.pool), falses(length(x.pool)))
     end
 end
-levels{T}(pdv::PooledDataArray{T}) = pdv.pool
+levels{T}(pda::PooledDataArray{T}) = pda.pool
 
 function unique{T}(adv::AbstractDataVector{T})
   values = Dict{Union(T, NAtype), Bool}()
@@ -277,22 +283,6 @@ function level_to_index{T}(x::PooledDataArray{T})
         d[x.pool[i]] = i
     end
     d
-end
-
-# like findin but returns the position in `b` that matches `a` (0 if no match)
-function findat(a, b) 
-    res = Array(Int, length(a))
-    # bdict's value is the index of the first occurrence of the key
-    bdict = Dict{Any, Int}()
-    for i in 1:length(b)
-        if !has(bdict, b[i])
-            bdict[b[i]] = i
-        end
-    end
-    for i = 1:length(a)
-        res[i] = get(bdict, a[i], 0) 
-    end
-    res
 end
 
 function PooledDataArray{S,N}(x::PooledDataArray{S,N},
@@ -382,7 +372,7 @@ reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
     reorder(fun, x, DataFrame({y...}))
 
-
+reverse(x::PooledDataArray) = PooledDataArray(reverse(x.refs), x.pool)
 
 ##############################################################################
 ##

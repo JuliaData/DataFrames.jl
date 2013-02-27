@@ -4,8 +4,20 @@
 ##
 ##############################################################################
 
-function table{T}(d::AbstractDataVector{T})
-    counts = Dict{Union(T, NAtype), Int}(0)
+function table{T}(d::AbstractDataArray{T})
+    counts = Dict{Union(T, NAtype), Int}()
+    for i = 1:length(d)
+        if has(counts, d[i])
+            counts[d[i]] += 1
+        else
+            counts[d[i]] = 1
+        end
+    end
+    return counts
+end
+
+function table{T}(d::AbstractArray{T})
+    counts = Dict{T, Int}()
     for i = 1:length(d)
         if has(counts, d[i])
             counts[d[i]] += 1
@@ -106,3 +118,52 @@ function cut{S, T}(x::Vector{S}, breaks::Vector{T})
     PooledDataArray(refs, pool)
 end
 cut(x::Vector, ngroups::Int) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
+
+##############################################################################
+##
+## rep()
+##
+##############################################################################
+
+function rep(x::AbstractVector, lengths::Vector{Int})
+    if length(x) != length(lengths)
+        error("vector lengths must match")
+    end
+    res = similar(x, sum(lengths))
+    i = 1
+    for idx in 1:length(x)
+        tmp = x[idx]
+        for kdx in 1:lengths[idx]
+            res[i] = tmp
+            i += 1
+        end
+    end
+    res
+end
+
+function rep(x::Any, length::Int)
+    [fill(x, length)...]
+end
+
+##############################################################################
+##
+## findat() - like R's match
+##
+##############################################################################
+
+# like findin but returns the position in `b` that first matches `a` (0 if no match)
+# similar to R's match
+function findat(a, b) 
+    res = Array(Int, length(a))
+    # bdict's value is the index of the first occurrence of the key
+    bdict = Dict{Any, Int}()
+    for i in 1:length(b)
+        if !has(bdict, b[i])
+            bdict[b[i]] = i
+        end
+    end
+    for i = 1:length(a)
+        res[i] = get(bdict, a[i], 0) 
+    end
+    res
+end

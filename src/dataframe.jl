@@ -1068,7 +1068,7 @@ without(df::SubDataFrame, c::Any) = SubDataFrame(without(df.parent, c), df.rows)
 # two-argument form, two dfs, references only
 function cbind(df1::DataFrame, df2::DataFrame)
     # If df1 had metadata, we should copy that.
-    colindex = Index(make_unique(concat(colnames(df1), colnames(df2))))
+    colindex = Index(make_unique([colnames(df1), colnames(df2)]))
     columns = [df1.columns, df2.columns]
     d = DataFrame(columns, colindex)  
     set_groups(d, get_groups(df1))
@@ -1719,13 +1719,13 @@ next(itr::DFColumnIterator, j::Int) = (itr.df[:, j], j + 1)
 size(itr::DFColumnIterator) = (ncol(itr.df), )
 length(itr::DFColumnIterator) = ncol(itr.df)
 ref(itr::DFColumnIterator, j::Any) = itr.df[:, j]
-function map(f::Function, dfri::DFColumnIterator)
+function map(f::Function, dfci::DFColumnIterator)
     # note: `f` must return a consistent length
     res = DataFrame()
-    for i = 1:ncol(dfri.df)
-        res[i] = f(dfri[i])
+    for i = 1:ncol(dfci.df)
+        res[i] = f(dfci[i])
     end
-    colnames!(res, colnames(dfri.df))
+    colnames!(res, colnames(dfci.df))
     res
 end
         

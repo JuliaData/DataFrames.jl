@@ -61,6 +61,8 @@ ref{I<:Real}(v::IndexedVector,i::I) = v.x[i]
 ref(v::IndexedVector,i::Real) = v.x[i]
 assign(v::IndexedVector, val::Any, i::Real) = IndexedVector(assign(v.x, val, i))
 assign(v::IndexedVector, val::Any, inds::AbstractVector) = IndexedVector(assign(v.x, val, inds))
+reverse(v::IndexedVector) = IndexedVector(reverse(v.x), reverse(v.idx))
+similar(v::IndexedVector, T, dims::Dims) = similar(v.x, T, dims)
 
 vecbind_type(x::IndexedVector) = vecbind_type(x.x)
 
