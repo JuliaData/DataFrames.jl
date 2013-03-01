@@ -1,7 +1,6 @@
 # Read saved R datasets in the RDA2 or RDX2 format
 # Files written in this format often have the extension .rda or .RData
 
-require("gzip")
 using GZip
 
 ##############################################################################
