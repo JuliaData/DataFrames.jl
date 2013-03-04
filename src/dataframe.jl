@@ -1195,10 +1195,10 @@ vcat(dfs::DataFrame...) = rbind(dfs...)
 function with(d::Associative, ex::Expr)
     # Note: keys must by symbols
     replace_symbols(x, d::Dict) = x
-    replace_symbols(e::Expr, d::Dict) = Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
+    replace_symbols(e::Expr, d::Dict) = Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args))...)
     function replace_symbols{K,V}(s::Symbol, d::Dict{K,V})
         if (K == Any || K == Symbol) && has(d, s)
-            :(_D[$(expr(:quote,s))])
+            :(_D[$(Meta.quot(s))])
         elseif (K == Any || K <: String) && has(d, string(s))
             :(_D[$(string(s))])
         else
@@ -1217,7 +1217,7 @@ function within!(d::Associative, ex::Expr)
     function replace_symbols{K,V}(e::Expr, d::Associative{K,V})
         if e.head == :(=) # replace left-hand side of assignments:
             if (K == Symbol || (K == Any && isa(keys(d)[1], Symbol)))
-                exref = expr(:quote, e.args[1])
+                exref = Meta.quot(e.args[1])
                 if !has(d, e.args[1]) # Dummy assignment to reserve a slot.
                                       # I'm not sure how expensive this is.
                     d[e.args[1]] = values(d)[1]
@@ -1229,15 +1229,14 @@ function within!(d::Associative, ex::Expr)
                 end
             end
             Expr(e.head,
-                 vcat({:(_D[$exref])}, map(x -> replace_symbols(x, d), e.args[2:end])),
-                 e.typ)
+                 vcat({:(_D[$exref])}, map(x -> replace_symbols(x, d), e.args[2:end]))...)
         else
-            Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
+            Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args))...)
         end
     end
     function replace_symbols{K,V}(s::Symbol, d::Associative{K,V})
         if (K == Any || K == Symbol) && has(d, s)
-            :(_D[$(expr(:quote,s))])
+            :(_D[$(Meta.quot(s))])
         elseif (K == Any || K <: String) && has(d, string(s))
             :(_D[$(string(s))])
         else
@@ -1268,10 +1267,10 @@ bestkey(d::AbstractDataFrame, key) = string(key)
 bestkey(d::NamedArray, key) = string(key)
 
 replace_syms(x) = x
-replace_syms(s::Symbol) = :( myhas(d, $(quot(s))) ? myref(d, $(quot(s))) : $(esc(s)) )
-replace_syms(e::Expr) = Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_syms(x), e.args), e.typ)
+replace_syms(s::Symbol) = :( myhas(d, $(Meta.quot(s))) ? myref(d, $(Meta.quot(s))) : $(esc(s)) )
+replace_syms(e::Expr) = Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_syms(x), e.args))...)
 
-quot(value) = expr(:quote, value)  # Toivo special
+## quot(value) = Base.splicedexpr(:quote, value)  # Toivo special
 
 function transform_helper(d, args...)
     exa = {:(local d = $(esc(d)))}
@@ -1279,10 +1278,10 @@ function transform_helper(d, args...)
         left = ex.args[1]
         right = replace_syms(ex.args[2])
         push!(exa,
-            :(d[bestkey(d, $(quot(left)))] = $(right)))
+            :(d[bestkey(d, $(Meta.quot(left)))] = $(right)))
     end
     push!(exa, :d)
-    Expr(:block, exa, Any)
+    Expr(:block, exa...)
 end
 
 macro transform(df, args...)
@@ -1302,7 +1301,7 @@ function based_on(d::Associative, ex::Expr)
     function replace_symbols{K,V}(e::Expr, d::Associative{K,V})
         if e.head == :(=) # replace left-hand side of assignments:
             if (K == Symbol || (K == Any && isa(keys(d)[1], Symbol)))
-                exref = expr(:quote, e.args[1])
+                exref = Meta.quot(e.args[1])
                 if !has(d, e.args[1]) # Dummy assignment to reserve a slot.
                                       # I'm not sure how expensive this is.
                     d[e.args[1]] = values(d)[1]
@@ -1314,15 +1313,14 @@ function based_on(d::Associative, ex::Expr)
                 end
             end
             Expr(e.head,
-                 vcat({:(_ND[$exref])}, map(x -> replace_symbols(x, d), e.args[2:end])),
-                 e.typ)
+                 vcat({:(_ND[$exref])}, map(x -> replace_symbols(x, d), e.args[2:end]))...)
         else
-            Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args), e.typ)
+            Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args))...)
         end
     end
     function replace_symbols{K,V}(s::Symbol, d::Associative{K,V})
         if (K == Any || K == Symbol) && has(d, s)
-            :(_D[$(expr(:quote,s))])
+            :(_D[$(Meta.quot(s))])
         elseif (K == Any || K <: String) && has(d, string(s))
             :(_D[$(string(s))])
         else
@@ -1351,10 +1349,9 @@ function within!(df::AbstractDataFrame, ex::Expr)
                 syms[string(e.args[1])] = length(syms) + 1
             end
             Expr(e.head,
-                 vcat({:(_DF[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end])),
-                 e.typ)
+                 vcat({:(_DF[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end]))...)
         else
-            Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args), e.typ)
+            Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args))...)
         end
     end
     function replace_symbols(s::Symbol, syms::Dict)
@@ -1388,10 +1385,9 @@ function based_on_f(df::AbstractDataFrame, ex::Expr)
                 syms[string(e.args[1])] = length(syms) + 1
             end
             Expr(e.head,
-                 vcat({:(_col_dict[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end])),
-                 e.typ)
+                 vcat({:(_col_dict[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end]))...)
         else
-            Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args), e.typ)
+            Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args))...)
         end
     end
     function replace_symbols(s::Symbol, syms::Dict)
@@ -1424,7 +1420,7 @@ function with(df::AbstractDataFrame, ex::Expr)
     # helper function to replace symbols in ex with a reference to the
     # appropriate column in df
     replace_symbols(x, syms::Dict) = x
-    replace_symbols(e::Expr, syms::Dict) = Expr(e.head, isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args), e.typ)
+    replace_symbols(e::Expr, syms::Dict) = Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args))...)
     function replace_symbols(s::Symbol, syms::Dict)
         if contains(keys(syms), string(s))
             :(_DF[$(syms[string(s)])])
