@@ -43,9 +43,10 @@ _vstring{T <: String}(s::T) = s
 _vstring{T <: String}(s::AbstractVector{T}) = s
 _vstring(s::AbstractVector) = String[_vstring(x) for x in s]
 _vstring(s::Any) = string(s)
+vcatstring(x) = vcat(_vstring(x))
 
 function paste(s...)
-    s = map(vcat * _vstring, {s...})
+    s = map(vcatstring, {s...})
     sa = {s...}
     N = max(length, sa)
     res = fill("", N)

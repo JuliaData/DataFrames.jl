@@ -1664,8 +1664,8 @@ for (sb,s) in {(:sortby!, :sort!), (:sortby, :sort)}
         $sb             (df::AbstractDataFrame, cols::ColIndexVec)              = $sb(df,cols,Sort.Forward())
 
         $sb{O<:Ordering}(df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray{O})             = $s(df,DFPerm(o, df[cols]))
-        $sb             (df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray{CompositeKind}) = $s(df,DFPerm(Ordering[O() for O in o], df[cols]))
-        $sb             (df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray)                = $sb(df,cols,CompositeKind[ot for ot in o])
+        $sb             (df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray{DataType}) = $s(df,DFPerm(Ordering[O() for O in o], df[cols]))
+        $sb             (df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray)                = $sb(df,cols,DataType[ot for ot in o])
         $sb             (df::AbstractDataFrame, col_ord::AbstractArray{Tuple}) = ((cols,o) = zip(col_ord...); $sb(df, [cols...], [o...]))
     end
 end
