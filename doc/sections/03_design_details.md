@@ -139,7 +139,7 @@ In contrast to these normal-looking constructors, when some of the values in the
 
 	dv = DataVector[1, 2, NA, 4]
 
-_Technical Note: This special type of constructor is defined by overloading the `ref()` function to apply to values of type `DataVector`.
+_Technical Note: This special type of constructor is defined by overloading the `getindex()` function to apply to values of type `DataVector`.
 
 # DataVector's with Special Types
 

@@ -543,7 +543,7 @@ function cor(ds::AbstractDataStream)
   return correlations
 end
 
-function ref(ds::AbstractDataStream, i::Int)
+function getindex(ds::AbstractDataStream, i::Int)
   cur_i = 0
   for df in ds
     if cur_i + nrow(df) > i

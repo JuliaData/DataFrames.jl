@@ -109,14 +109,14 @@ are selected. Indexing along rows works like Matrix indexing. Indexing
 along columns works like Matrix indexing with the addition of column
 name access. 
 
-#### `ref(df::DataFrame, ind)`  or `df[ind]`
+#### `getindex(df::DataFrame, ind)`  or `df[ind]`
 
 Returns a subset of the columns of `df` as specified by `ind`, which
 may be an `Int`, a `Range`, a `Vector{Int}`, `ByteString`, or
 `Vector{ByteString}`. Columns are referenced, not copied. For a
 single-element `ind`, the column by itself is returned.
 
-#### `ref(df::DataFrame, irow, icol)`  or `df[irow,icol]`
+#### `getindex(df::DataFrame, irow, icol)`  or `df[irow,icol]`
 
 Returns a subset of `df` as specified by `irow` and `icol`. `irow` may
 be an `Int`, a `Range`, or a `Vector{Int}`. `icol` may be an `Int`, a
@@ -138,7 +138,7 @@ See the Indexing section for these operations on column indexes.
 
 The column names as an `Array{ByteString}`
 
-#### `assign(df::DataFrame, newcol, colname)` or `df[colname] = newcol`
+#### `setindex!(df::DataFrame, newcol, colname)` or `df[colname] = newcol`
 
 Replace or add a new column with name `colname` and contents `newcol`.
 Arrays are converted to DataVector's. Values are recycled to match the
@@ -224,8 +224,8 @@ Return a SubDataFrame with references to rows and columns of `df`.
 
 Return a SubDataFrame with references to rows and columns of `df`.
 
-#### `ref(sd::SubDataFrame, r, c)` or `sd[r,c]`
-#### `ref(sd::SubDataFrame, c)` or `sd[c]`
+#### `getindex(sd::SubDataFrame, r, c)` or `sd[r,c]`
+#### `getindex(sd::SubDataFrame, c)` or `sd[c]`
 
 Referencing should work the same as DataFrames.
 
@@ -241,7 +241,7 @@ columns with one or more names given in `cols`.
 
 Methods to iterate over GroupedDataFrame groupings.
 
-#### `ref(gd::GroupedDataFrame, idx)` or `gd[idx]`
+#### `getindex(gd::GroupedDataFrame, idx)` or `gd[idx]`
 
 Reference a particular grouping. Referencing returns a SubDataFrame.
 
@@ -344,7 +344,7 @@ Set names `nm` in `x`.
 
 Replace names `from` with `to` in `x`.
 
-#### `ref(x::Index, idx)` or `x[idx]`
+#### `getindex(x::Index, idx)` or `x[idx]`
 
 This does the mapping from name(s) to Indices (positions). `idx` may
 be ByteString, Vector{ByteString}, Int, Vector{Int}, Range{Int},

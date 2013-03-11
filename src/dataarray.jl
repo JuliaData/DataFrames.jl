@@ -300,20 +300,20 @@ end
 
 ##############################################################################
 ##
-## ref()
+## getindex()
 ##
 ##############################################################################
 
 # v[dv]
-function ref(x::Vector, inds::AbstractDataVector{Bool})
+function getindex(x::Vector, inds::AbstractDataVector{Bool})
     return x[find(replaceNA(inds, false))]
 end
-function ref{S, T}(x::Vector{S}, inds::AbstractDataVector{T})
+function getindex{S, T}(x::Vector{S}, inds::AbstractDataVector{T})
     return x[removeNA(inds)]
 end
 
 # d[SingleItemIndex]
-function ref(d::DataArray, i::Real)
+function getindex(d::DataArray, i::Real)
 	if d.na[i]
 		return NA
 	else
@@ -323,22 +323,22 @@ end
 
 # d[MultiItemIndex]
 # TODO: Return SubDataArray
-function ref(d::DataArray, inds::AbstractDataVector{Bool})
+function getindex(d::DataArray, inds::AbstractDataVector{Bool})
     inds = find(replaceNA(inds, false))
     return d[inds]
 end
 # TODO: Return SubDataArray
-function ref(d::DataArray, inds::AbstractDataVector)
+function getindex(d::DataArray, inds::AbstractDataVector)
     inds = removeNA(inds)
     return d[inds]
 end
 # TODO: Return SubDataArray
 # TODO: Make inds::AbstractVector
 ## # The following assumes that T<:Number won't have #undefs
-function ref{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector, Vector{Bool}))
+function getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector, Vector{Bool}))
     DataArray(d.data[inds], d.na[inds])
 end
-function ref(d::DataArray, inds::Union(BitVector, Vector{Bool}))
+function getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     res = similar(d, sum(inds))
     j = 1
     for i in 1:length(inds)
@@ -349,7 +349,7 @@ function ref(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     end
     res
 end
-function ref(d::DataArray, inds::Union(Vector, Ranges))
+function getindex(d::DataArray, inds::Union(Vector, Ranges))
     res = similar(d, length(inds))
     for i in 1:length(inds)
         ix = inds[i]
@@ -361,7 +361,7 @@ function ref(d::DataArray, inds::Union(Vector, Ranges))
 end
 
 # dm[SingleItemIndex, SingleItemIndex)
-function ref(d::DataMatrix, i::Real, j::Real)
+function getindex(d::DataMatrix, i::Real, j::Real)
     if d.na[i, j]
         return NA
     else
@@ -370,84 +370,84 @@ function ref(d::DataMatrix, i::Real, j::Real)
 end
 
 # dm[SingleItemIndex, MultiItemIndex]
-function ref(x::DataMatrix, i::Real, col_inds::AbstractDataVector{Bool})
-    ref(x, i, find(replaceNA(col_inds, false)))
+function getindex(x::DataMatrix, i::Real, col_inds::AbstractDataVector{Bool})
+    getindex(x, i, find(replaceNA(col_inds, false)))
 end
-function ref(x::DataMatrix, i::Real, col_inds::AbstractDataVector)
-    ref(x, i, removeNA(col_inds))
+function getindex(x::DataMatrix, i::Real, col_inds::AbstractDataVector)
+    getindex(x, i, removeNA(col_inds))
 end
 # TODO: Make inds::AbstractVector
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              i::Real,
              col_inds::Union(Vector, BitVector, Ranges))
     DataArray(x.data[i, col_inds], x.na[i, col_inds])
 end
 
 # dm[MultiItemIndex, SingleItemIndex]
-function ref(x::DataMatrix, row_inds::AbstractDataVector{Bool}, j::Real)
-    ref(x, find(replaceNA(row_inds, false)), j)
+function getindex(x::DataMatrix, row_inds::AbstractDataVector{Bool}, j::Real)
+    getindex(x, find(replaceNA(row_inds, false)), j)
 end
-function ref(x::DataMatrix, row_inds::AbstractVector, j::Real)
-    ref(x, removeNA(row_inds), j)
+function getindex(x::DataMatrix, row_inds::AbstractVector, j::Real)
+    getindex(x, removeNA(row_inds), j)
 end
 # TODO: Make inds::AbstractVector
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
              j::Real)
     DataArray(x.data[row_inds, j], x.na[row_inds, j])
 end
 
 # dm[MultiItemIndex, MultiItemIndex]
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              row_inds::AbstractDataVector{Bool},
              col_inds::AbstractDataVector{Bool})
-    ref(x, find(replaceNA(row_inds, false)), find(replaceNA(col_inds, false)))
+    getindex(x, find(replaceNA(row_inds, false)), find(replaceNA(col_inds, false)))
 end
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              row_inds::AbstractDataVector{Bool},
              col_inds::AbstractDataVector)
-    ref(x, find(replaceNA(row_inds, false)), removeNA(col_inds))
+    getindex(x, find(replaceNA(row_inds, false)), removeNA(col_inds))
 end
 # TODO: Make inds::AbstractVector
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              row_inds::AbstractDataVector{Bool},
              col_inds::Union(Vector, BitVector, Ranges))
-    ref(x, find(replaceNA(row_inds, false)), col_inds)
+    getindex(x, find(replaceNA(row_inds, false)), col_inds)
 end
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              row_inds::AbstractDataVector,
              col_inds::AbstractDataVector{Bool})
-    ref(x, removeNA(row_inds), find(replaceNA(col_inds, false)))
+    getindex(x, removeNA(row_inds), find(replaceNA(col_inds, false)))
 end
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              row_inds::AbstractDataVector,
              col_inds::AbstractDataVector)
-    ref(x, removeNA(row_inds), removeNA(col_inds))
+    getindex(x, removeNA(row_inds), removeNA(col_inds))
 end
 
 # TODO: Make inds::AbstractVector
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              row_inds::AbstractDataVector,
              col_inds::Union(Vector, BitVector, Ranges))
-    ref(x, removeNA(row_inds), col_inds)
+    getindex(x, removeNA(row_inds), col_inds)
 end
 
 # TODO: Make inds::AbstractVector
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::AbstractDataVector{Bool})
-    ref(x, row_inds, find(replaceNA(col_inds, false)))
+    getindex(x, row_inds, find(replaceNA(col_inds, false)))
 end
 
 # TODO: Make inds::AbstractVector
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::AbstractDataVector)
-    ref(x, row_inds, removeNA(col_inds))
+    getindex(x, row_inds, removeNA(col_inds))
 end
 
 # TODO: Make inds::AbstractVector
-function ref(x::DataMatrix,
+function getindex(x::DataMatrix,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::Union(Vector, BitVector, Ranges))
     DataArray(x.data[row_inds, col_inds], x.na[row_inds, col_inds])
@@ -455,44 +455,44 @@ end
 
 ##############################################################################
 ##
-## assign()
+## setindex!()
 ##
 ##############################################################################
 
 # d[SingleItemIndex] = NA
-function assign(da::DataArray, val::NAtype, i::Real)
+function setindex!(da::DataArray, val::NAtype, i::Real)
 	da.na[i] = true
 end
 
 # d[SingleItemIndex] = Single Item
-function assign(da::DataArray, val::Any, i::Real)
+function setindex!(da::DataArray, val::Any, i::Real)
 	da.data[i] = val
 	da.na[i] = false
 end
 
 # d[MultiIndex] = NA
-function assign(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector{Bool})
+function setindex!(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector{Bool})
     throw(ArgumentError("DataArray{NAtype} is incoherent"))
 end
-function assign(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector)
+function setindex!(da::DataArray{NAtype}, val::NAtype, inds::AbstractVector)
     throw(ArgumentError("DataArray{NAtype} is incoherent"))
 end
-function assign(da::DataArray, val::NAtype, inds::AbstractVector{Bool})
+function setindex!(da::DataArray, val::NAtype, inds::AbstractVector{Bool})
     da.na[find(inds)] = true
     return NA
 end
-function assign(da::DataArray, val::NAtype, inds::AbstractVector)
+function setindex!(da::DataArray, val::NAtype, inds::AbstractVector)
     da.na[inds] = true
     return NA
 end
 
 # d[MultiIndex] = Multiple Values
-function assign(da::AbstractDataArray,
+function setindex!(da::AbstractDataArray,
                 vals::AbstractVector,
                 inds::AbstractVector{Bool})
-    assign(da, vals, find(inds))
+    setindex!(da, vals, find(inds))
 end
-function assign(da::AbstractDataArray,
+function setindex!(da::AbstractDataArray,
                 vals::AbstractVector,
                 inds::AbstractVector)
     for (val, ind) in zip(vals, inds)
@@ -502,12 +502,12 @@ function assign(da::AbstractDataArray,
 end
 
 # x[MultiIndex] = Single Item
-function assign{T}(da::AbstractDataArray{T},
+function setindex{T}(da::AbstractDataArray{T},
                    val::Union(Number, String, T),
                    inds::AbstractVector{Bool})
-    assign(da, val, find(inds))
+    setindex!(da, val, find(inds))
 end
-function assign{T}(da::AbstractDataArray{T},
+function setindex{T}(da::AbstractDataArray{T},
                    val::Union(Number, String, T),
                    inds::AbstractVector)
     val = convert(T, val)
@@ -516,12 +516,12 @@ function assign{T}(da::AbstractDataArray{T},
     end
     return val
 end
-function assign(da::AbstractDataArray,
+function setindex!(da::AbstractDataArray,
                 val::Any,
                 inds::AbstractVector{Bool})
-    assign(da, val, find(inds))
+    setindex!(da, val, find(inds))
 end
-function assign{T}(da::AbstractDataArray{T},
+function setindex{T}(da::AbstractDataArray{T},
                    val::Any,
                    inds::AbstractVector)
     val = convert(T, val)
@@ -532,20 +532,20 @@ function assign{T}(da::AbstractDataArray{T},
 end
 
 # dm[SingleItemIndex, SingleItemIndex] = NA
-function assign(dm::DataMatrix, val::NAtype, i::Real, j::Real)
+function setindex!(dm::DataMatrix, val::NAtype, i::Real, j::Real)
     dm.na[i, j] = true
     return NA
 end
 
 # dm[SingleItemIndex, SingleItemIndex] = Single Item
-function assign(dm::DataMatrix, val::Any, i::Real, j::Real)
+function setindex!(dm::DataMatrix, val::Any, i::Real, j::Real)
     dm.data[i, j] = val
     dm.na[i, j] = false
     return val
 end
 
 # dm[MultiItemIndex, SingleItemIndex] = NA
-function assign(dm::DataMatrix,
+function setindex!(dm::DataMatrix,
                 val::NAtype,
                 row_inds::Union(Vector, BitVector, Ranges),
                 j::Real)
@@ -554,7 +554,7 @@ function assign(dm::DataMatrix,
 end
 
 # dm[MultiItemIndex, SingleItemIndex] = Multiple Items
-function assign{S, T}(dm::DataMatrix{S},
+function setindex{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
                       row_inds::Union(Vector, BitVector, Ranges),
                       j::Real)
@@ -564,7 +564,7 @@ function assign{S, T}(dm::DataMatrix{S},
 end
 
 # dm[MultiItemIndex, SingleItemIndex] = Single Item
-function assign(dm::DataMatrix,
+function setindex!(dm::DataMatrix,
                 val::Any,
                 row_inds::Union(Vector, BitVector, Ranges),
                 j::Real)
@@ -574,7 +574,7 @@ function assign(dm::DataMatrix,
 end
 
 # dm[SingleItemIndex, MultiItemIndex] = NA
-function assign(dm::DataMatrix,
+function setindex!(dm::DataMatrix,
                 val::NAtype,
                 i::Real,
                 col_inds::Union(Vector, BitVector, Ranges))
@@ -583,7 +583,7 @@ function assign(dm::DataMatrix,
 end
 
 # dm[SingleItemIndex, MultiItemIndex] = Multiple Items
-function assign{S, T}(dm::DataMatrix{S},
+function setindex{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
                       i::Real,
                       col_inds::Union(Vector, BitVector, Ranges))
@@ -593,7 +593,7 @@ function assign{S, T}(dm::DataMatrix{S},
 end
 
 # dm[SingleItemIndex, MultiItemIndex] = Single Item
-function assign(dm::DataMatrix,
+function setindex!(dm::DataMatrix,
                 val::Any,
                 i::Real,
                 col_inds::Union(Vector, BitVector, Ranges))
@@ -603,7 +603,7 @@ function assign(dm::DataMatrix,
 end
 
 # dm[MultiItemIndex, MultiItemIndex] = NA
-function assign(dm::DataMatrix,
+function setindex!(dm::DataMatrix,
                 val::NAtype,
                 row_inds::Union(Vector, BitVector, Ranges),
                 col_inds::Union(Vector, BitVector, Ranges))
@@ -612,7 +612,7 @@ function assign(dm::DataMatrix,
 end
 
 # dm[MultiIndex, MultiIndex] = Multiple Items
-function assign{S, T}(dm::DataMatrix{S},
+function setindex{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
                       row_inds::Union(Vector, BitVector, Ranges),
                       col_inds::Union(Vector, BitVector, Ranges))
@@ -622,7 +622,7 @@ function assign{S, T}(dm::DataMatrix{S},
 end
 
 # dm[MultiItemIndex, MultiItemIndex] = Single Item
-function assign(dm::DataMatrix,
+function setindex!(dm::DataMatrix,
                 val::Any,
                 row_inds::Union(Vector, BitVector, Ranges),
                 col_inds::Union(Vector, BitVector, Ranges))

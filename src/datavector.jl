@@ -1,5 +1,5 @@
 # Super-hacked out constructor: DataVector[1, 2, NA]
-function ref(::Type{DataVector}, vals...)
+function getindex(::Type{DataVector}, vals...)
     # Get the most generic non-NA type
     toptype = _dv_most_generic_type(vals)
 

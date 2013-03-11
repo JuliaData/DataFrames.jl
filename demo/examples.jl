@@ -81,7 +81,7 @@ dv = DataArray(1:3)
 #
 # To order to provide a very concise constructor, we've hacked in
 # a very cute constructor for DataVector's using a trick involving
-# their ref() method.
+# their getindex() method.
 #
 
 dv = DataVector[1, 2, NA, 4]

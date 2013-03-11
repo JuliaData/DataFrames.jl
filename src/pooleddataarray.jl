@@ -165,7 +165,7 @@ for (f, basef) in ((:pdatafalses, :falses), (:pdatatrues, :trues))
 end
 
 # Super hacked-out constructor: PooledDataVector[1, 2, 2, NA]
-function ref(::Type{PooledDataVector}, vals...)
+function getindex(::Type{PooledDataVector}, vals...)
     # For now, just create a DataVector and then convert it
     # TODO: Rewrite for speed
     PooledDataArray(DataVector[vals...])
@@ -400,12 +400,12 @@ find(pdv::PooledDataVector{Bool}) = find(values(pdv))
 
 ##############################################################################
 ##
-## ref()
+## getindex()
 ##
 ##############################################################################
 
 # pda[SingleItemIndex]
-function ref(pda::PooledDataArray, i::Real)
+function getindex(pda::PooledDataArray, i::Real)
     if pda.refs[i] == 0
         return NA
     else
@@ -414,20 +414,20 @@ function ref(pda::PooledDataArray, i::Real)
 end
 
 # pda[MultiItemIndex]
-function ref(pda::PooledDataArray, inds::AbstractDataVector{Bool})
+function getindex(pda::PooledDataArray, inds::AbstractDataVector{Bool})
     inds = find(replaceNA(inds, false))
     return PooledDataArray(pda.refs[inds], copy(pda.pool))
 end
-function ref(pda::PooledDataArray, inds::AbstractDataVector)
+function getindex(pda::PooledDataArray, inds::AbstractDataVector)
     inds = removeNA(inds)
     return PooledDataArray(pda.refs[inds], copy(pda.pool))
 end
-function ref(pda::PooledDataArray, inds::Union(Vector, BitVector, Ranges))
+function getindex(pda::PooledDataArray, inds::Union(Vector, BitVector, Ranges))
     return PooledDataArray(pda.refs[inds], copy(pda.pool))
 end
 
 # pdm[SingleItemIndex, SingleItemIndex)
-function ref(pda::PooledDataArray, i::Real, j::Real)
+function getindex(pda::PooledDataArray, i::Real, j::Real)
     if pda.refs[i, j] == 0
         return NA
     else
@@ -436,14 +436,14 @@ function ref(pda::PooledDataArray, i::Real, j::Real)
 end
 
 # pda[SingleItemIndex, MultiItemIndex]
-function ref(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector{Bool})
-    ref(pda, i, find(replaceNA(col_inds, false)))
+function getindex(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector{Bool})
+    getindex(pda, i, find(replaceNA(col_inds, false)))
 end
-function ref(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector)
-    ref(pda, i, removeNA(col_inds))
+function getindex(pda::PooledDataArray, i::Real, col_inds::AbstractDataVector)
+    getindex(pda, i, removeNA(col_inds))
 end
 # TODO: Make inds::AbstractVector
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              i::Real,
              col_inds::Union(Vector, BitVector, Ranges))
     error("not yet implemented")
@@ -451,14 +451,14 @@ function ref(pda::PooledDataArray,
 end
 
 # pda[MultiItemIndex, SingleItemIndex]
-function ref(pda::PooledDataArray, row_inds::AbstractDataVector{Bool}, j::Real)
-    ref(pda, find(replaceNA(row_inds, false)), j)
+function getindex(pda::PooledDataArray, row_inds::AbstractDataVector{Bool}, j::Real)
+    getindex(pda, find(replaceNA(row_inds, false)), j)
 end
-function ref(pda::PooledDataArray, row_inds::AbstractVector, j::Real)
-    ref(pda, removeNA(row_inds), j)
+function getindex(pda::PooledDataArray, row_inds::AbstractVector, j::Real)
+    getindex(pda, removeNA(row_inds), j)
 end
 # TODO: Make inds::AbstractVector
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              row_inds::Union(Vector, BitVector, Ranges),
              j::Real)
     error("not yet implemented")
@@ -466,52 +466,52 @@ function ref(pda::PooledDataArray,
 end
 
 # pda[MultiItemIndex, MultiItemIndex]
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector{Bool},
              col_inds::AbstractDataVector{Bool})
-    ref(pda, find(replaceNA(row_inds, false)), find(replaceNA(col_inds, false)))
+    getindex(pda, find(replaceNA(row_inds, false)), find(replaceNA(col_inds, false)))
 end
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector{Bool},
              col_inds::AbstractDataVector)
-    ref(pda, find(replaceNA(row_inds, false)), removeNA(col_inds))
+    getindex(pda, find(replaceNA(row_inds, false)), removeNA(col_inds))
 end
 # TODO: Make inds::AbstractVector
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector{Bool},
              col_inds::Union(Vector, BitVector, Ranges))
-    ref(pda, find(replaceNA(row_inds, false)), col_inds)
+    getindex(pda, find(replaceNA(row_inds, false)), col_inds)
 end
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector,
              col_inds::AbstractDataVector{Bool})
-    ref(pda, removeNA(row_inds), find(replaceNA(col_inds, false)))
+    getindex(pda, removeNA(row_inds), find(replaceNA(col_inds, false)))
 end
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector,
              col_inds::AbstractDataVector)
-    ref(pda, removeNA(row_inds), removeNA(col_inds))
+    getindex(pda, removeNA(row_inds), removeNA(col_inds))
 end
 # TODO: Make inds::AbstractVector
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              row_inds::AbstractDataVector,
              col_inds::Union(Vector, BitVector, Ranges))
-    ref(pda, removeNA(row_inds), col_inds)
+    getindex(pda, removeNA(row_inds), col_inds)
 end
 # TODO: Make inds::AbstractVector
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::AbstractDataVector{Bool})
-    ref(pda, row_inds, find(replaceNA(col_inds, false)))
+    getindex(pda, row_inds, find(replaceNA(col_inds, false)))
 end
 # TODO: Make inds::AbstractVector
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::AbstractDataVector)
-    ref(pda, row_inds, removeNA(col_inds))
+    getindex(pda, row_inds, removeNA(col_inds))
 end
 # TODO: Make inds::AbstractVector
-function ref(pda::PooledDataArray,
+function getindex(pda::PooledDataArray,
              row_inds::Union(Vector, BitVector, Ranges),
              col_inds::Union(Vector, BitVector, Ranges))
     error("not yet implemented")
@@ -520,7 +520,7 @@ end
 
 ##############################################################################
 ##
-## assign() definitions
+## setindex!() definitions
 ##
 ##############################################################################
 
@@ -528,14 +528,14 @@ end
 # TODO: Delete values from pool that no longer exist?
 # Not a good idea.  Add another function called drop_unused_levels to do this.
 # R has the convention that if f is a factor then factor(f) drops unused levels
-function assign(x::PooledDataArray, val::NAtype, ind::Real)
+function setindex!(x::PooledDataArray, val::NAtype, ind::Real)
     x.refs[ind] = 0
     return NA
 end
 
 # x[SingleIndex] = Single Item
 # TODO: Delete values from pool that no longer exist?
-function assign(x::PooledDataArray, val::Any, ind::Real)
+function setindex!(x::PooledDataArray, val::Any, ind::Real)
     val = convert(eltype(x), val)
     pool_idx = findfirst(x.pool, val)
     if pool_idx > 0
@@ -549,33 +549,33 @@ end
 
 # x[MultiIndex] = NA
 # TODO: Find a way to delete the next four methods
-function assign(x::PooledDataArray{NAtype},
+function setindex!(x::PooledDataArray{NAtype},
                 val::NAtype,
                 inds::AbstractVector{Bool})
     error("Don't use PooledDataVector{NAtype}'s")
 end
-function assign(x::PooledDataArray{NAtype},
+function setindex!(x::PooledDataArray{NAtype},
                 val::NAtype,
                 inds::AbstractVector)
     error("Don't use PooledDataVector{NAtype}'s")
 end
-function assign(x::PooledDataArray, val::NAtype, inds::AbstractVector{Bool})
+function setindex!(x::PooledDataArray, val::NAtype, inds::AbstractVector{Bool})
     inds = find(inds)
     x.refs[inds] = 0
     return NA
 end
-function assign(x::PooledDataArray, val::NAtype, inds::AbstractVector)
+function setindex!(x::PooledDataArray, val::NAtype, inds::AbstractVector)
     x.refs[inds] = 0
     return NA
 end
 
 # pda[MultiIndex] = Multiple Values
-function assign(pda::PooledDataArray,
+function setindex!(pda::PooledDataArray,
                 vals::AbstractVector,
                 inds::AbstractVector{Bool})
-    assign(pda, vals, find(inds))
+    setindex!(pda, vals, find(inds))
 end
-function assign(pda::PooledDataArray,
+function setindex!(pda::PooledDataArray,
                 vals::AbstractVector,
                 inds::AbstractVector)
     for (val, ind) in zip(vals, inds)
@@ -585,7 +585,7 @@ function assign(pda::PooledDataArray,
 end
 
 # pda[SingleItemIndex, SingleItemIndex] = NA
-function assign(pda::PooledDataMatrix, val::NAtype, i::Real, j::Real)
+function setindex!(pda::PooledDataMatrix, val::NAtype, i::Real, j::Real)
     pda.refs[i, j] = POOLED_DATA_VEC_REF_CONVERTER(0)
     return NA
 end
@@ -613,7 +613,7 @@ function string(x::PooledDataVector)
     return "[$tmp]"
 end
 
-# # Need assign()'s to make this work
+# # Need setindex!()'s to make this work
 # This is broken now because the inner show returns to the outer show.
 # function show(io::IO, pda::PooledDataArray)
 #     invoke(show, (Any, AbstractArray), io, pda)

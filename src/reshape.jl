@@ -130,7 +130,7 @@ type EachRepeatedVector{T} <: AbstractVector{T}
     n::Int
 end
 
-function ref(v::StackedVector,i::Real)
+function getindex(v::StackedVector,i::Real)
     lengths = [length(x)::Int for x in v.components]
     cumlengths = [0, cumsum(lengths)]
     j = searchsortedlast(cumlengths + 1, i)
@@ -151,7 +151,7 @@ function ref{I<:Real}(v::StackedVector,i::AbstractVector{I})
     end
     result
 end
-ref(v::StackedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = ref(v, [i])
+getindex(v::StackedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
 
 size(v::StackedVector) = (length(v),)
 length(v::StackedVector) = sum(map(length, v.components))
@@ -173,7 +173,7 @@ function ref{T}(v::RepeatedVector{T},i::Real)
     j = mod(i - 1, length(v.parent)) + 1
     v.parent[j]
 end
-ref(v::RepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = ref(v, [i])
+getindex(v::RepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
 
 size(v::RepeatedVector) = (length(v),)
 length(v::RepeatedVector) = v.n * length(v.parent)
@@ -202,7 +202,7 @@ function ref{T,I<:Real}(v::EachRepeatedVector{T},i::AbstractVector{I})
     j = div(i - 1, v.n) + 1
     v.parent[j]
 end
-ref(v::EachRepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = ref(v, [i])
+getindex(v::EachRepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
 
 size(v::EachRepeatedVector) = (length(v),)
 length(v::EachRepeatedVector) = v.n * length(v.parent)
