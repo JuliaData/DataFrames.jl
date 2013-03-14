@@ -332,13 +332,8 @@ function ref(d::DataArray, inds::AbstractDataVector)
     inds = removeNA(inds)
     return d[inds]
 end
-# TODO: Return SubDataArray
-# TODO: Make inds::AbstractVector
-## # The following assumes that T<:Number won't have #undefs
-function ref{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector, Vector{Bool}))
-    DataArray(d.data[inds], d.na[inds])
-end
-function ref(d::DataArray, inds::Union(BitVector, Vector{Bool}))
+
+function ref{T,N}(d::DataArray{T,N}, inds::Union(BitVector, Vector{Bool}))
     res = similar(d, sum(inds))
     j = 1
     for i in 1:length(inds)
@@ -349,7 +344,7 @@ function ref(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     end
     res
 end
-function ref(d::DataArray, inds::Union(Vector, Ranges))
+function ref{T,N}(d::DataArray, inds::Union(Vector, Ranges))
     res = similar(d, length(inds))
     for i in 1:length(inds)
         ix = inds[i]
@@ -358,6 +353,13 @@ function ref(d::DataArray, inds::Union(Vector, Ranges))
         end
     end
     res
+end
+
+# TODO: Return SubDataArray
+# TODO: Make inds::AbstractVector
+## # The following assumes that T<:Number won't have #undefs
+function ref{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector, Vector{Bool}))
+    DataArray(d.data[inds], d.na[inds])
 end
 
 # dm[SingleItemIndex, SingleItemIndex)
