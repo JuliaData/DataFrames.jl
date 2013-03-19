@@ -71,13 +71,13 @@ DataArray{N}(t::Type, dims::NTuple{N,Int}) = DataArray(Array(t, dims...),
                                                  trues(dims...))
 
 # Wrap a scalar in a DataArray w/ repetition
-function DataArray(val::Any, dims::Integer...)
-    vals = Array(typeof(val), dims...)
-    for i in 1:length(vals)
-        vals[i] = val
-    end
-    DataArray(vals, falses(dims...))
-end
+# function DataArray(val::Any, dims::Integer...)
+#     vals = Array(typeof(val), dims...)
+#     for i in 1:length(vals)
+#         vals[i] = val
+#     end
+#     DataArray(vals, falses(dims...))
+# end
 
 # Wrap a scalar in a DataArray w/o repetition
 DataArray(val::Any) = DataArray([val], falses(1))
@@ -355,12 +355,13 @@ function ref{T,N}(d::DataArray, inds::Union(Vector, Ranges))
     res
 end
 
+
 # TODO: Return SubDataArray
 # TODO: Make inds::AbstractVector
 ## # The following assumes that T<:Number won't have #undefs
-function ref{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector, Vector{Bool}))
-    DataArray(d.data[inds], d.na[inds])
-end
+## # There are two definitions in order to remove ambiguity warnings
+ref{T<:Number,N}(d::DataArray{T,N}, inds::Union(BitVector, Vector{Bool})) = DataArray(d.data[inds], d.na[inds])
+ref{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector)) = DataArray(d.data[inds], d.na[inds])
 
 # dm[SingleItemIndex, SingleItemIndex)
 function ref(d::DataMatrix, i::Real, j::Real)
