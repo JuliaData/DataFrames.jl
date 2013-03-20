@@ -383,7 +383,7 @@ function getindex(df::DataFrame, col_ind::ColumnIndex)
 end
 
 # df[MultiColumnIndex] => (Sub)?DataFrame
-function ref{T <: ColumnIndex}(df::DataFrame, col_inds::AbstractVector{T})
+function getindex{T <: ColumnIndex}(df::DataFrame, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = df.columns[selected_columns]
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
@@ -396,20 +396,20 @@ function getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
 end
 
 # df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-function ref{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractVector{T})
+function getindex{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = {dv[[row_ind]] for dv in df.columns[selected_columns]}
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
-function ref{T <: Real}(df::DataFrame, row_inds::AbstractVector{T}, col_ind::ColumnIndex)
+function getindex{T <: Real}(df::DataFrame, row_inds::AbstractVector{T}, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column][row_inds]
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-function ref{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::AbstractVector{T})
+function getindex{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = {dv[row_inds] for dv in df.columns[selected_columns]}
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
@@ -418,9 +418,9 @@ end
 # Special cases involving expressions
 getindex(df::DataFrame, ex::Expr) = getindex(df, with(df, ex))
 getindex(df::DataFrame, ex::Expr, c::ColumnIndex) = getindex(df, with(df, ex), c)
-ref{T <: ColumnIndex}(df::DataFrame, ex::Expr, c::AbstractVector{T}) = getindex(df, with(df, ex), c)
+getindex{T <: ColumnIndex}(df::DataFrame, ex::Expr, c::AbstractVector{T}) = getindex(df, with(df, ex), c)
 getindex(df::DataFrame, c::Real, ex::Expr) = getindex(df, c, with(df, ex))
-ref{T <: Real}(df::DataFrame, c::AbstractVector{T}, ex::Expr) = getindex(df, c, with(df, ex))
+getindex{T <: Real}(df::DataFrame, c::AbstractVector{T}, ex::Expr) = getindex(df, c, with(df, ex))
 getindex(df::DataFrame, ex1::Expr, ex2::Expr) = getindex(df, with(df, ex1), with(df, ex2))
 
 ##############################################################################

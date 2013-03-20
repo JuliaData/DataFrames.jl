@@ -144,7 +144,7 @@ function getindex(v::StackedVector,i::Real)
     v.components[j][k]
 end
 
-function ref{I<:Real}(v::StackedVector,i::AbstractVector{I})
+function getindex{I<:Real}(v::StackedVector,i::AbstractVector{I})
     result = similar(v.components[1], length(i))
     for idx in 1:length(i)
         result[idx] = v[i[idx]]
@@ -165,11 +165,11 @@ repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
 
 PooledDataArray(v::StackedVector) = PooledDataArray(v[:]) # could be more efficient
 
-function ref{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
+function getindex{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
     j = mod(i - 1, length(v.parent)) + 1
     v.parent[j]
 end
-function ref{T}(v::RepeatedVector{T},i::Real)
+function getindex{T}(v::RepeatedVector{T},i::Real)
     j = mod(i - 1, length(v.parent)) + 1
     v.parent[j]
 end
@@ -194,11 +194,11 @@ function PooledDataArray(v::RepeatedVector)
     res
 end
 
-function ref{T}(v::EachRepeatedVector{T},i::Real)
+function getindex{T}(v::EachRepeatedVector{T},i::Real)
     j = div(i - 1, v.n) + 1
     v.parent[j]
 end
-function ref{T,I<:Real}(v::EachRepeatedVector{T},i::AbstractVector{I})
+function getindex{T,I<:Real}(v::EachRepeatedVector{T},i::AbstractVector{I})
     j = div(i - 1, v.n) + 1
     v.parent[j]
 end
