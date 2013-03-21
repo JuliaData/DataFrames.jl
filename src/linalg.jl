@@ -116,8 +116,8 @@ function svd(D::DataMatrix, k::Integer, opts::Options)
 
         # Impute missing entries using current SVD
         previous_dm = copy(current_dm)
-        U, D, Vt = svdt(current_dm, true)
-        impute!(current_dm, missing_entries, U, D, Vt, k)
+        U, D, V = svd(current_dm, true)
+        impute!(current_dm, missing_entries, U, D, V', k)
 
         # Compute the change in the matrix across iterations
         change = norm(previous_dm - current_dm) / norm(dm)
@@ -141,6 +141,6 @@ svd(dm::DataMatrix, k::Integer) = svd(dm, k, Options())
 svd(dm::DataMatrix) = svd(dm, min(size(dm)), Options())
 
 function eig(dm::DataMatrix)
-    U, D, V = svdt(dm)
-    return eig(U * diagm(D) * V)
+    U, D, V = svd(dm)
+    return eig(U * diagm(D) * V')
 end

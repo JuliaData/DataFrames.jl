@@ -56,11 +56,11 @@ type IndexedVector{T,S<:AbstractVector} <: AbstractVector{T}
 end
 IndexedVector{T}(x::AbstractVector{T}) = IndexedVector{T,typeof(x)}(x, indexorder(x))
 
-ref{I<:Real}(v::IndexedVector,i::AbstractVector{I}) = IndexedVector(v.x[i])
-ref{I<:Real}(v::IndexedVector,i::I) = v.x[i]
-ref(v::IndexedVector,i::Real) = v.x[i]
-assign(v::IndexedVector, val::Any, i::Real) = IndexedVector(assign(v.x, val, i))
-assign(v::IndexedVector, val::Any, inds::AbstractVector) = IndexedVector(assign(v.x, val, inds))
+getindex{I<:Real}(v::IndexedVector,i::AbstractVector{I}) = IndexedVector(v.x[i])
+getindex{I<:Real}(v::IndexedVector,i::I) = v.x[i]
+getindex(v::IndexedVector,i::Real) = v.x[i]
+setindex!(v::IndexedVector, val::Any, i::Real) = IndexedVector(setindex!(v.x, val, i))
+setindex!(v::IndexedVector, val::Any, inds::AbstractVector) = IndexedVector(setindex!(v.x, val, inds))
 reverse(v::IndexedVector) = IndexedVector(reverse(v.x), reverse(v.idx))
 similar(v::IndexedVector, T, dims::Dims) = similar(v.x, T, dims)
 
@@ -218,20 +218,20 @@ function bool(ix::Indexer)
     res
 end
 
-# `ref` -- each Range1 of the Indexer (i.r...) is applied to the indexing vector (i.iv.idx)
+# `getindex` -- each Range1 of the Indexer (i.r...) is applied to the indexing vector (i.iv.idx)
 
-ref(x::IndexedVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
-ref(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
-ref(x::AbstractDataVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
+getindex(x::IndexedVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
+getindex(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
+getindex(x::AbstractDataVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 
 # df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
-function ref(df::DataFrame, row_inds::Indexer, col_ind::ColumnIndex)
+function getindex(df::DataFrame, row_inds::Indexer, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column][row_inds.iv.idx[[row_inds.r...]]]
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-function ref{T <: ColumnIndex}(df::DataFrame, row_inds::Indexer, col_inds::AbstractVector{T})
+function getindex{T <: ColumnIndex}(df::DataFrame, row_inds::Indexer, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = {dv[row_inds.iv.idx[[row_inds.r...]]] for dv in df.columns[selected_columns]}
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))

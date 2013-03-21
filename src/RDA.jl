@@ -180,7 +180,7 @@ function namedobjects(io::IO, fl::Uint32, A::Bool, symtab::Array{RSymbol,1})
     while uint8(fl) != 0xfe
         ## need to call RSymbol here b/c of symbol reference table
         nm = RSymbol(io, readuint32(io, A), A, symtab).displayname
-        assign(res, readitem(io, A, symtab), nm)
+        setindex!(res, readitem(io, A, symtab), nm)
         fl = readuint32(io, A)
     end
     res

@@ -139,7 +139,7 @@ In contrast to these normal-looking constructors, when some of the values in the
 
 	dv = DataVector[1, 2, NA, 4]
 
-_Technical Note: This special type of constructor is defined by overloading the `ref()` function to apply to values of type `DataVector`.
+_Technical Note: This special type of constructor is defined by overloading the `getindex()` function to apply to values of type `DataVector`.
 
 # DataVector's with Special Types
 
@@ -444,7 +444,7 @@ The standard comparison operators work on `DataVector`'s:
 * `log10`
 * `log1p`
 * `log2`
-* `logb`
+* `exponent`
 * `sqrt`
 
 Standard functions that apply to scalar values of type `Number` return `NA` when applied to `NA`:
