@@ -425,7 +425,7 @@ df .== df
 #
 # abs, sign, acos, acosh, asin, asinh, atan, atan2, atanh, sin, sinh
 # cos, cosh, tan, tanh, ceil, floor, round, trunc, signif, exp, log
-# log10, log1p, log2, logb, sqrt
+# log10, log1p, log2, exponent, sqrt
 #
 ##############################################################################
 

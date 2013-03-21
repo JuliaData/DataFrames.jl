@@ -275,8 +275,8 @@ a4 = within(a2, :( d = a + b ))
 @assert isequal(a4["d"], a2["a"] + a2["b"])
 @assert isequal(a4["a"], a2["a"])
 
-a4c = @transform(copy(a2), d => a + b )
-@assert isequal(a4c["d"], a4["d"])
+# a4c = @transform(copy(a2), d => a + b )
+# @assert isequal(a4c["d"], a4["d"])
 
 a4 = within(a3, :( d = a + b ))
 @assert isequal(a4[:d], a3["a"] + a3["b"])

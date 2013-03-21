@@ -444,7 +444,7 @@ The standard comparison operators work on `DataVector`'s:
 * `log10`
 * `log1p`
 * `log2`
-* `logb`
+* `exponent`
 * `sqrt`
 
 Standard functions that apply to scalar values of type `Number` return `NA` when applied to `NA`:

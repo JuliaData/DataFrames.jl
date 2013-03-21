@@ -332,12 +332,12 @@ function getindex(d::DataArray, inds::AbstractDataVector)
     inds = removeNA(inds)
     return d[inds]
 end
+
 # TODO: Return SubDataArray
 # TODO: Make inds::AbstractVector
-## # The following assumes that T<:Number won't have #undefs
-function getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector, Vector{Bool}))
-    DataArray(d.data[inds], d.na[inds])
-end
+## # There are two definitions in order to remove ambiguity warnings
+getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(BitVector, Vector{Bool})) = DataArray(d.data[inds], d.na[inds])
+getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector)) = DataArray(d.data[inds], d.na[inds])
 function getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     res = similar(d, sum(inds))
     j = 1
@@ -349,6 +349,7 @@ function getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     end
     res
 end
+
 function getindex(d::DataArray, inds::Union(Vector, Ranges))
     res = similar(d, length(inds))
     for i in 1:length(inds)
@@ -359,6 +360,13 @@ function getindex(d::DataArray, inds::Union(Vector, Ranges))
     end
     res
 end
+
+# TODO: Return SubDataArray
+# TODO: Make inds::AbstractVector
+## # The following assumes that T<:Number won't have #undefs
+## # There are two definitions in order to remove ambiguity warnings
+getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(BitVector, Vector{Bool})) = DataArray(d.data[inds], d.na[inds])
+getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector)) = DataArray(d.data[inds], d.na[inds])
 
 # dm[SingleItemIndex, SingleItemIndex)
 function getindex(d::DataMatrix, i::Real, j::Real)
@@ -502,12 +510,12 @@ function setindex!(da::AbstractDataArray,
 end
 
 # x[MultiIndex] = Single Item
-function setindex{T}(da::AbstractDataArray{T},
+function setindex!{T}(da::AbstractDataArray{T},
                    val::Union(Number, String, T),
                    inds::AbstractVector{Bool})
     setindex!(da, val, find(inds))
 end
-function setindex{T}(da::AbstractDataArray{T},
+function setindex!{T}(da::AbstractDataArray{T},
                    val::Union(Number, String, T),
                    inds::AbstractVector)
     val = convert(T, val)
@@ -521,7 +529,7 @@ function setindex!(da::AbstractDataArray,
                 inds::AbstractVector{Bool})
     setindex!(da, val, find(inds))
 end
-function setindex{T}(da::AbstractDataArray{T},
+function setindex!{T}(da::AbstractDataArray{T},
                    val::Any,
                    inds::AbstractVector)
     val = convert(T, val)
@@ -554,7 +562,7 @@ function setindex!(dm::DataMatrix,
 end
 
 # dm[MultiItemIndex, SingleItemIndex] = Multiple Items
-function setindex{S, T}(dm::DataMatrix{S},
+function setindex!{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
                       row_inds::Union(Vector, BitVector, Ranges),
                       j::Real)
@@ -583,7 +591,7 @@ function setindex!(dm::DataMatrix,
 end
 
 # dm[SingleItemIndex, MultiItemIndex] = Multiple Items
-function setindex{S, T}(dm::DataMatrix{S},
+function setindex!{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
                       i::Real,
                       col_inds::Union(Vector, BitVector, Ranges))
@@ -612,7 +620,7 @@ function setindex!(dm::DataMatrix,
 end
 
 # dm[MultiIndex, MultiIndex] = Multiple Items
-function setindex{S, T}(dm::DataMatrix{S},
+function setindex!{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
                       row_inds::Union(Vector, BitVector, Ranges),
                       col_inds::Union(Vector, BitVector, Ranges))
