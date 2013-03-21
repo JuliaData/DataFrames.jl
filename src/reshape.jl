@@ -130,7 +130,7 @@ type EachRepeatedVector{T} <: AbstractVector{T}
     n::Int
 end
 
-function ref(v::StackedVector,i::Real)
+function getindex(v::StackedVector,i::Real)
     lengths = [length(x)::Int for x in v.components]
     cumlengths = [0, cumsum(lengths)]
     j = searchsortedlast(cumlengths + 1, i)
@@ -144,14 +144,14 @@ function ref(v::StackedVector,i::Real)
     v.components[j][k]
 end
 
-function ref{I<:Real}(v::StackedVector,i::AbstractVector{I})
+function getindex{I<:Real}(v::StackedVector,i::AbstractVector{I})
     result = similar(v.components[1], length(i))
     for idx in 1:length(i)
         result[idx] = v[i[idx]]
     end
     result
 end
-ref(v::StackedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = ref(v, [i])
+getindex(v::StackedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
 
 size(v::StackedVector) = (length(v),)
 length(v::StackedVector) = sum(map(length, v.components))
@@ -165,15 +165,15 @@ repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
 
 PooledDataArray(v::StackedVector) = PooledDataArray(v[:]) # could be more efficient
 
-function ref{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
+function getindex{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
     j = mod(i - 1, length(v.parent)) + 1
     v.parent[j]
 end
-function ref{T}(v::RepeatedVector{T},i::Real)
+function getindex{T}(v::RepeatedVector{T},i::Real)
     j = mod(i - 1, length(v.parent)) + 1
     v.parent[j]
 end
-ref(v::RepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = ref(v, [i])
+getindex(v::RepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
 
 size(v::RepeatedVector) = (length(v),)
 length(v::RepeatedVector) = v.n * length(v.parent)
@@ -194,15 +194,15 @@ function PooledDataArray(v::RepeatedVector)
     res
 end
 
-function ref{T}(v::EachRepeatedVector{T},i::Real)
+function getindex{T}(v::EachRepeatedVector{T},i::Real)
     j = div(i - 1, v.n) + 1
     v.parent[j]
 end
-function ref{T,I<:Real}(v::EachRepeatedVector{T},i::AbstractVector{I})
+function getindex{T,I<:Real}(v::EachRepeatedVector{T},i::AbstractVector{I})
     j = div(i - 1, v.n) + 1
     v.parent[j]
 end
-ref(v::EachRepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = ref(v, [i])
+getindex(v::EachRepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
 
 size(v::EachRepeatedVector) = (length(v),)
 length(v::EachRepeatedVector) = v.n * length(v.parent)

@@ -81,7 +81,7 @@ dv = DataArray(1:3)
 #
 # To order to provide a very concise constructor, we've hacked in
 # a very cute constructor for DataVector's using a trick involving
-# their ref() method.
+# their getindex() method.
 #
 
 dv = DataVector[1, 2, NA, 4]
@@ -425,7 +425,7 @@ df .== df
 #
 # abs, sign, acos, acosh, asin, asinh, atan, atan2, atanh, sin, sinh
 # cos, cosh, tan, tanh, ceil, floor, round, trunc, signif, exp, log
-# log10, log1p, log2, logb, sqrt
+# log10, log1p, log2, exponent, sqrt
 #
 ##############################################################################
 

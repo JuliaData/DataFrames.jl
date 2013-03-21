@@ -176,6 +176,6 @@ DataFrame's add two new indexer types:
 
 These can only occur as (a) the only indexer or (b) in the second slot of a paired indexer
 
-Anything that can be ref()'d can also be assign()'d
+Anything that can be getindex()'d can also be setindex!()'d
 
 Where do we allow Expr indexing?

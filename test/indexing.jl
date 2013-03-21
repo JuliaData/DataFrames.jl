@@ -111,7 +111,7 @@ column_indices = {1,
                   :(colnames(_DF) .== "B")}
 
 #
-# ref()
+# getindex()
 #
 
 for column_index in column_indices
@@ -125,7 +125,7 @@ for row_index in row_indices
 end
 
 #
-# assign()
+# setindex!()
 #
 
 for column_index in column_indices

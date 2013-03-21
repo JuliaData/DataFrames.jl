@@ -354,7 +354,7 @@ end
 
 ##############################################################################
 ##
-## ref() definitions
+## getindex() definitions
 ##
 ##############################################################################
 
@@ -369,63 +369,63 @@ end
 #
 # General Strategy:
 #
-# Let ref(df.colindex, col_inds) from Index() handle the resolution
+# Let getindex(df.colindex, col_inds) from Index() handle the resolution
 #  of column indices
-# Let ref(df.columns[j], row_inds) from AbstractDataVector() handle
+# Let getindex(df.columns[j], row_inds) from AbstractDataVector() handle
 #  the resolution of row indices
 
 typealias ColumnIndex Union(Real, String, Symbol)
 
 # df[SingleColumnIndex] => AbstractDataVector
-function ref(df::DataFrame, col_ind::ColumnIndex)
+function getindex(df::DataFrame, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column]
 end
 
 # df[MultiColumnIndex] => (Sub)?DataFrame
-function ref{T <: ColumnIndex}(df::DataFrame, col_inds::AbstractVector{T})
+function getindex{T <: ColumnIndex}(df::DataFrame, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = df.columns[selected_columns]
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
 end
 
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
-function ref(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
+function getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column][row_ind]
 end
 
 # df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-function ref{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractVector{T})
+function getindex{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = {dv[[row_ind]] for dv in df.columns[selected_columns]}
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
-function ref{T <: Real}(df::DataFrame, row_inds::AbstractVector{T}, col_ind::ColumnIndex)
+function getindex{T <: Real}(df::DataFrame, row_inds::AbstractVector{T}, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column][row_inds]
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-function ref{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::AbstractVector{T})
+function getindex{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = {dv[row_inds] for dv in df.columns[selected_columns]}
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
 end
 
 # Special cases involving expressions
-ref(df::DataFrame, ex::Expr) = ref(df, with(df, ex))
-ref(df::DataFrame, ex::Expr, c::ColumnIndex) = ref(df, with(df, ex), c)
-ref{T <: ColumnIndex}(df::DataFrame, ex::Expr, c::AbstractVector{T}) = ref(df, with(df, ex), c)
-ref(df::DataFrame, c::Real, ex::Expr) = ref(df, c, with(df, ex))
-ref{T <: Real}(df::DataFrame, c::AbstractVector{T}, ex::Expr) = ref(df, c, with(df, ex))
-ref(df::DataFrame, ex1::Expr, ex2::Expr) = ref(df, with(df, ex1), with(df, ex2))
+getindex(df::DataFrame, ex::Expr) = getindex(df, with(df, ex))
+getindex(df::DataFrame, ex::Expr, c::ColumnIndex) = getindex(df, with(df, ex), c)
+getindex{T <: ColumnIndex}(df::DataFrame, ex::Expr, c::AbstractVector{T}) = getindex(df, with(df, ex), c)
+getindex(df::DataFrame, c::Real, ex::Expr) = getindex(df, c, with(df, ex))
+getindex{T <: Real}(df::DataFrame, c::AbstractVector{T}, ex::Expr) = getindex(df, c, with(df, ex))
+getindex(df::DataFrame, ex1::Expr, ex2::Expr) = getindex(df, with(df, ex1), with(df, ex2))
 
 ##############################################################################
 ##
-## assign()
+## setindex!()
 ##
 ##############################################################################
 
@@ -512,24 +512,24 @@ function upgrade_scalar(df::DataFrame, v::Any)
 end
 
 # df[SingleColumnIndex] = AbstractVector
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 v::AbstractVector,
                 col_ind::ColumnIndex)
     insert_single_column!(df, upgrade_vector(v), col_ind)
 end
 
 # df[SingleColumnIndex] = Scalar (EXPANDS TO MAX(NROW(DF), 1))
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 v::Any,
                 col_ind::ColumnIndex)
     insert_single_column!(df, upgrade_scalar(df, v), col_ind)
 end
 
 # df[MultiColumnIndex] = DataFrame
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 new_df::DataFrame,
                 col_inds::AbstractVector{Bool})
-    assign(df, new_df, find(col_inds))
+    setindex!(df, new_df, find(col_inds))
 end
 function assign{T <: ColumnIndex}(df::DataFrame,
                                   new_df::DataFrame,
@@ -541,10 +541,10 @@ function assign{T <: ColumnIndex}(df::DataFrame,
 end
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 v::AbstractVector,
                 col_inds::AbstractVector{Bool})
-    assign(df, v, find(col_inds))
+    setindex!(df, v, find(col_inds))
 end
 function assign{T <: ColumnIndex}(df::DataFrame,
                                   v::AbstractVector,
@@ -557,10 +557,10 @@ function assign{T <: ColumnIndex}(df::DataFrame,
 end
 
 # df[MultiColumnIndex] = Scalar (REPEATED FOR EACH COLUMN; EXPANDS TO MAX(NROW(DF), 1))
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 val::Any,
                 col_inds::AbstractVector{Bool})
-    assign(df, val, find(col_inds))
+    setindex!(df, val, find(col_inds))
 end
 function assign{T <: ColumnIndex}(df::DataFrame,
                                   val::Any,
@@ -573,7 +573,7 @@ function assign{T <: ColumnIndex}(df::DataFrame,
 end
 
 # df[SingleRowIndex, SingleColumnIndex] = Scalar
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 v::Any,
                 row_ind::Real,
                 col_ind::ColumnIndex)
@@ -581,11 +581,11 @@ function assign(df::DataFrame,
 end
 
 # df[SingleRowIndex, MultiColumnIndex] = Scalar (EXPANDS TO MAX(NROW(DF), 1))
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 v::Any,
                 row_ind::Real,
                 col_inds::AbstractVector{Bool})
-    assign(df, v, row_ind, find(col_inds))
+    setindex!(df, v, row_ind, find(col_inds))
 end
 function assign{T <: ColumnIndex}(df::DataFrame,
                                   v::Any,
@@ -598,11 +598,11 @@ function assign{T <: ColumnIndex}(df::DataFrame,
 end
 
 # df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 new_df::DataFrame,
                 row_ind::Real,
                 col_inds::AbstractVector{Bool})
-    assign(df, new_df, row_ind, find(col_inds))
+    setindex!(df, new_df, row_ind, find(col_inds))
 end
 
 function assign{T <: ColumnIndex}(df::DataFrame,
@@ -621,11 +621,11 @@ function assign{T <: ColumnIndex}(df::DataFrame,
 end
 
 # df[MultiRowIndex, SingleColumnIndex] = AbstractVector
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 v::AbstractVector,
                 row_inds::AbstractVector{Bool},
                 col_ind::ColumnIndex)
-    assign(df, v, find(row_inds), col_ind)
+    setindex!(df, v, find(row_inds), col_ind)
 end
 function assign{T <: Real}(df::DataFrame,
                            v::AbstractVector,
@@ -641,11 +641,11 @@ function assign{T <: Real}(df::DataFrame,
 end
 
 # df[MultiRowIndex, SingleColumnIndex] = Single Value
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 v::Any,
                 row_inds::AbstractVector{Bool},
                 col_ind::ColumnIndex)
-    assign(df, v, find(row_inds), col_ind)
+    setindex!(df, v, find(row_inds), col_ind)
 end
 function assign{T <: Real}(df::DataFrame,
                            v::Any,
@@ -665,23 +665,23 @@ function assign{T <: Real}(df::DataFrame,
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = DataFrame
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 new_df::DataFrame,
                 row_inds::AbstractVector{Bool},
                 col_inds::AbstractVector{Bool})
-    assign(df, new_df, find(row_inds), find(col_inds))
+    setindex!(df, new_df, find(row_inds), find(col_inds))
 end
 function assign{T <: ColumnIndex}(df::DataFrame,
                                   new_df::DataFrame,
                                   row_inds::AbstractVector{Bool},
                                   col_inds::AbstractVector{T})
-    assign(df, new_df, find(row_inds), col_inds)
+    setindex!(df, new_df, find(row_inds), col_inds)
 end
 function assign{R <: Real}(df::DataFrame,
                            new_df::DataFrame,
                            row_inds::AbstractVector{R},
                            col_inds::AbstractVector{Bool})
-    assign(df, new_df, row_inds, find(col_inds))
+    setindex!(df, new_df, row_inds, find(col_inds))
 end
 function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              new_df::DataFrame,
@@ -699,23 +699,23 @@ function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = AbstractVector
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 v::AbstractVector,
                 row_inds::AbstractVector{Bool},
                 col_inds::AbstractVector{Bool})
-    assign(df, v, find(row_inds), find(col_inds))
+    setindex!(df, v, find(row_inds), find(col_inds))
 end
 function assign{T <: ColumnIndex}(df::DataFrame,
                                   v::AbstractVector,
                                   row_inds::AbstractVector{Bool},
                                   col_inds::AbstractVector{T})
-    assign(df, v, find(row_inds), col_inds)
+    setindex!(df, v, find(row_inds), col_inds)
 end
 function assign{R <: Real}(df::DataFrame,
                            v::AbstractVector,
                            row_inds::AbstractVector{R},
                            col_inds::AbstractVector{Bool})
-    assign(df, v, row_inds, find(col_inds))
+    setindex!(df, v, row_inds, find(col_inds))
 end
 function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              v::AbstractVector,
@@ -734,23 +734,23 @@ function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = Single Item
-function assign(df::DataFrame,
+function setindex!(df::DataFrame,
                 v::Any,
                 row_inds::AbstractVector{Bool},
                 col_inds::AbstractVector{Bool})
-    assign(df, v, find(row_inds), find(col_inds))
+    setindex!(df, v, find(row_inds), find(col_inds))
 end
 function assign{T <: ColumnIndex}(df::DataFrame,
                                   v::Any,
                                   row_inds::AbstractVector{Bool},
                                   col_inds::AbstractVector{T})
-    assign(df, v, find(row_inds), col_inds)
+    setindex!(df, v, find(row_inds), col_inds)
 end
 function assign{R <: Real}(df::DataFrame,
                            v::Any,
                            row_inds::AbstractVector{R},
                            col_inds::AbstractVector{Bool})
-    assign(df, v, row_inds, find(col_inds))
+    setindex!(df, v, row_inds, find(col_inds))
 end
 function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              v::Any,
@@ -773,26 +773,26 @@ function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
 end
 
 # Special deletion assignment
-assign(df::DataFrame, x::Nothing, icol::Int) = delete!(df, icol)
+setindex!(df::DataFrame, x::Nothing, icol::Int) = delete!(df, icol)
 
 # Special cases involving expressions
-function assign(df::DataFrame, val::Any, ex::Expr)
-    assign(df, val, with(df, ex))
+function setindex!(df::DataFrame, val::Any, ex::Expr)
+    setindex!(df, val, with(df, ex))
 end
-function assign(df::DataFrame, val::Any, ex::Expr, c::ColumnIndex)
-    assign(df, val, with(df, ex), c)
+function setindex!(df::DataFrame, val::Any, ex::Expr, c::ColumnIndex)
+    setindex!(df, val, with(df, ex), c)
 end
 function assign{T <: ColumnIndex}(df::DataFrame, val::Any, ex::Expr, c::AbstractVector{T})
-    assign(df, val, with(df, ex), c)
+    setindex!(df, val, with(df, ex), c)
 end
-function assign(df::DataFrame, val::Any, c::Real, ex::Expr)
-    assign(df, val, c, with(df, ex))
+function setindex!(df::DataFrame, val::Any, c::Real, ex::Expr)
+    setindex!(df, val, c, with(df, ex))
 end
 function assign{T <: Real}(df::DataFrame, val::Any, c::AbstractVector{T}, ex::Expr)
-    assign(df, val, c, with(df, ex))
+    setindex!(df, val, c, with(df, ex))
 end
-function assign(df::DataFrame, val::Any, ex1::Expr, ex2::Expr)
-    assign(df, val, with(df, ex1), with(df, ex2))
+function setindex!(df::DataFrame, val::Any, ex1::Expr, ex2::Expr)
+    setindex!(df, val, with(df, ex1), with(df, ex2))
 end
 
 ##############################################################################
@@ -1003,18 +1003,18 @@ sub(D::DataFrame, r, c) = sub(D[[c]], r)    # If columns are given, pass in a su
                                             # Columns are not copies, so it's not expensive.
 sub(D::DataFrame, r::Int) = sub(D, [r])
 sub(D::DataFrame, rs::Vector{Int}) = SubDataFrame(D, rs)
-sub(D::DataFrame, r) = sub(D, ref(SimpleIndex(nrow(D)), r)) # this is a wacky fall-through that uses light-weight fake indexes!
+sub(D::DataFrame, r) = sub(D, getindex(SimpleIndex(nrow(D)), r)) # this is a wacky fall-through that uses light-weight fake indexes!
 sub(D::DataFrame, ex::Expr) = sub(D, with(D, ex))
 
 sub(D::SubDataFrame, r, c) = sub(D[[c]], r)
 sub(D::SubDataFrame, r::Int) = sub(D, [r])
 sub(D::SubDataFrame, rs::Vector{Int}) = SubDataFrame(D.parent, D.rows[rs])
-sub(D::SubDataFrame, r) = sub(D, ref(SimpleIndex(nrow(D)), r)) # another wacky fall-through
+sub(D::SubDataFrame, r) = sub(D, getindex(SimpleIndex(nrow(D)), r)) # another wacky fall-through
 sub(D::SubDataFrame, ex::Expr) = sub(D, with(D, ex))
 const subset = sub
 
-ref(df::SubDataFrame, c) = df.parent[df.rows, c]
-ref(df::SubDataFrame, r, c) = df.parent[df.rows[r], c]
+getindex(df::SubDataFrame, c) = df.parent[df.rows, c]
+getindex(df::SubDataFrame, r, c) = df.parent[df.rows[r], c]
 
 nrow(df::SubDataFrame) = length(df.rows)
 ncol(df::SubDataFrame) = ncol(df.parent)
@@ -1253,9 +1253,9 @@ end
 
 
 
-myref(d, key) = ref(d, key)
-myref{K<:String,V}(d::Associative{K,V}, key) = ref(d, string(key))
-myref(d::AbstractDataFrame, key::Symbol) = ref(d, string(key))
+mygetindex(d, key) = getindex(d, key)
+myref{K<:String,V}(d::Associative{K,V}, key) = getindex(d, string(key))
+mygetindex(d::AbstractDataFrame, key::Symbol) = getindex(d, string(key))
 
 myhas(d, key) = has(d, key)
 myhas{K<:String,V}(d::Associative{K,V}, key) = has(d, string(key))
@@ -1267,7 +1267,7 @@ bestkey(d::AbstractDataFrame, key) = string(key)
 bestkey(d::NamedArray, key) = string(key)
 
 replace_syms(x) = x
-replace_syms(s::Symbol) = :( myhas(d, $(Meta.quot(s))) ? myref(d, $(Meta.quot(s))) : $(esc(s)) )
+replace_syms(s::Symbol) = :( myhas(d, $(Meta.quot(s))) ? mygetindex(d, $(Meta.quot(s))) : $(esc(s)) )
 replace_syms(e::Expr) = Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_syms(x), e.args))...)
 
 ## quot(value) = Base.splicedexpr(:quote, value)  # Toivo special
@@ -1700,7 +1700,7 @@ done(itr::DFRowIterator, i::Int) = i > nrow(itr.df)
 next(itr::DFRowIterator, i::Int) = (itr.df[i, :], i + 1)
 size(itr::DFRowIterator) = (nrow(itr.df), )
 length(itr::DFRowIterator) = nrow(itr.df)
-ref(itr::DFRowIterator, i::Any) = itr.df[i, :]
+getindex(itr::DFRowIterator, i::Any) = itr.df[i, :]
 map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
 
 
@@ -1714,7 +1714,7 @@ done(itr::DFColumnIterator, j::Int) = j > ncol(itr.df)
 next(itr::DFColumnIterator, j::Int) = (itr.df[:, j], j + 1)
 size(itr::DFColumnIterator) = (ncol(itr.df), )
 length(itr::DFColumnIterator) = ncol(itr.df)
-ref(itr::DFColumnIterator, j::Any) = itr.df[:, j]
+getindex(itr::DFColumnIterator, j::Any) = itr.df[:, j]
 function map(f::Function, dfci::DFColumnIterator)
     # note: `f` must return a consistent length
     res = DataFrame()

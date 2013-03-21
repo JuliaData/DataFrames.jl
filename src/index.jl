@@ -80,16 +80,16 @@ function delete!(x::Index, nm::String)
     delete!(x, idx)
 end
 
-ref(x::Index, idx::String) = x.lookup[idx]
-ref(x::Index, idx::Symbol) = x.lookup[string(idx)]
-ref(x::AbstractIndex, idx::Real) = int(idx)
-ref(x::AbstractIndex, idx::AbstractDataVector{Bool}) = ref(x, replaceNA(idx, false))
-ref{T}(x::AbstractIndex, idx::AbstractDataVector{T}) = ref(x, removeNA(idx))
-ref(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
-ref(x::AbstractIndex, idx::Ranges) = [idx]
-ref{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)
-ref{T <: String}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[i] for i in idx]...]
-ref{T <: Symbol}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[string(i)] for i in idx]...]
+getindex(x::Index, idx::String) = x.lookup[idx]
+getindex(x::Index, idx::Symbol) = x.lookup[string(idx)]
+getindex(x::AbstractIndex, idx::Real) = int(idx)
+getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, replaceNA(idx, false))
+getindex{T}(x::AbstractIndex, idx::AbstractDataVector{T}) = getindex(x, removeNA(idx))
+getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
+getindex(x::AbstractIndex, idx::Ranges) = [idx]
+getindex{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)
+getindex{T <: String}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[i] for i in idx]...]
+getindex{T <: Symbol}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[string(i)] for i in idx]...]
 
 type SimpleIndex <: AbstractIndex
     length::Integer

@@ -23,11 +23,11 @@ NamedArray() = NamedArray({}, Index())
 length(x::NamedArray) = length(x.idx)
 names(x::NamedArray) = names(x.idx)
 
-ref(x::NamedArray, c) = x[x.idx[c]]
-ref(x::NamedArray, c::Integer) = x.data[c]
-ref(x::NamedArray, c::Vector{Int}) = NamedArray(x.data[c], names(x)[c])
+getindex(x::NamedArray, c) = x[x.idx[c]]
+getindex(x::NamedArray, c::Integer) = x.data[c]
+getindex(x::NamedArray, c::Vector{Int}) = NamedArray(x.data[c], names(x)[c])
 
-function assign(x::NamedArray, newdata, ipos::Integer)
+function setindex!(x::NamedArray, newdata, ipos::Integer)
     if ipos > 0 && ipos <= length(x)
         x.data[ipos] = newdata
     else
@@ -35,11 +35,11 @@ function assign(x::NamedArray, newdata, ipos::Integer)
     end
     x
 end
-function assign(x::NamedArray, newdata, name)
+function setindex!(x::NamedArray, newdata, name)
     ipos = get(x.idx.lookup, name, 0)
     if ipos > 0
         # existing
-        assign(x, newdata, ipos)
+        setindex!(x, newdata, ipos)
     else
         # new
         push!(x.idx, name)
