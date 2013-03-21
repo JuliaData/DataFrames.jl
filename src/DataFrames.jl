@@ -1,5 +1,9 @@
 require("Options")
 
+# Note that the two calls to using Stats in this file are
+# strictly required: one pulls the names into DataFrames
+# for easy access within the module, whereas the other call
+# pushes those names into Main.
 using Stats
 
 module DataFrames
