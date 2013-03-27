@@ -13,10 +13,7 @@ minibatches are single rows of data, but this can be easily changed. To
 see how a `DataStream` works, it's easiest to convert an existing `DataFrame`
 into a `DataStream` using the `DataStream` function:
 
-    require("DataFrames")
     using DataFrames
-
-    require("RDatasets")
     using RDatasets
 
     iris = data("datasets", "iris")
@@ -43,10 +40,9 @@ In Julia, this can be addressed by piping new data into Julia using standard
 UNIX pipes. To see how to work with data that comes in from a UNIX pipe,
 copy the  following code into a program called streaming.jl:
 
-	require("DataFrames")
 	using DataFrames
 
-	ds = DataStream(stdin_stream, 2)
+	ds = DataStream(STDIN, 2)
 	
 	for df in ds
 	  println("==================  MINIBATCH  ==================")

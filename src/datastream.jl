@@ -158,7 +158,7 @@ function start(ds::IODataStream)
     end
     items = Array(UTF8String, strlen(line))
     current_field = Array(Char, strlen(line))
-    ds.column_names = split_separated_line(line, ds.separator, ds.quotation_character, items, current_field)
+      ds.column_names = read_separated_line(ds.stream, ds.separator, ds.quotation_character)
   else
     error("Currently only IODataStream's with headers are supported")
   end
