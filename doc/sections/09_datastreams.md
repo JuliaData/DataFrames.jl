@@ -42,7 +42,7 @@ copy the  following code into a program called streaming.jl:
 
 	using DataFrames
 
-	ds = DataStream(stdin_stream, 2)
+	ds = DataStream(STDIN, 2)
 	
 	for df in ds
 	  println("==================  MINIBATCH  ==================")
