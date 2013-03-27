@@ -113,7 +113,7 @@ number of issues and ideas for enhancements. Here are some particular
 enhancements under way or under discussion:
 
 * _Data Streams:_
-[issue 34](https://github.com/HarlanH/DataFrames.jl/issues/34), [doc](https://github.com/HarlanH/DataFrames.jl/blob/master/spec/DataStream.md)
+[issue 34](https://github.com/HarlanH/DataFrames.jl/issues/34), [doc](https://github.com/HarlanH/DataFrames.jl/blob/master/doc/sections/09_datastreams.md)
 
 * _Distributed DataFrames:_ [issue 26](https://github.com/HarlanH/DataFrames.jl/issues/26)
 
