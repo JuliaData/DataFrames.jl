@@ -28,3 +28,15 @@ df = @DataFrame(v => v, x => rand(6))
 pp = PooledDataArray(Any[])
 @assert length(pp) == 0
 @assert length(levels(pp)) == 0
+
+# Test explicitly setting refs type
+testarray = [1,1,2,2,0,0,3,3]
+testdata = DataVector[1,1,2,2,0,0,3,3]
+for t in Any[testarray, testdata]
+    for R in [Uint8, Uint16, Uint32, Uint64]
+        @assert eltype(PooledDataArray(t, R).refs) == R
+        @assert eltype(PooledDataArray(t, [1,2,3], R).refs) == R
+        @assert eltype(PooledDataArray(t, [1,2,3], t .== 0, R).refs) == R
+    end
+end
+
