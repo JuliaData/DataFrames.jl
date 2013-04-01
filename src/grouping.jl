@@ -55,7 +55,7 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     dv = PooledDataArray(df[cols[1]])
     # if there are NAs, add 1 to the refs to avoid underflows in x later
     dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    x = copy(dv.refs) + dv_has_nas
+    x = [uint64(z) + dv_has_nas for z in dv.refs]
     # also compute the number of groups, which is the product of the set lengths
     ngroups = length(dv.pool) + dv_has_nas
     # if there's more than 1 column, do roughly the same thing repeatedly
