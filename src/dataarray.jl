@@ -342,8 +342,10 @@ function getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     res = similar(d, sum(inds))
     j = 1
     for i in 1:length(inds)
-        if !d.na[i] && inds[i]
-            res[j] = d.data[i]
+        if inds[i]
+            if !d.na[i]
+                res[j] = d.data[i]
+            end
             j += 1
         end
     end
