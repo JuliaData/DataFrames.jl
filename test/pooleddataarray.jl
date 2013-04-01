@@ -25,3 +25,14 @@ df = @DataFrame(v => v, x => rand(6))
 @assert levels(set_levels!(copy(p), [1,8,9, 10])) == [1, 8, 9, 10]
 @assert levels(set_levels!(copy(p), [1 => 111])) == [111, 8, 9]
 @assert levels(set_levels!(copy(p), [1 => 111, 8 => NA])) == [111, 9]
+
+# Test explicitly setting refs type
+testarray = [1,1,2,2,0,0,3,3]
+testdata = DataVector[1,1,2,2,0,0,3,3]
+for t in Any[testarray, testdata]
+    for R in [Uint8, Uint16, Uint32, Uint64]
+        @assert eltype(PooledDataArray(t, R).refs) == R
+        @assert eltype(PooledDataArray(t, [1,2,3], R).refs) == R
+        @assert eltype(PooledDataArray(t, [1,2,3], t .== 0, R).refs) == R
+    end
+end

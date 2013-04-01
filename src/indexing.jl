@@ -329,17 +329,17 @@ end
 maxShowLength(v::IndexedVector) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
 
 # Methods to speed up grouping and merging
-function PooledDataArray(d::IndexedVector)
-    refs = zeros(POOLED_DATA_VEC_REF_TYPE, size(d))
-    oneval = one(POOLED_DATA_VEC_REF_TYPE)
+function PooledDataArray{R}(d::IndexedVector, ::Type{R})
+    refs = zeros(R, size(d))
+    oneval = one(R)
     local idx::Int
     ## local lastval::T
-    local poolidx::POOLED_DATA_VEC_REF_TYPE
+    local poolidx::R
     pool = Array(eltype(d), 0)
     # skip over NAs
     nna = length(d) - length(d.x)
     if nna == length(d)
-        return PooledDataArray(refs, pool)
+        return PooledDataArray(RefArray(refs), pool)
     end
     lastval = d.x[d.idx[nna+1]]
     push!(pool, d.x[d.idx[nna+1]])
@@ -354,8 +354,9 @@ function PooledDataArray(d::IndexedVector)
         end
         refs[idx] = poolidx
     end
-    return PooledDataArray(refs, pool)
+    return PooledDataArray(RefArray(refs), pool)
 end
+PooledDataArray(d::IndexedVector) = PooledDataArray(d, DEFAULT_POOLED_REF_TYPE)
 
 DataArray(d::IndexedVector) = DataArray(x.x)
 
