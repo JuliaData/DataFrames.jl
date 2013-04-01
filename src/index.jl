@@ -3,6 +3,10 @@
 # through cleanly.
 # an Index is the usual implementation.
 # a SimpleIndex only works if the things are integer indexes, which is weird.
+
+# these are not exported by Base, but are useful here.
+import Base.show_vector, Base.show_comma_array
+
 typealias Indices Union(Real, AbstractVector{Real})
 
 abstract AbstractIndex
@@ -15,6 +19,10 @@ Index{T <: ByteString}(x::Vector{T}) =
     Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)),
           make_unique(convert(Vector{ByteString}, x)))
 Index() = Index(Dict{ByteString, Indices}(), ByteString[])
+
+show(io::IO, x::Index) = show_vector(io, x.names, "Index([", "])")
+showall(io::IO, x::Index) = show_comma_array(io, x.names, "Index([", "])")
+
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
 copy(x::Index) = Index(copy(x.lookup), copy(x.names))
@@ -30,6 +38,7 @@ function names!(x::Index, nm::Vector)
         x.lookup[nm[i]] = i
     end
     x.names = nm
+    x
 end
 
 function rename!(x::Index, from::Vector, to::Vector)
@@ -45,7 +54,7 @@ function rename!(x::Index, from::Vector, to::Vector)
             delete!(x.lookup, from[idx])
         end
     end
-    x.names
+    x
 end
 rename!(x::Index, from, to) = rename!(x, [from], [to])
 rename!(x::Index, nd::Associative) = rename!(x, keys(nd), values(nd))
@@ -57,10 +66,7 @@ has(x::Index, key::String) = has(x.lookup, key)
 has(x::Index, key::Symbol) = has(x.lookup, string(key))
 has(x::Index, key::Real) = 1 <= key <= length(x.names)
 keys(x::Index) = names(x)
-function push!(x::Index, nm::String)
-    x.lookup[nm] = length(x) + 1
-    push!(x.names, nm)
-end
+
 function delete!(x::Index, idx::Integer)
     # reset the lookup's beyond the deleted item
     for i in (idx + 1):length(x.names)
@@ -68,20 +74,77 @@ function delete!(x::Index, idx::Integer)
     end
     gr = get_groups(x)
     delete!(x.lookup, x.names[idx])
-    delete!(x.names, idx)
+    ret = delete!(x.names, idx)
     # fix groups:
     for (k,v) in gr
         newv = [[has(x, vv) ? vv : ASCIIString[] for vv in v]...]
         set_group(x, k, newv)
     end
+    ret
 end
-function delete!(x::Index, nm::String)
+
+function delete!(x::Index, nm::ByteString)
     if !has(x.lookup, nm)
         return
     end
     idx = x.lookup[nm]
     delete!(x, idx)
 end
+
+function push!(x::Index, nm::ByteString)
+    if has(x.lookup, nm)
+        error("Key $nm already exists in index")
+    end
+    x.lookup[nm] = length(x) + 1
+    push!(x.names, nm)
+    x
+end
+
+function unshift!(x::Index, nm::ByteString)
+    if has(x.lookup, nm)
+        error("Key $nm already exists in index")
+    end
+    for (i,name) in enumerate(x.names)
+        x.lookup[name] = i+1
+    end
+    x.lookup[nm] = 1
+    unshift!(x.names, nm)
+    x
+end
+
+function append!(x::Index, nms::Vector{ByteString})
+    for nm in nms
+        if has(x.lookup, nm)
+            error("Key $nm already exists in index")
+        end
+    end
+    offset = length(x)
+    for (i,name) in enumerate(nms)
+        x.lookup[name] = i+offset
+    end
+    append!(x.names, nms)
+    x
+end
+# This is necessary because of the requirement that index names be bytestrings
+append!{T <: ByteString}(x::Index, nms::Vector{T}) = append!(x, ByteString[x for x in nms])
+
+function prepend!(x::Index, nms::Vector{ByteString})
+    for nm in nms
+        if has(x.lookup, nm)
+            error("Key $nm already exists in index")
+        end
+    end
+    prepend!(x.names, nms)
+    for (i,name) in enumerate(x.names)
+        x.lookup[name] = i
+    end
+    x
+end
+# This is necessary because of the requirement that index names be bytestrings
+prepend!{T <: ByteString}(x::Index, nms::Vector{T}) = prepend!(x, ByteString[x for x in nms])
+
+pop!(x::Index) = delete!(x, length(x))
+shift!(x::Index) = delete!(x, 1)
 
 getindex(x::Index, idx::String) = x.lookup[idx]
 getindex(x::Index, idx::Symbol) = x.lookup[string(idx)]
