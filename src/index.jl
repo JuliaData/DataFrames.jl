@@ -32,7 +32,7 @@ function names!(x::Index, nm::Vector)
     x.names = nm
 end
 
-function replace_names!(x::Index, from::Vector, to::Vector)
+function rename!(x::Index, from::Vector, to::Vector)
     if length(from) != length(to)
         error("lengths of from and to don't match.")
     end
@@ -47,8 +47,8 @@ function replace_names!(x::Index, from::Vector, to::Vector)
     end
     x.names
 end
-replace_names!(x::Index, from, to) = replace_names!(x, [from], [to])
-replace_names(x::Index, from, to) = replace_names!(copy(x), from, to)
+rename!(x::Index, from, to) = rename!(x, [from], [to])
+rename(x::Index, from, to) = rename!(copy(x), from, to)
 
 has(x::Index, key::String) = has(x.lookup, key)
 has(x::Index, key::Symbol) = has(x.lookup, string(key))

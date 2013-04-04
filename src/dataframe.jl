@@ -291,11 +291,11 @@ coltypes(df::DataFrame) = {eltype(df[i]) for i in 1:ncol(df)}
 names(df::AbstractDataFrame) = error("Use colnames()")
 names!(df::DataFrame, vals::Any) = error("Use colnames!()")
 
-function replace_names(df::DataFrame, from::Any, to::Any)
-    replace_names(df.colindex, from, to)
+function rename(df::DataFrame, from::Any, to::Any)
+    rename(df.colindex, from, to)
 end
-function replace_names!(df::DataFrame, from::Any, to::Any)
-    replace_names!(df.colindex, from, to)
+function rename!(df::DataFrame, from::Any, to::Any)
+    rename!(df.colindex, from, to)
 end
 
 nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
@@ -335,7 +335,7 @@ function get_groups(df::AbstractDataFrame)
     get_groups(index(df))
 end
 function rename_group!(df::AbstractDataFrame, a, b)
-    replace_names!(index(df), a, b)
+    rename!(index(df), a, b)
 end
 
 function reconcile_groups(olddf::AbstractDataFrame, newdf::AbstractDataFrame)

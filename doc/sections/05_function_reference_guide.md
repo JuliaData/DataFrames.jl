@@ -340,9 +340,13 @@ A Vector{ByteString} with the names of `x`.
 
 Set names `nm` in `x`.
 
-#### `replace_names(x::Index, from::Vector, to::Vector)`
+#### `rename(x::Index, f::Function)`
+#### `rename(x::Index, nd::Associative)`
+#### `rename(x::Index, from::Vector, to::Vector)`
 
-Replace names `from` with `to` in `x`.
+Replace names in `x`, by applying function `f` to each name,
+by mapping old to new names with a dictionary (Associative), or using
+`from` and `to` vectors.
 
 #### `getindex(x::Index, idx)` or `x[idx]`
 
