@@ -48,7 +48,10 @@ function rename!(x::Index, from::Vector, to::Vector)
     x.names
 end
 rename!(x::Index, from, to) = rename!(x, [from], [to])
-rename(x::Index, from, to) = rename!(copy(x), from, to)
+rename!(x::Index, nd::Associative) = rename!(x, keys(nd), values(nd))
+rename!(x::Index, f::Function) = (nms = names(x); rename!(x, nms, [f(x)::ByteString for x in nms]))
+
+rename(x::Index, args...) = rename!(copy(x), args...)
 
 has(x::Index, key::String) = has(x.lookup, key)
 has(x::Index, key::Symbol) = has(x.lookup, string(key))
