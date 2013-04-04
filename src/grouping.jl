@@ -86,6 +86,7 @@ next(gd::GroupedDataFrame, state::Int) =
      state + 1)
 done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
 length(gd::GroupedDataFrame) = length(gd.starts)
+endof(gd::GroupedDataFrame) = length(gd.starts)
 getindex(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]]) 
 
 function show(io::IO, gd::GroupedDataFrame)
