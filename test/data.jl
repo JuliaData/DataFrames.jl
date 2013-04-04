@@ -460,7 +460,7 @@ df2 = DataFrame({"a" => [1, 2, 4],
                  "c" => ["New World", "Old World", "New World"]})
 m1 = merge(df1, df2, "a", "inner")
 @assert isequal(m1["a"], DataVector[1, 2])
-m1 = merge(df1, df2, "a", jointype = "inner")
+m1 = merge(df1, df2, by = "a", jointype = "inner")
 @assert isequal(m1["a"], DataVector[1, 2])
 m2 = merge(df1, df2, "a", "left")
 @assert isequal(m2["a"], DataVector[1, 2, 3])
