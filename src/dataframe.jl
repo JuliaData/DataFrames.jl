@@ -42,8 +42,15 @@ end
 ##
 ##############################################################################
 
-# The empty DataFrame
-DataFrame() = DataFrame({}, Index())
+# A DataFrame from keyword arguments
+# This also covers the empty DataFrame.
+function DataFrame(;kwargs...)
+    result = DataFrame({}, Index())
+    for (k,v) in kwargs
+        result[string(k)] = v
+    end
+    return result
+end
 
 # No-op given a DataFrame
 DataFrame(df::DataFrame) = df
