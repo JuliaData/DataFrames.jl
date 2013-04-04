@@ -1016,6 +1016,8 @@ const subset = sub
 getindex(df::SubDataFrame, c) = df.parent[df.rows, c]
 getindex(df::SubDataFrame, r, c) = df.parent[df.rows[r], c]
 
+setindex!(df::SubDataFrame, v, r, c) = (df.parent[df.rows[r], c] = v)
+
 nrow(df::SubDataFrame) = length(df.rows)
 ncol(df::SubDataFrame) = ncol(df.parent)
 colnames(df::SubDataFrame) = colnames(df.parent) 
