@@ -463,7 +463,7 @@ end
 # Will automatically add a new column if needed
 # TODO: Automatically enlarge column to required size?
 function insert_single_column!(df::DataFrame,
-                               dv::AbstractDataVector,
+                               dv::AbstractVector,
                                col_ind::ColumnIndex)
     dv_n, df_n = length(dv), nrow(df)
     if df_n != 0
