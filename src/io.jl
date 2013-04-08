@@ -287,13 +287,13 @@ function convert_to_dataframe{R <: String,
     values = Array(Int64, nrows)
     try
       for i in 1:nrows
-        values[i] = parse_int(text_data[i, j])
+        values[i] = parseint(text_data[i, j])
       end
     catch
       try
         values = Array(Float64, nrows)
         for i in 1:nrows
-          values[i] = parse_float(text_data[i, j])
+          values[i] = parsefloat(text_data[i, j])
         end
       catch
         try
