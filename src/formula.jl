@@ -199,9 +199,25 @@ function isfe(ex::Expr)                 # true for fixed-effects terms
 end
 isfe(a) = true
 
-function model_matrix(mf::ModelFrame)
+## Expand the columns in an interaction term
+function expandcols(trm::Vector)
+    if length(trm) == 1 return float64(trm[1]) end
+    if length(trm) == 2
+        a = float64(trm[1])
+        b = float64(trm[2])
+        nca = size(a,2)
+        ncb = size(b,2)
+        return hcat([a[:,i].*b[:,j] for i in 1:nca, j in 1:ncb]...)
+    end
+    error("code for 3rd and higher order interactions not yet written")
+end
+
+nc(trm::Vector) = *([size(x,2) for x in trm]...)
+
+function ModelMatrix(mf::ModelFrame)
     trms = mf.terms
     aa = {{ones(size(mf.df,1),int(trms.intercept))}}
+    asgn = zeros(Int, (int(trms.intercept)))
     fetrms = bool(map(isfe, trms.terms))
     if trms.response unshift!(fetrms,false) end
     ff = trms.factors[:,fetrms]
@@ -210,8 +226,12 @@ function model_matrix(mf::ModelFrame)
     rows = vec(bool(sum(ff,[2])))
     ff = ff[rows,:]
     cc = [cols(x[2]) for x in mf.df[:,rows]]
-    for j in 1:size(ff,2) push!(aa, cc[bool(ff[:,j])]) end
-    aa
+    for j in 1:size(ff,2)
+        trm = cc[bool(ff[:,j])]
+        push!(aa, trm)
+        asgn = vcat(asgn, fill(j, nc(trm)))
+    end
+    ModelMatrix(hcat([expandcols(t) for t in aa]...), asgn)
 end
 
 # Expand dummy variables and equations
