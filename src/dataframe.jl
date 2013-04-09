@@ -1116,7 +1116,7 @@ nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavector.jl?
 zeros{T<:ByteString}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
     
 nas{T}(dv::PooledDataVector{T}, dims) =
-    PooledDataArray(fill(uint16(1), dims), dv.pool)
+    PooledDataArray(fill(POOLED_DATA_VEC_REF_TYPE(1), dims), dv.pool)
 
 nas(df::DataFrame, dims) = 
     DataFrame([nas(x, dims) for x in df.columns], colnames(df)) 
