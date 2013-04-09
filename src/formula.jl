@@ -255,132 +255,132 @@ end
 ##     ## end
 ## end
 
-model_matrix(f::Formula, d::AbstractDataFrame) = model_matrix(ModelFrame(f, d))
-model_matrix(ex::Expr, d::AbstractDataFrame) = model_matrix(ModelFrame(Formula(ex), d))
+## model_matrix(f::Formula, d::AbstractDataFrame) = model_matrix(ModelFrame(f, d))
+## model_matrix(ex::Expr, d::AbstractDataFrame) = model_matrix(ModelFrame(Formula(ex), d))
 
-# TODO: Make a more general version of these functions
-# TODO: Be able to extract information about each column name
-function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame)
-   cols = {}
-   col_names = Array(ASCIIString,0)
-   for i in 1:ncol(a)
-       for j in 1:ncol(b)
-          push!(cols, DataArray(a[:,i] .* b[:,j]))
-          push!(col_names, string(colnames(a)[i],"&",colnames(b)[j]))
-       end
-   end
-   DataFrame(cols, col_names)
-end
+## # TODO: Make a more general version of these functions
+## # TODO: Be able to extract information about each column name
+## function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame)
+##    cols = {}
+##    col_names = Array(ASCIIString,0)
+##    for i in 1:ncol(a)
+##        for j in 1:ncol(b)
+##           push!(cols, DataArray(a[:,i] .* b[:,j]))
+##           push!(col_names, string(colnames(a)[i],"&",colnames(b)[j]))
+##        end
+##    end
+##    DataFrame(cols, col_names)
+## end
 
-function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame, c::AbstractDataFrame)
-   cols = {}
-   col_names = Array(ASCIIString,0)
-   for i in 1:ncol(a)
-       for j in 1:ncol(b)
-           for k in 1:ncol(b)
-              push!(cols, DataArray(a[:,i] .* b[:,j] .* c[:,k]))
-              push!(col_names, string(colnames(a)[i],"&",colnames(b)[j],"&",colnames(c)[k]))
-           end
-       end
-   end
-   DataFrame(cols, col_names)
-end
+## function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame, c::AbstractDataFrame)
+##    cols = {}
+##    col_names = Array(ASCIIString,0)
+##    for i in 1:ncol(a)
+##        for j in 1:ncol(b)
+##            for k in 1:ncol(b)
+##               push!(cols, DataArray(a[:,i] .* b[:,j] .* c[:,k]))
+##               push!(col_names, string(colnames(a)[i],"&",colnames(b)[j],"&",colnames(c)[k]))
+##            end
+##        end
+##    end
+##    DataFrame(cols, col_names)
+## end
 
-# Temporary: Manually describe the interactions needed for DataFrame Array.
-function all_interactions(dfs::Array{Any,1})
-    d = DataFrame()
-    if length(dfs) == 2
-      combos = ([1,2],)
-    elseif length(dfs) == 3
-      combos = ([1,2], [1,3], [2,3], [1,2,3])
-    else
-      error("interactions with more than 3 terms not implemented (yet)")
-    end
-    for combo in combos
-       if length(combo) == 2
-         a = interaction_design_matrix(dfs[combo[1]],dfs[combo[2]])
-       elseif length(combo) == 3
-         a = interaction_design_matrix(dfs[combo[1]],dfs[combo[2]],dfs[combo[3]])
-       end
-       d = insert!(d, a)
-    end
-    return d
-end
+## # Temporary: Manually describe the interactions needed for DataFrame Array.
+## function all_interactions(dfs::Array{Any,1})
+##     d = DataFrame()
+##     if length(dfs) == 2
+##       combos = ([1,2],)
+##     elseif length(dfs) == 3
+##       combos = ([1,2], [1,3], [2,3], [1,2,3])
+##     else
+##       error("interactions with more than 3 terms not implemented (yet)")
+##     end
+##     for combo in combos
+##        if length(combo) == 2
+##          a = interaction_design_matrix(dfs[combo[1]],dfs[combo[2]])
+##        elseif length(combo) == 3
+##          a = interaction_design_matrix(dfs[combo[1]],dfs[combo[2]],dfs[combo[3]])
+##        end
+##        d = insert!(d, a)
+##     end
+##     return d
+## end
 
-# string(Expr) now quotes, which we don't want. This hacks around that, stealing
-# from print_to_string
-function formula_string(ex::Expr)
-    s = memio(0, false)
-    Base.show_unquoted(s, ex)
-    takebuf_string(s)
-end
+## # string(Expr) now quotes, which we don't want. This hacks around that, stealing
+## # from print_to_string
+## function formula_string(ex::Expr)
+##     s = memio(0, false)
+##     Base.show_unquoted(s, ex)
+##     takebuf_string(s)
+## end
 
-#
-# The main expression to DataFrame expansion function.
-# Returns a DataFrame.
-#
+## #
+## # The main expression to DataFrame expansion function.
+## # Returns a DataFrame.
+## #
 
-function expand(ex::Expr, df::AbstractDataFrame)
-    f = eval(ex.args[1])
-    if method_exists(f, (FormulaExpander, Vector{Any}, DataFrame))
-        # These are specialized expander functions (+, *, &, etc.)
-        f(FormulaExpander(), ex.args[2:end], df)
-    else
-        # Everything else is called recursively:
-        expand(with(df, ex), formula_string(ex), df)
-    end
-end
+## function expand(ex::Expr, df::AbstractDataFrame)
+##     f = eval(ex.args[1])
+##     if method_exists(f, (FormulaExpander, Vector{Any}, DataFrame))
+##         # These are specialized expander functions (+, *, &, etc.)
+##         f(FormulaExpander(), ex.args[2:end], df)
+##     else
+##         # Everything else is called recursively:
+##         expand(with(df, ex), formula_string(ex), df)
+##     end
+## end
 
-function expand(s::Symbol, df::AbstractDataFrame)
-    expand(with(df, s), string(s), df)
-end
+## function expand(s::Symbol, df::AbstractDataFrame)
+##     expand(with(df, s), string(s), df)
+## end
 
-# TODO: make this array{symbol}?
-function expand(args::Array{Any}, df::AbstractDataFrame)
-    [expand(x, df) for x in args]
-end
+## # TODO: make this array{symbol}?
+## function expand(args::Array{Any}, df::AbstractDataFrame)
+##     [expand(x, df) for x in args]
+## end
 
-function expand(x, name::ByteString, df::AbstractDataFrame)
-    # If this happens to be a column group, then expand each and concatenate
-    if is_group(df, name)
-      preds = get_groups(df)[name]
-      dfs = [expand(symbol(x), df) for x in preds]
-      return cbind(dfs...) 
-    end
-    # This is the default for expansion: put it right in to a DataFrame.
-    DataFrame({x}, [name])
-end
+## function expand(x, name::ByteString, df::AbstractDataFrame)
+##     # If this happens to be a column group, then expand each and concatenate
+##     if is_group(df, name)
+##       preds = get_groups(df)[name]
+##       dfs = [expand(symbol(x), df) for x in preds]
+##       return cbind(dfs...) 
+##     end
+##     # This is the default for expansion: put it right in to a DataFrame.
+##     DataFrame({x}, [name])
+## end
 
-#
-# Methods for expansion of specific data types
-#
+## #
+## # Methods for expansion of specific data types
+## #
 
-# Expand a PooledDataVector into a matrix of indicators for each dummy variable
-# TODO: account for NAs?
-function expand(poolcol::PooledDataVector, colname::ByteString, df::AbstractDataFrame)
-    newcol = {DataArray([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
-    newcolname = [string(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
-    DataFrame(newcol, convert(Vector{ByteString}, newcolname))
-end
+## # Expand a PooledDataVector into a matrix of indicators for each dummy variable
+## # TODO: account for NAs?
+## function expand(poolcol::PooledDataVector, colname::ByteString, df::AbstractDataFrame)
+##     newcol = {DataArray([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
+##     newcolname = [string(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
+##     DataFrame(newcol, convert(Vector{ByteString}, newcolname))
+## end
 
 
-#
-# Methods for Formula expansion
-#
-type FormulaExpander; end # This is an indictor type.
+## #
+## # Methods for Formula expansion
+## #
+## type FormulaExpander; end # This is an indictor type.
 
-function +(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
-    d = DataFrame()
-    for a in args
-        d = insert!(d, expand(a, df))
-    end
-    d
-end
-function (&)(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
-    interaction_design_matrix(expand(args[1], df), expand(args[2], df))
-end
-function *(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
-    d = +(FormulaExpander(), args, df)
-    d = insert!(d, all_interactions(expand(args, df)))
-    d
-end
+## function +(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
+##     d = DataFrame()
+##     for a in args
+##         d = insert!(d, expand(a, df))
+##     end
+##     d
+## end
+## function (&)(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
+##     interaction_design_matrix(expand(args[1], df), expand(args[2], df))
+## end
+## function *(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
+##     d = +(FormulaExpander(), args, df)
+##     d = insert!(d, all_interactions(expand(args, df)))
+##     d
+## end
