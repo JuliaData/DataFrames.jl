@@ -182,12 +182,16 @@ df3 = DataFrame({dvint})
 df4 = DataFrame([1:4 1:4])
 df5 = DataFrame({DataVector[1,2,3,4], dvstr})
 df6 = DataFrame({dvint, dvint, dvstr}, ["A", "B", "C"])
+df7 = DataFrame(x = dvint, y = dvstr)
+@assert size(df7) == (4, 2)
+@assert isequal(df7["x"], dvint)
 
 test_group("description functions")
 @assert nrow(df6) == 4
 @assert ncol(df6) == 3
 @assert all(colnames(df6) .== ["A", "B", "C"])
 @assert all(colnames(df2) .== ["x1", "x2"])
+@assert all(colnames(df7) .== ["x", "y"])
 
 test_group("ref")
 @assert df6[2, 3] == "two"

@@ -42,8 +42,15 @@ end
 ##
 ##############################################################################
 
-# The empty DataFrame
-DataFrame() = DataFrame({}, Index())
+# A DataFrame from keyword arguments
+# This also covers the empty DataFrame.
+function DataFrame(;kwargs...)
+    result = DataFrame({}, Index())
+    for (k,v) in kwargs
+        result[string(k)] = v
+    end
+    return result
+end
 
 # No-op given a DataFrame
 DataFrame(df::DataFrame) = df
@@ -284,11 +291,11 @@ coltypes(df::DataFrame) = {eltype(df[i]) for i in 1:ncol(df)}
 names(df::AbstractDataFrame) = error("Use colnames()")
 names!(df::DataFrame, vals::Any) = error("Use colnames!()")
 
-function replace_names(df::DataFrame, from::Any, to::Any)
-    replace_names(df.colindex, from, to)
+function rename(df::DataFrame, from::Any, to::Any)
+    rename(df.colindex, from, to)
 end
-function replace_names!(df::DataFrame, from::Any, to::Any)
-    replace_names!(df.colindex, from, to)
+function rename!(df::DataFrame, from::Any, to::Any)
+    rename!(df.colindex, from, to)
 end
 
 nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
@@ -328,7 +335,7 @@ function get_groups(df::AbstractDataFrame)
     get_groups(index(df))
 end
 function rename_group!(df::AbstractDataFrame, a, b)
-    replace_names!(index(df), a, b)
+    rename!(index(df), a, b)
 end
 
 function reconcile_groups(olddf::AbstractDataFrame, newdf::AbstractDataFrame)
@@ -456,7 +463,7 @@ end
 # Will automatically add a new column if needed
 # TODO: Automatically enlarge column to required size?
 function insert_single_column!(df::DataFrame,
-                               dv::AbstractDataVector,
+                               dv::AbstractVector,
                                col_ind::ColumnIndex)
     dv_n, df_n = length(dv), nrow(df)
     if df_n != 0
@@ -1016,6 +1023,7 @@ const subset = sub
 getindex(df::SubDataFrame, c) = df.parent[df.rows, c]
 getindex(df::SubDataFrame, r, c) = df.parent[df.rows[r], c]
 
+setindex!(df::SubDataFrame, v, c) = (df.parent[df.rows, c] = v)
 setindex!(df::SubDataFrame, v, r, c) = (df.parent[df.rows[r], c] = v)
 
 nrow(df::SubDataFrame) = length(df.rows)
