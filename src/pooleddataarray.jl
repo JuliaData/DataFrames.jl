@@ -208,7 +208,7 @@ function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
         return d
     end
 
-    newrefs::Array{REFTYPE, N} = d.refs
+    newrefs = convert(Array{REFTYPE, N}, d.refs)
     PooledDataArray(RefArray(newrefs), d.pool)
 end
 
