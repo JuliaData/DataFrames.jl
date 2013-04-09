@@ -25,8 +25,7 @@ using Stats
 ##############################################################################
 
 const DEFAULT_COLUMN_TYPE = Float64
-const POOLED_DATA_VEC_REF_TYPE = Uint16
-const POOLED_DATA_VEC_REF_CONVERTER = uint16
+const DEFAULT_POOLED_REF_TYPE = Uint16
 
 ##############################################################################
 ##
@@ -73,6 +72,7 @@ export # reconcile_groups,
        colvars,
        colwise,
        combine,
+       compact,
        complete_cases,
        complete_cases!,
        cut,

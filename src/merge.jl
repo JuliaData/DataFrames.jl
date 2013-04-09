@@ -95,10 +95,10 @@ function PooledDataVecs(df1::AbstractDataFrame,
         ngroups = ngroups * (length(dv1.pool) + 1)
     end
     pool = [1:ngroups]
-    (PooledDataArray(refs1, pool), PooledDataArray(refs2, pool))
+    (PooledDataArray(RefArray(refs1), pool), PooledDataArray(RefArray(refs2), pool))
 end
 
-function PooledDataArray(df::AbstractDataFrame)
+function PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
     # This method exists to allow another way for merge to work with
     # multiple columns. It takes the columns of the DataFrame and
     # returns a DataArray with a merged pool that "keys" the
@@ -107,7 +107,7 @@ function PooledDataArray(df::AbstractDataFrame)
     #   - I skipped the sort to make it faster.
     #   - Converting each individual one-row DataFrame to a Tuple
     #     might be faster.
-    refs = zeros(POOLED_DATA_VEC_REF_TYPE, nrow(df))
+    refs = zeros(R, nrow(df))
     poolref = Dict{AbstractDataFrame, Int}()
     pool = Array(Uint64, 0)
     j = 1
@@ -122,8 +122,9 @@ function PooledDataArray(df::AbstractDataFrame)
             j += 1
         end
     end
-    return PooledDataArray(refs, pool)
+    return PooledDataArray(RefArray(refs), pool)
 end
+PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)
 
 function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol, jointype)
 
