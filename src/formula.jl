@@ -107,6 +107,7 @@ end
 condense(a) = a
 
 getterms(ex::Expr) = (ex.head == :call && ex.args[1] == :+) ? ex.args[2:] : ex
+getterms(s::Symbol) = [s]
 getterms(a) = a
 
 ord(ex::Expr) = (ex.head == :call && ex.args[1] == :&) ? length(ex.args)-1 : 1
@@ -233,6 +234,9 @@ function ModelMatrix(mf::ModelFrame)
     end
     ModelMatrix(hcat([expandcols(t) for t in aa]...), asgn)
 end
+
+model_frame(f::Formula,d::AbstractDataFrame) = ModelFrame(f,d)
+model_matrix(mf::ModelFrame) = ModelMatrix(mf)
 
 # Expand dummy variables and equations
 ## function model_matrix(mf::ModelFrame)

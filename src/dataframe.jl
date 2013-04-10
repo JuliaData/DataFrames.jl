@@ -1597,10 +1597,10 @@ end
 ## Sorting
 ##############################################################################
 
-import Sort.sort, Sort.sortby, Sort.By, 
-       Sort.sort!, Sort.sortby!,
-       Sort.Algorithm, Sort.Ordering, 
-       Sort.lt, Sort.Perm, Sort.Forward
+## import Sort.sort, Sort.sortby, Sort.By, 
+##        Sort.sort!, Sort.sortby!,
+##        Sort.Algorithm, Sort.Ordering, 
+##        Sort.lt, Sort.Perm, Sort.Forward
 
 typealias ColIndexVec Union(AbstractVector{Integer}, AbstractVector{ASCIIString}, AbstractVector{UTF8String}, AbstractVector{Symbol})
 

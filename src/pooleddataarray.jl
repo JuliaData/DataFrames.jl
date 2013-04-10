@@ -695,7 +695,6 @@ end
 sortperm(pda::PooledDataArray, ::Sort.Reverse) = reverse(sortperm(pda))
 sort(pda::PooledDataArray) = pda[sortperm(pda)]
 sort(pda::PooledDataArray, ::Sort.Reverse) = pda[reverse(sortperm(pda))]
-import Sort.Perm
 type FastPerm{O<:Sort.Ordering,V<:AbstractVector} <: Sort.Ordering
     ord::O
     vec::V
