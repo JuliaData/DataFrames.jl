@@ -36,8 +36,9 @@ const POOLED_DATA_VEC_REF_CONVERTER = uint16
 
 importall Base
 importall Stats
-import Base.Sort.Algorithm, Base.Sort.Ordering
-import Base.Sort.Perm, Base.Sort.Forward
+import Base.Sort.Algorithm, Base.Sort.By, Base.Sort.Forward
+import Base.Sort.Ordering, Base.Sort.Perm, Base.Sort.lt
+import Base.Sort.sort, Base.Sort.sort!, Base.Sort.sortby, Base.Sort.sortby!
 
 ##############################################################################
 ##
