@@ -107,7 +107,6 @@ end
 condense(a) = a
 
 getterms(ex::Expr) = (ex.head == :call && ex.args[1] == :+) ? ex.args[2:] : ex
-getterms(s::Symbol) = [s]
 getterms(a) = a
 
 ord(ex::Expr) = (ex.head == :call && ex.args[1] == :&) ? length(ex.args)-1 : 1
@@ -125,6 +124,7 @@ evt(a) = {a}
 function Terms(f::Formula)
     rhs = condense(dospecials(f.rhs))
     tt = getterms(rhs)
+    if !isa(tt,AbstractArray) tt = [tt] end
     tt = tt[!(tt .== 1)]             # drop any explicit 1's
     noint = (tt .== 0) | (tt .== -1) # should also handle :(-(expr,1))
     tt = tt[!noint]
@@ -147,8 +147,8 @@ end
 
 ## Default NA handler.  Others can be added as keyword arguments
 function na_omit(df::DataFrame)
-    msng = vec(reducedim(|, isna(df), [2], false))
-    df[!msng,:], msng
+    cc = complete_cases(df)
+    df[cc,:], cc
 end
 
 ## Trim the pool field of da to only those levels that occur in the refs
