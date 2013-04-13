@@ -383,11 +383,11 @@ reverse(x::PooledDataArray) = PooledDataArray(reverse(x.refs), x.pool)
 similar(pda::PooledDataArray) = pda
 
 function similar(pda::PooledDataArray, dims::Int...)
-    PooledDataArray(fill(uint16(0), dims...), pda.pool)
+    PooledDataArray(fill(POOLED_DATA_VEC_REF_CONVERTER(0), dims...), pda.pool)
 end
 
 function similar(pda::PooledDataArray, dims::Dims)
-    PooledDataArray(fill(uint16(0), dims), pda.pool)
+    PooledDataArray(fill(POOLED_DATA_VEC_REF_CONVERTER(0), dims), pda.pool)
 end
 
 ##############################################################################
