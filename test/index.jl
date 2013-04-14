@@ -32,3 +32,35 @@ for ind in inds
 		@assert isequal(i[ind], [1])
 	end
 end
+
+r1 = rename(i, "A", "C")
+@assert isequal(r1.names, ["C", "B"])
+
+r2 = rename(i, ["A","B"], ["C","D"])
+@assert isequal(r2.names, ["C", "D"])
+
+r3 = rename(i, {"A"=>"C"})
+@assert isequal(r3.names, ["C", "B"])
+
+r4 = rename(i, lowercase)
+@assert isequal(r4.names, ["a", "b"])
+
+@assert pop!(i) == "B"
+@assert isequal(i.names, ["A"])
+unshift!(i, "B")
+@assert isequal(i.names, ["B", "A"])
+@assert shift!(i) == "B"
+@assert isequal(i.names, ["A"])
+
+
+append!(i, ["B","C","D"])
+@assert isequal(i.names, ["A","B","C","D"])
+for (idx,s) in enumerate(["A","B","C","D"])
+    @assert i.lookup[s] == idx
+end
+
+prepend!(i, ["X","Y"])
+@assert isequal(i.names, ["X","Y","A","B","C","D"])
+for (idx,s) in enumerate(["X","Y","A","B","C","D"])
+    @assert i.lookup[s] == idx
+end
