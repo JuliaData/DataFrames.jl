@@ -1136,11 +1136,22 @@ vecbind_promote_type{T1,T2}(x::Type{DataVector{T1}}, y::Type{Vector{T2}}) = Data
 vecbind_promote_type(a, b, c, ds...) = vecbind_promote_type(a, vecbind_promote_type(b, c, ds...))
 vecbind_promote_type(a, b, c) = vecbind_promote_type(a, vecbind_promote_type(b, c))
 
+function vecbind_promote_type(a::AbstractVector)
+    if length(a)  == 1
+         return a[1]
+    end
+    res = vecbind_promote_type(a[1], a[2])
+    for i in 3:length(a)
+        res = vecbind_promote_type(res, a[i])
+    end
+    res
+end
+
 constructor{T}(::Type{Vector{T}}, args...) = Array(T, args...)
 constructor{T}(::Type{DataVector{T}}, args...) = DataArray(T, args...)
 
 function vecbind(xs::AbstractVector...)
-    V = vecbind_promote_type(map(vecbind_type, xs)...)
+    V = vecbind_promote_type(map(vecbind_type, {xs...}))
     len = sum(length, xs)
     res = constructor(V, len)
     k = 1
