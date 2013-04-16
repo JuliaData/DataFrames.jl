@@ -999,7 +999,7 @@ type SubDataFrame <: AbstractDataFrame
         if any(rows .< 1)
             error("all SubDataFrame indices must be > 0")
         end
-        if max(rows) > nrow(parent)
+        if length(rows) > 0 && max(rows) > nrow(parent)
             error("all SubDataFrame indices must be <= the number of rows of the DataFrame")
         end
         new(parent, rows)
