@@ -19,7 +19,7 @@ type PooledDataArray{T, N} <: AbstractDataArray{T, N}
     function PooledDataArray(rs::Array{POOLED_DATA_VEC_REF_TYPE, N},
                              p::Vector{T})
         # refs mustn't overflow pool
-        if max(rs) > prod(size(p))
+        if length(rs) > 0 && max(rs) > prod(size(p))
             error("Reference array points beyond the end of the pool")
         end
         new(rs, p)
