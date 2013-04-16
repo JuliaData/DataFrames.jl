@@ -872,7 +872,7 @@ tail(df::AbstractDataFrame) = tail(df, 6)
 # then row-by-row print with an appropriate buffer
 _string(x) = sprint(showcompact, x)
 maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) : 0
-maxShowLength(dv::AbstractDataVector) = max([length(_string(x)) for x = dv])
+maxShowLength(dv::AbstractDataVector) = length(dv) > 0 ? max([length(_string(x)) for x = dv]) : 0
 show(io::IO, df::AbstractDataFrame) = show(io, df, 20)
 showall(io::IO, df::AbstractDataFrame) = show(io, df, nrow(df))
 function show(io::IO, df::AbstractDataFrame, Nmx::Integer)
