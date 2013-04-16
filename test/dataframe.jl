@@ -130,3 +130,10 @@ df = DataFrame(quote A = 1:4 end)
 @assert isequal(df, DataFrame(quote A = [1, 2, 3, 4] end))
 flipud!(df)
 @assert isequal(df, DataFrame(quote A = [4, 3, 2, 1] end))
+
+# zero-row dataframe and subdataframe test
+df = DataFrame(x=[], y=[])
+@assert nrow(df) == 0
+df = DataFrame(x=[1:3], y=[3:5])
+sdf = sub(df, :(x .== 4) )
+@assert nrow(sdf) == 0
