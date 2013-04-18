@@ -286,7 +286,7 @@ names(v::RVEC) = has(v.attr, "names") ? v.attr["names"].data : Array(ASCIIString
 row_names(v::RVEC) = has(v.attr, "row.names") ? v.attr["row.names"].data : Array(ASCIIString,0)
 
 data(rl::RLogical) = DataArray(rl.data, rl.missng)
-data(rn::RNumeric) = DataArray(rn.data, rn.data .== R_NA_FLOAT64)
+data(rn::RNumeric) = DataArray(rn.data, convert(BitArray,isnan(rn.data)))
 function data(ri::RInteger)
     dd = ri.data
     msng = dd .== R_NA_INT32
