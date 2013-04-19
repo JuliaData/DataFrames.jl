@@ -134,7 +134,7 @@ end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
 function DataFrame(d::Dict)
-    column_names = sort(convert(Array{ByteString, 1}, keys(d)))
+    column_names = sort(convert(Array{ByteString, 1}, collect(keys(d))))
     p = length(column_names)
     if p == 0
         DataFrame()
