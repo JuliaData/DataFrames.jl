@@ -68,7 +68,7 @@ function PooledDataArray{T, N}(d::AbstractArray{T, N}, m::AbstractArray{Bool, N}
     end
 
     # Fill positions in poolref
-    newpool = sort(keys(poolref))
+    newpool = sort(collect(keys(poolref)))
     i = 1
     for p in newpool
         poolref[p] = i
@@ -778,7 +778,7 @@ function PooledDataVecs(v1::AbstractArray,
     end
 
     # fill positions in poolref
-    pool = sort(keys(poolref))
+    pool = sort(collect(keys(poolref)))
     i = 1
     for p in pool
         poolref[p] = i
