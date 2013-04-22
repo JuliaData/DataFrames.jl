@@ -488,7 +488,7 @@ end
 
 function load_df(filename)
     f = open(filename)
-    dd = deserialize(f)()
+    dd = deserialize(f)
     close(f)
     return dd
 end
