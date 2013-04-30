@@ -56,7 +56,6 @@ function PooledDataArray{T,R<:Integer,N}(refs::RefArray{R, N},
     PooledDataArray{T,R,N}(refs, pool)
 end
 
-
 # A no-op constructor
 PooledDataArray(d::PooledDataArray) = d
 
@@ -99,6 +98,10 @@ end
 # Construct an all-NA PooledDataVector of a specific type
 PooledDataArray(t::Type, dims::Int...) = PooledDataArray(Array(t, dims...), trues(dims...))
 PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::Int...) = PooledDataArray(Array(t, dims...), trues(dims...), r)
+
+# Construct an empty PooledDataVector of a specific type
+PooledDataArray(t::Type) = PooledDataArray(similar(Array(t,1),0), trues(0))
+PooledDataArray{R<:Integer}(t::Type, r::Type{R}) = PooledDataArray(similar(Array(t,1),0), trues(0), r)
 
 # Convert a BitArray to an Array{Bool} (m = missingness)
 PooledDataArray{R<:Integer,N}(d::BitArray{N}, 
@@ -357,7 +360,7 @@ function set_levels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,Any}) # this versio
     set_levels!(x, newpool)
 end
 
-reorder(x::PooledDataArray)  = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
+reorder(x::PooledDataArray) = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
 
 reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 

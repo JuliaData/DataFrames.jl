@@ -196,9 +196,28 @@ Like the similar functions in Julia's Base, we can specify the length and type o
 
 	dv = datatrues(5)
 
-# The PooledDataVector Type
+# The PooledDataArray Type
 
-_TO BE FILLED IN_
+On the surface, `PooledDataArray`s look like `DataArray`s, but their implementation allows the efficient storage and manipulation of `DataVector`s and `DataArrays` which only contain a small number of values.  Internally, `PooledDataArray`s hold a pool of unique values, and the actual `DataArray` simply indexes into this pool, rather than storing each value individually.
+
+A `PooledDataArray` can be constructed from an `Array` or `DataArray`, and as with regular `DataArray`s, it can hold `NA` values:
+
+	pda  = PooledDataArray([1, 1, 1, 1, 2, 3, 2, 2, 3, 3, 3])
+        pda2 = PooledDataArray(DataArray["red", "green", "yellow", "yellow", "red", "orange", "red", "green"])
+
+`PooledDataArray`s can also be created empty or with a fixed size and a specific type:
+
+	pda3 = PooledDataArray(String, 2000)   # A pooled data array of 2000 strings, intially filled with NAs
+	pda4 = PooledDataArray(Float64)        # An empty pooled data array of floats
+
+By default, the index into the pool of values is a Uint32, allowing 2^32 possible pool values.  If you know that you will only have a much smaller number of unique values, you can specify a smaller reference index type, to save space:
+
+	pda5 = PooledDataArray(String, Uint8, 5000, 2)  # Create a 5000x2 array of String values, 
+	                                                # initialized to NA, 
+                                                        # with at most 2^8=256 unique values
+
+`PooledDataVectors`s can be used as columns in DataFrames.
+
 
 # The DataFrame Type
 
