@@ -25,6 +25,6 @@ df = @DataFrame(v => v, x => rand(6))
 @assert levels(set_levels!(copy(p), [1 => 111])) == [111, 8, 9]
 @assert levels(set_levels!(copy(p), [1 => 111, 8 => NA])) == [111, 9]
 
-p2 = PooledDataArray([])
+pp = PooledDataArray(Any[])
 @assert length(pp) == 0
 @assert length(levels(pp)) == 0
