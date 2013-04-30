@@ -505,8 +505,8 @@ function getindex(pda::PooledDataArray,
 end
 # TODO: Make inds::AbstractVector
 function getindex(pda::PooledDataArray,
-             row_inds::Union(Vector, BitVector, Ranges),
-             col_inds::Union(Vector, BitVector, Ranges))
+                  row_inds::Union(Vector, BitVector, Ranges),
+                  col_inds::Union(Vector, BitVector, Ranges))
     error("not yet implemented")
     PooledDataArray(RefArray(pda.refs[row_inds, col_inds]), pda.pool[row_inds, col_inds])
 end
@@ -516,6 +516,31 @@ end
 ## setindex!() definitions
 ##
 ##############################################################################
+
+function getpoolidx{T,R<:Union(Uint8, Uint16, Int8, Int16)}(pda::PooledDataArray{T,R}, val::Any)
+    val::T = convert(T,val)
+    pool_idx = findfirst(pda.pool, val)
+    if pool_idx <= 0
+        push!(pda.pool, val)
+        pool_idx = length(pda.pool)
+        if pool_idx > typemax(R)
+            error("You're using a PooledDataArray with ref type $R, which can only hold $(int(typemax(R))) values,\n",
+                  "and you just tried to add the $(typemax(R)+1)th reference.  Please change the ref type\n",
+                  "to a larger int type, or use the default ref type ($DEFAULT_POOLED_REF_TYPE).")
+        end
+    end
+    return pool_idx
+end
+
+function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
+    val::T = convert(T,val)
+    pool_idx = findfirst(pda.pool, val)
+    if pool_idx <= 0
+        push!(pda.pool, val)
+        pool_idx = length(pda.pool)
+    end
+    return pool_idx
+end
 
 # x[SingleIndex] = NA
 # TODO: Delete values from pool that no longer exist?
@@ -528,15 +553,9 @@ end
 
 # x[SingleIndex] = Single Item
 # TODO: Delete values from pool that no longer exist?
-function setindex!(x::PooledDataArray, val::Any, ind::Real)
-    val = convert(eltype(x), val)
-    pool_idx = findfirst(x.pool, val)
-    if pool_idx > 0
-        x.refs[ind] = pool_idx
-    else
-        push!(x.pool, val)
-        x.refs[ind] = length(x.pool)
-    end
+function setindex!{T,R}(x::PooledDataArray{T,R}, val::Any, ind::Real)
+    val = convert(T, val)
+    x.refs[ind] = getpoolidx(x, val)
     return val
 end
 
@@ -564,13 +583,13 @@ end
 
 # pda[MultiIndex] = Multiple Values
 function setindex!(pda::PooledDataArray,
-                vals::AbstractVector,
-                inds::AbstractVector{Bool})
+                   vals::AbstractVector,
+                   inds::AbstractVector{Bool})
     setindex!(pda, vals, find(inds))
 end
 function setindex!(pda::PooledDataArray,
-                vals::AbstractVector,
-                inds::AbstractVector)
+                   vals::AbstractVector,
+                   inds::AbstractVector)
     for (val, ind) in zip(vals, inds)
         pda[ind] = val
     end
@@ -583,15 +602,9 @@ function setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::NAtype, i::Real, j::Rea
     return NA
 end
 # pda[SingleItemIndex, SingleItemIndex] = Single Item
-function assign{T,R}(pda::PooledDataMatrix{T,R}, val::Any, i::Real, j::Real)
+function setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::Any, i::Real, j::Real)
     val = convert(T, val)
-    pool_idx = findfirst(x.pool, val)
-    if pool_idx > 0
-        pda.refs[i, j] = pool_idx
-    else
-        push!(pda.pool, val)
-        pda.refs[i, j] = length(pda.pool)
-    end
+    pda.refs[i, j] = getpoolidx(pda, val)
     return val
 end
 

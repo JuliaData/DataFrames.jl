@@ -25,7 +25,7 @@ using Stats
 ##############################################################################
 
 const DEFAULT_COLUMN_TYPE = Float64
-const DEFAULT_POOLED_REF_TYPE = Uint16
+const DEFAULT_POOLED_REF_TYPE = Uint32
 
 ##############################################################################
 ##
@@ -232,9 +232,9 @@ export # reconcile_groups,
 include("utils.jl")
 include("natype.jl")
 include("dataarray.jl")
+include("pooleddataarray.jl")
 include("datavector.jl")
 include("datamatrix.jl")
-include("pooleddataarray.jl")
 include("index.jl")
 include("namedarray.jl")
 include("dataframe.jl")
