@@ -291,8 +291,15 @@ function data(ri::RInteger)
     dd = ri.data
     msng = dd .== R_NA_INT32
     if !inherits(ri, "factor") return DataArray(dd, msng) end
-    dd[msng] = zero(eltype(dd))
-    PooledDataArray(POOLED_DATA_VEC_REF_CONVERTER(dd), ri.attr["levels"].data)
+    pool = ri.attr["levels"].data
+    sz = length(pool)
+    REFTYPE = sz <= typemax(Uint8)  ? Uint8 :
+              sz <= typemax(Uint16) ? Uint16 :
+              sz <= typemax(Uint32) ? Uint32 :
+                                      Uint64
+    refs = convert(Vector{REFTYPE}, dd)
+    refs[msng] = zero(REFTYPE)
+    PooledDataArray(RefArray(refs), pool)
 end
 
 data(rs::RString) = DataArray(rs.data, falses(length(rs.data)))
