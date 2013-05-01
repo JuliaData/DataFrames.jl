@@ -141,10 +141,28 @@ function rep(x::AbstractVector, lengths::Vector{Int})
     end
     res
 end
+rep(x::AbstractVector, times::AbstractVector{Int}, each::Int) = rep(x, times)
 
-function rep(x::Any, length::Int)
-    [fill(x, length)...]
+function rep(x::AbstractVector, times::Int = 1, each::Int = 1)
+    res = similar(x, each * sum(times) * length(x))
+    i = 1
+    for jdx in 1:times
+        for idx in 1:length(x)
+            for kdx in 1:each
+                res[i] = x[idx]
+                i += 1
+            end
+        end
+    end
+    res
 end
+
+rep(x, times) = fill(x, times)
+
+function rep(x; times = 1, each::Int = 1)
+    rep(x, times, each)
+end
+
 
 ##############################################################################
 ##
@@ -159,7 +177,7 @@ function findat(a, b)
     # bdict's value is the index of the first occurrence of the key
     bdict = Dict{Any, Int}()
     for i in 1:length(b)
-        if !has(bdict, b[i])
+        if !haskey(bdict, b[i])
             bdict[b[i]] = i
         end
     end

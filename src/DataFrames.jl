@@ -25,7 +25,7 @@ using Stats
 ##############################################################################
 
 const DEFAULT_COLUMN_TYPE = Float64
-const DEFAULT_POOLED_REF_TYPE = Uint16
+const DEFAULT_POOLED_REF_TYPE = Uint32
 
 ##############################################################################
 ##
@@ -35,6 +35,9 @@ const DEFAULT_POOLED_REF_TYPE = Uint16
 
 importall Base
 importall Stats
+import Base.Sort.Algorithm, Base.Sort.By, Base.Sort.Forward
+import Base.Sort.Ordering, Base.Sort.Perm, Base.Sort.lt
+import Base.Sort.sort, Base.Sort.sort!, Base.Sort.sortby, Base.Sort.sortby!
 
 ##############################################################################
 ##
@@ -128,6 +131,7 @@ export # reconcile_groups,
        merge,
        model_frame,
        model_matrix,
+       model_response,
        ModelFrame,
        ModelMatrix,
        NA,
@@ -228,9 +232,9 @@ export # reconcile_groups,
 include("utils.jl")
 include("natype.jl")
 include("dataarray.jl")
+include("pooleddataarray.jl")
 include("datavector.jl")
 include("datamatrix.jl")
-include("pooleddataarray.jl")
 include("index.jl")
 include("namedarray.jl")
 include("dataframe.jl")

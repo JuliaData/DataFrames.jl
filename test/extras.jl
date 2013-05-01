@@ -49,6 +49,10 @@ pdv = PooledDataArray(["(18,25]", "(18,25]", "(18,25]",
 
 @assert rep(3, 2) == [3,3]
 @assert rep([3,4], 2) == [3,4,3,4]
+@assert rep([3,4], 1, 2) == [3,3,4,4]
+@assert rep([3,4], each = 2) == [3,3,4,4]
+@assert rep([3,4], times = 2) == [3,4,3,4]
+@assert rep([3,4], times = [2,3]) == [3,3,4,4,4]
 @assert rep([3,4], [2,3]) == [3,3,4,4,4]
 @assert isequal(rep(DataVector[NA,3,4], 2), DataVector[NA,3,4,NA,3,4])
 @assert isequal(rep(DataVector[NA,3,4], [2,1,2]), DataVector[NA,NA,3,4,4])

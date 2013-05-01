@@ -24,7 +24,7 @@ type PooledDataArray{T, R<:Integer, N} <: AbstractDataArray{T, N}
     function PooledDataArray(rs::RefArray{R, N},
                              p::Vector{T})
         # refs mustn't overflow pool
-        if max(rs.a) > prod(size(p))
+        if length(rs.a) > 0 && max(rs.a) > prod(size(p))
             error("Reference array points beyond the end of the pool")
         end
         new(rs.a,p)
@@ -55,7 +55,6 @@ function PooledDataArray{T,R<:Integer,N}(refs::RefArray{R, N},
                                          pool::Vector{T})
     PooledDataArray{T,R,N}(refs, pool)
 end
-
 
 # A no-op constructor
 PooledDataArray(d::PooledDataArray) = d
@@ -99,6 +98,10 @@ end
 # Construct an all-NA PooledDataVector of a specific type
 PooledDataArray(t::Type, dims::Int...) = PooledDataArray(Array(t, dims...), trues(dims...))
 PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::Int...) = PooledDataArray(Array(t, dims...), trues(dims...), r)
+
+# Construct an empty PooledDataVector of a specific type
+PooledDataArray(t::Type) = PooledDataArray(similar(Array(t,1),0), trues(0))
+PooledDataArray{R<:Integer}(t::Type, r::Type{R}) = PooledDataArray(similar(Array(t,1),0), trues(0), r)
 
 # Convert a BitArray to an Array{Bool} (m = missingness)
 PooledDataArray{R<:Integer,N}(d::BitArray{N}, 
@@ -357,7 +360,7 @@ function set_levels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,Any}) # this versio
     set_levels!(x, newpool)
 end
 
-reorder(x::PooledDataArray)  = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
+reorder(x::PooledDataArray) = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
 
 reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 
@@ -505,8 +508,8 @@ function getindex(pda::PooledDataArray,
 end
 # TODO: Make inds::AbstractVector
 function getindex(pda::PooledDataArray,
-             row_inds::Union(Vector, BitVector, Ranges),
-             col_inds::Union(Vector, BitVector, Ranges))
+                  row_inds::Union(Vector, BitVector, Ranges),
+                  col_inds::Union(Vector, BitVector, Ranges))
     error("not yet implemented")
     PooledDataArray(RefArray(pda.refs[row_inds, col_inds]), pda.pool[row_inds, col_inds])
 end
@@ -516,6 +519,31 @@ end
 ## setindex!() definitions
 ##
 ##############################################################################
+
+function getpoolidx{T,R<:Union(Uint8, Uint16, Int8, Int16)}(pda::PooledDataArray{T,R}, val::Any)
+    val::T = convert(T,val)
+    pool_idx = findfirst(pda.pool, val)
+    if pool_idx <= 0
+        push!(pda.pool, val)
+        pool_idx = length(pda.pool)
+        if pool_idx > typemax(R)
+            error("You're using a PooledDataArray with ref type $R, which can only hold $(int(typemax(R))) values,\n",
+                  "and you just tried to add the $(typemax(R)+1)th reference.  Please change the ref type\n",
+                  "to a larger int type, or use the default ref type ($DEFAULT_POOLED_REF_TYPE).")
+        end
+    end
+    return pool_idx
+end
+
+function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
+    val::T = convert(T,val)
+    pool_idx = findfirst(pda.pool, val)
+    if pool_idx <= 0
+        push!(pda.pool, val)
+        pool_idx = length(pda.pool)
+    end
+    return pool_idx
+end
 
 # x[SingleIndex] = NA
 # TODO: Delete values from pool that no longer exist?
@@ -528,15 +556,9 @@ end
 
 # x[SingleIndex] = Single Item
 # TODO: Delete values from pool that no longer exist?
-function setindex!(x::PooledDataArray, val::Any, ind::Real)
-    val = convert(eltype(x), val)
-    pool_idx = findfirst(x.pool, val)
-    if pool_idx > 0
-        x.refs[ind] = pool_idx
-    else
-        push!(x.pool, val)
-        x.refs[ind] = length(x.pool)
-    end
+function setindex!{T,R}(x::PooledDataArray{T,R}, val::Any, ind::Real)
+    val = convert(T, val)
+    x.refs[ind] = getpoolidx(x, val)
     return val
 end
 
@@ -564,13 +586,13 @@ end
 
 # pda[MultiIndex] = Multiple Values
 function setindex!(pda::PooledDataArray,
-                vals::AbstractVector,
-                inds::AbstractVector{Bool})
+                   vals::AbstractVector,
+                   inds::AbstractVector{Bool})
     setindex!(pda, vals, find(inds))
 end
 function setindex!(pda::PooledDataArray,
-                vals::AbstractVector,
-                inds::AbstractVector)
+                   vals::AbstractVector,
+                   inds::AbstractVector)
     for (val, ind) in zip(vals, inds)
         pda[ind] = val
     end
@@ -583,15 +605,9 @@ function setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::NAtype, i::Real, j::Rea
     return NA
 end
 # pda[SingleItemIndex, SingleItemIndex] = Single Item
-function assign{T,R}(pda::PooledDataMatrix{T,R}, val::Any, i::Real, j::Real)
+function setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::Any, i::Real, j::Real)
     val = convert(T, val)
-    pool_idx = findfirst(x.pool, val)
-    if pool_idx > 0
-        pda.refs[i, j] = pool_idx
-    else
-        push!(pda.pool, val)
-        pda.refs[i, j] = length(pda.pool)
-    end
+    pda.refs[i, j] = getpoolidx(pda, val)
     return val
 end
 
@@ -688,7 +704,6 @@ end
 sortperm(pda::PooledDataArray, ::Sort.Reverse) = reverse(sortperm(pda))
 sort(pda::PooledDataArray) = pda[sortperm(pda)]
 sort(pda::PooledDataArray, ::Sort.Reverse) = pda[reverse(sortperm(pda))]
-import Sort.Perm
 type FastPerm{O<:Sort.Ordering,V<:AbstractVector} <: Sort.Ordering
     ord::O
     vec::V
@@ -777,7 +792,7 @@ function PooledDataVecs(v1::AbstractArray,
     end
 
     # fill positions in poolref
-    pool = sort(keys(poolref))
+    pool = sort(collect(keys(poolref)))
     i = 1
     for p in pool
         poolref[p] = i

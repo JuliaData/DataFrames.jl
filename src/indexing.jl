@@ -68,35 +68,6 @@ vecbind_type(x::IndexedVector) = vecbind_type(x.x)
 
 # to make assign in a DataFrame work:
 upgrade_vector(v::IndexedVector) = v
-function insert_single_column!(df::DataFrame,
-                               dv::IndexedVector,
-                               col_ind::ColumnIndex)
-    dv_n, df_n = length(dv), nrow(df)
-    if df_n != 0
-        if dv_n != df_n
-            #dv = repeat(dv, df_n)
-            error("New columns must have the same length as old columns")
-        end
-    end
-    if has(df.colindex, col_ind)
-        j = df.colindex[col_ind]
-        df.columns[j] = dv
-    else
-        if typeof(col_ind) <: String || typeof(col_ind) <: Symbol
-            push!(df.colindex, col_ind)
-            push!(df.columns, dv)
-        else
-            if isnextcol(df, col_ind)
-                push!(df.colindex, nextcolname(df))
-                push!(df.columns, dv)
-            else
-                println("Column does not exist: $col_ind")
-                error("Cannot assign to non-existent column")
-            end
-        end
-    end
-    return dv
-end
 
 
 sortperm{S,A<:AbstractDataVector}(x::IndexedVector{S,A}) = [findin(x.x, [NA]), x.idx]
@@ -284,8 +255,14 @@ ndims(a::IndexedVector) = 1
 eltype{T}(a::IndexedVector) = eltype(a.x)
 
 ## print(io, a::IndexedVector) = print(io, a.x)
-show(io::IO, a::IndexedVector) = show(io, a.x)
-repl_show(io::IO, a::IndexedVector) = repl_show(io, a.x)
+function show(io::IO, a::IndexedVector)
+    print(io, "IndexedVector: ")
+    show(io, a.x)
+end
+function repl_show(io::IO, a::IndexedVector)
+    print(io, "IndexedVector: ")
+    repl_show(io, a.x)
+end
 
 function search_sorted_last{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
     ## Index of the last value of vector a that is less than or equal to x.

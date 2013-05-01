@@ -87,7 +87,15 @@ next(gd::GroupedDataFrame, state::Int) =
 done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
 length(gd::GroupedDataFrame) = length(gd.starts)
 endof(gd::GroupedDataFrame) = length(gd.starts)
-getindex(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]]) 
+first(gd::GroupedDataFrame) = gd[1]
+last(gd::GroupedDataFrame) = gd[end]
+
+getindex(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
+getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) = GroupedDataFrame(gd.parent,
+                                                                          gd.cols,
+                                                                          gd.idx,
+                                                                          gd.starts[I],
+                                                                          gd.ends[I])
 
 function show(io::IO, gd::GroupedDataFrame)
     N = length(gd)
@@ -99,6 +107,15 @@ function show(io::IO, gd::GroupedDataFrame)
         println(io, "       :")
         println(io, "Last Group:")
         show(io, gd[N])
+    end
+end
+
+function showall(io::IO, gd::GroupedDataFrame)
+    N = length(gd)
+    println(io, "$(typeof(gd))  $N groups with keys: $(gd.cols)")
+    for i = 1:N
+        println(io, "gd[$i]:")
+        show(io, gd[i])
     end
 end
 

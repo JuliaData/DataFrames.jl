@@ -286,10 +286,13 @@ names(v::RVEC) = has(v.attr, "names") ? v.attr["names"].data : Array(ASCIIString
 row_names(v::RVEC) = has(v.attr, "row.names") ? v.attr["row.names"].data : Array(ASCIIString,0)
 
 data(rl::RLogical) = DataArray(rl.data, rl.missng)
-data(rn::RNumeric) = DataArray(rn.data, rn.data .== R_NA_FLOAT64)
+data(rn::RNumeric) = DataArray(rn.data, convert(BitArray,isnan(rn.data)))
 function data(ri::RInteger)
-    inherits(ri, "factor") ? PooledDataArray(uint16(ri.data), ri.attr["levels"].data) :
-    DataArray(ri.data, ri.data .== R_NA_INT32)
+    dd = ri.data
+    msng = dd .== R_NA_INT32
+    if !inherits(ri, "factor") return DataArray(dd, msng) end
+    dd[msng] = zero(eltype(dd))
+    PooledDataArray(POOLED_DATA_VEC_REF_CONVERTER(dd), ri.attr["levels"].data)
 end
 
 data(rs::RString) = DataArray(rs.data, falses(length(rs.data)))
