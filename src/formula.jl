@@ -117,7 +117,7 @@ const nonevaluation = Set(:&,:|)        # operators constructed from other evalu
 function evt(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
     if !contains(nonevaluation, ex.args[1]) return ex end
-    filter(x->!isa(x,Number), map(getterms, ex.args[2:]))
+    filter(x->!isa(x,Number), vcat(map(getterms, ex.args[2:])...))
 end
 evt(a) = {a}
     
