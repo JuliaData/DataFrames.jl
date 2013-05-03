@@ -449,7 +449,13 @@ end)
 
 m1 = merge(df1, df2, "a")
 @assert isequal(m1["a"], DataVector[1, 2, 3, 4, 5])
+m1 = merge(df1, df2, by = "a")
+@assert isequal(m1["a"], DataVector[1, 2, 3, 4, 5])
+m1 = merge(df1, df2)
+@assert isequal(m1["a"], DataVector[1, 2, 3, 4, 5])
 m2 = merge(df1, df2, "a", "outer")
+@assert isequal(m2["b2"], DataVector["A", "B", "B", "B", "B", NA, NA, NA, NA, NA])
+m2 = merge(df1, df2, jointype = "outer")
 @assert isequal(m2["b2"], DataVector["A", "B", "B", "B", "B", NA, NA, NA, NA, NA])
 
 df1 = DataFrame({"a" => [1, 2, 3],
@@ -457,6 +463,8 @@ df1 = DataFrame({"a" => [1, 2, 3],
 df2 = DataFrame({"a" => [1, 2, 4],
                  "c" => ["New World", "Old World", "New World"]})
 m1 = merge(df1, df2, "a", "inner")
+@assert isequal(m1["a"], DataVector[1, 2])
+m1 = merge(df1, df2, by = "a", jointype = "inner")
 @assert isequal(m1["a"], DataVector[1, 2])
 m2 = merge(df1, df2, "a", "left")
 @assert isequal(m2["a"], DataVector[1, 2, 3])
