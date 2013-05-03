@@ -177,7 +177,7 @@ function findat(a, b)
     # bdict's value is the index of the first occurrence of the key
     bdict = Dict{Any, Int}()
     for i in 1:length(b)
-        if !has(bdict, b[i])
+        if !haskey(bdict, b[i])
             bdict[b[i]] = i
         end
     end

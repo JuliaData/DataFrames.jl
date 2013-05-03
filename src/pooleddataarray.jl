@@ -19,7 +19,7 @@ type PooledDataArray{T, N} <: AbstractDataArray{T, N}
     function PooledDataArray(rs::Array{POOLED_DATA_VEC_REF_TYPE, N},
                              p::Vector{T})
         # refs mustn't overflow pool
-        if max(rs) > prod(size(p))
+        if length(rs) > 0 && max(rs) > prod(size(p))
             error("Reference array points beyond the end of the pool")
         end
         new(rs, p)
@@ -68,7 +68,7 @@ function PooledDataArray{T, N}(d::AbstractArray{T, N}, m::AbstractArray{Bool, N}
     end
 
     # Fill positions in poolref
-    newpool = sort(keys(poolref))
+    newpool = sort(collect(keys(poolref)))
     i = 1
     for p in newpool
         poolref[p] = i
@@ -383,11 +383,11 @@ reverse(x::PooledDataArray) = PooledDataArray(reverse(x.refs), x.pool)
 similar(pda::PooledDataArray) = pda
 
 function similar(pda::PooledDataArray, dims::Int...)
-    PooledDataArray(fill(uint16(0), dims...), pda.pool)
+    PooledDataArray(fill(POOLED_DATA_VEC_REF_CONVERTER(0), dims...), pda.pool)
 end
 
 function similar(pda::PooledDataArray, dims::Dims)
-    PooledDataArray(fill(uint16(0), dims), pda.pool)
+    PooledDataArray(fill(POOLED_DATA_VEC_REF_CONVERTER(0), dims), pda.pool)
 end
 
 ##############################################################################
@@ -695,7 +695,6 @@ end
 sortperm(pda::PooledDataArray, ::Sort.Reverse) = reverse(sortperm(pda))
 sort(pda::PooledDataArray) = pda[sortperm(pda)]
 sort(pda::PooledDataArray, ::Sort.Reverse) = pda[reverse(sortperm(pda))]
-import Sort.Perm
 type FastPerm{O<:Sort.Ordering,V<:AbstractVector} <: Sort.Ordering
     ord::O
     vec::V
@@ -779,7 +778,7 @@ function PooledDataVecs(v1::AbstractArray,
     end
 
     # fill positions in poolref
-    pool = sort(keys(poolref))
+    pool = sort(collect(keys(poolref)))
     i = 1
     for p in pool
         poolref[p] = i

@@ -1,4 +1,3 @@
-
 p = PooledDataArray(DataVector[9,9,8,NA,1,1])
 pcopy = copy(p)
 @assert levels(p) == [1,8,9]
@@ -25,3 +24,7 @@ df = @DataFrame(v => v, x => rand(6))
 @assert levels(set_levels!(copy(p), [1,8,9, 10])) == [1, 8, 9, 10]
 @assert levels(set_levels!(copy(p), [1 => 111])) == [111, 8, 9]
 @assert levels(set_levels!(copy(p), [1 => 111, 8 => NA])) == [111, 9]
+
+pp = PooledDataArray(Any[])
+@assert length(pp) == 0
+@assert length(levels(pp)) == 0

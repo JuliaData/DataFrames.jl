@@ -36,6 +36,9 @@ const POOLED_DATA_VEC_REF_CONVERTER = uint16
 
 importall Base
 importall Stats
+import Base.Sort.Algorithm, Base.Sort.By, Base.Sort.Forward
+import Base.Sort.Ordering, Base.Sort.Perm, Base.Sort.lt
+import Base.Sort.sort, Base.Sort.sort!, Base.Sort.sortby, Base.Sort.sortby!
 
 ##############################################################################
 ##
@@ -126,6 +129,7 @@ export # reconcile_groups,
        load_df,
        matrix,
        merge,
+       model_frame,
        model_matrix,
        model_response,
        ModelFrame,

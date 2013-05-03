@@ -134,7 +134,7 @@ end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
 function DataFrame(d::Dict)
-    column_names = sort(convert(Array{ByteString, 1}, keys(d)))
+    column_names = sort(convert(Array{ByteString, 1}, collect(keys(d))))
     p = length(column_names)
     if p == 0
         DataFrame()
@@ -872,7 +872,7 @@ tail(df::AbstractDataFrame) = tail(df, 6)
 # then row-by-row print with an appropriate buffer
 _string(x) = sprint(showcompact, x)
 maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) : 0
-maxShowLength(dv::AbstractDataVector) = max([length(_string(x)) for x = dv])
+maxShowLength(dv::AbstractDataVector) = length(dv) > 0 ? max([length(_string(x)) for x = dv]) : 0
 show(io::IO, df::AbstractDataFrame) = show(io, df, 20)
 showall(io::IO, df::AbstractDataFrame) = show(io, df, nrow(df))
 function show(io::IO, df::AbstractDataFrame, Nmx::Integer)
@@ -999,7 +999,7 @@ type SubDataFrame <: AbstractDataFrame
         if any(rows .< 1)
             error("all SubDataFrame indices must be > 0")
         end
-        if max(rows) > nrow(parent)
+        if length(rows) > 0 && max(rows) > nrow(parent)
             error("all SubDataFrame indices must be <= the number of rows of the DataFrame")
         end
         new(parent, rows)
@@ -1116,7 +1116,7 @@ nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavector.jl?
 zeros{T<:ByteString}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
     
 nas{T}(dv::PooledDataVector{T}, dims) =
-    PooledDataArray(fill(uint16(1), dims), dv.pool)
+    PooledDataArray(fill(POOLED_DATA_VEC_REF_TYPE(1), dims), dv.pool)
 
 nas(df::DataFrame, dims) = 
     DataFrame([nas(x, dims) for x in df.columns], colnames(df)) 
@@ -1136,11 +1136,22 @@ vecbind_promote_type{T1,T2}(x::Type{DataVector{T1}}, y::Type{Vector{T2}}) = Data
 vecbind_promote_type(a, b, c, ds...) = vecbind_promote_type(a, vecbind_promote_type(b, c, ds...))
 vecbind_promote_type(a, b, c) = vecbind_promote_type(a, vecbind_promote_type(b, c))
 
+function vecbind_promote_type(a::AbstractVector)
+    if length(a)  == 1
+         return a[1]
+    end
+    res = vecbind_promote_type(a[1], a[2])
+    for i in 3:length(a)
+        res = vecbind_promote_type(res, a[i])
+    end
+    res
+end
+
 constructor{T}(::Type{Vector{T}}, args...) = Array(T, args...)
 constructor{T}(::Type{DataVector{T}}, args...) = DataArray(T, args...)
 
 function vecbind(xs::AbstractVector...)
-    V = vecbind_promote_type(map(vecbind_type, xs)...)
+    V = vecbind_promote_type(map(vecbind_type, {xs...}))
     len = sum(length, xs)
     res = constructor(V, len)
     k = 1
@@ -1597,10 +1608,10 @@ end
 ## Sorting
 ##############################################################################
 
-import Sort.sort, Sort.sortby, Sort.By, 
-       Sort.sort!, Sort.sortby!,
-       Sort.Algorithm, Sort.Ordering, 
-       Sort.lt, Sort.Perm, Sort.Forward
+## import Sort.sort, Sort.sortby, Sort.By, 
+##        Sort.sort!, Sort.sortby!,
+##        Sort.Algorithm, Sort.Ordering, 
+##        Sort.lt, Sort.Perm, Sort.Forward
 
 typealias ColIndexVec Union(AbstractVector{Integer}, AbstractVector{ASCIIString}, AbstractVector{UTF8String}, AbstractVector{Symbol})
 
