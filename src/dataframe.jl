@@ -224,7 +224,7 @@ end
 
 # Initialize from a Vector of Associatives (aka list of dicts)
 function DataFrame{D <: Associative}(ds::Vector{D})
-    ks = [Set([[k for k in [keys(d) for d in ds]]...]...)...]
+    ks = [Set([[k for k in [collect(keys(d)) for d in ds]]...]...)...]
     DataFrame(ds, ks)
 end
 
@@ -239,7 +239,7 @@ function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
     for d in ds
         for (i,k) in enumerate(ks)
             # TODO: check for user-defined "NA" values, ala pandas
-            if has(d, k) && !isna(d[k])
+            if haskey(d, k) && !isna(d[k])
                 try
                     col_types[i] = promote_type(col_types[i], typeof(d[k]))
                 catch
@@ -472,7 +472,7 @@ function insert_single_column!(df::DataFrame,
             error("New columns must have the same length as old columns")
         end
     end
-    if has(df.colindex, col_ind)
+    if haskey(df.colindex, col_ind)
         j = df.colindex[col_ind]
         df.columns[j] = dv
     else
@@ -618,7 +618,7 @@ function assign{T <: ColumnIndex}(df::DataFrame,
                                   col_inds::AbstractVector{T})
     for j in 1:length(col_inds)
         col_ind = col_inds[j]
-        if has(df.colindex, col_ind)
+        if haskey(df.colindex, col_ind)
             df.columns[df.colindex[col_ind]][row_ind] = new_df[j][1]
         else
             error("Cannot assign into a non-existent position")
@@ -639,7 +639,7 @@ function assign{T <: Real}(df::DataFrame,
                            row_inds::AbstractVector{T},
                            col_ind::ColumnIndex)
     dv = upgrade_vector(v)
-    if has(df.colindex, col_ind)
+    if haskey(df.colindex, col_ind)
         df.columns[df.colindex[col_ind]][row_inds] = dv
     else
         error("Cannot assign into a non-existent position")
@@ -658,7 +658,7 @@ function assign{T <: Real}(df::DataFrame,
                            v::Any,
                            row_inds::AbstractVector{T},
                            col_ind::ColumnIndex)
-    if has(df.colindex, col_ind)
+    if haskey(df.colindex, col_ind)
         try
             df.columns[df.colindex[col_ind]][row_inds] = v
             return v
@@ -696,7 +696,7 @@ function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              col_inds::AbstractVector{T})
     for j in 1:length(col_inds)
         col_ind = col_inds[j]
-        if has(df.colindex, col_ind)
+        if haskey(df.colindex, col_ind)
             df.columns[df.colindex[col_ind]][row_inds] = new_df[:, j]
         else
             error("Cannot assign into a non-existent position")
@@ -731,7 +731,7 @@ function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
     dv = upgrade_vector(v)
     for j in 1:length(col_inds)
         col_ind = col_inds[j]
-        if has(df.colindex, col_ind)
+        if haskey(df.colindex, col_ind)
             df.columns[df.colindex[col_ind]][row_inds] = dv
         else
             error("Cannot assign into a non-existent position")
@@ -765,7 +765,7 @@ function assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              col_inds::AbstractVector{T})
     for j in 1:length(col_inds)
         col_ind = col_inds[j]
-        if has(df.colindex, col_ind)
+        if haskey(df.colindex, col_ind)
             try
                 df.columns[df.colindex[col_ind]][row_inds] = v
                 return v
@@ -808,8 +808,8 @@ end
 ##
 ##############################################################################
 
-has(df::AbstractDataFrame, key::Any) = has(index(df), key)
-get(df::AbstractDataFrame, key::Any, default::Any) = has(df, key) ? df[key] : default
+haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
+get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
 keys(df::AbstractDataFrame) = keys(index(df))
 values(df::DataFrame) = df.columns
 empty!(df::DataFrame) = DataFrame() # TODO: Make this work right
@@ -1218,9 +1218,9 @@ function with(d::Associative, ex::Expr)
     replace_symbols(x, d::Dict) = x
     replace_symbols(e::Expr, d::Dict) = Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args))...)
     function replace_symbols{K,V}(s::Symbol, d::Dict{K,V})
-        if (K == Any || K == Symbol) && has(d, s)
+        if (K == Any || K == Symbol) && haskey(d, s)
             :(_D[$(Meta.quot(s))])
-        elseif (K == Any || K <: String) && has(d, string(s))
+        elseif (K == Any || K <: String) && haskey(d, string(s))
             :(_D[$(string(s))])
         else
             s
@@ -1239,14 +1239,14 @@ function within!(d::Associative, ex::Expr)
         if e.head == :(=) # replace left-hand side of assignments:
             if (K == Symbol || (K == Any && isa(keys(d)[1], Symbol)))
                 exref = Meta.quot(e.args[1])
-                if !has(d, e.args[1]) # Dummy assignment to reserve a slot.
+                if !haskey(d, e.args[1]) # Dummy assignment to reserve a slot.
                                       # I'm not sure how expensive this is.
-                    d[e.args[1]] = values(d)[1]
+                    d[e.args[1]] = collect(values(d))[1]
                 end
             else
                 exref = string(e.args[1])
-                if !has(d, exref) # dummy assignment to reserve a slot
-                    d[exref] = values(d)[1]
+                if !haskey(d, exref) # dummy assignment to reserve a slot
+                    d[exref] = collect(values(d))[1]
                 end
             end
             Expr(e.head,
@@ -1256,9 +1256,9 @@ function within!(d::Associative, ex::Expr)
         end
     end
     function replace_symbols{K,V}(s::Symbol, d::Associative{K,V})
-        if (K == Any || K == Symbol) && has(d, s)
+        if (K == Any || K == Symbol) && haskey(d, s)
             :(_D[$(Meta.quot(s))])
-        elseif (K == Any || K <: String) && has(d, string(s))
+        elseif (K == Any || K <: String) && haskey(d, string(s))
             :(_D[$(string(s))])
         else
             s
@@ -1278,9 +1278,9 @@ mygetindex(d, key) = getindex(d, key)
 myref{K<:String,V}(d::Associative{K,V}, key) = getindex(d, string(key))
 mygetindex(d::AbstractDataFrame, key::Symbol) = getindex(d, string(key))
 
-myhas(d, key) = has(d, key)
-myhas{K<:String,V}(d::Associative{K,V}, key) = has(d, string(key))
-myhas(d::AbstractDataFrame, key::Symbol) = has(d, string(key))
+myhas(d, key) = haskey(d, key)
+myhas{K<:String,V}(d::Associative{K,V}, key) = haskey(d, string(key))
+myhas(d::AbstractDataFrame, key::Symbol) = haskey(d, string(key))
 
 bestkey(d, key) = key
 bestkey{K<:String,V}(d::Associative{K,V}, key) = string(key)
@@ -1323,14 +1323,14 @@ function based_on(d::Associative, ex::Expr)
         if e.head == :(=) # replace left-hand side of assignments:
             if (K == Symbol || (K == Any && isa(keys(d)[1], Symbol)))
                 exref = Meta.quot(e.args[1])
-                if !has(d, e.args[1]) # Dummy assignment to reserve a slot.
+                if !haskey(d, e.args[1]) # Dummy assignment to reserve a slot.
                                       # I'm not sure how expensive this is.
-                    d[e.args[1]] = values(d)[1]
+                    d[e.args[1]] = collect(values(d))[1]
                 end
             else
                 exref = string(e.args[1])
-                if !has(d, exref) # dummy assignment to reserve a slot
-                    d[exref] = values(d)[1]
+                if !haskey(d, exref) # dummy assignment to reserve a slot
+                    d[exref] = collect(values(d))[1]
                 end
             end
             Expr(e.head,
@@ -1340,9 +1340,9 @@ function based_on(d::Associative, ex::Expr)
         end
     end
     function replace_symbols{K,V}(s::Symbol, d::Associative{K,V})
-        if (K == Any || K == Symbol) && has(d, s)
+        if (K == Any || K == Symbol) && haskey(d, s)
             :(_D[$(Meta.quot(s))])
-        elseif (K == Any || K <: String) && has(d, string(s))
+        elseif (K == Any || K <: String) && haskey(d, string(s))
             :(_D[$(string(s))])
         else
             s
@@ -1366,7 +1366,7 @@ function within!(df::AbstractDataFrame, ex::Expr)
     replace_symbols(x, syms::Dict) = x
     function replace_symbols(e::Expr, syms::Dict)
         if e.head == :(=) # replace left-hand side of assignments:
-            if !has(syms, string(e.args[1]))
+            if !haskey(syms, string(e.args[1]))
                 syms[string(e.args[1])] = length(syms) + 1
             end
             Expr(e.head,
@@ -1402,7 +1402,7 @@ function based_on_f(df::AbstractDataFrame, ex::Expr)
     replace_symbols(x, syms::Dict) = x
     function replace_symbols(e::Expr, syms::Dict)
         if e.head == :(=) # replace left-hand side of assignments:
-            if !has(syms, string(e.args[1]))
+            if !haskey(syms, string(e.args[1]))
                 syms[string(e.args[1])] = length(syms) + 1
             end
             Expr(e.head,
@@ -1523,7 +1523,7 @@ function duplicated(df::AbstractDataFrame)
     res = fill(false, nrow(df))
     di = Dict()
     for i in 1:nrow(df)
-        if has(di, matrix(df[i, :], Any))
+        if haskey(di, matrix(df[i, :], Any))
             res[i] = true
         else
             di[matrix(df[i, :], Any)] = 1

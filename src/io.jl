@@ -39,7 +39,7 @@ let extract_cache = memio(500, false)
             while i <= right
                 lasti = i
                 ch, i = next(this, i)
-                if !has(omitlist, lasti)
+                if !contains(omitlist, lasti)
                     print(extract_cache, ch)
                 end
             end

@@ -108,7 +108,7 @@ function PooledDataArray{T, N}(d::AbstractArray{T, N},
         if m[i]
             newrefs[i] = 0
         else
-            if has(poolref, d[i])
+            if haskey(poolref, d[i])
                 newrefs[i] = poolref[d[i]]
             else
                 newrefs[i] = 0
@@ -258,7 +258,7 @@ function unique{T}(adv::AbstractDataVector{T})
   for i in 1:length(adv)
     values[adv[i]] = true
   end
-  unique_values = keys(values)
+  unique_values = collect(keys(values))
   res = DataArray(T, length(unique_values))
   for i in 1:length(unique_values)
     res[i] = unique_values[i]

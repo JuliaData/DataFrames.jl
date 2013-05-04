@@ -44,7 +44,7 @@ function make_unique{S<:ByteString}(names::Vector{S})
     names = copy(names)
     dups = Int[]
     for i in 1:length(names)
-        if has(x, names[i])
+        if haskey(x, names[i])
             push!(dups, i)
         else
             push!(x, names[i])
@@ -56,7 +56,7 @@ function make_unique{S<:ByteString}(names::Vector{S})
         k = 1
         while true
             newnm = "$(nm)_$k"
-            if !has(x, newnm)
+            if !haskey(x, newnm)
                 push!(x, newnm)
                 break
             end

@@ -7,7 +7,7 @@
 function table{T}(d::AbstractDataArray{T})
     counts = Dict{Union(T, NAtype), Int}()
     for i = 1:length(d)
-        if has(counts, d[i])
+        if haskey(counts, d[i])
             counts[d[i]] += 1
         else
             counts[d[i]] = 1
@@ -19,7 +19,7 @@ end
 function table{T}(d::AbstractArray{T})
     counts = Dict{T, Int}()
     for i = 1:length(d)
-        if has(counts, d[i])
+        if haskey(counts, d[i])
             counts[d[i]] += 1
         else
             counts[d[i]] = 1

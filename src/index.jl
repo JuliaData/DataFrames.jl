@@ -37,7 +37,7 @@ function rename!(x::Index, from::Vector, to::Vector)
         error("lengths of from and to don't match.")
     end
     for idx in 1:length(from)
-        if has(x, from[idx]) && !has(x, to[idx])
+        if haskey(x, from[idx]) && !haskey(x, to[idx])
             x.lookup[to[idx]] = x.lookup[from[idx]]
             if !isa(x.lookup[from[idx]], Array)
                 x.names[x.lookup[from[idx]]] = to[idx]
@@ -53,9 +53,9 @@ rename!(x::Index, f::Function) = (nms = names(x); rename!(x, nms, [f(x)::ByteStr
 
 rename(x::Index, args...) = rename!(copy(x), args...)
 
-has(x::Index, key::String) = has(x.lookup, key)
-has(x::Index, key::Symbol) = has(x.lookup, string(key))
-has(x::Index, key::Real) = 1 <= key <= length(x.names)
+haskey(x::Index, key::String) = haskey(x.lookup, key)
+haskey(x::Index, key::Symbol) = haskey(x.lookup, string(key))
+haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
 keys(x::Index) = names(x)
 function push!(x::Index, nm::String)
     x.lookup[nm] = length(x) + 1
@@ -71,12 +71,12 @@ function delete!(x::Index, idx::Integer)
     delete!(x.names, idx)
     # fix groups:
     for (k,v) in gr
-        newv = [[has(x, vv) ? vv : ASCIIString[] for vv in v]...]
+        newv = [[haskey(x, vv) ? vv : ASCIIString[] for vv in v]...]
         set_group(x, k, newv)
     end
 end
 function delete!(x::Index, nm::String)
-    if !has(x.lookup, nm)
+    if !haskey(x.lookup, nm)
         return
     end
     idx = x.lookup[nm]
@@ -103,13 +103,13 @@ names(x::SimpleIndex) = nothing
 
 # Chris's idea of namespaces adapted by Harlan for column groups
 function set_group(idx::Index, newgroup, names)
-    if !has(idx, newgroup) || isa(idx.lookup[newgroup], Array)
+    if !haskey(idx, newgroup) || isa(idx.lookup[newgroup], Array)
         idx.lookup[newgroup] = [[idx.lookup[nm] for nm in names]...]
     end
 end
 function set_groups(idx::Index, gr::Dict{ByteString,Vector{ByteString}})
     for (k,v) in gr
-        if !has(idx, k) 
+        if !haskey(idx, k) 
             idx.lookup[k] = [[idx.lookup[nm] for nm in v]...]
         end
     end
@@ -124,7 +124,7 @@ function get_groups(idx::Index)
     gr
 end
 function is_group(idx::Index, name::ByteString)
-  if has(idx, name)
+  if haskey(idx, name)
     return isa(idx.lookup[name], Array)
   else
     return false

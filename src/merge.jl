@@ -113,7 +113,7 @@ function PooledDataArray(df::AbstractDataFrame)
     j = 1
     for i = 1:nrow(df)
         val = df[i,:] 
-        if has(poolref, val)
+        if haskey(poolref, val)
             refs[i] = poolref[val]
         else
             push!(pool, hash(val))
