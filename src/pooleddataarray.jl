@@ -3,47 +3,42 @@
 ## PooledDataArray type definition
 ##
 ## An AbstractDataArray with efficient storage when values are repeated. A
-## PDA wraps an array of UInt8's, which are used to index into a compressed
-## pool of values. NA's are 0's in the UInt8 array.
+## PDA wraps an array of unsigned integers, which are used to index into a
+## compressed pool of values. NA's are 0's in the refs array.  The unsigned
+## integer type used for the refs array defaults to Uint32.  The `compact`
+## function converts to a smallest integer size that will index the entire pool.
 ##
-## TODO: Make sure we don't overflow from refs being Uint8
 ## TODO: Allow ordering of factor levels
 ## TODO: Add metadata for dummy conversion
 ##
 ##############################################################################
 
-type PooledDataArray{T, N} <: AbstractDataArray{T, N}
-    refs::Array{POOLED_DATA_VEC_REF_TYPE, N}
+# This is used as a wrapper during PooledDataArray construction only, to distinguish
+# arrays of pool indices from normal arrays
+type RefArray{R<:Integer,N}
+    a::Array{R,N}
+end 
+
+type PooledDataArray{T, R<:Integer, N} <: AbstractDataArray{T, N}
+    refs::Array{R, N}
     pool::Vector{T}
 
-    function PooledDataArray(rs::Array{POOLED_DATA_VEC_REF_TYPE, N},
+    function PooledDataArray(rs::RefArray{R, N},
                              p::Vector{T})
         # refs mustn't overflow pool
-        if length(rs) > 0 && max(rs) > prod(size(p))
+        if length(rs.a) > 0 && max(rs.a) > prod(size(p))
             error("Reference array points beyond the end of the pool")
         end
-        new(rs, p)
+        new(rs.a,p)
     end
 end
-typealias PooledDataVector{T} PooledDataArray{T, 1}
-typealias PooledDataMatrix{T} PooledDataArray{T, 2}
+typealias PooledDataVector{T,R} PooledDataArray{T,R,1}
+typealias PooledDataMatrix{T,R} PooledDataArray{T,R,2}
 
 ##############################################################################
 ##
 ## PooledDataArray constructors
 ##
-##############################################################################
-
-# Echo inner constructor as an outer constructor
-function PooledDataArray{T, N}(refs::Array{POOLED_DATA_VEC_REF_TYPE, N},
-                               pool::Vector{T})
-    PooledDataArray{T, N}(refs, pool)
-end
-
-
-# A no-op constructor
-PooledDataArray(d::PooledDataArray) = d
-
 # How do you construct a PooledDataArray from an Array?
 # From the same sigs as a DataArray!
 #
@@ -55,48 +50,28 @@ PooledDataArray(d::PooledDataArray) = d
 # * Iterate over d
 #   * If value of d in pool already, set the refs accordingly
 #   * If value is new, add it to the pool, then set refs
-function PooledDataArray{T, N}(d::AbstractArray{T, N}, m::AbstractArray{Bool, N})
-    newrefs = Array(POOLED_DATA_VEC_REF_TYPE, size(d))
-    #newpool = Array(T, 0)
-    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}() # Why isn't this a set?
+##############################################################################
 
-    # Loop through once to fill the poolref dict
-    for i = 1:length(d)
-        if !m[i]
-            poolref[d[i]] = 0
-        end
-    end
-
-    # Fill positions in poolref
-    newpool = sort(collect(keys(poolref)))
-    i = 1
-    for p in newpool
-        poolref[p] = i
-        i += 1
-    end
-
-    # Fill in newrefs
-    for i = 1:length(d)
-        if m[i]
-            newrefs[i] = 0
-        else
-            newrefs[i] = poolref[d[i]]
-        end
-    end
-
-    return PooledDataArray(newrefs, newpool)
+# Echo inner constructor as an outer constructor
+function PooledDataArray{T,R<:Integer,N}(refs::RefArray{R, N},
+                                         pool::Vector{T})
+    PooledDataArray{T,R,N}(refs, pool)
 end
 
-# Allow a pool to be provided by the user
-function PooledDataArray{T, N}(d::AbstractArray{T, N},
-                               pool::Vector{T},
-                               m::AbstractArray{Bool, N})
-    if length(pool) > typemax(POOLED_DATA_VEC_REF_TYPE)
-        error("Cannot construct a PooledDataVector with such a large pool")
+# A no-op constructor
+PooledDataArray(d::PooledDataArray) = d
+
+# Constructor from array, w/ pool, missingness, and ref type
+function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N},
+                                         pool::Vector{T},
+                                         m::AbstractArray{Bool, N},
+                                         r::Type{R} = DEFAULT_POOLED_REF_TYPE)
+    if length(pool) > typemax(R)
+        error("Cannot construct a PooledDataVector with type $R with a pool of size $(length(pool))")
     end
 
-    newrefs = Array(POOLED_DATA_VEC_REF_TYPE, size(d))
-    poolref = Dict{T, POOLED_DATA_VEC_REF_TYPE}()
+    newrefs = Array(R, size(d))
+    poolref = Dict{T, R}()
 
     # loop through once to fill the poolref dict
     for i = 1:length(pool)
@@ -108,59 +83,67 @@ function PooledDataArray{T, N}(d::AbstractArray{T, N},
         if m[i]
             newrefs[i] = 0
         else
-            if haskey(poolref, d[i])
-                newrefs[i] = poolref[d[i]]
-            else
-                newrefs[i] = 0
-            end
+            newrefs[i] = get(poolref, d[i], 0)
         end
     end
-
-    return PooledDataArray(newrefs, pool)
+    return PooledDataArray(RefArray(newrefs), pool)
 end
 
-# Convert a BitArray to an Array{Bool} w/ specified missingness
-function PooledDataArray{N}(d::BitArray{N}, m::AbstractArray{Bool, N})
-    PooledDataArray(convert(Array{Bool}, d), m)
+# Constructor from array, w/ missingness and ref type
+function PooledDataArray{T,R<:Integer,N}(d::AbstractArray{T, N}, 
+                                         m::AbstractArray{Bool, N},
+                                         r::Type{R} = DEFAULT_POOLED_REF_TYPE)
+    pool = sort(unique(d[!m]))
+    PooledDataArray(d, pool, m, r)
 end
-
-# Convert a DataArray to a PooledDataArray
-PooledDataArray{T}(da::DataArray{T}) = PooledDataArray(da.data, da.na)
-
-# Convert a DataArray to a PooledDataArray
-PooledDataArray{T}(da::DataArray{T}, pool::Vector{T}) = PooledDataArray(da.data, pool, da.na)
-
-# Convert a Array{T} to a PooledDataArray
-PooledDataArray{T}(a::Array{T}) = PooledDataArray(a, falses(size(a)))
-
-# Convert a BitVector to a Vector{Bool} w/o specified missingness
-function PooledDataArray(a::BitArray)
-    PooledDataArray(convert(Array{Bool}, a), falses(size(a)))
-end
-
-# Explicitly convert Ranges into a PooledDataVector
-PooledDataArray(r::Ranges) = PooledDataArray([r], falses(length(r)))
 
 # Construct an all-NA PooledDataVector of a specific type
 PooledDataArray(t::Type, dims::Int...) = PooledDataArray(Array(t, dims...), trues(dims...))
+PooledDataArray{R<:Integer}(t::Type, r::Type{R}, dims::Int...) = PooledDataArray(Array(t, dims...), trues(dims...), r)
 
-# Specify just a vector and a pool
-function PooledDataArray{T}(d::Array{T}, pool::Vector{T})
-    PooledDataArray(d, pool, falses(size(d)))
-end
+# Construct an empty PooledDataVector of a specific type
+PooledDataArray(t::Type) = PooledDataArray(similar(Array(t,1),0), trues(0))
+PooledDataArray{R<:Integer}(t::Type, r::Type{R}) = PooledDataArray(similar(Array(t,1),0), trues(0), r)
+
+# Convert a BitArray to an Array{Bool} (m = missingness)
+# For some reason an additional method is needed but even that doesn't work
+# For a BitArray a refs type of Uint8 will always be sufficient as the size of the pool is 0, 1 or 2
+PooledDataArray{N}(d::BitArray{N}) = PooledDataArray(bitunpack(d), falses(size(d)), Uint8)
+PooledDataArray{R<:Integer,N}(d::BitArray{N}, 
+                              m::AbstractArray{Bool, N}) = PooledDataArray(bitunpack(d), m, Uint8)
+
+# Convert a DataArray to a PooledDataArray
+PooledDataArray{T,R<:Integer}(da::DataArray{T},
+                              r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(da.data, da.na, r)
+PooledDataArray{T,R<:Integer}(da::DataArray{T}, 
+                              pool::Vector{T},
+                              r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(da.data, pool, da.na, r)
+
+# Convert a Array{T} to a PooledDataArray
+PooledDataArray{T,R<:Integer}(d::Array{T},
+                              r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(d, falses(size(d)), r)
+PooledDataArray{T,R<:Integer}(d::Array{T}, 
+                              pool::Vector{T},
+                              r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(d, pool, falses(size(d)), r)
+
+# Explicitly convert Ranges into a PooledDataVector
+PooledDataArray{R<:Integer}(rs::Ranges,
+                            r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray([rs], falses(length(rs)), r)
 
 # Initialized constructors with 0's, 1's
 for (f, basef) in ((:pdatazeros, :zeros), (:pdataones, :ones))
     @eval begin
         ($f)(dims::Int...) = PooledDataArray(($basef)(dims...), falses(dims...))
         ($f)(t::Type, dims::Int...) = PooledDataArray(($basef)(t, dims...), falses(dims...))
+        ($f){R<:Integer}(t::Type, r::Type{R}, dims::Int...) = PooledDataArray(($basef)(t, dims...), falses(dims...), r)
     end
 end
 
 # Initialized constructors with false's or true's
 for (f, basef) in ((:pdatafalses, :falses), (:pdatatrues, :trues))
     @eval begin
-        ($f)(dims::Int...) = PooledDataArray(($basef)(dims...), falses(dims...))
+        ($f)(dims::Int...) = PooledDataArray(($basef)(dims...), falses(dims...), Uint8)
+        ($f){R<:Integer}(r::Type{R}, dims::Int...) = PooledDataArray(($basef)(dims...), falses(dims...), r)
     end
 end
 
@@ -187,7 +170,7 @@ endof(pda::PooledDataArray) = endof(pda.refs)
 ##
 ##############################################################################
 
-copy(pda::PooledDataArray) = PooledDataArray(copy(pda.refs),
+copy(pda::PooledDataArray) = PooledDataArray(RefArray(copy(pda.refs)),
                                              copy(pda.pool))
 # TODO: Implement copy_to()
 
@@ -198,11 +181,11 @@ copy(pda::PooledDataArray) = PooledDataArray(copy(pda.refs),
 ##############################################################################
 
 function isnan(pda::PooledDataArray)
-    PooledDataArray(copy(pda.refs), isnan(pda.pool))
+    PooledDataArray(RefArray(copy(pda.refs)), isnan(pda.pool))
 end
 
 function isfinite(pda::PooledDataArray)
-    PooledDataArray(copy(pda.refs), isfinite(pda.pool))
+    PooledDataArray(RefArray(copy(pda.refs)), isfinite(pda.pool))
 end
 
 isna(pda::PooledDataArray) = pda.refs .== 0
@@ -219,6 +202,22 @@ isna(pda::PooledDataArray) = pda.refs .== 0
 ##       useful.
 ##
 ##############################################################################
+
+function compact{T,R<:Integer,N}(d::PooledDataArray{T,R,N})
+    sz = length(d.pool)
+
+    REFTYPE = sz <= typemax(Uint8)  ? Uint8 :
+              sz <= typemax(Uint16) ? Uint16 :
+              sz <= typemax(Uint32) ? Uint32 :
+                                      Uint64
+
+    if REFTYPE == R
+        return d
+    end
+
+    newrefs = convert(Array{REFTYPE, N}, d.refs)
+    PooledDataArray(RefArray(newrefs), d.pool)
+end
 
 # Convert a PooledDataVector{T} to a DataVector{T}
 function values{T}(pda::PooledDataArray{T})
@@ -267,60 +266,60 @@ function unique{T}(adv::AbstractDataVector{T})
 end
 levels{T}(adv::AbstractDataVector{T}) = unique(adv)
 
-get_indices{T}(x::PooledDataArray{T}) = x.refs
+get_indices{T,R}(x::PooledDataArray{T,R}) = x.refs
 
-function index_to_level{T}(x::PooledDataArray{T})
-    d = Dict{POOLED_DATA_VEC_REF_TYPE, T}()
-    for i in POOLED_DATA_VEC_REF_CONVERTER(1:length(x.pool))
+function index_to_level{T,R}(x::PooledDataArray{T,R})
+    d = Dict{R, T}()
+    for i in one(R):convert(R, length(x.pool))
         d[i] = x.pool[i]
     end
     return d
 end
 
-function level_to_index{T}(x::PooledDataArray{T})
-    d = Dict{T, POOLED_DATA_VEC_REF_TYPE}()
-    for i in POOLED_DATA_VEC_REF_CONVERTER(1:length(x.pool))
+function level_to_index{T,R}(x::PooledDataArray{T,R})
+    d = Dict{T, R}()
+    for i in one(R):convert(R, length(x.pool))
         d[x.pool[i]] = i
     end
     d
 end
 
-function PooledDataArray{S,N}(x::PooledDataArray{S,N},
-                              newpool::Vector{S})
+function PooledDataArray{S,R,N}(x::PooledDataArray{S,R,N},
+                                newpool::Vector{S})
     # QUESTION: should we have a ! version of this? If so, needs renaming?
-    tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(x.pool, newpool))
-    refs = zeros(POOLED_DATA_VEC_REF_TYPE, length(x))
+    tidx::Array{R} = findat(x.pool, newpool)
+    refs = zeros(R, length(x))
     for i in 1:length(refs)
         if x.refs[i] != 0 
             refs[i] = tidx[x.refs[i]]
         end
     end
-    PooledDataArray(refs, newpool)
+    PooledDataArray(RefArray(refs), newpool)
 end
 
 myunique(x::AbstractVector) = x[sort(unique(findat(x, x)))]  # gets the ordering right
 myunique(x::AbstractDataVector) = myunique(removeNA(x))   # gets the ordering right; removes NAs
 
-function set_levels(x::PooledDataArray, newpool::AbstractVector)
+function set_levels{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector)
     pool = myunique(newpool)
-    refs = zeros(POOLED_DATA_VEC_REF_TYPE, length(x))
-    tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(newpool, pool))
+    refs = zeros(R, length(x))
+    tidx::Array{R} = findat(newpool, pool)
     tidx[isna(newpool)] = 0
     for i in 1:length(refs)
         if x.refs[i] != 0
             refs[i] = tidx[x.refs[i]]
         end
     end
-    return PooledDataArray(refs, pool)
+    return PooledDataArray(RefArray(refs), pool)
 end
 
-function set_levels!{T}(x::PooledDataArray{T}, newpool::AbstractVector{T})
+function set_levels!{T,R}(x::PooledDataArray{T,R}, newpool::AbstractVector{T})
     if newpool == myunique(newpool) # no NAs or duplicates
         x.pool = newpool
         return x
     else
         x.pool = myunique(newpool)
-        tidx = POOLED_DATA_VEC_REF_CONVERTER(findat(newpool, x.pool))
+        tidx::Array{R} = findat(newpool, x.pool)
         tidx[isna(newpool)] = 0
         for i in 1:length(x.refs)
             if x.refs[i] != 0
@@ -343,7 +342,7 @@ function set_levels(x::PooledDataArray, d::Dict)
     set_levels(x, newpool)
 end
 
-function set_levels!{T}(x::PooledDataArray{T}, d::Dict{T,T})
+function set_levels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,T})
     for (k,v) in d
         idx = findin(x.pool, [k])
         if length(idx) == 1
@@ -353,7 +352,7 @@ function set_levels!{T}(x::PooledDataArray{T}, d::Dict{T,T})
     x
 end
 
-function set_levels!{T}(x::PooledDataArray{T}, d::Dict{T,Any}) # this version handles NAs in d's values
+function set_levels!{T,R}(x::PooledDataArray{T,R}, d::Dict{T,Any}) # this version handles NAs in d's values
     newpool = copy(DataArray(x.pool))
     # An NA in `v` is put in the pool; that will cause it to become NA
     for (k,v) in d
@@ -365,14 +364,14 @@ function set_levels!{T}(x::PooledDataArray{T}, d::Dict{T,Any}) # this version ha
     set_levels!(x, newpool)
 end
 
-reorder(x::PooledDataArray)  = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
+reorder(x::PooledDataArray) = PooledDataArray(x, sort(levels(x)))  # just re-sort the pool
 
 reorder(x::PooledDataArray, y::AbstractVector...) = reorder(mean, x, y...)
 
 reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
     reorder(fun, x, DataFrame({y...}))
 
-reverse(x::PooledDataArray) = PooledDataArray(reverse(x.refs), x.pool)
+reverse(x::PooledDataArray) = PooledDataArray(RefArray(reverse(x.refs)), x.pool)
 
 ##############################################################################
 ##
@@ -380,14 +379,15 @@ reverse(x::PooledDataArray) = PooledDataArray(reverse(x.refs), x.pool)
 ##
 ##############################################################################
 
-similar(pda::PooledDataArray) = pda
+# This needs to be parameterized to remove ambiguity warnings
+similar{T,R}(pda::PooledDataArray{T,R}) = pda
 
-function similar(pda::PooledDataArray, dims::Int...)
-    PooledDataArray(fill(POOLED_DATA_VEC_REF_CONVERTER(0), dims...), pda.pool)
+function similar{T,R}(pda::PooledDataArray{T,R}, dims::Int...)
+    PooledDataArray(RefArray(fill(zero(R), dims...)), pda.pool)
 end
 
-function similar(pda::PooledDataArray, dims::Dims)
-    PooledDataArray(fill(POOLED_DATA_VEC_REF_CONVERTER(0), dims), pda.pool)
+function similar{T,R}(pda::PooledDataArray{T,R}, dims::Dims)
+    PooledDataArray(RefArray(fill(zero(R), dims)), pda.pool)
 end
 
 ##############################################################################
@@ -416,14 +416,14 @@ end
 # pda[MultiItemIndex]
 function getindex(pda::PooledDataArray, inds::AbstractDataVector{Bool})
     inds = find(replaceNA(inds, false))
-    return PooledDataArray(pda.refs[inds], copy(pda.pool))
+    return PooledDataArray(RefArray(pda.refs[inds]), copy(pda.pool))
 end
 function getindex(pda::PooledDataArray, inds::AbstractDataVector)
     inds = removeNA(inds)
-    return PooledDataArray(pda.refs[inds], copy(pda.pool))
+    return PooledDataArray(RefArray(pda.refs[inds]), copy(pda.pool))
 end
 function getindex(pda::PooledDataArray, inds::Union(Vector, BitVector, Ranges))
-    return PooledDataArray(pda.refs[inds], copy(pda.pool))
+    return PooledDataArray(RefArray(pda.refs[inds]), copy(pda.pool))
 end
 
 # pdm[SingleItemIndex, SingleItemIndex)
@@ -447,7 +447,7 @@ function getindex(pda::PooledDataArray,
              i::Real,
              col_inds::Union(Vector, BitVector, Ranges))
     error("not yet implemented")
-    PooledDataArray(pda.refs[i, col_inds], pda.pool[i, col_inds])
+    PooledDataArray(RefArray(pda.refs[i, col_inds]), pda.pool[i, col_inds])
 end
 
 # pda[MultiItemIndex, SingleItemIndex]
@@ -462,7 +462,7 @@ function getindex(pda::PooledDataArray,
              row_inds::Union(Vector, BitVector, Ranges),
              j::Real)
     error("not yet implemented")
-    PooledDataArray(pda.refs[row_inds, j], pda.pool[row_inds, j])
+    PooledDataArray(RefArray(pda.refs[row_inds, j]), pda.pool[row_inds, j])
 end
 
 # pda[MultiItemIndex, MultiItemIndex]
@@ -512,10 +512,10 @@ function getindex(pda::PooledDataArray,
 end
 # TODO: Make inds::AbstractVector
 function getindex(pda::PooledDataArray,
-             row_inds::Union(Vector, BitVector, Ranges),
-             col_inds::Union(Vector, BitVector, Ranges))
+                  row_inds::Union(Vector, BitVector, Ranges),
+                  col_inds::Union(Vector, BitVector, Ranges))
     error("not yet implemented")
-    PooledDataArray(pda.refs[row_inds, col_inds], pda.pool[row_inds, col_inds])
+    PooledDataArray(RefArray(pda.refs[row_inds, col_inds]), pda.pool[row_inds, col_inds])
 end
 
 ##############################################################################
@@ -523,6 +523,31 @@ end
 ## setindex!() definitions
 ##
 ##############################################################################
+
+function getpoolidx{T,R<:Union(Uint8, Uint16, Int8, Int16)}(pda::PooledDataArray{T,R}, val::Any)
+    val::T = convert(T,val)
+    pool_idx = findfirst(pda.pool, val)
+    if pool_idx <= 0
+        push!(pda.pool, val)
+        pool_idx = length(pda.pool)
+        if pool_idx > typemax(R)
+            error("You're using a PooledDataArray with ref type $R, which can only hold $(int(typemax(R))) values,\n",
+                  "and you just tried to add the $(typemax(R)+1)th reference.  Please change the ref type\n",
+                  "to a larger int type, or use the default ref type ($DEFAULT_POOLED_REF_TYPE).")
+        end
+    end
+    return pool_idx
+end
+
+function getpoolidx{T,R}(pda::PooledDataArray{T,R}, val::Any)
+    val::T = convert(T,val)
+    pool_idx = findfirst(pda.pool, val)
+    if pool_idx <= 0
+        push!(pda.pool, val)
+        pool_idx = length(pda.pool)
+    end
+    return pool_idx
+end
 
 # x[SingleIndex] = NA
 # TODO: Delete values from pool that no longer exist?
@@ -535,15 +560,9 @@ end
 
 # x[SingleIndex] = Single Item
 # TODO: Delete values from pool that no longer exist?
-function setindex!(x::PooledDataArray, val::Any, ind::Real)
-    val = convert(eltype(x), val)
-    pool_idx = findfirst(x.pool, val)
-    if pool_idx > 0
-        x.refs[ind] = pool_idx
-    else
-        push!(x.pool, val)
-        x.refs[ind] = length(x.pool)
-    end
+function setindex!{T,R}(x::PooledDataArray{T,R}, val::Any, ind::Real)
+    val = convert(T, val)
+    x.refs[ind] = getpoolidx(x, val)
     return val
 end
 
@@ -571,13 +590,13 @@ end
 
 # pda[MultiIndex] = Multiple Values
 function setindex!(pda::PooledDataArray,
-                vals::AbstractVector,
-                inds::AbstractVector{Bool})
+                   vals::AbstractVector,
+                   inds::AbstractVector{Bool})
     setindex!(pda, vals, find(inds))
 end
 function setindex!(pda::PooledDataArray,
-                vals::AbstractVector,
-                inds::AbstractVector)
+                   vals::AbstractVector,
+                   inds::AbstractVector)
     for (val, ind) in zip(vals, inds)
         pda[ind] = val
     end
@@ -585,20 +604,14 @@ function setindex!(pda::PooledDataArray,
 end
 
 # pda[SingleItemIndex, SingleItemIndex] = NA
-function setindex!(pda::PooledDataMatrix, val::NAtype, i::Real, j::Real)
-    pda.refs[i, j] = POOLED_DATA_VEC_REF_CONVERTER(0)
+function setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::NAtype, i::Real, j::Real)
+    pda.refs[i, j] = zero(R)
     return NA
 end
 # pda[SingleItemIndex, SingleItemIndex] = Single Item
-function assign{T}(pda::PooledDataMatrix{T}, val::Any, i::Real, j::Real)
+function setindex!{T,R}(pda::PooledDataMatrix{T,R}, val::Any, i::Real, j::Real)
     val = convert(T, val)
-    pool_idx = findfirst(x.pool, val)
-    if pool_idx > 0
-        pda.refs[i, j] = pool_idx
-    else
-        push!(pda.pool, val)
-        pda.refs[i, j] = length(pda.pool)
-    end
+    pda.refs[i, j] = getpoolidx(pda, val)
     return val
 end
 
@@ -713,13 +726,20 @@ Perm{O<:Sort.Ordering}(o::O, v::PooledDataVector) = FastPerm(o, v)
 ##############################################################################
 
 
-function PooledDataVecs{S,N}(v1::PooledDataArray{S,N},
-                             v2::PooledDataArray{S,N})
+function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
+                                                   v2::PooledDataArray{S,R,N})
     pool = sort(unique([v1.pool, v2.pool]))
-    tidx1 = POOLED_DATA_VEC_REF_CONVERTER(findat(v1.pool, pool))
-    tidx2 = POOLED_DATA_VEC_REF_CONVERTER(findat(v2.pool, pool))
-    refs1 = zeros(POOLED_DATA_VEC_REF_TYPE, length(v1))
-    refs2 = zeros(POOLED_DATA_VEC_REF_TYPE, length(v2))
+    sz = length(pool)
+
+    REFTYPE = sz <= typemax(Uint8)  ? Uint8 :
+              sz <= typemax(Uint16) ? Uint16 :
+              sz <= typemax(Uint32) ? Uint32 :
+                                      Uint64
+
+    tidx1 = convert(Vector{REFTYPE}, findat(v1.pool, pool))
+    tidx2 = convert(Vector{REFTYPE}, findat(v2.pool, pool))
+    refs1 = zeros(REFTYPE, length(v1))
+    refs2 = zeros(REFTYPE, length(v2))
     for i in 1:length(refs1)
         if v1.refs[i] != 0
             refs1[i] = tidx1[v1.refs[i]]
@@ -730,27 +750,24 @@ function PooledDataVecs{S,N}(v1::PooledDataArray{S,N},
             refs2[i] = tidx2[v2.refs[i]]
         end
     end
-    return (PooledDataArray(refs1, pool),
-            PooledDataArray(refs2, pool))
+    return (PooledDataArray(RefArray(refs1), pool),
+            PooledDataArray(RefArray(refs2), pool))
 end
 
-function PooledDataVecs{S,N}(v1::PooledDataArray{S,N},
-                           v2::AbstractArray{S,N})
+function PooledDataVecs{S,R<:Integer,N}(v1::PooledDataArray{S,R,N},
+                                        v2::AbstractArray{S,N})
     return PooledDataVecs(v1,
                           PooledDataArray(v2))
 end
-function PooledDataVecs{S,N}(v1::PooledDataArray{S,N},
-                           v2::AbstractArray{S,N})
+function PooledDataVecs{S,R<:Integer,N}(v1::PooledDataArray{S,R,N},
+                                        v2::AbstractArray{S,N})
     return PooledDataVecs(v1,
                           PooledDataArray(v2))
 end
-function PooledDataVecs{S,N}(v1::AbstractArray{S,N},
-                           v2::PooledDataArray{S,N})
-    return PooledDataVecs(PooledDataArray(v1),
-                          v2)
-end
-function PooledDataVecs{S,N}(v1::AbstractArray{S,N},
-                           v2::PooledDataArray{S,N})
+
+####
+function PooledDataVecs{S,R<:Integer,N}(v1::AbstractArray{S,N},
+                                        v2::PooledDataArray{S,R,N})
     return PooledDataVecs(PooledDataArray(v1),
                           v2)
 end
@@ -760,9 +777,10 @@ function PooledDataVecs(v1::AbstractArray,
 
     ## Return two PooledDataVecs that share the same pool.
 
-    refs1 = Array(POOLED_DATA_VEC_REF_TYPE, size(v1))
-    refs2 = Array(POOLED_DATA_VEC_REF_TYPE, size(v2))
-    poolref = Dict{promote_type(eltype(v1), eltype(v2)), POOLED_DATA_VEC_REF_TYPE}()
+    ## TODO: allow specification of REFTYPE
+    refs1 = Array(DEFAULT_POOLED_REF_TYPE, size(v1))
+    refs2 = Array(DEFAULT_POOLED_REF_TYPE, size(v2))
+    poolref = Dict{promote_type(eltype(v1), eltype(v2)), DEFAULT_POOLED_REF_TYPE}()
     maxref = 0
 
     # loop through once to fill the poolref dict
@@ -786,21 +804,22 @@ function PooledDataVecs(v1::AbstractArray,
     end
 
     # fill in newrefs
+    zeroval = zero(DEFAULT_POOLED_REF_TYPE)
     for i = 1:length(v1)
         if isna(v1[i])
-            refs1[i] = POOLED_DATA_VEC_REF_CONVERTER(0)
+            refs1[i] = zeroval
         else
             refs1[i] = poolref[v1[i]]
         end
     end
     for i = 1:length(v2)
         if isna(v2[i])
-            refs2[i] = POOLED_DATA_VEC_REF_CONVERTER(0)
+            refs2[i] = zeroval
         else
             refs2[i] = poolref[v2[i]]
         end
     end
 
-    return (PooledDataArray(refs1, pool),
-            PooledDataArray(refs2, pool))
+    return (PooledDataArray(RefArray(refs1), pool),
+            PooledDataArray(RefArray(refs2), pool))
 end
