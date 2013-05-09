@@ -3,8 +3,10 @@
 ## PooledDataArray type definition
 ##
 ## An AbstractDataArray with efficient storage when values are repeated. A
-## PDA wraps an array of UInt8's, which are used to index into a compressed
-## pool of values. NA's are 0's in the UInt8 array.
+## PDA wraps an array of unsigned integers, which are used to index into a
+## compressed pool of values. NA's are 0's in the refs array.  The unsigned
+## integer type used for the refs array defaults to Uint32.  The `compact`
+## function converts to a smallest integer size that will index the entire pool.
 ##
 ## TODO: Allow ordering of factor levels
 ## TODO: Add metadata for dummy conversion
@@ -104,9 +106,11 @@ PooledDataArray(t::Type) = PooledDataArray(similar(Array(t,1),0), trues(0))
 PooledDataArray{R<:Integer}(t::Type, r::Type{R}) = PooledDataArray(similar(Array(t,1),0), trues(0), r)
 
 # Convert a BitArray to an Array{Bool} (m = missingness)
+# For some reason an additional method is needed but even that doesn't work
+# For a BitArray a refs type of Uint8 will always be sufficient as the size of the pool is 0, 1 or 2
+PooledDataArray{N}(d::BitArray{N}) = PooledDataArray(bitunpack(d), falses(size(a)), Uint8)
 PooledDataArray{R<:Integer,N}(d::BitArray{N}, 
-                              m::AbstractArray{Bool, N} = falses(size(a)),
-                              r::Type{R} = DEFAULT_POOLED_REF_TYPE) = PooledDataArray(convert(Array{Bool}, d), m, r)
+                              m::AbstractArray{Bool, N}) = PooledDataArray(bitunpack(d), m, Uint8)
 
 # Convert a DataArray to a PooledDataArray
 PooledDataArray{T,R<:Integer}(da::DataArray{T},
@@ -732,8 +736,8 @@ function PooledDataVecs{S,Q<:Integer,R<:Integer,N}(v1::PooledDataArray{S,Q,N},
               sz <= typemax(Uint32) ? Uint32 :
                                       Uint64
 
-    tidx1::Array{REFTYPE} = findat(v1.pool, pool)
-    tidx2::Array{REFTYPE} = findat(v2.pool, pool)
+    tidx1 = convert(Vector{REFTYPE}, findat(v1.pool, pool))
+    tidx2 = convert(Vector{REFTYPE}, findat(v2.pool, pool))
     refs1 = zeros(REFTYPE, length(v1))
     refs2 = zeros(REFTYPE, length(v2))
     for i in 1:length(refs1)
