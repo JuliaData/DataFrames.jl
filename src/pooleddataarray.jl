@@ -108,7 +108,7 @@ PooledDataArray{R<:Integer}(t::Type, r::Type{R}) = PooledDataArray(similar(Array
 # Convert a BitArray to an Array{Bool} (m = missingness)
 # For some reason an additional method is needed but even that doesn't work
 # For a BitArray a refs type of Uint8 will always be sufficient as the size of the pool is 0, 1 or 2
-PooledDataArray{N}(d::BitArray{N}) = PooledDataArray(bitunpack(d), falses(size(a)), Uint8)
+PooledDataArray{N}(d::BitArray{N}) = PooledDataArray(bitunpack(d), falses(size(d)), Uint8)
 PooledDataArray{R<:Integer,N}(d::BitArray{N}, 
                               m::AbstractArray{Bool, N}) = PooledDataArray(bitunpack(d), m, Uint8)
 
