@@ -278,7 +278,7 @@ size(rl::RList) = inherits(rl, "dataframe") ? (length(rl.data[1]), length(rl.dat
 length(rl::RList) = length(rl.data)
 length(ri::RInteger) = length(ri.data)
 length(rn::RNumeric) = length(rn.data)
-class(v::RVEC) = has(v.attr, "class") ? v.attr["class"].data : Array(ASCIIString,0)
+class(v::RVEC) = haskey(v.attr, "class") ? v.attr["class"].data : Array(ASCIIString,0)
 class(x) = Array(ASCIIString, 0)
 inherits(x, clnm::ASCIIString) = any(class(x) .== clnm)
 
