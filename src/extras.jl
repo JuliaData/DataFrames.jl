@@ -96,7 +96,7 @@ function cut{S, T}(x::Vector{S}, breaks::Vector{T})
     if breaks[end] < max_x
         push!(breaks, max_x)
     end
-    refs = fill(POOLED_DATA_VEC_REF_CONVERTER(0), length(x))
+    refs = fill(zero(DEFAULT_POOLED_REF_TYPE), length(x))
     for i in 1:length(x)
         if x[i] == min_x
             refs[i] = 1
@@ -116,7 +116,7 @@ function cut{S, T}(x::Vector{S}, breaks::Vector{T})
     for i in 2:(n - 1)
         pool[i] = string("(", from[i], ",", to[i], "]")
     end
-    PooledDataArray(refs, pool)
+    PooledDataArray(RefArray(refs), pool)
 end
 cut(x::Vector, ngroups::Int) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
 

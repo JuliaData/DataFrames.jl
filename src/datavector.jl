@@ -65,7 +65,6 @@ tail(dv::AbstractDataVector) = dv[max(length(dv) - 6, 1):length(dv)]
 ##
 ##############################################################################
 
-# TODO: Fill in definitions for PooledDataVector's
 # TODO: Macroize these definitions
 
 function push!{T}(dv::DataVector{T}, v::NAtype)
@@ -118,6 +117,32 @@ function map(f::Function, dv::DataVector)   # should this be an AbstractDataVect
     end
     return res
 end
+
+function push!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
+    push!(pdv.refs, zero(R))
+    return v
+end
+
+function push!{S,R,T}(pdv::PooledDataVector{S,R}, v::T)
+    v = convert(S,v)
+    push!(pdv.refs, getpoolidx(pdv, v))
+    return v
+end
+
+pop!(pdv::PooledDataVector) = pdv.pool[pop!(pdv.refs)]
+
+function unshift!{T,R}(pdv::PooledDataVector{T,R}, v::NAtype)
+    unshift!(pdv.refs, zero(R))
+    return v
+end
+
+function unshift!{S,R,T}(pdv::PooledDataVector{S,R}, v::T)
+    v = convert(S,v)
+    unshift!(pdv.refs, getpoolidx(pdv, v))
+    return v
+end
+
+shift!(pdv::PooledDataVector) = pdv.pool[shift!(pdv.refs)]
 
 reverse(x::AbstractDataVector) = x[end:-1:1]
 
