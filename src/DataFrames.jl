@@ -1,4 +1,3 @@
-require("Options")
 
 # Note that the two calls to using Stats in this file are
 # strictly required: one pulls the names into DataFrames
@@ -15,7 +14,6 @@ module DataFrames
 ##############################################################################
 
 using Base.Intrinsics
-using OptionsMod
 using Stats
 
 ##############################################################################

@@ -63,9 +63,7 @@ function na_safe_rowmeans(dm::DataMatrix)
 end
 
 # TODO: Default to failure in the face of NA's
-function svd(D::DataMatrix, k::Integer, opts::Options)
-    @defaults opts tracing => false
-    @defaults opts tolerance => 10e-4
+function svd(D::DataMatrix, k::Integer; tracing = false, tolerance = 10e-4)
 
     # Make a copy of the data that we can alter in place
     dm = copy(D)
@@ -137,8 +135,7 @@ function svd(D::DataMatrix, k::Integer, opts::Options)
     # Only return the SVD entries, not the imputation
     return (U[:, 1:k], D[1:k], V[:, 1:k])
 end
-svd(dm::DataMatrix, k::Integer) = svd(dm, k, Options())
-svd(dm::DataMatrix) = svd(dm, min(size(dm)), Options())
+svd(dm::DataMatrix) = svd(dm, min(size(dm)))
 
 function eig(dm::DataMatrix)
     U, D, V = svd(dm)
