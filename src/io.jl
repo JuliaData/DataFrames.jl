@@ -389,6 +389,24 @@ function read_table{T <: String}(filename::T)
   return df
 end
 
+function read_table{T <: String}(filename::T,separator::Char,header::Bool)
+  quotation_character = DEFAULT_QUOTATION_CHARACTER
+  missingness_indicators = DEFAULT_MISSINGNESS_INDICATORS
+  nrows = determine_nrows(filename, header)
+  io = open(filename, "r")
+  column_names = determine_column_names(io, separator, quotation_character, header)
+  df = read_table(io,
+                  separator,
+                  quotation_character,
+                  missingness_indicators,
+                  header,
+                  column_names,
+                  nrows)
+  close(io)
+  return df
+end
+
+read_table{T <: String}(filename::T,separator::Char)=read_table(filename::String,separator::Char,true)
 
 ##############################################################################
 #
