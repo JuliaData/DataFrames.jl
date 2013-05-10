@@ -372,7 +372,7 @@ end
 function read_table{T <: String}(filename::T; delim::Char=',',header::Bool=true,quotes::Char='"',missing::Array{ASCIIString,1}=DEFAULT_MISSINGNESS_INDICATORS)
   nrows = determine_nrows(filename, header)
   io = open(filename, "r")
-  column_names = determine_column_names(io, separator, quotes, header)
+  column_names = determine_column_names(io, delim, quotes, header)
   df = read_table(io,
                   delim,
                   quotes,
