@@ -72,9 +72,9 @@ upgrade_vector(v::IndexedVector) = v
 
 sortperm{S,A<:AbstractDataVector}(x::IndexedVector{S,A}) = [findin(x.x, [NA]), x.idx]
 sortperm(x::IndexedVector) = x.idx 
-sortperm(x::IndexedVector, ::Sort.Reverse) = reverse(x.idx)
+sortperm(x::IndexedVector, ::Sort.ReverseOrdering) = reverse(x.idx)
 sort(x::IndexedVector) = x.x[sortperm(x)]
-sort(x::IndexedVector, ::Sort.Reverse) = x.x[reverse(sortperm(x))]
+sort(x::IndexedVector, ::Sort.ReverseOrdering) = x.x[reverse(sortperm(x))]
 Perm{O<:Sort.Ordering}(o::O, v::IndexedVector) = FastPerm(o, v)
 
 type Indexer

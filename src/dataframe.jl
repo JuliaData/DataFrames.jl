@@ -1615,7 +1615,7 @@ end
 
 typealias ColIndexVec Union(AbstractVector{Integer}, AbstractVector{ASCIIString}, AbstractVector{UTF8String}, AbstractVector{Symbol})
 
-const DF_STABLE_SORT = Sort.TimSort()
+const DF_STABLE_SORT = Sort.TimSort
 
 # Permute indices according to the ordering of the given dataframe columns
 type DFPerm{O<:Ordering,DF<:AbstractDataFrame} <: Ordering
@@ -1630,13 +1630,13 @@ function DFPerm{O<:Ordering,DF<:AbstractDataFrame}(o::AbstractVector{Ordering}, 
         error("DFPerm: number of column orderings is greater than the number of columns")
     end
     if o_cols < df_cols
-        o = cat(1, o, fill(Sort.Forward(), df_cols-o_cols))
+        o = cat(1, o, fill(Sort.Forward, df_cols-o_cols))
     end
     DFPerm{O,DF}(o, df[cols])
 end
 
 DFPerm{O<:Ordering,DF<:AbstractDataFrame}(o::O,  df::DF) = DFPerm{O,DF}(fill(o,ncol(df)), df)
-DFPerm{            DF<:AbstractDataFrame}(       df::DF) = DFPerm(Sort.Forward(), df)
+DFPerm{            DF<:AbstractDataFrame}(       df::DF) = DFPerm(Sort.Forward, df)
 
 function lt(o::DFPerm, a, b)
     for i = 1:ncol(o.df)
@@ -1668,7 +1668,7 @@ for s in {:sort!, :sort, :sortperm}
     @eval begin
         $s{O<:Ordering}(df::AbstractDataFrame, ::Type{O})   = $s(df, DF_STABLE_SORT, O())
         $s             (df::AbstractDataFrame, o::Ordering) = $s(df, DF_STABLE_SORT, o)
-        $s             (df::AbstractDataFrame             ) = $s(df, Sort.Forward())
+        $s             (df::AbstractDataFrame             ) = $s(df, Sort.Forward)
     end
 end
 
@@ -1678,11 +1678,11 @@ for (sb,s) in {(:sortby!, :sort!), (:sortby, :sort)}
 
         $sb{O<:Ordering}(df::AbstractDataFrame, col::ColumnIndex, ::Type{O})   = $s(df,Perm(O(),df[col]))
         $sb             (df::AbstractDataFrame, col::ColumnIndex, o::Ordering) = $s(df,Perm(o,df[col]))
-        $sb             (df::AbstractDataFrame, col::ColumnIndex)              = $sb(df,col,Sort.Forward())
+        $sb             (df::AbstractDataFrame, col::ColumnIndex)              = $sb(df,col,Sort.Forward)
 
         $sb{O<:Ordering}(df::AbstractDataFrame, cols::ColIndexVec, ::Type{O})   = $s(df,DFPerm(O(),df[cols]))
         $sb             (df::AbstractDataFrame, cols::ColIndexVec, o::Ordering) = $s(df,DFPerm(o,  df[cols]))
-        $sb             (df::AbstractDataFrame, cols::ColIndexVec)              = $sb(df,cols,Sort.Forward())
+        $sb             (df::AbstractDataFrame, cols::ColIndexVec)              = $sb(df,cols,Sort.Forward)
 
         $sb{O<:Ordering}(df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray{O})             = $s(df,DFPerm(o, df[cols]))
         $sb             (df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray{DataType}) = $s(df,DFPerm(Ordering[O() for O in o], df[cols]))
@@ -1692,8 +1692,8 @@ for (sb,s) in {(:sortby!, :sort!), (:sortby, :sort)}
 end
 
 # Extras to speed up sorting
-sortperm{V}(d::AbstractDataFrame, a::Sort.Algorithm, o::FastPerm{Sort.Forward,V}) = sortperm(o.vec)
-sortperm{V}(d::AbstractDataFrame, a::Sort.Algorithm, o::FastPerm{Sort.Reverse,V}) = reverse(sortperm(o.vec))
+sortperm{V}(d::AbstractDataFrame, a::Sort.Algorithm, o::FastPerm{Sort.ForwardOrdering,V}) = sortperm(o.vec)
+sortperm{V}(d::AbstractDataFrame, a::Sort.Algorithm, o::FastPerm{Sort.ReverseOrdering,V}) = reverse(sortperm(o.vec))
 
 # reorder! for factors by specifying a DataFrame
 function reorder(fun::Function, x::PooledDataArray, df::AbstractDataFrame)
