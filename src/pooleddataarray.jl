@@ -705,16 +705,16 @@ function sortperm(pda::PooledDataArray)
     end 
 end 
         
-sortperm(pda::PooledDataArray, ::Sort.Reverse) = reverse(sortperm(pda))
+sortperm(pda::PooledDataArray, ::Sort.ReverseOrdering) = reverse(sortperm(pda))
 sort(pda::PooledDataArray) = pda[sortperm(pda)]
-sort(pda::PooledDataArray, ::Sort.Reverse) = pda[reverse(sortperm(pda))]
+sort(pda::PooledDataArray, ::Sort.ReverseOrdering) = pda[reverse(sortperm(pda))]
 type FastPerm{O<:Sort.Ordering,V<:AbstractVector} <: Sort.Ordering
     ord::O
     vec::V
 end
 FastPerm{O<:Sort.Ordering,V<:AbstractVector}(o::O,v::V) = FastPerm{O,V}(o,v)
-sortperm{V}(x::AbstractVector, a::Sort.Algorithm, o::FastPerm{Sort.Forward,V}) = x[sortperm(o.vec)]
-sortperm{V}(x::AbstractVector, a::Sort.Algorithm, o::FastPerm{Sort.Reverse,V}) = x[reverse(sortperm(o.vec))]
+sortperm{V}(x::AbstractVector, a::Sort.Algorithm, o::FastPerm{Sort.ForwardOrdering,V}) = x[sortperm(o.vec)]
+sortperm{V}(x::AbstractVector, a::Sort.Algorithm, o::FastPerm{Sort.ReverseOrdering,V}) = x[reverse(sortperm(o.vec))]
 Perm{O<:Sort.Ordering}(o::O, v::PooledDataVector) = FastPerm(o, v)
 
 
