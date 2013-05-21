@@ -369,26 +369,20 @@ function read_table{R <: String,
   end
 end
 
-function read_table{T <: String}(filename::T)
-  # Do inference for missing configuration settings
-  separator = determine_separator(filename)
-  quotation_character = DEFAULT_QUOTATION_CHARACTER
-  missingness_indicators = DEFAULT_MISSINGNESS_INDICATORS
-  header = true
+function read_table{T <: String}(filename::T; delim::Char=',',header::Bool=true,quotes::Char='"',missing::Array{ASCIIString,1}=DEFAULT_MISSINGNESS_INDICATORS)
   nrows = determine_nrows(filename, header)
   io = open(filename, "r")
-  column_names = determine_column_names(io, separator, quotation_character, header)
+  column_names = determine_column_names(io, delim, quotes, header)
   df = read_table(io,
-                  separator,
-                  quotation_character,
-                  missingness_indicators,
+                  delim,
+                  quotes,
+                  missing,
                   header,
                   column_names,
                   nrows)
   close(io)
   return df
 end
-
 
 ##############################################################################
 #
