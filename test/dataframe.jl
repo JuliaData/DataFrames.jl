@@ -137,3 +137,6 @@ df = DataFrame(x=[], y=[])
 df = DataFrame(x=[1:3], y=[3:5])
 sdf = sub(df, :(x .== 4) )
 @assert nrow(sdf) == 0
+
+@assert hash(DataFrame([1 2; 3 4])) == hash(DataFrame([1 2; 3 4]))
+@assert hash(DataFrame([1 2; 3 4])) != hash(DataFrame([1 3; 2 4]))
