@@ -1763,7 +1763,7 @@ next(df::AbstractDataFrame, i) = ((colnames(df)[i], df[i]), i + 1)
 
 function hash(a::AbstractDataFrame)
     h = hash(size(a)) + 1
-    for i in 1:prod(size(a))
+    for i in 1:ncol(a)
         h = bitmix(h, int(hash(a[i])))
     end
     return uint(h)
