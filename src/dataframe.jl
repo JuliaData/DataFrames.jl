@@ -1039,7 +1039,7 @@ index(df::SubDataFrame) = index(df.parent)
 function delete!(df::DataFrame, inds::Vector{Int})
     for ind in inds
         if 1 <= ind <= ncol(df)
-            delete!(df.columns, ind)
+            splice!(df.columns, ind)
             delete!(df.colindex, ind)
         else
             throw(ArgumentError("Can't delete a non-existent DataFrame column"))
