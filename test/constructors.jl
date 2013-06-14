@@ -143,7 +143,7 @@ dm = DataArray(Int64, 2, 2)
 
 @assert isequal(dataeye(3, 2), DataArray(eye(3, 2)))
 @assert isequal(dataeye(2), DataArray(eye(2)))
-@assert isequal(datadiagm([pi, pi]), DataArray(diagm([pi, pi])))
+@assert isequal(datadiagm(Float64[pi, pi]), DataArray(diagm(Float64[pi, pi])))
 
 #
 # DataFrame

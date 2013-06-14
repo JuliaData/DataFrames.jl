@@ -63,7 +63,7 @@ function na_safe_rowmeans(dm::DataMatrix)
 end
 
 # TODO: Default to failure in the face of NA's
-function svd(D::DataMatrix, k::Integer; tracing = false, tolerance = 10e-4)
+function svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
 
     # Make a copy of the data that we can alter in place
     dm = copy(D)

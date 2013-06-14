@@ -661,6 +661,7 @@ for (f, scalarf) in vectorized_comparison_operators
     end
 end
 
+.^(::MathConst{:e}, B::DataVector) = exp(B)
 for f in binary_operators
     @eval begin
         function ($f)(d::NAtype, e::NAtype)

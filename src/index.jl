@@ -68,7 +68,7 @@ function delete!(x::Index, idx::Integer)
     end
     gr = get_groups(x)
     delete!(x.lookup, x.names[idx])
-    delete!(x.names, idx)
+    splice!(x.names, idx)
     # fix groups:
     for (k,v) in gr
         newv = [[haskey(x, vv) ? vv : ASCIIString[] for vv in v]...]
