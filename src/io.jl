@@ -1,502 +1,468 @@
-const DEFAULT_BOOLEAN_STRINGS =
-  ["T", "F", "t", "f", "TRUE", "FALSE", "true", "false"]
-const DEFAULT_TRUE_STRINGS =
-  ["T", "t", "TRUE", "true"]
-const DEFAULT_FALSE_STRINGS =
-  ["F", "f", "FALSE", "false"]
+function readnrows!(io::IO,
+	                buffer::Vector{Uint8},
+	                eol_indices::Vector{Int},
+	                separator_indices::Vector{Int},
+	                nrows::Int,
+	                eol::Char,
+	                separator::Char,
+	                quotemark::Char)
+	bytesread::Int = 0
+	nrowsread::Int = 0
+	eolsread::Int = 0
+	separatorsread::Int = 0
 
-const DEFAULT_QUOTATION_CHARACTER = '"'
-const DEFAULT_SEPARATOR = ','
+	inquotes::Bool = false
+	inescape::Bool = false
 
-const DEFAULT_MISSINGNESS_INDICATORS =
-  ["", "NA", "#NA", "N/A", "#N/A", "NULL", "."]
+	chr::Uint8 = ' '
 
-function parse_bool(x::String)
-    if contains(DEFAULT_TRUE_STRINGS, x)
-        return true
-    elseif contains(DEFAULT_FALSE_STRINGS, x)
-        return false
-    else
-        error("Could not parse bool")
-    end
+	buffer_size::Int = length(buffer)
+	eol_size::Int = length(eol_indices)
+	separator_size::Int = length(separator_indices)
+
+	while !eof(io) && nrowsread < nrows
+		bytesread += 1
+		chr = read(io, Uint8)
+
+		if buffer_size < bytesread
+			buffer_size *= 2
+			resize!(buffer, buffer_size)
+		end
+		buffer[bytesread] = chr
+
+		if !inquotes
+			if chr == eol
+				nrowsread +=1
+				eolsread +=1
+				if eol_size < eolsread
+					eol_size *= 2
+					resize!(eol_indices, eol_size)
+				end
+				eol_indices[eolsread] = bytesread
+			end
+
+			if chr == separator
+				separatorsread += 1
+				if separator_size < separatorsread
+					separator_size *= 2
+					resize!(separator_indices, separator_size)
+				end
+				separator_indices[separatorsread] = bytesread
+			end
+
+			if chr == quotemark && !inescape
+				inquotes = true
+			end
+		else
+			if chr == quotemark && !inescape
+				inquotes = false
+			end
+		end
+
+		if chr == '\\'
+			inescape = true
+		else
+			inescape = false
+		end
+	end
+
+	return nrowsread, bytesread, eolsread, separatorsread
 end
 
-##############################################################################
-#
-# Low-level text parsing
-#
-##############################################################################
+function buffermatch(buffer::Vector{Uint8},
+	                 left::Int,
+	                 right::Int,
+	                 exemplars::Vector{ASCIIString})
+	l::Int = right - left + 1
 
-function make_extract_string()
-    extract_cache = IOBuffer(Array(Uint8, 500), true, true)
-    # Do we really need a closure?
-    # Why not just keep passing this argument in?
-    function f(this, left::Int, right::Int, omitlist::Set = Set())
-        extract_cache_size = right - left
-        if extract_cache_size > extract_cache.size
-            extract_cache = IOBuffer(Array(Uint8, extract_cache_size), true, true)
-        end
-        seek(extract_cache, 0) # necessary?
-        if length(this) >= 1
-            while isvalid(this, right) && right > left && this[right] == ' '
-                right -= 1
-            end
-            i = left
-            while i <= right
-                lasti = i
-                ch, i = next(this, i)
-                if !contains(omitlist, lasti)
-                    print(extract_cache, ch)
-                end
-            end
-            return takebuf_string(extract_cache)
-        else
-            return ""
-        end
-    end
-    return f
-end
-extract_string = make_extract_string()
+	for index in 1:length(exemplars)
+		exemplar::ASCIIString = exemplars[index]
+		if length(exemplar) == l
+			isamatch::Bool = true
 
-const STATE_EXPECTING_VALUE = 0
-const STATE_IN_BARE = 1
-const STATE_IN_QUOTED = 2
-const STATE_POSSIBLE_EOQUOTED = 3
-const STATE_EXPECTING_SEP = 4
+			for i in 0:(l - 1)
+				isamatch &= buffer[left + i] == exemplar[1 + i]
+			end
 
-# Read one line of delimited text
-# This is complex because delimited text can contain EOL inside quoted fields
-function read_separated_line(io,
-                             separator::Char,
-                             quotation_character::Char)
-    # Indexes into the current line for the current item
-    left = 0
-    right = 0
+			if isamatch
+				return true
+			end
+		end
+	end
 
-    # Was using RopeString for efficient appends, but rare case and makes 
-    # UTF-8 processing harder
-    this = Base.chomp!(readline(io))
-
-    # Short-circuit on the empty line
-    if this == ""
-      return Array(UTF8String, 0)
-    end
-
-    # 5-state machine. See list of possible states above
-    state = STATE_EXPECTING_VALUE
-
-    # Index of characters to remove
-    omitlist = Set()
-
-    # Where are we
-    i = start(this)
-    eol = false
-
-    # Will eventually return a Vector of strings
-    num_elems = 0
-    ret = Array(ByteString, 0)
-
-    # off we go! use manual loops because this can grow
-    while true
-        eol = done(this, i)
-        if !eol
-            this_i = i
-            this_char, i = next(this, i)
-        end
-        if state == STATE_EXPECTING_VALUE
-            if eol
-                num_elems += 1
-                push!(ret, "")
-                break
-            elseif this_char == ' '
-                continue
-            elseif this_char == separator
-                num_elems += 1
-                push!(ret, "")
-            elseif this_char == quotation_character
-                left = this_i + 1
-                state = STATE_IN_QUOTED
-            else
-                left = this_i
-                state = STATE_IN_BARE
-            end
-        elseif state == STATE_IN_BARE
-            if eol
-                right = this_i
-                num_elems += 1
-                push!(ret, extract_string(this, left, right))
-                break
-            elseif this_char == separator
-                right = this_i - 1
-                num_elems += 1
-                push!(ret, extract_string(this, left, right))
-                state = STATE_EXPECTING_VALUE
-            else
-                continue
-            end
-        elseif state == STATE_IN_QUOTED
-            if eol
-                this = string(this, "\n", Base.chomp!(readline(io)))
-            elseif this_char == quotation_character
-                state = STATE_POSSIBLE_EOQUOTED
-            else
-                continue
-            end
-        elseif state == STATE_POSSIBLE_EOQUOTED
-            if eol
-                right = this_i - 1
-                num_elems += 1
-                push!(ret, extract_string(this, left, right, omitlist))
-                break
-            elseif this_char == quotation_character
-                add!(omitlist, this_i)
-                state = STATE_IN_QUOTED
-            elseif this_char == separator
-                right = this_i - 2
-                num_elems += 1
-                push!(ret, extract_string(this, left, right, omitlist))
-                empty!(omitlist)
-                state = STATE_EXPECTING_VALUE
-            elseif this_char == ' '
-                right = this_i - 2
-                num_elems += 1
-                push!(ret, extract_string(this, left, right, omitlist))
-                empty!(omitlist)
-                state = STATE_EXPECTING_SEP
-            else
-                error("unexpected character after a quote")
-            end
-        elseif state == STATE_EXPECTING_SEP
-            if eol
-                break
-            elseif this_char == ' '
-                continue
-            elseif this_char == separator
-                state = STATE_EXPECTING_VALUE
-            else
-                error("expecting a separator but got something else")
-            end
-        end
-    end
-    ret
+	return false
 end
 
-# Read data line-by-line
-function read_separated_text(io::IO,
-                             nrows::Int,
-                             separator::Char,
-                             quotation_character::Char)
-    # Read one line to determine the number of columns
-    i = 1
-    sp = read_separated_line(io, separator, quotation_character)
-    # Find a way to reuse this buffer
-    ncols = length(sp)
+# All of these functions return three items:
+# Parsed value, Success indicator, Missing indicator
 
-    # If the line is blank, return a 0x0 array to signify this
-    if ncols == 0
-        return Array(UTF8String, 0, 0)
-    end
+# TODO: Align more closely with parseint code
+function bytestoint(buffer::Vector{Uint8},
+	                left::Int,
+	                right::Int,
+	                missing_nonstrings::Vector{ASCIIString})
+	if buffermatch(buffer, left, right, missing_nonstrings)
+		return 0, true, true
+	end
 
-    # Otherwise, allocate an array to store all of the text we'll read
-    text_data = Array(UTF8String, nrows, ncols)
-    text_data[i, :] = sp
+	value::Int = 0
+	power::Int = 1
+	index::Int = right
+	byte::Uint8 = buffer[index]
 
-    # Loop until we've read nrows of text or run out of text
-    while i < nrows
-        sp = read_separated_line(io, separator, quotation_character)
-        if length(sp) == ncols
-            i += 1
-            text_data[i, :] = sp 
-        else
-            break
-        end
-    end
+	while index > left
+		if '0' <= byte <= '9'
+			value += (byte - '0') * power
+			power *= 10
+		else
+			return value, false, false
+		end
+		index -= 1
+		byte = buffer[index]
+	end
 
-    # Return as much text as we read
-    return text_data[1:i, :]
+	if byte == '-'
+		return -value, true, false
+	elseif byte == '+'
+		return value, true, false
+	elseif '0' <= byte <= '9'
+		value += (byte - '0') * power
+		return value, true, false
+	else
+		return value, false, false
+	end
 end
 
-##############################################################################
-#
-# Inferential steps
-#
-##############################################################################
+let out::Vector{Float64} = Array(Float64, 1)
+	global bytestofloat
+	function bytestofloat(buffer::Vector{Uint8},
+		                  left::Int,
+		                  right::Int,
+		                  missing_nonstrings::Vector{ASCIIString})
+		if buffermatch(buffer, left, right, missing_nonstrings)
+			return 0.0, true, true
+		end
 
-function determine_separator{T <: String}(filename::T)
-  if ismatch(r"csv$", filename)
-    return ','
-  elseif ismatch(r"tsv$", filename)
-    return '\t'
-  elseif ismatch(r"wsv$", filename)
-    return ' '
-  else
-    error("Unable to determine separator used in $filename")
-  end
+	    success = ccall(:jl_substrtod,
+	    	            Int32,
+	    	            (Ptr{Uint8}, Int, Int, Ptr{Float64}),
+	    	            buffer,
+	    	            left - 1,
+	    	            right - left + 1,
+	    	            out) == 0
+
+	    return out[1], success, false
+	end
 end
 
-function determine_nrows{T <: String}(filename::T, header::Bool)
-  total_lines = countlines(filename)
-  if header
-    return total_lines - 1
-  else
-    return total_lines
-  end
+function bytestobool(buffer::Vector{Uint8},
+	                 left::Int,
+	                 right::Int,
+	                 missing_nonstrings::Vector{ASCIIString},
+	                 true_strings::Vector{ASCIIString},
+	                 false_strings::Vector{ASCIIString})
+	if buffermatch(buffer, left, right, missing_nonstrings)
+		return false, true, true
+	end
+
+	if buffermatch(buffer, left, right, true_strings)
+		return true, true, false
+	elseif buffermatch(buffer, left, right, false_strings)
+		return false, true, false
+	else
+		return false, false, false
+	end
 end
 
-function determine_column_names(io::IO,
-                                separator::Char,
-                                quotation_character::Char,
-                                header::Bool)
-  seek(io, 0)
-  fields = read_separated_line(io, separator, quotation_character)
+function bytestostring(buffer::Vector{Uint8},
+	                   left::Int,
+	                   right::Int,
+	                   missing_strings::Vector{ASCIIString})
+	if buffermatch(buffer, left, right, missing_strings)
+		return "", true, true
+	end
 
-  if length(fields) == 0
-    error("Failed to determine column names from an empty data source")
-  end
-
-  column_names = header ? fields : generate_column_names(length(fields))
-  seek(io, 0)
-  return column_names
+	return bytestring(buffer[left:right]), true, false
 end
 
-function convert_to_dataframe{R <: String,
-                              S <: String,
-                              T <: String}(text_data::Matrix{R},
-                                           missingness_indicators::Vector{S},
-                                           column_names::Vector{T})
-  # Keep a record of number of rows and columns
-  nrows, ncols = size(text_data, 1), length(column_names)
+function builddf(rows::Int,
+	             cols::Int,
+	             bytes::Int,
+	             eols::Int,
+	             separators::Int,
+	             buffer::Vector{Uint8},
+	             eol_indices::Vector{Int},
+	             separator_indices::Vector{Int},
+	             separator::Char,
+	             eol::Char,
+	             quotemark::Char,
+	             missing_nonstrings::Vector{ASCIIString},
+	             missing_strings::Vector{ASCIIString},
+	             true_strings::Vector{ASCIIString},
+	             false_strings::Vector{ASCIIString},
+	             ignore_padding::Bool,
+	             strings_as_factors::Bool)
+	columns::Vector{Any} = Array(Any, cols)
 
-  # Short-circuit if the text data is empty
-  if nrows == 0
-    column_types = {Any for i in 1:ncols}
-    return DataFrame(column_types, column_names, 0)
-  end
+	for j in 1:cols
+		values = Array(Int, rows)
+		missing::BitVector = falses(rows)
+		isint::Bool = true
+		isfloat::Bool = true
+		isbool::Bool = true
+		isstring::Bool = true
 
-  # Store the columns as a set of DataVector's inside an Array of Any's
-  columns = Array(Any, ncols)
+		i::Int = 0
 
-  # Convert each column of text into a DataVector of the
-  # appropriate type
-  dtime = 0.0
-  for j in 1:ncols
-    is_missing = BitVector(nrows)
-    for i in 1:nrows
-      value_missing = contains(missingness_indicators, text_data[i, j])
-      if value_missing
-        text_data[i, j] = utf8("0")
-        is_missing[i] = true
-      else
-        is_missing[i] = false
-      end
-    end
-    values = Array(Int64, nrows)
-    try
-      for i in 1:nrows
-        values[i] = parseint(text_data[i, j])
-      end
-    catch
-      try
-        values = Array(Float64, nrows)
-        for i in 1:nrows
-          values[i] = parsefloat(text_data[i, j])
-        end
-      catch
-        try
-          values = Array(Bool, nrows)
-          for i in 1:nrows
-            values[i] = parse_bool(text_data[i, j])
-          end
-        catch
-          values = text_data[:, j]
-        end
-      end
-    end
-    columns[j] = DataArray(values, is_missing)
-  end
+		while i < rows
+			i += 1
 
-  # Prepare the DataFrame we'll return
-  df = DataFrame(columns, column_names)
-  return df
+			# Determine left and right boundaries of field
+			if j == 1
+				if i == 1
+					left = 1
+				else
+					left = eol_indices[i - 1] + 1
+				end
+			else
+				left = separator_indices[(i - 1) * (cols - 1) + j - 1] + 1
+			end
+
+			if j == cols
+				if i == rows
+					if buffer[bytes] == eol
+						right = bytes - 1
+					else
+						right = bytes
+					end
+				else
+					right = eol_indices[i] - 1
+				end
+			else
+				right = separator_indices[(i - 1) * (cols - 1) + j] - 1
+			end
+
+			# Ignore left-and-right whitespace padding
+			if ignore_padding
+				while left < right && buffer[left] == ' '
+					left += 1
+				end
+				while left < right && buffer[right] == ' '
+					right -= 1
+				end
+			end
+
+			# (1) Try to parse values as Int's
+			if isint
+				values[i], success, missing[i] =
+				  bytestoint(buffer, left, right, missing_nonstrings)
+				if success
+					continue
+				else
+					isint = false
+					values = convert(Array{Float64}, values)
+				end
+			end
+
+			# (2) Try to parse as Float64's
+			if isfloat
+				values[i], success, missing[i] =
+				  bytestofloat(buffer, left, right, missing_nonstrings)
+				if success
+					continue
+				else
+					isfloat = false
+					values = Array(Bool, rows)
+					i = 1
+				end
+			end
+
+			# If we go this far, we should ignore quote marks on the boundaries
+			while left < right && buffer[left] == quotemark
+				left += 1
+			end
+			while left < right && buffer[right] == quotemark
+				right -= 1
+			end
+
+			# (3) Try to parse as Bool's
+			if isbool
+				values[i], success, missing[i] =
+				  bytestobool(buffer, left, right,
+				  	          missing_nonstrings,
+				  	          true_strings, false_strings)
+				if success
+					continue
+				else
+					isbool = false
+					values = Array(UTF8String, rows)
+					i = 1
+				end
+			end
+
+			# (4) Fallback to UTF8String
+			if left == right && buffer[right] == quotemark
+				# Empty string special method
+				values[i], success, missing[i] = "", true, false
+			else
+				values[i], success, missing[i] =
+				  bytestostring(buffer, left, right, missing_strings)
+			end
+		end
+
+		if strings_as_factors && isstring
+			columns[j] = PooledDataArray(values, missing)
+		else
+			columns[j] = DataArray(values, missing)
+		end
+	end
+
+	# Need to pass this in
+	column_names = DataFrames.generate_column_names(cols)
+
+	return DataFrame(columns, column_names)
 end
 
-##############################################################################
-#
-# Text input
-#
-##############################################################################
+function readtable(io::IO;
+	               header::Bool = true,
+	               separator::Char = ',',
+	               eol::Char = '\n',
+	               quotemark::Char = '"',
+	               missing_nonstrings::Vector{ASCIIString} = ["", "NA"],
+	               missing_strings::Vector{ASCIIString} = ["NA"],
+	               true_strings::Vector{ASCIIString} = ["T", "t", "TRUE", "true"],
+	               false_strings::Vector{ASCIIString} = ["F", "f", "FALSE", "false"],
+	               strings_as_factors::Bool = false,
+	               ignore_padding::Bool = true,
+	               decimal::Char = '.',
+                   colnames::Vector{UTF8String} = Array(UTF8String, 0),
+                   coltypes::Vector{Any} = Array(Any, 0),
+                   nrows::Int = -1,
+                   skip_lines_at_start::Int = 0,
+                   clean_colnames::Bool = true,
+                   skip_blanklines::Bool = true,
+                   comment::Char = '#',
+                   encoding::Symbol = :utf8)
 
-# Read at most N lines from an IO object
-# Then return a minibatch of at most N rows as a DataFrame
-# Add column_types, force_types option
-function read_minibatch{R <: String,
-                        S <: String}(io::IO,
-                                     separator::Char,
-                                     quotation_character::Char,
-                                     missingness_indicators::Vector{R},
-                                     column_names::Vector{S},
-                                     minibatch_size::Int)
-  # Represent data as an array of strings before type conversion
-  text_data = read_separated_text(io, minibatch_size, separator, quotation_character)
+	# Allocate buffers to conserve memory
+	buffer::Vector{Uint8} = Array(Uint8, 2^20)
+	eol_indices::Vector{Int} = Array(Int, 1)
+	separator_indices::Vector{Int} = Array(Int, 1)
 
-  # Convert text data to a DataFrame
-  return convert_to_dataframe(text_data, missingness_indicators, column_names)
+	# Skip lines at the start
+	skipped_lines::Int = 0
+	while skipped_lines < skip_lines_at_start
+		# TODO: Use a method that doesn't allocate buffers
+		readuntil(io, eol)
+	end
+
+	# Deal with header
+	# TODO: Extract column names during this step
+	if header
+		column_text = readuntil(io, eol)
+	end
+
+	# Separate text into fields
+	rows, bytes, eols, separators =
+	  readnrows!(io,
+	  	         buffer,
+	  	         eol_indices,
+	  	         separator_indices,
+	  	         nrows,
+	  	         eol,
+	  	         separator,
+	  	         quotemark)
+
+	# Determine the number of columns
+	cols = fld(separators, rows) + 1
+
+	# Confirm that the number of columns is consistent across rows
+	if rem(separators, rows) != 0
+		error(@sprintf "Every line must have %d columns" cols)
+	end
+
+	# Parse contents of a buffer into a DataFrame
+	df = builddf(rows,
+		         cols,
+		         bytes,
+		         eols,
+		         separators,
+		         buffer,
+		         eol_indices,
+		         separator_indices,
+		         separator,
+		         eol,
+		         quotemark,
+		         missing_nonstrings,
+	             missing_strings,
+	             true_strings,
+	             false_strings,
+	             ignore_padding,
+	             strings_as_factors)
+
+	# Clean up column names if requested
+	if clean_colnames
+		clean_colnames!(df)
+	end
+
+	# Return the final DataFrame
+	return df
 end
 
-# Read an entire data set into a DataFrame from an IO
-# TODO: Do only IO-pass through the data
-function read_table{R <: String,
-                    S <: String}(io::IO,
-                                 separator::Char,
-                                 quotation_character::Char,
-                                 missingness_indicators::Vector{R},
-                                 header::Bool,
-                                 column_names::Vector{S},
-                                 nrows::Int)
-  # Return to start of stream
-  seek(io, 0)
+function readtable(filename::String;
+	               header::Bool = true,
+	               separator::Char = ',',
+	               eol::Char = '\n',
+	               quotemark::Char = '"',
+	               missing_nonstrings::Vector{ASCIIString} = ["", "NA"],
+	               missing_strings::Vector{ASCIIString} = ["NA"],
+	               true_strings::Vector{ASCIIString} = ["T", "t", "TRUE", "true"],
+	               false_strings::Vector{ASCIIString} = ["F", "f", "FALSE", "false"],
+	               strings_as_factors::Bool = false,
+	               ignore_padding::Bool = true,
+	               decimal::Char = '.',
+                   colnames::Vector{UTF8String} = Array(UTF8String, 0),
+                   coltypes::Vector{Any} = Array(Any, 0),
+                   nrows::Int = -1,
+                   skip_lines_at_start::Int = 0,
+                   clean_colnames::Bool = true,
+                   skip_blanklines::Bool = true,
+                   comment::Char = '#',
+                   encoding::Symbol = :utf8)
 
-  # Read first line to remove header in advance
-  if header
-    readline(io)
-  end
+	# Open an IO stream
+	io = open(filename, "r")
 
-  # Represent data as an array of strings before type conversion
-  text_data = read_separated_text(io, nrows, separator, quotation_character)
+	# If user wants all rows, overestimate nrows
+	if nrows == -1
+		nrows = filesize(filename)
+	end
 
-  # Short-circuit if data set is empty except for a header line
-  if size(text_data, 1) == 0
-    column_types = {Any for i in 1:length(column_names)}
-    return DataFrame(column_types, column_names, 0)
-  else
-    # Convert text data to a DataFrame
-    df = convert_to_dataframe(text_data, missingness_indicators, column_names)
-    return df
-  end
+	# Use the IO stream method for readtable()
+	df = readtable(io,
+	               header = header,
+	               separator = separator,
+	               eol = eol,
+	               quotemark = quotemark,
+	               missing_nonstrings = missing_nonstrings,
+	               missing_strings = missing_strings,
+	               true_strings = true_strings,
+	               false_strings = false_strings,
+	               strings_as_factors = strings_as_factors,
+	               ignore_padding = ignore_padding,
+	               decimal = decimal,
+                   colnames = colnames,
+                   coltypes = coltypes,
+                   nrows = nrows,
+                   skip_lines_at_start = skip_lines_at_start,
+                   clean_colnames = clean_colnames,
+                   skip_blanklines = clean_colnames,
+                   comment = comment,
+                   encoding = encoding)
+
+	# Close the IO stream
+	close(io)
+
+	# Return the resulting DataFrame
+	return df
 end
-
-function read_table{T <: String}(filename::T)
-  # Do inference for missing configuration settings
-  separator = determine_separator(filename)
-  quotation_character = DEFAULT_QUOTATION_CHARACTER
-  missingness_indicators = DEFAULT_MISSINGNESS_INDICATORS
-  header = true
-  nrows = determine_nrows(filename, header)
-  io = open(filename, "r")
-  column_names = determine_column_names(io, separator, quotation_character, header)
-  df = read_table(io,
-                  separator,
-                  quotation_character,
-                  missingness_indicators,
-                  header,
-                  column_names,
-                  nrows)
-  close(io)
-  return df
-end
-
-
-##############################################################################
-#
-# Text output
-#
-##############################################################################
-
-# Quotation rules
-function in_quotes(val::String, quotation_character::Char)
-  string(quotation_character, val, quotation_character)
-end
-function in_quotes(val::Real, quotation_character::Char)
-  string(val)
-end
-function in_quotes(val::Any, quotation_character::Char)
-  string(quotation_character, string(val), quotation_character)
-end
-
-# TODO: write_table should do more to react to the type of each column
-# Need to increase precision of string representation of Float64's
-function print_table(io::IO,
-                     df::DataFrame,
-                     separator::Char,
-                     quotation_character::Char,
-                     header::Bool)
-  n, p = nrow(df), ncol(df)
-  if header
-    column_names = colnames(df)
-    for j in 1:p
-      if j < p
-        print(io, in_quotes(column_names[j], quotation_character))
-        print(io, separator)
-      else
-        println(io, in_quotes(column_names[j], quotation_character))
-      end
-    end
-  end
-  for i in 1:n
-    for j in 1:p
-      if j < p
-        print(io, in_quotes(df[i, j], quotation_character))
-        print(io, separator)
-      else
-        println(io, in_quotes(df[i, j], quotation_character))
-      end
-    end
-  end
-end
-
-function print_table(io::IO,
-                     df::DataFrame,
-                     separator::Char,
-                     quotation_character::Char)
-  print_table(io, df, separator, quotation_character, true)
-end
-
-function print_table(df::DataFrame, separator::Char, quotation_character::Char)
-  print_table(OUTPUT_STREAM, df, separator, quotation_character, true)
-end
-
-function print_table(df::DataFrame)
-    print_table(OUTPUT_STREAM,
-                df,
-                DEFAULT_SEPARATOR,
-                DEFAULT_QUOTATION_CHARACTER,
-                true)
-end
-
-function write_table(filename::String,
-                     df::DataFrame,
-                     separator::Char,
-                     quotation_character::Char)
-  io = open(filename, "w")
-  print_table(io, df, separator, quotation_character)
-  close(io)
-end
-
-# Infer configuration settings from filename
-function write_table(filename::String, df::DataFrame)
-  separator = determine_separator(filename)
-  quotation_character = DEFAULT_QUOTATION_CHARACTER
-  write_table(filename, df, separator, quotation_character)
-end
-
-##############################################################################
-#
-# Binary serialization
-#
-##############################################################################
-
-# Wrappers for serialization
-function save(filename, d)
-    f = open(filename, "w")
-    serialize(f, d)
-    close(f)
-end
-
-function load_df(filename)
-    f = open(filename)
-    dd = deserialize(f)
-    close(f)
-    return dd
-end
-
-# end
