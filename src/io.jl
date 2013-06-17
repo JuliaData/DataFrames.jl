@@ -1,20 +1,24 @@
-const DEFAULT_BOOLEAN_STRINGS = ["T", "F", "t", "f", "TRUE", "FALSE", "true", "false"]
-const DEFAULT_TRUE_STRINGS = ["T", "t", "TRUE", "true"]
-const DEFAULT_FALSE_STRINGS = ["F", "f", "FALSE", "false"]
+const DEFAULT_BOOLEAN_STRINGS =
+  ["T", "F", "t", "f", "TRUE", "FALSE", "true", "false"]
+const DEFAULT_TRUE_STRINGS =
+  ["T", "t", "TRUE", "true"]
+const DEFAULT_FALSE_STRINGS =
+  ["F", "f", "FALSE", "false"]
 
 const DEFAULT_QUOTATION_CHARACTER = '"'
 const DEFAULT_SEPARATOR = ','
 
-const DEFAULT_MISSINGNESS_INDICATORS = ["", "NA", "#NA", "N/A", "#N/A", "NULL", "."]
+const DEFAULT_MISSINGNESS_INDICATORS =
+  ["", "NA", "#NA", "N/A", "#N/A", "NULL", "."]
 
 function parse_bool(x::String)
-  if contains(DEFAULT_TRUE_STRINGS, x)
-    return true
-  elseif contains(DEFAULT_FALSE_STRINGS, x)
-    return false
-  else
-    error("Could not parse bool")
-  end
+    if contains(DEFAULT_TRUE_STRINGS, x)
+        return true
+    elseif contains(DEFAULT_FALSE_STRINGS, x)
+        return false
+    else
+        error("Could not parse bool")
+    end
 end
 
 ##############################################################################
@@ -23,12 +27,15 @@ end
 #
 ##############################################################################
 
-let extract_cache = memio(500, false)
-    global extract_string
-    function extract_string(this, left::Int, right::Int, omitlist::Set)
-        if right - left > length(extract_cache.ios)
-            extract_cache_size = right - left
-            extract_cache = memio(extract_cache_size,false)
+function make_extract_string()
+    # extract_cache = memio(500, false)
+    extract_cache = memio(500, false)
+    # Do we really need a closure?
+    # Why not just keep passing this argument in?
+    function f(this, left::Int, right::Int, omitlist::Set = Set())
+        extract_cache_size = right - left
+        if extract_cache_size > length(extract_cache.ios)
+            extract_cache = memio(extract_cache_size, false)
         end
         seek(extract_cache, 0) # necessary?
         if length(this) >= 1
@@ -48,10 +55,9 @@ let extract_cache = memio(500, false)
             return ""
         end
     end
+    return f
 end
-
-const NULLSET = Set()
-extract_string(this, left::Int, right::Int) = extract_string(this, left, right, NULLSET)
+extract_string = make_extract_string()
 
 const STATE_EXPECTING_VALUE = 0
 const STATE_IN_BARE = 1
@@ -184,6 +190,7 @@ function read_separated_text(io::IO,
     # Read one line to determine the number of columns
     i = 1
     sp = read_separated_line(io, separator, quotation_character)
+    # Find a way to reuse this buffer
     ncols = length(sp)
 
     # If the line is blank, return a 0x0 array to signify this
