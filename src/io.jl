@@ -98,18 +98,18 @@ end
 
 # TODO: Mechanism for traversing a single line of text to find fields
 # Use this to determine number of columns
-function findfields(buffer::Vector{Uint8},
-                    separator::Char,
-                    quotation_character::Char,
-                    lower::Int,
-                    upper::Int)
-    # Field starting indices
-    # Field ending indices
-    i = lower
-    while i < upper
+# function findfields(buffer::Vector{Uint8},
+#                     separator::Char,
+#                     quotation_character::Char,
+#                     lower::Int,
+#                     upper::Int)
+#     # Field starting indices
+#     # Field ending indices
+#     i = lower
+#     while i < upper
 
-    end
-end
+#     end
+# end
 
 # Read one line of delimited text
 # This is complex because delimited text can contain EOL inside quoted fields
@@ -148,7 +148,7 @@ function readfields!(io::IO,
     omitlist = Set()
 
     # Where are we
-    i = start(buffer) # Why not just use 1?
+    i = 1
     eol = false
 
     # Will eventually return a Vector of strings
@@ -160,7 +160,6 @@ function readfields!(io::IO,
 
     # off we go! use manual loops because this can grow
     while true
-        # eol = done(buffer, i)
         eol = i == upper
         if !eol
             this_i = i
@@ -199,7 +198,7 @@ function readfields!(io::IO,
                     n_fields *= 2
                     resize!(fields, n_fields)
                 end
-                fields[num_elems] = bytestring(buffer[left:right])
+                fields[num_elems] = UTF8String(buffer[left:right]) # bytestring(buffer[left:right])
                 break
             elseif this_char == separator
                 right = this_i - 1
@@ -208,7 +207,7 @@ function readfields!(io::IO,
                     n_fields *= 2
                     resize!(fields, n_fields)
                 end
-                fields[num_elems] = bytestring(buffer[left:right])
+                fields[num_elems] = UTF8String(buffer[left:right]) # bytestring(buffer[left:right])
                 state = STATE_EXPECTING_VALUE
             else
                 continue
@@ -231,7 +230,7 @@ function readfields!(io::IO,
                     n_fields *= 2
                     resize!(fields, n_fields)
                 end
-                fields[num_elems] = bytestring(buffer[left:right])
+                fields[num_elems] = UTF8String(buffer[left:right]) # bytestring(buffer[left:right])
                 # Pass omitlist?
                 break
             elseif this_char == quotation_character
@@ -244,7 +243,7 @@ function readfields!(io::IO,
                     n_fields *= 2
                     resize!(fields, n_fields)
                 end
-                fields[num_elems] = bytestring(buffer[left:right])
+                fields[num_elems] = UTF8String(buffer[left:right]) # bytestring(buffer[left:right])
                 # Remove omitlist
                 empty!(omitlist)
                 state = STATE_EXPECTING_VALUE
@@ -255,7 +254,7 @@ function readfields!(io::IO,
                     n_fields *= 2
                     resize!(fields, n_fields)
                 end
-                fields[num_elems] = bytestring(buffer[left:right])
+                fields[num_elems] = UTF8String(buffer[left:right]) # bytestring(buffer[left:right])
                 # Remove omitlist
                 empty!(omitlist)
                 state = STATE_EXPECTING_SEP
@@ -279,14 +278,13 @@ function readfields!(io::IO,
 end
 
 # Read data line-by-line
-function read_separated_text(io::IO,
-                             nrows::Int,
-                             separator::Char,
-                             quotation_character::Char)
+function readtext!(io::IO,
+                   nrows::Int,
+                   separator::Char,
+                   quotation_character::Char,
+                   buffer::Array{Uint8},
+                   fields::Array{UTF8String})
     # Read one line to determine the number of columns
-    i = 1
-    buffer = Array(Uint8, 2^16)
-    fields = Array(UTF8String, 2^16)
     ncols = readfields!(io, buffer, fields, separator, quotation_character)
 
     # If the line is blank, return a 0x0 array to signify this
@@ -296,6 +294,7 @@ function read_separated_text(io::IO,
 
     # Otherwise, allocate an array to store all of the text we'll read
     text_data = Array(UTF8String, nrows, ncols)
+    i = 1
     for j in 1:ncols
         text_data[i, j] = fields[j]
     end
@@ -314,7 +313,11 @@ function read_separated_text(io::IO,
     end
 
     # Return as much text as we read
-    return text_data[1:i, :]
+    if i == nrows
+        return text_data
+    else
+        return text_data[1:i, :]
+    end
 end
 
 ##############################################################################
@@ -347,25 +350,24 @@ end
 function determine_column_names(io::IO,
                                 separator::Char,
                                 quotation_character::Char,
-                                header::Bool)
+                                header::Bool,
+                                buffer::Vector{Uint8},
+                                fields::Vector{UTF8String})
     seek(io, 0)
-    buffer = Array(Uint8, 2^16)
-    fields = Array(UTF8String, 2^16)
+
     ncols = readfields!(io, buffer, fields, separator, quotation_character)
 
     if ncols == 0
         error("Failed to determine column names from an empty data source")
     end
 
-    if header
-        column_names = fields[1:ncols]
-    else
-        column_names = generate_column_names(1:ncols)
-    end
-
     seek(io, 0)
 
-    return column_names
+    if header
+        return fields[1:ncols]
+    else
+        return generate_column_names(1:ncols)
+    end
 end
 
 function convert_to_dataframe{R <: String,
@@ -443,11 +445,17 @@ function read_minibatch{R <: String,
                                      missingness_indicators::Vector{R},
                                      column_names::Vector{S},
                                      minibatch_size::Int)
+    # Set up buffers
+    buffer = Array(Uint8, 2^24)
+    fields = Array(UTF8String, 2^16)
+
     # Represent data as an array of strings before type conversion
-    text_data = read_separated_text(io,
-                                    minibatch_size,
-                                    separator,
-                                    quotation_character)
+    text_data = readtext!(io,
+                          minibatch_size,
+                          separator,
+                          quotation_character,
+                          buffer,
+                          fields)
 
     # Convert text data to a DataFrame
     return convert_to_dataframe(text_data,
@@ -464,7 +472,9 @@ function read_table{R <: String,
                                  missingness_indicators::Vector{R},
                                  header::Bool,
                                  column_names::Vector{S},
-                                 nrows::Int)
+                                 nrows::Int,
+                                 buffer::Vector{Uint8},
+                                 fields::Vector{UTF8String})
     # Return to start of stream
     seek(io, 0)
 
@@ -474,10 +484,12 @@ function read_table{R <: String,
     end
 
     # Represent data as an array of strings before type conversion
-    text_data = read_separated_text(io,
-                                    nrows,
-                                    separator,
-                                    quotation_character)
+    text_data = readtext!(io,
+                          nrows,
+                          separator,
+                          quotation_character,
+                          buffer,
+                          fields)
 
     # Short-circuit if data set is empty except for a header line
     if size(text_data, 1) == 0
@@ -485,10 +497,9 @@ function read_table{R <: String,
         return DataFrame(column_types, column_names, 0)
     else
         # Convert text data to a DataFrame
-        df = convert_to_dataframe(text_data,
-                                  missingness_indicators,
-                                  column_names)
-        return df
+        return convert_to_dataframe(text_data,
+                                    missingness_indicators,
+                                    column_names)
     end
 end
 
@@ -499,18 +510,30 @@ function read_table{T <: String}(filename::T,
                                  header = true)
     nrows = determine_nrows(filename, header)
     io = open(filename, "r")
+
+    # Set up buffers
+    buffer = Array(Uint8, 2^24)
+    fields = Array(UTF8String, 2^16)
+
     column_names = determine_column_names(io,
                                           separator,
                                           quotation_character,
-                                          header)
+                                          header,
+                                          buffer,
+                                          fields)
+
     df = read_table(io,
                     separator,
                     quotation_character,
                     missingness_indicators,
                     header,
                     column_names,
-                    nrows)
+                    nrows,
+                    buffer,
+                    fields)
+
     close(io)
+
     return df
 end
 
