@@ -1,17 +1,18 @@
-const DEFAULT_BOOLEAN_STRINGS =
-  ["T", "F", "t", "f", "TRUE", "FALSE", "true", "false"]
-const DEFAULT_TRUE_STRINGS =
-  ["T", "t", "TRUE", "true"]
-const DEFAULT_FALSE_STRINGS =
-  ["F", "f", "FALSE", "false"]
-
+const DEFAULT_TRUE_STRINGS = ["T", "t", "TRUE", "true"]
+const DEFAULT_FALSE_STRINGS = ["F", "f", "FALSE", "false"]
 const DEFAULT_QUOTATION_CHARACTER = '"'
 const DEFAULT_SEPARATOR = ','
-
 const DEFAULT_MISSINGNESS_INDICATORS =
-  ["", "NA", "#NA", "N/A", "#N/A", "NULL", "."]
+  ["", ".", "NA", "#NA", "N/A", "#N/A", "NULL"]
 
 const MISSINGNESS_STRING = utf8("0")
+const EMPTY_STRING = utf8("")
+
+const STATE_EXPECTING_VALUE = 0
+const STATE_IN_BARE = 1
+const STATE_IN_QUOTED = 2
+const STATE_POSSIBLE_EOQUOTED = 3
+const STATE_EXPECTING_SEP = 4
 
 function parsebool(x::String)
     if contains(DEFAULT_TRUE_STRINGS, x)
@@ -29,43 +30,25 @@ end
 #
 ##############################################################################
 
-function make_extract_string()
-    # extract_cache = memio(500, false)
-    extract_cache = memio(500, false)
-    # Do we really need a closure?
-    # Why not just keep passing this argument in?
-    function f(this, left::Int, right::Int, omitlist::Set = Set())
-        extract_cache_size = right - left
-        if extract_cache_size > length(extract_cache.ios)
-            extract_cache = memio(extract_cache_size, false)
-        end
-        seek(extract_cache, 0) # necessary?
-        if length(this) >= 1
-            while isvalid(this, right) && right > left && this[right] == ' '
-                right -= 1
-            end
-            i = left
-            while i <= right
-                lasti = i
-                ch, i = next(this, i)
-                if !contains(omitlist, lasti)
-                    print(extract_cache, ch)
-                end
-            end
-            return takebuf_string(extract_cache)
-        else
-            return ""
+function getstring(char_buffer::Vector{Uint8},
+                   left::Int,
+                   right::Int,
+                   omitlist::IntSet)
+    indices = left:right
+
+    data = Array(Uint8, length(indices) - length(omitlist))
+
+    i_prime = 0
+    for i in indices
+        if !contains(omitlist, i)
+            i_prime += 1
+            data[i_prime] = char_buffer[i]
         end
     end
-    return f
-end
-extract_string = make_extract_string()
 
-const STATE_EXPECTING_VALUE = 0
-const STATE_IN_BARE = 1
-const STATE_IN_QUOTED = 2
-const STATE_POSSIBLE_EOQUOTED = 3
-const STATE_EXPECTING_SEP = 4
+    # TODO: Use bytestring() for safety?
+    return UTF8String(data)
+end
 
 # Read a line of text into a Uint8 buffer from a given starting position
 # which defaults to 1 if not specified. Mutates inputs and returns
@@ -114,65 +97,55 @@ end
 # Read one line of delimited text
 # This is complex because delimited text can contain EOL inside quoted fields
 function readfields!(io::IO,
-                     buffer::Vector{Uint8}, # Character buffer
-                     fields::Vector{UTF8String}, # Fields buffer
+                     char_buffer::Vector{Uint8},
+                     field_buffer::Vector{UTF8String},
                      separator::Char,
-                     quotation_character::Char)
+                     quotation_character::Char,
+                     omitlist::IntSet)
     # Indexes into the current line for the current item
     left = 0
     right = 0
-
     upper = 1
-    l = length(buffer)
+    l = length(char_buffer)
 
     # Don't bother trying to read after EOF
-    # TODO: Don't allocate a new array
-    #       Just edit something in place
     if eof(io)
-        return 0 # Return number of fields
+        return 0
     end
 
-    upper, l = readline!(io, buffer, upper, l)
+    # Read a line of text into the buffer
+    upper, l = readline!(io, char_buffer, upper, l)
 
     # Short-circuit on empty lines
-    # TODO: Don't allocate a new array
-    #       Just edit something in place
     if upper == 1
-        return 0 # Return number of fields
+        return 0
     end
 
     # 5-state machine. See list of possible states above
-    state = STATE_EXPECTING_VALUE
-
-    # Index of characters to remove
-    omitlist = Set()
+    state::Int = STATE_EXPECTING_VALUE
 
     # Where are we
     i = 1
     eol = false
 
-    # Will eventually return a Vector of strings
-    # TODO: Don't do this.
-    # TODO: Never call anything ret. It's super confusing viz. x86 ASM.
-    # TODO: Deal with Latin-1 and other shitty encodings
     num_elems = 0
-    n_fields = length(fields)
+    n_fields = length(field_buffer)
 
     # off we go! use manual loops because this can grow
     while true
         eol = i == upper
         if !eol
             this_i = i
-            this_char, i = buffer[i], i + 1
+            this_char, i = char_buffer[i], i + 1
         end
         if state == STATE_EXPECTING_VALUE
             if eol
                 num_elems += 1
                 if num_elems > n_fields
                     n_fields *= 2
-                    resize!(fields, n_fields)
+                    resize!(field_buffer, n_fields)
                 end
-                fields[num_elems] = utf8("")
+                field_buffer[num_elems] = EMPTY_STRING
                 break
             elseif this_char == ' '
                 continue
@@ -180,9 +153,9 @@ function readfields!(io::IO,
                 num_elems += 1
                 if num_elems > n_fields
                     n_fields *= 2
-                    resize!(fields, n_fields)
+                    resize!(field_buffer, n_fields)
                 end
-                fields[num_elems] = utf8("")
+                field_buffer[num_elems] = EMPTY_STRING
             elseif this_char == quotation_character
                 left = this_i + 1
                 state = STATE_IN_QUOTED
@@ -196,18 +169,20 @@ function readfields!(io::IO,
                 num_elems += 1
                 if num_elems > n_fields
                     n_fields *= 2
-                    resize!(fields, n_fields)
+                    resize!(field_buffer, n_fields)
                 end
-                fields[num_elems] = UTF8String(buffer[left:right]) # bytestring(buffer[left:right])
+                field_buffer[num_elems] =
+                  getstring(char_buffer, left, right, omitlist)
                 break
             elseif this_char == separator
                 right = this_i - 1
                 num_elems += 1
                 if num_elems > n_fields
                     n_fields *= 2
-                    resize!(fields, n_fields)
+                    resize!(field_buffer, n_fields)
                 end
-                fields[num_elems] = UTF8String(buffer[left:right]) # bytestring(buffer[left:right])
+                field_buffer[num_elems] =
+                  getstring(char_buffer, left, right, omitlist)
                 state = STATE_EXPECTING_VALUE
             else
                 continue
@@ -216,7 +191,7 @@ function readfields!(io::IO,
             if eol
                 # We saw a newline inside a quoted field
                 # So we read in another line
-                upper, l = readline!(io, buffer, upper, l)
+                upper, l = readline!(io, char_buffer, upper, l)
             elseif this_char == quotation_character
                 state = STATE_POSSIBLE_EOQUOTED
             else
@@ -228,10 +203,10 @@ function readfields!(io::IO,
                 num_elems += 1
                 if num_elems > n_fields
                     n_fields *= 2
-                    resize!(fields, n_fields)
+                    resize!(field_buffer, n_fields)
                 end
-                fields[num_elems] = UTF8String(buffer[left:right]) # bytestring(buffer[left:right])
-                # Pass omitlist?
+                field_buffer[num_elems] =
+                  getstring(char_buffer, left, right, omitlist)
                 break
             elseif this_char == quotation_character
                 add!(omitlist, this_i)
@@ -241,10 +216,10 @@ function readfields!(io::IO,
                 num_elems += 1
                 if num_elems > n_fields
                     n_fields *= 2
-                    resize!(fields, n_fields)
+                    resize!(field_buffer, n_fields)
                 end
-                fields[num_elems] = UTF8String(buffer[left:right]) # bytestring(buffer[left:right])
-                # Remove omitlist
+                field_buffer[num_elems] =
+                  getstring(char_buffer, left, right, omitlist)
                 empty!(omitlist)
                 state = STATE_EXPECTING_VALUE
             elseif this_char == ' '
@@ -252,10 +227,10 @@ function readfields!(io::IO,
                 num_elems += 1
                 if num_elems > n_fields
                     n_fields *= 2
-                    resize!(fields, n_fields)
+                    resize!(field_buffer, n_fields)
                 end
-                fields[num_elems] = UTF8String(buffer[left:right]) # bytestring(buffer[left:right])
-                # Remove omitlist
+                field_buffer[num_elems] =
+                  getstring(char_buffer, left, right, omitlist)
                 empty!(omitlist)
                 state = STATE_EXPECTING_SEP
             else
@@ -282,10 +257,16 @@ function readtext!(io::IO,
                    nrows::Int,
                    separator::Char,
                    quotation_character::Char,
-                   buffer::Array{Uint8},
-                   fields::Array{UTF8String})
+                   char_buffer::Array{Uint8},
+                   field_buffer::Array{UTF8String},
+                   omitlist::IntSet)
     # Read one line to determine the number of columns
-    ncols = readfields!(io, buffer, fields, separator, quotation_character)
+    ncols = readfields!(io,
+                        char_buffer,
+                        field_buffer,
+                        separator,
+                        quotation_character,
+                        omitlist)
 
     # If the line is blank, return a 0x0 array to signify this
     if ncols == 0
@@ -296,16 +277,23 @@ function readtext!(io::IO,
     text_data = Array(UTF8String, nrows, ncols)
     i = 1
     for j in 1:ncols
-        text_data[i, j] = fields[j]
+        text_data[i, j] = field_buffer[j]
     end
 
     # Loop until we've read nrows of text or run out of text
+    # Do this loop without nrows
+    # That will save one full pass through data
     while i < nrows
-        tmp = readfields!(io, buffer, fields, separator, quotation_character)
+        tmp = readfields!(io,
+                          char_buffer,
+                          field_buffer,
+                          separator,
+                          quotation_character,
+                          omitlist)
         if tmp == ncols
             i += 1
             for j in 1:ncols
-                text_data[i, j] = fields[j]
+                text_data[i, j] = field_buffer[j]
             end
         else
             break
@@ -351,11 +339,17 @@ function determine_column_names(io::IO,
                                 separator::Char,
                                 quotation_character::Char,
                                 header::Bool,
-                                buffer::Vector{Uint8},
-                                fields::Vector{UTF8String})
+                                char_buffer::Vector{Uint8},
+                                field_buffer::Vector{UTF8String},
+                                omitlist::IntSet)
     seek(io, 0)
 
-    ncols = readfields!(io, buffer, fields, separator, quotation_character)
+    ncols = readfields!(io,
+                        char_buffer,
+                        field_buffer,
+                        separator,
+                        quotation_character,
+                        omitlist)
 
     if ncols == 0
         error("Failed to determine column names from an empty data source")
@@ -364,7 +358,7 @@ function determine_column_names(io::IO,
     seek(io, 0)
 
     if header
-        return fields[1:ncols]
+        return field_buffer[1:ncols]
     else
         return generate_column_names(1:ncols)
     end
@@ -446,16 +440,18 @@ function read_minibatch{R <: String,
                                      column_names::Vector{S},
                                      minibatch_size::Int)
     # Set up buffers
-    buffer = Array(Uint8, 2^24)
-    fields = Array(UTF8String, 2^16)
+    char_buffer = Array(Uint8, 2^24)
+    field_buffer = Array(UTF8String, 2^16)
+    omitlist = IntSet()
 
     # Represent data as an array of strings before type conversion
     text_data = readtext!(io,
                           minibatch_size,
                           separator,
                           quotation_character,
-                          buffer,
-                          fields)
+                          char_buffer,
+                          field_buffer,
+                          omitlist)
 
     # Convert text data to a DataFrame
     return convert_to_dataframe(text_data,
@@ -473,23 +469,29 @@ function read_table{R <: String,
                                  header::Bool,
                                  column_names::Vector{S},
                                  nrows::Int,
-                                 buffer::Vector{Uint8},
-                                 fields::Vector{UTF8String})
+                                 char_buffer::Vector{Uint8},
+                                 field_buffer::Vector{UTF8String},
+                                 omitlist::IntSet)
     # Return to start of stream
     seek(io, 0)
 
     # Read first line to remove header in advance
     if header
-        readline(io)
+        # cur = read(io, Uint8)
+        # while cur != '\n'
+        #     read(io, Uint8)
+        # end
+        readuntil(io, '\n')
     end
 
     # Represent data as an array of strings before type conversion
-    text_data = readtext!(io,
+    t1 = @elapsed text_data = readtext!(io,
                           nrows,
                           separator,
                           quotation_character,
-                          buffer,
-                          fields)
+                          char_buffer,
+                          field_buffer,
+                          omitlist)
 
     # Short-circuit if data set is empty except for a header line
     if size(text_data, 1) == 0
@@ -497,9 +499,12 @@ function read_table{R <: String,
         return DataFrame(column_types, column_names, 0)
     else
         # Convert text data to a DataFrame
-        return convert_to_dataframe(text_data,
+        t2 = @elapsed df = convert_to_dataframe(text_data,
                                     missingness_indicators,
                                     column_names)
+        @printf "Read Text: %f\n" t1
+        @printf "Convert Types: %f\n" t2
+        return df
     end
 end
 
@@ -512,15 +517,17 @@ function read_table{T <: String}(filename::T,
     io = open(filename, "r")
 
     # Set up buffers
-    buffer = Array(Uint8, 2^24)
-    fields = Array(UTF8String, 2^16)
+    char_buffer = Array(Uint8, 2^24)
+    field_buffer = Array(UTF8String, 2^16)
+    omitlist = IntSet()
 
     column_names = determine_column_names(io,
                                           separator,
                                           quotation_character,
                                           header,
-                                          buffer,
-                                          fields)
+                                          char_buffer,
+                                          field_buffer,
+                                          omitlist)
 
     df = read_table(io,
                     separator,
@@ -529,8 +536,9 @@ function read_table{T <: String}(filename::T,
                     header,
                     column_names,
                     nrows,
-                    buffer,
-                    fields)
+                    char_buffer,
+                    field_buffer,
+                    omitlist)
 
     close(io)
 
