@@ -399,24 +399,29 @@ function convert_to_dataframe{R <: String,
             for i in 1:nrows
                 values[i] = parseint(text_data[i, j])
             end
+            columns[j] = DataArray(values, is_missing)
         catch
             try
                 values = Array(Float64, nrows)
                 for i in 1:nrows
                     values[i] = parsefloat(text_data[i, j])
                 end
+                columns[j] = DataArray(values, is_missing)
             catch
                 try
                     values = Array(Bool, nrows)
                     for i in 1:nrows
                         values[i] = parsebool(text_data[i, j])
                     end
+                    columns[j] = DataArray(values, is_missing)
                 catch
                     values = text_data[:, j]
+                    # StringsAsFactors
+                    # columns[j] = PooledDataArray(values, is_missing)
+                    columns[j] = DataArray(values, is_missing)
                 end
             end
         end
-        columns[j] = DataArray(values, is_missing)
     end
 
     # Prepare the DataFrame we'll return
@@ -513,7 +518,8 @@ function read_table{T <: String}(filename::T,
                                  quotation_character = DEFAULT_QUOTATION_CHARACTER,
                                  missingness_indicators = DEFAULT_MISSINGNESS_INDICATORS,
                                  header = true)
-    nrows = determine_nrows(filename, header)
+    t0 = @elapsed nrows = determine_nrows(filename, header)
+    @printf "Row Count: %f\n" t0
     io = open(filename, "r")
 
     # Set up buffers
