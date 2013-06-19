@@ -28,14 +28,13 @@ end
 ##############################################################################
 
 function make_extract_string()
-    # extract_cache = memio(500, false)
-    extract_cache = memio(500, false)
+    extract_cache = IOBuffer(Array(Uint8, 500), true, true)
     # Do we really need a closure?
     # Why not just keep passing this argument in?
     function f(this, left::Int, right::Int, omitlist::Set = Set())
         extract_cache_size = right - left
-        if extract_cache_size > length(extract_cache.ios)
-            extract_cache = memio(extract_cache_size, false)
+        if extract_cache_size > extract_cache.size
+            extract_cache = IOBuffer(Array(Uint8, extract_cache_size), true, true)
         end
         seek(extract_cache, 0) # necessary?
         if length(this) >= 1
