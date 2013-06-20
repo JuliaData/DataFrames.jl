@@ -155,11 +155,11 @@ export # reconcile_groups,
        PooledDataArray,
        PooledDataMatrix,
        PooledDataVector,
-       print_table,
+       printtable,
        range,
        rbind,
        read_minibatch,
-       read_table,
+       readtable,
        reldiff,
        removeNA,
        rename_group!,
@@ -198,7 +198,7 @@ export # reconcile_groups,
        within!,
        within,
        without,
-       write_table,
+       writetable,
        xtab,
        xtabs,
        stack_df,
@@ -220,6 +220,16 @@ export # reconcile_groups,
        inherits,
        read_rda,
        vecbind
+
+##############################################################################
+##
+## Deprecations
+##
+##############################################################################
+
+Base.@deprecate read_table readtable
+Base.@deprecate print_table printtable
+Base.@deprecate write_table writetable
 
 ##############################################################################
 ##
