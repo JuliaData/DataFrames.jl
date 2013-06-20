@@ -66,6 +66,16 @@ function readnrows!(io::IO,
         end
     end
 
+    # Deal with files that do not include a final EOL
+    if eof(io) && chr != eol
+        nrowsread += 1
+        if eol_size < eolsread
+            eol_size *= 2
+            resize!(eol_indices, eol_size)
+        end
+        eol_indices[eolsread + 1] = bytesread + 1
+    end
+
     return nrowsread, bytesread, eolsread, separatorsread
 end
 
@@ -101,7 +111,8 @@ function bytestoint(buffer::Vector{Uint8},
                     left::Int,
                     right::Int,
                     missing_nonstrings::Vector{ASCIIString})
-    if buffermatch(buffer, left, right, missing_nonstrings)
+
+    if left > right || buffermatch(buffer, left, right, missing_nonstrings)
         return 0, true, true
     end
 
@@ -139,7 +150,7 @@ let out::Vector{Float64} = Array(Float64, 1)
                           left::Int,
                           right::Int,
                           missing_nonstrings::Vector{ASCIIString})
-        if buffermatch(buffer, left, right, missing_nonstrings)
+        if left > right || buffermatch(buffer, left, right, missing_nonstrings)
             return 0.0, true, true
         end
 
@@ -161,7 +172,7 @@ function bytestobool(buffer::Vector{Uint8},
                      missing_nonstrings::Vector{ASCIIString},
                      true_strings::Vector{ASCIIString},
                      false_strings::Vector{ASCIIString})
-    if buffermatch(buffer, left, right, missing_nonstrings)
+    if left > right || buffermatch(buffer, left, right, missing_nonstrings)
         return false, true, true
     end
 
@@ -177,7 +188,12 @@ end
 function bytestostring(buffer::Vector{Uint8},
                        left::Int,
                        right::Int,
-                       missing_strings::Vector{ASCIIString})
+                       missing_strings::Vector{ASCIIString},
+                       quotemark::Char)
+    if left > right && buffer[right] != quotemark
+        return "", true, true
+    end
+
     if buffermatch(buffer, left, right, missing_strings)
         return "", true, true
     end
@@ -308,7 +324,7 @@ function builddf(rows::Int,
                 values[i], success, missing[i] = "", true, false
             else
                 values[i], success, missing[i] =
-                  bytestostring(buffer, left, right, missing_strings)
+                  bytestostring(buffer, left, right, missing_strings, quotemark)
             end
         end
 
@@ -473,8 +489,24 @@ function readtable(io::IO;
     cols = fld(separators, rows) + 1
 
     # Confirm that the number of columns is consistent across rows
-    if rem(separators, rows) != 0
-        error(@sprintf "Every line must have %d columns" cols)
+    if separators != rows * (cols - 1)
+        linenumber = -1
+        j = -1
+        for i in 1:rows
+            bound = eol_indices[i]
+            j = 1
+            while separator_indices[(i - 1) * (cols - 1) + j] < bound
+                j += 1
+            end
+            if j != cols
+                linenumber = i
+                break
+            end
+        end
+        msg1 = @sprintf "Every line must have %d columns\n" cols
+        msg2 = @sprintf "Reading failed at line %d with %d columns\n" linenumber j
+        msg3 = @sprintf "Saw %d rows, but %d fields\n" rows separators
+        error(string(msg1, msg2, msg3))
     end
 
     # Parse contents of a buffer into a DataFrame
