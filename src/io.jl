@@ -260,10 +260,18 @@ function builddf(rows::Int,
 
             # Ignore left-and-right whitespace padding
             if ignorespace
-                while left < right && buffer[left] == ' '
+                while left < right &&
+                      (buffer[left] == ' ' ||
+                       buffer[left] == '\t' ||
+                       buffer[left] == '\r' ||
+                       buffer[left] == '\n')
                     left += 1
                 end
-                while left < right && buffer[right] == ' '
+                while left < right &&
+                      (buffer[right] == ' ' ||
+                       buffer[right] == '\t' ||
+                       buffer[right] == '\r' ||
+                       buffer[right] == '\n')
                     right -= 1
                 end
             end
@@ -401,7 +409,7 @@ function parseline(buffer::Vector{Uint8},
         index = right
         chr = buffer[index]
         while index > left &&
-              (chr == ' ' || chr == eol ||
+              (chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n' ||
                chr == separator || chr == quotemark)
             index -= 1
             chr = buffer[index]
