@@ -267,7 +267,7 @@ function builddf(rows::Int,
                        buffer[left] == '\n')
                     left += 1
                 end
-                while left < right &&
+                while left <= right &&
                       (buffer[right] == ' ' ||
                        buffer[right] == '\t' ||
                        buffer[right] == '\r' ||
@@ -492,6 +492,16 @@ function readtable(io::IO;
                  eol,
                  separator,
                  quotemark)
+
+    # Throw an error if we didn't see enough rows
+    if rows == 0
+        error("Failed to read any rows. Check EOL and file encoding.")
+    end
+
+    # Throw an error if we didn't see enough bytes
+    if bytes == 0
+        error("Failed to read any bytes. Check EOL and file encoding.")
+    end
 
     # Determine the number of columns
     cols = fld(separators, rows) + 1
