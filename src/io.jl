@@ -261,6 +261,8 @@ function builddf(rows::Int,
                 else
                     isint = false
                     values = convert(Array{Float64}, values)
+                    values[i], success, missing[i] =
+                      bytestoint(buffer, left, right, missing_nonstrings)
                 end
             end
 
@@ -431,7 +433,7 @@ function readtable(io::IO;
     # Skip lines at the start
     skipped_lines::Int = 0
     while skipped_lines < skipstartlines
-        while chr != eol
+        while !eof(io) && chr != eol
             chr = read(io, Uint8)
         end
         skipped_lines += 1
@@ -443,7 +445,7 @@ function readtable(io::IO;
         headerbytesread = 0
         headerbytes = Array(Uint8, 2^16)
         headerbytes_size = length(headerbytes)
-        while chr != eol
+        while !eof(io) && chr != eol
             chr = read(io, Uint8)
             headerbytesread += 1
             if headerbytesread > headerbytes_size
