@@ -370,6 +370,19 @@ end
 getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(BitVector, Vector{Bool})) = DataArray(d.data[inds], d.na[inds])
 getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector)) = DataArray(d.data[inds], d.na[inds])
 
+# dv[SingleItemIndex, SingleItemIndex)
+function getindex(d::DataVector, i::Real, j::Real)
+    if j != 1
+        throw(ArgumentError())
+    end
+
+    if d.na[i]
+        return NA
+    else
+        return d.data[i]
+    end
+end
+
 # dm[SingleItemIndex, SingleItemIndex)
 function getindex(d::DataMatrix, i::Real, j::Real)
     if d.na[i, j]
