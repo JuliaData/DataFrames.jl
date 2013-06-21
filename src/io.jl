@@ -69,7 +69,7 @@ function readnrows!(io::IO,
     # Deal with files that do not include a final EOL
     if eof(io) && chr != eol
         nrowsread += 1
-        if eol_size < eolsread
+        if eol_size < eolsread + 1
             eol_size *= 2
             resize!(eol_indices, eol_size)
         end
@@ -446,10 +446,11 @@ function readtable(io::IO;
                    cleancolnames::Bool = true,
                    skipblanklines::Bool = true,
                    comment::Char = '#',
-                   encoding::Symbol = :utf8)
+                   encoding::Symbol = :utf8,
+                   buffersize::Int = 2^20)
 
     # Allocate buffers to conserve memory
-    buffer::Vector{Uint8} = Array(Uint8, 2^20)
+    buffer::Vector{Uint8} = Array(Uint8, buffersize)
     eol_indices::Vector{Int} = Array(Int, 1)
     separator_indices::Vector{Int} = Array(Int, 1)
     chr::Uint8 = uint8(' ')
@@ -508,23 +509,25 @@ function readtable(io::IO;
 
     # Confirm that the number of columns is consistent across rows
     if separators != rows * (cols - 1)
-        linenumber = -1
-        j = -1
+        linesizes = Array(Int, rows)
+        localj = 0
+        totalj = 1
+        n = length(separator_indices)
         for i in 1:rows
             bound = eol_indices[i]
-            j = 1
-            while separator_indices[(i - 1) * (cols - 1) + j] < bound
-                j += 1
+            localj = 0
+            while 1 <= totalj <= n && separator_indices[totalj] < bound
+                localj += 1
+                totalj += 1
             end
-            if j != cols
-                linenumber = i
-                break
-            end
+            linesizes[i] = localj
         end
-        msg1 = @sprintf "Every line must have %d columns\n" cols
-        msg2 = @sprintf "Reading failed at line %d with %d columns\n" linenumber j
-        msg3 = @sprintf "Saw %d rows, but %d fields\n" rows separators
-        error(string(msg1, msg2, msg3))
+        m = median(linesizes)
+        msg = @sprintf "Every line must have %d columns\n" m + 1
+        for linenumber in find(linesizes .!= m)
+            msg = string(msg, @sprintf " * Line %d has %d columns\n" linenumber linesizes[linenumber] + 1)
+        end
+        error(msg)
     end
 
     # Parse contents of a buffer into a DataFrame
@@ -613,7 +616,8 @@ function readtable(filename::String;
                    cleancolnames = cleancolnames,
                    skipblanklines = cleancolnames,
                    comment = comment,
-                   encoding = encoding)
+                   encoding = encoding,
+                   buffersize = filesize(filename))
 
     # Close the IO stream
     close(io)

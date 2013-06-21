@@ -28,3 +28,43 @@ df = readtable(filename, separator = ' ')
 
 filename = "test/data/os9.csv"
 df = readtable(filename, eol = '\r')
+
+#
+# Confirm that we can read a large file
+#
+
+df = DataFrame()
+
+nrows, ncols = 100_000, 100
+
+for j in 1:ncols
+    df[j] = randn(nrows)
+end
+
+filename = tempname()
+
+writetable(filename, df, separator = ',')
+
+df1 = readtable(filename, separator = ',')
+
+all(df .== df1)
+
+#
+# Lots of rows
+#
+
+df = DataFrame()
+
+nrows, ncols = 1_000_000, 10
+
+for j in 1:ncols
+    df[j] = randn(nrows)
+end
+
+filename = tempname()
+
+writetable(filename, df, separator = ',')
+
+df1 = readtable(filename, separator = ',')
+
+all(df .== df1)
