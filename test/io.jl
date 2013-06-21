@@ -1,33 +1,45 @@
 using DataFrames
 
-filenames = ["test/data/big_data.csv",
-             "test/data/bool.csv",
-             "test/data/complex_data.csv",
-             "test/data/corrupt_utf8.csv",
-             "test/data/corrupt_utf8_short.csv",
-             "test/data/messy.csv",
-             "test/data/movies.csv",
-             "test/data/sample_data.csv",
-             "test/data/simple_data.csv",
-             "test/data/space_after_delimiter.csv",
-             "test/data/space_around_delimiter.csv",
-             "test/data/space_before_delimiter.csv",
-             "test/data/types.csv",
-             "test/data/windows.csv",
-             "test/data/utf8.csv"]
+filenames = ["test/data/blanklines/blanklines.csv",
+             "test/data/newlines/os9.csv",
+             "test/data/newlines/osx.csv",
+             "test/data/newlines/windows.csv",
+             "test/data/newlines/embedded_os9.csv",
+             "test/data/newlines/embedded_osx.csv",
+             "test/data/newlines/embedded_windows.csv",
+             "test/data/padding/space_after_delimiter.csv",
+             "test/data/padding/space_around_delimiter.csv",
+             "test/data/padding/space_before_delimiter.csv",
+             "test/data/quoting/escaping.csv",
+             "test/data/quoting/quotedcommas.csv",
+             "test/data/scaling/10000rows.csv",
+             "test/data/scaling/movies.csv",
+             "test/data/separators/sample_data.csv",
+             "test/data/separators/sample_data.tsv",
+             "test/data/separators/sample_data.wsv",
+             "test/data/typeinference/bool.csv",
+             "test/data/typeinference/standardtypes.csv",
+             "test/data/utf8/corrupt_utf8.csv",
+             "test/data/utf8/short_corrupt_utf8.csv",
+             "test/data/utf8/utf8.csv"]
 
 for filename in filenames
-	df = readtable(filename)
+    try
+	    df = readtable(filename)
+    catch
+        error(@sprintf "Failed to read %s\n" filename)
+    end
 end
 
-filename = "test/data/sample_data.tsv"
-df = readtable(filename, separator = '\t')
+readtable("test/data/comments/before_after_data.csv", allowcomments = true)
+readtable("test/data/comments/middata.csv", allowcomments = true)
+readtable("test/data/skiplines/skipfront.csv", skipstart = 3)
 
-filename = "test/data/sample_data.wsv"
-df = readtable(filename, separator = ' ')
+# TODO: Implement skipping lines at specified row positions
+# readtable("test/data/skiplines/skipbottom.csv", skiprows = [1, 2, 3])
 
-filename = "test/data/os9.csv"
-df = readtable(filename, eol = '\r')
+# TODO: Implement skipping lines at bottom
+# readtable("test/data/skiplines/skipbottom.csv", skipstartlines = 4)
 
 #
 # Confirm that we can read a large file

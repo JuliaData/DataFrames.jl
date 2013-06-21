@@ -1,82 +1,228 @@
+# NB: Linebreaks don't need to be stored, but they do aid debugging
+# TODO: Implement peek(io, Uint8)
+
+# function atnewline(chr::Union(Uint8, Char), nextchr::Union(Uint8, Char))
+#     return chr == '\n' ||                   # UNIX + Windows
+#            (chr == '\r' && nextchr != '\n') # OS 9
+# end
+macro atnewline(chr, nextchr)
+    chr = esc(chr)
+    nextchr = esc(nextchr)
+    quote
+        $chr == '\n' || $chr == '\r' && $nextchr != '\n'
+    end
+end
+
+# function atblankline(chr::Union(Uint8, Char), nextchr::Union(Uint8, Char))
+#     return (chr == '\n' && nextchr == '\n') || # UNIX
+#            (chr == '\n' && nextchr == '\r') || # Windows
+#            (chr == '\r' && nextchr == '\r')    # OS 9
+# end
+macro atblankline(chr, nextchr)
+    chr = esc(chr)
+    nextchr = esc(nextchr)
+    quote
+        ($chr == '\n' && $nextchr == '\n') ||
+        ($chr == '\n' && $nextchr == '\r') ||
+        ($chr == '\r' && $nextchr == '\r')
+    end
+end
+
+# function atescape(chr::Union(Uint8, Char),
+#                   nextchr::Union(Uint8, Char),
+#                   quotemark::Char)
+#     return chr == '\\' ||                             # \" escaping
+#            (chr == quotemark && nextchr == quotemark) # "" escaping
+# end
+macro atescape(chr, nextchr, quotemark)
+    chr = esc(chr)
+    nextchr = esc(nextchr)
+    quotemark = esc(quotemark)
+    quote
+        $chr == '\\' || ($chr == $quotemark && $nextchr == $quotemark)
+    end
+end
+
+function safesetindex!(a::Array, val::Any, index::Real, a_size::Integer)
+    if a_size < index
+        a_size *= 2
+        resize!(a, a_size)
+    end
+    a[index] = val
+    return a_size
+end
+
+function getseparator(filename::String)
+    if ismatch(r"csv$", filename)
+        return ','
+    elseif ismatch(r"tsv$", filename)
+        return '\t'
+    elseif ismatch(r"wsv$", filename)
+        return ' '
+    else
+        error("Unable to determine separator used in $filename")
+    end
+end
+
+# Read CSV file's rows into buffer while storing field boundary information
 function readnrows!(io::IO,
                     buffer::Vector{Uint8},
-                    eol_indices::Vector{Int},
-                    separator_indices::Vector{Int},
+                    linebreak_indices::Vector{Int},
+                    right_boundary_indices::Vector{Int},
                     nrows::Int,
-                    eol::Char,
                     separator::Char,
-                    quotemark::Char)
-    bytesread::Int = 0
-    nrowsread::Int = 0
-    eolsread::Int = 0
-    separatorsread::Int = 0
+                    quotemark::Char,
+                    skipblanks::Bool,
+                    allowcomments::Bool,
+                    commentmark::Char)
+    bytes_read::Int = 0
+    right_boundaries_read::Int = 0
+    linebreaks_read::Int = 0
 
-    inquotes::Bool = false
-    inescape::Bool = false
+    in_quotes::Bool = false
+    in_escape::Bool = false
+    at_front::Bool = true
 
     chr::Uint8 = ' '
+    nextchr::Uint8 = ' '
 
     buffer_size::Int = length(buffer)
-    eol_size::Int = length(eol_indices)
-    separator_size::Int = length(separator_indices)
+    linebreak_indices_size::Int = length(linebreak_indices)
+    right_boundary_indices_size::Int = length(right_boundary_indices)
 
-    while !eof(io) && nrowsread < nrows
-        bytesread += 1
+    # Insert a dummy break at position 0
+    right_boundaries_read += 1
+    right_boundary_indices_size =
+      safesetindex!(right_boundary_indices,
+                    0,
+                    right_boundaries_read,
+                    right_boundary_indices_size)
+    linebreaks_read += 1
+    linebreak_indices_size =
+      safesetindex!(linebreak_indices,
+                    0,
+                    linebreaks_read,
+                    linebreak_indices_size)
+
+    # Loop over bytes from the input until we've read requested rows
+    while !eof(io) && linebreaks_read < nrows + 1
         chr = read(io, Uint8)
+        nextchr = uint8(Base.peek(io))
+        # === Debugging ===
+        # if in_quotes
+        #     print_with_color(:red, string(char(chr)))
+        # else
+        #     print_with_color(:green, string(char(chr)))
+        # end
 
-        if buffer_size < bytesread
-            buffer_size *= 2
-            resize!(buffer, buffer_size)
-        end
-        buffer[bytesread] = chr
-
-        if !inquotes
-            if chr == eol
-                nrowsread +=1
-                eolsread +=1
-                if eol_size < eolsread
-                    eol_size *= 2
-                    resize!(eol_indices, eol_size)
-                end
-                eol_indices[eolsread] = bytesread
+        # Ignore text inside comments completely
+        if allowcomments && !in_quotes && chr == commentmark
+            while !eof(io) && !(@atnewline chr nextchr)
+                chr = read(io, Uint8)
+                nextchr = uint8(Base.peek(io))
             end
-
-            if chr == separator
-                separatorsread += 1
-                if separator_size < separatorsread
-                    separator_size *= 2
-                    resize!(separator_indices, separator_size)
-                end
-                separator_indices[separatorsread] = bytesread
-            end
-
-            if chr == quotemark && !inescape
-                inquotes = true
-            end
-        else
-            if chr == quotemark && !inescape
-                inquotes = false
+            # Skip the linebreak if the comment started at the front of a line
+            if at_front
+                continue
             end
         end
 
-        if chr == '\\'
-            inescape = true
+        # Skip blank lines
+        if skipblanks && !in_quotes
+            while !eof(io) && (@atblankline chr nextchr)
+                chr = read(io, Uint8)
+                nextchr = uint8(Base.peek(io))
+                # Special handling for Windows
+                if !eof(io) && chr == '\r' && nextchr == '\n'
+                    chr = read(io, Uint8)
+                    nextchr = uint8(Base.peek(io))
+                end
+            end
+        end
+
+        # No longer at the start of a line that might be a pure comment
+        at_front = false
+
+        # Processing is very different inside and outside of quotes
+        if !in_quotes
+            # Entering a quoted region
+            if chr == quotemark
+                in_quotes = true
+            # Finished reading a field
+            elseif chr == separator
+                right_boundaries_read += 1
+                right_boundary_indices_size =
+                  safesetindex!(right_boundary_indices,
+                                bytes_read,
+                                right_boundaries_read,
+                                right_boundary_indices_size)
+            # Finished reading a row
+            elseif @atnewline chr nextchr
+                right_boundaries_read += 1
+                right_boundary_indices_size =
+                  safesetindex!(right_boundary_indices,
+                                bytes_read,
+                                right_boundaries_read,
+                                right_boundary_indices_size)
+                linebreaks_read +=1
+                linebreak_indices_size =
+                  safesetindex!(linebreak_indices,
+                                bytes_read,
+                                linebreaks_read,
+                                linebreak_indices_size)
+                at_front = true
+            # Store character into buffer
+            else
+                bytes_read += 1
+                buffer_size =
+                  safesetindex!(buffer,
+                                chr,
+                                bytes_read,
+                                buffer_size)
+            end
         else
-            inescape = false
+            # Escape a quotemark inside quoted regions
+            if (@atescape chr nextchr quotemark) && !in_escape
+                in_escape = true
+            else
+                # Exited a quoted region
+                if chr == quotemark && !in_escape
+                    in_quotes = false
+                # Store character into buffer
+                else
+                    bytes_read += 1
+                    buffer_size =
+                      safesetindex!(buffer,
+                                    chr,
+                                    bytes_read,
+                                    buffer_size)
+                end
+
+                # Escape mode only lasts for one byte
+                in_escape = false
+            end
         end
     end
 
-    # Deal with files that do not include a final EOL
-    if eof(io) && chr != eol
-        nrowsread += 1
-        if eol_size < eolsread + 1
-            eol_size *= 2
-            resize!(eol_indices, eol_size)
-        end
-        eol_indices[eolsread + 1] = bytesread + 1
+    # Append a final EOL if it's missing in the raw input
+    if eof(io) && !(@atnewline chr nextchr)
+        right_boundaries_read += 1
+        right_boundary_indices_size =
+          safesetindex!(right_boundary_indices,
+                        bytes_read,
+                        right_boundaries_read,
+                        right_boundary_indices_size)
+
+        linebreaks_read += 1
+        linebreak_indices_size =
+          safesetindex!(linebreak_indices,
+                        bytes_read,
+                        linebreaks_read,
+                        linebreak_indices_size)
     end
 
-    return nrowsread, bytesread, eolsread, separatorsread
+    # Don't count the dummy boundaries in fields or rows
+    return bytes_read, right_boundaries_read - 1, linebreaks_read - 1
 end
 
 function buffermatch(buffer::Vector{Uint8},
@@ -86,14 +232,12 @@ function buffermatch(buffer::Vector{Uint8},
     l::Int = right - left + 1
 
     for index in 1:length(exemplars)
-        exemplar::ASCIIString = exemplars[index]
+        exemplar = exemplars[index]
         if length(exemplar) == l
-            isamatch::Bool = true
-
+            isamatch = true
             for i in 0:(l - 1)
                 isamatch &= buffer[left + i] == exemplar[1 + i]
             end
-
             if isamatch
                 return true
             end
@@ -103,16 +247,16 @@ function buffermatch(buffer::Vector{Uint8},
     return false
 end
 
-# All of these functions return three items:
-# Parsed value, Success indicator, Missing indicator
-
 # TODO: Align more closely with parseint code
 function bytestoint(buffer::Vector{Uint8},
                     left::Int,
                     right::Int,
-                    missing_nonstrings::Vector{ASCIIString})
+                    nastrings::Vector{ASCIIString})
+    if left > right
+        return 0, true, true
+    end
 
-    if left > right || buffermatch(buffer, left, right, missing_nonstrings)
+    if buffermatch(buffer, left, right, nastrings)
         return 0, true, true
     end
 
@@ -149,36 +293,44 @@ let out::Vector{Float64} = Array(Float64, 1)
     function bytestofloat(buffer::Vector{Uint8},
                           left::Int,
                           right::Int,
-                          missing_nonstrings::Vector{ASCIIString})
-        if left > right || buffermatch(buffer, left, right, missing_nonstrings)
+                          nastrings::Vector{ASCIIString})
+        if left > right
             return 0.0, true, true
         end
 
-        success = ccall(:jl_substrtod,
-                        Int32,
-                        (Ptr{Uint8}, Int, Int, Ptr{Float64}),
-                        buffer,
-                        left - 1,
-                        right - left + 1,
-                        out) == 0
+        if buffermatch(buffer, left, right, nastrings)
+            return 0.0, true, true
+        end
 
-        return out[1], success, false
+        wasparsed = ccall(:jl_substrtod,
+                          Int32,
+                          (Ptr{Uint8}, Int, Int, Ptr{Float64}),
+                          buffer,
+                          left - 1,
+                          right - left + 1,
+                          out) == 0
+
+        return out[1], wasparsed, false
     end
 end
 
 function bytestobool(buffer::Vector{Uint8},
                      left::Int,
                      right::Int,
-                     missing_nonstrings::Vector{ASCIIString},
-                     true_strings::Vector{ASCIIString},
-                     false_strings::Vector{ASCIIString})
-    if left > right || buffermatch(buffer, left, right, missing_nonstrings)
+                     nastrings::Vector{ASCIIString},
+                     truestrings::Vector{ASCIIString},
+                     falsestrings::Vector{ASCIIString})
+    if left > right
         return false, true, true
     end
 
-    if buffermatch(buffer, left, right, true_strings)
+    if buffermatch(buffer, left, right, nastrings)
+        return false, true, true
+    end
+
+    if buffermatch(buffer, left, right, truestrings)
         return true, true, false
-    elseif buffermatch(buffer, left, right, false_strings)
+    elseif buffermatch(buffer, left, right, falsestrings)
         return false, true, false
     else
         return false, false, false
@@ -188,13 +340,13 @@ end
 function bytestostring(buffer::Vector{Uint8},
                        left::Int,
                        right::Int,
-                       missing_strings::Vector{ASCIIString},
+                       nastrings::Vector{ASCIIString},
                        quotemark::Char)
-    if left > right && buffer[right] != quotemark
-        return "", true, true
+    if left > right
+        return "", true, false
     end
 
-    if buffermatch(buffer, left, right, missing_strings)
+    if buffermatch(buffer, left, right, nastrings)
         return "", true, true
     end
 
@@ -204,62 +356,40 @@ end
 function builddf(rows::Int,
                  cols::Int,
                  bytes::Int,
-                 eols::Int,
-                 separators::Int,
+                 fields::Int,
                  buffer::Vector{Uint8},
-                 eol_indices::Vector{Int},
-                 separator_indices::Vector{Int},
+                 linebreak_indices::Vector{Int},
+                 right_boundary_indices::Vector{Int},
                  separator::Char,
-                 eol::Char,
                  quotemark::Char,
-                 missing_nonstrings::Vector{ASCIIString},
-                 missing_strings::Vector{ASCIIString},
-                 true_strings::Vector{ASCIIString},
-                 false_strings::Vector{ASCIIString},
-                 ignorespace::Bool,
-                 makefactors::Bool)
+                 nastrings::Vector{ASCIIString},
+                 truestrings::Vector{ASCIIString},
+                 falsestrings::Vector{ASCIIString},
+                 ignorepadding::Bool,
+                 makefactors::Bool,
+                 colnames::Vector{UTF8String})
     columns::Vector{Any} = Array(Any, cols)
 
     for j in 1:cols
         values = Array(Int, rows)
         missing::BitVector = falses(rows)
-        isint::Bool = true
-        isfloat::Bool = true
-        isbool::Bool = true
-        isstring::Bool = true
+        is_int::Bool = true
+        is_float::Bool = true
+        is_bool::Bool = true
+        is_string::Bool = true
 
         i::Int = 0
-
         while i < rows
             i += 1
 
             # Determine left and right boundaries of field
-            if j == 1
-                if i == 1
-                    left = 1
-                else
-                    left = eol_indices[i - 1] + 1
-                end
-            else
-                left = separator_indices[(i - 1) * (cols - 1) + j - 1] + 1
-            end
-
-            if j == cols
-                if i == rows
-                    if buffer[bytes] == eol
-                        right = bytes - 1
-                    else
-                        right = bytes
-                    end
-                else
-                    right = eol_indices[i] - 1
-                end
-            else
-                right = separator_indices[(i - 1) * (cols - 1) + j] - 1
-            end
+            left = right_boundary_indices[(i - 1) * cols + j] + 1
+            right = right_boundary_indices[(i - 1) * cols + j + 1]
 
             # Ignore left-and-right whitespace padding
-            if ignorespace
+            # TODO: Debate moving this into readnrows()
+            # TODO: Modify readnrows() so that '\r' and '\n' don't occur near edges
+            if ignorepadding
                 while left < right &&
                       (buffer[left] == ' ' ||
                        buffer[left] == '\t' ||
@@ -267,7 +397,7 @@ function builddf(rows::Int,
                        buffer[left] == '\n')
                     left += 1
                 end
-                while left <= right &&
+                while left < right &&
                       (buffer[right] == ' ' ||
                        buffer[right] == '\t' ||
                        buffer[right] == '\r' ||
@@ -277,256 +407,200 @@ function builddf(rows::Int,
             end
 
             # (1) Try to parse values as Int's
-            if isint
-                values[i], success, missing[i] =
-                  bytestoint(buffer, left, right, missing_nonstrings)
-                if success
+            if is_int
+                values[i], wasparsed, missing[i] =
+                  bytestoint(buffer, left, right, nastrings)
+                if wasparsed
                     continue
                 else
-                    isint = false
+                    is_int = false
                     values = convert(Array{Float64}, values)
-                    values[i], success, missing[i] =
-                      bytestoint(buffer, left, right, missing_nonstrings)
+                    values[i], wasparsed, missing[i] =
+                      bytestofloat(buffer, left, right, nastrings)
                 end
             end
 
             # (2) Try to parse as Float64's
-            if isfloat
-                values[i], success, missing[i] =
-                  bytestofloat(buffer, left, right, missing_nonstrings)
-                if success
+            if is_float
+                values[i], wasparsed, missing[i] =
+                  bytestofloat(buffer, left, right, nastrings)
+                if wasparsed
                     continue
                 else
-                    isfloat = false
+                    is_float = false
                     values = Array(Bool, rows)
                     i = 1
                 end
             end
 
-            # If we go this far, we should ignore quote marks on the boundaries
-            while left < right && buffer[left] == quotemark
-                left += 1
-            end
-            while left < right && buffer[right] == quotemark
-                right -= 1
-            end
-
             # (3) Try to parse as Bool's
-            if isbool
-                values[i], success, missing[i] =
+            if is_bool
+                values[i], wasparsed, missing[i] =
                   bytestobool(buffer, left, right,
-                              missing_nonstrings,
-                              true_strings, false_strings)
-                if success
+                              nastrings,
+                              truestrings, falsestrings)
+                if wasparsed
                     continue
                 else
-                    isbool = false
+                    is_bool = false
                     values = Array(UTF8String, rows)
                     i = 1
                 end
             end
 
             # (4) Fallback to UTF8String
-            if left == right && buffer[right] == quotemark
-                # Empty string special method
-                values[i], success, missing[i] = "", true, false
-            else
-                values[i], success, missing[i] =
-                  bytestostring(buffer, left, right, missing_strings, quotemark)
-            end
+            # TODO: Make sure empty string is handled correctly
+            values[i], wasparsed, missing[i] =
+              bytestostring(buffer, left, right, nastrings, quotemark)
         end
 
-        if makefactors && isstring
+        if makefactors && is_string
             columns[j] = PooledDataArray(values, missing)
         else
             columns[j] = DataArray(values, missing)
         end
     end
 
-    # Need to pass this in
-    column_names = DataFrames.generate_column_names(cols)
-
-    return DataFrame(columns, column_names)
-end
-
-function parseline(buffer::Vector{Uint8},
-                   upper::Int,
-                   eol::Char,
-                   separator::Char,
-                   quotemark::Char)
-    column_names = Array(UTF8String, 0)
-    if upper == 1
-        return column_names
+    if isempty(colnames)
+        colnames = DataFrames.generate_column_names(fields)
     end
 
-    left::Int = 1
-    right::Int = -1
-    index::Int = -1
-    atbound::Bool = false
-    inquotes::Bool = false
-    inescape::Bool = false
-    chr::Uint8 = uint8(' ')
-
-    while left < upper
-        chr = buffer[left]
-        while chr == ' '
-            left += 1
-            chr = buffer[left]
-        end
-
-        right = left - 1
-
-        atbound = false
-        while right < upper && !atbound
-            right += 1
-            chr = buffer[right]
-            if !inquotes
-                if chr == separator
-                    atbound = true
-                elseif chr == quotemark && !inescape
-                    inquotes = true
-                end
-            else
-                if chr == quotemark && !inescape
-                    inquotes = false
-                end
-            end
-
-            if chr == '\\'
-                inescape = true
-            else
-                inescape = false
-            end
-        end
-
-        inquotes = false
-        inescape = false
-
-        if buffer[left] == quotemark
-            left += 1
-        end
-
-        index = right
-        chr = buffer[index]
-        while index > left &&
-              (chr == ' ' || chr == '\t' || chr == '\r' || chr == '\n' ||
-               chr == separator || chr == quotemark)
-            index -= 1
-            chr = buffer[index]
-        end
-
-        push!(column_names, bytestring(buffer[left:index]))
-
-        left = right + 1
-    end
-
-    return column_names
+    return DataFrame(columns, colnames)
 end
 
-# TODO: Respect coltypes
-# TODO: Skip blanklines
-# TODO: Skip comment lines
-# TODO: Use file encoding information
+function parsecolnames(buffer::Vector{Uint8},
+                       right_boundary_indices::Vector{Int},
+                       fields::Int)
+    if fields == 0
+        error("Header line was empty")
+    end
+
+    colnames = Array(UTF8String, fields)
+
+    for j in 1:fields
+        left = right_boundary_indices[j] + 1
+        right = right_boundary_indices[j + 1]
+        colnames[j] = bytestring(buffer[left:right])
+    end
+
+    return colnames
+end
+
 function readtable(io::IO;
                    header::Bool = true,
                    separator::Char = ',',
-                   eol::Char = '\n',
                    quotemark::Char = '"',
-                   missing_nonstrings::Vector{ASCIIString} = ["", "NA"],
-                   missing_strings::Vector{ASCIIString} = ["NA"],
-                   true_strings::Vector{ASCIIString} = ["T", "t", "TRUE", "true"],
-                   false_strings::Vector{ASCIIString} = ["F", "f", "FALSE", "false"],
-                   makefactors::Bool = false,
-                   ignorespace::Bool = true,
                    decimal::Char = '.',
-                   colnames::Vector{UTF8String} = Array(UTF8String, 0),
-                   coltypes::Vector{Any} = Array(Any, 0),
+                   nastrings::Vector{ASCIIString} = ASCIIString["", "NA"],
+                   truestrings::Vector{ASCIIString} = ASCIIString["T", "t", "TRUE", "true"],
+                   falsestrings::Vector{ASCIIString} = ASCIIString["F", "f", "FALSE", "false"],
+                   makefactors::Bool = false,
                    nrows::Int = -1,
-                   skipstartlines::Int = 0,
-                   cleancolnames::Bool = true,
-                   skipblanklines::Bool = true,
-                   comment::Char = '#',
+                   colnames::Vector{UTF8String} = UTF8String[],
+                   cleannames::Bool = false,
+                   coltypes::Vector{Any} = Any[],
+                   allowcomments::Bool = false,
+                   commentmark::Char = '#',
+                   ignorepadding::Bool = true,
+                   skipstart::Int = 0,
+                   skiprows::Vector{Int} = Int[],
+                   skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
                    buffersize::Int = 2^20)
 
     # Allocate buffers to conserve memory
+    # TODO: Pass in these three buffers on every pass for DataStream's
     buffer::Vector{Uint8} = Array(Uint8, buffersize)
-    eol_indices::Vector{Int} = Array(Int, 1)
-    separator_indices::Vector{Int} = Array(Int, 1)
-    chr::Uint8 = uint8(' ')
+    linebreak_indices::Vector{Int} = Array(Int, 1)
+    right_boundary_indices::Vector{Int} = Array(Int, 1)
 
     # Skip lines at the start
     skipped_lines::Int = 0
-    while skipped_lines < skipstartlines
-        while !eof(io) && chr != eol
-            chr = read(io, Uint8)
+    if skipstart != 0
+        chr::Uint8 = read(io, Uint8)
+        nextchr::Uint8 = uint8(Base.peek(io))
+        while skipped_lines < skipstart
+            while !eof(io) && !(@atnewline chr nextchr)
+                chr = read(io, Uint8)
+                nextchr = uint8(Base.peek(io))
+            end
+            skipped_lines += 1
+            if !eof(io) && skipped_lines < skipstart
+                chr = read(io, Uint8)
+                nextchr = uint8(Base.peek(io))
+            end
         end
-        skipped_lines += 1
     end
 
-    # Deal with header
+    # Extract the header
     if header
-        chr = uint8(' ')
-        headerbytesread = 0
-        headerbytes = Array(Uint8, 2^16)
-        headerbytes_size = length(headerbytes)
-        while !eof(io) && chr != eol
-            chr = read(io, Uint8)
-            headerbytesread += 1
-            if headerbytesread > headerbytes_size
-                headerbytes_size *= 2
-                resize!(headerbytes, headerbytes_size)
-            end
-            headerbytes[headerbytesread] = chr
-        end
-        column_names =
-          parseline(headerbytes, headerbytesread, eol, separator, quotemark)
+        bytes, fields, rows =
+          readnrows!(io,
+                     buffer,
+                     linebreak_indices,
+                     right_boundary_indices,
+                     1,
+                     separator,
+                     quotemark,
+                     skipblanks,
+                     allowcomments,
+                     commentmark)
+
+        colnames = parsecolnames(buffer,
+                                 right_boundary_indices,
+                                 fields)
     end
 
     # Separate text into fields
-    rows, bytes, eols, separators =
+    bytes, fields, rows =
       readnrows!(io,
                  buffer,
-                 eol_indices,
-                 separator_indices,
+                 linebreak_indices,
+                 right_boundary_indices,
                  nrows,
-                 eol,
                  separator,
-                 quotemark)
+                 quotemark,
+                 skipblanks,
+                 allowcomments,
+                 commentmark)
 
-    # Throw an error if we didn't see enough rows
-    if rows == 0
-        error("Failed to read any rows. Check EOL and file encoding.")
+    # Throw an error if we didn't see any bytes
+    if bytes == 0
+        error("Failed to read any bytes.")
     end
 
-    # Throw an error if we didn't see enough bytes
-    if bytes == 0
-        error("Failed to read any bytes. Check EOL and file encoding.")
+    # Throw an error if we didn't see any rows
+    if rows == 0
+        error("Failed to read any rows.")
+    end
+
+    # Throw an error if we didn't see any fields
+    if fields == 0
+        error("Failed to read any fields.")
     end
 
     # Determine the number of columns
-    cols = fld(separators, rows) + 1
+    cols = fld(fields, rows)
 
     # Confirm that the number of columns is consistent across rows
-    if separators != rows * (cols - 1)
+    if fields != rows * cols
         linesizes = Array(Int, rows)
-        localj = 0
-        totalj = 1
-        n = length(separator_indices)
+        total_fields = 1
+        n = length(right_boundary_indices)
         for i in 1:rows
-            bound = eol_indices[i]
-            localj = 0
-            while 1 <= totalj <= n && separator_indices[totalj] < bound
-                localj += 1
-                totalj += 1
+            bound = linebreak_indices[i + 1]
+            fields_in_row = 0
+            while right_boundary_indices[total_fields] < bound
+                fields_in_row += 1
+                total_fields += 1
             end
-            linesizes[i] = localj
+            linesizes[i] = fields_in_row
         end
+        msg = @sprintf "Saw %d rows, %d columns and %d fields\n" rows cols fields
         m = median(linesizes)
-        msg = @sprintf "Every line must have %d columns\n" m + 1
-        for linenumber in find(linesizes .!= m)
-            msg = string(msg, @sprintf " * Line %d has %d columns\n" linenumber linesizes[linenumber] + 1)
-        end
+        broken_rows = find(linesizes .!= m)
+        linenumber = broken_rows[1]
+        msg = string(msg, @sprintf " * Line %d has %d columns\n" linenumber linesizes[linenumber] + 1)
         error(msg)
     end
 
@@ -534,32 +608,21 @@ function readtable(io::IO;
     df = builddf(rows,
                  cols,
                  bytes,
-                 eols,
-                 separators,
+                 fields,
                  buffer,
-                 eol_indices,
-                 separator_indices,
+                 linebreak_indices,
+                 right_boundary_indices,
                  separator,
-                 eol,
                  quotemark,
-                 missing_nonstrings,
-                 missing_strings,
-                 true_strings,
-                 false_strings,
-                 ignorespace,
-                 makefactors)
-
-    # Set up column names based on user input and header
-    if isempty(colnames)
-        if header
-            colnames!(df, column_names)
-        end
-    else
-        colnames!(df, colnames)
-    end
+                 nastrings,
+                 truestrings,
+                 falsestrings,
+                 ignorepadding,
+                 makefactors,
+                 colnames)
 
     # Clean up column names if requested
-    if cleancolnames
+    if cleannames
         clean_colnames!(df)
     end
 
@@ -569,25 +632,24 @@ end
 
 function readtable(filename::String;
                    header::Bool = true,
-                   separator::Char = getseparator(filename),
-                   eol::Char = '\n',
+                   separator::Char = ',',
                    quotemark::Char = '"',
-                   missing_nonstrings::Vector{ASCIIString} = ["", "NA"],
-                   missing_strings::Vector{ASCIIString} = ["NA"],
-                   true_strings::Vector{ASCIIString} = ["T", "t", "TRUE", "true"],
-                   false_strings::Vector{ASCIIString} = ["F", "f", "FALSE", "false"],
-                   makefactors::Bool = false,
-                   ignorespace::Bool = true,
                    decimal::Char = '.',
-                   colnames::Vector{UTF8String} = Array(UTF8String, 0),
-                   coltypes::Vector{Any} = Array(Any, 0),
+                   nastrings::Vector{ASCIIString} = ASCIIString["", "NA"],
+                   truestrings::Vector{ASCIIString} = ASCIIString["T", "t", "TRUE", "true"],
+                   falsestrings::Vector{ASCIIString} = ASCIIString["F", "f", "FALSE", "false"],
+                   makefactors::Bool = false,
                    nrows::Int = -1,
-                   skipstartlines::Int = 0,
-                   cleancolnames::Bool = false,
-                   skipblanklines::Bool = true,
-                   comment::Char = '#',
+                   colnames::Vector{UTF8String} = UTF8String[],
+                   cleannames::Bool = false,
+                   coltypes::Vector{Any} = Any[],
+                   allowcomments::Bool = false,
+                   commentmark::Char = '#',
+                   ignorepadding::Bool = true,
+                   skipstart::Int = 0,
+                   skiprows::Vector{Int} = Int[],
+                   skipblanks::Bool = true,
                    encoding::Symbol = :utf8)
-
     # Open an IO stream
     io = open(filename, "r")
 
@@ -600,22 +662,22 @@ function readtable(filename::String;
     df = readtable(io,
                    header = header,
                    separator = separator,
-                   eol = eol,
                    quotemark = quotemark,
-                   missing_nonstrings = missing_nonstrings,
-                   missing_strings = missing_strings,
-                   true_strings = true_strings,
-                   false_strings = false_strings,
-                   makefactors = makefactors,
-                   ignorespace = ignorespace,
                    decimal = decimal,
-                   colnames = colnames,
-                   coltypes = coltypes,
+                   nastrings = nastrings,
+                   truestrings = truestrings,
+                   falsestrings = falsestrings,
+                   makefactors = makefactors,
                    nrows = nrows,
-                   skipstartlines = skipstartlines,
-                   cleancolnames = cleancolnames,
-                   skipblanklines = cleancolnames,
-                   comment = comment,
+                   colnames = colnames,
+                   cleannames = cleannames,
+                   coltypes = coltypes,
+                   allowcomments = allowcomments,
+                   commentmark = commentmark,
+                   ignorepadding = ignorepadding,
+                   skipstart = skipstart,
+                   skiprows = skiprows,
+                   skipblanks = skipblanks,
                    encoding = encoding,
                    buffersize = filesize(filename))
 
@@ -624,18 +686,6 @@ function readtable(filename::String;
 
     # Return the resulting DataFrame
     return df
-end
-
-function getseparator(filename::String)
-    if ismatch(r"csv$", filename)
-        return ','
-    elseif ismatch(r"tsv$", filename)
-        return '\t'
-    elseif ismatch(r"wsv$", filename)
-        return ' '
-    else
-        error("Unable to determine separator used in $filename")
-    end
 end
 
 ##############################################################################
