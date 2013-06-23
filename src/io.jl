@@ -225,10 +225,10 @@ function readnrows!(io::IO,
     return bytes_read, right_boundaries_read - 1, linebreaks_read - 1
 end
 
-function buffermatch(buffer::Vector{Uint8},
-                     left::Int,
-                     right::Int,
-                     exemplars::Vector{ASCIIString})
+function buffermatch{T <: ByteString}(buffer::Vector{Uint8},
+                                      left::Int,
+                                      right::Int,
+                                      exemplars::Vector{T})
     l::Int = right - left + 1
 
     for index in 1:length(exemplars)
@@ -248,10 +248,10 @@ function buffermatch(buffer::Vector{Uint8},
 end
 
 # TODO: Align more closely with parseint code
-function bytestoint(buffer::Vector{Uint8},
-                    left::Int,
-                    right::Int,
-                    nastrings::Vector{ASCIIString})
+function bytestoint{T <: ByteString}(buffer::Vector{Uint8},
+                                     left::Int,
+                                     right::Int,
+                                     nastrings::Vector{T})
     if left > right
         return 0, true, true
     end
@@ -290,10 +290,10 @@ end
 
 let out::Vector{Float64} = Array(Float64, 1)
     global bytestofloat
-    function bytestofloat(buffer::Vector{Uint8},
-                          left::Int,
-                          right::Int,
-                          nastrings::Vector{ASCIIString})
+    function bytestofloat{T <: ByteString}(buffer::Vector{Uint8},
+                                           left::Int,
+                                           right::Int,
+                                           nastrings::Vector{T})
         if left > right
             return 0.0, true, true
         end
@@ -314,12 +314,12 @@ let out::Vector{Float64} = Array(Float64, 1)
     end
 end
 
-function bytestobool(buffer::Vector{Uint8},
-                     left::Int,
-                     right::Int,
-                     nastrings::Vector{ASCIIString},
-                     truestrings::Vector{ASCIIString},
-                     falsestrings::Vector{ASCIIString})
+function bytestobool{T <: ByteString}(buffer::Vector{Uint8},
+                                      left::Int,
+                                      right::Int,
+                                      nastrings::Vector{T},
+                                      truestrings::Vector{T},
+                                      falsestrings::Vector{T})
     if left > right
         return false, true, true
     end
@@ -337,11 +337,11 @@ function bytestobool(buffer::Vector{Uint8},
     end
 end
 
-function bytestostring(buffer::Vector{Uint8},
-                       left::Int,
-                       right::Int,
-                       nastrings::Vector{ASCIIString},
-                       quotemark::Char)
+function bytestostring{T <: ByteString}(buffer::Vector{Uint8},
+                                        left::Int,
+                                        right::Int,
+                                        nastrings::Vector{T},
+                                        quotemark::Char)
     if left > right
         return "", true, false
     end
@@ -353,21 +353,21 @@ function bytestostring(buffer::Vector{Uint8},
     return bytestring(buffer[left:right]), true, false
 end
 
-function builddf(rows::Int,
-                 cols::Int,
-                 bytes::Int,
-                 fields::Int,
-                 buffer::Vector{Uint8},
-                 linebreak_indices::Vector{Int},
-                 right_boundary_indices::Vector{Int},
-                 separator::Char,
-                 quotemark::Char,
-                 nastrings::Vector{ASCIIString},
-                 truestrings::Vector{ASCIIString},
-                 falsestrings::Vector{ASCIIString},
-                 ignorepadding::Bool,
-                 makefactors::Bool,
-                 colnames::Vector{UTF8String})
+function builddf{T <: ByteString}(rows::Int,
+                                  cols::Int,
+                                  bytes::Int,
+                                  fields::Int,
+                                  buffer::Vector{Uint8},
+                                  linebreak_indices::Vector{Int},
+                                  right_boundary_indices::Vector{Int},
+                                  separator::Char,
+                                  quotemark::Char,
+                                  nastrings::Vector{T},
+                                  truestrings::Vector{T},
+                                  falsestrings::Vector{T},
+                                  ignorepadding::Bool,
+                                  makefactors::Bool,
+                                  colnames::Vector)
     columns::Vector{Any} = Array(Any, cols)
 
     for j in 1:cols
@@ -462,7 +462,7 @@ function builddf(rows::Int,
     end
 
     if isempty(colnames)
-        colnames = DataFrames.generate_column_names(fields)
+        colnames = DataFrames.generate_column_names(cols)
     end
 
     return DataFrame(columns, colnames)
@@ -491,12 +491,12 @@ function readtable(io::IO;
                    separator::Char = ',',
                    quotemark::Char = '"',
                    decimal::Char = '.',
-                   nastrings::Vector{ASCIIString} = ASCIIString["", "NA"],
-                   truestrings::Vector{ASCIIString} = ASCIIString["T", "t", "TRUE", "true"],
-                   falsestrings::Vector{ASCIIString} = ASCIIString["F", "f", "FALSE", "false"],
+                   nastrings::Vector = ASCIIString["", "NA"],
+                   truestrings::Vector = ASCIIString["T", "t", "TRUE", "true"],
+                   falsestrings::Vector = ASCIIString["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
                    nrows::Int = -1,
-                   colnames::Vector{UTF8String} = UTF8String[],
+                   colnames::Vector = UTF8String[],
                    cleannames::Bool = false,
                    coltypes::Vector{Any} = Any[],
                    allowcomments::Bool = false,
@@ -507,7 +507,6 @@ function readtable(io::IO;
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
                    buffersize::Int = 2^20)
-
     # Allocate buffers to conserve memory
     # TODO: Pass in these three buffers on every pass for DataStream's
     buffer::Vector{Uint8} = Array(Uint8, buffersize)
@@ -545,7 +544,10 @@ function readtable(io::IO;
                      skipblanks,
                      allowcomments,
                      commentmark)
+    end
 
+    # Insert column names from header if none present
+    if header && isempty(colnames)
         colnames = parsecolnames(buffer,
                                  right_boundary_indices,
                                  fields)
@@ -635,12 +637,12 @@ function readtable(filename::String;
                    separator::Char = ',',
                    quotemark::Char = '"',
                    decimal::Char = '.',
-                   nastrings::Vector{ASCIIString} = ASCIIString["", "NA"],
-                   truestrings::Vector{ASCIIString} = ASCIIString["T", "t", "TRUE", "true"],
-                   falsestrings::Vector{ASCIIString} = ASCIIString["F", "f", "FALSE", "false"],
+                   nastrings::Vector = ASCIIString["", "NA"],
+                   truestrings::Vector = ASCIIString["T", "t", "TRUE", "true"],
+                   falsestrings::Vector = ASCIIString["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
                    nrows::Int = -1,
-                   colnames::Vector{UTF8String} = UTF8String[],
+                   colnames::Vector = UTF8String[],
                    cleannames::Bool = false,
                    coltypes::Vector{Any} = Any[],
                    allowcomments::Bool = false,

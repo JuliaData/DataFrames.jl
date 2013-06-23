@@ -47,7 +47,7 @@ readtable("test/data/skiplines/skipfront.csv", skipstart = 3)
 
 df = DataFrame()
 
-nrows, ncols = 100_000, 100
+nrows, ncols = 100_000, 10
 
 for j in 1:ncols
     df[j] = randn(nrows)
@@ -60,6 +60,8 @@ writetable(filename, df, separator = ',')
 df1 = readtable(filename, separator = ',')
 
 all(df .== df1)
+
+rm(filename)
 
 #
 # Lots of rows
@@ -67,7 +69,7 @@ all(df .== df1)
 
 df = DataFrame()
 
-nrows, ncols = 1_000_000, 10
+nrows, ncols = 1_000_000, 1
 
 for j in 1:ncols
     df[j] = randn(nrows)
@@ -80,3 +82,5 @@ writetable(filename, df, separator = ',')
 df1 = readtable(filename, separator = ',')
 
 all(df .== df1)
+
+rm(filename)
