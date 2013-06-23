@@ -397,7 +397,7 @@ function builddf(rows::Int,
                        buffer[left] == '\n')
                     left += 1
                 end
-                while left < right &&
+                while left <= right &&
                       (buffer[right] == ' ' ||
                        buffer[right] == '\t' ||
                        buffer[right] == '\r' ||
