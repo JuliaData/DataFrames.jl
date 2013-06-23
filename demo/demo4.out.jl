@@ -149,7 +149,7 @@ julia>
 
 julia> # You can also use the piping operator for the same thing.
 
-julia> df | groupby("b") | :( x_sum = sum(x); x_len = length(x) )
+julia> df |> groupby("b") |> :( x_sum = sum(x); x_len = length(x) )
 5x3 DataFrame:
           b    x_sum x_len
 [1,]    "a" -3.01026    14

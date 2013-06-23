@@ -312,7 +312,7 @@ df7 = DataFrame({d1, d2, d3}, ["d1", "d2", "d3"])
 
 @assert isequal(with(df7, :(d3 + d3)), df7["d3"] + df7["d3"])
 @assert isequal(with(df7, :(d3 + $d4)), df7["d3"] + d4)
-x = df7 | with(:( d3 + d3 ))
+x = df7 |> with(:( d3 + d3 ))
 @assert isequal(x, df7["d3"] + df7["d3"])
 
 df8 = within(df7, :(d4 = d3 + d3 + 1))
@@ -326,7 +326,7 @@ df8 = @transform(copy(df7), d4 => d3 + 1)
 
 df8 = based_on(df7, :( d1 = d3 ))
 @assert isequal(df8["d1"], df7["d3"])
-df8 = df7 | based_on(:( d1 = d3 ))
+df8 = df7 |> based_on(:( d1 = d3 ))
 @assert isequal(df8["d1"], df7["d3"])
 df8 = based_on(df7, :( sum_d3 = sum(d3) ))
 @assert isequal(df8[1,1], sum(df7["d3"]))
@@ -352,7 +352,7 @@ for x in g1
 end
 @assert res == sum(df7["d1"])
 
-df8 = df7 | groupby(["d2"]) | :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) )
+df8 = df7 |> groupby(["d2"]) |> :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) )
 @assert isequal(df8["d2"], PooledDataVector[NA, "A", "B"])
 
 df9 = based_on(groupby(df7, "d2"),
@@ -375,7 +375,7 @@ df8 = colwise(groupby(df7, "d2"), [:sum, :length])
 # @assert df8[2, "d1_length"] == 7
 @assert df8[2, "d1_length"] == 8
 
-df9 = df7 | groupby(["d2"]) | [:sum, :length]
+df9 = df7 |> groupby(["d2"]) |> [:sum, :length]
 @assert isequal(df9, df8)
 df9 = by(df7, "d2", [:sum, :length])
 @assert isequal(df9, df8)

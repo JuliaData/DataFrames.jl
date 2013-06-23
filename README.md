@@ -33,7 +33,7 @@ using DataFrames
   [data.table](http://cran.r-project.org/web/packages/data.table/index.html)
 * Basic `merge` functionality
 * `stack` and `unstack` for long/wide conversions
-* Pipelining support (`|`) for many operations
+* Pipelining support (`|>`) for many operations
 * Several typical R-style functions, including `head`, `tail`, `describe`,
   `unique`, `duplicated`, `with`, `within`, and more
 * Formula and design matrix implementation
@@ -77,16 +77,16 @@ julia> d[1:3, ["x","y"]]     # indexing is similar to R's
 [2,]    -0.403393 -1.32755
 [3,]     0.602785  2.26635
 
-julia> # Group on column i, and pipe (|) that result to an expression
+julia> # Group on column i, and pipe (|>) that result to an expression
 julia> # that creates the column x_sum.
-julia> groupby(d, "i") | :(x_sum = sum(x))
+julia> groupby(d, "i") |> :(x_sum = sum(x))
 3x2 DataFrame
         i    x_sum
 [1,]    1  2.06822
 [2,]    2 -1.80867
 [3,]    3 0.319517
 
-julia> groupby(d, "i") | :sum   # Another way to operate on a grouping
+julia> groupby(d, "i") |> :sum   # Another way to operate on a grouping
 3x4 DataFrame
         i    x_sum    y_sum j_sum
 [1,]    1  2.06822 -2.73985     8

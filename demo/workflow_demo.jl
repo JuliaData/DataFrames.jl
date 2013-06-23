@@ -98,7 +98,7 @@ by(df, "b", :( x_sum = sum(x); x_len = length(x) ))
 by(df, ["a", "b"], :( x_sum = sum(x); x_len = length(x) )) 
 
 # You can also use the piping operator
-df | groupby("b") | :( x_sum = sum(x); x_len = length(x) ) 
+df |> groupby("b") |> :( x_sum = sum(x); x_len = length(x) )
 
 # merging isn't complete, but simple cases work
 srand(1)

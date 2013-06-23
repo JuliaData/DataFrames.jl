@@ -221,9 +221,9 @@ end
 
 # default pipelines:
 map(f::Function, x::SubDataFrame) = f(x)
-(|)(x::GroupedDataFrame, e::Expr) = based_on(x, e)   
-(|)(x::GroupApplied, e::Expr) = with(x, e)   
-## (|)(x::GroupedDataFrame, f::Function) = map(f, x)
+(|>)(x::GroupedDataFrame, e::Expr) = based_on(x, e)
+(|>)(x::GroupApplied, e::Expr) = with(x, e)
+## (|>)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
 colwise(f::Function, d::AbstractDataFrame) = {[f(d[idx])] for idx in 1:ncol(d)}
@@ -267,8 +267,8 @@ end
 colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
 colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
-(|)(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
-(|)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
+(|>)(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
+(|>)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
 colnames(d::GroupedDataFrame) = colnames(d.parent)
 
 # by() convenience function

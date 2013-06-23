@@ -276,14 +276,14 @@ results as an Array{Any}.
 Apply the function specified by Symbol `s` to each column of in each
 grouping of `gd`, and return the results as a DataFrame.
 
-#### `by(df::AbstractDataFrame, cols, s::Symbol)` or `groupby(df, cols) | s`
+#### `by(df::AbstractDataFrame, cols, s::Symbol)` or `groupby(df, cols) |> s`
 #### `by(df::AbstractDataFrame, cols, s::Vector{Symbol})`
 
 Return a DataFrame with the results of grouping on `cols` and
 `colwise` evaluation based on `s`. Equivalent to `colwise(groupby(df,
 cols), s)`.
 
-#### `by(df::AbstractDataFrame, cols, e::Expr)` or `groupby(df, cols) | e`
+#### `by(df::AbstractDataFrame, cols, e::Expr)` or `groupby(df, cols) |> e`
 
 Return a DataFrame with the results of grouping on `cols` and
 evaluation of `e` in each grouping. Equivalent to `based_on(groupby(df,

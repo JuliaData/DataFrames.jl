@@ -551,9 +551,9 @@ The basic mechanism for spliting data is the `groupby()` function, which will pr
 		println("A DataFrame with $(nrow(df)) rows")
 	end
 
-The `|` (pipe) operator for `GroupedDataFrame`'s allows you to run simple functions on the columns of the induced `DataFrame`'s. You pass a simple function by producing a symbol with its name:
+The `|>` (pipe) operator for `GroupedDataFrame`'s allows you to run simple functions on the columns of the induced `DataFrame`'s. You pass a simple function by producing a symbol with its name:
  
-	groupby(iris, "Species") | :mean
+	groupby(iris, "Species") |> :mean
 
 Another simple way to split-and-apply (without clear combining) is to use the `map()` function:
 

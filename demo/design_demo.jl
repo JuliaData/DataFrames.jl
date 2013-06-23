@@ -167,9 +167,9 @@ df1[with(df1, :(a .> 5)), :]
 
 
 # TODO: pipelining
-# The pipeline operator (`|`) is useful for many DataFrames.jl operations.
+# The pipeline operator (`|>`) is useful for many DataFrames.jl operations.
 # This is handy at the REPL to evaluate the structure of a result:
-df1[:( a .> 5 )] | dump
+df1[:( a .> 5 )] |> dump
 
 
 

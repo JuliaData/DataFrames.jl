@@ -27,7 +27,7 @@ by(df, ["a", "b"], :( x_sum = sum(x); x_len = length(x) ))
 based_on(groupby(df, "b"), :( x_sum = sum(x); x_len = length(x) ))
 
 # You can also use the piping operator for the same thing.
-df | groupby("b") | :( x_sum = sum(x); x_len = length(x) )
+df |> groupby("b") |> :( x_sum = sum(x); x_len = length(x) )
 
 # groupby returns a GroupedDataFrame
 gd = groupby(df, "b")

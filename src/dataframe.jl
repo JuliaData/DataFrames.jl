@@ -1205,10 +1205,10 @@ vcat(dfs::DataFrame...) = rbind(dfs...)
 # split-apply-combine
 # co(ap(myfun,
 #    sp(df, ["region", "product"])))
-# (|)(x, f::Function) = f(x)
-# split(df, ["region", "product"]) | (apply(nrow)) | mean
+# (|>)(x, f::Function) = f(x)
+# split(df, ["region", "product"]) |> (apply(nrow)) |> mean
 # apply(f::function) = (x -> map(f, x))
-# split(df, ["region", "product"]) | @@@)) | mean
+# split(df, ["region", "product"]) |> @@@)) |> mean
 # how do we add col names to the name space?
 # transform(df, :(cat=dog*2, clean=proc(dirty)))
 # summarise(df, :(cat=sum(dog), all=string(strs)))
@@ -1465,7 +1465,7 @@ within!(e::Expr) = x -> within!(x, e)
 based_on(e::Expr) = x -> based_on(x, e)
 
 # allow pipelining straight to an expression using within!:
-(|)(x::AbstractDataFrame, e::Expr) = within!(x, e)
+(|>)(x::AbstractDataFrame, e::Expr) = within!(x, e)
 
 
 
