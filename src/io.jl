@@ -98,6 +98,15 @@ function readnrows!(io::IO,
                     0,
                     right_boundaries_read,
                     right_boundary_indices_size)
+    # BEGIN
+    # Needed to satisfy strtod()
+    bytes_read += 1
+    buffer_size =
+      safesetindex!(buffer,
+                    '\n',
+                    bytes_read,
+                    buffer_size)
+    # END
     linebreaks_read += 1
     linebreak_indices_size =
       safesetindex!(linebreak_indices,
@@ -157,6 +166,15 @@ function readnrows!(io::IO,
                                 bytes_read,
                                 right_boundaries_read,
                                 right_boundary_indices_size)
+                # BEGIN
+                # Needed to satisfy strtod()
+                bytes_read += 1
+                buffer_size =
+                  safesetindex!(buffer,
+                                '\n',
+                                bytes_read,
+                                buffer_size)
+                # END
             # Finished reading a row
             elseif @atnewline chr nextchr
                 right_boundaries_read += 1
@@ -165,6 +183,15 @@ function readnrows!(io::IO,
                                 bytes_read,
                                 right_boundaries_read,
                                 right_boundary_indices_size)
+                # BEGIN
+                # Needed to satisfy strtod()
+                bytes_read += 1
+                buffer_size =
+                  safesetindex!(buffer,
+                                '\n',
+                                bytes_read,
+                                buffer_size)
+                # END
                 linebreaks_read +=1
                 linebreak_indices_size =
                   safesetindex!(linebreak_indices,
@@ -213,7 +240,15 @@ function readnrows!(io::IO,
                         bytes_read,
                         right_boundaries_read,
                         right_boundary_indices_size)
-
+        # BEGIN
+        # Needed to satisfy strtod()
+        bytes_read += 1
+        buffer_size =
+          safesetindex!(buffer,
+                        '\n',
+                        bytes_read,
+                        buffer_size)
+        # END
         linebreaks_read += 1
         linebreak_indices_size =
           safesetindex!(linebreak_indices,
@@ -384,7 +419,7 @@ function builddf{T <: ByteString}(rows::Int,
             i += 1
 
             # Determine left and right boundaries of field
-            left = right_boundary_indices[(i - 1) * cols + j] + 1
+            left = right_boundary_indices[(i - 1) * cols + j] + 2
             right = right_boundary_indices[(i - 1) * cols + j + 1]
 
             # Ignore left-and-right whitespace padding
@@ -416,8 +451,6 @@ function builddf{T <: ByteString}(rows::Int,
                 else
                     is_int = false
                     values = convert(Array{Float64}, values)
-                    values[i], wasparsed, missing[i] =
-                      bytestofloat(buffer, left, right, nastrings)
                 end
             end
 
@@ -479,7 +512,7 @@ function parsecolnames(buffer::Vector{Uint8},
     colnames = Array(UTF8String, fields)
 
     for j in 1:fields
-        left = right_boundary_indices[j] + 1
+        left = right_boundary_indices[j] + 2
         right = right_boundary_indices[j + 1]
         colnames[j] = bytestring(buffer[left:right])
     end
@@ -663,7 +696,7 @@ function readtable(pathname::String;
         error("URL retrieval not yet implemented")
     # (2) Path is GZip file
     elseif ismatch(r"\.gz$", pathname)
-        io = GZip.open("hack.txt.gz")
+        io = gzopen(pathname, "r")
         nbytes = 2 * filesize(pathname)
     # (3) Path is BZip2 file
     elseif ismatch(r"\.bz2?$", pathname)
