@@ -1,40 +1,45 @@
-dv = DataArray([1, 2, 3], bitpack([false, false, false]))
+require("test.jl")
+using DataFrames
 
-dv = DataArray([1, 2, 3], [false, false, false])
+let
+	dv = DataArray([1, 2, 3], bitpack([false, false, false]))
 
-failNA(dv)
-removeNA(dv)
-replaceNA(dv, 3)
-for v in each_failNA(dv)
-	println(v)
-end
-for v in each_removeNA(dv)
-	println(v)
-end
-for v in each_replaceNA(dv, 3)
-	println(v)
-end
+	dv = DataArray([1, 2, 3], [false, false, false])
 
-dv[1] = NA
+	failNA(dv)
+	removeNA(dv)
+	replaceNA(dv, 3)
+	for v in each_failNA(dv)
+		println(v)
+	end
+	for v in each_removeNA(dv)
+		println(v)
+	end
+	for v in each_replaceNA(dv, 3)
+		println(v)
+	end
 
-failNA(dv)
-removeNA(dv)
-replaceNA(dv, 3)
-for v in each_failNA(dv)
-	println(v)
-end
-for v in each_removeNA(dv)
-	println(v)
-end
-for v in each_replaceNA(dv, 3)
-	println(v)
-end
+	dv[1] = NA
 
-dv = DataArray(ComplexPair, 5)
+	failNA(dv)
+	removeNA(dv)
+	replaceNA(dv, 3)
+	for v in each_failNA(dv)
+		println(v)
+	end
+	for v in each_removeNA(dv)
+		println(v)
+	end
+	for v in each_replaceNA(dv, 3)
+		println(v)
+	end
 
-type MyType
-	a::Int64
-	b::Int64
+	dv = DataArray(ComplexPair, 5)
+
+	type MyType
+		a::Int64
+		b::Int64
+	end
+
+	dv = DataArray(MyType, 5)
 end
-
-dv = DataArray(MyType, 5)

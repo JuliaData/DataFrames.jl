@@ -1,4 +1,9 @@
-d = dataeye(3, 3)
-d[1, 1] = NA
+require("test.jl")
+using DataFrames
 
-svd(d)
+let
+	d = dataeye(3, 3)
+	d[1, 1] = NA
+
+	svd(d)
+end
