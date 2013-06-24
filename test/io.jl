@@ -3,6 +3,7 @@ using DataFrames
 
 let
     filenames = ["test/data/blanklines/blanklines.csv",
+                 "test/data/compressed/movies.csv.gz",
                  "test/data/newlines/os9.csv",
                  "test/data/newlines/osx.csv",
                  "test/data/newlines/windows.csv",
