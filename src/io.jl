@@ -71,6 +71,7 @@ function readnrows!(io::IO,
                     right_boundary_indices::Vector{Int},
                     nrows::Int,
                     separator::Char,
+                    allowquotes::Bool,
                     quotemark::Char,
                     skipblanks::Bool,
                     allowcomments::Bool,
@@ -146,7 +147,7 @@ function readnrows!(io::IO,
         # Processing is very different inside and outside of quotes
         if !in_quotes
             # Entering a quoted region
-            if chr == quotemark
+            if chr == quotemark && allowquotes
                 in_quotes = true
             # Finished reading a field
             elseif chr == separator
@@ -186,7 +187,7 @@ function readnrows!(io::IO,
                 in_escape = true
             else
                 # Exited a quoted region
-                if chr == quotemark && !in_escape
+                if chr == quotemark && allowquotes && !in_escape
                     in_quotes = false
                 # Store character into buffer
                 else
@@ -489,6 +490,7 @@ end
 function readtable(io::IO;
                    header::Bool = true,
                    separator::Char = ',',
+                   allowquotes::Bool = true,
                    quotemark::Char = '"',
                    decimal::Char = '.',
                    nastrings::Vector = ASCIIString["", "NA"],
@@ -540,6 +542,7 @@ function readtable(io::IO;
                      right_boundary_indices,
                      1,
                      separator,
+                     allowquotes,
                      quotemark,
                      skipblanks,
                      allowcomments,
@@ -561,6 +564,7 @@ function readtable(io::IO;
                  right_boundary_indices,
                  nrows,
                  separator,
+                 allowquotes,
                  quotemark,
                  skipblanks,
                  allowcomments,
@@ -632,9 +636,10 @@ function readtable(io::IO;
     return df
 end
 
-function readtable(filename::String;
+function readtable(pathname::String;
                    header::Bool = true,
                    separator::Char = ',',
+                   allowquotes::Bool = true,
                    quotemark::Char = '"',
                    decimal::Char = '.',
                    nastrings::Vector = ASCIIString["", "NA"],
@@ -652,18 +657,33 @@ function readtable(filename::String;
                    skiprows::Vector{Int} = Int[],
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8)
-    # Open an IO stream
-    io = open(filename, "r")
+    # Open an IO stream based on pathname
+    # (1) Path is an HTTP or FTP URL
+    if ismatch(r"^(http://)|(ftp://)", pathname)
+        error("URL retrieval not yet implemented")
+    # (2) Path is GZip file
+    elseif ismatch(r"\.gz$", pathname)
+        io = GZip.open("hack.txt.gz")
+        nbytes = 2 * filesize(pathname)
+    # (3) Path is BZip2 file
+    elseif ismatch(r"\.bz2?$", pathname)
+        error("BZip2 decompression not yet implemented")
+    # (4) Path is an uncompressed file
+    else
+        io = open(pathname, "r")
+        nbytes = filesize(pathname)
+    end
 
     # If user wants all rows, overestimate nrows
     if nrows == -1
-        nrows = filesize(filename)
+        nrows = nbytes
     end
 
     # Use the IO stream method for readtable()
     df = readtable(io,
                    header = header,
                    separator = separator,
+                   allowquotes = allowquotes,
                    quotemark = quotemark,
                    decimal = decimal,
                    nastrings = nastrings,
@@ -681,7 +701,7 @@ function readtable(filename::String;
                    skiprows = skiprows,
                    skipblanks = skipblanks,
                    encoding = encoding,
-                   buffersize = filesize(filename))
+                   buffersize = nbytes)
 
     # Close the IO stream
     close(io)

@@ -1,8 +1,6 @@
 # Read saved R datasets in the RDA2 or RDX2 format
 # Files written in this format often have the extension .rda or .RData
 
-using GZip
-
 ##############################################################################
 ##
 ## A table of R's SEXPREC tags.  No longer used but good to have around.
