@@ -106,10 +106,10 @@ Instead, you can simply focus on the behavior of the `DataVector` type. Let's st
 	typeof(DataVector)
 	typeof(DataVector{Int64})
 
-	super(DataVector)
-	super(super(DataVector))
+	super(DataVector{Int64})
+	super(super(DataVector{Int64}))
 
-	DataVector.names
+	DataVector{Int64}.names
 
 If you want to drill down further, you can always run `dump()`:
 
