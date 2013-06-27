@@ -514,7 +514,11 @@ function parsecolnames(buffer::Vector{Uint8},
     for j in 1:fields
         left = right_boundary_indices[j] + 2
         right = right_boundary_indices[j + 1]
-        colnames[j] = bytestring(buffer[left:right])
+        if buffer[right] == '\r' || buffer[right] == '\n'
+            colnames[j] = bytestring(buffer[left:(right - 1)])
+        else
+            colnames[j] = bytestring(buffer[left:right])
+        end
     end
 
     return colnames
