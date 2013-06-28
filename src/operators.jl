@@ -313,7 +313,7 @@ end
 
 for f in two_argument_elementary_functions
     @eval begin
-        function ($f){T}(dv::DataVector{T}, arg2)
+        function ($f){T}(dv::DataVector{T}, arg2::Integer)
             n = length(dv)
             res = DataArray(Array(T, n), falses(n))
             for i = 1:n
