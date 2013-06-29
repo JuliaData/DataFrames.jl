@@ -948,8 +948,8 @@ dump(io::IO, x::AbstractDataVector, n::Int, indent) =
 # if anything else, punt.
 # Note that R creates a summary object, which has a print method. That's
 # a reasonable alternative to this.
-describe(dv::AbstractDataVector) = describe(OUTPUT_STREAM, dv)
-describe(df::DataFrame) = describe(OUTPUT_STREAM, df)
+describe(dv::AbstractDataVector) = describe(STDOUT, dv)
+describe(df::DataFrame) = describe(STDOUT, df)
 function describe{T<:Number}(io, dv::AbstractDataVector{T})
     filtered = float(removeNA(dv))
     qs = quantile(filtered, [0, .25, .5, .75, 1])

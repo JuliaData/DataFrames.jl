@@ -29,7 +29,7 @@ type FileDataStream <: AbstractDataStream
 end
 
 function FileDataStream{T <: String}(filename::T, minibatch_size::Int)
-  stream = OUTPUT_STREAM
+  stream = STDOUT
   separator = determine_separator(filename)
   quotation_character = DEFAULT_QUOTATION_CHARACTER
   missingness_indicators = DEFAULT_MISSINGNESS_INDICATORS

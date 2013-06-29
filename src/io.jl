@@ -792,7 +792,7 @@ function printtable(df::DataFrame;
                     separator::Char = ',',
                     quotemark::Char = '"',
                     header::Bool = true)
-    printtable(OUTPUT_STREAM,
+    printtable(STDOUT,
                df,
                separator = separator,
                quotemark = quotemark,

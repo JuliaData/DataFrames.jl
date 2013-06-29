@@ -112,7 +112,7 @@ end
 
 copy(d::DataArray) = DataArray(copy(d.data), copy(d.na))
 deepcopy(d::DataArray) = DataArray(deepcopy(d.data), deepcopy(d.na))
-function copy_to(dest::DataArray, src::Any)
+function copy!(dest::DataArray, src::Any)
     i = 1
     for x in src
         dest[i] = x
