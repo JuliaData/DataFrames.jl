@@ -1,5 +1,7 @@
 # NB: Linebreaks don't need to be stored, but they do aid debugging
-# TODO: Implement peek(io, Uint8)
+# Implement peek(io, Uint8) to be used in dataframes io
+import Base.peek
+peek(io::IO, ::Type{Uint8}) = uint8(eof(io) ? -1 : peek(io))
 
 # function atnewline(chr::Union(Uint8, Char), nextchr::Union(Uint8, Char))
 #     return chr == '\n' ||                   # UNIX + Windows
@@ -115,9 +117,9 @@ function readnrows!(io::IO,
                     linebreak_indices_size)
 
     # Loop over bytes from the input until we've read requested rows
-    while !eof(io) && linebreaks_read < nrows + 1
+    while !eof(io) && ((nrows == -1) || (linebreaks_read < nrows + 1))
         chr = read(io, Uint8)
-        nextchr = uint8(Base.peek(io))
+        nextchr = peek(io, Uint8)
         # === Debugging ===
         # if in_quotes
         #     print_with_color(:red, string(char(chr)))
@@ -129,7 +131,7 @@ function readnrows!(io::IO,
         if allowcomments && !in_quotes && chr == commentmark
             while !eof(io) && !(@atnewline chr nextchr)
                 chr = read(io, Uint8)
-                nextchr = uint8(Base.peek(io))
+                nextchr = peek(io, Uint8)
             end
             # Skip the linebreak if the comment started at the front of a line
             if at_front
@@ -141,11 +143,11 @@ function readnrows!(io::IO,
         if skipblanks && !in_quotes
             while !eof(io) && (@atblankline chr nextchr)
                 chr = read(io, Uint8)
-                nextchr = uint8(Base.peek(io))
+                nextchr = peek(io, Uint8)
                 # Special handling for Windows
                 if !eof(io) && chr == '\r' && nextchr == '\n'
                     chr = read(io, Uint8)
-                    nextchr = uint8(Base.peek(io))
+                    nextchr = peek(io, Uint8)
                 end
             end
         end
@@ -556,16 +558,16 @@ function readtable(io::IO;
     skipped_lines::Int = 0
     if skipstart != 0
         chr::Uint8 = read(io, Uint8)
-        nextchr::Uint8 = uint8(Base.peek(io))
+        nextchr::Uint8 = peek(io, Uint8)
         while skipped_lines < skipstart
             while !eof(io) && !(@atnewline chr nextchr)
                 chr = read(io, Uint8)
-                nextchr = uint8(Base.peek(io))
+                nextchr = peek(io, Uint8)
             end
             skipped_lines += 1
             if !eof(io) && skipped_lines < skipstart
                 chr = read(io, Uint8)
-                nextchr = uint8(Base.peek(io))
+                nextchr = peek(io, Uint8)
             end
         end
     end
