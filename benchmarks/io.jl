@@ -7,5 +7,5 @@ for filename in filenames
 	                                filename,
 	                                N)
 	# TODO: Keep permanent record
-	print_table(STDOUT, df, ',', '"', false)
+	printtable(STDOUT, df, ',', '"', false)
 end

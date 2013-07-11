@@ -2,8 +2,7 @@
 # Correctness Tests
 #
 
-require("test.jl")
-
+using Base.Test
 using DataFrames
 
 my_tests = ["test/dataarray.jl",

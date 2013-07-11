@@ -1,4 +1,4 @@
-require("test.jl")
+using Base.Test
 using DataFrames
 
 let
