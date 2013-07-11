@@ -2,16 +2,16 @@ using Base.Test
 using DataFrames
 
 let
-    test_context("Data types and NA's")
+    #test_context("Data types and NA's")
 
-    test_group("NA's")
+    #test_group("NA's")
     @assert length(NA) == 1
     @assert size(NA) == ()
     @assert isna(3 == NA)
     @assert isna(NA == 3)
     @assert isna(NA == NA)
 
-    test_group("DataVector creation")
+    #test_group("DataVector creation")
     dvint = DataVector[1, 2, NA, 4]
     dvint2 = DataArray([5:8])
     dvint3 = DataArray(5:8)
@@ -24,17 +24,17 @@ let
     @assert isa(dvint3, DataVector{Int64})
     @assert isa(dvflt, DataVector{Float64})
     @assert isa(dvstr, DataVector{ASCIIString})
-    @test throws_exception(DataArray([5:8], falses(2)), Exception) 
+    # @test throws_exception(DataArray([5:8], falses(2)), Exception) 
 
     @assert isequal(DataArray(dvint), dvint)
 
-    test_group("PooledDataVector creation")
+    #test_group("PooledDataVector creation")
     pdvstr = PooledDataVector["one", "one", "two", "two", NA, "one", "one"]
     @assert isa(pdvstr, PooledDataVector{ASCIIString})
-    @test throws_exception(PooledDataVector["one", "one", 9], Exception)
+    # @test throws_exception(PooledDataVector["one", "one", 9], Exception)
     @assert isequal(PooledDataArray(pdvstr), pdvstr)
 
-    test_group("PooledDataVector creation with predetermined pool")
+    #test_group("PooledDataVector creation with predetermined pool")
     pdvpp = PooledDataArray([1, 2, 2, 3], [1, 2, 3, 4])
     @assert isequal(pdvpp.pool, [1, 2, 3, 4])
     @assert string(pdvpp) == "[1, 2, 2, 3]"
@@ -49,13 +49,13 @@ let
     @assert string(pdvpp) == "[one, two, two]"
     @assert string(PooledDataArray(["one", "two", "four"], ["one", "two", "three"])) == "[one, two, NA]"
 
-    test_group("PooledDataVector utf8 support")
+    #test_group("PooledDataVector utf8 support")
     pdvpp = PooledDataArray([utf8("hello")], [false])
     @assert isa(pdvpp[1], UTF8String)
     pdvpp = PooledDataArray([utf8("hello")])
     @assert isa(pdvpp[1], UTF8String)
 
-    test_group("DataVector access")
+    #test_group("DataVector access")
     @assert dvint[1] == 1
     @assert isna(dvint[3])
     @assert isequal(dvflt[3:4], DataVector[NA, 4.0])
@@ -63,35 +63,35 @@ let
     @assert isequal(dvstr[[1, 2, 1, 4]], DataVector["one", "two", "one", "four"])
     @assert isequal(dvstr[[1, 2, 1, 3]], DataVector["one", "two", "one", NA])
 
-    test_group("PooledDataVector access")
+    #test_group("PooledDataVector access")
     @assert pdvstr[1] == "one"
     @assert isna(pdvstr[5])
     @assert isequal(pdvstr[1:3], DataVector["one", "one", "two"])
     @assert isequal(pdvstr[[true, false, true, false, true, false, true]], PooledDataVector["one", "two", NA, "one"])
     @assert isequal(pdvstr[[1, 3, 1, 2]], DataVector["one", "two", "one", "one"])
 
-    test_group("DataVector methods")
+    #test_group("DataVector methods")
     @assert size(dvint) == (4,)
     @assert length(dvint) == 4
     @assert sum(isna(dvint)) == 1
     @assert eltype(dvint) == Int64
 
-    test_group("PooledDataVector methods")
+    #test_group("PooledDataVector methods")
     @assert size(pdvstr) == (7,)
     @assert length(pdvstr) == 7
     @assert sum(isna(pdvstr)) == 1
     @assert eltype(pdvstr) == ASCIIString
 
-    test_group("DataVector operations")
+    #test_group("DataVector operations")
     @assert isequal(dvint + 1, DataArray([2, 3, 4, 5], [false, false, true, false]))
     @assert isequal(dvint .* 2, DataVector[2, 4, NA, 8])
     @assert isequal(dvint .== 2, DataVector[false, true, NA, false])
     @assert isequal(dvint .> 1, DataVector[false, true, NA, true])
 
-    test_group("PooledDataVector operations")
+    #test_group("PooledDataVector operations")
     # @assert isequal(pdvstr .== "two", PooledDataVector[false, false, true, true, NA, false, false])
 
-    test_group("DataVector to something else")
+    #test_group("DataVector to something else")
     @assert all(removeNA(dvint) .== [1, 2, 4])
     @assert all(replaceNA(dvint, 0) .== [1, 2, 0, 4])
     @assert all(convert(Vector{Int}, dvint2) .== [5:8])
@@ -99,23 +99,23 @@ let
     @assert all([length(x)::Int for x in dvstr] == [3, 3, 1, 4])
     @assert repr(dvint) == "[1,2,NA,4]"
 
-    test_group("PooledDataVector to something else")
+    #test_group("PooledDataVector to something else")
     @assert all(removeNA(pdvstr) .== ["one", "one", "two", "two", "one", "one"])
     @assert all(replaceNA(pdvstr, "nine") .== ["one", "one", "two", "two", "nine", "one", "one"])
     @assert all([length(i)::Int for i in pdvstr] .== [3, 3, 3, 3, 1, 3, 3])
     @assert string(pdvstr[1:3]) == "[one, one, two]"
 
-    test_group("DataVector Filter and Replace")
+    #test_group("DataVector Filter and Replace")
     @assert isequal(removeNA(dvint), [1, 2, 4])
     @assert isequal(replaceNA(dvint, 7), [1, 2, 7, 4])
     @assert sum(removeNA(dvint)) == 7
     @assert sum(replaceNA(dvint, 7)) == 14
 
-    test_group("PooledDataVector Filter and Replace")
+    #test_group("PooledDataVector Filter and Replace")
     @assert reduce(string, "", removeNA(pdvstr)) == "oneonetwotwooneone"
     @assert reduce(string, "", replaceNA(pdvstr,"!")) == "oneonetwotwo!oneone"
 
-    test_group("DataVector assignment")
+    #test_group("DataVector assignment")
     assigntest = DataVector[1, 2, NA, 4]
     assigntest[1] = 8
     @assert isequal(assigntest, DataVector[8, 2, NA, 4])
@@ -141,7 +141,7 @@ let
     assigntest[2:4] = NA
     @assert isequal(assigntest, DataVector[1, NA, NA, NA])
 
-    test_group("PooledDataVector assignment")
+    #test_group("PooledDataVector assignment")
     ret = (pdvstr[2] = "three")
     @assert ret == "three"
     @assert pdvstr[2] == "three"
@@ -169,7 +169,7 @@ let
     @assert all(isna(begin pdvstr2[4:5] = NA end))
     @assert all(isna(pdvstr2))
 
-    test_group("PooledDataVector replace!")
+    #test_group("PooledDataVector replace!")
     pdvstr2 = PooledDataVector["one", "one", "two", "two", "three"]
     @assert replace!(pdvstr2, "two", "four") == "four"
     @assert replace!(pdvstr2, "three", "four") == "four"
@@ -177,9 +177,9 @@ let
     @assert replace!(pdvstr2, NA, "five") == "five"
     @assert isequal(pdvstr2, DataVector["five", "five", "four", "four", "four"])
 
-    test_context("DataFrames")
+    #test_context("DataFrames")
 
-    test_group("constructors")
+    #test_group("constructors")
     df1 = DataFrame({dvint, dvstr}, ["Ints", "Strs"])
     df2 = DataFrame({dvint, dvstr}) 
     df3 = DataFrame({dvint})
@@ -190,14 +190,14 @@ let
     @assert size(df7) == (4, 2)
     @assert isequal(df7["x"], dvint)
 
-    test_group("description functions")
+    #test_group("description functions")
     @assert nrow(df6) == 4
     @assert ncol(df6) == 3
     @assert all(colnames(df6) .== ["A", "B", "C"])
     @assert all(colnames(df2) .== ["x1", "x2"])
     @assert all(colnames(df7) .== ["x", "y"])
 
-    test_group("ref")
+    #test_group("ref")
     @assert df6[2, 3] == "two"
     @assert isna(df6[3, 3])
     @assert df6[2, "C"] == "two"
@@ -209,7 +209,7 @@ let
     @assert size(head(df6,2)) == (2, 3)
     # lots more to do
 
-    test_group("combining")
+    #test_group("combining")
 
     dfc = cbind(df3, df4)
     @assert ncol(dfc) == 3
@@ -228,10 +228,10 @@ let
     @assert all(colnames(df2) .== colnames(dfr))
     @assert isna(dfr[8,"x2"])
 
-    test_group("show")
+    #test_group("show")
     @assert repr(df1) == "4x2 DataFrame:\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
 
-    test_group("assign")
+    #test_group("assign")
     df6[3] = DataVector["un", "deux", "troix", "quatre"]
     @assert df6[1, 3] == "un"
     df6["B"] = [4, 3, 2, 1]
@@ -242,12 +242,12 @@ let
     @assert all(colnames(df6) .== ["A", "B", "C"])
     @assert ncol(df6) == 3
 
-    test_group("NA handling")
+    #test_group("NA handling")
     @assert nrow(df5[complete_cases(df5), :]) == 3
 
-    test_context("SubDataFrames")
+    #test_context("SubDataFrames")
 
-    test_group("constructors")
+    #test_group("constructors")
     # single index is rows
     sdf6a = sub(df6, 1)
     sdf6b = sub(df6, 2:3)
@@ -256,11 +256,11 @@ let
     sdf6d = sub(df6, [1,3], "B")
     @assert size(sdf6d) == (2,1)
 
-    test_group("ref")
+    #test_group("ref")
     @assert sdf6a[1,2] == 4
 
-    test_context("Within")
-    test_group("Associative")
+    #test_context("Within")
+    #test_group("Associative")
 
     srand(1)
     a1 = [:a => [1, 2], :b => [3, 4], :c => [5, 6]]
@@ -304,7 +304,7 @@ let
     a4 = based_on(a3, :( d = a + b ))
     @assert isequal(a4[:d], a3["a"] + a3["b"])
 
-    test_group("DataFrame")
+    #test_group("DataFrame")
 
     srand(1)
     N = 20
@@ -339,7 +339,7 @@ let
     # TODO: Remove all tests that depend upon srand(), which was just changed.
     @assert all(df7[:( d2 .== "B" ), "d1"] .== PooledDataArray([2,1,1,1,1,2,2,1,2]))
 
-    test_group("groupby")
+    #test_group("groupby")
 
     gd = groupby(df7, "d1")
     @assert length(gd) == 2
@@ -384,7 +384,7 @@ let
     df9 = by(df7, "d2", [:sum, :length])
     @assert isequal(df9, df8)
 
-    test_group("reshape")
+    #test_group("reshape")
 
     d1 = DataFrame(quote
         a = [1:3]
@@ -437,7 +437,7 @@ let
     dpv3 = pivot_table(d, ["a"], ["c", "b"], "d", length)
     @assert( dpv3[1,"O_J"] == 1.0)
 
-    test_group("merge")
+    #test_group("merge")
 
     srand(1)
     df1 = DataFrame(quote
@@ -539,7 +539,7 @@ let
     @assert isequal(sort(m1["a"]), sort(m2["a"]))
 
 
-    test_group("New DataVector constructors")
+    #test_group("New DataVector constructors")
     dv = DataArray(Int64, 5)
     @assert all(isna(dv))
     dv = DataArray(Float64, 5)
@@ -563,7 +563,7 @@ let
     PooledDataVector["1", "2", NA] .== "1"
 
     # Test unique()
-    test_group("unique()")
+    #test_group("unique()")
     dv = DataArray(1:4)
     dv[4] = NA
     @assert contains(unique(dv), 1)
@@ -571,7 +571,7 @@ let
     @assert contains(unique(dv), 3)
     @assert contains(unique(dv), NA)
 
-    test_group("find()")
+    #test_group("find()")
     dv = DataArray([true, false, true])
     @assert isequal(find(dv), [1, 3])
 

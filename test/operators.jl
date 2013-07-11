@@ -13,7 +13,7 @@ let
                             cos, cosh, tan, tanh, ceil, floor,
                             round, trunc, exp, exp2, expm1, log, log10, log1p,
                             log2, exponent, sqrt, gamma, lgamma, digamma,
-                            erf, erfc, square]
+                            erf, erfc]
 
     special_comparison_operators = [isless]
 

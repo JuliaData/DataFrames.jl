@@ -1,9 +1,3 @@
-##############################################################################
-##
-## table()
-##
-##############################################################################
-
 function table{T}(d::AbstractDataArray{T})
     counts = Dict{Union(T, NAtype), Int}()
     for i = 1:length(d)
@@ -15,24 +9,6 @@ function table{T}(d::AbstractDataArray{T})
     end
     return counts
 end
-
-function table{T}(d::AbstractArray{T})
-    counts = Dict{T, Int}()
-    for i = 1:length(d)
-        if haskey(counts, d[i])
-            counts[d[i]] += 1
-        else
-            counts[d[i]] = 1
-        end
-    end
-    return counts
-end
-
-##############################################################################
-##
-## paste()
-##
-##############################################################################
 
 const letters = convert(Vector{ASCIIString}, split("abcdefghijklmnopqrstuvwxyz", ""))
 const LETTERS = convert(Vector{ASCIIString}, split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", ""))
@@ -78,12 +54,6 @@ function paste_columns(d::AbstractDataFrame, sep)
     res
 end
 paste_columns(d::AbstractDataFrame) = paste_columns(d, "_")
-
-##############################################################################
-##
-## cut()
-##
-##############################################################################
 
 function cut{S, T}(x::Vector{S}, breaks::Vector{T})
     if !issorted(breaks)
@@ -161,28 +131,4 @@ rep(x, times) = fill(x, times)
 
 function rep(x; times = 1, each::Int = 1)
     rep(x, times, each)
-end
-
-
-##############################################################################
-##
-## findat() - like R's match
-##
-##############################################################################
-
-# like findin but returns the position in `b` that first matches `a` (0 if no match)
-# similar to R's match
-function findat(a, b) 
-    res = Array(Int, length(a))
-    # bdict's value is the index of the first occurrence of the key
-    bdict = Dict{Any, Int}()
-    for i in 1:length(b)
-        if !haskey(bdict, b[i])
-            bdict[b[i]] = i
-        end
-    end
-    for i = 1:length(a)
-        res[i] = get(bdict, a[i], 0) 
-    end
-    res
 end

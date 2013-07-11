@@ -2,7 +2,7 @@ using Base.Test
 using DataFrames
 
 let
-    test_group("Confirm that we can read various file types.")
+    #test_group("Confirm that we can read various file types.")
 
     filenames = ["test/data/blanklines/blanklines.csv",
                  "test/data/compressed/movies.csv.gz",
@@ -46,7 +46,7 @@ let
     # TODO: Implement skipping lines at bottom
     # readtable("test/data/skiplines/skipbottom.csv", skipstartlines = 4)
 
-    test_group("Confirm that we can read a large file.")
+    #test_group("Confirm that we can read a large file.")
 
     df = DataFrame()
 
@@ -89,7 +89,7 @@ let
     rm(filename)
 
 
-    test_group("Properties of data frames returned by readtable method.")
+    #test_group("Properties of data frames returned by readtable method.")
 
     # Readtable with makefactors active should only make factors from columns
     # of strings.

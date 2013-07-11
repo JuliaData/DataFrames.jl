@@ -9,8 +9,8 @@ let
 	# - implement ^2 for datavector's
 	# - support more transformations with I()?
 
-	test_context("Formula")
-	test_group("Formula")
+	#test_context("Formula")
+	#test_group("Formula")
 
 	d = DataFrame()
 	d["y"] = [1:4]
@@ -37,7 +37,7 @@ let
 
 	tmp = d["x2"]
 	 
-	test_group("Basic tests")
+	#test_group("Basic tests")
 
 	d = DataFrame()
 	d["y"] = [1:4]
@@ -59,7 +59,7 @@ let
 	@test mm.model[:,1] == ones(4)
 	@test mm.model[:,2:3] == [x1 x2]
 
-	test_group("expanding a PooledVec into a design matrix of indicators for each dummy variable")
+	#test_group("expanding a PooledVec into a design matrix of indicators for each dummy variable")
 
 	a = expand(PooledDataArray(x1), "x1", DataFrame())
 	@test a[:,1] == DataVector([0, 1., 0, 0])
@@ -67,7 +67,7 @@ let
 	@test a[:,3] == DataVector([0, 0, 0, 1.])
 	@test colnames(a) == ["x1:6.0", "x1:7.0", "x1:8.0"]
 
-	test_group("create a design matrix from interactions from two DataFrames")
+	#test_group("create a design matrix from interactions from two DataFrames")
 
 	b = DataFrame()
 	b["x2"] = DataVector(x2)
@@ -76,7 +76,7 @@ let
 	@test df[:,2] == DataVector([0, 0, 11., 0])
 	@test df[:,3] == DataVector([0, 0, 0, 12.])
 
-	test_group("expanding an singleton expression/symbol into a DataFrame")
+	#test_group("expanding an singleton expression/symbol into a DataFrame")
 
 	df = deepcopy(d)
 	r = expand(:x2, df)
@@ -120,7 +120,7 @@ let
 	@test r[:,1:3] == expand(PooledDataArray(x1), "x1", DataFrame())
 	@test r[:,4:6] == expand(PooledDataArray(x2), "x2", DataFrame())
 
-	test_group("Creating a model matrix using full formulas: y ~ x1 + x2, etc")
+	#test_group("Creating a model matrix using full formulas: y ~ x1 + x2, etc")
 
 	df = deepcopy(d)
 	f = Formula(:(y ~ x1 & x2))
@@ -140,7 +140,7 @@ let
 	mm = model_matrix(mf)
 	@test mm.model == [ones(4) x1e x2 [0, 10, 0, 0] [0, 0, 11, 0] [0, 0, 0, 12]]
 
-	test_group("Basic transformations")
+	#test_group("Basic transformations")
 
 	df = deepcopy(d)
 	f = Formula(:(y ~ x1 + log(x2)))
@@ -167,7 +167,7 @@ let
 	 "x1:8&log(x2)"
 	 "x1:8&x3" ]
 
-	test_group("Model frame response variables")
+	#test_group("Model frame response variables")
 
 	f = Formula(:(x1 + x2 ~ y + x3))
 	mf = model_frame(f, d)
@@ -220,7 +220,7 @@ let
 	mm = model_matrix(model_frame(Formula(:(y ~ x2 & x3 & x4)), df))
 	@test mm.model == [ones(4) x2.*x3.*x4]
 
-	test_group("Column groups in formulas")
+	#test_group("Column groups in formulas")
 	set_group(d, "odd_predictors", ["x1","x3"])
 	@test expand(:odd_predictors, d) == d["odd_predictors"]
 	mf = model_frame(Formula(:(y ~ odd_predictors)), d)

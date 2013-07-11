@@ -9,7 +9,7 @@ elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
                         :cos, :cosh, :tan, :tanh, :ceil, :floor,
                         :round, :trunc, :exp, :exp2, :expm1, :log, :log10, :log1p,
                         :log2, :exponent, :sqrt, :gamma, :lgamma, :digamma,
-                        :erf, :erfc, :square]
+                        :erf, :erfc]
 
 two_argument_elementary_functions = [:round, :ceil, :floor, :trunc]
 
@@ -45,7 +45,7 @@ scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
 
 induced_scalar_arithmetic_operators = [:(^)]
 
-array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(./), :(.^)]
+array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(.^)]
 
 bit_operators = [:(&), :(|), :($)]
 
@@ -839,6 +839,75 @@ for f in array_arithmetic_operators
             return results
         end
     end
+end
+
+function (./)(A::DataVector, B::Vector)
+    n_A, n_B = length(A), length(B)
+    if n_A != n_B
+        error("DataVector and Vector lengths must match")
+    end
+    res = DataArray(Array(Float64, n_A), BitArray(n_A))
+    for i in 1:n_A
+        res.na[i] = A.na[i]
+        res.data[i] = (./)(A.data[i], B[i])
+    end
+    return res
+end
+function (./)(A::Vector, B::DataVector)
+    n_A, n_B = length(A), length(B)
+    if n_A != n_B
+        error("Vector and DataVector lengths must match")
+    end
+    res = DataArray(Array(Float64, n_A), BitArray(n_A))
+    for i in 1:n_A
+        res.na[i] = B.na[i]
+        res.data[i] = (./)(A[i], B.data[i])
+    end
+    return res
+end
+function (./)(A::DataVector, B::DataVector)
+    if length(A) != length(B)
+        error("DataVector lengths must match")
+    end
+    res = DataArray(Array(Float64, length(A)),
+                    BitArray(length(A)))
+    for i in 1:length(A)
+        res.na[i] = (A.na[i] || B.na[i])
+        res.data[i] = (./)(A.data[i], B.data[i])
+    end
+    return res
+end
+function (./)(A::DataMatrix, B::DataMatrix)
+    if size(A) != size(B)
+        error("DataMatrix sizes must match")
+    end
+    res = DataArray(Array(Float64, size(A)),
+                    BitArray(size(A)))
+    for i in 1:length(A)
+        res.na[i] = (A.na[i] || B.na[i])
+        res.data[i] = (./)(A.data[i], B.data[i])
+    end
+    return res
+end
+function (./)(a::DataFrame, b::DataFrame)
+    n, p = nrow(a), ncol(a)
+    if n != nrow(b) || p != ncol(b)
+        error("DataFrames must have matching sizes for arithmetic")
+    end
+    # Tries to preserve types from a
+    results = deepcopy(a)
+    for j in 1:p
+        if typeof(a[j]).parameters[1] <: Number
+            for i in 1:n
+                results[i, j] = (./)(a[i, j], b[i, j])
+            end
+        else
+            for i in 1:n
+                results[i, j] = NA
+            end
+        end
+    end
+    return results
 end
 
 for f in biscalar_operators
