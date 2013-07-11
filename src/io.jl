@@ -414,7 +414,6 @@ function builddf{T <: ByteString}(rows::Int,
         is_int::Bool = true
         is_float::Bool = true
         is_bool::Bool = true
-        is_string::Bool = true
 
         i::Int = 0
         while i < rows
@@ -490,7 +489,7 @@ function builddf{T <: ByteString}(rows::Int,
               bytestostring(buffer, left, right, nastrings, quotemark)
         end
 
-        if makefactors && is_string
+        if makefactors && !(is_int || is_float || is_bool)
             columns[j] = PooledDataArray(values, missing)
         else
             columns[j] = DataArray(values, missing)
