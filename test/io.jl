@@ -2,6 +2,8 @@ require("test.jl")
 using DataFrames
 
 let
+    test_group("Confirm that we can read various file types.")
+
     filenames = ["test/data/blanklines/blanklines.csv",
                  "test/data/compressed/movies.csv.gz",
                  "test/data/newlines/os9.csv",
@@ -28,7 +30,7 @@ let
 
     for filename in filenames
         try
-    	    df = readtable(filename)
+          df = readtable(filename)
         catch
             error(@sprintf "Failed to read %s\n" filename)
         end
@@ -44,9 +46,7 @@ let
     # TODO: Implement skipping lines at bottom
     # readtable("test/data/skiplines/skipbottom.csv", skipstartlines = 4)
 
-    #
-    # Confirm that we can read a large file
-    #
+    test_group("Confirm that we can read a large file.")
 
     df = DataFrame()
 
@@ -87,4 +87,16 @@ let
     all(df .== df1)
 
     rm(filename)
+
+
+    test_group("Properties of data frames returned by readtable method.")
+
+    # Readtable with makefactors active should only make factors from columns
+    # of strings.
+    filename = "test/data/factors/mixedvartypes.csv"
+    df = readtable(filename, makefactors = true)
+
+    @assert typeof(df["factorvar"]) == PooledDataArray{UTF8String,Uint32,1}
+    @assert typeof(df["floatvar"]) == DataArray{Float64,1}
+
 end
