@@ -1807,16 +1807,25 @@ dict(adf::AbstractDataFrame) = dict(adf, false)
 
 # Pooling
 
-pool(a::AbstractVector) = PooledDataArray(a)
+pool(a::AbstractVector) = compact(PooledDataArray(a))
 
-function pool!(df::AbstractDataFrame, cname::String)
+function pool!(df::AbstractDataFrame, cname::Union(Integer, String))
     df[cname] = pool(df[cname])
     return
 end
 
-function pool!{T <: String}(df::AbstractDataFrame, cnames::Vector{T})
+function pool!{T <: Union(Integer, String)}(df::AbstractDataFrame, cnames::Vector{T})
     for cname in cnames
         df[cname] = pool(df[cname])
+    end
+    return
+end
+
+function pool!(df)
+    for i in 1:size(df, 2)
+        if eltype(df[i]) <: String
+            df[i] = pool(df[i])
+        end
     end
     return
 end
