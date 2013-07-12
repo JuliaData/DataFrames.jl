@@ -801,6 +801,7 @@ function vector(adv::AbstractDataVector, t::Type)
     return res
 end
 vector{T}(adv::AbstractDataVector{T}) = vector(adv, T)
+vector{T}(v::Vector{T}) = v
 
 function matrix(adm::AbstractDataMatrix, t::Type, replacement_val::Any)
     n, p = size(adm)

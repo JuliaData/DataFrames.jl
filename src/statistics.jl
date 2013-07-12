@@ -29,7 +29,7 @@ function gl(n::Integer, k::Integer, l::Integer)
     for j = 0:(l/nk - 1), i = 1:n
         aa[j * nk + (i - 1) * k + (1:k)] = i
     end
-    PooledDataArray(aa)
+    compact(PooledDataArray(aa))
 end
 
 gl(n::Integer, k::Integer) = gl(n, k, n*k)
