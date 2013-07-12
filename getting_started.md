@@ -9,22 +9,14 @@ title: Getting Started
 
 ## Installation
 
-The DataFrames package is available through the Julia package system. If you've never used the package system before, you'll need to run the following:
+The DataFrames package is available through the Julia package system. The first time you use it you will need to run
 
-	require("pkg")
-	Pkg.init()
-	Pkg.add("DataFrames")
-
-If you have an existing library of packages, you can pull the DataFrames package into your library using similar commands:
-
-	require("pkg")
 	Pkg.add("DataFrames")
 
 ## Loading the DataFrames Package
 
-In all of the examples that follow, we're going to assume that you've already loaded the DataFrames package. You can do that by typing the following two commands before trying out any of the examples in this manual:
+In all of the examples that follow, we're going to assume that you've already loaded the DataFrames package. You can do that by typing the following commands before trying out any of the examples in this manual:
 
-	load("DataFrames")
 	using DataFrames
 
 ## Some Basic Examples
@@ -79,17 +71,20 @@ As we said before, working with simple `DataVector`'s and `DataMatrix`'s gets bo
 	df["B"] = ["M", "F", "F", "M"]
 	df
 
-In practice, we're more likely to use an existing data set than to construct one from scratch. To load a more interesting data set, we can use the `read_table()` function. To make use of it, we'll need a data set stored in a simple format like the comma separated values (CSV) standard. There are some simple examples of CSV files included with the DataFrames package. We can find them using basic file operations in Julia:
+Because we know all of the columns in advance, this specific `DataFrame` could have been created more concisely using keyword arguments:
 
-	require("pkg")
-	mydir = joinpath(Pkg.package_directory("DataFrames"), "test", "data")
+	df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+
+In practice, we're more likely to use an existing data set than to construct one from scratch. To load a more interesting data set, we can use the `readtable()` function. To make use of it, we'll need a data set stored in a simple format like the comma separated values (CSV) standard. There are some simple examples of CSV files included with the DataFrames package. We can find them using basic file operations in Julia:
+
+	mydir = Pkg.dir("DataFrames", "test", "data", "scaling")
 	filenames = readdir(mydir)
-	df = read_table(joinpath(mydir, filenames[1]))
+	df = readtable(joinpath(mydir, filenames[1]))
 
-The resulting `DataFrame` has a large number of similar rows. We can check its size using the `nrow` and `ncol` commands:
+The resulting `DataFrame` has many similar rows. We can check its size using the `size` function:
 
-	nrow(df)
-	ncol(df)
+	nrows = size(df, 1)
+	ncols = size(df, 2)
 
 We can also look at small subsets of the data in a couple of ways:
 
@@ -104,8 +99,8 @@ Having seen what some of the rows look like, we can try to summarize the entire 
 
 To focus our search, we start looking at just the means and medians of the columns:
 
-	colmeans(df)
-	colmedians(df)
+	mean(df, 1)
+	median(df, 1)
 
 Or, alternatively, we can look at the columns one-by-one:
 
@@ -114,13 +109,12 @@ Or, alternatively, we can look at the columns one-by-one:
 
 If you'd like to get your hands on more data to play with, we strongly encourage you to try out the RDatasets package. This package supplements the DataFrames package by providing access to 570 classical data sets that will be familiar to R programmers. You can install and load the RDatasets package using the Julia package manager:
 
-	require("pkg")
 	Pkg.add("RDatasets")
-	load("RDatasets")
+	using RDatasets
 
 Once that's done, you can use the `data()` function from RDatasets to gain access to data sets like Fisher's Iris data:
 
-	iris = RDatasets.data("datasets", "iris")
+	iris = data("datasets", "iris")
 	head(iris)
 
 The Iris data set is a really interesting testbed for examining simple contrasts between groups. To get at those kind of group differences, we can split apart our data set based on the species of flower being studied and then analyze each group separately. To do that, we'll use the Split-Apply-Combine strategy made popular by R's plyr library. In Julia, we do this using the `by` function:
@@ -157,8 +151,8 @@ If none of these ways of working with individual groups of data appeal to you, y
 
 	for df in groupby(iris, "Species")
 		println({unique(df["Species"]),
-				 mean(df["Petal.Length"]),
-				 mean(df["Petal.Width"])})
+				 mean(df["Petal_Length"]),
+				 mean(df["Petal_Width"])})
 	end
 
 We hope this brief tutorial introduction has convinced you that you can do quite complex data manipulations using the DataFrames package. To really dig in, we're now going to describe the design of the DataFrames package in greater depth.

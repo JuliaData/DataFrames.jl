@@ -26,7 +26,6 @@
 	* size
 	* length
 	* ndims
-	* numel
 	* eltype
 * Predicates
 * Handling NA's
@@ -69,17 +68,17 @@ The unary operators
 	* Initialized with trues: `datatrues(3)`
 	* Literal syntax: `DataVector[1, 2, NA]`
 * PooledDataVector's
-	* From (Vector, BitVector): `PooledDataVector([1, 2, 3], falses(3))`
-	* From (Vector, Vector{Bool}): `PooledDataVector([1, 2, 3], [false, false, false])`
-	* From (Vector): `PooledDataVector([1, 2, 3])`
-	* From (BitVector, BitVector): `PooledDataVector(trues(3), falses(3))`
-	* From (BitVector, Vector{Bool}): `PooledDataVector(trues(3), [false, false, false])`
-	* From (BitVector): `PooledDataVector(trues(3))`
-	* From (Range1): `PooledDataVector(1:3)`
-	* From (DataVector): `PooledDataVector(DataArray([1, 2, 3]))`
-	* From (Type, Int): `PooledDataVector(Int64, 3)`
-	* From (Int): `PooledDataVector(3)` (Type defaults to Float64)
-	* From (): `PooledDataVector()` (Type defaults to Float64, length defaults to 0)
+	* From (Vector, BitVector): `PooledDataArray([1, 2, 3], falses(3))`
+	* From (Vector, Vector{Bool}): `PooledDataArray([1, 2, 3], [false, false, false])`
+	* From (Vector): `PooledDataArray([1, 2, 3])`
+	* From (BitVector, BitVector): `PooledDataArray(trues(3), falses(3))`
+	* From (BitVector, Vector{Bool}): `PooledDataArray(trues(3), [false, false, false])`
+	* From (BitVector): `PooledDataArray(trues(3))`
+	* From (Range1): `PooledDataArray(1:3)`
+	* From (DataVector): `PooledDataArray(DataArray([1, 2, 3]))`
+	* From (Type, Int): `PooledDataArray(Int64, 3)`
+	* From (Int): `PooledDataArray(3)` (Type defaults to Float64)
+	* From (): `PooledDataArray()` (Type defaults to Float64, length defaults to 0)
 	* Initialized with Float64 zeros: `pdatazeros(3)`
 	* Initialized with typed zeros: `pdatazeros(Int64, 3)`
 	* Initialized with Float64 ones: `pdataones(3)`
@@ -177,6 +176,6 @@ DataFrame's add two new indexer types:
 
 These can only occur as (a) the only indexer or (b) in the second slot of a paired indexer
 
-Anything that can be ref()'d can also be assign()'d
+Anything that can be getindex()'d can also be setindex!()'d
 
 Where do we allow Expr indexing?

@@ -9,7 +9,7 @@ title: The Design of DataFrames
 
 ## The Type Hierarchy
 
-Before we do anything else, let's go through the hierarchy of types introduced by the DataFrames package. This type hierarchy is depicated visually in the figures at the end of this section and can be summarized in a simple nested list:
+Before we do anything else, let's go through the hierarchy of types introduced by the DataFrames package. This type hierarchy is depicted visually in the figures at the end of this section and can be summarized in a simple nested list:
 
 * NAtype
 * AbstractDataVector
@@ -146,7 +146,7 @@ In contrast to these normal-looking constructors, when some of the values in the
 
 	dv = DataVector[1, 2, NA, 4]
 
-_Technical Note: This special type of constructor is defined by overloading the `ref()` function to apply to values of type `DataVector`.
+_Technical Note: This special type of constructor is defined by overloading the `getindex()` function to apply to values of type `DataVector`.
 
 # DataVector's with Special Types
 
@@ -203,9 +203,28 @@ Like the similar functions in Julia's Base, we can specify the length and type o
 
 	dv = datatrues(5)
 
-# The PooledDataVector Type
+# The PooledDataArray Type
 
-_TO BE FILLED IN_
+On the surface, `PooledDataArray`s look like `DataArray`s, but their implementation allows the efficient storage and manipulation of `DataVector`s and `DataArrays` which only contain a small number of values.  Internally, `PooledDataArray`s hold a pool of unique values, and the actual `DataArray` simply indexes into this pool, rather than storing each value individually.
+
+A `PooledDataArray` can be constructed from an `Array` or `DataArray`, and as with regular `DataArray`s, it can hold `NA` values:
+
+	pda  = PooledDataArray([1, 1, 1, 1, 2, 3, 2, 2, 3, 3, 3])
+        pda2 = PooledDataArray(DataArray["red", "green", "yellow", "yellow", "red", "orange", "red", "green"])
+
+`PooledDataArray`s can also be created empty or with a fixed size and a specific type:
+
+	pda3 = PooledDataArray(String, 2000)   # A pooled data array of 2000 strings, intially filled with NAs
+	pda4 = PooledDataArray(Float64)        # An empty pooled data array of floats
+
+By default, the index into the pool of values is a Uint32, allowing 2^32 possible pool values.  If you know that you will only have a much smaller number of unique values, you can specify a smaller reference index type, to save space:
+
+	pda5 = PooledDataArray(String, Uint8, 5000, 2)  # Create a 5000x2 array of String values, 
+	                                                # initialized to NA, 
+                                                        # with at most 2^8=256 unique values
+
+`PooledDataVectors`s can be used as columns in DataFrames.
+
 
 # The DataFrame Type
 
@@ -451,7 +470,7 @@ The standard comparison operators work on `DataVector`'s:
 * `log10`
 * `log1p`
 * `log2`
-* `logb`
+* `exponent`
 * `sqrt`
 
 Standard functions that apply to scalar values of type `Number` return `NA` when applied to `NA`:
@@ -526,7 +545,7 @@ You can see these in action:
 
 The DataFrames package is easiest to explore if you also install the RDatasets package, which provides access to 570 classic data sets:
 
-	load("RDatasets")
+	require("RDatasets")
 
 	iris = RDatasets.data("datasets", "iris")
 	dia = RDatasets.data("ggplot2", "diamonds")
@@ -539,9 +558,9 @@ The basic mechanism for spliting data is the `groupby()` function, which will pr
 		println("A DataFrame with $(nrow(df)) rows")
 	end
 
-The `|` (pipe) operator for `GroupedDataFrame`'s allows you to run simple functions on the columns of the induced `DataFrame`'s. You pass a simple function by producing a symbol with its name:
+The `|>` (pipe) operator for `GroupedDataFrame`'s allows you to run simple functions on the columns of the induced `DataFrame`'s. You pass a simple function by producing a symbol with its name:
  
-	groupby(iris, "Species") | :mean
+	groupby(iris, "Species") |> :mean
 
 Another simple way to split-and-apply (without clear combining) is to use the `map()` function:
 

@@ -63,7 +63,7 @@ Number of columns in `df`.
 
 Number of rows in `df`.
 
-#### `length(df::AbstractDataFrame)` or `numel(df::AbstractDataFrame)`
+#### `length(df::AbstractDataFrame)`
 
 Number of columns in `df`.
 
@@ -116,14 +116,14 @@ are selected. Indexing along rows works like Matrix indexing. Indexing
 along columns works like Matrix indexing with the addition of column
 name access. 
 
-#### `ref(df::DataFrame, ind)`  or `df[ind]`
+#### `getindex(df::DataFrame, ind)`  or `df[ind]`
 
 Returns a subset of the columns of `df` as specified by `ind`, which
 may be an `Int`, a `Range`, a `Vector{Int}`, `ByteString`, or
 `Vector{ByteString}`. Columns are referenced, not copied. For a
 single-element `ind`, the column by itself is returned.
 
-#### `ref(df::DataFrame, irow, icol)`  or `df[irow,icol]`
+#### `getindex(df::DataFrame, irow, icol)`  or `df[irow,icol]`
 
 Returns a subset of `df` as specified by `irow` and `icol`. `irow` may
 be an `Int`, a `Range`, or a `Vector{Int}`. `icol` may be an `Int`, a
@@ -145,18 +145,18 @@ See the Indexing section for these operations on column indexes.
 
 The column names as an `Array{ByteString}`
 
-#### `assign(df::DataFrame, newcol, colname)` or `df[colname] = newcol`
+#### `setindex!(df::DataFrame, newcol, colname)` or `df[colname] = newcol`
 
 Replace or add a new column with name `colname` and contents `newcol`.
 Arrays are converted to DataVector's. Values are recycled to match the
 number of rows in `df`.
 
-#### `insert(df::DataFrame, index::Integer, item, name)`
+#### `insert!(df::DataFrame, index::Integer, item, name)`
 
 Insert a column of name `name` and with contents `item` into `df` at
 position `index`.
 
-#### `insert(df::DataFrame, df2::DataFrame)`
+#### `insert!(df::DataFrame, df2::DataFrame)`
 
 Insert columns of `df2` into `df1`.
 
@@ -231,8 +231,8 @@ Return a SubDataFrame with references to rows and columns of `df`.
 
 Return a SubDataFrame with references to rows and columns of `df`.
 
-#### `ref(sd::SubDataFrame, r, c)` or `sd[r,c]`
-#### `ref(sd::SubDataFrame, c)` or `sd[c]`
+#### `getindex(sd::SubDataFrame, r, c)` or `sd[r,c]`
+#### `getindex(sd::SubDataFrame, c)` or `sd[c]`
 
 Referencing should work the same as DataFrames.
 
@@ -248,7 +248,7 @@ columns with one or more names given in `cols`.
 
 Methods to iterate over GroupedDataFrame groupings.
 
-#### `ref(gd::GroupedDataFrame, idx)` or `gd[idx]`
+#### `getindex(gd::GroupedDataFrame, idx)` or `gd[idx]`
 
 Reference a particular grouping. Referencing returns a SubDataFrame.
 
@@ -283,14 +283,14 @@ results as an Array{Any}.
 Apply the function specified by Symbol `s` to each column of in each
 grouping of `gd`, and return the results as a DataFrame.
 
-#### `by(df::AbstractDataFrame, cols, s::Symbol)` or `groupby(df, cols) | s`
+#### `by(df::AbstractDataFrame, cols, s::Symbol)` or `groupby(df, cols) |> s`
 #### `by(df::AbstractDataFrame, cols, s::Vector{Symbol})`
 
 Return a DataFrame with the results of grouping on `cols` and
 `colwise` evaluation based on `s`. Equivalent to `colwise(groupby(df,
 cols), s)`.
 
-#### `by(df::AbstractDataFrame, cols, e::Expr)` or `groupby(df, cols) | e`
+#### `by(df::AbstractDataFrame, cols, e::Expr)` or `groupby(df, cols) |> e`
 
 Return a DataFrame with the results of grouping on `cols` and
 evaluation of `e` in each grouping. Equivalent to `based_on(groupby(df,
@@ -331,7 +331,7 @@ An Index with names `s`. An Index is like an Associative type. An
 Index is used for column indexing of DataFrames. An Index maps
 ByteStrings and Vector{ByteStrings} to Indices.
 
-#### `length(x::Index)`, `copy(x::Index)`, `has(x::Index, key)`, `keys(x::Index)`, `push(x::Index, name)`
+#### `length(x::Index)`, `copy(x::Index)`, `has(x::Index, key)`, `keys(x::Index)`, `push!(x::Index, name)`
 
 Normal meanings.
 
@@ -347,11 +347,15 @@ A Vector{ByteString} with the names of `x`.
 
 Set names `nm` in `x`.
 
-#### `replace_names(x::Index, from::Vector, to::Vector)`
+#### `rename(x::Index, f::Function)`
+#### `rename(x::Index, nd::Associative)`
+#### `rename(x::Index, from::Vector, to::Vector)`
 
-Replace names `from` with `to` in `x`.
+Replace names in `x`, by applying function `f` to each name,
+by mapping old to new names with a dictionary (Associative), or using
+`from` and `to` vectors.
 
-#### `ref(x::Index, idx)` or `x[idx]`
+#### `getindex(x::Index, idx)` or `x[idx]`
 
 This does the mapping from name(s) to Indices (positions). `idx` may
 be ByteString, Vector{ByteString}, Int, Vector{Int}, Range{Int},
@@ -422,8 +426,8 @@ Create a DataVector from `x`, with `m` optionally indicating which values
 are NA. DataVector's are like Julia Vectors with support for NA's. `x` may
 be any type of Vector.
 
-#### `PooledDataVector(x::Vector)`
-#### `PooledDataVector(x::Vector, m::Vector{Bool})`
+#### `PooledDataArray(x::Vector)`
+#### `PooledDataArray(x::Vector, m::Vector{Bool})`
 
 Create a PooledDataVector from `x`, with `m` optionally indicating which
 values are NA. PooledDataVector's contain a pool of values with references
