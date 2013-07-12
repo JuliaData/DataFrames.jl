@@ -31,10 +31,13 @@ type ModelFrame
     msng::BitArray
 end
     
-type ModelMatrix
-    m::Matrix{Float64}
+type ModelMatrix{T<:Union(Float32,Float64)}
+    m::Matrix{T}
     assign::Vector{Int}
 end
+
+size(mm::ModelMatrix) = size(mm.m)
+size(mm::ModelMatrix,dim...) = size(mm.m,dim...)
 
 function Formula(ex::Expr) 
     aa = ex.args
@@ -175,10 +178,8 @@ end
 ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
 
 function model_response(mf::ModelFrame)
-    if !mf.terms.response
-        error("Formula for the model frame was a one-sided formula")
-    end
-    mf.df[bool(mf.terms.factors[:,1])][:,1]
+    mf.terms.response || error("Model formula one-sided")
+    vector(mf.df[bool(mf.terms.factors[:,1])][:,1])
 end
 
 function contr_treatment(n::Integer, contrasts::Bool, sparse::Bool, base::Integer)
@@ -232,11 +233,8 @@ function ModelMatrix(mf::ModelFrame)
         push!(aa, trm)
         asgn = vcat(asgn, fill(j, nc(trm)))
     end
-    ModelMatrix(hcat([expandcols(t) for t in aa]...), asgn)
+    ModelMatrix{Float64}(hcat([expandcols(t) for t in aa]...), asgn)
 end
-
-model_frame(f::Formula,d::AbstractDataFrame) = ModelFrame(f,d)
-model_matrix(mf::ModelFrame) = ModelMatrix(mf)
 
 # Expand dummy variables and equations
 ## function model_matrix(mf::ModelFrame)
