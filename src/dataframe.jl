@@ -1804,3 +1804,19 @@ dict(adf::AbstractDataFrame) = dict(adf, false)
 # ["B"=>["A"],"A"=>[1]]
 # DataFrames.dict(adf[1, :], true)
 # ["B"=>"A","A"=>1]
+
+# Pooling
+
+pool(a::AbstractVector) = PooledDataArray(a)
+
+function pool!(df::AbstractDataFrame, cname::String)
+    df[cname] = pool(df[cname])
+    return
+end
+
+function pool!{T <: String}(df::AbstractDataFrame, cnames::Vector{T})
+    for cname in cnames
+        df[cname] = pool(df[cname])
+    end
+    return
+end

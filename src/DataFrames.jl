@@ -151,6 +151,8 @@ export # reconcile_groups,
        pdatatrues,
        pdatazeros,
        percent_change,
+       pool,
+       pool!,
        PooledDataVecs, # The capitalization and/or name for this is a bit inconsistent (merge_pools, maybe?). Do we want to export?
        PooledDataArray,
        PooledDataMatrix,
