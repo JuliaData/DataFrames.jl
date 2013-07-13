@@ -407,7 +407,7 @@ Return an `NA` value appropriate for the type of `x`.
 
 #### `nas(x, dim)`
 
-Return an object like `x` filled with `NA`'s with size `dim`.
+Return an object like `x` filled with `NA` values with size `dim`.
 
 
 ## DataVector's

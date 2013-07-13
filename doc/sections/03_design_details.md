@@ -30,14 +30,14 @@ We'll step through each element of this hierarchy in turn in the following secti
 There are four new types introduced by the current generation of the DataFrames package:
 
 * NAType: A scalar value that represents a single missing piece of data. This value behaves much like `NA` in R.
-* DataVector: A vector that can contain values of a specific type as well as `NA`'s.
+* DataVector: A vector that can contain values of a specific type as well as `NA` values.
 * PooledDataVector: An alternative to DataVector's that can be more memory-efficient if a small number of distinc values are present in the underlying vector of data.
 * DataFrame: A tabular data structure that is similar to R's `data.frame` and Pandas' `DataFrame`.
 
 In the future, we will also be introducing generic Arrays of arbitrary dimension. After this, we will provide two new types:
 
-* DataMatrix: A matrix that can contain values of a specific type as well as `NA`'s.
-* DataFrame: An array that can contain values of a specific type as well as `NA`'s.
+* DataMatrix: A matrix that can contain values of a specific type as well as `NA` values.
+* DataFrame: An array that can contain values of a specific type as well as `NA` values.
 
 # The NA Type
 
@@ -68,11 +68,11 @@ You can explore this value to confirm that `NA` is just an instance of the `NAty
 
 	dump(NA)
 
-Simply being able to express the notion that a data point is missing is important, but we're ultimately not interested in just expressing data: we want to build tools for interacting with data that may be missing. In a later section, we'll describe the details of interacting with `NA`, but for now we'll state the defining property of `NA`: _because `NA` expresses ignorance about the value of something, every interaction with `NA` corrupts known values and transforms them into `NA`'s. Below we show how this works for addition:
+Simply being able to express the notion that a data point is missing is important, but we're ultimately not interested in just expressing data: we want to build tools for interacting with data that may be missing. In a later section, we'll describe the details of interacting with `NA`, but for now we'll state the defining property of `NA`: _because `NA` expresses ignorance about the value of something, every interaction with `NA` corrupts known values and transforms them into `NA` values. Below we show how this works for addition:
 
 	1 + NA
 
-We'll discuss the subtleties of `NA`'s ability to corrupt known values in a later section. For now the essential point is this: `NA`'s exist to represent missingness that occurs in scalar data.
+We'll discuss the subtleties of `NA` values ability to corrupt known values in a later section. For now the essential point is this: `NA` values exist to represent missingness that occurs in scalar data.
 
 # The DataVector Type
 
@@ -88,7 +88,7 @@ This new data structure is the `DataVector` type. You can construct your first `
 
 	DataVector[1, NA, 3]
 
-As you'll see when entering this into the REPL, this snippet of code creates a `3-element DataVector{Int64}`. A `DataVector` of type `DataVector{Int64}` can store `Int64` values or `NA`'s. In general, a `DataVector` of type `DataVector{T}` can store values of type `T` or `NA`'s.
+As you'll see when entering this into the REPL, this snippet of code creates a `3-element DataVector{Int64}`. A `DataVector` of type `DataVector{Int64}` can store `Int64` values or `NA` values. In general, a `DataVector` of type `DataVector{T}` can store values of type `T` or `NA` values.
 
 This is achieved by a very simple mechanism: a `DataVector{T}` is a new parametric composite type that we've added to Julia that wraps around a standard Julia `Vector` and complements this basic vector with a metadata store that indicates whether any entry of the wrapped vector is missing. In essence, a `DataVector` of type `T` is defined as:
 
@@ -97,7 +97,7 @@ This is achieved by a very simple mechanism: a `DataVector{T}` is a new parametr
 		na::BitVector
 	end
 
-This allows us to assess whether any entry of the vector is `NA` at the cost of exactly one additional bit per item. We are able to save space by using `BitArray`'s instead of an `Array{Bool}`. At present, we store the non-missing data values in a vector called `data` and we store the metadata that indicates which values are missing in a vector called `na`. But end-users should not worry about these implementation details.
+This allows us to assess whether any entry of the vector is `NA` at the cost of exactly one additional bit per item. We are able to save space by using `BitArray` instead of an `Array{Bool}`. At present, we store the non-missing data values in a vector called `data` and we store the metadata that indicates which values are missing in a vector called `na`. But end-users should not worry about these implementation details.
 
 Instead, you can simply focus on the behavior of the `DataVector` type. Let's start off by exploring the basic properties of this new type:
 
@@ -115,11 +115,11 @@ If you want to drill down further, you can always run `dump()`:
 
 	dump(DataVector)
 
-We're quite proud that the definition of `DataVector`'s is so simple: it makes it easier for end-users to start contributing code to the DataFrames package.
+We're quite proud that the definition of `DataVector` is so simple: it makes it easier for end-users to start contributing code to the DataFrames package.
 
 # Constructing DataVector's
 
-Let's focus on ways that you can create new `DataVector`'s. The simplest possible constructor requires the end-user to directly specify both the underlying data values and the missingness metadata as a `BitVector`:
+Let's focus on ways that you can create new `DataVector`. The simplest possible constructor requires the end-user to directly specify both the underlying data values and the missingness metadata as a `BitVector`:
 
 	dv = DataArray([1, 2, 3], falses(3))
 
@@ -143,7 +143,7 @@ _Technical Note: This special type of constructor is defined by overloading the 
 
 # DataVector's with Special Types
 
-One of the virtues of using metadata to represent missingness instead of sentinel values like `NaN` is that we can easily define `DataVector`'s over arbitrary types. For example, we can create `DataVector`'s that store arbitrary Julia types like `ComplexPair`'s and `Bool`'s:
+One of the virtues of using metadata to represent missingness instead of sentinel values like `NaN` is that we can easily define `DataVector` over arbitrary types. For example, we can create `DataVector` that store arbitrary Julia types like `ComplexPair` and `Bool`:
 
 	dv = DataArray([1 + 2im, 3 - 1im])
 
@@ -159,7 +159,7 @@ In fact, we can add a new type of our own and then wrap it inside of a new sort 
 
 	dv = DataArray([MyNewType(1, 2, 3), MyNewType(2, 3, 4)])
 
-Of course, specializing the types of `DataVector`'s means that we sometimes need to convert between types. Just as Julia has several specialized conversion functions for doing this, the DataFrames package provides conversion functions as well. For now, we have three such functions:
+Of course, specializing the types of `DataVector` means that we sometimes need to convert between types. Just as Julia has several specialized conversion functions for doing this, the DataFrames package provides conversion functions as well. For now, we have three such functions:
 
 * `dataint()`
 * `datafloat()`
@@ -171,13 +171,13 @@ Using these, we can naturally convert between types:
 
 	dataint(dv)
 
-In the opposite direction, we sometimes want to create arbitrary length `DataVector`'s that have a specific type before we insert values:
+In the opposite direction, we sometimes want to create arbitrary length `DataVector` that have a specific type before we insert values:
 
 	dv = DataArray(Float64, 5)
 
 	dv[1] = 1
 
-`DataArray`'s created in this way have `NA` in all entries. If you instead wish to initialize a `DataArray` with standard initial values, you can use one of several functions:
+`DataArray` created in this way have `NA` in all entries. If you instead wish to initialize a `DataArray` with standard initial values, you can use one of several functions:
 
 * datazeros()
 * dataones()
@@ -221,19 +221,19 @@ By default, the index into the pool of values is a Uint32, allowing 2^32 possibl
 
 # The DataFrame Type
 
-While `DataVector`'s are a very powerful tool for dealing with missing data, they only bring us part of the way towards representing real-world data in Julia. The final missing data structure is a tabular data structure of the sort used in relational databases and spreadsheet software.
+While `DataVector` are a very powerful tool for dealing with missing data, they only bring us part of the way towards representing real-world data in Julia. The final missing data structure is a tabular data structure of the sort used in relational databases and spreadsheet software.
 
 To represent these kinds of tabular data sets, the DataFrames package provides the `DataFrame` type. The `DataFrame` type is a new Julian composite type with just two fields:
 
 * `columns`: A Julia `Vector{Any}`, each element of which will be a single column of the tabular data. The typical column is of type `DataVector{T}`, but this is not strictly required.
-* `colindex`: An `Index` object that allows one to access entries in the columns using both numeric indexing (like a standard Julian `Array`) or key-valued indexing (like a standard Julian `Dict`). The details of the `Index` type will be described later; for now, we just note that an `Index` can easily be constructed from any array of `ByteString`'s. This array is assumed to specify the names of the columns. For example, you might create an index as follows: `Index(["ColumnA", "ColumnB"])`.
+* `colindex`: An `Index` object that allows one to access entries in the columns using both numeric indexing (like a standard Julian `Array`) or key-valued indexing (like a standard Julian `Dict`). The details of the `Index` type will be described later; for now, we just note that an `Index` can easily be constructed from any array of `ByteString`. This array is assumed to specify the names of the columns. For example, you might create an index as follows: `Index(["ColumnA", "ColumnB"])`.
 
 In the future, we hope that there will be many different types of `DataFrame`-like constructs. But all objects that behave like a `DataFrame` will behave according to the following rules that are enforced by an `AbstractDataFrame` protocol:
 
 * A DataFrame-like object is a table with `M` rows and `N` columns.
-* Every column of a DataFrame-like object has its own type. This heterogeneity of types is the reason that a DataFrame cannot simply be represented using a matrix of `DataVector`'s.
+* Every column of a DataFrame-like object has its own type. This heterogeneity of types is the reason that a DataFrame cannot simply be represented using a matrix of `DataVector`.
 * Each columns of a DataFrame-like object is guaranteed to have length `M`.
-* Each columns of a DataFrame-like object is guaranteed to be capable of storing an `NA` value if one is ever inserted. NB: _There is ongoing debate about whether the columns of a DataFrame should always be `DataVector`'s or whether the columns should only be converted to `DataVector`'s if an `NA` is introduced by an assignment operation._
+* Each columns of a DataFrame-like object is guaranteed to be capable of storing an `NA` value if one is ever inserted. NB: _There is ongoing debate about whether the columns of a DataFrame should always be `DataVector` or whether the columns should only be converted to `DataVector` if an `NA` is introduced by an assignment operation._
 
 # Constructing DataFrame's
 
@@ -248,7 +248,7 @@ In practice, many other constructors are more convenient to use than this basic 
 
 	df = DataFrame(df_columns)
 
-One often would like to construct `DataFrame`'s from columns which may not yet be `DataVector`'s. This is possible using the same type of constructor. All columns that are not yet `DataVector`'s will be converted to `DataVector`'s:
+One often would like to construct `DataFrame` from columns which may not yet be `DataVector`. This is possible using the same type of constructor. All columns that are not yet `DataVector` will be converted to `DataVector`:
 
 	df = DataFrame({ones(5), falses(5)})
 
@@ -256,7 +256,7 @@ Often one wishes to convert an existing matrix into a `DataFrame`. This is also 
 
 	df = DataFrame(ones(5, 3))
 
-Like `DataVector`'s, it is possible to create empty `DataFrame`'s in which all of the default values are `NA`. In the simplest version, we specify a type, the number of rows and the number of columns:
+Like `DataVector`, it is possible to create empty `DataFrame` in which all of the default values are `NA`. In the simplest version, we specify a type, the number of rows and the number of columns:
 
 	df = DataFrame(Int64, 10, 5)
 
@@ -271,7 +271,7 @@ _SHOULD THIS BE `DataFrame(types, nrow, names)` INSTEAD?_
 	DataFrame({Int64, Float64}, ["A", "B"], 10)
 	DataFrame({Int64, Float64}, Index(["A", "B"]), 10) # STILL NEED TO MAKE THIS WORK
 
-A more uniquely Julian way of creating `DataFrame`'s exploits Julia's ability to quote `Expression`'s in order to produce behavior like R's delayed evaluation strategy.
+A more uniquely Julian way of creating `DataFrame` exploits Julia's ability to quote `Expression` in order to produce behavior like R's delayed evaluation strategy.
 
 	df = DataFrame(quote
 	 				 A = rand(5)
@@ -414,11 +414,11 @@ _HOW MUCH SHOULD WE HAVE OPERATIONS W/ DATAFRAMES?_
 
 And so on for -, .- , .*, ./, .^ 
 
-The standard bit operators work on `DataVector`'s:
+The standard bit operators work on `DataVector`:
 
 _TO BE FILLED IN_
 
-The standard comparison operators work on `DataVector`'s:
+The standard comparison operators work on `DataVector`:
 
 	NA .< NA
 	NA .< "a"
@@ -470,7 +470,7 @@ Standard functions that apply to scalar values of type `Number` return `NA` when
 
 	abs(NA)
 
-Standard functions are broadcast to the elements of `DataVector`'s and `DataFrame`'s for elementwise application:
+Standard functions are broadcast to the elements of `DataVector` and `DataFrame` for elementwise application:
 
 	dv = dataones(5)
 	df = DataFrame({dv})
@@ -482,7 +482,7 @@ Standard functions are broadcast to the elements of `DataVector`'s and `DataFram
 
 * `diff`
 
-Functions that operate on pairs of entries of a `Vector` work on `DataVector`'s and insert `NA` where it would be produced by other operator rules:
+Functions that operate on pairs of entries of a `Vector` work on `DataVector` and insert `NA` where it would be produced by other operator rules:
 
 	diff(dv)
 
@@ -494,7 +494,7 @@ Functions that operate on pairs of entries of a `Vector` work on `DataVector`'s 
 * MISSING: `cummin`
 * MISSING: `cummax`
 
-Functions that operate cumulatively on the entries of a `Vector` work on `DataVector`'s and insert `NA` where it would be produced by other operator rules:
+Functions that operate cumulatively on the entries of a `Vector` work on `DataVector` and insert `NA` where it would be produced by other operator rules:
 
 	cumprod(dv)
 	cumsum(dv)
@@ -551,7 +551,7 @@ The basic mechanism for spliting data is the `groupby()` function, which will pr
 		println("A DataFrame with $(nrow(df)) rows")
 	end
 
-The `|>` (pipe) operator for `GroupedDataFrame`'s allows you to run simple functions on the columns of the induced `DataFrame`'s. You pass a simple function by producing a symbol with its name:
+The `|>` (pipe) operator for `GroupedDataFrame` allows you to run simple functions on the columns of the induced `DataFrame`. You pass a simple function by producing a symbol with its name:
  
 	groupby(iris, "Species") |> :mean
 
@@ -586,7 +586,7 @@ What is that language? The R formula language allows one to specify linear model
 
 In addition to these operators, the model formulas DSL typically allows us to include simple functions of single columns such as in the example, `C ~ A + log(B)`.
 
-For Julia, this DSL will be handled by constructing an object of type `Formula`. It will be possible to generate a `Formula` using explicitly quoted expression. For example, we might write the Julian equivalent of the models above as `lm(:(C ~ M + F), heights_data)`. A `Formula` object describes how one should convert the columns of a `DataFrame` into a `ModelMatrix`, which fully specifies a linear model. [MORE DETAILS NEEDED ABOUT HOW `ModelMatrix` WORKS.]
+For Julia, this DSL will be handled by constructing an object of type `Formula`. It will be possible to generate a `Formula` using explicitly quoted expression. For example, we might write the Julian equivalent of the models above as `lm(:(C ~ M + F), heights_data)`. A `Formula` object describes how one should convert the columns of a `DataFrame` into a `ModelMatrix`, which fully specifies a linear model. _MORE DETAILS NEEDED ABOUT HOW `ModelMatrix` WORKS._
 
 How can Julia move beyond R? The primary improvement Julia can offer over R's model formula approach involves the use of hierarchical indexing of columns to control the inclusion of groups of columns as predictors. For example, a text regression model that uses word counts for thousands of different words as columns in a `DataFrame` might involve writing `IsSpam ~ Pronouns + Prepositions + Verbs` to exclude most words from the analysis except for those included in the `Pronouns`, `Prepositions` and `Verbs` groups. In addition, we might try to improve upon some of the tricks R provides for writing hierarchical models in which each value of a categorical predictor gets its own coefficients. This occurs, for example, in hierarchical regression models of the sort implemented by R's `lmer` function. In addition, there are plans to support multiple LHS and RHS components of a `Formula` using a `|` operator.
 
@@ -608,7 +608,7 @@ In addition to the general `Factor` type, we might also introduce a subtype of t
 
 ## Implementation
 
-We have a `Factor` type that handles `NA`s. This type is currently implemented using `PooledDataVector`'s.
+We have a `Factor` type that handles `NA`s. This type is currently implemented using `PooledDataVector`.
 
 # DataStreams
 
@@ -619,7 +619,7 @@ A `DataStream` object allows one to abstractly write code that processes streami
 * Analysis of massive data sets that cannot fit in memory
 * Online analysis in which interim answers are required while an analysis is still underway
 
-Before we begin to discuss the use of `DataStream`'s in Julia, we need to distinguish between streaming data and online analysis:
+Before we begin to discuss the use of `DataStream` in Julia, we need to distinguish between streaming data and online analysis:
 
 * Streaming data involves low memory usage access to a data source. Typically, one demands that a streaming data algorithm use much less memory than would be required to simply represent the full raw data source in main memory.
 * Online analysis involves computations on data for which interim answers must be available. For example, given a list of a trillion numbers, one would like to have access to the estimated mean after seeing only the first _N_ elements of this list. Online estimation is essential for building practical statistical systems that will be deployed in the wild. Online analysis is the _sine qua non_ of active learning, in which a statistical system selects which data points it will observe next.
@@ -631,7 +631,7 @@ In Julia, a `DataStream` is really an abstract protocol implemented by all subty
 	 * `next(iter, state)`: For a given iterable object and iteration state, return the current item and the next iteration state.
 	 * `done(iter, state)`: Test whether we are done iterating.
 * Each call to `next()` causes the `DataStream` object to read in a chunk of rows of tabular data from the streaming source and store these in a `DataFrame`. This chunk of data is called a minibatch and its maximum size is specified at the time the DataStream is created. It defaults to _1_ if no size is explicitly specified.
-* All rows from the data source must use the same tabular schema. Entries may be missing, but this missingness must be represented explicitly by the `DataStream` using `NA`'s.
+* All rows from the data source must use the same tabular schema. Entries may be missing, but this missingness must be represented explicitly by the `DataStream` using `NA` values.
 
 Ultimately, we hope to implement a variety of `DataStream` types that wrap access to many different data sources like CSV files and SQL databases. At present, have only implemented the `FileDataStream` type, which wraps access to a delimited file. In the future, we hope to implement:
 
@@ -656,7 +656,7 @@ You can then iterate over this `DataStream` to see how things work:
 
 ## Use Cases for DataStreams:
 
-We can compute many useful quantities using `DataStream`'s:
+We can compute many useful quantities using `DataStream`:
 
 * _Means_: `colmeans(ds)`
 * _Variances_: `colvars(ds)`
@@ -685,19 +685,19 @@ We can compute many useful quantities using `DataStream`'s:
 # Ongoing Debates about NA's
 
 * What are the proper rules for the propagation of missingness? It is clear that there is no simple absolute rule we can follow, but we need to formulate some general principles for how to set reasonable defaults. R's strategy seems to be:
-    * For operations on vectors, `NA`'s are absolutely poisonous by default.
-    * For operations on `data.frames`'s, `NA`'s are absolutely poisonous on a column-by-column basis by default. This stems from a more general which assumes that most operations on `data.frame` reduce to the aggregation of the same operation performed on each column independently.
-    * Every function should provide an `na.rm` option that allows one to ignore `NA`'s. Essentially this involves replacing `NA` by the identity element for that function: `sum(na.rm = TRUE)` replaces `NA`'s with `0`, while `prod(na.rm = TRUE)` replaces `NA`'s with `1`.
+    * For operations on vectors, `NA` values are absolutely poisonous by default.
+    * For operations on `data.frames`, `NA` values are absolutely poisonous on a column-by-column basis by default. This stems from a more general which assumes that most operations on `data.frame` reduce to the aggregation of the same operation performed on each column independently.
+    * Every function should provide an `na.rm` option that allows one to ignore `NA` values. Essentially this involves replacing `NA` by the identity element for that function: `sum(na.rm = TRUE)` replaces `NA` values with `0`, while `prod(na.rm = TRUE)` replaces `NA` values with `1`.
 * Should there be multiple types of missingness?
     * For example, SAS distinguishes between:
         * Numeric missing values
         * Character missing values
         * Special numeric missing values
-    * In statistical theory, while the _fact_ of missingness is simple and does not involve multiple types of `NA`'s, the _cause_ of missingness can be different for different data sets, which leads to very different procedures that can appropriately be used. See, for example, the different suggestions in Little and Rubin (2002) about how to treat data that has entries missing completely at random (MCAR) vs. data that has entries missing at random (MAR). Should we be providing tools for handling this? External data sources will almost never provide this information, but multiple dispatch means that Julian statistical functions could insure that the appropriate computations are performed for properly typed data sets without the end-user ever understanding the process that goes on under the hood.
-* How is missingness different from `NaN` for `Float`'s? Both share poisonous behavior and `NaN` propagation is very efficient in modern computers. This can provide a clever method for making `NA` fast for `Float`'s, but does not apply to other types and seems potentially problematic as two different concepts are now aliased. For example, we are not uncertain about the value of `0/0` and should not allow any method to impute a value for it -- which any imputation method will do if we treat every `NaN` as equivalent to a `NA`.
+    * In statistical theory, while the _fact_ of missingness is simple and does not involve multiple types of `NA` values, the _cause_ of missingness can be different for different data sets, which leads to very different procedures that can appropriately be used. See, for example, the different suggestions in Little and Rubin (2002) about how to treat data that has entries missing completely at random (MCAR) vs. data that has entries missing at random (MAR). Should we be providing tools for handling this? External data sources will almost never provide this information, but multiple dispatch means that Julian statistical functions could insure that the appropriate computations are performed for properly typed data sets without the end-user ever understanding the process that goes on under the hood.
+* How is missingness different from `NaN` for `Float`? Both share poisonous behavior and `NaN` propagation is very efficient in modern computers. This can provide a clever method for making `NA` fast for `Float`, but does not apply to other types and seems potentially problematic as two different concepts are now aliased. For example, we are not uncertain about the value of `0/0` and should not allow any method to impute a value for it -- which any imputation method will do if we treat every `NaN` as equivalent to a `NA`.
 * Should cleverness ever be allowed in propagation of `NA`? In section 3.3.4 of the R Language Definition, they note that in cases where the result of an operation would be the same for all possible values that an `NA` value could take on, the operation may return this constant value rather than return `NA`. For example, `FALSE & NA` returns `FALSE` while `TRUE | NA` returns `TRUE`. This sort of cleverness seems like a can-of-worms.
 
 ## Ongoing Debates about DataFrame's
 
 * How should RDBMS-like indices be implemented? What is most efficient? How can we avoid the inefficient vector searches that R uses?
-* How should `DataFrame`'s be distributed for parallel processing?
+* How should `DataFrame` be distributed for parallel processing?
