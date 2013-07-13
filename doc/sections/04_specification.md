@@ -111,7 +111,7 @@ The unary operators
 * DataFrame
 	* From (): `DataFrame()`
 	* From (Vector{Any}, Index): `DataFrame({datazeros(3), dataones(3)}, Index(["A", "B"]))`
-	* From (Vector{Any}): `DataFrame({datazeros(3), dataones(3)})
+	* From (Vector{Any}): `DataFrame({datazeros(3), dataones(3)})`
 	* From (Expr): `DataFrame(quote A = [1, 2, 3, 4] end)`
 	* From (Matrix, Vector{String}): `DataFrame([1 2; 3 4], ["A", "B"])`
 	* From (Matrix): `DataFrame([1 2; 3 4])`
@@ -127,21 +127,23 @@ The unary operators
 
 # Indexing
 
-NA
+Types on indices:
 
-dv = datazeros(10)
+	NA
 
-dv[1]
+	dv = datazeros(10)
 
-dv[1:2]
+	dv[1]
 
-dv[:]
+	dv[1:2]
 
-dv[[1, 2 3]]
+	dv[:]
 
-dv[[false, false, true, false, false]]
+	dv[[1, 2 3]]
 
-dmzeros(10)
+	dv[[false, false, true, false, false]]
+
+	dmzeros(10)
 
 Indexers: Int, Range, Colon, Vector{Int}, Vector{Bool}, String, Vector{String}
 

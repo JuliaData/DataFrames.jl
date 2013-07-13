@@ -300,12 +300,16 @@ In contrast, a DataFrame is a random-access data structure that can be indexed i
 
 ## Simple Numeric Indexing
 
+Index by numbers:
+
 	df = DataFrame(Int64, 5, 3)
 	df[1, 3]
 	df[1]
 
 
 ## Range-Based Numeric Indexing
+
+Index by ranges:
 
 	df = DataFrame(Int64, 5, 3)
 
@@ -316,6 +320,8 @@ In contrast, a DataFrame is a random-access data structure that can be indexed i
 	df[:, :]
 
 ## Column Name Indexing
+
+Index by column names:
 
 	df["x1"]
 	df[1, "x1"]

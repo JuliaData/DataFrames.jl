@@ -176,8 +176,8 @@ Concatenate rows.
 #### `csvDataFrame(filename, o::Options)`
 
 Return a DataFrame from file `filename`. Options `o` include
-`colnames` [`"true"`, `"false"`, or `"check"` (the default)] and
-`poolstrings` [`"check"` (default) or `"never"`].
+`colnames` (`"true"`, `"false"`, or `"check"` (the default)) and
+`poolstrings` (`"check"` (default) or `"never"`).
 
 ### Expression/Function Evaluation in a DataFrame
 
