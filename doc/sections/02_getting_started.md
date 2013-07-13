@@ -2,32 +2,26 @@
 
 ## Installation
 
-The DataFrames package is available through the Julia package system. The first time you use it you will need to run
+The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataFrames` to bring all of the relevant variables into your current namespace. In addition, we will make use of the `RDatasets` package, which provides access to hundreds of classical data sets.
 
-	Pkg.add("DataFrames")
+## The `NA` Value
 
-## Loading the DataFrames Package
-
-In all of the examples that follow, we're going to assume that you've already loaded the DataFrames package. You can do that by typing the following commands before trying out any of the examples in this manual:
-
-	using DataFrames
-
-## Some Basic Examples
-
-As we described in the introduction, the first thing you'll want to do is to confirm that we have a new type that represents a missing value. Type the following into the REPL to see that this is working for you:
+To get started, let's examine the `NA` value. Type the following into the REPL:
 
 	NA
 
-One of the essential properties of `NA` is that it poisons other items. To see this, try to add something to `NA`:
+One of the essential properties of `NA` is that it poisons other items. To see this, try to add something like `1` to `NA`:
 
 	1 + NA
 
-As we described earlier, you'll get a lot more power out of `NA` values when they can occur in other data structures. Let's create our first `DataVector` now:
+## The `DataArray` Type
+
+Now that we see that `NA` is working, let's insert one into a `DataArray`. We'll create one now:
 
 	dv = DataArray([1, 3, 2, 5, 4])
 	dv[1] = NA
 
-To see how `NA` poisons even complex calculations, let's try to take the mean of those five numbers:
+To see how `NA` poisons even complex calculations, let's try to take the mean of the five numbers stored in `dv`:
 
 	mean(dv)
 
@@ -36,45 +30,39 @@ In many cases we're willing to just ignore `NA` values and remove them from our 
 	removeNA(dv)
 	mean(removeNA(dv))
 
-Instead of removing `NA` values, you can try to ignore them using the `failNA` function. The `failNA` function attempt to convert a `DataVector{T}` to a `Vector{T}` and will throw an error if any `NA` values are encountered. If we were dealing with a vector like the following, `failNA` will work just right:
+Instead of removing `NA` values, you can try to ignore them using the `failNA` function. The `failNA` function will attempt to convert a `DataArray{T}` to a `Array{T}`. The `failNA` function will throw an error if any `NA` values are encountered during the conversion process. If the input vector does not contain any `NA` values, the conversion will succeed and return a standard Julia `Array` object:
 
 	dv = DataArray([1, 3, 2, 5, 4])
 	mean(failNA(dv))
 
-In addition to removing or ignoring `NA` values, it's possible to replace them using the `replaceNA` function:
+In addition to removing or ignoring `NA` values, you can also replace any `NA` values using the `replaceNA` function:
 
 	dv = DataArray([1, 3, 2, 5, 4])
 	dv[1] = NA
 	mean(replaceNA(dv, 11))
 
-Which strategy for dealing with `NA` values is most appropriate will typically depend on the details of your situation.
+Which strategy for dealing with `NA` values is most appropriate will typically depend on the specific details of your data analysis pathway.
 
-In modern data analysis `NA` values don't simply arise in vector-like data. The `DataMatrix` and `DataFrame` structures are also capable of handling `NA` values. You can confirm for yourself that the presence of `NA` values poisons matrix operations in the same way that it poisons vector operations by creating a simple `DataMatrix` and trying to perform matrix multiplication:
+Although the examples above employed only 1D `DataArray` objects, the `DataArray` type defines a completely generic N-dimensional array type. Operations on generic `DataArray` objects work in higher dimensions in the same way that they work on Julia's Base `Array` type:
 
 	dm = DataArray([1.0 0.0; 0.0 1.0])
 	dm[1, 1] = NA
 	dm * dm
 
-## Working with Tabular Data Sets
+## The `DataFrame` Type
 
-As we said before, working with simple `DataVector` and `DataMatrix` gets boring after a while. To express interesting types of tabular data sets, we'll create a simple `DataFrame` piece-by-piece:
+The `DataFrame` type can be used to represent data tables, each column of which is a `DataArray`. You can specify the columns using keyword arguments:
+
+	df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+
+It is also possible to construct a `DataFrame` column-by-column:
 
 	df = DataFrame()
 	df["A"] = 1:4
 	df["B"] = ["M", "F", "F", "M"]
 	df
 
-Because we know all of the columns in advance, this specific `DataFrame` could have been created more concisely using keyword arguments:
-
-	df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
-
-In practice, we're more likely to use an existing data set than to construct one from scratch. To load a more interesting data set, we can use the `readtable()` function. To make use of it, we'll need a data set stored in a simple format like the comma separated values (CSV) standard. There are some simple examples of CSV files included with the DataFrames package. We can find them using basic file operations in Julia:
-
-	mydir = Pkg.dir("DataFrames", "test", "data", "scaling")
-	filenames = readdir(mydir)
-	df = readtable(joinpath(mydir, filenames[1]))
-
-The resulting `DataFrame` has many similar rows. We can check its size using the `size` function:
+The `DataFrame` we build in this way has 4 rows and 2 columns. You can check this using `size` function:
 
 	nrows = size(df, 1)
 	ncols = size(df, 2)
@@ -90,62 +78,24 @@ Having seen what some of the rows look like, we can try to summarize the entire 
 
 	describe(df)
 
-To focus our search, we start looking at just the means and medians of the columns:
+To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the `DataFrame`:
 
-	mean(df, 1)
-	median(df, 1)
+	mean(df[1])
+	median(df[1])
 
-Or, alternatively, we can look at the columns one-by-one:
+We could also have used column names to access individual columns:
 
-	mean(df["E"])
-	range(df["E"])
+	mean(df["A"])
+	range(df["A"])
 
-If you'd like to get your hands on more data to play with, we strongly encourage you to try out the RDatasets package. This package supplements the DataFrames package by providing access to 570 classical data sets that will be familiar to R programmers. You can install and load the RDatasets package using the Julia package manager:
+## Accessing Classic Data Sets
 
-	Pkg.add("RDatasets")
+To see more of the functionality for working with `DataFrame` objects, we need a more complex data to work with. We'll use the `RDatasets` package, which provides to many of the classical data sets that are available in R.
+
+For example, we can access Fisher's iris data set using the following functions:
+
 	using RDatasets
-
-Once that's done, you can use the `data()` function from RDatasets to gain access to data sets like Fisher's Iris data:
-
 	iris = data("datasets", "iris")
 	head(iris)
 
-The Iris data set is a really interesting testbed for examining simple contrasts between groups. To get at those kind of group differences, we can split apart our data set based on the species of flower being studied and then analyze each group separately. To do that, we'll use the Split-Apply-Combine strategy made popular by R's plyr library. In Julia, we do this using the `by` function:
-
-	function g(df)
-		res = DataFrame()
-		res["nrows"] = nrow(df)
-		res["MeanPetalLength"] = mean(df["Petal.Length"])
-		res["MeanPetalWidth"] = mean(df["Petal.Width"])
-		return res
-	end
-
-	by(iris, "Species", g)
-
-Instead of passing in a function that constructs a `DataFrame` piece-by-piece to summarize each group, you can pass in a Julia expression that will construct columns one-by-one. The simplest example looks like:
-
-	by(iris, "Species", :(NewColumn = 1))
-
-This example is admittedly a little silly. The reason we've started with something trivial is that it's quite difficult to work with our current version of the `iris` `DataFrame` because the current set of column names includes names like `"Petal.Length"`, which are not valid Julia variable names. As such, we can't use these names in Julia expressions. To work around that, the DataFrames package provides a function called `clean_colnames!()` which will replace non-alphanumeric characters with underscores in order to produce valid Julia identifiers:
-
-	clean_colnames!(iris)
-	colnames(iris)
-
-Now that the column names are clean, we can put the expression-based
-
-	by(iris, "Species", :(MeanPetalLength = mean(Petal_Length)))
-	by(iris, "Species", :(MeanPetalWidth = mean(Petal_Width)))
-
-This style of expression-based manipulation is quite handy once you get used to it. But sometimes you need to summarize groups based on properties of the entire group-level `DataFrame` rather than something describable using just the column names alone. In that case, you can exploit the fact that each group-level DataFrame is temporarily given the name `_DF`:
-
-	by(iris, "Species", :(N = nrow(_DF)))
-
-If none of these ways of working with individual groups of data appeal to you, you can also use the `groupby` function to produce an iterable set of `DataFrame` that you can step though one-by-one:
-
-	for df in groupby(iris, "Species")
-		println({unique(df["Species"]),
-				 mean(df["Petal_Length"]),
-				 mean(df["Petal_Width"])})
-	end
-
-We hope this brief tutorial introduction has convinced you that you can do quite complex data manipulations using the DataFrames package. To really dig in, we're now going to describe the design of the DataFrames package in greater depth.
+In the next section, we'll discuss generic I/O strategy for reading and writing `DataFrame` objects that you can use to import and export your own data files.
