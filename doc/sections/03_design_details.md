@@ -68,7 +68,7 @@ You can explore this value to confirm that `NA` is just an instance of the `NAty
 
 	dump(NA)
 
-Simply being able to express the notion that a data point is missing is important, but we're ultimately not interested in just expressing data: we want to build tools for interacting with data that may be missing. In a later section, we'll describe the details of interacting with `NA`, but for now we'll state the defining property of `NA`: _because `NA` expresses ignorance about the value of something, every interaction with `NA` corrupts known values and transforms them into `NA` values. Below we show how this works for addition:
+Simply being able to express the notion that a data point is missing is important, but we're ultimately not interested in just expressing data: we want to build tools for interacting with data that may be missing. In a later section, we'll describe the details of interacting with `NA`, but for now we'll state the defining property of `NA`: _because `NA` expresses ignorance about the value of something, every interaction with `NA` corrupts known values and transforms them into `NA` values_. Below we show how this works for addition:
 
 	1 + NA
 
@@ -139,7 +139,7 @@ In contrast to these normal-looking constructors, when some of the values in the
 
 	dv = DataVector[1, 2, NA, 4]
 
-_Technical Note: This special type of constructor is defined by overloading the `getindex()` function to apply to values of type `DataVector`.
+_Technical Note: This special type of constructor is defined by overloading the `getindex()` function to apply to values of type `DataVector`._
 
 # DataVector's with Special Types
 
@@ -367,8 +367,7 @@ The standard arithmetic operators work on DataVector's when they interact with N
 	NA + NA
 	NA .+ NA
 
-And so on for -, .- , *, .*, /, ./, ^, .^ 
-
+And so on for `-`, `.-`, `*`, `.*`, `/`, `./`, `^`, `.^`.
 
 ## NA's with Scalars and Scalars with NA's
 
@@ -377,7 +376,7 @@ And so on for -, .- , *, .*, /, ./, ^, .^
 	NA + 1
 	NA .+ 1
 
-And so on for -, .- , *, .*, /, ./, ^, .^ 
+And so on for `-`, `.-`, `*`, `.*`, `/`, `./`, `^`, `.^`.
 
 ## NA's with DataVector's
 
@@ -386,21 +385,21 @@ And so on for -, .- , *, .*, /, ./, ^, .^
 	NA + dv
 	NA .+ dv
 
-And so on for -, .- , *, .*, /, ./, ^, .^ 
+And so on for `-`, `.-`, `*`, `.*`, `/`, `./`, `^`, `.^`.
 
 ## DataVector's with Scalars
 
 	dv + 1
 	dv .+ 1
 
-And so on for -, .- , .*, ./, .^ 
+And so on for `-`, `.-`, `.*`, `./`, `.^`.
 
 ## Scalars with DataVector's
 
 	1 + dv
 	1 .+ dv
 
-And so on for -, .- , *, .*, /, ./, ^, .^ 
+And so on for `-`, `.-`, `*`, `.*`, `/`, `./`, `^`, `.^`.
 
 _HOW MUCH SHOULD WE HAVE OPERATIONS W/ DATAFRAMES?_
 
@@ -412,7 +411,7 @@ _HOW MUCH SHOULD WE HAVE OPERATIONS W/ DATAFRAMES?_
 	df + dv # SHOULD THIS EXIST?
 	df + df
 
-And so on for -, .- , .*, ./, .^ 
+And so on for `-`, `.-`, `.*`, `./`, `.^`.
 
 The standard bit operators work on `DataVector`:
 
