@@ -1,6 +1,6 @@
 ---
 
-layout: slate
+layout: minimal
 title: DataFrames.jl - Tools for working with data in Julia
 
 ---
