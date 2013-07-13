@@ -1,6 +1,6 @@
 ---
 
-layout: slate
+layout: minimal
 title: The Design of DataFrames
 
 ---

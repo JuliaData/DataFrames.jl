@@ -1,6 +1,6 @@
 ---
 
-layout: slate
+layout: minimal
 title: Split-Apply-Combine Operations
 
 ---

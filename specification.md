@@ -1,6 +1,6 @@
 ---
 
-layout: slate
+layout: minimal
 title: Formal Specification of DataFrames
 
 ---

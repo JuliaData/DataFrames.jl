@@ -92,7 +92,7 @@ for i in 1:n
 	io = open(web_url, "w")
 	println(io, "---")
 	println(io, "")
-	println(io, "layout: slate")
+	println(io, "layout: minimal")
 	println(io, "title: $(web_title)")
 	println(io, "")
 	println(io, "---")

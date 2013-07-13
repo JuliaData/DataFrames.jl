@@ -1,6 +1,6 @@
 ---
 
-layout: slate
+layout: minimal
 title: Why Use the DataFrames Package?
 
 ---
