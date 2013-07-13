@@ -176,8 +176,8 @@ Concatenate rows.
 #### `csvDataFrame(filename, o::Options)`
 
 Return a DataFrame from file `filename`. Options `o` include
-`colnames` [`"true"`, `"false"`, or `"check"` (the default)] and
-`poolstrings` [`"check"` (default) or `"never"`].
+`colnames` (`"true"`, `"false"`, or `"check"` (the default)) and
+`poolstrings` (`"check"` (default) or `"never"`).
 
 ### Expression/Function Evaluation in a DataFrame
 
@@ -407,7 +407,7 @@ Return an `NA` value appropriate for the type of `x`.
 
 #### `nas(x, dim)`
 
-Return an object like `x` filled with `NA`'s with size `dim`.
+Return an object like `x` filled with `NA` values with size `dim`.
 
 
 ## DataVector's

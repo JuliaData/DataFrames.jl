@@ -74,5 +74,3 @@ In addition to the two required arguments, `writetable` accepts the following op
 * `separator::Char` -- The separator character that you would like to use. Defaults to the output of `getseparator(filename)`, which uses commas for files that end in `.csv`, tabs for files that end in `.tsv` and a single space for files that end in `.wsv`.
 * `quotemark::Char` -- The character used to delimit string fields. Defaults to `'"'`.
 * `header::Bool` -- Should the file contain a header that specifies the column names from `df`. Defaults to `true`.
-
-TEST

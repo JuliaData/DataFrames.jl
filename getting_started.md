@@ -29,7 +29,7 @@ One of the essential properties of `NA` is that it poisons other items. To see t
 
 	1 + NA
 
-As we described earlier, you'll get a lot more power out of `NA`'s when they can occur in other data structures. Let's create our first `DataVector` now:
+As we described earlier, you'll get a lot more power out of `NA` values when they can occur in other data structures. Let's create our first `DataVector` now:
 
 	dv = DataArray([1, 3, 2, 5, 4])
 	dv[1] = NA
@@ -38,25 +38,25 @@ To see how `NA` poisons even complex calculations, let's try to take the mean of
 
 	mean(dv)
 
-In many cases we're willing to just ignore `NA`'s and remove them from our vector. We can do that using the `removeNA` function:
+In many cases we're willing to just ignore `NA` values and remove them from our vector. We can do that using the `removeNA` function:
 
 	removeNA(dv)
 	mean(removeNA(dv))
 
-Instead of removing `NA`'s, you can try to ignore them using the `failNA` function. The `failNA` function attempt to convert a `DataVector{T}` to a `Vector{T}` and will throw an error if any `NA`'s are encountered. If we were dealing with a vector like the following, `failNA` will work just right:
+Instead of removing `NA` values, you can try to ignore them using the `failNA` function. The `failNA` function attempt to convert a `DataVector{T}` to a `Vector{T}` and will throw an error if any `NA` values are encountered. If we were dealing with a vector like the following, `failNA` will work just right:
 
 	dv = DataArray([1, 3, 2, 5, 4])
 	mean(failNA(dv))
 
-In addition to removing or ignoring `NA`'s, it's possible to replace them using the `replaceNA` function:
+In addition to removing or ignoring `NA` values, it's possible to replace them using the `replaceNA` function:
 
 	dv = DataArray([1, 3, 2, 5, 4])
 	dv[1] = NA
 	mean(replaceNA(dv, 11))
 
-Which strategy for dealing with `NA`'s is most appropriate will typically depend on the details of your situation.
+Which strategy for dealing with `NA` values is most appropriate will typically depend on the details of your situation.
 
-In modern data analysis `NA`'s don't simply arise in vector-like data. The `DataMatrix` and `DataFrame` structures are also capable of handling `NA`'s. You can confirm for yourself that the presence of `NA`'s poisons matrix operations in the same way that it poisons vector operations by creating a simple `DataMatrix` and trying to perform matrix multiplication:
+In modern data analysis `NA` values don't simply arise in vector-like data. The `DataMatrix` and `DataFrame` structures are also capable of handling `NA` values. You can confirm for yourself that the presence of `NA` values poisons matrix operations in the same way that it poisons vector operations by creating a simple `DataMatrix` and trying to perform matrix multiplication:
 
 	dm = DataArray([1.0 0.0; 0.0 1.0])
 	dm[1, 1] = NA
@@ -64,7 +64,7 @@ In modern data analysis `NA`'s don't simply arise in vector-like data. The `Data
 
 ## Working with Tabular Data Sets
 
-As we said before, working with simple `DataVector`'s and `DataMatrix`'s gets boring after a while. To express interesting types of tabular data sets, we'll create a simple `DataFrame` piece-by-piece:
+As we said before, working with simple `DataVector` and `DataMatrix` gets boring after a while. To express interesting types of tabular data sets, we'll create a simple `DataFrame` piece-by-piece:
 
 	df = DataFrame()
 	df["A"] = 1:4
@@ -90,7 +90,7 @@ We can also look at small subsets of the data in a couple of ways:
 
 	head(df)
 	tail(df)
-
+	
 	df[1:3, :]
 
 Having seen what some of the rows look like, we can try to summarize the entire data set using:
@@ -147,7 +147,7 @@ This style of expression-based manipulation is quite handy once you get used to 
 
 	by(iris, "Species", :(N = nrow(_DF)))
 
-If none of these ways of working with individual groups of data appeal to you, you can also use the `groupby` function to produce an iterable set of `DataFrame`'s that you can step though one-by-one:
+If none of these ways of working with individual groups of data appeal to you, you can also use the `groupby` function to produce an iterable set of `DataFrame` that you can step though one-by-one:
 
 	for df in groupby(iris, "Species")
 		println({unique(df["Species"]),

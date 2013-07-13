@@ -15,7 +15,7 @@ sources. This is particularly important when:
 
 Julia is well-suited to both. The DataFrames package handles streaming
 data by construcing a `DataStream`, which is an iterable object that
-returns `DataFrame`'s one-by-one in small minibatches. By default, the
+returns `DataFrame` one-by-one in small minibatches. By default, the
 minibatches are single rows of data, but this can be easily changed. To
 see how a `DataStream` works, it's easiest to convert an existing `DataFrame`
 into a `DataStream` using the `DataStream` function:
