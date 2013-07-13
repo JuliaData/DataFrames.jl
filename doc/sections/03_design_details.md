@@ -658,13 +658,13 @@ You can then iterate over this `DataStream` to see how things work:
 
 We can compute many useful quantities using `DataStream`'s:
 
-* _Means: `colmeans(ds)`
-* _Variances: `colvars(ds)`
-* _Covariances: `cov(ds)`
-* _Correlations: `cor(ds)`
-* _Unique element lists and counts: _MISSING_
-* _Linear models: _MISSING_
-* _Entropy: _MISSING_
+* _Means_: `colmeans(ds)`
+* _Variances_: `colvars(ds)`
+* _Covariances_: `cov(ds)`
+* _Correlations_: `cor(ds)`
+* _Unique element lists and counts_: _MISSING_
+* _Linear models_: _MISSING_
+* _Entropy_: _MISSING_
 
 ## Advice on Deploying DataStreams
 
