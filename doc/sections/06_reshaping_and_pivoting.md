@@ -1,10 +1,8 @@
 # Reshaping and Pivoting Data
 
-    require("DataFrames")
-    using DataFrames
+Reshape data using the `stack` function:
 
-    require("RDatasets")
-    using RDatasets
+    using DataFrames, RDatasets
 
     iris = data("datasets", "iris")
 

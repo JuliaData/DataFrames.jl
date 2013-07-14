@@ -11,8 +11,7 @@ run(`git checkout master -- doc`)
 # trick, which will insert horizontal bars and force a page separation
 # between chapters in the manual.
 
-pdf_sections = ["00_table_of_contents.md",
-				"01_introduction.md",
+pdf_sections = ["01_introduction.md",
 				"02_getting_started.md",
 				"03_io.md",
 				"04_joins_and_indexing.md",
