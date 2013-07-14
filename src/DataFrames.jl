@@ -230,6 +230,7 @@ export # reconcile_groups,
 Base.@deprecate read_table readtable
 Base.@deprecate print_table printtable
 Base.@deprecate write_table writetable
+Base.@deprecate merge Base.join
 
 ##############################################################################
 ##

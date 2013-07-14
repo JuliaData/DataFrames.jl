@@ -1,4 +1,3 @@
-
 ##
 ## Join / merge
 ##
@@ -73,7 +72,6 @@ function join_idx(left, right, max_groups)
      right_sorter[right_indexer], right_sorter[rightonly_indexer])
 end
 
-
 function PooledDataVecs(df1::AbstractDataFrame,
                         df2::AbstractDataFrame)
     # This method exists to allow merge to work with multiple columns.
@@ -124,49 +122,43 @@ function PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
     end
     return PooledDataArray(RefArray(refs), pool)
 end
+
 PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)
 
-function merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol, jointype)
-
-    dv1, dv2 = PooledDataVecs(df1[bycol], df2[bycol])
+function Base.join(df1::AbstractDataFrame,
+                   df2::AbstractDataFrame;
+                   on::Union(ByteString, Nothing) = nothing,
+                   kind::Symbol = :inner)
+    if on == nothing
+        on = first(collect(intersect(Set{ByteString}(colnames(df1)...),
+                                     Set{ByteString}(colnames(df2)...))))
+    end
+    dv1, dv2 = PooledDataVecs(df1[on], df2[on])
     left_indexer, leftonly_indexer, right_indexer, rightonly_indexer =
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
 
-    if jointype == "inner"
-        return cbind(df1[left_indexer,:], without(df2, bycol)[right_indexer,:])
-    elseif jointype == "left"
+    if kind == :inner
+        return cbind(df1[left_indexer,:], without(df2, on)[right_indexer,:])
+    elseif kind == :left
         left = df1[[left_indexer,leftonly_indexer],:]
-        right = rbind(without(df2, bycol)[right_indexer,:],
-                      nas(without(df2, bycol), length(leftonly_indexer)))
+        right = rbind(without(df2, on)[right_indexer,:],
+                      nas(without(df2, on), length(leftonly_indexer)))
         return cbind(left, right)
-    elseif jointype == "right"
-        left = rbind(without(df1, bycol)[left_indexer, :],
-                     nas(without(df1, bycol), length(rightonly_indexer)))
+    elseif kind == :right
+        left = rbind(without(df1, on)[left_indexer, :],
+                     nas(without(df1, on), length(rightonly_indexer)))
         right = df2[[right_indexer,rightonly_indexer],:]
         return cbind(left, right)
-    elseif jointype == "outer"
-        mixed = cbind(df1[left_indexer, :], without(df2, bycol)[right_indexer, :])
+    elseif kind == :outer
+        mixed = cbind(df1[left_indexer, :], without(df2, on)[right_indexer, :])
         leftonly = cbind(df1[leftonly_indexer, :],
-                         nas(without(df2, bycol), length(leftonly_indexer)))
+                         nas(without(df2, on), length(leftonly_indexer)))
         leftonly = leftonly[:, colnames(mixed)]
-        rightonly = cbind(nas(without(df1, bycol), length(rightonly_indexer)),
+        rightonly = cbind(nas(without(df1, on), length(rightonly_indexer)),
                           df2[rightonly_indexer, :])
         rightonly = rightonly[:, colnames(mixed)]
         return rbind(mixed, leftonly, rightonly)
+    else
+        throw(ArgumentError("Unknown kind of join requested"))
     end
-end
-
-merge(df1::AbstractDataFrame, df2::AbstractDataFrame, bycol) = merge(df1, df2, bycol, "inner")
-
-function merge(df1::AbstractDataFrame, df2::AbstractDataFrame)
-    s1 = Set{ByteString}()
-    for coln in colnames(df1)
-        add!(s1, coln)
-    end
-    s2 = Set{ByteString}()
-    for coln in colnames(df2)
-        add!(s2, coln)
-    end
-    bycol = first(collect(intersect(s1, s2)))
-    merge(df1, df2, bycol, "inner")
 end
