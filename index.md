@@ -22,17 +22,6 @@ In particular, DataFrames provides:
 
 To learn more about specific features, read the relevant section of the DataFrames manual. We recommend starting with the "Getting Started" section.
 
-# Sections
-
-* [Table of Contents](http://harlanh.github.com/DataFrames.jl/index.html)
-* [Why Use the DataFrames Package?](http://harlanh.github.com/DataFrames.jl/introduction.html)
-* [Getting Started](http://harlanh.github.com/DataFrames.jl/getting_started.html)
-* [I/O](http://harlanh.github.com/DataFrames.jl/io.html)
-* [Database-Style Joins and Indexing](http://harlanh.github.com/DataFrames.jl/joins_and_indexing.html)
-* [Split-Apply-Combine Operations](http://harlanh.github.com/DataFrames.jl/split_apply_combine.html)
-* [Reshaping and Pivoting](http://harlanh.github.com/DataFrames.jl/reshaping_and_pivoting.html)
-* [Streaming Data Analysis](http://harlanh.github.com/DataFrames.jl/datastreams.html)
-
 # Offline Reading
 
 If you prefer reading documentation offline, you can download a copy of [our manual in PDF form](http://harlanh.github.com/DataFrames.jl/downloads/manual.pdf).
