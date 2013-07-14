@@ -57,16 +57,16 @@ web_titles = ["Why Use the DataFrames Package?",
 			  "Getting Started",
 			  "I/O",
 			  "Joins and Indexing",
-			  "Reshaping and Pivoting",
 			  "Split-Apply-Combine Operations",
+			  "Reshaping and Pivoting",
 			  "Streaming Data Analysis"]
 
 web_urls = ["introduction.md",
 			"getting_started.md",
 			"io.md",
 			"joins_and_indexing.md",
-			"reshaping_and_pivoting.md",
 			"split_apply_combine.md",
+			"reshaping_and_pivoting.md",
 			"datastreams.md"]
 
 n = length(web_sections)
