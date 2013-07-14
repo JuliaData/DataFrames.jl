@@ -125,9 +125,10 @@ end
 
 PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)
 
+# Union(Vector{T}, ByteString, Nothing
 function Base.join(df1::AbstractDataFrame,
                    df2::AbstractDataFrame;
-                   on::Union(ByteString, Nothing) = nothing,
+                   on::Any = nothing,
                    kind::Symbol = :inner)
     if on == nothing
         on = first(collect(intersect(Set{ByteString}(colnames(df1)...),

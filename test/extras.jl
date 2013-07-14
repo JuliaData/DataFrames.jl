@@ -3,22 +3,6 @@ using DataFrames
 
 let
 	##########
-	## table
-	##########
-
-
-	d = DataVector[1,1,2,4,5,9,NA,NA]
-	t = table(d)
-	@assert t[1] == 2
-	@assert t[NA] == 2
-
-	x = LETTERS[[1,1,9,5,9,9,9]]
-	t = table(x)
-	@assert t["A"] == 2
-	@assert t["I"] == 4
-	@assert length(t) == 3
-
-	##########
 	## paste
 	##########
 
@@ -46,7 +30,6 @@ let
 	                       "(35,60]", "(35,60]", "(25,35]"])
 	@assert isequal(cats, pdv)
 
-
 	##########
 	## rep
 	##########
@@ -61,12 +44,4 @@ let
 	@assert isequal(rep(DataVector[NA,3,4], 2), DataVector[NA,3,4,NA,3,4])
 	@assert isequal(rep(DataVector[NA,3,4], [2,1,2]), DataVector[NA,NA,3,4,4])
 	@assert isequal(rep(DataVector[NA,3,4], [2,1,0]), DataVector[NA,NA,3])
-
-
-	##########
-	## findat
-	##########
-
-	@assert findat([4,1,9,10,1], [1:6]) == [4,1,0,0,1]
-	@assert findat([1:6], [1,5,9,3,1]) == [1,0,4,0,2,0]
 end

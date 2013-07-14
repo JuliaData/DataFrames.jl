@@ -337,7 +337,7 @@ end
 # TODO: Make inds::AbstractVector
 ## # There are two definitions in order to remove ambiguity warnings
 getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(BitVector, Vector{Bool})) = DataArray(d.data[inds], d.na[inds])
-getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector)) = DataArray(d.data[inds], d.na[inds])
+getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, Range1, BitVector)) = DataArray(d.data[inds], d.na[inds])
 function getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     res = similar(d, sum(inds))
     j = 1
@@ -352,7 +352,7 @@ function getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     res
 end
 
-function getindex(d::DataArray, inds::Union(Vector, Ranges))
+function getindex(d::DataArray, inds::Union(Vector, Ranges, Range1))
     res = similar(d, length(inds))
     for i in 1:length(inds)
         ix = inds[i]
@@ -368,7 +368,7 @@ end
 ## # The following assumes that T<:Number won't have #undefs
 ## # There are two definitions in order to remove ambiguity warnings
 getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(BitVector, Vector{Bool})) = DataArray(d.data[inds], d.na[inds])
-getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, BitVector)) = DataArray(d.data[inds], d.na[inds])
+getindex{T<:Number,N}(d::DataArray{T,N}, inds::Union(Vector, Ranges, Range1, BitVector)) = DataArray(d.data[inds], d.na[inds])
 
 # dv[SingleItemIndex, SingleItemIndex)
 function getindex(d::DataVector, i::Real, j::Real)
@@ -402,7 +402,7 @@ end
 # TODO: Make inds::AbstractVector
 function getindex(x::DataMatrix,
              i::Real,
-             col_inds::Union(Vector, BitVector, Ranges))
+             col_inds::Union(Vector, BitVector, Ranges, Range1))
     DataArray(x.data[i, col_inds], x.na[i, col_inds])
 end
 
@@ -415,7 +415,7 @@ function getindex(x::DataMatrix, row_inds::AbstractVector, j::Real)
 end
 # TODO: Make inds::AbstractVector
 function getindex(x::DataMatrix,
-             row_inds::Union(Vector, BitVector, Ranges),
+             row_inds::Union(Vector, BitVector, Ranges, Range1),
              j::Real)
     DataArray(x.data[row_inds, j], x.na[row_inds, j])
 end
@@ -434,7 +434,7 @@ end
 # TODO: Make inds::AbstractVector
 function getindex(x::DataMatrix,
              row_inds::AbstractDataVector{Bool},
-             col_inds::Union(Vector, BitVector, Ranges))
+             col_inds::Union(Vector, BitVector, Ranges, Range1))
     getindex(x, find(replaceNA(row_inds, false)), col_inds)
 end
 function getindex(x::DataMatrix,
@@ -451,28 +451,28 @@ end
 # TODO: Make inds::AbstractVector
 function getindex(x::DataMatrix,
              row_inds::AbstractDataVector,
-             col_inds::Union(Vector, BitVector, Ranges))
+             col_inds::Union(Vector, BitVector, Ranges, Range1))
     getindex(x, removeNA(row_inds), col_inds)
 end
 
 # TODO: Make inds::AbstractVector
 function getindex(x::DataMatrix,
-             row_inds::Union(Vector, BitVector, Ranges),
+             row_inds::Union(Vector, BitVector, Ranges, Range1),
              col_inds::AbstractDataVector{Bool})
     getindex(x, row_inds, find(replaceNA(col_inds, false)))
 end
 
 # TODO: Make inds::AbstractVector
 function getindex(x::DataMatrix,
-             row_inds::Union(Vector, BitVector, Ranges),
+             row_inds::Union(Vector, BitVector, Ranges, Range1),
              col_inds::AbstractDataVector)
     getindex(x, row_inds, removeNA(col_inds))
 end
 
 # TODO: Make inds::AbstractVector
 function getindex(x::DataMatrix,
-             row_inds::Union(Vector, BitVector, Ranges),
-             col_inds::Union(Vector, BitVector, Ranges))
+             row_inds::Union(Vector, BitVector, Ranges, Range1),
+             col_inds::Union(Vector, BitVector, Ranges, Range1))
     DataArray(x.data[row_inds, col_inds], x.na[row_inds, col_inds])
 end
 
@@ -570,7 +570,7 @@ end
 # dm[MultiItemIndex, SingleItemIndex] = NA
 function setindex!(dm::DataMatrix,
                 val::NAtype,
-                row_inds::Union(Vector, BitVector, Ranges),
+                row_inds::Union(Vector, BitVector, Ranges, Range1),
                 j::Real)
     dm.na[row_inds, j] = true
     return NA
@@ -579,7 +579,7 @@ end
 # dm[MultiItemIndex, SingleItemIndex] = Multiple Items
 function setindex!{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
-                      row_inds::Union(Vector, BitVector, Ranges),
+                      row_inds::Union(Vector, BitVector, Ranges, Range1),
                       j::Real)
     dm.data[row_inds, j] = vals
     dm.na[row_inds, j] = false
@@ -589,7 +589,7 @@ end
 # dm[MultiItemIndex, SingleItemIndex] = Single Item
 function setindex!(dm::DataMatrix,
                 val::Any,
-                row_inds::Union(Vector, BitVector, Ranges),
+                row_inds::Union(Vector, BitVector, Ranges, Range1),
                 j::Real)
     dm.data[row_inds, j] = val
     dm.na[row_inds, j] = false
@@ -600,7 +600,7 @@ end
 function setindex!(dm::DataMatrix,
                 val::NAtype,
                 i::Real,
-                col_inds::Union(Vector, BitVector, Ranges))
+                col_inds::Union(Vector, BitVector, Ranges, Range1))
     dm.na[i, col_inds] = true
     return NA
 end
@@ -609,7 +609,7 @@ end
 function setindex!{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
                       i::Real,
-                      col_inds::Union(Vector, BitVector, Ranges))
+                      col_inds::Union(Vector, BitVector, Ranges, Range1))
     dm.data[i, col_inds] = vals
     dm.na[i, col_inds] = false
     return val
@@ -619,7 +619,7 @@ end
 function setindex!(dm::DataMatrix,
                 val::Any,
                 i::Real,
-                col_inds::Union(Vector, BitVector, Ranges))
+                col_inds::Union(Vector, BitVector, Ranges, Range1))
     dm.data[i, col_inds] = val
     dm.na[i, col_inds] = false
     return val
@@ -628,8 +628,8 @@ end
 # dm[MultiItemIndex, MultiItemIndex] = NA
 function setindex!(dm::DataMatrix,
                 val::NAtype,
-                row_inds::Union(Vector, BitVector, Ranges),
-                col_inds::Union(Vector, BitVector, Ranges))
+                row_inds::Union(Vector, BitVector, Ranges, Range1),
+                col_inds::Union(Vector, BitVector, Ranges, Range1))
     dm.na[row_inds, col_inds] = true
     return NA
 end
@@ -637,8 +637,8 @@ end
 # dm[MultiIndex, MultiIndex] = Multiple Items
 function setindex!{S, T}(dm::DataMatrix{S},
                       vals::Vector{T},
-                      row_inds::Union(Vector, BitVector, Ranges),
-                      col_inds::Union(Vector, BitVector, Ranges))
+                      row_inds::Union(Vector, BitVector, Ranges, Range1),
+                      col_inds::Union(Vector, BitVector, Ranges, Range1))
     dm.data[row_inds, col_inds] = vals
     dm.na[row_inds, col_inds] = false
     return val
@@ -647,8 +647,8 @@ end
 # dm[MultiItemIndex, MultiItemIndex] = Single Item
 function setindex!(dm::DataMatrix,
                 val::Any,
-                row_inds::Union(Vector, BitVector, Ranges),
-                col_inds::Union(Vector, BitVector, Ranges))
+                row_inds::Union(Vector, BitVector, Ranges, Range1),
+                col_inds::Union(Vector, BitVector, Ranges, Range1))
     dm.data[row_inds, col_inds] = val
     dm.na[row_inds, col_inds] = false
     return val

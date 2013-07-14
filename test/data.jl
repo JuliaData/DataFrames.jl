@@ -1,7 +1,7 @@
 using Base.Test
 using DataFrames
 
-let
+#let
     #test_context("Data types and NA's")
 
     #test_group("NA's")
@@ -452,9 +452,9 @@ let
         v2 = randn(3)    # test unequal lengths in the constructor
     end)
 
-    m1 = merge(df1, df2, "a")
+    m1 = join(df1, df2, on = "a")
     @assert isequal(m1["a"], DataVector[1, 2, 3, 4, 5])
-    m2 = merge(df1, df2, "a", "outer")
+    m2 = join(df1, df2, on = "a", kind = :outer)
     # @assert isequal(m2["b2"], DataVector["A", "B", "B", "B", "B", NA, NA, NA, NA, NA])
     @assert isequal(m2["b2"], DataVector["B", "B", "B", "C", "B", NA, NA, NA, NA, NA])
 
@@ -462,13 +462,13 @@ let
                      "b" => ["America", "Europe", "Africa"]})
     df2 = DataFrame({"a" => [1, 2, 4],
                      "c" => ["New World", "Old World", "New World"]})
-    m1 = merge(df1, df2, "a", "inner")
+    m1 = join(df1, df2, on = "a", kind = :inner)
     @assert isequal(m1["a"], DataVector[1, 2])
-    m2 = merge(df1, df2, "a", "left")
+    m2 = join(df1, df2, on = "a", kind = :left)
     @assert isequal(m2["a"], DataVector[1, 2, 3])
-    m3 = merge(df1, df2, "a", "right")
+    m3 = join(df1, df2, on = "a", kind = :right)
     @assert isequal(m3["a"], DataVector[1, 2, 4])
-    m4 = merge(df1, df2, "a", "outer")
+    m4 = join(df1, df2, on = "a", kind = :outer)
     @assert isequal(m4["a"], DataVector[1, 2, 3, 4])
 
     # test with NAs (issue #185)
@@ -480,10 +480,10 @@ let
     df2["A"] = DataVector["a", NA, "c"]
     df2["C"] = DataVector[1, 2, 4]
 
-    m1 = merge(df1, df2, "A")
+    m1 = join(df1, df2, on = "A")
     @assert size(m1) == (3,3) 
     @assert isequal(m1["A"], DataVector[NA,"a","a"])
-    m2 = merge(df1, df2, "A", "outer")
+    m2 = join(df1, df2, on = "A", kind = :outer)
     @assert size(m2) == (5,3) 
     @assert isequal(m2["A"], DataVector[NA,"a","a","b","c"])
 
@@ -501,19 +501,20 @@ let
     end)
     df2[1,"a"] = NA
 
-    m1 = merge(df1, df2, ["a","b"])
+    # TODO: Restore this functionality
+    m1 = join(df1, df2, on = ["a","b"])
     @assert isequal(m1["a"], DataArray(["x", "x", "y", "y", fill("x", 5)]))
-    m2 = merge(df1, df2, ["a","b"], "outer")
+    m2 = join(df1, df2, on = ["a","b"], kind = :outer)
     @assert isequal(m2[10,"v2"], NA)
     @assert isequal(m2["a"], DataVector["x", "x", "y", "y", "x", "x", "x", "x", "x", "y", NA, "y"])
 
-    m1a = merge(within(df1, :(key = PooledDataArray(_DF[["a","b"]]))),
-                based_on(df2, :(key = PooledDataArray(_DF[["a","b"]]); v2 = v2)),
-                "key")
-    m2a = merge(within(df1, :(key = PooledDataArray(_DF[["a","b"]]))),
-                based_on(df2, :(key = PooledDataArray(_DF[["a","b"]]); v2 = v2)),
-                "key",
-                "outer")
+    m1a = join(within(df1, :(key = PooledDataArray(_DF[["a","b"]]))),
+               based_on(df2, :(key = PooledDataArray(_DF[["a","b"]]); v2 = v2)),
+               on = "key")
+    m2a = join(within(df1, :(key = PooledDataArray(_DF[["a","b"]]))),
+               based_on(df2, :(key = PooledDataArray(_DF[["a","b"]]); v2 = v2)),
+               on = "key",
+               kind = :outer)
     @assert isequal(sort(m1["b"]), sort(m1a["b"]))
 
     srand(1)
@@ -534,10 +535,9 @@ let
     end)
     df2 = spltdf(df2)
 
-    m1 = merge(df1, df2, "a")
-    m2 = merge(df1, df2, ["x1", "x2", "x3"])
+    m1 = join(df1, df2, on = "a")
+    m2 = join(df1, df2, on = ["x1", "x2", "x3"])
     @assert isequal(sort(m1["a"]), sort(m2["a"]))
-
 
     #test_group("New DataVector constructors")
     dv = DataArray(Int64, 5)
@@ -583,4 +583,4 @@ let
 
     pdv[1] = NA
     @assert isequal(find(pdv), [3])
-end
+#end
