@@ -5,7 +5,7 @@ title: Split-Apply-Combine Operations
 
 ---
 
-# The Split-Apply-Combine Strategy
+# Reshaping and Pivoting Data
 
     require("DataFrames")
     using DataFrames
@@ -15,6 +15,4 @@ title: Split-Apply-Combine Operations
 
     iris = data("datasets", "iris")
 
-    by(iris, "Species", nrow)
-    by(iris, "Species", df -> mean(df["Petal.Length"]))
-    by(iris, "Species", :(N = nrow(_DF)))
+    stack(iris, "Sepal.Length")

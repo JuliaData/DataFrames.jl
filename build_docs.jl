@@ -14,14 +14,11 @@ run(`git checkout master -- doc`)
 pdf_sections = ["00_table_of_contents.md",
 				"01_introduction.md",
 				"02_getting_started.md",
-				"10_io.md",
-				"03_design_details.md",
-				"04_specification.md",
-				"05_function_reference_guide.md",
-				"06_merging_and_indexing.md",
-				"07_reshaping_and_pivoting.md",
-				"08_split_apply_combine.md",
-				"09_datastreams.md"]
+				"03_io.md",
+				"04_joins_and_indexing.md",
+				"05_split_apply_combine.md",
+				"06_reshaping_and_pivoting.md",
+				"07_datastreams.md"]
 
 pandoc_page_break = "\n\n\\newpage\n\n---\n\n"
 
@@ -47,24 +44,19 @@ run(`rm downloads/manual.md`)
 #
 #
 
+
 web_sections = ["01_introduction.md",
 				"02_getting_started.md",
-				"10_io.md",
-				"03_design_details.md",
-				"04_specification.md",
-				"05_function_reference_guide.md",
-				"06_merging_and_indexing.md",
-				"07_reshaping_and_pivoting.md",
-				"08_split_apply_combine.md",
-				"09_datastreams.md"]
+				"03_io.md",
+				"04_joins_and_indexing.md",
+				"05_split_apply_combine.md",
+				"06_reshaping_and_pivoting.md",
+				"07_datastreams.md"]
 
 web_titles = ["Why Use the DataFrames Package?",
 			  "Getting Started",
-			  "IO",
-			  "The Design of DataFrames",
-			  "Formal Specification of DataFrames",
-			  "Function Reference Guide",
-			  "Merging and Indexing",
+			  "I/O",
+			  "Joins and Indexing",
 			  "Reshaping and Pivoting",
 			  "Split-Apply-Combine Operations",
 			  "Streaming Data Analysis"]
@@ -72,10 +64,7 @@ web_titles = ["Why Use the DataFrames Package?",
 web_urls = ["introduction.md",
 			"getting_started.md",
 			"io.md",
-			"design_details.md",
-			"specification.md",
-			"function_reference_guide.md",
-			"merging_and_indexing.md",
+			"joins_and_indexing.md",
 			"reshaping_and_pivoting.md",
 			"split_apply_combine.md",
 			"datastreams.md"]
