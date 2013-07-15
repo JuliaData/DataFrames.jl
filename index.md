@@ -14,13 +14,8 @@ In particular, DataFrames provides:
 * `NA`: A new Julia type that represents a missing value
 * `DataArray`: A new Julia type that emulates Julia's standard `Array` type, but adds the ability to store missing values in the array
 * `DataFrame`: A new Julia type that represents tabular datasets like those found in typical databases or spreadsheets
-* I/O routines for reading and writing data files
-* Database-style joins between two `DataFrame` objects
-* Split-apply-combine operations
-* Reshaping and pivoting operations
-* Streaming data processing operations
 
-To learn more about specific features, read the relevant section of the DataFrames manual. We recommend starting with the "Getting Started" section.
+To learn more about specific features, read the relevant section of the DataFrames manual.
 
 # Offline Reading
 
