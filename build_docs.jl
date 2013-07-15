@@ -14,10 +14,12 @@ run(`git checkout master -- doc`)
 pdf_sections = ["01_introduction.md",
 				"02_getting_started.md",
 				"03_io.md",
-				"04_joins_and_indexing.md",
-				"05_split_apply_combine.md",
-				"06_reshaping_and_pivoting.md",
-				"07_datastreams.md"]
+				"04_subsets.md",
+				"05_joins_and_indexing.md",
+				"06_split_apply_combine.md",
+				"07_reshaping_and_pivoting.md",
+				"08_datastreams.md",
+				"09_formulas.md"]
 
 pandoc_page_break = "\n\n\\newpage\n\n---\n\n"
 
@@ -47,26 +49,32 @@ run(`rm downloads/manual.md`)
 web_sections = ["01_introduction.md",
 				"02_getting_started.md",
 				"03_io.md",
-				"04_joins_and_indexing.md",
-				"05_split_apply_combine.md",
-				"06_reshaping_and_pivoting.md",
-				"07_datastreams.md"]
+				"04_subsets.md",
+				"05_joins_and_indexing.md",
+				"06_split_apply_combine.md",
+				"07_reshaping_and_pivoting.md",
+				"08_datastreams.md",
+				"09_formulas.md"]
 
 web_titles = ["Why Use the DataFrames Package?",
 			  "Getting Started",
 			  "I/O",
+			  "Accessing Subsets of Data",
 			  "Joins and Indexing",
 			  "Split-Apply-Combine Operations",
 			  "Reshaping and Pivoting",
-			  "Streaming Data Analysis"]
+			  "Streaming Data Analysis",
+			  "Formulas"]
 
 web_urls = ["introduction.md",
 			"getting_started.md",
 			"io.md",
+			"subsets.md",
 			"joins_and_indexing.md",
 			"split_apply_combine.md",
 			"reshaping_and_pivoting.md",
-			"datastreams.md"]
+			"datastreams.md",
+			"formulas.md"]
 
 n = length(web_sections)
 if n != length(web_titles) || n != length(web_urls)
