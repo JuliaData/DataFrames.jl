@@ -19,4 +19,4 @@ To learn more about specific features, read the relevant section of the DataFram
 
 # Offline Reading
 
-If you prefer reading documentation offline, you can download a copy of [our manual in PDF form](http://harlanh.github.com/DataFrames.jl/downloads/manual.pdf).
+If you prefer reading documentation offline, you can download a copy of [our manual in PDF form](http://juliastats.github.com/DataFrames.jl/downloads/manual.pdf).
