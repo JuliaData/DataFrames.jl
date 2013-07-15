@@ -1021,6 +1021,7 @@ sub(D::SubDataFrame, ex::Expr) = sub(D, with(D, ex))
 const subset = sub
 
 Base.filter(ex::Expr, df::AbstractDataFrame) = subset(df, ex)
+Base.select(ex::Expr, df::AbstractDataFrame) = subset(df, ex)
 
 getindex(df::SubDataFrame, c) = df.parent[df.rows, c]
 getindex(df::SubDataFrame, r, c) = df.parent[df.rows[r], c]

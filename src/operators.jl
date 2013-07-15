@@ -1192,11 +1192,7 @@ function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     return true
 end
 
-function range{T}(dv::AbstractVector{T})
-    return [min(dv), max(dv)]
-end
-
-function range{T}(dv::AbstractDataVector{T})
+function Stats.range{T}(dv::AbstractDataVector{T})
     return DataVector[min(dv), max(dv)]
 end
 
