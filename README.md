@@ -19,4 +19,4 @@ using DataFrames
 
 # Documentation
 
-See the [online docs](http://harlanh.github.io/DataFrames.jl/) for up-to-date documentation on the DataFrames package.
+See the [online docs](http://juliastats.github.io/DataFrames.jl/) for up-to-date documentation on the DataFrames package.
