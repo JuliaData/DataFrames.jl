@@ -397,6 +397,20 @@ for f in bit_operators
             end
             return res
         end
+        function ($f)(a::AbstractDataArray, b::Union(Bool, Number))
+            res = similar(a, size(a))
+            for i in 1:length(res)
+                res[i] = ($f)(a[i], b)
+            end
+            return res
+        end
+        function ($f)(a::Union(Bool, Number), b::AbstractDataArray)
+            res = similar(b, size(b))
+            for i in 1:length(res)
+                res[i] = ($f)(a, b[i])
+            end
+            return res
+        end
     end
 end
 
