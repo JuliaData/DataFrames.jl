@@ -195,6 +195,13 @@ let
             @assert f(1, dv)[i] == f(1, dv[i])
         end
     end
+    dv = DataVector[false, true, false, true, false]
+    for f in bit_operators
+        for i in 1:length(dv)
+            @assert f(dv, true)[i] == f(dv[i], true)
+            @assert f(true, dv)[i] == f(true, dv[i])
+        end
+    end
 
     # Broadcasting operations between NA's and DataFrames's
     N = 5
