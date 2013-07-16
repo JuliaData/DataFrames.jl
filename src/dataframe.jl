@@ -1040,7 +1040,8 @@ index(df::SubDataFrame) = index(df.parent)
 # delete!(df, 1)
 # delete!(df, "old")
 function delete!(df::DataFrame, inds::Vector{Int})
-    for ind in inds
+    for i in 1:length(inds)
+        ind = inds[i] - i + 1
         if 1 <= ind <= ncol(df)
             splice!(df.columns, ind)
             delete!(df.colindex, ind)
