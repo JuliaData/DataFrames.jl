@@ -44,5 +44,5 @@ let
 	df["B"] = 1.0:5.0
 	@assert isa(matrix(df), Matrix{Float64})
 	@assert isa(matrix(df, Any), Matrix{Any})
-	@assert isa(matrix(df, Int64), Matrix{Int64})
+	@assert isa(matrix(df, Int), Matrix{Int})
 end

@@ -28,8 +28,8 @@ let
 	@assert isequal(dv, DataArray(1:3))
 	@assert isequal(dv, DataArray(DataArray([1, 2, 3])))
 
-	dv = DataArray(Int64, 3)
-	@assert isequal(eltype(dv), Int64)
+	dv = DataArray(Int, 3)
+	@assert isequal(eltype(dv), Int)
 	@assert isequal(dv.na, trues(3))
 
 	# dv = DataArray(3)
@@ -41,9 +41,9 @@ let
 	# @assert isequal(dv.na, trues(0))
 
 	@assert isequal(datazeros(3), DataArray(zeros(3)))
-	@assert isequal(datazeros(Int64, 3), DataArray(zeros(Int64, 3)))
+	@assert isequal(datazeros(Int, 3), DataArray(zeros(Int, 3)))
 	@assert isequal(dataones(3), DataArray(ones(3)))
-	@assert isequal(dataones(Int64, 3), DataArray(ones(Int64, 3)))
+	@assert isequal(dataones(Int, 3), DataArray(ones(Int, 3)))
 	@assert isequal(datafalses(3), DataArray(falses(3)))
 	@assert isequal(datatrues(3), DataArray(trues(3)))
 
@@ -51,7 +51,7 @@ let
 	@assert dv[1] == 1
 	@assert dv[2] == 2
 	@assert isna(dv[3])
-	@assert isequal(eltype(dv), Int64)
+	@assert isequal(eltype(dv), Int)
 
 	#
 	# PooledDataArray's
@@ -73,8 +73,8 @@ let
 	@assert isequal(pdv, PooledDataArray(1:3))
 	@assert isequal(pdv, PooledDataArray(PooledDataArray([1, 2, 3])))
 
-	pdv = PooledDataArray(Int64, 3)
-	@assert isequal(eltype(pdv), Int64)
+	pdv = PooledDataArray(Int, 3)
+	@assert isequal(eltype(pdv), Int)
 	@assert all(isna(pdv) .== trues(3))
 
 	# pdv = PooledDataArray(3)
@@ -86,9 +86,9 @@ let
 	# @assert all(isna(pdv) .== trues(0))
 
 	@assert isequal(pdatazeros(3), PooledDataArray(zeros(3)))
-	@assert isequal(pdatazeros(Int64, 3), PooledDataArray(zeros(Int64, 3)))
+	@assert isequal(pdatazeros(Int, 3), PooledDataArray(zeros(Int, 3)))
 	@assert isequal(pdataones(3), PooledDataArray(ones(3)))
-	@assert isequal(pdataones(Int64, 3), PooledDataArray(ones(Int64, 3)))
+	@assert isequal(pdataones(Int, 3), PooledDataArray(ones(Int, 3)))
 	@assert isequal(pdatafalses(3), PooledDataArray(falses(3)))
 	@assert isequal(pdatatrues(3), PooledDataArray(trues(3)))
 
@@ -96,7 +96,7 @@ let
 	@assert pdv[1] == 1
 	@assert pdv[2] == 2
 	@assert isna(pdv[3])
-	@assert isequal(eltype(pdv), Int64)
+	@assert isequal(eltype(pdv), Int)
 
 	#
 	# DataMatrix
@@ -120,16 +120,16 @@ let
 
 	@assert isequal(DataArray([1 2; 3 4]), DataArray(DataArray([1 2; 3 4])))
 
-	dm = DataArray(Int64, 2, 2)
-	@assert isequal(eltype(dm), Int64)
+	dm = DataArray(Int, 2, 2)
+	@assert isequal(eltype(dm), Int)
 	@assert isequal(dm.na, trues(2, 2))
 
 	# dm = DataArray(2, 2)
 	# @assert isequal(eltype(dm), Float64)
 	# @assert isequal(dm.na, trues(2, 2))
 
-	# dm = DataArray(Int64)
-	# @assert isequal(eltype(dm), Int64)
+	# dm = DataArray(Int)
+	# @assert isequal(eltype(dm), Int)
 	# @assert isequal(dm.na, trues(0, 0))
 
 	# dm = DataArray()
@@ -137,10 +137,10 @@ let
 	# @assert isequal(dm.na, trues(0, 0))
 
 	@assert isequal(datazeros(2, 2), DataArray(zeros(2, 2)))
-	@assert isequal(datazeros(Int64, 2, 2), DataArray(zeros(Int64, 2, 2)))
+	@assert isequal(datazeros(Int, 2, 2), DataArray(zeros(Int, 2, 2)))
 
 	@assert isequal(dataones(2, 2), DataArray(ones(2, 2)))
-	@assert isequal(dataones(Int64, 2, 2), DataArray(ones(Int64, 2, 2)))
+	@assert isequal(dataones(Int, 2, 2), DataArray(ones(Int, 2, 2)))
 
 	@assert isequal(datafalses(2, 2), DataArray(falses(2, 2)))
 	@assert isequal(datatrues(2, 2), DataArray(trues(2, 2)))
@@ -177,9 +177,9 @@ let
 	@assert isequal(df, DataFrame({"x1" => [0.0, 0.0, 0.0], "x2" => [1.0, 1.0, 1.0]}))
 	@assert isequal(df, DataFrame({"x1" => [0.0, 0.0, 0.0], "x2" => [1.0, 1.0, 1.0], "x3" => [2.0, 2.0, 2.0]}, ["x1", "x2"]))
 
-	df = DataFrame(Int64, 2, 2)
+	df = DataFrame(Int, 2, 2)
 	@assert size(df) == (2, 2)
-	@assert all(coltypes(df) .== {Int64, Int64})
+	@assert all(coltypes(df) .== {Int, Int})
 	@assert all(isna(df))
 
 	df = DataFrame(2, 2)
@@ -187,10 +187,10 @@ let
 	@assert all(coltypes(df) .== {Float64, Float64})
 	@assert all(isna(df))
 
-	df = DataFrame({Int64, Float64}, ["x1", "x2"], 2)
+	df = DataFrame({Int, Float64}, ["x1", "x2"], 2)
 	@assert size(df) == (2, 2)
-	@assert all(coltypes(df) .== {Int64, Float64})
+	@assert all(coltypes(df) .== {Int, Float64})
 	@assert all(isna(df))
 
-	@assert isequal(df, DataFrame({Int64, Float64}, 2))
+	@assert isequal(df, DataFrame({Int, Float64}, 2))
 end

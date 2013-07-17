@@ -19,9 +19,9 @@ using DataFrames
     dvstr = DataVector["one", "two", NA, "four"]
     dvdict = DataArray(Dict,4)    # for issue #199
 
-    @assert isa(dvint, DataVector{Int64})
-    @assert isa(dvint2, DataVector{Int64})
-    @assert isa(dvint3, DataVector{Int64})
+    @assert isa(dvint, DataVector{Int})
+    @assert isa(dvint2, DataVector{Int})
+    @assert isa(dvint3, DataVector{Int})
     @assert isa(dvflt, DataVector{Float64})
     @assert isa(dvstr, DataVector{ASCIIString})
     # @test throws_exception(DataArray([5:8], falses(2)), Exception) 
@@ -74,7 +74,7 @@ using DataFrames
     @assert size(dvint) == (4,)
     @assert length(dvint) == 4
     @assert sum(isna(dvint)) == 1
-    @assert eltype(dvint) == Int64
+    @assert eltype(dvint) == Int
 
     #test_group("PooledDataVector methods")
     @assert size(pdvstr) == (7,)
@@ -540,7 +540,7 @@ using DataFrames
     @assert isequal(sort(m1["a"]), sort(m2["a"]))
 
     #test_group("New DataVector constructors")
-    dv = DataArray(Int64, 5)
+    dv = DataArray(Int, 5)
     @assert all(isna(dv))
     dv = DataArray(Float64, 5)
     @assert all(isna(dv))

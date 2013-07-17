@@ -57,13 +57,13 @@ The unary operators
 	* From (BitVector): `DataArray(trues(3))`
 	* From (Range1): `DataArray(1:3)`
 	* From (DataVector): `DataArray(DataArray([1, 2, 3]))`
-	* From (Type, Int): `DataArray(Int64, 3)`
+	* From (Type, Int): `DataArray(Int, 3)`
 	* From (Int): `DataArray(3)` (Type defaults to Float64)
 	* From (): `DataArray()` (Type defaults to Float64, length defaults to 0)
 	* Initialized with Float64 zeros: `datazeros(3)`
-	* Initialized with typed zeros: `datazeros(Int64, 3)`
+	* Initialized with typed zeros: `datazeros(Int, 3)`
 	* Initialized with Float64 ones: `dataones(3)`
-	* Initialized with typed ones: `dataones(Int64, 3)`
+	* Initialized with typed ones: `dataones(Int, 3)`
 	* Initialized with falses: `datafalses(3)`
 	* Initialized with trues: `datatrues(3)`
 	* Literal syntax: `DataVector[1, 2, NA]`
@@ -76,13 +76,13 @@ The unary operators
 	* From (BitVector): `PooledDataArray(trues(3))`
 	* From (Range1): `PooledDataArray(1:3)`
 	* From (DataVector): `PooledDataArray(DataArray([1, 2, 3]))`
-	* From (Type, Int): `PooledDataArray(Int64, 3)`
+	* From (Type, Int): `PooledDataArray(Int, 3)`
 	* From (Int): `PooledDataArray(3)` (Type defaults to Float64)
 	* From (): `PooledDataArray()` (Type defaults to Float64, length defaults to 0)
 	* Initialized with Float64 zeros: `pdatazeros(3)`
-	* Initialized with typed zeros: `pdatazeros(Int64, 3)`
+	* Initialized with typed zeros: `pdatazeros(Int, 3)`
 	* Initialized with Float64 ones: `pdataones(3)`
-	* Initialized with typed ones: `pdataones(Int64, 3)`
+	* Initialized with typed ones: `pdataones(Int, 3)`
 	* Initialized with falses: `pdatafalses(3)`
 	* Initialized with trues: `pdatatrues(3)`
 	* Literal syntax: `PooledDataVector[1, 2, NA]`
@@ -95,13 +95,13 @@ The unary operators
 	* From (DataVector...): `DataMatrix(DataVector[1, NA], DataVector[NA, 2])`
 	* From (Range1...): `DataMatrix(1:3, 1:3)`
 	* From (DataMatrix): `DataMatrix(DataArray([1 2; 3 4]))`
-	* From (Type, Int, Int): `DataMatrix(Int64, 2, 2)`
+	* From (Type, Int, Int): `DataMatrix(Int, 2, 2)`
 	* From (Int, Int): `DataMatrix(2, 2)` (Type defaults to Float64)
 	* From (): `DataMatrix()` (Type defaults to Float64, length defaults to (0, 0))
 	* Initialized with Float64 zeros: `dmzeros(2, 2)`
-	* Initialized with typed zeros: `dmzeros(Int64, 2, 2)`
+	* Initialized with typed zeros: `dmzeros(Int, 2, 2)`
 	* Initialized with Float64 ones: `dmones(2, 2)`
-	* Initialized with typed ones: `dmones(Int64, 2, 2)`
+	* Initialized with typed ones: `dmones(Int, 2, 2)`
 	* Initialized with falses: `dmfalses(2, 2)`
 	* Initialized with trues: `dmtrues(2, 2)`
 	* Initialized identity matrix: `dmeye(2, 2)`
@@ -120,10 +120,10 @@ The unary operators
 	* From (Vector, Vector, Groupings): ???
 	* From (Dict of Vectors): `DataFrame({"A" => [1, 3], "B" => [2, 4]})`
 	* From (Dict of Vectors, Vector{String}): `DataFrame({"A" => [1, 3], "B" => [2, 4]}, ["A"])`
-	* From (Type, Int, Int): `DataFrame(Int64, 2, 2)`
+	* From (Type, Int, Int): `DataFrame(Int, 2, 2)`
 	* From (Int, Int): `DataFrame(2, 2)`
-	* From (Vector{Types}, Vector{String}, Int): `DataFrame({Int64, Float64}, ["A", "B"], 2)`
-	* From (Vector{Types}, Int): `DataFrame({Int64, Float64}, 2)`
+	* From (Vector{Types}, Vector{String}, Int): `DataFrame({Int, Float64}, ["A", "B"], 2)`
+	* From (Vector{Types}, Int): `DataFrame({Int, Float64}, 2)`
 
 # Indexing
 

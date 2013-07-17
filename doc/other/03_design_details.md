@@ -88,7 +88,7 @@ This new data structure is the `DataVector` type. You can construct your first `
 
 	DataVector[1, NA, 3]
 
-As you'll see when entering this into the REPL, this snippet of code creates a `3-element DataVector{Int64}`. A `DataVector` of type `DataVector{Int64}` can store `Int64` values or `NA` values. In general, a `DataVector` of type `DataVector{T}` can store values of type `T` or `NA` values.
+As you'll see when entering this into the REPL, this snippet of code creates a `3-element DataVector{Int}`. A `DataVector` of type `DataVector{Int}` can store `Int` values or `NA` values. In general, a `DataVector` of type `DataVector{T}` can store values of type `T` or `NA` values.
 
 This is achieved by a very simple mechanism: a `DataVector{T}` is a new parametric composite type that we've added to Julia that wraps around a standard Julia `Vector` and complements this basic vector with a metadata store that indicates whether any entry of the wrapped vector is missing. In essence, a `DataVector` of type `T` is defined as:
 
@@ -104,7 +104,7 @@ Instead, you can simply focus on the behavior of the `DataVector` type. Let's st
 	DataVector
 
 	typeof(DataVector)
-	typeof(DataVector{Int64})
+	typeof(DataVector{Int})
 
 	super(DataVector)
 	super(super(DataVector))
@@ -152,9 +152,9 @@ One of the virtues of using metadata to represent missingness instead of sentine
 In fact, we can add a new type of our own and then wrap it inside of a new sort of `DataVector`:
 
 	type MyNewType
-		a::Int64
-		b::Int64
-		c::Int64
+		a::Int
+		b::Int
+		c::Int
 	end
 
 	dv = DataArray([MyNewType(1, 2, 3), MyNewType(2, 3, 4)])
@@ -187,10 +187,10 @@ In the opposite direction, we sometimes want to create arbitrary length `DataVec
 Like the similar functions in Julia's Base, we can specify the length and type of these initialized vectors:
 
 	dv = datazeros(5)
-	dv = datazeros(Int64, 5)
+	dv = datazeros(Int, 5)
 
 	dv = dataones(5)
-	dv = dataones(Int64, 5)
+	dv = dataones(Int, 5)
 
 	dv = datafalses(5)
 
@@ -258,18 +258,18 @@ Often one wishes to convert an existing matrix into a `DataFrame`. This is also 
 
 Like `DataVector`, it is possible to create empty `DataFrame` in which all of the default values are `NA`. In the simplest version, we specify a type, the number of rows and the number of columns:
 
-	df = DataFrame(Int64, 10, 5)
+	df = DataFrame(Int, 10, 5)
 
 Alternatively, one can specify a `Vector` of types. This implicitly defines the number of columns, but one must still explicitly specify the number of rows:
 
-	df = DataFrame({Int64, Float64}, 4)
+	df = DataFrame({Int, Float64}, 4)
 
 When you know what the names of the columns will be, but not the values, it is possible to specify the column names at the time of construction.
 
 _SHOULD THIS BE `DataFrame(types, nrow, names)` INSTEAD?_
 
-	DataFrame({Int64, Float64}, ["A", "B"], 10)
-	DataFrame({Int64, Float64}, Index(["A", "B"]), 10) # STILL NEED TO MAKE THIS WORK
+	DataFrame({Int, Float64}, ["A", "B"], 10)
+	DataFrame({Int, Float64}, Index(["A", "B"]), 10) # STILL NEED TO MAKE THIS WORK
 
 A more uniquely Julian way of creating `DataFrame` exploits Julia's ability to quote `Expression` in order to produce behavior like R's delayed evaluation strategy.
 
@@ -302,7 +302,7 @@ In contrast, a DataFrame is a random-access data structure that can be indexed i
 
 Index by numbers:
 
-	df = DataFrame(Int64, 5, 3)
+	df = DataFrame(Int, 5, 3)
 	df[1, 3]
 	df[1]
 
@@ -311,7 +311,7 @@ Index by numbers:
 
 Index by ranges:
 
-	df = DataFrame(Int64, 5, 3)
+	df = DataFrame(Int, 5, 3)
 
 	df[1, :]
 	df[:, 3]

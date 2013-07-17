@@ -71,24 +71,24 @@ let
     @assert ncol(df) == 5
     @assert typeof(df[:, 1]) == DataVector{Float64}
 
-    df = DataFrame(Int64, 10, 3)
+    df = DataFrame(Int, 10, 3)
     @assert nrow(df) == 10
     @assert ncol(df) == 3
-    @assert typeof(df[:, 1]) == DataVector{Int64}
-    @assert typeof(df[:, 2]) == DataVector{Int64}
-    @assert typeof(df[:, 3]) == DataVector{Int64}
+    @assert typeof(df[:, 1]) == DataVector{Int}
+    @assert typeof(df[:, 2]) == DataVector{Int}
+    @assert typeof(df[:, 3]) == DataVector{Int}
 
-    df = DataFrame({Int64, Float64, ASCIIString}, 100)
+    df = DataFrame({Int, Float64, ASCIIString}, 100)
     @assert nrow(df) == 100
     @assert ncol(df) == 3
-    @assert typeof(df[:, 1]) == DataVector{Int64}
+    @assert typeof(df[:, 1]) == DataVector{Int}
     @assert typeof(df[:, 2]) == DataVector{Float64}
     @assert typeof(df[:, 3]) == DataVector{ASCIIString}
 
-    df = DataFrame({Int64, Float64, ASCIIString}, ["A", "B", "C"], 100)
+    df = DataFrame({Int, Float64, ASCIIString}, ["A", "B", "C"], 100)
     @assert nrow(df) == 100
     @assert ncol(df) == 3
-    @assert typeof(df[:, 1]) == DataVector{Int64}
+    @assert typeof(df[:, 1]) == DataVector{Int}
     @assert typeof(df[:, 2]) == DataVector{Float64}
     @assert typeof(df[:, 3]) == DataVector{ASCIIString}
 

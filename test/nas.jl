@@ -37,8 +37,8 @@ let
 	dv = DataArray(ComplexPair, 5)
 
 	type MyType
-		a::Int64
-		b::Int64
+		a::Int
+		b::Int
 	end
 
 	dv = DataArray(MyType, 5)

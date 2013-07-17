@@ -14,7 +14,7 @@ function impute!(X::Matrix, missing_entries::Vector,
     end
 end
 
-# Should be done with a proper N-dimensional Int64 array.
+# Should be done with a proper N-dimensional Int array.
 function findna(dm::DataMatrix)
     indices = {}
     n, p = size(dm)
