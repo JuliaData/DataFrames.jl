@@ -236,6 +236,25 @@ function ModelMatrix(mf::ModelFrame)
     ModelMatrix{Float64}(hcat([expandcols(t) for t in aa]...), asgn)
 end
 
+function coefnames(fr::ModelFrame)
+    if fr.terms.intercept
+        vnames = UTF8String["(Intercept)"]
+    else
+        vnames = UTF8String[]
+    end
+    # Need to only include active levels
+    for term in fr.terms.terms
+        if isa(fr.df[term], PooledDataArray)
+            for lev in levels(fr.df[term])[2:end]
+                push!(vnames, string(term, " - ", lev))
+            end
+        else
+            push!(vnames, string(term))
+        end
+    end
+    return vnames
+end
+
 # Expand dummy variables and equations
 ## function model_matrix(mf::ModelFrame)
 ##     ex = mf.formula.rhs[1]
