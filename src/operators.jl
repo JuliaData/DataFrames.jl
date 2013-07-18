@@ -1,9 +1,3 @@
-unary_operators = [:(+), :(-), :(!)]
-
-numeric_unary_operators = [:(+), :(-)]
-
-logical_unary_operators = [:(!)]
-
 elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
                         :asinh, :atan, :atanh, :sin, :sinh,
                         :cos, :cosh, :tan, :tanh, :ceil, :floor,
@@ -73,42 +67,23 @@ columnar_operators = [:colmins, :colmaxs, :colprods, :colsums,
 
 boolean_operators = [:any, :all]
 
-for f in unary_operators
-    @eval begin
-        function ($f)(d::NAtype)
-            return NA
-        end
-        function ($f){T}(dv::DataVector{T})
-            res = deepcopy(dv)
-            for i in 1:length(dv)
-                res[i] = ($f)(dv[i])
-            end
-            return res
-        end
-        function ($f){T}(dm::DataMatrix{T})
-            res = deepcopy(dm)
-            for i in 1:length(dm)
-                res[i] = ($f)(dm[i])
-            end
-            return res
-        end
-        function ($f)(df::DataFrame)
-            res = deepcopy(df)
-            n, p = nrow(df), ncol(df)
-            for j in 1:p
-                if typeof(df[j]).parameters[1] <: Number
-                    for i in 1:n
-                        res[i, j] = ($f)(df[i, j])
-                    end
-                else
-                    for i in 1:n
-                        res[i, j] = NA
-                    end
-                end
-            end
-            return res
-        end
-    end
+# Unary operators, NA
+for f in (:(+), :(-), :(!), :(*))
+    @eval $(f)(d::NAtype) = NA
+end
+
+# Unary operators, DataArrays. Definitions in base should be adequate for
+# AbstractDataArrays. These are just optimizations
+!(d::DataArray{Bool}) = DataArray(!d.data, copy(d.na))
+-(d::DataArray) = DataArray(-d.data, copy(d.na))
+
+# Unary operators, DataFrames
+for f in (:(!), :(-))
+    @eval $(f)(d::DataFrame) = DataFrame([$(f)(d[i]) for i=1:size(d, 2)], deepcopy(d.colindex))
+end
+# As in Base, these are identity operators.
+for f in (:(+), :(*))
+    @eval $(f)(d::DataFrame) = d
 end
 
 # Treat ctranspose and * in a special way for now
