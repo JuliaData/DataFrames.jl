@@ -342,9 +342,9 @@ let out::Vector{Float64} = Array(Float64, 1)
 
         wasparsed = ccall(:jl_substrtod,
                           Int32,
-                          (Ptr{Uint8}, Int, Int, Ptr{Float64}),
+                          (Ptr{Uint8}, Csize_t, Int, Ptr{Float64}),
                           buffer,
-                          left - 1,
+                          convert(Csize_t,left - 1),
                           right - left + 1,
                           out) == 0
 
