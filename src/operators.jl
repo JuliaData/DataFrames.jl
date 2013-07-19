@@ -87,153 +87,51 @@ for f in (:(+), :(*))
 end
 
 # Treat ctranspose and * in a special way for now
-function ctranspose(d::DataArray)
-    return DataArray(d.data', d.na')
-end
-
-# TODO: Check there are no better algorithms
-function (*){S <: Real, T <: Real}(a::DataVector{S}, b::DataMatrix{T})
-    if size(b, 1) != 1
-        error("DataVector and matrix sizes must match")
-    end
-    n, p = length(a), size(b, 2)
-    res = datazeros(n, p)
-    for i in 1:n
-        for j in 1:p
-            res[i, j] = a[i] * b[j]
-        end
-    end
-    return res
-end
-
-function (*){S <: Real, T <: Real}(a::Vector{S}, b::DataMatrix{T})
-    if size(b, 1) != 1
-        error("Vector and matrix sizes must match")
-    end
-    n, p = length(a), size(b, 2)
-    res = datazeros(n, p)
-    for i in 1:n
-        for j in 1:p
-            res[i, j] = a[i] * b[j]
-        end
-    end
-    return res
-end
-
-# TODO: Check there are no better algorithms
-function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataVector{T})
-    if size(a, 2) != length(b)
-        error("The number of columns of the DataMatrix must match the length of the DataVector")
-    end
-    n, p = size(a, 1), length(b)
-    res = datazeros(n)
-    for i in 1:n
-        res[i] = 0.0
-        for j in 1:p
-            res[i] += a[i, j] * b[j]
-        end
-    end
-    return res
-end
-
-# TODO: Check there are no better algorithms
-function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::Vector{T})
-    if size(a, 2) != length(b)
-        error("The number of columns of the DataMatrix must match the length of the Vector")
-    end
-    n, p = size(a, 1), length(b)
-    res = datazeros(n)
-    for i in 1:n
-        res[i] = 0.0
-        for j in 1:p
-            res[i] += a[i, j] * b[j]
-        end
-    end
-    return res
+for f in (:ctranspose, :transpose)
+    @eval $(f)(d::DataArray) = DataArray($(f)(d.data), d.na')
 end
 
 # Propagates NA's
 # For a dissenting view,
 # http://radfordneal.wordpress.com/2011/05/21/slowing-down-matrix-multiplication-in-r/
 # But we're getting 10x R while maintaining NA's
-function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::DataMatrix{T})
-    n1, p1 = size(a)
-    n2, p2 = size(b)
-    if p1 != n2
-        error("DataMatrix sizes must align for matrix multiplication")
-    end
-    res = DataArray(a.data * b.data, falses(n1, p2))
-    # Propagation can be made more efficient by storing record of corrupt
-    # rows and columns, then doing fast edits.
-    corrupt_rows = falses(n1)
-    corrupt_cols = falses(p2)
-    for i in 1:n1
-        for j in 1:p1
-            if a.na[i, j]
-                # Propagate NA's
-                # Corrupt all rows based on i
-                corrupt_rows[i] = true
-            end
+for (adata, bdata) in ((true, false), (false, true), (true, true))
+    @eval begin
+        function (*)(a::$(adata ? :(Union(DataVector, DataMatrix)) : :(Union(Vector, Matrix))),
+                     b::$(bdata ? :(Union(DataVector, DataMatrix)) : :(Union(Vector, Matrix))))
+            c = $(adata ? :(a.data) : :a) * $(bdata ? :(b.data) : :b)
+            res = DataArray(c, falses(size(c)))
+            # Propagation can be made more efficient by storing record of corrupt
+            # rows and columns, then doing fast edits.
+            $(if adata
+                quote
+                    n1 = size(a, 1)
+                    p1 = size(a, 2)
+                    corrupt_rows = falses(n1)
+                    for j in 1:p1, i in 1:n1
+                        # Propagate NA's
+                        # Corrupt all rows based on i
+                        corrupt_rows[i] |= a.na[i, j]
+                    end
+                    res.na[corrupt_rows, :] = true
+                end
+            end)
+            $(if bdata
+                quote
+                    n2 = size(b, 1)
+                    p2 = size(b, 2)
+                    corrupt_cols = falses(p2)
+                    for j in 1:p2, i in 1:n2
+                        # Propagate NA's
+                        # Corrupt all columns based on j
+                        corrupt_cols[j] |= b.na[i, j]
+                    end
+                    res.na[:, corrupt_cols] = true
+                end
+            end)
+            res
         end
     end
-    for i in 1:n2
-        for j in 1:p2
-            if b.na[i, j]
-                # Propagate NA's
-                # Corrupt all columns based on j
-                corrupt_cols[j] = true
-            end
-        end
-    end
-    for i in 1:n1
-        if corrupt_rows[i]
-            res.na[i, :] = true
-        end
-    end
-    for j in 1:p2
-        if corrupt_cols[j]
-            res.na[:, j] = true
-        end
-    end
-    return res
-end
-
-function (*){S <: Real, T <: Real}(a::DataMatrix{S}, b::Matrix{T})
-    n1, p1 = size(a)
-    n2, p2 = size(b)
-    if p1 != n2
-        error("DataMatrix and Matrix sizes must align for matrix multiplication")
-    end
-    res = DataArray(a.data * b, falses(n1, p2))
-    for i in 1:n1
-        for j in 1:p1
-            if a.na[i, j]
-                # Propagate NA's
-                # Corrupt all rows based on i
-                res.na[i, :] = true
-            end
-        end
-    end
-    return res
-end
-
-function (*){S <: Real, T <: Real}(a::Matrix{S}, b::DataMatrix{T})
-    n1, p1 = size(a)
-    n2, p2 = size(b)
-    if p1 != n2
-        error("Matrix and DataMatrix sizes must align for matrix multiplication")
-    end
-    res = DataArray(a * b.data, falses(n1, p2))
-    for i in 1:n2
-        for j in 1:p2
-            if b.na[i, j]
-                # Propagate NA's
-                # Corrupt all columns based on j
-                res.na[:, j] = true
-            end
-        end
-    end
-    return res
 end
 
 for f in elementary_functions
