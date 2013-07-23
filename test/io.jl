@@ -30,7 +30,7 @@ let
 
     for filename in filenames
         try
-          df = readtable(filename)
+            df = readtable(filename)
         catch
             error(@sprintf "Failed to read %s\n" filename)
         end
