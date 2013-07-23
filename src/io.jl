@@ -67,10 +67,13 @@ function getseparator(filename::String)
 end
 
 # Read CSV file's rows into buffer while storing field boundary information
+# TODO: Store information about quoted
+# TODO: Experiment with mmaping input
 function readnrows!(io::IO,
                     buffer::Vector{Uint8},
                     linebreak_indices::Vector{Int},
                     right_boundary_indices::Vector{Int},
+                    # wasquoted::BitVector = falses(n),
                     nrows::Int,
                     separator::Char,
                     allowquotes::Bool,
@@ -86,8 +89,8 @@ function readnrows!(io::IO,
     in_escape::Bool = false
     at_front::Bool = true
 
-    chr::Uint8 = ' '
-    nextchr::Uint8 = ' '
+    chr::Uint8 = ' ' # char(0xff)
+    nextchr::Uint8 = ' ' # char(0xff)
 
     buffer_size::Int = length(buffer)
     linebreak_indices_size::Int = length(linebreak_indices)
@@ -118,8 +121,7 @@ function readnrows!(io::IO,
 
     # Loop over bytes from the input until we've read requested rows
     while !eof(io) && ((nrows == -1) || (linebreaks_read < nrows + 1))
-        chr = read(io, Uint8)
-        nextchr = peek(io, Uint8)
+        chr, nextchr = read(io, Uint8), peek(io, Uint8)
         # === Debugging ===
         # if in_quotes
         #     print_with_color(:red, string(char(chr)))
@@ -130,8 +132,7 @@ function readnrows!(io::IO,
         # Ignore text inside comments completely
         if allowcomments && !in_quotes && chr == commentmark
             while !eof(io) && !(@atnewline chr nextchr)
-                chr = read(io, Uint8)
-                nextchr = peek(io, Uint8)
+                chr, nextchr = read(io, Uint8), peek(io, Uint8)
             end
             # Skip the linebreak if the comment started at the front of a line
             if at_front
@@ -142,12 +143,10 @@ function readnrows!(io::IO,
         # Skip blank lines
         if skipblanks && !in_quotes
             while !eof(io) && (@atblankline chr nextchr)
-                chr = read(io, Uint8)
-                nextchr = peek(io, Uint8)
+                chr, nextchr = read(io, Uint8), peek(io, Uint8)
                 # Special handling for Windows
                 if !eof(io) && chr == '\r' && nextchr == '\n'
-                    chr = read(io, Uint8)
-                    nextchr = peek(io, Uint8)
+                    chr, nextchr = read(io, Uint8), peek(io, Uint8)
                 end
             end
         end
@@ -158,8 +157,10 @@ function readnrows!(io::IO,
         # Processing is very different inside and outside of quotes
         if !in_quotes
             # Entering a quoted region
-            if chr == quotemark && allowquotes
+            # TODO: Mark wasquoted here
+            if allowquotes && chr == quotemark
                 in_quotes = true
+                # wasquoted[index] = true
             # Finished reading a field
             elseif chr == separator
                 right_boundaries_read += 1
@@ -216,7 +217,7 @@ function readnrows!(io::IO,
                 in_escape = true
             else
                 # Exited a quoted region
-                if chr == quotemark && allowquotes && !in_escape
+                if allowquotes && chr == quotemark && !in_escape
                     in_quotes = false
                 # Store character into buffer
                 else
@@ -754,10 +755,6 @@ end
 #
 ##############################################################################
 
-quoted(val::String, quotemark::Char) = string(quotemark, val, quotemark)
-quoted(val::Real, quotemark::Char) = string(val)
-quoted(val::Any, quotemark::Char) = string(quotemark, string(val), quotemark)
-
 # TODO: Increase precision of string representation of Float64's
 function printtable(io::IO,
                     df::DataFrame;
@@ -765,24 +762,33 @@ function printtable(io::IO,
                     quotemark::Char = '"',
                     header::Bool = true)
     n, p = size(df)
+    ctypes = coltypes(df)
     if header
         column_names = colnames(df)
         for j in 1:p
+            print(io, quotemark)
+            print(io, column_names[j])
+            print(io, quotemark)
             if j < p
-                print(io, quoted(column_names[j], quotemark))
                 print(io, separator)
             else
-                println(io, quoted(column_names[j], quotemark))
+                print(io, '\n')
             end
         end
     end
     for i in 1:n
         for j in 1:p
+            if ctypes[j] <: Real
+                print(io, quotemark)
+                print(io, df[i, j])
+                print(io, quotemark)
+            else
+                print(io, column_names[j])
+            end
             if j < p
-                print(io, quoted(df[i, j], quotemark))
                 print(io, separator)
             else
-                println(io, quoted(df[i, j], quotemark))
+                print(io, '\n')
             end
         end
     end
