@@ -1,5 +1,4 @@
 # NB: Linebreaks don't need to be stored, but they do aid debugging
-
 immutable ParsedCSV
     bytes::Vector{Uint8} # Raw bytes from CSV file
     rbounds::Vector{Int} # Right field boundary indices
@@ -7,22 +6,17 @@ immutable ParsedCSV
     quoted::BitVector    # Was field quoted in text
 end
 
-ParsedCSV() = ParsedCSV(Array(Uint8, 1),
-                        Array(Int, 1),
-                        Array(Int, 1),
-                        BitArray(1))
-
-immutable ParseOptions
+immutable ParseOptions{S <: ByteString, T <: ByteString}
     header::Bool
     separator::Char
     allowquotes::Bool
     quotemark::Char
     decimal::Char
-    nastrings::Vector
-    truestrings::Vector
-    falsestrings::Vector
+    nastrings::Vector{S}
+    truestrings::Vector{S}
+    falsestrings::Vector{S}
     makefactors::Bool
-    colnames::Vector
+    colnames::Vector{T}
     cleannames::Bool
     coltypes::Vector{Any}
     allowcomments::Bool
@@ -32,28 +26,6 @@ immutable ParseOptions
     skiprows::Vector{Int}
     skipblanks::Bool
     encoding::Symbol
-end
-
-function ParseOptions()
-    ParseOptions(true,
-                 ',',
-                 true,
-                 '"',
-                 '.',
-                 ["NA"],
-                 ["T", "t"],
-                 ["F", "f"],
-                 false,
-                 UTF8String[],
-                 false,
-                 Any[],
-                 true,
-                 '#',
-                 true,
-                 0,
-                 Int[],
-                 true,
-                 :utf8)
 end
 
 import Base.peek
@@ -85,6 +57,13 @@ macro atescape(chr, nextchr, quotemark)
     quote
         $chr == '\\' ||                                # \" escaping
         ($chr == $quotemark && $nextchr == $quotemark) # "" escaping
+    end
+end
+
+macro isspace(byte)
+    byte = esc(byte)
+    quote
+        0x09 <= $byte <= 0x0d || $byte == 0x20
     end
 end
 
@@ -383,10 +362,10 @@ function builddf(rows::Int,
             # TODO: Debate moving this into readnrows()
             # TODO: Modify readnrows() so that '\r' and '\n' don't occur near edges
             if o.ignorepadding # Condition on p.quoted
-                while left < right && isspace(char(p.bytes[left]))
+                while left < right && (@isspace p.bytes[left])
                     left += 1
                 end
-                while left <= right && isspace(char(p.bytes[right]))
+                while left <= right && (@isspace p.bytes[right])
                     right -= 1
                 end
             end
