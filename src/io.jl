@@ -1,7 +1,9 @@
-# NB: Linebreaks don't need to be stored, but they do aid debugging
+import Base.peek
+Base.peek(io::IO, ::Type{Uint8}) = uint8(eof(io) ? -1 : peek(io))
+
 immutable ParsedCSV
     bytes::Vector{Uint8} # Raw bytes from CSV file
-    rbounds::Vector{Int} # Right field boundary indices
+    bounds::Vector{Int}  # Right field boundary indices
     lines::Vector{Int}   # Line break indices
     quoted::BitVector    # Was field quoted in text
 end
@@ -27,9 +29,6 @@ immutable ParseOptions{S <: ByteString, T <: ByteString}
     skipblanks::Bool
     encoding::Symbol
 end
-
-import Base.peek
-Base.peek(io::IO, ::Type{Uint8}) = uint8(eof(io) ? -1 : peek(io))
 
 macro atnewline(chr, nextchr)
     chr = esc(chr)
@@ -68,7 +67,7 @@ macro isspace(byte)
 end
 
 # This trick is ugly, but is ~33% faster than push!() for large arrays
-macro update(count, a, val, l)
+macro push(count, a, val, l)
     count = esc(count) # Number of items in array
     a = esc(a)         # Array to update
     val = esc(val)     # Value to insert
@@ -96,21 +95,17 @@ function getseparator(filename::String)
 end
 
 # Read CSV file's rows into buffer while storing field boundary information
-# TODO: Store information about quoted fields
 # TODO: Experiment with mmaping input
 function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
     # Information about parse results
     n_bytes = 0
-    n_rbounds = 0
+    n_bounds = 0
     n_lines = 0
-    n_quoted = 0
+    n_fields = 1
     l_bytes = length(p.bytes)
     l_lines = length(p.lines)
-    l_rbounds = length(p.rbounds)
+    l_bounds = length(p.bounds)
     l_quoted = length(p.quoted)
-
-    # Assume all fields are not quoted
-    fill!(p.quoted, false)
 
     # Current state of the parser
     in_quotes = false
@@ -120,9 +115,9 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
     nextchr = 0xff
 
     # Insert a dummy field bound at position 0
-    @update n_rbounds p.rbounds 0    l_rbounds
-    @update n_bytes   p.bytes   '\n' l_bytes
-    @update n_lines   p.lines   0    l_lines
+    @push n_bounds p.bounds 0 l_bounds
+    @push n_bytes p.bytes '\n' l_bytes
+    @push n_lines p.lines 0 l_lines
 
     # Loop over bytes from the input until we've read requested rows
     while !eof(io) && ((nrows == -1) || (n_lines < nrows + 1))
@@ -164,21 +159,22 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
             # Entering a quoted region
             if o.allowquotes && chr == o.quotemark
                 in_quotes = true
-                # This is not right
-                @update n_quoted p.quoted true l_quoted
+                p.quoted[n_fields] = true
             # Finished reading a field
             elseif chr == o.separator
-                @update n_rbounds p.rbounds n_bytes l_rbounds
-                @update n_bytes   p.bytes   '\n'    l_bytes
+                @push n_bounds p.bounds n_bytes l_bounds
+                @push n_bytes p.bytes '\n' l_bytes
+                @push n_fields p.quoted false l_quoted
             # Finished reading a row
             elseif @atnewline chr nextchr
                 at_start = true
-                @update n_rbounds p.rbounds n_bytes l_rbounds
-                @update n_bytes   p.bytes   '\n'    l_bytes
-                @update n_lines   p.lines   n_bytes l_lines
-            # Store character into buffer
+                @push n_bounds p.bounds n_bytes l_bounds
+                @push n_bytes p.bytes '\n' l_bytes
+                @push n_lines p.lines n_bytes l_lines
+                @push n_fields p.quoted false l_quoted
+            # Store character in buffer
             else
-                @update n_bytes p.bytes chr l_bytes
+                @push n_bytes p.bytes chr l_bytes
             end
         else
             # Escape a quotemark inside quoted field
@@ -188,9 +184,9 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
                 # Exit quoted field
                 if o.allowquotes && chr == o.quotemark && !in_escape
                     in_quotes = false
-                # Store character into buffer
+                # Store character in buffer
                 else
-                    @update n_bytes p.bytes chr l_bytes
+                    @push n_bytes p.bytes chr l_bytes
                 end
                 # Escape mode only lasts for one byte
                 in_escape = false
@@ -200,20 +196,20 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
 
     # Append a final EOL if it's missing in the raw input
     if eof(io) && !(@atnewline chr nextchr)
-        @update n_rbounds p.rbounds n_bytes l_rbounds
-        @update n_bytes   p.bytes   '\n'    l_bytes
-        @update n_lines   p.lines   n_bytes l_lines
+        @push n_bounds p.bounds n_bytes l_bounds
+        @push n_bytes p.bytes '\n' l_bytes
+        @push n_lines p.lines n_bytes l_lines
     end
 
     # Don't count the dummy boundaries in fields or rows
-    return n_bytes, n_rbounds - 1, n_lines - 1
+    return n_bytes, n_bounds - 1, n_lines - 1
 end
 
 function bytematch{T <: ByteString}(bytes::Vector{Uint8},
                                     left::Int,
                                     right::Int,
                                     exemplars::Vector{T})
-    l::Int = right - left + 1
+    l = right - left + 1
     for index in 1:length(exemplars)
         exemplar = exemplars[index]
         if length(exemplar) == l
@@ -242,10 +238,10 @@ function bytestoint{T <: ByteString}(bytes::Vector{Uint8},
         return 0, true, true
     end
 
-    value::Int = 0
-    power::Int = 1
-    index::Int = right
-    byte::Uint8 = bytes[index]
+    value = 0
+    power = 1
+    index = right
+    byte = bytes[index]
 
     while index > left
         if '0' <= byte <= '9'
@@ -270,7 +266,7 @@ function bytestoint{T <: ByteString}(bytes::Vector{Uint8},
     end
 end
 
-let out::Vector{Float64} = Array(Float64, 1)
+let out = Array(Float64, 1)
     global bytestofloat
     function bytestofloat{T <: ByteString}(bytes::Vector{Uint8},
                                            left::Int,
@@ -322,10 +318,15 @@ end
 function bytestostring{T <: ByteString}(bytes::Vector{Uint8},
                                         left::Int,
                                         right::Int,
+                                        wasquoted::Bool,
                                         nastrings::Vector{T},
                                         quotemark::Char)
     if left > right
-        return "", true, false
+        if wasquoted
+            return "", true, false
+        else
+            return "", true, true
+        end
     end
 
     if bytematch(bytes, left, right, nastrings)
@@ -335,12 +336,8 @@ function bytestostring{T <: ByteString}(bytes::Vector{Uint8},
     return bytestring(bytes[left:right]), true, false
 end
 
-function builddf(rows::Int,
-                 cols::Int,
-                 bytes::Int,
-                 fields::Int,
-                 p::ParsedCSV,
-                 o::ParseOptions)
+function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
+                 p::ParsedCSV, o::ParseOptions)
     columns = Array(Any, cols)
 
     for j in 1:cols
@@ -355,13 +352,14 @@ function builddf(rows::Int,
             i += 1
 
             # Determine left and right boundaries of field
-            left = p.rbounds[(i - 1) * cols + j] + 2
-            right = p.rbounds[(i - 1) * cols + j + 1]
+            left = p.bounds[(i - 1) * cols + j] + 2
+            right = p.bounds[(i - 1) * cols + j + 1]
+            wasquoted = p.quoted[(i - 1) * cols + j]
 
             # Ignore left-and-right whitespace padding
             # TODO: Debate moving this into readnrows()
             # TODO: Modify readnrows() so that '\r' and '\n' don't occur near edges
-            if o.ignorepadding # Condition on p.quoted
+            if o.ignorepadding && !wasquoted
                 while left < right && (@isspace p.bytes[left])
                     left += 1
                 end
@@ -373,7 +371,8 @@ function builddf(rows::Int,
             # (1) Try to parse values as Int's
             if is_int
                 values[i], wasparsed, missing[i] =
-                  bytestoint(p.bytes, left, right, o.nastrings)
+                  bytestoint(p.bytes, left, right,
+                             o.nastrings)
                 if wasparsed
                     continue
                 else
@@ -385,13 +384,15 @@ function builddf(rows::Int,
             # (2) Try to parse as Float64's
             if is_float
                 values[i], wasparsed, missing[i] =
-                  bytestofloat(p.bytes, left, right, o.nastrings)
+                  bytestofloat(p.bytes, left, right,
+                               o.nastrings)
                 if wasparsed
                     continue
                 else
                     is_float = false
                     values = Array(Bool, rows)
-                    i = 1
+                    i = 0
+                    continue
                 end
             end
 
@@ -405,14 +406,15 @@ function builddf(rows::Int,
                 else
                     is_bool = false
                     values = Array(UTF8String, rows)
-                    i = 1
+                    i = 0
+                    continue
                 end
             end
 
             # (4) Fallback to UTF8String
-            # TODO: Make sure empty string is handled correctly
             values[i], wasparsed, missing[i] =
-              bytestostring(p.bytes, left, right, o.nastrings, o.quotemark)
+              bytestostring(p.bytes, left, right,
+                            wasquoted, o.nastrings, o.quotemark)
         end
 
         if o.makefactors && !(is_int || is_float || is_bool)
@@ -431,7 +433,7 @@ end
 
 function parsecolnames!(colnames::Vector{UTF8String},
                         bytes::Vector{Uint8},
-                        rbounds::Vector{Int},
+                        bounds::Vector{Int},
                         fields::Int)
     if fields == 0
         error("Header line was empty")
@@ -440,8 +442,8 @@ function parsecolnames!(colnames::Vector{UTF8String},
     resize!(colnames, fields)
 
     for j in 1:fields
-        left = rbounds[j] + 2
-        right = rbounds[j + 1]
+        left = bounds[j] + 2
+        right = bounds[j + 1]
         if bytes[right] == '\r' || bytes[right] == '\n'
             colnames[j] = bytestring(bytes[left:(right - 1)])
         else
@@ -449,7 +451,32 @@ function parsecolnames!(colnames::Vector{UTF8String},
         end
     end
 
-    return colnames
+    return
+end
+
+function findcorruption(rows::Integer,
+                        cols::Integer,
+                        fields::Integer,
+                        p::ParsedCSV)
+    n = length(p.bounds)
+    lengths = Array(Int, rows)
+    t = 1
+    for i in 1:rows
+        bound = p.lines[i + 1]
+        f = 0
+        while p.bounds[t] < bound
+            f += 1
+            t += 1
+        end
+        lengths[i] = f
+    end
+    m = median(lengths)
+    corruptrows = find(lengths .!= m)
+    l = corruptrows[1]
+    msg = @sprintf "Saw %d rows, %d columns and %d fields\n" rows cols fields
+    msg = string(msg,
+                 @sprintf " * Line %d has %d columns\n" l lengths[l] + 1)
+    error(msg)
 end
 
 function readtable!(p::ParsedCSV,
@@ -479,26 +506,16 @@ function readtable!(p::ParsedCSV,
 
     # Insert column names from header if none present
     if o.header && isempty(o.colnames)
-        parsecolnames!(o.colnames, p.bytes, p.rbounds, fields)
+        parsecolnames!(o.colnames, p.bytes, p.bounds, fields)
     end
 
     # Parse main data set
     bytes, fields, rows = readnrows!(p, io, nrows, o)
 
-    # Throw an error if we didn't see any bytes
-    if bytes == 0
-        error("Failed to read any bytes.")
-    end
-
-    # Throw an error if we didn't see any rows
-    if rows == 0
-        error("Failed to read any rows.")
-    end
-
-    # Throw an error if we didn't see any fields
-    if fields == 0
-        error("Failed to read any fields.")
-    end
+    # Sanity checks
+    bytes != 0 || error("Failed to read any bytes.")
+    rows != 0 || error("Failed to read any rows.")
+    fields != 0 || error("Failed to read any fields.")
 
     # Determine the number of columns
     cols = fld(fields, rows)
@@ -518,31 +535,6 @@ function readtable!(p::ParsedCSV,
 
     # Return the final DataFrame
     return df
-end
-
-function findcorruption(rows::Integer,
-                        cols::Integer,
-                        fields::Integer,
-                        p::ParsedCSV)
-    n = length(p.rbounds)
-    lengths = Array(Int, rows)
-    t = 1
-    for i in 1:rows
-        bound = p.lines[i + 1]
-        f = 0
-        while p.rbounds[t] < bound
-            f += 1
-            t += 1
-        end
-        lengths[i] = f
-    end
-    m = median(lengths)
-    corruptrows = find(lengths .!= m)
-    l = corruptrows[1]
-    msg = @sprintf "Saw %d rows, %d columns and %d fields\n" rows cols fields
-    msg = string(msg,
-                 @sprintf " * Line %d has %d columns\n" l lengths[l] + 1)
-    error(msg)
 end
 
 function readtable(pathname::String;
@@ -588,33 +580,16 @@ function readtable(pathname::String;
         nrows = nbytes
     end
 
-    # Allocate buffers
-    # TODO: Don't use nbytes if nrows == -1
-    p = ParsedCSV(Array(Uint8, nbytes),
-                  Array(Int, 1),
-                  Array(Int, 1),
-                  BitArray(1))
+    # Allocate buffers for storing metadata
+    p = ParsedCSV(Array(Uint8, nbytes), Array(Int, 1),
+                  Array(Int, 1), BitArray(1))
 
     # Set parsing options
-    o = ParseOptions(header,
-                     separator,
-                     allowquotes,
-                     quotemark,
-                     decimal,
-                     nastrings,
-                     truestrings,
-                     falsestrings,
-                     makefactors,
-                     colnames,
-                     cleannames,
-                     coltypes,
-                     allowcomments,
-                     commentmark,
-                     ignorepadding,
-                     skipstart,
-                     skiprows,
-                     skipblanks,
-                     encoding)
+    o = ParseOptions(header, separator, allowquotes, quotemark,
+                     decimal, nastrings, truestrings, falsestrings,
+                     makefactors, colnames, cleannames, coltypes,
+                     allowcomments, commentmark, ignorepadding,
+                     skipstart, skiprows, skipblanks, encoding)
 
     # Use the IO stream method for readtable()
     df = readtable!(p, io, nrows, o)
@@ -632,7 +607,6 @@ end
 #
 ##############################################################################
 
-# TODO: Increase precision of string representation of Float64's
 function printtable(io::IO,
                     df::DataFrame;
                     header::Bool = true,

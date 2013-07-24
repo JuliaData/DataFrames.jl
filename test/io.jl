@@ -15,6 +15,7 @@ let
                  "test/data/padding/space_after_delimiter.csv",
                  "test/data/padding/space_around_delimiter.csv",
                  "test/data/padding/space_before_delimiter.csv",
+                 "test/data/quoting/empty.csv",
                  "test/data/quoting/escaping.csv",
                  "test/data/quoting/quotedcommas.csv",
                  "test/data/scaling/10000rows.csv",
