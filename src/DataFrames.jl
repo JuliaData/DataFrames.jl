@@ -224,17 +224,6 @@ export # reconcile_groups,
 
 ##############################################################################
 ##
-## Deprecations
-##
-##############################################################################
-
-Base.@deprecate read_table readtable
-Base.@deprecate print_table printtable
-Base.@deprecate write_table writetable
-Base.@deprecate merge Base.join
-
-##############################################################################
-##
 ## Load files
 ##
 ##############################################################################
@@ -267,5 +256,16 @@ nafilter(x...) = error("Function removed. Please use removeNA")
 nareplace(x...) = error("Function removed. Please use replaceNA")
 naFilter(x...) = error("Function removed. Please use each_removeNA")
 naReplace(x...) = error("Function removed. Please use each_replaceNA")
+
+##############################################################################
+##
+## Deprecations
+##
+##############################################################################
+
+Base.@deprecate read_table readtable
+Base.@deprecate print_table printtable
+Base.@deprecate write_table writetable
+Base.@deprecate merge(df1::AbstractDataFrame, df2::AbstractDataFrame; on::Any = nothing, kind::Symbol = :inner) Base.join
 
 end # module DataFrames
