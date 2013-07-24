@@ -601,6 +601,69 @@ function readtable(pathname::String;
     return df
 end
 
+function filldf!(df::DataFrame,
+                 rows::Int, cols::Int, bytes::Int, fields::Int,
+                 p::ParsedCSV, o::ParseOptions)
+    ctypes = coltypes(df)
+
+    if rows != size(df, 1)
+        for j in 1:cols
+            resize!(df.columns[j].data, rows)
+            resize!(df.columns[j].na, rows)
+        end
+    end
+
+    for j in 1:cols
+        c = df.columns[j]
+        T = ctypes[j]
+
+        i = 0
+        while i < rows
+            i += 1
+
+            # Determine left and right boundaries of field
+            left = p.bounds[(i - 1) * cols + j] + 2
+            right = p.bounds[(i - 1) * cols + j + 1]
+            wasquoted = p.quoted[(i - 1) * cols + j]
+
+            # Ignore left-and-right whitespace padding
+            # TODO: Debate moving this into readnrows()
+            # TODO: Modify readnrows() so that '\r' and '\n' don't occur near edges
+            if o.ignorepadding && !wasquoted
+                while left < right && (@isspace p.bytes[left])
+                    left += 1
+                end
+                while left <= right && (@isspace p.bytes[right])
+                    right -= 1
+                end
+            end
+
+            # NB: Assumes perfect type stability
+            if T == Int
+                c.data[i], wasparsed, c.na[i] =
+                  bytestoint(p.bytes, left, right,
+                             o.nastrings)
+            elseif T == Float64
+                c.data[i], wasparsed, c.na[i] =
+                  bytestofloat(p.bytes, left, right,
+                               o.nastrings)
+            elseif T == Bool
+                c.data[i], wasparsed, c.na[i] =
+                  bytestobool(p.bytes, left, right,
+                              o.nastrings, o.truestrings, o.falsestrings)
+            elseif T == UTF8String
+                c.data[i], wasparsed, c.na[i] =
+                  bytestostring(p.bytes, left, right,
+                                wasquoted, o.nastrings, o.quotemark)
+            else
+                error("Invalid type encountered")
+            end
+        end
+    end
+
+    return
+end
+
 ##############################################################################
 #
 # Text output
