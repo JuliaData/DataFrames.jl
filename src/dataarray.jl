@@ -730,6 +730,10 @@ function convert{S, T, N}(::Type{Array{S, N}}, x::DataArray{T, N})
     end
 end
 
+function convert{S, T, N}(::Type{DataArray{S, N}}, x::DataArray{T, N})
+    return DataArray(convert(Array{S}, x.data), x.na)
+end
+
 ##############################################################################
 ##
 ## Conversion convenience functions
