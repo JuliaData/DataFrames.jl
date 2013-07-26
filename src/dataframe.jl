@@ -951,6 +951,10 @@ dump(io::IO, x::AbstractDataVector, n::Int, indent) =
 describe(dv::AbstractDataVector) = describe(STDOUT, dv)
 describe(df::DataFrame) = describe(STDOUT, df)
 function describe{T<:Number}(io, dv::AbstractDataVector{T})
+    if all(isna(dv))
+        println(io, " * All NA * ")
+        return
+    end
     filtered = float(removeNA(dv))
     qs = quantile(filtered, [0, .25, .5, .75, 1])
     statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
@@ -962,6 +966,7 @@ function describe{T<:Number}(io, dv::AbstractDataVector{T})
     if nas > 0
         println(io, "NAs      $nas")
     end
+    return
 end
 function describe{T}(io, dv::AbstractDataVector{T})
     ispooled = isa(dv, PooledDataVector) ? "Pooled " : ""
@@ -969,6 +974,7 @@ function describe{T}(io, dv::AbstractDataVector{T})
     println(io, "Length: $(length(dv))")
     println(io, "Type  : $(ispooled)$(string(eltype(dv)))")
     println(io, "NAs   : $(sum(isna(dv)))")
+    return
 end
 
 # TODO: clever layout in rows
