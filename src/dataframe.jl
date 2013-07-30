@@ -963,17 +963,18 @@ function describe{T<:Number}(io, dv::AbstractDataVector{T})
         println(io, string(rpad(statNames[i], 8, " "), " ", string(statVals[i])))
     end
     nas = sum(isna(dv))
-    if nas > 0
-        println(io, "NAs      $nas")
-    end
+    println(io, "NAs      $nas")
+    println(io, "NA%      $(round(nas*100/length(dv), 2))%")
     return
 end
 function describe{T}(io, dv::AbstractDataVector{T})
     ispooled = isa(dv, PooledDataVector) ? "Pooled " : ""
     # if nothing else, just give the length and element type and NA count
-    println(io, "Length: $(length(dv))")
-    println(io, "Type  : $(ispooled)$(string(eltype(dv)))")
-    println(io, "NAs   : $(sum(isna(dv)))")
+    println(io, "Length  $(length(dv))")
+    println(io, "Type    $(ispooled)$(string(eltype(dv)))")
+    println(io, "NAs     $(sum(isna(dv)))")
+    println(io, "NA%     $(round(sum(isna(dv))*100/length(dv), 2))%")
+    println(io, "Unique  $(length(unique(dv)))") 
     return
 end
 
