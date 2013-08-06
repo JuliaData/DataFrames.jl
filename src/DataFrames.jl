@@ -33,6 +33,7 @@ const DEFAULT_POOLED_REF_TYPE = Uint32
 
 importall Base
 importall Stats
+import Base.Sort
 import Base.Sort.Algorithm, Base.Sort.By, Base.Sort.Forward
 import Base.Sort.Ordering, Base.Sort.Perm, Base.Sort.lt
 import Base.Sort.sort, Base.Sort.sort!, Base.Sort.sortby, Base.Sort.sortby!
