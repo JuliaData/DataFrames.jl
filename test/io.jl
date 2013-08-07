@@ -53,9 +53,10 @@ let
 
     nrows, ncols = 100_000, 10
 
-    for j in 1:ncols
+    for j in 1:(ncols - 1)
         df[j] = randn(nrows)
     end
+    df[ncols] = "A"
 
     filename = tempname()
 
