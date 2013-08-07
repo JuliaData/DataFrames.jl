@@ -692,12 +692,12 @@ function printtable(io::IO,
     end
     for i in 1:n
         for j in 1:p
-            if ctypes[j] <: Real
+            if ! (ctypes[j] <: Real)
                 print(io, quotemark)
                 print(io, df[i, j])
                 print(io, quotemark)
             else
-                print(io, column_names[j])
+                print(io, df[i, j]) #column_names[j])
             end
             if j < p
                 print(io, separator)
