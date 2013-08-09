@@ -251,6 +251,7 @@ include("predicates.jl")
 include("indexing.jl")
 include("extras.jl")
 include("RDA.jl")
+include("dataframe_blocks.jl")
 
 # TODO: Remove these definitions
 nafilter(x...) = error("Function removed. Please use removeNA")
