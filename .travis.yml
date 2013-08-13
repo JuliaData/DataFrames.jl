@@ -13,7 +13,7 @@ before_install:
     - git config --global user.email "travis@example.net"
 script:
     - julia -e 'versioninfo(); Pkg.init();'
-    - julia -e 'Pkg.add("Stats"); Pkg.add("GZip");'
+    - julia -e 'Pkg.add("Stats"); Pkg.add("GZip"); Pkg.add("Blocks");'
     - mkdir -p ~/.julia/DataFrames
     - cp -R ./* ~/.julia/DataFrames/
     - julia ./run_tests.jl
