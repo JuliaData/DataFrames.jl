@@ -88,6 +88,12 @@ We could also have used column names to access individual columns:
 	mean(df["A"])
 	range(df["A"])
 
+We can also apply a function to each column of a `DataFrame` with the `colwise`
+function.  For example:
+
+    df = DataFrame(A = 1:4, B = randn(4))
+    colwise(cumsum, df)
+
 ## Accessing Classic Data Sets
 
 To see more of the functionality for working with `DataFrame` objects, we need a more complex data to work with. We'll use the `RDatasets` package, which provides to many of the classical data sets that are available in R.
