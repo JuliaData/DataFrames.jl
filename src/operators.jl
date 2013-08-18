@@ -1,22 +1,11 @@
+unary_operators = [:(+), :(-), :(!), :(*)]
+
 elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
                         :asinh, :atan, :atanh, :sin, :sinh,
                         :cos, :cosh, :tan, :tanh, :ceil, :floor,
                         :round, :trunc, :exp, :exp2, :expm1, :log, :log10, :log1p,
                         :log2, :exponent, :sqrt, :gamma, :lgamma, :digamma,
                         :erf, :erfc]
-
-two_argument_elementary_functions = [:round, :ceil, :floor, :trunc]
-
-special_comparison_operators = [:isless]
-
-comparison_operators = [:(==), :(.==), :(!=), :(.!=),
-                        :(>), :(.>), :(>=), :(.>=), :(<), :(.<),
-                        :(<=), :(.<=)]
-
-scalar_comparison_operators = [:(==), :(!=), :(>), :(>=),
-                               :(<), :(<=)]
-
-array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
 
 vectorized_comparison_operators = [(:(.==), :(==)), (:(.!=), :(!=)),
                                    (:(.>), :(>)), (:(.>=), :(>=)),
@@ -40,8 +29,6 @@ scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
 induced_scalar_arithmetic_operators = [:(^)]
 
 array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(.^)]
-
-bit_operators = [:(&), :(|), :($)]
 
 unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
                           :var, :mad, :norm, :skewness, :kurtosis]
@@ -67,21 +54,88 @@ columnar_operators = [:colmins, :colmaxs, :colprods, :colsums,
 
 boolean_operators = [:any, :all]
 
+# Unary operators for DataFrames and DataArrays
+macro dataframe_unary(f)
+    esc(:($(f)(d::DataFrame) = DataFrame([$(f)(d[i]) for i=1:size(d, 2)], deepcopy(index(d)))))
+end
+
+# Binary operators
+macro dataframe_binary(f)
+    esc(quote
+        function $(f)(a::DataFrame, b::DataFrame)
+            if size(a) != size(b); error("argument dimensions must match"); end
+            DataFrame([$(f)(a[i], b[i]) for i=1:size(a, 2)], deepcopy(index(a)))
+        end
+        @swappable $(f)(a::DataFrame, b::Union(Number, String)) = 
+            DataFrame([$(f)(a[i], b) for i=1:size(a, 2)], deepcopy(index(a)))
+    end)
+end
+
+# Swap arguments to fname() anywhere in AST. Returns the number of
+# arguments swapped
+function swapargs(ast::Expr, fname::Symbol)
+    if ast.head == :call &&
+       (ast.args[1] == fname ||
+        (isa(ast.args[1], Expr) && ast.args[1].head == :curly &&
+         ast.args[1].args[1] == fname)) &&
+       length(ast.args) == 3
+
+        ast.args[2], ast.args[3] = ast.args[3], ast.args[2]
+        1
+    else
+        n = 0
+        for arg in ast.args
+            n += swapargs(arg, fname)
+        end
+        n
+    end
+end
+function swapargs(ast, fname::Symbol)
+    ast
+    0
+end
+
+# Return a block consisting of both the given function and a copy of
+# the function in which arguments to the function itself and any
+# 2-argument calls to a function of the same name are swapped
+macro swappable(func, syms...)
+    if (func.head != :function && func.head != :(=)) ||
+       func.args[1].head != :call || length(func.args[1].args) != 3
+        error("@swappable may only be applied to functions of two arguments")
+    end
+    
+    func2 = deepcopy(func)
+    fname = func2.args[1].args[1]
+    if isa(fname, Expr)
+        if fname.head == :curly
+            fname = fname.args[1]
+        else
+            error("Unexpected function name $fname")
+        end
+    end
+
+    for s in [fname, syms...]
+        if swapargs(func2, s) < 1
+            error("No argument swapped")
+        end
+    end
+    esc(Expr(:block, func, func2))
+end
+
 # Unary operators, NA
 for f in (:(+), :(-), :(!), :(*))
     @eval $(f)(d::NAtype) = NA
 end
 
-# Unary operators, DataArrays. Definitions in base should be adequate for
-# AbstractDataArrays. These are just optimizations
+# Unary operators, DataArrays. Definitions in base should be adequate
+# for AbstractDataArrays. These are just optimizations
 !(d::DataArray{Bool}) = DataArray(!d.data, copy(d.na))
 -(d::DataArray) = DataArray(-d.data, copy(d.na))
 
 # Unary operators, DataFrames
-for f in (:(!), :(-))
-    @eval $(f)(d::DataFrame) = DataFrame([$(f)(d[i]) for i=1:size(d, 2)], deepcopy(d.colindex))
-end
-# As in Base, these are identity operators.
+@dataframe_unary !
+@dataframe_unary -
+# As in Base, these are identity operators
 for f in (:(+), :(*))
     @eval $(f)(d::DataFrame) = d
 end
@@ -134,94 +188,85 @@ for (adata, bdata) in ((true, false), (false, true), (true, true))
     end
 end
 
-for f in elementary_functions
-    @eval begin
-        function ($f)(d::NAtype)
-            return NA
-        end
-        function ($f){T}(dv::DataVector{T})
-            n = length(dv)
-            res = DataArray(Array(T, n), falses(n))
-            for i = 1:n
-                res[i] = ($f)(dv[i])
+#
+# Elementary functions
+#
+# XXX: The below should be revisited once we have a way to infer what
+# the proper return type of an array should be.
+
+# Apply unary operator to non-NA members of a DataArray or
+# AbstractDataArray
+macro dataarray_unary(f, intype, outtype)
+    esc(quote
+        function $(f){T<:$(intype)}(d::DataArray{T})
+            data = similar(d.data, $(outtype))
+            for i = 1:length(data)
+                if !d.na[i]
+                    data[i] = $(f)(d[i])
+                end
             end
-            return res
+            DataArray(data, copy(d.na))
         end
-        function ($f){T}(adv::AbstractDataVector{T})
-            res = deepcopy(adv)
+        function $(f){T<:$(intype)}(adv::AbstractDataArray{T})
+            # XXX Make sure similar actually works for AbstractDataArray types
+            # defined in DataFrames
+            res = similar(adv, $(outtype))
             for i = 1:length(adv)
-                if isna(adv[i])
-                    res[i] = NA
-                else
-                    res[i] = ($f)(adv[i])
+                res[i] = ($f)(adv[i])
+            end
+            res
+        end
+    end)
+end
+
+# One-argument elementary functions that return the same type as their
+# inputs
+for f in (:abs, :sign)
+    @eval begin
+        $(f)(::NAtype) = NA
+        @dataarray_unary $(f) Number T
+        @dataframe_unary $(f)
+    end
+end
+
+# One-argument elementary functions that always return floating points
+for f in (:acos, :acosh, :asin, :asinh, :atan, :atanh, :sin, :sinh, :cos,
+          :cosh, :tan, :tanh, :ceil, :floor, :round, :trunc, :exp, :exp2,
+          :expm1, :log, :log10, :log1p, :log2, :exponent, :sqrt, :gamma,
+          :lgamma, :digamma, :erf, :erfc)
+    @eval begin
+        ($f)(::NAtype) = NA
+        @dataarray_unary $(f) FloatingPoint T
+        @dataarray_unary $(f) Real Float64
+        @dataframe_unary $(f)
+    end
+end
+
+# Elementary functions that take varargs
+for f in (:round, :ceil, :floor, :trunc)
+    @eval begin
+        ($f)(::NAtype, args...) = NA
+
+        function $(f){T<:Number}(d::DataArray{T}, args...)
+            data = similar(d.data)
+            for i = 1:length(data)
+                if !d.na[i]
+                    data[i] = $(f)(d[i], args...)
                 end
             end
-            return res
+            DataArray(data, copy(d.na))
         end
-        function ($f){T}(dm::DataMatrix{T})
-            res = DataArray(Array(T, size(dm)), falses(size(dm)))
-            for i = 1:length(dm)
-                res[i] = ($f)(dm[i])
+        function $(f){T<:Number}(adv::AbstractDataArray{T}, args...)
+            # XXX Make sure similar actually works for
+            # AbstractDataArray types defined in DataFrames
+            res = similar(adv)
+            for i = 1:length(adv)
+                res[i] = ($f)(adv[i], args...)
             end
-            return res
+            res
         end
-        function ($f)(df::DataFrame)
-            n, p = nrow(df), ncol(df)
-            res = DataFrame(coltypes(df), colnames(df), n)
-            for j in 1:p
-                if eltype(df[j]) <: Number
-                    for i in 1:n
-                        res[i, j] = ($f)(df[i, j])
-                    end
-                else
-                    for i in 1:n
-                        res[i, j] = NA
-                    end
-                end
-            end
-            return res
-        end
-    end
-end
-
-for f in two_argument_elementary_functions
-    @eval begin
-        function ($f){T}(dv::DataVector{T}, arg2::Integer)
-            n = length(dv)
-            res = DataArray(Array(T, n), falses(n))
-            for i = 1:n
-                res[i] = ($f)(dv[i], arg2)
-            end
-            return res
-        end
-    end
-end
-
-for f in special_comparison_operators
-    @eval begin
-        function ($f)(d::NAtype, e::NAtype)
-            return false
-        end
-        function ($f){T <: Union(String, Number)}(d::NAtype, x::T)
-            return true
-        end
-        function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
-            return false
-        end
-    end
-end
-
-for f in comparison_operators
-    @eval begin
-        function ($f)(d::NAtype, e::NAtype)
-            return NA
-        end
-        function ($f){T <: Union(String, Number)}(d::NAtype, x::T)
-            return NA
-        end
-        function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
-            return NA
-        end
+        $(f)(d::DataFrame, args...) = 
+                DataFrame([$(f)(d[i], args...) for i=1:size(d, 2)], deepcopy(index(d)))
     end
 end
 
@@ -229,325 +274,168 @@ end
 # Bit operators
 #
 
-(&)(a::NAtype, b::NAtype) = NA
-(&)(a::NAtype, b::Bool) = b ? NA : false
-(&)(a::Bool, b::NAtype) = a ? NA : false
-(&)(a::NAtype, b::Real) = NA
-(&)(a::Real, b::NAtype) = NA
+@swappable (&)(a::NAtype, b::Bool) = b ? NA : false
+@swappable (|)(a::NAtype, b::Bool) = b ? true : NA
+@swappable ($)(a::NAtype, b::Bool) = NA
 
-(|)(a::NAtype, b::NAtype) = NA
-(|)(a::NAtype, b::Bool) = b ? true : NA
-(|)(a::Bool, b::NAtype) = a ? true : NA
-(|)(a::NAtype, b::Real) = NA
-(|)(a::Real, b::NAtype) = NA
+# To avoid ambiguity warning
+@swappable (|)(a::NAtype, b::Function) = NA
 
-($)(a::NAtype, b::NAtype) = NA
-($)(a::NAtype, b::Bool) = NA
-($)(a::Bool, b::NAtype) = NA
-($)(a::NAtype, b::Real) = NA
-($)(a::Real, b::NAtype) = NA
-
-for f in bit_operators
+for f in (:&, :|, :$)
     @eval begin
-        function ($f)(a::Array, b::AbstractDataArray)
-            res = similar(b, size(b))
-            for i in 1:length(res)
-                res[i] = ($f)(a[i], b[i])
-            end
-            return res
-        end
-        function ($f)(a::AbstractDataArray, b::Array)
-            res = similar(a, size(a))
-            for i in 1:length(res)
-                res[i] = ($f)(a[i], b[i])
-            end
-            return res
-        end
-        function ($f)(a::AbstractDataArray, b::AbstractDataArray)
-            res = similar(a, size(a))
-            for i in 1:length(res)
-                res[i] = ($f)(a[i], b[i])
-            end
-            return res
-        end
-        function ($f)(a::AbstractDataArray, b::Union(Bool, Number))
-            res = similar(a, size(a))
-            for i in 1:length(res)
-                res[i] = ($f)(a[i], b)
-            end
-            return res
-        end
-        function ($f)(a::Union(Bool, Number), b::AbstractDataArray)
-            res = similar(b, size(b))
-            for i in 1:length(res)
-                res[i] = ($f)(a, b[i])
-            end
-            return res
-        end
+        # Scalar with NA
+        ($f)(::NAtype, ::NAtype) = NA
+        @swappable ($f)(::NAtype, b) = NA
+        # DataFrame
+        @dataframe_binary $(f)
     end
 end
 
-for (f, scalarf) in vectorized_comparison_operators
+# DataArray with DataArray
+(&)(a::DataArray{Bool}, b::DataArray{Bool}) =
+    DataArray(a.data & b.data, (a.na & b.data) | (b.na & a.data))
+(|)(a::DataArray{Bool}, b::DataArray{Bool}) =
+    DataArray(a.data | b.data, (a.na & !b.data) | (b.na & !a.data))
+($)(a::DataArray{Bool}, b::DataArray{Bool}) =
+    DataArray(a.data $ b.data, a.na | b.na)
+
+# DataArray with non-DataArray
+# Need explicit definition for BitArray to avoid ambiguity
+for t in (:(BitArray), :(Union(AbstractArray{Bool}, Bool)))
     @eval begin
-        function ($f){S, T <: Union(String, Number)}(a::DataVector{S}, v::T)
-            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                if isna(a[i])
-                    res[i] = NA
-                else
-                    res[i] = ($scalarf)(a[i], v)
-                end
-            end
-            return res
-        end
-        function ($f){S <: Union(String, Number), T}(v::S, a::DataVector{T})
-            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                if isna(a[i])
-                    res[i] = NA
-                else
-                    res[i] = ($scalarf)(v, a[i])
-                end
-            end
-            return res
-        end
-        function ($f){S, T <: Union(String, Number)}(a::PooledDataVector{S}, v::T)
-            res = PooledDataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                if isna(a[i])
-                    res[i] = NA
-                else
-                    res[i] = ($scalarf)(a[i], v)
-                end
-            end
-            return res
-        end
-        function ($f){S <: Union(String, Number), T}(v::S, a::PooledDataVector{T})
-            res = PooledDataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                if isna(a[i])
-                    res[i] = NA
-                else
-                    res[i] = ($scalarf)(v, a[i])
-                end
-            end
-            return res
-        end
-        function ($f){T}(a::AbstractDataVector{T}, v::NAtype)
-            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                res[i] = NA
-            end
-            res
-        end
-        function ($f){T}(v::NAtype, a::AbstractDataVector{T})
-            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                res[i] = NA
-            end
-            res
-        end
-        function ($f){T}(a::PooledDataVector{T}, v::NAtype)
-            res = PooledDataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                res[i] = NA
-            end
-            res
-        end
-        function ($f){T}(v::NAtype, a::PooledDataVector{T})
-            res = PooledDataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                res[i] = NA
-            end
-            res
-        end
-        function ($f){T <: Number}(a::DataFrame, v::T)
-            res = DataFrame(Array(Bool, size(a)))
-            n, p = nrow(a), ncol(a)
-            for j in 1:p
-                if typeof(a[j]).parameters[1] <: Number
-                    for i in 1:n
-                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
-                    end
-                else
-                    for i in 1:n
-                        res[i, j] = NA
-                    end
-                end
-            end
-            return res
-        end
-        function ($f){T <: Number}(v::T, a::DataFrame)
-            res = DataFrame(Array(Bool, size(a)))
-            n, p = nrow(a), ncol(a)
-            for j in 1:p
-                if typeof(a[j]).parameters[1] <: Number
-                    for i = 1:n
-                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
-                    end
-                else
-                    for i = 1:n
-                        res[i, j] = NA
-                    end
-                end
-            end
-            return res
-        end
-        function ($f){T <: String}(a::DataFrame, v::T)
-            res = DataFrame(Array(Bool, size(a)))
-            n, p = nrow(a), ncol(a)
-            for j in 1:p
-                if typeof(a[j]).parameters[1] <: String
-                    for i in 1:n
-                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
-                    end
-                else
-                    for i in 1:n
-                        res[i, j] = NA
-                    end
-                end
-            end
-            return res
-        end
-        function ($f){T <: String}(v::T, a::DataFrame)
-            res = DataFrame(Array(Bool, size(a)))
-            n, p = nrow(a), ncol(a)
-            for j in 1:p
-                if typeof(a[j]).parameters[1] <: String
-                    for i = 1:n
-                        res[i, j] = isna(a[i, j]) ? NA : ($scalarf)(a[i, j], v)
-                    end
-                else
-                    for i = 1:n
-                        res[i, j] = NA
-                    end
-                end
-            end
-            return res
-        end
-        function ($f)(a::DataFrame, v::NAtype)
-            res = DataFrame(Array(Bool, size(a)))
-            n, p = nrow(a), ncol(a)
-            for j in 1:p
-                for i in 1:n
-                    res[i, j] = NA
-                end
-            end
-            return res
-        end
-        function ($f)(v::NAtype, a::DataFrame)
-            res = DataFrame(Array(Bool, size(a)))
-            n, p = nrow(a), ncol(a)
-            for j in 1:p
-                for i = 1:n
-                    res[i, j] = NA
-                end
-            end
-            return res
-        end
+        @swappable (&)(a::DataArray{Bool}, b::$t) = DataArray(a.data & b, a.na & b)
+        @swappable (|)(a::DataArray{Bool}, b::$t) = DataArray(a.data | b, a.na & !b)
+        @swappable ($)(a::DataArray{Bool}, b::$t) = DataArray(a.data $ b, a.na)
     end
 end
 
-for f in scalar_comparison_operators
+#
+# Scalar comparison operators
+#
+
+# Apply unary operator to non-NA members of a DataArray or
+# AbstractDataArray
+macro dataarray_binary(vectorfunc, scalarfunc, outtype)
+    esc(Expr(:block,
+        # DataArray with other array
+        {
+            quote
+                function $(vectorfunc)(a::$(adata ? :DataArray : :AbstractArray),
+                                       b::$(bdata ? :DataArray : :AbstractArray))
+                    res = DataArray(Array(Bool, promote_shape(size(a), size(b))), $narule)
+                    for i = 1:length(res)
+                        if !res.na[i]
+                            res.data[i] = $(scalarfunc)($(adata ? :(a.data) : :a)[i],
+                                                        $(bdata ? :(b.data) : :b)[i])
+                        end
+                    end
+                    res
+                end
+            end
+            for (adata, bdata, narule) in ((true, true, :(a.na | b.na)),
+                                           (true, false, :(copy(a.na))),
+                                           (false, true, :(copy(b.na))))
+        }...,
+        # AbstractDataArray with other array
+        # Definitinons with DataArray necessary to avoid ambiguity
+        {
+            quote
+                function $(vectorfunc)(a::$atype, b::$btype)
+                    res = similar($(asim ? :a : :b), Bool, promote_shape(size(a), size(b)))
+                    for i = 1:length(a)
+                        res[i] = $(scalarfunc)(a[i], b[i])
+                    end
+                    res
+                end
+            end
+            for (asim, atype, btype) in ((true, :DataArray, :AbstractDataArray),
+                                         (false, :AbstractDataArray, :DataArray),
+                                         (true, :AbstractDataArray, :AbstractDataArray),
+                                         (true, :AbstractDataArray, :AbstractArray),
+                                         (false, :AbstractDataArray, :AbstractArray))
+        }...,
+        # DataArray and AbstractDataArray with scalar
+        # XXX It would be really nice to make this work with arbitrary
+        # types, but doing so results in a bunch of method ambiguity
+        # warnings
+        {
+            quote
+                @swappable function $(vectorfunc)(a::DataArray, b::$t)
+                    res = DataArray(similar(a.data, Bool), copy(a.na))
+                    for i = 1:length(a)
+                        if !res.na[i]
+                            res.data[i] = $(scalarfunc)(a.data[i], b)
+                        end
+                    end
+                    res
+                end $scalarfunc
+                @swappable function $(vectorfunc)(a::AbstractDataArray, b::$t)
+                    res = similar(a, Bool)
+                    for i = 1:length(a)
+                        res[i] = $(scalarfunc)(a[i], b)
+                    end
+                    res
+                end $scalarfunc
+            end
+            for t in (:String, :Number)
+        }...
+    ))
+end
+
+isless(::NAtype, ::NAtype) = false
+isless(::NAtype, b) = true
+isless(a, ::NAtype) = false
+
+# This is for performance only; the definition in Base is sufficient
+# for AbstractDataArrays
+function isequal(a::DataArray, b::DataArray)
+    if size(a) != size(b) || a.na != b.na
+        return false
+    end
+    for i = 1:length(a)
+        if !a.na[i] && a.data[i] != b.data[i]
+            return false
+        end
+    end
+    return true
+end
+function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
+    if size(df1, 2) != size(df2, 2)
+        return false
+    end
+    for idx in 1:size(df1, 2)
+        if !isequal(df1[idx], df2[idx])
+            return false
+        end
+    end
+    return true
+end
+
+for sf in (:(==), :(!=), :(>), :(>=), :(<), :(<=))
+    vf = symbol(".$sf")
+
     @eval begin
-        function ($f){S, T}(a::AbstractDataVector{S}, b::AbstractDataVector{T})
-            error(string(string($f), " not defined for DataVectors. Try .", string($f)))
-        end
-        function ($f){S, T}(a::DataMatrix{S}, b::DataMatrix{T})
-            error(string(string($f), " not defined for DataMatrix's. Try .", string($f)))
-        end
-        function ($f)(a::AbstractDataFrame, b::AbstractDataFrame)
-            error(string(string($f), " not defined for DataFrames. Try .", string($f)))
-        end
+        # Array with NA (necessary to avoid ambiguity)
+        @swappable $(vf){T,N}(::NAtype, b::AbstractArray{T,N}) =
+            DataArray(Array(Bool, size(b)), trues(size(b)))
+
+        # Scalar with NA
+        $(vf)(::NAtype, ::NAtype) = NA
+        $(sf)(::NAtype, ::NAtype) = NA
+        @swappable $(vf)(::NAtype, b) = NA
+        @swappable $(sf)(::NAtype, b) = NA
+        $(sf)(a::AbstractDataArray, b::AbstractDataArray) =
+            error("$f not defined for AbstractDataArrays. Try $vf")
+
+        # DataFrame
+        @dataarray_binary $vf $sf Bool
+        @dataframe_binary $vf
     end
 end
 
-for (f, scalarf) in vectorized_comparison_operators
-    @eval begin
-        function ($f){S, T}(a::AbstractDataVector{S}, b::AbstractDataVector{T})
-            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                if isna(a[i]) || isna(b[i])
-                    res[i] = NA
-                else
-                    res[i] = ($scalarf)(a[i], b[i])
-                end
-            end
-            return res
-        end
-        function ($f){S, T}(a::AbstractDataVector{S}, b::Vector{T})
-            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                if isna(a[i])
-                    res[i] = NA
-                else
-                    res[i] = ($scalarf)(a[i], b[i])
-                end
-            end
-            return res
-        end
-        function ($f){S, T}(a::Vector{S}, b::AbstractDataVector{T})
-            res = DataArray(Array(Bool, length(a)), BitArray(length(a)))
-            for i in 1:length(a)
-                if isna(b[i])
-                    res[i] = NA
-                else
-                    res[i] = ($scalarf)(a[i], b[i])
-                end
-            end
-            return res
-        end
-        function ($f){S, T}(a::DataMatrix{S}, b::DataMatrix{T})
-            res = DataArray(Array(Bool, size(a)), BitArray(size(a)))
-            for i in 1:length(a)
-                if isna(a[i]) || isna(b[i])
-                    res[i] = NA
-                else
-                    res[i] = ($scalarf)(a[i], b[i])
-                end
-            end
-            return res
-        end
-        function ($f){S, T}(a::DataMatrix{S}, b::Matrix{T})
-            res = DataArray(Array(Bool, size(a)), BitArray(size(a)))
-            for i in 1:length(a)
-                if isna(a[i])
-                    res[i] = NA
-                else
-                    res[i] = ($scalarf)(a[i], b[i])
-                end
-            end
-            return res
-        end
-        function ($f){S, T}(a::Matrix{S}, b::DataMatrix{T})
-            res = DataArray(Array(Bool, size(a)), BitArray(size(a)))
-            for i in 1:length(a)
-                if isna(b[i])
-                    res[i] = NA
-                else
-                    res[i] = ($scalarf)(a[i], b[i])
-                end
-            end
-            return res
-        end
-        function ($f)(a::DataFrame, b::DataFrame)
-            n, p = nrow(a), ncol(a)
-            if n != nrow(b) || p != ncol(b)
-                error("DataFrames must have matching sizes for comparisons")
-            end
-            # Tries to preserve types from a
-            results = DataFrame(Array(Bool, size(a)))
-            # TODO: Test that types match across a and b
-            for j in 1:p
-                for i in 1:n
-                    results[i, j] = ($scalarf)(a[i, j], b[i, j])
-                end
-            end
-            return results
-        end
-    end
-end
-
+#
+# Binary operators
+#
 .^(::MathConst{:e}, B::DataVector) = exp(B)
 for f in binary_operators
     @eval begin
@@ -1005,78 +893,6 @@ function any(df::AbstractDataFrame)
     else
         return false
     end
-end
-
-# isequal() should for Data*
-# * If missingness differs, underlying values are irrelevant
-# * If both entries are NA, underlying values are irrelevant
-function isequal{T}(a::DataVector{T}, b::DataVector{T})
-    if length(a) != length(b)
-        return false
-    else
-        for i = 1:length(a)
-            if a.na[i] != b.na[i]
-                return false
-            elseif !a.na[i] && !b.na[i] && (a.data[i] != b.data[i])
-                return false
-            end
-        end
-    end
-    return true
-end
-function isequal{T}(a::PooledDataVector{T}, b::PooledDataVector{T})
-    if length(a) != length(b)
-        return false
-    else
-        for i = 1:length(a)
-            # Will we speed this up by looking under hood?
-            if isna(a[i])
-                if !isna(b[i])
-                    return false
-                end
-            else
-                if isna(b[i])
-                    return false
-                end
-                if a[i] != b[i]
-                    return false
-                end
-            end
-        end
-    end
-    return true
-end
-function isequal{T}(a::AbstractDataVector{T}, b::AbstractDataVector{T})
-    if length(a) != length(b)
-        return false
-    else
-        for i = 1:length(a)
-            if isna(a[i])
-                if !isna(b[i])
-                    return false
-                end
-            else
-                if isna(b[i])
-                    return false
-                end
-                if a[i] != b[i]
-                    return false
-                end
-            end
-        end
-    end
-    return true
-end
-function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
-    if ncol(df1) != ncol(df2)
-        return false
-    end
-    for idx in 1:ncol(df1)
-        if !isequal(df1[idx], df2[idx])
-            return false
-        end
-    end
-    return true
 end
 
 function Stats.range{T}(dv::AbstractDataVector{T})
