@@ -378,16 +378,8 @@ reverse(x::PooledDataArray) = PooledDataArray(RefArray(reverse(x.refs)), x.pool)
 ##
 ##############################################################################
 
-# This needs to be parameterized to remove ambiguity warnings
-similar{T,R}(pda::PooledDataArray{T,R}) = pda
-
-function similar{T,R}(pda::PooledDataArray{T,R}, dims::Int...)
-    PooledDataArray(RefArray(fill(zero(R), dims...)), pda.pool)
-end
-
-function similar{T,R}(pda::PooledDataArray{T,R}, dims::Dims)
-    PooledDataArray(RefArray(fill(zero(R), dims)), pda.pool)
-end
+similar{T,R}(pda::PooledDataArray{T,R}, S, dims::Dims) =
+    PooledDataArray(RefArray(zeros(R, dims)), S[])
 
 ##############################################################################
 ##
