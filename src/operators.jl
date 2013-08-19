@@ -1,11 +1,28 @@
 unary_operators = [:(+), :(-), :(!), :(*)]
 
+numeric_unary_operators = [:(+), :(-)]
+
+logical_unary_operators = [:(!)]
+
 elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
                         :asinh, :atan, :atanh, :sin, :sinh,
                         :cos, :cosh, :tan, :tanh, :ceil, :floor,
                         :round, :trunc, :exp, :exp2, :expm1, :log, :log10, :log1p,
                         :log2, :exponent, :sqrt, :gamma, :lgamma, :digamma,
                         :erf, :erfc]
+
+two_argument_elementary_functions = [:round, :ceil, :floor, :trunc]
+
+special_comparison_operators = [:isless]
+
+comparison_operators = [:(==), :(.==), :(!=), :(.!=),
+                        :(>), :(.>), :(>=), :(.>=), :(<), :(.<),
+                        :(<=), :(.<=)]
+
+scalar_comparison_operators = [:(==), :(!=), :(>), :(>=),
+                               :(<), :(<=)]
+
+array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
 
 vectorized_comparison_operators = [(:(.==), :(==)), (:(.!=), :(!=)),
                                    (:(.>), :(>)), (:(.>=), :(>=)),
@@ -14,15 +31,27 @@ vectorized_comparison_operators = [(:(.==), :(==)), (:(.!=), :(!=)),
 binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
                     :(.^), :(div), :(mod), :(fld), :(rem)]
 
+induced_binary_operators = [:(^)]
+
 arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
                         :(.^), :(div), :(mod), :(fld), :(rem)]
-                        
-array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(.^)]
+
+induced_arithmetic_operators = [:(^)]
 
 biscalar_operators = [:(max), :(min)]
 
+scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
+                               :(div), :(mod), :(fld), :(rem)]
+
+induced_scalar_arithmetic_operators = [:(^)]
+
+array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(.^)]
+
+bit_operators = [:(&), :(|), :($)]
+
 unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
                           :var, :mad, :norm, :skewness, :kurtosis]
+
 
 # TODO: dist, iqr, rle, inverse_rle
 
@@ -32,8 +61,7 @@ cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
 
 ffts = [:fft]
 
-binary_vector_operators = [:dot, :cor, :cov,
-                           :cor_spearman, :cov_spearman]
+binary_vector_operators = [:dot, :cor, :cov, :cor_spearman]
 
 rowwise_operators = [:rowmins, :rowmaxs, :rowprods, :rowsums,
                      :rowmeans, :rowmedians, :rowstds, :rowvars,
@@ -116,7 +144,7 @@ macro swappable(func, syms...)
 end
 
 # Unary operators, NA
-for f in (:(+), :(-), :(!), :(*))
+for f in unary_operators
     @eval $(f)(d::NAtype) = NA
 end
 
@@ -195,14 +223,12 @@ macro dataarray_unary(f, intype, outtype)
             data = similar(d.data, $(outtype))
             for i = 1:length(data)
                 if !d.na[i]
-                    data[i] = $(f)(d[i])
+                    data[i] = $(f)(d.data[i])
                 end
             end
             DataArray(data, copy(d.na))
         end
         function $(f){T<:$(intype)}(adv::AbstractDataArray{T})
-            # XXX Make sure similar actually works for AbstractDataArray types
-            # defined in DataFrames
             res = similar(adv, $(outtype))
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i])
@@ -250,8 +276,6 @@ for f in (:round, :ceil, :floor, :trunc)
             DataArray(data, copy(d.na))
         end
         function $(f){T<:Number}(adv::AbstractDataArray{T}, args...)
-            # XXX Make sure similar actually works for
-            # AbstractDataArray types defined in DataFrames
             res = similar(adv)
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i], args...)
@@ -259,7 +283,7 @@ for f in (:round, :ceil, :floor, :trunc)
             res
         end
         $(f)(d::DataFrame, args...) = 
-                DataFrame([$(f)(d[i], args...) for i=1:size(d, 2)], deepcopy(index(d)))
+            DataFrame([$(f)(d[i], args...) for i=1:size(d, 2)], deepcopy(index(d)))
     end
 end
 
@@ -409,7 +433,7 @@ function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     return true
 end
 
-for sf in (:(==), :(!=), :(>), :(>=), :(<), :(<=))
+for sf in scalar_comparison_operators
     vf = symbol(".$sf")
 
     @eval begin
@@ -437,8 +461,11 @@ end
 #
 # Binary operators
 #
+
+# Necessary to avoid ambiguity warnings
 .^(::MathConst{:e}, B::DataArray) = exp(B)
 .^(::MathConst{:e}, B::AbstractDataArray) = exp(B)
+
 for f in arithmetic_operators
     @eval begin
         # Array with NA
@@ -449,10 +476,10 @@ for f in arithmetic_operators
         ($f)(::NAtype, ::NAtype) = NA
         @swappable ($f)(d::NAtype, x::Number) = NA
 
-        @swappable ($f)(A::BitArray, B::AbstractDataArray) = ($f)(bitunpack(A), B)
-        @swappable ($f)(A::BitArray, B::DataArray) = ($f)(bitunpack(A), B)
+        # DataArray with scalar
         @dataarray_binary_scalar $f $f promote_type(eltype(a), eltype(b))
 
+        # DataFrame
         @dataframe_binary $f
     end
 end
@@ -462,114 +489,77 @@ end
 ^(::NAtype, ::Integer) = NA
 ^(::NAtype, ::Number) = NA
 
-# for arithmetic, NAs propagate
 for (vf, sf) in ((:(+), :(+)), (:(.+), :(+)), (:(-), :(-)), (:(.-), :(-)), (:(.*), :(*)),
                  (:(.^), :(^)))
     @eval begin
+        # Necessary to avoid ambiguity warnings
+        @swappable ($vf)(A::BitArray, B::AbstractDataArray) = ($vf)(bitunpack(A), B)
+        @swappable ($vf)(A::BitArray, B::DataArray) = ($vf)(bitunpack(A), B)
+
         @dataarray_binary_array $vf $sf promote_type(eltype(a), eltype(b))
     end
 end
-@dataarray_binary_array (./) (/) promote_type(eltype(a), eltype(b))
+
+@swappable ./(A::BitArray, B::AbstractDataArray) = ./(bitunpack(A), B)
+@swappable ./(A::BitArray, B::DataArray) = ./(bitunpack(A), B)
+
+@dataarray_binary_array (./) (/) isa(a, FloatingPoint) || isa(b, FloatingPoint) ?
+                                 promote_type(a, b) : Float64
 
 for f in biscalar_operators
     @eval begin
-        function ($f)(d::NAtype, e::NAtype)
-            return NA
-        end
-        function ($f){T <: Number}(d::NAtype, x::T)
-            return NA
-        end
-        function ($f){T <: Number}(x::T, d::NAtype)
-            return NA
-        end
+        ($f)(::NAtype, ::NAtype) = NA
+        @swappable $(f)(::Number, ::NAtype) = NA
     end
 end
 
 for f in pairwise_vector_operators
-    @eval begin
-        function ($f)(dv::DataVector)
-            n = length(dv)
-            new_data = ($f)(dv.data)
-            new_na = falses(n - 1)
-            for i = 2:(n - 1)
-                if isna(dv[i])
-                    new_na[i - 1] = true
-                    new_na[i] = true
-                end
+    @eval function ($f)(dv::DataVector)
+        n = length(dv)
+        new_data = ($f)(dv.data)
+        new_na = falses(n - 1)
+        for i = 2:(n - 1)
+            if dv.na[i]
+                new_na[i - 1] = true
+                new_na[i] = true
             end
-            if isna(dv[n])
-                new_na[n - 1] = true
-            end
-            return DataArray(new_data, new_na)
         end
+        if dv.na[n]
+            new_na[n - 1] = true
+        end
+        return DataArray(new_data, new_na)
     end
 end
 
 for f in cumulative_vector_operators
-    @eval begin
-        function ($f)(dv::DataVector)
-            new_data = ($f)(dv.data)
-            new_na = falses(length(dv))
-            hitna = false
-            for i = 1:length(dv)
-                if isna(dv[i])
-                    hitna = true
-                end
-                if hitna
-                    new_na[i] = true
-                end
+    @eval function ($f)(dv::DataVector)
+        new_data = ($f)(dv.data)
+        new_na = falses(length(dv))
+        hitna = false
+        for i = 1:length(dv)
+            if dv.na[i]
+                hitna = true
             end
-            return DataArray(new_data, new_na)
+            if hitna
+                new_na[i] = true
+            end
         end
+        return DataArray(new_data, new_na)
     end
 end
 
-for f in unary_vector_operators
-    @eval begin
-        function ($f)(dv::DataVector)
-            if any(isna(dv))
-                return NA
-            else
-                return ($f)(dv.data)
-            end
-        end
-    end
-end
-
-for f in ffts
-    @eval begin
-        function ($f)(dv::DataVector)
-            if any(isna(dv))
-                return NA
-            else
-                return ($f)(dv.data)
-            end
-        end
-    end
+for f in [unary_vector_operators; ffts]
+    @eval ($f)(dv::DataVector) = any(dv.na) ? NA : ($f)(dv.data)
 end
 
 for f in binary_vector_operators
-    @eval begin
-        function ($f)(dv1::DataVector, dv2::DataVector)
-            if any(isna(dv1)) || any(isna(dv2))
-                return NA
-            else
-                return ($f)(dv1.data, dv2.data)
-            end
-        end
-    end
+    @eval ($f)(dv1::DataVector, dv2::DataVector) =
+            any(dv1.na) || any(dv2.na) ? NA : ($f)(dv1.data, dv2.data)
 end
 
-for (f, colf) in ((:min, :colmins),
-                  (:max, :colmaxs),
-                  (:prod, :colprods),
-                  (:sum, :colsums),
-                  (:mean, :colmeans),
-                  (:median, :colmedians),
-                  (:std, :colstds),
-                  (:var, :colvars),
-                  (:fft, :colffts), # TODO: Remove and/or fix
-                  (:norm, :colnorms))
+for f in (:min, :max, :prod, :sum, :mean, :median, :std, :var, :norm)
+    colf = symbol("col$(f)s")
+    rowf = symbol("row$(f)s")
     @eval begin
         function ($colf)(df::AbstractDataFrame)
             p = ncol(df)
@@ -588,20 +578,6 @@ for (f, colf) in ((:min, :colmins),
             end
             return res
         end
-    end
-end
-
-for (f, rowf) in ((:min, :rowmins),
-                  (:max, :rowmaxs),
-                  (:prod, :rowprods),
-                  (:sum, :rowsums),
-                  (:mean, :rowmeans),
-                  (:median, :rowmedians),
-                  (:std, :rowstds),
-                  (:var, :rowvars),
-                  (:fft, :rowffts), # TODO: Remove and/or fix
-                  (:norm, :rownorms))
-    @eval begin
         function ($rowf)(dm::DataMatrix)
             n, p = nrow(dm), ncol(dm)
             res = datazeros(n)
@@ -617,7 +593,19 @@ end
 # Boolean operators
 #
 
-function all{T}(dv::AbstractDataArray{T})
+function all(dv::AbstractDataArray{Bool})
+    for i in 1:length(dv)
+        if dv.na[i]
+            return NA
+        end
+        if !dv.data[i]
+            return false
+        end
+    end
+    true
+end
+
+function all(dv::AbstractDataArray{Bool})
     for i in 1:length(dv)
         if isna(dv[i])
             return NA
@@ -626,10 +614,24 @@ function all{T}(dv::AbstractDataArray{T})
             return false
         end
     end
-    return true
+    true
 end
 
-function any{T}(dv::AbstractDataArray{T})
+function any(dv::DataArray{Bool})
+    has_na = false
+    for i in 1:length(dv)
+        if !dv.na[i]
+            if dv.data[i]
+                return true
+            end
+        else
+            has_na = true
+        end
+    end
+    has_na ? NA : false
+end
+
+function any(dv::AbstractDataArray{Bool})
     has_na = false
     for i in 1:length(dv)
         if !isna(dv[i])
@@ -640,45 +642,35 @@ function any{T}(dv::AbstractDataArray{T})
             has_na = true
         end
     end
-    if has_na
-        return NA
-    else
-        return false
-    end
+    has_na ? NA : false
 end
 
 function all(df::AbstractDataFrame)
-    for i in 1:nrow(df)
-        for j in 1:ncol(df)
-            if isna(df[i, j])
-                return NA
-            end
-            if !df[i, j]
-                return false
-            end
+    for i in 1:size(df, 2)
+        x = all(df[i])
+        if isna(x)
+            return NA
+        end
+        if !x
+            return false
         end
     end
-    return true
+    true
 end
 
 function any(df::AbstractDataFrame)
     has_na = false
-    for i in 1:nrow(df)
-        for j in 1:ncol(df)
-            if !isna(df[i, j])
-                if df[i, j]
-                    return true
-                end
-            else
-                has_na = true
+    for i in 1:size(df, 2)
+        x = any(df[i])
+        if !isna(x)
+            if x
+                return true
             end
+        else
+            has_na = true
         end
     end
-    if has_na
-        return NA
-    else
-        return false
-    end
+    has_na ? NA : false
 end
 
 function Stats.range{T}(dv::AbstractDataVector{T})
