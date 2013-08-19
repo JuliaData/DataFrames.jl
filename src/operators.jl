@@ -1,77 +1,77 @@
-unary_operators = [:(+), :(-), :(!), :(*)]
+const unary_operators = [:(+), :(-), :(!), :(*)]
 
-numeric_unary_operators = [:(+), :(-)]
+const numeric_unary_operators = [:(+), :(-)]
 
-logical_unary_operators = [:(!)]
+const logical_unary_operators = [:(!)]
 
-elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
-                        :asinh, :atan, :atanh, :sin, :sinh,
-                        :cos, :cosh, :tan, :tanh, :ceil, :floor,
-                        :round, :trunc, :exp, :exp2, :expm1, :log, :log10, :log1p,
-                        :log2, :exponent, :sqrt, :gamma, :lgamma, :digamma,
-                        :erf, :erfc]
+const elementary_functions = [:abs, :sign, :acos, :acosh, :asin,
+                              :asinh, :atan, :atanh, :sin, :sinh,
+                              :cos, :cosh, :tan, :tanh, :ceil, :floor,
+                              :round, :trunc, :exp, :exp2, :expm1, :log, :log10, :log1p,
+                              :log2, :exponent, :sqrt, :gamma, :lgamma, :digamma,
+                              :erf, :erfc]
 
-two_argument_elementary_functions = [:round, :ceil, :floor, :trunc]
+const two_argument_elementary_functions = [:round, :ceil, :floor, :trunc]
 
-special_comparison_operators = [:isless]
+const special_comparison_operators = [:isless]
 
-comparison_operators = [:(==), :(.==), :(!=), :(.!=),
-                        :(>), :(.>), :(>=), :(.>=), :(<), :(.<),
-                        :(<=), :(.<=)]
+const comparison_operators = [:(==), :(.==), :(!=), :(.!=),
+                              :(>), :(.>), :(>=), :(.>=), :(<), :(.<),
+                              :(<=), :(.<=)]
 
-scalar_comparison_operators = [:(==), :(!=), :(>), :(>=),
-                               :(<), :(<=)]
+const scalar_comparison_operators = [:(==), :(!=), :(>), :(>=),
+                                     :(<), :(<=)]
 
-array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
+const array_comparison_operators = [:(.==), :(.!=), :(.>), :(.>=), :(.<), :(.<=)]
 
-vectorized_comparison_operators = [(:(.==), :(==)), (:(.!=), :(!=)),
-                                   (:(.>), :(>)), (:(.>=), :(>=)),
-                                   (:(.<), :(<)), (:(.<=), :(<=))]
+const vectorized_comparison_operators = [(:(.==), :(==)), (:(.!=), :(!=)),
+                                         (:(.>), :(>)), (:(.>=), :(>=)),
+                                         (:(.<), :(<)), (:(.<=), :(<=))]
 
-binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
-                    :(.^), :(div), :(mod), :(fld), :(rem)]
+const binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
+                          :(.^), :(div), :(mod), :(fld), :(rem)]
 
-induced_binary_operators = [:(^)]
+const induced_binary_operators = [:(^)]
 
-arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
-                        :(.^), :(div), :(mod), :(fld), :(rem)]
+const arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
+                              :(.^), :(div), :(mod), :(fld), :(rem)]
 
-induced_arithmetic_operators = [:(^)]
+const induced_arithmetic_operators = [:(^)]
 
-biscalar_operators = [:(max), :(min)]
+const biscalar_operators = [:(max), :(min)]
 
-scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
-                               :(div), :(mod), :(fld), :(rem)]
+const scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
+                                     :(div), :(mod), :(fld), :(rem)]
 
-induced_scalar_arithmetic_operators = [:(^)]
+const induced_scalar_arithmetic_operators = [:(^)]
 
-array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(.^)]
+const array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(.^)]
 
-bit_operators = [:(&), :(|), :($)]
+const bit_operators = [:(&), :(|), :($)]
 
-unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
-                          :var, :mad, :norm, :skewness, :kurtosis]
+const unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
+                                :var, :mad, :norm, :skewness, :kurtosis]
 
 
 # TODO: dist, iqr, rle, inverse_rle
 
-pairwise_vector_operators = [:diff, :reldiff, :percent_change]
+const pairwise_vector_operators = [:diff, :reldiff, :percent_change]
 
-cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
+const cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
 
-ffts = [:fft]
+const ffts = [:fft]
 
-binary_vector_operators = [:dot, :cor, :cov, :cor_spearman]
+const binary_vector_operators = [:dot, :cor, :cov, :cor_spearman]
 
-rowwise_operators = [:rowmins, :rowmaxs, :rowprods, :rowsums,
-                     :rowmeans, :rowmedians, :rowstds, :rowvars,
-                     :rowffts, :rownorms]
+const rowwise_operators = [:rowmins, :rowmaxs, :rowprods, :rowsums,
+                           :rowmeans, :rowmedians, :rowstds, :rowvars,
+                           :rowffts, :rownorms]
 
-columnar_operators = [:colmins, :colmaxs, :colprods, :colsums,
-                      :colmeans, :colmedians, :colstds, :colvars,
-                      :colffts, :colnorms]
+const columnar_operators = [:colmins, :colmaxs, :colprods, :colsums,
+                            :colmeans, :colmedians, :colstds, :colvars,
+                            :colffts, :colnorms]
 
-boolean_operators = [:any, :all]
+const boolean_operators = [:any, :all]
 
 # Swap arguments to fname() anywhere in AST. Returns the number of
 # arguments swapped
