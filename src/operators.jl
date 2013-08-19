@@ -14,21 +14,12 @@ vectorized_comparison_operators = [(:(.==), :(==)), (:(.!=), :(!=)),
 binary_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
                     :(.^), :(div), :(mod), :(fld), :(rem)]
 
-induced_binary_operators = [:(^)]
-
 arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(*), :(.*), :(/), :(./),
                         :(.^), :(div), :(mod), :(fld), :(rem)]
-
-induced_arithmetic_operators = [:(^)]
+                        
+array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(.^)]
 
 biscalar_operators = [:(max), :(min)]
-
-scalar_arithmetic_operators = [:(+), :(-), :(*), :(/),
-                               :(div), :(mod), :(fld), :(rem)]
-
-induced_scalar_arithmetic_operators = [:(^)]
-
-array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(.^)]
 
 unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
                           :var, :mad, :norm, :skewness, :kurtosis]
@@ -67,6 +58,8 @@ macro dataframe_binary(f)
             DataFrame([$(f)(a[i], b[i]) for i=1:size(a, 2)], deepcopy(index(a)))
         end
         @swappable $(f)(a::DataFrame, b::Union(Number, String)) = 
+            DataFrame([$(f)(a[i], b) for i=1:size(a, 2)], deepcopy(index(a)))
+        @swappable $(f)(a::DataFrame, b::NAtype) = 
             DataFrame([$(f)(a[i], b) for i=1:size(a, 2)], deepcopy(index(a)))
     end)
 end
@@ -114,7 +107,7 @@ macro swappable(func, syms...)
         end
     end
 
-    for s in [fname, syms...]
+    for s in unique([fname, syms...])
         if swapargs(func2, s) < 1
             error("No argument swapped")
         end
@@ -310,19 +303,49 @@ for t in (:(BitArray), :(Union(AbstractArray{Bool}, Bool)))
 end
 
 #
-# Scalar comparison operators
+# Comparison operators
 #
 
-# Apply unary operator to non-NA members of a DataArray or
-# AbstractDataArray
-macro dataarray_binary(vectorfunc, scalarfunc, outtype)
+# Binary operators with one scalar argument
+macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype)
+    esc(Expr(:block,
+        # DataArray and AbstractDataArray with scalar
+        # XXX It would be really nice to make this work with arbitrary
+        # types, but doing so results in a bunch of method ambiguity
+        # warnings
+        {
+            quote
+                @swappable function $(vectorfunc)(a::DataArray, b::$t)
+                    res = DataArray(similar(a.data, $outtype), copy(a.na))
+                    for i = 1:length(a)
+                        if !res.na[i]
+                            res.data[i] = $(scalarfunc)(a.data[i], b)
+                        end
+                    end
+                    res
+                end $scalarfunc
+                @swappable function $(vectorfunc)(a::AbstractDataArray, b::$t)
+                    res = similar(a, $outtype)
+                    for i = 1:length(a)
+                        res[i] = $(scalarfunc)(a[i], b)
+                    end
+                    res
+                end $scalarfunc
+            end
+            for t in (:String, :Number)
+        }...
+    ))
+end
+
+# Binary operators with two array arguments
+macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
     esc(Expr(:block,
         # DataArray with other array
         {
             quote
                 function $(vectorfunc)(a::$(adata ? :DataArray : :AbstractArray),
                                        b::$(bdata ? :DataArray : :AbstractArray))
-                    res = DataArray(Array(Bool, promote_shape(size(a), size(b))), $narule)
+                    res = DataArray(Array($outtype, promote_shape(size(a), size(b))), $narule)
                     for i = 1:length(res)
                         if !res.na[i]
                             res.data[i] = $(scalarfunc)($(adata ? :(a.data) : :a)[i],
@@ -341,7 +364,7 @@ macro dataarray_binary(vectorfunc, scalarfunc, outtype)
         {
             quote
                 function $(vectorfunc)(a::$atype, b::$btype)
-                    res = similar($(asim ? :a : :b), Bool, promote_shape(size(a), size(b)))
+                    res = similar($(asim ? :a : :b), $outtype, promote_shape(size(a), size(b)))
                     for i = 1:length(a)
                         res[i] = $(scalarfunc)(a[i], b[i])
                     end
@@ -354,31 +377,6 @@ macro dataarray_binary(vectorfunc, scalarfunc, outtype)
                                          (true, :AbstractDataArray, :AbstractArray),
                                          (false, :AbstractDataArray, :AbstractArray))
         }...,
-        # DataArray and AbstractDataArray with scalar
-        # XXX It would be really nice to make this work with arbitrary
-        # types, but doing so results in a bunch of method ambiguity
-        # warnings
-        {
-            quote
-                @swappable function $(vectorfunc)(a::DataArray, b::$t)
-                    res = DataArray(similar(a.data, Bool), copy(a.na))
-                    for i = 1:length(a)
-                        if !res.na[i]
-                            res.data[i] = $(scalarfunc)(a.data[i], b)
-                        end
-                    end
-                    res
-                end $scalarfunc
-                @swappable function $(vectorfunc)(a::AbstractDataArray, b::$t)
-                    res = similar(a, Bool)
-                    for i = 1:length(a)
-                        res[i] = $(scalarfunc)(a[i], b)
-                    end
-                    res
-                end $scalarfunc
-            end
-            for t in (:String, :Number)
-        }...
     ))
 end
 
@@ -415,7 +413,7 @@ for sf in (:(==), :(!=), :(>), :(>=), :(<), :(<=))
     vf = symbol(".$sf")
 
     @eval begin
-        # Array with NA (necessary to avoid ambiguity)
+        # Array with NA
         @swappable $(vf){T,N}(::NAtype, b::AbstractArray{T,N}) =
             DataArray(Array(Bool, size(b)), trues(size(b)))
 
@@ -424,11 +422,14 @@ for sf in (:(==), :(!=), :(>), :(>=), :(<), :(<=))
         $(sf)(::NAtype, ::NAtype) = NA
         @swappable $(vf)(::NAtype, b) = NA
         @swappable $(sf)(::NAtype, b) = NA
+
+        @dataarray_binary_scalar $vf $sf Bool
+        @dataarray_binary_array $vf $sf Bool
+
         $(sf)(a::AbstractDataArray, b::AbstractDataArray) =
-            error("$f not defined for AbstractDataArrays. Try $vf")
+            error("$sf not defined for AbstractDataArrays. Try $vf")
 
         # DataFrame
-        @dataarray_binary $vf $sf Bool
         @dataframe_binary $vf
     end
 end
@@ -436,254 +437,39 @@ end
 #
 # Binary operators
 #
-.^(::MathConst{:e}, B::DataVector) = exp(B)
-for f in binary_operators
+.^(::MathConst{:e}, B::DataArray) = exp(B)
+.^(::MathConst{:e}, B::AbstractDataArray) = exp(B)
+for f in arithmetic_operators
     @eval begin
-        function ($f)(d::NAtype, e::NAtype)
-            return NA
-        end
-        function ($f){T <: Union(Number, String)}(d::NAtype, x::T)
-            return NA
-        end
-        function ($f){T <: Union(Number, String)}(x::T, d::NAtype)
-            return NA
-        end
-        function ($f){T}(A::Number, B::DataVector{T})
-            res = DataArray(Array(promote_type(typeof(A),T), length(B)), B.na)
-            for i in 1:length(B)
-                res.data[i] = ($f)(A, B.data[i])
-            end
-            return res
-        end
-        function ($f){T}(A::DataVector{T}, B::Number)
-            res = DataArray(Array(promote_type(typeof(B),T), length(A)), A.na)
-            for i in 1:length(A)
-                res.data[i] = ($f)(A.data[i], B)
-            end
-            return res
-        end
-        function ($f){T}(A::NAtype, B::DataVector{T})
-            res = DataArray(Array(typeof(B).parameters[1], length(B)), B.na)
-            for i in 1:length(B)
-                res.data[i] = B.data[i]
-                res.na[i] = true
-            end
-            return res
-        end
-        function ($f){T}(A::DataVector{T}, B::NAtype)
-            res = DataArray(Array(typeof(A).parameters[1], length(A)), A.na)
-            for i in 1:length(A)
-                res.data[i] = A.data[i]
-                res.na[i] = true
-            end
-            return res
-        end
-        function ($f)(df::DataFrame, x::Union(Number, NAtype))
-            n, p = nrow(df), ncol(df)
-            # Tries to preserve types
-            results = deepcopy(df)
-            for j in 1:p
-                if typeof(df[j]).parameters[1] <: Number
-                    for i in 1:n
-                        results[i, j] = ($f)(df[i, j], x)
-                    end
-                else
-                    for i in 1:n
-                        results[i, j] = NA
-                    end
-                end
-            end
-            return results
-        end
-        function ($f)(x::Union(Number, NAtype), df::DataFrame)
-            n, p = nrow(df), ncol(df)
-            # Tries to preserve types
-            results = deepcopy(df)
-            for j in 1:p
-                if typeof(df[j]).parameters[1] <: Number
-                    for i in 1:n
-                        results[i, j] = ($f)(x, df[i, j])
-                    end
-                else
-                    for i in 1:n
-                        results[i, j] = NA
-                    end
-                end
-            end
-            return results
-        end
-        function ($f){T <: Union(String, Number)}(d::NAtype, x::T)
-            return NA
-        end
-        function ($f){T <: Union(String, Number)}(x::T, d::NAtype)
-            return NA
-        end
-        function ($f){T,N}(a::AbstractArray{T,N}, d::NAtype)
-            return NA
-        end
-        function ($f){T,N}(d::NAtype, a::AbstractArray{T,N})
-            return NA
-        end
+        # Array with NA
+        @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
+            DataArray(Array(T, size(b)), trues(size(b)))
+
+        # Scalar with NA
+        ($f)(::NAtype, ::NAtype) = NA
+        @swappable ($f)(d::NAtype, x::Number) = NA
+
+        @swappable ($f)(A::BitArray, B::AbstractDataArray) = ($f)(bitunpack(A), B)
+        @swappable ($f)(A::BitArray, B::DataArray) = ($f)(bitunpack(A), B)
+        @dataarray_binary_scalar $f $f promote_type(eltype(a), eltype(b))
+
+        @dataframe_binary $f
     end
 end
 
-for f in induced_binary_operators
-    @eval begin
-        function ($f)(d::NAtype, e::NAtype)
-            return NA
-        end
-        function ($f)(d::Union(String, Number), e::NAtype)
-            return NA
-        end
-        function ($f)(d::NAtype, e::FloatingPoint)
-            return NA
-        end
-    end
-end
+^(::NAtype, ::NAtype) = NA
+^(a, ::NAtype) = NA
+^(::NAtype, ::Integer) = NA
+^(::NAtype, ::Number) = NA
 
 # for arithmetic, NAs propagate
-for f in array_arithmetic_operators
+for (vf, sf) in ((:(+), :(+)), (:(.+), :(+)), (:(-), :(-)), (:(.-), :(-)), (:(.*), :(*)),
+                 (:(.^), :(^)))
     @eval begin
-        function ($f){S, T}(A::DataVector{S}, B::Vector{T})
-            n_A, n_B = length(A), length(B)
-            if n_A != n_B
-                error("DataVector and Vector lengths must match")
-            end
-            res = DataArray(Array(promote_type(S, T), n_A), BitArray(n_A))
-            for i in 1:n_A
-                res.na[i] = A.na[i]
-                res.data[i] = ($f)(A.data[i], B[i])
-            end
-            return res
-        end
-        function ($f){S, T}(A::Vector{S}, B::DataVector{T})
-            n_A, n_B = length(A), length(B)
-            if n_A != n_B
-                error("Vector and DataVector lengths must match")
-            end
-            res = DataArray(Array(promote_type(S, T), n_A), BitArray(n_A))
-            for i in 1:n_A
-                res.na[i] = B.na[i]
-                res.data[i] = ($f)(A[i], B.data[i])
-            end
-            return res
-        end
-        function ($f){S, T}(A::DataVector{S}, B::DataVector{T})
-            if (length(A) != length(B))
-                error("DataVector lengths must match")
-            end
-            res = DataArray(Array(promote_type(S, T),
-                                  length(A)),
-                            BitArray(length(A)))
-            for i in 1:length(A)
-                res.na[i] = (A.na[i] || B.na[i])
-                res.data[i] = ($f)(A.data[i], B.data[i])
-            end
-            return res
-        end
-        function ($f){S, T}(A::DataMatrix{S}, B::DataMatrix{T})
-            if size(A) != size(B)
-                error("DataMatrix sizes must match")
-            end
-            res = DataArray(Array(promote_type(S, T), size(A)),
-                            BitArray(size(A)))
-            for i in 1:length(A)
-                res.na[i] = (A.na[i] || B.na[i])
-                res.data[i] = ($f)(A.data[i], B.data[i])
-            end
-            return res
-        end
-        function ($f)(a::DataFrame, b::DataFrame)
-            n, p = nrow(a), ncol(a)
-            if n != nrow(b) || p != ncol(b)
-                error("DataFrames must have matching sizes for arithmetic")
-            end
-            # Tries to preserve types from a
-            results = deepcopy(a)
-            for j in 1:p
-                if typeof(a[j]).parameters[1] <: Number
-                    for i in 1:n
-                        results[i, j] = ($f)(a[i, j], b[i, j])
-                    end
-                else
-                    for i in 1:n
-                        results[i, j] = NA
-                    end
-                end
-            end
-            return results
-        end
+        @dataarray_binary_array $vf $sf promote_type(eltype(a), eltype(b))
     end
 end
-
-function (./)(A::DataVector, B::Vector)
-    n_A, n_B = length(A), length(B)
-    if n_A != n_B
-        error("DataVector and Vector lengths must match")
-    end
-    res = DataArray(Array(Float64, n_A), BitArray(n_A))
-    for i in 1:n_A
-        res.na[i] = A.na[i]
-        res.data[i] = (./)(A.data[i], B[i])
-    end
-    return res
-end
-function (./)(A::Vector, B::DataVector)
-    n_A, n_B = length(A), length(B)
-    if n_A != n_B
-        error("Vector and DataVector lengths must match")
-    end
-    res = DataArray(Array(Float64, n_A), BitArray(n_A))
-    for i in 1:n_A
-        res.na[i] = B.na[i]
-        res.data[i] = (./)(A[i], B.data[i])
-    end
-    return res
-end
-function (./)(A::DataVector, B::DataVector)
-    if length(A) != length(B)
-        error("DataVector lengths must match")
-    end
-    res = DataArray(Array(Float64, length(A)),
-                    BitArray(length(A)))
-    for i in 1:length(A)
-        res.na[i] = (A.na[i] || B.na[i])
-        res.data[i] = (./)(A.data[i], B.data[i])
-    end
-    return res
-end
-function (./)(A::DataMatrix, B::DataMatrix)
-    if size(A) != size(B)
-        error("DataMatrix sizes must match")
-    end
-    res = DataArray(Array(Float64, size(A)),
-                    BitArray(size(A)))
-    for i in 1:length(A)
-        res.na[i] = (A.na[i] || B.na[i])
-        res.data[i] = (./)(A.data[i], B.data[i])
-    end
-    return res
-end
-function (./)(a::DataFrame, b::DataFrame)
-    n, p = nrow(a), ncol(a)
-    if n != nrow(b) || p != ncol(b)
-        error("DataFrames must have matching sizes for arithmetic")
-    end
-    # Tries to preserve types from a
-    results = deepcopy(a)
-    for j in 1:p
-        if typeof(a[j]).parameters[1] <: Number
-            for i in 1:n
-                results[i, j] = (./)(a[i, j], b[i, j])
-            end
-        else
-            for i in 1:n
-                results[i, j] = NA
-            end
-        end
-    end
-    return results
-end
+@dataarray_binary_array (./) (/) promote_type(eltype(a), eltype(b))
 
 for f in biscalar_operators
     @eval begin
