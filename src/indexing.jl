@@ -252,7 +252,7 @@ end
 size(a::IndexedVector) = size(a.x)
 length(a::IndexedVector) = length(a.x)
 ndims(a::IndexedVector) = 1
-eltype{T}(a::IndexedVector) = eltype(a.x)
+eltype(a::IndexedVector) = eltype(a.x)
 
 ## print(io, a::IndexedVector) = print(io, a.x)
 function show(io::IO, a::IndexedVector)

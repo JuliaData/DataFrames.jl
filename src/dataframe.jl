@@ -1634,7 +1634,7 @@ type DFPerm{O<:Ordering,DF<:AbstractDataFrame} <: Ordering
     df::DF
 end
 
-function DFPerm{O<:Ordering,DF<:AbstractDataFrame}(o::AbstractVector{Ordering}, df::DF)
+function DFPerm{O<:Ordering}(o::AbstractVector{O}, df::AbstractDataFrame)
     o_cols = length(o)
     df_cols = ncols(df)
     if o_cols > df_cols
