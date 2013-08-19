@@ -73,25 +73,6 @@ columnar_operators = [:colmins, :colmaxs, :colprods, :colsums,
 
 boolean_operators = [:any, :all]
 
-# Unary operators for DataFrames and DataArrays
-macro dataframe_unary(f)
-    esc(:($(f)(d::DataFrame) = DataFrame([$(f)(d[i]) for i=1:size(d, 2)], deepcopy(index(d)))))
-end
-
-# Binary operators
-macro dataframe_binary(f)
-    esc(quote
-        function $(f)(a::DataFrame, b::DataFrame)
-            if size(a) != size(b); error("argument dimensions must match"); end
-            DataFrame([$(f)(a[i], b[i]) for i=1:size(a, 2)], deepcopy(index(a)))
-        end
-        @swappable $(f)(a::DataFrame, b::Union(Number, String)) = 
-            DataFrame([$(f)(a[i], b) for i=1:size(a, 2)], deepcopy(index(a)))
-        @swappable $(f)(a::DataFrame, b::NAtype) = 
-            DataFrame([$(f)(a[i], b) for i=1:size(a, 2)], deepcopy(index(a)))
-    end)
-end
-
 # Swap arguments to fname() anywhere in AST. Returns the number of
 # arguments swapped
 function swapargs(ast::Expr, fname::Symbol)
@@ -141,6 +122,128 @@ macro swappable(func, syms...)
         end
     end
     esc(Expr(:block, func, func2))
+end
+
+#
+# Unary operator macros for DataFrames and DataArrays
+#
+
+macro dataframe_unary(f)
+    esc(:($(f)(d::DataFrame) = DataFrame([$(f)(d[i]) for i=1:size(d, 2)], deepcopy(index(d)))))
+end
+
+# Apply unary operator to non-NA members of a DataArray or
+# AbstractDataArray
+macro dataarray_unary(f, intype, outtype)
+    esc(quote
+        function $(f){T<:$(intype)}(d::DataArray{T})
+            data = similar(d.data, $(outtype))
+            for i = 1:length(data)
+                if !d.na[i]
+                    data[i] = $(f)(d.data[i])
+                end
+            end
+            DataArray(data, copy(d.na))
+        end
+        function $(f){T<:$(intype)}(adv::AbstractDataArray{T})
+            res = similar(adv, $(outtype))
+            for i = 1:length(adv)
+                res[i] = ($f)(adv[i])
+            end
+            res
+        end
+    end)
+end
+
+#
+# Binary operator macros for DataFrames and DataArrays
+#
+
+# Binary operators with one scalar argument
+macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype)
+    esc(Expr(:block,
+        # DataArray and AbstractDataArray with scalar
+        # XXX It would be really nice to make this work with arbitrary
+        # types, but doing so results in a bunch of method ambiguity
+        # warnings
+        {
+            quote
+                @swappable function $(vectorfunc)(a::DataArray, b::$t)
+                    res = DataArray(similar(a.data, $outtype), copy(a.na))
+                    for i = 1:length(a)
+                        if !res.na[i]
+                            res.data[i] = $(scalarfunc)(a.data[i], b)
+                        end
+                    end
+                    res
+                end $scalarfunc
+                @swappable function $(vectorfunc)(a::AbstractDataArray, b::$t)
+                    res = similar(a, $outtype)
+                    for i = 1:length(a)
+                        res[i] = $(scalarfunc)(a[i], b)
+                    end
+                    res
+                end $scalarfunc
+            end
+            for t in (:String, :Number)
+        }...
+    ))
+end
+
+# Binary operators with two array arguments
+macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
+    esc(Expr(:block,
+        # DataArray with other array
+        {
+            quote
+                function $(vectorfunc)(a::$(adata ? :DataArray : :AbstractArray),
+                                       b::$(bdata ? :DataArray : :AbstractArray))
+                    res = DataArray(Array($outtype, promote_shape(size(a), size(b))), $narule)
+                    for i = 1:length(res)
+                        if !res.na[i]
+                            res.data[i] = $(scalarfunc)($(adata ? :(a.data) : :a)[i],
+                                                        $(bdata ? :(b.data) : :b)[i])
+                        end
+                    end
+                    res
+                end
+            end
+            for (adata, bdata, narule) in ((true, true, :(a.na | b.na)),
+                                           (true, false, :(copy(a.na))),
+                                           (false, true, :(copy(b.na))))
+        }...,
+        # AbstractDataArray with other array
+        # Definitinons with DataArray necessary to avoid ambiguity
+        {
+            quote
+                function $(vectorfunc)(a::$atype, b::$btype)
+                    res = similar($(asim ? :a : :b), $outtype, promote_shape(size(a), size(b)))
+                    for i = 1:length(a)
+                        res[i] = $(scalarfunc)(a[i], b[i])
+                    end
+                    res
+                end
+            end
+            for (asim, atype, btype) in ((true, :DataArray, :AbstractDataArray),
+                                         (false, :AbstractDataArray, :DataArray),
+                                         (true, :AbstractDataArray, :AbstractDataArray),
+                                         (true, :AbstractDataArray, :AbstractArray),
+                                         (false, :AbstractDataArray, :AbstractArray))
+        }...,
+    ))
+end
+
+macro dataframe_binary(f)
+    esc(quote
+        function $(f)(a::DataFrame, b::DataFrame)
+            if size(a) != size(b); error("argument dimensions must match"); end
+            DataFrame([$(f)(a[i], b[i]) for i=1:size(a, 2)], deepcopy(index(a)))
+        end
+        @swappable $(f)(a::DataFrame, b::Union(Number, String)) = 
+            DataFrame([$(f)(a[i], b) for i=1:size(a, 2)], deepcopy(index(a)))
+        @swappable $(f)(a::DataFrame, b::NAtype) = 
+            DataFrame([$(f)(a[i], b) for i=1:size(a, 2)], deepcopy(index(a)))
+    end)
 end
 
 # Unary operators, NA
@@ -214,29 +317,6 @@ end
 #
 # XXX: The below should be revisited once we have a way to infer what
 # the proper return type of an array should be.
-
-# Apply unary operator to non-NA members of a DataArray or
-# AbstractDataArray
-macro dataarray_unary(f, intype, outtype)
-    esc(quote
-        function $(f){T<:$(intype)}(d::DataArray{T})
-            data = similar(d.data, $(outtype))
-            for i = 1:length(data)
-                if !d.na[i]
-                    data[i] = $(f)(d.data[i])
-                end
-            end
-            DataArray(data, copy(d.na))
-        end
-        function $(f){T<:$(intype)}(adv::AbstractDataArray{T})
-            res = similar(adv, $(outtype))
-            for i = 1:length(adv)
-                res[i] = ($f)(adv[i])
-            end
-            res
-        end
-    end)
-end
 
 # One-argument elementary functions that return the same type as their
 # inputs
@@ -329,80 +409,6 @@ end
 #
 # Comparison operators
 #
-
-# Binary operators with one scalar argument
-macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype)
-    esc(Expr(:block,
-        # DataArray and AbstractDataArray with scalar
-        # XXX It would be really nice to make this work with arbitrary
-        # types, but doing so results in a bunch of method ambiguity
-        # warnings
-        {
-            quote
-                @swappable function $(vectorfunc)(a::DataArray, b::$t)
-                    res = DataArray(similar(a.data, $outtype), copy(a.na))
-                    for i = 1:length(a)
-                        if !res.na[i]
-                            res.data[i] = $(scalarfunc)(a.data[i], b)
-                        end
-                    end
-                    res
-                end $scalarfunc
-                @swappable function $(vectorfunc)(a::AbstractDataArray, b::$t)
-                    res = similar(a, $outtype)
-                    for i = 1:length(a)
-                        res[i] = $(scalarfunc)(a[i], b)
-                    end
-                    res
-                end $scalarfunc
-            end
-            for t in (:String, :Number)
-        }...
-    ))
-end
-
-# Binary operators with two array arguments
-macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
-    esc(Expr(:block,
-        # DataArray with other array
-        {
-            quote
-                function $(vectorfunc)(a::$(adata ? :DataArray : :AbstractArray),
-                                       b::$(bdata ? :DataArray : :AbstractArray))
-                    res = DataArray(Array($outtype, promote_shape(size(a), size(b))), $narule)
-                    for i = 1:length(res)
-                        if !res.na[i]
-                            res.data[i] = $(scalarfunc)($(adata ? :(a.data) : :a)[i],
-                                                        $(bdata ? :(b.data) : :b)[i])
-                        end
-                    end
-                    res
-                end
-            end
-            for (adata, bdata, narule) in ((true, true, :(a.na | b.na)),
-                                           (true, false, :(copy(a.na))),
-                                           (false, true, :(copy(b.na))))
-        }...,
-        # AbstractDataArray with other array
-        # Definitinons with DataArray necessary to avoid ambiguity
-        {
-            quote
-                function $(vectorfunc)(a::$atype, b::$btype)
-                    res = similar($(asim ? :a : :b), $outtype, promote_shape(size(a), size(b)))
-                    for i = 1:length(a)
-                        res[i] = $(scalarfunc)(a[i], b[i])
-                    end
-                    res
-                end
-            end
-            for (asim, atype, btype) in ((true, :DataArray, :AbstractDataArray),
-                                         (false, :AbstractDataArray, :DataArray),
-                                         (true, :AbstractDataArray, :AbstractDataArray),
-                                         (true, :AbstractDataArray, :AbstractArray),
-                                         (false, :AbstractDataArray, :AbstractArray))
-        }...,
-    ))
-end
 
 isless(::NAtype, ::NAtype) = false
 isless(::NAtype, b) = true
