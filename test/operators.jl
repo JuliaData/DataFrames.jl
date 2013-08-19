@@ -61,7 +61,7 @@ let
 
     columnar_operators = [colmins, colmaxs, colprods, colsums,
                           colmeans, colmedians, colstds, colvars,
-                          colffts, colnorms]
+                          colnorms]
 
     boolean_operators = [any, all]
 
