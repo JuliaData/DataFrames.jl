@@ -117,7 +117,7 @@ function dreadtable(b::Block; kwargs...)
 end
 dreadtable(fname::String; kwargs...) = dreadtable(Block(File(fname)) |> as_io |> as_recordio; kwargs...)
 function dreadtable(io::Union(AsyncStream,IOStream), chunk_sz::Int, merge_chunks::Bool=true; kwargs...)
-    b = (Block(io, chunk_sz, '\n') .> as_recordio) .> as_bytearray
+    b = @prepare Block(io, chunk_sz, '\n') |> as_recordio |> as_bytearray
     rrefs = pmap(x->as_dataframe(PipeBuffer(x); kwargs...), b; fetch_results=false)
     procs = map(x->x.where, rrefs)
 
