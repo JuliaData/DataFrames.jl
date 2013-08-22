@@ -224,6 +224,12 @@ export # reconcile_groups,
        read_rda,
        vecbind
 
+       # DataArray operations
+       sum, prod, max, min, mean, cumsum, cumprod,
+
+       # Functors that handle NAs
+       NAOrZero, NAOrOne, NAOrMin, NAOrMax, NotNA
+
 ##############################################################################
 ##
 ## Load files
@@ -252,7 +258,8 @@ include("predicates.jl")
 include("indexing.jl")
 include("extras.jl")
 include("RDA.jl")
-include("dataframe_blocks.jl")
+#include("dataframe_blocks.jl")
+include("dataarray_ops.jl")
 
 # TODO: Remove these definitions
 nafilter(x...) = error("Function removed. Please use removeNA")
