@@ -760,13 +760,13 @@ end
 # MIME
 
 function Base.writemime(io::IO,
-                        ::@MIME("text/csv"),
+                        ::MIME"text/csv",
                         df::DataFrame)
     printtable(io, df, true, ',')
 end
 
 function Base.writemime(io::IO,
-                        ::@MIME("text/tab-separated-values"),
+                        ::MIME"text/tab-separated-values",
                         df::DataFrame)
     printtable(io, df, true, '\t')
 end
