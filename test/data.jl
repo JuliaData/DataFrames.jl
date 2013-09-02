@@ -567,10 +567,10 @@ using DataFrames
     #test_group("unique()")
     dv = DataArray(1:4)
     dv[4] = NA
-    @assert contains(unique(dv), 1)
-    @assert contains(unique(dv), 2)
-    @assert contains(unique(dv), 3)
-    @assert contains(unique(dv), NA)
+    @assert (1 in unique(dv))
+    @assert (2 in unique(dv))
+    @assert (3 in unique(dv))
+    @assert (NA in unique(dv))
 
     #test_group("find()")
     dv = DataArray([true, false, true])

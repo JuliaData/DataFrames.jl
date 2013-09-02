@@ -93,7 +93,7 @@ Block(dt::DDataFrame) = Block(dt, dt.rrefs, dt.procs, as_it_is, as_it_is)
 function _check_readtable_kwargs(kwargs...)
     kwargs = {kwargs...}
     for kw in kwargs
-        contains([:skipstart, :skiprows], kw[1]) && error("dreadtable does not support $(kw[1])")
+        (kw[1] in [:skipstart, :skiprows]) && error("dreadtable does not support $(kw[1])")
     end
     for (idx,kw) in enumerate(kwargs)
         if (kw[1]==:header) 

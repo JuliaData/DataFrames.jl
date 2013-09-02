@@ -67,7 +67,7 @@ const specials = Set(:+,:-,:*,:/,:&,:|,:^) # special operators in formulas
 function dospecials(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
     a1 = ex.args[1]
-    if !contains(specials, a1) return ex end
+    if !(a1 in specials) return ex end
     excp = copy(ex)
     excp.args = vcat(a1,map(dospecials, ex.args[2:]))
     if a1 != :* return excp end
@@ -102,7 +102,7 @@ ex_or_args(a,s::Symbol) = a
 function condense(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
     a1 = ex.args[1]
-    if !contains(associative, a1) return ex end
+    if !(a1 in associative) return ex end
     excp = copy(ex)
     excp.args = vcat(a1, map(x->ex_or_args(x,a1), ex.args[2:])...)
     excp
@@ -119,7 +119,7 @@ const nonevaluation = Set(:&,:|)        # operators constructed from other evalu
 ## evaluation terms - the (filtered) arguments for :& and :|, otherwise the term itself
 function evt(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
-    if !contains(nonevaluation, ex.args[1]) return ex end
+    if !(ex.args[1] in nonevaluation) return ex end
     filter(x->!isa(x,Number), vcat(map(getterms, ex.args[2:])...))
 end
 evt(a) = {a}
@@ -144,7 +144,7 @@ function Terms(f::Formula)
         unshift!(oo, 1)
     end
     ev = unique(vcat(etrms...))
-    facs = int8(hcat(map(x->(s=Set(x...);map(t->int8(contains(s,t)), ev)),etrms)...))
+    facs = int8(hcat(map(x->(s=Set(x...);map(t->int8(t in s), ev)),etrms)...))
     Terms(tt, ev, facs, oo, haslhs, !any(noint))
 end
 
