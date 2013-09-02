@@ -45,5 +45,5 @@ let
 	@assert isequal(vecbind(PooledDataArray(a),IndexedVector(d)), [d,d])
 	@assert isequal(vecbind(PooledDataArray(a),IndexedVector(a)), [a,a])
 	@assert isequal(vecbind(a,RepeatedVector(a,2)), [a,a,a])
-	@assert isequal(vecbind(a,StackedVector({a,1.0*a})), [a,a,a])
+	@assert (vecbind(a,StackedVector({a,1.0*a})) == [a,a,a])
 end

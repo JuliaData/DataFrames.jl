@@ -346,7 +346,7 @@ function reconcile_groups(olddf::AbstractDataFrame, newdf::AbstractDataFrame)
 		# this is clunky -- there are better/faster ways of doing this intersection operation
 		match_vals = ByteString[]
 		for val in old_groups[key]
-			if contains(colnames(newdf), val)
+			if (val in colnames(newdf))
 				push!(match_vals, val)
 			end
 		end
@@ -1387,7 +1387,7 @@ function within!(df::AbstractDataFrame, ex::Expr)
         end
     end
     function replace_symbols(s::Symbol, syms::Dict)
-        if contains(keys(syms), string(s))
+        if (string(s) in keys(syms))
             :(_DF[$(syms[string(s)])])
         else
             s
@@ -1423,7 +1423,7 @@ function based_on_f(df::AbstractDataFrame, ex::Expr)
         end
     end
     function replace_symbols(s::Symbol, syms::Dict)
-        if contains(keys(syms), string(s))
+        if (string(s) in keys(syms))
             :(_DF[$(syms[string(s)])])
         else
             s
@@ -1454,7 +1454,7 @@ function with(df::AbstractDataFrame, ex::Expr)
     replace_symbols(x, syms::Dict) = x
     replace_symbols(e::Expr, syms::Dict) = Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args))...)
     function replace_symbols(s::Symbol, syms::Dict)
-        if contains(keys(syms), string(s))
+        if (string(s) in keys(syms))
             :(_DF[$(syms[string(s)])])
         else
             s
