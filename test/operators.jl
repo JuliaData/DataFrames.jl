@@ -57,8 +57,7 @@ let
 
     ffts = [fft]
 
-    binary_vector_operators = [dot, cor, cov,
-                               cor_spearman, cov_spearman]
+    binary_vector_operators = [dot, cor, cov, cor_spearman]
 
     columnar_operators = [colmins, colmaxs, colprods, colsums,
                           colmeans, colmedians, colstds, colvars,
@@ -444,7 +443,7 @@ let
 
     v, l = rle(dv)
     @assert isequal(v, DataVector[1.0, NA, 1.0])
-    @assert isequal(l, [2, 1, 2])
+    @assert (l == [2, 1, 2])
 
     rdv = inverse_rle(v, l)
     @assert isequal(dv, rdv)
