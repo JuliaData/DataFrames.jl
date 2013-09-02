@@ -33,7 +33,7 @@ let
 		if isequal(ind, "A") || isequal(ind, :A) || ndims(ind) == 0
 			@assert isequal(i[ind], 1)
 		else
-			@assert isequal(i[ind], [1])
+			@assert (i[ind] == [1])
 		end
 	end
 end

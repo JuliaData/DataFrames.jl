@@ -14,7 +14,7 @@ baseval(x::Any) = zero(x)
 function _setdiff(a::Vector, b::Vector)
     idx = Int[]
     for i in 1:length(a)
-        if !contains(b, a[i])
+        if !(a[i] in b)
             push!(idx, i)
         end
     end
@@ -81,7 +81,7 @@ function ancestors(t::Type)
 end
 
 function common_ancestors(s::Type, t::Type)
-    return filter(e -> contains(ancestors(s), e), ancestors(t))
+    return filter(e -> (e in ancestors(s)), ancestors(t))
 end
 
 earliest_common_ancestor(s::Type, t::Type) = first(common_ancestors(s, t))
