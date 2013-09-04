@@ -222,13 +222,13 @@ export # reconcile_groups,
        class,                              # in the S3 sense of "class"
        inherits,
        read_rda,
-       vecbind
+       vecbind,
 
        # DataArray operations
        sum, prod, max, min, mean, cumsum, cumprod,
 
        # Functors that handle NAs
-       NAOrZero, NAOrOne, NAOrMin, NAOrMax, NotNA
+       NA2Zero, NA2One, NA2Min, NA2Max, NotNA
 
 ##############################################################################
 ##

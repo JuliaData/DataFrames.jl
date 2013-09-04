@@ -49,14 +49,16 @@ array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(.^)]
 
 bit_operators = [:(&), :(|), :($)]
 
-unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
+unary_vector_operators = [#:min, :max, :prod, :sum, :mean,
+                          :median, :std,
                           :var, :mad, :norm, :skewness, :kurtosis]
 
 # TODO: dist, iqr, rle, inverse_rle
 
 pairwise_vector_operators = [:diff, :reldiff, :percent_change]
 
-cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
+cumulative_vector_operators = [#:cumprod, :cumsum,
+                               :cumsum_kbn, :cummin, :cummax]
 
 ffts = [:fft]
 
