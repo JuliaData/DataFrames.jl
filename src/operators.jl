@@ -344,9 +344,9 @@ end
 # Elementary functions that take varargs
 for f in (:round, :ceil, :floor, :trunc)
     @eval begin
-        ($f)(::NAtype, args...) = NA
+        ($f)(::NAtype, args::Integer...) = NA
 
-        function $(f){T<:Number}(d::DataArray{T}, args...)
+        function $(f){T<:Number}(d::DataArray{T}, args::Integer...)
             data = similar(d.data)
             for i = 1:length(data)
                 if !d.na[i]
@@ -355,14 +355,14 @@ for f in (:round, :ceil, :floor, :trunc)
             end
             DataArray(data, copy(d.na))
         end
-        function $(f){T<:Number}(adv::AbstractDataArray{T}, args...)
+        function $(f){T<:Number}(adv::AbstractDataArray{T}, args::Integer...)
             res = similar(adv)
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i], args...)
             end
             res
         end
-        $(f)(d::DataFrame, args...) = 
+        $(f)(d::DataFrame, args::Integer...) = 
             DataFrame([$(f)(d[i], args...) for i=1:size(d, 2)], deepcopy(index(d)))
     end
 end
