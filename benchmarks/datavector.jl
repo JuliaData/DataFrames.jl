@@ -52,5 +52,5 @@ perf_test["dv[idxdv] : DataVector and DataVector indexing"] = () -> f9(dv, idxdv
 for (name, f) in perf_test
     res = benchmark(f, "DataArray Operations", name, 10)
 	# TODO: Keep permanent record
-	printtable(STDOUT, res, ',', '"', false)
+	printtable(res, header=false)
 end

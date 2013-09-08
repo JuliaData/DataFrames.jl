@@ -16,6 +16,6 @@ for f in (colmeans, colvars, cor)
 			           	    }, " "),
 			           N)
 		# TODO: Keep permanent record
-		printtable(STDOUT, df, ',', '"', false)
+		printtable(df, header=false)
 	end
 end
