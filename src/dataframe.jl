@@ -1626,7 +1626,7 @@ end
 
 typealias ColIndexVec Union(AbstractVector{Integer}, AbstractVector{ASCIIString}, AbstractVector{UTF8String}, AbstractVector{Symbol})
 
-const DF_STABLE_SORT = Sort.TimSort
+const DF_STABLE_SORT = SortingAlgorithms.TimSort
 
 # Permute indices according to the ordering of the given dataframe columns
 type DFPerm{O<:Ordering,DF<:AbstractDataFrame} <: Ordering
