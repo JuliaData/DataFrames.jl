@@ -223,7 +223,13 @@ export # reconcile_groups,
        class,                              # in the S3 sense of "class"
        inherits,
        read_rda,
-       vecbind
+       vecbind,
+
+       # DataArray operations
+       sum, prod, max, min, mean, cumsum, cumprod,
+
+       # Functors that handle NAs
+       NA2Zero, NA2One, NA2Min, NA2Max, NotNA
 
 ##############################################################################
 ##
@@ -253,7 +259,8 @@ include("predicates.jl")
 include("indexing.jl")
 include("extras.jl")
 include("RDA.jl")
-include("dataframe_blocks.jl")
+#include("dataframe_blocks.jl")
+include("dataarray_ops.jl")
 
 # TODO: Remove these definitions
 nafilter(x...) = error("Function removed. Please use removeNA")
