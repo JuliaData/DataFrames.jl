@@ -127,7 +127,7 @@ end
 ##
 ##############################################################################
 
-similar(d::DataArray) = d
+similar(d::DataArray) = DataArray(similar(d.data), similar(d.na))
 
 function similar{T}(d::DataArray{T}, dims::Int...)
     DataArray(Array(T, dims...), trues(dims...))
