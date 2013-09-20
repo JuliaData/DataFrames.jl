@@ -1,6 +1,17 @@
 using Base.Test
 using DataFrames
 
+macro test_da_pda(da, code)
+    esc(quote
+        let $da = copy($da)
+            $code
+        end
+        let $da = PooledDataArray($da)
+            $code
+        end
+    end)
+end
+
 let
     unary_operators = [(+), (-), (!)]
 
@@ -106,15 +117,19 @@ let
     # application of those same operators
     N = 5
     dv = dataones(N)
-    for f in numeric_unary_operators
-        for i in 1:length(dv)
-            @assert f(dv)[i] == f(dv[i])
+    @test_da_pda dv begin
+        for f in numeric_unary_operators
+            for i in 1:length(dv)
+                @assert f(dv)[i] == f(dv[i])
+            end
         end
     end
     dv = datatrues(N)
-    for f in logical_unary_operators
-        for i in 1:length(dv)
-            @assert f(dv)[i] == f(dv[i])
+    @test_da_pda dv begin
+        for f in logical_unary_operators
+            for i in 1:length(dv)
+                @assert f(dv)[i] == f(dv[i])
+            end
         end
     end
 
@@ -145,9 +160,11 @@ let
     # Elementary functions on DataVector's
     N = 5
     dv = dataones(N)
-    for f in elementary_functions
-        for i in 1:length(dv)
-            @assert f(dv)[i] == f(dv[i])
+    @test_da_pda dv begin
+        for f in elementary_functions
+            for i in 1:length(dv)
+                @assert f(dv)[i] == f(dv[i])
+            end
         end
     end
 
@@ -168,30 +185,36 @@ let
     # Broadcasting operations between NA's and DataVector's
     N = 5
     dv = dataones(N)
-    for f in arithmetic_operators
-        for i in 1:length(dv)
-            @assert isna(f(dv, NA)[i])
-            @assert isna(f(NA, dv)[i])
+    @test_da_pda dv begin
+        for f in arithmetic_operators
+            for i in 1:length(dv)
+                @assert isna(f(dv, NA)[i])
+                @assert isna(f(NA, dv)[i])
+            end
         end
     end
 
     # Broadcasting operations between NA's and DataVector's
     N = 5
     dv = dataones(N)
-    for f in arithmetic_operators
-        for i in 1:length(dv)
-            @assert isna(f(dv, NA)[i])
-            @assert isna(f(NA, dv)[i])
+    @test_da_pda dv begin
+        for f in arithmetic_operators
+            for i in 1:length(dv)
+                @assert isna(f(dv, NA)[i])
+                @assert isna(f(NA, dv)[i])
+            end
         end
     end
 
     # Broadcasting operations between scalars and DataVector's
     N = 5
     dv = dataones(N)
-    for f in arithmetic_operators
-        for i in 1:length(dv)
-            @assert f(dv, 1)[i] == f(dv[i], 1)
-            @assert f(1, dv)[i] == f(1, dv[i])
+    @test_da_pda dv begin
+        for f in arithmetic_operators
+            for i in 1:length(dv)
+                @assert f(dv, 1)[i] == f(dv[i], 1)
+                @assert f(1, dv)[i] == f(1, dv[i])
+            end
         end
     end
     dv = DataVector[false, true, false, true, false]
@@ -237,12 +260,14 @@ let
     v = ones(N)
     dv = dataones(N)
     dv[1] = NA
-    for f in array_arithmetic_operators
-        for i in 1:length(dv)
-            @assert isna(f(v, dv)[i]) && isna(dv[i]) ||
-                    f(v, dv)[i] == f(v[i], dv[i])
-            @assert isna(f(dv, v)[i]) && isna(dv[i]) ||
-                    f(dv, v)[i] == f(dv[i], v[i])
+    @test_da_pda dv begin
+        for f in array_arithmetic_operators
+            for i in 1:length(dv)
+                @assert isna(f(v, dv)[i]) && isna(dv[i]) ||
+                        f(v, dv)[i] == f(v[i], dv[i])
+                @assert isna(f(dv, v)[i]) && isna(dv[i]) ||
+                        f(dv, v)[i] == f(dv[i], v[i])
+            end
         end
     end
 
@@ -250,10 +275,12 @@ let
     N = 5
     dv = dataones(N)
     dv[1] = NA
-    for f in array_arithmetic_operators
-        for i in 1:length(dv)
-            @assert isna(f(dv, dv)[i]) && isna(dv[i]) ||
-                    f(dv, dv)[i] == f(dv[i], dv[i])
+    @test_da_pda dv begin
+        for f in array_arithmetic_operators
+            for i in 1:length(dv)
+                @assert isna(f(dv, dv)[i]) && isna(dv[i]) ||
+                        f(dv, dv)[i] == f(dv[i], dv[i])
+            end
         end
     end
 
@@ -277,18 +304,38 @@ let
     N = 5
     dv = dataones(5)
     for f in unary_vector_operators
-        if isnan(f(dv.data))
-            @assert isnan(f(dv))
-        else
-            @assert f(dv) == f(dv.data)
-        end
+        @assert isequal(f(dv), f(dv.data))
     end
     dv[1] = NA
     for f in unary_vector_operators
         @assert isna(f(dv))
     end
 
-    # TODO: Pairwise vector operators on DataVector's
+    # Pairwise vector operators on DataVector's
+    N = 5
+    dv = DataVector[911, 269, 835.0, 448, 772]
+    for f in pairwise_vector_operators
+        @assert isequal(f(dv), f(dv.data))
+    end
+    dv = DataVector[NA, 269, 835.0, 448, 772]
+    for f in pairwise_vector_operators
+        v = f(dv)
+        @assert isna(v[1])
+        @assert isequal(v[2:4], f(dv.data)[2:4])
+    end
+    dv = DataVector[911, NA, 835.0, 448, 772]
+    for f in pairwise_vector_operators
+        v = f(dv)
+        @assert isna(v[1])
+        @assert isna(v[2])
+        @assert isequal(v[3:4], f(dv.data)[3:4])
+    end
+    dv = DataVector[911, 269, 835.0, 448, NA]
+    for f in pairwise_vector_operators
+        v = f(dv)
+        @assert isna(v[4])
+        @assert isequal(v[1:3], f(dv.data)[1:3])
+    end
 
     # Cumulative vector operators on DataVector's
     N = 5
@@ -339,27 +386,39 @@ let
     @assert any(datatrues(N)) == true
     @assert all(datafalses(N)) == false
     @assert all(datatrues(N)) == true
+    @assert any(PooledDataArray(datafalses(N))) == false
+    @assert any(PooledDataArray(datatrues(N))) == true
+    @assert all(PooledDataArray(datafalses(N))) == false
+    @assert all(PooledDataArray(datatrues(N))) == true
 
     dv = datafalses(N)
     dv[3] = true
-    @assert any(dv) == true
-    @assert all(dv) == false
+    @test_da_pda dv begin
+        @assert any(dv) == true
+        @assert all(dv) == false
+    end
 
     dv = datafalses(N)
     dv[2] = NA
     dv[3] = true
-    @assert any(dv) == true
-    @assert all(dv) == false
+    @test_da_pda dv begin
+        @assert any(dv) == true
+        @assert all(dv) == false
+    end
 
     dv = datafalses(N)
     dv[2] = NA
-    @assert isna(any(dv))
-    @assert all(dv) == false
+    @test_da_pda dv begin
+        @assert isna(any(dv))
+        @assert all(dv) == false
+    end
 
     dv = datafalses(1)
     dv[1] = NA
-    @assert isna(any(dv))
-    @assert isna(all(dv))
+    @test_da_pda dv begin
+        @assert isna(any(dv))
+        @assert isna(all(dv))
+    end
 
     # Boolean operators on DataFrames's
     N = 5
@@ -409,6 +468,8 @@ let
 
     dv = DataVector[1, NA]
     alt_dv = DataVector[2, NA]
+    pdv = PooledDataArray(DataVector[1, NA])
+    alt_pdv = PooledDataArray(DataVector[2, NA])
     df = DataFrame({dv})
     alt_df = DataFrame({alt_dv})
 
@@ -422,9 +483,11 @@ let
     # @assert isna(df != df) # SHOULD RAISE ERROR
 
     @assert isequal(dv, dv)
+    @assert isequal(pdv, pdv)
     @assert isequal(df, df)
 
     @assert !isequal(dv, alt_dv)
+    @assert !isequal(pdv, alt_pdv)
     @assert !isequal(df, alt_df)
 
     @assert isequal(DataVector[1, NA] .== DataVector[1, NA], DataVector[true, NA])
@@ -433,6 +496,8 @@ let
 
     @assert all(isna(NA .== dataones(5)))
     @assert all(isna(dataones(5) .== NA))
+    @assert all(isna(NA .== PooledDataArray(dataones(5))))
+    @assert all(isna(PooledDataArray(dataones(5)) .== NA))
 
     @assert all(isna(NA .== df))
     @assert all(isna(df .== NA))
