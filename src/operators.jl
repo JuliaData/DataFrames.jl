@@ -524,15 +524,14 @@ for f in pairwise_vector_operators
         n = length(dv)
         new_data = ($f)(dv.data)
         new_na = falses(n - 1)
+        new_na[1] = dv.na[1]
         for i = 2:(n - 1)
             if dv.na[i]
                 new_na[i - 1] = true
                 new_na[i] = true
             end
         end
-        if dv.na[n]
-            new_na[n - 1] = true
-        end
+        new_na[n - 1] = new_na[n - 1] || dv.na[n]
         return DataArray(new_data, new_na)
     end
 end
