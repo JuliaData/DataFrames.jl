@@ -228,7 +228,7 @@ macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
                                          (false, :AbstractDataArray, :DataArray),
                                          (true, :AbstractDataArray, :AbstractDataArray),
                                          (true, :AbstractDataArray, :AbstractArray),
-                                         (false, :AbstractDataArray, :AbstractArray))
+                                         (false, :AbstractArray, :AbstractDataArray))
         }...,
     ))
 end
