@@ -117,7 +117,7 @@ function dreadtable(b::Block; kwargs...)
 end
 dreadtable(fname::String; kwargs...) = dreadtable(Block(File(fname)) |> as_io |> as_recordio; kwargs...)
 function dreadtable(io::Union(AsyncStream,IOStream), chunk_sz::Int, merge_chunks::Bool=true; kwargs...)
-    b = (Block(io, chunk_sz, '\n') .> as_recordio) .> as_bytearray
+    b = @prepare Block(io, chunk_sz, '\n') |> as_recordio |> as_bytearray
     rrefs = pmap(x->as_dataframe(PipeBuffer(x); kwargs...), b; fetch_results=false)
     procs = map(x->x.where, rrefs)
 
@@ -263,11 +263,11 @@ function _sorted_col_vals_at_pos(dt::DDataFrame, col, numvalid, minv, maxv, pos)
         nrowslt,nrowsgt = _count_col_seps(dt, col, pivot)
 
         #println("for $(col) => $(minv):$(maxv). rowdist: $(nrowslt) - $(pos) - $(nrowsgt)")
-        if (nrowslt <= pos) && (nrowsgt <= posr)
+        if (nrowslt < pos) && (nrowsgt <= posr)
             return pivot
         elseif (nrowsgt > posr)
             minv = pivot
-        else  # (nrowslt > pos)
+        else  # (nrowslt >= pos)
             maxv = pivot
         end
     end
@@ -351,7 +351,7 @@ function getindex{T <: DataFrames.ColumnIndex}(dt::DDataFrame, col_inds::Abstrac
 end
 
 # Operations on Distributed DataFrames
-# TODO: colmedians, colstds, colvars, colffts, colnorms
+# TODO: colstds, colvars, colffts, colnorms
 
 for f in [DataFrames.elementary_functions, DataFrames.unary_operators, :copy, :deepcopy, :isfinite, :isnan]
     @eval begin
@@ -455,6 +455,24 @@ for f in (:colmins, :colmaxs, :colprods, :colsums, :colmeans)
         end
     end
 end    
+
+function colmedians(dt::DDataFrame)
+    cnames = colnames(dt)
+    ctypes = coltypes(dt)
+    qcolnames = String[]
+    for idx in 1:length(cnames)
+        ((ctypes[idx] <: Number)) && push!(qcolnames, cnames[idx])
+    end
+    mins,maxs,means,numvalids = _colranges(dt, qcolnames)
+    qcols={}
+    for idx in 1:length(qcolnames)
+        q2 = _dquantile(dt, qcolnames[idx], numvalids[idx], mins[idx], maxs[idx], 0.5)
+        push!(qcols, [q2])
+    end
+    dm = DataFrame(qcols)
+    colnames!(dm, qcolnames)
+    dm
+end
 
 for f in DataFrames.array_arithmetic_operators
     @eval begin
