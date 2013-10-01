@@ -11,9 +11,10 @@ type Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{ByteString, Indices}      # name => names array position
     names::Vector{ByteString}
 end
-Index{T <: ByteString}(x::Vector{T}) =
-    Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)),
-          make_unique(convert(Vector{ByteString}, x)))
+function Index{T <: ByteString}(x::Vector{T}) 
+    x = make_unique(convert(Vector{ByteString}, x))
+    Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)), x)
+end
 Index() = Index(Dict{ByteString, Indices}(), ByteString[])
 length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
