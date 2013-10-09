@@ -713,8 +713,8 @@ end
 
 function printtable(df::DataFrame;
                     header::Bool = true,
-                    separator::Char = ',',
-                    quotemark::Char = '"')
+                    separator::StringOrChar = ',',
+                    quotemark::StringOrChar = '"')
     printtable(STDOUT,
                df,
                separator = separator,
