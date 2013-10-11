@@ -68,6 +68,16 @@ let
 
     rm(filename)
 
+    filename = tempname()
+    writetable(filename, df, separator="\t", quotemark="")
+    df1 = readtable(filename, separator = '\t')
+    all(df .== df1)
+    
+    writetable(filename, df, separator="\t", quotemark=";")
+    df1 = readtable(filename, separator = '\t', quotemark=';')
+    all(df .== df1)
+    rm(filename)    
+
     #
     # Lots of rows
     #

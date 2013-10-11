@@ -8,6 +8,8 @@ immutable ParsedCSV
     quoted::BitVector    # Was field quoted in text
 end
 
+typealias StringOrChar Union(Char, ASCIIString)
+
 immutable ParseOptions{S <: ByteString, T <: ByteString}
     header::Bool
     separator::Char
@@ -673,8 +675,8 @@ end
 function printtable(io::IO,
                     df::DataFrame;
                     header::Bool = true,
-                    separator::Char = ',',
-                    quotemark::Char = '"')
+                    separator::StringOrChar = ',',
+                    quotemark::StringOrChar = '"')
     n, p = size(df)
     ctypes = coltypes(df)
     if header
@@ -711,8 +713,8 @@ end
 
 function printtable(df::DataFrame;
                     header::Bool = true,
-                    separator::Char = ',',
-                    quotemark::Char = '"')
+                    separator::StringOrChar = ',',
+                    quotemark::StringOrChar = '"')
     printtable(STDOUT,
                df,
                separator = separator,
@@ -725,8 +727,8 @@ end
 function writetable(filename::String,
                     df::DataFrame;
                     header::Bool = true,
-                    separator::Char = getseparator(filename),
-                    quotemark::Char = '"')
+                    separator::StringOrChar = getseparator(filename),
+                    quotemark::StringOrChar = '"')
     io = open(filename, "w")
     printtable(io,
                df,
