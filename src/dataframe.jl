@@ -867,6 +867,11 @@ tail(df::AbstractDataFrame) = tail(df, 6)
 ##
 ##############################################################################
 
+function summary(df::AbstractDataFrame)
+    nrowz, ncolz = size(df)
+    "$(typeof(df)) with $(nrowz) rows, $(ncolz) columns"
+end
+
 # to print a DataFrame, find the max string length of each column
 # then print the column names with an appropriate buffer
 # then row-by-row print with an appropriate buffer
