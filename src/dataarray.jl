@@ -344,7 +344,7 @@ function getindex(d::DataArray, inds::Union(BitVector, Vector{Bool}))
     res
 end
 
-function getindex(d::DataArray, inds::Union(Vector, Ranges, Range1))
+function getindex(d::DataArray, inds::Union(Vector, Ranges, Range1, BitVector))
     res = similar(d, length(inds))
     for i in 1:length(inds)
         ix = inds[i]
