@@ -881,7 +881,8 @@ maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) :
 maxShowLength(dv::AbstractDataVector) = length(dv) > 0 ? max([length(_string(x)) for x = dv]) : 0
 showall(io::IO, df::AbstractDataFrame) = show(io, df, nrow(df))
 function show(io::IO, df::AbstractDataFrame)
-    if ncol(df) > 15
+    printed_width = sum(colwidths(df)) + length(ncol(df)) * 2 + 5
+    if printed_width > Base.tty_cols()
         column_summary(io, df)
     else
         show(io, df, 20)
@@ -893,6 +894,13 @@ function format_row(rows::Array{Any, 1}, colWidths, alignments::Array{Char,1})
     return join(formatted_fields)
 end
 
+function maxwidth(df::AbstractDataFrame, col::String) 
+    header_len = length(col)
+    row_max = max([length(_string(x)) for x=df[col]])
+    return max(row_max, header_len)
+end
+
+colwidths(df::AbstractDataFrame) = [maxwidth(df, col) for col=colnames(df)]
 colwidths(row::Array{Any}) = [length(_string(row[i])) for i = 1:length(row)]
 
 # Format a list of rows as a table.
