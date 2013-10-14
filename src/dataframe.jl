@@ -876,10 +876,42 @@ end
 # then print the column names with an appropriate buffer
 # then row-by-row print with an appropriate buffer
 _string(x) = sprint(showcompact, x)
-maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) : 0
-maxShowLength(dv::AbstractDataVector) = length(dv) > 0 ? max([length(_string(x)) for x = dv]) : 0
-show(io::IO, df::AbstractDataFrame) = show(io, df, 20)
+pad(item, num, dir) = dir == 'l' ? lpad(item, num) : rpad(item, num)
+maxShowLength(v::Vector) = mapreduce(x->length(_string(x)), max, 0, v)
+maxShowLength(dv::AbstractDataVector) = mapreduce(x->length(_string(x)), max, 0, dv)
+maxShowLength(df::AbstractDataFrame, col::String) = max(maxShowLength(df[col]), length(col))
+colwidths(df::AbstractDataFrame) = [maxShowLength(df, col) for col=colnames(df)]
+colwidths(row::Array{Any}) = [length(_string(row[i])) for i = 1:length(row)]
 showall(io::IO, df::AbstractDataFrame) = show(io, df, nrow(df))
+function show(io::IO, df::AbstractDataFrame)
+    printed_width = sum(colwidths(df)) + length(ncol(df)) * 2 + 5
+    if printed_width > Base.tty_cols()
+        column_summary(io, df)
+    else
+        show(io, df, 20)
+    end
+end
+
+function format_row(rows::Array{Any, 1}, colWidths, alignments::Array{Char,1})
+    formatted_fields = [pad(rows[i], colWidths[i] + 2, alignments[i]) for i=[1:length(rows)]]
+    return join(formatted_fields)
+end
+
+# Format a list of rows as a table.
+function format_table(rows, alignments::Array{Char,1})
+    colWidths = max([colwidths(row) for row = rows])
+    formatted_rows = [string(format_row(rows[i], colWidths, alignments), "\n") for i = [1:length(rows)]]
+    return join(formatted_rows)
+end
+
+# Print a summary of the columns in the dataframe
+function column_summary(io::IO, df::AbstractDataFrame)
+    println(io, summary(df))
+    println(io, "Columns:\n")
+    summary_rows = [[col, sum(!isna(df[col])), " non-null values"] for col = colnames(df)]
+    println(io, format_table(summary_rows, ['r', 'l', 'r']))
+end
+
 function show(io::IO, df::AbstractDataFrame, Nmx::Integer)
     ## TODO use alignment() like print_matrix in show.jl.
     nrowz, ncolz = size(df)
