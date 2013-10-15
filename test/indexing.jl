@@ -128,6 +128,14 @@ let
         end
     end
 
+    asym_df = DataFrame(quote
+       A = 1:10
+       B = 11:20
+    end)
+
+    asym_df[[true for i=1:10]]
+    asym_df[[true, false]]
+
     #
     # setindex!()
     #

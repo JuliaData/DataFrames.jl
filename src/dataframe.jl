@@ -373,6 +373,7 @@ end
 # df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
 # df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
 # df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
+# df[AbstractVector{Bool}] => (Sub)?DataFrame
 #
 # General Strategy:
 #
@@ -420,6 +421,22 @@ function getindex{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::Abstract
     selected_columns = df.colindex[col_inds]
     new_columns = {dv[row_inds] for dv in df.columns[selected_columns]}
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
+end
+
+# df[AbstractVector{Bool}] => (Sub)?DataFrame
+# If given a binary vector, decide whether to select
+# rows or columns based on its length
+function getindex(df::DataFrame, inds::AbstractVector{Bool})
+    if length(inds) == ncol(df)
+        selected_columns = df.colindex[inds]
+        new_columns = df.columns[selected_columns]
+        return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))    
+    elseif length(inds) == nrow(df)
+        new_columns = {dv[inds] for dv in df.columns}
+        return DataFrame(new_columns, df.colindex)
+    else
+        throw(BoundsError)
+    end
 end
 
 # Special cases involving expressions
