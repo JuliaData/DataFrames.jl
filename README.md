@@ -1,7 +1,9 @@
 DataFrames.jl
 =============
 
-Tools for working with data in Julia
+[![Build Status](https://travis-ci.org/JuliaStats/DataFrames.jl.png)](https://travis-ci.org/JuliaStats/DataFrames.jl)
+
+Tools for working with data in Julia. 
 
 # Installation
 
