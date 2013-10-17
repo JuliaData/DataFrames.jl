@@ -1286,7 +1286,7 @@ function within!(d::Associative, ex::Expr)
     replace_symbols(x, d::Associative) = x
     function replace_symbols{K,V}(e::Expr, d::Associative{K,V})
         if e.head == :(=) # replace left-hand side of assignments:
-            if (K == Symbol || (K == Any && isa(keys(d)[1], Symbol)))
+            if (K == Symbol || (K == Any && isa(collect(keys(d))[1], Symbol)))
                 exref = Meta.quot(e.args[1])
                 if !haskey(d, e.args[1]) # Dummy assignment to reserve a slot.
                                       # I'm not sure how expensive this is.
@@ -1370,7 +1370,7 @@ function based_on(d::Associative, ex::Expr)
     replace_symbols(x, d::Associative) = x
     function replace_symbols{K,V}(e::Expr, d::Associative{K,V})
         if e.head == :(=) # replace left-hand side of assignments:
-            if (K == Symbol || (K == Any && isa(keys(d)[1], Symbol)))
+            if (K == Symbol || (K == Any && isa(collect(keys(d))[1], Symbol)))
                 exref = Meta.quot(e.args[1])
                 if !haskey(d, e.args[1]) # Dummy assignment to reserve a slot.
                                       # I'm not sure how expensive this is.

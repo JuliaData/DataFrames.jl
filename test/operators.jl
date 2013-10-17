@@ -59,7 +59,7 @@ let
 
     bit_operators = [(&), (|), ($)]
 
-    unary_vector_operators = [min, max, prod, sum, mean, median, std,
+    unary_vector_operators = [minimum, maximum, prod, sum, mean, median, std,
                               var, mad, norm, skewness, kurtosis]
 
     pairwise_vector_operators = [diff, percent_change]
