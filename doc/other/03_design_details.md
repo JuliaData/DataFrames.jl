@@ -507,8 +507,8 @@ Functions that operate cumulatively on the entries of a `Vector` work on `DataVe
 
 ## Aggregative Functions
 
-* `min`
-* `max`
+* `minimum`
+* `maximum`
 * `prod`
 * `sum`
 * `mean`
@@ -520,7 +520,7 @@ Functions that operate cumulatively on the entries of a `Vector` work on `DataVe
 
 You can see these in action:
 
-	min(dv)
+	minimum(dv)
 
 To broadcast these to individual columns, use the `col*s` versions:
 

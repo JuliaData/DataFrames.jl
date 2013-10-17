@@ -24,7 +24,7 @@ vcatstring(x) = vcat(_vstring(x))
 function paste(s...)
     s = map(vcatstring, {s...})
     sa = {s...}
-    N = max(length, sa)
+    N = maximum(length, sa)
     res = fill("", N)
     for i in 1:length(sa)
         Ni = length(sa[i])
@@ -59,7 +59,8 @@ function cut{S, T}(x::Vector{S}, breaks::Vector{T})
     if !issorted(breaks)
         sort!(breaks)
     end
-    min_x, max_x = min(x), max(x)
+    min_x = minimum(x)
+    max_x = maximum(x)
     if breaks[1] > min_x
         unshift!(breaks, min_x)
     end

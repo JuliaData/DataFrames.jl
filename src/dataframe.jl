@@ -95,7 +95,7 @@ end
 function DataFrame{K, V}(d::Associative{K, V})
     # Find the first position with maximum length in the Dict.
     lengths = map(length, values(d))
-    max_length = max(lengths)
+    max_length = maximum(lengths)
     maxpos = findfirst(lengths .== max_length)
     keymaxlen = keys(d)[maxpos]
     nrows = max_length
@@ -871,8 +871,8 @@ tail(df::AbstractDataFrame) = tail(df, 6)
 # then print the column names with an appropriate buffer
 # then row-by-row print with an appropriate buffer
 _string(x) = sprint(showcompact, x)
-maxShowLength(v::Vector) = length(v) > 0 ? max([length(_string(x)) for x = v]) : 0
-maxShowLength(dv::AbstractDataVector) = length(dv) > 0 ? max([length(_string(x)) for x = dv]) : 0
+maxShowLength(v::Vector) = length(v) > 0 ? maximum([length(_string(x)) for x = v]) : 0
+maxShowLength(dv::AbstractDataVector) = length(dv) > 0 ? maximum([length(_string(x)) for x = dv]) : 0
 show(io::IO, df::AbstractDataFrame) = show(io, df, 20)
 showall(io::IO, df::AbstractDataFrame) = show(io, df, nrow(df))
 function show(io::IO, df::AbstractDataFrame, Nmx::Integer)
@@ -1006,7 +1006,7 @@ type SubDataFrame <: AbstractDataFrame
         if any(rows .< 1)
             error("all SubDataFrame indices must be > 0")
         end
-        if length(rows) > 0 && max(rows) > nrow(parent)
+        if length(rows) > 0 && maximum(rows) > nrow(parent)
             error("all SubDataFrame indices must be <= the number of rows of the DataFrame")
         end
         new(parent, rows)

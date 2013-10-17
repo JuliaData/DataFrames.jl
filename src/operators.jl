@@ -49,7 +49,7 @@ const array_arithmetic_operators = [:(+), :(.+), :(-), :(.-), :(.*), :(.^)]
 
 const bit_operators = [:(&), :(|), :($)]
 
-const unary_vector_operators = [:min, :max, :prod, :sum, :mean, :median, :std,
+const unary_vector_operators = [:minimum, :maximum, :prod, :sum, :mean, :median, :std,
                                 :var, :mad, :norm, :skewness, :kurtosis]
 
 
@@ -562,7 +562,7 @@ for f in binary_vector_operators
             any(dv1.na) || any(dv2.na) ? NA : ($f)(dv1.data, dv2.data)
 end
 
-for f in (:min, :max, :prod, :sum, :mean, :median, :std, :var, :norm)
+for f in (:minimum, :maximum, :prod, :sum, :mean, :median, :std, :var, :norm)
     colf = symbol("col$(f)s")
     rowf = symbol("row$(f)s")
     @eval begin
@@ -679,7 +679,7 @@ function any(df::AbstractDataFrame)
 end
 
 function Stats.range{T}(dv::AbstractDataVector{T})
-    return DataVector[min(dv), max(dv)]
+    return DataVector[minimum(dv), maximum(dv)]
 end
 
 function rle{T}(v::AbstractVector{T})
