@@ -19,7 +19,7 @@ let
 	@assert isequal(p, reorder(p))
 	@assert levels(reorder(p, v)) == [9,8,1]
 	df = @DataFrame(v => v, x => rand(6))
-	@assert levels(reorder(min, p, df)) == [9,8,1] 
+	@assert levels(reorder(minimum, p, df)) == [9,8,1] 
 	@assert isequal(p, pcopy)
 
 	@assert levels(set_levels!(copy(p), [10,80,90])) == [10, 80, 90]

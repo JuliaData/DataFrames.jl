@@ -135,7 +135,7 @@ function svd(D::DataMatrix, k::Int; tracing = false, tolerance = 10e-4)
     # Only return the SVD entries, not the imputation
     return (U[:, 1:k], D[1:k], V[:, 1:k])
 end
-svd(dm::DataMatrix) = svd(dm, min(size(dm)))
+svd(dm::DataMatrix) = svd(dm, minimum(size(dm)))
 
 function eig(dm::DataMatrix)
     U, D, V = svd(dm)

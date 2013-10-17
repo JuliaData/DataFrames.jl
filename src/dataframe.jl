@@ -95,7 +95,7 @@ end
 function DataFrame{K, V}(d::Associative{K, V})
     # Find the first position with maximum length in the Dict.
     lengths = map(length, values(d))
-    max_length = max(lengths)
+    max_length = maximum(lengths)
     maxpos = findfirst(lengths .== max_length)
     keymaxlen = keys(d)[maxpos]
     nrows = max_length
@@ -882,6 +882,7 @@ maxShowLength(dv::AbstractDataVector) = mapreduce(x->length(_string(x)), max, 0,
 maxShowLength(df::AbstractDataFrame, col::String) = max(maxShowLength(df[col]), length(col))
 colwidths(df::AbstractDataFrame) = [maxShowLength(df, col) for col=colnames(df)]
 colwidths(row::Array{Any}) = [length(_string(row[i])) for i = 1:length(row)]
+
 showall(io::IO, df::AbstractDataFrame) = show(io, df, nrow(df))
 function show(io::IO, df::AbstractDataFrame)
     printed_width = sum(colwidths(df)) + length(ncol(df)) * 2 + 5
@@ -1043,7 +1044,7 @@ type SubDataFrame <: AbstractDataFrame
         if any(rows .< 1)
             error("all SubDataFrame indices must be > 0")
         end
-        if length(rows) > 0 && max(rows) > nrow(parent)
+        if length(rows) > 0 && maximum(rows) > nrow(parent)
             error("all SubDataFrame indices must be <= the number of rows of the DataFrame")
         end
         new(parent, rows)
