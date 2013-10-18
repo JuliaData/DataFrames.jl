@@ -900,7 +900,7 @@ end
 
 # Format a list of rows as a table.
 function format_table(rows, alignments::Array{Char,1})
-    colWidths = max([colwidths(row) for row = rows])
+    colWidths = reduce(max, [colwidths(row) for row = rows])
     formatted_rows = [string(format_row(rows[i], colWidths, alignments), "\n") for i = [1:length(rows)]]
     return join(formatted_rows)
 end
