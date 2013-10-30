@@ -533,6 +533,20 @@ function readtable!(p::ParsedCSV,
         clean_colnames!(df)
     end
 
+    # Convert any column named Date (case-insensitive) to Datetime
+    for col in colnames(df)
+      ismatch(r"(?i)date", col)?
+      df[col] = Date[date(d) for d in df[col]]:
+      Nothing
+     end
+
+    # Ensure that rows are oldest first if Date column converted
+    for col in colnames(df)
+      ismatch(r"(?i)date", col) && df[col][1] > df[col][2]?
+      flipud!(df):
+      Nothing
+    end
+
     # Return the final DataFrame
     return df
 end
@@ -561,7 +575,13 @@ function readtable(pathname::String;
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
     if ismatch(r"^(http://)|(ftp://)", pathname)
-        error("URL retrieval not yet implemented")
+
+        io = readlines(`curl -s $pathname`)
+        nbytes = filesize(pathname)
+
+
+#        error("URL retrieval not yet implemented")
+
     # (2) Path is GZip file
     elseif ismatch(r"\.gz$", pathname)
         io = gzopen(pathname, "r")
