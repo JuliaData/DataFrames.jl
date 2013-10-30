@@ -575,13 +575,7 @@ function readtable(pathname::String;
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
     if ismatch(r"^(http://)|(ftp://)", pathname)
-
-        io = readlines(`curl -s $pathname`)
-        nbytes = filesize(pathname)
-
-
-#        error("URL retrieval not yet implemented")
-
+        error("URL retrieval not yet implemented")
     # (2) Path is GZip file
     elseif ismatch(r"\.gz$", pathname)
         io = gzopen(pathname, "r")
