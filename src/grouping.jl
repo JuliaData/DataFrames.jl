@@ -225,20 +225,34 @@ map(f::Function, x::SubDataFrame) = f(x)
 (|>)(x::GroupApplied, e::Expr) = with(x, e)
 ## (|>)(x::GroupedDataFrame, f::Function) = map(f, x)
 
-# apply a function to each column in a DataFrame
-colwise(f::Function, d::AbstractDataFrame) = {[f(d[idx])] for idx in 1:ncol(d)}
-colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
-colwise(f::Function) = x -> colwise(f, x)
-colwise(f) = x -> colwise(f, x)
-# apply several functions to each column in a DataFrame
-colwise(fns::Vector{Function}, d::AbstractDataFrame) = [f(d[idx]) for f in fns, idx in 1:ncol(d)][:]
-colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(fns), d)
-colwise(fns::Vector{Function}, d::GroupedDataFrame, cn::Vector{String}) = map(colwise(fns), d)
-colwise(fns::Vector{Function}) = x -> colwise(fns, x)
+# Apply a function to rows or columns of a dataframe.
+# The rowwise version assumes f is defined for a DataFrame
+function mapslices(f::Function, d::DataFrame, dim::Int=1)
+    if dim == 1
+        DataFrame({[f(d[idx])] for idx in 1:ncol(d)}, d.colindex)
+    elseif dim == 2
+        rbind({[f(d[idx,:])] for idx in 1:nrow(d)})
+    else
+        throw(ArgumentError("dim must be 1 or 2"))
+    end
+end
+function mapslices(f::Function, d::SubDataFrame, dim::Int=1)
+    if dim == 1
+        DataFrame({[f(d[idx])] for idx in 1:ncol(d)}, d.parent.colindex)
+    elseif dim == 2
+        rbind({[f(d[idx,:])] for idx in 1:nrow(d)})
+    else
+        throw(ArgumentError("dim must be 1 or 2"))
+    end
+end
+function mapslices(f::Function, d::GroupedDataFrame, dim::Int=1)
+    # Maybe this should look more like `based_on` above?
+    DataFrame[mapslices(f, g, dim) for g in d]
+end
 
-function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
-    header = [s2 * "_" * string(s1) for s1 in s, s2 in cn][:]
-    payload = colwise(map(eval, s), d)
+function mapcols_sym(d::AbstractDataFrame, s::Symbol, cn::Vector)
+    header = [s2 * "_" * string(s) for s2 in cn][:]
+    payload = mapslices(eval(s), d, 1)
     df = DataFrame()
     # TODO fix this to assign the longest column first or preallocate
     # based on the maximum length.
@@ -247,6 +261,39 @@ function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
     end
     df
 end
+function maprows_sym(d::AbstractDataFrame, s::Symbol)
+    mapslices(eval(s), d, 2)
+end
+function mapslices(d::AbstractDataFrame, s::Symbol, dim::Int=1)
+    if dim == 1
+        mapcols_sym(d, s, colnames(d))
+    elseif dim == 2
+        maprows_sym(d, s)
+    else
+        throw(ArgumentError("dim must be 1 or 2"))
+    end
+end
+(|>)(d::AbstractDataFrame, s::Symbol) = mapslices(d, s, 1)
+
+function mapslices(d::GroupedDataFrame, s::Symbol, dim::Int=1)
+    # More like `based_on` above?
+    DataFrame[mapslices(g, s, dim) for g in d]
+end
+(|>)(d::GroupedDataFrame, s::Symbol) = mapslices(d, s, 1)
+
+# apply a function to each column in a DataFrame
+colwise(f::Function, d::AbstractDataFrame) = {[f(d[idx])] for idx in 1:ncol(d)}
+colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
+colwise(f::Function) = x -> colwise(f, x)
+colwise(f) = x -> colwise(f, x)
+# apply several functions to each column in a DataFrame
+colwise(fns::Vector{Function}, d::AbstractDataFrame) = [f(d[idx]) for f in fns,
+idx in 1:ncol(d)][:]
+colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(fns), d)
+colwise(fns::Vector{Function}, d::GroupedDataFrame, cn::Vector{String}) =
+map(colwise(fns), d)
+colwise(fns::Vector{Function}) = x -> colwise(fns, x)
+
 ## function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
 ##     header = [s2 * "_" * string(s1) for s1 in s, s2 in cn][:]
 ##     payload = colwise(map(eval, s), d)
@@ -268,7 +315,7 @@ colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
 colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
 (|>)(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
-(|>)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
+#(|>)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
 colnames(d::GroupedDataFrame) = colnames(d.parent)
 
 # by() convenience function
