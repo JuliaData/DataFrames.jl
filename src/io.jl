@@ -346,6 +346,7 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
         is_int = true
         is_float = true
         is_bool = true
+        #is_time = true
 
         i = 0
         while i < rows
@@ -406,10 +407,28 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
                 else
                     is_bool = false
                     values = Array(UTF8String, rows)
+                    #values = Array(Datetime, rows)
                     i = 0
                     continue
                 end
             end
+
+##             # (4) Try to parse as Datetime
+##             if is_time
+##                 values[i], wasparsed, missing[i] =
+##                   bytestotime(p.bytes, left, right,
+##                               o.nastrings, o.truestrings, o.falsestrings)
+##                 if wasparsed
+##                     continue
+##                 else
+##                     is_time = false
+##                     values = Array(UTF8String, rows)
+##                     i = 0
+##                     continue
+##                 end
+##             end
+
+           ### (5) Fallback to UTF8String
 
             # (4) Fallback to UTF8String
             values[i], wasparsed, missing[i] =
@@ -417,6 +436,7 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
                             wasquoted, o.nastrings, o.quotemark)
         end
 
+        #if o.makefactors && !(is_int || is_float || is_bool || is_time)
         if o.makefactors && !(is_int || is_float || is_bool)
             columns[j] = PooledDataArray(values, missing)
         else
