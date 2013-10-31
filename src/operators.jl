@@ -134,9 +134,9 @@ end
 
 # Apply unary operator to non-NA members of a DataArray or
 # AbstractDataArray
-macro dataarray_unary(f, intype, outtype)
+macro dataarray_unary(f, intype, outtype, N...)
     esc(quote
-        function $(f){T<:$(intype)}(d::DataArray{T})
+        function $(f){T<:$(intype)}(d::$(isempty(N) ? :(DataArray{T}) : :(DataArray{T,$(N[1])})))
             data = similar(d.data, $(outtype))
             for i = 1:length(data)
                 if !d.na[i]
@@ -145,7 +145,7 @@ macro dataarray_unary(f, intype, outtype)
             end
             DataArray(data, copy(d.na))
         end
-        function $(f){T<:$(intype)}(adv::AbstractDataArray{T})
+        function $(f){T<:$(intype)}(adv::$(isempty(N) ? :(AbstractDataArray{T}) : :(AbstractDataArray{T,$(N[1])})))
             res = similar(adv, $(outtype))
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i])
@@ -330,9 +330,8 @@ end
 
 # One-argument elementary functions that always return floating points
 for f in (:acos, :acosh, :asin, :asinh, :atan, :atanh, :sin, :sinh, :cos,
-          :cosh, :tan, :tanh, :ceil, :floor, :round, :trunc, :exp, :exp2,
-          :expm1, :log, :log10, :log1p, :log2, :exponent, :sqrt, :gamma,
-          :lgamma, :digamma, :erf, :erfc)
+          :cosh, :tan, :tanh, :exp, :exp2, :expm1, :log, :log10, :log1p,
+          :log2, :exponent, :sqrt, :gamma, :lgamma, :digamma, :erf, :erfc)
     @eval begin
         ($f)(::NAtype) = NA
         @dataarray_unary $(f) FloatingPoint T
@@ -346,7 +345,12 @@ for f in (:round, :ceil, :floor, :trunc)
     @eval begin
         ($f)(::NAtype, args::Integer...) = NA
 
-        function $(f){T<:Number}(d::DataArray{T}, args::Integer...)
+        # ambiguity
+        @dataarray_unary $(f) Real T 1
+        @dataarray_unary $(f) Real T 2
+        @dataarray_unary $(f) Real T
+
+        function $(f){T<:Real}(d::DataArray{T}, args::Integer...)
             data = similar(d.data)
             for i = 1:length(data)
                 if !d.na[i]
@@ -355,7 +359,7 @@ for f in (:round, :ceil, :floor, :trunc)
             end
             DataArray(data, copy(d.na))
         end
-        function $(f){T<:Number}(adv::AbstractDataArray{T}, args::Integer...)
+        function $(f){T<:Real}(adv::AbstractDataArray{T}, args::Integer...)
             res = similar(adv)
             for i = 1:length(adv)
                 res[i] = ($f)(adv[i], args...)
