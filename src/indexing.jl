@@ -303,7 +303,7 @@ end
 
 
 # the following is needed for show(df)
-maxShowLength(v::IndexedVector) = length(v) > 0 ? max([length(_string(x)) for x = v.x]) : 0
+maxShowLength(v::IndexedVector) = length(v) > 0 ? maximum([length(_string(x)) for x = v.x]) : 0
 
 # Methods to speed up grouping and merging
 function PooledDataArray{R}(d::IndexedVector, ::Type{R})
