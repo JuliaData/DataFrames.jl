@@ -25,6 +25,7 @@ let
                  "test/data/separators/sample_data.wsv",
                  "test/data/typeinference/bool.csv",
                  "test/data/typeinference/standardtypes.csv",
+                 "test/data/typeinference/time.csv",
                  "test/data/utf8/corrupt_utf8.csv",
                  "test/data/utf8/short_corrupt_utf8.csv",
                  "test/data/utf8/utf8.csv"]
