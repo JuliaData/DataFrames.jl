@@ -543,7 +543,7 @@ function readtable(pathname::String;
                    allowquotes::Bool = true,
                    quotemark::Char = '"',
                    decimal::Char = '.',
-                   nastrings::Vector = ASCIIString["", "NA"],
+                   nastrings::Vector = ASCIIString["", "NA", "."],
                    truestrings::Vector = ASCIIString["T", "t", "TRUE", "true"],
                    falsestrings::Vector = ASCIIString["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
