@@ -34,8 +34,8 @@ To simplify the last example (in which we examined the properties of column of `
 
 Expression indexing makes it easier to build up complex subsets:
 
-	df[:(A % 2 .== 0 && B % 4 .== 0), :]
+	df[:((A % 2 .== 0) & (B % 4 .== 0)), :]
 
 This kind of indexing can also be accomplished using `select`:
 
-	select(:(A % 2 .== 0 && B % 4 .== 0), df)
+	select(:((A % 2 .== 0) & (B % 4 .== 0)), df)
