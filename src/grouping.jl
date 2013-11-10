@@ -2,34 +2,6 @@
 #  Split - Apply - Combine operations
 #
 
-function groupsort_indexer(x::AbstractVector, ngroups::Int)
-    ## translated from Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
-
-    ## count group sizes, location 0 for NA
-    n = length(x)
-    ## counts = x.pool
-    counts = fill(0, ngroups + 1)
-    for i = 1:n
-        counts[x[i] + 1] += 1
-    end
-
-    ## mark the start of each contiguous group of like-indexed data
-    where = fill(1, ngroups + 1)
-    for i = 2:ngroups+1
-        where[i] = where[i - 1] + counts[i - 1]
-    end
-    
-    ## this is our indexer
-    result = fill(0, n)
-    for i = 1:n
-        label = x[i] + 1
-        result[where[label]] = i
-        where[label] += 1
-    end
-    result, where, counts
-end
-groupsort_indexer(pv::PooledDataVector) = groupsort_indexer(pv.refs, length(pv.pool))
-
 ##############################################################################
 ##
 ## GroupedDataFrame...
@@ -68,7 +40,7 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
         ngroups = ngroups * (length(dv.pool) + dv_has_nas)
         # TODO if ngroups is really big, shrink it
     end
-    (idx, starts) = groupsort_indexer(x, ngroups)
+    (idx, starts) = DataArrays.groupsort_indexer(x, ngroups)
     # Remove zero-length groupings
     starts = _uniqueofsorted(starts) 
     ends = [starts[2:end] - 1]
@@ -80,24 +52,24 @@ groupby(d::AbstractDataFrame, cols) = groupby(d, [cols])
 groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
 groupby(cols) = x -> groupby(x, cols)
 
-start(gd::GroupedDataFrame) = 1
-next(gd::GroupedDataFrame, state::Int) = 
+Base.start(gd::GroupedDataFrame) = 1
+Base.next(gd::GroupedDataFrame, state::Int) = 
     (sub(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
      state + 1)
-done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
-length(gd::GroupedDataFrame) = length(gd.starts)
-endof(gd::GroupedDataFrame) = length(gd.starts)
-first(gd::GroupedDataFrame) = gd[1]
-last(gd::GroupedDataFrame) = gd[end]
+Base.done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
+Base.length(gd::GroupedDataFrame) = length(gd.starts)
+Base.endof(gd::GroupedDataFrame) = length(gd.starts)
+Base.first(gd::GroupedDataFrame) = gd[1]
+Base.last(gd::GroupedDataFrame) = gd[end]
 
-getindex(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
-getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) = GroupedDataFrame(gd.parent,
+Base.getindex(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
+Base.getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) = GroupedDataFrame(gd.parent,
                                                                           gd.cols,
                                                                           gd.idx,
                                                                           gd.starts[I],
                                                                           gd.ends[I])
 
-function show(io::IO, gd::GroupedDataFrame)
+function Base.show(io::IO, gd::GroupedDataFrame)
     N = length(gd)
     println(io, "$(typeof(gd))  $N groups with keys: $(gd.cols)")
     println(io, "First Group:")
@@ -110,7 +82,7 @@ function show(io::IO, gd::GroupedDataFrame)
     end
 end
 
-function showall(io::IO, gd::GroupedDataFrame)
+function Base.showall(io::IO, gd::GroupedDataFrame)
     N = length(gd)
     println(io, "$(typeof(gd))  $N groups with keys: $(gd.cols)")
     for i = 1:N
@@ -144,7 +116,7 @@ end
 #
 
 # map() sweeps along groups
-function map(f::Function, gd::GroupedDataFrame)
+function Base.map(f::Function, gd::GroupedDataFrame)
     ## [d[1,gd.cols] => f(d) for d in gd]
     ## [f(g) for g in gd]
     keys = [d[1,gd.cols] for d in gd]
@@ -153,7 +125,7 @@ function map(f::Function, gd::GroupedDataFrame)
 end
 
 with(x::GroupApplied, e::Expr) = GroupApplied(x.keys, map(with(e), x.vals))
-map(f::Function, x::GroupApplied) = GroupApplied(x.keys, map(f, x.vals))
+Base.map(f::Function, x::GroupApplied) = GroupApplied(x.keys, map(f, x.vals))
 
 
 
@@ -220,9 +192,9 @@ end
 
 
 # default pipelines:
-map(f::Function, x::SubDataFrame) = f(x)
-(|>)(x::GroupedDataFrame, e::Expr) = based_on(x, e)
-(|>)(x::GroupApplied, e::Expr) = with(x, e)
+Base.map(f::Function, x::SubDataFrame) = f(x)
+Base.(:|>)(x::GroupedDataFrame, e::Expr) = based_on(x, e)
+Base.(:|>)(x::GroupApplied, e::Expr) = with(x, e)
 ## (|>)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
@@ -267,8 +239,8 @@ end
 colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
 colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
-(|>)(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
-(|>)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
+Base.(:|>)(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
+Base.(:|>)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
 colnames(d::GroupedDataFrame) = colnames(d.parent)
 
 # by() convenience function

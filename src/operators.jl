@@ -55,7 +55,7 @@ const unary_vector_operators = [:minimum, :maximum, :prod, :sum, :mean, :median,
 
 # TODO: dist, iqr, rle, inverse_rle
 
-const pairwise_vector_operators = [:diff, :reldiff, :percent_change]
+const pairwise_vector_operators = [:diff, :reldiff]#, :percent_change]
 
 const cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
 
@@ -132,106 +132,9 @@ macro dataframe_unary(f)
     esc(:($(f)(d::DataFrame) = DataFrame([$(f)(d[i]) for i=1:size(d, 2)], deepcopy(index(d)))))
 end
 
-# Apply unary operator to non-NA members of a DataArray or
-# AbstractDataArray
-macro dataarray_unary(f, intype, outtype, N...)
-    esc(quote
-        function $(f){T<:$(intype)}(d::$(isempty(N) ? :(DataArray{T}) : :(DataArray{T,$(N[1])})))
-            data = similar(d.data, $(outtype))
-            for i = 1:length(data)
-                if !d.na[i]
-                    data[i] = $(f)(d.data[i])
-                end
-            end
-            DataArray(data, copy(d.na))
-        end
-        function $(f){T<:$(intype)}(adv::$(isempty(N) ? :(AbstractDataArray{T}) : :(AbstractDataArray{T,$(N[1])})))
-            res = similar(adv, $(outtype))
-            for i = 1:length(adv)
-                res[i] = ($f)(adv[i])
-            end
-            res
-        end
-    end)
-end
-
 #
 # Binary operator macros for DataFrames and DataArrays
 #
-
-# Binary operators with one scalar argument
-macro dataarray_binary_scalar(vectorfunc, scalarfunc, outtype)
-    esc(Expr(:block,
-        # DataArray and AbstractDataArray with scalar
-        # XXX It would be really nice to make this work with arbitrary
-        # types, but doing so results in a bunch of method ambiguity
-        # warnings
-        {
-            quote
-                @swappable function $(vectorfunc)(a::DataArray, b::$t)
-                    res = DataArray(similar(a.data, $outtype), copy(a.na))
-                    for i = 1:length(a)
-                        if !res.na[i]
-                            res.data[i] = $(scalarfunc)(a.data[i], b)
-                        end
-                    end
-                    res
-                end $scalarfunc
-                @swappable function $(vectorfunc)(a::AbstractDataArray, b::$t)
-                    res = similar(a, $outtype)
-                    for i = 1:length(a)
-                        res[i] = $(scalarfunc)(a[i], b)
-                    end
-                    res
-                end $scalarfunc
-            end
-            for t in (:String, :Number)
-        }...
-    ))
-end
-
-# Binary operators with two array arguments
-macro dataarray_binary_array(vectorfunc, scalarfunc, outtype)
-    esc(Expr(:block,
-        # DataArray with other array
-        {
-            quote
-                function $(vectorfunc)(a::$(adata ? :DataArray : :AbstractArray),
-                                       b::$(bdata ? :DataArray : :AbstractArray))
-                    res = DataArray(Array($outtype, promote_shape(size(a), size(b))), $narule)
-                    for i = 1:length(res)
-                        if !res.na[i]
-                            res.data[i] = $(scalarfunc)($(adata ? :(a.data) : :a)[i],
-                                                        $(bdata ? :(b.data) : :b)[i])
-                        end
-                    end
-                    res
-                end
-            end
-            for (adata, bdata, narule) in ((true, true, :(a.na | b.na)),
-                                           (true, false, :(copy(a.na))),
-                                           (false, true, :(copy(b.na))))
-        }...,
-        # AbstractDataArray with other array
-        # Definitinons with DataArray necessary to avoid ambiguity
-        {
-            quote
-                function $(vectorfunc)(a::$atype, b::$btype)
-                    res = similar($(asim ? :a : :b), $outtype, promote_shape(size(a), size(b)))
-                    for i = 1:length(a)
-                        res[i] = $(scalarfunc)(a[i], b[i])
-                    end
-                    res
-                end
-            end
-            for (asim, atype, btype) in ((true, :DataArray, :AbstractDataArray),
-                                         (false, :AbstractDataArray, :DataArray),
-                                         (true, :AbstractDataArray, :AbstractDataArray),
-                                         (true, :AbstractDataArray, :AbstractArray),
-                                         (false, :AbstractArray, :AbstractDataArray))
-        }...,
-    ))
-end
 
 macro dataframe_binary(f)
     esc(quote
@@ -246,70 +149,12 @@ macro dataframe_binary(f)
     end)
 end
 
-# Unary operators, NA
-for f in unary_operators
-    @eval $(f)(d::NAtype) = NA
-end
-
-# Unary operators, DataArrays. Definitions in base should be adequate
-# for AbstractDataArrays. These are just optimizations
-!(d::DataArray{Bool}) = DataArray(!d.data, copy(d.na))
--(d::DataArray) = DataArray(-d.data, copy(d.na))
-
 # Unary operators, DataFrames
 @dataframe_unary !
 @dataframe_unary -
 # As in Base, these are identity operators
 for f in (:(+), :(*))
     @eval $(f)(d::DataFrame) = d
-end
-
-# Treat ctranspose and * in a special way for now
-for f in (:ctranspose, :transpose)
-    @eval $(f)(d::DataArray) = DataArray($(f)(d.data), d.na')
-end
-
-# Propagates NA's
-# For a dissenting view,
-# http://radfordneal.wordpress.com/2011/05/21/slowing-down-matrix-multiplication-in-r/
-# But we're getting 10x R while maintaining NA's
-for (adata, bdata) in ((true, false), (false, true), (true, true))
-    @eval begin
-        function (*)(a::$(adata ? :(Union(DataVector, DataMatrix)) : :(Union(Vector, Matrix))),
-                     b::$(bdata ? :(Union(DataVector, DataMatrix)) : :(Union(Vector, Matrix))))
-            c = $(adata ? :(a.data) : :a) * $(bdata ? :(b.data) : :b)
-            res = DataArray(c, falses(size(c)))
-            # Propagation can be made more efficient by storing record of corrupt
-            # rows and columns, then doing fast edits.
-            $(if adata
-                quote
-                    n1 = size(a, 1)
-                    p1 = size(a, 2)
-                    corrupt_rows = falses(n1)
-                    for j in 1:p1, i in 1:n1
-                        # Propagate NA's
-                        # Corrupt all rows based on i
-                        corrupt_rows[i] |= a.na[i, j]
-                    end
-                    res.na[corrupt_rows, :] = true
-                end
-            end)
-            $(if bdata
-                quote
-                    n2 = size(b, 1)
-                    p2 = size(b, 2)
-                    corrupt_cols = falses(p2)
-                    for j in 1:p2, i in 1:n2
-                        # Propagate NA's
-                        # Corrupt all columns based on j
-                        corrupt_cols[j] |= b.na[i, j]
-                    end
-                    res.na[:, corrupt_cols] = true
-                end
-            end)
-            res
-        end
-    end
 end
 
 #
@@ -322,8 +167,6 @@ end
 # inputs
 for f in (:abs, :sign)
     @eval begin
-        $(f)(::NAtype) = NA
-        @dataarray_unary $(f) Number T
         @dataframe_unary $(f)
     end
 end
@@ -333,9 +176,6 @@ for f in (:acos, :acosh, :asin, :asinh, :atan, :atanh, :sin, :sinh, :cos,
           :cosh, :tan, :tanh, :exp, :exp2, :expm1, :log, :log10, :log1p,
           :log2, :exponent, :sqrt, :gamma, :lgamma, :digamma, :erf, :erfc)
     @eval begin
-        ($f)(::NAtype) = NA
-        @dataarray_unary $(f) FloatingPoint T
-        @dataarray_unary $(f) Real Float64
         @dataframe_unary $(f)
     end
 end
@@ -343,29 +183,6 @@ end
 # Elementary functions that take varargs
 for f in (:round, :ceil, :floor, :trunc)
     @eval begin
-        ($f)(::NAtype, args::Integer...) = NA
-
-        # ambiguity
-        @dataarray_unary $(f) Real T 1
-        @dataarray_unary $(f) Real T 2
-        @dataarray_unary $(f) Real T
-
-        function $(f){T<:Real}(d::DataArray{T}, args::Integer...)
-            data = similar(d.data)
-            for i = 1:length(data)
-                if !d.na[i]
-                    data[i] = $(f)(d[i], args...)
-                end
-            end
-            DataArray(data, copy(d.na))
-        end
-        function $(f){T<:Real}(adv::AbstractDataArray{T}, args::Integer...)
-            res = similar(adv)
-            for i = 1:length(adv)
-                res[i] = ($f)(adv[i], args...)
-            end
-            res
-        end
         $(f)(d::DataFrame, args::Integer...) = 
             DataFrame([$(f)(d[i], args...) for i=1:size(d, 2)], deepcopy(index(d)))
     end
@@ -375,62 +192,13 @@ end
 # Bit operators
 #
 
-@swappable (&)(a::NAtype, b::Bool) = b ? NA : false
-@swappable (|)(a::NAtype, b::Bool) = b ? true : NA
-@swappable ($)(a::NAtype, b::Bool) = NA
-
-# To avoid ambiguity warning
-@swappable (|)(a::NAtype, b::Function) = NA
-
 for f in (:&, :|, :$)
     @eval begin
-        # Scalar with NA
-        ($f)(::NAtype, ::NAtype) = NA
-        @swappable ($f)(::NAtype, b) = NA
         # DataFrame
         @dataframe_binary $(f)
     end
 end
 
-# DataArray with DataArray
-(&)(a::DataArray{Bool}, b::DataArray{Bool}) =
-    DataArray(a.data & b.data, (a.na & b.data) | (b.na & a.data))
-(|)(a::DataArray{Bool}, b::DataArray{Bool}) =
-    DataArray(a.data | b.data, (a.na & !b.data) | (b.na & !a.data))
-($)(a::DataArray{Bool}, b::DataArray{Bool}) =
-    DataArray(a.data $ b.data, a.na | b.na)
-
-# DataArray with non-DataArray
-# Need explicit definition for BitArray to avoid ambiguity
-for t in (:(BitArray), :(Union(AbstractArray{Bool}, Bool)))
-    @eval begin
-        @swappable (&)(a::DataArray{Bool}, b::$t) = DataArray(a.data & b, a.na & b)
-        @swappable (|)(a::DataArray{Bool}, b::$t) = DataArray(a.data | b, a.na & !b)
-        @swappable ($)(a::DataArray{Bool}, b::$t) = DataArray(a.data $ b, a.na)
-    end
-end
-
-#
-# Comparison operators
-#
-
-isless(::NAtype, ::NAtype) = false
-isless(::NAtype, b) = true
-isless(a, ::NAtype) = false
-
-# This is for performance only; the definition in Base is sufficient
-# for AbstractDataArrays
-function isequal(a::DataArray, b::DataArray)
-    if size(a) != size(b) || a.na != b.na
-        return false
-    end
-    for i = 1:length(a)
-        if !a.na[i] && a.data[i] != b.data[i]
-            return false
-        end
-    end
-    return true
-end
 function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     if size(df1, 2) != size(df2, 2)
         return false
@@ -445,25 +213,7 @@ end
 
 for sf in scalar_comparison_operators
     vf = symbol(".$sf")
-
     @eval begin
-        # Array with NA
-        @swappable $(vf){T,N}(::NAtype, b::AbstractArray{T,N}) =
-            DataArray(Array(Bool, size(b)), trues(size(b)))
-
-        # Scalar with NA
-        $(vf)(::NAtype, ::NAtype) = NA
-        $(sf)(::NAtype, ::NAtype) = NA
-        @swappable $(vf)(::NAtype, b) = NA
-        @swappable $(sf)(::NAtype, b) = NA
-
-        @dataarray_binary_scalar $vf $sf Bool
-        @dataarray_binary_array $vf $sf Bool
-
-        $(sf)(a::AbstractDataArray, b::AbstractDataArray) =
-            error("$sf not defined for AbstractDataArrays. Try $vf")
-
-        # DataFrame
         @dataframe_binary $vf
     end
 end
@@ -472,98 +222,10 @@ end
 # Binary operators
 #
 
-# Necessary to avoid ambiguity warnings
-.^(::MathConst{:e}, B::DataArray) = exp(B)
-.^(::MathConst{:e}, B::AbstractDataArray) = exp(B)
-
 for f in arithmetic_operators
     @eval begin
-        # Array with NA
-        @swappable $(f){T,N}(::NAtype, b::AbstractArray{T,N}) =
-            DataArray(Array(T, size(b)), trues(size(b)))
-
-        # Scalar with NA
-        ($f)(::NAtype, ::NAtype) = NA
-        @swappable ($f)(d::NAtype, x::Number) = NA
-
-        # DataArray with scalar
-        @dataarray_binary_scalar $f $f promote_type(eltype(a), eltype(b))
-
-        # DataFrame
         @dataframe_binary $f
     end
-end
-
-^(::NAtype, ::NAtype) = NA
-^(a, ::NAtype) = NA
-^(::NAtype, ::Integer) = NA
-^(::NAtype, ::Number) = NA
-
-for (vf, sf) in ((:(+), :(+)), (:(.+), :(+)), (:(-), :(-)), (:(.-), :(-)), (:(.*), :(*)),
-                 (:(.^), :(^)))
-    @eval begin
-        # Necessary to avoid ambiguity warnings
-        @swappable ($vf)(A::BitArray, B::AbstractDataArray) = ($vf)(bitunpack(A), B)
-        @swappable ($vf)(A::BitArray, B::DataArray) = ($vf)(bitunpack(A), B)
-
-        @dataarray_binary_array $vf $sf promote_type(eltype(a), eltype(b))
-    end
-end
-
-@swappable ./(A::BitArray, B::AbstractDataArray) = ./(bitunpack(A), B)
-@swappable ./(A::BitArray, B::DataArray) = ./(bitunpack(A), B)
-
-@dataarray_binary_array (./) (/) isa(a, FloatingPoint) || isa(b, FloatingPoint) ?
-                                 promote_type(a, b) : Float64
-
-for f in biscalar_operators
-    @eval begin
-        ($f)(::NAtype, ::NAtype) = NA
-        @swappable $(f)(::Number, ::NAtype) = NA
-    end
-end
-
-for f in pairwise_vector_operators
-    @eval function ($f)(dv::DataVector)
-        n = length(dv)
-        new_data = ($f)(dv.data)
-        new_na = falses(n - 1)
-        new_na[1] = dv.na[1]
-        for i = 2:(n - 1)
-            if dv.na[i]
-                new_na[i - 1] = true
-                new_na[i] = true
-            end
-        end
-        new_na[n - 1] = new_na[n - 1] || dv.na[n]
-        return DataArray(new_data, new_na)
-    end
-end
-
-for f in cumulative_vector_operators
-    @eval function ($f)(dv::DataVector)
-        new_data = ($f)(dv.data)
-        new_na = falses(length(dv))
-        hitna = false
-        for i = 1:length(dv)
-            if dv.na[i]
-                hitna = true
-            end
-            if hitna
-                new_na[i] = true
-            end
-        end
-        return DataArray(new_data, new_na)
-    end
-end
-
-for f in [unary_vector_operators; ffts]
-    @eval ($f)(dv::DataVector) = any(dv.na) ? NA : ($f)(dv.data)
-end
-
-for f in binary_vector_operators
-    @eval ($f)(dv1::DataVector, dv2::DataVector) =
-            any(dv1.na) || any(dv2.na) ? NA : ($f)(dv1.data, dv2.data)
 end
 
 for f in (:minimum, :maximum, :prod, :sum, :mean, :median, :std, :var, :norm)
@@ -579,80 +241,12 @@ for f in (:minimum, :maximum, :prod, :sum, :mean, :median, :std, :var, :norm)
             colnames!(res, colnames(df))
             return res
         end
-        function ($colf)(dm::AbstractDataMatrix)
-            n, p = nrow(dm), ncol(dm)
-            res = datazeros(p)
-            for j in 1:p
-                res[j] = ($f)(dm[:, j])
-            end
-            return res
-        end
-        function ($rowf)(dm::DataMatrix)
-            n, p = nrow(dm), ncol(dm)
-            res = datazeros(n)
-            for i in 1:n
-                res[i] = ($f)(DataArray(reshape(dm.data[i, :], p), reshape(dm.na[i, :], p)))
-            end
-            return res
-        end
     end
 end
 
 #
 # Boolean operators
 #
-
-function all(dv::AbstractDataArray{Bool})
-    for i in 1:length(dv)
-        if dv.na[i]
-            return NA
-        end
-        if !dv.data[i]
-            return false
-        end
-    end
-    true
-end
-
-function all(dv::AbstractDataArray{Bool})
-    for i in 1:length(dv)
-        if isna(dv[i])
-            return NA
-        end
-        if !dv[i]
-            return false
-        end
-    end
-    true
-end
-
-function any(dv::DataArray{Bool})
-    has_na = false
-    for i in 1:length(dv)
-        if !dv.na[i]
-            if dv.data[i]
-                return true
-            end
-        else
-            has_na = true
-        end
-    end
-    has_na ? NA : false
-end
-
-function any(dv::AbstractDataArray{Bool})
-    has_na = false
-    for i in 1:length(dv)
-        if !isna(dv[i])
-            if dv[i]
-                return true
-            end
-        else
-            has_na = true
-        end
-    end
-    has_na ? NA : false
-end
 
 function all(df::AbstractDataFrame)
     for i in 1:size(df, 2)
@@ -680,88 +274,4 @@ function any(df::AbstractDataFrame)
         end
     end
     has_na ? NA : false
-end
-
-function Stats.range{T}(dv::AbstractDataVector{T})
-    return DataVector[minimum(dv), maximum(dv)]
-end
-
-function rle{T}(v::AbstractVector{T})
-    n = length(v)
-    current_value = v[1]
-    current_length = 1
-    values = similar(v, n)
-    total_values = 1
-    lengths = Array(Int16, n)
-    total_lengths = 1
-    for i in 2:n
-        if v[i] == current_value
-            current_length += 1
-        else
-            values[total_values] = current_value
-            total_values += 1
-            lengths[total_lengths] = current_length
-            total_lengths += 1
-            current_value = v[i]
-            current_length = 1
-        end
-    end
-    values[total_values] = current_value
-    lengths[total_lengths] = current_length
-    return (values[1:total_values], lengths[1:total_lengths])
-end
-
-function rle{T}(v::AbstractDataVector{T})
-    n = length(v)
-    current_value = v[1]
-    current_length = 1
-    values = DataArray(T, n)
-    total_values = 1
-    lengths = Array(Int16, n)
-    total_lengths = 1
-    for i in 2:n
-        if isna(v[i]) || isna(current_value)
-            if isna(v[i]) && isna(current_value)
-                current_length += 1
-            else
-                values[total_values] = current_value
-                total_values += 1
-                lengths[total_lengths] = current_length
-                total_lengths += 1
-                current_value = v[i]
-                current_length = 1
-            end
-        else
-            if v[i] == current_value
-                current_length += 1
-            else
-                values[total_values] = current_value
-                total_values += 1
-                lengths[total_lengths] = current_length
-                total_lengths += 1
-                current_value = v[i]
-                current_length = 1
-            end
-        end
-    end
-    values[total_values] = current_value
-    lengths[total_lengths] = current_length
-    return (values[1:total_values], lengths[1:total_lengths])
-end
-
-## inverse run-length encoding
-function inverse_rle{T, I <: Integer}(values::AbstractVector{T}, lengths::Vector{I})
-    total_n = sum(lengths)
-    pos = 0
-    res = similar(values, total_n)
-    n = length(values)
-    for i in 1:n
-        v = values[i]
-        l = lengths[i]
-        for j in 1:l
-            pos += 1
-            res[pos] = v
-        end
-    end
-    return res
 end

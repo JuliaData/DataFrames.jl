@@ -271,11 +271,11 @@ end
 
 read_rda(fnm::ASCIIString) = gzopen(read_rda, fnm)
 
-size(rv::RVEC) = size(rv.data)
-size(rl::RList) = inherits(rl, "dataframe") ? (length(rl.data[1]), length(rl.data)) : length(rl.data)
-length(rl::RList) = length(rl.data)
-length(ri::RInteger) = length(ri.data)
-length(rn::RNumeric) = length(rn.data)
+Base.size(rv::RVEC) = size(rv.data)
+Base.size(rl::RList) = inherits(rl, "dataframe") ? (length(rl.data[1]), length(rl.data)) : length(rl.data)
+Base.length(rl::RList) = length(rl.data)
+Base.length(ri::RInteger) = length(ri.data)
+Base.length(rn::RNumeric) = length(rn.data)
 class(v::RVEC) = haskey(v.attr, "class") ? v.attr["class"].data : Array(ASCIIString,0)
 class(x) = Array(ASCIIString, 0)
 inherits(x, clnm::ASCIIString) = any(class(x) .== clnm)

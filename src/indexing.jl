@@ -56,13 +56,13 @@ type IndexedVector{T,S<:AbstractVector} <: AbstractVector{T}
 end
 IndexedVector{T}(x::AbstractVector{T}) = IndexedVector{T,typeof(x)}(x, indexorder(x))
 
-getindex{I<:Real}(v::IndexedVector,i::AbstractVector{I}) = IndexedVector(v.x[i])
-getindex{I<:Real}(v::IndexedVector,i::I) = v.x[i]
-getindex(v::IndexedVector,i::Real) = v.x[i]
-setindex!(v::IndexedVector, val::Any, i::Real) = IndexedVector(setindex!(v.x, val, i))
-setindex!(v::IndexedVector, val::Any, inds::AbstractVector) = IndexedVector(setindex!(v.x, val, inds))
-reverse(v::IndexedVector) = IndexedVector(reverse(v.x), reverse(v.idx))
-similar(v::IndexedVector, T, dims::Dims) = similar(v.x, T, dims)
+Base.getindex{I<:Real}(v::IndexedVector,i::AbstractVector{I}) = IndexedVector(v.x[i])
+Base.getindex{I<:Real}(v::IndexedVector,i::I) = v.x[i]
+Base.getindex(v::IndexedVector,i::Real) = v.x[i]
+Base.setindex!(v::IndexedVector, val::Any, i::Real) = IndexedVector(setindex!(v.x, val, i))
+Base.setindex!(v::IndexedVector, val::Any, inds::AbstractVector) = IndexedVector(setindex!(v.x, val, inds))
+Base.reverse(v::IndexedVector) = IndexedVector(reverse(v.x), reverse(v.idx))
+Base.similar(v::IndexedVector, T, dims::Dims) = similar(v.x, T, dims)
 
 vecbind_type(x::IndexedVector) = vecbind_type(x.x)
 
@@ -70,12 +70,12 @@ vecbind_type(x::IndexedVector) = vecbind_type(x.x)
 upgrade_vector(v::IndexedVector) = v
 
 
-sortperm{S,A<:AbstractDataVector}(x::IndexedVector{S,A}) = [findin(x.x, [NA]), x.idx]
-sortperm(x::IndexedVector) = x.idx 
-sortperm(x::IndexedVector, ::Sort.ReverseOrdering) = reverse(x.idx)
-sort(x::IndexedVector) = x.x[sortperm(x)]
-sort(x::IndexedVector, ::Sort.ReverseOrdering) = x.x[reverse(sortperm(x))]
-Perm{O<:Sort.Ordering}(o::O, v::IndexedVector) = FastPerm(o, v)
+Base.sortperm{S,A<:AbstractDataVector}(x::IndexedVector{S,A}) = [findin(x.x, [NA]), x.idx]
+Base.sortperm(x::IndexedVector) = x.idx 
+Base.sortperm(x::IndexedVector, ::Base.Sort.ReverseOrdering) = reverse(x.idx)
+Base.sort(x::IndexedVector) = x.x[sortperm(x)]
+Base.sort(x::IndexedVector, ::Base.Sort.ReverseOrdering) = x.x[reverse(sortperm(x))]
+Base.Perm{O<:Base.Sort.Ordering}(o::O, v::IndexedVector) = FastPerm(o, v)
 
 type Indexer
     r::Vector{Range1}
@@ -91,7 +91,7 @@ type Indexer
     end
 end
 
-function intersect(v1::Vector{Range1}, v2::Vector{Range1})
+function Base.intersect(v1::Vector{Range1}, v2::Vector{Range1})
     # Assumes that the Range1's in each vector are sorted and don't overlap.
     # (Actually, it doesn't, but it should to get more speed.)
     res = Range1[]
@@ -107,7 +107,7 @@ function intersect(v1::Vector{Range1}, v2::Vector{Range1})
     res
 end
 
-function union(v1::Vector{Range1}, v2::Vector{Range1})
+function Base.union(v1::Vector{Range1}, v2::Vector{Range1})
     # Assumes that the Range1's in each vector are sorted and don't overlap.
     # (Actually, it doesn't, but it should to get more speed.)
     # TODO Check for zero length.
@@ -152,7 +152,7 @@ function union(v1::Vector{Range1}, v2::Vector{Range1})
     reverse(res)
 end
 
-function (!)(x::Indexer)   # Negate the Indexer
+function Base.(:!)(x::Indexer)   # Negate the Indexer
     res = Range1[1 : x.r[1][1] - 1]
     for i in 1:length(x.r) - 1
         push!(res, x.r[i][end] + 1 : x.r[i + 1][1] - 1)
@@ -161,27 +161,27 @@ function (!)(x::Indexer)   # Negate the Indexer
     Indexer(res, x.iv)
 end
 
-function (&)(x1::Indexer, x2::Indexer)
+function Base.(:&)(x1::Indexer, x2::Indexer)
     if is(x1.iv, x2.iv)
         Indexer(intersect(x1.r, x2.r), x1.iv)
     else
         bool(x1) & bool(x2)
     end
 end
-(&)(x1::BitVector, x2::Indexer) = x1 & bool(x2)
-(&)(x1::Indexer, x2::BitVector) = x2 & bool(x1)
+Base.(:&)(x1::BitVector, x2::Indexer) = x1 & bool(x2)
+Base.(:&)(x1::Indexer, x2::BitVector) = x2 & bool(x1)
 
-function (|)(x1::Indexer, x2::Indexer)
+function Base.(:|)(x1::Indexer, x2::Indexer)
     if is(x1.iv, x2.iv)
         Indexer(union(x1.r, x2.r), x1.iv)
     else
         bool(x1) | bool(x2)
     end
 end
-(|)(x1::BitVector, x2::Indexer) = x1 | bool(x2)
-(|)(x1::Indexer, x2::BitVector) = x2 | bool(x1)
+Base.(:|)(x1::BitVector, x2::Indexer) = x1 | bool(x2)
+Base.(:|)(x1::Indexer, x2::BitVector) = x2 | bool(x1)
 
-function bool(ix::Indexer)
+function Base.bool(ix::Indexer)
     res = falses(length(ix.iv))
     for i in ix.iv.idx[[ix.r...]]
         res[i] = true
@@ -191,18 +191,18 @@ end
 
 # `getindex` -- each Range1 of the Indexer (i.r...) is applied to the indexing vector (i.iv.idx)
 
-getindex(x::IndexedVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
-getindex(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
-getindex(x::AbstractDataVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
+Base.getindex(x::IndexedVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
+Base.getindex(x::AbstractVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
+Base.getindex(x::AbstractDataVector, i::Indexer) = x[i.iv.idx[[i.r...]]]
 
 # df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
-function getindex(df::DataFrame, row_inds::Indexer, col_ind::ColumnIndex)
+function Base.getindex(df::DataFrame, row_inds::Indexer, col_ind::ColumnIndex)
     selected_column = df.colindex[col_ind]
     return df.columns[selected_column][row_inds.iv.idx[[row_inds.r...]]]
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-function getindex{T <: ColumnIndex}(df::DataFrame, row_inds::Indexer, col_inds::AbstractVector{T})
+function Base.getindex{T <: ColumnIndex}(df::DataFrame, row_inds::Indexer, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
     new_columns = {dv[row_inds.iv.idx[[row_inds.r...]]] for dv in df.columns[selected_columns]}
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
@@ -213,16 +213,16 @@ typealias ComparisonTypes Union(Number, String)   # defined mainly to avoid warn
 # element-wise (in)equality operators
 # these may need range checks
 # Should these results be sorted? Could be a counting sort.
-.=={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
-.=={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
-.>={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a.idx)], a)
-.<={T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
-.>={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
-.<={T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a.idx)], a)
-.>{T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a.idx)], a)
-.<{T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
-.<{T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a.idx)], a)
-.>{T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
+Base.(:.==){T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
+Base.(:.==){T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : search_sorted_last(a.x, v, a.idx)], a)
+Base.(:.>=){T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a.idx)], a)
+Base.(:.<=){T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
+Base.(:.>=){T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[1 : search_sorted_last(a.x, v, a.idx)], a)
+Base.(:.<=){T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first(a.x, v, a.idx) : length(a.idx)], a)
+Base.(:.>){T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a.idx)], a)
+Base.(:.<){T<:ComparisonTypes}(a::IndexedVector{T}, v::T) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
+Base.(:.<){T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[search_sorted_first_gt(a.x, v, a.idx) : length(a.idx)], a)
+Base.(:.>){T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[1 : search_sorted_last_lt(a.x, v, a.idx)], a)
 
 
 function search_sorted_first_gt{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
@@ -238,9 +238,9 @@ function search_sorted_last_lt{I<:Integer}(a::AbstractVector, x, idx::AbstractVe
     a[idx[res]] == x ? res - 1 : res
 end
 
-findin(a::IndexedVector,r::Range1) = findin(a, [r])
-findin(a::IndexedVector,v::Real) = findin(a, [v])
-function findin(a::IndexedVector, b::AbstractVector)
+Base.findin(a::IndexedVector,r::Range1) = findin(a, [r])
+Base.findin(a::IndexedVector,v::Real) = findin(a, [v])
+function Base.findin(a::IndexedVector, b::AbstractVector)
     ## Returns an Indexer with the elements in "a" that appear in "b"
     res = a .== b[1]
     for i in 2:length(b)
@@ -249,17 +249,17 @@ function findin(a::IndexedVector, b::AbstractVector)
     res
 end
         
-size(a::IndexedVector) = size(a.x)
-length(a::IndexedVector) = length(a.x)
-ndims(a::IndexedVector) = 1
-eltype(a::IndexedVector) = eltype(a.x)
+Base.size(a::IndexedVector) = size(a.x)
+Base.length(a::IndexedVector) = length(a.x)
+Base.ndims(a::IndexedVector) = 1
+Base.eltype(a::IndexedVector) = eltype(a.x)
 
 ## print(io, a::IndexedVector) = print(io, a.x)
-function show(io::IO, a::IndexedVector)
+function Base.show(io::IO, a::IndexedVector)
     print(io, "IndexedVector: ")
     show(io, a.x)
 end
-function repl_show(io::IO, a::IndexedVector)
+function Base.repl_show(io::IO, a::IndexedVector)
     print(io, "IndexedVector: ")
     repl_show(io, a.x)
 end
@@ -306,7 +306,7 @@ end
 maxShowLength(v::IndexedVector) = length(v) > 0 ? maximum([length(_string(x)) for x = v.x]) : 0
 
 # Methods to speed up grouping and merging
-function PooledDataArray{R}(d::IndexedVector, ::Type{R})
+function DataArrays.PooledDataArray{R}(d::IndexedVector, ::Type{R})
     refs = zeros(R, size(d))
     oneval = one(R)
     local idx::Int
@@ -333,11 +333,11 @@ function PooledDataArray{R}(d::IndexedVector, ::Type{R})
     end
     return PooledDataArray(RefArray(refs), pool)
 end
-PooledDataArray(d::IndexedVector) = PooledDataArray(d, DEFAULT_POOLED_REF_TYPE)
+DataArrays.PooledDataArray(d::IndexedVector) = PooledDataArray(d, DEFAULT_POOLED_REF_TYPE)
 
-DataArray(d::IndexedVector) = DataArray(x.x)
+DataArrays.DataArray(d::IndexedVector) = DataArray(x.x)
 
-function PooledDataVecs{S}(v1::IndexedVector{S},
+function DataArrays.PooledDataVecs{S}(v1::IndexedVector{S},
                            v2::IndexedVector{S})
     return PooledDataVecs(PooledDataArray(v1),
                           PooledDataArray(v2))
