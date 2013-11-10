@@ -113,6 +113,9 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
     chr = 0xff
     nextchr = 0xff
 
+    # 'in' does not work if passed Uint8 and Vector{Char}
+    quotemark = convert(Vector{Uint8}, o.quotemark)
+
     # Insert a dummy field bound at position 0
     @push n_bounds p.bounds 0 l_bounds
     @push n_bytes p.bytes '\n' l_bytes
@@ -156,7 +159,7 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
         # Processing is very different inside and outside of quotes
         if !in_quotes
             # Entering a quoted region
-            if chr in o.quotemark
+            if chr in quotemark
                 in_quotes = true
                 p.quoted[n_fields] = true
             # Finished reading a field
@@ -177,11 +180,11 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
             end
         else
             # Escape a quotemark inside quoted field
-            if (@atescape chr nextchr o.quotemark) && !in_escape
+            if (@atescape chr nextchr quotemark) && !in_escape
                 in_escape = true
             else
                 # Exit quoted field
-                if chr in o.quotemark && !in_escape
+                if chr in quotemark && !in_escape
                     in_quotes = false
                 # Store character in buffer
                 else
@@ -318,8 +321,7 @@ function bytestostring{T <: ByteString}(bytes::Vector{Uint8},
                                         left::Int,
                                         right::Int,
                                         wasquoted::Bool,
-                                        nastrings::Vector{T},
-                                        quotemark::Vector{Char})
+                                        nastrings::Vector{T})
     if left > right
         if wasquoted
             return "", true, false
@@ -413,7 +415,7 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
             # (4) Fallback to UTF8String
             values[i], wasparsed, missing[i] =
               bytestostring(p.bytes, left, right,
-                            wasquoted, o.nastrings, o.quotemark)
+                            wasquoted, o.nastrings)
         end
 
         if o.makefactors && !(is_int || is_float || is_bool)
@@ -652,7 +654,7 @@ function filldf!(df::DataFrame,
             elseif T == UTF8String
                 c.data[i], wasparsed, c.na[i] =
                   bytestostring(p.bytes, left, right,
-                                wasquoted, o.nastrings, o.quotemark)
+                                wasquoted, o.nastrings)
             else
                 error("Invalid type encountered")
             end
