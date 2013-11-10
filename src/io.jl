@@ -11,8 +11,7 @@ end
 immutable ParseOptions{S <: ByteString, T <: ByteString}
     header::Bool
     separator::Char
-    allowquotes::Bool
-    quotemark::Char
+    quotemark::Vector{Char}
     decimal::Char
     nastrings::Vector{S}
     truestrings::Vector{S}
@@ -55,7 +54,7 @@ macro atescape(chr, nextchr, quotemark)
     quotemark = esc(quotemark)
     quote
         $chr == '\\' ||                                # \" escaping
-        ($chr == $quotemark && $nextchr == $quotemark) # "" escaping
+        ($chr in $quotemark && $nextchr in $quotemark) # "" escaping
     end
 end
 
@@ -157,7 +156,7 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
         # Processing is very different inside and outside of quotes
         if !in_quotes
             # Entering a quoted region
-            if o.allowquotes && chr == o.quotemark
+            if chr in o.quotemark
                 in_quotes = true
                 p.quoted[n_fields] = true
             # Finished reading a field
@@ -182,7 +181,7 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
                 in_escape = true
             else
                 # Exit quoted field
-                if o.allowquotes && chr == o.quotemark && !in_escape
+                if chr in o.quotemark && !in_escape
                     in_quotes = false
                 # Store character in buffer
                 else
@@ -320,7 +319,7 @@ function bytestostring{T <: ByteString}(bytes::Vector{Uint8},
                                         right::Int,
                                         wasquoted::Bool,
                                         nastrings::Vector{T},
-                                        quotemark::Char)
+                                        quotemark::Vector{Char})
     if left > right
         if wasquoted
             return "", true, false
@@ -540,8 +539,7 @@ end
 function readtable(pathname::String;
                    header::Bool = true,
                    separator::Char = ',',
-                   allowquotes::Bool = true,
-                   quotemark::Char = '"',
+                   quotemark::Vector{Char} = ['"'],
                    decimal::Char = '.',
                    nastrings::Vector = ASCIIString["", "NA"],
                    truestrings::Vector = ASCIIString["T", "t", "TRUE", "true"],
@@ -585,8 +583,8 @@ function readtable(pathname::String;
                   Array(Int, 1), BitArray(1))
 
     # Set parsing options
-    o = ParseOptions(header, separator, allowquotes, quotemark,
-                     decimal, nastrings, truestrings, falsestrings,
+    o = ParseOptions(header, separator, quotemark, decimal,
+                     nastrings, truestrings, falsestrings,
                      makefactors, colnames, cleannames, coltypes,
                      allowcomments, commentmark, ignorepadding,
                      skipstart, skiprows, skipblanks, encoding)
