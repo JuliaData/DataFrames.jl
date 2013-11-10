@@ -36,8 +36,8 @@ type ModelMatrix{T<:Union(Float32,Float64)}
     assign::Vector{Int}
 end
 
-size(mm::ModelMatrix) = size(mm.m)
-size(mm::ModelMatrix,dim...) = size(mm.m,dim...)
+Base.size(mm::ModelMatrix) = size(mm.m)
+Base.size(mm::ModelMatrix,dim...) = size(mm.m,dim...)
 
 function Formula(ex::Expr) 
     aa = ex.args
@@ -48,7 +48,7 @@ function Formula(ex::Expr)
     Formula(aa[2], aa[3])
 end
 
-function show(io::IO, f::Formula)
+function Base.show(io::IO, f::Formula)
     print(io, string("Formula: ", f.lhs == nothing ? "" : f.lhs, " ~ ", f.rhs))
 end
 

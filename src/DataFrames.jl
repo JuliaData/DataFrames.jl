@@ -3,6 +3,7 @@
 # for easy access within the module, whereas the other call
 # pushes those names into Main.
 using Stats
+using DataArrays
 
 module DataFrames
 
@@ -13,6 +14,7 @@ module DataFrames
 ##############################################################################
 
 using Base.Intrinsics
+using DataArrays
 using GZip
 using Stats
 using SortingAlgorithms
@@ -24,7 +26,6 @@ using SortingAlgorithms
 ##############################################################################
 
 const DEFAULT_COLUMN_TYPE = Float64
-const DEFAULT_POOLED_REF_TYPE = Uint32
 
 ##############################################################################
 ##
@@ -49,12 +50,8 @@ import Base.AsyncStream
 export # reconcile_groups,
        @DataFrame,
        @transform,
-       AbstractDataArray,
        AbstractDataFrame,
-       AbstractDataVector,
        AbstractIndex,
-       anyna,
-       allna,
        array,
        based_on,
        by,
@@ -77,65 +74,40 @@ export # reconcile_groups,
        colvars,
        colwise,
        combine,
-       compact,
        complete_cases,
        complete_cases!,
        cut,
-       DataArray,
-       databool,
-       datadiagm,
-       dataeye,
-       datafalses,
-       datafloat,
        DataFrame,
-       dataint,
-       DataMatrix,
-       dataones,
        DataStream,
-       datatrues,
-       DataVector,
-       datazeros,
        describe,
        dict,
        drop_duplicates!,
        duplicated,
-       each_failNA,
-       each_removeNA,
-       each_replaceNA,
        EachCol,
        EachRow,
-       failNA,
        findat,
        flipud!,
        flipud,
        Formula,
        get_groups,
-       get_indices,
        gl,
        GroupApplied,
        groupby,
        GroupedDataFrame,
-       head,
        Index,
        index,
-       index_to_level,
        IndexedVector,
        Indexer,
        interaction_design_matrix,
        is_group,
-       isna,
        letters,
        LETTERS,
-       level_to_index,
-       levels,
        load_df,
        matrix,
        merge,
        model_response,
        ModelFrame,
        ModelMatrix,
-       NA,
-       NAException,
        nafilter,
        naFilter,
        NamedArray,
@@ -143,36 +115,23 @@ export # reconcile_groups,
        nareplace,
        naReplace,
        nas,
-       NAtype,
        ncol,
        nrow,
-       padNA,
        paste,
-       pdatafalses,
-       pdataones,
-       pdatatrues,
-       pdatazeros,
        percent_change,
        pool,
        pool!,
        PooledDataVecs, # The capitalization and/or name for this is a bit inconsistent (merge_pools, maybe?). Do we want to export?
-       PooledDataArray,
-       PooledDataMatrix,
-       PooledDataVector,
        printtable,
        range,
        rbind,
        read_minibatch,
        readtable,
        reldiff,
-       removeNA,
        rename_group!,
-       reorder,
        rep,
-       replace!,
        rename!,
        rename,
-       replaceNA,
        rowffts,
        rowmaxs,
        rowmeans,
@@ -187,14 +146,11 @@ export # reconcile_groups,
        save,
        set_group,
        set_groups,
-       set_levels,
-       set_levels!,
        SimpleIndex,
        stack,
        SubDataFrame,
        subset,
        table,
-       tail,
        unique,
        unstack,
        vector,
@@ -232,11 +188,6 @@ export # reconcile_groups,
 ##############################################################################
 
 include("utils.jl")
-include("natype.jl")
-include("dataarray.jl")
-include("pooleddataarray.jl")
-include("datavector.jl")
-include("datamatrix.jl")
 include("index.jl")
 include("namedarray.jl")
 include("dataframe.jl")
@@ -246,20 +197,11 @@ include("reshape.jl")
 include("formula.jl")
 include("io.jl")
 include("datastream.jl")
-include("linalg.jl")
 include("operators.jl")
-include("statistics.jl")
-include("predicates.jl")
 include("indexing.jl")
 include("extras.jl")
 include("RDA.jl")
 include("dataframe_blocks.jl")
-
-# TODO: Remove these definitions
-nafilter(x...) = error("Function removed. Please use removeNA")
-nareplace(x...) = error("Function removed. Please use replaceNA")
-naFilter(x...) = error("Function removed. Please use each_removeNA")
-naReplace(x...) = error("Function removed. Please use each_replaceNA")
 
 ##############################################################################
 ##

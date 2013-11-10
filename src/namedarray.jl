@@ -20,14 +20,14 @@ type NamedArray <: Associative{Any,Any}
 end
 NamedArray() = NamedArray({}, Index())
 
-length(x::NamedArray) = length(x.idx)
-names(x::NamedArray) = names(x.idx)
+Base.length(x::NamedArray) = length(x.idx)
+Base.names(x::NamedArray) = names(x.idx)
 
-getindex(x::NamedArray, c) = x[x.idx[c]]
-getindex(x::NamedArray, c::Integer) = x.data[c]
-getindex(x::NamedArray, c::Vector{Int}) = NamedArray(x.data[c], names(x)[c])
+Base.getindex(x::NamedArray, c) = x[x.idx[c]]
+Base.getindex(x::NamedArray, c::Integer) = x.data[c]
+Base.getindex(x::NamedArray, c::Vector{Int}) = NamedArray(x.data[c], names(x)[c])
 
-function setindex!(x::NamedArray, newdata, ipos::Integer)
+function Base.setindex!(x::NamedArray, newdata, ipos::Integer)
     if ipos > 0 && ipos <= length(x)
         x.data[ipos] = newdata
     else
@@ -35,7 +35,7 @@ function setindex!(x::NamedArray, newdata, ipos::Integer)
     end
     x
 end
-function setindex!(x::NamedArray, newdata, name)
+function Base.setindex!(x::NamedArray, newdata, name)
     ipos = get(x.idx.lookup, name, 0)
     if ipos > 0
         # existing
@@ -50,13 +50,13 @@ end
 
 
 # Associative methods:
-has(x::NamedArray, key) = has(x.idx, key)
-get(x::NamedArray, key, default) = has(x, key) ? x[key] : default
-keys(x::NamedArray) = keys(x.idx)
-values(x::NamedArray) = x.data
+Base.has(x::NamedArray, key) = has(x.idx, key)
+Base.get(x::NamedArray, key, default) = has(x, key) ? x[key] : default
+Base.keys(x::NamedArray) = keys(x.idx)
+Base.values(x::NamedArray) = x.data
 # Collection methods:
-start(x::NamedArray) = 1
-done(x::NamedArray, i) = i > length(x.data)
-next(x::NamedArray, i) = ((x.idx.names[i], x[i]), i + 1)
-length(x::NamedArray) = length(x.data)
-isempty(x::NamedArray) = length(x.data) == 0
+Base.start(x::NamedArray) = 1
+Base.done(x::NamedArray, i) = i > length(x.data)
+Base.next(x::NamedArray, i) = ((x.idx.names[i], x[i]), i + 1)
+Base.length(x::NamedArray) = length(x.data)
+Base.isempty(x::NamedArray) = length(x.data) == 0

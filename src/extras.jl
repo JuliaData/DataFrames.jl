@@ -1,15 +1,3 @@
-function table{T}(d::AbstractDataArray{T})
-    counts = Dict{Union(T, NAtype), Int}()
-    for i = 1:length(d)
-        if haskey(counts, d[i])
-            counts[d[i]] += 1
-        else
-            counts[d[i]] = 1
-        end
-    end
-    return counts
-end
-
 const letters = convert(Vector{ASCIIString}, split("abcdefghijklmnopqrstuvwxyz", ""))
 const LETTERS = convert(Vector{ASCIIString}, split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", ""))
 
@@ -54,42 +42,6 @@ function paste_columns(d::AbstractDataFrame, sep)
     res
 end
 paste_columns(d::AbstractDataFrame) = paste_columns(d, "_")
-
-function cut{S, T}(x::Vector{S}, breaks::Vector{T})
-    if !issorted(breaks)
-        sort!(breaks)
-    end
-    min_x = minimum(x)
-    max_x = maximum(x)
-    if breaks[1] > min_x
-        unshift!(breaks, min_x)
-    end
-    if breaks[end] < max_x
-        push!(breaks, max_x)
-    end
-    refs = fill(zero(DEFAULT_POOLED_REF_TYPE), length(x))
-    for i in 1:length(x)
-        if x[i] == min_x
-            refs[i] = 1
-        else
-            refs[i] = searchsortedfirst(breaks, x[i]) - 1
-        end
-    end
-    n = length(breaks)
-    from = map(x -> sprint(showcompact, x), breaks[1:(n - 1)])
-    to = map(x -> sprint(showcompact, x), breaks[2:n])
-    pool = Array(ASCIIString, n - 1)
-    if breaks[1] == min_x
-        pool[1] = string("[", from[1], ",", to[1], "]")
-    else
-        pool[1] = string("(", from[1], ",", to[1], "]")
-    end
-    for i in 2:(n - 1)
-        pool[i] = string("(", from[i], ",", to[i], "]")
-    end
-    PooledDataArray(RefArray(refs), pool)
-end
-cut(x::Vector, ngroups::Int) = cut(x, quantile(x, [1 : ngroups - 1] / ngroups))
 
 ##############################################################################
 ##

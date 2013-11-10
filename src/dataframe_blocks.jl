@@ -16,7 +16,7 @@ type DDataFrame <: AbstractDataFrame
     DDataFrame(rrefs::Vector, procs::Vector) = _dims(new(rrefs, procs))
 end
 
-show(io::IO, dt::DDataFrame) = println("$(nrow(dt))x$(ncol(dt)) DDataFrame. $(length(dt.rrefs)) blocks over $(length(union(dt.procs))) processors")
+Base.show(io::IO, dt::DDataFrame) = println("$(nrow(dt))x$(ncol(dt)) DDataFrame. $(length(dt.rrefs)) blocks over $(length(union(dt.procs))) processors")
 
 gather(dt::DDataFrame) = reduce((x,y)->vcat(fetch(x), fetch(y)), dt.rrefs) 
 #convert(::Type{DataFrame}, dt::DDataFrame) = reduce((x,y)->vcat(fetch(x), fetch(y)), dt.rrefs) 
@@ -116,7 +116,7 @@ function dreadtable(b::Block; kwargs...)
     DDataFrame(rrefs, procs)
 end
 dreadtable(fname::String; kwargs...) = dreadtable(Block(File(fname)) |> as_io |> as_recordio; kwargs...)
-function dreadtable(io::Union(AsyncStream,IOStream), chunk_sz::Int, merge_chunks::Bool=true; kwargs...)
+function dreadtable(io::Union(Base.AsyncStream,IOStream), chunk_sz::Int, merge_chunks::Bool=true; kwargs...)
     b = (Block(io, chunk_sz, '\n') .> as_recordio) .> as_bytearray
     rrefs = pmap(x->as_dataframe(PipeBuffer(x); kwargs...), b; fetch_results=false)
     procs = map(x->x.where, rrefs)
@@ -341,11 +341,11 @@ end
 
 ##
 # indexing into DDataFrames
-function getindex(dt::DDataFrame, col_ind::DataFrames.ColumnIndex)
+function Base.getindex(dt::DDataFrame, col_ind::DataFrames.ColumnIndex)
     rrefs = pmap(x->getindex(fetch(x), col_ind), Block(dt); fetch_results=false)
     DDataFrame(rrefs, dt.procs)
 end
-function getindex{T <: DataFrames.ColumnIndex}(dt::DDataFrame, col_inds::AbstractVector{T})
+function Base.getindex{T <: DataFrames.ColumnIndex}(dt::DDataFrame, col_inds::AbstractVector{T})
     rrefs = pmap(x->getindex(fetch(x), col_inds), Block(dt); fetch_results=false)
     DDataFrame(rrefs, dt.procs)
 end
@@ -374,7 +374,7 @@ end
 with(dt::DDataFrame, c::Expr) = vcat(pmap(x->with(fetch(x), c), Block(dt))...)
 with(dt::DDataFrame, c::Symbol) = vcat(pmap(x->with(fetch(x), c), Block(dt))...)
 
-function delete!(dt::DDataFrame, c)
+function Base.delete!(dt::DDataFrame, c)
     pmap(x->begin delete!(fetch(x),c); nothing; end, Block(dt))
     _dims(dt, false, true)
 end
@@ -400,7 +400,7 @@ function within!(dt::DDataFrame, c::Expr)
     _dims(dt, false, true)
 end
 
-for f in (:isna, :complete_cases)
+for f in (:(DataArrays.isna), :complete_cases)
     @eval begin
         function ($f)(dt::DDataFrame)
             vcat(pmap(x->($f)(fetch(x)), Block(dt))...)
@@ -466,7 +466,7 @@ for f in DataFrames.array_arithmetic_operators
     end
 end
 
-for f in [:all, :any]
+for f in [:(Base.all), :(Base.any)]
     @eval begin
         function ($f)(dt::DDataFrame)
             ($f)(pmap(x->($f)(fetch(x)), Block(dt)))
@@ -474,14 +474,14 @@ for f in [:all, :any]
     end
 end
 
-function isequal(a::DDataFrame, b::DDataFrame)
+function Base.isequal(a::DDataFrame, b::DDataFrame)
     all(pmap((x,y)->isequal(fetch(x),fetch(y)), Block(a), Block(b)))
 end
 
 nrow(dt::DDataFrame) = sum(dt.nrows)
 ncol(dt::DDataFrame) = dt.ncols
-head(dt::DDataFrame) = remotecall_fetch(dt.procs[1], x->head(fetch(x)), dt.rrefs[1])
-tail(dt::DDataFrame) = remotecall_fetch(dt.procs[end], x->tail(fetch(x)), dt.rrefs[end])
+DataArrays.head(dt::DDataFrame) = remotecall_fetch(dt.procs[1], x->head(fetch(x)), dt.rrefs[1])
+DataArrays.tail(dt::DDataFrame) = remotecall_fetch(dt.procs[end], x->tail(fetch(x)), dt.rrefs[end])
 colnames(dt::DDataFrame) = dt.colindex.names
 function colnames!(dt::DDataFrame, vals) 
     pmap(x->colnames!(fetch(x), vals), Block(dt))
@@ -515,14 +515,14 @@ for f in [:vcat, :hcat, :rbind, :cbind]
     end
 end
 
-function merge(dt::DDataFrame, t::DataFrame, bycol, jointype)
+function Base.merge(dt::DDataFrame, t::DataFrame, bycol, jointype)
     (jointype != "inner") && error("only inner joins are supported")
     
     rrefs = pmap((x)->merge(fetch(x),t), Block(dt); fetch_results=false)
     DDataFrame(rrefs, dt.procs)
 end
 
-function merge(t::DataFrame, dt::DDataFrame, bycol, jointype)
+function Base.merge(t::DataFrame, dt::DDataFrame, bycol, jointype)
     (jointype != "inner") && error("only inner joins are supported")
     
     rrefs = pmap((x)->merge(t,fetch(x)), Block(dt); fetch_results=false)

@@ -72,7 +72,7 @@ function join_idx(left, right, max_groups)
      right_sorter[right_indexer], right_sorter[rightonly_indexer])
 end
 
-function PooledDataVecs(df1::AbstractDataFrame,
+function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
                         df2::AbstractDataFrame)
     # This method exists to allow merge to work with multiple columns.
     # It takes the columns of each DataFrame and returns a DataArray
@@ -96,7 +96,7 @@ function PooledDataVecs(df1::AbstractDataFrame,
     (PooledDataArray(RefArray(refs1), pool), PooledDataArray(RefArray(refs2), pool))
 end
 
-function PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
+function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
     # This method exists to allow another way for merge to work with
     # multiple columns. It takes the columns of the DataFrame and
     # returns a DataArray with a merged pool that "keys" the
@@ -123,7 +123,7 @@ function PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
     return PooledDataArray(RefArray(refs), pool)
 end
 
-PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)
+DataArrays.PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)
 
 # Union(Vector{T}, ByteString, Nothing
 function Base.join(df1::AbstractDataFrame,

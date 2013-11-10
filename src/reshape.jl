@@ -130,7 +130,7 @@ type EachRepeatedVector{T} <: AbstractVector{T}
     n::Int
 end
 
-function getindex(v::StackedVector,i::Real)
+function Base.getindex(v::StackedVector,i::Real)
     lengths = [length(x)::Int for x in v.components]
     cumlengths = [0, cumsum(lengths)]
     j = searchsortedlast(cumlengths + 1, i)
@@ -144,82 +144,82 @@ function getindex(v::StackedVector,i::Real)
     v.components[j][k]
 end
 
-function getindex{I<:Real}(v::StackedVector,i::AbstractVector{I})
+function Base.getindex{I<:Real}(v::StackedVector,i::AbstractVector{I})
     result = similar(v.components[1], length(i))
     for idx in 1:length(i)
         result[idx] = v[i[idx]]
     end
     result
 end
-getindex(v::StackedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
+Base.getindex(v::StackedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
 
-size(v::StackedVector) = (length(v),)
-length(v::StackedVector) = sum(map(length, v.components))
-ndims(v::StackedVector) = 1
-eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
+Base.size(v::StackedVector) = (length(v),)
+Base.length(v::StackedVector) = sum(map(length, v.components))
+Base.ndims(v::StackedVector) = 1
+Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
 vecbind_type(v::StackedVector) = vecbind_promote_type(map(vecbind_type, v.components)...)
-similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
+Base.similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
 
-show(io::IO, v::StackedVector) = internal_show_vector(io, v)
-repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
+Base.show(io::IO, v::StackedVector) = internal_show_vector(io, v)
+Base.repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
 
-PooledDataArray(v::StackedVector) = PooledDataArray(v[:]) # could be more efficient
+DataArrays.PooledDataArray(v::StackedVector) = PooledDataArray(v[:]) # could be more efficient
 
-function getindex{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
+function Base.getindex{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
     j = mod(i - 1, length(v.parent)) + 1
     v.parent[j]
 end
-function getindex{T}(v::RepeatedVector{T},i::Real)
+function Base.getindex{T}(v::RepeatedVector{T},i::Real)
     j = mod(i - 1, length(v.parent)) + 1
     v.parent[j]
 end
-getindex(v::RepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
+Base.getindex(v::RepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
 
-size(v::RepeatedVector) = (length(v),)
-length(v::RepeatedVector) = v.n * length(v.parent)
-ndims(v::RepeatedVector) = 1
-eltype{T}(v::RepeatedVector{T}) = T
+Base.size(v::RepeatedVector) = (length(v),)
+Base.length(v::RepeatedVector) = v.n * length(v.parent)
+Base.ndims(v::RepeatedVector) = 1
+Base.eltype{T}(v::RepeatedVector{T}) = T
 vecbind_type(v::RepeatedVector) = vecbind_type(v.parent)
-reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.n)
-similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
+Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.n)
+Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 
-show(io::IO, v::RepeatedVector) = internal_show_vector(io, v)
-repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
+Base.show(io::IO, v::RepeatedVector) = internal_show_vector(io, v)
+Base.repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
 
-unique(v::RepeatedVector) = unique(v.parent)
+Base.unique(v::RepeatedVector) = unique(v.parent)
 
-function PooledDataArray(v::RepeatedVector)
+function DataArrays.PooledDataArray(v::RepeatedVector)
     res = PooledDataArray(v.parent)
     res.refs = rep(res.refs, v.n)
     res
 end
 
-function getindex{T}(v::EachRepeatedVector{T},i::Real)
+function Base.getindex{T}(v::EachRepeatedVector{T},i::Real)
     j = div(i - 1, v.n) + 1
     v.parent[j]
 end
-function getindex{T,I<:Real}(v::EachRepeatedVector{T},i::AbstractVector{I})
+function Base.getindex{T,I<:Real}(v::EachRepeatedVector{T},i::AbstractVector{I})
     j = div(i - 1, v.n) + 1
     v.parent[j]
 end
-getindex(v::EachRepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
+Base.getindex(v::EachRepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])
 
-size(v::EachRepeatedVector) = (length(v),)
-length(v::EachRepeatedVector) = v.n * length(v.parent)
-ndims(v::EachRepeatedVector) = 1
-eltype{T}(v::EachRepeatedVector{T}) = T
+Base.size(v::EachRepeatedVector) = (length(v),)
+Base.length(v::EachRepeatedVector) = v.n * length(v.parent)
+Base.ndims(v::EachRepeatedVector) = 1
+Base.eltype{T}(v::EachRepeatedVector{T}) = T
 vecbind_type(v::EachRepeatedVector) = vecbind_type(v.parent)
-reverse(v::EachRepeatedVector) = EachRepeatedVector(reverse(v.parent), v.n)
-similar(v::EachRepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
+Base.reverse(v::EachRepeatedVector) = EachRepeatedVector(reverse(v.parent), v.n)
+Base.similar(v::EachRepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 
-show(io::IO, v::EachRepeatedVector) = internal_show_vector(io, v)
-repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
+Base.show(io::IO, v::EachRepeatedVector) = internal_show_vector(io, v)
+Base.repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
 
-unique(v::EachRepeatedVector) = unique(v.parent)
+Base.unique(v::EachRepeatedVector) = unique(v.parent)
 
-PooledDataArray(v::EachRepeatedVector) = PooledDataArray(v[:], removeNA(unique(v.parent)))
+DataArrays.PooledDataArray(v::EachRepeatedVector) = PooledDataArray(v[:], removeNA(unique(v.parent)))
 
-function PooledDataArray(v::EachRepeatedVector)
+function DataArrays.PooledDataArray(v::EachRepeatedVector)
     res = PooledDataArray(v.parent)
     res.refs = rep(res.refs, rep(v.n,length(res.refs)))
     res

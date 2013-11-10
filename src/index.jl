@@ -16,10 +16,10 @@ function Index{T <: ByteString}(x::Vector{T})
     Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)), x)
 end
 Index() = Index(Dict{ByteString, Indices}(), ByteString[])
-length(x::Index) = length(x.names)
+Base.length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
-copy(x::Index) = Index(copy(x.lookup), copy(x.names))
-deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
+Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
+Base.deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
 
 # I think this should be Vector{T <: String}
 function names!(x::Index, nm::Vector)
@@ -54,15 +54,15 @@ rename!(x::Index, f::Function) = (nms = names(x); rename!(x, nms, [f(x)::ByteStr
 
 rename(x::Index, args...) = rename!(copy(x), args...)
 
-haskey(x::Index, key::String) = haskey(x.lookup, key)
-haskey(x::Index, key::Symbol) = haskey(x.lookup, string(key))
-haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
-keys(x::Index) = names(x)
-function push!(x::Index, nm::String)
+Base.haskey(x::Index, key::String) = haskey(x.lookup, key)
+Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, string(key))
+Base.haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
+Base.keys(x::Index) = names(x)
+function Base.push!(x::Index, nm::String)
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
 end
-function delete!(x::Index, idx::Integer)
+function Base.delete!(x::Index, idx::Integer)
     # reset the lookup's beyond the deleted item
     for i in (idx + 1):length(x.names)
         x.lookup[x.names[i]] = i - 1
@@ -76,7 +76,7 @@ function delete!(x::Index, idx::Integer)
         set_group(x, k, newv)
     end
 end
-function delete!(x::Index, nm::String)
+function Base.delete!(x::Index, nm::String)
     if !haskey(x.lookup, nm)
         return
     end
@@ -84,22 +84,22 @@ function delete!(x::Index, nm::String)
     delete!(x, idx)
 end
 
-getindex(x::Index, idx::String) = x.lookup[idx]
-getindex(x::Index, idx::Symbol) = x.lookup[string(idx)]
-getindex(x::AbstractIndex, idx::Real) = int(idx)
-getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, replaceNA(idx, false))
-getindex{T}(x::AbstractIndex, idx::AbstractDataVector{T}) = getindex(x, removeNA(idx))
-getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
-getindex(x::AbstractIndex, idx::Ranges) = [idx]
-getindex{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)
-getindex{T <: String}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[i] for i in idx]...]
-getindex{T <: Symbol}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[string(i)] for i in idx]...]
+Base.getindex(x::Index, idx::String) = x.lookup[idx]
+Base.getindex(x::Index, idx::Symbol) = x.lookup[string(idx)]
+Base.getindex(x::AbstractIndex, idx::Real) = int(idx)
+Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, replaceNA(idx, false))
+Base.getindex{T}(x::AbstractIndex, idx::AbstractDataVector{T}) = getindex(x, removeNA(idx))
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
+Base.getindex(x::AbstractIndex, idx::Ranges) = [idx]
+Base.getindex{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)
+Base.getindex{T <: String}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[i] for i in idx]...]
+Base.getindex{T <: Symbol}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[string(i)] for i in idx]...]
 
 type SimpleIndex <: AbstractIndex
     length::Integer
 end
 SimpleIndex() = SimpleIndex(0)
-length(x::SimpleIndex) = x.length
+Base.length(x::SimpleIndex) = x.length
 names(x::SimpleIndex) = nothing
 
 # Chris's idea of namespaces adapted by Harlan for column groups
