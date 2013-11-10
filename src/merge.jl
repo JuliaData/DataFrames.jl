@@ -7,8 +7,8 @@ function join_idx(left, right, max_groups)
 
     # NA group in location 0
 
-    left_sorter, where, left_count = groupsort_indexer(left, max_groups)
-    right_sorter, where, right_count = groupsort_indexer(right, max_groups)
+    left_sorter, where, left_count = DataArrays.groupsort_indexer(left, max_groups)
+    right_sorter, where, right_count = DataArrays.groupsort_indexer(right, max_groups)
 
     # First pass, determine size of result set
     tcount = 0

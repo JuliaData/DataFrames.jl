@@ -877,8 +877,19 @@ end
 # then row-by-row print with an appropriate buffer
 _string(x) = sprint(showcompact, x)
 pad(item, num, dir) = dir == 'l' ? lpad(item, num) : rpad(item, num)
-maxShowLength(v::Vector) = mapreduce(x->length(_string(x)), max, 0, v)
-maxShowLength(dv::AbstractDataVector) = mapreduce(x->length(_string(x)), max, 0, dv)
+maxShowLength(v::AbstractVector) = mapreduce(x->length(_string(x)), max, 0, v)
+function maxShowLength(dv::DataVector)
+    res = 0
+    for i in 1:length(dv)
+        if isdefined(dv.data, i)
+            res = max(res, length(_string(dv[i])))
+        else
+            res = max(res, length(Base.undef_ref_str))
+        end
+    end
+    return res
+end
+#maxShowLength(dv::AbstractVector) = mapreduce(x->length(_string(x)), max, 0, dv)
 maxShowLength(df::AbstractDataFrame, col::String) = max(maxShowLength(df[col]), length(col))
 colwidths(df::AbstractDataFrame) = [maxShowLength(df, col) for col=colnames(df)]
 colwidths(row::Array{Any}) = [length(_string(row[i])) for i = 1:length(row)]
@@ -1159,11 +1170,11 @@ Base.similar(df::DataFrame, dims) =
 Base.similar(df::SubDataFrame, dims) = 
     DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
 
+Base.zeros{T<:String}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
+
 nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavector.jl?
     DataArray(zeros(T, dims), fill(true, dims))
-
-Base.zeros{T<:ByteString}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
-    
+ 
 nas{T,R}(dv::PooledDataVector{T,R}, dims) =
     PooledDataArray(RefArray(fill(one(R), dims)), dv.pool)
 
@@ -1186,14 +1197,24 @@ vecbind_promote_type(a, b, c, ds...) = vecbind_promote_type(a, vecbind_promote_t
 vecbind_promote_type(a, b, c) = vecbind_promote_type(a, vecbind_promote_type(b, c))
 
 function vecbind_promote_type(a::AbstractVector)
-    if length(a)  == 1
-         return a[1]
+    res = None
+    if isdefined(a, 1)
+        if length(a) == 1
+            return a[1]
+        else
+            if isdefined(a, 2)
+                res = vecbind_promote_type(a[1], a[2])
+            else
+                res = a[1]
+            end
+        end
     end
-    res = vecbind_promote_type(a[1], a[2])
     for i in 3:length(a)
-        res = vecbind_promote_type(res, a[i])
+        if isdefined(a, i)
+            res = vecbind_promote_type(res, a[i])
+        end
     end
-    res
+    return res
 end
 
 constructor{T}(::Type{Vector{T}}, args...) = Array(T, args...)

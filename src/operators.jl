@@ -55,7 +55,7 @@ const unary_vector_operators = [:minimum, :maximum, :prod, :sum, :mean, :median,
 
 # TODO: dist, iqr, rle, inverse_rle
 
-const pairwise_vector_operators = [:diff, :reldiff, :percent_change]
+const pairwise_vector_operators = [:diff, :reldiff]#, :percent_change]
 
 const cumulative_vector_operators = [:cumprod, :cumsum, :cumsum_kbn, :cummin, :cummax]
 

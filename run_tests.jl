@@ -19,8 +19,7 @@ my_tests = ["test/extras.jl",
             "test/sort.jl",
             "test/iteration.jl",
             "test/colfuncs.jl",
-            "test/duplicates.jl",
-            "test/tabulation.jl"]
+            "test/duplicates.jl"]
 
 println("Running tests:")
 
