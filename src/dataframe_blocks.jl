@@ -52,8 +52,8 @@ function as_dataframe(bio::BlockableIO; kwargs...)
 
     kwdict = { :header => false,
         :separator => ',',
-        :allowquotes => true,
-        :quotemark => '"',
+        #:allowquotes => true,
+        :quotemark => ['"'],
         :decimal => '.',
         :nastrings => ASCIIString["", "NA"],
         :truestrings => ASCIIString["T", "t", "TRUE", "true"],
@@ -78,7 +78,25 @@ function as_dataframe(bio::BlockableIO; kwargs...)
     for argname in names(DataFrames.ParseOptions)
         push!(poargs, kwdict[argname])
     end
-    po = DataFrames.ParseOptions(poargs...)
+
+    po = DataFrames.ParseOptions(kwdict[:header], 
+                kwdict[:separator], 
+                kwdict[:quotemark],
+                kwdict[:decimal],
+                kwdict[:nastrings],
+                kwdict[:truestrings],
+                kwdict[:falsestrings],
+                kwdict[:makefactors],
+                kwdict[:colnames],
+                kwdict[:cleannames],
+                kwdict[:coltypes],
+                kwdict[:allowcomments],
+                kwdict[:commentmark],
+                kwdict[:ignorepadding],
+                kwdict[:skipstart],
+                kwdict[:skiprows],
+                kwdict[:skipblanks],
+                kwdict[:encoding])
 
     p = DataFrames.ParsedCSV(Array(Uint8, nbytes), Array(Int, 1), Array(Int, 1), BitArray(1))
 
