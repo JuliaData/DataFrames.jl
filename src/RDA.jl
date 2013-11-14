@@ -297,7 +297,7 @@ function data(ri::RInteger)
                                       Uint64
     refs = convert(Vector{REFTYPE}, dd)
     refs[msng] = zero(REFTYPE)
-    PooledDataArray(RefArray(refs), pool)
+    PooledDataArray(DataArrays.RefArray(refs), pool)
 end
 
 data(rs::RString) = DataArray(rs.data, falses(length(rs.data)))

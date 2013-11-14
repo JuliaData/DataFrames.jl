@@ -1176,7 +1176,7 @@ nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavector.jl?
     DataArray(zeros(T, dims), fill(true, dims))
  
 nas{T,R}(dv::PooledDataVector{T,R}, dims) =
-    PooledDataArray(RefArray(fill(one(R), dims)), dv.pool)
+    PooledDataArray(DataArrays.RefArray(fill(one(R), dims)), dv.pool)
 
 nas(df::DataFrame, dims) = 
     DataFrame([nas(x, dims) for x in df.columns], colnames(df)) 
