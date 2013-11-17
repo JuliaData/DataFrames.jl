@@ -93,7 +93,7 @@ function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
         ngroups = ngroups * (length(dv1.pool) + 1)
     end
     pool = [1:ngroups]
-    (PooledDataArray(RefArray(refs1), pool), PooledDataArray(RefArray(refs2), pool))
+    (PooledDataArray(DataArrays.RefArray(refs1), pool), PooledDataArray(DataArrays.RefArray(refs2), pool))
 end
 
 function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
@@ -120,7 +120,7 @@ function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
             j += 1
         end
     end
-    return PooledDataArray(RefArray(refs), pool)
+    return PooledDataArray(DataArrays.RefArray(refs), pool)
 end
 
 DataArrays.PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)

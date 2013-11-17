@@ -316,7 +316,7 @@ function DataArrays.PooledDataArray{R}(d::IndexedVector, ::Type{R})
     # skip over NAs
     nna = length(d) - length(d.x)
     if nna == length(d)
-        return PooledDataArray(RefArray(refs), pool)
+        return PooledDataArray(DataArrays.RefArray(refs), pool)
     end
     lastval = d.x[d.idx[nna+1]]
     push!(pool, d.x[d.idx[nna+1]])
@@ -331,7 +331,7 @@ function DataArrays.PooledDataArray{R}(d::IndexedVector, ::Type{R})
         end
         refs[idx] = poolidx
     end
-    return PooledDataArray(RefArray(refs), pool)
+    return PooledDataArray(DataArrays.RefArray(refs), pool)
 end
 DataArrays.PooledDataArray(d::IndexedVector) = PooledDataArray(d, DEFAULT_POOLED_REF_TYPE)
 
