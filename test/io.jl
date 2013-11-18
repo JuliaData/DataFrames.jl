@@ -101,4 +101,8 @@ let
     @assert typeof(df["factorvar"]) == PooledDataArray{UTF8String,Uint32,1}
     @assert typeof(df["floatvar"]) == DataArray{Float64,1}
 
+    # Readtable shouldn't silently drop data when reading highly compressed gz.
+    df = readtable("test/data/compressed/1000x2.csv.gz")
+    @assert size(df) == (1000, 2)
+
 end

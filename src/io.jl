@@ -575,11 +575,6 @@ function readtable(pathname::String;
         nbytes = filesize(pathname)
     end
 
-    # If user wants all rows, overestimate nrows
-    if nrows == -1
-        nrows = nbytes
-    end
-
     # Allocate buffers for storing metadata
     p = ParsedCSV(Array(Uint8, nbytes), Array(Int, 1),
                   Array(Int, 1), BitArray(1))
