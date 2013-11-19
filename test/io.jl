@@ -64,7 +64,7 @@ let
 
     df1 = readtable(filename, separator = ',')
 
-    all(df .== df1)
+    @assert isequal(df, df1)
 
     rm(filename)
 
@@ -86,7 +86,7 @@ let
 
     df1 = readtable(filename, separator = ',')
 
-    all(df .== df1)
+    @assert isequal(df, df1)
 
     rm(filename)
 
