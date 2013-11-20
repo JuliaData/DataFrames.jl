@@ -202,7 +202,7 @@ function RLogical(io::IO, fl::Uint32, A::Bool, symtab::Array{RSymbol,1})
     @assert uint8(fl) == 0x0a
     n = readuint32(io, A)
     rr = [readintorNA(io, A)::Int32 for i in 1:n]
-    RLogical(convert(BitArray{1}, rr), convert(BitArray{1}, rr .== R_NA_INTEGER),
+    RLogical(convert(BitArray{1}, rr), convert(BitArray{1}, rr .== R_NA_INT32),
              namedobjects(io, fl, A, symtab))
 end
 
