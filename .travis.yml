@@ -11,8 +11,5 @@ before_install:
     - git config --global user.name "Travis User"
     - git config --global user.email "travis@example.net"
 script:
-    - julia -e 'versioninfo(); Pkg.init();'
-    - julia -e 'Pkg.add("Stats"); Pkg.add("GZip"); Pkg.add("Blocks"); Pkg.add("SortingAlgorithms");'
-    - mkdir -p ~/.julia/DataFrames
-    - cp -R ./* ~/.julia/DataFrames/
+    - julia -e 'versioninfo(); Pkg.init(); Pkg.clone(pwd())'
     - julia ./run_tests.jl
