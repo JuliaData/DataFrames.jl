@@ -33,8 +33,7 @@ macro atnewline(chr, nextchr)
     chr = esc(chr)
     nextchr = esc(nextchr)
     quote
-        $chr == '\n' ||                  # UNIX + Windows
-        $chr == '\r' && $nextchr != '\n' # Mac OS
+        $chr == '\n' || $chr == '\r'
     end
 end
 
@@ -42,9 +41,7 @@ macro atblankline(chr, nextchr)
     chr = esc(chr)
     nextchr = esc(nextchr)
     quote
-        ($chr == '\n' && $nextchr == '\n') || # UNIX
-        ($chr == '\n' && $nextchr == '\r') || # Windows
-        ($chr == '\r' && $nextchr == '\r')    # Mac OS
+        ($chr == '\n' || $chr == '\r') && ($nextchr == '\n' || $nextchr == '\r')
     end
 end
 
