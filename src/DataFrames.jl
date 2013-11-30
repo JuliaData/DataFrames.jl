@@ -35,10 +35,9 @@ const DEFAULT_COLUMN_TYPE = Float64
 
 importall Base
 importall Stats
-import Base.Sort
-import Base.Sort.Algorithm, Base.Sort.By, Base.Sort.Forward
-import Base.Sort.Ordering, Base.Sort.Perm, Base.Sort.lt
-import Base.Sort.sort, Base.Sort.sort!, Base.Sort.sortby, Base.Sort.sortby!
+import Base: Sort, Order
+import Base.Sort: sort, sort!, Algorithm, defalg, issorted
+import Base.Order: Ordering, By, Lt, Perm, Forward, lt, ord
 import Base.AsyncStream
 
 ##############################################################################
@@ -117,6 +116,7 @@ export # reconcile_groups,
        nas,
        ncol,
        nrow,
+       order,
        paste,
        percent_change,
        pool,
