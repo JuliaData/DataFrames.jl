@@ -13,7 +13,7 @@ let
 	df[1, :] = 1
 
 	# Assignment of columns
-	df[1] = datazeros(4)
+	df[1] = DataArray(zeros(4))
 
 	# Broadcasting assignment of columns
 	df[:, 1] = 1
@@ -29,7 +29,7 @@ let
 
 	alt_df = deepcopy(df)
 	rbind(df, alt_df)
-	df[1] = datazeros(Int, nrow(df))
+	df[1] = DataArray(zeros(Int, nrow(df)))
 	# Fail on non-matching types
 	rbind(df, alt_df)
 

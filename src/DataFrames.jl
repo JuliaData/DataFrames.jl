@@ -209,6 +209,8 @@ include("dataframe_blocks.jl")
 ##
 ##############################################################################
 
+Base.@deprecate rbind vcat
+Base.@deprecate cbind hcat
 Base.@deprecate read_table readtable
 Base.@deprecate print_table printtable
 Base.@deprecate write_table writetable
