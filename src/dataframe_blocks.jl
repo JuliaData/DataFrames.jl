@@ -1,5 +1,4 @@
 using Blocks
-using Base.FS
 
 importall Blocks
 
@@ -133,7 +132,7 @@ function dreadtable(b::Block; kwargs...)
     procs = map(x->x.where, rrefs)
     DDataFrame(rrefs, procs)
 end
-dreadtable(fname::String; kwargs...) = dreadtable(Block(File(fname)) |> as_io |> as_recordio; kwargs...)
+dreadtable(fname::String; kwargs...) = dreadtable(Block(Base.FS.File(fname)) |> as_io |> as_recordio; kwargs...)
 function dreadtable(io::Union(Base.AsyncStream,IOStream), chunk_sz::Int, merge_chunks::Bool=true; kwargs...)
     b = (Block(io, chunk_sz, '\n') .> as_recordio) .> as_bytearray
     rrefs = pmap(x->as_dataframe(PipeBuffer(x); kwargs...), b; fetch_results=false)

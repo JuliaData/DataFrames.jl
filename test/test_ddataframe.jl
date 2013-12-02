@@ -1,7 +1,7 @@
 using DataFrames
 using DataArrays
 
-const datafile = "data/distributed/test.csv"
+const datafile = joinpath(dirname(@__FILE__), "data", "distributed", "test.csv")
 const nloops = 10
 
 function load_pkgs()
