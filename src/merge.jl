@@ -139,26 +139,26 @@ function Base.join(df1::AbstractDataFrame,
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
 
     if kind == :inner
-        return cbind(df1[left_indexer,:], without(df2, on)[right_indexer,:])
+        return hcat(df1[left_indexer,:], without(df2, on)[right_indexer,:])
     elseif kind == :left
         left = df1[[left_indexer,leftonly_indexer],:]
-        right = rbind(without(df2, on)[right_indexer,:],
+        right = vcat(without(df2, on)[right_indexer,:],
                       nas(without(df2, on), length(leftonly_indexer)))
-        return cbind(left, right)
+        return hcat(left, right)
     elseif kind == :right
-        left = rbind(without(df1, on)[left_indexer, :],
+        left = vcat(without(df1, on)[left_indexer, :],
                      nas(without(df1, on), length(rightonly_indexer)))
         right = df2[[right_indexer,rightonly_indexer],:]
-        return cbind(left, right)
+        return hcat(left, right)
     elseif kind == :outer
-        mixed = cbind(df1[left_indexer, :], without(df2, on)[right_indexer, :])
-        leftonly = cbind(df1[leftonly_indexer, :],
+        mixed = hcat(df1[left_indexer, :], without(df2, on)[right_indexer, :])
+        leftonly = hcat(df1[leftonly_indexer, :],
                          nas(without(df2, on), length(leftonly_indexer)))
         leftonly = leftonly[:, colnames(mixed)]
-        rightonly = cbind(nas(without(df1, on), length(rightonly_indexer)),
+        rightonly = hcat(nas(without(df1, on), length(rightonly_indexer)),
                           df2[rightonly_indexer, :])
         rightonly = rightonly[:, colnames(mixed)]
-        return rbind(mixed, leftonly, rightonly)
+        return vcat(mixed, leftonly, rightonly)
     else
         throw(ArgumentError("Unknown kind of join requested"))
     end

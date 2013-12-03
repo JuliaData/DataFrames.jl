@@ -1135,8 +1135,13 @@ without(df::SubDataFrame, c::Any) = SubDataFrame(without(df.parent, c), df.rows)
 # of first df. Missing data becomes NAs.
 # vcat() is just rbind()
  
+function cbind(x...)
+    Base.depwarn("cbind() is deprecated, use hcat() instead.", :cbind)
+    hcat(x...)
+end
+
 # two-argument form, two dfs, references only
-function cbind(df1::DataFrame, df2::DataFrame)
+function hcat(df1::DataFrame, df2::DataFrame)
     # If df1 had metadata, we should copy that.
     colindex = Index(make_unique([colnames(df1), colnames(df2)]))
     columns = [df1.columns, df2.columns]
@@ -1146,21 +1151,17 @@ function cbind(df1::DataFrame, df2::DataFrame)
     return d
 end
 
-function cbind{T}(df::DataFrame, x::DataVector{T})
-    cbind(df, DataFrame({x}))
-end
-
-function cbind{T}(df::DataFrame, x::Vector{T})
-    cbind(df, DataFrame({DataArray(x)}))
-end
-
-function cbind{T}(df::DataFrame, x::T)
-    cbind(df, DataFrame({DataArray([x])}))
-end
+hcat{T}(df::DataFrame, x::DataVector{T}) = hcat(df, DataFrame({x}))
+hcat{T}(df::DataFrame, x::Vector{T}) = hcat(df, DataFrame({DataArray(x)}))
+#hcat{T}(df::DataFrame, x::T) = hcat(df, DataFrame({DataArray([x])}))
+# ^  Steals from: hcat{T}(df::DataFrame, x::DataVector{T})
+hcat(v::Vector{DataFrame}) = hcat(v...)
+hcat(a::DataFrame, b::DataFrame, c::DataFrame...) = hcat(hcat(a, b), c...)
 
 # three-plus-argument form recurses
-cbind(a, b, c...) = cbind(cbind(a, b), c...)
-Base.hcat(dfs::DataFrame...) = cbind(dfs...)
+#hcat(a::DataFrame, b, c...) = hcat(hcat(a, b), c...)
+# ^  Steals from: {T}(df, x::DataVector{T}), {T}(df, x::Vector{T}), & {T}(df, x::T)
+hcat(a::DataFrame, b, c, d...) = hcat(hcat(a, b), c, d...)
 
 is_group(df::AbstractDataFrame, name::ByteString) = is_group(index(df), name)
 
@@ -1237,17 +1238,28 @@ function vecbind(xs::PooledDataVector...)
     vecbind(map(DataArray, xs)...)
 end
 
-rbind(df::AbstractDataFrame) = df
-rbind(dfs::Vector) = rbind(dfs...)
-function rbind(dfs::AbstractDataFrame...)
+
+function rbind(x...)
+    Base.depwarn("rbind() is deprecated, use vcat() instead.", :rbind)
+    vcat(x...)
+end
+
+vcat(df::AbstractDataFrame) = df
+vcat(dfs::Vector{AbstractDataFrame}) = vcat(dfs...)
+#  ^ to avoid hijacking from base, no longer works on Any's filled with DataFrames
+function vcat(dfs::AbstractDataFrame...)
     Nrow = sum(nrow, dfs)
     # build up column names and types
     colnams = colnames(dfs[1])
+    coltyps = coltypes(dfs[1])
     for i in 2:length(dfs)
+        cni = colnames(dfs[i])
+        cti = coltypes(dfs[i])
         for j in 1:ncol(dfs[i])
-            cn = colnames(dfs[i])[j]
+            cn = cni[j]
             if length(findin([cn], colnams)) == 0  # new column
                 push!(colnams, cn)
+                push!(coltyps, cti[j])
             end
         end
     end
@@ -1256,14 +1268,14 @@ function rbind(dfs::AbstractDataFrame...)
     for i in 1:Ncol
         coldata = {}
         for df in dfs
-            push!(coldata, get(df, colnams[i], DataArray(NA, nrow(df))))
+            push!(coldata, get(df, colnams[i], DataArray(coltyps[i], nrow(df))))
         end
         res[colnams[i]] = vecbind(coldata...)
     end
     res
 end
 
-Base.vcat(dfs::DataFrame...) = rbind(dfs...)
+
 
 # DF row operations -- delete and append
 # df[1] = nothing
