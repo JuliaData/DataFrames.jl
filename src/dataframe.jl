@@ -1555,8 +1555,10 @@ end
 
 complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(complete_cases(df)))
 
-function DataArrays.matrix(adf::AbstractDataFrame, t::Type)
+function DataArrays.array(adf::AbstractDataFrame)
     n, p = size(adf)
+    # TODO: Replace when tunion() is added to Base
+    t = reduce(earliest_common_ancestor, coltypes(adf))
     res = Array(t, n, p)
     for i in 1:n
         for j in 1:p
@@ -1564,11 +1566,6 @@ function DataArrays.matrix(adf::AbstractDataFrame, t::Type)
         end
     end
     return res
-end
-function DataArrays.matrix(adf::AbstractDataFrame)
-    # TODO: Replace when tunion() is added to Base
-    t = reduce(earliest_common_ancestor, coltypes(adf))
-    matrix(adf, t)
 end
 
 function DataArrays.DataArray(adf::AbstractDataFrame, t::Type)
@@ -1593,10 +1590,10 @@ function duplicated(df::AbstractDataFrame)
     res = fill(false, nrow(df))
     di = Dict()
     for i in 1:nrow(df)
-        if haskey(di, matrix(df[i, :], Any))
+        if haskey(di, array(df[i, :])) # Used to convert to Any type
             res[i] = true
         else
-            di[matrix(df[i, :], Any)] = 1
+            di[array(df[i, :])] = 1 # Used to convert to Any type
         end
     end
     res
@@ -1651,11 +1648,11 @@ end
 # TODO: Use cor and cov for DataMatrix to do this
 function Base.cor(df::DataFrame)
     numeric_cols = find(map(t -> t <: Number, coltypes(df)))
-    cor(matrix(df[:, numeric_cols]))
+    cor(array(df[:, numeric_cols]))
 end
 function Base.cov(df::DataFrame)
     numeric_cols = find(map(t -> t <: Number, coltypes(df)))
-    cov(matrix(df[:, numeric_cols]))
+    cov(array(df[:, numeric_cols]))
 end
 
 function clean_colnames!(df::DataFrame)

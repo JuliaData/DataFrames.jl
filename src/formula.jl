@@ -179,7 +179,7 @@ ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
 
 function model_response(mf::ModelFrame)
     mf.terms.response || error("Model formula one-sided")
-    vector(mf.df[bool(mf.terms.factors[:,1])][:,1])
+    array(mf.df[bool(mf.terms.factors[:,1])][:,1])
 end
 
 function contr_treatment(n::Integer, contrasts::Bool, sparse::Bool, base::Integer)

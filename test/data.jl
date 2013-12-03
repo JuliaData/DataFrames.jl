@@ -3,11 +3,11 @@ using DataFrames
 
 #let
     #test_group("DataVector creation")
-    dvint = DataVector[1, 2, NA, 4]
+    dvint = @data([1, 2, NA, 4])
     dvint2 = DataArray([5:8])
     dvint3 = DataArray(5:8)
-    dvflt = DataVector[1.0, 2, NA, 4]
-    dvstr = DataVector["one", "two", NA, "four"]
+    dvflt = @data([1.0, 2, NA, 4])
+    dvstr = @data(["one", "two", NA, "four"])
     dvdict = DataArray(Dict,4)    # for issue #199
 
     #test_group("constructors")
@@ -15,7 +15,7 @@ using DataFrames
     df2 = DataFrame({dvint, dvstr}) 
     df3 = DataFrame({dvint})
     df4 = DataFrame([1:4 1:4])
-    df5 = DataFrame({DataVector[1,2,3,4], dvstr})
+    df5 = DataFrame({@data([1,2,3,4]), dvstr})
     df6 = DataFrame({dvint, dvint, dvstr}, ["A", "B", "C"])
     df7 = DataFrame(x = dvint, y = dvstr)
     @assert size(df7) == (4, 2)
@@ -63,7 +63,7 @@ using DataFrames
     # @assert repr(df1) == "4x2 DataFrame:\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
 
     #test_group("assign")
-    df6[3] = DataVector["un", "deux", "troix", "quatre"]
+    df6[3] = @data(["un", "deux", "troix", "quatre"])
     @assert df6[1, 3] == "un"
     df6["B"] = [4, 3, 2, 1]
     @assert df6[1,2] == 4
@@ -140,7 +140,7 @@ using DataFrames
     srand(1)
     N = 20
     d1 = PooledDataArray(rand(1:2, N))
-    d2 = PooledDataVector["A", "B", NA][rand(1:3, N)]
+    d2 = @pdata(["A", "B", NA])[rand(1:3, N)]
     d3 = DataArray(randn(N))
     d4 = DataArray(randn(N))
     df7 = DataFrame({d1, d2, d3}, ["d1", "d2", "d3"])
@@ -189,7 +189,7 @@ using DataFrames
     @assert res == sum(df7["d1"])
 
     df8 = df7 |> groupby(["d2"]) |> :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) )
-    @assert isequal(df8["d2"], PooledDataVector[NA, "A", "B"])
+    @assert isequal(df8["d2"], @pdata([NA, "A", "B"]))
 
     df9 = based_on(groupby(df7, "d2"),
                    :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) ))
@@ -286,7 +286,7 @@ using DataFrames
     end)
 
     m1 = join(df1, df2, on = "a")
-    @assert isequal(m1["a"], DataVector[1, 2, 3, 4, 5])
+    @assert isequal(m1["a"], @data([1, 2, 3, 4, 5]))
     # TODO: Re-enable
     # m2 = join(df1, df2, on = "a", kind = :outer)
     # @assert isequal(m2["b2"], DataVector["A", "B", "B", "B", "B", NA, NA, NA, NA, NA])
@@ -297,11 +297,11 @@ using DataFrames
     df2 = DataFrame({"a" => [1, 2, 4],
                      "c" => ["New World", "Old World", "New World"]})
     m1 = join(df1, df2, on = "a", kind = :inner)
-    @assert isequal(m1["a"], DataVector[1, 2])
+    @assert isequal(m1["a"], @data([1, 2]))
     m2 = join(df1, df2, on = "a", kind = :left)
-    @assert isequal(m2["a"], DataVector[1, 2, 3])
+    @assert isequal(m2["a"], @data([1, 2, 3]))
     m3 = join(df1, df2, on = "a", kind = :right)
-    @assert isequal(m3["a"], DataVector[1, 2, 4])
+    @assert isequal(m3["a"], @data([1, 2, 4]))
     # TODO: Re-enable
     # m4 = join(df1, df2, on = "a", kind = :outer)
     # @assert isequal(m4["a"], DataVector[1, 2, 3, 4])
@@ -392,10 +392,10 @@ using DataFrames
     PooledDataArray(falses(2), trues(2))
 
     # Test vectorized comparisons work for DataVector's and PooledDataVector's
-    DataVector[1, 2, NA] .== 1
-    PooledDataVector[1, 2, NA] .== 1
-    DataVector["1", "2", NA] .== "1"
-    PooledDataVector["1", "2", NA] .== "1"
+    @data([1, 2, NA]) .== 1
+    @pdata([1, 2, NA]) .== 1
+    @data(["1", "2", NA]) .== "1"
+    @pdata(["1", "2", NA]) .== "1"
 
     # Test unique()
     #test_group("unique()")
