@@ -87,7 +87,7 @@ end
 Base.getindex(x::Index, idx::String) = x.lookup[idx]
 Base.getindex(x::Index, idx::Symbol) = x.lookup[string(idx)]
 Base.getindex(x::AbstractIndex, idx::Real) = int(idx)
-Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, replaceNA(idx, false))
+Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, array(idx, false))
 Base.getindex{T}(x::AbstractIndex, idx::AbstractDataVector{T}) = getindex(x, removeNA(idx))
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
 Base.getindex(x::AbstractIndex, idx::Ranges) = [idx]

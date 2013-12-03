@@ -102,10 +102,8 @@ let
 
     # Elementary functions on DataFrames's
     N = 5
-    df = DataFrame(quote
-                       A = dataones($(N))
-                       B = dataones($(N))
-                   end)
+    df = DataFrame(A = DataArray(ones(N)),
+                   B = DataArray(ones(N)))
     for f in elementary_functions
         for i in 1:nrow(df)
             for j in 1:ncol(df)
@@ -116,10 +114,8 @@ let
 
     # Broadcasting operations between NA's and DataFrames's
     N = 5
-    df = DataFrame(quote
-                       A = dataones($(N))
-                       B = dataones($(N))
-                   end)
+    df = DataFrame(A = DataArray(ones(N)),
+                   B = DataArray(ones(N)))
     for f in arithmetic_operators
         for i in 1:nrow(df)
             for j in 1:ncol(df)
@@ -131,10 +127,8 @@ let
 
     # Broadcasting operations between scalars and DataFrames's
     N = 5
-    df = DataFrame(quote
-                       A = dataones($(N))
-                       B = dataones($(N))
-                   end)
+    df = DataFrame(A = DataArray(ones(N)),
+                   B = DataArray(ones(N)))
     for f in arithmetic_operators
         for i in 1:nrow(df)
             for j in 1:ncol(df)
@@ -147,10 +141,8 @@ let
     # Binary operations on pairs of DataFrame's
     # TODO: Test in the presence of in-operable types like Strings
     N = 5
-    df = DataFrame(quote
-                       A = dataones($(N))
-                       B = dataones($(N))
-                   end)
+    df = DataFrame(A = DataArray(ones(N)),
+                   B = DataArray(ones(N)))
     for f in array_arithmetic_operators
         for i in 1:nrow(df)
             for j in 1:ncol(df)
@@ -164,42 +156,32 @@ let
 
     # Boolean operators on DataFrames's
     N = 5
-    df = DataFrame(quote
-                       A = datafalses($(N))
-                   end)
+    df = DataFrame(A = DataArray(falses(N)))
     @assert any(df) == false
     @assert any(!df) == true
     @assert all(df) == false
     @assert all(!df) == true
 
-    df = DataFrame(quote
-                       A = datafalses($(N))
-                   end)
+    df = DataFrame(A = DataArray(falses(N)))
     df[3, 1] = true
     @assert any(df) == true
     @assert all(df) == false
 
-    df = DataFrame(quote
-                       A = datafalses($(N))
-                   end)
+    df = DataFrame(A = DataArray(falses(N)))
     df[2, 1] = NA
     df[3, 1] = true
     @assert any(df) == true
     @assert all(df) == false
 
-    dv = DataVector[false, NA]
+    dv = @data [false, NA]
     dv[1] = NA
 
-    df = DataFrame(quote
-                       A = datafalses($(N))
-                   end)
+    df = DataFrame(A = DataArray(falses(N)))
     df[2, 1] = NA
     @assert isna(any(df))
     @assert all(df) == false
 
-    df = DataFrame(quote
-                     A = datafalses($(N))
-                   end)
+    df = DataFrame(A = DataArray(falses(N)))
     df[1, 1] = NA
     @assert isna(any(dv))
     @assert isna(all(dv))
@@ -211,7 +193,7 @@ let
     # Equality tests
     #
     df = DataFrame({dv})
-    alt_dv = DataVector[false, NA]
+    alt_dv = @data [false, NA]
     alt_dv[1] = NA
     alt_df = DataFrame({alt_dv})
     # @assert isequal(DataFrame({dv}) .== DataFrame({dv}), DataFrame({DataVector[true, NA]}))

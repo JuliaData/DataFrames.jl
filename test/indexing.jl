@@ -19,9 +19,9 @@ let
                    [1.0, 2.0],
                    [true, true],
                    trues(2),
-                   DataVector[1, 2],
-                   DataVector[1.0, 2.0],
-                   DataVector[true, true]}
+                   @data([1, 2]),
+                   @data([1.0, 2.0]),
+                   @data([true, true])}
 
     single_adv_indices = {1,
                           1.0}
@@ -34,9 +34,9 @@ let
                          [1.0, 2.0],
                          [true, true],
                          trues(2),
-                         DataVector[1, 2],
-                         DataVector[1.0, 2.0],
-                         DataVector[true, true]}
+                         @data([1, 2]),
+                         @data([1.0, 2.0]),
+                         @data([true, true])}
 
     # avd[Index]
     for adv_index in adv_indices
@@ -94,9 +94,9 @@ let
                    [1.0, 2.0],
                    [true, false],
                    trues(2),
-                   DataVector[1, 2],
-                   DataVector[1.0, 2.0],
-                   DataVector[true, false],
+                   @data([1, 2]),
+                   @data([1.0, 2.0]),
+                   @data([true, false]),
                    :(A .== 1)}
 
     column_indices = {1,
@@ -108,10 +108,10 @@ let
                       [true, false],
                       trues(2),
                       ["A", "B"],
-                      DataVector[1, 2],
-                      DataVector[1.0, 2.0],
-                      DataVector[true, false],
-                      DataVector["A", "B"],
+                      @data([1, 2]),
+                      @data([1.0, 2.0]),
+                      @data([true, false]),
+                      @data(["A", "B"]),
                       :(colnames(_DF) .== "B")}
 
     #

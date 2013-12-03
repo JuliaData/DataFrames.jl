@@ -140,7 +140,7 @@ using DataFrames
     srand(1)
     N = 20
     d1 = PooledDataArray(rand(1:2, N))
-    d2 = @pdata(["A", "B", NA])[rand(1:3, N)]
+    d2 = (@pdata ["A", "B", NA])[rand(1:3, N)]
     d3 = DataArray(randn(N))
     d4 = DataArray(randn(N))
     df7 = DataFrame({d1, d2, d3}, ["d1", "d2", "d3"])
@@ -379,13 +379,13 @@ using DataFrames
     @assert all(isna(dv))
     dv = DataArray(Float64, 5)
     @assert all(isna(dv))
-    dv = datazeros(5)
+    dv = @data(zeros(5))
     @assert all(dv .== 0.0)
-    dv = dataones(5)
+    dv = @data(ones(5))
     @assert all(dv .== 1.0)
 
     # No more NA corruption
-    dv = dataones(10_000)
+    dv = @data(ones(10_000))
     @assert !any(isna(dv))
 
     PooledDataArray(falses(2), falses(2))

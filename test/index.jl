@@ -18,16 +18,16 @@ let
 			1.0:1.0,
 			["A"],
 			[:A],
-			DataVector[true],
-			DataVector[1],
-			DataVector[1.0],
-			DataVector["A"],
-			DataVector[:A],
-			PooledDataVector[true],
-			PooledDataVector[1],
-			PooledDataVector[1.0],
-			PooledDataVector["A"],
-			PooledDataVector[:A]}
+			@data([true]),
+			@data([1]),
+			@data([1.0]),
+			@data(["A"]),
+			DataArray([:A]),
+			@pdata([true]),
+			@pdata([1]),
+			@pdata([1.0]),
+			@pdata(["A"]),
+			PooledDataArray([:A])}
 
 	for ind in inds
 		if isequal(ind, "A") || isequal(ind, :A) || ndims(ind) == 0
