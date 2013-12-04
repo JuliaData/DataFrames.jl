@@ -2039,6 +2039,10 @@ function DataArrays.reorder(fun::Function, x::PooledDataArray, df::AbstractDataF
 end
 DataArrays.reorder(x::PooledDataArray, df::AbstractDataFrame) = reorder(:mean, x, df)
 
+DataArrays.reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
+    reorder(fun, x, DataFrame({y...}))
+
+
 ##############################################################################
 ##
 ## Iteration: EachRow, EachCol
