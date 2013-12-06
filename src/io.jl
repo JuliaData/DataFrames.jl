@@ -731,6 +731,42 @@ end
 
 ##############################################################################
 #
+# HTML output
+#
+##############################################################################
+function html_escape(cell::String)
+    cell = replace(cell, "&", "&amp;")
+    cell = replace(cell, "<", "&lt;")
+    cell = replace(cell, ">", "&gt;")
+    return cell
+end
+
+function Base.writemime(io::IO, 
+                        ::MIME"text/html", 
+                        df::DataFrame)
+    n = size(df, 1)
+    column_names = colnames(df)
+    write(io, "<table>")
+    write(io, "<tr>")
+    write(io, "<th></th>")
+    for column_name in column_names
+        write(io, "<th>$column_name</th>")
+    end
+    write(io, "</tr>")
+    for row in 1:n
+        write(io, "<tr>")
+        write(io, "<th>$row</th>")
+        for column_name in column_names
+            cell = string(df[row, column_name])
+            write(io, "<td>$(html_escape(cell))</td>")
+        end
+        write(io, "</tr>")
+    end
+    write(io, "</table>")
+end
+
+##############################################################################
+#
 # Binary serialization
 #
 ##############################################################################
