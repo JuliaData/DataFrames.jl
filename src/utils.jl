@@ -101,3 +101,20 @@ function _dv_most_generic_type(vals)
     end
     return toptype
 end
+
+# Exports a delimted DataFrame instead of the Base default string representation
+function clipboard(df::DataFrame)
+  n, p = nrow(df), ncol(df)
+  column_names = join(colnames(df),'\t')*"\n"
+  c = df.columns
+  t = ref(String)
+  for i in 1:n, j in 1:p
+  	val = string(c[j][i])
+    if j < p
+    	push!(t,val*"\t")
+    else
+        push!(t,val*"\n")
+    end
+  end
+  clipboard(column_names*chomp(join(t)))
+end
