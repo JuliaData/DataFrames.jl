@@ -12,5 +12,5 @@ before_install:
     - git config --global user.email "travis@example.net"
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 script:
-    - julia -e 'versioninfo(); Pkg.init(); Pkg.clone(pwd())'
+    - julia -e 'versioninfo(); Pkg.init(); Pkg.clone(pwd()); Pkg.checkout("DataArrays")'
     - julia ./run_tests.jl
