@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestDataFrame
+    using Base.Test
+    using DataArrays
+    using DataFrames
 
-let
     #test_group("Operations on DataFrames that have column groupings")
 
     x = DataFrame(quote

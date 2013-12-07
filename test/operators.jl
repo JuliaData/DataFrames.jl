@@ -1,18 +1,20 @@
-using Base.Test
-using DataFrames
+module TestOperators
+    using Base.Test
+    using DataArrays
+    using DataFrames
+    using Stats
 
-macro test_da_pda(da, code)
-    esc(quote
-        let $da = copy($da)
-            $code
-        end
-        let $da = PooledDataArray($da)
-            $code
-        end
-    end)
-end
+    macro test_da_pda(da, code)
+        esc(quote
+            let $da = copy($da)
+                $code
+            end
+            let $da = PooledDataArray($da)
+                $code
+            end
+        end)
+    end
 
-let
     unary_operators = [(+), (-), (!)]
 
     numeric_unary_operators = [(+), (-)]
@@ -59,8 +61,9 @@ let
 
     bit_operators = [(&), (|), ($)]
 
-    unary_vector_operators = [minimum, maximum, prod, sum, mean, median, std,
-                              var, mad, norm, skewness, kurtosis]
+    unary_vector_operators = [minimum, maximum, prod, sum, mean, median, std, var, norm]
+
+    ex_tunary_vector_operators = [mad, skewness, kurtosis]
 
     pairwise_vector_operators = [diff]#, percent_change]
 

@@ -1,10 +1,12 @@
-using Base.Test
-using DataFrames
+module TestSort
+    using Base.Test
+    using DataArrays
+    using DataFrames
 
-let dv1 = @data([9,1,8,NA,3,3,7,NA]),
-    dv2 = 1.0 * dv1,
-    dv3 = DataArray([1:8]),
-    pdv1 = PooledDataArray(dv1),
+    dv1 = @data([9, 1, 8, NA, 3, 3, 7, NA])
+    dv2 = 1.0 * dv1
+    dv3 = DataArray([1:8])
+    pdv1 = PooledDataArray(dv1)
     idv1 = IndexedVector(dv1)
 
     @test sortperm(dv1) == sortperm(dv2)
@@ -24,10 +26,8 @@ let dv1 = @data([9,1,8,NA,3,3,7,NA]),
     @test sort(d, cols="idv1")["dv3"] == sortperm(dv1)
     @test sort(d, cols=["dv1","pdv1"])["dv3"] == sortperm(dv1)
     @test sort(d, cols=["dv1","dv3"])["dv3"] == sortperm(dv1)
-end
 
-
-let df=DataFrame(rank=rand(1:12, 1000), chrom=rand(1:24,1000), pos=rand(1:100000,1000))
+    df=DataFrame(rank=rand(1:12, 1000), chrom=rand(1:24,1000), pos=rand(1:100000,1000))
 
     @test issorted(sort(df))
     @test issorted(sort(df,rev=true), rev=true)

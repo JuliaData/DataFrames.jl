@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestIteration
+	using Base.Test
+	using DataArrays
+	using DataFrames
 
-let
 	dv = @data([1, 2, NA])
 	dm = DataArray([1 2; 3 4])
 	dt = DataArray(zeros(2, 2, 2))

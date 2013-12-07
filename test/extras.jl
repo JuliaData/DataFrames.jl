@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestDataFrames
+	using Base.Test
+	using DataArrays
+	using DataFrames
 
-let
 	##########
 	## paste
 	##########

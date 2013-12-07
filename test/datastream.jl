@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestDataStream
+    using Base.Test
+    using DataArrays
+    using DataFrames
 
-let
     filename = Pkg.dir("DataFrames", "test", "data", "sample_data.csv")
 
     ds = DataStream(filename)

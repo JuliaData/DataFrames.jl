@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestIndexedVector
+	using Base.Test
+	using DataArrays
+	using DataFrames
 
-let
 	#
 	# IndexedVector tests
 	#

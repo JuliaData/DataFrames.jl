@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestConversions
+	using Base.Test
+	using DataArrays
+	using DataFrames
 
-let
 	df = DataFrame()
 	df["A"] = 1:5
 	df["B"] = ["A", "B", "C", "D", "E"]

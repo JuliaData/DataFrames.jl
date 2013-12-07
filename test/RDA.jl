@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestRDA
+    using Base.Test
+    using DataArrays
+    using DataFrames
 
-let
     # R code generating test .rdas
         # df = data.frame(num=c(1.1, 2.2))
         # save(df, file='minimal.rda')

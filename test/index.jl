@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestIndex
+	using Base.Test
+	using DataArrays
+	using DataFrames
 
-let
 	i = Index()
 	push!(i, "A")
 	push!(i, "B")

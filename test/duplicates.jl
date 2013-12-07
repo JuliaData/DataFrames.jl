@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestDuplicates
+	using Base.Test
+	using DataArrays
+	using DataFrames
 
-let
 	df = DataFrame({"a" => [1, 2, 3, 3, 4]})
 	@assert isequal(duplicated(df), [false, false, false, true, false])
 	drop_duplicates!(df)

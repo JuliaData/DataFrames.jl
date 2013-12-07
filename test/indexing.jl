@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestIndexing
+    using Base.Test
+    using DataArrays
+    using DataFrames
 
-let
     #
     # DataVector and PooledDataVector Indexing
     #
@@ -82,10 +83,7 @@ let
     # DataFrame indexing
     #
 
-    df = DataFrame(quote
-                       A = 1:2
-                       B = 3:4
-                   end)
+    df = DataFrame(A = 1:2, B = 3:4)
 
     row_indices = {1,
                    1.0,

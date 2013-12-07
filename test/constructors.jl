@@ -1,7 +1,8 @@
-using Base.Test
-using DataFrames
+module TestConstructors
+	using Base.Test
+	using DataArrays
+	using DataFrames
 
-let
 	#
 	# DataFrame
 	#
