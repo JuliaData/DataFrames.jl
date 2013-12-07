@@ -254,9 +254,9 @@ function bytestoint{T <: ByteString}(bytes::Vector{Uint8},
     end
 
     if byte == '-'
-        return -value, true, false
+        return -value, left < right, false
     elseif byte == '+'
-        return value, true, false
+        return value, left < right, false
     elseif '0' <= byte <= '9'
         value += (byte - '0') * power
         return value, true, false
