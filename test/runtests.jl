@@ -18,6 +18,7 @@ my_tests = ["extras.jl",
             # "indexedvector.jl",
             "RDA.jl",
             "sort.jl",
+            "grouping.jl",
             "iteration.jl",
             #"test/colfuncs.jl",
             "duplicates.jl"]
