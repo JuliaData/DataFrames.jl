@@ -1234,7 +1234,7 @@ function vecbind(xs::AbstractVector...)
     res
 end
 function vecbind(xs::PooledDataVector...)
-    vecbind(map(DataArray, xs)...)
+    vecbind(map(x -> convert(DataArray, x), xs)...)
 end
 
 rbind(df::AbstractDataFrame) = df
