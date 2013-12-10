@@ -48,8 +48,8 @@ To write data to a CSV file, use the `writetable` function:
 
 * `header::Bool` -- Use the information from the file's header line to determine column names. Defaults to `true`.
 * `separator::Char` -- Assume that fields are split by the `separator` character. If not specified, it will be guessed from the filename: `.csv` defaults to `','`, `.tsv` defaults to `'\t'`, `.wsv` defaults to `' '`.
-* `quotemark::Char` -- Assume that fields contained inside of two `quotemark` characters are quoted, which disables processing of separators and linebreaks. Defaults to `'"'`.
-* `decimal::Char` -- Assume that the decimal place in numbers is written using the `decimal` character. Defaults to `','`.
+* `quotemark::Vector{Char}` -- Assume that fields contained inside of two `quotemark` characters are quoted, which disables processing of separators and linebreaks. Set to `Char[]` to disable this feature and slightly improve performance. Defaults to `['"']`.
+* `decimal::Char` -- Assume that the decimal place in numbers is written using the `decimal` character. Defaults to `'.'`.
 * `nastrings::Vector{ASCIIString}` -- Translate any of the strings into this vector into an `NA`. Defaults to `["", "NA"]`.
 * `truestrings::Vector{ASCIIString}` -- Translate any of the strings into this vector into a Boolean `true`. Defaults to `["T", "t", "TRUE", "true"]`.
 * `falsestrings::Vector{ASCIIString}` -- Translate any of the strings into this vector into a Boolean `true`. Defaults to `["F", "f", "FALSE", "false"]`.
@@ -65,7 +65,6 @@ To write data to a CSV file, use the `writetable` function:
 * `skiprows::Vector{Int}` -- Specify the indices of lines in the input to ignore. Defaults to `[]`.
 * `skipblanks::Bool` -- Skip any blank lines in input. Defaults to `true`.
 * `encoding::Symbol` -- Specify the file's encoding as either `:utf8` or `:latin1`. Defaults to `:utf8`.
-* `allowquotes::Bool` -- Ignore the special meaning of quotes. Defaults to `false`.
 
 ## Advanced Options for Writing CSV Files
 
