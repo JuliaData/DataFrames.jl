@@ -301,10 +301,10 @@ end
 nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
 ncol(df::DataFrame) = length(df.colindex)
 
-Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
+Base.size(df::AbstractDataFrame) = (size(df, 1), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
     if i == 1
-        nrow(df)
+        size(df, 1)
     elseif i == 2
         ncol(df)
     else
@@ -437,12 +437,12 @@ Base.getindex(df::DataFrame, ex1::Expr, ex2::Expr) = getindex(df, with(df, ex1),
 ##############################################################################
 
 function create_new_column_from_scalar(df::DataFrame, val::NAtype)
-    n = max(nrow(df), 1)
+    n = max(size(df, 1), 1)
     return DataArray(Array(DEFAULT_COLUMN_TYPE, n), trues(n))
 end
 
 function create_new_column_from_scalar(df::DataFrame, val::Any)
-    n = max(nrow(df), 1)
+    n = max(size(df, 1), 1)
     col_data = Array(typeof(val), n)
     for i in 1:n
         col_data[i] = val
@@ -465,7 +465,7 @@ end
 function insert_single_column!(df::DataFrame,
                                dv::AbstractVector,
                                col_ind::ColumnIndex)
-    dv_n, df_n = length(dv), nrow(df)
+    dv_n, df_n = length(dv), size(df, 1)
     if df_n != 0
         if dv_n != df_n
             #dv = repeat(dv, df_n)
@@ -494,7 +494,7 @@ end
 
 # Will automatically enlarge a scalar to a DataVector if needed
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
-    if nrow(df) <= 1
+    if size(df, 1) <= 1
         dv = DataArray([v], falses(1))
         insert_single_column!(df, dv, col_ind)
         return dv
@@ -514,7 +514,7 @@ upgrade_vector(v::Ranges) = DataArray([v], falses(length(v)))
 upgrade_vector(v::BitVector) = DataArray(convert(Array{Bool}, v), falses(length(v)))
 upgrade_vector(adv::AbstractDataArray) = adv
 function upgrade_scalar(df::DataFrame, v::Any)
-    n = max(nrow(df), 1)
+    n = max(size(df, 1), 1)
     DataArray(fill(v, n), falses(n))
 end
 
@@ -525,7 +525,7 @@ function Base.setindex!(df::DataFrame,
     insert_single_column!(df, upgrade_vector(v), col_ind)
 end
 
-# df[SingleColumnIndex] = Scalar (EXPANDS TO MAX(NROW(DF), 1))
+# df[SingleColumnIndex] = Scalar (EXPANDS TO MAX(size(DF, 1), 1))
 function Base.setindex!(df::DataFrame,
                 v::Any,
                 col_ind::ColumnIndex)
@@ -563,7 +563,7 @@ function Base.assign{T <: ColumnIndex}(df::DataFrame,
     return dv
 end
 
-# df[MultiColumnIndex] = Scalar (REPEATED FOR EACH COLUMN; EXPANDS TO MAX(NROW(DF), 1))
+# df[MultiColumnIndex] = Scalar (REPEATED FOR EACH COLUMN; EXPANDS TO MAX(size(DF, 1), 1))
 function Base.setindex!(df::DataFrame,
                 val::Any,
                 col_inds::AbstractVector{Bool})
@@ -587,7 +587,7 @@ function Base.setindex!(df::DataFrame,
     insert_single_entry!(df, v, row_ind, col_ind)
 end
 
-# df[SingleRowIndex, MultiColumnIndex] = Scalar (EXPANDS TO MAX(NROW(DF), 1))
+# df[SingleRowIndex, MultiColumnIndex] = Scalar (EXPANDS TO MAX(size(DF, 1), 1))
 function Base.setindex!(df::DataFrame,
                 v::Any,
                 row_ind::Real,
@@ -825,7 +825,7 @@ function Base.insert!(df::AbstractDataFrame, index::Int, item::Any, name::Any)
 end
 
 function Base.insert!(df::AbstractDataFrame, df2::AbstractDataFrame)
-    @assert nrow(df) == nrow(df2) || nrow(df) == 0
+    @assert size(df, 1) == nrow(df2) || nrow(df) == 0
     df = copy(df)
     for n in colnames(df2)
         df[n] = df2[n]
@@ -856,9 +856,9 @@ end
 ##
 ##############################################################################
 
-DataArrays.head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
+DataArrays.head(df::AbstractDataFrame, r::Int) = df[1:min(r,size(df, 1)), :]
 DataArrays.head(df::AbstractDataFrame) = head(df, 6)
-DataArrays.tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
+DataArrays.tail(df::AbstractDataFrame, r::Int) = df[max(1,size(df, 1)-r+1):nrow(df), :]
 DataArrays.tail(df::AbstractDataFrame) = tail(df, 6)
 
 ##############################################################################
@@ -894,7 +894,7 @@ maxShowLength(df::AbstractDataFrame, col::String) = max(maxShowLength(df[col]), 
 colwidths(df::AbstractDataFrame) = [maxShowLength(df, col) for col=colnames(df)]
 colwidths(row::Array{Any}) = [length(_string(row[i])) for i = 1:length(row)]
 
-Base.showall(io::IO, df::AbstractDataFrame) = show(io, df, nrow(df))
+Base.showall(io::IO, df::AbstractDataFrame) = show(io, df, size(df, 1))
 function Base.show(io::IO, df::AbstractDataFrame)
     printed_width = sum(colwidths(df)) + length(ncol(df)) * 2 + 5
     if printed_width > Base.tty_cols()
@@ -934,7 +934,7 @@ function Base.show(io::IO, df::AbstractDataFrame, Nmx::Integer)
         pretty_show(io, gr)
         println(io)
     end
-    N = nrow(df)
+    N = size(df, 1)
     Nmx = Nmx   # maximum head and tail lengths
     if N <= 2Nmx
         rowrng = 1:min(2Nmx,N)
@@ -973,7 +973,7 @@ end
 
 # get the structure of a DF
 function Base.dump(io::IO, x::AbstractDataFrame, n::Int, indent)
-    println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
+    println(io, typeof(x), "  $(size(x, 1)) observations of $(ncol(x)) variables")
     gr = get_groups(x)
     if length(gr) > 0
         pretty_show(io, gr)
@@ -1055,7 +1055,7 @@ type SubDataFrame <: AbstractDataFrame
         if any(rows .< 1)
             error("all SubDataFrame indices must be > 0")
         end
-        if length(rows) > 0 && maximum(rows) > nrow(parent)
+        if length(rows) > 0 && maximum(rows) > size(parent, 1)
             error("all SubDataFrame indices must be <= the number of rows of the DataFrame")
         end
         new(parent, rows)
@@ -1066,13 +1066,13 @@ Base.sub(D::DataFrame, r, c) = sub(D[[c]], r)    # If columns are given, pass in
                                             # Columns are not copies, so it's not expensive.
 Base.sub(D::DataFrame, r::Int) = sub(D, [r])
 Base.sub(D::DataFrame, rs::Vector{Int}) = SubDataFrame(D, rs)
-Base.sub(D::DataFrame, r) = sub(D, getindex(SimpleIndex(nrow(D)), r)) # this is a wacky fall-through that uses light-weight fake indexes!
+Base.sub(D::DataFrame, r) = sub(D, getindex(SimpleIndex(size(D, 1)), r)) # this is a wacky fall-through that uses light-weight fake indexes!
 Base.sub(D::DataFrame, ex::Expr) = sub(D, with(D, ex))
 
 Base.sub(D::SubDataFrame, r, c) = sub(D[[c]], r)
 Base.sub(D::SubDataFrame, r::Int) = sub(D, [r])
 Base.sub(D::SubDataFrame, rs::Vector{Int}) = SubDataFrame(D.parent, D.rows[rs])
-Base.sub(D::SubDataFrame, r) = sub(D, getindex(SimpleIndex(nrow(D)), r)) # another wacky fall-through
+Base.sub(D::SubDataFrame, r) = sub(D, getindex(SimpleIndex(size(D, 1)), r)) # another wacky fall-through
 Base.sub(D::SubDataFrame, ex::Expr) = sub(D, with(D, ex))
 const subset = sub
 
@@ -1256,7 +1256,7 @@ function rbind(dfs::AbstractDataFrame...)
     for i in 1:Ncol
         coldata = {}
         for df in dfs
-            push!(coldata, get(df, colnams[i], DataArray(NA, nrow(df))))
+            push!(coldata, get(df, colnams[i], DataArray(NA, size(df, 1))))
         end
         res[colnams[i]] = vecbind(coldata...)
     end
@@ -1590,9 +1590,9 @@ end
 function duplicated(df::AbstractDataFrame)
     # Return a Vector{Bool} indicated whether the row is a duplicate
     # of a prior row.
-    res = fill(false, nrow(df))
+    res = fill(false, size(df, 1))
     di = Dict()
-    for i in 1:nrow(df)
+    for i in 1:size(df, 1)
         if haskey(di, matrix(df[i, :], Any))
             res[i] = true
         else
@@ -1615,14 +1615,14 @@ function duplicatedkey(df::AbstractDataFrame)
     # made into PooledDataVector's.
     gd = groupby(df, colnames(df))
     idx = [1:length(gd.idx)][gd.idx][gd.starts]
-    res = fill(true, nrow(df))
+    res = fill(true, size(df, 1))
     res[idx] = false
     res
 end
 
 function DataArrays.isna(df::DataFrame)
     results = BitArray(size(df))
-    for i in 1:nrow(df)
+    for i in 1:size(df, 1)
         for j in 1:ncol(df)
             results[i, j] = isna(df[i, j])
         end
@@ -1665,11 +1665,11 @@ function clean_colnames!(df::DataFrame)
 end
 
 function Base.flipud(df::DataFrame)
-    return df[reverse(1:nrow(df)), :]
+    return df[reverse(1:size(df, 1)), :]
 end
 
 function flipud!(df::DataFrame)
-    df[1:nrow(df), :] = df[reverse(1:nrow(df)), :]
+    df[1:size(df, 1), :] = df[reverse(1:nrow(df)), :]
     return
 end
 
@@ -1720,7 +1720,7 @@ function Base.Sort.lt(o::DFPerm, a, b)
     false
 end
 
-Base.sortperm(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Union(Perm,DFPerm)) = sort!([1:nrow(df)], a, o)
+Base.sortperm(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Union(Perm,DFPerm)) = sort!([1:size(df, 1)], a, o)
 Base.sortperm(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering) = sortperm(df, a, DFPerm(o,df))
 Base.sort    (df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering) = df[sortperm(df, a, o),:]
 
@@ -1853,7 +1853,7 @@ function dict(adf::AbstractDataFrame, flatten::Bool)
     # TODO: Provide a de-data option that makes Vector's, not
     #       DataVector's
     res = Dict{UTF8String, Any}()
-    if flatten && nrow(adf) == 1
+    if flatten && size(adf, 1) == 1
         for colname in colnames(adf)
             res[colname] = adf[colname][1]
         end
