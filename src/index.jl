@@ -20,6 +20,7 @@ Base.length(x::Index) = length(x.names)
 names(x::Index) = copy(x.names)
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
+Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 
 # I think this should be Vector{T <: String}
 function names!(x::Index, nm::Vector)
@@ -31,26 +32,27 @@ function names!(x::Index, nm::Vector)
         x.lookup[nm[i]] = i
     end
     x.names = nm
+    return x
 end
 
-function rename!(x::Index, from::Vector, to::Vector)
-    if length(from) != length(to)
-        error("lengths of from and to don't match.")
-    end
-    for idx in 1:length(from)
-        if haskey(x, from[idx]) && !haskey(x, to[idx])
-            x.lookup[to[idx]] = x.lookup[from[idx]]
-            if !isa(x.lookup[from[idx]], Array)
-                x.names[x.lookup[from[idx]]] = to[idx]
+function rename!(x::Index, nms)
+    for (from, to) in nms
+        if haskey(x, from)
+            if haskey(x, to)
+                error("Tried renaming $from to $to, when $to already exists in the Index.")
             end
-            delete!(x.lookup, from[idx])
+            x.lookup[to] = col = pop!(x.lookup, from)
+            if !isa(col, Array)
+                x.names[col] = to
+            end
         end
     end
-    x.names
+    return x
 end
-rename!(x::Index, from, to) = rename!(x, [from], [to])
-rename!(x::Index, nd::Associative) = rename!(x, keys(nd), values(nd))
-rename!(x::Index, f::Function) = (nms = names(x); rename!(x, nms, [f(x)::ByteString for x in nms]))
+
+rename!(x::Index, from, to) = rename!(x, zip(from, to))
+rename!(x::Index, from::String, to::String) = rename!(x, ((from, to),))
+rename!(x::Index, f::Function) = rename!(x, [(x,f(x)) for x in x.names])
 
 rename(x::Index, args...) = rename!(copy(x), args...)
 
@@ -58,10 +60,13 @@ Base.haskey(x::Index, key::String) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, string(key))
 Base.haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
 Base.keys(x::Index) = names(x)
+
 function Base.push!(x::Index, nm::String)
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
+    return x
 end
+
 function Base.delete!(x::Index, idx::Integer)
     # reset the lookup's beyond the deleted item
     for i in (idx + 1):length(x.names)
@@ -75,13 +80,15 @@ function Base.delete!(x::Index, idx::Integer)
         newv = [[haskey(x, vv) ? vv : ASCIIString[] for vv in v]...]
         set_group(x, k, newv)
     end
+    return x
 end
+
 function Base.delete!(x::Index, nm::String)
     if !haskey(x.lookup, nm)
-        return
+        return x
     end
     idx = x.lookup[nm]
-    delete!(x, idx)
+    return delete!(x, idx)
 end
 
 Base.getindex(x::Index, idx::String) = x.lookup[idx]
