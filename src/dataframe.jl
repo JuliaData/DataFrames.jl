@@ -301,10 +301,10 @@ end
 nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
 ncol(df::DataFrame) = length(df.colindex)
 
-Base.size(df::AbstractDataFrame) = (size(df, 1), ncol(df))
+Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
     if i == 1
-        size(df, 1)
+        nrow(df)
     elseif i == 2
         ncol(df)
     else
@@ -825,7 +825,7 @@ function Base.insert!(df::AbstractDataFrame, index::Int, item::Any, name::Any)
 end
 
 function Base.insert!(df::AbstractDataFrame, df2::AbstractDataFrame)
-    @assert size(df, 1) == nrow(df2) || nrow(df) == 0
+    @assert size(df, 1) == size(df2,1) || size(df,1) == 0
     df = copy(df)
     for n in colnames(df2)
         df[n] = df2[n]
