@@ -163,7 +163,7 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
                 skip_white = false
             # Finished reading a field
             elseif o.separator == ' ' && (chr == ' ' || chr == '\t')
-                if !in(nextchr, " \t\n\r") && !skip_white
+                if !in(char(nextchr), " \t\n\r") && !skip_white
                     @push n_bounds p.bounds n_bytes l_bounds
                     @push n_bytes p.bytes '\n' l_bytes
                     @push n_fields p.quoted false l_quoted
