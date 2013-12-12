@@ -24,6 +24,7 @@ module TestIO
                  "test/data/separators/sample_data.csv",
                  "test/data/separators/sample_data.tsv",
                  "test/data/separators/sample_data.wsv",
+                 "test/data/separators/sample_data_white.txt",
                  "test/data/typeinference/bool.csv",
                  "test/data/typeinference/standardtypes.csv",
                  "test/data/utf8/corrupt_utf8.csv",

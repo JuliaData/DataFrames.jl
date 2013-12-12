@@ -109,6 +109,7 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
     at_start = true
     chr = 0xff
     nextchr = 0xff
+    skip_white = true           # whitespace flag if separator=' '
 
     # 'in' does not work if passed Uint8 and Vector{Char}
     quotemark = convert(Vector{Uint8}, o.quotemark)
@@ -159,7 +160,15 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
             if chr in quotemark
                 in_quotes = true
                 p.quoted[n_fields] = true
+                skip_white = false
             # Finished reading a field
+            elseif o.separator == ' ' && (chr == ' ' || chr == '\t')
+                if !in(nextchr, " \t\n\r") && !skip_white
+                    @push n_bounds p.bounds n_bytes l_bounds
+                    @push n_bytes p.bytes '\n' l_bytes
+                    @push n_fields p.quoted false l_quoted
+                    skip_white = false
+                end
             elseif chr == o.separator
                 @push n_bounds p.bounds n_bytes l_bounds
                 @push n_bytes p.bytes '\n' l_bytes
@@ -171,9 +180,11 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
                 @push n_bytes p.bytes '\n' l_bytes
                 @push n_lines p.lines n_bytes l_lines
                 @push n_fields p.quoted false l_quoted
+                skip_white = true
             # Store character in buffer
             else
                 @push n_bytes p.bytes chr l_bytes
+                skip_white = false
             end
         else
             # Escape a quotemark inside quoted field
