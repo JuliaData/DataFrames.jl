@@ -41,6 +41,10 @@ module TestIO
     readtable("test/data/comments/before_after_data.csv", allowcomments = true)
     readtable("test/data/comments/middata.csv", allowcomments = true)
     readtable("test/data/skiplines/skipfront.csv", skipstart = 3)
+    
+    readtable("test/data/separators/sample_data_white.txt",separator=' ')
+    readtable("test/data/quoting/quotedwhitespace.txt", separator=' ')
+
 
     # TODO: Implement skipping lines at specified row positions
     # readtable("test/data/skiplines/skipbottom.csv", skiprows = [1, 2, 3])
