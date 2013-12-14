@@ -266,6 +266,16 @@ function Base.show(adf::AbstractDataFrame,
     show(STDOUT, adf, splitchunks)
 end
 
+function Base.show(io::IO, r::DataFrameRow)
+    labelwidth = mapreduce(length, max, names(r)) + 2
+    @printf("DataFrameRow (row %d)\n", r.row)
+    for (label, value) in r
+        println(io, rpad(label, labelwidth, ' '), value)
+    end
+end
+
+Base.show(row::DataFrameRow) = show(STDOUT, row)
+
 function Base.showall(io::IO,
                       adf::AbstractDataFrame,
                       splitchunks::Bool = false,

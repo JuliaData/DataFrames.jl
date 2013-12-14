@@ -75,13 +75,14 @@ export # reconcile_groups,
        complete_cases!,
        cut,
        DataFrame,
+       DataFrameRow,
        DataStream,
        describe,
        dict,
        drop_duplicates!,
        duplicated,
-       EachCol,
-       EachRow,
+       eachcol,
+       eachrow,
        findat,
        flipud!,
        flipud,
@@ -217,5 +218,8 @@ Base.@deprecate merge(df1::AbstractDataFrame, df2::AbstractDataFrame; on::Any = 
 Base.@deprecate colnames(adf::AbstractDataFrame) Base.names
 Base.@deprecate colnames!(adf::AbstractDataFrame, vals) names!
 Base.@deprecate coltypes(adf::AbstractDataFrame) types
+Base.@deprecate EachRow eachrow
+Base.@deprecate EachCol eachcol
+Base.@deprecate subset sub
 
 end # module DataFrames
