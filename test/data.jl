@@ -43,19 +43,19 @@ module TestData
 
     #test_group("combining")
 
-    dfc = cbind(df3, df4)
+    dfc = hcat(df3, df4)
     @assert ncol(dfc) == 3
     @assert all(colnames(dfc) .== ["x1", "x1_1", "x2"])
     @assert isequal(dfc["x1"], df3["x1"])
 
     @assert isequal(dfc, [df3 df4])
 
-    dfr = rbind(df4, df4)
+    dfr = vcat(df4, df4)
     @assert nrow(dfr) == 8
     @assert all(colnames(df4) .== colnames(dfr))
     @assert isequal(dfr, [df4, df4])
 
-    dfr = rbind(df2, df3)
+    dfr = vcat(df2, df3)
     @assert size(dfr) == (8,2)
     @assert all(colnames(df2) .== colnames(dfr))
     @assert isna(dfr[8,"x2"])

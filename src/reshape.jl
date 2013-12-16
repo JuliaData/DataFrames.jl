@@ -14,10 +14,10 @@
 ##############################################################################
 
 function stack(df::DataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
-    res = [insert!(df[[i, id_vars]], 1, colnames(df)[i], "variable") for i in measure_vars]
+    res = DataFrame[insert!(df[[i, id_vars]], 1, colnames(df)[i], "variable") for i in measure_vars]
     # fix column names
     map(x -> colnames!(x, ["variable", "value", colnames(df[id_vars])]), res)
-    res = rbind(res)
+    res = vcat(res)
     res 
 end
 stack(df::DataFrame, measure_vars, id_vars) = stack(df, [df.colindex[measure_vars]], [df.colindex[id_vars]])
@@ -96,7 +96,7 @@ function pivot_table(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int}
     # find the "row" key DataFrame
     g = groupby(cmb_df[[1:length(rows)]], [1:length(rows)])
     row_key_df = g.parent[g.idx[g.starts],:]
-    cbind(row_key_df, payload)
+    hcat(row_key_df, payload)
 end
 # `mean` is the default aggregation function:
 pivot_table(df::AbstractDataFrame, rows, cols, value) = pivot_table(df, rows, cols, value, mean)

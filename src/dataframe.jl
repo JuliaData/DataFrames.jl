@@ -1136,7 +1136,7 @@ without(df::SubDataFrame, c::Any) = SubDataFrame(without(df.parent, c), df.rows)
 # vcat() is just rbind()
  
 # two-argument form, two dfs, references only
-function cbind(df1::DataFrame, df2::DataFrame)
+function Base.hcat(df1::DataFrame, df2::DataFrame)
     # If df1 had metadata, we should copy that.
     colindex = Index(make_unique([colnames(df1), colnames(df2)]))
     columns = [df1.columns, df2.columns]
@@ -1145,22 +1145,13 @@ function cbind(df1::DataFrame, df2::DataFrame)
     set_groups(d, get_groups(df2))
     return d
 end
-
-function cbind{T}(df::DataFrame, x::DataVector{T})
-    cbind(df, DataFrame({x}))
-end
-
-function cbind{T}(df::DataFrame, x::Vector{T})
-    cbind(df, DataFrame({DataArray(x)}))
-end
-
-function cbind{T}(df::DataFrame, x::T)
-    cbind(df, DataFrame({DataArray([x])}))
-end
+Base.hcat{T}(df::DataFrame, x::DataVector{T}) = hcat(df, DataFrame({x}))
+Base.hcat{T}(df::DataFrame, x::Vector{T}) = hcat(df, DataFrame({DataArray(x)}))
+Base.hcat{T}(df::DataFrame, x::T) = hcat(df, DataFrame({DataArray([x])}))
 
 # three-plus-argument form recurses
-cbind(a, b, c...) = cbind(cbind(a, b), c...)
-Base.hcat(dfs::DataFrame...) = cbind(dfs...)
+Base.hcat(a::DataFrame, b, c...) = hcat(hcat(a, b), c...)
+cbind(args...) = hcat(args...)
 
 is_group(df::AbstractDataFrame, name::ByteString) = is_group(index(df), name)
 
@@ -1237,17 +1228,21 @@ function vecbind(xs::PooledDataVector...)
     vecbind(map(x -> convert(DataArray, x), xs)...)
 end
 
-rbind(df::AbstractDataFrame) = df
-rbind(dfs::Vector) = rbind(dfs...)
-function rbind(dfs::AbstractDataFrame...)
+Base.vcat(df::AbstractDataFrame) = df
+Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T}) = vcat(dfs...)
+function Base.vcat(dfs::AbstractDataFrame...)
     Nrow = sum(nrow, dfs)
     # build up column names and types
     colnams = colnames(dfs[1])
+    coltyps = coltypes(dfs[1])
     for i in 2:length(dfs)
-        for j in 1:ncol(dfs[i])
-            cn = colnames(dfs[i])[j]
+        cni = colnames(dfs[i])
+        cti = coltypes(dfs[i])
+        for j in 1:length(cni)
+            cn = cni[j]
             if length(findin([cn], colnams)) == 0  # new column
                 push!(colnams, cn)
+                push!(coltyps, cti[j])
             end
         end
     end
@@ -1259,14 +1254,14 @@ function rbind(dfs::AbstractDataFrame...)
             push!(coldata,
                   get(df,
                       colnams[i],
-                      DataArray(Float64, nrow(df))))
+                      DataArray(coltyps[i], size(df, 1))))
         end
-        res[colnams[i]] = vecbind(coldata...)
+        res[colnams[i]] = vcat(coldata...)
     end
     res
 end
 
-Base.vcat(dfs::DataFrame...) = rbind(dfs...)
+rbind(args...) = vcat(args...)
 
 # DF row operations -- delete and append
 # df[1] = nothing
