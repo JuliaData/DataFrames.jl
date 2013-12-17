@@ -401,9 +401,10 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
                                  o.nastrings)
 	      elseif o.coltypes[j] == "Int64"
                   values = typeof(values) == typeof(Int64[]) ? values : Array(Int64, rows)
-                  values[i], wasparsed, missing[i] =
-                    bytestoint(p.bytes, left, right,
+                  value, wasparsed, missing[i] =
+                    bytestofloat(p.bytes, left, right,
                                o.nastrings)
+		  values[i] = int64(value)
 	      else
 	        error("'$(o.coltypes[j])' not implemented in coltypes. Use: UTF8String, ASCIIString, Bool, Float64 or Int64")
 	      end
