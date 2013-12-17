@@ -27,6 +27,7 @@ immutable ParseOptions{S <: ByteString, T <: ByteString}
     skiprows::Vector{Int}
     skipblanks::Bool
     encoding::Symbol
+    allowescapes::Bool
 end
 
 macro atnewline(chr, nextchr)
@@ -52,6 +53,30 @@ macro atescape(chr, nextchr, quotemark)
     quote
         $chr == '\\' ||                                # \" escaping
         ($chr in $quotemark && $nextchr in $quotemark) # "" escaping
+    end
+end
+
+macro atcescape(chr, nextchr)
+    chr = esc(chr)
+    nextchr = esc(nextchr)
+    quote
+        ($chr == '\\' && $nextchr == 'n') ||
+        ($chr == '\\' && $nextchr == 't') ||
+        ($chr == '\\' && $nextchr == 'r')
+    end
+end
+
+macro mergechr(chr, nextchr)
+    chr = esc(chr)
+    nextchr = esc(nextchr)
+    quote
+        if $chr == '\\' && $nextchr == 'n'
+            '\n'
+        elseif $chr == '\\' && $nextchr == 't'
+            '\t'
+        elseif $chr == '\\' && $nextchr == 'r'
+            '\r'
+        end
     end
 end
 
@@ -149,6 +174,13 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
                     chr, nextchr = read(io, Uint8), peek(io, Uint8)
                 end
             end
+        end
+
+        # Merge chr and nextchr here if they're a c-style escape
+        if o.allowescapes && @atcescape chr nextchr
+           chr = @mergechr chr nextchr
+           # Skip nextchr, which won't be informative
+           read(io, Uint8)
         end
 
         # No longer at the start of a line that might be a pure comment
@@ -565,7 +597,9 @@ function readtable(pathname::String;
                    skipstart::Int = 0,
                    skiprows::Vector{Int} = Int[],
                    skipblanks::Bool = true,
-                   encoding::Symbol = :utf8)
+                   encoding::Symbol = :utf8,
+                   allowescapes::Bool = false)
+
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
     if ismatch(r"^(http://)|(ftp://)", pathname)
@@ -592,7 +626,8 @@ function readtable(pathname::String;
                      nastrings, truestrings, falsestrings,
                      makefactors, colnames, cleannames, coltypes,
                      allowcomments, commentmark, ignorepadding,
-                     skipstart, skiprows, skipblanks, encoding)
+                     skipstart, skiprows, skipblanks, encoding,
+                     allowescapes)
 
     # Use the IO stream method for readtable()
     df = readtable!(p, io, nrows, o)
