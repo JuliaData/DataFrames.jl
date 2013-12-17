@@ -29,7 +29,7 @@ type DataFrame <: AbstractDataFrame
         end
         # colindex has to be the same length as columns vector
         if length(colind) != length(cols)
-            msg = "Colums and column index must be the same length"
+            msg = "Columns and column index must be the same length"
             throw(ArgumentError(msg))
         end
         new(cols, colind)
