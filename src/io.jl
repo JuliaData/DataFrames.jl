@@ -377,6 +377,42 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
                 end
             end
 
+	    # If coltypes has been defined, use them
+	    if !isempty(o.coltypes)
+  	      if o.coltypes[j] == "UTF8String" 
+                  values = typeof(values) == typeof(UTF8String[]) ? values : Array(UTF8String, rows)
+                  values[i], wasparsed, missing[i] =
+                    bytestostring(p.bytes, left, right,
+                                  wasquoted, o.nastrings)
+	      elseif o.coltypes[j] == "ASCIIString"
+                  values = typeof(values) == typeof(ASCIIString[]) ? values : Array(ASCIIString, rows)
+                  values[i], wasparsed, missing[i] =
+                    bytestostring(p.bytes, left, right,
+                                  wasquoted, o.nastrings)
+	      elseif o.coltypes[j] == "Bool"
+                  values = typeof(values) == typeof(Bool[]) ? values : Array(Bool, rows)
+                  values[i], wasparsed, missing[i] =
+                    bytestobool(p.bytes, left, right,
+                                o.nastrings, o.truestrings, o.falsestrings)
+	      elseif o.coltypes[j] == "Float64"
+                  values = typeof(values) == typeof(Float64[]) ? values : Array(Float64, rows)
+                  values[i], wasparsed, missing[i] =
+                    bytestofloat(p.bytes, left, right,
+                                 o.nastrings)
+	      elseif o.coltypes[j] == "Int64"
+                  values = typeof(values) == typeof(Int64[]) ? values : Array(Int64, rows)
+                  values[i], wasparsed, missing[i] =
+                    bytestoint(p.bytes, left, right,
+                               o.nastrings)
+	      else
+	        error("'$(o.coltypes[j])' not implemented in coltypes. Use: UTF8String, ASCIIString, Bool, Float64 or Int64")
+	      end
+	      
+	      # Don't go to guess type zone
+	      continue
+	    end
+	   
+
             # (1) Try to parse values as Int's
             if is_int
                 values[i], wasparsed, missing[i] =
