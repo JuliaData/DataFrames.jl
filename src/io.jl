@@ -62,7 +62,12 @@ macro atcescape(chr, nextchr)
     quote
         ($chr == '\\' && $nextchr == 'n') ||
         ($chr == '\\' && $nextchr == 't') ||
-        ($chr == '\\' && $nextchr == 'r')
+        ($chr == '\\' && $nextchr == 'r') ||
+        ($chr == '\\' && $nextchr == 'a') ||
+        ($chr == '\\' && $nextchr == 'b') ||
+        ($chr == '\\' && $nextchr == 'f') ||
+        ($chr == '\\' && $nextchr == 'v') ||
+        ($chr == '\\' && $nextchr == '\\')
     end
 end
 
@@ -76,6 +81,16 @@ macro mergechr(chr, nextchr)
             '\t'
         elseif $chr == '\\' && $nextchr == 'r'
             '\r'
+        elseif $chr == '\\' && $nextchr == 'a'
+            '\a'
+        elseif $chr == '\\' && $nextchr == 'b'
+            '\b'
+        elseif $chr == '\\' && $nextchr == 'f'
+            '\f'
+        elseif $chr == '\\' && $nextchr == 'v'
+            '\v'
+        elseif $chr == '\\' && $nextchr == '\\'
+            '\\'
         end
     end
 end
