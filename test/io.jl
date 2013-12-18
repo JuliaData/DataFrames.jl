@@ -125,7 +125,7 @@ module TestIO
     @assert typeof(df["b"]) == DataArray{Bool,1}
     @assert df["b"][1] == true
 
-    df = readtable(filename,coltypes={"Int64", "UTF8String", "Float64", "Bool"})
+    df = readtable(filename,coltypes=[Int64, UTF8String, Float64, Bool])
     @assert typeof(df["n"]) == DataArray{Int64,1}
     @assert df["n"][1] == 1
     @assert typeof(df["s"]) == DataArray{UTF8String,1}
@@ -136,7 +136,7 @@ module TestIO
     @assert typeof(df["b"]) == DataArray{Bool,1}
     @assert df["b"][1] == true
 
-    df = readtable(filename,coltypes={"Float64", "ASCIIString", "Int64", "ASCIIString"})
+    df = readtable(filename,coltypes=[Float64, ASCIIString, Int64, ASCIIString])
     @assert typeof(df["n"]) == DataArray{Float64,1}
     @assert df["n"][1] == 1.0
     @assert typeof(df["s"]) == DataArray{ASCIIString,1}
@@ -150,7 +150,7 @@ module TestIO
     @assert df["b"][1] == "true"
     @assert df["b"][2] == "false"
 
-    df = readtable(filename,coltypes={"UTF8String", "Bool", "UTF8String", "Float64"})
+    df = readtable(filename,coltypes=[UTF8String, Bool, UTF8String, Float64])
     @assert typeof(df["n"]) == DataArray{UTF8String,1}
     @assert df["n"][4] == "57"
     @assert typeof(df["s"]) == DataArray{Bool,1}
@@ -163,7 +163,7 @@ module TestIO
     #@assert df["b"][1] == 1.0
     @assert df["b"][2] == 0.0
 
-    df = readtable(filename,coltypes={"Bool", "UTF8String", "Bool", "Int64"})
+    df = readtable(filename,coltypes=[Bool, UTF8String, Bool, Int64])
     @assert typeof(df["n"]) == DataArray{Bool,1}
     #@assert df["n"][1] == true
     @assert df["n"][2] == false

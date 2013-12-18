@@ -19,7 +19,7 @@ immutable ParseOptions{S <: ByteString, T <: ByteString}
     makefactors::Bool
     colnames::Vector{T}
     cleannames::Bool
-    coltypes::Vector{Any}
+    coltypes::Vector{DataType}
     allowcomments::Bool
     commentmark::Char
     ignorepadding::Bool
@@ -379,27 +379,27 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
 
 	    # If coltypes has been defined, use them
 	    if !isempty(o.coltypes)
-  	      if o.coltypes[j] == "UTF8String" 
+  	      if o.coltypes[j] == UTF8String 
                   values = typeof(values) == typeof(UTF8String[]) ? values : Array(UTF8String, rows)
                   values[i], wasparsed, missing[i] =
                     bytestostring(p.bytes, left, right,
                                   wasquoted, o.nastrings)
-	      elseif o.coltypes[j] == "ASCIIString"
+	      elseif o.coltypes[j] == ASCIIString
                   values = typeof(values) == typeof(ASCIIString[]) ? values : Array(ASCIIString, rows)
                   values[i], wasparsed, missing[i] =
                     bytestostring(p.bytes, left, right,
                                   wasquoted, o.nastrings)
-	      elseif o.coltypes[j] == "Bool"
+	      elseif o.coltypes[j] == Bool
                   values = typeof(values) == typeof(Bool[]) ? values : Array(Bool, rows)
                   values[i], wasparsed, missing[i] =
                     bytestobool(p.bytes, left, right,
                                 o.nastrings, o.truestrings, o.falsestrings)
-	      elseif o.coltypes[j] == "Float64"
+	      elseif o.coltypes[j] == Float64
                   values = typeof(values) == typeof(Float64[]) ? values : Array(Float64, rows)
                   values[i], wasparsed, missing[i] =
                     bytestofloat(p.bytes, left, right,
                                  o.nastrings)
-	      elseif o.coltypes[j] == "Int64"
+	      elseif o.coltypes[j] == Int64
                   values = typeof(values) == typeof(Int64[]) ? values : Array(Int64, rows)
                   value, wasparsed, missing[i] =
                     bytestofloat(p.bytes, left, right,
@@ -595,7 +595,7 @@ function readtable(pathname::String;
                    nrows::Int = -1,
                    colnames::Vector = UTF8String[],
                    cleannames::Bool = false,
-                   coltypes::Vector{Any} = Any[],
+                   coltypes::Vector{DataType} = DataType[],
                    allowcomments::Bool = false,
                    commentmark::Char = '#',
                    ignorepadding::Bool = true,
