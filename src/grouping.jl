@@ -152,23 +152,23 @@ function combine(x)   # expecting (keys,vals) with keys to be DataFrames and val
     keys = copy(x.keys)
     vals = map(DataFrame, x.vals)
     for i in 1:length(keys)
-        keys[i] = rbind(fill(copy(keys[i]), nrow(vals[i])))
+        keys[i] = vcat(fill(copy(keys[i]), nrow(vals[i]))...)
     end
-    cbind(rbind(keys), rbind(vals))
+    hcat(vcat(keys...), vcat(vals...))
 end
 
 
 # within() sweeps along groups and applies within to each group
 function within!(gd::GroupedDataFrame, e::Expr)   
     x = [within!(d[:,:], e) for d in gd]
-    rbind(x...)
+    vcat(x...)
 end
 
 within!(x::SubDataFrame, e::Expr) = within!(x[:,:], e)
 
 function within(gd::GroupedDataFrame, e::Expr)  
     x = [within(d, e) for d in gd]
-    rbind(x...)
+    vcat(x...)
 end
 
 within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
@@ -176,19 +176,19 @@ within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
 # based_on() sweeps along groups and applies based_on to each group
 function based_on(gd::GroupedDataFrame, ex::Expr)  
     f = based_on_f(gd.parent, ex)
-    x = {f(d) for d in gd}
+    x = DataFrame[f(d) for d in gd]
     idx = rep([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
-    resdf = rbind(x)
-    cbind(keydf, resdf)
+    resdf = vcat(x)
+    hcat(keydf, resdf)
 end
 
 function based_on(gd::GroupedDataFrame, f::Function)
-    x = {DataFrame(f(d)) for d in gd}
+    x = DataFrame[DataFrame(f(d)) for d in gd]
     idx = rep([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
-    resdf = rbind(x)
-    cbind(keydf, resdf)
+    resdf = vcat(x)
+    hcat(keydf, resdf)
 end
 
 
@@ -235,7 +235,7 @@ colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
 # DataVector is 0 (not 0.0).
 function colwise(gd::GroupedDataFrame, s::Vector{Symbol})
     x = map(x -> colwise(without(x, gd.cols),s), gd)
-    cbind(rbind(x.keys), rbind(x.vals))
+    hcat(vcat(x.keys...), vcat(x.vals...))
 end
 colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])

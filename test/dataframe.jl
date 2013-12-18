@@ -20,7 +20,7 @@ module TestDataFrame
     z = deepcopy(x)  
     # @test is_group(z, "group1")
 
-    z = cbind(x, y)
+    z = hcat(x, y)
     # @test is_group(z, "group1")
     # @test is_group(z, "group2")
 
@@ -28,10 +28,10 @@ module TestDataFrame
         a = [5,6,7]
         b = [8,9,10]
     end)
-    z = rbind({v, x})
+    z = vcat(DataFrame[v, x])
     # @test is_group(z, "group1")
 
-    z = rbind(v,x)
+    z = vcat(v, x)
     # @test is_group(z, "group1")
 
     # Deleting columns removes any mention from groupings
