@@ -1,46 +1,29 @@
-##############################################################################
-##
-## AbstractDataFrame includes DataFrame and SubDataFrame
-##
-##############################################################################
-
 abstract AbstractDataFrame <: Associative{String, Any}
-
-##############################################################################
-##
-## Basic DataFrame definition
-##
-## A DataFrame is a vector of heterogeneous AbstractDataVector's that be
-## accessed using numeric indexing for both rows and columns and name-based
-## indexing for columns. The columns are stored in a vector, which means that
-## operations that insert/delete columns are O(n).
-##
-##############################################################################
 
 type DataFrame <: AbstractDataFrame
     columns::Vector{Any}
     colindex::Index
 
     function DataFrame(cols::Vector{Any}, colind::Index)
-        # all columns have to be the same length
-        if length(cols) > 1 && !all(map(length, cols) .== length(cols[1]))
-            msg = "All columns in a DataFrame must be the same length"
-            throw(ArgumentError(msg))
+        ncols = length(cols)
+        if ncols > 1
+            nrows = length(cols[1])
+            equallengths = true
+            for i in 2:ncols
+                equallengths &= length(cols[i]) == nrows
+            end
+            if !equallengths
+                msg = "All columns in a DataFrame must be the same length"
+                throw(ArgumentError(msg))
+            end
         end
-        # colindex has to be the same length as columns vector
-        if length(colind) != length(cols)
+        if length(colind) != ncols
             msg = "Columns and column index must be the same length"
             throw(ArgumentError(msg))
         end
         new(cols, colind)
     end
 end
-
-##############################################################################
-##
-## DataFrame constructors
-##
-##############################################################################
 
 # A DataFrame from keyword arguments
 # This also covers the empty DataFrame.
