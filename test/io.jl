@@ -113,7 +113,7 @@ module TestIO
 
     # Readtable defining column types
     # How to test UTF8String ?
-    filename = "test/data/factors/mixedvartypes2.csv"
+    filename = "test/data/definedtypes/mixedvartypes.csv"
 
     df = readtable(filename)
     @assert typeof(df["n"]) == DataArray{Int64,1}
