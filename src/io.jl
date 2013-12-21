@@ -236,10 +236,14 @@ function bytematch{T <: ByteString}(bytes::Vector{Uint8},
 end
 
 # TODO: Align more closely with parseint code
-function bytestoint{T <: ByteString}(bytes::Vector{Uint8},
-                                     left::Int,
-                                     right::Int,
-                                     nastrings::Vector{T})
+function bytestotype{N <: Int, T <: ByteString, P <: ByteString}(::Type{N},
+                                                                 bytes::Vector{Uint8},
+                                                                 left::Int,
+                                                                 right::Int,
+                                                                 nastrings::Vector{T};
+                                                                 wasquoted::Bool=false,
+                                                                 truestrings::Vector{P}=[],
+                                                                 falsestrings::Vector{P}=[])                                     
     if left > right
         return 0, true, true
     end
@@ -278,10 +282,14 @@ end
 
 let out = Array(Float64, 1)
     global bytestofloat
-    function bytestofloat{T <: ByteString}(bytes::Vector{Uint8},
-                                           left::Int,
-                                           right::Int,
-                                           nastrings::Vector{T})
+    function bytestotype{N <: FloatingPoint, T <: ByteString, P <: ByteString}(::Type{N},                      
+                                                                               bytes::Vector{Uint8},                      
+                                                                               left::Int,                                 
+                                                                               right::Int,                                
+                                                                               nastrings::Vector{T};                      
+                                                                               wasquoted::Bool=false,                     
+                                                                               truestrings::Vector{P}=[],                 
+                                                                               falsestrings::Vector{P}=[])
         if left > right
             return 0.0, true, true
         end
@@ -302,12 +310,14 @@ let out = Array(Float64, 1)
     end
 end
 
-function bytestobool{T <: ByteString}(bytes::Vector{Uint8},
-                                      left::Int,
-                                      right::Int,
-                                      nastrings::Vector{T},
-                                      truestrings::Vector{T},
-                                      falsestrings::Vector{T})
+function bytestotype{N <: Bool, T <: ByteString, P <: ByteString}(::Type{N},                  
+                                                                  bytes::Vector{Uint8},       
+                                                                  left::Int,                  
+                                                                  right::Int,                 
+                                                                  nastrings::Vector{T};                      
+                                                                  wasquoted::Bool=false,      
+                                                                  truestrings::Vector{P}=[],  
+                                                                  falsestrings::Vector{P}=[])
     if left > right
         return false, true, true
     end
@@ -325,11 +335,14 @@ function bytestobool{T <: ByteString}(bytes::Vector{Uint8},
     end
 end
 
-function bytestostring{T <: ByteString}(bytes::Vector{Uint8},
-                                        left::Int,
-                                        right::Int,
-                                        wasquoted::Bool,
-                                        nastrings::Vector{T})
+function bytestotype{N <: String, T <: ByteString, P <: ByteString}(::Type{N},                  
+                                                                    bytes::Vector{Uint8},       
+                                                                    left::Int,                  
+                                                                    right::Int,                 
+                                                                    nastrings::Vector{T};                      
+                                                                    wasquoted::Bool=false,      
+                                                                    truestrings::Vector{P}=[],  
+                                                                    falsestrings::Vector{P}=[])
     if left > right
         if wasquoted
             return "", true, false
@@ -383,25 +396,17 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
 
             # If coltypes has been defined, use them
             if !isempty(o.coltypes)
-                if o.coltypes[j] == UTF8String 
-                    values[i], wasparsed, missing[i] =
-                        bytestostring(p.bytes, left, right,
-                                      wasquoted, o.nastrings)
-                elseif o.coltypes[j] == Bool
-                    values[i], wasparsed, missing[i] =
-                        bytestobool(p.bytes, left, right,
-                                    o.nastrings, o.truestrings, o.falsestrings)
-                elseif o.coltypes[j] == Float64
-                    values[i], wasparsed, missing[i] =
-                        bytestofloat(p.bytes, left, right, o.nastrings)
-                elseif o.coltypes[j] == Int64
-                    value, wasparsed, missing[i] =
-                        bytestofloat(p.bytes, left, right, o.nastrings)
-                    values[i] = int64(value)
-                else
+                if o.coltypes[j] != UTF8String && o.coltypes[j] != Bool && 
+                   o.coltypes[j] != Float64 && o.coltypes[j] != Int64
                     error("'$(o.coltypes[j])' not implemented in coltypes. ",
                           "Use: UTF8String, Bool, Float64 or Int64")
                 end
+
+                values[i], wasparsed, missing[i] =
+                    bytestotype(o.coltypes[j], p.bytes, left, right, o.nastrings,
+                                wasquoted=wasquoted,
+                                truestrings=o.truestrings,
+                                falsestrings=o.falsestrings)
 
                 # Don't go to guess type zone
                 continue
@@ -411,8 +416,7 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
             # (1) Try to parse values as Int's
             if is_int
                 values[i], wasparsed, missing[i] =
-                  bytestoint(p.bytes, left, right,
-                             o.nastrings)
+                  bytestotype(Int, p.bytes, left, right, o.nastrings)
                 if wasparsed
                     continue
                 else
@@ -424,8 +428,7 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
             # (2) Try to parse as Float64's
             if is_float
                 values[i], wasparsed, missing[i] =
-                  bytestofloat(p.bytes, left, right,
-                               o.nastrings)
+                  bytestotype(FloatingPoint, p.bytes, left, right, o.nastrings)           
                 if wasparsed
                     continue
                 else
@@ -439,8 +442,9 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
             # (3) Try to parse as Bool's
             if is_bool
                 values[i], wasparsed, missing[i] =
-                  bytestobool(p.bytes, left, right,
-                              o.nastrings, o.truestrings, o.falsestrings)
+                  bytestotype(Bool, p.bytes, left, right, o.nastrings,
+                              truestrings=o.truestrings,                      
+                              falsestrings=o.falsestrings)
                 if wasparsed
                     continue
                 else
@@ -453,8 +457,8 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
 
             # (4) Fallback to UTF8String
             values[i], wasparsed, missing[i] =
-              bytestostring(p.bytes, left, right,
-                            wasquoted, o.nastrings)
+              bytestotype(UTF8String, p.bytes, left, right, o.nastrings,
+                          wasquoted=wasquoted)                            
         end
 
         if o.makefactors && !(is_int || is_float || is_bool)
@@ -673,25 +677,11 @@ function filldf!(df::DataFrame,
             end
 
             # NB: Assumes perfect type stability
-            if T == Int
-                c.data[i], wasparsed, c.na[i] =
-                  bytestoint(p.bytes, left, right,
-                             o.nastrings)
-            elseif T == Float64
-                c.data[i], wasparsed, c.na[i] =
-                  bytestofloat(p.bytes, left, right,
-                               o.nastrings)
-            elseif T == Bool
-                c.data[i], wasparsed, c.na[i] =
-                  bytestobool(p.bytes, left, right,
-                              o.nastrings, o.truestrings, o.falsestrings)
-            elseif T == UTF8String
-                c.data[i], wasparsed, c.na[i] =
-                  bytestostring(p.bytes, left, right,
-                                wasquoted, o.nastrings)
-            else
+            if T != Int && T != Float64 && T != Bool && T != UTF8String
                 error("Invalid type encountered")
             end
+            c.data[i], wasparsed, c.na[i] =
+              bytestotype(T, p.bytes, left, right, o.nastrings)
         end
     end
 
