@@ -150,7 +150,6 @@ module TestIO
     @assert df["c5"][3] == "true"
 
     # Readtable defining column types
-    # How to test UTF8String ?
     filename = "test/data/definedtypes/mixedvartypes.csv"
 
     df = readtable(filename)
@@ -175,17 +174,15 @@ module TestIO
     @assert df["b"][1] == true
     @assert df["b"][2] == false
 
-    df = readtable(filename,coltypes=[Float64, ASCIIString, Int64, ASCIIString])
+    df = readtable(filename,coltypes=[Float64, UTF8String, Int64, UTF8String])
     @assert typeof(df["n"]) == DataArray{Float64,1}
     @assert df["n"][1] == 1.0
-    @assert typeof(df["s"]) == DataArray{ASCIIString,1}
-    @assert df["s"][2] == "more text"
     @assert isna(df["s"][3])
     @assert typeof(df["f"]) == DataArray{Int64,1}
     @assert df["f"][1] == 2
     @assert df["f"][2] == 0
     @assert df["f"][3] == 6
-    @assert typeof(df["b"]) == DataArray{ASCIIString,1}
+    @assert typeof(df["b"]) == DataArray{UTF8String,1}
     @assert df["b"][1] == "T"
     @assert df["b"][2] == "FALSE"
 

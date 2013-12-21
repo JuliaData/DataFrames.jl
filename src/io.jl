@@ -387,10 +387,6 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
                     values[i], wasparsed, missing[i] =
                         bytestostring(p.bytes, left, right,
                                       wasquoted, o.nastrings)
-                elseif o.coltypes[j] == ASCIIString
-                    values[i], wasparsed, missing[i] =
-                        bytestostring(p.bytes, left, right,
-                                      wasquoted, o.nastrings)
                 elseif o.coltypes[j] == Bool
                     values[i], wasparsed, missing[i] =
                         bytestobool(p.bytes, left, right,
@@ -404,7 +400,7 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
                     values[i] = int64(value)
                 else
                     error("'$(o.coltypes[j])' not implemented in coltypes. ",
-                          "Use: UTF8String, ASCIIString, Bool, Float64 or Int64")
+                          "Use: UTF8String, Bool, Float64 or Int64")
                 end
 
                 # Don't go to guess type zone
