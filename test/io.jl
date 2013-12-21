@@ -110,6 +110,15 @@ module TestIO
     df = readtable("test/data/compressed/1000x2.csv.gz")
     @assert size(df) == (1000, 2)
 
+    # Readtable type inference
+    filename = "test/data/typeinference/bool.csv",
+    df = readtable(filename)
+    @assert typeof(df["Name"]) == DataArray{UTF8String,1}
+    @assert typeof(df["IsMale"]) == DataArray{Bool,1}
+
+    filename = "test/data/typeinference/standardtypes.csv",
+    df = readtable(filename)
+
 
     # Readtable defining column types
     # How to test UTF8String ?
@@ -135,6 +144,7 @@ module TestIO
     @assert df["f"][1] == 2.3
     @assert typeof(df["b"]) == DataArray{Bool,1}
     @assert df["b"][1] == true
+    @assert df["b"][2] == false
 
     df = readtable(filename,coltypes=[Float64, ASCIIString, Int64, ASCIIString])
     @assert typeof(df["n"]) == DataArray{Float64,1}
@@ -147,8 +157,8 @@ module TestIO
     @assert df["f"][2] == 0
     @assert df["f"][3] == 6
     @assert typeof(df["b"]) == DataArray{ASCIIString,1}
-    @assert df["b"][1] == "true"
-    @assert df["b"][2] == "false"
+    @assert df["b"][1] == "T"
+    @assert df["b"][2] == "FALSE"
 
     df = readtable(filename,coltypes=[UTF8String, Bool, UTF8String, Float64])
     @assert typeof(df["n"]) == DataArray{UTF8String,1}
