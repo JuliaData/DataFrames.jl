@@ -111,14 +111,43 @@ module TestIO
     @assert size(df) == (1000, 2)
 
     # Readtable type inference
-    filename = "test/data/typeinference/bool.csv",
+    filename = "test/data/typeinference/bool.csv"
     df = readtable(filename)
     @assert typeof(df["Name"]) == DataArray{UTF8String,1}
     @assert typeof(df["IsMale"]) == DataArray{Bool,1}
+    @assert df["IsMale"][1] == true
+    @assert df["IsMale"][4] == false
 
-    filename = "test/data/typeinference/standardtypes.csv",
+    filename = "test/data/typeinference/standardtypes.csv"
     df = readtable(filename)
+    @assert typeof(df["IntColumn"]) == DataArray{Int64,1}
+    @assert typeof(df["IntlikeColumn"]) == DataArray{Float64,1}
+    @assert typeof(df["FloatColumn"]) == DataArray{Float64,1}
+    @assert typeof(df["BoolColumn"]) == DataArray{Bool,1}
+    @assert typeof(df["StringColumn"]) == DataArray{UTF8String,1}
 
+    filename = "test/data/typeinference/mixedtypes.csv"
+    df = readtable(filename)
+    @assert typeof(df["c1"]) == DataArray{UTF8String,1}
+    @assert df["c1"][1] == "1" 
+    @assert df["c1"][2] == "2.0" 
+    @assert df["c1"][3] == "true" 
+    @assert typeof(df["c2"]) == DataArray{Float64,1}
+    @assert df["c2"][1] == 1.0 
+    @assert df["c2"][2] == 3.0 
+    @assert df["c2"][3] == 4.5 
+    @assert typeof(df["c3"]) == DataArray{UTF8String,1}
+    @assert df["c3"][1] == "0" 
+    @assert df["c3"][2] == "1" 
+    @assert df["c3"][3] == "f" 
+    @assert typeof(df["c4"]) == DataArray{Bool,1}
+    @assert df["c4"][1] == true
+    @assert df["c4"][2] == false
+    @assert df["c4"][3] == true
+    @assert typeof(df["c5"]) == DataArray{UTF8String,1}
+    @assert df["c5"][1] == "False"
+    @assert df["c5"][2] == "true"
+    @assert df["c5"][3] == "true"
 
     # Readtable defining column types
     # How to test UTF8String ?
