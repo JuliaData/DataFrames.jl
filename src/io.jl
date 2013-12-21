@@ -405,10 +405,10 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
                 else
                     error("'$(o.coltypes[j])' not implemented in coltypes. ",
                           "Use: UTF8String, ASCIIString, Bool, Float64 or Int64")
-            end
+                end
 
-            # Don't go to guess type zone
-            continue
+                # Don't go to guess type zone
+                continue
             end
 
 
