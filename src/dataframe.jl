@@ -877,7 +877,124 @@ maxShowLength(df::AbstractDataFrame, col::String) = max(maxShowLength(df[col]), 
 colwidths(df::AbstractDataFrame) = [maxShowLength(df, col) for col=colnames(df)]
 colwidths(row::Array{Any}) = [length(_string(row[i])) for i = 1:length(row)]
 
-Base.showall(io::IO, df::AbstractDataFrame) = show(io, df, nrow(df))
+function Base.showall(io::IO, df::AbstractDataFrame, splitup::Bool = true)
+    const rowlabel::UTF8String = "Row #"
+
+    nrows, ncols = size(df)
+
+    @printf "%dx%d DataFrame:\n" nrows ncols
+
+    cnames = colnames(df)
+
+    # Longest print out for any row number
+    rowmaxlength = max(iceil(log10(nrows)), length(rowlabel))
+
+    # Determine the maximum string length of any field in each column
+    maxlengths = Array(Int, ncols + 1)
+    for j in 1:ncols
+        # (1) Consider length of column label
+        maxlengths[j] = length(cnames[j])
+
+        # (2) Consider length of longest entry in that column
+        col = df[j]
+        for i in 1:nrows
+            maxlengths[j] = max(maxlengths[j], length(string(col[i])))
+        end
+    end
+
+    availablespace = Base.tty_cols() - (rowmaxlength + 3)
+
+    # Calculate bounds for each chunk of columns
+    if splitup
+        chunkbounds = Array(Int, 0)
+        currentchunk = 0
+        totalchars = 0
+        push!(chunkbounds, 0)
+        for j in 1:ncols
+            # Include whitespace + | character in character count
+            totalchars += maxlengths[j] + 3
+            if fld(totalchars, availablespace) != currentchunk
+                currentchunk += 1
+                push!(chunkbounds, j - 1)
+            end
+        end
+        if isempty(chunkbounds)
+            chunkbounds = [ncols]
+        end
+        if chunkbounds[end] != ncols
+            push!(chunkbounds, ncols)
+        end
+    else
+        chunkbounds = [0, ncols]
+    end
+
+    for chunkindex in 1:(length(chunkbounds) - 1)
+        leftcol = chunkbounds[chunkindex] + 1
+        rightcol = chunkbounds[chunkindex + 1]
+
+        # Header bounding line
+        write(io, '|')
+        for ind in 1:(rowmaxlength + 2)
+            write(io, '-')
+        end
+        write(io, '|')
+        for j in leftcol:rightcol
+            for ind in 1:(maxlengths[j] + 2)
+                write(io, '-')
+            end
+            write(io, '|')
+        end
+        write(io, '\n')
+
+        # Header column names
+        @printf io "| Row # | "
+        for j in leftcol:rightcol
+            s = cnames[j]
+            print(io, s)
+            # @printf io " %d" j
+            for addedspace in 1:(maxlengths[j] - length(s))
+                write(io, ' ')
+            end
+            if j == rightcol
+                @printf io " |\n"
+            else
+                @printf io " | "
+            end
+        end
+
+        # Main table body
+        for i in 1:nrows
+            @printf io "| %d" i
+            if i == 1
+                for addedspace in 1:(rowmaxlength - 1)
+                    write(io, ' ')
+                end
+            else
+                for addedspace in 1:(rowmaxlength - iceil(log10(i)))
+                    write(io, ' ')
+                end
+            end
+            @printf io " | "
+            for j in leftcol:rightcol
+                s = string(df[i, j])
+                @printf io "%s" s
+                for addedspace in 1:(maxlengths[j] - length(s))
+                    write(io, ' ')
+                end
+                if j == rightcol
+                    @printf " |\n"
+                else
+                    @printf " | "
+                end
+            end
+        end
+    end
+
+    return
+end
+
+Base.showall(df::AbstractDataFrame, splitup::Bool = true) = showall(STDOUT, df, splitup)
+
 function Base.show(io::IO, df::AbstractDataFrame)
     printed_width = sum(colwidths(df)) + length(ncol(df)) * 2 + 5
     if printed_width > Base.tty_cols()
