@@ -481,7 +481,7 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
     end
 
     if isempty(o.colnames)
-        return DataFrame(columns, DataFrames.generate_column_names(cols))
+        return DataFrame(columns, DataFrames.gennames(cols))
     else
         return DataFrame(columns, o.colnames)
     end

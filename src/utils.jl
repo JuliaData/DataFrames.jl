@@ -67,7 +67,7 @@ function make_unique{S<:ByteString}(names::Vector{S})
     names
 end
 
-function generate_column_names(n::Int)
+function gennames(n::Int)
     convert(Vector{ByteString}, map(i -> "x" * string(i), 1:n))
 end
 

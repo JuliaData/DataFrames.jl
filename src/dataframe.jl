@@ -41,18 +41,14 @@ DataFrame(df::DataFrame) = df
 # Wrap a scalar in a DataArray, then a DataFrame
 function DataFrame(x::Union(Number, String))
     cols = {DataArray([x], falses(1))}
-    colind = Index(generate_column_names(1))
+    colind = Index(gennames(1))
     return DataFrame(cols, colind)
 end
 
-# Convert an arbitrary set of columns w/ pre-specified names
-function DataFrame{T <: String}(cs::Vector{Any}, cn::Vector{T})
+# Wrap a set of columns in a DataFrame w/ or w/o column names
+function DataFrame{T <: String}(cs::Vector{Any},
+                                cn::Vector{T} = gennames(length(cs)))
     return DataFrame(cs, Index(cn))
-end
-
-# Convert an arbitrary set of columns w/o pre-specified names
-function DataFrame(cs::Vector{Any})
-    return DataFrame(cs, Index(generate_column_names(length(cs))))
 end
 
 # Build a DataFrame from an expression
@@ -61,18 +57,14 @@ end
 DataFrame(ex::Expr) = based_on(DataFrame(), ex)
 
 # Convert a standard Matrix to a DataFrame w/ pre-specified names
-function DataFrame(x::Matrix, cn::Vector)
+function DataFrame(x::Matrix,
+                   cn::Vector = gennames(size(x, 2)))
     n = length(cn)
     cols = Array(Any, n)
     for i in 1:n
         cols[i] = DataArray(x[:, i])
     end
     return DataFrame(cols, Index(cn))
-end
-
-# Convert a standard Matrix to a DataFrame w/o pre-specified names
-function DataFrame(x::Matrix)
-    DataFrame(x, generate_column_names(size(x, 2)))
 end
 
 function DataFrame{K, V}(d::Associative{K, V})
@@ -157,7 +149,7 @@ function DataFrame(t::Any, nrows::Integer, ncols::Integer)
     for i in 1:ncols
         columns[i] = DataArray(t, nrows)
     end
-    column_names = generate_column_names(ncols)
+    column_names = gennames(ncols)
     return DataFrame(columns, Index(column_names))
 end
 
@@ -168,7 +160,7 @@ function DataFrame(nrows::Integer, ncols::Integer)
     for i in 1:ncols
         columns[i] = DataArray(DEFAULT_COLUMN_TYPE, nrows)
     end
-    column_names = generate_column_names(ncols)
+    column_names = gennames(ncols)
     return DataFrame(columns, Index(column_names))
 end
 
@@ -192,7 +184,7 @@ end
 function DataFrame(column_types::Vector, nrows::Integer)
     p = length(column_types)
     columns = Array(Any, p)
-    column_names = generate_column_names(p)
+    column_names = gennames(p)
     for j in 1:p
         columns[j] = DataArray(column_types[j], nrows)
         for i in 1:nrows
@@ -256,7 +248,7 @@ function DataFrame(vals::Any...)
             columns[j] = DataArray(vals[j])
         end
     end
-    column_names = generate_column_names(p)
+    column_names = gennames(p)
     DataFrame(columns, Index(column_names))
 end
 
