@@ -114,11 +114,14 @@ function showrows(io::IO,
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
                   splitchunks::Bool = false,
-                  rowlabel::String = "Row #") # -> Nothing
+                  rowlabel::String = "Row #",
+                  displaysummary::Bool = true) # -> Nothing
     ncols = size(adf, 2)
     names = colnames(adf)
 
-    println(io, summary(adf))
+    if displaysummary
+        println(io, summary(adf))
+    end
 
     if isempty(rowindices1)
         return
@@ -193,7 +196,8 @@ end
 function Base.show(io::IO,
                    adf::AbstractDataFrame,
                    splitchunks::Bool = false,
-                   rowlabel::String = "Row #") # -> Nothing
+                   rowlabel::String = "Row #",
+                   displaysummary::Bool = true) # -> Nothing
     nrows = size(adf, 1)
     availableheight = Base.tty_rows() - 5
     nrowssubset = fld(availableheight, 2)
@@ -216,7 +220,8 @@ function Base.show(io::IO,
                  rowindices2,
                  maxwidths,
                  splitchunks,
-                 rowlabel)
+                 rowlabel,
+                 displaysummary)
     end
     return
 end
@@ -229,7 +234,8 @@ end
 function Base.showall(io::IO,
                       adf::AbstractDataFrame,
                       splitchunks::Bool = false,
-                      rowlabel::String = "Row #") # -> Nothing
+                      rowlabel::String = "Row #",
+                      displaysummary::Bool = true) # -> Nothing
     rowindices1 = 1:size(adf, 1)
     rowindices2 = 1:0
     maxwidths = getmaxwidths(adf, rowindices1, rowindices2, rowlabel)
@@ -240,7 +246,8 @@ function Base.showall(io::IO,
              rowindices2,
              maxwidths,
              splitchunks,
-             rowlabel)
+             rowlabel,
+             displaysummary)
     return
 end
 
@@ -262,9 +269,10 @@ function colmissing(adf::AbstractDataFrame) # -> Vector{Int}
 end
 
 function column_summary(io::IO, adf::AbstractDataFrame) # -> Nothing
+    println(io, summary(adf))
     metadata = DataFrame(Name = colnames(adf),
                          Type = coltypes(adf),
                          Missing = colmissing(adf))
-    showall(io, metadata, true, "Col #")
+    showall(io, metadata, true, "Col #", false)
     return
 end
