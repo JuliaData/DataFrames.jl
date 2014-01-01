@@ -13,31 +13,34 @@ function getmaxwidths(adf::AbstractDataFrame,
     maxwidths = Array(Int, ncols + 1)
     for j in 1:ncols
         # (1) Consider length of column name
-        maxwidths[j] = length(names[j])
+        maxwidths[j] = strwidth(names[j])
 
         # (2) Consider length of longest entry in that column
         for i in rowindices1
             maxwidths[j] = max(maxwidths[j],
-                               length(string(adf[i, j])))
+                               strwidth(string(adf[i, j])))
         end
         for i in rowindices2
             maxwidths[j] = max(maxwidths[j],
-                               length(string(adf[i, j])))
+                               strwidth(string(adf[i, j])))
         end
     end
-    m1 = isempty(rowindices1) ? 0 : maximum(rowindices1)
-    m2 = isempty(rowindices2) ? 0 : maximum(rowindices2)
-    maxwidths[ncols + 1] = max(max(ndigits(m1), ndigits(m2)),
-                               length(rowlabel))
+    rowmaxwidth1 = ndigits(maximum(rowindices1))
+    rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
+    maxwidths[ncols + 1] = max(max(rowmaxwidth1,
+                                   rowmaxwidth2),
+                               strwidth(rowlabel))
     return maxwidths
 end
 
 # Determine width of printing DataFrame in a single chunk
 function getprintedwidth(maxwidths::Vector{Int}) # -> Int
     n = length(maxwidths)
-    width = 1 # Length of line-initial |
+    # Length of line-initial |
+    width = 1
     for i in 1:n
-        width += maxwidths[i] + 3 # Length of field + 2 spaces + trailing |
+        # Length of field + 2 spaces + trailing |
+        width += maxwidths[i] + 3
     end
     return width
 end
@@ -48,30 +51,24 @@ function getchunkbounds(maxwidths::Vector{Int},
                         splitchunks::Bool) # -> Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
-    availablespace = Base.tty_cols() - (rowmaxwidth + 3)
+    availablewidth = Base.tty_cols()
     if splitchunks
-        chunkbounds = Array(Int, 0)
-        currentchunk = 0
-        totalchars = 0
-        push!(chunkbounds, 0)
+        chunkbounds = [0]
+        # Include 2 spaces + 2 | characters for row/col label
+        totalwidth = rowmaxwidth + 4
         for j in 1:ncols
             # Include 2 spaces + | character in per-column character count
-            totalchars += maxwidths[j] + 3
-            if fld(totalchars, availablespace) != currentchunk
-                currentchunk += 1
+            totalwidth += maxwidths[j] + 3
+            if totalwidth > availablewidth
                 push!(chunkbounds, j - 1)
+                totalwidth = rowmaxwidth + 4 + maxwidths[j] + 3
             end
         end
-        if isempty(chunkbounds)
-            chunkbounds = [ncols]
-        end
-        if chunkbounds[end] != ncols
-            push!(chunkbounds, ncols)
-        end
+        push!(chunkbounds, ncols)
     else
         chunkbounds = [0, ncols]
     end
-    return chunkbounds, availablespace
+    return chunkbounds
 end
 
 function showrowindices(io::IO,
@@ -80,25 +77,21 @@ function showrowindices(io::IO,
                         rowmaxwidth::Int,
                         maxwidths::Vector{Int},
                         leftcol::Int,
-                        rightcol::Int)
+                        rightcol::Int) # -> Nothing
     for i in rowindices
-        # Row ID
+        # Print row ID
         @printf io "| %d" i
-        if i == 1
-            for addedspace in 1:(rowmaxwidth - 1)
-                write(io, ' ')
-            end
-        else
-            for addedspace in 1:(rowmaxwidth - ndigits(i))
-                write(io, ' ')
-            end
+        padding = rowmaxwidth - ndigits(i)
+        for itr in 1:padding
+            write(io, ' ')
         end
         print(io, " | ")
-        # DataFrame entry
+        # Print DataFrame entry
         for j in leftcol:rightcol
             s = string(adf[i, j])
             @printf io "%s" s
-            for addedspace in 1:(maxwidths[j] - length(s))
+            padding = maxwidths[j] - strwidth(s)
+            for itr in 1:padding
                 write(io, ' ')
             end
             if j == rightcol
@@ -129,32 +122,34 @@ function showrows(io::IO,
 
     maxwidths = getmaxwidths(adf, rowindices1, rowindices2, rowlabel)
     rowmaxwidth = maxwidths[ncols + 1]
-    chunkbounds, availablespace = getchunkbounds(maxwidths, splitchunks)
+    chunkbounds = getchunkbounds(maxwidths, splitchunks)
+    nchunks = length(chunkbounds) - 1
 
-    for chunkindex in 1:(length(chunkbounds) - 1)
+    for chunkindex in 1:nchunks
         leftcol = chunkbounds[chunkindex] + 1
         rightcol = chunkbounds[chunkindex + 1]
 
-        # Header bounding line
+        # Print table bounding line
         write(io, '|')
-        for ind in 1:(rowmaxwidth + 2)
+        for itr in 1:(rowmaxwidth + 2)
             write(io, '-')
         end
         write(io, '|')
         for j in leftcol:rightcol
-            for ind in 1:(maxwidths[j] + 2)
+            for itr in 1:(maxwidths[j] + 2)
                 write(io, '-')
             end
             write(io, '|')
         end
         write(io, '\n')
 
-        # Header column names
+        # Print column names
         @printf io "| %s | " rowlabel
         for j in leftcol:rightcol
             s = names[j]
             print(io, s)
-            for addedspace in 1:(maxwidths[j] - length(s))
+            padding = maxwidths[j] - strwidth(s)
+            for itr in 1:padding
                 write(io, ' ')
             end
             if j == rightcol
@@ -164,7 +159,7 @@ function showrows(io::IO,
             end
         end
 
-        # Main table body
+        # Print main table body, potentially in two abbreviated sections
         showrowindices(io,
                        adf,
                        rowindices1,
@@ -183,7 +178,8 @@ function showrows(io::IO,
                            rightcol)
         end
 
-        if chunkindex < length(chunkbounds) - 1
+        # Print newlines to separate chunks
+        if chunkindex < nchunks
             print(io, "\n\n")
         end
     end
@@ -194,17 +190,17 @@ end
 function Base.show(io::IO,
                    adf::AbstractDataFrame,
                    splitchunks::Bool = false,
-                   rowlabel::String = "Row #")
+                   rowlabel::String = "Row #") # -> Nothing
     nrows = size(adf, 1)
-    availablespace = Base.tty_rows() - 5
-    regionsize = fld(availablespace, 2)
-    bound = min(regionsize - 1, nrows)
-    if nrows <= availablespace
+    availableheight = Base.tty_rows() - 5
+    nrowssubset = fld(availableheight, 2)
+    bound = min(nrowssubset - 1, nrows)
+    if nrows <= availableheight
         rowindices1 = 1:nrows
         rowindices2 = 1:0
     else
         rowindices1 = 1:bound
-        rowindices2 = max(bound + 1, nrows - regionsize + 1):nrows
+        rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
     end
     maxwidths = getmaxwidths(adf, rowindices1, rowindices2, rowlabel)
     width = getprintedwidth(maxwidths)
@@ -222,14 +218,15 @@ function Base.show(io::IO,
     return
 end
 
-function Base.show(adf::AbstractDataFrame, splitchunks::Bool = false)
+function Base.show(adf::AbstractDataFrame,
+                   splitchunks::Bool = false) # -> Nothing
     show(STDOUT, adf, splitchunks)
 end
 
 function Base.showall(io::IO,
                       adf::AbstractDataFrame,
                       splitchunks::Bool = false,
-                      rowlabel::String = "Row #")
+                      rowlabel::String = "Row #") # -> Nothing
     rowindices1 = 1:size(adf, 1)
     rowindices2 = 1:0
     maxwidths = getmaxwidths(adf, rowindices1, rowindices2, rowlabel)
@@ -245,16 +242,26 @@ function Base.showall(io::IO,
 end
 
 function Base.showall(adf::AbstractDataFrame,
-                      splitchunks::Bool = false)
+                      splitchunks::Bool = false) # -> Nothing
     showall(STDOUT, adf, splitchunks)
     return
 end
 
-function column_summary(io::IO, adf::AbstractDataFrame)
-    ncols = size(adf, 2)
+function colmissing(adf::AbstractDataFrame) # -> Vector{Int}
+    nrows, ncols = size(adf)
+    missing = zeros(Int, ncols)
+    for j in 1:ncols
+        for i in 1:nrows
+            missing[j] += int(isna(adf[i, j]))
+        end
+    end
+    return missing
+end
+
+function column_summary(io::IO, adf::AbstractDataFrame) # -> Nothing
     metadata = DataFrame(Name = colnames(adf),
                          Type = coltypes(adf),
-                         Missing = [sum(isna(adf[j])) for j in 1:ncols])
+                         Missing = colmissing(adf))
     showall(io, metadata, true, "Col #")
     return
 end

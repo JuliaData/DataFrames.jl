@@ -269,7 +269,7 @@ end
 colnames(df::DataFrame) = names(df.colindex)
 colnames!(df::DataFrame, vals) = names!(df.colindex, vals)
 
-coltypes(df::DataFrame) = {eltype(df[i]) for i in 1:ncol(df)}
+coltypes(df::AbstractDataFrame) = {eltype(df[i]) for i in 1:ncol(df)}
 
 names(df::AbstractDataFrame) = error("Use colnames()")
 names!(df::DataFrame, vals::Any) = error("Use colnames!()")
