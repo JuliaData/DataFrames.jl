@@ -25,7 +25,7 @@ function getmaxwidths(adf::AbstractDataFrame,
                                strwidth(string(adf[i, j])))
         end
     end
-    rowmaxwidth1 = ndigits(maximum(rowindices1))
+    rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
     rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
     maxwidths[ncols + 1] = max(max(rowmaxwidth1,
                                    rowmaxwidth2),
@@ -120,7 +120,10 @@ function showrows(io::IO,
 
     println(io, summary(adf))
 
-    maxwidths = getmaxwidths(adf, rowindices1, rowindices2, rowlabel)
+    if isempty(rowindices1)
+        return
+    end
+
     rowmaxwidth = maxwidths[ncols + 1]
     chunkbounds = getchunkbounds(maxwidths, splitchunks)
     nchunks = length(chunkbounds) - 1
