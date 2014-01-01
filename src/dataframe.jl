@@ -844,116 +844,6 @@ DataArrays.head(df::AbstractDataFrame) = head(df, 6)
 DataArrays.tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
 DataArrays.tail(df::AbstractDataFrame) = tail(df, 6)
 
-##############################################################################
-##
-## String representations
-##
-##############################################################################
-
-function summary(df::AbstractDataFrame)
-    nrowz, ncolz = size(df)
-    "$(typeof(df)) with $(nrowz) rows, $(ncolz) columns"
-end
-
-# to print a DataFrame, find the max string length of each column
-# then print the column names with an appropriate buffer
-# then row-by-row print with an appropriate buffer
-_string(x) = sprint(showcompact, x)
-pad(item, num, dir) = dir == 'l' ? lpad(item, num) : rpad(item, num)
-maxShowLength(v::AbstractVector) = mapreduce(x->length(_string(x)), max, 0, v)
-function maxShowLength(dv::DataVector)
-    res = 0
-    for i in 1:length(dv)
-        if isdefined(dv.data, i)
-            res = max(res, length(_string(dv[i])))
-        else
-            res = max(res, length(Base.undef_ref_str))
-        end
-    end
-    return res
-end
-#maxShowLength(dv::AbstractVector) = mapreduce(x->length(_string(x)), max, 0, dv)
-maxShowLength(df::AbstractDataFrame, col::String) = max(maxShowLength(df[col]), length(col))
-colwidths(df::AbstractDataFrame) = [maxShowLength(df, col) for col=colnames(df)]
-colwidths(row::Array{Any}) = [length(_string(row[i])) for i = 1:length(row)]
-
-Base.showall(io::IO, df::AbstractDataFrame) = show(io, df, nrow(df))
-function Base.show(io::IO, df::AbstractDataFrame)
-    printed_width = sum(colwidths(df)) + length(ncol(df)) * 2 + 5
-    if printed_width > Base.tty_cols()
-        column_summary(io, df)
-    else
-        show(io, df, 20)
-    end
-end
-
-function format_row(rows::Array{Any, 1}, colWidths, alignments::Array{Char,1})
-    formatted_fields = [pad(rows[i], colWidths[i] + 2, alignments[i]) for i=[1:length(rows)]]
-    return join(formatted_fields)
-end
-
-# Format a list of rows as a table.
-function format_table(rows, alignments::Array{Char,1})
-    colWidths = reduce(max, [colwidths(row) for row = rows])
-    formatted_rows = [string(format_row(rows[i], colWidths, alignments), "\n") for i = [1:length(rows)]]
-    return join(formatted_rows)
-end
-
-# Print a summary of the columns in the dataframe
-function column_summary(io::IO, df::AbstractDataFrame)
-    println(io, summary(df))
-    println(io, "Columns:\n")
-    summary_rows = [[col, sum(!isna(df[col])), " non-null values"] for col = colnames(df)]
-    println(io, format_table(summary_rows, ['r', 'l', 'r']))
-end
-
-function Base.show(io::IO, df::AbstractDataFrame, Nmx::Integer)
-    ## TODO use alignment() like print_matrix in show.jl.
-    nrowz, ncolz = size(df)
-    println(io, "$(nrowz)x$(ncolz) $(typeof(df)):")
-    gr = get_groups(df)
-    if length(gr) > 0
-        #print(io, "Column groups: ")
-        pretty_show(io, gr)
-        println(io)
-    end
-    N = nrow(df)
-    Nmx = Nmx   # maximum head and tail lengths
-    if N <= 2Nmx
-        rowrng = 1:min(2Nmx,N)
-    else
-        rowrng = [1:Nmx, N-Nmx+1:N]
-    end
-    # we don't have row names -- use indexes
-    rowNames = [@sprintf("[%d,]", r) for r = rowrng]
-    
-    rownameWidth = maxShowLength(rowNames)
-    
-    # if we don't have columns names, use indexes
-    # note that column names in R are obligatory
-    if eltype(colnames(df)) == Nothing
-        colNames = [@sprintf("[,%d]", c) for c = 1:ncol(df)]
-    else
-        colNames = colnames(df)
-    end
-    
-    colWidths = [max(length(string(colNames[c])), maxShowLength(df[rowrng,c])) for c = 1:ncol(df)]
-
-    header = string(" " ^ (rownameWidth+1),
-                    join([lpad(string(colNames[i]), colWidths[i]+1, " ") for i = 1:ncol(df)], ""))
-    println(io, header)
-
-    for i = 1:length(rowrng)
-        rowname = rpad(string(rowNames[i]), rownameWidth+1, " ")
-        line = string(rowname,
-                      join([lpad(_string(df[rowrng[i],c]), colWidths[c]+1, " ") for c = 1:ncol(df)], ""))
-        println(io, line)
-        if i == Nmx && N > 2Nmx
-            println(io, "  :")
-        end
-    end
-end
-
 # get the structure of a DF
 function Base.dump(io::IO, x::AbstractDataFrame, n::Int, indent)
     println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
@@ -969,8 +859,10 @@ function Base.dump(io::IO, x::AbstractDataFrame, n::Int, indent)
         end
     end
 end
-Base.dump(io::IO, x::AbstractDataVector, n::Int, indent) =
+
+function Base.dump(io::IO, x::AbstractDataVector, n::Int, indent)
     println(io, typeof(x), "(", length(x), ") ", x[1:min(4, end)])
+end
 
 # summarize the columns of a DF
 # if the column's base type derives from Number, 
