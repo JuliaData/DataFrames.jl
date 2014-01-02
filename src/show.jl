@@ -18,11 +18,11 @@ function getmaxwidths(adf::AbstractDataFrame,
         # (2) Consider length of longest entry in that column
         for i in rowindices1
             maxwidths[j] = max(maxwidths[j],
-                               strwidth(string(adf[i, j])))
+                               strwidth(sprint(showcompact, adf[i, j])))
         end
         for i in rowindices2
             maxwidths[j] = max(maxwidths[j],
-                               strwidth(string(adf[i, j])))
+                               strwidth(sprint(showcompact, adf[i, j])))
         end
     end
     rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
@@ -88,7 +88,7 @@ function showrowindices(io::IO,
         print(io, " | ")
         # Print DataFrame entry
         for j in leftcol:rightcol
-            s = string(adf[i, j])
+            s = sprint(showcompact, adf[i, j])
             @printf io "%s" s
             padding = maxwidths[j] - strwidth(s)
             for itr in 1:padding
