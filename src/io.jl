@@ -132,7 +132,7 @@ end
 
 # Read CSV file's rows into buffer while storing field boundary information
 # TODO: Experiment with mmaping input
-function readnrows!(p::ParsedCSV, io::IO, nrows::Int, o::ParseOptions)
+function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
     # Information about parse results
     n_bytes = 0
     n_bounds = 0
@@ -537,7 +537,7 @@ end
 
 function readtable!(p::ParsedCSV,
                     io::IO,
-                    nrows::Int,
+                    nrows::Int64,
                     o::ParseOptions)
     # Skip lines at the start
     chr, nextchr = 0xff, 0xff
@@ -557,7 +557,7 @@ function readtable!(p::ParsedCSV,
 
     # Extract the header
     if o.header
-        bytes, fields, rows = readnrows!(p, io, 1, o)
+        bytes, fields, rows = readnrows!(p, io, int64(1), o)
     end
 
     # Insert column names from header if none present
