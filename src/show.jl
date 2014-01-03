@@ -95,7 +95,11 @@ function showrowindices(io::IO,
                 write(io, ' ')
             end
             if j == rightcol
-                print(io, " |\n")
+                if i == rowindices[end]
+                    print(io, " |")
+                else
+                    print(io, " |\n")
+                end
             else
                 print(io, " | ")
             end
@@ -170,7 +174,7 @@ function showrows(io::IO,
                        leftcol,
                        rightcol)
         if !isempty(rowindices2)
-            print(io, "⋮\n")
+            print(io, "\n⋮\n")
             showrowindices(io,
                            adf,
                            rowindices2,
@@ -182,7 +186,7 @@ function showrows(io::IO,
 
         # Print newlines to separate chunks
         if chunkindex < nchunks
-            print(io, '\n')
+            print(io, "\n\n")
         end
     end
 
@@ -271,4 +275,9 @@ function column_summary(io::IO, adf::AbstractDataFrame) # -> Nothing
                          Missing = colmissing(adf))
     showall(io, metadata, true, "Col #", false)
     return
+end
+
+function Base.print(io::IO, adf::AbstractDataFrame)
+    show(io, adf)
+    print(io, '\n')
 end
