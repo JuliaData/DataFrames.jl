@@ -95,11 +95,7 @@ function showrowindices(io::IO,
                 write(io, ' ')
             end
             if j == rightcol
-                if i == rowindices[end]
-                    print(io, " |")
-                else
-                    print(io, " |\n")
-                end
+                print(io, " |\n")
             else
                 print(io, " | ")
             end
@@ -174,7 +170,7 @@ function showrows(io::IO,
                        leftcol,
                        rightcol)
         if !isempty(rowindices2)
-            print(io, "\n⋮\n")
+            print(io, "⋮\n")
             showrowindices(io,
                            adf,
                            rowindices2,
@@ -186,7 +182,7 @@ function showrows(io::IO,
 
         # Print newlines to separate chunks
         if chunkindex < nchunks
-            print(io, "\n\n")
+            print(io, '\n')
         end
     end
 
