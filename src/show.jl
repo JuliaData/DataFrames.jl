@@ -3,6 +3,15 @@ function Base.summary(adf::AbstractDataFrame) # -> UTF8String
     return @sprintf "%dx%d %s" nrows ncols typeof(adf)
 end
 
+begin
+    local io = IOBuffer(Array(Uint8, 80), true, true)
+    function Base.strwidth(x::Any)
+        truncate(io, 0)
+        showcompact(io, x)
+        return position(io)
+    end
+end
+
 # Determine the maximum string length of any entry in each DataFrame column
 function getmaxwidths(adf::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
@@ -17,12 +26,10 @@ function getmaxwidths(adf::AbstractDataFrame,
 
         # (2) Consider length of longest entry in that column
         for i in rowindices1
-            maxwidths[j] = max(maxwidths[j],
-                               strwidth(sprint(showcompact, adf[i, j])))
+            maxwidths[j] = max(maxwidths[j], strwidth(adf[i, j]))
         end
         for i in rowindices2
-            maxwidths[j] = max(maxwidths[j],
-                               strwidth(sprint(showcompact, adf[i, j])))
+            maxwidths[j] = max(maxwidths[j], strwidth(adf[i, j]))
         end
     end
     rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
@@ -88,9 +95,9 @@ function showrowindices(io::IO,
         print(io, " | ")
         # Print DataFrame entry
         for j in leftcol:rightcol
-            s = sprint(showcompact, adf[i, j])
-            @printf io "%s" s
-            padding = maxwidths[j] - strwidth(s)
+            strlen = strwidth(adf[i, j])
+            showcompact(io, adf[i, j])
+            padding = maxwidths[j] - strlen
             for itr in 1:padding
                 write(io, ' ')
             end
