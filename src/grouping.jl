@@ -227,8 +227,8 @@ end
 ## end
 colwise(d::AbstractDataFrame, s::Symbol, x) = colwise(d, [s], x)
 colwise(d::AbstractDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
-colwise(d::AbstractDataFrame, s::Symbol) = colwise(d, [s], colnames(d))
-colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, colnames(d))
+colwise(d::AbstractDataFrame, s::Symbol) = colwise(d, [s], names(d))
+colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, names(d))
 
 # TODO make this faster by applying the header just once.
 # BUG zero-rowed groupings cause problems here, because a sum of a zero-length
@@ -242,7 +242,7 @@ colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
 colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
 Base.(:|>)(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
 Base.(:|>)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
-colnames(d::GroupedDataFrame) = colnames(d.parent)
+Base.names(d::GroupedDataFrame) = names(d.parent)
 
 # by() convenience function
 by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)

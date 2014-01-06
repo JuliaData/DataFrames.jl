@@ -21,8 +21,8 @@ module TestDDataFrame
 	load_pkgs()
 
 	df = dreadtable(datafile, header=false)
-	colnames(df)
-	colnames!(df, ["c1","c2","c3","c4","c5","c6","c7","c8","c9","c10"])
+	names(df)
+	names!(df, ["c1","c2","c3","c4","c5","c6","c7","c8","c9","c10"])
 
 	sum_result = df+df
 	mul_result = 2*df

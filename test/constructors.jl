@@ -37,17 +37,17 @@ module TestConstructors
 
 	df = DataFrame(Int, 2, 2)
 	@assert size(df) == (2, 2)
-	@assert all(coltypes(df) .== {Int, Int})
+	@assert all(types(df) .== {Int, Int})
 	@assert all(isna(df))
 
 	df = DataFrame(2, 2)
 	@assert size(df) == (2, 2)
-	@assert all(coltypes(df) .== {Float64, Float64})
+	@assert all(types(df) .== {Float64, Float64})
 	@assert all(isna(df))
 
 	df = DataFrame({Int, Float64}, ["x1", "x2"], 2)
 	@assert size(df) == (2, 2)
-	@assert all(coltypes(df) .== {Int, Float64})
+	@assert all(types(df) .== {Int, Float64})
 	@assert all(isna(df))
 
 	@assert isequal(df, DataFrame({Int, Float64}, 2))

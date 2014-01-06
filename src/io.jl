@@ -586,7 +586,7 @@ function readtable!(p::ParsedCSV,
 
     # Clean up column names if requested
     if o.cleannames
-        clean_colnames!(df)
+        cleannames!(df)
     end
 
     # Return the final DataFrame
@@ -657,7 +657,7 @@ end
 function filldf!(df::DataFrame,
                  rows::Int, cols::Int, bytes::Int, fields::Int,
                  p::ParsedCSV, o::ParseOptions)
-    ctypes = coltypes(df)
+    ctypes = types(df)
 
     if rows != size(df, 1)
         for j in 1:cols
@@ -729,12 +729,12 @@ function printtable(io::IO,
                     separator::Char = ',',
                     quotemark::Char = '"')
     n, p = size(df)
-    ctypes = coltypes(df)
+    ctypes = types(df)
     if header
-        column_names = colnames(df)
+        cnames = names(df)
         for j in 1:p
             print(io, quotemark)
-            print(io, column_names[j])
+            print(io, cnames[j])
             print(io, quotemark)
             if j < p
                 print(io, separator)
@@ -806,18 +806,18 @@ function Base.writemime(io::IO,
                         ::MIME"text/html", 
                         df::DataFrame)
     n = size(df, 1)
-    column_names = colnames(df)
+    cnames = names(df)
     write(io, "<table>")
     write(io, "<tr>")
     write(io, "<th></th>")
-    for column_name in column_names
+    for column_name in cnames
         write(io, "<th>$column_name</th>")
     end
     write(io, "</tr>")
     for row in 1:n
         write(io, "<tr>")
         write(io, "<th>$row</th>")
-        for column_name in column_names
+        for column_name in cnames
             cell = string(df[row, column_name])
             write(io, "<td>$(html_escape(cell))</td>")
         end

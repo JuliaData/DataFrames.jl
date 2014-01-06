@@ -22,11 +22,11 @@ function getmaxwidths(adf::AbstractDataFrame,
                       rowindices2::AbstractVector{Int},
                       rowlabel::String) # -> Vector{Int}
     ncols = size(adf, 2)
-    names = colnames(adf)
+    cnames = names(adf)
     maxwidths = Array(Int, ncols + 1)
     for j in 1:ncols
         # (1) Consider length of column name
-        maxwidths[j] = ourstrwidth(names[j])
+        maxwidths[j] = ourstrwidth(cnames[j])
 
         # (2) Consider length of longest entry in that column
         for i in rowindices1
@@ -127,7 +127,7 @@ function showrows(io::IO,
                   rowlabel::String = "Row #",
                   displaysummary::Bool = true) # -> Nothing
     ncols = size(adf, 2)
-    names = colnames(adf)
+    cnames = names(adf)
 
     if displaysummary
         println(io, summary(adf))
@@ -162,7 +162,7 @@ function showrows(io::IO,
         # Print column names
         @printf io "| %s | " rowlabel
         for j in leftcol:rightcol
-            s = names[j]
+            s = cnames[j]
             ourshowcompact(io, s)
             padding = maxwidths[j] - ourstrwidth(s)
             for itr in 1:padding
@@ -280,8 +280,8 @@ end
 
 function column_summary(io::IO, adf::AbstractDataFrame) # -> Nothing
     println(io, summary(adf))
-    metadata = DataFrame(Name = colnames(adf),
-                         Type = coltypes(adf),
+    metadata = DataFrame(Name = names(adf),
+                         Type = types(adf),
                          Missing = colmissing(adf))
     showall(io, metadata, true, "Col #", false)
     return

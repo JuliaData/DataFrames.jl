@@ -17,7 +17,7 @@ function Index{T <: ByteString}(x::Vector{T})
 end
 Index() = Index(Dict{ByteString, Indices}(), ByteString[])
 Base.length(x::Index) = length(x.names)
-names(x::Index) = copy(x.names)
+Base.names(x::Index) = copy(x.names)
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
@@ -107,7 +107,7 @@ type SimpleIndex <: AbstractIndex
 end
 SimpleIndex() = SimpleIndex(0)
 Base.length(x::SimpleIndex) = x.length
-names(x::SimpleIndex) = nothing
+Base.names(x::SimpleIndex) = nothing
 
 # Chris's idea of namespaces adapted by Harlan for column groups
 function set_group(idx::Index, newgroup, names)
