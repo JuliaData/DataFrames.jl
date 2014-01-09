@@ -3,29 +3,36 @@
 # TODO: Remove colnames(ds::AbstractDataStream)
 # TODO: Implement MatrixStream, which reads CSV's into a Matrix of Float64's
 
-export openstream
+export readstream
 
 abstract AbstractDataStream
 
+# Store DataFrame that will contain minibatches in stream
 type SeekableDataStream <: AbstractDataStream
     io::IO
     p::ParsedCSV
     o::ParseOptions
     nrows::Int
+    df::DataFrame
 
-    function SeekableDataStream(io::IO, p::ParsedCSV, o::ParseOptions, nrows::Integer)
-        r = new(io, p, o, int(nrows))
+    function SeekableDataStream(io::IO,
+                                p::ParsedCSV,
+                                o::ParseOptions,
+                                nrows::Integer,
+                                df::DataFrame)
+        r = new(io, p, o, int(nrows), df)
         finalizer(r, r -> close(r.io))
         return r
     end
 end
 
-function openstream(pathname::String;
-                    nrows::Int = 1,
+# TODO: Use a custom prefix-checking tester for instrings.
+function readstream(pathname::String;
+                    nrows::Integer = 1,
                     header::Bool = true,
                     separator::Char = ',',
                     allowquotes::Bool = true,
-                    quotemark::Char = '"',
+                    quotemark::Vector{Char} = ['"'],
                     decimal::Char = '.',
                     nastrings::Vector = ASCIIString["", "NA"],
                     truestrings::Vector = ASCIIString["T", "t", "TRUE", "true"],
@@ -33,24 +40,43 @@ function openstream(pathname::String;
                     makefactors::Bool = false,
                     colnames::Vector = UTF8String[],
                     cleannames::Bool = false,
-                    coltypes::Vector{Any} = Any[],
+                    coltypes::Vector{DataType} = DataType[],
                     allowcomments::Bool = false,
                     commentmark::Char = '#',
                     ignorepadding::Bool = true,
                     skipstart::Int = 0,
                     skiprows::Vector{Int} = Int[],
                     skipblanks::Bool = true,
-                    encoding::Symbol = :utf8)
+                    encoding::Symbol = :utf8,
+                    allowescapes::Bool = true)
+
     io = open(pathname, "r")
     nbytes = 2^20
-    p = ParsedCSV(Array(Uint8, nbytes), Array(Int, 1),
-                  Array(Int, 1), BitArray(1))
-    o = ParseOptions(header, separator, allowquotes, quotemark,
-                     decimal, nastrings, truestrings, falsestrings,
-                     makefactors, colnames, cleannames, coltypes,
-                     allowcomments, commentmark, ignorepadding,
-                     skipstart, skiprows, skipblanks, encoding)
-    return SeekableDataStream(io, p, o, nrows)
+    p = ParsedCSV(Array(Uint8, nbytes),
+                  Array(Int, 1),
+                  Array(Int, 1),
+                  BitArray(1))
+    o = ParseOptions(header,
+                     separator,
+                     #allowquotes,
+                     quotemark,
+                     decimal,
+                     nastrings,
+                     truestrings,
+                     falsestrings,
+                     makefactors,
+                     colnames,
+                     cleannames,
+                     coltypes,
+                     allowcomments,
+                     commentmark,
+                     ignorepadding,
+                     skipstart,
+                     skiprows,
+                     skipblanks,
+                     encoding,
+                     allowescapes)
+    return SeekableDataStream(io, p, o, nrows, DataFrame())
 end
 
 function Base.show(io::IO, ds::SeekableDataStream)
@@ -59,24 +85,26 @@ function Base.show(io::IO, ds::SeekableDataStream)
     return
 end
 
+# TODO: Return nothing here?
 function Base.start(s::SeekableDataStream)
     seek(s.io, 0)
-    return DataFrame()
+    return nothing
 end
 
-function Base.next(s::SeekableDataStream, df::DataFrame)
+# TODO: Return df, nothing here?
+function Base.next(s::SeekableDataStream, n::Nothing)
     if position(s.io) == 0
-        df = readtable!(s.p, s.io, s.nrows, s.o)
-        return df, df
+        s.df = readtable!(s.p, s.io, s.nrows, s.o)
+        return s.df, nothing
     else
-        bytes, fields, rows = DataFrames.readnrows!(s.p, s.io, s.nrows, s.o)
+        bytes, fields, rows = readnrows!(s.p, s.io, s.nrows, s.o)
         cols = fld(fields, rows)
-        DataFrames.filldf!(df, rows, cols, bytes, fields, s.p, s.o)
-        return df, df
+        filldf!(s.df, rows, cols, bytes, fields, s.p, s.o)
+        return s.df, nothing
     end
 end
 
-Base.done(s::SeekableDataStream, df::DataFrame) = eof(s.io)
+Base.done(s::SeekableDataStream, n::Nothing) = eof(s.io)
 
 ##############################################################################
 #
