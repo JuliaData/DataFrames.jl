@@ -19,7 +19,7 @@ immutable ParseOptions{S <: ByteString, T <: ByteString}
     makefactors::Bool
     colnames::Vector{T}
     cleannames::Bool
-    coltypes::Vector{Any}
+    coltypes::Vector{DataType}
     allowcomments::Bool
     commentmark::Char
     ignorepadding::Bool
@@ -605,7 +605,7 @@ function readtable(pathname::String;
                    nrows::Int = -1,
                    colnames::Vector = UTF8String[],
                    cleannames::Bool = false,
-                   coltypes::Vector{Any} = Any[],
+                   coltypes::Vector{DataType} = DataType[],
                    allowcomments::Bool = false,
                    commentmark::Char = '#',
                    ignorepadding::Bool = true,
