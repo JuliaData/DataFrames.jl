@@ -177,7 +177,7 @@ module TestData
     gd = groupby(df7, "d1")
     @assert length(gd) == 2
     # @assert isequal(gd[2]["d2"], PooledDataVector["A", "B", NA, "A", NA, NA, NA, NA])
-    @assert sum(gd[2]["d3"]) == sum(df7["d3"][removeNA(df7["d1"] .== 2)])
+    @assert sum(gd[2]["d3"]) == sum(df7["d3"][dropna(df7["d1"] .== 2)])
 
     g1 = groupby(df7, ["d1", "d2"])
     g2 = groupby(df7, ["d2", "d1"])
@@ -189,11 +189,11 @@ module TestData
     end
     @assert res == sum(df7["d1"])
 
-    df8 = df7 |> groupby(["d2"]) |> :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) )
+    df8 = df7 |> groupby(["d2"]) |> :( d3sum = sum(d3); d3mean = mean(dropna(d3)) )
     @assert isequal(df8["d2"], @pdata([NA, "A", "B"]))
 
     df9 = based_on(groupby(df7, "d2"),
-                   :( d3sum = sum(d3); d3mean = mean(removeNA(d3)) ))
+                   :( d3sum = sum(d3); d3mean = mean(dropna(d3)) ))
     @assert isequal(df9, df8)
 
     df8 = within(groupby(df7, "d2"),

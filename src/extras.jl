@@ -67,7 +67,7 @@ end
 rep(x::AbstractVector, times::AbstractVector{Int}, each::Int) = rep(x, times)
 
 function rep(x::AbstractVector, times::Int = 1, each::Int = 1)
-    res = similar(x, each * sum(times) * length(x))
+    res = similar(x, each * times * length(x))
     i = 1
     for jdx in 1:times
         for idx in 1:length(x)

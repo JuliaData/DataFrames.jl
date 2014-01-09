@@ -871,7 +871,7 @@ function describe{T<:Number}(io, dv::AbstractDataVector{T})
         println(io, " * All NA * ")
         return
     end
-    filtered = float(removeNA(dv))
+    filtered = float(dropna(dv))
     qs = quantile(filtered, [0, .25, .5, .75, 1])
     statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
     statVals = [qs[1:3], mean(filtered), qs[4:5]]
@@ -1898,7 +1898,7 @@ function DataArrays.reorder(fun::Function, x::PooledDataArray, df::AbstractDataF
     dfc["__key__"] = x
     gd = by(dfc, "__key__", df -> colwise(fun, without(df, "__key__")))
     idx = sortperm(gd[[2:ncol(gd)]])
-    return PooledDataArray(x, removeNA(gd[idx,1]))
+    return PooledDataArray(x, dropna(gd[idx,1]))
 end
 DataArrays.reorder(x::PooledDataArray, df::AbstractDataFrame) = reorder(:mean, x, df)
 

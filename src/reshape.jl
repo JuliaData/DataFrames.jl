@@ -217,7 +217,7 @@ Base.repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
 
 Base.unique(v::EachRepeatedVector) = unique(v.parent)
 
-DataArrays.PooledDataArray(v::EachRepeatedVector) = PooledDataArray(v[:], removeNA(unique(v.parent)))
+DataArrays.PooledDataArray(v::EachRepeatedVector) = PooledDataArray(v[:], dropna(unique(v.parent)))
 
 function DataArrays.PooledDataArray(v::EachRepeatedVector)
     res = PooledDataArray(v.parent)
