@@ -144,6 +144,7 @@ export # reconcile_groups,
        rowsums,
        rowvars,
        save,
+       @select,
        set_group,
        set_groups,
        SimpleIndex,
@@ -203,6 +204,7 @@ include("indexing.jl")
 include("extras.jl")
 include("RDA.jl")
 include("dataframe_blocks.jl")
+include("select.jl")
 
 ##############################################################################
 ##
