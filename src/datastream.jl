@@ -121,7 +121,7 @@ function Base.sum(ds::AbstractDataStream, dim::Integer)
 
     df1, df1 = next(ds, df1)
 
-    cnames = colnames(df1)
+    cnames = names(df1)
     p = length(cnames)
     sums = zeros(p)
     counts = zeros(Int, p)
@@ -175,7 +175,7 @@ function Base.prod(ds::AbstractDataStream, dim::Integer)
 
     df1, df1 = next(ds, df1)
 
-    cnames = colnames(df1)
+    cnames = names(df1)
     p = length(cnames)
     prods = ones(p)
     counts = zeros(Int, p)
@@ -229,7 +229,7 @@ function Base.mean(ds::AbstractDataStream, dim::Integer)
 
     df1, df1 = next(ds, df1)
 
-    cnames = colnames(df1)
+    cnames = names(df1)
     p = length(cnames)
     sums = zeros(p)
     counts = zeros(Int, p)

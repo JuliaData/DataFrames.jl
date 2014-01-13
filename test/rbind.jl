@@ -35,7 +35,7 @@ module TestRBind
 	rbind(df, alt_df)
 
 	alt_df = deepcopy(df)
-	colnames!(alt_df, ["A", "B", "C"])
+	names!(alt_df, ["A", "B", "C"])
 	# Fail on non-matching names
 	rbind(df, alt_df)
 

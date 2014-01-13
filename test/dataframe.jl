@@ -41,14 +41,14 @@ module TestDataFrame
 
     ## del calls ref, which properly deals with groupings
     y = without(y, "c")
-    @test colnames(y) == ["d"]
+    @test names(y) == ["d"]
     #@test get_groups(y)["group2"] == ["d"]
     z1 = z[[1]]
-    @test colnames(z1) == ["a"]
+    @test names(z1) == ["a"]
     #@test get_groups(z1)["group1"] == ["a"]
 
     z2 = z[:,[1,1,2]]
-    @test colnames(z2) == ["a", "a_1", "b"]
+    @test names(z2) == ["a", "a_1", "b"]
     #@test get_groups(z2)["group1"] == ["a_1", "b"]
 
     #test_group("DataFrame assignment")

@@ -25,9 +25,9 @@ module TestData
     #test_group("description functions")
     @assert nrow(df6) == 4
     @assert ncol(df6) == 3
-    @assert all(colnames(df6) .== ["A", "B", "C"])
-    @assert all(colnames(df2) .== ["x1", "x2"])
-    @assert all(colnames(df7) .== ["x", "y"])
+    @assert all(names(df6) .== ["A", "B", "C"])
+    @assert all(names(df2) .== ["x1", "x2"])
+    @assert all(names(df7) .== ["x", "y"])
 
     #test_group("ref")
     @assert df6[2, 3] == "two"
@@ -45,19 +45,19 @@ module TestData
 
     dfc = hcat(df3, df4)
     @assert ncol(dfc) == 3
-    @assert all(colnames(dfc) .== ["x1", "x1_1", "x2"])
+    @assert all(names(dfc) .== ["x1", "x1_1", "x2"])
     @assert isequal(dfc["x1"], df3["x1"])
 
     @assert isequal(dfc, [df3 df4])
 
     dfr = vcat(df4, df4)
     @assert nrow(dfr) == 8
-    @assert all(colnames(df4) .== colnames(dfr))
+    @assert all(names(df4) .== names(dfr))
     @assert isequal(dfr, [df4, df4])
 
     dfr = vcat(df2, df3)
     @assert size(dfr) == (8,2)
-    @assert all(colnames(df2) .== colnames(dfr))
+    @assert all(names(df2) .== names(dfr))
     @assert isna(dfr[8,"x2"])
 
     #test_group("show")
@@ -71,7 +71,7 @@ module TestData
     df6["D"] = [true, false, true, false]
     @assert df6[1,4] == true
     delete!(df6, "D")
-    @assert all(colnames(df6) .== ["A", "B", "C"])
+    @assert all(names(df6) .== ["A", "B", "C"])
     @assert ncol(df6) == 3
 
     #test_group("NA handling")
@@ -238,7 +238,7 @@ module TestData
     d1s3 = melt(d1, ["c", "d"])
     @assert isequal(d1s[1:12, "c"], d1["c"])
     @assert isequal(d1s[13:24, "c"], d1["c"])
-    @assert all(colnames(d1s) .== ["variable", "value", "c", "d"])
+    @assert all(names(d1s) .== ["variable", "value", "c", "d"])
     @assert isequal(d1s, d1s3)
     d1s_df = stack_df(d1, ["a", "b"])
     # TODO: Fix this

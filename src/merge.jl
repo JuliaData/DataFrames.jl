@@ -131,8 +131,8 @@ function Base.join(df1::AbstractDataFrame,
                    on::Any = nothing,
                    kind::Symbol = :inner)
     if on == nothing
-        on = first(collect(intersect(Set{ByteString}(colnames(df1)...),
-                                     Set{ByteString}(colnames(df2)...))))
+        on = first(collect(intersect(Set{ByteString}(names(df1)...),
+                                     Set{ByteString}(names(df2)...))))
     end
     dv1, dv2 = PooledDataVecs(df1[on], df2[on])
     left_indexer, leftonly_indexer, right_indexer, rightonly_indexer =
@@ -154,10 +154,10 @@ function Base.join(df1::AbstractDataFrame,
         mixed = hcat(df1[left_indexer, :], without(df2, on)[right_indexer, :])
         leftonly = hcat(df1[leftonly_indexer, :],
                          nas(without(df2, on), length(leftonly_indexer)))
-        leftonly = leftonly[:, colnames(mixed)]
+        leftonly = leftonly[:, names(mixed)]
         rightonly = hcat(nas(without(df1, on), length(rightonly_indexer)),
                           df2[rightonly_indexer, :])
-        rightonly = rightonly[:, colnames(mixed)]
+        rightonly = rightonly[:, names(mixed)]
         return vcat(mixed, leftonly, rightonly)
     else
         throw(ArgumentError("Unknown kind of join requested"))

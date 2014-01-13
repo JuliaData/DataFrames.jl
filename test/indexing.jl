@@ -110,7 +110,7 @@ module TestIndexing
                       @data([1.0, 2.0]),
                       @data([true, false]),
                       @data(["A", "B"]),
-                      :(colnames(_DF) .== "B")}
+                      :(names(_DF) .== "B")}
 
     #
     # getindex()

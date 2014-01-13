@@ -238,7 +238,7 @@ for f in (:minimum, :maximum, :prod, :sum, :mean, :median, :std, :var, :norm)
             for j in 1:p
                 res[j] = DataArray(($f)(df[j]))
             end
-            colnames!(res, colnames(df))
+            names!(res, names(df))
             return res
         end
     end

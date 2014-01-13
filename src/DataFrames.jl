@@ -62,14 +62,11 @@ export # reconcile_groups,
        colmeans,
        colmedians,
        colmins,
-       colnames!,
-       colnames,
        colnorms,
        colprods,
        colranges,
        colstds,
        colsums,
-       coltypes,
        colvars,
        colwise,
        combine,
@@ -151,6 +148,7 @@ export # reconcile_groups,
        SubDataFrame,
        subset,
        table,
+       types,
        unique,
        unstack,
        vector,
@@ -217,5 +215,8 @@ Base.@deprecate read_table readtable
 Base.@deprecate print_table printtable
 Base.@deprecate write_table writetable
 Base.@deprecate merge(df1::AbstractDataFrame, df2::AbstractDataFrame; on::Any = nothing, kind::Symbol = :inner) Base.join
+Base.@deprecate colnames(adf::AbstractDataFrame) Base.names
+Base.@deprecate colnames!(adf::AbstractDataFrame, vals) names!
+Base.@deprecate coltypes(adf::AbstractDataFrame) types
 
 end # module DataFrames

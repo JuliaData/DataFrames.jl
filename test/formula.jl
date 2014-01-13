@@ -66,7 +66,7 @@ module TestFormula
 	@test a[:,1] == DataVector([0, 1., 0, 0])
 	@test a[:,2] == DataVector([0, 0, 1., 0])
 	@test a[:,3] == DataVector([0, 0, 0, 1.])
-	@test colnames(a) == ["x1:6.0", "x1:7.0", "x1:8.0"]
+	@test names(a) == ["x1:6.0", "x1:7.0", "x1:8.0"]
 
 	#test_group("create a design matrix from interactions from two DataFrames")
 

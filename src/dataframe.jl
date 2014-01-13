@@ -109,37 +109,37 @@ end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
 function DataFrame(d::Dict)
-    column_names = sort(convert(Array{ByteString, 1}, collect(keys(d))))
-    p = length(column_names)
+    cnames = sort(convert(Array{ByteString, 1}, collect(keys(d))))
+    p = length(cnames)
     if p == 0
         DataFrame()
     end
-    n = length(d[column_names[1]])
+    n = length(d[cnames[1]])
     columns = Array(Any, p)
     for j in 1:p
-        if length(d[column_names[j]]) != n
+        if length(d[cnames[j]]) != n
             throw(ArgumentError("All columns must have the same length"))
         end
-        columns[j] = DataArray(d[column_names[j]])
+        columns[j] = DataArray(d[cnames[j]])
     end
-    return DataFrame(columns, Index(column_names))
+    return DataFrame(columns, Index(cnames))
 end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/o explicit column names
-function DataFrame(d::Dict, column_names::Vector)
-    p = length(column_names)
+function DataFrame(d::Dict, cnames::Vector)
+    p = length(cnames)
     if p == 0
         DataFrame()
     end
-    n = length(d[column_names[1]])
+    n = length(d[cnames[1]])
     columns = Array(Any, p)
     for j in 1:p
-        if length(d[column_names[j]]) != n
+        if length(d[cnames[j]]) != n
             error("All inputs must have the same length")
         end
-        columns[j] = DataArray(d[column_names[j]])
+        columns[j] = DataArray(d[cnames[j]])
     end
-    return DataFrame(columns, Index(column_names))
+    return DataFrame(columns, Index(cnames))
 end
 
 # Initialize empty DataFrame objects of arbitrary size
@@ -149,8 +149,8 @@ function DataFrame(t::Any, nrows::Integer, ncols::Integer)
     for i in 1:ncols
         columns[i] = DataArray(t, nrows)
     end
-    column_names = gennames(ncols)
-    return DataFrame(columns, Index(column_names))
+    cnames = gennames(ncols)
+    return DataFrame(columns, Index(cnames))
 end
 
 # Initialize empty DataFrame objects of arbitrary size
@@ -160,12 +160,12 @@ function DataFrame(nrows::Integer, ncols::Integer)
     for i in 1:ncols
         columns[i] = DataArray(DEFAULT_COLUMN_TYPE, nrows)
     end
-    column_names = gennames(ncols)
-    return DataFrame(columns, Index(column_names))
+    cnames = gennames(ncols)
+    return DataFrame(columns, Index(cnames))
 end
 
 # Initialize an empty DataFrame with specific types and names
-function DataFrame(column_types::Vector, column_names::Vector, nrows::Integer)
+function DataFrame(column_types::Vector, cnames::Vector, nrows::Integer)
     p = length(column_types)
     columns = Array(Any, p)
     for j in 1:p
@@ -177,14 +177,14 @@ function DataFrame(column_types::Vector, column_names::Vector, nrows::Integer)
             columns[j][i] = NA
         end
     end
-    return DataFrame(columns, Index(column_names))
+    return DataFrame(columns, Index(cnames))
 end
 
 # Initialize an empty DataFrame with specific types
 function DataFrame(column_types::Vector, nrows::Integer)
     p = length(column_types)
     columns = Array(Any, p)
-    column_names = gennames(p)
+    cnames = gennames(p)
     for j in 1:p
         columns[j] = DataArray(column_types[j], nrows)
         for i in 1:nrows
@@ -194,7 +194,7 @@ function DataFrame(column_types::Vector, nrows::Integer)
             columns[j][i] = NA
         end
     end
-    return DataFrame(columns, Index(column_names))
+    return DataFrame(columns, Index(cnames))
 end
 
 # Initialize from a Vector of Associatives (aka list of dicts)
@@ -248,8 +248,8 @@ function DataFrame(vals::Any...)
             columns[j] = DataArray(vals[j])
         end
     end
-    column_names = gennames(p)
-    DataFrame(columns, Index(column_names))
+    cnames = gennames(p)
+    DataFrame(columns, Index(cnames))
 end
 
 ##############################################################################
@@ -258,13 +258,18 @@ end
 ##
 ##############################################################################
 
-colnames(df::DataFrame) = names(df.colindex)
-colnames!(df::DataFrame, vals) = names!(df.colindex, vals)
+Base.names(df::DataFrame) = names(df.colindex)
 
-coltypes(df::AbstractDataFrame) = {eltype(df[i]) for i in 1:ncol(df)}
+names!(df::DataFrame, vals) = names!(df.colindex, vals)
 
-names(df::AbstractDataFrame) = error("Use colnames()")
-names!(df::DataFrame, vals::Any) = error("Use colnames!()")
+function types(adf::AbstractDataFrame)
+    ncols = size(adf, 2)
+    res = Array(DataType, ncols)
+    for j in 1:ncols
+        res[j] = eltype(adf[j])
+    end
+    return res
+end
 
 function rename(df::DataFrame, from::Any, to::Any)
     rename(df.colindex, from, to)
@@ -321,7 +326,7 @@ function reconcile_groups(olddf::AbstractDataFrame, newdf::AbstractDataFrame)
 		# this is clunky -- there are better/faster ways of doing this intersection operation
 		match_vals = ByteString[]
 		for val in old_groups[key]
-			if (val in colnames(newdf))
+			if (val in names(newdf))
 				push!(match_vals, val)
 			end
 		end
@@ -802,7 +807,7 @@ end
 function Base.insert!(df::AbstractDataFrame, df2::AbstractDataFrame)
     @assert nrow(df) == nrow(df2) || nrow(df) == 0
     df = copy(df)
-    for n in colnames(df2)
+    for n in names(df2)
         df[n] = df2[n]
     end
     df
@@ -816,11 +821,11 @@ end
 
 # copy of a data frame does a shallow copy
 function Base.copy(df::DataFrame)
-	newdf = DataFrame(copy(df.columns), colnames(df))
+	newdf = DataFrame(copy(df.columns), names(df))
 	reconcile_groups(df, newdf)
 end
 function Base.deepcopy(df::DataFrame)
-    newdf = DataFrame([copy(x) for x in df.columns], colnames(df))
+    newdf = DataFrame([copy(x) for x in df.columns], names(df))
     reconcile_groups(df, newdf)
 end
 #deepcopy_with_groups(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df), get_groups(df))
@@ -845,7 +850,7 @@ function Base.dump(io::IO, x::AbstractDataFrame, n::Int, indent)
         println(io)
     end
     if n > 0
-        for col in colnames(x)[1:end]
+        for col in names(x)[1:end]
             print(io, indent, "  ", col, ": ")
             dump(io, x[col], n - 1, string(indent, "  "))
         end
@@ -899,7 +904,7 @@ end
 function describe(io, df::AbstractDataFrame)
     for c in 1:ncol(df)
         col = df[c]
-        println(io, colnames(df)[c])
+        println(io, names(df)[c])
         describe(io, col)
         println(io, )
     end
@@ -954,7 +959,7 @@ Base.setindex!(df::SubDataFrame, v, r, c) = (df.parent[df.rows[r], c] = v)
 
 nrow(df::SubDataFrame) = length(df.rows)
 ncol(df::SubDataFrame) = ncol(df.parent)
-colnames(df::SubDataFrame) = colnames(df.parent) 
+Base.names(df::SubDataFrame) = names(df.parent) 
 
 # Associative methods:
 index(df::SubDataFrame) = index(df.parent)
@@ -1005,7 +1010,7 @@ without(df::SubDataFrame, c::Any) = SubDataFrame(without(df.parent, c), df.rows)
 # two-argument form, two dfs, references only
 function Base.hcat(df1::DataFrame, df2::DataFrame)
     # If df1 had metadata, we should copy that.
-    colindex = Index(make_unique([colnames(df1), colnames(df2)]))
+    colindex = Index(make_unique([names(df1), names(df2)]))
     columns = [df1.columns, df2.columns]
     d = DataFrame(columns, colindex)  
     set_groups(d, get_groups(df1))
@@ -1023,10 +1028,10 @@ cbind(args...) = hcat(args...)
 is_group(df::AbstractDataFrame, name::ByteString) = is_group(index(df), name)
 
 Base.similar(df::DataFrame, dims) = 
-    DataFrame([similar(x, dims) for x in df.columns], colnames(df)) 
+    DataFrame([similar(x, dims) for x in df.columns], names(df)) 
 
 Base.similar(df::SubDataFrame, dims) = 
-    DataFrame([similar(df[x], dims) for x in colnames(df)], colnames(df)) 
+    DataFrame([similar(df[x], dims) for x in names(df)], names(df)) 
 
 Base.zeros{T<:String}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
 
@@ -1037,10 +1042,10 @@ nas{T,R}(dv::PooledDataVector{T,R}, dims) =
     PooledDataArray(DataArrays.RefArray(fill(one(R), dims)), dv.pool)
 
 nas(df::DataFrame, dims) = 
-    DataFrame([nas(x, dims) for x in df.columns], colnames(df)) 
+    DataFrame([nas(x, dims) for x in df.columns], names(df)) 
 
 nas(df::SubDataFrame, dims) = 
-    DataFrame([nas(df[x], dims) for x in colnames(df)], colnames(df)) 
+    DataFrame([nas(df[x], dims) for x in names(df)], names(df)) 
 
 vecbind_type{T}(::Vector{T}) = Vector{T}
 vecbind_type{T<:AbstractVector}(x::T) = Vector{eltype(x)}
@@ -1100,11 +1105,11 @@ Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T}) = vcat(dfs...)
 function Base.vcat(dfs::AbstractDataFrame...)
     Nrow = sum(nrow, dfs)
     # build up column names and types
-    colnams = colnames(dfs[1])
-    coltyps = coltypes(dfs[1])
+    colnams = names(dfs[1])
+    coltyps = types(dfs[1])
     for i in 2:length(dfs)
-        cni = colnames(dfs[i])
-        cti = coltypes(dfs[i])
+        cni = names(dfs[i])
+        cti = types(dfs[i])
         for j in 1:length(cni)
             cn = cni[j]
             if length(findin([cn], colnams)) == 0  # new column
@@ -1318,7 +1323,7 @@ function within!(df::AbstractDataFrame, ex::Expr)
         end
     end
     # Make a dict of colnames and column positions
-    cn_dict = Dict(colnames(df), 1:ncol(df))
+    cn_dict = Dict(names(df), 1:ncol(df))
     ex = replace_symbols(ex, cn_dict)
     f = @eval (_DF) -> begin
         $ex
@@ -1354,7 +1359,7 @@ function based_on_f(df::AbstractDataFrame, ex::Expr)
         end
     end
     # Make a dict of colnames and column positions
-    cn_dict = Dict(colnames(df), [1:ncol(df)])
+    cn_dict = Dict(names(df), [1:ncol(df)])
     ex = replace_symbols(ex, cn_dict)
     @eval (_DF) -> begin
         _col_dict = NamedArray()
@@ -1385,7 +1390,7 @@ function with(df::AbstractDataFrame, ex::Expr)
         end
     end
     # Make a dict of colnames and column positions
-    cn_dict = Dict(colnames(df), [1:ncol(df)])
+    cn_dict = Dict(names(df), [1:ncol(df)])
     ex = replace_symbols(ex, cn_dict)
     f = @eval (_DF) -> $ex
     f(df)
@@ -1422,31 +1427,28 @@ complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(complete_cases(df)
 
 function DataArrays.array(adf::AbstractDataFrame)
     n, p = size(adf)
-    # TODO: Replace when tunion() is added to Base
-    t = reduce(earliest_common_ancestor, coltypes(adf))
-    res = Array(t, n, p)
-    for i in 1:n
-        for j in 1:p
-            res[i, j] = adf[i, j]
+    T = reduce(typejoin, types(adf))
+    res = Array(T, n, p)
+    for j in 1:p
+        col = adf[j]
+        for i in 1:n
+            res[i, j] = col[i]
         end
     end
     return res
 end
 
-function DataArrays.DataArray(adf::AbstractDataFrame, t::Type)
+function DataArrays.DataArray(adf::AbstractDataFrame,
+                              T::DataType = reduce(typejoin, types(adf)))
     n, p = size(adf)
-    dm = DataArray(t, n, p)
-    for i in 1:n
-        for j in 1:p
-            dm[i, j] = adf[i, j]
+    dm = DataArray(T, n, p)
+    for j in 1:p
+        col = adf[j]
+        for i in 1:n
+            dm[i, j] = col[i]
         end
     end
     return dm
-end
-function DataArrays.DataArray(adf::AbstractDataFrame)
-    # TODO: Replace when tunion() is added to Base
-    t = reduce(earliest_common_ancestor, coltypes(adf))
-    DataArray(adf, t)
 end
 
 function duplicated(df::AbstractDataFrame)
@@ -1475,7 +1477,7 @@ function duplicatedkey(df::AbstractDataFrame)
     # Here's another (probably a lot faster) way to do `duplicated`
     # by grouping on all columns. It will fail if columns cannot be
     # made into PooledDataVector's.
-    gd = groupby(df, colnames(df))
+    gd = groupby(df, names(df))
     idx = [1:length(gd.idx)][gd.idx][gd.starts]
     res = fill(true, nrow(df))
     res[idx] = false
@@ -1498,7 +1500,7 @@ function Base.isnan(df::DataFrame)
     for j in 1:p
         res_columns[j] = isnan(df[j])
     end
-    return DataFrame(res_columns, colnames(df))
+    return DataFrame(res_columns, names(df))
 end
 
 function Base.isfinite(df::DataFrame)
@@ -1507,23 +1509,23 @@ function Base.isfinite(df::DataFrame)
     for j in 1:p
         res_columns[j] = isfinite(df[j])
     end
-    return DataFrame(res_columns, colnames(df))
+    return DataFrame(res_columns, names(df))
 end
 
 # TODO: Use cor and cov for DataMatrix to do this
 function Base.cor(df::DataFrame)
-    numeric_cols = find(map(t -> t <: Number, coltypes(df)))
+    numeric_cols = find(map(t -> isa(t, Number), types(df)))
     cor(array(df[:, numeric_cols]))
 end
 function Base.cov(df::DataFrame)
-    numeric_cols = find(map(t -> t <: Number, coltypes(df)))
+    numeric_cols = find(map(t -> isa(t, Number), types(df)))
     cov(array(df[:, numeric_cols]))
 end
 
-function clean_colnames!(df::DataFrame)
-    old_names = map(strip, colnames(df))
-    new_names = map(n -> replace(n, r"\W", "_"), old_names)
-    colnames!(df, new_names)
+function cleannames!(df::DataFrame)
+    oldnames = map(strip, names(df))
+    newnames = map(n -> replace(n, r"\W", "_"), oldnames)
+    names!(df, newnames)
     return
 end
 
@@ -1943,7 +1945,7 @@ function Base.map(f::Function, dfci::DFColumnIterator)
     for i = 1:ncol(dfci.df)
         res[i] = f(dfci[i])
     end
-    colnames!(res, colnames(dfci.df))
+    names!(res, names(dfci.df))
     res
 end
         
@@ -1951,7 +1953,7 @@ end
 # Iteration matches that of Associative types (experimental)
 Base.start(df::AbstractDataFrame) = 1
 Base.done(df::AbstractDataFrame, i) = i > ncol(df)
-Base.next(df::AbstractDataFrame, i) = ((colnames(df)[i], df[i]), i + 1)
+Base.next(df::AbstractDataFrame, i) = ((names(df)[i], df[i]), i + 1)
 
 
 ##############################################################################
@@ -1985,11 +1987,11 @@ function dict(adf::AbstractDataFrame, flatten::Bool)
     #       DataVector's
     res = Dict{UTF8String, Any}()
     if flatten && nrow(adf) == 1
-        for colname in colnames(adf)
+        for colname in names(adf)
             res[colname] = adf[colname][1]
         end
     else
-        for colname in colnames(adf)
+        for colname in names(adf)
             res[colname] = adf[colname]
         end
     end

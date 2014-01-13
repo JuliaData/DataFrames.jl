@@ -14,9 +14,9 @@
 ##############################################################################
 
 function stack(df::DataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
-    res = DataFrame[insert!(df[[i, id_vars]], 1, colnames(df)[i], "variable") for i in measure_vars]
+    res = DataFrame[insert!(df[[i, id_vars]], 1, names(df)[i], "variable") for i in measure_vars]
     # fix column names
-    map(x -> colnames!(x, ["variable", "value", colnames(df[id_vars])]), res)
+    map(x -> names!(x, ["variable", "value", names(df[id_vars])]), res)
     res = vcat(res)
     res 
 end
@@ -57,7 +57,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
             payload[j][i]  = valuecol[k]
         end
     end
-    insert!(payload, 1, refkeycol.pool, colnames(df)[colkey])
+    insert!(payload, 1, refkeycol.pool, names(df)[colkey])
 end
 unstack(df::AbstractDataFrame, rowkey, value, colkey) =
     unstack(df, index(df)[rowkey], index(df)[value], index(df)[colkey])
@@ -89,7 +89,7 @@ function pivot_table(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int}
     Ncol = length(col_pdv.pool)
     # `payload` is the main "data holding" part of the resulting DataFrame
     payload = DataFrame(Nrow, Ncol)
-    colnames!(payload, col_pdv.pool)
+    names!(payload, col_pdv.pool)
     for i in 1:length(row_idxs)
         payload[row_idxs[i], col_idxs[i]] = cmb_df[i,"x1"]
     end
@@ -261,14 +261,14 @@ end
 function stack_df(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
     N = length(measure_vars)
     remainingcols = _setdiff([1:ncol(df)], measure_vars)
-    names = colnames(df)[id_vars]
-    insert!(names, 1, "value")
-    insert!(names, 1, "variable")
-    DataFrame({EachRepeatedVector(colnames(df)[measure_vars], nrow(df)), # variable
+    cnames = names(df)[id_vars]
+    insert!(cnames, 1, "value")
+    insert!(cnames, 1, "variable")
+    DataFrame({EachRepeatedVector(names(df)[measure_vars], nrow(df)), # variable
                StackedVector({df[:,c] for c in 1:N}),                    # value
                ## RepeatedVector([1:nrow(df)], N),                       # idx - do we want this?
                [RepeatedVector(df[:,c], N) for c in id_vars]...},        # id_var columns
-              names)
+              cnames)
 end
 stack_df(df::AbstractDataFrame, measure_vars) = stack_df(df, [index(df)[measure_vars]])
 
