@@ -123,6 +123,7 @@ export # reconcile_groups,
        range,
        rbind,
        read_minibatch,
+       readfwfbin,
        readtable,
        reldiff,
        rename_group!,
@@ -156,6 +157,7 @@ export # reconcile_groups,
        within!,
        within,
        without,
+       writefwfbin,
        writetable,
        xtab,
        xtabs,
@@ -201,6 +203,7 @@ include("indexing.jl")
 include("extras.jl")
 include("RDA.jl")
 include("dataframe_blocks.jl")
+include("fwf.jl")
 
 ##############################################################################
 ##
