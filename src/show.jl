@@ -160,7 +160,12 @@ function showrows(io::IO,
         write(io, '\n')
 
         # Print column names
-        @printf io "| %s | " rowlabel
+        @printf io "| %s" rowlabel
+        padding = rowmaxwidth - ourstrwidth(rowlabel)
+        for itr in 1:padding
+            write(io, ' ')
+        end
+        @printf io " | "
         for j in leftcol:rightcol
             s = cnames[j]
             ourshowcompact(io, s)
