@@ -264,7 +264,7 @@ names!(df::DataFrame, vals) = names!(df.colindex, vals)
 
 function types(adf::AbstractDataFrame)
     ncols = size(adf, 2)
-    res = Array(DataType, ncols)
+    res = Array(Type, ncols)
     for j in 1:ncols
         res[j] = eltype(adf[j])
     end
