@@ -272,13 +272,33 @@ function Base.showall(adf::AbstractDataFrame,
     return
 end
 
+function countna(da::DataArray)
+    n = length(da)
+    res = 0
+    for i in 1:n
+        if da.na[i]
+            res += 1
+        end
+    end
+    return res
+end
+
+function countna(da::PooledDataArray)
+    n = length(da)
+    res = 0
+    for i in 1:n
+        if da.refs[i] == 0
+            res += 1
+        end
+    end
+    return res
+end
+
 function colmissing(adf::AbstractDataFrame) # -> Vector{Int}
     nrows, ncols = size(adf)
     missing = zeros(Int, ncols)
     for j in 1:ncols
-        for i in 1:nrows
-            missing[j] += int(isna(adf[i, j]))
-        end
+        missing[j] = countna(adf[j])
     end
     return missing
 end
