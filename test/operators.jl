@@ -2,7 +2,7 @@ module TestOperators
     using Base.Test
     using DataArrays
     using DataFrames
-    using Stats
+    using StatsBase
 
     macro test_da_pda(da, code)
         esc(quote

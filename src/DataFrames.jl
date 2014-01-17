@@ -2,7 +2,7 @@
 # strictly required: one pulls the names into DataFrames
 # for easy access within the module, whereas the other call
 # pushes those names into Main.
-using Stats
+using StatsBase
 using DataArrays
 
 module DataFrames
@@ -16,7 +16,7 @@ module DataFrames
 using Base.Intrinsics
 using DataArrays
 using GZip
-using Stats
+using StatsBase
 using SortingAlgorithms
 
 ##############################################################################
@@ -34,7 +34,7 @@ const DEFAULT_COLUMN_TYPE = Float64
 ##############################################################################
 
 importall Base
-importall Stats
+importall StatsBase
 import Base: Sort, Order
 import Base.Sort: sort, sort!, Algorithm, defalg, issorted
 import Base.Order: Ordering, By, Lt, Perm, Forward, lt, ord
