@@ -159,18 +159,18 @@ module TestOperators
 
     # Boolean operators on DataFrames's
     N = 5
-    df = DataFrame(A = DataArray(falses(N)))
+    df = DataFrame(A = data(falses(N)))
     @assert any(df) == false
     @assert any(!df) == true
     @assert all(df) == false
     @assert all(!df) == true
 
-    df = DataFrame(A = DataArray(falses(N)))
+    df = DataFrame(A = data(falses(N)))
     df[3, 1] = true
     @assert any(df) == true
     @assert all(df) == false
 
-    df = DataFrame(A = DataArray(falses(N)))
+    df = DataFrame(A = data(falses(N)))
     df[2, 1] = NA
     df[3, 1] = true
     @assert any(df) == true
@@ -179,12 +179,12 @@ module TestOperators
     dv = @data [false, NA]
     dv[1] = NA
 
-    df = DataFrame(A = DataArray(falses(N)))
+    df = DataFrame(A = data(falses(N)))
     df[2, 1] = NA
     @assert isna(any(df))
     @assert all(df) == false
 
-    df = DataFrame(A = DataArray(falses(N)))
+    df = DataFrame(A = data(falses(N)))
     df[1, 1] = NA
     @assert isna(any(dv))
     @assert isna(all(dv))

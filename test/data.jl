@@ -5,11 +5,11 @@ module TestData
 
     #test_group("DataVector creation")
     dvint = @data([1, 2, NA, 4])
-    dvint2 = DataArray([5:8])
-    dvint3 = DataArray(5:8)
+    dvint2 = data([5:8])
+    dvint3 = data(5:8)
     dvflt = @data([1.0, 2, NA, 4])
     dvstr = @data(["one", "two", NA, "four"])
-    dvdict = DataArray(Dict,4)    # for issue #199
+    dvdict = DataArray(Dict, 4)    # for issue #199
 
     #test_group("constructors")
     df1 = DataFrame({dvint, dvstr}, ["Ints", "Strs"])

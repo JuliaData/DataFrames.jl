@@ -90,12 +90,11 @@ module TestIndexing
                    1:2,
                    [1, 2],
                    [1.0, 2.0],
-                   [true, false],
+                   [true, true],
                    trues(2),
                    @data([1, 2]),
                    @data([1.0, 2.0]),
-                   @data([true, false]),
-                   :(A .== 1)}
+                   @data([true, true])}
 
     column_indices = {1,
                       1.0,

@@ -283,8 +283,8 @@ inherits(x, clnm::ASCIIString) = any(class(x) .== clnm)
 Base.names(v::RVEC) = has(v.attr, "names") ? v.attr["names"].data : Array(ASCIIString,0)
 row_names(v::RVEC) = has(v.attr, "row.names") ? v.attr["row.names"].data : Array(ASCIIString,0)
 
-data(rl::RLogical) = DataArray(rl.data, rl.missng)
-data(rn::RNumeric) = DataArray(rn.data, convert(BitArray,isnan(rn.data)))
+data(rl::RLogical) = DataArray(bitunpack(rl.data), rl.missng)
+data(rn::RNumeric) = DataArray(rn.data, convert(BitArray, isnan(rn.data)))
 function data(ri::RInteger)
     dd = ri.data
     msng = dd .== R_NA_INT32
