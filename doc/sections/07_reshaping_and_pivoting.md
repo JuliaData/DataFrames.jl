@@ -6,4 +6,4 @@ Reshape data using the `stack` function:
 
     iris = data("datasets", "iris")
 
-    stack(iris, "Sepal.Length")
+    stack(iris, "SepalLength")

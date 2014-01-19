@@ -11,11 +11,11 @@ We show several examples of the `by` function applied to the `iris` dataset belo
     iris = data("datasets", "iris")
 
     by(iris, "Species", nrow)
-    by(iris, "Species", df -> mean(df["Petal.Length"]))
+    by(iris, "Species", df -> mean(df["PetalLength"]))
     by(iris, "Species", :(N = size(_DF, 1)))
 
 If you only want to split the data set into subsets, use the `groupby` function:
 
-	for subdf in groupby(iris, "Species")
-		println(size(subdf, 1))
-	end
+    for subdf in groupby(iris, "Species")
+        println(size(subdf, 1))
+    end
