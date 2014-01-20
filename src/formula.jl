@@ -16,6 +16,14 @@ type Formula
     rhs::Union(Symbol, Expr, Integer)
 end
 
+macro ~(lhs, rhs)
+    ex = Expr(:call,
+              :Formula,
+              Base.Meta.quot(lhs),
+              Base.Meta.quot(rhs))
+    return ex
+end
+
 type Terms
     terms::Vector
     eterms::Vector                    # evaluation terms
@@ -38,15 +46,6 @@ end
 
 Base.size(mm::ModelMatrix) = size(mm.m)
 Base.size(mm::ModelMatrix,dim...) = size(mm.m,dim...)
-
-function Formula(ex::Expr) 
-    aa = ex.args
-    if aa[1] != :~
-        error("Invalid formula, top-level argument must be '~'.  Check parentheses.")
-    end
-    if length(aa) == 2 return Formula(nothing, aa[2]) end
-    Formula(aa[2], aa[3])
-end
 
 function Base.show(io::IO, f::Formula)
     print(io, string("Formula: ", f.lhs == nothing ? "" : f.lhs, " ~ ", f.rhs))

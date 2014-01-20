@@ -49,6 +49,7 @@ import Base.AsyncStream
 export # reconcile_groups,
        @DataFrame,
        @transform,
+       @~,
        AbstractDataFrame,
        AbstractIndex,
        array,
