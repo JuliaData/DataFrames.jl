@@ -245,7 +245,7 @@ function DataFrame(vals::Any...)
         if isa(vals[j], AbstractDataVector)
             columns[j] = vals[j]
         else
-            columns[j] = DataArray(vals[j])
+            columns[j] = convert(DataArray, vals[j])
         end
     end
     cnames = gennames(p)

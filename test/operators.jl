@@ -73,18 +73,15 @@ module TestOperators
 
     binary_vector_operators = [dot, cor, cov, corspearman]
 
-    columnar_operators = [colmins, colmaxs, colprods, colsums,
-                          colmeans, colmedians, colstds, colvars,
-                          colnorms]
+    # columnar_operators = [colmins, colmaxs, colprods, colsums,
+    #                       colmeans, colmedians, colstds, colvars,
+    #                       colnorms]
 
     boolean_operators = [any, all]
 
     # Unary operators on DataFrame's should be equivalent to elementwise
     # application of those same operators
-    df = DataFrame(quote
-                       A = [1, 2, 3, 4]
-                       B = [1.0, pi, pi, e]
-                   end)
+    df = DataFrame(A = [1, 2, 3, 4], B = [1.0, pi, pi, e])
     for f in numeric_unary_operators
         for i in 1:nrow(df)
             for j in 1:ncol(df)
@@ -92,9 +89,7 @@ module TestOperators
             end
         end
     end
-    df = DataFrame(quote
-                       A = [true, false, true, false]
-                   end)
+    df = DataFrame(A = [true, false, true, false])
     for f in logical_unary_operators
         for i in 1:nrow(df)
             for j in 1:ncol(df)
@@ -105,8 +100,7 @@ module TestOperators
 
     # Elementary functions on DataFrames's
     N = 5
-    df = DataFrame(A = DataArray(ones(N)),
-                   B = DataArray(ones(N)))
+    df = DataFrame(A = data(ones(N)), B = data(ones(N)))
     for f in elementary_functions
         for i in 1:nrow(df)
             for j in 1:ncol(df)
@@ -116,22 +110,20 @@ module TestOperators
     end
 
     # Broadcasting operations between NA's and DataFrames's
-    N = 5
-    df = DataFrame(A = DataArray(ones(N)),
-                   B = DataArray(ones(N)))
-    for f in arithmetic_operators
-        for i in 1:nrow(df)
-            for j in 1:ncol(df)
-                @assert isna(f(df, NA)[i, j])
-                @assert isna(f(NA, df)[i, j])
-            end
-        end
-    end
+    # N = 5
+    # df = DataFrame(A = data(ones(N)), B = data(ones(N)))
+    # for f in arithmetic_operators
+    #     for i in 1:nrow(df)
+    #         for j in 1:ncol(df)
+    #             @assert isna(f(df, NA)[i, j])
+    #             @assert isna(f(NA, df)[i, j])
+    #         end
+    #     end
+    # end
 
     # Broadcasting operations between scalars and DataFrames's
     N = 5
-    df = DataFrame(A = DataArray(ones(N)),
-                   B = DataArray(ones(N)))
+    df = DataFrame(A = data(ones(N)), B = data(ones(N)))
     for f in arithmetic_operators
         for i in 1:nrow(df)
             for j in 1:ncol(df)
@@ -144,8 +136,7 @@ module TestOperators
     # Binary operations on pairs of DataFrame's
     # TODO: Test in the presence of in-operable types like Strings
     N = 5
-    df = DataFrame(A = DataArray(ones(N)),
-                   B = DataArray(ones(N)))
+    df = DataFrame(A = data(ones(N)), B = data(ones(N)))
     for f in array_arithmetic_operators
         for i in 1:nrow(df)
             for j in 1:ncol(df)
