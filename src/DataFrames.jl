@@ -178,7 +178,9 @@ export # reconcile_groups,
        class,                              # in the S3 sense of "class"
        inherits,
        read_rda,
-       vecbind
+       vecbind,
+       cdataframe,
+       CDataFrame
 
 ##############################################################################
 ##
@@ -190,6 +192,7 @@ include("utils.jl")
 include("index.jl")
 include("namedarray.jl")
 include("dataframe.jl")
+include("cdataframe.jl")
 include("show.jl")
 include("merge.jl")
 include("grouping.jl")
