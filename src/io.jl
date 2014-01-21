@@ -723,6 +723,14 @@ end
 #
 ##############################################################################
 
+function escapedprint(io::IO, x::Any, escapes::String)
+    print(io, x)
+end
+
+function escapedprint(io::IO, x::String, escapes::String)
+    print_escaped(io, x, escapes)
+end
+
 function printtable(io::IO,
                     df::DataFrame;
                     header::Bool = true,
@@ -747,10 +755,10 @@ function printtable(io::IO,
         for j in 1:p
             if ! (ctypes[j] <: Real)
                 print(io, quotemark)
-                print(io, df[i, j])
+                escapedprint(io, df[i, j], "\"'")
                 print(io, quotemark)
             else
-                print(io, df[i, j]) #column_names[j])
+                print(io, df[i, j])
             end
             if j < p
                 print(io, separator)
