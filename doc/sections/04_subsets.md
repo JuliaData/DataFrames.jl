@@ -1,6 +1,7 @@
 # Accessing and Modifying Entries of DataArray and DataFrame Objects
 
-The `DataArray` type is meant to behave like a standard Julia `Array` and tries to implement identical indexing rules:
+The `DataArray` type is meant to behave like a standard Julia `Array` and
+tries to implement identical indexing rules:
 
     dv = data([1, 2, 3])
     dv[1]
@@ -12,7 +13,8 @@ The `DataArray` type is meant to behave like a standard Julia `Array` and tries 
     dm[2, 1] = NA
     dm[2, 1]
 
-In contrast, a `DataFrame` offers substantially more forms of indexing because columns can be referred to by name:
+In contrast, a `DataFrame` offers substantially more forms of indexing
+because columns can be referred to by name:
 
     df = DataFrame(A = 1:10, B = 2:2:20)
 
@@ -28,7 +30,9 @@ In contrast, a `DataFrame` offers substantially more forms of indexing because c
     df[df["A"] % 2 .== 0, :]
     df[df["B"] % 2 .== 0, :]
 
-To simplify the last example (in which we examined the properties of column of `df` to determine which rows to return), you can also index rows using quoted expressions that will be evaluated using the columns of the `DataFrame`:
+To simplify the last example (in which we examined the properties of column of `df`
+to determine which rows to return), you can also index rows using quoted expressions
+that will be evaluated using the columns of the `DataFrame`:
 
     df[:(A % 2 .== 0), :]
 
