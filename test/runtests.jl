@@ -11,16 +11,14 @@ my_tests = ["extras.jl",
             "dataframe.jl",
             "operators.jl",
             "io.jl",
-            # "formula.jl",
+            #"formula.jl",
             "datastream.jl",
             "constructors.jl",
-            "indexing.jl",
-            # "indexedvector.jl",
+            #"indexing.jl",
             "RDA.jl",
             "sort.jl",
             "grouping.jl",
             "iteration.jl",
-            #"test/colfuncs.jl",
             "duplicates.jl"]
 
 println("Running tests:")

@@ -198,10 +198,8 @@ include("formula.jl")
 include("io.jl")
 include("datastream.jl")
 include("operators.jl")
-include("indexing.jl")
 include("extras.jl")
 include("RDA.jl")
-include("dataframe_blocks.jl")
 
 ##############################################################################
 ##
