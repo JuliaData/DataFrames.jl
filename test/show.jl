@@ -1,16 +1,22 @@
 module TestShow
+    using DataArrays
     using DataFrames
     using RDatasets
-    movies = data("ggplot2", "movies")
-    movies = movies[1:50, :]
-    show(movies)
-    show(movies, true)
-    showall(movies)
-    showall(movies, true)
 
-    subdf = select(:(rating .> 6.4), movies)
-    show(subdf)
-    show(subdf, true)
-    showall(subdf)
-    showall(subdf, true)
+    iris = data("datasets", "iris")
+    iris = iris[1:50, :]
+
+    io = IOBuffer()
+    show(io, iris)
+    show(io, iris, true)
+    showall(io, iris)
+    showall(io, iris, true)
+
+    subdf = select(:(SepalLength .> 4.0), iris)
+    show(io, subdf)
+    show(io, subdf, true)
+    showall(io, subdf)
+    showall(io, subdf, true)
+
+    df = DataFrame(A = Array(UTF8String, 3))
 end

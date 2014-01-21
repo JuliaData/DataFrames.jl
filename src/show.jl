@@ -24,16 +24,30 @@ function getmaxwidths(adf::AbstractDataFrame,
     ncols = size(adf, 2)
     cnames = names(adf)
     maxwidths = Array(Int, ncols + 1)
+
+    # TODO: Move this definition somewhere else
+    NAstrwidth = 2
+    undefstrwidth = ourstrwidth(Base.undef_ref_str)
+
     for j in 1:ncols
         # (1) Consider length of column name
         maxwidths[j] = ourstrwidth(cnames[j])
 
+        col = adf[j]
+
         # (2) Consider length of longest entry in that column
-        for i in rowindices1
-            maxwidths[j] = max(maxwidths[j], ourstrwidth(adf[i, j]))
-        end
-        for i in rowindices2
-            maxwidths[j] = max(maxwidths[j], ourstrwidth(adf[i, j]))
+        for indices in (rowindices1, rowindices2)
+            for i in indices
+                if isna(col, i)
+                    maxwidths[j] = max(maxwidths[j], NAstrwidth)
+                else
+                    try
+                        maxwidths[j] = max(maxwidths[j], ourstrwidth(col[i]))
+                    catch
+                        maxwidths[j] = max(maxwidths[j], undefstrwidth)
+                    end
+                end
+            end
         end
     end
     rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
@@ -98,8 +112,14 @@ function showrowindices(io::IO,
         print(io, " | ")
         # Print DataFrame entry
         for j in leftcol:rightcol
-            strlen = ourstrwidth(adf[i, j])
-            ourshowcompact(io, adf[i, j])
+            strlen = 0
+            try
+                strlen = ourstrwidth(adf[i, j])
+                ourshowcompact(io, adf[i, j])
+            catch
+                strlen = ourstrwidth(Base.undef_ref_str)
+                ourshowcompact(io, Base.undef_ref_str)
+            end
             padding = maxwidths[j] - strlen
             for itr in 1:padding
                 write(io, ' ')

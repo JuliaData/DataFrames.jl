@@ -171,9 +171,6 @@ function DataFrame(column_types::Vector, cnames::Vector, nrows::Integer)
     for j in 1:p
         columns[j] = DataArray(column_types[j], nrows)
         for i in 1:nrows
-            # TODO: Find a way to get rid of this line
-            # Problem may be in show()
-            columns[j][i] = baseval(column_types[j])
             columns[j][i] = NA
         end
     end
@@ -188,9 +185,6 @@ function DataFrame(column_types::Vector, nrows::Integer)
     for j in 1:p
         columns[j] = DataArray(column_types[j], nrows)
         for i in 1:nrows
-            # TODO: Find a way to get rid of this line
-            # Problem may be in show()
-            columns[j][i] = baseval(column_types[j])
             columns[j][i] = NA
         end
     end
