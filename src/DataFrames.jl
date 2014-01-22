@@ -197,7 +197,6 @@ include("reshape.jl")
 include("formula.jl")
 include("io.jl")
 include("datastream.jl")
-include("operators.jl")
 include("extras.jl")
 include("RDA.jl")
 
