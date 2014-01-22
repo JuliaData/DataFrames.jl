@@ -19,9 +19,9 @@ module TestFormula
 	d["x2"] = [9:12]
 	d["x3"] = [11:14]
 	d["x4"] = [12:15]
-	f = Formula(:(y ~ x1 * (log(x2) + x3)))
-	mf = model_frame(f, d)
-	mm = model_matrix(mf)
+	f = y ~ x1 * (log(x2) + x3)
+	mf = ModelFrame(f, d)
+	mm = ModelMatrix(mf)
 	@test mm.model_colnames == [
 	 "(Intercept)"
 	 "x1:6"        
@@ -51,9 +51,9 @@ module TestFormula
 	x2 = [9.:12]
 	x3 = [13.:16]
 	x4 = [17.:20]
-	f = Formula(:(y ~ x1 + x2))
-	mf = model_frame(f, d)
-	mm = model_matrix(mf)
+	f = y ~ x1 + x2
+	mf = ModelFrame(f, d)
+	mm = ModelMatrix(mf)
 	@test mm.response_colnames == ["y"]
 	@test mm.model_colnames == ["(Intercept)","x1","x2"]
 	@test mm.response == transpose([1. 2 3 4])

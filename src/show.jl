@@ -6,7 +6,7 @@ end
 begin
     local io = IOBuffer(Array(Uint8, 80), true, true)
     global ourstrwidth
-    function ourstrwidth(x::Any)
+    function ourstrwidth(x::Any) # -> Int
         truncate(io, 0)
         ourshowcompact(io, x)
         return position(io)
@@ -14,8 +14,8 @@ begin
     ourstrwidth(x::String) = strwidth(x)
 end
 
-ourshowcompact(io::IO, x::Any) = showcompact(io, x)
-ourshowcompact(io::IO, x::String) = print(io, x)
+ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Nothing
+ourshowcompact(io::IO, x::String) = print(io, x) # -> Nothing
 
 # Determine the maximum string length of any entry in each DataFrame column
 function getmaxwidths(adf::AbstractDataFrame,

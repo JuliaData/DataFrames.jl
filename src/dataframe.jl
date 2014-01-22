@@ -35,9 +35,11 @@ function DataFrame(;kwargs...)
     return result
 end
 
+# TODO: Remove this
 # No-op given a DataFrame
 DataFrame(df::DataFrame) = df
 
+# TODO: Remove this
 # Wrap a scalar in a DataArray, then a DataFrame
 function DataFrame(x::Union(Number, String))
     cols = {DataArray([x], falses(1))}
@@ -51,11 +53,7 @@ function DataFrame{T <: String}(cs::Vector{Any},
     return DataFrame(cs, Index(cn))
 end
 
-# Build a DataFrame from an expression
-# TODO: Expand the following to allow unequal lengths that are rep'd
-#       to the longest length.
-DataFrame(ex::Expr) = based_on(DataFrame(), ex)
-
+# TODO: Replace this with convert call.
 # Convert a standard Matrix to a DataFrame w/ pre-specified names
 function DataFrame(x::Matrix,
                    cn::Vector = gennames(size(x, 2)))
@@ -67,6 +65,7 @@ function DataFrame(x::Matrix,
     return DataFrame(cols, Index(cn))
 end
 
+# TODO: Document these better.
 function DataFrame{K, V}(d::Associative{K, V})
     # Find the first position with maximum length in the Dict.
     lengths = map(length, values(d))
@@ -95,16 +94,6 @@ function DataFrame{K, V}(d::Associative{K, V})
         end
     end
     df
-end
-
-# Construct a DataFrame with groupings over the columns
-# TODO: Restore grouping
-function DataFrame(cs::Vector,
-                   cn::Vector,
-                   gr::Dict{ByteString, Vector{ByteString}})
-    d = DataFrame(cs, cn)
-    set_groups(index(d), gr)
-    return d
 end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
@@ -153,6 +142,7 @@ function DataFrame(t::Any, nrows::Integer, ncols::Integer)
     return DataFrame(columns, Index(cnames))
 end
 
+# TODO: Remove this
 # Initialize empty DataFrame objects of arbitrary size
 # Use the default column type
 function DataFrame(nrows::Integer, ncols::Integer)
@@ -230,6 +220,7 @@ function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
     df
 end
 
+# TODO: Remove this.
 # If we have a tuple, convert each value in the tuple to a
 # DataVector and then pass the converted columns in, hoping for the best
 function DataFrame(vals::Any...)
@@ -272,6 +263,7 @@ function rename!(df::DataFrame, from::Any, to::Any)
     rename!(df.colindex, from, to)
 end
 
+# TODO: Remove these
 nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
 ncol(df::DataFrame) = length(df.colindex)
 
@@ -292,46 +284,6 @@ Base.endof(df::AbstractDataFrame) = ncol(df)
 Base.ndims(::AbstractDataFrame) = 2
 
 index(df::DataFrame) = df.colindex
-
-##############################################################################
-##
-## Tools for working with groups of columns
-##
-##############################################################################
-
-function set_group(df::AbstractDataFrame, newgroup, names)
-    set_group(index(df), newgroup, names)
-end
-function set_groups(df::AbstractDataFrame, gr::Dict{ByteString, Vector{ByteString}})
-    set_groups(index(df), gr)
-end
-function get_groups(df::AbstractDataFrame)
-    get_groups(index(df))
-end
-function rename_group!(df::AbstractDataFrame, a, b)
-    rename!(index(df), a, b)
-end
-
-function reconcile_groups(olddf::AbstractDataFrame, newdf::AbstractDataFrame)
-	# foreach group, restrict range to intersection with newdf colnames
-	# add back any groups with non-null range
-	old_groups = get_groups(olddf)
-	for key in keys(old_groups)
-		# this is clunky -- there are better/faster ways of doing this intersection operation
-		match_vals = ByteString[]
-		for val in old_groups[key]
-			if (val in names(newdf))
-				push!(match_vals, val)
-			end
-		end
-		if !isempty(match_vals)
-			set_group(newdf, key, match_vals)
-		end
-	end
-	newdf
-end
-
-# TODO: Restore calls to reconcile_groups()
 
 ##############################################################################
 ##
@@ -395,14 +347,6 @@ function Base.getindex{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::Abs
     new_columns = {dv[row_inds] for dv in df.columns[selected_columns]}
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
 end
-
-# Special cases involving expressions
-Base.getindex(df::DataFrame, ex::Expr) = getindex(df, with(df, ex))
-Base.getindex(df::DataFrame, ex::Expr, c::ColumnIndex) = getindex(df, with(df, ex), c)
-Base.getindex{T <: ColumnIndex}(df::DataFrame, ex::Expr, c::AbstractVector{T}) = getindex(df, with(df, ex), c)
-Base.getindex(df::DataFrame, c::Real, ex::Expr) = getindex(df, c, with(df, ex))
-Base.getindex{T <: Real}(df::DataFrame, c::AbstractVector{T}, ex::Expr) = getindex(df, c, with(df, ex))
-Base.getindex(df::DataFrame, ex1::Expr, ex2::Expr) = getindex(df, with(df, ex1), with(df, ex2))
 
 ##############################################################################
 ##
@@ -756,26 +700,6 @@ end
 # Special deletion assignment
 Base.setindex!(df::DataFrame, x::Nothing, icol::Int) = delete!(df, icol)
 
-# Special cases involving expressions
-function Base.setindex!(df::DataFrame, val::Any, ex::Expr)
-    setindex!(df, val, with(df, ex))
-end
-function Base.setindex!(df::DataFrame, val::Any, ex::Expr, c::ColumnIndex)
-    setindex!(df, val, with(df, ex), c)
-end
-function Base.assign{T <: ColumnIndex}(df::DataFrame, val::Any, ex::Expr, c::AbstractVector{T})
-    setindex!(df, val, with(df, ex), c)
-end
-function Base.setindex!(df::DataFrame, val::Any, c::Real, ex::Expr)
-    setindex!(df, val, c, with(df, ex))
-end
-function Base.assign{T <: Real}(df::DataFrame, val::Any, c::AbstractVector{T}, ex::Expr)
-    setindex!(df, val, c, with(df, ex))
-end
-function Base.setindex!(df::DataFrame, val::Any, ex1::Expr, ex2::Expr)
-    setindex!(df, val, with(df, ex1), with(df, ex2))
-end
-
 ##############################################################################
 ##
 ## Equality
@@ -844,13 +768,10 @@ end
 # copy of a data frame does a shallow copy
 function Base.copy(df::DataFrame)
 	newdf = DataFrame(copy(df.columns), names(df))
-	reconcile_groups(df, newdf)
 end
 function Base.deepcopy(df::DataFrame)
     newdf = DataFrame([copy(x) for x in df.columns], names(df))
-    reconcile_groups(df, newdf)
 end
-#deepcopy_with_groups(df::DataFrame) = DataFrame([copy(x) for x in df.columns], colnames(df), get_groups(df))
 
 ##############################################################################
 ##
@@ -866,11 +787,6 @@ DataArrays.tail(df::AbstractDataFrame) = tail(df, 6)
 # get the structure of a DF
 function Base.dump(io::IO, x::AbstractDataFrame, n::Int, indent)
     println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
-    gr = get_groups(x)
-    if length(gr) > 0
-        pretty_show(io, gr)
-        println(io)
-    end
     if n > 0
         for col in names(x)[1:end]
             print(io, indent, "  ", col, ": ")
@@ -1059,8 +975,6 @@ function Base.hcat(df1::DataFrame, df2::DataFrame)
     colindex = Index(make_unique([names(df1), names(df2)]))
     columns = [df1.columns, df2.columns]
     d = DataFrame(columns, colindex)  
-    set_groups(d, get_groups(df1))
-    set_groups(d, get_groups(df2))
     return d
 end
 Base.hcat{T}(df::DataFrame, x::DataVector{T}) = hcat(df, DataFrame({x}))
@@ -1070,8 +984,6 @@ Base.hcat{T}(df::DataFrame, x::T) = hcat(df, DataFrame({DataArray([x])}))
 # three-plus-argument form recurses
 Base.hcat(a::DataFrame, b, c...) = hcat(hcat(a, b), c...)
 cbind(args...) = hcat(args...)
-
-is_group(df::AbstractDataFrame, name::ByteString) = is_group(index(df), name)
 
 Base.similar(df::DataFrame, dims) = 
     DataFrame([similar(x, dims) for x in df.columns], names(df)) 
@@ -1187,7 +1099,6 @@ rbind(args...) = vcat(args...)
 # df3 = rbind(df1, df2...)
 # rbind!(df1, df2...)
 
-
 # split-apply-combine
 # co(ap(myfun,
 #    sp(df, ["region", "product"])))
@@ -1198,263 +1109,6 @@ rbind(args...) = vcat(args...)
 # how do we add col names to the name space?
 # transform(df, :(cat=dog*2, clean=proc(dirty)))
 # summarise(df, :(cat=sum(dog), all=string(strs)))
-
-function with(d::Associative, ex::Expr)
-    # Note: keys must by symbols
-    replace_symbols(x, d::Dict) = x
-    replace_symbols(e::Expr, d::Dict) = Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args))...)
-    function replace_symbols{K,V}(s::Symbol, d::Dict{K,V})
-        if (K == Any || K == Symbol) && haskey(d, s)
-            :(_D[$(Meta.quot(s))])
-        elseif (K == Any || K <: String) && haskey(d, string(s))
-            :(_D[$(string(s))])
-        else
-            s
-        end
-    end
-    ex = replace_symbols(ex, d)
-    global _ex = ex
-    f = @eval (_D) -> $ex
-    f(d)
-end
-
-function within!(d::Associative, ex::Expr)
-    # Note: keys must by symbols
-    replace_symbols(x, d::Associative) = x
-    function replace_symbols{K,V}(e::Expr, d::Associative{K,V})
-        if e.head == :(=) # replace left-hand side of assignments:
-            if (K == Symbol || (K == Any && isa(collect(keys(d))[1], Symbol)))
-                exref = Meta.quot(e.args[1])
-                if !haskey(d, e.args[1]) # Dummy assignment to reserve a slot.
-                                      # I'm not sure how expensive this is.
-                    d[e.args[1]] = collect(values(d))[1]
-                end
-            else
-                exref = string(e.args[1])
-                if !haskey(d, exref) # dummy assignment to reserve a slot
-                    d[exref] = collect(values(d))[1]
-                end
-            end
-            Expr(e.head,
-                 vcat({:(_D[$exref])}, map(x -> replace_symbols(x, d), e.args[2:end]))...)
-        else
-            Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args))...)
-        end
-    end
-    function replace_symbols{K,V}(s::Symbol, d::Associative{K,V})
-        if (K == Any || K == Symbol) && haskey(d, s)
-            :(_D[$(Meta.quot(s))])
-        elseif (K == Any || K <: String) && haskey(d, string(s))
-            :(_D[$(string(s))])
-        else
-            s
-        end
-    end
-    ex = replace_symbols(ex, d)
-    f = @eval (_D) -> begin
-        $ex
-        _D
-    end
-    f(d)
-end
-
-
-
-mygetindex(d, key) = getindex(d, key)
-myref{K<:String,V}(d::Associative{K,V}, key) = getindex(d, string(key))
-mygetindex(d::AbstractDataFrame, key::Symbol) = getindex(d, string(key))
-
-myhas(d, key) = haskey(d, key)
-myhas{K<:String,V}(d::Associative{K,V}, key) = haskey(d, string(key))
-myhas(d::AbstractDataFrame, key::Symbol) = haskey(d, string(key))
-
-bestkey(d, key) = key
-bestkey{K<:String,V}(d::Associative{K,V}, key) = string(key)
-bestkey(d::AbstractDataFrame, key) = string(key)
-bestkey(d::NamedArray, key) = string(key)
-
-replace_syms(x) = x
-replace_syms(s::Symbol) = :( myhas(d, $(Meta.quot(s))) ? mygetindex(d, $(Meta.quot(s))) : $(esc(s)) )
-replace_syms(e::Expr) = Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_syms(x), e.args))...)
-
-## quot(value) = Base.splicedexpr(:quote, value)  # Toivo special
-
-function transform_helper(d, args...)
-    exa = {:(local d = $(esc(d)))}
-    for ex in args
-        left = ex.args[1]
-        right = replace_syms(ex.args[2])
-        push!(exa,
-            :(d[bestkey(d, $(Meta.quot(left)))] = $(right)))
-    end
-    push!(exa, :d)
-    Expr(:block, exa...)
-end
-
-macro transform(df, args...)
-    transform_helper(df, args...)
-end
-
-macro DataFrame(args...)
-    :(DataFrame( @transform(NamedArray(), $(map(esc, args)...)) ))
-end
-
-
-
-    
-function based_on(d::Associative, ex::Expr)
-    # Note: keys must by symbols
-    replace_symbols(x, d::Associative) = x
-    function replace_symbols{K,V}(e::Expr, d::Associative{K,V})
-        if e.head == :(=) # replace left-hand side of assignments:
-            if (K == Symbol || (K == Any && isa(collect(keys(d))[1], Symbol)))
-                exref = Meta.quot(e.args[1])
-                if !haskey(d, e.args[1]) # Dummy assignment to reserve a slot.
-                                      # I'm not sure how expensive this is.
-                    d[e.args[1]] = collect(values(d))[1]
-                end
-            else
-                exref = string(e.args[1])
-                if !haskey(d, exref) # dummy assignment to reserve a slot
-                    d[exref] = collect(values(d))[1]
-                end
-            end
-            Expr(e.head,
-                 vcat({:(_ND[$exref])}, map(x -> replace_symbols(x, d), e.args[2:end]))...)
-        else
-            Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, d), e.args))...)
-        end
-    end
-    function replace_symbols{K,V}(s::Symbol, d::Associative{K,V})
-        if (K == Any || K == Symbol) && haskey(d, s)
-            :(_D[$(Meta.quot(s))])
-        elseif (K == Any || K <: String) && haskey(d, string(s))
-            :(_D[$(string(s))])
-        else
-            s
-        end
-    end
-    ex = replace_symbols(ex, d)
-    f = @eval (_D) -> begin
-        _ND = similar(_D)
-        $ex
-        _ND
-    end
-    f(d)
-end
-
-function within!(df::AbstractDataFrame, ex::Expr)
-    # By-column operation within a DataFrame that allows replacing or adding columns.
-    # Returns the transformed DataFrame.
-    #   
-    # helper function to replace symbols in ex with a reference to the
-    # appropriate column in df
-    replace_symbols(x, syms::Dict) = x
-    function replace_symbols(e::Expr, syms::Dict)
-        if e.head == :(=) # replace left-hand side of assignments:
-            if !haskey(syms, string(e.args[1]))
-                syms[string(e.args[1])] = length(syms) + 1
-            end
-            Expr(e.head,
-                 vcat({:(_DF[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end]))...)
-        else
-            Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args))...)
-        end
-    end
-    function replace_symbols(s::Symbol, syms::Dict)
-        if (string(s) in keys(syms))
-            :(_DF[$(syms[string(s)])])
-        else
-            s
-        end
-    end
-    # Make a dict of colnames and column positions
-    cn_dict = Dict(names(df), 1:ncol(df))
-    ex = replace_symbols(ex, cn_dict)
-    f = @eval (_DF) -> begin
-        $ex
-        _DF
-    end
-    f(df)
-end
-
-within(x, args...) = within!(copy(x), args...)
-
-function based_on_f(df::AbstractDataFrame, ex::Expr)
-    # Returns a function for use on an AbstractDataFrame
-    
-    # helper function to replace symbols in ex with a reference to the
-    # appropriate column in a new df
-    replace_symbols(x, syms::Dict) = x
-    function replace_symbols(e::Expr, syms::Dict)
-        if e.head == :(=) # replace left-hand side of assignments:
-            if !haskey(syms, string(e.args[1]))
-                syms[string(e.args[1])] = length(syms) + 1
-            end
-            Expr(e.head,
-                 vcat({:(_col_dict[$(string(e.args[1]))])}, map(x -> replace_symbols(x, syms), e.args[2:end]))...)
-        else
-            Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args))...)
-        end
-    end
-    function replace_symbols(s::Symbol, syms::Dict)
-        if (string(s) in keys(syms))
-            :(_DF[$(syms[string(s)])])
-        else
-            s
-        end
-    end
-    # Make a dict of colnames and column positions
-    cn_dict = Dict(names(df), [1:ncol(df)])
-    ex = replace_symbols(ex, cn_dict)
-    @eval (_DF) -> begin
-        _col_dict = NamedArray()
-        $ex
-        DataFrame(_col_dict)
-    end
-end
-function based_on(df::AbstractDataFrame, ex::Expr)
-    # By-column operation within a DataFrame.
-    # Returns a new DataFrame.
-    f = based_on_f(df, ex)
-    f(df)
-end
-
-function with(df::AbstractDataFrame, ex::Expr)
-    # By-column operation with the columns of a DataFrame.
-    # Returns the result of evaluating ex.
-    
-    # helper function to replace symbols in ex with a reference to the
-    # appropriate column in df
-    replace_symbols(x, syms::Dict) = x
-    replace_symbols(e::Expr, syms::Dict) = Expr(e.head, (isempty(e.args) ? e.args : map(x -> replace_symbols(x, syms), e.args))...)
-    function replace_symbols(s::Symbol, syms::Dict)
-        if (string(s) in keys(syms))
-            :(_DF[$(syms[string(s)])])
-        else
-            s
-        end
-    end
-    # Make a dict of colnames and column positions
-    cn_dict = Dict(names(df), [1:ncol(df)])
-    ex = replace_symbols(ex, cn_dict)
-    f = @eval (_DF) -> $ex
-    f(df)
-end
-
-with(df::AbstractDataFrame, s::Symbol) = df[string(s)]
-
-# add function curries to ease pipelining:
-with(e::Expr) = x -> with(x, e)
-within(e::Expr) = x -> within(x, e)
-within!(e::Expr) = x -> within!(x, e)
-based_on(e::Expr) = x -> based_on(x, e)
-
-# allow pipelining straight to an expression using within!:
-(|>)(x::AbstractDataFrame, e::Expr) = within!(x, e)
-
-
-
 
 ##
 ## Miscellaneous
@@ -1532,44 +1186,6 @@ function duplicatedkey(df::AbstractDataFrame)
     res
 end
 
-function DataArrays.isna(df::DataFrame)
-    results = BitArray(size(df))
-    for i in 1:nrow(df)
-        for j in 1:ncol(df)
-            results[i, j] = isna(df[i, j])
-        end
-    end
-    return results
-end
-
-function Base.isnan(df::DataFrame)
-    p = ncol(df)
-    res_columns = Array(Any, p)
-    for j in 1:p
-        res_columns[j] = isnan(df[j])
-    end
-    return DataFrame(res_columns, names(df))
-end
-
-function Base.isfinite(df::DataFrame)
-    p = ncol(df)
-    res_columns = Array(Any, p)
-    for j in 1:p
-        res_columns[j] = isfinite(df[j])
-    end
-    return DataFrame(res_columns, names(df))
-end
-
-# TODO: Use cor and cov for DataMatrix to do this
-function Base.cor(df::DataFrame)
-    numeric_cols = find(map(t -> isa(t, Number), types(df)))
-    cor(array(df[:, numeric_cols]))
-end
-function Base.cov(df::DataFrame)
-    numeric_cols = find(map(t -> isa(t, Number), types(df)))
-    cov(array(df[:, numeric_cols]))
-end
-
 function cleannames!(df::DataFrame)
     oldnames = map(strip, names(df))
     newnames = map(n -> replace(n, r"\W", "_"), oldnames)
@@ -1586,362 +1202,6 @@ function flipud!(df::DataFrame)
     return
 end
 
-
-##############################################################################
-##
-## Sorting
-##
-##############################################################################
-
-#########################################
-## Permutation & Ordering types/functions
-#########################################
-# Sorting in Julia works through Orderings, where each ordering is a type
-# which defines a comparison function lt(o::Ord, a, b).
-
-# UserColOrdering: user ordering of a column; this is just a convenience container
-#                  which allows a user to specify column specific orderings
-#                  with "order(column, rev=true,...)"
-
-type UserColOrdering{T<:ColumnIndex}
-    col::T
-    kwargs
-end
-
-# This is exported, and lets a user define orderings for a particular column
-order{T<:ColumnIndex}(col::T; kwargs...) = UserColOrdering{T}(col, kwargs)
-
-# Allow getting the column even if it is not wrapped in a UserColOrdering
-_getcol(o::UserColOrdering) = o.col
-_getcol(x) = x
-
-###
-# Get an Ordering for a single column
-###
-function ordering(col_ord::UserColOrdering, lt::Function, by::Function, rev::Bool, order::Ordering)
-    for (k,v) in col_ord.kwargs
-        if     k == :lt;    lt    = v
-        elseif k == :by;    by    = v
-        elseif k == :rev;   rev   = v
-        elseif k == :order; order = v
-        else
-            error("Unknown keyword argument: ", string(k))
-        end
-    end
-
-    ord(lt,by,rev,order)
-end
-
-ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Ordering) =
-             ord(lt,by,rev,order)
-
-# DFPerm: defines a permutation on a particular DataFrame, using
-#         a single ordering (O<:Ordering) or a list of column orderings
-#         (O<:AbstractVector{Ordering}), one per DataFrame column
-#
-#         If a user only specifies a few columns, the DataFrame
-#         contained in the DFPerm only contains those columns, and
-#         the permutation induced by this ordering is used to 
-#         sort the original (presumably larger) DataFrame
-
-type DFPerm{O<:Union(Ordering, AbstractVector), DF<:AbstractDataFrame} <: Ordering
-    ord::O
-    df::DF
-end
-
-function DFPerm{O<:Ordering}(ords::AbstractVector{O}, df::AbstractDataFrame)
-    if length(ords) != ncol(df)
-        error("DFPerm: number of column orderings does not equal the number of DataFrame columns")
-    end
-    DFPerm{AbstractVector{O}, typeof(df)}(ords, df)
-end
-
-DFPerm{O<:Ordering}(o::O, df::AbstractDataFrame) = DFPerm{O,typeof(df)}(o,df)
-
-# For sorting, a and b are row indices (first two lt definitions)
-# For issorted, the default row iterator returns DataFrameRows instead,
-# so two more lt function is defined below
-function Base.Sort.lt{V<:AbstractVector}(o::DFPerm{V}, a, b)
-    for i = 1:ncol(o.df)
-        if lt(o.ord[i], o.df[a,i], o.df[b,i])
-            return true
-        end
-        if lt(o.ord[i], o.df[b,i], o.df[a,i])
-            return false
-        end
-    end
-    false
-end
-
-function Base.Sort.lt{O<:Ordering}(o::DFPerm{O}, a, b)
-    for i = 1:ncol(o.df)
-        if lt(o.ord, o.df[a,i], o.df[b,i])
-            return true
-        end
-        if lt(o.ord, o.df[b,i], o.df[a,i])
-            return false
-        end
-    end
-    false
-end
-
-function Base.Sort.lt{V<:AbstractVector}(o::DFPerm{V}, a::DataFrameRow, b::DataFrameRow)
-    for i = 1:ncol(o.df)
-        if lt(o.ord[i], a[i], b[i])
-            return true
-        end
-        if lt(o.ord[i], b[i], a[i])
-            return false
-        end
-    end
-    false
-end
-
-function Base.Sort.lt{O<:Ordering}(o::DFPerm{O}, a::DataFrameRow, b::DataFrameRow)
-    for i = 1:ncol(o.df)
-        if lt(o.ord, a[i], b[i])
-            return true
-        end
-        if lt(o.ord, b[i], a[i])
-            return false
-        end
-    end
-    false
-end
-
-###
-# Get an Ordering for a DataFrame
-###
-
-################
-## Case 1: no columns requested, so sort by all columns using requested order
-################
-## Case 1a: single order
-######
-ordering(df::AbstractDataFrame, lt::Function, by::Function, rev::Bool, order::Ordering) =
-    DFPerm(ord(lt, by, rev, order), df)
-
-######
-## Case 1b: lt, by, rev, and order are Arrays
-######
-function ordering(df::AbstractDataFrame, lt::AbstractVector{Function}, by::AbstractVector{Function}, rev::AbstractVector{Bool}, order::AbstractVector)
-    if !(length(lt) == length(by) == length(rev) == length(order) == size(df,2))
-        throw(ArgumentError("Orderings must be specified for all DataFrame columns"))
-    end
-    DFPerm([ord(_lt, _by, _rev, _order) for (_lt, _by, _rev, _order) in zip(lt, by, rev, order)], df)
-end
-
-################
-## Case 2:  Return a regular permutation when there's only one column
-################
-## Case 2a: The column is given directly
-######
-ordering(df::AbstractDataFrame, col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Ordering) =
-    Perm(ord(lt, by, rev, order), df[col])
-
-######
-## Case 2b: The column is given as a UserColOrdering
-######
-ordering(df::AbstractDataFrame, col_ord::UserColOrdering, lt::Function, by::Function, rev::Bool, order::Ordering) =
-    Perm(ordering(col_ord, lt, by, rev, order), df[col_ord.col])
-
-################
-## Case 3:  General case: cols is an iterable of a combination of ColumnIndexes and UserColOrderings
-################
-## Case 3a: None of lt, by, rev, or order is an Array
-######
-function ordering(df::AbstractDataFrame, cols::AbstractVector, lt::Function, by::Function, rev::Bool, order::Ordering)
-
-    if length(cols) == 0
-        return ordering(df, lt, by, rev, order)
-    end
-
-    if length(cols) == 1
-        return ordering(df, cols[1], lt, by, rev, order)
-    end
-
-    # Collect per-column ordering info
-
-    ords = Ordering[]
-    newcols = Int[]
-
-    for col in cols
-        push!(ords, ordering(col, lt, by, rev, order))
-        push!(newcols, index(df)[(_getcol(col))])
-    end
-
-    # Simplify ordering when all orderings are the same
-    if all([ords[i] == ords[1] for i = 2:length(ords)])
-        return DFPerm(ords[1], df[newcols])
-    end
-
-    return DFPerm(ords, df[newcols])
-end
-
-######
-# Case 3b: cols, lt, by, rev, and order are all arrays
-######
-function ordering(df::AbstractDataFrame, cols::AbstractVector,
-                  lt::AbstractVector{Function}, by::AbstractVector{Function}, rev::AbstractVector{Bool}, order::AbstractVector)
-
-    if !(length(lt) == length(by) == length(rev) == length(order))
-        throw(ArgumentError("All ordering arguments must be 1 or the same length."))
-    end
-
-    if length(cols) == 0
-        return ordering(df, lt, by, rev, order)
-    end
-
-    if length(lt) != length(cols)
-        throw(ArgumentError("All ordering arguments must be 1 or the same length as the number of columns requested."))
-    end
-
-    if length(cols) == 1
-        return ordering(df, cols[1], lt[1], by[1], rev[1], order[1])
-    end
-
-    # Collect per-column ordering info
-
-    ords = Ordering[]
-    newcols = Int[]
-
-    for i in 1:length(cols)
-        push!(ords, ordering(cols[i], lt[i], by[i], rev[i], order[i]))
-        push!(newcols, index(df)[(_getcol(cols[i]))])
-    end
-
-    # Simplify ordering when all orderings are the same
-    if all([ords[i] == ords[1] for i = 2:length(ords)])
-        return DFPerm(ords[1], df[newcols])
-    end
-
-    return DFPerm(ords, df[newcols])
-end
-
-######
-## At least one of lt, by, rev, or order is an array or tuple, so expand all to arrays
-######
-function ordering(df::AbstractDataFrame, cols::AbstractVector, lt, by, rev, order)
-    to_array(src::AbstractVector, dims) = src
-    to_array(src::Tuple, dims) = [src...]
-    to_array(src, dims) = fill(src, dims)
-
-    dims = length(cols) > 0 ? length(cols) : size(df,2)
-    ordering(df, cols, 
-             to_array(lt, dims),
-             to_array(by, dims),
-             to_array(rev, dims),
-             to_array(order, dims))
-end
-
-#### Convert cols from tuple to Array, if necessary
-ordering(df::AbstractDataFrame, cols::Tuple, args...) = ordering(df, [cols...], args...)
-
-
-###########################
-# Default sorting algorithm
-###########################
-
-# TimSort is fast for data with structure, but only if the DataFrame is large enough
-# TODO: 8192 is informed but somewhat arbitrary
-
-defalg(df::AbstractDataFrame) = size(df, 1) < 8192 ? Sort.MergeSort : SortingAlgorithms.TimSort
-
-# For DataFrames, we can choose the algorithm based on the column type and requested ordering
-function defalg{T<:Real}(df::AbstractDataFrame, ::Type{T}, o::Ordering)
-    # If we're sorting a single numerical column in forward or reverse, 
-    # RadixSort will generally be the fastest stable sort
-    if isbits(T) && sizeof(T) <= 8 && (o==Order.Forward || o==Order.Reverse)
-        SortingAlgorithms.RadixSort
-    else
-        defalg(df)
-    end
-end
-defalg(df::AbstractDataFrame,        ::Type,          o::Ordering) = defalg(df)
-defalg(df::AbstractDataFrame, col    ::ColumnIndex,   o::Ordering) = defalg(df, eltype(df[col]), o)
-defalg(df::AbstractDataFrame, col_ord::UserColOrdering, o::Ordering) = defalg(df, col_ord.col, o)
-defalg(df::AbstractDataFrame, cols,                   o::Ordering) = defalg(df)
-
-function defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[])
-    alg != nothing && return alg
-    defalg(df, cols, o)
-end
-
-########################
-## Actual sort functions
-########################
-
-issorted(df::AbstractDataFrame; cols={}, lt=isless, by=identity, rev=false, order=Forward) = 
-    issorted(eachrow(df), ordering(df, cols, lt, by, rev, order))
-
-# sort!, sort, and sortperm functions
-
-for s in {:sort!, :sort, :sortperm}
-    @eval begin
-        function $s(df::AbstractDataFrame; cols={}, alg=nothing,
-                    lt=isless, by=identity, rev=false, order=Forward)
-            ord = ordering(df, cols, lt, by, rev, order)
-            _alg = defalg(df, ord; alg=alg, cols=cols)
-            $s(df, _alg, ord)
-        end
-    end
-end
-
-function Base.sort!(df::AbstractDataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
-    p = sortperm(df, a, o)
-    pp = similar(p)
-    for col in df.columns
-        copy!(pp,p)
-        Base.permute!!(col, pp)
-    end
-    df
-end
-
-sort    (df::AbstractDataFrame, a::Algorithm, o::Ordering) = df[sortperm(df, a, o),:]
-sortperm(df::AbstractDataFrame, a::Algorithm, o::Union(Perm,DFPerm)) = sort!([1:nrow(df)], a, o)
-sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) = sortperm(df, a, DFPerm(o,df))
-
-# Extras to speed up sorting
-sortperm{V}(d::AbstractDataFrame, a::Algorithm, o::FastPerm{Sort.ForwardOrdering,V}) = sortperm(o.vec)
-sortperm{V}(d::AbstractDataFrame, a::Algorithm, o::FastPerm{Sort.ReverseOrdering,V}) = reverse(sortperm(o.vec))
-
-## Deprecated; remove after julia v0.3 is released (or sooner)
-
-typealias ColIndexVec Union(AbstractVector{Integer}, AbstractVector{ASCIIString}, AbstractVector{UTF8String}, AbstractVector{Symbol})
-
-@deprecate sort!(df::AbstractDataFrame, o::Ordering)  sort!(df,order=o)
-@deprecate sort(df::AbstractDataFrame, o::Ordering)  sort(df,order=o)
-@deprecate sortperm(df::AbstractDataFrame, o::Ordering)  sortperm(df, order=o)
-
-@deprecate sortby!(df::AbstractDataFrame, by::Function)  sort!(df,by=by)
-
-@deprecate sortby!(df::AbstractDataFrame, col ::ColumnIndex, o::Ordering)  sort!(df,cols=col,order=o)
-@deprecate sortby!(df::AbstractDataFrame, col ::ColumnIndex)               sort!(df,cols=col)
-@deprecate sortby!(df::AbstractDataFrame, cols::ColIndexVec, o::Ordering)  sort!(df,cols=cols,order=o)
-@deprecate sortby!(df::AbstractDataFrame, cols::ColIndexVec)               sort!(df,cols=cols)
-@deprecate sortby(df::AbstractDataFrame, col ::ColumnIndex, o::Ordering)  sort(df,cols=col,order=o)
-@deprecate sortby(df::AbstractDataFrame, col ::ColumnIndex)               sort(df,cols=col)
-@deprecate sortby(df::AbstractDataFrame, cols::ColIndexVec, o::Ordering)  sort(df,cols=cols,order=o)
-@deprecate sortby(df::AbstractDataFrame, cols::ColIndexVec)               sort(df,cols=cols)
-
-#@deprecate sort!   {O<:Ordering}(df::AbstractDataFrame, ::Type{O})    sort!   (df, order=O())
-#@deprecate sort    {O<:Ordering}(df::AbstractDataFrame, ::Type{O})    sort    (df, order=O())
-#@deprecate sortperm{O<:Ordering}(df::AbstractDataFrame, ::Type{O})    sortperm(df, order=O())
-
-#@deprecate sortby!{O<:Ordering}(df::AbstractDataFrame, col::ColumnIndex, ::Type{O})                   sort!(df,col=col,order=O())
-#@deprecate sortby!{O<:Ordering}(df::AbstractDataFrame, cols::ColIndexVec, ::Type{O})                  sort!(df,cols=cols,order=O())
-#@deprecate sortby!{O<:Ordering}(df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray{O})        sort!(df,DFPerm(o, df[cols]))
-#@deprecate sortby {O<:Ordering}(df::AbstractDataFrame, col::ColumnIndex, ::Type{O})                   sort (df,col=col,order=O())
-#@deprecate sortby {O<:Ordering}(df::AbstractDataFrame, cols::ColIndexVec, ::Type{O})                  sort (df,cols=cols,order=O())
-#@deprecate sortby {O<:Ordering}(df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray{O})        sort (df,DFPerm(o, df[cols]))
-
-#@deprecate sortby!             (df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray{DataType}) sort!(df,DFPerm(Ordering[O() for O in o], df[cols]))
-#           sortby!             (df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray)           sortby!(df,cols,DataType[ot for ot in o])
-#           sortby!             (df::AbstractDataFrame, col_ord::AbstractArray{Tuple}) = ((cols,o) = zip(col_ord...); sortby!(df, [cols...], [o...]))
-#@deprecate sortby              (df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray{DataType}) sort (df,DFPerm(Ordering[O() for O in o], df[cols]))
-#           sortby              (df::AbstractDataFrame, cols::ColIndexVec, o::AbstractArray)           sortby!(df,cols,DataType[ot for ot in o])
-#           sortby              (df::AbstractDataFrame, col_ord::AbstractArray{Tuple}) = ((cols,o) = zip(col_ord...); sortby!(df, [cols...], [o...]))
-
 # reorder! for factors by specifying a DataFrame
 function DataArrays.reorder(fun::Function, x::PooledDataArray, df::AbstractDataFrame)
     dfc = copy(df)
@@ -1954,57 +1214,6 @@ DataArrays.reorder(x::PooledDataArray, df::AbstractDataFrame) = reorder(:mean, x
 
 DataArrays.reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
     reorder(fun, x, DataFrame({y...}))
-
-
-##############################################################################
-##
-## Iteration: eachrow, eachcol
-##
-##############################################################################
-
-# Iteration by rows
-immutable DFRowIterator
-    df::AbstractDataFrame
-end
-eachrow(df::AbstractDataFrame) = DFRowIterator(df)
-
-Base.start(itr::DFRowIterator) = 1
-Base.done(itr::DFRowIterator, i::Int) = i > size(itr.df, 1)
-Base.next(itr::DFRowIterator, i::Int) = (DataFrameRow(itr.df, i), i + 1)
-Base.size(itr::DFRowIterator) = (size(itr.df, 1), )
-Base.length(itr::DFRowIterator) = size(itr.df, 1)
-Base.getindex(itr::DFRowIterator, i::Any) = DataFrameRow(itr.df, i)
-Base.map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
-
-
-# Iteration by columns
-immutable DFColumnIterator
-    df::AbstractDataFrame
-end
-eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
-
-Base.start(itr::DFColumnIterator) = 1
-Base.done(itr::DFColumnIterator, j::Int) = j > size(itr.df, 2)
-Base.next(itr::DFColumnIterator, j::Int) = (itr.df[:, j], j + 1)
-Base.size(itr::DFColumnIterator) = (size(itr.df, 2), )
-Base.length(itr::DFColumnIterator) = size(itr.df, 2)
-Base.getindex(itr::DFColumnIterator, j::Any) = itr.df[:, j]
-function Base.map(f::Function, dfci::DFColumnIterator)
-    # note: `f` must return a consistent length
-    res = DataFrame()
-    for i = 1:size(dfci.df, 2)
-        res[i] = f(dfci[i])
-    end
-    names!(res, names(dfci.df))
-    res
-end
-        
-
-# Iteration matches that of Associative types (experimental)
-Base.start(df::AbstractDataFrame) = 1
-Base.done(df::AbstractDataFrame, i) = i > ncol(df)
-Base.next(df::AbstractDataFrame, i) = ((names(df)[i], df[i]), i + 1)
-
 
 ##############################################################################
 ##

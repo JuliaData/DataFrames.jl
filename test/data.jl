@@ -19,63 +19,60 @@ module TestData
     df5 = DataFrame({@data([1,2,3,4]), dvstr})
     df6 = DataFrame({dvint, dvint, dvstr}, ["A", "B", "C"])
     df7 = DataFrame(x = dvint, y = dvstr)
-    @assert size(df7) == (4, 2)
-    @assert isequal(df7["x"], dvint)
+    @test size(df7) == (4, 2)
+    @test isequal(df7["x"], dvint)
 
     #test_group("description functions")
-    @assert nrow(df6) == 4
-    @assert ncol(df6) == 3
-    @assert all(names(df6) .== ["A", "B", "C"])
-    @assert all(names(df2) .== ["x1", "x2"])
-    @assert all(names(df7) .== ["x", "y"])
+    @test size(df6, 1) == 4
+    @test size(df6, 2) == 3
+    @test all(names(df6) .== ["A", "B", "C"])
+    @test all(names(df2) .== ["x1", "x2"])
+    @test all(names(df7) .== ["x", "y"])
 
     #test_group("ref")
-    @assert df6[2, 3] == "two"
-    @assert isna(df6[3, 3])
-    @assert df6[2, "C"] == "two"
-    @assert isequal(df6["B"], dvint)
-    @assert ncol(df6[[2,3]]) == 2
-    @assert nrow(df6[2,:]) == 1
-    @assert size(df6[[1, 3], [1, 3]]) == (2, 2)
-    @assert size(df6[1:2, 1:2]) == (2, 2)
-    @assert size(head(df6,2)) == (2, 3)
+    @test df6[2, 3] == "two"
+    @test isna(df6[3, 3])
+    @test df6[2, "C"] == "two"
+    @test isequal(df6["B"], dvint)
+    @test size(df6[[2,3]], 2) == 2
+    @test size(df6[2,:], 1) == 1
+    @test size(df6[[1, 3], [1, 3]]) == (2, 2)
+    @test size(df6[1:2, 1:2]) == (2, 2)
+    @test size(head(df6,2)) == (2, 3)
     # lots more to do
 
     #test_group("combining")
 
     dfc = hcat(df3, df4)
-    @assert ncol(dfc) == 3
-    @assert all(names(dfc) .== ["x1", "x1_1", "x2"])
-    @assert isequal(dfc["x1"], df3["x1"])
+    @test size(dfc, 2) == 3
+    @test all(names(dfc) .== ["x1", "x1_1", "x2"])
+    @test isequal(dfc["x1"], df3["x1"])
 
-    @assert isequal(dfc, [df3 df4])
+    @test isequal(dfc, [df3 df4])
 
     dfr = vcat(df4, df4)
-    @assert nrow(dfr) == 8
-    @assert all(names(df4) .== names(dfr))
-    @assert isequal(dfr, [df4, df4])
+    @test size(dfr, 1) == 8
+    @test all(names(df4) .== names(dfr))
+    @test isequal(dfr, [df4, df4])
 
     dfr = vcat(df2, df3)
-    @assert size(dfr) == (8,2)
-    @assert all(names(df2) .== names(dfr))
-    @assert isna(dfr[8,"x2"])
-
-    #test_group("show")
-    # @assert repr(df1) == "4x2 DataFrame:\n        Ints   Strs\n[1,]       1  \"one\"\n[2,]       2  \"two\"\n[3,]      NA     NA\n[4,]       4 \"four\"\n"
+    @test size(dfr) == (8,2)
+    @test all(names(df2) .== names(dfr))
+    @test isna(dfr[8,"x2"])
 
     #test_group("assign")
     df6[3] = @data(["un", "deux", "troix", "quatre"])
-    @assert df6[1, 3] == "un"
+    @test df6[1, 3] == "un"
     df6["B"] = [4, 3, 2, 1]
-    @assert df6[1,2] == 4
+    @test df6[1,2] == 4
     df6["D"] = [true, false, true, false]
-    @assert df6[1,4] == true
+    @test df6[1,4] == true
     delete!(df6, "D")
-    @assert all(names(df6) .== ["A", "B", "C"])
-    @assert ncol(df6) == 3
+    @test all(names(df6) .== ["A", "B", "C"])
+    @test size(df6, 2) == 3
 
     #test_group("NA handling")
-    @assert nrow(df5[complete_cases(df5), :]) == 3
+    @test nrow(df5[complete_cases(df5), :]) == 3
 
     #test_context("SubDataFrames")
 
@@ -84,12 +81,12 @@ module TestData
     sdf6a = sub(df6, 1)
     sdf6b = sub(df6, 2:3)
     sdf6c = sub(df6, [true, false, true, false])
-    @assert size(sdf6a) == (1,3)
+    @test size(sdf6a) == (1,3)
     sdf6d = sub(df6, [1,3], "B")
-    @assert size(sdf6d) == (2,1)
+    @test size(sdf6d) == (2,1)
 
     #test_group("ref")
-    @assert sdf6a[1,2] == 4
+    @test sdf6a[1,2] == 4
 
     #test_context("Within")
     #test_group("Associative")
@@ -99,259 +96,146 @@ module TestData
     a2 = ["a" => [1, 2], "b" => [3, 4], "c" => [5, 6]]
     a3 = {"a" => [1, 2], "b" => [3, 4], :c => [5, 6]}
 
-    @assert isequal(with(a1, :(c + 1)), a1[:c] + 1)
-    @assert isequal(with(a2, :(c + 1)), with(a1, :(c + 1)))
-    @assert isequal(with(a3, :(c + 1)), with(a1, :(c + 1)))
-    @assert isequal(with(a3, :(c + 1 + 0 * b)), with(a1, :(c + 1)))
-
-    a4 = within(a1, :( d = a + b ))
-    @assert isequal(a4[:d], a1[:a] + a1[:b])
-    @assert isequal(a4[:a], a1[:a])
-
-    a4c = @transform(copy(a1), d => a + b )
-    @assert isequal(a4[:d], a4c[:d])
-
-    a4 = within(a2, :( d = a + b ))
-    @assert isequal(a4["d"], a2["a"] + a2["b"])
-    @assert isequal(a4["a"], a2["a"])
-
-    # a4c = @transform(copy(a2), d => a + b )
-    # @assert isequal(a4c["d"], a4["d"])
-    
-    a4 = within(a3, :( d = a + b ))
-    @assert isequal(a4[:d], a3["a"] + a3["b"])
-    @assert isequal(a4["a"], a3["a"])
-
-    # Note: The following won't work. 
-    #       @transform will only find the keys that are symbols.
-    ## a4c = @transform(copy(a3), d => a + b )
-    ## @assert isequal(a4c[:d], a4[:d])
-
-    a4 = based_on(a1, :( d = a + b ))
-    @assert isequal(a4[:d], a1[:a] + a1[:b])
-
-    a4 = based_on(a2, :( d = a + b ))
-    @assert isequal(a4["d"], a2["a"] + a2["b"])
-
-    a4 = based_on(a3, :( d = a + b ))
-    @assert isequal(a4[:d], a3["a"] + a3["b"])
-
     #test_group("DataFrame")
-
     srand(1)
     N = 20
-    d1 = PooledDataArray(rand(1:2, N))
+    d1 = pdata(rand(1:2, N))
     d2 = (@pdata ["A", "B", NA])[rand(1:3, N)]
-    d3 = DataArray(randn(N))
-    d4 = DataArray(randn(N))
+    d3 = data(randn(N))
+    d4 = data(randn(N))
     df7 = DataFrame({d1, d2, d3}, ["d1", "d2", "d3"])
 
-    @assert isequal(with(df7, :(d3 + d3)), df7["d3"] + df7["d3"])
-    @assert isequal(with(df7, :(d3 + $d4)), df7["d3"] + d4)
-    x = df7 |> with(:( d3 + d3 ))
-    @assert isequal(x, df7["d3"] + df7["d3"])
-
-    df8 = within(df7, :(d4 = d3 + d3 + 1))
-    @assert isequal(df7, df8[1:3])
-    @assert isequal(df8["d4"], df7["d3"] + df7["d3"] + 1)
-    within!(df8, :( d4 = d1 ))
-    @assert isequal(df8["d1"], df8["d4"])
-
-    df8 = @transform(copy(df7), d4 => d3 + 1)
-    @assert isequal(df7, df8[1:3])
-
-    df8 = based_on(df7, :( d1 = d3 ))
-    @assert isequal(df8["d1"], df7["d3"])
-    df8 = df7 |> based_on(:( d1 = d3 ))
-    @assert isequal(df8["d1"], df7["d3"])
-    df8 = based_on(df7, :( sum_d3 = sum(d3) ))
-    @assert isequal(df8[1,1], sum(df7["d3"]))
-
-    #@assert all(df7[:( d2 .== "B" )]["d1"] .== PooledDataArray([1,2,1,1]))
-    # TODO: Remove all tests that depend upon srand(), which was just changed.
-    # TODO: Restore this test
-    # @assert all(df7[:( d2 .== "B" ), "d1"] .== PooledDataArray([2,1,1,1,1,2,2,1,2]))
-
     #test_group("groupby")
-
     gd = groupby(df7, "d1")
-    @assert length(gd) == 2
-    # @assert isequal(gd[2]["d2"], PooledDataVector["A", "B", NA, "A", NA, NA, NA, NA])
-    @assert sum(gd[2]["d3"]) == sum(df7["d3"][dropna(df7["d1"] .== 2)])
+    @test length(gd) == 2
+    # @test isequal(gd[2]["d2"], PooledDataVector["A", "B", NA, "A", NA, NA, NA, NA])
+    @test sum(gd[2]["d3"]) == sum(df7["d3"][dropna(df7["d1"] .== 2)])
 
     g1 = groupby(df7, ["d1", "d2"])
     g2 = groupby(df7, ["d2", "d1"])
-    @assert sum(g1[1]["d3"]) == sum(g2[1]["d3"])
+    @test sum(g1[1]["d3"]) == sum(g2[1]["d3"])
 
     res = 0.0
     for x in g1
         res += sum(x["d1"])
     end
-    @assert res == sum(df7["d1"])
+    @test res == sum(df7["d1"])
 
-    df8 = df7 |> groupby(["d2"]) |> :( d3sum = sum(d3); d3mean = mean(dropna(d3)) )
-    @assert isequal(df8["d2"], @pdata([NA, "A", "B"]))
-
-    df9 = based_on(groupby(df7, "d2"),
-                   :( d3sum = sum(d3); d3mean = mean(dropna(d3)) ))
-    @assert isequal(df9, df8)
-
-    df8 = within(groupby(df7, "d2"),
-                 :( d4 = d3 + 1; d1sum = sum(d1) ))
-    @assert all(df8[:( d2 .== "C" ), "d1sum"] .== 13)
-     
-    ## @assert isequal(with(g1, :( sum(d1) )), map(x -> sum(x["d1"]), g1))
-
+    # TODO: Don't use symbols here
     df8 = colwise(df7[[1, 3]], :sum)
-    @assert df8[1, "d1_sum"] == sum(df7["d1"])
+    @test df8[1, "d1_sum"] == sum(df7["d1"])
 
     df8 = colwise(groupby(df7, "d2"), [:sum, :length])
-    @assert nrow(df8) == 3
-    @assert ncol(df8) == 5
-    #@assert df8[1, "d1_sum"] == 13
-    # @assert df8[2, "d1_length"] == 7
-    @assert df8[2, "d1_length"] == 8
+    @test size(df8, 1) == 3
+    @test size(df8, 2) == 5
+    @test df8[2, "d1_length"] == 8
 
     df9 = df7 |> groupby(["d2"]) |> [:sum, :length]
-    @assert isequal(df9, df8)
+    @test isequal(df9, df8)
     df9 = by(df7, "d2", [:sum, :length])
-    @assert isequal(df9, df8)
+    @test isequal(df9, df8)
 
     #test_group("reshape")
-
-    d1 = DataFrame(quote
-        a = [1:3]
-        b = [1:4]
-        c = randn(12)
-        d = randn(12)
-    end)
-
-    d1c = @DataFrame(a => [1:3],
-                     b => [1:4],
-                     c => randn(12),
-                     d => randn(12))
-                     
-    @assert isequal(d1[1:2], d1c[1:2])
+    d1 = DataFrame(a = repeat([1:3], inner = [4]),
+                   b = repeat([1:4], inner = [3]),
+                   c = randn(12),
+                   d = randn(12))
 
     d1s = stack(d1, ["a", "b"])
     d1s2 = stack(d1, ["c", "d"])
     d1s3 = melt(d1, ["c", "d"])
-    @assert isequal(d1s[1:12, "c"], d1["c"])
-    @assert isequal(d1s[13:24, "c"], d1["c"])
-    @assert all(names(d1s) .== ["variable", "value", "c", "d"])
-    @assert isequal(d1s, d1s3)
+    @test isequal(d1s[1:12, "c"], d1["c"])
+    @test isequal(d1s[13:24, "c"], d1["c"])
+    @test all(names(d1s) .== ["variable", "value", "c", "d"])
+    @test isequal(d1s, d1s3)
     d1s_df = stack_df(d1, ["a", "b"])
-    # TODO: Fix this
-    @assert isequal(d1s["variable"], d1s_df["variable"][:])
-    @assert isequal(d1s["value"], d1s_df["value"][:])
-    @assert isequal(d1s["c"], d1s_df["c"][:])
-    @assert isequal(d1s[1,:], d1s_df[1,:])
+    @test isequal(d1s["variable"], d1s_df["variable"][:])
+    @test isequal(d1s["value"], d1s_df["value"][:])
+    @test isequal(d1s["c"], d1s_df["c"][:])
+    @test isequal(d1s[1,:], d1s_df[1,:])
 
     d1s["idx"] = [1:12, 1:12]
     d1s2["idx"] = [1:12, 1:12]
     d1us = unstack(d1s, "variable", "idx", "value")
     d1us2 = unstack(d1s2, "variable", "idx", "value")
-    @assert isequal(d1us["a"], d1["a"])
-    @assert isequal(d1us2["d"], d1["d"])
+    @test isequal(d1us["a"], d1["a"])
+    @test isequal(d1us2["d"], d1["d"])
 
-    d = DataFrame(quote
-        a = letters[5:8]
-        b = LETTERS[10:11]
-        c = LETTERS[13 + [1, 1, 2, 2, 2, 1, 1, 2, 1, 2, 2, 1, 1, 2]]
-        d = pi * [1:14]
-    end)
-
-    dpv = pivot_table(d, ["a", "b"], "c", "d")
-    @assert( dpv[1,"O"] == d[5,"d"])
-    @assert( nrow(dpv) == 4 )
-
-    dpv2 = pivot_table(d, ["a"], ["c", "b"], "d")
-    @assert( dpv2[1,"O_J"] == d[5,"d"])
-
-    dpv3 = pivot_table(d, ["a"], ["c", "b"], "d", length)
-    @assert( dpv3[1,"O_J"] == 1.0)
+    const letters = convert(Vector{ASCIIString}, split("abcdefghijklmnopqrstuvwxyz", ""))
+    const LETTERS = convert(Vector{ASCIIString}, split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", ""))
 
     #test_group("merge")
 
     srand(1)
-    df1 = DataFrame(quote
-        a = shuffle!([1:10])
-        b = ["A","B"][rand(1:2, 10)]
-        v1 = randn(10)
-    end)
+    df1 = DataFrame(a = shuffle!([1:10]),
+                    b = ["A","B"][rand(1:2, 10)],
+                    v1 = randn(10))
 
-    df2 = DataFrame(quote
-        a = shuffle!(reverse([1:5]))
-        b2 = ["A","B","C"][rand(1:3, 5)]
-        v2 = randn(3)    # test unequal lengths in the constructor
-    end)
+    df2 = DataFrame(a = shuffle!(reverse([1:5])),
+                    b2 = ["A","B","C"][rand(1:3, 5)],
+                    v2 = randn(5))
 
     m1 = join(df1, df2, on = "a")
-    @assert isequal(m1["a"], @data([1, 2, 3, 4, 5]))
+    @test isequal(m1["a"], @data([1, 2, 3, 4, 5]))
     # TODO: Re-enable
     # m2 = join(df1, df2, on = "a", kind = :outer)
-    # @assert isequal(m2["b2"], DataVector["A", "B", "B", "B", "B", NA, NA, NA, NA, NA])
-    # @assert isequal(m2["b2"], DataVector["B", "B", "B", "C", "B", NA, NA, NA, NA, NA])
+    # @test isequal(m2["b2"], DataVector["A", "B", "B", "B", "B", NA, NA, NA, NA, NA])
+    # @test isequal(m2["b2"], DataVector["B", "B", "B", "C", "B", NA, NA, NA, NA, NA])
 
     df1 = DataFrame({"a" => [1, 2, 3],
                      "b" => ["America", "Europe", "Africa"]})
     df2 = DataFrame({"a" => [1, 2, 4],
                      "c" => ["New World", "Old World", "New World"]})
+
     m1 = join(df1, df2, on = "a", kind = :inner)
-    @assert isequal(m1["a"], @data([1, 2]))
+    @test isequal(m1["a"], @data([1, 2]))
+
     m2 = join(df1, df2, on = "a", kind = :left)
-    @assert isequal(m2["a"], @data([1, 2, 3]))
+    @test isequal(m2["a"], @data([1, 2, 3]))
+
     m3 = join(df1, df2, on = "a", kind = :right)
-    @assert isequal(m3["a"], @data([1, 2, 4]))
-    # TODO: Re-enable
-    # m4 = join(df1, df2, on = "a", kind = :outer)
-    # @assert isequal(m4["a"], DataVector[1, 2, 3, 4])
+    @test isequal(m3["a"], @data([1, 2, 4]))
 
-    # # test with NAs (issue #185)
-    # df1 = DataFrame()
-    # df1["A"] = DataVector["a", "b", "a", NA]
-    # df1["B"] = DataVector[1, 2, 1, 3]
+    m4 = join(df1, df2, on = "a", kind = :outer)
+    @test isequal(m4["a"], @data([1, 2, 3, 4]))
 
-    # df2 = DataFrame()
-    # df2["A"] = DataVector["a", NA, "c"]
-    # df2["C"] = DataVector[1, 2, 4]
+    # test with NAs (issue #185)
+    df1 = DataFrame()
+    df1["A"] = @data(["a", "b", "a", NA])
+    df1["B"] = @data([1, 2, 1, 3])
 
-    # m1 = join(df1, df2, on = "A")
-    # @assert size(m1) == (3,3) 
-    # @assert isequal(m1["A"], DataVector[NA,"a","a"])
-    # m2 = join(df1, df2, on = "A", kind = :outer)
-    # @assert size(m2) == (5,3) 
-    # @assert isequal(m2["A"], DataVector[NA,"a","a","b","c"])
+    df2 = DataFrame()
+    df2["A"] = @data(["a", NA, "c"])
+    df2["C"] = @data([1, 2, 4])
+
+    m1 = join(df1, df2, on = "A")
+    @test size(m1) == (3,3) 
+    @test isequal(m1["A"], @data([NA,"a","a"]))
+
+    m2 = join(df1, df2, on = "A", kind = :outer)
+    @test size(m2) == (5,3) 
+    @test isequal(m2["A"], @data([NA,"a","a","b","c"]))
 
     srand(1)
-    df1 = DataFrame(quote
-        a = ["x","y"][rand(1:2, 10)]
-        b = ["A","B"][rand(1:2, 10)]
+    df1 = DataFrame(
+        a = ["x","y"][rand(1:2, 10)],
+        b = ["A","B"][rand(1:2, 10)],
         v1 = randn(10)
-    end)
+    )
 
-    df2 = DataFrame(quote
-        a = ["x","y"][[1,2,1,1,2]]
-        b = ["A","B","C"][[1,1,1,2,3]]
-        v2 = randn(5)    
-    end)
+    df2 = DataFrame(
+        a = ["x","y"][[1,2,1,1,2]],
+        b = ["A","B","C"][[1,1,1,2,3]],
+        v2 = randn(5)
+    )
     df2[1,"a"] = NA
 
     # # TODO: Restore this functionality
     # m1 = join(df1, df2, on = ["a","b"])
-    # @assert isequal(m1["a"], DataArray(["x", "x", "y", "y", fill("x", 5)]))
+    # @test isequal(m1["a"], DataArray(["x", "x", "y", "y", fill("x", 5)]))
     # m2 = join(df1, df2, on = ["a","b"], kind = :outer)
-    # @assert isequal(m2[10,"v2"], NA)
-    # @assert isequal(m2["a"], DataVector["x", "x", "y", "y", "x", "x", "x", "x", "x", "y", NA, "y"])
-
-    # m1a = join(within(df1, :(key = PooledDataArray(_DF[["a","b"]]))),
-    #            based_on(df2, :(key = PooledDataArray(_DF[["a","b"]]); v2 = v2)),
-    #            on = "key")
-    # m2a = join(within(df1, :(key = PooledDataArray(_DF[["a","b"]]))),
-    #            based_on(df2, :(key = PooledDataArray(_DF[["a","b"]]); v2 = v2)),
-    #            on = "key",
-    #            kind = :outer)
-    # @assert isequal(sort(m1["b"]), sort(m1a["b"]))
+    # @test isequal(m2[10,"v2"], NA)
+    # @test isequal(m2["a"], DataVector["x", "x", "y", "y", "x", "x", "x", "x", "x", "y", NA, "y"])
 
     srand(1)
     function spltdf(d)
@@ -360,34 +244,34 @@ module TestData
         d["x3"] = map(x -> x[3], d["a"])
         d
     end
-    df1 = DataFrame(quote
-        a = ["abc","abx", "axz", "def", "dfr"]
+    df1 = DataFrame(
+        a = ["abc", "abx", "axz", "def", "dfr"],
         v1 = randn(5)
-    end)
+    )
     df1 = spltdf(df1)
-    df2 = DataFrame(quote
-        a = ["def", "abc","abx", "axz", "xyz"]
+    df2 = DataFrame(
+        a = ["def", "abc","abx", "axz", "xyz"],
         v2 = randn(5)    
-    end)
+    )
     df2 = spltdf(df2)
 
     # m1 = join(df1, df2, on = "a")
     # m2 = join(df1, df2, on = ["x1", "x2", "x3"])
-    # @assert isequal(sort(m1["a"]), sort(m2["a"]))
+    # @test isequal(sort(m1["a"]), sort(m2["a"]))
 
     #test_group("New DataVector constructors")
     dv = DataArray(Int, 5)
-    @assert all(isna(dv))
+    @test all(isna(dv))
     dv = DataArray(Float64, 5)
-    @assert all(isna(dv))
+    @test all(isna(dv))
     dv = @data(zeros(5))
-    @assert all(dv .== 0.0)
+    @test all(dv .== 0.0)
     dv = @data(ones(5))
-    @assert all(dv .== 1.0)
+    @test all(dv .== 1.0)
 
     # No more NA corruption
     dv = @data(ones(10_000))
-    @assert !any(isna(dv))
+    @test !any(isna(dv))
 
     PooledDataArray(falses(2), falses(2))
     PooledDataArray(falses(2), trues(2))
@@ -403,21 +287,21 @@ module TestData
     # TODO: Restore this
     # dv = DataArray(1:4)
     # dv[4] = NA
-    # @assert (1 in unique(dv))
-    # @assert (2 in unique(dv))
-    # @assert (3 in unique(dv))
-    # @assert (NA in unique(dv))
+    # @test (1 in unique(dv))
+    # @test (2 in unique(dv))
+    # @test (3 in unique(dv))
+    # @test (NA in unique(dv))
 
     #test_group("find()")
     dv = DataArray([true, false, true])
-    @assert isequal(find(dv), [1, 3])
+    @test isequal(find(dv), [1, 3])
 
     pdv = PooledDataArray([true, false, true])
-    @assert isequal(find(pdv), [1, 3])
+    @test isequal(find(pdv), [1, 3])
 
     dv[1] = NA
-    @assert isequal(find(dv), [3])
+    @test isequal(find(dv), [3])
 
     pdv[1] = NA
-    @assert isequal(find(pdv), [3])
+    @test isequal(find(pdv), [3])
 end

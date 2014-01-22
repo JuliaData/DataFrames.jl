@@ -5,14 +5,8 @@ module TestDataFrame
 
     #test_group("Operations on DataFrames that have column groupings")
 
-    x = DataFrame(quote
-        a = [1,2,3]
-        b = [4,5,6]
-    end)
-    y = DataFrame(quote
-        c = [1,2,3]
-        d = [4,5,6]
-    end)
+    x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
+    y = DataFrame(c = [1, 2, 3], d = [4, 5, 6])
 
     #
     # Equality
@@ -35,110 +29,80 @@ module TestDataFrame
     @test isna(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])))
     @test isna(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
 
-    # set_group(x, "group1", ["a", "b"])
-    # set_group(y, "group2", ["c", "d"])
-
     z = deepcopy(x)  
-    # @test is_group(z, "group1")
 
     z = hcat(x, y)
-    # @test is_group(z, "group1")
-    # @test is_group(z, "group2")
 
-    v = DataFrame(quote
-        a = [5,6,7]
+    v = DataFrame(
+        a = [5,6,7],
         b = [8,9,10]
-    end)
+    )
     z = vcat(DataFrame[v, x])
-    # @test is_group(z, "group1")
 
     z = vcat(v, x)
-    # @test is_group(z, "group1")
 
     # Deleting columns removes any mention from groupings
     delete!(x, "a")
     # @test colnames(x) == ["b"]
-    # @test get_groups(x)["group1"] == ["b"]
 
     ## del calls ref, which properly deals with groupings
-    y = without(y, "c")
-    @test names(y) == ["d"]
-    #@test get_groups(y)["group2"] == ["d"]
-    z1 = z[[1]]
-    @test names(z1) == ["a"]
-    #@test get_groups(z1)["group1"] == ["a"]
-
     z2 = z[:,[1,1,2]]
     @test names(z2) == ["a", "a_1", "b"]
-    #@test get_groups(z2)["group1"] == ["a_1", "b"]
 
     #test_group("DataFrame assignment")
-    df1 = DataFrame(quote
-        a = 1:5
-        b2 = letters[1:5]
-        v2 = randn(5) 
-    end)
-    df2 = DataFrame(quote
-        a = reverse([1:5])
-        b2 = reverse(letters)[1:5]
-        v2 = randn(5)
-    end)
-    df1[1:2,:] = df2[4:5,:]
-    # TODO: Decide on ==
-    # @test df1[1:2,:] == df2[4:5,:]
 
     #test_group("Empty DataFrame constructors")
     df = DataFrame(10, 5)
-    @assert nrow(df) == 10
-    @assert ncol(df) == 5
+    @assert size(df, 1) == 10
+    @assert size(df, 2) == 5
     @assert typeof(df[:, 1]) == DataVector{Float64}
 
     df = DataFrame(Int, 10, 3)
-    @assert nrow(df) == 10
-    @assert ncol(df) == 3
+    @assert size(df, 1) == 10
+    @assert size(df, 2) == 3
     @assert typeof(df[:, 1]) == DataVector{Int}
     @assert typeof(df[:, 2]) == DataVector{Int}
     @assert typeof(df[:, 3]) == DataVector{Int}
 
     df = DataFrame({Int, Float64, ASCIIString}, 100)
-    @assert nrow(df) == 100
-    @assert ncol(df) == 3
+    @assert size(df, 1) == 100
+    @assert size(df, 2) == 3
     @assert typeof(df[:, 1]) == DataVector{Int}
     @assert typeof(df[:, 2]) == DataVector{Float64}
     @assert typeof(df[:, 3]) == DataVector{ASCIIString}
 
     df = DataFrame({Int, Float64, ASCIIString}, ["A", "B", "C"], 100)
-    @assert nrow(df) == 100
-    @assert ncol(df) == 3
+    @assert size(df, 1) == 100
+    @assert size(df, 2) == 3
     @assert typeof(df[:, 1]) == DataVector{Int}
     @assert typeof(df[:, 2]) == DataVector{Float64}
     @assert typeof(df[:, 3]) == DataVector{ASCIIString}
 
     df = DataFrame(zeros(10, 5))
-    @assert nrow(df) == 10
-    @assert ncol(df) == 5
+    @assert size(df, 1) == 10
+    @assert size(df, 2) == 5
     @assert typeof(df[:, 1]) == DataVector{Float64}
 
     df = DataFrame(ones(10, 5))
-    @assert nrow(df) == 10
-    @assert ncol(df) == 5
+    @assert size(df, 1) == 10
+    @assert size(df, 2) == 5
     @assert typeof(df[:, 1]) == DataVector{Float64}
 
     df = DataFrame(eye(10, 5))
-    @assert nrow(df) == 10
-    @assert ncol(df) == 5
+    @assert size(df, 1) == 10
+    @assert size(df, 2) == 5
     @assert typeof(df[:, 1]) == DataVector{Float64}
 
     #test_group("Other DataFrame constructors")
     df = DataFrame([{"a"=>1, "b"=>'c'}, {"a"=>3, "b"=>'d'}, {"a"=>5}])
-    @assert nrow(df) == 3
-    @assert ncol(df) == 2
+    @assert size(df, 1) == 3
+    @assert size(df, 2) == 2
     @assert typeof(df[:,"a"]) == DataVector{Int}
     @assert typeof(df[:,"b"]) == DataVector{Char}
 
     df = DataFrame([{"a"=>1, "b"=>'c'}, {"a"=>3, "b"=>'d'}, {"a"=>5}], ["a", "b"])
-    @assert nrow(df) == 3
-    @assert ncol(df) == 2
+    @assert size(df, 1) == 3
+    @assert size(df, 2) == 2
     @assert typeof(df[:,"a"]) == DataVector{Int}
     @assert typeof(df[:,"b"]) == DataVector{Char}
 
@@ -148,21 +112,21 @@ module TestDataFrame
     df = DataFrame(data, ["C", "A", "B"])
 
     # This assignment was missing before
-    df = DataFrame(quote Column = ["A"] end)
+    df = DataFrame(Column = ["A"])
     df[1, "Column"] = "Testing"
 
     # flipud() tests
-    df = DataFrame(quote A = 1:4 end)
-    @assert isequal(flipud(df), DataFrame(quote A = [4, 3, 2, 1] end))
-    @assert isequal(df, DataFrame(quote A = [1, 2, 3, 4] end))
+    df = DataFrame(A = 1:4)
+    @assert isequal(flipud(df), DataFrame(A = [4, 3, 2, 1]))
+    @assert isequal(df, DataFrame(A = [1, 2, 3, 4]))
     flipud!(df)
-    @assert isequal(df, DataFrame(quote A = [4, 3, 2, 1] end))
+    @assert isequal(df, DataFrame(A = [4, 3, 2, 1]))
 
     # zero-row dataframe and subdataframe test
     df = DataFrame(x=[], y=[])
     @assert nrow(df) == 0
     df = DataFrame(x=[1:3], y=[3:5])
-    sdf = sub(df, :(x .== 4) )
+    sdf = sub(df, df["x"] .== 4)
     @assert nrow(sdf) == 0
 
     @assert hash(DataFrame([1 2; 3 4])) == hash(DataFrame([1 2; 3 4]))

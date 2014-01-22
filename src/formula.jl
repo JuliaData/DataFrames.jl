@@ -12,7 +12,7 @@
 ## The rhs of a formula can be 1
 
 type Formula
-    lhs::Union(Symbol, Expr,Nothing)
+    lhs::Union(Symbol, Expr, Nothing)
     rhs::Union(Symbol, Expr, Integer)
 end
 
@@ -26,11 +26,11 @@ end
 
 type Terms
     terms::Vector
-    eterms::Vector                    # evaluation terms
-    factors::Matrix{Int8}             # maps terms to evaluation terms
-    order::Vector{Int}                # orders of rhs terms
-    response::Bool       # indicator of a response, which is eterms[1] if present
-    intercept::Bool      # is there an intercept column in the model matrix?
+    eterms::Vector        # evaluation terms
+    factors::Matrix{Int8} # maps terms to evaluation terms
+    order::Vector{Int}    # orders of rhs terms
+    response::Bool        # indicator of a response, which is eterms[1] if present
+    intercept::Bool       # is there an intercept column in the model matrix?
 end
 
 type ModelFrame
@@ -39,16 +39,18 @@ type ModelFrame
     msng::BitArray
 end
     
-type ModelMatrix{T<:Union(Float32,Float64)}
+type ModelMatrix{T <: Union(Float32, Float64)}
     m::Matrix{T}
     assign::Vector{Int}
 end
 
 Base.size(mm::ModelMatrix) = size(mm.m)
-Base.size(mm::ModelMatrix,dim...) = size(mm.m,dim...)
+Base.size(mm::ModelMatrix, dim...) = size(mm.m, dim...)
 
 function Base.show(io::IO, f::Formula)
-    print(io, string("Formula: ", f.lhs == nothing ? "" : f.lhs, " ~ ", f.rhs))
+    print(io,
+          string("Formula: ",
+                 f.lhs == nothing ? "" : f.lhs, " ~ ", f.rhs))
 end
 
 ## Return, as a vector of symbols, the names of all the variables in
@@ -59,9 +61,10 @@ function allvars(ex::Expr)
 end
 allvars(f::Formula) = unique(vcat(allvars(f.rhs), allvars(f.lhs)))
 allvars(sym::Symbol) = [sym]
-allvars(v) = Array(Symbol,0)
+allvars(v::Any) = Array(Symbol, 0)
 
-const specials = Set(:+,:-,:*,:/,:&,:|,:^) # special operators in formulas
+# special operators in formulas
+const specials = Set(:+, :-, :*, :/, :&, :|, :^)
 
 function dospecials(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
@@ -79,7 +82,7 @@ function dospecials(ex::Expr)
     end
     :($a2 + $a3 + $a2 & $a3)
 end
-dospecials(a) = a
+dospecials(a::Any) = a
 
 const associative = Set(:+,:*,:&)       # associative special operators
 
@@ -106,13 +109,13 @@ function condense(ex::Expr)
     excp.args = vcat(a1, map(x->ex_or_args(x,a1), ex.args[2:end])...)
     excp
 end    
-condense(a) = a
+condense(a::Any) = a
 
 getterms(ex::Expr) = (ex.head == :call && ex.args[1] == :+) ? ex.args[2:end] : ex
-getterms(a) = a
+getterms(a::Any) = a
 
 ord(ex::Expr) = (ex.head == :call && ex.args[1] == :&) ? length(ex.args)-1 : 1
-ord(a) = 1
+ord(a::Any) = 1
 
 const nonevaluation = Set(:&,:|)        # operators constructed from other evaluations
 ## evaluation terms - the (filtered) arguments for :& and :|, otherwise the term itself
@@ -169,7 +172,9 @@ dropUnusedLevels!(x) = x
 
 function ModelFrame(f::Formula, d::AbstractDataFrame)
     trms = Terms(f)
-    df,msng = na_omit(DataFrame(map(x->with(d,x),trms.eterms)))
+    dump(trms.eterms)
+    println(trms.eterms)
+    df,msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, map(string, trms.eterms))
     for c in df dropUnusedLevels!(c[2]) end
     ModelFrame(df, trms, msng)
@@ -253,174 +258,3 @@ function coefnames(fr::ModelFrame)
     end
     return vnames
 end
-
-# Expand dummy variables and equations
-## function model_matrix(mf::ModelFrame)
-##     ex = mf.formula.rhs[1]
-##     # BUG: complete_cases doesn't preserve grouped columns
-##     df = mf.df#[complete_cases(mf.df),1:ncol(mf.df)]  
-##     rdf = df[mf.y_indexes]
-##     mdf = expand(ex, df)
-
-##     # TODO: Convert to Array{Float64} in a cleaner way
-##     rnames = colnames(rdf)
-##     mnames = colnames(mdf)
-##     r = Array(Float64,nrow(rdf),ncol(rdf))
-##     m = Array(Float64,nrow(mdf),ncol(mdf))
-##     for i = 1:nrow(rdf)
-##       for j = 1:ncol(rdf)
-##         r[i,j] = float(rdf[i,j])
-##       end
-##       for j = 1:ncol(mdf)
-##         m[i,j] = float(mdf[i,j])
-##       end
-##     end
-    
-##     include_intercept = true
-##     if include_intercept
-##       m = hcat(ones(nrow(mdf)), m)
-##       unshift!(mnames, "(Intercept)")
-##     end
-
-##     ModelMatrix(m, r, mnames, rnames)
-##     ## mnames = {}
-##     ## rnames = {}
-##     ## for c in 1:ncol(rdf)
-##     ##   r = hcat(r, float(rdf[c]))
-##     ##   push!(rnames, colnames(rdf)[c])
-##     ## end
-##     ## for c in 1:ncol(mdf)
-##     ##   m = hcat(m, mdf[c])
-##     ##   push!(mnames, colnames(mdf)[c])
-##     ## end
-## end
-
-## model_matrix(f::Formula, d::AbstractDataFrame) = model_matrix(ModelFrame(f, d))
-## model_matrix(ex::Expr, d::AbstractDataFrame) = model_matrix(ModelFrame(Formula(ex), d))
-
-## # TODO: Make a more general version of these functions
-## # TODO: Be able to extract information about each column name
-## function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame)
-##    cols = {}
-##    col_names = Array(ASCIIString,0)
-##    for i in 1:ncol(a)
-##        for j in 1:ncol(b)
-##           push!(cols, DataArray(a[:,i] .* b[:,j]))
-##           push!(col_names, string(colnames(a)[i],"&",colnames(b)[j]))
-##        end
-##    end
-##    DataFrame(cols, col_names)
-## end
-
-## function interaction_design_matrix(a::AbstractDataFrame, b::AbstractDataFrame, c::AbstractDataFrame)
-##    cols = {}
-##    col_names = Array(ASCIIString,0)
-##    for i in 1:ncol(a)
-##        for j in 1:ncol(b)
-##            for k in 1:ncol(b)
-##               push!(cols, DataArray(a[:,i] .* b[:,j] .* c[:,k]))
-##               push!(col_names, string(colnames(a)[i],"&",colnames(b)[j],"&",colnames(c)[k]))
-##            end
-##        end
-##    end
-##    DataFrame(cols, col_names)
-## end
-
-## # Temporary: Manually describe the interactions needed for DataFrame Array.
-## function all_interactions(dfs::Array{Any,1})
-##     d = DataFrame()
-##     if length(dfs) == 2
-##       combos = ([1,2],)
-##     elseif length(dfs) == 3
-##       combos = ([1,2], [1,3], [2,3], [1,2,3])
-##     else
-##       error("interactions with more than 3 terms not implemented (yet)")
-##     end
-##     for combo in combos
-##        if length(combo) == 2
-##          a = interaction_design_matrix(dfs[combo[1]],dfs[combo[2]])
-##        elseif length(combo) == 3
-##          a = interaction_design_matrix(dfs[combo[1]],dfs[combo[2]],dfs[combo[3]])
-##        end
-##        d = insert!(d, a)
-##     end
-##     return d
-## end
-
-## # string(Expr) now quotes, which we don't want. This hacks around that, stealing
-## # from print_to_string
-## function formula_string(ex::Expr)
-##     s = memio(0, false)
-##     Base.show_unquoted(s, ex)
-##     takebuf_string(s)
-## end
-
-## #
-## # The main expression to DataFrame expansion function.
-## # Returns a DataFrame.
-## #
-
-## function expand(ex::Expr, df::AbstractDataFrame)
-##     f = eval(ex.args[1])
-##     if method_exists(f, (FormulaExpander, Vector{Any}, DataFrame))
-##         # These are specialized expander functions (+, *, &, etc.)
-##         f(FormulaExpander(), ex.args[2:end], df)
-##     else
-##         # Everything else is called recursively:
-##         expand(with(df, ex), formula_string(ex), df)
-##     end
-## end
-
-## function expand(s::Symbol, df::AbstractDataFrame)
-##     expand(with(df, s), string(s), df)
-## end
-
-## # TODO: make this array{symbol}?
-## function expand(args::Array{Any}, df::AbstractDataFrame)
-##     [expand(x, df) for x in args]
-## end
-
-## function expand(x, name::ByteString, df::AbstractDataFrame)
-##     # If this happens to be a column group, then expand each and concatenate
-##     if is_group(df, name)
-##       preds = get_groups(df)[name]
-##       dfs = [expand(symbol(x), df) for x in preds]
-##       return cbind(dfs...) 
-##     end
-##     # This is the default for expansion: put it right in to a DataFrame.
-##     DataFrame({x}, [name])
-## end
-
-## #
-## # Methods for expansion of specific data types
-## #
-
-## # Expand a PooledDataVector into a matrix of indicators for each dummy variable
-## # TODO: account for NAs?
-## function expand(poolcol::PooledDataVector, colname::ByteString, df::AbstractDataFrame)
-##     newcol = {DataArray([convert(Float64,x)::Float64 for x in (poolcol.refs .== i)]) for i in 2:length(poolcol.pool)}
-##     newcolname = [string(colname, ":", x) for x in poolcol.pool[2:length(poolcol.pool)]]
-##     DataFrame(newcol, convert(Vector{ByteString}, newcolname))
-## end
-
-
-## #
-## # Methods for Formula expansion
-## #
-## type FormulaExpander; end # This is an indictor type.
-
-## function +(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
-##     d = DataFrame()
-##     for a in args
-##         d = insert!(d, expand(a, df))
-##     end
-##     d
-## end
-## function (&)(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
-##     interaction_design_matrix(expand(args[1], df), expand(args[2], df))
-## end
-## function *(::FormulaExpander, args::Vector{Any}, df::AbstractDataFrame)
-##     d = +(FormulaExpander(), args, df)
-##     d = insert!(d, all_interactions(expand(args, df)))
-##     d
-## end

@@ -125,28 +125,7 @@ function Base.map(f::Function, gd::GroupedDataFrame)
     GroupApplied(keys,vals)
 end
 
-with(x::GroupApplied, e::Expr) = GroupApplied(x.keys, map(with(e), x.vals))
 Base.map(f::Function, x::GroupApplied) = GroupApplied(x.keys, map(f, x.vals))
-
-
-
-## function map(f::Function, gd::GroupedDataFrame)
-##     # preallocate based on the results on the first one
-##     x = f(gd[1])
-##     res = Array(typeof(x), length(gd))
-##     res[1] = x
-##     for idx in 2:length(gd)
-##         res[idx] = f(gd[idx])
-##     end
-##     res
-## end
-
-# with() sweeps along groups and applies with to each group
-function with(gd::GroupedDataFrame, e::Expr)
-    keys = [d[1,gd.cols] for d in gd]
-    vals = {with(d, e) for d in gd}
-    GroupApplied(keys,vals)
-end
 
 function combine(x)   # expecting (keys,vals) with keys to be DataFrames and values are what are to be combined
     keys = copy(x.keys)
@@ -155,32 +134,6 @@ function combine(x)   # expecting (keys,vals) with keys to be DataFrames and val
         keys[i] = vcat(fill(copy(keys[i]), nrow(vals[i]))...)
     end
     hcat(vcat(keys...), vcat(vals...))
-end
-
-
-# within() sweeps along groups and applies within to each group
-function within!(gd::GroupedDataFrame, e::Expr)   
-    x = [within!(d[:,:], e) for d in gd]
-    vcat(x...)
-end
-
-within!(x::SubDataFrame, e::Expr) = within!(x[:,:], e)
-
-function within(gd::GroupedDataFrame, e::Expr)  
-    x = [within(d, e) for d in gd]
-    vcat(x...)
-end
-
-within(x::SubDataFrame, e::Expr) = within(x[:,:], e)
-
-# based_on() sweeps along groups and applies based_on to each group
-function based_on(gd::GroupedDataFrame, ex::Expr)  
-    f = based_on_f(gd.parent, ex)
-    x = DataFrame[f(d) for d in gd]
-    idx = rep([1:length(x)], convert(Vector{Int}, map(nrow, x)))
-    keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
-    resdf = vcat(x)
-    hcat(keydf, resdf)
 end
 
 function based_on(gd::GroupedDataFrame, f::Function)
@@ -194,9 +147,6 @@ end
 
 # default pipelines:
 Base.map(f::Function, x::SubDataFrame) = f(x)
-Base.(:|>)(x::GroupedDataFrame, e::Expr) = based_on(x, e)
-Base.(:|>)(x::GroupApplied, e::Expr) = with(x, e)
-## (|>)(x::GroupedDataFrame, f::Function) = map(f, x)
 
 # apply a function to each column in a DataFrame
 colwise(f::Function, d::AbstractDataFrame) = {[f(d[idx])] for idx in 1:ncol(d)}
@@ -246,17 +196,5 @@ Base.names(d::GroupedDataFrame) = names(d.parent)
 
 # by() convenience function
 by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
-by(d::AbstractDataFrame, cols, e::Expr) = based_on(groupby(d, cols), e)
 by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
 by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
-function by(d, x::Union(Function,Expr)...)
-    res = d
-    for e in x
-        if isa(e, Function)
-            res = e(res)
-        else
-            res = with(res, e)
-        end
-    end
-    res
-end
