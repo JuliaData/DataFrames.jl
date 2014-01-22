@@ -913,37 +913,25 @@ end
 
 # a SubDataFrame is a lightweight wrapper around a DataFrame used most frequently in
 # split/apply sorts of operations.
-type SubDataFrame <: AbstractDataFrame
+
+immutable SubDataFrame{T<:AbstractVector{Int}} <: AbstractDataFrame
     parent::DataFrame
-    rows::Vector{Int} # maps from subdf row indexes to parent row indexes
+    rows::T # maps from subdf row indexes to parent row indexes
     
-    function SubDataFrame(parent::DataFrame, rows::Vector{Int})
-        if any(rows .< 1)
-            error("all SubDataFrame indices must be > 0")
-        end
-        if length(rows) > 0 && maximum(rows) > nrow(parent)
-            error("all SubDataFrame indices must be <= the number of rows of the DataFrame")
+    function SubDataFrame(parent::DataFrame, rows::T)
+        if length(rows) > 0
+            rmin, rmax = extrema(rows)
+            if rmin < 1 || rmax > size(parent, 1)
+                throw(BoundsError())
+            end
         end
         new(parent, rows)
     end
 end
 
-Base.sub(D::DataFrame, r, c) = sub(D[[c]], r)    # If columns are given, pass in a subsetted parent D.
-                                            # Columns are not copies, so it's not expensive.
-Base.sub(D::DataFrame, r::Int) = sub(D, [r])
-Base.sub(D::DataFrame, rs::Vector{Int}) = SubDataFrame(D, rs)
-Base.sub(D::DataFrame, r) = sub(D, getindex(SimpleIndex(nrow(D)), r)) # this is a wacky fall-through that uses light-weight fake indexes!
-Base.sub(D::DataFrame, ex::Expr) = sub(D, with(D, ex))
-
-Base.sub(D::SubDataFrame, r, c) = sub(D[[c]], r)
-Base.sub(D::SubDataFrame, r::Int) = sub(D, [r])
-Base.sub(D::SubDataFrame, rs::Vector{Int}) = SubDataFrame(D.parent, D.rows[rs])
-Base.sub(D::SubDataFrame, r) = sub(D, getindex(SimpleIndex(nrow(D)), r)) # another wacky fall-through
-Base.sub(D::SubDataFrame, ex::Expr) = sub(D, with(D, ex))
-const subset = sub
-
-Base.filter(ex::Expr, df::AbstractDataFrame) = subset(df, ex)
-Base.select(ex::Expr, df::AbstractDataFrame) = subset(df, ex)
+SubDataFrame(parent::DataFrame, row::Integer) = SubDataFrame(parent, [row])
+SubDataFrame{T<:AbstractVector{Int}}(parent::DataFrame, rows::T) = SubDataFrame{T}(parent,rows)
+SubDataFrame{S<:Integer}(parent::DataFrame, rows::AbstractVector{S}) = sub(parent, int(rows))
 
 Base.getindex(df::SubDataFrame, c) = df.parent[df.rows, c]
 Base.getindex(df::SubDataFrame, r, c) = df.parent[df.rows[r], c]
@@ -955,8 +943,44 @@ nrow(df::SubDataFrame) = length(df.rows)
 ncol(df::SubDataFrame) = ncol(df.parent)
 Base.names(df::SubDataFrame) = names(df.parent) 
 
-# Associative methods:
 index(df::SubDataFrame) = index(df.parent)
+
+# Sub definitions, creating a SubDataFrame
+
+Base.sub{S<:Real}(D::DataFrame, rs::AbstractVector{S}) = SubDataFrame(D, rs)
+Base.sub{S<:Real}(D::SubDataFrame, rs::AbstractVector{S}) = SubDataFrame(D.parent, D.rows[rs])
+Base.sub(D::DataFrame, rs::AbstractVector{Bool}) = sub(D, getindex(SimpleIndex(nrow(D)), rs))
+Base.sub(D::SubDataFrame, rs::AbstractVector{Bool}) = sub(D, getindex(SimpleIndex(nrow(D)), rs))
+
+Base.sub(D::AbstractDataFrame, r::Integer) = SubDataFrame(D, Int[r])
+Base.sub(D::AbstractDataFrame, ex::Expr) = sub(D, with(D, ex))
+Base.sub(D::AbstractDataFrame, r) = sub(D, getindex(SimpleIndex(nrow(D)), r)) # fall-through that uses light-weight "fake" indexes
+
+Base.sub(D::AbstractDataFrame, r, c) = sub(D[[c]], r)
+
+Base.filter(ex::Expr, df::AbstractDataFrame) = sub(df, ex)
+Base.select(ex::Expr, df::AbstractDataFrame) = sub(df, ex)
+
+# Container for a DataFrame row
+
+immutable DataFrameRow
+    df::AbstractDataFrame
+    row::Int
+end
+
+Base.getindex(r::DataFrameRow, idx::AbstractArray) = DataFrameRow(r.df[[idx]], r.row)
+Base.getindex(r::DataFrameRow, idx) = r.df[r.row, idx]
+Base.setindex!(r::DataFrameRow, value, idx) = setindex!(r.df, value, r.row, idx)
+Base.names(df::DataFrameRow) = names(df.df) 
+Base.sub(r::DataFrameRow, c) = DataFrameRow(r.df[[c]], r.row)
+index(r::DataFrameRow) = index(r.df)
+length(r::DataFrameRow) = size(r.df, 2)
+endof(r::DataFrameRow) = size(r.df, 2)
+collect(r::DataFrameRow) = (String,Any)[x for x in r]
+
+start(r::DataFrameRow) = 1
+next(r::DataFrameRow, s) = ((names(r)[s], r[s]), s+1)
+done(r::DataFrameRow, s) = s > length(r)
 
 # delete!() deletes columns; deleterows!() deletes rows
 # delete!(df, 1)
@@ -1432,6 +1456,8 @@ function DataArrays.array(adf::AbstractDataFrame)
     return res
 end
 
+DataArrays.array(r::DataFrameRow) = DataArrays.array(r.df[r.row,:])
+
 function DataArrays.DataArray(adf::AbstractDataFrame,
                               T::DataType = reduce(typejoin, types(adf)))
     n, p = size(adf)
@@ -1605,7 +1631,7 @@ end
 DFPerm{O<:Ordering}(o::O, df::AbstractDataFrame) = DFPerm{O,typeof(df)}(o,df)
 
 # For sorting, a and b are row indices (first two lt definitions)
-# For issorted, the default row iterator returns SubDataFrames instead,
+# For issorted, the default row iterator returns DataFrameRows instead,
 # so two more lt function is defined below
 function Base.Sort.lt{V<:AbstractVector}(o::DFPerm{V}, a, b)
     for i = 1:ncol(o.df)
@@ -1631,24 +1657,24 @@ function Base.Sort.lt{O<:Ordering}(o::DFPerm{O}, a, b)
     false
 end
 
-function Base.Sort.lt{V<:AbstractVector}(o::DFPerm{V}, a::AbstractDataFrame, b::AbstractDataFrame)
+function Base.Sort.lt{V<:AbstractVector}(o::DFPerm{V}, a::DataFrameRow, b::DataFrameRow)
     for i = 1:ncol(o.df)
-        if lt(o.ord[i], a[1,i], b[1,i])
+        if lt(o.ord[i], a[i], b[i])
             return true
         end
-        if lt(o.ord[i], b[1,i], a[1,i])
+        if lt(o.ord[i], b[i], a[i])
             return false
         end
     end
     false
 end
 
-function Base.Sort.lt{O<:Ordering}(o::DFPerm{O}, a::AbstractDataFrame, b::AbstractDataFrame)
+function Base.Sort.lt{O<:Ordering}(o::DFPerm{O}, a::DataFrameRow, b::DataFrameRow)
     for i = 1:ncol(o.df)
-        if lt(o.ord, a[1,i], b[1,i])
+        if lt(o.ord, a[i], b[i])
             return true
         end
-        if lt(o.ord, b[1,i], a[1,i])
+        if lt(o.ord, b[i], a[i])
             return false
         end
     end
@@ -1818,7 +1844,7 @@ end
 ########################
 
 issorted(df::AbstractDataFrame; cols={}, lt=isless, by=identity, rev=false, order=Forward) = 
-    issorted(EachRow(df), ordering(df, cols, lt, by, rev, order))
+    issorted(eachrow(df), ordering(df, cols, lt, by, rev, order))
 
 # sort!, sort, and sortperm functions
 
@@ -1904,39 +1930,41 @@ DataArrays.reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
 
 ##############################################################################
 ##
-## Iteration: EachRow, EachCol
+## Iteration: eachrow, eachcol
 ##
 ##############################################################################
 
 # Iteration by rows
-type DFRowIterator
+immutable DFRowIterator
     df::AbstractDataFrame
 end
-EachRow(df::AbstractDataFrame) = DFRowIterator(df)
+eachrow(df::AbstractDataFrame) = DFRowIterator(df)
+
 Base.start(itr::DFRowIterator) = 1
-Base.done(itr::DFRowIterator, i::Int) = i > nrow(itr.df)
-Base.next(itr::DFRowIterator, i::Int) = (itr.df[i, :], i + 1)
-Base.size(itr::DFRowIterator) = (nrow(itr.df), )
-Base.length(itr::DFRowIterator) = nrow(itr.df)
-Base.getindex(itr::DFRowIterator, i::Any) = itr.df[i, :]
+Base.done(itr::DFRowIterator, i::Int) = i > size(itr.df, 1)
+Base.next(itr::DFRowIterator, i::Int) = (DataFrameRow(itr.df, i), i + 1)
+Base.size(itr::DFRowIterator) = (size(itr.df, 1), )
+Base.length(itr::DFRowIterator) = size(itr.df, 1)
+Base.getindex(itr::DFRowIterator, i::Any) = DataFrameRow(itr.df, i)
 Base.map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
 
 
 # Iteration by columns
-type DFColumnIterator
+immutable DFColumnIterator
     df::AbstractDataFrame
 end
-EachCol(df::AbstractDataFrame) = DFColumnIterator(df)
+eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
+
 Base.start(itr::DFColumnIterator) = 1
-Base.done(itr::DFColumnIterator, j::Int) = j > ncol(itr.df)
+Base.done(itr::DFColumnIterator, j::Int) = j > size(itr.df, 2)
 Base.next(itr::DFColumnIterator, j::Int) = (itr.df[:, j], j + 1)
-Base.size(itr::DFColumnIterator) = (ncol(itr.df), )
-Base.length(itr::DFColumnIterator) = ncol(itr.df)
+Base.size(itr::DFColumnIterator) = (size(itr.df, 2), )
+Base.length(itr::DFColumnIterator) = size(itr.df, 2)
 Base.getindex(itr::DFColumnIterator, j::Any) = itr.df[:, j]
 function Base.map(f::Function, dfci::DFColumnIterator)
     # note: `f` must return a consistent length
     res = DataFrame()
-    for i = 1:ncol(dfci.df)
+    for i = 1:size(dfci.df, 2)
         res[i] = f(dfci[i])
     end
     names!(res, names(dfci.df))

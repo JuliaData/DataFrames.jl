@@ -21,16 +21,37 @@ module TestIteration
 	    @assert ndims(el) == 0
 	end
 
-	for row in EachRow(df)
-	    @assert isa(row, DataFrame)
+	for row in eachrow(df)
+	    @assert isa(row, DataFrameRow)
+	    @assert row["B"]-row["A"] == 1
 	end
 
-	for col in EachCol(df)
+	for col in eachcol(df)
 	    @assert isa(col, AbstractDataVector)
 	end
 
-	@assert isequal(map(x -> minimum(array(x)), EachRow(df)), {1,2})
-	@assert isequal(map(minimum, EachCol(df)), DataFrame(A = [1], B = [2]))
+	@assert isequal(map(x -> minimum(array(x)), eachrow(df)), {1,2})
+	@assert isequal(map(minimum, eachcol(df)), DataFrame(A = [1], B = [2]))
+
+	row = DataFrameRow(df, 1)
+
+	row["A"] = 100
+	@assert df[1, "A"] == 100
+
+	row[1] = 101
+	@assert df[1, "A"] == 101
+
+        df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+
+        s1 = sub(df, 1:3)
+        s1[2,"A"] = 4
+        @assert df[2, "A"] == 4
+        @assert sub(s1, 1:2) == sub(df, 1:2)
+
+        s2 = sub(df, 1:2:3)
+        s2[2, "B"] = "M"
+        @assert df[3, "B"] == "M"
+        @assert sub(s2, 1:1:2) == sub(df, [1,3])
 
 	# @test_fail for x in df; end # Raises an error
 end
