@@ -778,6 +778,34 @@ end
 
 ##############################################################################
 ##
+## Equality
+##
+##############################################################################
+
+function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
+    size(df1, 2) == size(df2, 2) || return false
+    isequal(index(df1), index(df2)) || return false
+    for idx in 1:size(df1, 2)
+        isequal(df1[idx], df2[idx]) || return false
+    end
+    return true
+end
+
+function Base.(:(==))(df1::AbstractDataFrame, df2::AbstractDataFrame)
+    size(df1, 2) == size(df2, 2) || return false
+    isequal(index(df1), index(df2)) || return false
+    eq = true
+    for idx in 1:size(df1, 2)
+        coleq = df1[idx] == df2[idx]
+        # coleq could be NA
+        !isequal(coleq, false) || return false
+        eq &= coleq
+    end
+    return eq
+end
+
+##############################################################################
+##
 ## Associative methods
 ##
 ##############################################################################

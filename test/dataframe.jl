@@ -14,6 +14,27 @@ module TestDataFrame
         d = [4,5,6]
     end)
 
+    #
+    # Equality
+    #
+    @test isequal(DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
+    @test !isequal(DataFrame(a=@data([1, 2]), b=@data([4, 5])), DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
+    @test !isequal(DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, 3])))
+    @test !isequal(DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, 3]), c=@data([4, 5, 6])))
+    @test !isequal(DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])), DataFrame(b=@data([4, 5, 6]), a=@data([1, 2, 3])))
+    @test !isequal(DataFrame(a=@data([1, 2, 2]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
+    @test isequal(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])))
+
+    @test DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6]))
+    @test DataFrame(a=@data([1, 2]), b=@data([4, 5])) != DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6]))
+    @test DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])) != DataFrame(a=@data([1, 2, 3]))
+    @test DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])) != DataFrame(a=@data([1, 2, 3]), c=@data([4, 5, 6]))
+    @test DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])) != DataFrame(b=@data([4, 5, 6]), a=@data([1, 2, 3]))
+    @test DataFrame(a=@data([1, 2, 2]), b=@data([4, 5, 6])) != DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6]))
+    @test DataFrame(a=@data([1, 3, NA]), b=@data([4, 5, 6])) != DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6]))
+    @test isna(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])))
+    @test isna(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
+
     # set_group(x, "group1", ["a", "b"])
     # set_group(y, "group2", ["c", "d"])
 
