@@ -1419,9 +1419,25 @@ end
 
 complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(complete_cases(df)))
 
-function DataArrays.array(adf::AbstractDataFrame)
+#' @description
+#'
+#' Turn a DataFrame into an Array. Will fail if NA's are encountered.
+#' You probably want to use this after `complete_cases`.
+#'
+#' @param adf::AbstractDataFrame DataFrame that will be converted to an Array.
+#' @param T::DataType Type of the resulting Array's elements. Defaults to the
+#'        typeunion of all of `adf`'s types.
+#'
+#' @returns a::Array{T} Array containing values of `adf`.
+#'
+#' @examples
+#'
+#' df = @DataFrame(a => range(1:4), b => randn(8))
+#' isa(array(df), Array{Real})
+#' isa(array(df, Float64), Array{Float64})
+function DataArrays.array(adf::AbstractDataFrame,
+                          T::DataType = reduce(typejoin, types(adf)))
     n, p = size(adf)
-    T = reduce(typejoin, types(adf))
     res = Array(T, n, p)
     for j in 1:p
         col = adf[j]
@@ -1432,6 +1448,21 @@ function DataArrays.array(adf::AbstractDataFrame)
     return res
 end
 
+#' @description
+#'
+#' Turn a DataFrame into a DataArray.
+#'
+#' @param adf::AbstractDataFrame DataFrame that will be converted to a DataArray.
+#' @param T::DataType Type of the resulting DataArray's elements.
+#'        Defaults to the typeunion of all of `adf`'s types.
+#'
+#' @returns a::DataArray{T} DataArray containing values of `adf`.
+#'
+#' @examples
+#'
+#' df = @DataFrame(a => range(1:4), b => randn(8))
+#' isa(DataArray(df), DataArray{Real})
+#' isa(DataArray(df, Float64), DataArray{Float64})
 function DataArrays.DataArray(adf::AbstractDataFrame,
                               T::DataType = reduce(typejoin, types(adf)))
     n, p = size(adf)
