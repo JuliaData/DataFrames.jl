@@ -1,18 +1,15 @@
 module TestShow
     using DataArrays
     using DataFrames
-    using RDatasets
-
-    iris = data("datasets", "iris")
-    iris = iris[1:50, :]
+    df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 
     io = IOBuffer()
-    show(io, iris)
-    show(io, iris, true)
-    showall(io, iris)
-    showall(io, iris, true)
+    show(io, df)
+    show(io, df, true)
+    showall(io, df)
+    showall(io, df, true)
 
-    subdf = select(:(SepalLength .> 4.0), iris)
+    subdf = select(:(A .> 1.0), df)
     show(io, subdf)
     show(io, subdf, true)
     showall(io, subdf)
