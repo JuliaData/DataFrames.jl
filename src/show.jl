@@ -11,6 +11,7 @@ begin
         ourshowcompact(io, x)
         return position(io)
     end
+    ourstrwidth(x::String) = strwidth(x)
 end
 
 ourshowcompact(io::IO, x::Any) = showcompact(io, x)
