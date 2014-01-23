@@ -38,6 +38,70 @@ module TestIO
         end
     end
 
+    # Spot check movies.csv file
+    filename = "test/data/scaling/movies.csv"
+    df = readtable(filename)
+
+    @test df[1, 1] === 1
+    # TODO: Figure out why strict equality won't work here
+    #       Doesn't seem to be UTF8String vs. ASCIIString
+    @test df[1, 2] == "\$"
+    @test df[1, 3] === 1971
+    @test df[1, 4] === 121
+    @test df[1, 5] === NA
+    @test df[1, 6] === 6.4
+    @test df[1, 7] === 348
+    @test df[1, 8] === 4.5
+    @test df[1, 9] === 4.5
+    @test df[1, 10] === 4.5
+    @test df[1, 11] === 4.5
+    @test df[1, 12] === 14.5
+    @test df[1, 13] === 24.5
+    @test df[1, 14] === 24.5
+    @test df[1, 15] === 14.5
+    @test df[1, 16] === 4.5
+    @test df[1, 17] === 4.5
+    # TODO: Figure out why strict equality won't work here
+    #       Doesn't seem to be UTF8String vs. ASCIIString
+    @test df[1, 18] == ""
+    @test df[1, 19] === 0
+    @test df[1, 20] === 0
+    @test df[1, 21] === 1
+    @test df[1, 22] === 1
+    @test df[1, 23] === 0
+    @test df[1, 24] === 0
+    @test df[1, 24] === 0
+
+    @test df[end, 1] === 58788
+    # TODO: Figure out why strict equality won't work here
+    #       Doesn't seem to be UTF8String vs. ASCIIString
+    @test df[end, 2] == "xXx: State of the Union"
+    @test df[end, 3] === 2005
+    @test df[end, 4] === 101
+    @test df[end, 5] === 87000000
+    @test df[end, 6] === 3.9
+    @test df[end, 7] === 1584
+    @test df[end, 8] === 24.5
+    @test df[end, 9] === 4.5
+    @test df[end, 10] === 4.5
+    @test df[end, 11] === 4.5
+    @test df[end, 12] === 4.5
+    @test df[end, 13] === 14.5
+    @test df[end, 14] === 4.5
+    @test df[end, 15] === 4.5
+    @test df[end, 16] === 4.5
+    @test df[end, 17] === 14.5
+    # TODO: Figure out why strict equality won't work here
+    #       Doesn't seem to be UTF8String vs. ASCIIString
+    @test df[end, 18] == "PG-13"
+    @test df[end, 19] === 1
+    @test df[end, 20] === 0
+    @test df[end, 21] === 0
+    @test df[end, 22] === 0
+    @test df[end, 23] === 0
+    @test df[end, 24] === 0
+    @test df[end, 25] === 0
+
     readtable("test/data/comments/before_after_data.csv", allowcomments = true)
     readtable("test/data/comments/middata.csv", allowcomments = true)
     readtable("test/data/skiplines/skipfront.csv", skipstart = 3)
