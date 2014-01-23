@@ -55,7 +55,7 @@ end
 ## an expression or a formula
 function allvars(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
-    [[allvars(a) for a in ex.args[2:]]...]
+    [[allvars(a) for a in ex.args[2:end]]...]
 end
 allvars(f::Formula) = unique(vcat(allvars(f.rhs), allvars(f.lhs)))
 allvars(sym::Symbol) = [sym]
@@ -68,13 +68,13 @@ function dospecials(ex::Expr)
     a1 = ex.args[1]
     if !(a1 in specials) return ex end
     excp = copy(ex)
-    excp.args = vcat(a1,map(dospecials, ex.args[2:]))
+    excp.args = vcat(a1,map(dospecials, ex.args[2:end]))
     if a1 != :* return excp end
     aa = excp.args
     a2 = aa[2]
     a3 = aa[3]
     if length(aa) > 3
-        excp.args = vcat(a1, aa[3:])
+        excp.args = vcat(a1, aa[3:end])
         a3 = dospecials(excp)
     end
     :($a2 + $a3 + $a2 & $a3)
@@ -89,7 +89,7 @@ function ex_or_args(ex::Expr,s::Symbol)
     if ex.head != :call error("Non-call expression encountered") end
     excp = copy(ex)
     a1 = ex.args[1]
-    a2 = map(condense, ex.args[2:])
+    a2 = map(condense, ex.args[2:end])
     if a1 == s return a2 end
     excp.args = vcat(a1, a2)
     excp
@@ -103,12 +103,12 @@ function condense(ex::Expr)
     a1 = ex.args[1]
     if !(a1 in associative) return ex end
     excp = copy(ex)
-    excp.args = vcat(a1, map(x->ex_or_args(x,a1), ex.args[2:])...)
+    excp.args = vcat(a1, map(x->ex_or_args(x,a1), ex.args[2:end])...)
     excp
 end    
 condense(a) = a
 
-getterms(ex::Expr) = (ex.head == :call && ex.args[1] == :+) ? ex.args[2:] : ex
+getterms(ex::Expr) = (ex.head == :call && ex.args[1] == :+) ? ex.args[2:end] : ex
 getterms(a) = a
 
 ord(ex::Expr) = (ex.head == :call && ex.args[1] == :&) ? length(ex.args)-1 : 1
@@ -119,7 +119,7 @@ const nonevaluation = Set(:&,:|)        # operators constructed from other evalu
 function evt(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
     if !(ex.args[1] in nonevaluation) return ex end
-    filter(x->!isa(x,Number), vcat(map(getterms, ex.args[2:])...))
+    filter(x->!isa(x,Number), vcat(map(getterms, ex.args[2:end])...))
 end
 evt(a) = {a}
     
