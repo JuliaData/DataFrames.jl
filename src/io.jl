@@ -1,5 +1,4 @@
-import Base.peek
-Base.peek(io::IO, ::Type{Uint8}) = uint8(eof(io) ? -1 : peek(io))
+Base.peek(io::IO, ::Type{Uint8}) = eof(io) ? 0xff : uint8(peek(io))
 
 immutable ParsedCSV
     bytes::Vector{Uint8} # Raw bytes from CSV file
@@ -11,7 +10,7 @@ end
 immutable ParseOptions{S <: ByteString, T <: ByteString}
     header::Bool
     separator::Char
-    quotemark::Vector{Char}
+    quotemarks::Vector{Char}
     decimal::Char
     nastrings::Vector{S}
     truestrings::Vector{S}
@@ -42,17 +41,18 @@ macro atblankline(chr, nextchr)
     chr = esc(chr)
     nextchr = esc(nextchr)
     quote
-        ($chr == '\n' || $chr == '\r') && ($nextchr == '\n' || $nextchr == '\r')
+        ($chr == '\n' || $chr == '\r') &&
+        ($nextchr == '\n' || $nextchr == '\r')
     end
 end
 
-macro atescape(chr, nextchr, quotemark)
+macro atescape(chr, nextchr, quotemarks)
     chr = esc(chr)
     nextchr = esc(nextchr)
-    quotemark = esc(quotemark)
+    quotemarks = esc(quotemarks)
     quote
-        $chr == '\\' ||                                # \" escaping
-        ($chr in $quotemark && $nextchr in $quotemark) # "" escaping
+        $chr == '\\' ||                                  # \" escaping
+        ($chr in $quotemarks && $nextchr in $quotemarks) # "" escaping
     end
 end
 
@@ -60,14 +60,15 @@ macro atcescape(chr, nextchr)
     chr = esc(chr)
     nextchr = esc(nextchr)
     quote
-        ($chr == '\\' && $nextchr == 'n') ||
-        ($chr == '\\' && $nextchr == 't') ||
-        ($chr == '\\' && $nextchr == 'r') ||
-        ($chr == '\\' && $nextchr == 'a') ||
-        ($chr == '\\' && $nextchr == 'b') ||
-        ($chr == '\\' && $nextchr == 'f') ||
-        ($chr == '\\' && $nextchr == 'v') ||
-        ($chr == '\\' && $nextchr == '\\')
+        $chr == '\\' &&
+        ($nextchr == 'n' ||
+         $nextchr == 't' ||
+         $nextchr == 'r' ||
+         $nextchr == 'a' ||
+         $nextchr == 'b' ||
+         $nextchr == 'f' ||
+         $nextchr == 'v' ||
+         $nextchr == '\\')
     end
 end
 
@@ -75,22 +76,34 @@ macro mergechr(chr, nextchr)
     chr = esc(chr)
     nextchr = esc(nextchr)
     quote
-        if $chr == '\\' && $nextchr == 'n'
-            '\n'
-        elseif $chr == '\\' && $nextchr == 't'
-            '\t'
-        elseif $chr == '\\' && $nextchr == 'r'
-            '\r'
-        elseif $chr == '\\' && $nextchr == 'a'
-            '\a'
-        elseif $chr == '\\' && $nextchr == 'b'
-            '\b'
-        elseif $chr == '\\' && $nextchr == 'f'
-            '\f'
-        elseif $chr == '\\' && $nextchr == 'v'
-            '\v'
-        elseif $chr == '\\' && $nextchr == '\\'
-            '\\'
+        if $chr == '\\'
+            if $nextchr == 'n'
+                '\n'
+            elseif $nextchr == 't'
+                '\t'
+            elseif $nextchr == 'r'
+                '\r'
+            elseif $nextchr == 'a'
+                '\a'
+            elseif $nextchr == 'b'
+                '\b'
+            elseif $nextchr == 'f'
+                '\f'
+            elseif $nextchr == 'v'
+                '\v'
+            elseif $nextchr == '\\'
+                '\\'
+            else
+                msg = @sprintf("Invalid escape character '%s%s' encountered",
+                               $chr,
+                               $nextchr)
+                error(msg)
+            end
+        else
+            msg = @sprintf("Invalid escape character '%s%s' encountered",
+                           $chr,
+                           $nextchr)
+            error(msg)
         end
     end
 end
@@ -119,20 +132,23 @@ macro push(count, a, val, l)
 end
 
 function getseparator(filename::String)
-    if ismatch(r"csv$", filename)
+    if endswith(filename, "csv")
         return ','
-    elseif ismatch(r"tsv$", filename)
+    elseif endswith(filename, "tsv")
         return '\t'
-    elseif ismatch(r"wsv$", filename)
+    elseif endswith(filename, "wsv")
         return ' '
     else
-        error("Unable to determine separator used in $filename")
+        msg = @sprintf("Unable to determine separator used in %s",
+                       filename)
+        error(msg)
     end
 end
 
 # Read CSV file's rows into buffer while storing field boundary information
 # TODO: Experiment with mmaping input
 function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
+    # TODO: Use better variable names
     # Information about parse results
     n_bytes = 0
     n_bounds = 0
@@ -152,12 +168,12 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
     skip_white = true           # whitespace flag if separator=' '
 
     # 'in' does not work if passed Uint8 and Vector{Char}
-    quotemark = convert(Vector{Uint8}, o.quotemark)
+    quotemarks = convert(Vector{Uint8}, o.quotemarks)
 
     # Insert a dummy field bound at position 0
-    @push n_bounds p.bounds 0 l_bounds
-    @push n_bytes p.bytes '\n' l_bytes
-    @push n_lines p.lines 0 l_lines
+    @push(n_bounds, p.bounds, 0, l_bounds)
+    @push(n_bytes, p.bytes, '\n', l_bytes)
+    @push(n_lines, p.lines, 0, l_lines)
 
     # Loop over bytes from the input until we've read requested rows
     while !eof(io) && ((nrows == -1) || (n_lines < nrows + 1))
@@ -171,7 +187,7 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
 
         # Ignore text inside comments completely
         if o.allowcomments && !in_quotes && chr == o.commentmark
-            while !eof(io) && !(@atnewline chr nextchr)
+            while !eof(io) && !@atnewline(chr, nextchr)
                 chr, nextchr = read(io, Uint8), peek(io, Uint8)
             end
             # Skip the linebreak if the comment began at the start of a line
@@ -182,7 +198,7 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
 
         # Skip blank lines
         if o.skipblanks && !in_quotes
-            while !eof(io) && (@atblankline chr nextchr)
+            while !eof(io) && @atblankline(chr, nextchr)
                 chr, nextchr = read(io, Uint8), peek(io, Uint8)
                 # Special handling for Windows
                 if !eof(io) && chr == '\r' && nextchr == '\n'
@@ -192,8 +208,8 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
         end
 
         # Merge chr and nextchr here if they're a c-style escape
-        if o.allowescapes && @atcescape chr nextchr
-           chr = @mergechr chr nextchr
+        if o.allowescapes && @atcescape(chr, nextchr)
+           chr = @mergechr(chr, nextchr)
            # Skip nextchr, which won't be informative
            read(io, Uint8)
         end
@@ -204,46 +220,46 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
         # Processing is very different inside and outside of quotes
         if !in_quotes
             # Entering a quoted region
-            if chr in quotemark
+            if chr in quotemarks
                 in_quotes = true
                 p.quoted[n_fields] = true
                 skip_white = false
             # Finished reading a field
             elseif o.separator == ' ' && (chr == ' ' || chr == '\t')
-                if !in(char(nextchr), " \t\n\r") && !skip_white
-                    @push n_bounds p.bounds n_bytes l_bounds
-                    @push n_bytes p.bytes '\n' l_bytes
-                    @push n_fields p.quoted false l_quoted
+                if !(nextchr in [' ', '\t', '\n', '\r']) && !skip_white
+                    @push(n_bounds, p.bounds, n_bytes, l_bounds)
+                    @push(n_bytes, p.bytes, '\n', l_bytes)
+                    @push(n_fields, p.quoted, false, l_quoted)
                     skip_white = false
                 end
             elseif chr == o.separator
-                @push n_bounds p.bounds n_bytes l_bounds
-                @push n_bytes p.bytes '\n' l_bytes
-                @push n_fields p.quoted false l_quoted
+                @push(n_bounds, p.bounds, n_bytes, l_bounds)
+                @push(n_bytes, p.bytes, '\n', l_bytes)
+                @push(n_fields, p.quoted, false, l_quoted)
             # Finished reading a row
-            elseif @atnewline chr nextchr
+            elseif @atnewline(chr, nextchr)
                 at_start = true
-                @push n_bounds p.bounds n_bytes l_bounds
-                @push n_bytes p.bytes '\n' l_bytes
-                @push n_lines p.lines n_bytes l_lines
-                @push n_fields p.quoted false l_quoted
+                @push(n_bounds, p.bounds, n_bytes, l_bounds)
+                @push(n_bytes, p.bytes, '\n', l_bytes)
+                @push(n_lines, p.lines, n_bytes, l_lines)
+                @push(n_fields, p.quoted, false, l_quoted)
                 skip_white = true
             # Store character in buffer
             else
-                @push n_bytes p.bytes chr l_bytes
+                @push(n_bytes, p.bytes, chr, l_bytes)
                 skip_white = false
             end
         else
             # Escape a quotemark inside quoted field
-            if (@atescape chr nextchr quotemark) && !in_escape
+            if @atescape(chr, nextchr, quotemarks) && !in_escape
                 in_escape = true
             else
                 # Exit quoted field
-                if chr in quotemark && !in_escape
+                if chr in quotemarks && !in_escape
                     in_quotes = false
                 # Store character in buffer
                 else
-                    @push n_bytes p.bytes chr l_bytes
+                    @push(n_bytes, p.bytes, chr, l_bytes)
                 end
                 # Escape mode only lasts for one byte
                 in_escape = false
@@ -252,10 +268,10 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
     end
 
     # Append a final EOL if it's missing in the raw input
-    if eof(io) && !(@atnewline chr nextchr)
-        @push n_bounds p.bounds n_bytes l_bounds
-        @push n_bytes p.bytes '\n' l_bytes
-        @push n_lines p.lines n_bytes l_lines
+    if eof(io) && !@atnewline(chr, nextchr)
+        @push(n_bounds, p.bounds, n_bytes, l_bounds)
+        @push(n_bytes, p.bytes, '\n', l_bytes)
+        @push(n_lines, p.lines, n_bytes, l_lines)
     end
 
     # Don't count the dummy boundaries in fields or rows
@@ -282,11 +298,16 @@ function bytematch{T <: ByteString}(bytes::Vector{Uint8},
     return false
 end
 
-# TODO: Align more closely with parseint code
-function bytestoint{T <: ByteString}(bytes::Vector{Uint8},
-                                     left::Int,
-                                     right::Int,
-                                     nastrings::Vector{T})
+function bytestotype{N <: Int,
+                     T <: ByteString,
+                     P <: ByteString}(::Type{N},
+                                      bytes::Vector{Uint8},
+                                      left::Int,
+                                      right::Int,
+                                      nastrings::Vector{T},
+                                      wasquoted::Bool = false,
+                                      truestrings::Vector{P} = P[],
+                                      falsestrings::Vector{P} = P[])
     if left > right
         return 0, true, true
     end
@@ -324,11 +345,17 @@ function bytestoint{T <: ByteString}(bytes::Vector{Uint8},
 end
 
 let out = Array(Float64, 1)
-    global bytestofloat
-    function bytestofloat{T <: ByteString}(bytes::Vector{Uint8},
-                                           left::Int,
-                                           right::Int,
-                                           nastrings::Vector{T})
+    global bytestotype
+    function bytestotype{N <: FloatingPoint,
+                         T <: ByteString,
+                         P <: ByteString}(::Type{N},
+                                          bytes::Vector{Uint8},
+                                          left::Int,
+                                          right::Int,
+                                          nastrings::Vector{T},
+                                          wasquoted::Bool = false,
+                                          truestrings::Vector{P} = P[],
+                                          falsestrings::Vector{P} = P[])
         if left > right
             return 0.0, true, true
         end
@@ -349,12 +376,16 @@ let out = Array(Float64, 1)
     end
 end
 
-function bytestobool{T <: ByteString}(bytes::Vector{Uint8},
+function bytestotype{N <: Bool,
+                     T <: ByteString,
+                     P <: ByteString}(::Type{N},
+                                      bytes::Vector{Uint8},
                                       left::Int,
                                       right::Int,
                                       nastrings::Vector{T},
-                                      truestrings::Vector{T},
-                                      falsestrings::Vector{T})
+                                      wasquoted::Bool = false,
+                                      truestrings::Vector{P} = P[],
+                                      falsestrings::Vector{P} = P[])
     if left > right
         return false, true, true
     end
@@ -372,11 +403,16 @@ function bytestobool{T <: ByteString}(bytes::Vector{Uint8},
     end
 end
 
-function bytestostring{T <: ByteString}(bytes::Vector{Uint8},
-                                        left::Int,
-                                        right::Int,
-                                        wasquoted::Bool,
-                                        nastrings::Vector{T})
+function bytestotype{N <: String,
+                     T <: ByteString,
+                     P <: ByteString}(::Type{N},
+                                      bytes::Vector{Uint8},
+                                      left::Int,
+                                      right::Int,
+                                      nastrings::Vector{T},
+                                      wasquoted::Bool = false,
+                                      truestrings::Vector{P} = P[],
+                                      falsestrings::Vector{P} = P[])
     if left > right
         if wasquoted
             return "", true, false
@@ -392,12 +428,21 @@ function bytestostring{T <: ByteString}(bytes::Vector{Uint8},
     return bytestring(bytes[left:right]), true, false
 end
 
-function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
-                 p::ParsedCSV, o::ParseOptions)
+function builddf(rows::Integer,
+                 cols::Integer,
+                 bytes::Integer,
+                 fields::Integer,
+                 p::ParsedCSV,
+                 o::ParseOptions)
     columns = Array(Any, cols)
 
     for j in 1:cols
-        values = Array(Int, rows)
+        if isempty(o.coltypes)
+            values = Array(Int, rows)
+        else
+            values = Array(o.coltypes[j], rows)
+        end
+
         missing = falses(rows)
         is_int = true
         is_float = true
@@ -414,21 +459,53 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
 
             # Ignore left-and-right whitespace padding
             # TODO: Debate moving this into readnrows()
-            # TODO: Modify readnrows() so that '\r' and '\n' don't occur near edges
+            # TODO: Modify readnrows() so that '\r' and '\n'
+            #       don't occur near edges
             if o.ignorepadding && !wasquoted
-                while left < right && (@isspace p.bytes[left])
+                while left < right && @isspace(p.bytes[left])
                     left += 1
                 end
-                while left <= right && (@isspace p.bytes[right])
+                while left <= right && @isspace(p.bytes[right])
                     right -= 1
+                end
+            end
+
+            # If coltypes has been defined, use them
+            if !isempty(o.coltypes)
+                values[i], wasparsed, missing[i] =
+                    bytestotype(o.coltypes[j],
+                                p.bytes,
+                                left,
+                                right,
+                                o.nastrings,
+                                wasquoted,
+                                o.truestrings,
+                                o.falsestrings)
+
+                # Don't go to guess type zone
+                if wasparsed
+                    continue
+                else
+                    msgio = IOBuffer()
+                    @printf(msgio,
+                            "Failed to parse '%s' using type '%s'",
+                            bytestring(p.bytes[left:right]),
+                            o.coltypes[j])
+                    error(bytestring(msgio))
                 end
             end
 
             # (1) Try to parse values as Int's
             if is_int
                 values[i], wasparsed, missing[i] =
-                  bytestoint(p.bytes, left, right,
-                             o.nastrings)
+                  bytestotype(Int64,
+                              p.bytes,
+                              left,
+                              right,
+                              o.nastrings,
+                              wasquoted,
+                              o.truestrings,
+                              o.falsestrings)
                 if wasparsed
                     continue
                 else
@@ -440,8 +517,14 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
             # (2) Try to parse as Float64's
             if is_float
                 values[i], wasparsed, missing[i] =
-                  bytestofloat(p.bytes, left, right,
-                               o.nastrings)
+                  bytestotype(Float64,
+                              p.bytes,
+                              left,
+                              right,
+                              o.nastrings,
+                              wasquoted,
+                              o.truestrings,
+                              o.falsestrings)
                 if wasparsed
                     continue
                 else
@@ -455,8 +538,14 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
             # (3) Try to parse as Bool's
             if is_bool
                 values[i], wasparsed, missing[i] =
-                  bytestobool(p.bytes, left, right,
-                              o.nastrings, o.truestrings, o.falsestrings)
+                  bytestotype(Bool,
+                              p.bytes,
+                              left,
+                              right,
+                              o.nastrings,
+                              wasquoted,
+                              o.truestrings,                      
+                              o.falsestrings)
                 if wasparsed
                     continue
                 else
@@ -469,8 +558,14 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
 
             # (4) Fallback to UTF8String
             values[i], wasparsed, missing[i] =
-              bytestostring(p.bytes, left, right,
-                            wasquoted, o.nastrings)
+              bytestotype(UTF8String,
+                          p.bytes,
+                          left,
+                          right,
+                          o.nastrings,
+                          wasquoted,
+                          o.truestrings,                      
+                          o.falsestrings)
         end
 
         if o.makefactors && !(is_int || is_float || is_bool)
@@ -481,7 +576,7 @@ function builddf(rows::Int, cols::Int, bytes::Int, fields::Int,
     end
 
     if isempty(o.colnames)
-        return DataFrame(columns, DataFrames.gennames(cols))
+        return DataFrame(columns, gennames(cols))
     else
         return DataFrame(columns, o.colnames)
     end
@@ -529,10 +624,17 @@ function findcorruption(rows::Integer,
     m = median(lengths)
     corruptrows = find(lengths .!= m)
     l = corruptrows[1]
-    msg = @sprintf "Saw %d rows, %d columns and %d fields\n" rows cols fields
-    msg = string(msg,
-                 @sprintf " * Line %d has %d columns\n" l lengths[l] + 1)
-    error(msg)
+    msgio = IOBuffer()
+    @printf(msgio,
+            "Saw %d rows, %d columns and %d fields\n",
+            rows,
+            cols,
+            fields)
+    @printf(msgio,
+            " * Line %d has %d columns\n",
+            l,
+            lengths[l] + 1)
+    error(bytestring(msgio))
 end
 
 function readtable!(p::ParsedCSV,
@@ -545,7 +647,7 @@ function readtable!(p::ParsedCSV,
     if o.skipstart != 0
         chr, nextchr = read(io, Uint8), peek(io, Uint8)
         while skipped_lines < o.skipstart
-            while !eof(io) && !(@atnewline chr nextchr)
+            while !eof(io) && !@atnewline(chr, nextchr)
                 chr, nextchr = read(io, Uint8), peek(io, Uint8)
             end
             skipped_lines += 1
@@ -617,14 +719,14 @@ function readtable(pathname::String;
 
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
-    if ismatch(r"^(http://)|(ftp://)", pathname)
+    if beginswith(pathname, "http://") || beginswith(pathname, "ftp://")
         error("URL retrieval not yet implemented")
     # (2) Path is GZip file
-    elseif ismatch(r"\.gz$", pathname)
+    elseif endswith(pathname, ".gz")
         io = gzopen(pathname, "r")
         nbytes = 2 * filesize(pathname)
     # (3) Path is BZip2 file
-    elseif ismatch(r"\.bz2?$", pathname)
+    elseif endswith(pathname, ".bz") || endswith(pathname, ".bz2")
         error("BZip2 decompression not yet implemented")
     # (4) Path is an uncompressed file
     else
@@ -632,9 +734,25 @@ function readtable(pathname::String;
         nbytes = filesize(pathname)
     end
 
+    if !isempty(coltypes)
+        for j in 1:length(coltypes)
+            if !(coltypes[j] in [UTF8String, Bool, Float64, Int64])
+                msgio = IOBuffer()
+                @printf(msgio,
+                        "Invalid column type '%s' encountered.\n",
+                        coltypes[j])
+                @printf(msgio,
+                        "Valid types: UTF8String, Bool, Float64 or Int64")
+                error(bytestring(msgio))
+            end
+        end
+    end
+
     # Allocate buffers for storing metadata
-    p = ParsedCSV(Array(Uint8, nbytes), Array(Int, 1),
-                  Array(Int, 1), BitArray(1))
+    p = ParsedCSV(Array(Uint8, nbytes),
+                  Array(Int, 1),
+                  Array(Int, 1),
+                  BitArray(1))
 
     # Set parsing options
     o = ParseOptions(header, separator, quotemark, decimal,
@@ -655,8 +773,12 @@ function readtable(pathname::String;
 end
 
 function filldf!(df::DataFrame,
-                 rows::Int, cols::Int, bytes::Int, fields::Int,
-                 p::ParsedCSV, o::ParseOptions)
+                 rows::Integer,
+                 cols::Integer,
+                 bytes::Integer,
+                 fields::Integer,
+                 p::ParsedCSV,
+                 o::ParseOptions)
     ctypes = types(df)
 
     if rows != size(df, 1)
@@ -681,35 +803,34 @@ function filldf!(df::DataFrame,
 
             # Ignore left-and-right whitespace padding
             # TODO: Debate moving this into readnrows()
-            # TODO: Modify readnrows() so that '\r' and '\n' don't occur near edges
+            # TODO: Modify readnrows() so that '\r' and '\n'
+            #       don't occur near edges
             if o.ignorepadding && !wasquoted
-                while left < right && (@isspace p.bytes[left])
+                while left < right && @isspace(p.bytes[left])
                     left += 1
                 end
-                while left <= right && (@isspace p.bytes[right])
+                while left <= right && @isspace(p.bytes[right])
                     right -= 1
                 end
             end
 
             # NB: Assumes perfect type stability
-            if T == Int
-                c.data[i], wasparsed, c.na[i] =
-                  bytestoint(p.bytes, left, right,
-                             o.nastrings)
-            elseif T == Float64
-                c.data[i], wasparsed, c.na[i] =
-                  bytestofloat(p.bytes, left, right,
-                               o.nastrings)
-            elseif T == Bool
-                c.data[i], wasparsed, c.na[i] =
-                  bytestobool(p.bytes, left, right,
-                              o.nastrings, o.truestrings, o.falsestrings)
-            elseif T == UTF8String
-                c.data[i], wasparsed, c.na[i] =
-                  bytestostring(p.bytes, left, right,
-                                wasquoted, o.nastrings)
-            else
+            # Use subtypes here
+            if !(T in [Int, Float64, Bool, UTF8String])
                 error("Invalid type encountered")
+            end
+            c.data[i], wasparsed, c.na[i] =
+              bytestotype(T,
+                          p.bytes,
+                          left,
+                          right,
+                          o.nastrings,
+                          wasquoted,
+                          o.truestrings,                      
+                          o.falsestrings)
+
+            if !wasparsed
+                error("Failed to parse entry")
             end
         end
     end
