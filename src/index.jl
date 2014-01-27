@@ -72,14 +72,8 @@ function Base.delete!(x::Index, idx::Integer)
     for i in (idx + 1):length(x.names)
         x.lookup[x.names[i]] = i - 1
     end
-    gr = get_groups(x)
     delete!(x.lookup, x.names[idx])
     splice!(x.names, idx)
-    # fix groups:
-    for (k,v) in gr
-        newv = [[haskey(x, vv) ? vv : ASCIIString[] for vv in v]...]
-        set_group(x, k, newv)
-    end
     return x
 end
 
@@ -109,44 +103,3 @@ SimpleIndex() = SimpleIndex(0)
 Base.length(x::SimpleIndex) = x.length
 Base.names(x::SimpleIndex) = nothing
 
-# Chris's idea of namespaces adapted by Harlan for column groups
-function set_group(idx::Index, newgroup, names)
-    if !haskey(idx, newgroup) || isa(idx.lookup[newgroup], Array)
-        idx.lookup[newgroup] = [[idx.lookup[nm] for nm in names]...]
-    end
-end
-function set_groups(idx::Index, gr::Dict{ByteString,Vector{ByteString}})
-    for (k,v) in gr
-        if !haskey(idx, k)
-            idx.lookup[k] = [[idx.lookup[nm] for nm in v]...]
-        end
-    end
-end
-function get_groups(idx::Index)
-    gr = Dict{ByteString,Vector{ByteString}}()
-    for (k,v) in idx.lookup
-        if isa(v,Array)
-            gr[k] = idx.names[v]
-        end
-    end
-    gr
-end
-function is_group(idx::Index, name::ByteString)
-  if haskey(idx, name)
-    return isa(idx.lookup[name], Array)
-  else
-    return false
-  end
-end
-
-# special pretty-printer for groups, which are just Dicts.
-function pretty_show(io::IO, gr::Dict{ByteString,Vector{ByteString}})
-    allkeys = keys(gr)
-    for k = allkeys
-        print(io, "$(k): ")
-        print(io, join(gr[k], ", "))
-        if k != last(allkeys)
-            print(io, "; ")
-        end
-    end
-end
