@@ -10,12 +10,9 @@ module TestGrouping
     cols = [:a, :b]
 
     sdf = sort(df, cols=cols)
-    bdf = by(df, cols, :(cmax = maximum(c)))
+    bdf = by(df, cols, df -> DataFrame(cmax = maximum(df["c"])))
 
     @test isequal(bdf[cols], unique(sdf[cols]))
 
-    bye = by(df, "a", :(bsum = sum(b)))
     byf = by(df, "a", df -> DataFrame(bsum = sum(df["b"])))
-
-    @test bye["bsum"] == byf["bsum"]
 end
