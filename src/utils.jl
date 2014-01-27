@@ -50,6 +50,46 @@ function make_unique{S<:ByteString}(names::Vector{S})
     names
 end
 
-function gennames(n::Int)
-    convert(Vector{ByteString}, map(i -> "x" * string(i), 1:n))
+#' @description
+#'
+#' Generate standardized names for columns of a DataFrame. The
+#' first name will be "x1", the second "x2", etc.
+#'
+#' @field n::Integer The number of names to generate.
+#'
+#' @returns names::Vector{UTF8String} A vector of standardized column names.
+#'
+#' @examples
+#'
+#' DataFrames.gennames(10)
+function gennames(n::Integer)
+    res = Array(UTF8String, n)
+    for i in 1:n
+        res[i] = @sprintf "x%d" i
+    end
+    return res
+end
+
+countna(a::Array) = 0
+
+function countna(da::DataArray)
+    n = length(da)
+    res = 0
+    for i in 1:n
+        if da.na[i]
+            res += 1
+        end
+    end
+    return res
+end
+
+function countna(da::PooledDataArray)
+    n = length(da)
+    res = 0
+    for i in 1:n
+        if da.refs[i] == 0
+            res += 1
+        end
+    end
+    return res
 end

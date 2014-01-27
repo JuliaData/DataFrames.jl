@@ -18,7 +18,7 @@ function stack(df::DataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
     # fix column names
     map(x -> names!(x, ["variable", "value", names(df[id_vars])]), res)
     res = vcat(res)
-    res 
+    res
 end
 stack(df::DataFrame, measure_vars, id_vars) = stack(df, [df.colindex[measure_vars]], [df.colindex[id_vars]])
 stack(df::DataFrame, measure_vars) = stack(df, [df.colindex[measure_vars]], _setdiff([1:ncol(df)], [df.colindex[measure_vars]]))
@@ -43,14 +43,14 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     remainingcols = _setdiff([1:ncol(df)], [rowkey, value])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
-    # TODO make fillNA(type, length) 
+    # TODO make fillNA(type, length)
     payload = DataFrame({DataArray([fill(valuecol[1],Nrow)], fill(true, Nrow))  for i in 1:Ncol}, map(string, keycol.pool))
-    nowarning = true 
+    nowarning = true
     for k in 1:nrow(df)
         j = int(keycol.refs[k])
         i = int(refkeycol.refs[k])
         if i > 0 && j > 0
-            if nowarning && !isna(payload[j][i]) 
+            if nowarning && !isna(payload[j][i])
                 println("Warning: duplicate entries in unstack.")
                 nowarning = false
             end
@@ -73,7 +73,7 @@ unstack(df::AbstractDataFrame, rowkey, value, colkey) =
 #  - `fun` must reduce to one value
 #  - no margins
 #  - can't have zero rows or zero columns
-#  - the resulting data part is Float64 (`payload` below) 
+#  - the resulting data part is Float64 (`payload` below)
 
 function pivot_table(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int}, value::Int, fun::Function)
     # `rows` vector indicating which columns are keys placed in rows
@@ -102,7 +102,7 @@ end
 pivot_table(df::AbstractDataFrame, rows, cols, value) = pivot_table(df, rows, cols, value, mean)
 pivot_table(df::AbstractDataFrame, rows, cols, value, fun) = pivot_table(df, [index(df)[rows]], [index(df)[cols]], index(df)[value], fun)
 
-    
+
 ##############################################################################
 ##
 ## Reshaping using referencing (issue #145)

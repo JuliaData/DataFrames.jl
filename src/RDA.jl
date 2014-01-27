@@ -64,7 +64,7 @@ if ENDIAN_BOM == 0x01020304
     const R_NA_FLOAT64 = reinterpret(Float64, [0x7ff00000, uint32(1954)])[1]
 else
     const R_NA_FLOAT64 = reinterpret(Float64, [uint32(1954), 0x7ff00000])[1]
-end    
+end
 const R_NA_INT32 = typemin(Int32)
 
 ##############################################################################
@@ -143,7 +143,7 @@ readuint32(io::IO, A::Bool) = A ? uint32(readline(io)) : hton(read(io, Uint32))
 readfloat64(io::IO, A::Bool) = A ? float64(readline(io)) : hton(read(io, Float64))
 
 function readintorNA(io::IO, A::Bool)
-    if A 
+    if A
         str = chomp(readline(io));
         return str == "NA" ? R_NA_INT32 : int32(str)
     end
@@ -151,7 +151,7 @@ function readintorNA(io::IO, A::Bool)
 end
 
 function readfloatorNA(io::IO, A::Bool)
-    if A 
+    if A
         str = chomp(readline(io));
         return str == "NA" ? R_NA_FLOAT64 : float64(str)
     end

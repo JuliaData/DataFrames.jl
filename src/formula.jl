@@ -38,7 +38,7 @@ type ModelFrame
     terms::Terms
     msng::BitArray
 end
-    
+
 type ModelMatrix{T <: Union(Float32, Float64)}
     m::Matrix{T}
     assign::Vector{Int}
@@ -108,7 +108,7 @@ function condense(ex::Expr)
     excp = copy(ex)
     excp.args = vcat(a1, map(x->ex_or_args(x,a1), ex.args[2:end])...)
     excp
-end    
+end
 condense(a::Any) = a
 
 getterms(ex::Expr) = (ex.head == :call && ex.args[1] == :+) ? ex.args[2:end] : ex
@@ -125,7 +125,7 @@ function evt(ex::Expr)
     filter(x->!isa(x,Number), vcat(map(getterms, ex.args[2:end])...))
 end
 evt(a) = {a}
-    
+
 function Terms(f::Formula)
     rhs = condense(dospecials(f.rhs))
     tt = getterms(rhs)

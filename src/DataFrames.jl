@@ -152,6 +152,7 @@ export @~,
 
 include("utils.jl")
 include("index.jl")
+include("abstractdataframe.jl")
 include("dataframe.jl")
 include("sort.jl")
 include("iteration.jl")

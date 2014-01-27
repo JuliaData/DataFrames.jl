@@ -1,5 +1,3 @@
-abstract AbstractDataFrame <: Associative{String, Any}
-
 type DataFrame <: AbstractDataFrame
     columns::Vector{Any}
     colindex::Index
@@ -74,10 +72,10 @@ function DataFrame{K, V}(d::Associative{K, V})
     keymaxlen = keys(d)[maxpos]
     nrows = max_length
     # Start with a blank DataFrame
-    df = DataFrame() 
+    df = DataFrame()
     for (k, v) in d
         if length(v) == nrows
-            df[k] = v  
+            df[k] = v
         elseif rem(nrows, length(v)) == 0    # nrows is a multiple of length(v)
             df[k] = vcat(fill(v, div(nrows, length(v)))...)
         else
@@ -800,7 +798,7 @@ function Base.dump(io::IO, x::AbstractDataVector, n::Int, indent)
 end
 
 # summarize the columns of a DF
-# if the column's base type derives from Number, 
+# if the column's base type derives from Number,
 # compute min, 1st quantile, median, mean, 3rd quantile, and max
 # filtering NAs, which are reported separately
 # if boolean, report trues, falses, and NAs
@@ -833,7 +831,7 @@ function describe{T}(io, dv::AbstractDataVector{T})
     println(io, "Type    $(ispooled)$(string(eltype(dv)))")
     println(io, "NAs     $(sum(isna(dv)))")
     println(io, "NA%     $(round(sum(isna(dv))*100/length(dv), 2))%")
-    println(io, "Unique  $(length(unique(dv)))") 
+    println(io, "Unique  $(length(unique(dv)))")
     return
 end
 
@@ -861,7 +859,7 @@ end
 immutable SubDataFrame{T<:AbstractVector{Int}} <: AbstractDataFrame
     parent::DataFrame
     rows::T # maps from subdf row indexes to parent row indexes
-    
+
     function SubDataFrame(parent::DataFrame, rows::T)
         if length(rows) > 0
             rmin, rmax = extrema(rows)
@@ -885,7 +883,7 @@ Base.setindex!(df::SubDataFrame, v, r, c) = (df.parent[df.rows[r], c] = v)
 
 nrow(df::SubDataFrame) = length(df.rows)
 ncol(df::SubDataFrame) = ncol(df.parent)
-Base.names(df::SubDataFrame) = names(df.parent) 
+Base.names(df::SubDataFrame) = names(df.parent)
 
 index(df::SubDataFrame) = index(df.parent)
 
@@ -915,7 +913,7 @@ end
 Base.getindex(r::DataFrameRow, idx::AbstractArray) = DataFrameRow(r.df[[idx]], r.row)
 Base.getindex(r::DataFrameRow, idx) = r.df[r.row, idx]
 Base.setindex!(r::DataFrameRow, value, idx) = setindex!(r.df, value, r.row, idx)
-Base.names(df::DataFrameRow) = names(df.df) 
+Base.names(df::DataFrameRow) = names(df.df)
 Base.sub(r::DataFrameRow, c) = DataFrameRow(r.df[[c]], r.row)
 index(r::DataFrameRow) = index(r.df)
 length(r::DataFrameRow) = size(r.df, 2)
@@ -968,13 +966,13 @@ without(df::SubDataFrame, c::Any) = SubDataFrame(without(df.parent, c), df.rows)
 # rbind(df, ...) only accepts data frames. Finds union of columns, maintaining order
 # of first df. Missing data becomes NAs.
 # vcat() is just rbind()
- 
+
 # two-argument form, two dfs, references only
 function Base.hcat(df1::DataFrame, df2::DataFrame)
     # If df1 had metadata, we should copy that.
     colindex = Index(make_unique([names(df1), names(df2)]))
     columns = [df1.columns, df2.columns]
-    d = DataFrame(columns, colindex)  
+    d = DataFrame(columns, colindex)
     return d
 end
 Base.hcat{T}(df::DataFrame, x::DataVector{T}) = hcat(df, DataFrame({x}))
@@ -985,25 +983,25 @@ Base.hcat{T}(df::DataFrame, x::T) = hcat(df, DataFrame({DataArray([x])}))
 Base.hcat(a::DataFrame, b, c...) = hcat(hcat(a, b), c...)
 cbind(args...) = hcat(args...)
 
-Base.similar(df::DataFrame, dims) = 
-    DataFrame([similar(x, dims) for x in df.columns], names(df)) 
+Base.similar(df::DataFrame, dims) =
+    DataFrame([similar(x, dims) for x in df.columns], names(df))
 
-Base.similar(df::SubDataFrame, dims) = 
-    DataFrame([similar(df[x], dims) for x in names(df)], names(df)) 
+Base.similar(df::SubDataFrame, dims) =
+    DataFrame([similar(df[x], dims) for x in names(df)], names(df))
 
 Base.zeros{T<:String}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
 
 nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavector.jl?
     DataArray(zeros(T, dims), fill(true, dims))
- 
+
 nas{T,R}(dv::PooledDataVector{T,R}, dims) =
     PooledDataArray(DataArrays.RefArray(fill(one(R), dims)), dv.pool)
 
-nas(df::DataFrame, dims) = 
-    DataFrame([nas(x, dims) for x in df.columns], names(df)) 
+nas(df::DataFrame, dims) =
+    DataFrame([nas(x, dims) for x in df.columns], names(df))
 
-nas(df::SubDataFrame, dims) = 
-    DataFrame([nas(df[x], dims) for x in names(df)], names(df)) 
+nas(df::SubDataFrame, dims) =
+    DataFrame([nas(df[x], dims) for x in names(df)], names(df))
 
 vecbind_type{T}(::Vector{T}) = Vector{T}
 vecbind_type{T<:AbstractVector}(x::T) = Vector{eltype(x)}
@@ -1172,8 +1170,8 @@ function drop_duplicates!(df::AbstractDataFrame)
     deleterows!(df, find(!duplicated(df)))
 end
 
-# Unique rows of an AbstractDataFrame.        
-Base.unique(df::AbstractDataFrame) = df[!duplicated(df), :] 
+# Unique rows of an AbstractDataFrame.
+Base.unique(df::AbstractDataFrame) = df[!duplicated(df), :]
 
 function duplicatedkey(df::AbstractDataFrame)
     # Here's another (probably a lot faster) way to do `duplicated`

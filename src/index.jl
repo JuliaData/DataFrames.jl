@@ -11,7 +11,7 @@ type Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{ByteString, Indices}      # name => names array position
     names::Vector{ByteString}
 end
-function Index{T <: ByteString}(x::Vector{T}) 
+function Index{T <: ByteString}(x::Vector{T})
     x = make_unique(convert(Vector{ByteString}, x))
     Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)), x)
 end
@@ -117,7 +117,7 @@ function set_group(idx::Index, newgroup, names)
 end
 function set_groups(idx::Index, gr::Dict{ByteString,Vector{ByteString}})
     for (k,v) in gr
-        if !haskey(idx, k) 
+        if !haskey(idx, k)
             idx.lookup[k] = [[idx.lookup[nm] for nm in v]...]
         end
     end

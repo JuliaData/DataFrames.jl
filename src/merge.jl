@@ -26,7 +26,7 @@ function join_idx(left, right, max_groups)
             lcount += lc
         end
     end
-    
+
     # group 0 is the NA group
     tposition = 0
     lposition = 0
@@ -110,7 +110,7 @@ function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
     pool = Array(Uint64, 0)
     j = 1
     for i = 1:nrow(df)
-        val = df[i,:] 
+        val = df[i,:]
         if haskey(poolref, val)
             refs[i] = poolref[val]
         else

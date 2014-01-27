@@ -52,7 +52,7 @@ ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Orderin
 #
 #         If a user only specifies a few columns, the DataFrame
 #         contained in the DFPerm only contains those columns, and
-#         the permutation induced by this ordering is used to 
+#         the permutation induced by this ordering is used to
 #         sort the original (presumably larger) DataFrame
 
 type DFPerm{O<:Union(Ordering, AbstractVector), DF<:AbstractDataFrame} <: Ordering
@@ -238,7 +238,7 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector, lt, by, rev, orde
     to_array(src, dims) = fill(src, dims)
 
     dims = length(cols) > 0 ? length(cols) : size(df,2)
-    ordering(df, cols, 
+    ordering(df, cols,
              to_array(lt, dims),
              to_array(by, dims),
              to_array(rev, dims),
@@ -260,7 +260,7 @@ defalg(df::AbstractDataFrame) = size(df, 1) < 8192 ? Sort.MergeSort : SortingAlg
 
 # For DataFrames, we can choose the algorithm based on the column type and requested ordering
 function defalg{T<:Real}(df::AbstractDataFrame, ::Type{T}, o::Ordering)
-    # If we're sorting a single numerical column in forward or reverse, 
+    # If we're sorting a single numerical column in forward or reverse,
     # RadixSort will generally be the fastest stable sort
     if isbits(T) && sizeof(T) <= 8 && (o==Order.Forward || o==Order.Reverse)
         SortingAlgorithms.RadixSort
@@ -282,7 +282,7 @@ end
 ## Actual sort functions
 ########################
 
-issorted(df::AbstractDataFrame; cols={}, lt=isless, by=identity, rev=false, order=Forward) = 
+issorted(df::AbstractDataFrame; cols={}, lt=isless, by=identity, rev=false, order=Forward) =
     issorted(eachrow(df), ordering(df, cols, lt, by, rev, order))
 
 # sort!, sort, and sortperm functions

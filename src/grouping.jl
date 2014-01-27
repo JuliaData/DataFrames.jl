@@ -13,7 +13,7 @@ type GroupedDataFrame
     cols::Vector         # columns used for sorting
     idx::Vector{Int}     # indexing vector when sorted by the given columns
     starts::Vector{Int}  # starts of groups
-    ends::Vector{Int}    # ends of groups 
+    ends::Vector{Int}    # ends of groups
 end
 
 #
@@ -22,7 +22,7 @@ end
 function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     ## a subset of Wes McKinney's algorithm here:
     ##     http://wesmckinney.com/blog/?p=489
-    
+
     ncols = length(cols)
     # use the pool trick to get a set of integer references for each unique item
     dv = PooledDataArray(df[cols[ncols]])
@@ -43,7 +43,7 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     end
     (idx, starts) = DataArrays.groupsort_indexer(x, ngroups)
     # Remove zero-length groupings
-    starts = _uniqueofsorted(starts) 
+    starts = _uniqueofsorted(starts)
     ends = [starts[2:end] - 1]
     GroupedDataFrame(df, cols, idx, starts[1:end-1], ends)
 end
@@ -54,7 +54,7 @@ groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
 groupby(cols) = x -> groupby(x, cols)
 
 Base.start(gd::GroupedDataFrame) = 1
-Base.next(gd::GroupedDataFrame, state::Int) = 
+Base.next(gd::GroupedDataFrame, state::Int) =
     (sub(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
      state + 1)
 Base.done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)

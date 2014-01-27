@@ -544,7 +544,7 @@ function builddf(rows::Integer,
                               right,
                               o.nastrings,
                               wasquoted,
-                              o.truestrings,                      
+                              o.truestrings,
                               o.falsestrings)
                 if wasparsed
                     continue
@@ -564,7 +564,7 @@ function builddf(rows::Integer,
                           right,
                           o.nastrings,
                           wasquoted,
-                          o.truestrings,                      
+                          o.truestrings,
                           o.falsestrings)
         end
 
@@ -826,7 +826,7 @@ function filldf!(df::DataFrame,
                           right,
                           o.nastrings,
                           wasquoted,
-                          o.truestrings,                      
+                          o.truestrings,
                           o.falsestrings)
 
             if !wasparsed
@@ -931,8 +931,8 @@ function html_escape(cell::String)
     return cell
 end
 
-function Base.writemime(io::IO, 
-                        ::MIME"text/html", 
+function Base.writemime(io::IO,
+                        ::MIME"text/html",
                         df::DataFrame)
     n = size(df, 1)
     cnames = names(df)
