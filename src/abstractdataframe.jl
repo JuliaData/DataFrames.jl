@@ -1,5 +1,21 @@
+#' @description
+#'
+#' An AbstractDataFrame is a Julia abstract type for which all concrete
+#' types expose an database interface.
 abstract AbstractDataFrame <: Associative{String, Any}
 
+#' @description
+#'
+#' Count the number of missing values in every column of an AbstractDataFrame.
+#'
+#' @param adf::AbstractDataFrame An AbstractDataFrame.
+#'
+#' @returns missing::Vector{Int} The number of missing values in each column.
+#'
+#' @examples
+#'
+#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+#' colmissing(df)
 function colmissing(adf::AbstractDataFrame) # -> Vector{Int}
     nrows, ncols = size(adf)
     missing = zeros(Int, ncols)

@@ -70,8 +70,32 @@ function gennames(n::Integer)
     return res
 end
 
+#' @description
+#'
+#' Count the number of missing values in an Array.
+#'
+#' NOTE: This function always returns 0.
+#'
+#' @field a::Array The Array whose missing values are to be counted.
+#'
+#' @returns count::Int The number of missing values in `a`.
+#'
+#' @examples
+#'
+#' DataFrames.countna([1, 2, 3])
 countna(a::Array) = 0
 
+#' @description
+#'
+#' Count the number of missing values in a DataArray.
+#'
+#' @field da::DataArray The DataArray whose missing values are to be counted.
+#'
+#' @returns count::Int The number of missing values in `a`.
+#'
+#' @examples
+#'
+#' DataFrames.countna(@data([1, 2, 3]))
 function countna(da::DataArray)
     n = length(da)
     res = 0
@@ -83,6 +107,18 @@ function countna(da::DataArray)
     return res
 end
 
+#' @description
+#'
+#' Count the number of missing values in a PooledDataArray.
+#'
+#' @field pda::PooledDataArray The PooledDataArray whose missing values
+#'        are to be counted.
+#'
+#' @returns count::Int The number of missing values in `a`.
+#'
+#' @examples
+#'
+#' DataFrames.countna(@pdata([1, 2, 3]))
 function countna(da::PooledDataArray)
     n = length(da)
     res = 0

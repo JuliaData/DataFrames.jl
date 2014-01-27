@@ -611,6 +611,7 @@ function column_summary(io::IO, adf::AbstractDataFrame) # -> Nothing
     return
 end
 
+#' @exported
 #' @description
 #'
 #' Print an AbstractDataFrame to an IO system with an added newline.

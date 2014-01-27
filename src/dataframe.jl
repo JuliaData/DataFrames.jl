@@ -1,33 +1,57 @@
+#' @exported
+#' @description
+#'
+#' An DataFrame is a Julia type that implements the AbstractDataFrame
+#' interface by storing a set of named columns in memory.
+#'
+#' @field columns::Vector{Any} The columns of a DataFrame are stored in
+#'        a vector. Each entry of this vector should be a Vector, DataVector
+#'        or PooledDataVector.
+#' @field colindex::Index A data structure used to map column names to
+#'        their numeric indices in `columns`.
 type DataFrame <: AbstractDataFrame
     columns::Vector{Any}
     colindex::Index
 
-    function DataFrame(cols::Vector{Any}, colind::Index)
-        ncols = length(cols)
+    function DataFrame(columns::Vector{Any}, colindex::Index)
+        ncols = length(columns)
         if ncols > 1
-            nrows = length(cols[1])
+            nrows = length(columns[1])
             equallengths = true
             for i in 2:ncols
-                equallengths &= length(cols[i]) == nrows
+                equallengths &= length(columns[i]) == nrows
             end
             if !equallengths
                 msg = "All columns in a DataFrame must be the same length"
                 throw(ArgumentError(msg))
             end
         end
-        if length(colind) != ncols
+        if length(colindex) != ncols
             msg = "Columns and column index must be the same length"
             throw(ArgumentError(msg))
         end
-        new(cols, colind)
+        new(columns, colindex)
     end
 end
 
-# A DataFrame from keyword arguments
-# This also covers the empty DataFrame.
+#' @exported
+#' @description
+#'
+#' Construct a DataFrame from keyword arguments. Each argument should be
+#' Vector, DataVector or PooledDataVector.
+#'
+#' NOTE: This also covers the empty DataFrame if no keyword arguments are
+#'       passed in.
+#'
+#' @returns df::DataFrame A newly constructed DataFrame.
+#'
+#' @examples
+#'
+#' df = DataFrame()
+#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 function DataFrame(;kwargs...)
     result = DataFrame({}, Index())
-    for (k,v) in kwargs
+    for (k, v) in kwargs
         result[string(k)] = v
     end
     return result
@@ -45,10 +69,21 @@ function DataFrame(x::Union(Number, String))
     return DataFrame(cols, colind)
 end
 
-# Wrap a set of columns in a DataFrame w/ or w/o column names
-function DataFrame{T <: String}(cs::Vector{Any},
-                                cn::Vector{T} = gennames(length(cs)))
-    return DataFrame(cs, Index(cn))
+#' @exported
+#' @description
+#'
+#' Construct a DataFrame from a vector of columns and, optionally, specify
+#' the names of the columns as a vector of strings.
+#'
+#' @returns df::DataFrame A newly constructed DataFrame.
+#'
+#' @examples
+#'
+#' df = DataFrame()
+#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+function DataFrame{T <: String}(columns::Vector{Any},
+                                cnames::Vector{T} = gennames(length(columns)))
+    return DataFrame(columns, Index(cnames))
 end
 
 # TODO: Replace this with convert call.
