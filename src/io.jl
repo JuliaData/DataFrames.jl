@@ -1,5 +1,3 @@
-Base.peek(io::IO, ::Type{Uint8}) = eof(io) ? 0xff : uint8(peek(io))
-
 immutable ParsedCSV
     bytes::Vector{Uint8} # Raw bytes from CSV file
     bounds::Vector{Int}  # Right field boundary indices
@@ -27,6 +25,15 @@ immutable ParseOptions{S <: ByteString}
     skipblanks::Bool
     encoding::Symbol
     allowescapes::Bool
+end
+
+macro read_peek_eof(io, nextchr)
+    io = esc(io)
+    nextchr = esc(nextchr)
+    quote
+        nextnext = eof($io) ? 0xff : read($io, Uint8)
+        $nextchr, nextnext, nextnext == 0xff
+    end
 end
 
 macro atnewline(chr, nextchr)
@@ -147,7 +154,8 @@ end
 
 # Read CSV file's rows into buffer while storing field boundary information
 # TODO: Experiment with mmaping input
-function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
+function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions,
+                    firstchr::Uint8=0xff)
     # TODO: Use better variable names
     # Information about parse results
     n_bytes = 0
@@ -164,7 +172,8 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
     in_escape = false
     at_start = true
     chr = 0xff
-    nextchr = 0xff
+    nextchr = (firstchr == 0xff && !eof(io)) ? read(io, Uint8) : firstchr
+    endf = nextchr == 0xff
     skip_white = true           # whitespace flag if separator=' '
 
     # 'in' does not work if passed Uint8 and Vector{Char}
@@ -176,8 +185,8 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
     @push(n_lines, p.lines, 0, l_lines)
 
     # Loop over bytes from the input until we've read requested rows
-    while !eof(io) && ((nrows == -1) || (n_lines < nrows + 1))
-        chr, nextchr = read(io, Uint8), peek(io, Uint8)
+    while !endf && ((nrows == -1) || (n_lines < nrows + 1))
+        chr, nextchr, endf = @read_peek_eof(io, nextchr)
         # === Debugging ===
         # if in_quotes
         #     print_with_color(:red, string(char(chr)))
@@ -187,8 +196,8 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
 
         # Ignore text inside comments completely
         if o.allowcomments && !in_quotes && chr == o.commentmark
-            while !eof(io) && !@atnewline(chr, nextchr)
-                chr, nextchr = read(io, Uint8), peek(io, Uint8)
+            while !endf && !@atnewline(chr, nextchr)
+                chr, nextchr, endf = @read_peek_eof(io, nextchr)
             end
             # Skip the linebreak if the comment began at the start of a line
             if at_start
@@ -198,20 +207,20 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
 
         # Skip blank lines
         if o.skipblanks && !in_quotes
-            while !eof(io) && @atblankline(chr, nextchr)
-                chr, nextchr = read(io, Uint8), peek(io, Uint8)
+            while !endf && @atblankline(chr, nextchr)
+                chr, nextchr, endf = @read_peek_eof(io, nextchr)
                 # Special handling for Windows
-                if !eof(io) && chr == '\r' && nextchr == '\n'
-                    chr, nextchr = read(io, Uint8), peek(io, Uint8)
+                if !endf && chr == '\r' && nextchr == '\n'
+                    chr, nextchr, endf = @read_peek_eof(io, nextchr)
                 end
             end
         end
 
         # Merge chr and nextchr here if they're a c-style escape
         if o.allowescapes && @atcescape(chr, nextchr)
-           chr = @mergechr(chr, nextchr)
-           # Skip nextchr, which won't be informative
-           read(io, Uint8)
+            chr = @mergechr(chr, nextchr)
+            nextchr = eof(io) ? 0xff : read(io, Uint8)
+            endf = nextchr == 0xff
         end
 
         # No longer at the start of a line that might be a pure comment
@@ -268,14 +277,14 @@ function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions)
     end
 
     # Append a final EOL if it's missing in the raw input
-    if eof(io) && !@atnewline(chr, nextchr)
+    if endf && !@atnewline(chr, nextchr)
         @push(n_bounds, p.bounds, n_bytes, l_bounds)
         @push(n_bytes, p.bytes, '\n', l_bytes)
         @push(n_lines, p.lines, n_bytes, l_lines)
     end
 
     # Don't count the dummy boundaries in fields or rows
-    return n_bytes, n_bounds - 1, n_lines - 1
+    return n_bytes, n_bounds - 1, n_lines - 1, nextchr
 end
 
 function bytematch{T <: ByteString}(bytes::Vector{Uint8},
@@ -645,21 +654,21 @@ function readtable!(p::ParsedCSV,
     chr, nextchr = 0xff, 0xff
     skipped_lines = 0
     if o.skipstart != 0
-        chr, nextchr = read(io, Uint8), peek(io, Uint8)
+        chr, nextchr, endf = @read_peek_eof(io, nextchr)
         while skipped_lines < o.skipstart
-            while !eof(io) && !@atnewline(chr, nextchr)
-                chr, nextchr = read(io, Uint8), peek(io, Uint8)
+            while !endf && !@atnewline(chr, nextchr)
+                chr, nextchr, endf = @read_peek_eof(io, nextchr)
             end
             skipped_lines += 1
-            if !eof(io) && skipped_lines < o.skipstart
-                chr, nextchr = read(io, Uint8), peek(io, Uint8)
+            if !endf && skipped_lines < o.skipstart
+                chr, nextchr, endf = @read_peek_eof(io, nextchr)
             end
         end
     end
 
     # Extract the header
     if o.header
-        bytes, fields, rows = readnrows!(p, io, int64(1), o)
+        bytes, fields, rows, nextchr = readnrows!(p, io, int64(1), o, nextchr)
     end
 
     # Insert column names from header if none present
@@ -668,7 +677,7 @@ function readtable!(p::ParsedCSV,
     end
 
     # Parse main data set
-    bytes, fields, rows = readnrows!(p, io, nrows, o)
+    bytes, fields, rows, nextchr = readnrows!(p, io, nrows, o, nextchr)
 
     # Sanity checks
     bytes != 0 || error("Failed to read any bytes.")
