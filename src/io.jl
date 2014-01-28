@@ -27,6 +27,11 @@ immutable ParseOptions{S <: ByteString}
     allowescapes::Bool
 end
 
+# Hacky way of dispatching on values of ParseOptions to avoid running
+#   unused checks for every byte read
+immutable ParseType{ALLOWCOMMENTS, SKIPBLANKS, ALLOWESCAPES, SPC_SEP} end
+ParseType(o::ParseOptions) = ParseType{o.allowcomments, o.skipblanks, o.allowescapes, o.separator == ' '}()
+
 macro read_peek_eof(io, nextchr)
     io = esc(io)
     nextchr = esc(nextchr)
@@ -152,139 +157,168 @@ function getseparator(filename::String)
     end
 end
 
-# Read CSV file's rows into buffer while storing field boundary information
-# TODO: Experiment with mmaping input
-function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions,
-                    firstchr::Uint8=0xff)
-    # TODO: Use better variable names
-    # Information about parse results
-    n_bytes = 0
-    n_bounds = 0
-    n_lines = 0
-    n_fields = 1
-    l_bytes = length(p.bytes)
-    l_lines = length(p.lines)
-    l_bounds = length(p.bounds)
-    l_quoted = length(p.quoted)
+tf = (true, false)
+for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
+    dtype = ParseType{allowcomments, skipblanks, allowescapes, wsv}
+    @eval begin
+        # Read CSV file's rows into buffer while storing field boundary information
+        # TODO: Experiment with mmaping input
+        function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions,
+                            dispatcher::$(dtype), firstchr::Uint8=0xff)
+            # TODO: Use better variable names
+            # Information about parse results
+            n_bytes = 0
+            n_bounds = 0
+            n_lines = 0
+            n_fields = 1
+            l_bytes = length(p.bytes)
+            l_lines = length(p.lines)
+            l_bounds = length(p.bounds)
+            l_quoted = length(p.quoted)
 
-    # Current state of the parser
-    in_quotes = false
-    in_escape = false
-    at_start = true
-    chr = 0xff
-    nextchr = (firstchr == 0xff && !eof(io)) ? read(io, Uint8) : firstchr
-    endf = nextchr == 0xff
-    skip_white = true           # whitespace flag if separator=' '
-
-    # 'in' does not work if passed Uint8 and Vector{Char}
-    quotemarks = convert(Vector{Uint8}, o.quotemarks)
-
-    # Insert a dummy field bound at position 0
-    @push(n_bounds, p.bounds, 0, l_bounds)
-    @push(n_bytes, p.bytes, '\n', l_bytes)
-    @push(n_lines, p.lines, 0, l_lines)
-
-    # Loop over bytes from the input until we've read requested rows
-    while !endf && ((nrows == -1) || (n_lines < nrows + 1))
-        chr, nextchr, endf = @read_peek_eof(io, nextchr)
-        # === Debugging ===
-        # if in_quotes
-        #     print_with_color(:red, string(char(chr)))
-        # else
-        #     print_with_color(:green, string(char(chr)))
-        # end
-
-        # Ignore text inside comments completely
-        if o.allowcomments && !in_quotes && chr == o.commentmark
-            while !endf && !@atnewline(chr, nextchr)
-                chr, nextchr, endf = @read_peek_eof(io, nextchr)
-            end
-            # Skip the linebreak if the comment began at the start of a line
-            if at_start
-                continue
-            end
-        end
-
-        # Skip blank lines
-        if o.skipblanks && !in_quotes
-            while !endf && @atblankline(chr, nextchr)
-                chr, nextchr, endf = @read_peek_eof(io, nextchr)
-                # Special handling for Windows
-                if !endf && chr == '\r' && nextchr == '\n'
-                    chr, nextchr, endf = @read_peek_eof(io, nextchr)
-                end
-            end
-        end
-
-        # Merge chr and nextchr here if they're a c-style escape
-        if o.allowescapes && @atcescape(chr, nextchr)
-            chr = @mergechr(chr, nextchr)
-            nextchr = eof(io) ? 0xff : read(io, Uint8)
+            # Current state of the parser
+            in_quotes = false
+            in_escape = false
+            $(if allowcomments quote at_start = true end end)
+            $(if wsv quote skip_white = true end end)
+            chr = 0xff
+            nextchr = (firstchr == 0xff && !eof(io)) ? read(io, Uint8) : firstchr
             endf = nextchr == 0xff
-        end
 
-        # No longer at the start of a line that might be a pure comment
-        at_start = false
+            # 'in' does not work if passed Uint8 and Vector{Char}
+            quotemarks = convert(Vector{Uint8}, o.quotemarks)
 
-        # Processing is very different inside and outside of quotes
-        if !in_quotes
-            # Entering a quoted region
-            if chr in quotemarks
-                in_quotes = true
-                p.quoted[n_fields] = true
-                skip_white = false
-            # Finished reading a field
-            elseif o.separator == ' ' && (chr == ' ' || chr == '\t')
-                if !(nextchr in [' ', '\t', '\n', '\r']) && !skip_white
-                    @push(n_bounds, p.bounds, n_bytes, l_bounds)
-                    @push(n_bytes, p.bytes, '\n', l_bytes)
-                    @push(n_fields, p.quoted, false, l_quoted)
-                    skip_white = false
+            # Insert a dummy field bound at position 0
+            @push(n_bounds, p.bounds, 0, l_bounds)
+            @push(n_bytes, p.bytes, '\n', l_bytes)
+            @push(n_lines, p.lines, 0, l_lines)
+
+            # Loop over bytes from the input until we've read requested rows
+            while !endf && ((nrows == -1) || (n_lines < nrows + 1))
+                chr, nextchr, endf = @read_peek_eof(io, nextchr)
+
+                # === Debugging ===
+                # if in_quotes
+                #     print_with_color(:red, string(char(chr)))
+                # else
+                #     print_with_color(:green, string(char(chr)))
+                # end
+
+                $(if allowcomments
+                    quote
+                        # Ignore text inside comments completely                       
+                        if !in_quotes && chr == o.commentmark
+                            while !endf && !@atnewline(chr, nextchr)
+                                chr, nextchr, endf = @read_peek_eof(io, nextchr)
+                            end
+                            # Skip the linebreak if the comment began at the start of a line
+                            if at_start
+                                continue
+                            end
+                        end
+                    end
+                end)
+
+                $(if skipblanks
+                    quote
+                        # Skip blank lines
+                        if !in_quotes
+                            while !endf && @atblankline(chr, nextchr)
+                                chr, nextchr, endf = @read_peek_eof(io, nextchr)
+                                # Special handling for Windows
+                                if !endf && chr == '\r' && nextchr == '\n'
+                                    chr, nextchr, endf = @read_peek_eof(io, nextchr)
+                                end
+                            end
+                        end
+                    end
+                end)
+
+                $(if allowescapes
+                    quote
+                        # Merge chr and nextchr here if they're a c-style escape
+                        if @atcescape(chr, nextchr)
+                            chr = @mergechr(chr, nextchr)
+                            nextchr = eof(io) ? 0xff : read(io, Uint8)
+                            endf = nextchr == 0xff
+                        end
+                    end
+                end)
+
+                # No longer at the start of a line that might be a pure comment
+                $(if allowcomments quote at_start = false end end)
+
+                # Processing is very different inside and outside of quotes
+                if !in_quotes
+                    # Entering a quoted region
+                    if chr in quotemarks
+                        in_quotes = true
+                        p.quoted[n_fields] = true
+                        $(if wsv quote skip_white = false end end)
+                    # Finished reading a field
+                    elseif $(if wsv
+                                quote chr == ' ' || chr == '\t' end
+                            else
+                                quote chr == o.separator end
+                            end)
+                        $(if wsv
+                            quote
+                                if !(nextchr in [' ', '\t', '\n', '\r']) && !skip_white
+                                    @push(n_bounds, p.bounds, n_bytes, l_bounds)
+                                    @push(n_bytes, p.bytes, '\n', l_bytes)
+                                    @push(n_fields, p.quoted, false, l_quoted)
+                                    skip_white = false
+                                end
+                            end
+                        else
+                            quote
+                                @push(n_bounds, p.bounds, n_bytes, l_bounds)
+                                @push(n_bytes, p.bytes, '\n', l_bytes)
+                                @push(n_fields, p.quoted, false, l_quoted)
+                            end
+                        end)
+                    # Finished reading a row
+                    elseif @atnewline(chr, nextchr)
+                        $(if allowcomments quote at_start = true end end)
+                        @push(n_bounds, p.bounds, n_bytes, l_bounds)
+                        @push(n_bytes, p.bytes, '\n', l_bytes)
+                        @push(n_lines, p.lines, n_bytes, l_lines)
+                        @push(n_fields, p.quoted, false, l_quoted)
+                        $(if wsv quote skip_white = true end end)
+                    # Store character in buffer
+                    else
+                        @push(n_bytes, p.bytes, chr, l_bytes)
+                        $(if wsv quote skip_white = false end end)
+                    end
+                else
+                    # Escape a quotemark inside quoted field
+                    if @atescape(chr, nextchr, quotemarks) && !in_escape
+                        in_escape = true
+                    else
+                        # Exit quoted field
+                        if chr in quotemarks && !in_escape
+                            in_quotes = false
+                        # Store character in buffer
+                        else
+                            @push(n_bytes, p.bytes, chr, l_bytes)
+                        end
+                        # Escape mode only lasts for one byte
+                        in_escape = false
+                    end
                 end
-            elseif chr == o.separator
-                @push(n_bounds, p.bounds, n_bytes, l_bounds)
-                @push(n_bytes, p.bytes, '\n', l_bytes)
-                @push(n_fields, p.quoted, false, l_quoted)
-            # Finished reading a row
-            elseif @atnewline(chr, nextchr)
-                at_start = true
+            end
+
+            # Append a final EOL if it's missing in the raw input
+            if endf && !@atnewline(chr, nextchr)
                 @push(n_bounds, p.bounds, n_bytes, l_bounds)
                 @push(n_bytes, p.bytes, '\n', l_bytes)
                 @push(n_lines, p.lines, n_bytes, l_lines)
-                @push(n_fields, p.quoted, false, l_quoted)
-                skip_white = true
-            # Store character in buffer
-            else
-                @push(n_bytes, p.bytes, chr, l_bytes)
-                skip_white = false
             end
-        else
-            # Escape a quotemark inside quoted field
-            if @atescape(chr, nextchr, quotemarks) && !in_escape
-                in_escape = true
-            else
-                # Exit quoted field
-                if chr in quotemarks && !in_escape
-                    in_quotes = false
-                # Store character in buffer
-                else
-                    @push(n_bytes, p.bytes, chr, l_bytes)
-                end
-                # Escape mode only lasts for one byte
-                in_escape = false
-            end
+
+            # Don't count the dummy boundaries in fields or rows
+            return n_bytes, n_bounds - 1, n_lines - 1, nextchr
         end
     end
-
-    # Append a final EOL if it's missing in the raw input
-    if endf && !@atnewline(chr, nextchr)
-        @push(n_bounds, p.bounds, n_bytes, l_bounds)
-        @push(n_bytes, p.bytes, '\n', l_bytes)
-        @push(n_lines, p.lines, n_bytes, l_lines)
-    end
-
-    # Don't count the dummy boundaries in fields or rows
-    return n_bytes, n_bounds - 1, n_lines - 1, nextchr
 end
 
 function bytematch{T <: ByteString}(bytes::Vector{Uint8},
@@ -650,8 +684,10 @@ function readtable!(p::ParsedCSV,
                     io::IO,
                     nrows::Int64,
                     o::ParseOptions)
-    # Skip lines at the start
+
     chr, nextchr = 0xff, 0xff
+
+    # Skip lines at the start
     skipped_lines = 0
     if o.skipstart != 0
         chr, nextchr, endf = @read_peek_eof(io, nextchr)
@@ -666,18 +702,21 @@ function readtable!(p::ParsedCSV,
         end
     end
 
+    # Use ParseOptions to pick the right method of readnrows!
+    d = ParseType(o)
+
     # Extract the header
     if o.header
-        bytes, fields, rows, nextchr = readnrows!(p, io, int64(1), o, nextchr)
-    end
+        bytes, fields, rows, nextchr = readnrows!(p, io, int64(1), o, d, nextchr)
 
-    # Insert column names from header if none present
-    if o.header && isempty(o.colnames)
-        parsecolnames!(o.colnames, p.bytes, p.bounds, fields)
+        # Insert column names from header if none present
+        if isempty(o.colnames)
+            parsecolnames!(o.colnames, p.bytes, p.bounds, fields)
+        end
     end
 
     # Parse main data set
-    bytes, fields, rows, nextchr = readnrows!(p, io, nrows, o, nextchr)
+    bytes, fields, rows, nextchr = readnrows!(p, io, nrows, o, d, nextchr)
 
     # Sanity checks
     bytes != 0 || error("Failed to read any bytes.")
