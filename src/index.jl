@@ -8,22 +8,22 @@ typealias Indices Union(Real, AbstractVector{Real})
 abstract AbstractIndex
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...
-    lookup::Dict{ByteString, Indices}      # name => names array position
-    names::Vector{ByteString}
+    lookup::Dict{Symbol, Indices}      # name => names array position
+    names::Vector{Symbol}
 end
-function Index{T <: ByteString}(x::Vector{T})
-    x = make_unique(convert(Vector{ByteString}, x))
-    Index(Dict{ByteString, Indices}(tuple(x...), tuple([1:length(x)]...)), x)
+function Index{T <: Symbol}(x::Vector{T})
+    x = make_unique(convert(Vector{Symbol}, x))
+    Index(Dict{Symbol, Indices}(tuple(x...), tuple([1:length(x)]...)), x)
 end
-Index() = Index(Dict{ByteString, Indices}(), ByteString[])
+Index() = Index(Dict{Symbol, Indices}(), Symbol[])
 Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = copy(x.names)
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 
-# I think this should be Vector{T <: String}
-function names!(x::Index, nm::Vector)
+# I think this should be Vector{T <: Symbol}
+function names!(x::Index, nm::Vector{Symbol})
     if length(nm) != length(x)
         error("lengths don't match.")
     end
@@ -51,17 +51,16 @@ function rename!(x::Index, nms)
 end
 
 rename!(x::Index, from, to) = rename!(x, zip(from, to))
-rename!(x::Index, from::String, to::String) = rename!(x, ((from, to),))
+rename!(x::Index, from::Symbol, to::Symbol) = rename!(x, ((from, to),))
 rename!(x::Index, f::Function) = rename!(x, [(x,f(x)) for x in x.names])
 
 rename(x::Index, args...) = rename!(copy(x), args...)
 
-Base.haskey(x::Index, key::String) = haskey(x.lookup, key)
-Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, string(key))
+Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
 Base.keys(x::Index) = names(x)
 
-function Base.push!(x::Index, nm::String)
+function Base.push!(x::Index, nm::Symbol)
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
     return x
@@ -77,7 +76,7 @@ function Base.delete!(x::Index, idx::Integer)
     return x
 end
 
-function Base.delete!(x::Index, nm::String)
+function Base.delete!(x::Index, nm::Symbol)
     if !haskey(x.lookup, nm)
         return x
     end
@@ -85,16 +84,14 @@ function Base.delete!(x::Index, nm::String)
     return delete!(x, idx)
 end
 
-Base.getindex(x::Index, idx::String) = x.lookup[idx]
-Base.getindex(x::Index, idx::Symbol) = x.lookup[string(idx)]
+Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::Real) = int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, array(idx, false))
 Base.getindex{T}(x::AbstractIndex, idx::AbstractDataVector{T}) = getindex(x, dropna(idx))
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
 Base.getindex(x::AbstractIndex, idx::Ranges) = [idx]
 Base.getindex{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)
-Base.getindex{T <: String}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[i] for i in idx]...]
-Base.getindex{T <: Symbol}(x::AbstractIndex, idx::AbstractVector{T}) = [[x.lookup[string(i)] for i in idx]...]
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [[x.lookup[i] for i in idx]...]
 
 type SimpleIndex <: AbstractIndex
     length::Integer

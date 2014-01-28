@@ -160,7 +160,7 @@ colwise(fns::Vector{Function}, d::GroupedDataFrame, cn::Vector{String}) = map(co
 colwise(fns::Vector{Function}) = x -> colwise(fns, x)
 
 function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
-    header = [s2 * "_" * string(s1) for s1 in s, s2 in cn][:]
+    header = [symbol(string(s2) * "_" * string(s1)) for s1 in s, s2 in cn][:]
     payload = colwise(map(eval, s), d)
     df = DataFrame()
     # TODO fix this to assign the longest column first or preallocate

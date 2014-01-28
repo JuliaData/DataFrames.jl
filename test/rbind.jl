@@ -19,7 +19,7 @@ module TestRBind
 	# Broadcasting assignment of columns
 	df[:, 1] = 1
 	df[1] = 3
-	df["x3"] = 2
+	df[:x3] = 2
 
 	rbind(null_df)
 	rbind(null_df, null_df)
@@ -35,7 +35,7 @@ module TestRBind
 	rbind(df, alt_df)
 
 	alt_df = deepcopy(df)
-	names!(alt_df, ["A", "B", "C"])
+	names!(alt_df, [:A, :B, :C])
 	# Fail on non-matching names
 	rbind(df, alt_df)
 

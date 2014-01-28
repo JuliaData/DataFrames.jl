@@ -52,7 +52,7 @@ end
 function DataFrame(;kwargs...)
     result = DataFrame({}, Index())
     for (k, v) in kwargs
-        result[string(k)] = v
+        result[k] = v
     end
     return result
 end
@@ -73,7 +73,7 @@ end
 #' @description
 #'
 #' Construct a DataFrame from a vector of columns and, optionally, specify
-#' the names of the columns as a vector of strings.
+#' the names of the columns as a vector of symbols.
 #'
 #' @returns df::DataFrame A newly constructed DataFrame.
 #'
@@ -81,8 +81,8 @@ end
 #'
 #' df = DataFrame()
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-function DataFrame{T <: String}(columns::Vector{Any},
-                                cnames::Vector{T} = gennames(length(columns)))
+function DataFrame(columns::Vector{Any},
+                   cnames::Vector{Symbol} = gennames(length(columns)))
     return DataFrame(columns, Index(cnames))
 end
 
@@ -131,10 +131,10 @@ end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
 function DataFrame(d::Dict)
-    cnames = sort(convert(Array{ByteString, 1}, collect(keys(d))))
+    cnames = sort(Symbol[x for x in keys(d)])
     p = length(cnames)
     if p == 0
-        DataFrame()
+        return DataFrame()
     end
     n = length(d[cnames[1]])
     columns = Array(Any, p)
@@ -221,7 +221,7 @@ function DataFrame{D <: Associative}(ds::Vector{D})
 end
 
 # Initialize from a Vector of Associatives (aka list of dicts)
-function DataFrame{D <: Associative, T <: String}(ds::Vector{D}, ks::Vector{T})
+function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector{Symbol})
     invoke(DataFrame, (Vector{D}, Vector), ds, ks)
 end
 
@@ -340,7 +340,7 @@ index(df::DataFrame) = df.colindex
 # Let getindex(df.columns[j], row_inds) from AbstractDataVector() handle
 #  the resolution of row indices
 
-typealias ColumnIndex Union(Real, String, Symbol)
+typealias ColumnIndex Union(Real, Symbol)
 
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
@@ -401,14 +401,13 @@ function create_new_column_from_scalar(df::DataFrame, val::Any)
     return DataArray(col_data, falses(n))
 end
 
-isnextcol(df::DataFrame, col_ind::String) = true
 isnextcol(df::DataFrame, col_ind::Symbol) = true
 function isnextcol(df::DataFrame, col_ind::Real)
     return ncol(df) + 1 == int(col_ind)
 end
 
 function nextcolname(df::DataFrame)
-    return string("x", ncol(df) + 1)
+    return symbol(string("x", ncol(df) + 1))
 end
 
 # Will automatically add a new column if needed
@@ -427,7 +426,7 @@ function insert_single_column!(df::DataFrame,
         j = df.colindex[col_ind]
         df.columns[j] = dv
     else
-        if typeof(col_ind) <: String || typeof(col_ind) <: Symbol
+        if typeof(col_ind) <: Symbol
             push!(df.colindex, col_ind)
             push!(df.columns, dv)
         else
@@ -1277,7 +1276,7 @@ function dict(adf::AbstractDataFrame, flatten::Bool)
     # TODO: Make flatten an option
     # TODO: Provide a de-data option that makes Vector's, not
     #       DataVector's
-    res = Dict{UTF8String, Any}()
+    res = Dict{Symbol, Any}()
     if flatten && nrow(adf) == 1
         for colname in names(adf)
             res[colname] = adf[colname][1]
@@ -1304,12 +1303,12 @@ dict(adf::AbstractDataFrame) = dict(adf, false)
 
 pool(a::AbstractVector) = compact(PooledDataArray(a))
 
-function pool!(df::AbstractDataFrame, cname::Union(Integer, String))
+function pool!(df::AbstractDataFrame, cname::Union(Integer, Symbol))
     df[cname] = pool(df[cname])
     return
 end
 
-function pool!{T <: Union(Integer, String)}(df::AbstractDataFrame, cnames::Vector{T})
+function pool!{T <: Union(Integer, Symbol)}(df::AbstractDataFrame, cnames::Vector{T})
     for cname in cnames
         df[cname] = pool(df[cname])
     end
