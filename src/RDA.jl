@@ -306,4 +306,5 @@ function data(rc::RComplex)
               BitArray(imag(rc.data) .== R_NA_FLOAT64))
 end
 
-DataFrame(rl::RList) = DataFrame(map(x->data(x), rl.data), rl.attr["names"].data)
+DataFrame(rl::RList) = DataFrame(map(x->data(x), rl.data), 
+                                 Symbol[symbol(x) for x in rl.attr["names"].data]) 

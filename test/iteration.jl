@@ -23,7 +23,7 @@ module TestIteration
 
 	for row in eachrow(df)
 	    @assert isa(row, DataFrameRow)
-	    @assert row["B"]-row["A"] == 1
+	    @assert row[:B]-row[:A] == 1
 	end
 
 	for col in eachcol(df)
@@ -35,22 +35,22 @@ module TestIteration
 
 	row = DataFrameRow(df, 1)
 
-	row["A"] = 100
-	@assert df[1, "A"] == 100
+	row[:A] = 100
+	@assert df[1, :A] == 100
 
 	row[1] = 101
-	@assert df[1, "A"] == 101
+	@assert df[1, :A] == 101
 
         df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
         s1 = sub(df, 1:3)
-        s1[2,"A"] = 4
-        @assert df[2, "A"] == 4
+        s1[2,:A] = 4
+        @assert df[2, :A] == 4
         @assert sub(s1, 1:2) == sub(df, 1:2)
 
         s2 = sub(df, 1:2:3)
-        s2[2, "B"] = "M"
-        @assert df[3, "B"] == "M"
+        s2[2, :B] = "M"
+        @assert df[3, :B] == "M"
         @assert sub(s2, 1:1:2) == sub(df, [1,3])
 
 	# @test_fail for x in df; end # Raises an error

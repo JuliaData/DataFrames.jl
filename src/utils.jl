@@ -22,7 +22,7 @@ function _uniqueofsorted(x::Vector)
     x[idx]
 end
 
-function make_unique{S<:ByteString}(names::Vector{S})
+function make_unique(names::Vector{Symbol})
     x = Index()
     names = copy(names)
     dups = Int[]
@@ -38,7 +38,7 @@ function make_unique{S<:ByteString}(names::Vector{S})
         newnm = nm
         k = 1
         while true
-            newnm = "$(nm)_$k"
+            newnm = symbol("$(nm)_$k")
             if !haskey(x, newnm)
                 push!(x, newnm)
                 break
@@ -53,19 +53,19 @@ end
 #' @description
 #'
 #' Generate standardized names for columns of a DataFrame. The
-#' first name will be "x1", the second "x2", etc.
+#' first name will be :x1, the second :x2, etc.
 #'
 #' @field n::Integer The number of names to generate.
 #'
-#' @returns names::Vector{UTF8String} A vector of standardized column names.
+#' @returns names::Vector{Symbol} A vector of standardized column names.
 #'
 #' @examples
 #'
 #' DataFrames.gennames(10)
 function gennames(n::Integer)
-    res = Array(UTF8String, n)
+    res = Array(Symbol, n)
     for i in 1:n
-        res[i] = @sprintf "x%d" i
+        res[i] = symbol(@sprintf "x%d" i)
     end
     return res
 end

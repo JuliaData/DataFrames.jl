@@ -41,7 +41,6 @@ module TestIO
     # Spot check movies.csv file
     filename = "test/data/scaling/movies.csv"
     df = readtable(filename)
-
     @test df[1, 1] === 1
     # TODO: Figure out why strict equality won't work here
     #       Doesn't seem to be UTF8String vs. ASCIIString
@@ -166,8 +165,8 @@ module TestIO
     filename = "test/data/factors/mixedvartypes.csv"
     df = readtable(filename, makefactors = true)
 
-    @assert typeof(df["factorvar"]) == PooledDataArray{UTF8String,Uint32,1}
-    @assert typeof(df["floatvar"]) == DataArray{Float64,1}
+    @assert typeof(df[:factorvar]) == PooledDataArray{UTF8String,Uint32,1}
+    @assert typeof(df[:floatvar]) == DataArray{Float64,1}
 
     # Readtable shouldn't silently drop data when reading highly compressed gz.
     df = readtable("test/data/compressed/1000x2.csv.gz")
@@ -176,77 +175,77 @@ module TestIO
     # Readtable type inference
     filename = "test/data/typeinference/bool.csv"
     df = readtable(filename)
-    @assert typeof(df["Name"]) == DataArray{UTF8String,1}
-    @assert typeof(df["IsMale"]) == DataArray{Bool,1}
-    @assert df["IsMale"][1] == true
-    @assert df["IsMale"][4] == false
+    @assert typeof(df[:Name]) == DataArray{UTF8String,1}
+    @assert typeof(df[:IsMale]) == DataArray{Bool,1}
+    @assert df[:IsMale][1] == true
+    @assert df[:IsMale][4] == false
  
     filename = "test/data/typeinference/standardtypes.csv"
     df = readtable(filename)
-    @assert typeof(df["IntColumn"]) == DataArray{Int64,1}
-    @assert typeof(df["IntlikeColumn"]) == DataArray{Float64,1}
-    @assert typeof(df["FloatColumn"]) == DataArray{Float64,1}
-    @assert typeof(df["BoolColumn"]) == DataArray{Bool,1}
-    @assert typeof(df["StringColumn"]) == DataArray{UTF8String,1}
+    @assert typeof(df[:IntColumn]) == DataArray{Int64,1}
+    @assert typeof(df[:IntlikeColumn]) == DataArray{Float64,1}
+    @assert typeof(df[:FloatColumn]) == DataArray{Float64,1}
+    @assert typeof(df[:BoolColumn]) == DataArray{Bool,1}
+    @assert typeof(df[:StringColumn]) == DataArray{UTF8String,1}
  
     filename = "test/data/typeinference/mixedtypes.csv"
     df = readtable(filename)
-    @assert typeof(df["c1"]) == DataArray{UTF8String,1}
-    @assert df["c1"][1] == "1" 
-    @assert df["c1"][2] == "2.0" 
-    @assert df["c1"][3] == "true" 
-    @assert typeof(df["c2"]) == DataArray{Float64,1}
-    @assert df["c2"][1] == 1.0 
-    @assert df["c2"][2] == 3.0 
-    @assert df["c2"][3] == 4.5 
-    @assert typeof(df["c3"]) == DataArray{UTF8String,1}
-    @assert df["c3"][1] == "0" 
-    @assert df["c3"][2] == "1" 
-    @assert df["c3"][3] == "f" 
-    @assert typeof(df["c4"]) == DataArray{Bool,1}
-    @assert df["c4"][1] == true
-    @assert df["c4"][2] == false
-    @assert df["c4"][3] == true
-    @assert typeof(df["c5"]) == DataArray{UTF8String,1}
-    @assert df["c5"][1] == "False"
-    @assert df["c5"][2] == "true"
-    @assert df["c5"][3] == "true"
+    @assert typeof(df[:c1]) == DataArray{UTF8String,1}
+    @assert df[:c1][1] == "1" 
+    @assert df[:c1][2] == "2.0" 
+    @assert df[:c1][3] == "true" 
+    @assert typeof(df[:c2]) == DataArray{Float64,1}
+    @assert df[:c2][1] == 1.0 
+    @assert df[:c2][2] == 3.0 
+    @assert df[:c2][3] == 4.5 
+    @assert typeof(df[:c3]) == DataArray{UTF8String,1}
+    @assert df[:c3][1] == "0" 
+    @assert df[:c3][2] == "1" 
+    @assert df[:c3][3] == "f" 
+    @assert typeof(df[:c4]) == DataArray{Bool,1}
+    @assert df[:c4][1] == true
+    @assert df[:c4][2] == false
+    @assert df[:c4][3] == true
+    @assert typeof(df[:c5]) == DataArray{UTF8String,1}
+    @assert df[:c5][1] == "False"
+    @assert df[:c5][2] == "true"
+    @assert df[:c5][3] == "true"
  
     # Readtable defining column types
     filename = "test/data/definedtypes/mixedvartypes.csv"
  
     df = readtable(filename)
-    @assert typeof(df["n"]) == DataArray{Int64,1}
-    @assert df["n"][1] == 1
-    @assert typeof(df["s"]) == DataArray{UTF8String,1}
-    @assert df["s"][1] == "text"
-    @assert typeof(df["f"]) == DataArray{Float64,1}
-    @assert df["f"][1] == 2.3
-    @assert typeof(df["b"]) == DataArray{Bool,1}
-    @assert df["b"][1] == true
+    @assert typeof(df[:n]) == DataArray{Int64,1}
+    @assert df[:n][1] == 1
+    @assert typeof(df[:s]) == DataArray{UTF8String,1}
+    @assert df[:s][1] == "text"
+    @assert typeof(df[:f]) == DataArray{Float64,1}
+    @assert df[:f][1] == 2.3
+    @assert typeof(df[:b]) == DataArray{Bool,1}
+    @assert df[:b][1] == true
 
     df = readtable(filename,coltypes=[Int64, UTF8String, Float64, Bool])
-    @assert typeof(df["n"]) == DataArray{Int64,1}
-    @assert df["n"][1] == 1
-    @assert typeof(df["s"]) == DataArray{UTF8String,1}
-    @assert df["s"][1] == "text"
-    @assert df["s"][4] == "text ole"
-    @assert typeof(df["f"]) == DataArray{Float64,1}
-    @assert df["f"][1] == 2.3
-    @assert typeof(df["b"]) == DataArray{Bool,1}
-    @assert df["b"][1] == true
-    @assert df["b"][2] == false
+    @assert typeof(df[:n]) == DataArray{Int64,1}
+    @assert df[:n][1] == 1
+    @assert typeof(df[:s]) == DataArray{UTF8String,1}
+    @assert df[:s][1] == "text"
+    @assert df[:s][4] == "text ole"
+    @assert typeof(df[:f]) == DataArray{Float64,1}
+    @assert df[:f][1] == 2.3
+    @assert typeof(df[:b]) == DataArray{Bool,1}
+    @assert df[:b][1] == true
+    @assert df[:b][2] == false
 
     df = readtable(filename,coltypes=[Int64, UTF8String, Float64, UTF8String])
-    @assert typeof(df["n"]) == DataArray{Int64,1}
-    @assert df["n"][1] == 1.0
-    @assert isna(df["s"][3])
-    @assert typeof(df["f"]) == DataArray{Float64,1}
+    @assert typeof(df[:n]) == DataArray{Int64,1}
+    @assert df[:n][1] == 1.0
+    @assert isna(df[:s][3])
+    @assert typeof(df[:f]) == DataArray{Float64,1}
     # Float are not converted to int
-    @assert df["f"][1] == 2.3
-    @assert df["f"][2] == 0.2
-    @assert df["f"][3] == 5.7
-    @assert typeof(df["b"]) == DataArray{UTF8String,1}
-    @assert df["b"][1] == "T"
-    @assert df["b"][2] == "FALSE"
+    @assert df[:f][1] == 2.3
+    @assert df[:f][2] == 0.2
+    @assert df[:f][3] == 5.7
+    @assert typeof(df[:b]) == DataArray{UTF8String,1}
+    @assert df[:b][1] == "T"
+    @assert df[:b][2] == "FALSE"
 end

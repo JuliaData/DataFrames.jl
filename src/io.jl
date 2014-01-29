@@ -7,7 +7,7 @@ immutable ParsedCSV
     quoted::BitVector    # Was field quoted in text
 end
 
-immutable ParseOptions{S <: ByteString, T <: ByteString}
+immutable ParseOptions{S <: ByteString}
     header::Bool
     separator::Char
     quotemarks::Vector{Char}
@@ -16,7 +16,7 @@ immutable ParseOptions{S <: ByteString, T <: ByteString}
     truestrings::Vector{S}
     falsestrings::Vector{S}
     makefactors::Bool
-    colnames::Vector{T}
+    colnames::Vector{Symbol}
     cleannames::Bool
     coltypes::Vector{DataType}
     allowcomments::Bool
@@ -582,7 +582,7 @@ function builddf(rows::Integer,
     end
 end
 
-function parsecolnames!(colnames::Vector{UTF8String},
+function parsecolnames!(colnames::Vector{Symbol},
                         bytes::Vector{Uint8},
                         bounds::Vector{Int},
                         fields::Int)
@@ -596,9 +596,9 @@ function parsecolnames!(colnames::Vector{UTF8String},
         left = bounds[j] + 2
         right = bounds[j + 1]
         if bytes[right] == '\r' || bytes[right] == '\n'
-            colnames[j] = bytestring(bytes[left:(right - 1)])
+            colnames[j] = symbol(bytestring(bytes[left:(right - 1)]))
         else
-            colnames[j] = bytestring(bytes[left:right])
+            colnames[j] = symbol(bytestring(bytes[left:right]))
         end
     end
 
@@ -705,7 +705,7 @@ function readtable(pathname::String;
                    falsestrings::Vector = ASCIIString["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
                    nrows::Int = -1,
-                   colnames::Vector = UTF8String[],
+                   colnames::Vector = Symbol[],
                    cleannames::Bool = false,
                    coltypes::Vector{DataType} = DataType[],
                    allowcomments::Bool = false,

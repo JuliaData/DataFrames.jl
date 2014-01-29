@@ -21,13 +21,13 @@ module TestRDA
     df = DataFrame(num = [1.1, 2.2])
     @assert isequal(DataFrame(read_rda("test/data/RDA/minimal.rda")["df"]), df)
 
-    df["int"] = Int32[1, 2]
-    df["logi"] = [true, false]
-    df["chr"] = ["ab", "c"]
-    df["factor"] = pool(df["chr"])
+    df[:int] = Int32[1, 2]
+    df[:logi] = [true, false]
+    df[:chr] = ["ab", "c"]
+    df[:factor] = pool(df[:chr])
     @assert isequal(DataFrame(read_rda("test/data/RDA/types.rda")["df"]), df)
 
     df[2, :] = NA
-    df = df[:, ["num", "int", "logi", "factor"]]  # (NA) chr breaks read_rda
+    df = df[:, [:num, :int, :logi, :factor]]  # (NA) chr breaks read_rda
     @assert isequal(DataFrame(read_rda("test/data/RDA/NAs.rda")["df"]), df)
 end

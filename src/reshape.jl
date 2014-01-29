@@ -14,9 +14,9 @@
 ##############################################################################
 
 function stack(df::DataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
-    res = DataFrame[insert!(df[[i, id_vars]], 1, names(df)[i], "variable") for i in measure_vars]
+    res = DataFrame[insert!(df[[i, id_vars]], 1, names(df)[i], :variable) for i in measure_vars]
     # fix column names
-    map(x -> names!(x, ["variable", "value", names(df[id_vars])]), res)
+    map(x -> names!(x, [:variable, :value, names(df[id_vars])]), res)
     res = vcat(res)
     res
 end
@@ -44,7 +44,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     # TODO make fillNA(type, length)
-    payload = DataFrame({DataArray([fill(valuecol[1],Nrow)], fill(true, Nrow))  for i in 1:Ncol}, map(string, keycol.pool))
+    payload = DataFrame({DataArray([fill(valuecol[1],Nrow)], fill(true, Nrow))  for i in 1:Ncol}, map(symbol, keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
         j = int(keycol.refs[k])

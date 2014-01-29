@@ -42,12 +42,12 @@ module TestDataFrame
     z = vcat(v, x)
 
     # Deleting columns removes any mention from groupings
-    delete!(x, "a")
-    # @test colnames(x) == ["b"]
+    delete!(x, :a)
+    # @test colnames(x) == [:b]
 
     ## del calls ref, which properly deals with groupings
     z2 = z[:,[1,1,2]]
-    @test names(z2) == ["a", "a_1", "b"]
+    @test names(z2) == [:a, :a_1, :b]
 
     #test_group("DataFrame assignment")
 
@@ -71,7 +71,7 @@ module TestDataFrame
     @assert typeof(df[:, 2]) == DataVector{Float64}
     @assert typeof(df[:, 3]) == DataVector{ASCIIString}
 
-    df = DataFrame({Int, Float64, ASCIIString}, ["A", "B", "C"], 100)
+    df = DataFrame({Int, Float64, ASCIIString}, [:A, :B, :C], 100)
     @assert size(df, 1) == 100
     @assert size(df, 2) == 3
     @assert typeof(df[:, 1]) == DataVector{Int}
@@ -94,26 +94,26 @@ module TestDataFrame
     @assert typeof(df[:, 1]) == DataVector{Float64}
 
     #test_group("Other DataFrame constructors")
-    df = DataFrame([{"a"=>1, "b"=>'c'}, {"a"=>3, "b"=>'d'}, {"a"=>5}])
+    df = DataFrame([{:a=>1, :b=>'c'}, {:a=>3, :b=>'d'}, {:a=>5}])
     @assert size(df, 1) == 3
     @assert size(df, 2) == 2
-    @assert typeof(df[:,"a"]) == DataVector{Int}
-    @assert typeof(df[:,"b"]) == DataVector{Char}
+    @assert typeof(df[:,:a]) == DataVector{Int}
+    @assert typeof(df[:,:b]) == DataVector{Char}
 
-    df = DataFrame([{"a"=>1, "b"=>'c'}, {"a"=>3, "b"=>'d'}, {"a"=>5}], ["a", "b"])
+    df = DataFrame([{:a=>1, :b=>'c'}, {:a=>3, :b=>'d'}, {:a=>5}], [:a, :b])
     @assert size(df, 1) == 3
     @assert size(df, 2) == 2
-    @assert typeof(df[:,"a"]) == DataVector{Int}
-    @assert typeof(df[:,"b"]) == DataVector{Char}
+    @assert typeof(df[:,:a]) == DataVector{Int}
+    @assert typeof(df[:,:b]) == DataVector{Char}
 
-    data = {"A" => [1, 2], "C" => ["1", "2"], "B" => [3, 4]}
+    data = {:A => [1, 2], :C => [:1, :2], :B => [3, 4]}
     df = DataFrame(data)
     # Specify column_names
-    df = DataFrame(data, ["C", "A", "B"])
+    df = DataFrame(data, [:C, :A, :B])
 
     # This assignment was missing before
-    df = DataFrame(Column = ["A"])
-    df[1, "Column"] = "Testing"
+    df = DataFrame(Column = [:A])
+    df[1, :Column] = "Testing"
 
     # flipud() tests
     df = DataFrame(A = 1:4)
@@ -126,7 +126,7 @@ module TestDataFrame
     df = DataFrame(x=[], y=[])
     @assert nrow(df) == 0
     df = DataFrame(x=[1:3], y=[3:5])
-    sdf = sub(df, df["x"] .== 4)
+    sdf = sub(df, df[:x] .== 4)
     @assert nrow(sdf) == 0
 
     @assert hash(DataFrame([1 2; 3 4])) == hash(DataFrame([1 2; 3 4]))
