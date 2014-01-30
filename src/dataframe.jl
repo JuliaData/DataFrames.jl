@@ -1323,3 +1323,15 @@ function pool!(df)
     end
     return
 end
+
+function Base.append!(adf1::AbstractDataFrame,
+                      adf2::AbstractDataFrame)
+   names(adf1) == names(adf2) || error("Column names do not match")
+   types(adf1) == types(adf2) || error("Column types do not match")
+   ncols = size(adf1, 2)
+   # TODO: This needs to be a sort of transaction to be 100% safe
+   for j in 1:ncols
+       append!(adf1[j], adf2[j])
+   end
+   return adf1
+end
