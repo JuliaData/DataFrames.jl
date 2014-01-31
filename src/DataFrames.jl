@@ -140,25 +140,6 @@ include("formula.jl")
 include("io.jl")
 include("extras.jl")
 include("RDA.jl")
-
-##############################################################################
-##
-## Deprecations
-##
-##############################################################################
-
-Base.@deprecate vecbind vcat
-Base.@deprecate rbind vcat
-Base.@deprecate cbind hcat
-Base.@deprecate read_table readtable
-Base.@deprecate print_table printtable
-Base.@deprecate write_table writetable
-Base.@deprecate merge(df1::AbstractDataFrame, df2::AbstractDataFrame; on::Any = nothing, kind::Symbol = :inner) Base.join
-Base.@deprecate colnames(adf::AbstractDataFrame) Base.names
-Base.@deprecate colnames!(adf::AbstractDataFrame, vals) names!
-Base.@deprecate coltypes(adf::AbstractDataFrame) types
-Base.@deprecate EachRow eachrow
-Base.@deprecate EachCol eachcol
-Base.@deprecate subset sub
+include("deprecated.jl")
 
 end # module DataFrames
