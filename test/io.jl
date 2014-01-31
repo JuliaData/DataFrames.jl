@@ -4,31 +4,32 @@ module TestIO
     using DataFrames
 
     #test_group("Confirm that we can read various file types.")
+    testdir = dirname(@__FILE__)
 
-    filenames = ["test/data/blanklines/blanklines.csv",
-                 "test/data/compressed/movies.csv.gz",
-                 "test/data/newlines/os9.csv",
-                 "test/data/newlines/osx.csv",
-                 "test/data/newlines/windows.csv",
-                 "test/data/newlines/embedded_os9.csv",
-                 "test/data/newlines/embedded_osx.csv",
-                 "test/data/newlines/embedded_windows.csv",
-                 "test/data/padding/space_after_delimiter.csv",
-                 "test/data/padding/space_around_delimiter.csv",
-                 "test/data/padding/space_before_delimiter.csv",
-                 "test/data/quoting/empty.csv",
-                 "test/data/quoting/escaping.csv",
-                 "test/data/quoting/quotedcommas.csv",
-                 "test/data/scaling/10000rows.csv",
-                 "test/data/scaling/movies.csv",
-                 "test/data/separators/sample_data.csv",
-                 "test/data/separators/sample_data.tsv",
-                 "test/data/separators/sample_data.wsv",
-                 "test/data/typeinference/bool.csv",
-                 "test/data/typeinference/standardtypes.csv",
-                 "test/data/utf8/corrupt_utf8.csv",
-                 "test/data/utf8/short_corrupt_utf8.csv",
-                 "test/data/utf8/utf8.csv"]
+    filenames = ["$testdir/data/blanklines/blanklines.csv",
+                 "$testdir/data/compressed/movies.csv.gz",
+                 "$testdir/data/newlines/os9.csv",
+                 "$testdir/data/newlines/osx.csv",
+                 "$testdir/data/newlines/windows.csv",
+                 "$testdir/data/newlines/embedded_os9.csv",
+                 "$testdir/data/newlines/embedded_osx.csv",
+                 "$testdir/data/newlines/embedded_windows.csv",
+                 "$testdir/data/padding/space_after_delimiter.csv",
+                 "$testdir/data/padding/space_around_delimiter.csv",
+                 "$testdir/data/padding/space_before_delimiter.csv",
+                 "$testdir/data/quoting/empty.csv",
+                 "$testdir/data/quoting/escaping.csv",
+                 "$testdir/data/quoting/quotedcommas.csv",
+                 "$testdir/data/scaling/10000rows.csv",
+                 "$testdir/data/scaling/movies.csv",
+                 "$testdir/data/separators/sample_data.csv",
+                 "$testdir/data/separators/sample_data.tsv",
+                 "$testdir/data/separators/sample_data.wsv",
+                 "$testdir/data/typeinference/bool.csv",
+                 "$testdir/data/typeinference/standardtypes.csv",
+                 "$testdir/data/utf8/corrupt_utf8.csv",
+                 "$testdir/data/utf8/short_corrupt_utf8.csv",
+                 "$testdir/data/utf8/utf8.csv"]
 
     for filename in filenames
         try
@@ -39,7 +40,7 @@ module TestIO
     end
 
     # Spot check movies.csv file
-    filename = "test/data/scaling/movies.csv"
+    filename = "$testdir/data/scaling/movies.csv"
     df = readtable(filename)
     @test df[1, 1] === 1
     # TODO: Figure out why strict equality won't work here
@@ -101,18 +102,18 @@ module TestIO
     @test df[end, 24] === 0
     @test df[end, 25] === 0
 
-    readtable("test/data/comments/before_after_data.csv", allowcomments = true)
-    readtable("test/data/comments/middata.csv", allowcomments = true)
-    readtable("test/data/skiplines/skipfront.csv", skipstart = 3)
+    readtable("$testdir/data/comments/before_after_data.csv", allowcomments = true)
+    readtable("$testdir/data/comments/middata.csv", allowcomments = true)
+    readtable("$testdir/data/skiplines/skipfront.csv", skipstart = 3)
     
-    readtable("test/data/separators/sample_data_white.txt",separator=' ')
-    readtable("test/data/quoting/quotedwhitespace.txt", separator=' ')
+    readtable("$testdir/data/separators/sample_data_white.txt",separator=' ')
+    readtable("$testdir/data/quoting/quotedwhitespace.txt", separator=' ')
 
     # TODO: Implement skipping lines at specified row positions
-    # readtable("test/data/skiplines/skipbottom.csv", skiprows = [1, 2, 3])
+    # readtable("$testdir/data/skiplines/skipbottom.csv", skiprows = [1, 2, 3])
 
     # TODO: Implement skipping lines at bottom
-    # readtable("test/data/skiplines/skipbottom.csv", skipstartlines = 4)
+    # readtable("$testdir/data/skiplines/skipbottom.csv", skipstartlines = 4)
 
     #test_group("Confirm that we can read a large file.")
 
@@ -162,25 +163,25 @@ module TestIO
 
     # Readtable with makefactors active should only make factors from columns
     # of strings.
-    filename = "test/data/factors/mixedvartypes.csv"
+    filename = "$testdir/data/factors/mixedvartypes.csv"
     df = readtable(filename, makefactors = true)
 
     @assert typeof(df[:factorvar]) == PooledDataArray{UTF8String,Uint32,1}
     @assert typeof(df[:floatvar]) == DataArray{Float64,1}
 
     # Readtable shouldn't silently drop data when reading highly compressed gz.
-    df = readtable("test/data/compressed/1000x2.csv.gz")
+    df = readtable("$testdir/data/compressed/1000x2.csv.gz")
     @assert size(df) == (1000, 2)
 
     # Readtable type inference
-    filename = "test/data/typeinference/bool.csv"
+    filename = "$testdir/data/typeinference/bool.csv"
     df = readtable(filename)
     @assert typeof(df[:Name]) == DataArray{UTF8String,1}
     @assert typeof(df[:IsMale]) == DataArray{Bool,1}
     @assert df[:IsMale][1] == true
     @assert df[:IsMale][4] == false
  
-    filename = "test/data/typeinference/standardtypes.csv"
+    filename = "$testdir/data/typeinference/standardtypes.csv"
     df = readtable(filename)
     @assert typeof(df[:IntColumn]) == DataArray{Int64,1}
     @assert typeof(df[:IntlikeColumn]) == DataArray{Float64,1}
@@ -188,7 +189,7 @@ module TestIO
     @assert typeof(df[:BoolColumn]) == DataArray{Bool,1}
     @assert typeof(df[:StringColumn]) == DataArray{UTF8String,1}
  
-    filename = "test/data/typeinference/mixedtypes.csv"
+    filename = "$testdir/data/typeinference/mixedtypes.csv"
     df = readtable(filename)
     @assert typeof(df[:c1]) == DataArray{UTF8String,1}
     @assert df[:c1][1] == "1" 
@@ -212,7 +213,7 @@ module TestIO
     @assert df[:c5][3] == "true"
  
     # Readtable defining column types
-    filename = "test/data/definedtypes/mixedvartypes.csv"
+    filename = "$testdir/data/definedtypes/mixedvartypes.csv"
  
     df = readtable(filename)
     @assert typeof(df[:n]) == DataArray{Int64,1}
