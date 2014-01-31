@@ -12,7 +12,7 @@ module TestData
     dvdict = DataArray(Dict, 4)    # for issue #199
 
     #test_group("constructors")
-    df1 = DataFrame({dvint, dvstr}, ["Ints", "Strs"])
+    df1 = DataFrame({dvint, dvstr}, [:Ints, :Strs])
     df2 = DataFrame({dvint, dvstr}) 
     df3 = DataFrame({dvint})
     df4 = DataFrame([1:4 1:4])
