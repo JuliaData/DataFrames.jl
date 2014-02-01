@@ -144,16 +144,16 @@ macro push(count, a, val, l)
 end
 
 function getseparator(filename::String)
-    if endswith(filename, "csv")
+    m = match(r"\.(\w+)(\.(gz|bz|bz2))?$", filename)
+    ext = isa(m, RegexMatch) ? m.captures[1] : ""
+    if ext == "csv"
         return ','
-    elseif endswith(filename, "tsv")
+    elseif ext == "tsv"
         return '\t'
-    elseif endswith(filename, "wsv")
+    elseif ext == "wsv"
         return ' '
     else
-        msg = @sprintf("Unable to determine separator used in %s",
-                       filename)
-        error(msg)
+        return ','
     end
 end
 
@@ -745,7 +745,7 @@ end
 
 function readtable(pathname::String;
                    header::Bool = true,
-                   separator::Char = ',',
+                   separator::Char = getseparator(pathname),
                    quotemark::Vector{Char} = ['"'],
                    decimal::Char = '.',
                    nastrings::Vector = ASCIIString["", "NA"],
@@ -957,7 +957,13 @@ function writetable(filename::String,
                     header::Bool = true,
                     separator::Char = getseparator(filename),
                     quotemark::Char = '"')
-    io = open(filename, "w")
+    if endswith(filename, ".gz")
+        io = gzopen(filename, "w")
+    elseif endswith(filename, ".bz") || endswith(filename, ".bz2")
+        error("BZip2 compression not yet implemented")
+    else
+        io = open(filename, "w")
+    end
     printtable(io,
                df,
                separator = separator,
