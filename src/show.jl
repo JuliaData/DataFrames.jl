@@ -38,7 +38,11 @@ begin
         ourshowcompact(io, x)
         return position(io)
     end
-    ourstrwidth(x::String) = strwidth(x)
+    ourstrwidth(x::String) = strwidth(x) + 2 # -> Int
+    ourstrwidth(s::Symbol) = int(ccall(:u8_strwidth,
+                                       Csize_t,
+                                       (Ptr{Uint8}, ),
+                                       convert(Ptr{Uint8}, s)))
 end
 
 #' @description
@@ -57,7 +61,8 @@ end
 #' ourshowcompact(STDOUT, "abc")
 #' ourshowcompact(STDOUT, 10000)
 ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Nothing
-ourshowcompact(io::IO, x::String) = print(io, x) # -> Nothing
+ourshowcompact(io::IO, x::String) = showcompact(io, x) # -> Nothing
+ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Nothing
 
 #' @description
 #'
@@ -91,7 +96,7 @@ ourshowcompact(io::IO, x::String) = print(io, x) # -> Nothing
 function getmaxwidths(adf::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
-                      rowlabel::String) # -> Vector{Int}
+                      rowlabel::Symbol) # -> Vector{Int}
     ncols = size(adf, 2)
     cnames = names(adf)
     maxwidths = Array(Int, ncols + 1)
@@ -299,7 +304,7 @@ end
 #'        required to render each column.
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
-#' @param rowlabel::String What label should be printed when rendering the
+#' @param rowlabel::Symbol What label should be printed when rendering the
 #'        numeric ID's of each row? Defaults to `"Row #"`.
 #' @param displaysummary::Bool Should a brief string summary of the
 #'        AbstractDataFrame be rendered to the IO system before printing the
@@ -317,7 +322,7 @@ function showrows(io::IO,
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
                   splitchunks::Bool = false,
-                  rowlabel::String = "Row #",
+                  rowlabel::Symbol = symbol("Row #"),
                   displaysummary::Bool = true) # -> Nothing
     ncols = size(adf, 2)
     cnames = names(adf)
@@ -414,7 +419,7 @@ end
 #' @param adf::AbstractDataFrame An AbstractDataFrame.
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
-#' @param rowlabel::String What label should be printed when rendering the
+#' @param rowlabel::Symbol What label should be printed when rendering the
 #'        numeric ID's of each row? Defaults to `"Row #"`.
 #' @param displaysummary::Bool Should a brief string summary of the
 #'        AbstractDataFrame be rendered to the IO system before printing the
@@ -429,7 +434,7 @@ end
 function Base.show(io::IO,
                    adf::AbstractDataFrame,
                    splitchunks::Bool = false,
-                   rowlabel::String = "Row #",
+                   rowlabel::Symbol = symbol("Row #"),
                    displaysummary::Bool = true) # -> Nothing
     nrows = size(adf, 1)
     availableheight = Base.tty_rows() - 5
@@ -534,7 +539,7 @@ Base.show(row::DataFrameRow) = show(STDOUT, row)
 #' @param adf::AbstractDataFrame An AbstractDataFrame.
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
-#' @param rowlabel::String What label should be printed when rendering the
+#' @param rowlabel::Symbol What label should be printed when rendering the
 #'        numeric ID's of each row? Defaults to `"Row #"`.
 #' @param displaysummary::Bool Should a brief string summary of the
 #'        AbstractDataFrame be rendered to the IO system before printing the
@@ -549,7 +554,7 @@ Base.show(row::DataFrameRow) = show(STDOUT, row)
 function Base.showall(io::IO,
                       adf::AbstractDataFrame,
                       splitchunks::Bool = false,
-                      rowlabel::String = "Row #",
+                      rowlabel::Symbol = symbol("Row #"),
                       displaysummary::Bool = true) # -> Nothing
     rowindices1 = 1:size(adf, 1)
     rowindices2 = 1:0
@@ -607,7 +612,7 @@ function column_summary(io::IO, adf::AbstractDataFrame) # -> Nothing
     metadata = DataFrame(Name = names(adf),
                          Type = types(adf),
                          Missing = colmissing(adf))
-    showall(io, metadata, true, "Col #", false)
+    showall(io, metadata, true, symbol("Col #"), false)
     return
 end
 
