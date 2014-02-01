@@ -102,12 +102,23 @@ module TestIO
     @test df[end, 24] === 0
     @test df[end, 25] === 0
 
-    readtable("$testdir/data/comments/before_after_data.csv", allowcomments = true)
-    readtable("$testdir/data/comments/middata.csv", allowcomments = true)
-    readtable("$testdir/data/skiplines/skipfront.csv", skipstart = 3)
+    df1 = readtable("$testdir/data/comments/before_after_data.csv", allowcomments = true)
+    df2 = readtable("$testdir/data/comments/middata.csv", allowcomments = true)
+    df3 = readtable("$testdir/data/skiplines/skipfront.csv", skipstart = 3)
     
-    readtable("$testdir/data/separators/sample_data_white.txt",separator=' ')
-    readtable("$testdir/data/quoting/quotedwhitespace.txt", separator=' ')
+    @test df1 == df2
+    @test df2 == df3
+
+    df1 = readtable("$testdir/data/separators/sample_data.csv")
+    df2 = readtable("$testdir/data/separators/sample_data.tsv")
+    df3 = readtable("$testdir/data/separators/sample_data.wsv")
+    df4 = readtable("$testdir/data/separators/sample_data_white.txt", separator = ' ')
+
+    @test df1 == df2
+    @test df2 == df3
+    @test df3 == df4
+
+    readtable("$testdir/data/quoting/quotedwhitespace.txt", separator = ' ')
 
     # TODO: Implement skipping lines at specified row positions
     # readtable("$testdir/data/skiplines/skipbottom.csv", skiprows = [1, 2, 3])
