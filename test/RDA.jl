@@ -18,16 +18,18 @@ module TestRDA
         # df['chr'] = NULL  # NA characters breaking read_rda
         # save(df, file='NAs.rda')
 
+    testdir = dirname(@__FILE__)
+
     df = DataFrame(num = [1.1, 2.2])
-    @assert isequal(DataFrame(read_rda("test/data/RDA/minimal.rda")["df"]), df)
+    @assert isequal(DataFrame(read_rda("$testdir/data/RDA/minimal.rda")["df"]), df)
 
     df[:int] = Int32[1, 2]
     df[:logi] = [true, false]
     df[:chr] = ["ab", "c"]
     df[:factor] = pool(df[:chr])
-    @assert isequal(DataFrame(read_rda("test/data/RDA/types.rda")["df"]), df)
+    @assert isequal(DataFrame(read_rda("$testdir/data/RDA/types.rda")["df"]), df)
 
     df[2, :] = NA
     df = df[:, [:num, :int, :logi, :factor]]  # (NA) chr breaks read_rda
-    @assert isequal(DataFrame(read_rda("test/data/RDA/NAs.rda")["df"]), df)
+    @assert isequal(DataFrame(read_rda("$testdir/data/RDA/NAs.rda")["df"]), df)
 end
