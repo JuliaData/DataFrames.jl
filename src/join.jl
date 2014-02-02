@@ -131,34 +131,40 @@ function Base.join(df1::AbstractDataFrame,
                    on::Any = nothing,
                    kind::Symbol = :inner)
     if on == nothing
-        on = first(collect(intersect(Set{ByteString}(names(df1)...),
-                                     Set{ByteString}(names(df2)...))))
+        on = intersect(names(df1), names(df2))
+        if length(on) > 1
+            throw(ArgumentError("Key omitted from join with multiple shared names."))
+        end
     end
     dv1, dv2 = PooledDataVecs(df1[on], df2[on])
     left_indexer, leftonly_indexer, right_indexer, rightonly_indexer =
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
 
     if kind == :inner
-        return hcat(df1[left_indexer,:], without(df2, on)[right_indexer,:])
+        return hcat(df1[left_indexer, :], without(df2, on)[right_indexer, :])
     elseif kind == :left
-        left = df1[[left_indexer,leftonly_indexer],:]
-        right = vcat(without(df2, on)[right_indexer,:],
-                      nas(without(df2, on), length(leftonly_indexer)))
+        left = df1[[left_indexer, leftonly_indexer], :]
+        right = vcat(without(df2, on)[right_indexer, :],
+                     nas(without(df2, on), length(leftonly_indexer)))
         return hcat(left, right)
     elseif kind == :right
         left = vcat(without(df1, on)[left_indexer, :],
-                     nas(without(df1, on), length(rightonly_indexer)))
-        right = df2[[right_indexer,rightonly_indexer],:]
+                    nas(without(df1, on), length(rightonly_indexer)))
+        right = df2[[right_indexer, rightonly_indexer], :]
         return hcat(left, right)
     elseif kind == :outer
         mixed = hcat(df1[left_indexer, :], without(df2, on)[right_indexer, :])
         leftonly = hcat(df1[leftonly_indexer, :],
-                         nas(without(df2, on), length(leftonly_indexer)))
+                        nas(without(df2, on), length(leftonly_indexer)))
         leftonly = leftonly[:, names(mixed)]
         rightonly = hcat(nas(without(df1, on), length(rightonly_indexer)),
-                          df2[rightonly_indexer, :])
+                         df2[rightonly_indexer, :])
         rightonly = rightonly[:, names(mixed)]
         return vcat(mixed, leftonly, rightonly)
+    elseif kind == :semi
+        df1[left_indexer, :]
+    elseif kind == :anti
+        df1[leftonly_indexer, :]
     else
         throw(ArgumentError("Unknown kind of join requested"))
     end
