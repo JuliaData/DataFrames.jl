@@ -56,6 +56,16 @@ function Base.getindex{T<:String}(df::DataFrame, row_ind, col_inds::AbstractVect
 	getindex(df, row_ind, map(symbol, col_inds))
 end
 
+function Base.getindex(x::AbstractIndex, idx::String)
+	depwarn("indexing DataFrames with strings is deprecated; use symbols instead", :getindex)
+	getindex(x, symbol(idx))
+end
+
+function Base.getindex{T<:String}(x::AbstractIndex, idx::AbstractVector{T})
+	depwarn("indexing DataFrames with strings is deprecated; use symbols instead", :getindex)
+	getindex(x, map(symbol, idx))
+end
+
 function Base.setindex!(df::DataFrame, v, col_ind::String)
 	depwarn("indexing DataFrames with strings is deprecated; use symbols instead", :setindex!)
 	setindex!(df, v, symbol(col_ind))
