@@ -172,10 +172,8 @@ dropUnusedLevels!(x) = x
 
 function ModelFrame(f::Formula, d::AbstractDataFrame)
     trms = Terms(f)
-    dump(trms.eterms)
-    println(trms.eterms)
     df,msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
-    names!(df, map(string, trms.eterms))
+    names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
     for c in df dropUnusedLevels!(c[2]) end
     ModelFrame(df, trms, msng)
 end
