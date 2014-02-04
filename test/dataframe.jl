@@ -78,20 +78,20 @@ module TestDataFrame
     @assert typeof(df[:, 2]) == DataVector{Float64}
     @assert typeof(df[:, 3]) == DataVector{ASCIIString}
 
-    df = DataFrame(zeros(10, 5))
+    df = convert(DataFrame, zeros(10, 5))
     @assert size(df, 1) == 10
     @assert size(df, 2) == 5
-    @assert typeof(df[:, 1]) == DataVector{Float64}
+    @assert typeof(df[:, 1]) == Vector{Float64}
 
-    df = DataFrame(ones(10, 5))
+    df = convert(DataFrame, ones(10, 5))
     @assert size(df, 1) == 10
     @assert size(df, 2) == 5
-    @assert typeof(df[:, 1]) == DataVector{Float64}
+    @assert typeof(df[:, 1]) == Vector{Float64}
 
-    df = DataFrame(eye(10, 5))
+    df = convert(DataFrame, eye(10, 5))
     @assert size(df, 1) == 10
     @assert size(df, 2) == 5
-    @assert typeof(df[:, 1]) == DataVector{Float64}
+    @assert typeof(df[:, 1]) == Vector{Float64}
 
     #test_group("Other DataFrame constructors")
     df = DataFrame([{:a=>1, :b=>'c'}, {:a=>3, :b=>'d'}, {:a=>5}])
@@ -129,6 +129,6 @@ module TestDataFrame
     sdf = sub(df, df[:x] .== 4)
     @assert nrow(sdf) == 0
 
-    @assert hash(DataFrame([1 2; 3 4])) == hash(DataFrame([1 2; 3 4]))
-    @assert hash(DataFrame([1 2; 3 4])) != hash(DataFrame([1 3; 2 4]))
+    @assert hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
+    @assert hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
 end

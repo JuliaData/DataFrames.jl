@@ -136,8 +136,12 @@ function combine(x)   # expecting (keys,vals) with keys to be DataFrames and val
     hcat(vcat(keys...), vcat(vals...))
 end
 
+wrap(df::DataFrame) = df
+wrap(A::Matrix) = convert(DataFrame, A)
+wrap(s::Any) = DataFrame(x1 = s)
+
 function based_on(gd::GroupedDataFrame, f::Function)
-    x = DataFrame[DataFrame(f(d)) for d in gd]
+    x = DataFrame[wrap(f(d)) for d in gd]
     idx = rep([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
     resdf = vcat(x)

@@ -15,7 +15,7 @@ module TestData
     df1 = DataFrame({dvint, dvstr}, [:Ints, :Strs])
     df2 = DataFrame({dvint, dvstr}) 
     df3 = DataFrame({dvint})
-    df4 = DataFrame([1:4 1:4])
+    df4 = convert(DataFrame, [1:4 1:4])
     df5 = DataFrame({@data([1,2,3,4]), dvstr})
     df6 = DataFrame({dvint, dvint, dvstr}, [:A, :B, :C])
     df7 = DataFrame(x = dvint, y = dvstr)

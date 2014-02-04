@@ -14,6 +14,33 @@ Base.@deprecate EachRow eachrow
 Base.@deprecate EachCol eachcol
 Base.@deprecate subset sub
 
+function DataFrame(df::DataFrame)
+	depwarn("DataFrame(::DataFrame) is deprecated, use convert(DataFrame, DataFrame) instead",
+		    :DataFrame)
+	return df
+end
+
+function DataFrame(x::Union(Number, String))
+	depwarn("DataFrame(::Union(Number, String)) is deprecated, use DataFrame(Vector{Any}) instead",
+		    :DataFrame)
+    cols = {DataArray([x], falses(1))}
+    colind = Index(gennames(1))
+    return DataFrame(cols, colind)
+end
+
+# TODO: Replace this with convert call.
+# Convert a standard Matrix to a DataFrame w/ pre-specified names
+function DataFrame(x::Matrix, cn::Vector = gennames(size(x, 2)))
+	depwarn("DataFrame(::Matrix, ::Vector)) is deprecated, use convert(DataFrame, Matrix) instead",
+		    :DataFrame)
+    n = length(cn)
+    cols = Array(Any, n)
+    for i in 1:n
+        cols[i] = DataArray(x[:, i])
+    end
+    return DataFrame(cols, Index(cn))
+end
+
 function DataFrame{T<:String}(columns::Vector{Any}, cnames::Vector{T})
 	depwarn("DataFrame(::Vector{Any}, ::Vector{T<:String}) is deprecated, use DataFrame(::Vector{Any}, ::Vector{Symbol}) instead",
 		    :DataFrame)

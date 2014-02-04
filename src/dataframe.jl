@@ -1,14 +1,17 @@
-#' @exported
-#' @description
+#' @@exported
+#'
+#' @@name
+#'
+#' @@description
 #'
 #' An DataFrame is a Julia type that implements the AbstractDataFrame
 #' interface by storing a set of named columns in memory.
 #'
-#' @field columns::Vector{Any} The columns of a DataFrame are stored in
-#'        a vector. Each entry of this vector should be a Vector, DataVector
-#'        or PooledDataVector.
-#' @field colindex::Index A data structure used to map column names to
-#'        their numeric indices in `columns`.
+#' @@field columns::Vector{Any} The columns of a DataFrame are stored in
+#'         a vector. Each entry of this vector should be a Vector, DataVector
+#'         or PooledDataVector.
+#' @@field colindex::Index A data structure used to map column names to
+#'         their numeric indices in `columns`.
 type DataFrame <: AbstractDataFrame
     columns::Vector{Any}
     colindex::Index
@@ -34,22 +37,27 @@ type DataFrame <: AbstractDataFrame
     end
 end
 
-#' @exported
-#' @description
+#' @@exported
+#'
+#' @@name DataFrame
+#'
+#' @@description
 #'
 #' Construct a DataFrame from keyword arguments. Each argument should be
-#' Vector, DataVector or PooledDataVector.
+#' a Vector, DataVector or PooledDataVector.
 #'
 #' NOTE: This also covers the empty DataFrame if no keyword arguments are
 #'       passed in.
 #'
-#' @returns df::DataFrame A newly constructed DataFrame.
+#' @@arg kwargs... A set of named columns to be placed in a DataFrame.
 #'
-#' @examples
+#' @@return df::DataFrame A newly constructed DataFrame.
+#'
+#' @@examples
 #'
 #' df = DataFrame()
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-function DataFrame(;kwargs...)
+function DataFrame(; kwargs...)
     result = DataFrame({}, Index())
     for (k, v) in kwargs
         result[k] = v
@@ -57,45 +65,24 @@ function DataFrame(;kwargs...)
     return result
 end
 
-# TODO: Remove this
-# No-op given a DataFrame
-DataFrame(df::DataFrame) = df
-
-# TODO: Remove this
-# Wrap a scalar in a DataArray, then a DataFrame
-function DataFrame(x::Union(Number, String))
-    cols = {DataArray([x], falses(1))}
-    colind = Index(gennames(1))
-    return DataFrame(cols, colind)
-end
-
-#' @exported
-#' @description
+#' @@exported
+#'
+#' @@name DataFrame
+#'
+#' @@description
 #'
 #' Construct a DataFrame from a vector of columns and, optionally, specify
 #' the names of the columns as a vector of symbols.
 #'
-#' @returns df::DataFrame A newly constructed DataFrame.
+#' @@return df::DataFrame A newly constructed DataFrame.
 #'
-#' @examples
+#' @@examples
 #'
 #' df = DataFrame()
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 function DataFrame(columns::Vector{Any},
                    cnames::Vector{Symbol} = gennames(length(columns)))
     return DataFrame(columns, Index(cnames))
-end
-
-# TODO: Replace this with convert call.
-# Convert a standard Matrix to a DataFrame w/ pre-specified names
-function DataFrame(x::Matrix,
-                   cn::Vector = gennames(size(x, 2)))
-    n = length(cn)
-    cols = Array(Any, n)
-    for i in 1:n
-        cols[i] = DataArray(x[:, i])
-    end
-    return DataFrame(cols, Index(cn))
 end
 
 # TODO: Document these better.
@@ -1334,4 +1321,13 @@ function Base.append!(adf1::AbstractDataFrame,
        append!(adf1[j], adf2[j])
    end
    return adf1
+end
+
+function Base.convert(::Type{DataFrame}, A::Matrix)
+    n = size(A, 2)
+    cols = Array(Any, n)
+    for i in 1:n
+        cols[i] = A[:, i]
+    end
+    return DataFrame(cols, Index(gennames(n)))
 end
