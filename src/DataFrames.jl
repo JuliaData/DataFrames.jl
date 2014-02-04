@@ -89,7 +89,6 @@ export @~,
        range,
        rbind,
        readtable,
-       rep,
        rename!,
        rename,
        save,
@@ -138,7 +137,6 @@ include("grouping.jl")
 include("reshape.jl")
 include("formula.jl")
 include("io.jl")
-include("extras.jl")
 include("RDA.jl")
 include("deprecated.jl")
 
