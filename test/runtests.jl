@@ -8,8 +8,7 @@ anyerrors = false
 using Base.Test
 using DataFrames
 
-my_tests = ["extras.jl",
-            "data.jl",
+my_tests = ["data.jl",
             "index.jl",
             "dataframe.jl",
             "io.jl",
