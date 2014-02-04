@@ -743,9 +743,10 @@ function readtable!(p::ParsedCSV,
     return df
 end
 
-function readtable(pathname::String;
+function readtable(io::IO,
+                   nbytes::Int = 1;
                    header::Bool = true,
-                   separator::Char = getseparator(pathname),
+                   separator::Char = ',',
                    quotemark::Vector{Char} = ['"'],
                    decimal::Char = '.',
                    nastrings::Vector = ASCIIString["", "NA"],
@@ -764,24 +765,6 @@ function readtable(pathname::String;
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false)
-
-    # Open an IO stream based on pathname
-    # (1) Path is an HTTP or FTP URL
-    if beginswith(pathname, "http://") || beginswith(pathname, "ftp://")
-        error("URL retrieval not yet implemented")
-    # (2) Path is GZip file
-    elseif endswith(pathname, ".gz")
-        io = gzopen(pathname, "r")
-        nbytes = 2 * filesize(pathname)
-    # (3) Path is BZip2 file
-    elseif endswith(pathname, ".bz") || endswith(pathname, ".bz2")
-        error("BZip2 decompression not yet implemented")
-    # (4) Path is an uncompressed file
-    else
-        io = open(pathname, "r")
-        nbytes = filesize(pathname)
-    end
-
     if !isempty(coltypes)
         for j in 1:length(coltypes)
             if !(coltypes[j] in [UTF8String, Bool, Float64, Int64])
@@ -818,6 +801,68 @@ function readtable(pathname::String;
 
     # Return the resulting DataFrame
     return df
+end
+
+function readtable(pathname::String;
+                   header::Bool = true,
+                   separator::Char = getseparator(pathname),
+                   quotemark::Vector{Char} = ['"'],
+                   decimal::Char = '.',
+                   nastrings::Vector = ASCIIString["", "NA"],
+                   truestrings::Vector = ASCIIString["T", "t", "TRUE", "true"],
+                   falsestrings::Vector = ASCIIString["F", "f", "FALSE", "false"],
+                   makefactors::Bool = false,
+                   nrows::Int = -1,
+                   colnames::Vector = Symbol[],
+                   cleannames::Bool = false,
+                   coltypes::Vector{DataType} = DataType[],
+                   allowcomments::Bool = false,
+                   commentmark::Char = '#',
+                   ignorepadding::Bool = true,
+                   skipstart::Int = 0,
+                   skiprows::Vector{Int} = Int[],
+                   skipblanks::Bool = true,
+                   encoding::Symbol = :utf8,
+                   allowescapes::Bool = false)
+    # Open an IO stream based on pathname
+    # (1) Path is an HTTP or FTP URL
+    if beginswith(pathname, "http://") || beginswith(pathname, "ftp://")
+        error("URL retrieval not yet implemented")
+    # (2) Path is GZip file
+    elseif endswith(pathname, ".gz")
+        io = gzopen(pathname, "r")
+        nbytes = 2 * filesize(pathname)
+    # (3) Path is BZip2 file
+    elseif endswith(pathname, ".bz") || endswith(pathname, ".bz2")
+        error("BZip2 decompression not yet implemented")
+    # (4) Path is an uncompressed file
+    else
+        io = open(pathname, "r")
+        nbytes = filesize(pathname)
+    end
+
+    return readtable(io,
+                     nbytes,
+                     header = header,
+                     separator = separator,
+                     quotemark = quotemark,
+                     decimal = decimal,
+                     nastrings = nastrings,
+                     truestrings = truestrings,
+                     falsestrings = falsestrings,
+                     makefactors = makefactors,
+                     nrows = nrows,
+                     colnames = colnames,
+                     cleannames = cleannames,
+                     coltypes = coltypes,
+                     allowcomments = allowcomments,
+                     commentmark = commentmark,
+                     ignorepadding = ignorepadding,
+                     skipstart = skipstart,
+                     skiprows = skiprows,
+                     skipblanks = skipblanks,
+                     encoding = encoding,
+                     allowescapes = allowescapes)
 end
 
 function filldf!(df::DataFrame,

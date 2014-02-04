@@ -41,3 +41,6 @@ end
 if anyerrors
     throw("Tests failed")
 end
+
+stdin = Pkg.dir("DataFrames", "test", "stdin.sh")
+run(`bash $stdin`)
