@@ -1042,12 +1042,20 @@ function Base.writemime(io::IO,
         write(io, "<th>$column_name</th>")
     end
     write(io, "</tr>")
-    for row in 1:n
+    for row in 1:min(n, 20)
         write(io, "<tr>")
         write(io, "<th>$row</th>")
         for column_name in cnames
             cell = string(df[row, column_name])
             write(io, "<td>$(html_escape(cell))</td>")
+        end
+        write(io, "</tr>")
+    end
+    if n > 20
+        write(io, "<tr>")
+        write(io, "<th>...</th>")
+        for column_name in cnames
+            write(io, "<td>...</td>")
         end
         write(io, "</tr>")
     end
