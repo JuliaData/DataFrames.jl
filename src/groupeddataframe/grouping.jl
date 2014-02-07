@@ -153,12 +153,12 @@ end
 Base.map(f::Function, x::SubDataFrame) = f(x)
 
 # apply a function to each column in a DataFrame
-colwise(f::Function, d::AbstractDataFrame) = {[f(d[idx])] for idx in 1:ncol(d)}
+colwise(f::Function, d::AbstractDataFrame) = {[f(d[idx])] for idx in 1:size(d, 2)}
 colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
 colwise(f) = x -> colwise(f, x)
 # apply several functions to each column in a DataFrame
-colwise(fns::Vector{Function}, d::AbstractDataFrame) = [f(d[idx]) for f in fns, idx in 1:ncol(d)][:]
+colwise(fns::Vector{Function}, d::AbstractDataFrame) = [f(d[idx]) for f in fns, idx in 1:size(d, 2)][:]
 colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(fns), d)
 colwise(fns::Vector{Function}, d::GroupedDataFrame, cn::Vector{String}) = map(colwise(fns), d)
 colwise(fns::Vector{Function}) = x -> colwise(fns, x)

@@ -115,19 +115,12 @@ module TestDataFrame
     df = DataFrame(Column = [:A])
     df[1, :Column] = "Testing"
 
-    # flipud() tests
-    df = DataFrame(A = 1:4)
-    @assert isequal(flipud(df), DataFrame(A = [4, 3, 2, 1]))
-    @assert isequal(df, DataFrame(A = [1, 2, 3, 4]))
-    flipud!(df)
-    @assert isequal(df, DataFrame(A = [4, 3, 2, 1]))
-
     # zero-row dataframe and subdataframe test
     df = DataFrame(x=[], y=[])
     @assert nrow(df) == 0
     df = DataFrame(x=[1:3], y=[3:5])
     sdf = sub(df, df[:x] .== 4)
-    @assert nrow(sdf) == 0
+    @assert size(sdf, 1) == 0
 
     @assert hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
     @assert hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))

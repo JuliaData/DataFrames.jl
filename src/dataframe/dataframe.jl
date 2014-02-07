@@ -475,7 +475,7 @@ function Base.setindex!(df::DataFrame,
                 col_inds::AbstractVector{Bool})
     setindex!(df, new_df, find(col_inds))
 end
-function Base.assign{T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   new_df::DataFrame,
                                   col_inds::AbstractVector{T})
     for i in 1:length(col_inds)
@@ -490,7 +490,7 @@ function Base.setindex!(df::DataFrame,
                 col_inds::AbstractVector{Bool})
     setindex!(df, v, find(col_inds))
 end
-function Base.assign{T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   v::AbstractVector,
                                   col_inds::AbstractVector{T})
     dv = upgrade_vector(v)
@@ -506,7 +506,7 @@ function Base.setindex!(df::DataFrame,
                 col_inds::AbstractVector{Bool})
     setindex!(df, val, find(col_inds))
 end
-function Base.assign{T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   val::Any,
                                   col_inds::AbstractVector{T})
     dv = upgrade_scalar(df, val)
@@ -531,7 +531,7 @@ function Base.setindex!(df::DataFrame,
                 col_inds::AbstractVector{Bool})
     setindex!(df, v, row_ind, find(col_inds))
 end
-function Base.assign{T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   v::Any,
                                   row_ind::Real,
                                   col_inds::AbstractVector{T})
@@ -549,7 +549,7 @@ function Base.setindex!(df::DataFrame,
     setindex!(df, new_df, row_ind, find(col_inds))
 end
 
-function Base.assign{T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   new_df::DataFrame,
                                   row_ind::Real,
                                   col_inds::AbstractVector{T})
@@ -571,7 +571,7 @@ function Base.setindex!(df::DataFrame,
                 col_ind::ColumnIndex)
     setindex!(df, v, find(row_inds), col_ind)
 end
-function Base.assign{T <: Real}(df::DataFrame,
+function Base.setindex!{T <: Real}(df::DataFrame,
                            v::AbstractVector,
                            row_inds::AbstractVector{T},
                            col_ind::ColumnIndex)
@@ -591,7 +591,7 @@ function Base.setindex!(df::DataFrame,
                 col_ind::ColumnIndex)
     setindex!(df, v, find(row_inds), col_ind)
 end
-function Base.assign{T <: Real}(df::DataFrame,
+function Base.setindex!{T <: Real}(df::DataFrame,
                            v::Any,
                            row_inds::AbstractVector{T},
                            col_ind::ColumnIndex)
@@ -615,19 +615,19 @@ function Base.setindex!(df::DataFrame,
                 col_inds::AbstractVector{Bool})
     setindex!(df, new_df, find(row_inds), find(col_inds))
 end
-function Base.assign{T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   new_df::DataFrame,
                                   row_inds::AbstractVector{Bool},
                                   col_inds::AbstractVector{T})
     setindex!(df, new_df, find(row_inds), col_inds)
 end
-function Base.assign{R <: Real}(df::DataFrame,
+function Base.setindex!{R <: Real}(df::DataFrame,
                            new_df::DataFrame,
                            row_inds::AbstractVector{R},
                            col_inds::AbstractVector{Bool})
     setindex!(df, new_df, row_inds, find(col_inds))
 end
-function Base.assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              new_df::DataFrame,
                                              row_inds::AbstractVector{R},
                                              col_inds::AbstractVector{T})
@@ -649,19 +649,19 @@ function Base.setindex!(df::DataFrame,
                 col_inds::AbstractVector{Bool})
     setindex!(df, v, find(row_inds), find(col_inds))
 end
-function Base.assign{T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   v::AbstractVector,
                                   row_inds::AbstractVector{Bool},
                                   col_inds::AbstractVector{T})
     setindex!(df, v, find(row_inds), col_inds)
 end
-function Base.assign{R <: Real}(df::DataFrame,
+function Base.setindex!{R <: Real}(df::DataFrame,
                            v::AbstractVector,
                            row_inds::AbstractVector{R},
                            col_inds::AbstractVector{Bool})
     setindex!(df, v, row_inds, find(col_inds))
 end
-function Base.assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              v::AbstractVector,
                                              row_inds::AbstractVector{R},
                                              col_inds::AbstractVector{T})
@@ -684,19 +684,19 @@ function Base.setindex!(df::DataFrame,
                 col_inds::AbstractVector{Bool})
     setindex!(df, v, find(row_inds), find(col_inds))
 end
-function Base.assign{T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   v::Any,
                                   row_inds::AbstractVector{Bool},
                                   col_inds::AbstractVector{T})
     setindex!(df, v, find(row_inds), col_inds)
 end
-function Base.assign{R <: Real}(df::DataFrame,
+function Base.setindex!{R <: Real}(df::DataFrame,
                            v::Any,
                            row_inds::AbstractVector{R},
                            col_inds::AbstractVector{Bool})
     setindex!(df, v, row_inds, find(col_inds))
 end
-function Base.assign{R <: Real, T <: ColumnIndex}(df::DataFrame,
+function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              v::Any,
                                              row_inds::AbstractVector{R},
                                              col_inds::AbstractVector{T})
@@ -867,84 +867,6 @@ function describe(io, df::AbstractDataFrame)
     end
 end
 
-##############################################################################
-##
-## We use SubDataFrame's to maintain a reference to a subset of a DataFrame
-## without making copies.
-##
-##############################################################################
-
-# a SubDataFrame is a lightweight wrapper around a DataFrame used most frequently in
-# split/apply sorts of operations.
-
-immutable SubDataFrame{T<:AbstractVector{Int}} <: AbstractDataFrame
-    parent::DataFrame
-    rows::T # maps from subdf row indexes to parent row indexes
-
-    function SubDataFrame(parent::DataFrame, rows::T)
-        if length(rows) > 0
-            rmin, rmax = extrema(rows)
-            if rmin < 1 || rmax > size(parent, 1)
-                throw(BoundsError())
-            end
-        end
-        new(parent, rows)
-    end
-end
-
-SubDataFrame(parent::DataFrame, row::Integer) = SubDataFrame(parent, [row])
-SubDataFrame{T<:AbstractVector{Int}}(parent::DataFrame, rows::T) = SubDataFrame{T}(parent,rows)
-SubDataFrame{S<:Integer}(parent::DataFrame, rows::AbstractVector{S}) = sub(parent, int(rows))
-
-Base.getindex(df::SubDataFrame, c) = df.parent[df.rows, c]
-Base.getindex(df::SubDataFrame, r, c) = df.parent[df.rows[r], c]
-
-Base.setindex!(df::SubDataFrame, v, c) = (df.parent[df.rows, c] = v)
-Base.setindex!(df::SubDataFrame, v, r, c) = (df.parent[df.rows[r], c] = v)
-
-nrow(df::SubDataFrame) = length(df.rows)
-ncol(df::SubDataFrame) = ncol(df.parent)
-Base.names(df::SubDataFrame) = names(df.parent)
-
-index(df::SubDataFrame) = index(df.parent)
-
-# Sub definitions, creating a SubDataFrame
-
-Base.sub{S<:Real}(D::DataFrame, rs::AbstractVector{S}) = SubDataFrame(D, rs)
-Base.sub{S<:Real}(D::SubDataFrame, rs::AbstractVector{S}) = SubDataFrame(D.parent, D.rows[rs])
-Base.sub(D::DataFrame, rs::AbstractVector{Bool}) = sub(D, getindex(SimpleIndex(nrow(D)), rs))
-Base.sub(D::SubDataFrame, rs::AbstractVector{Bool}) = sub(D, getindex(SimpleIndex(nrow(D)), rs))
-
-Base.sub(D::AbstractDataFrame, r::Integer) = SubDataFrame(D, Int[r])
-Base.sub(D::AbstractDataFrame, ex::Expr) = sub(D, with(D, ex))
-Base.sub(D::AbstractDataFrame, r) = sub(D, getindex(SimpleIndex(nrow(D)), r)) # fall-through that uses light-weight "fake" indexes
-
-Base.sub(D::AbstractDataFrame, r, c) = sub(D[[c]], r)
-
-Base.filter(ex::Expr, df::AbstractDataFrame) = sub(df, ex)
-Base.select(ex::Expr, df::AbstractDataFrame) = sub(df, ex)
-
-# Container for a DataFrame row
-
-immutable DataFrameRow
-    df::AbstractDataFrame
-    row::Int
-end
-
-Base.getindex(r::DataFrameRow, idx::AbstractArray) = DataFrameRow(r.df[[idx]], r.row)
-Base.getindex(r::DataFrameRow, idx) = r.df[r.row, idx]
-Base.setindex!(r::DataFrameRow, value, idx) = setindex!(r.df, value, r.row, idx)
-Base.names(df::DataFrameRow) = names(df.df)
-Base.sub(r::DataFrameRow, c) = DataFrameRow(r.df[[c]], r.row)
-index(r::DataFrameRow) = index(r.df)
-length(r::DataFrameRow) = size(r.df, 2)
-endof(r::DataFrameRow) = size(r.df, 2)
-collect(r::DataFrameRow) = (String,Any)[x for x in r]
-
-start(r::DataFrameRow) = 1
-next(r::DataFrameRow, s) = ((names(r)[s], r[s]), s+1)
-done(r::DataFrameRow, s) = s > length(r)
-
 # delete!() deletes columns; deleterows!() deletes rows
 # delete!(df, 1)
 # delete!(df, "old")
@@ -962,7 +884,6 @@ function Base.delete!(df::DataFrame, inds::Vector{Int})
 end
 Base.delete!(df::DataFrame, c::Int) = delete!(df, [c])
 Base.delete!(df::DataFrame, c::Any) = delete!(df, df.colindex[c])
-Base.delete!(df::SubDataFrame, c::Any) = SubDataFrame(del(df.parent, c), df.rows)
 
 # deleterows!()
 function deleterows!(df::DataFrame, keep_inds::Vector{Int})
@@ -980,7 +901,6 @@ function without(df::DataFrame, icols::Vector{Int})
 end
 without(df::DataFrame, i::Int) = without(df, [i])
 without(df::DataFrame, c::Any) = without(df, df.colindex[c])
-without(df::SubDataFrame, c::Any) = SubDataFrame(without(df.parent, c), df.rows)
 
 #### cbind, rbind, hcat, vcat
 # hcat() is just cbind()
@@ -1007,9 +927,6 @@ cbind(args...) = hcat(args...)
 Base.similar(df::DataFrame, dims) =
     DataFrame([similar(x, dims) for x in df.columns], names(df))
 
-Base.similar(df::SubDataFrame, dims) =
-    DataFrame([similar(df[x], dims) for x in names(df)], names(df))
-
 Base.zeros{T<:String}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
 
 nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavector.jl?
@@ -1020,9 +937,6 @@ nas{T,R}(dv::PooledDataVector{T,R}, dims) =
 
 nas(df::DataFrame, dims) =
     DataFrame([nas(x, dims) for x in df.columns], names(df))
-
-nas(df::SubDataFrame, dims) =
-    DataFrame([nas(df[x], dims) for x in names(df)], names(df))
 
 vecbind_type{T}(::Vector{T}) = Vector{T}
 vecbind_type{T<:AbstractVector}(x::T) = Vector{eltype(x)}
@@ -1073,12 +987,15 @@ function vecbind(xs::AbstractVector...)
     end
     res
 end
+
 function vecbind(xs::PooledDataVector...)
     vecbind(map(x -> convert(DataArray, x), xs)...)
 end
 
 Base.vcat(df::AbstractDataFrame) = df
+
 Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T}) = vcat(dfs...)
+
 function Base.vcat(dfs::AbstractDataFrame...)
     Nrow = sum(nrow, dfs)
     # build up column names and types
@@ -1112,23 +1029,6 @@ end
 
 rbind(args...) = vcat(args...)
 
-# DF row operations -- delete and append
-# df[1] = nothing
-# df[1:3] = nothing
-# df3 = rbind(df1, df2...)
-# rbind!(df1, df2...)
-
-# split-apply-combine
-# co(ap(myfun,
-#    sp(df, ["region", "product"])))
-# (|>)(x, f::Function) = f(x)
-# split(df, ["region", "product"]) |> (apply(nrow)) |> mean
-# apply(f::function) = (x -> map(f, x))
-# split(df, ["region", "product"]) |> @@@)) |> mean
-# how do we add col names to the name space?
-# transform(df, :(cat=dog*2, clean=proc(dirty)))
-# summarise(df, :(cat=sum(dog), all=string(strs)))
-
 ##
 ## Miscellaneous
 ##
@@ -1156,8 +1056,6 @@ function DataArrays.array(adf::AbstractDataFrame)
     end
     return res
 end
-
-DataArrays.array(r::DataFrameRow) = DataArrays.array(r.df[r.row,:])
 
 function DataArrays.DataArray(adf::AbstractDataFrame,
                               T::DataType = reduce(typejoin, types(adf)))
@@ -1242,49 +1140,13 @@ DataArrays.reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
 ##
 ##############################################################################
 
-function Base.hash(a::AbstractDataFrame)
-    h = hash(size(a)) + 1
-    for i in 1:ncol(a)
-        h = bitmix(h, int(hash(a[i])))
+function Base.hash(adf::AbstractDataFrame)
+    h = hash(size(adf)) + 1
+    for i in 1:size(adf, 2)
+        h = bitmix(h, int(hash(adf[i])))
     end
     return uint(h)
 end
-
-##############################################################################
-##
-## Dict conversion
-##
-## Try to insure this invertible.
-## Allow option to flatten a single row.
-##
-##############################################################################
-
-function dict(adf::AbstractDataFrame, flatten::Bool)
-    # TODO: Make flatten an option
-    # TODO: Provide a de-data option that makes Vector's, not
-    #       DataVector's
-    res = Dict{Symbol, Any}()
-    if flatten && nrow(adf) == 1
-        for colname in names(adf)
-            res[colname] = adf[colname][1]
-        end
-    else
-        for colname in names(adf)
-            res[colname] = adf[colname]
-        end
-    end
-    return res
-end
-dict(adf::AbstractDataFrame) = dict(adf, false)
-
-# TODO: Add proper tests
-# adf = DataFrame(quote A = 1:4; B = ["A", "B", "C", "D"] end)
-# DataFrames.dict(adf)
-# ["B"=>["A", "B", "C", "D"],"A"=>[1, 2, 3, 4]]
-# DataFrames.dict(adf[1, :])
-# ["B"=>["A"],"A"=>[1]]
-# DataFrames.dict(adf[1, :], true)
-# ["B"=>"A","A"=>1]
 
 # Pooling
 

@@ -53,6 +53,30 @@ function DataFrame{D <: Associative, T <: String}(ds::Vector{D}, ks::Vector{T})
 	DataFrame(ds, map(symbol, ks))
 end
 
+##############################################################################
+##
+## Dict conversion
+##
+## Try to insure this invertible.
+## Allow option to flatten a single row.
+##
+##############################################################################
+
+function dict(adf::AbstractDataFrame, flatten::Bool = false)
+	depwarn("dict(::AbstractDataFrame, ::Bool) is deprecated", :dict)
+    res = Dict{Symbol, Any}()
+    if flatten && size(adf, 1) == 1
+        for colname in names(adf)
+            res[colname] = adf[colname][1]
+        end
+    else
+        for colname in names(adf)
+            res[colname] = adf[colname]
+        end
+    end
+    return res
+end
+
 function pool!(df::AbstractDataFrame, cname::String)
 	depwarn("pool!(::AbstractDataFrame, ::String) is deprecated, use pool!(::AbstractDataFrame, ::Symbol) instead", :pool!)
 	pool!(df, symbol(cname))
@@ -111,5 +135,44 @@ end
 function Base.assign{T<:String}(df::DataFrame, v, row_ind, col_inds::AbstractVector{T})
 	depwarn("indexing DataFrames with strings is deprecated; use symbols instead", :setindex!)
     setindex!(df, v, row_ind, map(symbol, col_ind))
+end
+
+
+# reorder! for factors by specifying a DataFrame
+function DataArrays.reorder(fun::Function, x::PooledDataArray, df::AbstractDataFrame)
+    depwarn("reordering DataFrames is deprecated", :reorder)
+    dfc = copy(df)
+    dfc["__key__"] = x
+    gd = by(dfc, "__key__", df -> colwise(fun, without(df, "__key__")))
+    idx = sortperm(gd[[2:ncol(gd)]])
+    return PooledDataArray(x, dropna(gd[idx,1]))
+end
+function DataArrays.reorder(x::PooledDataArray, df::AbstractDataFrame)
+    depwarn("reordering DataFrames is deprecated", :reorder)
+    reorder(:mean, x, df)
+end
+
+function DataArrays.reorder(fun::Function, x::PooledDataArray, y::AbstractVector...)
+    depwarn("reordering DataFrames is deprecated", :reorder)
+    reorder(fun, x, DataFrame({y...}))
+end
+
+function Base.flipud(df::DataFrame)
+    depwarn("flipud(DataFrame)", :flipud)
+    return df[reverse(1:nrow(df)), :]
+end
+
+function flipud!(df::DataFrame)
+    depwarn("flipud!(DataFrame)", :flipud!)
+    df[1:nrow(df), :] = df[reverse(1:nrow(df)), :]
+    return
+end
+
+function cleannames!(df::DataFrame)
+    depwarn("cleannames!(DataFrame)", :cleannames!)
+    oldnames = map(strip, names(df))
+    newnames = map(n -> replace(n, r"\W", "_"), oldnames)
+    names!(df, newnames)
+    return
 end
 
