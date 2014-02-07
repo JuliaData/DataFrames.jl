@@ -32,4 +32,18 @@ module TestJoin
     @test_throws join(df1, df2)
 
     join(df1, df2, on = [:A, :B])
+
+
+    df = DataFrame(A = 1:2, B = ['b', 'a'])
+    t1 = (:C, [2.4, 3.6])
+    t2 = (:D, [2, 3])
+
+    crossjoin(df, df, t1, t2, df, t2)
+
+    dft = DataFrame(A = [1, 1, 1, 1, 2, 2, 2, 2],
+                    B = ['b', 'b', 'b', 'b', 'a', 'a', 'a', 'a'],
+                    C = [2.4, 2.4, 3.6, 3.6, 2.4, 2.4, 3.6, 3.6],
+                    D = [2, 3, 2, 3, 2, 3, 2, 3])
+
+    @test crossjoin(df, t1, t2) == dft
 end
