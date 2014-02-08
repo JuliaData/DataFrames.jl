@@ -169,3 +169,36 @@ function Base.join(df1::AbstractDataFrame,
         throw(ArgumentError("Unknown kind of join requested"))
     end
 end
+
+##
+## Crossjoin
+##
+
+let
+    global crossjoin
+    function crossjoin(xs::Union(DataFrame, (Symbol, AbstractVector))...)
+        lens = Int[xlen(x) for x in xs]
+        d = DataFrame()
+        times = 1
+        each = prod(lens)
+        for i in 1:length(xs)
+            ilen = lens[i]
+            each = fld(each, ilen)
+            addx!(d, xs[i], times, each)
+            times *= ilen
+        end
+        d
+    end
+
+    xlen(x::DataFrame) = size(x, 1)
+    xlen(x::(Symbol, AbstractVector)) = size(x[2], 1)
+
+    function addx!(d::DataFrame, x::DataFrame, times::Int, each::Int)
+        for c in x
+            addx!(d, c, times, each)
+        end
+    end
+    function addx!(d::DataFrame, x::(Symbol, AbstractVector), times::Int, each::Int)
+        d[x[1]] = rep(x[2], times, each)
+    end
+end
