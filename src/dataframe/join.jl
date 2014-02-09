@@ -125,17 +125,24 @@ end
 
 DataArrays.PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)
 
-# Union(Vector{T}, ByteString, Nothing
 function Base.join(df1::AbstractDataFrame,
                    df2::AbstractDataFrame;
-                   on::Any = nothing,
+                   on::Union(Symbol, Vector{Symbol}) = Symbol[],
                    kind::Symbol = :inner)
-    if on == nothing
+    if kind == :cross
+        if on != Symbol[]
+            throw(ArgumentError("Cross joins don't use argument 'on'."))
+        end
+        return crossjoin(df1, df2)
+    elseif on == Symbol[]
+        depwarn("Natural joins are deprecated, use argument 'on'.", :AbstractDataFrame)
         on = intersect(names(df1), names(df2))
         if length(on) > 1
             throw(ArgumentError("Key omitted from join with multiple shared names."))
         end
+        #throw(ArgumentError("Missing join argument 'on'."))
     end
+
     dv1, dv2 = PooledDataVecs(df1[on], df2[on])
     left_indexer, leftonly_indexer, right_indexer, rightonly_indexer =
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
@@ -167,5 +174,18 @@ function Base.join(df1::AbstractDataFrame,
         df1[leftonly_indexer, :]
     else
         throw(ArgumentError("Unknown kind of join requested"))
+    end
+end
+
+function crossjoin(df1::DataFrame, df2::DataFrame)
+    d = DataFrame()
+    addx!(d, df1, 1, size(df2, 1))
+    addx!(d, df2, size(df1, 1), 1)
+    d
+end
+
+function addx!(d::DataFrame, x::DataFrame, times::Int, each::Int)
+    for (n, v) in eachcol(x)
+        d[n] = rep(v, times, each)
     end
 end
