@@ -27,7 +27,7 @@ module TestIteration
     end
 
     for col in eachcol(df)
-        @assert isa(col, AbstractDataVector)
+        @assert isa(col, (Symbol, AbstractDataVector))
     end
 
     @assert isequal(map(x -> minimum(array(x)), eachrow(df)), {1,2})
