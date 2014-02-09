@@ -163,8 +163,12 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
     @eval begin
         # Read CSV file's rows into buffer while storing field boundary information
         # TODO: Experiment with mmaping input
-        function readnrows!(p::ParsedCSV, io::IO, nrows::Int64, o::ParseOptions,
-                            dispatcher::$(dtype), firstchr::Uint8=0xff)
+        function readnrows!(p::ParsedCSV,
+                            io::IO,
+                            nrows::Integer,
+                            o::ParseOptions,
+                            dispatcher::$(dtype),
+                            firstchr::Uint8=0xff)
             # TODO: Use better variable names
             # Information about parse results
             n_bytes = 0
@@ -682,7 +686,7 @@ end
 
 function readtable!(p::ParsedCSV,
                     io::IO,
-                    nrows::Int64,
+                    nrows::Integer,
                     o::ParseOptions)
 
     chr, nextchr = 0xff, 0xff
@@ -716,7 +720,7 @@ function readtable!(p::ParsedCSV,
     end
 
     # Parse main data set
-    bytes, fields, rows, nextchr = readnrows!(p, io, nrows, o, d, nextchr)
+    bytes, fields, rows, nextchr = readnrows!(p, io, int64(nrows), o, d, nextchr)
 
     # Sanity checks
     bytes != 0 || error("Failed to read any bytes.")
