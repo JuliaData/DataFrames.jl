@@ -194,7 +194,7 @@ module TestIO
  
     filename = "$testdir/data/typeinference/standardtypes.csv"
     df = readtable(filename)
-    @assert typeof(df[:IntColumn]) == DataArray{Int64,1}
+    @assert typeof(df[:IntColumn]) == DataArray{Int,1}
     @assert typeof(df[:IntlikeColumn]) == DataArray{Float64,1}
     @assert typeof(df[:FloatColumn]) == DataArray{Float64,1}
     @assert typeof(df[:BoolColumn]) == DataArray{Bool,1}
@@ -227,7 +227,7 @@ module TestIO
     filename = "$testdir/data/definedtypes/mixedvartypes.csv"
  
     df = readtable(filename)
-    @assert typeof(df[:n]) == DataArray{Int64,1}
+    @assert typeof(df[:n]) == DataArray{Int,1}
     @assert df[:n][1] == 1
     @assert typeof(df[:s]) == DataArray{UTF8String,1}
     @assert df[:s][1] == "text"
