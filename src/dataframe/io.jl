@@ -1079,7 +1079,7 @@ function save(filename::String, df::AbstractDataFrame)
     return
 end
 
-function load_df(filename::String)
+function loaddf(filename::String)
     f = open(filename)
     dd = deserialize(f)
     close(f)

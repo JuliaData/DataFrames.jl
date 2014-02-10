@@ -902,11 +902,9 @@ end
 without(df::DataFrame, i::Int) = without(df, [i])
 without(df::DataFrame, c::Any) = without(df, df.colindex[c])
 
-#### cbind, rbind, hcat, vcat
-# hcat() is just cbind()
-# rbind(df, ...) only accepts data frames. Finds union of columns, maintaining order
+#### hcat, vcat
+# vcat(df, ...) only accepts data frames. Finds union of columns, maintaining order
 # of first df. Missing data becomes NAs.
-# vcat() is just rbind()
 
 # two-argument form, two dfs, references only
 function Base.hcat(df1::DataFrame, df2::DataFrame)
@@ -922,7 +920,6 @@ Base.hcat{T}(df::DataFrame, x::T) = hcat(df, DataFrame({DataArray([x])}))
 
 # three-plus-argument form recurses
 Base.hcat(a::DataFrame, b, c...) = hcat(hcat(a, b), c...)
-cbind(args...) = hcat(args...)
 
 Base.similar(df::DataFrame, dims) =
     DataFrame([similar(x, dims) for x in df.columns], names(df))
@@ -937,60 +934,6 @@ nas{T,R}(dv::PooledDataVector{T,R}, dims) =
 
 nas(df::DataFrame, dims) =
     DataFrame([nas(x, dims) for x in df.columns], names(df))
-
-vecbind_type{T}(::Vector{T}) = Vector{T}
-vecbind_type{T<:AbstractVector}(x::T) = Vector{eltype(x)}
-vecbind_type{T<:AbstractDataVector}(x::T) = DataVector{eltype(x)}
-vecbind_type{T}(::PooledDataVector{T}) = DataVector{T}
-
-vecbind_promote_type{T1,T2}(x::Type{Vector{T1}}, y::Type{Vector{T2}}) = Array{promote_type(eltype(x), eltype(y)),1}
-vecbind_promote_type{T1,T2}(x::Type{DataVector{T1}}, y::Type{DataVector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
-vecbind_promote_type{T1,T2}(x::Type{Vector{T1}}, y::Type{DataVector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
-vecbind_promote_type{T1,T2}(x::Type{DataVector{T1}}, y::Type{Vector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
-vecbind_promote_type(a, b, c, ds...) = vecbind_promote_type(a, vecbind_promote_type(b, c, ds...))
-vecbind_promote_type(a, b, c) = vecbind_promote_type(a, vecbind_promote_type(b, c))
-
-function vecbind_promote_type(a::AbstractVector)
-    res = None
-    if isdefined(a, 1)
-        if length(a) == 1
-            return a[1]
-        else
-            if isdefined(a, 2)
-                res = vecbind_promote_type(a[1], a[2])
-            else
-                res = a[1]
-            end
-        end
-    end
-    for i in 3:length(a)
-        if isdefined(a, i)
-            res = vecbind_promote_type(res, a[i])
-        end
-    end
-    return res
-end
-
-constructor{T}(::Type{Vector{T}}, args...) = Array(T, args...)
-constructor{T}(::Type{DataVector{T}}, args...) = DataArray(T, args...)
-
-function vecbind(xs::AbstractVector...)
-    V = vecbind_promote_type(map(vecbind_type, {xs...}))
-    len = sum(length, xs)
-    res = constructor(V, len)
-    k = 1
-    for i in 1:length(xs)
-        for j in 1:length(xs[i])
-            res[k] = xs[i][j]
-            k += 1
-        end
-    end
-    res
-end
-
-function vecbind(xs::PooledDataVector...)
-    vecbind(map(x -> convert(DataArray, x), xs)...)
-end
 
 Base.vcat(df::AbstractDataFrame) = df
 
@@ -1026,8 +969,6 @@ function Base.vcat(dfs::AbstractDataFrame...)
     end
     res
 end
-
-rbind(args...) = vcat(args...)
 
 ##
 ## Miscellaneous
@@ -1070,7 +1011,7 @@ function DataArrays.DataArray(adf::AbstractDataFrame,
     return dm
 end
 
-function duplicated(df::AbstractDataFrame)
+function nonunique(df::AbstractDataFrame)
     # Return a Vector{Bool} indicated whether the row is a duplicate
     # of a prior row.
     res = fill(false, nrow(df))
@@ -1085,15 +1026,15 @@ function duplicated(df::AbstractDataFrame)
     res
 end
 
-function drop_duplicates!(df::AbstractDataFrame)
-    deleterows!(df, find(!duplicated(df)))
+function unique!(df::AbstractDataFrame)
+    deleterows!(df, find(!nonunique(df)))
 end
 
 # Unique rows of an AbstractDataFrame.
-Base.unique(df::AbstractDataFrame) = df[!duplicated(df), :]
+Base.unique(df::AbstractDataFrame) = df[!nonunique(df), :]
 
-function duplicatedkey(df::AbstractDataFrame)
-    # Here's another (probably a lot faster) way to do `duplicated`
+function nonuniquekey(df::AbstractDataFrame)
+    # Here's another (probably a lot faster) way to do `nonunique`
     # by grouping on all columns. It will fail if columns cannot be
     # made into PooledDataVector's.
     gd = groupby(df, names(df))
@@ -1109,28 +1050,6 @@ function cleannames!(df::DataFrame)
     names!(df, newnames)
     return
 end
-
-function Base.flipud(df::DataFrame)
-    return df[reverse(1:nrow(df)), :]
-end
-
-function flipud!(df::DataFrame)
-    df[1:nrow(df), :] = df[reverse(1:nrow(df)), :]
-    return
-end
-
-# reorder! for factors by specifying a DataFrame
-function DataArrays.reorder(fun::Function, x::PooledDataArray, df::AbstractDataFrame)
-    dfc = copy(df)
-    dfc["__key__"] = x
-    gd = by(dfc, "__key__", df -> colwise(fun, without(df, "__key__")))
-    idx = sortperm(gd[[2:ncol(gd)]])
-    return PooledDataArray(x, dropna(gd[idx,1]))
-end
-DataArrays.reorder(x::PooledDataArray, df::AbstractDataFrame) = reorder(:mean, x, df)
-
-DataArrays.reorder(fun::Function, x::PooledDataArray, y::AbstractVector...) =
-    reorder(fun, x, DataFrame({y...}))
 
 ##############################################################################
 ##

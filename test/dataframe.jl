@@ -43,7 +43,7 @@ module TestDataFrame
 
     # Deleting columns removes any mention from groupings
     delete!(x, :a)
-    # @test colnames(x) == [:b]
+    @test names(x) == [:b]
 
     ## del calls ref, which properly deals with groupings
     z2 = z[:,[1,1,2]]

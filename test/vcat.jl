@@ -1,4 +1,4 @@
-module TestRBind
+module TestVcat
     using Base.Test
     using DataArrays
     using DataFrames
@@ -14,30 +14,30 @@ module TestRBind
     df[1, :] = 1
 
     # Assignment of columns
-    df[1] = datazeros(4)
+    df[1] = zeros(4)
 
     # Broadcasting assignment of columns
     df[:, 1] = 1
     df[1] = 3
     df[:x3] = 2
 
-    rbind(null_df)
-    rbind(null_df, null_df)
-    rbind(null_df, df)
-    rbind(df, null_df)
-    rbind(df, df)
-    rbind(df, df, df)
+    vcat(null_df)
+    vcat(null_df, null_df)
+    vcat(null_df, df)
+    vcat(df, null_df)
+    vcat(df, df)
+    vcat(df, df, df)
 
     alt_df = deepcopy(df)
-    rbind(df, alt_df)
-    df[1] = datazeros(Int, nrow(df))
+    vcat(df, alt_df)
+    df[1] = zeros(Int, nrow(df))
     # Fail on non-matching types
-    rbind(df, alt_df)
+    vcat(df, alt_df)
 
     alt_df = deepcopy(df)
     names!(alt_df, [:A, :B, :C])
     # Fail on non-matching names
-    rbind(df, alt_df)
+    vcat(df, alt_df)
 
     # df[:, 1] = dvzeros(Int, nrow(df))
 end

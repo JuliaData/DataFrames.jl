@@ -144,7 +144,7 @@ module TestData
     @test isequal(d1s[13:24, :c], d1[:c])
     @test all(names(d1s) .== [:variable, :value, :c, :d])
     @test isequal(d1s, d1s3)
-    d1s_df = stack_df(d1, [:a, :b])
+    d1s_df = stackdf(d1, [:a, :b])
     @test isequal(d1s[:variable], d1s_df[:variable][:])
     @test isequal(d1s[:value], d1s_df[:value][:])
     @test isequal(d1s[:c], d1s_df[:c][:])

@@ -64,7 +64,7 @@ unstack(df::AbstractDataFrame, rowkey, value, colkey) =
 
 ##############################################################################
 ##
-## pivot_table()
+## pivottable()
 ##
 ##############################################################################
 
@@ -75,7 +75,7 @@ unstack(df::AbstractDataFrame, rowkey, value, colkey) =
 #  - can't have zero rows or zero columns
 #  - the resulting data part is Float64 (`payload` below)
 
-function pivot_table(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int}, value::Int, fun::Function)
+function pivottable(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int}, value::Int, fun::Function)
     # `rows` vector indicating which columns are keys placed in rows
     # `cols` vector indicating which columns are keys placed as column headers
     # `value` integer indicating which column has values
@@ -99,8 +99,8 @@ function pivot_table(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int}
     hcat(row_key_df, payload)
 end
 # `mean` is the default aggregation function:
-pivot_table(df::AbstractDataFrame, rows, cols, value) = pivot_table(df, rows, cols, value, mean)
-pivot_table(df::AbstractDataFrame, rows, cols, value, fun) = pivot_table(df, [index(df)[rows]], [index(df)[cols]], index(df)[value], fun)
+pivottable(df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, mean)
+pivottable(df::AbstractDataFrame, rows, cols, value, fun) = pivottable(df, [index(df)[rows]], [index(df)[cols]], index(df)[value], fun)
 
 
 ##############################################################################
@@ -157,7 +157,6 @@ Base.size(v::StackedVector) = (length(v),)
 Base.length(v::StackedVector) = sum(map(length, v.components))
 Base.ndims(v::StackedVector) = 1
 Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
-vecbind_type(v::StackedVector) = vecbind_promote_type(map(vecbind_type, v.components)...)
 Base.similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
 
 Base.show(io::IO, v::StackedVector) = internal_show_vector(io, v)
@@ -179,7 +178,6 @@ Base.size(v::RepeatedVector) = (length(v),)
 Base.length(v::RepeatedVector) = v.n * length(v.parent)
 Base.ndims(v::RepeatedVector) = 1
 Base.eltype{T}(v::RepeatedVector{T}) = T
-vecbind_type(v::RepeatedVector) = vecbind_type(v.parent)
 Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.n)
 Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 
@@ -208,7 +206,6 @@ Base.size(v::EachRepeatedVector) = (length(v),)
 Base.length(v::EachRepeatedVector) = v.n * length(v.parent)
 Base.ndims(v::EachRepeatedVector) = 1
 Base.eltype{T}(v::EachRepeatedVector{T}) = T
-vecbind_type(v::EachRepeatedVector) = vecbind_type(v.parent)
 Base.reverse(v::EachRepeatedVector) = EachRepeatedVector(reverse(v.parent), v.n)
 Base.similar(v::EachRepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 
@@ -250,15 +247,15 @@ end
 
 ##############################################################################
 ##
-## stack_df()
-## melt_df()
+## stackdf()
+## meltdf()
 ## Reshaping using referencing (issue #145), using the above vector types
 ##
 ##############################################################################
 
 # Same as `stack`, but uses references
 # I'm not sure the name is very good
-function stack_df(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
+function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
     N = length(measure_vars)
     remainingcols = _setdiff([1:ncol(df)], measure_vars)
     cnames = names(df)[id_vars]
@@ -270,10 +267,10 @@ function stack_df(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vec
                [RepeatedVector(df[:,c], N) for c in id_vars]...},        # id_var columns
               cnames)
 end
-stack_df(df::AbstractDataFrame, measure_vars) = stack_df(df, [index(df)[measure_vars]])
+stackdf(df::AbstractDataFrame, measure_vars) = stackdf(df, [index(df)[measure_vars]])
 
-stack_df(df::AbstractDataFrame, measure_vars, id_vars) = stack_df(df, [index(df)[measure_vars]], [index(df)[id_vars]])
-stack_df(df::AbstractDataFrame, measure_vars) = stack_df(df, [index(df)[measure_vars]], _setdiff([1:ncol(df)], [index(df)[measure_vars]]))
+stackdf(df::AbstractDataFrame, measure_vars, id_vars) = stackdf(df, [index(df)[measure_vars]], [index(df)[id_vars]])
+stackdf(df::AbstractDataFrame, measure_vars) = stackdf(df, [index(df)[measure_vars]], _setdiff([1:ncol(df)], [index(df)[measure_vars]]))
 
-melt_df(df::AbstractDataFrame, id_vars) = stack_df(df, _setdiff([1:ncol(df)], index(df)[id_vars]))
-melt_df(df::AbstractDataFrame, id_vars, measure_vars) = stack_df(df, measure_vars, id_vars)
+meltdf(df::AbstractDataFrame, id_vars) = stackdf(df, _setdiff([1:ncol(df)], index(df)[id_vars]))
+meltdf(df::AbstractDataFrame, id_vars, measure_vars) = stackdf(df, measure_vars, id_vars)
