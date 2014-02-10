@@ -9,7 +9,8 @@ Base.@deprecate write_table writetable
 Base.@deprecate merge(df1::AbstractDataFrame, df2::AbstractDataFrame; on::Any = nothing, kind::Symbol = :inner) Base.join
 Base.@deprecate colnames(adf::AbstractDataFrame) Base.names
 Base.@deprecate colnames!(adf::AbstractDataFrame, vals) names!
-Base.@deprecate coltypes(adf::AbstractDataFrame) types
+Base.@deprecate coltypes(adf::AbstractDataFrame) eltypes
+Base.@deprecate types(adf::AbstractDataFrame) eltypes(adf::AbstractDataFrame)
 Base.@deprecate EachRow eachrow
 Base.@deprecate EachCol eachcol
 Base.@deprecate subset sub

@@ -164,22 +164,22 @@ end
 
 # TODO: Remove this
 # Initialize empty DataFrame objects of arbitrary size
-# Use the default column type
+# Use the default column eltype
 function DataFrame(nrows::Integer, ncols::Integer)
     columns = Array(Any, ncols)
     for i in 1:ncols
-        columns[i] = DataArray(DEFAULT_COLUMN_TYPE, nrows)
+        columns[i] = DataArray(DEFAULT_COLUMN_ELTYPE, nrows)
     end
     cnames = gennames(ncols)
     return DataFrame(columns, Index(cnames))
 end
 
-# Initialize an empty DataFrame with specific types and names
-function DataFrame(column_types::Vector, cnames::Vector, nrows::Integer)
-    p = length(column_types)
+# Initialize an empty DataFrame with specific eltypes and names
+function DataFrame(column_eltypes::Vector, cnames::Vector, nrows::Integer)
+    p = length(column_eltypes)
     columns = Array(Any, p)
     for j in 1:p
-        columns[j] = DataArray(column_types[j], nrows)
+        columns[j] = DataArray(column_eltypes[j], nrows)
         for i in 1:nrows
             columns[j][i] = NA
         end
@@ -187,13 +187,13 @@ function DataFrame(column_types::Vector, cnames::Vector, nrows::Integer)
     return DataFrame(columns, Index(cnames))
 end
 
-# Initialize an empty DataFrame with specific types
-function DataFrame(column_types::Vector, nrows::Integer)
-    p = length(column_types)
+# Initialize an empty DataFrame with specific eltypes
+function DataFrame(column_eltypes::Vector, nrows::Integer)
+    p = length(column_eltypes)
     columns = Array(Any, p)
     cnames = gennames(p)
     for j in 1:p
-        columns[j] = DataArray(column_types[j], nrows)
+        columns[j] = DataArray(column_eltypes[j], nrows)
         for i in 1:nrows
             columns[j][i] = NA
         end
@@ -213,24 +213,24 @@ function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector{Symbol})
 end
 
 function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
-    #get column types
-    col_types = Any[None for i = 1:length(ks)]
+    #get column eltypes
+    col_eltypes = Any[None for i = 1:length(ks)]
     for d in ds
         for (i,k) in enumerate(ks)
             # TODO: check for user-defined "NA" values, ala pandas
             if haskey(d, k) && !isna(d[k])
                 try
-                    col_types[i] = promote_type(col_types[i], typeof(d[k]))
+                    col_eltypes[i] = promote_type(col_eltypes[i], typeof(d[k]))
                 catch
-                    col_types[i] = Any
+                    col_eltypes[i] = Any
                 end
             end
         end
     end
-    col_types[col_types .== None] = Any
+    col_eltypes[col_eltypes .== None] = Any
 
     # create empty DataFrame, and fill
-    df = DataFrame(col_types, ks, length(ds))
+    df = DataFrame(col_eltypes, ks, length(ds))
     for (i,d) in enumerate(ds)
         for (j,k) in enumerate(ks)
             df[i,j] = get(d, k, NA)
@@ -267,7 +267,7 @@ Base.names(df::DataFrame) = names(df.colindex)
 
 names!(df::DataFrame, vals) = names!(df.colindex, vals)
 
-function types(adf::AbstractDataFrame)
+function eltypes(adf::AbstractDataFrame)
     ncols = size(adf, 2)
     res = Array(Type, ncols)
     for j in 1:ncols
@@ -376,7 +376,7 @@ end
 
 function create_new_column_from_scalar(df::DataFrame, val::NAtype)
     n = max(nrow(df), 1)
-    return DataArray(Array(DEFAULT_COLUMN_TYPE, n), trues(n))
+    return DataArray(Array(DEFAULT_COLUMN_ELTYPE, n), trues(n))
 end
 
 function create_new_column_from_scalar(df::DataFrame, val::Any)
@@ -941,12 +941,12 @@ Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T}) = vcat(dfs...)
 
 function Base.vcat(dfs::AbstractDataFrame...)
     Nrow = sum(nrow, dfs)
-    # build up column names and types
+    # build up column names and eltypes
     colnams = names(dfs[1])
-    coltyps = types(dfs[1])
+    coltyps = eltypes(dfs[1])
     for i in 2:length(dfs)
         cni = names(dfs[i])
-        cti = types(dfs[i])
+        cti = eltypes(dfs[i])
         for j in 1:length(cni)
             cn = cni[j]
             if length(findin([cn], colnams)) == 0  # new column
@@ -987,7 +987,7 @@ complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(complete_cases(df)
 
 function DataArrays.array(adf::AbstractDataFrame)
     n, p = size(adf)
-    T = reduce(typejoin, types(adf))
+    T = reduce(typejoin, eltypes(adf))
     res = Array(T, n, p)
     for j in 1:p
         col = adf[j]
@@ -999,7 +999,7 @@ function DataArrays.array(adf::AbstractDataFrame)
 end
 
 function DataArrays.DataArray(adf::AbstractDataFrame,
-                              T::DataType = reduce(typejoin, types(adf)))
+                              T::DataType = reduce(typejoin, eltypes(adf)))
     n, p = size(adf)
     dm = DataArray(T, n, p)
     for j in 1:p
@@ -1095,7 +1095,7 @@ end
 function Base.append!(adf1::AbstractDataFrame,
                       adf2::AbstractDataFrame)
    names(adf1) == names(adf2) || error("Column names do not match")
-   types(adf1) == types(adf2) || error("Column types do not match")
+   eltypes(adf1) == eltypes(adf2) || error("Column eltypes do not match")
    ncols = size(adf1, 2)
    # TODO: This needs to be a sort of transaction to be 100% safe
    for j in 1:ncols

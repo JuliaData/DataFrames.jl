@@ -610,7 +610,7 @@ end
 function column_summary(io::IO, adf::AbstractDataFrame) # -> Nothing
     println(io, summary(adf))
     metadata = DataFrame(Name = names(adf),
-                         Type = types(adf),
+                         Eltype = eltypes(adf),
                          Missing = colmissing(adf))
     showall(io, metadata, true, symbol("Col #"), false)
     return
