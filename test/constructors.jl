@@ -43,15 +43,15 @@ module TestConstructors
 
     df = DataFrame(Int, 2, 2)
     @test size(df) == (2, 2)
-    @test all(types(df) .== [Int, Int])
+    @test all(eltypes(df) .== [Int, Int])
 
     df = DataFrame(2, 2)
     @test size(df) == (2, 2)
-    @test all(types(df) .== [Float64, Float64])
+    @test all(eltypes(df) .== [Float64, Float64])
 
     df = DataFrame([Int, Float64], [:x1, :x2], 2)
     @test size(df) == (2, 2)
-    @test all(types(df) .== {Int, Float64})
+    @test all(eltypes(df) .== {Int, Float64})
 
     @test isequal(df, DataFrame([Int, Float64], 2))
 end

@@ -25,7 +25,7 @@ using SortingAlgorithms
 ##
 ##############################################################################
 
-const DEFAULT_COLUMN_TYPE = Float64
+const DEFAULT_COLUMN_ELTYPE = Float64
 
 ##############################################################################
 ##
@@ -61,6 +61,7 @@ export @~,
        describe,
        eachcol,
        eachrow,
+       eltypes,
        flipud!,
        flipud,
        Formula,
@@ -91,7 +92,6 @@ export @~,
        stack,
        SubDataFrame,
        subset,
-       types,
        unique,
        unique!,
        unstack,

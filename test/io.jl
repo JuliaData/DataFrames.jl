@@ -236,7 +236,7 @@ module TestIO
     @assert typeof(df[:b]) == DataArray{Bool,1}
     @assert df[:b][1] == true
 
-    df = readtable(filename,coltypes=[Int64, UTF8String, Float64, Bool])
+    df = readtable(filename,eltypes=[Int64, UTF8String, Float64, Bool])
     @assert typeof(df[:n]) == DataArray{Int64,1}
     @assert df[:n][1] == 1
     @assert typeof(df[:s]) == DataArray{UTF8String,1}
@@ -248,7 +248,7 @@ module TestIO
     @assert df[:b][1] == true
     @assert df[:b][2] == false
 
-    df = readtable(filename,coltypes=[Int64, UTF8String, Float64, UTF8String])
+    df = readtable(filename,eltypes=[Int64, UTF8String, Float64, UTF8String])
     @assert typeof(df[:n]) == DataArray{Int64,1}
     @assert df[:n][1] == 1.0
     @assert isna(df[:s][3])

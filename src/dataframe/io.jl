@@ -14,9 +14,9 @@ immutable ParseOptions{S <: ByteString}
     truestrings::Vector{S}
     falsestrings::Vector{S}
     makefactors::Bool
-    colnames::Vector{Symbol}
+    names::Vector{Symbol}
     cleannames::Bool
-    coltypes::Vector{DataType}
+    eltypes::Vector{DataType}
     allowcomments::Bool
     commentmark::Char
     ignorepadding::Bool
@@ -484,10 +484,10 @@ function builddf(rows::Integer,
     columns = Array(Any, cols)
 
     for j in 1:cols
-        if isempty(o.coltypes)
+        if isempty(o.eltypes)
             values = Array(Int, rows)
         else
-            values = Array(o.coltypes[j], rows)
+            values = Array(o.eltypes[j], rows)
         end
 
         missing = falses(rows)
@@ -517,10 +517,10 @@ function builddf(rows::Integer,
                 end
             end
 
-            # If coltypes has been defined, use them
-            if !isempty(o.coltypes)
+            # If eltypes has been defined, use it
+            if !isempty(o.eltypes)
                 values[i], wasparsed, missing[i] =
-                    bytestotype(o.coltypes[j],
+                    bytestotype(o.eltypes[j],
                                 p.bytes,
                                 left,
                                 right,
@@ -537,7 +537,7 @@ function builddf(rows::Integer,
                     @printf(msgio,
                             "Failed to parse '%s' using type '%s'",
                             bytestring(p.bytes[left:right]),
-                            o.coltypes[j])
+                            o.eltypes[j])
                     error(bytestring(msgio))
                 end
             end
@@ -622,30 +622,30 @@ function builddf(rows::Integer,
         end
     end
 
-    if isempty(o.colnames)
+    if isempty(o.names)
         return DataFrame(columns, gennames(cols))
     else
-        return DataFrame(columns, o.colnames)
+        return DataFrame(columns, o.names)
     end
 end
 
-function parsecolnames!(colnames::Vector{Symbol},
-                        bytes::Vector{Uint8},
-                        bounds::Vector{Int},
-                        fields::Int)
+function parsenames!(names::Vector{Symbol},
+                     bytes::Vector{Uint8},
+                     bounds::Vector{Int},
+                     fields::Int)
     if fields == 0
         error("Header line was empty")
     end
 
-    resize!(colnames, fields)
+    resize!(names, fields)
 
     for j in 1:fields
         left = bounds[j] + 2
         right = bounds[j + 1]
         if bytes[right] == '\r' || bytes[right] == '\n'
-            colnames[j] = symbol(bytestring(bytes[left:(right - 1)]))
+            names[j] = symbol(bytestring(bytes[left:(right - 1)]))
         else
-            colnames[j] = symbol(bytestring(bytes[left:right]))
+            names[j] = symbol(bytestring(bytes[left:right]))
         end
     end
 
@@ -714,8 +714,8 @@ function readtable!(p::ParsedCSV,
         bytes, fields, rows, nextchr = readnrows!(p, io, int64(1), o, d, nextchr)
 
         # Insert column names from header if none present
-        if isempty(o.colnames)
-            parsecolnames!(o.colnames, p.bytes, p.bounds, fields)
+        if isempty(o.names)
+            parsenames!(o.names, p.bytes, p.bounds, fields)
         end
     end
 
@@ -758,8 +758,10 @@ function readtable(io::IO,
                    falsestrings::Vector = ASCIIString["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
                    nrows::Integer = -1,
+                   names::Vector = Symbol[],
                    colnames::Vector = Symbol[],
                    cleannames::Bool = false,
+                   eltypes::Vector{DataType} = DataType[],
                    coltypes::Vector{DataType} = DataType[],
                    allowcomments::Bool = false,
                    commentmark::Char = '#',
@@ -769,15 +771,30 @@ function readtable(io::IO,
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false)
+    if !isempty(colnames)
+        warn("Argument 'colnames' is deprecated, please use 'names'.")
+        if !isempty(names)
+            throw(ArgumentError("'names' and 'colnames' can't both be specified."))
+        end
+        names = colnames
+    end
     if !isempty(coltypes)
-        for j in 1:length(coltypes)
-            if !(coltypes[j] in [UTF8String, Bool, Float64, Int64])
+        warn("Argument 'coltypes' is deprecated, please use 'eltypes'.")
+        if !isempty(eltypes)
+            throw(ArgumentError("'eltypes' and 'coltypes' can't both be specified."))
+        end
+        eltypes = coltypes
+    end
+
+    if !isempty(eltypes)
+        for j in 1:length(eltypes)
+            if !(eltypes[j] in [UTF8String, Bool, Float64, Int64])
                 msgio = IOBuffer()
                 @printf(msgio,
-                        "Invalid column type '%s' encountered.\n",
-                        coltypes[j])
+                        "Invalid eltype '%s' encountered.\n",
+                        eltypes[j])
                 @printf(msgio,
-                        "Valid types: UTF8String, Bool, Float64 or Int64")
+                        "Valid eltypes: UTF8String, Bool, Float64 or Int64")
                 error(bytestring(msgio))
             end
         end
@@ -792,7 +809,7 @@ function readtable(io::IO,
     # Set parsing options
     o = ParseOptions(header, separator, quotemark, decimal,
                      nastrings, truestrings, falsestrings,
-                     makefactors, colnames, cleannames, coltypes,
+                     makefactors, names, cleannames, eltypes,
                      allowcomments, commentmark, ignorepadding,
                      skipstart, skiprows, skipblanks, encoding,
                      allowescapes)
@@ -817,9 +834,11 @@ function readtable(pathname::String;
                    falsestrings::Vector = ASCIIString["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
                    nrows::Integer = -1,
+                   names::Vector = Symbol[],
                    colnames::Vector = Symbol[],
                    cleannames::Bool = false,
                    coltypes::Vector{DataType} = DataType[],
+                   eltypes::Vector{DataType} = DataType[],
                    allowcomments::Bool = false,
                    commentmark::Char = '#',
                    ignorepadding::Bool = true,
@@ -828,6 +847,21 @@ function readtable(pathname::String;
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false)
+    if !isempty(colnames)
+        warn("Argument 'colnames' is deprecated, please use 'names'.")
+        if !isempty(names)
+            throw(ArgumentError("'names' and 'colnames' can't both be specified."))
+        end
+        names = colnames
+    end
+    if !isempty(coltypes)
+        warn("Argument 'coltypes' is deprecated, please use 'eltypes'.")
+        if !isempty(eltypes)
+            throw(ArgumentError("'eltypes' and 'coltypes' can't both be specified."))
+        end
+        eltypes = coltypes
+    end
+
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
     if beginswith(pathname, "http://") || beginswith(pathname, "ftp://")
@@ -856,9 +890,9 @@ function readtable(pathname::String;
                      falsestrings = falsestrings,
                      makefactors = makefactors,
                      nrows = nrows,
-                     colnames = colnames,
+                     names = names,
                      cleannames = cleannames,
-                     coltypes = coltypes,
+                     eltypes = eltypes,
                      allowcomments = allowcomments,
                      commentmark = commentmark,
                      ignorepadding = ignorepadding,
@@ -876,7 +910,7 @@ function filldf!(df::DataFrame,
                  fields::Integer,
                  p::ParsedCSV,
                  o::ParseOptions)
-    ctypes = types(df)
+    etypes = eltypes(df)
 
     if rows != size(df, 1)
         for j in 1:cols
@@ -887,7 +921,7 @@ function filldf!(df::DataFrame,
 
     for j in 1:cols
         c = df.columns[j]
-        T = ctypes[j]
+        T = etypes[j]
 
         i = 0
         while i < rows
@@ -914,7 +948,7 @@ function filldf!(df::DataFrame,
             # NB: Assumes perfect type stability
             # Use subtypes here
             if !(T in [Int, Float64, Bool, UTF8String])
-                error("Invalid type encountered")
+                error("Invalid eltype encountered")
             end
             c.data[i], wasparsed, c.na[i] =
               bytestotype(T,
@@ -955,7 +989,7 @@ function printtable(io::IO,
                     separator::Char = ',',
                     quotemark::Char = '"')
     n, p = size(df)
-    ctypes = types(df)
+    etypes = eltypes(df)
     if header
         cnames = names(df)
         for j in 1:p
@@ -971,7 +1005,7 @@ function printtable(io::IO,
     end
     for i in 1:n
         for j in 1:p
-            if ! (ctypes[j] <: Real)
+            if ! (etypes[j] <: Real)
                 print(io, quotemark)
                 escapedprint(io, df[i, j], "\"'")
                 print(io, quotemark)
