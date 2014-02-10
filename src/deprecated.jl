@@ -13,6 +13,12 @@ Base.@deprecate coltypes(adf::AbstractDataFrame) types
 Base.@deprecate EachRow eachrow
 Base.@deprecate EachCol eachcol
 Base.@deprecate subset sub
+Base.@deprecate drop_duplicates! unique!
+Base.@deprecate duplicated nonunique
+Base.@deprecate load_df loaddf
+Base.@deprecate melt_df meltdf
+Base.@deprecate stack_df stackdf
+Base.@deprecate pivot_table pivottable
 
 function DataFrame(df::DataFrame)
     depwarn("DataFrame(::DataFrame) is deprecated, use convert(DataFrame, DataFrame) instead",
@@ -167,12 +173,12 @@ function DataArrays.reorder(fun::Function, x::PooledDataArray, y::AbstractVector
 end
 
 function Base.flipud(df::DataFrame)
-    depwarn("flipud(DataFrame)", :flipud)
+    depwarn("flipud(DataFrame) is deprecated", :flipud)
     return df[reverse(1:nrow(df)), :]
 end
 
 function flipud!(df::DataFrame)
-    depwarn("flipud!(DataFrame)", :flipud!)
+    depwarn("flipud!(DataFrame) is deprecated", :flipud!)
     df[1:nrow(df), :] = df[reverse(1:nrow(df)), :]
     return
 end
@@ -185,3 +191,65 @@ function cleannames!(df::DataFrame)
     return
 end
 
+# rbind, cbind, vecbind
+
+rbind(args...) = vcat(args...)
+
+cbind(args...) = hcat(args...)
+
+vecbind_type{T}(::Vector{T}) = Vector{T}
+vecbind_type{T<:AbstractVector}(x::T) = Vector{eltype(x)}
+vecbind_type{T<:AbstractDataVector}(x::T) = DataVector{eltype(x)}
+vecbind_type{T}(::PooledDataVector{T}) = DataVector{T}
+vecbind_type(v::StackedVector) = vecbind_promote_type(map(vecbind_type, v.components)...)
+vecbind_type(v::RepeatedVector) = vecbind_type(v.parent)
+vecbind_type(v::EachRepeatedVector) = vecbind_type(v.parent)
+
+vecbind_promote_type{T1,T2}(x::Type{Vector{T1}}, y::Type{Vector{T2}}) = Array{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type{T1,T2}(x::Type{DataVector{T1}}, y::Type{DataVector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type{T1,T2}(x::Type{Vector{T1}}, y::Type{DataVector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type{T1,T2}(x::Type{DataVector{T1}}, y::Type{Vector{T2}}) = DataArray{promote_type(eltype(x), eltype(y)),1}
+vecbind_promote_type(a, b, c, ds...) = vecbind_promote_type(a, vecbind_promote_type(b, c, ds...))
+vecbind_promote_type(a, b, c) = vecbind_promote_type(a, vecbind_promote_type(b, c))
+
+function vecbind_promote_type(a::AbstractVector)
+    res = None
+    if isdefined(a, 1)
+        if length(a) == 1
+            return a[1]
+        else
+            if isdefined(a, 2)
+                res = vecbind_promote_type(a[1], a[2])
+            else
+                res = a[1]
+            end
+        end
+    end
+    for i in 3:length(a)
+        if isdefined(a, i)
+            res = vecbind_promote_type(res, a[i])
+        end
+    end
+    return res
+end
+
+#constructor{T}(::Type{Vector{T}}, args...) = Array(T, args...)
+#constructor{T}(::Type{DataVector{T}}, args...) = DataArray(T, args...)
+
+function vecbind(xs::AbstractVector...)
+    V = vecbind_promote_type(map(vecbind_type, {xs...}))
+    len = sum(length, xs)
+    res = constructor(V, len)
+    k = 1
+    for i in 1:length(xs)
+        for j in 1:length(xs[i])
+            res[k] = xs[i][j]
+            k += 1
+        end
+    end
+    res
+end
+
+function vecbind(xs::PooledDataVector...)
+    vecbind(map(x -> convert(DataArray, x), xs)...)
+end

@@ -4,7 +4,9 @@ module TestDuplicates
     using DataFrames
 
     df = DataFrame(a = [1, 2, 3, 3, 4])
-    @assert isequal(duplicated(df), [false, false, false, true, false])
-    drop_duplicates!(df)
-    @assert isequal(df, DataFrame(a = [1, 2, 3, 4]))
+    udf = DataFrame(a = [1, 2, 3, 4])
+    @test isequal(nonunique(df), [false, false, false, true, false])
+    @test isequal(udf, unique(df))
+    unique!(df)
+    @test isequal(df, udf)
 end
