@@ -39,7 +39,7 @@ using the `pool!` function:
 
     df = DataFrame(A = [1, 1, 1, 2, 2, 2],
                    B = ["X", "X", "X", "Y", "Y", "Y"])
-    pool!(df, ["A", "B"])
+    pool!(df, [:A, :B])
 
 Pooling columns is important for working with the
 [GLM package](https://github.com/JuliaStats/GLM.jl).

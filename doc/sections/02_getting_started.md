@@ -78,8 +78,8 @@ which is a `DataArray`. You can specify the columns using keyword arguments:
 It is also possible to construct a `DataFrame` in stages:
 
     df = DataFrame()
-    df["A"] = 1:8
-    df["B"] = ["M", "F", "F", "M", "F", "M", "M", "F"]
+    df[:A] = 1:8
+    df[:B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
     df
 
 The `DataFrame` we build in this way has 8 rows and 2 columns. You
@@ -109,8 +109,8 @@ the columns of the `DataFrame`:
 
 We could also have used column names to access individual columns:
 
-    mean(df["A"])
-    median(df["A"])
+    mean(df[:A])
+    median(df[:A])
 
 We can also apply a function to each column of a `DataFrame` with the `colwise`
 function. For example:
@@ -127,7 +127,7 @@ provides access to many of the classical data sets that are available in R.
 For example, we can access Fisher's iris data set using the following functions:
 
     using RDatasets
-    iris = data("datasets", "iris")
+    iris = dataset("datasets", "iris")
     head(iris)
 
 In the next section, we'll discuss generic I/O strategy for reading and writing

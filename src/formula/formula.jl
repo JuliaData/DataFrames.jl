@@ -172,9 +172,9 @@ dropUnusedLevels!(x) = x
 
 function ModelFrame(f::Formula, d::AbstractDataFrame)
     trms = Terms(f)
-    df,msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
+    df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
-    for c in df dropUnusedLevels!(c[2]) end
+    for c in eachcol(df) dropUnusedLevels!(c[2]) end
     ModelFrame(df, trms, msng)
 end
 ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
@@ -229,7 +229,7 @@ function ModelMatrix(mf::ModelFrame)
     ## if the factor doesn't occur in the fetrms
     rows = vec(bool(sum(ff,[2])))
     ff = ff[rows,:]
-    cc = [cols(x[2]) for x in mf.df[:,rows]]
+    cc = [cols(x[2]) for x in eachcol(mf.df[:,rows])]
     for j in 1:size(ff,2)
         trm = cc[bool(ff[:,j])]
         push!(aa, trm)
