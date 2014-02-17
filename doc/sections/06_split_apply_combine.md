@@ -16,14 +16,14 @@ below:
 
     using DataFrames, RDatasets
 
-    iris = data("datasets", "iris")
+    iris = dataset("datasets", "iris")
 
-    by(iris, "Species", nrow)
-    by(iris, "Species", df -> mean(df["PetalLength"]))
-    by(iris, "Species", :(N = size(_DF, 1)))
+    by(iris, :Species, size)
+    by(iris, :Species, df -> mean(df[:PetalLength]))
+    by(iris, :Species, df -> DataFrame(N = size(df, 1)))
 
 If you only want to split the data set into subsets, use the `groupby` function:
 
-    for subdf in groupby(iris, "Species")
+    for subdf in groupby(iris, :Species)
         println(size(subdf, 1))
     end
