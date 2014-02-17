@@ -178,14 +178,9 @@ function Base.join(df1::AbstractDataFrame,
 end
 
 function crossjoin(df1::DataFrame, df2::DataFrame)
-    d = DataFrame()
-    addx!(d, df1, 1, size(df2, 1))
-    addx!(d, df2, size(df1, 1), 1)
-    d
-end
-
-function addx!(d::DataFrame, x::DataFrame, times::Int, each::Int)
-    for (n, v) in eachcol(x)
-        d[n] = rep(v, times, each)
-    end
+    r1, r2 = size(df1, 1), size(df2, 1)
+    columns = [[rep(c[2], 1, r2) for c in eachcol(df1)],
+               [rep(c[2], r1, 1) for c in eachcol(df2)]]
+    colindex = Index(make_unique([names(df1), names(df2)]))
+    DataFrame(columns, colindex)
 end
