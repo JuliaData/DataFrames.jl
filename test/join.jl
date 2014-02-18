@@ -49,6 +49,9 @@ module TestJoin
 
     @test join(df1, df2[[:C]], kind = :cross) == cross
 
+    # Cross joins handle naming collisions
+    @test size(join(df1, df1, kind = :cross)) == (4, 4)
+
     # Cross joins don't take keys
     @test_throws join(df1, df2, on = :A, kind = :cross)
 end
