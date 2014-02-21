@@ -238,6 +238,12 @@ function ModelMatrix(mf::ModelFrame)
     ModelMatrix{Float64}(hcat([expandcols(t) for t in aa]...), asgn)
 end
 
+termnames(term::Symbol, col) = [string(term)]
+function termnames(term::Symbol, col::PooledDataArray)
+    levs = levels(col)
+    [string(term, " - ", levs[i]) for i in 2:length(levs)]
+end
+
 function coefnames(fr::ModelFrame)
     if fr.terms.intercept
         vnames = UTF8String["(Intercept)"]
@@ -246,12 +252,18 @@ function coefnames(fr::ModelFrame)
     end
     # Need to only include active levels
     for term in fr.terms.terms
-        if isa(fr.df[term], PooledDataArray)
-            for lev in levels(fr.df[term])[2:end]
-                push!(vnames, string(term, " - ", lev))
+        if isa(term, Expr)
+            if term.head == :call && term.args[1] == :&
+                a = term.args[2]
+                b = term.args[3]
+                for lev1 in termnames(a, fr.df[a]), lev2 in termnames(a, fr.df[b])
+                    push!(vnames, string(lev1, " & ", lev2))
+                end
+            else
+                error("unrecognized term $term")
             end
         else
-            push!(vnames, string(term))
+            append!(vnames, termnames(term, fr.df[term]))
         end
     end
     return vnames
