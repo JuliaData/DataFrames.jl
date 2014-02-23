@@ -203,8 +203,11 @@ end
 
 # Initialize from a Vector of Associatives (aka list of dicts)
 function DataFrame{D <: Associative}(ds::Vector{D})
-    ks = [Set([[k for k in [collect(keys(d)) for d in ds]]...]...)...]
-    DataFrame(ds, ks)
+    ks = Set()
+    for d in ds
+        union!(ks, keys(d))
+    end
+    DataFrame(ds, [ks...])
 end
 
 # Initialize from a Vector of Associatives (aka list of dicts)

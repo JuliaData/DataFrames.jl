@@ -64,7 +64,7 @@ allvars(sym::Symbol) = [sym]
 allvars(v::Any) = Array(Symbol, 0)
 
 # special operators in formulas
-const specials = Set(:+, :-, :*, :/, :&, :|, :^)
+const specials = Set([:+, :-, :*, :/, :&, :|, :^])
 
 function dospecials(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
@@ -84,7 +84,7 @@ function dospecials(ex::Expr)
 end
 dospecials(a::Any) = a
 
-const associative = Set(:+,:*,:&)       # associative special operators
+const associative = Set([:+,:*,:&])       # associative special operators
 
 ## If the expression is a call to the function s return its arguments
 ## Otherwise return the expression
@@ -117,7 +117,7 @@ getterms(a::Any) = a
 ord(ex::Expr) = (ex.head == :call && ex.args[1] == :&) ? length(ex.args)-1 : 1
 ord(a::Any) = 1
 
-const nonevaluation = Set(:&,:|)        # operators constructed from other evaluations
+const nonevaluation = Set([:&,:|])        # operators constructed from other evaluations
 ## evaluation terms - the (filtered) arguments for :& and :|, otherwise the term itself
 function evt(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
@@ -146,7 +146,7 @@ function Terms(f::Formula)
         unshift!(oo, 1)
     end
     ev = unique(vcat(etrms...))
-    facs = int8(hcat(map(x->(s=Set(x...);map(t->int8(t in s), ev)),etrms)...))
+    facs = int8(hcat(map(x->(s=Set(x);map(t->int8(t in s), ev)),etrms)...))
     Terms(tt, ev, facs, oo, haslhs, !any(noint))
 end
 
