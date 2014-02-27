@@ -4,7 +4,7 @@
 #'
 #' An AbstractDataFrame is a Julia abstract type for which all concrete
 #' types expose an database-like interface.
-abstract AbstractDataFrame <: Associative{String, Any}
+abstract AbstractDataFrame <: Associative{Symbol, Any}
 
 #' @@name colmissing
 #'
