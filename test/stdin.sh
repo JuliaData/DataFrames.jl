@@ -1,3 +1,4 @@
 #!/bin/bash
 
-cat test/data/utf8/utf8.csv | julia test/stdin.jl
+TESTDIR=$(dirname $0)
+cat $TESTDIR/data/utf8/utf8.csv | julia $TESTDIR/stdin.jl
