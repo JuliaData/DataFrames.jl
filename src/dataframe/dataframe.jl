@@ -728,7 +728,7 @@ Base.setindex!(df::DataFrame, x::Nothing, icol::Int) = delete!(df, icol)
 ##
 ##############################################################################
 
-function isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
+function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
     isequal(index(df1), index(df2)) || return false
     for idx in 1:size(df1, 2)
