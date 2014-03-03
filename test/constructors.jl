@@ -45,10 +45,6 @@ module TestConstructors
     @test size(df) == (2, 2)
     @test all(eltypes(df) .== [Int, Int])
 
-    df = DataFrame(2, 2)
-    @test size(df) == (2, 2)
-    @test all(eltypes(df) .== [Float64, Float64])
-
     df = DataFrame([Int, Float64], [:x1, :x2], 2)
     @test size(df) == (2, 2)
     @test all(eltypes(df) .== {Int, Float64})

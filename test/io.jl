@@ -3,6 +3,7 @@ module TestIO
     using DataArrays
     using DataFrames
 
+
     #test_group("Confirm that we can read various file types.")
     testdir = dirname(@__FILE__)
 
@@ -143,7 +144,7 @@ module TestIO
 
     df1 = readtable(filename, separator = ',')
 
-    @assert isequal(df, df1)
+    @test isequal(df, df1)
 
     rm(filename)
 
@@ -165,7 +166,7 @@ module TestIO
 
     df1 = readtable(filename, separator = ',')
 
-    @assert isequal(df, df1)
+    @test isequal(df, df1)
 
     rm(filename)
 
@@ -177,87 +178,117 @@ module TestIO
     filename = "$testdir/data/factors/mixedvartypes.csv"
     df = readtable(filename, makefactors = true)
 
-    @assert typeof(df[:factorvar]) == PooledDataArray{UTF8String,Uint32,1}
-    @assert typeof(df[:floatvar]) == DataArray{Float64,1}
+    @test typeof(df[:factorvar]) == PooledDataArray{UTF8String,Uint32,1}
+    @test typeof(df[:floatvar]) == DataArray{Float64,1}
 
     # Readtable shouldn't silently drop data when reading highly compressed gz.
     df = readtable("$testdir/data/compressed/1000x2.csv.gz")
-    @assert size(df) == (1000, 2)
+    @test size(df) == (1000, 2)
 
     # Readtable type inference
     filename = "$testdir/data/typeinference/bool.csv"
     df = readtable(filename)
-    @assert typeof(df[:Name]) == DataArray{UTF8String,1}
-    @assert typeof(df[:IsMale]) == DataArray{Bool,1}
-    @assert df[:IsMale][1] == true
-    @assert df[:IsMale][4] == false
+    @test typeof(df[:Name]) == DataArray{UTF8String,1}
+    @test typeof(df[:IsMale]) == DataArray{Bool,1}
+    @test df[:IsMale][1] == true
+    @test df[:IsMale][4] == false
  
     filename = "$testdir/data/typeinference/standardtypes.csv"
     df = readtable(filename)
-    @assert typeof(df[:IntColumn]) == DataArray{Int,1}
-    @assert typeof(df[:IntlikeColumn]) == DataArray{Float64,1}
-    @assert typeof(df[:FloatColumn]) == DataArray{Float64,1}
-    @assert typeof(df[:BoolColumn]) == DataArray{Bool,1}
-    @assert typeof(df[:StringColumn]) == DataArray{UTF8String,1}
+    @test typeof(df[:IntColumn]) == DataArray{Int,1}
+    @test typeof(df[:IntlikeColumn]) == DataArray{Float64,1}
+    @test typeof(df[:FloatColumn]) == DataArray{Float64,1}
+    @test typeof(df[:BoolColumn]) == DataArray{Bool,1}
+    @test typeof(df[:StringColumn]) == DataArray{UTF8String,1}
  
     filename = "$testdir/data/typeinference/mixedtypes.csv"
     df = readtable(filename)
-    @assert typeof(df[:c1]) == DataArray{UTF8String,1}
-    @assert df[:c1][1] == "1" 
-    @assert df[:c1][2] == "2.0" 
-    @assert df[:c1][3] == "true" 
-    @assert typeof(df[:c2]) == DataArray{Float64,1}
-    @assert df[:c2][1] == 1.0 
-    @assert df[:c2][2] == 3.0 
-    @assert df[:c2][3] == 4.5 
-    @assert typeof(df[:c3]) == DataArray{UTF8String,1}
-    @assert df[:c3][1] == "0" 
-    @assert df[:c3][2] == "1" 
-    @assert df[:c3][3] == "f" 
-    @assert typeof(df[:c4]) == DataArray{Bool,1}
-    @assert df[:c4][1] == true
-    @assert df[:c4][2] == false
-    @assert df[:c4][3] == true
-    @assert typeof(df[:c5]) == DataArray{UTF8String,1}
-    @assert df[:c5][1] == "False"
-    @assert df[:c5][2] == "true"
-    @assert df[:c5][3] == "true"
+    @test typeof(df[:c1]) == DataArray{UTF8String,1}
+    @test df[:c1][1] == "1"
+    @test df[:c1][2] == "2.0"
+    @test df[:c1][3] == "true"
+    @test typeof(df[:c2]) == DataArray{Float64,1}
+    @test df[:c2][1] == 1.0
+    @test df[:c2][2] == 3.0
+    @test df[:c2][3] == 4.5
+    @test typeof(df[:c3]) == DataArray{UTF8String,1}
+    @test df[:c3][1] == "0"
+    @test df[:c3][2] == "1"
+    @test df[:c3][3] == "f"
+    @test typeof(df[:c4]) == DataArray{Bool,1}
+    @test df[:c4][1] == true
+    @test df[:c4][2] == false
+    @test df[:c4][3] == true
+    @test typeof(df[:c5]) == DataArray{UTF8String,1}
+    @test df[:c5][1] == "False"
+    @test df[:c5][2] == "true"
+    @test df[:c5][3] == "true"
  
     # Readtable defining column types
     filename = "$testdir/data/definedtypes/mixedvartypes.csv"
  
     df = readtable(filename)
-    @assert typeof(df[:n]) == DataArray{Int,1}
-    @assert df[:n][1] == 1
-    @assert typeof(df[:s]) == DataArray{UTF8String,1}
-    @assert df[:s][1] == "text"
-    @assert typeof(df[:f]) == DataArray{Float64,1}
-    @assert df[:f][1] == 2.3
-    @assert typeof(df[:b]) == DataArray{Bool,1}
-    @assert df[:b][1] == true
+    @test typeof(df[:n]) == DataArray{Int,1}
+    @test df[:n][1] == 1
+    @test typeof(df[:s]) == DataArray{UTF8String,1}
+    @test df[:s][1] == "text"
+    @test typeof(df[:f]) == DataArray{Float64,1}
+    @test df[:f][1] == 2.3
+    @test typeof(df[:b]) == DataArray{Bool,1}
+    @test df[:b][1] == true
 
     df = readtable(filename,eltypes=[Int64, UTF8String, Float64, Bool])
-    @assert typeof(df[:n]) == DataArray{Int64,1}
-    @assert df[:n][1] == 1
-    @assert typeof(df[:s]) == DataArray{UTF8String,1}
-    @assert df[:s][1] == "text"
-    @assert df[:s][4] == "text ole"
-    @assert typeof(df[:f]) == DataArray{Float64,1}
-    @assert df[:f][1] == 2.3
-    @assert typeof(df[:b]) == DataArray{Bool,1}
-    @assert df[:b][1] == true
-    @assert df[:b][2] == false
+    @test typeof(df[:n]) == DataArray{Int64,1}
+    @test df[:n][1] == 1
+    @test typeof(df[:s]) == DataArray{UTF8String,1}
+    @test df[:s][1] == "text"
+    @test df[:s][4] == "text ole"
+    @test typeof(df[:f]) == DataArray{Float64,1}
+    @test df[:f][1] == 2.3
+    @test typeof(df[:b]) == DataArray{Bool,1}
+    @test df[:b][1] == true
+    @test df[:b][2] == false
 
     df = readtable(filename,eltypes=[Int64, UTF8String, Float64, UTF8String])
-    @assert typeof(df[:n]) == DataArray{Int64,1}
-    @assert df[:n][1] == 1.0
-    @assert isna(df[:s][3])
-    @assert typeof(df[:f]) == DataArray{Float64,1}
+    @test typeof(df[:n]) == DataArray{Int64,1}
+    @test df[:n][1] == 1.0
+    @test isna(df[:s][3])
+    @test typeof(df[:f]) == DataArray{Float64,1}
     # Float are not converted to int
-    @assert df[:f][1] == 2.3
-    @assert df[:f][2] == 0.2
-    @assert df[:f][3] == 5.7
-    @assert typeof(df[:b]) == DataArray{UTF8String,1}
-    @assert df[:b][1] == "T"
-    @assert df[:b][2] == "FALSE"
+    @test df[:f][1] == 2.3
+    @test df[:f][2] == 0.2
+    @test df[:f][3] == 5.7
+    @test typeof(df[:b]) == DataArray{UTF8String,1}
+    @test df[:b][1] == "T"
+    @test df[:b][2] == "FALSE"
+
+    # Readtable ignorepadding argument
+    io = IOBuffer("A , \tB  , C\n1 , \t2, 3\n")
+    @test readtable(io, ignorepadding=true) == DataFrame(A=1, B=2, C=3)
+
+    # Readtable name normalization
+    abnormal = "\u212b"
+    ns = [:Å, :B_C, :_end]
+    @test !in(symbol(abnormal), ns)
+
+    io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
+    @test names(readtable(io)) == ns
+
+    # Check that reserved words are up to date
+    f = "$JULIA_HOME/../../src/julia-parser.scm"
+    if isfile(f)
+        r1 = r"define reserved-words '\(([^)]+)"
+        r2 = r"define \(parse-block s\) \(parse-Nary s parse-eq '\([^(]+\(([^)]+)"
+        body = readall(f)
+        m1, m2 = match(r1, body), match(r2, body)
+        if m1 == nothing || m2 == nothing
+            error("Unable to extract keywords from 'julia-parser.scm'.")
+        else
+            rw = split(m1.captures[1]*" "*m2.captures[1], r"\W+")
+            @test rw == DataFrames.RESERVED_WORDS
+        end
+    else
+        warn("Unable to find validate reserved words against parser. ",
+             "Expected if Julia was not built from source.")
+    end
 end

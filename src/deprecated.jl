@@ -21,6 +21,19 @@ Base.@deprecate melt_df meltdf
 Base.@deprecate stack_df stackdf
 Base.@deprecate pivot_table pivottable
 
+
+
+const DEFAULT_COLUMN_ELTYPE = Float64
+function DataFrame(nrows::Integer, ncols::Integer)
+    depwarn("DataFrame(::Integer, ::Integer) is deprecated", :DataFrame)
+    columns = Array(Any, ncols)
+    for i in 1:ncols
+        columns[i] = DataArray(DEFAULT_COLUMN_ELTYPE, nrows)
+    end
+    cnames = gennames(ncols)
+    return DataFrame(columns, Index(cnames))
+end
+
 function DataFrame(df::DataFrame)
     depwarn("DataFrame(::DataFrame) is deprecated, use convert(DataFrame, DataFrame) instead",
             :DataFrame)
@@ -185,7 +198,7 @@ function flipud!(df::DataFrame)
 end
 
 function cleannames!(df::DataFrame)
-    depwarn("cleannames!(DataFrame)", :cleannames!)
+    depwarn("cleannames!(::DataFrame) is deprecated (names are now required to be valid identifiers).", :cleannames!)
     oldnames = map(strip, names(df))
     newnames = map(n -> replace(n, r"\W", "_"), oldnames)
     names!(df, newnames)

@@ -15,7 +15,6 @@ immutable ParseOptions{S <: ByteString}
     falsestrings::Vector{S}
     makefactors::Bool
     names::Vector{Symbol}
-    cleannames::Bool
     eltypes::Vector{DataType}
     allowcomments::Bool
     commentmark::Char
@@ -642,11 +641,9 @@ function parsenames!(names::Vector{Symbol},
     for j in 1:fields
         left = bounds[j] + 2
         right = bounds[j + 1]
-        if bytes[right] == '\r' || bytes[right] == '\n'
-            names[j] = symbol(bytestring(bytes[left:(right - 1)]))
-        else
-            names[j] = symbol(bytestring(bytes[left:right]))
-        end
+
+        str = normalize_string(bytestring(bytes[left:right]))
+        names[j] = symbol(isidentifier(str) ? str : makeidentifier(str))
     end
 
     return
@@ -738,11 +735,6 @@ function readtable!(p::ParsedCSV,
     # Parse contents of a buffer into a DataFrame
     df = builddf(rows, cols, bytes, fields, p, o)
 
-    # Clean up column names if requested
-    if o.cleannames
-        cleannames!(df)
-    end
-
     # Return the final DataFrame
     return df
 end
@@ -760,7 +752,7 @@ function readtable(io::IO,
                    nrows::Integer = -1,
                    names::Vector = Symbol[],
                    colnames::Vector = Symbol[],
-                   cleannames::Bool = false,
+                   cleannames::Any = nothing,
                    eltypes::Vector{DataType} = DataType[],
                    coltypes::Vector{DataType} = DataType[],
                    allowcomments::Bool = false,
@@ -784,6 +776,9 @@ function readtable(io::IO,
             throw(ArgumentError("'eltypes' and 'coltypes' can't both be specified."))
         end
         eltypes = coltypes
+    end
+    if !isa(cleannames, Nothing)
+        warn("Argument 'cleannames' is deprecated (it now happens automatically).")
     end
 
     if !isempty(eltypes)
@@ -809,7 +804,7 @@ function readtable(io::IO,
     # Set parsing options
     o = ParseOptions(header, separator, quotemark, decimal,
                      nastrings, truestrings, falsestrings,
-                     makefactors, names, cleannames, eltypes,
+                     makefactors, names, eltypes,
                      allowcomments, commentmark, ignorepadding,
                      skipstart, skiprows, skipblanks, encoding,
                      allowescapes)
@@ -836,7 +831,7 @@ function readtable(pathname::String;
                    nrows::Integer = -1,
                    names::Vector = Symbol[],
                    colnames::Vector = Symbol[],
-                   cleannames::Bool = false,
+                   cleannames::Any = nothing,
                    coltypes::Vector{DataType} = DataType[],
                    eltypes::Vector{DataType} = DataType[],
                    allowcomments::Bool = false,
@@ -860,6 +855,9 @@ function readtable(pathname::String;
             throw(ArgumentError("'eltypes' and 'coltypes' can't both be specified."))
         end
         eltypes = coltypes
+    end
+    if !isa(cleannames, Nothing)
+        warn("Argument 'cleannames' is deprecated (it now happens automatically).")
     end
 
     # Open an IO stream based on pathname
@@ -891,7 +889,6 @@ function readtable(pathname::String;
                      makefactors = makefactors,
                      nrows = nrows,
                      names = names,
-                     cleannames = cleannames,
                      eltypes = eltypes,
                      allowcomments = allowcomments,
                      commentmark = commentmark,

@@ -1,28 +1,109 @@
-# slow, but maintains order and seems to work:
-function _setdiff(a::Vector, b::Vector)
-    idx = Int[]
-    for i in 1:length(a)
-        if !(a[i] in b)
-            push!(idx, i)
-        end
-    end
-    a[idx]
+const RESERVED_WORDS = ASCIIString["begin", "while", "if", "for", "try",
+    "return", "break", "continue", "function", "macro", "quote", "let",
+    "local", "global", "const", "abstract", "typealias", "type", "bitstype",
+    "immutable", "ccall", "do", "module", "baremodule", "using", "import",
+    "export", "importall", "end", "else", "elseif", "catch", "finally"]
+
+function isidentifier(sym::Symbol)
+    s = string(sym)
+    s == normalize_string(s) && isidentifier(s)
 end
 
-function _uniqueofsorted(x::Vector)
-    idx = fill(true, length(x))
-    lastx = x[1]
-    for i = 2:length(x)
-        if lastx == x[i]
-            idx[i] = false
+function isidentifier(s::String)
+    n = length(s)
+    if n == 0 || in(s, RESERVED_WORDS)
+        return false
+    end
+    i = 1
+    for c in s
+        if i == 1
+            if !(isalpha(c) || c == '_')
+                return false
+            end
         else
-            lastx = x[i]
+            if !(isalpha(c) || isdigit(c) || c == '_' || c == '!')
+                return false
+            end
+        end
+        i += 1
+    end
+    return true
+end
+
+function makeidentifier(s::String)
+    ind = 0
+    n = endof(s)
+    res = Array(Char, 0)
+
+    while isempty(res)
+        if ind >= n
+            return "x"
+        end
+
+        ind = nextind(s, ind)
+        c = s[ind]
+
+        if isalpha(c)
+            push!(res, c)
+        elseif isdigit(c) || c == '!'
+            push!(res, 'x')
+            push!(res, c)
         end
     end
-    x[idx]
+
+    while ind < n
+        ind = nextind(s, ind)
+        c = s[ind]
+
+        if isalpha(c) || isdigit(c) || c == '!'
+            push!(res, c)
+        else
+            while ind < n
+                ind = nextind(s, ind)
+                c = s[ind]
+
+                if isalpha(c) || isdigit(c) || c == '!'
+                    push!(res, '_')
+                    push!(res, c)
+                    break
+                end
+            end
+        end
+    end
+
+    cs = UTF32String(res)
+    return in(cs, RESERVED_WORDS) ? "_"*cs : cs
 end
 
 function make_unique(names::Vector{Symbol})
+    x = Index()
+    names = copy(names)
+    dups = Int[]
+    for i in 1:length(names)
+        if haskey(x, names[i])
+            push!(dups, i)
+        else
+            push!(x, names[i])
+        end
+    end
+    for i in dups
+        nm = names[i]
+        newnm = nm
+        k = 1
+        while true
+            newnm = symbol("$(nm)_$k")
+            if !haskey(x, newnm)
+                push!(x, newnm)
+                break
+            end
+            k += 1
+        end
+        names[i] = newnm
+    end
+    names
+end
+
+function make_unique(names::Vector{Symbol}, orig::Vector{Bool})
     x = Index()
     names = copy(names)
     dups = Int[]
@@ -128,4 +209,28 @@ function countna(da::PooledDataArray)
         end
     end
     return res
+end
+
+# slow, but maintains order and seems to work:
+function _setdiff(a::Vector, b::Vector)
+    idx = Int[]
+    for i in 1:length(a)
+        if !(a[i] in b)
+            push!(idx, i)
+        end
+    end
+    a[idx]
+end
+
+function _uniqueofsorted(x::Vector)
+    idx = fill(true, length(x))
+    lastx = x[1]
+    for i = 2:length(x)
+        if lastx == x[i]
+            idx[i] = false
+        else
+            lastx = x[i]
+        end
+    end
+    x[idx]
 end
