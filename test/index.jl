@@ -46,4 +46,9 @@ end
 push!(i, :C)
 @test delete!(i, 1) == Index([:C])
 
+Index(Symbol["a"])
+@test_throws Index(Symbol["\u212b"])
+@test_throws Index(Symbol["end"])
+@test_throws Index(Symbol["1a"])
+
 end

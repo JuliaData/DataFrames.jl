@@ -52,11 +52,6 @@ module TestDataFrame
     #test_group("DataFrame assignment")
 
     #test_group("Empty DataFrame constructors")
-    df = DataFrame(10, 5)
-    @assert size(df, 1) == 10
-    @assert size(df, 2) == 5
-    @assert typeof(df[:, 1]) == DataVector{Float64}
-
     df = DataFrame(Int, 10, 3)
     @assert size(df, 1) == 10
     @assert size(df, 2) == 3

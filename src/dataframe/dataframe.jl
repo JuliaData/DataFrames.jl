@@ -162,18 +162,6 @@ function DataFrame(t::Any, nrows::Integer, ncols::Integer)
     return DataFrame(columns, Index(cnames))
 end
 
-# TODO: Remove this
-# Initialize empty DataFrame objects of arbitrary size
-# Use the default column eltype
-function DataFrame(nrows::Integer, ncols::Integer)
-    columns = Array(Any, ncols)
-    for i in 1:ncols
-        columns[i] = DataArray(DEFAULT_COLUMN_ELTYPE, nrows)
-    end
-    cnames = gennames(ncols)
-    return DataFrame(columns, Index(cnames))
-end
-
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::Vector, cnames::Vector, nrows::Integer)
     p = length(column_eltypes)
@@ -377,20 +365,6 @@ end
 ##
 ##############################################################################
 
-function create_new_column_from_scalar(df::DataFrame, val::NAtype)
-    n = max(nrow(df), 1)
-    return DataArray(Array(DEFAULT_COLUMN_ELTYPE, n), trues(n))
-end
-
-function create_new_column_from_scalar(df::DataFrame, val::Any)
-    n = max(nrow(df), 1)
-    col_data = Array(typeof(val), n)
-    for i in 1:n
-        col_data[i] = val
-    end
-    return DataArray(col_data, falses(n))
-end
-
 isnextcol(df::DataFrame, col_ind::Symbol) = true
 function isnextcol(df::DataFrame, col_ind::Real)
     return ncol(df) + 1 == int(col_ind)
@@ -417,6 +391,9 @@ function insert_single_column!(df::DataFrame,
         df.columns[j] = dv
     else
         if typeof(col_ind) <: Symbol
+            if !is_valid_identifier(col_ind)
+                error("$col_ind is not a valid identifier.")
+            end
             push!(df.colindex, col_ind)
             push!(df.columns, dv)
         else
@@ -1045,13 +1022,6 @@ function nonuniquekey(df::AbstractDataFrame)
     res = fill(true, nrow(df))
     res[idx] = false
     res
-end
-
-function cleannames!(df::DataFrame)
-    oldnames = map(strip, names(df))
-    newnames = map(n -> replace(n, r"\W", "_"), oldnames)
-    names!(df, newnames)
-    return
 end
 
 ##############################################################################

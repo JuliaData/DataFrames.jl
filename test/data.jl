@@ -26,7 +26,7 @@ module TestData
     @test size(df6, 1) == 4
     @test size(df6, 2) == 3
     @test all(names(df6) .== [:A, :B, :C])
-    @test all(names(df2) .== [:x1, :x2])
+    @test all(names(df2) .== [:x, :x_1])
     @test all(names(df7) .== [:x, :y])
 
     #test_group("ref")
@@ -45,8 +45,8 @@ module TestData
 
     dfc = hcat(df3, df4)
     @test size(dfc, 2) == 3
-    @test all(names(dfc) .== [:x1, :x1_1, :x2])
-    @test isequal(dfc[:x1], df3[:x1])
+    @test all(names(dfc) .== [:x, :x_2, :x_1])
+    @test isequal(dfc[:x], df3[:x])
 
     @test isequal(dfc, [df3 df4])
 
@@ -58,7 +58,7 @@ module TestData
     dfr = vcat(df2, df3)
     @test size(dfr) == (8,2)
     @test all(names(df2) .== names(dfr))
-    @test isna(dfr[8,:x2])
+    @test isna(dfr[8, :x_1])
 
     #test_group("assign")
     df6[3] = @data(["un", "deux", "troix", "quatre"])
