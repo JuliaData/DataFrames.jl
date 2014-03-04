@@ -13,7 +13,7 @@ type Index <: AbstractIndex   # an OrderedDict would be nice here...
 end
 function Index(x::Vector{Symbol})
     for n in x
-        if !isidentifier(n)
+        if !is_valid_identifier(n)
             error("Names must be valid identifiers.")
         end
     end
@@ -32,7 +32,7 @@ function names!(x::Index, nm::Vector{Symbol})
         error("Lengths don't match.")
     end
     for n in nm
-        if !isidentifier(n)
+        if !is_valid_identifier(n)
             error("Names must be valid identifiers.")
         end
     end
@@ -50,7 +50,7 @@ function rename!(x::Index, nms)
             if haskey(x, to)
                 error("Tried renaming $from to $to, when $to already exists in the Index.")
             end
-            if !isidentifier(to)
+            if !is_valid_identifier(to)
                 error("Names must be valid identifiers.")
             end
             x.lookup[to] = col = pop!(x.lookup, from)

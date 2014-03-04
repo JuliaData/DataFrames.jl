@@ -4,7 +4,7 @@ const RESERVED_WORDS = ASCIIString["begin", "while", "if", "for", "try",
     "immutable", "ccall", "do", "module", "baremodule", "using", "import",
     "export", "importall", "end", "else", "elseif", "catch", "finally"]
 
-function isidentifier(sym::Symbol)
+function is_valid_identifier(sym::Symbol)
     s = string(sym)
     s == normalize_string(s) && isidentifier(s)
 end
@@ -146,7 +146,7 @@ end
 function gennames(n::Integer)
     res = Array(Symbol, n)
     for i in 1:n
-        res[i] = symbol(@sprintf "x%d" i)
+        res[i] = (i == 1) ? :x : symbol(@sprintf("x_%d", i - 1))
     end
     return res
 end

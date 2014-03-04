@@ -391,7 +391,7 @@ function insert_single_column!(df::DataFrame,
         df.columns[j] = dv
     else
         if typeof(col_ind) <: Symbol
-            if !isidentifier(col_ind)
+            if !is_valid_identifier(col_ind)
                 error("$col_ind is not a valid identifier.")
             end
             push!(df.colindex, col_ind)
