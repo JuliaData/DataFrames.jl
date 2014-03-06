@@ -53,53 +53,53 @@ module TestDataFrame
 
     #test_group("Empty DataFrame constructors")
     df = DataFrame(Int, 10, 3)
-    @assert size(df, 1) == 10
-    @assert size(df, 2) == 3
-    @assert typeof(df[:, 1]) == DataVector{Int}
-    @assert typeof(df[:, 2]) == DataVector{Int}
-    @assert typeof(df[:, 3]) == DataVector{Int}
+    @test size(df, 1) == 10
+    @test size(df, 2) == 3
+    @test typeof(df[:, 1]) == DataVector{Int}
+    @test typeof(df[:, 2]) == DataVector{Int}
+    @test typeof(df[:, 3]) == DataVector{Int}
 
     df = DataFrame({Int, Float64, ASCIIString}, 100)
-    @assert size(df, 1) == 100
-    @assert size(df, 2) == 3
-    @assert typeof(df[:, 1]) == DataVector{Int}
-    @assert typeof(df[:, 2]) == DataVector{Float64}
-    @assert typeof(df[:, 3]) == DataVector{ASCIIString}
+    @test size(df, 1) == 100
+    @test size(df, 2) == 3
+    @test typeof(df[:, 1]) == DataVector{Int}
+    @test typeof(df[:, 2]) == DataVector{Float64}
+    @test typeof(df[:, 3]) == DataVector{ASCIIString}
 
     df = DataFrame({Int, Float64, ASCIIString}, [:A, :B, :C], 100)
-    @assert size(df, 1) == 100
-    @assert size(df, 2) == 3
-    @assert typeof(df[:, 1]) == DataVector{Int}
-    @assert typeof(df[:, 2]) == DataVector{Float64}
-    @assert typeof(df[:, 3]) == DataVector{ASCIIString}
+    @test size(df, 1) == 100
+    @test size(df, 2) == 3
+    @test typeof(df[:, 1]) == DataVector{Int}
+    @test typeof(df[:, 2]) == DataVector{Float64}
+    @test typeof(df[:, 3]) == DataVector{ASCIIString}
 
     df = convert(DataFrame, zeros(10, 5))
-    @assert size(df, 1) == 10
-    @assert size(df, 2) == 5
-    @assert typeof(df[:, 1]) == Vector{Float64}
+    @test size(df, 1) == 10
+    @test size(df, 2) == 5
+    @test typeof(df[:, 1]) == Vector{Float64}
 
     df = convert(DataFrame, ones(10, 5))
-    @assert size(df, 1) == 10
-    @assert size(df, 2) == 5
-    @assert typeof(df[:, 1]) == Vector{Float64}
+    @test size(df, 1) == 10
+    @test size(df, 2) == 5
+    @test typeof(df[:, 1]) == Vector{Float64}
 
     df = convert(DataFrame, eye(10, 5))
-    @assert size(df, 1) == 10
-    @assert size(df, 2) == 5
-    @assert typeof(df[:, 1]) == Vector{Float64}
+    @test size(df, 1) == 10
+    @test size(df, 2) == 5
+    @test typeof(df[:, 1]) == Vector{Float64}
 
     #test_group("Other DataFrame constructors")
     df = DataFrame([{:a=>1, :b=>'c'}, {:a=>3, :b=>'d'}, {:a=>5}])
-    @assert size(df, 1) == 3
-    @assert size(df, 2) == 2
-    @assert typeof(df[:,:a]) == DataVector{Int}
-    @assert typeof(df[:,:b]) == DataVector{Char}
+    @test size(df, 1) == 3
+    @test size(df, 2) == 2
+    @test typeof(df[:,:a]) == DataVector{Int}
+    @test typeof(df[:,:b]) == DataVector{Char}
 
     df = DataFrame([{:a=>1, :b=>'c'}, {:a=>3, :b=>'d'}, {:a=>5}], [:a, :b])
-    @assert size(df, 1) == 3
-    @assert size(df, 2) == 2
-    @assert typeof(df[:,:a]) == DataVector{Int}
-    @assert typeof(df[:,:b]) == DataVector{Char}
+    @test size(df, 1) == 3
+    @test size(df, 2) == 2
+    @test typeof(df[:,:a]) == DataVector{Int}
+    @test typeof(df[:,:b]) == DataVector{Char}
 
     data = {:A => [1, 2], :C => [:1, :2], :B => [3, 4]}
     df = DataFrame(data)
@@ -112,11 +112,11 @@ module TestDataFrame
 
     # zero-row dataframe and subdataframe test
     df = DataFrame(x=[], y=[])
-    @assert nrow(df) == 0
+    @test nrow(df) == 0
     df = DataFrame(x=[1:3], y=[3:5])
     sdf = sub(df, df[:x] .== 4)
-    @assert size(sdf, 1) == 0
+    @test size(sdf, 1) == 0
 
-    @assert hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
-    @assert hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
+    @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
+    @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
 end

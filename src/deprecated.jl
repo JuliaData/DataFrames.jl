@@ -22,7 +22,6 @@ Base.@deprecate stack_df stackdf
 Base.@deprecate pivot_table pivottable
 
 
-
 const DEFAULT_COLUMN_ELTYPE = Float64
 function DataFrame(nrows::Integer, ncols::Integer)
     depwarn("DataFrame(::Integer, ::Integer) is deprecated", :DataFrame)
