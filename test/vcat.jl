@@ -3,7 +3,7 @@ module TestVcat
     using DataArrays
     using DataFrames
 
-    null_df = DataFrame(0, 0)
+    null_df = DataFrame(Int, 0, 0)
     df = DataFrame(Int, 4, 3)
 
     # Assignment of rows
