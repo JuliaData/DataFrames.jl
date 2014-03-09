@@ -260,4 +260,16 @@ module TestIO
     @test typeof(df[:b]) == DataArray{UTF8String,1}
     @test df[:b][1] == "T"
     @test df[:b][2] == "FALSE"
+
+    # Readtable ignorepadding argument
+    io = IOBuffer("A , \tB  , C\n1 , \t2, 3\n")
+    @test readtable(io, ignorepadding=true) == DataFrame(A=1, B=2, C=3)
+
+    # Readtable name normalization
+    abnormal = "\u212b"
+    ns = [:Å, :B_C, :_end]
+    @test !in(symbol(abnormal), ns)
+
+    io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
+    @test names(readtable(io)) == ns
 end

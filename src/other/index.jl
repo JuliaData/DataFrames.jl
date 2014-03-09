@@ -11,8 +11,13 @@ type Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Indices}      # name => names array position
     names::Vector{Symbol}
 end
-function Index{T <: Symbol}(x::Vector{T})
-    x = make_unique(convert(Vector{Symbol}, x))
+function Index(x::Vector{Symbol})
+    for n in x
+        if !is_valid_identifier(n)
+            error("Names must be valid identifiers.")
+        end
+    end
+    x = make_unique(x)
     Index(Dict{Symbol, Indices}(tuple(x...), tuple([1:length(x)]...)), x)
 end
 Index() = Index(Dict{Symbol, Indices}(), Symbol[])
@@ -22,10 +27,14 @@ Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 
-# I think this should be Vector{T <: Symbol}
 function names!(x::Index, nm::Vector{Symbol})
     if length(nm) != length(x)
-        error("lengths don't match.")
+        error("Lengths don't match.")
+    end
+    for n in nm
+        if !is_valid_identifier(n)
+            error("Names must be valid identifiers.")
+        end
     end
     for i in 1:length(nm)
         delete!(x.lookup, x.names[i])
@@ -40,6 +49,9 @@ function rename!(x::Index, nms)
         if haskey(x, from)
             if haskey(x, to)
                 error("Tried renaming $from to $to, when $to already exists in the Index.")
+            end
+            if !is_valid_identifier(to)
+                error("Names must be valid identifiers.")
             end
             x.lookup[to] = col = pop!(x.lookup, from)
             if !isa(col, Array)
