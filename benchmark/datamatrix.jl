@@ -1,12 +1,12 @@
 a = eye(100)
 b = eye(100)
 
-dm_a = dataeye(100)
-dm_b = dataeye(100)
+dm_a = data(a)
+dm_b = data(b)
 
-dm_a_na = dataeye(100)
+dm_a_na = copy(dm_a)
 dm_a_na[:, :] = NA
-dm_b_na = dataeye(100)
+dm_b_na = copy(dm_b)
 dm_b_na[:, :] = NA
 
 f1() = *(a, b)
