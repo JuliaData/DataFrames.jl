@@ -5,10 +5,9 @@
 using DataFrames
 using Benchmark
 
-benchmarks = ["benchmarks/datavector.jl",
-              "benchmarks/datamatrix.jl",
-              "benchmarks/io.jl"]
-#              "benchmarks/datastreams.jl"]
+benchmarks = ["datavector.jl",
+              "datamatrix.jl",
+              "io.jl"]
 
 # TODO: Print summary to stdout_stream, while printing results
 #       to file with appends.
