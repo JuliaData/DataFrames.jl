@@ -161,4 +161,13 @@ module TestIndexing
             df[row_index, column_index] = DataArray([1 + 0im, 2 + 1im])
         end
     end
+
+    #
+    # Insert single column
+    #
+
+    df[symbol("c")] = 1:2
+    @test_throws df[symbol("\u212b")] = 1:2
+    @test_throws df[symbol("end")] = 1:2
+    @test_throws df[symbol("1a")] = 1:2
 end

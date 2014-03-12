@@ -8,15 +8,18 @@ module TestRDA
         # save(df, file='minimal.rda')
 
         # df['int'] = c(1L, 2L)
-        # df['logi'] = c(T, F)
+        # df['logi'] = c(TRUE, FALSE)
         # df['chr'] = c('ab', 'c')
-        # df['factor'] = factor(df[['chr']])
+        # df['factor'] = factor(df$chr)
         # #utf=c('Ж', '∰')) R handles it, read_rda doesn't.
         # save(df, file='types.rda')
 
         # df[2, ] = NA
         # df['chr'] = NULL  # NA characters breaking read_rda
         # save(df, file='NAs.rda')
+
+        # names(df) = c('end', '!', '1', '%_B*\tC*')
+        # save(df, file='names.rda')
 
     testdir = dirname(@__FILE__)
 
@@ -32,4 +35,7 @@ module TestRDA
     df[2, :] = NA
     df = df[:, [:num, :int, :logi, :factor]]  # (NA) chr breaks read_rda
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs.rda")["df"]), df)
+
+    rda_names = names(DataFrame(read_rda("$testdir/data/RDA/names.rda")["df"]))
+    @test rda_names == [:_end, :x!, :x1, :B_C]
 end
