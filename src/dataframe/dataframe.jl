@@ -1085,3 +1085,6 @@ function Base.convert(::Type{DataFrame}, A::Matrix)
     end
     return DataFrame(cols, Index(gennames(n)))
 end
+
+function nullable!(colnames::Array{Symbol,1},df::AbstractDataFrame)=  (for i in colnames df[i]=DataArray(df[i]) end)
+function nullable!(colnums::Array{Int,1},df::AbstractDataFrame)= (for i in colnums df[i]=DataArray(df[i]) end)
