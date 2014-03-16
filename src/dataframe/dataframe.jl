@@ -1077,11 +1077,11 @@ function Base.append!(adf1::AbstractDataFrame,
    return adf1
 end
 
-function Base.convert(::Type{DataFrame}, A::Matrix, cn::Vector = gennames(size(A, 2)))
+function Base.convert(::Type{DataFrame}, A::Matrix)
     n = size(A, 2)
     cols = Array(Any, n)
     for i in 1:n
-        cols[i] = DataArray(A[:, i])
+        cols[i] = A[:, i]
     end
-    return DataFrame(cols, Index(cn))
+    return DataFrame(cols, Index(gennames(n)))
 end
