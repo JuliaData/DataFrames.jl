@@ -28,7 +28,7 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     dv = PooledDataArray(df[cols[ncols]])
     # if there are NAs, add 1 to the refs to avoid underflows in x later
     dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    x = copy(dv.refs) + dv_has_nas
+    x = copy(dv.refs) .+ dv_has_nas
     # also compute the number of groups, which is the product of the set lengths
     ngroups = length(dv.pool) + dv_has_nas
     # if there's more than 1 column, do roughly the same thing repeatedly
@@ -44,7 +44,7 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     (idx, starts) = DataArrays.groupsort_indexer(x, ngroups)
     # Remove zero-length groupings
     starts = _uniqueofsorted(starts)
-    ends = [starts[2:end] - 1]
+    ends = [starts[2:end] .- 1]
     GroupedDataFrame(df, cols, idx, starts[1:end-1], ends)
 end
 groupby(d::AbstractDataFrame, cols) = groupby(d, [cols])

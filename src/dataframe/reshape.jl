@@ -133,7 +133,7 @@ end
 function Base.getindex(v::StackedVector,i::Real)
     lengths = [length(x)::Int for x in v.components]
     cumlengths = [0, cumsum(lengths)]
-    j = searchsortedlast(cumlengths + 1, i)
+    j = searchsortedlast(cumlengths .+ 1, i)
     if j > length(cumlengths)
         error("indexing bounds error")
     end
@@ -165,7 +165,7 @@ Base.repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
 DataArrays.PooledDataArray(v::StackedVector) = PooledDataArray(v[:]) # could be more efficient
 
 function Base.getindex{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
-    j = mod(i - 1, length(v.parent)) + 1
+    j = mod(i .- 1, length(v.parent)) .+ 1
     v.parent[j]
 end
 function Base.getindex{T}(v::RepeatedVector{T},i::Real)
@@ -197,7 +197,7 @@ function Base.getindex{T}(v::EachRepeatedVector{T},i::Real)
     v.parent[j]
 end
 function Base.getindex{T,I<:Real}(v::EachRepeatedVector{T},i::AbstractVector{I})
-    j = div(i - 1, v.n) + 1
+    j = div(i .- 1, v.n) .+ 1
     v.parent[j]
 end
 Base.getindex(v::EachRepeatedVector,i::Union(Ranges, Vector{Bool}, BitVector)) = getindex(v, [i])

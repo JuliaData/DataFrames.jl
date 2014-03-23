@@ -79,8 +79,8 @@ function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
     # with a merged pool that "keys" the combination of column values.
     # The pools of the result don't really mean anything.
     dv1, dv2 = PooledDataVecs(df1[1], df2[1])
-    refs1 = dv1.refs + 1   # the + 1 handles NA's
-    refs2 = dv2.refs + 1
+    refs1 = dv1.refs .+ 1   # the + 1 handles NA's
+    refs2 = dv2.refs .+ 1
     ngroups = length(dv1.pool) + 1
     for j = 2:ncol(df1)
         dv1, dv2 = PooledDataVecs(df1[j], df2[j])
