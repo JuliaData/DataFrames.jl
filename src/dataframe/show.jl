@@ -450,7 +450,7 @@ function Base.show(io::IO,
     maxwidths = getmaxwidths(adf, rowindices1, rowindices2, rowlabel)
     width = getprintedwidth(maxwidths)
     if width > Base.tty_cols() && !splitchunks
-        column_summary(io, adf)
+        showcols(io, adf)
     else
         showrows(io,
                  adf,
@@ -606,8 +606,8 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' column_summary(df, true)
-function column_summary(io::IO, adf::AbstractDataFrame) # -> Nothing
+#' showcols(df, true)
+function showcols(io::IO, adf::AbstractDataFrame) # -> Nothing
     println(io, summary(adf))
     metadata = DataFrame(Name = names(adf),
                          Eltype = eltypes(adf),
@@ -615,6 +615,8 @@ function column_summary(io::IO, adf::AbstractDataFrame) # -> Nothing
     showall(io, metadata, true, symbol("Col #"), false)
     return
 end
+
+showcols(adf::AbstractDataFrame) = showcols(STDOUT, adf) # -> Nothing
 
 #' @exported
 #' @description
