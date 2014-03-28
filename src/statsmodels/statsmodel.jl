@@ -76,6 +76,16 @@ function StatsBase.coeftable(model::DataFrameModels)
 end
 
 # show function that delegates to coeftable
-function show(io::IO, model::DataFrameModels)
-    print(io, "$(typeof(model)):\n\nCoefficients:", coeftable(model))
+function Base.show(io::IO, model::DataFrameModels)
+    try
+        ct = coeftable(model)
+        println(io, "$(typeof(model)):\n\nCoefficients:")
+        show(io, ct)
+    catch e
+        if isa(e, String) && beginswith(e, "coeftable is not defined")
+            show(io, model.model)
+        else
+            rethrow(e)
+        end
+    end
 end
