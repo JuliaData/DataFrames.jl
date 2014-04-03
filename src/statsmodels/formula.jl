@@ -196,6 +196,7 @@ contr_treatment(n::Integer,contrasts::Bool) = contr_treatment(n,contrasts,false,
 contr_treatment(n::Integer) = contr_treatment(n,true,false,1)
 cols(v::PooledDataVector) = contr_treatment(length(v.pool))[v.refs,:]
 cols(v::DataVector) = reshape(float64(v.data), (length(v),1))
+cols(v::Vector) = float64(v)
 
 function isfe(ex::Expr)                 # true for fixed-effects terms
     if ex.head != :call error("Non-call expression encountered") end
