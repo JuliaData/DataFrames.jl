@@ -72,7 +72,7 @@ export @~,
        ncol,
        nonunique,
        nrow,
-       nullable!
+       nullable!,
        order,
        pool,
        pool!,
