@@ -1,4 +1,5 @@
 module TestData
+    importall Base # so that we get warnings for conflicts
     using Base.Test
     using DataArrays
     using DataFrames

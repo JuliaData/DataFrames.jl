@@ -25,10 +25,8 @@ using SortingAlgorithms
 ##
 ##############################################################################
 
-importall Base
-importall StatsBase
 import Base: Sort, Order
-import Base.Sort: sort, sort!, Algorithm, defalg, issorted
+import Base.Sort: sort, sort!, sortperm, sortby, sortby!, Algorithm, defalg, issorted
 import Base.Order: Ordering, By, Lt, Perm, Forward, lt, ord
 import Base.AsyncStream
 
@@ -64,7 +62,6 @@ export @~,
        interaction_design_matrix,
        loaddf,
        matrix,
-       merge,
        model_response,
        ModelFrame,
        ModelMatrix,

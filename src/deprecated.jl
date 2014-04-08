@@ -6,6 +6,7 @@ Base.@deprecate cbind hcat
 Base.@deprecate read_table readtable
 Base.@deprecate print_table printtable
 Base.@deprecate write_table writetable
+import Base.merge
 Base.@deprecate merge(df1::AbstractDataFrame, df2::AbstractDataFrame; on::Any = nothing, kind::Symbol = :inner) Base.join
 Base.@deprecate colnames(adf::AbstractDataFrame) Base.names
 Base.@deprecate colnames!(adf::AbstractDataFrame, vals) names!
