@@ -1,6 +1,5 @@
 module TestIteration
     using Base.Test
-    using DataArrays
     using DataFrames
 
     dv = @data([1, 2, NA])

@@ -1,6 +1,5 @@
 module TestFormula
     using Base.Test
-    using DataArrays
     using DataFrames
 
     # TODO:

@@ -1,6 +1,5 @@
 module TestIO
     using Base.Test
-    using DataArrays
     using DataFrames
 
     #test_group("Confirm that we can read various file types.")

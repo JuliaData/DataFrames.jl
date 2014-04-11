@@ -1,6 +1,5 @@
 module TestUtils
     using Base.Test
-    using DataArrays
     using DataFrames
 
     macro testid(s::String, b::Bool)

@@ -1,6 +1,5 @@
 module TestVcat
     using Base.Test
-    using DataArrays
     using DataFrames
 
     null_df = DataFrame(Int, 0, 0)

@@ -1,6 +1,5 @@
 module TestIndexing
     using Base.Test
-    using DataArrays
     using DataFrames
 
     #

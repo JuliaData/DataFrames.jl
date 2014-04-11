@@ -283,9 +283,9 @@ inherits(x, clnm::ASCIIString) = any(class(x) .== clnm)
 Base.names(v::RVEC) = has(v.attr, "names") ? v.attr["names"].data : Array(ASCIIString,0)
 row_names(v::RVEC) = has(v.attr, "row.names") ? v.attr["row.names"].data : Array(ASCIIString,0)
 
-data(rl::RLogical) = DataArray(bitunpack(rl.data), rl.missng)
-data(rn::RNumeric) = DataArray(rn.data, convert(BitArray, isnan(rn.data)))
-function data(ri::RInteger)
+DataArrays.data(rl::RLogical) = DataArray(bitunpack(rl.data), rl.missng)
+DataArrays.data(rn::RNumeric) = DataArray(rn.data, convert(BitArray, isnan(rn.data)))
+function DataArrays.data(ri::RInteger)
     dd = ri.data
     msng = dd .== R_NA_INT32
     if !inherits(ri, "factor") return DataArray(dd, msng) end
@@ -300,8 +300,8 @@ function data(ri::RInteger)
     PooledDataArray(DataArrays.RefArray(refs), pool)
 end
 
-data(rs::RString) = DataArray(rs.data, falses(length(rs.data)))
-function data(rc::RComplex)
+DataArrays.data(rs::RString) = DataArray(rs.data, falses(length(rs.data)))
+function DataArrays.data(rc::RComplex)
     DataArray(rc.data, BitArray(real(rc.data) .== R_NA_FLOAT64) |
               BitArray(imag(rc.data) .== R_NA_FLOAT64))
 end
