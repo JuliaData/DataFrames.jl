@@ -1,7 +1,6 @@
 module TestJoin
     using Base.Test
     using DataFrames
-    using DataArrays
 
     name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
     job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])

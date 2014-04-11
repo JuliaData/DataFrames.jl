@@ -1,6 +1,5 @@
 module TestConversions
     using Base.Test
-    using DataArrays
     using DataFrames
 
     df = DataFrame()

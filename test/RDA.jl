@@ -1,6 +1,5 @@
 module TestRDA
     using Base.Test
-    using DataArrays
     using DataFrames
 
     # R code generating test .rdas

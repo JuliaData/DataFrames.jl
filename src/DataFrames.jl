@@ -1,10 +1,3 @@
-# Note that the two calls to using Stats in this file are
-# strictly required: one pulls the names into DataFrames
-# for easy access within the module, whereas the other call
-# pushes those names into Main.
-using StatsBase
-using DataArrays
-
 module DataFrames
 
 ##############################################################################
@@ -14,9 +7,10 @@ module DataFrames
 ##############################################################################
 
 using Base.Intrinsics
-using DataArrays
+using Reexport
+@reexport using StatsBase
+@reexport using DataArrays
 using GZip
-using StatsBase
 using SortingAlgorithms
 
 ##############################################################################
