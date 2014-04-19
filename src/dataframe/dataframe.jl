@@ -379,12 +379,9 @@ end
 function insert_single_column!(df::DataFrame,
                                dv::AbstractVector,
                                col_ind::ColumnIndex)
-    dv_n, df_n = length(dv), nrow(df)
-    if df_n != 0
-        if dv_n != df_n
-            #dv = repeat(dv, df_n)
-            error("New columns must have the same length as old columns")
-        end
+
+    if ncol(df) != 0 && nrow(df) != length(dv)
+        error("New columns must have the same length as old columns")
     end
     if haskey(df.colindex, col_ind)
         j = df.colindex[col_ind]
@@ -411,18 +408,12 @@ end
 
 # Will automatically enlarge a scalar to a DataVector if needed
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
-    if nrow(df) <= 1
-        dv = DataArray([v], falses(1))
-        insert_single_column!(df, dv, col_ind)
-        return dv
-    else
-        try
-            df.columns[df.colindex[col_ind]][row_ind] = v
-            return v
-        catch
-            df.columns[df.colindex[col_ind]][row_ind] = NA
-            return NA
-        end
+    try
+        df.columns[df.colindex[col_ind]][row_ind] = v
+        return v
+    catch
+        df.columns[df.colindex[col_ind]][row_ind] = NA
+        return NA
     end
 end
 
@@ -431,7 +422,7 @@ upgrade_vector(v::Ranges) = DataArray([v], falses(length(v)))
 upgrade_vector(v::BitVector) = DataArray(convert(Array{Bool}, v), falses(length(v)))
 upgrade_vector(adv::AbstractDataArray) = adv
 function upgrade_scalar(df::DataFrame, v::Any)
-    n = max(nrow(df), 1)
+    n = (ncol(df) == 0) ? 1 : nrow(df)
     DataArray(fill(v, n), falses(n))
 end
 
@@ -442,7 +433,7 @@ function Base.setindex!(df::DataFrame,
     insert_single_column!(df, upgrade_vector(v), col_ind)
 end
 
-# df[SingleColumnIndex] = Scalar (EXPANDS TO MAX(NROW(DF), 1))
+# df[SingleColumnIndex] = Scalar (EXPANDS TO NROW(DF) if NCOL(DF) > 0)
 function Base.setindex!(df::DataFrame,
                 v::Any,
                 col_ind::ColumnIndex)
@@ -480,7 +471,7 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
     return dv
 end
 
-# df[MultiColumnIndex] = Scalar (REPEATED FOR EACH COLUMN; EXPANDS TO MAX(NROW(DF), 1))
+# df[MultiColumnIndex] = Scalar (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(DF) if NCOL(DF) > 0)
 function Base.setindex!(df::DataFrame,
                 val::Any,
                 col_inds::AbstractVector{Bool})
@@ -504,7 +495,7 @@ function Base.setindex!(df::DataFrame,
     insert_single_entry!(df, v, row_ind, col_ind)
 end
 
-# df[SingleRowIndex, MultiColumnIndex] = Scalar (EXPANDS TO MAX(NROW(DF), 1))
+# df[SingleRowIndex, MultiColumnIndex] = Scalar
 function Base.setindex!(df::DataFrame,
                 v::Any,
                 row_ind::Real,
@@ -528,7 +519,6 @@ function Base.setindex!(df::DataFrame,
                 col_inds::AbstractVector{Bool})
     setindex!(df, new_df, row_ind, find(col_inds))
 end
-
 function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   new_df::DataFrame,
                                   row_ind::Real,
