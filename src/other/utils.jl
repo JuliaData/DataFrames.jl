@@ -19,16 +19,16 @@ function isidentifier(s::String)
     if n == 0 || in(s, RESERVED_WORDS)
         return false
     end
-    i = 1
+    firstchar = true
     for c in s
-        if i == 1
+        if firstchar
             if !(isalpha(c) || c == '_')
                 return false
             end
+            firstchar = false
         elseif !(isalpha(c) || isdigit(c) || c == '_' || c == '!')
             return false
         end
-        i += 1
     end
     return true
 end
