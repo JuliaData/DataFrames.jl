@@ -166,7 +166,7 @@ module TestIndexing
     #
 
     df[symbol("c")] = 1:2
-    @test_throws df[symbol("\u212b")] = 1:2
-    @test_throws df[symbol("end")] = 1:2
-    @test_throws df[symbol("1a")] = 1:2
+    @test_throws ErrorException df[symbol("\u212b")] = 1:2
+    @test_throws ErrorException df[symbol("end")] = 1:2
+    @test_throws ErrorException df[symbol("1a")] = 1:2
 end

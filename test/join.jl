@@ -52,5 +52,5 @@ module TestJoin
     @test size(join(df1, df1, kind = :cross)) == (4, 4)
 
     # Cross joins don't take keys
-    @test_throws join(df1, df2, on = :A, kind = :cross)
+    @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
 end
