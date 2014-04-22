@@ -375,16 +375,12 @@ function nextcolname(df::DataFrame)
 end
 
 # Will automatically add a new column if needed
-# TODO: Automatically enlarge column to required size?
 function insert_single_column!(df::DataFrame,
                                dv::AbstractVector,
                                col_ind::ColumnIndex)
-    dv_n, df_n = length(dv), nrow(df)
-    if df_n != 0
-        if dv_n != df_n
-            #dv = repeat(dv, df_n)
-            error("New columns must have the same length as old columns")
-        end
+
+    if ncol(df) != 0 && nrow(df) != length(dv)
+        error("New columns must have the same length as old columns")
     end
     if haskey(df.colindex, col_ind)
         j = df.colindex[col_ind]
@@ -409,20 +405,26 @@ function insert_single_column!(df::DataFrame,
     return dv
 end
 
-# Will automatically enlarge a scalar to a DataVector if needed
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
-    if nrow(df) <= 1
-        dv = DataArray([v], falses(1))
-        insert_single_column!(df, dv, col_ind)
-        return dv
+    if haskey(df.colindex, col_ind)
+        df.columns[df.colindex[col_ind]][row_ind] = v
+        return v
     else
-        try
-            df.columns[df.colindex[col_ind]][row_ind] = v
-            return v
-        catch
-            df.columns[df.colindex[col_ind]][row_ind] = NA
-            return NA
-        end
+        println("Column does not exist: $col_ind")
+        error("Cannot assign to non-existent column")
+    end
+end
+
+function insert_multiple_entries!{T <: Real}(df::DataFrame,
+                                            v::Any,
+                                            row_inds::AbstractVector{T},
+                                            col_ind::ColumnIndex)
+    if haskey(df.colindex, col_ind)
+        df.columns[df.colindex[col_ind]][row_inds] = v
+        return v
+    else
+        println("Column does not exist: $col_ind")
+        error("Cannot assign to non-existent column")
     end
 end
 
@@ -431,7 +433,7 @@ upgrade_vector(v::Ranges) = DataArray([v], falses(length(v)))
 upgrade_vector(v::BitVector) = DataArray(convert(Array{Bool}, v), falses(length(v)))
 upgrade_vector(adv::AbstractDataArray) = adv
 function upgrade_scalar(df::DataFrame, v::Any)
-    n = max(nrow(df), 1)
+    n = (ncol(df) == 0) ? 1 : nrow(df)
     DataArray(fill(v, n), falses(n))
 end
 
@@ -442,7 +444,7 @@ function Base.setindex!(df::DataFrame,
     insert_single_column!(df, upgrade_vector(v), col_ind)
 end
 
-# df[SingleColumnIndex] = Scalar (EXPANDS TO MAX(NROW(DF), 1))
+# df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(DF) if NCOL(DF) > 0)
 function Base.setindex!(df::DataFrame,
                 v::Any,
                 col_ind::ColumnIndex)
@@ -458,8 +460,8 @@ end
 function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   new_df::DataFrame,
                                   col_inds::AbstractVector{T})
-    for i in 1:length(col_inds)
-        insert_single_column!(df, new_df[i], col_inds[i])
+    for j in 1:length(col_inds)
+        insert_single_column!(df, new_df[j], col_inds[j])
     end
     return new_df
 end
@@ -480,7 +482,7 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
     return dv
 end
 
-# df[MultiColumnIndex] = Scalar (REPEATED FOR EACH COLUMN; EXPANDS TO MAX(NROW(DF), 1))
+# df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(DF) if NCOL(DF) > 0)
 function Base.setindex!(df::DataFrame,
                 val::Any,
                 col_inds::AbstractVector{Bool})
@@ -496,7 +498,7 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
     return dv
 end
 
-# df[SingleRowIndex, SingleColumnIndex] = Scalar
+# df[SingleRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame,
                 v::Any,
                 row_ind::Real,
@@ -504,7 +506,7 @@ function Base.setindex!(df::DataFrame,
     insert_single_entry!(df, v, row_ind, col_ind)
 end
 
-# df[SingleRowIndex, MultiColumnIndex] = Scalar (EXPANDS TO MAX(NROW(DF), 1))
+# df[SingleRowIndex, MultiColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame,
                 v::Any,
                 row_ind::Real,
@@ -528,18 +530,12 @@ function Base.setindex!(df::DataFrame,
                 col_inds::AbstractVector{Bool})
     setindex!(df, new_df, row_ind, find(col_inds))
 end
-
 function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   new_df::DataFrame,
                                   row_ind::Real,
                                   col_inds::AbstractVector{T})
     for j in 1:length(col_inds)
-        col_ind = col_inds[j]
-        if haskey(df.colindex, col_ind)
-            df.columns[df.colindex[col_ind]][row_ind] = new_df[j][1]
-        else
-            error("Cannot assign into a non-existent position")
-        end
+        insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
     end
     return new_df
 end
@@ -555,16 +551,11 @@ function Base.setindex!{T <: Real}(df::DataFrame,
                            v::AbstractVector,
                            row_inds::AbstractVector{T},
                            col_ind::ColumnIndex)
-    dv = upgrade_vector(v)
-    if haskey(df.colindex, col_ind)
-        df.columns[df.colindex[col_ind]][row_inds] = dv
-    else
-        error("Cannot assign into a non-existent position")
-    end
-    return dv
+    insert_multiple_entries!(df, v, row_inds, col_ind)
+    return v
 end
 
-# df[MultiRowIndex, SingleColumnIndex] = Single Value
+# df[MultiRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame,
                 v::Any,
                 row_inds::AbstractVector{Bool},
@@ -575,17 +566,8 @@ function Base.setindex!{T <: Real}(df::DataFrame,
                            v::Any,
                            row_inds::AbstractVector{T},
                            col_ind::ColumnIndex)
-    if haskey(df.colindex, col_ind)
-        try
-            df.columns[df.colindex[col_ind]][row_inds] = v
-            return v
-        catch
-            df.columns[df.colindex[col_ind]][row_inds] = NA
-            return NA
-        end
-    else
-        error("Cannot assign into a non-existent position")
-    end
+    insert_multiple_entries!(df, v, row_inds, col_ind)
+    return v
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = DataFrame
@@ -612,12 +594,7 @@ function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              row_inds::AbstractVector{R},
                                              col_inds::AbstractVector{T})
     for j in 1:length(col_inds)
-        col_ind = col_inds[j]
-        if haskey(df.colindex, col_ind)
-            df.columns[df.colindex[col_ind]][row_inds] = new_df[:, j]
-        else
-            error("Cannot assign into a non-existent position")
-        end
+        insert_multiple_entries!(df, new_df[:, j], row_inds, col_inds[j])
     end
     return new_df
 end
@@ -645,16 +622,10 @@ function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              v::AbstractVector,
                                              row_inds::AbstractVector{R},
                                              col_inds::AbstractVector{T})
-    dv = upgrade_vector(v)
-    for j in 1:length(col_inds)
-        col_ind = col_inds[j]
-        if haskey(df.colindex, col_ind)
-            df.columns[df.colindex[col_ind]][row_inds] = dv
-        else
-            error("Cannot assign into a non-existent position")
-        end
+    for col_ind in col_inds
+        insert_multiple_entries!(df, v, row_inds, col_ind)
     end
-    return dv
+    return v
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = Single Item
@@ -680,19 +651,8 @@ function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              v::Any,
                                              row_inds::AbstractVector{R},
                                              col_inds::AbstractVector{T})
-    for j in 1:length(col_inds)
-        col_ind = col_inds[j]
-        if haskey(df.colindex, col_ind)
-            try
-                df.columns[df.colindex[col_ind]][row_inds] = v
-                return v
-            catch
-                df.columns[df.colindex[col_ind]][row_inds] = NA
-                return NA
-            end
-        else
-            error("Cannot assign into a non-existent position")
-        end
+    for col_ind in col_inds
+        insert_multiple_entries!(df, v, row_inds, col_ind)
     end
 end
 

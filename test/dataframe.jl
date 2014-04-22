@@ -49,6 +49,22 @@ module TestDataFrame
     @test names(z2) == [:a, :a_1, :b]
 
     #test_group("DataFrame assignment")
+    # Insert single column
+    x[symbol("c")] = 1:3
+    @test_throws ErrorException x[symbol("\u212b")] = 1:3
+    @test_throws ErrorException x[symbol("end")] = 1:3
+    @test_throws ErrorException x[symbol("1a")] = 1:3
+
+    x0 = x[[], :]
+    @test_throws ErrorException x0[:d] = [1]
+    @test_throws ErrorException x0[:d] = 1:3
+
+    # Insert single value
+    x[:d] = 3
+    @test x[:d] == [3, 3, 3]
+
+    x0[:d] = 3
+    @test x0[:d] == Int[]
 
     #test_group("Empty DataFrame constructors")
     df = DataFrame(Int, 10, 3)
