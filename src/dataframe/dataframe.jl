@@ -463,7 +463,7 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
     for j in 1:length(col_inds)
         insert_single_column!(df, new_df[j], col_inds[j])
     end
-    return new_df
+    return df
 end
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
@@ -479,7 +479,7 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
     for col_ind in col_inds
         insert_single_column!(df, dv, col_ind)
     end
-    return dv
+    return df
 end
 
 # df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(DF) if NCOL(DF) > 0)
@@ -495,7 +495,7 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
     for col_ind in col_inds
         insert_single_column!(df, dv, col_ind)
     end
-    return dv
+    return df
 end
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
@@ -520,7 +520,7 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
     for col_ind in col_inds
         insert_single_entry!(df, v, row_ind, col_ind)
     end
-    return v
+    return df
 end
 
 # df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
@@ -537,7 +537,7 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
     for j in 1:length(col_inds)
         insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
     end
-    return new_df
+    return df
 end
 
 # df[MultiRowIndex, SingleColumnIndex] = AbstractVector
@@ -552,7 +552,7 @@ function Base.setindex!{T <: Real}(df::DataFrame,
                            row_inds::AbstractVector{T},
                            col_ind::ColumnIndex)
     insert_multiple_entries!(df, v, row_inds, col_ind)
-    return v
+    return df
 end
 
 # df[MultiRowIndex, SingleColumnIndex] = Single Item
@@ -567,7 +567,7 @@ function Base.setindex!{T <: Real}(df::DataFrame,
                            row_inds::AbstractVector{T},
                            col_ind::ColumnIndex)
     insert_multiple_entries!(df, v, row_inds, col_ind)
-    return v
+    return df
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = DataFrame
@@ -596,7 +596,7 @@ function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
     for j in 1:length(col_inds)
         insert_multiple_entries!(df, new_df[:, j], row_inds, col_inds[j])
     end
-    return new_df
+    return df
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = AbstractVector
@@ -625,7 +625,7 @@ function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
     for col_ind in col_inds
         insert_multiple_entries!(df, v, row_inds, col_ind)
     end
-    return v
+    return df
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = Single Item
@@ -654,6 +654,7 @@ function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
     for col_ind in col_inds
         insert_multiple_entries!(df, v, row_inds, col_ind)
     end
+    return df
 end
 
 # Special deletion assignment

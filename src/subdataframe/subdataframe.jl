@@ -45,11 +45,13 @@ function Base.getindex(df::SubDataFrame, rowinds::Any, colinds::Any)
 end
 
 function Base.setindex!(df::SubDataFrame, val::Any, colinds::Any)
-    return df.parent[df.rows, colinds] = val
+    df.parent[df.rows, colinds] = val
+    return df
 end
 
 function Base.setindex!(df::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
-    return df.parent[df.rows[rowinds], colinds] = val
+    df.parent[df.rows[rowinds], colinds] = val
+    return df
 end
 
 function Base.size(df::SubDataFrame)
