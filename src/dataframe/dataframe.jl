@@ -275,7 +275,7 @@ function rename!(df::DataFrame, from::Any, to::Any)
 end
 
 # TODO: Remove these
-nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1]) : 0
+nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1])::Int : 0
 ncol(df::DataFrame) = length(df.colindex)
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
