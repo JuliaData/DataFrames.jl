@@ -124,7 +124,7 @@ module TestData
     df8 = colwise(groupby(df7, :d2), [:sum, :length])
     @test size(df8, 1) == 3
     @test size(df8, 2) == 5
-    @test df8[2, :d1_length] == 8
+    @test df8[2, :d1_length] == 4
 
     df9 = df7 |> groupby([:d2]) |> [:sum, :length]
     @test isequal(df9, df8)
