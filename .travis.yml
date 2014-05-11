@@ -13,4 +13,6 @@ before_install:
     - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 script:
     - julia -e 'versioninfo(); Pkg.init(); Pkg.add("StatsBase"); Pkg.checkout("StatsBase"); Pkg.clone(pwd()); Pkg.checkout("DataArrays")'
-    - julia ./test/runtests.jl
+    - julia --code-coverage ./test/runtests.jl
+after_success:
+    - julia -e 'cd(Pkg.dir("DataFrames")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
