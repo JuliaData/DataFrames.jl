@@ -2,23 +2,11 @@ DataFrames.jl
 =============
 
 [![Build Status](https://travis-ci.org/JuliaStats/DataFrames.jl.png)](https://travis-ci.org/JuliaStats/DataFrames.jl)
+[![Coverage Status](https://coveralls.io/repos/JuliaStats/DataFrames.jl/badge.png?branch=master)](https://coveralls.io/r/JuliaStats/DataFrames.jl?branch=master)
+[![Package Evaluator](http://iainnz.github.io/packages.julialang.org/badges/DataFrames_0.3.svg)](http://iainnz.github.io/packages.julialang.org/?pkg=DataFrames&ver=0.3)
 
 Tools for working with data in Julia. 
 
-# Installation
+**Installation**: at the Julia REPL: `Pkg.add("DataFrames")`
 
-DataFrames.jl is now available from METADATA.jl. To install DataFrames.jl, use the following:
-
-```julia
-Pkg.add("DataFrames")
-```
-
-DataFrames.jl has one main module named `DataFrames`. You can load it as:
-
-```julia
-using DataFrames
-```
-
-# Documentation
-
-See the [online docs](http://juliastats.github.io/DataFrames.jl/) for up-to-date documentation on the DataFrames package.
+**Documentation**: [available here](http://juliastats.github.io/DataFrames.jl/).
