@@ -26,6 +26,7 @@ Base.names(x::Index) = copy(x.names)
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
+Base.(:(==))(x::Index, y::Index) = isequal(x, y)
 
 function names!(x::Index, nm::Vector{Symbol})
     if length(nm) != length(x)

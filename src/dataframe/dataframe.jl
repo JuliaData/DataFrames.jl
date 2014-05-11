@@ -996,7 +996,7 @@ end
 function Base.hash(adf::AbstractDataFrame)
     h = hash(size(adf)) + 1
     for i in 1:size(adf, 2)
-        h = bitmix(h, int(hash(adf[i])))
+        h = hash(adf[i], h)
     end
     return uint(h)
 end
