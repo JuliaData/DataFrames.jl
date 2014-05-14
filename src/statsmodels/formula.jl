@@ -257,7 +257,7 @@ function coefnames(fr::ModelFrame)
             if term.head == :call && term.args[1] == :&
                 a = term.args[2]
                 b = term.args[3]
-                for lev1 in termnames(a, fr.df[a]), lev2 in termnames(a, fr.df[b])
+                for lev1 in termnames(a, fr.df[a]), lev2 in termnames(b, fr.df[b])
                     push!(vnames, string(lev1, " & ", lev2))
                 end
             else
