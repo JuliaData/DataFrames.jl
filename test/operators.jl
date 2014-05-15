@@ -68,7 +68,7 @@ let
 
     ffts = [fft]
 
-    binary_vector_operators = [dot, cor, cov, cor_spearman]
+    binary_vector_operators = [dot, cor, cov, corspearman]
 
     columnar_operators = [colmins, colmaxs, colprods, colsums,
                           colmeans, colmedians, colstds, colvars,

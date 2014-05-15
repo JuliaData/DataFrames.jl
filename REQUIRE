@@ -1,6 +1,6 @@
-julia 0.2-
+julia 0.2- 0.3-
 DataArrays
-Stats
+StatsBase 0.3.8-
 GZip
 Blocks
 SortingAlgorithms
