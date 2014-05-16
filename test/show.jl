@@ -14,5 +14,8 @@ module TestShow
     showall(io, subdf)
     showall(io, subdf, true)
 
+    dfr = DataFrameRow(df, 1)
+    show(io, dfr)
+
     df = DataFrame(A = Array(UTF8String, 3))
 end
