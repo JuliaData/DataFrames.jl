@@ -26,13 +26,11 @@ module TestConstructors
                               0.0 1.0])
     names!(df2, [:x1, :x2])
     @test isequal(df, df2)
-                  
+
     @test isequal(df,
                   convert(DataFrame, [0.0 1.0;
                                       0.0 1.0;
                                       0.0 1.0]))
-    @test isequal(df,
-                  DataFrame(data(zeros(3)), data(ones(3))))
 
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0],
                                 x2 = [1.0, 1.0, 1.0]))
