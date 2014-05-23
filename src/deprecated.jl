@@ -73,6 +73,56 @@ function DataFrame{D <: Associative, T <: String}(ds::Vector{D}, ks::Vector{T})
     DataFrame(ds, map(symbol, ks))
 end
 
+function DataFrame{K, V}(d::Associative{K, V})
+    depwarn("DataFrame(::Vector{Associative}) with broadcasting is deprecated, please remove any reliance on broadcasting",
+            :DataFrame)
+    # Find the first position with maximum length in the Dict.
+    lengths = map(length, values(d))
+    max_length = maximum(lengths)
+    maxpos = findfirst(lengths .== max_length)
+    keymaxlen = keys(d)[maxpos]
+    nrows = max_length
+    # Start with a blank DataFrame
+    df = DataFrame()
+    for (k, v) in d
+        if length(v) == nrows
+            df[k] = v
+        elseif rem(nrows, length(v)) == 0    # nrows is a multiple of length(v)
+            df[k] = vcat(fill(v, div(nrows, length(v)))...)
+        else
+            vec = fill(v[1], nrows)
+            j = 1
+            for i = 1:nrows
+                vec[i] = v[j]
+                j += 1
+                if j > length(v)
+                    j = 1
+                end
+            end
+            df[k] = vec
+        end
+    end
+    df
+end
+
+# If we have a tuple, convert each value in the tuple to a
+# DataVector and then pass the converted columns in, hoping for the best
+function DataFrame(vals::Any...)
+    depwarn("DataFrame(::Any...) is deprecated",
+            :DataFrame)
+    p = length(vals)
+    columns = Array(Any, p)
+    for j in 1:p
+        if isa(vals[j], AbstractDataVector)
+            columns[j] = vals[j]
+        else
+            columns[j] = convert(DataArray, vals[j])
+        end
+    end
+    cnames = gennames(p)
+    DataFrame(columns, Index(cnames))
+end
+
 # Iteration matches that of Associative types (experimental)
 function Base.start(df::AbstractDataFrame)
     depwarn("Default AbstractDataFrame iterator is deprecated, use eachcol(::AbstractDataFrame) instead",

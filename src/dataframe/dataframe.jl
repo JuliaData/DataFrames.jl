@@ -85,37 +85,6 @@ function DataFrame(columns::Vector{Any},
     return DataFrame(columns, Index(cnames))
 end
 
-# TODO: Document these better.
-function DataFrame{K, V}(d::Associative{K, V})
-    # Find the first position with maximum length in the Dict.
-    lengths = map(length, values(d))
-    max_length = maximum(lengths)
-    maxpos = findfirst(lengths .== max_length)
-    keymaxlen = keys(d)[maxpos]
-    nrows = max_length
-    # Start with a blank DataFrame
-    df = DataFrame()
-    for (k, v) in d
-        if length(v) == nrows
-            df[k] = v
-        elseif rem(nrows, length(v)) == 0    # nrows is a multiple of length(v)
-            df[k] = vcat(fill(v, div(nrows, length(v)))...)
-        else
-            vec = fill(v[1], nrows)
-            j = 1
-            for i = 1:nrows
-                vec[i] = v[j]
-                j += 1
-                if j > length(v)
-                    j = 1
-                end
-            end
-            df[k] = vec
-        end
-    end
-    df
-end
-
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
 function DataFrame(d::Dict)
     cnames = sort(Symbol[x for x in keys(d)])
@@ -144,7 +113,7 @@ function DataFrame(d::Dict, cnames::Vector)
     columns = Array(Any, p)
     for j in 1:p
         if length(d[cnames[j]]) != n
-            error("All inputs must have the same length")
+            throw(ArgumentError("All columns must have the same length"))
         end
         columns[j] = DataArray(d[cnames[j]])
     end
@@ -152,8 +121,7 @@ function DataFrame(d::Dict, cnames::Vector)
 end
 
 # Initialize empty DataFrame objects of arbitrary size
-# t is a Type
-function DataFrame(t::Any, nrows::Integer, ncols::Integer)
+function DataFrame(t::Type, nrows::Integer, ncols::Integer)
     columns = Array(Any, ncols)
     for i in 1:ncols
         columns[i] = DataArray(t, nrows)
@@ -205,16 +173,12 @@ end
 
 function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
     #get column eltypes
-    col_eltypes = Any[None for i = 1:length(ks)]
+    col_eltypes = Type[None for _ = 1:length(ks)]
     for d in ds
         for (i,k) in enumerate(ks)
             # TODO: check for user-defined "NA" values, ala pandas
             if haskey(d, k) && !isna(d[k])
-                try
-                    col_eltypes[i] = promote_type(col_eltypes[i], typeof(d[k]))
-                catch
-                    col_eltypes[i] = Any
-                end
+                col_eltypes[i] = promote_type(col_eltypes[i], typeof(d[k]))
             end
         end
     end
@@ -229,23 +193,6 @@ function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
     end
 
     df
-end
-
-# TODO: Remove this.
-# If we have a tuple, convert each value in the tuple to a
-# DataVector and then pass the converted columns in, hoping for the best
-function DataFrame(vals::Any...)
-    p = length(vals)
-    columns = Array(Any, p)
-    for j in 1:p
-        if isa(vals[j], AbstractDataVector)
-            columns[j] = vals[j]
-        else
-            columns[j] = convert(DataArray, vals[j])
-        end
-    end
-    cnames = gennames(p)
-    DataFrame(columns, Index(cnames))
 end
 
 ##############################################################################
@@ -432,6 +379,10 @@ upgrade_vector(v::Vector) = DataArray(v, falses(length(v)))
 upgrade_vector(v::Ranges) = DataArray([v], falses(length(v)))
 upgrade_vector(v::BitVector) = DataArray(convert(Array{Bool}, v), falses(length(v)))
 upgrade_vector(adv::AbstractDataArray) = adv
+function upgrade_scalar(df::DataFrame, v::AbstractArray)
+    msg = "setindex!(::DataFrame, ...) only broadcasts scalars, not arrays"
+    throw(ArgumentError(msg))
+end
 function upgrade_scalar(df::DataFrame, v::Any)
     n = (ncol(df) == 0) ? 1 : nrow(df)
     DataArray(fill(v, n), falses(n))
