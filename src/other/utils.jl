@@ -74,7 +74,7 @@ function makeidentifier(s::String)
         end
     end
 
-    cs = UTF32String(res)
+    cs = utf8(res)
     return in(cs, RESERVED_WORDS) ? "_"*cs : cs
 end
 
