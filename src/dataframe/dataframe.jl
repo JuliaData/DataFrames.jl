@@ -1007,28 +1007,6 @@ nullable!(colnums::Array{Int,1},df::AbstractDataFrame)= (for i in colnums df[i]=
 ##
 ##############################################################################
 
-# array and tuple like collections
-function push!(df::DataFrame, iterable)    
-    if length(iterable) != length(df.columns)
-        msg = "Length of iterable does not match DataFrame column count."
-        throw(ArgumentError(msg))    
-    end
-    i=1
-    for t in iterable
-        try 
-            push!(df.columns[i], t)
-        catch
-            #clean up partial row
-            for j in 1:(i-1)
-                pop!(df.columns[j])
-            end
-            msg = "Error adding $t to column :$(names(df)[i]), possibly due to a type mis-match."
-            throw(ArgumentError(msg))
-        end    
-        i=i+1
-    end
-end
-
 
 function push!(df::DataFrame, associative::Associative{Symbol,Any})    
     if length(associative) != length(df.columns)
@@ -1073,3 +1051,27 @@ function push!{K<:String}(df::DataFrame, associative::Associative{K,Any})
         i=i+1
     end
 end
+
+
+# array and tuple like collections
+function push!(df::DataFrame, iterable::Any)    
+    if length(iterable) != length(df.columns)
+        msg = "Length of iterable does not match DataFrame column count."
+        throw(ArgumentError(msg))    
+    end
+    i=1
+    for t in iterable
+        try 
+            push!(df.columns[i], t)
+        catch
+            #clean up partial row
+            for j in 1:(i-1)
+                pop!(df.columns[j])
+            end
+            msg = "Error adding $t to column :$(names(df)[i]). Possible type mis-match."
+            throw(ArgumentError(msg))
+        end    
+        i=i+1
+    end
+end
+
