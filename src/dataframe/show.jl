@@ -433,7 +433,7 @@ end
 #' show(STDOUT, df, false, "Row #", true)
 function Base.show(io::IO,
                    adf::AbstractDataFrame,
-                   splitchunks::Bool = false,
+                   splitchunks::Bool = true,
                    rowlabel::Symbol = symbol("Row #"),
                    displaysummary::Bool = true) # -> Nothing
     nrows = size(adf, 1)
@@ -482,7 +482,7 @@ end
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' show(df, true)
 function Base.show(adf::AbstractDataFrame,
-                   splitchunks::Bool = false) # -> Nothing
+                   splitchunks::Bool = true) # -> Nothing
     return show(STDOUT, adf, splitchunks)
 end
 
