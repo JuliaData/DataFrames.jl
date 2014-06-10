@@ -134,4 +134,37 @@ module TestDataFrame
 
     @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
     @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
+    
+    
+    # push!(df, row)
+    df=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
+
+    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    push!(dfb, {3,"pear"})
+    @test df==dfb
+
+    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    push!(dfb, (3,"pear"))
+    @test df==dfb
+
+    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    @test_throws ArgumentError push!(dfb, (33.33,"pear"))
+
+    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    @test_throws ArgumentError push!(dfb, ("coconut",22))
+
+    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    push!(dfb, [ :first=>3,:second=>"pear" ])
+    @test df==dfb
+    
+    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    push!(dfb, [ "first"=>3,"second"=>"pear" ])
+    @test df==dfb
+
+    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    @test_throws ArgumentError push!(dfb, [ :first=>true,:second=>false ])
+
+    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+    @test_throws ArgumentError push!(dfb, ["first"=>"chicken", "second"=>"stuff" ])
+
 end

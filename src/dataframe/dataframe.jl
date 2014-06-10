@@ -999,3 +999,77 @@ function Base.convert(::Type{DataFrame}, A::Matrix)
 end
 nullable!(colnames::Array{Symbol,1},df::AbstractDataFrame)=  (for i in colnames df[i]=DataArray(df[i]) end)
 nullable!(colnums::Array{Int,1},df::AbstractDataFrame)= (for i in colnums df[i]=DataArray(df[i]) end)
+
+
+##############################################################################
+##
+## push! a row onto a DataFrame
+##
+##############################################################################
+
+# array and tuple like collections
+function push!(df::DataFrame, iterable)    
+    if length(iterable) != length(df.columns)
+        msg = "Length of iterable does not match DataFrame column count."
+        throw(ArgumentError(msg))    
+    end
+    i=1
+    for t in iterable
+        try 
+            push!(df.columns[i], t)
+        catch
+            #clean up partial row
+            for j in 1:(i-1)
+                pop!(df.columns[j])
+            end
+            msg = "Error adding $t to column :$(names(df)[i]), possibly due to a type mis-match."
+            throw(ArgumentError(msg))
+        end    
+        i=i+1
+    end
+end
+
+
+function push!(df::DataFrame, associative::Associative{Symbol,Any})    
+    if length(associative) != length(df.columns)
+        msg = "Length of iterable does not match DataFrame column count."
+        throw(ArgumentError(msg))    
+    end
+    i=1
+    for nm in names(df)
+        try 
+            push!(df[nm], associative[nm])
+        catch
+            #clean up partial row
+            for j in 1:(i-1)
+                pop!(df[ names(df[j]) ])
+            end
+            msg = "Error adding value to column :$nm."
+            throw(ArgumentError(msg))
+        end    
+        i=i+1
+    end
+end
+
+
+function push!{K<:String}(df::DataFrame, associative::Associative{K,Any}) 
+    if length(associative) != length(df.columns)
+        msg = "Length of iterable does not match DataFrame column count."
+        throw(ArgumentError(msg))    
+    end
+    i=1
+    for nm in names(df)
+        try 
+            push!(df[nm], associative[string(nm)])
+        catch
+            #clean up partial row
+            colnames=[symbol(c) for c in names(df)]
+            for j in 1:(i-1)
+                pop!(df[colnames[j]])
+            end
+            msg = "Error adding value to column :$nm."
+            throw(ArgumentError(msg))
+        end    
+        i=i+1
+    end
+end
