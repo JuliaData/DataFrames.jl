@@ -157,14 +157,19 @@ module TestDataFrame
     push!(dfb, [ :first=>3,:second=>"pear" ])
     @test df==dfb
     
+    df=DataFrame( first=[1,2,3], second=["apple","orange","banana"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, [ "first"=>3,"second"=>"pear" ])
+    push!(dfb, [ "first"=>3,"second"=>"banana" ])
     @test df==dfb
 
+    df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
     @test_throws ArgumentError push!(dfb, [ :first=>true,:second=>false ])
+    @test df0==dfb
 
+    df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
     @test_throws ArgumentError push!(dfb, ["first"=>"chicken", "second"=>"stuff" ])
+    @test df0==dfb
 
 end
