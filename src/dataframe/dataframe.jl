@@ -1008,7 +1008,7 @@ nullable!(colnums::Array{Int,1},df::AbstractDataFrame)= (for i in colnums df[i]=
 ##############################################################################
 
 
-function push!(df::DataFrame, associative::Associative{Symbol,Any})    
+function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})    
     if length(associative) != length(df.columns)
         msg = "Length of iterable does not match DataFrame column count."
         throw(ArgumentError(msg))    
@@ -1030,7 +1030,7 @@ function push!(df::DataFrame, associative::Associative{Symbol,Any})
 end
 
 
-function push!{K<:String}(df::DataFrame, associative::Associative{K,Any}) 
+function Base.push!{K<:String}(df::DataFrame, associative::Associative{K,Any}) 
     if length(associative) != length(df.columns)
         msg = "Length of iterable does not match DataFrame column count."
         throw(ArgumentError(msg))    
@@ -1054,7 +1054,7 @@ end
 
 
 # array and tuple like collections
-function push!(df::DataFrame, iterable::Any)    
+function Base.push!(df::DataFrame, iterable::Any)    
     if length(iterable) != length(df.columns)
         msg = "Length of iterable does not match DataFrame column count."
         throw(ArgumentError(msg))    

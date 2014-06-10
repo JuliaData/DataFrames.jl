@@ -19,7 +19,7 @@ using SortingAlgorithms
 ##
 ##############################################################################
 
-import Base: Sort, Order, push!
+import Base: Sort, Order
 import Base.Sort: sort, sort!, sortperm, sortby, sortby!, Algorithm, defalg, issorted
 import Base.Order: Ordering, By, Lt, Perm, Forward, lt, ord
 import Base.AsyncStream
