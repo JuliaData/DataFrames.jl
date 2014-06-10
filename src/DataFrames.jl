@@ -89,7 +89,8 @@ export @~,
        meltdf,
        pivottable,
        read_rda,
-       vecbind
+       vecbind,
+       push!
 
 ##############################################################################
 ##
