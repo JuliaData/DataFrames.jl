@@ -88,17 +88,18 @@ end
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
 function DataFrame(d::Dict)
     cnames = sort(Symbol[x for x in keys(d)])
+    dnames = collect(keys(d))
     p = length(cnames)
     if p == 0
         return DataFrame()
     end
-    n = length(d[cnames[1]])
+    n = length(d[dnames[1]])
     columns = Array(Any, p)
     for j in 1:p
-        if length(d[cnames[j]]) != n
+        if length(d[dnames[j]]) != n
             throw(ArgumentError("All columns must have the same length"))
         end
-        columns[j] = DataArray(d[cnames[j]])
+        columns[j] = DataArray([d[dnames[j]]])
     end
     return DataFrame(columns, Index(cnames))
 end
