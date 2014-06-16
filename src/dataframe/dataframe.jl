@@ -87,9 +87,8 @@ end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
 function DataFrame(d::Dict)
-    cnames = sort(Symbol[x for x in keys(d)])
-    dnames = collect(keys(d))
-    p = length(cnames)
+    dnames = sort(collect(keys(d)))
+    p = length(dnames)
     if p == 0
         return DataFrame()
     end
@@ -101,6 +100,7 @@ function DataFrame(d::Dict)
         end
         columns[j] = DataArray([d[dnames[j]]])
     end
+    cnames = Symbol[x for x in dnames]
     return DataFrame(columns, Index(cnames))
 end
 
