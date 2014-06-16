@@ -1009,10 +1009,6 @@ nullable!(colnums::Array{Int,1},df::AbstractDataFrame)= (for i in colnums df[i]=
 
 
 function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})    
-    if length(associative) != length(df.columns)
-        msg = "Length of iterable does not match DataFrame column count."
-        throw(ArgumentError(msg))    
-    end
     i=1
     for nm in names(df)
         try 
@@ -1030,18 +1026,14 @@ function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})
 end
 
 
-function Base.push!{K<:String}(df::DataFrame, associative::Associative{K,Any}) 
-    if length(associative) != length(df.columns)
-        msg = "Length of iterable does not match DataFrame column count."
-        throw(ArgumentError(msg))    
-    end
+function Base.push!(df::DataFrame, associative::Associative) 
     i=1
     for nm in names(df)
         try 
             push!(df[nm], associative[string(nm)])
         catch
             #clean up partial row
-            colnames=[symbol(c) for c in names(df)]
+            colnames=[c for c in names(df)]
             for j in 1:(i-1)
                 pop!(df[colnames[j]])
             end
