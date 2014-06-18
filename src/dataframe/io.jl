@@ -1076,7 +1076,8 @@ function Base.writemime(io::IO,
         write(io, "<th>$column_name</th>")
     end
     write(io, "</tr>")
-    for row in 1:min(n, Base.tty_rows())
+    tty_rows, tty_cols = Base.tty_size()
+    for row in 1:min(n, tty_rows)
         write(io, "<tr>")
         write(io, "<th>$row</th>")
         for column_name in cnames

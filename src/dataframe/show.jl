@@ -196,7 +196,7 @@ function getchunkbounds(maxwidths::Vector{Int},
                         splitchunks::Bool) # -> Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
-    availablewidth = Base.tty_cols()
+    _, availablewidth = Base.tty_size()
     if splitchunks
         chunkbounds = [0]
         # Include 2 spaces + 2 | characters for row/col label
@@ -437,7 +437,8 @@ function Base.show(io::IO,
                    rowlabel::Symbol = symbol("Row #"),
                    displaysummary::Bool = true) # -> Nothing
     nrows = size(adf, 1)
-    availableheight = Base.tty_rows() - 5
+    tty_rows, tty_cols = Base.tty_size()
+    availableheight = tty_rows - 5
     nrowssubset = fld(availableheight, 2)
     bound = min(nrowssubset - 1, nrows)
     if nrows <= availableheight
@@ -449,7 +450,7 @@ function Base.show(io::IO,
     end
     maxwidths = getmaxwidths(adf, rowindices1, rowindices2, rowlabel)
     width = getprintedwidth(maxwidths)
-    if width > Base.tty_cols() && !splitchunks
+    if width > tty_cols && !splitchunks
         showcols(io, adf)
     else
         showrows(io,
