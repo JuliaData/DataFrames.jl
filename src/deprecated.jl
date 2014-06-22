@@ -157,7 +157,7 @@ function dict(adf::AbstractDataFrame, flatten::Bool = false)
 end
 
 function DataFrame(d::Dict)
-    depwarn("DataFrame(::Dict) is deprecated, use convert(::DataFrame,d::Dict)")
+    depwarn("DataFrame(::Dict) is deprecated, use convert(::DataFrame,d::Dict)",:convert)
     convert(DataFrame,d)
 end
 
