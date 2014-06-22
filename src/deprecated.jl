@@ -156,6 +156,11 @@ function dict(adf::AbstractDataFrame, flatten::Bool = false)
     return res
 end
 
+function DataFrame(d::Dict)
+    depwarn("DataFrame(::Dict) is deprecated, use convert(::DataFrame,d::Dict)")
+    convert(DataFrame,d)
+end
+
 function pool!(df::AbstractDataFrame, cname::String)
     depwarn("pool!(::AbstractDataFrame, ::String) is deprecated, use pool!(::AbstractDataFrame, ::Symbol) instead", :pool!)
     pool!(df, symbol(cname))

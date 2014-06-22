@@ -21,4 +21,20 @@ module TestConversions
     @test isa(array(df), Matrix{Float64})
     # @test isa(matrix(df, Any), Matrix{Any})
     # @test isa(matrix(df, Int), Matrix{Int})
+
+    a = [1.0,2.0]
+    b = [-0.1,3]
+    c = [-3.1,7]
+    di = ["a" => a, "b" => b, "c" => c ]
+    df = convert(DataFrame,di)
+    @test isa(df,DataFrame)
+    @test names(df) == Symbol[x for x in sort(collect(keys(di)))]
+    @test df[:a] == a
+    @test df[:b] == b
+    @test df[:c] == c
+
+    a = [1.0]
+    di = ["a" => a, "b" => b, "c" => c ]
+    @test_throws ArgumentError convert(DataFrame,di)
+
 end

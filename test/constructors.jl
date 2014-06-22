@@ -48,22 +48,7 @@ module TestConstructors
 
     @test isequal(df, DataFrame([Int, Float64], 2))
 
-    a = [1.0,2.0]
-    b = [-0.1,3]
-    c = [-3.1,7]
-    di = ["a" => a, "b" => b, "c" => c ]
-    df = DataFrame(di)
 
-    @test names(df) == Symbol[x for x in sort(collect(keys(di)))]
-    @test df[:a] == a
-    @test df[:b] == b
-    @test df[:c] == c
 
-    di = ["c" => c, "b" => b, "a" => a ]
-    df = DataFrame(di)
-    @test names(df) == Symbol[x for x in sort(collect(keys(di)))]
 
-    a = [1.0]
-    di = ["a" => a, "b" => b, "c" => c ]
-    @test_throws ArgumentError DataFrame(di)
 end
