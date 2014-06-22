@@ -794,6 +794,18 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
    return df1
 end
 
+function Base.convert(::Type{DataFrame}, A::DataArray)
+    if length(size(A)) > 2
+        error("Not implemented DataFrame with dimension > 2")
+    end
+    n = size(A, 1)
+    cols = Array(Any, n)
+    for i in 1:n
+        cols[i] = A[i, :]
+    end
+    return DataFrame(cols, Index(gennames(n)))
+end
+
 function Base.convert(::Type{DataFrame}, A::Matrix)
     n = size(A, 2)
     cols = Array(Any, n)

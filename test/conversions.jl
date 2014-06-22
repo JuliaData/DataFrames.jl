@@ -17,6 +17,14 @@ module TestConversions
     @test isa(convert(Array{Any}, df), Matrix{Any})
     @test isa(convert(Array{Float64}, df), Matrix{Float64})
 
+    da1 = @data([1 NA 3 4 5 6])
+    df = convert(DataFrame, da1)
+    @test size(df) == (6, 1)
+
+    da2 = @data([1 NA; 3 4; 5 6])
+    df = convert(DataFrame, da2)
+    @test size(df) == (3, 2)
+
     df = DataFrame()
     df[:A] = 1.0:5.0
     df[:B] = 1.0:5.0
