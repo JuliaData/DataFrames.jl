@@ -106,6 +106,8 @@ end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/o explicit column names
 function DataFrame(d::Dict, cnames::Vector)
+    d = convert(Dict{Symbol, eltype(d)[2]}, d)
+    cnames = convert(Vector{Symbol}, cnames)
     p = length(cnames)
     if p == 0
         DataFrame()
