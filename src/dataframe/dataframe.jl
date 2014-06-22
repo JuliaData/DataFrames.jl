@@ -87,7 +87,8 @@ end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
 function DataFrame(d::Dict)
-    cnames = sort(Symbol[x for x in keys(d)])
+    d = convert(Dict{Symbol, Any}, d)
+    cnames = sort([x for x in keys(d)])
     p = length(cnames)
     if p == 0
         return DataFrame()

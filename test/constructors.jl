@@ -47,4 +47,8 @@ module TestConstructors
     @test all(eltypes(df) .== {Int, Float64})
 
     @test isequal(df, DataFrame([Int, Float64], 2))
+
+    df1 = DataFrame({"a" => [1 2], "b" => [3 4]})
+    df2 = DataFrame({:a => [1 2], :b => [3 4]})
+    @test isequal(df1, df2)
 end
