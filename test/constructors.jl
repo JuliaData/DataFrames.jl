@@ -47,12 +47,4 @@ module TestConstructors
     @test all(eltypes(df) .== {Int, Float64})
 
     @test isequal(df, DataFrame([Int, Float64], 2))
-
-    df1 = DataFrame({"a" => [1 2], "b" => [3 4]})
-    df2 = DataFrame({:a => [1 2], :b => [3 4]})
-    df3 = DataFrame({"a" => [1 2], "b" => [3 4]}, ["a", "b"])
-    df4 = DataFrame({:a => [1 2], :b => [3 4]}, ["a", "b"])
-    @test isequal(df1, df2)
-    @test isequal(df1, df3)
-    @test isequal(df1, df4)
 end

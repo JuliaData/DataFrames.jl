@@ -86,7 +86,8 @@ function DataFrame(columns::Vector{Any},
 end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
-function DataFrame(d::Dict)
+import Base.convert
+convert(::Type{DataFrame}, d::Dict) = begin
     d = convert(Dict{Symbol, eltype(d)[2]}, d)
     cnames = sort([x for x in keys(d)])
     p = length(cnames)
@@ -101,7 +102,7 @@ function DataFrame(d::Dict)
         end
         columns[j] = DataArray(d[cnames[j]])
     end
-    return DataFrame(columns, Index(cnames))
+    DataFrame(columns, Index(cnames))
 end
 
 # Pandas' Dict of Vectors -> DataFrame constructor w/o explicit column names
