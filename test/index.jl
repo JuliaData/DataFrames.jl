@@ -50,4 +50,6 @@ Index(Symbol["a"])
 @test_throws ErrorException Index(Symbol["end"])
 @test_throws ErrorException Index(Symbol["1a"])
 
+@test Index(["a"]) == Index([:a])
+
 end

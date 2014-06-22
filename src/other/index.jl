@@ -20,6 +20,18 @@ function Index(x::Vector{Symbol})
     x = make_unique(x)
     Index(Dict{Symbol, Indices}(tuple(x...), tuple([1:length(x)]...)), x)
 end
+function Index(x::Vector)
+    try
+        x = convert(Vector{Symbol}, x)
+    catch error
+        if isa(error, MethodError)
+            error("Names must be able to convert to symbols.")
+        else
+            throw(error)
+        end
+    end
+    Index(x)
+end
 Index() = Index(Dict{Symbol, Indices}(), Symbol[])
 Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = copy(x.names)
