@@ -1069,7 +1069,7 @@ function Base.writemime(io::IO,
                         df::DataFrame)
     n = size(df, 1)
     cnames = names(df)
-    write(io, "<table>")
+    write(io, "<table class=\"data-frame\">")
     write(io, "<tr>")
     write(io, "<th></th>")
     for column_name in cnames
