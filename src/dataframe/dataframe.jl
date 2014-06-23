@@ -649,21 +649,25 @@ Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
 Base.get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
 Base.keys(df::AbstractDataFrame) = keys(index(df))
 Base.values(df::DataFrame) = df.columns
-Base.empty!(df::DataFrame) = DataFrame() # TODO: Make this work right
+Base.empty!(df::DataFrame) = (empty!(df.columns); empty!(df.colindex); df)
 
 Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
 
-function Base.insert!(df::AbstractDataFrame, index::Int, item::Any, name::Any)
-    @assert 0 < index <= ncol(df) + 1
-    df = copy(df)
-    df[name] = item
-    # rearrange:
-    df[[1:index-1, end, index:end-1]]
-end
+function Base.insert!(df::DataFrame, index::Int, item::AbstractVector, name::Symbol)
+    0 < index <= ncol(df) + 1 || error(BoundsError)
+    size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
+    is_valid_identifier(name) || error("$name is not a valid identifier.")
 
-function Base.insert!(df::AbstractDataFrame, df2::AbstractDataFrame)
-    @assert nrow(df) == nrow(df2) || nrow(df) == 0
-    df = copy(df)
+    insert!(df.colindex, index, name)
+    insert!(df.columns, index, item)
+    df
+end
+Base.insert!(df::DataFrame, index::Int, item, name::Symbol) =
+    Base.insert!(df, index, upgrade_scalar(df, item), name)
+
+function Base.insert!(df::DataFrame, df2::AbstractDataFrame)
+    nrow(df) == nrow(df2) || nrow(df) == 0 || error("number of rows does not match")
+
     for n in names(df2)
         df[n] = df2[n]
     end

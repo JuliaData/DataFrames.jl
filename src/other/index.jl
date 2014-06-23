@@ -85,7 +85,7 @@ function Base.delete!(x::Index, idx::Integer)
         x.lookup[x.names[i]] = i - 1
     end
     delete!(x.lookup, x.names[idx])
-    splice!(x.names, idx)
+    deleteat!(x.names, idx)
     return x
 end
 
@@ -95,6 +95,22 @@ function Base.delete!(x::Index, nm::Symbol)
     end
     idx = x.lookup[nm]
     return delete!(x, idx)
+end
+
+function Base.empty!(x::Index)
+    empty!(x.lookup)
+    empty!(x.names)
+    x
+end
+
+function Base.insert!(x::Index, idx::Integer, nm::Symbol)
+    1 <= idx <= length(x.names)+1 || error(BoundsError())
+    for i = idx:length(x.names)
+        x.lookup[x.names[i]] = i + 1
+    end
+    x.lookup[nm] = idx
+    insert!(x.names, idx, nm)
+    x
 end
 
 Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
@@ -112,4 +128,3 @@ end
 SimpleIndex() = SimpleIndex(0)
 Base.length(x::SimpleIndex) = x.length
 Base.names(x::SimpleIndex) = nothing
-
