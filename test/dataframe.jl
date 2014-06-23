@@ -66,6 +66,35 @@ module TestDataFrame
     x0[:d] = 3
     @test x0[:d] == Int[]
 
+    # Associative methods
+
+    df = DataFrame(a=[1, 2], b=[3., 4.])
+    @test haskey(df, :a)
+    @test !haskey(df, :c)
+    @test get(df, :a, -1) === df.columns[1]
+    @test get(df, :c, -1) == -1
+    @test keys(df) == [:a, :b]
+    @test values(df) == {df[:a], df[:b]}
+    @test !isempty(df)
+
+    @test empty!(df) === df
+    @test isempty(df.columns)
+    @test isempty(df)
+
+    df = DataFrame(a=[1, 2], b=[3., 4.])
+    @test_throws BoundsError insert!(df, 5, ["a", "b"], :newcol)
+    @test_throws ErrorException insert!(df, 1, ["a"], :newcol)
+    @test insert!(df, 1, ["a", "b"], :newcol) == df
+    @test isequal(df, DataFrame(newcol=["a", "b"], a=[1, 2], b=[3., 4.]))
+    df = DataFrame(a=[1, 2], b=[3., 4.])
+    @test insert!(df, 3, ["a", "b"], :newcol) == df
+    @test isequal(df, DataFrame(a=[1, 2], b=[3., 4.], newcol=["a", "b"]))
+
+    df = DataFrame(a=[1, 2], b=[3., 4.])
+    df2 = DataFrame(c=["a", "b"], d=[:c, :d])
+    @test insert!(df, df2) == df
+    @test isequal(df, DataFrame(a=[1, 2], b=[3., 4.], c=["a", "b"], d=[:c, :d]))
+
     #test_group("Empty DataFrame constructors")
     df = DataFrame(Int, 10, 3)
     @test size(df, 1) == 10
