@@ -782,10 +782,37 @@ Base.delete!(df::DataFrame, c::Int) = delete!(df, [c])
 Base.delete!(df::DataFrame, c::Any) = delete!(df, df.colindex[c])
 
 # deleterows!()
-function deleterows!(df::DataFrame, keep_inds::Vector{Int})
+function deleterows!(df::DataFrame, ind::Union(Integer, UnitRange{Int}))
     for i in 1:ncol(df)
-        df.columns[i] = df.columns[i][keep_inds]
+        df.columns[i] = deleteat!(df.columns[i], ind)
     end
+    df
+end
+
+function deleterows!(df::DataFrame, ind::AbstractVector{Int})
+    ind2 = sort(ind)
+    n = size(df, 1)
+
+    idf = 1
+    iind = 1
+    ikeep = 1
+    keep = Array(Int, n-length(ind2))
+    while idf <= n && iind <= length(ind2)
+        1 <= ind2[iind] <= n || error(BoundsError())
+        if idf == ind2[iind]
+            iind += 1
+        else
+            keep[ikeep] = idf
+            ikeep += 1
+        end
+        idf += 1
+    end
+    keep[ikeep:end] = idf:n
+
+    for i in 1:ncol(df)
+        df.columns[i] = df.columns[i][keep]
+    end
+    df
 end
 
 function without(df::DataFrame, icols::Vector{Int})
@@ -879,7 +906,7 @@ function complete_cases(df::AbstractDataFrame)
     res
 end
 
-complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(complete_cases(df)))
+complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(!complete_cases(df)))
 
 function DataArrays.array(adf::AbstractDataFrame)
     n, p = size(adf)
@@ -923,7 +950,7 @@ function nonunique(df::AbstractDataFrame)
 end
 
 function unique!(df::AbstractDataFrame)
-    deleterows!(df, find(!nonunique(df)))
+    deleterows!(df, find(nonunique(df)))
 end
 
 # Unique rows of an AbstractDataFrame.

@@ -163,6 +163,10 @@ means that columns can be referenced).
 Nondestructive version. Return a DataFrame based on the columns in
 `df` after deleting columns specified by `cols`.
 
+#### `deleterows!(df::DataFrame, inds)`
+
+Delete rows at positions specified by `inds` from the given DataFrame.
+
 #### `cbind(df1, df2, ...)` or `hcat(df1, df2, ...)` or `[df1 df2 ...]`  
 
 Concatenate columns. Duplicated column names are adjusted.

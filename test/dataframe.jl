@@ -201,4 +201,36 @@ module TestDataFrame
     @test_throws ArgumentError push!(dfb, ["first"=>"chicken", "second"=>"stuff" ])
     @test df0==dfb
 
+    # deleterows!
+    df = DataFrame(a=[1, 2], b=[3., 4.])
+    @test deleterows!(df, 1) === df
+    @test isequal(df, DataFrame(a=[2], b=[4.]))
+
+    df = DataFrame(a=[1, 2], b=[3., 4.])
+    @test deleterows!(df, 2) === df
+    @test isequal(df, DataFrame(a=[1], b=[3.]))
+
+    df = DataFrame(a=[1, 2, 3], b=[3., 4., 5.])
+    @test deleterows!(df, 2:3) === df
+    @test isequal(df, DataFrame(a=[1], b=[3.]))
+
+    df = DataFrame(a=[1, 2, 3], b=[3., 4., 5.])
+    @test deleterows!(df, [2, 3]) === df
+    @test isequal(df, DataFrame(a=[1], b=[3.]))
+
+    df = DataFrame(a=@data([1, 2]), b=@data([3., 4.]))
+    @test deleterows!(df, 1) === df
+    @test isequal(df, DataFrame(a=@data([2]), b=@data([4.])))
+
+    df = DataFrame(a=@data([1, 2]), b=@data([3., 4.]))
+    @test deleterows!(df, 2) === df
+    @test isequal(df, DataFrame(a=@data([1]), b=@data([3.])))
+
+    df = DataFrame(a=@data([1, 2, 3]), b=@data([3., 4., 5.]))
+    @test deleterows!(df, 2:3) === df
+    @test isequal(df, DataFrame(a=@data([1]), b=@data([3.])))
+
+    df = DataFrame(a=@data([1, 2, 3]), b=@data([3., 4., 5.]))
+    @test deleterows!(df, [2, 3]) === df
+    @test isequal(df, DataFrame(a=@data([1]), b=@data([3.])))
 end
