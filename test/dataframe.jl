@@ -28,7 +28,7 @@ module TestDataFrame
     @test isna(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])))
     @test isna(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
 
-    z = deepcopy(x)  
+    z = deepcopy(x)
 
     z = hcat(x, y)
 
@@ -50,11 +50,6 @@ module TestDataFrame
 
     #test_group("DataFrame assignment")
     # Insert single column
-    x[symbol("c")] = 1:3
-    @test_throws ErrorException x[symbol("\u212b")] = 1:3
-    @test_throws ErrorException x[symbol("end")] = 1:3
-    @test_throws ErrorException x[symbol("1a")] = 1:3
-
     x0 = x[[], :]
     @test_throws ErrorException x0[:d] = [1]
     @test_throws ErrorException x0[:d] = 1:3
@@ -163,8 +158,8 @@ module TestDataFrame
 
     @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
     @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
-    
-    
+
+
     # push!(df, row)
     df=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
 
@@ -185,7 +180,7 @@ module TestDataFrame
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
     push!(dfb, [ :first=>3,:second=>"pear" ])
     @test df==dfb
-    
+
     df=DataFrame( first=[1,2,3], second=["apple","orange","banana"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
     push!(dfb, [ "first"=>3,"second"=>"banana" ])
