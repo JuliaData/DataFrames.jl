@@ -146,7 +146,7 @@ module TestDataFrame
     @test typeof(df[:,:b]) == DataVector{Char}
 
     data = {:A => [1, 2], :C => [:1, :2], :B => [3, 4]}
-    df = DataFrame(data)
+    df = convert(DataFrame, data)
     # Specify column_names
     df = DataFrame(data, [:C, :A, :B])
 

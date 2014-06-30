@@ -61,6 +61,12 @@ function DataFrame(x::Matrix, cn::Vector = gennames(size(x, 2)))
     return DataFrame(cols, Index(cn))
 end
 
+function DataFrame(d::Dict)
+    depwarn("DataFrame(::Dict) is deprecated, use convert(DataFrame, Dict) instead",
+            :DataFrame)
+    convert(DataFrame, d)
+end
+
 function DataFrame{T<:String}(columns::Vector{Any}, cnames::Vector{T})
     depwarn("DataFrame(::Vector{Any}, ::Vector{T<:String}) is deprecated, use DataFrame(::Vector{Any}, ::Vector{Symbol}) instead",
             :DataFrame)
