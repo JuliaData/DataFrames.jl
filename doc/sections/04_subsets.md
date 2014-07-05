@@ -1,31 +1,154 @@
 # Accessing and Modifying Entries of DataArray and DataFrame Objects
 
+## DataArrays
+
 The `DataArray` type is meant to behave like a standard Julia `Array` and
 tries to implement identical indexing rules:
 
-    dv = data([1, 2, 3])
-    dv[1]
-    dv[2] = NA
-    dv[2]
+One dimensional `DataArray`:
+~~~.jl
+julia> using DataArrays
 
-    dm = data([1 2; 3 4])
-    dm[1, 1]
-    dm[2, 1] = NA
-    dm[2, 1]
+julia> dv = data([1, 2, 3])
+3-element DataArray{Int64,1}:
+ 1
+ 2
+ 3
+
+julia> dv[1]
+1
+
+julia> dv[2] = NA
+NA
+
+julia> dv[2]
+NA
+~~~
+
+Two dimensional `DataArray`:
+~~~.jl
+julia> using DataArrays
+
+julia> dm = data([1 2; 3 4])
+2x2 DataArray{Int64,2}:
+ 1  2
+ 3  4
+
+julia> dm[1, 1]
+1
+
+julia> dm[2, 1] = NA
+NA
+
+julia> dm[2, 1]
+NA
+~~~
+
+## DataFrames
 
 In contrast, a `DataFrame` offers substantially more forms of indexing
 because columns can be referred to by name:
 
-    df = DataFrame(A = 1:10, B = 2:2:20)
+~~~.jl
+julia> using DataFrames
 
-    df[1]
-    df[:A]
+julia> df = DataFrame(A = 1:10, B = 2:2:20)
+10x2 DataFrame
+|-------|----|----|
+| Row # | A  | B  |
+| 1     | 1  | 2  |
+| 2     | 2  | 4  |
+| 3     | 3  | 6  |
+| 4     | 4  | 8  |
+| 5     | 5  | 10 |
+| 6     | 6  | 12 |
+| 7     | 7  | 14 |
+| 8     | 8  | 16 |
+| 9     | 9  | 18 |
+| 10    | 10 | 20 |
+~~~
 
-    df[1, 1]
-    df[1, :A]
+Refering to the first column by index or name:
+~~~.jl
+julia> df[1]
+10-element DataArray{Int64,1}:
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
 
-    df[1:3, [:A, :B]]
-    df[1:3, [:B, :A]]
+julia> df[:A]
+10-element DataArray{Int64,1}:
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+~~~
 
-    df[df[:A] % 2 .== 0, :]
-    df[df[:B] % 2 .== 0, :]
+Refering to the first element of the first column:
+~~~.jl
+julia> df[1, 1]
+1
+
+julia> df[1, :A]
+1
+~~~
+
+Selecting a subset of rows by index and an (ordered) subset of columns by name:
+~~~.jl
+julia> df[1:3, [:A, :B]]
+3x2 DataFrame
+|-------|---|---|
+| Row # | A | B |
+| 1     | 1 | 2 |
+| 2     | 2 | 4 |
+| 3     | 3 | 6 |
+
+julia> df[1:3, [:B, :A]]
+3x2 DataFrame
+|-------|---|---|
+| Row # | B | A |
+| 1     | 2 | 1 |
+| 2     | 4 | 2 |
+| 3     | 6 | 3 |
+~~~
+
+Selecting a subset of rows by using a condition:
+~~~.jl
+julia> df[df[:A] % 2 .== 0, :]
+5x2 DataFrame
+|-------|----|----|
+| Row # | A  | B  |
+| 1     | 2  | 4  |
+| 2     | 4  | 8  |
+| 3     | 6  | 12 |
+| 4     | 8  | 16 |
+| 5     | 10 | 20 |
+
+julia> df[df[:B] % 2 .== 0, :]
+10x2 DataFrame
+|-------|----|----|
+| Row # | A  | B  |
+| 1     | 1  | 2  |
+| 2     | 2  | 4  |
+| 3     | 3  | 6  |
+| 4     | 4  | 8  |
+| 5     | 5  | 10 |
+| 6     | 6  | 12 |
+| 7     | 7  | 14 |
+| 8     | 8  | 16 |
+| 9     | 9  | 18 |
+| 10    | 10 | 20 |
+~~~
