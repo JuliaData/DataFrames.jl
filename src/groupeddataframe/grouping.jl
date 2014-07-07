@@ -76,8 +76,7 @@ function Base.show(io::IO, gd::GroupedDataFrame)
     println(io, "First Group:")
     show(io, gd[1])
     if N > 1
-        println(io, "       :")
-        println(io, "       :")
+        print(io, "\n⋮\n")
         println(io, "Last Group:")
         show(io, gd[N])
     end
