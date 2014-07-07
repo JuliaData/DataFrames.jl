@@ -199,5 +199,6 @@ Base.names(d::GroupedDataFrame) = names(d.parent)
 
 # by() convenience function
 by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
+by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
 by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
 by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)

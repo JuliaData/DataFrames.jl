@@ -101,7 +101,7 @@ end
 # `mean` is the default aggregation function:
 pivottable(df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, mean)
 pivottable(df::AbstractDataFrame, rows, cols, value, fun) = pivottable(df, [index(df)[rows]], [index(df)[cols]], index(df)[value], fun)
-
+pivottable(fun::Function, df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, fun)
 
 ##############################################################################
 ##
