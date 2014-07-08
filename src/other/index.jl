@@ -66,8 +66,10 @@ end
 rename!(x::Index, from, to) = rename!(x, zip(from, to))
 rename!(x::Index, from::Symbol, to::Symbol) = rename!(x, ((from, to),))
 rename!(x::Index, f::Function) = rename!(x, [(x,f(x)) for x in x.names])
+rename!(f::Function, x::Index) = rename!(x, f)
 
 rename(x::Index, args...) = rename!(copy(x), args...)
+rename(f::Function, x::Index) = rename(x, f)
 
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
