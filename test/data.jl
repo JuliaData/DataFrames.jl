@@ -13,7 +13,7 @@ module TestData
 
     #test_group("constructors")
     df1 = DataFrame({dvint, dvstr}, [:Ints, :Strs])
-    df2 = DataFrame({dvint, dvstr}) 
+    df2 = DataFrame({dvint, dvstr})
     df3 = DataFrame({dvint})
     df4 = convert(DataFrame, [1:4 1:4])
     df5 = DataFrame({@data([1,2,3,4]), dvstr})
@@ -139,26 +139,34 @@ module TestData
 
     d1s = stack(d1, [:a, :b])
     d1s2 = stack(d1, [:c, :d])
-    d1s3 = melt(d1, [:c, :d])
+    d1m = melt(d1, [:c, :d])
     @test isequal(d1s[1:12, :c], d1[:c])
     @test isequal(d1s[13:24, :c], d1[:c])
     @test all(names(d1s) .== [:variable, :value, :c, :d])
-    @test isequal(d1s, d1s3)
+    @test isequal(d1s, d1m)
+
     d1s_df = stackdf(d1, [:a, :b])
+    d1m_df = meltdf(d1, [:c, :d])
     @test isequal(d1s[:variable], d1s_df[:variable][:])
     @test isequal(d1s[:value], d1s_df[:value][:])
     @test isequal(d1s[:c], d1s_df[:c][:])
     @test isequal(d1s[1,:], d1s_df[1,:])
+    @test isequal(d1s_df, d1m_df)
 
     d1s[:idx] = [1:12, 1:12]
     d1s2[:idx] = [1:12, 1:12]
-    d1us = unstack(d1s, :variable, :idx, :value)
-    d1us2 = unstack(d1s2, :variable, :idx, :value)
+    d1us = unstack(d1s, :idx, :variable, :value)
+    d1us2 = unstack(d1s2, :idx, :variable, :value)
     @test isequal(d1us[:a], d1[:a])
     @test isequal(d1us2[:d], d1[:d])
 
-    const letters = convert(Vector{ASCIIString}, split("abcdefghijklmnopqrstuvwxyz", ""))
-    const LETTERS = convert(Vector{ASCIIString}, split("ABCDEFGHIJKLMNOPQRSTUVWXYZ", ""))
+    d2 = DataFrame(id1 = [:a, :a, :a, :b],
+                   id2 = [:A, :B, :B, :B],
+                   id3 = [:t, :f, :t, :f],
+                   val = [.1, .2, .3, .4])
+
+    @test isequal(pivottable(d2, :id1, [:id2, :id3], :val)[:B_t], @data([0.3, NA]))
+    @test isequal(pivottable(d2, :id2, :id1, :val)[:a], [0.1, 0.25])
 
     #test_group("merge")
 
@@ -205,11 +213,11 @@ module TestData
     df2[:C] = @data([1, 2, 4])
 
     m1 = join(df1, df2, on = :A)
-    @test size(m1) == (3,3) 
+    @test size(m1) == (3,3)
     @test isequal(m1[:A], @data([NA,"a","a"]))
 
     m2 = join(df1, df2, on = :A, kind = :outer)
-    @test size(m2) == (5,3) 
+    @test size(m2) == (5,3)
     @test isequal(m2[:A], @data([NA,"a","a","b","c"]))
 
     srand(1)
@@ -247,7 +255,7 @@ module TestData
     df1 = spltdf(df1)
     df2 = DataFrame(
         a = ["def", "abc","abx", "axz", "xyz"],
-        v2 = randn(5)    
+        v2 = randn(5)
     )
     df2 = spltdf(df2)
 
