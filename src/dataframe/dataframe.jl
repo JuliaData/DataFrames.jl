@@ -334,9 +334,6 @@ function insert_single_column!(df::DataFrame,
         df.columns[j] = dv
     else
         if typeof(col_ind) <: Symbol
-            if !is_valid_identifier(col_ind)
-                error("$col_ind is not a valid identifier.")
-            end
             push!(df.colindex, col_ind)
             push!(df.columns, dv)
         else
@@ -656,7 +653,6 @@ Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
 function Base.insert!(df::DataFrame, index::Int, item::AbstractVector, name::Symbol)
     0 < index <= ncol(df) + 1 || error(BoundsError)
     size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
-    is_valid_identifier(name) || error("$name is not a valid identifier.")
 
     insert!(df.colindex, index, name)
     insert!(df.columns, index, item)
