@@ -36,10 +36,10 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     # `rowkey` integer indicating which column to place along rows
     # `colkey` integer indicating which column to place along column headers
     # `value` integer indicating which column has values
-    keycol = PooledDataArray(df[rowkey])
+    refkeycol = PooledDataArray(df[rowkey])
     valuecol = df[value]
     # TODO make a version with a default refkeycol
-    refkeycol = PooledDataArray(df[colkey])
+    keycol = PooledDataArray(df[colkey])
     remainingcols = _setdiff([1:ncol(df)], [rowkey, value])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
@@ -59,8 +59,8 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     end
     insert!(payload, 1, refkeycol.pool, names(df)[colkey])
 end
-unstack(df::AbstractDataFrame, rowkey, value, colkey) =
-    unstack(df, index(df)[rowkey], index(df)[value], index(df)[colkey])
+unstack(df::AbstractDataFrame, rowkey, colkey, value) =
+    unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
 
 ##############################################################################
 ##
@@ -88,20 +88,29 @@ function pivottable(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int},
     col_idxs = int(col_pdv.refs)
     Ncol = length(col_pdv.pool)
     # `payload` is the main "data holding" part of the resulting DataFrame
-    payload = DataFrame(Nrow, Ncol)
-    names!(payload, col_pdv.pool)
+    payload = DataFrame(Float64, Nrow, Ncol)
+    names!(payload, convert(Vector{Symbol}, col_pdv.pool))
     for i in 1:length(row_idxs)
-        payload[row_idxs[i], col_idxs[i]] = cmb_df[i,"x1"]
+        payload[row_idxs[i], col_idxs[i]] = cmb_df[i, :x1]
     end
     # find the "row" key DataFrame
     g = groupby(cmb_df[[1:length(rows)]], [1:length(rows)])
-    row_key_df = g.parent[g.idx[g.starts],:]
+    row_key_df = g.parent[g.idx[g.starts], :]
     hcat(row_key_df, payload)
 end
 # `mean` is the default aggregation function:
 pivottable(df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, mean)
 pivottable(df::AbstractDataFrame, rows, cols, value, fun) = pivottable(df, [index(df)[rows]], [index(df)[cols]], index(df)[value], fun)
 pivottable(fun::Function, df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, fun)
+
+function paste_columns(df::AbstractDataFrame, sep)
+    res = [string(v) for v in df[1]]
+    for j in 2:ncol(df), i in 1:nrow(df)
+        res[i] *= string(sep, df[i, j])
+    end
+    res
+end
+paste_columns(df::AbstractDataFrame) = paste_columns(df, "_")
 
 ##############################################################################
 ##
@@ -262,7 +271,7 @@ function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vect
     insert!(cnames, 1, "value")
     insert!(cnames, 1, "variable")
     DataFrame({EachRepeatedVector(names(df)[measure_vars], nrow(df)), # variable
-               StackedVector({df[:,c] for c in 1:N}),                    # value
+               StackedVector({df[:,c] for c in measure_vars}),           # value
                ## RepeatedVector([1:nrow(df)], N),                       # idx - do we want this?
                [RepeatedVector(df[:,c], N) for c in id_vars]...},        # id_var columns
               cnames)
