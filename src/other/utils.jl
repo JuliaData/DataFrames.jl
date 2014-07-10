@@ -1,81 +1,50 @@
-const RESERVED_WORDS = ASCIIString["begin", "while", "if", "for", "try",
+import Base: isidentifier, is_id_start_char, is_id_char
+
+const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
     "return", "break", "continue", "function", "macro", "quote", "let",
     "local", "global", "const", "abstract", "typealias", "type", "bitstype",
     "immutable", "ccall", "do", "module", "baremodule", "using", "import",
-    "export", "importall", "end", "else", "elseif", "catch", "finally"]
+    "export", "importall", "end", "else", "elseif", "catch", "finally"])
 
- function is_valid_identifier(sym::Symbol)
-    s = string(sym)
-    s == normalize_string(s) && isidentifier(s)
- end
 
 function identifier(s::String)
     s = normalize_string(s)
-    symbol(isidentifier(s) ? s : makeidentifier(s))
-end
-
-function isidentifier(s::String)
-    n = length(s)
-    if n == 0 || in(s, RESERVED_WORDS)
-        return false
+    if !isidentifier(s)
+        s = makeidentifier(s)
     end
-    firstchar = true
-    for c in s
-        if firstchar
-            if !(isalpha(c) || c == '_')
-                return false
-            end
-            firstchar = false
-        elseif !(isalpha(c) || isdigit(c) || c == '_' || c == '!')
-            return false
-        end
-    end
-    return true
+    symbol(in(s, RESERVED_WORDS) ? "_"*s : s)
 end
 
 function makeidentifier(s::String)
-    ind = 0
-    n = endof(s)
-    res = Array(Char, 0)
+    i = start(s)
+    done(s, i) && return "x"
 
-    while isempty(res)
-        if ind >= n
-            return "x"
-        end
+    res = IOBuffer(sizeof(s) + 1)
 
-        ind = nextind(s, ind)
-        c = s[ind]
+    (c, i) = next(s, i)
+    under = if is_id_start_char(c)
+        write(res, c)
+        c == '_'
+    elseif is_id_char(c)
+        write(res, 'x', c)
+        false
+    else
+        write(res, '_')
+        true
+    end
 
-        if isalpha(c)
-            push!(res, c)
-        elseif isdigit(c) || c == '!'
-            push!(res, 'x')
-            push!(res, c)
+    while !done(s, i)
+        (c, i) = next(s, i)
+        if c != '_' && is_id_char(c)
+            write(res, c)
+            under = false
+        elseif !under
+            write(res, '_')
+            under = true
         end
     end
 
-    while ind < n
-        ind = nextind(s, ind)
-        c = s[ind]
-
-        if isalpha(c) || isdigit(c) || c == '!'
-            push!(res, c)
-        else
-            while ind < n
-                ind = nextind(s, ind)
-                c = s[ind]
-
-                if isalpha(c) || isdigit(c) || c == '!'
-                    push!(res, '_')
-                    push!(res, c)
-                    break
-                end
-            end
-        end
-    end
-
-    cs = utf8(res)
-    return in(cs, RESERVED_WORDS) ? "_"*cs : cs
+    return takebuf_string(res)
 end
 
 function make_unique(names::Vector{Symbol})

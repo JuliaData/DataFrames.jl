@@ -104,7 +104,7 @@ module TestIO
     df1 = readtable("$testdir/data/comments/before_after_data.csv", allowcomments = true)
     df2 = readtable("$testdir/data/comments/middata.csv", allowcomments = true)
     df3 = readtable("$testdir/data/skiplines/skipfront.csv", skipstart = 3)
-    
+
     @test df1 == df2
     @test df2 == df3
 
@@ -190,7 +190,7 @@ module TestIO
     @test typeof(df[:IsMale]) == DataArray{Bool,1}
     @test df[:IsMale][1] == true
     @test df[:IsMale][4] == false
- 
+
     filename = "$testdir/data/typeinference/standardtypes.csv"
     df = readtable(filename)
     @test typeof(df[:IntColumn]) == DataArray{Int,1}
@@ -198,21 +198,21 @@ module TestIO
     @test typeof(df[:FloatColumn]) == DataArray{Float64,1}
     @test typeof(df[:BoolColumn]) == DataArray{Bool,1}
     @test typeof(df[:StringColumn]) == DataArray{UTF8String,1}
- 
+
     filename = "$testdir/data/typeinference/mixedtypes.csv"
     df = readtable(filename)
     @test typeof(df[:c1]) == DataArray{UTF8String,1}
-    @test df[:c1][1] == "1" 
-    @test df[:c1][2] == "2.0" 
-    @test df[:c1][3] == "true" 
+    @test df[:c1][1] == "1"
+    @test df[:c1][2] == "2.0"
+    @test df[:c1][3] == "true"
     @test typeof(df[:c2]) == DataArray{Float64,1}
-    @test df[:c2][1] == 1.0 
-    @test df[:c2][2] == 3.0 
-    @test df[:c2][3] == 4.5 
+    @test df[:c2][1] == 1.0
+    @test df[:c2][2] == 3.0
+    @test df[:c2][3] == 4.5
     @test typeof(df[:c3]) == DataArray{UTF8String,1}
-    @test df[:c3][1] == "0" 
-    @test df[:c3][2] == "1" 
-    @test df[:c3][3] == "f" 
+    @test df[:c3][1] == "0"
+    @test df[:c3][2] == "1"
+    @test df[:c3][3] == "f"
     @test typeof(df[:c4]) == DataArray{Bool,1}
     @test df[:c4][1] == true
     @test df[:c4][2] == false
@@ -221,10 +221,10 @@ module TestIO
     @test df[:c5][1] == "False"
     @test df[:c5][2] == "true"
     @test df[:c5][3] == "true"
- 
+
     # Readtable defining column types
     filename = "$testdir/data/definedtypes/mixedvartypes.csv"
- 
+
     df = readtable(filename)
     @test typeof(df[:n]) == DataArray{Int,1}
     @test df[:n][1] == 1
@@ -266,7 +266,7 @@ module TestIO
 
     # Readtable name normalization
     abnormal = "\u212b"
-    ns = [:Å, :B_C, :_end]
+    ns = [:Å, :_B_C_, :_end]
     @test !in(symbol(abnormal), ns)
 
     io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
