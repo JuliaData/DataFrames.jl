@@ -209,7 +209,7 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
 
                 $(if allowcomments
                     quote
-                        # Ignore text inside comments completely                       
+                        # Ignore text inside comments completely
                         if !in_quotes && chr == o.commentmark
                             while !endf && !@atnewline(chr, nextchr)
                                 chr, nextchr, endf = @read_peek_eof(io, nextchr)
@@ -629,8 +629,10 @@ function builddf(rows::Integer,
 end
 
 function parsenames!(names::Vector{Symbol},
+                     ignorepadding::Bool,
                      bytes::Vector{Uint8},
                      bounds::Vector{Int},
+                     quoted::BitVector,
                      fields::Int)
     if fields == 0
         error("Header line was empty")
@@ -641,6 +643,15 @@ function parsenames!(names::Vector{Symbol},
     for j in 1:fields
         left = bounds[j] + 2
         right = bounds[j + 1]
+
+        if ignorepadding && !quoted[j]
+            while left < right && @isspace(bytes[left])
+                left += 1
+            end
+            while left <= right && @isspace(bytes[right])
+                right -= 1
+            end
+        end
 
         names[j] = identifier(bytestring(bytes[left:right]))
     end
@@ -711,7 +722,7 @@ function readtable!(p::ParsedCSV,
 
         # Insert column names from header if none present
         if isempty(o.names)
-            parsenames!(o.names, p.bytes, p.bounds, fields)
+            parsenames!(o.names, o.ignorepadding, p.bytes, p.bounds, p.quoted, fields)
         end
     end
 

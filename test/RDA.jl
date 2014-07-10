@@ -36,5 +36,5 @@ module TestRDA
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs.rda")["df"]), df)
 
     rda_names = names(DataFrame(read_rda("$testdir/data/RDA/names.rda")["df"]))
-    @test rda_names == [:_end, :x!, :x1, :B_C]
+    @test rda_names == [:_end, :x!, :x1, :_B_C_]
 end
