@@ -40,10 +40,6 @@ module TestDataFrame
 
     z = vcat(v, x)
 
-    # Deleting columns removes any mention from groupings
-    delete!(x, :a)
-    @test names(x) == [:b]
-
     ## del calls ref, which properly deals with groupings
     z2 = z[:,[1,1,2]]
     @test names(z2) == [:a, :a_1, :b]
@@ -193,8 +189,26 @@ module TestDataFrame
 
     df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, ["first"=>"chicken", "second"=>"stuff" ])
+    @test_throws ArgumentError push!(dfb, ["first"=>"chicken", "second"=>"stuff"] )
     @test df0==dfb
+
+    # delete!
+    df = DataFrame(a=1, b=2, c=3, d=4, e=5)
+    @test_throws ArgumentError delete!(df, 0)
+    @test_throws ArgumentError delete!(df, 6)
+    @test_throws KeyError delete!(df, :f)
+
+    d = copy(df)
+    delete!(d, [:a, :e, :c])
+    @test names(d) == [:b, :d]
+    delete!(d, :b)
+    @test isequal(d, df[[:d]])
+
+    d = copy(df)
+    delete!(d, [2, 5, 3])
+    @test names(d) == [:a, :d]
+    delete!(d, 2)
+    @test isequal(d, df[[:a]])
 
     # deleterows!
     df = DataFrame(a=[1, 2], b=[3., 4.])

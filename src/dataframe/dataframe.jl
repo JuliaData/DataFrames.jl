@@ -761,10 +761,9 @@ end
 
 # delete!() deletes columns; deleterows!() deletes rows
 # delete!(df, 1)
-# delete!(df, "old")
+# delete!(df, :Old)
 function Base.delete!(df::DataFrame, inds::Vector{Int})
-    for i in 1:length(inds)
-        ind = inds[i] - i + 1
+    for ind in sort(inds, rev = true)
         if 1 <= ind <= ncol(df)
             splice!(df.columns, ind)
             delete!(df.colindex, ind)
@@ -1035,10 +1034,10 @@ nullable!(colnums::Array{Int,1},df::AbstractDataFrame)= (for i in colnums df[i]=
 ##############################################################################
 
 
-function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})    
+function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})
     i=1
     for nm in names(df)
-        try 
+        try
             push!(df[nm], associative[nm])
         catch
             #clean up partial row
@@ -1047,16 +1046,16 @@ function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})
             end
             msg = "Error adding value to column :$nm."
             throw(ArgumentError(msg))
-        end    
+        end
         i=i+1
     end
 end
 
 
-function Base.push!(df::DataFrame, associative::Associative) 
+function Base.push!(df::DataFrame, associative::Associative)
     i=1
     for nm in names(df)
-        try 
+        try
             push!(df[nm], associative[string(nm)])
         catch
             #clean up partial row
@@ -1066,21 +1065,21 @@ function Base.push!(df::DataFrame, associative::Associative)
             end
             msg = "Error adding value to column :$nm."
             throw(ArgumentError(msg))
-        end    
+        end
         i=i+1
     end
 end
 
 
 # array and tuple like collections
-function Base.push!(df::DataFrame, iterable::Any)    
+function Base.push!(df::DataFrame, iterable::Any)
     if length(iterable) != length(df.columns)
         msg = "Length of iterable does not match DataFrame column count."
-        throw(ArgumentError(msg))    
+        throw(ArgumentError(msg))
     end
     i=1
     for t in iterable
-        try 
+        try
             push!(df.columns[i], t)
         catch
             #clean up partial row
@@ -1089,7 +1088,7 @@ function Base.push!(df::DataFrame, iterable::Any)
             end
             msg = "Error adding $t to column :$(names(df)[i]). Possible type mis-match."
             throw(ArgumentError(msg))
-        end    
+        end
         i=i+1
     end
 end
