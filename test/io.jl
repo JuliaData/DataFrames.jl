@@ -271,4 +271,10 @@ module TestIO
 
     io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
     @test names(readtable(io)) == ns
+
+    # Readtable names argument
+    exp = DataFrame(a=[1, 3], b=[2, 4])
+    csv = "A,B\n1,2\n3,4\n"
+    @test exp == readtable(IOBuffer(csv), names=[:a, :b])
+    @test exp == readtable(IOBuffer(csv), names=["a", "b"])
 end

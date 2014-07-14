@@ -805,6 +805,8 @@ function readtable(io::IO,
         end
     end
 
+    names = convert(Vector{Symbol}, names)
+
     # Allocate buffers for storing metadata
     p = ParsedCSV(Array(Uint8, nbytes),
                   Array(Int, 1),
