@@ -203,7 +203,7 @@ end
 
 function Base.setindex!{T<:String}(df::DataFrame, v, col_inds::AbstractVector{T})
     depwarn("indexing DataFrames with strings is deprecated; use symbols instead", :setindex!)
-    setindex!(df, v, map(symbol, col_ind))
+    setindex!(df, v, map(symbol, col_inds))
 end
 
 function Base.setindex!(df::DataFrame, v, row_ind, col_ind::String)
@@ -211,9 +211,9 @@ function Base.setindex!(df::DataFrame, v, row_ind, col_ind::String)
     setindex!(df, v, row_ind, symbol(col_ind))
 end
 
-function Base.assign{T<:String}(df::DataFrame, v, row_ind, col_inds::AbstractVector{T})
+function Base.setindex!{T<:String}(df::DataFrame, v, row_ind, col_inds::AbstractVector{T})
     depwarn("indexing DataFrames with strings is deprecated; use symbols instead", :setindex!)
-    setindex!(df, v, row_ind, map(symbol, col_ind))
+    setindex!(df, v, row_ind, map(symbol, col_inds))
 end
 
 
