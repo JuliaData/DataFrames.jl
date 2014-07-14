@@ -168,13 +168,6 @@ Base.ndims(v::StackedVector) = 1
 Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
 Base.similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
 
-Base.show(io::IO, v::StackedVector) = internal_show_vector(io, v)
-if VERSION < v"0.3.0-rc1"
-    Base.repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
-else
-    repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
-end
-
 DataArrays.PooledDataArray(v::StackedVector) = PooledDataArray(v[:]) # could be more efficient
 
 function Base.getindex{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
@@ -193,14 +186,6 @@ Base.ndims(v::RepeatedVector) = 1
 Base.eltype{T}(v::RepeatedVector{T}) = T
 Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.n)
 Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
-
-Base.show(io::IO, v::RepeatedVector) = internal_show_vector(io, v)
-if VERSION < v"0.3.0-rc1"
-    Base.repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
-else
-    repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
-end
-
 Base.unique(v::RepeatedVector) = unique(v.parent)
 
 function DataArrays.PooledDataArray(v::RepeatedVector)
@@ -225,14 +210,6 @@ Base.ndims(v::EachRepeatedVector) = 1
 Base.eltype{T}(v::EachRepeatedVector{T}) = T
 Base.reverse(v::EachRepeatedVector) = EachRepeatedVector(reverse(v.parent), v.n)
 Base.similar(v::EachRepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
-
-Base.show(io::IO, v::EachRepeatedVector) = internal_show_vector(io, v)
-if VERSION < v"0.3.0-rc1"
-    Base.repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
-else
-    repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
-end
-
 Base.unique(v::EachRepeatedVector) = unique(v.parent)
 
 DataArrays.PooledDataArray(v::EachRepeatedVector) = PooledDataArray(v[:], dropna(unique(v.parent)))
@@ -242,29 +219,6 @@ function DataArrays.PooledDataArray(v::EachRepeatedVector)
     res.refs = rep(res.refs, rep(v.n,length(res.refs)))
     res
 end
-
-
-# The default values of show and repl_show don't work because
-# both try to reshape the vector into a matrix, and these
-# types do not support that.
-
-function internal_show_vector(io::IO, v::AbstractVector)
-    Base.show_delim_array(io, v, '[', ',', ']', true)
-end
-
-function internal_repl_show_vector(io::IO, v::AbstractVector)
-    print(io, summary(v))
-    if length(v) < 21
-        print_matrix(io, v[:]'')    # the double transpose ('') reshapes to a matrix
-    else
-        println(io)
-        print_matrix(io, v[1:10]'')
-        println(io)
-        println(io, "  \u22ee")
-        print_matrix(io, v[end - 9:end]'')
-    end
-end
-
 
 ##############################################################################
 ##
