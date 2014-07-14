@@ -169,7 +169,11 @@ Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
 Base.similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
 
 Base.show(io::IO, v::StackedVector) = internal_show_vector(io, v)
-Base.repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
+if VERSION < v"0.3.0-rc1"
+    Base.repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
+else
+    repl_show(io::IO, v::StackedVector) = internal_repl_show_vector(io, v)
+end
 
 DataArrays.PooledDataArray(v::StackedVector) = PooledDataArray(v[:]) # could be more efficient
 
@@ -191,7 +195,11 @@ Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.n)
 Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 
 Base.show(io::IO, v::RepeatedVector) = internal_show_vector(io, v)
-Base.repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
+if VERSION < v"0.3.0-rc1"
+    Base.repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
+else
+    repl_show(io::IO, v::RepeatedVector) = internal_repl_show_vector(io, v)
+end
 
 Base.unique(v::RepeatedVector) = unique(v.parent)
 
@@ -219,7 +227,11 @@ Base.reverse(v::EachRepeatedVector) = EachRepeatedVector(reverse(v.parent), v.n)
 Base.similar(v::EachRepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 
 Base.show(io::IO, v::EachRepeatedVector) = internal_show_vector(io, v)
-Base.repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
+if VERSION < v"0.3.0-rc1"
+    Base.repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
+else
+    repl_show(io::IO, v::EachRepeatedVector) = internal_repl_show_vector(io, v)
+end
 
 Base.unique(v::EachRepeatedVector) = unique(v.parent)
 
