@@ -179,7 +179,7 @@ function ModelFrame(f::Formula, d::AbstractDataFrame)
 end
 ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
 
-function model_response(mf::ModelFrame)
+function StatsBase.model_response(mf::ModelFrame)
     mf.terms.response || error("Model formula one-sided")
     convert(Array, mf.df[bool(mf.terms.factors[:,1])][:,1])
 end
