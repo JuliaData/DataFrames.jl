@@ -69,7 +69,13 @@ does not correspond to a simple `DataArray`.
 For example, the data table shown below highlights some of the ways in which a
 typical data set is not like a `DataArray`:
 
-[Missing...]
++-----------+--------+--------+-------+
+|Name       | Height | Weight | Gender|
++===========+========+========+=======+
+|John Smith | 73.0   | NA     | Male  |
++-----------+--------+--------+-------+
+|Jane Doe   | 68.0   | 130    | Female|
++-----------+--------+--------+-------+
 
 Note three important properties that this table possesses:
 
