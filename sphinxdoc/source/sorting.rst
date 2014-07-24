@@ -2,7 +2,7 @@ Sorting
 =======
 
 Sorting is a fundamental component of data analysis.  Basic sorting is
-trivial: just calling `sort!` will sort all columns, in place::
+trivial: just calling ``sort!`` will sort all columns, in place::
 
     using DataFrames, RDatasets
 
@@ -20,17 +20,17 @@ possible options::
     sort!(iris, cols = [order(:Species, by = uppercase),
                         order(:SepalLength, rev = true)])
 
-Keywords used above include `cols` (to specify columns), `rev` (to
-sort a column or the whole DataFrame in reverse), and `by` (to apply a
+Keywords used above include ``cols`` (to specify columns), ``rev`` (to
+sort a column or the whole DataFrame in reverse), and ``by`` (to apply a
 function to a column/DataFrame).  Each keyword can either be a single
 value, or can be a tuple or array, with values corresponding to
 individual columns.
 
-As an alternative to using array or tuple values, `order` to specify
+As an alternative to using array or tuple values, ``order`` to specify
 an ordering for a particular column within a set of columns
 
-The following two examples show two ways to sort the `iris` dataset
-with the same result: `Species` will be ordered in reverse
+The following two examples show two ways to sort the ``iris`` dataset
+with the same result: ``Species`` will be ordered in reverse
 lexicographic order, and within species, rows will be sorted by
 increasing sepal length and width::
 

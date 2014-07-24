@@ -9,7 +9,8 @@ In particular, DataFrames provides:
 - DataArray: A new Julia type that emulates Julia’s standard Array type, but adds the ability to store missing values in the array
 - DataFrame: A new Julia type that represents tabular datasets like those found in typical databases or spreadsheets
 
-Contents:
+Contents
+--------
 
 .. toctree::
    :maxdepth: 2
