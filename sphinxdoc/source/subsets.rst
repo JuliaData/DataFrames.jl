@@ -4,10 +4,10 @@ Subsets
 DataArrays
 ~~~~~~~~~~
 
-The `DataArray` type is meant to behave like a standard Julia `Array` and
+The ``DataArray`` type is meant to behave like a standard Julia ``Array`` and
 tries to implement identical indexing rules:
 
-One dimensional `DataArray`::
+One dimensional ``DataArray``::
 
   julia> using DataArrays
 
@@ -27,7 +27,7 @@ One dimensional `DataArray`::
   NA
 
 
-Two dimensional `DataArray`::
+Two dimensional ``DataArray``::
 
   julia> using DataArrays
 
@@ -48,7 +48,7 @@ Two dimensional `DataArray`::
 DataFrames
 ~~~~~~~~~~
 
-In contrast, a `DataFrame` offers substantially more forms of indexing
+In contrast, a ``DataFrame`` offers substantially more forms of indexing
 because columns can be referred to by name::
 
   julia> using DataFrames

@@ -8,11 +8,11 @@ the paper, [The Split-Apply-Combine Strategy for Data Analysis](http://www.jstat
 written by Hadley Wickham.
 
 The DataFrames package supports the Split-Apply-Combine strategy through
-the `by` function, which takes in three arguments: (1) a DataFrame, (2) a
+the ``by`` function, which takes in three arguments: (1) a DataFrame, (2) a
 column to split the DataFrame on, and (3) a function or expression to
 apply to each subset of the DataFrame.
 
-We show several examples of the `by` function applied to the `iris` dataset
+We show several examples of the ``by`` function applied to the ``iris`` dataset
 below::
 
     using DataFrames, RDatasets
@@ -23,7 +23,7 @@ below::
     by(iris, :Species, df -> mean(df[:PetalLength]))
     by(iris, :Species, df -> DataFrame(N = size(df, 1)))
 
-If you only want to split the data set into subsets, use the `groupby` function::
+If you only want to split the data set into subsets, use the ``groupby`` function::
 
     for subdf in groupby(iris, :Species)
         println(size(subdf, 1))

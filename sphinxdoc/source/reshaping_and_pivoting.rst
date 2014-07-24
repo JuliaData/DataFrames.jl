@@ -1,7 +1,7 @@
 Reshaping and Pivoting Data
 ===========================
 
-Reshape data using the `stack` function::
+Reshape data using the ``stack`` function::
 
     using DataFrames, RDatasets
 
