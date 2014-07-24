@@ -23,7 +23,7 @@ of the factor at any time using the ``levels`` function::
     levels(pdv)
 
 By default, a ``PooledDataArray`` is able to represent
-2\ :sub:`32`\ differents levels. You can use less memory by
+2\ :sup:`32`\ differents levels. You can use less memory by
 calling the ``compact`` function::
 
     pdv = compact(pdv)
@@ -46,6 +46,6 @@ Pooling columns is important for working with the
 `GLM package <https://github.com/JuliaStats/GLM.jl>`_
 When fitting regression models, ``PooledDataArray`` columns
 in the input are translated into 0/1 indicator columns
-in the ``ModelMatrix`` -- with one column for each of the levels
+in the ``ModelMatrix`` - with one column for each of the levels
 of the ``PooledDataArray``. This allows one to analyze categorical
 data efficiently.
