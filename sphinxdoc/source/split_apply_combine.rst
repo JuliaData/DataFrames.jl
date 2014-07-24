@@ -4,7 +4,7 @@ The Split-Apply-Combine Strategy
 Many data analysis tasks involve splitting a data set into groups, applying
 some functions to each of the groups and then combining the results. A
 standardized framework for handling this sort of computation is described in
-the paper, [The Split-Apply-Combine Strategy for Data Analysis](http://www.jstatsoft.org/v40/i01),
+the paper, `The Split-Apply-Combine Strategy for Data Analysis` <http://www.jstatsoft.org/v40/i01>,
 written by Hadley Wickham.
 
 The DataFrames package supports the Split-Apply-Combine strategy through
