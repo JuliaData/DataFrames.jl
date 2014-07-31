@@ -51,11 +51,11 @@ no `NA` values:
     convert(Array, dv)
 
 In addition to removing `NA` values and hoping they won't occur, you can
-also replace any `NA` values using the `array` function, which takes a
+also replace any `NA` values using the `convert` function, which takes a
 replacement value as an argument:
 
     dv = @data([NA, 3, 2, 5, 4])
-    mean(array(dv, 11))
+    mean(convert(Vector, dv, 11))
 
 Which strategy for dealing with `NA` values is most appropriate will
 typically depend on the specific details of your data analysis pathway.
@@ -92,7 +92,7 @@ We can also look at small subsets of the data in a couple of different ways:
 
     head(df)
     tail(df)
-    
+
     df[1:3, :]
 
 Having seen what some of the rows look like, we can try to summarize the
