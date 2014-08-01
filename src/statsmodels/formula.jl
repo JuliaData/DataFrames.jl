@@ -254,7 +254,9 @@ function coefnames(fr::ModelFrame)
     # Need to only include active levels
     for term in fr.terms.terms
         if isa(term, Expr)
-            if term.head == :call && term.args[1] == :&
+            if term.head == :call && term.args[1] == :|
+                continue                # skip random-effects terms
+            elseif term.head == :call && term.args[1] == :&
                 a = term.args[2]
                 b = term.args[3]
                 for lev1 in termnames(a, fr.df[a]), lev2 in termnames(b, fr.df[b])
