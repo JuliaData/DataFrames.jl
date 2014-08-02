@@ -20,7 +20,7 @@ immutable ParseOptions{S <: ByteString}
     commentmark::Char
     ignorepadding::Bool
     skipstart::Int
-    skiprows::Vector{Int}
+    skiprows::AbstractVector{Int}
     skipblanks::Bool
     encoding::Symbol
     allowescapes::Bool
@@ -769,10 +769,16 @@ function readtable(io::IO,
                    commentmark::Char = '#',
                    ignorepadding::Bool = true,
                    skipstart::Integer = 0,
-                   skiprows::Vector{Int} = Int[],
+                   skiprows::AbstractVector{Int} = Int[],
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false)
+    if encoding != :utf8
+        throw(ArgumentError("Argument 'encoding' only supports ':utf8' currently."))
+    elseif !isempty(skiprows)
+        throw(ArgumentError("Argument 'skiprows' is not yet supported."))
+    end
+
     if !isempty(colnames)
         warn("Argument 'colnames' is deprecated, please use 'names'.")
         if !isempty(names)
@@ -848,7 +854,7 @@ function readtable(pathname::String;
                    commentmark::Char = '#',
                    ignorepadding::Bool = true,
                    skipstart::Integer = 0,
-                   skiprows::Vector{Int} = Int[],
+                   skiprows::AbstractVector{Int} = Int[],
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false)
