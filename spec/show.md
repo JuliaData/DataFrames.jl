@@ -69,7 +69,7 @@ julia> show(df, true)
 # | 22    | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 # | 23    | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 # | 24    | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
-# 
+#
 # |-------|------------------------------------------|
 # | Row # | B                                        |
 # | 1     | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |
@@ -148,7 +148,7 @@ julia> showall(df, true)
 # | 22    | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 # | 23    | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 # | 24    | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
-# 
+#
 # |-------|------------------------------------------|
 # | Row # | B                                        |
 # | 1     | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |

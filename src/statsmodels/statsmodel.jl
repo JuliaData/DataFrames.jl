@@ -3,11 +3,11 @@
 # A macro for doing delegation
 #
 # This macro call
-# 
+#
 #     @delegate MyContainer.elems [:size, :length, :ndims, :endof]
-# 
+#
 # produces this block of expressions
-# 
+#
 #     size(a::MyContainer) = size(a.elems)
 #     length(a::MyContainer) = length(a.elems)
 #     ndims(a::MyContainer) = ndims(a.elems)

@@ -5,15 +5,15 @@ immutable DataFrameRow{T <: AbstractDataFrame}
 end
 
 function Base.getindex(r::DataFrameRow, idx::AbstractArray)
-	return DataFrameRow(r.df[[idx]], r.row)
+    return DataFrameRow(r.df[[idx]], r.row)
 end
 
 function Base.getindex(r::DataFrameRow, idx::Any)
-	return r.df[r.row, idx]
+    return r.df[r.row, idx]
 end
 
 function Base.setindex!(r::DataFrameRow, value::Any, idx::Any)
-	return setindex!(r.df, value, r.row, idx)
+    return setindex!(r.df, value, r.row, idx)
 end
 
 Base.names(df::DataFrameRow) = names(df.df)

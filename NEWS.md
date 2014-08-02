@@ -57,7 +57,7 @@ DataFrames v0.5.0 Release Notes
 ===============================
 
 Improved I/O and more-Julian idioms.
-  
+
 New features
 ------------
   * Write HTML tables via writemime ([#433])

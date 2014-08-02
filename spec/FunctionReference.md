@@ -1,4 +1,4 @@
-# DataFrames.jl Package  
+# DataFrames.jl Package
 
 ## DataFrames
 
@@ -30,7 +30,7 @@ A deep copy of `df`. Copies of each column are made.
 
 #### `similar(df::DataFrame, nrow)`
 
-A new DataFrame with `nrow` rows and the same column names and types as `df`. 
+A new DataFrame with `nrow` rows and the same column names and types as `df`.
 
 
 ### Basics
@@ -64,11 +64,11 @@ Number of columns in `df`.
 
 Whether the number of columns equals zero.
 
-#### `head(df::AbstractDataFrame)` and `head(df::AbstractDataFrame, i::Int)` 
+#### `head(df::AbstractDataFrame)` and `head(df::AbstractDataFrame, i::Int)`
 
 First `i` rows of `df`. Defaults to 6.
 
-#### `tail(df::AbstractDataFrame)` and `tail(df::AbstractDataFrame, i::Int)` 
+#### `tail(df::AbstractDataFrame)` and `tail(df::AbstractDataFrame, i::Int)`
 
 Last `i` rows of `df`. Defaults to 6.
 
@@ -107,7 +107,7 @@ with one argument normally indexes by columns: `df["col"]`,
 `df[["col1","col3"]]` or `df[i]`. With two arguments, rows and columns
 are selected. Indexing along rows works like Matrix indexing. Indexing
 along columns works like Matrix indexing with the addition of column
-name access. 
+name access.
 
 #### `getindex(df::DataFrame, ind)`  or `df[ind]`
 
@@ -134,7 +134,7 @@ Returns the column `Index` for `df`.
 
 See the Indexing section for these operations on column indexes.
 
-#### `colnames(df::DataFrame)` or `names(df::DataFrame)` 
+#### `colnames(df::DataFrame)` or `names(df::DataFrame)`
 
 The column names as an `Array{ByteString}`
 
@@ -163,11 +163,11 @@ means that columns can be referenced).
 Nondestructive version. Return a DataFrame based on the columns in
 `df` after deleting columns specified by `cols`.
 
-#### `cbind(df1, df2, ...)` or `hcat(df1, df2, ...)` or `[df1 df2 ...]`  
+#### `cbind(df1, df2, ...)` or `hcat(df1, df2, ...)` or `[df1 df2 ...]`
 
 Concatenate columns. Duplicated column names are adjusted.
 
-#### `rbind(df1, df2, ...)` or `vcat(df1, df2, ...)` or `[df1, df2, ...]`  
+#### `rbind(df1, df2, ...)` or `vcat(df1, df2, ...)` or `[df1, df2, ...]`
 
 Concatenate rows.
 
@@ -328,7 +328,7 @@ ByteStrings and Vector{ByteStrings} to Indices.
 
 Normal meanings.
 
-#### `del(x::Index, idx::Integer)`,  `del(x::Index, s::ByteString)`,  
+#### `del(x::Index, idx::Integer)`,  `del(x::Index, s::ByteString)`,
 
 Delete the name `s` or name at position `idx` in `x`.
 
@@ -357,7 +357,7 @@ Vector{Bool}, AbstractDataVector{Bool}, or AbstractDataVector{Int}.
 #### `set_group(idx::Index, newgroup, names::Vector{ByteString})`
 
 Add a group to `idx` with name `newgroup` that includes the names in
-the vector `names`.  
+the vector `names`.
 
 #### `get_groups(idx::Index)`
 
@@ -371,12 +371,12 @@ Set groups in `idx` based on the mapping given by `gr`.
 ## Missing Values
 
 Missing value behavior is implemented by instantiations of the `AbstractDataVector`
-abstract type. 
+abstract type.
 
 #### `NA`
 
 A constant indicating a missing value.
-  
+
 #### `isna(x)`
 
 Return a `Bool` or `Array{Bool}` (if `x` is an `AbstractDataVector`)
@@ -384,7 +384,7 @@ that is `true` for elements with missing values.
 
 #### `nafilter(x)`
 
-Return a copy of `x` after removing missing values. 
+Return a copy of `x` after removing missing values.
 
 #### `nareplace(x, val)`
 

@@ -17,8 +17,8 @@ end
 
 Base.show(io::IO, dt::DDataFrame) = println("$(nrow(dt))x$(ncol(dt)) DDataFrame. $(length(dt.rrefs)) blocks over $(length(union(dt.procs))) processors")
 
-gather(dt::DDataFrame) = reduce((x,y)->vcat(fetch(x), fetch(y)), dt.rrefs) 
-#convert(::Type{DataFrame}, dt::DDataFrame) = reduce((x,y)->vcat(fetch(x), fetch(y)), dt.rrefs) 
+gather(dt::DDataFrame) = reduce((x,y)->vcat(fetch(x), fetch(y)), dt.rrefs)
+#convert(::Type{DataFrame}, dt::DDataFrame) = reduce((x,y)->vcat(fetch(x), fetch(y)), dt.rrefs)
 
 # internal methods
 function _dims(dt::DDataFrame, rows::Bool=true, cols::Bool=true)
@@ -78,8 +78,8 @@ function as_dataframe(bio::BlockableIO; kwargs...)
         push!(poargs, kwdict[argname])
     end
 
-    po = DataFrames.ParseOptions(kwdict[:header], 
-                kwdict[:separator], 
+    po = DataFrames.ParseOptions(kwdict[:header],
+                kwdict[:separator],
                 kwdict[:quotemark],
                 kwdict[:decimal],
                 kwdict[:nastrings],
@@ -113,7 +113,7 @@ function _check_readtable_kwargs(kwargs...)
         (kw[1] in [:skipstart, :skiprows]) && error("dreadtable does not support $(kw[1])")
     end
     for (idx,kw) in enumerate(kwargs)
-        if (kw[1]==:header) 
+        if (kw[1]==:header)
             (kw[2] != false) && error("dreadtable does not support reading of headers")
             splice!(kwargs, idx)
             break
@@ -125,7 +125,7 @@ end
 
 function dreadtable(b::Block; kwargs...)
     kwargs = _check_readtable_kwargs(kwargs...)
-    if (b.affinity == Blocks.no_affinity) 
+    if (b.affinity == Blocks.no_affinity)
         b.affinity = [[w] for w in workers()]
     end
     rrefs = pmap(x->as_dataframe(x;kwargs...), b; fetch_results=false)
@@ -147,7 +147,7 @@ function dreadtable(io::Union(Base.AsyncStream,IOStream), chunk_sz::Int, merge_c
         rrefs = vcat_refs
         procs = uniqprocs
     end
-    
+
     DDataFrame(rrefs, procs)
 end
 
@@ -221,7 +221,7 @@ function _colranges(t::DataFrame, cnames)
         cc = t[colnames[cidx]]
         for idx in 1:nrows
             ccval = cc[idx]
-            if !isna(ccval) 
+            if !isna(ccval)
                 (isna(_min) || (_min > ccval)) && (_min = ccval)
                 (isna(_max) || (_max < ccval)) && (_max = ccval)
                 _sum += ccval
@@ -407,7 +407,7 @@ function deleterows!(dt::DDataFrame, keep_inds::Vector{Int})
         beg_row = end_row+1
     end
     dt_keep_inds = DDataFrame(split_inds, dt.procs)
-    
+
     pmap((x,y)->begin DataFrames.deleterows!(fetch(x),y[1].data); nothing; end, Block(dt), Block(dt_keep_inds))
     _dims(dt, true, false)
 end
@@ -423,7 +423,7 @@ for f in (:(DataArrays.isna), :complete_cases)
             vcat(pmap(x->($f)(fetch(x)), Block(dt))...)
         end
     end
-end    
+end
 function complete_cases!(dt::DDataFrame)
     pmap(x->begin complete_cases!(fetch(x)); nothing; end, Block(dt))
     _dims(dt, true, true)
@@ -471,7 +471,7 @@ for f in (:colmins, :colmaxs, :colprods, :colsums, :colmeans)
             ($f)(vcat(pmap(x->($f)(fetch(x)), Block(dt))...))
         end
     end
-end    
+end
 
 for f in DataFrames.array_arithmetic_operators
     @eval begin
@@ -500,7 +500,7 @@ ncol(dt::DDataFrame) = dt.ncols
 DataArrays.head(dt::DDataFrame) = remotecall_fetch(dt.procs[1], x->head(fetch(x)), dt.rrefs[1])
 DataArrays.tail(dt::DDataFrame) = remotecall_fetch(dt.procs[end], x->tail(fetch(x)), dt.rrefs[end])
 colnames(dt::DDataFrame) = dt.colindex.names
-function colnames!(dt::DDataFrame, vals) 
+function colnames!(dt::DDataFrame, vals)
     pmap(x->colnames!(fetch(x), vals), Block(dt))
     names!(dt.colindex, vals)
 end
@@ -527,21 +527,21 @@ for f in [:vcat, :hcat, :rbind, :cbind]
         function ($f)(dt::DDataFrame...)
             rrefs = pmap((x...)->($f)([fetch(y) for y in x]...), [Block(a) for a in dt]...; fetch_results=false)
             procs = dt[1].procs
-            DDataFrame(rrefs, procs)   
+            DDataFrame(rrefs, procs)
         end
     end
 end
 
 function Base.merge(dt::DDataFrame, t::DataFrame, bycol, jointype)
     (jointype != "inner") && error("only inner joins are supported")
-    
+
     rrefs = pmap((x)->merge(fetch(x),t), Block(dt); fetch_results=false)
     DDataFrame(rrefs, dt.procs)
 end
 
 function Base.merge(t::DataFrame, dt::DDataFrame, bycol, jointype)
     (jointype != "inner") && error("only inner joins are supported")
-    
+
     rrefs = pmap((x)->merge(t,fetch(x)), Block(dt); fetch_results=false)
     DDataFrame(rrefs, dt.procs)
 end
@@ -555,7 +555,7 @@ function colwise(f::Function, r::Function, dt::DDataFrame)
     combined = hcat(resarr...)
     map(x->r([combined[x, :]...]), 1:size(combined,1))
 end
-function colwise(fns::Vector{Function}, rfns::Vector{Function}, dt::DDataFrame) 
+function colwise(fns::Vector{Function}, rfns::Vector{Function}, dt::DDataFrame)
     nfns = length(fns)
     (nfns != length(rfns)) && error("number of operations must match number of reduce operations")
     resarr = pmap((x)->colwise(fns,fetch(x)), Block(dt))
@@ -568,7 +568,7 @@ function colwise(dt::DDataFrame, s::Vector{Symbol}, reduces::Vector{Function}, c
     resarr = pmap((x)->colwise(fetch(x), s, cn), Block(dt))
     combined = vcat(resarr...)
     resdf = DataFrame()
-    
+
     for (idx,(colname,col)) in enumerate(combined)
         resdf[colname] = (reduces[idx%nfns+1])(col)
     end
