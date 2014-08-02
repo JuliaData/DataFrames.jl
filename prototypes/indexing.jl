@@ -71,7 +71,7 @@ upgrade_vector(v::IndexedVector) = v
 
 
 Base.sortperm{S,A<:AbstractDataVector}(x::IndexedVector{S,A}) = [findin(x.x, [NA]), x.idx]
-Base.sortperm(x::IndexedVector) = x.idx 
+Base.sortperm(x::IndexedVector) = x.idx
 Base.sortperm(x::IndexedVector, ::Base.Sort.ReverseOrdering) = reverse(x.idx)
 Base.sort(x::IndexedVector) = x.x[sortperm(x)]
 Base.sort(x::IndexedVector, ::Base.Sort.ReverseOrdering) = x.x[reverse(sortperm(x))]
@@ -124,7 +124,7 @@ function Base.union(v1::Vector{Range1}, v2::Vector{Range1})
         end
         if length(right) == 0 break; end
         # overlap
-        r_end = max(right[end][end], left[end][end])  
+        r_end = max(right[end][end], left[end][end])
         overlap = false
         while length(left) > 0 && length(right) > 0 && right[end][end] > left[end][1]
             r_start = min(right[end][1], left[end][1])
@@ -228,13 +228,13 @@ Base.(:.>){T<:ComparisonTypes}(v::T, a::IndexedVector{T}) = Indexer(Range1[1 : s
 function search_sorted_first_gt{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
     res = search_sorted_last(a, x, idx)
     if res == 0 return 1 end
-    if res == length(a) && a[idx[res]] != x return(length(a)+1) end 
+    if res == length(a) && a[idx[res]] != x return(length(a)+1) end
     a[idx[res]] == x ? res + 1 : res
 end
 function search_sorted_last_lt{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
     res = search_sorted_first(a, x, idx)
     if res > length(idx) return length(idx) end
-    if res == 1 && a[idx[res]] != x return(0) end 
+    if res == 1 && a[idx[res]] != x return(0) end
     a[idx[res]] == x ? res - 1 : res
 end
 
@@ -248,7 +248,7 @@ function Base.findin(a::IndexedVector, b::AbstractVector)
     end
     res
 end
-        
+
 Base.size(a::IndexedVector) = size(a.x)
 Base.length(a::IndexedVector) = length(a.x)
 Base.ndims(a::IndexedVector) = 1
@@ -267,7 +267,7 @@ end
 function search_sorted_last{I<:Integer}(a::AbstractVector, x, idx::AbstractVector{I})
     ## Index of the last value of vector a that is less than or equal to x.
     ## Returns 0 if x is less than all values of a.
-    ## idx is an indexing vector equal in length to a that sorts a 
+    ## idx is an indexing vector equal in length to a that sorts a
     ## @assert length(a) == length(idx)
     lo = 0
     hi = length(idx) + 1

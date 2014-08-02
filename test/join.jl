@@ -23,7 +23,7 @@ module TestJoin
     inner = left[!isna(left[:Job]), :]
     semi = inner[:, [:ID, :Name]]
     anti = left[isna(left[:Job]), [:ID, :Name]]
-    
+
     @test isequal(join(name, job, on = :ID), inner)
     @test isequal(join(name, job, on = :ID, kind = :inner), inner)
     @test isequal(join(name, job, on = :ID, kind = :outer), outer)

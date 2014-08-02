@@ -92,7 +92,7 @@ We can also look at small subsets of the data in a couple of different ways:
 
     head(df)
     tail(df)
-    
+
     df[1:3, :]
 
 Having seen what some of the rows look like, we can try to summarize the

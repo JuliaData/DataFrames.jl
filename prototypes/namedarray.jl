@@ -9,7 +9,7 @@
 #       c = [1:10]
 #   end)
 type NamedArray <: Associative{Any,Any}
-    data::Vector{Any} 
+    data::Vector{Any}
     idx::AbstractIndex
     function NamedArray(data::Vector, idx::AbstractIndex)
         if length(idx) != length(data)

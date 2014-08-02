@@ -14,15 +14,15 @@ f2() = *(dm_a, dm_b)
 f3() = *(dm_a_na, dm_b_na)
 
 df1 = benchmark(f1,
-	            "Linear Algebra",
+                "Linear Algebra",
                 "Matrix Multiplication w/ No NA's",
                 1_000)
 df2 = benchmark(f2,
-	            "Linear Algebra",
+                "Linear Algebra",
                 "DataMatrix Multiplication w/ No NA's",
                 1_000)
 df3 = benchmark(f3,
-	            "Linear Algebra",
+                "Linear Algebra",
                 "DataMatrix Multiplication w/ NA's",
                 1_000)
 

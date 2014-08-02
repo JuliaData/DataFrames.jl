@@ -23,20 +23,20 @@ module TestFormula
     mm = ModelMatrix(mf)
     @test mm.model_colnames == [
      "(Intercept)"
-     "x1:6"        
-     "x1:7"        
-     "x1:8"        
-     "log(x2)"     
-     "x3"          
+     "x1:6"
+     "x1:7"
+     "x1:8"
+     "log(x2)"
+     "x3"
      "x1:6&log(x2)"
-     "x1:6&x3"     
+     "x1:6&x3"
      "x1:7&log(x2)"
-     "x1:7&x3"     
+     "x1:7&x3"
      "x1:8&log(x2)"
      "x1:8&x3" ]
 
     tmp = d["x2"]
-     
+
     #test_group("Basic tests")
 
     d = DataFrame()
@@ -155,15 +155,15 @@ module TestFormula
     mm = model_matrix(mf)
     @test mm.model_colnames == [
      "(Intercept)"
-     "x1:6"        
-     "x1:7"        
-     "x1:8"        
-     "log(x2)"     
-     "x3"          
+     "x1:6"
+     "x1:7"
+     "x1:8"
+     "log(x2)"
+     "x3"
      "x1:6&log(x2)"
-     "x1:6&x3"     
+     "x1:6&x3"
      "x1:7&log(x2)"
-     "x1:7&x3"     
+     "x1:7&x3"
      "x1:8&log(x2)"
      "x1:8&x3" ]
 

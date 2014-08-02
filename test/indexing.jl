@@ -149,7 +149,7 @@ module TestIndexing
         df[column_index] = "A"
         df[column_index] = DataArray([1 + 0im, 2 + 1im])
     end
-     
+
     # Only assign into columns for which new value is type compatible
     for row_index in row_indices
         for column_index in column_indices

@@ -212,8 +212,8 @@ A `PooledDataArray` can be constructed from an `Array` or `DataArray`, and as wi
 
 By default, the index into the pool of values is a Uint32, allowing 2^32 possible pool values.  If you know that you will only have a much smaller number of unique values, you can specify a smaller reference index type, to save space:
 
-	pda5 = PooledDataArray(String, Uint8, 5000, 2)  # Create a 5000x2 array of String values, 
-	                                                # initialized to NA, 
+	pda5 = PooledDataArray(String, Uint8, 5000, 2)  # Create a 5000x2 array of String values,
+	                                                # initialized to NA,
                                                         # with at most 2^8=256 unique values
 
 `PooledDataVectors`s can be used as columns in DataFrames.
@@ -557,7 +557,7 @@ The basic mechanism for spliting data is the `groupby()` function, which will pr
 	end
 
 The `|>` (pipe) operator for `GroupedDataFrame` allows you to run simple functions on the columns of the induced `DataFrame`. You pass a simple function by producing a symbol with its name:
- 
+
 	groupby(iris, "Species") |> :mean
 
 Another simple way to split-and-apply (without clear combining) is to use the `map()` function:

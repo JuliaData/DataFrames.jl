@@ -1,7 +1,7 @@
 ## Possible changes to Julia syntax
 
 DataFrames fit well with Julia's syntax, but some features would
-improve the user experience. 
+improve the user experience.
 
 ### Keyword function arguments
 
@@ -15,7 +15,7 @@ DataFrame creation would be cleaner:
 ```julia
 d = DataFrame(a = [1:20],
               b = PooledDataArray([1:20]))
-```              
+```
 
 In addition, a number of existing and planned functions are calling
 out for optional arguments.
@@ -26,7 +26,7 @@ It'd be nice to be able to do:
 
 ```julia
     by(df[~ a > 3], ["b", "c"], ~ x_sum = sum(x); y_mean = mean(y))
-```    
+```
 A two-sided version would allow better formulas:
 
 ```julia

@@ -678,7 +678,7 @@ end
 
 # copy of a data frame does a shallow copy
 function Base.copy(df::DataFrame)
-	newdf = DataFrame(copy(df.columns), names(df))
+    newdf = DataFrame(copy(df.columns), names(df))
 end
 function Base.deepcopy(df::DataFrame)
     newdf = DataFrame([copy(x) for x in df.columns], names(df))
