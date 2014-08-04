@@ -29,7 +29,7 @@ module TestIteration
         @test isa(col, (Symbol, AbstractDataVector))
     end
 
-    @test isequal(map(x -> minimum(array(x)), eachrow(df)), {1,2})
+    @test isequal(map(row -> minimum(convert(Matrix, row)), eachrow(df)), {1,2})
     @test isequal(map(minimum, eachcol(df)), DataFrame(A = [1], B = [2]))
 
     row = DataFrameRow(df, 1)

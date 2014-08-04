@@ -904,6 +904,13 @@ end
 complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(!complete_cases(df)))
 
 function DataArrays.array(adf::AbstractDataFrame)
+    Base.depwarn(
+        """
+        array(adf::AbstractDataFrame) is deprecated.
+        Use convert(Matrix, adf).
+        """,
+        :array
+    )
     n, p = size(adf)
     T = reduce(typejoin, eltypes(adf))
     res = Array(T, n, p)
@@ -935,10 +942,10 @@ function nonunique(df::AbstractDataFrame)
     res = fill(false, nrow(df))
     di = Dict()
     for i in 1:nrow(df)
-        if haskey(di, array(df[i, :])) # Used to convert to Any type
+        if haskey(di, convert(Matrix{Any}, df[i, :])) # Used to convert to Any type
             res[i] = true
         else
-            di[array(df[i, :])] = 1 # Used to convert to Any type
+            di[convert(Matrix{Any}, df[i, :])] = 1 # Used to convert to Any type
         end
     end
     res
@@ -1093,3 +1100,68 @@ function Base.push!(df::DataFrame, iterable::Any)
     end
 end
 
+function Base.convert{T}(::Type{Matrix{T}}, df::DataFrame)
+    # Fail if any NA's are encountered
+    nrows, ncols = size(df)
+    M = Array(T, nrows, ncols)
+    for j in 1:ncols
+        col = df[j]
+        if countna(col) != 0
+            throw(
+                NAException("Can't convert DataFrame w/ NA's to a Matrix")
+            )
+        end
+        for i in 1:nrows
+            M[i, j] = convert(T, col[i])
+        end
+    end
+    return M
+end
+
+function Base.convert(::Type{Matrix}, df::DataFrame)
+    return convert(Matrix{typejoin(eltypes(df)...)}, df)
+end
+
+function Base.convert{T}(::Type{DataMatrix{T}}, df::DataFrame)
+    nrows, ncols = size(df)
+    M = DataArray(T, nrows, ncols)
+    for j in 1:ncols
+        col = df[j]
+        for i in 1:nrows
+            if !isna(col[i])
+                M[i, j] = convert(T, col[i])
+            else
+                M[i, j] = NA
+            end
+        end
+    end
+    return M
+end
+
+function Base.convert(::Type{DataMatrix}, df::DataFrame)
+    return convert(DataMatrix{typejoin(eltypes(df)...)}, df)
+end
+
+# TODO: Add Base.convert(::Type{Dict{S, T}}, df::DataFrame)
+function Base.convert(::Type{Dict{Vector}}, df::DataFrame)
+    d = Dict{Symbol, Any}()
+    colnames = names(df)
+    for j in 1:size(df, 2)
+        d[colnames[j]] = df[j]
+    end
+    return d
+end
+
+function Base.convert(::Type{Vector{Dict}}, df::DataFrame)
+    nrows, ncols = size(df)
+    colnames = names(df)
+    v = [Dict{Symbol, Any}() for i in 1:nrows]
+    for j in 1:ncols
+        col = df[j]
+        name = colnames[j]
+        for i in 1:nrows
+            v[i][name] = col[i]
+        end
+    end
+    return v
+end
