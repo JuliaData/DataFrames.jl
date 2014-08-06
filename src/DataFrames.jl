@@ -88,6 +88,7 @@ export @~,
        meltdf,
        pivottable,
        read_rda,
+       read_dbf,
        vecbind,
        push!
 
@@ -113,6 +114,7 @@ include(joinpath("statsmodels", "formula.jl"))
 include(joinpath("statsmodels", "statsmodel.jl"))
 include(joinpath("dataframe", "io.jl"))
 include("RDA.jl")
+include("DBF.jl")
 include("deprecated.jl")
 
 end # module DataFrames
