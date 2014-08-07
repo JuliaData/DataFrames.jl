@@ -990,6 +990,28 @@ function escapedprint(io::IO, x::String, escapes::String)
     print_escaped(io, x, escapes)
 end
 
+using Base.Cartesian
+@ngenerate N Nothing function _printtable(io::IO, header::Bool, separator::Char, quotemark::Char, col::NTuple{N, AbstractVector}...)
+    @nexprs N j->(extr_j = DataArrays.daextract(col_j))
+    for i = 1:length(col_1)
+        @nexprs N j->(begin
+            if DataArrays.unsafe_isna(col_j, extr_j, i)
+                print(io, "NA")
+            elseif !(eltype(col_j) <: Real)
+                print(io, quotemark)
+                escapedprint(io, DataArrays.unsafe_getindex_notna(col_j, extr_j, i), "\"'")
+                print(io, quotemark)
+            else
+                print(io, DataArrays.unsafe_getindex_notna(col_j, extr_j, i))
+            end
+            if j < N
+                print(io, separator)
+            end
+        end)
+        print(io, '\n')
+    end
+end
+
 function printtable(io::IO,
                     df::DataFrame;
                     header::Bool = true,
@@ -1010,22 +1032,7 @@ function printtable(io::IO,
             end
         end
     end
-    for i in 1:n
-        for j in 1:p
-            if ! (etypes[j] <: Real)
-                print(io, quotemark)
-                escapedprint(io, df[i, j], "\"'")
-                print(io, quotemark)
-            else
-                print(io, df[i, j])
-            end
-            if j < p
-                print(io, separator)
-            else
-                print(io, '\n')
-            end
-        end
-    end
+    _printtable(io, header, separator, quotemark, df.columns...)
     return
 end
 
