@@ -48,5 +48,7 @@ if anyerrors
     throw("Tests failed")
 end
 
-stdin = Pkg.dir("DataFrames", "test", "stdin.sh")
-run(`bash $stdin`)
+stdin = joinpath(dirname(@__FILE__), "stdin.sh")
+ENV2 = copy(ENV)
+ENV2["JULIA_HOME"] = JULIA_HOME
+run(setenv(`bash $stdin`, ENV2))
