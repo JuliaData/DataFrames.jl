@@ -26,7 +26,7 @@ immutable ParseOptions{S <: ByteString}
     allowescapes::Bool
 end
 
-# Hacky way of dispatching on values of ParseOptions to avoid running
+# Dispatch on values of ParseOptions to avoid running
 #   unused checks for every byte read
 immutable ParseType{ALLOWCOMMENTS, SKIPBLANKS, ALLOWESCAPES, SPC_SEP} end
 ParseType(o::ParseOptions) = ParseType{o.allowcomments, o.skipblanks, o.allowescapes, o.separator == ' '}()
@@ -37,6 +37,31 @@ macro read_peek_eof(io, nextchr)
     quote
         nextnext = eof($io) ? 0xff : read($io, Uint8)
         $nextchr, nextnext, nextnext == 0xff
+    end
+end
+
+macro skip_within_eol(io, chr, nextchr, endf)
+    io = esc(io)
+    chr = esc(chr)
+    nextchr = esc(nextchr)
+    endf = esc(endf)
+    quote
+        if $chr == '\r' && $nextchr == '\n'
+            $chr, $nextchr, $endf = @read_peek_eof($io, $nextchr)
+        end
+    end
+end
+
+macro skip_to_eol(io, chr, nextchr, endf)
+    io = esc(io)
+    chr = esc(chr)
+    nextchr = esc(nextchr)
+    endf = esc(endf)
+    quote
+        while !$endf && !@atnewline($chr, $nextchr)
+            $chr, $nextchr, $endf = @read_peek_eof($io, $nextchr)
+        end
+        @skip_within_eol($io, $chr, $nextchr, $endf)
     end
 end
 
@@ -62,8 +87,8 @@ macro atescape(chr, nextchr, quotemarks)
     nextchr = esc(nextchr)
     quotemarks = esc(quotemarks)
     quote
-        $chr == '\\' ||                                  # \" escaping
-        ($chr in $quotemarks && $nextchr in $quotemarks) # "" escaping
+        ($chr == '\\' || $chr in $quotemarks) &&
+        $nextchr in $quotemarks
     end
 end
 
@@ -198,6 +223,7 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
 
             # Loop over bytes from the input until we've read requested rows
             while !endf && ((nrows == -1) || (n_lines < nrows + 1))
+
                 chr, nextchr, endf = @read_peek_eof(io, nextchr)
 
                 # === Debugging ===
@@ -210,10 +236,10 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
                 $(if allowcomments
                     quote
                         # Ignore text inside comments completely
+
                         if !in_quotes && chr == o.commentmark
-                            while !endf && !@atnewline(chr, nextchr)
-                                chr, nextchr, endf = @read_peek_eof(io, nextchr)
-                            end
+                            @skip_to_eol(io, chr, nextchr, endf)
+
                             # Skip the linebreak if the comment began at the start of a line
                             if at_start
                                 continue
@@ -228,10 +254,7 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
                         if !in_quotes
                             while !endf && @atblankline(chr, nextchr)
                                 chr, nextchr, endf = @read_peek_eof(io, nextchr)
-                                # Special handling for Windows
-                                if !endf && chr == '\r' && nextchr == '\n'
-                                    chr, nextchr, endf = @read_peek_eof(io, nextchr)
-                                end
+                                @skip_within_eol(io, chr, nextchr, endf)
                             end
                         end
                     end
@@ -282,6 +305,7 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
                         end)
                     # Finished reading a row
                     elseif @atnewline(chr, nextchr)
+                        @skip_within_eol(io, chr, nextchr, endf)
                         $(if allowcomments quote at_start = true end end)
                         @push(n_bounds, p.bounds, n_bytes, l_bounds)
                         @push(n_bytes, p.bytes, '\n', l_bytes)
@@ -698,18 +722,31 @@ function readtable!(p::ParsedCSV,
 
     chr, nextchr = 0xff, 0xff
 
-    # Skip lines at the start
     skipped_lines = 0
+
+    # Skip lines at the start
     if o.skipstart != 0
-        chr, nextchr, endf = @read_peek_eof(io, nextchr)
         while skipped_lines < o.skipstart
-            while !endf && !@atnewline(chr, nextchr)
+            chr, nextchr, endf = @read_peek_eof(io, nextchr)
+            @skip_to_eol(io, chr, nextchr, endf)
+            skipped_lines += 1
+        end
+    else
+        chr, nextchr, endf = @read_peek_eof(io, nextchr)
+    end
+
+    if o.allowcomments || o.skipblanks
+        while true
+            if o.allowcomments && nextchr == o.commentmark
                 chr, nextchr, endf = @read_peek_eof(io, nextchr)
+                @skip_to_eol(io, chr, nextchr, endf)
+            elseif o.skipblanks && @atnewline(nextchr, nextchr)
+                chr, nextchr, endf = @read_peek_eof(io, nextchr)
+                @skip_within_eol(io, chr, nextchr, endf)
+            else
+                break
             end
             skipped_lines += 1
-            if !endf && skipped_lines < o.skipstart
-                chr, nextchr, endf = @read_peek_eof(io, nextchr)
-            end
         end
     end
 
@@ -777,6 +814,8 @@ function readtable(io::IO,
         throw(ArgumentError("Argument 'encoding' only supports ':utf8' currently."))
     elseif !isempty(skiprows)
         throw(ArgumentError("Argument 'skiprows' is not yet supported."))
+    elseif decimal != '.'
+        throw(ArgumentError("Argument 'decimal' is not yet supported."))
     end
 
     if !isempty(colnames)
