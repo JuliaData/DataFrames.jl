@@ -203,12 +203,20 @@ module TestIO
     @test readtable(io, ignorepadding = true) == DataFrame(A = 1, B = 2, C = 3)
 
     # Readtable c-style escape options
+
+    df = readtable("$data/escapes/escapes.csv", allowescapes = true)
+    @test df[1, :V] == "\t\r\n"
+    @test df[2, :V] == "\\\\t"
+    @test df[3, :V] == "\\\""
+
     df = readtable("$data/escapes/escapes.csv")
     @test df[1, :V] == "\\t\\r\\n"
     @test df[2, :V] == "\\\\t"
-    df = readtable("$data/escapes/escapes.csv", allowescapes = true)
-    @test df[1, :V] == "\t\r\n"
-    @test df[2, :V] == "\\t"
+    @test df[3, :V] == "\\\""
+
+    # df = readtable("$data/escapes/escapes.csv", escapechars = ['"'], nrows = 2)
+    # @test df[1, :V] == "\\t\\r\\n"
+    # @test df[2, :V] == "\\\\\\\\t"
 
     # Readtable with makefactors active should only make factors from columns
     # of strings.
