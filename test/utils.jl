@@ -30,4 +30,20 @@ module TestUtils
         warn("Unable to find validate reserved words against parser. ",
              "Expected if Julia was not built from source.")
     end
+
+    @test DataFrames.countna([1:3]) == 0
+
+    data = @data rand(20)
+    @test DataFrames.countna(data) == 0
+    data[sample(1:20, 11, replace=false)] = NA
+    @test DataFrames.countna(data) == 11
+    data[1:end] = NA
+    @test DataFrames.countna(data) == 20
+
+    pdata = @data sample(1:5, 20)
+    @test DataFrames.countna(pdata) == 0
+    pdata[sample(1:20, 11, replace=false)] = NA
+    @test DataFrames.countna(pdata) == 11
+    pdata[1:end] = NA
+    @test DataFrames.countna(pdata) == 20
 end
