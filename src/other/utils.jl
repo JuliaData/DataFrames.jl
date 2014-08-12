@@ -121,16 +121,7 @@ countna(a::Array) = 0
 #' @examples
 #'
 #' DataFrames.countna(@data([1, 2, 3]))
-function countna(da::DataArray)
-    n = length(da)
-    res = 0
-    for i in 1:n
-        if da.na[i]
-            res += 1
-        end
-    end
-    return res
-end
+countna(da::DataArray) = sum(da.na)
 
 #' @description
 #'
@@ -145,12 +136,9 @@ end
 #'
 #' DataFrames.countna(@pdata([1, 2, 3]))
 function countna(da::PooledDataArray)
-    n = length(da)
     res = 0
-    for i in 1:n
-        if da.refs[i] == 0
-            res += 1
-        end
+    for i in 1:length(da)
+        res += da.refs[i] == 0
     end
     return res
 end
