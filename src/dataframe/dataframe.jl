@@ -136,9 +136,6 @@ function DataFrame(column_eltypes::Vector, cnames::Vector, nrows::Integer)
     columns = Array(Any, p)
     for j in 1:p
         columns[j] = DataArray(column_eltypes[j], nrows)
-        for i in 1:nrows
-            columns[j][i] = NA
-        end
     end
     return DataFrame(columns, Index(cnames))
 end
@@ -150,9 +147,6 @@ function DataFrame(column_eltypes::Vector, nrows::Integer)
     cnames = gennames(p)
     for j in 1:p
         columns[j] = DataArray(column_eltypes[j], nrows)
-        for i in 1:nrows
-            columns[j][i] = NA
-        end
     end
     return DataFrame(columns, Index(cnames))
 end
@@ -1092,4 +1086,3 @@ function Base.push!(df::DataFrame, iterable::Any)
         i=i+1
     end
 end
-
