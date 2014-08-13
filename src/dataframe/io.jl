@@ -87,8 +87,8 @@ macro atescape(chr, nextchr, quotemarks)
     nextchr = esc(nextchr)
     quotemarks = esc(quotemarks)
     quote
-        ($chr == '\\' || $chr in $quotemarks) &&
-        $nextchr in $quotemarks
+        ($chr == '\\' && ($nextchr == '\\' || $nextchr in $quotemarks)) ||
+        ($chr == $nextchr && $chr in $quotemarks)
     end
 end
 
@@ -236,7 +236,6 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
                 $(if allowcomments
                     quote
                         # Ignore text inside comments completely
-
                         if !in_quotes && chr == o.commentmark
                             @skip_to_eol(io, chr, nextchr, endf)
 
@@ -263,10 +262,11 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
                 $(if allowescapes
                     quote
                         # Merge chr and nextchr here if they're a c-style escape
-                        if @atcescape(chr, nextchr)
+                        if @atcescape(chr, nextchr) && !in_escape
                             chr = @mergechr(chr, nextchr)
                             nextchr = eof(io) ? 0xff : read(io, Uint8)
                             endf = nextchr == 0xff
+                            in_escape = true
                         end
                     end
                 end)
