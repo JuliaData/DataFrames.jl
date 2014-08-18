@@ -84,7 +84,7 @@ ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Nothing
 #'        be empty if the AbstractDataFrame would be printed without any
 #'        ellipses.
 #' @param rowlabel::String The label that will be used when rendered the
-#'        numeric ID's of each row. Typically, this will be set to "Row #".
+#'        numeric ID's of each row. Typically, this will be set to "Row".
 #'
 #' @returns widths::Vector{Int} The maximum string widths required to render
 #'          each column, including that column's name.
@@ -92,7 +92,7 @@ ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Nothing
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "yy", "z"])
-#' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row #")
+#' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row")
 function getmaxwidths(adf::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
@@ -154,7 +154,7 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "yy", "z"])
-#' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row #")
+#' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row")
 #' totalwidth = getprintedwidth(maxwidths))
 function getprintedwidth(maxwidths::Vector{Int}) # -> Int
     # Include length of line-initial |
@@ -190,7 +190,7 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "yy", "z"])
-#' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row #")
+#' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row")
 #' chunkbounds = getchunkbounds(maxwidths, true)
 function getchunkbounds(maxwidths::Vector{Int},
                         splitchunks::Bool) # -> Vector{Int}
@@ -305,7 +305,7 @@ end
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
 #' @param rowlabel::Symbol What label should be printed when rendering the
-#'        numeric ID's of each row? Defaults to `"Row #"`.
+#'        numeric ID's of each row? Defaults to `"Row"`.
 #' @param displaysummary::Bool Should a brief string summary of the
 #'        AbstractDataFrame be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
@@ -315,14 +315,14 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' showrows(STDOUT, df, 1:2, 3:3, [1, 1, 5], false, "Row #", true)
+#' showrows(STDOUT, df, 1:2, 3:3, [1, 1, 5], false, "Row", true)
 function showrows(io::IO,
                   adf::AbstractDataFrame,
                   rowindices1::AbstractVector{Int},
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
                   splitchunks::Bool = false,
-                  rowlabel::Symbol = symbol("Row #"),
+                  rowlabel::Symbol = symbol("Row"),
                   displaysummary::Bool = true) # -> Nothing
     ncols = size(adf, 2)
     cnames = names(adf)
@@ -420,7 +420,7 @@ end
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
 #' @param rowlabel::Symbol What label should be printed when rendering the
-#'        numeric ID's of each row? Defaults to `"Row #"`.
+#'        numeric ID's of each row? Defaults to `"Row"`.
 #' @param displaysummary::Bool Should a brief string summary of the
 #'        AbstractDataFrame be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
@@ -430,11 +430,11 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' show(STDOUT, df, false, "Row #", true)
+#' show(STDOUT, df, false, "Row", true)
 function Base.show(io::IO,
                    adf::AbstractDataFrame,
                    splitchunks::Bool = true,
-                   rowlabel::Symbol = symbol("Row #"),
+                   rowlabel::Symbol = symbol("Row"),
                    displaysummary::Bool = true) # -> Nothing
     nrows = size(adf, 1)
     tty_rows, tty_cols = Base.tty_size()
@@ -541,7 +541,7 @@ Base.show(row::DataFrameRow) = show(STDOUT, row)
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
 #' @param rowlabel::Symbol What label should be printed when rendering the
-#'        numeric ID's of each row? Defaults to `"Row #"`.
+#'        numeric ID's of each row? Defaults to `"Row"`.
 #' @param displaysummary::Bool Should a brief string summary of the
 #'        AbstractDataFrame be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
@@ -551,11 +551,11 @@ Base.show(row::DataFrameRow) = show(STDOUT, row)
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' showall(STDOUT, df, false, "Row #", true)
+#' showall(STDOUT, df, false, "Row", true)
 function Base.showall(io::IO,
                       adf::AbstractDataFrame,
                       splitchunks::Bool = false,
-                      rowlabel::Symbol = symbol("Row #"),
+                      rowlabel::Symbol = symbol("Row"),
                       displaysummary::Bool = true) # -> Nothing
     rowindices1 = 1:size(adf, 1)
     rowindices2 = 1:0
