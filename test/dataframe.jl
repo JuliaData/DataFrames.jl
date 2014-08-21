@@ -251,4 +251,23 @@ module TestDataFrame
     df = DataFrame(a=@data([1, 2, 3]), b=@data([3., 4., 5.]))
     @test deleterows!(df, [2, 3]) === df
     @test isequal(df, DataFrame(a=@data([1]), b=@data([3.])))
+
+    #head, tail and sample
+    data = rand(1:20, 10, 3)
+    df = convert(DataFrame,data)
+
+    @test head(df) == convert(DataFrame, data[1:6, :])
+    @test head(df, 5) == convert(DataFrame, data[1:5, :])
+    @test head(df, 20) == df
+
+    @test tail(df) == convert(DataFrame, data[5:end, :])
+    @test tail(df, 5) == convert(DataFrame, data[6:end, :])
+    @test tail(df, 20) == df
+
+    srand(42)
+    df1 = sample(df, 5)
+    srand(42)
+    @test df1 == convert(DataFrame,
+                         data[sort(sample(1:10, 5, replace=false)), :])
+    @test sample(df, 15) == df
 end
