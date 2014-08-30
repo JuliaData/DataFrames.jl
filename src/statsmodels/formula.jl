@@ -170,14 +170,16 @@ function dropUnusedLevels!(da::PooledDataArray)
 end
 dropUnusedLevels!(x) = x
 
-function ModelFrame(f::Formula, d::AbstractDataFrame)
-    trms = Terms(f)
+function ModelFrame(trms::Terms, d::AbstractDataFrame)
     df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
     for c in eachcol(df) dropUnusedLevels!(c[2]) end
     ModelFrame(df, trms, msng)
 end
+
+ModelFrame(f::Formula, d::AbstractDataFrame) = ModelFrame(Terms(f), d)
 ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
+ModelFrame(mf::ModelFrame, d::AbstractDataFrame) = ModelFrame(mf.terms, d)
 
 function StatsBase.model_response(mf::ModelFrame)
     mf.terms.response || error("Model formula one-sided")
