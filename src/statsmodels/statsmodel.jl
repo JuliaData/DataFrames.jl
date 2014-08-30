@@ -67,8 +67,12 @@ typealias DataFrameModels Union(DataFrameStatisticalModel, DataFrameRegressionMo
 
 # Predict function that takes data frame as predictor instead of matrix
 function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame)
-    newX = ModelMatrix(ModelFrame(mm.mf, df))
-    predict(mm, newX.m)
+    # copy terms remove outcome if present
+    newTerms = Terms(mm.mf.terms)
+    removeResponse!(newTerms)
+    # create new model frame/matrix
+    newX = ModelMatrix(ModelFrame(newTerms, df)).m
+    predict(mm, newX)
 end
 
 # coeftable implementation
