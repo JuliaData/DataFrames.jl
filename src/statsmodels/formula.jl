@@ -150,6 +150,20 @@ function Terms(f::Formula)
     Terms(tt, ev, facs, oo, haslhs, !any(noint))
 end
 
+function Terms(t::Terms)
+    Terms(t.terms, t.eterms, t.factors, t.order, t.response, t.intercept)
+end
+
+function removeResponse!(t::Terms)
+    if t.response
+        t.order = t.order[2:end]
+        t.eterms = t.eterms[2:end]
+        t.factors = t.factors[2:end, 2:end]
+        t.response = false
+    end
+    return t
+end
+
 ## Default NA handler.  Others can be added as keyword arguments
 function na_omit(df::DataFrame)
     cc = complete_cases(df)
