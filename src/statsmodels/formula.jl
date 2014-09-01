@@ -150,6 +150,18 @@ function Terms(f::Formula)
     Terms(tt, ev, facs, oo, haslhs, !any(noint))
 end
 
+function remove_response(t::Terms)
+    # shallow copy original terms
+    t = Terms(t.terms, t.eterms, t.factors, t.order, t.response, t.intercept)
+    if t.response
+        t.order = t.order[2:end]
+        t.eterms = t.eterms[2:end]
+        t.factors = t.factors[2:end, 2:end]
+        t.response = false
+    end
+    return t
+end
+
 ## Default NA handler.  Others can be added as keyword arguments
 function na_omit(df::DataFrame)
     cc = complete_cases(df)
@@ -170,13 +182,14 @@ function dropUnusedLevels!(da::PooledDataArray)
 end
 dropUnusedLevels!(x) = x
 
-function ModelFrame(f::Formula, d::AbstractDataFrame)
-    trms = Terms(f)
+function ModelFrame(trms::Terms, d::AbstractDataFrame)
     df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
     for c in eachcol(df) dropUnusedLevels!(c[2]) end
     ModelFrame(df, trms, msng)
 end
+
+ModelFrame(f::Formula, d::AbstractDataFrame) = ModelFrame(Terms(f), d)
 ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
 
 function StatsBase.model_response(mf::ModelFrame)

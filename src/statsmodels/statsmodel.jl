@@ -65,6 +65,15 @@ typealias DataFrameModels Union(DataFrameStatisticalModel, DataFrameRegressionMo
 @delegate DataFrameRegressionModel.model [StatsBase.residuals, StatsBase.model_response,
                                           StatsBase.predict, StatsBase.predict!]
 
+# Predict function that takes data frame as predictor instead of matrix
+function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame)
+    # copy terms, removing outcome if present
+    newTerms = remove_response(mm.mf.terms)
+    # create new model frame/matrix
+    newX = ModelMatrix(ModelFrame(newTerms, df)).m
+    predict(mm, newX)
+end
+
 # coeftable implementation
 function StatsBase.coeftable(model::DataFrameModels)
     ct = coeftable(model.model)
