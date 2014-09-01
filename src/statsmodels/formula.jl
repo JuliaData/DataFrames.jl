@@ -150,11 +150,9 @@ function Terms(f::Formula)
     Terms(tt, ev, facs, oo, haslhs, !any(noint))
 end
 
-function Terms(t::Terms)
-    Terms(t.terms, t.eterms, t.factors, t.order, t.response, t.intercept)
-end
-
-function removeResponse!(t::Terms)
+function remove_response(t::Terms)
+    # shallow copy original terms
+    t = Terms(t.terms, t.eterms, t.factors, t.order, t.response, t.intercept)
     if t.response
         t.order = t.order[2:end]
         t.eterms = t.eterms[2:end]
@@ -193,7 +191,6 @@ end
 
 ModelFrame(f::Formula, d::AbstractDataFrame) = ModelFrame(Terms(f), d)
 ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
-ModelFrame(mf::ModelFrame, d::AbstractDataFrame) = ModelFrame(mf.terms, d)
 
 function StatsBase.model_response(mf::ModelFrame)
     mf.terms.response || error("Model formula one-sided")

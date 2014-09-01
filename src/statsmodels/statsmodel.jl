@@ -67,9 +67,8 @@ typealias DataFrameModels Union(DataFrameStatisticalModel, DataFrameRegressionMo
 
 # Predict function that takes data frame as predictor instead of matrix
 function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame)
-    # copy terms remove outcome if present
-    newTerms = Terms(mm.mf.terms)
-    removeResponse!(newTerms)
+    # copy terms, removing outcome if present
+    newTerms = remove_response(mm.mf.terms)
     # create new model frame/matrix
     newX = ModelMatrix(ModelFrame(newTerms, df)).m
     predict(mm, newX)
