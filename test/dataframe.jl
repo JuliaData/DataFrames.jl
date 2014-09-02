@@ -145,10 +145,6 @@ module TestDataFrame
     @test typeof(df[:,:a]) == DataVector{Int}
     @test typeof(df[:,:b]) == DataVector{Char}
 
-    data = {:A => [1, 2], :C => [:1, :2], :B => [3, 4]}
-    df = DataFrame(data)
-    # Specify column_names
-    df = DataFrame(data, [:C, :A, :B])
 
     # This assignment was missing before
     df = DataFrame(Column = [:A])

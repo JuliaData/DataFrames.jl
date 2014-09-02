@@ -85,40 +85,6 @@ function DataFrame(columns::Vector{Any},
     return DataFrame(columns, Index(cnames))
 end
 
-# Pandas' Dict of Vectors -> DataFrame constructor w/ explicit column names
-function DataFrame(d::Dict)
-    cnames = sort(Symbol[x for x in keys(d)])
-    p = length(cnames)
-    if p == 0
-        return DataFrame()
-    end
-    n = length(d[cnames[1]])
-    columns = Array(Any, p)
-    for j in 1:p
-        if length(d[cnames[j]]) != n
-            throw(ArgumentError("All columns must have the same length"))
-        end
-        columns[j] = DataArray(d[cnames[j]])
-    end
-    return DataFrame(columns, Index(cnames))
-end
-
-# Pandas' Dict of Vectors -> DataFrame constructor w/o explicit column names
-function DataFrame(d::Dict, cnames::Vector)
-    p = length(cnames)
-    if p == 0
-        DataFrame()
-    end
-    n = length(d[cnames[1]])
-    columns = Array(Any, p)
-    for j in 1:p
-        if length(d[cnames[j]]) != n
-            throw(ArgumentError("All columns must have the same length"))
-        end
-        columns[j] = DataArray(d[cnames[j]])
-    end
-    return DataFrame(columns, Index(cnames))
-end
 
 # Initialize empty DataFrame objects of arbitrary size
 function DataFrame(t::Type, nrows::Integer, ncols::Integer)
@@ -1020,6 +986,25 @@ end
 nullable!(colnames::Array{Symbol,1},df::AbstractDataFrame)=  (for i in colnames df[i]=DataArray(df[i]) end)
 nullable!(colnums::Array{Int,1},df::AbstractDataFrame)= (for i in colnums df[i]=DataArray(df[i]) end)
 
+function Base.convert(::Type{DataFrame}, d::Dict)
+    dnames = collect(keys(d))
+    sort!(dnames)
+    p = length(dnames)
+    columns  = Array(Any, p)
+    colnames = Array(Symbol,p)
+    if p == 0
+        return DataFrame()
+    end
+    n = length(d[dnames[1]])
+    for j in 1:p
+        if length(d[dnames[j]]) != n
+            throw(ArgumentError("All columns in Dict must have the same length"))
+        end
+        columns[j] = DataArray([d[dnames[j]]])
+        colnames[j] = symbol(dnames[j])
+    end
+    return DataFrame(columns, Index(colnames))
+end
 
 ##############################################################################
 ##
