@@ -23,6 +23,9 @@ module TestIteration
     for row in eachrow(df)
         @test isa(row, DataFrameRow)
         @test row[:B]-row[:A] == 1
+
+        # issue #683 (https://github.com/JuliaStats/DataFrames.jl/pull/683)
+        @test typeof(collect(row)) <: Array{(Symbol, Any), 1}
     end
 
     for col in eachcol(df)
