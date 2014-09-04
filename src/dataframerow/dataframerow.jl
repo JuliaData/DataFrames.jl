@@ -26,7 +26,7 @@ Base.length(r::DataFrameRow) = size(r.df, 2)
 
 Base.endof(r::DataFrameRow) = size(r.df, 2)
 
-Base.collect(r::DataFrameRow) = (String, Any)[x for x in r]
+Base.collect(r::DataFrameRow) = (Symbol, Any)[x for x in r]
 
 Base.start(r::DataFrameRow) = 1
 
