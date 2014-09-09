@@ -92,7 +92,7 @@ ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Nothing
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "yy", "z"])
-#' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row")
+#' maxwidths = getmaxwidths(df, 1:1, 3:3, :Row)
 function getmaxwidths(adf::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
@@ -315,7 +315,7 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' showrows(STDOUT, df, 1:2, 3:3, [1, 1, 5], false, "Row", true)
+#' showrows(STDOUT, df, 1:2, 3:3, [1, 1, 5], false, :Row, true)
 function showrows(io::IO,
                   adf::AbstractDataFrame,
                   rowindices1::AbstractVector{Int},
@@ -430,7 +430,7 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' show(STDOUT, df, false, "Row", true)
+#' show(STDOUT, df, false, :Row, true)
 function Base.show(io::IO,
                    adf::AbstractDataFrame,
                    splitchunks::Bool = true,
@@ -551,7 +551,7 @@ Base.show(row::DataFrameRow) = show(STDOUT, row)
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' showall(STDOUT, df, false, "Row", true)
+#' showall(STDOUT, df, false, :Row, true)
 function Base.showall(io::IO,
                       adf::AbstractDataFrame,
                       splitchunks::Bool = false,
