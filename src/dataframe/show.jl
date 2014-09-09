@@ -342,21 +342,7 @@ function showrows(io::IO,
     for chunkindex in 1:nchunks
         leftcol = chunkbounds[chunkindex] + 1
         rightcol = chunkbounds[chunkindex + 1]
-
-        # Print table bounding line
-        write(io, '|')
-        for itr in 1:(rowmaxwidth + 2)
-            write(io, '-')
-        end
-        write(io, '|')
-        for j in leftcol:rightcol
-            for itr in 1:(maxwidths[j] + 2)
-                write(io, '-')
-            end
-            write(io, '|')
-        end
-        write(io, '\n')
-
+        
         # Print column names
         @printf io "| %s" rowlabel
         padding = rowmaxwidth - ourstrwidth(rowlabel)
@@ -377,6 +363,20 @@ function showrows(io::IO,
                 print(io, " | ")
             end
         end
+
+        # Print table bounding line
+        write(io, '|')
+        for itr in 1:(rowmaxwidth + 2)
+            write(io, '-')
+        end
+        write(io, '|')
+        for j in leftcol:rightcol
+            for itr in 1:(maxwidths[j] + 2)
+                write(io, '-')
+            end
+            write(io, '|')
+        end
+        write(io, '\n')
 
         # Print main table body, potentially in two abbreviated sections
         showrowindices(io,
