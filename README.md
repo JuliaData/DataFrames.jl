@@ -9,4 +9,4 @@ Tools for working with data in Julia.
 
 **Installation**: at the Julia REPL: `Pkg.add("DataFrames")`
 
-**Documentation**: [available here](http://juliastats.github.io/DataFrames.jl/).
+**Documentation**: [available here](http://dataframesjl.readthedocs.org/en/latest/).
