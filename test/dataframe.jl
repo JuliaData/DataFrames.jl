@@ -46,7 +46,7 @@ module TestDataFrame
 
     #test_group("DataFrame assignment")
     # Insert single column
-    x0 = x[[], :]
+    x0 = x[Int[], :]
     @test_throws ErrorException x0[:d] = [1]
     @test_throws ErrorException x0[:d] = 1:3
 

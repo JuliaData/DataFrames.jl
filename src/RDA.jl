@@ -295,8 +295,8 @@ function DataArrays.data(ri::RInteger)
               sz <= typemax(Uint16) ? Uint16 :
               sz <= typemax(Uint32) ? Uint32 :
                                       Uint64
+    dd[msng] = 0
     refs = convert(Vector{REFTYPE}, dd)
-    refs[msng] = zero(REFTYPE)
     PooledDataArray(DataArrays.RefArray(refs), pool)
 end
 
