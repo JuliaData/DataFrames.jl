@@ -1035,7 +1035,8 @@ function Base.push!(df::DataFrame, associative::Associative)
     i=1
     for nm in names(df)
         try
-            push!(df[nm], associative[string(nm)])
+            val = get(() -> associative[string(nm)], associative, nm)
+            push!(df[nm], val)
         catch
             #clean up partial row
             colnames=[c for c in names(df)]
