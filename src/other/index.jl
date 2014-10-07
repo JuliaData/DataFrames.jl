@@ -13,7 +13,7 @@ type Index <: AbstractIndex   # an OrderedDict would be nice here...
 end
 function Index(x::Vector{Symbol})
     x = make_unique(x)
-    Index(Dict{Symbol, Indices}(tuple(x...), tuple([1:length(x)]...)), x)
+    Index(Dict{Symbol, Indices}(zip(x, 1:length(x))), x)
 end
 Index() = Index(Dict{Symbol, Indices}(), Symbol[])
 Base.length(x::Index) = length(x.names)
