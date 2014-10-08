@@ -7,51 +7,51 @@
 ##
 ##############################################################################
 
-const SXPtab = [                        # Defined in Rinternals.h
-                0x00=>"NULL",
-                0x01=>"Symbol",
-                0x02=>"Pairlist",
-                0x03=>"Closure",
-                0x04=>"Environment",
-                0x05=>"Promise",
-                0x06=>"Lang",
-                0x07=>"Special",
-                0x08=>"Builtin",
-                0x09=>"Char",        # "scalar" string type (internal only)
-                0x0a=>"Logical",     # almost BitArray but allows NA's
-                0x0d=>"Integer",     # Array{Int32, 1}
-                0x0e=>"Real",        # Array{Float64, 1}
-                0x0f=>"Complex",     # Array{Complex128, 1}
-                0x10=>"String",      # Array{ASCIIString, 1}
-                0x11=>"Dot",         # dot-dot-dot object
-                0x12=>"Any",         # make "any" args work
-                0x13=>"List",        # generic vector, {} but with names
-                0x14=>"Expr",        # expressions vectors
-                0x15=>"ByteCode",
-                0x16=>"XPtr",
-                0x17=>"WeakRef",
-                0x18=>"Raw",
-                0x19=>"S4",
-                0x1e=>"New",          # fresh node created in new page
-                0x1f=>"Free",         # node released by GC
-                0x63=>"Function",       # closure or builtin
-                                        # Defined in serialize.c
-                0xf1=>"BaseEnv",
-                0xf2=>"EmptyEnv",
-                0xf3=>"BCREPREF",
-                0xf4=>"BCREPDEF",
-                0xf5=>"GenericRef",
-                0xf6=>"ClassRef",
-                0xf7=>"Persist",
-                0xf8=>"Package",
-                0xf9=>"Namespace",
-                0xfa=>"BaseNamespace",
-                0xfb=>"MissingArg",
-                0xfc=>"UnboundValue",
-                0xfd=>"GlobalEnv",
-                0xfe=>"NilValue", # terminates a pairs list?
-                0xff=>"Ref"
-                ]
+const SXPtab = @Dict(      # Defined in Rinternals.h
+    0x00=>"NULL",
+    0x01=>"Symbol",
+    0x02=>"Pairlist",
+    0x03=>"Closure",
+    0x04=>"Environment",
+    0x05=>"Promise",
+    0x06=>"Lang",
+    0x07=>"Special",
+    0x08=>"Builtin",
+    0x09=>"Char",          # "scalar" string type (internal only)
+    0x0a=>"Logical",       # almost BitArray but allows NA's
+    0x0d=>"Integer",       # Array{Int32, 1}
+    0x0e=>"Real",          # Array{Float64, 1}
+    0x0f=>"Complex",       # Array{Complex128, 1}
+    0x10=>"String",        # Array{ASCIIString, 1}
+    0x11=>"Dot",           # dot-dot-dot object
+    0x12=>"Any",           # make "any" args work
+    0x13=>"List",          # generic vector, {} but with names
+    0x14=>"Expr",          # expressions vectors
+    0x15=>"ByteCode",
+    0x16=>"XPtr",
+    0x17=>"WeakRef",
+    0x18=>"Raw",
+    0x19=>"S4",
+    0x1e=>"New",           # fresh node created in new page
+    0x1f=>"Free",          # node released by GC
+    0x63=>"Function",      # closure or builtin
+                           # Defined in serialize.c
+    0xf1=>"BaseEnv",
+    0xf2=>"EmptyEnv",
+    0xf3=>"BCREPREF",
+    0xf4=>"BCREPDEF",
+    0xf5=>"GenericRef",
+    0xf6=>"ClassRef",
+    0xf7=>"Persist",
+    0xf8=>"Package",
+    0xf9=>"Namespace",
+    0xfa=>"BaseNamespace",
+    0xfb=>"MissingArg",
+    0xfc=>"UnboundValue",
+    0xfd=>"GlobalEnv",
+    0xfe=>"NilValue",      # terminates a pairs list?
+    0xff=>"Ref"
+)
 
 ##############################################################################
 ##
@@ -76,15 +76,15 @@ const R_NA_INT32 = typemin(Int32)
 typealias Hash Dict{ASCIIString, Any}
 const nullhash = Hash()
 
-abstract RSEXPREC               # Basic R object - symbolic expression
+abstract RSEXPREC                # Basic R object - symbolic expression
 
-abstract RVEC <: RSEXPREC               # Vector R object
+abstract RVEC <: RSEXPREC        # Vector R object
 
-type RSymbol <: RSEXPREC        # Not quite the same as a Julia symbol
+type RSymbol <: RSEXPREC         # Not quite the same as a Julia symbol
     displayname::ASCIIString
 end
 
-type RList <: RVEC                   # "list" in R == Julia cell array
+type RList <: RVEC               # "list" in R == Julia cell array
     data::Array{Any, 1}
     attr::Hash
 end
@@ -110,7 +110,7 @@ type RLogical <: RVEC
     attr::Hash
 end
 
-type RString <: RVEC                    # Vector of character strings
+type RString <: RVEC             # Vector of character strings
     data::Array{ASCIIString, 1}
     missng::BitArray{1}
     attr::Hash
