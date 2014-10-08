@@ -1,6 +1,6 @@
 module TestIO
     using Base.Test
-    using DataFrames
+    using DataFrames, DataFrames.Compatibility
 
     #test_group("We can read various file types.")
 
@@ -141,8 +141,8 @@ module TestIO
     osxpath = "$data/skiplines/complex_osx.csv"
     winpath = "$data/skiplines/complex_windows.csv"
 
-    opts1 = {:allowcomments => true}
-    opts2 = {:skipstart => 4, :skiprows => [6, 7, 12, 14, 17], :skipblanks => false}
+    opts1 = @AnyDict(:allowcomments => true)
+    opts2 = @AnyDict(:skipstart => 4, :skiprows => [6, 7, 12, 14, 17], :skipblanks => false)
 
     df1 = readtable(osxpath; opts1...)
     # df2 = readtable(osxpath; opts2...)

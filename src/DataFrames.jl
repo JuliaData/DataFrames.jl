@@ -97,6 +97,7 @@ export @~,
 ##
 ##############################################################################
 
+include("compatibility.jl")
 include(joinpath("other", "utils.jl"))
 include(joinpath("other", "index.jl"))
 include(joinpath("abstractdataframe", "abstractdataframe.jl"))

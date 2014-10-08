@@ -25,7 +25,8 @@ module TestConversions
     a = [1.0,2.0]
     b = [-0.1,3]
     c = [-3.1,7]
-    di = ["a" => a, "b" => b, "c" => c ]
+    di = Dict([("a", a), ("b", b), ("c", c)])
+
     df = convert(DataFrame,di)
     @test isa(df,DataFrame)
     @test names(df) == Symbol[x for x in sort(collect(keys(di)))]
@@ -34,7 +35,7 @@ module TestConversions
     @test df[:c] == c
 
     a = [1.0]
-    di = ["a" => a, "b" => b, "c" => c ]
+    di = Dict([("a", a), ("b", b), ("c", c)])
     @test_throws ArgumentError convert(DataFrame,di)
 
 end

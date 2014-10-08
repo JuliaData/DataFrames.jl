@@ -1,6 +1,6 @@
 module TestDataFrame
     using Base.Test
-    using DataFrames
+    using DataFrames, DataFrames.Compatibility
 
     #test_group("Operations on DataFrames that have column groupings")
 
@@ -133,13 +133,18 @@ module TestDataFrame
     @test typeof(df[:, 1]) == Vector{Float64}
 
     #test_group("Other DataFrame constructors")
-    df = DataFrame([{:a=>1, :b=>'c'}, {:a=>3, :b=>'d'}, {:a=>5}])
+    df = DataFrame([@AnyDict(:a=>1, :b=>'c'),
+                    @AnyDict(:a=>3, :b=>'d'),
+                    @AnyDict(:a=>5)])
     @test size(df, 1) == 3
     @test size(df, 2) == 2
     @test typeof(df[:,:a]) == DataVector{Int}
     @test typeof(df[:,:b]) == DataVector{Char}
 
-    df = DataFrame([{:a=>1, :b=>'c'}, {:a=>3, :b=>'d'}, {:a=>5}], [:a, :b])
+    df = DataFrame([@AnyDict(:a=>1, :b=>'c'),
+                    @AnyDict(:a=>3, :b=>'d'),
+                    @AnyDict(:a=>5)],
+                   [:a, :b])
     @test size(df, 1) == 3
     @test size(df, 2) == 2
     @test typeof(df[:,:a]) == DataVector{Int}
@@ -179,22 +184,22 @@ module TestDataFrame
     @test_throws ArgumentError push!(dfb, ("coconut",22))
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, [ :first=>3,:second=>"pear" ])
+    push!(dfb, @Dict(:first=>3, :second=>"pear"))
     @test df==dfb
 
     df=DataFrame( first=[1,2,3], second=["apple","orange","banana"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, [ "first"=>3,"second"=>"banana" ])
+    push!(dfb, @Dict("first"=>3, "second"=>"banana"))
     @test df==dfb
 
     df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, [ :first=>true,:second=>false ])
+    @test_throws ArgumentError push!(dfb, @Dict(:first=>true, :second=>false))
     @test df0==dfb
 
     df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, ["first"=>"chicken", "second"=>"stuff"] )
+    @test_throws ArgumentError push!(dfb, @Dict("first"=>"chicken", "second"=>"stuff"))
     @test df0==dfb
 
     # delete!
