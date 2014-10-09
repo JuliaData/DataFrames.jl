@@ -80,9 +80,60 @@ function dospecials(ex::Expr)
         excp.args = vcat(a1, aa[3:end])
         a3 = dospecials(excp)
     end
-    :($a2 + $a3 + $a2 & $a3)
+    ## this order of expansion gives the R-style ordering of interaction
+    ## terms (after sorting in increasing interaction order) for higher-
+    ## order interaction terms (e.g. x1 * x2 * x3 should expand to x1 +
+    ## x2 + x3 + x1&x2 + x1&x3 + x2&x3 + x1&x2&x3)
+    :($a2 + $a2 & $a3 + $a3)
 end
 dospecials(a::Any) = a
+
+## Distribution of & over +
+const distributive = {:& => :+}
+
+distribute(ex::Expr) = distribute!(copy(ex))
+distribute(a::Any) = a
+## apply distributive property in-place
+function distribute!(ex::Expr)
+    if ex.head != :call error("Non-call expression encountered") end
+    [distribute!(a) for a in ex.args[2:end]]
+    ## check that top-level can be distributed
+    a1 = ex.args[1]
+    if a1 in keys(distributive)
+
+        ## which op is being DISTRIBUTED (e.g. &, *)?
+        distributed_op = a1
+        ## which op is doing the distributing (e.g. +)?
+        distributing_op = distributive[a1]
+
+        ## detect distributing sub-expression (first arg is, e.g. :+)
+        is_distributing_subex(e) =
+            typeof(e)==Expr && e.head == :call && e.args[1] == distributing_op
+
+        ## find first distributing subex
+        first_distributing_subex = findfirst(is_distributing_subex, ex.args)
+        if first_distributing_subex != 0
+            ## remove distributing subexpression from args
+            subex = splice!(ex.args, first_distributing_subex)
+
+            newargs = {distributing_op}
+            ## generate one new sub-expression, which calls the distributed operation
+            ## (e.g. &) on each of the distributing sub-expression's arguments, plus
+            ## the non-distributed arguments of the original expression.
+            for a in subex.args[2:end]
+                new_subex = copy(ex)
+                push!(new_subex.args, a)
+                ## need to recurse here, in case there are any other
+                ## distributing operations in the sub expression
+                distribute!(new_subex)
+                push!(newargs, new_subex)
+            end
+            ex.args = newargs
+        end
+    end
+    ex
+end
+distribute!(a::Any) = a
 
 const associative = Set([:+,:*,:&])       # associative special operators
 
@@ -90,17 +141,17 @@ const associative = Set([:+,:*,:&])       # associative special operators
 ## Otherwise return the expression
 function ex_or_args(ex::Expr,s::Symbol)
     if ex.head != :call error("Non-call expression encountered") end
-    excp = copy(ex)
-    a1 = ex.args[1]
-    a2 = map(condense, ex.args[2:end])
-    if a1 == s return a2 end
-    excp.args = vcat(a1, a2)
-    excp
+    if ex.args[1] == s
+        ## recurse in case there are more :calls of s below
+        return vcat(map(x -> ex_or_args(x, s), ex.args[2:end])...)
+    else
+        ## not a :call to s, return condensed version of ex
+        return condense(ex)
+    end
 end
 ex_or_args(a,s::Symbol) = a
 
 ## Condense calls like :(+(a,+(b,c))) to :(+(a,b,c))
-## Also need to work out how to distribute & over +
 function condense(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
     a1 = ex.args[1]
@@ -111,8 +162,9 @@ function condense(ex::Expr)
 end
 condense(a::Any) = a
 
-getterms(ex::Expr) = (ex.head == :call && ex.args[1] == :+) ? ex.args[2:end] : ex
-getterms(a::Any) = a
+## always return an ARRAY of terms
+getterms(ex::Expr) = (ex.head == :call && ex.args[1] == :+) ? ex.args[2:end] : Expr[ex]
+getterms(a::Any) = {a}
 
 ord(ex::Expr) = (ex.head == :call && ex.args[1] == :&) ? length(ex.args)-1 : 1
 ord(a::Any) = 1
@@ -127,9 +179,8 @@ end
 evt(a) = {a}
 
 function Terms(f::Formula)
-    rhs = condense(dospecials(f.rhs))
-    tt = getterms(rhs)
-    if !isa(tt,AbstractArray) tt = [tt] end
+    rhs = condense(distribute(dospecials(f.rhs)))
+    tt = unique(getterms(rhs))
     tt = tt[!(tt .== 1)]             # drop any explicit 1's
     noint = (tt .== 0) | (tt .== -1) # should also handle :(-(expr,1))
     tt = tt[!noint]
@@ -217,17 +268,16 @@ function isfe(ex::Expr)                 # true for fixed-effects terms
 end
 isfe(a) = true
 
-## Expand the columns in an interaction term
 function expandcols(trm::Vector)
-    if length(trm) == 1 return float64(trm[1]) end
-    if length(trm) == 2
+    if length(trm) == 1
+        return float64(trm[1])
+    else
         a = float64(trm[1])
-        b = float64(trm[2])
-        nca = size(a,2)
-        ncb = size(b,2)
-        return hcat([a[:,i].*b[:,j] for i in 1:nca, j in 1:ncb]...)
+        b = expandcols(trm[2:end])
+        nca = size(a, 2)
+        ncb = size(b, 2)
+        return hcat([a[:,i] .* b[:,j] for i in 1:nca, j in 1:ncb]...)
     end
-    error("code for 3rd and higher order interactions not yet written")
 end
 
 nc(trm::Vector) = *([size(x,2) for x in trm]...)
@@ -270,11 +320,14 @@ function coefnames(fr::ModelFrame)
             if term.head == :call && term.args[1] == :|
                 continue                # skip random-effects terms
             elseif term.head == :call && term.args[1] == :&
-                a = term.args[2]
-                b = term.args[3]
-                for lev1 in termnames(a, fr.df[a]), lev2 in termnames(b, fr.df[b])
-                    push!(vnames, string(lev1, " & ", lev2))
-                end
+                ## for an interaction term, combine term names pairwise,
+                ## starting with rightmost terms
+                append!(vnames,
+                        foldr((a,b) ->
+                              vec([string(lev1, " & ", lev2) for
+                                   lev1 in a,
+                                   lev2 in b]),
+                              map(x -> termnames(x, fr.df[x]), term.args[2:end])))
             else
                 error("unrecognized term $term")
             end
