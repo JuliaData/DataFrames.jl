@@ -1,3 +1,10 @@
+DataFrames v0.5.10 Release Notes
+===============================
+* Fixed Tests for Forumula.jl ([#700])
+* Now handles Julia0.4 `dicts` ([#698])
+* Now using ReadTheDocs
+
+
 DataFrames v0.5.3 Release Notes
 ===============================
 
