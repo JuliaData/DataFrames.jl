@@ -44,7 +44,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     # TODO make fillNA(type, length)
-    payload = DataFrame({DataArray([fill(valuecol[1],Nrow)], fill(true, Nrow))  for i in 1:Ncol}, map(symbol, keycol.pool))
+    payload = DataFrame(Any[DataArray([fill(valuecol[1],Nrow)], fill(true, Nrow))  for i in 1:Ncol], map(symbol, keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
         j = int(keycol.refs[k])
@@ -236,10 +236,10 @@ function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vect
     cnames = names(df)[id_vars]
     insert!(cnames, 1, "value")
     insert!(cnames, 1, "variable")
-    DataFrame({EachRepeatedVector(names(df)[measure_vars], nrow(df)), # variable
-               StackedVector({df[:,c] for c in measure_vars}),           # value
+    DataFrame(Any[EachRepeatedVector(names(df)[measure_vars], nrow(df)), # variable
+                  StackedVector(Any[df[:,c] for c in measure_vars]),     # value
                ## RepeatedVector([1:nrow(df)], N),                       # idx - do we want this?
-               [RepeatedVector(df[:,c], N) for c in id_vars]...},        # id_var columns
+                  [RepeatedVector(df[:,c], N) for c in id_vars]...],     # id_var columns
               cnames)
 end
 stackdf(df::AbstractDataFrame, measure_vars) = stackdf(df, [index(df)[measure_vars]])

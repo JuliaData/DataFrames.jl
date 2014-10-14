@@ -282,14 +282,14 @@ end
 ## Actual sort functions
 ########################
 
-issorted(df::AbstractDataFrame; cols={}, lt=isless, by=identity, rev=false, order=Forward) =
+issorted(df::AbstractDataFrame; cols=Any[], lt=isless, by=identity, rev=false, order=Forward) =
     issorted(eachrow(df), ordering(df, cols, lt, by, rev, order))
 
 # sort!, sort, and sortperm functions
 
-for s in {:sort!, :sort, :sortperm}
+for s in [:sort!, :sort, :sortperm]
     @eval begin
-        function $s(df::AbstractDataFrame; cols={}, alg=nothing,
+        function $s(df::AbstractDataFrame; cols=Any[], alg=nothing,
                     lt=isless, by=identity, rev=false, order=Forward)
             ord = ordering(df, cols, lt, by, rev, order)
             _alg = defalg(df, ord; alg=alg, cols=cols)

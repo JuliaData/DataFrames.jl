@@ -120,7 +120,7 @@ function Base.map(f::Function, gd::GroupedDataFrame)
     ## [d[1,gd.cols] => f(d) for d in gd]
     ## [f(g) for g in gd]
     keys = [d[1,gd.cols] for d in gd]
-    vals = {f(d) for d in gd}
+    vals = Any[f(d) for d in gd]
     GroupApplied(keys,vals)
 end
 
@@ -152,7 +152,7 @@ end
 Base.map(f::Function, x::SubDataFrame) = f(x)
 
 # apply a function to each column in a DataFrame
-colwise(f::Function, d::AbstractDataFrame) = {[f(d[idx])] for idx in 1:size(d, 2)}
+colwise(f::Function, d::AbstractDataFrame) = Any[[f(d[idx])] for idx in 1:size(d, 2)]
 colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
 colwise(f) = x -> colwise(f, x)

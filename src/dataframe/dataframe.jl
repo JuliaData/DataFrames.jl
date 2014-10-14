@@ -58,7 +58,7 @@ end
 #' df = DataFrame()
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 function DataFrame(; kwargs...)
-    result = DataFrame({}, Index())
+    result = DataFrame(Any[], Index())
     for (k, v) in kwargs
         result[k] = v
     end
@@ -249,7 +249,7 @@ end
 # df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
 function Base.getindex{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
-    new_columns = {dv[[row_ind]] for dv in df.columns[selected_columns]}
+    new_columns = Any[dv[[row_ind]] for dv in df.columns[selected_columns]]
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
 end
 
@@ -262,7 +262,7 @@ end
 # df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
 function Base.getindex{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::AbstractVector{T})
     selected_columns = df.colindex[col_inds]
-    new_columns = {dv[row_inds] for dv in df.columns[selected_columns]}
+    new_columns = Any[dv[row_inds] for dv in df.columns[selected_columns]]
     return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
 end
 
@@ -792,9 +792,9 @@ function Base.hcat(df1::DataFrame, df2::DataFrame)
     d = DataFrame(columns, colindex)
     return d
 end
-Base.hcat{T}(df::DataFrame, x::DataVector{T}) = hcat(df, DataFrame({x}))
-Base.hcat{T}(df::DataFrame, x::Vector{T}) = hcat(df, DataFrame({DataArray(x)}))
-Base.hcat{T}(df::DataFrame, x::T) = hcat(df, DataFrame({DataArray([x])}))
+Base.hcat{T}(df::DataFrame, x::DataVector{T}) = hcat(df, DataFrame(Any[x]))
+Base.hcat{T}(df::DataFrame, x::Vector{T}) = hcat(df, DataFrame(Any[DataArray(x)]))
+Base.hcat{T}(df::DataFrame, x::T) = hcat(df, DataFrame(Any[DataArray([x])]))
 
 # three-plus-argument form recurses
 Base.hcat(a::DataFrame, b, c...) = hcat(hcat(a, b), c...)
@@ -836,7 +836,7 @@ function Base.vcat(dfs::AbstractDataFrame...)
     Ncol = length(colnams)
     res = DataFrame()
     for i in 1:Ncol
-        coldata = {}
+        coldata = Any[]
         for df in dfs
             push!(coldata,
                   get(df,
