@@ -243,7 +243,7 @@ end
 
 function DataArrays.reorder(fun::Function, x::PooledDataArray, y::AbstractVector...)
     depwarn("reordering DataFrames is deprecated", :reorder)
-    reorder(fun, x, DataFrame([y...]))
+    reorder(fun, x, DataFrame(Any[y...]))
 end
 
 function Base.flipud(df::DataFrame)
@@ -311,7 +311,7 @@ end
 #constructor{T}(::Type{DataVector{T}}, args...) = DataArray(T, args...)
 
 function vecbind(xs::AbstractVector...)
-    V = vecbind_promote_type(map(vecbind_type, [xs...]))
+    V = vecbind_promote_type(map(vecbind_type, Any[xs...]))
     len = sum(length, xs)
     res = constructor(V, len)
     k = 1
