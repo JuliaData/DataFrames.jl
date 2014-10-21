@@ -43,7 +43,7 @@ end
 function DataFrame(x::Union(Number, String))
     depwarn("DataFrame(::Union(Number, String)) is deprecated, use DataFrame(Vector{Any}) instead",
             :DataFrame)
-    cols = {DataArray([x], falses(1))}
+    cols = Any[DataArray([x], falses(1))]
     colind = Index(gennames(1))
     return DataFrame(cols, colind)
 end
@@ -243,7 +243,7 @@ end
 
 function DataArrays.reorder(fun::Function, x::PooledDataArray, y::AbstractVector...)
     depwarn("reordering DataFrames is deprecated", :reorder)
-    reorder(fun, x, DataFrame({y...}))
+    reorder(fun, x, DataFrame(Any[y...]))
 end
 
 function Base.flipud(df::DataFrame)
@@ -311,7 +311,7 @@ end
 #constructor{T}(::Type{DataVector{T}}, args...) = DataArray(T, args...)
 
 function vecbind(xs::AbstractVector...)
-    V = vecbind_promote_type(map(vecbind_type, {xs...}))
+    V = vecbind_promote_type(map(vecbind_type, Any[xs...]))
     len = sum(length, xs)
     res = constructor(V, len)
     k = 1

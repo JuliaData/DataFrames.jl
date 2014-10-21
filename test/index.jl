@@ -6,26 +6,26 @@ i = Index()
 push!(i, :A)
 push!(i, :B)
 
-inds = {1,
-        1.0,
-        :A,
-        [true],
-        trues(1),
-        [1],
-        [1.0],
-        1:1,
-        1.0:1.0,
-        [:A],
-        @data([true]),
-        @data([1]),
-        @data([1.0]),
-        @data([:A]),
-        DataArray([:A]),
-        PooledDataArray([true]),
-        @pdata([1]),
-        @pdata([1.0]),
-        @pdata([:A]),
-        PooledDataArray([:A])}
+inds = Any[1,
+           1.0,
+           :A,
+           [true],
+           trues(1),
+           [1],
+           [1.0],
+           1:1,
+           1.0:1.0,
+           [:A],
+           @data([true]),
+           @data([1]),
+           @data([1.0]),
+           @data([:A]),
+           DataArray([:A]),
+           PooledDataArray([true]),
+           @pdata([1]),
+           @pdata([1.0]),
+           @pdata([:A]),
+           PooledDataArray([:A])]
 
 for ind in inds
     if isequal(ind, :A) || ndims(ind) == 0

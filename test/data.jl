@@ -12,12 +12,12 @@ module TestData
     dvdict = DataArray(Dict, 4)    # for issue #199
 
     #test_group("constructors")
-    df1 = DataFrame({dvint, dvstr}, [:Ints, :Strs])
-    df2 = DataFrame({dvint, dvstr})
-    df3 = DataFrame({dvint})
+    df1 = DataFrame(Any[dvint, dvstr], [:Ints, :Strs])
+    df2 = DataFrame(Any[dvint, dvstr])
+    df3 = DataFrame(Any[dvint])
     df4 = convert(DataFrame, [1:4 1:4])
-    df5 = DataFrame({@data([1,2,3,4]), dvstr})
-    df6 = DataFrame({dvint, dvint, dvstr}, [:A, :B, :C])
+    df5 = DataFrame(Any[@data([1,2,3,4]), dvstr])
+    df6 = DataFrame(Any[dvint, dvint, dvstr], [:A, :B, :C])
     df7 = DataFrame(x = dvint, y = dvstr)
     @test size(df7) == (4, 2)
     @test isequal(df7[:x], dvint)
@@ -99,7 +99,7 @@ module TestData
     d2 = (@pdata ["A", "B", NA])[rand(int64(1:3), N)]
     d3 = data(randn(N))
     d4 = data(randn(N))
-    df7 = DataFrame({d1, d2, d3}, [:d1, :d2, :d3])
+    df7 = DataFrame(Any[d1, d2, d3], [:d1, :d2, :d3])
 
     #test_group("groupby")
     gd = groupby(df7, :d1)

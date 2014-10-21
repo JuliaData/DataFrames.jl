@@ -89,7 +89,7 @@ end
 dospecials(a::Any) = a
 
 ## Distribution of & over +
-const distributive = {:& => :+}
+const distributive = [:& => :+]
 
 distribute(ex::Expr) = distribute!(copy(ex))
 distribute(a::Any) = a
@@ -116,7 +116,7 @@ function distribute!(ex::Expr)
             ## remove distributing subexpression from args
             subex = splice!(ex.args, first_distributing_subex)
 
-            newargs = {distributing_op}
+            newargs = Any[distributing_op]
             ## generate one new sub-expression, which calls the distributed operation
             ## (e.g. &) on each of the distributing sub-expression's arguments, plus
             ## the non-distributed arguments of the original expression.
@@ -164,7 +164,7 @@ condense(a::Any) = a
 
 ## always return an ARRAY of terms
 getterms(ex::Expr) = (ex.head == :call && ex.args[1] == :+) ? ex.args[2:end] : Expr[ex]
-getterms(a::Any) = {a}
+getterms(a::Any) = Any[a]
 
 ord(ex::Expr) = (ex.head == :call && ex.args[1] == :&) ? length(ex.args)-1 : 1
 ord(a::Any) = 1
@@ -176,7 +176,7 @@ function evt(ex::Expr)
     if !(ex.args[1] in nonevaluation) return ex end
     filter(x->!isa(x,Number), vcat(map(getterms, ex.args[2:end])...))
 end
-evt(a) = {a}
+evt(a) = Any[a]
 
 function Terms(f::Formula)
     rhs = condense(distribute(dospecials(f.rhs)))
@@ -193,7 +193,7 @@ function Terms(f::Formula)
     etrms = map(evt, tt)
     haslhs = f.lhs != nothing
     if haslhs
-        unshift!(etrms, {f.lhs})
+        unshift!(etrms, Any[f.lhs])
         unshift!(oo, 1)
     end
     ev = unique(vcat(etrms...))
@@ -284,7 +284,7 @@ nc(trm::Vector) = *([size(x,2) for x in trm]...)
 
 function ModelMatrix(mf::ModelFrame)
     trms = mf.terms
-    aa = {{ones(size(mf.df,1),int(trms.intercept))}}
+    aa = Any[Any[ones(size(mf.df,1),int(trms.intercept))]]
     asgn = zeros(Int, (int(trms.intercept)))
     fetrms = bool(map(isfe, trms.terms))
     if trms.response unshift!(fetrms,false) end

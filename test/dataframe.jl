@@ -65,7 +65,7 @@ module TestDataFrame
     @test get(df, :a, -1) === df.columns[1]
     @test get(df, :c, -1) == -1
     @test keys(df) == [:a, :b]
-    @test values(df) == {df[:a], df[:b]}
+    @test values(df) == Any[df[:a], df[:b]]
     @test !isempty(df)
 
     @test empty!(df) === df
@@ -97,7 +97,7 @@ module TestDataFrame
     @test allna(df[:, 2])
     @test allna(df[:, 3])
 
-    df = DataFrame({Int, Float64, ASCIIString}, 100)
+    df = DataFrame(Any[Int, Float64, ASCIIString], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
@@ -107,7 +107,7 @@ module TestDataFrame
     @test allna(df[:, 2])
     @test allna(df[:, 3])
 
-    df = DataFrame({Int, Float64, ASCIIString}, [:A, :B, :C], 100)
+    df = DataFrame(Any[Int, Float64, ASCIIString], [:A, :B, :C], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
@@ -170,7 +170,7 @@ module TestDataFrame
     df=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, {3,"pear"})
+    push!(dfb, Any[3,"pear"])
     @test df==dfb
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )

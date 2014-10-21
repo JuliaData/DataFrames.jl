@@ -7,16 +7,16 @@ module TestConstructors
     #
 
     df = DataFrame()
-    @test isequal(df.columns, {})
+    @test isequal(df.columns, Any[])
     @test isequal(df.colindex, Index())
 
-    df = DataFrame({data(zeros(3)), data(ones(3))},
-                    Index([:x1, :x2]))
+    df = DataFrame(Any[data(zeros(3)), data(ones(3))],
+                   Index([:x1, :x2]))
     @test size(df, 1) == 3
     @test size(df, 2) == 2
 
     @test isequal(df,
-                  DataFrame({data(zeros(3)), data(ones(3))}))
+                  DataFrame(Any[data(zeros(3)), data(ones(3))]))
     @test isequal(df,
                   DataFrame(x1 = [0.0, 0.0, 0.0],
                             x2 = [1.0, 1.0, 1.0]))
@@ -44,7 +44,7 @@ module TestConstructors
 
     df = DataFrame([Int, Float64], [:x1, :x2], 2)
     @test size(df) == (2, 2)
-    @test all(eltypes(df) .== {Int, Float64})
+    @test all(eltypes(df) .== Any[Int, Float64])
 
     @test isequal(df, DataFrame([Int, Float64], 2))
 
