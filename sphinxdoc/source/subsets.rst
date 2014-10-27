@@ -1,8 +1,12 @@
-Subsets
-=======
+Data Structures
+===============
+In this section we will quickly go over datastructures in the DataFrames package. We will go over the two basic types of
+data structures the DataArray and the DataFrame. To start you must import the DataFrames package::
+
+using DataArrays, DataFrames
 
 DataArrays
-~~~~~~~~~~
+==========
 
 The ``DataArray`` type is meant to behave like a standard Julia ``Array`` and
 tries to implement identical indexing rules:
@@ -46,14 +50,15 @@ Two dimensional ``DataArray``::
   NA
 
 DataFrames
-~~~~~~~~~~
+==========
 
-In contrast, a ``DataFrame`` offers substantially more forms of indexing
-because columns can be referred to by name::
+The ``DataFrame`` offers substantially more forms of indexing because columns can be referred to by name. The data frame can store integers, floats, and strings.
+The can be created by the command `DataFrame`::
 
-  julia> using DataFrames
+  df = DataFrame(A = 1:10, B = 2:2:20)
 
-  julia> df = DataFrame(A = 1:10, B = 2:2:20)
+Output::
+  
   10x2 DataFrame
   |-------|----|----|
   | Row # | A  | B  |
@@ -67,6 +72,38 @@ because columns can be referred to by name::
   | 8     | 8  | 16 |
   | 9     | 9  | 18 |
   | 10    | 10 | 20 |
+
+
+Empty DataFrames can also be created::
+
+df = DataFrame()
+
+Copying Dataframes
+------------------
+
++------------+------------------------------------------------------------+
+|copy(df)    | Creates a copy of the `df` where the columns are referenced|
++------------+------------------------------------------------------------+
+|deepcopy(df)| Creates a physical copy of `df`.                           |
++------------+------------------------------------------------------------+
+
+Determining Dimensions
+----------------------
+The following commands are used to determine the length of row and columns or the dimensions in a DataFrame
+
++------------+------------------------------------------------------------------------------------+
+|ndims(df)   | Returns the dimensions of df                                                       |
++------------+------------------------------------------------------------------------------------+
+|size(df)    | Returns the dimensions of df                                                       |
++------------+------------------------------------------------------------------------------------+
+|ncol(df)    | Returns the number of columns in df                                                |
++------------+------------------------------------------------------------------------------------+
+|length(df)  | Returns the number of columns in df                                                |
++------------+------------------------------------------------------------------------------------+
+|nrow(df)    | Returns the number of rows in df                                                   |
++------------+------------------------------------------------------------------------------------+
+|isempty(df) | Returns a boolean expression that checks if the number of columns is equal to zero.|
++------------+------------------------------------------------------------------------------------+
 
 Refering to the first column by index or name::
 
