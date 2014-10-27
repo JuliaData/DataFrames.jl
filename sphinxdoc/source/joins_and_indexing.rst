@@ -16,15 +16,13 @@ jobs for each ID. We can do this using the ``join`` function::
 
     full = join(names, jobs, on = :ID)
     
-Output:
+Output::
 
-    +-----+----+------------+----------+
-    | Row | ID | Name       | Job      |
-    +-----+----+------------+----------+
-    | 1   | 1  | "John Doe" | "Lawyer" |
-    +-----+----+------------+----------+
-    | 2   | 2  | "Jane Doe" | "Doctor" |
-    +-----+----+------------+----------+
+2x3 DataFrame
+| Row | ID | Name       | Job      |
+|-----|----|------------|----------|
+| 1   | 1  | "John Doe" | "Lawyer" |
+| 2   | 2  | "Jane Doe" | "Doctor" |
     
 
 In relational database theory, this operation is generally referred to as a
@@ -66,3 +64,12 @@ keyword argument::
 Cross joins are the only kind of join that does not use a key::
 
     join(a, b, kind = :cross)
+    
+    
+GroupBy
+~~~~~~~
+To group data we can use the `GroupBy` function::
+
+groupby(df, colA, colB)
+
+This returns a GroupedDataFrame based on groupings indicated by the columns
