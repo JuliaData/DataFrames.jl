@@ -66,9 +66,9 @@ Cross joins are the only kind of join that does not use a key::
     join(a, b, kind = :cross)
     
     
-GroupBy
+group by
 ~~~~~~~
-To group data we can use the `GroupBy` function::
+To group data we can use the `groupby` function::
 
 groupby(df, colA, colB)
 
