@@ -2,7 +2,7 @@
 
 Installation
 ============
-The DataFrames library is a Julia library for working with with tabular data
+The DataFrames library is a Julia library for working with with tabular data.
 It is available through the Julia package system. 
 
 It can be installed using the command ``Pkg.add("DataFrames")``.
