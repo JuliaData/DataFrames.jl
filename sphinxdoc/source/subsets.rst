@@ -53,7 +53,7 @@ DataFrames
 ==========
 
 The ``DataFrame`` offers substantially more forms of indexing because columns can be referred to by name. The data frame can store integers, floats, and strings.
-The can be created by the command `DataFrame`::
+The can be created by the function `DataFrame`::
 
   df = DataFrame(A = 1:10, B = 2:2:20)
 
@@ -74,7 +74,7 @@ Output::
   | 10    | 10 | 20 |
 
 
-Empty DataFrames can also be created::
+Empty DataFrames can also be created:
 
 df = DataFrame()
 
@@ -84,7 +84,7 @@ Copying Dataframes
 +------------+------------------------------------------------------------+
 |copy(df)    | Creates a copy of the `df` where the columns are referenced|
 +------------+------------------------------------------------------------+
-|deepcopy(df)| Creates a physical copy of `df`.                           |
+|deepcopy(df)| Creates a recursive copy of `df`.                          |
 +------------+------------------------------------------------------------+
 
 Determining Dimensions
@@ -92,7 +92,7 @@ Determining Dimensions
 The following commands are used to determine the length of row and columns or the dimensions in a DataFrame
 
 +------------+------------------------------------------------------------------------------------+
-|ndims(df)   | Returns the dimensions of df                                                       |
+|ndims(df)   | Returns the dimensions of df, which is always 2.                                   |
 +------------+------------------------------------------------------------------------------------+
 |size(df)    | Returns the dimensions of df                                                       |
 +------------+------------------------------------------------------------------------------------+
