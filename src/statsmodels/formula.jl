@@ -89,7 +89,7 @@ end
 dospecials(a::Any) = a
 
 ## Distribution of & over +
-const distributive = [:& => :+]
+const distributive = @compat Dict(:& => :+)
 
 distribute(ex::Expr) = distribute!(copy(ex))
 distribute(a::Any) = a

@@ -8,6 +8,7 @@ module DataFrames
 
 using Base.Intrinsics
 using Reexport
+using Compat
 @reexport using StatsBase
 @reexport using DataArrays
 using GZip
@@ -97,7 +98,6 @@ export @~,
 ##
 ##############################################################################
 
-include("compatibility.jl")
 include(joinpath("other", "utils.jl"))
 include(joinpath("other", "index.jl"))
 include(joinpath("abstractdataframe", "abstractdataframe.jl"))

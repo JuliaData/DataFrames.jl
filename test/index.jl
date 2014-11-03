@@ -1,6 +1,6 @@
 module TestIndex
 using Base.Test
-using DataFrames, DataFrames.Index, DataFrames.Compatibility
+using DataFrames, DataFrames.Index, Compat
 
 i = Index()
 push!(i, :A)
@@ -37,7 +37,7 @@ end
 
 @test names(i) == [:A,:B]
 @test names!(i, [:a,:b]) == Index([:a,:b])
-@test rename(i, @Dict(:a=>:A, :b=>:B)) == Index([:A,:B])
+@test rename(i, @compat(Dict(:a=>:A, :b=>:B))) == Index([:A,:B])
 @test rename(i, :a, :A) == Index([:A,:b])
 @test rename(i, [:a], [:A]) == Index([:A,:b])
 # @test rename(i, uppercase) == Index([:A,:B])
