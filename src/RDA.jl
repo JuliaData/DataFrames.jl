@@ -7,7 +7,7 @@
 ##
 ##############################################################################
 
-const SXPtab = @Dict(      # Defined in Rinternals.h
+const SXPtab = @compat Dict(      # Defined in Rinternals.h
     0x00=>"NULL",
     0x01=>"Symbol",
     0x02=>"Pairlist",
