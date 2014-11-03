@@ -393,7 +393,7 @@ function bytestotype{N <: Integer,
 
     while index > left
         if '0' <= byte <= '9'
-            value += (byte - '0') * power
+            value += (byte - uint8('0')) * power
             power *= 10
         else
             return value, false, false
@@ -407,7 +407,7 @@ function bytestotype{N <: Integer,
     elseif byte == '+'
         return value, left < right, false
     elseif '0' <= byte <= '9'
-        value += (byte - '0') * power
+        value += (byte - uint8('0')) * power
         return value, true, false
     else
         return value, false, false
