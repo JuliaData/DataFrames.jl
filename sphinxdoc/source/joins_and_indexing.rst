@@ -1,4 +1,4 @@
-Database-Style Joins and Indexing
+Database-Style Joins, Merges, and Indexing
 =================================
 
 Joining Data Sets Together
@@ -16,12 +16,14 @@ jobs for each ID. We can do this using the ``join`` function::
 
     full = join(names, jobs, on = :ID)
     
-Output:
+Output::
 
-    | Row | ID | Name       | Job      |
-    |-----|----|------------|----------|
-    | 1   | 1  | "John Doe" | "Lawyer" |
-    | 2   | 2  | "Jane Doe" | "Doctor" |
+2x3 DataFrame
+| Row | ID | Name       | Job      |
+|-----|----|------------|----------|
+| 1   | 1  | "John Doe" | "Lawyer" |
+| 2   | 2  | "Jane Doe" | "Doctor" |
+    
 
 In relational database theory, this operation is generally referred to as a
 join. The columns used to determine which rows should be combined during a join
@@ -62,3 +64,12 @@ keyword argument::
 Cross joins are the only kind of join that does not use a key::
 
     join(a, b, kind = :cross)
+    
+    
+group by
+~~~~~~~
+To group data we can use the `groupby` function::
+
+groupby(df, colA, colB)
+
+This returns a GroupedDataFrame based on groupings indicated by the columns
