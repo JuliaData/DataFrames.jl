@@ -797,20 +797,24 @@ without(df::DataFrame, c::Any) = without(df, df.colindex[c])
 # vcat(df, ...) only accepts data frames. Finds union of columns, maintaining order
 # of first df. Missing data becomes NAs.
 
-# two-argument form, two dfs, references only
-function Base.hcat(df1::DataFrame, df2::DataFrame)
-    # If df1 had metadata, we should copy that.
-    colindex = Index(make_unique([names(df1), names(df2)]))
-    columns = [df1.columns, df2.columns]
-    d = DataFrame(columns, colindex)
-    return d
+function hcat!(df1::DataFrame, df2::DataFrame)
+    u = unique_adds(df1, names(df2))
+    for i in 1:length(u)
+        df1[u[i]] = df2[i]
+    end
+
+    return df1
 end
-Base.hcat{T}(df::DataFrame, x::DataVector{T}) = hcat(df, DataFrame(Any[x]))
-Base.hcat{T}(df::DataFrame, x::Vector{T}) = hcat(df, DataFrame(Any[DataArray(x)]))
-Base.hcat{T}(df::DataFrame, x::T) = hcat(df, DataFrame(Any[DataArray([x])]))
+hcat!{T}(df::DataFrame, x::DataVector{T}) = hcat!(df, DataFrame(Any[x]))
+hcat!{T}(df::DataFrame, x::Vector{T}) = hcat!(df, DataFrame(Any[DataArray(x)]))
+hcat!{T}(df::DataFrame, x::T) = hcat!(df, DataFrame(Any[DataArray([x])]))
+
+Base.hcat(df::DataFrame, x) = hcat!(copy(df), x)
 
 # three-plus-argument form recurses
-Base.hcat(a::DataFrame, b, c...) = hcat(hcat(a, b), c...)
+hcat!(a::DataFrame, b, c...) = hcat!(hcat!(a, b), c...)
+
+Base.hcat(a::DataFrame, b, c...) = hcat!(hcat(a, b), c...)
 
 Base.similar(df::DataFrame, dims) =
     DataFrame([similar(x, dims) for x in df.columns], names(df))
@@ -846,9 +850,8 @@ function Base.vcat(dfs::AbstractDataFrame...)
             end
         end
     end
-    Ncol = length(colnams)
     res = DataFrame()
-    for i in 1:Ncol
+    for i in 1:length(colnams)
         coldata = Any[]
         for df in dfs
             push!(coldata,
@@ -917,9 +920,7 @@ function nonunique(df::AbstractDataFrame)
     res
 end
 
-function unique!(df::AbstractDataFrame)
-    deleterows!(df, find(nonunique(df)))
-end
+unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[!nonunique(df), :]

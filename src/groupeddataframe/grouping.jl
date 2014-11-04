@@ -63,12 +63,10 @@ Base.endof(gd::GroupedDataFrame) = length(gd.starts)
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
-Base.getindex(gd::GroupedDataFrame, idx::Int) = sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
-Base.getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) = GroupedDataFrame(gd.parent,
-                                                                          gd.cols,
-                                                                          gd.idx,
-                                                                          gd.starts[I],
-                                                                          gd.ends[I])
+Base.getindex(gd::GroupedDataFrame, idx::Int) =
+    sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
+Base.getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) =
+    GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts[I], gd.ends[I])
 
 function Base.show(io::IO, gd::GroupedDataFrame)
     N = length(gd)
@@ -134,7 +132,7 @@ function combine(x)   # expecting (keys,vals) with keys to be DataFrames and val
     for i in 1:length(keys)
         keys[i] = vcat(fill(copy(keys[i]), nrow(vals[i]))...)
     end
-    hcat(vcat(keys...), vcat(vals...))
+    hcat!(vcat(keys...), vcat(vals...))
 end
 
 wrap(df::DataFrame) = df
@@ -146,7 +144,7 @@ function based_on(gd::GroupedDataFrame, f::Function)
     idx = rep([1:length(x)], convert(Vector{Int}, map(nrow, x)))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
     resdf = vcat(x)
-    hcat(keydf, resdf)
+    hcat!(keydf, resdf)
 end
 
 

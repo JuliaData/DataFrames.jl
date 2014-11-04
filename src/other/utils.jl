@@ -50,31 +50,54 @@ function makeidentifier(s::String)
 end
 
 function make_unique(names::Vector{Symbol})
-    x = Index()
+    seen = Set{Symbol}()
     names = copy(names)
     dups = Int[]
     for i in 1:length(names)
-        if haskey(x, names[i])
-            push!(dups, i)
-        else
-            push!(x, names[i])
-        end
+        name = names[i]
+        in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
     for i in dups
         nm = names[i]
-        newnm = nm
         k = 1
         while true
             newnm = symbol("$(nm)_$k")
-            if !haskey(x, newnm)
-                push!(x, newnm)
+            if !in(newnm, seen)
+                names[i] = newnm
+                push!(seen, newnm)
                 break
             end
             k += 1
         end
-        names[i] = newnm
     end
-    names
+
+    return names
+end
+
+function unique_adds(df::DataFrame, adds::Vector{Symbol})
+    seen = Set(names(df))
+    dups = Int[]
+    u = copy(adds)
+
+    for i in 1:length(u)
+        name = u[i]
+        in(name, seen) ? push!(dups, i) : push!(seen, name)
+    end
+    for i in dups
+        nm = u[i]
+        k = 1
+        while true
+            newnm = symbol("$(nm)_$k")
+            if !in(newnm, seen)
+                u[i] = newnm
+                push!(seen, newnm)
+                break
+            end
+            k += 1
+        end
+    end
+
+    return u
 end
 
 #' @description

@@ -11,9 +11,10 @@ type Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Indices}      # name => names array position
     names::Vector{Symbol}
 end
-function Index(x::Vector{Symbol})
-    x = make_unique(x)
-    Index(Dict{Symbol, Indices}(zip(x, 1:length(x))), x)
+function Index(names::Vector{Symbol})
+    u = make_unique(names)
+    lookup = Dict{Symbol, Indices}(zip(u, 1:length(u)))
+    Index(lookup, u)
 end
 Index() = Index(Dict{Symbol, Indices}(), Symbol[])
 Base.length(x::Index) = length(x.names)

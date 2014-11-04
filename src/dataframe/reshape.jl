@@ -96,7 +96,7 @@ function pivottable(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int},
     # find the "row" key DataFrame
     g = groupby(cmb_df[[1:length(rows)]], [1:length(rows)])
     row_key_df = g.parent[g.idx[g.starts], :]
-    hcat(row_key_df, payload)
+    hcat!(row_key_df, payload)
 end
 # `mean` is the default aggregation function:
 pivottable(df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, mean)

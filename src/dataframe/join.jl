@@ -148,23 +148,23 @@ function Base.join(df1::AbstractDataFrame,
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
 
     if kind == :inner
-        return hcat(df1[left_indexer, :], without(df2, on)[right_indexer, :])
+        return hcat!(df1[left_indexer, :], without(df2, on)[right_indexer, :])
     elseif kind == :left
         left = df1[[left_indexer, leftonly_indexer], :]
         right = vcat(without(df2, on)[right_indexer, :],
                      nas(without(df2, on), length(leftonly_indexer)))
-        return hcat(left, right)
+        return hcat!(left, right)
     elseif kind == :right
         left = vcat(without(df1, on)[left_indexer, :],
                     nas(without(df1, on), length(rightonly_indexer)))
         right = df2[[right_indexer, rightonly_indexer], :]
-        return hcat(left, right)
+        return hcat!(left, right)
     elseif kind == :outer
-        mixed = hcat(df1[left_indexer, :], without(df2, on)[right_indexer, :])
-        leftonly = hcat(df1[leftonly_indexer, :],
+        mixed = hcat!(df1[left_indexer, :], without(df2, on)[right_indexer, :])
+        leftonly = hcat!(df1[leftonly_indexer, :],
                         nas(without(df2, on), length(leftonly_indexer)))
         leftonly = leftonly[:, names(mixed)]
-        rightonly = hcat(nas(without(df1, on), length(rightonly_indexer)),
+        rightonly = hcat!(nas(without(df1, on), length(rightonly_indexer)),
                          df2[rightonly_indexer, :])
         rightonly = rightonly[:, names(mixed)]
         return vcat(mixed, leftonly, rightonly)
@@ -181,6 +181,6 @@ function crossjoin(df1::DataFrame, df2::DataFrame)
     r1, r2 = size(df1, 1), size(df2, 1)
     columns = [[rep(c[2], 1, r2) for c in eachcol(df1)],
                [rep(c[2], r1, 1) for c in eachcol(df2)]]
-    colindex = Index(make_unique([names(df1), names(df2)]))
+    colindex = Index([names(df1), names(df2)])
     DataFrame(columns, colindex)
 end

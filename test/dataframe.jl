@@ -30,8 +30,6 @@ module TestDataFrame
 
     z = deepcopy(x)
 
-    z = hcat(x, y)
-
     v = DataFrame(
         a = [5,6,7],
         b = [8,9,10]
