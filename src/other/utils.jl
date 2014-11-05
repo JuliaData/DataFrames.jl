@@ -168,15 +168,14 @@ function countna(da::PooledDataArray)
     return res
 end
 
-# slow, but maintains order and seems to work:
-function _setdiff(a::Vector, b::Vector)
-    idx = Int[]
-    for i in 1:length(a)
-        if !(a[i] in b)
-            push!(idx, i)
+function _setdiff{T}(a::AbstractVector{T}, b::AbstractVector{T})
+    diff = T[]
+    for val in a
+        if !(val in b)
+            push!(diff, val)
         end
     end
-    a[idx]
+    diff
 end
 
 function _uniqueofsorted(x::Vector)
