@@ -35,22 +35,22 @@ julia> using DataFrames
 julia> df = DataFrame(A = [repeat("a", 40) for i in 1:24],
                       B = [repeat("b", 40) for i in 1:24])
 # 2x3 DataFrame
-# |-------|------|-------------|---------|
 # | Col # | Name | Type        | Missing |
+# |-------|------|-------------|---------|
 # | 1     | A    | ASCIIString | 0       |
 # | 2     | B    | ASCIIString | 0       |
 
 julia> show(df)
 # 2x3 DataFrame
-# |-------|------|-------------|---------|
 # | Col # | Name | Type        | Missing |
+# |-------|------|-------------|---------|
 # | 1     | A    | ASCIIString | 0       |
 # | 2     | B    | ASCIIString | 0       |
 
 julia> show(df, true)
 # 24x2 DataFrame
-# |-------|------------------------------------------|
 # | Row # | A                                        |
+# |-------|------------------------------------------|
 # | 1     | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 # | 2     | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 # | 3     | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
@@ -70,8 +70,8 @@ julia> show(df, true)
 # | 23    | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 # | 24    | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 #
-# |-------|------------------------------------------|
 # | Row # | B                                        |
+# |-------|------------------------------------------|
 # | 1     | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |
 # | 2     | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |
 # | 3     | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |
@@ -93,8 +93,8 @@ julia> show(df, true)
 
 julia> showall(df)
 # 24x2 DataFrame
-# |-------|------------------------------------------|------------------------------------------|
 # | Row # | A                                        | B                                        |
+# |-------|------------------------------------------|------------------------------------------|
 # | 1     | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |
 # | 2     | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |
 # | 3     | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |
@@ -122,8 +122,8 @@ julia> showall(df)
 
 julia> showall(df, true)
 # 24x2 DataFrame
-# |-------|------------------------------------------|
 # | Row # | A                                        |
+# |-------|------------------------------------------|
 # | 1     | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 # | 2     | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 # | 3     | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
@@ -149,8 +149,8 @@ julia> showall(df, true)
 # | 23    | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 # | 24    | aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa |
 #
-# |-------|------------------------------------------|
 # | Row # | B                                        |
+# |-------|------------------------------------------|
 # | 1     | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |
 # | 2     | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |
 # | 3     | bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb |
