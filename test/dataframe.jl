@@ -116,6 +116,18 @@ module TestDataFrame
     @test allna(df[:, 1])
     @test allna(df[:, 2])
     @test allna(df[:, 3])
+    
+    
+    df = DataFrame(DataType[Int, Float64, ASCIIString],[:A, :B, :C], [false,false,true],100)
+    @test size(df, 1) == 100
+    @test size(df, 2) == 3
+    @test typeof(df[:, 1]) == DataVector{Int}
+    @test typeof(df[:, 2]) == DataVector{Float64}
+    @test typeof(df[:, 3]) == PooledDataVector{ASCIIString,Uint32}
+    @test allna(df[:, 1])
+    @test allna(df[:, 2])
+    @test allna(df[:, 3])
+
 
     df = convert(DataFrame, zeros(10, 5))
     @test size(df, 1) == 10
