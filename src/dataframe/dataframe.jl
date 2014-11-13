@@ -105,7 +105,19 @@ function DataFrame(column_eltypes::Vector, cnames::Vector, nrows::Integer)
     end
     return DataFrame(columns, Index(cnames))
 end
-
+# Initialize an empty DataFrame with specific eltypes and names and whether is pooled data array
+function DataFrame(column_eltypes::Vector, cnames::Vector,ispda::Vector, nrows::Integer)
+    p = length(column_eltypes)
+    columns = Array(Any, p)
+    for j in 1:p
+      if ispda[j]
+        columns[j] = PooledDataArray(column_eltypes[j], nrows)
+      else
+        columns[j] = DataArray(column_eltypes[j], nrows)
+      end  
+    end
+    return DataFrame(columns, Index(cnames))
+end
 # Initialize an empty DataFrame with specific eltypes
 function DataFrame(column_eltypes::Vector, nrows::Integer)
     p = length(column_eltypes)
