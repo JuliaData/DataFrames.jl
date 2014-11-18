@@ -33,6 +33,7 @@ import Base.AsyncStream
 
 export @~,
        AbstractDataFrame,
+       aggregate,
        array,
        by,
        cbind,

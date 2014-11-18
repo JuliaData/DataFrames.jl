@@ -164,37 +164,41 @@ colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(fns), d)
 colwise(fns::Vector{Function}, d::GroupedDataFrame, cn::Vector{String}) = map(colwise(fns), d)
 colwise(fns::Vector{Function}) = x -> colwise(fns, x)
 
+# By convenience functions
+by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
+by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
+
+# TODO: deprecate
+# by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
+# by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
+
 # Applies a set of functions over a DataFrame, in the from of a cross-product
-function colwise(d::AbstractDataFrame, fs::Vector{Function}, cn::Vector)
+function aggregate(d::AbstractDataFrame, fs::Vector{Function}, cn::Vector)
     fnames = _fnames(fs) # see other/utils.jl
     header = [symbol("$(colname)_$(fname)") for fname in fnames, colname in cn][:]
     payload = colwise(fs, d)
     DataFrame(payload, header)
 end
 
-colwise(d::AbstractDataFrame, f::Function, x) = colwise(d, [f], x)
-colwise(d::AbstractDataFrame, f::Vector{Function}, x::String) = colwise(d, f, [x])
-colwise(d::AbstractDataFrame, f::Function) = colwise(d, [f], names(d))
-colwise(d::AbstractDataFrame, f::Vector{Function}) = colwise(d, f, names(d))
+aggregate(d::AbstractDataFrame, f::Function, x) = aggregate(d, [f], x)
+aggregate(d::AbstractDataFrame, f::Vector{Function}, x::String) = aggregate(d, f, [x])
+aggregate(d::AbstractDataFrame, f::Vector{Function}) = aggregate(d, f, names(d))
+aggregate(d::AbstractDataFrame, f::Function) = aggregate(d, [f])
 
 # TODO make this faster by applying the header just once.
 # BUG zero-rowed groupings cause problems here, because a sum of a zero-length
 # DataVector is 0 (not 0.0).
-function colwise(gd::GroupedDataFrame, fs::Vector{Function})
-    x = map(x -> colwise(without(x, gd.cols),fs), gd)
+function aggregate(gd::GroupedDataFrame, fs::Vector{Function})
+    x = map(x -> aggregate(without(x, gd.cols),fs), gd)
     hcat(vcat(x.keys...), vcat(x.vals...))
 end
-colwise(d::GroupedDataFrame, f::Function) = colwise(d, [f])
-colwise(d::GroupedDataFrame, f::Function, x) = colwise(d, [f], x)
-colwise(d::GroupedDataFrame, fs::Vector{Function}, x::Union(String, Symbol)) = colwise(d, fs, [x])
-Base.(:|>)(d::GroupedDataFrame, fs::Vector{Function}) = colwise(d, fs)
-Base.(:|>)(d::GroupedDataFrame, f::Function) = colwise(d, [s])
+aggregate(d::GroupedDataFrame, f::Function) = aggregate(d, [f])
+aggregate(d::GroupedDataFrame, f::Function, x) = aggregate(d, [f], x)
+aggregate(d::GroupedDataFrame, fs::Vector{Function}, x::Union(String, Symbol)) = aggregate(d, fs, [x])
+Base.(:|>)(d::GroupedDataFrame, fs::Vector{Function}) = aggregate(d, fs)
+Base.(:|>)(d::GroupedDataFrame, f::Function) = aggregate(d, [s])
 
-by(d::AbstractDataFrame, cols, f::Function) = colwise(groupby(d, cols), f)
-by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
-by(d::AbstractDataFrame, cols, fs::Vector{Function}) = colwise(groupby(d, cols), fs)
-
-
-# TODO: deprecate
-# by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
-# by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
+aggregate{T <: ColumnIndex}(d::AbstractDataFrame, cols :: AbstractVector{T}, fs::Vector{Function}) = aggregate(groupby(d, cols), fs)
+aggregate{T <: ColumnIndex}(d::AbstractDataFrame, cols :: AbstractVector{T}, f::Function) = aggregate(d, cols, [f])
+aggregate(d::AbstractDataFrame, col :: ColumnIndex, fs::Vector{Function}) = aggregate(d, [col], fs)
+aggregate(d::AbstractDataFrame, col :: ColumnIndex, f::Function) = aggregate(d, [col], [f])
