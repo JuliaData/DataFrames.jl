@@ -168,10 +168,6 @@ colwise(fns::Vector{Function}) = x -> colwise(fns, x)
 by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
 by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
 
-# TODO: deprecate
-# by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
-# by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
-
 # Applies a set of functions over a DataFrame, in the from of a cross-product
 function aggregate(d::AbstractDataFrame, fs::Vector{Function}, cn::Vector)
     fnames = _fnames(fs) # see other/utils.jl
