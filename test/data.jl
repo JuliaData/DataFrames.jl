@@ -117,18 +117,17 @@ module TestData
     end
     @test res == sum(df7[:d1])
 
-    # TODO: Don't use symbols here
-    df8 = colwise(df7[[1, 3]], :sum)
+    df8 = aggregate(df7[[1, 3]], sum)
     @test df8[1, :d1_sum] == sum(df7[:d1])
 
-    df8 = colwise(groupby(df7, :d2), [:sum, :length])
+    df8 = aggregate(df7, :d2, [sum, length])
     @test size(df8, 1) == 3
     @test size(df8, 2) == 5
     @test df8[2, :d1_length] == 4
 
-    df9 = df7 |> groupby([:d2]) |> [:sum, :length]
+    df9 = df7 |> groupby([:d2]) |> [sum, length]
     @test isequal(df9, df8)
-    df9 = by(df7, :d2, [:sum, :length])
+    df9 = aggregate(df7, :d2, [sum, length])
     @test isequal(df9, df8)
 
     #test_group("reshape")
