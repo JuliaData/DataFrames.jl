@@ -14,4 +14,7 @@ module TestGrouping
     @test isequal(bdf[cols], unique(sdf[cols]))
 
     byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
+
+    @test all(T -> T <: AbstractVector, map(typeof, colwise([sum], df)))
+    @test all(T -> T <: AbstractVector, map(typeof, colwise(sum, df)))
 end
