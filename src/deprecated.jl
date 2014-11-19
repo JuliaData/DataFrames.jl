@@ -21,6 +21,8 @@ Base.@deprecate load_df loaddf
 Base.@deprecate melt_df meltdf
 Base.@deprecate stack_df stackdf
 Base.@deprecate pivot_table pivottable
+Base.@deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
+Base.@deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 
 
 const DEFAULT_COLUMN_ELTYPE = Float64

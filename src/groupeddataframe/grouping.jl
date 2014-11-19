@@ -91,6 +91,8 @@ function Base.showall(io::IO, gd::GroupedDataFrame)
     end
 end
 
+Base.names(d::GroupedDataFrame) = names(d.parent)
+
 ##############################################################################
 ##
 ## GroupApplied...
@@ -157,48 +159,42 @@ colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
 colwise(f::Function) = x -> colwise(f, x)
 colwise(f) = x -> colwise(f, x)
 # apply several functions to each column in a DataFrame
-colwise(fns::Vector{Function}, d::AbstractDataFrame) = [f(d[idx]) for f in fns, idx in 1:size(d, 2)][:]
+colwise(fns::Vector{Function}, d::AbstractDataFrame) = Any[[f(d[idx])] for f in fns, idx in 1:size(d, 2)][:]
 colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(fns), d)
 colwise(fns::Vector{Function}, d::GroupedDataFrame, cn::Vector{String}) = map(colwise(fns), d)
 colwise(fns::Vector{Function}) = x -> colwise(fns, x)
 
-function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
-    header = [symbol(string(s2) * "_" * string(s1)) for s1 in s, s2 in cn][:]
-    payload = colwise(map(eval, s), d)
-    df = DataFrame()
-    # TODO fix this to assign the longest column first or preallocate
-    # based on the maximum length.
-    for i in 1:length(header)
-        df[header[i]] = payload[i]
-    end
-    df
+# By convenience functions
+by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
+by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
+
+# Applies a set of functions over a DataFrame, in the from of a cross-product
+function aggregate(d::AbstractDataFrame, fs::Vector{Function}, cn::Vector)
+    fnames = _fnames(fs) # see other/utils.jl
+    header = [symbol("$(colname)_$(fname)") for fname in fnames, colname in cn][:]
+    payload = colwise(fs, d)
+    DataFrame(payload, header)
 end
-## function colwise(d::AbstractDataFrame, s::Vector{Symbol}, cn::Vector)
-##     header = [s2 * "_" * string(s1) for s1 in s, s2 in cn][:]
-##     payload = colwise(map(eval, s), d)
-##     DataFrame(payload, header)
-## end
-colwise(d::AbstractDataFrame, s::Symbol, x) = colwise(d, [s], x)
-colwise(d::AbstractDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
-colwise(d::AbstractDataFrame, s::Symbol) = colwise(d, [s], names(d))
-colwise(d::AbstractDataFrame, s::Vector{Symbol}) = colwise(d, s, names(d))
+
+aggregate(d::AbstractDataFrame, f::Function, x) = aggregate(d, [f], x)
+aggregate(d::AbstractDataFrame, f::Vector{Function}, x::String) = aggregate(d, f, [x])
+aggregate(d::AbstractDataFrame, f::Vector{Function}) = aggregate(d, f, names(d))
+aggregate(d::AbstractDataFrame, f::Function) = aggregate(d, [f])
 
 # TODO make this faster by applying the header just once.
 # BUG zero-rowed groupings cause problems here, because a sum of a zero-length
 # DataVector is 0 (not 0.0).
-function colwise(gd::GroupedDataFrame, s::Vector{Symbol})
-    x = map(x -> colwise(without(x, gd.cols),s), gd)
+function aggregate(gd::GroupedDataFrame, fs::Vector{Function})
+    x = map(x -> aggregate(without(x, gd.cols),fs), gd)
     hcat(vcat(x.keys...), vcat(x.vals...))
 end
-colwise(d::GroupedDataFrame, s::Symbol, x) = colwise(d, [s], x)
-colwise(d::GroupedDataFrame, s::Vector{Symbol}, x::String) = colwise(d, s, [x])
-colwise(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
-Base.(:|>)(d::GroupedDataFrame, s::Vector{Symbol}) = colwise(d, s)
-Base.(:|>)(d::GroupedDataFrame, s::Symbol) = colwise(d, [s])
-Base.names(d::GroupedDataFrame) = names(d.parent)
+aggregate(d::GroupedDataFrame, f::Function) = aggregate(d, [f])
+aggregate(d::GroupedDataFrame, f::Function, x) = aggregate(d, [f], x)
+aggregate(d::GroupedDataFrame, fs::Vector{Function}, x::Union(String, Symbol)) = aggregate(d, fs, [x])
+Base.(:|>)(d::GroupedDataFrame, fs::Vector{Function}) = aggregate(d, fs)
+Base.(:|>)(d::GroupedDataFrame, f::Function) = aggregate(d, [s])
 
-# by() convenience function
-by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
-by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
-by(d::AbstractDataFrame, cols, s::Vector{Symbol}) = colwise(groupby(d, cols), s)
-by(d::AbstractDataFrame, cols, s::Symbol) = colwise(groupby(d, cols), s)
+aggregate{T <: ColumnIndex}(d::AbstractDataFrame, cols :: AbstractVector{T}, fs::Vector{Function}) = aggregate(groupby(d, cols), fs)
+aggregate{T <: ColumnIndex}(d::AbstractDataFrame, cols :: AbstractVector{T}, f::Function) = aggregate(d, cols, [f])
+aggregate(d::AbstractDataFrame, col :: ColumnIndex, fs::Vector{Function}) = aggregate(d, [col], fs)
+aggregate(d::AbstractDataFrame, col :: ColumnIndex, f::Function) = aggregate(d, [col], [f])
