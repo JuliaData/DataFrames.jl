@@ -659,7 +659,7 @@ end
 
 ##############################################################################
 ##
-## head() and tail()
+## head(), tail() and sample()
 ##
 ##############################################################################
 
@@ -667,6 +667,14 @@ DataArrays.head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
 DataArrays.head(df::AbstractDataFrame) = head(df, 6)
 DataArrays.tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
 DataArrays.tail(df::AbstractDataFrame) = tail(df, 6)
+
+function StatsBase.sample(df::AbstractDataFrame, n::Integer)
+    if n >= nrow(df)
+        return df
+    else
+        return df[sort(sample(1:nrow(df), n, replace=false)), :]
+    end
+end
 
 # get the structure of a DF
 function Base.dump(io::IO, x::AbstractDataFrame, n::Int, indent)
