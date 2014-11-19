@@ -13,24 +13,24 @@
 ##
 ##############################################################################
 
-function stack(df::DataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
+function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
     res = DataFrame[insert!(df[[i, id_vars]], 1, names(df)[i], :variable) for i in measure_vars]
     # fix column names
     map(x -> names!(x, [:variable, :value, names(df[id_vars])]), res)
     vcat(res)
 end
-stack(df::DataFrame, measure_vars, id_vars) =
-    stack(df, df.colindex[measure_vars], df.colindex[id_vars])
-function stack(df::DataFrame, measure_vars)
-    mv_inds = df.colindex[measure_vars]
+stack(df::AbstractDataFrame, measure_vars, id_vars) =
+    stack(df, index(df)[measure_vars], index(df)[id_vars])
+function stack(df::AbstractDataFrame, measure_vars)
+    mv_inds = index(df)[measure_vars]
     stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds))
 end
 
-function melt(df::DataFrame, id_vars)
-    id_inds = df.colindex[id_vars]
+function melt(df::AbstractDataFrame, id_vars)
+    id_inds = index(df)[id_vars]
     stack(df, _setdiff(1:ncol(df), id_inds), id_inds)
 end
-melt(df::DataFrame, id_vars, measure_vars) = stack(df, measure_vars, id_vars)
+melt(df::AbstractDataFrame, id_vars, measure_vars) = stack(df, measure_vars, id_vars)
 
 ##############################################################################
 ##

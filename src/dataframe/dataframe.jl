@@ -114,7 +114,7 @@ function DataFrame(column_eltypes::Vector{DataType}, cnames::Vector{Symbol}, isp
         columns[j] = PooledDataArray(column_eltypes[j], nrows)
       else
         columns[j] = DataArray(column_eltypes[j], nrows)
-      end  
+      end
     end
     return DataFrame(columns, Index(cnames))
 end
@@ -170,51 +170,16 @@ end
 
 ##############################################################################
 ##
-## Basic properties of a DataFrame
+## AbstractDataFrame interface
 ##
 ##############################################################################
 
-Base.names(df::DataFrame) = names(df.colindex)
-
-names!(df::DataFrame, vals) = names!(df.colindex, vals)
-
-function eltypes(adf::AbstractDataFrame)
-    ncols = size(adf, 2)
-    res = Array(Type, ncols)
-    for j in 1:ncols
-        res[j] = eltype(adf[j])
-    end
-    return res
-end
-
-function rename(df::DataFrame, from::Any, to::Any)
-    rename(df.colindex, from, to)
-end
-function rename!(df::DataFrame, from::Any, to::Any)
-    rename!(df.colindex, from, to)
-end
+index(df::DataFrame) = df.colindex
+columns(df::DataFrame) = df.columns
 
 # TODO: Remove these
 nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1])::Int : 0
-ncol(df::DataFrame) = length(df.colindex)
-
-Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
-function Base.size(df::AbstractDataFrame, i::Integer)
-    if i == 1
-        nrow(df)
-    elseif i == 2
-        ncol(df)
-    else
-        throw(ArgumentError("DataFrames have only two dimensions"))
-    end
-end
-
-Base.length(df::AbstractDataFrame) = ncol(df)
-Base.endof(df::AbstractDataFrame) = ncol(df)
-
-Base.ndims(::AbstractDataFrame) = 2
-
-index(df::DataFrame) = df.colindex
+ncol(df::DataFrame) = length(index(df))
 
 ##############################################################################
 ##
@@ -233,7 +198,7 @@ index(df::DataFrame) = df.colindex
 #
 # General Strategy:
 #
-# Let getindex(df.colindex, col_inds) from Index() handle the resolution
+# Let getindex(index(df), col_inds) from Index() handle the resolution
 #  of column indices
 # Let getindex(df.columns[j], row_inds) from AbstractDataVector() handle
 #  the resolution of row indices
@@ -242,41 +207,41 @@ typealias ColumnIndex Union(Real, Symbol)
 
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
-    selected_column = df.colindex[col_ind]
+    selected_column = index(df)[col_ind]
     return df.columns[selected_column]
 end
 
 # df[MultiColumnIndex] => (Sub)?DataFrame
 function Base.getindex{T <: ColumnIndex}(df::DataFrame, col_inds::AbstractVector{T})
-    selected_columns = df.colindex[col_inds]
+    selected_columns = index(df)[col_inds]
     new_columns = df.columns[selected_columns]
-    return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
+    return DataFrame(new_columns, Index(index(df).names[selected_columns]))
 end
 
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
 function Base.getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
-    selected_column = df.colindex[col_ind]
+    selected_column = index(df)[col_ind]
     return df.columns[selected_column][row_ind]
 end
 
 # df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
 function Base.getindex{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractVector{T})
-    selected_columns = df.colindex[col_inds]
+    selected_columns = index(df)[col_inds]
     new_columns = Any[dv[[row_ind]] for dv in df.columns[selected_columns]]
-    return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
+    return DataFrame(new_columns, Index(index(df).names[selected_columns]))
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
 function Base.getindex{T <: Real}(df::DataFrame, row_inds::AbstractVector{T}, col_ind::ColumnIndex)
-    selected_column = df.colindex[col_ind]
+    selected_column = index(df)[col_ind]
     return df.columns[selected_column][row_inds]
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
 function Base.getindex{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::AbstractVector{T})
-    selected_columns = df.colindex[col_inds]
+    selected_columns = index(df)[col_inds]
     new_columns = Any[dv[row_inds] for dv in df.columns[selected_columns]]
-    return DataFrame(new_columns, Index(df.colindex.names[selected_columns]))
+    return DataFrame(new_columns, Index(index(df).names[selected_columns]))
 end
 
 ##############################################################################
@@ -302,16 +267,16 @@ function insert_single_column!(df::DataFrame,
     if ncol(df) != 0 && nrow(df) != length(dv)
         error("New columns must have the same length as old columns")
     end
-    if haskey(df.colindex, col_ind)
-        j = df.colindex[col_ind]
+    if haskey(index(df), col_ind)
+        j = index(df)[col_ind]
         df.columns[j] = dv
     else
         if typeof(col_ind) <: Symbol
-            push!(df.colindex, col_ind)
+            push!(index(df), col_ind)
             push!(df.columns, dv)
         else
             if isnextcol(df, col_ind)
-                push!(df.colindex, nextcolname(df))
+                push!(index(df), nextcolname(df))
                 push!(df.columns, dv)
             else
                 println("Column does not exist: $col_ind")
@@ -323,8 +288,8 @@ function insert_single_column!(df::DataFrame,
 end
 
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
-    if haskey(df.colindex, col_ind)
-        df.columns[df.colindex[col_ind]][row_ind] = v
+    if haskey(index(df), col_ind)
+        df.columns[index(df)[col_ind]][row_ind] = v
         return v
     else
         println("Column does not exist: $col_ind")
@@ -336,8 +301,8 @@ function insert_multiple_entries!{T <: Real}(df::DataFrame,
                                             v::Any,
                                             row_inds::AbstractVector{T},
                                             col_ind::ColumnIndex)
-    if haskey(df.colindex, col_ind)
-        df.columns[df.colindex[col_ind]][row_inds] = v
+    if haskey(index(df), col_ind)
+        df.columns[index(df)[col_ind]][row_inds] = v
         return v
     else
         println("Column does not exist: $col_ind")
@@ -579,60 +544,27 @@ function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
 end
 
 # Special deletion assignment
-Base.setindex!(df::DataFrame, x::Nothing, icol::Int) = delete!(df, icol)
+Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = delete!(df, col_ind)
 
 ##############################################################################
 ##
-## Equality
+## Mutating Associative methods
 ##
 ##############################################################################
 
-function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
-    size(df1, 2) == size(df2, 2) || return false
-    isequal(index(df1), index(df2)) || return false
-    for idx in 1:size(df1, 2)
-        isequal(df1[idx], df2[idx]) || return false
-    end
-    return true
-end
+Base.empty!(df::DataFrame) = (empty!(df.columns); empty!(index(df)); df)
 
-function Base.(:(==))(df1::AbstractDataFrame, df2::AbstractDataFrame)
-    size(df1, 2) == size(df2, 2) || return false
-    isequal(index(df1), index(df2)) || return false
-    eq = true
-    for idx in 1:size(df1, 2)
-        coleq = df1[idx] == df2[idx]
-        # coleq could be NA
-        !isequal(coleq, false) || return false
-        eq &= coleq
-    end
-    return eq
-end
 
-##############################################################################
-##
-## Associative methods
-##
-##############################################################################
-
-Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
-Base.get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
-Base.keys(df::AbstractDataFrame) = keys(index(df))
-Base.values(df::DataFrame) = df.columns
-Base.empty!(df::DataFrame) = (empty!(df.columns); empty!(df.colindex); df)
-
-Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
-
-function Base.insert!(df::DataFrame, index::Int, item::AbstractVector, name::Symbol)
-    0 < index <= ncol(df) + 1 || error(BoundsError)
+function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol)
+    0 < col_ind <= ncol(df) + 1 || error(BoundsError)
     size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
 
-    insert!(df.colindex, index, name)
-    insert!(df.columns, index, item)
+    insert!(index(df), col_ind, name)
+    insert!(df.columns, col_ind, item)
     df
 end
-Base.insert!(df::DataFrame, index::Int, item, name::Symbol) =
-    Base.insert!(df, index, upgrade_scalar(df, item), name)
+Base.insert!(df::DataFrame, col_ind::Int, item, name::Symbol) =
+    Base.insert!(df, col_ind, upgrade_scalar(df, item), name)
 
 function Base.insert!(df::DataFrame, df2::AbstractDataFrame)
     nrow(df) == nrow(df2) || nrow(df) == 0 || error("number of rows does not match")
@@ -659,78 +591,9 @@ end
 
 ##############################################################################
 ##
-## head() and tail()
+## Deletion / Subsetting
 ##
 ##############################################################################
-
-DataArrays.head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
-DataArrays.head(df::AbstractDataFrame) = head(df, 6)
-DataArrays.tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
-DataArrays.tail(df::AbstractDataFrame) = tail(df, 6)
-
-# get the structure of a DF
-function Base.dump(io::IO, x::AbstractDataFrame, n::Int, indent)
-    println(io, typeof(x), "  $(nrow(x)) observations of $(ncol(x)) variables")
-    if n > 0
-        for col in names(x)[1:end]
-            print(io, indent, "  ", col, ": ")
-            dump(io, x[col], n - 1, string(indent, "  "))
-        end
-    end
-end
-
-function Base.dump(io::IO, x::AbstractDataVector, n::Int, indent)
-    println(io, typeof(x), "(", length(x), ") ", x[1:min(4, end)])
-end
-
-# summarize the columns of a DF
-# if the column's base type derives from Number,
-# compute min, 1st quantile, median, mean, 3rd quantile, and max
-# filtering NAs, which are reported separately
-# if boolean, report trues, falses, and NAs
-# if anything else, punt.
-# Note that R creates a summary object, which has a print method. That's
-# a reasonable alternative to this.
-describe(dv::AbstractDataVector) = describe(STDOUT, dv)
-describe(df::DataFrame) = describe(STDOUT, df)
-function describe{T<:Number}(io, dv::AbstractDataVector{T})
-    if all(isna(dv))
-        println(io, " * All NA * ")
-        return
-    end
-    filtered = float(dropna(dv))
-    qs = quantile(filtered, [0, .25, .5, .75, 1])
-    statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
-    statVals = [qs[1:3], mean(filtered), qs[4:5]]
-    for i = 1:6
-        println(io, string(rpad(statNames[i], 8, " "), " ", string(statVals[i])))
-    end
-    nas = sum(isna(dv))
-    println(io, "NAs      $nas")
-    println(io, "NA%      $(round(nas*100/length(dv), 2))%")
-    return
-end
-function describe{T}(io, dv::AbstractDataVector{T})
-    ispooled = isa(dv, PooledDataVector) ? "Pooled " : ""
-    # if nothing else, just give the length and element type and NA count
-    println(io, "Length  $(length(dv))")
-    println(io, "Type    $(ispooled)$(string(eltype(dv)))")
-    println(io, "NAs     $(sum(isna(dv)))")
-    println(io, "NA%     $(round(sum(isna(dv))*100/length(dv), 2))%")
-    println(io, "Unique  $(length(unique(dv)))")
-    return
-end
-
-# TODO: clever layout in rows
-# TODO: AbstractDataFrame
-function describe(io, df::AbstractDataFrame)
-    for c in 1:ncol(df)
-        col = df[c]
-        println(io, names(df)[c])
-        describe(io, col)
-        println(io, )
-    end
-end
 
 # delete!() deletes columns; deleterows!() deletes rows
 # delete!(df, 1)
@@ -739,7 +602,7 @@ function Base.delete!(df::DataFrame, inds::Vector{Int})
     for ind in sort(inds, rev = true)
         if 1 <= ind <= ncol(df)
             splice!(df.columns, ind)
-            delete!(df.colindex, ind)
+            delete!(index(df), ind)
         else
             throw(ArgumentError("Can't delete a non-existent DataFrame column"))
         end
@@ -747,7 +610,7 @@ function Base.delete!(df::DataFrame, inds::Vector{Int})
     return df
 end
 Base.delete!(df::DataFrame, c::Int) = delete!(df, [c])
-Base.delete!(df::DataFrame, c::Any) = delete!(df, df.colindex[c])
+Base.delete!(df::DataFrame, c::Any) = delete!(df, index(df)[c])
 
 # deleterows!()
 function deleterows!(df::DataFrame, ind::Union(Integer, UnitRange{Int}))
@@ -783,21 +646,13 @@ function deleterows!(df::DataFrame, ind::AbstractVector{Int})
     df
 end
 
-function without(df::DataFrame, icols::Vector{Int})
-    newcols = _setdiff(1:ncol(df), icols)
-    if length(newcols) == 0
-        throw(ArgumentError("Empty DataFrame generated by without()"))
-    end
-    df[newcols]
-end
-without(df::DataFrame, i::Int) = without(df, [i])
-without(df::DataFrame, c::Any) = without(df, df.colindex[c])
+##############################################################################
+##
+## Hcat specialization
+##
+##############################################################################
 
-#### hcat, vcat
-# vcat(df, ...) only accepts data frames. Finds union of columns, maintaining order
-# of first df. Missing data becomes NAs.
-
-function hcat!(df1::DataFrame, df2::DataFrame)
+function hcat!(df1::DataFrame, df2::AbstractDataFrame)
     u = unique_adds(df1, names(df2))
     for i in 1:length(u)
         df1[u[i]] = df2[i]
@@ -809,166 +664,33 @@ hcat!{T}(df::DataFrame, x::DataVector{T}) = hcat!(df, DataFrame(Any[x]))
 hcat!{T}(df::DataFrame, x::Vector{T}) = hcat!(df, DataFrame(Any[DataArray(x)]))
 hcat!{T}(df::DataFrame, x::T) = hcat!(df, DataFrame(Any[DataArray([x])]))
 
-Base.hcat(df::DataFrame, x) = hcat!(copy(df), x)
-
 # three-plus-argument form recurses
 hcat!(a::DataFrame, b, c...) = hcat!(hcat!(a, b), c...)
 
-Base.hcat(a::DataFrame, b, c...) = hcat!(hcat(a, b), c...)
-
-Base.similar(df::DataFrame, dims) =
-    DataFrame([similar(x, dims) for x in df.columns], names(df))
-
-Base.zeros{T<:String}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
-
-nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavector.jl?
-    DataArray(zeros(T, dims), fill(true, dims))
-
-nas{T,R}(dv::PooledDataVector{T,R}, dims) =
-    PooledDataArray(DataArrays.RefArray(fill(one(R), dims)), dv.pool)
-
-nas(df::DataFrame, dims) =
-    DataFrame([nas(x, dims) for x in df.columns], names(df))
-
-Base.vcat(df::AbstractDataFrame) = df
-
-Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T}) = vcat(dfs...)
-
-function Base.vcat(dfs::AbstractDataFrame...)
-    Nrow = sum(nrow, dfs)
-    # build up column names and eltypes
-    colnams = names(dfs[1])
-    coltyps = eltypes(dfs[1])
-    for i in 2:length(dfs)
-        cni = names(dfs[i])
-        cti = eltypes(dfs[i])
-        for j in 1:length(cni)
-            cn = cni[j]
-            if length(findin([cn], colnams)) == 0  # new column
-                push!(colnams, cn)
-                push!(coltyps, cti[j])
-            end
-        end
-    end
-    res = DataFrame()
-    for i in 1:length(colnams)
-        coldata = Any[]
-        for df in dfs
-            push!(coldata,
-                  get(df,
-                      colnams[i],
-                      DataArray(coltyps[i], size(df, 1))))
-        end
-        res[colnams[i]] = vcat(coldata...)
-    end
-    res
-end
-
-##
-## Miscellaneous
-##
-
-function complete_cases(df::AbstractDataFrame)
-    ## Returns a Vector{Bool} of indexes of complete cases (rows with no NA's).
-    res = !isna(df[1])
-    for i in 2:ncol(df)
-        res &= !isna(df[i])
-    end
-    res
-end
-
-complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(!complete_cases(df)))
-
-function DataArrays.array(adf::AbstractDataFrame)
-    n, p = size(adf)
-    T = reduce(typejoin, eltypes(adf))
-    res = Array(T, n, p)
-    for j in 1:p
-        col = adf[j]
-        for i in 1:n
-            res[i, j] = col[i]
-        end
-    end
-    return res
-end
-
-function DataArrays.DataArray(adf::AbstractDataFrame,
-                              T::DataType = reduce(typejoin, eltypes(adf)))
-    n, p = size(adf)
-    dm = DataArray(T, n, p)
-    for j in 1:p
-        col = adf[j]
-        for i in 1:n
-            dm[i, j] = col[i]
-        end
-    end
-    return dm
-end
-
-function nonunique(df::AbstractDataFrame)
-    # Return a Vector{Bool} indicated whether the row is a duplicate
-    # of a prior row.
-    res = fill(false, nrow(df))
-    di = Dict()
-    for i in 1:nrow(df)
-        if haskey(di, array(df[i, :])) # Used to convert to Any type
-            res[i] = true
-        else
-            di[array(df[i, :])] = 1 # Used to convert to Any type
-        end
-    end
-    res
-end
-
-unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
-
-# Unique rows of an AbstractDataFrame.
-Base.unique(df::AbstractDataFrame) = df[!nonunique(df), :]
-
-function nonuniquekey(df::AbstractDataFrame)
-    # Here's another (probably a lot faster) way to do `nonunique`
-    # by grouping on all columns. It will fail if columns cannot be
-    # made into PooledDataVector's.
-    gd = groupby(df, names(df))
-    idx = [1:length(gd.idx)][gd.idx][gd.starts]
-    res = fill(true, nrow(df))
-    res[idx] = false
-    res
-end
+Base.hcat(df::DataFrame, x) = hcat!(copy(df), x)
 
 ##############################################################################
 ##
-## Hashing
-##
-## Make sure this agrees with is_equals()
+## Pooling
 ##
 ##############################################################################
-
-function Base.hash(adf::AbstractDataFrame)
-    h = hash(size(adf)) + 1
-    for i in 1:size(adf, 2)
-        h = hash(adf[i], h)
-    end
-    return uint(h)
-end
-
-# Pooling
 
 pool(a::AbstractVector) = compact(PooledDataArray(a))
 
-function pool!(df::AbstractDataFrame, cname::Union(Integer, Symbol))
+function pool!(df::DataFrame, cname::Union(Integer, Symbol))
     df[cname] = pool(df[cname])
     return
 end
 
-function pool!{T <: Union(Integer, Symbol)}(df::AbstractDataFrame, cnames::Vector{T})
+function pool!{T <: Union(Integer, Symbol)}(df::DataFrame, cnames::Vector{T})
     for cname in cnames
         df[cname] = pool(df[cname])
     end
     return
 end
 
-function pool!(df)
+# TODO: Deprecate or change for being too inconsistent with other pool methods
+function pool!(df::DataFrame)
     for i in 1:size(df, 2)
         if eltype(df[i]) <: String
             df[i] = pool(df[i])
@@ -977,16 +699,15 @@ function pool!(df)
     return
 end
 
-function Base.append!(adf1::AbstractDataFrame,
-                      adf2::AbstractDataFrame)
-   names(adf1) == names(adf2) || error("Column names do not match")
-   eltypes(adf1) == eltypes(adf2) || error("Column eltypes do not match")
-   ncols = size(adf1, 2)
+function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
+   names(df1) == names(df2) || error("Column names do not match")
+   eltypes(df1) == eltypes(df2) || error("Column eltypes do not match")
+   ncols = size(df1, 2)
    # TODO: This needs to be a sort of transaction to be 100% safe
    for j in 1:ncols
-       append!(adf1[j], adf2[j])
+       append!(df1[j], df2[j])
    end
-   return adf1
+   return df1
 end
 
 function Base.convert(::Type{DataFrame}, A::Matrix)
@@ -997,8 +718,6 @@ function Base.convert(::Type{DataFrame}, A::Matrix)
     end
     return DataFrame(cols, Index(gennames(n)))
 end
-nullable!(colnames::Array{Symbol,1},df::AbstractDataFrame)=  (for i in colnames df[i]=DataArray(df[i]) end)
-nullable!(colnums::Array{Int,1},df::AbstractDataFrame)= (for i in colnums df[i]=DataArray(df[i]) end)
 
 function Base.convert(::Type{DataFrame}, d::Dict)
     dnames = collect(keys(d))
@@ -1026,7 +745,6 @@ end
 ##
 ##############################################################################
 
-
 function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})
     i=1
     for nm in names(df)
@@ -1043,7 +761,6 @@ function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})
         i=i+1
     end
 end
-
 
 function Base.push!(df::DataFrame, associative::Associative)
     i=1
@@ -1063,7 +780,6 @@ function Base.push!(df::DataFrame, associative::Associative)
         i=i+1
     end
 end
-
 
 # array and tuple like collections
 function Base.push!(df::DataFrame, iterable::Any)

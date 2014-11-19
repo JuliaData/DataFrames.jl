@@ -74,7 +74,7 @@ function make_unique(names::Vector{Symbol})
     return names
 end
 
-function unique_adds(df::DataFrame, adds::Vector{Symbol})
+function unique_adds(df::AbstractDataFrame, adds::Vector{Symbol})
     seen = Set(names(df))
     dups = Int[]
     u = copy(adds)

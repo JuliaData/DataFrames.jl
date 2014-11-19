@@ -4,6 +4,8 @@
 ##
 ##############################################################################
 
+# TODO: Reconsider/redesign eachrow -- ~100% overhead
+
 # Iteration by rows
 immutable DFRowIterator
     df::AbstractDataFrame

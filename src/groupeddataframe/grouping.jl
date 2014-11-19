@@ -19,13 +19,13 @@ end
 #
 # Split
 #
-function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
+function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     ## a subset of Wes McKinney's algorithm here:
     ##     http://wesmckinney.com/blog/?p=489
 
     ncols = length(cols)
     # use the pool trick to get a set of integer references for each unique item
-    dv = PooledDataArray(df[cols[ncols]])
+    dv = PooledDataArray(d[cols[ncols]])
     # if there are NAs, add 1 to the refs to avoid underflows in x later
     dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
     x = copy(dv.refs) .+ dv_has_nas
@@ -33,9 +33,9 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     ngroups = length(dv.pool) + dv_has_nas
     # if there's more than 1 column, do roughly the same thing repeatedly
     for j = (ncols - 1):-1:1
-        dv = PooledDataArray(df[cols[j]])
+        dv = PooledDataArray(d[cols[j]])
         dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-        for i = 1:nrow(df)
+        for i = 1:nrow(d)
             x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
         end
         ngroups = ngroups * (length(dv.pool) + dv_has_nas)
@@ -45,7 +45,7 @@ function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
     # Remove zero-length groupings
     starts = _uniqueofsorted(starts)
     ends = [starts[2:end] .- 1]
-    GroupedDataFrame(df, cols, idx, starts[1:end-1], ends)
+    GroupedDataFrame(d, cols, idx, starts[1:end-1], ends)
 end
 groupby(d::AbstractDataFrame, cols) = groupby(d, [cols])
 
@@ -68,28 +68,7 @@ Base.getindex(gd::GroupedDataFrame, idx::Int) =
 Base.getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) =
     GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts[I], gd.ends[I])
 
-function Base.show(io::IO, gd::GroupedDataFrame)
-    N = length(gd)
-    println(io, "$(typeof(gd))  $N groups with keys: $(gd.cols)")
-    println(io, "First Group:")
-    show(io, gd[1])
-    if N > 1
-        print(io, "\n⋮\n")
-        println(io, "Last Group:")
-        show(io, gd[N])
-    end
-end
-
-function Base.showall(io::IO, gd::GroupedDataFrame)
-    N = length(gd)
-    println(io, "$(typeof(gd))  $N groups with keys: $(gd.cols)")
-    for i = 1:N
-        println(io, "gd[$i]:")
-        show(io, gd[i])
-    end
-end
-
-Base.names(d::GroupedDataFrame) = names(d.parent)
+Base.names(gd::GroupedDataFrame) = names(gd.parent)
 
 ##############################################################################
 ##
@@ -106,8 +85,15 @@ Base.names(d::GroupedDataFrame) = names(d.parent)
 ##############################################################################
 
 type GroupApplied
-    keys
-    vals
+    keys::Vector{AbstractDataFrame}
+    vals::Vector
+
+    function GroupApplied(keys, vals)
+        if length(keys) != length(vals)
+            error("GroupApplied requires keys and vals be of equal length.")
+        end
+        new(keys, vals)
+    end
 end
 
 
@@ -126,7 +112,7 @@ end
 
 Base.map(f::Function, x::GroupApplied) = GroupApplied(x.keys, map(f, x.vals))
 
-function combine(x)   # expecting (keys,vals) with keys to be DataFrames and values are what are to be combined
+function combine(x::GroupApplied)
     keys = copy(x.keys)
     vals = map(DataFrame, x.vals)
     for i in 1:length(keys)
@@ -135,7 +121,7 @@ function combine(x)   # expecting (keys,vals) with keys to be DataFrames and val
     hcat!(vcat(keys...), vcat(vals...))
 end
 
-wrap(df::DataFrame) = df
+wrap(df::AbstractDataFrame) = df
 wrap(A::Matrix) = convert(DataFrame, A)
 wrap(s::Any) = DataFrame(x1 = s)
 
@@ -148,18 +134,16 @@ function based_on(gd::GroupedDataFrame, f::Function)
 end
 
 
-# default pipelines:
-Base.map(f::Function, x::SubDataFrame) = f(x)
-
 # apply a function to each column in a DataFrame
 colwise(f::Function, d::AbstractDataFrame) = Any[[f(d[idx])] for idx in 1:size(d, 2)]
-colwise(f::Function, d::GroupedDataFrame) = map(colwise(f), d)
+colwise(f::Function, gd::GroupedDataFrame) = map(colwise(f), gd)
 colwise(f::Function) = x -> colwise(f, x)
 colwise(f) = x -> colwise(f, x)
 # apply several functions to each column in a DataFrame
 colwise(fns::Vector{Function}, d::AbstractDataFrame) = Any[[f(d[idx])] for f in fns, idx in 1:size(d, 2)][:]
-colwise(fns::Vector{Function}, d::GroupedDataFrame) = map(colwise(fns), d)
-colwise(fns::Vector{Function}, d::GroupedDataFrame, cn::Vector{String}) = map(colwise(fns), d)
+colwise(fns::Vector{Function}, gd::GroupedDataFrame) = map(colwise(fns), gd)
+# TODO: ignoring `cn`???
+colwise(fns::Vector{Function}, gd::GroupedDataFrame, cn::Vector{String}) = map(colwise(fns), gd)
 colwise(fns::Vector{Function}) = x -> colwise(fns, x)
 
 # By convenience functions
@@ -186,11 +170,11 @@ function aggregate(gd::GroupedDataFrame, fs::Vector{Function})
     x = map(x -> aggregate(without(x, gd.cols),fs), gd)
     hcat(vcat(x.keys...), vcat(x.vals...))
 end
-aggregate(d::GroupedDataFrame, f::Function) = aggregate(d, [f])
-aggregate(d::GroupedDataFrame, f::Function, x) = aggregate(d, [f], x)
-aggregate(d::GroupedDataFrame, fs::Vector{Function}, x::Union(String, Symbol)) = aggregate(d, fs, [x])
-Base.(:|>)(d::GroupedDataFrame, fs::Vector{Function}) = aggregate(d, fs)
-Base.(:|>)(d::GroupedDataFrame, f::Function) = aggregate(d, [s])
+aggregate(gd::GroupedDataFrame, f::Function) = aggregate(gd, [f])
+aggregate(gd::GroupedDataFrame, f::Function, x) = aggregate(gd, [f], x)
+aggregate(gd::GroupedDataFrame, fs::Vector{Function}, x::Union(String, Symbol)) = aggregate(gd, fs, [x])
+Base.(:|>)(gd::GroupedDataFrame, fs::Vector{Function}) = aggregate(gd, fs)
+Base.(:|>)(gd::GroupedDataFrame, f::Function) = aggregate(gd, [s])
 
 aggregate{T <: ColumnIndex}(d::AbstractDataFrame, cols :: AbstractVector{T}, fs::Vector{Function}) = aggregate(groupby(d, cols), fs)
 aggregate{T <: ColumnIndex}(d::AbstractDataFrame, cols :: AbstractVector{T}, f::Function) = aggregate(d, cols, [f])
