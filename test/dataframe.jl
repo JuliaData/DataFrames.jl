@@ -55,6 +55,14 @@ module TestDataFrame
     x0[:d] = 3
     @test x0[:d] == Int[]
 
+    # similar / nas
+    df = DataFrame(a = 1, b = "b", c = @pdata([3.3]))
+    nadf = DataFrame(a = @data(Int[NA, NA]),
+                     b = DataArray(Array(ASCIIString, 2), trues(2)),
+                     c = @pdata(Float64[NA, NA]))
+    @test isequal(nadf, similar(df, 2))
+    @test isequal(nadf, DataFrames.nas(df, 2))
+
     # Associative methods
 
     df = DataFrame(a=[1, 2], b=[3., 4.])
@@ -114,8 +122,8 @@ module TestDataFrame
     @test allna(df[:, 1])
     @test allna(df[:, 2])
     @test allna(df[:, 3])
-    
-    
+
+
     df = DataFrame(DataType[Int, Float64, ASCIIString],[:A, :B, :C], [false,false,true],100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3

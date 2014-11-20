@@ -72,18 +72,16 @@ Base.ndims(::AbstractDataFrame) = 2
 ##
 ##############################################################################
 
-Base.similar(df::AbstractDataFrame, dims) =
+Base.similar(df::AbstractDataFrame, dims::Int) =
     DataFrame([similar(x, dims) for x in columns(df)], names(df))
 
-Base.zeros{T<:String}(::Type{T},args...) = fill("",args...) # needed for string arrays in the `nas` method above
+nas{T}(dv::AbstractArray{T}, dims::Union(Int, (Int...))) =   # TODO move to datavector.jl?
+    DataArray(Array(T, dims), trues(dims))
 
-nas{T}(dv::DataArray{T}, dims) =   # TODO move to datavector.jl?
-    DataArray(zeros(T, dims), fill(true, dims))
+nas{T,R}(dv::PooledDataArray{T,R}, dims::Union(Int, (Int...))) =
+    PooledDataArray(DataArrays.RefArray(zeros(R, dims)), dv.pool)
 
-nas{T,R}(dv::PooledDataVector{T,R}, dims) =
-    PooledDataArray(DataArrays.RefArray(fill(one(R), dims)), dv.pool)
-
-nas(df::AbstractDataFrame, dims) =
+nas(df::AbstractDataFrame, dims::Int) =
     DataFrame([nas(x, dims) for x in columns(df)], names(df))
 
 ##############################################################################
