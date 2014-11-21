@@ -1039,15 +1039,20 @@ function printtable(io::IO,
                     df::DataFrame;
                     header::Bool = true,
                     separator::Char = ',',
-                    quotemark::Char = '"')
+                    quotemark::Char = '"',
+                    quotation::Bool = true)
     n, p = size(df)
     etypes = eltypes(df)
     if header
         cnames = names(df)
         for j in 1:p
-            print(io, quotemark)
-            print(io, cnames[j])
-            print(io, quotemark)
+            if quotation
+                print(io, quotemark)
+                print(io, cnames[j])
+                print(io, quotemark)
+            else
+                print(io, cnames[j])  
+            end
             if j < p
                 print(io, separator)
             else
@@ -1057,7 +1062,7 @@ function printtable(io::IO,
     end
     for i in 1:n
         for j in 1:p
-            if ! (etypes[j] <: Real)
+            if ! (etypes[j] <: Real) && quotation
                 print(io, quotemark)
                 escapedprint(io, df[i, j], "\"'")
                 print(io, quotemark)
@@ -1077,12 +1082,14 @@ end
 function printtable(df::DataFrame;
                     header::Bool = true,
                     separator::Char = ',',
-                    quotemark::Char = '"')
+                    quotemark::Char = '"',
+                    quotation::Bool = quotation)
     printtable(STDOUT,
                df,
                separator = separator,
                quotemark = quotemark,
-               header = header)
+               header = header,
+               quotation = quotation)
     return
 end
 
@@ -1091,7 +1098,8 @@ function writetable(filename::String,
                     df::DataFrame;
                     header::Bool = true,
                     separator::Char = getseparator(filename),
-                    quotemark::Char = '"')
+                    quotemark::Char = '"',
+                    quotation=true)
     if endswith(filename, ".gz")
         io = gzopen(filename, "w")
     elseif endswith(filename, ".bz") || endswith(filename, ".bz2")
@@ -1103,7 +1111,8 @@ function writetable(filename::String,
                df,
                separator = separator,
                quotemark = quotemark,
-               header = header)
+               header = header,
+               quotation=quotation)
     close(io)
     return
 end
