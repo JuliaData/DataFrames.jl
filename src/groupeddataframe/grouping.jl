@@ -151,39 +151,31 @@ colwise(f) = x -> colwise(f, x)
 # apply several functions to each column in a DataFrame
 colwise(fns::Vector{Function}, d::AbstractDataFrame) = Any[[f(d[idx])] for f in fns, idx in 1:size(d, 2)][:]
 colwise(fns::Vector{Function}, gd::GroupedDataFrame) = map(colwise(fns), gd)
-# TODO: ignoring `cn`???
-colwise(fns::Vector{Function}, gd::GroupedDataFrame, cn::Vector{String}) = map(colwise(fns), gd)
 colwise(fns::Vector{Function}) = x -> colwise(fns, x)
 
 # By convenience functions
 by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
 by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
 
-
-aggregate(d::Union(AbstractDataFrame, GroupedDataFrame), fs, cn::Symbol) = aggregate(d, fs, [cn])
-aggregate(d::Union(AbstractDataFrame, GroupedDataFrame), fs::Function, cn) = aggregate(d, [fs], cn)
+#
+# Aggregate convenience functions
+#
 
 # Applies a set of functions over a DataFrame, in the from of a cross-product
-aggregate(d::AbstractDataFrame, fs) = aggregate(d, fs, names(d))
-function aggregate(d::AbstractDataFrame, fs::Vector{Function}, cn::Vector{Symbol})
-    if length(cn) != length(d)
-        error("Length of 'cn' must match columns of 'd.'")
-    end
-    headers = _makeheaders(fs, cn)
+aggregate(d::AbstractDataFrame, fs::Function) = aggregate(d, [fs])
+function aggregate(d::AbstractDataFrame, fs::Vector{Function})
+    headers = _makeheaders(fs, names(d))
     _aggregate(d, fs, headers)
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
-Base.(:|>)(gd::GroupedDataFrame, fs::Vector{Function}) = aggregate(gd, fs)
-Base.(:|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, [fs])
-aggregate(gd::GroupedDataFrame, fs) = aggregate(gd, fs, _setdiff(names(gd), gd.cols))
-function aggregate(gd::GroupedDataFrame, fs::Vector{Function}, cn::Vector{Symbol})
-    if length(cn) != length(gd) - length(gd.cols)
-        error("Length of 'cn' must match non-key columns of 'gd.'")
-    end
-    headers = _makeheaders(fs, cn)
+aggregate(gd::GroupedDataFrame, fs::Function) = aggregate(gd, [fs])
+function aggregate(gd::GroupedDataFrame, fs::Vector{Function})
+    headers = _makeheaders(fs, _setdiff(names(gd), gd.cols))
     combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
 end
+Base.(:|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, fs)
+Base.(:|>)(gd::GroupedDataFrame, fs::Vector{Function}) = aggregate(gd, fs)
 
 # Groups DataFrame by cols before applying aggregate
 function aggregate{T <: ColumnIndex}(d::AbstractDataFrame,
@@ -191,7 +183,6 @@ function aggregate{T <: ColumnIndex}(d::AbstractDataFrame,
                                      fs::Union(Function, Vector{Function}))
     aggregate(groupby(d, cols), fs)
 end
-
 
 function _makeheaders(fs::Vector{Function}, cn::Vector{Symbol})
     fnames = _fnames(fs) # see other/utils.jl
