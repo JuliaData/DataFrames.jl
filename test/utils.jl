@@ -48,5 +48,5 @@ module TestUtils
     @test DataFrames.countna(pdata) == 20
 
     funs = [mean, sum, var, x -> sum(x)]
-    @test DataFrames._fnames(funs) == [:mean, :sum, :var, :λ1]
+    @test DataFrames._fnames(funs) == ["mean", "sum", "var", "λ1"]
 end

@@ -197,9 +197,9 @@ function _fnames(fs::Vector{Function})
     names = map(fs) do f
         if f.env == () # Anonymous function
             λcounter += 1
-            name = symbol("λ$(λcounter)")
+            name = "λ$(λcounter)"
         else
-            name = f.env.name
+            name = string(f.env.name)
         end
         name
     end

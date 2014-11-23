@@ -105,20 +105,29 @@ end
 function Base.map(f::Function, gd::GroupedDataFrame)
     ## [d[1,gd.cols] => f(d) for d in gd]
     ## [f(g) for g in gd]
-    keys = [d[1,gd.cols] for d in gd]
+    keys = [d[1, gd.cols] for d in gd]
     vals = Any[f(d) for d in gd]
-    GroupApplied(keys,vals)
+    GroupApplied(keys, vals)
 end
 
 Base.map(f::Function, x::GroupApplied) = GroupApplied(x.keys, map(f, x.vals))
 
 function combine(x::GroupApplied)
-    keys = copy(x.keys)
-    vals = map(DataFrame, x.vals)
-    for i in 1:length(keys)
-        keys[i] = vcat(fill(copy(keys[i]), nrow(vals[i]))...)
+    vals = convert(Vector{DataFrame}, x.vals)
+    rows = sum(nrow, vals)
+    ret = similar(x.keys[1], rows)
+    for j in 1:length(ret)
+        i = 1
+        col = ret[j]
+        for idx in 1:length(x.keys)
+            val = x.keys[idx][j][1]
+            @inbounds for _ = 1:size(vals[idx], 1)
+                col[i] = val
+                i += 1
+            end
+        end
     end
-    hcat!(vcat(keys...), vcat(vals...))
+    hcat!(ret, vcat(vals))
 end
 
 wrap(df::AbstractDataFrame) = df
@@ -126,8 +135,8 @@ wrap(A::Matrix) = convert(DataFrame, A)
 wrap(s::Any) = DataFrame(x1 = s)
 
 function based_on(gd::GroupedDataFrame, f::Function)
-    x = DataFrame[wrap(f(d)) for d in gd]
-    idx = rep([1:length(x)], convert(Vector{Int}, map(nrow, x)))
+    x = AbstractDataFrame[wrap(f(d)) for d in gd]
+    idx = rep(1:length(x), map(nrow, x))
     keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
     resdf = vcat(x)
     hcat!(keydf, resdf)
@@ -150,33 +159,46 @@ colwise(fns::Vector{Function}) = x -> colwise(fns, x)
 by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
 by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
 
+
+aggregate(d::Union(AbstractDataFrame, GroupedDataFrame), fs, cn::Symbol) = aggregate(d, fs, [cn])
+aggregate(d::Union(AbstractDataFrame, GroupedDataFrame), fs::Function, cn) = aggregate(d, [fs], cn)
+
 # Applies a set of functions over a DataFrame, in the from of a cross-product
-function aggregate(d::AbstractDataFrame, fs::Vector{Function}, cn::Vector)
-    fnames = _fnames(fs) # see other/utils.jl
-    header = [symbol("$(colname)_$(fname)") for fname in fnames, colname in cn][:]
-    payload = colwise(fs, d)
-    DataFrame(payload, header)
+aggregate(d::AbstractDataFrame, fs) = aggregate(d, fs, names(d))
+function aggregate(d::AbstractDataFrame, fs::Vector{Function}, cn::Vector{Symbol})
+    if length(cn) != length(d)
+        error("Length of 'cn' must match columns of 'd.'")
+    end
+    headers = _makeheaders(fs, cn)
+    _aggregate(d, fs, headers)
 end
 
-aggregate(d::AbstractDataFrame, f::Function, x) = aggregate(d, [f], x)
-aggregate(d::AbstractDataFrame, f::Vector{Function}, x::String) = aggregate(d, f, [x])
-aggregate(d::AbstractDataFrame, f::Vector{Function}) = aggregate(d, f, names(d))
-aggregate(d::AbstractDataFrame, f::Function) = aggregate(d, [f])
-
-# TODO make this faster by applying the header just once.
-# BUG zero-rowed groupings cause problems here, because a sum of a zero-length
-# DataVector is 0 (not 0.0).
-function aggregate(gd::GroupedDataFrame, fs::Vector{Function})
-    x = map(x -> aggregate(without(x, gd.cols),fs), gd)
-    hcat(vcat(x.keys...), vcat(x.vals...))
-end
-aggregate(gd::GroupedDataFrame, f::Function) = aggregate(gd, [f])
-aggregate(gd::GroupedDataFrame, f::Function, x) = aggregate(gd, [f], x)
-aggregate(gd::GroupedDataFrame, fs::Vector{Function}, x::Union(String, Symbol)) = aggregate(gd, fs, [x])
+# Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 Base.(:|>)(gd::GroupedDataFrame, fs::Vector{Function}) = aggregate(gd, fs)
-Base.(:|>)(gd::GroupedDataFrame, f::Function) = aggregate(gd, [s])
+Base.(:|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, [fs])
+aggregate(gd::GroupedDataFrame, fs) = aggregate(gd, fs, _setdiff(names(gd), gd.cols))
+function aggregate(gd::GroupedDataFrame, fs::Vector{Function}, cn::Vector{Symbol})
+    if length(cn) != length(gd) - length(gd.cols)
+        error("Length of 'cn' must match non-key columns of 'gd.'")
+    end
+    headers = _makeheaders(fs, cn)
+    combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
+end
 
-aggregate{T <: ColumnIndex}(d::AbstractDataFrame, cols :: AbstractVector{T}, fs::Vector{Function}) = aggregate(groupby(d, cols), fs)
-aggregate{T <: ColumnIndex}(d::AbstractDataFrame, cols :: AbstractVector{T}, f::Function) = aggregate(d, cols, [f])
-aggregate(d::AbstractDataFrame, col :: ColumnIndex, fs::Vector{Function}) = aggregate(d, [col], fs)
-aggregate(d::AbstractDataFrame, col :: ColumnIndex, f::Function) = aggregate(d, [col], [f])
+# Groups DataFrame by cols before applying aggregate
+function aggregate{T <: ColumnIndex}(d::AbstractDataFrame,
+                                     cols::Union(T, AbstractVector{T}),
+                                     fs::Union(Function, Vector{Function}))
+    aggregate(groupby(d, cols), fs)
+end
+
+
+function _makeheaders(fs::Vector{Function}, cn::Vector{Symbol})
+    fnames = _fnames(fs) # see other/utils.jl
+    scn = [string(x) for x in cn]
+    [symbol("$(colname)_$(fname)") for fname in fnames, colname in scn][:]
+end
+
+function _aggregate(d::AbstractDataFrame, fs::Vector{Function}, headers::Vector{Symbol})
+    DataFrame(colwise(fs, d), headers)
+end

@@ -315,9 +315,9 @@ Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
 
 Base.vcat(df::AbstractDataFrame) = df
 
-Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T}) = vcat(dfs...)
+Base.vcat(dfs::AbstractDataFrame...) = vcat(collect(dfs))
 
-function Base.vcat(dfs::AbstractDataFrame...)
+function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
     Nrow = sum(nrow, dfs)
     # build up column names and eltypes
     colnams = names(dfs[1])
@@ -327,22 +327,24 @@ function Base.vcat(dfs::AbstractDataFrame...)
         cti = eltypes(dfs[i])
         for j in 1:length(cni)
             cn = cni[j]
-            if length(findin([cn], colnams)) == 0  # new column
+            if !in(cn, colnams) # new column
                 push!(colnams, cn)
                 push!(coltyps, cti[j])
             end
         end
     end
     res = DataFrame()
-    for i in 1:length(colnams)
-        coldata = Any[]
+    for j in 1:length(colnams)
+        col = DataArray(coltyps[j], Nrow)
+        colnam = colnams[j]
+        i = 1
         for df in dfs
-            push!(coldata,
-                  get(df,
-                      colnams[i],
-                      DataArray(coltyps[i], size(df, 1))))
+            if haskey(df, colnam)
+                copy!(col, i, df[colnam])
+            end
+            i += size(df, 1)
         end
-        res[colnams[i]] = vcat(coldata...)
+        res[colnam] = col
     end
     res
 end
