@@ -85,14 +85,14 @@ Base.names(gd::GroupedDataFrame) = names(gd.parent)
 ##############################################################################
 
 type GroupApplied
-    keys::Vector{AbstractDataFrame}
+    gd::GroupedDataFrame
     vals::Vector
 
-    function GroupApplied(keys, vals)
-        if length(keys) != length(vals)
+    function GroupApplied(gd, vals)
+        if length(gd) != length(vals)
             error("GroupApplied requires keys and vals be of equal length.")
         end
-        new(keys, vals)
+        new(gd, vals)
     end
 end
 
@@ -103,45 +103,22 @@ end
 
 # map() sweeps along groups
 function Base.map(f::Function, gd::GroupedDataFrame)
-    ## [d[1,gd.cols] => f(d) for d in gd]
-    ## [f(g) for g in gd]
-    keys = [d[1, gd.cols] for d in gd]
-    vals = Any[f(d) for d in gd]
-    GroupApplied(keys, vals)
+    GroupApplied(gd, [wrap(f(d)) for d in gd])
 end
-
-Base.map(f::Function, x::GroupApplied) = GroupApplied(x.keys, map(f, x.vals))
-
-function combine(x::GroupApplied)
-    vals = convert(Vector{DataFrame}, x.vals)
-    rows = sum(nrow, vals)
-    ret = similar(x.keys[1], rows)
-    for j in 1:length(ret)
-        i = 1
-        col = ret[j]
-        for idx in 1:length(x.keys)
-            val = x.keys[idx][j][1]
-            @inbounds for _ = 1:size(vals[idx], 1)
-                col[i] = val
-                i += 1
-            end
-        end
-    end
-    hcat!(ret, vcat(vals))
+function Base.map(f::Function, ga::GroupApplied)
+    GroupApplied(ga.gd, [wrap(f(d)) for d in ga.vals])
 end
 
 wrap(df::AbstractDataFrame) = df
 wrap(A::Matrix) = convert(DataFrame, A)
 wrap(s::Any) = DataFrame(x1 = s)
 
-function based_on(gd::GroupedDataFrame, f::Function)
-    x = AbstractDataFrame[wrap(f(d)) for d in gd]
-    idx = rep(1:length(x), map(nrow, x))
-    keydf = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
-    resdf = vcat(x)
-    hcat!(keydf, resdf)
+function combine(ga::GroupApplied)
+    gd, vals = ga.gd, ga.vals
+    idx = rep(1:length(vals), Int[size(val, 1) for val in vals])
+    ret = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
+    hcat!(ret, vcat(vals))
 end
-
 
 # apply a function to each column in a DataFrame
 colwise(f::Function, d::AbstractDataFrame) = Any[[f(d[idx])] for idx in 1:size(d, 2)]
@@ -154,7 +131,7 @@ colwise(fns::Vector{Function}, gd::GroupedDataFrame) = map(colwise(fns), gd)
 colwise(fns::Vector{Function}) = x -> colwise(fns, x)
 
 # By convenience functions
-by(d::AbstractDataFrame, cols, f::Function) = based_on(groupby(d, cols), f)
+by(d::AbstractDataFrame, cols, f::Function) = combine(map(f, groupby(d, cols)))
 by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
 
 #
