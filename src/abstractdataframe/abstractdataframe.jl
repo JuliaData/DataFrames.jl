@@ -217,11 +217,11 @@ function DataArrays.array(df::AbstractDataFrame)
     n, p = size(df)
     T = reduce(typejoin, eltypes(df))
     res = Array(T, n, p)
-    for j in 1:p
-        col = df[j]
-        for i in 1:n
-            res[i, j] = col[i]
-        end
+    idx = 1
+    for col in columns(df)
+        anyna(col) && error("DataFrame contains NAs")
+        copy!(res, idx, data(col))
+        idx += n
     end
     return res
 end
@@ -229,14 +229,13 @@ end
 function DataArrays.DataArray(df::AbstractDataFrame,
                               T::DataType = reduce(typejoin, eltypes(df)))
     n, p = size(df)
-    dm = DataArray(T, n, p)
-    for j in 1:p
-        col = df[j]
-        for i in 1:n
-            dm[i, j] = col[i]
-        end
+    res = DataArray(T, n, p)
+    idx = 1
+    for col in columns(df)
+        copy!(res, idx, col)
+        idx += n
     end
-    return dm
+    return res
 end
 
 function nonunique(df::AbstractDataFrame)
