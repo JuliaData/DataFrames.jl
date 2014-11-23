@@ -8,11 +8,11 @@
 # a SubDataFrame is a lightweight wrapper around a DataFrame used most
 # frequently in split/apply sorts of operations.
 
-immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
-    parent::DataFrame
+immutable SubDataFrame{T <: AbstractVector{Int}, D <: AbstractDataFrame} <: AbstractDataFrame
+    parent::D
     rows::T # maps from subdf row indexes to parent row indexes
 
-    function SubDataFrame(parent::DataFrame, rows::T)
+    function SubDataFrame(parent::D, rows::T)
         if length(rows) > 0
             rmin, rmax = extrema(rows)
             if rmin < 1 || rmax > size(parent, 1)
@@ -23,15 +23,15 @@ immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
     end
 end
 
-function SubDataFrame{T <: AbstractVector{Int}}(parent::DataFrame, rows::T)
-    return SubDataFrame{T}(parent, rows)
+function SubDataFrame{T <: AbstractVector{Int}, D <: AbstractDataFrame}(parent::D, rows::T)
+    return SubDataFrame{T,D}(parent, rows)
 end
 
-function SubDataFrame(parent::DataFrame, row::Integer)
+function SubDataFrame(parent::AbstractDataFrame, row::Integer)
     return SubDataFrame(parent, [row])
 end
 
-function SubDataFrame{S <: Integer}(parent::DataFrame,
+function SubDataFrame{S <: Integer}(parent::AbstractDataFrame,
                                     rows::AbstractVector{S})
     return sub(parent, int(rows))
 end
@@ -73,7 +73,7 @@ Base.names(df::SubDataFrame) = names(df.parent)
 # TODO: Remove this?
 index(df::SubDataFrame) = index(df.parent)
 
-function Base.sub{S <: Real}(df::DataFrame, rowinds::AbstractVector{S})
+function Base.sub{S <: Real}(df::AbstractDataFrame, rowinds::AbstractVector{S})
     return SubDataFrame(df, rowinds)
 end
 
@@ -81,7 +81,12 @@ function Base.sub{S <: Real}(sdf::SubDataFrame, rowinds::AbstractVector{S})
     return SubDataFrame(sdf.parent, sdf.rows[rowinds])
 end
 
-function Base.sub(df::DataFrame, rowinds::AbstractVector{Bool})
+function Base.sub(sdf::SubDataFrame, rowinds::AbstractVector{Bool})
+    return SubDataFrame(sdf.parent, sdf.rows[rowinds])
+    sub(sdf, getindex(SimpleIndex(size(sdf, 1)), rowinds))
+end
+
+function Base.sub(df::AbstractDataFrame, rowinds::AbstractVector{Bool})
     return sub(df, getindex(SimpleIndex(size(df, 1)), rowinds))
 end
 
@@ -91,10 +96,6 @@ end
 
 function Base.sub(adf::AbstractDataFrame, rowinds::Integer)
     return SubDataFrame(adf, Int[rowinds])
-end
-
-function Base.sub(adf::AbstractDataFrame, rowinds::Any)
-    return sub(adf, getindex(SimpleIndex(size(adf, 1)), rowinds))
 end
 
 function Base.sub(adf::AbstractDataFrame, rowinds::Any, colinds::Any)
