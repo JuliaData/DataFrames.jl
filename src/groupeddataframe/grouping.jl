@@ -103,10 +103,10 @@ end
 
 # map() sweeps along groups
 function Base.map(f::Function, gd::GroupedDataFrame)
-    GroupApplied(gd, [wrap(f(d)) for d in gd])
+    GroupApplied(gd, AbstractDataFrame[wrap(f(d)) for d in gd])
 end
 function Base.map(f::Function, ga::GroupApplied)
-    GroupApplied(ga.gd, [wrap(f(d)) for d in ga.vals])
+    GroupApplied(ga.gd, AbstractDataFrame[wrap(f(d)) for d in ga.vals])
 end
 
 wrap(df::AbstractDataFrame) = df

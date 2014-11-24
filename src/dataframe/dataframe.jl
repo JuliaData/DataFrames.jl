@@ -140,10 +140,6 @@ function DataFrame{D <: Associative}(ds::Vector{D})
 end
 
 # Initialize from a Vector of Associatives (aka list of dicts)
-function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector{Symbol})
-    invoke(DataFrame, (Vector{D}, Vector), ds, ks)
-end
-
 function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
     #get column eltypes
     col_eltypes = Type[None for _ = 1:length(ks)]

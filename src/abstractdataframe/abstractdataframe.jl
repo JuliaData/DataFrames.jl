@@ -82,7 +82,7 @@ nas{T,R}(dv::PooledDataArray{T,R}, dims::Union(Int, (Int...))) =
     PooledDataArray(DataArrays.RefArray(zeros(R, dims)), dv.pool)
 
 nas(df::AbstractDataFrame, dims::Int) =
-    DataFrame([nas(x, dims) for x in columns(df)], names(df))
+    DataFrame(Any[nas(x, dims) for x in columns(df)], names(df))
 
 ##############################################################################
 ##
