@@ -5,16 +5,16 @@
 #' form. For example, a standard DataFrame with 10 rows and 5 columns
 #' will be summarized as "10x5 DataFrame".
 #'
-#' @param adf::AbstractDataFrame The AbstractDataFrame to be summarized.
+#' @param df::AbstractDataFrame The AbstractDataFrame to be summarized.
 #'
-#' @returns res::UTF8String The summary of `adf`.
+#' @returns res::UTF8String The summary of `df`.
 #'
 #' @examples
 #'
 #' summary(DataFrame(A = 1:10))
-function Base.summary(adf::AbstractDataFrame) # -> UTF8String
-    nrows, ncols = size(adf)
-    return utf8(@sprintf "%dx%d %s" nrows ncols typeof(adf))
+function Base.summary(df::AbstractDataFrame) # -> UTF8String
+    nrows, ncols = size(df)
+    return utf8(@sprintf "%dx%d %s" nrows ncols typeof(df))
 end
 
 #' @description
@@ -75,7 +75,7 @@ ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Nothing
 #' NOTE: The last entry of the result vector is the string width of the
 #'       implicit row ID column contained in every AbstractDataFrame.
 #'
-#' @param adf::AbstractDataFrame The AbstractDataFrame whose columns will be
+#' @param df::AbstractDataFrame The AbstractDataFrame whose columns will be
 #'        printed.
 #' @param rowindices1::AbstractVector{Int} A set of indices of the first
 #'        chunk of the AbstractDataFrame that would be rendered to IO.
@@ -93,45 +93,43 @@ ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Nothing
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "yy", "z"])
 #' maxwidths = getmaxwidths(df, 1:1, 3:3, :Row)
-function getmaxwidths(adf::AbstractDataFrame,
+function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol) # -> Vector{Int}
-    ncols = size(adf, 2)
-    cnames = names(adf)
-    maxwidths = Array(Int, ncols + 1)
+    maxwidths = Array(Int, size(df, 2) + 1)
 
     # TODO: Move this definition somewhere else
     NAstrwidth = 2
     undefstrwidth = ourstrwidth(Base.undef_ref_str)
 
-    for j in 1:ncols
+    j = 1
+    for (name, col) in eachcol(df)
         # (1) Consider length of column name
-        maxwidths[j] = ourstrwidth(cnames[j])
+        maxwidth = ourstrwidth(name)
 
         # (2) Consider length of longest entry in that column
-        col = adf[j]
         for indices in (rowindices1, rowindices2)
             for i in indices
                 if isna(col, i)
-                    maxwidths[j] = max(maxwidths[j], NAstrwidth)
+                    maxwidth = max(maxwidth, NAstrwidth)
                 else
                     try
-                        maxwidths[j] = max(maxwidths[j], ourstrwidth(col[i]))
+                        maxwidth = max(maxwidth, ourstrwidth(col[i]))
                     catch
-                        maxwidths[j] = max(maxwidths[j], undefstrwidth)
+                        maxwidth = max(maxwidth, undefstrwidth)
                     end
                 end
             end
         end
+        maxwidths[j] = maxwidth
+        j += 1
     end
 
     rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
     rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
 
-    maxwidths[ncols + 1] = max(max(rowmaxwidth1,
-                                   rowmaxwidth2),
-                               ourstrwidth(rowlabel))
+    maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2), ourstrwidth(rowlabel))
 
     return maxwidths
 end
@@ -224,8 +222,8 @@ end
 #' the last indicated column. Assumes that the maximum string widths
 #' required for printing have been precomputed.
 #'
-#' @param io::IO The IO system to which `adf` will be printed.
-#' @param adf::AbstractDataFrame An AbstractDataFrame.
+#' @param io::IO The IO system to which `df` will be printed.
+#' @param df::AbstractDataFrame An AbstractDataFrame.
 #' @param rowindices::AbstractVector{Int} The indices of the subset of rows
 #'        that will be rendered to `io`.
 #' @param maxwidths::Vector{Int} The pre-computed maximum string width
@@ -242,7 +240,7 @@ end
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showrowindices(STDOUT, df, 1:2, [1, 1, 5], 1, 2)
 function showrowindices(io::IO,
-                        adf::AbstractDataFrame,
+                        df::AbstractDataFrame,
                         rowindices::AbstractVector{Int},
                         maxwidths::Vector{Int},
                         leftcol::Int,
@@ -253,7 +251,7 @@ function showrowindices(io::IO,
         # Print row ID
         @printf io "| %d" i
         padding = rowmaxwidth - ndigits(i)
-        for itr in 1:padding
+        for _ in 1:padding
             write(io, ' ')
         end
         print(io, " | ")
@@ -261,14 +259,14 @@ function showrowindices(io::IO,
         for j in leftcol:rightcol
             strlen = 0
             try
-                strlen = ourstrwidth(adf[i, j])
-                ourshowcompact(io, adf[i, j])
+                strlen = ourstrwidth(df[i, j])
+                ourshowcompact(io, df[i, j])
             catch
                 strlen = ourstrwidth(Base.undef_ref_str)
                 ourshowcompact(io, Base.undef_ref_str)
             end
             padding = maxwidths[j] - strlen
-            for itr in 1:padding
+            for _ in 1:padding
                 write(io, ' ')
             end
             if j == rightcol
@@ -293,8 +291,8 @@ end
 #' NOTE: The value of `maxwidths[end]` must be the string width of
 #' `rowlabel`.
 #'
-#' @param io::IO The IO system to which `adf` will be printed.
-#' @param adf::AbstractDataFrame An AbstractDataFrame.
+#' @param io::IO The IO system to which `df` will be printed.
+#' @param df::AbstractDataFrame An AbstractDataFrame.
 #' @param rowindices1::AbstractVector{Int} The indices of the first subset
 #'        of rows to be rendered.
 #' @param rowindices2::AbstractVector{Int} The indices of the second subset
@@ -317,18 +315,18 @@ end
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showrows(STDOUT, df, 1:2, 3:3, [1, 1, 5], false, :Row, true)
 function showrows(io::IO,
-                  adf::AbstractDataFrame,
+                  df::AbstractDataFrame,
                   rowindices1::AbstractVector{Int},
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
                   splitchunks::Bool = false,
                   rowlabel::Symbol = symbol("Row"),
                   displaysummary::Bool = true) # -> Nothing
-    ncols = size(adf, 2)
-    cnames = names(adf)
+    ncols = size(df, 2)
+    cnames = names(df)
 
     if displaysummary
-        println(io, summary(adf))
+        println(io, summary(df))
     end
 
     if isempty(rowindices1)
@@ -342,7 +340,7 @@ function showrows(io::IO,
     for chunkindex in 1:nchunks
         leftcol = chunkbounds[chunkindex] + 1
         rightcol = chunkbounds[chunkindex + 1]
-        
+
         # Print column names
         @printf io "| %s" rowlabel
         padding = rowmaxwidth - ourstrwidth(rowlabel)
@@ -380,15 +378,16 @@ function showrows(io::IO,
 
         # Print main table body, potentially in two abbreviated sections
         showrowindices(io,
-                       adf,
+                       df,
                        rowindices1,
                        maxwidths,
                        leftcol,
                        rightcol)
+
         if !isempty(rowindices2)
             print(io, "\n⋮\n")
             showrowindices(io,
-                           adf,
+                           df,
                            rowindices2,
                            maxwidths,
                            leftcol,
@@ -415,8 +414,8 @@ end
 #' response to screen width can be configured using the argument
 #' `splitchunks`.
 #'
-#' @param io::IO The IO system to which `adf` will be printed.
-#' @param adf::AbstractDataFrame An AbstractDataFrame.
+#' @param io::IO The IO system to which `df` will be printed.
+#' @param df::AbstractDataFrame An AbstractDataFrame.
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
 #' @param rowlabel::Symbol What label should be printed when rendering the
@@ -432,11 +431,11 @@ end
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' show(STDOUT, df, false, :Row, true)
 function Base.show(io::IO,
-                   adf::AbstractDataFrame,
+                   df::AbstractDataFrame,
                    splitchunks::Bool = true,
                    rowlabel::Symbol = symbol("Row"),
                    displaysummary::Bool = true) # -> Nothing
-    nrows = size(adf, 1)
+    nrows = size(df, 1)
     tty_rows, tty_cols = Base.tty_size()
     availableheight = tty_rows - 5
     nrowssubset = fld(availableheight, 2)
@@ -448,13 +447,13 @@ function Base.show(io::IO,
         rowindices1 = 1:bound
         rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
     end
-    maxwidths = getmaxwidths(adf, rowindices1, rowindices2, rowlabel)
+    maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel)
     width = getprintedwidth(maxwidths)
     if width > tty_cols && !splitchunks
-        showcols(io, adf)
+        showcols(io, df)
     else
         showrows(io,
-                 adf,
+                 df,
                  rowindices1,
                  rowindices2,
                  maxwidths,
@@ -472,7 +471,7 @@ end
 #' other `show` documentation for details. This is mainly used to force
 #' showing the AbstractDataFrame in chunks.
 #'
-#' @param adf::AbstractDataFrame An AbstractDataFrame.
+#' @param df::AbstractDataFrame An AbstractDataFrame.
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
 #'
@@ -482,53 +481,10 @@ end
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' show(df, true)
-function Base.show(adf::AbstractDataFrame,
+function Base.show(df::AbstractDataFrame,
                    splitchunks::Bool = true) # -> Nothing
-    return show(STDOUT, adf, splitchunks)
+    return show(STDOUT, df, splitchunks)
 end
-
-#' @exported
-#' @description
-#'
-#' Render a DataFrameRow to an IO system. Each column of the DataFrameRow
-#' is printed on a separate line.
-#'
-#' @param io::IO The IO system where rendering will take place.
-#' @param r::DataFrameRow The DataFrameRow to be rendered to `io`.
-#'
-#' @returns o::Nothing A `nothing` value.
-#'
-#' @examples
-#'
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' for r in eachrow(df)
-#'     show(STDOUT, r)
-#' end
-function Base.show(io::IO, r::DataFrameRow)
-    labelwidth = mapreduce(n -> length(string(n)), max, names(r)) + 2
-    @printf(io, "DataFrameRow (row %d)\n", r.row)
-    for (label, value) in r
-        println(io, rpad(label, labelwidth, ' '), value)
-    end
-end
-
-#' @exported
-#' @description
-#'
-#' Render a DataFrameRow to STDOUT. See other `show` documentation for
-#' details.
-#'
-#' @param r::DataFrameRow The DataFrameRow to be rendered to `io`.
-#'
-#' @returns o::Nothing A `nothing` value.
-#'
-#' @examples
-#'
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' for r in eachrow(df)
-#'     show(r)
-#' end
-Base.show(row::DataFrameRow) = show(STDOUT, row)
 
 #' @exported
 #' @description
@@ -536,8 +492,8 @@ Base.show(row::DataFrameRow) = show(STDOUT, row)
 #' Render all of the rows of an AbstractDataFrame to an IO system. See
 #' `show` documentation for details.
 #'
-#' @param io::IO The IO system to which `adf` will be printed.
-#' @param adf::AbstractDataFrame An AbstractDataFrame.
+#' @param io::IO The IO system to which `df` will be printed.
+#' @param df::AbstractDataFrame An AbstractDataFrame.
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
 #' @param rowlabel::Symbol What label should be printed when rendering the
@@ -553,16 +509,16 @@ Base.show(row::DataFrameRow) = show(STDOUT, row)
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showall(STDOUT, df, false, :Row, true)
 function Base.showall(io::IO,
-                      adf::AbstractDataFrame,
+                      df::AbstractDataFrame,
                       splitchunks::Bool = false,
                       rowlabel::Symbol = symbol("Row"),
                       displaysummary::Bool = true) # -> Nothing
-    rowindices1 = 1:size(adf, 1)
+    rowindices1 = 1:size(df, 1)
     rowindices2 = 1:0
-    maxwidths = getmaxwidths(adf, rowindices1, rowindices2, rowlabel)
+    maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel)
     width = getprintedwidth(maxwidths)
     showrows(io,
-             adf,
+             df,
              rowindices1,
              rowindices2,
              maxwidths,
@@ -578,7 +534,7 @@ end
 #' Render all of the rows of an AbstractDataFrame to STDOUT. See
 #' `showall` documentation for details.
 #'
-#' @param adf::AbstractDataFrame An AbstractDataFrame.
+#' @param df::AbstractDataFrame An AbstractDataFrame.
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
 #'
@@ -588,9 +544,9 @@ end
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showall(df, true)
-function Base.showall(adf::AbstractDataFrame,
+function Base.showall(df::AbstractDataFrame,
                       splitchunks::Bool = false) # -> Nothing
-    showall(STDOUT, adf, splitchunks)
+    showall(STDOUT, df, splitchunks)
     return
 end
 
@@ -600,7 +556,7 @@ end
 #' count.
 #'
 #' @param io::IO The `io` to be rendered to.
-#' @param adf::AbstractDataFrame An AbstractDataFrame.
+#' @param df::AbstractDataFrame An AbstractDataFrame.
 #'
 #' @returns o::Nothing A `nothing` value.
 #'
@@ -608,16 +564,16 @@ end
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showcols(df, true)
-function showcols(io::IO, adf::AbstractDataFrame) # -> Nothing
-    println(io, summary(adf))
-    metadata = DataFrame(Name = names(adf),
-                         Eltype = eltypes(adf),
-                         Missing = colmissing(adf))
+function showcols(io::IO, df::AbstractDataFrame) # -> Nothing
+    println(io, summary(df))
+    metadata = DataFrame(Name = names(df),
+                         Eltype = eltypes(df),
+                         Missing = colmissing(df))
     showall(io, metadata, true, symbol("Col #"), false)
     return
 end
 
-showcols(adf::AbstractDataFrame) = showcols(STDOUT, adf) # -> Nothing
+showcols(df::AbstractDataFrame) = showcols(STDOUT, df) # -> Nothing
 
 #' @exported
 #' @description
@@ -625,7 +581,7 @@ showcols(adf::AbstractDataFrame) = showcols(STDOUT, adf) # -> Nothing
 #' Print an AbstractDataFrame to an IO system with an added newline.
 #'
 #' @param io::IO The `io` system to be rendered to.
-#' @param adf::AbstractDataFrame An AbstractDataFrame.
+#' @param df::AbstractDataFrame An AbstractDataFrame.
 #'
 #' @returns o::Nothing A `nothing` value.
 #'
@@ -634,7 +590,7 @@ showcols(adf::AbstractDataFrame) = showcols(STDOUT, adf) # -> Nothing
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' print(STDOUT, df)
 # TODO: Determine if this method is strictly necessary.
-function Base.print(io::IO, adf::AbstractDataFrame)
-    show(io, adf)
+function Base.print(io::IO, df::AbstractDataFrame)
+    show(io, df)
     print(io, '\n')
 end

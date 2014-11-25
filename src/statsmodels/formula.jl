@@ -308,14 +308,14 @@ function termnames(term::Symbol, col::PooledDataArray)
     [string(term, " - ", levs[i]) for i in 2:length(levs)]
 end
 
-function coefnames(fr::ModelFrame)
-    if fr.terms.intercept
+function coefnames(mf::ModelFrame)
+    if mf.terms.intercept
         vnames = UTF8String["(Intercept)"]
     else
         vnames = UTF8String[]
     end
     # Need to only include active levels
-    for term in fr.terms.terms
+    for term in mf.terms.terms
         if isa(term, Expr)
             if term.head == :call && term.args[1] == :|
                 continue                # skip random-effects terms
@@ -327,12 +327,12 @@ function coefnames(fr::ModelFrame)
                               vec([string(lev1, " & ", lev2) for
                                    lev1 in a,
                                    lev2 in b]),
-                              map(x -> termnames(x, fr.df[x]), term.args[2:end])))
+                              map(x -> termnames(x, mf.df[x]), term.args[2:end])))
             else
                 error("unrecognized term $term")
             end
         else
-            append!(vnames, termnames(term, fr.df[term]))
+            append!(vnames, termnames(term, mf.df[term]))
         end
     end
     return vnames

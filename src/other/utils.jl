@@ -50,31 +50,54 @@ function makeidentifier(s::String)
 end
 
 function make_unique(names::Vector{Symbol})
-    x = Index()
+    seen = Set{Symbol}()
     names = copy(names)
     dups = Int[]
     for i in 1:length(names)
-        if haskey(x, names[i])
-            push!(dups, i)
-        else
-            push!(x, names[i])
-        end
+        name = names[i]
+        in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
     for i in dups
         nm = names[i]
-        newnm = nm
         k = 1
         while true
             newnm = symbol("$(nm)_$k")
-            if !haskey(x, newnm)
-                push!(x, newnm)
+            if !in(newnm, seen)
+                names[i] = newnm
+                push!(seen, newnm)
                 break
             end
             k += 1
         end
-        names[i] = newnm
     end
-    names
+
+    return names
+end
+
+function unique_adds(df::AbstractDataFrame, adds::Vector{Symbol})
+    seen = Set(names(df))
+    dups = Int[]
+    u = copy(adds)
+
+    for i in 1:length(u)
+        name = u[i]
+        in(name, seen) ? push!(dups, i) : push!(seen, name)
+    end
+    for i in dups
+        nm = u[i]
+        k = 1
+        while true
+            newnm = symbol("$(nm)_$k")
+            if !in(newnm, seen)
+                u[i] = newnm
+                push!(seen, newnm)
+                break
+            end
+            k += 1
+        end
+    end
+
+    return u
 end
 
 #' @description
@@ -145,15 +168,14 @@ function countna(da::PooledDataArray)
     return res
 end
 
-# slow, but maintains order and seems to work:
-function _setdiff(a::Vector, b::Vector)
-    idx = Int[]
-    for i in 1:length(a)
-        if !(a[i] in b)
-            push!(idx, i)
+function _setdiff{T}(a::AbstractVector{T}, b::AbstractVector{T})
+    diff = T[]
+    for val in a
+        if !(val in b)
+            push!(diff, val)
         end
     end
-    a[idx]
+    diff
 end
 
 function _uniqueofsorted(x::Vector)
@@ -175,9 +197,9 @@ function _fnames(fs::Vector{Function})
     names = map(fs) do f
         if f.env == () # Anonymous function
             λcounter += 1
-            name = symbol("λ$(λcounter)")
+            name = "λ$(λcounter)"
         else
-            name = f.env.name
+            name = string(f.env.name)
         end
         name
     end

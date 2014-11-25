@@ -16,7 +16,7 @@ function Base.setindex!(r::DataFrameRow, value::Any, idx::Any)
     return setindex!(r.df, value, r.row, idx)
 end
 
-Base.names(df::DataFrameRow) = names(df.df)
+Base.names(r::DataFrameRow) = names(r.df)
 
 Base.sub(r::DataFrameRow, c) = DataFrameRow(r.df[[c]], r.row)
 

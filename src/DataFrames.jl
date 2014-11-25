@@ -99,21 +99,28 @@ export @~,
 ##
 ##############################################################################
 
-include(joinpath("other", "utils.jl"))
 include(joinpath("other", "index.jl"))
 include(joinpath("abstractdataframe", "abstractdataframe.jl"))
+include(joinpath("other", "utils.jl"))
+
 include(joinpath("dataframe", "dataframe.jl"))
 include(joinpath("subdataframe", "subdataframe.jl"))
-include(joinpath("dataframerow", "dataframerow.jl"))
-include(joinpath("dataframe", "sort.jl"))
-include(joinpath("dataframe", "iteration.jl"))
-include(joinpath("dataframe", "show.jl"))
-include(joinpath("dataframe", "join.jl"))
 include(joinpath("groupeddataframe", "grouping.jl"))
-include(joinpath("dataframe", "reshape.jl"))
+include(joinpath("dataframerow", "dataframerow.jl"))
+
+include(joinpath("abstractdataframe", "io.jl"))
+include(joinpath("abstractdataframe", "iteration.jl"))
+include(joinpath("abstractdataframe", "join.jl"))
+include(joinpath("abstractdataframe", "reshape.jl"))
+include(joinpath("abstractdataframe", "show.jl"))
+include(joinpath("abstractdataframe", "sort.jl"))
+include(joinpath("dataframe", "io.jl"))
+include(joinpath("dataframe", "sort.jl"))
+include(joinpath("groupeddataframe", "show.jl"))
+include(joinpath("dataframerow", "show.jl"))
+
 include(joinpath("statsmodels", "formula.jl"))
 include(joinpath("statsmodels", "statsmodel.jl"))
-include(joinpath("dataframe", "io.jl"))
 include("RDA.jl")
 include("deprecated.jl")
 

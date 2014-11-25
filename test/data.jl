@@ -25,9 +25,9 @@ module TestData
     #test_group("description functions")
     @test size(df6, 1) == 4
     @test size(df6, 2) == 3
-    @test all(names(df6) .== [:A, :B, :C])
-    @test all(names(df2) .== [:x1, :x2])
-    @test all(names(df7) .== [:x, :y])
+    @test names(df6) == [:A, :B, :C]
+    @test names(df2) == [:x1, :x2]
+    @test names(df7) == [:x, :y]
 
     #test_group("ref")
     @test df6[2, 3] == "two"
@@ -41,23 +41,26 @@ module TestData
     @test size(head(df6,2)) == (2, 3)
     # lots more to do
 
-    #test_group("combining")
-
+    #test_group("hcat")
     dfc = hcat(df3, df4)
     @test size(dfc, 2) == 3
-    @test all(names(dfc) .== [:x1, :x1_1, :x2])
+    @test names(dfc) == [:x1, :x1_1, :x2]
     @test isequal(dfc[:x1], df3[:x1])
-
     @test isequal(dfc, [df3 df4])
 
+    dfc3 = hcat(df3, df4, df5)
+    @test names(dfc3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
+    @test isequal(dfc3, hcat(dfc, df5))
+
+    #test_group("vcat")
     dfr = vcat(df4, df4)
     @test size(dfr, 1) == 8
-    @test all(names(df4) .== names(dfr))
+    @test names(df4) == names(dfr)
     @test isequal(dfr, [df4, df4])
 
     dfr = vcat(df2, df3)
     @test size(dfr) == (8,2)
-    @test all(names(df2) .== names(dfr))
+    @test names(df2) == names(dfr)
     @test isna(dfr[8,:x2])
 
     #test_group("assign")
@@ -68,7 +71,7 @@ module TestData
     df6[:D] = [true, false, true, false]
     @test df6[1,4] == true
     delete!(df6, :D)
-    @test all(names(df6) .== [:A, :B, :C])
+    @test names(df6) == [:A, :B, :C]
     @test size(df6, 2) == 3
 
     #test_group("NA handling")
@@ -124,6 +127,7 @@ module TestData
     @test size(df8, 1) == 3
     @test size(df8, 2) == 5
     @test df8[2, :d1_length] == 4
+    @test isequal(df8, aggregate(groupby(df7, :d2), [sum, length]))
 
     df9 = df7 |> groupby([:d2]) |> [sum, length]
     @test isequal(df9, df8)
@@ -141,7 +145,7 @@ module TestData
     d1m = melt(d1, [:c, :d])
     @test isequal(d1s[1:12, :c], d1[:c])
     @test isequal(d1s[13:24, :c], d1[:c])
-    @test all(names(d1s) .== [:variable, :value, :c, :d])
+    @test names(d1s) == [:variable, :value, :c, :d]
     @test isequal(d1s, d1m)
 
     d1s_df = stackdf(d1, [:a, :b])

@@ -31,47 +31,10 @@ function SubDataFrame(parent::DataFrame, row::Integer)
     return SubDataFrame(parent, [row])
 end
 
-function SubDataFrame{S <: Integer}(parent::DataFrame,
-                                    rows::AbstractVector{S})
+function SubDataFrame{S <: Integer}(parent::DataFrame, rows::AbstractVector{S})
     return sub(parent, int(rows))
 end
 
-function Base.getindex(df::SubDataFrame, colinds::Any)
-    return df.parent[df.rows, colinds]
-end
-
-function Base.getindex(df::SubDataFrame, rowinds::Any, colinds::Any)
-    return df.parent[df.rows[rowinds], colinds]
-end
-
-function Base.setindex!(df::SubDataFrame, val::Any, colinds::Any)
-    df.parent[df.rows, colinds] = val
-    return df
-end
-
-function Base.setindex!(df::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
-    df.parent[df.rows[rowinds], colinds] = val
-    return df
-end
-
-function Base.size(df::SubDataFrame)
-    return length(df.rows), size(df.parent, 2)
-end
-
-function Base.size(df::SubDataFrame, i::Integer)
-    if i == 1
-        return length(df.rows)
-    elseif i == 2
-        return size(df.parent, 2)
-    else
-        throw(ArgumentError("Invalid size index"))
-    end
-end
-
-Base.names(df::SubDataFrame) = names(df.parent)
-
-# TODO: Remove this?
-index(df::SubDataFrame) = index(df.parent)
 
 function Base.sub{S <: Real}(df::DataFrame, rowinds::AbstractVector{S})
     return SubDataFrame(df, rowinds)
@@ -101,14 +64,48 @@ function Base.sub(adf::AbstractDataFrame, rowinds::Any, colinds::Any)
     return sub(adf[[colinds]], rowinds)
 end
 
-function Base.delete!(df::SubDataFrame, c::Any)
-    return SubDataFrame(delete!(df.parent, c), df.rows)
+##############################################################################
+##
+## AbstractDataFrame interface
+##
+##############################################################################
+
+index(sdf::SubDataFrame) = index(sdf.parent)
+
+# TODO: Remove these
+nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(sdf.rows)::Int : 0
+ncol(sdf::SubDataFrame) = length(index(sdf))
+
+function Base.getindex(sdf::SubDataFrame, colinds::Any)
+    return sdf.parent[sdf.rows, colinds]
 end
 
-without(df::SubDataFrame, c::Any) = SubDataFrame(without(df.parent, c), df.rows)
+function Base.getindex(sdf::SubDataFrame, rowinds::Any, colinds::Any)
+    return sdf.parent[sdf.rows[rowinds], colinds]
+end
 
-Base.similar(df::SubDataFrame, dims) =
-    DataFrame([similar(df[x], dims) for x in names(df)], names(df))
+function Base.setindex!(sdf::SubDataFrame, val::Any, colinds::Any)
+    sdf.parent[sdf.rows, colinds] = val
+    return sdf
+end
 
-nas(df::SubDataFrame, dims) =
-    DataFrame([nas(df[x], dims) for x in names(df)], names(df))
+function Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
+    sdf.parent[sdf.rows[rowinds], colinds] = val
+    return sdf
+end
+
+##############################################################################
+##
+## Miscellaneous
+##
+##############################################################################
+
+Base.map(f::Function, sdf::SubDataFrame) = f(sdf) # TODO: deprecate
+
+function Base.delete!(sdf::SubDataFrame, c::Any) # TODO: deprecate?
+    return SubDataFrame(delete!(sdf.parent, c), sdf.rows)
+end
+
+without(sdf::SubDataFrame, c::Vector{Int}) = sub(without(sdf.parent, c), sdf.rows)
+without(sdf::SubDataFrame, c::Int) = sub(without(sdf.parent, c), sdf.rows)
+without(sdf::SubDataFrame, c::Any) = sub(without(sdf.parent, c), sdf.rows)

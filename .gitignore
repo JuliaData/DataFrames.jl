@@ -1,3 +1,4 @@
-.DS_Store
+*.jl.cov
+*.jl.mem
 doc/manual.pdf
 test/data/bigrams.tsv
