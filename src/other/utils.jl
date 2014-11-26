@@ -177,6 +177,16 @@ function _setdiff{T}(a::AbstractVector{T}, b::AbstractVector{T})
     end
     diff
 end
+# because unions and parametric types don't compose, yet
+function _setdiff{T}(a::AbstractVector{T}, b::T)
+    diff = T[]
+    for val in a
+        if !(val in b)
+            push!(diff, val)
+        end
+    end
+    diff
+end
 
 function _uniqueofsorted(x::Vector)
     idx = fill(true, length(x))

@@ -6,6 +6,8 @@
 ##
 ##############################################################################
 
+typealias Ints Union(Int, Vector{Int})
+
 ##############################################################################
 ##
 ## stack()
@@ -13,7 +15,7 @@
 ##
 ##############################################################################
 
-function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
+function stack(df::AbstractDataFrame, measure_vars::Ints, id_vars::Ints)
     res = DataFrame[insert!(df[[i, id_vars]], 1, names(df)[i], :variable) for i in measure_vars]
     # fix column names
     map(x -> names!(x, [:variable, :value, names(df[id_vars])]), res)
@@ -80,7 +82,7 @@ unstack(df::AbstractDataFrame, rowkey, colkey, value) =
 #  - can't have zero rows or zero columns
 #  - the resulting data part is Float64 (`payload` below)
 
-function pivottable(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int}, value::Int, fun::Function)
+function pivottable(df::AbstractDataFrame, rows::Ints, cols::Ints, value::Int, fun::Function)
     # `rows` vector indicating which columns are keys placed in rows
     # `cols` vector indicating which columns are keys placed as column headers
     # `value` integer indicating which column has values
@@ -99,13 +101,13 @@ function pivottable(df::AbstractDataFrame, rows::Vector{Int}, cols::Vector{Int},
         payload[row_idxs[i], col_idxs[i]] = cmb_df[i, :x1]
     end
     # find the "row" key DataFrame
-    g = groupby(cmb_df[[1:length(rows)]], [1:length(rows)])
+    g = groupby(cmb_df[1:length(rows)], 1:length(rows))
     row_key_df = g.parent[g.idx[g.starts], :]
     hcat!(row_key_df, payload)
 end
 # `mean` is the default aggregation function:
 pivottable(df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, mean)
-pivottable(df::AbstractDataFrame, rows, cols, value, fun) = pivottable(df, [index(df)[rows]], [index(df)[cols]], index(df)[value], fun)
+pivottable(df::AbstractDataFrame, rows, cols, value, fun) = pivottable(df, index(df)[rows], index(df)[cols], index(df)[value], fun)
 pivottable(fun::Function, df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, fun)
 
 function paste_columns(df::AbstractDataFrame, sep)
@@ -235,7 +237,7 @@ end
 
 # Same as `stack`, but uses references
 # I'm not sure the name is very good
-function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
+function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Ints)
     N = length(measure_vars)
     cnames = names(df)[id_vars]
     insert!(cnames, 1, "value")
@@ -245,6 +247,9 @@ function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vect
                ## RepeatedVector([1:nrow(df)], N),                       # idx - do we want this?
                   [RepeatedVector(df[:,c], N) for c in id_vars]...],     # id_var columns
               cnames)
+end
+function stackdf(df::AbstractDataFrame, measure_vars::Int, id_vars)
+    stackdf(df, [measure_vars], id_vars)
 end
 function stackdf(df::AbstractDataFrame, measure_vars, id_vars)
     stackdf(df, index(df)[measure_vars], index(df)[id_vars])
