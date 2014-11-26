@@ -27,7 +27,7 @@ module TestUtils
             @test rw == DataFrames.RESERVED_WORDS
         end
     else
-        warn("Unable to find validate reserved words against parser. ",
+        warn("Unable to validate reserved words against parser. ",
              "Expected if Julia was not built from source.")
     end
 

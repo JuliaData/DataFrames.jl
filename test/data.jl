@@ -140,6 +140,7 @@ module TestData
                    c = randn(12),
                    d = randn(12))
 
+    stack(d1, :a)
     d1s = stack(d1, [:a, :b])
     d1s2 = stack(d1, [:c, :d])
     d1m = melt(d1, [:c, :d])
@@ -148,6 +149,7 @@ module TestData
     @test names(d1s) == [:variable, :value, :c, :d]
     @test isequal(d1s, d1m)
 
+    stackdf(d1, :a)
     d1s_df = stackdf(d1, [:a, :b])
     d1m_df = meltdf(d1, [:c, :d])
     @test isequal(d1s[:variable], d1s_df[:variable][:])

@@ -574,23 +574,3 @@ function showcols(io::IO, df::AbstractDataFrame) # -> Nothing
 end
 
 showcols(df::AbstractDataFrame) = showcols(STDOUT, df) # -> Nothing
-
-#' @exported
-#' @description
-#'
-#' Print an AbstractDataFrame to an IO system with an added newline.
-#'
-#' @param io::IO The `io` system to be rendered to.
-#' @param df::AbstractDataFrame An AbstractDataFrame.
-#'
-#' @returns o::Nothing A `nothing` value.
-#'
-#' @examples
-#'
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' print(STDOUT, df)
-# TODO: Determine if this method is strictly necessary.
-function Base.print(io::IO, df::AbstractDataFrame)
-    show(io, df)
-    print(io, '\n')
-end
