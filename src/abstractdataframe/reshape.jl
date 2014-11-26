@@ -56,7 +56,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
         i = int(refkeycol.refs[k])
         if i > 0 && j > 0
             if nowarning && !isna(payload[j][i])
-                println("Warning: duplicate entries in unstack.")
+                warn("Duplicate entries in unstack.")
                 nowarning = false
             end
             payload[j][i]  = valuecol[k]

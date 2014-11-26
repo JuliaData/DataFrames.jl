@@ -275,8 +275,7 @@ function insert_single_column!(df::DataFrame,
                 push!(index(df), nextcolname(df))
                 push!(df.columns, dv)
             else
-                println("Column does not exist: $col_ind")
-                error("Cannot assign to non-existent column")
+                error("Cannot assign to non-existent column: $col_ind")
             end
         end
     end
@@ -288,8 +287,7 @@ function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::Col
         df.columns[index(df)[col_ind]][row_ind] = v
         return v
     else
-        println("Column does not exist: $col_ind")
-        error("Cannot assign to non-existent column")
+        error("Cannot assign to non-existent column: $col_ind")
     end
 end
 
@@ -301,8 +299,7 @@ function insert_multiple_entries!{T <: Real}(df::DataFrame,
         df.columns[index(df)[col_ind]][row_inds] = v
         return v
     else
-        println("Column does not exist: $col_ind")
-        error("Cannot assign to non-existent column")
+        error("Cannot assign to non-existent column: $col_ind")
     end
 end
 
