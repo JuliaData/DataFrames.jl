@@ -264,7 +264,7 @@ end
 # I'm not sure the name is very good
 function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Ints)
     N = length(measure_vars)
-    cnames = names(df)[id_vars]
+    cnames = names(df)[collect(id_vars)]
     insert!(cnames, 1, "value")
     insert!(cnames, 1, "variable")
     DataFrame(Any[EachRepeatedVector(names(df)[measure_vars], nrow(df)), # variable
@@ -283,6 +283,7 @@ function stackdf(df::AbstractDataFrame, measure_vars)
     m_inds = index(df)[measure_vars]
     stackdf(df, m_inds, _setdiff(1:ncol(df), m_inds))
 end
+stackdf(df::AbstractDataFrame) = stackdf(df, [1:size(df, 2)], Int[])
 
 function meltdf(df::AbstractDataFrame, id_vars)
     id_inds = index(df)[id_vars]
