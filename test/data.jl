@@ -143,9 +143,11 @@ module TestData
     stack(d1, :a)
     d1s = stack(d1, [:a, :b])
     d1s2 = stack(d1, [:c, :d])
+    d1s3 = stack(d1)
     d1m = melt(d1, [:c, :d])
     @test isequal(d1s[1:12, :c], d1[:c])
     @test isequal(d1s[13:24, :c], d1[:c])
+    @test isequal(d1s2, d1s3)
     @test names(d1s) == [:variable, :value, :c, :d]
     @test isequal(d1s, d1m)
     d1m = melt(d1[[1,3,4]], :a)

@@ -29,13 +29,17 @@ function stack(df::AbstractDataFrame, measure_vars)
     mv_inds = index(df)[measure_vars]
     stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds))
 end
-stack(df::AbstractDataFrame) = stack(df, [1:size(df, 2)], Int[])
+function stack(df::AbstractDataFrame)
+    idx = [1:length(df)][[t <: FloatingPoint for t in eltypes(df)]]
+    stack(df, idx)
+end
 
 function melt(df::AbstractDataFrame, id_vars)
     id_inds = index(df)[id_vars]
     stack(df, _setdiff(1:ncol(df), id_inds), id_inds)
 end
 melt(df::AbstractDataFrame, id_vars, measure_vars) = stack(df, measure_vars, id_vars)
+melt(df::AbstractDataFrame) = stack(df)
 
 ##############################################################################
 ##
@@ -283,7 +287,10 @@ function stackdf(df::AbstractDataFrame, measure_vars)
     m_inds = index(df)[measure_vars]
     stackdf(df, m_inds, _setdiff(1:ncol(df), m_inds))
 end
-stackdf(df::AbstractDataFrame) = stackdf(df, [1:size(df, 2)], Int[])
+function stackdf(df::AbstractDataFrame)
+    idx = [1:length(df)][[t <: FloatingPoint for t in eltypes(df)]]
+    stackdf(df, idx)
+end
 
 function meltdf(df::AbstractDataFrame, id_vars)
     id_inds = index(df)[id_vars]
@@ -291,3 +298,4 @@ function meltdf(df::AbstractDataFrame, id_vars)
 end
 meltdf(df::AbstractDataFrame, id_vars, measure_vars) =
     stackdf(df, measure_vars, id_vars)
+meltdf(df::AbstractDataFrame) = stackdf(df)
