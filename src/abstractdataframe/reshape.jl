@@ -95,6 +95,36 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     unstack(df2, length(df2), colkey, value)
 end
 
+function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
+    # group on anything not a key or value:
+    g = groupby(df, setdiff(names(df), names(df)[[colkey, value]]))
+    groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
+    rowkey = PooledDataArray(zeros(Int, size(df, 1)), [1:length(groupidxs)])
+    for i in 1:length(groupidxs)
+        rowkey[groupidxs[i]] = i
+    end
+    keycol = PooledDataArray(df[colkey])
+    valuecol = df[value]
+    df1 = df[g.starts, g.cols]
+    keys = unique(keycol)
+    Nrow = length(g)
+    Ncol = length(keycol.pool)
+    df2 = DataFrame(Any[DataArray([fill(valuecol[1], Nrow)], fill(true, Nrow)) for i in 1:Ncol], map(symbol, keycol.pool))
+    nowarning = true
+    for k in 1:nrow(df)
+        j = int(keycol.refs[k])
+        i = rowkey[k]
+        if i > 0 && j > 0
+            if nowarning && !isna(df2[j][i])
+                warn("Duplicate entries in unstack.")
+                nowarning = false
+            end
+            df2[j][i]  = valuecol[k]
+        end
+    end
+    hcat(df1, df2)
+end
+
 unstack(df::AbstractDataFrame) = unstack(df, :id, :variable, :value)
 
 
