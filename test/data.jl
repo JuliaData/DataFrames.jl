@@ -176,8 +176,6 @@ module TestData
                    id3 = [:t, :f, :t, :f],
                    val = [.1, .2, .3, .4])
 
-    @test isequal(pivottable(d2, :id1, [:id2, :id3], :val)[:B_t], @data([0.3, NA]))
-    @test isequal(pivottable(d2, :id2, :id1, :val)[:a], [0.1, 0.25])
 
     #test_group("merge")
 

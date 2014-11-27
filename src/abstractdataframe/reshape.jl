@@ -100,56 +100,6 @@ unstack(df::AbstractDataFrame) = unstack(df, :id, :variable, :value)
 
 ##############################################################################
 ##
-## pivottable()
-##
-##############################################################################
-
-# Limitations:
-#  - only one `value` column is allowed (same as dcast)
-#  - `fun` must reduce to one value
-#  - no margins
-#  - can't have zero rows or zero columns
-#  - the resulting data part is Float64 (`payload` below)
-
-function pivottable(df::AbstractDataFrame, rows::Ints, cols::Ints, value::Int, fun::Function)
-    # `rows` vector indicating which columns are keys placed in rows
-    # `cols` vector indicating which columns are keys placed as column headers
-    # `value` integer indicating which column has values
-    # `fun` function applied to the value column during aggregation
-    cmb_df = by(df, [rows, cols], d->fun(d[value]))
-    row_pdv = PooledDataArray(paste_columns(cmb_df[[length(rows):-1:1]]))  # the :-1: is to reverse the columns for sorting
-    row_idxs = int(row_pdv.refs)
-    Nrow = length(row_pdv.pool)
-    col_pdv = PooledDataArray(paste_columns(cmb_df[[length(rows) + (1:length(cols))]]))
-    col_idxs = int(col_pdv.refs)
-    Ncol = length(col_pdv.pool)
-    # `payload` is the main "data holding" part of the resulting DataFrame
-    payload = DataFrame(Float64, Nrow, Ncol)
-    names!(payload, convert(Vector{Symbol}, col_pdv.pool))
-    for i in 1:length(row_idxs)
-        payload[row_idxs[i], col_idxs[i]] = cmb_df[i, :x1]
-    end
-    # find the "row" key DataFrame
-    g = groupby(cmb_df[1:length(rows)], 1:length(rows))
-    row_key_df = g.parent[g.idx[g.starts], :]
-    hcat!(row_key_df, payload)
-end
-# `mean` is the default aggregation function:
-pivottable(df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, mean)
-pivottable(df::AbstractDataFrame, rows, cols, value, fun) = pivottable(df, index(df)[rows], index(df)[cols], index(df)[value], fun)
-pivottable(fun::Function, df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, fun)
-
-function paste_columns(df::AbstractDataFrame, sep)
-    res = [string(v) for v in df[1]]
-    for j in 2:ncol(df), i in 1:nrow(df)
-        res[i] *= string(sep, df[i, j])
-    end
-    res
-end
-paste_columns(df::AbstractDataFrame) = paste_columns(df, "_")
-
-##############################################################################
-##
 ## Reshaping using referencing (issue #145)
 ## New AbstractVector types (all read only):
 ##     StackedVector
