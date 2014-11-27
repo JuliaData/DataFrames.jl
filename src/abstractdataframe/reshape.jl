@@ -90,6 +90,8 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     unstack(df2, length(df2), colkey, value)
 end
 
+unstack(df::AbstractDataFrame) = unstack(df, :id, :variable, :value)
+
 
 ##############################################################################
 ##

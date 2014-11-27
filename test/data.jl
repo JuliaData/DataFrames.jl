@@ -160,12 +160,14 @@ module TestData
     @test isequal(d1s[1,:], d1s_df[1,:])
     @test isequal(d1s_df, d1m_df)
 
-    d1s[:idx] = [1:12, 1:12]
-    d1s2[:idx] = [1:12, 1:12]
-    d1us = unstack(d1s, :idx, :variable, :value)
-    d1us2 = unstack(d1s2, :idx, :variable, :value)
+    d1s[:id] = [1:12, 1:12]
+    d1s2[:id] = [1:12, 1:12]
+    d1us = unstack(d1s, :id, :variable, :value)
+    d1us2 = unstack(d1s2)
+    d1us3 = unstack(d1s2, :variable, :value)
     @test isequal(d1us[:a], d1[:a])
     @test isequal(d1us2[:d], d1[:d])
+    @test isequal(d1us2[:3], d1[:d])
 
     d2 = DataFrame(id1 = [:a, :a, :a, :b],
                    id2 = [:A, :B, :B, :B],
