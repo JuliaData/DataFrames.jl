@@ -29,6 +29,7 @@ function stack(df::AbstractDataFrame, measure_vars)
     mv_inds = index(df)[measure_vars]
     stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds))
 end
+stack(df::AbstractDataFrame) = stack(df, [1:size(df, 2)], Int[])
 
 function melt(df::AbstractDataFrame, id_vars)
     id_inds = index(df)[id_vars]
