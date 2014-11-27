@@ -3,20 +3,18 @@
 # through cleanly.
 # an Index is the usual implementation.
 # a SimpleIndex only works if the things are integer indexes, which is weird.
-typealias Indices Union(Real, AbstractVector{Real})
-
 abstract AbstractIndex
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...
-    lookup::Dict{Symbol, Indices}      # name => names array position
+    lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
 end
 function Index(names::Vector{Symbol})
     u = make_unique(names)
-    lookup = Dict{Symbol, Indices}(zip(u, 1:length(u)))
+    lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
     Index(lookup, u)
 end
-Index() = Index(Dict{Symbol, Indices}(), Symbol[])
+Index() = Index(Dict{Symbol, Int}(), Symbol[])
 Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = copy(x.names)
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))

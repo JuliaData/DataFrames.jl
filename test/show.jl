@@ -8,11 +8,19 @@ module TestShow
     showall(io, df)
     showall(io, df, true)
 
-    subdf = df[df[:A] .> 1.0, :]
+    subdf = sub(df, [2, 3]) # df[df[:A] .> 1.0, :]
     show(io, subdf)
     show(io, subdf, true)
     showall(io, subdf)
     showall(io, subdf, true)
+
+    dfvec = DataFrame[df for _=1:3]
+    show(io, dfvec)
+    showall(io, dfvec)
+
+    gd = groupby(df, :A)
+    show(io, gd)
+    showall(io, gd)
 
     dfr = DataFrameRow(df, 1)
     show(io, dfr)
