@@ -18,7 +18,9 @@ typealias Ints Union(Int, Vector{Int})
 function stack(df::AbstractDataFrame, measure_vars::Ints, id_vars::Ints)
     res = DataFrame[insert!(df[[i, id_vars]], 1, names(df)[i], :variable) for i in measure_vars]
     # fix column names
-    map(x -> names!(x, [:variable, :value, names(df[id_vars])]), res)
+    nm = names(res[1])
+    nm[2] = :value
+    map(x -> names!(x, nm), res)
     vcat(res)
 end
 stack(df::AbstractDataFrame, measure_vars, id_vars) =

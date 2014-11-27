@@ -148,6 +148,8 @@ module TestData
     @test isequal(d1s[13:24, :c], d1[:c])
     @test names(d1s) == [:variable, :value, :c, :d]
     @test isequal(d1s, d1m)
+    d1m = melt(d1[[1,3,4]], :a)
+    @test names(d1m) == [:variable, :value, :a]
 
     stackdf(d1, :a)
     d1s_df = stackdf(d1, [:a, :b])
