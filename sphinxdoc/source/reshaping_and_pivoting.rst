@@ -38,10 +38,10 @@ id columns as:
 All other columns are assumed to be measured variables (they are
 stacked). 
     
-You can also stack an entire DataFrame. Again, the columns must be the
-same type.
+You can also stack an entire DataFrame. The default stacks all
+floating-point columns.
 
-    d = stack(iris[1:4])
+    d = stack(iris)
 
 ``unstack`` converts from a long format to a wide format. The default
 is requires specifying which columns are an id variable, column
@@ -55,9 +55,35 @@ use:
 
     widedf = unstack(longdf, :variable, :value)
 
-Still to be documented...
+``stackdf`` and ``meltdf`` are two additional functions that work like
+``stack`` and ``melt``, but they provide a view into the original wide
+DataFrame. Here is an example:
 
-    meltdf(iris, :Species)
-    pivottable(melt(iris, :Species), :variable, :Species, :value, x -> mean(x))
+    d = stackdf(iris)
 
+This saves memory. To create the view, several AbstractVectors are
+defined:
+
+``:variable`` column -- ``EachRepeatedVector``
+  This repeats the variables N times where N is the number of rows of
+  the original AbstractDataFrame.
+
+``:value`` column -- ``StackedVector``
+  This is provides a view of the original columns stacked together.
+  
+Id columns -- ``RepeatedVector``
+  This repeats the original columns N times where N is the number of
+  columns stacked.
+
+For more details on the storage representation, see:
+
+    dump(stackdf(iris))
+
+None of these reshaping functions perform any aggregation. To do
+aggregation, use the split-apply-combine functions in combination with
+reshaping. Here is an example:
+
+    d = stack(iris)
+    x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(df[:value])))
+    unstack(x, :Species, :vsum)
 
