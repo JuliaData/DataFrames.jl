@@ -317,35 +317,10 @@ Base.vcat(df::AbstractDataFrame) = df
 Base.vcat(dfs::AbstractDataFrame...) = vcat(collect(dfs))
 
 function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
-    Nrow = sum(nrow, dfs)
-    # build up column names and eltypes
-    colnams = names(dfs[1])
-    coltyps = eltypes(dfs[1])
-    for i in 2:length(dfs)
-        cni = names(dfs[i])
-        cti = eltypes(dfs[i])
-        for j in 1:length(cni)
-            cn = cni[j]
-            if !in(cn, colnams) # new column
-                push!(colnams, cn)
-                push!(coltyps, cti[j])
-            end
-        end
-    end
-    res = DataFrame()
-    for j in 1:length(colnams)
-        col = DataArray(coltyps[j], Nrow)
-        colnam = colnams[j]
-        i = 1
-        for df in dfs
-            if haskey(df, colnam)
-                copy!(col, i, df[colnam])
-            end
-            i += size(df, 1)
-        end
-        res[colnam] = col
-    end
-    res
+    colnams = union([names(d) for d in dfs]...)
+    defaultcol = padNA(@data([]), size(dfs[1], 1), 0)
+    data = Any[vcat(map(x -> get(x, n, defaultcol), dfs)...) for n in colnams]
+    DataFrame(data, colnams)
 end
 
 ##############################################################################
