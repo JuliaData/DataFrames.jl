@@ -14,8 +14,8 @@ Column names can also be given:
 
     d = stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth])
     
-Note that all columns must be of the same type. Currently, there is no
-type coersion.
+Note that all columns can be of different types. Type promotion
+follows the rules of ``vcat``.
 
 The stacked DataFrame that results includes all of the columns not
 specified to be stacked. These are repeated for each stacked column.

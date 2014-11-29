@@ -6,7 +6,6 @@
 ##
 ##############################################################################
 
-typealias Ints Union(Int, Vector{Int})
 
 ##############################################################################
 ##
@@ -15,13 +14,24 @@ typealias Ints Union(Int, Vector{Int})
 ##
 ##############################################################################
 
-function stack(df::AbstractDataFrame, measure_vars::Ints, id_vars::Ints)
-    res = DataFrame[insert!(df[[i, id_vars]], 1, names(df)[i], :variable) for i in measure_vars]
-    # fix column names
-    nm = names(res[1])
-    nm[2] = :value
-    map(x -> names!(x, nm), res)
-    vcat(res)
+function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
+    N = length(measure_vars)
+    cnames = names(df)[id_vars]
+    insert!(cnames, 1, "value")
+    insert!(cnames, 1, "variable")
+    DataFrame(Any[rep(names(df)[measure_vars], rep(nrow(df), N)),   # variable
+                  vcat([df[c] for c in measure_vars]...),           # value
+                  [rep(df[c], N) for c in id_vars]...],             # id_var columns
+              cnames)
+end
+function stack(df::AbstractDataFrame, measure_vars::Int, id_vars::Int)
+    stack(df, [measure_vars], [id_vars])
+end
+function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Int)
+    stack(df, measure_vars, [id_vars])
+end
+function stack(df::AbstractDataFrame, measure_vars::Int, id_vars::Vector{Int})
+    stackdf(df, [measure_vars], id_vars)
 end
 stack(df::AbstractDataFrame, measure_vars, id_vars) =
     stack(df, index(df)[measure_vars], index(df)[id_vars])
@@ -34,6 +44,7 @@ function stack(df::AbstractDataFrame)
     stack(df, idx)
 end
 
+melt(df::AbstractDataFrame, id_vars::Union(Int,Symbol)) = melt(df, [id_vars])
 function melt(df::AbstractDataFrame, id_vars)
     id_inds = index(df)[id_vars]
     stack(df, _setdiff(1:ncol(df), id_inds), id_inds)
@@ -251,7 +262,6 @@ function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vect
     insert!(cnames, 1, "variable")
     DataFrame(Any[EachRepeatedVector(names(df)[measure_vars], nrow(df)), # variable
                   StackedVector(Any[df[:,c] for c in measure_vars]),     # value
-               ## RepeatedVector([1:nrow(df)], N),                       # idx - do we want this?
                   [RepeatedVector(df[:,c], N) for c in id_vars]...],     # id_var columns
               cnames)
 end
