@@ -228,8 +228,6 @@ Base.reverse(v::EachRepeatedVector) = EachRepeatedVector(reverse(v.parent), v.n)
 Base.similar(v::EachRepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 Base.unique(v::EachRepeatedVector) = unique(v.parent)
 
-DataArrays.PooledDataArray(v::EachRepeatedVector) = PooledDataArray(v[:], dropna(unique(v.parent)))
-
 function DataArrays.PooledDataArray(v::EachRepeatedVector)
     res = PooledDataArray(v.parent)
     res.refs = rep(res.refs, rep(v.n,length(res.refs)))
