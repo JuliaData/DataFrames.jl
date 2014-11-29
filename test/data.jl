@@ -138,40 +138,51 @@ module TestData
     d1 = DataFrame(a = repeat([1:3], inner = [4]),
                    b = repeat([1:4], inner = [3]),
                    c = randn(12),
-                   d = randn(12))
+                   d = randn(12),
+                   e = map(string, ['a':'l']))
 
     stack(d1, :a)
     d1s = stack(d1, [:a, :b])
     d1s2 = stack(d1, [:c, :d])
-    d1m = melt(d1, [:c, :d])
+    d1s3 = stack(d1)
+    d1m = melt(d1, [:c, :d, :e])
     @test isequal(d1s[1:12, :c], d1[:c])
     @test isequal(d1s[13:24, :c], d1[:c])
-    @test names(d1s) == [:variable, :value, :c, :d]
+    @test isequal(d1s2, d1s3)
+    @test names(d1s) == [:variable, :value, :c, :d, :e]
     @test isequal(d1s, d1m)
+    d1m = melt(d1[[1,3,4]], :a)
+    @test names(d1m) == [:variable, :value, :a]
 
     stackdf(d1, :a)
-    d1s_df = stackdf(d1, [:a, :b])
-    d1m_df = meltdf(d1, [:c, :d])
-    @test isequal(d1s[:variable], d1s_df[:variable][:])
-    @test isequal(d1s[:value], d1s_df[:value][:])
-    @test isequal(d1s[:c], d1s_df[:c][:])
-    @test isequal(d1s[1,:], d1s_df[1,:])
-    @test isequal(d1s_df, d1m_df)
+    d1s = stackdf(d1, [:a, :b])
+    d1s2 = stackdf(d1, [:c, :d])
+    d1s3 = stackdf(d1)
+    d1m = meltdf(d1, [:c, :d, :e])
+    @test isequal(d1s[1:12, :c], d1[:c])
+    @test isequal(d1s[13:24, :c], d1[:c])
+    @test isequal(d1s2, d1s3)
+    @test names(d1s) == [:variable, :value, :c, :d, :e]
+    @test isequal(d1s, d1m)
+    d1m = meltdf(d1[[1,3,4]], :a)
+    @test names(d1m) == [:variable, :value, :a]
 
-    d1s[:idx] = [1:12, 1:12]
-    d1s2[:idx] = [1:12, 1:12]
-    d1us = unstack(d1s, :idx, :variable, :value)
-    d1us2 = unstack(d1s2, :idx, :variable, :value)
+    d1s[:id] = [1:12, 1:12]
+    d1s2[:id] = [1:12, 1:12]
+    d1us = unstack(d1s, :id, :variable, :value)
+    d1us2 = unstack(d1s2)
+    d1us3 = unstack(d1s2, :variable, :value)
     @test isequal(d1us[:a], d1[:a])
     @test isequal(d1us2[:d], d1[:d])
+    @test isequal(d1us2[:3], d1[:d])
+
+    
 
     d2 = DataFrame(id1 = [:a, :a, :a, :b],
                    id2 = [:A, :B, :B, :B],
                    id3 = [:t, :f, :t, :f],
                    val = [.1, .2, .3, .4])
 
-    @test isequal(pivottable(d2, :id1, [:id2, :id3], :val)[:B_t], @data([0.3, NA]))
-    @test isequal(pivottable(d2, :id2, :id1, :val)[:a], [0.1, 0.25])
 
     #test_group("merge")
 
