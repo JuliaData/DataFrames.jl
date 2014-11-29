@@ -246,9 +246,9 @@ end
 
 # Same as `stack`, but uses references
 # I'm not sure the name is very good
-function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Ints)
+function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
     N = length(measure_vars)
-    cnames = names(df)[collect(id_vars)]
+    cnames = names(df)[id_vars]
     insert!(cnames, 1, "value")
     insert!(cnames, 1, "variable")
     DataFrame(Any[EachRepeatedVector(names(df)[measure_vars], nrow(df)), # variable
@@ -256,6 +256,12 @@ function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Ints
                ## RepeatedVector([1:nrow(df)], N),                       # idx - do we want this?
                   [RepeatedVector(df[:,c], N) for c in id_vars]...],     # id_var columns
               cnames)
+end
+function stackdf(df::AbstractDataFrame, measure_vars::Int, id_vars::Int)
+    stackdf(df, [measure_vars], [id_vars])
+end
+function stackdf(df::AbstractDataFrame, measure_vars, id_vars::Int)
+    stackdf(df, measure_vars, [id_vars])
 end
 function stackdf(df::AbstractDataFrame, measure_vars::Int, id_vars)
     stackdf(df, [measure_vars], id_vars)
