@@ -41,28 +41,6 @@ module TestData
     @test size(head(df6,2)) == (2, 3)
     # lots more to do
 
-    #test_group("hcat")
-    dfc = hcat(df3, df4)
-    @test size(dfc, 2) == 3
-    @test names(dfc) == [:x1, :x1_1, :x2]
-    @test isequal(dfc[:x1], df3[:x1])
-    @test isequal(dfc, [df3 df4])
-
-    dfc3 = hcat(df3, df4, df5)
-    @test names(dfc3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
-    @test isequal(dfc3, hcat(dfc, df5))
-
-    #test_group("vcat")
-    dfr = vcat(df4, df4)
-    @test size(dfr, 1) == 8
-    @test names(df4) == names(dfr)
-    @test isequal(dfr, [df4, df4])
-
-    dfr = vcat(df2, df3)
-    @test size(dfr) == (8,2)
-    @test names(df2) == names(dfr)
-    @test isna(dfr[8,:x2])
-
     #test_group("assign")
     df6[3] = @data(["un", "deux", "troix", "quatre"])
     @test df6[1, 3] == "un"
