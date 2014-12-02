@@ -693,12 +693,12 @@ function pool!(df::DataFrame)
 end
 
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
-   names(df1) == names(df2) || error("Column names do not match")
-   eltypes(df1) == eltypes(df2) || error("Column eltypes do not match")
-   ncols = size(df1, 2)
+   df1_names = sort(names(df1))
+   df1_names == sort(names(df2)) || error("Column names do not match")
+   eltypes(df1[df1_names]) == eltypes(df2[df1_names]) || error("Column eltypes do not match")
    # TODO: This needs to be a sort of transaction to be 100% safe
-   for j in 1:ncols
-       append!(df1[j], df2[j])
+   for c in df1_names
+       append!(df1[c], df2[c])
    end
    return df1
 end
