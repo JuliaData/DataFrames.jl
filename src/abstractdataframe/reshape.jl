@@ -6,7 +6,6 @@
 ##
 ##############################################################################
 
-typealias Ints Union(Int, Vector{Int})
 
 ##############################################################################
 ##
@@ -15,11 +14,24 @@ typealias Ints Union(Int, Vector{Int})
 ##
 ##############################################################################
 
-function stack(df::AbstractDataFrame, measure_vars::Ints, id_vars::Ints)
-    res = DataFrame[insert!(df[[i, id_vars]], 1, names(df)[i], :variable) for i in measure_vars]
-    # fix column names
-    map(x -> names!(x, [:variable, :value, names(df[id_vars])]), res)
-    vcat(res)
+function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
+    N = length(measure_vars)
+    cnames = names(df)[id_vars]
+    insert!(cnames, 1, "value")
+    insert!(cnames, 1, "variable")
+    DataFrame(Any[rep(names(df)[measure_vars], rep(nrow(df), N)),   # variable
+                  vcat([df[c] for c in measure_vars]...),           # value
+                  [rep(df[c], N) for c in id_vars]...],             # id_var columns
+              cnames)
+end
+function stack(df::AbstractDataFrame, measure_vars::Int, id_vars::Int)
+    stack(df, [measure_vars], [id_vars])
+end
+function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Int)
+    stack(df, measure_vars, [id_vars])
+end
+function stack(df::AbstractDataFrame, measure_vars::Int, id_vars::Vector{Int})
+    stackdf(df, [measure_vars], id_vars)
 end
 stack(df::AbstractDataFrame, measure_vars, id_vars) =
     stack(df, index(df)[measure_vars], index(df)[id_vars])
@@ -27,12 +39,18 @@ function stack(df::AbstractDataFrame, measure_vars)
     mv_inds = index(df)[measure_vars]
     stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds))
 end
+function stack(df::AbstractDataFrame)
+    idx = [1:length(df)][[t <: FloatingPoint for t in eltypes(df)]]
+    stack(df, idx)
+end
 
+melt(df::AbstractDataFrame, id_vars::Union(Int,Symbol)) = melt(df, [id_vars])
 function melt(df::AbstractDataFrame, id_vars)
     id_inds = index(df)[id_vars]
     stack(df, _setdiff(1:ncol(df), id_inds), id_inds)
 end
 melt(df::AbstractDataFrame, id_vars, measure_vars) = stack(df, measure_vars, id_vars)
+melt(df::AbstractDataFrame) = stack(df)
 
 ##############################################################################
 ##
@@ -69,55 +87,57 @@ end
 unstack(df::AbstractDataFrame, rowkey, colkey, value) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
 
-##############################################################################
-##
-## pivottable()
-##
-##############################################################################
-
-# Limitations:
-#  - only one `value` column is allowed (same as dcast)
-#  - `fun` must reduce to one value
-#  - no margins
-#  - can't have zero rows or zero columns
-#  - the resulting data part is Float64 (`payload` below)
-
-function pivottable(df::AbstractDataFrame, rows::Ints, cols::Ints, value::Int, fun::Function)
-    # `rows` vector indicating which columns are keys placed in rows
-    # `cols` vector indicating which columns are keys placed as column headers
-    # `value` integer indicating which column has values
-    # `fun` function applied to the value column during aggregation
-    cmb_df = by(df, [rows, cols], d->fun(d[value]))
-    row_pdv = PooledDataArray(paste_columns(cmb_df[[length(rows):-1:1]]))  # the :-1: is to reverse the columns for sorting
-    row_idxs = int(row_pdv.refs)
-    Nrow = length(row_pdv.pool)
-    col_pdv = PooledDataArray(paste_columns(cmb_df[[length(rows) + (1:length(cols))]]))
-    col_idxs = int(col_pdv.refs)
-    Ncol = length(col_pdv.pool)
-    # `payload` is the main "data holding" part of the resulting DataFrame
-    payload = DataFrame(Float64, Nrow, Ncol)
-    names!(payload, convert(Vector{Symbol}, col_pdv.pool))
-    for i in 1:length(row_idxs)
-        payload[row_idxs[i], col_idxs[i]] = cmb_df[i, :x1]
+# Version of unstack with just the colkey and value columns provided
+unstack(df::AbstractDataFrame, colkey, value) =
+    unstack(df, index(df)[colkey], index(df)[value])
+    
+function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
+    # group on anything not a key or value:
+    g = groupby(df, setdiff(names(df), names(df)[[colkey, value]]))
+    # find the indexes for each group:
+    groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
+    # this will be a new column to key the rows:
+    rowkey = PooledDataArray(zeros(Int, size(df, 1)), [1:length(groupidxs)])
+    for i in 1:length(groupidxs)
+        rowkey[groupidxs[i]] = i
     end
-    # find the "row" key DataFrame
-    g = groupby(cmb_df[1:length(rows)], 1:length(rows))
-    row_key_df = g.parent[g.idx[g.starts], :]
-    hcat!(row_key_df, payload)
+    df2 = copy(df)
+    df2[gensym()] = rowkey
+    unstack(df2, length(df2), colkey, value)
 end
-# `mean` is the default aggregation function:
-pivottable(df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, mean)
-pivottable(df::AbstractDataFrame, rows, cols, value, fun) = pivottable(df, index(df)[rows], index(df)[cols], index(df)[value], fun)
-pivottable(fun::Function, df::AbstractDataFrame, rows, cols, value) = pivottable(df, rows, cols, value, fun)
 
-function paste_columns(df::AbstractDataFrame, sep)
-    res = [string(v) for v in df[1]]
-    for j in 2:ncol(df), i in 1:nrow(df)
-        res[i] *= string(sep, df[i, j])
+function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
+    # group on anything not a key or value:
+    g = groupby(df, setdiff(names(df), names(df)[[colkey, value]]))
+    groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
+    rowkey = PooledDataArray(zeros(Int, size(df, 1)), [1:length(groupidxs)])
+    for i in 1:length(groupidxs)
+        rowkey[groupidxs[i]] = i
     end
-    res
+    keycol = PooledDataArray(df[colkey])
+    valuecol = df[value]
+    df1 = df[g.starts, g.cols]
+    keys = unique(keycol)
+    Nrow = length(g)
+    Ncol = length(keycol.pool)
+    df2 = DataFrame(Any[DataArray([fill(valuecol[1], Nrow)], fill(true, Nrow)) for i in 1:Ncol], map(symbol, keycol.pool))
+    nowarning = true
+    for k in 1:nrow(df)
+        j = int(keycol.refs[k])
+        i = rowkey[k]
+        if i > 0 && j > 0
+            if nowarning && !isna(df2[j][i])
+                warn("Duplicate entries in unstack.")
+                nowarning = false
+            end
+            df2[j][i]  = valuecol[k]
+        end
+    end
+    hcat(df1, df2)
 end
-paste_columns(df::AbstractDataFrame) = paste_columns(df, "_")
+
+unstack(df::AbstractDataFrame) = unstack(df, :id, :variable, :value)
+
 
 ##############################################################################
 ##
@@ -219,8 +239,6 @@ Base.reverse(v::EachRepeatedVector) = EachRepeatedVector(reverse(v.parent), v.n)
 Base.similar(v::EachRepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 Base.unique(v::EachRepeatedVector) = unique(v.parent)
 
-DataArrays.PooledDataArray(v::EachRepeatedVector) = PooledDataArray(v[:], dropna(unique(v.parent)))
-
 function DataArrays.PooledDataArray(v::EachRepeatedVector)
     res = PooledDataArray(v.parent)
     res.refs = rep(res.refs, rep(v.n,length(res.refs)))
@@ -237,16 +255,21 @@ end
 
 # Same as `stack`, but uses references
 # I'm not sure the name is very good
-function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Ints)
+function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
     N = length(measure_vars)
     cnames = names(df)[id_vars]
     insert!(cnames, 1, "value")
     insert!(cnames, 1, "variable")
     DataFrame(Any[EachRepeatedVector(names(df)[measure_vars], nrow(df)), # variable
                   StackedVector(Any[df[:,c] for c in measure_vars]),     # value
-               ## RepeatedVector([1:nrow(df)], N),                       # idx - do we want this?
                   [RepeatedVector(df[:,c], N) for c in id_vars]...],     # id_var columns
               cnames)
+end
+function stackdf(df::AbstractDataFrame, measure_vars::Int, id_vars::Int)
+    stackdf(df, [measure_vars], [id_vars])
+end
+function stackdf(df::AbstractDataFrame, measure_vars, id_vars::Int)
+    stackdf(df, measure_vars, [id_vars])
 end
 function stackdf(df::AbstractDataFrame, measure_vars::Int, id_vars)
     stackdf(df, [measure_vars], id_vars)
@@ -258,6 +281,10 @@ function stackdf(df::AbstractDataFrame, measure_vars)
     m_inds = index(df)[measure_vars]
     stackdf(df, m_inds, _setdiff(1:ncol(df), m_inds))
 end
+function stackdf(df::AbstractDataFrame)
+    idx = [1:length(df)][[t <: FloatingPoint for t in eltypes(df)]]
+    stackdf(df, idx)
+end
 
 function meltdf(df::AbstractDataFrame, id_vars)
     id_inds = index(df)[id_vars]
@@ -265,3 +292,4 @@ function meltdf(df::AbstractDataFrame, id_vars)
 end
 meltdf(df::AbstractDataFrame, id_vars, measure_vars) =
     stackdf(df, measure_vars, id_vars)
+meltdf(df::AbstractDataFrame) = stackdf(df)
