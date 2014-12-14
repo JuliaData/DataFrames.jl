@@ -1,14 +1,35 @@
-Getting Started
-===============
+
 
 Installation
+============
+The DataFrames library is a Julia library for working with with tabular data.
+It is available through the Julia package system. 
 
-The DataFrames package is available through the Julia package system. Throughout
-the rest of this tutorial, we will assume that you have installed the DataFrames
+It can be installed using the command ``Pkg.add("DataFrames")``.
+
+The package can be updated to the latest version using ``Pkg.update("DataFrames")``.
+
+
+
+Version support
+---------------
+This package supports Julia version 0.3.2 which can be obtained `here <http://julialang.org/downloads/>`_. 
+
+
+Dependencies
+------------
+
+* `Gadfly <http://gadflyjl.org/>`_. for graphing data
+
+
+Getting Started
+===============
+Throughout the rest of this tutorial, we will assume that you have installed the DataFrames
 package and have already typed ``using DataArrays, DataFrames`` to bring all of
 the relevant variables into your current namespace. In addition, we will make
 use of the ``RDatasets`` package, which provides access to hundreds of
 classical data sets.
+
 
 The ``NA`` Value
 ----------------
