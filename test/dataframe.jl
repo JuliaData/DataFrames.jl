@@ -270,4 +270,13 @@ module TestDataFrame
     df = DataFrame(a=@data([1, 2, 3]), b=@data([3., 4., 5.]))
     @test deleterows!(df, [2, 3]) === df
     @test isequal(df, DataFrame(a=@data([1]), b=@data([3.])))
+
+    # Test append!
+    df1 = DataFrame(a=@data([1, 2, 3]), b=@data([3., 4., 5.]))
+    df2 = DataFrame(b=@data([6., 7., 8.]), a=@data([4, 5, 6]))
+    df3 = DataFrame(a=@data([1, 2, 3, 4, 5, 6]), b= @data([3., 4., 5., 6., 7., 8.]))
+
+    append!(df1, df2)
+
+    @test df1 == df3
 end
