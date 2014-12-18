@@ -562,7 +562,7 @@ Base.insert!(df::DataFrame, col_ind::Int, item, name::Symbol) =
 function Base.insert!(df::DataFrame, df2::AbstractDataFrame)
     nrow(df) == nrow(df2) || nrow(df) == 0 || error("number of rows does not match")
 
-    for n in names(df2)
+    for n in _names(df2)
         df[n] = df2[n]
     end
     df
@@ -576,10 +576,10 @@ end
 
 # copy of a data frame does a shallow copy
 function Base.copy(df::DataFrame)
-    newdf = DataFrame(copy(df.columns), names(df))
+    newdf = DataFrame(copy(df.columns), _names(df))
 end
 function Base.deepcopy(df::DataFrame)
-    newdf = DataFrame([copy(x) for x in df.columns], names(df))
+    newdf = DataFrame([copy(x) for x in df.columns], _names(df))
 end
 
 ##############################################################################
@@ -646,7 +646,7 @@ end
 ##############################################################################
 
 function hcat!(df1::DataFrame, df2::AbstractDataFrame)
-    u = unique_adds(df1, names(df2))
+    u = unique_adds(df1, _names(df2))
     for i in 1:length(u)
         df1[u[i]] = df2[i]
     end
@@ -693,7 +693,7 @@ function pool!(df::DataFrame)
 end
 
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
-   names(df1) == names(df2) || error("Column names do not match")
+   _names(df1) == _names(df2) || error("Column names do not match")
    eltypes(df1) == eltypes(df2) || error("Column eltypes do not match")
    ncols = size(df1, 2)
    # TODO: This needs to be a sort of transaction to be 100% safe
@@ -739,38 +739,37 @@ end
 ##############################################################################
 
 function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})
-    i=1
-    for nm in names(df)
+    i = 1
+    for nm in _names(df)
         try
             push!(df[nm], associative[nm])
         catch
             #clean up partial row
-            for j in 1:(i-1)
-                pop!(df[ names(df[j]) ])
+            for j in 1:(i - 1)
+                pop!(df[_names(df)[j]])
             end
             msg = "Error adding value to column :$nm."
             throw(ArgumentError(msg))
         end
-        i=i+1
+        i += 1
     end
 end
 
 function Base.push!(df::DataFrame, associative::Associative)
-    i=1
-    for nm in names(df)
+    i = 1
+    for nm in _names(df)
         try
             val = get(() -> associative[string(nm)], associative, nm)
             push!(df[nm], val)
         catch
             #clean up partial row
-            colnames=[c for c in names(df)]
-            for j in 1:(i-1)
-                pop!(df[colnames[j]])
+            for j in 1:(i - 1)
+                pop!(df[_names(df)[j]])
             end
             msg = "Error adding value to column :$nm."
             throw(ArgumentError(msg))
         end
-        i=i+1
+        i += 1
     end
 end
 
@@ -780,18 +779,18 @@ function Base.push!(df::DataFrame, iterable::Any)
         msg = "Length of iterable does not match DataFrame column count."
         throw(ArgumentError(msg))
     end
-    i=1
+    i = 1
     for t in iterable
         try
             push!(df.columns[i], t)
         catch
             #clean up partial row
-            for j in 1:(i-1)
+            for j in 1:(i - 1)
                 pop!(df.columns[j])
             end
-            msg = "Error adding $t to column :$(names(df)[i]). Possible type mis-match."
+            msg = "Error adding $t to column :$(_names(df)[i]). Possible type mis-match."
             throw(ArgumentError(msg))
         end
-        i=i+1
+        i += 1
     end
 end

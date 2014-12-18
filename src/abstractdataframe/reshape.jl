@@ -17,9 +17,9 @@
 function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
     N = length(measure_vars)
     cnames = names(df)[id_vars]
-    insert!(cnames, 1, "value")
-    insert!(cnames, 1, "variable")
-    DataFrame(Any[rep(names(df)[measure_vars], rep(nrow(df), N)),   # variable
+    insert!(cnames, 1, :value)
+    insert!(cnames, 1, :variable)
+    DataFrame(Any[rep(_names(df)[measure_vars], rep(nrow(df), N)),   # variable
                   vcat([df[c] for c in measure_vars]...),           # value
                   [rep(df[c], N) for c in id_vars]...],             # id_var columns
               cnames)
@@ -82,7 +82,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
             payload[j][i]  = valuecol[k]
         end
     end
-    insert!(payload, 1, refkeycol.pool, names(df)[colkey])
+    insert!(payload, 1, refkeycol.pool, _names(df)[colkey])
 end
 unstack(df::AbstractDataFrame, rowkey, colkey, value) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
@@ -90,10 +90,10 @@ unstack(df::AbstractDataFrame, rowkey, colkey, value) =
 # Version of unstack with just the colkey and value columns provided
 unstack(df::AbstractDataFrame, colkey, value) =
     unstack(df, index(df)[colkey], index(df)[value])
-    
+
 function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     # group on anything not a key or value:
-    g = groupby(df, setdiff(names(df), names(df)[[colkey, value]]))
+    g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]))
     # find the indexes for each group:
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
     # this will be a new column to key the rows:
@@ -108,7 +108,7 @@ end
 
 function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     # group on anything not a key or value:
-    g = groupby(df, setdiff(names(df), names(df)[[colkey, value]]))
+    g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]))
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
     rowkey = PooledDataArray(zeros(Int, size(df, 1)), [1:length(groupidxs)])
     for i in 1:length(groupidxs)
@@ -258,9 +258,9 @@ end
 function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
     N = length(measure_vars)
     cnames = names(df)[id_vars]
-    insert!(cnames, 1, "value")
-    insert!(cnames, 1, "variable")
-    DataFrame(Any[EachRepeatedVector(names(df)[measure_vars], nrow(df)), # variable
+    insert!(cnames, 1, :value)
+    insert!(cnames, 1, :variable)
+    DataFrame(Any[EachRepeatedVector(_names(df)[measure_vars], nrow(df)), # variable
                   StackedVector(Any[df[:,c] for c in measure_vars]),     # value
                   [RepeatedVector(df[:,c], N) for c in id_vars]...],     # id_var columns
               cnames)

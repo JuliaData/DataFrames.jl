@@ -20,7 +20,7 @@ function printtable(io::IO,
     n, p = size(df)
     etypes = eltypes(df)
     if header
-        cnames = names(df)
+        cnames = _names(df)
         for j in 1:p
             print(io, quotemark)
             print(io, cnames[j])
@@ -102,7 +102,7 @@ function Base.writemime(io::IO,
                         ::MIME"text/html",
                         df::AbstractDataFrame)
     n = size(df, 1)
-    cnames = names(df)
+    cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
     write(io, "<tr>")
     write(io, "<th></th>")

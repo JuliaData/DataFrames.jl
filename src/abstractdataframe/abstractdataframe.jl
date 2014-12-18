@@ -35,6 +35,7 @@ Base.next(itr::Cols, st) = (itr.df[st], st + 1)
 columns{T <: AbstractDataFrame}(df::T) = Cols{T}(df)
 
 Base.names(df::AbstractDataFrame) = names(index(df))
+_names(df::AbstractDataFrame) = _names(index(df))
 
 names!(df::AbstractDataFrame, vals) = names!(index(df), vals)
 
@@ -73,7 +74,7 @@ Base.ndims(::AbstractDataFrame) = 2
 ##############################################################################
 
 Base.similar(df::AbstractDataFrame, dims::Int) =
-    DataFrame([similar(x, dims) for x in columns(df)], names(df))
+    DataFrame([similar(x, dims) for x in columns(df)], _names(df))
 
 nas{T}(dv::AbstractArray{T}, dims::Union(Int, (Int...))) =   # TODO move to datavector.jl?
     DataArray(Array(T, dims), trues(dims))
@@ -82,7 +83,7 @@ nas{T,R}(dv::PooledDataArray{T,R}, dims::Union(Int, (Int...))) =
     PooledDataArray(DataArrays.RefArray(zeros(R, dims)), dv.pool)
 
 nas(df::AbstractDataFrame, dims::Int) =
-    DataFrame(Any[nas(x, dims) for x in columns(df)], names(df))
+    DataFrame(Any[nas(x, dims) for x in columns(df)], _names(df))
 
 ##############################################################################
 ##
@@ -262,7 +263,7 @@ function nonuniquekey(df::AbstractDataFrame)
     # Here's another (probably a lot faster) way to do `nonunique`
     # by grouping on all columns. It will fail if columns cannot be
     # made into PooledDataVector's.
-    gd = groupby(df, names(df))
+    gd = groupby(df, _names(df))
     idx = [1:length(gd.idx)][gd.idx][gd.starts]
     res = fill(true, nrow(df))
     res[idx] = false
@@ -322,7 +323,7 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
     colnams = names(dfs[1])
     coltyps = eltypes(dfs[1])
     for i in 2:length(dfs)
-        cni = names(dfs[i])
+        cni = _names(dfs[i])
         cti = eltypes(dfs[i])
         for j in 1:length(cni)
             cn = cni[j]

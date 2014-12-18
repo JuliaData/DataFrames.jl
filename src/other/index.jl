@@ -17,6 +17,7 @@ end
 Index() = Index(Dict{Symbol, Int}(), Symbol[])
 Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = copy(x.names)
+_names(x::Index) = x.names
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
@@ -61,7 +62,15 @@ Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
 Base.keys(x::Index) = names(x)
 
+# TODO: If this should stay 'unsafe', perhaps make unexported
+#       If changing, make sure union stays fast
 function Base.push!(x::Index, nm::Symbol)
+    x.lookup[nm] = length(x) + 1
+    push!(x.names, nm)
+    return x
+end
+
+function Base.union(x::Index, nm::Index)
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
     return x
@@ -116,3 +125,4 @@ end
 SimpleIndex() = SimpleIndex(0)
 Base.length(x::SimpleIndex) = x.length
 Base.names(x::SimpleIndex) = nothing
+_names(x::SimpleIndex) = nothing

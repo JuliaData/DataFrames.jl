@@ -69,6 +69,7 @@ Base.getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) =
     GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts[I], gd.ends[I])
 
 Base.names(gd::GroupedDataFrame) = names(gd.parent)
+_names(gd::GroupedDataFrame) = _names(gd.parent)
 
 ##############################################################################
 ##
@@ -141,14 +142,14 @@ by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
 # Applies a set of functions over a DataFrame, in the from of a cross-product
 aggregate(d::AbstractDataFrame, fs::Function) = aggregate(d, [fs])
 function aggregate(d::AbstractDataFrame, fs::Vector{Function})
-    headers = _makeheaders(fs, names(d))
+    headers = _makeheaders(fs, _names(d))
     _aggregate(d, fs, headers)
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 aggregate(gd::GroupedDataFrame, fs::Function) = aggregate(gd, [fs])
 function aggregate(gd::GroupedDataFrame, fs::Vector{Function})
-    headers = _makeheaders(fs, _setdiff(names(gd), gd.cols))
+    headers = _makeheaders(fs, _setdiff(_names(gd), gd.cols))
     combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
 end
 Base.(:|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, fs)
