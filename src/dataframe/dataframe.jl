@@ -211,7 +211,7 @@ end
 function Base.getindex{T <: ColumnIndex}(df::DataFrame, col_inds::AbstractVector{T})
     selected_columns = index(df)[col_inds]
     new_columns = df.columns[selected_columns]
-    return DataFrame(new_columns, Index(index(df).names[selected_columns]))
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
@@ -224,7 +224,7 @@ end
 function Base.getindex{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractVector{T})
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[[row_ind]] for dv in df.columns[selected_columns]]
-    return DataFrame(new_columns, Index(index(df).names[selected_columns]))
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
@@ -237,7 +237,7 @@ end
 function Base.getindex{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::AbstractVector{T})
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[row_inds] for dv in df.columns[selected_columns]]
-    return DataFrame(new_columns, Index(index(df).names[selected_columns]))
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
 ##############################################################################
@@ -646,7 +646,7 @@ end
 ##############################################################################
 
 function hcat!(df1::DataFrame, df2::AbstractDataFrame)
-    u = unique_adds(df1, _names(df2))
+    u = add_names(index(df1), index(df2))
     for i in 1:length(u)
         df1[u[i]] = df2[i]
     end
