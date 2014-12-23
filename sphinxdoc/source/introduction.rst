@@ -55,9 +55,10 @@ most specific ``Array`` that can contain both ``Float64`` and ``NA`` values is a
 ``Array{Any}``.
 
 Except for the ability to store ``NA`` values, the ``DataArray`` type is meant to
-behave exactly like Julia's standard ``Array`` type. In particular, ``DataArray``
-provides two typealiases called ``DataVector`` and ``DataMatrix`` that mimic the
-``Vector`` and ``Matrix`` typealiases for 1D and 2D ``Array`` types.
+behave exactly like Julia's standard ``Array`` type (n.b. Base methods that make
+assumptions about container types may not work with DataArrays). In particular,
+``DataArray`` provides two typealiases called ``DataVector`` and ``DataMatrix``
+that mimic the ``Vector`` and ``Matrix`` typealiases for 1D and 2D ``Array`` types.
 
 ``DataFrame``: Tabular Data Sets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
