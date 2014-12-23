@@ -317,25 +317,14 @@ Base.vcat(df::AbstractDataFrame) = df
 Base.vcat(dfs::AbstractDataFrame...) = vcat(collect(dfs))
 
 function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
-    Nrow = sum(nrow, dfs)
-    # build up column names and eltypes
-    colnams = names(dfs[1])
-    coltyps = eltypes(dfs[1])
-    for i in 2:length(dfs)
-        cni = names(dfs[i])
-        cti = eltypes(dfs[i])
-        for j in 1:length(cni)
-            cn = cni[j]
-            if !in(cn, colnams) # new column
-                push!(colnams, cn)
-                push!(coltyps, cti[j])
-            end
-        end
-    end
+    coltyps, colnams, firstcols = _colinfo(dfs)
+
     res = DataFrame()
+    Nrow = sum(nrow, dfs)
     for j in 1:length(colnams)
-        col = DataArray(coltyps[j], Nrow)
         colnam = colnams[j]
+        col = similar(firstcols[j], coltyps[j], Nrow)
+
         i = 1
         for df in dfs
             if haskey(df, colnam)
@@ -343,9 +332,39 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
             end
             i += size(df, 1)
         end
+
         res[colnam] = col
     end
     res
+end
+
+function _colinfo{T<:AbstractDataFrame}(dfs::Vector{T})
+    colindex = copy(index(dfs[1]))
+    coltyps = eltypes(dfs[1])
+    firstcols = collect(columns(dfs[1]))
+
+    for i in 2:length(dfs)
+        df = dfs[i]
+        cni = names(df)
+        cti = eltypes(df)
+        for j in 1:length(cni)
+            cn, ct = cni[j], cti[j]
+            if haskey(colindex, cn)
+                idx = colindex[cn]
+                oldtyp = coltyps[idx]
+                if oldtyp != ct
+                    coltyps[idx] = promote_type(oldtyp, ct)
+                end
+            else # new column
+                push!(colindex, cn)
+                push!(coltyps, ct)
+                push!(firstcols, df[cn])
+            end
+        end
+    end
+    colnams = names(colindex)
+
+    coltyps, colnams, firstcols
 end
 
 ##############################################################################
