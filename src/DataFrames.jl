@@ -99,10 +99,10 @@ export @~,
 ##
 ##############################################################################
 
-include(joinpath("other", "index.jl"))
-include(joinpath("abstractdataframe", "abstractdataframe.jl"))
 include(joinpath("other", "utils.jl"))
+include(joinpath("other", "index.jl"))
 
+include(joinpath("abstractdataframe", "abstractdataframe.jl"))
 include(joinpath("dataframe", "dataframe.jl"))
 include(joinpath("subdataframe", "subdataframe.jl"))
 include(joinpath("groupeddataframe", "grouping.jl"))

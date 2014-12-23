@@ -74,32 +74,6 @@ function make_unique(names::Vector{Symbol})
     return names
 end
 
-function unique_adds(df::AbstractDataFrame, adds::Vector{Symbol})
-    seen = Set(names(df))
-    dups = Int[]
-    u = copy(adds)
-
-    for i in 1:length(u)
-        name = u[i]
-        in(name, seen) ? push!(dups, i) : push!(seen, name)
-    end
-    for i in dups
-        nm = u[i]
-        k = 1
-        while true
-            newnm = symbol("$(nm)_$k")
-            if !in(newnm, seen)
-                u[i] = newnm
-                push!(seen, newnm)
-                break
-            end
-            k += 1
-        end
-    end
-
-    return u
-end
-
 #' @description
 #'
 #' Generate standardized names for columns of a DataFrame. The

@@ -17,6 +17,7 @@ function Base.setindex!(r::DataFrameRow, value::Any, idx::Any)
 end
 
 Base.names(r::DataFrameRow) = names(r.df)
+_names(r::DataFrameRow) = _names(r.df)
 
 Base.sub(r::DataFrameRow, c) = DataFrameRow(r.df[[c]], r.row)
 
@@ -30,7 +31,7 @@ Base.collect(r::DataFrameRow) = (Symbol, Any)[x for x in r]
 
 Base.start(r::DataFrameRow) = 1
 
-Base.next(r::DataFrameRow, s) = ((names(r)[s], r[s]), s + 1)
+Base.next(r::DataFrameRow, s) = ((_names(r)[s], r[s]), s + 1)
 
 Base.done(r::DataFrameRow, s) = s > length(r)
 

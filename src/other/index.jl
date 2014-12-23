@@ -17,11 +17,13 @@ end
 Index() = Index(Dict{Symbol, Int}(), Symbol[])
 Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = copy(x.names)
+_names(x::Index) = x.names
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 Base.(:(==))(x::Index, y::Index) = isequal(x, y)
 
+# TODO: consider. 'unsafe', as in few other place allow duplicate names to corrupt index
 function names!(x::Index, nm::Vector{Symbol})
     if length(nm) != length(x)
         error("Lengths don't match.")
@@ -61,11 +63,25 @@ Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
 Base.keys(x::Index) = names(x)
 
+# TODO: If this should stay 'unsafe', perhaps make unexported
 function Base.push!(x::Index, nm::Symbol)
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
     return x
 end
+
+function Base.merge!(x::Index, y::Index)
+    adds = add_names(x, y)
+    i = length(x)
+    for add in adds
+        i += 1
+        x.lookup[add] = i
+    end
+    append!(x.names, adds)
+    return x
+end
+
+Base.merge(x::Index, y::Index) = merge!(copy(x), y)
 
 function Base.delete!(x::Index, idx::Integer)
     # reset the lookup's beyond the deleted item
@@ -116,3 +132,33 @@ end
 SimpleIndex() = SimpleIndex(0)
 Base.length(x::SimpleIndex) = x.length
 Base.names(x::SimpleIndex) = nothing
+_names(x::SimpleIndex) = nothing
+
+# Helpers
+
+function add_names(ind::Index, add_ind::Index)
+    u = names(add_ind)
+
+    seen = Set(_names(ind))
+    dups = Int[]
+
+    for i in 1:length(u)
+        name = u[i]
+        in(name, seen) ? push!(dups, i) : push!(seen, name)
+    end
+    for i in dups
+        nm = u[i]
+        k = 1
+        while true
+            newnm = symbol("$(nm)_$k")
+            if !in(newnm, seen)
+                u[i] = newnm
+                push!(seen, newnm)
+                break
+            end
+            k += 1
+        end
+    end
+
+    return u
+end

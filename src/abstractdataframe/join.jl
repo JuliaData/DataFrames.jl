@@ -136,7 +136,7 @@ function Base.join(df1::AbstractDataFrame,
         return crossjoin(df1, df2)
     elseif on == Symbol[]
         depwarn("Natural joins are deprecated, use argument 'on'.", :AbstractDataFrame)
-        on = intersect(names(df1), names(df2))
+        on = intersect(_names(df1), _names(df2))
         if length(on) > 1
             throw(ArgumentError("Key omitted from join with multiple shared names."))
         end
@@ -164,10 +164,10 @@ function Base.join(df1::AbstractDataFrame,
         mixed = hcat!(df1[left_indexer, :], without(df2, on)[right_indexer, :])
         leftonly = hcat!(df1[leftonly_indexer, :],
                         nas(without(df2, on), length(leftonly_indexer)))
-        leftonly = leftonly[:, names(mixed)]
+        leftonly = leftonly[:, _names(mixed)]
         rightonly = hcat!(nas(without(df1, on), length(rightonly_indexer)),
                          df2[rightonly_indexer, :])
-        rightonly = rightonly[:, names(mixed)]
+        rightonly = rightonly[:, _names(mixed)]
         return vcat(mixed, leftonly, rightonly)
     elseif kind == :semi
         df1[left_indexer, :]
@@ -182,6 +182,6 @@ function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame)
     r1, r2 = size(df1, 1), size(df2, 1)
     cols = [[rep(c, 1, r2) for c in columns(df1)],
             [rep(c, r1, 1) for c in columns(df2)]]
-    colindex = Index([names(df1), names(df2)])
+    colindex = merge(index(df1), index(df2))
     DataFrame(cols, colindex)
 end

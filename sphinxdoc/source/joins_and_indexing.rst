@@ -15,7 +15,7 @@ We might want to work with a larger data set that contains both the names and
 jobs for each ID. We can do this using the ``join`` function::
 
     full = join(names, jobs, on = :ID)
-    
+
 Output:
 
 +-----+----+------------+----------+

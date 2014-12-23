@@ -323,7 +323,6 @@ function showrows(io::IO,
                   rowlabel::Symbol = symbol("Row"),
                   displaysummary::Bool = true) # -> Nothing
     ncols = size(df, 2)
-    cnames = names(df)
 
     if displaysummary
         println(io, summary(df))
@@ -349,7 +348,7 @@ function showrows(io::IO,
         end
         @printf io " | "
         for j in leftcol:rightcol
-            s = cnames[j]
+            s = _names(df)[j]
             ourshowcompact(io, s)
             padding = maxwidths[j] - ourstrwidth(s)
             for itr in 1:padding
@@ -566,7 +565,7 @@ end
 #' showcols(df, true)
 function showcols(io::IO, df::AbstractDataFrame) # -> Nothing
     println(io, summary(df))
-    metadata = DataFrame(Name = names(df),
+    metadata = DataFrame(Name = _names(df),
                          Eltype = eltypes(df),
                          Missing = colmissing(df))
     showall(io, metadata, true, symbol("Col #"), false)

@@ -7,13 +7,13 @@ Reshape data from wide to long format using the ``stack`` function::
     iris = dataset("datasets", "iris")
     iris[:id] = 1:size(iris, 1)  # this makes it easier to unstack
     d = stack(iris, [1:4])
-    
+
 The second optional argument to ``stack`` indicates the columns to be
 stacked. These are normally referred to as the measured variables.
 Column names can also be given:
 
     d = stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth])
-    
+
 Note that all columns can be of different types. Type promotion
 follows the rules of ``vcat``.
 
@@ -36,8 +36,8 @@ id columns as:
     d = melt(iris, :Species)
 
 All other columns are assumed to be measured variables (they are
-stacked). 
-    
+stacked).
+
 You can also stack an entire DataFrame. The default stacks all
 floating-point columns.
 
@@ -70,7 +70,7 @@ defined:
 
 ``:value`` column -- ``StackedVector``
   This is provides a view of the original columns stacked together.
-  
+
 Id columns -- ``RepeatedVector``
   This repeats the original columns N times where N is the number of
   columns stacked.
