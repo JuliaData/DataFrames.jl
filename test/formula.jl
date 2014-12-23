@@ -36,7 +36,7 @@ module TestFormula
     d[:x1p] = PooledDataArray(d[:x1])
     mf = ModelFrame(y ~ x1p, d)
     mm = ModelMatrix(mf)
-    
+
     @test mm.m[:,2] == [0, 1., 0, 0]
     @test mm.m[:,3] == [0, 0, 1., 0]
     @test mm.m[:,4] == [0, 0, 0, 1.]
@@ -117,7 +117,7 @@ module TestFormula
     @test mm.m == [ones(4) x1e x2 [0, 10, 0, 0] [0, 0, 11, 0] [0, 0, 0, 12]]
 
     #test_group("Basic transformations")
-    
+
     ## the log(x2) appears to be broken (again, in The Great Purge, by the
     ## removal of the x -> with(d, x) in the ModelFrame constructor)
     ## df = deepcopy(d)
@@ -149,7 +149,7 @@ module TestFormula
 
     ## also does not work, not sure what used to happen but now it seems that
     ## the LHS is assumed to be just a single symbol that indexes a DF column
-    
+
     ## f = x1 + x2 ~ y + x3
     ## mf = ModelFrame(f, d)
     ## @test mf.y_indexes == [1, 2]
@@ -206,7 +206,7 @@ module TestFormula
 
     #test_group("Column groups in formulas")
     ## set_group was removed in The Great Purge (55e47cd)
-    
+
     ## set_group(d, "odd_predictors", ["x1","x3"])
     ## @test expand(:odd_predictors, d) == d["odd_predictors"]
     ## mf = ModelFrame(Formula(:(y ~ odd_predictors)), d)

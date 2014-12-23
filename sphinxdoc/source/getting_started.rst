@@ -16,12 +16,12 @@ The ``NA`` Value
 To get started, let's examine the ``NA`` value. Type the following into the
 REPL::
 
-	NA
+    NA
 
 One of the essential properties of ``NA`` is that it poisons other items. To
 see this, try to add something like ``1`` to ``NA``::
 
-	1 + NA
+    1 + NA
 
 The ``DataArray`` Type
 ----------------------
@@ -29,12 +29,12 @@ The ``DataArray`` Type
 Now that we see that ``NA`` is working, let's insert one into a ``DataArray``.
 We'll create one now using the ``@data`` macro::
 
-	dv = @data([NA, 3, 2, 5, 4])
+    dv = @data([NA, 3, 2, 5, 4])
 
 To see how ``NA`` poisons even complex calculations, let's try to take
 the mean of the five numbers stored in ``dv``::
 
-	mean(dv)
+    mean(dv)
 
 In many cases we're willing to just ignore ``NA`` values and remove them
 from our vector. We can do that using the ``dropna`` function::
@@ -45,7 +45,7 @@ from our vector. We can do that using the ``dropna`` function::
 Instead of removing ``NA`` values, you can try to conver the ``DataArray``
 into a normal Julia ``Array`` using ``convert``::
 
-	convert(Array, dv)
+    convert(Array, dv)
 
 This fails in the presence of ``NA`` values, but will succeed if there are
 no ``NA`` values::

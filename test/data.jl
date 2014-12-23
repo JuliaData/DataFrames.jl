@@ -112,17 +112,19 @@ module TestData
     df9 = aggregate(df7, :d2, [sum, length])
     @test isequal(df9, df8)
 
-    df10 = DataFrame(Any[ [1:4], [2:5], ["a","a","a", "b" ], ["c","d","c","d"]],
-    [:d1, :d2, :d3, :d4])
+    df10 = DataFrame(
+        Any[[1:4], [2:5], ["a", "a", "a", "b" ], ["c", "d", "c", "d"]],
+        [:d1, :d2, :d3, :d4]
+    )
 
-    gd = groupby( df10, [:d3] )
-    ggd = groupby( gd[1], [ :d3,:d4] ) # make sure we can groupby subdataframes
-    @test ggd[1][1,:d3] == "a"
-    @test ggd[1][1,:d4] == "c"
-    @test ggd[1][2,:d3] == "a"
-    @test ggd[1][2,:d4] == "c"
-    @test ggd[2][1,:d3] == "a"
-    @test ggd[2][1,:d4] == "d"
+    gd = groupby(df10, [:d3])
+    ggd = groupby(gd[1], [:d3, :d4]) # make sure we can groupby subdataframes
+    @test ggd[1][1, :d3] == "a"
+    @test ggd[1][1, :d4] == "c"
+    @test ggd[1][2, :d3] == "a"
+    @test ggd[1][2, :d4] == "c"
+    @test ggd[2][1, :d3] == "a"
+    @test ggd[2][1, :d4] == "d"
 
     #test_group("reshape")
     d1 = DataFrame(a = repeat([1:3], inner = [4]),
