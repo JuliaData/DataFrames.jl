@@ -10,6 +10,7 @@ using Base.Test
 using DataFrames
 
 my_tests = ["utils.jl",
+            "cat.jl",
             "data.jl",
             "index.jl",
             "dataframe.jl",
@@ -22,7 +23,6 @@ my_tests = ["utils.jl",
             "sort.jl",
             "grouping.jl",
             "join.jl",
-            "vcat.jl",
             "iteration.jl",
             "duplicates.jl",
             "show.jl"]

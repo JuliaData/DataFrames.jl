@@ -318,25 +318,14 @@ Base.vcat(df::AbstractDataFrame) = df
 Base.vcat(dfs::AbstractDataFrame...) = vcat(collect(dfs))
 
 function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
-    Nrow = sum(nrow, dfs)
-    # build up column names and eltypes
-    colnams = names(dfs[1])
-    coltyps = eltypes(dfs[1])
-    for i in 2:length(dfs)
-        cni = _names(dfs[i])
-        cti = eltypes(dfs[i])
-        for j in 1:length(cni)
-            cn = cni[j]
-            if !in(cn, colnams) # new column
-                push!(colnams, cn)
-                push!(coltyps, cti[j])
-            end
-        end
-    end
+    coltyps, colnams, similars = _colinfo(dfs)
+
     res = DataFrame()
+    Nrow = sum(nrow, dfs)
     for j in 1:length(colnams)
-        col = DataArray(coltyps[j], Nrow)
         colnam = colnams[j]
+        col = similar(similars[j], coltyps[j], Nrow)
+
         i = 1
         for df in dfs
             if haskey(df, colnam)
@@ -344,9 +333,53 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
             end
             i += size(df, 1)
         end
+
         res[colnam] = col
     end
     res
+end
+
+_isnullable(::AbstractArray) = false
+_isnullable(::AbstractDataArray) = true
+const EMPTY_DATA = DataArray(Void, 0)
+
+function _colinfo{T<:AbstractDataFrame}(dfs::Vector{T})
+    df1 = dfs[1]
+    colindex = copy(index(df1))
+    coltyps = eltypes(df1)
+    similars = collect(columns(df1))
+    nonnull_ct = Int[_isnullable(c) for c in columns(df1)]
+
+    for i in 2:length(dfs)
+        df = dfs[i]
+        for j in 1:size(df, 2)
+            col = df[j]
+            cn, ct = _names(df)[j], eltype(col)
+            if haskey(colindex, cn)
+                idx = colindex[cn]
+
+                oldtyp = coltyps[idx]
+                if !(ct <: oldtyp)
+                    coltyps[idx] = promote_type(oldtyp, ct)
+                end
+                nonnull_ct[idx] += !_isnullable(col)
+            else # new column
+                push!(colindex, cn)
+                push!(coltyps, ct)
+                push!(similars, col)
+                push!(nonnull_ct, !_isnullable(col))
+            end
+        end
+    end
+
+    for j in 1:length(colindex)
+        if nonnull_ct[j] < length(dfs) && !_isnullable(similars[j])
+            similars[j] = EMPTY_DATA
+        end
+    end
+    colnams = _names(colindex)
+
+    coltyps, colnams, similars
 end
 
 ##############################################################################
