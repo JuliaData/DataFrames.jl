@@ -35,7 +35,7 @@ A second approach to the Split-Apply-Combine strategy is implemented in the ``ag
 We show several examples of the ``aggregate`` function applied to the ``iris`` dataset below::
 
     aggregate(iris, :Species, sum)
-    aggregate(iris, :Specise, [sum, mean])
+    aggregate(iris, :Species, [sum, mean])
 
 If you only want to split the data set into subsets, use the ``groupby`` function::
 
