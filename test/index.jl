@@ -45,4 +45,13 @@ end
 push!(i, :C)
 @test delete!(i, 1) == Index([:C])
 
+i = Index([:A, :B, :C, :D, :E])
+i2 = copy(i)
+names!(i2, reverse(names(i2)))
+names!(i2, reverse(names(i2)))
+@test names(i2) == names(i)
+for name in names(i)
+  i2[name] # Issue #715
+end
+
 end
