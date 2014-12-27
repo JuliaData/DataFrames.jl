@@ -23,16 +23,25 @@ Base.deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 Base.(:(==))(x::Index, y::Index) = isequal(x, y)
 
-# TODO: consider. 'unsafe', as in few other place allow duplicate names to corrupt index
-function names!(x::Index, nm::Vector{Symbol})
-    if length(nm) != length(x)
-        error("Lengths don't match.")
+function names!(x::Index, nms::Vector{Symbol})
+    if length(nms) != length(x)
+        throw(ArgumentError("Length of nms doesn't match length of x."))
     end
-    for i in 1:length(nm)
-        delete!(x.lookup, x.names[i])
-        x.lookup[nm[i]] = i
+    for i in 1:length(nms)
+        newname = nms[i]
+        oldname = x.names[i]
+
+        if newname != oldname
+            if x.lookup[oldname] >= i
+                delete!(x.lookup, oldname)
+            end
+            x.lookup[newname] = i
+            x.names[i] = newname
+        end
     end
-    x.names = nm
+    if length(x.names) != length(x.lookup)
+        throw(ArgumentError("Index corrupted by duplicate symbols in nms."))
+    end
     return x
 end
 
