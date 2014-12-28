@@ -291,6 +291,10 @@ for s in [:sort, :sortperm]
     @eval begin
         function $s(df::AbstractDataFrame; cols=Any[], alg=nothing,
                     lt=isless, by=identity, rev=false, order=Forward)
+            if !(isa(by, Function) || isa(by, Vector{Function}))
+                msg = "'by' must be a Function or AbstractVector{Function}. Perhaps you wanted 'cols'."
+                throw(ArgumentError(msg))
+            end
             ord = ordering(df, cols, lt, by, rev, order)
             _alg = defalg(df, ord; alg=alg, cols=cols)
             $s(df, _alg, ord)
