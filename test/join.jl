@@ -32,6 +32,19 @@ module TestJoin
     @test isequal(join(name, job, on = :ID, kind = :semi), semi)
     @test isequal(join(name, job, on = :ID, kind = :anti), anti)
 
+    # Join with no non-key columns
+    on = [:ID]
+    nameid = name[on]
+    jobid = job[on]
+
+    @test isequal(join(nameid, jobid, on = :ID), inner[on])
+    @test isequal(join(nameid, jobid, on = :ID, kind = :inner), inner[on])
+    @test isequal(join(nameid, jobid, on = :ID, kind = :outer), outer[on])
+    @test isequal(join(nameid, jobid, on = :ID, kind = :left), left[on])
+    @test isequal(join(nameid, jobid, on = :ID, kind = :right), right[on])
+    @test isequal(join(nameid, jobid, on = :ID, kind = :semi), semi[on])
+    @test isequal(join(nameid, jobid, on = :ID, kind = :anti), anti[on])
+
     # Join on multiple keys
     df1 = DataFrame(A = 1, B = 2, C = 3)
     df2 = DataFrame(A = 1, B = 2, D = 4)
