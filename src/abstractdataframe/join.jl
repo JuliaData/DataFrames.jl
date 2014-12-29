@@ -135,12 +135,7 @@ function Base.join(df1::AbstractDataFrame,
         end
         return crossjoin(df1, df2)
     elseif on == Symbol[]
-        depwarn("Natural joins are deprecated, use argument 'on'.", :AbstractDataFrame)
-        on = intersect(_names(df1), _names(df2))
-        if length(on) > 1
-            throw(ArgumentError("Key omitted from join with multiple shared names."))
-        end
-        #throw(ArgumentError("Missing join argument 'on'."))
+        throw(ArgumentError("Missing join argument 'on'."))
     end
 
     dv1, dv2 = PooledDataVecs(df1[on], df2[on])

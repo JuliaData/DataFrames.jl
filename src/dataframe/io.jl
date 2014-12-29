@@ -798,10 +798,7 @@ function readtable(io::IO,
                    makefactors::Bool = false,
                    nrows::Integer = -1,
                    names::Vector = Symbol[],
-                   colnames::Vector = Symbol[],
-                   cleannames::Any = nothing,
                    eltypes::Vector{DataType} = DataType[],
-                   coltypes::Vector{DataType} = DataType[],
                    allowcomments::Bool = false,
                    commentmark::Char = '#',
                    ignorepadding::Bool = true,
@@ -816,24 +813,6 @@ function readtable(io::IO,
         throw(ArgumentError("Argument 'skiprows' is not yet supported."))
     elseif decimal != '.'
         throw(ArgumentError("Argument 'decimal' is not yet supported."))
-    end
-
-    if !isempty(colnames)
-        warn("Argument 'colnames' is deprecated, please use 'names'.")
-        if !isempty(names)
-            throw(ArgumentError("'names' and 'colnames' can't both be specified."))
-        end
-        names = colnames
-    end
-    if !isempty(coltypes)
-        warn("Argument 'coltypes' is deprecated, please use 'eltypes'.")
-        if !isempty(eltypes)
-            throw(ArgumentError("'eltypes' and 'coltypes' can't both be specified."))
-        end
-        eltypes = coltypes
-    end
-    if !isa(cleannames, Nothing)
-        warn("Argument 'cleannames' is deprecated (it now happens automatically).")
     end
 
     if !isempty(eltypes)
@@ -885,9 +864,6 @@ function readtable(pathname::String;
                    makefactors::Bool = false,
                    nrows::Integer = -1,
                    names::Vector = Symbol[],
-                   colnames::Vector = Symbol[],
-                   cleannames::Any = nothing,
-                   coltypes::Vector{DataType} = DataType[],
                    eltypes::Vector{DataType} = DataType[],
                    allowcomments::Bool = false,
                    commentmark::Char = '#',
@@ -897,24 +873,6 @@ function readtable(pathname::String;
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false)
-    if !isempty(colnames)
-        warn("Argument 'colnames' is deprecated, please use 'names'.")
-        if !isempty(names)
-            throw(ArgumentError("'names' and 'colnames' can't both be specified."))
-        end
-        names = colnames
-    end
-    if !isempty(coltypes)
-        warn("Argument 'coltypes' is deprecated, please use 'eltypes'.")
-        if !isempty(eltypes)
-            throw(ArgumentError("'eltypes' and 'coltypes' can't both be specified."))
-        end
-        eltypes = coltypes
-    end
-    if !isa(cleannames, Nothing)
-        warn("Argument 'cleannames' is deprecated (it now happens automatically).")
-    end
-
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
     if beginswith(pathname, "http://") || beginswith(pathname, "ftp://")
