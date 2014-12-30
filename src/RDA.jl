@@ -321,7 +321,7 @@ class(ro::ROBJ) = getattr(ro, "class", emptystrvec)
 class(x) = emptystrvec
 inherits(x, clnm::ASCIIString) = any(class(x) .== clnm)
 
-isdataframe(rl::RList) = inherits(rl, "dataframe")
+isdataframe(rl::RList) = inherits(rl, "data.frame")
 isfactor(ri::RInteger) = inherits(ri, "factor")
 
 Base.length(rl::RVEC) = length(rl.data)
