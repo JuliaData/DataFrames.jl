@@ -338,9 +338,9 @@ row_names(ro::ROBJ) = getattr(ro, "row.names", emptystrvec)
 
 namask(rl::RLogical) = rl.missng
 namask(ri::RInteger) = bitpack(ri.data .== R_NA_INT32)
-namask(rn::RNumeric) = bitpack(isnan(rn.data))
+namask(rn::RNumeric) = bitpack([rn.data[i] === R_NA_FLOAT64 for i in 1:length(rn.data)])
 namask(rs::RString) = falses(length(rs.data)) # FIXME use R_NA_STRING?
-namask(rc::RComplex) = bitpack(real(rc.data) .== R_NA_FLOAT64) | BitArray(imag(rc.data) .== R_NA_FLOAT64)
+namask(rc::RComplex) = bitpack([rc.data[i].re === R_NA_FLOAT64 || rc.data[i].im === R_NA_FLOAT64 for i in 1:length(rc.data)])
 
 DataArrays.data{T}(rv::RVEC{T}) = DataArray(rv.data, namask(rv))
 

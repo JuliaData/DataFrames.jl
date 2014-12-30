@@ -14,6 +14,8 @@ module TestRDA
         # save(df, file='types.rda')
 
         # df[2, ] = NA
+        # df[3, ] = df[2, ]
+        # df[3,'num'] = NaN
         # df['chr'] = NULL  # NA characters breaking read_rda
         # save(df, file='NAs.rda')
 
@@ -32,6 +34,8 @@ module TestRDA
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/types.rda")["df"]), df)
 
     df[2, :] = NA
+    append!(df, df[2, :])
+    df[3, :num] = NaN
     df = df[:, [:num, :int, :logi, :factor]]  # (NA) chr breaks read_rda
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs.rda")["df"]), df)
 
