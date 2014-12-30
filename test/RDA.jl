@@ -10,12 +10,14 @@ module TestRDA
         # df['logi'] = c(TRUE, FALSE)
         # df['chr'] = c('ab', 'c')
         # df['factor'] = factor(df$chr)
+        # df['cplx'] = complex( real=c(1.1,0.0), imaginary=c(0.5,1.0) )
         # #utf=c('Ж', '∰')) R handles it, read_rda doesn't.
         # save(df, file='types.rda')
 
         # df[2, ] = NA
         # df[3, ] = df[2, ]
         # df[3,'num'] = NaN
+        # df[,'cplx'] = complex( real=c(1.1,1,NaN), imaginary=c(NA,NaN,0) )
         # df['chr'] = NULL  # NA characters breaking read_rda
         # save(df, file='NAs.rda')
 
@@ -31,12 +33,14 @@ module TestRDA
     df[:logi] = [true, false]
     df[:chr] = ["ab", "c"]
     df[:factor] = pool(df[:chr])
+    df[:cplx] = complex128([1.1+0.5im, 1.0im])
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/types.rda")["df"]), df)
 
     df[2, :] = NA
     append!(df, df[2, :])
     df[3, :num] = NaN
-    df = df[:, [:num, :int, :logi, :factor]]  # (NA) chr breaks read_rda
+    df[:, :cplx] = @data [NA, complex128(1,NaN), NaN]
+    df = df[:, [:num, :int, :logi, :factor, :cplx]]  # (NA) chr breaks read_rda
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs.rda")["df"]), df)
 
     rda_names = names(DataFrame(read_rda("$testdir/data/RDA/names.rda")["df"]))
