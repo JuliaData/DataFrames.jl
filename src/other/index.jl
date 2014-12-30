@@ -47,15 +47,11 @@ end
 
 function rename!(x::Index, nms)
     for (from, to) in nms
-        if haskey(x, from)
-            if haskey(x, to)
-                error("Tried renaming $from to $to, when $to already exists in the Index.")
-            end
-            x.lookup[to] = col = pop!(x.lookup, from)
-            if !isa(col, Array)
-                x.names[col] = to
-            end
+        if haskey(x, to)
+            error("Tried renaming $from to $to, when $to already exists in the Index.")
         end
+        x.lookup[to] = col = pop!(x.lookup, from)
+        x.names[col] = to
     end
     return x
 end
