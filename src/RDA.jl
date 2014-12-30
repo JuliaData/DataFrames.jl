@@ -180,19 +180,30 @@ end
 
 type RDAContext # RDA reading context
     io::RDAIO                  # R input stream
+
+    # RDA properties
     fmtver::Uint32             # RDA format version
     Rver::VersionNumber        # R version that has written RDA
     Rmin::VersionNumber        # R minimal version to read RDA
+
+    # behaviour
+    convertdataframes::Bool    # if R dataframe objects should be automatically converted into DataFrames
+    fixcolnames::Bool          # if dataframe column names are fixed when creating DataFrame objects
+
+    # intermediate data
     symtab::Array{RSymbol,1}   # symbols array
 
-    function RDAContext(io::RDAIO)
+    function RDAContext(io::RDAIO, kwoptions::Array{Any})
         fmtver = readint32(io)
         rver = readint32(io)
         rminver = readint32(io)
+        kwdict = Dict{Symbol,Any}(kwoptions)
         new(io,
             fmtver,
             VersionNumber( div(rver,65536), div(rver%65536, 256), rver%256 ),
             VersionNumber( div(rminver,65536), div(rminver%65536, 256), rminver%256 ),
+            get(kwdict,:convertdataframes,false),
+            get(kwdict,:fixcolnames,true),
             Array(RSymbol,0))
     end
 end
@@ -256,8 +267,13 @@ end
 function readlist(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x13
     n = readuint32(ctx.io)
-    RList([readitem(ctx) for i in 1:n],
-          readattrs(ctx, fl))
+    res = RList([readitem(ctx) for i in 1:n],
+                readattrs(ctx, fl))
+    if (ctx.convertdataframes && isdataframe(res))
+      DataFrame(res, fixcolnames=ctx.fixcolnames)
+    else
+      res
+    end
 end
 
 function readsymbol(ctx::RDAContext, fl::RDATag)
@@ -290,19 +306,21 @@ function readitem(ctx::RDAContext)
     error("Encountered flag $ff corresponding to type $(SXPtab[fl])")
 end
 
-function read_rda(io::IO)
+function read_rda(io::IO, kwoptions::Array{Any})
     header = chomp(readline(io))
     @assert header[1] == 'R' # readable header (or RDX2)
     @assert header[2] == 'D'
     @assert header[4] == '2'
-    ctx = RDAContext(RDAIO(io, chomp(readline(io)) == "A"))
+    ctx = RDAContext(RDAIO(io, chomp(readline(io)) == "A"), kwoptions)
     @assert ctx.fmtver == 2    # format version
 #    println("Written by R version $(ctx.Rver)")
 #    println("Minimal R version: $(ctx.Rmin)")
     return readnamedobjects(ctx, 0x00000200)
 end
 
-read_rda(fnm::ASCIIString) = gzopen(read_rda, fnm)
+read_rda(io::IO; kwoptions...) = read_rda(io, kwoptions)
+
+read_rda(fnm::ASCIIString; kwoptions...) = gzopen(fnm) do io read_rda(io, kwoptions) end
 
 ##############################################################################
 ##

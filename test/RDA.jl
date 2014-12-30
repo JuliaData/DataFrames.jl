@@ -30,6 +30,7 @@ module TestRDA
     df = DataFrame(num = [1.1, 2.2])
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/minimal.rda")["df"]), df)
     @test isequal(DataFrame(open(read_rda,"$testdir/data/RDA/minimal_ascii.rda")["df"]), df)
+    @test isequal(read_rda("$testdir/data/RDA/minimal.rda",convertdataframes=true)["df"], df)
 
     df[:int] = Int32[1, 2]
     df[:logi] = [true, false]
