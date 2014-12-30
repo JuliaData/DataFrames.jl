@@ -130,8 +130,6 @@ end
 
 Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
 Base.get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
-Base.keys(df::AbstractDataFrame) = keys(index(df))
-Base.values(df::AbstractDataFrame) = columns(df)
 Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
 
 ##############################################################################

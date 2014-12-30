@@ -83,8 +83,6 @@ module TestDataFrame
     @test !haskey(df, :c)
     @test get(df, :a, -1) === df.columns[1]
     @test get(df, :c, -1) == -1
-    @test keys(df) == [:a, :b]
-    @test values(df) == Any[df[:a], df[:b]]
     @test !isempty(df)
 
     @test empty!(df) === df

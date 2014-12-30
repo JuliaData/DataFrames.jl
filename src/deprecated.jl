@@ -25,6 +25,9 @@ Base.@deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, c
 Base.@deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 Base.@deprecate nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame) nullable!(df, colnames)
 Base.@deprecate nullable!(colnums::Array{Int,1}, df::AbstractDataFrame) nullable!(df, colnums)
+import Base: keys, values
+Base.@deprecate keys(df::AbstractDataFrame) names(df)
+Base.@deprecate values(df::AbstractDataFrame) DataFrames.columns(df)
 
 const DEFAULT_COLUMN_ELTYPE = Float64
 function DataFrame(nrows::Integer, ncols::Integer)
