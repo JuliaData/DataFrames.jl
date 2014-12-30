@@ -37,10 +37,19 @@ columns{T <: AbstractDataFrame}(df::T) = Cols{T}(df)
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
-names!(df::AbstractDataFrame, vals) = names!(index(df), vals)
+function names!(df::AbstractDataFrame, vals)
+    names!(index(df), vals)
+    return df
+end
 
-rename(df::AbstractDataFrame, from::Any, to::Any) = rename(index(df), from, to)
-rename!(df::AbstractDataFrame, from::Any, to::Any) = rename!(index(df), from, to)
+function rename!(df::AbstractDataFrame, args...)
+    rename!(index(df), args...)
+    return df
+end
+rename!(f::Function, df::AbstractDataFrame) = rename!(df, f)
+
+rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
+rename(f::Function, df::AbstractDataFrame) = rename(df, f)
 
 function eltypes(df::AbstractDataFrame)
     ncols = size(df, 2)
