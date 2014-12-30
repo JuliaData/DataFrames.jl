@@ -66,6 +66,7 @@ else
     const R_NA_FLOAT64 = reinterpret(Float64, [uint32(1954), 0x7ff00000])[1]
 end
 const R_NA_INT32 = typemin(Int32)
+const R_NA_STRING = "NA"
 
 ##############################################################################
 ##
@@ -78,43 +79,34 @@ const nullhash = Hash()
 
 abstract RSEXPREC                # Basic R object - symbolic expression
 
-abstract RVEC <: RSEXPREC        # Vector R object
-
 type RSymbol <: RSEXPREC         # Not quite the same as a Julia symbol
     displayname::ASCIIString
 end
 
-type RList <: RVEC               # "list" in R == Julia cell array
-    data::Array{Any, 1}
-    attr::Hash
+abstract ROBJ <: RSEXPREC     # R object that can have attributes
+
+abstract RVEC{T} <: ROBJ      # abstract R vector (actual storage implementation may differ)
+
+type RVector{T} <: RVEC{T} # R vector object
+    data::Array{T, 1}
+    attr::Hash                  # collection of R object attributes
 end
 
-type RNumeric <: RVEC
-    data::Array{Float64, 1}
-    attr::Hash
-end
+typealias RList RVector{Any}  # "list" in R == Julia cell array
 
-type RComplex <: RVEC
-    data::Array{Complex128, 1}
-    attr::Hash
-end
+typealias RNumeric RVector{Float64}
 
-type RInteger <: RVEC
-    data::Array{Int32, 1}
-    attr::Hash
-end
+typealias RComplex RVector{Complex128}
 
-type RLogical <: RVEC
-    data::BitArray{1}
+typealias RInteger RVector{Int32}
+
+type RLogical <: RVEC{Bool}
+    data::Array{Bool, 1}
     missng::BitArray{1}
-    attr::Hash
+    attr::Hash                  # collection of R object attributes
 end
 
-type RString <: RVEC             # Vector of character strings
-    data::Array{ASCIIString, 1}
-    missng::BitArray{1}
-    attr::Hash
-end
+typealias RString RVector{ASCIIString} # Vector of character strings
 
 ##############################################################################
 ##
@@ -125,9 +117,13 @@ end
 ##
 ##############################################################################
 
-isobj(fl::Uint32) = bool(fl & 0x00000100)
-hasattr(fl::Uint32) = bool(fl & 0x00000200)
-hastag(fl::Uint32) = bool(fl & 0x00000400)
+typealias RDATag Uint32
+
+isobj(fl::RDATag) = bool(fl & 0x00000100)
+hasattr(fl::RDATag) = bool(fl & 0x00000200)
+hastag(fl::RDATag) = bool(fl & 0x00000400)
+
+sxtype = uint8
 
 ##############################################################################
 ##
@@ -138,173 +134,250 @@ hastag(fl::Uint32) = bool(fl & 0x00000400)
 ##
 ##############################################################################
 
-readint32(io::IO, A::Bool) = A ? int32(readline(io)) : hton(read(io, Int32))
-readuint32(io::IO, A::Bool) = A ? uint32(readline(io)) : hton(read(io, Uint32))
-readfloat64(io::IO, A::Bool) = A ? float64(readline(io)) : hton(read(io, Float64))
-
-function readintorNA(io::IO, A::Bool)
-    if A
-        str = chomp(readline(io));
-        return str == "NA" ? R_NA_INT32 : int32(str)
-    end
-    hton(read(io, Int32))
+type RDAIO # RDA IO stream
+    sub::IO       # underlying IO stream
+    ascii::Bool  # if the stream is in ASCII format
 end
 
-function readfloatorNA(io::IO, A::Bool)
-    if A
-        str = chomp(readline(io));
-        return str == "NA" ? R_NA_FLOAT64 : float64(str)
+readint32(io::RDAIO) = io.ascii ? int32(readline(io.sub)) : hton(read(io.sub, Int32))
+readuint32(io::RDAIO) = io.ascii ? uint32(readline(io.sub)) : hton(read(io.sub, Uint32))
+readfloat64(io::RDAIO) = io.ascii ? float64(readline(io.sub)) : hton(read(io.sub, Float64))
+
+function readintorNA(io::RDAIO)
+    if io.ascii
+        str = chomp(readline(io.sub));
+        return str == R_NA_STRING ? R_NA_INT32 : int32(str)
     end
-    hton(read(io, Float64))
+    hton(read(io.sub, Int32))
 end
 
-function InputChar(io::IO, fl::Uint32, A::Bool)  # a single character string
-    @assert uint8(fl) ==  0x09
+function readfloatorNA(io::RDAIO)
+    if io.ascii
+        str = chomp(readline(io.sub));
+        return str == R_NA_STRING ? R_NA_FLOAT64 : float64(str)
+    end
+    hton(read(io.sub, Float64))
+end
+
+function readcharacter(io::RDAIO, fl::RDATag)  # a single character string
+    @assert sxtype(fl) ==  0x09
     ## levs = uint16(fl >> 12)
 ### watch out for levs in here.  Generally it has the value 0x40 so that fl = 0x00040009 (262153)
 ### if levs == 0x00 then the next line should be -1 to indicate the NA_STRING
-    nchar = readuint32(io, A)
-    if A
-        str = unescape_string(chomp(readline(io)))
+    nchar = readuint32(io)
+    if io.ascii
+        str = unescape_string(chomp(readline(io.sub)))
         return length(str) == nchar ? str : error("Character string length mismatch")
     end
-    bytestring(read(io, Array(Uint8, nchar)))
+    bytestring(read(io.sub, Array(Uint8, nchar)))
 end
 
-function namedobjects(io::IO, fl::Uint32, A::Bool, symtab::Array{RSymbol,1})
+##############################################################################
+##
+## Utilities for reading compound RDA items: lists, arrays etc
+##
+##############################################################################
+
+type RDAContext # RDA reading context
+    io::RDAIO                  # R input stream
+
+    # RDA properties
+    fmtver::Uint32             # RDA format version
+    Rver::VersionNumber        # R version that has written RDA
+    Rmin::VersionNumber        # R minimal version to read RDA
+
+    # behaviour
+    convertdataframes::Bool    # if R dataframe objects should be automatically converted into DataFrames
+    fixcolnames::Bool          # if dataframe column names are fixed when creating DataFrame objects
+
+    # intermediate data
+    symtab::Array{RSymbol,1}   # symbols array
+
+    function RDAContext(io::RDAIO, kwoptions::Array{Any})
+        fmtver = readint32(io)
+        rver = readint32(io)
+        rminver = readint32(io)
+        kwdict = Dict{Symbol,Any}(kwoptions)
+        new(io,
+            fmtver,
+            VersionNumber( div(rver,65536), div(rver%65536, 256), rver%256 ),
+            VersionNumber( div(rminver,65536), div(rminver%65536, 256), rminver%256 ),
+            get(kwdict,:convertdataframes,false),
+            get(kwdict,:fixcolnames,true),
+            Array(RSymbol,0))
+    end
+end
+
+function readnamedobjects(ctx::RDAContext, fl::RDATag)
     if !hasattr(fl) return nullhash end
     res = Hash()
-    fl = readuint32(io,A)
-    while uint8(fl) != 0xfe
+    fl = readuint32(ctx.io)
+    while sxtype(fl) != 0xfe
         ## need to call RSymbol here b/c of symbol reference table
-        nm = RSymbol(io, readuint32(io, A), A, symtab).displayname
-        setindex!(res, readitem(io, A, symtab), nm)
-        fl = readuint32(io, A)
+        nm = readsymbol(ctx, readuint32(ctx.io)).displayname
+        setindex!(res, readitem(ctx), nm)
+        fl = readuint32(ctx.io)
     end
     res
 end
 
-function RNumeric(io::IO, fl::Uint32, A::Bool, symtab::Array{RSymbol,1})
-    @assert uint8(fl) == 0x0e
-    n = readuint32(io, A)
-    RNumeric([readfloatorNA(io, A)::Float64 for i in 1:n],
-             namedobjects(io, fl, A, symtab))
+readattrs(ctx::RDAContext, fl::RDATag) = readnamedobjects(ctx, fl)
+
+function readnumeric(ctx::RDAContext, fl::RDATag)
+    @assert sxtype(fl) == 0x0e
+    n = readuint32(ctx.io)
+    RNumeric([readfloatorNA(ctx.io)::Float64 for i in 1:n],
+             readattrs(ctx, fl))
 end
 
-function RInteger(io::IO, fl::Uint32, A::Bool, symtab::Array{RSymbol,1})
-    @assert uint8(fl) == 0x0d
-    n = readint32(io, A)
-    RInteger([readintorNA(io, A)::Int32 for i in 1:n],
-             namedobjects(io, fl, A, symtab))
+function readinteger(ctx::RDAContext, fl::RDATag)
+    @assert sxtype(fl) == 0x0d
+    n = readint32(ctx.io)
+    RInteger([readintorNA(ctx.io)::Int32 for i in 1:n],
+             readattrs(ctx, fl))
 end
 
-function RLogical(io::IO, fl::Uint32, A::Bool, symtab::Array{RSymbol,1})
-    @assert uint8(fl) == 0x0a
-    n = readuint32(io, A)
-    rr = [readintorNA(io, A)::Int32 for i in 1:n]
-    RLogical(convert(BitArray{1}, rr), convert(BitArray{1}, rr .== R_NA_INT32),
-             namedobjects(io, fl, A, symtab))
+function readlogical(ctx::RDAContext, fl::RDATag)
+    @assert sxtype(fl) == 0x0a
+    n = readuint32(ctx.io)
+    data = [readintorNA(ctx.io)::Int32 for i in 1:n]
+    RLogical(data,
+             convert(BitArray{1}, data .== R_NA_INT32),
+             readattrs(ctx, fl))
 end
 
-function RComplex(io::IO, fl::Uint32, A::Bool, symtab::Array{RSymbol,1})
-    @assert uint8(fl) == 0x0f
-    n = readuint32(io, A)
-    RComplex([(readfloatorNA(io,A) + readfloatorNA(io, A)*im)::Complex128 for i in 1:n],
-             namedobjects(io, fl, A, symtab))
+function readcomplex(ctx::RDAContext, fl::RDATag)
+    @assert sxtype(fl) == 0x0f
+    n = readuint32(ctx.io)
+    RComplex([complex128(readfloatorNA(ctx.io), readfloatorNA(ctx.io)) for i in 1:n],
+             readattrs(ctx, fl))
 end
 
-function RString(io::IO, fl::Uint32, A::Bool, symtab::Array{RSymbol,1})
-    @assert uint8(fl) == 0x10
-    n = readuint32(io, A)
+function readstring(ctx::RDAContext, fl::RDATag)
+    @assert sxtype(fl) == 0x10
+    n = readuint32(ctx.io)
     data = Array(ASCIIString, n)
     for i in 1:n
-        fl1 = readuint32(io, A)
-        data[i] = InputChar(io, fl1, A)
+        fl1 = readuint32(ctx.io)
+        data[i] = readcharacter(ctx.io, fl1)
     end
-    RString(data, falses(int(n)), namedobjects(io, fl, A, symtab))
+    RString(data, readattrs(ctx, fl))
 end
 
-function RList(io::IO, fl::Uint32, A::Bool, symtab::Array{RSymbol,1})
-    @assert uint8(fl) == 0x13
-    n = readuint32(io, A)
-    RList([readitem(io, A, symtab) for i in 1:n], namedobjects(io, fl, A, symtab))
+function readlist(ctx::RDAContext, fl::RDATag)
+    @assert sxtype(fl) == 0x13
+    n = readuint32(ctx.io)
+    res = RList([readitem(ctx) for i in 1:n],
+                readattrs(ctx, fl))
+    if (ctx.convertdataframes && isdataframe(res))
+      DataFrame(res, fixcolnames=ctx.fixcolnames)
+    else
+      res
+    end
 end
 
-function RSymbol(io::IO, fl::Uint32, A::Bool, symtab::Array{RSymbol,1})
-    if uint8(fl) == 0xff return symtab[fl >> 8] end
-    @assert uint8(fl) == 0x01
-    res = RSymbol(InputChar(io, readuint32(io, A), A))
-    push!(symtab, res)
+function readsymbol(ctx::RDAContext, fl::RDATag)
+    # check if its a reference to an already defined string
+    if sxtype(fl) == 0xff return ctx.symtab[fl >> 8] end
+    # read the new strings and put it into symbols table
+    @assert sxtype(fl) == 0x01
+    res = RSymbol(readcharacter(ctx.io, readuint32(ctx.io)))
+    push!(ctx.symtab, res)
     res
 end
 
-function readitem(io::IO, A::Bool, symtab::Array{RSymbol,1})
-    ff = readuint32(io, A)
-    fl = uint8(ff)
-    if fl == 0x01 return RSymbol(io, ff, A, symtab) end
-    if fl == 0x0a return RLogical(io, ff, A, symtab) end
-    if fl == 0x0d return RInteger(io, ff, A, symtab) end
-    if fl == 0x0e return RNumeric(io, ff, A, symtab) end
-    if fl == 0x0f return RComplex(io, ff, A, symtab) end
-    if fl == 0x10 return RString(io, ff, A, symtab) end
-    if fl == 0x13 return RList(io, ff, A, symtab) end
+const SXReaders = @compat Dict( # maps RDA type to function that read it
+    0x01 => readsymbol,
+    0x0a => readlogical,
+    0x0d => readinteger,
+    0x0e => readnumeric,
+    0x0f => readcomplex,
+    0x10 => readstring,
+    0x13 => readlist
+);
+
+function readitem(ctx::RDAContext)
+    ff = readuint32(ctx.io)
+    fl = sxtype(ff)
+    if haskey(SXReaders, fl) return SXReaders[fl](ctx, ff) end
 ### Should not occur at the top level
 ###    if fl == 0xf3 return nothing end      # terminates dotted pair lists
-###    if fl == 0x09 return InputChar(io, ff, A) end
+###    if fl == 0x09 return readcharacter(ctx.io, ff) end
     error("Encountered flag $ff corresponding to type $(SXPtab[fl])")
 end
 
-function read_rda(io::IO)
+function read_rda(io::IO, kwoptions::Array{Any})
     header = chomp(readline(io))
     @assert header[1] == 'R' # readable header (or RDX2)
     @assert header[2] == 'D'
     @assert header[4] == '2'
-    A = chomp(readline(io)) == "A"
-    @assert readint32(io, A) == 2    # format version
-    symtab = Array(RSymbol,0)
-    Rver = readint32(io, A)
-#    println("Written by version $(div(Rver,65536)).$(div(Rver%65536, 256)).$(Rver%256)")
-    Rmin = readint32(io, A)
-#    println("Minimal R version: $(div(Rmin,65536)).$(div(Rmin%65536, 256)).$(Rmin%256)")
-    namedobjects(io, 0x00000200, A, symtab)
+    ctx = RDAContext(RDAIO(io, chomp(readline(io)) == "A"), kwoptions)
+    @assert ctx.fmtver == 2    # format version
+#    println("Written by R version $(ctx.Rver)")
+#    println("Minimal R version: $(ctx.Rmin)")
+    return readnamedobjects(ctx, 0x00000200)
 end
 
-read_rda(fnm::ASCIIString) = gzopen(read_rda, fnm)
+read_rda(io::IO; kwoptions...) = read_rda(io, kwoptions)
 
-Base.size(rv::RVEC) = size(rv.data)
-Base.size(rl::RList) = inherits(rl, "dataframe") ? (length(rl.data[1]), length(rl.data)) : length(rl.data)
-Base.length(rl::RList) = length(rl.data)
-Base.length(ri::RInteger) = length(ri.data)
-Base.length(rn::RNumeric) = length(rn.data)
-class(v::RVEC) = haskey(v.attr, "class") ? v.attr["class"].data : Array(ASCIIString,0)
-class(x) = Array(ASCIIString, 0)
+read_rda(fnm::ASCIIString; kwoptions...) = gzopen(fnm) do io read_rda(io, kwoptions) end
+
+##############################################################################
+##
+## Utilities for working with basic properties of R objects:
+##    attributes, class inheritance, etc
+##
+##############################################################################
+
+const emptystrvec = Array(ASCIIString,0)
+
+getattr{T}(ro::ROBJ, attrnm::ASCIIString, default::T) = haskey(ro.attr, attrnm) ? ro.attr[attrnm].data : default;
+
+Base.names(ro::ROBJ) = getattr(ro, "names", emptystrvec)
+
+class(ro::ROBJ) = getattr(ro, "class", emptystrvec)
+class(x) = emptystrvec
 inherits(x, clnm::ASCIIString) = any(class(x) .== clnm)
 
-Base.names(v::RVEC) = has(v.attr, "names") ? v.attr["names"].data : Array(ASCIIString,0)
-row_names(v::RVEC) = has(v.attr, "row.names") ? v.attr["row.names"].data : Array(ASCIIString,0)
+isdataframe(rl::RList) = inherits(rl, "data.frame")
+isfactor(ri::RInteger) = inherits(ri, "factor")
 
-DataArrays.data(rl::RLogical) = DataArray(bitunpack(rl.data), rl.missng)
-DataArrays.data(rn::RNumeric) = DataArray(rn.data, convert(BitArray, isnan(rn.data)))
+Base.length(rl::RVEC) = length(rl.data)
+Base.size(rv::RVEC) = length(rv.data)
+Base.size(rl::RList) = isdataframe(rl) ? (length(rl.data[1]), length(rl.data)) : length(rl.data)
+
+row_names(ro::ROBJ) = getattr(ro, "row.names", emptystrvec)
+
+##############################################################################
+##
+## Conversion of intermediate R objects into DataArray and DataFrame objects
+##
+##############################################################################
+
+namask(rl::RLogical) = rl.missng
+namask(ri::RInteger) = bitpack(ri.data .== R_NA_INT32)
+namask(rn::RNumeric) = bitpack([rn.data[i] === R_NA_FLOAT64 for i in 1:length(rn.data)])
+namask(rs::RString) = falses(length(rs.data)) # FIXME use R_NA_STRING?
+namask(rc::RComplex) = bitpack([rc.data[i].re === R_NA_FLOAT64 || rc.data[i].im === R_NA_FLOAT64 for i in 1:length(rc.data)])
+
+DataArrays.data{T}(rv::RVEC{T}) = DataArray(rv.data, namask(rv))
+
 function DataArrays.data(ri::RInteger)
-    dd = ri.data
-    msng = dd .== R_NA_INT32
-    if !inherits(ri, "factor") return DataArray(dd, msng) end
-    pool = ri.attr["levels"].data
+    if !isfactor(ri) return DataArray(ri.data, namask(ri)) end
+    # convert factor into PooledDataArray
+    pool = getattr(ri, "levels", emptystrvec)
     sz = length(pool)
     REFTYPE = sz <= typemax(Uint8)  ? Uint8 :
               sz <= typemax(Uint16) ? Uint16 :
               sz <= typemax(Uint32) ? Uint32 :
                                       Uint64
-    dd[msng] = 0
+    dd = ri.data
+    dd[namask(ri)] = 0
     refs = convert(Vector{REFTYPE}, dd)
-    PooledDataArray(DataArrays.RefArray(refs), pool)
+    return PooledDataArray(DataArrays.RefArray(refs), pool)
 end
 
-DataArrays.data(rs::RString) = DataArray(rs.data, falses(length(rs.data)))
-function DataArrays.data(rc::RComplex)
-    DataArray(rc.data, BitArray(real(rc.data) .== R_NA_FLOAT64) |
-              BitArray(imag(rc.data) .== R_NA_FLOAT64))
+function DataFrame(rl::RList; fixcolnames=true)
+    DataFrame( map(data, rl.data),
+               Symbol[fixcolnames ? identifier(x) : x for x in names(rl)] )
 end
-
-DataFrame(rl::RList) = DataFrame(map(x->data(x), rl.data),
-                                 Symbol[identifier(x) for x in rl.attr["names"].data])
