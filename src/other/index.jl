@@ -19,7 +19,7 @@ Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = copy(x.names)
 _names(x::Index) = x.names
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
-Base.deepcopy(x::Index) = Index(deepcopy(x.lookup), deepcopy(x.names))
+Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 Base.(:(==))(x::Index, y::Index) = isequal(x, y)
 

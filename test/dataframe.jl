@@ -2,14 +2,10 @@ module TestDataFrame
     using Base.Test
     using DataFrames, Compat
 
-    #test_group("Operations on DataFrames that have column groupings")
-
-    x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
-    y = DataFrame(c = [1, 2, 3], d = [4, 5, 6])
-
     #
     # Equality
     #
+
     @test isequal(DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
     @test !isequal(DataFrame(a=@data([1, 2]), b=@data([4, 5])), DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
     @test !isequal(DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, 3])))
@@ -28,18 +24,35 @@ module TestDataFrame
     @test isna(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])))
     @test isna(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
 
-    z = deepcopy(x)
+    #
+    # Copying
+    #
 
-    v = DataFrame(
-        a = [5,6,7],
-        b = [8,9,10]
-    )
-    z = vcat(DataFrame[v, x])
+    df = DataFrame(a = [2, 3], b = Any[DataFrame(c = 1), DataFrame(d = 2)])
+    dfc = copy(df)
+    dfdc = deepcopy(df)
+
+    df[1, :a] = 4
+    df[1, :b][:e] = 5
+    names!(df, [:f, :g])
+
+    @test names(dfc) == [:a, :b]
+    @test names(dfdc) == [:a, :b]
+
+    @test dfc[1, :a] == 4
+    @test dfdc[1, :a] == 2
+
+    @test names(dfc[1, :b]) == [:c, :e]
+    @test names(dfdc[1, :b]) == [:c]
+
+    #
+
+    x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
+    v = DataFrame(a = [5, 6, 7], b = [8, 9, 10])
 
     z = vcat(v, x)
 
-    ## del calls ref, which properly deals with groupings
-    z2 = z[:,[1,1,2]]
+    z2 = z[:, [1, 1, 2]]
     @test names(z2) == [:a, :a_1, :b]
 
     #test_group("DataFrame assignment")
