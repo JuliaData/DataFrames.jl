@@ -666,6 +666,23 @@ Base.hcat(df::DataFrame, x) = hcat!(copy(df), x)
 
 ##############################################################################
 ##
+## Nullability
+##
+##############################################################################
+
+function nullable!(df::DataFrame, col::ColumnIndex)
+    df[col] = DataArray(df[col])
+    df
+end
+function nullable!{T <: ColumnIndex}(df::DataFrame, cols::Vector{T})
+    for col in cols
+        nullable!(df, col)
+    end
+    df
+end
+
+##############################################################################
+##
 ## Pooling
 ##
 ##############################################################################

@@ -289,9 +289,6 @@ function colmissing(df::AbstractDataFrame) # -> Vector{Int}
     return missing
 end
 
-nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame)= (for i in colnames df[i]=DataArray(df[i]) end)
-nullable!(colnums::Array{Int,1}, df::AbstractDataFrame)= (for i in colnums df[i]=DataArray(df[i]) end)
-
 function without(df::AbstractDataFrame, icols::Vector{Int})
     newcols = _setdiff(1:ncol(df), icols)
     df[newcols]
