@@ -359,7 +359,7 @@ function DataArrays.data(ri::RInteger)
     return PooledDataArray(DataArrays.RefArray(refs), pool)
 end
 
-function DataFrame(rl::RList)
+function DataFrame(rl::RList; fixcolnames=true)
     DataFrame( map(data, rl.data),
-               Symbol[identifier(x) for x in names(rl)] )
+               Symbol[fixcolnames ? identifier(x) : x for x in names(rl)] )
 end

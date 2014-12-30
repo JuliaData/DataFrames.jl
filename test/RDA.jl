@@ -41,4 +41,7 @@ module TestRDA
 
     rda_names = names(DataFrame(read_rda("$testdir/data/RDA/names.rda")["df"]))
     @test rda_names == [:_end, :x!, :x1, :_B_C_]
+
+    rda_names = names(DataFrame(read_rda("$testdir/data/RDA/names.rda")["df"], fixcolnames=false))
+    @test rda_names == [symbol("end"), :!, symbol("1"), symbol("%_B*\tC*")]
 end
