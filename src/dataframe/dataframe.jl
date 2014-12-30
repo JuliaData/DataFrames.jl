@@ -574,12 +574,14 @@ end
 ##
 ##############################################################################
 
-# copy of a data frame does a shallow copy
-function Base.copy(df::DataFrame)
-    newdf = DataFrame(copy(df.columns), _names(df))
-end
+# A copy of a DataFrame points to the original column vectors but
+#   gets its own Index.
+Base.copy(df::DataFrame) = DataFrame(copy(columns(df)), copy(index(df)))
+
+# Deepcopy is recursive -- if a column is a vector of DataFrames, each of
+#   those DataFrames is deepcopied.
 function Base.deepcopy(df::DataFrame)
-    newdf = DataFrame([copy(x) for x in df.columns], _names(df))
+    DataFrame(deepcopy(columns(df)), deepcopy(index(df)))
 end
 
 ##############################################################################
