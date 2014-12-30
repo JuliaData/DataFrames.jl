@@ -5,6 +5,7 @@ module TestRDA
     # R code generating test .rdas
         # df = data.frame(num=c(1.1, 2.2))
         # save(df, file='minimal.rda')
+        # save(df, file='minimal_ascii.rda', ascii=TRUE)
 
         # df['int'] = c(1L, 2L)
         # df['logi'] = c(TRUE, FALSE)
@@ -28,6 +29,7 @@ module TestRDA
 
     df = DataFrame(num = [1.1, 2.2])
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/minimal.rda")["df"]), df)
+    @test isequal(DataFrame(open(read_rda,"$testdir/data/RDA/minimal_ascii.rda")["df"]), df)
 
     df[:int] = Int32[1, 2]
     df[:logi] = [true, false]
