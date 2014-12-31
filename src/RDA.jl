@@ -188,7 +188,6 @@ type RDAContext # RDA reading context
 
     # behaviour
     convertdataframes::Bool    # if R dataframe objects should be automatically converted into DataFrames
-    fixcolnames::Bool          # if dataframe column names are fixed when creating DataFrame objects
 
     # intermediate data
     symtab::Array{RSymbol,1}   # symbols array
@@ -203,7 +202,6 @@ type RDAContext # RDA reading context
             VersionNumber( div(rver,65536), div(rver%65536, 256), rver%256 ),
             VersionNumber( div(rminver,65536), div(rminver%65536, 256), rminver%256 ),
             get(kwdict,:convertdataframes,false),
-            get(kwdict,:fixcolnames,true),
             Array(RSymbol,0))
     end
 end
@@ -269,10 +267,10 @@ function readlist(ctx::RDAContext, fl::RDATag)
     n = readuint32(ctx.io)
     res = RList([readitem(ctx) for i in 1:n],
                 readattrs(ctx, fl))
-    if (ctx.convertdataframes && isdataframe(res))
-      DataFrame(res, fixcolnames=ctx.fixcolnames)
+    if ctx.convertdataframes && isdataframe(res)
+        DataFrame(res)
     else
-      res
+        res
     end
 end
 
@@ -377,7 +375,7 @@ function DataArrays.data(ri::RInteger)
     return PooledDataArray(DataArrays.RefArray(refs), pool)
 end
 
-function DataFrame(rl::RList; fixcolnames=true)
-    DataFrame( map(data, rl.data),
-               Symbol[fixcolnames ? identifier(x) : x for x in names(rl)] )
+function DataFrame(rl::RList)
+    DataFrame(map(data, rl.data),
+              Symbol[identifier(x) for x in names(rl)])
 end
