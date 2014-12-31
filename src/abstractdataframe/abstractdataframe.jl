@@ -130,8 +130,6 @@ end
 
 Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
 Base.get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
-Base.keys(df::AbstractDataFrame) = keys(index(df))
-Base.values(df::AbstractDataFrame) = columns(df)
 Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
 
 ##############################################################################
@@ -288,9 +286,6 @@ function colmissing(df::AbstractDataFrame) # -> Vector{Int}
     end
     return missing
 end
-
-nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame)= (for i in colnames df[i]=DataArray(df[i]) end)
-nullable!(colnums::Array{Int,1}, df::AbstractDataFrame)= (for i in colnums df[i]=DataArray(df[i]) end)
 
 function without(df::AbstractDataFrame, icols::Vector{Int})
     newcols = _setdiff(1:ncol(df), icols)

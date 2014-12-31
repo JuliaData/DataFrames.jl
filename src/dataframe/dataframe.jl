@@ -547,9 +547,8 @@ Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = delete!(df, col_ind)
 
 Base.empty!(df::DataFrame) = (empty!(df.columns); empty!(index(df)); df)
 
-
 function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol)
-    0 < col_ind <= ncol(df) + 1 || error(BoundsError)
+    0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
     size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
 
     insert!(index(df), col_ind, name)
@@ -557,15 +556,15 @@ function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::S
     df
 end
 Base.insert!(df::DataFrame, col_ind::Int, item, name::Symbol) =
-    Base.insert!(df, col_ind, upgrade_scalar(df, item), name)
+    insert!(df, col_ind, upgrade_scalar(df, item), name)
 
-function Base.insert!(df::DataFrame, df2::AbstractDataFrame)
-    nrow(df) == nrow(df2) || nrow(df) == 0 || error("number of rows does not match")
-
-    for n in _names(df2)
-        df[n] = df2[n]
+function Base.merge!(df::DataFrame, others::AbstractDataFrame...)
+    for other in others
+        for n in _names(other)
+            df[n] = other[n]
+        end
     end
-    df
+    return df
 end
 
 ##############################################################################
@@ -663,6 +662,23 @@ hcat!{T}(df::DataFrame, x::T) = hcat!(df, DataFrame(Any[DataArray([x])]))
 hcat!(a::DataFrame, b, c...) = hcat!(hcat!(a, b), c...)
 
 Base.hcat(df::DataFrame, x) = hcat!(copy(df), x)
+
+##############################################################################
+##
+## Nullability
+##
+##############################################################################
+
+function nullable!(df::DataFrame, col::ColumnIndex)
+    df[col] = DataArray(df[col])
+    df
+end
+function nullable!{T <: ColumnIndex}(df::DataFrame, cols::Vector{T})
+    for col in cols
+        nullable!(df, col)
+    end
+    df
+end
 
 ##############################################################################
 ##
