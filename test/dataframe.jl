@@ -99,9 +99,9 @@ module TestDataFrame
     @test isequal(df, DataFrame(a=[1, 2], b=[3., 4.], newcol=["a", "b"]))
 
     df = DataFrame(a=[1, 2], b=[3., 4.])
-    df2 = DataFrame(c=["a", "b"], d=[:c, :d])
-    @test insert!(df, df2) == df
-    @test isequal(df, DataFrame(a=[1, 2], b=[3., 4.], c=["a", "b"], d=[:c, :d]))
+    df2 = DataFrame(b=["a", "b"], c=[:c, :d])
+    @test merge!(df, df2) == df
+    @test isequal(df, DataFrame(a=[1, 2], b=["a", "b"], c=[:c, :d]))
 
     #test_group("Empty DataFrame constructors")
     df = DataFrame(Int, 10, 3)

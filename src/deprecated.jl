@@ -25,9 +25,10 @@ Base.@deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, c
 Base.@deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 Base.@deprecate nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame) nullable!(df, colnames)
 Base.@deprecate nullable!(colnums::Array{Int,1}, df::AbstractDataFrame) nullable!(df, colnums)
-import Base: keys, values
+import Base: keys, values, insert!
 Base.@deprecate keys(df::AbstractDataFrame) names(df)
 Base.@deprecate values(df::AbstractDataFrame) DataFrames.columns(df)
+Base.@deprecate insert!(df::DataFrame, df2::AbstractDataFrame) merge!(df, df2)
 
 const DEFAULT_COLUMN_ELTYPE = Float64
 function DataFrame(nrows::Integer, ncols::Integer)
