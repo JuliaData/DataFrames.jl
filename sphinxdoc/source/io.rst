@@ -70,8 +70,6 @@ Advanced Options for Reading CSV Files
   indicates that the entire file should be read.
 - ``names::Vector{Symbol}`` -- Use the values in this array as the names
   for all columns instead of or in lieu of the names in the file's header. Defaults to ``[]``, which indicates that the header should be used if present or that numeric names should be invented if there is no header.
-- ``cleannames::Bool`` -- Call ``cleancolnames!`` on the resulting DataFrame to
-  ensure that all column names are valid identifers in Julia.
 - ``eltypes::Vector{DataType}`` -- Specify the types of all columns. Defaults to ``[]``.
 - ``allowcomments::Bool`` -- Ignore all text inside comments. Defaults to ``false``.
 - ``commentmark::Char`` -- Specify the character that starts comments. Defaults
