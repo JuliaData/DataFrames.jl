@@ -7,8 +7,8 @@
 # TODO: Reconsider/redesign eachrow -- ~100% overhead
 
 # Iteration by rows
-immutable DFRowIterator
-    df::AbstractDataFrame
+immutable DFRowIterator{T <: AbstractDataFrame}
+    df::T
 end
 eachrow(df::AbstractDataFrame) = DFRowIterator(df)
 
@@ -21,8 +21,8 @@ Base.getindex(itr::DFRowIterator, i::Any) = DataFrameRow(itr.df, i)
 Base.map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
 
 # Iteration by columns
-immutable DFColumnIterator
-    df::AbstractDataFrame
+immutable DFColumnIterator{T <: AbstractDataFrame}
+    df::T
 end
 eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
 
