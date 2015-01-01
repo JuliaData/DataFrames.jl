@@ -139,8 +139,9 @@ abstract RDAIO
 
 type RDAXDRIO <: RDAIO # RDA XDR(binary) format IO stream wrapper
     sub::IO            # underlying IO stream
+    buf::Vector{Uint8} # buffer for strings
 
-    RDAXDRIO( io::IO ) = new( io )
+    RDAXDRIO( io::IO ) = new( io, Array(Uint8, 1024) )
 end
 
 readint32(io::RDAXDRIO) = hton(read(io.sub, Int32))
@@ -150,20 +151,9 @@ readfloat64(io::RDAIO) = hton(read(io.sub, Float64))
 readintorNA(io::RDAXDRIO) = readint32(io)
 readfloatorNA(io::RDAXDRIO) = readfloat64(io)
 
-function readcharacterprops{T<:RDAIO}(io::T) # read character string encoding and length
-    # TODO implement processing of character encoding and NA checks
-    fl = readuint32(io)
-    @assert sxtype(fl) == 0x09
-    ## levs = uint16(fl >> 12)
-### watch out for levs in here.  Generally it has the value 0x40 so that fl = 0x00040009 (262153)
-### if levs == 0x00 then the next line should be -1 to indicate the NA_STRING
-    nchar = readint32(io)
-    return fl, nchar
-end
-
-function readcharacter(io::RDAXDRIO)  # a single character string
-    fl, nchar = readcharacterprops(io)
-    bytestring(readbytes(io.sub, nchar))
+function readnchars(io::RDAXDRIO, n::Int32)  # a single character string
+    readbytes!(io.sub, io.buf, n)
+    bytestring(pointer(io.buf), n)
 end
 
 type RDAASCIIIO <: RDAIO # RDA ASCII format IO stream wrapper
@@ -186,10 +176,10 @@ function readfloatorNA(io::RDAASCIIIO)
     str == R_NA_STRING ? R_NA_FLOAT64 : float64(str)
 end
 
-function readcharacter(io::RDAASCIIIO)  # a single character string
-    fl, nchar = readcharacterprops(io)
+function readnchars(io::RDAASCIIIO, n::Int32)  # reads N bytes-sized string
+    if (n==-1) return "" end
     str = unescape_string(chomp(readline(io.sub)))
-    return length(str) == nchar ? str : error("Character string length mismatch")
+    return length(str) == n ? str : error("Character string length mismatch")
 end
 
 type RDANativeIO <: RDAIO # RDA native binary format IO stream wrapper (TODO)
@@ -219,6 +209,24 @@ function readlength(io::RDAIO)
         if (len1 > 65536) error("invalid upper part of serialized vector length") end
         return (len1 << 32) + len2
     end
+end
+
+immutable CHARSXProps # RDA CHARSXP properties
+  levs::Uint32       # level flags (encoding etc) TODO process
+  nchar::Int32       # string length, -1 for NA strings
+end
+
+function readcharsxprops(io::RDAIO) # read character string encoding and length
+    fl = readuint32(io)
+    @assert sxtype(fl) == 0x09
+### watch out for levs in here.  Generally it has the value 0x40 so that fl = 0x00040009 (262153)
+### if levs == 0x00 then the next line should be -1 to indicate the NA_STRING
+    CHARSXProps(fl >> 12, readint32(io))
+end
+
+function readcharacter(io::RDAIO)  # a single character string
+    props = readcharsxprops(io)
+    props.nchar==-1 ? "" : readnchars(io, props.nchar)
 end
 
 ##############################################################################
