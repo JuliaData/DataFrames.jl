@@ -149,7 +149,10 @@ readuint32(io::RDAXDRIO) = hton(read(io.sub, Uint32))
 readfloat64(io::RDAIO) = hton(read(io.sub, Float64))
 
 readintorNA(io::RDAXDRIO) = readint32(io)
+readintorNA(io::RDAXDRIO, n::Int64) = map!(hton, read(io.sub, Int32, n))
+
 readfloatorNA(io::RDAXDRIO) = readfloat64(io)
+readfloatorNA(io::RDAXDRIO, n::Int64) = map!(hton, read(io.sub, Float64, n))
 
 function readnchars(io::RDAXDRIO, n::Int32)  # a single character string
     readbytes!(io.sub, io.buf, n)
@@ -170,11 +173,13 @@ function readintorNA(io::RDAASCIIIO)
     str = chomp(readline(io.sub));
     str == R_NA_STRING ? R_NA_INT32 : int32(str)
 end
+readintorNA(io::RDAASCIIIO, n::Int64) = Int32[readintorNA(io) for i in 1:n]
 
 function readfloatorNA(io::RDAASCIIIO)
     str = chomp(readline(io.sub));
     str == R_NA_STRING ? R_NA_FLOAT64 : float64(str)
 end
+readfloatorNA(io::RDAASCIIIO, n::Int64) = Float64[readfloatorNA(io) for i in 1:n]
 
 function readnchars(io::RDAASCIIIO, n::Int32)  # reads N bytes-sized string
     if (n==-1) return "" end
@@ -227,6 +232,10 @@ end
 function readcharacter(io::RDAIO)  # a single character string
     props = readcharsxprops(io)
     props.nchar==-1 ? "" : readnchars(io, props.nchar)
+end
+
+function readcharacter(io::RDAIO, n::Int64)  # a single character string
+    ASCIIString[ readcharacter(io) for i in 1:n ]
 end
 
 ##############################################################################
@@ -282,22 +291,19 @@ readattrs(ctx::RDAContext, fl::RDATag) = readnamedobjects(ctx, fl)
 
 function readnumeric(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0e
-    n = readlength(ctx.io)
-    RNumeric([readfloatorNA(ctx.io)::Float64 for i in 1:n],
+    RNumeric(readfloatorNA(ctx.io, readlength(ctx.io)),
              readattrs(ctx, fl))
 end
 
 function readinteger(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0d
-    n = readlength(ctx.io)
-    RInteger([readintorNA(ctx.io)::Int32 for i in 1:n],
+    RInteger(readintorNA(ctx.io, readlength(ctx.io)),
              readattrs(ctx, fl))
 end
 
 function readlogical(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0a
-    n = readlength(ctx.io)
-    data = [readintorNA(ctx.io)::Int32 for i in 1:n]
+    data = readintorNA(ctx.io, readlength(ctx.io))
     RLogical(data,
              convert(BitArray{1}, data .== R_NA_INT32),
              readattrs(ctx, fl))
@@ -306,14 +312,14 @@ end
 function readcomplex(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0f
     n = readlength(ctx.io)
-    RComplex([complex128(readfloatorNA(ctx.io), readfloatorNA(ctx.io)) for i in 1:n],
+    data = readfloatorNA(ctx.io, 2n)
+    RComplex(Complex128[complex128(data[i],data[i+1]) for i in 2(1:n)-1],
              readattrs(ctx, fl))
 end
 
 function readstring(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x10
-    n = readlength(ctx.io)
-    RString(ASCIIString[readcharacter(ctx.io) for i in 1:n],
+    RString(readcharacter(ctx.io, readlength(ctx.io)),
             readattrs(ctx, fl))
 end
 
