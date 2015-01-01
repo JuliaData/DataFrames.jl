@@ -77,36 +77,34 @@ const R_NA_STRING = "NA"
 typealias Hash Dict{ASCIIString, Any}
 const nullhash = Hash()
 
-abstract RSEXPREC                # Basic R object - symbolic expression
+abstract RSEXPREC{S}             # Basic R object - symbolic expression
 
-type RSymbol <: RSEXPREC         # Not quite the same as a Julia symbol
+type RSymbol <: RSEXPREC{0x01}   # Not quite the same as a Julia symbol
     displayname::ASCIIString
 end
 
-abstract ROBJ <: RSEXPREC     # R object that can have attributes
+abstract ROBJ{S} <: RSEXPREC{S}  # R object that can have attributes
 
-abstract RVEC{T} <: ROBJ      # abstract R vector (actual storage implementation may differ)
+abstract RVEC{T, S} <: ROBJ{S}   # abstract R vector (actual storage implementation may differ)
 
-type RVector{T} <: RVEC{T} # R vector object
+type RVector{T, S} <: RVEC{T, S} # R vector object
     data::Array{T, 1}
+    attr::Hash                   # collection of R object attributes
+end
+
+typealias RLogical RVector{Int32, 0x0a}
+typealias RInteger RVector{Int32, 0x0d}
+typealias RNumeric RVector{Float64, 0x0e}
+typealias RComplex RVector{Complex128, 0x0f}
+
+type RNullableVector{T, S} <: RVEC{T, S} # R vector object with explicit NA values
+    data::Array{T, 1}
+    na::BitArray{1}             # mask of NA elements
     attr::Hash                  # collection of R object attributes
 end
 
-typealias RList RVector{Any}  # "list" in R == Julia cell array
-
-typealias RNumeric RVector{Float64}
-
-typealias RComplex RVector{Complex128}
-
-typealias RInteger RVector{Int32}
-
-type RLogical <: RVEC{Bool}
-    data::Array{Bool, 1}
-    missng::BitArray{1}
-    attr::Hash                  # collection of R object attributes
-end
-
-typealias RString RVector{ASCIIString} # Vector of character strings
+typealias RString RNullableVector{ASCIIString,0x10}
+typealias RList RVector{Any, 0x13}  # "list" in R == Julia cell array
 
 ##############################################################################
 ##
@@ -127,49 +125,123 @@ sxtype = uint8
 
 ##############################################################################
 ##
-## Utilities for reading a single data element - ASCII format if A
+## Utilities for reading a single data element.
 ## The read<type>orNA functions are needed because the ASCII format
 ## stores the NA as the string 'NA'.  Perhaps it would be easier to
 ## wrap the conversion in a try/catch block.
 ##
 ##############################################################################
 
-type RDAIO # RDA IO stream
-    sub::IO       # underlying IO stream
-    ascii::Bool  # if the stream is in ASCII format
+# abstract RDA format IO stream wrapper
+abstract RDAIO 
+
+type RDAXDRIO <: RDAIO # RDA XDR(binary) format IO stream wrapper
+    sub::IO            # underlying IO stream
+    buf::Vector{Uint8} # buffer for strings
+
+    RDAXDRIO( io::IO ) = new( io, Array(Uint8, 1024) )
 end
 
-readint32(io::RDAIO) = io.ascii ? int32(readline(io.sub)) : hton(read(io.sub, Int32))
-readuint32(io::RDAIO) = io.ascii ? uint32(readline(io.sub)) : hton(read(io.sub, Uint32))
-readfloat64(io::RDAIO) = io.ascii ? float64(readline(io.sub)) : hton(read(io.sub, Float64))
+readint32(io::RDAXDRIO) = hton(read(io.sub, Int32))
+readuint32(io::RDAXDRIO) = hton(read(io.sub, Uint32))
+readfloat64(io::RDAIO) = hton(read(io.sub, Float64))
 
-function readintorNA(io::RDAIO)
-    if io.ascii
-        str = chomp(readline(io.sub));
-        return str == R_NA_STRING ? R_NA_INT32 : int32(str)
+readintorNA(io::RDAXDRIO) = readint32(io)
+readintorNA(io::RDAXDRIO, n::Int64) = map!(hton, read(io.sub, Int32, n))
+
+readfloatorNA(io::RDAXDRIO) = readfloat64(io)
+readfloatorNA(io::RDAXDRIO, n::Int64) = map!(hton, read(io.sub, Float64, n))
+
+function readnchars(io::RDAXDRIO, n::Int32)  # a single character string
+    readbytes!(io.sub, io.buf, n)
+    bytestring(pointer(io.buf), n)
+end
+
+type RDAASCIIIO <: RDAIO # RDA ASCII format IO stream wrapper
+    sub::IO              # underlying IO stream
+
+    RDAASCIIIO( io::IO ) = new( io )
+end
+
+readint32(io::RDAASCIIIO) = int32(readline(io.sub))
+readuint32(io::RDAASCIIIO) = uint32(readline(io.sub))
+readfloat64(io::RDAASCIIIO) = float64(readline(io.sub))
+
+function readintorNA(io::RDAASCIIIO)
+    str = chomp(readline(io.sub));
+    str == R_NA_STRING ? R_NA_INT32 : int32(str)
+end
+readintorNA(io::RDAASCIIIO, n::Int64) = Int32[readintorNA(io) for i in 1:n]
+
+function readfloatorNA(io::RDAASCIIIO)
+    str = chomp(readline(io.sub));
+    str == R_NA_STRING ? R_NA_FLOAT64 : float64(str)
+end
+readfloatorNA(io::RDAASCIIIO, n::Int64) = Float64[readfloatorNA(io) for i in 1:n]
+
+function readnchars(io::RDAASCIIIO, n::Int32)  # reads N bytes-sized string
+    if (n==-1) return "" end
+    str = unescape_string(chomp(readline(io.sub)))
+    return length(str) == n ? str : error("Character string length mismatch")
+end
+
+type RDANativeIO <: RDAIO # RDA native binary format IO stream wrapper (TODO)
+    sub::IO               # underlying IO stream
+
+    RDANativeIO( io::IO ) = new( io )
+end
+
+function rdaio(io::IO, formatcode::AbstractString)
+    if formatcode == "X" RDAXDRIO(io)
+    elseif formatcode == "A" RDAASCIIIO(io)
+    elseif formatcode == "B" RDANativeIO(io)
+    else error( "Unrecognized RDA format \"$formatcode\"" )
     end
-    hton(read(io.sub, Int32))
 end
 
-function readfloatorNA(io::RDAIO)
-    if io.ascii
-        str = chomp(readline(io.sub));
-        return str == R_NA_STRING ? R_NA_FLOAT64 : float64(str)
+# reads the length of any data vector from a stream
+# from R's serialize.c
+function readlength(io::RDAIO)
+    len = convert(Int64, readint32(io))
+    if (len < -1) error("negative serialized length for vector")
+    elseif (len >= 0)
+        return len
+    else # big vectors, the next 2 ints encode the length
+        len1, len2 = convert(Int64, readint32(io)), convert(Int64, readint32(io))
+        # sanity check for now */
+        if (len1 > 65536) error("invalid upper part of serialized vector length") end
+        return (len1 << 32) + len2
     end
-    hton(read(io.sub, Float64))
 end
 
-function readcharacter(io::RDAIO, fl::RDATag)  # a single character string
-    @assert sxtype(fl) ==  0x09
-    ## levs = uint16(fl >> 12)
+immutable CHARSXProps # RDA CHARSXP properties
+  levs::Uint32       # level flags (encoding etc) TODO process
+  nchar::Int32       # string length, -1 for NA strings
+end
+
+function readcharsxprops(io::RDAIO) # read character string encoding and length
+    fl = readuint32(io)
+    @assert sxtype(fl) == 0x09
 ### watch out for levs in here.  Generally it has the value 0x40 so that fl = 0x00040009 (262153)
 ### if levs == 0x00 then the next line should be -1 to indicate the NA_STRING
-    nchar = readuint32(io)
-    if io.ascii
-        str = unescape_string(chomp(readline(io.sub)))
-        return length(str) == nchar ? str : error("Character string length mismatch")
+    CHARSXProps(fl >> 12, readint32(io))
+end
+
+function readcharacter(io::RDAIO)  # a single character string
+    props = readcharsxprops(io)
+    props.nchar==-1 ? "" : readnchars(io, props.nchar)
+end
+
+function readcharacter(io::RDAIO, n::Int64)  # a single character string
+    res = fill("", n)
+    na = falses(n)
+    for i in 1:n
+        props = readcharsxprops(io)
+        if (props.nchar==-1) na[i] = true
+        else res[i] = readnchars(io, props.nchar)
+        end
     end
-    bytestring(read(io.sub, Array(Uint8, nchar)))
+    return res, na
 end
 
 ##############################################################################
@@ -178,8 +250,8 @@ end
 ##
 ##############################################################################
 
-type RDAContext # RDA reading context
-    io::RDAIO                  # R input stream
+type RDAContext{T <: RDAIO}    # RDA reading context
+    io::T                      # R input stream
 
     # RDA properties
     fmtver::Uint32             # RDA format version
@@ -192,7 +264,7 @@ type RDAContext # RDA reading context
     # intermediate data
     symtab::Array{RSymbol,1}   # symbols array
 
-    function RDAContext(io::RDAIO, kwoptions::Array{Any})
+    function RDAContext(io::T, kwoptions::Array{Any})
         fmtver = readint32(io)
         rver = readint32(io)
         rminver = readint32(io)
@@ -205,6 +277,8 @@ type RDAContext # RDA reading context
             Array(RSymbol,0))
     end
 end
+
+RDAContext{T <: RDAIO}(io::T, kwoptions::Array{Any}) = RDAContext{T}(io, kwoptions)
 
 function readnamedobjects(ctx::RDAContext, fl::RDATag)
     if !hasattr(fl) return nullhash end
@@ -223,48 +297,39 @@ readattrs(ctx::RDAContext, fl::RDATag) = readnamedobjects(ctx, fl)
 
 function readnumeric(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0e
-    n = readuint32(ctx.io)
-    RNumeric([readfloatorNA(ctx.io)::Float64 for i in 1:n],
+    RNumeric(readfloatorNA(ctx.io, readlength(ctx.io)),
              readattrs(ctx, fl))
 end
 
 function readinteger(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0d
-    n = readint32(ctx.io)
-    RInteger([readintorNA(ctx.io)::Int32 for i in 1:n],
+    RInteger(readintorNA(ctx.io, readlength(ctx.io)),
              readattrs(ctx, fl))
 end
 
 function readlogical(ctx::RDAContext, fl::RDATag)
-    @assert sxtype(fl) == 0x0a
-    n = readuint32(ctx.io)
-    data = [readintorNA(ctx.io)::Int32 for i in 1:n]
-    RLogical(data,
-             convert(BitArray{1}, data .== R_NA_INT32),
+    @assert sxtype(fl) == 0x0a # excluding this check, the method is the same as readinteger()
+    RLogical(readintorNA(ctx.io, readlength(ctx.io)),
              readattrs(ctx, fl))
 end
 
 function readcomplex(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0f
-    n = readuint32(ctx.io)
-    RComplex([complex128(readfloatorNA(ctx.io), readfloatorNA(ctx.io)) for i in 1:n],
+    n = readlength(ctx.io)
+    data = readfloatorNA(ctx.io, 2n)
+    RComplex(Complex128[complex128(data[i],data[i+1]) for i in 2(1:n)-1],
              readattrs(ctx, fl))
 end
 
 function readstring(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x10
-    n = readuint32(ctx.io)
-    data = Array(ASCIIString, n)
-    for i in 1:n
-        fl1 = readuint32(ctx.io)
-        data[i] = readcharacter(ctx.io, fl1)
-    end
-    RString(data, readattrs(ctx, fl))
+    RString(readcharacter(ctx.io, readlength(ctx.io))...,
+            readattrs(ctx, fl))
 end
 
 function readlist(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x13
-    n = readuint32(ctx.io)
+    n = readlength(ctx.io)
     res = RList([readitem(ctx) for i in 1:n],
                 readattrs(ctx, fl))
     if ctx.convertdataframes && isdataframe(res)
@@ -279,7 +344,7 @@ function readsymbol(ctx::RDAContext, fl::RDATag)
     if sxtype(fl) == 0xff return ctx.symtab[fl >> 8] end
     # read the new strings and put it into symbols table
     @assert sxtype(fl) == 0x01
-    res = RSymbol(readcharacter(ctx.io, readuint32(ctx.io)))
+    res = RSymbol(readcharacter(ctx.io))
     push!(ctx.symtab, res)
     res
 end
@@ -309,7 +374,7 @@ function read_rda(io::IO, kwoptions::Array{Any})
     @assert header[1] == 'R' # readable header (or RDX2)
     @assert header[2] == 'D'
     @assert header[4] == '2'
-    ctx = RDAContext(RDAIO(io, chomp(readline(io)) == "A"), kwoptions)
+    ctx = RDAContext(rdaio(io, chomp(readline(io))), kwoptions)
     @assert ctx.fmtver == 2    # format version
 #    println("Written by R version $(ctx.Rver)")
 #    println("Minimal R version: $(ctx.Rmin)")
@@ -352,13 +417,14 @@ row_names(ro::ROBJ) = getattr(ro, "row.names", emptystrvec)
 ##
 ##############################################################################
 
-namask(rl::RLogical) = rl.missng
+namask(rl::RLogical) = bitpack(rl.data .== R_NA_INT32)
 namask(ri::RInteger) = bitpack(ri.data .== R_NA_INT32)
 namask(rn::RNumeric) = bitpack([rn.data[i] === R_NA_FLOAT64 for i in 1:length(rn.data)])
-namask(rs::RString) = falses(length(rs.data)) # FIXME use R_NA_STRING?
-namask(rc::RComplex) = bitpack([rc.data[i].re === R_NA_FLOAT64 || rc.data[i].im === R_NA_FLOAT64 for i in 1:length(rc.data)])
+namask(rc::RComplex) = bitpack([rc.data[i].re === R_NA_FLOAT64 ||
+                                rc.data[i].im === R_NA_FLOAT64 for i in 1:length(rc.data)])
+namask(rv::RNullableVector) = rv.na
 
-DataArrays.data{T}(rv::RVEC{T}) = DataArray(rv.data, namask(rv))
+DataArrays.data(rv::RVEC) = DataArray(rv.data, namask(rv))
 
 function DataArrays.data(ri::RInteger)
     if !isfactor(ri) return DataArray(ri.data, namask(ri)) end
