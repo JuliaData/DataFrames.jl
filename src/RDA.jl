@@ -134,14 +134,77 @@ sxtype = uint8
 ##
 ##############################################################################
 
-type RDAIO # RDA IO stream
-    sub::IO       # underlying IO stream
-    ascii::Bool  # if the stream is in ASCII format
+# abstract RDA format IO stream wrapper
+abstract RDAIO 
+
+type RDAXDRIO <: RDAIO # RDA XDR(binary) format IO stream wrapper
+    sub::IO            # underlying IO stream
+
+    RDAXDRIO( io::IO ) = new( io )
 end
 
-readint32(io::RDAIO) = io.ascii ? int32(readline(io.sub)) : hton(read(io.sub, Int32))
-readuint32(io::RDAIO) = io.ascii ? uint32(readline(io.sub)) : hton(read(io.sub, Uint32))
-readfloat64(io::RDAIO) = io.ascii ? float64(readline(io.sub)) : hton(read(io.sub, Float64))
+readint32(io::RDAXDRIO) = hton(read(io.sub, Int32))
+readuint32(io::RDAXDRIO) = hton(read(io.sub, Uint32))
+readfloat64(io::RDAIO) = hton(read(io.sub, Float64))
+
+readintorNA(io::RDAXDRIO) = readint32(io)
+readfloatorNA(io::RDAXDRIO) = readfloat64(io)
+
+function readcharacterprops{T<:RDAIO}(io::T) # read character string encoding and length
+    # TODO implement processing of character encoding and NA checks
+    fl = readuint32(io)
+    @assert sxtype(fl) == 0x09
+    ## levs = uint16(fl >> 12)
+### watch out for levs in here.  Generally it has the value 0x40 so that fl = 0x00040009 (262153)
+### if levs == 0x00 then the next line should be -1 to indicate the NA_STRING
+    nchar = readint32(io)
+    return fl, nchar
+end
+
+function readcharacter(io::RDAXDRIO)  # a single character string
+    fl, nchar = readcharacterprops(io)
+    bytestring(readbytes(io.sub, nchar))
+end
+
+type RDAASCIIIO <: RDAIO # RDA ASCII format IO stream wrapper
+    sub::IO              # underlying IO stream
+
+    RDAASCIIIO( io::IO ) = new( io )
+end
+
+readint32(io::RDAASCIIIO) = int32(readline(io.sub))
+readuint32(io::RDAASCIIIO) = uint32(readline(io.sub))
+readfloat64(io::RDAASCIIIO) = float64(readline(io.sub))
+
+function readintorNA(io::RDAASCIIIO)
+    str = chomp(readline(io.sub));
+    str == R_NA_STRING ? R_NA_INT32 : int32(str)
+end
+
+function readfloatorNA(io::RDAASCIIIO)
+    str = chomp(readline(io.sub));
+    str == R_NA_STRING ? R_NA_FLOAT64 : float64(str)
+end
+
+function readcharacter(io::RDAASCIIIO)  # a single character string
+    fl, nchar = readcharacterprops(io)
+    str = unescape_string(chomp(readline(io.sub)))
+    return length(str) == nchar ? str : error("Character string length mismatch")
+end
+
+type RDANativeIO <: RDAIO # RDA native binary format IO stream wrapper (TODO)
+    sub::IO               # underlying IO stream
+
+    RDANativeIO( io::IO ) = new( io )
+end
+
+function rdaio(io::IO, formatcode::AbstractString)
+    if formatcode == "X" RDAXDRIO(io)
+    elseif formatcode == "A" RDAASCIIIO(io)
+    elseif formatcode == "B" RDANativeIO(io)
+    else error( "Unrecognized RDA format \"$formatcode\"" )
+    end
+end
 
 # reads the length of any data vector from a stream
 # from R's serialize.c
@@ -158,43 +221,14 @@ function readlength(io::RDAIO)
     end
 end
 
-function readintorNA(io::RDAIO)
-    if io.ascii
-        str = chomp(readline(io.sub));
-        return str == R_NA_STRING ? R_NA_INT32 : int32(str)
-    end
-    hton(read(io.sub, Int32))
-end
-
-function readfloatorNA(io::RDAIO)
-    if io.ascii
-        str = chomp(readline(io.sub));
-        return str == R_NA_STRING ? R_NA_FLOAT64 : float64(str)
-    end
-    hton(read(io.sub, Float64))
-end
-
-function readcharacter(io::RDAIO, fl::RDATag)  # a single character string
-    @assert sxtype(fl) ==  0x09
-    ## levs = uint16(fl >> 12)
-### watch out for levs in here.  Generally it has the value 0x40 so that fl = 0x00040009 (262153)
-### if levs == 0x00 then the next line should be -1 to indicate the NA_STRING
-    nchar = readuint32(io)
-    if io.ascii
-        str = unescape_string(chomp(readline(io.sub)))
-        return length(str) == nchar ? str : error("Character string length mismatch")
-    end
-    bytestring(read(io.sub, Array(Uint8, nchar)))
-end
-
 ##############################################################################
 ##
 ## Utilities for reading compound RDA items: lists, arrays etc
 ##
 ##############################################################################
 
-type RDAContext # RDA reading context
-    io::RDAIO                  # R input stream
+type RDAContext{T <: RDAIO}    # RDA reading context
+    io::T                      # R input stream
 
     # RDA properties
     fmtver::Uint32             # RDA format version
@@ -207,7 +241,7 @@ type RDAContext # RDA reading context
     # intermediate data
     symtab::Array{RSymbol,1}   # symbols array
 
-    function RDAContext(io::RDAIO, kwoptions::Array{Any})
+    function RDAContext(io::T, kwoptions::Array{Any})
         fmtver = readint32(io)
         rver = readint32(io)
         rminver = readint32(io)
@@ -220,6 +254,8 @@ type RDAContext # RDA reading context
             Array(RSymbol,0))
     end
 end
+
+RDAContext{T <: RDAIO}(io::T, kwoptions::Array{Any}) = RDAContext{T}(io, kwoptions)
 
 function readnamedobjects(ctx::RDAContext, fl::RDATag)
     if !hasattr(fl) return nullhash end
@@ -269,12 +305,8 @@ end
 function readstring(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x10
     n = readlength(ctx.io)
-    data = Array(ASCIIString, n)
-    for i in 1:n
-        fl1 = readuint32(ctx.io)
-        data[i] = readcharacter(ctx.io, fl1)
-    end
-    RString(data, readattrs(ctx, fl))
+    RString(ASCIIString[readcharacter(ctx.io) for i in 1:n],
+            readattrs(ctx, fl))
 end
 
 function readlist(ctx::RDAContext, fl::RDATag)
@@ -294,7 +326,7 @@ function readsymbol(ctx::RDAContext, fl::RDATag)
     if sxtype(fl) == 0xff return ctx.symtab[fl >> 8] end
     # read the new strings and put it into symbols table
     @assert sxtype(fl) == 0x01
-    res = RSymbol(readcharacter(ctx.io, readuint32(ctx.io)))
+    res = RSymbol(readcharacter(ctx.io))
     push!(ctx.symtab, res)
     res
 end
@@ -324,7 +356,7 @@ function read_rda(io::IO, kwoptions::Array{Any})
     @assert header[1] == 'R' # readable header (or RDX2)
     @assert header[2] == 'D'
     @assert header[4] == '2'
-    ctx = RDAContext(RDAIO(io, chomp(readline(io)) == "A"), kwoptions)
+    ctx = RDAContext(rdaio(io, chomp(readline(io))), kwoptions)
     @assert ctx.fmtver == 2    # format version
 #    println("Written by R version $(ctx.Rver)")
 #    println("Minimal R version: $(ctx.Rmin)")
