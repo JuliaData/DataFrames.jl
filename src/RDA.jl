@@ -96,7 +96,14 @@ typealias RLogical RVector{Int32, 0x0a}
 typealias RInteger RVector{Int32, 0x0d}
 typealias RNumeric RVector{Float64, 0x0e}
 typealias RComplex RVector{Complex128, 0x0f}
-typealias RString RVector{ASCIIString,0x10} # Vector of character strings
+
+type RNullableVector{T, S} <: RVEC{T, S} # R vector object with explicit NA values
+    data::Array{T, 1}
+    na::BitArray{1}             # mask of NA elements
+    attr::Hash                  # collection of R object attributes
+end
+
+typealias RString RNullableVector{ASCIIString,0x10}
 typealias RList RVector{Any, 0x13}  # "list" in R == Julia cell array
 
 ##############################################################################
@@ -226,7 +233,15 @@ function readcharacter(io::RDAIO)  # a single character string
 end
 
 function readcharacter(io::RDAIO, n::Int64)  # a single character string
-    ASCIIString[ readcharacter(io) for i in 1:n ]
+    res = fill("", n)
+    na = falses(n)
+    for i in 1:n
+        props = readcharsxprops(io)
+        if (props.nchar==-1) na[i] = true
+        else res[i] = readnchars(io, props.nchar)
+        end
+    end
+    return res, na
 end
 
 ##############################################################################
@@ -308,7 +323,7 @@ end
 
 function readstring(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x10
-    RString(readcharacter(ctx.io, readlength(ctx.io)),
+    RString(readcharacter(ctx.io, readlength(ctx.io))...,
             readattrs(ctx, fl))
 end
 
@@ -407,7 +422,7 @@ namask(ri::RInteger) = bitpack(ri.data .== R_NA_INT32)
 namask(rn::RNumeric) = bitpack([rn.data[i] === R_NA_FLOAT64 for i in 1:length(rn.data)])
 namask(rc::RComplex) = bitpack([rc.data[i].re === R_NA_FLOAT64 ||
                                 rc.data[i].im === R_NA_FLOAT64 for i in 1:length(rc.data)])
-namask(rs::RString) = falses(length(rs.data)) # FIXME use R_NA_STRING?
+namask(rv::RNullableVector) = rv.na
 
 DataArrays.data(rv::RVEC) = DataArray(rv.data, namask(rv))
 

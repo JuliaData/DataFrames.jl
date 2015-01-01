@@ -19,10 +19,9 @@ module TestRDA
         # df[3, ] = df[2, ]
         # df[3,'num'] = NaN
         # df[,'cplx'] = complex( real=c(1.1,1,NaN), imaginary=c(NA,NaN,0) )
-        # df['chr'] = NULL  # NA characters breaking read_rda
         # save(df, file='NAs.rda')
 
-        # names(df) = c('end', '!', '1', '%_B*\tC*')
+        # names(df) = c('end', '!', '1', '%_B*\tC*', NA, 'x')
         # save(df, file='names.rda')
 
     testdir = dirname(@__FILE__)
@@ -43,10 +42,9 @@ module TestRDA
     append!(df, df[2, :])
     df[3, :num] = NaN
     df[:, :cplx] = @data [NA, complex128(1,NaN), NaN]
-    df = df[:, [:num, :int, :logi, :factor, :cplx]]  # (NA) chr breaks read_rda
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs.rda")["df"]), df)
 
     rda_names = names(DataFrame(read_rda("$testdir/data/RDA/names.rda")["df"]))
-    @test rda_names == [:_end, :x!, :x1, :_B_C_]
+    @test rda_names == [:_end, :x!, :x1, :_B_C_, :x, :x_1]
 
 end
