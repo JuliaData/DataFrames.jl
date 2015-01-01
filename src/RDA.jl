@@ -77,36 +77,27 @@ const R_NA_STRING = "NA"
 typealias Hash Dict{ASCIIString, Any}
 const nullhash = Hash()
 
-abstract RSEXPREC                # Basic R object - symbolic expression
+abstract RSEXPREC{S}             # Basic R object - symbolic expression
 
-type RSymbol <: RSEXPREC         # Not quite the same as a Julia symbol
+type RSymbol <: RSEXPREC{0x01}   # Not quite the same as a Julia symbol
     displayname::ASCIIString
 end
 
-abstract ROBJ <: RSEXPREC     # R object that can have attributes
+abstract ROBJ{S} <: RSEXPREC{S}  # R object that can have attributes
 
-abstract RVEC{T} <: ROBJ      # abstract R vector (actual storage implementation may differ)
+abstract RVEC{T, S} <: ROBJ{S}   # abstract R vector (actual storage implementation may differ)
 
-type RVector{T} <: RVEC{T} # R vector object
+type RVector{T, S} <: RVEC{T, S} # R vector object
     data::Array{T, 1}
-    attr::Hash                  # collection of R object attributes
+    attr::Hash                   # collection of R object attributes
 end
 
-typealias RList RVector{Any}  # "list" in R == Julia cell array
-
-typealias RNumeric RVector{Float64}
-
-typealias RComplex RVector{Complex128}
-
-typealias RInteger RVector{Int32}
-
-type RLogical <: RVEC{Bool}
-    data::Array{Bool, 1}
-    missng::BitArray{1}
-    attr::Hash                  # collection of R object attributes
-end
-
-typealias RString RVector{ASCIIString} # Vector of character strings
+typealias RLogical RVector{Int32, 0x0a}
+typealias RInteger RVector{Int32, 0x0d}
+typealias RNumeric RVector{Float64, 0x0e}
+typealias RComplex RVector{Complex128, 0x0f}
+typealias RString RVector{ASCIIString,0x10} # Vector of character strings
+typealias RList RVector{Any, 0x13}  # "list" in R == Julia cell array
 
 ##############################################################################
 ##
@@ -302,10 +293,8 @@ function readinteger(ctx::RDAContext, fl::RDATag)
 end
 
 function readlogical(ctx::RDAContext, fl::RDATag)
-    @assert sxtype(fl) == 0x0a
-    data = readintorNA(ctx.io, readlength(ctx.io))
-    RLogical(data,
-             convert(BitArray{1}, data .== R_NA_INT32),
+    @assert sxtype(fl) == 0x0a # excluding this check, the method is the same as readinteger()
+    RLogical(readintorNA(ctx.io, readlength(ctx.io)),
              readattrs(ctx, fl))
 end
 
@@ -413,13 +402,14 @@ row_names(ro::ROBJ) = getattr(ro, "row.names", emptystrvec)
 ##
 ##############################################################################
 
-namask(rl::RLogical) = rl.missng
+namask(rl::RLogical) = bitpack(rl.data .== R_NA_INT32)
 namask(ri::RInteger) = bitpack(ri.data .== R_NA_INT32)
 namask(rn::RNumeric) = bitpack([rn.data[i] === R_NA_FLOAT64 for i in 1:length(rn.data)])
+namask(rc::RComplex) = bitpack([rc.data[i].re === R_NA_FLOAT64 ||
+                                rc.data[i].im === R_NA_FLOAT64 for i in 1:length(rc.data)])
 namask(rs::RString) = falses(length(rs.data)) # FIXME use R_NA_STRING?
-namask(rc::RComplex) = bitpack([rc.data[i].re === R_NA_FLOAT64 || rc.data[i].im === R_NA_FLOAT64 for i in 1:length(rc.data)])
 
-DataArrays.data{T}(rv::RVEC{T}) = DataArray(rv.data, namask(rv))
+DataArrays.data(rv::RVEC) = DataArray(rv.data, namask(rv))
 
 function DataArrays.data(ri::RInteger)
     if !isfactor(ri) return DataArray(ri.data, namask(ri)) end
