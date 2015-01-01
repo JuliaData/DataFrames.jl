@@ -127,7 +127,7 @@ sxtype = uint8
 
 ##############################################################################
 ##
-## Utilities for reading a single data element - ASCII format if A
+## Utilities for reading a single data element.
 ## The read<type>orNA functions are needed because the ASCII format
 ## stores the NA as the string 'NA'.  Perhaps it would be easier to
 ## wrap the conversion in a try/catch block.
@@ -142,6 +142,21 @@ end
 readint32(io::RDAIO) = io.ascii ? int32(readline(io.sub)) : hton(read(io.sub, Int32))
 readuint32(io::RDAIO) = io.ascii ? uint32(readline(io.sub)) : hton(read(io.sub, Uint32))
 readfloat64(io::RDAIO) = io.ascii ? float64(readline(io.sub)) : hton(read(io.sub, Float64))
+
+# reads the length of any data vector from a stream
+# from R's serialize.c
+function readlength(io::RDAIO)
+    len = convert(Int64, readint32(io))
+    if (len < -1) error("negative serialized length for vector")
+    elseif (len >= 0)
+        return len
+    else # big vectors, the next 2 ints encode the length
+        len1, len2 = convert(Int64, readint32(io)), convert(Int64, readint32(io))
+        # sanity check for now */
+        if (len1 > 65536) error("invalid upper part of serialized vector length") end
+        return (len1 << 32) + len2
+    end
+end
 
 function readintorNA(io::RDAIO)
     if io.ascii
@@ -223,21 +238,21 @@ readattrs(ctx::RDAContext, fl::RDATag) = readnamedobjects(ctx, fl)
 
 function readnumeric(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0e
-    n = readuint32(ctx.io)
+    n = readlength(ctx.io)
     RNumeric([readfloatorNA(ctx.io)::Float64 for i in 1:n],
              readattrs(ctx, fl))
 end
 
 function readinteger(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0d
-    n = readint32(ctx.io)
+    n = readlength(ctx.io)
     RInteger([readintorNA(ctx.io)::Int32 for i in 1:n],
              readattrs(ctx, fl))
 end
 
 function readlogical(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0a
-    n = readuint32(ctx.io)
+    n = readlength(ctx.io)
     data = [readintorNA(ctx.io)::Int32 for i in 1:n]
     RLogical(data,
              convert(BitArray{1}, data .== R_NA_INT32),
@@ -246,14 +261,14 @@ end
 
 function readcomplex(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0f
-    n = readuint32(ctx.io)
+    n = readlength(ctx.io)
     RComplex([complex128(readfloatorNA(ctx.io), readfloatorNA(ctx.io)) for i in 1:n],
              readattrs(ctx, fl))
 end
 
 function readstring(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x10
-    n = readuint32(ctx.io)
+    n = readlength(ctx.io)
     data = Array(ASCIIString, n)
     for i in 1:n
         fl1 = readuint32(ctx.io)
@@ -264,7 +279,7 @@ end
 
 function readlist(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x13
-    n = readuint32(ctx.io)
+    n = readlength(ctx.io)
     res = RList([readitem(ctx) for i in 1:n],
                 readattrs(ctx, fl))
     if ctx.convertdataframes && isdataframe(res)
