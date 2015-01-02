@@ -75,29 +75,38 @@ export @~,
 ##
 ##############################################################################
 
-include(joinpath("other", "utils.jl"))
-include(joinpath("other", "index.jl"))
+for (dir, filename) in [
+        ("other", "utils.jl"),
+        ("other", "index.jl"),
 
-include(joinpath("abstractdataframe", "abstractdataframe.jl"))
-include(joinpath("dataframe", "dataframe.jl"))
-include(joinpath("subdataframe", "subdataframe.jl"))
-include(joinpath("groupeddataframe", "grouping.jl"))
-include(joinpath("dataframerow", "dataframerow.jl"))
+        ("abstractdataframe", "abstractdataframe.jl"),
+        ("dataframe", "dataframe.jl"),
+        ("subdataframe", "subdataframe.jl"),
+        ("groupeddataframe", "grouping.jl"),
+        ("dataframerow", "dataframerow.jl"),
 
-include(joinpath("abstractdataframe", "io.jl"))
-include(joinpath("abstractdataframe", "iteration.jl"))
-include(joinpath("abstractdataframe", "join.jl"))
-include(joinpath("abstractdataframe", "reshape.jl"))
-include(joinpath("abstractdataframe", "show.jl"))
-include(joinpath("abstractdataframe", "sort.jl"))
-include(joinpath("dataframe", "io.jl"))
-include(joinpath("dataframe", "sort.jl"))
-include(joinpath("groupeddataframe", "show.jl"))
-include(joinpath("dataframerow", "show.jl"))
+        ("abstractdataframe", "iteration.jl"),
+        ("abstractdataframe", "join.jl"),
+        ("abstractdataframe", "reshape.jl"),
 
-include(joinpath("statsmodels", "formula.jl"))
-include(joinpath("statsmodels", "statsmodel.jl"))
-include("RDA.jl")
-include("deprecated.jl")
+        ("abstractdataframe", "io.jl"),
+        ("dataframe", "io.jl"),
+
+        ("abstractdataframe", "show.jl"),
+        ("groupeddataframe", "show.jl"),
+        ("dataframerow", "show.jl"),
+
+        ("abstractdataframe", "sort.jl"),
+        ("dataframe", "sort.jl"),
+
+        ("statsmodels", "formula.jl"),
+        ("statsmodels", "statsmodel.jl"),
+
+        ("", "RDA.jl"),
+        ("", "deprecated.jl")
+    ]
+
+    include(joinpath(dir, filename))
+end
 
 end # module DataFrames
