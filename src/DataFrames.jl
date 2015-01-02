@@ -6,28 +6,17 @@ module DataFrames
 ##
 ##############################################################################
 
-using Base.Intrinsics
-using Reexport
 using Compat
+using Reexport
 @reexport using StatsBase
 @reexport using DataArrays
 using GZip
 using SortingAlgorithms
+using Base: Sort, Order
 
 ##############################################################################
 ##
-## Extend methods in Base by default
-##
-##############################################################################
-
-import Base: Sort, Order
-import Base.Sort: sort, sort!, sortperm, Algorithm, defalg, issorted
-import Base.Order: Ordering, By, Lt, Perm, Forward, lt, ord
-import Base.AsyncStream
-
-##############################################################################
-##
-## Exported methods and types
+## Exported methods and types (in addition to everything reexported above)
 ##
 ##############################################################################
 
