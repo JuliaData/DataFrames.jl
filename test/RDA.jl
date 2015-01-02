@@ -47,8 +47,10 @@ module TestRDA
     df[3, :num] = NaN
     df[:, :cplx] = @data [NA, complex128(1,NaN), NaN]
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs.rda")["df"]), df)
-    # NA ASCII test disabled for now, because NaN are saved as NA. Investigating it from R side.
-    #@test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs_ascii.rda")["df"]), df)
+    # ASCII format saves NaN as NA
+    df[3, :num] = NA
+    df[:, :cplx] = @data [NA, NA, NA]
+    @test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs_ascii.rda")["df"]), df)
 
     rda_names = names(DataFrame(read_rda("$testdir/data/RDA/names.rda")["df"]))
     expected_names = [:_end, :x!, :x1, :_B_C_, :x, :x_1]
