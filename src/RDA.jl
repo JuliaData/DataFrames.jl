@@ -142,19 +142,19 @@ type RDAXDRIO <: RDAIO # RDA XDR(binary) format IO stream wrapper
     RDAXDRIO( io::IO ) = new( io, Array(Uint8, 1024) )
 end
 
-readint32(io::RDAXDRIO) = hton(read(io.sub, Int32))
-readuint32(io::RDAXDRIO) = hton(read(io.sub, Uint32))
-readfloat64(io::RDAIO) = hton(read(io.sub, Float64))
+readint32(io::RDAXDRIO) = ntoh(read(io.sub, Int32))
+readuint32(io::RDAXDRIO) = ntoh(read(io.sub, Uint32))
+readfloat64(io::RDAXDRIO) = ntoh(read(io.sub, Float64))
 
 readintorNA(io::RDAXDRIO) = readint32(io)
-readintorNA(io::RDAXDRIO, n::Int64) = map!(hton, read(io.sub, Int32, n))
+readintorNA(io::RDAXDRIO, n::Int64) = map!(ntoh, read(io.sub, Int32, n))
 
 readfloatorNA(io::RDAXDRIO) = readfloat64(io)
-readfloatorNA(io::RDAXDRIO, n::Int64) = map!(hton, read(io.sub, Float64, n))
+readfloatorNA(io::RDAXDRIO, n::Int64) = map!(ntoh, read(io.sub, Float64, n))
 
 function readnchars(io::RDAXDRIO, n::Int32)  # a single character string
     readbytes!(io.sub, io.buf, n)
-    bytestring(pointer(io.buf), n)
+    bytestring(pointer(io.buf), n)::ASCIIString
 end
 
 type RDAASCIIIO <: RDAIO # RDA ASCII format IO stream wrapper
@@ -182,7 +182,8 @@ readfloatorNA(io::RDAASCIIIO, n::Int64) = Float64[readfloatorNA(io) for i in 1:n
 function readnchars(io::RDAASCIIIO, n::Int32)  # reads N bytes-sized string
     if (n==-1) return "" end
     str = unescape_string(chomp(readline(io.sub)))
-    return length(str) == n ? str : error("Character string length mismatch")
+    length(str) == n || error("Character string length mismatch")
+    str
 end
 
 type RDANativeIO <: RDAIO # RDA native binary format IO stream wrapper (TODO)
