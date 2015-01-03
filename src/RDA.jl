@@ -132,6 +132,14 @@ sxtype = uint8
 ##
 ##############################################################################
 
+LONG_VECTOR_SUPPORT = (WORD_SIZE > 32) # disable long vectors support on 32-bit machines
+
+if LONG_VECTOR_SUPPORT
+    typealias RVecLength Int64
+else
+    typealias RVecLength Int
+end
+
 # abstract RDA format IO stream wrapper
 abstract RDAIO
 
@@ -148,10 +156,10 @@ readuint32(io::RDAXDRIO) = ntoh(read(io.sub, Uint32))
 readfloat64(io::RDAXDRIO) = ntoh(read(io.sub, Float64))
 
 readintorNA(io::RDAXDRIO) = readint32(io)
-readintorNA(io::RDAXDRIO, n::Int64) = map!(ntoh, read(io.sub, Int32, n))
+readintorNA(io::RDAXDRIO, n::RVecLength) = map!(ntoh, read(io.sub, Int32, n))
 
 readfloatorNA(io::RDAXDRIO) = readfloat64(io)
-readfloatorNA(io::RDAXDRIO, n::Int64) = map!(ntoh, read(io.sub, Float64, n))
+readfloatorNA(io::RDAXDRIO, n::RVecLength) = map!(ntoh, read(io.sub, Float64, n))
 
 function readnchars(io::RDAXDRIO, n::Int32)  # a single character string
     readbytes!(io.sub, io.buf, n)
@@ -173,13 +181,13 @@ function readintorNA(io::RDAASCIIIO)
     str = chomp(readline(io.sub));
     str == R_NA_STRING ? R_NA_INT32 : int32(str)
 end
-readintorNA(io::RDAASCIIIO, n::Int64) = Int32[readintorNA(io) for i in 1:n]
+readintorNA(io::RDAASCIIIO, n::RVecLength) = Int32[readintorNA(io) for i in 1:n]
 
 function readfloatorNA(io::RDAASCIIIO)
     str = chomp(readline(io.sub));
     str == R_NA_STRING ? R_NA_FLOAT64 : float64(str)
 end
-readfloatorNA(io::RDAASCIIIO, n::Int64) = Float64[readfloatorNA(io) for i in 1:n]
+readfloatorNA(io::RDAASCIIIO, n::RVecLength) = Float64[readfloatorNA(io) for i in 1:n]
 
 function readnchars(io::RDAASCIIIO, n::Int32)  # reads N bytes-sized string
     if (n==-1) return "" end
@@ -203,18 +211,34 @@ function rdaio(io::IO, formatcode::AbstractString)
     end
 end
 
-# reads the length of any data vector from a stream
-# from R's serialize.c
-function readlength(io::RDAIO)
-    len = convert(Int64, readint32(io))
-    if (len < -1) error("negative serialized length for vector")
-    elseif (len >= 0)
-        return len
-    else # big vectors, the next 2 ints encode the length
-        len1, len2 = convert(Int64, readint32(io)), convert(Int64, readint32(io))
-        # sanity check for now */
-        if (len1 > 65536) error("invalid upper part of serialized vector length") end
-        return (len1 << 32) + len2
+if LONG_VECTOR_SUPPORT
+    # reads the length of any data vector from a stream
+    # from R's serialize.c
+    function readlength(io::RDAIO)
+        len = convert(RVecLength, readint32(io))
+        if (len < -1) error("negative serialized length for vector")
+        elseif (len >= 0)
+            return len
+        else # big vectors, the next 2 ints encode the length
+            len1, len2 = convert(RVecLength, readint32(io)), convert(RVecLength, readint32(io))
+            # sanity check for now
+            if (len1 > 65536) error("invalid upper part of serialized vector length") end
+            return (len1 << 32) + len2
+        end
+    end
+else
+    # reads the length of any data vector from a stream
+    # fails when long (> 2^31-1) vector encountered
+    # from R's serialize.c
+    function readlength(io::RDAIO)
+        len = convert(RVecLength, readint32(io))
+        if (len >= 0)
+            return len
+        elseif (len < -1)
+            error("negative serialized length for vector")
+        else
+            error("negative serialized vector length:\nperhaps long vector from 64-bit version of R?")
+        end
     end
 end
 
@@ -236,7 +260,7 @@ function readcharacter(io::RDAIO)  # a single character string
     props.nchar==-1 ? "" : readnchars(io, props.nchar)
 end
 
-function readcharacter(io::RDAIO, n::Int64)  # a single character string
+function readcharacter(io::RDAIO, n::RVecLength)  # a single character string
     res = fill("", n)
     na = falses(n)
     for i in 1:n
