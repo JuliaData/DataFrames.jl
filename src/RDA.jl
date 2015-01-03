@@ -133,14 +133,15 @@ sxtype = uint8
 ##############################################################################
 
 # abstract RDA format IO stream wrapper
-abstract RDAIO 
+abstract RDAIO
 
-type RDAXDRIO <: RDAIO # RDA XDR(binary) format IO stream wrapper
-    sub::IO            # underlying IO stream
+type RDAXDRIO{T<:IO} <: RDAIO # RDA XDR(binary) format IO stream wrapper
+    sub::T             # underlying IO stream
     buf::Vector{Uint8} # buffer for strings
 
-    RDAXDRIO( io::IO ) = new( io, Array(Uint8, 1024) )
+    RDAXDRIO( io::T ) = new( io, Array(Uint8, 1024) )
 end
+RDAXDRIO{T <: IO}(io::T) = RDAXDRIO{T}(io)
 
 readint32(io::RDAXDRIO) = ntoh(read(io.sub, Int32))
 readuint32(io::RDAXDRIO) = ntoh(read(io.sub, Uint32))
@@ -157,11 +158,12 @@ function readnchars(io::RDAXDRIO, n::Int32)  # a single character string
     bytestring(pointer(io.buf), n)::ASCIIString
 end
 
-type RDAASCIIIO <: RDAIO # RDA ASCII format IO stream wrapper
-    sub::IO              # underlying IO stream
+type RDAASCIIIO{T<:IO} <: RDAIO # RDA ASCII format IO stream wrapper
+    sub::T              # underlying IO stream
 
-    RDAASCIIIO( io::IO ) = new( io )
+    RDAASCIIIO( io::T ) = new( io )
 end
+RDAASCIIIO{T <: IO}(io::T) = RDAASCIIIO{T}(io)
 
 readint32(io::RDAASCIIIO) = int32(readline(io.sub))
 readuint32(io::RDAASCIIIO) = uint32(readline(io.sub))
@@ -186,11 +188,12 @@ function readnchars(io::RDAASCIIIO, n::Int32)  # reads N bytes-sized string
     str
 end
 
-type RDANativeIO <: RDAIO # RDA native binary format IO stream wrapper (TODO)
-    sub::IO               # underlying IO stream
+type RDANativeIO{T<:IO} <: RDAIO # RDA native binary format IO stream wrapper (TODO)
+    sub::T               # underlying IO stream
 
-    RDANativeIO( io::IO ) = new( io )
+    RDANativeIO( io::T ) = new( io )
 end
+RDANativeIO{T <: IO}(io::T) = RDANativeIO{T}(io)
 
 function rdaio(io::IO, formatcode::AbstractString)
     if formatcode == "X" RDAXDRIO(io)
