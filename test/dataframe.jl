@@ -311,32 +311,10 @@ df5 = readtable("test2.csv")
 @test nrow(df5) == nrow(df2)
 
 # TEST 3: Does check_column_name flag work ...
-try 
-    writetable("test3.csv",df2, header=true, append=false)
-    writetable("test3.csv",df3, header=false,append=true,check_column_names=true)
-    test3_result = false
-     catch y
-    if isa(y,ErrorException) 
-        global test3_result = true
-    end
-end
-
-@test test3_result
-
+writetable("test3.csv",df2, header=true, append=false)
+@test_throws ErrorException writetable("test3.csv",df3, header=false,append=true,check_column_names=true)
+    
 
 # TEST 4: check the check on number of columns works ...
-
-
-try 
-    writetable("test4.csv",df3, header=true, append=false)
-    writetable("test4.csv",df3b, header=false,append=true)
-    test4_result = false
-     catch y
-    if isa(y,ErrorException) 
-        global test4_result = true
-    end
-end
-
-@test test4_result
-
-
+writetable("test4.csv",df3, header=true, append=false)
+@test_throws ErrorException writetable("test4.csv",df3b, header=false,append=true)
