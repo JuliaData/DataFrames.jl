@@ -333,7 +333,7 @@ try
     test4_result = false
      catch y
     if isa(y,ErrorException) 
-        global test3_result = true
+        global test4_result = true
     end
 end
 
