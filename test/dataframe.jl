@@ -282,3 +282,39 @@ module TestDataFrame
     @test deleterows!(df, [2, 3]) === df
     @test isequal(df, DataFrame(a=@data([1]), b=@data([3.])))
 end
+
+
+# Test writetable with append 
+
+df1 = DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6]))
+df2 = DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6]))
+df3 = DataFrame(a=@data([1, 2, 3]), c=@data([4, 5, 6])) # 2nd column mismatch
+df3b = DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6]),c=@data([4, 5, 6])) # number of columns mitmatch 
+
+writetable("test1.csv",df1,header=true)
+writetable("test1.csv",df2, header=false,append=true)
+
+# TEST 1: Does append = true work ...(expected: append to file)
+ 
+df4 = readtable("test1.csv") 
+
+@test nrow(df4) == nrow(df1) + nrow(df2)
+
+
+# TEST 2: Does append = false work ... (expected: overwrite file)
+ 
+writetable("test2.csv",df1,header=true)
+writetable("test2.csv",df2,header=true)
+
+df5 = readtable("test2.csv") 
+
+@test nrow(df5) == nrow(df2)
+
+# TEST 3: Does check_column_name flag work ...
+writetable("test3.csv",df2, header=true, append=false)
+@test_throws ErrorException writetable("test3.csv",df3, header=false,append=true,check_column_names=true)
+    
+
+# TEST 4: check the check on number of columns works ...
+writetable("test4.csv",df3, header=true, append=false)
+@test_throws ErrorException writetable("test4.csv",df3b, header=false,append=true)
