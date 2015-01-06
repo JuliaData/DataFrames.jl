@@ -1,4 +1,4 @@
-julia 0.3-
+julia 0.3.4-
 DataArrays
 StatsBase 0.3.9+
 GZip
