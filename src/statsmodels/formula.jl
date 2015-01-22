@@ -37,6 +37,9 @@ type ModelFrame
     df::AbstractDataFrame
     terms::Terms
     msng::BitArray
+    ## mapping from df keys to contrasts.  Rather than specify types allowed,
+    ## leave that to cols() to check.  Allows more seamless later extension
+    contrasts::Dict{Any, Any}
 end
 
 type ModelMatrix{T <: @compat(Union{Float32, Float64})}
@@ -236,32 +239,22 @@ function dropUnusedLevels!(da::PooledDataArray)
 end
 dropUnusedLevels!(x) = x
 
-function ModelFrame(trms::Terms, d::AbstractDataFrame)
+function ModelFrame(trms::Terms, d::AbstractDataFrame;
+                    contrasts::Dict{Symbol, Type} = Dict{Symbol, Type}())
     df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
     for c in eachcol(df) dropUnusedLevels!(c[2]) end
-    ModelFrame(df, trms, msng)
+    ModelFrame(df, trms, msng, contrasts)
 end
 
-ModelFrame(f::Formula, d::AbstractDataFrame) = ModelFrame(Terms(f), d)
-ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
+ModelFrame(f::Formula, d::AbstractDataFrame; kwargs...) = ModelFrame(Terms(f), d; kwargs...)
+ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), d; kwargs...)
 
 function StatsBase.model_response(mf::ModelFrame)
     mf.terms.response || error("Model formula one-sided")
     convert(Array, mf.df[round(Bool, mf.terms.factors[:, 1])][:, 1])
 end
 
-function contr_treatment(n::Integer, contrasts::Bool, sparse::Bool, base::Integer)
-    if n < 2 error("not enought degrees of freedom to define contrasts") end
-    contr = sparse ? speye(n) : eye(n) .== 1.
-    if !contrasts return contr end
-    if !(1 <= base <= n) error("base = $base is not allowed for n = $n") end
-    contr[:,vcat(1:(base-1),(base+1):end)]
-end
-contr_treatment(n::Integer,contrasts::Bool,sparse::Bool) = contr_treatment(n,contrasts,sparse,1)
-contr_treatment(n::Integer,contrasts::Bool) = contr_treatment(n,contrasts,false,1)
-contr_treatment(n::Integer) = contr_treatment(n,true,false,1)
-cols(v::PooledDataVector) = contr_treatment(length(v.pool))[v.refs,:]
 cols(v::DataVector) = convert(Vector{Float64}, v.data)
 cols(v::Vector) = convert(Vector{Float64}, v)
 
@@ -303,7 +296,22 @@ function ModelMatrix(mf::ModelFrame)
     ## if the factor doesn't occur in the fetrms
     rows = vec(sum(ff, 2) .!= 0)
     ff = ff[rows, :]
-    cc = [cols(col) for col in columns(mf.df[:, rows])]
+    ## cc = [cols(col) for col in columns(mf.df[:, rows])]
+
+    ## construct model matrix columns from each of the factors, checking for
+    ## contrasts that have been manually specified.  Categorical data
+    ## (PooledDataArray) will expand to a matrix with multiple columns, one
+    ## or each column of the contrast matrix, either specified in the ModelFrame
+    ## or the default TreatmentContrast.
+    cc = Any[]
+    for (name, x) in eachcol(mf.df[:,rows])
+        if name in keys(mf.contrasts)
+            push!(cc, cols(x, mf.contrasts[name]))
+        else
+            push!(cc, cols(x))
+        end
+    end
+
     for j in 1:size(ff,2)
         trm = cc[round(Bool, ff[:, j])]
         push!(aa, trm)
