@@ -875,7 +875,7 @@ function readtable(pathname::String;
                    allowescapes::Bool = false)
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
-    if beginswith(pathname, "http://") || beginswith(pathname, "ftp://")
+    if startswith(pathname, "http://") || startswith(pathname, "ftp://")
         error("URL retrieval not yet implemented")
     # (2) Path is GZip file
     elseif endswith(pathname, ".gz")
