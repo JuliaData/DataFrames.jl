@@ -119,15 +119,27 @@ module TestIO
     df3 = readtable("$data/skiplines/skipfront.csv", skipstart = 3)
     df4 = readtable("$data/skiplines/skipfront.csv", skipstart = 4, header = false)
     names!(df4, names(df1))
-    # df5 = readtable("$data/skiplines/skipfront.csv", skipstart = 3, skiprows = 5:6)
-    # df6 = readtable("$data/skiplines/skipfront.csv", skipstart = 3, header = false, skiprows = [4, 6])
-    # names!(df6, names(df1))
+    df5 = readtable("$data/comments/before_after_data_windows.csv", allowcomments = true)
+    df6 = readtable("$data/comments/middata_windows.csv", allowcomments = true)
+    df7 = readtable("$data/skiplines/skipfront_windows.csv", skipstart = 3)
+    df8 = readtable("$data/skiplines/skipfront_windows.csv", skipstart = 4, header = false)
+    names!(df8, names(df1))
+    # df9 = readtable("$data/skiplines/skipfront.csv", skipstart = 3, skiprows = 5:6)
+    # df10 = readtable("$data/skiplines/skipfront.csv", skipstart = 3, header = false, skiprows = [4, 6])
+    # names!(df10, names(df1))
 
     @test df2 == df1
     @test df3 == df1
     @test df4 == df1
-    # @test df5 == df1[3:end]
-    # @test df6 == df1[[1, 3:end]]
+
+    # Windows EOLS
+    @test df5 == df1
+    @test df6 == df1
+    @test df7 == df1
+    @test df8 == df1
+
+    # @test df9 == df1[3:end]
+    # @test df10 == df1[[1, 3:end]]
 
     function normalize_eol!(df)
         for (name, col) in eachcol(df)
