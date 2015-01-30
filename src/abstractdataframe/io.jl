@@ -57,82 +57,52 @@ function printtable(df::AbstractDataFrame;
                     quotemark::Char = '"')
     printtable(STDOUT,
                df,
+               header = header,
                separator = separator,
-               quotemark = quotemark,
-               header = header)
+               quotemark = quotemark)
     return
 end
 
 # Infer configuration settings from filename
 function writetable(filename::String,
                     df::AbstractDataFrame;
-                    header::Bool = ifelse(append,false,true),
+                    header::Bool = true,
                     separator::Char = getseparator(filename),
                     quotemark::Char = '"',
-                    append::Bool = false,
-                    check_column_names::Bool = false
-                    )
-    
-    
-               
-    if append==false
-        # Case 0: Move to end of the if statement
-        
-    elseif !isfile(filename)
-        # Case 1: There is no file to append to ==> Create a file
-        append == false
-    else
-        # Case 2: There is a file. 
-        
-        # Checking number of columns and matching headers
+                    append::Bool = false)
 
-        # Read first line
-        read_io = open(filename, "r")
-        file_headers = Base.split(readline(read_io),separator)  
-        close(read_io)
+    if append && isfile(filename)
+        file_df = readtable(filename, header = false, nrows = 1)
 
-        
         # Check if number of columns matches
-        if length(file_headers) != length(names(df)) 
-            error("Number of columns mismatch between file and DataFrame")
+        if size(file_df, 2) != size(df, 2)
+            throw(DimensionMismatch("Number of columns differ between file and DataFrame"))
         end
 
+        # In append mode, 'header' triggers a check for matching names
+        if header
+            if any(i -> symbol(file_df[1, i]) != index(df)[i], 1:size(df, 2))
+                throw(KeyError("Column names don't match names in file"))
+            end
 
-        if check_column_names==true # Perform column name check
-            
-            # Convert to String
-             file_headers =  [convert(String,i) for i in file_headers]
-
-            # Parse headers            
-            map!(k-> Base.strip(Base.strip(k),'\"'),file_headers) 
-
-            # Change to symbol
-            file_headers = map(m -> symbol(m),file_headers) 
-            
-            if any(file_headers.!= names(df))  # Check that all column names matches
-                error("Column headers are not matching with first line of file")
-            end  
-        end 
+            header = false
+        end
     end
 
-    mode_selected = ifelse(append, "a", "w")
-    
-    if endswith(filename, ".gz")
-        io = gzopen(filename, mode_selected)
-    elseif endswith(filename, ".bz") || endswith(filename, ".bz2")
-        error("BZip2 compression not yet implemented")
-    else
-        io = open(filename, mode_selected)
-        
+    if endswith(filename, ".bz") || endswith(filename, ".bz2")
+        throw(ArgumentError("BZip2 compression not yet implemented"))
     end
-    
-       
-    printtable(io,
-               df,
-               separator = separator,
-               quotemark = quotemark,
-               header = header)
-    close(io)
+
+    openfunc = endswith(filename, ".gz") ? gzopen : open
+
+    openfunc(filename, append ? "a" : "w") do io
+        printtable(io,
+                   df,
+                   header = header,
+                   separator = separator,
+                   quotemark = quotemark)
+    end
+
     return
 end
 

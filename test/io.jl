@@ -314,4 +314,36 @@ module TestIO
 
     io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
     @test names(readtable(io)) == ns
+
+    # Test writetable with append
+
+    df1 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
+    df2 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
+    df3 = DataFrame(a = @data([1, 2, 3]), c = @data([4, 5, 6])) # 2nd column mismatch
+    df3b = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]), c = @data([4, 5, 6])) # number of columns mismatch
+
+    tf = tempname()
+
+    # Written as normal if file doesn't exist
+    writetable(tf, df1, append = true)
+    @test readtable(tf) == df1
+
+    # Appends to existing file if append == true
+    writetable(tf, df1)
+    writetable(tf, df2, header = false, append = true)
+    @test readtable(tf) == vcat(df1, df2)
+
+    # Overwrites file if append == false
+    writetable(tf, df1)
+    writetable(tf, df2)
+    @test readtable(tf) == df2
+
+    # Enforces matching column names iff append == true && header == true
+    writetable(tf, df2)
+    @test_throws KeyError writetable(tf, df3, append = true)
+    writetable(tf, df3, header = false, append = true)
+
+    # Enforces matching column count if append == true
+    writetable(tf, df3)
+    @test_throws DimensionMismatch writetable(tf, df3b, header = false, append = true)
 end
