@@ -119,15 +119,27 @@ module TestIO
     df3 = readtable("$data/skiplines/skipfront.csv", skipstart = 3)
     df4 = readtable("$data/skiplines/skipfront.csv", skipstart = 4, header = false)
     names!(df4, names(df1))
-    # df5 = readtable("$data/skiplines/skipfront.csv", skipstart = 3, skiprows = 5:6)
-    # df6 = readtable("$data/skiplines/skipfront.csv", skipstart = 3, header = false, skiprows = [4, 6])
-    # names!(df6, names(df1))
+    df5 = readtable("$data/comments/before_after_data_windows.csv", allowcomments = true)
+    df6 = readtable("$data/comments/middata_windows.csv", allowcomments = true)
+    df7 = readtable("$data/skiplines/skipfront_windows.csv", skipstart = 3)
+    df8 = readtable("$data/skiplines/skipfront_windows.csv", skipstart = 4, header = false)
+    names!(df8, names(df1))
+    # df9 = readtable("$data/skiplines/skipfront.csv", skipstart = 3, skiprows = 5:6)
+    # df10 = readtable("$data/skiplines/skipfront.csv", skipstart = 3, header = false, skiprows = [4, 6])
+    # names!(df10, names(df1))
 
     @test df2 == df1
     @test df3 == df1
     @test df4 == df1
-    # @test df5 == df1[3:end]
-    # @test df6 == df1[[1, 3:end]]
+
+    # Windows EOLS
+    @test df5 == df1
+    @test df6 == df1
+    @test df7 == df1
+    @test df8 == df1
+
+    # @test df9 == df1[3:end]
+    # @test df10 == df1[[1, 3:end]]
 
     function normalize_eol!(df)
         for (name, col) in eachcol(df)
@@ -314,4 +326,36 @@ module TestIO
 
     io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
     @test names(readtable(io)) == ns
+
+    # Test writetable with append
+
+    df1 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
+    df2 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
+    df3 = DataFrame(a = @data([1, 2, 3]), c = @data([4, 5, 6])) # 2nd column mismatch
+    df3b = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]), c = @data([4, 5, 6])) # number of columns mismatch
+
+    tf = tempname()
+
+    # Written as normal if file doesn't exist
+    writetable(tf, df1, append = true)
+    @test readtable(tf) == df1
+
+    # Appends to existing file if append == true
+    writetable(tf, df1)
+    writetable(tf, df2, header = false, append = true)
+    @test readtable(tf) == vcat(df1, df2)
+
+    # Overwrites file if append == false
+    writetable(tf, df1)
+    writetable(tf, df2)
+    @test readtable(tf) == df2
+
+    # Enforces matching column names iff append == true && header == true
+    writetable(tf, df2)
+    @test_throws KeyError writetable(tf, df3, append = true)
+    writetable(tf, df3, header = false, append = true)
+
+    # Enforces matching column count if append == true
+    writetable(tf, df3)
+    @test_throws DimensionMismatch writetable(tf, df3b, header = false, append = true)
 end

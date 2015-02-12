@@ -91,7 +91,7 @@ function Base.show(io::IO, model::DataFrameModels)
         println(io, "$(typeof(model)):\n\nCoefficients:")
         show(io, ct)
     catch e
-        if isa(e, String) && beginswith(e, "coeftable is not defined")
+        if isa(e, String) && startswith(e, "coeftable is not defined")
             show(io, model.model)
         else
             rethrow(e)
