@@ -67,7 +67,7 @@ module TestCat
     dfr = vcat(df4, df4)
     @test size(dfr, 1) == 8
     @test names(df4) == names(dfr)
-    @test isequal(dfr, [df4, df4])
+    @test isequal(dfr, [df4; df4])
 
     dfr = vcat(df2, df3)
     @test size(dfr) == (8,2)

@@ -304,7 +304,7 @@ function insert_multiple_entries!{T <: Real}(df::DataFrame,
 end
 
 upgrade_vector(v::Vector) = DataArray(v, falses(length(v)))
-upgrade_vector(v::Ranges) = DataArray([v], falses(length(v)))
+upgrade_vector(v::Ranges) = DataArray([v;], falses(length(v)))
 upgrade_vector(v::BitVector) = DataArray(convert(Array{Bool}, v), falses(length(v)))
 upgrade_vector(adv::AbstractDataArray) = adv
 function upgrade_scalar(df::DataFrame, v::AbstractArray)
@@ -734,18 +734,18 @@ function Base.convert(::Type{DataFrame}, d::Dict)
     dnames = collect(keys(d))
     sort!(dnames)
     p = length(dnames)
+    p == 0 && return DataFrame()
     columns  = Array(Any, p)
-    colnames = Array(Symbol,p)
-    if p == 0
-        return DataFrame()
-    end
+    colnames = Array(Symbol, p)
     n = length(d[dnames[1]])
     for j in 1:p
-        if length(d[dnames[j]]) != n
+        name = dnames[j]
+        col = d[name]
+        if length(col) != n
             throw(ArgumentError("All columns in Dict must have the same length"))
         end
-        columns[j] = DataArray([d[dnames[j]]])
-        colnames[j] = symbol(dnames[j])
+        columns[j] = DataArray(col)
+        colnames[j] = symbol(name)
     end
     return DataFrame(columns, Index(colnames))
 end

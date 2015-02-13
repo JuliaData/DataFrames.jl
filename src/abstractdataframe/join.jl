@@ -92,7 +92,7 @@ function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
         end
         ngroups = ngroups * (length(dv1.pool) + 1)
     end
-    pool = [1:ngroups]
+    pool = [1:ngroups;]
     (PooledDataArray(DataArrays.RefArray(refs1), pool), PooledDataArray(DataArrays.RefArray(refs2), pool))
 end
 
@@ -153,7 +153,7 @@ function Base.join(df1::AbstractDataFrame,
     elseif kind == :left
         df2w = without(df2, on)
 
-        left = df1[[left_idx, leftonly_idx], :]
+        left = df1[[left_idx; leftonly_idx], :]
         right = vcat(df2w[right_idx, :],
                      nas(df2w, length(leftonly_idx)))
 
@@ -163,7 +163,7 @@ function Base.join(df1::AbstractDataFrame,
 
         left = vcat(df1w[left_idx, :],
                     nas(df1w, length(rightonly_idx)))
-        right = df2[[right_idx, rightonly_idx], :]
+        right = df2[[right_idx; rightonly_idx], :]
 
         return hcat!(left, right)
     elseif kind == :outer
@@ -187,7 +187,7 @@ end
 
 function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame)
     r1, r2 = size(df1, 1), size(df2, 1)
-    cols = [[rep(c, 1, r2) for c in columns(df1)],
+    cols = [[rep(c, 1, r2) for c in columns(df1)];
             [rep(c, r1, 1) for c in columns(df2)]]
     colindex = merge(index(df1), index(df2))
     DataFrame(cols, colindex)
