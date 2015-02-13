@@ -44,7 +44,7 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     (idx, starts) = DataArrays.groupsort_indexer(x, ngroups)
     # Remove zero-length groupings
     starts = _uniqueofsorted(starts)
-    ends = [starts[2:end] .- 1]
+    ends = starts[2:end] - 1
     GroupedDataFrame(d, cols, idx, starts[1:end-1], ends)
 end
 groupby(d::AbstractDataFrame, cols) = groupby(d, [cols])

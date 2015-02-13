@@ -127,9 +127,9 @@ Base.getindex(x::AbstractIndex, idx::Real) = int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, array(idx, false))
 Base.getindex{T}(x::AbstractIndex, idx::AbstractDataVector{T}) = getindex(x, dropna(idx))
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
-Base.getindex(x::AbstractIndex, idx::Ranges) = [idx]
+Base.getindex(x::AbstractIndex, idx::Ranges) = [idx;]
 Base.getindex{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [[x.lookup[i] for i in idx]...]
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 
 type SimpleIndex <: AbstractIndex
     length::Integer

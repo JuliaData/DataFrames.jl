@@ -31,7 +31,7 @@ module TestUtils
              "Expected if Julia was not built from source.")
     end
 
-    @test DataFrames.countna([1:3]) == 0
+    @test DataFrames.countna([1:3;]) == 0
 
     data = @data rand(20)
     @test DataFrames.countna(data) == 0

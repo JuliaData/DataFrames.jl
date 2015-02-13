@@ -5,7 +5,7 @@ module TestData
 
     #test_group("DataVector creation")
     dvint = @data([1, 2, NA, 4])
-    dvint2 = data([5:8])
+    dvint2 = data([5:8;])
     dvint3 = data(5:8)
     dvflt = @data([1.0, 2, NA, 4])
     dvstr = @data(["one", "two", NA, "four"])
@@ -113,7 +113,7 @@ module TestData
     @test isequal(df9, df8)
 
     df10 = DataFrame(
-        Any[[1:4], [2:5], ["a", "a", "a", "b" ], ["c", "d", "c", "d"]],
+        Any[[1:4;], [2:5;], ["a", "a", "a", "b" ], ["c", "d", "c", "d"]],
         [:d1, :d2, :d3, :d4]
     )
 
@@ -127,11 +127,11 @@ module TestData
     @test ggd[2][1, :d4] == "d"
 
     #test_group("reshape")
-    d1 = DataFrame(a = repeat([1:3], inner = [4]),
-                   b = repeat([1:4], inner = [3]),
+    d1 = DataFrame(a = repeat([1:3;], inner = [4]),
+                   b = repeat([1:4;], inner = [3]),
                    c = randn(12),
                    d = randn(12),
-                   e = map(string, ['a':'l']))
+                   e = map(string, 'a':'l'))
 
     stack(d1, :a)
     d1s = stack(d1, [:a, :b])
@@ -159,8 +159,8 @@ module TestData
     d1m = meltdf(d1[[1,3,4]], :a)
     @test names(d1m) == [:variable, :value, :a]
 
-    d1s[:id] = [1:12, 1:12]
-    d1s2[:id] = [1:12, 1:12]
+    d1s[:id] = [1:12; 1:12]
+    d1s2[:id] = [1:12; 1:12]
     d1us = unstack(d1s, :id, :variable, :value)
     d1us2 = unstack(d1s2)
     d1us3 = unstack(d1s2, :variable, :value)
@@ -179,11 +179,11 @@ module TestData
     #test_group("merge")
 
     srand(1)
-    df1 = DataFrame(a = shuffle!([1:10]),
+    df1 = DataFrame(a = shuffle!([1:10;]),
                     b = [:A,:B][rand(1:2, 10)],
                     v1 = randn(10))
 
-    df2 = DataFrame(a = shuffle!(reverse([1:5])),
+    df2 = DataFrame(a = shuffle!(reverse([1:5;])),
                     b2 = [:A,:B,:C][rand(1:3, 5)],
                     v2 = randn(5))
 

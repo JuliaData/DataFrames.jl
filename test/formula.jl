@@ -12,16 +12,16 @@ module TestFormula
     #test_group("Basic tests")
 
     d = DataFrame()
-    d[:y] = [1:4]
-    d[:x1] = [5:8]
-    d[:x2] = [9:12]
-    d[:x3] = [13:16]
-    d[:x4] = [17:20]
+    d[:y] = [1:4;]
+    d[:x1] = [5:8;]
+    d[:x2] = [9:12;]
+    d[:x3] = [13:16;]
+    d[:x4] = [17:20;]
 
-    x1 = [5.:8]
-    x2 = [9.:12]
-    x3 = [13.:16]
-    x4 = [17.:20]
+    x1 = [5.:8;]
+    x2 = [9.:12;]
+    x3 = [13.:16;]
+    x4 = [17.:20;]
     f = y ~ x1 + x2
     mf = ModelFrame(f, d)
     ## @test mm.response_colnames == ["y"] # nope: no response_colnames

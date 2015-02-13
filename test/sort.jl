@@ -4,7 +4,7 @@ module TestSort
 
     dv1 = @data([9, 1, 8, NA, 3, 3, 7, NA])
     dv2 = 1.0 * dv1
-    dv3 = DataArray([1:8])
+    dv3 = DataArray([1:8;])
     pdv1 = convert(PooledDataArray, dv1)
 
     d = DataFrame(dv1 = dv1, dv2 = dv2, dv3 = dv3, pdv1 = pdv1)
