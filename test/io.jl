@@ -334,9 +334,19 @@ module TestIO
     df3 = DataFrame(a = @data([1, 2, 3]), c = @data([4, 5, 6])) # 2nd column mismatch
     df3b = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]), c = @data([4, 5, 6])) # number of columns mismatch
 
+
+    # Would use joinpath(tempdir(), randstring()) to get around tempname
+    # creating a file on Windows, but Julia 0.3 has no srand() to unset the
+    # seed set in test/data.jl -- annoying for local testing.
     tf = tempname()
+    isfile(tf) && rm(tf)
 
     # Written as normal if file doesn't exist
+    writetable(tf, df1, append = true)
+    @test readtable(tf) == df1
+
+    # Written as normal if file is empty
+    open(io -> print(io, ""), tf, "w")
     writetable(tf, df1, append = true)
     @test readtable(tf) == df1
 

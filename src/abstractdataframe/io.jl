@@ -71,7 +71,11 @@ function writetable(filename::String,
                     quotemark::Char = '"',
                     append::Bool = false)
 
-    if append && isfile(filename)
+    if endswith(filename, ".bz") || endswith(filename, ".bz2")
+        throw(ArgumentError("BZip2 compression not yet implemented"))
+    end
+
+    if append && isfile(filename) && filesize(filename) > 0
         file_df = readtable(filename, header = false, nrows = 1)
 
         # Check if number of columns matches
@@ -79,7 +83,8 @@ function writetable(filename::String,
             throw(DimensionMismatch("Number of columns differ between file and DataFrame"))
         end
 
-        # In append mode, 'header' triggers a check for matching names
+        # When 'append'-ing to a nonempty file,
+        # 'header' triggers a check for matching colnames
         if header
             if any(i -> symbol(file_df[1, i]) != index(df)[i], 1:size(df, 2))
                 throw(KeyError("Column names don't match names in file"))
@@ -87,10 +92,6 @@ function writetable(filename::String,
 
             header = false
         end
-    end
-
-    if endswith(filename, ".bz") || endswith(filename, ".bz2")
-        throw(ArgumentError("BZip2 compression not yet implemented"))
     end
 
     openfunc = endswith(filename, ".gz") ? gzopen : open
