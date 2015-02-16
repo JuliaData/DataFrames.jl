@@ -33,5 +33,13 @@ module TestSort
     @test issorted(ds2, cols=(order(:rank, rev=true), :chrom, :pos))
     @test issorted(ds2, rev=(true, false, false))
 
-    @test ds == ds2
+    @test ds2 == ds
+
+    sort!(df, cols=(:rank, :chrom, :pos), rev=(true, false, false))
+    @test issorted(df, cols=(order(:rank, rev=true), :chrom, :pos))
+    @test issorted(df, rev=(true, false, false))
+
+    @test df == ds
+
+
 end

@@ -5,7 +5,7 @@ function Base.sort!(df::DataFrame; cols=Any[], alg=nothing,
         throw(ArgumentError(msg))
     end
     ord = ordering(df, cols, lt, by, rev, order)
-    _alg = defalg(df, ord; alg=alg, cols=cols)
+    _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
     sort!(df, _alg, ord)
 end
 
