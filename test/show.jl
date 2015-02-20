@@ -29,8 +29,8 @@ module TestShow
 
     A = DataFrames.StackedVector(Any[[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     show(io, A)
-    A = DataFrames.RepeatedVector([1, 2, 3], 5)
+    A = DataFrames.RepeatedVector([1, 2, 3], 5, 1)
     show(io, A)
-    A = DataFrames.EachRepeatedVector([1, 2, 3], 5)
+    A = DataFrames.RepeatedVector([1, 2, 3], 1, 5)
     show(io, A)
 end
