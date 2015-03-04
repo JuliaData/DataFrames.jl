@@ -789,7 +789,7 @@ end
 function readtable(io::IO,
                    nbytes::Integer = 1;
                    header::Bool = true,
-                   separator::Char = ',',
+                   separator::Union(Char,String) = ',',
                    quotemark::Vector{Char} = ['"'],
                    decimal::Char = '.',
                    nastrings::Vector = ASCIIString["", "NA"],
@@ -814,7 +814,12 @@ function readtable(io::IO,
     elseif decimal != '.'
         throw(ArgumentError("Argument 'decimal' is not yet supported."))
     end
-
+    if isa(separator, String)
+        if length(separator) != 1
+            throw(ArgumentError("separator must be a Char or a String of length 1"))
+        end
+        separator = first(separator)::Char
+    end
     if !isempty(eltypes)
         for j in 1:length(eltypes)
             if !(eltypes[j] in [UTF8String, Bool, Float64, Int64])
@@ -855,7 +860,7 @@ end
 
 function readtable(pathname::String;
                    header::Bool = true,
-                   separator::Char = getseparator(pathname),
+                   separator::Union(Char,String) = getseparator(pathname),
                    quotemark::Vector{Char} = ['"'],
                    decimal::Char = '.',
                    nastrings::Vector = ASCIIString["", "NA"],
@@ -889,8 +894,7 @@ function readtable(pathname::String;
         io = open(pathname, "r")
         nbytes = filesize(pathname)
     end
-
-    return readtable(io,
+       return readtable(io,
                      nbytes,
                      header = header,
                      separator = separator,
