@@ -43,6 +43,40 @@ end
 #'
 #' @@description
 #'
+#' Construct a DataFrame from a Vector of any object. It uses field names in
+#' the data structure to name the columns
+#'
+#' @@arg elements A vector of data structures.
+#'
+#' @@return df::DataFrame A newly constructed DataFrame with the values from the data structures.
+#'
+#' @@examples
+#'
+#' type Kind
+#'     b :: Int
+#'     c :: Float64
+#' end
+#' 
+#' elements = [Kind(3, 5.0), Kind(6, 1.4)]
+#' 
+#' df = DataFrame(elements)
+#'
+#' julia> df = DataFrame(elements)
+#' 2x2 DataFrames.DataFrame
+#' | Row | b | c   |
+#' |-----|---|-----|
+#' | 1   | 3 | 5.0 |
+#' | 2   | 6 | 1.4 |
+DataFrame{T}(elements :: Vector{T}) =
+    DataFrame(Dict(zip(names(T), map(field -> map(ev -> getfield(ev, field), elements), names(T)))))
+
+
+#' @@exported
+#'
+#' @@name DataFrame
+#'
+#' @@description
+#'
 #' Construct a DataFrame from keyword arguments. Each argument should be
 #' a Vector, DataVector or PooledDataVector.
 #'
