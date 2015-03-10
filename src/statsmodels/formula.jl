@@ -282,7 +282,7 @@ end
 
 nc(trm::Vector) = *([size(x,2) for x in trm]...)
 
-function ModelMatrix(mf::ModelFrame; includeIntercept = true)
+function ModelMatrix(mf::ModelFrame; includeIntercept::Bool = true)
 	mf.terms.intercept = includeIntercept 
     trms = mf.terms
     aa = Any[Any[ones(size(mf.df,1),int(trms.intercept))]]
