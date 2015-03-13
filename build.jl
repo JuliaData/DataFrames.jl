@@ -56,5 +56,6 @@ function mysave(file::String, docs::Metadata, order = [:source])
 end
 
 
-mysave("api/reshaping.md", myfilter(DataFrames, files = ["abstractdataframe/reshape.jl"]))
+mysave("api/maintypes.md", myfilter(DataFrames, files = ["abstractdataframe.jl", "dataframe.jl", "subdataframe.jl"]))
+mysave("api/manipulation.md", myfilter(DataFrames, files = ["reshape.jl", "join.jl"]))
 
