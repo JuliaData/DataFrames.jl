@@ -2,8 +2,11 @@
 using Docile, Docile.Interface, Lexicon, DataFrames
 
 
-myfilter(x::Module; files = [""]) = filter(metadata(x), files = files, categories = [:comment, :module, :function, :method, :type, :typealias, :macro, :global])
-myfilter(x::Metadata; files = [""]) = filter(x, files = files, categories = [:comment, :module, :function, :method, :type, :typealias, :macro, :global])
+myfilter(x::Module; files = [""], categories = [:comment, :module, :function, :method, :type, :typealias, :macro, :global]) =
+    filter(metadata(x), files = files, categories = categories)
+    
+myfilter(x::Metadata; files = [""], categories = [:comment, :module, :function, :method, :type, :typealias, :macro, :global]) =
+    filter(x, files = files, categories = categories)
 
 # Stuff from Lexicon.jl:
 writeobj(any) = string(any)
@@ -56,6 +59,9 @@ function mysave(file::String, docs::Metadata, order = [:source])
 end
 
 
-mysave("api/maintypes.md", myfilter(DataFrames, files = ["abstractdataframe.jl", "dataframe.jl", "subdataframe.jl"]))
+mysave("api/maintypes.md", myfilter(DataFrames, files = ["abstractdataframe.jl", "dataframe.jl", "subdataframe.jl"],
+                                    categories = [:comment, :type, :typealias]))
+mysave("api/utilities.md", myfilter(DataFrames, files = ["abstractdataframe.jl", "dataframe.jl", "subdataframe.jl"],
+                                    categories = [:comment, :function, :method, :macro, :global]))
 mysave("api/manipulation.md", myfilter(DataFrames, files = ["reshape.jl", "join.jl"]))
 

@@ -107,8 +107,29 @@
                                 <a href="../maintypes">Main types</a>
                             </li>
                         
+                            <li >
+                                <a href="../utilities">Utilities</a>
+                            </li>
+                        
                             <li class="active">
                                 <a href=".">Data manipulation</a>
+                            </li>
+                        
+                        </ul>
+                    </li>
+                
+                
+                
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">About <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                        
+                            <li >
+                                <a href="../../NEWS">Release notes</a>
+                            </li>
+                        
+                            <li >
+                                <a href="../../LICENSE">License</a>
                             </li>
                         
                         </ul>
@@ -124,12 +145,12 @@
                 
                 
                 <li >
-                    <a rel="next" href="../maintypes">
+                    <a rel="next" href="../utilities">
                         <i class="fa fa-arrow-left"></i> Previous
                     </a>
                 </li>
-                <li class="disabled">
-                    <a rel="prev" >
+                <li >
+                    <a rel="prev" href="../../NEWS">
                         Next <i class="fa fa-arrow-right"></i>
                     </a>
                 </li>
@@ -235,7 +256,7 @@
 </pre></div>
 
 
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/abstractdataframe/join.jl#L187">DataFrames/src/abstractdataframe/join.jl:187</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/abstractdataframe/join.jl#L187">DataFrames/src/abstractdataframe/join.jl:187</a></p>
 <h1 id="reshaping">Reshaping</h1>
 <h2 id="stack">stack</h2>
 <p>Stacks a DataFrame; convert from a wide to long format</p>
@@ -289,11 +310,11 @@ long to wide format.</p>
 </pre></div>
 
 
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/abstractdataframe/reshape.jl#L75">DataFrames/src/abstractdataframe/reshape.jl:75</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/abstractdataframe/reshape.jl#L75">DataFrames/src/abstractdataframe/reshape.jl:75</a></p>
 <h2 id="melt">melt</h2>
 <p>Stacks a DataFrame; convert from a wide to long format; see
 <code>stack</code>.</p>
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/abstractdataframe/reshape.jl#L109">DataFrames/src/abstractdataframe/reshape.jl:109</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/abstractdataframe/reshape.jl#L109">DataFrames/src/abstractdataframe/reshape.jl:109</a></p>
 <h2 id="unstack">unstack</h2>
 <p>Unstacks a DataFrame; convert from a long to wide format</p>
 <div class="codehilite"><pre><span class="n">unstack</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">rowkey</span><span class="p">,</span> <span class="n">colkey</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -338,7 +359,7 @@ long to wide format.</p>
 
 
 <p>Note that there are some differences between the widened results above.</p>
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/abstractdataframe/reshape.jl#L166">DataFrames/src/abstractdataframe/reshape.jl:166</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/abstractdataframe/reshape.jl#L166">DataFrames/src/abstractdataframe/reshape.jl:166</a></p>
 <h2 id="dataframesstackedvector">DataFrames.StackedVector</h2>
 <p>An AbstractVector{Any} that is a linear, concatenated view into
 another set of AbstractVectors</p>
@@ -357,7 +378,7 @@ another set of AbstractVectors</p>
 </pre></div>
 
 
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/abstractdataframe/reshape.jl#L279">DataFrames/src/abstractdataframe/reshape.jl:279</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/abstractdataframe/reshape.jl#L279">DataFrames/src/abstractdataframe/reshape.jl:279</a></p>
 <h2 id="dataframesrepeatedvectort">DataFrames.RepeatedVector{T}</h2>
 <p>An AbstractVector that is a view into another AbstractVector with
 repeated elements</p>
@@ -383,7 +404,7 @@ to <code>repeat</code>.</p>
 </pre></div>
 
 
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/abstractdataframe/reshape.jl#L345">DataFrames/src/abstractdataframe/reshape.jl:345</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/abstractdataframe/reshape.jl#L345">DataFrames/src/abstractdataframe/reshape.jl:345</a></p>
 <h2 id="stackdf">stackdf</h2>
 <p>A stacked view of a DataFrame (long format)</p>
 <p>Like <code>stack</code> and <code>melt</code>, but a view is returned rather than data
@@ -434,10 +455,10 @@ that return indexed views into the original DataFrame.</p>
 </pre></div>
 
 
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/abstractdataframe/reshape.jl#L436">DataFrames/src/abstractdataframe/reshape.jl:436</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/abstractdataframe/reshape.jl#L436">DataFrames/src/abstractdataframe/reshape.jl:436</a></p>
 <h2 id="meltdf">meltdf</h2>
 <p>A stacked view of a DataFrame (long format); see <code>stackdf</code></p>
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/abstractdataframe/reshape.jl#L470">DataFrames/src/abstractdataframe/reshape.jl:470</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/abstractdataframe/reshape.jl#L470">DataFrames/src/abstractdataframe/reshape.jl:470</a></p>
 </div>
             
         </div>

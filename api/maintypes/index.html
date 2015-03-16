@@ -108,7 +108,28 @@
                             </li>
                         
                             <li >
+                                <a href="../utilities">Utilities</a>
+                            </li>
+                        
+                            <li >
                                 <a href="../manipulation">Data manipulation</a>
+                            </li>
+                        
+                        </ul>
+                    </li>
+                
+                
+                
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">About <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                        
+                            <li >
+                                <a href="../../NEWS">Release notes</a>
+                            </li>
+                        
+                            <li >
+                                <a href="../../LICENSE">License</a>
                             </li>
                         
                         </ul>
@@ -129,7 +150,7 @@
                     </a>
                 </li>
                 <li >
-                    <a rel="prev" href="../manipulation">
+                    <a rel="prev" href="../utilities">
                         Next <i class="fa fa-arrow-right"></i>
                     </a>
                 </li>
@@ -164,6 +185,9 @@
         
             <li><a href="#dataframesdataframe">DataFrames.DataFrame</a></li>
         
+    
+        <li class="main "><a href="#subdataframe">SubDataFrame</a></li>
+        
             <li><a href="#dataframessubdataframetabstractarrayint641">DataFrames.SubDataFrame{T&lt;:AbstractArray{Int64,1}}</a></li>
         
     
@@ -196,6 +220,7 @@ type in that it allows indexing by a key (the columns).</p>
 <li><code>array(d)</code> : convert to an array</li>
 <li><code>DataArray(d)</code> : convert to a DataArray</li>
 <li><code>complete_cases(d)</code> : indexes of complete cases (rows with no NA's)</li>
+<li><code>complete_cases!(d)</code> : remove rows with NA's</li>
 <li><code>nonunique(d)</code> : indexes of duplicate rows</li>
 <li><code>unique!(d)</code> : remove duplicate rows</li>
 <li><code>similar(d)</code> : a DataFrame with similar columns as <code>d</code></li>
@@ -224,7 +249,7 @@ of indexing columns by name.</p>
 
 
 <p><code>setindex</code> works similarly.</p>
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/abstractdataframe/abstractdataframe.jl#L66">DataFrames/src/abstractdataframe/abstractdataframe.jl:66</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/abstractdataframe/abstractdataframe.jl#L67">DataFrames/src/abstractdataframe/abstractdataframe.jl:67</a></p>
 <h1 id="dataframe">DataFrame</h1>
 <h2 id="dataframesdataframe">DataFrames.DataFrame</h2>
 <p>An AbstractDataFrame that stores a set of named columns</p>
@@ -287,7 +312,8 @@ loops.</p>
 </pre></div>
 
 
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/dataframe/dataframe.jl#L76">DataFrames/src/dataframe/dataframe.jl:76</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/dataframe/dataframe.jl#L76">DataFrames/src/dataframe/dataframe.jl:76</a></p>
+<h1 id="subdataframe">SubDataFrame</h1>
 <h2 id="dataframessubdataframetabstractarrayint641">DataFrames.SubDataFrame{T&lt;:AbstractArray{Int64,1}}</h2>
 <p>A view of row subsets of an AbstractDataFrame</p>
 <p>A <code>SubDataFrame</code> is meant to be constructed with <code>sub</code>.  A
@@ -321,7 +347,7 @@ use column-based indexing with <code>sub</code>.</p>
 </pre></div>
 
 
-<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/542d870cb40cff200fc5243ebbbdf2feb7f33ad5/src/subdataframe/subdataframe.jl#L49">DataFrames/src/subdataframe/subdataframe.jl:49</a></p>
+<p><a href="https://github.com/JuliaStats/DataFrames.jl/tree/cac96119c9f5e24c5f2976ff119703a6ec52476c/src/subdataframe/subdataframe.jl#L53">DataFrames/src/subdataframe/subdataframe.jl:53</a></p>
 </div>
             
         </div>
