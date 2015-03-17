@@ -1,17 +1,78 @@
-#' @@exported
-#'
-#' @@name
-#'
-#' @@description
-#'
-#' An DataFrame is a Julia type that implements the AbstractDataFrame
-#' interface by storing a set of named columns in memory.
-#'
-#' @@field columns::Vector{Any} The columns of a DataFrame are stored in
-#'         a vector. Each entry of this vector should be a Vector, DataVector
-#'         or PooledDataVector.
-#' @@field colindex::Index A data structure used to map column names to
-#'         their numeric indices in `columns`.
+@comment """
+# DataFrame
+"""
+
+"""
+An AbstractDataFrame that stores a set of named columns
+
+The columns are normally AbstractVectors stored in memory,
+particularly a Vector, DataVector, or PooledDataVector.
+
+### Constructors
+
+```julia
+DataFrame(columns::Vector{Any}, names::Vector{Symbol})
+DataFrame(kwargs...)
+DataFrame() # an empty DataFrame
+DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
+DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer)
+DataFrame(ds::Vector{Associative})
+```
+
+### Arguments
+
+* `columns` : a Vector{Any} with each column as contents
+* `names` : the column names
+* `kwargs` : the key gives the column names, and the value is the
+  column contents
+* `t` : elemental type of all columns
+* `nrows`, `ncols` : number of rows and columns
+* `column_eltypes` : elemental type of each column
+* `ds` : a vector of Associatives
+
+Each column in `columns` should be the same length. 
+
+### Notes
+
+Most of the default constructors convert columns to `DataArrays`.  The
+base constructor, `DataFrame(columns::Vector{Any},
+names::Vector{Symbol})` does not convert to `DataArrays`.
+
+A `DataFrame` is a lightweight object. As long as columns are not
+manipulated, creation of a DataFrame from existing AbstractVectors is
+inexpensive. For example, indexing on columns is inexpensive, but
+indexing by rows is expensive because copies are made of each column.
+
+Because column types can vary, a DataFrame is not type stable. For
+performance-critical code, do not index into a DataFrame inside of
+loops.
+
+### Examples
+
+```julia
+df = DataFrame()
+v = ["x","y","z"][rand(1:3, 10)]
+df1 = DataFrame(Any[[1:10], v, rand(10)], [:A, :B, :C])  # columns are Arrays
+df2 = DataFrame(A = 1:10, B = v, C = rand(10))           # columns are DataArrays
+dump(df1)
+dump(df2)
+describe(df2)
+head(df1)
+df1[:A] + df2[:C]
+df1[1:4, 1:2]
+df1[[:A,:C]]
+df1[1:2, [:A,:C]]
+df1[:, [:A,:C]]
+df1[:, [1,3]]
+df1[1:4, :]
+df1[1:4, :C]
+df1[1:4, :C] = 40. * df1[1:4, :C]
+[df1; df2]  # vcat
+[df1  df2]  # hcat
+size(df1)
+```
+
+"""
 type DataFrame <: AbstractDataFrame
     columns::Vector{Any}
     colindex::Index
@@ -37,26 +98,6 @@ type DataFrame <: AbstractDataFrame
     end
 end
 
-#' @@exported
-#'
-#' @@name DataFrame
-#'
-#' @@description
-#'
-#' Construct a DataFrame from keyword arguments. Each argument should be
-#' a Vector, DataVector or PooledDataVector.
-#'
-#' NOTE: This also covers the empty DataFrame if no keyword arguments are
-#'       passed in.
-#'
-#' @@arg kwargs... A set of named columns to be placed in a DataFrame.
-#'
-#' @@return df::DataFrame A newly constructed DataFrame.
-#'
-#' @@examples
-#'
-#' df = DataFrame()
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 function DataFrame(; kwargs...)
     result = DataFrame(Any[], Index())
     for (k, v) in kwargs
@@ -65,21 +106,6 @@ function DataFrame(; kwargs...)
     return result
 end
 
-#' @@exported
-#'
-#' @@name DataFrame
-#'
-#' @@description
-#'
-#' Construct a DataFrame from a vector of columns and, optionally, specify
-#' the names of the columns as a vector of symbols.
-#'
-#' @@return df::DataFrame A newly constructed DataFrame.
-#'
-#' @@examples
-#'
-#' df = DataFrame()
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 function DataFrame(columns::Vector{Any},
                    cnames::Vector{Symbol} = gennames(length(columns)))
     return DataFrame(columns, Index(cnames))

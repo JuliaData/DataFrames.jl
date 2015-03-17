@@ -1,3 +1,7 @@
+@comment """
+# Joins
+"""
+
 ##
 ## Join / merge
 ##
@@ -124,6 +128,64 @@ function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
 end
 
 DataArrays.PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)
+
+
+
+"""
+Join two DataFrames
+
+```julia
+join(df1::AbstractDataFrame,
+     df2::AbstractDataFrame;
+     on::Union(Symbol, Vector{Symbol}) = Symbol[],
+     kind::Symbol = :inner)
+```
+
+### Arguments
+
+* `df1`, `df2` : the two AbstractDataFrames to be joined
+
+### Keyword Arguments
+
+* `on` : a Symbol or Vector{Symbol}, the column(s) used as keys when
+  joining; required argument except for `kind = :cross`
+
+* `kind` : the type of join, options include:
+
+  - `:inner` : only include rows with keys that match in both `df1`
+    and `df2`, the default
+  - `:outer` : include all rows from `df1` and `df2`
+  - `:left` : include all rows from `df1`
+  - `:right` : include all rows from `df2`
+  - `:semi` : return rows of `df1` that match with the keys in `df2`
+  - `:anti` : return rows of `df1` that do not match with the keys in `df2`
+  - `:cross` : a full Cartesian product of the key combinations; every
+    row of `df1` is matched with every row of `df2`
+
+`NA`s are filled in where needed to complete joins.
+
+### Result
+
+* `::DataFrame` : the joined DataFrame 
+
+### Examples
+
+```julia
+name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+
+join(name, job, on = :ID)
+join(name, job, on = :ID, kind = :outer)
+join(name, job, on = :ID, kind = :left)
+join(name, job, on = :ID, kind = :right)
+join(name, job, on = :ID, kind = :semi)
+join(name, job, on = :ID, kind = :anti)
+join(name, job, kind = :cross)
+```
+
+"""
+:join
+
 
 function Base.join(df1::AbstractDataFrame,
                    df2::AbstractDataFrame;

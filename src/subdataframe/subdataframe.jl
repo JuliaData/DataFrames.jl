@@ -5,9 +5,51 @@
 ##
 ##############################################################################
 
-# a SubDataFrame is a lightweight wrapper around a DataFrame used most
-# frequently in split/apply sorts of operations.
+@comment """
+# SubDataFrame
+"""
 
+
+"""
+A view of row subsets of an AbstractDataFrame
+
+A `SubDataFrame` is meant to be constructed with `sub`.  A
+SubDataFrame is used frequently in split/apply sorts of operations.
+
+```julia
+sub(d::AbstractDataFrame, rows)
+```
+
+### Arguments
+
+* `d` : an AbstractDataFrame
+* `rows` : any indexing type for rows, typically an Int,
+  AbstractVector{Int}, AbstractVector{Bool}, or a Range
+
+### Notes
+
+A `SubDataFrame` is an AbstractDataFrame, so expect that most
+DataFrame functions should work. Such methods include `describe`,
+`dump`, `nrow`, `size`, `by`, `stack`, and `join`. Indexing is just
+like a DataFrame; copies are returned.
+
+To subset along columns, use standard column indexing as that creates
+a view to the columns by default. To subset along rows and columns,
+use column-based indexing with `sub`.
+
+### Examples
+
+```julia
+df = DataFrame(a = rep(1:4, 2), b = rep(2:-1:1, 4), c = randn(8))
+sdf1 = sub(df, 1:6)
+sdf2 = sub(df, df[:a] .> 1)
+sdf3 = sub(df[[1,3]], df[:a] .> 1)  # row and column subsetting
+sdf4 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
+sdf5 = sub(sdf1, 1:3)
+sdf1[:,[:a,:b]]
+```
+
+"""
 immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
     parent::DataFrame
     rows::T # maps from subdf row indexes to parent row indexes
