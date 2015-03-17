@@ -1,9 +1,69 @@
-#' @@name AbstractDataFrame
-#'
-#' @@description
-#'
-#' An AbstractDataFrame is a Julia abstract type for which all concrete
-#' types expose an database-like interface.
+
+@comment """
+# AbstractDataFrame
+"""
+
+"""
+
+An abstract type for which all concrete types expose a database-like
+interface.
+
+### Common methods
+
+An AbstractDataFrame is a two-dimensional table with Symbols for
+column names. An AbstractDataFrame is also similar to an Associative
+type in that it allows indexing by a key (the columns).
+
+The following are normally implemented for AbstractDataFrames:
+
+* `describe(d)` : summarize columns
+* `dump(d)` : show structure
+* `hcat(d1, d2)` : horizontal concatenation
+* `vcat(d1, d2)` : vertical concatenation
+* `names(d)` : columns names
+* `names!(d, vals)` : set columns names
+* `rename!(d, args)` : rename columns names based on keyword arguments
+* `eltypes(d)` : `eltype` of each column
+* `length(d)` : number of columns
+* `size(d)` : (nrows, ncols)
+* `head(d, n = 5)` : first `n` rows
+* `tail(d, n = 5)` : last `n` rows
+* `array(d)` : convert to an array
+* `DataArray(d)` : convert to a DataArray
+* `complete_cases(d)` : indexes of complete cases (rows with no NA's)
+* `complete_cases!(d)` : remove rows with NA's
+* `nonunique(d)` : indexes of duplicate rows
+* `unique!(d)` : remove duplicate rows
+* `similar(d)` : a DataFrame with similar columns as `d`
+
+### Indexing
+
+Table columns are accessed (`getindex`) by a single index that can be
+a symbol identifier, an integer, or a vector of each. If a single
+column is selected, just the column object is returned. If multiple
+columns are selected, some AbstractDataFrame is returned.
+
+```julia
+d[:colA] 
+d[3]
+d[[:colA, :colB]]
+d[[1:3; 5]]
+```
+
+Rows and columns can be indexed like a `Matrix` with the added feature
+of indexing columns by name.
+
+```julia
+d[1:3, :colA]
+d[3,3]
+d[3,:]
+d[3,[:colA, :colB]]
+d[:, [:colA, :colB]]
+d[[1:3; 5], :]
+```
+
+`setindex` works similarly.
+"""
 abstract AbstractDataFrame
 
 ##############################################################################
@@ -37,10 +97,72 @@ columns{T <: AbstractDataFrame}(df::T) = Cols{T}(df)
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
+"""
+Set column names
+
+
+```julia
+names!(df::AbstractDataFrame, vals)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+* `vals` : column names, normally a Vector{Symbol} the same length as
+  the number of columns in `df`
+
+### Result
+
+* `::AbstractDataFrame` : the updated result
+
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+names!(df, [:a, :b, :c])
+```
+
+"""
 function names!(df::AbstractDataFrame, vals)
     names!(index(df), vals)
     return df
 end
+
+"""
+Rename columns
+
+```julia
+rename!(df::AbstractDataFrame, from::Symbol, to::Symbol)
+rename!(df::AbstractDataFrame, d::Associative)
+rename!(f::Function, df::AbstractDataFrame)
+rename(df::AbstractDataFrame, from::Symbol, to::Symbol)
+rename(f::Function, df::AbstractDataFrame)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+* `d` : an Associative type that maps the original name to a new name
+* `f` : a function that has the old column name (a symbol) as input
+  and new column name (a symbol) as output
+
+### Result
+
+* `::AbstractDataFrame` : the updated result
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+rename(x -> symbol(uppercase(string(x))), df)
+rename(df, @compat(Dict(:i=>:A, :x=>:X)))
+rename(df, :y, :Y)
+rename!(df, @compat(Dict(:i=>:A, :x=>:X)))
+```
+
+"""
+[:rename!, :rename]
 
 function rename!(df::AbstractDataFrame, args...)
     rename!(index(df), args...)
@@ -51,6 +173,29 @@ rename!(f::Function, df::AbstractDataFrame) = rename!(df, f)
 rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
 rename(f::Function, df::AbstractDataFrame) = rename(df, f)
 
+"""
+Column elemental types
+
+```julia
+eltypes(df::AbstractDataFrame)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+
+### Result
+
+* `::Vector{Type}` : the elemental type of each column
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+eltypes(df)
+```
+
+"""
 function eltypes(df::AbstractDataFrame)
     ncols = size(df, 2)
     res = Array(Type, ncols)
@@ -138,12 +283,66 @@ Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
 ##
 ##############################################################################
 
+"""
+Show the first or last part of an AbstractDataFrame
+
+```julia
+head(df::AbstractDataFrame, r::Int = 6)
+tail(df::AbstractDataFrame, r::Int = 6)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+* `r` : the number of rows to show
+
+### Result
+
+* `::AbstractDataFrame` : the first or last part of `df`
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+head(df)
+tail(df)
+```
+
+"""
+[:head, :tail]
+
 DataArrays.head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
 DataArrays.head(df::AbstractDataFrame) = head(df, 6)
 DataArrays.tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
 DataArrays.tail(df::AbstractDataFrame) = tail(df, 6)
 
 # get the structure of a DF
+"""
+Show the structure of an AbstractDataFrame, in a tree-like format
+
+```julia
+dump(df::AbstractDataFrame, n::Int = 5)
+dump(io::IO, df::AbstractDataFrame, n::Int = 5)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+* `n` : the number of levels to show
+* `io` : optional output descriptor
+
+### Result
+
+* nothing
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+str(df)
+```
+
+"""
 function Base.dump(io::IO, df::AbstractDataFrame, n::Int, indent)
     println(io, typeof(df), "  $(nrow(df)) observations of $(ncol(df)) variables")
     if n > 0
@@ -159,14 +358,42 @@ function Base.dump(io::IO, dv::AbstractDataVector, n::Int, indent)
 end
 
 # summarize the columns of a DF
-# if the column's base type derives from Number,
-# compute min, 1st quantile, median, mean, 3rd quantile, and max
-# filtering NAs, which are reported separately
-# if boolean, report trues, falses, and NAs
-# if anything else, punt.
-# Note that R creates a summary object, which has a print method. That's
-# a reasonable alternative to this.
 # TODO: clever layout in rows
+"""
+Summarize the columns of an AbstractDataFrame
+
+```julia
+describe(df::AbstractDataFrame)
+describe(io, df::AbstractDataFrame)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+* `io` : optional output descriptor
+
+### Result
+
+* nothing
+
+### Details
+
+If the column's base type derives from Number, compute the minimum, first
+quantile, median, mean, third quantile, and maximum. NA's are filtered and
+reported separately.
+
+For boolean columns, report trues, falses, and NAs.
+
+For other types, show column characteristics and number of NAs.
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+describe(df)
+```
+
+"""
 describe(df::AbstractDataFrame) = describe(STDOUT, df)
 function describe(io, df::AbstractDataFrame)
     for (name, col) in eachcol(df)
@@ -210,6 +437,33 @@ end
 ##
 ##############################################################################
 
+"""
+Indexes of complete cases (rows without NA's)
+
+```julia
+complete_cases(df::AbstractDataFrame)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+
+### Result
+
+* `::Vector{Bool}` : indexes of complete cases
+
+See also `complete_cases!`.
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+df[[1,4,5], :x] = NA
+df[[9,10], :y] = NA
+complete_cases(df)
+```
+
+"""
 function complete_cases(df::AbstractDataFrame)
     ## Returns a Vector{Bool} of indexes of complete cases (rows with no NA's).
     res = !isna(df[1])
@@ -219,6 +473,33 @@ function complete_cases(df::AbstractDataFrame)
     res
 end
 
+"""
+Delete rows with NA's.
+
+```julia
+complete_cases!(df::AbstractDataFrame)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+
+### Result
+
+* `::AbstractDataFrame` : the updated version
+
+See also `complete_cases`.
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+df[[1,4,5], :x] = NA
+df[[9,10], :y] = NA
+complete_cases!(df)
+```
+
+"""
 complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(!complete_cases(df)))
 
 function DataArrays.array(df::AbstractDataFrame)
@@ -246,6 +527,33 @@ function DataArrays.DataArray(df::AbstractDataFrame,
     return res
 end
 
+"""
+Indexes of complete cases (rows without NA's)
+
+```julia
+nonunique(df::AbstractDataFrame)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+
+### Result
+
+* `::Vector{Bool}` : indicates whether the row is a duplicate of a
+  prior row
+
+See also `unique` and `unique!`.
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+df = vcat(df, df)
+nonunique(df)
+```
+
+"""
 function nonunique(df::AbstractDataFrame)
     # Return a Vector{Bool} indicated whether the row is a duplicate
     # of a prior row.
@@ -260,6 +568,36 @@ function nonunique(df::AbstractDataFrame)
     end
     res
 end
+
+"""
+Delete duplicate rows
+
+```julia
+unique(df::AbstractDataFrame)
+unique!(df::AbstractDataFrame)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+
+### Result
+
+* `::AbstractDataFrame` : the updated version
+
+See also `nonunique` and `unique`.
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+df = vcat(df, df)
+unique(df)   # doesn't modify df
+unique!(df)  # modifies df
+```
+
+"""
+[:unique, :unique!]
 
 unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
 
@@ -398,3 +736,38 @@ function Base.hash(df::AbstractDataFrame)
     end
     return uint(h)
 end
+
+
+## Documentation for methods defined elsewhere
+
+"""
+Number of rows or columns in an AbstractDataFrame
+
+```julia
+nrow(df::AbstractDataFrame)
+ncol(df::AbstractDataFrame)
+```
+
+### Arguments
+
+* `df` : the AbstractDataFrame
+
+### Result
+
+* `::AbstractDataFrame` : the updated version
+
+See also `size`.
+
+NOTE: these functions may be depreciated for `size`.
+
+### Examples
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+size(df)
+nrow(df)
+ncol(df)
+```
+
+"""
+[:nrow, :ncol]

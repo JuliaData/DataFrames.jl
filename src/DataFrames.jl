@@ -13,6 +13,9 @@ using Reexport
 using GZip
 using SortingAlgorithms
 using Base: Sort, Order
+using Docile
+
+@document
 
 ##############################################################################
 ##

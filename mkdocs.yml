@@ -1,0 +1,25 @@
+
+site_name: DataFrames.jl
+
+site_description: package for working with tabular data in Julia
+
+repo_url: https://github.com/JuliaStats/DataFrames.jl
+
+pages:
+- [index.md, Introduction]
+- [getting_started.md, User guide, Introduction]
+- [io.md, User guide, IO]
+- [subsets.md, User guide, Subsetting]
+- [joins_and_indexing.md, User guide, Joins and indexing]
+- [split_apply_combine.md, User guide, Split-apply-combine]
+- [reshaping_and_pivoting.md, User guide, Reshaping]
+- [sorting.md, User guide, Sorting]
+- [formulas.md, User guide, Formulas]
+- [pooling.md, User guide, Pooling]
+- [api/maintypes.md, API, Main types]
+- [api/utilities.md, API, Utilities]
+- [api/manipulation.md, API, Data manipulation]
+- [NEWS.md,    About, Release notes]
+- [LICENSE.md, About, License]
+
+markdown_extensions: [codehilite]
