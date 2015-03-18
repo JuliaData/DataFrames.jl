@@ -61,9 +61,9 @@ const SXPtab = @compat Dict(      # Defined in Rinternals.h
 ##############################################################################
 
 if ENDIAN_BOM == 0x01020304
-    const R_NA_FLOAT64 = reinterpret(Float64, [0x7ff00000, uint32(1954)])[1]
+    const R_NA_FLOAT64 = reinterpret(Float64, [0x7ff00000, @compat(UInt32(1954))])[1]
 else
-    const R_NA_FLOAT64 = reinterpret(Float64, [uint32(1954), 0x7ff00000])[1]
+    const R_NA_FLOAT64 = reinterpret(Float64, [@compat(UInt32(1954)), 0x7ff00000])[1]
 end
 const R_NA_INT32 = typemin(Int32)
 const R_NA_STRING = "NA"
@@ -108,20 +108,24 @@ typealias RList RVector{Any, 0x13}  # "list" in R == Julia cell array
 
 ##############################################################################
 ##
-## R objects in the file are preceded by a Uint32 giving the type and
+## R objects in the file are preceded by a UInt32 giving the type and
 ## some flags.  These functiona unpack bits in the flags.  The isobj
 ## bit might be useful for distinguishing an RInteger from a factor or
 ## an RList from a data.frame.
 ##
 ##############################################################################
 
-typealias RDATag Uint32
+typealias RDATag UInt32
 
-isobj(fl::RDATag) = bool(fl & 0x00000100)
-hasattr(fl::RDATag) = bool(fl & 0x00000200)
-hastag(fl::RDATag) = bool(fl & 0x00000400)
+isobj(fl::RDATag) = @compat Bool(fl & 0x00000100)
+hasattr(fl::RDATag) = @compat Bool(fl & 0x00000200)
+hastag(fl::RDATag) = @compat Bool(fl & 0x00000400)
 
-sxtype = uint8
+if VERSION < v"0.4-"
+    sxtype = uint8
+else
+    sxtype(fl::RDATag) = fl % UInt8
+end
 
 ##############################################################################
 ##
@@ -145,14 +149,14 @@ abstract RDAIO
 
 type RDAXDRIO{T<:IO} <: RDAIO # RDA XDR(binary) format IO stream wrapper
     sub::T             # underlying IO stream
-    buf::Vector{Uint8} # buffer for strings
+    buf::Vector{UInt8} # buffer for strings
 
-    RDAXDRIO( io::T ) = new( io, Array(Uint8, 1024) )
+    RDAXDRIO( io::T ) = new( io, Array(UInt8, 1024) )
 end
 RDAXDRIO{T <: IO}(io::T) = RDAXDRIO{T}(io)
 
 readint32(io::RDAXDRIO) = ntoh(read(io.sub, Int32))
-readuint32(io::RDAXDRIO) = ntoh(read(io.sub, Uint32))
+readuint32(io::RDAXDRIO) = ntoh(read(io.sub, UInt32))
 readfloat64(io::RDAXDRIO) = ntoh(read(io.sub, Float64))
 
 readintorNA(io::RDAXDRIO) = readint32(io)
@@ -173,19 +177,19 @@ type RDAASCIIIO{T<:IO} <: RDAIO # RDA ASCII format IO stream wrapper
 end
 RDAASCIIIO{T <: IO}(io::T) = RDAASCIIIO{T}(io)
 
-readint32(io::RDAASCIIIO) = int32(readline(io.sub))
-readuint32(io::RDAASCIIIO) = uint32(readline(io.sub))
-readfloat64(io::RDAASCIIIO) = float64(readline(io.sub))
+readint32(io::RDAASCIIIO) = parse(Int32, readline(io.sub))
+readuint32(io::RDAASCIIIO) = parse(UInt32, readline(io.sub))
+readfloat64(io::RDAASCIIIO) = parse(Float64, readline(io.sub))
 
 function readintorNA(io::RDAASCIIIO)
     str = chomp(readline(io.sub));
-    str == R_NA_STRING ? R_NA_INT32 : int32(str)
+    str == R_NA_STRING ? R_NA_INT32 : parse(Int32, str)
 end
 readintorNA(io::RDAASCIIIO, n::RVecLength) = Int32[readintorNA(io) for i in 1:n]
 
 function readfloatorNA(io::RDAASCIIIO)
     str = chomp(readline(io.sub));
-    str == R_NA_STRING ? R_NA_FLOAT64 : float64(str)
+    str == R_NA_STRING ? R_NA_FLOAT64 : parse(Float64, str)
 end
 readfloatorNA(io::RDAASCIIIO, n::RVecLength) = Float64[readfloatorNA(io) for i in 1:n]
 
@@ -243,7 +247,7 @@ else
 end
 
 immutable CHARSXProps # RDA CHARSXP properties
-  levs::Uint32       # level flags (encoding etc) TODO process
+  levs::UInt32       # level flags (encoding etc) TODO process
   nchar::Int32       # string length, -1 for NA strings
 end
 
@@ -282,7 +286,7 @@ type RDAContext{T <: RDAIO}    # RDA reading context
     io::T                      # R input stream
 
     # RDA properties
-    fmtver::Uint32             # RDA format version
+    fmtver::UInt32             # RDA format version
     Rver::VersionNumber        # R version that has written RDA
     Rmin::VersionNumber        # R minimal version to read RDA
 
@@ -345,7 +349,7 @@ function readcomplex(ctx::RDAContext, fl::RDATag)
     @assert sxtype(fl) == 0x0f
     n = readlength(ctx.io)
     data = readfloatorNA(ctx.io, 2n)
-    RComplex(Complex128[complex128(data[i],data[i+1]) for i in 2(1:n)-1],
+    RComplex(Complex128[@compat(Complex128(data[i],data[i+1])) for i in 2(1:n)-1],
              readattrs(ctx, fl))
 end
 
@@ -459,10 +463,10 @@ function DataArrays.data(ri::RInteger)
     # convert factor into PooledDataArray
     pool = getattr(ri, "levels", emptystrvec)
     sz = length(pool)
-    REFTYPE = sz <= typemax(Uint8)  ? Uint8 :
-              sz <= typemax(Uint16) ? Uint16 :
-              sz <= typemax(Uint32) ? Uint32 :
-                                      Uint64
+    REFTYPE = sz <= typemax(UInt8)  ? UInt8 :
+              sz <= typemax(UInt16) ? UInt16 :
+              sz <= typemax(UInt32) ? UInt32 :
+                                      UInt64
     dd = ri.data
     dd[namask(ri)] = 0
     refs = convert(Vector{REFTYPE}, dd)

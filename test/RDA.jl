@@ -1,6 +1,7 @@
 module TestRDA
     using Base.Test
     using DataFrames
+    using Compat
 
     # R code generating test .rdas
         # df = data.frame(num=c(1.1, 2.2))
@@ -38,14 +39,14 @@ module TestRDA
     df[:logi] = [true, false]
     df[:chr] = ["ab", "c"]
     df[:factor] = pool(df[:chr])
-    df[:cplx] = complex128([1.1+0.5im, 1.0im])
+    df[:cplx] = Complex128[1.1+0.5im, 1.0im]
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/types.rda")["df"]), df)
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/types_ascii.rda")["df"]), df)
 
     df[2, :] = NA
     append!(df, df[2, :])
     df[3, :num] = NaN
-    df[:, :cplx] = @data [NA, complex128(1,NaN), NaN]
+    df[:, :cplx] = @data [NA, @compat(Complex128(1,NaN)), NaN]
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs.rda")["df"]), df)
     # ASCII format saves NaN as NA
     df[3, :num] = NA
