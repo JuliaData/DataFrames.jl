@@ -184,7 +184,7 @@ function Terms(f::Formula)
     tt = tt[!(tt .== 1)]             # drop any explicit 1's
     noint = (tt .== 0) | (tt .== -1) # should also handle :(-(expr,1))
     tt = tt[!noint]
-    oo = int(map(ord, tt))           # orders of interaction terms
+    oo = Int[ord(t) for t in tt]     # orders of interaction terms
     if !issorted(oo)                 # sort terms by increasing order
         pp = sortperm(oo)
         tt = tt[pp]
@@ -197,7 +197,8 @@ function Terms(f::Formula)
         unshift!(oo, 1)
     end
     ev = unique(vcat(etrms...))
-    facs = int8(hcat(map(x->(s=Set(x);map(t->int8(t in s), ev)),etrms)...))
+    sets = [Set(x) for x in etrms]
+    facs = Int8[t in s for t in ev, s in sets]
     Terms(tt, ev, facs, oo, haslhs, !any(noint))
 end
 
@@ -223,11 +224,11 @@ end
 function dropUnusedLevels!(da::PooledDataArray)
     rr = da.refs
     uu = unique(rr)
-    if length(uu) == length(da.pool) return da end
+    length(uu) == length(da.pool) && return da
     T = eltype(rr)
     su = sort!(uu)
-    dict = Dict(su, one(T):convert(T,length(uu)))
-    da.refs = map(x->dict[x], rr)
+    dict = Dict(su, map(T, 1:length(uu)))
+    da.refs = map(x -> dict[x], rr)
     da.pool = da.pool[uu]
     da
 end
@@ -245,7 +246,7 @@ ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
 
 function StatsBase.model_response(mf::ModelFrame)
     mf.terms.response || error("Model formula one-sided")
-    convert(Array, mf.df[bool(mf.terms.factors[:,1])][:,1])
+    convert(Array, mf.df[round(Bool, mf.terms.factors[:, 1])][:, 1])
 end
 
 function contr_treatment(n::Integer, contrasts::Bool, sparse::Bool, base::Integer)
@@ -259,8 +260,8 @@ contr_treatment(n::Integer,contrasts::Bool,sparse::Bool) = contr_treatment(n,con
 contr_treatment(n::Integer,contrasts::Bool) = contr_treatment(n,contrasts,false,1)
 contr_treatment(n::Integer) = contr_treatment(n,true,false,1)
 cols(v::PooledDataVector) = contr_treatment(length(v.pool))[v.refs,:]
-cols(v::DataVector) = reshape(float64(v.data), (length(v),1))
-cols(v::Vector) = float64(v)
+cols(v::DataVector) = convert(Vector{Float64}, v.data)
+cols(v::Vector) = convert(Vector{Float64}, v)
 
 function isfe(ex::Expr)                 # true for fixed-effects terms
     if ex.head != :call error("Non-call expression encountered") end
@@ -270,32 +271,39 @@ isfe(a) = true
 
 function expandcols(trm::Vector)
     if length(trm) == 1
-        return float64(trm[1])
+        return convert(Array{Float64}, trm[1])
     else
-        a = float64(trm[1])
+        a = convert(Array{Float64}, trm[1])
         b = expandcols(trm[2:end])
         nca = size(a, 2)
         ncb = size(b, 2)
-        return hcat([a[:,i] .* b[:,j] for i in 1:nca, j in 1:ncb]...)
+        return hcat([a[:, i] .* b[:, j] for i in 1:nca, j in 1:ncb]...)
     end
 end
 
-nc(trm::Vector) = *([size(x,2) for x in trm]...)
+function nc(trm::Vector)
+    isempty(trm) && return 0
+    n = 1
+    for x in trm
+        n *= size(x, 2)
+    end
+    n
+end
 
 function ModelMatrix(mf::ModelFrame)
     trms = mf.terms
-    aa = Any[Any[ones(size(mf.df,1),int(trms.intercept))]]
-    asgn = zeros(Int, (int(trms.intercept)))
-    fetrms = bool(map(isfe, trms.terms))
-    if trms.response unshift!(fetrms,false) end
-    ff = trms.factors[:,fetrms]
+    aa = Any[Any[ones(size(mf.df,1), @compat(Int(trms.intercept)))]]
+    asgn = zeros(Int, @compat(Int(trms.intercept)))
+    fetrms = Bool[isfe(t) for t in trms.terms]
+    if trms.response unshift!(fetrms, false) end
+    ff = trms.factors[:, fetrms]
     ## need to be cautious here to avoid evaluating cols for a factor with many levels
     ## if the factor doesn't occur in the fetrms
-    rows = vec(bool(sum(ff,[2])))
-    ff = ff[rows,:]
-    cc = [cols(x[2]) for x in eachcol(mf.df[:,rows])]
+    rows = Bool[x for x in sum(ff, 2)]
+    ff = ff[rows, :]
+    cc = [cols(col) for col in columns(mf.df[:, rows])]
     for j in 1:size(ff,2)
-        trm = cc[bool(ff[:,j])]
+        trm = cc[round(Bool, ff[:, j])]
         push!(aa, trm)
         asgn = vcat(asgn, fill(j, nc(trm)))
     end

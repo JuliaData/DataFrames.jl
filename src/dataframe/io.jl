@@ -1,5 +1,5 @@
 immutable ParsedCSV
-    bytes::Vector{Uint8} # Raw bytes from CSV file
+    bytes::Vector{UInt8} # Raw bytes from CSV file
     bounds::Vector{Int}  # Right field boundary indices
     lines::Vector{Int}   # Line break indices
     quoted::BitVector    # Was field quoted in text
@@ -35,7 +35,7 @@ macro read_peek_eof(io, nextchr)
     io = esc(io)
     nextchr = esc(nextchr)
     quote
-        nextnext = eof($io) ? 0xff : read($io, Uint8)
+        nextnext = eof($io) ? 0xff : read($io, UInt8)
         $nextchr, nextnext, nextnext == 0xff
     end
 end
@@ -192,7 +192,7 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
                             nrows::Integer,
                             o::ParseOptions,
                             dispatcher::$(dtype),
-                            firstchr::Uint8=0xff)
+                            firstchr::UInt8=0xff)
             # TODO: Use better variable names
             # Information about parse results
             n_bytes = 0
@@ -210,11 +210,11 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
             $(if allowcomments quote at_start = true end end)
             $(if wsv quote skip_white = true end end)
             chr = 0xff
-            nextchr = (firstchr == 0xff && !eof(io)) ? read(io, Uint8) : firstchr
+            nextchr = (firstchr == 0xff && !eof(io)) ? read(io, UInt8) : firstchr
             endf = nextchr == 0xff
 
-            # 'in' does not work if passed Uint8 and Vector{Char}
-            quotemarks = convert(Vector{Uint8}, o.quotemarks)
+            # 'in' does not work if passed UInt8 and Vector{Char}
+            quotemarks = convert(Vector{UInt8}, o.quotemarks)
 
             # Insert a dummy field bound at position 0
             @push(n_bounds, p.bounds, 0, l_bounds)
@@ -264,7 +264,7 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
                         # Merge chr and nextchr here if they're a c-style escape
                         if @atcescape(chr, nextchr) && !in_escape
                             chr = @mergechr(chr, nextchr)
-                            nextchr = eof(io) ? 0xff : read(io, Uint8)
+                            nextchr = eof(io) ? 0xff : read(io, UInt8)
                             endf = nextchr == 0xff
                             in_escape = true
                         end
@@ -348,7 +348,7 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
     end
 end
 
-function bytematch{T <: ByteString}(bytes::Vector{Uint8},
+function bytematch{T <: ByteString}(bytes::Vector{UInt8},
                                     left::Integer,
                                     right::Integer,
                                     exemplars::Vector{T})
@@ -371,7 +371,7 @@ end
 function bytestotype{N <: Integer,
                      T <: ByteString,
                      P <: ByteString}(::Type{N},
-                                      bytes::Vector{Uint8},
+                                      bytes::Vector{UInt8},
                                       left::Integer,
                                       right::Integer,
                                       nastrings::Vector{T},
@@ -393,7 +393,7 @@ function bytestotype{N <: Integer,
 
     while index > left
         if '0' <= byte <= '9'
-            value += (byte - uint8('0')) * power
+            value += (byte - @compat(UInt8('0'))) * power
             power *= 10
         else
             return value, false, false
@@ -407,7 +407,7 @@ function bytestotype{N <: Integer,
     elseif byte == '+'
         return value, left < right, false
     elseif '0' <= byte <= '9'
-        value += (byte - uint8('0')) * power
+        value += (byte - @compat(UInt8('0'))) * power
         return value, true, false
     else
         return value, false, false
@@ -419,7 +419,7 @@ let out = Array(Float64, 1)
     function bytestotype{N <: FloatingPoint,
                          T <: ByteString,
                          P <: ByteString}(::Type{N},
-                                          bytes::Vector{Uint8},
+                                          bytes::Vector{UInt8},
                                           left::Integer,
                                           right::Integer,
                                           nastrings::Vector{T},
@@ -436,7 +436,7 @@ let out = Array(Float64, 1)
 
         wasparsed = ccall(:jl_substrtod,
                           Int32,
-                          (Ptr{Uint8}, Csize_t, Int, Ptr{Float64}),
+                          (Ptr{UInt8}, Csize_t, Int, Ptr{Float64}),
                           bytes,
                           convert(Csize_t, left - 1),
                           right - left + 1,
@@ -449,7 +449,7 @@ end
 function bytestotype{N <: Bool,
                      T <: ByteString,
                      P <: ByteString}(::Type{N},
-                                      bytes::Vector{Uint8},
+                                      bytes::Vector{UInt8},
                                       left::Integer,
                                       right::Integer,
                                       nastrings::Vector{T},
@@ -476,7 +476,7 @@ end
 function bytestotype{N <: String,
                      T <: ByteString,
                      P <: ByteString}(::Type{N},
-                                      bytes::Vector{Uint8},
+                                      bytes::Vector{UInt8},
                                       left::Integer,
                                       right::Integer,
                                       nastrings::Vector{T},
@@ -654,7 +654,7 @@ end
 
 function parsenames!(names::Vector{Symbol},
                      ignorepadding::Bool,
-                     bytes::Vector{Uint8},
+                     bytes::Vector{UInt8},
                      bounds::Vector{Int},
                      quoted::BitVector,
                      fields::Int)
@@ -755,7 +755,7 @@ function readtable!(p::ParsedCSV,
 
     # Extract the header
     if o.header
-        bytes, fields, rows, nextchr = readnrows!(p, io, int64(1), o, d, nextchr)
+        bytes, fields, rows, nextchr = readnrows!(p, io, @compat(Int64(1)), o, d, nextchr)
 
         # Insert column names from header if none present
         if isempty(o.names)
@@ -764,7 +764,7 @@ function readtable!(p::ParsedCSV,
     end
 
     # Parse main data set
-    bytes, fields, rows, nextchr = readnrows!(p, io, int64(nrows), o, d, nextchr)
+    bytes, fields, rows, nextchr = readnrows!(p, io, @compat(Int64(nrows)), o, d, nextchr)
 
     # Sanity checks
     bytes != 0 || error("Failed to read any bytes.")
@@ -830,7 +830,7 @@ function readtable(io::IO,
     end
 
     # Allocate buffers for storing metadata
-    p = ParsedCSV(Array(Uint8, nbytes),
+    p = ParsedCSV(Array(UInt8, nbytes),
                   Array(Int, 1),
                   Array(Int, 1),
                   BitArray(1))

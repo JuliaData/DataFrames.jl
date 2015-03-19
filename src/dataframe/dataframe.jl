@@ -274,7 +274,7 @@ end
 
 isnextcol(df::DataFrame, col_ind::Symbol) = true
 function isnextcol(df::DataFrame, col_ind::Real)
-    return ncol(df) + 1 == int(col_ind)
+    return ncol(df) + 1 == @compat Int(col_ind)
 end
 
 function nextcolname(df::DataFrame)

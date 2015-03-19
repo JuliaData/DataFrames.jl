@@ -31,7 +31,7 @@ end
 #' ourstrwidth("abc")
 #' ourstrwidth(10000)
 begin
-    local io = IOBuffer(Array(Uint8, 80), true, true)
+    local io = IOBuffer(Array(UInt8, 80), true, true)
     global ourstrwidth
     function ourstrwidth(x::Any) # -> Int
         truncate(io, 0)
@@ -39,10 +39,12 @@ begin
         return position(io)
     end
     ourstrwidth(x::String) = strwidth(x) + 2 # -> Int
-    ourstrwidth(s::Symbol) = int(ccall(:u8_strwidth,
-                                       Csize_t,
-                                       (Ptr{Uint8}, ),
-                                       convert(Ptr{Uint8}, s)))
+    myconv = VERSION < v"0.4-" ? convert : Base.unsafe_convert
+    ourstrwidth(s::Symbol) =
+        @compat Int(ccall(:u8_strwidth,
+                          Csize_t,
+                          (Ptr{UInt8}, ),
+                          myconv(Ptr{UInt8}, s)))
 end
 
 #' @description

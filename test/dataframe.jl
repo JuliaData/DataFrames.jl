@@ -140,7 +140,7 @@ module TestDataFrame
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
     @test typeof(df[:, 2]) == DataVector{Float64}
-    @test typeof(df[:, 3]) == PooledDataVector{ASCIIString,Uint32}
+    @test typeof(df[:, 3]) == PooledDataVector{ASCIIString,UInt32}
     @test allna(df[:, 1])
     @test allna(df[:, 2])
     @test allna(df[:, 3])

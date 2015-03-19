@@ -235,7 +235,7 @@ module TestIO
     filename = "$data/factors/mixedvartypes.csv"
     df = readtable(filename, makefactors = true)
 
-    @test typeof(df[:factorvar]) == PooledDataArray{UTF8String,Uint32,1}
+    @test typeof(df[:factorvar]) == PooledDataArray{UTF8String,UInt32,1}
     @test typeof(df[:floatvar]) == DataArray{Float64,1}
 
     # Readtable shouldn't silently drop data when reading highly compressed gz.

@@ -177,8 +177,8 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     payload = DataFrame(Any[DataArray(fill(valuecol[1], Nrow), fill(true, Nrow)) for i in 1:Ncol], map(symbol, keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
-        j = int(keycol.refs[k])
-        i = int(refkeycol.refs[k])
+        j = @compat Int(keycol.refs[k])
+        i = @compat Int(refkeycol.refs[k])
         if i > 0 && j > 0
             if nowarning && !isna(payload[j][i])
                 warn("Duplicate entries in unstack.")
@@ -228,7 +228,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     df2 = DataFrame(Any[DataArray(fill(valuecol[1], Nrow), fill(true, Nrow)) for i in 1:Ncol], map(symbol, keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
-        j = int(keycol.refs[k])
+        j = @compat Int(keycol.refs[k])
         i = rowkey[k]
         if i > 0 && j > 0
             if nowarning && !isna(df2[j][i])

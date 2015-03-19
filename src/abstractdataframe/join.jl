@@ -111,7 +111,7 @@ function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
     #     might be faster.
     refs = zeros(R, nrow(df))
     poolref = Dict{AbstractDataFrame, Int}()
-    pool = Array(Uint64, 0)
+    pool = Array(UInt64, 0)
     j = 1
     for i = 1:nrow(df)
         val = df[i,:]
