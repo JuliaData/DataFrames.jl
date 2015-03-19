@@ -402,8 +402,8 @@ function describe(io, df::AbstractDataFrame)
         println(io, )
     end
 end
-describe(dv::AbstractDataVector) = describe(STDOUT, dv)
-function describe{T<:Number}(io, dv::AbstractDataVector{T})
+describe(dv::AbstractVector) = describe(STDOUT, dv)
+function describe{T<:Number}(io, dv::AbstractVector{T})
     if all(isna(dv))
         println(io, " * All NA * ")
         return
@@ -420,7 +420,7 @@ function describe{T<:Number}(io, dv::AbstractDataVector{T})
     println(io, "NA%      $(round(nas*100/length(dv), 2))%")
     return
 end
-function describe{T}(io, dv::AbstractDataVector{T})
+function describe{T}(io, dv::AbstractVector{T})
     ispooled = isa(dv, PooledDataVector) ? "Pooled " : ""
     # if nothing else, just give the length and element type and NA count
     println(io, "Length  $(length(dv))")
