@@ -44,7 +44,7 @@ column is selected, just the column object is returned. If multiple
 columns are selected, some AbstractDataFrame is returned.
 
 ```julia
-d[:colA] 
+d[:colA]
 d[3]
 d[[:colA, :colB]]
 d[[1:3; 5]]
@@ -402,8 +402,8 @@ function describe(io, df::AbstractDataFrame)
         println(io, )
     end
 end
-describe(dv::AbstractDataVector) = describe(STDOUT, dv)
-function describe{T<:Number}(io, dv::AbstractDataVector{T})
+describe(dv::AbstractVector) = describe(STDOUT, dv)
+function describe{T<:Number}(io, dv::AbstractVector{T})
     if all(isna(dv))
         println(io, " * All NA * ")
         return
@@ -411,7 +411,7 @@ function describe{T<:Number}(io, dv::AbstractDataVector{T})
     filtered = float(dropna(dv))
     qs = quantile(filtered, [0, .25, .5, .75, 1])
     statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
-    statVals = [qs[1:3], mean(filtered), qs[4:5]]
+    statVals = [qs[1:3]; mean(filtered); qs[4:5]]
     for i = 1:6
         println(io, string(rpad(statNames[i], 8, " "), " ", string(statVals[i])))
     end
@@ -420,7 +420,7 @@ function describe{T<:Number}(io, dv::AbstractDataVector{T})
     println(io, "NA%      $(round(nas*100/length(dv), 2))%")
     return
 end
-function describe{T}(io, dv::AbstractDataVector{T})
+function describe{T}(io, dv::AbstractVector{T})
     ispooled = isa(dv, PooledDataVector) ? "Pooled " : ""
     # if nothing else, just give the length and element type and NA count
     println(io, "Length  $(length(dv))")

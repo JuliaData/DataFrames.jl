@@ -281,4 +281,19 @@ module TestDataFrame
     df = DataFrame(a=@data([1, 2, 3]), b=@data([3., 4., 5.]))
     @test deleterows!(df, [2, 3]) === df
     @test isequal(df, DataFrame(a=@data([1]), b=@data([3.])))
+
+    # describe
+    #suppress output and test that describe() does not throw
+    devnull = @unix? "/dev/null" : "nul"
+    open(devnull, "w") do f
+        @test nothing == describe(f, DataFrame(a=[1, 2], b=Any["3", NA]))
+        @test nothing == describe(f, DataFrame(a=@data([1, 2]), b=@data(["3", NA])))
+        @test nothing == describe(f, DataFrame(a=@pdata([1, 2]), b=@pdata(["3", NA])))
+        @test nothing == describe(f, [1, 2, 3])
+        @test nothing == describe(f, @data([1, 2, 3]))
+        @test nothing == describe(f, @pdata([1, 2, 3]))
+        @test nothing == describe(f, Any["1", "2", NA])
+        @test nothing == describe(f, @data(["1", "2", NA]))
+        @test nothing == describe(f, @pdata(["1", "2", NA]))
+    end
 end
