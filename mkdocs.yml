@@ -7,10 +7,10 @@ repo_url: https://github.com/JuliaStats/DataFrames.jl
 
 pages:
 - [index.md, Introduction]
-- [getting_started.md, User guide, Introduction]
+- [getting_started.md, User guide, Getting Started]
 - [io.md, User guide, IO]
 - [subsets.md, User guide, Subsetting]
-- [joins_and_indexing.md, User guide, Joins and indexing]
+- [joins.md, User guide, Joins]
 - [split_apply_combine.md, User guide, Split-apply-combine]
 - [reshaping_and_pivoting.md, User guide, Reshaping]
 - [sorting.md, User guide, Sorting]
@@ -19,7 +19,7 @@ pages:
 - [api/maintypes.md, API, Main types]
 - [api/utilities.md, API, Utilities]
 - [api/manipulation.md, API, Data manipulation]
-- [NEWS.md,    About, Release notes]
+- [NEWS.md, About, Release notes]
 - [LICENSE.md, About, License]
 
 markdown_extensions: [codehilite]

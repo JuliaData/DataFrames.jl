@@ -1,5 +1,4 @@
-Why Use the DataFrames Package?
-===============================
+# Why Use the DataFrames Package?
 
 We believe that Julia is the future of technical computing. Nevertheless, Base Julia is not sufficient for statistical computing. The DataFrames package (and its sibling, DataArrays) extends Base Julia by introducing three basic types needed for statistical computing:
 
@@ -7,7 +6,7 @@ We believe that Julia is the future of technical computing. Nevertheless, Base J
 -   `DataArray`: An extension to the `Array` type that can contain missing values
 -   `DataFrame`: A data structure for representing tabular data sets
 
-`NA`: An Indicator for Missing Data Points ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## `NA`: An Indicator for Missing Data Points
 
 Suppose that we want to calculate the mean of a list of five `Float64` numbers: `x1`, `x2`, `x3`, `x4` and `x5`. We would normally do this in Julia as follows:
 
@@ -24,48 +23,22 @@ Like R's `NA` value and unlike Java's `NULL` value, Julia's `NA` value represent
 
 For example, `false && NA` evaluates to `false` and `true || NA` evaluates to `true`. In contrast, `1 + NA` evaluates to `NA` because the outcome is uncertain in the absence of knowledge about the missing value represented by `NA`.
 
-`DataArray`: Efficient Arrays with Missing Values ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## `DataArray`: Efficient Arrays with Missing Values
 
 Although the `NA` value is sufficient for representing missing scalar values, it cannot be stored efficiently inside of Julia's standard `Array` type. To represent arrays with potentially missing entries, the DataArrays package introduces a `DataArray` type. For example, a `DataArray{Float64}` can contain `Float64` values and `NA` values, but nothing else. In contrast, the most specific `Array` that can contain both `Float64` and `NA` values is an `Array{Any}`.
 
 Except for the ability to store `NA` values, the `DataArray` type is meant to behave exactly like Julia's standard `Array` type (n.b. Base methods that make assumptions about container types may not work with DataArrays). In particular, `DataArray` provides two typealiases called `DataVector` and `DataMatrix` that mimic the `Vector` and `Matrix` typealiases for 1D and 2D `Array` types.
 
-`DataFrame`: Tabular Data Sets ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## `DataFrame`: Tabular Data Sets
 
 `NA` and `DataArray` provide mechanisms for handling missing values for scalar types and arrays, but most real world data sets have a tabular structure that does not correspond to a simple `DataArray`.
 
 For example, the data table shown below highlights some of the ways in which a typical data set is not like a `DataArray`:
 
-<table>
-<colgroup>
-<col width="16%" />
-<col width="12%" />
-<col width="12%" />
-<col width="12%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Name</th>
-<th align="left">Height</th>
-<th align="left">Weight</th>
-<th align="left">Gender</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">John Smith</td>
-<td align="left">73.0</td>
-<td align="left">NA</td>
-<td align="left">Male</td>
-</tr>
-<tr class="even">
-<td align="left">Jane Doe</td>
-<td align="left">68.0</td>
-<td align="left">130</td>
-<td align="left">Female</td>
-</tr>
-</tbody>
-</table>
+| Name       | Height | Weight | Gender | 
+|------------|--------|--------|--------|
+| John Smith | 73.0   | NA     | Male   |
+| Jane Doe   | 68.0   | 130    | Female |
 
 Note three important properties that this table possesses:
 

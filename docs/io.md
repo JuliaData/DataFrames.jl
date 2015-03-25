@@ -1,36 +1,30 @@
-Importing and Exporting (I/O) ==============
+# Importing and Exporting (I/O)
 
-Importing data from tabular data files
-======================================
+## Importing data from tabular data files
 
 To read data from a CSV-like file, use the `readtable` function:
 
-    df = readtable("data.csv")
-
-    df = readtable("data.tsv")
-
-    df = readtable("data.wsv")
-
-    df = readtable("data.txt", separator = '\t')
-
-    df = readtable("data.txt", header = false)
+```julia
+df = readtable("data.csv")
+df = readtable("data.tsv")
+df = readtable("data.wsv")
+df = readtable("data.txt", separator = '\t')
+df = readtable("data.txt", header = false)
+```
 
 `readtable` requires that you specify the path of the file that you would like to read as a `String`. It supports many additional keyword arguments: these are documented in the section on advanced I/O operations.
 
-Exporting data to a tabular data file
-=====================================
+## Exporting data to a tabular data file
 
 To write data to a CSV file, use the `writetable` function:
 
-    df = DataFrame(A = 1:10)
-
-    writetable("output.csv", df)
-
-    writetable("output.dat", df, separator = ',', header = false)
-
-    writetable("output.dat", df, quotemark = '\'', separator = ',')
-
-    writetable("output.dat", df, header = false)
+```julia
+df = DataFrame(A = 1:10)
+writetable("output.csv", df)
+writetable("output.dat", df, separator = ',', header = false)
+writetable("output.dat", df, quotemark = '\'', separator = ',')
+writetable("output.dat", df, header = false)
+```
 
 `writetable` requires the following arguments:
 
@@ -39,8 +33,7 @@ To write data to a CSV file, use the `writetable` function:
 
 Additional advanced options are documented below.
 
-Advanced Options for Reading CSV Files
-======================================
+## Advanced Options for Reading CSV Files
 
 `readtable` accepts the following optional keyword arguments:
 
@@ -63,8 +56,7 @@ Advanced Options for Reading CSV Files
 -   `skipblanks::Bool` -- Skip any blank lines in input. Defaults to `true`.
 -   `encoding::Symbol` -- Specify the file's encoding as either `:utf8` or `:latin1`. Defaults to `:utf8`.
 
-Advanced Options for Writing CSV Files
-======================================
+## Advanced Options for Writing CSV Files
 
 `writetable` accepts the following optional keyword arguments:
 
