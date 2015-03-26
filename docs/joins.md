@@ -1,50 +1,24 @@
-Database-Style Joins and Indexing
-=================================
-
-Joining Data Sets Together
---------------------------
+# Database-Style Joins
 
 We often need to combine two or more data sets together to provide a complete picture of the topic we are studying. For example, suppose that we have the following two data sets:
 
-    names = DataFrame(ID = [1, 2], Name = ["John Doe", "Jane Doe"])
-    jobs = DataFrame(ID = [1, 2], Job = ["Lawyer", "Doctor"])
+```julia
+names = DataFrame(ID = [1, 2], Name = ["John Doe", "Jane Doe"])
+jobs = DataFrame(ID = [1, 2], Job = ["Lawyer", "Doctor"])
+```
 
 We might want to work with a larger data set that contains both the names and jobs for each ID. We can do this using the `join` function:
 
-    full = join(names, jobs, on = :ID)
+```julia
+full = join(names, jobs, on = :ID)
+```
 
 Output:
 
-<table>
-<colgroup>
-<col width="8%" />
-<col width="6%" />
-<col width="18%" />
-<col width="18%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Row</th>
-<th align="left">ID</th>
-<th align="left">Name</th>
-<th align="left">Job</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">1</td>
-<td align="left">1</td>
-<td align="left">&quot;John Doe&quot;</td>
-<td align="left">&quot;Lawyer&quot;</td>
-</tr>
-<tr class="even">
-<td align="left">2</td>
-<td align="left">2</td>
-<td align="left">&quot;Jane Doe&quot;</td>
-<td align="left">&quot;Doctor&quot;</td>
-</tr>
-</tbody>
-</table>
+| Row | ID | Name       | Job      | 
+|-----|----|------------|----------|
+| 1   | 1  | "John Doe" | "Lawyer" |
+| 2   | 1  | "Jane Doe" | "Doctor" |
 
 In relational database theory, this operation is generally referred to as a join. The columns used to determine which rows should be combined during a join are called keys.
 
@@ -60,15 +34,19 @@ There are seven kinds of joins supported by the DataFrames package:
 
 You can control the kind of join that `join` performs using the `kind` keyword argument:
 
-    a = DataFrame(ID = [1, 2], Name = ["A", "B"])
-    b = DataFrame(ID = [1, 3], Job = ["Doctor", "Lawyer"])
-    join(a, b, on = :ID, kind = :inner)
-    join(a, b, on = :ID, kind = :left)
-    join(a, b, on = :ID, kind = :right)
-    join(a, b, on = :ID, kind = :outer)
-    join(a, b, on = :ID, kind = :semi)
-    join(a, b, on = :ID, kind = :anti)
+```julia
+a = DataFrame(ID = [1, 2], Name = ["A", "B"])
+b = DataFrame(ID = [1, 3], Job = ["Doctor", "Lawyer"])
+join(a, b, on = :ID, kind = :inner)
+join(a, b, on = :ID, kind = :left)
+join(a, b, on = :ID, kind = :right)
+join(a, b, on = :ID, kind = :outer)
+join(a, b, on = :ID, kind = :semi)
+join(a, b, on = :ID, kind = :anti)
+```
 
 Cross joins are the only kind of join that does not use a key:
 
-    join(a, b, kind = :cross)
+```julia
+join(a, b, kind = :cross)
+```
