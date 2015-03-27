@@ -978,23 +978,3 @@ function filldf!(df::DataFrame,
 
     return
 end
-
-##############################################################################
-#
-# Binary serialization
-#
-##############################################################################
-
-function save(filename::String, df::DataFrame)
-    f = open(filename, "w")
-    serialize(f, df)
-    close(f)
-    return
-end
-
-function loaddf(filename::String)
-    f = open(filename)
-    dd = deserialize(f)
-    close(f)
-    return dd
-end

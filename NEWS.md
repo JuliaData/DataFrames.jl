@@ -1,3 +1,9 @@
+# DataFrames v0.6.3 Release Notes
+
+* Removes `save` and `loaddf`, since the format was not compatible
+  across Julia and DataFrames versions ([#790]). Use `writetable` or
+  [JLD](https://github.com/timholy/HDF5.jl) to save DataFrames
+
 # DataFrames v0.6.0 Release Notes
 
 Focus on performance improvements and rooting out bugs in corner cases.
@@ -212,6 +218,7 @@ Improved I/O and more-Julian idioms.
 [#749]: https://github.com/JuliaStats/DataFrames.jl/issues/749
 [#751]: https://github.com/JuliaStats/DataFrames.jl/issues/751
 [#752]: https://github.com/JuliaStats/DataFrames.jl/issues/752
+[#790]: https://github.com/JuliaStats/DataFrames.jl/issues/790
 
 [JuliaLang/julia#4882]: https://github.com/JuliaLang/julia/issues/4882
 [JuliaLang/julia#5897]: https://github.com/JuliaLang/julia/issues/5897
