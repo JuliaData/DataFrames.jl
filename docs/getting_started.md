@@ -50,6 +50,7 @@ julia> dropna(dv)
  2
  5
  4
+ 
 julia> mean(dropna(dv))
 3.5
 ```
@@ -127,7 +128,6 @@ It is also possible to construct a `DataFrame` in stages:
 ```julia
 julia> df = DataFrame()
 0x0 DataFrame
-
 
 julia> df[:A] = 1:8
 1:8

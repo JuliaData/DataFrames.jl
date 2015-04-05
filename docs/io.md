@@ -2,6 +2,14 @@
 
 Currently, `DataFrames` provides functions to read tabular (CSV) data, and R data files (in RDA2 or RDX2 format).
 
+In addition, a number of additional packages allow to obtain a `DataFrame` from external data, for instance databases, or Statistics software. Below, we describe interfaces for
+
+* PostgreSQL
+* MySQL
+* Stata
+* SPSS
+* SAS
+
 ## CSV files
 
 ### Importing
@@ -74,30 +82,32 @@ writetable("output.dat", df, header = false)
 
 ## Using other packages
 
-### Obtaining a DataFrame from a database query
+### Databases
 
-To read a `DataFrame` from a database, you can use the database-independent API provided by [DBI.jl](https://github.com/JuliaDB/DBI.jl). This API can be implemented by specific database drivers, for instance SQLite:
+To read a `DataFrame` from a database, you can use the database-independent API provided by [DBI.jl](https://github.com/JuliaDB/DBI.jl). This API can be implemented by specific database drivers, for instance PostgreSQL:
 
 ```julia
 using DBI
-using SQLite
+using PostgreSQL
 
-db = connect(SQLite3, "db.sqlite3")
-stmt = prepare(db, "SELECT * FROM users")
-execute(stmt)
-df = fetchdf(stmt)
+conn = connect(Postgres, "localhost", "username", "password", "dbname", 5432)
+
+stmt = prepare(conn, "SELECT 1::bigint, 2.0::double precision, 'foo'::character varying, " *
+                     "'foo'::character(10);")
+result = execute(stmt)
+df = fetchdf(stmt) # This is a DataFrame
 ```
 
 Note that, while `fetchdf` allows obtaining a `DataFrame`, `DBI` allows for other return formats.
 
 Currently, the API of `DBI` is implemented for
 
-* [SQLite3](https://github.com/quinnj/SQLite.jl)
+* [PostgreSQL](https://github.com/iamed2/PostgreSQL.jl)
 * [MySQL](https://github.com/johnmyleswhite/MySQL.jl)
 
 ### Stata, SPSS, and SAS: [DataRead.jl](https://github.com/WizardMac/DataRead.jl)
 
-This packages is a wrapper around a C library that reads these file formats. It requires that `libreadstat.dylib` (obtained by following the link above) is in Julia's load path. Example usage:
+This package is a wrapper around a C library that reads these file formats. It requires that `libreadstat.dylib` (obtained by following the link above) is in Julia's load path. Example usage:
 
 ```julia
 using DataRead

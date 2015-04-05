@@ -1,4 +1,4 @@
-# Overview
+# Comparison of `DataFrames` with R and Pandas
 
 R and Pandas (with Python) are commonly used data analysis tools. Both allow defining dataframes and provide a range of convenient ways of using them. Here, we translate some of the essential functionality of both languages. This is a good place to start if you know how to work with dataframes in R or Pandas and quickly want to get going using Julia.
 
