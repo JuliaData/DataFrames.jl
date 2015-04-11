@@ -4,7 +4,7 @@ R and Pandas (with Python) are commonly used data analysis tools. Both allow def
 
 If you are instead interested in a general comparison of the languages, you can find that in the [base Julia documentation](http://docs.julialang.org/en/release-0.3/manual/noteworthy-differences/).
 
-For the examples below, we are following the [Pandas documentation](http://pandas.pydata.org/pandas-docs/stable/comparison_with_r.html) as much as possible. Since we use random numbers throughout, we assume that the ``Distributions`` package is loaded in Julia.
+For the examples below, we are following the [Pandas documentation](http://pandas.pydata.org/pandas-docs/stable/comparison_with_r.html) as much as possible. Since we use random numbers throughout, we assume that the `Distributions` package is loaded in Julia.
 
 # R
 
@@ -16,26 +16,22 @@ In R, columns of a `data.frame` can be accessed by name:
 df <- data.frame(a=rnorm(5), b=rnorm(5), c=rnorm(5), d=rnorm(5), e=rnorm(5))
 df[, c("a", "c")]
 
-df <- data.frame(matrix(rnorm(1000), ncol=100))
+df <- data.frame(matrix(runiform(1000), ncol=100))
 df[, c(1:10, 25:30, 40, 50:100)]
 ```
 
 Using DataFrames, the equivalent would be the following:
 
 ```julia
-d = Uniform()
+d = Normal()
 df = DataFrame(a=rand(d, 5), b=rand(d, 5), c=rand(d, 5), d=rand(d, 5), e=rand(d, 5))
 df[[:a, :c]]
 
-d = Normal()
+d = Uniform()
 data = rand(d, (1000, 100))
 df = convert(DataFrame, data)
 df[:, [1:10, 25:30, 40, 50:100]]
 ```
-
-The biggest difference is that columns are not accessed using symbols like `:a` instead of strings like `"a"`.
-
-Further, note that `DataFrames` does not support named rows.
 
 ## Aggregating data using `aggregate`
 
@@ -60,14 +56,14 @@ df = DataFrame(
 aggregate(df, [:by1, :by2], mean)
 ```
 
-Note as well that `DataFrames` requires the use of the `@data` macro to create the columns to ensure that missing values are correctly handled.
+Note that we are using the `@data` macro to correctly handle columns containing missing values (`NA`). If a column does not contain `NA`, the `@data` macro is not needed.
 
 ## Using `with` to evaluate an expression within a `data.frame`
 
 In R, you can use `with` to simplify many expressions involving a `data.frame`:
 
 ```R
-df <- data.frame(a=rnorm(10), b=rnorm(10))
+df <- data.frame(a=rexp(10), b=rexp(10)) # a and b are exponentially distributed
 with(df, a + b)
 df$a + df$b  # same as the previous expression
 ```
@@ -75,11 +71,10 @@ df$a + df$b  # same as the previous expression
 DataFrames does not currently support evaluations inside a DataFrame, so you would write the following:
 
 ```julia
-d = Normal()
+d = Exponential()
 df = data.frame(a=rand(d, 10), b=rand(d, 10))
 df[:a] + df[:b]
 ```
-
 To stay closer to the functionality of R's `with`, you can use the experimental [DataFramesMeta](https://github.com/JuliaStats/DataFramesMeta.jl) package. Using this package, you would write:
 
 ```julia
@@ -87,7 +82,7 @@ using DataFramesMeta
 @with(df, :a + :b)
 ```
 
-Note that this syntax allows you to distinguish between a variable `a` and a column `df[:a]`.
+Note that this syntax allows you to distinguish between a variable `a` and a column `:a`.
 
 # Pandas
 
@@ -108,7 +103,7 @@ df = DataFrame(a=rand(d, 10), b=rand(d, 10), c=rand(d, 10))
 df[[:a, :c]]
 ```
 
-The biggest difference is that columns are not accessed using symbols like `:a` instead of strings like `"a"`.
+The biggest difference is that columns are accessed using symbols like `:a` instead of strings like `"a"`.
 
 Further, note that `DataFrames` does not support named (indexed) rows. For instance, appending to Dataframes using Pandas will, by default, align these dataframes by their row index, which is related to a database join. Instead, `DataFrames` will never re-align DataFrames, because there are no row indices. 
 
@@ -137,3 +132,4 @@ df = DataFrame(
 
 aggregate(df, [:by1, :by2], mean)
 ```
+

@@ -1,6 +1,6 @@
 # Importing and Exporting (I/O)
 
-Currently, `DataFrames` provides functions to read tabular (CSV) data, and R data files (in RDA2 or RDX2 format).
+Currently, `DataFrames` provides functions to read tabular (e.g. CSV) data, and R data files (in RDA2 or RDX2 format).
 
 In addition, a number of additional packages allow to obtain a `DataFrame` from external data, for instance databases, or Statistics software. Below, we describe interfaces for
 
