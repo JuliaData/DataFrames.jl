@@ -35,7 +35,7 @@ function printtable(io::IO,
     end
     for i in 1:n
         for j in 1:p
-			if ! (isna(df[i,j]))
+	    if ! (isna(df[i,j]))
                 if ! (etypes[j] <: Real)
                     print(io, quotemark)
                     escapedprint(io, df[i, j], "\"'")
@@ -43,9 +43,9 @@ function printtable(io::IO,
                 else
                     print(io, df[i, j])
                 end
-			else
-                 print(io, nastring)
-			end
+	    else
+                print(io, nastring)
+	    end
             if j < p
                 print(io, separator)
             else
