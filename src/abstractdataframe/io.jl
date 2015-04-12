@@ -16,7 +16,8 @@ function printtable(io::IO,
                     df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = ',',
-                    quotemark::Char = '"')
+                    quotemark::Char = '"',
+                    nastring::String = "NA")
     n, p = size(df)
     etypes = eltypes(df)
     if header
@@ -34,13 +35,17 @@ function printtable(io::IO,
     end
     for i in 1:n
         for j in 1:p
-            if ! (etypes[j] <: Real)
-                print(io, quotemark)
-                escapedprint(io, df[i, j], "\"'")
-                print(io, quotemark)
-            else
-                print(io, df[i, j])
-            end
+			if ! (isna(df[i,j]))
+                if ! (etypes[j] <: Real)
+                    print(io, quotemark)
+                    escapedprint(io, df[i, j], "\"'")
+                    print(io, quotemark)
+                else
+                    print(io, df[i, j])
+                end
+			else
+                 print(io, nastring)
+			end
             if j < p
                 print(io, separator)
             else
@@ -54,12 +59,14 @@ end
 function printtable(df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = ',',
-                    quotemark::Char = '"')
+                    quotemark::Char = '"',
+                    nastring::String = "NA")
     printtable(STDOUT,
                df,
                header = header,
                separator = separator,
-               quotemark = quotemark)
+               quotemark = quotemark,
+               nastring = nastring)
     return
 end
 
@@ -69,6 +76,7 @@ function writetable(filename::String,
                     header::Bool = true,
                     separator::Char = getseparator(filename),
                     quotemark::Char = '"',
+                    nastring::String = "NA",
                     append::Bool = false)
 
     if endswith(filename, ".bz") || endswith(filename, ".bz2")
@@ -101,7 +109,8 @@ function writetable(filename::String,
                    df,
                    header = header,
                    separator = separator,
-                   quotemark = quotemark)
+                   quotemark = quotemark,
+                   nastring = nastring)
     end
 
     return
