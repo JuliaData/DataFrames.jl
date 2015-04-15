@@ -4,7 +4,7 @@ R and Pandas (with Python) are commonly used data analysis tools. Both allow def
 
 If you are instead interested in a general comparison of the languages, you can find that in the [base Julia documentation](http://docs.julialang.org/en/release-0.3/manual/noteworthy-differences/).
 
-For the examples below, we are following the [Pandas documentation](http://pandas.pydata.org/pandas-docs/stable/comparison_with_r.html) as much as possible. Since we use random numbers throughout, we assume that the `Distributions` package is loaded in Julia.
+For the examples below, we are following the [Pandas documentation](http://pandas.pydata.org/pandas-docs/stable/comparison_with_r.html) as much as possible.
 
 # R
 
@@ -23,12 +23,10 @@ df[, c(1:10, 25:30, 40, 50:100)]
 Using DataFrames, the equivalent would be the following:
 
 ```julia
-d = Normal()
-df = DataFrame(a=rand(d, 5), b=rand(d, 5), c=rand(d, 5), d=rand(d, 5), e=rand(d, 5))
+df = DataFrame(a=randn(5), b=randn(5), c=randn(5), d=randn(5), e=randn(5))
 df[[:a, :c]]
 
-d = Uniform()
-data = rand(d, (1000, 100))
+data = rand(1000, 100)
 df = convert(DataFrame, data)
 df[:, [1:10, 25:30, 40, 50:100]]
 ```
@@ -63,7 +61,7 @@ Note that we are using the `@data` macro to correctly handle columns containing 
 In R, you can use `with` to simplify many expressions involving a `data.frame`:
 
 ```R
-df <- data.frame(a=rexp(10), b=rexp(10)) # a and b are exponentially distributed
+df <- data.frame(a=runiform(10), b=runiform(10)) # a and b are exponentially distributed
 with(df, a + b)
 df$a + df$b  # same as the previous expression
 ```
@@ -71,8 +69,8 @@ df$a + df$b  # same as the previous expression
 DataFrames does not currently support evaluations inside a DataFrame, so you would write the following:
 
 ```julia
-d = Exponential()
-df = data.frame(a=rand(d, 10), b=rand(d, 10))
+
+df = data.frame(a=rand(10), b=rand(10))
 df[:a] + df[:b]
 ```
 To stay closer to the functionality of R's `with`, you can use the experimental [DataFramesMeta](https://github.com/JuliaStats/DataFramesMeta.jl) package. Using this package, you would write:
@@ -98,14 +96,13 @@ df[['a', 'c']]
 In Julia, you would write:
 
 ```julia
-d = Uniform()
-df = DataFrame(a=rand(d, 10), b=rand(d, 10), c=rand(d, 10))
+df = DataFrame(a=randn(10), b=randn(10), c=randn(10))
 df[[:a, :c]]
 ```
 
 The biggest difference is that columns are accessed using symbols like `:a` instead of strings like `"a"`.
 
-Further, note that `DataFrames` does not support named (indexed) rows. For instance, appending to Dataframes using Pandas will, by default, align these dataframes by their row index, which is related to a database join. Instead, `DataFrames` will never re-align DataFrames, because there are no row indices. 
+Further, note that `DataFrames` does not support named (indexed) rows. For instance, appending to Dataframes using Pandas will, by default, align these dataframes by their row index, which is related to a database join. Instead, `DataFrames` will never re-align DataFrames, because there are no row indices.
 
 ## Aggregating using `groupby`
 
@@ -116,7 +113,7 @@ df = pd.DataFrame({
     'by1': ["red", "blue", 1, 2, np.nan, "big", 1, 2, "red", 1, np.nan, 12],
     'by2': ["wet", "dry", 99, 95, np.nan, "damp", 95, 99, "red", 99, np.nan, np.nan]
     })
-    
+
 g = df.groupby(['by1','by2'])
 g[['v1','v2']].mean()
 ```
