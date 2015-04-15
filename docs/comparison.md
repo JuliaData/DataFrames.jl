@@ -16,7 +16,7 @@ In R, columns of a `data.frame` can be accessed by name:
 df <- data.frame(a=rnorm(5), b=rnorm(5), c=rnorm(5), d=rnorm(5), e=rnorm(5))
 df[, c("a", "c")]
 
-df <- data.frame(matrix(runiform(1000), ncol=100))
+df <- data.frame(matrix(runif(1000), ncol=100))
 df[, c(1:10, 25:30, 40, 50:100)]
 ```
 
@@ -26,7 +26,7 @@ Using DataFrames, the equivalent would be the following:
 df = DataFrame(a=randn(5), b=randn(5), c=randn(5), d=randn(5), e=randn(5))
 df[[:a, :c]]
 
-data = rand(1000, 100)
+data = rand(10, 100)
 df = convert(DataFrame, data)
 df[:, [1:10, 25:30, 40, 50:100]]
 ```
@@ -39,7 +39,7 @@ df <- data.frame(
   v2 = c(11,33,55,77,88,33,55,NA,44,55,77,99),
   by1 = c("red", "blue", 1, 2, NA, "big", 1, 2, "red", 1, NA, 12),
   by2 = c("wet", "dry", 99, 95, NA, "damp", 95, 99, "red", 99, NA, NA))
-aggregate(x=df[, c("v1", "v2")], by=list(mydf2$by1, mydf2$by2), FUN = mean)
+aggregate(x=df[, c("v1", "v2")], by=list(df$by1, df$by2), FUN = mean)
 ```
 
 In Julia, you would use ``aggregate``
@@ -61,7 +61,7 @@ Note that we are using the `@data` macro to correctly handle columns containing 
 In R, you can use `with` to simplify many expressions involving a `data.frame`:
 
 ```R
-df <- data.frame(a=runiform(10), b=runiform(10)) # a and b are exponentially distributed
+df <- data.frame(a=runif(10), b=runif(10))
 with(df, a + b)
 df$a + df$b  # same as the previous expression
 ```
@@ -69,10 +69,10 @@ df$a + df$b  # same as the previous expression
 DataFrames does not currently support evaluations inside a DataFrame, so you would write the following:
 
 ```julia
-
 df = data.frame(a=rand(10), b=rand(10))
 df[:a] + df[:b]
 ```
+
 To stay closer to the functionality of R's `with`, you can use the experimental [DataFramesMeta](https://github.com/JuliaStats/DataFramesMeta.jl) package. Using this package, you would write:
 
 ```julia
