@@ -327,7 +327,19 @@ module TestIO
     io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
     @test names(readtable(io)) == ns
 
-    # Test writetable with append
+    # Test writetable with NA
+	# Can't check the result with ==.  Also unclear how to
+	# test the results.  
+	tf = tempname()
+    isfile(tf) && rm(tf)
+	df1 = DataFrame(a = @data([NA, 2, 3]), b = @data([4, NA, 6]))
+	writetable(tf, df1)
+	
+	# Test writetable with nastring set
+	isfile(tf) && rm(tf)
+	writetable(tf, df1, nastring="NaN")
+	
+	# Test writetable with append
 
     df1 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
     df2 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
