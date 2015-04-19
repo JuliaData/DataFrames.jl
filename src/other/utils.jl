@@ -179,7 +179,7 @@ end
 function _fnames(fs::Vector{Function})
     λcounter = 0
     names = map(fs) do f
-        if f.env == () # Anonymous function
+        if isempty(f.env) # Anonymous function
             λcounter += 1
             name = "λ$(λcounter)"
         else

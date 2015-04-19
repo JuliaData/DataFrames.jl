@@ -1,6 +1,5 @@
 module TestIteration
-    using Base.Test
-    using DataFrames
+    using Base.Test, DataFrames, Compat
 
     dv = @data([1, 2, NA])
     dm = DataArray([1 2; 3 4])
@@ -25,11 +24,11 @@ module TestIteration
         @test row[:B]-row[:A] == 1
 
         # issue #683 (https://github.com/JuliaStats/DataFrames.jl/pull/683)
-        @test typeof(collect(row)) <: Array{(Symbol, Any), 1}
+        @test typeof(collect(row)) == @compat Array{Tuple{Symbol, Any}, 1}
     end
 
     for col in eachcol(df)
-        @test isa(col, (Symbol, AbstractDataVector))
+        @test isa(col, @compat Tuple{Symbol, AbstractDataVector})
     end
 
     @test isequal(map(x -> minimum(array(x)), eachrow(df)), Any[1,2])

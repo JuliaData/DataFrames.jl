@@ -230,10 +230,10 @@ Base.ndims(::AbstractDataFrame) = 2
 Base.similar(df::AbstractDataFrame, dims::Int) =
     DataFrame([similar(x, dims) for x in columns(df)], copy(index(df)))
 
-nas{T}(dv::AbstractArray{T}, dims::Union(Int, (Int...))) =   # TODO move to datavector.jl?
+nas{T}(dv::AbstractArray{T}, dims::Union(Int, @compat Tuple{Vararg{Int}})) =   # TODO move to datavector.jl?
     DataArray(Array(T, dims), trues(dims))
 
-nas{T,R}(dv::PooledDataArray{T,R}, dims::Union(Int, (Int...))) =
+nas{T,R}(dv::PooledDataArray{T,R}, dims::Union(Int, @compat Tuple{Vararg{Int}})) =
     PooledDataArray(DataArrays.RefArray(zeros(R, dims)), dv.pool)
 
 nas(df::AbstractDataFrame, dims::Int) =
