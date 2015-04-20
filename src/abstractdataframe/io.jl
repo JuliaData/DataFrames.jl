@@ -17,7 +17,7 @@ function printtable(io::IO,
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-					nastring::String = "NA")
+                    nastring::String = "NA")
     n, p = size(df)
     etypes = eltypes(df)
     if header
@@ -37,20 +37,20 @@ function printtable(io::IO,
         for j in 1:p
             if ! (isna(df[j],i))
                 if ! (etypes[j] <: Real)
-					print(io, quotemark)
-					escapedprint(io, df[i, j], "\"'")
-					print(io, quotemark)
+		    print(io, quotemark)
+		    escapedprint(io, df[i, j], "\"'")
+		    print(io, quotemark)
                 else
-					print(io, df[i, j])
+		    print(io, df[i, j])
                 end
-			else
-				print(io, nastring)
+            else
+		print(io, nastring)
             end
             if j < p
-				print(io, separator)
-			else
+		print(io, separator)
+            else
                 print(io, '\n')
-			end
+            end
         end
     end
     return
@@ -60,13 +60,13 @@ function printtable(df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-					nastring::String = "NA")
+                    nastring::String = "NA")
     printtable(STDOUT,
                df,
                header = header,
                separator = separator,
                quotemark = quotemark,
-			   nastring = nastring)
+               nastring = nastring)
     return
 end
 
@@ -76,7 +76,7 @@ function writetable(filename::String,
                     header::Bool = true,
                     separator::Char = getseparator(filename),
                     quotemark::Char = '"',
-					nastring::String = "NA",
+                    nastring::String = "NA",
                     append::Bool = false)
 
     if endswith(filename, ".bz") || endswith(filename, ".bz2")
@@ -110,7 +110,7 @@ function writetable(filename::String,
                    header = header,
                    separator = separator,
                    quotemark = quotemark,
-				   nastring = nastring)
+                   nastring = nastring)
     end
 
     return
