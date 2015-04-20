@@ -336,8 +336,8 @@ module TestIO
 
     # Test writetable with nastring set and compare to the results
     isfile(tf) && rm(tf)
-    writetable(tf, df, nastring="NaN")
-    @test readcsv(tf) == ["A" "B"; 1 "b"; "NaN" "NaN"]
+    writetable(tf, df, nastring="none")
+    @test readcsv(tf) == ["A" "B"; 1 "b"; "none" "none"]
     
     # Test writetable with append
     df1 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
