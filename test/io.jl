@@ -327,8 +327,19 @@ module TestIO
     io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
     @test names(readtable(io)) == ns
 
-    # Test writetable with append
+    # Test writetable with NA and compare to the results
+    tf = tempname()
+    isfile(tf) && rm(tf)
+    df = DataFrame(A = @data([1,NA]), B = @data(["b", NA]))
+    writetable(tf, df)
+    @test readcsv(tf) == ["A" "B"; 1 "b"; "NA" "NA"]
 
+    # Test writetable with nastring set and compare to the results
+    isfile(tf) && rm(tf)
+    writetable(tf, df, nastring="none")
+    @test readcsv(tf) == ["A" "B"; 1 "b"; "none" "none"]
+    
+    # Test writetable with append
     df1 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
     df2 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
     df3 = DataFrame(a = @data([1, 2, 3]), c = @data([4, 5, 6])) # 2nd column mismatch
