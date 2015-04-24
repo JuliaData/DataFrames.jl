@@ -299,7 +299,7 @@ function ModelMatrix(mf::ModelFrame)
     ff = trms.factors[:, fetrms]
     ## need to be cautious here to avoid evaluating cols for a factor with many levels
     ## if the factor doesn't occur in the fetrms
-    rows = Bool[x for x in sum(ff, 2)]
+    rows = Bool[x != 0 for x in sum(ff, 2)]
     ff = ff[rows, :]
     cc = [cols(col) for col in columns(mf.df[:, rows])]
     for j in 1:size(ff,2)

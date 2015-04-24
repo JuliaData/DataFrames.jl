@@ -117,9 +117,9 @@ typealias RList RVector{Any, 0x13}  # "list" in R == Julia cell array
 
 typealias RDATag UInt32
 
-isobj(fl::RDATag) = @compat Bool(fl & 0x00000100)
-hasattr(fl::RDATag) = @compat Bool(fl & 0x00000200)
-hastag(fl::RDATag) = @compat Bool(fl & 0x00000400)
+isobj(fl::RDATag) = (fl & 0x00000100) != 0
+hasattr(fl::RDATag) = (fl & 0x00000200) != 0
+hastag(fl::RDATag) = (fl & 0x00000400) != 0
 
 if VERSION < v"0.4-"
     sxtype = uint8
