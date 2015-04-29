@@ -358,7 +358,7 @@ function Base.getindex{T}(v::RepeatedVector{T},i::Real)
     idx = Base.fld1(mod1(i,v.inner*N),v.inner)
     v.parent[idx]
 end
-Base.getindex(v::RepeatedVector,i::Ranges) = getindex(v, [i;])
+Base.getindex(v::RepeatedVector,i::Range) = getindex(v, [i;])
 
 Base.size(v::RepeatedVector) = (length(v),)
 Base.length(v::RepeatedVector) = v.inner * v.outer * length(v.parent)
