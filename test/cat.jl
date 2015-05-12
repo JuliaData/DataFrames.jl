@@ -46,6 +46,7 @@ module TestCat
     df[1] = 3
     df[:x3] = 2
 
+    vcat([])
     vcat(null_df)
     vcat(null_df, null_df)
     vcat(null_df, df)
