@@ -90,6 +90,7 @@ end
 Base.start(::Cols) = 1
 Base.done(itr::Cols, st) = st > length(itr.df)
 Base.next(itr::Cols, st) = (itr.df[st], st + 1)
+Base.length(itr::Cols) = length(itr.df)
 
 # N.B. where stored as a vector, 'columns(x) = x.vector' is a bit cheaper
 columns{T <: AbstractDataFrame}(df::T) = Cols{T}(df)
