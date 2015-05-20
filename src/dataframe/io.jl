@@ -693,7 +693,7 @@ function findcorruption(rows::Integer,
     for i in 1:rows
         bound = p.lines[i + 1]
         f = 0
-        while p.bounds[t] < bound
+        while t <= n && p.bounds[t] < bound
             f += 1
             t += 1
         end
