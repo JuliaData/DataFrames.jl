@@ -8,3 +8,11 @@ import Base: keys, values, insert!
 Base.@deprecate keys(df::AbstractDataFrame) names(df)
 Base.@deprecate values(df::AbstractDataFrame) DataFrames.columns(df)
 Base.@deprecate insert!(df::DataFrame, df2::AbstractDataFrame) merge!(df, df2)
+
+import DataArrays: array, DataArray
+Base.@deprecate array(df::AbstractDataFrame) convert(Array, df)
+Base.@deprecate array(r::DataFrameRow) convert(Array, r)
+if VERSION < v"0.4.0-"
+    Base.@deprecate DataArray(df::AbstractDataFrame) convert(DataArray, df)
+end
+Base.@deprecate DataArray(df::AbstractDataFrame, T::DataType) convert(DataArray{T}, df)

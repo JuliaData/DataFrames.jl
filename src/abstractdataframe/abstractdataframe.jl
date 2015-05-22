@@ -28,7 +28,7 @@ The following are normally implemented for AbstractDataFrames:
 * `size(d)` : (nrows, ncols)
 * `head(d, n = 5)` : first `n` rows
 * `tail(d, n = 5)` : last `n` rows
-* `array(d)` : convert to an array
+* `convert(Array, d)` : convert to an array
 * `DataArray(d)` : convert to a DataArray
 * `complete_cases(d)` : indexes of complete cases (rows with no NA's)
 * `complete_cases!(d)` : remove rows with NA's
@@ -503,9 +503,18 @@ complete_cases!(df)
 """
 complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(!complete_cases(df)))
 
-function DataArrays.array(df::AbstractDataFrame)
-    n, p = size(df)
+function Base.convert(::Type{Array}, df::AbstractDataFrame)
+    convert(Matrix, df)
+end
+function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(typejoin, eltypes(df))
+    convert(Matrix{T}, df)
+end
+function Base.convert{T}(::Type{Array{T}}, df::AbstractDataFrame)
+    convert(Matrix{T}, df)
+end
+function Base.convert{T}(::Type{Matrix{T}}, df::AbstractDataFrame)
+    n, p = size(df)
     res = Array(T, n, p)
     idx = 1
     for col in columns(df)
@@ -516,8 +525,17 @@ function DataArrays.array(df::AbstractDataFrame)
     return res
 end
 
-function DataArrays.DataArray(df::AbstractDataFrame,
-                              T::DataType = reduce(typejoin, eltypes(df)))
+function Base.convert(::Type{DataArray}, df::AbstractDataFrame)
+    convert(DataMatrix, df)
+end
+function Base.convert(::Type{DataMatrix}, df::AbstractDataFrame)
+    T = reduce(typejoin, eltypes(df))
+    convert(DataMatrix{T}, df)
+end
+function Base.convert{T}(::Type{DataArray{T}}, df::AbstractDataFrame)
+    convert(DataMatrix{T}, df)
+end
+function Base.convert{T}(::Type{DataMatrix{T}}, df::AbstractDataFrame)
     n, p = size(df)
     res = DataArray(T, n, p)
     idx = 1
@@ -561,10 +579,11 @@ function nonunique(df::AbstractDataFrame)
     res = fill(false, nrow(df))
     di = Dict()
     for i in 1:nrow(df)
-        if haskey(di, array(df[i, :])) # Used to convert to Any type
+        arow = convert(Array, df[i, :]) # Used to convert to Any type
+        if haskey(di, arow)
             res[i] = true
         else
-            di[array(df[i, :])] = 1 # Used to convert to Any type
+            di[arow] = 1
         end
     end
     res

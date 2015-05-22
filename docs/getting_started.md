@@ -52,11 +52,11 @@ dv[1] = 3
 convert(Array, dv)
 ```
 
-In addition to removing `NA` values and hoping they won't occur, you can also replace any `NA` values using the `array` function, which takes a replacement value as an argument:
+In addition to removing `NA` values and hoping they won't occur, you can also replace any `NA` values using the `convert` function, which takes a replacement value as an argument:
 
 ```julia
 dv = @data([NA, 3, 2, 5, 4])
-mean(array(dv, 11))
+mean(convert(Array, dv, 11))
 ```
 
 Which strategy for dealing with `NA` values is most appropriate will typically depend on the specific details of your data analysis pathway.

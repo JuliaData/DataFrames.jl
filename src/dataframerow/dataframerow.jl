@@ -35,4 +35,4 @@ Base.next(r::DataFrameRow, s) = ((_names(r)[s], r[s]), s + 1)
 
 Base.done(r::DataFrameRow, s) = s > length(r)
 
-DataArrays.array(r::DataFrameRow) = DataArrays.array(r.df[r.row,:])
+Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, r.df[r.row,:])
