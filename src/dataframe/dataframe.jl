@@ -30,7 +30,7 @@ DataFrame(ds::Vector{Associative})
 * `column_eltypes` : elemental type of each column
 * `ds` : a vector of Associatives
 
-Each column in `columns` should be the same length. 
+Each column in `columns` should be the same length.
 
 ### Notes
 
@@ -672,6 +672,7 @@ end
 ##
 ##############################################################################
 
+# hcat! for 2 arguments
 function hcat!(df1::DataFrame, df2::AbstractDataFrame)
     u = add_names(index(df1), index(df2))
     for i in 1:length(u)
@@ -684,9 +685,11 @@ hcat!{T}(df::DataFrame, x::DataVector{T}) = hcat!(df, DataFrame(Any[x]))
 hcat!{T}(df::DataFrame, x::Vector{T}) = hcat!(df, DataFrame(Any[DataArray(x)]))
 hcat!{T}(df::DataFrame, x::T) = hcat!(df, DataFrame(Any[DataArray([x])]))
 
-# three-plus-argument form recurses
+# hcat! for 1-n arguments
+hcat!(df::DataFrame) = df
 hcat!(a::DataFrame, b, c...) = hcat!(hcat!(a, b), c...)
 
+# hcat
 Base.hcat(df::DataFrame, x) = hcat!(copy(df), x)
 
 ##############################################################################
