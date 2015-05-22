@@ -124,7 +124,7 @@ end
 
 Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::Real) = @compat Int(idx)
-Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, array(idx, false))
+Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, convert(Array, idx, false))
 Base.getindex{T}(x::AbstractIndex, idx::AbstractDataVector{T}) = getindex(x, dropna(idx))
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
 Base.getindex(x::AbstractIndex, idx::Range) = [idx;]
