@@ -16,6 +16,7 @@ pages:
 - [sorting.md, User guide, Sorting]
 - [formulas.md, User guide, Formulas]
 - [pooling.md, User guide, Pooling]
+- [comparison.md, User guide, Comparison to R and Pandas]
 - [api/maintypes.md, API, Main types]
 - [api/utilities.md, API, Utilities]
 - [api/manipulation.md, API, Data manipulation]
