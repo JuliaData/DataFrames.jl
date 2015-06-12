@@ -122,6 +122,7 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     x
 end
 
+Base.getindex(x::Index, idx::Colon) = idx
 Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::Real) = @compat Int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, convert(Array, idx, false))

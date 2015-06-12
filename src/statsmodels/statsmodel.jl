@@ -67,7 +67,8 @@ typealias DataFrameModels Union(DataFrameStatisticalModel, DataFrameRegressionMo
 
 # Predict function that takes data frame as predictor instead of matrix
 function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame)
-    # copy terms, removing outcome if present
+    # copy terms, removing outcome if present (ModelFrame will complain if a
+    # term is not found in the DataFrame)
     newTerms = remove_response(mm.mf.terms)
     # create new model frame/matrix
     newX = ModelMatrix(ModelFrame(newTerms, df)).m
@@ -91,7 +92,7 @@ function Base.show(io::IO, model::DataFrameModels)
         println(io, "$(typeof(model)):\n\nCoefficients:")
         show(io, ct)
     catch e
-        if isa(e, String) && startswith(e, "coeftable is not defined")
+        if isa(e, ErrorException) && contains(e.msg, "coeftable is not defined")
             show(io, model.model)
         else
             rethrow(e)
