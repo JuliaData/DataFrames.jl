@@ -58,8 +58,8 @@ module TestDataFrame
     #test_group("DataFrame assignment")
     # Insert single column
     x0 = x[Int[], :]
-    @test_throws ErrorException x0[:d] = [1]
-    @test_throws ErrorException x0[:d] = 1:3
+    @test_throws DimensionMismatch x0[:d] = [1]
+    @test_throws DimensionMismatch x0[:d] = 1:3
 
     # Insert single value
     x[:d] = 3
