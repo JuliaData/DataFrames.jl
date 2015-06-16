@@ -135,7 +135,7 @@ _names(gd::GroupedDataFrame) = _names(gd.parent)
 
 
 # group creates pooled data array from multiple columns 
-function group{T}(df::AbstractDataFrame) 
+function group(df::AbstractDataFrame) 
 	ncols = length(df)
     dv = DataArrays.PooledDataArray(df[ncols])
     dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
