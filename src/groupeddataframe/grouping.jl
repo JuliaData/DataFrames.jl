@@ -154,7 +154,7 @@ function group(df::AbstractDataFrame)
     uu = unique(x)
     T = eltype(x)
     dict = Dict(uu, map(z -> convert(T,z), 1:length(uu)))
-    PooledDataArray(DataArrays.RefArray(map(z -> dict[z], x)),  [1:length(uu)])
+    PooledDataArray(DataArrays.RefArray(map(z -> dict[z], x)),  [1:length(uu);])
 end
 ##############################################################################
 ##
