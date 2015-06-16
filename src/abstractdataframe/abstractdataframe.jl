@@ -559,7 +559,7 @@ nonunique(df::AbstractDataFrame)
 
 ### Result
 
-* `::Vector{Bool}` : indicates whether the row is a duplicate of a
+* `::Vector{Bool}` : indicates whether the row is a duplicate of some
   prior row
 
 See also `unique` and `unique!`.
@@ -574,16 +574,14 @@ nonunique(df)
 
 """
 function nonunique(df::AbstractDataFrame)
-    # Return a Vector{Bool} indicated whether the row is a duplicate
-    # of a prior row.
     res = fill(false, nrow(df))
-    di = Dict()
+    rows = Set{DataFrameRow}()
     for i in 1:nrow(df)
-        arow = convert(Array, df[i, :]) # Used to convert to Any type
-        if haskey(di, arow)
+        arow = DataFrameRow(df, i)
+        if in(arow, rows)
             res[i] = true
         else
-            di[arow] = 1
+            push!(rows, arow)
         end
     end
     res
