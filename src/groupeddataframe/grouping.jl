@@ -133,6 +133,24 @@ Base.getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) =
 Base.names(gd::GroupedDataFrame) = names(gd.parent)
 _names(gd::GroupedDataFrame) = _names(gd.parent)
 
+
+# group creates pooled data array from multiple columns 
+function group{T}(df::AbstractDataFrame) 
+	ncols = length(df)
+    dv = DataArrays.PooledDataArray(df[ncols])
+    dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
+    x = copy(dv.refs) .+ dv_has_nas
+    ngroups = length(dv.pool) + dv_has_nas
+    for j = (ncols - 1):-1:1
+        dv = DataArrays.PooledDataArray(df[j])
+        dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
+        for i = 1:DataFrames.size(df, 1)
+            x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
+        end
+        ngroups = ngroups * (length(dv.pool) + dv_has_nas)
+    end
+    dropUnusedLevels!(x)
+end
 ##############################################################################
 ##
 ## GroupApplied...
