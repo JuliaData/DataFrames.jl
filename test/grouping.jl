@@ -29,4 +29,14 @@ module TestGrouping
     h(df) = g(f(df))
 
     @test combine(map(h, gd)) == combine(map(g, ga))
+
+
+    df = DataFrame(v1 = @data([1, NA, 2, 1]), v2 = @data([1, 3, 2, 1]), v3 = @data([NA, 1, 1, NA]))
+    
+    @test poolall(df).pool == [1, 2, 3]
+    @test poolall(df).refs == [1, 2, 3, 1]
+    @test poolall(df, skipna = true).pool == [1]
+    @test poolall(df, skipna = true).refs = [0, 0, 1, 0]
+
+
 end

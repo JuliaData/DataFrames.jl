@@ -133,29 +133,53 @@ Base.getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) =
 Base.names(gd::GroupedDataFrame) = names(gd.parent)
 _names(gd::GroupedDataFrame) = _names(gd.parent)
 
-
-# group creates pooled data array from multiple columns 
-function group(df::AbstractDataFrame) 
-    # from groupby
+# poolall combine multiple columns into one pooled array
+function poolall(df::AbstractDataFrame; skipna = false) 
     ncols = length(df)
     dv = DataArrays.PooledDataArray(df[ncols])
-    dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    x = copy(dv.refs) .+ dv_has_nas
-    ngroups = length(dv.pool) + dv_has_nas
-    for j = (ncols - 1):-1:1
-        dv = DataArrays.PooledDataArray(df[j])
-        dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-        for i = 1:DataFrames.size(df, 1)
-            x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
+
+    if skipna
+        x = copy(dv.refs) 
+        ngroups = length(dv.pool)
+        for j = (ncols - 1):-1:1
+            dv = DataArrays.PooledDataArray(df[j])
+            for i = 1:DataFrames.size(df, 1)
+                x[i] += ((dv.refs[i] == 0 | x[i] == 0) ? 0 : (dv.refs[i] - 1) * ngroups)
+            end
+            ngroups = ngroups * length(dv.pool)
         end
-        ngroups = ngroups * (length(dv.pool) + dv_has_nas)
+        # factorize
+        uu = unique(x)
+        T = eltype(x)
+        vv = setdiff(uu, zero(T))
+        dict = Dict(vv, map(z -> convert(T, z), 1:(length(vv))))
+        PooledDataArray(DataArrays.RefArray(map(z -> z == 0 ? zero(T) : dict[z], x)),  [1:length(vv);])
+    else
+        # code from groupby
+        dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
+        x = copy(dv.refs) .+ dv_has_nas
+        ngroups = length(dv.pool) + dv_has_nas
+        for j = (ncols - 1):-1:1
+            dv = DataArrays.PooledDataArray(df[j])
+            dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
+            for i = 1:DataFrames.size(df, 1)
+                x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
+            end
+            ngroups = ngroups * (length(dv.pool) + dv_has_nas)
+        end
+        # end of code from groupby
+        # factorize
+        uu = unique(x)
+        T = eltype(x)
+        dict = Dict(uu, map(z -> convert(T,z), 1:length(uu)))
+        PooledDataArray(DataArrays.RefArray(map(z -> dict[z], x)),  [1:length(uu);])
     end
-    # factorize
-    uu = unique(x)
-    T = eltype(x)
-    dict = Dict(uu, map(z -> convert(T,z), 1:length(uu)))
-    PooledDataArray(DataArrays.RefArray(map(z -> dict[z], x)),  [1:length(uu);])
 end
+
+poolall{T}(df::AbstractDataFrame, cols = Vector{T}; skipna = false) =  poollall(df[cols], skipna)
+
+
+
 ##############################################################################
 ##
 ## GroupApplied...
