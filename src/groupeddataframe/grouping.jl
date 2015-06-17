@@ -134,7 +134,7 @@ Base.names(gd::GroupedDataFrame) = names(gd.parent)
 _names(gd::GroupedDataFrame) = _names(gd.parent)
 
 # poolall combine multiple columns into one pooled array
-function poolall(df::AbstractDataFrame; skipna = false) 
+function poolall(df::AbstractDataFrame; skipna = true) 
     ncols = length(df)
     dv = DataArrays.PooledDataArray(df[ncols])
 
@@ -176,7 +176,7 @@ function poolall(df::AbstractDataFrame; skipna = false)
     end
 end
 
-poolall{T}(df::AbstractDataFrame, cols = Vector{T}; skipna = false) =  poollall(df[cols], skipna)
+poolall{T}(df::AbstractDataFrame, cols = Vector{T}; skipna = true) =  poollall(df[cols], skipna)
 
 
 
