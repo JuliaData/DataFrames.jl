@@ -40,12 +40,12 @@ df = DataFrame(A = [1, 1, 1, 2, 2, 2],
 pool!(df, [:A, :B])
 ```
 
-Pool multiple columns in a `DataFrame` into one `PooledDataArray` with the `poolall` function: 
+Pool multiple columns in a `DataFrame` into one `PooledDataArray` with the `group` function: 
 
 ```julia
 df = DataFrame(A = [1, 1, 1, 2, 2, 2],
                B = ["X", "X", "X", "Y", "Y", "Y"])
-poolall(df)
+group(df, [:A, :B])
 ```
 
 Pooling columns is important for working with the [GLM package](https://github.com/JuliaStats/GLM.jl) When fitting regression models, `PooledDataArray` columns in the input are translated into 0/1 indicator columns in the `ModelMatrix` with one column for each of the levels of the `PooledDataArray`. This allows one to analyze categorical data efficiently.
