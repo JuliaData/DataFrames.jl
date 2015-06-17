@@ -301,13 +301,22 @@ upgrade_vector(v::Vector) = DataArray(v, falses(length(v)))
 upgrade_vector(v::Range) = DataArray([v;], falses(length(v)))
 upgrade_vector(v::BitVector) = DataArray(convert(Array{Bool}, v), falses(length(v)))
 upgrade_vector(adv::AbstractDataArray) = adv
-function upgrade_scalar(df::DataFrame, v::AbstractArray)
-    msg = "setindex!(::DataFrame, ...) only broadcasts scalars, not arrays"
-    throw(ArgumentError(msg))
+
+function upgrade_scalar(df::DataFrame, v::AbstractArray, row_inds::Union{Colon,AbstractArray})
+    throw(ArgumentError("setindex!(::DataFrame, ...) only broadcasts scalars, not arrays"))
 end
-function upgrade_scalar(df::DataFrame, v::Any)
-    n = (ncol(df) == 0) ? 1 : nrow(df)
+
+# how many rows are in the selection
+nselrows(df::DataFrame, row_inds::Colon) = (ncol(df) == 0) ? 1 : nrow(df)
+nselrows{T<:Real}(df::DataFrame, row_inds::AbstractArray{T}) = length(row_inds)
+nselrows(df::DataFrame, row_inds::AbstractArray{Bool}) = sum(row_inds)
+
+function upgrade_scalar(df::DataFrame, v::Any, row_inds::Any)
+    n = nselrows(df, row_inds)
     DataArray(fill(v, n), falses(n))
+end
+function upgrade_scalar(df::DataFrame, ::NAtype, row_inds::Any)
+    throw(MethodError("Assigning NAs not supported yet"))
 end
 
 ##############################################################################
@@ -414,8 +423,11 @@ for rows in [nothing, :single, :multiple, :colon]
       # setup value-dependent elements of the generated function
       if val == :scalar
         val_arg = "v"
-        if rows != :single
-          val_prepare = "dv = upgrade_scalar(df, v)"
+        if rows == :colon || rows == nothing
+          val_prepare = "dv = upgrade_scalar(df, v, :)"
+          val_insert = "dv"
+        elseif rows == :multi
+          val_prepare = "dv = upgrade_scalar(df, v, row_inds)"
           val_insert = "dv"
         end
       elseif val == :vector
