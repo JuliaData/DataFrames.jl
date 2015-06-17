@@ -302,7 +302,10 @@ upgrade_vector(v::Range) = DataArray([v;], falses(length(v)))
 upgrade_vector(v::BitVector) = DataArray(convert(Array{Bool}, v), falses(length(v)))
 upgrade_vector(adv::AbstractDataArray) = adv
 
-function upgrade_scalar(df::DataFrame, v::AbstractArray, row_inds::Union{Colon,AbstractArray})
+function upgrade_scalar(df::DataFrame, v::AbstractArray, row_inds::AbstractArray)
+    throw(ArgumentError("setindex!(::DataFrame, ...) only broadcasts scalars, not arrays"))
+end
+function upgrade_scalar(df::DataFrame, v::AbstractArray, row_inds::Colon)
     throw(ArgumentError("setindex!(::DataFrame, ...) only broadcasts scalars, not arrays"))
 end
 
