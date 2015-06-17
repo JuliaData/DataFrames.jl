@@ -36,11 +36,11 @@ module TestGrouping
     @test group(df, skipna = false).pool == [1, 2, 3]
     @test group(df, skipna = false).refs == [1, 2, 3, 1]
     @test group(df).pool == [1]
-    @test group(df).refs = [0, 0, 1, 0]
+    @test group(df).refs == [0, 0, 1, 0]
     
     # test that type of refs of last column is promoted
     df = DataFrame(v1 = pool(1:1000), v2 = pool(fill(1, 1000)))
-    @test groupby(df, [:v1, :v2]).starts  [1:100;]
+    @test groupby(df, [:v1, :v2]).starts == [1:100;]
     
 
 
