@@ -90,7 +90,7 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     dv = PooledDataArray(d[cols[ncols]])
     # if there are NAs, add 1 to the refs to avoid underflows in x later
     dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    x = copy(dv.refs) .+ dv_has_nas
+    x = map(z -> convert(Uint32, z) + dv_has_nas, dv.refs)
     # also compute the number of groups, which is the product of the set lengths
     ngroups = length(dv.pool) + dv_has_nas
     # if there's more than 1 column, do roughly the same thing repeatedly
@@ -134,12 +134,11 @@ Base.names(gd::GroupedDataFrame) = names(gd.parent)
 _names(gd::GroupedDataFrame) = _names(gd.parent)
 
 # poolall combine multiple columns into one pooled array
-function poolall(df::AbstractDataFrame; skipna = true) 
+function group(df::AbstractDataFrame; skipna = true) 
     ncols = length(df)
     dv = DataArrays.PooledDataArray(df[ncols])
-
     if skipna
-        x = copy(dv.refs) 
+        x = map(z -> convert(Uint32, z), dv.refs)
         ngroups = length(dv.pool)
         for j = (ncols - 1):-1:1
             dv = DataArrays.PooledDataArray(df[j])
@@ -152,12 +151,12 @@ function poolall(df::AbstractDataFrame; skipna = true)
         uu = unique(x)
         T = eltype(x)
         vv = setdiff(uu, zero(T))
-        dict = Dict(vv, map(z -> convert(T, z), 1:(length(vv))))
+        dict = Dict(vv, 1:(length(vv)))
         PooledDataArray(DataArrays.RefArray(map(z -> z == 0 ? zero(T) : dict[z], x)),  [1:length(vv);])
     else
         # code from groupby
         dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-        x = copy(dv.refs) .+ dv_has_nas
+        x = map(z -> convert(Uint32, z) + dv_has_nas, dv.refs)
         ngroups = length(dv.pool) + dv_has_nas
         for j = (ncols - 1):-1:1
             dv = DataArrays.PooledDataArray(df[j])
@@ -171,12 +170,14 @@ function poolall(df::AbstractDataFrame; skipna = true)
         # factorize
         uu = unique(x)
         T = eltype(x)
-        dict = Dict(uu, map(z -> convert(T,z), 1:length(uu)))
-        PooledDataArray(DataArrays.RefArray(map(z -> dict[z], x)),  [1:length(uu);])
+        dict = Dict(uu, 1:length(uu))
+        compact(PooledDataArray(DataArrays.RefArray(map(z -> dict[z], x)),  [1:length(uu);]))
     end
 end
 
-poolall{T}(df::AbstractDataFrame, cols = Vector{T}; skipna = true) =  poollall(df[cols], skipna)
+
+group(df::AbstractDataFrame, cols::Vector; skipna = true) =  group(df[cols]; skipna = skipna)
+
 
 
 
