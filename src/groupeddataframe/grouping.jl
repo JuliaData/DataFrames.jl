@@ -82,15 +82,13 @@ df |> groupby([:a, :b]) |> [sum, length]
 
 """
 function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
-    ## a subset of Wes McKinney's algorithm here:
-    ##     http://wesmckinney.com/blog/?p=489
-
+    ## a subset of Wes McKinney's algorithm here: http://wesmckinney.com/blog/?p=489
     ncols = length(cols)
     # use the pool trick to get a set of integer references for each unique item
     dv = PooledDataArray(d[cols[ncols]])
     # if there are NAs, add 1 to the refs to avoid underflows in x later
     dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    x = map(z -> convert(Uint32, z) + dv_has_nas, dv.refs)
+    x = map(z -> convert(Uint64, z) + dv_has_nas, dv.refs)
     # also compute the number of groups, which is the product of the set lengths
     ngroups = length(dv.pool) + dv_has_nas
     # if there's more than 1 column, do roughly the same thing repeatedly
@@ -138,7 +136,8 @@ function group(df::AbstractDataFrame; skipna = true)
     ncols = length(df)
     dv = DataArrays.PooledDataArray(df[ncols])
     if skipna
-        x = map(z -> convert(Uint32, z), dv.refs)
+        # NA across different columns are grouped into NA field
+        x = map(z -> convert(Uint64, z), dv.refs)
         ngroups = length(dv.pool)
         for j = (ncols - 1):-1:1
             dv = DataArrays.PooledDataArray(df[j])
@@ -152,11 +151,11 @@ function group(df::AbstractDataFrame; skipna = true)
         T = eltype(x)
         vv = setdiff(uu, zero(T))
         dict = Dict(vv, 1:(length(vv)))
-        PooledDataArray(DataArrays.RefArray(map(z -> z == 0 ? zero(T) : dict[z], x)),  [1:length(vv);])
+        out = PooledDataArray(DataArrays.RefArray(map(z -> z == 0 ? zero(T) : dict[z], x)),  [1:length(vv);])
     else
-        # code from groupby
+        # NA accross different columns are  groupted into distinct values
         dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-        x = map(z -> convert(Uint32, z) + dv_has_nas, dv.refs)
+        x = map(z -> convert(Uint64, z) + dv_has_nas, dv.refs)
         ngroups = length(dv.pool) + dv_has_nas
         for j = (ncols - 1):-1:1
             dv = DataArrays.PooledDataArray(df[j])
@@ -166,18 +165,18 @@ function group(df::AbstractDataFrame; skipna = true)
             end
             ngroups = ngroups * (length(dv.pool) + dv_has_nas)
         end
-        # end of code from groupby
         # factorize
         uu = unique(x)
         T = eltype(x)
         dict = Dict(uu, 1:length(uu))
-        compact(PooledDataArray(DataArrays.RefArray(map(z -> dict[z], x)),  [1:length(uu);]))
+        out = PooledDataArray(DataArrays.RefArray(map(z -> dict[z], x)),  [1:length(uu);])
     end
+    return(compact(out))
 end
 
 
 group(df::AbstractDataFrame, cols::Vector; skipna = true) =  group(df[cols]; skipna = skipna)
-
+group(df::AbstractDataFrame, cols::Vector; skipna = true) =  group(df[cols]; skipna = skipna)
 
 
 
