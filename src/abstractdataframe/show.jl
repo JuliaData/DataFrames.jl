@@ -30,8 +30,8 @@ end
 #'
 #' ourstrwidth("abc")
 #' ourstrwidth(10000)
-begin
-    io = IOBuffer(Array(UInt8, 80), true, true)
+let
+    local io = IOBuffer(Array(UInt8, 80), true, true)
     global ourstrwidth
     function ourstrwidth(x::Any) # -> Int
         truncate(io, 0)
