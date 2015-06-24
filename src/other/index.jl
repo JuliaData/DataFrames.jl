@@ -66,6 +66,8 @@ rename(f::Function, x::Index) = rename(x, f)
 
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
+Base.get(x::Index, key::Symbol, default::Real) = get(x.lookup, key, default)
+Base.get(x::Index, key::Real, default::Real) = 1 <= key <= length(x.names) ? key : default
 Base.keys(x::Index) = names(x)
 
 # TODO: If this should stay 'unsafe', perhaps make unexported
@@ -122,6 +124,7 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     x
 end
 
+Base.getindex(x::Index, idx::Colon) = idx
 Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::Real) = @compat Int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, convert(Array, idx, false))

@@ -217,6 +217,11 @@ ncol(df::DataFrame) = length(index(df))
 # df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
 # df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
 # df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
+# df[:] => DataFrame
+# df[SingleRowIndex, :] => (Sub)?DataFrame
+# df[MultiRowIndex, :] => (Sub)?DataFrame
+# df[:, SingleColumnIndex] => (Sub)?AbstractDataVector
+# df[:, MultiColumnIndex] => (Sub)?DataFrame
 #
 # General Strategy:
 #
@@ -227,48 +232,9 @@ ncol(df::DataFrame) = length(index(df))
 
 typealias ColumnIndex Union(Real, Symbol)
 
-# df[SingleColumnIndex] => AbstractDataVector
-function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
-    selected_column = index(df)[col_ind]
-    return df.columns[selected_column]
-end
-
-# df[MultiColumnIndex] => (Sub)?DataFrame
-function Base.getindex{T <: ColumnIndex}(df::DataFrame, col_inds::AbstractVector{T})
-    selected_columns = index(df)[col_inds]
-    new_columns = df.columns[selected_columns]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
-end
-
-# df[SingleRowIndex, SingleColumnIndex] => Scalar
-function Base.getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
-    selected_column = index(df)[col_ind]
-    return df.columns[selected_column][row_ind]
-end
-
-# df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-function Base.getindex{T <: ColumnIndex}(df::DataFrame, row_ind::Real, col_inds::AbstractVector{T})
-    selected_columns = index(df)[col_inds]
-    new_columns = Any[dv[[row_ind]] for dv in df.columns[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
-end
-
-# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
-function Base.getindex{T <: Real}(df::DataFrame, row_inds::AbstractVector{T}, col_ind::ColumnIndex)
-    selected_column = index(df)[col_ind]
-    return df.columns[selected_column][row_inds]
-end
-
-# df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-function Base.getindex{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::AbstractVector{T})
-    selected_columns = index(df)[col_inds]
-    new_columns = Any[dv[row_inds] for dv in df.columns[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
-end
-
 ##############################################################################
 ##
-## setindex!()
+## setindex!() helper functions
 ##
 ##############################################################################
 
@@ -281,17 +247,15 @@ function nextcolname(df::DataFrame)
     return symbol(string("x", ncol(df) + 1))
 end
 
-# Will automatically add a new column if needed
-function insert_single_column!(df::DataFrame,
-                               dv::AbstractVector,
-                               col_ind::ColumnIndex)
-
-    if ncol(df) != 0 && nrow(df) != length(dv)
-        error("New columns must have the same length as old columns")
-    end
-    if haskey(index(df), col_ind)
-        j = index(df)[col_ind]
-        df.columns[j] = dv
+# Assign the whole column, will automatically add a new column if needed
+function set_column!(df::DataFrame,
+                     dv::AbstractVector,
+                     ::Colon,
+                     col_ind::ColumnIndex)
+    @assert ncol(df) == 0 || nrow(df) == length(dv) # user-friendly check should have been done before
+    col_pos = get(index(df), col_ind, 0)
+    if col_pos > 0
+        df.columns[col_pos] = dv
     else
         if typeof(col_ind) <: Symbol
             push!(index(df), col_ind)
@@ -301,31 +265,35 @@ function insert_single_column!(df::DataFrame,
                 push!(index(df), nextcolname(df))
                 push!(df.columns, dv)
             else
-                error("Cannot assign to non-existent column: $col_ind")
+                throw(KeyError("Cannot assign to non-existent column: $col_ind"))
             end
         end
     end
     return dv
 end
 
-function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
-    if haskey(index(df), col_ind)
-        df.columns[index(df)[col_ind]][row_ind] = v
+# Assign the single element in a column
+function set_column!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
+    col_pos = get(index(df), col_ind, 0)
+    if col_pos > 0
+        df.columns[col_pos][row_ind] = v
         return v
     else
-        error("Cannot assign to non-existent column: $col_ind")
+        throw(KeyError("Cannot assign to non-existent column: $col_ind"))
     end
 end
 
-function insert_multiple_entries!{T <: Real}(df::DataFrame,
-                                            v::Any,
-                                            row_inds::AbstractVector{T},
-                                            col_ind::ColumnIndex)
-    if haskey(index(df), col_ind)
-        df.columns[index(df)[col_ind]][row_inds] = v
+# Assign the subset of elements in a column
+function set_column!{T <: Real}(df::DataFrame,
+                                v::Any,
+                                row_inds::AbstractVector{T},
+                                col_ind::ColumnIndex)
+    col_pos = get(index(df), col_ind, 0)
+    if col_pos > 0
+        df.columns[col_pos][row_inds] = v
         return v
     else
-        error("Cannot assign to non-existent column: $col_ind")
+        throw(KeyError("Cannot assign to non-existent column: $col_ind"))
     end
 end
 
@@ -333,233 +301,183 @@ upgrade_vector(v::Vector) = DataArray(v, falses(length(v)))
 upgrade_vector(v::Range) = DataArray([v;], falses(length(v)))
 upgrade_vector(v::BitVector) = DataArray(convert(Array{Bool}, v), falses(length(v)))
 upgrade_vector(adv::AbstractDataArray) = adv
-function upgrade_scalar(df::DataFrame, v::AbstractArray)
-    msg = "setindex!(::DataFrame, ...) only broadcasts scalars, not arrays"
-    throw(ArgumentError(msg))
+
+function upgrade_scalar(df::DataFrame, v::AbstractArray, row_inds::AbstractArray)
+    throw(ArgumentError("setindex!(::DataFrame, ...) only broadcasts scalars, not arrays"))
 end
-function upgrade_scalar(df::DataFrame, v::Any)
-    n = (ncol(df) == 0) ? 1 : nrow(df)
+function upgrade_scalar(df::DataFrame, v::AbstractArray, row_inds::Colon)
+    throw(ArgumentError("setindex!(::DataFrame, ...) only broadcasts scalars, not arrays"))
+end
+
+# how many rows are in the selection
+nselrows(df::DataFrame, row_inds::Colon) = (ncol(df) == 0) ? 1 : nrow(df)
+nselrows{T<:Real}(df::DataFrame, row_inds::AbstractArray{T}) = length(row_inds)
+nselrows(df::DataFrame, row_inds::AbstractArray{Bool}) = sum(row_inds)
+
+function upgrade_scalar(df::DataFrame, v::Any, row_inds::Any)
+    n = nselrows(df, row_inds)
     DataArray(fill(v, n), falses(n))
 end
-
-# df[SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame,
-                v::AbstractVector,
-                col_ind::ColumnIndex)
-    insert_single_column!(df, upgrade_vector(v), col_ind)
+function upgrade_scalar(df::DataFrame, ::NAtype, row_inds::Any)
+    throw(MethodError("Assigning NAs not supported yet"))
 end
 
-# df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(DF) if NCOL(DF) > 0)
-function Base.setindex!(df::DataFrame,
-                v::Any,
-                col_ind::ColumnIndex)
-    insert_single_column!(df, upgrade_scalar(df, v), col_ind)
-end
+##############################################################################
+##
+## Generation of getindex() and setindex!() methods
+##
+##############################################################################
 
-# df[MultiColumnIndex] = DataFrame
-function Base.setindex!(df::DataFrame,
-                new_df::DataFrame,
-                col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, find(col_inds))
-end
-function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
-                                  new_df::DataFrame,
-                                  col_inds::AbstractVector{T})
-    for j in 1:length(col_inds)
-        insert_single_column!(df, new_df[j], col_inds[j])
+_concat_args(args...; delim=",") = join(filter( x -> !isempty(x), [args...]), delim)
+
+for rows in [nothing, :single, :multiple, :colon]
+  rows_arg = "" # rows argument declaration
+  rows_tparam = "" # template parameter for rows argument
+  cell_sel = "" # subset of column-vector to set/return. "" = set the whole vector
+
+  # setup row-dependent elements of the generated function
+  if rows == :single
+    rows_arg = "row_ind::Real"
+    cell_sel = "row_ind"
+  elseif rows == :multiple
+    rows_arg = "row_inds::AbstractVector{R}"
+    rows_tparam = "R<:Real"
+    cell_sel = "row_inds"
+  elseif rows == :mask
+    rows_arg = "row_mask::AbstractVector{Bool}"
+    cell_sel = "row_mask"
+  elseif rows == :colon
+    rows_arg = "::Colon"
+  elseif rows == nothing
+  else
+    throw(ArgumentError("Unknown kind of rows argument: $(rows)"))
+  end
+
+  for cols in [:single, :multiple, :colon]
+    getindex_body = nothing
+    get_cols_sel = "index(df)[col_inds]" # column positions for getindex() loop
+    set_cols_sel = "col_inds" # collection of column indices for setindex!() loop
+    set_col_ind = "col_inds[j]" # column index being used inside setindex!() loop
+    cols_tparam = ""
+
+    # correct column element accesses for getindex()
+    if cols != :single && rows == :single
+      # correct column access for 1-row DataFrame case
+      get_cell_sel = "[[row_ind]]" # return 1-element DataVector
+    else
+      get_cell_sel = cell_sel != "" ? "[$(cell_sel)]" : ""
     end
-    return df
-end
 
-# df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
-function Base.setindex!(df::DataFrame,
-                v::AbstractVector,
-                col_inds::AbstractVector{Bool})
-    setindex!(df, v, find(col_inds))
-end
-function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
-                                  v::AbstractVector,
-                                  col_inds::AbstractVector{T})
-    dv = upgrade_vector(v)
-    for col_ind in col_inds
-        insert_single_column!(df, dv, col_ind)
+    # setup column-dependent elements of the generated function
+    if cols == :single
+      # vector or scalar returned
+      cols_arg = "col_ind::ColumnIndex"
+      getindex_body = "return df.columns[index(df)[col_ind]]$(get_cell_sel)"
+    elseif cols == :multiple
+      cols_arg = "col_inds::AbstractVector{C}"
+      cols_sel = "index(df)[col_inds]"
+      cols_tparam = "C<:ColumnIndex"
+    elseif cols == :mask
+      cols_arg = "col_mask::AbstractVector{Bool}"
+      cols_sel = "index(df)[col_mask]"
+    elseif cols == :colon
+      cols_arg = "::Colon"
+      cols_sel = "1:ncol(df)" # iterate over all columns
+      set_cols_sel = cols_sel
+      set_col_ind = "j"
+      if rows == nothing || rows == :colon
+        # getindex returns the whole dataframe
+        getindex_body = "return copy(df)"
+      end
+    else
+      throw(ArgumentError("Unknown kind of cols argument: $(cols)"))
     end
-    return df
-end
 
-# df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(DF) if NCOL(DF) > 0)
-function Base.setindex!(df::DataFrame,
-                val::Any,
-                col_inds::AbstractVector{Bool})
-    setindex!(df, val, find(col_inds))
-end
-function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
-                                  val::Any,
-                                  col_inds::AbstractVector{T})
-    dv = upgrade_scalar(df, val)
-    for col_ind in col_inds
-        insert_single_column!(df, dv, col_ind)
+    getindex_args = _concat_args("df::DataFrame", rows_arg, cols_arg)
+    tparams = _concat_args(rows_tparam, cols_tparam)
+    if (!isempty(tparams)) tparams = "{$(tparams)}" end
+
+    if getindex_body == nothing
+      getindex_body = "col_poses = index(df)[$(cols_sel)]
+           new_columns = Any[df.columns[j]$(get_cell_sel) for j in col_poses]
+           return DataFrame(new_columns, Index(_names(df)[col_poses]))"
     end
-    return df
-end
 
-# df[SingleRowIndex, SingleColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame,
-                v::Any,
-                row_ind::Real,
-                col_ind::ColumnIndex)
-    insert_single_entry!(df, v, row_ind, col_ind)
-end
+    # declare getindex() function
+    getindex_func = "function Base.getindex$(tparams)($(getindex_args))
+      $(getindex_body)
+    end"
+    eval(parse(getindex_func))
 
-# df[SingleRowIndex, MultiColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame,
-                v::Any,
-                row_ind::Real,
-                col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_ind, find(col_inds))
-end
-function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
-                                  v::Any,
-                                  row_ind::Real,
-                                  col_inds::AbstractVector{T})
-    for col_ind in col_inds
-        insert_single_entry!(df, v, row_ind, col_ind)
+    for val in [:frame, :scalar, :vector]
+      val_insert = "v" # value to pass to set_column!()
+      val_checks = ""  # check to do before the assignment
+      val_prepare = "" # value preparations before the assignment
+
+      # correct column element accesses for setindex!()
+      if rows == :colon || rows == nothing
+        set_cell_sel = ":"
+      elseif rows == :single && val != :scalar
+        set_cell_sel = "[row_ind]" # assign to 1-element DataVector
+      else
+        set_cell_sel = cell_sel
+      end
+
+      # setup value-dependent elements of the generated function
+      if val == :scalar
+        val_arg = "v"
+        if rows == :colon || rows == nothing
+          val_prepare = "dv = upgrade_scalar(df, v, :)"
+          val_insert = "dv"
+        elseif rows == :multi
+          val_prepare = "dv = upgrade_scalar(df, v, row_inds)"
+          val_insert = "dv"
+        end
+      elseif val == :vector
+        if rows == :single continue # impossible combination
+        elseif rows == :colon || rows == nothing # check that vector is compatible with the dataframe
+            val_checks = "if ncol(df) != 0 && nrow(df) != length(v)
+              throw(DimensionMismatch(\"Data size (\$(length(v))) doesn't match the number of rows \$(nrow(df))\"))
+            end"
+        end
+        val_arg = "v::AbstractVector"
+        val_prepare = "dv = upgrade_vector(v)"
+        val_insert = "dv"
+      elseif val == :frame
+        if cols == :single continue end # impossible combination
+        if rows == :colon || rows == nothing # check that vector is compatible with the dataframe
+            val_checks = "if ncol(df) != 0 && nrow(df) != nrow(v)
+              throw(DimensionMismatch(\"Data size (\$(nrow(v))) doesn't match the number of rows \$(nrow(df))\"))
+            end"
+        else
+            val_checks = "if ncol(v) != length($(set_cols_sel))
+              throw(DimensionMismatch(\"Trying to assign \$(ncol(v)) column(s) to \$(length(col_inds)) column(s)\"))
+            end"
+        end
+        val_arg = "v::DataFrame"
+        val_insert = "v[j]"
+      else
+        throw(ArgumentError("Unknown kind of val argument: $(val)"))
+      end
+
+      if cols == :single
+        setindex_body = "set_column!( df, $(val_insert), $(set_cell_sel), col_ind )"
+      else
+        setindex_body = "for j in @compat eachindex($(set_cols_sel))
+              set_column!( df, $(val_insert), $(set_cell_sel), $(set_col_ind) )
+            end"
+      end
+
+      setindex_args = _concat_args("df::DataFrame",val_arg,rows_arg,cols_arg)
+      setindex_func = "function Base.setindex!$(tparams)($(setindex_args))
+        $(val_checks)
+        $(val_prepare)
+        $(setindex_body)
+        return df
+      end"
+      eval(parse(setindex_func))
     end
-    return df
-end
-
-# df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
-function Base.setindex!(df::DataFrame,
-                new_df::DataFrame,
-                row_ind::Real,
-                col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_ind, find(col_inds))
-end
-function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
-                                  new_df::DataFrame,
-                                  row_ind::Real,
-                                  col_inds::AbstractVector{T})
-    for j in 1:length(col_inds)
-        insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
-    end
-    return df
-end
-
-# df[MultiRowIndex, SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame,
-                v::AbstractVector,
-                row_inds::AbstractVector{Bool},
-                col_ind::ColumnIndex)
-    setindex!(df, v, find(row_inds), col_ind)
-end
-function Base.setindex!{T <: Real}(df::DataFrame,
-                           v::AbstractVector,
-                           row_inds::AbstractVector{T},
-                           col_ind::ColumnIndex)
-    insert_multiple_entries!(df, v, row_inds, col_ind)
-    return df
-end
-
-# df[MultiRowIndex, SingleColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame,
-                v::Any,
-                row_inds::AbstractVector{Bool},
-                col_ind::ColumnIndex)
-    setindex!(df, v, find(row_inds), col_ind)
-end
-function Base.setindex!{T <: Real}(df::DataFrame,
-                           v::Any,
-                           row_inds::AbstractVector{T},
-                           col_ind::ColumnIndex)
-    insert_multiple_entries!(df, v, row_inds, col_ind)
-    return df
-end
-
-# df[MultiRowIndex, MultiColumnIndex] = DataFrame
-function Base.setindex!(df::DataFrame,
-                new_df::DataFrame,
-                row_inds::AbstractVector{Bool},
-                col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, find(row_inds), find(col_inds))
-end
-function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
-                                  new_df::DataFrame,
-                                  row_inds::AbstractVector{Bool},
-                                  col_inds::AbstractVector{T})
-    setindex!(df, new_df, find(row_inds), col_inds)
-end
-function Base.setindex!{R <: Real}(df::DataFrame,
-                           new_df::DataFrame,
-                           row_inds::AbstractVector{R},
-                           col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_inds, find(col_inds))
-end
-function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
-                                             new_df::DataFrame,
-                                             row_inds::AbstractVector{R},
-                                             col_inds::AbstractVector{T})
-    for j in 1:length(col_inds)
-        insert_multiple_entries!(df, new_df[:, j], row_inds, col_inds[j])
-    end
-    return df
-end
-
-# df[MultiRowIndex, MultiColumnIndex] = AbstractVector
-function Base.setindex!(df::DataFrame,
-                v::AbstractVector,
-                row_inds::AbstractVector{Bool},
-                col_inds::AbstractVector{Bool})
-    setindex!(df, v, find(row_inds), find(col_inds))
-end
-function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
-                                  v::AbstractVector,
-                                  row_inds::AbstractVector{Bool},
-                                  col_inds::AbstractVector{T})
-    setindex!(df, v, find(row_inds), col_inds)
-end
-function Base.setindex!{R <: Real}(df::DataFrame,
-                           v::AbstractVector,
-                           row_inds::AbstractVector{R},
-                           col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, find(col_inds))
-end
-function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
-                                             v::AbstractVector,
-                                             row_inds::AbstractVector{R},
-                                             col_inds::AbstractVector{T})
-    for col_ind in col_inds
-        insert_multiple_entries!(df, v, row_inds, col_ind)
-    end
-    return df
-end
-
-# df[MultiRowIndex, MultiColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame,
-                v::Any,
-                row_inds::AbstractVector{Bool},
-                col_inds::AbstractVector{Bool})
-    setindex!(df, v, find(row_inds), find(col_inds))
-end
-function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
-                                  v::Any,
-                                  row_inds::AbstractVector{Bool},
-                                  col_inds::AbstractVector{T})
-    setindex!(df, v, find(row_inds), col_inds)
-end
-function Base.setindex!{R <: Real}(df::DataFrame,
-                           v::Any,
-                           row_inds::AbstractVector{R},
-                           col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, find(col_inds))
-end
-function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
-                                             v::Any,
-                                             row_inds::AbstractVector{R},
-                                             col_inds::AbstractVector{T})
-    for col_ind in col_inds
-        insert_multiple_entries!(df, v, row_inds, col_ind)
-    end
-    return df
+  end
 end
 
 # Special deletion assignment
