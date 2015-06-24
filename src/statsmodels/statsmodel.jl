@@ -68,12 +68,18 @@ typealias DataFrameModels Union(DataFrameStatisticalModel, DataFrameRegressionMo
 # Predict function that takes data frame as predictor instead of matrix
 function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame)
     # copy terms, removing outcome if present (ModelFrame will complain if a
-    # term is not found in the DataFrame)
+    # term is not found in the DataFrame and we don't want to remove elements with missing y)
     newTerms = remove_response(mm.mf.terms)
     # create new model frame/matrix
-    newX = ModelMatrix(ModelFrame(newTerms, df)).m
-    predict(mm, newX)
+    mf = ModelFrame(newTerms, df)
+    newX = ModelMatrix(mf).m
+    yp = predict(mm, newX)
+    out = DataArray(eltype(yp), size(df, 1))
+    out[mf.msng] = yp
+    return(out)
 end
+
+
 
 # coeftable implementation
 function StatsBase.coeftable(model::DataFrameModels)

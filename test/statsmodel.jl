@@ -47,6 +47,10 @@ mm = ModelMatrix(ModelFrame(f, d))
 ## new data from DataFrame (via ModelMatrix)
 @test predict(m, d) == predict(m, mm.m)
 
+d2 = deepcopy(d)
+d2[3, :x1] = NA
+@test length(predict(m, d2)) = 4
+
 ## test copying of names from Terms to CoefTable
 ct = coeftable(m)
 @test ct.rownms == ["(Intercept)", "x1", "x2", "x1 & x2"]
