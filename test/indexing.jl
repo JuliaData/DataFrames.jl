@@ -84,31 +84,33 @@ module TestIndexing
 
     df = DataFrame(A = 1:2, B = 3:4)
 
-    row_indices = {1,
-                   1.0,
-                   1:2,
-                   [1, 2],
-                   [1.0, 2.0],
-                   [true, true],
-                   trues(2),
-                   @data([1, 2]),
-                   @data([1.0, 2.0]),
-                   @data([true, true])}
-
-    column_indices = {1,
+    row_indices = Any[1,
                       1.0,
-                      "A",
                       1:2,
                       [1, 2],
                       [1.0, 2.0],
-                      [true, false],
+                      [true, true],
                       trues(2),
-                      ["A", "B"],
                       @data([1, 2]),
                       @data([1.0, 2.0]),
-                      @data([true, false]),
-                      @data(["A", "B"]),
-                      :(names(_DF) .== "B")}
+                      @data([true, true]),
+                      Colon()]
+
+    column_indices = Any[1,
+                         1.0,
+                         "A",
+                         1:2,
+                         [1, 2],
+                         [1.0, 2.0],
+                         [true, false],
+                         trues(2),
+                         ["A", "B"],
+                         @data([1, 2]),
+                         @data([1.0, 2.0]),
+                         @data([true, false]),
+                         @data(["A", "B"]),
+                         :(names(_DF) .== "B"),
+                         Colon()]
 
     #
     # getindex()
