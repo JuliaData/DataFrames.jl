@@ -49,7 +49,7 @@ mm = ModelMatrix(ModelFrame(f, d))
 
 d2 = deepcopy(d)
 d2[3, :x1] = NA
-@test length(predict(m, d2)) = 4
+@test length(predict(m, d2)) == 4
 
 ## test copying of names from Terms to CoefTable
 ct = coeftable(m)
