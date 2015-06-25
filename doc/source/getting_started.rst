@@ -42,7 +42,7 @@ from our vector. We can do that using the ``dropna`` function::
     dropna(dv)
     mean(dropna(dv))
 
-Instead of removing ``NA`` values, you can try to conver the ``DataArray``
+Instead of removing ``NA`` values, you can try to convert the ``DataArray``
 into a normal Julia ``Array`` using ``convert``::
 
     convert(Array, dv)
