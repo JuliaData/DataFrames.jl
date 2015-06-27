@@ -85,10 +85,19 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     ## a subset of Wes McKinney's algorithm here: http://wesmckinney.com/blog/?p=489
     ncols = length(cols)
     # use the pool trick to get a set of integer references for each unique item
-    dv = PooledDataArray(d[cols[ncols]])
+    v = d[cols[ncols]]
+    if typeof(v) <: PooledDataArray
+        dv = v
+        x = convert(Array{Uint64}, dv.refs)
+    else
+        dv = PooledDataArray(d[cols[ncols]], Uint64)
+        x = dv.refs
+    end
     # if there are NAs, add 1 to the refs to avoid underflows in x later
     dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    x = map(z -> convert(Uint64, z) + dv_has_nas, dv.refs)
+    if dv_has_nas > 0
+        x = x .+ dv_has_nas
+    end
     # also compute the number of groups, which is the product of the set lengths
     ngroups = length(dv.pool) + dv_has_nas
     # if there's more than 1 column, do roughly the same thing repeatedly
@@ -131,52 +140,72 @@ Base.getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) =
 Base.names(gd::GroupedDataFrame) = names(gd.parent)
 _names(gd::GroupedDataFrame) = _names(gd.parent)
 
-# poolall combine multiple columns into one pooled array
-function group(df::AbstractDataFrame; skipna = true) 
-    ncols = length(df)
-    dv = DataArrays.PooledDataArray(df[ncols])
-    if skipna
-        # NA across different columns are grouped into NA field
-        x = map(z -> convert(Uint64, z), dv.refs)
-        ngroups = length(dv.pool)
-        for j = (ncols - 1):-1:1
-            dv = DataArrays.PooledDataArray(df[j])
-            for i = 1:DataFrames.size(df, 1)
-                x[i] += ((dv.refs[i] == 0 | x[i] == 0) ? 0 : (dv.refs[i] - 1) * ngroups)
-            end
-            ngroups = ngroups * length(dv.pool)
-        end
-        # factorize
-        uu = unique(x)
-        T = eltype(x)
-        vv = setdiff(uu, zero(T))
-        dict = Dict(vv, 1:(length(vv)))
-        out = PooledDataArray(DataArrays.RefArray(map(z -> z == 0 ? zero(T) : dict[z], x)),  [1:length(vv);])
-    else
-        # NA accross different columns are  groupted into distinct values
-        dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-        x = map(z -> convert(Uint64, z) + dv_has_nas, dv.refs)
-        ngroups = length(dv.pool) + dv_has_nas
-        for j = (ncols - 1):-1:1
-            dv = DataArrays.PooledDataArray(df[j])
-            dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-            for i = 1:DataFrames.size(df, 1)
-                x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
-            end
-            ngroups = ngroups * (length(dv.pool) + dv_has_nas)
-        end
-        # factorize
-        uu = unique(x)
-        T = eltype(x)
-        dict = Dict(uu, 1:length(uu))
-        out = PooledDataArray(DataArrays.RefArray(map(z -> dict[z], x)),  [1:length(uu);])
-    end
-    return(compact(out))
+
+
+
+##############################################################################
+##
+## group transform multiple PooledDataArray into one
+## Output is a PooledArray where pool is type Int64, equal to ranking of group
+## NA in some row retruns NA on this row
+## 
+##############################################################################
+
+function reftype(sz) 
+    sz <= typemax(Uint8)  ? Uint8 :
+    sz <= typemax(Uint16) ? Uint16 :
+    sz <= typemax(Uint32) ? Uint32 :
+    Uint64
 end
 
+#  similar todropunusedlevels! but (i) may be NA (ii) change pool to integer
+function factorize!(refs::Array)
+    uu = unique(refs)
+    sort!(uu)
+    has_na = uu[1] == 0
+    T = reftype(length(uu)-has_na)
+    dict = Dict(uu, 0:convert(T, length(uu)-has_na))
+    @inbounds @simd for i in 1:length(refs)
+         refs[i] = dict[refs[i]]
+    end
+    PooledDataArray(DataArrays.RefArray(refs), [1:length(uu)-has_na;])
+end
 
-group(df::AbstractDataFrame, cols::Vector; skipna = true) =  group(df[cols]; skipna = skipna)
-group(df::AbstractDataFrame, cols::Vector; skipna = true) =  group(df[cols]; skipna = skipna)
+function pool_combine!{T}(x::Array{Uint64, T}, dv::PooledDataArray, ngroups::Int64)
+    @inbounds for i in 1:length(x)
+        # if previous one is NA or this one is NA, set to NA
+        x[i] = (dv.refs[i] == 0 || x[i] == zero(Uint64)) ? zero(Uint64) : x[i] + (dv.refs[i] - 1) * ngroups
+    end
+    return(x, ngroups * length(dv.pool))
+end
+
+function group(x::AbstractVector) 
+    v = PooledDataArray(x)
+    PooledDataArray(DataArrays.RefArray(v.refs), [1:length(v.pool);])
+end
+# faster specialization
+function group(x::PooledDataArray)
+    PooledDataArray(DataArrays.RefArray(copy(x.refs)), [1:length(x.pool);])
+end
+function group(df::AbstractDataFrame) 
+    ncols = size(df, 2)
+    v = df[1]
+    ncols = size(df, 2)
+    ncols == 1 && return(group(v))
+    if typeof(v) <: PooledDataArray
+        x = convert(Array{Uint64}, v.refs)
+    else
+        v = PooledDataArray(v, v.na, Uint64)
+        x = v.refs
+    end
+    ngroups = length(v.pool)
+    for j = 2:ncols
+        v = PooledDataArray(df[j])
+        (x, ngroups) = pool_combine!(x, v, ngroups)
+    end
+    return(factorize!(x))
+end
+group(df::AbstractDataFrame, cols::Vector) =  group(df[cols])
 
 
 
