@@ -241,7 +241,7 @@ function Base.join(df1::AbstractDataFrame,
 
         return vcat(mixed, leftonly, rightonly)
     elseif kind == :semi
-        df1[left_idx, :]
+        df1[unique(left_idx), :]
     elseif kind == :anti
         df1[leftonly_idx, :]
     else
