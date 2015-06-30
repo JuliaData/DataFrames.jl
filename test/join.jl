@@ -3,7 +3,7 @@ module TestJoin
     using DataFrames
 
     name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
-    job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+    job = DataFrame(ID = [1, 2, 2, 4], Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
 
     # Join on symbols or vectors of symbols
     join(name, job, on = :ID)
@@ -13,15 +13,15 @@ module TestJoin
     #@test_throws join(name, job)
 
     # Test output of various join types
-    outer = DataFrame(ID = [1, 2, 3, 4],
-                      Name = @data(["John Doe", "Jane Doe", "Joe Blogs", NA]),
-                      Job = @data(["Lawyer", "Doctor", NA, "Farmer"]))
+    outer = DataFrame(ID = [1, 2, 2, 3, 4],
+                      Name = @data(["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", NA]),
+                      Job = @data(["Lawyer", "Doctor", "Florist", NA, "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
     right = outer[!isna(outer[:Job]), [:Name, :ID, :Job]]
     left = outer[!isna(outer[:Name]), :]
     inner = left[!isna(left[:Job]), :]
-    semi = inner[:, [:ID, :Name]]
+    semi = unique(inner[:, [:ID, :Name]])
     anti = left[isna(left[:Job]), [:ID, :Name]]
 
     @test isequal(join(name, job, on = :ID), inner)
