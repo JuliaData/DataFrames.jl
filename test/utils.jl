@@ -17,7 +17,7 @@ module TestUtils
     f = "$JULIA_HOME/../../src/julia-parser.scm"
     if isfile(f)
         r1 = r"define reserved-words '\(([^)]+)"
-        r2 = r"define \(parse-block s\) \(parse-Nary s parse-eq '\([^(]+\(([^)]+)"
+        r2 = r"define \(parse-block s(?: \([^)]+\))?\)\s+\(parse-Nary s (?:parse-eq '\([^(]*|down '\([^)]+\) '[^']+ ')\(([^)]+)"
         body = readall(f)
         m1, m2 = match(r1, body), match(r2, body)
         if m1 == nothing || m2 == nothing
