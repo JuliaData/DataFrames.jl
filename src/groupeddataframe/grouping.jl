@@ -36,7 +36,7 @@ groupby(cols)
 ### Arguments
 
 * `d` : an AbstractDataFrame
-* `cols` : an 
+* `cols` : an
 
 If `d` is not provided, a curried version of groupby is given.
 
@@ -284,7 +284,7 @@ notation can be used.
 
 ### Returns
 
-* `::DataFrame` 
+* `::DataFrame`
 
 ### Examples
 
@@ -330,7 +330,7 @@ same length.
 
 ### Returns
 
-* `::DataFrame` 
+* `::DataFrame`
 
 ### Examples
 
@@ -374,3 +374,23 @@ end
 function _aggregate(d::AbstractDataFrame, fs::Vector{Function}, headers::Vector{Symbol})
     DataFrame(colwise(fs, d), headers)
 end
+
+import Base.split
+
+@doc """
+Split a grouped data frame into a dataframe of dataframes.
+""" ->
+function split(grouped_frame::GroupedDataFrame)
+
+  if :_subset in grouped_frame.cols
+    error("Grouping variables cannot include :_subset") end
+
+  table = sort(grouped_frame.parent, cols = grouped_frame.cols)
+
+  get_slice(starts, ends) = table[starts:ends, :]
+
+  summary = table[grouped_frame.starts, grouped_frame.cols]
+
+  summary[:_subset] = map(get_slice, grouped_frame.starts, grouped_frame.ends)
+
+  summary end
