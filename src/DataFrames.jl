@@ -36,6 +36,7 @@ export @~,
        SubDataFrame,
 
        aggregate,
+       allvars,
        by,
        coefnames,
        colwise,
