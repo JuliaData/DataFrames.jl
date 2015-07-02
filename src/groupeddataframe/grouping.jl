@@ -36,7 +36,7 @@ groupby(cols)
 ### Arguments
 
 * `d` : an AbstractDataFrame
-* `cols` : an
+* `cols` : an 
 
 If `d` is not provided, a curried version of groupby is given.
 
@@ -284,7 +284,7 @@ notation can be used.
 
 ### Returns
 
-* `::DataFrame`
+* `::DataFrame` 
 
 ### Examples
 
@@ -330,7 +330,7 @@ same length.
 
 ### Returns
 
-* `::DataFrame`
+* `::DataFrame` 
 
 ### Examples
 
