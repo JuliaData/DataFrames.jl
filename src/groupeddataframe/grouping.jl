@@ -168,7 +168,7 @@ function factorize!(refs::Array)
     @inbounds @simd for i in 1:length(refs)
          refs[i] = dict[refs[i]]
     end
-    PooledDataArray(RefArray(refs), [1:(length(uu)-has_na);])
+    PooledDataArray(DataArrays.RefArray(refs), [1:(length(uu)-has_na);])
 end
 
 function pool_combine!{T}(x::Array{Uint64, T}, dv::PooledDataArray, ngroups::Int64)
