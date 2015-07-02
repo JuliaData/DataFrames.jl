@@ -65,3 +65,12 @@ keyword argument::
 Cross joins are the only kind of join that does not use a key::
 
     join(a, b, kind = :cross)
+
+It is also possible to join on multiple keys::
+
+    join(df1, df2, on = [:key1, :key2], kind = :left)
+    
+In order to join data frames on keys which have different names, you must first rename them so that they match.  This can be done using rename!::
+
+    rename!(df3, :old_name, :new_name)
+
