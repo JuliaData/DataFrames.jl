@@ -9,6 +9,9 @@ module TestJoin
     join(name, job, on = :ID)
     join(name, job, on = [:ID])
 
+    # If on is not given, use common variable names.
+    join(name, job)
+
     # Soon we won't allow natural joins
     #@test_throws join(name, job)
 

@@ -127,6 +127,11 @@ module TestData
     @test ggd[2][1, :d3] == "a"
     @test ggd[2][1, :d4] == "d"
 
+    #test_group("split")
+    g1_split = split(g1)
+    @test size(g1_split) == (6, 3)
+
+
     #test_group("reshape")
     d1 = DataFrame(a = repeat([1:3;], inner = [4]),
                    b = repeat([1:4;], inner = [3]),

@@ -150,7 +150,8 @@ join(df1::AbstractDataFrame,
 ### Keyword Arguments
 
 * `on` : a Symbol or Vector{Symbol}, the column(s) used as keys when
-  joining; required argument except for `kind = :cross`
+  joining. If not given, defaults to common variables, excluding
+  `kind = :cross` which does not require keys.
 
 * `kind` : the type of join, options include:
 
@@ -168,7 +169,7 @@ join(df1::AbstractDataFrame,
 
 ### Result
 
-* `::DataFrame` : the joined DataFrame 
+* `::DataFrame` : the joined DataFrame
 
 ### Examples
 
@@ -199,7 +200,8 @@ function Base.join(df1::AbstractDataFrame,
         end
         return crossjoin(df1, df2)
     elseif on == Symbol[]
-        throw(ArgumentError("Missing join argument 'on'."))
+        on = intersect(names(df1), names(df2))
+        info("Joining by $on")
     end
 
     dv1, dv2 = PooledDataVecs(df1[on], df2[on])
