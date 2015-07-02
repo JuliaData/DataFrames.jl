@@ -396,15 +396,15 @@ describe(df)
 
 """
 StatsBase.describe(df::AbstractDataFrame) = describe(STDOUT, df)
-function describe(io, df::AbstractDataFrame)
+function StatsBase.describe(io, df::AbstractDataFrame)
     for (name, col) in eachcol(df)
         println(io, name)
         describe(io, col)
         println(io, )
     end
 end
-describe(dv::AbstractVector) = describe(STDOUT, dv)
-function describe{T<:Number}(io, dv::AbstractVector{T})
+StatsBase.describe(dv::AbstractArray) = describe(STDOUT, dv)
+function StatsBase.describe{T<:Number}(io, dv::AbstractArray{T})
     if all(isna(dv))
         println(io, " * All NA * ")
         return
@@ -421,7 +421,7 @@ function describe{T<:Number}(io, dv::AbstractVector{T})
     println(io, "NA%      $(round(nas*100/length(dv), 2))%")
     return
 end
-function describe{T}(io, dv::AbstractVector{T})
+function StatsBase.describe{T}(io, dv::AbstractArray{T})
     ispooled = isa(dv, PooledDataVector) ? "Pooled " : ""
     # if nothing else, just give the length and element type and NA count
     println(io, "Length  $(length(dv))")

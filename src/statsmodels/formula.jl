@@ -227,7 +227,7 @@ function dropUnusedLevels!(da::PooledDataArray)
     length(uu) == length(da.pool) && return da
     T = eltype(rr)
     su = sort!(uu)
-    dict = Dict(su, map(x -> convert(T,x), 1:length(uu)))
+    dict = Dict(zip(su, one(T):convert(T, length(uu))))
     da.refs = map(x -> dict[x], rr)
     da.pool = da.pool[uu]
     da

@@ -13,7 +13,7 @@ end
 
 ## dumb fit method: just copy the x and y input over
 StatsBase.fit(::Type{DummyMod}, x::Matrix, y::Vector) =
-    DummyMod([1:size(x, 2)], x, y)
+    DummyMod(collect(1:size(x, 2)), x, y)
 StatsBase.model_response(mod::DummyMod) = mod.y
 ## dumb coeftable: just prints the "beta" values
 StatsBase.coeftable(mod::DummyMod) =
@@ -37,12 +37,12 @@ m = fit(DummyMod, f, d)
 ## test prediction method
 ## vanilla
 StatsBase.predict(mod::DummyMod) = mod.x * mod.beta
-@test predict(m) == [ ones(size(d,1)) d[:x1] d[:x2] d[:x1].*d[:x2] ] * [1:4]
+@test predict(m) == [ ones(size(d,1)) d[:x1] d[:x2] d[:x1].*d[:x2] ] * collect(1:4)
 
 ## new data from matrix
 StatsBase.predict(mod::DummyMod, newX::Matrix) = newX * mod.beta
 mm = ModelMatrix(ModelFrame(f, d))
-@test predict(m, mm.m) == mm.m * [1:4]
+@test predict(m, mm.m) == mm.m * collect(1:4)
 
 ## new data from DataFrame (via ModelMatrix)
 @test predict(m, d) == predict(m, mm.m)
