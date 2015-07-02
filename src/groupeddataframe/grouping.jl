@@ -377,7 +377,7 @@ end
 
 import Base.split
 
-@doc """
+Docile.@doc """
 Split a grouped data frame into a dataframe of dataframes.
 """ ->
 function split(grouped_frame::GroupedDataFrame)
