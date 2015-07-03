@@ -169,6 +169,13 @@ module TestData
     @test isequal(d1us2[:d], d1[:d])
     @test isequal(d1us2[:3], d1[:d])
 
+    test = DataFrame(ID = 1:2,
+                     a = 1:2,
+                     b = ["a", "a"] )
+
+    test_long = stack(test, [:a, :b])
+    test_wide = unstack(test_long, :variable, :value )
+    @test isequal(test[:a], test_wide[:a])
 
 
     d2 = DataFrame(id1 = [:a, :a, :a, :b],
