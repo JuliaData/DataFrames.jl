@@ -135,6 +135,17 @@ end
 
 ##############################################################################
 ##
+## Conversion and promotion
+##
+##############################################################################
+
+# convert SubDataFrame to DataFrame
+Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = sdf[:]
+# promote SubDataFrame to AbstractDataFrame
+Base.promote_rule(::Type{DataFrame}, ::Type{SubDataFrame}) = AbstractDataFrame
+
+##############################################################################
+##
 ## Miscellaneous
 ##
 ##############################################################################

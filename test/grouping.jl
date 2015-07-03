@@ -64,4 +64,27 @@ module TestGrouping
     @test isequal(gd[2], DataFrame(Key1="B", Key2="A", Value=3))
     @test isequal(gd[3], DataFrame(Key1="A", Key2="B", Value=2))
     @test isequal(gd[4], DataFrame(Key1="A", Key2="A", Value=1))
+
+    # test conversion of SubDataFrame to DataFrame
+    sub_df = SubDataFrame(df, [1, 3, 4])
+    sub_df_copy = convert(DataFrame, sub_df)
+    @test isa(sub_df_copy, DataFrame)
+    @test size(sub_df_copy) == (3, size(df, 2))
+
+    # test mixing of SubDataFrame and DataFrame in combine()
+    gix = 1
+    df2 = map(gd) do sub_gd
+        iseven(gix) ? sub_gd : convert(DataFrame, sub_gd)
+    end |> combine
+    @test isa(df2, DataFrame)
+    delete!(df2, [:Key1_1, :Key2_1]) # grouping columns are re-added
+    @test size(df2) == size(df)
+
+    # test promotion and conversion of SubDataFrame to DataFrame when modifying
+    append_inc_col(df) = hcat(df, DataFrame(Value2 = df[:Value] + 1))
+    @test isequal(delete!(combine(map(append_inc_col, groupby(df, :Key1))), [:Key1_1]),
+                  append_inc_col(sdf))
+
+    @test isequal(delete!(combine(map(append_inc_col, groupby(df, [:Key1, :Key2]))), [:Key1_1, :Key2_1]),
+                  append_inc_col(sdf))
 end
