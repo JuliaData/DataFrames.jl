@@ -579,7 +579,7 @@ function nonunique(df::AbstractDataFrame)
     res = fill(false, nrow(df))
     di = Dict()
     for i in 1:nrow(df)
-        arow = convert(Array, df[i, :]) # Used to convert to Any type
+        arow = convert(DataArray, df[i, :]) # Used to convert to Any type
         if haskey(di, arow)
             res[i] = true
         else
