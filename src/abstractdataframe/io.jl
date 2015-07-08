@@ -142,7 +142,8 @@ function Base.writemime(io::IO,
     end
     write(io, "</tr>")
     tty_rows, tty_cols = Base.tty_size()
-    for row in 1:min(n, tty_rows)
+    mxrow = min(n,tty_rows)
+    for row in 1:mxrow
         write(io, "<tr>")
         write(io, "<th>$row</th>")
         for column_name in cnames
@@ -151,7 +152,7 @@ function Base.writemime(io::IO,
         end
         write(io, "</tr>")
     end
-    if n > 20
+    if n > mxrow
         write(io, "<tr>")
         write(io, "<th>&vellip;</th>")
         for column_name in cnames
