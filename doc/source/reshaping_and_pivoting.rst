@@ -44,7 +44,7 @@ floating-point columns::
     d = stack(iris)
 
 ``unstack`` converts from a long format to a wide format. The default
-is requires specifying which columns are an id variable, column
+requires that you specify which columns are an id variable, column
 variable names, and column values::
 
     longdf = melt(iris, :id)
