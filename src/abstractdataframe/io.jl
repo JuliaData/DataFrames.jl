@@ -202,6 +202,37 @@ end
 
 ##############################################################################
 #
+# LaTeX output
+#
+##############################################################################
+
+function Base.writemime(io::IO,
+                        ::MIME"text/latex",
+                        df::AbstractDataFrame)
+    nrows = size(df, 1)
+    ncols = size(df, 2)
+    cnames = _names(df)
+    alignment = join(["c" for _ in 1:ncols])
+    write(io, "\\begin{tabular}{r|")
+    write(io, alignment)
+    write(io, "}\n")
+    write(io, "\t&")
+    header = join(cnames, "&")
+    write(io, header)
+    write(io, "\\\\ \n")
+    write(io, "\t\\hline \n")
+    for row in 1:nrows
+        write(io, "\t")
+        write(io, @sprintf("%d &", row))
+        cell_contents = [string(df[row,col]) for col in 1:ncols]
+        latex_row = join(cell_contents, "&")
+        write(io, latex_row)
+        write(io, "\\\\ \n")
+    end
+    write(io, "\\end{tabular}\n")
+end
+##############################################################################
+#
 # MIME
 #
 ##############################################################################
