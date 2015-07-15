@@ -206,31 +206,52 @@ end
 #
 ##############################################################################
 
+function latex_char_escape(char::SubString)
+    if char == "\\"
+        return "\\textbackslash{}"
+    elseif char == "~"
+        return "\\textasciitilde{}"
+    else
+        return string("\\", char)
+    end
+end
+
+function latex_escape(cell::String)
+    cell = replace(cell, ['\\','~','#','$','%','&','_','^','{','}'], latex_char_escape)
+    return cell
+end
+
+function Base.writemime(io::IO, ::MIME"text/latex", x::Any)
+    write(io, latex_escape(string(x)))
+end
+
 function Base.writemime(io::IO,
                         ::MIME"text/latex",
                         df::AbstractDataFrame)
     nrows = size(df, 1)
     ncols = size(df, 2)
-    cnames = _names(df)
+    cnames = DataFrames._names(df)
     alignment = join(["c" for _ in 1:ncols])
     write(io, "\\begin{tabular}{r|")
     write(io, alignment)
     write(io, "}\n")
-    write(io, "\t&")
-    header = join(cnames, "&")
+    write(io, "\t& ")
+    header = join(cnames, " & ")
     write(io, header)
     write(io, "\\\\ \n")
     write(io, "\t\\hline \n")
     for row in 1:nrows
         write(io, "\t")
-        write(io, @sprintf("%d &", row))
-        cell_contents = [string(df[row,col]) for col in 1:ncols]
-        latex_row = join(cell_contents, "&")
-        write(io, latex_row)
-        write(io, "\\\\ \n")
+        write(io, @sprintf("%d", row))
+        for col in 1:ncols
+            write(io, " & ")
+            writemime(io, MIME("text/latex"), df[row,col])
+        end
+        write(io, " \\\\ \n")
     end
     write(io, "\\end{tabular}\n")
 end
+
 ##############################################################################
 #
 # MIME
