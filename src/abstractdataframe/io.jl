@@ -221,16 +221,12 @@ function latex_escape(cell::String)
     return cell
 end
 
-function Base.writemime(io::IO, ::MIME"text/latex", x::Any)
-    write(io, latex_escape(string(x)))
-end
-
 function Base.writemime(io::IO,
                         ::MIME"text/latex",
                         df::AbstractDataFrame)
     nrows = size(df, 1)
     ncols = size(df, 2)
-    cnames = DataFrames._names(df)
+    cnames = _names(df)
     alignment = join(["c" for _ in 1:ncols])
     write(io, "\\begin{tabular}{r|")
     write(io, alignment)
@@ -245,7 +241,12 @@ function Base.writemime(io::IO,
         write(io, @sprintf("%d", row))
         for col in 1:ncols
             write(io, " & ")
-            writemime(io, MIME("text/latex"), df[row,col])
+            cell = df[row,col]
+            if mimewritable(MIME("text/latex"), cell)
+                writemime(io, MIME("text/latex"), cell)
+            else
+                write(io, latex_escape(string(cell)))
+            end
         end
         write(io, " \\\\ \n")
     end
