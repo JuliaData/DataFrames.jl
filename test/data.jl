@@ -318,3 +318,19 @@ module TestData
     pdv[1] = NA
     @test isequal(find(pdv), [3])
 end
+
+data_frame = DataFrame(a__1 = [1, 2],
+                       a__2 = [3, 4],
+                       b__1 = [5, 6],
+                       b__2 = [7, 8],
+                       types = [1, 2])
+
+stacked = stack(data_frame, [:a__1, :a__2, :b__1, :b__2])
+
+split_df = split(stacked, :variable, new_names = [:category, :group])
+
+paste!(split_df, [:category, :types], :variable)
+
+final = unstack(split_df, :variable, :value)
+
+@test isequal(final[:a__1], [1, 3])

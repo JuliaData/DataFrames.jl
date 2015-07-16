@@ -474,3 +474,91 @@ end
 meltdf(df::AbstractDataFrame, id_vars, measure_vars) =
     stackdf(df, measure_vars, id_vars)
 meltdf(df::AbstractDataFrame) = stackdf(df)
+
+
+import Base.split
+
+function get_internal_type{T}(array::AbstractArray{T})
+  T
+end
+
+"""
+A function to split a column with concatenated information.
+"""
+function split{T <: Symbol}(data_frame::AbstractDataFrame,
+                            old_name::Symbol;
+                            sep::String = "__",
+                            new_names::AbstractVector{T} = convert(Vector{Symbol}, []),
+                            remove::Bool = true)
+
+  if (:_id in names(data_frame)) | (:_id in new_names)
+    error(":_id cannot be in names(data_frame) or new_names")
+  end
+
+  old_vector = get_internal_type(data_frame[old_name]) <: String ?
+    data_frame[old_name] :
+    convert(Vector{String},
+            map(string,
+                data_frame[old_name] ) )
+
+  function split_frame(old_string::String)
+    convert(DataFrame,
+            transpose(Base.split(old_string,
+                                 sep ) ) )
+  end
+
+  split_result = reduce(vcat,
+                        map(split_frame,
+                            old_vector) )
+
+  named_result = size(new_names)[1] == 0 ?
+    split_result :
+    names!(split_result,
+           new_names)
+
+  data_frame[:_id] = 1:size(data_frame)[1]
+  named_result[:_id] = 1:size(data_frame)[1]
+
+  result = delete!(join(data_frame, named_result, on = :_id ), :_id)
+  delete!(data_frame, :_id)
+
+  remove ? delete!(result, old_name) : result
+end
+
+"""
+Functions to concatenate information together with a separator.
+"""
+function paste(string_1::String, string_2::String, sep::String = "__")
+  *(string_1, sep, string_2)
+end
+
+function paste{T <: String}(vector::AbstractVector{T}, sep::String = "__")
+  function my_paste(string_1::String, string_2::String)
+    paste(string_1, string_2, sep)
+  end
+
+  reduce(my_paste, vector)
+end
+
+function paste!{T <: Symbol}(data_frame::AbstractDataFrame,
+                             old_names::AbstractVector{T},
+                             new_name::Symbol;
+                             sep::String = "__",
+                             remove::Bool = true)
+
+  for name in old_names
+    if !(get_internal_type(data_frame[name]) <: String)
+      data_frame[name] = convert(Vector{String},
+                                 map(string,
+                                     data_frame[name] ) )
+    end
+  end
+
+  array = transpose(DataArray(data_frame[old_names]))
+
+  data_frame[new_name] = convert(Vector{String},
+                                 [paste(array[:, i])
+                                  for i in 1:size(array)[2] ] )
+
+  remove ? delete!(data_frame, old_names) : data_frame
+end
