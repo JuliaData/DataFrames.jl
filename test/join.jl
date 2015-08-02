@@ -8,9 +8,8 @@ module TestJoin
     # Join on symbols or vectors of symbols
     join(name, job, on = :ID)
     join(name, job, on = [:ID])
-
-    # Soon we won't allow natural joins
-    #@test_throws join(name, job)
+    # on is requied for any join except :cross
+    @test_throws ArgumentError join(name, job)
 
     # Test output of various join types
     outer = DataFrame(ID = [1, 2, 2, 3, 4],
