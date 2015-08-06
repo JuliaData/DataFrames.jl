@@ -49,7 +49,15 @@ module TestJoin
     df1 = DataFrame(A = 1, B = 2, C = 3)
     df2 = DataFrame(A = 1, B = 2, D = 4)
 
-    join(df1, df2, on = [:A, :B])
+    @test isequal(join(df1, df2, on = [:A, :B]),
+                  DataFrame(A = 1, B = 2, C = 3, D = 4))
+
+    # Join on multiple keys with different order of "on" columns
+    df1 = DataFrame(A = 1, B = :A, C = 3)
+    df2 = DataFrame(B = :A, A = 1, D = 4)
+
+    @test isequal(join(df1, df2, on = [:A, :B]),
+                  DataFrame(A = 1, B = :A, C = 3, D = 4))
 
     # Test output of cross joins
     df1 = DataFrame(A = 1:2, B = 'a':'b')
