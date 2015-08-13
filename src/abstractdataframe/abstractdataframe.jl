@@ -162,7 +162,7 @@ rename(df, :y, :Y)
 rename!(df, @compat(Dict(:i=>:A, :x=>:X)))
 ```
 
-"""
+""";
 [:rename!, :rename]
 
 function rename!(df::AbstractDataFrame, args...)
@@ -309,7 +309,7 @@ head(df)
 tail(df)
 ```
 
-"""
+""";
 [:head, :tail]
 
 DataArrays.head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
@@ -614,7 +614,7 @@ unique(df)   # doesn't modify df
 unique!(df)  # modifies df
 ```
 
-"""
+""";
 [:unique, :unique!]
 
 unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
@@ -788,5 +788,5 @@ nrow(df)
 ncol(df)
 ```
 
-"""
+""";
 [:nrow, :ncol]
