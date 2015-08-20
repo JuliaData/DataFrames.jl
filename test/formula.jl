@@ -9,7 +9,102 @@ module TestFormula
     # - implement ^2 for datavector's
     # - support more transformations with I()?
 
-    #test_group("Basic tests")
+    ## Formula parsing
+    import DataFrames.Terms
+
+    ## totally empty
+    t = Terms(Formula(nothing, 0))
+    @test t.response == false
+    @test t.intercept == false
+    @test t.terms == []
+    @test t.eterms == []
+
+    ## empty RHS
+    t = Terms(y ~ 0)
+    @test t.intercept == false
+    @test t.terms == []
+    @test t.eterms == [:y]
+    t = Terms(y ~ -1)
+    @test t.intercept == false
+    @test t.terms == []
+
+    ## intercept-only
+    t = Terms(y ~ 1)
+    @test t.response == true
+    @test t.intercept == true
+    @test t.terms == []
+    @test t.eterms == [:y]
+    
+    ## terms add
+    t = Terms(y ~ 1 + x1 + x2)
+    @test t.intercept == true
+    @test t.terms == [:x1, :x2]
+    @test t.eterms == [:y, :x1, :x2]
+
+    ## implicit intercept behavior:
+    t = Terms(y ~ x1 + x2)
+    @test t.intercept == true
+    @test t.terms == [:x1, :x2]
+    @test t.eterms == [:y, :x1, :x2]
+
+    ## no intercept
+    t = Terms(y ~ 0 + x1 + x2)
+    @test t.intercept == false
+    @test t.terms == [:x1, :x2]
+    
+    t = Terms(y ~ -1 + x1 + x2)
+    @test t.intercept == false
+    @test t.terms == [:x1, :x2]
+
+    t = Terms(y ~ x1 & x2)
+    @test t.terms == [:(x1 & x2)]
+    @test t.eterms == [:y, :x1, :x2]
+
+    ## `*` expansion
+    t = Terms(y ~ x1 * x2)
+    @test t.terms == [:x1, :x2, :(x1 & x2)]
+    @test t.eterms == [:y, :x1, :x2]
+
+    ## associative rule:
+    ## +
+    t = Terms(y ~ x1 + x2 + x3)
+    @test t.terms == [:x1, :x2, :x3]
+
+    ## &
+    t = Terms(y ~ x1 & x2 & x3)
+    @test t.terms == [:((&)(x1, x2, x3))]
+    @test t.eterms == [:y, :x1, :x2, :x3]
+
+    ## distributive property of + and &
+    t = Terms(y ~ x1 & (x2 + x3))
+    @test t.terms == [:(x1&x2), :(x1&x3)]
+
+    ## FAILS: ordering of expanded interaction terms is wrong
+    ## (only has an observable effect when both terms are categorical and
+    ## produce multiple model matrix columns that are multiplied together...)
+    ## 
+    ## t = Terms(y ~ (x2 + x3) & x1)
+    ## @test t.terms == [:(x2&x1), :(x3&x1)]
+
+    ## three-way *
+    t = Terms(y ~ x1 * x2 * x3)
+    @test t.terms == [:x1, :x2, :x3,
+                      :(x1&x2), :(x1&x3), :(x2&x3),
+                      :((&)(x1, x2, x3))]
+    @test t.eterms == [:y, :x1, :x2, :x3]
+
+    ## Interactions with `1` reduce to main effect.  All fail at the moment.
+    ## t = Terms(y ~ 1 & x1)
+    ## @test t.terms == [:x1]              # == [:(1 & x1)]
+    ## @test t.eterms == [:y, :x1]
+
+    ## t = Terms(y ~ (1 + x1) & x2)
+    ## @test t.terms == [:x2, :(x1&x2)]    # == [:(1 & x1)]
+    ## @test t.eterms == [:y, :x1, :x2]
+
+
+
+    ## Tests for constructing ModelFrame and ModelMatrix
 
     d = DataFrame()
     d[:y] = [1:4;]
@@ -251,5 +346,23 @@ module TestFormula
     ## Condensing nested :+ calls
     f = y ~ x1 + (x2 + (x3 + x4))
     @test ModelMatrix(ModelFrame(f, df)).m == hcat(ones(4), x1, x2, x3, x4)
+
+    
+    ## Extra levels in categorical column
+    mf_full = ModelFrame(y ~ x1p, d)
+    mm_full = ModelMatrix(mf_full)
+    @test size(mm_full) == (4,4)
+
+    mf_sub = ModelFrame(y ~ x1p, d[2:4, :])
+    mm_sub = ModelMatrix(mf_sub)
+    ## should have only three rows, and only three columns (intercept plus two
+    ## levels of factor)
+    @test size(mm_sub) == (3,3)
+
+    ## Missing data
+    d[:x1m] = @data [5, 6, NA, 7]
+    mf = ModelFrame(y ~ x1m, d)
+    mm = ModelMatrix(mf)
+    @test mm.m[:, 2] == d[complete_cases(d), :x1m]
 
 end

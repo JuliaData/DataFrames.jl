@@ -1,8 +1,23 @@
+# DataFrames v0.6.6 Release Notes
+
+## Deprecations
+* Deprecates `array(df, ...)` in favor of `convert(Array, df, ...)` ([#806])
+* Deprecates `DataArray(df, T)` in favor of `convert(DataArray{T}, df)` ([#806])
+
 # DataFrames v0.6.3 Release Notes
 
+## Deprecations
 * Removes `save` and `loaddf`, since the format was not compatible
   across Julia and DataFrames versions ([#790]). Use `writetable` or
   [JLD](https://github.com/timholy/HDF5.jl) to save DataFrames
+
+# DataFrames v0.6.1 Release Notes
+
+## New features
+* `writetable` supports `append` option ([#755])
+
+## Changes
+* Faster `read_rda` ([#754], [#759])
 
 # DataFrames v0.6.0 Release Notes
 
@@ -218,7 +233,11 @@ Improved I/O and more-Julian idioms.
 [#749]: https://github.com/JuliaStats/DataFrames.jl/issues/749
 [#751]: https://github.com/JuliaStats/DataFrames.jl/issues/751
 [#752]: https://github.com/JuliaStats/DataFrames.jl/issues/752
+[#754]: https://github.com/JuliaStats/DataFrames.jl/issues/754
+[#755]: https://github.com/JuliaStats/DataFrames.jl/issues/755
+[#759]: https://github.com/JuliaStats/DataFrames.jl/issues/759
 [#790]: https://github.com/JuliaStats/DataFrames.jl/issues/790
+[#806]: https://github.com/JuliaStats/DataFrames.jl/issues/806
 
 [JuliaLang/julia#4882]: https://github.com/JuliaLang/julia/issues/4882
 [JuliaLang/julia#5897]: https://github.com/JuliaLang/julia/issues/5897

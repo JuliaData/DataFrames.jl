@@ -30,7 +30,7 @@ DataFrame(ds::Vector{Associative})
 * `column_eltypes` : elemental type of each column
 * `ds` : a vector of Associatives
 
-Each column in `columns` should be the same length. 
+Each column in `columns` should be the same length.
 
 ### Notes
 
@@ -240,6 +240,9 @@ function Base.getindex{T <: ColumnIndex}(df::DataFrame, col_inds::AbstractVector
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
+# df[:] => (Sub)?DataFrame
+Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
+
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
 function Base.getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
@@ -265,6 +268,22 @@ function Base.getindex{R <: Real, T <: ColumnIndex}(df::DataFrame, row_inds::Abs
     new_columns = Any[dv[row_inds] for dv in df.columns[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
+
+# df[:, SingleColumnIndex] => (Sub)?AbstractVector
+# df[:, MultiColumnIndex] => (Sub)?DataFrame
+Base.getindex{T<:ColumnIndex}(df::DataFrame, row_inds::Colon, col_inds::Union(T, AbstractVector{T})) = df[col_inds]
+
+# df[SingleRowIndex, :] => (Sub)?DataFrame
+Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col_inds]
+
+# df[MultiRowIndex, :] => (Sub)?DataFrame
+function Base.getindex{R<:Real}(df::DataFrame, row_inds::AbstractVector{R}, col_inds::Colon)
+    new_columns = Any[dv[row_inds] for dv in df.columns]
+    return DataFrame(new_columns, copy(index(df)))
+end
+
+# df[:, :] => (Sub)?DataFrame
+Base.getindex(df::DataFrame, ::Colon, ::Colon) = copy(df)
 
 ##############################################################################
 ##
@@ -402,6 +421,9 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
     end
     return df
 end
+
+# df[:] = AbstractVector or Single Item
+Base.setindex!(df::DataFrame, v, ::Colon) = (df[1:size(df, 2)] = v; df)
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame,
@@ -562,6 +584,28 @@ function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
     return df
 end
 
+# df[:] = DataFrame, df[:, :] = DataFrame
+function Base.setindex!(df::DataFrame,
+                                  new_df::DataFrame,
+                                  row_inds::Colon,
+                                  col_inds::Colon=Colon())
+    df.columns = copy(new_df.columns)
+    df.colindex = copy(new_df.colindex)
+    df
+end
+
+# df[:, :] = ...
+Base.setindex!(df::DataFrame, v, ::Colon, ::Colon) =
+    (df[1:size(df, 1), 1:size(df, 2)] = v; df)
+
+# df[Any, :] = ...
+Base.setindex!(df::DataFrame, v, row_inds, ::Colon) =
+    (df[row_inds, 1:size(df, 2)] = v; df)
+
+# df[:, Any] = ...
+Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
+    (df[col_inds] = v; df)
+
 # Special deletion assignment
 Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = delete!(df, col_ind)
 
@@ -672,6 +716,7 @@ end
 ##
 ##############################################################################
 
+# hcat! for 2 arguments
 function hcat!(df1::DataFrame, df2::AbstractDataFrame)
     u = add_names(index(df1), index(df2))
     for i in 1:length(u)
@@ -684,9 +729,11 @@ hcat!{T}(df::DataFrame, x::DataVector{T}) = hcat!(df, DataFrame(Any[x]))
 hcat!{T}(df::DataFrame, x::Vector{T}) = hcat!(df, DataFrame(Any[DataArray(x)]))
 hcat!{T}(df::DataFrame, x::T) = hcat!(df, DataFrame(Any[DataArray([x])]))
 
-# three-plus-argument form recurses
+# hcat! for 1-n arguments
+hcat!(df::DataFrame) = df
 hcat!(a::DataFrame, b, c...) = hcat!(hcat!(a, b), c...)
 
+# hcat
 Base.hcat(df::DataFrame, x) = hcat!(copy(df), x)
 
 ##############################################################################

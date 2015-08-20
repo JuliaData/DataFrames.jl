@@ -28,7 +28,7 @@ The following are normally implemented for AbstractDataFrames:
 * `size(d)` : (nrows, ncols)
 * `head(d, n = 5)` : first `n` rows
 * `tail(d, n = 5)` : last `n` rows
-* `array(d)` : convert to an array
+* `convert(Array, d)` : convert to an array
 * `DataArray(d)` : convert to a DataArray
 * `complete_cases(d)` : indexes of complete cases (rows with no NA's)
 * `complete_cases!(d)` : remove rows with NA's
@@ -90,6 +90,7 @@ end
 Base.start(::Cols) = 1
 Base.done(itr::Cols, st) = st > length(itr.df)
 Base.next(itr::Cols, st) = (itr.df[st], st + 1)
+Base.length(itr::Cols) = length(itr.df)
 
 # N.B. where stored as a vector, 'columns(x) = x.vector' is a bit cheaper
 columns{T <: AbstractDataFrame}(df::T) = Cols{T}(df)
@@ -129,6 +130,15 @@ function names!(df::AbstractDataFrame, vals)
     return df
 end
 
+function rename!(df::AbstractDataFrame, args...)
+    rename!(index(df), args...)
+    return df
+end
+rename!(f::Function, df::AbstractDataFrame) = rename!(df, f)
+
+rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
+rename(f::Function, df::AbstractDataFrame) = rename(df, f)
+
 """
 Rename columns
 
@@ -162,16 +172,7 @@ rename!(df, @compat(Dict(:i=>:A, :x=>:X)))
 ```
 
 """
-[:rename!, :rename]
-
-function rename!(df::AbstractDataFrame, args...)
-    rename!(index(df), args...)
-    return df
-end
-rename!(f::Function, df::AbstractDataFrame) = rename!(df, f)
-
-rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
-rename(f::Function, df::AbstractDataFrame) = rename(df, f)
+(rename!, rename)
 
 """
 Column elemental types
@@ -283,6 +284,11 @@ Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
 ##
 ##############################################################################
 
+DataArrays.head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
+DataArrays.head(df::AbstractDataFrame) = head(df, 6)
+DataArrays.tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
+DataArrays.tail(df::AbstractDataFrame) = tail(df, 6)
+
 """
 Show the first or last part of an AbstractDataFrame
 
@@ -309,12 +315,7 @@ tail(df)
 ```
 
 """
-[:head, :tail]
-
-DataArrays.head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
-DataArrays.head(df::AbstractDataFrame) = head(df, 6)
-DataArrays.tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
-DataArrays.tail(df::AbstractDataFrame) = tail(df, 6)
+(head, tail)
 
 # get the structure of a DF
 """
@@ -394,16 +395,16 @@ describe(df)
 ```
 
 """
-describe(df::AbstractDataFrame) = describe(STDOUT, df)
-function describe(io, df::AbstractDataFrame)
+StatsBase.describe(df::AbstractDataFrame) = describe(STDOUT, df)
+function StatsBase.describe(io, df::AbstractDataFrame)
     for (name, col) in eachcol(df)
         println(io, name)
         describe(io, col)
         println(io, )
     end
 end
-describe(dv::AbstractVector) = describe(STDOUT, dv)
-function describe{T<:Number}(io, dv::AbstractVector{T})
+StatsBase.describe(dv::AbstractArray) = describe(STDOUT, dv)
+function StatsBase.describe{T<:Number}(io, dv::AbstractArray{T})
     if all(isna(dv))
         println(io, " * All NA * ")
         return
@@ -420,7 +421,7 @@ function describe{T<:Number}(io, dv::AbstractVector{T})
     println(io, "NA%      $(round(nas*100/length(dv), 2))%")
     return
 end
-function describe{T}(io, dv::AbstractVector{T})
+function StatsBase.describe{T}(io, dv::AbstractArray{T})
     ispooled = isa(dv, PooledDataVector) ? "Pooled " : ""
     # if nothing else, just give the length and element type and NA count
     println(io, "Length  $(length(dv))")
@@ -502,9 +503,18 @@ complete_cases!(df)
 """
 complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(!complete_cases(df)))
 
-function DataArrays.array(df::AbstractDataFrame)
-    n, p = size(df)
+function Base.convert(::Type{Array}, df::AbstractDataFrame)
+    convert(Matrix, df)
+end
+function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(typejoin, eltypes(df))
+    convert(Matrix{T}, df)
+end
+function Base.convert{T}(::Type{Array{T}}, df::AbstractDataFrame)
+    convert(Matrix{T}, df)
+end
+function Base.convert{T}(::Type{Matrix{T}}, df::AbstractDataFrame)
+    n, p = size(df)
     res = Array(T, n, p)
     idx = 1
     for col in columns(df)
@@ -515,8 +525,17 @@ function DataArrays.array(df::AbstractDataFrame)
     return res
 end
 
-function DataArrays.DataArray(df::AbstractDataFrame,
-                              T::DataType = reduce(typejoin, eltypes(df)))
+function Base.convert(::Type{DataArray}, df::AbstractDataFrame)
+    convert(DataMatrix, df)
+end
+function Base.convert(::Type{DataMatrix}, df::AbstractDataFrame)
+    T = reduce(typejoin, eltypes(df))
+    convert(DataMatrix{T}, df)
+end
+function Base.convert{T}(::Type{DataArray{T}}, df::AbstractDataFrame)
+    convert(DataMatrix{T}, df)
+end
+function Base.convert{T}(::Type{DataMatrix{T}}, df::AbstractDataFrame)
     n, p = size(df)
     res = DataArray(T, n, p)
     idx = 1
@@ -540,7 +559,7 @@ nonunique(df::AbstractDataFrame)
 
 ### Result
 
-* `::Vector{Bool}` : indicates whether the row is a duplicate of a
+* `::Vector{Bool}` : indicates whether the row is a duplicate of some
   prior row
 
 See also `unique` and `unique!`.
@@ -555,19 +574,23 @@ nonunique(df)
 
 """
 function nonunique(df::AbstractDataFrame)
-    # Return a Vector{Bool} indicated whether the row is a duplicate
-    # of a prior row.
     res = fill(false, nrow(df))
-    di = Dict()
+    rows = Set{DataFrameRow}()
     for i in 1:nrow(df)
-        if haskey(di, array(df[i, :])) # Used to convert to Any type
+        arow = DataFrameRow(df, i)
+        if in(arow, rows)
             res[i] = true
         else
-            di[array(df[i, :])] = 1 # Used to convert to Any type
+            push!(rows, arow)
         end
     end
     res
 end
+
+unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
+
+# Unique rows of an AbstractDataFrame.
+Base.unique(df::AbstractDataFrame) = df[!nonunique(df), :]
 
 """
 Delete duplicate rows
@@ -597,12 +620,7 @@ unique!(df)  # modifies df
 ```
 
 """
-[:unique, :unique!]
-
-unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
-
-# Unique rows of an AbstractDataFrame.
-Base.unique(df::AbstractDataFrame) = df[!nonunique(df), :]
+(unique, unique!)
 
 function nonuniquekey(df::AbstractDataFrame)
     # Here's another (probably a lot faster) way to do `nonunique`
@@ -770,5 +788,5 @@ nrow(df)
 ncol(df)
 ```
 
-"""
+""";
 [:nrow, :ncol]

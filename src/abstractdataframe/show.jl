@@ -30,7 +30,7 @@ end
 #'
 #' ourstrwidth("abc")
 #' ourstrwidth(10000)
-begin
+let
     local io = IOBuffer(Array(UInt8, 80), true, true)
     global ourstrwidth
     function ourstrwidth(x::Any) # -> Int

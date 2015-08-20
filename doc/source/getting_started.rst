@@ -42,7 +42,7 @@ from our vector. We can do that using the ``dropna`` function::
     dropna(dv)
     mean(dropna(dv))
 
-Instead of removing ``NA`` values, you can try to conver the ``DataArray``
+Instead of removing ``NA`` values, you can try to convert the ``DataArray``
 into a normal Julia ``Array`` using ``convert``::
 
     convert(Array, dv)
@@ -54,11 +54,11 @@ no ``NA`` values::
     convert(Array, dv)
 
 In addition to removing ``NA`` values and hoping they won't occur, you can
-also replace any ``NA`` values using the ``array`` function, which takes a
+also replace any ``NA`` values using the ``convert`` function, which takes a
 replacement value as an argument::
 
     dv = @data([NA, 3, 2, 5, 4])
-    mean(array(dv, 11))
+    mean(convert(Array, dv, 11))
 
 Which strategy for dealing with ``NA`` values is most appropriate will
 typically depend on the specific details of your data analysis pathway.

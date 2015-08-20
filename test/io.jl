@@ -186,7 +186,7 @@ module TestIO
     readtable("$data/skiplines/skipfront.csv", allowcomments = true, commentmark = '%')
 
     readtable("$data/separators/sample_data.csv", quotemark = Char[])
-    @test_throws BoundsError readtable("$data/newlines/embedded_osx.csv", quotemark = Char[])
+    @test_throws ErrorException readtable("$data/newlines/embedded_osx.csv", quotemark = Char[])
     df = readtable("$data/quoting/single.csv", quotemark = ['\''])
     @test df == readtable("$data/quoting/mixed.csv", quotemark = ['\'', '"'])
 
@@ -338,7 +338,7 @@ module TestIO
     isfile(tf) && rm(tf)
     writetable(tf, df, nastring="none")
     @test readcsv(tf) == ["A" "B"; 1 "b"; "none" "none"]
-    
+
     # Test writetable with append
     df1 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
     df2 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))

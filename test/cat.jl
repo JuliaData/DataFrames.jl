@@ -19,10 +19,14 @@ module TestCat
     @test names(dfh) == [:x1, :x1_1, :x2]
     @test isequal(dfh[:x1], df3[:x1])
     @test isequal(dfh, [df3 df4])
+    @test isequal(dfh, DataFrames.hcat!(DataFrame(), df3, df4))
 
     dfh3 = hcat(df3, df4, df5)
     @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
     @test isequal(dfh3, hcat(dfh, df5))
+    @test isequal(dfh3, DataFrames.hcat!(DataFrame(), df3, df4, df5))
+
+    @test isequal(df2, DataFrames.hcat!(df2))
 
     #
     # vcat

@@ -94,10 +94,12 @@ function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
         for i = 1:length(refs2)
             refs2[i] += (dv2.refs[i]) * ngroups
         end
-        ngroups = ngroups * (length(dv1.pool) + 1)
+        # FIXME check for ngroups overflow, maybe recode refs to prevent it
+        ngroups *= (length(dv1.pool) + 1)
     end
-    pool = [1:ngroups;]
-    (PooledDataArray(DataArrays.RefArray(refs1), pool), PooledDataArray(DataArrays.RefArray(refs2), pool))
+    # recode refs1 and refs2 to drop the unused column combinations and
+    # limit the pool size
+    PooledDataVecs( refs1, refs2 )
 end
 
 function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
@@ -239,7 +241,7 @@ function Base.join(df1::AbstractDataFrame,
 
         return vcat(mixed, leftonly, rightonly)
     elseif kind == :semi
-        df1[left_idx, :]
+        df1[unique(left_idx), :]
     elseif kind == :anti
         df1[leftonly_idx, :]
     else
