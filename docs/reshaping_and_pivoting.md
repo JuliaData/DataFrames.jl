@@ -42,7 +42,7 @@ d = stack(iris)
 `unstack` converts from a long format to a wide format. The default is requires specifying which columns are an id variable, column variable names, and column values:
 
 ```julia
-longdf = melt(iris, :id)
+longdf = melt(iris, [:Species, :id])
 widedf = unstack(longdf, :id, :variable, :value)
 ```
 
