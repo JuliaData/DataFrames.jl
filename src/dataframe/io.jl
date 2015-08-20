@@ -687,11 +687,11 @@ function findcorruption(rows::Integer,
                         cols::Integer,
                         fields::Integer,
                         p::ParsedCSV)
-    n = length(p.bounds)
+    n = min(fields + 1, length(p.bounds))
     lengths = Array(Int, rows)
     t = 1
     for i in 1:rows
-        bound = p.lines[i + 1]
+        bound = p.lines[i + 1] - 1
         f = 0
         while t <= n && p.bounds[t] < bound
             f += 1
@@ -699,19 +699,30 @@ function findcorruption(rows::Integer,
         end
         lengths[i] = f
     end
-    m = median(lengths)
+    m = int(median(lengths))
     corruptrows = find(lengths .!= m)
-    l = corruptrows[1]
     msgio = IOBuffer()
     @printf(msgio,
-            "Saw %d rows, %d columns and %d fields\n",
+            "Saw %d rows and %d fields, expected %d columns\n",
             rows,
-            cols,
-            fields)
-    @printf(msgio,
-            " * Line %d has %d columns\n",
-            l,
-            lengths[l] + 1)
+            fields,
+            cols)
+    if m != cols
+        @printf(msgio,
+                " * Median number of columns: %d\n",
+                m)
+    end
+    for i in 1:min(length(corruptrows), 10)
+        @printf(msgio,
+                " * Line %d has %d columns\n",
+                corruptrows[i],
+                lengths[corruptrows[i]])
+    end
+    if length(corruptrows) > 10
+        @printf(msgio,
+                " * Issues found in %d more lines\n",
+                length(corruptrows) - 10)
+    end
     error(bytestring(msgio))
 end
 
