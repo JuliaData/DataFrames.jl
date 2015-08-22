@@ -84,21 +84,28 @@ df |> groupby([:a, :b]) |> [sum, length]
 function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     ## a subset of Wes McKinney's algorithm here:
     ##     http://wesmckinney.com/blog/?p=489
-
     ncols = length(cols)
     # use the pool trick to get a set of integer references for each unique item
-    dv = PooledDataArray(d[cols[ncols]])
+    v = d[cols[end]]
+    dv = convert(PooledDataArray{Uint64, eltype(v)}, v)
+    if is(dv,  d[cols[ncols]])
+        x = deepcopy(dv.refs)
+    else
+        x = dv.refs
+    end
     # if there are NAs, add 1 to the refs to avoid underflows in x later
-    dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    x = copy(dv.refs) .+ dv_has_nas
+    if zero(Uint64) in x
+        broadcast!(+, x, x, one(Uint64))
+    end
     # also compute the number of groups, which is the product of the set lengths
+    dv_has_nas = convert(Uint64, 0 in dv.refs)
     ngroups = length(dv.pool) + dv_has_nas
     # if there's more than 1 column, do roughly the same thing repeatedly
     for j = (ncols - 1):-1:1
         dv = PooledDataArray(d[cols[j]])
-        dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
+        dv_has_nas = convert(Uint64, 0 in dv.refs)
         for i = 1:nrow(d)
-            x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
+            x[i] += (dv.refs[i] + dv_has_nas-1) * ngroups
         end
         ngroups = ngroups * (length(dv.pool) + dv_has_nas)
         # TODO if ngroups is really big, shrink it
