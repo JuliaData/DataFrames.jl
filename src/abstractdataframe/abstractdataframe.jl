@@ -572,17 +572,14 @@ nonunique(df, 1)
 
 """
 function nonunique(df::AbstractDataFrame)
-    res = fill(false, nrow(df))
-    rows = Set{DataFrameRow}()
-    for i in 1:nrow(df)
-        arow = DataFrameRow(df, i)
-        if in(arow, rows)
-            res[i] = true
-        else
-            push!(rows, arow)
-        end
+    gslots = row_group_slots(df)[3]
+    # unique rows are the first encountered group representatives,
+    # nonunique are everything else
+    res = fill(true, nrow(df))
+    @inbounds for g_row in gslots
+        (g_row > 0) && (res[g_row] = false)
     end
-    res
+    return res
 end
 
 nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
@@ -631,17 +628,6 @@ unique!(df)  # modifies df
 
 """
 (unique, unique!)
-
-function nonuniquekey(df::AbstractDataFrame)
-    # Here's another (probably a lot faster) way to do `nonunique`
-    # by grouping on all columns. It will fail if columns cannot be
-    # made into CategoricalVector's.
-    gd = groupby(df, _names(df))
-    idx = [1:length(gd.idx)][gd.idx][gd.starts]
-    res = fill(true, nrow(df))
-    res[idx] = false
-    res
-end
 
 # Count the number of missing values in every column of an AbstractDataFrame.
 function colmissing(df::AbstractDataFrame) # -> Vector{Int}
