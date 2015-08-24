@@ -106,10 +106,15 @@ module TestData
     @test isequal(df8[1, :d1_sum], sum(df7[:d1]))
 
     df8 = aggregate(df7, :d2, [sum, length])
+    @test df8[1:2, :d2] == ["A", "B"]
     @test size(df8, 1) == 3
     @test size(df8, 2) == 5
     @test isequal(df8[2, :d1_length], Nullable(4))
     @test isequal(df8, aggregate(groupby(df7, :d2), [sum, length]))
+    @test sum(df8[:d1_length]) == N
+    @test all(df8[:d1_length] .> 0)
+    @test df8[:d1_length] == [4, 5, 11]
+    @test df8[2, :d1_length] == 4
 
     df9 = df7 |> groupby([:d2]) |> [sum, length]
     @test isequal(df9, df8)
