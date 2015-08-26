@@ -93,3 +93,23 @@ function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
         return true
     end
 end
+
+# lexicographic ordering on DataFrame rows, null > !null
+function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
+    (ncol(r1.df) == ncol(r2.df)) ||
+        throw(ArgumentError("Rows of the data frames that have different number of columns cannot be compared ($(ncol(df1)) and $(ncol(df2)))"))
+    @inbounds for i in 1:ncol(r1.df)
+        col1 = r1.df[i]
+        col2 = r2.df[i]
+        isnull1 = _isnull(col1, r1.row)
+        isnull2 = _isnull(col2, r2.row)
+        (isnull1 != isnull2) && return isnull2 # null > !null
+        if !isnull1
+            v1 = NullableArrays.unsafe_getvalue_notnull(col1, r1.row)
+            v2 = NullableArrays.unsafe_getvalue_notnull(col2, r2.row)
+            isless(v1, v2) && return true
+            !isequal(v1, v2) && return false
+        end
+    end
+    return false
+end

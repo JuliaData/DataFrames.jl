@@ -22,6 +22,26 @@ module TestDataFrameRow
     @test isequal(DataFrameRow(df, 2), DataFrameRow(df, 5))
     @test !isequal(DataFrameRow(df, 2), DataFrameRow(df, 6))
 
+    # isless()
+    df4 = DataFrame(a=NullableArray(Nullable{Int}[1, 1, 2, 2, 2, 2, Nullable(), Nullable()]),
+                    b=NullableArray([2.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0]),
+                    c=NullableArray(Nullable{Symbol}[:B, Nullable(), :A, :C, :D, :D, :A, :A]))
+    @test isless(DataFrameRow(df4, 1), DataFrameRow(df4, 2))
+    @test !isless(DataFrameRow(df4, 2), DataFrameRow(df4, 1))
+    @test !isless(DataFrameRow(df4, 1), DataFrameRow(df4, 1))
+    @test isless(DataFrameRow(df4, 1), DataFrameRow(df4, 3))
+    @test !isless(DataFrameRow(df4, 3), DataFrameRow(df4, 1))
+    @test isless(DataFrameRow(df4, 3), DataFrameRow(df4, 4))
+    @test !isless(DataFrameRow(df4, 4), DataFrameRow(df4, 3))
+    @test isless(DataFrameRow(df4, 4), DataFrameRow(df4, 5))
+    @test !isless(DataFrameRow(df4, 5), DataFrameRow(df4, 4))
+    @test !isless(DataFrameRow(df4, 6), DataFrameRow(df4, 5))
+    @test !isless(DataFrameRow(df4, 5), DataFrameRow(df4, 6))
+    @test isless(DataFrameRow(df4, 7), DataFrameRow(df4, 8))
+    @test !isless(DataFrameRow(df4, 8), DataFrameRow(df4, 7))
+    @test isless(DataFrameRow(df4, 1), DataFrameRow(df4, 8))
+    @test !isless(DataFrameRow(df4, 8), DataFrameRow(df4, 1))
+
     # hashing
     @test !isequal(hash(DataFrameRow(df, 1)), hash(DataFrameRow(df, 2)))
     @test !isequal(hash(DataFrameRow(df, 1)), hash(DataFrameRow(df, 3)))
