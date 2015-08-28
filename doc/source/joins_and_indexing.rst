@@ -74,3 +74,6 @@ In order to join data frames on keys which have different names, you must first 
 
     rename!(df3, :old_name, :new_name)
 
+Or renaming multiple columns at a time::
+
+    rename!(df3, {:old_name => :new_name, :another_old_name => :another_new_name})
