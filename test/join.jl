@@ -67,6 +67,30 @@ module TestJoin
     # Cross joins don't take keys
     @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
 
+    # test empty inputs
+    simple_df(len::Int, col=:A) = (df = DataFrame(); df[col]=collect(1:len); df)
+    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :left),  simple_df(0))
+    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :left),  simple_df(2))
+    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :left),  simple_df(0))
+    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :right), simple_df(0))
+    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :right), simple_df(2))
+    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :right), simple_df(0))
+    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :inner), simple_df(0))
+    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :inner), simple_df(0))
+    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :inner), simple_df(0))
+    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :outer), simple_df(0))
+    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :outer), simple_df(2))
+    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :outer), simple_df(2))
+    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :semi),  simple_df(0))
+    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :semi),  simple_df(0))
+    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :semi),  simple_df(0))
+    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :anti),  simple_df(0))
+    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :anti),  simple_df(2))
+    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :anti),  simple_df(0))
+    @test isequal(join(simple_df(0), simple_df(0, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
+    @test isequal(join(simple_df(0), simple_df(2, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
+    @test isequal(join(simple_df(2), simple_df(0, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
+
     # issue #960
     df1 = DataFrame(A = 1:50,
                     B = 1:50,
