@@ -1,7 +1,9 @@
 DataFrames.jl
 =============
 
-[![DataFrames](http://pkg.julialang.org/badges/DataFrames_release.svg)](http://pkg.julialang.org/?pkg=DataFrames&ver=release)
+[![DataFrames](http://pkg.julialang.org/badges/DataFrames_0.3.svg)](http://pkg.julialang.org/?pkg=DataFrames&ver=0.3)
+[![DataFrames](http://pkg.julialang.org/badges/DataFrames_0.4.svg)](http://pkg.julialang.org/?pkg=DataFrames&ver=0.4)
+
 [![Coverage Status](http://img.shields.io/coveralls/JuliaStats/DataFrames.jl.svg)](https://coveralls.io/r/JuliaStats/DataFrames.jl)
 [![Build Status](https://travis-ci.org/JuliaStats/DataFrames.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/DataFrames.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/github/JuliaStats/DataFrames.jl?svg=true&branch=master)](https://ci.appveyor.com/project/garborg/dataframes-jl/branch/master)
