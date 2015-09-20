@@ -322,7 +322,7 @@ function ModelMatrix(mf::ModelFrame)
     ## or the default TreatmentContrast.
     cc = Any[]
     for (name, x) in eachcol(mf.df[:,rows])
-        if name in keys(mf.contrasts)
+        if haskey(mf.contrasts, name)
             push!(cc, cols(x, mf.contrasts[name]))
         else
             push!(cc, cols(x))
@@ -338,39 +338,56 @@ function ModelMatrix(mf::ModelFrame)
 end
 
 termnames(term::Symbol, col) = [string(term)]
-function termnames(term::Symbol, col::PooledDataArray)
-    levs = levels(col)
-    [string(term, " - ", levs[i]) for i in 2:length(levs)]
+
+function expandtermnames(term::Vector)
+    if length(term) == 1
+        return term[1]
+    else
+        return foldr((a,b) -> vec([string(lev1, " & ", lev2) for
+                                   lev1 in a,
+                                   lev2 in b]),
+                     term)
+    end
 end
 
 function coefnames(mf::ModelFrame)
-    if mf.terms.intercept
-        vnames = Compat.UTF8String["(Intercept)"]
-    else
-        vnames = Compat.UTF8String[]
+    # Generate individual evaluation-term names. Each value in etnames is a
+    # vector of the names for each column that the term evaluates to. (Just a
+    # single column for numeric terms, and one per contrast for categorical)
+    etnames = Dict();
+    for term in mf.terms.eterms
+        if haskey(mf.contrasts, term)
+            etnames[term] = termnames(term, mf.df[term], mf.contrasts[term])
+        else
+            etnames[term] = termnames(term, mf.df[term])
+        end
     end
-    # Need to only include active levels
+
+    # For each _term_, pull out a vector of individual evaluation termnames that
+    # go into it.
+    tnames = Vector{Vector{Compat.UTF8String}}()
+    if mf.terms.intercept
+        push!(tnames, push!([], ["(Intercept)"]))
+    end
     for term in mf.terms.terms
         if isa(term, Expr)
             if term.head == :call && term.args[1] == :|
                 continue                # skip random-effects terms
             elseif term.head == :call && term.args[1] == :&
-                ## for an interaction term, combine term names pairwise,
-                ## starting with rightmost terms
-                append!(vnames,
-                        foldr((a,b) ->
-                              vec([string(lev1, " & ", lev2) for
-                                   lev1 in a,
-                                   lev2 in b]),
-                              map(x -> termnames(x, mf.df[x]), term.args[2:end])))
+                push!(tnames, map(x -> etnames[x], term.args[2:end]))
             else
                 error("unrecognized term $term")
             end
         else
-            append!(vnames, termnames(term, mf.df[term]))
+            # for "main effect" terms, push length-1 vector which holds all
+            push!(tnames, push!([], etnames[term]))
         end
     end
-    return vnames
+
+    # Finally, expand each term names (analogously with expandcols, creating
+    # the names of each of the interaction columns), concatenate, and return.
+    return mapreduce(expandtermnames, vcat, tnames)
+    
 end
 
 function Formula(t::Terms)
