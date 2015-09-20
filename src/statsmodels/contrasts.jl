@@ -4,13 +4,15 @@
 ## matrix columns and coefficient names
 ##
 ## ModelFrame will hold a Dict{Symbol, T<:AbstractContrast} that maps column
-## names to contrasts. ModelMatrix will check this dict when evaluating terms,
-## falling back to a default for any categorical data without a specified
-## contrast.
+## names to contrasts.
+##
+## ModelMatrix will check this dict when evaluating terms, falling back to a
+## default for any categorical data without a specified contrast.
 
 abstract AbstractContrast
 
-termnames(term::Symbol, col::Any, contrast::AbstractContrast) = contrast.termnames
+termnames(term::Symbol, col::Any, contrast::AbstractContrast) =
+    ["$term - $name" for name in contrast.termnames]
 
 function cols(v::PooledDataVector, contrast::AbstractContrast)
     ## make sure the levels of the contrast matrix and the categorical data
@@ -19,15 +21,30 @@ function cols(v::PooledDataVector, contrast::AbstractContrast)
     ## contrast matrix
     reindex = [findfirst(l .== contrast.levels) for l in levels(v)]
 
+    ## TODO: add kwarg for full-rank contrasts (e.g., when intercept isn't
+    ## specified in a model frame).
+
     return contrast.matrix[reindex[v.refs], :]
 end
 
-Base.call{T<: AbstractContrast}(Type{T}, v::DataVector, args...; kwargs...) =
-    Base.call(Type{T}, pool(v), args...; kwargs...)
+## Default contrast is treatment coding:
+cols(v::PooledDataVector) = cols(v, TreatmentContrast(v))
+termnames(term::Symbol, col::PooledDataArray) = termnames(term, col, TreatmentContrast(col))
+
+
+## Constructing a contrast from a non-pooled data vector will first pool it
+## 
+## (NOT SURE THIS IS GOOD: constructing columns also depends on levels, so for
+## _that_ to work would need to somehow hold onto pooled data...)
+Base.call{T<: AbstractContrast}(C::Type{T}, v::DataVector, args...; kwargs...) =
+    Base.call(C, pool(v), args...; kwargs...)
 
 ################################################################################
 ## Treatment (dummy-coded) contrast
 ################################################################################
+
+## TODO: factor out some of this repetition between different contrast types
+## using metaprogramming
 
 type TreatmentContrast <: AbstractContrast
     base::Integer
@@ -42,7 +59,7 @@ function TreatmentContrast(v::PooledDataVector; base::Integer=1)
     n = length(lvls)
     if n < 2 error("not enought degrees of freedom to define contrasts") end
 
-    not_base = [1:(base-1), (base+1):n]
+    not_base = [1:(base-1); (base+1):n]
     tnames = lvls[ not_base ]
     mat = eye(n)[:, not_base]
 
@@ -69,7 +86,7 @@ function SumContrast(v::PooledDataVector; base::Integer=1)
     n = length(lvls)
     if n < 2 error("not enought degrees of freedom to define contrasts") end
 
-    not_base = [1:(base-1), (base+1):n]
+    not_base = [1:(base-1); (base+1):n]
     tnames = lvls[ not_base ]
     mat = eye(n)[:, not_base]
     mat[base, :] = -1
@@ -110,7 +127,7 @@ function HelmertContrast(v::PooledDataVector; base::Integer=1)
     if n < 2 error("not enought degrees of freedom to define contrasts") end
     if !(1 <= base <= n) error("base = $(base) is not allowed for n = $n") end
 
-    not_base = [1:(base-1), (base+1):n]
+    not_base = [1:(base-1); (base+1):n]
     tnames = lvls[ not_base ]
 
     mat = zeros(n, n-1)
@@ -120,6 +137,6 @@ function HelmertContrast(v::PooledDataVector; base::Integer=1)
     end
 
     ## re-shuffle the rows such that base is the all -1.0 row (currently first)
-    mat = mat[[C.base, 1:(C.base-1), (C.base+1):end], :]
+    mat = mat[[base; 1:(base-1); (base+1):end], :]
 
 end
