@@ -1,124 +1,54 @@
-## Specifying contrast coding for categorical data.  General strategy is to
-## define types for each kind of contrast coding (treatment, sum, normalized sum,
-## Helmert, etc.).  Constructing object with data will wrap the data and
-## calculate the contrast matrix.  Objects will provide methods for generating
-## contrast coded matrix for ModelMatrix construction, and term names.
+## Specify contrasts for coding categorical data in model matrix. Contrast types
+## are constructed with data and other options, creating a subtype of
+## AbstractContrast. AbstractContrast provides the interface for creating modle
+## matrix columns and coefficient names
 ##
-
-
-## Okay what's the goal here?  Just to be able to call the `cols` and
-## `termnames` functions on the column in the DataFrame and have it work
-## automagically.
-##
-## The operations that need to happen are
-## * contrast matrix given data (or number of contrasts)
-## * make contrast-coded design matrix columns
-## * make column names
-##
-## What about from the user's point of view?  How do you say that you want to
-## use a particular kind of contrast?  Replace or assign the contrast wrapped
-## data to the parent data frame.
-##
-## OKay, but having a container type is going to be a huge pain in the ass:
-## you have to duplicate all the PooledDataArray functionality so that it can
-## be used interchangeably.  I mean, maybe not, if it's enough to just write
-## down all the methods that need to be delegated and shove them all through
-## a macro (although I suspect it's not quite that simple).
-##
-## So instead the right place to specify this is in the ModelFrame.  Perhaps
-## a Dict{Symbol,T<:AbstractContrast}, initialized to empty, and checked on
-## construction of ModelMatrix.  Only change would be to change the cols() calls
-## in the ModelMatrix constructor to take the contrasts into account, and the
-## call to coefnames
-##
-## Other issue: what about specifying a contrast matrix manually?  Maybe have
-## a type called ManualContrast that has fields for the matrix and the name?
-## And if a matrix is passed to the ModelFrame then it'll first wrap it in the
-## contrast type, then wrap the data, then call cols.  This seems needlessly
-## complicated to say the least. Better migth just be to add a version of the
-## `cols` function that takes a Contrast or a matrix and does the right thing,
-## and can still benefit from the multiple dispatch.
-## 
-## 
-##
-## So I'll have two kinds of types:
-## ContrastedDataArray - container for data, parametrized by kind of contrast
-## ContrastTreatment <: AbstractContrast - For dispatching methods for making
-##   specific contrast matrix, contrast columns, and names.
-##
-## AbstractContrast provides interface
-##
-## contrast_matrix(::AbstractContrast, v::PooledDataVector, ...) - construct
-##   the contrast matrix for this contrast type and data.  Might optionally
-##   provide other arguments (like the base level, whether to make it sparse,
-##   etc.).  The columns of the contrast matrix correspond to the columsn that
-##   will be put into the design matrix, and the rows correspond to the levels of
-##   the input data.
-
+## ModelFrame will hold a Dict{Symbol, T<:AbstractContrast} that maps column
+## names to contrasts. ModelMatrix will check this dict when evaluating terms,
+## falling back to a default for any categorical data without a specified
+## contrast.
 
 abstract AbstractContrast
 
-## contrast_matrix{T<:AbstractContrast}(C::Type{T}, v::PooledDataArray, args...; kwargs...) =
-##     contrast_matrix(C(), length(levels(v)), args...; kwargs...)
+termnames(term::Symbol, col::Any, contrast::AbstractContrast) = contrast.termnames
 
-## Allow specification of contrast Types (e.g. `SumContrast`) in addition to
-## instantiated contrast objects (e.g. `SumContrast(base=1)`).
-contrast_matrix{T<:AbstractContrast}(C::Type{T}, args...; kwargs...) =
-    contrast_matrix(C(), args...; kwargs...)
+function cols(v::PooledDataVector, contrast::AbstractContrast)
+    ## make sure the levels of the contrast matrix and the categorical data
+    ## are the same by constructing a re-indexing vector. Indexing into
+    ## reindex with v.refs will give the corresponding row number of the
+    ## contrast matrix
+    reindex = [findfirst(l .== contrast.levels) for l in levels(v)]
 
-## Generic generation of columns for design matrix based on a contrast matrix
-function cols(v::PooledDataVector, contr_mat::Matrix)
-    ## validate provided matrix
-    n = length(levels(v))
-    ## number of columns has to be < n-1
-    dims = size(contr_mat)
-    if dims[2] >= n
-        error("Too many columns in contrast matrix: $(dims[2]) (only $n levels)")
-    elseif dims[1] < n
-        error("Not enough rows in contrast matrix: $(dims[1]) ($n levels)")
-    end
-
-    return contr_mat[v.refs, :]
+    return contrast.matrix[reindex[v.refs], :]
 end
 
-## Default contrast is treatment:
-cols(v::PooledDataVector) = cols(v, TreatmentContrast)
-## Make contrast columns from contrast object:
-cols(v::PooledDataVector, C::AbstractContrast) = cols(v, contrast_matrix(C,v))
-## Make contrast columsn from contrast _type_:
-cols{T<:AbstractContrast}(v::PooledDataVector, C::Type{T}) = cols(v, C())
-
-
-## Default names for contrasts are just the level of the PDV used to construct.
-termnames(term::Symbol, 
-function contrast_names{T<:AbstractContrast}(C::Type{T}, v::PooledDataVector)
-    levs = levels(v)
-    return levs[2:end]
-end
-
-
+Base.call{T<: AbstractContrast}(Type{T}, v::DataVector, args...; kwargs...) =
+    Base.call(Type{T}, pool(v), args...; kwargs...)
 
 ################################################################################
 ## Treatment (dummy-coded) contrast
 ################################################################################
 
 type TreatmentContrast <: AbstractContrast
-    sparse::Bool
     base::Integer
+    matrix::Array{Any,2}
+    termnames::Vector{Any}
+    levels::Vector{Any}
 end
 
-TreatmentContrast(; sparse::Bool=false, base::Integer=1) = TreatmentContrast(sparse, base)
+function TreatmentContrast(v::PooledDataVector; base::Integer=1)
+    lvls = levels(v)
 
-function contrast_matrix(C::TreatmentContrast, v::PooledDataVector)
-    n = length(levels(v))          # number of levels for contrast
+    n = length(lvls)
     if n < 2 error("not enought degrees of freedom to define contrasts") end
 
-    contr = C.sparse ? speye(n) : eye(n)
+    not_base = [1:(base-1), (base+1):n]
+    tnames = lvls[ not_base ]
+    mat = eye(n)[:, not_base]
 
-    ## Drop the base level column from the contrast matrix
-    if !(1 <= C.base <= n) error("base = $(C.base) is not allowed for n = $n") end
-    contr[:,vcat(1:(C.base-1),(C.base+1):end)]
+    return TreatmentContrast(base, mat, tnames, lvls)
 end
+
 
 ################################################################################
 ## Sum-coded contrast
@@ -126,20 +56,27 @@ end
 ## -1 for base level and +1 for contrast level.
 ################################################################################
 
-type SumContrast <: AbstractContrast 
+type SumContrast <: AbstractContrast
     base::Integer
+    matrix::Array{Any,2}
+    termnames::Vector{Any}
+    levels::Vector{Any}
 end
 
-SumContrast(; base::Integer=1) = SumContrast(base)
+function SumContrast(v::PooledDataVector; base::Integer=1)
+    lvls = levels(v)
 
-function contrast_matrix(C::SumContrast, v::PooledDataVector)
-    n = length(levels(v))
+    n = length(lvls)
     if n < 2 error("not enought degrees of freedom to define contrasts") end
-    if !(1 <= C.base <= n) error("base = $(C.base) is not allowed for n = $n") end
-    contr = eye(n)[:, [1:(C.base-1), (C.base+1):end]]
-    contr[C.base, :] = -1
-    return contr
+
+    not_base = [1:(base-1), (base+1):n]
+    tnames = lvls[ not_base ]
+    mat = eye(n)[:, not_base]
+    mat[base, :] = -1
+
+    return SumContrast(base, mat, tnames, lvls)
 end
+
 
 ################################################################################
 ## Helmert-coded contrast
@@ -154,31 +91,35 @@ end
 ##
 ## Interpretation is that the nth contrast column is the difference between
 ## level n+1 and the average of levels 1:n
+##
+## Has the nice property of each column in the resulting model matrix being
+## orthogonal and with mean 0.
 ################################################################################
 
-type HelmertContrast <: AbstractContrast 
+type HelmertContrast <: AbstractContrast
     base::Integer
+    matrix::Array{Any,2}
+    termnames::Vector{Any}
+    levels::Vector{Any}
 end
 
-HelmertContrast(; base::Integer=1) = HelmertContrast(base)
+function HelmertContrast(v::PooledDataVector; base::Integer=1)
+    lvls = levels(v)
 
-function contrast_matrix(C::HelmertContrast, v::PooledDataVector)
-    n = length(levels(v))
+    n = length(lvls)
     if n < 2 error("not enought degrees of freedom to define contrasts") end
-    if !(1 <= C.base <= n) error("base = $(C.base) is not allowed for n = $n") end
+    if !(1 <= base <= n) error("base = $(base) is not allowed for n = $n") end
 
-    contr = zeros(Integer, n, n-1)
+    not_base = [1:(base-1), (base+1):n]
+    tnames = lvls[ not_base ]
+
+    mat = zeros(n, n-1)
     for i in 1:n-1
-        contr[1:i, i] = -1
-        contr[i+1, i] = i
+        mat[1:i, i] = -1
+        mat[i+1, i] = i
     end
 
-    return contr[[C.base, 1:(C.base-1), (C.base+1):end], :]
-end
+    ## re-shuffle the rows such that base is the all -1.0 row (currently first)
+    mat = mat[[C.base, 1:(C.base-1), (C.base+1):end], :]
 
-
-################################################################################
-
-function contrast_matrix(::AbstractContrast, args...)
-    error("Contrast not implemented")
 end
