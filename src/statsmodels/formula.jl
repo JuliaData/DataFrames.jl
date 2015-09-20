@@ -239,12 +239,29 @@ function dropUnusedLevels!(da::PooledDataArray)
 end
 dropUnusedLevels!(x) = x
 
+## Goal here is to allow specification of _either_ a "naked" contrast type,
+## or an instantiated contrast object itself.  This might be achieved in a more
+## julian way by overloading call for c::AbstractContrast to just return c.
+evaluateContrast(c::AbstractContrast, col::AbstractDataVector) = c
+evaluateContrast{C <: AbstractContrast}(c::Type{C}, col::AbstractDataVector) = C(col)
+
 function ModelFrame(trms::Terms, d::AbstractDataFrame;
-                    contrasts::Dict{Symbol, Type} = Dict{Symbol, Type}())
+                    contrasts::Dict = Dict())
     df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
     for c in eachcol(df) dropUnusedLevels!(c[2]) end
-    ModelFrame(df, trms, msng, contrasts)
+
+    ## TODO: set default contrasts for categorical columns without specified
+    ## contrasts.  This is to ensure that we store how to construct model matrix
+    ## columsn for ALL variables where the levels might change for prediction
+    ## with new data (e.g. if only a subset of the levels are present)
+
+    ## evaluate any naked contrasts types based on data (creating
+    ## contrast matrices, term names, and levels to store)
+    evaledContrasts = [ col => evaluateContrast(contr, df[col])
+                        for (col, contr) in contrasts ]
+
+    ModelFrame(df, trms, msng, evaledContrasts)
 end
 
 ModelFrame(f::Formula, d::AbstractDataFrame; kwargs...) = ModelFrame(Terms(f), d; kwargs...)
