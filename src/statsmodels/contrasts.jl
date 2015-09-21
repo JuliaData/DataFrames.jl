@@ -19,7 +19,7 @@ function cols(v::PooledDataVector, contrast::AbstractContrast)
     ## are the same by constructing a re-indexing vector. Indexing into
     ## reindex with v.refs will give the corresponding row number of the
     ## contrast matrix
-    reindex = [findfirst(l .== contrast.levels) for l in levels(v)]
+    reindex = [findfirst(contrast.levels, l) for l in levels(v)]
 
     ## TODO: add kwarg for full-rank contrasts (e.g., when intercept isn't
     ## specified in a model frame).
@@ -48,7 +48,7 @@ termnames(term::Symbol, col::PooledDataArray) = termnames(term, col, TreatmentCo
 
 type TreatmentContrast <: AbstractContrast
     base::Integer
-    matrix::Array{Any,2}
+    matrix::Matrix{Float64}
     termnames::Vector{Any}
     levels::Vector{Any}
 end
@@ -57,11 +57,12 @@ function TreatmentContrast(v::PooledDataVector; base::Integer=1)
     lvls = levels(v)
 
     n = length(lvls)
-    if n < 2 error("not enought degrees of freedom to define contrasts") end
+    n > 1 || error("not enough degrees of freedom to define contrasts")
+    (1 <= base <= n) || error("base = $(base) is not allowed for n = $n")
 
     not_base = [1:(base-1); (base+1):n]
-    tnames = lvls[ not_base ]
     mat = eye(n)[:, not_base]
+    tnames = lvls[not_base]
 
     return TreatmentContrast(base, mat, tnames, lvls)
 end
@@ -75,7 +76,7 @@ end
 
 type SumContrast <: AbstractContrast
     base::Integer
-    matrix::Array{Any,2}
+    matrix::Matrix{Float64}
     termnames::Vector{Any}
     levels::Vector{Any}
 end
@@ -84,12 +85,13 @@ function SumContrast(v::PooledDataVector; base::Integer=1)
     lvls = levels(v)
 
     n = length(lvls)
-    if n < 2 error("not enought degrees of freedom to define contrasts") end
+    n > 1 || error("not enough degrees of freedom to define contrasts")
+    (1 <= base <= n) || error("base = $(base) is not allowed for n = $n")
 
     not_base = [1:(base-1); (base+1):n]
-    tnames = lvls[ not_base ]
     mat = eye(n)[:, not_base]
     mat[base, :] = -1
+    tnames = lvls[not_base]
 
     return SumContrast(base, mat, tnames, lvls)
 end
@@ -115,7 +117,7 @@ end
 
 type HelmertContrast <: AbstractContrast
     base::Integer
-    matrix::Array{Any,2}
+    matrix::Matrix{Float64}
     termnames::Vector{Any}
     levels::Vector{Any}
 end
@@ -124,11 +126,11 @@ function HelmertContrast(v::PooledDataVector; base::Integer=1)
     lvls = levels(v)
 
     n = length(lvls)
-    if n < 2 error("not enought degrees of freedom to define contrasts") end
-    if !(1 <= base <= n) error("base = $(base) is not allowed for n = $n") end
+    n > 1 || error("not enough degrees of freedom to define contrasts")
+    1 <= base <= n || error("base = $(base) is not allowed for n = $n")
 
     not_base = [1:(base-1); (base+1):n]
-    tnames = lvls[ not_base ]
+    tnames = lvls[not_base]
 
     mat = zeros(n, n-1)
     for i in 1:n-1
