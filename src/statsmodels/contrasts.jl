@@ -139,4 +139,5 @@ function HelmertContrast(v::PooledDataVector; base::Integer=1)
     ## re-shuffle the rows such that base is the all -1.0 row (currently first)
     mat = mat[[base; 1:(base-1); (base+1):end], :]
 
+    return HelmertContrast(base, mat, tnames, lvls)
 end
