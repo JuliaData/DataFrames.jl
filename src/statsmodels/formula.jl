@@ -267,6 +267,14 @@ end
 ModelFrame(f::Formula, d::AbstractDataFrame; kwargs...) = ModelFrame(Terms(f), d; kwargs...)
 ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), d; kwargs...)
 
+## modify contrasts in place
+function contrast!(mf::ModelFrame; kwargs...)
+    new_contrasts = [ col => evaluateContrast(contr, mf.df[col])
+                      for (col, contr) in kwargs ]
+    mf.contrasts = merge(mf.contrasts, new_contrasts)
+    return mf
+end
+
 function StatsBase.model_response(mf::ModelFrame)
     mf.terms.response || error("Model formula one-sided")
     convert(Array, mf.df[round(Bool, mf.terms.factors[:, 1])][:, 1])
