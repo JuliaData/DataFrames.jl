@@ -78,7 +78,7 @@ function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame; 
     # term is not found in the DataFrame and we don't want to remove elements with missing y)
     newTerms = remove_response(mm.mf.terms)
     # create new model frame/matrix
-    mf = ModelFrame(newTerms, df)
+    mf = ModelFrame(newTerms, df; contrasts = mm.mf.contrasts)
     newX = ModelMatrix(mf).m
     yp = predict(mm, newX; kwargs...)
     out = DataArray(eltype(yp), size(df, 1))

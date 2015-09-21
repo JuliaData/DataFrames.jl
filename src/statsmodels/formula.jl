@@ -251,10 +251,15 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
     for c in eachcol(df) dropUnusedLevels!(c[2]) end
 
-    ## TODO: set default contrasts for categorical columns without specified
+    ## set default contrasts for categorical columns without specified
     ## contrasts.  This is to ensure that we store how to construct model matrix
     ## columsn for ALL variables where the levels might change for prediction
     ## with new data (e.g. if only a subset of the levels are present)
+    for term in trms.eterms
+        if isa(df[term], PooledDataArray) && !haskey(contrasts, term)
+            contrasts[term] = TreatmentContrast
+        end
+    end
 
     ## evaluate any naked contrasts types based on data (creating
     ## contrast matrices, term names, and levels to store)
