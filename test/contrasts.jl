@@ -1,33 +1,57 @@
-## module TestContrasts
+module TestContrasts
 
 using Base.Test
 using DataFrames
 
-x = @pdata [1, 2, 3, 1]
 
-@test contrast_matrix(TreatmentContrast, x) == [false false
-                                                true false
-                                                false true]
+d = DataFrame(x = @pdata( [:a, :b, :c, :a, :a, :b] ))
 
-@test contrast_matrix(TreatmentContrast(base=2), x) == [true false
-                                                        false false
-                                                        false true]
+mf = ModelFrame(Formula(Nothing(), :x), d)
 
-@test contrast_matrix(SumContrast, x) == [-1 -1
-                                           1  0
-                                           0  1]
+@test ModelMatrix(mf).m == [1  0  0
+                            1  1  0
+                            1  0  1
+                            1  0  0
+                            1  0  0
+                            1  1  0]
+@test coefnames(mf) == ["(Intercept)"; "x - b"; "x - c"]
 
-@test contrast_matrix(SumContrast(base=2), x) == [1  0
-                                                  -1 -1
-                                                  0  1]
+contrast!(mf, x = SumContrast)
+@test ModelMatrix(mf).m == [1 -1 -1
+                            1  1  0
+                            1  0  1
+                            1 -1 -1
+                            1 -1 -1
+                            1  1  0]
+@test coefnames(mf) == ["(Intercept)"; "x - b"; "x - c"]
 
-@test contrast_matrix(HelmertContrast, x) == [-1 -1
-                                              1  -1
-                                              0  2]
+## change base level of contrast
+contrast!(mf, x = SumContrast(d[:x]; base = 2))
+@test ModelMatrix(mf).m == [1  1  0
+                            1 -1 -1
+                            1  0  1
+                            1  1  0
+                            1  1  0
+                            1 -1 -1]
+@test coefnames(mf) == ["(Intercept)"; "x - a"; "x - c"]
 
-@test contrast_matrix(HelmertContrast(base=2), x) == [1   -1
-                                                      -1  -1
-                                                      0   2]
+contrast!(mf, x = HelmertContrast)
+@test ModelMatrix(mf).m == [1 -1 -1
+                            1  1 -1
+                            1  0  2
+                            1 -1 -1
+                            1 -1 -1
+                            1  1 -1]
+@test coefnames(mf) == ["(Intercept)"; "x - b"; "x - c"]
 
+## test for missing data (and when it clobbers one of the levels)
+d[3, :x] = NA
+mf = ModelFrame(Formula(Nothing(), :x), d, contrasts = [:x => SumContrast])
+@test ModelMatrix(mf).m == [1 -1
+                            1  1
+                            1 -1
+                            1 -1
+                            1  1]
+@test coefnames(mf) == ["(Intercept)"; "x - b"]
 
-## end
+end
