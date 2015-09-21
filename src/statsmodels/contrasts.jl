@@ -61,11 +61,14 @@ function TreatmentContrast(v::PooledDataVector; base::Integer=1)
     (1 <= base <= n) || error("base = $(base) is not allowed for n = $n")
 
     not_base = [1:(base-1); (base+1):n]
-    mat = eye(n)[:, not_base]
     tnames = lvls[not_base]
+
+    mat = contrast_matrix(TreatmentContrast, n, base)
 
     return TreatmentContrast(base, mat, tnames, lvls)
 end
+
+contrast_matrix(::Type{TreatmentContrast}, n, base) = eye(n)[:, [1:(base-1); (base+1):n]]
 
 
 ################################################################################
@@ -89,11 +92,18 @@ function SumContrast(v::PooledDataVector; base::Integer=1)
     (1 <= base <= n) || error("base = $(base) is not allowed for n = $n")
 
     not_base = [1:(base-1); (base+1):n]
-    mat = eye(n)[:, not_base]
-    mat[base, :] = -1
     tnames = lvls[not_base]
 
+    mat = contrast_matrix(SumContrast, n, base)
+    
     return SumContrast(base, mat, tnames, lvls)
+end
+
+function contrast_matrix(::Type{SumContrast}, n, base)
+    not_base = [1:(base-1); (base+1):n]
+    mat = eye(n)[:, not_base]
+    mat[base, :] = -1
+    return mat
 end
 
 
@@ -132,6 +142,12 @@ function HelmertContrast(v::PooledDataVector; base::Integer=1)
     not_base = [1:(base-1); (base+1):n]
     tnames = lvls[not_base]
 
+    mat = contrast_matrix(HelmertContrast, n, base)
+
+    return HelmertContrast(base, mat, tnames, lvls)
+end
+
+function contrast_matrix(::Type{HelmertContrast}, n, base)
     mat = zeros(n, n-1)
     for i in 1:n-1
         mat[1:i, i] = -1
@@ -140,6 +156,6 @@ function HelmertContrast(v::PooledDataVector; base::Integer=1)
 
     ## re-shuffle the rows such that base is the all -1.0 row (currently first)
     mat = mat[[base; 1:(base-1); (base+1):end], :]
-
-    return HelmertContrast(base, mat, tnames, lvls)
+    return mat
 end
+    
