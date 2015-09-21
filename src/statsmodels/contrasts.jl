@@ -36,8 +36,8 @@ termnames(term::Symbol, col::PooledDataArray) = termnames(term, col, TreatmentCo
 ## 
 ## (NOT SURE THIS IS GOOD: constructing columns also depends on levels, so for
 ## _that_ to work would need to somehow hold onto pooled data...)
-Base.call{T<: AbstractContrast}(C::Type{T}, v::DataVector, args...; kwargs...) =
-    Base.call(C, pool(v), args...; kwargs...)
+## Base.call{T<: AbstractContrast}(C::Type{T}, v::DataVector, args...; kwargs...) =
+##     Base.call(C, pool(v), args...; kwargs...)
 
 ################################################################################
 ## Treatment (dummy-coded) contrast
