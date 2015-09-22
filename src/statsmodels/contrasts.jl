@@ -73,11 +73,6 @@ end
 ## downside of that would be that they'd be locked in to a particular set of
 ## fields...although they could always just write the boilerplate themselves...
 
-
-
-
-end
-
 ################################################################################
 ## Treatment (dummy-coded) contrast
 ################################################################################
