@@ -34,39 +34,53 @@ termnames(term::Symbol, col::PooledDataArray) = termnames(term, col, TreatmentCo
 
 ## Constructing a contrast from a non-pooled data vector will first pool it
 ## 
-## (NOT SURE THIS IS GOOD: constructing columns also depends on levels, so for
-## _that_ to work would need to somehow hold onto pooled data...)
+## Also requires a cols method for non-PooledDataArray column...
 ## Base.call{T<: AbstractContrast}(C::Type{T}, v::DataVector, args...; kwargs...) =
 ##     Base.call(C, pool(v), args...; kwargs...)
+
+
+## Making a contrast type T only requires that there be a method for
+## contrast_matrix(T, v::PooledDataArray). The rest is boilerplate.
+##
+for contrastType in [:TreatmentContrast, :SumContrast, :HelmertContrast]
+    @eval begin
+        type $contrastType <: AbstractContrast
+            base::Integer
+            matrix::Matrix{Float64}
+            termnames::Vector{Any}
+            levels::Vector{Any}
+        end
+
+        function $contrastType(v::PooledDataVector; base::Integer=1)
+            lvls = levels(v)
+
+            n = length(lvls)
+            n > 1 || error("not enough degrees of freedom to define contrasts")
+            (1 <= base <= n) || error("base = $(base) is not allowed for n = $n")
+
+            not_base = [1:(base-1); (base+1):n]
+            tnames = lvls[not_base]
+
+            mat = contrast_matrix($contrastType, n, base)
+
+            return $contrastType(base, mat, tnames, lvls)
+        end
+    end
+end
+
+## Could write this as a macro, too, so that people can register their own
+## contrast types easily, without having to write out this boilerplate...the
+## downside of that would be that they'd be locked in to a particular set of
+## fields...although they could always just write the boilerplate themselves...
+
+
+
+
+end
 
 ################################################################################
 ## Treatment (dummy-coded) contrast
 ################################################################################
-
-## TODO: factor out some of this repetition between different contrast types
-## using metaprogramming
-
-type TreatmentContrast <: AbstractContrast
-    base::Integer
-    matrix::Matrix{Float64}
-    termnames::Vector{Any}
-    levels::Vector{Any}
-end
-
-function TreatmentContrast(v::PooledDataVector; base::Integer=1)
-    lvls = levels(v)
-
-    n = length(lvls)
-    n > 1 || error("not enough degrees of freedom to define contrasts")
-    (1 <= base <= n) || error("base = $(base) is not allowed for n = $n")
-
-    not_base = [1:(base-1); (base+1):n]
-    tnames = lvls[not_base]
-
-    mat = contrast_matrix(TreatmentContrast, n, base)
-
-    return TreatmentContrast(base, mat, tnames, lvls)
-end
 
 contrast_matrix(::Type{TreatmentContrast}, n, base) = eye(n)[:, [1:(base-1); (base+1):n]]
 
@@ -76,28 +90,6 @@ contrast_matrix(::Type{TreatmentContrast}, n, base) = eye(n)[:, [1:(base-1); (ba
 ##
 ## -1 for base level and +1 for contrast level.
 ################################################################################
-
-type SumContrast <: AbstractContrast
-    base::Integer
-    matrix::Matrix{Float64}
-    termnames::Vector{Any}
-    levels::Vector{Any}
-end
-
-function SumContrast(v::PooledDataVector; base::Integer=1)
-    lvls = levels(v)
-
-    n = length(lvls)
-    n > 1 || error("not enough degrees of freedom to define contrasts")
-    (1 <= base <= n) || error("base = $(base) is not allowed for n = $n")
-
-    not_base = [1:(base-1); (base+1):n]
-    tnames = lvls[not_base]
-
-    mat = contrast_matrix(SumContrast, n, base)
-    
-    return SumContrast(base, mat, tnames, lvls)
-end
 
 function contrast_matrix(::Type{SumContrast}, n, base)
     not_base = [1:(base-1); (base+1):n]
@@ -124,28 +116,6 @@ end
 ## Has the nice property of each column in the resulting model matrix being
 ## orthogonal and with mean 0.
 ################################################################################
-
-type HelmertContrast <: AbstractContrast
-    base::Integer
-    matrix::Matrix{Float64}
-    termnames::Vector{Any}
-    levels::Vector{Any}
-end
-
-function HelmertContrast(v::PooledDataVector; base::Integer=1)
-    lvls = levels(v)
-
-    n = length(lvls)
-    n > 1 || error("not enough degrees of freedom to define contrasts")
-    1 <= base <= n || error("base = $(base) is not allowed for n = $n")
-
-    not_base = [1:(base-1); (base+1):n]
-    tnames = lvls[not_base]
-
-    mat = contrast_matrix(HelmertContrast, n, base)
-
-    return HelmertContrast(base, mat, tnames, lvls)
-end
 
 function contrast_matrix(::Type{HelmertContrast}, n, base)
     mat = zeros(n, n-1)
