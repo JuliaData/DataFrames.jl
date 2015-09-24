@@ -44,14 +44,14 @@ termnames(term::Symbol, col::PooledDataArray) = termnames(term, col, TreatmentCo
 ##
 for contrastType in [:TreatmentContrast, :SumContrast, :HelmertContrast]
     @eval begin
-        type $contrastType <: AbstractContrast
+        type $contrastType{T} <: AbstractContrast
             base::Integer
             matrix::Matrix{Float64}
-            termnames::Vector{Any}
-            levels::Vector{Any}
+            termnames::Vector{T}
+            levels::Vector{T}
         end
 
-        function $contrastType(v::PooledDataVector; base::Integer=1)
+        function $contrastType{T}(v::PooledDataVector{T}; base::Integer=1)
             lvls = levels(v)
 
             n = length(lvls)
@@ -63,7 +63,7 @@ for contrastType in [:TreatmentContrast, :SumContrast, :HelmertContrast]
 
             mat = contrast_matrix($contrastType, n, base)
 
-            return $contrastType(base, mat, tnames, lvls)
+            return $contrastType{T}(base, mat, tnames, lvls)
         end
     end
 end
