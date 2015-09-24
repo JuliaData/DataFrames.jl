@@ -239,6 +239,69 @@ function dropUnusedLevels!(da::PooledDataArray)
 end
 dropUnusedLevels!(x) = x
 
+## whether or not a column of a particular type can be "promoted" to full rank
+## (only true of factors)
+can_promote(::PooledDataArray) = true
+can_promote(::Any) = false
+
+## Check for non-redundancy of columns.  For instance, if x is a factor with two
+## levels, it should be expanded into two columns in y~0+x but only one column
+## in y~1+x.  The default is the rank-reduced form (contrasts for n levels only
+## produce n-1 columns).  In general, an evaluation term x within a term
+## x&y&... needs to be "promoted" to full rank if y&... hasn't already been
+## included (either explicitly in the Terms or implicitly by promoting another
+## term like z in z&y&...).
+##
+## This function returns a boolean matrix that says whether each evaluation term
+## of each term needs to be promoted.
+function check_non_redundancy(trms, df)
+
+    ## This can be checked using the .factors field of the terms, which is an
+    ## evaluation terms x terms matrix.
+    (n_eterms, n_terms) = size(trms.factors)
+    to_promote = falses(n_eterms, n_terms)
+    encountered_columns = Vector{eltype(trms.factors)}[]
+
+    if trms.intercept
+        push!(encountered_columns, zeros(eltype(trms.factors), n_eterms))
+    end
+
+    for i_term in 1:n_terms
+        for i_eterm in 1:n_eterms
+            ## only need to check eterms that are included and can be promoted
+            ## (e.g., categorical variables that expand to multiple mm columns)
+            if round(Bool, trms.factors[i_eterm, i_term]) && can_promote(df[trms.eterms[i_eterm]])
+                dropped = trms.factors[:,i_term]
+                dropped[i_eterm] = 0
+                ## short circuiting check for whether the version of this term
+                ## with the current eterm dropped has been encountered already
+                ## (and hence does not need to be expanded
+                is_redundant = false
+                for enc in encountered_columns
+                    if dropped == enc
+                        is_redundant = true
+                        break
+                    end
+                end
+                ## more concisely, but with non-short-circuiting any:
+                ##is_redundant = any([dropped == enc for enc in encountered_columns])
+
+                if !is_redundant
+                    to_promote[i_eterm, i_term] = true
+                    push!(encountered_columns, dropped)
+                end
+
+            end
+            ## once we've checked all the eterms in this term, add it to the list
+            ## of encountered terms/columns
+        end
+        push!(encountered_columns, trms.factors[:, i_term])
+    end
+
+    return to_promote
+    
+end
+
 ## Goal here is to allow specification of _either_ a "naked" contrast type,
 ## or an instantiated contrast object itself.  This might be achieved in a more
 ## julian way by overloading call for c::AbstractContrast to just return c.
