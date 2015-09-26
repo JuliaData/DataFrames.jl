@@ -74,7 +74,38 @@ end
 ## fields...although they could always just write the boilerplate themselves...
 
 ################################################################################
-## Treatment (dummy-coded) contrast
+## Dummy contrasts (full rank)
+##
+## Needed when a term is non-redundant with lower-order terms (e.g., in ~0+x vs.
+## ~1+x, or in the interactions terms in ~1+x+x&y vs. ~1+x+y+x&y.  In the
+## non-redundant cases, we can (probably) expand x into length(levels(x))
+## columns without creating a non-identifiable model matrix (unless the user
+## has done something dumb in specifying the model, which we can't do much about
+## anyway).
+################################################################################
+
+## Dummy contrasts have no base level (since all levels produce a column)
+type DummyContrast{T} <: AbstractContrast
+    matrix::Matrix{Float64}
+    termnames::Vector{T}
+    levels::Vector{T}
+end
+
+function DummyContrast{T}(v::PooledDataVector{T})
+    lvls = levels(v)
+    mat = eye(Float64, length(lvls))
+
+    DummyContrast(mat, lvls, lvls)
+end
+
+## Default for promoting contrasts to full rank is to convert to dummy contrasts
+promote_contrast(C::AbstractContrast) = DummyContrast(eye(Float64, length(C.levels)), C.levels, C.levels)
+
+
+
+
+################################################################################
+## Treatment (rank-reduced dummy-coded) contrast
 ################################################################################
 
 contrast_matrix(::Type{TreatmentContrast}, n, base) = eye(n)[:, [1:(base-1); (base+1):n]]
