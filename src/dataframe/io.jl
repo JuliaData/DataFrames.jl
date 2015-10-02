@@ -167,7 +167,7 @@ macro push(count, a, val, l)
     end
 end
 
-function getseparator(filename::String)
+function getseparator(filename::AbstractString)
     m = match(r"\.(\w+)(\.(gz|bz|bz2))?$", filename)
     ext = isa(m, RegexMatch) ? m.captures[1] : ""
     if ext == "csv"
@@ -416,7 +416,7 @@ end
 
 let out = Array(Float64, 1)
     global bytestotype
-    function bytestotype{N <: FloatingPoint,
+    function bytestotype{N <: AbstractFloat,
                          T <: ByteString,
                          P <: ByteString}(::Type{N},
                                           bytes::Vector{UInt8},
@@ -473,7 +473,7 @@ function bytestotype{N <: Bool,
     end
 end
 
-function bytestotype{N <: String,
+function bytestotype{N <: AbstractString,
                      T <: ByteString,
                      P <: ByteString}(::Type{N},
                                       bytes::Vector{UInt8},
@@ -853,7 +853,7 @@ function readtable(io::IO,
     return df
 end
 
-function readtable(pathname::String;
+function readtable(pathname::AbstractString;
                    header::Bool = true,
                    separator::Char = getseparator(pathname),
                    quotemark::Vector{Char} = ['"'],

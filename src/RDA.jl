@@ -415,7 +415,7 @@ end
 
 read_rda(io::IO; kwoptions...) = read_rda(io, kwoptions)
 
-read_rda(fnm::String; kwoptions...) = gzopen(fnm) do io read_rda(io, kwoptions) end
+read_rda(fnm::AbstractString; kwoptions...) = gzopen(fnm) do io read_rda(io, kwoptions) end
 
 ##############################################################################
 ##

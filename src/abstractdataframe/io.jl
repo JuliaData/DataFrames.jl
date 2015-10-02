@@ -4,11 +4,11 @@
 #
 ##############################################################################
 
-function escapedprint(io::IO, x::Any, escapes::String)
+function escapedprint(io::IO, x::Any, escapes::AbstractString)
     print(io, x)
 end
 
-function escapedprint(io::IO, x::String, escapes::String)
+function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
     print_escaped(io, x, escapes)
 end
 
@@ -17,7 +17,7 @@ function printtable(io::IO,
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    nastring::String = "NA")
+                    nastring::AbstractString = "NA")
     n, p = size(df)
     etypes = eltypes(df)
     if header
@@ -60,7 +60,7 @@ function printtable(df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    nastring::String = "NA")
+                    nastring::AbstractString = "NA")
     printtable(STDOUT,
                df,
                header = header,
@@ -71,12 +71,12 @@ function printtable(df::AbstractDataFrame;
 end
 
 # Infer configuration settings from filename
-function writetable(filename::String,
+function writetable(filename::AbstractString,
                     df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = getseparator(filename),
                     quotemark::Char = '"',
-                    nastring::String = "NA",
+                    nastring::AbstractString = "NA",
                     append::Bool = false)
 
     if endswith(filename, ".bz") || endswith(filename, ".bz2")
@@ -122,7 +122,7 @@ end
 #
 ##############################################################################
 
-function html_escape(cell::String)
+function html_escape(cell::AbstractString)
     cell = replace(cell, "&", "&amp;")
     cell = replace(cell, "<", "&lt;")
     cell = replace(cell, ">", "&gt;")

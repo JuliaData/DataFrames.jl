@@ -12,8 +12,8 @@
 ## The rhs of a formula can be 1
 
 type Formula
-    lhs::Union(Symbol, Expr, Nothing)
-    rhs::Union(Symbol, Expr, Integer)
+    lhs::@compat(Union{Symbol, Expr, Void})
+    rhs::@compat(Union{Symbol, Expr, Integer})
 end
 
 macro ~(lhs, rhs)
@@ -39,7 +39,7 @@ type ModelFrame
     msng::BitArray
 end
 
-type ModelMatrix{T <: Union(Float32, Float64)}
+type ModelMatrix{T <: @compat(Union{Float32, Float64})}
     m::Matrix{T}
     assign::Vector{Int}
 end
