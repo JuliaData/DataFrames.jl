@@ -360,8 +360,8 @@ Base.(:|>)(gd::GroupedDataFrame, fs::Vector{Function}) = aggregate(gd, fs)
 
 # Groups DataFrame by cols before applying aggregate
 function aggregate{T <: ColumnIndex}(d::AbstractDataFrame,
-                                     cols::Union(T, AbstractVector{T}),
-                                     fs::Union(Function, Vector{Function}))
+                                     cols::@compat(Union{T, AbstractVector{T}}),
+                                     fs::@compat(Union{Function, Vector{Function}}))
     aggregate(groupby(d, cols), fs)
 end
 

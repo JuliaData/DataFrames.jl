@@ -9,7 +9,7 @@ if VERSION >= v"0.4.0-dev+757"
     push!(RESERVED_WORDS, "stagedfunction")
 end
 
-function identifier(s::String)
+function identifier(s::AbstractString)
     s = normalize_string(s)
     if !isidentifier(s)
         s = makeidentifier(s)
@@ -17,7 +17,7 @@ function identifier(s::String)
     symbol(in(s, RESERVED_WORDS) ? "_"*s : s)
 end
 
-function makeidentifier(s::String)
+function makeidentifier(s::AbstractString)
     i = start(s)
     done(s, i) && return "x"
 

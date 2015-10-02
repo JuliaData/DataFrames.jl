@@ -55,7 +55,7 @@ ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Orderin
 #         the permutation induced by this ordering is used to
 #         sort the original (presumably larger) DataFrame
 
-type DFPerm{O<:Union(Ordering, AbstractVector), DF<:AbstractDataFrame} <: Ordering
+type DFPerm{O<:@compat(Union{Ordering, AbstractVector}), DF<:AbstractDataFrame} <: Ordering
     ord::O
     df::DF
 end
@@ -303,7 +303,7 @@ for s in [:(Base.sort), :(Base.sortperm)]
 end
 
 Base.sort(df::AbstractDataFrame, a::Algorithm, o::Ordering) = df[sortperm(df, a, o),:]
-Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Union(Perm,DFPerm)) = sort!([1:size(df, 1);], a, o)
+Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::@compat(Union{Perm,DFPerm})) = sort!([1:size(df, 1);], a, o)
 Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) = sortperm(df, a, DFPerm(o,df))
 
 # Extras to speed up sorting

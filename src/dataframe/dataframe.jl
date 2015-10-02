@@ -168,7 +168,7 @@ end
 # Initialize from a Vector of Associatives (aka list of dicts)
 function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
     #get column eltypes
-    col_eltypes = Type[None for _ = 1:length(ks)]
+    col_eltypes = Type[@compat(Union{}) for _ = 1:length(ks)]
     for d in ds
         for (i,k) in enumerate(ks)
             # TODO: check for user-defined "NA" values, ala pandas
@@ -177,7 +177,7 @@ function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
             end
         end
     end
-    col_eltypes[col_eltypes .== None] = Any
+    col_eltypes[col_eltypes .== @compat(Union{})] = Any
 
     # create empty DataFrame, and fill
     df = DataFrame(col_eltypes, ks, length(ds))
@@ -225,7 +225,7 @@ ncol(df::DataFrame) = length(index(df))
 # Let getindex(df.columns[j], row_inds) from AbstractDataVector() handle
 #  the resolution of row indices
 
-typealias ColumnIndex Union(Real, Symbol)
+typealias ColumnIndex @compat(Union{Real, Symbol})
 
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
@@ -271,7 +271,7 @@ end
 
 # df[:, SingleColumnIndex] => (Sub)?AbstractVector
 # df[:, MultiColumnIndex] => (Sub)?DataFrame
-Base.getindex{T<:ColumnIndex}(df::DataFrame, row_inds::Colon, col_inds::Union(T, AbstractVector{T})) = df[col_inds]
+Base.getindex{T<:ColumnIndex}(df::DataFrame, row_inds::Colon, col_inds::@compat(Union{T, AbstractVector{T}})) = df[col_inds]
 
 # df[SingleRowIndex, :] => (Sub)?DataFrame
 Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col_inds]
@@ -607,7 +607,7 @@ Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
     (df[col_inds] = v; df)
 
 # Special deletion assignment
-Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = delete!(df, col_ind)
+Base.setindex!(df::DataFrame, x::Void, col_ind::Int) = delete!(df, col_ind)
 
 ##############################################################################
 ##
@@ -677,7 +677,7 @@ Base.delete!(df::DataFrame, c::Int) = delete!(df, [c])
 Base.delete!(df::DataFrame, c::Any) = delete!(df, index(df)[c])
 
 # deleterows!()
-function deleterows!(df::DataFrame, ind::Union(Integer, UnitRange{Int}))
+function deleterows!(df::DataFrame, ind::@compat(Union{Integer, UnitRange{Int}}))
     for i in 1:ncol(df)
         df.columns[i] = deleteat!(df.columns[i], ind)
     end
@@ -761,12 +761,12 @@ end
 
 pool(a::AbstractVector) = compact(PooledDataArray(a))
 
-function pool!(df::DataFrame, cname::Union(Integer, Symbol))
+function pool!(df::DataFrame, cname::@compat(Union{Integer, Symbol}))
     df[cname] = pool(df[cname])
     return
 end
 
-function pool!{T <: Union(Integer, Symbol)}(df::DataFrame, cnames::Vector{T})
+function pool!{T <: @compat(Union{Integer, Symbol})}(df::DataFrame, cnames::Vector{T})
     for cname in cnames
         df[cname] = pool(df[cname])
     end
@@ -776,7 +776,7 @@ end
 # TODO: Deprecate or change for being too inconsistent with other pool methods
 function pool!(df::DataFrame)
     for i in 1:size(df, 2)
-        if eltype(df[i]) <: String
+        if eltype(df[i]) <: AbstractString
             df[i] = pool(df[i])
         end
     end

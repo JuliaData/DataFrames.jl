@@ -38,7 +38,7 @@ let
         ourshowcompact(io, x)
         return position(io)
     end
-    ourstrwidth(x::String) = strwidth(x) + 2 # -> Int
+    ourstrwidth(x::AbstractString) = strwidth(x) + 2 # -> Int
     myconv = VERSION < v"0.4-" ? convert : Base.unsafe_convert
     ourstrwidth(s::Symbol) =
         @compat Int(ccall(:u8_strwidth,
@@ -56,15 +56,15 @@ end
 #' @param io::IO An IO object to be printed to.
 #' @param x::Any A value to be printed.
 #'
-#' @returns x::Nothing A `nothing` value.
+#' @returns x::Void A `nothing` value.
 #'
 #' @examples
 #'
 #' ourshowcompact(STDOUT, "abc")
 #' ourshowcompact(STDOUT, 10000)
-ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Nothing
-ourshowcompact(io::IO, x::String) = showcompact(io, x) # -> Nothing
-ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Nothing
+ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Void
+ourshowcompact(io::IO, x::AbstractString) = showcompact(io, x) # -> Void
+ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Void
 
 #' @description
 #'
@@ -85,7 +85,7 @@ ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Nothing
 #'        chunk of the AbstractDataFrame that would be rendered to IO. Can
 #'        be empty if the AbstractDataFrame would be printed without any
 #'        ellipses.
-#' @param rowlabel::String The label that will be used when rendered the
+#' @param rowlabel::AbstractString The label that will be used when rendered the
 #'        numeric ID's of each row. Typically, this will be set to "Row".
 #'
 #' @returns widths::Vector{Int} The maximum string widths required to render
@@ -235,7 +235,7 @@ end
 #' @param rightcol::Int The index of the last column in a chunk to be
 #'        rendered.
 #'
-#' @returns o::Nothing A `nothing` value.
+#' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
@@ -246,7 +246,7 @@ function showrowindices(io::IO,
                         rowindices::AbstractVector{Int},
                         maxwidths::Vector{Int},
                         leftcol::Int,
-                        rightcol::Int) # -> Nothing
+                        rightcol::Int) # -> Void
     rowmaxwidth = maxwidths[end]
 
     for i in rowindices
@@ -310,7 +310,7 @@ end
 #'        AbstractDataFrame be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
 #'
-#' @returns o::Nothing A `nothing` value.
+#' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
@@ -323,7 +323,7 @@ function showrows(io::IO,
                   maxwidths::Vector{Int},
                   splitchunks::Bool = false,
                   rowlabel::Symbol = symbol("Row"),
-                  displaysummary::Bool = true) # -> Nothing
+                  displaysummary::Bool = true) # -> Void
     ncols = size(df, 2)
 
     if displaysummary
@@ -425,7 +425,7 @@ end
 #'        AbstractDataFrame be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
 #'
-#' @returns o::Nothing A `nothing` value.
+#' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
@@ -435,7 +435,7 @@ function Base.show(io::IO,
                    df::AbstractDataFrame,
                    splitchunks::Bool = true,
                    rowlabel::Symbol = symbol("Row"),
-                   displaysummary::Bool = true) # -> Nothing
+                   displaysummary::Bool = true) # -> Void
     nrows = size(df, 1)
     tty_rows, tty_cols = Base.tty_size()
     availableheight = tty_rows - 5
@@ -476,14 +476,14 @@ end
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
 #'
-#' @returns o::Nothing A `nothing` value.
+#' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' show(df, true)
 function Base.show(df::AbstractDataFrame,
-                   splitchunks::Bool = true) # -> Nothing
+                   splitchunks::Bool = true) # -> Void
     return show(STDOUT, df, splitchunks)
 end
 
@@ -503,7 +503,7 @@ end
 #'        AbstractDataFrame be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
 #'
-#' @returns o::Nothing A `nothing` value.
+#' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
@@ -513,7 +513,7 @@ function Base.showall(io::IO,
                       df::AbstractDataFrame,
                       splitchunks::Bool = false,
                       rowlabel::Symbol = symbol("Row"),
-                      displaysummary::Bool = true) # -> Nothing
+                      displaysummary::Bool = true) # -> Void
     rowindices1 = 1:size(df, 1)
     rowindices2 = 1:0
     maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel)
@@ -539,14 +539,14 @@ end
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
 #'
-#' @returns o::Nothing A `nothing` value.
+#' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showall(df, true)
 function Base.showall(df::AbstractDataFrame,
-                      splitchunks::Bool = false) # -> Nothing
+                      splitchunks::Bool = false) # -> Void
     showall(STDOUT, df, splitchunks)
     return
 end
@@ -559,13 +559,13 @@ end
 #' @param io::IO The `io` to be rendered to.
 #' @param df::AbstractDataFrame An AbstractDataFrame.
 #'
-#' @returns o::Nothing A `nothing` value.
+#' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showcols(df, true)
-function showcols(io::IO, df::AbstractDataFrame) # -> Nothing
+function showcols(io::IO, df::AbstractDataFrame) # -> Void
     println(io, summary(df))
     metadata = DataFrame(Name = _names(df),
                          Eltype = eltypes(df),
@@ -574,4 +574,4 @@ function showcols(io::IO, df::AbstractDataFrame) # -> Nothing
     return
 end
 
-showcols(df::AbstractDataFrame) = showcols(STDOUT, df) # -> Nothing
+showcols(df::AbstractDataFrame) = showcols(STDOUT, df) # -> Void
