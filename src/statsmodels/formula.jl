@@ -40,6 +40,9 @@ type ModelFrame
     ## mapping from df keys to contrasts.  Rather than specify types allowed,
     ## leave that to cols() to check.  Allows more seamless later extension
     contrasts::Dict{Any, Any}
+    ## An eterms x terms matrix which is true for terms that need to be "promoted"
+    ## to full rank in constructing a model matrx
+    non_redundant_terms::Matrix{Bool}
 end
 
 type ModelMatrix{T <: @compat(Union{Float32, Float64})}
@@ -254,7 +257,7 @@ can_promote(::Any) = false
 ##
 ## This function returns a boolean matrix that says whether each evaluation term
 ## of each term needs to be promoted.
-function check_non_redundancy(trms, df)
+function check_non_redundancy(trms::Terms, df::AbstractDataFrame)
 
     ## This can be checked using the .factors field of the terms, which is an
     ## evaluation terms x terms matrix.
@@ -328,8 +331,10 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
     ## contrast matrices, term names, and levels to store)
     evaledContrasts = [ col => evaluateContrast(contr, df[col])
                         for (col, contr) in contrasts ]
+    ## Check whether or not
+    non_redundants = check_non_redundancy(trms, df)
 
-    ModelFrame(df, trms, msng, evaledContrasts)
+    ModelFrame(df, trms, msng, evaledContrasts, non_redundants)
 end
 
 ModelFrame(f::Formula, d::AbstractDataFrame; kwargs...) = ModelFrame(Terms(f), d; kwargs...)
@@ -350,6 +355,15 @@ end
 
 cols(v::DataVector) = convert(Vector{Float64}, v.data)
 cols(v::Vector) = convert(Vector{Float64}, v)
+## construct model matrix columns from model frame + name (checks for contrasts)
+function cols(name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
+    if haskey(mf.contrasts, name)
+        cols(mf.df[name], 
+             non_redundant ? promote_contrast(mf.contrasts[name]) : mf.contrasts[name])
+    else
+        cols(mf.df[name])
+    end
+end
 
 function isfe(ex::Expr)                 # true for fixed-effects terms
     if ex.head != :call error("Non-call expression encountered") end
