@@ -325,7 +325,7 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
     ## actual contrasts matrices, levels, and term names (using TreatmentContrast
     ## as the default)
     evaledContrasts = Dict()
-    for term,col in eachcol(df)
+    for (term, col) in eachcol(df)
         needsContrasts(col) || continue
         evaledContrasts[term] = evaluateContrast(haskey(contrasts, term) ?
                                                  contrasts[term] :
@@ -345,12 +345,12 @@ ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), 
 ## modify contrasts in place
 function contrast!(mf::ModelFrame, new_contrasts::Dict)
     new_contrasts = [ col => evaluateContrast(contr, mf.df[col])
-                      for (col, contr) 
-                      in filter((k,v)->haskey(mf.df, k), new_contrasts) ]
+                      for (col, contr) in filter((k,v)->haskey(mf.df, k), new_contrasts) ]
+                      
     mf.contrasts = merge(mf.contrasts, new_contrasts)
     return mf
 end
-contrast!(mf::ModelFrame; kwargs...) = contrast!(mf, kwargs)
+contrast!(mf::ModelFrame; kwargs...) = contrast!(mf, Dict(kwargs))
 
 function StatsBase.model_response(mf::ModelFrame)
     mf.terms.response || error("Model formula one-sided")
