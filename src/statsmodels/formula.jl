@@ -311,26 +311,28 @@ end
 evaluateContrast(c::AbstractContrast, col::AbstractDataVector) = c
 evaluateContrast{C <: AbstractContrast}(c::Type{C}, col::AbstractDataVector) = C(col)
 
+needsContrasts(::PooledDataArray) = true
+needsContrasts(::Any) = false
+
 function ModelFrame(trms::Terms, d::AbstractDataFrame;
                     contrasts::Dict = Dict())
     df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
     for c in eachcol(df) dropUnusedLevels!(c[2]) end
 
-    ## set default contrasts for categorical columns without specified
-    ## contrasts.  This is to ensure that we store how to construct model matrix
-    ## columsn for ALL variables where the levels might change for prediction
-    ## with new data (e.g. if only a subset of the levels are present)
-    for term in trms.eterms
-        if isa(df[term], PooledDataArray) && !haskey(contrasts, term)
-            contrasts[term] = TreatmentContrast
-        end
+    ## Set up contrasts: 
+    ## Combine actual DF columns and contrast types if necessary to compute the
+    ## actual contrasts matrices, levels, and term names (using TreatmentContrast
+    ## as the default)
+    evaledContrasts = Dict()
+    for term,col in eachcol(df)
+        needsContrasts(col) || continue
+        evaledContrasts[term] = evaluateContrast(haskey(contrasts, term) ?
+                                                 contrasts[term] :
+                                                 TreatmentContrast,
+                                                 col)
     end
 
-    ## evaluate any naked contrasts types based on data (creating
-    ## contrast matrices, term names, and levels to store)
-    evaledContrasts = [ col => evaluateContrast(contr, df[col])
-                        for (col, contr) in contrasts ]
     ## Check whether or not
     non_redundants = check_non_redundancy(trms, df)
 
@@ -341,12 +343,14 @@ ModelFrame(f::Formula, d::AbstractDataFrame; kwargs...) = ModelFrame(Terms(f), d
 ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), d; kwargs...)
 
 ## modify contrasts in place
-function contrast!(mf::ModelFrame; kwargs...)
+function contrast!(mf::ModelFrame, new_contrasts::Dict)
     new_contrasts = [ col => evaluateContrast(contr, mf.df[col])
-                      for (col, contr) in kwargs ]
+                      for (col, contr) 
+                      in filter((k,v)->haskey(mf.df, k), new_contrasts) ]
     mf.contrasts = merge(mf.contrasts, new_contrasts)
     return mf
 end
+contrast!(mf::ModelFrame; kwargs...) = contrast!(mf, kwargs)
 
 function StatsBase.model_response(mf::ModelFrame)
     mf.terms.response || error("Model formula one-sided")
