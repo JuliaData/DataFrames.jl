@@ -400,35 +400,26 @@ function ModelMatrix(mf::ModelFrame)
     trms = mf.terms
     aa = Any[Any[ones(size(mf.df,1), @compat(Int(trms.intercept)))]]
     asgn = zeros(Int, @compat(Int(trms.intercept)))
-    fetrms = Bool[isfe(t) for t in trms.terms]
-    if trms.response unshift!(fetrms, false) end
-    ff = trms.factors[:, fetrms]
+    fe_terms = Bool[isfe(t) for t in trms.terms]
+    if trms.response unshift!(fe_terms, false) end
+    ff = trms.factors[:, fe_terms]
     ## need to be cautious here to avoid evaluating cols for a factor with many levels
-    ## if the factor doesn't occur in the fetrms
-    rows = vec(sum(ff, 2) .!= 0)
-    ff = ff[rows, :]
-    ## cc = [cols(col) for col in columns(mf.df[:, rows])]
+    ## if the factor doesn't occur in the fe_terms
+    eterms_included = Bool[x != 0 for x in sum(ff, 2)]
+    ff = ff[eterms_included, :]
 
-    ## construct model matrix columns from each of the factors, checking for
-    ## contrasts that have been manually specified.  Categorical data
-    ## (PooledDataArray) will expand to a matrix with multiple columns, one
-    ## or each column of the contrast matrix, either specified in the ModelFrame
-    ## or the default TreatmentContrast.
-    cc = Any[]
-    for (name, x) in eachcol(mf.df[:,rows])
-        if haskey(mf.contrasts, name)
-            push!(cc, cols(x, mf.contrasts[name]))
-        else
-            push!(cc, cols(x))
-        end
-    end
+    cc = [cols(eterm, mf) for eterm in trms.eterms[eterms_included]]
 
-    for j in 1:size(ff,2)
-        trm = cc[round(Bool, ff[:, j])]
+    ## Iterate over terms, pulling out the necessary eterms into a vector
+    ## and recording the columns in the model matrix that will correspond to
+    ## this term
+    for i_term in 1:size(ff,2)
+        trm = cc[round(Bool, ff[:, i_term])]
         push!(aa, trm)
-        asgn = vcat(asgn, fill(j, nc(trm)))
+        asgn = vcat(asgn, fill(i_term, nc(trm)))
     end
-    ModelMatrix{Float64}(hcat([expandcols(t) for t in aa]...), asgn)
+    return ModelMatrix{Float64}(hcat([expandcols(t) for t in aa]...), asgn)
+
 end
 
 termnames(term::Symbol, col) = [string(term)]
