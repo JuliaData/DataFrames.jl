@@ -397,28 +397,44 @@ function nc(trm::Vector)
 end
 
 function ModelMatrix(mf::ModelFrame)
-    trms = mf.terms
-    aa = Any[Any[ones(size(mf.df,1), @compat(Int(trms.intercept)))]]
-    asgn = zeros(Int, @compat(Int(trms.intercept)))
-    fe_terms = Bool[isfe(t) for t in trms.terms]
-    if trms.response unshift!(fe_terms, false) end
-    ff = trms.factors[:, fe_terms]
-    ## need to be cautious here to avoid evaluating cols for a factor with many levels
-    ## if the factor doesn't occur in the fe_terms
-    eterms_included = Bool[x != 0 for x in sum(ff, 2)]
-    ff = ff[eterms_included, :]
+    
+    ## Map eval. term name + redundancy bool to cached model matrix columns
+    eterm_cols = Dict{Tuple{Symbol,Bool}, Array{Float64}}()
+    ## Accumulator for each term's vector of eval. term columns.
+    mm_cols = Vector{Array{Float64}}[]
+    mf.terms.intercept && push!(mm_cols, Matrix{Float64}[ones(Float64, size(mf.df,1), 1)])
+    factors = round(Bool, mf.terms.factors)
 
-    cc = [cols(eterm, mf) for eterm in trms.eterms[eterms_included]]
-
-    ## Iterate over terms, pulling out the necessary eterms into a vector
-    ## and recording the columns in the model matrix that will correspond to
-    ## this term
-    for i_term in 1:size(ff,2)
-        trm = cc[round(Bool, ff[:, i_term])]
-        push!(aa, trm)
-        asgn = vcat(asgn, fill(i_term, nc(trm)))
+    ## turn each term into a vector of mm columns for its eval. terms, using
+    ## "promoted" full-rank versions of categorical columns for non-redundant
+    ## eval. terms:
+    for (i_term, term) in enumerate(mf.terms.terms)
+        ## Skip non-fixed-effect terms
+        isfe(term) || continue
+        term_cols = Array{Float64}[]
+        ## adjust term index if there's a response in the formula (mf.terms.terms
+        ## lists only non-response terms, but mf.terms.factors and .non_reundant_terms
+        ## has first column for the response if it's present)
+        i_term += mf.terms.response
+        ## Pull out the eval terms, and the non-redundancy flags for this term
+        eterms = mf.terms.eterms[factors[:, i_term]]
+        non_redundant = mf.non_redundant_terms[factors[:, i_term], i_term]
+        ## Get cols for each eval term (either previously generated, or generating
+        ## and storing as necessary)
+        for et_and_nr in zip(eterms, non_redundant)
+            haskey(eterm_cols, et_and_nr) || 
+                setindex!(eterm_cols,
+                          cols(et_and_nr[1], mf, non_redundant=et_and_nr[2]),
+                          et_and_nr)
+            push!(term_cols, eterm_cols[et_and_nr])
+        end
+        push!(mm_cols, term_cols)
     end
-    return ModelMatrix{Float64}(hcat([expandcols(t) for t in aa]...), asgn)
+
+    mm = hcat([expandcols(tc) for tc in mm_cols]...)
+    mm_col_term_nums = vcat([fill(i_term, nc(tc)) for (i_term,tc) in enumerate(mm_cols)]...)
+
+    ModelMatrix{Float64}(mm, mm_col_term_nums)
 
 end
 
