@@ -33,10 +33,10 @@ function url(m)
 end
 
 
-function mysave(file::String, m::Module, order = [:source])
+function mysave(file::AbstractString, m::Module, order = [:source])
     mysave(file, documentation(m), order)
 end
-function mysave(file::String, docs::Metadata, order = [:source])
+function mysave(file::AbstractString, docs::Metadata, order = [:source])
     isfile(file) || mkpath(dirname(file))
     open(file, "w") do io
         info("writing documentation to $(file)")

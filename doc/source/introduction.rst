@@ -81,9 +81,9 @@ typical data set is not like a ``DataArray``:
 Note three important properties that this table possesses:
 
 - The columns of a tabular data set may have different types. A ``DataMatrix``
-  can only contain values of one type: these might all be ``String`` or ``Int``,
-  but we cannot have one column of ``String`` type and another column of ``Int``
-  type.
+  can only contain values of one type: these might all be ``UTF8String``
+  or ``Int``, but we cannot have one column of ``UTF8String`` type and
+  another column of ``Int`` type.
 - The values of the entries within a column always have a consistent type.
   This means that a single column could be represented using a ``DataVector``.
   Unfortunately, the heterogeneity of types between columns means that we
@@ -93,7 +93,7 @@ Note three important properties that this table possesses:
   *every column of a tabular data set has the same length as all of the other
   columns*.
 - The columns of a tabular data set are typically named using some sort of
-  ``String``. Often, one wants to access the entries of a data set by using a
+  ``UTF8String``. Often, one wants to access the entries of a data set by using a
   combination of verbal names and numeric indices.
 
 We can summarize these concerns by noting that we face four problems when with

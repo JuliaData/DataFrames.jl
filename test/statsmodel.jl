@@ -72,7 +72,7 @@ m2 = fit(DummyMod, f2, d)
 
 ## Another dummy model type to test fall-through show method
 immutable DummyModTwo <: RegressionModel
-    msg::String
+    msg::UTF8String
 end
 
 StatsBase.fit(::Type{DummyModTwo}, ::Matrix, ::Vector) = DummyModTwo("hello!")
