@@ -308,8 +308,9 @@ end
 ## Goal here is to allow specification of _either_ a "naked" contrast type,
 ## or an instantiated contrast object itself.  This might be achieved in a more
 ## julian way by overloading call for c::AbstractContrast to just return c.
-evaluateContrast(c::AbstractContrast, col::AbstractDataVector) = c
-evaluateContrast{C <: AbstractContrast}(c::Type{C}, col::AbstractDataVector) = C(col)
+evaluateContrast(c::AbstractContrast, col::AbstractDataVector) = ContrastMatrix(c, col)
+evaluateContrast{C <: AbstractContrast}(c::Type{C}, col::AbstractDataVector) = ContrastMatrix(c(), col)
+evaluateContrast(c::ContrastMatrix, col::AbstractDataVector) = c
 
 needsContrasts(::PooledDataArray) = true
 needsContrasts(::Any) = false
