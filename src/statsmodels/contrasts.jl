@@ -27,11 +27,6 @@ function cols(v::PooledDataVector, contrast::AbstractContrast)
     return contrast.matrix[reindex[v.refs], :]
 end
 
-## Default contrast is treatment coding:
-cols(v::PooledDataVector) = cols(v, TreatmentContrast(v))
-termnames(term::Symbol, col::PooledDataArray) = termnames(term, col, TreatmentContrast(col))
-
-
 ## Constructing a contrast from a non-pooled data vector will first pool it
 ## 
 ## Also requires a cols method for non-PooledDataArray column...
