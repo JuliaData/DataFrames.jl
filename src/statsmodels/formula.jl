@@ -438,7 +438,17 @@ function ModelMatrix(mf::ModelFrame)
 
 end
 
+
+
 termnames(term::Symbol, col) = [string(term)]
+function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
+    if haskey(mf.contrasts, term)
+        termnames(term, mf.df[term], 
+             non_redundant ? promote_contrast(mf.contrasts[term]) : mf.contrasts[term])
+    else
+        termnames(term, mf.df[term])
+    end
+end
 
 function expandtermnames(term::Vector)
     if length(term) == 1
@@ -452,42 +462,33 @@ function expandtermnames(term::Vector)
 end
 
 function coefnames(mf::ModelFrame)
-    # Generate individual evaluation-term names. Each value in etnames is a
-    # vector of the names for each column that the term evaluates to. (Just a
-    # single column for numeric terms, and one per contrast for categorical)
-    etnames = Dict();
-    for term in mf.terms.eterms
-        if haskey(mf.contrasts, term)
-            etnames[term] = termnames(term, mf.df[term], mf.contrasts[term])
-        else
-            etnames[term] = termnames(term, mf.df[term])
+    ## strategy mirrors ModelMatrx constructor:
+    eterm_names = Dict{Tuple{Symbol,Bool}, Vector{Compat.UTF8String}}()
+    term_names = Vector{Vector{Compat.UTF8String}}[]
+    mf.terms.intercept && push!(term_names, Vector[Compat.UTF8String["(Intercept)"]])
+
+    factors = round(Bool, mf.terms.factors)
+
+    for (i_term, term) in enumerate(mf.terms.terms)
+        isfe(term) || continue
+        ## names for columns for eval terms
+        names = Vector{Compat.UTF8String}[]
+
+        i_term += mf.terms.response
+        eterms = mf.terms.eterms[factors[:, i_term]]
+        non_redundant = mf.non_redundant_terms[factors[:, i_term], i_term]
+
+        for et_and_nr in zip(eterms, non_redundant)
+            haskey(eterm_names, et_and_nr) ||
+            setindex!(eterm_names,
+                      termnames(et_and_nr[1], mf, non_redundant=et_and_nr[2]),
+                      et_and_nr)
+            push!(names, eterm_names[et_and_nr])
         end
+        push!(term_names, names)
     end
 
-    # For each _term_, pull out a vector of individual evaluation termnames that
-    # go into it.
-    tnames = Vector{Vector{Compat.UTF8String}}()
-    if mf.terms.intercept
-        push!(tnames, push!(Any[], ["(Intercept)"]))
-    end
-    for term in mf.terms.terms
-        if isa(term, Expr)
-            if term.head == :call && term.args[1] == :|
-                continue                # skip random-effects terms
-            elseif term.head == :call && term.args[1] == :&
-                push!(tnames, map(x -> etnames[x], term.args[2:end]))
-            else
-                error("unrecognized term $term")
-            end
-        else
-            # for "main effect" terms, push length-1 vector which holds all
-            push!(tnames, push!(Any[], etnames[term]))
-        end
-    end
-
-    # Finally, expand each term names (analogously with expandcols, creating
-    # the names of each of the interaction columns), concatenate, and return.
-    return mapreduce(expandtermnames, vcat, tnames)
+    mapreduce(expandtermnames, vcat, term_names)
     
 end
 

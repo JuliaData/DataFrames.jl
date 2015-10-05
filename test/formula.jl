@@ -381,6 +381,7 @@ d[:n] = 1.:8
 ## No intercept
 mf = ModelFrame(n ~ 0 + x, d[1:2,:], contrasts=cs)
 @test ModelMatrix(mf).m == [1 0; 0 1]
+@test coefnames(mf) == ["x - a", "x - b"]
 
 ## No first-order term for interaction
 mf = ModelFrame(n ~ 1 + x + x&y, d[1:4, :], contrasts=cs)
@@ -388,6 +389,17 @@ mf = ModelFrame(n ~ 1 + x + x&y, d[1:4, :], contrasts=cs)
                                       1  0 -1
                                       -1 1  0
                                       1  0  1]
+@test coefnames(mf) == ["(Intercept)", "x - b", "x - a & y - d", "x - b & y - d"]
+
+## When both terms of interaction are non-redundant:
+mf = ModelFrame(n ~ 0 + x&y, d[1:4, :], contrasts=cs)
+@test ModelMatrix(mf).m == [1 0 0 0
+                            0 1 0 0
+                            0 0 1 0
+                            0 0 0 1]
+@test coefnames(mf) == ["x - a & y - c", "x - b & y - c",                             
+                        "x - a & y - d", "x - b & y - d"]
+
 
 
 end
