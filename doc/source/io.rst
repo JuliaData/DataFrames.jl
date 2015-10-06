@@ -17,7 +17,7 @@ To read data from a CSV-like file, use the ``readtable`` function::
     df = readtable("data.txt", header = false)
 
 ``readtable`` requires that you specify the path of the file that you would
-like to read as a ``String``. It supports many additional keyword arguments:
+like to read as a ``UTF8String``. It supports many additional keyword arguments:
 these are documented in the section on advanced I/O operations.
 
 Exporting data to a tabular data file
@@ -37,7 +37,7 @@ To write data to a CSV file, use the ``writetable`` function::
 
 ``writetable`` requires the following arguments:
 
-- ``filename::String`` -- The path of the file that you wish to write to.
+- ``filename::AbstractString`` -- The path of the file that you wish to write to.
 - ``df::DataFrame`` -- The DataFrame you wish to write to disk.
 
 Additional advanced options are documented below.
