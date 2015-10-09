@@ -400,7 +400,7 @@ end
 function ModelMatrix(mf::ModelFrame)
     
     ## Map eval. term name + redundancy bool to cached model matrix columns
-    eterm_cols = Dict{Tuple{Symbol,Bool}, Array{Float64}}()
+    eterm_cols = @compat Dict{Tuple{Symbol,Bool}, Array{Float64}}()
     ## Accumulator for each term's vector of eval. term columns.
     mm_cols = Vector{Array{Float64}}[]
     mf.terms.intercept && push!(mm_cols, Matrix{Float64}[ones(Float64, size(mf.df,1), 1)])
@@ -464,7 +464,7 @@ end
 
 function coefnames(mf::ModelFrame)
     ## strategy mirrors ModelMatrx constructor:
-    eterm_names = Dict{Tuple{Symbol,Bool}, Vector{Compat.UTF8String}}()
+    eterm_names = @compat Dict{Tuple{Symbol,Bool}, Vector{Compat.UTF8String}}()
     term_names = Vector{Vector{Compat.UTF8String}}[]
     mf.terms.intercept && push!(term_names, Vector[Compat.UTF8String["(Intercept)"]])
 
