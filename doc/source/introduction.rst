@@ -96,13 +96,13 @@ Note three important properties that this table possesses:
   ``UTF8String``. Often, one wants to access the entries of a data set by using a
   combination of verbal names and numeric indices.
 
-We can summarize these concerns by noting that we face four problems when with
+We can summarize these concerns by noting that we face four problems when
 working with tabular data sets:
 
 - Tabular data sets may have columns of heterogeneous type
 - Each column of a tabular data set has a consistent type across all of
   its entries
-- All of the columns of a tabular data set have the same length
+- All columns of a tabular data set have the same length
 - The columns of a tabular data set should be addressable using both verbal
   names and numeric indices
 
