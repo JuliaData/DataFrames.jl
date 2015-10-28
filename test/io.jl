@@ -8,6 +8,7 @@ module TestIO
 
     filenames = ["$data/blanklines/blanklines.csv",
                  "$data/compressed/movies.csv.gz",
+                 "$data/headeronly/headeronly.csv",
                  "$data/newlines/embedded_os9.csv",
                  "$data/newlines/embedded_osx.csv",
                  "$data/newlines/embedded_windows.csv",
