@@ -57,7 +57,9 @@ end
 ## an expression or a formula
 function allvars(ex::Expr)
     if ex.head != :call error("Non-call expression encountered") end
-    [[allvars(a) for a in ex.args[2:end]]...]
+    cc=Symbol[]
+    for i in ex.args[2:end] cc=vcat(cc,allvars(i)) end
+    cc
 end
 allvars(f::Formula) = unique(vcat(allvars(f.rhs), allvars(f.lhs)))
 allvars(sym::Symbol) = [sym]
