@@ -774,6 +774,13 @@ function readtable!(p::ParsedCSV,
     # Determine the number of columns
     cols = fld(fields, rows)
 
+    # if the file is empty but has a header then fields, cols and rows will not be computed correctly
+    if length(o.names) != cols && cols == 1 && rows == 1 && fields == 1 && bytes == 2
+        fields = 0
+        rows = 0
+        cols = length(o.names)
+    end
+
     # Confirm that the number of columns is consistent across rows
     if fields != rows * cols
         findcorruption(rows, cols, fields, p)
