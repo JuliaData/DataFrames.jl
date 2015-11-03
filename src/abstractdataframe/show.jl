@@ -251,12 +251,12 @@ function showrowindices(io::IO,
 
     for i in rowindices
         # Print row ID
-        @printf io "| %d" i
+        @printf io "│ %d" i
         padding = rowmaxwidth - ndigits(i)
         for _ in 1:padding
             write(io, ' ')
         end
-        print(io, " | ")
+        print(io, " │ ")
         # Print DataFrame entry
         for j in leftcol:rightcol
             strlen = 0
@@ -273,12 +273,12 @@ function showrowindices(io::IO,
             end
             if j == rightcol
                 if i == rowindices[end]
-                    print(io, " |")
+                    print(io, " │")
                 else
-                    print(io, " |\n")
+                    print(io, " │\n")
                 end
             else
-                print(io, " | ")
+                print(io, " │ ")
             end
         end
     end
@@ -343,12 +343,12 @@ function showrows(io::IO,
         rightcol = chunkbounds[chunkindex + 1]
 
         # Print column names
-        @printf io "| %s" rowlabel
+        @printf io "│ %s" rowlabel
         padding = rowmaxwidth - ourstrwidth(rowlabel)
         for itr in 1:padding
             write(io, ' ')
         end
-        @printf io " | "
+        @printf io " │ "
         for j in leftcol:rightcol
             s = _names(df)[j]
             ourshowcompact(io, s)
@@ -357,23 +357,27 @@ function showrows(io::IO,
                 write(io, ' ')
             end
             if j == rightcol
-                print(io, " |\n")
+                print(io, " │\n")
             else
-                print(io, " | ")
+                print(io, " │ ")
             end
         end
 
         # Print table bounding line
-        write(io, '|')
+        write(io, '┝')
         for itr in 1:(rowmaxwidth + 2)
-            write(io, '-')
+            write(io, '━')
         end
-        write(io, '|')
+        write(io, '┿')
         for j in leftcol:rightcol
             for itr in 1:(maxwidths[j] + 2)
-                write(io, '-')
+                write(io, '━')
             end
-            write(io, '|')
+            if j < rightcol
+                write(io, '┿')
+            else
+                write(io, '┥')
+            end
         end
         write(io, '\n')
 
