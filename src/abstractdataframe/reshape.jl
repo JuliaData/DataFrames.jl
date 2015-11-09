@@ -221,7 +221,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     end
     keycol = PooledDataArray(df[colkey])
     valuecol = df[value]
-    df1 = df[g.starts, g.cols]
+    df1 = df[g.idx[g.starts], g.cols]
     keys = unique(keycol)
     Nrow = length(g)
     Ncol = length(keycol.pool)
