@@ -296,4 +296,13 @@ module TestDataFrame
         @test nothing == describe(f, @data(["1", "2", NA]))
         @test nothing == describe(f, @pdata(["1", "2", NA]))
     end
+        
+    #Check the output of unstack
+    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"], 
+        Key = ["Mass", "Color", "Mass", "Color"], 
+        Value = ["12 g", "Red", "18 g", "Grey"])
+    df2 = unstack(df,:Fish, :Key, :Value)
+    #The expected output
+    df3 = DataFrame(Key = ["Batman", "Bob"], Color = ["Grey", "Red"], Mass = ["18 g", "12 g"])
+    @test df2 == df3
 end
