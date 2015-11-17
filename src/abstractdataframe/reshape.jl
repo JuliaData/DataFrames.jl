@@ -187,7 +187,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
             payload[j][i]  = valuecol[k]
         end
     end
-    insert!(payload, 1, refkeycol.pool, _names(df)[colkey])
+    insert!(payload, 1, refkeycol.pool, _names(df)[rowkey])
 end
 unstack(df::AbstractDataFrame, rowkey, colkey, value) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
