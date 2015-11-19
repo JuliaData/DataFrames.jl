@@ -301,8 +301,12 @@ module TestDataFrame
     df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"], 
         Key = ["Mass", "Color", "Mass", "Color"], 
         Value = ["12 g", "Red", "18 g", "Grey"])
+    #Unstack specifying a row column
     df2 = unstack(df,:Fish, :Key, :Value)
+    #Unstack without specifying a row column
+    df3 = unstack(df,:Key, :Value)
     #The expected output
-    df3 = DataFrame(Key = ["Batman", "Bob"], Color = ["Grey", "Red"], Mass = ["18 g", "12 g"])
-    @test df2 == df3
+    df4 = DataFrame(Fish = ["Batman", "Bob"], Color = ["Grey", "Red"], Mass = ["18 g", "12 g"])
+    @test df2 == df4
+    @test df3 == df4
 end
