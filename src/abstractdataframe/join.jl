@@ -76,13 +76,14 @@ function join_idx(left, right, max_groups)
      right_sorter[right_indexer], right_sorter[rightonly_indexer])
 end
 
-function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
-                                   df2::AbstractDataFrame)
+function DataArrays.PooledDataVecs{R<:Integer}(df1::AbstractDataFrame,
+                                               df2::AbstractDataFrame,
+                                               ::Type{R})
     # This method exists to allow merge to work with multiple columns.
     # It takes the columns of each DataFrame and returns a DataArray
     # with a merged pool that "keys" the combination of column values.
     # The pools of the result don't really mean anything.
-    dv1, dv2 = PooledDataVecs(df1[1], df2[1])
+    dv1, dv2 = PooledDataVecs(df1[1], df2[1], R)
     refs1 = dv1.refs .+ 1   # the + 1 handles NA's
     refs2 = dv2.refs .+ 1
     ngroups = length(dv1.pool) + 1
@@ -129,7 +130,7 @@ function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
     return PooledDataArray(DataArrays.RefArray(refs), pool)
 end
 
-DataArrays.PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)
+DataArrays.PooledDataArray{R<:Integer}(df::AbstractDataFrame, r::Type{R} = DataArrays.DEFAULT_POOLED_REF_TYPE) = PooledDataArray(df, r)
 
 
 
@@ -168,7 +169,7 @@ join(df1::AbstractDataFrame,
 
 ### Result
 
-* `::DataFrame` : the joined DataFrame 
+* `::DataFrame` : the joined DataFrame
 
 ### Examples
 
@@ -189,10 +190,11 @@ join(name, job, kind = :cross)
 :join
 
 
-function Base.join(df1::AbstractDataFrame,
-                   df2::AbstractDataFrame;
-                   on::@compat(Union{Symbol, Vector{Symbol}}) = Symbol[],
-                   kind::Symbol = :inner)
+function Base.join{R<:Integer}(df1::AbstractDataFrame,
+                               df2::AbstractDataFrame;
+                               on::@compat(Union{Symbol, Vector{Symbol}}) = Symbol[],
+                               kind::Symbol = :inner,
+                               reftype::Type{R} = DataArrays.DEFAULT_POOLED_REF_TYPE)
     if kind == :cross
         if on != Symbol[]
             throw(ArgumentError("Cross joins don't use argument 'on'."))
@@ -202,7 +204,7 @@ function Base.join(df1::AbstractDataFrame,
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
-    dv1, dv2 = PooledDataVecs(df1[on], df2[on])
+    dv1, dv2 = PooledDataVecs(df1[on], df2[on], reftype)
 
     left_idx, leftonly_idx, right_idx, rightonly_idx =
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
