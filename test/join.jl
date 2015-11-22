@@ -66,4 +66,17 @@ module TestJoin
 
     # Cross joins don't take keys
     @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
+
+    # Reftype is needed for joins on several columns and several rows
+    N = 10000
+    dfc1 = DataFrame(A = 1:N, B=1:N, C=1:N, dfc1=ones(N))
+    dfc2 = DataFrame(A = 1:N, B=1:N, C=1:N, dfc2=2*ones(N))
+
+    try
+        join(dfc1, dfc2, on=[:A,:B,:C])
+    catch x
+        @test isa(x,InexactError)
+    end
+
+    join(dfc1, dfc2, on=[:A,:B,:C], reftype=BigInt)
 end
