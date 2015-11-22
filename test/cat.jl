@@ -81,6 +81,7 @@ module TestCat
 
     # Eltype promotion
     @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Float64]
+    @test eltypes(vcat(DataFrame(a = [NA]), DataFrame(a = [2.1]))) == [Float64]
 
     # Minimal container type promotion
     dfa = DataFrame(a = @pdata([1, 2, 2]))

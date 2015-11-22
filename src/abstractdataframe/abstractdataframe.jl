@@ -686,7 +686,7 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
 
         i = 1
         for df in dfs
-            if haskey(df, colnam)
+            if haskey(df, colnam) && eltype(df[colnam]) != NAtype
                 copy!(col, i, df[colnam])
             end
             i += size(df, 1)
