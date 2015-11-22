@@ -100,8 +100,16 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
         for i = 1:nrow(d)
             x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
         end
-        ngroups = ngroups * (length(dv.pool) + dv_has_nas)
-        # TODO if ngroups is really big, shrink it
+
+        if typemax(eltype(x))/(length(x)^2) <= ngroups
+            # about to overflow, recode x to drop the
+            # unused combinations and limit the pool size
+            dv = PooledDataArray( x )
+            x = dv.refs .+ 1
+            ngroups = length(dv.pool) + 1
+        else
+            ngroups *= (length(dv.pool) + dv_has_nas)
+        end
     end
     (idx, starts) = DataArrays.groupsort_indexer(x, ngroups)
     # Remove zero-length groupings
