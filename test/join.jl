@@ -66,4 +66,10 @@ module TestJoin
 
     # Cross joins don't take keys
     @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
+
+    # Do a join that would overflow unless the pool was recoded
+    N = 10000
+    dfc1 = DataFrame(A = 1:N, B=1:N, C=1:N, dfc1=ones(N))
+    dfc2 = DataFrame(A = 1:N, B=1:N, C=1:N, dfc2=2*ones(N))
+    join(dfc1, dfc2, on=[:A,:B,:C])
 end
