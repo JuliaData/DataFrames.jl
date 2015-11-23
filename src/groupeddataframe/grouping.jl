@@ -93,15 +93,33 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     x = copy(dv.refs) .+ dv_has_nas
     # also compute the number of groups, which is the product of the set lengths
     ngroups = length(dv.pool) + dv_has_nas
+    dense_pool = true
     # if there's more than 1 column, do roughly the same thing repeatedly
     for j = (ncols - 1):-1:1
+        dense_pool = false
         dv = PooledDataArray(d[cols[j]])
         dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
         for i = 1:nrow(d)
             x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
         end
-        ngroups = ngroups * (length(dv.pool) + dv_has_nas)
-        # TODO if ngroups is really big, shrink it
+
+        if typemax(eltype(x))/(length(x)^2) <= ngroups
+            dense_pool = true
+            # about to overflow, recode x to drop the
+            # unused combinations and limit the pool size
+            dv = PooledDataArray( x )
+            dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
+            x = dv.refs .+ dv_has_nas
+            ngroups = length(dv.pool) + dv_has_nas
+        else
+            ngroups *= (length(dv.pool) + dv_has_nas)
+        end
+    end
+    if !dense_pool
+        dv = PooledDataArray( x )
+        dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
+        x = dv.refs .+ dv_has_nas
+        ngroups = length(dv.pool) + dv_has_nas
     end
     (idx, starts) = DataArrays.groupsort_indexer(x, ngroups)
     # Remove zero-length groupings

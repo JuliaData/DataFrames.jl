@@ -94,8 +94,17 @@ function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
         for i = 1:length(refs2)
             refs2[i] += (dv2.refs[i]) * ngroups
         end
-        # FIXME check for ngroups overflow, maybe recode refs to prevent it
-        ngroups *= (length(dv1.pool) + 1)
+
+        if typemax(eltype(refs1))/(length(refs1)^2) <= ngroups
+            # about to overflow, recode refs1 and refs2 to drop the
+            # unused column combinations and limit the pool size
+            dv1, dv2 = PooledDataVecs( refs1, refs2 )
+            refs1 = dv1.refs .+ 1
+            refs2 = dv2.refs .+ 1
+            ngroups = length(dv1.pool) + 1
+        else
+            ngroups *= (length(dv1.pool) + 1)
+        end
     end
     # recode refs1 and refs2 to drop the unused column combinations and
     # limit the pool size

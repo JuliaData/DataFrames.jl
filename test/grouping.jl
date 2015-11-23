@@ -29,4 +29,9 @@ module TestGrouping
     h(df) = g(f(df))
 
     @test combine(map(h, gd)) == combine(map(g, ga))
+
+    # groupby should handle the permutations caused by grouping over many columns
+    N = 10000
+    dfc1 = DataFrame(A=1:N, B=1:N, C=1:N, dfc1=ones(N))
+    groupby(dfc1, [:A,:B,:C])
 end
