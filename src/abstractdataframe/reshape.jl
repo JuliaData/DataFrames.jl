@@ -72,6 +72,7 @@ d1m = melt(d1, [:a, :b, :e])
 ```
 
 """
+
 function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
     N = length(measure_vars)
     cnames = names(df)[id_vars]
@@ -211,6 +212,21 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     unstack(df2, length(df2), colkey, value)
 end
 
+import Base.convert
+
+function convert{T}(vector::AbstractVector{T})
+  df = DataFrame(vector = vector)
+  df[:type] = map(typeof, df[:vector])
+  df = by(df, :type, df -> first(df[:vector]))
+  convert(typeof(df[:x1]), vector)
+end
+
+function convert!(df::AbstractDataFrame)
+  for i in 1:(size(df)[2])
+    df[i] = convert(df[i])
+  end
+end
+
 function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     # group on anything not a key or value:
     g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]))
@@ -225,7 +241,12 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     keys = unique(keycol)
     Nrow = length(g)
     Ncol = length(keycol.pool)
-    df2 = DataFrame(Any[DataArray(fill(valuecol[1], Nrow), fill(true, Nrow)) for i in 1:Ncol], map(symbol, keycol.pool))
+    if typeof(valuecol) == DataFrames.StackedVector
+      type_store = Vector{Any}
+    else
+      type_store = typeof(valuecol)
+    end
+    df2 = DataFrame(Any[convert(type_store, fill(NA, Nrow)) for i in 1:Ncol], map(symbol, keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
         j = @compat Int(keycol.refs[k])
@@ -238,6 +259,9 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
             df2[j][i]  = valuecol[k]
         end
     end
+
+    convert!(df2)
+
     hcat(df1, df2)
 end
 
