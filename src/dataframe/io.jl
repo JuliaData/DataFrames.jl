@@ -24,6 +24,7 @@ immutable ParseOptions{S <: ByteString}
     skipblanks::Bool
     encoding::Symbol
     allowescapes::Bool
+    normalizenames::Bool
 end
 
 # Dispatch on values of ParseOptions to avoid running
@@ -657,7 +658,8 @@ function parsenames!(names::Vector{Symbol},
                      bytes::Vector{UInt8},
                      bounds::Vector{Int},
                      quoted::BitVector,
-                     fields::Int)
+                     fields::Int,
+                     normalizenames::Bool)
     if fields == 0
         error("Header line was empty")
     end
@@ -677,7 +679,12 @@ function parsenames!(names::Vector{Symbol},
             end
         end
 
-        names[j] = identifier(bytestring(bytes[left:right]))
+        name = bytestring(bytes[left:right])
+        if normalizenames
+            name = identifier(name)
+        end
+
+        names[j] = name
     end
 
     return
@@ -759,7 +766,7 @@ function readtable!(p::ParsedCSV,
 
         # Insert column names from header if none present
         if isempty(o.names)
-            parsenames!(o.names, o.ignorepadding, p.bytes, p.bounds, p.quoted, fields)
+            parsenames!(o.names, o.ignorepadding, p.bytes, p.bounds, p.quoted, fields, o.normalizenames)
         end
     end
 
@@ -806,7 +813,8 @@ function readtable(io::IO,
                    skiprows::AbstractVector{Int} = Int[],
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
-                   allowescapes::Bool = false)
+                   allowescapes::Bool = false,
+                   normalizenames::Bool = true)
     if encoding != :utf8
         throw(ArgumentError("Argument 'encoding' only supports ':utf8' currently."))
     elseif !isempty(skiprows)
@@ -841,7 +849,7 @@ function readtable(io::IO,
                      makefactors, names, eltypes,
                      allowcomments, commentmark, ignorepadding,
                      skipstart, skiprows, skipblanks, encoding,
-                     allowescapes)
+                     allowescapes, normalizenames)
 
     # Use the IO stream method for readtable()
     df = readtable!(p, io, nrows, o)
@@ -872,7 +880,8 @@ function readtable(pathname::AbstractString;
                    skiprows::AbstractVector{Int} = Int[],
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
-                   allowescapes::Bool = false)
+                   allowescapes::Bool = false,
+                   normalizenames::Bool = true)
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
     if startswith(pathname, "http://") || startswith(pathname, "ftp://")
@@ -910,7 +919,8 @@ function readtable(pathname::AbstractString;
                      skiprows = skiprows,
                      skipblanks = skipblanks,
                      encoding = encoding,
-                     allowescapes = allowescapes)
+                     allowescapes = allowescapes,
+                     normalizenames = normalizenames)
 end
 
 function filldf!(df::DataFrame,
