@@ -199,21 +199,6 @@ unstack(df::AbstractDataFrame, colkey, value) =
 function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     # group on anything not a key or value:
     g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]))
-    # find the indexes for each group:
-    groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
-    # this will be a new column to key the rows:
-    rowkey = PooledDataArray(zeros(Int, size(df, 1)), [1:length(groupidxs);])
-    for i in 1:length(groupidxs)
-        rowkey[groupidxs[i]] = i
-    end
-    df2 = copy(df)
-    df2[gensym()] = rowkey
-    unstack(df2, length(df2), colkey, value)
-end
-
-function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
-    # group on anything not a key or value:
-    g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]))
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
     rowkey = PooledDataArray(zeros(Int, size(df, 1)), [1:length(groupidxs);])
     for i in 1:length(groupidxs)
