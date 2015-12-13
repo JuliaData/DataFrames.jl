@@ -676,6 +676,7 @@ Base.vcat(dfs::AbstractDataFrame...) = vcat(collect(dfs))
 
 Base.vcat(dfs::Vector{Void}) = dfs
 function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
+    isempty(dfs) && return DataFrame()
     coltyps, colnams, similars = _colinfo(dfs)
 
     res = DataFrame()
@@ -686,7 +687,7 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
 
         i = 1
         for df in dfs
-            if haskey(df, colnam)
+            if haskey(df, colnam) && eltype(df[colnam]) != NAtype
                 copy!(col, i, df[colnam])
             end
             i += size(df, 1)

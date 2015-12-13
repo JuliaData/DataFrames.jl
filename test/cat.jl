@@ -57,6 +57,7 @@ module TestCat
     vcat(df, null_df)
     vcat(df, df)
     vcat(df, df, df)
+    @test vcat(DataFrame[]) == DataFrame()
 
     alt_df = deepcopy(df)
     vcat(df, alt_df)
@@ -81,6 +82,7 @@ module TestCat
 
     # Eltype promotion
     @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Float64]
+    @test eltypes(vcat(DataFrame(a = [NA]), DataFrame(a = [2.1]))) == [Float64]
 
     # Minimal container type promotion
     dfa = DataFrame(a = @pdata([1, 2, 2]))
