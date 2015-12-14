@@ -95,7 +95,11 @@ end
 function Base.show(io::IO, model::DataFrameModels)
     try
         ct = coeftable(model)
-        println(io, "$(typeof(model)):\n\nCoefficients:")
+        println(io, "$(typeof(model))")
+        println(io)
+        println(io, Formula(model.mf.terms))
+        println(io)
+        println(io,"Coefficients:")
         show(io, ct)
     catch e
         if isa(e, ErrorException) && contains(e.msg, "coeftable is not defined")

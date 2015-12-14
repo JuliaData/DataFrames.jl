@@ -345,3 +345,13 @@ function coefnames(mf::ModelFrame)
     end
     return vnames
 end
+
+function Formula(t::Terms)
+    lhs = t.response ? t.eterms[1] : nothing
+    rhs = Expr(:call,:+)
+    if t.intercept
+        push!(rhs.args,1)
+    end
+    append!(rhs.args,t.terms)
+    Formula(lhs,rhs)
+end
