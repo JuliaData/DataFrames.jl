@@ -328,6 +328,10 @@ module TestIO
     io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
     @test names(readtable(io)) == ns
 
+    # With normalization disabled
+    io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
+    @test names(readtable(io, normalizenames=false)) == [symbol(abnormal),symbol("%_B*\tC*"),:end]
+
     # Test writetable with NA and compare to the results
     tf = tempname()
     isfile(tf) && rm(tf)
