@@ -23,9 +23,9 @@ function printtable(io::IO,
     if header
         cnames = _names(df)
         for j in 1:p
-            print(io, quotemark)
+            if quotemark != '\0' print(io, quotemark) end
             print(io, cnames[j])
-            print(io, quotemark)
+            if quotemark != '\0' print(io, quotemark) end
             if j < p
                 print(io, separator)
             else
@@ -37,9 +37,9 @@ function printtable(io::IO,
         for j in 1:p
             if ! (isna(df[j],i))
                 if ! (etypes[j] <: Real)
-		    print(io, quotemark)
+		    if quotemark != '\0' print(io, quotemark) end
 		    escapedprint(io, df[i, j], "\"'")
-		    print(io, quotemark)
+		    if quotemark != '\0' print(io, quotemark) end
                 else
 		    print(io, df[i, j])
                 end
