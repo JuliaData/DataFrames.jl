@@ -1,6 +1,6 @@
 # The Formula, ModelFrame and ModelMatrix Types
 
-In regression model, we often want to describe the relationship between a response variable and one or more input variables in terms of main effects and interactions. To facilitate the specification of a regression model in terms of the columns of a `DataFrame`, the DataFrames package provides a `Formula` type, which is created by the `~` binary operator in Julia:
+In regression analysis, we often want to describe the relationship between a response variable and one or more input variables in terms of main effects and interactions. To facilitate the specification of a regression model in terms of the columns of a `DataFrame`, the DataFrames package provides a `Formula` type, which is created by the `~` binary operator in Julia:
 
 ```julia
 fm = Z ~ X + Y
