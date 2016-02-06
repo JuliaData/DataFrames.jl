@@ -551,11 +551,13 @@ Indexes of complete cases (rows without NA's)
 
 ```julia
 nonunique(df::AbstractDataFrame)
+nonunique(df::AbstractDataFrame, columns)
 ```
 
 ### Arguments
 
 * `df` : the AbstractDataFrame
+* `columns` : specifies the columns to compare
 
 ### Result
 
@@ -570,6 +572,7 @@ See also `unique` and `unique!`.
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 df = vcat(df, df)
 nonunique(df)
+nonunique(df, 1)
 ```
 
 """
@@ -587,22 +590,40 @@ function nonunique(df::AbstractDataFrame)
     res
 end
 
+function nonunique(df::AbstractDataFrame, columns::Any)
+    nonunique(df[columns])
+end
+
+function nonunique(df::AbstractDataFrame, columns::Int)
+    nonunique(df[[columns]])
+end
+
+function nonunique(df::AbstractDataFrame, columns::Symbol)
+    nonunique(df[[columns]])
+end
+
+
 unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
+unique!(df::AbstractDataFrame, columns::Any) = deleterows!(df, find(nonunique(df, columns)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[!nonunique(df), :]
+Base.unique(df::AbstractDataFrame, columns::Any) = df[!nonunique(df, columns), :]
 
 """
 Delete duplicate rows
 
 ```julia
 unique(df::AbstractDataFrame)
+unique(df::AbstractDataFrame, columns)
 unique!(df::AbstractDataFrame)
+unique!(df::AbstractDataFrame, columns)
 ```
 
 ### Arguments
 
 * `df` : the AbstractDataFrame
+* `columns` : specifies the columns to compare
 
 ### Result
 
@@ -616,6 +637,7 @@ See also `nonunique` and `unique`.
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 df = vcat(df, df)
 unique(df)   # doesn't modify df
+unique(df, 1)
 unique!(df)  # modifies df
 ```
 
