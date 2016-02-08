@@ -305,6 +305,20 @@ module TestData
     # @test (3 in unique(dv))
     # @test (NA in unique(dv))
 
+    # test nonunique() with extra argument
+    df = DataFrame(a = ["a", "b", "a", "b", "a", "b"], b = 1:6, c = [1:3;1:3])
+    df = vcat(df, df)
+    @test isequal(sum(nonunique(df)), 6)
+    @test isequal(sum(nonunique(df, :a)), 10)
+    @test isequal(sum(nonunique(df, [1, 3])), 6)
+
+    # Test unique() with extra argument
+    @test isequal(size(unique(df)), (6,3))
+    @test isequal(size(unique(df, 2:3)), (6,3))
+    @test isequal(size(unique(df, 3)), (3,3))
+    @test isequal(size(unique(df, [:a, :c])), (6,3))
+    @test isequal(size(unique(df, :a)), (2,3))
+
     #test_group("find()")
     dv = DataArray([true, false, true])
     @test isequal(find(dv), [1, 3])
