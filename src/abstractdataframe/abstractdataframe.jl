@@ -605,15 +605,15 @@ Delete duplicate rows
 
 ```julia
 unique(df::AbstractDataFrame)
-unique(df::AbstractDataFrame, columns)
+unique(df::AbstractDataFrame, cols)
 unique!(df::AbstractDataFrame)
-unique!(df::AbstractDataFrame, columns)
+unique!(df::AbstractDataFrame, cols)
 ```
 
 ### Arguments
 
 * `df` : the AbstractDataFrame
-* `columns` : specifies the columns to compare
+* `cols` : specifies the columns to compare – any valid DataFrames column specifier will work
 
 ### Result
 
