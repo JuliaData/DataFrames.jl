@@ -306,18 +306,22 @@ module TestData
     # @test (NA in unique(dv))
 
     # test nonunique() with extra argument
-    df = DataFrame(a = ["a", "b", "a", "b", "a", "b"], b = 1:6, c = [1:3;1:3])
-    df = vcat(df, df)
-    @test isequal(sum(nonunique(df)), 6)
-    @test isequal(sum(nonunique(df, :a)), 10)
-    @test isequal(sum(nonunique(df, [1, 3])), 6)
+    df1 = DataFrame(a = ["a", "b", "a", "b", "a", "b"], b = 1:6, c = [1:3;1:3])
+    df = vcat(df1, df1)
+    @test nonunique(df) == [rep(false,6); rep(true, 6)]
+    @test nonunique(df, :) == [rep(false,6); rep(true, 6)]
+    @test nonunique(df, Colon()) == [rep(false,6); rep(true, 6)]
+    @test nonunique(df, :a) == [rep(false,2); rep(true, 10)]
+    @test nonunique(df, [1, 3]) == [rep(false,6); rep(true, 6)]
 
     # Test unique() with extra argument
-    @test isequal(size(unique(df)), (6,3))
-    @test isequal(size(unique(df, 2:3)), (6,3))
-    @test isequal(size(unique(df, 3)), (3,3))
-    @test isequal(size(unique(df, [:a, :c])), (6,3))
-    @test isequal(size(unique(df, :a)), (2,3))
+    @test unique(df) == df1
+    @test unique(df, :) == df1
+    @test unique(df, Colon()) == df1
+    @test unique(df, 2:3) == df1
+    @test unique(df, 3) == df1[1:3,:]
+    @test unique(df, [:a, :c]) == df1
+    @test unique(df, :a) == df1[1:2,:]
 
     #test_group("find()")
     dv = DataArray([true, false, true])

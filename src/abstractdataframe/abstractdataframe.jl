@@ -590,8 +590,8 @@ function nonunique(df::AbstractDataFrame)
     res
 end
 
-nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[[cols]])
-nonunique{T <: Any}(df::AbstractDataFrame, cols::AbstractVector{T}) = nonunique(df[cols])
+nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
+nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
 unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
 unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, find(nonunique(df, cols)))
