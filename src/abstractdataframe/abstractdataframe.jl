@@ -557,7 +557,7 @@ nonunique(df::AbstractDataFrame, cols)
 ### Arguments
 
 * `df` : the AbstractDataFrame
-* `cols` : specifies the column(s) to compare – any valid DataFrames column specifier will work
+* `cols` : the column(s) to compare – any valid DataFrames column specifier will work
 
 ### Result
 
@@ -613,7 +613,7 @@ unique!(df::AbstractDataFrame, cols)
 ### Arguments
 
 * `df` : the AbstractDataFrame
-* `cols` : specifies the columns to compare – any valid DataFrames column specifier will work
+* `cols` : the columns to compare – any valid DataFrames column specifier will work
 
 ### Result
 
