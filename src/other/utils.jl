@@ -176,7 +176,7 @@ function _uniqueofsorted(x::Vector)
 end
 
 # Gets the name of a function. Used in groupedataframe/grouping.jl
-function _fnames(fs::Vector{Function})
+function _fnames{T<:Function}(fs::Vector{T})
     λcounter = 0
     names = map(fs) do f
         if isempty(f.env) # Anonymous function

@@ -135,7 +135,9 @@ ordering(df::AbstractDataFrame, lt::Function, by::Function, rev::Bool, order::Or
 ######
 ## Case 1b: lt, by, rev, and order are Arrays
 ######
-function ordering(df::AbstractDataFrame, lt::AbstractVector{Function}, by::AbstractVector{Function}, rev::AbstractVector{Bool}, order::AbstractVector)
+function ordering{S<:Function, T<:Function}(df::AbstractDataFrame,
+                                            lt::AbstractVector{S}, by::AbstractVector{T},
+                                            rev::AbstractVector{Bool}, order::AbstractVector)
     if !(length(lt) == length(by) == length(rev) == length(order) == size(df,2))
         throw(ArgumentError("Orderings must be specified for all DataFrame columns"))
     end
@@ -192,8 +194,9 @@ end
 ######
 # Case 3b: cols, lt, by, rev, and order are all arrays
 ######
-function ordering(df::AbstractDataFrame, cols::AbstractVector,
-                  lt::AbstractVector{Function}, by::AbstractVector{Function}, rev::AbstractVector{Bool}, order::AbstractVector)
+function ordering{S<:Function, T<:Function}(df::AbstractDataFrame, cols::AbstractVector,
+                                            lt::AbstractVector{S}, by::AbstractVector{T},
+                                            rev::AbstractVector{Bool}, order::AbstractVector)
 
     if !(length(lt) == length(by) == length(rev) == length(order))
         throw(ArgumentError("All ordering arguments must be 1 or the same length."))
@@ -291,8 +294,8 @@ for s in [:(Base.sort), :(Base.sortperm)]
     @eval begin
         function $s(df::AbstractDataFrame; cols=Any[], alg=nothing,
                     lt=isless, by=identity, rev=false, order=Forward)
-            if !(isa(by, Function) || isa(by, Vector{Function}))
-                msg = "'by' must be a Function or AbstractVector{Function}. Perhaps you wanted 'cols'."
+            if !(isa(by, Function) || eltype(by) <: Function)
+                msg = "'by' must be a Function or a vector of Functions. Perhaps you wanted 'cols'."
                 throw(ArgumentError(msg))
             end
             ord = ordering(df, cols, lt, by, rev, order)
