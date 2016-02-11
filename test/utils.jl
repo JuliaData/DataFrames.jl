@@ -48,5 +48,9 @@ module TestUtils
     @test DataFrames.countna(pdata) == 20
 
     funs = [mean, sum, var, x -> sum(x)]
-    @test DataFrames._fnames(funs) == ["mean", "sum", "var", "λ1"]
+    if string(funs[end]) == "(anonymous function)" # Julia < 0.5
+        @test DataFrames._fnames(funs) == ["mean", "sum", "var", "λ1"]
+    else
+        @test DataFrames._fnames(funs) == ["mean", "sum", "var", string(funs[end])]
+    end
 end
