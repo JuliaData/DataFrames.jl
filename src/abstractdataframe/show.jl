@@ -166,6 +166,11 @@ function getprintedwidth(maxwidths::Vector{Int}) # -> Int
     return totalwidth
 end
 
+# For Julia < 0.5
+if VERSION < v"0.5.0-dev+2023"
+    displaysize(io::IO) = Base.tty_size()
+end
+
 #' @description
 #'
 #' When rendering an AbstractDataFrame to a REPL window in chunks, each of
@@ -184,6 +189,7 @@ end
 #' @param splitchunks::Bool Should the output be split into chunks at all or
 #'        should only one chunk be constructed for the entire
 #'        AbstractDataFrame?
+#' @param availablewidth::Int The available width in the REPL.
 #'
 #' @returns chunkbounds::Vector{Int} The bounds of each chunk of columns.
 #'
@@ -193,10 +199,10 @@ end
 #' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row")
 #' chunkbounds = getchunkbounds(maxwidths, true)
 function getchunkbounds(maxwidths::Vector{Int},
-                        splitchunks::Bool) # -> Vector{Int}
+                        splitchunks::Bool,
+                        availablewidth::Int=displaysize()[2]) # -> Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
-    _, availablewidth = Base.tty_size()
     if splitchunks
         chunkbounds = [0]
         # Include 2 spaces + 2 | characters for row/col label
@@ -335,7 +341,7 @@ function showrows(io::IO,
     end
 
     rowmaxwidth = maxwidths[ncols + 1]
-    chunkbounds = getchunkbounds(maxwidths, splitchunks)
+    chunkbounds = getchunkbounds(maxwidths, splitchunks, displaysize(io)[2])
     nchunks = length(chunkbounds) - 1
 
     for chunkindex in 1:nchunks
@@ -437,8 +443,8 @@ function Base.show(io::IO,
                    rowlabel::Symbol = symbol("Row"),
                    displaysummary::Bool = true) # -> Void
     nrows = size(df, 1)
-    tty_rows, tty_cols = Base.tty_size()
-    availableheight = tty_rows - 5
+    dsize = displaysize(io)
+    availableheight = dsize[1] - 5
     nrowssubset = fld(availableheight, 2)
     bound = min(nrowssubset - 1, nrows)
     if nrows <= availableheight
@@ -450,7 +456,7 @@ function Base.show(io::IO,
     end
     maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel)
     width = getprintedwidth(maxwidths)
-    if width > tty_cols && !splitchunks
+    if width > dsize[2] && !splitchunks
         showcols(io, df)
     else
         showrows(io,
