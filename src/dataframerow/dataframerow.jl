@@ -16,6 +16,16 @@ function Base.setindex!(r::DataFrameRow, value::Any, idx::Any)
     return setindex!(r.df, value, r.row, idx)
 end
 
+function Base.setindex!{T <: AbstractDataFrame}(df::DataFrame, r::DataFrameRow{T},
+                                                ::Colon, ::Colon)
+    return setindex!(df, r.df[r.row,:], :, :)
+end
+
+function Base.setindex!{T <: AbstractDataFrame}(df::DataFrame, r::DataFrameRow{T},
+                                                row_inds, ::Colon)
+    return setindex!(df, r.df[r.row,:], row_inds, :)
+end
+
 Base.names(r::DataFrameRow) = names(r.df)
 _names(r::DataFrameRow) = _names(r.df)
 
@@ -36,6 +46,10 @@ Base.next(r::DataFrameRow, s) = ((_names(r)[s], r[s]), s + 1)
 Base.done(r::DataFrameRow, s) = s > length(r)
 
 Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, r.df[r.row,:])
+
+Base.similar(r::DataFrameRow, dims::Int) = similar(r.df, dims)
+
+Base.similar(r::DataFrameRow) = DataFrameRow(similar(r, 1), 1)
 
 # hash of DataFrame rows based on its values
 # so that duplicate rows would have the same hash
