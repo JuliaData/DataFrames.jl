@@ -25,7 +25,7 @@ immutable ParseOptions{S <: ByteString}
     encoding::Symbol
     allowescapes::Bool
     normalizenames::Bool
-    usecols::Union{Vector{Symbol},Vector{Int}}
+    usecols::@compat(Union{Vector{Symbol},Vector{Int}})
 end
 
 # Dispatch on values of ParseOptions to avoid running
@@ -848,7 +848,7 @@ function readtable(io::IO,
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false,
                    normalizenames::Bool = true,
-                   usecols::Union{Vector{Symbol},Vector{Int}} = Int[])
+                   usecols::@compat(Union{Vector{Symbol},Vector{Int}}) = Int[])
     if encoding != :utf8
         throw(ArgumentError("Argument 'encoding' only supports ':utf8' currently."))
     elseif !isempty(skiprows)
@@ -916,7 +916,7 @@ function readtable(pathname::AbstractString;
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false,
                    normalizenames::Bool = true,
-                   usecols::Union{Vector{Symbol},Vector{Int}} = Int[])
+                   usecols::@compat(Union{Vector{Symbol},Vector{Int}}) = Int[])
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
     if startswith(pathname, "http://") || startswith(pathname, "ftp://")
