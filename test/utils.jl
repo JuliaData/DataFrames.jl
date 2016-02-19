@@ -1,6 +1,7 @@
 module TestUtils
     using Base.Test
     using DataFrames
+    using Compat
 
     import DataFrames: identifier
 
@@ -18,7 +19,7 @@ module TestUtils
     if isfile(f)
         r1 = r"define reserved-words '\(([^)]+)"
         r2 = r"define \(parse-block s(?: \([^)]+\))?\)\s+\(parse-Nary s (?:parse-eq '\([^(]*|down '\([^)]+\) '[^']+ ')\(([^)]+)"
-        body = readall(f)
+        body = readstring(f)
         m1, m2 = match(r1, body), match(r2, body)
         if m1 == nothing || m2 == nothing
             error("Unable to extract keywords from 'julia-parser.scm'.")
@@ -48,5 +49,9 @@ module TestUtils
     @test DataFrames.countna(pdata) == 20
 
     funs = [mean, sum, var, x -> sum(x)]
-    @test DataFrames._fnames(funs) == ["mean", "sum", "var", "λ1"]
+    if string(funs[end]) == "(anonymous function)" # Julia < 0.5
+        @test DataFrames._fnames(funs) == ["mean", "sum", "var", "λ1"]
+    else
+        @test DataFrames._fnames(funs) == ["mean", "sum", "var", string(funs[end])]
+    end
 end
