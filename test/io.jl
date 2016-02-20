@@ -399,4 +399,95 @@ module TestIO
     writetable(tf, df, quotemark='\'')
     @test readstring(tf) == "'a'\n'who\\'s'\n"
 
+    ### Tests for nonstandard string literals
+    # Test basic @csv_str usage
+    df1 = csv"""
+        name,  age, squidPerWeek
+        Alice,  36,         3.14
+        Bob,    24,         0
+        Carol,  58,         2.71
+        Eve,    49,         7.77
+        """
+    @test size(df1) == (4, 3)
+    @test names(df1) == [:name, :age, :squidPerWeek]
+    @test df1[1] == ["Alice","Bob","Carol","Eve"]
+    @test df1[2] == [36,24,58,49]
+    @test df1[3] == [3.14,0,2.71,7.77]
+    @test typeof(df1[1]) <: DataArray
+
+    # Test @wsv_str
+    df2 = wsv"""
+        name  age squidPerWeek
+        Alice  36         3.14
+        Bob    24         0
+        Carol  58         2.71
+        Eve    49         7.77
+        """
+    @test df2 == df1
+
+    # Test @tsv_str
+    df3 = tsv"""
+        name	age	squidPerWeek
+        Alice	36	3.14
+        Bob	24	0
+        Carol	58	2.71
+        Eve	49	7.77
+        """
+    @test df3 == df1
+
+    # csv2 can't be tested until non-'.' decimals are implemented
+    #df4 = csv2"""
+    #    name;  age; squidPerWeek
+    #    Alice;  36;         3,14
+    #    Bob;    24;         0
+    #    Carol;  58;         2,71
+    #    Eve;    49;         7,77
+    #    """
+    #@test df4 == df1
+
+    # Test 'f' flag
+    df5 = csv"""
+        name,  age, squidPerWeek
+        Alice,  36,         3.14
+        Bob,    24,         0
+        Carol,  58,         2.71
+        Eve,    49,         7.77
+        """f
+    @test typeof(df5[1]) <: PooledDataArray
+
+    # Test 'c' flag
+    df6 = csv"""
+        name,  age, squidPerWeek
+        Alice,  36,         3.14
+        Bob,    24,         0
+        #Carol,  58,         2.71
+        Eve,    49,         7.77
+        """c
+    @test df6 == df1[[1,2,4],:]
+
+    # Test 'H' flag
+    df7 = csv"""
+        Alice,  36,         3.14
+        Bob,    24,         0
+        Carol,  58,         2.71
+        Eve,    49,         7.77
+        """H
+    @test names(df7) == [:x1,:x2,:x3]
+    @test Array(df7) == Array(df1)
+
+    # Test multiple flags at once
+    df8 = csv"""
+        Alice,  36,         3.14
+        Bob,    24,         0
+        #Carol,  58,         2.71
+        Eve,    49,         7.77
+        """fcH
+    @test typeof(df8[1]) <: PooledDataArray
+    @test names(df8) == [:x1,:x2,:x3]
+    @test Array(df8) == Array(df1[[1,2,4],:])
+
+    # Test invalid flag
+    # Need to wrap macro call inside eval to prevent the error from being
+    # thrown prematurely
+    @test_throws ArgumentError eval(:(csv"foo,bar"a))
 end
