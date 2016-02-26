@@ -55,6 +55,7 @@ Additional advanced options are documented below.
 -   `skiprows::Vector{Int}` -- Specify the indices of lines in the input to ignore. Defaults to `[]`.
 -   `skipblanks::Bool` -- Skip any blank lines in input. Defaults to `true`.
 -   `encoding::Symbol` -- Specify the file's encoding as either `:utf8` or `:latin1`. Defaults to `:utf8`.
+-   `normalizenames::Bool` -- Ensure that column names are valid Julia identifiers. For instance this renames a column named `"a b"` to `"a_b"` which can then be accessed with `:a_b` instead of `symbol("a b")`. Defaults to `true`.
 
 ## Advanced Options for Writing CSV Files
 
