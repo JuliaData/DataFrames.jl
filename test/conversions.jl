@@ -19,7 +19,7 @@ module TestConversions
 
     da1 = @data([1 NA 3 4 5 6])
     df = convert(DataFrame, da1)
-    @test size(df) == (6, 1)
+    @test size(df) == (1, 6)
 
     da2 = @data([1 NA; 3 4; 5 6])
     df = convert(DataFrame, da2)
