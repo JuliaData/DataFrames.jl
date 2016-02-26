@@ -55,6 +55,7 @@ Additional advanced options are documented below.
 -   `skiprows::Vector{Int}` -- Specify the indices of lines in the input to ignore. Defaults to `[]`.
 -   `skipblanks::Bool` -- Skip any blank lines in input. Defaults to `true`.
 -   `encoding::Symbol` -- Specify the file's encoding as either `:utf8` or `:latin1`. Defaults to `:utf8`.
+-   `usecols::Union{Vector{Symbol},Vector{Int}}` -- Only read subset of columns.  Columns may be specified by either a list of indices (e.g. `[1,2,3,5,8]`) or a list of names (e.g. `[:x1,:x3]`). Default: read all columns.
 
 ## Advanced Options for Writing CSV Files
 

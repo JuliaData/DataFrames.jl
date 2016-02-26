@@ -282,6 +282,45 @@ module TestIO
     @test df[:c5][2] == "true"
     @test df[:c5][3] == "true"
 
+
+    # Readtable column preselection ('usecols')
+    filename = "$data/typeinference/standardtypes.csv"
+    df = readtable(filename)
+    @test size(df) == (3,5)
+
+    df = readtable(filename, usecols=[1,3,5])
+    @test size(df) == (3,3)
+    @test df[1] == df[:IntColumn] == [1,2,-1]
+    @test df[2] == df[:FloatColumn] == [3.1,-3.1e8,-3.1e-8]
+    @test df[3] == df[:StringColumn] == ["stuff","blah","gah"]
+
+    df = readtable(filename, usecols=[:IntlikeColumn,:BoolColumn])
+    @test size(df) == (3,2)
+    @test df[1] == df[:IntlikeColumn] == [1.0,7.0,7.0]
+    @test df[2] == df[:BoolColumn] == [true,false,false]
+
+    df = readtable(filename, usecols=[:x1,:x2,:x3], header=false, skipstart=1)
+    @test size(df) == (3,3)
+    @test df[1] == df[:x1] == [1,2,-1]
+    @test df[2] == df[:x2] == [1.0,7.0,7.0]
+    @test df[3] == df[:x3] == [3.1,-3.1e8,-3.1e-8]
+
+    df = readtable(filename, usecols=[5,3,1,3])
+    @test size(df) == (3,3)
+    @test df[1] == df[:IntColumn] == [1,2,-1]
+    @test df[2] == df[:FloatColumn] == [3.1,-3.1e8,-3.1e-8]
+    @test df[3] == df[:StringColumn] == ["stuff","blah","gah"]
+
+    df = readtable(filename, usecols=[:x3,:x1,:x1], header=false, skipstart=1)
+    @test size(df) == (3,2)
+    @test df[1] == df[:x1] == [1,2,-1]
+    @test df[2] == df[:x3] == [3.1,-3.1e8,-3.1e-8]
+
+    @test_throws ErrorException readtable(filename, usecols=[1,2,10,100,101])
+    @test_throws ErrorException readtable(filename, usecols=[:BoolColumn, :BocciaColumn])
+
+
+
     # Readtable defining column types
     filename = "$data/definedtypes/mixedvartypes.csv"
 

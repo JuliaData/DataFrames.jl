@@ -25,6 +25,7 @@ immutable ParseOptions{S <: ByteString}
     encoding::Symbol
     allowescapes::Bool
     normalizenames::Bool
+    usecols::@compat(Union{Vector{Symbol},Vector{Int}})
 end
 
 # Dispatch on values of ParseOptions to avoid running
@@ -505,9 +506,38 @@ function builddf(rows::Integer,
                  fields::Integer,
                  p::ParsedCSV,
                  o::ParseOptions)
-    columns = Array(Any, cols)
+    # Determine column names
+    if isempty(o.names)
+        names = gennames(cols)
+    else
+        names = copy(o.names)
+    end
+    # Determine columns to be read from usecols-option
+    # If option not set: read all available columns
+    if isempty(o.usecols)
+        colindices = 1:cols
+    else
+        if isa(o.usecols, Vector{Int})
+            colindices = indexin(o.usecols, 1:cols)
+        else
+            colindices = indexin(o.usecols, names)
+        end
+        if any(colindices .== 0)
+            errorcols = map(x->string(x), o.usecols[colindices .== 0])
+            errorcols = join(errorcols, ", ")
+            error("usecols: invalid column(s): $errorcols")
+        else
+            # Select columns only once and in order of original dataset
+            colindices = sort(unique(colindices))
+        end
+        # Filter names for selected columns
+        names = names[colindices]
+    end
+    columns = Array(Any, length(colindices))
 
-    for j in 1:cols
+    # k: new column index in data frame
+    # j: old column index in original data
+    for (k, j) in enumerate(colindices)
         if isempty(o.eltypes)
             values = Array(Int, rows)
         else
@@ -640,17 +670,13 @@ function builddf(rows::Integer,
         end
 
         if o.makefactors && !(is_int || is_float || is_bool)
-            columns[j] = PooledDataArray(values, missing)
+            columns[k] = PooledDataArray(values, missing)
         else
-            columns[j] = DataArray(values, missing)
+            columns[k] = DataArray(values, missing)
         end
     end
 
-    if isempty(o.names)
-        return DataFrame(columns, gennames(cols))
-    else
-        return DataFrame(columns, o.names)
-    end
+    return DataFrame(columns, names)
 end
 
 function parsenames!(names::Vector{Symbol},
@@ -821,7 +847,8 @@ function readtable(io::IO,
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false,
-                   normalizenames::Bool = true)
+                   normalizenames::Bool = true,
+                   usecols::@compat(Union{Vector{Symbol},Vector{Int}}) = Int[])
     if encoding != :utf8
         throw(ArgumentError("Argument 'encoding' only supports ':utf8' currently."))
     elseif !isempty(skiprows)
@@ -856,7 +883,7 @@ function readtable(io::IO,
                      makefactors, names, eltypes,
                      allowcomments, commentmark, ignorepadding,
                      skipstart, skiprows, skipblanks, encoding,
-                     allowescapes, normalizenames)
+                     allowescapes, normalizenames, usecols)
 
     # Use the IO stream method for readtable()
     df = readtable!(p, io, nrows, o)
@@ -888,7 +915,8 @@ function readtable(pathname::AbstractString;
                    skipblanks::Bool = true,
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false,
-                   normalizenames::Bool = true)
+                   normalizenames::Bool = true,
+                   usecols::@compat(Union{Vector{Symbol},Vector{Int}}) = Int[])
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
     if startswith(pathname, "http://") || startswith(pathname, "ftp://")
@@ -927,7 +955,8 @@ function readtable(pathname::AbstractString;
                      skipblanks = skipblanks,
                      encoding = encoding,
                      allowescapes = allowescapes,
-                     normalizenames = normalizenames)
+                     normalizenames = normalizenames,
+                     usecols = usecols)
 end
 
 function filldf!(df::DataFrame,
@@ -946,6 +975,8 @@ function filldf!(df::DataFrame,
         end
     end
 
+    #TODO implement 'usecols'-options
+    #     (if necessary; filldf! does not seem to be used anywhere...) 
     for j in 1:cols
         c = df.columns[j]
         T = etypes[j]
