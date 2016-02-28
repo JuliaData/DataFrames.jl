@@ -30,7 +30,8 @@ In relational database theory, this operation is generally referred to as a
 join. The columns used to determine which rows should be combined during a join
 are called keys.
 
-There are seven kinds of joins supported by the DataFrames package:
+There are seven kinds of joins supported by the DataFrames package with the 
+default being "Inner":
 
 - Inner: The output contains rows for values of the key that exist in both
   the first (left) and second (right) arguments to ``join``.
