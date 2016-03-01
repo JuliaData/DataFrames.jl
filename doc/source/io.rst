@@ -63,7 +63,7 @@ Advanced Options for Reading CSV Files
 - ``truestrings::Vector{ASCIIString}`` -- Translate any of the strings into
   this vector into a Boolean ``true``. Defaults to ``["T", "t", "TRUE", "true"]``.
 - ``falsestrings::Vector{ASCIIString}`` -- Translate any of the strings into
-  this vector into a Boolean ``true``. Defaults to ``["F", "f", "FALSE", "false"]``.
+  this vector into a Boolean ``false``. Defaults to ``["F", "f", "FALSE", "false"]``.
 - ``makefactors::Bool`` -- Convert string columns into ``PooledDataVector``'s
   for use as factors. Defaults to ``false``.
 - ``nrows::Int`` -- Read only ``nrows`` from the file. Defaults to ``-1``, which
