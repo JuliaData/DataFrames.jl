@@ -397,6 +397,6 @@ module TestIO
 
     # Make sure the ' does get escaped when needed
     writetable(tf, df, quotemark='\'')
-    @test open(readall, tf) == "'a'\n'who\\'s'\n"
+    @test readstring(tf) == "'a'\n'who\\'s'\n"
 
 end
