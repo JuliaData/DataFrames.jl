@@ -384,4 +384,19 @@ module TestIO
     # Enforces matching column count if append == true
     writetable(tf, df3)
     @test_throws DimensionMismatch writetable(tf, df3b, header = false, append = true)
+
+    # Quotemarks are escaped
+    tf = tempname()
+    isfile(tf) && rm(tf)
+
+    df = DataFrame(a = ["who's"]) # We have a ' in our string
+
+    # Make sure the ' doesn't get escaped for no reason
+    writetable(tf, df)
+    @test readtable(tf) == df
+
+    # Make sure the ' does get escaped when needed
+    writetable(tf, df, quotemark='\'')
+    @test open(readall, tf) == "'a'\n'who\\'s'\n"
+
 end

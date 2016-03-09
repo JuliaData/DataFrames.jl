@@ -33,12 +33,13 @@ function printtable(io::IO,
             end
         end
     end
+    quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
             if ! (isna(df[j],i))
                 if ! (etypes[j] <: Real)
 		    print(io, quotemark)
-		    escapedprint(io, df[i, j], "\"'")
+		    escapedprint(io, df[i, j], quotestr)
 		    print(io, quotemark)
                 else
 		    print(io, df[i, j])
