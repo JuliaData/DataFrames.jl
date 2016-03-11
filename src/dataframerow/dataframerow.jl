@@ -5,7 +5,7 @@ immutable DataFrameRow{T <: AbstractDataFrame}
 end
 
 function Base.getindex(r::DataFrameRow, idx::AbstractArray)
-    return DataFrameRow(r.df[[idx]], r.row)
+    return DataFrameRow(r.df[idx], r.row)
 end
 
 function Base.getindex(r::DataFrameRow, idx::Any)
