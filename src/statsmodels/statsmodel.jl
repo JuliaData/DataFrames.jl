@@ -59,11 +59,18 @@ end
 
 # Delegate functions from StatsBase that use our new types
 typealias DataFrameModels @compat(Union{DataFrameStatisticalModel, DataFrameRegressionModel})
-@delegate DataFrameModels.model [StatsBase.coef, StatsBase.confint, StatsBase.deviance,
-                                 StatsBase.loglikelihood, StatsBase.nobs, StatsBase.stderr,
-                                 StatsBase.vcov]
+@delegate DataFrameModels.model [StatsBase.coef, StatsBase.confint,
+                                 StatsBase.deviance, StatsBase.nulldeviance,
+                                 StatsBase.loglikelihood, StatsBase.nullloglikelihood,
+                                 StatsBase.df, StatsBase.df_residual, StatsBase.nobs,
+                                 StatsBase.stderr, StatsBase.vcov]
 @delegate DataFrameRegressionModel.model [StatsBase.residuals, StatsBase.model_response,
                                           StatsBase.predict, StatsBase.predict!]
+# Need to define these manually because of ambiguity using @delegate
+StatsBase.R2(mm::DataFrameRegressionModel) = R2(mm.model)
+StatsBase.adjR2(mm::DataFrameRegressionModel) = adjR2(mm.model)
+StatsBase.R2(mm::DataFrameRegressionModel, variant::Symbol) = R2(mm.model, variant)
+StatsBase.adjR2(mm::DataFrameRegressionModel, variant::Symbol) = adjR2(mm.model, variant)
 
 # Predict function that takes data frame as predictor instead of matrix
 function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame)
