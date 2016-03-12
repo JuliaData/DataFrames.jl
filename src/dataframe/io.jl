@@ -930,6 +930,171 @@ function readtable(pathname::AbstractString;
                      normalizenames = normalizenames)
 end
 
+"""
+    inlinetable(s[, flags]; args...)
+
+A helper function to process strings as tabular data for non-standard string
+literals. Parses the string `s` containing delimiter-separated tabular data
+(by default, comma-separated values) using `readtable`. The optional `flags`
+argument contains a list of flag characters, which, if present, are equivalent
+to supplying named arguments to `readtable` as follows:
+
+- `f`: `makefactors=true`, convert string columns to `PooledData` columns
+- `c`: `allowcomments=true`, ignore lines beginning with `#`
+- `H`: `header=false`, do not interpret the first line as column names
+"""
+inlinetable(s::AbstractString; args...) = readtable(IOBuffer(s); args...)
+function inlinetable(s::AbstractString, flags::AbstractString; args...)
+    flagbindings = Dict(
+        'f' => (:makefactors, true),
+        'c' => (:allowcomments, true),
+        'H' => (:header, false) )
+    for f in flags
+        if haskey(flagbindings, f)
+            push!(args, flagbindings[f])
+        else
+            throw(ArgumentError("Unknown inlinetable flag: $f"))
+        end
+    end
+    readtable(IOBuffer(s); args...)
+end
+
+"""
+    @csv_str(s[, flags])
+    csv"[data]"fcH
+
+Construct a `DataFrame` from a non-standard string literal containing comma-
+separated values (CSV) using `readtable`, just as if it were being loaded from
+an external file. The suffix flags `f`, `c`, and `H` are optional. If present,
+they are equivalent to supplying named arguments to `readtable` as follows:
+
+* `f`: `makefactors=true`, convert string columns to `PooledDataArray` columns
+* `c`: `allowcomments=true`, ignore lines beginning with `#`
+* `H`: `header=false`, do not interpret the first line as column names
+
+# Example
+```jldoctest
+julia> df = csv\"""
+           name,  age, squidPerWeek
+           Alice,  36,         3.14
+           Bob,    24,         0
+           Carol,  58,         2.71
+           Eve,    49,         7.77
+           \"""
+4x3 DataFrames.DataFrame
+| Row | name    | age | squidPerWeek |
+|-----|---------|-----|--------------|
+| 1   | "Alice" | 36  | 3.14         |
+| 2   | "Bob"   | 24  | 0.0          |
+| 3   | "Carol" | 58  | 2.71         |
+| 4   | "Eve"   | 49  | 7.77         |
+```
+"""
+macro csv_str(s, flags...) inlinetable(s, flags...; separator=',') end
+
+"""
+    @csv2_str(s[, flags])
+    csv2"[data]"fcH
+
+Construct a `DataFrame` from a non-standard string literal containing
+semicolon-separated values using `readtable`, with comma acting as the decimal
+character, just as if it were being loaded from an external file. The suffix
+flags `f`, `c`, and `H` are optional. If present, they are equivalent to
+supplying named arguments to `readtable` as follows:
+
+* `f`: `makefactors=true`, convert string columns to `PooledDataArray` columns
+* `c`: `allowcomments=true`, ignore lines beginning with `#`
+* `H`: `header=false`, do not interpret the first line as column names
+
+# Example
+```jldoctest
+julia> df = csv2\"""
+           name;  age; squidPerWeek
+           Alice;  36;         3,14
+           Bob;    24;         0
+           Carol;  58;         2,71
+           Eve;    49;         7,77
+           \"""
+4x3 DataFrames.DataFrame
+| Row | name    | age | squidPerWeek |
+|-----|---------|-----|--------------|
+| 1   | "Alice" | 36  | 3.14         |
+| 2   | "Bob"   | 24  | 0.0          |
+| 3   | "Carol" | 58  | 2.71         |
+| 4   | "Eve"   | 49  | 7.77         |
+```
+"""
+macro csv2_str(s, flags...)
+    inlinetable(s, flags...; separator=';', decimal=',')
+end
+
+"""
+    @wsv_str(s[, flags])
+    wsv"[data]"fcH
+
+Construct a `DataFrame` from a non-standard string literal containing
+whitespace-separated values (WSV) using `readtable`, just as if it were being
+loaded from an external file. The suffix flags `f`, `c`, and `H` are optional.
+If present, they are equivalent to supplying named arguments to `readtable` as
+follows:
+
+* `f`: `makefactors=true`, convert string columns to `PooledDataArray` columns
+* `c`: `allowcomments=true`, ignore lines beginning with `#`
+* `H`: `header=false`, do not interpret the first line as column names
+
+# Example
+```jldoctest
+julia> df = wsv\"""
+           name  age squidPerWeek
+           Alice  36         3.14
+           Bob    24         0
+           Carol  58         2.71
+           Eve    49         7.77
+           \"""
+4x3 DataFrames.DataFrame
+| Row | name    | age | squidPerWeek |
+|-----|---------|-----|--------------|
+| 1   | "Alice" | 36  | 3.14         |
+| 2   | "Bob"   | 24  | 0.0          |
+| 3   | "Carol" | 58  | 2.71         |
+| 4   | "Eve"   | 49  | 7.77         |
+```
+"""
+macro wsv_str(s, flags...) inlinetable(s, flags...; separator=' ') end
+
+"""
+    @tsv_str(s[, flags])
+    tsv"[data]"fcH
+
+Construct a `DataFrame` from a non-standard string literal containing tab-
+separated values (TSV) using `readtable`, just as if it were being loaded from
+an external file. The suffix flags `f`, `c`, and `H` are optional. If present,
+they are equivalent to supplying named arguments to `readtable` as follows:
+
+* `f`: `makefactors=true`, convert string columns to `PooledDataArray` columns
+* `c`: `allowcomments=true`, ignore lines beginning with `#`
+* `H`: `header=false`, do not interpret the first line as column names
+
+# Example
+```jldoctest
+julia> df = tsv\"""
+           name\tage\tsquidPerWeek
+           Alice\t36\t3.14
+           Bob\t24\t0
+           Carol\t58\t2.71
+           Eve\t49\t7.77
+           \"""
+4x3 DataFrames.DataFrame
+| Row | name    | age | squidPerWeek |
+|-----|---------|-----|--------------|
+| 1   | "Alice" | 36  | 3.14         |
+| 2   | "Bob"   | 24  | 0.0          |
+| 3   | "Carol" | 58  | 2.71         |
+| 4   | "Eve"   | 49  | 7.77         |
+```
+"""
+macro tsv_str(s, flags...) inlinetable(s, flags...; separator='\t') end
+
 function filldf!(df::DataFrame,
                  rows::Integer,
                  cols::Integer,

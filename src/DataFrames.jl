@@ -26,6 +26,10 @@ using Docile
 ##############################################################################
 
 export @~,
+       @csv_str,
+       @csv2_str,
+       @tsv_str,
+       @wsv_str,
 
        AbstractDataFrame,
        DataFrame,
