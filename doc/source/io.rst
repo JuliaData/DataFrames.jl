@@ -98,3 +98,4 @@ Advanced Options for Writing CSV Files
   to ``'"'``.
 - ``header::Bool`` -- Should the file contain a header that specifies the column
   names from ``df``. Defaults to ``true``.
+- ``nastring::AbstractString`` -- What to write in place of missing data. Defaults to ``"NA"``.
