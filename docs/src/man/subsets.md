@@ -55,7 +55,7 @@ julia> using DataFrames
 julia> df = DataFrame(A = 1:10, B = 2:2:20)
 10x2 DataFrame
 | Row | A  | B  |
-|-----|----|----|
+|:----|:---|:---|
 | 1   | 1  | 2  |
 | 2   | 2  | 4  |
 | 3   | 3  | 6  |
@@ -114,7 +114,7 @@ Selecting a subset of rows by index and an (ordered) subset of columns by name:
 julia> df[1:3, [:A, :B]]
 3x2 DataFrame
 | Row | A | B |
-|-----|---|---|
+|:----|:--|:--|
 | 1   | 1 | 2 |
 | 2   | 2 | 4 |
 | 3   | 3 | 6 |
@@ -122,7 +122,7 @@ julia> df[1:3, [:A, :B]]
 julia> df[1:3, [:B, :A]]
 3x2 DataFrame
 | Row | B | A |
-|-----|---|---|
+|:----|:--|:--|
 | 1   | 2 | 1 |
 | 2   | 4 | 2 |
 | 3   | 6 | 3 |
@@ -134,7 +134,7 @@ Selecting a subset of rows by using a condition:
 julia> df[df[:A] % 2 .== 0, :]
 5x2 DataFrame
 | Row | A  | B  |
-|-----|----|----|
+|:----|:---|:---|
 | 1   | 2  | 4  |
 | 2   | 4  | 8  |
 | 3   | 6  | 12 |
@@ -144,7 +144,7 @@ julia> df[df[:A] % 2 .== 0, :]
 julia> df[df[:B] % 2 .== 0, :]
 10x2 DataFrame
 | Row | A  | B  |
-|-----|----|----|
+|:----|:---|:---|
 | 1   | 1  | 2  |
 | 2   | 2  | 4  |
 | 3   | 3  | 6  |

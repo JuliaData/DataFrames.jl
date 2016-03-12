@@ -1,3 +1,4 @@
+
 language: julia
 julia:
   - nightly
@@ -7,8 +8,12 @@ os:
   - osx
 notifications:
   email: false
+before_script:
+  - export PATH=$HOME/.local/bin:$PATH
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("DataFrames"); Pkg.test("DataFrames"; coverage=true)'
 after_success:
+  - julia -e 'cd(Pkg.dir("DataFrames")); Pkg.clone("https://github.com/MichaelHatherly/Lapidary.jl"); include(joinpath("docs", "make.jl"))'
   - julia -e 'cd(Pkg.dir("DataFrames")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  
