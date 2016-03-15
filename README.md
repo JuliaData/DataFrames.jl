@@ -17,6 +17,6 @@ Tools for working with tabular data in Julia.
 **Reporting Issues and Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 **Maintenance**: DataFrames is maintained collectively by the   
-[JuliaStats collaborators](https://github.com/orgs/JuliaStats/teams/collaborators).
+[JuliaStats collaborators](https://github.com/orgs/JuliaStats/people).
 Responsiveness to pull requests and issues can vary, depending on the
 availability of key collaborators, 
