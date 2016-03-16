@@ -20,6 +20,28 @@ To read data from a CSV-like file, use the ``readtable`` function::
 like to read as a ``UTF8String``. It supports many additional keyword arguments:
 these are documented in the section on advanced I/O operations.
 
+Importing remote data
+~~~~~~~~~~~~~~~~~~~~~
+
+``readtable`` can take either a path or an ``IO`` object, so if you wanted to
+load a remote resource, you could do the following:
+
+    using DataFrames
+    using Requests
+
+    # Iris data set
+    url = "http://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
+
+    # without error checking
+    df = readtable(Requests.get_streaming(url))
+
+    # with error checking
+    r = Requests.get_streaming(url; timeout = 30.0)
+    if r.response.status / 100 != 2
+        error("Error downloading data")
+    end
+    df = readtable(r)
+
 Exporting data to a tabular data file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
