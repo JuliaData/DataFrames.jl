@@ -24,7 +24,7 @@ Importing remote data
 ~~~~~~~~~~~~~~~~~~~~~
 
 ``readtable`` can take either a path or an ``IO`` object, so if you wanted to
-load a remote resource, you could do the following:
+load a remote resource, you could do the following::
 
     using DataFrames
     using Requests
