@@ -71,7 +71,39 @@ function printtable(df::AbstractDataFrame;
     return
 end
 
-# Infer configuration settings from filename
+"""
+Write data to a tabular-file format (CSV, TSV, ...)
+
+```julia
+writetable(filename, df, [keyword options])
+```
+
+### Arguments
+
+* `filename::AbstractString` : the filename to be created
+* `df::AbstractDataFrame` : the AbstractDataFrame to be written
+
+### Keyword Arguments
+
+* `separator::Char` -- The separator character that you would like to use. Defaults to the output of `getseparator(filename)`, which uses commas for files that end in `.csv`, tabs for files that end in `.tsv` and a single space for files that end in `.wsv`.
+* `quotemark::Char` -- The character used to delimit string fields. Defaults to `'"'`.
+* `header::Bool` -- Should the file contain a header that specifies the column names from `df`. Defaults to `true`.
+* `nastring::AbstractString` -- What to write in place of missing data. Defaults to `"NA"`.
+
+### Result
+
+* `::DataFrame`
+
+### Examples
+
+```julia
+df = DataFrame(A = 1:10)
+writetable("output.csv", df)
+writetable("output.dat", df, separator = ',', header = false)
+writetable("output.dat", df, quotemark = '\'', separator = ',')
+writetable("output.dat", df, header = false)
+```
+"""
 function writetable(filename::AbstractString,
                     df::AbstractDataFrame;
                     header::Bool = true,

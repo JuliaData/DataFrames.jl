@@ -12,7 +12,8 @@ Tools for working with tabular data in Julia.
 
 **Installation**: at the Julia REPL, `Pkg.add("DataFrames")`
 
-**Documentation**: [available here](http://dataframesjl.readthedocs.org/en/latest/)
+**Documentation for the Stable Version**: [available here](http://JuliaStats.github.io/DataFrames.jl/stable/)
+**In-Development Documentation**: [available here](http://JuliaStats.github.io/DataFrames.jl/latest/)
 
 **Reporting Issues and Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
 

@@ -186,9 +186,6 @@ join(name, job, kind = :cross)
 ```
 
 """
-:join
-
-
 function Base.join(df1::AbstractDataFrame,
                    df2::AbstractDataFrame;
                    on::@compat(Union{Symbol, Vector{Symbol}}) = Symbol[],

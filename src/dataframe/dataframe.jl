@@ -8,7 +8,7 @@ An AbstractDataFrame that stores a set of named columns
 The columns are normally AbstractVectors stored in memory,
 particularly a Vector, DataVector, or PooledDataVector.
 
-### Constructors
+**Constructors**
 
 ```julia
 DataFrame(columns::Vector{Any}, names::Vector{Symbol})
@@ -19,7 +19,7 @@ DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer)
 DataFrame(ds::Vector{Associative})
 ```
 
-### Arguments
+**Arguments**
 
 * `columns` : a Vector{Any} with each column as contents
 * `names` : the column names
@@ -32,7 +32,7 @@ DataFrame(ds::Vector{Associative})
 
 Each column in `columns` should be the same length.
 
-### Notes
+**Notes**
 
 Most of the default constructors convert columns to `DataArrays`.  The
 base constructor, `DataFrame(columns::Vector{Any},
@@ -47,7 +47,7 @@ Because column types can vary, a DataFrame is not type stable. For
 performance-critical code, do not index into a DataFrame inside of
 loops.
 
-### Examples
+**Examples**
 
 ```julia
 df = DataFrame()
