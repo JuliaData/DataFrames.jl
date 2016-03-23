@@ -308,6 +308,12 @@
         <ul>
           
             <li class="anchor">
+              <a title="DataFrames v0.6.11 Release Notes" href="#dataframes-v0611-release-notes">
+                DataFrames v0.6.11 Release Notes
+              </a>
+            </li>
+          
+            <li class="anchor">
               <a title="DataFrames v0.6.6 Release Notes" href="#dataframes-v066-release-notes">
                 DataFrames v0.6.6 Release Notes
               </a>
@@ -440,7 +446,17 @@
           
             <h1>Release notes</h1>
           
-          <p><a id='DataFrames-v0.6.6-Release-Notes-1'></a></p>
+          <p><a id='DataFrames-v0.6.11-Release-Notes-1'></a></p>
+<h2 id="dataframes-v0611-release-notes">DataFrames v0.6.11 Release Notes</h2>
+<p><a id='Changes-1'></a></p>
+<h5 id="changes">Changes</h5>
+<ul>
+<li>New documentation based on Lapidary ([#929])</li>
+<li>Support new fit indicator functions for statistical models ([#921]).</li>
+<li>Add string literals csv, csv2, wsv, and tsv ([#918]) </li>
+<li>Add a readtable argument for optional name normalization ([#896]) </li>
+</ul>
+<p><a id='DataFrames-v0.6.6-Release-Notes-1'></a></p>
 <h2 id="dataframes-v066-release-notes">DataFrames v0.6.6 Release Notes</h2>
 <p><a id='Deprecations-1'></a></p>
 <h5 id="deprecations">Deprecations</h5>
@@ -462,8 +478,8 @@
 <ul>
 <li><code>writetable</code> supports <code>append</code> option ([#755])</li>
 </ul>
-<p><a id='Changes-1'></a></p>
-<h5 id="changes">Changes</h5>
+<p><a id='Changes-2'></a></p>
+<h5 id="changes_1">Changes</h5>
 <ul>
 <li>Faster <code>read_rda</code> ([#754], [#759])</li>
 </ul>
@@ -478,8 +494,8 @@
 <li>New convenience methods for <code>unstack</code> ([#734])</li>
 <li><code>convertdataframes</code> option added to <code>read_rda</code> ([#751])</li>
 </ul>
-<p><a id='Changes-2'></a></p>
-<h5 id="changes_1">Changes</h5>
+<p><a id='Changes-3'></a></p>
+<h5 id="changes_2">Changes</h5>
 <ul>
 <li><code>vcat(dfs)</code> handles container and eltype promotion ([#747])</li>
 <li><code>join</code> finally handles DataFrames with no non-key columns ([#749])</li>
@@ -509,8 +525,8 @@
 <ul>
 <li>Formulas handle three-way (and higher) interactions ([#700])</li>
 </ul>
-<p><a id='Changes-3'></a></p>
-<h5 id="changes_2">Changes</h5>
+<p><a id='Changes-4'></a></p>
+<h5 id="changes_3">Changes</h5>
 <ul>
 <li>Now using ReadTheDocs for documentation</li>
 </ul>
@@ -537,8 +553,8 @@
 <ul>
 <li><code>deleterows!(df::DataFrame, inds)</code> ([#635])</li>
 </ul>
-<p><a id='Changes-4'></a></p>
-<h5 id="changes_3">Changes</h5>
+<p><a id='Changes-5'></a></p>
+<h5 id="changes_4">Changes</h5>
 <ul>
 <li><code>empty!(::DataFrame)</code> and <code>insert!(::DataFrame, ...)</code> now operate in place ([#634])</li>
 <li>All exported higher-order functions now handle do-block syntax ([#643])</li>
@@ -554,8 +570,8 @@
 <li>Support fitting arbitrary StatisticalModels ([#571])</li>
 <li>Test coverage now tracked via Coveralls.io ([#597])</li>
 </ul>
-<p><a id='Changes-5'></a></p>
-<h5 id="changes_4">Changes</h5>
+<p><a id='Changes-6'></a></p>
+<h5 id="changes_5">Changes</h5>
 <ul>
 <li><code>show(::AbstractDataFrame)</code> now shows all columns by default</li>
 </ul>
@@ -572,8 +588,8 @@
 <li><code>push!</code> methods add a row to a DataFrame ([#621])</li>
 <li>Test coverage now tracked via Coveralls.io ([#597])</li>
 </ul>
-<p><a id='Changes-6'></a></p>
-<h5 id="changes_5">Changes</h5>
+<p><a id='Changes-7'></a></p>
+<h5 id="changes_6">Changes</h5>
 <ul>
 <li>IO functions ensure column names are valid symbols ([#563])</li>
 <li><code>setindex!</code> methods now return the updated DataFrame</li>
@@ -597,8 +613,8 @@
 <li>Implement <code>eltypes</code> argument in <code>readtable</code> ([#497])</li>
 <li>Read from generic IO objects ([#499])</li>
 </ul>
-<p><a id='Changes-7'></a></p>
-<h5 id="changes_6">Changes</h5>
+<p><a id='Changes-8'></a></p>
+<h5 id="changes_7">Changes</h5>
 <ul>
 <li>Convert to using only symbols (no more strings) for column names ([#509])</li>
 <li>Renames <code>stack_df</code>, <code>melt_df</code>, <code>pivot_table</code> to <code>stackdf</code>, <code>meltdf</code>, <code>pivottable</code> ([#538])</li>
@@ -621,8 +637,8 @@
 <p><a id='DataFrames-v0.5.1-Release-Notes-1'></a></p>
 <h2 id="dataframes-v051-release-notes">DataFrames v0.5.1 Release Notes</h2>
 <p>Removing prototype features until core functionality is farther along.</p>
-<p><a id='Changes-8'></a></p>
-<h5 id="changes_7">Changes</h5>
+<p><a id='Changes-9'></a></p>
+<h5 id="changes_8">Changes</h5>
 <ul>
 <li>Write <code>Formula</code>s without quoting, thanks to the <code>@~</code> macro ([JuliaLang/julia#4882])</li>
 <li>Renames <code>EachCol</code>, <code>EachRow</code> to <code>eachcol</code>, <code>eachrow</code> ([#474])</li>
@@ -647,8 +663,8 @@
 <li>Read whitespace-delimited input ([#443])</li>
 <li>Read input with C-style escapes ([#454])</li>
 </ul>
-<p><a id='Changes-9'></a></p>
-<h5 id="changes_8">Changes</h5>
+<p><a id='Changes-10'></a></p>
+<h5 id="changes_9">Changes</h5>
 <ul>
 <li><code>sort</code> interface updated to better match mainline Julia ([#389])</li>
 <li><code>names!</code>, <code>rename!</code>, and <code>delete!</code> now return the updated Index, rather than the names in the Index ([#445])</li>
