@@ -1,7 +1,7 @@
 ## DataFrames v0.6.11 Release Notes
 
 ##### Changes
-* New documentation based on Lapidary ([#929])
+* New documentation based on Documenter ([#929])
 * Support new fit indicator functions for statistical models ([#921]).
 * Add string literals csv, csv2, wsv, and tsv ([#918]) 
 * Add a readtable argument for optional name normalization ([#896]) 
