@@ -216,7 +216,7 @@ function latex_char_escape(char::SubString)
     end
 end
 
-function latex_escape(cell::String)
+function latex_escape(cell::AbstractString)
     cell = replace(cell, ['\\','~','#','$','%','&','_','^','{','}'], latex_char_escape)
     return cell
 end
@@ -232,7 +232,7 @@ function Base.writemime(io::IO,
     write(io, alignment)
     write(io, "}\n")
     write(io, "\t& ")
-    header = join(cnames, " & ")
+    header = join(map(c -> latex_escape(string(c)), cnames), " & ")
     write(io, header)
     write(io, "\\\\ \n")
     write(io, "\t\\hline \n")
