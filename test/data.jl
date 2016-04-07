@@ -99,6 +99,8 @@ module TestData
     end
     @test res == sum(df7[:d1])
 
+    @test aggregate(DataFrame(a=1),x->x+1) == DataFrame(a_λ1=2)
+
     df8 = aggregate(df7[[1, 3]], sum)
     @test df8[1, :d1_sum] == sum(df7[:d1])
 
