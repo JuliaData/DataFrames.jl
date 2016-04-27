@@ -31,7 +31,7 @@ Two dimensional `DataArray`:
 julia> using DataArrays
 
 julia> dm = data([1 2; 3 4])
-2x2 DataArray{Int64,2}:
+2×2 DataArray{Int64,2}:
  1  2
  3  4
 
@@ -53,7 +53,7 @@ In contrast, a `DataFrame` offers substantially more forms of indexing because c
 julia> using DataFrames
 
 julia> df = DataFrame(A = 1:10, B = 2:2:20)
-10x2 DataFrame
+10×2 DataFrame
 | Row | A  | B  |
 |:----|:---|:---|
 | 1   | 1  | 2  |
@@ -112,7 +112,7 @@ Selecting a subset of rows by index and an (ordered) subset of columns by name:
 
 ```julia
 julia> df[1:3, [:A, :B]]
-3x2 DataFrame
+3×2 DataFrame
 | Row | A | B |
 |:----|:--|:--|
 | 1   | 1 | 2 |
@@ -120,7 +120,7 @@ julia> df[1:3, [:A, :B]]
 | 3   | 3 | 6 |
 
 julia> df[1:3, [:B, :A]]
-3x2 DataFrame
+3×2 DataFrame
 | Row | B | A |
 |:----|:--|:--|
 | 1   | 2 | 1 |
@@ -132,7 +132,7 @@ Selecting a subset of rows by using a condition:
 
 ```julia
 julia> df[df[:A] % 2 .== 0, :]
-5x2 DataFrame
+5×2 DataFrame
 | Row | A  | B  |
 |:----|:---|:---|
 | 1   | 2  | 4  |
@@ -142,7 +142,7 @@ julia> df[df[:A] % 2 .== 0, :]
 | 5   | 10 | 20 |
 
 julia> df[df[:B] % 2 .== 0, :]
-10x2 DataFrame
+10×2 DataFrame
 | Row | A  | B  |
 |:----|:---|:---|
 | 1   | 1  | 2  |
