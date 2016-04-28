@@ -108,4 +108,6 @@ module TestCat
 
     # Alignment
     @test isequal(vcat(dfda, dfd, dfa), vcat(dfda, dfda))
+
+    @test vcat(sub(DataFrame(A=1:3),2),DataFrame(A=4:5)) == DataFrame(A=[2,4,5])
 end
