@@ -292,13 +292,50 @@ function nc(trm::Vector)
     n
 end
 
-function ModelMatrix(mf::ModelFrame)
+function alignpool{T,Rx,Ry,N}(x::PooledDataArray{T, Rx, N}, y::PooledDataArray{T, Ry, N})
+    if x.pool == y.pool
+        return x
+    end
+
+    xi = DataFrame(pool=x.pool, xi=1:length(x.pool))
+    yi = DataFrame(pool=y.pool, yi=1:length(y.pool))
+    d = join(xi, yi, on=:pool, kind=:left)
+
+    # Validate that x has support in y
+    i = findfirst(isna(d[:yi]))
+    if i>0
+        if length(y.pool)<10
+            error("Unknown level: ", d[i,:pool], ". Expected one of: ", y.pool)
+        else
+            error("Unknown level: ", d[i,:pool], ". Expected one of ", length(y.pool), " levels in reference dataframe.")
+        end
+    end
+
+    newrefs = Array{Ry}(size(x.refs)...)
+    for r in eachrow(d)
+        newrefs[x.refs .== r[:xi]] = r[:yi]
+    end
+
+    PooledDataArray(DataArrays.RefArray(newrefs), y.pool)
+end
+
+function alignpool(x::DataArray, ::DataArray)
+    return x
+end
+
+function ModelMatrix(mf::ModelFrame, referece_df = mf.df)
     trms = mf.terms
     aa = Any[Any[ones(size(mf.df,1), @compat(Int(trms.intercept)))]]
     asgn = zeros(Int, @compat(Int(trms.intercept)))
     fetrms = Bool[isfe(t) for t in trms.terms]
     if trms.response unshift!(fetrms, false) end
     ff = trms.factors[:, fetrms]
+
+    # need to use the same levels in predictions as for regression
+    for n in trms.eterms
+        mf.df[n] = alignpool(mf.df[n], referece_df[n])
+    end
+
     ## need to be cautious here to avoid evaluating cols for a factor with many levels
     ## if the factor doesn't occur in the fetrms
     rows = Bool[x != 0 for x in sum(ff, 2)]

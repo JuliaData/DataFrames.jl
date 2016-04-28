@@ -79,7 +79,7 @@ function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame)
     newTerms = remove_response(mm.mf.terms)
     # create new model frame/matrix
     mf = ModelFrame(newTerms, df)
-    newX = ModelMatrix(mf).m
+    newX = ModelMatrix(mf, mm.mf.df[1:0,:]).m
     yp = predict(mm, newX)
     out = DataArray(eltype(yp), size(df, 1))
     out[mf.msng] = yp

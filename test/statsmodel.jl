@@ -66,8 +66,7 @@ m2 = fit(DummyMod, f2, d)
 @test coeftable(m2).rownms == ["(Intercept)", "x1p - 6", "x1p - 7", "x1p - 8"]
 
 ## predict w/ new data missing levels
-## FAILS: mismatch between number of model matrix columns
-## @test predict(m2, d[2:4, :]) == predict(m2)[2:4]
+@test predict(m2, d[2:4, :]) == predict(m2)[2:4]
 
 
 ## Another dummy model type to test fall-through show method
