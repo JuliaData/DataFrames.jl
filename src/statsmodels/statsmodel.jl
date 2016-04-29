@@ -24,7 +24,7 @@ macro delegate(source, targets)
     for i in 1:n
         funcname = esc(funcnames[i])
         f = quote
-            ($funcname)(a::($typename), args...) = ($funcname)(a.($fieldname), args...)
+            ($funcname)(a::($typename), args...; kwargs...) = ($funcname)(a.($fieldname), args...; kwargs...)
         end
         push!(result.args[2].args, f)
     end
@@ -73,14 +73,14 @@ StatsBase.R2(mm::DataFrameRegressionModel, variant::Symbol) = R2(mm.model, varia
 StatsBase.adjR2(mm::DataFrameRegressionModel, variant::Symbol) = adjR2(mm.model, variant)
 
 # Predict function that takes data frame as predictor instead of matrix
-function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame)
+function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame; kwargs...)
     # copy terms, removing outcome if present (ModelFrame will complain if a
     # term is not found in the DataFrame and we don't want to remove elements with missing y)
     newTerms = remove_response(mm.mf.terms)
     # create new model frame/matrix
     mf = ModelFrame(newTerms, df)
     newX = ModelMatrix(mf).m
-    yp = predict(mm, newX)
+    yp = predict(mm, newX; kwargs...)
     out = DataArray(eltype(yp), size(df, 1))
     out[mf.msng] = yp
     return(out)
