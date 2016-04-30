@@ -26,7 +26,7 @@ contrast!(mf, x = SumContrast)
 @test coefnames(mf) == ["(Intercept)"; "x - b"; "x - c"]
 
 ## change base level of contrast
-contrast!(mf, x = SumContrast(base = 2))
+contrast!(mf, x = SumContrast(baseind = 2))
 @test ModelMatrix(mf).m == [1  1  0
                             1 -1 -1
                             1  0  1
@@ -34,6 +34,17 @@ contrast!(mf, x = SumContrast(base = 2))
                             1  1  0
                             1 -1 -1]
 @test coefnames(mf) == ["(Intercept)"; "x - a"; "x - c"]
+
+## change base level of contrast
+contrast!(mf, x = SumContrast(base = :b))
+@test ModelMatrix(mf).m == [1  1  0
+                            1 -1 -1
+                            1  0  1
+                            1  1  0
+                            1  1  0
+                            1 -1 -1]
+@test coefnames(mf) == ["(Intercept)"; "x - a"; "x - c"]
+
 
 contrast!(mf, x = HelmertContrast)
 @test ModelMatrix(mf).m == [1 -1 -1

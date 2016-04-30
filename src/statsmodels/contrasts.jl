@@ -25,17 +25,37 @@ type ContrastMatrix{T}
 end
 
 function ContrastMatrix{T}(C::AbstractContrast, lvls::Vector{T})
-    n = length(lvls)
-    n > 1 || error("not enough degrees of freedom to define contrasts")
-    (1 <= C.base <= n) || error("base = $(base) is not allowed for n = $n")
 
-    not_base = [1:(C.base-1); (C.base+1):n]
+    ## if levels are defined on C, use those, validating that they line up.
+    ## what does that mean?
+    ##
+    ## C.levels == lvls (best case)
+    ## C.levels < lvls  (will leave out some data...okay? will have empty ROWS)
+    ## C.levels > lvls  (will have empty columns. not okay.)
+    ## empty intersection (worst case)
+    c_lvls = get(C.levels, lvls)
+    missing_lvls = setdiff(c_lvls, lvls)
+    isempty(missing_lvls) || error("Contrast levels not found in data: ", missing_lvls)
+
+    n = length(c_lvls)
+    n > 1 || error("not enough degrees of freedom to define contrasts")
+    
+    ## find index of base level. use C.base, then C.baseind, then default (1).
+    if isnull(C.base)
+        baseind = get(C.baseind, 1)
+        (1 <= baseind <= n) || error("base = $(baseind) is not allowed for $n levels")
+    else
+        baseind = findfirst(c_lvls, get(C.base))
+        baseind > 0 || error("Base level $(C.base) not found in levels")
+    end
+    
+    not_base = [1:(baseind-1); (baseind+1):n]
     tnames = lvls[not_base]
 
-    mat = contrast_matrix(C, n)
+    mat = contrast_matrix(C, baseind, n)
 
     ContrastMatrix(mat, tnames, lvls, C)
-end    
+end
 
 ContrastMatrix(C::AbstractContrast, v::PooledDataArray) = ContrastMatrix(C, levels(v))
 
@@ -52,16 +72,28 @@ function cols(v::PooledDataVector, contrast::ContrastMatrix)
     return contrast.matrix[reindex[v.refs], :]
 end
 
+
+nullify(x::Nullable) = x
+nullify(x) = Nullable(x)
+
 ## Making a contrast type T only requires that there be a method for
 ## contrast_matrix(T, v::PooledDataArray). The rest is boilerplate.
 ##
 for contrastType in [:TreatmentContrast, :SumContrast, :HelmertContrast]
     @eval begin
         type $contrastType <: AbstractContrast
-            base::Integer
+            base::Nullable{Any}
+            baseind::Nullable{Integer}
+            levels::Nullable{Vector}
         end
-        ## default base level is 1:
-        $contrastType(; base::Integer=1) = $contrastType(base)
+        ## constructor with optional keyword arguments, defaulting to Nullables
+        $contrastType(;
+                      base=Nullable{Any}(),
+                      baseind=Nullable{Integer}(),
+                      levels=Nullable{Vector}()) = 
+                          $contrastType(nullify(base),
+                                        nullify(baseind),
+                                        nullify(levels))
     end
 end
 
@@ -94,7 +126,7 @@ promote_contrast(C::ContrastMatrix) = ContrastMatrix(DummyContrast(), C.levels)
 ## Treatment (rank-reduced dummy-coded) contrast
 ################################################################################
 
-contrast_matrix(C::TreatmentContrast, n) = eye(n)[:, [1:(C.base-1); (C.base+1):n]]
+contrast_matrix(C::TreatmentContrast, baseind, n) = eye(n)[:, [1:(baseind-1); (baseind+1):n]]
 
 
 ################################################################################
@@ -103,10 +135,10 @@ contrast_matrix(C::TreatmentContrast, n) = eye(n)[:, [1:(C.base-1); (C.base+1):n
 ## -1 for base level and +1 for contrast level.
 ################################################################################
 
-function contrast_matrix(C::SumContrast, n)
-    not_base = [1:(C.base-1); (C.base+1):n]
+function contrast_matrix(C::SumContrast, baseind, n)
+    not_base = [1:(baseind-1); (baseind+1):n]
     mat = eye(n)[:, not_base]
-    mat[C.base, :] = -1
+    mat[baseind, :] = -1
     return mat
 end
 
@@ -128,7 +160,7 @@ end
 ## orthogonal and with mean 0.
 ################################################################################
 
-function contrast_matrix(C::HelmertContrast, n)
+function contrast_matrix(C::HelmertContrast, baseind, n)
     mat = zeros(n, n-1)
     for i in 1:n-1
         mat[1:i, i] = -1
@@ -136,7 +168,7 @@ function contrast_matrix(C::HelmertContrast, n)
     end
 
     ## re-shuffle the rows such that base is the all -1.0 row (currently first)
-    mat = mat[[C.base; 1:(C.base-1); (C.base+1):end], :]
+    mat = mat[[baseind; 1:(baseind-1); (baseind+1):end], :]
     return mat
 end
     
