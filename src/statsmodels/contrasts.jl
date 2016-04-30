@@ -41,13 +41,8 @@ function ContrastMatrix{T}(C::AbstractContrast, lvls::Vector{T})
     n > 1 || error("not enough degrees of freedom to define contrasts")
     
     ## find index of base level. use C.base, then C.baseind, then default (1).
-    if isnull(C.base)
-        baseind = get(C.baseind, 1)
-        (1 <= baseind <= n) || error("base = $(baseind) is not allowed for $n levels")
-    else
-        baseind = findfirst(c_lvls, get(C.base))
-        baseind > 0 || error("Base level $(C.base) not found in levels")
-    end
+    baseind = isnull(C.base) ? 1 : findfirst(c_lvls, get(C.base))
+    baseind > 0 || error("Base level $(C.base) not found in levels")
     
     not_base = [1:(baseind-1); (baseind+1):n]
     tnames = c_lvls[not_base]
@@ -83,16 +78,13 @@ for contrastType in [:TreatmentContrast, :SumContrast, :HelmertContrast]
     @eval begin
         type $contrastType <: AbstractContrast
             base::Nullable{Any}
-            baseind::Nullable{Integer}
             levels::Nullable{Vector}
         end
         ## constructor with optional keyword arguments, defaulting to Nullables
         $contrastType(;
                       base=Nullable{Any}(),
-                      baseind=Nullable{Integer}(),
                       levels=Nullable{Vector}()) = 
                           $contrastType(nullify(base),
-                                        nullify(baseind),
                                         nullify(levels))
     end
 end
