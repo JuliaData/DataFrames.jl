@@ -50,11 +50,11 @@ function ContrastMatrix{T}(C::AbstractContrast, lvls::Vector{T})
     end
     
     not_base = [1:(baseind-1); (baseind+1):n]
-    tnames = lvls[not_base]
+    tnames = c_lvls[not_base]
 
     mat = contrast_matrix(C, baseind, n)
 
-    ContrastMatrix(mat, tnames, lvls, C)
+    ContrastMatrix(mat, tnames, c_lvls, C)
 end
 
 ContrastMatrix(C::AbstractContrast, v::PooledDataArray) = ContrastMatrix(C, levels(v))
