@@ -135,7 +135,7 @@ module TestFormula
     @test mm.m[:,2] == [0, 1., 0, 0]
     @test mm.m[:,3] == [0, 0, 1., 0]
     @test mm.m[:,4] == [0, 0, 0, 1.]
-    @test coefnames(mf)[2:end] == ["x1p - 6", "x1p - 7", "x1p - 8"]
+    @test coefnames(mf)[2:end] == ["x1p: 6", "x1p: 7", "x1p: 8"]
 
     #test_group("create a design matrix from interactions from two DataFrames")
     ## this was removed in commit dead4562506badd7e84a2367086f5753fa49bb6a
@@ -324,7 +324,7 @@ module TestFormula
     ## f = y ~ x1 & x2 & x3
     ## mf = ModelFrame(f, df)
     ## @test coefnames(mf)[2:end] ==
-    ##     vec([string("x1 - ", x, " & x2 - ", y, " & x3 - ", z) for
+    ##     vec([string("x1: ", x, " & x2: ", y, " & x3: ", z) for
     ##          x in 2:3,
     ##          y in 5:6,
     ##          z in 8:9])
@@ -381,7 +381,7 @@ d[:n] = 1.:8
 ## No intercept
 mf = ModelFrame(n ~ 0 + x, d[1:2,:], contrasts=cs)
 @test ModelMatrix(mf).m == [1 0; 0 1]
-@test coefnames(mf) == ["x - a", "x - b"]
+@test coefnames(mf) == ["x: a", "x: b"]
 
 ## No first-order term for interaction
 mf = ModelFrame(n ~ 1 + x + x&y, d[1:4, :], contrasts=cs)
@@ -389,7 +389,7 @@ mf = ModelFrame(n ~ 1 + x + x&y, d[1:4, :], contrasts=cs)
                                       1  0 -1
                                       -1 1  0
                                       1  0  1]
-@test coefnames(mf) == ["(Intercept)", "x - b", "x - a & y - d", "x - b & y - d"]
+@test coefnames(mf) == ["(Intercept)", "x: b", "x: a & y: d", "x: b & y: d"]
 
 ## When both terms of interaction are non-redundant:
 mf = ModelFrame(n ~ 0 + x&y, d[1:4, :], contrasts=cs)
@@ -397,8 +397,8 @@ mf = ModelFrame(n ~ 0 + x&y, d[1:4, :], contrasts=cs)
                             0 1 0 0
                             0 0 1 0
                             0 0 0 1]
-@test coefnames(mf) == ["x - a & y - c", "x - b & y - c",                             
-                        "x - a & y - d", "x - b & y - d"]
+@test coefnames(mf) == ["x: a & y: c", "x: b & y: c",                             
+                        "x: a & y: d", "x: b & y: d"]
 
 
 

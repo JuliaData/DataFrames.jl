@@ -467,7 +467,7 @@ function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     end
 end
 termnames(term::Symbol, col::Any, contrast::ContrastMatrix) =
-    ["$term - $name" for name in contrast.termnames]
+    ["$term: $name" for name in contrast.termnames]
 
 
 function expandtermnames(term::Vector)

@@ -14,7 +14,7 @@ mf = ModelFrame(Formula(Nothing(), :x), d)
                             1  0  0
                             1  0  0
                             1  1  0]
-@test coefnames(mf) == ["(Intercept)"; "x - b"; "x - c"]
+@test coefnames(mf) == ["(Intercept)"; "x: b"; "x: c"]
 
 contrast!(mf, x = SumContrast)
 @test ModelMatrix(mf).m == [1 -1 -1
@@ -23,7 +23,7 @@ contrast!(mf, x = SumContrast)
                             1 -1 -1
                             1 -1 -1
                             1  1  0]
-@test coefnames(mf) == ["(Intercept)"; "x - b"; "x - c"]
+@test coefnames(mf) == ["(Intercept)"; "x: b"; "x: c"]
 
 ## change base level of contrast
 contrast!(mf, x = SumContrast(base = :b))
@@ -33,7 +33,7 @@ contrast!(mf, x = SumContrast(base = :b))
                             1  1  0
                             1  1  0
                             1 -1 -1]
-@test coefnames(mf) == ["(Intercept)"; "x - a"; "x - c"]
+@test coefnames(mf) == ["(Intercept)"; "x: a"; "x: c"]
 
 ## change levels of contrast
 contrast!(mf, x = SumContrast(levels = [:c, :b, :a]))
@@ -43,7 +43,7 @@ contrast!(mf, x = SumContrast(levels = [:c, :b, :a]))
                             1  0  1
                             1  0  1
                             1  1  0]
-@test coefnames(mf) == ["(Intercept)"; "x - b"; "x - a"]
+@test coefnames(mf) == ["(Intercept)"; "x: b"; "x: a"]
 
 
 ## change levels and base level of contrast
@@ -54,7 +54,7 @@ contrast!(mf, x = SumContrast(levels = [:c, :b, :a], base = :a))
                             1 -1 -1
                             1 -1 -1
                             1  0  1]
-@test coefnames(mf) == ["(Intercept)"; "x - c"; "x - b"]
+@test coefnames(mf) == ["(Intercept)"; "x: c"; "x: b"]
 
 ## Helmert coded contrasts
 contrast!(mf, x = HelmertContrast)
@@ -64,7 +64,7 @@ contrast!(mf, x = HelmertContrast)
                             1 -1 -1
                             1 -1 -1
                             1  1 -1]
-@test coefnames(mf) == ["(Intercept)"; "x - b"; "x - c"]
+@test coefnames(mf) == ["(Intercept)"; "x: b"; "x: c"]
 
 ## Types for contrast levels are coerced to data levels when constructing
 ## ContrastMatrix
@@ -73,13 +73,13 @@ contrast!(mf, x = SumContrast(levels = ["a", "b", "c"]))
 
 ## Missing data is handled gracefully, dropping columns when a level is lost
 d[3, :x] = NA
-mf = ModelFrame(Formula(Nothing(), :x), d, contrasts = [:x => SumContrast])
-@test ModelMatrix(mf).m == [1 -1
-                            1  1
-                            1 -1
-                            1 -1
-                            1  1]
-@test coefnames(mf) == ["(Intercept)"; "x - b"]
+mf_missing = ModelFrame(Formula(Nothing(), :x), d, contrasts = [:x => SumContrast])
+@test ModelMatrix(mf_missing).m == [1 -1
+                                    1  1
+                                    1 -1
+                                    1 -1
+                                    1  1]
+@test coefnames(mf_missing) == ["(Intercept)"; "x: b"]
 
 ## Things that are bad to do:
 ## Applying a contrast that only has a subset of data levels:
