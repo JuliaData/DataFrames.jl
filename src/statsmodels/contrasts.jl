@@ -86,25 +86,6 @@ end
 ContrastMatrix(C::AbstractContrast, v::PooledDataArray) = ContrastMatrix(C, levels(v))
 
 
-termnames(term::Symbol, col::Any, contrast::ContrastMatrix) =
-    ["$term - $name" for name in contrast.termnames]
-
-"""
-    cols(v::PooledDataVector, contrast::ContrastMatrix)
-
-Construct `ModelMatrix` columns based on specified contrasts, ensuring that
-levels align properly.
-"""
-function cols(v::PooledDataVector, contrast::ContrastMatrix)
-    ## make sure the levels of the contrast matrix and the categorical data
-    ## are the same by constructing a re-indexing vector. Indexing into
-    ## reindex with v.refs will give the corresponding row number of the
-    ## contrast matrix
-    reindex = [findfirst(contrast.levels, l) for l in levels(v)]
-    return contrast.matrix[reindex[v.refs], :]
-end
-
-
 nullify(x::Nullable) = x
 nullify(x) = Nullable(x)
 

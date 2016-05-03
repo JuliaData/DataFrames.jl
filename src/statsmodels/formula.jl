@@ -370,6 +370,22 @@ function cols(name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     end
 end
 
+"""
+    cols(v::PooledDataVector, contrast::ContrastMatrix)
+
+Construct `ModelMatrix` columns based on specified contrasts, ensuring that
+levels align properly.
+"""
+function cols(v::PooledDataVector, contrast::ContrastMatrix)
+    ## make sure the levels of the contrast matrix and the categorical data
+    ## are the same by constructing a re-indexing vector. Indexing into
+    ## reindex with v.refs will give the corresponding row number of the
+    ## contrast matrix
+    reindex = [findfirst(contrast.levels, l) for l in levels(v)]
+    return contrast.matrix[reindex[v.refs], :]
+end
+
+
 function isfe(ex::Expr)                 # true for fixed-effects terms
     if ex.head != :call error("Non-call expression encountered") end
     ex.args[1] != :|
@@ -450,6 +466,9 @@ function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
         termnames(term, mf.df[term])
     end
 end
+termnames(term::Symbol, col::Any, contrast::ContrastMatrix) =
+    ["$term - $name" for name in contrast.termnames]
+
 
 function expandtermnames(term::Vector)
     if length(term) == 1
