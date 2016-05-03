@@ -307,10 +307,10 @@ end
 
 ## Goal here is to allow specification of _either_ a "naked" contrast type,
 ## or an instantiated contrast object itself.  This might be achieved in a more
-## julian way by overloading call for c::AbstractContrast to just return c.
-evaluateContrast(c::AbstractContrast, col::AbstractDataVector) = ContrastMatrix(c, col)
-evaluateContrast{C <: AbstractContrast}(c::Type{C}, col::AbstractDataVector) = ContrastMatrix(c(), col)
-evaluateContrast(c::ContrastMatrix, col::AbstractDataVector) = c
+## julian way by overloading call for c::AbstractContrasts to just return c.
+evaluateContrasts(c::AbstractContrasts, col::AbstractDataVector) = ContrastsMatrix(c, col)
+evaluateContrasts{C <: AbstractContrasts}(c::Type{C}, col::AbstractDataVector) = ContrastsMatrix(c(), col)
+evaluateContrasts(c::ContrastsMatrix, col::AbstractDataVector) = c
 
 needsContrasts(::PooledDataArray) = true
 needsContrasts(::Any) = false
@@ -323,15 +323,15 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
 
     ## Set up contrasts: 
     ## Combine actual DF columns and contrast types if necessary to compute the
-    ## actual contrasts matrices, levels, and term names (using TreatmentContrast
+    ## actual contrasts matrices, levels, and term names (using TreatmentContrasts
     ## as the default)
     evaledContrasts = Dict()
     for (term, col) in eachcol(df)
         needsContrasts(col) || continue
-        evaledContrasts[term] = evaluateContrast(haskey(contrasts, term) ?
-                                                 contrasts[term] :
-                                                 TreatmentContrast,
-                                                 col)
+        evaledContrasts[term] = evaluateContrasts(haskey(contrasts, term) ?
+                                                  contrasts[term] :
+                                                  TreatmentContrasts,
+                                                  col)
     end
 
     ## Check whether or not
@@ -345,7 +345,7 @@ ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), 
 
 ## modify contrasts in place
 function contrast!(mf::ModelFrame, new_contrasts::Dict)
-    new_contrasts = [ col => evaluateContrast(contr, mf.df[col])
+    new_contrasts = [ col => evaluateContrasts(contr, mf.df[col])
                       for (col, contr) in filter((k,v)->haskey(mf.df, k), new_contrasts) ]
                       
     mf.contrasts = merge(mf.contrasts, new_contrasts)
@@ -371,12 +371,12 @@ function cols(name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
 end
 
 """
-    cols(v::PooledDataVector, contrast::ContrastMatrix)
+    cols(v::PooledDataVector, contrast::ContrastsMatrix)
 
 Construct `ModelMatrix` columns based on specified contrasts, ensuring that
 levels align properly.
 """
-function cols(v::PooledDataVector, contrast::ContrastMatrix)
+function cols(v::PooledDataVector, contrast::ContrastsMatrix)
     ## make sure the levels of the contrast matrix and the categorical data
     ## are the same by constructing a re-indexing vector. Indexing into
     ## reindex with v.refs will give the corresponding row number of the
@@ -466,7 +466,7 @@ function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
         termnames(term, mf.df[term])
     end
 end
-termnames(term::Symbol, col::Any, contrast::ContrastMatrix) =
+termnames(term::Symbol, col::Any, contrast::ContrastsMatrix) =
     ["$term: $name" for name in contrast.termnames]
 
 

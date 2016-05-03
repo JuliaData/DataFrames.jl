@@ -374,7 +374,7 @@ d = DataFrame(x = rep([:a, :b], times = 4),
               y = rep([:c, :d], times = 2, each = 2),
               z = rep([:e, :f], each = 4))
 [pool!(d, name) for name in names(d)]
-cs = [name => SumContrast for name in names(d)]
+cs = [name => SumContrasts for name in names(d)]
 d[:n] = 1.:8
 
 
