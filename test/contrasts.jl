@@ -56,12 +56,6 @@ contrast!(mf, x = SumContrast(levels = [:c, :b, :a], base = :a))
                             1  0  1]
 @test coefnames(mf) == ["(Intercept)"; "x - c"; "x - b"]
 
-## restricting to only a subset of levels
-@test_throws ErrorException contrast!(mf, x = SumContrast(levels = [:a, :b]))
-
-## asking for levels that are not in the data raises an error
-@test_throws ErrorException contrast!(mf, x = SumContrast(levels = [:a, :b, :c, :d]))
-
 ## Helmert coded contrasts
 contrast!(mf, x = HelmertContrast)
 @test ModelMatrix(mf).m == [1 -1 -1
@@ -72,7 +66,12 @@ contrast!(mf, x = HelmertContrast)
                             1  1 -1]
 @test coefnames(mf) == ["(Intercept)"; "x - b"; "x - c"]
 
-## test for missing data (and when it clobbers one of the levels)
+## Types for contrast levels are coerced to data levels when constructing
+## ContrastMatrix
+contrast!(mf, x = SumContrast(levels = ["a", "b", "c"]))
+@test mf.contrasts[:x].levels == levels(d[:x])
+
+## Missing data is handled gracefully, dropping columns when a level is lost
 d[3, :x] = NA
 mf = ModelFrame(Formula(Nothing(), :x), d, contrasts = [:x => SumContrast])
 @test ModelMatrix(mf).m == [1 -1
@@ -81,5 +80,13 @@ mf = ModelFrame(Formula(Nothing(), :x), d, contrasts = [:x => SumContrast])
                             1 -1
                             1  1]
 @test coefnames(mf) == ["(Intercept)"; "x - b"]
+
+## Things that are bad to do:
+## Applying a contrast that only has a subset of data levels:
+@test_throws ErrorException contrast!(mf, x = SumContrast(levels = [:a, :b]))
+## Applying a contrast that expects levels not found in data:
+@test_throws ErrorException contrast!(mf, x = SumContrast(levels = [:a, :b, :c, :d]))
+
+
 
 end

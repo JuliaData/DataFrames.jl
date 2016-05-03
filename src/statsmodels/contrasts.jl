@@ -51,7 +51,7 @@ end
 
 Instantiate contrasts matrix for given data (categorical levels)
 
-If levels are specified in the AbstractContrast, those will be used, and likewise
+If levels are specified in the `AbstractContrast`, those will be used, and likewise
 for the base level (which defaults to the first level).
 """
 function ContrastMatrix{T}(C::AbstractContrast, lvls::Vector{T})
@@ -64,7 +64,7 @@ function ContrastMatrix{T}(C::AbstractContrast, lvls::Vector{T})
     ## better to filter data frame first
     ## contrast levels missing from data: would have empty columns, generate a
     ## rank-deficient model matrix.
-    c_lvls = get(C.levels, lvls)
+    c_lvls = convert(typeof(lvls), get(C.levels, lvls))
     mismatched_lvls = symdiff(c_lvls, lvls)
     isempty(mismatched_lvls) || error("Contrast levels not found in data or vice-versa: ", mismatched_lvls)
 
@@ -72,7 +72,7 @@ function ContrastMatrix{T}(C::AbstractContrast, lvls::Vector{T})
     n > 1 || error("not enough degrees of freedom to define contrasts")
     
     ## find index of base level. use C.base, then default (1).
-    baseind = isnull(C.base) ? 1 : findfirst(c_lvls, get(C.base))
+    baseind = isnull(C.base) ? 1 : findfirst(c_lvls, convert(eltype(lvls), get(C.base)))
     baseind > 0 || error("Base level $(C.base) not found in levels")
     
     not_base = [1:(baseind-1); (baseind+1):n]
