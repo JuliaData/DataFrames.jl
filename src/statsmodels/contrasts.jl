@@ -18,8 +18,6 @@
 
 
 """
-    AbstractContrasts(; base::Any=NULL, levels::Vector=NULL)
-
 Interface to describe contrast coding schemes for categorical variables.
 
 Concrete subtypes of `AbstractContrasts` describe a particular way of converting a
@@ -28,15 +26,48 @@ instantiation optionally includes the levels to generate columns for and the bas
 level. If not specified these will be taken from the data when a `ContrastsMatrix` is
 generated (during `ModelFrame` construction).
 
-# Arguments
+## Constructors
 
-* `levels::Nullable{Vector}=NULL`: If specified, will be checked against data when
-  generating a `ContrastsMatrix`. Levels that are specified here but missing in the
-  data will result in an error, because this would lead to empty columns in the
-  resulting ModelMatrix.
-* `base::Nullable{Any}=NULL`: The base level of the contrast. The
-  actual interpretation of this depends on the particular contrast type, but in
-  general it can be thought of as a "reference" level.
+For `C <: AbstractContrast`:
+
+```julia
+C()                             # levels are inferred later 
+C(levels = ::Vector{Any})       # levels checked against data later
+C(base = ::Any)                 # specify base level
+C(levels = ::Vector{Any}, base = ::Any)
+```
+
+If specified, levels will be checked against data when generating a
+`ContrastsMatrix`. Any mismatch will result in an error, because missing data
+levels would lead to empty columns in the model matrix, and missing contrast
+levels would lead to empty or undefined rows.
+
+You can also specify the base level of the contrasts. The
+actual interpretation of this depends on the particular contrast type, but in
+general it can be thought of as a "reference" level.  It defaults to the first
+level.
+
+Both `levels` and `base` will be coerced to the type of the data when
+constructing a `ContrastsMatrix`.
+
+## Concrete types
+
+* `TreatmentContrasts`
+* `SumContrasts`
+* `HelmertContrasts`
+
+To implement your own concrete types, implement a constructor and a method for
+constructing the actual contrasts matrix that maps from levels to `ModelMatrix`
+column values:
+
+```julia
+type MyContrasts <: AbstractContrasts
+    ...
+end
+
+contrasts_matrix(C::MyContrasts, baseind, n) = ...
+```
+
 """
 abstract AbstractContrasts
 
