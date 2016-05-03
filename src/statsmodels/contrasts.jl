@@ -60,17 +60,18 @@ function ContrastMatrix{T}(C::AbstractContrast, lvls::Vector{T})
     ## what does that mean?
     ##
     ## C.levels == lvls (best case)
-    ## C.levels < lvls  (will leave out some data...okay? will have empty ROWS)
-    ## C.levels > lvls  (will have empty columns. not okay.)
-    ## empty intersection (worst case)
+    ## data levels missing from contrast: would generate empty/undefined rows. 
+    ## better to filter data frame first
+    ## contrast levels missing from data: would have empty columns, generate a
+    ## rank-deficient model matrix.
     c_lvls = get(C.levels, lvls)
-    missing_lvls = setdiff(c_lvls, lvls)
-    isempty(missing_lvls) || error("Contrast levels not found in data: ", missing_lvls)
+    mismatched_lvls = symdiff(c_lvls, lvls)
+    isempty(mismatched_lvls) || error("Contrast levels not found in data or vice-versa: ", mismatched_lvls)
 
     n = length(c_lvls)
     n > 1 || error("not enough degrees of freedom to define contrasts")
     
-    ## find index of base level. use C.base, then C.baseind, then default (1).
+    ## find index of base level. use C.base, then default (1).
     baseind = isnull(C.base) ? 1 : findfirst(c_lvls, get(C.base))
     baseind > 0 || error("Base level $(C.base) not found in levels")
     

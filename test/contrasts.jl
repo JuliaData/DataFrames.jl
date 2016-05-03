@@ -56,7 +56,13 @@ contrast!(mf, x = SumContrast(levels = [:c, :b, :a], base = :a))
                             1  0  1]
 @test coefnames(mf) == ["(Intercept)"; "x - c"; "x - b"]
 
+## restricting to only a subset of levels
+@test_throws ErrorException contrast!(mf, x = SumContrast(levels = [:a, :b]))
 
+## asking for levels that are not in the data raises an error
+@test_throws ErrorException contrast!(mf, x = SumContrast(levels = [:a, :b, :c, :d]))
+
+## Helmert coded contrasts
 contrast!(mf, x = HelmertContrast)
 @test ModelMatrix(mf).m == [1 -1 -1
                             1  1 -1
