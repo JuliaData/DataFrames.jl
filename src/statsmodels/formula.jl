@@ -38,7 +38,7 @@ type ModelFrame
     terms::Terms
     msng::BitArray
     ## mapping from df keys to contrasts.  Rather than specify types allowed,
-    ## leave that to cols() to check.  Allows more seamless later extension
+    ## leave that to modelmat_cols() to check.  Allows more seamless later extension
     contrasts::Dict{Any, Any}
     ## An eterms x terms matrix which is true for terms that need to be "promoted"
     ## to full rank in constructing a model matrx
@@ -358,25 +358,25 @@ function StatsBase.model_response(mf::ModelFrame)
     convert(Array, mf.df[round(Bool, mf.terms.factors[:, 1])][:, 1])
 end
 
-cols(v::DataVector) = convert(Vector{Float64}, v.data)
-cols(v::Vector) = convert(Vector{Float64}, v)
+modelmat_cols(v::DataVector) = convert(Vector{Float64}, v.data)
+modelmat_cols(v::Vector) = convert(Vector{Float64}, v)
 ## construct model matrix columns from model frame + name (checks for contrasts)
-function cols(name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
+function modelmat_cols(name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, name)
-        cols(mf.df[name], 
+        modelmat_cols(mf.df[name],
              non_redundant ? promote_contrast(mf.contrasts[name]) : mf.contrasts[name])
     else
-        cols(mf.df[name])
+        modelmat_cols(mf.df[name])
     end
 end
 
 """
-    cols(v::PooledDataVector, contrast::ContrastsMatrix)
+    modelmat_cols(v::PooledDataVector, contrast::ContrastsMatrix)
 
 Construct `ModelMatrix` columns based on specified contrasts, ensuring that
 levels align properly.
 """
-function cols(v::PooledDataVector, contrast::ContrastsMatrix)
+function modelmat_cols(v::PooledDataVector, contrast::ContrastsMatrix)
     ## make sure the levels of the contrast matrix and the categorical data
     ## are the same by constructing a re-indexing vector. Indexing into
     ## reindex with v.refs will give the corresponding row number of the
@@ -414,6 +414,9 @@ function nc(trm::Vector)
 end
 
 function ModelMatrix(mf::ModelFrame)
+    ## TODO: this method makes multiple copies of the data in the ModelFrame:
+    ## first in term_cols (1-2x per evaluation term, depending on redundancy),
+    ## second in constructing the matrix itself.
     
     ## Map eval. term name + redundancy bool to cached model matrix columns
     eterm_cols = @compat Dict{Tuple{Symbol,Bool}, Array{Float64}}()
@@ -441,13 +444,15 @@ function ModelMatrix(mf::ModelFrame)
         for et_and_nr in zip(eterms, non_redundant)
             haskey(eterm_cols, et_and_nr) || 
                 setindex!(eterm_cols,
-                          cols(et_and_nr[1], mf, non_redundant=et_and_nr[2]),
+                          modelmat_cols(et_and_nr[1], mf, non_redundant=et_and_nr[2]),
                           et_and_nr)
             push!(term_cols, eterm_cols[et_and_nr])
         end
         push!(mm_cols, term_cols)
     end
 
+    ## TODO: could this be made more efficient by
+    ## first computing mm_col_term_nums, initializing mm, and directly indexing?
     mm = hcat([expandcols(tc) for tc in mm_cols]...)
     mm_col_term_nums = vcat([fill(i_term, nc(tc)) for (i_term,tc) in enumerate(mm_cols)]...)
 
