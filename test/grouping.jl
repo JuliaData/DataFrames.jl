@@ -5,8 +5,8 @@ module TestGrouping
     df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                    b = repeat([2, 1], outer=[4]),
                    c = randn(8))
-    #df[6, :a] = NA
-    #df[7, :b] = NA
+    #df[6, :a] = Nullable()
+    #df[7, :b] = Nullable()
 
     cols = [:a, :b]
 
@@ -15,7 +15,7 @@ module TestGrouping
     sdf = sort(df, cols=cols)
     bdf = by(df, cols, f)
 
-    @test bdf[cols] == unique(sdf[cols])
+    @test get(bdf[cols] == unique(sdf[cols]))
 
     byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
 
@@ -25,19 +25,20 @@ module TestGrouping
     gd = groupby(df, cols)
     ga = map(f, gd)
 
-    @test bdf == combine(ga)
+    @test get(bdf == combine(ga))
 
-    g(df) = DataFrame(cmax1 = df[:cmax] + 1)
+    # FIXME: shouldn't need Vector here
+    g(df) = DataFrame(cmax1 = Vector(df[:cmax]) + 1)
     h(df) = g(f(df))
 
-    @test combine(map(h, gd)) == combine(map(g, ga))
+    @test get(combine(map(h, gd)) == combine(map(g, ga)))
 
     # issue #960
-    x = pool(collect(1:20))
+    x = NominalArray(collect(1:20))
     df = DataFrame(v1=x, v2=x)
     groupby(df, [:v1, :v2])
 
     df2 = by(e->1, DataFrame(x=Int64[]), :x)
     @test size(df2) == (0,1)
-    @test sum(df2[:x]) == 0
+    @test isequal(sum(df2[:x]), 0)
 end

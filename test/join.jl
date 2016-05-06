@@ -14,15 +14,16 @@ module TestJoin
 
     # Test output of various join types
     outer = DataFrame(ID = [1, 2, 2, 3, 4],
-                      Name = @data(["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", NA]),
-                      Job = @data(["Lawyer", "Doctor", "Florist", NA, "Farmer"]))
+                      Name = NullableArray(["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
+                      Job = NullableArray(["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
-    right = outer[!isna(outer[:Job]), [:Name, :ID, :Job]]
-    left = outer[!isna(outer[:Name]), :]
-    inner = left[!isna(left[:Job]), :]
+    # FIXME: Vector{Bool} should not be needed if map(::NullableArray) behave properly
+    right = outer[Vector{Bool}(map(x->!isnull(x), outer[:Job])), [:Name, :ID, :Job]]
+    left = outer[Vector{Bool}(map(x->!isnull(x), outer[:Name])), :]
+    inner = left[Vector{Bool}(map(x->!isnull(x), left[:Job])), :]
     semi = unique(inner[:, [:ID, :Name]])
-    anti = left[isna(left[:Job]), [:ID, :Name]]
+    anti = left[Vector{Bool}(map(isnull, left[:Job])), [:ID, :Name]]
 
     @test isequal(join(name, job, on = :ID), inner)
     @test isequal(join(name, job, on = :ID, kind = :inner), inner)
@@ -59,7 +60,7 @@ module TestJoin
                       B = ['a', 'a', 'a', 'b', 'b', 'b'],
                       C = [3, 4, 5, 3, 4, 5])
 
-    @test join(df1, df2[[:C]], kind = :cross) == cross
+    @test isequal(join(df1, df2[[:C]], kind = :cross), cross)
 
     # Cross joins handle naming collisions
     @test size(join(df1, df1, kind = :cross)) == (4, 4)

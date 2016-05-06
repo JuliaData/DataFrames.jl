@@ -10,16 +10,16 @@ module TestConstructors
     @test isequal(df.columns, Any[])
     @test isequal(df.colindex, Index())
 
-    df = DataFrame(Any[data(zeros(3)), data(ones(3))],
+    df = DataFrame(Any[NullableNominalVector(zeros(3)),
+                       NullableNominalVector(ones(3))],
                    Index([:x1, :x2]))
     @test size(df, 1) == 3
     @test size(df, 2) == 2
 
-    @test isequal(df,
-                  DataFrame(Any[data(zeros(3)), data(ones(3))]))
-    @test isequal(df,
-                  DataFrame(x1 = [0.0, 0.0, 0.0],
-                            x2 = [1.0, 1.0, 1.0]))
+    @test isequal(df, DataFrame(Any[NullableNominalVector(zeros(3)),
+                                    NullableNominalVector(ones(3))]))
+    @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0],
+                                x2 = [1.0, 1.0, 1.0]))
 
     df2 = convert(DataFrame, [0.0 1.0;
                               0.0 1.0;
@@ -27,10 +27,9 @@ module TestConstructors
     names!(df2, [:x1, :x2])
     @test isequal(df, df2)
 
-    @test isequal(df,
-                  convert(DataFrame, [0.0 1.0;
-                                      0.0 1.0;
-                                      0.0 1.0]))
+    @test isequal(df, convert(DataFrame, [0.0 1.0;
+                                          0.0 1.0;
+                                          0.0 1.0]))
 
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0],
                                 x2 = [1.0, 1.0, 1.0]))
@@ -40,15 +39,12 @@ module TestConstructors
 
     df = DataFrame(Int, 2, 2)
     @test size(df) == (2, 2)
-    @test all(eltypes(df) .== [Int, Int])
+    @test eltypes(df) == [Nullable{Int}, Nullable{Int}]
 
     df = DataFrame([Int, Float64], [:x1, :x2], 2)
     @test size(df) == (2, 2)
-    @test all(eltypes(df) .== Any[Int, Float64])
+    @test eltypes(df) == [Nullable{Int}, Nullable{Float64}]
 
     @test isequal(df, DataFrame([Int, Float64], 2))
-
-
-
 
 end

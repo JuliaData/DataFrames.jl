@@ -23,7 +23,7 @@ function printtable(io::IO,
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    nastring::AbstractString = "NA")
+                    nastring::AbstractString = "NULL")
     n, p = size(df)
     etypes = eltypes(df)
     if header
@@ -42,10 +42,10 @@ function printtable(io::IO,
     quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
-            if ! (isna(df[j],i))
+            if !isnull(df[j],i)
                 if ! (etypes[j] <: Real)
 		    print(io, quotemark)
-		    escapedprint(io, df[i, j], quotestr)
+		    escapedprint(io, get(df[i, j]), quotestr)
 		    print(io, quotemark)
                 else
 		    print(io, df[i, j])
@@ -67,7 +67,7 @@ function printtable(df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    nastring::AbstractString = "NA")
+                    nastring::AbstractString = "NULL")
     printtable(STDOUT,
                df,
                header = header,
@@ -94,7 +94,7 @@ writetable(filename, df, [keyword options])
 * `separator::Char` -- The separator character that you would like to use. Defaults to the output of `getseparator(filename)`, which uses commas for files that end in `.csv`, tabs for files that end in `.tsv` and a single space for files that end in `.wsv`.
 * `quotemark::Char` -- The character used to delimit string fields. Defaults to `'"'`.
 * `header::Bool` -- Should the file contain a header that specifies the column names from `df`. Defaults to `true`.
-* `nastring::AbstractString` -- What to write in place of missing data. Defaults to `"NA"`.
+* `nastring::AbstractString` -- What to write in place of missing data. Defaults to `"NULL"`.
 
 ### Result
 
@@ -115,7 +115,7 @@ function writetable(filename::AbstractString,
                     header::Bool = true,
                     separator::Char = getseparator(filename),
                     quotemark::Char = '"',
-                    nastring::AbstractString = "NA",
+                    nastring::AbstractString = "NULL",
                     append::Bool = false)
 
     if endswith(filename, ".bz") || endswith(filename, ".bz2")

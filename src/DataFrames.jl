@@ -12,7 +12,8 @@ using Compat
 import Compat.String
 using Reexport
 @reexport using StatsBase
-@reexport using DataArrays
+@reexport using NullableArrays
+@reexport using CategoricalArrays
 using GZip
 using SortingAlgorithms
 
@@ -83,8 +84,63 @@ export @~,
        unstack,
        writetable,
 
+       # FIXME: unexport, these should go in Base or nowhere
+       head,
+       tail,
+
        # Remove after deprecation period
        read_rda
+
+    # FIXME
+    using Compat
+    @compat function Base.:(==){S<:Nullable,T<:Nullable}(A::AbstractArray{S}, B::AbstractArray{T})
+        if size(A) != size(B)
+            return Nullable(false)
+        end
+        if isa(A,Range) != isa(B,Range)
+            return Nullable(false)
+        end
+        eq = Nullable(true)
+        for (a, b) in zip(A, B)
+            el_eq = a == b
+            get(el_eq, true) || return Nullable(false)
+            eq &= el_eq
+        end
+        return eq
+    end
+
+    for f in (
+        :(@compat Base.:(==)),
+        :(@compat Base.:!=),
+    )
+        @eval begin
+            function $(f){S1, S2}(x::Nullable{S1}, y::Nullable{S2})
+                if isnull(x) || isnull(y)
+                    Nullable{Bool}()
+                else
+                    Nullable{Bool}($(f)(x.value, y.value))
+                end
+            end
+        end
+    end
+
+    # FIXME: to remove, == currently throws an error for Nullables
+    Base.:(==)(x::Nullable, y::Nullable) = isequal(x, y)
+
+    # For NullableCategoricalArrays (specialized version could be faster)
+    NullableArrays.allnull{T<:Nullable}(x::AbstractArray{T}) = all(isnull, x)
+
+
+    _dropnull(x::Any) = x
+    _dropnull{T<:Nullable}(x::AbstractArray{T}) = dropnull(x)
+
+    _isnull(x::Any) = false
+    _isnull(x::Nullable) = isnull(x)
+
+    Base.isless(x::Nullable, y::Nullable) = get(x < y)
+
+    Base.isequal(x::Any, y::Nullable) = isequal(Nullable(x), y)
+    Base.isequal(x::Nullable, y::Any) = isequal(y, x)
 
 ##############################################################################
 ##

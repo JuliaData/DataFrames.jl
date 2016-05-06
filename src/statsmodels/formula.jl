@@ -216,27 +216,16 @@ function Terms(f::Formula)
     Terms(tt, ev, facs, non_redundants, oo, haslhs, !any(noint))
 end
 
-## Default NA handler.  Others can be added as keyword arguments
-function na_omit(df::DataFrame)
+## Default NULL handler.  Others can be added as keyword arguments
+function null_omit(df::DataFrame)
     cc = complete_cases(df)
     df[cc,:], cc
 end
 
-## Trim the pool field of da to only those levels that occur in the refs
-function dropunusedlevels!(da::PooledDataArray)
-    rr = da.refs
-    uu = unique(rr)
-    length(uu) == length(da.pool) && return da
-    T = eltype(rr)
-    su = sort!(uu)
-    dict = Dict(zip(su, one(T):convert(T, length(uu))))
-    da.refs = map(x -> dict[x], rr)
-    da.pool = da.pool[uu]
-    da
-end
-dropunusedlevels!(x) = x
+_droplevels!(x::Any) = x
+_droplevels!(x::Union{CategoricalArray, NullableCategoricalArray}) = droplevels!(x)
 
-is_categorical(::PooledDataArray) = true
+is_categorical(::Union{CategoricalArray, NullableCategoricalArray}) = true
 is_categorical(::Any) = false
 
 ## Check for non-redundancy of columns.  For instance, if x is a factor with two
@@ -354,8 +343,11 @@ function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, name::Symbol, mf::Mode
     end
 end
 
-modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::DataVector) = convert(T, reshape(v.data, length(v), 1))
-modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::Vector) = convert(T, reshape(v, length(v), 1))
+modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::AbstractVector) =
+    convert(T, reshape(v, length(v), 1))
+# FIXME: this inefficient method should not be needed, cf. JuliaLang/julia#18264
+modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::NullableVector) =
+    convert(T, Matrix(reshape(v, length(v), 1)))
 
 """
     modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::PooledDataVector, contrast::ContrastsMatrix)
@@ -363,7 +355,9 @@ modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::Vector) = convert(T, reshape
 Construct `ModelMatrix` columns of type `T` based on specified contrasts, ensuring that
 levels align properly.
 """
-function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::PooledDataVector, contrast::ContrastsMatrix)
+function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T},
+                                               v::Union{CategoricalVector, NullableCategoricalVector},
+                                               contrast::ContrastsMatrix)
     ## make sure the levels of the contrast matrix and the categorical data
     ## are the same by constructing a re-indexing vector. Indexing into
     ## reindex with v.refs will give the corresponding row number of the
@@ -429,7 +423,6 @@ function dropresponse!(trms::Terms)
         trms
     end
 end
-
 
 """
     ModelMatrix{T<:AbstractFloatMatrix}(mf::ModelFrame)
@@ -512,7 +505,8 @@ ModelMatrix(mf::ModelFrame) = ModelMatrix{Matrix{Float64}}(mf)
     termnames(term::Symbol, col)
 Returns a vector of strings with the names of the coefficients
 associated with a term.  If the column corresponding to the term
-is not a `PooledDataArray` a one-element vector is returned.
+is not a `CategoricalArray` or `NullableCategoricalArray`,
+a one-element vector is returned.
 """
 termnames(term::Symbol, col) = [string(term)]
 function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)

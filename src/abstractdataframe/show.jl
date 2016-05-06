@@ -65,6 +65,9 @@ ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Void
 ourshowcompact(io::IO, x::AbstractString) = showcompact(io, x) # -> Void
 ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Void
 
+# FIXME: if really necessary, put this elsewhere under a different name
+Base.isnull(x::AbstractArray, i) = isa(x[i], Nullable) && isnull(x[i]) 
+
 #' @description
 #'
 #' Calculates, for each column of an AbstractDataFrame, the maximum
@@ -100,8 +103,6 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowlabel::Symbol) # -> Vector{Int}
     maxwidths = Array(Int, size(df, 2) + 1)
 
-    # TODO: Move this definition somewhere else
-    NAstrwidth = 2
     undefstrwidth = ourstrwidth(Base.undef_ref_str)
 
     j = 1
@@ -110,17 +111,11 @@ function getmaxwidths(df::AbstractDataFrame,
         maxwidth = ourstrwidth(name)
 
         # (2) Consider length of longest entry in that column
-        for indices in (rowindices1, rowindices2)
-            for i in indices
-                if isna(col, i)
-                    maxwidth = max(maxwidth, NAstrwidth)
-                else
-                    try
-                        maxwidth = max(maxwidth, ourstrwidth(col[i]))
-                    catch
-                        maxwidth = max(maxwidth, undefstrwidth)
-                    end
-                end
+        for indices in (rowindices1, rowindices2), i in indices
+            try
+                maxwidth = max(maxwidth, ourstrwidth(col[i]))
+            catch
+                maxwidth = max(maxwidth, undefstrwidth)
             end
         end
         maxwidths[j] = maxwidth

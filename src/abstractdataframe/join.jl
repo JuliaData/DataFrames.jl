@@ -2,13 +2,26 @@
 ## Join / merge
 ##
 
+# Like similar, but returns a nullable array
+similar_nullable{T}(dv::AbstractArray{T}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
+    NullableArray(T, dims)
+
+similar_nullable{T,R}(dv::NominalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
+    NullableNominalArray(T, dims)
+
+similar_nullable{T,R}(dv::OrdinalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
+    NullableOrdinalArray(T, dims)
+
+similar_nullable(df::AbstractDataFrame, dims::Int) =
+    DataFrame(Any[similar_nullable(x, dims) for x in columns(df)], copy(index(df)))
+
 function join_idx(left, right, max_groups)
     ## adapted from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
 
-    # NA group in location 0
+    # NULL group in location 0
 
-    left_sorter, where, left_count = DataArrays.groupsort_indexer(left, max_groups)
-    right_sorter, where, right_count = DataArrays.groupsort_indexer(right, max_groups)
+    left_sorter, where, left_count = groupsort_indexer(left, max_groups)
+    right_sorter, where, right_count = groupsort_indexer(right, max_groups)
 
     # First pass, determine size of result set
     tcount = 0
@@ -27,7 +40,7 @@ function join_idx(left, right, max_groups)
         end
     end
 
-    # group 0 is the NA group
+    # group 0 is the NULL group
     tposition = 0
     lposition = 0
     rposition = 0
@@ -72,10 +85,116 @@ function join_idx(left, right, max_groups)
      right_sorter[right_indexer], right_sorter[rightonly_indexer])
 end
 
-function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
-                                   df2::AbstractDataFrame)
+# FIXME: rename this, and possibly move to CategoricalArrays.jl
+function PooledDataVecs{S,N}(v1::NullableCategoricalArray{S,N},
+                             v2::NullableCategoricalArray{S,N},
+                             index::Vector{S}, R)
+    tidx1 = convert(Vector{R}, indexin(CategoricalArrays.index(v1.pool), index))
+    tidx2 = convert(Vector{R}, indexin(CategoricalArrays.index(v2.pool), index))
+    refs1 = zeros(R, length(v1))
+    refs2 = zeros(R, length(v2))
+    for i in 1:length(refs1)
+        if v1.refs[i] != 0
+            refs1[i] = tidx1[v1.refs[i]]
+        end
+    end
+    for i in 1:length(refs2)
+        if v2.refs[i] != 0
+            refs2[i] = tidx2[v2.refs[i]]
+        end
+    end
+    pool = NominalPool{S, R}(index)
+    return (NominalArray(refs1, pool),
+            NominalArray(refs2, pool))
+end
+
+function PooledDataVecs{S,N}(v1::NullableCategoricalArray{S,N},
+                             v2::NullableCategoricalArray{S,N})
+    index = sort(unique([levels(v1); levels(v2)]))
+    sz = length(index)
+
+    R = sz <= typemax(UInt8)  ? UInt8 :
+        sz <= typemax(UInt16) ? UInt16 :
+        sz <= typemax(UInt32) ? UInt32 :
+                                UInt64
+
+    # To ensure type stability during actual work
+    PooledDataVecs(v1, v2, index, R)
+end
+
+# FIXME: add more efficient rules for conversions between array types,
+# in particular CategoricalArrays
+PooledDataVecs{S,N}(v1::NullableCategoricalArray{S,N}, v2::AbstractArray{S,N}) =
+    PooledDataVecs(v1, NullableCategoricalArray(v2))
+
+PooledDataVecs{S,N}(v1::AbstractArray{S,N}, v2::NullableCategoricalArray{S,N}) =
+    PooledDataVecs(NullableCategoricalArray(v2), v1)
+
+function PooledDataVecs(v1::AbstractArray,
+                        v2::AbstractArray)
+    ## Return two PooledDataVecs that share the same pool.
+
+    ## TODO: allow specification of R
+    R = CategoricalArrays.DefaultRefType
+    refs1 = Array(R, size(v1))
+    refs2 = Array(R, size(v2))
+    poolref = Dict{promote_type(eltype(v1), eltype(v2)), R}()
+    maxref = 0
+
+    # loop through once to fill the poolref dict
+    for i = 1:length(v1)
+        if !_isnull(v1[i])
+            poolref[v1[i]] = 0
+        end
+    end
+    for i = 1:length(v2)
+        if !_isnull(v2[i])
+            poolref[v2[i]] = 0
+        end
+    end
+
+    # fill positions in poolref
+    pool = sort(collect(keys(poolref)))
+    i = 1
+    for p in pool
+        poolref[p] = i
+        i += 1
+    end
+
+    # fill in newrefs
+    zeroval = zero(R)
+    for i = 1:length(v1)
+        if _isnull(v1[i])
+            refs1[i] = zeroval
+        else
+            refs1[i] = poolref[v1[i]]
+        end
+    end
+    for i = 1:length(v2)
+        if _isnull(v2[i])
+            refs2[i] = zeroval
+        else
+            refs2[i] = poolref[v2[i]]
+        end
+    end
+
+    pool = NominalPool(pool)
+    return (NominalArray(refs1, pool),
+            NominalArray(refs2, pool))
+end
+
+PooledDataVecs(v1::NullableArray, v2::NullableArray) =
+    PooledDataVecs(NullableNominalArray(v1), NullableNominalArray(v2))
+
+PooledDataVecs(v1::AbstractArray, v2::NullableArray) =
+    PooledDataVecs(v1, NullableNominalArray(v2))
+
+PooledDataVecs(v1::NullableArray, v2::AbstractArray) =
+    PooledDataVecs(NullableNominalArray(v2), v1)
+
+function PooledDataVecs(df1::AbstractDataFrame, df2::AbstractDataFrame)
     # This method exists to allow merge to work with multiple columns.
-    # It takes the columns of each DataFrame and returns a DataArray
+    # It takes the columns of each DataFrame and returns a NominalArray
     # with a merged pool that "keys" the combination of column values.
     # The pools of the result don't really mean anything.
     dv1, dv2 = PooledDataVecs(df1[1], df2[1])
@@ -83,10 +202,10 @@ function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
     # since the number of levels can be high
     refs1 = Vector{UInt32}(dv1.refs)
     refs2 = Vector{UInt32}(dv2.refs)
-    # the + 1 handles NA's
+    # the + 1 handles nulls
     refs1[:] += 1
     refs2[:] += 1
-    ngroups = length(dv1.pool) + 1
+    ngroups = length(levels(dv1)) + 1
     for j = 2:ncol(df1)
         dv1, dv2 = PooledDataVecs(df1[j], df2[j])
         for i = 1:length(refs1)
@@ -95,14 +214,14 @@ function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
         for i = 1:length(refs2)
             refs2[i] += (dv2.refs[i]) * ngroups
         end
-        ngroups *= (length(dv1.pool) + 1)
+        ngroups *= length(levels(dv1)) + 1
     end
     # recode refs1 and refs2 to drop the unused column combinations and
     # limit the pool size
-    PooledDataVecs( refs1, refs2 )
+    PooledDataVecs(refs1, refs2)
 end
 
-function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
+function CategoricalArrays.NominalArray{R}(df::AbstractDataFrame, ::Type{R})
     # This method exists to allow another way for merge to work with
     # multiple columns. It takes the columns of the DataFrame and
     # returns a DataArray with a merged pool that "keys" the
@@ -126,10 +245,10 @@ function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
             j += 1
         end
     end
-    return PooledDataArray(DataArrays.RefArray(refs), pool)
+    return NominalArray(DataArrays.RefArray(refs), pool)
 end
 
-DataArrays.PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)
+CategoricalArrays.NominalArray(df::AbstractDataFrame) = NominalArray(df, DEFAULT_POOLED_REF_TYPE)
 
 
 
@@ -216,14 +335,14 @@ function Base.join(df1::AbstractDataFrame,
 
         left = df1[[left_idx; leftonly_idx], :]
         right = vcat(df2w[right_idx, :],
-                     nas(df2w, length(leftonly_idx)))
+                     similar_nullable(df2w, length(leftonly_idx)))
 
         return hcat!(left, right)
     elseif kind == :right
         df1w = without(df1, on)
 
         left = vcat(df1w[left_idx, :],
-                    nas(df1w, length(rightonly_idx)))
+                    similar_nullable(df1w, length(rightonly_idx)))
         right = df2[[right_idx; rightonly_idx], :]
 
         return hcat!(left, right)
@@ -232,8 +351,8 @@ function Base.join(df1::AbstractDataFrame,
 
         mixed = hcat!(df1[left_idx, :], df2w[right_idx, :])
         leftonly = hcat!(df1[leftonly_idx, :],
-                         nas(df2w, length(leftonly_idx)))
-        rightonly = hcat!(nas(df1w, length(rightonly_idx)),
+                         similar_nullable(df2w, length(leftonly_idx)))
+        rightonly = hcat!(similar_nullable(df1w, length(rightonly_idx)),
                           df2[rightonly_idx, :])
 
         return vcat(mixed, leftonly, rightonly)

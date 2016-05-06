@@ -310,5 +310,6 @@ Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::@compat(Union{Perm,DFPerm}
 Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) = sortperm(df, a, DFPerm(o,df))
 
 # Extras to speed up sorting
-Base.sortperm{V}(df::AbstractDataFrame, a::Algorithm, o::FastPerm{Sort.ForwardOrdering,V}) = sortperm(o.vec)
-Base.sortperm{V}(df::AbstractDataFrame, a::Algorithm, o::FastPerm{Sort.ReverseOrdering,V}) = reverse(sortperm(o.vec))
+# FIXME: decide whether it's worth having
+#Base.sortperm{V}(df::AbstractDataFrame, a::Algorithm, o::FastPerm{Sort.ForwardOrdering,V}) = sortperm(o.vec)
+#Base.sortperm{V}(df::AbstractDataFrame, a::Algorithm, o::FastPerm{Sort.ReverseOrdering,V}) = reverse(sortperm(o.vec))

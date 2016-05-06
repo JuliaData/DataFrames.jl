@@ -33,12 +33,12 @@ d[:x4] = [17:20;]
 
 f = y ~ x1 * x2
 m = fit(DummyMod, f, d)
-@test model_response(m) == d[:y]
+@test model_response(m) == Array(d[:y])
 
 ## test prediction method
 ## vanilla
 StatsBase.predict(mod::DummyMod) = mod.x * mod.beta
-@test predict(m) == [ ones(size(d,1)) d[:x1] d[:x2] d[:x1].*d[:x2] ] * collect(1:4)
+@test predict(m) == [ ones(size(d,1)) Array(d[:x1]) Array(d[:x2]) Array(d[:x1].*d[:x2]) ] * collect(1:4)
 
 ## new data from matrix
 StatsBase.predict(mod::DummyMod, newX::Matrix) = newX * mod.beta
@@ -46,10 +46,11 @@ mm = ModelMatrix(ModelFrame(f, d))
 @test predict(m, mm.m) == mm.m * collect(1:4)
 
 ## new data from DataFrame (via ModelMatrix)
-@test predict(m, d) == predict(m, mm.m)
+# FIXME: inconsistency in returning NullableArray here, but Array above?
+@test Array(predict(m, d)) == predict(m, mm.m)
 
 d2 = deepcopy(d)
-d2[3, :x1] = NA
+d2[3, :x1] = Nullable()
 @test length(predict(m, d2)) == 4
 
 ## test copying of names from Terms to CoefTable
@@ -61,23 +62,23 @@ io = IOBuffer()
 show(io, m)
 
 ## with categorical variables
-d[:x1p] = PooledDataArray(d[:x1])
+d[:x1p] = NullableNominalArray(d[:x1])
 f2 = y ~ x1p
 m2 = fit(DummyMod, f2, d)
 
 @test coeftable(m2).rownms == ["(Intercept)", "x1p: 6", "x1p: 7", "x1p: 8"]
 
 ## predict w/ new data missing levels
-@test predict(m2, d[2:4, :]) == predict(m2)[2:4]
+@test isequal(predict(m2, d[2:4, :]), NullableArray(predict(m2)[2:4]))
 
 ## predict w/ new data with _extra_ levels (throws an error)
 d3 = deepcopy(d)
 d3[1, :x1] = 0
-d3[:x1p] = PooledDataArray(d3[:x1])
+d3[:x1p] = NullableNominalVector(d3[:x1])
 @test_throws ArgumentError predict(m2, d3)
 
 ## fit with contrasts specified
-d[:x2p] = PooledDataArray(d[:x2])
+d[:x2p] = NullableNominalVector(d[:x2])
 f3 = y ~ x1p + x2p
 m3 = fit(DummyMod, f3, d)
 fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding()))

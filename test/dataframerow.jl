@@ -2,12 +2,14 @@ module TestDataFrameRow
     using Base.Test
     using DataFrames, Compat
 
-    df = DataFrame(a=@data([1,   2,   3,   1,   2,   2 ]),
-                   b=@data([2.0, NA,  1.2, 2.0, NA,  NA]),
-                   c=@data(["A", "B", "C", "A", "B", NA]),
-                   d=PooledDataArray(
-                     @data([:A,  NA,  :C,  :A,  NA,  :C])))
-    df2 = DataFrame(a = @data([1, 2, 3]))
+    df = DataFrame(a=NullableArray([1,   2,   3,   1,   2,   2 ]),
+                   b=NullableArray(Nullable{Float64}[2.0, Nullable(),
+                                                     1.2, 2.0,
+                                                     Nullable(), Nullable()]),
+                   c=NullableArray(Nullable{String}["A", "B", "C", "A", "B", Nullable()]),
+                   d=NullableNominalArray(Nullable{Symbol}[:A,  Nullable(),  :C,  :A,
+                                                           Nullable(),  :C]))
+    df2 = DataFrame(a = NullableArray([1, 2, 3]))
 
     #
     # Equality

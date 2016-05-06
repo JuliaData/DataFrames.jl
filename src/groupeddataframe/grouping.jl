@@ -25,6 +25,41 @@ end
 #
 # Split
 #
+
+function groupsort_indexer(x::AbstractVector, ngroups::Integer, null_last::Bool=false)
+    # translated from Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
+
+    # count group sizes, location 0 for NULL
+    n = length(x)
+    # counts = x.pool
+    counts = fill(0, ngroups + 1)
+    for i = 1:n
+        counts[x[i] + 1] += 1
+    end
+
+    # mark the start of each contiguous group of like-indexed data
+    where = fill(1, ngroups + 1)
+    if null_last
+        for i = 3:ngroups+1
+            where[i] = where[i - 1] + counts[i - 1]
+        end
+        where[1] = where[end] + counts[end]
+    else
+        for i = 2:ngroups+1
+            where[i] = where[i - 1] + counts[i - 1]
+        end
+    end
+
+    # this is our indexer
+    result = fill(0, n)
+    for i = 1:n
+        label = x[i] + 1
+        result[where[label]] = i
+        where[label] += 1
+    end
+    result, where, counts
+end
+
 """
 A view of an AbstractDataFrame split into row groups
 
@@ -88,25 +123,25 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     ##     http://wesmckinney.com/blog/?p=489
 
     ncols = length(cols)
-    # use the pool trick to get a set of integer references for each unique item
-    dv = PooledDataArray(d[cols[ncols]])
-    # if there are NAs, add 1 to the refs to avoid underflows in x later
-    dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    # use UInt32 instead of the PDA's integer size since the number of levels can be high
-    x = copy!(similar(dv.refs, UInt32), dv.refs) .+ dv_has_nas
+    # use NominalArray to get a set of integer references for each unique item
+    nv = NullableNominalArray(d[cols[ncols]])
+    # if there are NULLs, add 1 to the refs to avoid underflows in x later
+    anynulls = (findfirst(nv.refs, 0) > 0 ? 1 : 0)
+    # use UInt32 instead of the original array's integer size since the number of levels can be high
+    x = copy!(similar(nv.refs, UInt32), nv.refs) .+ anynulls
     # also compute the number of groups, which is the product of the set lengths
-    ngroups = length(dv.pool) + dv_has_nas
+    ngroups = length(levels(nv)) + anynulls
     # if there's more than 1 column, do roughly the same thing repeatedly
     for j = (ncols - 1):-1:1
-        dv = PooledDataArray(d[cols[j]])
-        dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
+        nv = NullableNominalArray(d[cols[j]])
+        anynulls = (findfirst(nv.refs, 0) > 0 ? 1 : 0)
         for i = 1:nrow(d)
-            x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
+            x[i] += (nv.refs[i] + anynulls - 1) * ngroups
         end
-        ngroups = ngroups * (length(dv.pool) + dv_has_nas)
+        ngroups = ngroups * (length(levels(nv)) + anynulls)
         # TODO if ngroups is really big, shrink it
     end
-    (idx, starts) = DataArrays.groupsort_indexer(x, ngroups)
+    (idx, starts) = groupsort_indexer(x, ngroups)
     # Remove zero-length groupings
     starts = _uniqueofsorted(starts)
     ends = starts[2:end] - 1
