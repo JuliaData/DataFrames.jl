@@ -400,6 +400,29 @@ mf = ModelFrame(n ~ 0 + x&y, d[1:4, :], contrasts=cs)
 @test coefnames(mf) == ["x: a & y: c", "x: b & y: c",                             
                         "x: a & y: d", "x: b & y: d"]
 
+## FAILS: When both terms are non-redundant and intercept is PRESENT
+## (not fully redundant). Ideally, would drop last column. Might make sense
+## to warn about this, and suggest recoding x and y into a single variable.
+# mf = ModelFrame(n ~ 1 + x&y, d[1:4, :], contrasts=cs)
+# @test ModelMatrix(mf).m == [1 1 0 0
+#                             1 0 1 0
+#                             1 0 0 1
+#                             1 0 0 0]
+# @test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
+#                         "x: a & y: d", "x: b & y: d"]
+
+## note that R also does not detect this automatically. it's left to glm et al.
+## to detect numerically when the model matrix is rank deficient, which is hard
+## to do correctly.
+# > d = data.frame(x = factor(c(1, 2, 1, 2)), y = factor(c(3, 3, 4, 4)))
+# > model.matrix(~ 1 + x:y, d)
+#   (Intercept) x1:y3 x2:y3 x1:y4 x2:y4
+# 1           1     1     0     0     0
+# 2           1     0     1     0     0
+# 3           1     0     0     1     0
+# 4           1     0     0     0     1
+
+
 
 
 end
