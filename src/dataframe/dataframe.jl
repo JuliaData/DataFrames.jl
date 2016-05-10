@@ -803,9 +803,7 @@ function Base.convert(::Type{DataFrame}, A::Matrix)
     return DataFrame(cols, Index(gennames(n)))
 end
 
-function Base.convert(::Type{DataFrame}, d::Dict)
-    dnames = collect(keys(d))
-    sort!(dnames)
+function _dataframe_from_associative(dnames, d::Associative)
     p = length(dnames)
     p == 0 && return DataFrame()
     columns  = Array(Any, p)
@@ -822,6 +820,20 @@ function Base.convert(::Type{DataFrame}, d::Dict)
     end
     return DataFrame(columns, Index(colnames))
 end
+
+function Base.convert(::Type{DataFrame}, d::Associative)
+    dnames = collect(keys(d))
+    return _dataframe_from_associative(dnames, d)
+end
+
+# A Dict is not sorted or otherwise ordered, and it's nicer to return a
+# DataFrame which is ordered in some way
+function Base.convert(::Type{DataFrame}, d::Dict)
+    dnames = collect(keys(d))
+    sort!(dnames)
+    return _dataframe_from_associative(dnames, d)
+end
+
 
 ##############################################################################
 ##

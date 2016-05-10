@@ -1,6 +1,7 @@
 module TestConversions
     using Base.Test
     using DataFrames
+    using DataStructures: OrderedDict, SortedDict
 
     df = DataFrame()
     df[:A] = 1:5
@@ -46,7 +47,7 @@ module TestConversions
     a = [1.0,2.0]
     b = [-0.1,3]
     c = [-3.1,7]
-    di = Dict([("a", a), ("b", b), ("c", c)])
+    di = Dict("a"=>a, "b"=>b, "c"=>c)
 
     df = convert(DataFrame,di)
     @test isa(df,DataFrame)
@@ -55,8 +56,24 @@ module TestConversions
     @test df[:b] == b
     @test df[:c] == c
 
+    od = OrderedDict("c"=>c, "a"=>a, "b"=>b)
+    df = convert(DataFrame,od)
+    @test isa(df, DataFrame)
+    @test names(df) == Symbol[x for x in keys(od)]
+    @test df[:a] == a
+    @test df[:b] == b
+    @test df[:c] == c
+
+    sd = SortedDict("c"=>c, "a"=>a, "b"=>b)
+    df = convert(DataFrame,sd)
+    @test isa(df, DataFrame)
+    @test names(df) == Symbol[x for x in keys(sd)]
+    @test df[:a] == a
+    @test df[:b] == b
+    @test df[:c] == c
+
     a = [1.0]
-    di = Dict([("a", a), ("b", b), ("c", c)])
+    di = Dict("a"=>a, "b"=>b, "c"=>c)
     @test_throws ArgumentError convert(DataFrame,di)
 
 end
