@@ -31,7 +31,7 @@ Two dimensional `DataArray`:
 julia> using DataArrays
 
 julia> dm = data([1 2; 3 4])
-2x2 DataArray{Int64,2}:
+2×2 DataArray{Int64,2}:
  1  2
  3  4
 
@@ -53,19 +53,19 @@ In contrast, a `DataFrame` offers substantially more forms of indexing because c
 julia> using DataFrames
 
 julia> df = DataFrame(A = 1:10, B = 2:2:20)
-10x2 DataFrame
-| Row | A  | B  |
-|:----|:---|:---|
-| 1   | 1  | 2  |
-| 2   | 2  | 4  |
-| 3   | 3  | 6  |
-| 4   | 4  | 8  |
-| 5   | 5  | 10 |
-| 6   | 6  | 12 |
-| 7   | 7  | 14 |
-| 8   | 8  | 16 |
-| 9   | 9  | 18 |
-| 10  | 10 | 20 |
+10×2 DataFrame
+│ Row │ A  │ B  │
+┝━━━━━┿━━━━┿━━━━┥
+│ 1   │ 1  │ 2  │
+│ 2   │ 2  │ 4  │
+│ 3   │ 3  │ 6  │
+│ 4   │ 4  │ 8  │
+│ 5   │ 5  │ 10 │
+│ 6   │ 6  │ 12 │
+│ 7   │ 7  │ 14 │
+│ 8   │ 8  │ 16 │
+│ 9   │ 9  │ 18 │
+│ 10  │ 10 │ 20 │
 ```
 
 Refering to the first column by index or name:
@@ -112,47 +112,47 @@ Selecting a subset of rows by index and an (ordered) subset of columns by name:
 
 ```julia
 julia> df[1:3, [:A, :B]]
-3x2 DataFrame
-| Row | A | B |
-|:----|:--|:--|
-| 1   | 1 | 2 |
-| 2   | 2 | 4 |
-| 3   | 3 | 6 |
+3×2 DataFrame
+│ Row │ A │ B │
+┝━━━━━┿━━━┿━━━┥
+│ 1   │ 1 │ 2 │
+│ 2   │ 2 │ 4 │
+│ 3   │ 3 │ 6 │
 
 julia> df[1:3, [:B, :A]]
-3x2 DataFrame
-| Row | B | A |
-|:----|:--|:--|
-| 1   | 2 | 1 |
-| 2   | 4 | 2 |
-| 3   | 6 | 3 |
+3×2 DataFrame
+│ Row │ B │ A │
+┝━━━━━┿━━━┿━━━┥
+│ 1   │ 2 │ 1 │
+│ 2   │ 4 │ 2 │
+│ 3   │ 6 │ 3 │
 ```
 
 Selecting a subset of rows by using a condition:
 
 ```julia
 julia> df[df[:A] % 2 .== 0, :]
-5x2 DataFrame
-| Row | A  | B  |
-|:----|:---|:---|
-| 1   | 2  | 4  |
-| 2   | 4  | 8  |
-| 3   | 6  | 12 |
-| 4   | 8  | 16 |
-| 5   | 10 | 20 |
+5×2 DataFrame
+│ Row │ A  │ B  │
+┝━━━━━┿━━━━┿━━━━┥
+│ 1   │ 2  │ 4  │
+│ 2   │ 4  │ 8  │
+│ 3   │ 6  │ 12 │
+│ 4   │ 8  │ 16 │
+│ 5   │ 10 │ 20 │
 
 julia> df[df[:B] % 2 .== 0, :]
-10x2 DataFrame
-| Row | A  | B  |
-|:----|:---|:---|
-| 1   | 1  | 2  |
-| 2   | 2  | 4  |
-| 3   | 3  | 6  |
-| 4   | 4  | 8  |
-| 5   | 5  | 10 |
-| 6   | 6  | 12 |
-| 7   | 7  | 14 |
-| 8   | 8  | 16 |
-| 9   | 9  | 18 |
-| 10  | 10 | 20 |
+10×2 DataFrame
+│ Row │ A  │ B  │
+┝━━━━━┿━━━━┿━━━━┥
+│ 1   │ 1  │ 2  │
+│ 2   │ 2  │ 4  │
+│ 3   │ 3  │ 6  │
+│ 4   │ 4  │ 8  │
+│ 5   │ 5  │ 10 │
+│ 6   │ 6  │ 12 │
+│ 7   │ 7  │ 14 │
+│ 8   │ 8  │ 16 │
+│ 9   │ 9  │ 18 │
+│ 10  │ 10 │ 20 │
 ```

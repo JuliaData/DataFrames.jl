@@ -1028,13 +1028,13 @@ julia> df = csv\"""
            Carol,  58,         2.71
            Eve,    49,         7.77
            \"""
-4x3 DataFrames.DataFrame
-| Row | name    | age | squidPerWeek |
-|-----|---------|-----|--------------|
-| 1   | "Alice" | 36  | 3.14         |
-| 2   | "Bob"   | 24  | 0.0          |
-| 3   | "Carol" | 58  | 2.71         |
-| 4   | "Eve"   | 49  | 7.77         |
+4×3 DataFrames.DataFrame
+│ Row │ name    │ age │ squidPerWeek │
+┝━━━━━┿━━━━━━━━━┿━━━━━┿━━━━━━━━━━━━━━┥
+│ 1   │ "Alice" │ 36  │ 3.14         │
+│ 2   │ "Bob"   │ 24  │ 0.0          │
+│ 3   │ "Carol" │ 58  │ 2.71         │
+│ 4   │ "Eve"   │ 49  │ 7.77         │
 ```
 """
 macro csv_str(s, flags...) inlinetable(s, flags...; separator=',') end
@@ -1062,13 +1062,13 @@ julia> df = csv2\"""
            Carol;  58;         2,71
            Eve;    49;         7,77
            \"""
-4x3 DataFrames.DataFrame
-| Row | name    | age | squidPerWeek |
-|-----|---------|-----|--------------|
-| 1   | "Alice" | 36  | 3.14         |
-| 2   | "Bob"   | 24  | 0.0          |
-| 3   | "Carol" | 58  | 2.71         |
-| 4   | "Eve"   | 49  | 7.77         |
+4×3 DataFrames.DataFrame
+│ Row │ name    │ age │ squidPerWeek │
+┝━━━━━┿━━━━━━━━━┿━━━━━┿━━━━━━━━━━━━━━┥
+│ 1   │ "Alice" │ 36  │ 3.14         │
+│ 2   │ "Bob"   │ 24  │ 0.0          │
+│ 3   │ "Carol" │ 58  │ 2.71         │
+│ 4   │ "Eve"   │ 49  │ 7.77         │
 ```
 """
 macro csv2_str(s, flags...)
@@ -1098,13 +1098,13 @@ julia> df = wsv\"""
            Carol  58         2.71
            Eve    49         7.77
            \"""
-4x3 DataFrames.DataFrame
-| Row | name    | age | squidPerWeek |
-|-----|---------|-----|--------------|
-| 1   | "Alice" | 36  | 3.14         |
-| 2   | "Bob"   | 24  | 0.0          |
-| 3   | "Carol" | 58  | 2.71         |
-| 4   | "Eve"   | 49  | 7.77         |
+4×3 DataFrames.DataFrame
+│ Row │ name    │ age │ squidPerWeek │
+┝━━━━━┿━━━━━━━━━┿━━━━━┿━━━━━━━━━━━━━━┥
+│ 1   │ "Alice" │ 36  │ 3.14         │
+│ 2   │ "Bob"   │ 24  │ 0.0          │
+│ 3   │ "Carol" │ 58  │ 2.71         │
+│ 4   │ "Eve"   │ 49  │ 7.77         │
 ```
 """
 macro wsv_str(s, flags...) inlinetable(s, flags...; separator=' ') end
@@ -1131,13 +1131,13 @@ julia> df = tsv\"""
            Carol\t58\t2.71
            Eve\t49\t7.77
            \"""
-4x3 DataFrames.DataFrame
-| Row | name    | age | squidPerWeek |
-|-----|---------|-----|--------------|
-| 1   | "Alice" | 36  | 3.14         |
-| 2   | "Bob"   | 24  | 0.0          |
-| 3   | "Carol" | 58  | 2.71         |
-| 4   | "Eve"   | 49  | 7.77         |
+4×3 DataFrames.DataFrame
+│ Row │ name    │ age │ squidPerWeek │
+┝━━━━━┿━━━━━━━━━┿━━━━━┿━━━━━━━━━━━━━━┥
+│ 1   │ "Alice" │ 36  │ 3.14         │
+│ 2   │ "Bob"   │ 24  │ 0.0          │
+│ 3   │ "Carol" │ 58  │ 2.71         │
+│ 4   │ "Eve"   │ 49  │ 7.77         │
 ```
 """
 macro tsv_str(s, flags...) inlinetable(s, flags...; separator='\t') end

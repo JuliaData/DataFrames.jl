@@ -3,7 +3,7 @@
 #'
 #' Returns a string summary of an AbstractDataFrame in a standardized
 #' form. For example, a standard DataFrame with 10 rows and 5 columns
-#' will be summarized as "10x5 DataFrame".
+#' will be summarized as "10×5 DataFrame".
 #'
 #' @param df::AbstractDataFrame The AbstractDataFrame to be summarized.
 #'
@@ -14,7 +14,7 @@
 #' summary(DataFrame(A = 1:10))
 function Base.summary(df::AbstractDataFrame) # -> UTF8String
     nrows, ncols = size(df)
-    return utf8(@sprintf "%dx%d %s" nrows ncols typeof(df))
+    return utf8(@sprintf("%d×%d %s", nrows, ncols, typeof(df)))
 end
 
 #' @description
