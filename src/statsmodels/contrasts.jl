@@ -103,12 +103,11 @@ function ContrastsMatrix{T}(C::AbstractContrasts, levels::Vector{T})
     n == 0 && error("empty set of levels found (need at least two to compute contrasts).")
     n == 1 && error("only one level found: $(c_levels[1]). need at least two to compute contrasts.")
     
-    not_base = [1:(baseind-1); (baseind+1):n]
-    tnames = c_lvls[not_base]
     # find index of base level. use C.base, then default (1).
     baseind = isnull(C.base) ? 1 : findfirst(c_levels, convert(eltype(levels), get(C.base)))
     baseind > 0 || error("base level $(C.base) not found in levels $c_levels.")
 
+    tnames = termnames(C, c_levels, baseind)
 
     mat = contrasts_matrix(C, baseind, n)
 
@@ -117,6 +116,10 @@ end
 
 ContrastsMatrix(C::AbstractContrasts, v::PooledDataArray) = ContrastsMatrix(C, levels(v))
 
+function termnames(C::AbstractContrasts, levels::Vector, baseind::Integer)
+    not_base = [1:(baseind-1); (baseind+1):length(levels)]
+    levels[not_base]
+end
 
 nullify(x::Nullable) = x
 nullify(x) = Nullable(x)
