@@ -370,19 +370,19 @@ function showrows(io::IO,
         end
 
         # Print table bounding line
-        write(io, '┝')
+        write(io, '├')
         for itr in 1:(rowmaxwidth + 2)
-            write(io, '━')
+            write(io, '─')
         end
-        write(io, '┿')
+        write(io, '┼')
         for j in leftcol:rightcol
             for itr in 1:(maxwidths[j] + 2)
-                write(io, '━')
+                write(io, '─')
             end
             if j < rightcol
-                write(io, '┿')
+                write(io, '┼')
             else
-                write(io, '┥')
+                write(io, '┤')
             end
         end
         write(io, '\n')
