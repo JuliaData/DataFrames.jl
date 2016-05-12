@@ -5,7 +5,7 @@ immutable ParsedCSV
     quoted::BitVector    # Was field quoted in text
 end
 
-immutable ParseOptions{S <: ByteString}
+immutable ParseOptions{S <: String}
     header::Bool
     separator::Char
     quotemarks::Vector{Char}
@@ -15,7 +15,7 @@ immutable ParseOptions{S <: ByteString}
     falsestrings::Vector{S}
     makefactors::Bool
     names::Vector{Symbol}
-    eltypes::Vector{DataType}
+    eltypes::Vector
     allowcomments::Bool
     commentmark::Char
     ignorepadding::Bool
@@ -47,7 +47,7 @@ macro skip_within_eol(io, chr, nextchr, endf)
     nextchr = esc(nextchr)
     endf = esc(endf)
     quote
-        if $chr == '\r' && $nextchr == '\n'
+        if $chr == UInt32('\r') && $nextchr == UInt32('\n')
             $chr, $nextchr, $endf = @read_peek_eof($io, $nextchr)
         end
     end
@@ -70,7 +70,7 @@ macro atnewline(chr, nextchr)
     chr = esc(chr)
     nextchr = esc(nextchr)
     quote
-        $chr == '\n' || $chr == '\r'
+        $chr == UInt32('\n') || $chr == UInt32('\r')
     end
 end
 
@@ -78,8 +78,8 @@ macro atblankline(chr, nextchr)
     chr = esc(chr)
     nextchr = esc(nextchr)
     quote
-        ($chr == '\n' || $chr == '\r') &&
-        ($nextchr == '\n' || $nextchr == '\r')
+        ($chr == UInt32('\n') || $chr == UInt32('\r')) &&
+        ($nextchr == UInt32('\n') || $nextchr == UInt32('\r'))
     end
 end
 
@@ -88,8 +88,11 @@ macro atescape(chr, nextchr, quotemarks)
     nextchr = esc(nextchr)
     quotemarks = esc(quotemarks)
     quote
-        ($chr == '\\' && ($nextchr == '\\' || $nextchr in $quotemarks)) ||
-        ($chr == $nextchr && $chr in $quotemarks)
+        (UInt32($chr) == UInt32('\\') &&
+            (UInt32($nextchr) == UInt32('\\') ||
+                UInt32($nextchr) in $quotemarks)) ||
+                    (UInt32($chr) == UInt32($nextchr) &&
+                        UInt32($chr) in $quotemarks)
     end
 end
 
@@ -97,15 +100,15 @@ macro atcescape(chr, nextchr)
     chr = esc(chr)
     nextchr = esc(nextchr)
     quote
-        $chr == '\\' &&
-        ($nextchr == 'n' ||
-         $nextchr == 't' ||
-         $nextchr == 'r' ||
-         $nextchr == 'a' ||
-         $nextchr == 'b' ||
-         $nextchr == 'f' ||
-         $nextchr == 'v' ||
-         $nextchr == '\\')
+        $chr == UInt32('\\') &&
+        ($nextchr == UInt32('n') ||
+         $nextchr == UInt32('t') ||
+         $nextchr == UInt32('r') ||
+         $nextchr == UInt32('a') ||
+         $nextchr == UInt32('b') ||
+         $nextchr == UInt32('f') ||
+         $nextchr == UInt32('v') ||
+         $nextchr == UInt32('\\'))
     end
 end
 
@@ -113,22 +116,22 @@ macro mergechr(chr, nextchr)
     chr = esc(chr)
     nextchr = esc(nextchr)
     quote
-        if $chr == '\\'
-            if $nextchr == 'n'
+        if $chr == UInt32('\\')
+            if $nextchr == UInt32('n')
                 '\n'
-            elseif $nextchr == 't'
+            elseif $nextchr == UInt32('t')
                 '\t'
-            elseif $nextchr == 'r'
+            elseif $nextchr == UInt32('r')
                 '\r'
-            elseif $nextchr == 'a'
+            elseif $nextchr == UInt32('a')
                 '\a'
-            elseif $nextchr == 'b'
+            elseif $nextchr == UInt32('b')
                 '\b'
-            elseif $nextchr == 'f'
+            elseif $nextchr == UInt32('f')
                 '\f'
-            elseif $nextchr == 'v'
+            elseif $nextchr == UInt32('v')
                 '\v'
-            elseif $nextchr == '\\'
+            elseif $nextchr == UInt32('\\')
                 '\\'
             else
                 msg = @sprintf("Invalid escape character '%s%s' encountered",
@@ -237,7 +240,7 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
                 $(if allowcomments
                     quote
                         # Ignore text inside comments completely
-                        if !in_quotes && chr == o.commentmark
+                        if !in_quotes && chr == UInt32(o.commentmark)
                             @skip_to_eol(io, chr, nextchr, endf)
 
                             # Skip the linebreak if the comment began at the start of a line
@@ -284,13 +287,13 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
                         $(if wsv quote skip_white = false end end)
                     # Finished reading a field
                     elseif $(if wsv
-                                quote chr == ' ' || chr == '\t' end
+                                quote chr == UInt32(' ') || chr == UInt32('\t') end
                             else
-                                quote chr == o.separator end
+                                quote chr == UInt32(o.separator) end
                             end)
                         $(if wsv
                             quote
-                                if !(nextchr in [' ', '\t', '\n', '\r']) && !skip_white
+                                if !(nextchr in UInt32[' ', '\t', '\n', '\r']) && !skip_white
                                     @push(n_bounds, p.bounds, n_bytes, l_bounds)
                                     @push(n_bytes, p.bytes, '\n', l_bytes)
                                     @push(n_fields, p.quoted, false, l_quoted)
@@ -324,7 +327,7 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
                         in_escape = true
                     else
                         # Exit quoted field
-                        if chr in quotemarks && !in_escape
+                        if UInt32(chr) in quotemarks && !in_escape
                             in_quotes = false
                         # Store character in buffer
                         else
@@ -349,7 +352,7 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
     end
 end
 
-function bytematch{T <: ByteString}(bytes::Vector{UInt8},
+function bytematch{T <: String}(bytes::Vector{UInt8},
                                     left::Integer,
                                     right::Integer,
                                     exemplars::Vector{T})
@@ -359,7 +362,7 @@ function bytematch{T <: ByteString}(bytes::Vector{UInt8},
         if length(exemplar) == l
             matched = true
             for i in 0:(l - 1)
-                matched &= bytes[left + i] == exemplar[1 + i]
+                matched &= bytes[left + i] == UInt32(exemplar[1 + i])
             end
             if matched
                 return true
@@ -370,8 +373,8 @@ function bytematch{T <: ByteString}(bytes::Vector{UInt8},
 end
 
 function bytestotype{N <: Integer,
-                     T <: ByteString,
-                     P <: ByteString}(::Type{N},
+                     T <: String,
+                     P <: String}(::Type{N},
                                       bytes::Vector{UInt8},
                                       left::Integer,
                                       right::Integer,
@@ -393,7 +396,7 @@ function bytestotype{N <: Integer,
     byte = bytes[index]
 
     while index > left
-        if '0' <= byte <= '9'
+        if UInt32('0') <= byte <= UInt32('9')
             value += (byte - @compat(UInt8('0'))) * power
             power *= 10
         else
@@ -403,11 +406,11 @@ function bytestotype{N <: Integer,
         byte = bytes[index]
     end
 
-    if byte == '-'
+    if byte == UInt32('-')
         return -value, left < right, false
-    elseif byte == '+'
+    elseif byte == UInt32('+')
         return value, left < right, false
-    elseif '0' <= byte <= '9'
+    elseif UInt32('0') <= byte <= UInt32('9')
         value += (byte - @compat(UInt8('0'))) * power
         return value, true, false
     else
@@ -418,8 +421,8 @@ end
 let out = Array(Float64, 1)
     global bytestotype
     function bytestotype{N <: AbstractFloat,
-                         T <: ByteString,
-                         P <: ByteString}(::Type{N},
+                         T <: String,
+                         P <: String}(::Type{N},
                                           bytes::Vector{UInt8},
                                           left::Integer,
                                           right::Integer,
@@ -448,8 +451,8 @@ let out = Array(Float64, 1)
 end
 
 function bytestotype{N <: Bool,
-                     T <: ByteString,
-                     P <: ByteString}(::Type{N},
+                     T <: String,
+                     P <: String}(::Type{N},
                                       bytes::Vector{UInt8},
                                       left::Integer,
                                       right::Integer,
@@ -475,8 +478,8 @@ function bytestotype{N <: Bool,
 end
 
 function bytestotype{N <: AbstractString,
-                     T <: ByteString,
-                     P <: ByteString}(::Type{N},
+                     T <: String,
+                     P <: String}(::Type{N},
                                       bytes::Vector{UInt8},
                                       left::Integer,
                                       right::Integer,
@@ -621,15 +624,15 @@ function builddf(rows::Integer,
                     continue
                 else
                     is_bool = false
-                    values = Array(UTF8String, rows)
+                    values = Array(String, rows)
                     i = 0
                     continue
                 end
             end
 
-            # (4) Fallback to UTF8String
+            # (4) Fallback to String
             values[i], wasparsed, missing[i] =
-              bytestotype(UTF8String,
+              bytestotype(String,
                           p.bytes,
                           left,
                           right,
@@ -744,7 +747,7 @@ function readtable!(p::ParsedCSV,
 
     if o.allowcomments || o.skipblanks
         while true
-            if o.allowcomments && nextchr == o.commentmark
+            if o.allowcomments && nextchr == UInt32(o.commentmark)
                 chr, nextchr, endf = @read_peek_eof(io, nextchr)
                 @skip_to_eol(io, chr, nextchr, endf)
             elseif o.skipblanks && @atnewline(nextchr, nextchr)
@@ -806,13 +809,13 @@ function readtable(io::IO,
                    separator::Char = ',',
                    quotemark::Vector{Char} = ['"'],
                    decimal::Char = '.',
-                   nastrings::Vector = ASCIIString["", "NA"],
-                   truestrings::Vector = ASCIIString["T", "t", "TRUE", "true"],
-                   falsestrings::Vector = ASCIIString["F", "f", "FALSE", "false"],
+                   nastrings::Vector = String["", "NA"],
+                   truestrings::Vector = String["T", "t", "TRUE", "true"],
+                   falsestrings::Vector = String["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
                    nrows::Integer = -1,
                    names::Vector = Symbol[],
-                   eltypes::Vector{DataType} = DataType[],
+                   eltypes::Vector = [],
                    allowcomments::Bool = false,
                    commentmark::Char = '#',
                    ignorepadding::Bool = true,
@@ -832,13 +835,13 @@ function readtable(io::IO,
 
     if !isempty(eltypes)
         for j in 1:length(eltypes)
-            if !(eltypes[j] in [UTF8String, Bool, Float64, Int64])
+            if !(eltypes[j] in [String, Bool, Float64, Int64])
                 msgio = IOBuffer()
                 @printf(msgio,
                         "Invalid eltype '%s' encountered.\n",
                         eltypes[j])
                 @printf(msgio,
-                        "Valid eltypes: UTF8String, Bool, Float64 or Int64")
+                        "Valid eltypes: String, Bool, Float64 or Int64")
                 error(bytestring(msgio))
             end
         end
@@ -885,13 +888,13 @@ readtable(filename, [keyword options])
 *   `separator::Char` -- Assume that fields are split by the `separator` character. If not specified, it will be guessed from the filename: `.csv` defaults to `','`, `.tsv` defaults to `'\t'`, `.wsv` defaults to `' '`.
 *   `quotemark::Vector{Char}` -- Assume that fields contained inside of two `quotemark` characters are quoted, which disables processing of separators and linebreaks. Set to `Char[]` to disable this feature and slightly improve performance. Defaults to `['"']`.
 *   `decimal::Char` -- Assume that the decimal place in numbers is written using the `decimal` character. Defaults to `'.'`.
-*   `nastrings::Vector{ASCIIString}` -- Translate any of the strings into this vector into an `NA`. Defaults to `["", "NA"]`.
-*   `truestrings::Vector{ASCIIString}` -- Translate any of the strings into this vector into a Boolean `true`. Defaults to `["T", "t", "TRUE", "true"]`.
-*   `falsestrings::Vector{ASCIIString}` -- Translate any of the strings into this vector into a Boolean `false`. Defaults to `["F", "f", "FALSE", "false"]`.
+*   `nastrings::Vector{String}` -- Translate any of the strings into this vector into an `NA`. Defaults to `["", "NA"]`.
+*   `truestrings::Vector{String}` -- Translate any of the strings into this vector into a Boolean `true`. Defaults to `["T", "t", "TRUE", "true"]`.
+*   `falsestrings::Vector{String}` -- Translate any of the strings into this vector into a Boolean `false`. Defaults to `["F", "f", "FALSE", "false"]`.
 *   `makefactors::Bool` -- Convert string columns into `PooledDataVector`'s for use as factors. Defaults to `false`.
 *   `nrows::Int` -- Read only `nrows` from the file. Defaults to `-1`, which indicates that the entire file should be read.
 *   `names::Vector{Symbol}` -- Use the values in this array as the names for all columns instead of or in lieu of the names in the file's header. Defaults to `[]`, which indicates that the header should be used if present or that numeric names should be invented if there is no header.
-*   `eltypes::Vector{DataType}` -- Specify the types of all columns. Defaults to `[]`.
+*   `eltypes::Vector` -- Specify the types of all columns. Defaults to `[]`.
 *   `allowcomments::Bool` -- Ignore all text inside comments. Defaults to `false`.
 *   `commentmark::Char` -- Specify the character that starts comments. Defaults to `'#'`.
 *   `ignorepadding::Bool` -- Ignore all whitespace on left and right sides of a field. Defaults to `true`.
@@ -899,7 +902,7 @@ readtable(filename, [keyword options])
 *   `skiprows::Vector{Int}` -- Specify the indices of lines in the input to ignore. Defaults to `[]`.
 *   `skipblanks::Bool` -- Skip any blank lines in input. Defaults to `true`.
 *   `encoding::Symbol` -- Specify the file's encoding as either `:utf8` or `:latin1`. Defaults to `:utf8`.
-*   `normalizenames::Bool` -- Ensure that column names are valid Julia identifiers. For instance this renames a column named `"a b"` to `"a_b"` which can then be accessed with `:a_b` instead of `symbol("a b")`. Defaults to `true`.
+*   `normalizenames::Bool` -- Ensure that column names are valid Julia identifiers. For instance this renames a column named `"a b"` to `"a_b"` which can then be accessed with `:a_b` instead of `Symbol("a b")`. Defaults to `true`.
 
 ### Result
 
@@ -920,13 +923,13 @@ function readtable(pathname::AbstractString;
                    separator::Char = getseparator(pathname),
                    quotemark::Vector{Char} = ['"'],
                    decimal::Char = '.',
-                   nastrings::Vector = ASCIIString["", "NA"],
-                   truestrings::Vector = ASCIIString["T", "t", "TRUE", "true"],
-                   falsestrings::Vector = ASCIIString["F", "f", "FALSE", "false"],
+                   nastrings::Vector = String["", "NA"],
+                   truestrings::Vector = String["T", "t", "TRUE", "true"],
+                   falsestrings::Vector = String["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
                    nrows::Integer = -1,
                    names::Vector = Symbol[],
-                   eltypes::Vector{DataType} = DataType[],
+                   eltypes::Vector = [],
                    allowcomments::Bool = false,
                    commentmark::Char = '#',
                    ignorepadding::Bool = true,
@@ -1186,7 +1189,7 @@ function filldf!(df::DataFrame,
 
             # NB: Assumes perfect type stability
             # Use subtypes here
-            if !(T in [Int, Float64, Bool, UTF8String])
+            if !(T in [Int, Float64, Bool, String])
                 error("Invalid eltype encountered")
             end
             c.data[i], wasparsed, c.na[i] =

@@ -368,7 +368,7 @@ end
 function _makeheaders{T<:Function}(fs::Vector{T}, cn::Vector{Symbol})
     fnames = _fnames(fs) # see other/utils.jl
     scn = [string(x) for x in cn]
-    [symbol("$(colname)_$(fname)") for fname in fnames, colname in scn][:]
+    [Symbol("$(colname)_$(fname)") for fname in fnames, colname in scn][:]
 end
 
 function _aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol})

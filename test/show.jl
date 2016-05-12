@@ -1,5 +1,7 @@
 module TestShow
     using DataFrames
+    using Compat
+    import Compat.String
     df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 
     io = IOBuffer()
@@ -25,7 +27,7 @@ module TestShow
     dfr = DataFrameRow(df, 1)
     show(io, dfr)
 
-    df = DataFrame(A = Array(UTF8String, 3))
+    df = DataFrame(A = Array(String, 3))
 
     A = DataFrames.StackedVector(Any[[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     show(io, A)

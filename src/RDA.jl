@@ -22,7 +22,7 @@ const SXPtab = @compat Dict(      # Defined in Rinternals.h
     0x0d=>"Integer",       # Array{Int32, 1}
     0x0e=>"Real",          # Array{Float64, 1}
     0x0f=>"Complex",       # Array{Complex128, 1}
-    0x10=>"String",        # Array{ASCIIString, 1}
+    0x10=>"String",        # Array{String, 1}
     0x11=>"Dot",           # dot-dot-dot object
     0x12=>"Any",           # make "any" args work
     0x13=>"List",          # generic vector, {} but with names
@@ -74,13 +74,13 @@ const R_NA_STRING = "NA"
 ##
 ##############################################################################
 
-typealias Hash Dict{ASCIIString, Any}
+typealias Hash Dict{String, Any}
 const nullhash = Hash()
 
 abstract RSEXPREC{S}             # Basic R object - symbolic expression
 
 type RSymbol <: RSEXPREC{0x01}   # Not quite the same as a Julia symbol
-    displayname::ASCIIString
+    displayname::String
 end
 
 abstract ROBJ{S} <: RSEXPREC{S}  # R object that can have attributes
@@ -103,7 +103,7 @@ type RNullableVector{T, S} <: RVEC{T, S} # R vector object with explicit NA valu
     attr::Hash                  # collection of R object attributes
 end
 
-typealias RString RNullableVector{ASCIIString,0x10}
+typealias RString RNullableVector{String,0x10}
 typealias RList RVector{Any, 0x13}  # "list" in R == Julia cell array
 
 ##############################################################################
@@ -167,7 +167,7 @@ readfloatorNA(io::RDAXDRIO, n::RVecLength) = map!(ntoh, read(io.sub, Float64, n)
 
 function readnchars(io::RDAXDRIO, n::Int32)  # a single character string
     readbytes!(io.sub, io.buf, n)
-    bytestring(pointer(io.buf), n)::ASCIIString
+    bytestring(pointer(io.buf), n)::String
 end
 
 type RDAASCIIIO{T<:IO} <: RDAIO # RDA ASCII format IO stream wrapper
@@ -207,7 +207,7 @@ type RDANativeIO{T<:IO} <: RDAIO # RDA native binary format IO stream wrapper (T
 end
 RDANativeIO{T <: IO}(io::T) = RDANativeIO{T}(io)
 
-function rdaio(io::IO, formatcode::AbstractString)
+function rdaio(io::IO, formatcode::String)
     if formatcode == "X" RDAXDRIO(io)
     elseif formatcode == "A" RDAASCIIIO(io)
     elseif formatcode == "B" RDANativeIO(io)
@@ -415,7 +415,7 @@ end
 
 read_rda(io::IO; kwoptions...) = read_rda(io, kwoptions)
 
-read_rda(fnm::AbstractString; kwoptions...) = gzopen(fnm) do io read_rda(io, kwoptions) end
+read_rda(fnm::String; kwoptions...) = gzopen(fnm) do io read_rda(io, kwoptions) end
 
 ##############################################################################
 ##
@@ -424,15 +424,15 @@ read_rda(fnm::AbstractString; kwoptions...) = gzopen(fnm) do io read_rda(io, kwo
 ##
 ##############################################################################
 
-const emptystrvec = Array(ASCIIString,0)
+const emptystrvec = Array(String,0)
 
-getattr{T}(ro::ROBJ, attrnm::ASCIIString, default::T) = haskey(ro.attr, attrnm) ? ro.attr[attrnm].data : default;
+getattr{T}(ro::ROBJ, attrnm::String, default::T) = haskey(ro.attr, attrnm) ? ro.attr[attrnm].data : default;
 
 Base.names(ro::ROBJ) = getattr(ro, "names", emptystrvec)
 
 class(ro::ROBJ) = getattr(ro, "class", emptystrvec)
 class(x) = emptystrvec
-inherits(x, clnm::ASCIIString) = any(class(x) .== clnm)
+inherits(x, clnm::String) = any(class(x) .== clnm)
 
 isdataframe(rl::RList) = inherits(rl, "data.frame")
 isfactor(ri::RInteger) = inherits(ri, "factor")
@@ -449,10 +449,10 @@ row_names(ro::ROBJ) = getattr(ro, "row.names", emptystrvec)
 ##
 ##############################################################################
 
-namask(rl::RLogical) = bitpack(rl.data .== R_NA_INT32)
-namask(ri::RInteger) = bitpack(ri.data .== R_NA_INT32)
-namask(rn::RNumeric) = bitpack([rn.data[i] === R_NA_FLOAT64 for i in 1:length(rn.data)])
-namask(rc::RComplex) = bitpack([rc.data[i].re === R_NA_FLOAT64 ||
+namask(rl::RLogical) = BitArray(rl.data .== R_NA_INT32)
+namask(ri::RInteger) = BitArray(ri.data .== R_NA_INT32)
+namask(rn::RNumeric) = BitArray([rn.data[i] === R_NA_FLOAT64 for i in 1:length(rn.data)])
+namask(rc::RComplex) = BitArray([rc.data[i].re === R_NA_FLOAT64 ||
                                 rc.data[i].im === R_NA_FLOAT64 for i in 1:length(rc.data)])
 namask(rv::RNullableVector) = rv.na
 
