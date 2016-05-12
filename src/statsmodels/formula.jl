@@ -421,12 +421,11 @@ function ModelMatrix(mf::ModelFrame)
         non_redundant = mf.non_redundant_terms[factors[:, i_term], i_term]
         ## Get cols for each eval term (either previously generated, or generating
         ## and storing as necessary)
-        for et_and_nr in zip(eterms, non_redundant)
-            haskey(eterm_cols, et_and_nr) || 
-                setindex!(eterm_cols,
-                          modelmat_cols(et_and_nr[1], mf, non_redundant=et_and_nr[2]),
-                          et_and_nr)
-            push!(term_cols, eterm_cols[et_and_nr])
+        for (et, nr) in zip(eterms, non_redundant)
+            if ! haskey(eterm_cols, (et, nr))
+                eterm_cols[(et, nr)] = modelmat_cols(et, mf, non_redundant=nr)
+            end
+            push!(term_cols, eterm_cols[(et, nr)])
         end
         push!(mm_cols, term_cols)
     end
@@ -485,12 +484,11 @@ function coefnames(mf::ModelFrame)
         eterms = mf.terms.eterms[factors[:, i_term]]
         non_redundant = mf.non_redundant_terms[factors[:, i_term], i_term]
 
-        for et_and_nr in zip(eterms, non_redundant)
-            haskey(eterm_names, et_and_nr) ||
-            setindex!(eterm_names,
-                      termnames(et_and_nr[1], mf, non_redundant=et_and_nr[2]),
-                      et_and_nr)
-            push!(names, eterm_names[et_and_nr])
+        for (et, nr) in zip(eterms, non_redundant)
+            if !haskey(eterm_names, (et, nr))
+                eterm_names[(et, nr)] = termnames(et, mf, non_redundant=nr)
+            end
+            push!(names, eterm_names[(et, nr)])
         end
         push!(term_names, names)
     end
