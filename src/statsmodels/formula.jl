@@ -37,9 +37,8 @@ type ModelFrame
     df::AbstractDataFrame
     terms::Terms
     msng::BitArray
-    ## mapping from df keys to contrasts.  Rather than specify types allowed,
-    ## leave that to modelmat_cols() to check.  Allows more seamless later extension
-    contrasts::Dict{Any, Any}
+    ## mapping from df keys to contrasts matrices
+    contrasts::Dict{Symbol, ContrastsMatrix}
     ## An eterms x terms matrix which is true for terms that need to be "promoted"
     ## to full rank in constructing a model matrx
     non_redundant_terms::Matrix{Bool}
