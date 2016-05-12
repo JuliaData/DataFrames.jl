@@ -287,12 +287,8 @@ function check_non_redundancy(trms::Terms, df::AbstractDataFrame)
     return to_promote
 end
 
-## Goal here is to allow specification of _either_ a "naked" contrast type,
-## or an instantiated contrast object itself.  This might be achieved in a more
-## julian way by overloading call for c::AbstractContrasts to just return c.
-evaluateContrasts(c::AbstractContrasts, col::AbstractDataVector) = ContrastsMatrix(c, col)
-evaluateContrasts{C <: AbstractContrasts}(c::Type{C}, col::AbstractDataVector) = ContrastsMatrix(c(), col)
-evaluateContrasts(c::ContrastsMatrix, col::AbstractDataVector) = c
+
+const DEFAULT_CONTRASTS = TreatmentContrasts
 
 function ModelFrame(trms::Terms, d::AbstractDataFrame;
                     contrasts::Dict = Dict())
@@ -307,10 +303,10 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
     evaledContrasts = Dict()
     for (term, col) in eachcol(df)
         is_categorical(col) || continue
-        evaledContrasts[term] = evaluateContrasts(haskey(contrasts, term) ?
-                                                  contrasts[term] :
-                                                  TreatmentContrasts,
-                                                  col)
+        evaledContrasts[term] = ContrastsMatrix(haskey(contrasts, term) ?
+                                                contrasts[term] :
+                                                DEFAULT_CONTRASTS,
+                                                col)
     end
 
     non_redundants = check_non_redundancy(trms, df)
@@ -323,7 +319,7 @@ ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), 
 
 ## modify contrasts in place
 function setcontrasts!(mf::ModelFrame, new_contrasts::Dict)
-    new_contrasts = [ col => evaluateContrasts(contr, mf.df[col])
+    new_contrasts = [ col => ContrastsMatrix(contr, mf.df[col])
                       for (col, contr) in filter((k,v)->haskey(mf.df, k), new_contrasts) ]
                       
     mf.contrasts = merge(mf.contrasts, new_contrasts)
@@ -436,7 +432,6 @@ function ModelMatrix(mf::ModelFrame)
     mm_col_term_nums = vcat([fill(i_term, nc(tc)) for (i_term,tc) in enumerate(mm_cols)]...)
 
     ModelMatrix{Float64}(mm, mm_col_term_nums)
-
 end
 
 
@@ -494,7 +489,6 @@ function coefnames(mf::ModelFrame)
     end
 
     mapreduce(expandtermnames, vcat, term_names)
-    
 end
 
 function Formula(t::Terms)

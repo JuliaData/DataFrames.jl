@@ -117,6 +117,11 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::Vector)
 end
 
 ContrastsMatrix(C::AbstractContrasts, v::PooledDataArray) = ContrastsMatrix(C, levels(v))
+ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, col::PooledDataArray) = ContrastsMatrix(c(), col)
+ContrastsMatrix(c::ContrastsMatrix, col::PooledDataArray) =
+    isempty(symdiff(c.levels, levels(col))) ?
+    c :
+    error("mismatch between levels in ContrastsMatrix and data:\nData levels: $(levels(col))\nContrast levels $(c.levels)")
 
 function termnames(C::AbstractContrasts, levels::Vector, baseind::Integer)
     not_base = [1:(baseind-1); (baseind+1):length(levels)]
