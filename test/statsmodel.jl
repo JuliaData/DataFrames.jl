@@ -69,6 +69,11 @@ m2 = fit(DummyMod, f2, d)
 ## predict w/ new data missing levels
 @test predict(m2, d[2:4, :]) == predict(m2)[2:4]
 
+## predict w/ new data with _extra_ levels (throws an error)
+d3 = deepcopy(d)
+d3[1, :x1] = 0
+d3[:x1p] = PooledDataArray(d3[:x1])
+@test_throws ErrorException predict(m2, d3)
 
 ## Another dummy model type to test fall-through show method
 immutable DummyModTwo <: RegressionModel

@@ -116,12 +116,22 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::Vector)
     ContrastsMatrix(mat, tnames, c_levels, contrasts)
 end
 
+# Methods for constructing ContrastsMatrix from data. These are called in
+# ModelFrame constructor and setcontrasts!.
+
 ContrastsMatrix(C::AbstractContrasts, v::PooledDataArray) = ContrastsMatrix(C, levels(v))
+# instantiate Type{C<:AbstractContrasts}
 ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, col::PooledDataArray) = ContrastsMatrix(c(), col)
+# given an existing ContrastsMatrix, check that all of the levels present in the
+# data are present in the contrasts. Note that this behavior is different from the
+# ContrastsMatrix constructor, which requires that the levels be exactly the same.
+# This method exists to support things like `predict` that can operate on new data
+# which may contain only a subset of the original data's levels. Checking here
+# (instead of in `modelmat_cols`) allows an informative error message.
 ContrastsMatrix(c::ContrastsMatrix, col::PooledDataArray) =
-    isempty(symdiff(c.levels, levels(col))) ?
+    isempty(setdiff(levels(col), c.levels)) ?
     c :
-    error("mismatch between levels in ContrastsMatrix and data:\nData levels: $(levels(col))\nContrast levels $(c.levels)")
+    error("there are levels in data that are not in ContrastsMatrix: $(setdiff(levels(col), c.levels))\n  Data levels: $(levels(col))\n  Contrast levels $(c.levels)")
 
 function termnames(C::AbstractContrasts, levels::Vector, baseind::Integer)
     not_base = [1:(baseind-1); (baseind+1):length(levels)]
