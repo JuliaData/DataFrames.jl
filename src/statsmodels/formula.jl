@@ -258,8 +258,6 @@ can_promote(::Any) = false
 ## of each term needs to be promoted.
 function check_non_redundancy(trms::Terms, df::AbstractDataFrame)
 
-    ## This can be checked using the .factors field of the terms, which is an
-    ## evaluation terms x terms matrix.
     (n_eterms, n_terms) = size(trms.factors)
     to_promote = falses(n_eterms, n_terms)
     encountered_columns = Vector{eltype(trms.factors)}[]
@@ -272,36 +270,23 @@ function check_non_redundancy(trms::Terms, df::AbstractDataFrame)
         for i_eterm in 1:n_eterms
             ## only need to check eterms that are included and can be promoted
             ## (e.g., categorical variables that expand to multiple mm columns)
-            if round(Bool, trms.factors[i_eterm, i_term]) && can_promote(df[trms.eterms[i_eterm]])
+            if Bool(trms.factors[i_eterm, i_term]) && can_promote(df[trms.eterms[i_eterm]])
                 dropped = trms.factors[:,i_term]
                 dropped[i_eterm] = 0
-                ## short circuiting check for whether the version of this term
-                ## with the current eterm dropped has been encountered already
-                ## (and hence does not need to be expanded
-                is_redundant = false
-                for enc in encountered_columns
-                    if dropped == enc
-                        is_redundant = true
-                        break
-                    end
-                end
-                ## more concisely, but with non-short-circuiting any:
-                ##is_redundant = any([dropped == enc for enc in encountered_columns])
 
-                if !is_redundant
+                if findfirst(encountered_columns, dropped) == 0
                     to_promote[i_eterm, i_term] = true
                     push!(encountered_columns, dropped)
                 end
 
             end
-            ## once we've checked all the eterms in this term, add it to the list
-            ## of encountered terms/columns
         end
+        ## once we've checked all the eterms in this term, add it to the list
+        ## of encountered terms/columns
         push!(encountered_columns, trms.factors[:, i_term])
     end
 
     return to_promote
-    
 end
 
 ## Goal here is to allow specification of _either_ a "naked" contrast type,
@@ -333,7 +318,6 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
                                                   col)
     end
 
-    ## Check whether or not
     non_redundants = check_non_redundancy(trms, df)
 
     ModelFrame(df, trms, msng, evaledContrasts, non_redundants)
