@@ -364,7 +364,9 @@ modelmat_cols(v::Vector) = convert(Vector{Float64}, v)
 function modelmat_cols(name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, name)
         modelmat_cols(mf.df[name],
-             non_redundant ? promote_contrast(mf.contrasts[name]) : mf.contrasts[name])
+                      non_redundant ?
+                      ContrastsMatrix{DummyContrasts}(mf.contrasts[name]) :
+                      mf.contrasts[name])
     else
         modelmat_cols(mf.df[name])
     end
@@ -466,7 +468,9 @@ termnames(term::Symbol, col) = [string(term)]
 function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, term)
         termnames(term, mf.df[term], 
-             non_redundant ? promote_contrast(mf.contrasts[term]) : mf.contrasts[term])
+                  non_redundant ?
+                  ContrastsMatrix{DummyContrasts}(mf.contrasts[term]) :
+                  mf.contrasts[term])
     else
         termnames(term, mf.df[term])
     end

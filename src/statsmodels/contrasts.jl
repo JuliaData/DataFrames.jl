@@ -70,7 +70,7 @@ contrasts_matrix(C::MyContrasts, baseind, n) = ...
 abstract AbstractContrasts
 
 # Contrasts + Levels (usually from data) = ContrastsMatrix
-type ContrastsMatrix{T, S <: AbstractContrasts}
+type ContrastsMatrix{S <: AbstractContrasts, T}
     matrix::Matrix{Float64}
     termnames::Vector{T}
     levels::Vector{T}
@@ -85,7 +85,7 @@ Compute contrasts matrix for a given set of categorical data levels.
 If levels are specified in the `AbstractContrasts`, those will be used, and likewise
 for the base level (which defaults to the first level).
 """
-function ContrastsMatrix{T,C <: AbstractContrasts}(contrasts::C, levels::Vector{T})
+function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::Vector)
 
     # if levels are defined on contrasts, use those, validating that they line up.
     # what does that mean? either:
@@ -160,14 +160,8 @@ end
 
 ContrastsMatrix{T}(C::DummyContrasts, lvls::Vector{T}) = ContrastsMatrix(eye(Float64, length(lvls)), lvls, lvls, C)
 
-# Default for promoting contrasts to full rank is to convert to dummy contrasts
-# promote_contrast(C::AbstractContrasts) = DummyContrasts(eye(Float64, length(C.levels)), C.levels, C.levels)
-
-"Promote a contrast to full rank"
-promote_contrast(C::ContrastsMatrix) = ContrastsMatrix(DummyContrasts(), C.levels)
-
-
-
+"Promote contrasts matrix to full rank version"
+Base.convert(::Type{ContrastsMatrix{DummyContrasts}}, C::ContrastsMatrix) = ContrastsMatrix(DummyContrasts(), C.levels)
 
 """
     TreatmentContrasts
