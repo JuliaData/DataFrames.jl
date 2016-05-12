@@ -241,10 +241,8 @@ function dropUnusedLevels!(da::PooledDataArray)
 end
 dropUnusedLevels!(x) = x
 
-## whether or not a column of a particular type can be "promoted" to full rank
-## (only true of factors)
-can_promote(::PooledDataArray) = true
-can_promote(::Any) = false
+is_categorical(::PooledDataArray) = true
+is_categorical(::Any) = false
 
 ## Check for non-redundancy of columns.  For instance, if x is a factor with two
 ## levels, it should be expanded into two columns in y~0+x but only one column
@@ -270,7 +268,7 @@ function check_non_redundancy(trms::Terms, df::AbstractDataFrame)
         for i_eterm in 1:n_eterms
             ## only need to check eterms that are included and can be promoted
             ## (e.g., categorical variables that expand to multiple mm columns)
-            if Bool(trms.factors[i_eterm, i_term]) && can_promote(df[trms.eterms[i_eterm]])
+            if Bool(trms.factors[i_eterm, i_term]) && is_categorical(df[trms.eterms[i_eterm]])
                 dropped = trms.factors[:,i_term]
                 dropped[i_eterm] = 0
 
@@ -296,9 +294,6 @@ evaluateContrasts(c::AbstractContrasts, col::AbstractDataVector) = ContrastsMatr
 evaluateContrasts{C <: AbstractContrasts}(c::Type{C}, col::AbstractDataVector) = ContrastsMatrix(c(), col)
 evaluateContrasts(c::ContrastsMatrix, col::AbstractDataVector) = c
 
-needsContrasts(::PooledDataArray) = true
-needsContrasts(::Any) = false
-
 function ModelFrame(trms::Terms, d::AbstractDataFrame;
                     contrasts::Dict = Dict())
     df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
@@ -311,7 +306,7 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
     ## as the default)
     evaledContrasts = Dict()
     for (term, col) in eachcol(df)
-        needsContrasts(col) || continue
+        is_categorical(col) || continue
         evaledContrasts[term] = evaluateContrasts(haskey(contrasts, term) ?
                                                   contrasts[term] :
                                                   TreatmentContrasts,
