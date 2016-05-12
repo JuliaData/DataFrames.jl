@@ -48,8 +48,8 @@ for (modeltype, dfmodeltype) in ((:StatisticalModel, DataFrameStatisticalModel),
                                  (:RegressionModel, DataFrameRegressionModel))
     @eval begin
         function StatsBase.fit{T<:$modeltype}(::Type{T}, f::Formula, df::AbstractDataFrame,
-                                              args...; kwargs...)
-            mf = ModelFrame(f, df)
+                                              args...; contrasts::Dict = Dict(), kwargs...)
+            mf = ModelFrame(f, df, contrasts=contrasts)
             mm = ModelMatrix(mf)
             y = model_response(mf)
             $dfmodeltype(fit(T, mm.m, y, args...; kwargs...), mf, mm)
