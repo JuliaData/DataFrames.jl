@@ -85,17 +85,17 @@ Compute contrasts matrix for a given set of categorical data levels.
 If levels are specified in the `AbstractContrasts`, those will be used, and likewise
 for the base level (which defaults to the first level).
 """
-function ContrastsMatrix{T}(C::AbstractContrasts, levels::Vector{T})
+function ContrastsMatrix{T,C <: AbstractContrasts}(contrasts::C, levels::Vector{T})
 
-    # if levels are defined on C, use those, validating that they line up.
+    # if levels are defined on contrasts, use those, validating that they line up.
     # what does that mean? either:
     #
-    # 1. C.levels == levels (best case)
+    # 1. contrasts.levels == levels (best case)
     # 2. data levels missing from contrast: would generate empty/undefined rows. 
     #    better to filter data frame first
     # 3. contrast levels missing from data: would have empty columns, generate a
     #    rank-deficient model matrix.
-    c_levels = oftype(levels, get(C.levels, levels))
+    c_levels = oftype(levels, get(contrasts.levels, levels))
     mismatched_levels = symdiff(c_levels, levels)
     isempty(mismatched_levels) || error("contrasts levels not found in data or vice-versa: $mismatched_levels.\nData levels: $levels.\nContrast levels: $c_levels")
 
@@ -103,15 +103,17 @@ function ContrastsMatrix{T}(C::AbstractContrasts, levels::Vector{T})
     n == 0 && error("empty set of levels found (need at least two to compute contrasts).")
     n == 1 && error("only one level found: $(c_levels[1]). need at least two to compute contrasts.")
     
-    # find index of base level. use C.base, then default (1).
-    baseind = isnull(C.base) ? 1 : findfirst(c_levels, convert(eltype(levels), get(C.base)))
-    baseind > 0 || error("base level $(C.base) not found in levels $c_levels.")
+    # find index of base level. use contrasts.base, then default (1).
+    baseind = isnull(contrasts.base) ?
+              1 :
+              findfirst(c_levels, convert(eltype(levels), get(contrasts.base)))
+    baseind > 0 || error("base level $(contrasts.base) not found in levels $c_levels.")
 
-    tnames = termnames(C, c_levels, baseind)
+    tnames = termnames(contrasts, c_levels, baseind)
 
-    mat = contrasts_matrix(C, baseind, n)
+    mat = contrasts_matrix(contrasts, baseind, n)
 
-    ContrastsMatrix(mat, tnames, c_levels, C)
+    ContrastsMatrix(mat, tnames, c_levels, contrasts)
 end
 
 ContrastsMatrix(C::AbstractContrasts, v::PooledDataArray) = ContrastsMatrix(C, levels(v))
