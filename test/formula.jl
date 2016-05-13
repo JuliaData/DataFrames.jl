@@ -379,26 +379,97 @@ d[:n] = 1.:8
 
 
 ## No intercept
-mf = ModelFrame(n ~ 0 + x, d[1:2,:], contrasts=cs)
-@test ModelMatrix(mf).m == [1 0; 0 1]
+mf = ModelFrame(n ~ 0 + x, d, contrasts=cs)
+@test ModelMatrix(mf).m == [1 0
+                            0 1
+                            1 0
+                            0 1
+                            1 0
+                            0 1
+                            1 0
+                            0 1]
 @test coefnames(mf) == ["x: a", "x: b"]
 
 ## No first-order term for interaction
-mf = ModelFrame(n ~ 1 + x + x&y, d[1:4, :], contrasts=cs)
-@test ModelMatrix(mf).m[:, 2:end] == [-1 -1 0
-                                      1  0 -1
-                                      -1 1  0
-                                      1  0  1]
+mf = ModelFrame(n ~ 1 + x + x&y, d, contrasts=cs)
+@test ModelMatrix(mf).m[:, 2:end] == [-1 -1  0
+                                       1  0 -1
+                                      -1  1  0
+                                       1  0  1
+                                      -1 -1  0
+                                       1  0 -1
+                                      -1  1  0
+                                       1  0  1]
 @test coefnames(mf) == ["(Intercept)", "x: b", "x: a & y: d", "x: b & y: d"]
 
 ## When both terms of interaction are non-redundant:
-mf = ModelFrame(n ~ 0 + x&y, d[1:4, :], contrasts=cs)
+mf = ModelFrame(n ~ 0 + x&y, d, contrasts=cs)
 @test ModelMatrix(mf).m == [1 0 0 0
+                            0 1 0 0
+                            0 0 1 0
+                            0 0 0 1
+                            1 0 0 0
                             0 1 0 0
                             0 0 1 0
                             0 0 0 1]
 @test coefnames(mf) == ["x: a & y: c", "x: b & y: c",                             
                         "x: a & y: d", "x: b & y: d"]
+
+# only a three-way interaction: every term is promoted.
+mf = ModelFrame(n ~ 0 + x&y&z, d, contrasts=cs)
+@test ModelMatrix(mf).m == eye(8)
+
+# two two-way interactions, with no lower-order term. both are promoted in
+# first (both x and y), but only the old term (x) in the second (because
+# dropping x gives z which isn't found elsewhere, but dropping z gives x
+# which is found (implicitly) in the promoted interaction x&y).
+mf = ModelFrame(n ~ 0 + x&y + x&z, d, contrasts=cs)
+@test ModelMatrix(mf).m == [1 0 0 0 -1  0
+                            0 1 0 0  0 -1
+                            0 0 1 0 -1  0
+                            0 0 0 1  0 -1
+                            1 0 0 0  1  0
+                            0 1 0 0  0  1
+                            0 0 1 0  1  0
+                            0 0 0 1  0  1]
+@test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
+                        "x: a & y: d", "x: b & y: d",
+                        "x: a & z: f", "x: b & z: f"]
+
+# ...and adding a three-way interaction, only the shared term (x) is promoted.
+# this is because dropping x gives y&z which isn't present, but dropping y or z
+# gives x&z or x&z respectively, which are both present.
+mf = ModelFrame(n ~ 0 + x&y + x&z + x&y&z, d, contrasts=cs)
+@test ModelMatrix(mf).m == [1 0 0 0 -1  0  1  0
+                            0 1 0 0  0 -1  0  1
+                            0 0 1 0 -1  0 -1  0
+                            0 0 0 1  0 -1  0 -1
+                            1 0 0 0  1  0 -1  0
+                            0 1 0 0  0  1  0 -1
+                            0 0 1 0  1  0  1  0
+                            0 0 0 1  0  1  0  1]
+@test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
+                        "x: a & y: d", "x: b & y: d",
+                        "x: a & z: f", "x: b & z: f",
+                        "x: a & y: d & z: f", "x: b & y: d & z: f"]
+
+# two two-way interactions, with common lower-order term. the common term x is
+# promoted in both (along with lower-order term), because in every case, when
+# x is dropped, the remaining terms (1, y, and z) aren't present elsewhere.
+mf = ModelFrame(n ~ 0 + x + x&y + x&z, d, contrasts=cs)
+@test ModelMatrix(mf).m == [1 0 -1  0 -1  0
+                            0 1  0 -1  0 -1
+                            1 0  1  0 -1  0
+                            0 1  0  1  0 -1
+                            1 0 -1  0  1  0
+                            0 1  0 -1  0  1
+                            1 0  1  0  1  0
+                            0 1  0  1  0  1]
+@test coefnames(mf) == ["x: a", "x: b",
+                        "x: a & y: d", "x: b & y: d",
+                        "x: a & z: f", "x: b & z: f"]
+
+
 
 ## FAILS: When both terms are non-redundant and intercept is PRESENT
 ## (not fully redundant). Ideally, would drop last column. Might make sense
