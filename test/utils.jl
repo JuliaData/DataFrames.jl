@@ -17,7 +17,11 @@ module TestUtils
     # Check that reserved words are up to date
     f = "$JULIA_HOME/../../src/julia-parser.scm"
     if isfile(f)
-        r1 = r"define reserved-words '\(([^)]+)"
+        if VERSION >= v"0.5.0-dev+3678"
+            r1 = r"define initial-reserved-words '\(([^)]+)"
+        else
+            r1 = r"define reserved-words '\(([^)]+)"
+        end
         r2 = r"define \(parse-block s(?: \([^)]+\))?\)\s+\(parse-Nary s (?:parse-eq '\([^(]*|down '\([^)]+\) '[^']+ ')\(([^)]+)"
         body = readstring(f)
         m1, m2 = match(r1, body), match(r2, body)

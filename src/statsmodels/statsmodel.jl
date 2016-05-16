@@ -24,7 +24,7 @@ macro delegate(source, targets)
     for i in 1:n
         funcname = esc(funcnames[i])
         f = quote
-            ($funcname)(a::($typename), args...; kwargs...) = ($funcname)(a.($fieldname), args...; kwargs...)
+            ($funcname)(a::($typename), args...; kwargs...) = ($funcname)(getfield(a, $fieldname), args...; kwargs...)
         end
         push!(result.args[2].args, f)
     end

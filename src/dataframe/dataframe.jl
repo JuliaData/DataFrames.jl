@@ -297,7 +297,7 @@ function isnextcol(df::DataFrame, col_ind::Real)
 end
 
 function nextcolname(df::DataFrame)
-    return symbol(string("x", ncol(df) + 1))
+    return @compat(Symbol(string("x", ncol(df) + 1)))
 end
 
 # Will automatically add a new column if needed
@@ -776,7 +776,7 @@ end
 # TODO: Deprecate or change for being too inconsistent with other pool methods
 function pool!(df::DataFrame)
     for i in 1:size(df, 2)
-        if eltype(df[i]) <: AbstractString
+        if eltype(df[i]) <: String
             df[i] = pool(df[i])
         end
     end
@@ -816,7 +816,7 @@ function _dataframe_from_associative(dnames, d::Associative)
             throw(ArgumentError("All columns in Dict must have the same length"))
         end
         columns[j] = DataArray(col)
-        colnames[j] = symbol(name)
+        colnames[j] = Symbol(name)
     end
     return DataFrame(columns, Index(colnames))
 end

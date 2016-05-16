@@ -38,7 +38,7 @@ let
         ourshowcompact(io, x)
         return position(io)
     end
-    ourstrwidth(x::AbstractString) = strwidth(x) + 2 # -> Int
+    ourstrwidth(x::String) = strwidth(x) + 2 # -> Int
     myconv = VERSION < v"0.4-" ? convert : Base.unsafe_convert
     ourstrwidth(s::Symbol) =
         @compat Int(ccall(:u8_strwidth,
@@ -63,7 +63,7 @@ end
 #' ourshowcompact(STDOUT, "abc")
 #' ourshowcompact(STDOUT, 10000)
 ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Void
-ourshowcompact(io::IO, x::AbstractString) = showcompact(io, x) # -> Void
+ourshowcompact(io::IO, x::String) = showcompact(io, x) # -> Void
 ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Void
 
 #' @description
@@ -85,7 +85,7 @@ ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Void
 #'        chunk of the AbstractDataFrame that would be rendered to IO. Can
 #'        be empty if the AbstractDataFrame would be printed without any
 #'        ellipses.
-#' @param rowlabel::AbstractString The label that will be used when rendered the
+#' @param rowlabel::String The label that will be used when rendered the
 #'        numeric ID's of each row. Typically, this will be set to "Row".
 #'
 #' @returns widths::Vector{Int} The maximum string widths required to render
@@ -328,7 +328,7 @@ function showrows(io::IO,
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
                   splitchunks::Bool = false,
-                  rowlabel::Symbol = symbol("Row"),
+                  rowlabel::Symbol = @compat(Symbol("Row")),
                   displaysummary::Bool = true) # -> Void
     ncols = size(df, 2)
 
@@ -444,7 +444,7 @@ end
 function Base.show(io::IO,
                    df::AbstractDataFrame,
                    splitchunks::Bool = true,
-                   rowlabel::Symbol = symbol("Row"),
+                   rowlabel::Symbol = @compat(Symbol("Row")),
                    displaysummary::Bool = true) # -> Void
     nrows = size(df, 1)
     dsize = displaysize(io)
@@ -522,7 +522,7 @@ end
 function Base.showall(io::IO,
                       df::AbstractDataFrame,
                       splitchunks::Bool = false,
-                      rowlabel::Symbol = symbol("Row"),
+                      rowlabel::Symbol = @compat(Symbol("Row")),
                       displaysummary::Bool = true) # -> Void
     rowindices1 = 1:size(df, 1)
     rowindices2 = 1:0
@@ -580,7 +580,7 @@ function showcols(io::IO, df::AbstractDataFrame) # -> Void
     metadata = DataFrame(Name = _names(df),
                          Eltype = eltypes(df),
                          Missing = colmissing(df))
-    showall(io, metadata, true, symbol("Col #"), false)
+    showall(io, metadata, true, @compat(Symbol("Col #")), false)
     return
 end
 

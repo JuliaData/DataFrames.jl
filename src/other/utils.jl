@@ -9,15 +9,15 @@ if VERSION >= v"0.4.0-dev+757"
     push!(RESERVED_WORDS, "stagedfunction")
 end
 
-function identifier(s::AbstractString)
+function identifier(s::String)
     s = normalize_string(s)
     if !isidentifier(s)
         s = makeidentifier(s)
     end
-    symbol(in(s, RESERVED_WORDS) ? "_"*s : s)
+    @compat(Symbol(in(s, RESERVED_WORDS) ? "_"*s : s))
 end
 
-function makeidentifier(s::AbstractString)
+function makeidentifier(s::String)
     i = start(s)
     done(s, i) && return "x"
 
@@ -61,7 +61,7 @@ function make_unique(names::Vector{Symbol})
         nm = names[i]
         k = 1
         while true
-            newnm = symbol("$(nm)_$k")
+            newnm = Symbol("$(nm)_$k")
             if !in(newnm, seen)
                 names[i] = newnm
                 push!(seen, newnm)
@@ -89,7 +89,7 @@ end
 function gennames(n::Integer)
     res = Array(Symbol, n)
     for i in 1:n
-        res[i] = symbol(@sprintf "x%d" i)
+        res[i] = Symbol(@sprintf "x%d" i)
     end
     return res
 end

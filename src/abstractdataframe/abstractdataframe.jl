@@ -165,7 +165,7 @@ rename(f::Function, df::AbstractDataFrame)
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-rename(x -> symbol(uppercase(string(x))), df)
+rename(x -> @compat(Symbol)(uppercase(string(x))), df)
 rename(df, @compat(Dict(:i=>:A, :x=>:X)))
 rename(df, :y, :Y)
 rename!(df, @compat(Dict(:i=>:A, :x=>:X)))

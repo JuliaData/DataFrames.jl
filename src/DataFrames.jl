@@ -9,6 +9,7 @@ module DataFrames
 ##############################################################################
 
 using Compat
+import Compat.String
 using Reexport
 @reexport using StatsBase
 @reexport using DataArrays

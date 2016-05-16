@@ -155,7 +155,7 @@ function add_names(ind::Index, add_ind::Index)
         nm = u[i]
         k = 1
         while true
-            newnm = symbol("$(nm)_$k")
+            newnm = Symbol("$(nm)_$k")
             if !in(newnm, seen)
                 u[i] = newnm
                 push!(seen, newnm)
