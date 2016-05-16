@@ -364,7 +364,6 @@
 <h2 id="joins">Joins</h2>
 <p><a id='Base.join' href='#Base.join'>#</a>
 <strong><code>Base.join</code></strong> &mdash; <em>Function</em>.</p>
-<hr />
 <p>Join two DataFrames</p>
 <div class="codehilite"><pre><span></span><span class="n">join</span><span class="p">(</span><span class="n">df1</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span>
      <span class="n">df2</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">;</span>
@@ -373,11 +372,11 @@
 </pre></div>
 
 
-<h3 id="arguments">Arguments</h3>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>df1</code>, <code>df2</code> : the two AbstractDataFrames to be joined</li>
 </ul>
-<h3 id="keyword-arguments">Keyword Arguments</h3>
+<p><strong>Keyword Arguments</strong></p>
 <ul>
 <li>
 <p><code>on</code> : a Symbol or Vector{Symbol}, the column(s) used as keys when   joining; required argument except for <code>kind = :cross</code></p>
@@ -396,11 +395,11 @@
 <li><code>:cross</code> : a full Cartesian product of the key combinations; every     row of <code>df1</code> is matched with every row of <code>df2</code></li>
 </ul>
 <p><code>NA</code>s are filled in where needed to complete joins.</p>
-<h3 id="result">Result</h3>
+<p><strong>Result</strong></p>
 <ul>
 <li><code>::DataFrame</code> : the joined DataFrame </li>
 </ul>
-<h3 id="examples">Examples</h3>
+<p><strong>Examples</strong></p>
 <div class="codehilite"><pre><span></span><span class="n">name</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">Name</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;John Doe&quot;</span><span class="p">,</span> <span class="s">&quot;Jane Doe&quot;</span><span class="p">,</span> <span class="s">&quot;Joe Blogs&quot;</span><span class="p">])</span>
 <span class="n">job</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">Job</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Lawyer&quot;</span><span class="p">,</span> <span class="s">&quot;Doctor&quot;</span><span class="p">,</span> <span class="s">&quot;Farmer&quot;</span><span class="p">])</span>
 
@@ -414,17 +413,15 @@
 </pre></div>
 
 
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/abstractdataframe/join.jl#L136' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/abstractdataframe/join.jl#L136-188' class='documenter-source'>source</a><br></p>
 <p><a id='Reshaping-1'></a></p>
 <h2 id="reshaping">Reshaping</h2>
 <p><a id='DataFrames.melt' href='#DataFrames.melt'>#</a>
 <strong><code>DataFrames.melt</code></strong> &mdash; <em>Function</em>.</p>
-<hr />
 <p>Stacks a DataFrame; convert from a wide to long format; see <code>stack</code>.</p>
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/abstractdataframe/reshape.jl#L105' class='documenter-source'>source</a><br>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/abstractdataframe/reshape.jl#L105-108' class='documenter-source'>source</a><br>
 <a id='DataFrames.stack' href='#DataFrames.stack'>#</a>
 <strong><code>DataFrames.stack</code></strong> &mdash; <em>Function</em>.</p>
-<hr />
 <p>Stacks a DataFrame; convert from a wide to long format</p>
 <div class="codehilite"><pre><span></span><span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">measure_vars</span><span class="p">,</span> <span class="n">id_vars</span><span class="p">)</span>
 <span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">measure_vars</span><span class="p">)</span>
@@ -434,7 +431,7 @@
 </pre></div>
 
 
-<h3 id="arguments_1">Arguments</h3>
+<p><strong>Arguments</strong></p>
 <ul>
 <li>
 <p><code>df</code> : the AbstractDataFrame to be stacked</p>
@@ -447,12 +444,12 @@
 </li>
 </ul>
 <p>If neither <code>measure_vars</code> or <code>id_vars</code> are given, <code>measure_vars</code> defaults to all floating point columns.</p>
-<h3 id="result_1">Result</h3>
+<p><strong>Result</strong></p>
 <ul>
 <li><code>::DataFrame</code> : the long-format dataframe with column <code>:value</code>   holding the values of the stacked columns (<code>measure_vars</code>), with   column <code>:variable</code> a Vector of Symbols with the <code>measure_vars</code> name,   and with columns for each of the <code>id_vars</code>.</li>
 </ul>
 <p>See also <code>stackdf</code> and <code>meltdf</code> for stacking methods that return a view into the original DataFrame. See <code>unstack</code> for converting from long to wide format.</p>
-<h3 id="examples_1">Examples</h3>
+<p><strong>Examples</strong></p>
 <div class="codehilite"><pre><span></span><span class="n">d1</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
                <span class="n">b</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
                <span class="n">c</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span>
@@ -465,10 +462,9 @@
 </pre></div>
 
 
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/abstractdataframe/reshape.jl#L20' class='documenter-source'>source</a><br>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/abstractdataframe/reshape.jl#L20-74' class='documenter-source'>source</a><br>
 <a id='DataFrames.unstack' href='#DataFrames.unstack'>#</a>
 <strong><code>DataFrames.unstack</code></strong> &mdash; <em>Function</em>.</p>
-<hr />
 <p>Unstacks a DataFrame; convert from a long to wide format</p>
 <div class="codehilite"><pre><span></span><span class="n">unstack</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">rowkey</span><span class="p">,</span> <span class="n">colkey</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 <span class="n">unstack</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">colkey</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -476,7 +472,7 @@
 </pre></div>
 
 
-<h3 id="arguments_2">Arguments</h3>
+<p><strong>Arguments</strong></p>
 <ul>
 <li>
 <p><code>df</code> : the AbstractDataFrame to be unstacked</p>
@@ -491,11 +487,11 @@
 <p><code>value</code> : the value column, defaults to <code>:value</code></p>
 </li>
 </ul>
-<h3 id="result_2">Result</h3>
+<p><strong>Result</strong></p>
 <ul>
 <li><code>::DataFrame</code> : the wide-format dataframe</li>
 </ul>
-<h3 id="examples_2">Examples</h3>
+<p><strong>Examples</strong></p>
 <div class="codehilite"><pre><span></span><span class="n">wide</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">id</span> <span class="o">=</span> <span class="mi">1</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span>
                  <span class="n">a</span>  <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
                  <span class="n">b</span>  <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
@@ -510,10 +506,9 @@
 
 
 <p>Note that there are some differences between the widened results above.</p>
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/abstractdataframe/reshape.jl#L123' class='documenter-source'>source</a><br>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/abstractdataframe/reshape.jl#L123-165' class='documenter-source'>source</a><br>
 <a id='DataFrames.stackdf' href='#DataFrames.stackdf'>#</a>
 <strong><code>DataFrames.stackdf</code></strong> &mdash; <em>Function</em>.</p>
-<hr />
 <p>A stacked view of a DataFrame (long format)</p>
 <p>Like <code>stack</code> and <code>melt</code>, but a view is returned rather than data copies.</p>
 <div class="codehilite"><pre><span></span><span class="n">stackdf</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">measure_vars</span><span class="p">,</span> <span class="n">id_vars</span><span class="p">)</span>
@@ -523,7 +518,7 @@
 </pre></div>
 
 
-<h3 id="arguments_3">Arguments</h3>
+<p><strong>Arguments</strong></p>
 <ul>
 <li>
 <p><code>df</code> : the wide AbstractDataFrame</p>
@@ -535,12 +530,12 @@
 <p><code>id_vars</code> : the identifier columns that are repeated during   stacking, a normal column indexing type; for <code>stack</code> defaults to all   variables that are not <code>measure_vars</code></p>
 </li>
 </ul>
-<h3 id="result_3">Result</h3>
+<p><strong>Result</strong></p>
 <ul>
 <li><code>::DataFrame</code> : the long-format dataframe with column <code>:value</code>   holding the values of the stacked columns (<code>measure_vars</code>), with   column <code>:variable</code> a Vector of Symbols with the <code>measure_vars</code> name,   and with columns for each of the <code>id_vars</code>.</li>
 </ul>
 <p>The result is a view because the columns are special AbstractVectors that return indexed views into the original DataFrame.</p>
-<h3 id="examples_3">Examples</h3>
+<p><strong>Examples</strong></p>
 <div class="codehilite"><pre><span></span><span class="n">d1</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
                <span class="n">b</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">;],</span> <span class="n">inner</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">]),</span>
                <span class="n">c</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">12</span><span class="p">),</span>
@@ -553,12 +548,11 @@
 </pre></div>
 
 
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/abstractdataframe/reshape.jl#L370' class='documenter-source'>source</a><br>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/abstractdataframe/reshape.jl#L370-420' class='documenter-source'>source</a><br>
 <a id='DataFrames.meltdf' href='#DataFrames.meltdf'>#</a>
 <strong><code>DataFrames.meltdf</code></strong> &mdash; <em>Function</em>.</p>
-<hr />
 <p>A stacked view of a DataFrame (long format); see <code>stackdf</code></p>
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/abstractdataframe/reshape.jl#L452' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/abstractdataframe/reshape.jl#L452-454' class='documenter-source'>source</a><br></p>
           <aside class="copyright" role="note">
             
             Documentation built with

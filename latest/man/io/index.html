@@ -363,29 +363,28 @@
 <p>To read data from a CSV-like file, use the <code>readtable</code> function:</p>
 <p><a id='DataFrames.readtable' href='#DataFrames.readtable'>#</a>
 <strong><code>DataFrames.readtable</code></strong> &mdash; <em>Function</em>.</p>
-<hr />
 <p>Read data from a tabular-file format (CSV, TSV, ...)</p>
 <div class="codehilite"><pre><span></span><span class="n">readtable</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="p">[</span><span class="n">keyword</span> <span class="n">options</span><span class="p">])</span>
 </pre></div>
 
 
-<h3 id="arguments">Arguments</h3>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>filename::AbstractString</code> : the filename to be read</li>
 </ul>
-<h3 id="keyword-arguments">Keyword Arguments</h3>
+<p><strong>Keyword Arguments</strong></p>
 <ul>
 <li><code>header::Bool</code> – Use the information from the file's header line to determine column names. Defaults to <code>true</code>.</li>
 <li><code>separator::Char</code> – Assume that fields are split by the <code>separator</code> character. If not specified, it will be guessed from the filename: <code>.csv</code> defaults to <code>','</code>, <code>.tsv</code> defaults to <code>'    '</code>, <code>.wsv</code> defaults to <code>' '</code>.</li>
 <li><code>quotemark::Vector{Char}</code> – Assume that fields contained inside of two <code>quotemark</code> characters are quoted, which disables processing of separators and linebreaks. Set to <code>Char[]</code> to disable this feature and slightly improve performance. Defaults to <code>['"']</code>.</li>
 <li><code>decimal::Char</code> – Assume that the decimal place in numbers is written using the <code>decimal</code> character. Defaults to <code>'.'</code>.</li>
-<li><code>nastrings::Vector{ASCIIString}</code> – Translate any of the strings into this vector into an <code>NA</code>. Defaults to <code>["", "NA"]</code>.</li>
-<li><code>truestrings::Vector{ASCIIString}</code> – Translate any of the strings into this vector into a Boolean <code>true</code>. Defaults to <code>["T", "t", "TRUE", "true"]</code>.</li>
-<li><code>falsestrings::Vector{ASCIIString}</code> – Translate any of the strings into this vector into a Boolean <code>false</code>. Defaults to <code>["F", "f", "FALSE", "false"]</code>.</li>
+<li><code>nastrings::Vector{String}</code> – Translate any of the strings into this vector into an <code>NA</code>. Defaults to <code>["", "NA"]</code>.</li>
+<li><code>truestrings::Vector{String}</code> – Translate any of the strings into this vector into a Boolean <code>true</code>. Defaults to <code>["T", "t", "TRUE", "true"]</code>.</li>
+<li><code>falsestrings::Vector{String}</code> – Translate any of the strings into this vector into a Boolean <code>false</code>. Defaults to <code>["F", "f", "FALSE", "false"]</code>.</li>
 <li><code>makefactors::Bool</code> – Convert string columns into <code>PooledDataVector</code>'s for use as factors. Defaults to <code>false</code>.</li>
 <li><code>nrows::Int</code> – Read only <code>nrows</code> from the file. Defaults to <code>-1</code>, which indicates that the entire file should be read.</li>
 <li><code>names::Vector{Symbol}</code> – Use the values in this array as the names for all columns instead of or in lieu of the names in the file's header. Defaults to <code>[]</code>, which indicates that the header should be used if present or that numeric names should be invented if there is no header.</li>
-<li><code>eltypes::Vector{DataType}</code> – Specify the types of all columns. Defaults to <code>[]</code>.</li>
+<li><code>eltypes::Vector</code> – Specify the types of all columns. Defaults to <code>[]</code>.</li>
 <li><code>allowcomments::Bool</code> – Ignore all text inside comments. Defaults to <code>false</code>.</li>
 <li><code>commentmark::Char</code> – Specify the character that starts comments. Defaults to <code>'#'</code>.</li>
 <li><code>ignorepadding::Bool</code> – Ignore all whitespace on left and right sides of a field. Defaults to <code>true</code>.</li>
@@ -393,13 +392,13 @@
 <li><code>skiprows::Vector{Int}</code> – Specify the indices of lines in the input to ignore. Defaults to <code>[]</code>.</li>
 <li><code>skipblanks::Bool</code> – Skip any blank lines in input. Defaults to <code>true</code>.</li>
 <li><code>encoding::Symbol</code> – Specify the file's encoding as either <code>:utf8</code> or <code>:latin1</code>. Defaults to <code>:utf8</code>.</li>
-<li><code>normalizenames::Bool</code> – Ensure that column names are valid Julia identifiers. For instance this renames a column named <code>"a b"</code> to <code>"a_b"</code> which can then be accessed with <code>:a_b</code> instead of <code>symbol("a b")</code>. Defaults to <code>true</code>.</li>
+<li><code>normalizenames::Bool</code> – Ensure that column names are valid Julia identifiers. For instance this renames a column named <code>"a b"</code> to <code>"a_b"</code> which can then be accessed with <code>:a_b</code> instead of <code>Symbol("a b")</code>. Defaults to <code>true</code>.</li>
 </ul>
-<h3 id="result">Result</h3>
+<p><strong>Result</strong></p>
 <ul>
 <li><code>::DataFrame</code></li>
 </ul>
-<h3 id="examples">Examples</h3>
+<p><strong>Examples</strong></p>
 <div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">readtable</span><span class="p">(</span><span class="s">&quot;data.csv&quot;</span><span class="p">)</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">readtable</span><span class="p">(</span><span class="s">&quot;data.tsv&quot;</span><span class="p">)</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">readtable</span><span class="p">(</span><span class="s">&quot;data.wsv&quot;</span><span class="p">)</span>
@@ -408,45 +407,44 @@
 </pre></div>
 
 
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/dataframe/io.jl#L871' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/dataframe/io.jl#L874-920' class='documenter-source'>source</a><br></p>
 <p><code>readtable</code> requires that you specify the path of the file that you would like to read as a <code>String</code>. To read data from a non-file source, you may also supply an <code>IO</code> object. It supports many additional keyword arguments: these are documented in the section on advanced I/O operations.</p>
 <p><a id='Exporting-data-to-a-tabular-data-file-1'></a></p>
 <h2 id="exporting-data-to-a-tabular-data-file">Exporting data to a tabular data file</h2>
 <p>To write data to a CSV file, use the <code>writetable</code> function:</p>
 <p><a id='DataFrames.writetable' href='#DataFrames.writetable'>#</a>
 <strong><code>DataFrames.writetable</code></strong> &mdash; <em>Function</em>.</p>
-<hr />
 <p>Write data to a tabular-file format (CSV, TSV, ...)</p>
 <div class="codehilite"><pre><span></span><span class="n">writetable</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="p">[</span><span class="n">keyword</span> <span class="n">options</span><span class="p">])</span>
 </pre></div>
 
 
-<h3 id="arguments_1">Arguments</h3>
+<p><strong>Arguments</strong></p>
 <ul>
-<li><code>filename::AbstractString</code> : the filename to be created</li>
+<li><code>filename::String</code> : the filename to be created</li>
 <li><code>df::AbstractDataFrame</code> : the AbstractDataFrame to be written</li>
 </ul>
-<h3 id="keyword-arguments_1">Keyword Arguments</h3>
+<p><strong>Keyword Arguments</strong></p>
 <ul>
 <li><code>separator::Char</code> – The separator character that you would like to use. Defaults to the output of <code>getseparator(filename)</code>, which uses commas for files that end in <code>.csv</code>, tabs for files that end in <code>.tsv</code> and a single space for files that end in <code>.wsv</code>.</li>
 <li><code>quotemark::Char</code> – The character used to delimit string fields. Defaults to <code>'"'</code>.</li>
 <li><code>header::Bool</code> – Should the file contain a header that specifies the column names from <code>df</code>. Defaults to <code>true</code>.</li>
-<li><code>nastring::AbstractString</code> – What to write in place of missing data. Defaults to <code>"NA"</code>.</li>
+<li><code>nastring::String</code> – What to write in place of missing data. Defaults to <code>"NA"</code>.</li>
 </ul>
-<h3 id="result_1">Result</h3>
+<p><strong>Result</strong></p>
 <ul>
 <li><code>::DataFrame</code></li>
 </ul>
-<h3 id="examples_1">Examples</h3>
+<p><strong>Examples</strong></p>
 <div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">)</span>
 <span class="n">writetable</span><span class="p">(</span><span class="s">&quot;output.csv&quot;</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
 <span class="n">writetable</span><span class="p">(</span><span class="s">&quot;output.dat&quot;</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">separator</span> <span class="o">=</span> <span class="sc">&#39;,&#39;</span><span class="p">,</span> <span class="n">header</span> <span class="o">=</span> <span class="n">false</span><span class="p">)</span>
-<span class="n">writetable</span><span class="p">(</span><span class="s">&quot;output.dat&quot;</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">quotemark</span> <span class="o">=</span> <span class="err">&#39;&#39;&#39;</span><span class="p">,</span> <span class="n">separator</span> <span class="o">=</span> <span class="sc">&#39;,&#39;</span><span class="p">)</span>
+<span class="n">writetable</span><span class="p">(</span><span class="s">&quot;output.dat&quot;</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">quotemark</span> <span class="o">=</span> <span class="err">&#39;&#39;</span><span class="p">,</span> <span class="n">separator</span> <span class="o">=</span> <span class="sc">&#39;,&#39;</span><span class="p">)</span>
 <span class="n">writetable</span><span class="p">(</span><span class="s">&quot;output.dat&quot;</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">header</span> <span class="o">=</span> <span class="n">false</span><span class="p">)</span>
 </pre></div>
 
 
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/abstractdataframe/io.jl#L74' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/abstractdataframe/io.jl#L74-106' class='documenter-source'>source</a><br></p>
 <p><a id='Supplying-DataFrames-inline-with-non-standard-string-literals-1'></a></p>
 <h2 id="supplying-dataframes-inline-with-non-standard-string-literals">Supplying <code>DataFrame</code>s inline with non-standard string literals</h2>
 <p>You can also provide CSV-like tabular data in a non-standard string literal to construct a new <code>DataFrame</code>, as in the following:</p>

@@ -271,28 +271,6 @@
         
       
       
-        <ul>
-          
-            <li class="anchor">
-              <a title="Arguments" href="#arguments">
-                Arguments
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Notes" href="#notes">
-                Notes
-              </a>
-            </li>
-          
-            <li class="anchor">
-              <a title="Examples" href="#examples">
-                Examples
-              </a>
-            </li>
-          
-        </ul>
-      
     
   </li>
 
@@ -366,7 +344,6 @@
 <p>...</p>
 <p><a id='DataFrames.AbstractDataFrame' href='#DataFrames.AbstractDataFrame'>#</a>
 <strong><code>DataFrames.AbstractDataFrame</code></strong> &mdash; <em>Type</em>.</p>
-<hr />
 <p>An abstract type for which all concrete types expose a database-like interface.</p>
 <p><strong>Common methods</strong></p>
 <p>An AbstractDataFrame is a two-dimensional table with Symbols for column names. An AbstractDataFrame is also similar to an Associative type in that it allows indexing by a key (the columns).</p>
@@ -412,10 +389,9 @@
 
 
 <p><code>setindex</code> works similarly.</p>
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/abstractdataframe/abstractdataframe.jl#L6' class='documenter-source'>source</a><br>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/abstractdataframe/abstractdataframe.jl#L6-66' class='documenter-source'>source</a><br>
 <a id='DataFrames.DataFrame' href='#DataFrames.DataFrame'>#</a>
 <strong><code>DataFrames.DataFrame</code></strong> &mdash; <em>Type</em>.</p>
-<hr />
 <p>An AbstractDataFrame that stores a set of named columns</p>
 <p>The columns are normally AbstractVectors stored in memory, particularly a Vector, DataVector, or PooledDataVector.</p>
 <p><strong>Constructors</strong></p>
@@ -467,25 +443,24 @@
 </pre></div>
 
 
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/dataframe/dataframe.jl#L5' class='documenter-source'>source</a><br>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/dataframe/dataframe.jl#L5-75' class='documenter-source'>source</a><br>
 <a id='DataFrames.SubDataFrame' href='#DataFrames.SubDataFrame'>#</a>
 <strong><code>DataFrames.SubDataFrame</code></strong> &mdash; <em>Type</em>.</p>
-<hr />
 <p>A view of row subsets of an AbstractDataFrame</p>
 <p>A <code>SubDataFrame</code> is meant to be constructed with <code>sub</code>.  A SubDataFrame is used frequently in split/apply sorts of operations.</p>
 <div class="codehilite"><pre><span></span><span class="n">sub</span><span class="p">(</span><span class="n">d</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">rows</span><span class="p">)</span>
 </pre></div>
 
 
-<h3 id="arguments">Arguments</h3>
+<p><strong>Arguments</strong></p>
 <ul>
 <li><code>d</code> : an AbstractDataFrame</li>
 <li><code>rows</code> : any indexing type for rows, typically an Int,   AbstractVector{Int}, AbstractVector{Bool}, or a Range</li>
 </ul>
-<h3 id="notes">Notes</h3>
+<p><strong>Notes</strong></p>
 <p>A <code>SubDataFrame</code> is an AbstractDataFrame, so expect that most DataFrame functions should work. Such methods include <code>describe</code>, <code>dump</code>, <code>nrow</code>, <code>size</code>, <code>by</code>, <code>stack</code>, and <code>join</code>. Indexing is just like a DataFrame; copies are returned.</p>
 <p>To subset along columns, use standard column indexing as that creates a view to the columns by default. To subset along rows and columns, use column-based indexing with <code>sub</code>.</p>
-<h3 id="examples">Examples</h3>
+<p><strong>Examples</strong></p>
 <div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span> <span class="o">=</span> <span class="n">rep</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">b</span> <span class="o">=</span> <span class="n">rep</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">c</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
 <span class="n">sdf1</span> <span class="o">=</span> <span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">6</span><span class="p">)</span>
 <span class="n">sdf2</span> <span class="o">=</span> <span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">df</span><span class="p">[:</span><span class="n">a</span><span class="p">]</span> <span class="o">.&gt;</span> <span class="mi">1</span><span class="p">)</span>
@@ -496,7 +471,7 @@
 </pre></div>
 
 
-<p><a href='https://github.com/JuliaStats/DataFrames.jl/tree/f89fca5481f326060292669bb3a98d2f8cead85d/src/subdataframe/subdataframe.jl#L13' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/e975c42a65d376d25144dc33938d2e27c89dc02d/src/subdataframe/subdataframe.jl#L13-52' class='documenter-source'>source</a><br></p>
           <aside class="copyright" role="note">
             
             Documentation built with
