@@ -90,7 +90,8 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     dv = PooledDataArray(d[cols[ncols]])
     # if there are NAs, add 1 to the refs to avoid underflows in x later
     dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    x = copy(dv.refs) .+ dv_has_nas
+    # use UInt32 instead of the PDA's integer size since the number of levels can be high
+    x = copy!(similar(dv.refs, UInt32), dv.refs) .+ dv_has_nas
     # also compute the number of groups, which is the product of the set lengths
     ngroups = length(dv.pool) + dv_has_nas
     # if there's more than 1 column, do roughly the same thing repeatedly
