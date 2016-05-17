@@ -207,7 +207,7 @@ type RDANativeIO{T<:IO} <: RDAIO # RDA native binary format IO stream wrapper (T
 end
 RDANativeIO{T <: IO}(io::T) = RDANativeIO{T}(io)
 
-function rdaio(io::IO, formatcode::String)
+function rdaio(io::IO, formatcode::AbstractString)
     if formatcode == "X" RDAXDRIO(io)
     elseif formatcode == "A" RDAASCIIIO(io)
     elseif formatcode == "B" RDANativeIO(io)
@@ -415,7 +415,7 @@ end
 
 read_rda(io::IO; kwoptions...) = read_rda(io, kwoptions)
 
-read_rda(fnm::String; kwoptions...) = gzopen(fnm) do io read_rda(io, kwoptions) end
+read_rda(fnm::AbstractString; kwoptions...) = gzopen(fnm) do io read_rda(io, kwoptions) end
 
 ##############################################################################
 ##
