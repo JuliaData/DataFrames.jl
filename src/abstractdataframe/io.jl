@@ -4,11 +4,11 @@
 #
 ##############################################################################
 
-function escapedprint(io::IO, x::Any, escapes::String)
+function escapedprint(io::IO, x::Any, escapes::AbstractString)
     print(io, x)
 end
 
-function escapedprint(io::IO, x::String, escapes::String)
+function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
     print_escaped(io, x, escapes)
 end
 
@@ -17,7 +17,7 @@ function printtable(io::IO,
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    nastring::String = "NA")
+                    nastring::AbstractString = "NA")
     n, p = size(df)
     etypes = eltypes(df)
     if header
@@ -61,7 +61,7 @@ function printtable(df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    nastring::String = "NA")
+                    nastring::AbstractString = "NA")
     printtable(STDOUT,
                df,
                header = header,
@@ -80,7 +80,7 @@ writetable(filename, df, [keyword options])
 
 ### Arguments
 
-* `filename::String` : the filename to be created
+* `filename::AbstractString` : the filename to be created
 * `df::AbstractDataFrame` : the AbstractDataFrame to be written
 
 ### Keyword Arguments
@@ -88,7 +88,7 @@ writetable(filename, df, [keyword options])
 * `separator::Char` -- The separator character that you would like to use. Defaults to the output of `getseparator(filename)`, which uses commas for files that end in `.csv`, tabs for files that end in `.tsv` and a single space for files that end in `.wsv`.
 * `quotemark::Char` -- The character used to delimit string fields. Defaults to `'"'`.
 * `header::Bool` -- Should the file contain a header that specifies the column names from `df`. Defaults to `true`.
-* `nastring::String` -- What to write in place of missing data. Defaults to `"NA"`.
+* `nastring::AbstractString` -- What to write in place of missing data. Defaults to `"NA"`.
 
 ### Result
 
@@ -104,12 +104,12 @@ writetable("output.dat", df, quotemark = '\', separator = ',')
 writetable("output.dat", df, header = false)
 ```
 """
-function writetable(filename::String,
+function writetable(filename::AbstractString,
                     df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = getseparator(filename),
                     quotemark::Char = '"',
-                    nastring::String = "NA",
+                    nastring::AbstractString = "NA",
                     append::Bool = false)
 
     if endswith(filename, ".bz") || endswith(filename, ".bz2")
@@ -155,7 +155,7 @@ end
 #
 ##############################################################################
 
-function html_escape(cell::String)
+function html_escape(cell::AbstractString)
     cell = replace(cell, "&", "&amp;")
     cell = replace(cell, "<", "&lt;")
     cell = replace(cell, ">", "&gt;")

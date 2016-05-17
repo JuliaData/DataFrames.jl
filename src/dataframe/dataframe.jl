@@ -776,7 +776,7 @@ end
 # TODO: Deprecate or change for being too inconsistent with other pool methods
 function pool!(df::DataFrame)
     for i in 1:size(df, 2)
-        if eltype(df[i]) <: String
+        if eltype(df[i]) <: AbstractString
             df[i] = pool(df[i])
         end
     end
