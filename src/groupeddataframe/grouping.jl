@@ -66,7 +66,9 @@ package for more operations on GroupedDataFrames.
 ### Examples
 
 ```julia
-df = DataFrame(a = rep(1:4, 2), b = rep(2:-1:1, 4), c = randn(8))
+df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+               b = repeat([2, 1], outer=[4]),
+               c = randn(8))
 gd = groupby(df, :a)
 gd[1]
 last(gd)
@@ -203,15 +205,25 @@ combine(ga::GroupApplied)
 ### Examples
 
 ```julia
-df = DataFrame(a = rep(1:4, 2), b = rep(2:-1:1, 4), c = randn(8))
+df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+               b = repeat([2, 1], outer=[4]),
+               c = randn(8))
 combine(map(d -> mean(d[:c]), gd))
 ```
 
 """
 function combine(ga::GroupApplied)
     gd, vals = ga.gd, ga.vals
-    idx = rep(1:length(vals), Int[size(val, 1) for val in vals])
-    ret = gd.parent[gd.idx[gd.starts[idx]], gd.cols]
+    # Could be made shorter with a rep(x, lengths) function
+    # See JuliaLang/julia#16443
+    idx = Vector{Int}(sum([size(val, 1) for val in vals]))
+    j = 0
+    for i in 1:length(vals)
+        n = size(vals[i], 1)
+        @inbounds idx[j + (1:n)] = gd.idx[gd.starts[i]]
+        j += n
+    end
+    ret = gd.parent[idx, gd.cols]
     hcat!(ret, vcat(vals))
 end
 
@@ -239,7 +251,9 @@ If `d` is not provided, a curried version of groupby is given.
 ### Examples
 
 ```julia
-df = DataFrame(a = rep(1:4, 2), b = rep(2:-1:1, 4), c = randn(8))
+df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+               b = repeat([2, 1], outer=[4]),
+               c = randn(8))
 colwise(sum, df)
 colwise(sum, groupby(df, :a))
 ```
@@ -289,7 +303,9 @@ notation can be used.
 ### Examples
 
 ```julia
-df = DataFrame(a = rep(1:4, 2), b = rep(2:-1:1, 4), c = randn(8))
+df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+               b = repeat([2, 1], outer=[4]),
+               c = randn(8))
 by(df, :a, d -> sum(d[:c]))
 by(df, :a, d -> 2 * d[:c])
 by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(d[:c])))
@@ -335,7 +351,9 @@ same length.
 ### Examples
 
 ```julia
-df = DataFrame(a = rep(1:4, 2), b = rep(2:-1:1, 4), c = randn(8))
+df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+               b = repeat([2, 1], outer=[4]),
+               c = randn(8))
 aggregate(df, :a, sum)
 aggregate(df, :a, [sum, mean])
 aggregate(groupby(df, :a), [sum, mean])

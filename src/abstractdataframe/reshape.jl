@@ -77,9 +77,9 @@ function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector
     cnames = names(df)[id_vars]
     insert!(cnames, 1, :value)
     insert!(cnames, 1, :variable)
-    DataFrame(Any[rep(_names(df)[measure_vars], rep(nrow(df), N)),   # variable
-                  vcat([df[c] for c in measure_vars]...),           # value
-                  [rep(df[c], N) for c in id_vars]...],             # id_var columns
+    DataFrame(Any[Compat.repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
+                  vcat([df[c] for c in measure_vars]...),                    # value
+                  [Compat.repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
               cnames)
 end
 function stack(df::AbstractDataFrame, measure_vars::Int, id_vars::Int)
