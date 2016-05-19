@@ -29,4 +29,9 @@ module TestGrouping
     h(df) = g(f(df))
 
     @test combine(map(h, gd)) == combine(map(g, ga))
+
+    # issue #960
+    x = pool(collect(1:20))
+    df = DataFrame(v1=x, v2=x)
+    groupby(df, [:v1, :v2])
 end
