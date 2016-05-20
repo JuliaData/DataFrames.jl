@@ -80,6 +80,7 @@ StatsBase.fit(::Type{DummyModTwo}, ::Matrix, ::Vector) = DummyModTwo("hello!")
 Base.show(io::IO, m::DummyModTwo) = println(io, m.msg)
 
 m2 = fit(DummyModTwo, f, d)
-@show m2
+io = IOBuffer()
+show(io, m2)
 
 end
