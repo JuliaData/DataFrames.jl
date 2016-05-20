@@ -136,20 +136,12 @@ module TestDataFrame
     @test allna(df[:, 3])
 
 
-    if VERSION >= v"0.5.0-dev+3876"
-        df = DataFrame(DataType[Int, Float64, String],[:A, :B, :C], [false,false,true],100)
-    else
-        df = DataFrame(DataType[Int, Float64, UTF8String],[:A, :B, :C], [false,false,true],100)
-    end
+    df = DataFrame(DataType[Int, Float64, Compat.UTF8String],[:A, :B, :C], [false,false,true],100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
     @test typeof(df[:, 2]) == DataVector{Float64}
-    if VERSION >= v"0.5.0-dev+3876"
-        @test typeof(df[:, 3]) == PooledDataVector{String,UInt32}
-    else
-        @test typeof(df[:, 3]) == PooledDataVector{UTF8String,UInt32}
-    end
+    @test typeof(df[:, 3]) == PooledDataVector{Compat.UTF8String,UInt32}
     @test allna(df[:, 1])
     @test allna(df[:, 2])
     @test allna(df[:, 3])
