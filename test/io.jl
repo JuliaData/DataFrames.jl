@@ -27,8 +27,9 @@ module TestIO
     for filename in filenames
         try
             df = readtable(filename)
-        catch
-            error(@sprintf "Failed to read %s\n" filename)
+        catch e
+            println("Failed to read ", filename)
+            rethrow(e)
         end
     end
 
