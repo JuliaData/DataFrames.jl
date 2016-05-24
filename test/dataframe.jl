@@ -293,7 +293,7 @@ module TestDataFrame
 
     # describe
     #suppress output and test that describe() does not throw
-    devnull = is_unix() ? "/dev/null" : "nul"
+    devnull = @unix? "/dev/null" : "nul"
     open(devnull, "w") do f
         @test nothing == describe(f, DataFrame(a=[1, 2], b=Any["3", NA]))
         @test nothing == describe(f, DataFrame(a=@data([1, 2]), b=@data(["3", NA])))

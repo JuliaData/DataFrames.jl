@@ -499,7 +499,7 @@ function bytestotype{N <: AbstractString,
         return "", true, true
     end
 
-    return String(bytes[left:right]), true, false
+    return bytestring(bytes[left:right]), true, false
 end
 
 function builddf(rows::Integer,
@@ -561,11 +561,9 @@ function builddf(rows::Integer,
                     continue
                 else
                     msgio = IOBuffer()
-                    @printf(msgio,
-                            "Failed to parse '%s' using type '%s'",
-                            String(p.bytes[left:right]),
-                            o.eltypes[j])
-                    error(String(msgio))
+                    print(msgio, "Failed to parse '", p.bytes[left:right],
+                        "' using type ", o.eltypes[j])
+                    error(takebuf_string(msgio))
                 end
             end
 
@@ -682,7 +680,7 @@ function parsenames!(names::Vector{Symbol},
             end
         end
 
-        name = String(bytes[left:right])
+        name = bytestring(bytes[left:right])
         if normalizenames
             name = identifier(name)
         end
@@ -722,7 +720,7 @@ function findcorruption(rows::Integer,
             " * Line %d has %d columns\n",
             l,
             lengths[l] + 1)
-    error(String(msgio))
+    error(takebuf_string(msgio))
 end
 
 function readtable!(p::ParsedCSV,
@@ -842,7 +840,7 @@ function readtable(io::IO,
                         eltypes[j])
                 @printf(msgio,
                         "Valid eltypes: String, Bool, Float64 or Int64")
-                error(String(msgio))
+                error(takebuf_string(msgio))
             end
         end
     end
