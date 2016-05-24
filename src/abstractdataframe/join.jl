@@ -1,5 +1,5 @@
-@comment """
-# Joins
+"""
+    Joins
 """
 
 ##
@@ -168,7 +168,7 @@ join(df1::AbstractDataFrame,
 
 ### Result
 
-* `::DataFrame` : the joined DataFrame 
+* `::DataFrame` : the joined DataFrame
 
 ### Examples
 

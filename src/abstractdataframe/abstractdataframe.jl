@@ -1,10 +1,6 @@
 
-@comment """
-# AbstractDataFrame
 """
-
-"""
-
+    AbstractDataFrame
 An abstract type for which all concrete types expose a database-like
 interface.
 

@@ -561,11 +561,9 @@ function builddf(rows::Integer,
                     continue
                 else
                     msgio = IOBuffer()
-                    @printf(msgio,
-                            "Failed to parse '%s' using type '%s'",
-                            bytestring(p.bytes[left:right]),
-                            o.eltypes[j])
-                    error(bytestring(msgio))
+                    print(msgio, "Failed to parse '", p.bytes[left:right],
+                        "' using type ", o.eltypes[j])
+                    error(takebuf_string(msgio))
                 end
             end
 
@@ -722,7 +720,7 @@ function findcorruption(rows::Integer,
             " * Line %d has %d columns\n",
             l,
             lengths[l] + 1)
-    error(bytestring(msgio))
+    error(takebuf_string(msgio))
 end
 
 function readtable!(p::ParsedCSV,
@@ -842,7 +840,7 @@ function readtable(io::IO,
                         eltypes[j])
                 @printf(msgio,
                         "Valid eltypes: String, Bool, Float64 or Int64")
-                error(bytestring(msgio))
+                error(takebuf_string(msgio))
             end
         end
     end
