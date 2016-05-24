@@ -1,4 +1,4 @@
-VERSION >= v"0.4.0-dev+6521" && __precompile__(true)
+__precompile__(true)
 
 module DataFrames
 
@@ -16,7 +16,6 @@ using Reexport
 using GZip
 using SortingAlgorithms
 using Base: Sort, Order
-using Docile
 
 @document
 
