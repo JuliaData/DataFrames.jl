@@ -17,7 +17,7 @@ using GZip
 using SortingAlgorithms
 using Base: Sort, Order
 
-@document
+#@document
 
 ##############################################################################
 ##

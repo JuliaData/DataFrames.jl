@@ -293,7 +293,7 @@ module TestDataFrame
 
     # describe
     #suppress output and test that describe() does not throw
-    devnull = @unix? "/dev/null" : "nul"
+    devnull = is_unix() ? "/dev/null" : "nul"
     open(devnull, "w") do f
         @test nothing == describe(f, DataFrame(a=[1, 2], b=Any["3", NA]))
         @test nothing == describe(f, DataFrame(a=@data([1, 2]), b=@data(["3", NA])))
@@ -305,10 +305,10 @@ module TestDataFrame
         @test nothing == describe(f, @data(["1", "2", NA]))
         @test nothing == describe(f, @pdata(["1", "2", NA]))
     end
-        
+
     #Check the output of unstack
-    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"], 
-        Key = ["Mass", "Color", "Mass", "Color"], 
+    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
+        Key = ["Mass", "Color", "Mass", "Color"],
         Value = ["12 g", "Red", "18 g", "Grey"])
     #Unstack specifying a row column
     df2 = unstack(df,:Fish, :Key, :Value)

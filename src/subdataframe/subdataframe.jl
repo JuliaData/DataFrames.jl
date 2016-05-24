@@ -4,13 +4,9 @@
 ## without making copies.
 ##
 ##############################################################################
-
-@comment """
-# SubDataFrame
 """
+    SubDataFrame
 
-
-"""
 A view of row subsets of an AbstractDataFrame
 
 A `SubDataFrame` is meant to be constructed with `sub`.  A

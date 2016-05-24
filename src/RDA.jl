@@ -167,7 +167,7 @@ readfloatorNA(io::RDAXDRIO, n::RVecLength) = map!(ntoh, read(io.sub, Float64, n)
 
 function readnchars(io::RDAXDRIO, n::Int32)  # a single character string
     readbytes!(io.sub, io.buf, n)
-    bytestring(pointer(io.buf), n)::String
+    String(pointer(io.buf), n)::String
 end
 
 type RDAASCIIIO{T<:IO} <: RDAIO # RDA ASCII format IO stream wrapper
