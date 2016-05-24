@@ -1,11 +1,14 @@
 environment:
   matrix:
-# Releases
-  - JULIAVERSION: "stable/win32"
-  - JULIAVERSION: "stable/win64"
-# Nightlies
-  # - JULIAVERSION: "download/win32"
-  # - JULIAVERSION: "download/win64"
+  - JULIAVERSION: "julialang/bin/winnt/x86/0.4/julia-0.4-latest-win32.exe"
+  - JULIAVERSION: "julialang/bin/winnt/x64/0.4/julia-0.4-latest-win64.exe"
+  - JULIAVERSION: "julianightlies/bin/winnt/x86/julia-latest-win32.exe"
+  - JULIAVERSION: "julianightlies/bin/winnt/x64/julia-latest-win64.exe"
+
+branches:
+  only:
+    - master
+    - /release-.*/
 
 notifications:
   - provider: Email
