@@ -111,9 +111,9 @@ names!(df::AbstractDataFrame, vals)
 * `df` : the AbstractDataFrame
 * `vals` : column names, normally a Vector{Symbol} the same length as
   the number of columns in `df`
-* `allow_duplicates` : if duplicate colum names are allowed; `false`
-  by default (duplicates not allowed); if set to `true` non-conflicting
-  names are generated for duplicate column names
+* `allow_duplicates` : if `false` (the default), an error will be raised
+  if duplicate names are found; if `true`, duplicate names will be suffixed
+  with `_i` (`i` starting at 1 for the first duplicate).
 
 **Result**
 
