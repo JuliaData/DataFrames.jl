@@ -9,8 +9,8 @@ type Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
 end
-function Index(names::Vector{Symbol}; strict=false)
-    u = make_unique(names, strict=strict)
+function Index(names::Vector{Symbol}; allow_duplicates=true)
+    u = make_unique(names, allow_duplicates=allow_duplicates)
     lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
     Index(lookup, u)
 end
@@ -23,11 +23,11 @@ Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 Base.(:(==))(x::Index, y::Index) = isequal(x, y)
 
-function names!(x::Index, nms::Vector{Symbol}; strict=true)
+function names!(x::Index, nms::Vector{Symbol}; allow_duplicates=false)
     if length(nms) != length(x)
         throw(ArgumentError("Length of nms doesn't match length of x."))
     end
-    newindex = Index(nms, strict=strict)
+    newindex = Index(nms, allow_duplicates=allow_duplicates)
     x.names = newindex.names
     x.lookup = newindex.lookup
     return x

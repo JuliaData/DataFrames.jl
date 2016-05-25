@@ -111,7 +111,7 @@ names!(df::AbstractDataFrame, vals)
 * `df` : the AbstractDataFrame
 * `vals` : column names, normally a Vector{Symbol} the same length as
   the number of columns in `df`
-* `strict` : if names! should disallow duplicate colum names; `true`
+* `allow_duplicates` : if duplicate colum names are allowed; `false`
   by default (duplicates not allowed)
 
 **Result**
@@ -125,12 +125,12 @@ names!(df::AbstractDataFrame, vals)
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 names!(df, [:a, :b, :c])
 names!(df, [:a, :b, :a])  # throws ArgumentError
-names!(df, [:a, :b, :a], strict=false)  # renames second :a to :a_1
+names!(df, [:a, :b, :a], allow_duplicates=true)  # renames second :a to :a_1
 ```
 
 """
-function names!(df::AbstractDataFrame, vals; strict=true)
-    names!(index(df), vals; strict=strict)
+function names!(df::AbstractDataFrame, vals; allow_duplicates=false)
+    names!(index(df), vals; allow_duplicates=allow_duplicates)
     return df
 end
 
