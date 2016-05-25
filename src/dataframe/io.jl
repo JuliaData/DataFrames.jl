@@ -5,14 +5,14 @@ immutable ParsedCSV
     quoted::BitVector    # Was field quoted in text
 end
 
-immutable ParseOptions{S <: String}
+immutable ParseOptions{S <: String, T <: String}
     header::Bool
     separator::Char
     quotemarks::Vector{Char}
     decimal::Char
     nastrings::Vector{S}
-    truestrings::Vector{S}
-    falsestrings::Vector{S}
+    truestrings::Vector{T}
+    falsestrings::Vector{T}
     makefactors::Bool
     names::Vector{Symbol}
     eltypes::Vector
@@ -375,13 +375,13 @@ end
 function bytestotype{N <: Integer,
                      T <: String,
                      P <: String}(::Type{N},
-                                      bytes::Vector{UInt8},
-                                      left::Integer,
-                                      right::Integer,
-                                      nastrings::Vector{T},
-                                      wasquoted::Bool = false,
-                                      truestrings::Vector{P} = P[],
-                                      falsestrings::Vector{P} = P[])
+                                  bytes::Vector{UInt8},
+                                  left::Integer,
+                                  right::Integer,
+                                  nastrings::Vector{T},
+                                  wasquoted::Bool = false,
+                                  truestrings::Vector{P} = P[],
+                                  falsestrings::Vector{P} = P[])
     if left > right
         return 0, true, true
     end
@@ -423,13 +423,13 @@ let out = Array(Float64, 1)
     function bytestotype{N <: AbstractFloat,
                          T <: String,
                          P <: String}(::Type{N},
-                                          bytes::Vector{UInt8},
-                                          left::Integer,
-                                          right::Integer,
-                                          nastrings::Vector{T},
-                                          wasquoted::Bool = false,
-                                          truestrings::Vector{P} = P[],
-                                          falsestrings::Vector{P} = P[])
+                                      bytes::Vector{UInt8},
+                                      left::Integer,
+                                      right::Integer,
+                                      nastrings::Vector{T},
+                                      wasquoted::Bool = false,
+                                      truestrings::Vector{P} = P[],
+                                      falsestrings::Vector{P} = P[])
         if left > right
             return 0.0, true, true
         end
@@ -453,13 +453,13 @@ end
 function bytestotype{N <: Bool,
                      T <: String,
                      P <: String}(::Type{N},
-                                      bytes::Vector{UInt8},
-                                      left::Integer,
-                                      right::Integer,
-                                      nastrings::Vector{T},
-                                      wasquoted::Bool = false,
-                                      truestrings::Vector{P} = P[],
-                                      falsestrings::Vector{P} = P[])
+                                  bytes::Vector{UInt8},
+                                  left::Integer,
+                                  right::Integer,
+                                  nastrings::Vector{T},
+                                  wasquoted::Bool = false,
+                                  truestrings::Vector{P} = P[],
+                                  falsestrings::Vector{P} = P[])
     if left > right
         return false, true, true
     end
@@ -480,13 +480,13 @@ end
 function bytestotype{N <: AbstractString,
                      T <: String,
                      P <: String}(::Type{N},
-                                      bytes::Vector{UInt8},
-                                      left::Integer,
-                                      right::Integer,
-                                      nastrings::Vector{T},
-                                      wasquoted::Bool = false,
-                                      truestrings::Vector{P} = P[],
-                                      falsestrings::Vector{P} = P[])
+                                  bytes::Vector{UInt8},
+                                  left::Integer,
+                                  right::Integer,
+                                  nastrings::Vector{T},
+                                  wasquoted::Bool = false,
+                                  truestrings::Vector{P} = P[],
+                                  falsestrings::Vector{P} = P[])
     if left > right
         if wasquoted
             return "", true, false
@@ -809,9 +809,9 @@ function readtable(io::IO,
                    separator::Char = ',',
                    quotemark::Vector{Char} = ['"'],
                    decimal::Char = '.',
-                   nastrings::Vector = String["", "NA"],
-                   truestrings::Vector = String["T", "t", "TRUE", "true"],
-                   falsestrings::Vector = String["F", "f", "FALSE", "false"],
+                   nastrings::Vector = ["", "NA"],
+                   truestrings::Vector = ["T", "t", "TRUE", "true"],
+                   falsestrings::Vector = ["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
                    nrows::Integer = -1,
                    names::Vector = Symbol[],
