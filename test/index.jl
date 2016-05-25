@@ -37,6 +37,8 @@ end
 
 @test names(i) == [:A,:B]
 @test names!(i, [:a,:b]) == Index([:a,:b])
+@test names!(i, [:a,:a], strict=false) == Index([:a,:a_1])
+@test_throws ArgumentError names!(i, [:a,:a]) 
 @test rename(i, @compat(Dict(:a=>:A, :b=>:B))) == Index([:A,:B])
 @test rename(i, :a, :A) == Index([:A,:b])
 @test rename(i, [:a], [:A]) == Index([:A,:b])
