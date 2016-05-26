@@ -40,7 +40,9 @@ use column-based indexing with `sub`.
 ### Examples
 
 ```julia
-df = DataFrame(a = rep(1:4, 2), b = rep(2:-1:1, 4), c = randn(8))
+df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+               b = repeat([2, 1], outer=[4]),
+               c = randn(8))
 sdf1 = sub(df, 1:6)
 sdf2 = sub(df, df[:a] .> 1)
 sdf3 = sub(df[[1,3]], df[:a] .> 1)  # row and column subsetting
