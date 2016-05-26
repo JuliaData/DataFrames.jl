@@ -389,7 +389,7 @@
 
 
 <p><code>setindex</code> works similarly.</p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/96790b2a152da070a4fcedb59e0276216c100048/src/abstractdataframe/abstractdataframe.jl#L6-66' class='documenter-source'>source</a><br>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/fa09067cdf8adec9170384b5883f57ae19ca1219/src/abstractdataframe/abstractdataframe.jl#L6-66' class='documenter-source'>source</a><br>
 <a id='DataFrames.DataFrame' href='#DataFrames.DataFrame'>#</a>
 <strong><code>DataFrames.DataFrame</code></strong> &mdash; <em>Type</em>.</p>
 <p>An AbstractDataFrame that stores a set of named columns</p>
@@ -443,7 +443,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/96790b2a152da070a4fcedb59e0276216c100048/src/dataframe/dataframe.jl#L5-75' class='documenter-source'>source</a><br>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/fa09067cdf8adec9170384b5883f57ae19ca1219/src/dataframe/dataframe.jl#L5-75' class='documenter-source'>source</a><br>
 <a id='DataFrames.SubDataFrame' href='#DataFrames.SubDataFrame'>#</a>
 <strong><code>DataFrames.SubDataFrame</code></strong> &mdash; <em>Type</em>.</p>
 <p>A view of row subsets of an AbstractDataFrame</p>
@@ -461,7 +461,9 @@
 <p>A <code>SubDataFrame</code> is an AbstractDataFrame, so expect that most DataFrame functions should work. Such methods include <code>describe</code>, <code>dump</code>, <code>nrow</code>, <code>size</code>, <code>by</code>, <code>stack</code>, and <code>join</code>. Indexing is just like a DataFrame; copies are returned.</p>
 <p>To subset along columns, use standard column indexing as that creates a view to the columns by default. To subset along rows and columns, use column-based indexing with <code>sub</code>.</p>
 <p><strong>Examples</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span> <span class="o">=</span> <span class="n">rep</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">b</span> <span class="o">=</span> <span class="n">rep</span><span class="p">(</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">c</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
+<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">a</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">outer</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+               <span class="n">b</span> <span class="o">=</span> <span class="n">repeat</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">outer</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span>
+               <span class="n">c</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
 <span class="n">sdf1</span> <span class="o">=</span> <span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">6</span><span class="p">)</span>
 <span class="n">sdf2</span> <span class="o">=</span> <span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">df</span><span class="p">[:</span><span class="n">a</span><span class="p">]</span> <span class="o">.&gt;</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">sdf3</span> <span class="o">=</span> <span class="n">sub</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]],</span> <span class="n">df</span><span class="p">[:</span><span class="n">a</span><span class="p">]</span> <span class="o">.&gt;</span> <span class="mi">1</span><span class="p">)</span>  <span class="c"># row and column subsetting</span>
@@ -471,7 +473,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/96790b2a152da070a4fcedb59e0276216c100048/src/subdataframe/subdataframe.jl#L13-52' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/fa09067cdf8adec9170384b5883f57ae19ca1219/src/subdataframe/subdataframe.jl#L13-54' class='documenter-source'>source</a><br></p>
           <aside class="copyright" role="note">
             
             Documentation built with
