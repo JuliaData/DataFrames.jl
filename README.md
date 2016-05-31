@@ -8,6 +8,9 @@ DataFrames.jl
 [![Build Status](https://travis-ci.org/JuliaStats/DataFrames.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/DataFrames.jl)
 [![Build status](https://ci.appveyor.com/api/projects/status/github/JuliaStats/DataFrames.jl?svg=true&branch=master)](https://ci.appveyor.com/project/garborg/dataframes-jl/branch/master)
 
+[![Documentation Status](https://readthedocs.org/projects/dataframesjl/badge/?version=stable)](http://dataframesjl.readthedocs.io/en/latest/?badge=stable)
+[![Documentation Status](https://readthedocs.org/projects/dataframesjl/badge/?version=latest)](http://dataframesjl.readthedocs.io/en/latest/?badge=latest)
+
 Tools for working with tabular data in Julia.
 
 **Installation**: at the Julia REPL, `Pkg.add("DataFrames")`
