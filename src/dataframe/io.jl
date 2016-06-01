@@ -499,7 +499,7 @@ function bytestotype{N <: AbstractString,
         return "", true, true
     end
 
-    return bytestring(bytes[left:right]), true, false
+    return String(bytes[left:right]), true, false
 end
 
 function builddf(rows::Integer,
@@ -560,12 +560,9 @@ function builddf(rows::Integer,
                 if wasparsed
                     continue
                 else
-                    msgio = IOBuffer()
-                    @printf(msgio,
-                            "Failed to parse '%s' using type '%s'",
-                            bytestring(p.bytes[left:right]),
-                            o.eltypes[j])
-                    error(bytestring(msgio))
+                    error(@sprintf("Failed to parse '%s' using type '%s'",
+                                   String(p.bytes[left:right]),
+                                   o.eltypes[j]))
                 end
             end
 
@@ -682,7 +679,7 @@ function parsenames!(names::Vector{Symbol},
             end
         end
 
-        name = bytestring(bytes[left:right])
+        name = String(bytes[left:right])
         if normalizenames
             name = identifier(name)
         end
@@ -712,17 +709,12 @@ function findcorruption(rows::Integer,
     m = median(lengths)
     corruptrows = find(lengths .!= m)
     l = corruptrows[1]
-    msgio = IOBuffer()
-    @printf(msgio,
-            "Saw %d rows, %d columns and %d fields\n",
-            rows,
-            cols,
-            fields)
-    @printf(msgio,
-            " * Line %d has %d columns\n",
-            l,
-            lengths[l] + 1)
-    error(bytestring(msgio))
+    error(@sprintf("Saw %d rows, %d columns and %d fields\n * Line %d has %d columns\n",
+                   rows,
+                   cols,
+                   fields,
+                   l,
+                   lengths[l] + 1))
 end
 
 function readtable!(p::ParsedCSV,
