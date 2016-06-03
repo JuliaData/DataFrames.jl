@@ -13,6 +13,8 @@ module TestUtils
     @test identifier("end") == :_end
 
     @test DataFrames.make_unique([:x, :x, :x_1, :x2]) == [:x, :x_2, :x_1, :x2]
+    @test_throws ArgumentError DataFrames.make_unique([:x, :x, :x_1, :x2], allow_duplicates=false)
+    @test DataFrames.make_unique([:x, :x_1, :x2], allow_duplicates=false) == [:x, :x_1, :x2]
 
     # Check that reserved words are up to date
     f = "$JULIA_HOME/../../src/julia-parser.scm"

@@ -111,6 +111,9 @@ names!(df::AbstractDataFrame, vals)
 * `df` : the AbstractDataFrame
 * `vals` : column names, normally a Vector{Symbol} the same length as
   the number of columns in `df`
+* `allow_duplicates` : if `false` (the default), an error will be raised
+  if duplicate names are found; if `true`, duplicate names will be suffixed
+  with `_i` (`i` starting at 1 for the first duplicate).
 
 **Result**
 
@@ -122,11 +125,13 @@ names!(df::AbstractDataFrame, vals)
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 names!(df, [:a, :b, :c])
+names!(df, [:a, :b, :a])  # throws ArgumentError
+names!(df, [:a, :b, :a], allow_duplicates=true)  # renames second :a to :a_1
 ```
 
 """
-function names!(df::AbstractDataFrame, vals)
-    names!(index(df), vals)
+function names!(df::AbstractDataFrame, vals; allow_duplicates=false)
+    names!(index(df), vals; allow_duplicates=allow_duplicates)
     return df
 end
 

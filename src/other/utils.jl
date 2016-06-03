@@ -49,7 +49,7 @@ function makeidentifier(s::AbstractString)
     return takebuf_string(res)
 end
 
-function make_unique(names::Vector{Symbol})
+function make_unique(names::Vector{Symbol}; allow_duplicates=true)
     seen = Set{Symbol}()
     names = copy(names)
     dups = Int[]
@@ -57,6 +57,14 @@ function make_unique(names::Vector{Symbol})
         name = names[i]
         in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
+    
+    if !allow_duplicates && length(dups) > 0
+        d = unique(names[dups])
+        msg = """Duplicate variable names: $d.
+                 Pass allow_duplicates=true to make them unique using a suffix automatically."""
+        throw(ArgumentError(msg))
+    end
+
     for i in dups
         nm = names[i]
         k = 1
