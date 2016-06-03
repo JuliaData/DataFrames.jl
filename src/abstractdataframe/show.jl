@@ -7,20 +7,19 @@
 #'
 #' @param df::AbstractDataFrame The AbstractDataFrame to be summarized.
 #'
-#' @returns res::UTF8String The summary of `df`.
+#' @returns res::String The summary of `df`.
 #'
 #' @examples
 #'
 #' summary(DataFrame(A = 1:10))
-function Base.summary(df::AbstractDataFrame) # -> UTF8String
+function Base.summary(df::AbstractDataFrame) # -> String
     nrows, ncols = size(df)
-    return utf8(@sprintf("%d×%d %s", nrows, ncols, typeof(df)))
+    return @sprintf("%d×%d %s", nrows, ncols, typeof(df))
 end
 
 #' @description
 #'
-#' Determine the number of UTF8 characters that would be used to
-#' render a value.
+#' Determine the number of characters that would be used to print a value.
 #'
 #' @param x::Any A value whose string width will be computed.
 #'
@@ -139,7 +138,7 @@ end
 #' @description
 #'
 #' Given the maximum widths required to render each column of an
-#' AbstractDataFrame, this returns the total number of UTF8 characters
+#' AbstractDataFrame, this returns the total number of characters
 #' that would be required to render an entire row to an IO system.
 #'
 #' NOTE: This width includes the whitespace and special characters used to
