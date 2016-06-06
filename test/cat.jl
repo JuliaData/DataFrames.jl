@@ -110,18 +110,18 @@ module TestCat
     @test isequal(vcat(dfda, dfd, dfa), vcat(dfda, dfda))
 
     # vcat for single DataFrame
-    df1 = DataFrame(a = [1, 2], b = [3, 4])
-    df = DataFrame(c = [1, 2], d = [df1, df1] )
-    result = vcat(df, :d)
-    expected_result = DataFrame(c = [1, 1, 2, 2],
-                                a = [1, 2, 1, 2],
-                                b = [3, 4, 3, 4] )
-    @test isequal(result, expected_result)
+    sdf_df1 = DataFrame(a = [1, 2], b = [3, 4])
+    sdf_df = DataFrame(c = [1, 2], d = [sdf_df1, sdf_df1] )
+    sdf_result = vcat(sdf_df, :d)
+    sdf_expected_result = DataFrame(c = [1, 1, 2, 2],
+                                    a = [1, 2, 1, 2],
+                                    b = [3, 4, 3, 4] )
+    Test.@test isequal(sdf_result, sdf_expected_result)
 
-    c = [1, 2]
-    df = DataFrames.DataFrame(c = c, d = Any[c, c] )
-    result = vcat(df, :d)
-    expected_result = DataFrame(c = [1, 1, 2, 2],
-                                d = [1, 2, 1, 2] )
-    @test isequal(result, expected_result)
+    sdf_c = [1, 2]
+    sdf_df = DataFrames.DataFrame(c = sdf_c, d = Any[sdf_c, sdf_c] )
+    sdf_result = vcat(sdf_df, :d)
+    sdf_expected_result = DataFrame(c = [1, 1, 2, 2],
+                                    d = [1, 2, 1, 2] )
+    Test.@test isequal(sdf_result, sdf_expected_result)
 end
