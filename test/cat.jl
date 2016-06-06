@@ -109,10 +109,10 @@ module TestCat
     # Alignment
     @test isequal(vcat(dfda, dfd, dfa), vcat(dfda, dfda))
 
-    # unnest
+    # vcat for single DataFrame
     df1 = DataFrame(a = [1, 2], b = [3, 4])
     df = DataFrame(c = [1, 2], d = [df1, df1] )
-    result = unnest(df, :d)
+    result = vcat(df, :d)
     expected_result = DataFrame(c = [1, 1, 2, 2],
                                 a = [1, 2, 1, 2],
                                 b = [3, 4, 3, 4] )
@@ -120,7 +120,7 @@ module TestCat
 
     c = [1, 2]
     df = DataFrames.DataFrame(c = c, d = Any[c, c] )
-    result = unnest(df, :d)
+    result = vcat(df, :d)
     expected_result = DataFrame(c = [1, 1, 2, 2],
                                 d = [1, 2, 1, 2] )
     @test isequal(result, expected_result)
