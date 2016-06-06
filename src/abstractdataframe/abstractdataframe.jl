@@ -703,6 +703,31 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
     res
 end
 
+"""
+    vcat(df::AbstractDataFrame, c::Symbol)
+
+If `df[c]` is a vector of AbstractDataFrames, the frames in c will be `vcat`,
+and other columns will be duplicated to match the corresponding sections of the
+ result.
+
+Else, c will be concatenated to a new c column, and other columns will be
+duplicated to match the corresponding sections of the result.
+"""
+function Base.vcat(df::AbstractDataFrame, c::Symbol)
+    not_names = setdiff(names(df), [c] )
+
+    if typeof(df[c][1]) <: AbstractDataFrame
+        by(df, not_names, df -> vcat(df[c]...) )
+    else
+        function put_together(df, c)
+            v = [df[c]...]
+            d = DataFrame({v})
+            names!(d, [c])
+        end
+        by(df, not_names, df -> put_together(df, c) )
+    end
+end
+
 _isnullable(::AbstractArray) = false
 _isnullable(::AbstractDataArray) = true
 const EMPTY_DATA = DataArray(Void, 0)
