@@ -704,7 +704,7 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
 end
 
 """
-    vcat(df::AbstractDataFrame, c::Symbol)
+    unnest(df::AbstractDataFrame, c::Symbol)
 
 If `df[c]` is a vector of AbstractDataFrames, the frames in c will be `vcat`,
 and other columns will be duplicated to match the corresponding sections of the
@@ -713,7 +713,7 @@ and other columns will be duplicated to match the corresponding sections of the
 Else, c will be concatenated to a new c column, and other columns will be
 duplicated to match the corresponding sections of the result.
 """
-function Base.vcat(df::AbstractDataFrame, c::Symbol)
+function unnest(df::AbstractDataFrame, c::Symbol)
     not_names = setdiff(names(df), [c] )
 
     if typeof(df[c][1]) <: AbstractDataFrame
