@@ -119,7 +119,7 @@ module TestCat
     @test isequal(result, expected_result)
 
     c = [1, 2]
-    df = DataFrames.DataFrame(c = c, d = {c, c} )
+    df = DataFrames.DataFrame(c = c, d = Any[c, c] )
     result = vcat(df, :d)
     expected_result = DataFrame(c = [1, 1, 2, 2],
                                 d = [1, 2, 1, 2] )

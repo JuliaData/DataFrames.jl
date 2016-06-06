@@ -721,7 +721,7 @@ function Base.vcat(df::AbstractDataFrame, c::Symbol)
     else
         function put_together(df, c)
             v = [df[c]...]
-            d = DataFrame({v})
+            d = DataFrame(Any[v])
             names!(d, [c])
         end
         by(df, not_names, df -> put_together(df, c) )
