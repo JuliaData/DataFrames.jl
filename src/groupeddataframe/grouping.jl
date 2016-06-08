@@ -217,7 +217,7 @@ function combine(ga::GroupApplied)
     gd, vals = ga.gd, ga.vals
     # Could be made shorter with a rep(x, lengths) function
     # See JuliaLang/julia#16443
-    idx = Vector{Int}(sum([size(val, 1) for val in vals]))
+    idx = Vector{Int}(sum(Int[size(val, 1) for val in vals]))
     j = 0
     for i in 1:length(vals)
         n = size(vals[i], 1)
