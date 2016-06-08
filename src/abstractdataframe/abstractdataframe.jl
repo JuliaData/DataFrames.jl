@@ -673,7 +673,7 @@ Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
 
 Base.vcat(df::AbstractDataFrame) = df
 
-Base.vcat(dfs::AbstractDataFrame...) = vcat(collect(AbstractDataFrame, dfs))
+Base.vcat(dfs::AbstractDataFrame...) = vcat(AbstractDataFrame[dfs...])
 
 Base.vcat(dfs::Vector{Void}) = dfs
 function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
