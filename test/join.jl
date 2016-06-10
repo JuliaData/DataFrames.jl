@@ -66,4 +66,12 @@ module TestJoin
 
     # Cross joins don't take keys
     @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
+
+    # issue #960
+    df1 = DataFrame(A = 1:50,
+                    B = 1:50,
+                    C = 1)
+    pool!(df1, :A)
+    pool!(df1, :B)
+    join(df1, df1, on = [:A, :B], kind = :inner)
 end
