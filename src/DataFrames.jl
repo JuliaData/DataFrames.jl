@@ -70,6 +70,7 @@ export @~,
        readtable,
        rename!,
        rename,
+       sample,
        showcols,
        stack,
        stackdf,
@@ -111,7 +112,9 @@ for (dir, filename) in [
         ("statsmodels", "statsmodel.jl"),
 
         ("", "RDA.jl"),
-        ("", "deprecated.jl")
+        ("", "deprecated.jl"),
+
+        ("other", "sample.jl"),
     ]
 
     include(joinpath(dir, filename))
