@@ -6,6 +6,9 @@ julia:
 os:
   - linux
   - osx
+matrix:
+  allow_failures:
+    - julia: nightly
 notifications:
   email: false
 before_script:
