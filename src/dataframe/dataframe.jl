@@ -384,8 +384,8 @@ end
 function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   new_df::DataFrame,
                                   col_inds::AbstractVector{T})
-    for j in 1:length(col_inds)
-        insert_single_column!(df, new_df[j], col_inds[j])
+    for col_ind in col_inds
+        insert_single_column!(df, new_df[col_ind], col_ind)
     end
     return df
 end
@@ -461,8 +461,8 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   new_df::DataFrame,
                                   row_ind::Real,
                                   col_inds::AbstractVector{T})
-    for j in 1:length(col_inds)
-        insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
+    for col_ind in col_inds
+        insert_single_entry!(df, new_df[col_ind][1], row_ind, col_ind)
     end
     return df
 end
@@ -520,8 +520,8 @@ function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                              new_df::DataFrame,
                                              row_inds::AbstractVector{R},
                                              col_inds::AbstractVector{T})
-    for j in 1:length(col_inds)
-        insert_multiple_entries!(df, new_df[:, j], row_inds, col_inds[j])
+    for col_ind in col_inds
+        insert_multiple_entries!(df, new_df[:, col_ind], row_inds, col_ind)
     end
     return df
 end
