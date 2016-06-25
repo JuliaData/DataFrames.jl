@@ -2,164 +2,64 @@ module TestIndexing
     using Base.Test
     using DataFrames
 
-    #
-    # DataVector and PooledDataVector Indexing
-    #
+    df = DataFrame(A = 1:3, B = [:a, :b, :c], C=["a", 1, "2"])
 
-    dv = DataArray([1, 2])
-    pdv = PooledDataArray([1, 2])
+    # get single column
+    @test df[:A] == 1:3
+    @test names(df[[:A, :B]]) == [:A, :B]
+    @test names(df[[:B, :A]]) == [:B, :A]
+    @test df[[:A, :B]][:A] == 1:3
+    @test df[[:A, :B]][:B] == [:a, :b, :c]
+    # get row
+    @test df[1, 1] == 1
+    @test df[2, 2] == :b
+    # get columns and rows
+    @test names(df[3, [true, false, true]]) == [:A, :C]
+    @test df[3, [true, false, true]][:A] == [3]
+    @test df[3, [true, false, true]][:C] == ["2"]
+    @test names(df[[1, 2], [true]]) == [:A]
+    @test df[[1, 2], [true]][:A] == [1, 2]
 
-    adv_indices = {1,
-                   1.0,
-                   1:2,
-                   1:1:2,
-                   1.0:2.0,
-                   1.0:1.0:2.0,
-                   [1, 2],
-                   [1.0, 2.0],
-                   [true, true],
-                   trues(2),
-                   @data([1, 2]),
-                   @data([1.0, 2.0]),
-                   @data([true, true])}
 
-    single_adv_indices = {1,
-                          1.0}
+    original = deepcopy(df)
+    df[:A] = 4:6
+    @test df[:A] == 4:6
+    df = deepcopy(original)
+    df[:A] = 4
+    @test df[:A] == [4, 4, 4]
+    df = deepcopy(original)
+    df[1] = 1
+    @test df[:A] == [1, 1, 1]
+    df = deepcopy(original)
+    df[:E] = "new"
+    @test df[:E] == ["new", "new", "new"]
+    df[1, :E] = "a"
+    @test df[1, :E] == "a"
 
-    multi_adv_indices = {1:2,
-                         1:1:2,
-                         1.0:2.0,
-                         1.0:1.0:2.0,
-                         [1, 2],
-                         [1.0, 2.0],
-                         [true, true],
-                         trues(2),
-                         @data([1, 2]),
-                         @data([1.0, 2.0]),
-                         @data([true, true])}
+    df = deepcopy(original)
+    df[:E] = 3
+    @test df[:E] == [3, 3, 3]
+    df[[1, 2], [:E, :A]] = 5
+    @test df[:E] == [5, 5, 3]
+    @test df[:A] == [5, 5, 3]
 
-    # avd[Index]
-    for adv_index in adv_indices
-        dv[adv_index]
-        pdv[adv_index]
-    end
+    df = deepcopy(original)
+    df[[false, true], [true, false, true]] = 6
+    @test df[:A] == [1, 6, 3]
+    @test df[:B] == [:a, :b, :c]
+    @test df[:C] == ["a", 6, "2"]
 
-    # avd[SingleIndex] = Single Value
-    for single_adv_index in single_adv_indices
-        dv[single_adv_index] = NA
-        dv[single_adv_index] = 1
-        dv[single_adv_index] = 1.0
-        pdv[single_adv_index] = NA
-        pdv[single_adv_index] = 1
-        pdv[single_adv_index] = 1.0
-    end
+    # assigning one dataframe to another
+    df = deepcopy(original)
+    other = DataFrame(A = 4:6, B = [:A, :B, :C], D=5:7)
+    df[[:A, :B]] = other
+    @test df[:A] ≡ other[:A]
+    @test df[:B] ≡ other[:B]
 
-    # avd[MultiIndex] = Multiple Values
-    for multi_adv_index in multi_adv_indices
-        dv[multi_adv_index] = [1, 2]
-        dv[multi_adv_index] = [1.0, 2.0]
-        dv[multi_adv_index] = 1:2
-        dv[multi_adv_index] = 1:1:2
-        dv[multi_adv_index] = 1.0:2.0
-        dv[multi_adv_index] = 1.0:1.0:2.0
-        pdv[multi_adv_index] = [1, 2]
-        pdv[multi_adv_index] = [1.0, 2.0]
-        pdv[multi_adv_index] = 1:2
-        pdv[multi_adv_index] = 1:1:2
-        pdv[multi_adv_index] = 1.0:2.0
-        pdv[multi_adv_index] = 1.0:1.0:2.0
-    end
-
-    # avd[MultiIndex] = Single Value
-    for multi_adv_index in multi_adv_indices
-        dv[multi_adv_index] = 1
-        dv[multi_adv_index] = 1.0
-        pdv[multi_adv_index] = 1
-        pdv[multi_adv_index] = 1.0
-    end
-
-    #
-    # DataFrame indexing
-    #
-
-    df = DataFrame(A = 1:2, B = 3:4)
-
-    row_indices = Any[1,
-                      1.0,
-                      1:2,
-                      [1, 2],
-                      [1.0, 2.0],
-                      [true, true],
-                      trues(2),
-                      @data([1, 2]),
-                      @data([1.0, 2.0]),
-                      @data([true, true]),
-                      Colon()]
-
-    column_indices = Any[1,
-                         1.0,
-                         "A",
-                         1:2,
-                         [1, 2],
-                         [1.0, 2.0],
-                         [true, false],
-                         trues(2),
-                         ["A", "B"],
-                         @data([1, 2]),
-                         @data([1.0, 2.0]),
-                         @data([true, false]),
-                         @data(["A", "B"]),
-                         :(names(_DF) .== "B"),
-                         Colon()]
-
-    #
-    # getindex()
-    #
-
-    for column_index in column_indices
-        df[column_index]
-    end
-
-    for row_index in row_indices
-        for column_index in column_indices
-            df[row_index, column_index]
-        end
-    end
-
-    #
-    # setindex!()
-    #
-
-    for column_index in column_indices
-        df[column_index] = df[column_index]
-    end
-
-    for row_index in row_indices
-        for column_index in column_indices
-            df[row_index, column_index] = df[row_index, column_index]
-        end
-    end
-
-    #
-    # Broadcasting assignments
-    #
-
-    for column_index in column_indices
-        df[column_index] = NA
-        df[column_index] = 1
-        df[column_index] = 1.0
-        df[column_index] = "A"
-        df[column_index] = DataArray([1 + 0im, 2 + 1im])
-    end
-
-    # Only assign into columns for which new value is type compatible
-    for row_index in row_indices
-        for column_index in column_indices
-            df[row_index, column_index] = NA
-            df[row_index, column_index] = 1
-            df[row_index, column_index] = 1.0
-            df[row_index, column_index] = "A"
-            df[row_index, column_index] = DataArray([1 + 0im, 2 + 1im])
-        end
-    end
+    df = deepcopy(original)
+    other = DataFrame(A = 4:6, B = [:A, :B, :C], D=5:7)
+    df[[2, 1], [:A, :B]] = other[1:2, :]
+    @test df[:A] == [5, 4, 3]
+    @test df[:B] == [:B, :A, :c]
+    @test df[:C] == ["a", 1, "2"]
 end
