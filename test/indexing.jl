@@ -58,8 +58,35 @@ module TestIndexing
 
     df = deepcopy(original)
     other = DataFrame(A = 4:6, B = [:A, :B, :C], D=5:7)
+    df[2, [:A, :B]] = other
+    @test df[:A] == [1, 4, 3]
+    @test df[:B] == [:a, :A, :c]
+    @test df[:C] == ["a", 1, "2"]
+
+    df = deepcopy(original)
+    other = DataFrame(A = 4:6, B = [:A, :B, :C], D=5:7)
     df[[2, 1], [:A, :B]] = other[1:2, :]
     @test df[:A] == [5, 4, 3]
     @test df[:B] == [:B, :A, :c]
+    @test df[:C] == ["a", 1, "2"]
+
+    df = deepcopy(original)
+    other = DataFrame(D=5:7, B = [:A, :B, :C], A = 4:6)
+    df[[:A, :B]] = other
+    @test df[:A] ≡ other[:A]
+    @test df[:B] ≡ other[:B]
+
+    df = deepcopy(original)
+    other = DataFrame(B = [:A, :B, :C], A = 4:6, D=5:7)
+    df[[2, 1], [:A, :B]] = other[1:2, :]
+    @test df[:A] == [5, 4, 3]
+    @test df[:B] == [:B, :A, :c]
+    @test df[:C] == ["a", 1, "2"]
+
+    df = deepcopy(original)
+    other = DataFrame(B = [:A, :B, :C], A = 4:6, D=5:7)
+    df[2, [:A, :B]] = other
+    @test df[:A] == [1, 4, 3]
+    @test df[:B] == [:a, :A, :c]
     @test df[:C] == ["a", 1, "2"]
 end
