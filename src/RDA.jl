@@ -63,7 +63,7 @@ const SXPtab = @compat Dict(      # Defined in Rinternals.h
 if ENDIAN_BOM == 0x01020304
     const R_NA_FLOAT64 = reinterpret(Float64, [0x7ff00000, @compat(UInt32(1954))])[1]
 else
-    const R_NA_FLOAT64 = reinterpret(Float64, [@compat(UInt32(1954)), 0x7ff00000])[1]
+    const R_NA_FLOAT64 = reinterpret(Float64, 0x7ff00000000007a2)
 end
 const R_NA_INT32 = typemin(Int32)
 const R_NA_STRING = "NA"
