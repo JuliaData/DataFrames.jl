@@ -5,9 +5,6 @@ const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
     "local", "global", "const", "abstract", "typealias", "type", "bitstype",
     "immutable", "ccall", "do", "module", "baremodule", "using", "import",
     "export", "importall", "end", "else", "elseif", "catch", "finally"])
-if VERSION >= v"0.4.0-dev+757"
-    push!(RESERVED_WORDS, "stagedfunction")
-end
 
 function identifier(s::AbstractString)
     s = normalize_string(s)
