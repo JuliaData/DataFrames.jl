@@ -47,6 +47,9 @@ module TestRDA
     append!(df, df[2, :])
     df[3, :num] = NaN
     df[:, :cplx] = @data [NA, @compat(Complex128(1,NaN)), NaN]
+    @show df
+    @show read_rda("$testdir/data/RDA/NAs.rda")["df"]
+    @show DataFrame(read_rda("$testdir/data/RDA/NAs.rda")["df"])
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs.rda")["df"]), df)
     # ASCII format saves NaN as NA
     df[3, :num] = NA
