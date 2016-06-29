@@ -54,6 +54,7 @@ module TestRDA
     # ASCII format saves NaN as NA
     df[3, :num] = NA
     df[:, :cplx] = @data [NA, NA, NA]
+    @show DataFrame(read_rda("$testdir/data/RDA/NAs_ascii.rda")["df"])
     @test isequal(DataFrame(read_rda("$testdir/data/RDA/NAs_ascii.rda")["df"]), df)
 
     rda_names = names(DataFrame(read_rda("$testdir/data/RDA/names.rda")["df"]))
