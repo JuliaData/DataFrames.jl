@@ -56,14 +56,16 @@ const SXPtab = @compat Dict(      # Defined in Rinternals.h
 ##############################################################################
 ##
 ## Constants used as NA patterns in R.
+## 0x000007a2 == UInt32(1954)
 ## (I assume 1954 is the year of Ross's birth or something like that.)
 ##
 ##############################################################################
 
+# Need to put the value in an array to work around corruption when reinterpreting as Float64
 if ENDIAN_BOM == 0x01020304
-    const R_NA_FLOAT64 = reinterpret(Float64, [0x7ff00000, @compat(UInt32(1954))])[1]
+    const R_NA_FLOAT64 = reinterpret(UInt64, reinterpret(Float64, [0x000007a27ff00000]))[1]
 else
-    const R_NA_FLOAT64 = reinterpret(Float64, 0x7ff00000000007a2)
+    const R_NA_FLOAT64 = reinterpret(UInt64, reinterpret(Float64, [0x7ff00000000007a2]))[1]
 end
 const R_NA_INT32 = typemin(Int32)
 const R_NA_STRING = "NA"
