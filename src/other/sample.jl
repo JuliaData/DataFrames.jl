@@ -18,6 +18,7 @@ julia> srand(1)
 julia> sample(iris, 5)
 5×5 DataFrames.DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species      │
+|-----|-------------|------------|-------------|------------|--------------|
 │ 1   │ 5.0         │ 2.0        │ 3.5         │ 1.0        │ "versicolor" │
 │ 2   │ 6.2         │ 2.9        │ 4.3         │ 1.3        │ "versicolor" │
 │ 3   │ 6.7         │ 3.1        │ 4.7         │ 1.5        │ "versicolor" │
