@@ -67,10 +67,10 @@ typealias DataFrameModels @compat(Union{DataFrameStatisticalModel, DataFrameRegr
 @delegate DataFrameRegressionModel.model [StatsBase.residuals, StatsBase.model_response,
                                           StatsBase.predict, StatsBase.predict!]
 # Need to define these manually because of ambiguity using @delegate
-StatsBase.R2(mm::DataFrameRegressionModel) = R2(mm.model)
-StatsBase.adjR2(mm::DataFrameRegressionModel) = adjR2(mm.model)
-StatsBase.R2(mm::DataFrameRegressionModel, variant::Symbol) = R2(mm.model, variant)
-StatsBase.adjR2(mm::DataFrameRegressionModel, variant::Symbol) = adjR2(mm.model, variant)
+StatsBase.r2(mm::DataFrameRegressionModel) = r2(mm.model)
+StatsBase.adjr2(mm::DataFrameRegressionModel) = adjr2(mm.model)
+StatsBase.r2(mm::DataFrameRegressionModel, variant::Symbol) = r2(mm.model, variant)
+StatsBase.adjr2(mm::DataFrameRegressionModel, variant::Symbol) = adjr2(mm.model, variant)
 
 # Predict function that takes data frame as predictor instead of matrix
 function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame; kwargs...)
