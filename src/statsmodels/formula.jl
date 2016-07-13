@@ -262,14 +262,8 @@ contr_treatment(n::Integer,contrasts::Bool,sparse::Bool) = contr_treatment(n,con
 contr_treatment(n::Integer,contrasts::Bool) = contr_treatment(n,contrasts,false,1)
 contr_treatment(n::Integer) = contr_treatment(n,true,false,1)
 cols(v::PooledDataVector) = contr_treatment(length(v.pool))[v.refs,:]
-cols(v::DataVector) = convert(Vector{Float64}, v.data)
-cols(v::Vector) = convert(Vector{Float64}, v)
-
-function isfe(ex::Expr)                 # true for fixed-effects terms
-    if ex.head != :call error("Non-call expression encountered") end
-    ex.args[1] != :|
-end
-isfe(a) = true
+cols(v::DataVector) = hcat(convert(Vector{Float64}, v.data))
+cols(v::Vector) = hcat(convert(Vector{Float64}, v))
 
 function expandcols(trm::Vector)
     if length(trm) == 1
@@ -292,24 +286,53 @@ function nc(trm::Vector)
     n
 end
 
+"""
+    ModelMatrix(mf::ModelFrame)
+Create a `ModelMatrix` from the `terms` and `df` members of `mf`
+
+This is basically a map-reduce where terms are mapped to columns by `cols`
+and reduced by `hcat`.  During the collection of the columns the `assign`
+vector is created.  `assign` maps columns of the model matrix to terms in
+the model frame.  It can also be considered as mapping coefficients to
+terms and, hence, to names.
+
+If there is an intercept in the model, that column occurs first and its
+`assign` value is zero.
+
+Mixed-effects models include "random-effects" terms which are ignored when
+creating a model matrix.
+"""
 function ModelMatrix(mf::ModelFrame)
-    trms = mf.terms
-    aa = Any[Any[ones(size(mf.df,1), @compat(Int(trms.intercept)))]]
-    asgn = zeros(Int, @compat(Int(trms.intercept)))
-    fetrms = Bool[isfe(t) for t in trms.terms]
-    if trms.response unshift!(fetrms, false) end
-    ff = trms.factors[:, fetrms]
-    ## need to be cautious here to avoid evaluating cols for a factor with many levels
-    ## if the factor doesn't occur in the fetrms
-    rows = vec(sum(ff, 2) .!= 0)
-    ff = ff[rows, :]
-    cc = [cols(col) for col in columns(mf.df[:, rows])]
-    for j in 1:size(ff,2)
-        trm = cc[round(Bool, ff[:, j])]
-        push!(aa, trm)
-        asgn = vcat(asgn, fill(j, nc(trm)))
+    terms = mf.terms
+        # terms.factors is a Boolean matrix indicating which evaluation terms (rows)
+        # are used in each model term (columns).  By convention, the response,
+        # if present, is the first column, which we drop.
+    factors = convert(Array{Bool}, terms.response ? terms.factors[:, 2 : end] : terms.factors)
+    trms = terms.terms     # the vector of expressions of terms in the model
+        # detect and remove any random-effects terms
+    nonreterms = Bool[!(Meta.isexpr(x, :call) && x.args[1] == :|) for x in trms]
+    if !all(nonreterms)
+        trms = trms[nonreterms]
+        factors = factors[:, nonreterms]
     end
-    ModelMatrix{Float64}(hcat([expandcols(t) for t in aa]...), asgn)
+    columns = Matrix{Float64}[]
+    n = size(mf.df, 1)     # number of rows in the model matrix
+        # Special care is taken to avoid evaluating cols(etrm) for an evaluation term
+        # that only occurs in random-effects terms.  These, potentially very large,
+        # matrices, which will not be used here, are replaced by a matrix with zero columns.
+    for (used, t) in zip(sum(factors, 1), terms.eterms)
+        @show used, t
+        push!(columns, used == 0 ? zeros(n, 0) : cols(mf.df[terms.eterms[i]]))
+    end
+    blocks = [ones(n, Int(terms.intercept))]
+    assign = terms.intercept ? [0] : Int[]
+    for j in 1:size(factors, 2)
+        @show j, columns[view(factors, :, j)]
+        bb = expandcols(columns[view(factors, :, j)])
+        push!(blocks, bb)
+        append!(assign, fill(j, size(bb, 2)))
+    end
+    ModelMatrix{Float64}(reduce(hcat, blocks), assign)
 end
 
 termnames(term::Symbol, col) = [string(term)]
