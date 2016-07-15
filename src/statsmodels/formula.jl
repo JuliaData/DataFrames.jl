@@ -27,7 +27,8 @@ end
 type Terms
     terms::Vector
     eterms::Vector        # evaluation terms
-    factors::Matrix{Int8} # maps terms to evaluation terms
+    factors::Matrix{Bool} # maps terms to evaluation terms
+# order can probably be dropped.  It is vec(sum(factors, 1))
     order::Vector{Int}    # orders of rhs terms
     response::Bool        # indicator of a response, which is eterms[1] if present
     intercept::Bool       # is there an intercept column in the model matrix?
@@ -200,20 +201,8 @@ function Terms(f::Formula)
     end
     ev = unique(vcat(etrms...))
     sets = [Set(x) for x in etrms]
-    facs = Int8[t in s for t in ev, s in sets]
+    facs = Bool[t in s for t in ev, s in sets]
     Terms(tt, ev, facs, oo, haslhs, !any(noint))
-end
-
-function remove_response(t::Terms)
-    # shallow copy original terms
-    t = Terms(t.terms, t.eterms, t.factors, t.order, t.response, t.intercept)
-    if t.response
-        t.order = t.order[2:end]
-        t.eterms = t.eterms[2:end]
-        t.factors = t.factors[2:end, 2:end]
-        t.response = false
-    end
-    return t
 end
 
 ## Default NA handler.  Others can be added as keyword arguments
@@ -248,7 +237,7 @@ ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
 
 function StatsBase.model_response(mf::ModelFrame)
     mf.terms.response || error("Model formula one-sided")
-    convert(Array, mf.df[round(Bool, mf.terms.factors[:, 1])][:, 1])
+    convert(Array, mf.df[mf.terms.eterms[1]])
 end
 
 function contr_treatment(n::Integer, contrasts::Bool, sparse::Bool, base::Integer)
@@ -261,7 +250,7 @@ end
 contr_treatment(n::Integer,contrasts::Bool,sparse::Bool) = contr_treatment(n,contrasts,sparse,1)
 contr_treatment(n::Integer,contrasts::Bool) = contr_treatment(n,contrasts,false,1)
 contr_treatment(n::Integer) = contr_treatment(n,true,false,1)
-cols(v::PooledDataVector) = contr_treatment(length(v.pool))[v.refs,:]
+cols(v::PooledDataVector) = contr_treatment(length(v.pool))[v.refs, :]
 cols(v::DataVector) = hcat(convert(Vector{Float64}, v.data))
 cols(v::Vector) = hcat(convert(Vector{Float64}, v))
 
@@ -287,6 +276,39 @@ function nc(trm::Vector)
 end
 
 """
+    dropRanefTerms(trms::Terms)
+Expressions of the form `(a|b)` are "random-effects" terms and are not
+incorporated in the ModelMatrix.  This function checks for such terms and,
+if any are present, drops them from the `Terms` object.
+"""
+function dropRanefTerms(trms::Terms)
+    retrms = Bool[Meta.isexpr(t, :call) && t.args[1] == :| for t in trms.terms]
+    if !any(retrms)
+        return trms
+    end
+    if all(retrms) && !trms.response
+        return Terms(Any[],Any[],Array(Bool, (0,0)), Int[], false, trms.intercept)
+    end
+    # the rows of `trms.factors` correspond to `eterms`, the columns to `terms`
+    # After dropping random-effects terms we drop any eterms whose rows are all false
+    ckeep = !retrms                 # columns to retain
+    facs = trms.factors[:, ckeep]
+    rkeep = vec(sum(facs, 2) .> 0)
+    Terms(trms.terms[ckeep], trms.eterms[rkeep], facs[rkeep, :],
+        trms.order[ckeep], trms.response, trms.intercept)
+end
+
+"""
+    dropResponse(trms::Terms)
+Drop the response term, `trms.eterms[1]` and the first column of `trms.factors`
+if `trms.response` is true.
+"""
+dropResponse(trms::Terms) = !trms.response ? trms :
+    Terms(trms.terms, trms.eterms[2 : end], trms.factors[2 : end, 2 : end],
+        trms.order[2 : end], false, trms.intercept)
+
+
+"""
     ModelMatrix(mf::ModelFrame)
 Create a `ModelMatrix` from the `terms` and `df` members of `mf`
 
@@ -303,31 +325,17 @@ Mixed-effects models include "random-effects" terms which are ignored when
 creating a model matrix.
 """
 function ModelMatrix(mf::ModelFrame)
-    terms = mf.terms
-        # terms.factors is a Boolean matrix indicating which evaluation terms (rows)
-        # are used in each model term (columns).  By convention, the response,
-        # if present, is the first column, which we drop.
-    factors = convert(Array{Bool}, terms.response ? terms.factors[:, 2 : end] : terms.factors)
-    trms = terms.terms     # the vector of expressions of terms in the model
-        # detect and remove any random-effects terms
-    nonreterms = Bool[!(Meta.isexpr(x, :call) && x.args[1] == :|) for x in trms]
-    if !all(nonreterms)
-        trms = trms[nonreterms]
-        factors = factors[:, nonreterms]
+    dfrm = mf.df
+    terms = dropRanefTerms(dropResponse(mf.terms))
+    columns = [cols(dfrm[e]) for e in terms.eterms]
+    blocks = Matrix{Float64}[]
+    assign = Int[]
+    if terms.intercept
+        push!(blocks, ones(size(dfrm, 1), 1))  # columns of 1's is first block
+        push!(assign, 0)                        # this block corresponds to term zero
     end
-    columns = Matrix{Float64}[]
-    n = size(mf.df, 1)     # number of rows in the model matrix
-        # Special care is taken to avoid evaluating cols(etrm) for an evaluation term
-        # that only occurs in random-effects terms.  These, potentially very large,
-        # matrices, which will not be used here, are replaced by a matrix with zero columns.
-    for (used, t) in zip(sum(factors, 1), terms.eterms)
-        @show used, t
-        push!(columns, used == 0 ? zeros(n, 0) : cols(mf.df[terms.eterms[i]]))
-    end
-    blocks = [ones(n, Int(terms.intercept))]
-    assign = terms.intercept ? [0] : Int[]
-    for j in 1:size(factors, 2)
-        @show j, columns[view(factors, :, j)]
+    factors = terms.factors
+    for j in 1 : size(factors, 2)
         bb = expandcols(columns[view(factors, :, j)])
         push!(blocks, bb)
         append!(assign, fill(j, size(bb, 2)))
