@@ -234,7 +234,7 @@ Base.ndims(::AbstractDataFrame) = 2
 ##############################################################################
 
 Base.similar(df::AbstractDataFrame, dims::Int) =
-    DataFrame([similar(x, dims) for x in columns(df)], copy(index(df)))
+    DataFrame(Any[similar(x, dims) for x in columns(df)], copy(index(df)))
 
 nas{T}(dv::AbstractArray{T}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =   # TODO move to datavector.jl?
     DataArray(Array(T, dims), trues(dims))
@@ -260,7 +260,8 @@ function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     return true
 end
 
-function Base.(:(==))(df1::AbstractDataFrame, df2::AbstractDataFrame)
+# Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
+function (==)(df1::AbstractDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
     isequal(index(df1), index(df2)) || return false
     eq = true

@@ -139,7 +139,7 @@ end
 ##
 ##############################################################################
 
-LONG_VECTOR_SUPPORT = (WORD_SIZE > 32) # disable long vectors support on 32-bit machines
+LONG_VECTOR_SUPPORT = (Sys.WORD_SIZE > 32) # disable long vectors support on 32-bit machines
 
 if LONG_VECTOR_SUPPORT
     typealias RVecLength Int64
@@ -173,7 +173,7 @@ readfloatorNA(io::RDAXDRIO, n::RVecLength) =
 
 function readnchars(io::RDAXDRIO, n::Int32)  # a single character string
     readbytes!(io.sub, io.buf, n)
-    bytestring(pointer(io.buf), n)::String
+    unsafe_string(pointer(io.buf), n)
 end
 
 type RDAASCIIIO{T<:IO} <: RDAIO # RDA ASCII format IO stream wrapper
