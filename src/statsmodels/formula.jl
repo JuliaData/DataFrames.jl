@@ -292,7 +292,8 @@ function nc(trm::Vector)
     n
 end
 
-function ModelMatrix(mf::ModelFrame)
+function ModelMatrix(mf::ModelFrame; includeIntercept::Bool = true)
+	mf.terms.intercept = includeIntercept 
     trms = mf.terms
     aa = Any[Any[ones(size(mf.df,1), @compat(Int(trms.intercept)))]]
     asgn = zeros(Int, @compat(Int(trms.intercept)))
