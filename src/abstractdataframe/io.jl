@@ -8,8 +8,14 @@ function escapedprint(io::IO, x::Any, escapes::AbstractString)
     print(io, x)
 end
 
-function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
-    print_escaped(io, x, escapes)
+@static if VERSION < v"0.5.0-"
+    function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
+        print_escaped(io, x, escapes)
+    end
+else
+    function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
+        escape_string(io, x, escapes)
+    end
 end
 
 function printtable(io::IO,
@@ -162,9 +168,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-function Base.writemime(io::IO,
-                        ::MIME"text/html",
-                        df::AbstractDataFrame)
+@compat function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     n = size(df, 1)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
@@ -202,14 +206,10 @@ end
 #
 ##############################################################################
 
-function Base.writemime(io::IO,
-                        ::MIME"text/csv",
-                        df::AbstractDataFrame)
+@compat function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
     printtable(io, df, true, ',')
 end
 
-function Base.writemime(io::IO,
-                        ::MIME"text/tab-separated-values",
-                        df::AbstractDataFrame)
+@compat function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
     printtable(io, df, true, '\t')
 end

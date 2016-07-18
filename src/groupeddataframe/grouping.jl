@@ -374,8 +374,8 @@ function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T})
     headers = _makeheaders(fs, _setdiff(_names(gd), gd.cols))
     combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
 end
-Base.(:|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, fs)
-Base.(:|>){T<:Function}(gd::GroupedDataFrame, fs::Vector{T}) = aggregate(gd, fs)
+(|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, fs)
+(|>){T<:Function}(gd::GroupedDataFrame, fs::Vector{T}) = aggregate(gd, fs)
 
 # Groups DataFrame by cols before applying aggregate
 function aggregate{S <: ColumnIndex, T <:Function}(d::AbstractDataFrame,
