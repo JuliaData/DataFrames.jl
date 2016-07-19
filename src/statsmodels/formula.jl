@@ -235,44 +235,57 @@ end
 ModelFrame(f::Formula, d::AbstractDataFrame) = ModelFrame(Terms(f), d)
 ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
 
+asMatrix(a::AbstractMatrix) = a
+asMatrix(v::AbstractVector) = reshape(v, (length(v), 1))
+
+"""
+    StatsBase.model_response(mf::ModelFrame)
+Extract the response column, if present.  `DataVector` or
+`PooledDataVector` columns are converted to `Array`s
+"""
 function StatsBase.model_response(mf::ModelFrame)
-    mf.terms.response || error("Model formula one-sided")
-    convert(Array, mf.df[mf.terms.eterms[1]])
+    if mf.terms.response
+        convert(Array, mf.df[mf.terms.eterms[1]])
+    else
+        error("Model formula one-sided")
+    end
 end
 
+"""
+    contr_treatment(n::Integer, contrasts::Bool, sparse::Bool, base::Integer)
+Create a sparse or dense identity of size `n`.  Return the identity if `contrasts`
+is false.  Otherwise drop the `base` column.
+"""
 function contr_treatment(n::Integer, contrasts::Bool, sparse::Bool, base::Integer)
     if n < 2 error("not enought degrees of freedom to define contrasts") end
     contr = sparse ? speye(n) : eye(n) .== 1.
-    if !contrasts return contr end
-    if !(1 <= base <= n) error("base = $base is not allowed for n = $n") end
-    contr[:,vcat(1:(base-1),(base+1):end)]
+    if !contrasts
+        contr
+    elseif !(1 <= base <= n)
+        error("base = $base is not allowed for n = $n")
+    else
+        contr[:, vcat(1 : (base-1), (base+1) : end)]
+    end
 end
 contr_treatment(n::Integer,contrasts::Bool,sparse::Bool) = contr_treatment(n,contrasts,sparse,1)
 contr_treatment(n::Integer,contrasts::Bool) = contr_treatment(n,contrasts,false,1)
 contr_treatment(n::Integer) = contr_treatment(n,true,false,1)
 cols(v::PooledDataVector) = contr_treatment(length(v.pool))[v.refs, :]
-cols(v::DataVector) = hcat(convert(Vector{Float64}, v.data))
-cols(v::Vector) = hcat(convert(Vector{Float64}, v))
+cols(v::DataVector) = asMatrix(convert(Vector{Float64}, v.data))
+cols(v::Vector) = asMatrix(convert(Vector{Float64}, v))
 
+"""
+    expandcols(trm::Vector)
+Create pairwise products of columns from a vector of matrices
+"""
 function expandcols(trm::Vector)
     if length(trm) == 1
-        return convert(Array{Float64}, trm[1])
+        asMatrix(convert(Array{Float64}, trm[1]))
     else
         a = convert(Array{Float64}, trm[1])
-        b = expandcols(trm[2:end])
-        nca = size(a, 2)
-        ncb = size(b, 2)
-        return hcat([a[:, i] .* b[:, j] for i in 1:nca, j in 1:ncb]...)
+        b = expandcols(trm[2 : end])
+        reduce(hcat, [broadcast(*, a, view(b, :, j)) for j in 1 : size(b, 2)])
     end
-end
-
-function nc(trm::Vector)
-    isempty(trm) && return 0
-    n = 1
-    for x in trm
-        n *= size(x, 2)
-    end
-    n
 end
 
 """
@@ -283,25 +296,25 @@ if any are present, drops them from the `Terms` object.
 """
 function dropRanefTerms(trms::Terms)
     retrms = Bool[Meta.isexpr(t, :call) && t.args[1] == :| for t in trms.terms]
-    if !any(retrms)
-        return trms
+    if !any(retrms)  # return trms unchanged
+        trms
+    elseif all(retrms) && !trms.response   # return an empty Terms object
+        Terms(Any[],Any[],Array(Bool, (0,0)), Int[], false, trms.intercept)
+    else
+        # the rows of `trms.factors` correspond to `eterms`, the columns to `terms`
+        # After dropping random-effects terms we drop any eterms whose rows are all false
+        ckeep = !retrms                 # columns to retain
+        facs = trms.factors[:, ckeep]
+        rkeep = vec(sum(facs, 2) .> 0)
+        Terms(trms.terms[ckeep], trms.eterms[rkeep], facs[rkeep, :],
+            trms.order[ckeep], trms.response, trms.intercept)
     end
-    if all(retrms) && !trms.response
-        return Terms(Any[],Any[],Array(Bool, (0,0)), Int[], false, trms.intercept)
-    end
-    # the rows of `trms.factors` correspond to `eterms`, the columns to `terms`
-    # After dropping random-effects terms we drop any eterms whose rows are all false
-    ckeep = !retrms                 # columns to retain
-    facs = trms.factors[:, ckeep]
-    rkeep = vec(sum(facs, 2) .> 0)
-    Terms(trms.terms[ckeep], trms.eterms[rkeep], facs[rkeep, :],
-        trms.order[ckeep], trms.response, trms.intercept)
 end
 
 """
     dropResponse(trms::Terms)
-Drop the response term, `trms.eterms[1]` and the first column of `trms.factors`
-if `trms.response` is true.
+Drop the response term, `trms.eterms[1]` and the first row and column
+of `trms.factors` if `trms.response` is true.
 """
 dropResponse(trms::Terms) = !trms.response ? trms :
     Terms(trms.terms, trms.eterms[2 : end], trms.factors[2 : end, 2 : end],
@@ -322,7 +335,7 @@ If there is an intercept in the model, that column occurs first and its
 `assign` value is zero.
 
 Mixed-effects models include "random-effects" terms which are ignored when
-creating a model matrix.
+creating the model matrix.
 """
 function ModelMatrix(mf::ModelFrame)
     dfrm = mf.df
@@ -343,12 +356,24 @@ function ModelMatrix(mf::ModelFrame)
     ModelMatrix{Float64}(reduce(hcat, blocks), assign)
 end
 
+"""
+    termnames(term::Symbol, col)
+Returns a vector of strings with the names of the coefficients
+associated with a term.  If the column corresponding to the term
+is not a `PooledDataArray` a one-element vector is returned.
+"""
 termnames(term::Symbol, col) = [string(term)]
 function termnames(term::Symbol, col::PooledDataArray)
     levs = levels(col)
     [string(term, " - ", levs[i]) for i in 2:length(levs)]
 end
+# FIXME: Only handles treatment contrasts and PooledDataArray.
 
+"""
+    coefnames(mf::ModelFrame)
+Returns a vector of coefficient names constructed from the Terms
+member and the types of the evaluation columns.
+"""
 function coefnames(mf::ModelFrame)
     if mf.terms.intercept
         vnames = Compat.UTF8String["(Intercept)"]
