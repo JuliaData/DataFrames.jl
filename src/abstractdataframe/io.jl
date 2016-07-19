@@ -8,7 +8,7 @@ function escapedprint(io::IO, x::Any, escapes::AbstractString)
     print(io, x)
 end
 
-@static if VERSION < v"0.5.0-"
+if VERSION < v"0.5.0-dev+4354"
     function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
         print_escaped(io, x, escapes)
     end
