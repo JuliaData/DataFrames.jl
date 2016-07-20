@@ -162,25 +162,17 @@ module TestIO
     df1w = readtable(winpath; opts1...)
     # df2w = readtable(winpath; opts2...)
 
-    # @test df2 == df1
-    @test normalize_eol!(df1w) == df1
+    # Normalize line endings in both and test equality
+    @test normalize_eol!(df1w) == normalize_eol!(df1)
     # @test normalize_eol!(df2w) == df1
 
     opts1[:nrows] = 3
     opts2[:nrows] = 3
 
-    @test readtable(osxpath; opts1...) == df1[1:3, :]
+    @test normalize_eol!(readtable(osxpath; opts1...)) == df1[1:3, :]
     # @test readtable(osxpath; opts2...) == df1[1:3, :]
     @test normalize_eol!(readtable(winpath; opts1...)) == df1[1:3, :]
     # @test readtable(winpath; opts2...) == df1[1:3, :]
-
-    # opts2[:header] = false
-    # opts2[:skipstart] = 5
-
-    # df2b = readtable(path; opts2...)
-    # names!(df2b, names(df1))
-
-    # @test df2b == df1[1:3]
 
     #test_group("readtable handles custom delimiters.")
 
