@@ -212,7 +212,7 @@ function na_omit(df::DataFrame)
 end
 
 ## Trim the pool field of da to only those levels that occur in the refs
-function dropUnusedLevels!(da::PooledDataArray)
+function dropunusedlevels!(da::PooledDataArray)
     rr = da.refs
     uu = unique(rr)
     length(uu) == length(da.pool) && return da
@@ -223,20 +223,20 @@ function dropUnusedLevels!(da::PooledDataArray)
     da.pool = da.pool[uu]
     da
 end
-dropUnusedLevels!(x) = x
+dropunusedlevels!(x) = x
 
 function ModelFrame(trms::Terms, d::AbstractDataFrame)
     df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
-    for c in eachcol(df) dropUnusedLevels!(c[2]) end
+    for c in eachcol(df) dropunusedlevels!(c[2]) end
     ModelFrame(df, trms, msng)
 end
 
 ModelFrame(f::Formula, d::AbstractDataFrame) = ModelFrame(Terms(f), d)
 ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
 
-asMatrix(a::AbstractMatrix) = a
-asMatrix(v::AbstractVector) = reshape(v, (length(v), 1))
+asmatrix(a::AbstractMatrix) = a
+asmatrix(v::AbstractVector) = reshape(v, (length(v), 1))
 
 """
     StatsBase.model_response(mf::ModelFrame)
@@ -257,12 +257,14 @@ Create a sparse or dense identity of size `n`.  Return the identity if `contrast
 is false.  Otherwise drop the `base` column.
 """
 function contr_treatment(n::Integer, contrasts::Bool, sparse::Bool, base::Integer)
-    if n < 2 error("not enought degrees of freedom to define contrasts") end
+    if n < 2
+        throw(ArgumentError("Contrasts require n > 1"))
+    end
     contr = sparse ? speye(n) : eye(n) .== 1.
     if !contrasts
         contr
     elseif !(1 <= base <= n)
-        error("base = $base is not allowed for n = $n")
+        throw(ArgumentError("base = $base is not allowed for n = $n"))
     else
         contr[:, vcat(1 : (base-1), (base+1) : end)]
     end
@@ -271,8 +273,8 @@ contr_treatment(n::Integer,contrasts::Bool,sparse::Bool) = contr_treatment(n,con
 contr_treatment(n::Integer,contrasts::Bool) = contr_treatment(n,contrasts,false,1)
 contr_treatment(n::Integer) = contr_treatment(n,true,false,1)
 cols(v::PooledDataVector) = contr_treatment(length(v.pool))[v.refs, :]
-cols(v::DataVector) = asMatrix(convert(Vector{Float64}, v.data))
-cols(v::Vector) = asMatrix(convert(Vector{Float64}, v))
+cols(v::DataVector) = asmatrix(convert(Vector{Float64}, v.data))
+cols(v::Vector) = asmatrix(convert(Vector{Float64}, v))
 
 """
     expandcols(trm::Vector)
@@ -280,7 +282,7 @@ Create pairwise products of columns from a vector of matrices
 """
 function expandcols(trm::Vector)
     if length(trm) == 1
-        asMatrix(convert(Array{Float64}, trm[1]))
+        asmatrix(convert(Array{Float64}, trm[1]))
     else
         a = convert(Array{Float64}, trm[1])
         b = expandcols(trm[2 : end])
@@ -289,12 +291,12 @@ function expandcols(trm::Vector)
 end
 
 """
-    dropRanefTerms(trms::Terms)
+    droprandomeffects(trms::Terms)
 Expressions of the form `(a|b)` are "random-effects" terms and are not
 incorporated in the ModelMatrix.  This function checks for such terms and,
 if any are present, drops them from the `Terms` object.
 """
-function dropRanefTerms(trms::Terms)
+function droprandomeffects(trms::Terms)
     retrms = Bool[Meta.isexpr(t, :call) && t.args[1] == :| for t in trms.terms]
     if !any(retrms)  # return trms unchanged
         trms
@@ -312,11 +314,11 @@ function dropRanefTerms(trms::Terms)
 end
 
 """
-    dropResponse(trms::Terms)
+    dropresponse!(trms::Terms)
 Drop the response term, `trms.eterms[1]` and the first row and column
 of `trms.factors` if `trms.response` is true.
 """
-dropResponse(trms::Terms) = !trms.response ? trms :
+dropresponse!(trms::Terms) = !trms.response ? trms :
     Terms(trms.terms, trms.eterms[2 : end], trms.factors[2 : end, 2 : end],
         trms.order[2 : end], false, trms.intercept)
 
@@ -339,7 +341,7 @@ creating the model matrix.
 """
 function ModelMatrix(mf::ModelFrame)
     dfrm = mf.df
-    terms = dropRanefTerms(dropResponse(mf.terms))
+    terms = droprandomeffects(dropresponse!(mf.terms))
     columns = [cols(dfrm[e]) for e in terms.eterms]
     blocks = Matrix{Float64}[]
     assign = Int[]
