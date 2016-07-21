@@ -286,7 +286,7 @@ function expandcols(trm::Vector)
     else
         a = convert(Array{Float64}, trm[1])
         b = expandcols(trm[2 : end])
-        reduce(hcat, [broadcast(*, a, view(b, :, j)) for j in 1 : size(b, 2)])
+        reduce(hcat, [broadcast(*, a, Compat.view(b, :, j)) for j in 1 : size(b, 2)])
     end
 end
 
@@ -351,7 +351,7 @@ function ModelMatrix(mf::ModelFrame)
     end
     factors = terms.factors
     for j in 1 : size(factors, 2)
-        bb = expandcols(columns[view(factors, :, j)])
+        bb = expandcols(columns[Compat.view(factors, :, j)])
         push!(blocks, bb)
         append!(assign, fill(j, size(bb, 2)))
     end
