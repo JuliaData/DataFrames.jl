@@ -1,6 +1,7 @@
 module TestFormula
     using Base.Test
     using DataFrames
+    using Compat
 
     # TODO:
     # - grouped variables in formulas with interactions
@@ -370,9 +371,9 @@ module TestFormula
 
 ## Promote non-redundant categorical terms to full rank
 
-d = DataFrame(x = rep([:a, :b], times = 4),
-              y = rep([:c, :d], times = 2, each = 2),
-              z = rep([:e, :f], each = 4))
+d = DataFrame(x = Compat.repeat([:a, :b], outer = 4),
+              y = Compat.repeat([:c, :d], inner = 2, outer = 2),
+              z = Compat.repeat([:e, :f], inner = 4))
 [pool!(d, name) for name in names(d)]
 cs = [name => SumContrasts for name in names(d)]
 d[:n] = 1.:8
