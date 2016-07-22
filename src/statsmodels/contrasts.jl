@@ -107,7 +107,7 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::Vector)
     baseind = isnull(contrasts.base) ?
               1 :
               findfirst(c_levels, convert(eltype(levels), get(contrasts.base)))
-    baseind > 0 || error("base level $(contrasts.base) not found in levels $c_levels.")
+    baseind > 0 || error("base level $(get(contrasts.base)) not found in levels $c_levels.")
 
     tnames = termnames(contrasts, c_levels, baseind)
 
