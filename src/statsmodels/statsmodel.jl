@@ -76,7 +76,7 @@ StatsBase.adjr2(mm::DataFrameRegressionModel, variant::Symbol) = adjr2(mm.model,
 function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame; kwargs...)
     # copy terms, removing outcome if present (ModelFrame will complain if a
     # term is not found in the DataFrame and we don't want to remove elements with missing y)
-    newTerms = remove_response(mm.mf.terms)
+    newTerms = dropresponse!(mm.mf.terms)
     # create new model frame/matrix
     mf = ModelFrame(newTerms, df)
     newX = ModelMatrix(mf).m

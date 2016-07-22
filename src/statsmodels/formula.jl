@@ -27,7 +27,8 @@ end
 type Terms
     terms::Vector
     eterms::Vector        # evaluation terms
-    factors::Matrix{Int8} # maps terms to evaluation terms
+    factors::Matrix{Bool} # maps terms to evaluation terms
+# order can probably be dropped.  It is vec(sum(factors, 1))
     order::Vector{Int}    # orders of rhs terms
     response::Bool        # indicator of a response, which is eterms[1] if present
     intercept::Bool       # is there an intercept column in the model matrix?
@@ -200,20 +201,8 @@ function Terms(f::Formula)
     end
     ev = unique(vcat(etrms...))
     sets = [Set(x) for x in etrms]
-    facs = Int8[t in s for t in ev, s in sets]
+    facs = Bool[t in s for t in ev, s in sets]
     Terms(tt, ev, facs, oo, haslhs, !any(noint))
-end
-
-function remove_response(t::Terms)
-    # shallow copy original terms
-    t = Terms(t.terms, t.eterms, t.factors, t.order, t.response, t.intercept)
-    if t.response
-        t.order = t.order[2:end]
-        t.eterms = t.eterms[2:end]
-        t.factors = t.factors[2:end, 2:end]
-        t.response = false
-    end
-    return t
 end
 
 ## Default NA handler.  Others can be added as keyword arguments
@@ -223,7 +212,7 @@ function na_omit(df::DataFrame)
 end
 
 ## Trim the pool field of da to only those levels that occur in the refs
-function dropUnusedLevels!(da::PooledDataArray)
+function dropunusedlevels!(da::PooledDataArray)
     rr = da.refs
     uu = unique(rr)
     length(uu) == length(da.pool) && return da
@@ -234,90 +223,159 @@ function dropUnusedLevels!(da::PooledDataArray)
     da.pool = da.pool[uu]
     da
 end
-dropUnusedLevels!(x) = x
+dropunusedlevels!(x) = x
 
 function ModelFrame(trms::Terms, d::AbstractDataFrame)
     df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
-    for c in eachcol(df) dropUnusedLevels!(c[2]) end
+    for c in eachcol(df) dropunusedlevels!(c[2]) end
     ModelFrame(df, trms, msng)
 end
 
 ModelFrame(f::Formula, d::AbstractDataFrame) = ModelFrame(Terms(f), d)
 ModelFrame(ex::Expr, d::AbstractDataFrame) = ModelFrame(Formula(ex), d)
 
+asmatrix(a::AbstractMatrix) = a
+asmatrix(v::AbstractVector) = reshape(v, (length(v), 1))
+
+"""
+    StatsBase.model_response(mf::ModelFrame)
+Extract the response column, if present.  `DataVector` or
+`PooledDataVector` columns are converted to `Array`s
+"""
 function StatsBase.model_response(mf::ModelFrame)
-    mf.terms.response || error("Model formula one-sided")
-    convert(Array, mf.df[round(Bool, mf.terms.factors[:, 1])][:, 1])
+    if mf.terms.response
+        convert(Array, mf.df[mf.terms.eterms[1]])
+    else
+        error("Model formula one-sided")
+    end
 end
 
+"""
+    contr_treatment(n::Integer, contrasts::Bool, sparse::Bool, base::Integer)
+Create a sparse or dense identity of size `n`.  Return the identity if `contrasts`
+is false.  Otherwise drop the `base` column.
+"""
 function contr_treatment(n::Integer, contrasts::Bool, sparse::Bool, base::Integer)
-    if n < 2 error("not enought degrees of freedom to define contrasts") end
+    if n < 2
+        throw(ArgumentError("Contrasts require n > 1"))
+    end
     contr = sparse ? speye(n) : eye(n) .== 1.
-    if !contrasts return contr end
-    if !(1 <= base <= n) error("base = $base is not allowed for n = $n") end
-    contr[:,vcat(1:(base-1),(base+1):end)]
+    if !contrasts
+        contr
+    elseif !(1 <= base <= n)
+        throw(ArgumentError("base = $base is not allowed for n = $n"))
+    else
+        contr[:, vcat(1 : (base-1), (base+1) : end)]
+    end
 end
 contr_treatment(n::Integer,contrasts::Bool,sparse::Bool) = contr_treatment(n,contrasts,sparse,1)
 contr_treatment(n::Integer,contrasts::Bool) = contr_treatment(n,contrasts,false,1)
 contr_treatment(n::Integer) = contr_treatment(n,true,false,1)
-cols(v::PooledDataVector) = contr_treatment(length(v.pool))[v.refs,:]
-cols(v::DataVector) = convert(Vector{Float64}, v.data)
-cols(v::Vector) = convert(Vector{Float64}, v)
+cols(v::PooledDataVector) = contr_treatment(length(v.pool))[v.refs, :]
+cols(v::DataVector) = asmatrix(convert(Vector{Float64}, v.data))
+cols(v::Vector) = asmatrix(convert(Vector{Float64}, v))
 
-function isfe(ex::Expr)                 # true for fixed-effects terms
-    if ex.head != :call error("Non-call expression encountered") end
-    ex.args[1] != :|
-end
-isfe(a) = true
-
+"""
+    expandcols(trm::Vector)
+Create pairwise products of columns from a vector of matrices
+"""
 function expandcols(trm::Vector)
     if length(trm) == 1
-        return convert(Array{Float64}, trm[1])
+        asmatrix(convert(Array{Float64}, trm[1]))
     else
         a = convert(Array{Float64}, trm[1])
-        b = expandcols(trm[2:end])
-        nca = size(a, 2)
-        ncb = size(b, 2)
-        return hcat([a[:, i] .* b[:, j] for i in 1:nca, j in 1:ncb]...)
+        b = expandcols(trm[2 : end])
+        reduce(hcat, [broadcast(*, a, Compat.view(b, :, j)) for j in 1 : size(b, 2)])
     end
 end
 
-function nc(trm::Vector)
-    isempty(trm) && return 0
-    n = 1
-    for x in trm
-        n *= size(x, 2)
+"""
+    droprandomeffects(trms::Terms)
+Expressions of the form `(a|b)` are "random-effects" terms and are not
+incorporated in the ModelMatrix.  This function checks for such terms and,
+if any are present, drops them from the `Terms` object.
+"""
+function droprandomeffects(trms::Terms)
+    retrms = Bool[Meta.isexpr(t, :call) && t.args[1] == :| for t in trms.terms]
+    if !any(retrms)  # return trms unchanged
+        trms
+    elseif all(retrms) && !trms.response   # return an empty Terms object
+        Terms(Any[],Any[],Array(Bool, (0,0)), Int[], false, trms.intercept)
+    else
+        # the rows of `trms.factors` correspond to `eterms`, the columns to `terms`
+        # After dropping random-effects terms we drop any eterms whose rows are all false
+        ckeep = !retrms                 # columns to retain
+        facs = trms.factors[:, ckeep]
+        rkeep = vec(sum(facs, 2) .> 0)
+        Terms(trms.terms[ckeep], trms.eterms[rkeep], facs[rkeep, :],
+            trms.order[ckeep], trms.response, trms.intercept)
     end
-    n
 end
 
+"""
+    dropresponse!(trms::Terms)
+Drop the response term, `trms.eterms[1]` and the first row and column
+of `trms.factors` if `trms.response` is true.
+"""
+dropresponse!(trms::Terms) = !trms.response ? trms :
+    Terms(trms.terms, trms.eterms[2 : end], trms.factors[2 : end, 2 : end],
+        trms.order[2 : end], false, trms.intercept)
+
+
+"""
+    ModelMatrix(mf::ModelFrame)
+Create a `ModelMatrix` from the `terms` and `df` members of `mf`
+
+This is basically a map-reduce where terms are mapped to columns by `cols`
+and reduced by `hcat`.  During the collection of the columns the `assign`
+vector is created.  `assign` maps columns of the model matrix to terms in
+the model frame.  It can also be considered as mapping coefficients to
+terms and, hence, to names.
+
+If there is an intercept in the model, that column occurs first and its
+`assign` value is zero.
+
+Mixed-effects models include "random-effects" terms which are ignored when
+creating the model matrix.
+"""
 function ModelMatrix(mf::ModelFrame)
-    trms = mf.terms
-    aa = Any[Any[ones(size(mf.df,1), @compat(Int(trms.intercept)))]]
-    asgn = zeros(Int, @compat(Int(trms.intercept)))
-    fetrms = Bool[isfe(t) for t in trms.terms]
-    if trms.response unshift!(fetrms, false) end
-    ff = trms.factors[:, fetrms]
-    ## need to be cautious here to avoid evaluating cols for a factor with many levels
-    ## if the factor doesn't occur in the fetrms
-    rows = vec(sum(ff, 2) .!= 0)
-    ff = ff[rows, :]
-    cc = [cols(col) for col in columns(mf.df[:, rows])]
-    for j in 1:size(ff,2)
-        trm = cc[round(Bool, ff[:, j])]
-        push!(aa, trm)
-        asgn = vcat(asgn, fill(j, nc(trm)))
+    dfrm = mf.df
+    terms = droprandomeffects(dropresponse!(mf.terms))
+    columns = [cols(dfrm[e]) for e in terms.eterms]
+    blocks = Matrix{Float64}[]
+    assign = Int[]
+    if terms.intercept
+        push!(blocks, ones(size(dfrm, 1), 1))  # columns of 1's is first block
+        push!(assign, 0)                        # this block corresponds to term zero
     end
-    ModelMatrix{Float64}(hcat([expandcols(t) for t in aa]...), asgn)
+    factors = terms.factors
+    for j in 1 : size(factors, 2)
+        bb = expandcols(columns[Compat.view(factors, :, j)])
+        push!(blocks, bb)
+        append!(assign, fill(j, size(bb, 2)))
+    end
+    ModelMatrix{Float64}(reduce(hcat, blocks), assign)
 end
 
+"""
+    termnames(term::Symbol, col)
+Returns a vector of strings with the names of the coefficients
+associated with a term.  If the column corresponding to the term
+is not a `PooledDataArray` a one-element vector is returned.
+"""
 termnames(term::Symbol, col) = [string(term)]
 function termnames(term::Symbol, col::PooledDataArray)
     levs = levels(col)
     [string(term, " - ", levs[i]) for i in 2:length(levs)]
 end
+# FIXME: Only handles treatment contrasts and PooledDataArray.
 
+"""
+    coefnames(mf::ModelFrame)
+Returns a vector of coefficient names constructed from the Terms
+member and the types of the evaluation columns.
+"""
 function coefnames(mf::ModelFrame)
     if mf.terms.intercept
         vnames = Compat.UTF8String["(Intercept)"]
