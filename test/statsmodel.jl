@@ -73,7 +73,7 @@ m2 = fit(DummyMod, f2, d)
 d3 = deepcopy(d)
 d3[1, :x1] = 0
 d3[:x1p] = PooledDataArray(d3[:x1])
-@test_throws ErrorException predict(m2, d3)
+@test_throws ArgumentError predict(m2, d3)
 
 ## Another dummy model type to test fall-through show method
 immutable DummyModTwo <: RegressionModel

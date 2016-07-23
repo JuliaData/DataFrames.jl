@@ -97,17 +97,24 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::Vector)
     #    rank-deficient model matrix.
     c_levels = oftype(levels, get(contrasts.levels, levels))
     mismatched_levels = symdiff(c_levels, levels)
-    isempty(mismatched_levels) || error("contrasts levels not found in data or vice-versa: $mismatched_levels.\nData levels: $levels.\nContrast levels: $c_levels")
+    if ! isempty(mismatched_levels)
+        throw(ArgumentError("contrasts levels not found in data or vice-versa: $mismatched_levels.\nData levels: $levels.\nContrast levels: $c_levels"))
+    end
 
     n = length(c_levels)
-    n == 0 && error("empty set of levels found (need at least two to compute contrasts).")
-    n == 1 && error("only one level found: $(c_levels[1]). need at least two to compute contrasts.")
+    if n == 0
+        throw(ArgumentError("empty set of levels found (need at least two to compute contrasts)."))
+    elseif n == 1
+        throw(ArgumentError("only one level found: $(c_levels[1]) (need at least two to compute contrasts)."))
+    end
     
     # find index of base level. use contrasts.base, then default (1).
     baseind = isnull(contrasts.base) ?
               1 :
               findfirst(c_levels, convert(eltype(levels), get(contrasts.base)))
-    baseind > 0 || error("base level $(get(contrasts.base)) not found in levels $c_levels.")
+    if baseind < 1
+        throw(ArgumentError("base level $(get(contrasts.base)) not found in levels $c_levels."))
+    end
 
     tnames = termnames(contrasts, c_levels, baseind)
 
@@ -131,7 +138,7 @@ ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, col::PooledDataArray) = Cont
 ContrastsMatrix(c::ContrastsMatrix, col::PooledDataArray) =
     isempty(setdiff(levels(col), c.levels)) ?
     c :
-    error("there are levels in data that are not in ContrastsMatrix: $(setdiff(levels(col), c.levels))\n  Data levels: $(levels(col))\n  Contrast levels $(c.levels)")
+    throw(ArgumentError("there are levels in data that are not in ContrastsMatrix: $(setdiff(levels(col), c.levels))\n  Data levels: $(levels(col))\n  Contrast levels $(c.levels)"))
 
 function termnames(C::AbstractContrasts, levels::Vector, baseind::Integer)
     not_base = [1:(baseind-1); (baseind+1):length(levels)]

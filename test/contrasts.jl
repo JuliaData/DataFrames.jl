@@ -83,10 +83,10 @@ mf_missing = ModelFrame(Formula(nothing, :x), d, contrasts = Dict(:x => SumContr
 
 # Things that are bad to do:
 # Applying contrasts that only have a subset of data levels:
-@test_throws ErrorException setcontrasts!(mf, x = SumContrasts(levels = [:a, :b]))
+@test_throws ArgumentError setcontrasts!(mf, x = SumContrasts(levels = [:a, :b]))
 # Applying contrasts that expect levels not found in data:
-@test_throws ErrorException setcontrasts!(mf, x = SumContrasts(levels = [:a, :b, :c, :d]))
+@test_throws ArgumentError setcontrasts!(mf, x = SumContrasts(levels = [:a, :b, :c, :d]))
 # Asking for base level that's not found in data
-@test_throws ErrorException setcontrasts!(mf, x = SumContrasts(base = :e))
+@test_throws ArgumentError setcontrasts!(mf, x = SumContrasts(base = :e))
 
 end
