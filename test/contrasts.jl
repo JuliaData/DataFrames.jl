@@ -6,7 +6,7 @@ using DataFrames
 
 d = DataFrame(x = @pdata( [:a, :b, :c, :a, :a, :b] ))
 
-mf = ModelFrame(Formula(Nothing(), :x), d)
+mf = ModelFrame(Formula(nothing, :x), d)
 
 @test ModelMatrix(mf).m == [1  0  0
                             1  1  0
@@ -73,7 +73,7 @@ setcontrasts!(mf, x = SumContrasts(levels = ["a", "b", "c"]))
 
 # Missing data is handled gracefully, dropping columns when a level is lost
 d[3, :x] = NA
-mf_missing = ModelFrame(Formula(Nothing(), :x), d, contrasts = Dict(:x => SumContrasts))
+mf_missing = ModelFrame(Formula(nothing, :x), d, contrasts = Dict(:x => SumContrasts))
 @test ModelMatrix(mf_missing).m == [1 -1
                                     1  1
                                     1 -1
