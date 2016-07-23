@@ -27,7 +27,11 @@ end
 type Terms
     terms::Vector
     eterms::Vector        # evaluation terms
-    factors::Matrix{Int8} # maps terms to evaluation terms
+    factors::Matrix{Bool} # maps terms to evaluation terms
+    ## An eterms x terms matrix which is true for terms that need to be "promoted"
+    ## to full rank in constructing a model matrx
+    is_non_redundant::Matrix{Bool}
+# order can probably be dropped.  It is vec(sum(factors, 1))
     order::Vector{Int}    # orders of rhs terms
     response::Bool        # indicator of a response, which is eterms[1] if present
     intercept::Bool       # is there an intercept column in the model matrix?
@@ -39,9 +43,6 @@ type ModelFrame
     msng::BitArray
     ## mapping from df keys to contrasts matrices
     contrasts::Dict{Symbol, ContrastsMatrix}
-    ## An eterms x terms matrix which is true for terms that need to be "promoted"
-    ## to full rank in constructing a model matrx
-    non_redundant_terms::Matrix{Bool}
 end
 
 type ModelMatrix{T <: @compat(Union{Float32, Float64})}
@@ -205,20 +206,9 @@ function Terms(f::Formula)
     end
     ev = unique(vcat(etrms...))
     sets = [Set(x) for x in etrms]
-    facs = Int8[t in s for t in ev, s in sets]
-    Terms(tt, ev, facs, oo, haslhs, !any(noint))
-end
-
-function remove_response(t::Terms)
-    # shallow copy original terms
-    t = Terms(t.terms, t.eterms, t.factors, t.order, t.response, t.intercept)
-    if t.response
-        t.order = t.order[2:end]
-        t.eterms = t.eterms[2:end]
-        t.factors = t.factors[2:end, 2:end]
-        t.response = false
-    end
-    return t
+    facs = Bool[t in s for t in ev, s in sets]
+    non_redundants = fill(false, size(facs)) # initialize to false
+    Terms(tt, ev, facs, non_redundants, oo, haslhs, !any(noint))
 end
 
 ## Default NA handler.  Others can be added as keyword arguments
@@ -228,7 +218,7 @@ function na_omit(df::DataFrame)
 end
 
 ## Trim the pool field of da to only those levels that occur in the refs
-function dropUnusedLevels!(da::PooledDataArray)
+function dropunusedlevels!(da::PooledDataArray)
     rr = da.refs
     uu = unique(rr)
     length(uu) == length(da.pool) && return da
@@ -239,7 +229,7 @@ function dropUnusedLevels!(da::PooledDataArray)
     da.pool = da.pool[uu]
     da
 end
-dropUnusedLevels!(x) = x
+dropunusedlevels!(x) = x
 
 is_categorical(::PooledDataArray) = true
 is_categorical(::Any) = false
@@ -252,12 +242,12 @@ is_categorical(::Any) = false
 ## included (either explicitly in the Terms or implicitly by promoting another
 ## term like z in z&y&...).
 ##
-## This function returns a boolean matrix that says whether each evaluation term
-## of each term needs to be promoted.
-function check_non_redundancy(trms::Terms, df::AbstractDataFrame)
+## This modifies the Terms, setting `trms.is_non_redundant = true` for all non-
+## redundant evaluation terms.
+function check_non_redundancy!(trms::Terms, df::AbstractDataFrame)
 
     (n_eterms, n_terms) = size(trms.factors)
-    to_promote = falses(n_eterms, n_terms)
+
     encountered_columns = Vector{eltype(trms.factors)}[]
 
     if trms.intercept
@@ -273,7 +263,7 @@ function check_non_redundancy(trms::Terms, df::AbstractDataFrame)
                 dropped[i_eterm] = 0
 
                 if findfirst(encountered_columns, dropped) == 0
-                    to_promote[i_eterm, i_term] = true
+                    trms.is_non_redundant[i_eterm, i_term] = true
                     push!(encountered_columns, dropped)
                 end
 
@@ -281,10 +271,10 @@ function check_non_redundancy(trms::Terms, df::AbstractDataFrame)
         end
         ## once we've checked all the eterms in this term, add it to the list
         ## of encountered terms/columns
-        push!(encountered_columns, trms.factors[:, i_term])
+        push!(encountered_columns, Compat.view(trms.factors, :, i_term))
     end
 
-    return to_promote
+    return trms.is_non_redundant
 end
 
 
@@ -294,7 +284,7 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
                     contrasts::Dict = Dict())
     df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
-    for c in eachcol(df) dropUnusedLevels!(c[2]) end
+    for c in eachcol(df) dropunusedlevels!(c[2]) end
 
     ## Set up contrasts: 
     ## Combine actual DF columns and contrast types if necessary to compute the
@@ -309,9 +299,10 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
                                                 col)
     end
 
-    non_redundants = check_non_redundancy(trms, df)
+    ## Check for non-redundant terms, modifying terms in place
+    check_non_redundancy!(trms, df)
 
-    ModelFrame(df, trms, msng, evaledContrasts, non_redundants)
+    ModelFrame(df, trms, msng, evaledContrasts)
 end
 
 ModelFrame(f::Formula, d::AbstractDataFrame; kwargs...) = ModelFrame(Terms(f), d; kwargs...)
@@ -327,13 +318,24 @@ function setcontrasts!(mf::ModelFrame, new_contrasts::Dict)
 end
 setcontrasts!(mf::ModelFrame; kwargs...) = setcontrasts!(mf, Dict(kwargs))
 
+asmatrix(a::AbstractMatrix) = a
+asmatrix(v::AbstractVector) = reshape(v, (length(v), 1))
+
+"""
+    StatsBase.model_response(mf::ModelFrame)
+Extract the response column, if present.  `DataVector` or
+`PooledDataVector` columns are converted to `Array`s
+"""
 function StatsBase.model_response(mf::ModelFrame)
-    mf.terms.response || error("Model formula one-sided")
-    convert(Array, mf.df[round(Bool, mf.terms.factors[:, 1])][:, 1])
+    if mf.terms.response
+        convert(Array, mf.df[mf.terms.eterms[1]])
+    else
+        error("Model formula one-sided")
+    end
 end
 
-modelmat_cols(v::DataVector) = convert(Vector{Float64}, v.data)
-modelmat_cols(v::Vector) = convert(Vector{Float64}, v)
+modelmat_cols(v::DataVector) = asmatrix(convert(Vector{Float64}, v.data))
+modelmat_cols(v::Vector) = asmatrix(convert(Vector{Float64}, v))
 ## construct model matrix columns from model frame + name (checks for contrasts)
 function modelmat_cols(name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, name)
@@ -361,81 +363,123 @@ function modelmat_cols(v::PooledDataVector, contrast::ContrastsMatrix)
     return contrast.matrix[reindex[v.refs], :]
 end
 
-
-function isfe(ex::Expr)                 # true for fixed-effects terms
-    if ex.head != :call error("Non-call expression encountered") end
-    ex.args[1] != :|
-end
-isfe(a) = true
-
+"""
+    expandcols(trm::Vector)
+Create pairwise products of columns from a vector of matrices
+"""
 function expandcols(trm::Vector)
     if length(trm) == 1
-        return convert(Array{Float64}, trm[1])
+        asmatrix(convert(Array{Float64}, trm[1]))
     else
         a = convert(Array{Float64}, trm[1])
-        b = expandcols(trm[2:end])
-        nca = size(a, 2)
-        ncb = size(b, 2)
-        return hcat([a[:, i] .* b[:, j] for i in 1:nca, j in 1:ncb]...)
+        b = expandcols(trm[2 : end])
+        reduce(hcat, [broadcast(*, a, Compat.view(b, :, j)) for j in 1 : size(b, 2)])
     end
 end
 
-function nc(trm::Vector)
-    isempty(trm) && return 0
-    n = 1
-    for x in trm
-        n *= size(x, 2)
+"""
+    droprandomeffects(trms::Terms)
+Expressions of the form `(a|b)` are "random-effects" terms and are not
+incorporated in the ModelMatrix.  This function checks for such terms and,
+if any are present, drops them from the `Terms` object.
+"""
+function droprandomeffects(trms::Terms)
+    retrms = Bool[Meta.isexpr(t, :call) && t.args[1] == :| for t in trms.terms]
+    if !any(retrms)  # return trms unchanged
+        trms
+    elseif all(retrms) && !trms.response   # return an empty Terms object
+        Terms(Any[],Any[],Array(Bool, (0,0)),Array(Bool, (0,0)), Int[], false, trms.intercept)
+    else
+        # the rows of `trms.factors` correspond to `eterms`, the columns to `terms`
+        # After dropping random-effects terms we drop any eterms whose rows are all false
+        ckeep = !retrms                 # columns to retain
+        facs = trms.factors[:, ckeep]
+        rkeep = vec(sum(facs, 2) .> 0)
+        Terms(trms.terms[ckeep], trms.eterms[rkeep], facs[rkeep, :],
+              trms.is_non_redundant[rkeep, ckeep],
+              trms.order[ckeep], trms.response, trms.intercept)
     end
-    n
 end
 
+"""
+    dropresponse!(trms::Terms)
+Drop the response term, `trms.eterms[1]` and the first row and column
+of `trms.factors` if `trms.response` is true.
+"""
+dropresponse!(trms::Terms) = !trms.response ? trms :
+    Terms(trms.terms, trms.eterms[2 : end], trms.factors[2 : end, 2 : end],
+          trms.is_non_redundant[2 : end, 2 : end],
+          trms.order[2 : end], false, trms.intercept)
+
+
+"""
+    ModelMatrix(mf::ModelFrame)
+Create a `ModelMatrix` from the `terms` and `df` members of `mf`
+
+This is basically a map-reduce where terms are mapped to columns by `cols`
+and reduced by `hcat`.  During the collection of the columns the `assign`
+vector is created.  `assign` maps columns of the model matrix to terms in
+the model frame.  It can also be considered as mapping coefficients to
+terms and, hence, to names.
+
+If there is an intercept in the model, that column occurs first and its
+`assign` value is zero.
+
+Mixed-effects models include "random-effects" terms which are ignored when
+creating the model matrix.
+"""
 function ModelMatrix(mf::ModelFrame)
+    dfrm = mf.df
+    terms = droprandomeffects(dropresponse!(mf.terms))
+
+    blocks = Matrix{Float64}[]
+    assign = Int[]
+    if terms.intercept
+        push!(blocks, ones(size(dfrm, 1), 1))  # columns of 1's is first block
+        push!(assign, 0)                        # this block corresponds to term zero
+    end
+
+    factors = terms.factors
+
+    ## Map eval. term name + redundancy bool to cached model matrix columns
+    eterm_cols = @compat Dict{Tuple{Symbol,Bool}, Array{Float64}}()
+    ## Accumulator for each term's vector of eval. term columns.
+
     ## TODO: this method makes multiple copies of the data in the ModelFrame:
     ## first in term_cols (1-2x per evaluation term, depending on redundancy),
     ## second in constructing the matrix itself.
     
-    ## Map eval. term name + redundancy bool to cached model matrix columns
-    eterm_cols = @compat Dict{Tuple{Symbol,Bool}, Array{Float64}}()
-    ## Accumulator for each term's vector of eval. term columns.
-    mm_cols = Vector{Array{Float64}}[]
-    mf.terms.intercept && push!(mm_cols, Matrix{Float64}[ones(Float64, size(mf.df,1), 1)])
-    factors = round(Bool, mf.terms.factors)
-
     ## turn each term into a vector of mm columns for its eval. terms, using
     ## "promoted" full-rank versions of categorical columns for non-redundant
     ## eval. terms:
-    for (i_term, term) in enumerate(mf.terms.terms)
-        ## Skip non-fixed-effect terms
-        isfe(term) || continue
-        term_cols = Array{Float64}[]
-        ## adjust term index if there's a response in the formula (mf.terms.terms
-        ## lists only non-response terms, but mf.terms.factors and .non_reundant_terms
-        ## has first column for the response if it's present)
-        i_term += mf.terms.response
+    for (i_term, term) in enumerate(terms.terms)
+        term_cols = Matrix{Float64}[]
         ## Pull out the eval terms, and the non-redundancy flags for this term
-        eterms = mf.terms.eterms[factors[:, i_term]]
-        non_redundant = mf.non_redundant_terms[factors[:, i_term], i_term]
+        ff = Compat.view(factors, :, i_term)
+        eterms = Compat.view(terms.eterms, ff)
+        non_redundants = Compat.view(terms.is_non_redundant, ff, i_term)
         ## Get cols for each eval term (either previously generated, or generating
         ## and storing as necessary)
-        for (et, nr) in zip(eterms, non_redundant)
+        for (et, nr) in zip(eterms, non_redundants)
             if ! haskey(eterm_cols, (et, nr))
                 eterm_cols[(et, nr)] = modelmat_cols(et, mf, non_redundant=nr)
             end
             push!(term_cols, eterm_cols[(et, nr)])
         end
-        push!(mm_cols, term_cols)
+        push!(blocks, expandcols(term_cols))
+        append!(assign, fill(i_term, size(blocks[end], 2)))
     end
 
-    ## TODO: could this be made more efficient by
-    ## first computing mm_col_term_nums, initializing mm, and directly indexing?
-    mm = hcat([expandcols(tc) for tc in mm_cols]...)
-    mm_col_term_nums = vcat([fill(i_term, nc(tc)) for (i_term,tc) in enumerate(mm_cols)]...)
-
-    ModelMatrix{Float64}(mm, mm_col_term_nums)
+    ModelMatrix{Float64}(reduce(hcat, blocks), assign)
 end
 
 
-
+"""
+    termnames(term::Symbol, col)
+Returns a vector of strings with the names of the coefficients
+associated with a term.  If the column corresponding to the term
+is not a `PooledDataArray` a one-element vector is returned.
+"""
 termnames(term::Symbol, col) = [string(term)]
 function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, term)
@@ -447,6 +491,7 @@ function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
         termnames(term, mf.df[term])
     end
 end
+
 termnames(term::Symbol, col::Any, contrast::ContrastsMatrix) =
     ["$term: $name" for name in contrast.termnames]
 
@@ -462,33 +507,44 @@ function expandtermnames(term::Vector)
     end
 end
 
+
+"""
+    coefnames(mf::ModelFrame)
+Returns a vector of coefficient names constructed from the Terms
+member and the types of the evaluation columns.
+"""
 function coefnames(mf::ModelFrame)
+    terms = droprandomeffects(dropresponse!(mf.terms))
+
     ## strategy mirrors ModelMatrx constructor:
     eterm_names = @compat Dict{Tuple{Symbol,Bool}, Vector{Compat.UTF8String}}()
-    term_names = Vector{Vector{Compat.UTF8String}}[]
-    mf.terms.intercept && push!(term_names, Vector[Compat.UTF8String["(Intercept)"]])
+    term_names = Vector{Compat.UTF8String}[]
 
-    factors = round(Bool, mf.terms.factors)
+    if terms.intercept
+        push!(term_names, Compat.UTF8String["(Intercept)"])
+    end
+
+    factors = terms.factors
 
     for (i_term, term) in enumerate(mf.terms.terms)
-        isfe(term) || continue
+
         ## names for columns for eval terms
         names = Vector{Compat.UTF8String}[]
 
-        i_term += mf.terms.response
-        eterms = mf.terms.eterms[factors[:, i_term]]
-        non_redundant = mf.non_redundant_terms[factors[:, i_term], i_term]
+        ff = Compat.view(factors, :, i_term)
+        eterms = Compat.view(terms.eterms, ff)
+        non_redundants = Compat.view(terms.is_non_redundant, ff, i_term)
 
-        for (et, nr) in zip(eterms, non_redundant)
+        for (et, nr) in zip(eterms, non_redundants)
             if !haskey(eterm_names, (et, nr))
                 eterm_names[(et, nr)] = termnames(et, mf, non_redundant=nr)
             end
             push!(names, eterm_names[(et, nr)])
         end
-        push!(term_names, names)
+        push!(term_names, expandtermnames(names))
     end
 
-    mapreduce(expandtermnames, vcat, term_names)
+    reduce(vcat, term_names)
 end
 
 function Formula(t::Terms)
