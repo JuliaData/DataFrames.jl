@@ -278,7 +278,7 @@ function check_non_redundancy!(trms::Terms, df::AbstractDataFrame)
 end
 
 
-const DEFAULT_CONTRASTS = TreatmentContrasts
+const DEFAULT_CONTRASTS = DummyCoding
 
 function ModelFrame(trms::Terms, d::AbstractDataFrame;
                     contrasts::Dict = Dict())
@@ -288,7 +288,7 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
 
     ## Set up contrasts: 
     ## Combine actual DF columns and contrast types if necessary to compute the
-    ## actual contrasts matrices, levels, and term names (using TreatmentContrasts
+    ## actual contrasts matrices, levels, and term names (using DummyCoding
     ## as the default)
     evaledContrasts = Dict()
     for (term, col) in eachcol(df)
@@ -341,7 +341,7 @@ function modelmat_cols(name::Symbol, mf::ModelFrame; non_redundant::Bool = false
     if haskey(mf.contrasts, name)
         modelmat_cols(mf.df[name],
                       non_redundant ?
-                      ContrastsMatrix{DummyContrasts}(mf.contrasts[name]) :
+                      ContrastsMatrix{FullDummyCoding}(mf.contrasts[name]) :
                       mf.contrasts[name])
     else
         modelmat_cols(mf.df[name])
@@ -485,7 +485,7 @@ function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, term)
         termnames(term, mf.df[term], 
                   non_redundant ?
-                  ContrastsMatrix{DummyContrasts}(mf.contrasts[term]) :
+                  ContrastsMatrix{FullDummyCoding}(mf.contrasts[term]) :
                   mf.contrasts[term])
     else
         termnames(term, mf.df[term])

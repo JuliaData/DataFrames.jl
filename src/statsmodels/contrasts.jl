@@ -50,9 +50,9 @@ constructing a `ContrastsMatrix`.
 
 # Concrete types
 
-* `TreatmentContrasts`
-* `SumContrasts`
-* `HelmertContrasts`
+* `DummyCoding`
+* `EffectsCoding`
+* `HelmertCoding`
 
 To implement your own concrete types, implement a constructor and a
 `contrast_matrix` method for constructing the actual contrasts matrix
@@ -150,7 +150,7 @@ nullify(x) = Nullable(x)
 
 # Making a contrast type T only requires that there be a method for
 # contrasts_matrix(T, v::PooledDataArray). The rest is boilerplate.
-for contrastType in [:TreatmentContrasts, :SumContrasts, :HelmertContrasts]
+for contrastType in [:DummyCoding, :EffectsCoding, :HelmertCoding]
     @eval begin
         type $contrastType <: AbstractContrasts
             base::Nullable{Any}
@@ -166,7 +166,7 @@ for contrastType in [:TreatmentContrasts, :SumContrasts, :HelmertContrasts]
 end
 
 """
-    DummyContrasts
+    FullDummyCoding
 
 One indicator (1 or 0) column for each level, __including__ the base level.
 
@@ -176,30 +176,32 @@ non-redundant cases, we can expand x into `length(levels(x))` columns
 without creating a non-identifiable model matrix (unless the user has done
 something foolish in specifying the model, which we can't do much about anyway).
 """
-type DummyContrasts <: AbstractContrasts
+type FullDummyCoding <: AbstractContrasts
 # Dummy contrasts have no base level (since all levels produce a column)
 end
 
-ContrastsMatrix{T}(C::DummyContrasts, lvls::Vector{T}) = ContrastsMatrix(eye(Float64, length(lvls)), lvls, lvls, C)
+ContrastsMatrix{T}(C::FullDummyCoding, lvls::Vector{T}) =
+    ContrastsMatrix(eye(Float64, length(lvls)), lvls, lvls, C)
 
 "Promote contrasts matrix to full rank version"
-Base.convert(::Type{ContrastsMatrix{DummyContrasts}}, C::ContrastsMatrix) = ContrastsMatrix(DummyContrasts(), C.levels)
+Base.convert(::Type{ContrastsMatrix{FullDummyCoding}}, C::ContrastsMatrix) =
+    ContrastsMatrix(FullDummyCoding(), C.levels)
 
 """
-    TreatmentContrasts
+    DummyCoding
 
 One indicator column (1 or 0) for each non-base level.
 
 The default in R. Columns have non-zero mean and are collinear with an intercept
 column (and lower-order columns for interactions) but are orthogonal to each other.
 """
-TreatmentContrasts
+DummyCoding
 
-contrasts_matrix(C::TreatmentContrasts, baseind, n) = eye(n)[:, [1:(baseind-1); (baseind+1):n]]
+contrasts_matrix(C::DummyCoding, baseind, n) = eye(n)[:, [1:(baseind-1); (baseind+1):n]]
 
 
 """
-    SumContrasts
+    EffectsCoding
 
 Column for level `x` of column `col` is 1 where `col .== x` and -1 where
 `col .== base`.
@@ -208,9 +210,9 @@ Produces mean-0 (centered) columns _only_ when all levels are equally frequent.
 But with more than two levels, the generated columns are guaranteed to be non-
 orthogonal (so beware of collinearity).
 """
-SumContrasts
+EffectsCoding
 
-function contrasts_matrix(C::SumContrasts, baseind, n)
+function contrasts_matrix(C::EffectsCoding, baseind, n)
     not_base = [1:(baseind-1); (baseind+1):n]
     mat = eye(n)[:, not_base]
     mat[baseind, :] = -1
@@ -218,7 +220,7 @@ function contrasts_matrix(C::SumContrasts, baseind, n)
 end
 
 """
-    HelmertContrasts
+    HelmertCoding
 
 Produces contrast columns with -1 for each of n levels below contrast, n for
 contrast level, and 0 above.  Produces something like:
@@ -236,9 +238,9 @@ level n+1 and the average of levels 1 to n.  When balanced, it has the
 nice property of each column in the resulting model matrix being orthogonal and
 with mean 0.
 """
-HelmertContrasts
+HelmertCoding
 
-function contrasts_matrix(C::HelmertContrasts, baseind, n)
+function contrasts_matrix(C::HelmertCoding, baseind, n)
     mat = zeros(n, n-1)
     for i in 1:n-1
         mat[1:i, i] = -1

@@ -16,7 +16,7 @@ mf = ModelFrame(Formula(nothing, :x), d)
                             1  1  0]
 @test coefnames(mf) == ["(Intercept)"; "x: b"; "x: c"]
 
-setcontrasts!(mf, x = SumContrasts)
+setcontrasts!(mf, x = EffectsCoding)
 @test ModelMatrix(mf).m == [1 -1 -1
                             1  1  0
                             1  0  1
@@ -26,7 +26,7 @@ setcontrasts!(mf, x = SumContrasts)
 @test coefnames(mf) == ["(Intercept)"; "x: b"; "x: c"]
 
 # change base level of contrast
-setcontrasts!(mf, x = SumContrasts(base = :b))
+setcontrasts!(mf, x = EffectsCoding(base = :b))
 @test ModelMatrix(mf).m == [1  1  0
                             1 -1 -1
                             1  0  1
@@ -36,7 +36,7 @@ setcontrasts!(mf, x = SumContrasts(base = :b))
 @test coefnames(mf) == ["(Intercept)"; "x: a"; "x: c"]
 
 # change levels of contrast
-setcontrasts!(mf, x = SumContrasts(levels = [:c, :b, :a]))
+setcontrasts!(mf, x = EffectsCoding(levels = [:c, :b, :a]))
 @test ModelMatrix(mf).m == [1  0  1
                             1  1  0
                             1 -1 -1
@@ -47,7 +47,7 @@ setcontrasts!(mf, x = SumContrasts(levels = [:c, :b, :a]))
 
 
 # change levels and base level of contrast
-setcontrasts!(mf, x = SumContrasts(levels = [:c, :b, :a], base = :a))
+setcontrasts!(mf, x = EffectsCoding(levels = [:c, :b, :a], base = :a))
 @test ModelMatrix(mf).m == [1 -1 -1
                             1  0  1
                             1  1  0
@@ -57,7 +57,7 @@ setcontrasts!(mf, x = SumContrasts(levels = [:c, :b, :a], base = :a))
 @test coefnames(mf) == ["(Intercept)"; "x: c"; "x: b"]
 
 # Helmert coded contrasts
-setcontrasts!(mf, x = HelmertContrasts)
+setcontrasts!(mf, x = HelmertCoding)
 @test ModelMatrix(mf).m == [1 -1 -1
                             1  1 -1
                             1  0  2
@@ -68,12 +68,12 @@ setcontrasts!(mf, x = HelmertContrasts)
 
 # Types for contrast levels are converted to data levels when constructing
 # ContrastsMatrix
-setcontrasts!(mf, x = SumContrasts(levels = ["a", "b", "c"]))
+setcontrasts!(mf, x = EffectsCoding(levels = ["a", "b", "c"]))
 @test mf.contrasts[:x].levels == levels(d[:x])
 
 # Missing data is handled gracefully, dropping columns when a level is lost
 d[3, :x] = NA
-mf_missing = ModelFrame(Formula(nothing, :x), d, contrasts = Dict(:x => SumContrasts))
+mf_missing = ModelFrame(Formula(nothing, :x), d, contrasts = Dict(:x => EffectsCoding))
 @test ModelMatrix(mf_missing).m == [1 -1
                                     1  1
                                     1 -1
@@ -83,10 +83,10 @@ mf_missing = ModelFrame(Formula(nothing, :x), d, contrasts = Dict(:x => SumContr
 
 # Things that are bad to do:
 # Applying contrasts that only have a subset of data levels:
-@test_throws ArgumentError setcontrasts!(mf, x = SumContrasts(levels = [:a, :b]))
+@test_throws ArgumentError setcontrasts!(mf, x = EffectsCoding(levels = [:a, :b]))
 # Applying contrasts that expect levels not found in data:
-@test_throws ArgumentError setcontrasts!(mf, x = SumContrasts(levels = [:a, :b, :c, :d]))
+@test_throws ArgumentError setcontrasts!(mf, x = EffectsCoding(levels = [:a, :b, :c, :d]))
 # Asking for base level that's not found in data
-@test_throws ArgumentError setcontrasts!(mf, x = SumContrasts(base = :e))
+@test_throws ArgumentError setcontrasts!(mf, x = EffectsCoding(base = :e))
 
 end
