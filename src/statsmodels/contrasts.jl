@@ -98,14 +98,19 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::Vector)
     c_levels = oftype(levels, get(contrasts.levels, levels))
     mismatched_levels = symdiff(c_levels, levels)
     if ! isempty(mismatched_levels)
-        throw(ArgumentError("contrasts levels not found in data or vice-versa: $mismatched_levels.\nData levels: $levels.\nContrast levels: $c_levels"))
+        throw(ArgumentError("contrasts levels not found in data or vice-versa: " *
+                            "$mismatched_levels." *
+                            "\n  Data levels: $levels."*
+                            "\n  Contrast levels: $c_levels"))
     end
 
     n = length(c_levels)
     if n == 0
-        throw(ArgumentError("empty set of levels found (need at least two to compute contrasts)."))
+        throw(ArgumentError("empty set of levels found (need at least two to compute " *
+                            "contrasts)."))
     elseif n == 1
-        throw(ArgumentError("only one level found: $(c_levels[1]) (need at least two to compute contrasts)."))
+        throw(ArgumentError("only one level found: $(c_levels[1]) (need at least two to " *
+                            "compute contrasts)."))
     end
     
     # find index of base level. use contrasts.base, then default (1).
@@ -126,9 +131,10 @@ end
 # Methods for constructing ContrastsMatrix from data. These are called in
 # ModelFrame constructor and setcontrasts!.
 
-ContrastsMatrix(C::AbstractContrasts, v::PooledDataArray) = ContrastsMatrix(C, levels(v))
-# instantiate Type{C<:AbstractContrasts}
-ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, col::PooledDataArray) = ContrastsMatrix(c(), col)
+ContrastsMatrix(C::AbstractContrasts, v::PooledDataArray) =
+    ContrastsMatrix(C, levels(v))
+ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, col::PooledDataArray) =
+    ContrastsMatrix(c(), col)
 # given an existing ContrastsMatrix, check that all of the levels present in the
 # data are present in the contrasts. Note that this behavior is different from the
 # ContrastsMatrix constructor, which requires that the levels be exactly the same.
@@ -138,7 +144,10 @@ ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, col::PooledDataArray) = Cont
 ContrastsMatrix(c::ContrastsMatrix, col::PooledDataArray) =
     isempty(setdiff(levels(col), c.levels)) ?
     c :
-    throw(ArgumentError("there are levels in data that are not in ContrastsMatrix: $(setdiff(levels(col), c.levels))\n  Data levels: $(levels(col))\n  Contrast levels $(c.levels)"))
+    throw(ArgumentError("there are levels in data that are not in ContrastsMatrix: "*
+                        "$(setdiff(levels(col), c.levels))" *
+                        "\n  Data levels: $(levels(col))" *
+                        "\n  Contrast levels $(c.levels)"))
 
 function termnames(C::AbstractContrasts, levels::Vector, baseind::Integer)
     not_base = [1:(baseind-1); (baseind+1):length(levels)]
