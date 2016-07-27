@@ -89,4 +89,21 @@ mf_missing = ModelFrame(Formula(nothing, :x), d, contrasts = Dict(:x => EffectsC
 # Asking for base level that's not found in data
 @test_throws ArgumentError setcontrasts!(mf, x = EffectsCoding(base = :e))
 
+# Manually specified contrasts
+contrasts = [0  1
+             -1 -.5
+             1  -.5]
+setcontrasts!(mf, x = ContrastsCoding(contrasts))
+@test ModelMatrix(mf).m == [1  0  1
+                            1 -1 -.5
+                            1  1 -.5
+                            1  0  1
+                            1  0  1
+                            1 -1 -.5]
+
+# throw argument error if number of levels mismatches
+@test_throws ArgumentError setcontrasts!(mf, x = ContrastsCoding(contrasts[1:2, :]))
+@test_throws ArgumentError setcontrasts!(mf, x = ContrastsCoding(hcat(contrasts, contrasts)))
+
+
 end

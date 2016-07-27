@@ -47,6 +47,7 @@ export @~,
        EffectsCoding,
        DummyCoding,
        HelmertCoding,
+       ContrastsCoding,
 
        aggregate,
        by,
