@@ -8,6 +8,7 @@ d = DataFrame(x = @pdata( [:a, :b, :c, :a, :a, :b] ))
 
 mf = ModelFrame(Formula(nothing, :x), d)
 
+# Dummy coded contrasts by default:
 @test ModelMatrix(mf).m == [1  0  0
                             1  1  0
                             1  0  1
@@ -15,6 +16,10 @@ mf = ModelFrame(Formula(nothing, :x), d)
                             1  0  0
                             1  1  0]
 @test coefnames(mf) == ["(Intercept)"; "x: b"; "x: c"]
+
+mmm = ModelMatrix(mf).m
+setcontrasts!(mf, x = DummyCoding)
+@test ModelMatrix(mf).m == mmm
 
 setcontrasts!(mf, x = EffectsCoding)
 @test ModelMatrix(mf).m == [1 -1 -1
