@@ -71,10 +71,8 @@ setcontrasts!(mf, x = HelmertCoding)
                             1  1 -1]
 @test coefnames(mf) == ["(Intercept)"; "x: b"; "x: c"]
 
-# Types for contrast levels are converted to data levels when constructing
-# ContrastsMatrix
-setcontrasts!(mf, x = EffectsCoding(levels = ["a", "b", "c"]))
-@test mf.contrasts[:x].levels == levels(d[:x])
+# Mismatching types of data and contrasts levels throws an error:
+@test_throws ArgumentError setcontrasts!(mf, x = EffectsCoding(levels = ["a", "b", "c"]))
 
 # Missing data is handled gracefully, dropping columns when a level is lost
 d[3, :x] = NA

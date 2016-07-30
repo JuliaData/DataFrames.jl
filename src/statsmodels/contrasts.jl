@@ -44,9 +44,6 @@ You can also specify the base level of the contrasts. The actual interpretation
 of this depends on the particular contrast type, but in general it can be
 thought of as a "reference" level.  It defaults to the first level.
 
-Both `levels` and `base` will be converted to the type of the data when
-constructing a `ContrastsMatrix`.
-
 # Concrete types
 
 * `DummyCoding` - Code each non-base level as a 0-1 indicator column.
@@ -105,7 +102,11 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::AbstractV
     #    better to filter data frame first
     # 3. contrast levels missing from data: would have empty columns, generate a
     #    rank-deficient model matrix.
-    c_levels = oftype(levels, get(contrasts.levels, levels))
+    c_levels = get(contrasts.levels, levels)
+    if eltype(c_levels) != eltype(levels)
+        throw(ArgumentError("mismatching levels types: got $(eltype(levels)), expected " *
+                            "$(eltype(c_levels)) based on contrasts levels."))
+    end
     mismatched_levels = symdiff(c_levels, levels)
     if ! isempty(mismatched_levels)
         throw(ArgumentError("contrasts levels not found in data or vice-versa: " *
@@ -126,7 +127,7 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::AbstractV
     # find index of base level. use contrasts.base, then default (1).
     baseind = isnull(contrasts.base) ?
               1 :
-              findfirst(c_levels, convert(eltype(levels), get(contrasts.base)))
+              findfirst(c_levels, get(contrasts.base))
     if baseind < 1
         throw(ArgumentError("base level $(get(contrasts.base)) not found in levels $c_levels."))
     end
