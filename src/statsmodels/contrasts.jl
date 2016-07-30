@@ -111,7 +111,7 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::AbstractV
     if !isempty(mismatched_levels)
         throw(ArgumentError("contrasts levels not found in data or vice-versa: " *
                             "$mismatched_levels." *
-                            "\n  Data levels: $levels."*
+                            "\n  Data levels: $levels." *
                             "\n  Contrast levels: $c_levels"))
     end
 
@@ -129,7 +129,8 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::AbstractV
               1 :
               findfirst(c_levels, get(contrasts.base))
     if baseind < 1
-        throw(ArgumentError("base level $(get(contrasts.base)) not found in levels $c_levels."))
+        throw(ArgumentError("base level $(get(contrasts.base)) not found in levels " *
+                            "$c_levels."))
     end
 
     tnames = termnames(contrasts, c_levels, baseind)
@@ -141,6 +142,7 @@ end
 
 # Methods for constructing ContrastsMatrix from data. These are called in
 # ModelFrame constructor and setcontrasts!.
+# TODO: add methods for new categorical types
 
 ContrastsMatrix(C::AbstractContrasts, v::PooledDataArray) =
     ContrastsMatrix(C, levels(v))
@@ -154,10 +156,10 @@ ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, col::PooledDataArray) =
 # (instead of in `modelmat_cols`) allows an informative error message.
 function ContrastsMatrix(c::ContrastsMatrix, col::PooledDataArray)
     if !isempty(setdiff(levels(col), c.levels))
-        throw(ArgumentError("there are levels in data that are not in ContrastsMatrix: "*
+        throw(ArgumentError("there are levels in data that are not in ContrastsMatrix: " *
                             "$(setdiff(levels(col), c.levels))" *
                             "\n  Data levels: $(levels(col))" *
-                            "\n  Contrast levels $(c.levels)"))
+                            "\n  Contrast levels: $(c.levels)"))
     end
     return c
 end
