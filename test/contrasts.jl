@@ -18,10 +18,10 @@ mf = ModelFrame(Formula(nothing, :x), d)
 @test coefnames(mf) == ["(Intercept)"; "x: b"; "x: c"]
 
 mmm = ModelMatrix(mf).m
-setcontrasts!(mf, x = DummyCoding)
+setcontrasts!(mf, x = DummyCoding())
 @test ModelMatrix(mf).m == mmm
 
-setcontrasts!(mf, x = EffectsCoding)
+setcontrasts!(mf, x = EffectsCoding())
 @test ModelMatrix(mf).m == [1 -1 -1
                             1  1  0
                             1  0  1
@@ -62,7 +62,7 @@ setcontrasts!(mf, x = EffectsCoding(levels = [:c, :b, :a], base = :a))
 @test coefnames(mf) == ["(Intercept)"; "x: c"; "x: b"]
 
 # Helmert coded contrasts
-setcontrasts!(mf, x = HelmertCoding)
+setcontrasts!(mf, x = HelmertCoding())
 @test ModelMatrix(mf).m == [1 -1 -1
                             1  1 -1
                             1  0  2
@@ -76,7 +76,7 @@ setcontrasts!(mf, x = HelmertCoding)
 
 # Missing data is handled gracefully, dropping columns when a level is lost
 d[3, :x] = NA
-mf_missing = ModelFrame(Formula(nothing, :x), d, contrasts = Dict(:x => EffectsCoding))
+mf_missing = ModelFrame(Formula(nothing, :x), d, contrasts = Dict(:x => EffectsCoding()))
 @test ModelMatrix(mf_missing).m == [1 -1
                                     1  1
                                     1 -1
@@ -108,5 +108,7 @@ setcontrasts!(mf, x = ContrastsCoding(contrasts))
 @test_throws ArgumentError setcontrasts!(mf, x = ContrastsCoding(contrasts[1:2, :]))
 @test_throws ArgumentError setcontrasts!(mf, x = ContrastsCoding(hcat(contrasts, contrasts)))
 
+# contrasts types must be instaniated
+@test_throws ArgumentError setcontrasts!(mf, x = DummyCoding)
 
 end

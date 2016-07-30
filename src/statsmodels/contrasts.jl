@@ -147,7 +147,7 @@ end
 ContrastsMatrix(C::AbstractContrasts, v::PooledDataArray) =
     ContrastsMatrix(C, levels(v))
 ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, col::PooledDataArray) =
-    ContrastsMatrix(c(), col)
+    throw(ArgumentError("contrast types must be instantiated (use $c() instead of $c)"))
 # given an existing ContrastsMatrix, check that all of the levels present in the
 # data are present in the contrasts. Note that this behavior is different from the
 # ContrastsMatrix constructor, which requires that the levels be exactly the same.

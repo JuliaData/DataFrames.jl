@@ -295,7 +295,7 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
         is_categorical(col) || continue
         evaledContrasts[term] = ContrastsMatrix(haskey(contrasts, term) ?
                                                 contrasts[term] :
-                                                DEFAULT_CONTRASTS,
+                                                DEFAULT_CONTRASTS(),
                                                 col)
     end
 
