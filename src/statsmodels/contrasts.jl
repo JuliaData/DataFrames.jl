@@ -49,10 +49,11 @@ constructing a `ContrastsMatrix`.
 
 # Concrete types
 
-* `DummyCoding`
-* `EffectsCoding`
-* `HelmertCoding`
-* `ContrastsCoding`
+* `DummyCoding` - Code each non-base level as a 0-1 indicator column.
+* `EffectsCoding` - Code each non-base level as 1, and base as -1.
+* `HelmertCoding` - Code each non-base level as the difference from the mean of
+  the lower levels
+* `ContrastsCoding` - Manually specify contrasts matrix
 
 The last coding type, `ContrastsCoding`, provides a way to manually specify a
 contrasts matrix. For a variable `x` with k levels, a contrasts matrix `M` is a
