@@ -11,8 +11,6 @@
 #
 # ModelMatrix will check this dict when evaluating terms, falling back to a
 # default for any categorical data without a specified contrast.
-#
-# TODO: implement contrast types in Formula/Terms
 
 
 """

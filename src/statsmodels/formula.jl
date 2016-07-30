@@ -24,6 +24,9 @@ macro ~(lhs, rhs)
     return ex
 end
 
+#
+# TODO: implement contrast types in Formula/Terms
+#
 type Terms
     terms::Vector
     eterms::Vector        # evaluation terms
