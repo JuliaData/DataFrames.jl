@@ -87,14 +87,14 @@ type ContrastsMatrix{C <: AbstractContrasts, T}
 end
 
 """
-    ContrastsMatrix{C<:AbstractContrasts}(contrasts::C, levels::Vector)
+    ContrastsMatrix{C<:AbstractContrasts}(contrasts::C, levels::AbstractVector)
 
 Compute contrasts matrix for given data levels.
 
 If levels are specified in the `AbstractContrasts`, those will be used, and likewise
 for the base level (which defaults to the first level).
 """
-function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::Vector)
+function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::AbstractVector)
 
     # if levels are defined on contrasts, use those, validating that they line up.
     # what does that mean? either:
@@ -158,7 +158,7 @@ ContrastsMatrix(c::ContrastsMatrix, col::PooledDataArray) =
                         "\n  Data levels: $(levels(col))" *
                         "\n  Contrast levels $(c.levels)"))
 
-function termnames(C::AbstractContrasts, levels::Vector, baseind::Integer)
+function termnames(C::AbstractContrasts, levels::AbstractVector, baseind::Integer)
     not_base = [1:(baseind-1); (baseind+1):length(levels)]
     levels[not_base]
 end
