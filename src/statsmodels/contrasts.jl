@@ -151,13 +151,15 @@ ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, col::PooledDataArray) =
 # This method exists to support things like `predict` that can operate on new data
 # which may contain only a subset of the original data's levels. Checking here
 # (instead of in `modelmat_cols`) allows an informative error message.
-ContrastsMatrix(c::ContrastsMatrix, col::PooledDataArray) =
-    isempty(setdiff(levels(col), c.levels)) ?
-    c :
-    throw(ArgumentError("there are levels in data that are not in ContrastsMatrix: "*
-                        "$(setdiff(levels(col), c.levels))" *
-                        "\n  Data levels: $(levels(col))" *
-                        "\n  Contrast levels $(c.levels)"))
+function ContrastsMatrix(c::ContrastsMatrix, col::PooledDataArray)
+    if !isempty(setdiff(levels(col), c.levels))
+        throw(ArgumentError("there are levels in data that are not in ContrastsMatrix: "*
+                            "$(setdiff(levels(col), c.levels))" *
+                            "\n  Data levels: $(levels(col))" *
+                            "\n  Contrast levels $(c.levels)"))
+    end
+    return c
+end
 
 function termnames(C::AbstractContrasts, levels::AbstractVector, baseind::Integer)
     not_base = [1:(baseind-1); (baseind+1):length(levels)]
