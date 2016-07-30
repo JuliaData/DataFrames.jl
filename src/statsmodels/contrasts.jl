@@ -108,7 +108,7 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::AbstractV
                             "$(eltype(c_levels)) based on contrasts levels."))
     end
     mismatched_levels = symdiff(c_levels, levels)
-    if ! isempty(mismatched_levels)
+    if !isempty(mismatched_levels)
         throw(ArgumentError("contrasts levels not found in data or vice-versa: " *
                             "$mismatched_levels." *
                             "\n  Data levels: $levels."*
