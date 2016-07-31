@@ -224,6 +224,14 @@ Also known as "treatment coding" (`contr.treatment` in R) or "one-hot encoding".
 """
 DummyCoding
 
+"""
+    TreatmentCoding([base[, levels]])
+
+Alias for `DummyCoding`, which is also known as treatment coding (e.g.,
+`contr.treatment` in R).
+"""
+typealias TreatmentCoding DummyCoding
+
 contrasts_matrix(C::DummyCoding, baseind, n) = eye(n)[:, [1:(baseind-1); (baseind+1):n]]
 
 
@@ -248,6 +256,13 @@ Here we use the _first_ level as the base, for consistency with other coding
 schemes.
 """
 EffectsCoding
+
+"""
+    SumCoding([base[, levels]])
+
+Alias for `EffectsCoding`, which is also known as sum coding (e.g., `contr.sum` in R).
+"""
+typealias SumCoding EffectsCoding
 
 function contrasts_matrix(C::EffectsCoding, baseind, n)
     not_base = [1:(baseind-1); (baseind+1):n]
