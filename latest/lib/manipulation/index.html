@@ -23,8 +23,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     
-    <link rel="shortcut icon" type="image/x-icon" href="../../None">
-    <link rel="icon" type="image/x-icon" href="../../None">
+    <link rel="shortcut icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
+    <link rel="icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
     <style>
       @font-face {
       	font-family: 'Icon';
@@ -41,7 +41,7 @@
       	font-style: normal;
       }
     </style>
-    <link rel="stylesheet" href="../../assets/stylesheets/application-0dac3e5884.css">
+    <link rel="stylesheet" href="../../assets/stylesheets/application-a422ff04cc.css">
     
       <link rel="stylesheet" href="../../assets/stylesheets/palettes-05ab2406df.css">
     
@@ -49,7 +49,7 @@
       
       
       
-      <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
       <style>
         body, input {
           font-family: 'Ubuntu', Helvetica, Arial, sans-serif;
@@ -378,26 +378,24 @@
 </ul>
 <p><strong>Keyword Arguments</strong></p>
 <ul>
-<li>
-<p><code>on</code> : a Symbol or Vector{Symbol}, the column(s) used as keys when   joining; required argument except for <code>kind = :cross</code></p>
-</li>
+<li><code>on</code> : a Symbol or Vector{Symbol}, the column(s) used as keys when joining; required argument except for <code>kind = :cross</code></li>
 <li>
 <p><code>kind</code> : the type of join, options include:</p>
-</li>
-<li>
-<p><code>:inner</code> : only include rows with keys that match in both <code>df1</code>     and <code>df2</code>, the default</p>
-</li>
+<ul>
+<li><code>:inner</code> : only include rows with keys that match in both <code>df1</code> and <code>df2</code>, the default</li>
 <li><code>:outer</code> : include all rows from <code>df1</code> and <code>df2</code></li>
 <li><code>:left</code> : include all rows from <code>df1</code></li>
 <li><code>:right</code> : include all rows from <code>df2</code></li>
 <li><code>:semi</code> : return rows of <code>df1</code> that match with the keys in <code>df2</code></li>
 <li><code>:anti</code> : return rows of <code>df1</code> that do not match with the keys in <code>df2</code></li>
-<li><code>:cross</code> : a full Cartesian product of the key combinations; every     row of <code>df1</code> is matched with every row of <code>df2</code></li>
+<li><code>:cross</code> : a full Cartesian product of the key combinations; every row of <code>df1</code> is matched with every row of <code>df2</code></li>
+</ul>
+</li>
 </ul>
 <p><code>NA</code>s are filled in where needed to complete joins.</p>
 <p><strong>Result</strong></p>
 <ul>
-<li><code>::DataFrame</code> : the joined DataFrame </li>
+<li><code>::DataFrame</code> : the joined DataFrame</li>
 </ul>
 <p><strong>Examples</strong></p>
 <div class="codehilite"><pre><span></span><span class="n">name</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">Name</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;John Doe&quot;</span><span class="p">,</span> <span class="s">&quot;Jane Doe&quot;</span><span class="p">,</span> <span class="s">&quot;Joe Blogs&quot;</span><span class="p">])</span>
@@ -413,14 +411,61 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/join.jl#L136-188' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/join.jl#L140-192' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre><span class="nf">join</span><span class="p">(</span>
+    <span class="n">df1</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">df2</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/join.jl#L197">src/abstractdataframe/join.jl:197</a>
+</li>
+</ul>
+
+<p><em>Hiding 4 methods defined outside of this package.</em></p>
 <p><a id='Reshaping-1'></a></p>
 <h2 id="reshaping">Reshaping</h2>
 <p><a id='DataFrames.melt' href='#DataFrames.melt'>#</a>
 <strong><code>DataFrames.melt</code></strong> &mdash; <em>Function</em>.</p>
 <p>Stacks a DataFrame; convert from a wide to long format; see <code>stack</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/reshape.jl#L105-108' class='documenter-source'>source</a><br>
-<a id='DataFrames.stack' href='#DataFrames.stack'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L105-108' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">melt</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L115">src/abstractdataframe/reshape.jl:115</a>
+</li>
+<li>
+    <pre><span class="nf">melt</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">id_vars</span><span class="p">::</span><span class="n">Union{Int64,Symbol}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L109">src/abstractdataframe/reshape.jl:109</a>
+</li>
+<li>
+    <pre><span class="nf">melt</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">id_vars</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L111">src/abstractdataframe/reshape.jl:111</a>
+</li>
+<li>
+    <pre><span class="nf">melt</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">id_vars</span><span class="p">,
+</span>    <span class="n">measure_vars</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L114">src/abstractdataframe/reshape.jl:114</a>
+</li>
+</ul>
+
+<p><a id='DataFrames.stack' href='#DataFrames.stack'>#</a>
 <strong><code>DataFrames.stack</code></strong> &mdash; <em>Function</em>.</p>
 <p>Stacks a DataFrame; convert from a wide to long format</p>
 <div class="codehilite"><pre><span></span><span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">measure_vars</span><span class="p">,</span> <span class="n">id_vars</span><span class="p">)</span>
@@ -433,20 +478,14 @@
 
 <p><strong>Arguments</strong></p>
 <ul>
-<li>
-<p><code>df</code> : the AbstractDataFrame to be stacked</p>
-</li>
-<li>
-<p><code>measure_vars</code> : the columns to be stacked (the measurement   variables), a normal column indexing type, like a Symbol,   Vector{Symbol}, Int, etc.; for <code>melt</code>, defaults to all   variables that are not <code>id_vars</code></p>
-</li>
-<li>
-<p><code>id_vars</code> : the identifier columns that are repeated during   stacking, a normal column indexing type; for <code>stack</code> defaults to all   variables that are not <code>measure_vars</code></p>
-</li>
+<li><code>df</code> : the AbstractDataFrame to be stacked</li>
+<li><code>measure_vars</code> : the columns to be stacked (the measurement variables), a normal column indexing type, like a Symbol, Vector{Symbol}, Int, etc.; for <code>melt</code>, defaults to all variables that are not <code>id_vars</code></li>
+<li><code>id_vars</code> : the identifier columns that are repeated during stacking, a normal column indexing type; for <code>stack</code> defaults to all variables that are not <code>measure_vars</code></li>
 </ul>
 <p>If neither <code>measure_vars</code> or <code>id_vars</code> are given, <code>measure_vars</code> defaults to all floating point columns.</p>
 <p><strong>Result</strong></p>
 <ul>
-<li><code>::DataFrame</code> : the long-format dataframe with column <code>:value</code>   holding the values of the stacked columns (<code>measure_vars</code>), with   column <code>:variable</code> a Vector of Symbols with the <code>measure_vars</code> name,   and with columns for each of the <code>id_vars</code>.</li>
+<li><code>::DataFrame</code> : the long-format dataframe with column <code>:value</code> holding the values of the stacked columns (<code>measure_vars</code>), with column <code>:variable</code> a Vector of Symbols with the <code>measure_vars</code> name, and with columns for each of the <code>id_vars</code>.</li>
 </ul>
 <p>See also <code>stackdf</code> and <code>meltdf</code> for stacking methods that return a view into the original DataFrame. See <code>unstack</code> for converting from long to wide format.</p>
 <p><strong>Examples</strong></p>
@@ -462,8 +501,70 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/reshape.jl#L20-74' class='documenter-source'>source</a><br>
-<a id='DataFrames.unstack' href='#DataFrames.unstack'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L20-74' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">stack</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L101">src/abstractdataframe/reshape.jl:101</a>
+</li>
+<li>
+    <pre><span class="nf">stack</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span><span class="p">::</span><span class="n">Array{Int64,1}</span><span class="p">,
+</span>    <span class="n">id_vars</span><span class="p">::</span><span class="n">Array{Int64,1}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L76">src/abstractdataframe/reshape.jl:76</a>
+</li>
+<li>
+    <pre><span class="nf">stack</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span><span class="p">::</span><span class="n">Int64</span><span class="p">,
+</span>    <span class="n">id_vars</span><span class="p">::</span><span class="n">Int64</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L86">src/abstractdataframe/reshape.jl:86</a>
+</li>
+<li>
+    <pre><span class="nf">stack</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span><span class="p">::</span><span class="n">Array{Int64,1}</span><span class="p">,
+</span>    <span class="n">id_vars</span><span class="p">::</span><span class="n">Int64</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L89">src/abstractdataframe/reshape.jl:89</a>
+</li>
+<li>
+    <pre><span class="nf">stack</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span><span class="p">::</span><span class="n">Int64</span><span class="p">,
+</span>    <span class="n">id_vars</span><span class="p">::</span><span class="n">Array{Int64,1}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L92">src/abstractdataframe/reshape.jl:92</a>
+</li>
+<li>
+    <pre><span class="nf">stack</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L97">src/abstractdataframe/reshape.jl:97</a>
+</li>
+<li>
+    <pre><span class="nf">stack</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span><span class="p">,
+</span>    <span class="n">id_vars</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L94">src/abstractdataframe/reshape.jl:94</a>
+</li>
+</ul>
+
+<p><a id='DataFrames.unstack' href='#DataFrames.unstack'>#</a>
 <strong><code>DataFrames.unstack</code></strong> &mdash; <em>Function</em>.</p>
 <p>Unstacks a DataFrame; convert from a long to wide format</p>
 <div class="codehilite"><pre><span></span><span class="n">unstack</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">rowkey</span><span class="p">,</span> <span class="n">colkey</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -474,18 +575,10 @@
 
 <p><strong>Arguments</strong></p>
 <ul>
-<li>
-<p><code>df</code> : the AbstractDataFrame to be unstacked</p>
-</li>
-<li>
-<p><code>rowkey</code> : the column with a unique key for each row, if not given,   find a key by grouping on anything not a <code>colkey</code> or <code>value</code></p>
-</li>
-<li>
-<p><code>colkey</code> : the column holding the column names in wide format,   defaults to <code>:variable</code></p>
-</li>
-<li>
-<p><code>value</code> : the value column, defaults to <code>:value</code></p>
-</li>
+<li><code>df</code> : the AbstractDataFrame to be unstacked</li>
+<li><code>rowkey</code> : the column with a unique key for each row, if not given, find a key by grouping on anything not a <code>colkey</code> or <code>value</code></li>
+<li><code>colkey</code> : the column holding the column names in wide format, defaults to <code>:variable</code></li>
+<li><code>value</code> : the value column, defaults to <code>:value</code></li>
 </ul>
 <p><strong>Result</strong></p>
 <ul>
@@ -506,8 +599,55 @@
 
 
 <p>Note that there are some differences between the widened results above.</p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/reshape.jl#L123-165' class='documenter-source'>source</a><br>
-<a id='DataFrames.stackdf' href='#DataFrames.stackdf'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L123-165' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">unstack</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L229">src/abstractdataframe/reshape.jl:229</a>
+</li>
+<li>
+    <pre><span class="nf">unstack</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">colkey</span><span class="p">::</span><span class="n">Int64</span><span class="p">,
+</span>    <span class="n">value</span><span class="p">::</span><span class="n">Int64</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L201">src/abstractdataframe/reshape.jl:201</a>
+</li>
+<li>
+    <pre><span class="nf">unstack</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">rowkey</span><span class="p">::</span><span class="n">Int64</span><span class="p">,
+</span>    <span class="n">colkey</span><span class="p">::</span><span class="n">Int64</span><span class="p">,
+</span>    <span class="n">value</span><span class="p">::</span><span class="n">Int64</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L170">src/abstractdataframe/reshape.jl:170</a>
+</li>
+<li>
+    <pre><span class="nf">unstack</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">colkey</span><span class="p">,
+</span>    <span class="n">value</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L196">src/abstractdataframe/reshape.jl:196</a>
+</li>
+<li>
+    <pre><span class="nf">unstack</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">rowkey</span><span class="p">,
+</span>    <span class="n">colkey</span><span class="p">,
+</span>    <span class="n">value</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L192">src/abstractdataframe/reshape.jl:192</a>
+</li>
+</ul>
+
+<p><a id='DataFrames.stackdf' href='#DataFrames.stackdf'>#</a>
 <strong><code>DataFrames.stackdf</code></strong> &mdash; <em>Function</em>.</p>
 <p>A stacked view of a DataFrame (long format)</p>
 <p>Like <code>stack</code> and <code>melt</code>, but a view is returned rather than data copies.</p>
@@ -520,19 +660,13 @@
 
 <p><strong>Arguments</strong></p>
 <ul>
-<li>
-<p><code>df</code> : the wide AbstractDataFrame</p>
-</li>
-<li>
-<p><code>measure_vars</code> : the columns to be stacked (the measurement   variables), a normal column indexing type, like a Symbol,   Vector{Symbol}, Int, etc.; for <code>melt</code>, defaults to all   variables that are not <code>id_vars</code></p>
-</li>
-<li>
-<p><code>id_vars</code> : the identifier columns that are repeated during   stacking, a normal column indexing type; for <code>stack</code> defaults to all   variables that are not <code>measure_vars</code></p>
-</li>
+<li><code>df</code> : the wide AbstractDataFrame</li>
+<li><code>measure_vars</code> : the columns to be stacked (the measurement variables), a normal column indexing type, like a Symbol, Vector{Symbol}, Int, etc.; for <code>melt</code>, defaults to all variables that are not <code>id_vars</code></li>
+<li><code>id_vars</code> : the identifier columns that are repeated during stacking, a normal column indexing type; for <code>stack</code> defaults to all variables that are not <code>measure_vars</code></li>
 </ul>
 <p><strong>Result</strong></p>
 <ul>
-<li><code>::DataFrame</code> : the long-format dataframe with column <code>:value</code>   holding the values of the stacked columns (<code>measure_vars</code>), with   column <code>:variable</code> a Vector of Symbols with the <code>measure_vars</code> name,   and with columns for each of the <code>id_vars</code>.</li>
+<li><code>::DataFrame</code> : the long-format dataframe with column <code>:value</code> holding the values of the stacked columns (<code>measure_vars</code>), with column <code>:variable</code> a Vector of Symbols with the <code>measure_vars</code> name, and with columns for each of the <code>id_vars</code>.</li>
 </ul>
 <p>The result is a view because the columns are special AbstractVectors that return indexed views into the original DataFrame.</p>
 <p><strong>Examples</strong></p>
@@ -548,11 +682,98 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/reshape.jl#L370-420' class='documenter-source'>source</a><br>
-<a id='DataFrames.meltdf' href='#DataFrames.meltdf'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L370-420' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">stackdf</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L448">src/abstractdataframe/reshape.jl:448</a>
+</li>
+<li>
+    <pre><span class="nf">stackdf</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span><span class="p">::</span><span class="n">Array{Int64,1}</span><span class="p">,
+</span>    <span class="n">id_vars</span><span class="p">::</span><span class="n">Array{Int64,1}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L422">src/abstractdataframe/reshape.jl:422</a>
+</li>
+<li>
+    <pre><span class="nf">stackdf</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span><span class="p">::</span><span class="n">Int64</span><span class="p">,
+</span>    <span class="n">id_vars</span><span class="p">::</span><span class="n">Int64</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L432">src/abstractdataframe/reshape.jl:432</a>
+</li>
+<li>
+    <pre><span class="nf">stackdf</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L444">src/abstractdataframe/reshape.jl:444</a>
+</li>
+<li>
+    <pre><span class="nf">stackdf</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span><span class="p">,
+</span>    <span class="n">id_vars</span><span class="p">::</span><span class="n">Int64</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L435">src/abstractdataframe/reshape.jl:435</a>
+</li>
+<li>
+    <pre><span class="nf">stackdf</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span><span class="p">::</span><span class="n">Int64</span><span class="p">,
+</span>    <span class="n">id_vars</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L438">src/abstractdataframe/reshape.jl:438</a>
+</li>
+<li>
+    <pre><span class="nf">stackdf</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">measure_vars</span><span class="p">,
+</span>    <span class="n">id_vars</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L441">src/abstractdataframe/reshape.jl:441</a>
+</li>
+</ul>
+
+<p><a id='DataFrames.meltdf' href='#DataFrames.meltdf'>#</a>
 <strong><code>DataFrames.meltdf</code></strong> &mdash; <em>Function</em>.</p>
 <p>A stacked view of a DataFrame (long format); see <code>stackdf</code></p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/reshape.jl#L452-454' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L452-454' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">meltdf</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L461">src/abstractdataframe/reshape.jl:461</a>
+</li>
+<li>
+    <pre><span class="nf">meltdf</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">id_vars</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L456">src/abstractdataframe/reshape.jl:456</a>
+</li>
+<li>
+    <pre><span class="nf">meltdf</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">id_vars</span><span class="p">,
+</span>    <span class="n">measure_vars</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L459">src/abstractdataframe/reshape.jl:459</a>
+</li>
+</ul>
           <aside class="copyright" role="note">
             
             Documentation built with

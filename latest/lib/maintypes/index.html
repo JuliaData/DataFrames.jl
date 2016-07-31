@@ -23,8 +23,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     
-    <link rel="shortcut icon" type="image/x-icon" href="../../None">
-    <link rel="icon" type="image/x-icon" href="../../None">
+    <link rel="shortcut icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
+    <link rel="icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
     <style>
       @font-face {
       	font-family: 'Icon';
@@ -41,7 +41,7 @@
       	font-style: normal;
       }
     </style>
-    <link rel="stylesheet" href="../../assets/stylesheets/application-0dac3e5884.css">
+    <link rel="stylesheet" href="../../assets/stylesheets/application-a422ff04cc.css">
     
       <link rel="stylesheet" href="../../assets/stylesheets/palettes-05ab2406df.css">
     
@@ -49,7 +49,7 @@
       
       
       
-      <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
       <style>
         body, input {
           font-family: 'Ubuntu', Helvetica, Arial, sans-serif;
@@ -389,8 +389,8 @@
 
 
 <p><code>setindex</code> works similarly.</p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L6-66' class='documenter-source'>source</a><br>
-<a id='DataFrames.DataFrame' href='#DataFrames.DataFrame'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L6-66' class='documenter-source'>source</a><br></p>
+<p><a id='DataFrames.DataFrame' href='#DataFrames.DataFrame'>#</a>
 <strong><code>DataFrames.DataFrame</code></strong> &mdash; <em>Type</em>.</p>
 <p>An AbstractDataFrame that stores a set of named columns</p>
 <p>The columns are normally AbstractVectors stored in memory, particularly a Vector, DataVector, or PooledDataVector.</p>
@@ -408,7 +408,7 @@
 <ul>
 <li><code>columns</code> : a Vector{Any} with each column as contents</li>
 <li><code>names</code> : the column names</li>
-<li><code>kwargs</code> : the key gives the column names, and the value is the   column contents</li>
+<li><code>kwargs</code> : the key gives the column names, and the value is the column contents</li>
 <li><code>t</code> : elemental type of all columns</li>
 <li><code>nrows</code>, <code>ncols</code> : number of rows and columns</li>
 <li><code>column_eltypes</code> : elemental type of each column</li>
@@ -443,8 +443,93 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/dataframe/dataframe.jl#L5-75' class='documenter-source'>source</a><br>
-<a id='DataFrames.SubDataFrame' href='#DataFrames.SubDataFrame'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L5-75' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">DataFrame</span><span class="p">(</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L102">src/dataframe/dataframe.jl:102</a>
+</li>
+<li>
+    <pre class="documenter-inline"><span class="nf">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="p">::</span><span class="n">Array{Any,1}</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L111">src/dataframe/dataframe.jl:111</a>
+</li>
+<li>
+    <pre><span class="nf">DataFrame</span><span class="p">(</span>
+    <span class="n">columns</span><span class="p">::</span><span class="n">Array{Any,1}</span><span class="p">,
+</span>    <span class="n">colindex</span><span class="p">::</span><span class="n">DataFrames.Index</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L81">src/dataframe/dataframe.jl:81</a>
+</li>
+<li>
+    <pre><span class="nf">DataFrame</span><span class="p">(</span>
+    <span class="n">columns</span><span class="p">::</span><span class="n">Array{Any,1}</span><span class="p">,
+</span>    <span class="n">cnames</span><span class="p">::</span><span class="n">Array{Symbol,1}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L111">src/dataframe/dataframe.jl:111</a>
+</li>
+<li>
+    <pre><span class="nf">DataFrame</span><span class="p">(</span>
+    <span class="n">t</span><span class="p">::</span><span class="n">Type</span><span class="p">,
+</span>    <span class="n">nrows</span><span class="p">::</span><span class="n">Integer</span><span class="p">,
+</span>    <span class="n">ncols</span><span class="p">::</span><span class="n">Integer</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L117">src/dataframe/dataframe.jl:117</a>
+</li>
+<li>
+    <pre class="documenter-inline"><span class="nf">DataFrame</span><span class="p">{</span><span class="n">D<:Associative{K,V}</span><span class="p">}</span><span class="p">(</span><span class="n">ds</span><span class="p">::</span><span class="n">Array{D,1}</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L161">src/dataframe/dataframe.jl:161</a>
+</li>
+<li>
+    <pre><span class="nf">DataFrame</span><span class="p">{</span><span class="n">D<:Associative{K,V}</span><span class="p">}</span><span class="p">(</span>
+    <span class="n">ds</span><span class="p">::</span><span class="n">Array{D,1}</span><span class="p">,
+</span>    <span class="n">ks</span><span class="p">::</span><span class="n">Array{T<:Any,1}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L171">src/dataframe/dataframe.jl:171</a>
+</li>
+<li>
+    <pre><span class="nf">DataFrame</span><span class="p">(</span>
+    <span class="n">column_eltypes</span><span class="p">::</span><span class="n">Array{T<:Any,1}</span><span class="p">,
+</span>    <span class="n">cnames</span><span class="p">::</span><span class="n">Array{T<:Any,1}</span><span class="p">,
+</span>    <span class="n">nrows</span><span class="p">::</span><span class="n">Integer</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L127">src/dataframe/dataframe.jl:127</a>
+</li>
+<li>
+    <pre><span class="nf">DataFrame</span><span class="p">(</span>
+    <span class="n">column_eltypes</span><span class="p">::</span><span class="n">Array{DataType,1}</span><span class="p">,
+</span>    <span class="n">cnames</span><span class="p">::</span><span class="n">Array{Symbol,1}</span><span class="p">,
+</span>    <span class="n">ispda</span><span class="p">::</span><span class="n">Array{Bool,1}</span><span class="p">,
+</span>    <span class="n">nrows</span><span class="p">::</span><span class="n">Integer</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L136">src/dataframe/dataframe.jl:136</a>
+</li>
+<li>
+    <pre><span class="nf">DataFrame</span><span class="p">(</span>
+    <span class="n">column_eltypes</span><span class="p">::</span><span class="n">Array{T<:Any,1}</span><span class="p">,
+</span>    <span class="n">nrows</span><span class="p">::</span><span class="n">Integer</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/dataframe/dataframe.jl#L150">src/dataframe/dataframe.jl:150</a>
+</li>
+<li>
+    <pre class="documenter-inline"><span class="nf">DataFrame</span><span class="p">(</span><span class="n">rl</span><span class="p">::</span><span class="n">DataFrames.RVector{Any,0x13}</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/RDA.jl#L499">src/RDA.jl:499</a>
+</li>
+</ul>
+
+<p><em>Hiding 1 method defined outside of this package.</em></p>
+<p><a id='DataFrames.SubDataFrame' href='#DataFrames.SubDataFrame'>#</a>
 <strong><code>DataFrames.SubDataFrame</code></strong> &mdash; <em>Type</em>.</p>
 <p>A view of row subsets of an AbstractDataFrame</p>
 <p>A <code>SubDataFrame</code> is meant to be constructed with <code>sub</code>.  A SubDataFrame is used frequently in split/apply sorts of operations.</p>
@@ -455,7 +540,7 @@
 <p><strong>Arguments</strong></p>
 <ul>
 <li><code>d</code> : an AbstractDataFrame</li>
-<li><code>rows</code> : any indexing type for rows, typically an Int,   AbstractVector{Int}, AbstractVector{Bool}, or a Range</li>
+<li><code>rows</code> : any indexing type for rows, typically an Int, AbstractVector{Int}, AbstractVector{Bool}, or a Range</li>
 </ul>
 <p><strong>Notes</strong></p>
 <p>A <code>SubDataFrame</code> is an AbstractDataFrame, so expect that most DataFrame functions should work. Such methods include <code>describe</code>, <code>dump</code>, <code>nrow</code>, <code>size</code>, <code>by</code>, <code>stack</code>, and <code>join</code>. Indexing is just like a DataFrame; copies are returned.</p>
@@ -473,7 +558,36 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/subdataframe/subdataframe.jl#L13-54' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/subdataframe/subdataframe.jl#L13-54' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre><span class="nf">SubDataFrame</span><span class="p">{</span><span class="n">T<:AbstractArray{Int64,1}</span><span class="p">}</span><span class="p">(</span>
+    <span class="n">parent</span><span class="p">::</span><span class="n">DataFrames.DataFrame</span><span class="p">,
+</span>    <span class="n">rows</span><span class="p">::</span><span class="n">T</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/subdataframe/subdataframe.jl#L71">src/subdataframe/subdataframe.jl:71</a>
+</li>
+<li>
+    <pre><span class="nf">SubDataFrame</span><span class="p">(</span>
+    <span class="n">parent</span><span class="p">::</span><span class="n">DataFrames.DataFrame</span><span class="p">,
+</span>    <span class="n">row</span><span class="p">::</span><span class="n">Integer</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/subdataframe/subdataframe.jl#L75">src/subdataframe/subdataframe.jl:75</a>
+</li>
+<li>
+    <pre><span class="nf">SubDataFrame</span><span class="p">{</span><span class="n">S<:Integer</span><span class="p">}</span><span class="p">(</span>
+    <span class="n">parent</span><span class="p">::</span><span class="n">DataFrames.DataFrame</span><span class="p">,
+</span>    <span class="n">rows</span><span class="p">::</span><span class="n">AbstractArray{S,1}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/subdataframe/subdataframe.jl#L79">src/subdataframe/subdataframe.jl:79</a>
+</li>
+</ul>
+
+<p><em>Hiding 1 method defined outside of this package.</em></p>
           <aside class="copyright" role="note">
             
             Documentation built with

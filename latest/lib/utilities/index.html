@@ -23,8 +23,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     
-    <link rel="shortcut icon" type="image/x-icon" href="../../None">
-    <link rel="icon" type="image/x-icon" href="../../None">
+    <link rel="shortcut icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
+    <link rel="icon" type="image/x-icon" href="../../assets/images/favicon-e565ddfa3b.ico">
     <style>
       @font-face {
       	font-family: 'Icon';
@@ -41,7 +41,7 @@
       	font-style: normal;
       }
     </style>
-    <link rel="stylesheet" href="../../assets/stylesheets/application-0dac3e5884.css">
+    <link rel="stylesheet" href="../../assets/stylesheets/application-a422ff04cc.css">
     
       <link rel="stylesheet" href="../../assets/stylesheets/palettes-05ab2406df.css">
     
@@ -49,7 +49,7 @@
       
       
       
-      <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700|Ubuntu+Mono">
       <style>
         body, input {
           font-family: 'Ubuntu', Helvetica, Arial, sans-serif;
@@ -373,8 +373,17 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L182-204' class='documenter-source'>source</a><br>
-<a id='DataArrays.head' href='#DataArrays.head'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L182-204' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">eltypes</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L206">src/abstractdataframe/abstractdataframe.jl:206</a>
+</li>
+</ul>
+
+<p><a id='DataArrays.head' href='#DataArrays.head'>#</a>
 <strong><code>DataArrays.head</code></strong> &mdash; <em>Function</em>.</p>
 <p>Show the first or last part of an AbstractDataFrame</p>
 <div class="codehilite"><pre><span></span><span class="n">head</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">r</span><span class="p">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">)</span>
@@ -398,8 +407,30 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L297-322' class='documenter-source'>source</a><br>
-<a id='DataFrames.complete_cases' href='#DataFrames.complete_cases'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L298-323' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">head</span><span class="p">(</span><span class="n">dv</span><span class="p">::</span><span class="n">DataArrays.AbstractDataArray{T<:Any,1}</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaLang/julia/tree/d4a29e5f245e92fefde6cd8a1d47dc1ff71c212a/base/deprecated.jl#L49">deprecated.jl:49</a>
+</li>
+<li>
+    <pre class="documenter-inline"><span class="nf">head</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L294">src/abstractdataframe/abstractdataframe.jl:294</a>
+</li>
+<li>
+    <pre><span class="nf">head</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">r</span><span class="p">::</span><span class="n">Int64</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L293">src/abstractdataframe/abstractdataframe.jl:293</a>
+</li>
+</ul>
+
+<p><a id='DataFrames.complete_cases' href='#DataFrames.complete_cases'>#</a>
 <strong><code>DataFrames.complete_cases</code></strong> &mdash; <em>Function</em>.</p>
 <p>Indexes of complete cases (rows without NA's)</p>
 <div class="codehilite"><pre><span></span><span class="n">complete_cases</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span>
@@ -423,8 +454,17 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L446-472' class='documenter-source'>source</a><br>
-<a id='DataFrames.complete_cases!' href='#DataFrames.complete_cases!'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L447-473' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">complete_cases</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L476">src/abstractdataframe/abstractdataframe.jl:476</a>
+</li>
+</ul>
+
+<p><a id='DataFrames.complete_cases!' href='#DataFrames.complete_cases!'>#</a>
 <strong><code>DataFrames.complete_cases!</code></strong> &mdash; <em>Function</em>.</p>
 <p>Delete rows with NA's.</p>
 <div class="codehilite"><pre><span></span><span class="n">complete_cases!</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span>
@@ -448,9 +488,24 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L482-508' class='documenter-source'>source</a><br>
-<a id='StatsBase.describe' href='#StatsBase.describe'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L483-509' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">complete_cases!</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L510">src/abstractdataframe/abstractdataframe.jl:510</a>
+</li>
+</ul>
+
+<p><a id='StatsBase.describe' href='#StatsBase.describe'>#</a>
 <strong><code>StatsBase.describe</code></strong> &mdash; <em>Function</em>.</p>
+<div class="codehilite"><pre><span></span>describe(a)
+</pre></div>
+
+
+<p>Pretty-print the summary statistics provided by <code>summarystats</code>: the mean, minimum, 25th percentile, median, 75th percentile, and maximum.</p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/30356e3001a12969b4b2d57029de294faa49c59f/src/scalarstats.jl#L490-496' class='documenter-source'>source</a><br></p>
 <p>Summarize the columns of an AbstractDataFrame</p>
 <div class="codehilite"><pre><span></span><span class="n">describe</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span>
 <span class="n">describe</span><span class="p">(</span><span class="n">io</span><span class="p">,</span> <span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span>
@@ -476,33 +531,78 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L368-402' class='documenter-source'>source</a><br>
-<a id='Base.dump' href='#Base.dump'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L369-403' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">describe</span><span class="p">{</span><span class="n">T<:Real</span><span class="p">}</span><span class="p">(</span><span class="n">a</span><span class="p">::</span><span class="n">AbstractArray{T,N<:Any}</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/30356e3001a12969b4b2d57029de294faa49c59f/src/scalarstats.jl#L497">src/scalarstats.jl:497</a>
+</li>
+<li>
+    <pre class="documenter-inline"><span class="nf">describe</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L404">src/abstractdataframe/abstractdataframe.jl:404</a>
+</li>
+<li>
+    <pre class="documenter-inline"><span class="nf">describe</span><span class="p">(</span><span class="n">dv</span><span class="p">::</span><span class="n">AbstractArray</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L412">src/abstractdataframe/abstractdataframe.jl:412</a>
+</li>
+<li>
+    <pre><span class="nf">describe</span><span class="p">(</span>
+    <span class="n">io</span><span class="p">,
+</span>    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L406">src/abstractdataframe/abstractdataframe.jl:406</a>
+</li>
+<li>
+    <pre><span class="nf">describe</span><span class="p">{</span><span class="n">T<:Number</span><span class="p">}</span><span class="p">(</span>
+    <span class="n">io</span><span class="p">,
+</span>    <span class="n">dv</span><span class="p">::</span><span class="n">AbstractArray{T,N<:Any}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L414">src/abstractdataframe/abstractdataframe.jl:414</a>
+</li>
+<li>
+    <pre><span class="nf">describe</span><span class="p">{</span><span class="n">T</span><span class="p">}</span><span class="p">(</span>
+    <span class="n">io</span><span class="p">,
+</span>    <span class="n">dv</span><span class="p">::</span><span class="n">AbstractArray{T,N<:Any}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L431">src/abstractdataframe/abstractdataframe.jl:431</a>
+</li>
+</ul>
+
+<p><a id='Base.dump' href='#Base.dump'>#</a>
 <strong><code>Base.dump</code></strong> &mdash; <em>Function</em>.</p>
-<p>Show the structure of an AbstractDataFrame, in a tree-like format</p>
-<div class="codehilite"><pre><span></span><span class="n">dump</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">n</span><span class="p">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span>
-<span class="n">dump</span><span class="p">(</span><span class="n">io</span><span class="p">::</span><span class="n">IO</span><span class="p">,</span> <span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">n</span><span class="p">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span>
-</pre></div>
-
-
-<p><strong>Arguments</strong></p>
-<ul>
-<li><code>df</code> : the AbstractDataFrame</li>
-<li><code>n</code> : the number of levels to show</li>
-<li><code>io</code> : optional output descriptor</li>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre><span class="nf">dump</span><span class="p">(</span>
+    <span class="n">io</span><span class="p">::</span><span class="n">IO</span><span class="p">,
+</span>    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">n</span><span class="p">::</span><span class="n">Int64</span><span class="p">,
+</span>    <span class="n">indent</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L354">src/abstractdataframe/abstractdataframe.jl:354</a>
+</li>
+<li>
+    <pre><span class="nf">dump</span><span class="p">(</span>
+    <span class="n">io</span><span class="p">::</span><span class="n">IO</span><span class="p">,
+</span>    <span class="n">dv</span><span class="p">::</span><span class="n">DataArrays.AbstractDataArray{T<:Any,1}</span><span class="p">,
+</span>    <span class="n">n</span><span class="p">::</span><span class="n">Int64</span><span class="p">,
+</span>    <span class="n">indent</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L364">src/abstractdataframe/abstractdataframe.jl:364</a>
+</li>
 </ul>
-<p><strong>Result</strong></p>
-<ul>
-<li>nothing</li>
-</ul>
-<p><strong>Examples</strong></p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">y</span> <span class="o">=</span> <span class="n">rand</span><span class="p">([</span><span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="s">&quot;b&quot;</span><span class="p">,</span> <span class="s">&quot;c&quot;</span><span class="p">],</span> <span class="mi">10</span><span class="p">))</span>
-<span class="n">str</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-</pre></div>
 
-
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L326-351' class='documenter-source'>source</a><br>
-<a id='DataFrames.names!' href='#DataFrames.names!'>#</a>
+<p><em>Hiding 11 methods defined outside of this package.</em></p>
+<p><a id='DataFrames.names!' href='#DataFrames.names!'>#</a>
 <strong><code>DataFrames.names!</code></strong> &mdash; <em>Function</em>.</p>
 <p>Set column names</p>
 <div class="codehilite"><pre><span></span><span class="n">names!</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">vals</span><span class="p">)</span>
@@ -512,8 +612,8 @@
 <p><strong>Arguments</strong></p>
 <ul>
 <li><code>df</code> : the AbstractDataFrame</li>
-<li><code>vals</code> : column names, normally a Vector{Symbol} the same length as   the number of columns in <code>df</code></li>
-<li><code>allow_duplicates</code> : if <code>false</code> (the default), an error will be raised   if duplicate names are found; if <code>true</code>, duplicate names will be suffixed   with <code>_i</code> (<code>i</code> starting at 1 for the first duplicate).</li>
+<li><code>vals</code> : column names, normally a Vector{Symbol} the same length as the number of columns in <code>df</code></li>
+<li><code>allow_duplicates</code> : if <code>false</code> (the default), an error will be raised if duplicate names are found; if <code>true</code>, duplicate names will be suffixed with <code>_i</code> (<code>i</code> starting at 1 for the first duplicate).</li>
 </ul>
 <p><strong>Result</strong></p>
 <ul>
@@ -527,8 +627,28 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L101-132' class='documenter-source'>source</a><br>
-<a id='DataFrames.nonunique' href='#DataFrames.nonunique'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L101-132' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre><span class="nf">names!</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">::</span><span class="n">DataFrames.Index</span><span class="p">,
+</span>    <span class="n">nms</span><span class="p">::</span><span class="n">Array{Symbol,1}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/other/index.jl#L28">src/other/index.jl:28</a>
+</li>
+<li>
+    <pre><span class="nf">names!</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">vals</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L134">src/abstractdataframe/abstractdataframe.jl:134</a>
+</li>
+</ul>
+
+<p><a id='DataFrames.nonunique' href='#DataFrames.nonunique'>#</a>
 <strong><code>DataFrames.nonunique</code></strong> &mdash; <em>Function</em>.</p>
 <p>Indexes of complete cases (rows without NA's)</p>
 <div class="codehilite"><pre><span></span><span class="n">nonunique</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span>
@@ -541,7 +661,7 @@
 </ul>
 <p><strong>Result</strong></p>
 <ul>
-<li><code>::Vector{Bool}</code> : indicates whether the row is a duplicate of some   prior row</li>
+<li><code>::Vector{Bool}</code> : indicates whether the row is a duplicate of some prior row</li>
 </ul>
 <p>See also <a href="./#Base.unique"><code>unique</code></a> and <a href="./#DataFrames.unique!"><code>unique!</code></a>.</p>
 <p><strong>Examples</strong></p>
@@ -551,8 +671,17 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L554-580' class='documenter-source'>source</a><br>
-<a id='DataFrames.rename' href='#DataFrames.rename'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L555-581' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">nonunique</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L583">src/abstractdataframe/abstractdataframe.jl:583</a>
+</li>
+</ul>
+
+<p><a id='DataFrames.rename' href='#DataFrames.rename'>#</a>
 <strong><code>DataFrames.rename</code></strong> &mdash; <em>Function</em>.</p>
 <p>Rename columns</p>
 <div class="codehilite"><pre><span></span><span class="n">rename!</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">from</span><span class="p">::</span><span class="n">Symbol</span><span class="p">,</span> <span class="n">to</span><span class="p">::</span><span class="n">Symbol</span><span class="p">)</span>
@@ -567,7 +696,7 @@
 <ul>
 <li><code>df</code> : the AbstractDataFrame</li>
 <li><code>d</code> : an Associative type that maps the original name to a new name</li>
-<li><code>f</code> : a function that has the old column name (a symbol) as input   and new column name (a symbol) as output</li>
+<li><code>f</code> : a function that has the old column name (a symbol) as input and new column name (a symbol) as output</li>
 </ul>
 <p><strong>Result</strong></p>
 <ul>
@@ -582,8 +711,44 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L147-179' class='documenter-source'>source</a><br>
-<a id='DataFrames.rename!' href='#DataFrames.rename!'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L147-179' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre><span class="nf">rename</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">::</span><span class="n">DataFrames.Index</span><span class="p">,
+</span>    <span class="n">args...</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/other/index.jl#L53">src/other/index.jl:53</a>
+</li>
+<li>
+    <pre><span class="nf">rename</span><span class="p">(</span>
+    <span class="n">f</span><span class="p">::</span><span class="n">Function</span><span class="p">,
+</span>    <span class="n">x</span><span class="p">::</span><span class="n">DataFrames.Index</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/other/index.jl#L54">src/other/index.jl:54</a>
+</li>
+<li>
+    <pre><span class="nf">rename</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">args...</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L144">src/abstractdataframe/abstractdataframe.jl:144</a>
+</li>
+<li>
+    <pre><span class="nf">rename</span><span class="p">(</span>
+    <span class="n">f</span><span class="p">::</span><span class="n">Function</span><span class="p">,
+</span>    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L145">src/abstractdataframe/abstractdataframe.jl:145</a>
+</li>
+</ul>
+
+<p><a id='DataFrames.rename!' href='#DataFrames.rename!'>#</a>
 <strong><code>DataFrames.rename!</code></strong> &mdash; <em>Function</em>.</p>
 <p>Rename columns</p>
 <div class="codehilite"><pre><span></span><span class="n">rename!</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">from</span><span class="p">::</span><span class="n">Symbol</span><span class="p">,</span> <span class="n">to</span><span class="p">::</span><span class="n">Symbol</span><span class="p">)</span>
@@ -598,7 +763,7 @@
 <ul>
 <li><code>df</code> : the AbstractDataFrame</li>
 <li><code>d</code> : an Associative type that maps the original name to a new name</li>
-<li><code>f</code> : a function that has the old column name (a symbol) as input   and new column name (a symbol) as output</li>
+<li><code>f</code> : a function that has the old column name (a symbol) as input and new column name (a symbol) as output</li>
 </ul>
 <p><strong>Result</strong></p>
 <ul>
@@ -613,8 +778,67 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L147-179' class='documenter-source'>source</a><br>
-<a id='DataArrays.tail' href='#DataArrays.tail'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L147-179' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre><span class="nf">rename!</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">::</span><span class="n">DataFrames.Index</span><span class="p">,
+</span>    <span class="n">from</span><span class="p">::</span><span class="n">Symbol</span><span class="p">,
+</span>    <span class="n">to</span><span class="p">::</span><span class="n">Symbol</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/other/index.jl#L49">src/other/index.jl:49</a>
+</li>
+<li>
+    <pre><span class="nf">rename!</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">::</span><span class="n">DataFrames.Index</span><span class="p">,
+</span>    <span class="n">f</span><span class="p">::</span><span class="n">Function</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/other/index.jl#L50">src/other/index.jl:50</a>
+</li>
+<li>
+    <pre class="documenter-inline"><span class="nf">rename!</span><span class="p">(</span><span class="n">x</span><span class="p">::</span><span class="n">DataFrames.Index</span><span class="p">, </span><span class="n">nms</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/other/index.jl#L38">src/other/index.jl:38</a>
+</li>
+<li>
+    <pre><span class="nf">rename!</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">::</span><span class="n">DataFrames.Index</span><span class="p">,
+</span>    <span class="n">from</span><span class="p">,
+</span>    <span class="n">to</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/other/index.jl#L48">src/other/index.jl:48</a>
+</li>
+<li>
+    <pre><span class="nf">rename!</span><span class="p">(</span>
+    <span class="n">f</span><span class="p">::</span><span class="n">Function</span><span class="p">,
+</span>    <span class="n">x</span><span class="p">::</span><span class="n">DataFrames.Index</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/other/index.jl#L51">src/other/index.jl:51</a>
+</li>
+<li>
+    <pre><span class="nf">rename!</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">args...</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L139">src/abstractdataframe/abstractdataframe.jl:139</a>
+</li>
+<li>
+    <pre><span class="nf">rename!</span><span class="p">(</span>
+    <span class="n">f</span><span class="p">::</span><span class="n">Function</span><span class="p">,
+</span>    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L142">src/abstractdataframe/abstractdataframe.jl:142</a>
+</li>
+</ul>
+
+<p><a id='DataArrays.tail' href='#DataArrays.tail'>#</a>
 <strong><code>DataArrays.tail</code></strong> &mdash; <em>Function</em>.</p>
 <p>Show the first or last part of an AbstractDataFrame</p>
 <div class="codehilite"><pre><span></span><span class="n">head</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">,</span> <span class="n">r</span><span class="p">::</span><span class="kt">Int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">)</span>
@@ -638,8 +862,30 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L297-322' class='documenter-source'>source</a><br>
-<a id='Base.unique' href='#Base.unique'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L298-323' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">tail</span><span class="p">(</span><span class="n">dv</span><span class="p">::</span><span class="n">DataArrays.AbstractDataArray{T<:Any,1}</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaLang/julia/tree/d4a29e5f245e92fefde6cd8a1d47dc1ff71c212a/base/deprecated.jl#L49">deprecated.jl:49</a>
+</li>
+<li>
+    <pre class="documenter-inline"><span class="nf">tail</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L296">src/abstractdataframe/abstractdataframe.jl:296</a>
+</li>
+<li>
+    <pre><span class="nf">tail</span><span class="p">(</span>
+    <span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">,
+</span>    <span class="n">r</span><span class="p">::</span><span class="n">Int64</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L295">src/abstractdataframe/abstractdataframe.jl:295</a>
+</li>
+</ul>
+
+<p><a id='Base.unique' href='#Base.unique'>#</a>
 <strong><code>Base.unique</code></strong> &mdash; <em>Function</em>.</p>
 <p>Delete duplicate rows</p>
 <div class="codehilite"><pre><span></span><span class="n">unique</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span>
@@ -664,8 +910,35 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L600-627' class='documenter-source'>source</a><br>
-<a id='DataFrames.unique!' href='#DataFrames.unique!'>#</a>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L601-628' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">unique</span><span class="p">{</span><span class="n">T</span><span class="p">}</span><span class="p">(</span><span class="n">da</span><span class="p">::</span><span class="n">DataArrays.DataArray{T,N<:Any}</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/c1cca79252dc47ed2f27723198a5cab03d145a25/src/dataarray.jl#L690">src/dataarray.jl:690</a>
+</li>
+<li>
+    <pre><span class="nf">unique</span><span class="p">{</span><span class="n">T</span><span class="p">}</span><span class="p">(</span>
+    <span class="n">pda</span><span class="p">::</span><span class="n">DataArrays.PooledDataArray{T,R<:Integer,N<:Any}</span>
+<span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/c1cca79252dc47ed2f27723198a5cab03d145a25/src/pooleddataarray.jl#L288">src/pooleddataarray.jl:288</a>
+</li>
+<li>
+    <pre class="documenter-inline"><span class="nf">unique</span><span class="p">(</span><span class="n">v</span><span class="p">::</span><span class="n">DataFrames.RepeatedVector</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/reshape.jl#L354">src/abstractdataframe/reshape.jl:354</a>
+</li>
+<li>
+    <pre class="documenter-inline"><span class="nf">unique</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L599">src/abstractdataframe/abstractdataframe.jl:599</a>
+</li>
+</ul>
+
+<p><em>Hiding 3 methods defined outside of this package.</em></p>
+<p><a id='DataFrames.unique!' href='#DataFrames.unique!'>#</a>
 <strong><code>DataFrames.unique!</code></strong> &mdash; <em>Function</em>.</p>
 <p>Delete duplicate rows</p>
 <div class="codehilite"><pre><span></span><span class="n">unique</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">AbstractDataFrame</span><span class="p">)</span>
@@ -690,7 +963,15 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3400fbc81cc9d7409e288ff1319305d67f3ffec2/src/abstractdataframe/abstractdataframe.jl#L600-627' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L601-628' class='documenter-source'>source</a><br></p>
+<p><strong>Methods</strong></p>
+<ul class="documenter-methodtable">
+<li>
+    <pre class="documenter-inline"><span class="nf">unique!</span><span class="p">(</span><span class="n">df</span><span class="p">::</span><span class="n">DataFrames.AbstractDataFrame</span><span class="p">)</span></pre>
+    defined at
+    <a target="_blank" href="https://github.com/JuliaStats/DataFrames.jl/tree/3b21a032e8b9428e94b04f42b7b737d588491a2c/src/abstractdataframe/abstractdataframe.jl#L596">src/abstractdataframe/abstractdataframe.jl:596</a>
+</li>
+</ul>
           <aside class="copyright" role="note">
             
             Documentation built with
