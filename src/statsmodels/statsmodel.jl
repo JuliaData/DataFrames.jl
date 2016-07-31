@@ -48,8 +48,8 @@ for (modeltype, dfmodeltype) in ((:StatisticalModel, DataFrameStatisticalModel),
                                  (:RegressionModel, DataFrameRegressionModel))
     @eval begin
         function StatsBase.fit{T<:$modeltype}(::Type{T}, f::Formula, df::AbstractDataFrame,
-                                              args...; kwargs...)
-            mf = ModelFrame(f, df)
+                                              args...; contrasts::Dict = Dict(), kwargs...)
+            mf = ModelFrame(f, df, contrasts=contrasts)
             mm = ModelMatrix(mf)
             y = model_response(mf)
             $dfmodeltype(fit(T, mm.m, y, args...; kwargs...), mf, mm)
@@ -78,7 +78,7 @@ function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame; 
     # term is not found in the DataFrame and we don't want to remove elements with missing y)
     newTerms = dropresponse!(mm.mf.terms)
     # create new model frame/matrix
-    mf = ModelFrame(newTerms, df)
+    mf = ModelFrame(newTerms, df; contrasts = mm.mf.contrasts)
     newX = ModelMatrix(mf).m
     yp = predict(mm, newX; kwargs...)
     out = DataArray(eltype(yp), size(df, 1))

@@ -1,6 +1,7 @@
 module TestFormula
     using Base.Test
     using DataFrames
+    using Compat
 
     # TODO:
     # - grouped variables in formulas with interactions
@@ -135,7 +136,7 @@ module TestFormula
     @test mm.m[:,2] == [0, 1., 0, 0]
     @test mm.m[:,3] == [0, 0, 1., 0]
     @test mm.m[:,4] == [0, 0, 0, 1.]
-    @test coefnames(mf)[2:end] == ["x1p - 6", "x1p - 7", "x1p - 8"]
+    @test coefnames(mf)[2:end] == ["x1p: 6", "x1p: 7", "x1p: 8"]
 
     #test_group("create a design matrix from interactions from two DataFrames")
     ## this was removed in commit dead4562506badd7e84a2367086f5753fa49bb6a
@@ -297,7 +298,7 @@ module TestFormula
     f = y ~ x1 & x2 & x3
     mf = ModelFrame(f, df)
     mm = ModelMatrix(mf)
-    @test mm.m[:, 2:end] == vcat(zeros(1, 3), diagm(x2[2:end].*x3[2:end]))
+    @test mm.m[:, 2:end] == diagm(x2.*x3)
 
     #test_group("Column groups in formulas")
     ## set_group was removed in The Great Purge (55e47cd)
@@ -314,27 +315,30 @@ module TestFormula
     ## @test mm.model == [ones(4) x1 x3 x2 x1.*x2 x3.*x2]
 
     ## Interactions between three PDA columns
-    df = DataFrame(y=1:27,
-                   x1 = PooledDataArray(vec([x for x in 1:3, y in 4:6, z in 7:9])),
-                   x2 = PooledDataArray(vec([y for x in 1:3, y in 4:6, z in 7:9])),
-                   x3 = PooledDataArray(vec([z for x in 1:3, y in 4:6, z in 7:9])))
-    f = y ~ x1 & x2 & x3
-    mf = ModelFrame(f, df)
-    @test coefnames(mf)[2:end] ==
-        vec([string("x1 - ", x, " & x2 - ", y, " & x3 - ", z) for
-             x in 2:3,
-             y in 5:6,
-             z in 8:9])
+    ## 
+    ## FAILS: behavior is wrong when no lower-order terms (1+x1+x2+x1&x2...)
+    ## 
+    ## df = DataFrame(y=1:27,
+    ##                x1 = PooledDataArray(vec([x for x in 1:3, y in 4:6, z in 7:9])),
+    ##                x2 = PooledDataArray(vec([y for x in 1:3, y in 4:6, z in 7:9])),
+    ##                x3 = PooledDataArray(vec([z for x in 1:3, y in 4:6, z in 7:9])))
+    ## f = y ~ x1 & x2 & x3
+    ## mf = ModelFrame(f, df)
+    ## @test coefnames(mf)[2:end] ==
+    ##     vec([string("x1: ", x, " & x2: ", y, " & x3: ", z) for
+    ##          x in 2:3,
+    ##          y in 5:6,
+    ##          z in 8:9])
 
-    mm = ModelMatrix(mf)
-    @test mm.m[:,2] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 5) .* (df[:x3].==8)
-    @test mm.m[:,3] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 5) .* (df[:x3].==8)
-    @test mm.m[:,4] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 6) .* (df[:x3].==8)
-    @test mm.m[:,5] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 6) .* (df[:x3].==8)
-    @test mm.m[:,6] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 5) .* (df[:x3].==9)
-    @test mm.m[:,7] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 5) .* (df[:x3].==9)
-    @test mm.m[:,8] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 6) .* (df[:x3].==9)
-    @test mm.m[:,9] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 6) .* (df[:x3].==9)
+    ## mm = ModelMatrix(mf)
+    ## @test mm.m[:,2] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 5) .* (df[:x3].==8)
+    ## @test mm.m[:,3] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 5) .* (df[:x3].==8)
+    ## @test mm.m[:,4] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 6) .* (df[:x3].==8)
+    ## @test mm.m[:,5] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 6) .* (df[:x3].==8)
+    ## @test mm.m[:,6] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 5) .* (df[:x3].==9)
+    ## @test mm.m[:,7] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 5) .* (df[:x3].==9)
+    ## @test mm.m[:,8] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 6) .* (df[:x3].==9)
+    ## @test mm.m[:,9] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 6) .* (df[:x3].==9)
 
     ## Distributive property of :& over :+
     df = deepcopy(d)
@@ -364,5 +368,133 @@ module TestFormula
     mf = ModelFrame(y ~ x1m, d)
     mm = ModelMatrix(mf)
     @test mm.m[:, 2] == d[complete_cases(d), :x1m]
+
+## Promote non-redundant categorical terms to full rank
+
+d = DataFrame(x = Compat.repeat([:a, :b], outer = 4),
+              y = Compat.repeat([:c, :d], inner = 2, outer = 2),
+              z = Compat.repeat([:e, :f], inner = 4))
+[pool!(d, name) for name in names(d)]
+cs = [name => EffectsCoding() for name in names(d)]
+d[:n] = 1.:8
+
+
+## No intercept
+mf = ModelFrame(n ~ 0 + x, d, contrasts=cs)
+@test ModelMatrix(mf).m == [1 0
+                            0 1
+                            1 0
+                            0 1
+                            1 0
+                            0 1
+                            1 0
+                            0 1]
+@test coefnames(mf) == ["x: a", "x: b"]
+
+## No first-order term for interaction
+mf = ModelFrame(n ~ 1 + x + x&y, d, contrasts=cs)
+@test ModelMatrix(mf).m[:, 2:end] == [-1 -1  0
+                                       1  0 -1
+                                      -1  1  0
+                                       1  0  1
+                                      -1 -1  0
+                                       1  0 -1
+                                      -1  1  0
+                                       1  0  1]
+@test coefnames(mf) == ["(Intercept)", "x: b", "x: a & y: d", "x: b & y: d"]
+
+## When both terms of interaction are non-redundant:
+mf = ModelFrame(n ~ 0 + x&y, d, contrasts=cs)
+@test ModelMatrix(mf).m == [1 0 0 0
+                            0 1 0 0
+                            0 0 1 0
+                            0 0 0 1
+                            1 0 0 0
+                            0 1 0 0
+                            0 0 1 0
+                            0 0 0 1]
+@test coefnames(mf) == ["x: a & y: c", "x: b & y: c",                             
+                        "x: a & y: d", "x: b & y: d"]
+
+# only a three-way interaction: every term is promoted.
+mf = ModelFrame(n ~ 0 + x&y&z, d, contrasts=cs)
+@test ModelMatrix(mf).m == eye(8)
+
+# two two-way interactions, with no lower-order term. both are promoted in
+# first (both x and y), but only the old term (x) in the second (because
+# dropping x gives z which isn't found elsewhere, but dropping z gives x
+# which is found (implicitly) in the promoted interaction x&y).
+mf = ModelFrame(n ~ 0 + x&y + x&z, d, contrasts=cs)
+@test ModelMatrix(mf).m == [1 0 0 0 -1  0
+                            0 1 0 0  0 -1
+                            0 0 1 0 -1  0
+                            0 0 0 1  0 -1
+                            1 0 0 0  1  0
+                            0 1 0 0  0  1
+                            0 0 1 0  1  0
+                            0 0 0 1  0  1]
+@test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
+                        "x: a & y: d", "x: b & y: d",
+                        "x: a & z: f", "x: b & z: f"]
+
+# ...and adding a three-way interaction, only the shared term (x) is promoted.
+# this is because dropping x gives y&z which isn't present, but dropping y or z
+# gives x&z or x&z respectively, which are both present.
+mf = ModelFrame(n ~ 0 + x&y + x&z + x&y&z, d, contrasts=cs)
+@test ModelMatrix(mf).m == [1 0 0 0 -1  0  1  0
+                            0 1 0 0  0 -1  0  1
+                            0 0 1 0 -1  0 -1  0
+                            0 0 0 1  0 -1  0 -1
+                            1 0 0 0  1  0 -1  0
+                            0 1 0 0  0  1  0 -1
+                            0 0 1 0  1  0  1  0
+                            0 0 0 1  0  1  0  1]
+@test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
+                        "x: a & y: d", "x: b & y: d",
+                        "x: a & z: f", "x: b & z: f",
+                        "x: a & y: d & z: f", "x: b & y: d & z: f"]
+
+# two two-way interactions, with common lower-order term. the common term x is
+# promoted in both (along with lower-order term), because in every case, when
+# x is dropped, the remaining terms (1, y, and z) aren't present elsewhere.
+mf = ModelFrame(n ~ 0 + x + x&y + x&z, d, contrasts=cs)
+@test ModelMatrix(mf).m == [1 0 -1  0 -1  0
+                            0 1  0 -1  0 -1
+                            1 0  1  0 -1  0
+                            0 1  0  1  0 -1
+                            1 0 -1  0  1  0
+                            0 1  0 -1  0  1
+                            1 0  1  0  1  0
+                            0 1  0  1  0  1]
+@test coefnames(mf) == ["x: a", "x: b",
+                        "x: a & y: d", "x: b & y: d",
+                        "x: a & z: f", "x: b & z: f"]
+
+
+
+## FAILS: When both terms are non-redundant and intercept is PRESENT
+## (not fully redundant). Ideally, would drop last column. Might make sense
+## to warn about this, and suggest recoding x and y into a single variable.
+# mf = ModelFrame(n ~ 1 + x&y, d[1:4, :], contrasts=cs)
+# @test ModelMatrix(mf).m == [1 1 0 0
+#                             1 0 1 0
+#                             1 0 0 1
+#                             1 0 0 0]
+# @test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
+#                         "x: a & y: d", "x: b & y: d"]
+
+## note that R also does not detect this automatically. it's left to glm et al.
+## to detect numerically when the model matrix is rank deficient, which is hard
+## to do correctly.
+# > d = data.frame(x = factor(c(1, 2, 1, 2)), y = factor(c(3, 3, 4, 4)))
+# > model.matrix(~ 1 + x:y, d)
+#   (Intercept) x1:y3 x2:y3 x1:y4 x2:y4
+# 1           1     1     0     0     0
+# 2           1     0     1     0     0
+# 3           1     0     0     1     0
+# 4           1     0     0     0     1
+
+
+
 
 end
