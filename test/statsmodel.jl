@@ -57,7 +57,8 @@ ct = coeftable(m)
 @test ct.rownms == ["(Intercept)", "x1", "x2", "x1 & x2"]
 
 ## show with coeftable defined
-@show m
+io = IOBuffer()
+show(io, m)
 
 ## with categorical variables
 d[:x1p] = PooledDataArray(d[:x1])
@@ -95,7 +96,6 @@ StatsBase.fit(::Type{DummyModTwo}, ::Matrix, ::Vector) = DummyModTwo("hello!")
 Base.show(io::IO, m::DummyModTwo) = println(io, m.msg)
 
 m2 = fit(DummyModTwo, f, d)
-io = IOBuffer()
 show(io, m2)
 
 end
