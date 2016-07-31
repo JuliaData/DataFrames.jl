@@ -75,6 +75,17 @@ d3[1, :x1] = 0
 d3[:x1p] = PooledDataArray(d3[:x1])
 @test_throws ArgumentError predict(m2, d3)
 
+## fit with contrasts specified
+d[:x2p] = PooledDataArray(d[:x2])
+f3 = y ~ x1p + x2p
+m3 = fit(DummyMod, f3, d)
+fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding()))
+fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding(),
+                                      :x2p => DummyCoding()))
+@test_throws Exception fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding(),
+                                                             :x2p => 1))
+
+
 ## Another dummy model type to test fall-through show method
 immutable DummyModTwo <: RegressionModel
     msg::Compat.UTF8String
