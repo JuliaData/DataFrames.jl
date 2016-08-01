@@ -1,8 +1,9 @@
 
 language: julia
 julia:
-  - nightly
   - 0.4
+  - 0.5
+  - nightly
 os:
   - linux
   - osx
