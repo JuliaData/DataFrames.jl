@@ -15,12 +15,9 @@ using Reexport
 @reexport using DataArrays
 using GZip
 using SortingAlgorithms
-using Docile
 
 using Base: Sort, Order
 import Base: ==, |>
-
-@document
 
 ##############################################################################
 ##

@@ -1,7 +1,3 @@
-@comment """
-# DataFrame
-"""
-
 """
 An AbstractDataFrame that stores a set of named columns
 
