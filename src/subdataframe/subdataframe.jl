@@ -5,11 +5,6 @@
 ##
 ##############################################################################
 
-@comment """
-# SubDataFrame
-"""
-
-
 """
 A view of row subsets of an AbstractDataFrame
 
