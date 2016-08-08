@@ -313,8 +313,8 @@ ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), 
 
 ## modify contrasts in place
 function setcontrasts!(mf::ModelFrame, new_contrasts::Dict)
-    new_contrasts = [ col => ContrastsMatrix(contr, mf.df[col])
-                      for (col, contr) in filter((k,v)->haskey(mf.df, k), new_contrasts) ]
+    new_contrasts = Dict([ Pair(col, ContrastsMatrix(contr, mf.df[col]))
+                      for (col, contr) in filter((k,v)->haskey(mf.df, k), new_contrasts) ])
                       
     mf.contrasts = merge(mf.contrasts, new_contrasts)
     return mf
