@@ -289,7 +289,7 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
     for c in eachcol(df) dropunusedlevels!(c[2]) end
 
-    ## Set up contrasts: 
+    ## Set up contrasts:
     ## Combine actual DF columns and contrast types if necessary to compute the
     ## actual contrasts matrices, levels, and term names (using DummyCoding
     ## as the default)
@@ -315,7 +315,7 @@ ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), 
 function setcontrasts!(mf::ModelFrame, new_contrasts::Dict)
     new_contrasts = Dict([ Pair(col, ContrastsMatrix(contr, mf.df[col]))
                       for (col, contr) in filter((k,v)->haskey(mf.df, k), new_contrasts) ])
-                      
+
     mf.contrasts = merge(mf.contrasts, new_contrasts)
     return mf
 end
@@ -451,7 +451,7 @@ function ModelMatrix(mf::ModelFrame)
     ## TODO: this method makes multiple copies of the data in the ModelFrame:
     ## first in term_cols (1-2x per evaluation term, depending on redundancy),
     ## second in constructing the matrix itself.
-    
+
     ## turn each term into a vector of mm columns for its eval. terms, using
     ## "promoted" full-rank versions of categorical columns for non-redundant
     ## eval. terms:
@@ -486,7 +486,7 @@ is not a `PooledDataArray` a one-element vector is returned.
 termnames(term::Symbol, col) = [string(term)]
 function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, term)
-        termnames(term, mf.df[term], 
+        termnames(term, mf.df[term],
                   non_redundant ?
                   ContrastsMatrix{FullDummyCoding}(mf.contrasts[term]) :
                   mf.contrasts[term])
@@ -529,7 +529,7 @@ function coefnames(mf::ModelFrame)
 
     factors = terms.factors
 
-    for (i_term, term) in enumerate(mf.terms.terms)
+    for (i_term, term) in enumerate(terms.terms)
 
         ## names for columns for eval terms
         names = Vector{Compat.UTF8String}[]
