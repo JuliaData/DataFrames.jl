@@ -369,6 +369,11 @@ module TestFormula
     mm = ModelMatrix(mf)
     @test mm.m[:, 2] == d[complete_cases(d), :x1m]
 
+    ## Same variable on left and right side
+    mf = ModelFrame(x1 ~ x1, df)
+    mm = ModelMatrix(mf)
+    mm.m == float(model_response(mf))
+
 ## Promote non-redundant categorical terms to full rank
 
 d = DataFrame(x = Compat.repeat([:a, :b], outer = 4),
