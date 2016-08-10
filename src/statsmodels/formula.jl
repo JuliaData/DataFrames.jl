@@ -409,10 +409,16 @@ end
 Drop the response term, `trms.eterms[1]` and the first row and column
 of `trms.factors` if `trms.response` is true.
 """
-dropresponse!(trms::Terms) = !trms.response ? trms :
-    Terms(trms.terms, trms.eterms[2 : end], trms.factors[2 : end, 2 : end],
-          trms.is_non_redundant[2 : end, 2 : end],
-          trms.order[2 : end], false, trms.intercept)
+function dropresponse!(trms::Terms)
+    if trms.response
+        ckeep = 2:size(trms.factors, 2)
+        rkeep = vec(any(trms.factors[:, ckeep], 2))
+        Terms(trms.terms, trms.eterms[rkeep], trms.factors[rkeep, ckeep],
+              trms.is_non_redundant[rkeep, ckeep], trms.order[ckeep], false, trms.intercept)
+    else
+        trms
+    end
+end
 
 
 """
