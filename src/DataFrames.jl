@@ -71,7 +71,6 @@ export @~,
        pool,
        pool!,
        printtable,
-       read_rda,
        readtable,
        rename!,
        rename,
@@ -116,7 +115,6 @@ for (dir, filename) in [
         ("statsmodels", "formula.jl"),
         ("statsmodels", "statsmodel.jl"),
 
-        ("", "RDA.jl"),
         ("", "deprecated.jl")
     ]
 
