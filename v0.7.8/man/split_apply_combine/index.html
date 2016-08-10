@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
     
       
-        <title>Formulas - DataFrames.jl</title>
+        <title>Split-apply-combine - DataFrames.jl</title>
       
       
       
@@ -98,7 +98,7 @@
             
           </span>
         
-        Formulas
+        Split-apply-combine
       </div>
     </div>
     
@@ -209,9 +209,14 @@
       
         
   <li>
-    <a class="" title="Split-apply-combine" href="../split_apply_combine/">
+    <a class="current" title="Split-apply-combine" href="./">
       Split-apply-combine
     </a>
+    
+      
+        
+      
+      
     
   </li>
 
@@ -236,14 +241,9 @@
       
         
   <li>
-    <a class="current" title="Formulas" href="./">
+    <a class="" title="Formulas" href="../formulas/">
       Formulas
     </a>
-    
-      
-        
-      
-      
     
   </li>
 
@@ -334,36 +334,40 @@
       <article class="article">
         <div class="wrapper">
           
-          <p><a id='The-Formula,-ModelFrame-and-ModelMatrix-Types-1'></a></p>
-<h1 id="the-formula-modelframe-and-modelmatrix-types">The Formula, ModelFrame and ModelMatrix Types</h1>
-<p>In regression analysis, we often want to describe the relationship between a response variable and one or more input variables in terms of main effects and interactions. To facilitate the specification of a regression model in terms of the columns of a <code>DataFrame</code>, the DataFrames package provides a <code>Formula</code> type, which is created by the <code>~</code> binary operator in Julia:</p>
-<div class="codehilite"><pre><span></span><span class="n">fm</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span>
+          <p><a id='The-Split-Apply-Combine-Strategy-1'></a></p>
+<h1 id="the-split-apply-combine-strategy">The Split-Apply-Combine Strategy</h1>
+<p>Many data analysis tasks involve splitting a data set into groups, applying some functions to each of the groups and then combining the results. A standardized framework for handling this sort of computation is described in the paper, The Split-Apply-Combine Strategy for Data Analysis \&lt;<a href="http://www.jstatsoft.org/v40/i01">http://www.jstatsoft.org/v40/i01</a>>, written by Hadley Wickham.</p>
+<p>The DataFrames package supports the Split-Apply-Combine strategy through the <code>by</code> function, which takes in three arguments: (1) a DataFrame, (2) a column to split the DataFrame on, and (3) a function or expression to apply to each subset of the DataFrame.</p>
+<p>We show several examples of the <code>by</code> function applied to the <code>iris</code> dataset below:</p>
+<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">DataFrames</span><span class="p">,</span> <span class="n">RDatasets</span>
+
+<span class="n">iris</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">(</span><span class="s">&quot;datasets&quot;</span><span class="p">,</span> <span class="s">&quot;iris&quot;</span><span class="p">)</span>
+
+<span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+<span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">,</span> <span class="n">df</span> <span class="o">-&gt;</span> <span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[:</span><span class="n">PetalLength</span><span class="p">]))</span>
+<span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">,</span> <span class="n">df</span> <span class="o">-&gt;</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">N</span> <span class="o">=</span> <span class="n">size</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
 </pre></div>
 
 
-<p>A <code>Formula</code> object can be used to transform a <code>DataFrame</code> into a <code>ModelFrame</code> object:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-<span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<p>The <code>by</code> function also support the <code>do</code> block form:</p>
+<div class="codehilite"><pre><span></span><span class="n">by</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">)</span> <span class="k">do</span> <span class="n">df</span>
+   <span class="n">DataFrame</span><span class="p">(</span><span class="n">m</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[:</span><span class="n">PetalLength</span><span class="p">]),</span> <span class="n">s²</span> <span class="o">=</span> <span class="n">var</span><span class="p">(</span><span class="n">df</span><span class="p">[:</span><span class="n">PetalLength</span><span class="p">]))</span>
+<span class="k">end</span>
 </pre></div>
 
 
-<p>A <code>ModelFrame</code> object is just a simple wrapper around a <code>DataFrame</code>. For modeling purposes, one generally wants to construct a <code>ModelMatrix</code>, which constructs a <code>Matrix{Float64}</code> that can be used directly to fit a statistical model:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>A second approach to the Split-Apply-Combine strategy is implemented in the <code>aggregate</code> function, which also takes three arguments: (1) a DataFrame, (2) a column (or columns) to split the DataFrame on, and a (3) function (or several functions) that are used to compute a summary of each subset of the DataFrame. Each function is applied to each column, that was not used to split the DataFrame, creating new columns of the form <code>$name_$function</code> e.g. <code>SepalLength_mean</code>. Anonymous functions and expressions that do not have a name will be called <code>λ1</code>.</p>
+<p>We show several examples of the <code>aggregate</code> function applied to the <code>iris</code> dataset below:</p>
+<div class="codehilite"><pre><span></span><span class="n">aggregate</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">,</span> <span class="n">sum</span><span class="p">)</span>
+<span class="n">aggregate</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">,</span> <span class="p">[</span><span class="n">sum</span><span class="p">,</span> <span class="n">mean</span><span class="p">])</span>
 </pre></div>
 
 
-<p>Note that <code>mm</code> contains an additional column consisting entirely of <code>1.0</code> values. This is used to fit an intercept term in a regression model.</p>
-<p>In addition to specifying main effects, it is possible to specify interactions using the <code>&amp;</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span> <span class="o">+</span> <span class="n">X</span><span class="o">&amp;</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>If you only want to split the data set into subsets, use the <code>groupby</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="k">for</span> <span class="n">subdf</span> <span class="k">in</span> <span class="n">groupby</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">)</span>
+    <span class="n">println</span><span class="p">(</span><span class="n">size</span><span class="p">(</span><span class="n">subdf</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="k">end</span>
 </pre></div>
-
-
-<p>If you would like to specify both main effects and an interaction term at once, use the <code>*</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
-</pre></div>
-
-
-<p>The construction of model matrices makes it easy to formulate complex statistical models. These are used to good effect by the <a href="https://github.com/JuliaStats/GLM.jl">GLM Package.</a></p>
           <aside class="copyright" role="note">
             
             Documentation built with
@@ -380,7 +384,7 @@
   <nav class="pagination" aria-label="Footer">
     <div class="previous">
       
-        <a href="../sorting/" title="Sorting">
+        <a href="../joins/" title="Joins">
           <span class="direction">
             Previous
           </span>
@@ -390,7 +394,7 @@
             </div>
             <div class="stretch">
               <div class="title">
-                Sorting
+                Joins
               </div>
             </div>
           </div>
@@ -399,14 +403,14 @@
     </div>
     <div class="next">
       
-        <a href="../pooling/" title="Pooling">
+        <a href="../reshaping_and_pivoting/" title="Reshaping">
           <span class="direction">
             Next
           </span>
           <div class="page">
             <div class="stretch">
               <div class="title">
-                Pooling
+                Reshaping
               </div>
             </div>
             <div class="button button-next" role="button" aria-label="Next">

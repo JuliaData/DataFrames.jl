@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
     
       
-        <title>Formulas - DataFrames.jl</title>
+        <title>Pooling - DataFrames.jl</title>
       
       
       
@@ -98,7 +98,7 @@
             
           </span>
         
-        Formulas
+        Pooling
       </div>
     </div>
     
@@ -236,23 +236,23 @@
       
         
   <li>
-    <a class="current" title="Formulas" href="./">
+    <a class="" title="Formulas" href="../formulas/">
       Formulas
     </a>
-    
-      
-        
-      
-      
     
   </li>
 
       
         
   <li>
-    <a class="" title="Pooling" href="../pooling/">
+    <a class="current" title="Pooling" href="./">
       Pooling
     </a>
+    
+      
+        
+      
+      
     
   </li>
 
@@ -334,36 +334,43 @@
       <article class="article">
         <div class="wrapper">
           
-          <p><a id='The-Formula,-ModelFrame-and-ModelMatrix-Types-1'></a></p>
-<h1 id="the-formula-modelframe-and-modelmatrix-types">The Formula, ModelFrame and ModelMatrix Types</h1>
-<p>In regression analysis, we often want to describe the relationship between a response variable and one or more input variables in terms of main effects and interactions. To facilitate the specification of a regression model in terms of the columns of a <code>DataFrame</code>, the DataFrames package provides a <code>Formula</code> type, which is created by the <code>~</code> binary operator in Julia:</p>
-<div class="codehilite"><pre><span></span><span class="n">fm</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span>
+          <p><a id='Pooling-Data-(Representing-Factors)-1'></a></p>
+<h1 id="pooling-data-representing-factors">Pooling Data (Representing Factors)</h1>
+<p>Often, we have to deal with factors that take on a small number of levels:</p>
+<div class="codehilite"><pre><span></span><span class="n">dv</span> <span class="o">=</span> <span class="p">@</span><span class="n">data</span><span class="p">([</span><span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span>
+            <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">])</span>
 </pre></div>
 
 
-<p>A <code>Formula</code> object can be used to transform a <code>DataFrame</code> into a <code>ModelFrame</code> object:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-<span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<p>The naive encoding used in a <code>DataArray</code> represents every entry of this vector as a full string. In contrast, we can represent the data more efficiently by replacing the strings with indices into a small pool of levels. This is what the <code>PooledDataArray</code> does:</p>
+<div class="codehilite"><pre><span></span><span class="n">pdv</span> <span class="o">=</span> <span class="p">@</span><span class="n">pdata</span><span class="p">([</span><span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span>
+              <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">])</span>
 </pre></div>
 
 
-<p>A <code>ModelFrame</code> object is just a simple wrapper around a <code>DataFrame</code>. For modeling purposes, one generally wants to construct a <code>ModelMatrix</code>, which constructs a <code>Matrix{Float64}</code> that can be used directly to fit a statistical model:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>In addition to representing repeated data efficiently, the <code>PooledDataArray</code> allows us to determine the levels of the factor at any time using the <code>levels</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="n">levels</span><span class="p">(</span><span class="n">pdv</span><span class="p">)</span>
 </pre></div>
 
 
-<p>Note that <code>mm</code> contains an additional column consisting entirely of <code>1.0</code> values. This is used to fit an intercept term in a regression model.</p>
-<p>In addition to specifying main effects, it is possible to specify interactions using the <code>&amp;</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span> <span class="o">+</span> <span class="n">X</span><span class="o">&amp;</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>By default, a <code>PooledDataArray</code> is able to represent 2<sup>32</sup>differents levels. You can use less memory by calling the <code>compact</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="n">pdv</span> <span class="o">=</span> <span class="n">compact</span><span class="p">(</span><span class="n">pdv</span><span class="p">)</span>
 </pre></div>
 
 
-<p>If you would like to specify both main effects and an interaction term at once, use the <code>*</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>Often, you will have factors encoded inside a DataFrame with <code>DataArray</code> columns instead of <code>PooledDataArray</code> columns. You can do conversion of a single column using the <code>pool</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="n">pdv</span> <span class="o">=</span> <span class="n">pool</span><span class="p">(</span><span class="n">dv</span><span class="p">)</span>
 </pre></div>
 
 
-<p>The construction of model matrices makes it easy to formulate complex statistical models. These are used to good effect by the <a href="https://github.com/JuliaStats/GLM.jl">GLM Package.</a></p>
+<p>Or you can edit the columns of a <code>DataFrame</code> in-place using the <code>pool!</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+               <span class="n">B</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;X&quot;</span><span class="p">,</span> <span class="s">&quot;X&quot;</span><span class="p">,</span> <span class="s">&quot;X&quot;</span><span class="p">,</span> <span class="s">&quot;Y&quot;</span><span class="p">,</span> <span class="s">&quot;Y&quot;</span><span class="p">,</span> <span class="s">&quot;Y&quot;</span><span class="p">])</span>
+<span class="n">pool!</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="p">[:</span><span class="n">A</span><span class="p">,</span> <span class="p">:</span><span class="n">B</span><span class="p">])</span>
+</pre></div>
+
+
+<p>Pooling columns is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a> When fitting regression models, <code>PooledDataArray</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>PooledDataArray</code>. This allows one to analyze categorical data efficiently.</p>
           <aside class="copyright" role="note">
             
             Documentation built with
@@ -380,7 +387,7 @@
   <nav class="pagination" aria-label="Footer">
     <div class="previous">
       
-        <a href="../sorting/" title="Sorting">
+        <a href="../formulas/" title="Formulas">
           <span class="direction">
             Previous
           </span>
@@ -390,7 +397,7 @@
             </div>
             <div class="stretch">
               <div class="title">
-                Sorting
+                Formulas
               </div>
             </div>
           </div>
@@ -399,14 +406,14 @@
     </div>
     <div class="next">
       
-        <a href="../pooling/" title="Pooling">
+        <a href="../../lib/maintypes/" title="Main types">
           <span class="direction">
             Next
           </span>
           <div class="page">
             <div class="stretch">
               <div class="title">
-                Pooling
+                Main types
               </div>
             </div>
             <div class="button button-next" role="button" aria-label="Next">
