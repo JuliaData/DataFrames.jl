@@ -500,6 +500,9 @@ mf = ModelFrame(n ~ 0 + x + x&y + x&z, d, contrasts=cs)
 # 4           1     0     0     0     1
 
 
-
+# Ensure that random effects terms are dropped from coefnames
+df = DataFrame(x = [1,2,3], y = [4,5,6])
+mf = ModelFrame(y ~ 1 + (1 | x), df)
+@test coefnames(mf) == ["(Intercept)"]
 
 end
