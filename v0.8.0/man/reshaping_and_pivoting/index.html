@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
     
       
-        <title>Formulas - DataFrames.jl</title>
+        <title>Reshaping - DataFrames.jl</title>
       
       
       
@@ -98,7 +98,7 @@
             
           </span>
         
-        Formulas
+        Reshaping
       </div>
     </div>
     
@@ -218,9 +218,14 @@
       
         
   <li>
-    <a class="" title="Reshaping" href="../reshaping_and_pivoting/">
+    <a class="current" title="Reshaping" href="./">
       Reshaping
     </a>
+    
+      
+        
+      
+      
     
   </li>
 
@@ -236,14 +241,9 @@
       
         
   <li>
-    <a class="current" title="Formulas" href="./">
+    <a class="" title="Formulas" href="../formulas/">
       Formulas
     </a>
-    
-      
-        
-      
-      
     
   </li>
 
@@ -334,47 +334,69 @@
       <article class="article">
         <div class="wrapper">
           
-          <p><a id='The-Formula,-ModelFrame-and-ModelMatrix-Types-1'></a></p>
-<h1 id="the-formula-modelframe-and-modelmatrix-types">The Formula, ModelFrame and ModelMatrix Types</h1>
-<p>In regression analysis, we often want to describe the relationship between a response variable and one or more input variables in terms of main effects and interactions. To facilitate the specification of a regression model in terms of the columns of a <code>DataFrame</code>, the DataFrames package provides a <code>Formula</code> type, which is created by the <code>~</code> binary operator in Julia:</p>
-<div class="codehilite"><pre><span></span><span class="n">fm</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span>
+          <p><a id='Reshaping-and-Pivoting-Data-1'></a></p>
+<h1 id="reshaping-and-pivoting-data">Reshaping and Pivoting Data</h1>
+<p>Reshape data from wide to long format using the <code>stack</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">DataFrames</span><span class="p">,</span> <span class="n">RDatasets</span>
+<span class="n">iris</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">(</span><span class="s">&quot;datasets&quot;</span><span class="p">,</span> <span class="s">&quot;iris&quot;</span><span class="p">)</span>
+<span class="n">iris</span><span class="p">[:</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c"># this makes it easier to unstack</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
 </pre></div>
 
 
-<p>A <code>Formula</code> object can be used to transform a <code>DataFrame</code> into a <code>ModelFrame</code> object:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-<span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<p>The second optional argument to <code>stack</code> indicates the columns to be stacked. These are normally referred to as the measured variables. Column names can also be given:</p>
+<div class="codehilite"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">[:</span><span class="n">SepalLength</span><span class="p">,</span> <span class="p">:</span><span class="n">SepalWidth</span><span class="p">,</span> <span class="p">:</span><span class="n">PetalLength</span><span class="p">,</span> <span class="p">:</span><span class="n">PetalWidth</span><span class="p">])</span>
 </pre></div>
 
 
-<p>A <code>ModelFrame</code> object is just a simple wrapper around a <code>DataFrame</code>. For modeling purposes, one generally wants to construct a <code>ModelMatrix</code>, which constructs a <code>Matrix{Float64}</code> that can be used directly to fit a statistical model:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>Note that all columns can be of different types. Type promotion follows the rules of <code>vcat</code>.</p>
+<p>The stacked DataFrame that results includes all of the columns not specified to be stacked. These are repeated for each stacked column. These are normally refered to as identifier (id) columns. In addition to the id columns, two additional columns labeled <code>:variable</code> and <code>:values</code> contain the column identifier and the stacked columns.</p>
+<p>A third optional argument to <code>stack</code> represents the id columns that are repeated. This makes it easier to specify which variables you want included in the long format:</p>
+<div class="codehilite"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">[:</span><span class="n">SepalLength</span><span class="p">,</span> <span class="p">:</span><span class="n">SepalWidth</span><span class="p">],</span> <span class="p">:</span><span class="n">Species</span><span class="p">)</span>
 </pre></div>
 
 
-<p>Note that <code>mm</code> contains an additional column consisting entirely of <code>1.0</code> values. This is used to fit an intercept term in a regression model.</p>
-<p>In addition to specifying main effects, it is possible to specify interactions using the <code>&amp;</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span> <span class="o">+</span> <span class="n">X</span><span class="o">&amp;</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p><code>melt</code> is an alternative function to reshape from wide to long format. It is based on <code>stack</code>, but it prefers specification of the id columns as:</p>
+<div class="codehilite"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">melt</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">)</span>
 </pre></div>
 
 
-<p>If you would like to specify both main effects and an interaction term at once, use the <code>*</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>All other columns are assumed to be measured variables (they are stacked).</p>
+<p>You can also stack an entire DataFrame. The default stacks all floating-point columns:</p>
+<div class="codehilite"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">iris</span><span class="p">)</span>
 </pre></div>
 
 
-<p>You can control how categorical variables (e.g., <code>PooledDataArray</code> columns) are converted to <code>ModelMatrix</code> columns by specifying <em>contrasts</em> when you construct a <code>ModelFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">contrasts</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(:</span><span class="n">X</span> <span class="o">=&gt;</span> <span class="n">HelmertCoding</span><span class="p">())))</span>
+<p><code>unstack</code> converts from a long format to a wide format. The default is requires specifying which columns are an id variable, column variable names, and column values:</p>
+<div class="codehilite"><pre><span></span><span class="n">longdf</span> <span class="o">=</span> <span class="n">melt</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">[:</span><span class="n">Species</span><span class="p">,</span> <span class="p">:</span><span class="n">id</span><span class="p">])</span>
+<span class="n">widedf</span> <span class="o">=</span> <span class="n">unstack</span><span class="p">(</span><span class="n">longdf</span><span class="p">,</span> <span class="p">:</span><span class="n">id</span><span class="p">,</span> <span class="p">:</span><span class="n">variable</span><span class="p">,</span> <span class="p">:</span><span class="n">value</span><span class="p">)</span>
 </pre></div>
 
 
-<p>Contrasts can also be modified in an existing <code>ModelFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
-<span class="n">contrasts!</span><span class="p">(</span><span class="n">mf</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">HelmertCoding</span><span class="p">())</span>
+<p>If the remaining columns are unique, you can skip the id variable and use:</p>
+<div class="codehilite"><pre><span></span><span class="n">widedf</span> <span class="o">=</span> <span class="n">unstack</span><span class="p">(</span><span class="n">longdf</span><span class="p">,</span> <span class="p">:</span><span class="n">variable</span><span class="p">,</span> <span class="p">:</span><span class="n">value</span><span class="p">)</span>
 </pre></div>
 
 
-<p>The construction of model matrices makes it easy to formulate complex statistical models. These are used to good effect by the <a href="https://github.com/JuliaStats/GLM.jl">GLM Package.</a></p>
+<p><code>stackdf</code> and <code>meltdf</code> are two additional functions that work like <code>stack</code> and <code>melt</code>, but they provide a view into the original wide DataFrame. Here is an example:</p>
+<div class="codehilite"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">stackdf</span><span class="p">(</span><span class="n">iris</span><span class="p">)</span>
+</pre></div>
+
+
+<p>This saves memory. To create the view, several AbstractVectors are defined:</p>
+<p><code>:variable</code> column – <code>EachRepeatedVector</code>   This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.</p>
+<p><code>:value</code> column – <code>StackedVector</code>   This is provides a view of the original columns stacked together.</p>
+<p>Id columns – <code>RepeatedVector</code>   This repeats the original columns N times where N is the number of columns stacked.</p>
+<p>For more details on the storage representation, see:</p>
+<div class="codehilite"><pre><span></span><span class="n">dump</span><span class="p">(</span><span class="n">stackdf</span><span class="p">(</span><span class="n">iris</span><span class="p">))</span>
+</pre></div>
+
+
+<p>None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:</p>
+<div class="codehilite"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">iris</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">by</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="p">[:</span><span class="n">variable</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">],</span> <span class="n">df</span> <span class="o">-&gt;</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">vsum</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[:</span><span class="n">value</span><span class="p">])))</span>
+<span class="n">unstack</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">,</span> <span class="p">:</span><span class="n">vsum</span><span class="p">)</span>
+</pre></div>
           <aside class="copyright" role="note">
             
             Documentation built with
@@ -391,7 +413,7 @@
   <nav class="pagination" aria-label="Footer">
     <div class="previous">
       
-        <a href="../sorting/" title="Sorting">
+        <a href="../split_apply_combine/" title="Split-apply-combine">
           <span class="direction">
             Previous
           </span>
@@ -401,7 +423,7 @@
             </div>
             <div class="stretch">
               <div class="title">
-                Sorting
+                Split-apply-combine
               </div>
             </div>
           </div>
@@ -410,14 +432,14 @@
     </div>
     <div class="next">
       
-        <a href="../pooling/" title="Pooling">
+        <a href="../sorting/" title="Sorting">
           <span class="direction">
             Next
           </span>
           <div class="page">
             <div class="stretch">
               <div class="title">
-                Pooling
+                Sorting
               </div>
             </div>
             <div class="button button-next" role="button" aria-label="Next">

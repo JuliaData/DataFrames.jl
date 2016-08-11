@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
     
       
-        <title>Formulas - DataFrames.jl</title>
+        <title>Joins - DataFrames.jl</title>
       
       
       
@@ -98,7 +98,7 @@
             
           </span>
         
-        Formulas
+        Joins
       </div>
     </div>
     
@@ -200,9 +200,14 @@
       
         
   <li>
-    <a class="" title="Joins" href="../joins/">
+    <a class="current" title="Joins" href="./">
       Joins
     </a>
+    
+      
+        
+      
+      
     
   </li>
 
@@ -236,14 +241,9 @@
       
         
   <li>
-    <a class="current" title="Formulas" href="./">
+    <a class="" title="Formulas" href="../formulas/">
       Formulas
     </a>
-    
-      
-        
-      
-      
     
   </li>
 
@@ -334,47 +334,70 @@
       <article class="article">
         <div class="wrapper">
           
-          <p><a id='The-Formula,-ModelFrame-and-ModelMatrix-Types-1'></a></p>
-<h1 id="the-formula-modelframe-and-modelmatrix-types">The Formula, ModelFrame and ModelMatrix Types</h1>
-<p>In regression analysis, we often want to describe the relationship between a response variable and one or more input variables in terms of main effects and interactions. To facilitate the specification of a regression model in terms of the columns of a <code>DataFrame</code>, the DataFrames package provides a <code>Formula</code> type, which is created by the <code>~</code> binary operator in Julia:</p>
-<div class="codehilite"><pre><span></span><span class="n">fm</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span>
+          <p><a id='Database-Style-Joins-1'></a></p>
+<h1 id="database-style-joins">Database-Style Joins</h1>
+<p>We often need to combine two or more data sets together to provide a complete picture of the topic we are studying. For example, suppose that we have the following two data sets:</p>
+<div class="codehilite"><pre><span></span><span class="n">names</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">Name</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;John Doe&quot;</span><span class="p">,</span> <span class="s">&quot;Jane Doe&quot;</span><span class="p">])</span>
+<span class="n">jobs</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">Job</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Lawyer&quot;</span><span class="p">,</span> <span class="s">&quot;Doctor&quot;</span><span class="p">])</span>
 </pre></div>
 
 
-<p>A <code>Formula</code> object can be used to transform a <code>DataFrame</code> into a <code>ModelFrame</code> object:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-<span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<p>We might want to work with a larger data set that contains both the names and jobs for each ID. We can do this using the <code>join</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="n">full</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">jobs</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="p">:</span><span class="n">ID</span><span class="p">)</span>
 </pre></div>
 
 
-<p>A <code>ModelFrame</code> object is just a simple wrapper around a <code>DataFrame</code>. For modeling purposes, one generally wants to construct a <code>ModelMatrix</code>, which constructs a <code>Matrix{Float64}</code> that can be used directly to fit a statistical model:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>Output:</p>
+<table>
+<thead>
+<tr>
+<th align="right">Row</th>
+<th align="right">ID</th>
+<th align="right">Name</th>
+<th align="right">Job</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">"John Doe"</td>
+<td align="right">"Lawyer"</td>
+</tr>
+<tr>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">"Jane Doe"</td>
+<td align="right">"Doctor"</td>
+</tr>
+</tbody>
+</table>
+<p>In relational database theory, this operation is generally referred to as a join. The columns used to determine which rows should be combined during a join are called keys.</p>
+<p>There are seven kinds of joins supported by the DataFrames package:</p>
+<ul>
+<li>Inner: The output contains rows for values of the key that exist in both the first (left) and second (right) arguments to <code>join</code>.</li>
+<li>Left: The output contains rows for values of the key that exist in the first (left) argument to <code>join</code>, whether or not that value exists in the second (right) argument.</li>
+<li>Right: The output contains rows for values of the key that exist in the second (right) argument to <code>join</code>, whether or not that value exists in the first (left) argument.</li>
+<li>Outer: The output contains rows for values of the key that exist in the first (left) or second (right) argument to <code>join</code>.</li>
+<li>Semi: Like an inner join, but output is restricted to columns from the first (left) argument to <code>join</code>.</li>
+<li>Anti: The output contains rows for values of the key that exist in the first (left) but not the second (right) argument to <code>join</code>. As with semi joins, output is restricted to columns from the first (left) argument.</li>
+<li>Cross: The output is the cartesian product of rows from the first (left) and second (right) arguments to <code>join</code>.</li>
+</ul>
+<p>You can control the kind of join that <code>join</code> performs using the <code>kind</code> keyword argument:</p>
+<div class="codehilite"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">Name</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;A&quot;</span><span class="p">,</span> <span class="s">&quot;B&quot;</span><span class="p">])</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">Job</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Doctor&quot;</span><span class="p">,</span> <span class="s">&quot;Lawyer&quot;</span><span class="p">])</span>
+<span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="p">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="p">:</span><span class="n">inner</span><span class="p">)</span>
+<span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="p">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="p">:</span><span class="n">left</span><span class="p">)</span>
+<span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="p">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="p">:</span><span class="n">right</span><span class="p">)</span>
+<span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="p">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="p">:</span><span class="n">outer</span><span class="p">)</span>
+<span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="p">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="p">:</span><span class="n">semi</span><span class="p">)</span>
+<span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">on</span> <span class="o">=</span> <span class="p">:</span><span class="n">ID</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="p">:</span><span class="n">anti</span><span class="p">)</span>
 </pre></div>
 
 
-<p>Note that <code>mm</code> contains an additional column consisting entirely of <code>1.0</code> values. This is used to fit an intercept term in a regression model.</p>
-<p>In addition to specifying main effects, it is possible to specify interactions using the <code>&amp;</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span> <span class="o">+</span> <span class="n">X</span><span class="o">&amp;</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>Cross joins are the only kind of join that does not use a key:</p>
+<div class="codehilite"><pre><span></span><span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">kind</span> <span class="o">=</span> <span class="p">:</span><span class="n">cross</span><span class="p">)</span>
 </pre></div>
-
-
-<p>If you would like to specify both main effects and an interaction term at once, use the <code>*</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
-</pre></div>
-
-
-<p>You can control how categorical variables (e.g., <code>PooledDataArray</code> columns) are converted to <code>ModelMatrix</code> columns by specifying <em>contrasts</em> when you construct a <code>ModelFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">contrasts</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(:</span><span class="n">X</span> <span class="o">=&gt;</span> <span class="n">HelmertCoding</span><span class="p">())))</span>
-</pre></div>
-
-
-<p>Contrasts can also be modified in an existing <code>ModelFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
-<span class="n">contrasts!</span><span class="p">(</span><span class="n">mf</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">HelmertCoding</span><span class="p">())</span>
-</pre></div>
-
-
-<p>The construction of model matrices makes it easy to formulate complex statistical models. These are used to good effect by the <a href="https://github.com/JuliaStats/GLM.jl">GLM Package.</a></p>
           <aside class="copyright" role="note">
             
             Documentation built with
@@ -391,7 +414,7 @@
   <nav class="pagination" aria-label="Footer">
     <div class="previous">
       
-        <a href="../sorting/" title="Sorting">
+        <a href="../io/" title="IO">
           <span class="direction">
             Previous
           </span>
@@ -401,7 +424,7 @@
             </div>
             <div class="stretch">
               <div class="title">
-                Sorting
+                IO
               </div>
             </div>
           </div>
@@ -410,14 +433,14 @@
     </div>
     <div class="next">
       
-        <a href="../pooling/" title="Pooling">
+        <a href="../split_apply_combine/" title="Split-apply-combine">
           <span class="direction">
             Next
           </span>
           <div class="page">
             <div class="stretch">
               <div class="title">
-                Pooling
+                Split-apply-combine
               </div>
             </div>
             <div class="button button-next" role="button" aria-label="Next">

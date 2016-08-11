@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
     
       
-        <title>Formulas - DataFrames.jl</title>
+        <title>IO - DataFrames.jl</title>
       
       
       
@@ -98,7 +98,7 @@
             
           </span>
         
-        Formulas
+        IO
       </div>
     </div>
     
@@ -191,9 +191,36 @@
       
         
   <li>
-    <a class="" title="IO" href="../io/">
+    <a class="current" title="IO" href="./">
       IO
     </a>
+    
+      
+        
+      
+      
+        <ul>
+          
+            <li class="anchor">
+              <a title="Importing data from tabular data files" href="#importing-data-from-tabular-data-files">
+                Importing data from tabular data files
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Exporting data to a tabular data file" href="#exporting-data-to-a-tabular-data-file">
+                Exporting data to a tabular data file
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Supplying DataFrames inline with non-standard string literals" href="#supplying-dataframes-inline-with-non-standard-string-literals">
+                Supplying DataFrames inline with non-standard string literals
+              </a>
+            </li>
+          
+        </ul>
+      
     
   </li>
 
@@ -236,14 +263,9 @@
       
         
   <li>
-    <a class="current" title="Formulas" href="./">
+    <a class="" title="Formulas" href="../formulas/">
       Formulas
     </a>
-    
-      
-        
-      
-      
     
   </li>
 
@@ -334,47 +356,69 @@
       <article class="article">
         <div class="wrapper">
           
-          <p><a id='The-Formula,-ModelFrame-and-ModelMatrix-Types-1'></a></p>
-<h1 id="the-formula-modelframe-and-modelmatrix-types">The Formula, ModelFrame and ModelMatrix Types</h1>
-<p>In regression analysis, we often want to describe the relationship between a response variable and one or more input variables in terms of main effects and interactions. To facilitate the specification of a regression model in terms of the columns of a <code>DataFrame</code>, the DataFrames package provides a <code>Formula</code> type, which is created by the <code>~</code> binary operator in Julia:</p>
-<div class="codehilite"><pre><span></span><span class="n">fm</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span>
+          <p><a id='Importing-and-Exporting-(I/O)-1'></a></p>
+<h1 id="importing-and-exporting-io">Importing and Exporting (I/O)</h1>
+<p><a id='Importing-data-from-tabular-data-files-1'></a></p>
+<h2 id="importing-data-from-tabular-data-files">Importing data from tabular data files</h2>
+<p>To read data from a CSV-like file, use the <code>readtable</code> function:</p>
+<div class="codehilite"><pre><span></span>{docs}
+readtable
 </pre></div>
 
 
-<p>A <code>Formula</code> object can be used to transform a <code>DataFrame</code> into a <code>ModelFrame</code> object:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-<span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<p><code>readtable</code> requires that you specify the path of the file that you would like to read as a <code>String</code>. To read data from a non-file source, you may also supply an <code>IO</code> object. It supports many additional keyword arguments: these are documented in the section on advanced I/O operations.</p>
+<p><a id='Exporting-data-to-a-tabular-data-file-1'></a></p>
+<h2 id="exporting-data-to-a-tabular-data-file">Exporting data to a tabular data file</h2>
+<p>To write data to a CSV file, use the <code>writetable</code> function:</p>
+<div class="codehilite"><pre><span></span>{docs}
+writetable
 </pre></div>
 
 
-<p>A <code>ModelFrame</code> object is just a simple wrapper around a <code>DataFrame</code>. For modeling purposes, one generally wants to construct a <code>ModelMatrix</code>, which constructs a <code>Matrix{Float64}</code> that can be used directly to fit a statistical model:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p><a id='Supplying-DataFrames-inline-with-non-standard-string-literals-1'></a></p>
+<h2 id="supplying-dataframes-inline-with-non-standard-string-literals">Supplying <code>DataFrame</code>s inline with non-standard string literals</h2>
+<p>You can also provide CSV-like tabular data in a non-standard string literal to construct a new <code>DataFrame</code>, as in the following:</p>
+<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">csv</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">    name,  age, squidPerWeek</span>
+<span class="s">    Alice,  36,         3.14</span>
+<span class="s">    Bob,    24,         0</span>
+<span class="s">    Carol,  58,         2.71</span>
+<span class="s">    Eve,    49,         7.77</span>
+<span class="s">    &quot;&quot;&quot;</span>
 </pre></div>
 
 
-<p>Note that <code>mm</code> contains an additional column consisting entirely of <code>1.0</code> values. This is used to fit an intercept term in a regression model.</p>
-<p>In addition to specifying main effects, it is possible to specify interactions using the <code>&amp;</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span> <span class="o">+</span> <span class="n">X</span><span class="o">&amp;</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>The <code>csv</code> string literal prefix indicates that the data are supplied in standard comma-separated value format. Common alternative formats are also available as string literals. For semicolon-separated values, with comma as a decimal, use <code>csv2</code>:</p>
+<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">csv2</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">    name;  age; squidPerWeek</span>
+<span class="s">    Alice;  36;         3,14</span>
+<span class="s">    Bob;    24;         0</span>
+<span class="s">    Carol;  58;         2,71</span>
+<span class="s">    Eve;    49;         7,77</span>
+<span class="s">    &quot;&quot;&quot;</span>
 </pre></div>
 
 
-<p>If you would like to specify both main effects and an interaction term at once, use the <code>*</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>For whitespace-separated values, use <code>wsv</code>:</p>
+<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">wsv</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">    name  age squidPerWeek</span>
+<span class="s">    Alice  36         3.14</span>
+<span class="s">    Bob    24         0</span>
+<span class="s">    Carol  58         2.71</span>
+<span class="s">    Eve    49         7.77</span>
+<span class="s">    &quot;&quot;&quot;</span>
 </pre></div>
 
 
-<p>You can control how categorical variables (e.g., <code>PooledDataArray</code> columns) are converted to <code>ModelMatrix</code> columns by specifying <em>contrasts</em> when you construct a <code>ModelFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">contrasts</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(:</span><span class="n">X</span> <span class="o">=&gt;</span> <span class="n">HelmertCoding</span><span class="p">())))</span>
+<p>And for tab-separated values, use <code>tsv</code>:</p>
+<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">tsv</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">    name    age squidPerWeek</span>
+<span class="s">    Alice   36  3.14</span>
+<span class="s">    Bob 24  0</span>
+<span class="s">    Carol   58  2.71</span>
+<span class="s">    Eve 49  7.77</span>
+<span class="s">    &quot;&quot;&quot;</span>
 </pre></div>
-
-
-<p>Contrasts can also be modified in an existing <code>ModelFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
-<span class="n">contrasts!</span><span class="p">(</span><span class="n">mf</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">HelmertCoding</span><span class="p">())</span>
-</pre></div>
-
-
-<p>The construction of model matrices makes it easy to formulate complex statistical models. These are used to good effect by the <a href="https://github.com/JuliaStats/GLM.jl">GLM Package.</a></p>
           <aside class="copyright" role="note">
             
             Documentation built with
@@ -391,7 +435,7 @@
   <nav class="pagination" aria-label="Footer">
     <div class="previous">
       
-        <a href="../sorting/" title="Sorting">
+        <a href="../getting_started/" title="Getting Started">
           <span class="direction">
             Previous
           </span>
@@ -401,7 +445,7 @@
             </div>
             <div class="stretch">
               <div class="title">
-                Sorting
+                Getting Started
               </div>
             </div>
           </div>
@@ -410,14 +454,14 @@
     </div>
     <div class="next">
       
-        <a href="../pooling/" title="Pooling">
+        <a href="../joins/" title="Joins">
           <span class="direction">
             Next
           </span>
           <div class="page">
             <div class="stretch">
               <div class="title">
-                Pooling
+                Joins
               </div>
             </div>
             <div class="button button-next" role="button" aria-label="Next">

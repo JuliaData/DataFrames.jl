@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
     
       
-        <title>Formulas - DataFrames.jl</title>
+        <title>Data manipulation - DataFrames.jl</title>
       
       
       
@@ -93,12 +93,12 @@
           <span class="path">
             
               
-                User guide <i class="icon icon-link"></i>
+                API <i class="icon icon-link"></i>
               
             
           </span>
         
-        Formulas
+        Data manipulation
       </div>
     </div>
     
@@ -182,7 +182,7 @@
       
         
   <li>
-    <a class="" title="Getting Started" href="../getting_started/">
+    <a class="" title="Getting Started" href="../../man/getting_started/">
       Getting Started
     </a>
     
@@ -191,7 +191,7 @@
       
         
   <li>
-    <a class="" title="IO" href="../io/">
+    <a class="" title="IO" href="../../man/io/">
       IO
     </a>
     
@@ -200,7 +200,7 @@
       
         
   <li>
-    <a class="" title="Joins" href="../joins/">
+    <a class="" title="Joins" href="../../man/joins/">
       Joins
     </a>
     
@@ -209,7 +209,7 @@
       
         
   <li>
-    <a class="" title="Split-apply-combine" href="../split_apply_combine/">
+    <a class="" title="Split-apply-combine" href="../../man/split_apply_combine/">
       Split-apply-combine
     </a>
     
@@ -218,7 +218,7 @@
       
         
   <li>
-    <a class="" title="Reshaping" href="../reshaping_and_pivoting/">
+    <a class="" title="Reshaping" href="../../man/reshaping_and_pivoting/">
       Reshaping
     </a>
     
@@ -227,7 +227,7 @@
       
         
   <li>
-    <a class="" title="Sorting" href="../sorting/">
+    <a class="" title="Sorting" href="../../man/sorting/">
       Sorting
     </a>
     
@@ -236,21 +236,16 @@
       
         
   <li>
-    <a class="current" title="Formulas" href="./">
+    <a class="" title="Formulas" href="../../man/formulas/">
       Formulas
     </a>
-    
-      
-        
-      
-      
     
   </li>
 
       
         
   <li>
-    <a class="" title="Pooling" href="../pooling/">
+    <a class="" title="Pooling" href="../../man/pooling/">
       Pooling
     </a>
     
@@ -268,7 +263,7 @@
       
         
   <li>
-    <a class="" title="Main types" href="../../lib/maintypes/">
+    <a class="" title="Main types" href="../maintypes/">
       Main types
     </a>
     
@@ -277,7 +272,7 @@
       
         
   <li>
-    <a class="" title="Utilities" href="../../lib/utilities/">
+    <a class="" title="Utilities" href="../utilities/">
       Utilities
     </a>
     
@@ -286,9 +281,30 @@
       
         
   <li>
-    <a class="" title="Data manipulation" href="../../lib/manipulation/">
+    <a class="current" title="Data manipulation" href="./">
       Data manipulation
     </a>
+    
+      
+        
+      
+      
+        <ul>
+          
+            <li class="anchor">
+              <a title="Joins" href="#joins">
+                Joins
+              </a>
+            </li>
+          
+            <li class="anchor">
+              <a title="Reshaping" href="#reshaping">
+                Reshaping
+              </a>
+            </li>
+          
+        </ul>
+      
     
   </li>
 
@@ -334,47 +350,34 @@
       <article class="article">
         <div class="wrapper">
           
-          <p><a id='The-Formula,-ModelFrame-and-ModelMatrix-Types-1'></a></p>
-<h1 id="the-formula-modelframe-and-modelmatrix-types">The Formula, ModelFrame and ModelMatrix Types</h1>
-<p>In regression analysis, we often want to describe the relationship between a response variable and one or more input variables in terms of main effects and interactions. To facilitate the specification of a regression model in terms of the columns of a <code>DataFrame</code>, the DataFrames package provides a <code>Formula</code> type, which is created by the <code>~</code> binary operator in Julia:</p>
-<div class="codehilite"><pre><span></span><span class="n">fm</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span>
+          <div class="codehilite"><pre><span></span>{meta}
+CurrentModule = DataFrames
 </pre></div>
 
 
-<p>A <code>Formula</code> object can be used to transform a <code>DataFrame</code> into a <code>ModelFrame</code> object:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-<span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<p><a id='Data-Manipulation-1'></a></p>
+<h1 id="data-manipulation">Data Manipulation</h1>
+<div class="codehilite"><pre><span></span>{index}
+Pages = [&quot;manipulation.md&quot;]
 </pre></div>
 
 
-<p>A <code>ModelFrame</code> object is just a simple wrapper around a <code>DataFrame</code>. For modeling purposes, one generally wants to construct a <code>ModelMatrix</code>, which constructs a <code>Matrix{Float64}</code> that can be used directly to fit a statistical model:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p><a id='Joins-1'></a></p>
+<h2 id="joins">Joins</h2>
+<div class="codehilite"><pre><span></span>{docs}
+join
 </pre></div>
 
 
-<p>Note that <code>mm</code> contains an additional column consisting entirely of <code>1.0</code> values. This is used to fit an intercept term in a regression model.</p>
-<p>In addition to specifying main effects, it is possible to specify interactions using the <code>&amp;</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span> <span class="o">+</span> <span class="n">X</span><span class="o">&amp;</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p><a id='Reshaping-1'></a></p>
+<h2 id="reshaping">Reshaping</h2>
+<div class="codehilite"><pre><span></span>{docs}
+melt 
+stack
+unstack
+stackdf
+meltdf
 </pre></div>
-
-
-<p>If you would like to specify both main effects and an interaction term at once, use the <code>*</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
-</pre></div>
-
-
-<p>You can control how categorical variables (e.g., <code>PooledDataArray</code> columns) are converted to <code>ModelMatrix</code> columns by specifying <em>contrasts</em> when you construct a <code>ModelFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">contrasts</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(:</span><span class="n">X</span> <span class="o">=&gt;</span> <span class="n">HelmertCoding</span><span class="p">())))</span>
-</pre></div>
-
-
-<p>Contrasts can also be modified in an existing <code>ModelFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
-<span class="n">contrasts!</span><span class="p">(</span><span class="n">mf</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">HelmertCoding</span><span class="p">())</span>
-</pre></div>
-
-
-<p>The construction of model matrices makes it easy to formulate complex statistical models. These are used to good effect by the <a href="https://github.com/JuliaStats/GLM.jl">GLM Package.</a></p>
           <aside class="copyright" role="note">
             
             Documentation built with
@@ -391,7 +394,7 @@
   <nav class="pagination" aria-label="Footer">
     <div class="previous">
       
-        <a href="../sorting/" title="Sorting">
+        <a href="../utilities/" title="Utilities">
           <span class="direction">
             Previous
           </span>
@@ -401,7 +404,7 @@
             </div>
             <div class="stretch">
               <div class="title">
-                Sorting
+                Utilities
               </div>
             </div>
           </div>
@@ -410,14 +413,14 @@
     </div>
     <div class="next">
       
-        <a href="../pooling/" title="Pooling">
+        <a href="../../NEWS/" title="Release notes">
           <span class="direction">
             Next
           </span>
           <div class="page">
             <div class="stretch">
               <div class="title">
-                Pooling
+                Release notes
               </div>
             </div>
             <div class="button button-next" role="button" aria-label="Next">

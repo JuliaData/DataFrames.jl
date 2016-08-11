@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1,maximum-scale=1">
     
       
-        <title>Formulas - DataFrames.jl</title>
+        <title>Sorting - DataFrames.jl</title>
       
       
       
@@ -98,7 +98,7 @@
             
           </span>
         
-        Formulas
+        Sorting
       </div>
     </div>
     
@@ -227,23 +227,23 @@
       
         
   <li>
-    <a class="" title="Sorting" href="../sorting/">
+    <a class="current" title="Sorting" href="./">
       Sorting
     </a>
+    
+      
+        
+      
+      
     
   </li>
 
       
         
   <li>
-    <a class="current" title="Formulas" href="./">
+    <a class="" title="Formulas" href="../formulas/">
       Formulas
     </a>
-    
-      
-        
-      
-      
     
   </li>
 
@@ -334,47 +334,33 @@
       <article class="article">
         <div class="wrapper">
           
-          <p><a id='The-Formula,-ModelFrame-and-ModelMatrix-Types-1'></a></p>
-<h1 id="the-formula-modelframe-and-modelmatrix-types">The Formula, ModelFrame and ModelMatrix Types</h1>
-<p>In regression analysis, we often want to describe the relationship between a response variable and one or more input variables in terms of main effects and interactions. To facilitate the specification of a regression model in terms of the columns of a <code>DataFrame</code>, the DataFrames package provides a <code>Formula</code> type, which is created by the <code>~</code> binary operator in Julia:</p>
-<div class="codehilite"><pre><span></span><span class="n">fm</span> <span class="o">=</span> <span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span>
+          <p><a id='Sorting-1'></a></p>
+<h1 id="sorting">Sorting</h1>
+<p>Sorting is a fundamental component of data analysis. Basic sorting is trivial: just calling <code>sort!</code> will sort all columns, in place:</p>
+<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">DataFrames</span><span class="p">,</span> <span class="n">RDatasets</span>
+
+<span class="n">iris</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">(</span><span class="s">&quot;datasets&quot;</span><span class="p">,</span> <span class="s">&quot;iris&quot;</span><span class="p">)</span>
+<span class="n">sort!</span><span class="p">(</span><span class="n">iris</span><span class="p">)</span>
 </pre></div>
 
 
-<p>A <code>Formula</code> object can be used to transform a <code>DataFrame</code> into a <code>ModelFrame</code> object:</p>
-<div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">X</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="n">Z</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
-<span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<p>In Sorting DataFrames, you may want to sort different columns with different options. Here are some examples showing most of the possible options:</p>
+<div class="codehilite"><pre><span></span><span class="n">sort!</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="n">rev</span> <span class="o">=</span> <span class="n">true</span><span class="p">)</span>
+<span class="n">sort!</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="p">[:</span><span class="n">SepalWidth</span><span class="p">,</span> <span class="p">:</span><span class="n">SepalLength</span><span class="p">])</span>
+
+<span class="n">sort!</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">order</span><span class="p">(:</span><span class="n">Species</span><span class="p">,</span> <span class="n">by</span> <span class="o">=</span> <span class="n">uppercase</span><span class="p">),</span>
+                    <span class="n">order</span><span class="p">(:</span><span class="n">SepalLength</span><span class="p">,</span> <span class="n">rev</span> <span class="o">=</span> <span class="n">true</span><span class="p">)])</span>
 </pre></div>
 
 
-<p>A <code>ModelFrame</code> object is just a simple wrapper around a <code>DataFrame</code>. For modeling purposes, one generally wants to construct a <code>ModelMatrix</code>, which constructs a <code>Matrix{Float64}</code> that can be used directly to fit a statistical model:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
+<p>Keywords used above include <code>cols</code> (to specify columns), <code>rev</code> (to sort a column or the whole DataFrame in reverse), and <code>by</code> (to apply a function to a column/DataFrame). Each keyword can either be a single value, or can be a tuple or array, with values corresponding to individual columns.</p>
+<p>As an alternative to using array or tuple values, <code>order</code> to specify an ordering for a particular column within a set of columns</p>
+<p>The following two examples show two ways to sort the <code>iris</code> dataset with the same result: <code>Species</code> will be ordered in reverse lexicographic order, and within species, rows will be sorted by increasing sepal length and width:</p>
+<div class="codehilite"><pre><span></span><span class="n">sort!</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="p">(:</span><span class="n">Species</span><span class="p">,</span> <span class="p">:</span><span class="n">SepalLength</span><span class="p">,</span> <span class="p">:</span><span class="n">SepalWidth</span><span class="p">),</span>
+      <span class="n">rev</span> <span class="o">=</span> <span class="p">(</span><span class="n">true</span><span class="p">,</span> <span class="n">false</span><span class="p">,</span> <span class="n">false</span><span class="p">))</span>
+
+<span class="n">sort!</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="n">cols</span> <span class="o">=</span> <span class="p">(</span><span class="n">order</span><span class="p">(:</span><span class="n">Species</span><span class="p">,</span> <span class="n">rev</span> <span class="o">=</span> <span class="n">true</span><span class="p">),</span> <span class="p">:</span><span class="n">SepalLength</span><span class="p">,</span> <span class="p">:</span><span class="n">SepalWidth</span><span class="p">))</span>
 </pre></div>
-
-
-<p>Note that <code>mm</code> contains an additional column consisting entirely of <code>1.0</code> values. This is used to fit an intercept term in a regression model.</p>
-<p>In addition to specifying main effects, it is possible to specify interactions using the <code>&amp;</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span> <span class="o">+</span> <span class="n">Y</span> <span class="o">+</span> <span class="n">X</span><span class="o">&amp;</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
-</pre></div>
-
-
-<p>If you would like to specify both main effects and an interaction term at once, use the <code>*</code> operator inside a <code>Formula</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">))</span>
-</pre></div>
-
-
-<p>You can control how categorical variables (e.g., <code>PooledDataArray</code> columns) are converted to <code>ModelMatrix</code> columns by specifying <em>contrasts</em> when you construct a <code>ModelFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">contrasts</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(:</span><span class="n">X</span> <span class="o">=&gt;</span> <span class="n">HelmertCoding</span><span class="p">())))</span>
-</pre></div>
-
-
-<p>Contrasts can also be modified in an existing <code>ModelFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mf</span> <span class="o">=</span> <span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
-<span class="n">contrasts!</span><span class="p">(</span><span class="n">mf</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">HelmertCoding</span><span class="p">())</span>
-</pre></div>
-
-
-<p>The construction of model matrices makes it easy to formulate complex statistical models. These are used to good effect by the <a href="https://github.com/JuliaStats/GLM.jl">GLM Package.</a></p>
           <aside class="copyright" role="note">
             
             Documentation built with
@@ -391,7 +377,7 @@
   <nav class="pagination" aria-label="Footer">
     <div class="previous">
       
-        <a href="../sorting/" title="Sorting">
+        <a href="../reshaping_and_pivoting/" title="Reshaping">
           <span class="direction">
             Previous
           </span>
@@ -401,7 +387,7 @@
             </div>
             <div class="stretch">
               <div class="title">
-                Sorting
+                Reshaping
               </div>
             </div>
           </div>
@@ -410,14 +396,14 @@
     </div>
     <div class="next">
       
-        <a href="../pooling/" title="Pooling">
+        <a href="../formulas/" title="Formulas">
           <span class="direction">
             Next
           </span>
           <div class="page">
             <div class="stretch">
               <div class="title">
-                Pooling
+                Formulas
               </div>
             </div>
             <div class="button button-next" role="button" aria-label="Next">
