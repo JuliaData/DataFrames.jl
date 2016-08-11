@@ -535,7 +535,7 @@ function coefnames(mf::ModelFrame)
 
     factors = terms.factors
 
-    for (i_term, term) in enumerate(mf.terms.terms)
+    for (i_term, term) in enumerate(terms.terms)
 
         ## names for columns for eval terms
         names = Vector{Compat.UTF8String}[]
