@@ -557,7 +557,7 @@ function coefnames(mf::ModelFrame)
         push!(term_names, expandtermnames(names))
     end
 
-    isempty(term_names) ? Vector{Compat.UTF8String}() : reduce(vcat, term_names)
+    reduce(vcat, Vector{Compat.UTF8String}(), term_names)
 end
 
 function Formula(t::Terms)
