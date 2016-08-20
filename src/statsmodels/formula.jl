@@ -48,7 +48,11 @@ type ModelFrame
     contrasts::Dict{Symbol, ContrastsMatrix}
 end
 
-type ModelMatrix{T <: @compat(Union{Matrix{Float32}, Matrix{Float64}, SparseMatrixCSC{Float32,Int}, SparseMatrixCSC{Float64,Int}})}
+modelmatrixcontainertypes = [Matrix{Float32}, Matrix{Float64},
+                         SparseMatrixCSC{Float32,Int},
+                         SparseMatrixCSC{Float64,Int}]
+
+type ModelMatrix{T <: Union{modelmatrixcontainertypes...}}
     m::T
     assign::Vector{Int}
 end
@@ -437,21 +441,21 @@ If there is an intercept in the model, that column occurs first and its
 Mixed-effects models include "random-effects" terms which are ignored when
 creating the model matrix.
 """
-function ModelMatrix(mf::ModelFrame)
+function ModelMatrix(T::Union{map(t->Type{t}, modelmatrixcontainertypes)...}, mf::ModelFrame)
     dfrm = mf.df
     terms = droprandomeffects(dropresponse!(mf.terms))
 
-    blocks = Matrix{Float64}[]
+    blocks = T[]
     assign = Int[]
     if terms.intercept
-        push!(blocks, ones(size(dfrm, 1), 1))  # columns of 1's is first block
-        push!(assign, 0)                        # this block corresponds to term zero
+        push!(blocks, convert(T, ones(size(dfrm, 1), 1)))  # columns of 1's is first block
+        push!(assign, 0)                                   # this block corresponds to term zero
     end
 
     factors = terms.factors
 
     ## Map eval. term name + redundancy bool to cached model matrix columns
-    eterm_cols = @compat Dict{Tuple{Symbol,Bool}, Array{Float64}}()
+    eterm_cols = @compat Dict{Tuple{Symbol,Bool}, T}()
     ## Accumulator for each term's vector of eval. term columns.
 
     ## TODO: this method makes multiple copies of the data in the ModelFrame:
@@ -462,7 +466,7 @@ function ModelMatrix(mf::ModelFrame)
     ## "promoted" full-rank versions of categorical columns for non-redundant
     ## eval. terms:
     for (i_term, term) in enumerate(terms.terms)
-        term_cols = Matrix{Float64}[]
+        term_cols = T[]
         ## Pull out the eval terms, and the non-redundancy flags for this term
         ff = Compat.view(factors, :, i_term)
         eterms = Compat.view(terms.eterms, ff)
@@ -479,8 +483,9 @@ function ModelMatrix(mf::ModelFrame)
         append!(assign, fill(i_term, size(blocks[end], 2)))
     end
 
-    ModelMatrix{Matrix{Float64}}(reduce(hcat, blocks), assign)
+    ModelMatrix{T}(reduce(hcat, blocks), assign)
 end
+ModelMatrix(mf::ModelFrame) = ModelMatrix(Matrix{Float64}, mf)
 
 
 """
