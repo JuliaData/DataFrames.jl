@@ -48,8 +48,8 @@ type ModelFrame
     contrasts::Dict{Symbol, ContrastsMatrix}
 end
 
-type ModelMatrix{T <: @compat(Union{Float32, Float64})}
-    m::Matrix{T}
+type ModelMatrix{T <: @compat(Union{Matrix{Float32}, Matrix{Float64}, SparseMatrixCSC{Float32,Int}, SparseMatrixCSC{Float64,Int}})}
+    m::T
     assign::Vector{Int}
 end
 
@@ -479,7 +479,7 @@ function ModelMatrix(mf::ModelFrame)
         append!(assign, fill(i_term, size(blocks[end], 2)))
     end
 
-    ModelMatrix{Float64}(reduce(hcat, blocks), assign)
+    ModelMatrix{Matrix{Float64}}(reduce(hcat, blocks), assign)
 end
 
 
