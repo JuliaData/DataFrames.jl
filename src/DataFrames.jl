@@ -16,6 +16,8 @@ using Reexport
 using GZip
 using SortingAlgorithms
 
+using RData  # remove after read_rda deprecation period
+
 using Base: Sort, Order
 import Base: ==, |>
 
@@ -79,7 +81,10 @@ export @~,
        stackdf,
        unique!,
        unstack,
-       writetable
+       writetable,
+
+       # Remove after deprecation period
+       read_rda
 
 ##############################################################################
 ##

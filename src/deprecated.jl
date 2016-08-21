@@ -17,5 +17,7 @@ if VERSION < v"0.4.0-"
 end
 @deprecate DataArray(df::AbstractDataFrame, T::DataType) convert(DataArray{T}, df)
 
-read_rda(args...) = error("read_rda has been moved to the package RData.jl. Run " *
-                          "Pkg.add(\"RData\") to install RData.")
+function read_rda(args...)
+    depwarn("read_rda is deprecated. Use the load function from the RData package.")
+    RData.load(args...)
+end
