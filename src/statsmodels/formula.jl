@@ -374,12 +374,11 @@ end
     expandcols(trm::Vector)
 Create pairwise products of columns from a vector of matrices
 """
-function expandcols(trm::Vector)
+function expandcols{T<:ModelMatrixContainer}(trm::Vector{T})
     if length(trm) == 1
-        asmatrix(Matrix{Float64}, convert(Array{Float64}, trm[1]))
+        trm[1]
     else
-        a = convert(Array{Float64}, trm[1])
-        b = expandcols(trm[2 : end])
+        a, b = trm[1], expandcols(trm[2 : end])
         reduce(hcat, [broadcast(*, a, Compat.view(b, :, j)) for j in 1 : size(b, 2)])
     end
 end
