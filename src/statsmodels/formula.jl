@@ -48,11 +48,9 @@ type ModelFrame
     contrasts::Dict{Symbol, ContrastsMatrix}
 end
 
-modelmatrixcontainertypes = [Matrix{Float32}, Matrix{Float64},
-                         SparseMatrixCSC{Float32,Int},
-                         SparseMatrixCSC{Float64,Int}]
+typealias ModelMatrixContainer{T<:AbstractFloat} AbstractMatrix{T}
 
-type ModelMatrix{T <: Union{modelmatrixcontainertypes...}}
+type ModelMatrix{T <: ModelMatrixContainer}
     m::T
     assign::Vector{Int}
 end
@@ -441,15 +439,15 @@ If there is an intercept in the model, that column occurs first and its
 Mixed-effects models include "random-effects" terms which are ignored when
 creating the model matrix.
 """
-function ModelMatrix(T::Union{map(t->Type{t}, modelmatrixcontainertypes)...}, mf::ModelFrame)
+function (::Type{ModelMatrix{T}}){T<:ModelMatrixContainer}(mf::ModelFrame)
     dfrm = mf.df
     terms = droprandomeffects(dropresponse!(mf.terms))
 
     blocks = T[]
     assign = Int[]
     if terms.intercept
-        push!(blocks, convert(T, ones(size(dfrm, 1), 1)))  # columns of 1's is first block
-        push!(assign, 0)                                   # this block corresponds to term zero
+        push!(blocks, ones(size(dfrm, 1), 1))  # columns of 1's is first block
+        push!(assign, 0)                       # this block corresponds to term zero
     end
 
     factors = terms.factors
@@ -485,7 +483,7 @@ function ModelMatrix(T::Union{map(t->Type{t}, modelmatrixcontainertypes)...}, mf
 
     ModelMatrix{T}(reduce(hcat, blocks), assign)
 end
-ModelMatrix(mf::ModelFrame) = ModelMatrix(Matrix{Float64}, mf)
+ModelMatrix(mf::ModelFrame) = ModelMatrix{Matrix{Float64}}(mf)
 
 
 """
