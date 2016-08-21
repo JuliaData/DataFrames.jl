@@ -126,12 +126,14 @@ module TestFormula
     @test coefnames(mf) == ["(Intercept)","x1","x2"]
     ## @test model_response(mf) == transpose([1. 2 3 4]) # fails: Int64 vs. Float64
     mm = ModelMatrix(mf)
+    smm = ModelMatrix{sparsetype}(mf)
     @test mm.m[:,1] == ones(4)
     @test mm.m[:,2:3] == [x1 x2]
-
-    smm = ModelMatrix{sparsetype}(mf)
-    @test issparse(smm.m)
     @test mm.m == smm.m
+
+    @test isa(mm.m, Matrix{Float64})
+    @test isa(smm.m, sparsetype)
+    @test isa(ModelMatrix{DataMatrix{Float64}}(mf).m, DataMatrix{Float64})
 
     #test_group("expanding a PooledVec into a design matrix of indicators for each dummy variable")
 
@@ -143,10 +145,7 @@ module TestFormula
     @test mm.m[:,3] == [0, 0, 1., 0]
     @test mm.m[:,4] == [0, 0, 0, 1.]
     @test coefnames(mf)[2:end] == ["x1p: 6", "x1p: 7", "x1p: 8"]
-
-    smm = ModelMatrix{sparsetype}(mf)
-    @test issparse(smm.m)
-    @test mm.m == smm.m
+    @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     #test_group("create a design matrix from interactions from two DataFrames")
     ## this was removed in commit dead4562506badd7e84a2367086f5753fa49bb6a
