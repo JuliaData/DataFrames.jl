@@ -323,8 +323,8 @@ function setcontrasts!(mf::ModelFrame, new_contrasts::Dict)
 end
 setcontrasts!(mf::ModelFrame; kwargs...) = setcontrasts!(mf, Dict(kwargs))
 
-asmatrix(a::AbstractMatrix) = a
-asmatrix(v::AbstractVector) = reshape(v, (length(v), 1))
+asmatrix(T::Type, a::AbstractMatrix) = convert(T, a)
+asmatrix(T::Type, v::AbstractVector) = convert(T, reshape(v, (length(v), 1)))
 
 """
     StatsBase.model_response(mf::ModelFrame)
@@ -339,33 +339,35 @@ function StatsBase.model_response(mf::ModelFrame)
     end
 end
 
-modelmat_cols(v::DataVector) = asmatrix(convert(Vector{Float64}, v.data))
-modelmat_cols(v::Vector) = asmatrix(convert(Vector{Float64}, v))
+modelmat_cols{T<:ModelMatrixContainer}(::Type{T}, v::DataVector) = asmatrix(T, convert(Vector{Float64}, v.data))
+modelmat_cols{T<:ModelMatrixContainer}(::Type{T}, v::Vector) = asmatrix(T, convert(Vector{Float64}, v))
+
 ## construct model matrix columns from model frame + name (checks for contrasts)
-function modelmat_cols(name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
+function modelmat_cols{T<:ModelMatrixContainer}(::Type{T}, name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, name)
-        modelmat_cols(mf.df[name],
+        modelmat_cols(T, mf.df[name],
                       non_redundant ?
                       ContrastsMatrix{FullDummyCoding}(mf.contrasts[name]) :
                       mf.contrasts[name])
     else
-        modelmat_cols(mf.df[name])
+        modelmat_cols(T, mf.df[name])
     end
 end
 
 """
-    modelmat_cols(v::PooledDataVector, contrast::ContrastsMatrix)
+    modelmat_cols(T::Type{ModelMatrixContainer}, v::PooledDataVector, contrast::ContrastsMatrix)
 
-Construct `ModelMatrix` columns based on specified contrasts, ensuring that
+Construct `ModelMatrix` columns of type `T` based on specified contrasts, ensuring that
 levels align properly.
 """
-function modelmat_cols(v::PooledDataVector, contrast::ContrastsMatrix)
+function modelmat_cols{T<:ModelMatrixContainer}(::Type{T}, v::PooledDataVector, contrast::ContrastsMatrix)
     ## make sure the levels of the contrast matrix and the categorical data
     ## are the same by constructing a re-indexing vector. Indexing into
     ## reindex with v.refs will give the corresponding row number of the
     ## contrast matrix
     reindex = [findfirst(contrast.levels, l) for l in levels(v)]
-    return contrast.matrix[reindex[v.refs], :]
+    contrastmatrix = convert(T, contrast.matrix)
+    return contrastmatrix[reindex[v.refs], :]
 end
 
 """
@@ -374,7 +376,7 @@ Create pairwise products of columns from a vector of matrices
 """
 function expandcols(trm::Vector)
     if length(trm) == 1
-        asmatrix(convert(Array{Float64}, trm[1]))
+        asmatrix(Matrix{Float64}, convert(Array{Float64}, trm[1]))
     else
         a = convert(Array{Float64}, trm[1])
         b = expandcols(trm[2 : end])
@@ -439,7 +441,8 @@ If there is an intercept in the model, that column occurs first and its
 Mixed-effects models include "random-effects" terms which are ignored when
 creating the model matrix.
 """
-function (::Type{ModelMatrix{T}}){T<:ModelMatrixContainer}(mf::ModelFrame)
+@compat function (::Type{ModelMatrix{T}}){T<:ModelMatrixContainer}(mf::ModelFrame)
+    sparsemm = T <: AbstractSparseMatrix
     dfrm = mf.df
     terms = droprandomeffects(dropresponse!(mf.terms))
 
@@ -473,7 +476,7 @@ function (::Type{ModelMatrix{T}}){T<:ModelMatrixContainer}(mf::ModelFrame)
         ## and storing as necessary)
         for (et, nr) in zip(eterms, non_redundants)
             if ! haskey(eterm_cols, (et, nr))
-                eterm_cols[(et, nr)] = modelmat_cols(et, mf, non_redundant=nr)
+                eterm_cols[(et, nr)] = modelmat_cols(T, et, mf, non_redundant=nr)
             end
             push!(term_cols, eterm_cols[(et, nr)])
         end
