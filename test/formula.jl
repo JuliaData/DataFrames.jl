@@ -107,6 +107,8 @@ module TestFormula
 
     ## Tests for constructing ModelFrame and ModelMatrix
 
+    sparsetype = SparseMatrixCSC{Float64,Int}
+
     d = DataFrame()
     d[:y] = [1:4;]
     d[:x1] = [5:8;]
@@ -127,6 +129,10 @@ module TestFormula
     @test mm.m[:,1] == ones(4)
     @test mm.m[:,2:3] == [x1 x2]
 
+    smm = ModelMatrix{sparsetype}(mf)
+    @test issparse(smm.m)
+    @test mm.m == smm.m
+
     #test_group("expanding a PooledVec into a design matrix of indicators for each dummy variable")
 
     d[:x1p] = PooledDataArray(d[:x1])
@@ -137,6 +143,10 @@ module TestFormula
     @test mm.m[:,3] == [0, 0, 1., 0]
     @test mm.m[:,4] == [0, 0, 0, 1.]
     @test coefnames(mf)[2:end] == ["x1p: 6", "x1p: 7", "x1p: 8"]
+
+    smm = ModelMatrix{sparsetype}(mf)
+    @test issparse(smm.m)
+    @test mm.m == smm.m
 
     #test_group("create a design matrix from interactions from two DataFrames")
     ## this was removed in commit dead4562506badd7e84a2367086f5753fa49bb6a
@@ -199,11 +209,13 @@ module TestFormula
     mf = ModelFrame(f, df)
     mm = ModelMatrix(mf)
     @test mm.m == [ones(4) x1.*x2]
+    @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     f = y ~ x1 * x2
     mf = ModelFrame(f, df)
     mm = ModelMatrix(mf)
     @test mm.m == [ones(4) x1 x2 x1.*x2]
+    @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     df[:x1] = PooledDataArray(x1)
     x1e = [[0, 1, 0, 0] [0, 0, 1, 0] [0, 0, 0, 1]]
@@ -211,6 +223,7 @@ module TestFormula
     mf = ModelFrame(f, df)
     mm = ModelMatrix(mf)
     @test mm.m == [ones(4) x1e x2 [0, 10, 0, 0] [0, 0, 11, 0] [0, 0, 0, 12]]
+    @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     #test_group("Basic transformations")
 
@@ -261,6 +274,7 @@ module TestFormula
     mf = ModelFrame(y ~ x2, d)
     mm = ModelMatrix(mf)
     @test mm.m == [ones(4) x2]
+    @test mm.m == ModelMatrix{sparsetype}(mf).m
     ## @test model_response(mf) == y''     # fails: Int64 vs. Float64
 
     df = deepcopy(d)
@@ -294,11 +308,13 @@ module TestFormula
     mf = ModelFrame(f, df)
     mm = ModelMatrix(mf)
     @test mm.m == [ones(4) x2.*x3.*x4]
+    @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     f = y ~ x1 & x2 & x3
     mf = ModelFrame(f, df)
     mm = ModelMatrix(mf)
     @test mm.m[:, 2:end] == diagm(x2.*x3)
+    @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     #test_group("Column groups in formulas")
     ## set_group was removed in The Great Purge (55e47cd)
@@ -346,6 +362,7 @@ module TestFormula
     mf = ModelFrame(f, df)
     mm = ModelMatrix(mf)
     @test mm.m == hcat(ones(4), x1.*x3, x1.*x4, x2.*x3, x2.*x4)
+    @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     ## Condensing nested :+ calls
     f = y ~ x1 + (x2 + (x3 + x4))
@@ -368,6 +385,7 @@ module TestFormula
     mf = ModelFrame(y ~ x1m, d)
     mm = ModelMatrix(mf)
     @test mm.m[:, 2] == d[complete_cases(d), :x1m]
+    @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     ## Same variable on left and right side
     mf = ModelFrame(x1 ~ x1, df)
@@ -386,7 +404,8 @@ d[:n] = 1.:8
 
 ## No intercept
 mf = ModelFrame(n ~ 0 + x, d, contrasts=cs)
-@test ModelMatrix(mf).m == [1 0
+mm = ModelMatrix(mf)
+@test mm.m == [1 0
                             0 1
                             1 0
                             0 1
@@ -394,11 +413,13 @@ mf = ModelFrame(n ~ 0 + x, d, contrasts=cs)
                             0 1
                             1 0
                             0 1]
+@test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["x: a", "x: b"]
 
 ## No first-order term for interaction
 mf = ModelFrame(n ~ 1 + x + x&y, d, contrasts=cs)
-@test ModelMatrix(mf).m[:, 2:end] == [-1 -1  0
+mm = ModelMatrix(mf)
+@test mm.m[:, 2:end] == [-1 -1  0
                                        1  0 -1
                                       -1  1  0
                                        1  0  1
@@ -406,11 +427,13 @@ mf = ModelFrame(n ~ 1 + x + x&y, d, contrasts=cs)
                                        1  0 -1
                                       -1  1  0
                                        1  0  1]
+@test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["(Intercept)", "x: b", "x: a & y: d", "x: b & y: d"]
 
 ## When both terms of interaction are non-redundant:
 mf = ModelFrame(n ~ 0 + x&y, d, contrasts=cs)
-@test ModelMatrix(mf).m == [1 0 0 0
+mm = ModelMatrix(mf)
+@test mm.m == [1 0 0 0
                             0 1 0 0
                             0 0 1 0
                             0 0 0 1
@@ -418,19 +441,23 @@ mf = ModelFrame(n ~ 0 + x&y, d, contrasts=cs)
                             0 1 0 0
                             0 0 1 0
                             0 0 0 1]
+@test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["x: a & y: c", "x: b & y: c",                             
                         "x: a & y: d", "x: b & y: d"]
 
 # only a three-way interaction: every term is promoted.
 mf = ModelFrame(n ~ 0 + x&y&z, d, contrasts=cs)
-@test ModelMatrix(mf).m == eye(8)
+mm = ModelMatrix(mf)
+@test mm.m == eye(8)
+@test mm.m == ModelMatrix{sparsetype}(mf).m
 
 # two two-way interactions, with no lower-order term. both are promoted in
 # first (both x and y), but only the old term (x) in the second (because
 # dropping x gives z which isn't found elsewhere, but dropping z gives x
 # which is found (implicitly) in the promoted interaction x&y).
 mf = ModelFrame(n ~ 0 + x&y + x&z, d, contrasts=cs)
-@test ModelMatrix(mf).m == [1 0 0 0 -1  0
+mm = ModelMatrix(mf)
+@test mm.m == [1 0 0 0 -1  0
                             0 1 0 0  0 -1
                             0 0 1 0 -1  0
                             0 0 0 1  0 -1
@@ -438,6 +465,7 @@ mf = ModelFrame(n ~ 0 + x&y + x&z, d, contrasts=cs)
                             0 1 0 0  0  1
                             0 0 1 0  1  0
                             0 0 0 1  0  1]
+@test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
                         "x: a & y: d", "x: b & y: d",
                         "x: a & z: f", "x: b & z: f"]
@@ -446,7 +474,8 @@ mf = ModelFrame(n ~ 0 + x&y + x&z, d, contrasts=cs)
 # this is because dropping x gives y&z which isn't present, but dropping y or z
 # gives x&z or x&z respectively, which are both present.
 mf = ModelFrame(n ~ 0 + x&y + x&z + x&y&z, d, contrasts=cs)
-@test ModelMatrix(mf).m == [1 0 0 0 -1  0  1  0
+mm = ModelMatrix(mf)
+@test mm.m == [1 0 0 0 -1  0  1  0
                             0 1 0 0  0 -1  0  1
                             0 0 1 0 -1  0 -1  0
                             0 0 0 1  0 -1  0 -1
@@ -454,6 +483,7 @@ mf = ModelFrame(n ~ 0 + x&y + x&z + x&y&z, d, contrasts=cs)
                             0 1 0 0  0  1  0 -1
                             0 0 1 0  1  0  1  0
                             0 0 0 1  0  1  0  1]
+@test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
                         "x: a & y: d", "x: b & y: d",
                         "x: a & z: f", "x: b & z: f",
@@ -463,7 +493,8 @@ mf = ModelFrame(n ~ 0 + x&y + x&z + x&y&z, d, contrasts=cs)
 # promoted in both (along with lower-order term), because in every case, when
 # x is dropped, the remaining terms (1, y, and z) aren't present elsewhere.
 mf = ModelFrame(n ~ 0 + x + x&y + x&z, d, contrasts=cs)
-@test ModelMatrix(mf).m == [1 0 -1  0 -1  0
+mm = ModelMatrix(mf)
+@test mm.m == [1 0 -1  0 -1  0
                             0 1  0 -1  0 -1
                             1 0  1  0 -1  0
                             0 1  0  1  0 -1
@@ -471,10 +502,10 @@ mf = ModelFrame(n ~ 0 + x + x&y + x&z, d, contrasts=cs)
                             0 1  0 -1  0  1
                             1 0  1  0  1  0
                             0 1  0  1  0  1]
+@test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["x: a", "x: b",
                         "x: a & y: d", "x: b & y: d",
                         "x: a & z: f", "x: b & z: f"]
-
 
 
 ## FAILS: When both terms are non-redundant and intercept is PRESENT
