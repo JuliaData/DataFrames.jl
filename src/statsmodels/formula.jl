@@ -375,7 +375,8 @@ function expandcols{T<:AbstractFloatMatrix}(trm::Vector{T})
     if length(trm) == 1
         trm[1]
     else
-        a, b = trm[1], expandcols(trm[2 : end])
+        a = trm[1]
+        b = expandcols(trm[2 : end])
         reduce(hcat, [broadcast(*, a, Compat.view(b, :, j)) for j in 1 : size(b, 2)])
     end
 end
