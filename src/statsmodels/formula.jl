@@ -352,7 +352,7 @@ modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::DataVector) = convert(T, res
 modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::Vector) = convert(T, reshape(v, length(v), 1))
 
 """
-    modelmat_cols(T::Type{AbstractFloatMatrix}, v::PooledDataVector, contrast::ContrastsMatrix)
+    modelmat_cols(::Type{T}, v::PooledDataVector, contrast::ContrastsMatrix)
 
 Construct `ModelMatrix` columns of type `T` based on specified contrasts, ensuring that
 levels align properly.

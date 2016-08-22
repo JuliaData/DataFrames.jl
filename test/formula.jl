@@ -405,13 +405,13 @@ d[:n] = 1.:8
 mf = ModelFrame(n ~ 0 + x, d, contrasts=cs)
 mm = ModelMatrix(mf)
 @test mm.m == [1 0
-                            0 1
-                            1 0
-                            0 1
-                            1 0
-                            0 1
-                            1 0
-                            0 1]
+               0 1
+               1 0
+               0 1
+               1 0
+               0 1
+               1 0
+               0 1]
 @test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["x: a", "x: b"]
 
@@ -419,13 +419,13 @@ mm = ModelMatrix(mf)
 mf = ModelFrame(n ~ 1 + x + x&y, d, contrasts=cs)
 mm = ModelMatrix(mf)
 @test mm.m[:, 2:end] == [-1 -1  0
-                                       1  0 -1
-                                      -1  1  0
-                                       1  0  1
-                                      -1 -1  0
-                                       1  0 -1
-                                      -1  1  0
-                                       1  0  1]
+                         1  0 -1
+                         -1  1  0
+                         1  0  1
+                         -1 -1  0
+                         1  0 -1
+                         -1  1  0
+                         1  0  1]
 @test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["(Intercept)", "x: b", "x: a & y: d", "x: b & y: d"]
 
@@ -433,13 +433,13 @@ mm = ModelMatrix(mf)
 mf = ModelFrame(n ~ 0 + x&y, d, contrasts=cs)
 mm = ModelMatrix(mf)
 @test mm.m == [1 0 0 0
-                            0 1 0 0
-                            0 0 1 0
-                            0 0 0 1
-                            1 0 0 0
-                            0 1 0 0
-                            0 0 1 0
-                            0 0 0 1]
+               0 1 0 0
+               0 0 1 0
+               0 0 0 1
+               1 0 0 0
+               0 1 0 0
+               0 0 1 0
+               0 0 0 1]
 @test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["x: a & y: c", "x: b & y: c",                             
                         "x: a & y: d", "x: b & y: d"]
@@ -457,13 +457,13 @@ mm = ModelMatrix(mf)
 mf = ModelFrame(n ~ 0 + x&y + x&z, d, contrasts=cs)
 mm = ModelMatrix(mf)
 @test mm.m == [1 0 0 0 -1  0
-                            0 1 0 0  0 -1
-                            0 0 1 0 -1  0
-                            0 0 0 1  0 -1
-                            1 0 0 0  1  0
-                            0 1 0 0  0  1
-                            0 0 1 0  1  0
-                            0 0 0 1  0  1]
+               0 1 0 0  0 -1
+               0 0 1 0 -1  0
+               0 0 0 1  0 -1
+               1 0 0 0  1  0
+               0 1 0 0  0  1
+               0 0 1 0  1  0
+               0 0 0 1  0  1]
 @test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
                         "x: a & y: d", "x: b & y: d",
@@ -475,13 +475,13 @@ mm = ModelMatrix(mf)
 mf = ModelFrame(n ~ 0 + x&y + x&z + x&y&z, d, contrasts=cs)
 mm = ModelMatrix(mf)
 @test mm.m == [1 0 0 0 -1  0  1  0
-                            0 1 0 0  0 -1  0  1
-                            0 0 1 0 -1  0 -1  0
-                            0 0 0 1  0 -1  0 -1
-                            1 0 0 0  1  0 -1  0
-                            0 1 0 0  0  1  0 -1
-                            0 0 1 0  1  0  1  0
-                            0 0 0 1  0  1  0  1]
+               0 1 0 0  0 -1  0  1
+               0 0 1 0 -1  0 -1  0
+               0 0 0 1  0 -1  0 -1
+               1 0 0 0  1  0 -1  0
+               0 1 0 0  0  1  0 -1
+               0 0 1 0  1  0  1  0
+               0 0 0 1  0  1  0  1]
 @test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
                         "x: a & y: d", "x: b & y: d",
@@ -494,13 +494,13 @@ mm = ModelMatrix(mf)
 mf = ModelFrame(n ~ 0 + x + x&y + x&z, d, contrasts=cs)
 mm = ModelMatrix(mf)
 @test mm.m == [1 0 -1  0 -1  0
-                            0 1  0 -1  0 -1
-                            1 0  1  0 -1  0
-                            0 1  0  1  0 -1
-                            1 0 -1  0  1  0
-                            0 1  0 -1  0  1
-                            1 0  1  0  1  0
-                            0 1  0  1  0  1]
+               0 1  0 -1  0 -1
+               1 0  1  0 -1  0
+               0 1  0  1  0 -1
+               1 0 -1  0  1  0
+               0 1  0 -1  0  1
+               1 0  1  0  1  0
+               0 1  0  1  0  1]
 @test mm.m == ModelMatrix{sparsetype}(mf).m
 @test coefnames(mf) == ["x: a", "x: b",
                         "x: a & y: d", "x: b & y: d",
