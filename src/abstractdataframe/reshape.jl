@@ -170,7 +170,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     # TODO make fillNA(type, length)
-    payload = DataFrame(Any[DataArray(eltype(valuecol), (Nrow)) for i in 1:Ncol], map(@compat(Symbol), keycol.pool))
+    payload = DataFrame(Any[DataArray(eltype(valuecol), Nrow) for i in 1:Ncol], map(@compat(Symbol), keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
         j = @compat Int(keycol.refs[k])
