@@ -37,5 +37,7 @@ module TestGrouping
     df = DataFrame(v1=x, v2=x)
     groupby(df, [:v1, :v2])
 
-    by(e->1, DataFrame(x=[]), :x)
+    df2 = by(e->1, DataFrame(x=Int64[]), :x)
+    @test size(df2) == (0,1)
+    @test sum(df2[:x]) == 0
 end
