@@ -352,7 +352,7 @@ modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::DataVector) = convert(T, res
 modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::Vector) = convert(T, reshape(v, length(v), 1))
 
 """
-    modelmat_cols(::Type{T}, v::PooledDataVector, contrast::ContrastsMatrix)
+    modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::PooledDataVector, contrast::ContrastsMatrix)
 
 Construct `ModelMatrix` columns of type `T` based on specified contrasts, ensuring that
 levels align properly.
@@ -368,7 +368,7 @@ function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::PooledDataVector, c
 end
 
 """
-    expandcols(trm::Vector)
+    expandcols{T<:AbstractFloatMatrix}(trm::Vector{T})
 Create pairwise products of columns from a vector of matrices
 """
 function expandcols{T<:AbstractFloatMatrix}(trm::Vector{T})
@@ -423,8 +423,9 @@ end
 
 
 """
-    ModelMatrix(mf::ModelFrame)
-Create a `ModelMatrix` from the `terms` and `df` members of `mf`
+    ModelMatrix{T<:AbstractFloatMatrix}(mf::ModelFrame)
+Create a `ModelMatrix` of type `T` (default `Matrix{Float64}`) from the
+`terms` and `df` members of `mf`.
 
 This is basically a map-reduce where terms are mapped to columns by `cols`
 and reduced by `hcat`.  During the collection of the columns the `assign`
