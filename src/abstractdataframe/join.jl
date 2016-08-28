@@ -6,6 +6,9 @@
 similar_nullable{T}(dv::AbstractArray{T}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
     NullableArray(T, dims)
 
+similar_nullable{T<:Nullable}(dv::AbstractArray{T}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
+    NullableArray(eltype(T), dims)
+
 similar_nullable{T,R}(dv::NominalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
     NullableNominalArray(T, dims)
 

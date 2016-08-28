@@ -91,17 +91,17 @@ module TestCat
     dfd = DataFrame(Any[2:4], [:a])
     dfab = vcat(dfa, dfb)
     dfac = vcat(dfa, dfc)
-    @test get(dfab[:a] == Nullable{Int}[1, 2, 2, 2, 3, 4])
-    @test get(dfac[:a] == Nullable{Int}[1, 2, 2, 2, 3, 4])
+    @test isequal(dfab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
+    @test isequal(dfac[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
     @test isa(dfab[:a], NullableNominalVector{Int})
     @test isa(dfac[:a], NullableNominalVector{Int})
     # ^^ container may flip if container promotion happens in Base/DataArrays
     dc = vcat(dfd, dfc)
-    @test get(vcat(dfc, dfd) == dc)
+    @test isequal(vcat(dfc, dfd), dc)
 
     # Zero-row DataFrames
     dfc0 = similar(dfc, 0)
-    @test get(vcat(dfd, dfc0, dfc) == dc)
+    @test isequal(vcat(dfd, dfc0, dfc), dc)
     @test eltypes(vcat(dfd, dfc0)) == eltypes(dc)
 
     # Missing columns

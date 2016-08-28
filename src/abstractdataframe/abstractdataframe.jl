@@ -398,7 +398,7 @@ function StatsBase.describe{T<:Number}(io, nv::AbstractArray{T})
         println(io, " * All NA * ")
         return
     end
-    filtered = float(_dropnull(nv))
+    filtered = float(dropnull(nv))
     qs = quantile(filtered, [0, .25, .5, .75, 1])
     statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
     statVals = [qs[1:3]; mean(filtered); qs[4:5]]

@@ -4,9 +4,6 @@ module TestData
     using DataFrames
     using Compat
 
-    # FIXME: to remove, == currently throws an error for Nullables
-    (==) = isequal
-
     #test_group("NullableArray creation")
     nvint = NullableArray(Nullable{Int}[1, 2, Nullable(), 4])
     nvint2 = NullableArray(5:8)
@@ -34,9 +31,9 @@ module TestData
     @test names(df7) == [:x, :y]
 
     #test_group("ref")
-    @test df6[2, 3] == Nullable("two")
+    @test isequal(df6[2, 3], Nullable("two"))
     @test isnull(df6[3, 3])
-    @test df6[2, :C] == Nullable("two")
+    @test isequal(df6[2, :C], Nullable("two"))
     @test isequal(df6[:B], nvint)
     @test size(df6[[2,3]], 2) == 2
     @test size(df6[2,:], 1) == 1
@@ -47,11 +44,11 @@ module TestData
 
     #test_group("assign")
     df6[3] = NullableArray(["un", "deux", "troix", "quatre"])
-    @test df6[1, 3] == Nullable("un")
+    @test isequal(df6[1, 3], Nullable("un"))
     df6[:B] = [4, 3, 2, 1]
-    @test df6[1,2] == Nullable(4)
+    @test isequal(df6[1,2], Nullable(4))
     df6[:D] = [true, false, true, false]
-    @test df6[1,4] == Nullable(true)
+    @test isequal(df6[1,4], Nullable(true))
     delete!(df6, :D)
     @test names(df6) == [:A, :B, :C]
     @test size(df6, 2) == 3
@@ -71,7 +68,7 @@ module TestData
     @test size(sdf6d) == (2,1)
 
     #test_group("ref")
-    @test sdf6a[1,2] == Nullable(4)
+    @test isequal(sdf6a[1,2], Nullable(4))
 
     #test_context("Within")
     #test_group("Associative")
@@ -90,25 +87,25 @@ module TestData
     gd = groupby(df7, :d1)
     @test length(gd) == 2
     # @test isequal(gd[2]["d2"], NominalVector["A", "B", Nullable(), "A", Nullable(), Nullable(), Nullable(), Nullable()])
-    @test sum(gd[2][:d3]) == sum(df7[:d3][Vector(df7[:d1]) .== 2])
+    @test isequal(sum(gd[2][:d3]), sum(df7[:d3][Vector(df7[:d1]) .== 2]))
 
     g1 = groupby(df7, [:d1, :d2])
     g2 = groupby(df7, [:d2, :d1])
-    @test sum(g1[1][:d3]) == sum(g2[1][:d3])
+    @test isequal(sum(g1[1][:d3]), sum(g2[1][:d3]))
 
     res = Nullable(0.0)
     for x in g1
         res += sum(x[:d1])
     end
-    @test res == sum(df7[:d1])
+    @test isequal(res, sum(df7[:d1]))
 
     df8 = aggregate(df7[[1, 3]], sum)
-    @test df8[1, :d1_sum] == sum(df7[:d1])
+    @test isequal(df8[1, :d1_sum], sum(df7[:d1]))
 
     df8 = aggregate(df7, :d2, [sum, length])
     @test size(df8, 1) == 3
     @test size(df8, 2) == 5
-    @test df8[2, :d1_length] == Nullable(4)
+    @test isequal(df8[2, :d1_length], Nullable(4))
     @test isequal(df8, aggregate(groupby(df7, :d2), [sum, length]))
 
     df9 = df7 |> groupby([:d2]) |> [sum, length]

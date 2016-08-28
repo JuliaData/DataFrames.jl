@@ -198,3 +198,6 @@ function _fnames{T<:Function}(fs::Vector{T})
     end
     names
 end
+
+_isnull(x::Any) = false
+_isnull(x::Nullable) = isnull(x)

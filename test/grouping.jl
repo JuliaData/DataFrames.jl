@@ -15,7 +15,7 @@ module TestGrouping
     sdf = sort(df, cols=cols)
     bdf = by(df, cols, f)
 
-    @test get(bdf[cols] == unique(sdf[cols]))
+    @test isequal(bdf[cols], unique(sdf[cols]))
 
     byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
 
@@ -25,13 +25,13 @@ module TestGrouping
     gd = groupby(df, cols)
     ga = map(f, gd)
 
-    @test get(bdf == combine(ga))
+    @test isequal(bdf, combine(ga))
 
     # FIXME: shouldn't need Vector here
     g(df) = DataFrame(cmax1 = Vector(df[:cmax]) + 1)
     h(df) = g(f(df))
 
-    @test get(combine(map(h, gd)) == combine(map(g, ga)))
+    @test isequal(combine(map(h, gd)), combine(map(g, ga)))
 
     # issue #960
     x = NominalArray(collect(1:20))
@@ -40,5 +40,5 @@ module TestGrouping
 
     df2 = by(e->1, DataFrame(x=Int64[]), :x)
     @test size(df2) == (0,1)
-    @test isequal(sum(df2[:x]), 0)
+    @test isequal(sum(df2[:x]), Nullable(0))
 end

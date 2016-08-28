@@ -52,25 +52,25 @@ module TestConversions
     df = convert(DataFrame,di)
     @test isa(df,DataFrame)
     @test names(df) == Symbol[x for x in sort(collect(keys(di)))]
-    @test get(df[:a] == NullableArray(a))
-    @test get(df[:b] == NullableArray(b))
-    @test get(df[:c] == NullableArray(c))
+    @test isequal(df[:a], NullableArray(a))
+    @test isequal(df[:b], NullableArray(b))
+    @test isequal(df[:c], NullableArray(c))
 
     od = OrderedDict("c"=>c, "a"=>a, "b"=>b)
     df = convert(DataFrame,od)
     @test isa(df, DataFrame)
     @test names(df) == Symbol[x for x in keys(od)]
-    @test get(df[:a] == NullableArray(a))
-    @test get(df[:b] == NullableArray(b))
-    @test get(df[:c] == NullableArray(c))
+    @test isequal(df[:a], NullableArray(a))
+    @test isequal(df[:b], NullableArray(b))
+    @test isequal(df[:c], NullableArray(c))
 
     sd = SortedDict("c"=>c, "a"=>a, "b"=>b)
     df = convert(DataFrame,sd)
     @test isa(df, DataFrame)
     @test names(df) == Symbol[x for x in keys(sd)]
-    @test get(df[:a] == NullableArray(a))
-    @test get(df[:b] == NullableArray(b))
-    @test get(df[:c] == NullableArray(c))
+    @test isequal(df[:a], NullableArray(a))
+    @test isequal(df[:b], NullableArray(b))
+    @test isequal(df[:c], NullableArray(c))
 
     a = [1.0]
     di = Dict("a"=>a, "b"=>b, "c"=>c)

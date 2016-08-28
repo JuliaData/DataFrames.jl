@@ -9,7 +9,7 @@ module TestIteration
 
     for row in eachrow(df)
         @test isa(row, DataFrameRow)
-        @test isequal(row[:B]-row[:A], 1)
+        @test isequal(row[:B]-row[:A], Nullable(1))
 
         # issue #683 (https://github.com/JuliaStats/DataFrames.jl/pull/683)
         @test typeof(collect(row)) == @compat Array{Tuple{Symbol, Any}, 1}
@@ -25,21 +25,21 @@ module TestIteration
     row = DataFrameRow(df, 1)
 
     row[:A] = 100
-    @test isequal(df[1, :A], 100)
+    @test isequal(df[1, :A], Nullable(100))
 
     row[1] = 101
-    @test isequal(df[1, :A], 101)
+    @test isequal(df[1, :A], Nullable(101))
 
     df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
     s1 = sub(df, 1:3)
     s1[2,:A] = 4
-    @test isequal(df[2, :A], 4)
+    @test isequal(df[2, :A], Nullable(4))
     @test isequal(sub(s1, 1:2), sub(df, 1:2))
 
     s2 = sub(df, 1:2:3)
     s2[2, :B] = "M"
-    @test isequal(df[3, :B], "M")
+    @test isequal(df[3, :B], Nullable("M"))
     @test isequal(sub(s2, 1:1:2), sub(df, [1,3]))
 
     # @test_fail for x in df; end # Raises an error
