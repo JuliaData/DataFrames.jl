@@ -239,7 +239,7 @@ Base.similar(df::AbstractDataFrame, dims::Int) =
 ##############################################################################
 
 # Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
-function Base.:(==)(df1::AbstractDataFrame, df2::AbstractDataFrame)
+function @compat(Base.:(==))(df1::AbstractDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return Nullable(false)
     isequal(index(df1), index(df2)) || return Nullable(false)
     eq = Nullable(true)

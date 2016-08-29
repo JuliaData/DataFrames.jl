@@ -53,7 +53,7 @@ end
 # comparison of DataFrame rows
 # only the rows of the same DataFrame could be compared
 # rows are equal if they have the same values (while the row indices could differ)
-function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
+function @compat(Base.:(==))(r1::DataFrameRow, r2::DataFrameRow)
     if r1.df !== r2.df
         throw(ArgumentError("Comparing rows from different frames not supported"))
     end
