@@ -128,7 +128,14 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     # if there are NULLs, add 1 to the refs to avoid underflows in x later
     anynulls = (findfirst(nv.refs, 0) > 0 ? 1 : 0)
     # use UInt32 instead of the original array's integer size since the number of levels can be high
-    x = copy!(similar(nv.refs, UInt32), nv.refs) .+ anynulls
+    x = similar(nv.refs, UInt32)
+    for i = 1:nrow(d)
+        if nv.refs[i] == 0
+            x[i] = 1
+        else
+            x[i] = CategoricalArrays.order(nv.pool)[nv.refs[i]] + anynulls
+        end
+    end
     # also compute the number of groups, which is the product of the set lengths
     ngroups = length(levels(nv)) + anynulls
     # if there's more than 1 column, do roughly the same thing repeatedly
@@ -136,7 +143,9 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
         nv = NullableNominalArray(d[cols[j]])
         anynulls = (findfirst(nv.refs, 0) > 0 ? 1 : 0)
         for i = 1:nrow(d)
-            x[i] += (nv.refs[i] + anynulls - 1) * ngroups
+            if nv.refs[i] != 0
+                x[i] += (CategoricalArrays.order(nv.pool)[nv.refs[i]] + anynulls - 1) * ngroups
+            end
         end
         ngroups = ngroups * (length(levels(nv)) + anynulls)
         # TODO if ngroups is really big, shrink it

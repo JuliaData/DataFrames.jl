@@ -166,7 +166,6 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     # `value` integer indicating which column has values
     refkeycol = NullableNominalArray(df[rowkey])
     valuecol = df[value]
-    # TODO make a version with a default refkeycol
     keycol = NullableNominalArray(df[colkey])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
@@ -178,8 +177,8 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
                         map(Symbol, levels(keycol)))
     nowarning = true
     for k in 1:nrow(df)
-        j = @compat Int(keycol.refs[k])
-        i = @compat Int(refkeycol.refs[k])
+        j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
+        i = Int(CategoricalArrays.order(refkeycol.pool)[refkeycol.refs[k]])
         if i > 0 && j > 0
             if nowarning && !isnull(payload[j][i])
                 warn("Duplicate entries in unstack.")
@@ -208,7 +207,6 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     keycol = NullableNominalArray(df[colkey])
     valuecol = df[value]
     df1 = df[g.idx[g.starts], g.cols]
-    keys = unique(keycol) # FIXME: why not levels?
     Nrow = length(g)
     Ncol = length(levels(keycol))
     T = eltype(valuecol)
@@ -219,7 +217,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
                     map(@compat(Symbol), levels(keycol)))
     nowarning = true
     for k in 1:nrow(df)
-        j = @compat Int(keycol.refs[k])
+        j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
         i = rowkey[k]
         if i > 0 && j > 0
             if nowarning && !isnull(df2[j][i])
