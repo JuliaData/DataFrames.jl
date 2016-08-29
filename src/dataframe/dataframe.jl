@@ -169,7 +169,6 @@ function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
     col_eltypes = Type[@compat(Union{}) for _ = 1:length(ks)]
     for d in ds
         for (i,k) in enumerate(ks)
-            # FIXME: types and nullables
             if haskey(d, k) && !_isnull(d[k])
                 col_eltypes[i] = promote_type(col_eltypes[i], typeof(d[k]))
             end
