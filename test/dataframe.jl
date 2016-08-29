@@ -98,13 +98,11 @@ module TestDataFrame
     df = DataFrame(a=[1, 2], b=[3., 4.])
     @test_throws BoundsError insert!(df, 5, ["a", "b"], :newcol)
     @test_throws ErrorException insert!(df, 1, ["a"], :newcol)
-    # FIXME: should we convert to NullableArray automatically?
-    @test isequal(insert!(df, 1, NullableArray(["a", "b"]), :newcol), df)
-    @test isequal(df, DataFrame(newcol=["a", "b"], a=[1, 2], b=[3., 4.]))
-    df = DataFrame(a=[1, 2], b=[3., 4.])
-    # FIXME: should we convert to NullableArray automatically?
-    @test isequal(insert!(df, 3, NullableArray(["a", "b"]), :newcol), df)
-    @test isequal(df, DataFrame(a=[1, 2], b=[3., 4.], newcol=["a", "b"]))
+    @test isequal(insert!(df, 1, ["a", "b"], :newcol), df)
+    @test names(df) == [:newcol, :a, :b]
+    @test isequal(df[:a], NullableArray([1, 2]))
+    @test isequal(df[:b], NullableArray([3., 4.]))
+    @test isequal(df[:newcol], ["a", "b"])
 
     df = DataFrame(a=[1, 2], b=[3., 4.])
     df2 = DataFrame(b=["a", "b"], c=[:c, :d])
