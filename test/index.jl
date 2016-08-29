@@ -21,12 +21,6 @@ inds = Any[1,
            NullableArray([1.0]),
            NullableArray([:A]),
            NullableArray([:A])]
-# FIXME: do we want to support this?
-#           NominalArray([true]),
-#           NominalArray([1]),
-#           NominalArray([1.0]),
-#           NominalArray([:A]),
-#           NominalArray([:A])]
 
 for ind in inds
     if isequal(ind, :A) || ndims(ind) == 0
