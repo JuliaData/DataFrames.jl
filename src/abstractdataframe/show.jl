@@ -65,9 +65,6 @@ ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Void
 ourshowcompact(io::IO, x::AbstractString) = showcompact(io, x) # -> Void
 ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Void
 
-# FIXME: if really necessary, put this elsewhere under a different name
-Base.isnull(x::AbstractArray, i) = isa(x[i], Nullable) && isnull(x[i]) 
-
 #' @description
 #'
 #' Calculates, for each column of an AbstractDataFrame, the maximum

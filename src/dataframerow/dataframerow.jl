@@ -41,7 +41,7 @@ Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, r.df[r.row,:])
 # so that duplicate rows would have the same hash
 function Base.hash(r::DataFrameRow, h::UInt)
     for col in columns(r.df)
-        if isnull(col, r.row)
+        if _isnull(col[r.row])
             h = hash(false, h)
         else
             h = hash(true, hash(col[r.row], h))
