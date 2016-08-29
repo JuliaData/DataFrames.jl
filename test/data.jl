@@ -189,7 +189,7 @@ module TestData
                     v2 = randn(5))
 
     m1 = join(df1, df2, on = :a)
-    @test isequal(m1[:a], NullableArray([1, 2, 3, 4, 5])) # FIXME: shouldn't need NullableArray on the RHS
+    @test isequal(m1[:a], NullableArray([1, 2, 3, 4, 5]))
     # TODO: Re-enable
     m2 = join(df1, df2, on = :a, kind = :outer)
     # @test isequal(m2[:b2],
