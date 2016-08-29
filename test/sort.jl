@@ -5,18 +5,17 @@ module TestSort
     dv1 = NullableArray(Nullable{Int}[9, 1, 8, Nullable(), 3, 3, 7, Nullable()])
     dv2 = NullableArray(Nullable{Float64}[9, 1, 8, Nullable(), 3, 3, 7, Nullable()])
     dv3 = NullableArray(1:8)
-    pdv1 = NullableNominalArray(dv1)
+    pdv1 = NullableOrdinalArray(dv1)
 
     d = DataFrame(dv1 = dv1, dv2 = dv2, dv3 = dv3, pdv1 = pdv1)
 
-# FIXME: need an implementation of sortperm() for NullableArrays which accepts NULLs
-#    @test sortperm(d) == sortperm(dv1)
-#    @test sortperm(d[[:dv3, :dv1]]) == sortperm(dv3)
-#    @test sort(d, cols=:dv1)[:dv3] == sortperm(dv1)
-#    @test sort(d, cols=:dv2)[:dv3] == sortperm(dv1)
-#    @test sort(d, cols=:pdv1)[:dv3] == sortperm(dv1)
-#    @test sort(d, cols=[:dv1, :pdv1])[:dv3] == sortperm(dv1)
-#    @test sort(d, cols=[:dv1, :dv3])[:dv3] == sortperm(dv1)
+    @test sortperm(d) == sortperm(dv1)
+    @test sortperm(d[[:dv3, :dv1]]) == sortperm(dv3)
+    @test isequal(sort(d, cols=:dv1)[:dv3], NullableArray(sortperm(dv1)))
+    @test isequal(sort(d, cols=:dv2)[:dv3], NullableArray(sortperm(dv1)))
+    @test isequal(sort(d, cols=:pdv1)[:dv3], NullableArray(sortperm(dv1)))
+    @test isequal(sort(d, cols=[:dv1, :pdv1])[:dv3], NullableArray(sortperm(dv1)))
+    @test isequal(sort(d, cols=[:dv1, :dv3])[:dv3], NullableArray(sortperm(dv1)))
 
     df = DataFrame(rank=rand(1:12, 1000),
                    chrom=rand(1:24, 1000),

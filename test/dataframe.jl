@@ -312,23 +312,21 @@ module TestDataFrame
                    Key = ["Mass", "Color", "Mass", "Color"],
                    Value = ["12 g", "Red", "18 g", "Grey"])
     # Check that reordering levels does not confuse unstack
-    levels!(df[1], ["XXX", "Batman", "Bob"])
+    levels!(df[1], ["XXX", "Bob", "Batman"])
     #Unstack specifying a row column
     df2 = unstack(df,:Fish, :Key, :Value)
     #Unstack without specifying a row column
     df3 = unstack(df,:Key, :Value)
     #The expected output
-    # FIXME: NominalArray keep levels in their order of appearance, while PDAs sort them
-    #        Decide what's best.
-    df4 = DataFrame(Fish = ["XXX", "Batman", "Bob"],
-                    Mass = [Nullable(), "18 g", "12 g"],
-                    Color = [Nullable(), "Grey", "Red"])
+    df4 = DataFrame(Fish = ["XXX", "Bob", "Batman"],
+                    Color = [Nullable(), "Red", "Grey"],
+                    Mass = [Nullable(), "12 g", "18 g"])
     @test isequal(df2, df4)
     @test isequal(df3, df4[2:3, :])
     #Make sure unstack works with NULLs at the start of the value column
     df[1,:Value] = Nullable()
     df2 = unstack(df,:Fish, :Key, :Value)
     #This changes the expected result
-    df4[3,:Mass] = Nullable()
+    df4[2,:Mass] = Nullable()
     @test isequal(df2, df4)
 end
