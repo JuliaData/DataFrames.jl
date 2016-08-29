@@ -18,12 +18,11 @@ module TestJoin
                       Job = NullableArray(["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
-    # FIXME: Vector{Bool} should not be needed if map(::NullableArray) behave properly
-    right = outer[Vector{Bool}(map(x->!isnull(x), outer[:Job])), [:Name, :ID, :Job]]
-    left = outer[Vector{Bool}(map(x->!isnull(x), outer[:Name])), :]
-    inner = left[Vector{Bool}(map(x->!isnull(x), left[:Job])), :]
+    right = outer[[!isnull(x) for x in outer[:Job]], [:Name, :ID, :Job]]
+    left = outer[[!isnull(x) for x in outer[:Name]], :]
+    inner = left[[!isnull(x) for x in left[:Job]], :]
     semi = unique(inner[:, [:ID, :Name]])
-    anti = left[Vector{Bool}(map(isnull, left[:Job])), [:ID, :Name]]
+    anti = left[[isnull(x) for x in left[:Job]], [:ID, :Name]]
 
     @test isequal(join(name, job, on = :ID), inner)
     @test isequal(join(name, job, on = :ID, kind = :inner), inner)
