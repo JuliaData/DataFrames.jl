@@ -27,7 +27,6 @@ module TestGrouping
 
     @test isequal(bdf, combine(ga))
 
-    # FIXME: shouldn't need Vector here
     g(df) = DataFrame(cmax1 = Vector(df[:cmax]) + 1)
     h(df) = g(f(df))
 
