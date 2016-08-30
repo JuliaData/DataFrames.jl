@@ -83,8 +83,6 @@ export @~,
        unique!,
        unstack,
        writetable,
-
-       # FIXME: unexport, these should go in Base or nowhere
        head,
        tail,
 
