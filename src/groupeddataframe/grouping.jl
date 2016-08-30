@@ -306,7 +306,9 @@ colwise(f::Function, gd::GroupedDataFrame) = map(colwise(f), gd)
 colwise(f::Function) = x -> colwise(f, x)
 colwise(f) = x -> colwise(f, x)
 # apply several functions to each column in a DataFrame
-colwise{T<:Function}(fns::Vector{T}, d::AbstractDataFrame) = Any[vcat(f(d[idx])) for f in fns, idx in 1:size(d, 2)][:]
+colwise{T<:Function}(fns::Vector{T}, d::AbstractDataFrame) =
+    reshape(Any[vcat(f(d[idx])) for f in fns, idx in 1:size(d, 2)],
+            length(fns)*size(d, 2))
 colwise{T<:Function}(fns::Vector{T}, gd::GroupedDataFrame) = map(colwise(fns), gd)
 colwise{T<:Function}(fns::Vector{T}) = x -> colwise(fns, x)
 
@@ -410,7 +412,7 @@ function aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T})
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
-aggregate(gd::GroupedDataFrame, fs::Function) = aggregate(gd, [fs])
+aggregate(gd::GroupedDataFrame, f::Function) = aggregate(gd, [f])
 function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T})
     headers = _makeheaders(fs, _setdiff(_names(gd), gd.cols))
     combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
@@ -427,8 +429,8 @@ end
 
 function _makeheaders{T<:Function}(fs::Vector{T}, cn::Vector{Symbol})
     fnames = _fnames(fs) # see other/utils.jl
-    scn = [string(x) for x in cn]
-    [Symbol("$(colname)_$(fname)") for fname in fnames, colname in scn][:]
+    reshape([Symbol(colname,'_',fname) for fname in fnames, colname in cn],
+            length(fnames)*length(cn))
 end
 
 function _aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol})
