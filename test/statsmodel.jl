@@ -46,8 +46,7 @@ mm = ModelMatrix(ModelFrame(f, d))
 @test predict(m, mm.m) == mm.m * collect(1:4)
 
 ## new data from DataFrame (via ModelMatrix)
-# FIXME: inconsistency in returning NullableArray here, but Array above?
-@test Array(predict(m, d)) == predict(m, mm.m)
+@test isequal(predict(m, d), NullableArray(predict(m, mm.m)))
 
 d2 = deepcopy(d)
 d2[3, :x1] = Nullable()
