@@ -88,10 +88,10 @@ function join_idx(left, right, max_groups)
      right_sorter[right_indexer], right_sorter[rightonly_indexer])
 end
 
-# FIXME: rename this, and possibly move to CategoricalArrays.jl
-function PooledDataVecs{S,N}(v1::NullableCategoricalArray{S,N},
-                             v2::NullableCategoricalArray{S,N},
-                             index::Vector{S}, R)
+function sharepools{S,N}(v1::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}},
+                         v2::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}},
+                         index::Vector{S},
+                         R)
     tidx1 = convert(Vector{R}, indexin(CategoricalArrays.index(v1.pool), index))
     tidx2 = convert(Vector{R}, indexin(CategoricalArrays.index(v2.pool), index))
     refs1 = zeros(R, length(v1))
@@ -111,8 +111,8 @@ function PooledDataVecs{S,N}(v1::NullableCategoricalArray{S,N},
             NominalArray(refs2, pool))
 end
 
-function PooledDataVecs{S,N}(v1::NullableCategoricalArray{S,N},
-                             v2::NullableCategoricalArray{S,N})
+function sharepools{S,N}(v1::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}},
+                         v2::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}})
     index = sort(unique([levels(v1); levels(v2)]))
     sz = length(index)
 
@@ -122,20 +122,20 @@ function PooledDataVecs{S,N}(v1::NullableCategoricalArray{S,N},
                                 UInt64
 
     # To ensure type stability during actual work
-    PooledDataVecs(v1, v2, index, R)
+    sharepools(v1, v2, index, R)
 end
 
-# FIXME: add more efficient rules for conversions between array types,
-# in particular CategoricalArrays
-PooledDataVecs{S,N}(v1::NullableCategoricalArray{S,N}, v2::AbstractArray{S,N}) =
-    PooledDataVecs(v1, NullableCategoricalArray(v2))
+sharepools{S,N}(v1::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}},
+                v2::AbstractArray{S,N}) =
+    sharepools(v1, oftype(v1, v2))
 
-PooledDataVecs{S,N}(v1::AbstractArray{S,N}, v2::NullableCategoricalArray{S,N}) =
-    PooledDataVecs(NullableCategoricalArray(v2), v1)
+sharepools{S,N}(v1::AbstractArray{S,N},
+                v2::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}}) =
+    sharepools(oftype(v2, v1), v2)
 
-function PooledDataVecs(v1::AbstractArray,
-                        v2::AbstractArray)
-    ## Return two PooledDataVecs that share the same pool.
+function sharepools(v1::AbstractArray,
+                    v2::AbstractArray)
+    ## Return two categorical arrays that share the same pool.
 
     ## TODO: allow specification of R
     R = CategoricalArrays.DefaultRefType
@@ -186,22 +186,22 @@ function PooledDataVecs(v1::AbstractArray,
             NominalArray(refs2, pool))
 end
 
-PooledDataVecs(v1::NullableArray, v2::NullableArray) =
-    PooledDataVecs(NullableNominalArray(v1), NullableNominalArray(v2))
+sharepools(v1::NullableArray, v2::NullableArray) =
+    sharepools(NullableNominalArray(v1), NullableNominalArray(v2))
 
-PooledDataVecs(v1::AbstractArray, v2::NullableArray) =
-    PooledDataVecs(v1, NullableNominalArray(v2))
+sharepools(v1::AbstractArray, v2::NullableArray) =
+    sharepools(v1, NullableNominalArray(v2))
 
-PooledDataVecs(v1::NullableArray, v2::AbstractArray) =
-    PooledDataVecs(NullableNominalArray(v2), v1)
+sharepools(v1::NullableArray, v2::AbstractArray) =
+    sharepools(NullableNominalArray(v2), v1)
 
-function PooledDataVecs(df1::AbstractDataFrame, df2::AbstractDataFrame)
+function sharepools(df1::AbstractDataFrame, df2::AbstractDataFrame)
     # This method exists to allow merge to work with multiple columns.
-    # It takes the columns of each DataFrame and returns a NominalArray
+    # It takes the columns of each DataFrame and returns a categorical array
     # with a merged pool that "keys" the combination of column values.
     # The pools of the result don't really mean anything.
-    dv1, dv2 = PooledDataVecs(df1[1], df2[1])
-    # use UInt32 instead of the minimum integer size chosen by PooledDataVecs
+    dv1, dv2 = sharepools(df1[1], df2[1])
+    # use UInt32 instead of the minimum integer size chosen by sharepools
     # since the number of levels can be high
     refs1 = Vector{UInt32}(dv1.refs)
     refs2 = Vector{UInt32}(dv2.refs)
@@ -210,7 +210,7 @@ function PooledDataVecs(df1::AbstractDataFrame, df2::AbstractDataFrame)
     refs2[:] += 1
     ngroups = length(levels(dv1)) + 1
     for j = 2:ncol(df1)
-        dv1, dv2 = PooledDataVecs(df1[j], df2[j])
+        dv1, dv2 = sharepools(df1[j], df2[j])
         for i = 1:length(refs1)
             refs1[i] += (dv1.refs[i]) * ngroups
         end
@@ -221,13 +221,13 @@ function PooledDataVecs(df1::AbstractDataFrame, df2::AbstractDataFrame)
     end
     # recode refs1 and refs2 to drop the unused column combinations and
     # limit the pool size
-    PooledDataVecs(refs1, refs2)
+    sharepools(refs1, refs2)
 end
 
 function CategoricalArrays.NominalArray{R}(df::AbstractDataFrame, ::Type{R})
     # This method exists to allow another way for merge to work with
     # multiple columns. It takes the columns of the DataFrame and
-    # returns a DataArray with a merged pool that "keys" the
+    # returns a NominalArray with a merged pool that "keys" the
     # combination of column values.
     # Notes:
     #   - I skipped the sort to make it faster.
@@ -321,7 +321,7 @@ function Base.join(df1::AbstractDataFrame,
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
-    dv1, dv2 = PooledDataVecs(df1[on], df2[on])
+    dv1, dv2 = sharepools(df1[on], df2[on])
 
     left_idx, leftonly_idx, right_idx, rightonly_idx =
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
