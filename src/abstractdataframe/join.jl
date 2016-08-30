@@ -224,36 +224,6 @@ function sharepools(df1::AbstractDataFrame, df2::AbstractDataFrame)
     sharepools(refs1, refs2)
 end
 
-function CategoricalArrays.NominalArray{R}(df::AbstractDataFrame, ::Type{R})
-    # This method exists to allow another way for merge to work with
-    # multiple columns. It takes the columns of the DataFrame and
-    # returns a NominalArray with a merged pool that "keys" the
-    # combination of column values.
-    # Notes:
-    #   - I skipped the sort to make it faster.
-    #   - Converting each individual one-row DataFrame to a Tuple
-    #     might be faster.
-    refs = zeros(R, nrow(df))
-    poolref = Dict{AbstractDataFrame, Int}()
-    pool = Array(UInt64, 0)
-    j = 1
-    for i = 1:nrow(df)
-        val = df[i,:]
-        if haskey(poolref, val)
-            refs[i] = poolref[val]
-        else
-            push!(pool, hash(val))
-            refs[i] = j
-            poolref[val] = j
-            j += 1
-        end
-    end
-    return NominalArray(DataArrays.RefArray(refs), pool)
-end
-
-CategoricalArrays.NominalArray(df::AbstractDataFrame) = NominalArray(df, DEFAULT_POOLED_REF_TYPE)
-
-
 
 """
 Join two DataFrames
