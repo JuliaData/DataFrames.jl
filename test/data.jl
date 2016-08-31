@@ -308,11 +308,13 @@ module TestData
     # test nonunique() with extra argument
     df1 = DataFrame(a = ["a", "b", "a", "b", "a", "b"], b = 1:6, c = [1:3;1:3])
     df = vcat(df1, df1)
-    @test nonunique(df) == [rep(false,6); rep(true, 6)]
-    @test nonunique(df, :) == [rep(false,6); rep(true, 6)]
-    @test nonunique(df, Colon()) == [rep(false,6); rep(true, 6)]
-    @test nonunique(df, :a) == [rep(false,2); rep(true, 10)]
-    @test nonunique(df, [1, 3]) == [rep(false,6); rep(true, 6)]
+    @test find(nonunique(df)) == collect(7:12)
+    @test find(nonunique(df, :)) == collect(7:12)
+    @test find(nonunique(df, Colon())) == collect(7:12)
+    @test find(nonunique(df, :a)) == collect(3:12)
+    @test find(nonunique(df, [:a, :c])) == collect(7:12)
+    @test find(nonunique(df, [1, 3])) == collect(7:12)
+    @test find(nonunique(df, 1)) == collect(3:12)
 
     # Test unique() with extra argument
     @test unique(df) == df1
@@ -320,6 +322,7 @@ module TestData
     @test unique(df, Colon()) == df1
     @test unique(df, 2:3) == df1
     @test unique(df, 3) == df1[1:3,:]
+    @test unique(df, [1, 3]) == df1
     @test unique(df, [:a, :c]) == df1
     @test unique(df, :a) == df1[1:2,:]
 

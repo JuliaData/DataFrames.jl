@@ -558,7 +558,7 @@ nonunique(df::AbstractDataFrame, cols)
 **Arguments**
 
 * `df` : the AbstractDataFrame
-* `cols` : the column(s) to compare – any valid DataFrames column specifier will work
+* `cols` : a column indicator (Symbol, Int, Vector{Symbol}, etc.) specifying the column(s) to compare
 
 **Result**
 
