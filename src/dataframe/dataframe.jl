@@ -644,7 +644,7 @@ function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::S
     df
 end
 
-# FIXME: why is this needed for test/dataframe.jl to pass?
+# FIXME: Needed to work around a crash: JuliaLang/julia#18299
 function Base.insert!(df::DataFrame, col_ind::Int, item::NullableArray, name::Symbol)
     0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
     size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
