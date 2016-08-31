@@ -1,5 +1,5 @@
 julia 0.4
-NullableArrays 0.0.7+
+NullableArrays 0.0.8
 CategoricalArrays 0.0.3
 StatsBase 0.8.3
 GZip
