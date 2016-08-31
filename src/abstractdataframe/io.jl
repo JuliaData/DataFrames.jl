@@ -8,8 +8,14 @@ function escapedprint(io::IO, x::Any, escapes::AbstractString)
     print(io, x)
 end
 
-function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
-    print_escaped(io, x, escapes)
+if VERSION < v"0.5.0-dev+4354"
+    function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
+        print_escaped(io, x, escapes)
+    end
+else
+    function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
+        escape_string(io, x, escapes)
+    end
 end
 
 function printtable(io::IO,
@@ -33,12 +39,13 @@ function printtable(io::IO,
             end
         end
     end
+    quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
             if ! (isna(df[j],i))
                 if ! (etypes[j] <: Real)
 		    print(io, quotemark)
-		    escapedprint(io, df[i, j], "\"'")
+		    escapedprint(io, df[i, j], quotestr)
 		    print(io, quotemark)
                 else
 		    print(io, df[i, j])
@@ -70,7 +77,39 @@ function printtable(df::AbstractDataFrame;
     return
 end
 
-# Infer configuration settings from filename
+"""
+Write data to a tabular-file format (CSV, TSV, ...)
+
+```julia
+writetable(filename, df, [keyword options])
+```
+
+### Arguments
+
+* `filename::AbstractString` : the filename to be created
+* `df::AbstractDataFrame` : the AbstractDataFrame to be written
+
+### Keyword Arguments
+
+* `separator::Char` -- The separator character that you would like to use. Defaults to the output of `getseparator(filename)`, which uses commas for files that end in `.csv`, tabs for files that end in `.tsv` and a single space for files that end in `.wsv`.
+* `quotemark::Char` -- The character used to delimit string fields. Defaults to `'"'`.
+* `header::Bool` -- Should the file contain a header that specifies the column names from `df`. Defaults to `true`.
+* `nastring::AbstractString` -- What to write in place of missing data. Defaults to `"NA"`.
+
+### Result
+
+* `::DataFrame`
+
+### Examples
+
+```julia
+df = DataFrame(A = 1:10)
+writetable("output.csv", df)
+writetable("output.dat", df, separator = ',', header = false)
+writetable("output.dat", df, quotemark = '\', separator = ',')
+writetable("output.dat", df, header = false)
+```
+"""
 function writetable(filename::AbstractString,
                     df::AbstractDataFrame;
                     header::Bool = true,
@@ -94,7 +133,7 @@ function writetable(filename::AbstractString,
         # When 'append'-ing to a nonempty file,
         # 'header' triggers a check for matching colnames
         if header
-            if any(i -> symbol(file_df[1, i]) != index(df)[i], 1:size(df, 2))
+            if any(i -> @compat(Symbol(file_df[1, i])) != index(df)[i], 1:size(df, 2))
                 throw(KeyError("Column names don't match names in file"))
             end
 
@@ -129,9 +168,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-function Base.writemime(io::IO,
-                        ::MIME"text/html",
-                        df::AbstractDataFrame)
+@compat function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     n = size(df, 1)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
@@ -141,7 +178,7 @@ function Base.writemime(io::IO,
         write(io, "<th>$column_name</th>")
     end
     write(io, "</tr>")
-    tty_rows, tty_cols = Base.tty_size()
+    tty_rows, tty_cols = Base.displaysize(io)
     mxrow = min(n,tty_rows)
     for row in 1:mxrow
         write(io, "<tr>")
@@ -169,14 +206,10 @@ end
 #
 ##############################################################################
 
-function Base.writemime(io::IO,
-                        ::MIME"text/csv",
-                        df::AbstractDataFrame)
+@compat function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
     printtable(io, df, true, ',')
 end
 
-function Base.writemime(io::IO,
-                        ::MIME"text/tab-separated-values",
-                        df::AbstractDataFrame)
+@compat function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
     printtable(io, df, true, '\t')
 end

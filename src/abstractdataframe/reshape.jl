@@ -6,10 +6,6 @@
 ##
 ##############################################################################
 
-@comment """
-# Reshaping
-"""
-
 ##############################################################################
 ##
 ## stack()
@@ -77,9 +73,9 @@ function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector
     cnames = names(df)[id_vars]
     insert!(cnames, 1, :value)
     insert!(cnames, 1, :variable)
-    DataFrame(Any[rep(_names(df)[measure_vars], rep(nrow(df), N)),   # variable
-                  vcat([df[c] for c in measure_vars]...),           # value
-                  [rep(df[c], N) for c in id_vars]...],             # id_var columns
+    DataFrame(Any[Compat.repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
+                  vcat([df[c] for c in measure_vars]...),                    # value
+                  [Compat.repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
               cnames)
 end
 function stack(df::AbstractDataFrame, measure_vars::Int, id_vars::Int)
@@ -174,7 +170,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     # TODO make fillNA(type, length)
-    payload = DataFrame(Any[DataArray(fill(valuecol[1], Nrow), fill(true, Nrow)) for i in 1:Ncol], map(symbol, keycol.pool))
+    payload = DataFrame(Any[DataArray(eltype(valuecol), Nrow) for i in 1:Ncol], map(Symbol, keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
         j = @compat Int(keycol.refs[k])
@@ -210,7 +206,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     keys = unique(keycol)
     Nrow = length(g)
     Ncol = length(keycol.pool)
-    df2 = DataFrame(Any[DataArray(fill(valuecol[1], Nrow), fill(true, Nrow)) for i in 1:Ncol], map(symbol, keycol.pool))
+    df2 = DataFrame(Any[DataArray(fill(valuecol[1], Nrow), fill(true, Nrow)) for i in 1:Ncol], map(@compat(Symbol), keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
         j = @compat Int(keycol.refs[k])

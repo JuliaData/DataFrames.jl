@@ -1,6 +1,7 @@
 module TestDataFrame
     using Base.Test
     using DataFrames, Compat
+    import Compat.String
 
     #
     # Equality
@@ -71,7 +72,7 @@ module TestDataFrame
     # similar / nas
     df = DataFrame(a = 1, b = "b", c = @pdata([3.3]))
     nadf = DataFrame(a = @data(Int[NA, NA]),
-                     b = DataArray(Array(ASCIIString, 2), trues(2)),
+                     b = DataArray(Array(String, 2), trues(2)),
                      c = @pdata(Float64[NA, NA]))
     @test isequal(nadf, similar(df, 2))
     @test isequal(nadf, DataFrames.nas(df, 2))
@@ -114,33 +115,33 @@ module TestDataFrame
     @test allna(df[:, 2])
     @test allna(df[:, 3])
 
-    df = DataFrame(Any[Int, Float64, ASCIIString], 100)
+    df = DataFrame(Any[Int, Float64, String], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
     @test typeof(df[:, 2]) == DataVector{Float64}
-    @test typeof(df[:, 3]) == DataVector{ASCIIString}
+    @test typeof(df[:, 3]) == DataVector{String}
     @test allna(df[:, 1])
     @test allna(df[:, 2])
     @test allna(df[:, 3])
 
-    df = DataFrame(Any[Int, Float64, ASCIIString], [:A, :B, :C], 100)
+    df = DataFrame(Any[Int, Float64, String], [:A, :B, :C], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
     @test typeof(df[:, 2]) == DataVector{Float64}
-    @test typeof(df[:, 3]) == DataVector{ASCIIString}
+    @test typeof(df[:, 3]) == DataVector{String}
     @test allna(df[:, 1])
     @test allna(df[:, 2])
     @test allna(df[:, 3])
 
 
-    df = DataFrame(DataType[Int, Float64, ASCIIString],[:A, :B, :C], [false,false,true],100)
+    df = DataFrame(DataType[Int, Float64, Compat.UTF8String],[:A, :B, :C], [false,false,true],100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
     @test typeof(df[:, 2]) == DataVector{Float64}
-    @test typeof(df[:, 3]) == PooledDataVector{ASCIIString,UInt32}
+    @test typeof(df[:, 3]) == PooledDataVector{Compat.UTF8String,UInt32}
     @test allna(df[:, 1])
     @test allna(df[:, 2])
     @test allna(df[:, 3])
@@ -284,7 +285,7 @@ module TestDataFrame
 
     # describe
     #suppress output and test that describe() does not throw
-    devnull = @unix? "/dev/null" : "nul"
+    devnull = is_unix() ? "/dev/null" : "nul"
     open(devnull, "w") do f
         @test nothing == describe(f, DataFrame(a=[1, 2], b=Any["3", NA]))
         @test nothing == describe(f, DataFrame(a=@data([1, 2]), b=@data(["3", NA])))
@@ -296,10 +297,10 @@ module TestDataFrame
         @test nothing == describe(f, @data(["1", "2", NA]))
         @test nothing == describe(f, @pdata(["1", "2", NA]))
     end
-        
+
     #Check the output of unstack
-    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"], 
-        Key = ["Mass", "Color", "Mass", "Color"], 
+    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
+        Key = ["Mass", "Color", "Mass", "Color"],
         Value = ["12 g", "Red", "18 g", "Grey"])
     #Unstack specifying a row column
     df2 = unstack(df,:Fish, :Key, :Value)
@@ -309,4 +310,11 @@ module TestDataFrame
     df4 = DataFrame(Fish = ["Batman", "Bob"], Color = ["Grey", "Red"], Mass = ["18 g", "12 g"])
     @test df2 == df4
     @test df3 == df4
+    #Make sure unstack works with NAs at the start of the value column
+    df[1,:Value] = NA
+    df2 = unstack(df,:Fish, :Key, :Value)
+    #This changes the expected result
+    df4[2,:Mass] = NA
+    @test isequal(df2, df4)
+
 end

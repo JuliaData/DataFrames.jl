@@ -1,6 +1,7 @@
 module TestStatsModels
 using DataFrames
 using Base.Test
+using Compat
 
 # Tests for statsmodel.jl
 
@@ -56,29 +57,45 @@ ct = coeftable(m)
 @test ct.rownms == ["(Intercept)", "x1", "x2", "x1 & x2"]
 
 ## show with coeftable defined
-@show m
+io = IOBuffer()
+show(io, m)
 
 ## with categorical variables
 d[:x1p] = PooledDataArray(d[:x1])
 f2 = y ~ x1p
 m2 = fit(DummyMod, f2, d)
 
-@test coeftable(m2).rownms == ["(Intercept)", "x1p - 6", "x1p - 7", "x1p - 8"]
+@test coeftable(m2).rownms == ["(Intercept)", "x1p: 6", "x1p: 7", "x1p: 8"]
 
 ## predict w/ new data missing levels
-## FAILS: mismatch between number of model matrix columns
-## @test predict(m2, d[2:4, :]) == predict(m2)[2:4]
+@test predict(m2, d[2:4, :]) == predict(m2)[2:4]
+
+## predict w/ new data with _extra_ levels (throws an error)
+d3 = deepcopy(d)
+d3[1, :x1] = 0
+d3[:x1p] = PooledDataArray(d3[:x1])
+@test_throws ArgumentError predict(m2, d3)
+
+## fit with contrasts specified
+d[:x2p] = PooledDataArray(d[:x2])
+f3 = y ~ x1p + x2p
+m3 = fit(DummyMod, f3, d)
+fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding()))
+fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding(),
+                                      :x2p => DummyCoding()))
+@test_throws Exception fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding(),
+                                                             :x2p => 1))
 
 
 ## Another dummy model type to test fall-through show method
 immutable DummyModTwo <: RegressionModel
-    msg::UTF8String
+    msg::Compat.UTF8String
 end
 
 StatsBase.fit(::Type{DummyModTwo}, ::Matrix, ::Vector) = DummyModTwo("hello!")
 Base.show(io::IO, m::DummyModTwo) = println(io, m.msg)
 
 m2 = fit(DummyModTwo, f, d)
-@show m2
+show(io, m2)
 
 end

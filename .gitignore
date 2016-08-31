@@ -2,3 +2,5 @@
 *.jl.mem
 doc/manual.pdf
 test/data/bigrams.tsv
+docs/build/
+docs/site/

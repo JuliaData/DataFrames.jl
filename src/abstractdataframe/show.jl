@@ -3,24 +3,23 @@
 #'
 #' Returns a string summary of an AbstractDataFrame in a standardized
 #' form. For example, a standard DataFrame with 10 rows and 5 columns
-#' will be summarized as "10x5 DataFrame".
+#' will be summarized as "10×5 DataFrame".
 #'
 #' @param df::AbstractDataFrame The AbstractDataFrame to be summarized.
 #'
-#' @returns res::UTF8String The summary of `df`.
+#' @returns res::String The summary of `df`.
 #'
 #' @examples
 #'
 #' summary(DataFrame(A = 1:10))
-function Base.summary(df::AbstractDataFrame) # -> UTF8String
+function Base.summary(df::AbstractDataFrame) # -> String
     nrows, ncols = size(df)
-    return utf8(@sprintf "%dx%d %s" nrows ncols typeof(df))
+    return @sprintf("%d×%d %s", nrows, ncols, typeof(df))
 end
 
 #' @description
 #'
-#' Determine the number of UTF8 characters that would be used to
-#' render a value.
+#' Determine the number of characters that would be used to print a value.
 #'
 #' @param x::Any A value whose string width will be computed.
 #'
@@ -139,7 +138,7 @@ end
 #' @description
 #'
 #' Given the maximum widths required to render each column of an
-#' AbstractDataFrame, this returns the total number of UTF8 characters
+#' AbstractDataFrame, this returns the total number of characters
 #' that would be required to render an entire row to an IO system.
 #'
 #' NOTE: This width includes the whitespace and special characters used to
@@ -166,6 +165,11 @@ function getprintedwidth(maxwidths::Vector{Int}) # -> Int
     return totalwidth
 end
 
+# For Julia < 0.5
+if VERSION < v"0.5.0-dev+2023"
+    displaysize(io::IO) = Base.tty_size()
+end
+
 #' @description
 #'
 #' When rendering an AbstractDataFrame to a REPL window in chunks, each of
@@ -184,6 +188,7 @@ end
 #' @param splitchunks::Bool Should the output be split into chunks at all or
 #'        should only one chunk be constructed for the entire
 #'        AbstractDataFrame?
+#' @param availablewidth::Int The available width in the REPL.
 #'
 #' @returns chunkbounds::Vector{Int} The bounds of each chunk of columns.
 #'
@@ -193,10 +198,10 @@ end
 #' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row")
 #' chunkbounds = getchunkbounds(maxwidths, true)
 function getchunkbounds(maxwidths::Vector{Int},
-                        splitchunks::Bool) # -> Vector{Int}
+                        splitchunks::Bool,
+                        availablewidth::Int=displaysize()[2]) # -> Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
-    _, availablewidth = Base.tty_size()
     if splitchunks
         chunkbounds = [0]
         # Include 2 spaces + 2 | characters for row/col label
@@ -251,12 +256,12 @@ function showrowindices(io::IO,
 
     for i in rowindices
         # Print row ID
-        @printf io "| %d" i
+        @printf io "│ %d" i
         padding = rowmaxwidth - ndigits(i)
         for _ in 1:padding
             write(io, ' ')
         end
-        print(io, " | ")
+        print(io, " │ ")
         # Print DataFrame entry
         for j in leftcol:rightcol
             strlen = 0
@@ -273,12 +278,12 @@ function showrowindices(io::IO,
             end
             if j == rightcol
                 if i == rowindices[end]
-                    print(io, " |")
+                    print(io, " │")
                 else
-                    print(io, " |\n")
+                    print(io, " │\n")
                 end
             else
-                print(io, " | ")
+                print(io, " │ ")
             end
         end
     end
@@ -322,7 +327,7 @@ function showrows(io::IO,
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
                   splitchunks::Bool = false,
-                  rowlabel::Symbol = symbol("Row"),
+                  rowlabel::Symbol = @compat(Symbol("Row")),
                   displaysummary::Bool = true) # -> Void
     ncols = size(df, 2)
 
@@ -335,7 +340,7 @@ function showrows(io::IO,
     end
 
     rowmaxwidth = maxwidths[ncols + 1]
-    chunkbounds = getchunkbounds(maxwidths, splitchunks)
+    chunkbounds = getchunkbounds(maxwidths, splitchunks, displaysize(io)[2])
     nchunks = length(chunkbounds) - 1
 
     for chunkindex in 1:nchunks
@@ -343,12 +348,12 @@ function showrows(io::IO,
         rightcol = chunkbounds[chunkindex + 1]
 
         # Print column names
-        @printf io "| %s" rowlabel
+        @printf io "│ %s" rowlabel
         padding = rowmaxwidth - ourstrwidth(rowlabel)
         for itr in 1:padding
             write(io, ' ')
         end
-        @printf io " | "
+        @printf io " │ "
         for j in leftcol:rightcol
             s = _names(df)[j]
             ourshowcompact(io, s)
@@ -357,23 +362,27 @@ function showrows(io::IO,
                 write(io, ' ')
             end
             if j == rightcol
-                print(io, " |\n")
+                print(io, " │\n")
             else
-                print(io, " | ")
+                print(io, " │ ")
             end
         end
 
         # Print table bounding line
-        write(io, '|')
+        write(io, '├')
         for itr in 1:(rowmaxwidth + 2)
-            write(io, '-')
+            write(io, '─')
         end
-        write(io, '|')
+        write(io, '┼')
         for j in leftcol:rightcol
             for itr in 1:(maxwidths[j] + 2)
-                write(io, '-')
+                write(io, '─')
             end
-            write(io, '|')
+            if j < rightcol
+                write(io, '┼')
+            else
+                write(io, '┤')
+            end
         end
         write(io, '\n')
 
@@ -434,11 +443,11 @@ end
 function Base.show(io::IO,
                    df::AbstractDataFrame,
                    splitchunks::Bool = true,
-                   rowlabel::Symbol = symbol("Row"),
+                   rowlabel::Symbol = @compat(Symbol("Row")),
                    displaysummary::Bool = true) # -> Void
     nrows = size(df, 1)
-    tty_rows, tty_cols = Base.tty_size()
-    availableheight = tty_rows - 5
+    dsize = displaysize(io)
+    availableheight = dsize[1] - 5
     nrowssubset = fld(availableheight, 2)
     bound = min(nrowssubset - 1, nrows)
     if nrows <= availableheight
@@ -450,7 +459,7 @@ function Base.show(io::IO,
     end
     maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel)
     width = getprintedwidth(maxwidths)
-    if width > tty_cols && !splitchunks
+    if width > dsize[2] && !splitchunks
         showcols(io, df)
     else
         showrows(io,
@@ -512,7 +521,7 @@ end
 function Base.showall(io::IO,
                       df::AbstractDataFrame,
                       splitchunks::Bool = false,
-                      rowlabel::Symbol = symbol("Row"),
+                      rowlabel::Symbol = @compat(Symbol("Row")),
                       displaysummary::Bool = true) # -> Void
     rowindices1 = 1:size(df, 1)
     rowindices2 = 1:0
@@ -570,7 +579,7 @@ function showcols(io::IO, df::AbstractDataFrame) # -> Void
     metadata = DataFrame(Name = _names(df),
                          Eltype = eltypes(df),
                          Missing = colmissing(df))
-    showall(io, metadata, true, symbol("Col #"), false)
+    showall(io, metadata, true, @compat(Symbol("Col #")), false)
     return
 end
 

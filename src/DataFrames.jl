@@ -9,15 +9,15 @@ module DataFrames
 ##############################################################################
 
 using Compat
+import Compat.String
 using Reexport
 @reexport using StatsBase
 @reexport using DataArrays
 using GZip
 using SortingAlgorithms
-using Base: Sort, Order
-using Docile
 
-@document
+using Base: Sort, Order
+import Base: ==, |>
 
 ##############################################################################
 ##
@@ -26,8 +26,13 @@ using Docile
 ##############################################################################
 
 export @~,
+       @csv_str,
+       @csv2_str,
+       @tsv_str,
+       @wsv_str,
 
        AbstractDataFrame,
+       AbstractContrasts,
        DataFrame,
        DataFrameRow,
        Formula,
@@ -36,6 +41,10 @@ export @~,
        ModelFrame,
        ModelMatrix,
        SubDataFrame,
+       EffectsCoding,
+       DummyCoding,
+       HelmertCoding,
+       ContrastsCoding,
 
        aggregate,
        by,
@@ -44,6 +53,7 @@ export @~,
        combine,
        complete_cases,
        complete_cases!,
+       setcontrasts!,
        deleterows!,
        describe,
        eachcol,
@@ -102,6 +112,7 @@ for (dir, filename) in [
         ("abstractdataframe", "sort.jl"),
         ("dataframe", "sort.jl"),
 
+        ("statsmodels", "contrasts.jl"),
         ("statsmodels", "formula.jl"),
         ("statsmodels", "statsmodel.jl"),
 

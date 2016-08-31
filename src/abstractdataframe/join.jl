@@ -1,7 +1,3 @@
-@comment """
-# Joins
-"""
-
 ##
 ## Join / merge
 ##
@@ -83,8 +79,13 @@ function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
     # with a merged pool that "keys" the combination of column values.
     # The pools of the result don't really mean anything.
     dv1, dv2 = PooledDataVecs(df1[1], df2[1])
-    refs1 = dv1.refs .+ 1   # the + 1 handles NA's
-    refs2 = dv2.refs .+ 1
+    # use UInt32 instead of the minimum integer size chosen by PooledDataVecs
+    # since the number of levels can be high
+    refs1 = Vector{UInt32}(dv1.refs)
+    refs2 = Vector{UInt32}(dv2.refs)
+    # the + 1 handles NA's
+    refs1[:] += 1
+    refs2[:] += 1
     ngroups = length(dv1.pool) + 1
     for j = 2:ncol(df1)
         dv1, dv2 = PooledDataVecs(df1[j], df2[j])
@@ -94,7 +95,6 @@ function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
         for i = 1:length(refs2)
             refs2[i] += (dv2.refs[i]) * ngroups
         end
-        # FIXME check for ngroups overflow, maybe recode refs to prevent it
         ngroups *= (length(dv1.pool) + 1)
     end
     # recode refs1 and refs2 to drop the unused column combinations and
@@ -186,9 +186,6 @@ join(name, job, kind = :cross)
 ```
 
 """
-:join
-
-
 function Base.join(df1::AbstractDataFrame,
                    df2::AbstractDataFrame;
                    on::@compat(Union{Symbol, Vector{Symbol}}) = Symbol[],
@@ -251,8 +248,8 @@ end
 
 function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame)
     r1, r2 = size(df1, 1), size(df2, 1)
-    cols = [[rep(c, 1, r2) for c in columns(df1)];
-            [rep(c, r1, 1) for c in columns(df2)]]
+    cols = Any[[Compat.repeat(c, inner=r2) for c in columns(df1)];
+            [Compat.repeat(c, outer=r1) for c in columns(df2)]]
     colindex = merge(index(df1), index(df2))
     DataFrame(cols, colindex)
 end

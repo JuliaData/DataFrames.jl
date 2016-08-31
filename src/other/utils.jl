@@ -5,16 +5,13 @@ const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
     "local", "global", "const", "abstract", "typealias", "type", "bitstype",
     "immutable", "ccall", "do", "module", "baremodule", "using", "import",
     "export", "importall", "end", "else", "elseif", "catch", "finally"])
-if VERSION >= v"0.4.0-dev+757"
-    push!(RESERVED_WORDS, "stagedfunction")
-end
 
 function identifier(s::AbstractString)
     s = normalize_string(s)
     if !isidentifier(s)
         s = makeidentifier(s)
     end
-    symbol(in(s, RESERVED_WORDS) ? "_"*s : s)
+    @compat(Symbol(in(s, RESERVED_WORDS) ? "_"*s : s))
 end
 
 function makeidentifier(s::AbstractString)
@@ -49,7 +46,7 @@ function makeidentifier(s::AbstractString)
     return takebuf_string(res)
 end
 
-function make_unique(names::Vector{Symbol})
+function make_unique(names::Vector{Symbol}; allow_duplicates=true)
     seen = Set{Symbol}()
     names = copy(names)
     dups = Int[]
@@ -57,11 +54,19 @@ function make_unique(names::Vector{Symbol})
         name = names[i]
         in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
+    
+    if !allow_duplicates && length(dups) > 0
+        d = unique(names[dups])
+        msg = """Duplicate variable names: $d.
+                 Pass allow_duplicates=true to make them unique using a suffix automatically."""
+        throw(ArgumentError(msg))
+    end
+
     for i in dups
         nm = names[i]
         k = 1
         while true
-            newnm = symbol("$(nm)_$k")
+            newnm = Symbol("$(nm)_$k")
             if !in(newnm, seen)
                 names[i] = newnm
                 push!(seen, newnm)
@@ -89,7 +94,7 @@ end
 function gennames(n::Integer)
     res = Array(Symbol, n)
     for i in 1:n
-        res[i] = symbol(@sprintf "x%d" i)
+        res[i] = Symbol(@sprintf "x%d" i)
     end
     return res
 end
@@ -176,14 +181,13 @@ function _uniqueofsorted(x::Vector)
 end
 
 # Gets the name of a function. Used in groupedataframe/grouping.jl
-function _fnames(fs::Vector{Function})
+function _fnames{T<:Function}(fs::Vector{T})
     λcounter = 0
     names = map(fs) do f
-        if isempty(f.env) # Anonymous function
+        name = string(f)
+        if name == "(anonymous function)" # Anonymous functions with Julia < 0.5
             λcounter += 1
             name = "λ$(λcounter)"
-        else
-            name = string(f.env.name)
         end
         name
     end

@@ -1,14 +1,10 @@
-@comment """
-# DataFrame
-"""
-
 """
 An AbstractDataFrame that stores a set of named columns
 
 The columns are normally AbstractVectors stored in memory,
 particularly a Vector, DataVector, or PooledDataVector.
 
-### Constructors
+**Constructors**
 
 ```julia
 DataFrame(columns::Vector{Any}, names::Vector{Symbol})
@@ -19,7 +15,7 @@ DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer)
 DataFrame(ds::Vector{Associative})
 ```
 
-### Arguments
+**Arguments**
 
 * `columns` : a Vector{Any} with each column as contents
 * `names` : the column names
@@ -32,7 +28,7 @@ DataFrame(ds::Vector{Associative})
 
 Each column in `columns` should be the same length.
 
-### Notes
+**Notes**
 
 Most of the default constructors convert columns to `DataArrays`.  The
 base constructor, `DataFrame(columns::Vector{Any},
@@ -47,7 +43,7 @@ Because column types can vary, a DataFrame is not type stable. For
 performance-critical code, do not index into a DataFrame inside of
 loops.
 
-### Examples
+**Examples**
 
 ```julia
 df = DataFrame()
@@ -297,7 +293,7 @@ function isnextcol(df::DataFrame, col_ind::Real)
 end
 
 function nextcolname(df::DataFrame)
-    return symbol(string("x", ncol(df) + 1))
+    return @compat(Symbol(string("x", ncol(df) + 1)))
 end
 
 # Will automatically add a new column if needed
@@ -803,9 +799,7 @@ function Base.convert(::Type{DataFrame}, A::Matrix)
     return DataFrame(cols, Index(gennames(n)))
 end
 
-function Base.convert(::Type{DataFrame}, d::Dict)
-    dnames = collect(keys(d))
-    sort!(dnames)
+function _dataframe_from_associative(dnames, d::Associative)
     p = length(dnames)
     p == 0 && return DataFrame()
     columns  = Array(Any, p)
@@ -818,10 +812,24 @@ function Base.convert(::Type{DataFrame}, d::Dict)
             throw(ArgumentError("All columns in Dict must have the same length"))
         end
         columns[j] = DataArray(col)
-        colnames[j] = symbol(name)
+        colnames[j] = Symbol(name)
     end
     return DataFrame(columns, Index(colnames))
 end
+
+function Base.convert(::Type{DataFrame}, d::Associative)
+    dnames = collect(keys(d))
+    return _dataframe_from_associative(dnames, d)
+end
+
+# A Dict is not sorted or otherwise ordered, and it's nicer to return a
+# DataFrame which is ordered in some way
+function Base.convert(::Type{DataFrame}, d::Dict)
+    dnames = collect(keys(d))
+    sort!(dnames)
+    return _dataframe_from_associative(dnames, d)
+end
+
 
 ##############################################################################
 ##

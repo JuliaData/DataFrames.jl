@@ -22,7 +22,7 @@ const SXPtab = @compat Dict(      # Defined in Rinternals.h
     0x0d=>"Integer",       # Array{Int32, 1}
     0x0e=>"Real",          # Array{Float64, 1}
     0x0f=>"Complex",       # Array{Complex128, 1}
-    0x10=>"String",        # Array{ASCIIString, 1}
+    0x10=>"String",        # Array{String, 1}
     0x11=>"Dot",           # dot-dot-dot object
     0x12=>"Any",           # make "any" args work
     0x13=>"List",          # generic vector, {} but with names
@@ -56,14 +56,17 @@ const SXPtab = @compat Dict(      # Defined in Rinternals.h
 ##############################################################################
 ##
 ## Constants used as NA patterns in R.
+## 0x000007a2 == UInt32(1954), stored as a NaN bit pattern
 ## (I assume 1954 is the year of Ross's birth or something like that.)
 ##
 ##############################################################################
 
+# Need to work with UInt64 to work around corruption when reinterpreting as float:
+# See JuliaLang/julia#17195
 if ENDIAN_BOM == 0x01020304
-    const R_NA_FLOAT64 = reinterpret(Float64, [0x7ff00000, @compat(UInt32(1954))])[1]
+    const R_NA_FLOAT64 = 0x000007a27ff00000
 else
-    const R_NA_FLOAT64 = reinterpret(Float64, [@compat(UInt32(1954)), 0x7ff00000])[1]
+    const R_NA_FLOAT64 = 0x7ff00000000007a2
 end
 const R_NA_INT32 = typemin(Int32)
 const R_NA_STRING = "NA"
@@ -74,13 +77,13 @@ const R_NA_STRING = "NA"
 ##
 ##############################################################################
 
-typealias Hash Dict{ASCIIString, Any}
+typealias Hash Dict{String, Any}
 const nullhash = Hash()
 
 abstract RSEXPREC{S}             # Basic R object - symbolic expression
 
 type RSymbol <: RSEXPREC{0x01}   # Not quite the same as a Julia symbol
-    displayname::ASCIIString
+    displayname::String
 end
 
 abstract ROBJ{S} <: RSEXPREC{S}  # R object that can have attributes
@@ -103,7 +106,7 @@ type RNullableVector{T, S} <: RVEC{T, S} # R vector object with explicit NA valu
     attr::Hash                  # collection of R object attributes
 end
 
-typealias RString RNullableVector{ASCIIString,0x10}
+typealias RString RNullableVector{String,0x10}
 typealias RList RVector{Any, 0x13}  # "list" in R == Julia cell array
 
 ##############################################################################
@@ -136,7 +139,7 @@ end
 ##
 ##############################################################################
 
-LONG_VECTOR_SUPPORT = (WORD_SIZE > 32) # disable long vectors support on 32-bit machines
+LONG_VECTOR_SUPPORT = (Sys.WORD_SIZE > 32) # disable long vectors support on 32-bit machines
 
 if LONG_VECTOR_SUPPORT
     typealias RVecLength Int64
@@ -163,11 +166,14 @@ readintorNA(io::RDAXDRIO) = readint32(io)
 readintorNA(io::RDAXDRIO, n::RVecLength) = map!(ntoh, read(io.sub, Int32, n))
 
 readfloatorNA(io::RDAXDRIO) = readfloat64(io)
-readfloatorNA(io::RDAXDRIO, n::RVecLength) = map!(ntoh, read(io.sub, Float64, n))
+# Need to work with UInt64 to work around corruption when reinterpreting as float:
+# See JuliaLang/julia#17195
+readfloatorNA(io::RDAXDRIO, n::RVecLength) =
+    reinterpret(Float64, map!(ntoh, read(io.sub, UInt64, n)))
 
 function readnchars(io::RDAXDRIO, n::Int32)  # a single character string
     readbytes!(io.sub, io.buf, n)
-    bytestring(pointer(io.buf), n)::ASCIIString
+    unsafe_string(pointer(io.buf), n)
 end
 
 type RDAASCIIIO{T<:IO} <: RDAIO # RDA ASCII format IO stream wrapper
@@ -187,11 +193,21 @@ function readintorNA(io::RDAASCIIIO)
 end
 readintorNA(io::RDAASCIIIO, n::RVecLength) = Int32[readintorNA(io) for i in 1:n]
 
-function readfloatorNA(io::RDAASCIIIO)
-    str = chomp(readline(io.sub));
-    str == R_NA_STRING ? R_NA_FLOAT64 : parse(Float64, str)
+# Need to work with UInt64 to work around corruption when reinterpreting as float:
+# See JuliaLang/julia#17195
+#function readfloatorNA(io::RDAASCIIIO)
+#    str = chomp(readline(io.sub));
+#    str == R_NA_STRING ? R_NA_FLOAT64 : parse(Float64, str)
+#end
+function readfloatorNA(io::RDAASCIIIO, n::RVecLength)
+    res = Vector{UInt64}(n)
+    for i in 1:n
+        str = chomp(readline(io.sub))
+        res[i] = str == R_NA_STRING ? R_NA_FLOAT64 :
+                                      reinterpret(UInt64, parse(Float64, str))
+    end
+    reinterpret(Float64, res)
 end
-readfloatorNA(io::RDAASCIIIO, n::RVecLength) = Float64[readfloatorNA(io) for i in 1:n]
 
 function readnchars(io::RDAASCIIIO, n::Int32)  # reads N bytes-sized string
     if (n==-1) return "" end
@@ -424,15 +440,15 @@ read_rda(fnm::AbstractString; kwoptions...) = gzopen(fnm) do io read_rda(io, kwo
 ##
 ##############################################################################
 
-const emptystrvec = Array(ASCIIString,0)
+const emptystrvec = Array(String,0)
 
-getattr{T}(ro::ROBJ, attrnm::ASCIIString, default::T) = haskey(ro.attr, attrnm) ? ro.attr[attrnm].data : default;
+getattr{T}(ro::ROBJ, attrnm::String, default::T) = haskey(ro.attr, attrnm) ? ro.attr[attrnm].data : default;
 
 Base.names(ro::ROBJ) = getattr(ro, "names", emptystrvec)
 
 class(ro::ROBJ) = getattr(ro, "class", emptystrvec)
 class(x) = emptystrvec
-inherits(x, clnm::ASCIIString) = any(class(x) .== clnm)
+inherits(x, clnm::String) = any(class(x) .== clnm)
 
 isdataframe(rl::RList) = inherits(rl, "data.frame")
 isfactor(ri::RInteger) = inherits(ri, "factor")
@@ -449,11 +465,17 @@ row_names(ro::ROBJ) = getattr(ro, "row.names", emptystrvec)
 ##
 ##############################################################################
 
-namask(rl::RLogical) = bitpack(rl.data .== R_NA_INT32)
-namask(ri::RInteger) = bitpack(ri.data .== R_NA_INT32)
-namask(rn::RNumeric) = bitpack([rn.data[i] === R_NA_FLOAT64 for i in 1:length(rn.data)])
-namask(rc::RComplex) = bitpack([rc.data[i].re === R_NA_FLOAT64 ||
-                                rc.data[i].im === R_NA_FLOAT64 for i in 1:length(rc.data)])
+namask(rl::RLogical) = BitArray(rl.data .== R_NA_INT32)
+namask(ri::RInteger) = BitArray(ri.data .== R_NA_INT32)
+# Need to work with UInt64 to work around corruption when reinterpreting as float:
+# See JuliaLang/julia#17195
+namask(rn::RNumeric) =
+    BitArray([reinterpret(UInt64, rn.data)[i] == R_NA_FLOAT64 for i in 1:length(rn.data)])
+function namask(rc::RComplex)
+    data = reinterpret(Complex{UInt64}, rc.data)
+    BitArray([data[i].re == R_NA_FLOAT64 || data[i].im == R_NA_FLOAT64
+              for i in 1:length(rc.data)])
+end
 namask(rv::RNullableVector) = rv.na
 
 DataArrays.data(rv::RVEC) = DataArray(rv.data, namask(rv))
