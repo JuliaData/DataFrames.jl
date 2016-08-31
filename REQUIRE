@@ -5,3 +5,4 @@ GZip
 SortingAlgorithms
 Reexport
 Compat 0.8
+FileIO 0.1.2
