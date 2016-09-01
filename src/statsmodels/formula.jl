@@ -481,7 +481,16 @@ creating the model matrix.
         append!(assign, fill(i_term, size(blocks[end], 2)))
     end
 
-    ModelMatrix{T}(reduce(hcat, blocks), assign)
+    I = size(dfrm, 1)
+    J = mapreduce(x -> size(x, 2), +, blocks)
+    X = zeros(eltype(T), I, J)
+    i = 1
+    for block in blocks
+        len = size(block, 2)
+        X[:, i:(i + len - 1)] = block
+        i += len
+    end
+    ModelMatrix{T}(X, assign)
 end
 ModelMatrix(mf::ModelFrame) = ModelMatrix{Matrix{Float64}}(mf)
 

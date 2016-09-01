@@ -535,4 +535,11 @@ df = DataFrame(x = [1,2,3], y = [4,5,6])
 mf = ModelFrame(y ~ 1 + (1 | x), df)
 @test coefnames(mf) == ["(Intercept)"]
 
+
+# Ensure X is not a view on df column
+df = DataFrame(x = [1.0,2.0,3.0], y = [4.0,5.0,6.0])
+mf = ModelFrame(y ~ 0 + x, df)
+X = ModelMatrix(mf).m
+X[1] = 0.0
+@test isapprox(mf.df[1, :x], 1.0)
 end
