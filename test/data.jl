@@ -326,6 +326,10 @@ module TestData
     @test unique(df, [:a, :c]) == df1
     @test unique(df, :a) == df1[1:2,:]
 
+    #test unique!() with extra argument
+    unique!(df, [1, 3])
+    @test df == df1    
+
     #test_group("find()")
     dv = DataArray([true, false, true])
     @test isequal(find(dv), [1, 3])

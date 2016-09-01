@@ -614,7 +614,9 @@ unique!(df::AbstractDataFrame, cols)
 **Arguments**
 
 * `df` : the AbstractDataFrame
-* `cols` : the columns to compare – any valid DataFrames column specifier will work
+* `cols` :  column indicator (Symbol, Int, Vector{Symbol}, etc.)
+specifying the column(s) to compare. The first instance of each complete
+row is retained
 
 **Result**
 
