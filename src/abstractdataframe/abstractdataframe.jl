@@ -615,12 +615,13 @@ unique!(df::AbstractDataFrame, cols)
 
 * `df` : the AbstractDataFrame
 * `cols` :  column indicator (Symbol, Int, Vector{Symbol}, etc.)
-specifying the column(s) to compare. The first instance of each complete
-row is retained
+specifying the column(s) to compare.
 
 **Result**
 
-* `::AbstractDataFrame` : the updated version
+* `::AbstractDataFrame` : the updated version of `df` with unique rows.
+When `cols` is specified, the return DataFrame contains complete rows,
+retaining in each case the first instance for which `df[cols]` is unique.
 
 See also [`nonunique`]({ref}).
 
