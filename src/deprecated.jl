@@ -1,18 +1,24 @@
-using Base.depwarn
+import Base: @deprecate, depwarn
 
-Base.@deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
-Base.@deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
-Base.@deprecate nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame) nullable!(df, colnames)
-Base.@deprecate nullable!(colnums::Array{Int,1}, df::AbstractDataFrame) nullable!(df, colnums)
+@deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
+@deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
+@deprecate nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame) nullable!(df, colnames)
+@deprecate nullable!(colnums::Array{Int,1}, df::AbstractDataFrame) nullable!(df, colnums)
 import Base: keys, values, insert!
-Base.@deprecate keys(df::AbstractDataFrame) names(df)
-Base.@deprecate values(df::AbstractDataFrame) DataFrames.columns(df)
-Base.@deprecate insert!(df::DataFrame, df2::AbstractDataFrame) merge!(df, df2)
+@deprecate keys(df::AbstractDataFrame) names(df)
+@deprecate values(df::AbstractDataFrame) DataFrames.columns(df)
+@deprecate insert!(df::DataFrame, df2::AbstractDataFrame) merge!(df, df2)
 
 import DataArrays: array, DataArray
-Base.@deprecate array(df::AbstractDataFrame) convert(Array, df)
-Base.@deprecate array(r::DataFrameRow) convert(Array, r)
+@deprecate array(df::AbstractDataFrame) convert(Array, df)
+@deprecate array(r::DataFrameRow) convert(Array, r)
 if VERSION < v"0.4.0-"
-    Base.@deprecate DataArray(df::AbstractDataFrame) convert(DataArray, df)
+    @deprecate DataArray(df::AbstractDataFrame) convert(DataArray, df)
 end
-Base.@deprecate DataArray(df::AbstractDataFrame, T::DataType) convert(DataArray{T}, df)
+@deprecate DataArray(df::AbstractDataFrame, T::DataType) convert(DataArray{T}, df)
+
+function read_rda(args...)
+    depwarn("read_rda() is deprecated. R data format support has been moved to the " *
+            "RData package. Use FileIO.load() instead.")
+    FileIO.load(args...)
+end

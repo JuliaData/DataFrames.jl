@@ -297,10 +297,10 @@ module TestDataFrame
         @test nothing == describe(f, @data(["1", "2", NA]))
         @test nothing == describe(f, @pdata(["1", "2", NA]))
     end
-        
+
     #Check the output of unstack
-    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"], 
-        Key = ["Mass", "Color", "Mass", "Color"], 
+    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
+        Key = ["Mass", "Color", "Mass", "Color"],
         Value = ["12 g", "Red", "18 g", "Grey"])
     #Unstack specifying a row column
     df2 = unstack(df,:Fish, :Key, :Value)
@@ -310,4 +310,11 @@ module TestDataFrame
     df4 = DataFrame(Fish = ["Batman", "Bob"], Color = ["Grey", "Red"], Mass = ["18 g", "12 g"])
     @test df2 == df4
     @test df3 == df4
+    #Make sure unstack works with NAs at the start of the value column
+    df[1,:Value] = NA
+    df2 = unstack(df,:Fish, :Key, :Value)
+    #This changes the expected result
+    df4[2,:Mass] = NA
+    @test isequal(df2, df4)
+
 end

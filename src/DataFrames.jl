@@ -16,6 +16,8 @@ using Reexport
 using GZip
 using SortingAlgorithms
 
+using FileIO  # remove after read_rda deprecation period
+
 using Base: Sort, Order
 import Base: ==, |>
 
@@ -71,7 +73,6 @@ export @~,
        pool,
        pool!,
        printtable,
-       read_rda,
        readtable,
        rename!,
        rename,
@@ -80,7 +81,10 @@ export @~,
        stackdf,
        unique!,
        unstack,
-       writetable
+       writetable,
+
+       # Remove after deprecation period
+       read_rda
 
 ##############################################################################
 ##
@@ -116,7 +120,6 @@ for (dir, filename) in [
         ("statsmodels", "formula.jl"),
         ("statsmodels", "statsmodel.jl"),
 
-        ("", "RDA.jl"),
         ("", "deprecated.jl")
     ]
 
