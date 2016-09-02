@@ -35,7 +35,7 @@ module TestFormula
     @test t.intercept == true
     @test t.terms == []
     @test t.eterms == [:y]
-    
+
     ## terms add
     t = Terms(y ~ 1 + x1 + x2)
     @test t.intercept == true
@@ -52,7 +52,7 @@ module TestFormula
     t = Terms(y ~ 0 + x1 + x2)
     @test t.intercept == false
     @test t.terms == [:x1, :x2]
-    
+
     t = Terms(y ~ -1 + x1 + x2)
     @test t.intercept == false
     @test t.terms == [:x1, :x2]
@@ -83,7 +83,7 @@ module TestFormula
     ## FAILS: ordering of expanded interaction terms is wrong
     ## (only has an observable effect when both terms are categorical and
     ## produce multiple model matrix columns that are multiplied together...)
-    ## 
+    ##
     ## t = Terms(y ~ (x2 + x3) & x1)
     ## @test t.terms == [:(x2&x1), :(x3&x1)]
 
@@ -330,9 +330,9 @@ module TestFormula
     ## @test mm.model == [ones(4) x1 x3 x2 x1.*x2 x3.*x2]
 
     ## Interactions between three PDA columns
-    ## 
+    ##
     ## FAILS: behavior is wrong when no lower-order terms (1+x1+x2+x1&x2...)
-    ## 
+    ##
     ## df = DataFrame(y=1:27,
     ##                x1 = PooledDataArray(vec([x for x in 1:3, y in 4:6, z in 7:9])),
     ##                x2 = PooledDataArray(vec([y for x in 1:3, y in 4:6, z in 7:9])),
@@ -367,7 +367,7 @@ module TestFormula
     f = y ~ x1 + (x2 + (x3 + x4))
     @test ModelMatrix(ModelFrame(f, df)).m == hcat(ones(4), x1, x2, x3, x4)
 
-    
+
     ## Extra levels in categorical column
     mf_full = ModelFrame(y ~ x1p, d)
     mm_full = ModelMatrix(mf_full)
@@ -441,7 +441,7 @@ mm = ModelMatrix(mf)
                0 0 1 0
                0 0 0 1]
 @test mm.m == ModelMatrix{sparsetype}(mf).m
-@test coefnames(mf) == ["x: a & y: c", "x: b & y: c",                             
+@test coefnames(mf) == ["x: a & y: c", "x: b & y: c",
                         "x: a & y: d", "x: b & y: d"]
 
 # only a three-way interaction: every term is promoted.
@@ -534,5 +534,9 @@ mm = ModelMatrix(mf)
 df = DataFrame(x = [1,2,3], y = [4,5,6])
 mf = ModelFrame(y ~ 1 + (1 | x), df)
 @test coefnames(mf) == ["(Intercept)"]
+
+mf = ModelFrame(y ~ 0 + (1 | x), df)
+@test_throws ErrorException ModelMatrix(mf)
+@test coefnames(mf) == Vector{Compat.UTF8String}()
 
 end

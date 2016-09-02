@@ -291,7 +291,7 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
     for c in eachcol(df) dropunusedlevels!(c[2]) end
 
-    ## Set up contrasts: 
+    ## Set up contrasts:
     ## Combine actual DF columns and contrast types if necessary to compute the
     ## actual contrasts matrices, levels, and term names (using DummyCoding
     ## as the default)
@@ -317,7 +317,7 @@ ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), 
 function setcontrasts!(mf::ModelFrame, new_contrasts::Dict)
     new_contrasts = Dict([ Pair(col, ContrastsMatrix(contr, mf.df[col]))
                       for (col, contr) in filter((k,v)->haskey(mf.df, k), new_contrasts) ])
-                      
+
     mf.contrasts = merge(mf.contrasts, new_contrasts)
     return mf
 end
@@ -459,7 +459,7 @@ creating the model matrix.
     ## TODO: this method makes multiple copies of the data in the ModelFrame:
     ## first in term_cols (1-2x per evaluation term, depending on redundancy),
     ## second in constructing the matrix itself.
-    
+
     ## turn each term into a vector of mm columns for its eval. terms, using
     ## "promoted" full-rank versions of categorical columns for non-redundant
     ## eval. terms:
@@ -481,6 +481,10 @@ creating the model matrix.
         append!(assign, fill(i_term, size(blocks[end], 2)))
     end
 
+    if isempty(blocks)
+        error("Could not construct model matrix. Resulting matrix has 0 columns.")
+    end
+
     ModelMatrix{T}(reduce(hcat, blocks), assign)
 end
 ModelMatrix(mf::ModelFrame) = ModelMatrix{Matrix{Float64}}(mf)
@@ -495,7 +499,7 @@ is not a `PooledDataArray` a one-element vector is returned.
 termnames(term::Symbol, col) = [string(term)]
 function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, term)
-        termnames(term, mf.df[term], 
+        termnames(term, mf.df[term],
                   non_redundant ?
                   ContrastsMatrix{FullDummyCoding}(mf.contrasts[term]) :
                   mf.contrasts[term])
@@ -556,7 +560,7 @@ function coefnames(mf::ModelFrame)
         push!(term_names, expandtermnames(names))
     end
 
-    reduce(vcat, term_names)
+    reduce(vcat, Vector{Compat.UTF8String}(), term_names)
 end
 
 function Formula(t::Terms)
