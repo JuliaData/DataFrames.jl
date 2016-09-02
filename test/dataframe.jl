@@ -319,8 +319,8 @@ module TestDataFrame
     df3 = unstack(df,:Key, :Value)
     #The expected output
     df4 = DataFrame(Fish = ["XXX", "Bob", "Batman"],
-                    Color = [Nullable(), "Red", "Grey"],
-                    Mass = [Nullable(), "12 g", "18 g"])
+                    Color = Nullable{String}[Nullable(), "Red", "Grey"],
+                    Mass = Nullable{String}[Nullable(), "12 g", "18 g"])
     @test isequal(df2, df4)
     @test isequal(df3, df4[2:3, :])
     #Make sure unstack works with NULLs at the start of the value column

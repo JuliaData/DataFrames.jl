@@ -744,6 +744,13 @@ function _colinfo{T<:AbstractDataFrame}(dfs::Vector{T})
                 oldtyp = coltyps[idx]
                 if !(ct <: oldtyp)
                     coltyps[idx] = promote_type(oldtyp, ct)
+                    # Needed on Julia 0.4 since e.g.
+                    # promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T},
+                    # which is not a usable type: fall back to Nullable{Any}
+                    if VERSION < v"0.5.0-dev" &&
+                       coltyps[idx] <: Nullable && !isa(coltyps[idx].types[2], DataType)
+                        coltyps[idx] = Nullable{Any}
+                    end
                 end
                 nonnull_ct[idx] += !_isnullable(col)
             else # new column

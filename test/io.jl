@@ -411,7 +411,7 @@ module TestIO
     @test isequal(df1[1], NullableArray(["Alice","Bob","Carol","Eve"]))
     @test isequal(df1[2], NullableArray([36,24,58,49]))
     @test isequal(df1[3], NullableArray([3.14,0,2.71,7.77]))
-    @test isa(df1[1], NullableArray{Compat.ASCIIString,1})
+    @test isa(df1[1], NullableArray{Compat.UTF8String,1})
 
     # Test @wsv_str
     df2 = wsv"""
@@ -451,7 +451,7 @@ module TestIO
         Carol,  58,         2.71
         Eve,    49,         7.77
         """f
-    @test isa(df5[1], NullableNominalArray{Compat.ASCIIString,1})
+    @test isa(df5[1], NullableNominalArray{Compat.UTF8String,1})
 
     # Test 'c' flag
     df6 = csv"""
@@ -481,7 +481,7 @@ module TestIO
         #Carol,  58,         2.71
         Eve,    49,         7.77
         """fcH
-    @test isa(df8[1], NullableNominalArray{Compat.ASCIIString,1})
+    @test isa(df8[1], NullableNominalArray{Compat.UTF8String,1})
     @test names(df8) == [:x1,:x2,:x3]
     names!(df8, names(df1))
     @test isequal(df8, df1[[1,2,4],:])

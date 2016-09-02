@@ -3,7 +3,7 @@ module TestSort
     using DataFrames
 
     dv1 = NullableArray(Nullable{Int}[9, 1, 8, Nullable(), 3, 3, 7, Nullable()])
-    dv2 = NullableArray(Nullable{Float64}[9, 1, 8, Nullable(), 3, 3, 7, Nullable()])
+    dv2 = NullableArray(Nullable{Int}[9, 1, 8, Nullable(), 3, 3, 7, Nullable()])
     dv3 = NullableArray(1:8)
     pdv1 = NullableOrdinalArray(dv1)
 

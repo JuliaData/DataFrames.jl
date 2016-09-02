@@ -14,15 +14,15 @@ module TestJoin
 
     # Test output of various join types
     outer = DataFrame(ID = [1, 2, 2, 3, 4],
-                      Name = NullableArray(["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
-                      Job = NullableArray(["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
+                      Name = NullableArray(Nullable{String}["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
+                      Job = NullableArray(Nullable{String}["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
-    right = outer[[!isnull(x) for x in outer[:Job]], [:Name, :ID, :Job]]
-    left = outer[[!isnull(x) for x in outer[:Name]], :]
-    inner = left[[!isnull(x) for x in left[:Job]], :]
+    right = outer[Bool[!isnull(x) for x in outer[:Job]], [:Name, :ID, :Job]]
+    left = outer[Bool[!isnull(x) for x in outer[:Name]], :]
+    inner = left[Bool[!isnull(x) for x in left[:Job]], :]
     semi = unique(inner[:, [:ID, :Name]])
-    anti = left[[isnull(x) for x in left[:Job]], [:ID, :Name]]
+    anti = left[Bool[isnull(x) for x in left[:Job]], [:ID, :Name]]
 
     @test isequal(join(name, job, on = :ID), inner)
     @test isequal(join(name, job, on = :ID, kind = :inner), inner)

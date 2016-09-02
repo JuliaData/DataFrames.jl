@@ -6,8 +6,8 @@ module TestCat
     # hcat
     #
 
-    nvint = NullableArray([1, 2, Nullable(), 4])
-    nvstr = NullableArray(["one", "two", Nullable(), "four"])
+    nvint = NullableArray(Nullable{Int}[1, 2, Nullable(), 4])
+    nvstr = NullableArray(Nullable{String}["one", "two", Nullable(), "four"])
 
     df2 = DataFrame(Any[nvint, nvstr])
     df3 = DataFrame(Any[nvint])
@@ -81,8 +81,14 @@ module TestCat
     @test isnull(dfr[8,:x2])
 
     # Eltype promotion
-    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Float64}]
-    @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Float64}]
+    # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
+    if VERSION >= v"0.5.0-dev"
+        @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Float64}]
+        @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Float64}]
+    else
+        @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Any}]
+        @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Any}]
+    end
 
     # Minimal container type promotion
     dfa = DataFrame(a = NominalArray([1, 2, 2]))
@@ -94,7 +100,12 @@ module TestCat
     @test isequal(dfab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
     @test isequal(dfac[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
     @test isa(dfab[:a], NullableNominalVector{Int})
-    @test isa(dfac[:a], NullableNominalVector{Int})
+    # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
+    if VERSION >= v"0.5.0-dev"
+        @test isa(dfac[:a], NullableNominalVector{Int})
+    else
+        @test isa(dfac[:a], NullableNominalVector{Any})
+    end
     # ^^ container may flip if container promotion happens in Base/DataArrays
     dc = vcat(dfd, dfc)
     @test isequal(vcat(dfc, dfd), dc)
