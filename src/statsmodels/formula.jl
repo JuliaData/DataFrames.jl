@@ -487,7 +487,7 @@ creating the model matrix.
 
     I = size(dfrm, 1)
     J = mapreduce(x -> size(x, 2), +, blocks)
-    X = Array(eltype(T), I, J)
+    X = similar(blocks[1], I, J)
     i = 1
     for block in blocks
         len = size(block, 2)
