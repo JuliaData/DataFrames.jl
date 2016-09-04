@@ -411,8 +411,8 @@ end
 function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   val::Any,
                                   col_inds::AbstractVector{T})
-    dv = upgrade_scalar(df, val)
     for col_ind in col_inds
+        dv = upgrade_scalar(df, val)
         insert_single_column!(df, dv, col_ind)
     end
     return df
