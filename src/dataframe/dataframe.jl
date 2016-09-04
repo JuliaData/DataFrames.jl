@@ -344,7 +344,8 @@ function insert_multiple_entries!{T <: Real}(df::DataFrame,
     end
 end
 
-upgrade_vector(v::Union{Vector,Range,BitVector}) =
+upgrade_vector(v::Vector) = DataArray(copy(v), falses(length(v)))
+upgrade_vector(v::Union{Range,BitVector}) =
     DataArray(collect(v), falses(length(v)))
 upgrade_vector(adv::AbstractDataArray) = copy(adv)
 function upgrade_scalar(df::DataFrame, v::AbstractArray)
