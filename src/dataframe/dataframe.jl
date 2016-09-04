@@ -344,10 +344,9 @@ function insert_multiple_entries!{T <: Real}(df::DataFrame,
     end
 end
 
-upgrade_vector(v::Vector) = DataArray(v, falses(length(v)))
-upgrade_vector(v::Range) = DataArray([v;], falses(length(v)))
-upgrade_vector(v::BitVector) = DataArray(convert(Array{Bool}, v), falses(length(v)))
-upgrade_vector(adv::AbstractDataArray) = adv
+upgrade_vector(v::Union{Vector,Range,BitVector}) =
+    DataArray(collect(v), falses(length(v)))
+upgrade_vector(adv::AbstractDataArray) = copy(adv)
 function upgrade_scalar(df::DataFrame, v::AbstractArray)
     msg = "setindex!(::DataFrame, ...) only broadcasts scalars, not arrays"
     throw(ArgumentError(msg))
@@ -395,8 +394,8 @@ end
 function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   v::AbstractVector,
                                   col_inds::AbstractVector{T})
-    dv = upgrade_vector(v)
     for col_ind in col_inds
+        dv = upgrade_vector(v)
         insert_single_column!(df, dv, col_ind)
     end
     return df
@@ -411,8 +410,8 @@ end
 function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   val::Any,
                                   col_inds::AbstractVector{T})
-    dv = upgrade_scalar(df, val)
     for col_ind in col_inds
+        dv = upgrade_scalar(df, val)
         insert_single_column!(df, dv, col_ind)
     end
     return df
