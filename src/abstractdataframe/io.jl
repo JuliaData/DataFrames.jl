@@ -178,7 +178,7 @@ end
         write(io, "<th>$column_name</th>")
     end
     write(io, "</tr>")
-    tty_rows, tty_cols = Base.displaysize(io)
+    tty_rows, tty_cols = _displaysize(io)
     mxrow = min(n,tty_rows)
     for row in 1:mxrow
         write(io, "<tr>")
