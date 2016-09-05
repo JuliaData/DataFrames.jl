@@ -17,8 +17,4 @@ if VERSION < v"0.4.0-"
 end
 @deprecate DataArray(df::AbstractDataFrame, T::DataType) convert(DataArray{T}, df)
 
-function read_rda(args...)
-    depwarn("read_rda() is deprecated. R data format support has been moved to the " *
-            "RData package. Use FileIO.load() instead.")
-    FileIO.load(args...)
-end
+@deprecate read_rda(args...) RData.load(args...)
