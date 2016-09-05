@@ -539,4 +539,11 @@ mf = ModelFrame(y ~ 0 + (1 | x), df)
 @test_throws ErrorException ModelMatrix(mf)
 @test coefnames(mf) == Vector{Compat.UTF8String}()
 
+
+# Ensure X is not a view on df column
+df = DataFrame(x = [1.0,2.0,3.0], y = [4.0,5.0,6.0])
+mf = ModelFrame(y ~ 0 + x, df)
+X = ModelMatrix(mf).m
+X[1] = 0.0
+@test mf.df[1, :x] == 1.0
 end

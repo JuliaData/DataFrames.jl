@@ -485,7 +485,16 @@ creating the model matrix.
         error("Could not construct model matrix. Resulting matrix has 0 columns.")
     end
 
-    ModelMatrix{T}(reduce(hcat, blocks), assign)
+    I = size(dfrm, 1)
+    J = mapreduce(x -> size(x, 2), +, blocks)
+    X = similar(blocks[1], I, J)
+    i = 1
+    for block in blocks
+        len = size(block, 2)
+        X[:, i:(i + len - 1)] = block
+        i += len
+    end
+    ModelMatrix{T}(X, assign)
 end
 ModelMatrix(mf::ModelFrame) = ModelMatrix{Matrix{Float64}}(mf)
 
