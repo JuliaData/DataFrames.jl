@@ -4,7 +4,7 @@
     
     <url>
      <loc>None/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -13,49 +13,49 @@
         
     <url>
      <loc>None/man/getting_started/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>None/man/io/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>None/man/joins/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>None/man/split_apply_combine/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>None/man/reshaping_and_pivoting/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>None/man/sorting/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>None/man/formulas/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>None/man/pooling/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
@@ -65,19 +65,19 @@
         
     <url>
      <loc>None/lib/maintypes/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>None/lib/utilities/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>None/lib/manipulation/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
@@ -87,13 +87,13 @@
         
     <url>
      <loc>None/NEWS/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>None/LICENSE/</loc>
-     <lastmod>2016-09-05</lastmod>
+     <lastmod>2016-09-06</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
