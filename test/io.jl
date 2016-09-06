@@ -335,6 +335,7 @@ module TestIO
     isfile(tf) && rm(tf)
     writetable(tf, df, nastring="none")
     @test readcsv(tf) == ["A" "B"; 1 "b"; "none" "none"]
+    rm(tf)
 
     # Test writetable with append
     df1 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
@@ -376,6 +377,7 @@ module TestIO
     # Enforces matching column count if append == true
     writetable(tf, df3)
     @test_throws DimensionMismatch writetable(tf, df3b, header = false, append = true)
+    rm(tf)
 
     # Quotemarks are escaped
     tf = tempname()
@@ -390,6 +392,7 @@ module TestIO
     # Make sure the ' does get escaped when needed
     writetable(tf, df, quotemark='\'')
     @test readstring(tf) == "'a'\n'who\\'s'\n"
+    rm(tf)
 
     ### Tests for nonstandard string literals
     # Test basic @csv_str usage
