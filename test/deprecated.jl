@@ -1,5 +1,5 @@
 using DataFrames, FileIO, RDatasets, Compat
-mktemp() do fn
+mktemp() do fn, fio
     open(fn, "w") do f
         redirect_stderr(f) do
             dataset("datasets", "iris")
