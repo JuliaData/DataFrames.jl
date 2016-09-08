@@ -165,11 +165,6 @@ function getprintedwidth(maxwidths::Vector{Int}) # -> Int
     return totalwidth
 end
 
-# For Julia < 0.5
-if VERSION < v"0.5.0-dev+2023"
-    displaysize(io::IO) = Base.tty_size()
-end
-
 #' @description
 #'
 #' When rendering an AbstractDataFrame to a REPL window in chunks, each of
@@ -199,7 +194,7 @@ end
 #' chunkbounds = getchunkbounds(maxwidths, true)
 function getchunkbounds(maxwidths::Vector{Int},
                         splitchunks::Bool,
-                        availablewidth::Int=displaysize()[2]) # -> Vector{Int}
+                        availablewidth::Int=_displaysize()[2]) # -> Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
     if splitchunks
@@ -340,7 +335,7 @@ function showrows(io::IO,
     end
 
     rowmaxwidth = maxwidths[ncols + 1]
-    chunkbounds = getchunkbounds(maxwidths, splitchunks, displaysize(io)[2])
+    chunkbounds = getchunkbounds(maxwidths, splitchunks, _displaysize(io)[2])
     nchunks = length(chunkbounds) - 1
 
     for chunkindex in 1:nchunks
@@ -446,7 +441,7 @@ function Base.show(io::IO,
                    rowlabel::Symbol = @compat(Symbol("Row")),
                    displaysummary::Bool = true) # -> Void
     nrows = size(df, 1)
-    dsize = displaysize(io)
+    dsize = _displaysize(io)
     availableheight = dsize[1] - 5
     nrowssubset = fld(availableheight, 2)
     bound = min(nrowssubset - 1, nrows)
