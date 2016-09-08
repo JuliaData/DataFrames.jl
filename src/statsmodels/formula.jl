@@ -285,12 +285,11 @@ end
 
 const DEFAULT_CONTRASTS = DummyCoding
 
+## Set up contrasts:
+## Combine actual DF columns and contrast types if necessary to compute the
+## actual contrasts matrices, levels, and term names (using DummyCoding
+## as the default)
 function evalcontrasts(df::AbstractDataFrame, contrasts::Dict = Dict())
-
-    ## Set up contrasts:
-    ## Combine actual DF columns and contrast types if necessary to compute the
-    ## actual contrasts matrices, levels, and term names (using DummyCoding
-    ## as the default)
     evaledContrasts = Dict()
     for (term, col) in eachcol(df)
         is_categorical(col) || continue
