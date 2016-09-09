@@ -26,8 +26,7 @@ my_tests = ["utils.jl",
             "duplicates.jl",
             "show.jl",
             "statsmodel.jl",
-            "contrasts.jl",
-            "deprecated.jl"]
+            "contrasts.jl"]
 
 println("Running tests:")
 
