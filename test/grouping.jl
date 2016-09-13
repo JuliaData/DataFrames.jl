@@ -33,7 +33,7 @@ module TestGrouping
     @test isequal(combine(map(h, gd)), combine(map(g, ga)))
 
     # issue #960
-    x = NominalArray(collect(1:20))
+    x = CategoricalArray(collect(1:20))
     df = DataFrame(v1=x, v2=x)
     groupby(df, [:v1, :v2])
 
@@ -42,8 +42,8 @@ module TestGrouping
     @test isequal(sum(df2[:x]), Nullable(0))
 
     # Check that reordering levels does not confuse groupby
-    df = DataFrame(Key1 = NominalArray(["A", "A", "B", "B"]),
-                   Key2 = NominalArray(["A", "B", "A", "B"]),
+    df = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B"]),
+                   Key2 = CategoricalArray(["A", "B", "A", "B"]),
                    Value = 1:4)
     gd = groupby(df, :Key1)
     @test isequal(gd[1], DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2))

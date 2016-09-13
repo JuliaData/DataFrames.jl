@@ -2,7 +2,7 @@
 An AbstractDataFrame that stores a set of named columns
 
 The columns are normally AbstractVectors stored in memory,
-particularly a Vector, NullableVector, or NominalVector.
+particularly a Vector, NullableVector, or CategoricalVector.
 
 **Constructors**
 
@@ -135,7 +135,7 @@ function DataFrame(column_eltypes::Vector{DataType}, cnames::Vector{Symbol},
     columns = Array(Any, p)
     for j in 1:p
       if nominal[j]
-        columns[j] = NullableNominalArray(column_eltypes[j], nrows)
+        columns[j] = NullableCategoricalArray(column_eltypes[j], nrows)
       else
         columns[j] = NullableArray(column_eltypes[j], nrows)
       end
@@ -364,8 +364,8 @@ function insert_multiple_entries!{T <: Real}(df::DataFrame,
 end
 
 upgrade_vector{T<:Nullable}(v::AbstractArray{T}) = v
-upgrade_vector(v::NominalArray) = NullableNominalArray(v)
-upgrade_vector(v::OrdinalArray) = NullableOrdinalArray(v)
+upgrade_vector(v::CategoricalArray) = NullableCategoricalArray(v)
+upgrade_vector(v::CategoricalArray) = NullableCategoricalArray(v)
 upgrade_vector(v::AbstractArray) = NullableArray(v)
 
 function upgrade_scalar(df::DataFrame, v::AbstractArray)
@@ -789,8 +789,8 @@ end
 ##
 ##############################################################################
 
-pool(a::AbstractVector) = compact(NominalArray(a))
-pool{T<:Nullable}(a::AbstractVector{T}) = compact(NullableNominalArray(a))
+pool(a::AbstractVector) = compact(CategoricalArray(a))
+pool{T<:Nullable}(a::AbstractVector{T}) = compact(NullableCategoricalArray(a))
 
 function pool!(df::DataFrame, cname::@compat(Union{Integer, Symbol}))
     df[cname] = pool(df[cname])

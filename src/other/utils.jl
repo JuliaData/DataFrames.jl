@@ -136,15 +136,15 @@ countnull(a::NullableArray) = sum(a.isnull)
 #'
 #' Count the number of missing values in a NullableCategoricalArray.
 #'
-#' @field na::NominalArray The NominalArray whose missing values
+#' @field na::CategoricalArray The CategoricalArray whose missing values
 #'        are to be counted.
 #'
 #' @returns count::Int The number of null values in `a`.
 #'
 #' @examples
 #'
-#' DataFrames.countnull(NominalArray([1, 2, 3]))
-function countnull(a::NominalArray)
+#' DataFrames.countnull(CategoricalArray([1, 2, 3]))
+function countnull(a::CategoricalArray)
     res = 0
     for x in a.refs
         res += x == 0

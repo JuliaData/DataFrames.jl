@@ -640,7 +640,7 @@ function builddf(rows::Integer,
         end
 
         if o.makefactors && !(is_int || is_float || is_bool)
-            columns[j] = NullableNominalArray(values, missing)
+            columns[j] = NullableCategoricalArray(values, missing)
         else
             columns[j] = NullableArray(values, missing)
         end
@@ -877,7 +877,7 @@ readtable(filename, [keyword options])
 *   `nastrings::Vector{String}` -- Translate any of the strings into this vector into a NULL value. Defaults to `["", "NULL", "NA"]`.
 *   `truestrings::Vector{String}` -- Translate any of the strings into this vector into a Boolean `true`. Defaults to `["T", "t", "TRUE", "true"]`.
 *   `falsestrings::Vector{String}` -- Translate any of the strings into this vector into a Boolean `false`. Defaults to `["F", "f", "FALSE", "false"]`.
-*   `makefactors::Bool` -- Convert string columns into `NominalVector`'s for use as factors. Defaults to `false`.
+*   `makefactors::Bool` -- Convert string columns into `CategoricalVector`'s for use as factors. Defaults to `false`.
 *   `nrows::Int` -- Read only `nrows` from the file. Defaults to `-1`, which indicates that the entire file should be read.
 *   `names::Vector{Symbol}` -- Use the values in this array as the names for all columns instead of or in lieu of the names in the file's header. Defaults to `[]`, which indicates that the header should be used if present or that numeric names should be invented if there is no header.
 *   `eltypes::Vector` -- Specify the types of all columns. Defaults to `[]`.
@@ -975,7 +975,7 @@ literals. Parses the string `s` containing delimiter-separated tabular data
 argument contains a list of flag characters, which, if present, are equivalent
 to supplying named arguments to `readtable` as follows:
 
-- `f`: `makefactors=true`, convert string columns to `NominalArray` columns
+- `f`: `makefactors=true`, convert string columns to `CategoricalArray` columns
 - `c`: `allowcomments=true`, ignore lines beginning with `#`
 - `H`: `header=false`, do not interpret the first line as column names
 """
@@ -1004,7 +1004,7 @@ separated values (CSV) using `readtable`, just as if it were being loaded from
 an external file. The suffix flags `f`, `c`, and `H` are optional. If present,
 they are equivalent to supplying named arguments to `readtable` as follows:
 
-* `f`: `makefactors=true`, convert string columns to `NominalArray` columns
+* `f`: `makefactors=true`, convert string columns to `CategoricalArray` columns
 * `c`: `allowcomments=true`, ignore lines beginning with `#`
 * `H`: `header=false`, do not interpret the first line as column names
 
@@ -1038,7 +1038,7 @@ character, just as if it were being loaded from an external file. The suffix
 flags `f`, `c`, and `H` are optional. If present, they are equivalent to
 supplying named arguments to `readtable` as follows:
 
-* `f`: `makefactors=true`, convert string columns to `NominalArray` columns
+* `f`: `makefactors=true`, convert string columns to `CategoricalArray` columns
 * `c`: `allowcomments=true`, ignore lines beginning with `#`
 * `H`: `header=false`, do not interpret the first line as column names
 
@@ -1074,7 +1074,7 @@ loaded from an external file. The suffix flags `f`, `c`, and `H` are optional.
 If present, they are equivalent to supplying named arguments to `readtable` as
 follows:
 
-* `f`: `makefactors=true`, convert string columns to `NominalArray` columns
+* `f`: `makefactors=true`, convert string columns to `CategoricalArray` columns
 * `c`: `allowcomments=true`, ignore lines beginning with `#`
 * `H`: `header=false`, do not interpret the first line as column names
 
@@ -1107,7 +1107,7 @@ separated values (TSV) using `readtable`, just as if it were being loaded from
 an external file. The suffix flags `f`, `c`, and `H` are optional. If present,
 they are equivalent to supplying named arguments to `readtable` as follows:
 
-* `f`: `makefactors=true`, convert string columns to `NominalArray` columns
+* `f`: `makefactors=true`, convert string columns to `CategoricalArray` columns
 * `c`: `allowcomments=true`, ignore lines beginning with `#`
 * `H`: `header=false`, do not interpret the first line as column names
 

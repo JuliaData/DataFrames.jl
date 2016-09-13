@@ -4,7 +4,7 @@ using Base.Test
 using DataFrames
 
 
-d = DataFrame(x = NominalVector([:a, :b, :c, :a, :a, :b]))
+d = DataFrame(x = CategoricalVector([:a, :b, :c, :a, :a, :b]))
 
 mf = ModelFrame(Formula(nothing, :x), d)
 

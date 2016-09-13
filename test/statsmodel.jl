@@ -61,7 +61,7 @@ io = IOBuffer()
 show(io, m)
 
 ## with categorical variables
-d[:x1p] = NullableNominalArray(d[:x1])
+d[:x1p] = NullableCategoricalArray(d[:x1])
 f2 = y ~ x1p
 m2 = fit(DummyMod, f2, d)
 
@@ -73,11 +73,11 @@ m2 = fit(DummyMod, f2, d)
 ## predict w/ new data with _extra_ levels (throws an error)
 d3 = deepcopy(d)
 d3[1, :x1] = 0
-d3[:x1p] = NullableNominalVector(d3[:x1])
+d3[:x1p] = NullableCategoricalVector(d3[:x1])
 @test_throws ArgumentError predict(m2, d3)
 
 ## fit with contrasts specified
-d[:x2p] = NullableNominalVector(d[:x2])
+d[:x2p] = NullableCategoricalVector(d[:x2])
 f3 = y ~ x1p + x2p
 m3 = fit(DummyMod, f3, d)
 fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding()))

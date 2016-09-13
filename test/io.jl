@@ -230,7 +230,7 @@ module TestIO
     filename = "$data/factors/mixedvartypes.csv"
     df = readtable(filename, makefactors = true)
 
-    @test isa(df[:factorvar], NullableNominalArray{Compat.UTF8String,1})
+    @test isa(df[:factorvar], NullableCategoricalArray{Compat.UTF8String,1})
     @test isa(df[:floatvar], NullableArray{Float64,1})
 
     # Readtable shouldn't silently drop data when reading highly compressed gz.
@@ -451,7 +451,7 @@ module TestIO
         Carol,  58,         2.71
         Eve,    49,         7.77
         """f
-    @test isa(df5[1], NullableNominalArray{Compat.UTF8String,1})
+    @test isa(df5[1], NullableCategoricalArray{Compat.UTF8String,1})
 
     # Test 'c' flag
     df6 = csv"""
@@ -481,7 +481,7 @@ module TestIO
         #Carol,  58,         2.71
         Eve,    49,         7.77
         """fcH
-    @test isa(df8[1], NullableNominalArray{Compat.UTF8String,1})
+    @test isa(df8[1], NullableCategoricalArray{Compat.UTF8String,1})
     @test names(df8) == [:x1,:x2,:x3]
     names!(df8, names(df1))
     @test isequal(df8, df1[[1,2,4],:])

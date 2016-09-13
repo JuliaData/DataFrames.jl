@@ -75,10 +75,10 @@ module TestDataFrame
     @test x0[:d] == Int[]
 
     # similar / nulls
-    df = DataFrame(a = 1, b = "b", c = NominalArray([3.3]))
+    df = DataFrame(a = 1, b = "b", c = CategoricalArray([3.3]))
     nulldf = DataFrame(a = NullableArray(Int, 2),
                        b = NullableArray(String, 2),
-                       c = NullableNominalArray(Float64, 2))
+                       c = NullableCategoricalArray(Float64, 2))
     @test isequal(nulldf, similar(df, 2))
     @test isequal(nulldf, DataFrames.similar_nullable(df, 2))
 
@@ -146,7 +146,7 @@ module TestDataFrame
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == NullableVector{Int}
     @test typeof(df[:, 2]) == NullableVector{Float64}
-    @test typeof(df[:, 3]) == NullableNominalVector{Compat.UTF8String,UInt32}
+    @test typeof(df[:, 3]) == NullableCategoricalVector{Compat.UTF8String,UInt32}
     @test allnull(df[:, 1])
     @test allnull(df[:, 2])
     @test allnull(df[:, 3])
@@ -297,18 +297,18 @@ module TestDataFrame
               describe(f, DataFrame(a=NullableArray([1, 2]),
                                     b=NullableArray(Nullable{String}["3", Nullable()])))
         @test nothing ==
-              describe(f, DataFrame(a=NominalArray([1, 2]),
-                                    b=NullableNominalArray(Nullable{String}["3", Nullable()])))
+              describe(f, DataFrame(a=CategoricalArray([1, 2]),
+                                    b=NullableCategoricalArray(Nullable{String}["3", Nullable()])))
         @test nothing == describe(f, [1, 2, 3])
         @test nothing == describe(f, NullableArray([1, 2, 3]))
-        @test nothing == describe(f, NominalArray([1, 2, 3]))
+        @test nothing == describe(f, CategoricalArray([1, 2, 3]))
         @test nothing == describe(f, Any["1", "2", Nullable()])
         @test nothing == describe(f, NullableArray(Nullable{String}["1", "2", Nullable()]))
-        @test nothing == describe(f, NullableNominalArray(Nullable{String}["1", "2", Nullable()]))
+        @test nothing == describe(f, NullableCategoricalArray(Nullable{String}["1", "2", Nullable()]))
     end
 
     #Check the output of unstack
-    df = DataFrame(Fish = NominalArray(["Bob", "Bob", "Batman", "Batman"]),
+    df = DataFrame(Fish = CategoricalArray(["Bob", "Bob", "Batman", "Batman"]),
                    Key = ["Mass", "Color", "Mass", "Color"],
                    Value = ["12 g", "Red", "18 g", "Grey"])
     # Check that reordering levels does not confuse unstack

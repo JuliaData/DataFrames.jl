@@ -123,8 +123,8 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     ##     http://wesmckinney.com/blog/?p=489
 
     ncols = length(cols)
-    # use NominalArray to get a set of integer references for each unique item
-    nv = NullableNominalArray(d[cols[ncols]])
+    # use CategoricalArray to get a set of integer references for each unique item
+    nv = NullableCategoricalArray(d[cols[ncols]])
     # if there are NULLs, add 1 to the refs to avoid underflows in x later
     anynulls = (findfirst(nv.refs, 0) > 0 ? 1 : 0)
     # use UInt32 instead of the original array's integer size since the number of levels can be high
@@ -140,7 +140,7 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     ngroups = length(levels(nv)) + anynulls
     # if there's more than 1 column, do roughly the same thing repeatedly
     for j = (ncols - 1):-1:1
-        nv = NullableNominalArray(d[cols[j]])
+        nv = NullableCategoricalArray(d[cols[j]])
         anynulls = (findfirst(nv.refs, 0) > 0 ? 1 : 0)
         for i = 1:nrow(d)
             if nv.refs[i] != 0

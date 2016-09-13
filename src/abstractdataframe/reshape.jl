@@ -164,9 +164,9 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     # `rowkey` integer indicating which column to place along rows
     # `colkey` integer indicating which column to place along column headers
     # `value` integer indicating which column has values
-    refkeycol = NullableNominalArray(df[rowkey])
+    refkeycol = NullableCategoricalArray(df[rowkey])
     valuecol = df[value]
-    keycol = NullableNominalArray(df[colkey])
+    keycol = NullableCategoricalArray(df[colkey])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     T = eltype(valuecol)
@@ -204,7 +204,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     for i in 1:length(groupidxs)
         rowkey[groupidxs[i]] = i
     end
-    keycol = NullableNominalArray(df[colkey])
+    keycol = NullableCategoricalArray(df[colkey])
     valuecol = df[value]
     df1 = df[g.idx[g.starts], g.cols]
     Nrow = length(g)
@@ -297,7 +297,7 @@ Base.ndims(v::StackedVector) = 1
 Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
 Base.similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
 
-CategoricalArrays.NominalArray(v::StackedVector) = NominalArray(v[:]) # could be more efficient
+CategoricalArrays.CategoricalArray(v::StackedVector) = CategoricalArray(v[:]) # could be more efficient
 
 
 """
@@ -357,8 +357,8 @@ Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.inner, v.o
 Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 Base.unique(v::RepeatedVector) = unique(v.parent)
 
-function CategoricalArrays.NominalArray(v::RepeatedVector)
-    res = CategoricalArrays.NominalArray(v.parent)
+function CategoricalArrays.CategoricalArray(v::RepeatedVector)
+    res = CategoricalArrays.CategoricalArray(v.parent)
     res.refs = repeat(res.refs, inner = [v.inner], outer = [v.outer])
     res
 end

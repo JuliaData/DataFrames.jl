@@ -91,20 +91,20 @@ module TestCat
     end
 
     # Minimal container type promotion
-    dfa = DataFrame(a = NominalArray([1, 2, 2]))
-    dfb = DataFrame(a = NominalArray([2, 3, 4]))
+    dfa = DataFrame(a = CategoricalArray([1, 2, 2]))
+    dfb = DataFrame(a = CategoricalArray([2, 3, 4]))
     dfc = DataFrame(a = NullableArray([2, 3, 4]))
     dfd = DataFrame(Any[2:4], [:a])
     dfab = vcat(dfa, dfb)
     dfac = vcat(dfa, dfc)
     @test isequal(dfab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
     @test isequal(dfac[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
-    @test isa(dfab[:a], NullableNominalVector{Int})
+    @test isa(dfab[:a], NullableCategoricalVector{Int})
     # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
     if VERSION >= v"0.5.0-dev"
-        @test isa(dfac[:a], NullableNominalVector{Int})
+        @test isa(dfac[:a], NullableCategoricalVector{Int})
     else
-        @test isa(dfac[:a], NullableNominalVector{Any})
+        @test isa(dfac[:a], NullableCategoricalVector{Any})
     end
     # ^^ container may flip if container promotion happens in Base/DataArrays
     dc = vcat(dfd, dfc)
@@ -118,7 +118,7 @@ module TestCat
     # Missing columns
     rename!(dfd, :a, :b)
     dfda = DataFrame(b = NullableArray(Nullable{Int}[2, 3, 4, Nullable(), Nullable(), Nullable()]),
-                     a = NullableNominalVector(Nullable{Int}[Nullable(), Nullable(), Nullable(), 1, 2, 2]))
+                     a = NullableCategoricalVector(Nullable{Int}[Nullable(), Nullable(), Nullable(), 1, 2, 2]))
     @test isequal(vcat(dfd, dfa), dfda)
 
     # Alignment

@@ -78,7 +78,7 @@ module TestData
     N = 20
     #Cast to Int64 as rand() behavior differs between Int32/64
     d1 = NullableArray(rand(map(Int64, 1:2), N))
-    d2 = NullableNominalArray(Nullable{String}["A", "B", Nullable()])[rand(map(Int64, 1:3), N)]
+    d2 = NullableCategoricalArray(Nullable{String}["A", "B", Nullable()])[rand(map(Int64, 1:3), N)]
     d3 = NullableArray(randn(N))
     d4 = NullableArray(randn(N))
     df7 = DataFrame(Any[d1, d2, d3], [:d1, :d2, :d3])
@@ -86,7 +86,7 @@ module TestData
     #test_group("groupby")
     gd = groupby(df7, :d1)
     @test length(gd) == 2
-    # @test isequal(gd[2]["d2"], NominalVector["A", "B", Nullable(), "A", Nullable(), Nullable(), Nullable(), Nullable()])
+    # @test isequal(gd[2]["d2"], CategoricalVector["A", "B", Nullable(), "A", Nullable(), Nullable(), Nullable(), Nullable()])
     @test isequal(sum(gd[2][:d3]), sum(df7[:d3][Vector(df7[:d1]) .== 2]))
 
     g1 = groupby(df7, [:d1, :d2])

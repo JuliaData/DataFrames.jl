@@ -10,14 +10,14 @@ module TestConstructors
     @test isequal(df.columns, Any[])
     @test isequal(df.colindex, Index())
 
-    df = DataFrame(Any[NullableNominalVector(zeros(3)),
-                       NullableNominalVector(ones(3))],
+    df = DataFrame(Any[NullableCategoricalVector(zeros(3)),
+                       NullableCategoricalVector(ones(3))],
                    Index([:x1, :x2]))
     @test size(df, 1) == 3
     @test size(df, 2) == 2
 
-    @test isequal(df, DataFrame(Any[NullableNominalVector(zeros(3)),
-                                    NullableNominalVector(ones(3))]))
+    @test isequal(df, DataFrame(Any[NullableCategoricalVector(zeros(3)),
+                                    NullableCategoricalVector(ones(3))]))
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0],
                                 x2 = [1.0, 1.0, 1.0]))
 

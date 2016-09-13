@@ -9,11 +9,11 @@ similar_nullable{T}(dv::AbstractArray{T}, dims::@compat(Union{Int, Tuple{Vararg{
 similar_nullable{T<:Nullable}(dv::AbstractArray{T}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
     NullableArray(eltype(T), dims)
 
-similar_nullable{T,R}(dv::NominalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
-    NullableNominalArray(T, dims)
+similar_nullable{T,R}(dv::CategoricalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
+    NullableCategoricalArray(T, dims)
 
-similar_nullable{T,R}(dv::OrdinalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
-    NullableOrdinalArray(T, dims)
+similar_nullable{T,R}(dv::CategoricalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
+    NullableCategoricalArray(T, dims)
 
 similar_nullable(df::AbstractDataFrame, dims::Int) =
     DataFrame(Any[similar_nullable(x, dims) for x in columns(df)], copy(index(df)))
@@ -106,9 +106,9 @@ function sharepools{S,N}(v1::Union{CategoricalArray{S,N}, NullableCategoricalArr
             refs2[i] = tidx2[v2.refs[i]]
         end
     end
-    pool = NominalPool{S, R}(index)
-    return (NominalArray(refs1, pool),
-            NominalArray(refs2, pool))
+    pool = CategoricalPool{S, R}(index)
+    return (CategoricalArray(refs1, pool),
+            CategoricalArray(refs2, pool))
 end
 
 function sharepools{S,N}(v1::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}},
@@ -181,19 +181,19 @@ function sharepools(v1::AbstractArray,
         end
     end
 
-    pool = NominalPool(pool)
-    return (NominalArray(refs1, pool),
-            NominalArray(refs2, pool))
+    pool = CategoricalPool(pool)
+    return (CategoricalArray(refs1, pool),
+            CategoricalArray(refs2, pool))
 end
 
 sharepools(v1::NullableArray, v2::NullableArray) =
-    sharepools(NullableNominalArray(v1), NullableNominalArray(v2))
+    sharepools(NullableCategoricalArray(v1), NullableCategoricalArray(v2))
 
 sharepools(v1::AbstractArray, v2::NullableArray) =
-    sharepools(v1, NullableNominalArray(v2))
+    sharepools(v1, NullableCategoricalArray(v2))
 
 sharepools(v1::NullableArray, v2::AbstractArray) =
-    sharepools(NullableNominalArray(v2), v1)
+    sharepools(NullableCategoricalArray(v2), v1)
 
 function sharepools(df1::AbstractDataFrame, df2::AbstractDataFrame)
     # This method exists to allow merge to work with multiple columns.

@@ -5,16 +5,16 @@ module TestSort
     dv1 = NullableArray(Nullable{Int}[9, 1, 8, Nullable(), 3, 3, 7, Nullable()])
     dv2 = NullableArray(Nullable{Int}[9, 1, 8, Nullable(), 3, 3, 7, Nullable()])
     dv3 = NullableArray(1:8)
-    pdv1 = NullableOrdinalArray(dv1)
+    cv1 = NullableCategoricalArray(dv1, ordered=true)
 
-    d = DataFrame(dv1 = dv1, dv2 = dv2, dv3 = dv3, pdv1 = pdv1)
+    d = DataFrame(dv1 = dv1, dv2 = dv2, dv3 = dv3, cv1 = cv1)
 
     @test sortperm(d) == sortperm(dv1)
     @test sortperm(d[[:dv3, :dv1]]) == sortperm(dv3)
     @test isequal(sort(d, cols=:dv1)[:dv3], NullableArray(sortperm(dv1)))
     @test isequal(sort(d, cols=:dv2)[:dv3], NullableArray(sortperm(dv1)))
-    @test isequal(sort(d, cols=:pdv1)[:dv3], NullableArray(sortperm(dv1)))
-    @test isequal(sort(d, cols=[:dv1, :pdv1])[:dv3], NullableArray(sortperm(dv1)))
+    @test isequal(sort(d, cols=:cv1)[:dv3], NullableArray(sortperm(dv1)))
+    @test isequal(sort(d, cols=[:dv1, :cv1])[:dv3], NullableArray(sortperm(dv1)))
     @test isequal(sort(d, cols=[:dv1, :dv3])[:dv3], NullableArray(sortperm(dv1)))
 
     df = DataFrame(rank=rand(1:12, 1000),

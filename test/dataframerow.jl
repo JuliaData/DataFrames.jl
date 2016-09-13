@@ -7,7 +7,7 @@ module TestDataFrameRow
                                                      1.2, 2.0,
                                                      Nullable(), Nullable()]),
                    c=NullableArray(Nullable{String}["A", "B", "C", "A", "B", Nullable()]),
-                   d=NullableNominalArray(Nullable{Symbol}[:A,  Nullable(),  :C,  :A,
+                   d=NullableCategoricalArray(Nullable{Symbol}[:A,  Nullable(),  :C,  :A,
                                                            Nullable(),  :C]))
     df2 = DataFrame(a = NullableArray([1, 2, 3]))
 

@@ -411,7 +411,7 @@ function StatsBase.describe{T<:Number}(io, nv::AbstractArray{T})
     return
 end
 function StatsBase.describe{T}(io, nv::AbstractArray{T})
-    ispooled = isa(nv, NominalVector) ? "Pooled " : ""
+    ispooled = isa(nv, CategoricalVector) ? "Pooled " : ""
     nulls = countnull(nv)
     # if nothing else, just give the length and element type and NA count
     println(io, "Length    $(length(nv))")
@@ -650,7 +650,7 @@ unique!(df)  # modifies df
 function nonuniquekey(df::AbstractDataFrame)
     # Here's another (probably a lot faster) way to do `nonunique`
     # by grouping on all columns. It will fail if columns cannot be
-    # made into NominalVector's.
+    # made into CategoricalVector's.
     gd = groupby(df, _names(df))
     idx = [1:length(gd.idx)][gd.idx][gd.starts]
     res = fill(true, nrow(df))
