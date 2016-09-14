@@ -285,16 +285,11 @@ end
 
 const DEFAULT_CONTRASTS = DummyCoding
 
-function ModelFrame(trms::Terms, d::AbstractDataFrame;
-                    contrasts::Dict = Dict())
-    df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
-    names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
-    for c in eachcol(df) dropunusedlevels!(c[2]) end
-
-    ## Set up contrasts:
-    ## Combine actual DF columns and contrast types if necessary to compute the
-    ## actual contrasts matrices, levels, and term names (using DummyCoding
-    ## as the default)
+## Set up contrasts:
+## Combine actual DF columns and contrast types if necessary to compute the
+## actual contrasts matrices, levels, and term names (using DummyCoding
+## as the default)
+function evalcontrasts(df::AbstractDataFrame, contrasts::Dict = Dict())
     evaledContrasts = Dict()
     for (term, col) in eachcol(df)
         is_categorical(col) || continue
@@ -303,6 +298,16 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
                                                 DEFAULT_CONTRASTS(),
                                                 col)
     end
+    return evaledContrasts
+end
+
+function ModelFrame(trms::Terms, d::AbstractDataFrame;
+                    contrasts::Dict = Dict())
+    df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
+    names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
+    for c in eachcol(df) dropunusedlevels!(c[2]) end
+
+    evaledContrasts = evalcontrasts(df, contrasts)
 
     ## Check for non-redundant terms, modifying terms in place
     check_non_redundancy!(trms, df)
@@ -310,6 +315,7 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
     ModelFrame(df, trms, msng, evaledContrasts)
 end
 
+ModelFrame(df::AbstractDataFrame, term::Terms, msng::BitArray) = ModelFrame(df, term, msng, evalcontrasts(df))
 ModelFrame(f::Formula, d::AbstractDataFrame; kwargs...) = ModelFrame(Terms(f), d; kwargs...)
 ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), d; kwargs...)
 
