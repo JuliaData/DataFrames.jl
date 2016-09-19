@@ -370,8 +370,11 @@ function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::PooledDataVector, c
     ## contrast matrix
     reindex = [findfirst(contrast.levels, l) for l in levels(v)]
     contrastmatrix = convert(T, contrast.matrix)
-    return contrastmatrix[reindex[v.refs], :]
+    return indexrows(contrastmatrix, reindex[v.refs])
 end
+
+indexrows(m::SparseMatrixCSC, ind::Vector{Int}) = m'[:, ind]'
+indexrows(m::AbstractMatrix, ind::Vector{Int}) = m[ind, :]
 
 """
     expandcols{T<:AbstractFloatMatrix}(trm::Vector{T})
