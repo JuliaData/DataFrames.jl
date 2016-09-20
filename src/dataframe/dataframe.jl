@@ -365,10 +365,13 @@ function Base.setindex!(df::DataFrame,
 end
 
 # df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(DF) if NCOL(DF) > 0)
-function Base.setindex!(df::DataFrame,
-                v::Any,
-                col_ind::ColumnIndex)
-    insert_single_column!(df, upgrade_scalar(df, v), col_ind)
+function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
+    if haskey(index(df), col_ind)
+        fill!(df[col_ind], v)
+    else
+        insert_single_column!(df, upgrade_scalar(df, v), col_ind)
+    end
+    return df
 end
 
 # df[MultiColumnIndex] = DataFrame
@@ -397,7 +400,7 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   col_inds::AbstractVector{T})
     dv = upgrade_vector(v)
     for col_ind in col_inds
-        insert_single_column!(df, dv, col_ind)
+        df[col_ind] = dv
     end
     return df
 end
@@ -411,9 +414,8 @@ end
 function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
                                   val::Any,
                                   col_inds::AbstractVector{T})
-    dv = upgrade_scalar(df, val)
     for col_ind in col_inds
-        insert_single_column!(df, dv, col_ind)
+        df[col_ind] = val
     end
     return df
 end
