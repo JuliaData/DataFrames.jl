@@ -19,7 +19,7 @@ A companion type, `NullableCategoricalArray`, allows storing missing values in t
 In addition to representing repeated data efficiently, the `CategoricalArray` type allows us to determine efficiently the allowed levels of the variable at any time using the `levels` function (note that levels may or may not be actually used in the data):
 
 ```julia
-levels(cv)
+CategoricalArrays.levels(cv)
 ```
 
 The `levels!` function also allows changing the order of appearance of the levels, which can be useful for display purposes or when working with ordered variables.
@@ -27,13 +27,13 @@ The `levels!` function also allows changing the order of appearance of the level
 By default, a `CategoricalArray` is able to represent 2<sup>32</sup>differents levels. You can use less memory by calling the `compact` function:
 
 ```julia
-cv = compact(cv)
+cv = CategoricalArrays.compact(cv)
 ```
 
 Often, you will have factors encoded inside a DataFrame with `Array` or `NullableArray` columns instead of `CategoricalArray` or `NullableCategoricalArray` columns. You can do conversion of a single column using the `categorical` function:
 
 ```julia
-cv = categorical(v)
+cv = CategoricalArray(v)
 ```
 
 Or you can edit the columns of a `DataFrame` in-place using the `categorical!` function:

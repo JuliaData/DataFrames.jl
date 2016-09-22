@@ -47,4 +47,3 @@ contrasts!(mf, X = HelmertCoding())
 ```
 
 The construction of model matrices makes it easy to formulate complex statistical models. These are used to good effect by the [GLM Package.](https://github.com/JuliaStats/GLM.jl)
-

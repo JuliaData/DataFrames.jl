@@ -6,7 +6,7 @@ A `DataFrame` supports many forms of indexing.
 julia> using DataFrames
 
 julia> df = DataFrame(A = 1:10, B = 2:2:20)
-10×2 DataFrame
+10×2 DataFrames.DataFrame
 │ Row │ A  │ B  │
 ├─────┼────┼────┤
 │ 1   │ 1  │ 2  │
@@ -25,7 +25,7 @@ Referring to the first column by index or name:
 
 ```julia
 julia> df[1]
-10-element DataArray{Int64,1}:
+10-element NullableArrays.NullableArray{Int64,1}:
   1
   2
   3
@@ -38,7 +38,7 @@ julia> df[1]
  10
 
 julia> df[:A]
-10-element DataArray{Int64,1}:
+10-element NullableArrays.NullableArray{Int64,1}:
   1
   2
   3
@@ -55,17 +55,17 @@ Refering to the first element of the first column:
 
 ```julia
 julia> df[1, 1]
-1
+Nullable{Int64}(1)
 
 julia> df[1, :A]
-1
+Nullable{Int64}(1)
 ```
 
 Selecting a subset of rows by index and an (ordered) subset of columns by name:
 
 ```julia
 julia> df[1:3, [:A, :B]]
-3×2 DataFrame
+3×2 DataFrames.DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ 1 │ 2 │
@@ -73,7 +73,7 @@ julia> df[1:3, [:A, :B]]
 │ 3   │ 3 │ 6 │
 
 julia> df[1:3, [:B, :A]]
-3×2 DataFrame
+3×2 DataFrames.DataFrame
 │ Row │ B │ A │
 ├─────┼───┼───┤
 │ 1   │ 2 │ 1 │

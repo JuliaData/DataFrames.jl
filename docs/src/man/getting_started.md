@@ -46,7 +46,7 @@ dropnull(nv)
 mean(dropnull(nv))
 ```
 
-Instead of removing `null` values, you can try to conver the `NullableArray` into a normal Julia `Array` using `convert`:
+Instead of removing `null` values, you can try to convert the `NullableArray` into a normal Julia `Array` using `convert`:
 
 ```julia
 convert(Array, nv)
@@ -95,8 +95,8 @@ ncols = size(df, 2)
 We can also look at small subsets of the data in a couple of different ways:
 
 ```julia
-head(df)
-tail(df)
+DataFrames.head(df)
+DataFrames.tail(df)
 
 df[1:3, :]
 ```
@@ -137,8 +137,7 @@ For example, we can access Fisher's iris data set using the following functions:
 ```julia
 using RDatasets
 iris = dataset("datasets", "iris")
-head(iris)
+DataFrames.head(iris)
 ```
 
 In the next section, we'll discuss generic I/O strategy for reading and writing `DataFrame` objects that you can use to import and export your own data files.
-

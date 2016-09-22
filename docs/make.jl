@@ -1,4 +1,4 @@
-using Documenter, DataFrames, DataArrays
+using Documenter, DataFrames
 
 # Build documentation.
 # ====================
