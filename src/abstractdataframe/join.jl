@@ -256,11 +256,11 @@ join(df1::AbstractDataFrame,
   - `:cross` : a full Cartesian product of the key combinations; every
     row of `df1` is matched with every row of `df2`
 
-`NA`s are filled in where needed to complete joins.
+Null values are filled in where needed to complete joins.
 
 ### Result
 
-* `::DataFrame` : the joined DataFrame 
+* `::DataFrame` : the joined DataFrame
 
 ### Examples
 

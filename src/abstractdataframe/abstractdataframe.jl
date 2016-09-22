@@ -214,7 +214,7 @@ function Base.size(df::AbstractDataFrame, i::Integer)
     elseif i == 2
         ncol(df)
     else
-        throw(ArgumentError("DataFrames have only two dimensions"))
+        throw(ArgumentError("DataFrames only have two dimensions"))
     end
 end
 
@@ -333,7 +333,7 @@ dump(io::IO, df::AbstractDataFrame, n::Int = 5)
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-str(df)
+dump(df)
 ```
 
 """
@@ -448,7 +448,7 @@ end
 
 
 """
-Indexes of complete cases (rows without NA's)
+Indexes of complete cases (rows without null values)
 
 ```julia
 complete_cases(df::AbstractDataFrame)
@@ -468,8 +468,8 @@ See also [`complete_cases!`]({ref}).
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df[[1,4,5], :x] = NA
-df[[9,10], :y] = NA
+df[[1,4,5], :x] = Nullable()
+df[[9,10], :y] = Nullable()
 complete_cases(df)
 ```
 
@@ -483,7 +483,7 @@ function complete_cases(df::AbstractDataFrame)
 end
 
 """
-Delete rows with NA's.
+Delete rows with null values.
 
 ```julia
 complete_cases!(df::AbstractDataFrame)
@@ -503,8 +503,8 @@ See also [`complete_cases`]({ref}).
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df[[1,4,5], :x] = NA
-df[[9,10], :y] = NA
+df[[1,4,5], :x] = Nullable()
+df[[9,10], :y] = Nullable()
 complete_cases!(df)
 ```
 
@@ -557,7 +557,7 @@ function Base.convert{T}(::Type{NullableMatrix{T}}, df::AbstractDataFrame)
 end
 
 """
-Indexes of complete cases (rows without nulls)
+Indexes of duplicate rows (a row that is a duplicate of a prior row)
 
 ```julia
 nonunique(df::AbstractDataFrame)
@@ -682,7 +682,7 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 ##############################################################################
 
 # hcat's first argument must be an AbstractDataFrame
-# Trailing arguments (currently) may also be DataVectors, Vectors, or scalars.
+# Trailing arguments (currently) may also be NullableVectors, Vectors, or scalars.
 
 # hcat! is defined in dataframes/dataframes.jl
 # Its first argument (currently) must be a DataFrame.
@@ -693,7 +693,7 @@ Base.hcat(df::AbstractDataFrame, x) = hcat!(df[:, :], x)
 Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
 
 # vcat only accepts DataFrames. Finds union of columns, maintaining order
-# of first df. Missing data becomes NAs.
+# of first df. Missing data become null values.
 
 Base.vcat(df::AbstractDataFrame) = df
 
@@ -776,7 +776,7 @@ end
 ##
 ## Hashing
 ##
-## Make sure this agrees with is_equals()
+## Make sure this agrees with isequals()
 ##
 ##############################################################################
 
