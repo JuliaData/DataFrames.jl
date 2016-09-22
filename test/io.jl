@@ -366,10 +366,10 @@ module TestIO
 
     # Overwrites file if append == false
     writetable(tf, df1)
-    writetable(tf, df2)
-    @test readtable(tf) == df2
+    writetable(tf, df3)
+    @test readtable(tf) == df3
 
-    # Enforces matching column names iff append == true && header == true
+    # Enforces matching column names if append == true && header == true
     writetable(tf, df2)
     @test_throws KeyError writetable(tf, df3, append = true)
     writetable(tf, df3, header = false, append = true)
@@ -378,6 +378,14 @@ module TestIO
     writetable(tf, df3)
     @test_throws DimensionMismatch writetable(tf, df3b, header = false, append = true)
     rm(tf)
+
+    # create a new file if one does not exist. then, append to it.
+    # the resulting file tf will have one header line and the df1 data frame twice.
+    tf = tempname()
+    isfile(tf) && rm(tf)
+    writetable(tf, df1, append = true)
+    writetable(tf, df1, append = true)
+    @test readtable(tf) == vcat(df1, df1)
 
     # Quotemarks are escaped
     tf = tempname()
