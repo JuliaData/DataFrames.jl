@@ -292,9 +292,9 @@ end
 
 function ModelFrame(trms::Terms, d::AbstractDataFrame;
                     contrasts::Dict = Dict())
-    df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
+    df, msng = null_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
-    for c in eachcol(df) dropunusedlevels!(c[2]) end
+    for c in eachcol(df) _droplevels!(c[2]) end
 
     evaledContrasts = evalcontrasts(df, contrasts)
 

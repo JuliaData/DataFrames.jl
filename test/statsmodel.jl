@@ -38,7 +38,7 @@ m = fit(DummyMod, f, d)
 ## test prediction method
 ## vanilla
 StatsBase.predict(mod::DummyMod) = mod.x * mod.beta
-@test predict(m) == [ ones(size(d,1)) Array(d[:x1]) Array(d[:x2]) Array(d[:x1].*d[:x2]) ] * collect(1:4)
+@test predict(m) == [ ones(size(d,1)) Array(d[:x1]) Array(d[:x2]) Array(d[:x1]).*Array(d[:x2]) ] * collect(1:4)
 
 ## new data from matrix
 StatsBase.predict(mod::DummyMod, newX::Matrix) = newX * mod.beta

@@ -544,5 +544,6 @@ df = DataFrame(x = [1.0,2.0,3.0], y = [4.0,5.0,6.0])
 mf = ModelFrame(y ~ 0 + x, df)
 X = ModelMatrix(mf).m
 X[1] = 0.0
-@test mf.df[1, :x] == 1.0
+@test mf.df[1, :x] === Nullable(1.0)
+
 end
