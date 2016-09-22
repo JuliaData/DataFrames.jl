@@ -79,6 +79,6 @@ None of these reshaping functions perform any aggregation. To do aggregation, us
 
 ```julia
 d = stack(iris)
-x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(df[:value])))
+x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(dropnull(df[:value]))))
 unstack(x, :Species, :vsum)
 ```

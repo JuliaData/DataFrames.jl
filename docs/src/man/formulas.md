@@ -33,7 +33,7 @@ If you would like to specify both main effects and an interaction term at once, 
 mm = ModelMatrix(ModelFrame(Z ~ X*Y, df))
 ```
 
-You can control how categorical variables (e.g., `PooledDataArray` columns) are converted to `ModelMatrix` columns by specifying _contrasts_ when you construct a `ModelFrame`:
+You can control how categorical variables (e.g., `CategoricalArray` columns) are converted to `ModelMatrix` columns by specifying _contrasts_ when you construct a `ModelFrame`:
 
 ```julia
 mm = ModelMatrix(ModelFrame(Z ~ X*Y, df, contrasts = Dict(:X => HelmertCoding())))
