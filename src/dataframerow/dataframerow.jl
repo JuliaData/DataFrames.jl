@@ -54,29 +54,17 @@ end
 # only the rows of the same DataFrame could be compared
 # rows are equal if they have the same values (while the row indices could differ)
 function @compat(Base.:(==))(r1::DataFrameRow, r2::DataFrameRow)
-    if r1.df !== r2.df
-        throw(ArgumentError("Comparing rows from different frames not supported"))
-    end
-    if r1.row == r2.row
-        return Nullable(true)
-    end
-    eq = Nullable(true)
+    r1.df == r2.df || throw(ArgumentError("Comparing rows from different frames not supported"))
+    r1.row == r2.row && return true
     for col in columns(r1.df)
-        eq_col = convert(Nullable{Bool}, col[r1.row] == col[r2.row])
-        # If true or null, need to compare remaining columns
-        get(eq_col, true) || return Nullable(false)
-        eq &= eq_col
+        col[r1.row] == col[r2.row] || return false
     end
-    return eq
+    return true
 end
 
 function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
-    if r1.df !== r2.df
-        throw(ArgumentError("Comparing rows from different frames not supported"))
-    end
-    if r1.row == r2.row
-        return true
-    end
+    r1.df == r2.df || throw(ArgumentError("Comparing rows from different frames not supported"))
+    r1.row == r2.row && return true
     for col in columns(r1.df)
         if !isequal(col[r1.row], col[r2.row])
             return false
