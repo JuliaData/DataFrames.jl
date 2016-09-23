@@ -41,5 +41,8 @@ module TestSort
 
     @test df == ds
 
-
+    df = DataFrame(a=[2,1])
+    df[:b] = df[:a]
+    sort!(df, cols=:a)
+    @test df == DataFrame(a=[1,2],b=[1,2])
 end
