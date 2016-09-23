@@ -41,6 +41,7 @@ module TestSort
 
     @test df == ds
 
+    # Check that columns that shares the same underlying array are only permuted once PR#1072
     df = DataFrame(a=[2,1])
     df[:b] = df[:a]
     sort!(df, cols=:a)

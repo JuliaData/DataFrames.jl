@@ -13,7 +13,10 @@ function Base.sort!(df::DataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering
     p = sortperm(df, a, o)
     pp = similar(p)
     c = columns(df)
-    uc = [!any(j->c[i] ≡ c[j], 1:i-1) for i=1:length(c)]
+
+    # Check that columns that shares the same underlying array are only permuted once PR#1072
+    uc = [!any(j->c[i] === c[j], 1:i-1) for i=1:length(c)]
+
     for col in c[uc]
         copy!(pp,p)
         Base.permute!!(col, pp)
