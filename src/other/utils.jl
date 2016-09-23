@@ -54,7 +54,7 @@ function make_unique(names::Vector{Symbol}; allow_duplicates=true)
         name = names[i]
         in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
-    
+
     if !allow_duplicates && length(dups) > 0
         d = unique(names[dups])
         msg = """Duplicate variable names: $d.
@@ -201,3 +201,5 @@ end
 
 _isnull(x::Any) = false
 _isnull(x::Nullable) = isnull(x)
+
+loadiris() = readtable(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))

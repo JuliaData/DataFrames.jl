@@ -95,8 +95,8 @@ ncols = size(df, 2)
 We can also look at small subsets of the data in a couple of different ways:
 
 ```julia
-DataFrames.head(df)
-DataFrames.tail(df)
+head(df)
+tail(df)
 
 df[1:3, :]
 ```
@@ -135,9 +135,8 @@ To see more of the functionality for working with `DataFrame` objects, we need a
 For example, we can access Fisher's iris data set using the following functions:
 
 ```julia
-using RDatasets
-iris = dataset("datasets", "iris")
-DataFrames.head(iris)
+iris = DataFrames.loadiris()
+head(iris)
 ```
 
 In the next section, we'll discuss generic I/O strategy for reading and writing `DataFrame` objects that you can use to import and export your own data files.

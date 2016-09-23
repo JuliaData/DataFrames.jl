@@ -19,7 +19,7 @@ A companion type, `NullableCategoricalArray`, allows storing missing values in t
 In addition to representing repeated data efficiently, the `CategoricalArray` type allows us to determine efficiently the allowed levels of the variable at any time using the `levels` function (note that levels may or may not be actually used in the data):
 
 ```julia
-CategoricalArrays.levels(cv)
+levels(cv)
 ```
 
 The `levels!` function also allows changing the order of appearance of the levels, which can be useful for display purposes or when working with ordered variables.
@@ -27,21 +27,21 @@ The `levels!` function also allows changing the order of appearance of the level
 By default, a `CategoricalArray` is able to represent 2<sup>32</sup>differents levels. You can use less memory by calling the `compact` function:
 
 ```julia
-cv = CategoricalArrays.compact(cv)
+cv = compact(cv)
 ```
 
-Often, you will have factors encoded inside a DataFrame with `Array` or `NullableArray` columns instead of `CategoricalArray` or `NullableCategoricalArray` columns. You can do conversion of a single column using the `categorical` function:
+Often, you will have factors encoded inside a DataFrame with `Array` or `NullableArray` columns instead of `CategoricalArray` or `NullableCategoricalArray` columns. You can do conversion of a single column using the `categorize` function:
 
 ```julia
-cv = CategoricalArray(v)
+cv = categorize(v)
 ```
 
-Or you can edit the columns of a `DataFrame` in-place using the `categorical!` function:
+Or you can edit the columns of a `DataFrame` in-place using the `categorize!` function:
 
 ```julia
 df = DataFrame(A = [1, 1, 1, 2, 2, 2],
                B = ["X", "X", "X", "Y", "Y", "Y"])
-categorical!(df, [:A, :B])
+categorize!(df, [:A, :B])
 ```
 
 Using categorical arrays is important for working with the [GLM package](https://github.com/JuliaStats/GLM.jl). When fitting regression models, `CategoricalArray` and `NullableCategoricalArray` columns in the input are translated into 0/1 indicator columns in the `ModelMatrix` with one column for each of the levels of the `CategoricalArray`/`NullableCategoricalArray`. This allows one to analyze categorical data efficiently.

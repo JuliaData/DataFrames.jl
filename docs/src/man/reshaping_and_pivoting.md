@@ -3,10 +3,10 @@
 Reshape data from wide to long format using the `stack` function:
 
 ```julia
-using DataFrames, RDatasets
-iris = dataset("datasets", "iris")
+using DataFrames
+iris = DataFrames.loadiris()
 iris[:id] = 1:size(iris, 1)  # this makes it easier to unstack
-d = stack(iris, [1:4])
+d = stack(iris, 1:4)
 ```
 
 The second optional argument to `stack` indicates the columns to be stacked. These are normally referred to as the measured variables. Column names can also be given:

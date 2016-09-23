@@ -71,7 +71,7 @@ groupby(cols)
 ### Arguments
 
 * `d` : an AbstractDataFrame
-* `cols` : an 
+* `cols` : an
 
 If `d` is not provided, a curried version of groupby is given.
 
@@ -111,8 +111,8 @@ vcat([g[:b] for g in gd]...)
 for g in gd
     println(g)
 end
-map(d -> mean(d[:c]), gd)   # returns a GroupApplied object
-combine(map(d -> mean(d[:c]), gd))
+map(d -> mean(dropnull(d[:c])), gd)   # returns a GroupApplied object
+combine(map(d -> mean(dropnull(d[:c])), gd))
 df |> groupby(:a) |> [sum, length]
 df |> groupby([:a, :b]) |> [sum, length]
 ```
@@ -253,7 +253,7 @@ combine(ga::GroupApplied)
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
-combine(map(d -> mean(d[:c]), gd))
+combine(map(d -> mean(dropnull(d[:c])), gd))
 ```
 
 """
@@ -343,7 +343,7 @@ notation can be used.
 
 ### Returns
 
-* `::DataFrame` 
+* `::DataFrame`
 
 ### Examples
 
@@ -352,11 +352,11 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 by(df, :a, d -> sum(d[:c]))
-by(df, :a, d -> 2 * d[:c])
-by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(d[:c])))
-by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(d[:c])))
+by(df, :a, d -> 2 * dropnull(d[:c]))
+by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(dropnull(d[:c]))))
+by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(dropnull(d[:c]))))
 by(df, [:a, :b]) do d
-    DataFrame(m = mean(d[:c]), v = var(d[:c]))
+    DataFrame(m = mean(dropnull(d[:c])), v = var(dropnull(d[:c])))
 end
 ```
 
@@ -391,7 +391,7 @@ same length.
 
 ### Returns
 
-* `::DataFrame` 
+* `::DataFrame`
 
 ### Examples
 
@@ -400,9 +400,9 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 aggregate(df, :a, sum)
-aggregate(df, :a, [sum, mean])
-aggregate(groupby(df, :a), [sum, mean])
-df |> groupby(:a) |> [sum, mean]   # equivalent
+aggregate(df, :a, [sum, x->mean(dropnull(x))])
+aggregate(groupby(df, :a), [sum, x->mean(dropnull(x))])
+df |> groupby(:a) |> [sum, x->mean(dropnull(x))]   # equivalent
 ```
 
 """
