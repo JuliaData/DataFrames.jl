@@ -71,8 +71,8 @@ export @~,
        nrow,
        nullable!,
        order,
-       pool,
-       pool!,
+       categorize,
+       categorize!,
        printtable,
        readtable,
        rename!,
@@ -87,7 +87,9 @@ export @~,
        tail,
 
        # Remove after deprecation period
-       read_rda
+       read_rda,
+       pool,
+       pool!
 
 
 ##############################################################################
