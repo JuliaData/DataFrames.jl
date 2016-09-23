@@ -25,7 +25,6 @@ The following are normally implemented for AbstractDataFrames:
 * [`tail`]({ref}) : last `n` rows
 * `convert` : convert to an array
 * `NullableArray` : convert to a NullableArray
-* `DataArray` : convert to a DataArray
 * [`complete_cases`]({ref}) : indexes of complete cases (rows with no NA's)
 * [`complete_cases!`]({ref}) : remove rows with NA's
 * [`nonunique`]({ref}) : indexes of duplicate rows
