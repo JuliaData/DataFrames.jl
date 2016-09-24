@@ -238,14 +238,7 @@ Base.similar(df::AbstractDataFrame, dims::Int) =
 ##############################################################################
 
 # Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
-function @compat(Base.:(==))(df1::AbstractDataFrame, df2::AbstractDataFrame)
-    size(df1, 2) == size(df2, 2) || return false
-    isequal(index(df1), index(df2)) || return false
-    for idx in 1:size(df1, 2)
-        isequal(df1[idx], df2[idx]) || return false
-    end
-    return true
-end
+@compat(Base.:(==))(df1::AbstractDataFrame, df2::AbstractDataFrame) = isequal(df1, df2)
 
 function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
