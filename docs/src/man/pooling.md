@@ -36,12 +36,12 @@ Often, you will have factors encoded inside a DataFrame with `Array` or `Nullabl
 cv = categorize(v)
 ```
 
-Or you can edit the columns of a `DataFrame` in-place using the `categorize!` function:
+Or you can edit the columns of a `DataFrame` in-place using the `categorical!` function:
 
 ```julia
 df = DataFrame(A = [1, 1, 1, 2, 2, 2],
                B = ["X", "X", "X", "Y", "Y", "Y"])
-categorize!(df, [:A, :B])
+categorical!(df, [:A, :B])
 ```
 
 Using categorical arrays is important for working with the [GLM package](https://github.com/JuliaStats/GLM.jl). When fitting regression models, `CategoricalArray` and `NullableCategoricalArray` columns in the input are translated into 0/1 indicator columns in the `ModelMatrix` with one column for each of the levels of the `CategoricalArray`/`NullableCategoricalArray`. This allows one to analyze categorical data efficiently.

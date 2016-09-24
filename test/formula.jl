@@ -395,7 +395,7 @@ module TestFormula
 d = DataFrame(x = Compat.repeat([:a, :b], outer = 4),
               y = Compat.repeat([:c, :d], inner = 2, outer = 2),
               z = Compat.repeat([:e, :f], inner = 4))
-[categorize!(d, name) for name in names(d)]
+[categorical!(d, name) for name in names(d)]
 cs = Dict([Pair(name, EffectsCoding()) for name in names(d)])
 d[:n] = 1.:8
 

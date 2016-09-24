@@ -790,26 +790,23 @@ end
 ##
 ##############################################################################
 
-categorize(a::AbstractVector) = compact(CategoricalArray(a))
-categorize{T<:Nullable}(a::AbstractVector{T}) = compact(NullableCategoricalArray(a))
-
-function categorize!(df::DataFrame, cname::@compat(Union{Integer, Symbol}))
-    df[cname] = categorize(df[cname])
+function categorical!(df::DataFrame, cname::@compat(Union{Integer, Symbol}), compact::Bool=true)
+    df[cname] = categorical(df[cname], compact)
     return
 end
 
-function categorize!{T <: @compat(Union{Integer, Symbol})}(df::DataFrame, cnames::Vector{T})
+function categorical!{T <: @compat(Union{Integer, Symbol})}(df::DataFrame, cnames::Vector{T},
+                                                            compact::Bool=true)
     for cname in cnames
-        df[cname] = categorize(df[cname])
+        df[cname] = categorical(df[cname], compact)
     end
     return
 end
 
-# TODO: Deprecate or change for being too inconsistent with other pool methods
-function categorize!(df::DataFrame)
+function categorical!(df::DataFrame, compact::Bool=true)
     for i in 1:size(df, 2)
         if eltype(df[i]) <: AbstractString
-            df[i] = categorize(df[i])
+            df[i] = categorical(df[i], compact)
         end
     end
     return
