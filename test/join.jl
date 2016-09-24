@@ -71,7 +71,7 @@ module TestJoin
     df1 = DataFrame(A = 1:50,
                     B = 1:50,
                     C = 1)
-    pool!(df1, :A)
-    pool!(df1, :B)
+    categorize!(df1, :A)
+    categorize!(df1, :B)
     join(df1, df1, on = [:A, :B], kind = :inner)
 end

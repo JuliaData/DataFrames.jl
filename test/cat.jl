@@ -57,7 +57,7 @@ module TestCat
     vcat(df, null_df)
     vcat(df, df)
     vcat(df, df, df)
-    @test get(vcat(DataFrame[]) == DataFrame())
+    @test vcat(DataFrame[]) == DataFrame()
 
     alt_df = deepcopy(df)
     vcat(df, alt_df)
