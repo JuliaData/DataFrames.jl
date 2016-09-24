@@ -242,7 +242,7 @@ function @compat(Base.:(==))(df1::AbstractDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
     isequal(index(df1), index(df2)) || return false
     for idx in 1:size(df1, 2)
-        df1[idx] == df2[idx] || return false
+        isequal(df1[idx], df2[idx]) || return false
     end
     return true
 end
