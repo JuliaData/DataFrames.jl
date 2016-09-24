@@ -12,9 +12,6 @@ similar_nullable{T<:Nullable}(dv::AbstractArray{T}, dims::@compat(Union{Int, Tup
 similar_nullable{T,R}(dv::CategoricalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
     NullableCategoricalArray(T, dims)
 
-similar_nullable{T,R}(dv::CategoricalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
-    NullableCategoricalArray(T, dims)
-
 similar_nullable(df::AbstractDataFrame, dims::Int) =
     DataFrame(Any[similar_nullable(x, dims) for x in columns(df)], copy(index(df)))
 

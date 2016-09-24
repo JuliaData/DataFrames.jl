@@ -365,7 +365,6 @@ end
 
 upgrade_vector{T<:Nullable}(v::AbstractArray{T}) = v
 upgrade_vector(v::CategoricalArray) = NullableCategoricalArray(v)
-upgrade_vector(v::CategoricalArray) = NullableCategoricalArray(v)
 upgrade_vector(v::AbstractArray) = NullableArray(v)
 
 function upgrade_scalar(df::DataFrame, v::AbstractArray)
