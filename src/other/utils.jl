@@ -201,5 +201,3 @@ end
 
 _isnull(x::Any) = false
 _isnull(x::Nullable) = isnull(x)
-
-loadiris() = readtable(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
