@@ -15,7 +15,7 @@ function Base.sort!(df::DataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering
     c = columns(df)
 
     for (i,col) in enumerate(c)
-        # Check if this column has been sorted already. PR#1072
+        # Check if this column has been sorted already
         if any(j -> c[j]===col, 1:i-1)
             continue
         end
