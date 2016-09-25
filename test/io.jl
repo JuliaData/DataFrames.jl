@@ -42,7 +42,7 @@ module TestIO
     @test isequal(df[1, 2], Nullable("\$"))
     @test df[1, 3] === Nullable(1971)
     @test df[1, 4] === Nullable(121)
-    @test df[1, 5] === Nullable(0, true) # See JuliaLang/julia#16923
+    @test isnull(df[1, 5])
     @test df[1, 6] === Nullable(6.4)
     @test df[1, 7] === Nullable(348)
     @test df[1, 8] === Nullable(4.5)
