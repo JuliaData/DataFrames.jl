@@ -12,7 +12,14 @@ end
 function Base.sort!(df::DataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
     p = sortperm(df, a, o)
     pp = similar(p)
-    for col in columns(df)
+    c = columns(df)
+
+    for (i,col) in enumerate(c)
+        # Check if this column has been sorted already
+        if any(j -> c[j]===col, 1:i-1)
+            continue
+        end
+
         copy!(pp,p)
         Base.permute!!(col, pp)
     end
