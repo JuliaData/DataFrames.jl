@@ -337,10 +337,10 @@
           <p><a id='Reshaping-and-Pivoting-Data-1'></a></p>
 <h1 id="reshaping-and-pivoting-data">Reshaping and Pivoting Data</h1>
 <p>Reshape data from wide to long format using the <code>stack</code> function:</p>
-<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">DataFrames</span><span class="p">,</span> <span class="n">RDatasets</span>
-<span class="n">iris</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">(</span><span class="s">&quot;datasets&quot;</span><span class="p">,</span> <span class="s">&quot;iris&quot;</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">DataFrames</span>
+<span class="n">iris</span> <span class="o">=</span> <span class="n">readtable</span><span class="p">(</span><span class="n">joinpath</span><span class="p">(</span><span class="n">Pkg</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s">&quot;DataFrames&quot;</span><span class="p">),</span> <span class="s">&quot;test/data/iris.csv&quot;</span><span class="p">))</span>
 <span class="n">iris</span><span class="p">[:</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c"># this makes it easier to unstack</span>
-<span class="n">d</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">iris</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">)</span>
 </pre></div>
 
 
@@ -394,7 +394,7 @@
 
 <p>None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:</p>
 <div class="codehilite"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">stack</span><span class="p">(</span><span class="n">iris</span><span class="p">)</span>
-<span class="n">x</span> <span class="o">=</span> <span class="n">by</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="p">[:</span><span class="n">variable</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">],</span> <span class="n">df</span> <span class="o">-&gt;</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">vsum</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[:</span><span class="n">value</span><span class="p">])))</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">by</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="p">[:</span><span class="n">variable</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">],</span> <span class="n">df</span> <span class="o">-&gt;</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">vsum</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">dropnull</span><span class="p">(</span><span class="n">df</span><span class="p">[:</span><span class="n">value</span><span class="p">]))))</span>
 <span class="n">unstack</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">:</span><span class="n">Species</span><span class="p">,</span> <span class="p">:</span><span class="n">vsum</span><span class="p">)</span>
 </pre></div>
           <aside class="copyright" role="note">

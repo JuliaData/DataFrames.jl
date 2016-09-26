@@ -337,9 +337,8 @@
           <p><a id='Sorting-1'></a></p>
 <h1 id="sorting">Sorting</h1>
 <p>Sorting is a fundamental component of data analysis. Basic sorting is trivial: just calling <code>sort!</code> will sort all columns, in place:</p>
-<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">DataFrames</span><span class="p">,</span> <span class="n">RDatasets</span>
-
-<span class="n">iris</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">(</span><span class="s">&quot;datasets&quot;</span><span class="p">,</span> <span class="s">&quot;iris&quot;</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">DataFrames</span>
+<span class="n">iris</span> <span class="o">=</span> <span class="n">readtable</span><span class="p">(</span><span class="n">joinpath</span><span class="p">(</span><span class="n">Pkg</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s">&quot;DataFrames&quot;</span><span class="p">),</span> <span class="s">&quot;test/data/iris.csv&quot;</span><span class="p">))</span>
 <span class="n">sort!</span><span class="p">(</span><span class="n">iris</span><span class="p">)</span>
 </pre></div>
 

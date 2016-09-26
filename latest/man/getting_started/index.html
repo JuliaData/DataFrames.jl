@@ -199,14 +199,14 @@
             </li>
           
             <li class="anchor">
-              <a title="The NA Value" href="#the-na-value">
-                The NA Value
+              <a title="The Nullable Type" href="#the-nullable-type">
+                The Nullable Type
               </a>
             </li>
           
             <li class="anchor">
-              <a title="The DataArray Type" href="#the-dataarray-type">
-                The DataArray Type
+              <a title="The NullableArray Type" href="#the-nullablearray-type">
+                The NullableArray Type
               </a>
             </li>
           
@@ -372,64 +372,64 @@
 <h1 id="getting-started">Getting Started</h1>
 <p><a id='Installation-1'></a></p>
 <h2 id="installation">Installation</h2>
-<p>The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed <code>using DataArrays, DataFrames</code> to bring all of the relevant variables into your current namespace. In addition, we will make use of the <code>RDatasets</code> package, which provides access to hundreds of classical data sets.</p>
-<p><a id='The-NA-Value-1'></a></p>
-<h2 id="the-na-value">The <code>NA</code> Value</h2>
-<p>To get started, let's examine the <code>NA</code> value. Type the following into the REPL:</p>
-<div class="codehilite"><pre><span></span><span class="n">NA</span>
+<p>The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed <code>using NullableArrays, DataFrames</code> to bring all of the relevant variables into your current namespace. In addition, we will make use of the <code>RDatasets</code> package, which provides access to hundreds of classical data sets.</p>
+<p><a id='The-Nullable-Type-1'></a></p>
+<h2 id="the-nullable-type">The <code>Nullable</code> Type</h2>
+<p>To get started, let's examine the <code>Nullable</code> type. Objects of this type can either hold a value, or represent a missing value (<code>null</code>). For example, this is a <code>Nullable</code> holding the integer <code>1</code>:</p>
+<div class="codehilite"><pre><span></span><span class="n">Nullable</span><span class="p">()</span>
 </pre></div>
 
 
-<p>One of the essential properties of <code>NA</code> is that it poisons other items. To see this, try to add something like <code>1</code> to <code>NA</code>:</p>
-<div class="codehilite"><pre><span></span><span class="mi">1</span> <span class="o">+</span> <span class="n">NA</span>
+<p>And this represents a missing value:</p>
+<div class="codehilite"><pre><span></span><span class="n">Nullable</span><span class="p">()</span>
 </pre></div>
 
 
-<p><a id='The-DataArray-Type-1'></a></p>
-<h2 id="the-dataarray-type">The <code>DataArray</code> Type</h2>
-<p>Now that we see that <code>NA</code> is working, let's insert one into a <code>DataArray</code>. We'll create one now using the <code>@data</code> macro:</p>
-<div class="codehilite"><pre><span></span><span class="n">dv</span> <span class="o">=</span> <span class="p">@</span><span class="n">data</span><span class="p">([</span><span class="n">NA</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<p><code>Nullable</code> objects support all standard operators, which return another <code>Nullable</code>. One of the essential properties of <code>null</code> values is that they poison other items. To see this, try to add something like <code>Nullable(1)</code> to <code>Nullable()</code>:</p>
+<div class="codehilite"><pre><span></span><span class="n">Nullable</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">Nullable</span><span class="p">()</span>
 </pre></div>
 
 
-<p>To see how <code>NA</code> poisons even complex calculations, let's try to take the mean of the five numbers stored in <code>dv</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">dv</span><span class="p">)</span>
+<p>Note that operations mixing <code>Nullable</code> and scalars (e.g. <code>1 + Nullable()</code>) are not supported.</p>
+<p><a id='The-NullableArray-Type-1'></a></p>
+<h2 id="the-nullablearray-type">The <code>NullableArray</code> Type</h2>
+<p><code>Nullable</code> objects can be stored in a standard <code>Array</code> just like any value:</p>
+<div class="codehilite"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="n">Nullable</span><span class="p">{</span><span class="kt">Int</span><span class="p">}[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
 </pre></div>
 
 
-<p>In many cases we're willing to just ignore <code>NA</code> values and remove them from our vector. We can do that using the <code>dropna</code> function:</p>
-<div class="codehilite"><pre><span></span><span class="n">dropna</span><span class="p">(</span><span class="n">dv</span><span class="p">)</span>
-<span class="n">mean</span><span class="p">(</span><span class="n">dropna</span><span class="p">(</span><span class="n">dv</span><span class="p">))</span>
+<p>But arrays of <code>Nullable</code> are inefficient, both in terms of computation costs and of memory use. <code>NullableArrays</code> provide a more efficient storage, and behave like <code>Array{Nullable}</code> objects.</p>
+<div class="codehilite"><pre><span></span><span class="n">nv</span> <span class="o">=</span> <span class="n">NullableArray</span><span class="p">(</span><span class="n">Nullable</span><span class="p">{</span><span class="kt">Int</span><span class="p">}[</span><span class="n">Nullable</span><span class="p">(),</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
 </pre></div>
 
 
-<p>Instead of removing <code>NA</code> values, you can try to conver the <code>DataArray</code> into a normal Julia <code>Array</code> using <code>convert</code>:</p>
-<div class="codehilite"><pre><span></span><span class="nb">convert</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="n">dv</span><span class="p">)</span>
+<p>In many cases we're willing to just ignore missing values and remove them from our vector. We can do that using the <code>dropnull</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="n">dropnull</span><span class="p">(</span><span class="n">nv</span><span class="p">)</span>
+<span class="n">mean</span><span class="p">(</span><span class="n">dropnull</span><span class="p">(</span><span class="n">nv</span><span class="p">))</span>
 </pre></div>
 
 
-<p>This fails in the presence of <code>NA</code> values, but will succeed if there are no <code>NA</code> values:</p>
-<div class="codehilite"><pre><span></span><span class="n">dv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
-<span class="nb">convert</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="n">dv</span><span class="p">)</span>
+<p>Instead of removing <code>null</code> values, you can try to convert the <code>NullableArray</code> into a normal Julia <code>Array</code> using <code>convert</code>:</p>
+<div class="codehilite"><pre><span></span><span class="nb">convert</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="n">nv</span><span class="p">)</span>
 </pre></div>
 
 
-<p>In addition to removing <code>NA</code> values and hoping they won't occur, you can also replace any <code>NA</code> values using the <code>convert</code> function, which takes a replacement value as an argument:</p>
-<div class="codehilite"><pre><span></span><span class="n">dv</span> <span class="o">=</span> <span class="p">@</span><span class="n">data</span><span class="p">([</span><span class="n">NA</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
-<span class="n">mean</span><span class="p">(</span><span class="nb">convert</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="n">dv</span><span class="p">,</span> <span class="mi">11</span><span class="p">))</span>
+<p>This fails in the presence of <code>null</code> values, but will succeed if there are no <code>null</code> values:</p>
+<div class="codehilite"><pre><span></span><span class="n">nv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="nb">convert</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="n">nv</span><span class="p">)</span>
 </pre></div>
 
 
-<p>Which strategy for dealing with <code>NA</code> values is most appropriate will typically depend on the specific details of your data analysis pathway.</p>
-<p>Although the examples above employed only 1D <code>DataArray</code> objects, the <code>DataArray</code> type defines a completely generic N-dimensional array type. Operations on generic <code>DataArray</code> objects work in higher dimensions in the same way that they work on Julia's Base <code>Array</code> type:</p>
-<div class="codehilite"><pre><span></span><span class="n">dm</span> <span class="o">=</span> <span class="p">@</span><span class="n">data</span><span class="p">([</span><span class="n">NA</span> <span class="mf">0.0</span><span class="p">;</span> <span class="mf">0.0</span> <span class="mf">1.0</span><span class="p">])</span>
-<span class="n">dm</span> <span class="o">*</span> <span class="n">dm</span>
+<p>In addition to removing <code>null</code> values and hoping they won't occur, you can also replace any <code>null</code> values using the <code>convert</code> function, which takes a replacement value as an argument:</p>
+<div class="codehilite"><pre><span></span><span class="n">nv</span> <span class="o">=</span> <span class="n">NullableArray</span><span class="p">(</span><span class="n">Nullable</span><span class="p">{</span><span class="kt">Int</span><span class="p">}[</span><span class="n">Nullable</span><span class="p">(),</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="n">mean</span><span class="p">(</span><span class="nb">convert</span><span class="p">(</span><span class="n">Array</span><span class="p">,</span> <span class="n">nv</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
 </pre></div>
 
 
+<p>Which strategy for dealing with <code>null</code> values is most appropriate will typically depend on the specific details of your data analysis pathway.</p>
 <p><a id='The-DataFrame-Type-1'></a></p>
 <h2 id="the-dataframe-type">The <code>DataFrame</code> Type</h2>
-<p>The <code>DataFrame</code> type can be used to represent data tables, each column of which is a <code>DataArray</code>. You can specify the columns using keyword arguments:</p>
+<p>The <code>DataFrame</code> type can be used to represent data tables, each column of which is an array (by default, a <code>NullableArray</code>). You can specify the columns using keyword arguments:</p>
 <div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="n">B</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;M&quot;</span><span class="p">,</span> <span class="s">&quot;F&quot;</span><span class="p">,</span> <span class="s">&quot;F&quot;</span><span class="p">,</span> <span class="s">&quot;M&quot;</span><span class="p">])</span>
 </pre></div>
 
@@ -462,20 +462,20 @@
 
 
 <p>To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the <code>DataFrame</code>:</p>
-<div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">median</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">dropnull</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<span class="n">median</span><span class="p">(</span><span class="n">dropnull</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
 </pre></div>
 
 
 <p>We could also have used column names to access individual columns:</p>
-<div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">df</span><span class="p">[:</span><span class="n">A</span><span class="p">])</span>
-<span class="n">median</span><span class="p">(</span><span class="n">df</span><span class="p">[:</span><span class="n">A</span><span class="p">])</span>
+<div class="codehilite"><pre><span></span><span class="n">mean</span><span class="p">(</span><span class="n">dropnull</span><span class="p">(</span><span class="n">df</span><span class="p">[:</span><span class="n">A</span><span class="p">]))</span>
+<span class="n">median</span><span class="p">(</span><span class="n">dropnull</span><span class="p">(</span><span class="n">df</span><span class="p">[:</span><span class="n">A</span><span class="p">]))</span>
 </pre></div>
 
 
 <p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>colwise</code> function. For example:</p>
 <div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span> <span class="o">=</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">,</span> <span class="n">B</span> <span class="o">=</span> <span class="n">randn</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
-<span class="n">colwise</span><span class="p">(</span><span class="n">cumsum</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+<span class="n">colwise</span><span class="p">(</span><span class="n">c</span><span class="o">-&gt;</span><span class="n">cumsum</span><span class="p">(</span><span class="n">dropnull</span><span class="p">(</span><span class="n">c</span><span class="p">)),</span> <span class="n">df</span><span class="p">)</span>
 </pre></div>
 
 
@@ -483,8 +483,7 @@
 <h2 id="accessing-classic-data-sets">Accessing Classic Data Sets</h2>
 <p>To see more of the functionality for working with <code>DataFrame</code> objects, we need a more complex data set to work with. We'll use the <code>RDatasets</code> package, which provides access to many of the classical data sets that are available in R.</p>
 <p>For example, we can access Fisher's iris data set using the following functions:</p>
-<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">RDatasets</span>
-<span class="n">iris</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">(</span><span class="s">&quot;datasets&quot;</span><span class="p">,</span> <span class="s">&quot;iris&quot;</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="n">iris</span> <span class="o">=</span> <span class="n">DataFrames</span><span class="o">.</span><span class="n">loadiris</span><span class="p">()</span>
 <span class="n">head</span><span class="p">(</span><span class="n">iris</span><span class="p">)</span>
 </pre></div>
 

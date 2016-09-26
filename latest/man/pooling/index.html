@@ -334,43 +334,46 @@
       <article class="article">
         <div class="wrapper">
           
-          <p><a id='Pooling-Data-(Representing-Factors)-1'></a></p>
-<h1 id="pooling-data-representing-factors">Pooling Data (Representing Factors)</h1>
+          <p><a id='Categorical-Data-1'></a></p>
+<h1 id="categorical-data">Categorical Data</h1>
 <p>Often, we have to deal with factors that take on a small number of levels:</p>
-<div class="codehilite"><pre><span></span><span class="n">dv</span> <span class="o">=</span> <span class="p">@</span><span class="n">data</span><span class="p">([</span><span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span>
-            <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">])</span>
+<div class="codehilite"><pre><span></span><span class="n">v</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span>
+     <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">]</span>
 </pre></div>
 
 
-<p>The naive encoding used in a <code>DataArray</code> represents every entry of this vector as a full string. In contrast, we can represent the data more efficiently by replacing the strings with indices into a small pool of levels. This is what the <code>PooledDataArray</code> does:</p>
-<div class="codehilite"><pre><span></span><span class="n">pdv</span> <span class="o">=</span> <span class="p">@</span><span class="n">pdata</span><span class="p">([</span><span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span>
-              <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">])</span>
+<p>The naive encoding used in an <code>Array</code> or in a <code>NullableArray</code> represents every entry of this vector as a full string. In contrast, we can represent the data more efficiently by replacing the strings with indices into a small pool of levels. This is what the <code>CategoricalArray</code> type does:</p>
+<div class="codehilite"><pre><span></span><span class="n">cv</span> <span class="o">=</span> <span class="n">CategoricalArray</span><span class="p">([</span><span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span> <span class="s">&quot;Group A&quot;</span><span class="p">,</span>
+                       <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">,</span> <span class="s">&quot;Group B&quot;</span><span class="p">])</span>
 </pre></div>
 
 
-<p>In addition to representing repeated data efficiently, the <code>PooledDataArray</code> allows us to determine the levels of the factor at any time using the <code>levels</code> function:</p>
-<div class="codehilite"><pre><span></span><span class="n">levels</span><span class="p">(</span><span class="n">pdv</span><span class="p">)</span>
+<p>A companion type, <code>NullableCategoricalArray</code>, allows storing missing values in the array: is to <code>CategoricalArray</code> what <code>NullableArray</code> is to the standard <code>Array</code> type.</p>
+<p>In addition to representing repeated data efficiently, the <code>CategoricalArray</code> type allows us to determine efficiently the allowed levels of the variable at any time using the <code>levels</code> function (note that levels may or may not be actually used in the data):</p>
+<div class="codehilite"><pre><span></span><span class="n">levels</span><span class="p">(</span><span class="n">cv</span><span class="p">)</span>
 </pre></div>
 
 
-<p>By default, a <code>PooledDataArray</code> is able to represent 2<sup>32</sup>differents levels. You can use less memory by calling the <code>compact</code> function:</p>
-<div class="codehilite"><pre><span></span><span class="n">pdv</span> <span class="o">=</span> <span class="n">compact</span><span class="p">(</span><span class="n">pdv</span><span class="p">)</span>
+<p>The <code>levels!</code> function also allows changing the order of appearance of the levels, which can be useful for display purposes or when working with ordered variables.</p>
+<p>By default, a <code>CategoricalArray</code> is able to represent 2<sup>32</sup>differents levels. You can use less memory by calling the <code>compact</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="n">cv</span> <span class="o">=</span> <span class="n">compact</span><span class="p">(</span><span class="n">cv</span><span class="p">)</span>
 </pre></div>
 
 
-<p>Often, you will have factors encoded inside a DataFrame with <code>DataArray</code> columns instead of <code>PooledDataArray</code> columns. You can do conversion of a single column using the <code>pool</code> function:</p>
-<div class="codehilite"><pre><span></span><span class="n">pdv</span> <span class="o">=</span> <span class="n">pool</span><span class="p">(</span><span class="n">dv</span><span class="p">)</span>
+<p>Often, you will have factors encoded inside a DataFrame with <code>Array</code> or <code>NullableArray</code> columns instead of <code>CategoricalArray</code> or <code>NullableCategoricalArray</code> columns. You can do conversion of a single column using the <code>categorize</code> function:</p>
+<div class="codehilite"><pre><span></span><span class="n">cv</span> <span class="o">=</span> <span class="n">categorize</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
 </pre></div>
 
 
-<p>Or you can edit the columns of a <code>DataFrame</code> in-place using the <code>pool!</code> function:</p>
+<p>Or you can edit the columns of a <code>DataFrame</code> in-place using the <code>categorical!</code> function:</p>
 <div class="codehilite"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">A</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
                <span class="n">B</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;X&quot;</span><span class="p">,</span> <span class="s">&quot;X&quot;</span><span class="p">,</span> <span class="s">&quot;X&quot;</span><span class="p">,</span> <span class="s">&quot;Y&quot;</span><span class="p">,</span> <span class="s">&quot;Y&quot;</span><span class="p">,</span> <span class="s">&quot;Y&quot;</span><span class="p">])</span>
-<span class="n">pool!</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="p">[:</span><span class="n">A</span><span class="p">,</span> <span class="p">:</span><span class="n">B</span><span class="p">])</span>
+<span class="n">categorical!</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="p">[:</span><span class="n">A</span><span class="p">,</span> <span class="p">:</span><span class="n">B</span><span class="p">])</span>
 </pre></div>
 
 
-<p>Pooling columns is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a> When fitting regression models, <code>PooledDataArray</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>PooledDataArray</code>. This allows one to analyze categorical data efficiently.</p>
+<p>Using categorical arrays is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a>. When fitting regression models, <code>CategoricalArray</code> and <code>NullableCategoricalArray</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>CategoricalArray</code>/<code>NullableCategoricalArray</code>. This allows one to analyze categorical data efficiently.</p>
+<p>See the <a href="https://github.com/nalimilan/CategoricalArrays.jl">CategoricalArrays package</a> for more information regarding categorical arrays.</p>
           <aside class="copyright" role="note">
             
             Documentation built with

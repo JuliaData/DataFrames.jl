@@ -363,7 +363,7 @@
 </pre></div>
 
 
-<p>You can control how categorical variables (e.g., <code>PooledDataArray</code> columns) are converted to <code>ModelMatrix</code> columns by specifying <em>contrasts</em> when you construct a <code>ModelFrame</code>:</p>
+<p>You can control how categorical variables (e.g., <code>CategoricalArray</code> columns) are converted to <code>ModelMatrix</code> columns by specifying <em>contrasts</em> when you construct a <code>ModelFrame</code>:</p>
 <div class="codehilite"><pre><span></span><span class="n">mm</span> <span class="o">=</span> <span class="n">ModelMatrix</span><span class="p">(</span><span class="n">ModelFrame</span><span class="p">(</span><span class="n">Z</span> <span class="o">~</span> <span class="n">X</span><span class="o">*</span><span class="n">Y</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">contrasts</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(:</span><span class="n">X</span> <span class="o">=&gt;</span> <span class="n">HelmertCoding</span><span class="p">())))</span>
 </pre></div>
 
