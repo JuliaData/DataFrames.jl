@@ -2,75 +2,75 @@
 
 ## Installation
 
-The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataArrays, DataFrames` to bring all of the relevant variables into your current namespace. In addition, we will make use of the `RDatasets` package, which provides access to hundreds of classical data sets.
+The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using NullableArrays, DataFrames` to bring all of the relevant variables into your current namespace. In addition, we will make use of the `RDatasets` package, which provides access to hundreds of classical data sets.
 
-## The `NA` Value
+## The `Nullable` Type
 
-To get started, let's examine the `NA` value. Type the following into the REPL:
-
-```julia
-NA
-```
-
-One of the essential properties of `NA` is that it poisons other items. To see this, try to add something like `1` to `NA`:
+To get started, let's examine the `Nullable` type. Objects of this type can either hold a value, or represent a missing value (`null`). For example, this is a `Nullable` holding the integer `1`:
 
 ```julia
-1 + NA
+Nullable()
 ```
 
-## The `DataArray` Type
+And this represents a missing value:
+```julia
+Nullable()
+```
 
-Now that we see that `NA` is working, let's insert one into a `DataArray`. We'll create one now using the `@data` macro:
+`Nullable` objects support all standard operators, which return another `Nullable`. One of the essential properties of `null` values is that they poison other items. To see this, try to add something like `Nullable(1)` to `Nullable()`:
 
 ```julia
-dv = @data([NA, 3, 2, 5, 4])
+Nullable(1) + Nullable()
 ```
 
-To see how `NA` poisons even complex calculations, let's try to take the mean of the five numbers stored in `dv`:
+Note that operations mixing `Nullable` and scalars (e.g. `1 + Nullable()`) are not supported.
+
+## The `NullableArray` Type
+
+`Nullable` objects can be stored in a standard `Array` just like any value:
 
 ```julia
-mean(dv)
+v = Nullable{Int}[1, 3, 4, 5, 4]
 ```
 
-In many cases we're willing to just ignore `NA` values and remove them from our vector. We can do that using the `dropna` function:
+But arrays of `Nullable` are inefficient, both in terms of computation costs and of memory use. `NullableArrays` provide a more efficient storage, and behave like `Array{Nullable}` objects.
 
 ```julia
-dropna(dv)
-mean(dropna(dv))
+nv = NullableArray(Nullable{Int}[Nullable(), 3, 2, 5, 4])
 ```
 
-Instead of removing `NA` values, you can try to conver the `DataArray` into a normal Julia `Array` using `convert`:
+In many cases we're willing to just ignore missing values and remove them from our vector. We can do that using the `dropnull` function:
 
 ```julia
-convert(Array, dv)
+dropnull(nv)
+mean(dropnull(nv))
 ```
 
-This fails in the presence of `NA` values, but will succeed if there are no `NA` values:
+Instead of removing `null` values, you can try to convert the `NullableArray` into a normal Julia `Array` using `convert`:
 
 ```julia
-dv[1] = 3
-convert(Array, dv)
+convert(Array, nv)
 ```
 
-In addition to removing `NA` values and hoping they won't occur, you can also replace any `NA` values using the `convert` function, which takes a replacement value as an argument:
+This fails in the presence of `null` values, but will succeed if there are no `null` values:
 
 ```julia
-dv = @data([NA, 3, 2, 5, 4])
-mean(convert(Array, dv, 11))
+nv[1] = 3
+convert(Array, nv)
 ```
 
-Which strategy for dealing with `NA` values is most appropriate will typically depend on the specific details of your data analysis pathway.
-
-Although the examples above employed only 1D `DataArray` objects, the `DataArray` type defines a completely generic N-dimensional array type. Operations on generic `DataArray` objects work in higher dimensions in the same way that they work on Julia's Base `Array` type:
+In addition to removing `null` values and hoping they won't occur, you can also replace any `null` values using the `convert` function, which takes a replacement value as an argument:
 
 ```julia
-dm = @data([NA 0.0; 0.0 1.0])
-dm * dm
+nv = NullableArray(Nullable{Int}[Nullable(), 3, 2, 5, 4])
+mean(convert(Array, nv, 0))
 ```
+
+Which strategy for dealing with `null` values is most appropriate will typically depend on the specific details of your data analysis pathway.
 
 ## The `DataFrame` Type
 
-The `DataFrame` type can be used to represent data tables, each column of which is a `DataArray`. You can specify the columns using keyword arguments:
+The `DataFrame` type can be used to represent data tables, each column of which is an array (by default, a `NullableArray`). You can specify the columns using keyword arguments:
 
 ```julia
 df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
@@ -110,22 +110,22 @@ describe(df)
 To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the `DataFrame`:
 
 ```julia
-mean(df[1])
-median(df[1])
+mean(dropnull(df[1]))
+median(dropnull(df[1]))
 ```
 
 We could also have used column names to access individual columns:
 
 ```julia
-mean(df[:A])
-median(df[:A])
+mean(dropnull(df[:A]))
+median(dropnull(df[:A]))
 ```
 
 We can also apply a function to each column of a `DataFrame` with the `colwise` function. For example:
 
 ```julia
 df = DataFrame(A = 1:4, B = randn(4))
-colwise(cumsum, df)
+colwise(c->cumsum(dropnull(c)), df)
 ```
 
 ## Accessing Classic Data Sets
@@ -135,10 +135,8 @@ To see more of the functionality for working with `DataFrame` objects, we need a
 For example, we can access Fisher's iris data set using the following functions:
 
 ```julia
-using RDatasets
-iris = dataset("datasets", "iris")
+iris = DataFrames.loadiris()
 head(iris)
 ```
 
 In the next section, we'll discuss generic I/O strategy for reading and writing `DataFrame` objects that you can use to import and export your own data files.
-

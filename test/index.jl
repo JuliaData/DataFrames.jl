@@ -16,16 +16,11 @@ inds = Any[1,
            1:1,
            1.0:1.0,
            [:A],
-           @data([true]),
-           @data([1]),
-           @data([1.0]),
-           @data([:A]),
-           DataArray([:A]),
-           PooledDataArray([true]),
-           @pdata([1]),
-           @pdata([1.0]),
-           @pdata([:A]),
-           PooledDataArray([:A])]
+           NullableArray([true]),
+           NullableArray([1]),
+           NullableArray([1.0]),
+           NullableArray([:A]),
+           NullableArray([:A])]
 
 for ind in inds
     if isequal(ind, :A) || ndims(ind) == 0
@@ -62,6 +57,6 @@ end
 df = DataFrame(A=[0],B=[0])
 df[1:end] = 0.0
 df[1,:A] = 1.0
-@test df[1,:B] === 0
+@test df[1,:B] === Nullable(0)
 
 end

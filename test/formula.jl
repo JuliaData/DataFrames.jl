@@ -133,11 +133,10 @@ module TestFormula
 
     @test isa(mm.m, Matrix{Float64})
     @test isa(smm.m, sparsetype)
-    @test isa(ModelMatrix{DataMatrix{Float64}}(mf).m, DataMatrix{Float64})
 
-    #test_group("expanding a PooledVec into a design matrix of indicators for each dummy variable")
+    #test_group("expanding a nominal array into a design matrix of indicators for each dummy variable")
 
-    d[:x1p] = PooledDataArray(d[:x1])
+    d[:x1p] = NullableCategoricalArray(d[:x1])
     mf = ModelFrame(y ~ x1p, d)
     mm = ModelMatrix(mf)
 
@@ -182,24 +181,24 @@ module TestFormula
     ## @test r[:,1] == DataVector(df["x1"])
     ## @test r[:,2] == DataVector(df["x2"])
 
-    ## df["x1"] = PooledDataArray(x1)
+    ## df["x1"] = CategoricalArray(x1)
     ## r = expand(:x1, df)
     ## @test isa(r, DataFrame)
     ## @test ncol(r) == 3
-    ## @test r == expand(PooledDataArray(x1), "x1", DataFrame())
+    ## @test r == expand(CategoricalArray(x1), "x1", DataFrame())
 
     ## r = expand(:(x1 + x2), df)
     ## @test isa(r, DataFrame)
     ## @test ncol(r) == 4
-    ## @test r[:,1:3] == expand(PooledDataArray(x1), "x1", DataFrame())
+    ## @test r[:,1:3] == expand(CategoricalArray(x1), "x1", DataFrame())
     ## @test r[:,4] == DataVector(df["x2"])
 
-    ## df["x2"] = PooledDataArray(x2)
+    ## df["x2"] = CategoricalArray(x2)
     ## r = expand(:(x1 + x2), df)
     ## @test isa(r, DataFrame)
     ## @test ncol(r) == 6
-    ## @test r[:,1:3] == expand(PooledDataArray(x1), "x1", DataFrame())
-    ## @test r[:,4:6] == expand(PooledDataArray(x2), "x2", DataFrame())
+    ## @test r[:,1:3] == expand(CategoricalArray(x1), "x1", DataFrame())
+    ## @test r[:,4:6] == expand(CategoricalArray(x2), "x2", DataFrame())
 
     #test_group("Creating a model matrix using full formulas: y ~ x1 + x2, etc")
 
@@ -216,7 +215,7 @@ module TestFormula
     @test mm.m == [ones(4) x1 x2 x1.*x2]
     @test mm.m == ModelMatrix{sparsetype}(mf).m
 
-    df[:x1] = PooledDataArray(x1)
+    df[:x1] = CategoricalArray(x1)
     x1e = [[0, 1, 0, 0] [0, 0, 1, 0] [0, 0, 0, 1]]
     f = y ~ x1 * x2
     mf = ModelFrame(f, df)
@@ -235,7 +234,7 @@ module TestFormula
     ## @test mm.m == [ones(4) x1 log(x2)]
 
     ## df = deepcopy(d)
-    ## df["x1"] = PooledDataArray([5:8])
+    ## df["x1"] = CategoricalArray([5:8])
     ## f = Formula(:(y ~ x1 * (log(x2) + x3)))
     ## mf = ModelFrame(f, df)
     ## mm = ModelMatrix(mf)
@@ -277,7 +276,7 @@ module TestFormula
     ## @test model_response(mf) == y''     # fails: Int64 vs. Float64
 
     df = deepcopy(d)
-    df[:x1] = PooledDataArray(df[:x1])
+    df[:x1] = NullableCategoricalArray(df[:x1])
 
     f = y ~ x2 + x3 + x3*x2
     mm = ModelMatrix(ModelFrame(f, df))
@@ -334,9 +333,9 @@ module TestFormula
     ## FAILS: behavior is wrong when no lower-order terms (1+x1+x2+x1&x2...)
     ##
     ## df = DataFrame(y=1:27,
-    ##                x1 = PooledDataArray(vec([x for x in 1:3, y in 4:6, z in 7:9])),
-    ##                x2 = PooledDataArray(vec([y for x in 1:3, y in 4:6, z in 7:9])),
-    ##                x3 = PooledDataArray(vec([z for x in 1:3, y in 4:6, z in 7:9])))
+    ##                x1 = CategoricalArray(vec([x for x in 1:3, y in 4:6, z in 7:9])),
+    ##                x2 = CategoricalArray(vec([y for x in 1:3, y in 4:6, z in 7:9])),
+    ##                x3 = CategoricalArray(vec([z for x in 1:3, y in 4:6, z in 7:9])))
     ## f = y ~ x1 & x2 & x3
     ## mf = ModelFrame(f, df)
     ## @test coefnames(mf)[2:end] ==
@@ -380,10 +379,10 @@ module TestFormula
     @test size(mm_sub) == (3,3)
 
     ## Missing data
-    d[:x1m] = @data [5, 6, NA, 7]
+    d[:x1m] = NullableArray(Nullable{Int}[5, 6, Nullable(), 7])
     mf = ModelFrame(y ~ x1m, d)
     mm = ModelMatrix(mf)
-    @test mm.m[:, 2] == d[complete_cases(d), :x1m]
+    @test isequal(NullableArray(mm.m[:, 2]), d[complete_cases(d), :x1m])
     @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     ## Same variable on left and right side
@@ -396,7 +395,7 @@ module TestFormula
 d = DataFrame(x = Compat.repeat([:a, :b], outer = 4),
               y = Compat.repeat([:c, :d], inner = 2, outer = 2),
               z = Compat.repeat([:e, :f], inner = 4))
-[pool!(d, name) for name in names(d)]
+[categorical!(d, name) for name in names(d)]
 cs = Dict([Pair(name, EffectsCoding()) for name in names(d)])
 d[:n] = 1.:8
 
@@ -545,5 +544,6 @@ df = DataFrame(x = [1.0,2.0,3.0], y = [4.0,5.0,6.0])
 mf = ModelFrame(y ~ 0 + x, df)
 X = ModelMatrix(mf).m
 X[1] = 0.0
-@test mf.df[1, :x] == 1.0
+@test mf.df[1, :x] === Nullable(1.0)
+
 end

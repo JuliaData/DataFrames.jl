@@ -4,7 +4,7 @@ using Base.Test
 using DataFrames
 
 
-d = DataFrame(x = @pdata( [:a, :b, :c, :a, :a, :b] ))
+d = DataFrame(x = CategoricalVector([:a, :b, :c, :a, :a, :b]))
 
 mf = ModelFrame(Formula(nothing, :x), d)
 
@@ -75,7 +75,7 @@ setcontrasts!(mf, x = HelmertCoding())
 @test_throws ArgumentError setcontrasts!(mf, x = EffectsCoding(levels = ["a", "b", "c"]))
 
 # Missing data is handled gracefully, dropping columns when a level is lost
-d[3, :x] = NA
+d[3, :x] = Nullable()
 mf_missing = ModelFrame(Formula(nothing, :x), d, contrasts = Dict(:x => EffectsCoding()))
 @test ModelMatrix(mf_missing).m == [1 -1
                                     1  1

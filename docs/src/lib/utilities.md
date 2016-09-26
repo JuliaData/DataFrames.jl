@@ -12,6 +12,7 @@
     {docs}
     eltypes
     head
+    categorical!
     complete_cases
     complete_cases!
     describe

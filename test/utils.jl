@@ -38,21 +38,21 @@ module TestUtils
              "Expected if Julia was not built from source.")
     end
 
-    @test DataFrames.countna([1:3;]) == 0
+    @test DataFrames.countnull([1:3;]) == 0
 
-    data = @data rand(20)
-    @test DataFrames.countna(data) == 0
-    data[sample(1:20, 11, replace=false)] = NA
-    @test DataFrames.countna(data) == 11
-    data[1:end] = NA
-    @test DataFrames.countna(data) == 20
+    data = NullableArray(rand(20))
+    @test DataFrames.countnull(data) == 0
+    data[sample(1:20, 11, replace=false)] = Nullable()
+    @test DataFrames.countnull(data) == 11
+    data[1:end] = Nullable()
+    @test DataFrames.countnull(data) == 20
 
-    pdata = @data sample(1:5, 20)
-    @test DataFrames.countna(pdata) == 0
-    pdata[sample(1:20, 11, replace=false)] = NA
-    @test DataFrames.countna(pdata) == 11
-    pdata[1:end] = NA
-    @test DataFrames.countna(pdata) == 20
+    pdata = NullableArray(sample(1:5, 20))
+    @test DataFrames.countnull(pdata) == 0
+    pdata[sample(1:20, 11, replace=false)] = Nullable()
+    @test DataFrames.countnull(pdata) == 11
+    pdata[1:end] = Nullable()
+    @test DataFrames.countnull(pdata) == 20
 
     funs = [mean, sum, var, x -> sum(x)]
     if string(funs[end]) == "(anonymous function)" # Julia < 0.5

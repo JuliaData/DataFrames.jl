@@ -25,6 +25,41 @@ end
 #
 # Split
 #
+
+function groupsort_indexer(x::AbstractVector, ngroups::Integer, null_last::Bool=false)
+    # translated from Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
+
+    # count group sizes, location 0 for NULL
+    n = length(x)
+    # counts = x.pool
+    counts = fill(0, ngroups + 1)
+    for i = 1:n
+        counts[x[i] + 1] += 1
+    end
+
+    # mark the start of each contiguous group of like-indexed data
+    where = fill(1, ngroups + 1)
+    if null_last
+        for i = 3:ngroups+1
+            where[i] = where[i - 1] + counts[i - 1]
+        end
+        where[1] = where[end] + counts[end]
+    else
+        for i = 2:ngroups+1
+            where[i] = where[i - 1] + counts[i - 1]
+        end
+    end
+
+    # this is our indexer
+    result = fill(0, n)
+    for i = 1:n
+        label = x[i] + 1
+        result[where[label]] = i
+        where[label] += 1
+    end
+    result, where, counts
+end
+
 """
 A view of an AbstractDataFrame split into row groups
 
@@ -36,7 +71,7 @@ groupby(cols)
 ### Arguments
 
 * `d` : an AbstractDataFrame
-* `cols` : an 
+* `cols` : an
 
 If `d` is not provided, a curried version of groupby is given.
 
@@ -76,8 +111,8 @@ vcat([g[:b] for g in gd]...)
 for g in gd
     println(g)
 end
-map(d -> mean(d[:c]), gd)   # returns a GroupApplied object
-combine(map(d -> mean(d[:c]), gd))
+map(d -> mean(dropnull(d[:c])), gd)   # returns a GroupApplied object
+combine(map(d -> mean(dropnull(d[:c])), gd))
 df |> groupby(:a) |> [sum, length]
 df |> groupby([:a, :b]) |> [sum, length]
 ```
@@ -88,25 +123,34 @@ function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
     ##     http://wesmckinney.com/blog/?p=489
 
     ncols = length(cols)
-    # use the pool trick to get a set of integer references for each unique item
-    dv = PooledDataArray(d[cols[ncols]])
-    # if there are NAs, add 1 to the refs to avoid underflows in x later
-    dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    # use UInt32 instead of the PDA's integer size since the number of levels can be high
-    x = copy!(similar(dv.refs, UInt32), dv.refs) .+ dv_has_nas
+    # use CategoricalArray to get a set of integer references for each unique item
+    nv = NullableCategoricalArray(d[cols[ncols]])
+    # if there are NULLs, add 1 to the refs to avoid underflows in x later
+    anynulls = (findfirst(nv.refs, 0) > 0 ? 1 : 0)
+    # use UInt32 instead of the original array's integer size since the number of levels can be high
+    x = similar(nv.refs, UInt32)
+    for i = 1:nrow(d)
+        if nv.refs[i] == 0
+            x[i] = 1
+        else
+            x[i] = CategoricalArrays.order(nv.pool)[nv.refs[i]] + anynulls
+        end
+    end
     # also compute the number of groups, which is the product of the set lengths
-    ngroups = length(dv.pool) + dv_has_nas
+    ngroups = length(levels(nv)) + anynulls
     # if there's more than 1 column, do roughly the same thing repeatedly
     for j = (ncols - 1):-1:1
-        dv = PooledDataArray(d[cols[j]])
-        dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
+        nv = NullableCategoricalArray(d[cols[j]])
+        anynulls = (findfirst(nv.refs, 0) > 0 ? 1 : 0)
         for i = 1:nrow(d)
-            x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
+            if nv.refs[i] != 0
+                x[i] += (CategoricalArrays.order(nv.pool)[nv.refs[i]] + anynulls - 1) * ngroups
+            end
         end
-        ngroups = ngroups * (length(dv.pool) + dv_has_nas)
+        ngroups = ngroups * (length(levels(nv)) + anynulls)
         # TODO if ngroups is really big, shrink it
     end
-    (idx, starts) = DataArrays.groupsort_indexer(x, ngroups)
+    (idx, starts) = groupsort_indexer(x, ngroups)
     # Remove zero-length groupings
     starts = _uniqueofsorted(starts)
     ends = starts[2:end] - 1
@@ -209,7 +253,7 @@ combine(ga::GroupApplied)
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
-combine(map(d -> mean(d[:c]), gd))
+combine(map(d -> mean(dropnull(d[:c])), gd))
 ```
 
 """
@@ -299,7 +343,7 @@ notation can be used.
 
 ### Returns
 
-* `::DataFrame` 
+* `::DataFrame`
 
 ### Examples
 
@@ -308,11 +352,11 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 by(df, :a, d -> sum(d[:c]))
-by(df, :a, d -> 2 * d[:c])
-by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(d[:c])))
-by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(d[:c])))
+by(df, :a, d -> 2 * dropnull(d[:c]))
+by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(dropnull(d[:c]))))
+by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(dropnull(d[:c]))))
 by(df, [:a, :b]) do d
-    DataFrame(m = mean(d[:c]), v = var(d[:c]))
+    DataFrame(m = mean(dropnull(d[:c])), v = var(dropnull(d[:c])))
 end
 ```
 
@@ -347,7 +391,7 @@ same length.
 
 ### Returns
 
-* `::DataFrame` 
+* `::DataFrame`
 
 ### Examples
 
@@ -356,9 +400,9 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 aggregate(df, :a, sum)
-aggregate(df, :a, [sum, mean])
-aggregate(groupby(df, :a), [sum, mean])
-df |> groupby(:a) |> [sum, mean]   # equivalent
+aggregate(df, :a, [sum, x->mean(dropnull(x))])
+aggregate(groupby(df, :a), [sum, x->mean(dropnull(x))])
+df |> groupby(:a) |> [sum, x->mean(dropnull(x))]   # equivalent
 ```
 
 """

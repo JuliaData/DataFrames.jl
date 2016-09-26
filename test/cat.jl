@@ -6,13 +6,13 @@ module TestCat
     # hcat
     #
 
-    dvint = @data([1, 2, NA, 4])
-    dvstr = @data(["one", "two", NA, "four"])
+    nvint = NullableArray(Nullable{Int}[1, 2, Nullable(), 4])
+    nvstr = NullableArray(Nullable{String}["one", "two", Nullable(), "four"])
 
-    df2 = DataFrame(Any[dvint, dvstr])
-    df3 = DataFrame(Any[dvint])
+    df2 = DataFrame(Any[nvint, nvstr])
+    df3 = DataFrame(Any[nvint])
     df4 = convert(DataFrame, [1:4 1:4])
-    df5 = DataFrame(Any[@data([1,2,3,4]), dvstr])
+    df5 = DataFrame(Any[NullableArray([1,2,3,4]), nvstr])
 
     dfh = hcat(df3, df4)
     @test size(dfh, 2) == 3
@@ -78,37 +78,52 @@ module TestCat
     dfr = vcat(df2, df3)
     @test size(dfr) == (8,2)
     @test names(df2) == names(dfr)
-    @test isna(dfr[8,:x2])
+    @test isnull(dfr[8,:x2])
 
     # Eltype promotion
-    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Float64]
-    @test eltypes(vcat(DataFrame(a = [NA]), DataFrame(a = [2.1]))) == [Float64]
+    # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
+    if VERSION >= v"0.5.0-dev"
+        @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Float64}]
+        @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Float64}]
+    else
+        @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Any}]
+        @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Any}]
+    end
 
     # Minimal container type promotion
-    dfa = DataFrame(a = @pdata([1, 2, 2]))
-    dfb = DataFrame(a = @pdata([2, 3, 4]))
-    dfc = DataFrame(a = @data([2, 3, 4]))
+    dfa = DataFrame(a = CategoricalArray([1, 2, 2]))
+    dfb = DataFrame(a = CategoricalArray([2, 3, 4]))
+    dfc = DataFrame(a = NullableArray([2, 3, 4]))
     dfd = DataFrame(Any[2:4], [:a])
-    @test vcat(dfa, dfb)[:a] == @pdata([1, 2, 2, 2, 3, 4])
-    @test vcat(dfa, dfc)[:a] == @pdata([1, 2, 2, 2, 3, 4])
+    dfab = vcat(dfa, dfb)
+    dfac = vcat(dfa, dfc)
+    @test isequal(dfab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
+    @test isequal(dfac[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
+    @test isa(dfab[:a], NullableCategoricalVector{Int})
+    # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
+    if VERSION >= v"0.5.0-dev"
+        @test isa(dfac[:a], NullableCategoricalVector{Int})
+    else
+        @test isa(dfac[:a], NullableCategoricalVector{Any})
+    end
     # ^^ container may flip if container promotion happens in Base/DataArrays
     dc = vcat(dfd, dfc)
-    @test vcat(dfc, dfd) == dc
+    @test isequal(vcat(dfc, dfd), dc)
 
     # Zero-row DataFrames
     dfc0 = similar(dfc, 0)
-    @test vcat(dfd, dfc0, dfc) == dc
+    @test isequal(vcat(dfd, dfc0, dfc), dc)
     @test eltypes(vcat(dfd, dfc0)) == eltypes(dc)
 
     # Missing columns
     rename!(dfd, :a, :b)
-    dfda = DataFrame(b = @data([2, 3, 4, NA, NA, NA]),
-                     a = @pdata([NA, NA, NA, 1, 2, 2]))
+    dfda = DataFrame(b = NullableArray(Nullable{Int}[2, 3, 4, Nullable(), Nullable(), Nullable()]),
+                     a = NullableCategoricalVector(Nullable{Int}[Nullable(), Nullable(), Nullable(), 1, 2, 2]))
     @test isequal(vcat(dfd, dfa), dfda)
 
     # Alignment
     @test isequal(vcat(dfda, dfd, dfa), vcat(dfda, dfda))
 
     # vcat should be able to concatenate different implementations of AbstractDataFrame (PR #944)
-    @test vcat(sub(DataFrame(A=1:3),2),DataFrame(A=4:5)) == DataFrame(A=[2,4,5])
+    @test isequal(vcat(sub(DataFrame(A=1:3),2),DataFrame(A=4:5)), DataFrame(A=[2,4,5]))
 end

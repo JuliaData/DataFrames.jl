@@ -94,7 +94,8 @@ function stack(df::AbstractDataFrame, measure_vars)
     stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds))
 end
 function stack(df::AbstractDataFrame)
-    idx = [1:length(df);][[t <: AbstractFloat for t in eltypes(df)]]
+    idx = find([T <: AbstractFloat || (T <: Nullable && eltype(T) <: AbstractFloat)
+                for T in eltypes(df)])
     stack(df, idx)
 end
 
@@ -163,27 +164,30 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     # `rowkey` integer indicating which column to place along rows
     # `colkey` integer indicating which column to place along column headers
     # `value` integer indicating which column has values
-    refkeycol = PooledDataArray(df[rowkey])
+    refkeycol = NullableCategoricalArray(df[rowkey])
     valuecol = df[value]
-    # TODO make a version with a default refkeycol
-    keycol = PooledDataArray(df[colkey])
+    keycol = NullableCategoricalArray(df[colkey])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
-    # TODO make fillNA(type, length)
-    payload = DataFrame(Any[DataArray(eltype(valuecol), Nrow) for i in 1:Ncol], map(Symbol, keycol.pool))
+    T = eltype(valuecol)
+    if T <: Nullable
+        T = eltype(T)
+    end
+    payload = DataFrame(Any[NullableArray(T, Nrow) for i in 1:Ncol],
+                        map(Symbol, levels(keycol)))
     nowarning = true
     for k in 1:nrow(df)
-        j = @compat Int(keycol.refs[k])
-        i = @compat Int(refkeycol.refs[k])
+        j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
+        i = Int(CategoricalArrays.order(refkeycol.pool)[refkeycol.refs[k]])
         if i > 0 && j > 0
-            if nowarning && !isna(payload[j][i])
+            if nowarning && !isnull(payload[j][i])
                 warn("Duplicate entries in unstack.")
                 nowarning = false
             end
             payload[j][i]  = valuecol[k]
         end
     end
-    insert!(payload, 1, refkeycol.pool, _names(df)[rowkey])
+    insert!(payload, 1, NullableArray(levels(refkeycol)), _names(df)[rowkey])
 end
 unstack(df::AbstractDataFrame, rowkey, colkey, value) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
@@ -196,23 +200,27 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     # group on anything not a key or value:
     g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]))
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
-    rowkey = PooledDataArray(zeros(Int, size(df, 1)), [1:length(groupidxs);])
+    rowkey = zeros(Int, size(df, 1))
     for i in 1:length(groupidxs)
         rowkey[groupidxs[i]] = i
     end
-    keycol = PooledDataArray(df[colkey])
+    keycol = NullableCategoricalArray(df[colkey])
     valuecol = df[value]
     df1 = df[g.idx[g.starts], g.cols]
-    keys = unique(keycol)
     Nrow = length(g)
-    Ncol = length(keycol.pool)
-    df2 = DataFrame(Any[DataArray(fill(valuecol[1], Nrow), fill(true, Nrow)) for i in 1:Ncol], map(@compat(Symbol), keycol.pool))
+    Ncol = length(levels(keycol))
+    T = eltype(valuecol)
+    if T <: Nullable
+        T = eltype(T)
+    end
+    df2 = DataFrame(Any[NullableArray(T, Nrow) for i in 1:Ncol],
+                    map(@compat(Symbol), levels(keycol)))
     nowarning = true
     for k in 1:nrow(df)
-        j = @compat Int(keycol.refs[k])
+        j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
         i = rowkey[k]
         if i > 0 && j > 0
-            if nowarning && !isna(df2[j][i])
+            if nowarning && !isnull(df2[j][i])
                 warn("Duplicate entries in unstack.")
                 nowarning = false
             end
@@ -289,7 +297,7 @@ Base.ndims(v::StackedVector) = 1
 Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
 Base.similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
 
-DataArrays.PooledDataArray(v::StackedVector) = PooledDataArray(v[:]) # could be more efficient
+CategoricalArrays.CategoricalArray(v::StackedVector) = CategoricalArray(v[:]) # could be more efficient
 
 
 """
@@ -349,8 +357,8 @@ Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.inner, v.o
 Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 Base.unique(v::RepeatedVector) = unique(v.parent)
 
-function DataArrays.PooledDataArray(v::RepeatedVector)
-    res = DataArrays.PooledDataArray(v.parent)
+function CategoricalArrays.CategoricalArray(v::RepeatedVector)
+    res = CategoricalArrays.CategoricalArray(v.parent)
     res.refs = repeat(res.refs, inner = [v.inner], outer = [v.outer])
     res
 end
@@ -441,7 +449,8 @@ function stackdf(df::AbstractDataFrame, measure_vars)
     stackdf(df, m_inds, _setdiff(1:ncol(df), m_inds))
 end
 function stackdf(df::AbstractDataFrame)
-    idx = [1:length(df);][[t <: AbstractFloat for t in eltypes(df)]]
+    idx = find([T <: AbstractFloat || (T <: Nullable && eltype(T) <: AbstractFloat)
+                for T in eltypes(df)])
     stackdf(df, idx)
 end
 

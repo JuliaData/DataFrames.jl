@@ -54,7 +54,7 @@ function make_unique(names::Vector{Symbol}; allow_duplicates=true)
         name = names[i]
         in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
-    
+
     if !allow_duplicates && length(dups) > 0
         d = unique(names[dups])
         msg = """Duplicate variable names: $d.
@@ -99,50 +99,55 @@ function gennames(n::Integer)
     return res
 end
 
-#' @description
-#'
-#' Count the number of missing values in an Array.
-#'
-#' NOTE: This function always returns 0.
-#'
-#' @field a::Array The Array whose missing values are to be counted.
-#'
-#' @returns count::Int The number of missing values in `a`.
-#'
-#' @examples
-#'
-#' DataFrames.countna([1, 2, 3])
-countna(a::Array) = 0
 
 #' @description
 #'
-#' Count the number of missing values in a DataArray.
+#' Count the number of null values in an array.
 #'
-#' @field da::DataArray The DataArray whose missing values are to be counted.
+#' @field a::AbstractArray The array whose missing values are to be counted.
 #'
-#' @returns count::Int The number of missing values in `a`.
+#' @returns count::Int The number of null values in `a`.
 #'
 #' @examples
 #'
-#' DataFrames.countna(@data([1, 2, 3]))
-countna(da::DataArray) = sum(da.na)
+#' DataFrames.countnull([1, 2, 3])
+function countnull(a::AbstractArray)
+    res = 0
+    for x in a
+        res += _isnull(x)
+    end
+    return res
+end
 
 #' @description
 #'
-#' Count the number of missing values in a PooledDataArray.
+#' Count the number of missing values in a NullableArray.
 #'
-#' @field pda::PooledDataArray The PooledDataArray whose missing values
+#' @field a::NullableArray The NullableArray whose missing values are to be counted.
+#'
+#' @returns count::Int The number of null values in `a`.
+#'
+#' @examples
+#'
+#' DataFrames.countnull(NullableArray([1, 2, 3]))
+countnull(a::NullableArray) = sum(a.isnull)
+
+#' @description
+#'
+#' Count the number of missing values in a NullableCategoricalArray.
+#'
+#' @field na::CategoricalArray The CategoricalArray whose missing values
 #'        are to be counted.
 #'
-#' @returns count::Int The number of missing values in `a`.
+#' @returns count::Int The number of null values in `a`.
 #'
 #' @examples
 #'
-#' DataFrames.countna(@pdata([1, 2, 3]))
-function countna(da::PooledDataArray)
+#' DataFrames.countnull(CategoricalArray([1, 2, 3]))
+function countnull(a::CategoricalArray)
     res = 0
-    for i in 1:length(da)
-        res += da.refs[i] == 0
+    for x in a.refs
+        res += x == 0
     end
     return res
 end
@@ -193,3 +198,6 @@ function _fnames{T<:Function}(fs::Vector{T})
     end
     names
 end
+
+_isnull(x::Any) = false
+_isnull(x::Nullable) = isnull(x)
