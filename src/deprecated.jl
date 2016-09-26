@@ -12,5 +12,5 @@ import Base: keys, values, insert!
 
 @deprecate read_rda(args...) FileIO.load(args...)
 
-@deprecate pool categorize
-@deprecate pool! categorize!
+@deprecate pool categorical
+@deprecate pool! categorical!
