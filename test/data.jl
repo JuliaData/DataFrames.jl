@@ -99,7 +99,7 @@ module TestData
     end
     @test isequal(res, sum(df7[:d1]))
 
-    @test aggregate(DataFrame(a=1),abs) == DataFrame(a_abs=1)
+    @test aggregate(DataFrame(a=1), identity) == DataFrame(a_identity=1)
 
     df8 = aggregate(df7[[1, 3]], sum)
     @test isequal(df8[1, :d1_sum], sum(df7[:d1]))

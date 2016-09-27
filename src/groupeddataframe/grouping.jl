@@ -304,12 +304,12 @@ colwise(sum, groupby(df, :a))
 ```
 
 """
-colwise(f::Function, d::AbstractDataFrame) = Any[collect(f(d[idx])) for idx in 1:size(d, 2)]
+colwise(f::Function, d::AbstractDataFrame) = Any[vcat(f(d[idx])) for idx in 1:size(d, 2)]
 colwise(f::Function, gd::GroupedDataFrame) = map(colwise(f), gd)
 colwise(f::Function) = x -> colwise(f, x)
 colwise(f) = x -> colwise(f, x)
 # apply several functions to each column in a DataFrame
-colwise{T<:Function}(fns::Vector{T}, d::AbstractDataFrame) = Any[collect(f(d[idx])) for f in fns, idx in 1:size(d, 2)][:]
+colwise{T<:Function}(fns::Vector{T}, d::AbstractDataFrame) = Any[vcat(f(d[idx])) for f in fns, idx in 1:size(d, 2)][:]
 colwise{T<:Function}(fns::Vector{T}, gd::GroupedDataFrame) = map(colwise(fns), gd)
 colwise{T<:Function}(fns::Vector{T}) = x -> colwise(fns, x)
 
