@@ -1,4 +1,3 @@
-
 ```@meta
 CurrentModule = DataFrames
 ```
@@ -9,22 +8,18 @@ CurrentModule = DataFrames
 Pages = ["utilities.md"]
 ```
 
-...
-
-    {docs}
-    eltypes
-    head
-    categorical!
-    complete_cases
-    complete_cases!
-    describe
-    dump
-    names!
-    nonunique
-    rename
-    rename!
-    tail
-    unique
-    unique!
-
-
+```@docs
+eltypes
+head
+complete_cases
+complete_cases!
+describe
+dump
+names!
+nonunique
+rename
+rename!
+tail
+unique
+unique!
+```

@@ -9,11 +9,8 @@ CurrentModule = DataFrames
 Pages = ["maintypes.md"]
 ```
 
-...
-    
 ```@docs
 AbstractDataFrame
 DataFrame
 SubDataFrame
 ```
-
