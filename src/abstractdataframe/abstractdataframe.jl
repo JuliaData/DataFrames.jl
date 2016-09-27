@@ -79,13 +79,17 @@ abstract AbstractDataFrame
 ##
 ##############################################################################
 
-immutable Cols{T <: AbstractDataFrame}
+immutable Cols{T <: AbstractDataFrame} <: AbstractVector{Any}
     df::T
 end
 Base.start(::Cols) = 1
 Base.done(itr::Cols, st) = st > length(itr.df)
 Base.next(itr::Cols, st) = (itr.df[st], st + 1)
 Base.length(itr::Cols) = length(itr.df)
+Base.size(itr::Cols, ix) = ix==1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
+Base.size(itr::Cols) = (length(itr.df),)
+Base.linearindexing{T}(::Type{Cols{T}}) = Base.LinearFast()
+Base.getindex(itr::Cols, inds...) = getindex(itr.df, inds...)
 
 # N.B. where stored as a vector, 'columns(x) = x.vector' is a bit cheaper
 columns{T <: AbstractDataFrame}(df::T) = Cols{T}(df)
