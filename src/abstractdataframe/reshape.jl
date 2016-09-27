@@ -78,25 +78,23 @@ function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector
                   [Compat.repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
               cnames)
 end
-function stack(df::AbstractDataFrame, measure_vars::Int, id_vars::Int)
-    stack(df, [measure_vars], [id_vars])
+function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int)
+    stack(df, [measure_var], [id_var])
 end
-function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Int)
-    stack(df, measure_vars, [id_vars])
+function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_var::Int)
+    stack(df, measure_vars, [id_var])
 end
-function stack(df::AbstractDataFrame, measure_vars::Int, id_vars::Vector{Int})
-    stackdf(df, [measure_vars], id_vars)
+function stack(df::AbstractDataFrame, measure_var::Int, id_vars::Vector{Int})
+    stackdf(df, [measure_var], id_vars)
 end
 stack(df::AbstractDataFrame, measure_vars, id_vars) =
     stack(df, index(df)[measure_vars], index(df)[id_vars])
-function stack(df::AbstractDataFrame, measure_vars)
+# no vars specified, by default select only numeric columns
+numeric_vars(df::AbstractDataFrame) = [T <: AbstractFloat || (T <: Nullable && eltype(T) <: AbstractFloat)
+                                       for T in eltypes(df)]
+function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df))
     mv_inds = index(df)[measure_vars]
     stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds))
-end
-function stack(df::AbstractDataFrame)
-    idx = find([T <: AbstractFloat || (T <: Nullable && eltype(T) <: AbstractFloat)
-                for T in eltypes(df)])
-    stack(df, idx)
 end
 
 """
@@ -221,7 +219,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
         i = rowkey[k]
         if i > 0 && j > 0
             if nowarning && !isnull(df2[j][i])
-                warn("Duplicate entries in unstack.")
+                warn("Duplicate entries in unstack at row $k.")
                 nowarning = false
             end
             df2[j][i]  = valuecol[k]
@@ -251,7 +249,7 @@ NOTE: Not exported.
 ### Constructor
 
 ```julia
-RepeatedVector(d::AbstractVector...)
+StackedVector(d::AbstractVector...)
 ```
 
 ### Arguments
@@ -432,26 +430,21 @@ function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vect
                   [RepeatedVector(df[:,c], 1, N) for c in id_vars]...],     # id_var columns
               cnames)
 end
-function stackdf(df::AbstractDataFrame, measure_vars::Int, id_vars::Int)
-    stackdf(df, [measure_vars], [id_vars])
+function stackdf(df::AbstractDataFrame, measure_var::Int, id_var::Int)
+    stackdf(df, [measure_var], [id_var])
 end
-function stackdf(df::AbstractDataFrame, measure_vars, id_vars::Int)
-    stackdf(df, measure_vars, [id_vars])
+function stackdf(df::AbstractDataFrame, measure_vars, id_var::Int)
+    stackdf(df, measure_vars, [id_var])
 end
-function stackdf(df::AbstractDataFrame, measure_vars::Int, id_vars)
-    stackdf(df, [measure_vars], id_vars)
+function stackdf(df::AbstractDataFrame, measure_var::Int, id_vars)
+    stackdf(df, [measure_var], id_vars)
 end
 function stackdf(df::AbstractDataFrame, measure_vars, id_vars)
     stackdf(df, index(df)[measure_vars], index(df)[id_vars])
 end
-function stackdf(df::AbstractDataFrame, measure_vars)
+function stackdf(df::AbstractDataFrame, measure_vars = numeric_vars(df))
     m_inds = index(df)[measure_vars]
     stackdf(df, m_inds, _setdiff(1:ncol(df), m_inds))
-end
-function stackdf(df::AbstractDataFrame)
-    idx = find([T <: AbstractFloat || (T <: Nullable && eltype(T) <: AbstractFloat)
-                for T in eltypes(df)])
-    stackdf(df, idx)
 end
 
 """
