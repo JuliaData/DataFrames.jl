@@ -203,15 +203,14 @@ Not meant to be constructed directly, see `groupby` abnd
 provided for a GroupApplied object.
 
 """
-type GroupApplied
+immutable GroupApplied{T<:AbstractDataFrame}
     gd::GroupedDataFrame
-    vals::Vector
+    vals::Vector{T}
 
-    function GroupApplied(gd, vals)
-        if length(gd) != length(vals)
-            error("GroupApplied requires keys and vals be of equal length.")
-        end
-        new(gd, vals)
+    @compat function (::Type{GroupApplied})(gd::GroupedDataFrame, vals::Vector)
+        length(gd) == length(vals) ||
+            throw(DimensionMismatch("GroupApplied requires keys and vals be of equal length (got $(length(gd)) and $(length(vals)))."))
+        new{eltype(vals)}(gd, vals)
     end
 end
 
@@ -222,10 +221,10 @@ end
 
 # map() sweeps along groups
 function Base.map(f::Function, gd::GroupedDataFrame)
-    GroupApplied(gd, AbstractDataFrame[wrap(f(d)) for d in gd])
+    GroupApplied(gd, [wrap(f(df)) for df in gd])
 end
 function Base.map(f::Function, ga::GroupApplied)
-    GroupApplied(ga.gd, AbstractDataFrame[wrap(f(d)) for d in ga.vals])
+    GroupApplied(ga.gd, [wrap(f(df)) for df in ga.vals])
 end
 
 wrap(df::AbstractDataFrame) = df
@@ -259,17 +258,15 @@ combine(map(d -> mean(dropnull(d[:c])), gd))
 """
 function combine(ga::GroupApplied)
     gd, vals = ga.gd, ga.vals
-    # Could be made shorter with a rep(x, lengths) function
-    # See JuliaLang/julia#16443
-    idx = Vector{Int}(sum(Int[size(val, 1) for val in vals]))
+    valscat = vcat(vals)
+    idx = Vector{Int}(size(valscat, 1))
     j = 0
-    for i in 1:length(vals)
-        n = size(vals[i], 1)
-        @inbounds idx[j + (1:n)] = gd.idx[gd.starts[i]]
+    @inbounds for (start, val) in zip(gd.starts, vals)
+        n = size(val, 1)
+        idx[j + (1:n)] = gd.idx[start]
         j += n
     end
-    ret = gd.parent[idx, gd.cols]
-    hcat!(ret, vcat(vals))
+    hcat!(gd.parent[idx, gd.cols], valscat)
 end
 
 
