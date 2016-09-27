@@ -201,14 +201,7 @@ eltypes(df)
 ```
 
 """
-function eltypes(df::AbstractDataFrame)
-    ncols = size(df, 2)
-    res = Array(Type, ncols)
-    for j in 1:ncols
-        res[j] = eltype(df[j])
-    end
-    return res
-end
+eltypes(df::AbstractDataFrame) = map!(eltype, Vector{Type}(size(df,2)), columns(df))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
