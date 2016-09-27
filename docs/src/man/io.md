@@ -4,8 +4,9 @@
 
 To read data from a CSV-like file, use the `readtable` function:
 
-    {docs}
-    readtable
+```@docs
+readtable
+```
 
 `readtable` requires that you specify the path of the file that you would like to read as a `String`. To read data from a non-file source, you may also supply an `IO` object. It supports many additional keyword arguments: these are documented in the section on advanced I/O operations.
 
@@ -13,8 +14,9 @@ To read data from a CSV-like file, use the `readtable` function:
 
 To write data to a CSV file, use the `writetable` function:
 
-    {docs}
-    writetable
+```@docs
+writetable
+```
 
 ## Supplying `DataFrame`s inline with non-standard string literals
 

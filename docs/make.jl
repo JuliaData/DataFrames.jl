@@ -7,17 +7,40 @@ makedocs(
     # options
     modules = [DataFrames],
     doctest = false,
-    clean   = false
+    clean = false,
+    sitename = "DataFrames.jl",
+    format = Documenter.Formats.HTML,
+    pages = Any[
+        "Introduction" => "index.md",
+        "User Guide" => Any[
+            "Getting Started" => "man/getting_started.md",
+            "IO" => "man/io.md",
+            "Joins" => "man/joins.md",
+            "Split-apply-combine" => "man/split_apply_combine.md",
+            "Reshaping" => "man/reshaping_and_pivoting.md",
+            "Sorting" => "man/sorting.md",
+            "Formulas" => "man/formulas.md",
+            "Pooling" => "man/pooling.md",
+        ],
+        "API" => Any[
+            "Main types" => "lib/maintypes.md",
+            "Utilities" => "lib/utilities.md",
+            "Data manipulation" => "lib/manipulation.md",
+        ],
+        "About" => Any[
+            "Release Notes" => "NEWS.md",
+            "License" => "LICENSE.md",
+        ]
+    ]
 )
 
 # Deploy built documentation from Travis.
 # =======================================
 
-# Needs to install an additional dep, mkdocs-material, so provide a custom `deps`.
-custom_deps() = run(`pip install --user pygments mkdocs mkdocs-material`)
-
 deploydocs(
     # options
-    deps = custom_deps,
-    repo = "github.com/JuliaStats/DataFrames.jl.git"
+    repo = "github.com/JuliaStats/DataFrames.jl.git",
+    target = "build",
+    deps = nothing,
+    make = nothing,
 )
