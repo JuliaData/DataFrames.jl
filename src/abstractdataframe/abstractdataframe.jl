@@ -11,24 +11,24 @@ type in that it allows indexing by a key (the columns).
 
 The following are normally implemented for AbstractDataFrames:
 
-* [`describe`]({ref}) : summarize columns
-* [`dump`]({ref}) : show structure
+* [`describe`](@ref) : summarize columns
+* [`dump`](@ref) : show structure
 * `hcat` : horizontal concatenation
 * `vcat` : vertical concatenation
 * `names` : columns names
-* [`names!`]({ref}) : set columns names
-* [`rename!`]({ref}) : rename columns names based on keyword arguments
-* [`eltypes`]({ref}) : `eltype` of each column
+* [`names!`](@ref) : set columns names
+* [`rename!`](@ref) : rename columns names based on keyword arguments
+* [`eltypes`](@ref) : `eltype` of each column
 * `length` : number of columns
 * `size` : (nrows, ncols)
-* [`head`]({ref}) : first `n` rows
-* [`tail`]({ref}) : last `n` rows
+* [`head`](@ref) : first `n` rows
+* [`tail`](@ref) : last `n` rows
 * `convert` : convert to an array
 * `NullableArray` : convert to a NullableArray
-* [`complete_cases`]({ref}) : indexes of complete cases (rows with no NA's)
-* [`complete_cases!`]({ref}) : remove rows with NA's
-* [`nonunique`]({ref}) : indexes of duplicate rows
-* [`unique!`]({ref}) : remove duplicate rows
+* [`complete_cases`](@ref) : indexes of complete cases (rows with no NA's)
+* [`complete_cases!`](@ref) : remove rows with NA's
+* [`nonunique`](@ref) : indexes of duplicate rows
+* [`unique!`](@ref) : remove duplicate rows
 * `similar` : a DataFrame with similar columns as `d`
 
 **Indexing**
@@ -450,7 +450,7 @@ complete_cases(df::AbstractDataFrame)
 
 * `::Vector{Bool}` : indexes of complete cases
 
-See also [`complete_cases!`]({ref}).
+See also [`complete_cases!`](@ref).
 
 **Examples**
 
@@ -485,7 +485,7 @@ complete_cases!(df::AbstractDataFrame)
 
 * `::AbstractDataFrame` : the updated version
 
-See also [`complete_cases`]({ref}).
+See also [`complete_cases`](@ref).
 
 **Examples**
 
@@ -562,7 +562,7 @@ nonunique(df::AbstractDataFrame, cols)
 * `::Vector{Bool}` : indicates whether the row is a duplicate of some
   prior row
 
-See also [`unique`]({ref}) and [`unique!`]({ref}).
+See also [`unique`](@ref) and [`unique!`](@ref).
 
 **Examples**
 
@@ -620,7 +620,7 @@ specifying the column(s) to compare.
 When `cols` is specified, the return DataFrame contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
 
-See also [`nonunique`]({ref}).
+See also [`nonunique`](@ref).
 
 **Examples**
 
@@ -795,7 +795,7 @@ ncol(df::AbstractDataFrame)
 
 * `::AbstractDataFrame` : the updated version
 
-See also [`size`]({ref}).
+See also [`size`](@ref).
 
 NOTE: these functions may be depreciated for `size`.
 
