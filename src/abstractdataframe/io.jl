@@ -221,7 +221,7 @@ function latex_escape(cell::AbstractString)
     return cell
 end
 
-function Base.writemime(io::IO,
+function Base.show(io::IO,
                         ::MIME"text/latex",
                         df::AbstractDataFrame)
     nrows = size(df, 1)
@@ -242,10 +242,13 @@ function Base.writemime(io::IO,
         for col in 1:ncols
             write(io, " & ")
             cell = df[row,col]
-            if mimewritable(MIME("text/latex"), cell)
-                writemime(io, MIME("text/latex"), cell)
-            else
-                write(io, latex_escape(string(cell)))
+            if !isnull(cell)
+                content = get(cell)
+                if mimewritable(MIME("text/latex"), content)
+                    Base.show(io, MIME("text/latex"), content)
+                else
+                    Base.print(io, latex_escape(string(content)))
+                end
             end
         end
         write(io, " \\\\ \n")
