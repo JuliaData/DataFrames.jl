@@ -9,14 +9,16 @@
 # Iteration by rows
 immutable DFRowIterator{T <: AbstractDataFrame}
     df::T
+    nrow::Int
+    @compat (::Type{DFRowIterator}){T}(df::T) = new{T}(df, nrow(df))
 end
 eachrow(df::AbstractDataFrame) = DFRowIterator(df)
 
 Base.start(itr::DFRowIterator) = 1
-Base.done(itr::DFRowIterator, i::Int) = i > size(itr.df, 1)
+Base.done(itr::DFRowIterator, i::Int) = i > itr.nrow
 Base.next(itr::DFRowIterator, i::Int) = (DataFrameRow(itr.df, i), i + 1)
-Base.size(itr::DFRowIterator) = (size(itr.df, 1), )
-Base.length(itr::DFRowIterator) = size(itr.df, 1)
+Base.size(itr::DFRowIterator) = (itr.nrow, )
+Base.length(itr::DFRowIterator) = itr.nrow
 Base.getindex(itr::DFRowIterator, i::Any) = DataFrameRow(itr.df, i)
 Base.map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
 
