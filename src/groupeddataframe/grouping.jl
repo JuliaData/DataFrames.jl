@@ -70,14 +70,13 @@ groupby(cols)
 
 ### Arguments
 
-* `d` : an AbstractDataFrame
-* `cols` : an
-
-If `d` is not provided, a curried version of groupby is given.
+* `d` : an AbstractDataFrame to split (optional, see [Returns](#returns))
+* `cols` : data frame columns to group by
 
 ### Returns
 
 * `::GroupedDataFrame` : a grouped view into `d`
+* `::Function`: a function `x -> groupby(x, cols)` (if `d` is not specified)
 
 ### Details
 
