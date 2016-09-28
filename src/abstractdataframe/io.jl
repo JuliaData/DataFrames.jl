@@ -221,13 +221,11 @@ function latex_escape(cell::AbstractString)
     return cell
 end
 
-function Base.show(io::IO,
-                        ::MIME"text/latex",
-                        df::AbstractDataFrame)
+function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
     nrows = size(df, 1)
     ncols = size(df, 2)
     cnames = _names(df)
-    alignment = join(["c" for _ in 1:ncols])
+    alignment = repeat("c", ncols)
     write(io, "\\begin{tabular}{r|")
     write(io, alignment)
     write(io, "}\n")
@@ -245,9 +243,9 @@ function Base.show(io::IO,
             if !isnull(cell)
                 content = get(cell)
                 if mimewritable(MIME("text/latex"), content)
-                    Base.show(io, MIME("text/latex"), content)
+                    show(io, MIME("text/latex"), content)
                 else
-                    Base.print(io, latex_escape(string(content)))
+                    print(io, latex_escape(string(content)))
                 end
             end
         end
