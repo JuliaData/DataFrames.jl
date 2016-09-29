@@ -481,7 +481,7 @@ creating the model matrix.
     end
 
     # Pre-allocate model matrix
-    mm = T(size(dfrm, 1), num_cols)
+    mm = similar(convert(T, Matrix()), size(dfrm, 1), num_cols)
 
     if terms.intercept
         mm[:,1] = 1
