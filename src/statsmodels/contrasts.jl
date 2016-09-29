@@ -138,6 +138,10 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::AbstractV
     ContrastsMatrix(mat, tnames, c_levels, contrasts)
 end
 
+# Delegate size to underlying matrix
+Base.size(C::ContrastsMatrix) = size(C.matrix)
+Base.size(C::ContrastsMatrix, d::Any) = size(C.matrix, d)
+
 # Methods for constructing ContrastsMatrix from data. These are called in
 # ModelFrame constructor and setcontrasts!.
 ContrastsMatrix(C::AbstractContrasts,

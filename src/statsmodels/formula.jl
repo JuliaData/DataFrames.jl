@@ -331,6 +331,17 @@ function StatsBase.model_response(mf::ModelFrame)
     end
 end
 
+function nc(name::Symbol, mf::ModelFrame; non_redundant::Bool=false)
+    if haskey(mf.contrasts, name)
+        size(non_redundant ?
+             ContrastsMatrix{FullDummyCoding}(mf.contrasts[name]) :
+             mf.contrasts[name],
+             2)
+    else
+        1
+    end
+end
+
 ## construct model matrix columns from model frame + name (checks for contrasts)
 function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, name)
@@ -444,59 +455,85 @@ creating the model matrix.
 @compat function (::Type{ModelMatrix{T}}){T<:AbstractFloatMatrix}(mf::ModelFrame)
     dfrm = mf.df
     terms = droprandomeffects(dropresponse!(mf.terms))
-
-    blocks = T[]
-    assign = Int[]
-    if terms.intercept
-        push!(blocks, ones(size(dfrm, 1), 1))  # columns of 1's is first block
-        push!(assign, 0)                       # this block corresponds to term zero
-    end
-
     factors = terms.factors
 
-    ## Map eval. term name + redundancy bool to cached model matrix columns
-    eterm_cols = @compat Dict{Tuple{Symbol,Bool}, T}()
-    ## Accumulator for each term's vector of eval. term columns.
+    ## Step 1:
+    ## compute which columns correspond to which terms in order to pre-allocate
+    ## model matrix and set up views later
+    term_col_inds = []
+    num_cols = convert(Int, terms.intercept)
 
-    ## TODO: this method makes multiple copies of the data in the ModelFrame:
-    ## first in term_cols (1-2x per evaluation term, depending on redundancy),
-    ## second in constructing the matrix itself.
+    for (i_term, term) in enumerate(terms.terms)
+        f = Compat.view(factors, :, i_term)
+        any(f) || continue
+
+        block_sizes = map((et,nr) -> nc(et, mf, non_redundant=nr),
+                          Compat.view(terms.eterms, f),
+                          Compat.view(terms.is_non_redundant, f, i_term))
+        num_term_cols = reduce(*, block_sizes)
+
+        push!(term_col_inds, (1:num_term_cols)+num_cols)
+        num_cols += num_term_cols
+    end
+
+    if num_cols == 0
+        error("Could not construct model matrix. Resulting matrix has 0 columns.")
+    end
+
+    # Pre-allocate model matrix
+    mm = T(size(dfrm, 1), num_cols)
+
+    if terms.intercept
+        mm[:,1] = 1
+    end
+
+    ## turn terms' column indices into views of corresponding columns in mm
+    term_cols = map(inds -> Compat.view(mm, :, inds), term_col_inds)
+    assign = zeros(Int, num_cols)
+
+    ## Step 2:
+    ## Fill in the columns for each term.
+
+    ## Map eval. term name + redundancy bool to cached model matrix columns
+    ## (views of model matrix itself for eval terms that correspond directly to
+    ## mm columns, and arrays otherwise)
+    eterm_cols = @compat Dict{Tuple{Symbol,Bool}, T}()
 
     ## turn each term into a vector of mm columns for its eval. terms, using
     ## "promoted" full-rank versions of categorical columns for non-redundant
     ## eval. terms:
     for (i_term, term) in enumerate(terms.terms)
-        term_cols = T[]
         ## Pull out the eval terms, and the non-redundancy flags for this term
         ff = Compat.view(factors, :, i_term)
         eterms = Compat.view(terms.eterms, ff)
         non_redundants = Compat.view(terms.is_non_redundant, ff, i_term)
-        ## Get cols for each eval term (either previously generated, or generating
-        ## and storing as necessary)
-        for (et, nr) in zip(eterms, non_redundants)
-            if ! haskey(eterm_cols, (et, nr))
-                eterm_cols[(et, nr)] = modelmat_cols(T, et, mf, non_redundant=nr)
+        if length(eterms) == 1 && term == eterms[1]
+            ## handle special case where term == eterm (e.g., main effect
+            ## terms). in this case, we can store the columns generated for the
+            ## eterm directly in the model matrix and just hold onto a view of
+            ## those columns for any higher-order terms that need them
+            et = eterms[1]
+            nr = non_redundants[1]
+            term_cols[i_term][:] = modelmat_cols(T, et, mf, non_redundant=nr)
+            println("special: $et, $nr")
+            eterm_cols[(et, nr)] = Compat.view(mm, :, term_col_inds[i_term])
+        else
+            ## general case with multiple eterms and expandcols
+            blocks = T[]
+            println("general: $term")
+            for (et, nr) in zip(eterms, non_redundants)
+                block = get!(eterm_cols, (et, nr)) do
+                    println("  generating $et, $nr")
+                    modelmat_cols(T, et, mf, non_redundant=nr)
+                end
+                push!(blocks, block)
             end
-            push!(term_cols, eterm_cols[(et, nr)])
+            mm[:, term_col_inds[i_term]] = expandcols(blocks)
         end
-        push!(blocks, expandcols(term_cols))
-        append!(assign, fill(i_term, size(blocks[end], 2)))
+        assign[term_col_inds[i_term]] = i_term
     end
 
-    if isempty(blocks)
-        error("Could not construct model matrix. Resulting matrix has 0 columns.")
-    end
-
-    I = size(dfrm, 1)
-    J = mapreduce(x -> size(x, 2), +, blocks)
-    X = similar(blocks[1], I, J)
-    i = 1
-    for block in blocks
-        len = size(block, 2)
-        X[:, i:(i + len - 1)] = block
-        i += len
-    end
-    ModelMatrix{T}(X, assign)
+    ModelMatrix{T}(mm, assign)
 end
 ModelMatrix(mf::ModelFrame) = ModelMatrix{Matrix{Float64}}(mf)
 
