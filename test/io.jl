@@ -498,6 +498,13 @@ module TestIO
                    C = [L"\alpha", L"\beta", L"\gamma", L"\sum_{i=1}^n \delta_i"],
                    D = [1.0, 2.0, Nullable(), 3.0]
                    )
-    @test isequal(reprmime(MIME("text/latex"), df), "\\begin{tabular}{r|cccc}\n\t& A & B & C & D\\\\ \n\t\\hline \n\t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 \\\\ \n\t2 & 2 & M\\&F & \$\\beta\$ & 2.0 \\\\ \n\t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  \\\\ \n\t4 & 4 & \\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 \\\\ \n\\end{tabular}\n")
+    @test isequal(reprmime(MIME("text/latex"), df),
+        """\\begin{tabular}{r|cccc}
+	& A & B & C & D\\\\ \n\t\\hline 
+	1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 \\\\ 
+	2 & 2 & M\\&F & \$\\beta\$ & 2.0 \\\\ 
+	3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  \\\\ 
+	4 & 4 & \\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 \\\\ 
+\\end{tabular}\n""")
 
 end
