@@ -499,12 +499,14 @@ module TestIO
                    D = [1.0, 2.0, Nullable(), 3.0]
                    )
     @test isequal(reprmime(MIME("text/latex"), df),
-        """\\begin{tabular}{r|cccc}
-	& A & B & C & D\\\\ \n\t\\hline 
-	1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 \\\\ 
-	2 & 2 & M\\&F & \$\\beta\$ & 2.0 \\\\ 
-	3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  \\\\ 
-	4 & 4 & \\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 \\\\ 
-\\end{tabular}\n""")
-
+            """
+            \\begin{tabular}{r|cccc}
+            \t& A & B & C & D\\\\ 
+            \t\\hline 
+            \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 \\\\ 
+            \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 \\\\ 
+            \t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  \\\\ 
+            \t4 & 4 & \\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 \\\\ 
+            \\end{tabular}
+            """)
 end
