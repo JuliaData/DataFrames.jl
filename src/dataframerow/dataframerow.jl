@@ -24,18 +24,13 @@ Base.sub(r::DataFrameRow, c) = DataFrameRow(r.df[[c]], r.row)
 index(r::DataFrameRow) = index(r.df)
 
 Base.length(r::DataFrameRow) = size(r.df, 2)
-
 Base.endof(r::DataFrameRow) = size(r.df, 2)
-
-Base.collect(r::DataFrameRow) = Tuple{Symbol, Any}[x for x in r]
-
 Base.start(r::DataFrameRow) = 1
-
 Base.next(r::DataFrameRow, s) = ((_names(r)[s], r[s]), s + 1)
-
 Base.done(r::DataFrameRow, s) = s > length(r)
 
 Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, r.df[r.row,:])
+Base.collect(r::DataFrameRow) = Tuple{Symbol, Any}[x for x in r]
 
 # hash of DataFrame rows based on its values
 # so that duplicate rows would have the same hash
