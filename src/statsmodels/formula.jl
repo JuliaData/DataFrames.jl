@@ -482,14 +482,11 @@ creating the model matrix.
 
     # Pre-allocate model matrix
     mm = similar(convert(T, Matrix()), size(dfrm, 1), num_cols)
+    assign = zeros(Int, num_cols)
 
     if terms.intercept
         mm[:,1] = 1
     end
-
-    ## turn terms' column indices into views of corresponding columns in mm
-    term_cols = map(inds -> Compat.view(mm, :, inds), term_col_inds)
-    assign = zeros(Int, num_cols)
 
     ## Step 2:
     ## Fill in the columns for each term.
@@ -514,16 +511,13 @@ creating the model matrix.
             ## those columns for any higher-order terms that need them
             et = eterms[1]
             nr = non_redundants[1]
-            term_cols[i_term][:] = modelmat_cols(T, et, mf, non_redundant=nr)
-            println("special: $et, $nr")
+            mm[:, term_col_inds[i_term]] = modelmat_cols(T, et, mf, non_redundant=nr)
             eterm_cols[(et, nr)] = Compat.view(mm, :, term_col_inds[i_term])
         else
             ## general case with multiple eterms and expandcols
             blocks = T[]
-            println("general: $term")
             for (et, nr) in zip(eterms, non_redundants)
                 block = get!(eterm_cols, (et, nr)) do
-                    println("  generating $et, $nr")
                     modelmat_cols(T, et, mf, non_redundant=nr)
                 end
                 push!(blocks, block)
