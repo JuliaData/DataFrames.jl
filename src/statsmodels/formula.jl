@@ -470,7 +470,7 @@ creating the model matrix.
         block_sizes = map((et,nr) -> nc(et, mf, non_redundant=nr),
                           view(terms.eterms, f),
                           view(terms.is_non_redundant, f, i_term))
-        num_term_cols = reduce(*, block_sizes)
+        num_term_cols = prod(block_sizes)
 
         push!(term_col_inds, (1:num_term_cols)+num_cols)
         num_cols += num_term_cols
