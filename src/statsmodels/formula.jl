@@ -464,12 +464,12 @@ creating the model matrix.
     num_cols = convert(Int, terms.intercept)
 
     for (i_term, term) in enumerate(terms.terms)
-        f = Compat.view(factors, :, i_term)
+        f = view(factors, :, i_term)
         any(f) || continue
 
         block_sizes = map((et,nr) -> nc(et, mf, non_redundant=nr),
-                          Compat.view(terms.eterms, f),
-                          Compat.view(terms.is_non_redundant, f, i_term))
+                          view(terms.eterms, f),
+                          view(terms.is_non_redundant, f, i_term))
         num_term_cols = reduce(*, block_sizes)
 
         push!(term_col_inds, (1:num_term_cols)+num_cols)
@@ -501,9 +501,9 @@ creating the model matrix.
     ## eval. terms:
     for (i_term, term) in enumerate(terms.terms)
         ## Pull out the eval terms, and the non-redundancy flags for this term
-        ff = Compat.view(factors, :, i_term)
-        eterms = Compat.view(terms.eterms, ff)
-        non_redundants = Compat.view(terms.is_non_redundant, ff, i_term)
+        ff = view(factors, :, i_term)
+        eterms = view(terms.eterms, ff)
+        non_redundants = view(terms.is_non_redundant, ff, i_term)
         if length(eterms) == 1 && term == eterms[1]
             ## handle special case where term == eterm (e.g., main effect
             ## terms). in this case, we can store the columns generated for the
@@ -512,7 +512,7 @@ creating the model matrix.
             et = eterms[1]
             nr = non_redundants[1]
             mm[:, term_col_inds[i_term]] = modelmat_cols(T, et, mf, non_redundant=nr)
-            eterm_cols[(et, nr)] = Compat.view(mm, :, term_col_inds[i_term])
+            eterm_cols[(et, nr)] = view(mm, :, term_col_inds[i_term])
         else
             ## general case with multiple eterms and expandcols
             blocks = T[]
