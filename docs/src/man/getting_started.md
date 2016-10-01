@@ -140,3 +140,10 @@ head(iris)
 ```
 
 In the next section, we'll discuss generic I/O strategy for reading and writing `DataFrame` objects that you can use to import and export your own data files.
+
+## Querying DataFrames
+
+While the `DataFrames` package provides basic data manipulation capabilities, users are encouraged to use the following packages for more powerful and complete data querying functionality in the spirit of [dplyr](https://github.com/hadley/dplyr) and [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx):
+
+- [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) provides metaprogramming tools for `DataFrames` and associative objects. These macros improve performance and provide more convenient syntax.
+- [Query.jl](https://github.com/davidanthoff/Query.jl) provides a LINQ like interface to a large number of data sources, including `DataFrame` instances.
