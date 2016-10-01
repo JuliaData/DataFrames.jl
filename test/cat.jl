@@ -38,17 +38,39 @@ module TestCat
     # Assignment of rows
     df[1, :] = df[1, :]
     df[1:2, :] = df[1:2, :]
+    df[[true,false,false,true], :] = df[2:3, :]
 
-    # Broadcasting assignment of rows
+    # Scalar broadcasting assignment of rows
     df[1, :] = 1
+    df[1:2, :] = 1
+    df[[true,false,false,true], :] = 3
+
+    # Vector broadcasting assignment of rows
+    df[1:2, :] = [2,3]
+    df[[true,false,false,true], :] = [2,3]
 
     # Assignment of columns
     df[1] = zeros(4)
+    df[:, 2] = ones(4)
 
     # Broadcasting assignment of columns
     df[:, 1] = 1
     df[1] = 3
     df[:x3] = 2
+
+    # assignment of subframes
+    df[1, 1:2] = df[2, 2:3]
+    df[1:2, 1:2] = df[2:3, 2:3]
+    df[[true,false,false,true], 2:3] = df[1:2,1:2]
+
+    # scalar broadcasting assignment of subframes
+    df[1, 1:2] = 3
+    df[1:2, 1:2] = 3
+    df[[true,false,false,true], 2:3] = 3
+
+    # vector broadcasting assignment of subframes
+    df[1:2, 1:2] = [3,2]
+    df[[true,false,false,true], 2:3] = [2,3]
 
     vcat([])
     vcat(null_df)
