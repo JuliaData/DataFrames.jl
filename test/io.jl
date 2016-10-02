@@ -1,6 +1,7 @@
 module TestIO
     using Base.Test
     using DataFrames, Compat
+    using JSON
 
     #test_group("We can read various file types.")
 
@@ -490,4 +491,22 @@ module TestIO
     # Need to wrap macro call inside eval to prevent the error from being
     # thrown prematurely
     @test_throws ArgumentError eval(:(csv"foo,bar"a))
+
+    # test JSON serialisation
+    df = readtable("$data/iris.csv")
+    df[:TimeStamp] = now()
+    nullify!(df[:SepalWidth], 1)
+    nullify!(df[:Species], 2)
+    nullify!(df[:TimeStamp], 3)
+    s = JSON.json(df)
+    @test isequal(readjson(IOBuffer(s)), df)
+
+    df = DataFrames.DataFrame(
+        A=[1, 2, 3], B=[1.1, 2.2, 3.3],
+        C=["X", "Y", "Z"], D=['p', 'q', 'r'],
+        E=[Date("2016-02-03"), Date("2016-04-01"), Date("0001-01-01")],
+        F=[DateTime("1970-01-01T00:00:00.000"), DateTime("2014-04-08T01:42:02.162"), DateTime("2015-02-09T10:11:04.652")]
+    )
+    @test isequal(JSON.json(df), readstring(open("$data/json/test.json", "r")))
+    @test isequal(readjson("$data/json/test.json"), df)
 end

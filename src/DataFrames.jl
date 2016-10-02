@@ -16,6 +16,7 @@ using Reexport
 @reexport using CategoricalArrays
 using GZip
 using SortingAlgorithms
+using JSON
 
 using FileIO  # remove after read_rda deprecation period
 
@@ -74,6 +75,7 @@ export @~,
        order,
        printtable,
        readtable,
+       readjson,
        rename!,
        rename,
        showcols,
