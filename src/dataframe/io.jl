@@ -1258,11 +1258,13 @@ function readjson(data::Dict{Symbol, Any}; makefactors::Bool=false, normalizenam
             name = identifier(name)
         end
 
+        # types and conversions
         T = get_type(type_name)
-        converter = T == Char ? (x) -> Char(x[1]) : T  # all but Char can initialise on JSON value
-        A = !makefactors || T <: Number ? NullableArray : NullableCategoricalArray
+        converter = T == Char ? (x) -> Char(x[1]) : T  # all types but Char can initialise directly on JSON value
+        ArrayType = !makefactors || T <: Number ? NullableArray : NullableCategoricalArray
 
-        array = result[name] = A(T, length(column))  # initially all null
+        # populate the array
+        array = result[name] = ArrayType(T, length(column))  # initially all null
         mask = column .!= nothing
         array[mask] = [converter(x) for x in column[mask]]  # convert and insert non-nulls
     end

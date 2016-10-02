@@ -507,6 +507,6 @@ module TestIO
         E=[Date("2016-02-03"), Date("2016-04-01"), Date("0001-01-01")],
         F=[DateTime("1970-01-01T00:00:00.000"), DateTime("2014-04-08T01:42:02.162"), DateTime("2015-02-09T10:11:04.652")]
     )
-    @test isequal(JSON.json(df), readstring(open("$data/json/test.json", "r")))
+    @test isequal(JSON.parse(JSON.json(df)), JSON.parse(readstring(open("$data/json/test.json", "r"))))
     @test isequal(readjson("$data/json/test.json"), df)
 end
