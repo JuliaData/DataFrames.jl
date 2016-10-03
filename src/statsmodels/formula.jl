@@ -40,8 +40,7 @@ type Terms
     intercept::Bool       # is there an intercept column in the model matrix?
 end
 
-import Base.==
-==(t1::Terms, t2::Terms) = all( getfield(t1, f)==getfield(t2, ) for f in fieldnames(t1))
+Base.:(==)(t1::Terms, t2::Terms) = all(getfield(t1, f)==getfield(t2, f) for f in fieldnames(t1))
 
 type ModelFrame
     df::AbstractDataFrame
