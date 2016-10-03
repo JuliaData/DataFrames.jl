@@ -53,9 +53,10 @@ module TestFormula
     @test t.intercept == false
     @test t.terms == [:x1, :x2]
 
-    t = Terms(y ~ -1 + x1 + x2)
-    @test t.intercept == false
-    @test t.terms == [:x1, :x2]
+    @test t == Terms(y ~ -1 + x1 + x2) == Terms(y ~ x1 - 1 + x2) == Terms(y ~ x1 + x2 -1)
+
+    ## can't subtract terms other than 1
+    @test_throws ErrorException Terms(y ~ x1 - x2)
 
     t = Terms(y ~ x1 & x2)
     @test t.terms == [:(x1 & x2)]
