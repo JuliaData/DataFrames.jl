@@ -202,6 +202,60 @@ end
 
 ##############################################################################
 #
+# LaTeX output
+#
+##############################################################################
+
+function latex_char_escape(char::AbstractString)
+    if char == "\\"
+        return "\\textbackslash{}"
+    elseif char == "~"
+        return "\\textasciitilde{}"
+    else
+        return string("\\", char)
+    end
+end
+
+function latex_escape(cell::AbstractString)
+    cell = replace(cell, ['\\','~','#','$','%','&','_','^','{','}'], latex_char_escape)
+    return cell
+end
+
+function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
+    nrows = size(df, 1)
+    ncols = size(df, 2)
+    cnames = _names(df)
+    alignment = repeat("c", ncols)
+    write(io, "\\begin{tabular}{r|")
+    write(io, alignment)
+    write(io, "}\n")
+    write(io, "\t& ")
+    header = join(map(c -> latex_escape(string(c)), cnames), " & ")
+    write(io, header)
+    write(io, "\\\\ \n")
+    write(io, "\t\\hline \n")
+    for row in 1:nrows
+        write(io, "\t")
+        write(io, @sprintf("%d", row))
+        for col in 1:ncols
+            write(io, " & ")
+            cell = df[row,col]
+            if !isnull(cell)
+                content = get(cell)
+                if mimewritable(MIME("text/latex"), content)
+                    show(io, MIME("text/latex"), content)
+                else
+                    print(io, latex_escape(string(content)))
+                end
+            end
+        end
+        write(io, " \\\\ \n")
+    end
+    write(io, "\\end{tabular}\n")
+end
+
+##############################################################################
+#
 # MIME
 #
 ##############################################################################
