@@ -206,7 +206,7 @@ end
 #
 ##############################################################################
 
-function latex_char_escape(char::SubString)
+function latex_char_escape(char::AbstractString)
     if char == "\\"
         return "\\textbackslash{}"
     elseif char == "~"
