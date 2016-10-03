@@ -89,7 +89,7 @@ function dospecials(ex::Expr)
     excp.args = vcat(a1,map(dospecials, ex.args[2:end]))
     if a1 == :-
         a2, a3 = excp.args[2:3]
-        a3 == 1 || error("invalid expression $ex; subtraction only supported or -1")
+        a3 == 1 || error("invalid expression $ex; subtraction only supported for -1")
         return :($a2 + -1)
     elseif a1 == :*
         aa = excp.args
