@@ -1,9 +1,5 @@
-module TestUtils
-    using Base.Test
-    using DataFrames
-    using Compat
-
-    import DataFrames: identifier
+@testset "DataFrames utils" begin
+    using DataFrames: identifier
 
     @test identifier("%_B*_\tC*") == :_B_C_
     @test identifier("2a") == :x2a

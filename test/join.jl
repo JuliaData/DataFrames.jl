@@ -1,6 +1,4 @@
-module TestJoin
-    using Base.Test
-    using DataFrames
+@testset "DataFrame joins" begin
 
     name = DataFrame(Name = ["John Doe", "Jane Doe", "Joe Blogs"], ID = [1, 2, 3])
     job = DataFrame(ID = [1, 2, 2, 4], Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
@@ -31,7 +29,7 @@ module TestJoin
     @test isequal(join(name, job, on = :ID, kind = :semi), semi)
     @test isequal(join(name, job, on = :ID, kind = :anti), anti)
 
-    # Join with no non-key columns
+@testset "Join with no non-key columns" begin
     on = [:ID]
     nameid = name[on]
     jobid = job[on]
@@ -43,8 +41,9 @@ module TestJoin
     @test isequal(join(nameid, jobid, on = :ID, kind = :right), right[on])
     @test isequal(join(nameid, jobid, on = :ID, kind = :semi), semi[on])
     @test isequal(join(nameid, jobid, on = :ID, kind = :anti), anti[on])
+end
 
-    # Join using categorical vectors
+@testset "Join using categorical vectors" begin
     cname = DataFrame(Name = ["John Doe", "Jane Doe", "Joe Blogs"], ID = categorical(NullableArray([1, 2, 3])))
     cjob = DataFrame(ID = categorical(NullableArray([1, 2, 2, 4])), Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
     couter = DataFrame(Name = NullableArray(Nullable{String}["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
@@ -58,8 +57,9 @@ module TestJoin
     @test isequal(join(cname, cjob, on = :ID, kind = :outer), couter)
     @test isequal(join(cname, cjob, on = :ID, kind = :left), cleft)
     @test isequal(join(cname, cjob, on = :ID, kind = :right), cright)
+end
 
-    # Join on multiple keys
+@testset "Join on multiple keys" begin
     df1 = DataFrame(A = 1, B = 2, C = 3)
     df2 = DataFrame(A = 1, B = 2, D = 4)
 
@@ -72,7 +72,9 @@ module TestJoin
 
     @test isequal(join(df1, df2, on = [:A, :B]),
                   DataFrame(A = 1, B = :A, C = 3, D = 4))
+end
 
+@testset "Crossjoin" begin
     # Test output of cross joins
     df1 = DataFrame(A = 1:2, B = 'a':'b')
     df2 = DataFrame(A = 1:3, C = 3:5)
@@ -88,8 +90,9 @@ module TestJoin
 
     # Cross joins don't take keys
     @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
+end
 
-    # test empty inputs
+@testset "Join empty inputs" begin
     simple_df(len::Int, col=:A) = (df = DataFrame(); df[col]=collect(1:len); df)
     @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :left),  simple_df(0))
     @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :left),  simple_df(2))
@@ -112,15 +115,17 @@ module TestJoin
     @test isequal(join(simple_df(0), simple_df(0, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
     @test isequal(join(simple_df(0), simple_df(2, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
     @test isequal(join(simple_df(2), simple_df(0, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
+end
 
-    # issue #960
+@testset "issue #960" begin
     df1 = DataFrame(A = 1:50, B = 1:50, C = 1)
     categorical!(df1, :A)
     categorical!(df1, :B)
     @test isequal(join(df1, df1, on = [:A, :B], kind = :inner),
                   DataFrame(A=1:50, B=1:50, C=1, C_1=1))
+end
 
-    # Test that Array{Nullable} works when combined with NullableArray (#1088)
+@testset "Array{Nullable} works with NullableArray (#1088)" begin
     df = DataFrame(Name = Nullable{String}["A", "B", "C"],
                    Mass = [1.5, 2.2, 1.1])
     df2 = DataFrame(Name = ["A", "B", "C", "A"],
@@ -128,4 +133,6 @@ module TestJoin
     @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "B", "C", "A"],
                                                            Quantity = [3, 3, 2, 4],
                                                            Mass = [1.5, 2.2, 1.1, 1.5])
+end
+
 end

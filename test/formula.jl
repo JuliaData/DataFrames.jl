@@ -1,8 +1,4 @@
-module TestFormula
-    using Base.Test
-    using DataFrames
-    using Compat
-
+@testset "Formulas" begin
     # TODO:
     # - grouped variables in formulas with interactions
     # - is it fast?  Can expand() handle DataFrames?
@@ -11,7 +7,7 @@ module TestFormula
     # - support more transformations with I()?
 
     ## Formula parsing
-    import DataFrames.Terms
+    using DataFrames.Terms
 
     ## totally empty
     t = Terms(Formula(nothing, 0))

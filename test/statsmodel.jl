@@ -1,9 +1,12 @@
+# Tests for statsmodel.jl
 module TestStatsModels
 using DataFrames
 using Base.Test
 using Compat
+using StatsBase
 
-# Tests for statsmodel.jl
+import Base: show
+import StatsBase: fit, predict, coeftable, model_response
 
 # A dummy RegressionModel type
 immutable DummyMod <: RegressionModel
@@ -22,6 +25,20 @@ StatsBase.coeftable(mod::DummyMod) =
               ["'beta' value"],
               ["" for n in 1:size(mod.x,2)],
               0)
+## vanilla
+StatsBase.predict(mod::DummyMod) = mod.x * mod.beta
+## new data from matrix
+StatsBase.predict(mod::DummyMod, newX::Matrix) = newX * mod.beta
+
+## Another dummy model type to test fall-through show method
+immutable DummyModTwo <: RegressionModel
+    msg::Compat.UTF8String
+end
+
+StatsBase.fit(::Type{DummyModTwo}, ::Matrix, ::Vector) = DummyModTwo("hello!")
+Base.show(io::IO, m::DummyModTwo) = println(io, m.msg)
+
+@testset "Statistical Models" begin
 
 ## Test fitting
 d = DataFrame()
@@ -36,12 +53,8 @@ m = fit(DummyMod, f, d)
 @test model_response(m) == Array(d[:y])
 
 ## test prediction method
-## vanilla
-StatsBase.predict(mod::DummyMod) = mod.x * mod.beta
-@test predict(m) == [ ones(size(d,1)) Array(d[:x1]) Array(d[:x2]) Array(d[:x1]).*Array(d[:x2]) ] * collect(1:4)
+@test predict(m) == [ones(size(d,1)) Array(d[:x1]) Array(d[:x2]) Array(d[:x1]).*Array(d[:x2])] * collect(1:4)
 
-## new data from matrix
-StatsBase.predict(mod::DummyMod, newX::Matrix) = newX * mod.beta
 mm = ModelMatrix(ModelFrame(f, d))
 @test predict(m, mm.m) == mm.m * collect(1:4)
 
@@ -86,16 +99,9 @@ fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding(),
 @test_throws Exception fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding(),
                                                              :x2p => 1))
 
-
-## Another dummy model type to test fall-through show method
-immutable DummyModTwo <: RegressionModel
-    msg::Compat.UTF8String
-end
-
-StatsBase.fit(::Type{DummyModTwo}, ::Matrix, ::Vector) = DummyModTwo("hello!")
-Base.show(io::IO, m::DummyModTwo) = println(io, m.msg)
-
 m2 = fit(DummyModTwo, f, d)
 show(io, m2)
+
+end
 
 end

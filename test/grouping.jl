@@ -1,6 +1,4 @@
-module TestGrouping
-    using Base.Test
-    using DataFrames
+@testset "Grouping" begin
 
     df = DataFrame(a = repeat([4, 3, 2, 1], outer=[2]),
                    b = repeat([2, 1], outer=[4]),
@@ -56,15 +54,17 @@ module TestGrouping
     # grouping single row
     @test groupby(DataFrame(A=Int[1]), :A).starts == Int[1]
 
-    # issue #960
+@testset "issue #960" begin
     x = CategoricalArray(collect(1:20))
     df = DataFrame(v1=x, v2=x)
     @test isa(groupby(df, [:v1, :v2]), GroupedDataFrame)
+end
 
     df2 = by(e->1, DataFrame(x=Int64[]), :x)
     @test size(df2) == (0,1)
     @test isequal(sum(df2[:x]), Nullable(0))
 
+@testset "Levels reordering" begin
     # Check that reordering levels does not confuse groupby()
     df = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B"], ordered=true),
                    Key2 = CategoricalArray(["A", "B", "A", "B"], ordered=true),
@@ -89,4 +89,6 @@ module TestGrouping
     @test isequal(gd[2], DataFrame(Key1="B", Key2="A", Value=3))
     @test isequal(gd[3], DataFrame(Key1="A", Key2="B", Value=2))
     @test isequal(gd[4], DataFrame(Key1="A", Key2="A", Value=1))
+end
+
 end

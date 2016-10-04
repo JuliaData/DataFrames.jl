@@ -1,6 +1,7 @@
 #
 # Correctness Tests
 #
+module DataFramesTests
 
 fatalerrors = length(ARGS) > 0 && ARGS[1] == "-f"
 quiet = length(ARGS) > 0 && ARGS[1] == "-q"
@@ -8,6 +9,8 @@ anyerrors = false
 
 using Base.Test
 using DataFrames
+using Compat, Compat.String
+importall Base # so that we get warnings for conflicts
 
 my_tests = ["utils.jl",
             "cat.jl",
@@ -54,3 +57,5 @@ stdin = joinpath(dirname(@__FILE__), "stdin.sh")
 ENV2 = copy(ENV)
 ENV2["JULIA_HOME"] = JULIA_HOME
 run(setenv(`bash $stdin`, ENV2))
+
+end

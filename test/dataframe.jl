@@ -1,12 +1,6 @@
-module TestDataFrame
-    using Base.Test
-    using DataFrames, Compat
-    import Compat.String
+@testset "DataFrame basic operations" begin
 
-    #
-    # Equality
-    #
-
+@testset "Equality" begin
     @test isequal(DataFrame(a=[1, 2, 3], b=[4, 5, 6]), DataFrame(a=[1, 2, 3], b=[4, 5, 6]))
     @test !isequal(DataFrame(a=[1, 2], b=[4, 5]), DataFrame(a=[1, 2, 3], b=[4, 5, 6]))
     @test !isequal(DataFrame(a=[1, 2, 3], b=[4, 5, 6]), DataFrame(a=[1, 2, 3]))
@@ -29,11 +23,9 @@ module TestDataFrame
     #             DataFrame(a=Nullable{Int}[1, 2, Nullable()], b=[4, 5, 6]))
     #@test isnull(DataFrame(a=Nullable{Int}[1, 2, Nullable()], b=[4, 5, 6]) ==
     #             DataFrame(a=Nullable{Int}[1, 2, 3], b=[4, 5, 6]))
+end
 
-    #
-    # Copying
-    #
-
+@testset "Copying and concatenating" begin
     df = DataFrame(a = [2, 3], b = Any[DataFrame(c = 1), DataFrame(d = 2)])
     dfc = copy(df)
     dfdc = deepcopy(df)
@@ -60,9 +52,11 @@ module TestDataFrame
 
     z2 = z[:, [1, 1, 2]]
     @test names(z2) == [:a, :a_1, :b]
+end
 
-    #test_group("DataFrame assignment")
+@testset "Modifying" begin
     # Insert single column
+    x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
     x0 = x[Int[], :]
     @test_throws ErrorException x0[:d] = [1]
     @test_throws ErrorException x0[:d] = 1:3
@@ -81,9 +75,9 @@ module TestDataFrame
                        c = NullableCategoricalArray(Float64, 2))
     @test isequal(nulldf, similar(df, 2))
     @test isequal(nulldf, DataFrames.similar_nullable(df, 2))
+end
 
-    # Associative methods
-
+@testset "Associative methods" begin
     df = DataFrame(a=[1, 2], b=[3., 4.])
     @test haskey(df, :a)
     @test !haskey(df, :c)
@@ -108,8 +102,9 @@ module TestDataFrame
     df2 = DataFrame(b=["a", "b"], c=[:c, :d])
     @test isequal(merge!(df, df2), df)
     @test isequal(df, DataFrame(a=[1, 2], b=["a", "b"], c=[:c, :d]))
+end
 
-    #test_group("Empty DataFrame constructors")
+@testset "Empty DataFrame constructors" begin
     df = DataFrame(Int, 10, 3)
     @test size(df, 1) == 10
     @test size(df, 2) == 3
@@ -166,8 +161,9 @@ module TestDataFrame
     @test size(df, 1) == 10
     @test size(df, 2) == 5
     @test typeof(df[:, 1]) == Vector{Float64}
+end
 
-    #test_group("Other DataFrame constructors")
+@testset "Other DataFrame constructors" begin
     df = DataFrame([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
                     @compat(Dict{Any,Any}(:a=>3, :b=>'d')),
                     @compat(Dict{Any,Any}(:a=>5))])
@@ -200,9 +196,9 @@ module TestDataFrame
 
     @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
     @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
+end
 
-
-    # push!(df, row)
+@testset "push!(df, row)" begin
     df=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
@@ -237,8 +233,9 @@ module TestDataFrame
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
     @test_throws ArgumentError push!(dfb, @compat(Dict("first"=>"chicken", "second"=>"stuff")))
     @test isequal(df0, dfb)
+end
 
-    # delete!
+@testset "delete!(df, ...)" begin
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
     @test_throws ArgumentError delete!(df, 0)
     @test_throws ArgumentError delete!(df, 6)
@@ -255,8 +252,9 @@ module TestDataFrame
     @test names(d) == [:a, :d]
     delete!(d, 2)
     @test isequal(d, df[[:a]])
+end
 
-    # deleterows!
+@testset "deleterows!(df, ...)" begin
     df = DataFrame(a=[1, 2], b=[3., 4.])
     @test deleterows!(df, 1) === df
     @test isequal(df, DataFrame(a=[2], b=[4.]))
@@ -288,8 +286,9 @@ module TestDataFrame
     df = DataFrame(a=NullableArray([1, 2, 3]), b=NullableArray([3., 4., 5.]))
     @test deleterows!(df, [2, 3]) === df
     @test isequal(df, DataFrame(a=NullableArray([1]), b=NullableArray([3.])))
+end
 
-    # describe
+@testset "describe(df, ...)" begin
     #suppress output and test that describe() does not throw
     devnull = is_unix() ? "/dev/null" : "nul"
     open(devnull, "w") do f
@@ -330,4 +329,6 @@ module TestDataFrame
     #This changes the expected result
     df4[2,:Mass] = Nullable()
     @test isequal(df2, df4)
+end
+
 end

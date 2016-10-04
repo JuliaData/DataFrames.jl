@@ -1,7 +1,4 @@
-module TestDataFrameRow
-    using Base.Test
-    using DataFrames, Compat
-
+@testset "DataFrameRow" begin
     df = DataFrame(a=NullableArray([1,   2,   3,   1,   2,   2 ]),
                    b=NullableArray(Nullable{Float64}[2.0, Nullable(),
                                                      1.2, 2.0,
@@ -12,7 +9,7 @@ module TestDataFrameRow
     df2 = df[reverse(1:nrow(df)),:]
     df3 = DataFrame(a = NullableArray([1, 2, 3]))
 
-    # test the same frame
+@testset "Comparisons within the same frame" begin
     #
     # Equality
     #
@@ -48,8 +45,9 @@ module TestDataFrameRow
     @test isequal(hash(DataFrameRow(df, 1)), hash(DataFrameRow(df, 4)))
     @test isequal(hash(DataFrameRow(df, 2)), hash(DataFrameRow(df, 5)))
     @test !isequal(hash(DataFrameRow(df, 2)), hash(DataFrameRow(df, 6)))
+end
 
-    # test compatible frames
+@testset "Comparison across different (compatible) frames" begin
     #
     # Equality
     #
@@ -76,8 +74,9 @@ module TestDataFrameRow
 
     # test incompatible frames
     @test_throws ArgumentError isequal(DataFrameRow(df, 1), DataFrameRow(df3, 1))
+end
 
-    # test RowGroupDict
+@testset "RowGroupDict" begin
     N = 20
     d1 = categorical(rand(map(Int64, 1:2), N))
     df5 = DataFrame(Any[d1], [:d1])
@@ -126,4 +125,6 @@ module TestDataFrameRow
     # grouping single row
     gd = DataFrames.group_rows(df5[1,:])
     @test DataFrames.ngroups(gd) == 1
+end
+
 end

@@ -1,7 +1,4 @@
-module TestDuplicates
-    using Base.Test
-    using DataFrames
-
+@testset "Duplicates" begin
     df = DataFrame(a = [1, 2, 3, 3, 4])
     udf = DataFrame(a = [1, 2, 3, 4])
     @test isequal(nonunique(df), [false, false, false, true, false])

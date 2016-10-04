@@ -1,13 +1,10 @@
-module TestContrasts
-
-using Base.Test
-using DataFrames
-
+@testset "Contrasts" begin
 
 d = DataFrame(x = CategoricalVector([:a, :b, :c, :a, :a, :b]))
 
 mf = ModelFrame(Formula(nothing, :x), d)
 
+@testset "Dummy" begin
 # Dummy coded contrasts by default:
 @test ModelMatrix(mf).m == [1  0  0
                             1  1  0
@@ -20,7 +17,9 @@ mf = ModelFrame(Formula(nothing, :x), d)
 mmm = ModelMatrix(mf).m
 setcontrasts!(mf, x = DummyCoding())
 @test ModelMatrix(mf).m == mmm
+end
 
+@testset "Effects" begin
 setcontrasts!(mf, x = EffectsCoding())
 @test ModelMatrix(mf).m == [1 -1 -1
                             1  1  0
@@ -50,7 +49,6 @@ setcontrasts!(mf, x = EffectsCoding(levels = [:c, :b, :a]))
                             1  1  0]
 @test coefnames(mf) == ["(Intercept)"; "x: b"; "x: a"]
 
-
 # change levels and base level of contrast
 setcontrasts!(mf, x = EffectsCoding(levels = [:c, :b, :a], base = :a))
 @test ModelMatrix(mf).m == [1 -1 -1
@@ -61,6 +59,7 @@ setcontrasts!(mf, x = EffectsCoding(levels = [:c, :b, :a], base = :a))
                             1  0  1]
 @test coefnames(mf) == ["(Intercept)"; "x: c"; "x: b"]
 
+@testset "Helmert" begin
 # Helmert coded contrasts
 setcontrasts!(mf, x = HelmertCoding())
 @test ModelMatrix(mf).m == [1 -1 -1
@@ -70,7 +69,9 @@ setcontrasts!(mf, x = HelmertCoding())
                             1 -1 -1
                             1  1 -1]
 @test coefnames(mf) == ["(Intercept)"; "x: b"; "x: c"]
+end
 
+@testset "Incorrect input data" begin
 # Mismatching types of data and contrasts levels throws an error:
 @test_throws ArgumentError setcontrasts!(mf, x = EffectsCoding(levels = ["a", "b", "c"]))
 
@@ -91,6 +92,7 @@ mf_missing = ModelFrame(Formula(nothing, :x), d, contrasts = Dict(:x => EffectsC
 @test_throws ArgumentError setcontrasts!(mf, x = EffectsCoding(levels = [:a, :b, :c, :d]))
 # Asking for base level that's not found in data
 @test_throws ArgumentError setcontrasts!(mf, x = EffectsCoding(base = :e))
+end
 
 # Manually specified contrasts
 contrasts = [0  1
@@ -110,5 +112,6 @@ setcontrasts!(mf, x = ContrastsCoding(contrasts))
 
 # contrasts types must be instaniated
 @test_throws ArgumentError setcontrasts!(mf, x = DummyCoding)
+end
 
 end
