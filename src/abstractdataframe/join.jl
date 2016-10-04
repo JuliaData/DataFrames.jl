@@ -272,9 +272,7 @@ function Base.join(df1::AbstractDataFrame,
                    on::Union{Symbol, Vector{Symbol}} = Symbol[],
                    kind::Symbol = :inner)
     if kind == :cross
-        if on != Symbol[]
-            throw(ArgumentError("Cross joins don't use argument 'on'."))
-        end
+        (on == Symbol[]) || throw(ArgumentError("Cross joins don't use argument 'on'."))
         return crossjoin(df1, df2)
     elseif on == Symbol[]
         throw(ArgumentError("Missing join argument 'on'."))
