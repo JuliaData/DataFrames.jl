@@ -130,6 +130,7 @@ sharepools{S,N}(v1::AbstractArray{S,N},
                 v2::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}}) =
     sharepools(oftype(v2, v1), v2)
 
+# TODO: write an optimized version for (Nullable)CategoricalArray
 function sharepools(v1::AbstractArray,
                     v2::AbstractArray)
     ## Return two categorical arrays that share the same pool.
@@ -179,18 +180,9 @@ function sharepools(v1::AbstractArray,
     end
 
     pool = CategoricalPool(pool)
-    return (CategoricalArray(refs1, pool),
-            CategoricalArray(refs2, pool))
+    return (NullableCategoricalArray(refs1, pool),
+            NullableCategoricalArray(refs2, pool))
 end
-
-sharepools(v1::NullableArray, v2::NullableArray) =
-    sharepools(NullableCategoricalArray(v1), NullableCategoricalArray(v2))
-
-sharepools(v1::AbstractArray, v2::NullableArray) =
-    sharepools(v1, NullableCategoricalArray(v2))
-
-sharepools(v1::NullableArray, v2::AbstractArray) =
-    sharepools(NullableCategoricalArray(v2), v1)
 
 function sharepools(df1::AbstractDataFrame, df2::AbstractDataFrame)
     # This method exists to allow merge to work with multiple columns.
