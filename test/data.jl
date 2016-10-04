@@ -85,6 +85,7 @@ module TestData
 
     #test_group("groupby")
     gd = groupby(df7, :d1)
+    @test isa(gd, GroupedDataFrame)
     @test length(gd) == 2
     # @test isequal(gd[2]["d2"], CategoricalVector["A", "B", Nullable(), "A", Nullable(), Nullable(), Nullable(), Nullable()])
     @test isequal(sum(gd[2][:d3]), sum(df7[:d3][Vector(df7[:d1]) .== 2]))
@@ -191,7 +192,7 @@ module TestData
                     v2 = randn(5))
 
     m1 = join(df1, df2, on = :a)
-    @test isequal(m1[:a], NullableArray([1, 2, 3, 4, 5]))
+    @test isequal(m1[:a], df2[:a][filter!(x->x!=0, indexin(df1[:a], df2[:a]))])
     # TODO: Re-enable
     m2 = join(df1, df2, on = :a, kind = :outer)
     # @test isequal(m2[:b2],
@@ -231,11 +232,11 @@ module TestData
 
     m1 = join(df1, df2, on = :A)
     @test size(m1) == (3,3)
-    @test isequal(m1[:A], NullableArray(Nullable{Compat.ASCIIString}[Nullable(),"a","a"]))
+    @test isequal(m1[:A], NullableArray(Nullable{Compat.ASCIIString}["a","a",Nullable()]))
 
     m2 = join(df1, df2, on = :A, kind = :outer)
     @test size(m2) == (5,3)
-    @test isequal(m2[:A], NullableArray(Nullable{Compat.ASCIIString}[Nullable(),"a","a","b","c"]))
+    @test isequal(m2[:A], NullableArray(Nullable{Compat.ASCIIString}["a","b","a",Nullable(),"c"]))
 
     srand(1)
     df1 = DataFrame(

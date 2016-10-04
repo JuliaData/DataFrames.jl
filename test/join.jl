@@ -2,26 +2,26 @@ module TestJoin
     using Base.Test
     using DataFrames
 
-    name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+    name = DataFrame(Name = ["John Doe", "Jane Doe", "Joe Blogs"], ID = [1, 2, 3])
     job = DataFrame(ID = [1, 2, 2, 4], Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
 
     # Join on symbols or vectors of symbols
-    join(name, job, on = :ID)
-    join(name, job, on = [:ID])
+    @test isa(join(name, job, on = :ID), AbstractDataFrame)
+    @test isa(join(name, job, on = [:ID]), AbstractDataFrame)
     # on is requied for any join except :cross
     @test_throws ArgumentError join(name, job)
 
     # Test output of various join types
-    outer = DataFrame(ID = [1, 2, 2, 3, 4],
-                      Name = NullableArray(Nullable{String}["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
+    outer = DataFrame(Name = NullableArray(Nullable{String}["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
+                      ID = [1, 2, 2, 3, 4],
                       Job = NullableArray(Nullable{String}["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
-    right = outer[Bool[!isnull(x) for x in outer[:Job]], [:Name, :ID, :Job]]
-    left = outer[Bool[!isnull(x) for x in outer[:Name]], :]
-    inner = left[Bool[!isnull(x) for x in left[:Job]], :]
-    semi = unique(inner[:, [:ID, :Name]])
-    anti = left[Bool[isnull(x) for x in left[:Job]], [:ID, :Name]]
+    right = outer[!isnull(outer[:Job]), [:Name, :ID, :Job]]
+    left = outer[!isnull(outer[:Name]), :]
+    inner = left[!isnull(left[:Job]), :]
+    semi = unique(inner[:, [:Name, :ID]])
+    anti = left[isnull(left[:Job]), [:Name, :ID]]
 
     @test isequal(join(name, job, on = :ID), inner)
     @test isequal(join(name, job, on = :ID, kind = :inner), inner)
@@ -43,6 +43,21 @@ module TestJoin
     @test isequal(join(nameid, jobid, on = :ID, kind = :right), right[on])
     @test isequal(join(nameid, jobid, on = :ID, kind = :semi), semi[on])
     @test isequal(join(nameid, jobid, on = :ID, kind = :anti), anti[on])
+
+    # Join using categorical vectors
+    cname = DataFrame(Name = ["John Doe", "Jane Doe", "Joe Blogs"], ID = categorical(NullableArray([1, 2, 3])))
+    cjob = DataFrame(ID = categorical(NullableArray([1, 2, 2, 4])), Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
+    couter = DataFrame(Name = NullableArray(Nullable{String}["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
+                       ID = categorical(NullableArray([1, 2, 2, 3, 4])),
+                       Job = categorical(NullableArray(Nullable{String}["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"])))
+    cright = couter[!isnull(couter[:Job]), [:Name, :ID, :Job]]
+    cleft = couter[!isnull(couter[:Name]), :]
+    cinner = cleft[!isnull(cleft[:Job]), :]
+    @test isequal(join(cname, cjob, on = :ID), cinner)
+    @test isequal(join(cname, cjob, on = :ID, kind = :inner), cinner)
+    @test isequal(join(cname, cjob, on = :ID, kind = :outer), couter)
+    @test isequal(join(cname, cjob, on = :ID, kind = :left), cleft)
+    @test isequal(join(cname, cjob, on = :ID, kind = :right), cright)
 
     # Join on multiple keys
     df1 = DataFrame(A = 1, B = 2, C = 3)
@@ -99,19 +114,18 @@ module TestJoin
     @test isequal(join(simple_df(2), simple_df(0, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
 
     # issue #960
-    df1 = DataFrame(A = 1:50,
-                    B = 1:50,
-                    C = 1)
+    df1 = DataFrame(A = 1:50, B = 1:50, C = 1)
     categorical!(df1, :A)
     categorical!(df1, :B)
-    join(df1, df1, on = [:A, :B], kind = :inner)
+    @test isequal(join(df1, df1, on = [:A, :B], kind = :inner),
+                  DataFrame(A=1:50, B=1:50, C=1, C_1=1))
 
     # Test that Array{Nullable} works when combined with NullableArray (#1088)
     df = DataFrame(Name = Nullable{String}["A", "B", "C"],
                    Mass = [1.5, 2.2, 1.1])
     df2 = DataFrame(Name = ["A", "B", "C", "A"],
                     Quantity = [3, 3, 2, 4])
-    @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "A", "B", "C"],
-                                                           Quantity = [3, 4, 3, 2],
-                                                           Mass = [1.5, 1.5, 2.2, 1.1])
+    @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "B", "C", "A"],
+                                                           Quantity = [3, 3, 2, 4],
+                                                           Mass = [1.5, 2.2, 1.1, 1.5])
 end
