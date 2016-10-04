@@ -46,4 +46,14 @@ module TestSort
     df[:b] = df[:a]
     sort!(df, cols=:a)
     @test df == DataFrame(a=[1,2],b=[1,2])
+
+    df2 = DataFrame(a=[1,2,3])
+    df2[:b] = df2[:a]
+    permute!(df2, [3,1,2])
+    @test df2 == DataFrame(a=[3,1,2],b=[3,1,2])
+
+    df3 = DataFrame(a=[1,2,3])
+    df3[:b] = df3[:a]
+    ipermute!(df3, [3,1,2])
+    @test df3 == DataFrame(a=[2,3,1],b=[2,3,1])
 end
