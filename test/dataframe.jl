@@ -315,9 +315,9 @@ module TestDataFrame
     # Check that reordering levels does not confuse unstack
     levels!(df[1], ["XXX", "Bob", "Batman"])
     #Unstack specifying a row column
-    df2 = unstack(df,:Fish, :Key, :Value)
+    df2 = unstack(df, :Fish, :Key, :Value)
     #Unstack without specifying a row column
-    df3 = unstack(df,:Key, :Value)
+    df3 = unstack(df, :Key, :Value)
     #The expected output
     df4 = DataFrame(Fish = ["XXX", "Bob", "Batman"],
                     Color = Nullable{String}[Nullable(), "Red", "Grey"],

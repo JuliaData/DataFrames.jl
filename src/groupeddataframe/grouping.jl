@@ -420,9 +420,9 @@ end
 (|>){T<:Function}(gd::GroupedDataFrame, fs::Vector{T}) = aggregate(gd, fs)
 
 # Groups DataFrame by cols before applying aggregate
-function aggregate{S <: ColumnIndex, T <:Function}(d::AbstractDataFrame,
-                                     cols::Union{S, AbstractVector{S}},
-                                     fs::Union{T, Vector{T}})
+function aggregate{S<:ColumnIndex, T <:Function}(d::AbstractDataFrame,
+                                    cols::Union{S, AbstractVector{S}},
+                                    fs::Union{T, Vector{T}})
     aggregate(groupby(d, cols), fs)
 end
 
