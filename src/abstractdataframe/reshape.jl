@@ -354,6 +354,12 @@ Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.inner, v.o
 Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 Base.unique(v::RepeatedVector) = unique(v.parent)
 
+NullableArrays.isnull(v::RepeatedVector, i::Real) = false
+NullableArrays.isnull{T}(v::RepeatedVector{Nullable{T}}, i::Int) =
+    isnull(v.parent, parent_index(i, length(v.parent), v.inner))
+NullableArrays.unsafe_getvalue_notnull{T}(v::RepeatedVector{Nullable{T}}, i::Int) =
+    NullableArrays.unsafe_getvalue_notnull(v.parent, parent_index(i, length(v.parent), v.inner))
+
 function CategoricalArrays.CategoricalArray(v::RepeatedVector)
     res = CategoricalArrays.CategoricalArray(v.parent)
     res.refs = repeat(res.refs, inner = [v.inner], outer = [v.outer])
