@@ -98,4 +98,13 @@ module TestJoin
     categorical!(df1, :A)
     categorical!(df1, :B)
     join(df1, df1, on = [:A, :B], kind = :inner)
+
+    # Test that Array{Nullable} works when combined with NullableArray (#1088)
+    df = DataFrame(Name = Nullable{String}["A", "B", "C"],
+                   Mass = [1.5, 2.2, 1.1])
+    df2 = DataFrame(Name = ["A", "B", "C", "A"],
+                    Quantity = [3, 3, 2, 4])
+    @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "A", "B", "C"],
+                                                           Quantity = [3, 4, 3, 2],
+                                                           Mass = [1.5, 1.5, 2.2, 1.1])
 end
