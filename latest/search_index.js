@@ -341,7 +341,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Utilities",
     "title": "StatsBase.describe",
     "category": "Function",
-    "text": "describe(a)\n\nPretty-print the summary statistics provided by summarystats: the mean, minimum, 25th percentile, median, 75th percentile, and maximum.\n\n\n\nSummarize the columns of an AbstractDataFrame\n\ndescribe(df::AbstractDataFrame)\ndescribe(io, df::AbstractDataFrame)\n\nArguments\n\ndf : the AbstractDataFrame\nio : optional output descriptor\n\nResult\n\nnothing\n\nDetails\n\nIf the column's base type derives from Number, compute the minimum, first quantile, median, mean, third quantile, and maximum. NA's are filtered and reported separately.\n\nFor boolean columns, report trues, falses, and NAs.\n\nFor other types, show column characteristics and number of NAs.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\ndescribe(df)\n\n\n\n"
+    "text": "Summarize the columns of an AbstractDataFrame\n\ndescribe(df::AbstractDataFrame)\ndescribe(io, df::AbstractDataFrame)\n\nArguments\n\ndf : the AbstractDataFrame\nio : optional output descriptor\n\nResult\n\nnothing\n\nDetails\n\nIf the column's base type derives from Number, compute the minimum, first quantile, median, mean, third quantile, and maximum. NA's are filtered and reported separately.\n\nFor boolean columns, report trues, falses, and NAs.\n\nFor other types, show column characteristics and number of NAs.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\ndescribe(df)\n\n\n\ndescribe(a)\n\nPretty-print the summary statistics provided by summarystats: the mean, minimum, 25th percentile, median, 75th percentile, and maximum.\n\n\n\n"
 },
 
 {
