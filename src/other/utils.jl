@@ -201,3 +201,8 @@ end
 
 _isnull(x::Any) = false
 _isnull(x::Nullable) = isnull(x)
+
+_isnull(v::AbstractArray, inds...) = false
+# T is required to make this definition more specific than AbstractArray
+_isnull{T}(v::AbstractNullableArray{T}, inds...) = isnull(v, inds...)
+_isnull{T}(v::AbstractNullableCategoricalArray{T}, inds...) = isnull(v, inds...)
