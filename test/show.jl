@@ -47,6 +47,5 @@ module TestShow
 │ Row │ Fish │ Mass  │
 ├─────┼──────┼───────┤
 │ 1   │ Suzy │ 1.5   │
-│ 2   │ Amir │ #NULL │
-"""
+│ 2   │ Amir │ #NULL │"""
 end
