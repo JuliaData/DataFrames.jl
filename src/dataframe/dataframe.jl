@@ -706,7 +706,7 @@ Base.delete!(df::DataFrame, c::Int) = delete!(df, [c])
 Base.delete!(df::DataFrame, c::Any) = delete!(df, index(df)[c])
 
 # deleterows!()
-function deleterows!(df::DataFrame, ind::@compat(Union{Integer, UnitRange{Int}}))
+function deleterows!(df::DataFrame, ind::Union{Integer, UnitRange{Int}})
     for i in 1:ncol(df)
         df.columns[i] = deleteat!(df.columns[i], ind)
     end
@@ -790,13 +790,13 @@ end
 ##
 ##############################################################################
 
-function categorical!(df::DataFrame, cname::@compat(Union{Integer, Symbol}), compact::Bool=true)
+function categorical!(df::DataFrame, cname::Union{Integer, Symbol}, compact::Bool=true)
     df[cname] = categorical(df[cname], compact)
     return
 end
 
-function categorical!{T <: @compat(Union{Integer, Symbol})}(df::DataFrame, cnames::Vector{T},
-                                                            compact::Bool=true)
+function categorical!{T <: Union{Integer, Symbol}}(df::DataFrame, cnames::Vector{T},
+                                                   compact::Bool=true)
     for cname in cnames
         df[cname] = categorical(df[cname], compact)
     end

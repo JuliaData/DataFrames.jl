@@ -27,7 +27,7 @@ Base.length(r::DataFrameRow) = size(r.df, 2)
 
 Base.endof(r::DataFrameRow) = size(r.df, 2)
 
-Base.collect(r::DataFrameRow) = @compat Tuple{Symbol, Any}[x for x in r]
+Base.collect(r::DataFrameRow) = Tuple{Symbol, Any}[x for x in r]
 
 Base.start(r::DataFrameRow) = 1
 

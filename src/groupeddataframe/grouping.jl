@@ -421,8 +421,8 @@ end
 
 # Groups DataFrame by cols before applying aggregate
 function aggregate{S <: ColumnIndex, T <:Function}(d::AbstractDataFrame,
-                                     cols::@compat(Union{S, AbstractVector{S}}),
-                                     fs::@compat(Union{T, Vector{T}}))
+                                     cols::Union{S, AbstractVector{S}},
+                                     fs::Union{T, Vector{T}})
     aggregate(groupby(d, cols), fs)
 end
 
