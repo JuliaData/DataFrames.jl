@@ -66,7 +66,7 @@ function make_unique(names::Vector{Symbol}; allow_duplicates=true)
         nm = names[i]
         k = 1
         while true
-            newnm = Symbol("$(nm)_$k")
+            newnm = Symbol(nm,'_',k)
             if !in(newnm, seen)
                 names[i] = newnm
                 push!(seen, newnm)
@@ -94,7 +94,7 @@ end
 function gennames(n::Integer)
     res = Array(Symbol, n)
     for i in 1:n
-        res[i] = Symbol(@sprintf "x%d" i)
+        res[i] = Symbol("x", i)
     end
     return res
 end
