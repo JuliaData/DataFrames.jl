@@ -37,6 +37,7 @@ groupby(cols)
 
 * `d` : an AbstractDataFrame to split (optional, see [Returns](#returns))
 * `cols` : data frame columns to group by
+* `sort`: sort row groups (no sorting by default)
 
 ### Returns
 
@@ -82,19 +83,23 @@ df |> groupby([:a, :b]) |> [sum, length]
 ```
 
 """
-function groupby{T}(df::AbstractDataFrame, cols::Vector{T})
-    df_groups = group_rows(df[cols])
+function groupby{T}(df::AbstractDataFrame, cols::Vector{T}; sort::Bool = false)
+    sdf = df[cols]
+    df_groups = group_rows(sdf)
     # sort the groups
-    group_perm = sortperm(sub(sdf, df_groups.rperm[df_groups.starts]))
+    if sort
+        group_perm = sortperm(sub(sdf, df_groups.rperm[df_groups.starts]))
+        permute!(df_groups.starts, group_perm)
+        permute!(df_groups.stops, group_perm)
+    end
     GroupedDataFrame(df, cols, df_groups.rperm,
-                     df_groups.starts[group_perm],
-                     df_groups.stops[group_perm])
+                     df_groups.starts, df_groups.stops)
 end
-groupby(d::AbstractDataFrame, cols) = groupby(d, [cols])
+groupby(d::AbstractDataFrame, cols; sort::Bool = false) = groupby(d, [cols], sort = sort)
 
 # add a function curry
-groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
-groupby(cols) = x -> groupby(x, cols)
+groupby{T}(cols::Vector{T}; sort::Bool = false) = x -> groupby(x, cols, sort = sort)
+groupby(cols; sort::Bool = false) = x -> groupby(x, cols, sort = sort)
 
 Base.start(gd::GroupedDataFrame) = 1
 Base.next(gd::GroupedDataFrame, state::Int) =
@@ -252,8 +257,8 @@ Split-apply-combine in one step; apply `f` to each grouping in `d`
 based on columns `col`
 
 ```julia
-by(d::AbstractDataFrame, cols, f::Function)
-by(f::Function, d::AbstractDataFrame, cols)
+by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false)
+by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false)
 ```
 
 ### Arguments
@@ -262,6 +267,7 @@ by(f::Function, d::AbstractDataFrame, cols)
 * `cols` : a column indicator (Symbol, Int, Vector{Symbol}, etc.)
 * `f` : a function to be applied to groups; expects each argument to
   be an AbstractDataFrame
+* `sort`: sort row groups (no sorting by default)
 
 `f` can return a value, a vector, or a DataFrame. For a value or
 vector, these are merged into a column along with the `cols` keys. For
@@ -294,8 +300,10 @@ end
 ```
 
 """
-by(d::AbstractDataFrame, cols, f::Function) = combine(map(f, groupby(d, cols)))
-by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
+by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false) =
+    combine(map(f, groupby(d, cols, sort = sort)))
+by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false) =
+    by(d, cols, f, sort = sort)
 
 #
 # Aggregate convenience functions
@@ -339,17 +347,19 @@ df |> groupby(:a) |> [sum, x->mean(dropnull(x))]   # equivalent
 ```
 
 """
-aggregate(d::AbstractDataFrame, fs::Function) = aggregate(d, [fs])
-function aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T})
+aggregate(d::AbstractDataFrame, fs::Function; sort::Bool=false) = aggregate(d, [fs], sort=sort)
+function aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}; sort::Bool=false)
     headers = _makeheaders(fs, _names(d))
-    _aggregate(d, fs, headers)
+    _aggregate(d, fs, headers, sort)
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
-aggregate(gd::GroupedDataFrame, f::Function) = aggregate(gd, [f])
-function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T})
+aggregate(gd::GroupedDataFrame, f::Function; sort::Bool=false) = aggregate(gd, [f], sort=sort)
+function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false)
     headers = _makeheaders(fs, _setdiff(_names(gd), gd.cols))
-    combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
+    res = combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
+    sort && sort!(res, cols=headers)
+    res
 end
 (|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, fs)
 (|>){T<:Function}(gd::GroupedDataFrame, fs::Vector{T}) = aggregate(gd, fs)
@@ -357,8 +367,9 @@ end
 # Groups DataFrame by cols before applying aggregate
 function aggregate{S<:ColumnIndex, T <:Function}(d::AbstractDataFrame,
                                     cols::Union{S, AbstractVector{S}},
-                                    fs::Union{T, Vector{T}})
-    aggregate(groupby(d, cols), fs)
+                                    fs::Union{T, Vector{T}};
+                                    sort::Bool=false)
+    aggregate(groupby(d, cols, sort=sort), fs)
 end
 
 function _makeheaders{T<:Function}(fs::Vector{T}, cn::Vector{Symbol})
@@ -367,6 +378,8 @@ function _makeheaders{T<:Function}(fs::Vector{T}, cn::Vector{Symbol})
             length(fnames)*length(cn))
 end
 
-function _aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol})
-    DataFrame(colwise(fs, d), headers)
+function _aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false)
+    res = DataFrame(colwise(fs, d), headers)
+    sort && sort!(res, cols=headers)
+    res
 end

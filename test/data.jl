@@ -78,7 +78,7 @@ module TestData
     N = 20
     #Cast to Int64 as rand() behavior differs between Int32/64
     d1 = NullableArray(rand(map(Int64, 1:2), N))
-    d2 = NullableCategoricalArray(Nullable{String}["A", "B", Nullable()])[rand(map(Int64, 1:3), N)]
+    d2 = NullableCategoricalArray(Nullable{String}["A", "B", Nullable()], ordered=true)[rand(map(Int64, 1:3), N)]
     d3 = NullableArray(randn(N))
     d4 = NullableArray(randn(N))
     df7 = DataFrame(Any[d1, d2, d3], [:d1, :d2, :d3])
@@ -105,20 +105,19 @@ module TestData
     df8 = aggregate(df7[[1, 3]], sum)
     @test isequal(df8[1, :d1_sum], sum(df7[:d1]))
 
-    df8 = aggregate(df7, :d2, [sum, length])
-    @test df8[1:2, :d2] == ["A", "B"]
+    df8 = aggregate(df7, :d2, [sum, length], sort=true)
+    @test isequal(df8[1:2, :d2], categorical(NullableArray(["A", "B"])))
     @test size(df8, 1) == 3
     @test size(df8, 2) == 5
-    @test isequal(df8[2, :d1_length], Nullable(4))
-    @test isequal(df8, aggregate(groupby(df7, :d2), [sum, length]))
-    @test sum(df8[:d1_length]) == N
-    @test all(df8[:d1_length] .> 0)
-    @test df8[:d1_length] == [4, 5, 11]
-    @test df8[2, :d1_length] == 4
+    @test isequal(df8[2,:d1_length], Nullable(5))
+    @test isequal(df8[:d1_length], NullableArray([4,5,11]))
+    @test isequal(df8[:d1_sum], NullableArray([6,6,17]))
+    @test isequal(df8, aggregate(groupby(df7, :d2), [sum, length], sort=true))
+    @test isequal(sum(df8[:d1_length]), Nullable(N))
+    @test all(x -> get(x) > 0, df8[:d1_length])
+    #@test df8[:d1_length] == [4, 5, 11]
 
-    df9 = df7 |> groupby([:d2]) |> [sum, length]
-    @test isequal(df9, df8)
-    df9 = aggregate(df7, :d2, [sum, length])
+    df9 = df7 |> groupby([:d2], sort=true) |> [sum, length]
     @test isequal(df9, df8)
 
     df10 = DataFrame(
