@@ -40,6 +40,8 @@ type Terms
     intercept::Bool       # is there an intercept column in the model matrix?
 end
 
+Base.:(==)(t1::Terms, t2::Terms) = all(getfield(t1, f)==getfield(t2, f) for f in fieldnames(t1))
+
 type ModelFrame
     df::AbstractDataFrame
     terms::Terms
@@ -85,19 +87,26 @@ function dospecials(ex::Expr)
     if !(a1 in specials) return ex end
     excp = copy(ex)
     excp.args = vcat(a1,map(dospecials, ex.args[2:end]))
-    if a1 != :* return excp end
-    aa = excp.args
-    a2 = aa[2]
-    a3 = aa[3]
-    if length(aa) > 3
-        excp.args = vcat(a1, aa[3:end])
-        a3 = dospecials(excp)
+    if a1 == :-
+        a2, a3 = excp.args[2:3]
+        a3 == 1 || error("invalid expression $ex; subtraction only supported for -1")
+        return :($a2 + -1)
+    elseif a1 == :*
+        aa = excp.args
+        a2 = aa[2]
+        a3 = aa[3]
+        if length(aa) > 3
+            excp.args = vcat(a1, aa[3:end])
+            a3 = dospecials(excp)
+        end
+        ## this order of expansion gives the R-style ordering of interaction
+        ## terms (after sorting in increasing interaction order) for higher-
+        ## order interaction terms (e.g. x1 * x2 * x3 should expand to x1 +
+        ## x2 + x3 + x1&x2 + x1&x3 + x2&x3 + x1&x2&x3)
+        :($a2 + $a2 & $a3 + $a3)
+    else
+        excp
     end
-    ## this order of expansion gives the R-style ordering of interaction
-    ## terms (after sorting in increasing interaction order) for higher-
-    ## order interaction terms (e.g. x1 * x2 * x3 should expand to x1 +
-    ## x2 + x3 + x1&x2 + x1&x3 + x2&x3 + x1&x2&x3)
-    :($a2 + $a2 & $a3 + $a3)
 end
 dospecials(a::Any) = a
 

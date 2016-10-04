@@ -184,7 +184,7 @@ end
         write(io, "<tr>")
         write(io, "<th>$row</th>")
         for column_name in cnames
-            cell = string(df[row, column_name])
+            cell = sprint(ourshowcompact, df[row, column_name])
             write(io, "<td>$(html_escape(cell))</td>")
         end
         write(io, "</tr>")
