@@ -181,7 +181,7 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
         write(io, "<tr>")
         write(io, "<th>$row</th>")
         for column_name in cnames
-            cell = string(df[row, column_name])
+            cell = sprint(ourshowcompact, df[row, column_name])
             write(io, "<td>$(html_escape(cell))</td>")
         end
         write(io, "</tr>")
@@ -230,8 +230,8 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
     write(io, "\t& ")
     header = join(map(c -> latex_escape(string(c)), cnames), " & ")
     write(io, header)
-    write(io, "\\\\ \n")
-    write(io, "\t\\hline \n")
+    write(io, "\\\\\n")
+    write(io, "\t\\hline\n")
     for row in 1:nrows
         write(io, "\t")
         write(io, @sprintf("%d", row))
@@ -247,7 +247,7 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
                 end
             end
         end
-        write(io, " \\\\ \n")
+        write(io, " \\\\\n")
     end
     write(io, "\\end{tabular}\n")
 end

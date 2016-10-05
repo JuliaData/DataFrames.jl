@@ -1,6 +1,8 @@
 module TestShow
     using DataFrames
-    
+    using Compat
+    using Base.Test
+    import Compat.String
     df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 
     io = IOBuffer()
@@ -35,4 +37,15 @@ module TestShow
     A = DataFrames.RepeatedVector([1, 2, 3], 1, 5)
     show(io, A)
 
+    #Test show output for REPL and similar
+    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
+    io = IOBuffer()
+    show(io, df)
+    str = takebuf_string(io)
+    @test str == """
+2×2 DataFrames.DataFrame
+│ Row │ Fish │ Mass  │
+├─────┼──────┼───────┤
+│ 1   │ Suzy │ 1.5   │
+│ 2   │ Amir │ #NULL │"""
 end

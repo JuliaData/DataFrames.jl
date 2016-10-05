@@ -498,15 +498,22 @@ module TestIO
                    C = [L"\alpha", L"\beta", L"\gamma", L"\sum_{i=1}^n \delta_i"],
                    D = [1.0, 2.0, Nullable(), 3.0]
                    )
-    @test isequal(reprmime(MIME("text/latex"), df),
-            """
-            \\begin{tabular}{r|cccc}
-            \t& A & B & C & D\\\\
-            \t\\hline
-            \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 \\\\
-            \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 \\\\
-            \t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  \\\\
-            \t4 & 4 & \\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 \\\\
-            \\end{tabular}
-            """)
+    str = """
+        \\begin{tabular}{r|cccc}
+        \t& A & B & C & D\\\\
+        \t\\hline
+        \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 \\\\
+        \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 \\\\
+        \t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  \\\\
+        \t4 & 4 & \\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 \\\\
+        \\end{tabular}
+        """
+    @test reprmime(MIME("text/latex"), df) == str
+
+    #Test HTML output for IJulia and similar
+    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
+    io = IOBuffer()
+    show(io, "text/html", df)
+    str = takebuf_string(io)
+    @test str == "<table class=\"data-frame\"><tr><th></th><th>Fish</th><th>Mass</th></tr><tr><th>1</th><td>Suzy</td><td>1.5</td></tr><tr><th>2</th><td>Amir</td><td>#NULL</td></tr></table>"
 end
