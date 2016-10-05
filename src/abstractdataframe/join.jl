@@ -216,7 +216,7 @@ function compose_joined_frame(joiner::_DataFrameJoiner,
         # permute the indices to restore left frame rows order
         all_orig_left_ixs[[left_ixs.join; leftonly_ixs.join]] = all_orig_left_ixs
     end
-    left_df = DataFrame(Any[padnull!(col[all_orig_left_ixs], 0, length(rightonly_ixs))
+    left_df = DataFrame(Any[resize!(col[all_orig_left_ixs], length(all_orig_left_ixs)+length(rightonly_ixs))
                             for col in columns(joiner.dfl)],
                         names(joiner.dfl))
 
@@ -233,7 +233,7 @@ function compose_joined_frame(joiner::_DataFrameJoiner,
         right_perm[[right_ixs.join; leftonly_ixs.join]] = right_perm[1:(length(right_ixs)+length(leftonly_ixs))]
     end
     all_orig_right_ixs = [right_ixs.orig; rightonly_ixs.orig]
-    right_df = DataFrame(Any[padnull!(col[all_orig_right_ixs], 0, length(leftonly_ixs))[right_perm]
+    right_df = DataFrame(Any[resize!(col[all_orig_right_ixs], length(all_orig_right_ixs)+length(leftonly_ixs))[right_perm]
                              for col in columns(dfr_noon)],
                          names(dfr_noon))
     # merge left and right parts of the joined frame
