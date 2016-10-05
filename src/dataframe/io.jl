@@ -1198,7 +1198,7 @@ function filldf!(df::DataFrame,
 end
 
 # JSONable types
-json_types = Union{String, Char, Number, Date, DateTime}
+json_types = Union{String, Char, AbstractFloat, Integer, Date, DateTime}
 
 """
     get_type(type_name)
