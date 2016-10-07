@@ -1,6 +1,6 @@
 julia 0.4
 DataArrays 0.3.4
-StatsBase 0.8.3
+StatsBase 0.11.0
 GZip
 SortingAlgorithms
 Reexport

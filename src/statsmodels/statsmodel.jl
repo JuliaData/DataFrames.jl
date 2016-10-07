@@ -62,7 +62,7 @@ typealias DataFrameModels @compat(Union{DataFrameStatisticalModel, DataFrameRegr
 @delegate DataFrameModels.model [StatsBase.coef, StatsBase.confint,
                                  StatsBase.deviance, StatsBase.nulldeviance,
                                  StatsBase.loglikelihood, StatsBase.nullloglikelihood,
-                                 StatsBase.df, StatsBase.df_residual, StatsBase.nobs,
+                                 StatsBase.dof, StatsBase.dof_residual, StatsBase.nobs,
                                  StatsBase.stderr, StatsBase.vcov]
 @delegate DataFrameRegressionModel.model [StatsBase.residuals, StatsBase.model_response,
                                           StatsBase.predict, StatsBase.predict!]
