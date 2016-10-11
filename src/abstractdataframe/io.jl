@@ -180,7 +180,7 @@ end
     haslimit = get(io, :limit, true)
     n = size(df, 1)
     if haslimit
-        tty_rows, tty_cols = displaysize(io)
+        tty_rows, tty_cols = _displaysize(io)
         mxrow = min(n,tty_rows)
     else
         mxrow = n

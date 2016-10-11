@@ -520,11 +520,11 @@ module TestIO
     # test limit attribute of IOContext is used
     df = DataFrame(a=collect(1:1000))
     ioc = IOContext(IOBuffer(), displaysize=(10, 10), limit=false)
-    show(ioc, MIME{Symbol("text/html")}(), df)
-    @test ioc.io |> takebuf_string |> length > 10000
+    show(ioc, "text/html", df)
+    @test length(takebuf_string(ioc.io)) > 10000
 
     io = IOBuffer()
-    show(io, MIME{Symbol("text/html")}(), df)
-    @test io |> takebuf_string |> length < 10000
+    show(io, "text/html", df)
+    @test length(takebuf_string(io)) < 10000
 
 end
