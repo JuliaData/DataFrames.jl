@@ -162,8 +162,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
-    n = size(df, 1)
+@compat function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
     write(io, "<thead>")
@@ -173,10 +172,14 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
         write(io, "<th>$column_name</th>")
     end
     write(io, "</tr>")
-    write(io, "</thead>")
-    write(io, "<tbody>")
-    tty_rows, tty_cols = displaysize(io)
-    mxrow = min(n,tty_rows)
+    haslimit = get(io, :limit, true)
+    n = size(df, 1)
+    if haslimit
+        tty_rows, tty_cols = _displaysize(io)
+        mxrow = min(n,tty_rows)
+    else
+        mxrow = n
+    end
     for row in 1:mxrow
         write(io, "<tr>")
         write(io, "<th>$row</th>")
