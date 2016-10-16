@@ -48,7 +48,7 @@ loops.
 ```julia
 df = DataFrame()
 v = ["x","y","z"][rand(1:3, 10)]
-df1 = DataFrame(Any[[1:10], v, rand(10)], [:A, :B, :C])  # columns are Arrays
+df1 = DataFrame(Any[collect(1:10), v, rand(10)], [:A, :B, :C])  # columns are Arrays
 df2 = DataFrame(A = 1:10, B = v, C = rand(10))           # columns are NullableArrays
 dump(df1)
 dump(df2)
