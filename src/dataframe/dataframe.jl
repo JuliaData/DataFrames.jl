@@ -102,9 +102,9 @@ function DataFrame(; kwargs...)
     return result
 end
 
-function DataFrame(columns::Vector{Any},
+function DataFrame{T}(columns::Vector{T},
                    cnames::Vector{Symbol} = gennames(length(columns)))
-    return DataFrame(columns, Index(cnames))
+    return DataFrame(convert(Vector{Any}, columns), Index(cnames))
 end
 
 
