@@ -104,7 +104,7 @@ end
 
 function DataFrame(columns::AbstractVector,
                    cnames::AbstractVector{Symbol} = gennames(length(columns)))
-    return DataFrame(convert(Vector{Any}, columns), Index(cnames))
+    return DataFrame(convert(Vector{Any}, columns), Index(convert(Vector{Symbol}, cnames)))
 end
 
 
