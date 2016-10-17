@@ -36,7 +36,7 @@ println(q1)
 │ 2   │ 4                  │ Roger   │
 ```
 
-The query starts with the ``@from`` macro. The first argument ``i`` is the name of the range variable that will be used to refer to an individual row in later query commands. The next argument ``df`` is the data source that one wants to query. The `@where` command in this query will filter the source data by applying the filter condition `i.age > 40`. This filters out any rows in which the `age` column is not larger than 40. The `@select` command then projects the columns of the source data onto a new column structure. The example here applies three specific modifications: 1) it only keeps a subset of the columns in the source `DataFrame`, i.e. the `age` column will not be part of the transformed data; 2) it changes the order of the two columns that are selected; and 3) it renames one of the columns that is selected from `children` to `number_of_children`. The example query uses the ``{}`` syntax to achieve this. A ``{}`` in a Query.jl expression instantiates a new [NamedTuple](https://github.com/blackrock/NamedTuples.jl), i.e. it is a shortcut for writing ``@NT(number_of_children=>i.children, name=>i.name)``. The `@collect` statement determines the data structure that the query returns. In this example the results are returned as a `DataFrame`.
+The query starts with the `@from` macro. The first argument `i` is the name of the range variable that will be used to refer to an individual row in later query commands. The next argument `df` is the data source that one wants to query. The `@where` command in this query will filter the source data by applying the filter condition `i.age > 40`. This filters out any rows in which the `age` column is not larger than 40. The `@select` command then projects the columns of the source data onto a new column structure. The example here applies three specific modifications: 1) it only keeps a subset of the columns in the source `DataFrame`, i.e. the `age` column will not be part of the transformed data; 2) it changes the order of the two columns that are selected; and 3) it renames one of the columns that is selected from `children` to `number_of_children`. The example query uses the `{}` syntax to achieve this. A `{}` in a Query.jl expression instantiates a new [NamedTuple](https://github.com/blackrock/NamedTuples.jl), i.e. it is a shortcut for writing `@NT(number_of_children=>i.children, name=>i.name)`. The `@collect` statement determines the data structure that the query returns. In this example the results are returned as a `DataFrame`.
 
 A query without a `@collect` statement returns a standard julia iterator that can be used with any normal julia language construct that can deal with iterators. The following code returns a julia iterator for the query results:
 
@@ -45,7 +45,7 @@ q2 = @from i in df begin
      @where i.age > 40
      @select {number_of_children=i.children, i.name}
 end
-````
+```
 
 One can loop over the results using a standard julia `for` statement:
 
@@ -64,7 +64,7 @@ Total number of children: 4
 
 Or one can use a comprehension to extract the name of a subset of rows:
 
-````julia
+```julia
 y = [i.name for i in q2 if i.number_of_children > 0]
 
 # output
