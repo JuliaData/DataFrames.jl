@@ -185,6 +185,7 @@ module TestDataFrame
     @test typeof(df[:,:a]) == NullableVector{Int}
     @test typeof(df[:,:b]) == NullableVector{Char}
 
+    @test DataFrame(NullableArray[[1,2,3],[2.5,4.5,6.5]], [:A, :B]) == DataFrame(A = [1,2,3], B = [2.5,4.5,6.5])
 
     # This assignment was missing before
     df = DataFrame(Column = [:A])
