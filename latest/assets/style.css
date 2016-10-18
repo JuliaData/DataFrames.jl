@@ -129,19 +129,12 @@ article section.docstring h6 {
 
 /* Navigation */
 nav.toc {
-    /* TODO: would be nice to have the navigation fixed, but the simple
-     * solution (below) has problems with scrolling focus if there's overflow.
-     *
-     *   position: fixed;
-     *   overflow-y: auto;
-     *   height: calc(100% - 2em);
-     *
-     */
-    position: absolute;
-    width: 20em;
-    min-height: calc(100% - 2em);
+    position: fixed;
     top: 0;
     left: 0;
+    bottom: 0;
+    width: 20em;
+    overflow-y: auto;
     padding: 1em 0;
     background-color: #fcfcfc;
     box-shadow: inset -14px 0px 5px -12px rgb(210,210,210);
@@ -203,6 +196,15 @@ nav.toc ul.internal {
     background-color: #e3e3e3;
     box-shadow: inset -14px 0px 5px -12px rgb(210,210,210);
     list-style: none;
+}
+
+nav.toc ul.internal li.toplevel {
+    border-top: 1px solid #c9c9c9;
+    font-weight: bold;
+}
+
+nav.toc ul.internal li.toplevel:first-child {
+    border-top: none;
 }
 
 nav.toc .toctext {
@@ -368,6 +370,13 @@ article section.docstring a.source-link {
 
 .admonition.tip {
     background-color: #dbfaf4;
+}
+
+
+/* footnotes */
+.footnote {
+    padding-left: 0.8em;
+    border-left: 2px solid #ccc;
 }
 
 /* Search page */
