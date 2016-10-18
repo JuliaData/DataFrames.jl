@@ -31,8 +31,6 @@ q1 = @from i in df begin
      @collect DataFrame
 end
 
-println(q1)
-
 # output
 
 2×2 DataFrames.DataFrame
