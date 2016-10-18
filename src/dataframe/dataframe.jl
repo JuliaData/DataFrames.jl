@@ -48,7 +48,7 @@ loops.
 ```julia
 df = DataFrame()
 v = ["x","y","z"][rand(1:3, 10)]
-df1 = DataFrame(Any[[1:10], v, rand(10)], [:A, :B, :C])  # columns are Arrays
+df1 = DataFrame(Any[collect(1:10), v, rand(10)], [:A, :B, :C])  # columns are Arrays
 df2 = DataFrame(A = 1:10, B = v, C = rand(10))           # columns are NullableArrays
 dump(df1)
 dump(df2)
@@ -102,9 +102,9 @@ function DataFrame(; kwargs...)
     return result
 end
 
-function DataFrame(columns::Vector{Any},
-                   cnames::Vector{Symbol} = gennames(length(columns)))
-    return DataFrame(columns, Index(cnames))
+function DataFrame(columns::AbstractVector,
+                   cnames::AbstractVector{Symbol} = gennames(length(columns)))
+    return DataFrame(convert(Vector{Any}, columns), Index(convert(Vector{Symbol}, cnames)))
 end
 
 
