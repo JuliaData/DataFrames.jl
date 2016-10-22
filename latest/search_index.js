@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Getting Started",
     "title": "The Nullable Type",
     "category": "section",
-    "text": "To get started, let's examine the Nullable type. Objects of this type can either hold a value, or represent a missing value (null). For example, this is a Nullable holding the integer 1:Nullable()And this represents a missing value:Nullable()Nullable objects support all standard operators, which return another Nullable. One of the essential properties of null values is that they poison other items. To see this, try to add something like Nullable(1) to Nullable():Nullable(1) + Nullable()Note that operations mixing Nullable and scalars (e.g. 1 + Nullable()) are not supported."
+    "text": "To get started, let's examine the Nullable type. Objects of this type can either hold a value, or represent a missing value (null). For example, this is a Nullable holding the integer 1:Nullable(1)And this represents a missing value:Nullable()Nullable objects support all standard operators, which return another Nullable. One of the essential properties of null values is that they poison other items. To see this, try to add something like Nullable(1) to Nullable():Nullable(1) + Nullable()Note that operations mixing Nullable and scalars (e.g. 1 + Nullable()) are not supported."
 },
 
 {
@@ -397,7 +397,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Utilities",
     "title": "Base.unique",
     "category": "Function",
-    "text": "Delete duplicate rows\n\nunique(df::AbstractDataFrame)\nunique(df::AbstractDataFrame, cols)\nunique!(df::AbstractDataFrame)\nunique!(df::AbstractDataFrame, cols)\n\nArguments\n\ndf : the AbstractDataFrame\ncols :  column indicator (Symbol, Int, Vector{Symbol}, etc.)\n\nspecifying the column(s) to compare.\n\nResult\n\n::AbstractDataFrame : the updated version of df with unique rows.\n\nWhen cols is specified, the return DataFrame contains complete rows, retaining in each case the first instance for which df[cols] is unique.\n\nSee also nonunique.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\ndf = vcat(df, df)\nunique(df)   # doesn't modify df\nunique(df, 1)\nunique!(df)  # modifies df\n\n\n\n"
+    "text": "Delete duplicate rows\n\nunique(df::AbstractDataFrame)\nunique(df::AbstractDataFrame, cols)\nunique!(df::AbstractDataFrame)\nunique!(df::AbstractDataFrame, cols)\n\nArguments\n\ndf : the AbstractDataFrame\ncols :  column indicator (Symbol, Int, Vector{Symbol}, etc.)\n\nspecifying the column(s) to compare.\n\nResult\n\n::AbstractDataFrame : the updated version of df with unique rows.\n\nWhen cols is specified, the return DataFrame contains complete rows, retaining in each case the first instance for which df[cols] is unique.\n\nSee also nonunique.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\ndf = vcat(df, df)\nunique(df)   # doesn't modify df\nunique(df, 1)\nunique!(df)  # modifies df\n\n\n\nunique(A::CategoricalArray)\nunique(A::NullableCategoricalArray)\n\nReturn levels which appear in A, in the same order as levels (and not in their order of appearance). This function is significantly slower than levels since it needs to check whether levels are used or not.\n\n\n\n"
 },
 
 {
