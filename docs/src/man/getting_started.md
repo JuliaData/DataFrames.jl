@@ -135,7 +135,7 @@ To see more of the functionality for working with `DataFrame` objects, we need a
 For example, we can access Fisher's iris data set using the following functions:
 
 ```julia
-iris = DataFrames.loadiris()
+iris = readtable(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
 head(iris)
 ```
 
