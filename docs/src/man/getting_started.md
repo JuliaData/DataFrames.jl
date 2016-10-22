@@ -9,7 +9,7 @@ The DataFrames package is available through the Julia package system. Throughout
 To get started, let's examine the `Nullable` type. Objects of this type can either hold a value, or represent a missing value (`null`). For example, this is a `Nullable` holding the integer `1`:
 
 ```julia
-Nullable()
+Nullable(1)
 ```
 
 And this represents a missing value:
