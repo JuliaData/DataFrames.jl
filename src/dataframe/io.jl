@@ -1196,3 +1196,77 @@ function filldf!(df::DataFrame,
 
     return
 end
+
+# JSONable types
+json_types = Union{String, Char, AbstractFloat, Integer, Date, DateTime}
+
+"""
+    get_type(type_name)
+
+Get data type from type name.
+"""
+function get_type(type_name::String; super_types=json_types)
+    T = getfield(Base, Symbol(type_name))
+    T <: super_types ? T : throw(TypeError(:get_type, "", super_types, T))
+end
+
+# define lower-level representation for data-frame when serialising to JSON
+import JSON.lower
+lower(a::DataFrame) = Dict{Symbol, Vector{Any}}(
+    :names => names(a),
+    :types => [eltype(x) for x in eltypes(a)],
+    :columns => columns(a)
+)
+
+"""
+Read data from a JSON format
+
+```julia
+readjson(filename, [keyword options])
+```
+
+### Arguments
+
+* `filename::AbstractString` : the filename to be read
+
+### Keyword Arguments
+
+*   `makefactors::Bool` -- Convert string columns into `CategoricalVector`'s for use as factors. Defaults to `false`.
+*   `normalizenames::Bool` -- Ensure that column names are valid Julia identifiers. For instance this renames a column named `"a b"` to `"a_b"` which can then be accessed with `:a_b` instead of `Symbol("a b")`. Defaults to `true`.
+
+### Result
+
+* `::DataFrame`
+
+### Examples
+
+```julia
+df = readtable("data.json")
+```
+"""
+function readjson(filename::String; makefactors::Bool=false, normalizenames::Bool=true)
+    readjson(open(filename, "r"); makefactors=makefactors, normalizenames=normalizenames)
+end
+function readjson(io::IO; makefactors::Bool=false, normalizenames::Bool=true)
+    readjson(JSON.parse(io; dicttype=Dict{Symbol, Any}); makefactors=makefactors, normalizenames=normalizenames)
+end
+function readjson(data::Dict{Symbol, Any}; makefactors::Bool=false, normalizenames::Bool=true)
+    names, types, columns = data[:names], data[:types], data[:columns]
+    result = DataFrame()
+    for (name, type_name, column) in zip(names, types, columns)
+        if normalizenames
+            name = identifier(name)
+        end
+
+        # types and conversions
+        T = get_type(type_name)
+        converter = T == Char ? (x) -> Char(x[1]) : T  # all types but Char can initialise directly on JSON value
+        ArrayType = !makefactors || T <: Number ? NullableArray : NullableCategoricalArray
+
+        # populate the array
+        array = result[name] = ArrayType(T, length(column))  # initially all null
+        mask = column .!= nothing
+        array[mask] = [converter(x) for x in column[mask]]  # convert and insert non-nulls
+    end
+    return result
+end
