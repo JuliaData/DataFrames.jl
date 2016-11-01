@@ -685,22 +685,32 @@ Base.vcat(df::AbstractDataFrame) = df
 Base.vcat(dfs::AbstractDataFrame...) = vcat(AbstractDataFrame[dfs...])
 
 Base.vcat(dfs::Vector{Void}) = dfs
+
 function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
     isempty(dfs) && return DataFrame()
-    coltyps, colnams, similars = _colinfo(dfs)
-
     res = DataFrame()
-    Nrow = sum(nrow, dfs)
-    for j in 1:length(colnams)
-        colnam = colnams[j]
-        col = similar(similars[j], coltyps[j], Nrow)
-
-        i = 1
-        for df in dfs
-            if haskey(df, colnam)
-                copy!(col, i, df[colnam])
+    nrows = sum(nrow, dfs)
+    for colnam in unique([(names(e) for e in dfs)...;])
+        k = Bool[haskey(e, colnam) for e in dfs]
+        c = vcat((e[colnam] for e in view(dfs, k))...)
+        if all(k)
+            col = c
+        else
+            col = if _isnullable(c)
+              similar(c, nrows)
+            else
+              NullableArray{eltype(c)}(nrows)
             end
-            i += size(df, 1)
+
+            i = 1
+            j = 1
+            for df in dfs
+                if haskey(df, colnam)
+                    copy!(col, i, view(c, j:j+nrow(df)-1))
+                    j += nrow(df)
+                end
+                i += nrow(df)
+            end
         end
 
         res[colnam] = col
@@ -709,53 +719,6 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
 end
 
 _isnullable{T}(::AbstractArray{T}) = T <: Nullable
-const EMPTY_DATA = NullableArray(Void, 0)
-
-function _colinfo{T<:AbstractDataFrame}(dfs::Vector{T})
-    df1 = dfs[1]
-    colindex = copy(index(df1))
-    coltyps = eltypes(df1)
-    similars = collect(columns(df1))
-    nonnull_ct = Int[_isnullable(c) for c in columns(df1)]
-
-    for i in 2:length(dfs)
-        df = dfs[i]
-        for j in 1:size(df, 2)
-            col = df[j]
-            cn, ct = _names(df)[j], eltype(col)
-            if haskey(colindex, cn)
-                idx = colindex[cn]
-
-                oldtyp = coltyps[idx]
-                if !(ct <: oldtyp)
-                    coltyps[idx] = promote_type(oldtyp, ct)
-                    # Needed on Julia 0.4 since e.g.
-                    # promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T},
-                    # which is not a usable type: fall back to Nullable{Any}
-                    if VERSION < v"0.5.0-dev" &&
-                       coltyps[idx] <: Nullable && !isa(coltyps[idx].types[2], DataType)
-                        coltyps[idx] = Nullable{Any}
-                    end
-                end
-                nonnull_ct[idx] += !_isnullable(col)
-            else # new column
-                push!(colindex, cn)
-                push!(coltyps, ct)
-                push!(similars, col)
-                push!(nonnull_ct, !_isnullable(col))
-            end
-        end
-    end
-
-    for j in 1:length(colindex)
-        if nonnull_ct[j] < length(dfs) && !_isnullable(similars[j])
-            similars[j] = EMPTY_DATA
-        end
-    end
-    colnams = _names(colindex)
-
-    coltyps, colnams, similars
-end
 
 ##############################################################################
 ##

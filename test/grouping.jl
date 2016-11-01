@@ -74,4 +74,19 @@ module TestGrouping
     @test isequal(gd[2], DataFrame(Key1="B", Key2="A", Value=3))
     @test isequal(gd[3], DataFrame(Key1="A", Key2="B", Value=2))
     @test isequal(gd[4], DataFrame(Key1="A", Key2="A", Value=1))
+
+    a = DataFrame(x=categorical(1:200))
+    b = DataFrame(x=categorical(100:300))
+    a[:x] = compact(a[:x])
+    b[:x] = compact(b[:x])
+    r = vcat(a,b)
+    @test isequal(r, DataFrame(x=[categorical(1:200);categorical(100:300)]))
+
+    a = DataFrame(x=categorical(1:200))
+    b = DataFrame(y=categorical(100:300))
+    a[:x] = compact(a[:x])
+    b[:y] = compact(b[:y])
+    r = vcat(a,b)
+    @test isequal(r, DataFrame(x=NullableCategoricalArray(1:401,[fill(false,200);fill(true,201)]),
+                               y=NullableCategoricalArray(-100:300,[fill(true,200);fill(false,201)])))
 end
