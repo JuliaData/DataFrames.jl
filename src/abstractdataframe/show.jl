@@ -586,11 +586,11 @@ import Juno: Inline, LazyTree, Table, Row, strong
 const SIZE = 25
 
 @render Inline frame::AbstractDataFrame begin
-  width = min(size(frame, 2), SIZE)
-  height = min(size(frame, 1), SIZE)
-  header = map(x->strong(string(x)), names(frame)[1:width]')
-  body = hcat([frame[1:height,i] for i = 1:width]...)
-  view = Table(vcat(header, body))
-  LazyTree(Row(typeof(frame), text" ", Juno.dims(size(frame)...)),
-           () -> [view])
+    width = min(size(frame, 2), SIZE)
+    height = min(size(frame, 1), SIZE)
+    header = map(x->strong(string(x)), names(frame)[1:width]')
+    body = hcat([frame[1:height,i] for i = 1:width]...)
+    view = Table(vcat(header, body))
+    LazyTree(Row(typeof(frame), text" ", Juno.dims(size(frame)...)),
+             () -> [view])
 end
