@@ -3,3 +3,4 @@ DataStructures
 RDatasets # can be removed when deprecated.jl doesn't test read_rda anymore
 RData
 LaTeXStrings
+Atom
