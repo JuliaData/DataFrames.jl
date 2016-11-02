@@ -1,16 +1,19 @@
 
-    {meta}
-    CurrentModule = DataFrames
+```@meta
+CurrentModule = DataFrames
+```
 
 # Main Types
 
-    {index}
-    Pages = ["maintypes.md"]
+```@index
+Pages = ["maintypes.md"]
+```
 
 ...
     
-    {docs}
-    AbstractDataFrame
-    DataFrame
-    SubDataFrame
+```@docs
+AbstractDataFrame
+DataFrame
+SubDataFrame
+```
 
