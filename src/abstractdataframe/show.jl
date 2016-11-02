@@ -579,3 +579,18 @@ function showcols(io::IO, df::AbstractDataFrame) # -> Void
 end
 
 showcols(df::AbstractDataFrame) = showcols(STDOUT, df) # -> Void
+
+using Juno
+import Juno: Inline, Tree, Table, Row, strong
+
+const SIZE = 25
+
+@render Inline frame::AbstractDataFrame begin
+  width = min(size(frame, 2), SIZE)
+  height = min(size(frame, 1), SIZE)
+  header = map(x->strong(string(x)), names(frame)[1:width]')
+  body = hcat([frame[1:height,i] for i = 1:width]...)
+  view = Table(vcat(header, body))
+  Tree(Row(typeof(frame), text" ", Juno.dims(size(frame)...)),
+       [view])
+end
