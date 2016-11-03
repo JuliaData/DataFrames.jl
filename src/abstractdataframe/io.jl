@@ -172,12 +172,15 @@ end
     n = size(df, 1)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
+    write(io, "<thead>")
     write(io, "<tr>")
     write(io, "<th></th>")
     for column_name in cnames
         write(io, "<th>$column_name</th>")
     end
     write(io, "</tr>")
+    write(io, "</thead>")
+    write(io, "<tbody>")
     tty_rows, tty_cols = _displaysize(io)
     mxrow = min(n,tty_rows)
     for row in 1:mxrow
@@ -197,6 +200,7 @@ end
         end
         write(io, "</tr>")
     end
+    write(io, "</tbody>")
     write(io, "</table>")
 end
 
