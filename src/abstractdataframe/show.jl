@@ -581,15 +581,23 @@ end
 showcols(df::AbstractDataFrame) = showcols(STDOUT, df) # -> Void
 
 using Juno
-using Juno: Inline, LazyTree, Table, Row, strong
+using Juno: Inline, LazyTree, Table, Row, strong, undefs
 
 const SIZE = 25
+
+function tomat(df::AbstractDataFrame)
+    res = Array{Any}(size(df))
+    for (j, col) in enumerate(columns(df)), i = 1:length(col)
+      isassigned(col, i) && (res[i, j] = col[i])
+    end
+    return res
+end
 
 @render Inline df::AbstractDataFrame begin
     width = min(size(df, 2), SIZE)
     height = min(size(df, 1), SIZE)
     header = map(x->strong(string(x)), names(df)[1:width]')
-    body = Array(df[1:height, 1:width])
+    body = undefs(tomat(df))[1:height, 1:width]
     view = Table(vcat(header, body))
     LazyTree(Row(typeof(df), text" ", Juno.dims(size(df)...)),
              () -> [view])
