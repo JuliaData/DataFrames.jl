@@ -16,8 +16,10 @@ module TestShow
     showall(io, subdf)
     showall(io, subdf, true)
 
-    using Atom, Juno
-    render(Juno.Editor(), df)
+    if VERSION > v"0.5-"
+      using Atom, Juno
+      render(Juno.Editor(), df)
+    end
 
     dfvec = DataFrame[df for _=1:3]
     show(io, dfvec)
@@ -39,6 +41,6 @@ module TestShow
     A = DataFrames.RepeatedVector([1, 2, 3], 1, 5)
     show(io, A)
 
-    render(Juno.Editor(), df)
+    VERSION > v"0.5-" && render(Juno.Editor(), df)
 
 end
