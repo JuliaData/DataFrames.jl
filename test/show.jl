@@ -17,8 +17,8 @@ module TestShow
     showall(io, subdf, true)
 
     if VERSION > v"0.5-"
-      using Atom, Juno
-      render(Juno.Editor(), df)
+        using Atom, Juno
+        render(Juno.Editor(), df)
     end
 
     dfvec = DataFrame[df for _=1:3]
