@@ -35,4 +35,7 @@ module TestShow
     show(io, A)
     A = DataFrames.RepeatedVector([1, 2, 3], 1, 5)
     show(io, A)
+
+    using Juno
+    @assert applicable(render, Juno.Inline(), df)
 end
