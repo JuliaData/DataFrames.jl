@@ -581,16 +581,16 @@ end
 showcols(df::AbstractDataFrame) = showcols(STDOUT, df) # -> Void
 
 using Juno
-import Juno: Inline, LazyTree, Table, Row, strong
+using Juno: Inline, LazyTree, Table, Row, strong
 
 const SIZE = 25
 
-@render Inline frame::AbstractDataFrame begin
-    width = min(size(frame, 2), SIZE)
-    height = min(size(frame, 1), SIZE)
-    header = map(x->strong(string(x)), names(frame)[1:width]')
-    body = Array(frame[1:height, 1:width])
+@render Inline df::AbstractDataFrame begin
+    width = min(size(df, 2), SIZE)
+    height = min(size(df, 1), SIZE)
+    header = map(x->strong(string(x)), names(df)[1:width]')
+    body = Array(df[1:height, 1:width])
     view = Table(vcat(header, body))
-    LazyTree(Row(typeof(frame), text" ", Juno.dims(size(frame)...)),
+    LazyTree(Row(typeof(df), text" ", Juno.dims(size(df)...)),
              () -> [view])
 end
