@@ -2,3 +2,4 @@ Compat 0.9.0
 DataStructures
 RDatasets # can be removed when deprecated.jl doesn't test read_rda anymore
 RData
+Atom
