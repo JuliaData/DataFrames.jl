@@ -692,7 +692,13 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
     nrows = sum(nrow, dfs)
     for colnam in unique(Base.flatten(names.(dfs)))
         k = Bool[haskey(df, colnam) for df in dfs]
-        C = Base.return_types(vcat, [typeof(dfs[i][colnam]) for i in 1:length(dfs) if k[i]])
+        if all(k)
+            res[colnam] = vcat((dfs[i][colnam] for i in 1:length(dfs))...)
+            continue
+        end
+
+        c = ((typeof(dfs[i][colnam]) for i in 1:length(dfs) if k[i])...,)
+        C = Base.return_types(vcat, c)
 
         if length(C)==1 && isleaftype(C[1])
             if _isnullable(C[1])
@@ -709,32 +715,12 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
                 end
                 j += nrow(dfs[i])
             end
-        elseif all(k)
-            col = vcat((dfs[i][colnam] for i in 1:length(dfs))...)
         else
-            #warn("Unstable return types: ", C, " from vcat of ", [typeof(dfs[i][colnam]) for i in 1:length(dfs) if k[i]])
-            #col = vcat((k[i] ? dfs[i][colnam] : NullableArray{?}(nrow(dfs[i])) for i in 1:length(dfs))...)
+            # warn("Unstable return types: ", C, " from vcat of ", [typeof(dfs[i][colnam]) for i in 1:length(dfs) if k[i]])
 
-            r = vcat((dfs[i][colnam] for i in 1:length(dfs) if k[i])...)
-            if _isnullable(r)
-              NC = typeof(r)
-            else
-              NC = NullableArray{eltype(r)}
-            end
-
-            col = NC(nrows)
-            coli = 1
-            ri = 1
-            println("NC:", NC)
-            println("col:", summary(col))
-            println("r:", summary(r))
-            for i in 1:length(dfs)
-                if k[i]
-                    copy!(col, coli, r, ri, nrow(dfs[i]))
-                    ri += nrow(dfs[i])
-                end
-                coli += nrow(dfs[i])
-            end
+            E = Base.promote_eltype(c...)
+            TN = NullableArray{E <: Nullable ? eltype(E) : E}
+            col = vcat((k[i] ? dfs[i][colnam] : TN(nrow(dfs[i])) for i in 1:length(dfs))...)
         end
 
         res[colnam] = col
