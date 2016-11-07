@@ -690,26 +690,50 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
     isempty(dfs) && return DataFrame()
     res = DataFrame()
     nrows = sum(nrow, dfs)
-    for colnam in unique([(names(e) for e in dfs)...;])
-        k = Bool[haskey(e, colnam) for e in dfs]
-        c = vcat((e[colnam] for e in view(dfs, k))...)
-        if all(k)
-            col = c
-        else
-            col = if _isnullable(c)
-              similar(c, nrows)
+    for colnam in unique(Base.flatten(names.(dfs)))
+        k = Bool[haskey(df, colnam) for df in dfs]
+        C = Base.return_types(vcat, [typeof(dfs[i][colnam]) for i in 1:length(dfs) if k[i]])
+
+        if length(C)==1 && isleaftype(C[1])
+            if _isnullable(C[1])
+              NC = C[1]
             else
-              NullableArray{eltype(c)}(nrows)
+              NC = NullableArray{eltype(C[1])}
             end
 
-            i = 1
+            col = NC(nrows)
             j = 1
-            for df in dfs
-                if haskey(df, colnam)
-                    copy!(col, i, view(c, j:j+nrow(df)-1))
-                    j += nrow(df)
+            for i in 1:length(dfs)
+                if k[i]
+                    copy!(col, j, dfs[i][colnam])
                 end
-                i += nrow(df)
+                j += nrow(dfs[i])
+            end
+        elseif all(k)
+            col = vcat((dfs[i][colnam] for i in 1:length(dfs))...)
+        else
+            #warn("Unstable return types: ", C, " from vcat of ", [typeof(dfs[i][colnam]) for i in 1:length(dfs) if k[i]])
+            #col = vcat((k[i] ? dfs[i][colnam] : NullableArray{?}(nrow(dfs[i])) for i in 1:length(dfs))...)
+
+            r = vcat((dfs[i][colnam] for i in 1:length(dfs) if k[i])...)
+            if _isnullable(r)
+              NC = typeof(r)
+            else
+              NC = NullableArray{eltype(r)}
+            end
+
+            col = NC(nrows)
+            coli = 1
+            ri = 1
+            println("NC:", NC)
+            println("col:", summary(col))
+            println("r:", summary(r))
+            for i in 1:length(dfs)
+                if k[i]
+                    copy!(col, coli, r, ri, nrow(dfs[i]))
+                    ri += nrow(dfs[i])
+                end
+                coli += nrow(dfs[i])
             end
         end
 
@@ -719,6 +743,7 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
 end
 
 _isnullable{T}(::AbstractArray{T}) = T <: Nullable
+_isnullable{A<:AbstractArray}(::Type{A}) = eltype(A) <: Nullable
 
 ##############################################################################
 ##

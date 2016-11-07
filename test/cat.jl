@@ -117,11 +117,15 @@ module TestCat
     dfb = DataFrame(a = CategoricalArray([2, 3, 4]))
     dfc = DataFrame(a = NullableArray([2, 3, 4]))
     dfd = DataFrame(Any[2:4], [:a])
+    dfe = DataFrame(b = CategoricalArray([2, 3, 4]))
     dfab = vcat(dfa, dfb)
     dfac = vcat(dfa, dfc)
+    dfabcd = vcat(dfa, dfc, dfe)
     @test isequal(dfab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
     @test isequal(dfac[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
     @test isa(dfab[:a], NullableCategoricalVector{Int})
+    @test isa(dfabcd[:a], NullableCategoricalVector{Int})
+    @test isa(dfabcd[:b], NullableCategoricalVector{Int})
     # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
     if VERSION >= v"0.5.0-dev"
         @test isa(dfac[:a], NullableCategoricalVector{Int})
