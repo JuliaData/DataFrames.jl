@@ -593,7 +593,7 @@ function to_matrix(df::AbstractDataFrame)
     return res
 end
 
-@render Inline df::AbstractDataFrame begin
+function _render(df::AbstractDataFrame)
     width = min(size(df, 2), SIZE)
     height = min(size(df, 1), SIZE)
     header = map(x->strong(string(x)), names(df)[1:width]')
@@ -602,3 +602,5 @@ end
     LazyTree(Row(typeof(df), text" ", Juno.dims(size(df)...)),
              () -> [view])
 end
+
+@render Inline df::AbstractDataFrame _render(df)
