@@ -21,6 +21,7 @@ makedocs(
             "Sorting" => "man/sorting.md",
             "Formulas" => "man/formulas.md",
             "Pooling" => "man/pooling.md",
+            "Querying frameworks" => "man/querying_frameworks.md",
         ],
         "API" => Any[
             "Main types" => "lib/maintypes.md",
