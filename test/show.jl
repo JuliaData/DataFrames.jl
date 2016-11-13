@@ -16,6 +16,14 @@ module TestShow
     showall(io, subdf)
     showall(io, subdf, true)
 
+    if VERSION > v"0.5-"
+        using Juno
+        out = DataFrames._render(df)
+        @assert out.head.xs[1] == DataFrame
+        @assert isa(out.children()[1], Juno.Table)
+        @assert size(out.children()[1].xs) == (4, 2)
+    end
+
     dfvec = DataFrame[df for _=1:3]
     show(io, dfvec)
     showall(io, dfvec)
@@ -35,4 +43,5 @@ module TestShow
     show(io, A)
     A = DataFrames.RepeatedVector([1, 2, 3], 1, 5)
     show(io, A)
+
 end
