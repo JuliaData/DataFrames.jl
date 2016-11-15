@@ -35,6 +35,7 @@ pages:
 - [man/sorting.md, User guide, Sorting]
 - [man/formulas.md, User guide, Formulas]
 - [man/pooling.md, User guide, Pooling]
+- [man/querying_frameworks.md, User guide, Querying frameworks]
 - [lib/maintypes.md, API, Main types]
 - [lib/utilities.md, API, Utilities]
 - [lib/manipulation.md, API, Data manipulation]
