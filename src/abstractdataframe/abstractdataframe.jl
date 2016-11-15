@@ -686,6 +686,8 @@ Base.vcat(dfs::AbstractDataFrame...) = vcat(AbstractDataFrame[dfs...])
 
 Base.vcat(dfs::Vector{Void}) = dfs
 
+_isnullable{A<:AbstractArray}(::Type{A}) = eltype(A) <: Nullable
+
 function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
     isempty(dfs) && return DataFrame()
     res = DataFrame()
@@ -697,14 +699,14 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
             continue
         end
 
-        c = ((typeof(dfs[i][colnam]) for i in 1:length(dfs) if k[i])...,)
+        c = ((typeof(dfs[i][colnam]) for i in 1:length(dfs) if k[i])...)
         C = Base.return_types(vcat, c)
 
         if length(C)==1 && isleaftype(C[1])
             if _isnullable(C[1])
-              NC = C[1]
+                NC = C[1]
             else
-              NC = NullableArray{eltype(C[1])}
+                NC = NullableArray{eltype(C[1])}
             end
 
             col = NC(nrows)
@@ -727,9 +729,6 @@ function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
     end
     res
 end
-
-_isnullable{T}(::AbstractArray{T}) = T <: Nullable
-_isnullable{A<:AbstractArray}(::Type{A}) = eltype(A) <: Nullable
 
 ##############################################################################
 ##
