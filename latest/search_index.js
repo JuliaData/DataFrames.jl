@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Package Manual",
     "category": "section",
-    "text": "Pages = [\"man/getting_started.md\", \"man/io.md\", \"man/joins.md\", \"man/split_apply_combine.md\", \"man/reshaping_and_pivoting.md\", \"man/sorting.md\", \"man/formulas.md\", \"man/pooling.md\"]\nDepth = 2"
+    "text": "Pages = [\"man/getting_started.md\", \"man/io.md\", \"man/joins.md\", \"man/split_apply_combine.md\", \"man/reshaping_and_pivoting.md\", \"man/sorting.md\", \"man/formulas.md\", \"man/pooling.md\", \"man/querying_frameworks.md\"]\nDepth = 2"
 },
 
 {
@@ -421,7 +421,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Utilities",
     "title": "Base.unique",
     "category": "Function",
-    "text": "Delete duplicate rows\n\nunique(df::AbstractDataFrame)\nunique(df::AbstractDataFrame, cols)\nunique!(df::AbstractDataFrame)\nunique!(df::AbstractDataFrame, cols)\n\nArguments\n\ndf : the AbstractDataFrame\ncols :  column indicator (Symbol, Int, Vector{Symbol}, etc.)\n\nspecifying the column(s) to compare.\n\nResult\n\n::AbstractDataFrame : the updated version of df with unique rows.\n\nWhen cols is specified, the return DataFrame contains complete rows, retaining in each case the first instance for which df[cols] is unique.\n\nSee also nonunique.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\ndf = vcat(df, df)\nunique(df)   # doesn't modify df\nunique(df, 1)\nunique!(df)  # modifies df\n\n\n\nunique(A::CategoricalArray)\nunique(A::NullableCategoricalArray)\n\nReturn levels which appear in A, in the same order as levels (and not in their order of appearance). This function is significantly slower than levels since it needs to check whether levels are used or not.\n\n\n\n"
+    "text": "unique(A::CategoricalArray)\nunique(A::NullableCategoricalArray)\n\nReturn levels which appear in A, in the same order as levels (and not in their order of appearance). This function is significantly slower than levels since it needs to check whether levels are used or not.\n\n\n\nDelete duplicate rows\n\nunique(df::AbstractDataFrame)\nunique(df::AbstractDataFrame, cols)\nunique!(df::AbstractDataFrame)\nunique!(df::AbstractDataFrame, cols)\n\nArguments\n\ndf : the AbstractDataFrame\ncols :  column indicator (Symbol, Int, Vector{Symbol}, etc.)\n\nspecifying the column(s) to compare.\n\nResult\n\n::AbstractDataFrame : the updated version of df with unique rows.\n\nWhen cols is specified, the return DataFrame contains complete rows, retaining in each case the first instance for which df[cols] is unique.\n\nSee also nonunique.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\ndf = vcat(df, df)\nunique(df)   # doesn't modify df\nunique(df, 1)\nunique!(df)  # modifies df\n\n\n\n"
 },
 
 {
