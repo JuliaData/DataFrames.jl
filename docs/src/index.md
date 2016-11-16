@@ -3,7 +3,7 @@
 ## Package Manual
 
 ```@contents
-Pages = ["man/getting_started.md", "man/io.md", "man/joins.md", "man/split_apply_combine.md", "man/reshaping_and_pivoting.md", "man/sorting.md", "man/formulas.md", "man/pooling.md"]
+Pages = ["man/getting_started.md", "man/io.md", "man/joins.md", "man/split_apply_combine.md", "man/reshaping_and_pivoting.md", "man/sorting.md", "man/formulas.md", "man/pooling.md", "man/querying_frameworks.md"]
 Depth = 2
 ```
 
