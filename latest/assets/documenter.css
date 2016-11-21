@@ -158,6 +158,15 @@ nav.toc input {
     font-size: smaller;
 }
 
+nav.toc select {
+    display: block;
+    height: 2em;
+    width: calc(100% - 3em);
+    margin: 5px auto;
+    font-size: smaller;
+    text-align: center;
+}
+
 nav.toc > ul * {
     margin: 0;
 }
