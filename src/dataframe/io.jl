@@ -498,8 +498,8 @@ function bytestotype{N <: AbstractString,
     if bytematch(bytes, left, right, nastrings)
         return "", true, true
     end
-
-    return String(bytes[left:right]), true, false
+    proper_bytes = convert(Array{UInt32,1}, bytes[left:right])
+    return transcode(String, proper_bytes), true, false
 end
 
 function builddf(rows::Integer,
