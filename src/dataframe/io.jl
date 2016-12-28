@@ -848,13 +848,7 @@ function readtable(io::IO,
                      allowescapes, normalizenames)
 
     # Use the IO stream method for readtable()
-    df = readtable!(p, io, nrows, o)
-
-    # Close the IO stream
-    close(io)
-
-    # Return the resulting DataFrame
-    return df
+    return readtable!(p, io, nrows, o)
 end
 
 """
@@ -942,28 +936,34 @@ function readtable(pathname::AbstractString;
         nbytes = filesize(pathname)
     end
 
-    return readtable(io,
-                     nbytes,
-                     header = header,
-                     separator = separator,
-                     quotemark = quotemark,
-                     decimal = decimal,
-                     nastrings = nastrings,
-                     truestrings = truestrings,
-                     falsestrings = falsestrings,
-                     makefactors = makefactors,
-                     nrows = nrows,
-                     names = names,
-                     eltypes = eltypes,
-                     allowcomments = allowcomments,
-                     commentmark = commentmark,
-                     ignorepadding = ignorepadding,
-                     skipstart = skipstart,
-                     skiprows = skiprows,
-                     skipblanks = skipblanks,
-                     encoding = encoding,
-                     allowescapes = allowescapes,
-                     normalizenames = normalizenames)
+    df = try
+        readtable(io,
+                  nbytes,
+                  header = header,
+                  separator = separator,
+                  quotemark = quotemark,
+                  decimal = decimal,
+                  nastrings = nastrings,
+                  truestrings = truestrings,
+                  falsestrings = falsestrings,
+                  makefactors = makefactors,
+                  nrows = nrows,
+                  names = names,
+                  eltypes = eltypes,
+                  allowcomments = allowcomments,
+                  commentmark = commentmark,
+                  ignorepadding = ignorepadding,
+                  skipstart = skipstart,
+                  skiprows = skiprows,
+                  skipblanks = skipblanks,
+                  encoding = encoding,
+                  allowescapes = allowescapes,
+                  normalizenames = normalizenames)
+    finally
+        close(io)
+    end
+
+    return df
 end
 
 """
