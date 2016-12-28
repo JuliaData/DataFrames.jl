@@ -35,7 +35,10 @@ module TestIO
     #test_group("We get the right size, types, values for a basic csv.")
 
     filename = "$data/scaling/movies.csv"
-    df = readtable(filename)
+    io = open(filename)
+    df = readtable(io)
+    @test isopen(io)
+    close(io)
 
     @test size(df) == (58788, 25)
 
