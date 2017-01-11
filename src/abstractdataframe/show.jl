@@ -589,7 +589,7 @@ end
 function _render(df::AbstractDataFrame)
     width = min(size(df, 2), SIZE)
     height = min(size(df, 1), SIZE)
-    header = map(x->strong(string(x)), names(df)[1:width]')
+    header = map(x->strong(string(x)), reshape(names(df), 1, width))
     body = Juno.undefs(to_matrix(df))[1:height, 1:width]
     view = Table(vcat(header, body))
     LazyTree(Row(typeof(df), text" ", Juno.dims(size(df)...)),
