@@ -18,11 +18,11 @@ Stacks a DataFrame; convert from a wide to long format
 
 
 ```julia
-stack(df::AbstractDataFrame, measure_vars, id_vars)
-stack(df::AbstractDataFrame, measure_vars)
-stack(df::AbstractDataFrame)
-melt(df::AbstractDataFrame, id_vars, measure_vars)
-melt(df::AbstractDataFrame, id_vars)
+stack(df::AbstractDataFrame, measure_vars, id_vars; measure_name=:variable, value_name=:value)
+stack(df::AbstractDataFrame, measure_vars; measure_name=:variable, value_name=:value)
+stack(df::AbstractDataFrame; measure_name=:variable, value_name=:value)
+melt(df::AbstractDataFrame, id_vars, measure_vars; measure_name=:variable, value_name=:value)
+melt(df::AbstractDataFrame, id_vars; measure_name=:variable, value_name=:value)
 ```
 
 ### Arguments
@@ -38,8 +38,13 @@ melt(df::AbstractDataFrame, id_vars)
   stacking, a normal column indexing type; for `stack` defaults to all
   variables that are not `measure_vars`
 
+
 If neither `measure_vars` or `id_vars` are given, `measure_vars`
 defaults to all floating point columns.
+
+The names of the resulting "stacked" columns can be controlled with keyword
+arguments `measure_name` and `value_name`. These default to `:variable` and
+`:value` respectively.
 
 ### Result
 
@@ -68,33 +73,38 @@ d1m = melt(d1, [:a, :b, :e])
 ```
 
 """
-function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
+function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int}; measure_name=:variable, value_name=:value)
     N = length(measure_vars)
     cnames = names(df)[id_vars]
-    insert!(cnames, 1, :value)
-    insert!(cnames, 1, :variable)
+    insert!(cnames, 1, value_name)
+    insert!(cnames, 1, measure_name)
     DataFrame(Any[Compat.repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
                   vcat([df[c] for c in measure_vars]...),                    # value
                   [Compat.repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
               cnames)
 end
-function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int)
-    stack(df, [measure_var], [id_var])
+function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int; measure_name=:variable, value_name=:value)
+    stack(df, [measure_var], [id_var];
+          measure_name=measure_name, value_name=value_name)
 end
-function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_var::Int)
-    stack(df, measure_vars, [id_var])
+function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_var::Int; measure_name=:variable, value_name=:value)
+    stack(df, measure_vars, [id_var];
+          measure_name=measure_name, value_name=value_name)
 end
-function stack(df::AbstractDataFrame, measure_var::Int, id_vars::Vector{Int})
-    stackdf(df, [measure_var], id_vars)
+function stack(df::AbstractDataFrame, measure_var::Int, id_vars::Vector{Int}; measure_name=:variable, value_name=:value)
+    stackdf(df, [measure_var], id_vars;
+            measure_name=measure_name, value_name=value_name)
 end
-stack(df::AbstractDataFrame, measure_vars, id_vars) =
-    stack(df, index(df)[measure_vars], index(df)[id_vars])
+stack(df::AbstractDataFrame, measure_vars, id_vars; measure_name=:variable, value_name=:value) =
+    stack(df, index(df)[measure_vars], index(df)[id_vars];
+          measure_name=measure_name, value_name=value_name)
 # no vars specified, by default select only numeric columns
 numeric_vars(df::AbstractDataFrame) = [T <: AbstractFloat || (T <: Nullable && eltype(T) <: AbstractFloat)
                                        for T in eltypes(df)]
-function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df))
+function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df); measure_name=:variable, value_name=:value)
     mv_inds = index(df)[measure_vars]
-    stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds))
+    stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds);
+          measure_name=measure_name, value_name=value_name)
 end
 
 """
@@ -102,9 +112,10 @@ Stacks a DataFrame; convert from a wide to long format; see
 `stack`.
 """
 melt(df::AbstractDataFrame, id_vars::@compat(Union{Int,Symbol})) = melt(df, [id_vars])
-function melt(df::AbstractDataFrame, id_vars)
+function melt(df::AbstractDataFrame, id_vars; measure_name=:variable, value_name=:value)
     id_inds = index(df)[id_vars]
-    stack(df, _setdiff(1:ncol(df), id_inds), id_inds)
+    stack(df, _setdiff(1:ncol(df), id_inds), id_inds;
+          measure_name=measure_name, value_name=value_name)
 end
 melt(df::AbstractDataFrame, id_vars, measure_vars) = stack(df, measure_vars, id_vars)
 melt(df::AbstractDataFrame) = stack(df)
@@ -420,29 +431,40 @@ d1m = meltdf(d1, [:a, :b, :e])
 ```
 
 """
-function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector{Int})
+function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int},
+                 id_vars::Vector{Int}; measure_name::Symbol=:variable,
+                 value_name::Symbol=:value)
     N = length(measure_vars)
     cnames = names(df)[id_vars]
-    insert!(cnames, 1, :value)
-    insert!(cnames, 1, :variable)
+    insert!(cnames, 1, value_name)
+    insert!(cnames, 1, measure_name)
     DataFrame(Any[RepeatedVector(_names(df)[measure_vars], nrow(df), 1),   # variable
                   StackedVector(Any[df[:,c] for c in measure_vars]),     # value
                   [RepeatedVector(df[:,c], 1, N) for c in id_vars]...],     # id_var columns
               cnames)
 end
-function stackdf(df::AbstractDataFrame, measure_var::Int, id_var::Int)
-    stackdf(df, [measure_var], [id_var])
+function stackdf(df::AbstractDataFrame, measure_var::Int, id_var::Int; measure_name::Symbol=:variable,
+                 value_name::Symbol=:value)
+    stackdf(df, [measure_var], [id_var];
+            measure_name=measure_name, value_name=value_name)
 end
-function stackdf(df::AbstractDataFrame, measure_vars, id_var::Int)
-    stackdf(df, measure_vars, [id_var])
+function stackdf(df::AbstractDataFrame, measure_vars, id_var::Int; measure_name::Symbol=:variable,
+                 value_name::Symbol=:value)
+    stackdf(df, measure_vars, [id_var];
+            measure_name=measure_name, value_name=value_name)
 end
-function stackdf(df::AbstractDataFrame, measure_var::Int, id_vars)
-    stackdf(df, [measure_var], id_vars)
+function stackdf(df::AbstractDataFrame, measure_var::Int, id_vars; measure_name::Symbol=:variable,
+                 value_name::Symbol=:value)
+    stackdf(df, [measure_var], id_vars;
+            measure_name=measure_name, value_name=value_name)
 end
-function stackdf(df::AbstractDataFrame, measure_vars, id_vars)
-    stackdf(df, index(df)[measure_vars], index(df)[id_vars])
+function stackdf(df::AbstractDataFrame, measure_vars, id_vars; measure_name::Symbol=:variable,
+                 value_name::Symbol=:value)
+    stackdf(df, index(df)[measure_vars], index(df)[id_vars];
+            measure_name=measure_name, value_name=value_name)
 end
-function stackdf(df::AbstractDataFrame, measure_vars = numeric_vars(df))
+function stackdf(df::AbstractDataFrame, measure_vars = numeric_vars(df); measure_name::Symbol=:variable,
+                 value_name::Symbol=:value)
     m_inds = index(df)[measure_vars]
     stackdf(df, m_inds, _setdiff(1:ncol(df), m_inds))
 end

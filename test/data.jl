@@ -149,6 +149,12 @@ module TestData
     d1m = melt(d1[[1,3,4]], :a)
     @test names(d1m) == [:variable, :value, :a]
 
+    # Test naming of measure/value columns
+    d1s_named = stack(d1, [:a, :b], measure_name=:letter, value_name=:someval)
+    @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
+    d1m_named = melt(d1[[1,3,4]], :a, measure_name=:letter)
+    @test names(d1m_named) == [:letter, :value, :a]
+
     stackdf(d1, :a)
     d1s = stackdf(d1, [:a, :b])
     d1s2 = stackdf(d1, [:c, :d])
