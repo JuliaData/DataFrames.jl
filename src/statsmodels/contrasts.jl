@@ -138,27 +138,20 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::AbstractV
     ContrastsMatrix(mat, tnames, c_levels, contrasts)
 end
 
-# Methods for constructing ContrastsMatrix from data. These are called in
-# ModelFrame constructor and setcontrasts!.
-ContrastsMatrix(C::AbstractContrasts,
-                v::Union{CategoricalArray, NullableCategoricalArray}) =
-    ContrastsMatrix(C, levels(v))
-ContrastsMatrix{C <: AbstractContrasts}(c::Type{C},
-                                        col::Union{CategoricalArray, NullableCategoricalArray}) =
+ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, levels::AbstractVector) =
     throw(ArgumentError("contrast types must be instantiated (use $c() instead of $c)"))
 
-# given an existing ContrastsMatrix, check that all of the levels present in the
-# data are present in the contrasts. Note that this behavior is different from the
+# given an existing ContrastsMatrix, check that all passed levels are present
+# in the contrasts. Note that this behavior is different from the
 # ContrastsMatrix constructor, which requires that the levels be exactly the same.
 # This method exists to support things like `predict` that can operate on new data
 # which may contain only a subset of the original data's levels. Checking here
 # (instead of in `modelmat_cols`) allows an informative error message.
-function ContrastsMatrix(c::ContrastsMatrix,
-                         col::Union{CategoricalArray, NullableCategoricalArray})
-    if !isempty(setdiff(levels(col), c.levels))
+function ContrastsMatrix(c::ContrastsMatrix, levels::AbstractVector)
+    if !isempty(setdiff(levels, c.levels))
         throw(ArgumentError("there are levels in data that are not in ContrastsMatrix: " *
-                            "$(setdiff(levels(col), c.levels))" *
-                            "\n  Data levels: $(levels(col))" *
+                            "$(setdiff(levels, c.levels))" *
+                            "\n  Data levels: $(levels)" *
                             "\n  Contrast levels: $(c.levels)"))
     end
     return c
