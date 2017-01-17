@@ -49,11 +49,22 @@ module TestShow
     df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
     io = IOBuffer()
     show(io, df)
-    str = takebuf_string(io)
+    str = String(take!(io))
     @test str == """
-2×2 DataFrames.DataFrame
-│ Row │ Fish │ Mass  │
-├─────┼──────┼───────┤
-│ 1   │ Suzy │ 1.5   │
-│ 2   │ Amir │ #NULL │"""
+    2×2 DataFrames.DataFrame
+    │ Row │ Fish │ Mass  │
+    ├─────┼──────┼───────┤
+    │ 1   │ Suzy │ 1.5   │
+    │ 2   │ Amir │ #NULL │"""
+
+    # Test computing width for Array{String} columns
+    df = DataFrame(Any[["a"]], [:x])
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrames.DataFrame
+    │ Row │ x │
+    ├─────┼───┤
+    │ 1   │ a │"""
 end
