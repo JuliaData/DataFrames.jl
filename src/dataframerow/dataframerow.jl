@@ -32,26 +32,25 @@ Base.done(r::DataFrameRow, s) = s > length(r)
 Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, r.df[r.row,:])
 Base.collect(r::DataFrameRow) = Tuple{Symbol, Any}[x for x in r]
 
-# hash array element
 # the equal elements of nullable and normal arrays would have the same hashes
-
 const NULL_MAGIC = 0xBADDEED # what to hash if the element is null
 
-unsafe_hashindex(v::AbstractArray, i, h::UInt = zero(UInt)) = hash(Base.unsafe_getindex(v, i), h)
-unsafe_hashindex{T}(v::AbstractNullableArray{T}, i, h::UInt = zero(UInt)) =
-    _isnull(v, i) ? hash(NULL_MAGIC, h) : hash(NullableArrays.unsafe_getvalue_notnull(v, i), h)
-unsafe_hashindex{T}(v::AbstractCategoricalArray{T}, i, h::UInt = zero(UInt)) =
-    hash(Base.unsafe_getindex(v.pool, Base.unsafe_getindex(v.refs, i)), h)
-function unsafe_hashindex{T}(v::AbstractNullableCategoricalArray{T}, i, h::UInt = zero(UInt))
-    ref = Base.unsafe_getindex(v.refs, i)
-    ref == 0 ? hash(NULL_MAGIC, h) : hash(Base.unsafe_getindex(v.pool, ref), h)
+# hash column element
+Base.@propagate_inbounds hash_colel(v::AbstractArray, i, h::UInt = zero(UInt)) = hash(v[i], h)
+Base.@propagate_inbounds hash_colel{T}(v::AbstractNullableArray{T}, i, h::UInt = zero(UInt)) =
+    isnull(v, i) ? hash(NULL_MAGIC, h) : hash(NullableArrays.unsafe_getvalue_notnull(v, i), h)
+Base.@propagate_inbounds hash_colel{T}(v::AbstractCategoricalArray{T}, i, h::UInt = zero(UInt)) =
+    hash(CategoricalArrays.index(v.pool)[v.refs[i]], h)
+Base.@propagate_inbounds function hash_colel{T}(v::AbstractCategoricalArray{T}, i, h::UInt = zero(UInt))
+    ref = v.refs[i]
+    ref == 0 ? hash(NULL_MAGIC, h) : hash(CategoricalArrays.index(v.pool)[ref], h)
 end
 
 # hash of DataFrame rows based on its values
 # so that duplicate rows would have the same hash
 function rowhash(df::DataFrame, r::Int, h::UInt = zero(UInt))
     @inbounds for col in columns(df)
-        h = unsafe_hashindex(col, r, h)
+        h = hash_colel(col, r, h)
     end
     return h
 end
