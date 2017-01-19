@@ -49,7 +49,7 @@ module TestShow
     df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
     io = IOBuffer()
     show(io, df)
-    str = takebuf_string(io)
+    str = String(take!(io))
     @test str == """
 2×2 DataFrames.DataFrame
 │ Row │ Fish │ Mass  │
