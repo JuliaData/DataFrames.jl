@@ -131,26 +131,27 @@ sharepools{S,N}(v1::AbstractArray{S,N},
     sharepools(oftype(v2, v1), v2)
 
 # TODO: write an optimized version for (Nullable)CategoricalArray
-function sharepools(v1::AbstractArray,
-                    v2::AbstractArray)
+function sharepools{S, T}(v1::AbstractArray{S},
+                          v2::AbstractArray{T})
     ## Return two categorical arrays that share the same pool.
 
     ## TODO: allow specification of R
     R = CategoricalArrays.DefaultRefType
     refs1 = Array(R, size(v1))
     refs2 = Array(R, size(v2))
-    poolref = Dict{promote_type(eltype(v1), eltype(v2)), R}()
+    K = promote_type(S, T)
+    poolref = Dict{K, R}()
     maxref = 0
 
     # loop through once to fill the poolref dict
     for i = 1:length(v1)
         if !_isnull(v1[i])
-            poolref[v1[i]] = 0
+            poolref[K(v1[i])] = 0
         end
     end
     for i = 1:length(v2)
         if !_isnull(v2[i])
-            poolref[v2[i]] = 0
+            poolref[K(v2[i])] = 0
         end
     end
 
@@ -168,14 +169,14 @@ function sharepools(v1::AbstractArray,
         if _isnull(v1[i])
             refs1[i] = zeroval
         else
-            refs1[i] = poolref[v1[i]]
+            refs1[i] = poolref[K(v1[i])]
         end
     end
     for i = 1:length(v2)
         if _isnull(v2[i])
             refs2[i] = zeroval
         else
-            refs2[i] = poolref[v2[i]]
+            refs2[i] = poolref[K(v2[i])]
         end
     end
 
