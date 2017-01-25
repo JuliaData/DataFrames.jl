@@ -6,8 +6,8 @@ DataFrames.jl
 [![Julia 0.5 Status](http://pkg.julialang.org/badges/DataFrames_0.5.svg)](http://pkg.julialang.org/?pkg=DataFrames&ver=0.5)
 
 [![Coverage Status](https://coveralls.io/repos/JuliaStats/DataFrames.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaStats/DataFrames.jl?branch=master)
-[![Build Status](https://travis-ci.org/JuliaStats/DataFrames.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/DataFrames.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/github/JuliaStats/DataFrames.jl?svg=true&branch=master)](https://ci.appveyor.com/project/garborg/dataframes-jl/branch/master)
+[![Travis Build Status](https://travis-ci.org/JuliaStats/DataFrames.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/DataFrames.jl)
+[![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/85h1i9lll64jpg3y/branch/master?svg=true)](https://ci.appveyor.com/project/nalimilan/dataframes-jl/branch/master)
 
 Tools for working with tabular data in Julia.
 
