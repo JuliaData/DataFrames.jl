@@ -18,16 +18,10 @@ Stacks a DataFrame; convert from a wide to long format
 
 
 ```julia
-stack(df::AbstractDataFrame, measure_vars, id_vars;
-      measure_name=:variable, value_name=:value)
-stack(df::AbstractDataFrame, measure_vars;
-      measure_name=:variable, value_name=:value)
-stack(df::AbstractDataFrame;
-      measure_name=:variable, value_name=:value)
-melt(df::AbstractDataFrame, id_vars, measure_vars;
-     measure_name=:variable, value_name=:value)
-melt(df::AbstractDataFrame, id_vars;
-     measure_name=:variable, value_name=:value)
+stack(df::AbstractDataFrame, [measure_vars], [id_vars];
+      measure_name::Symbol=:variable, value_name::Symbol=:value)
+melt(df::AbstractDataFrame, [id_vars], [measure_vars];
+     measure_name::Symbol=:variable, value_name::Symbol=:value)
 ```
 
 ### Arguments
@@ -81,7 +75,8 @@ d1s_name = melt(d1, [:a, :b, :e], measure_name=:somemeasure)
 
 """
 function stack(df::AbstractDataFrame, measure_vars::Vector{Int},
-               id_vars::Vector{Int}; measure_name=:variable, value_name=:value)
+               id_vars::Vector{Int}; measure_name::Symbol=:variable,
+               value_name::Symbol=:value)
     N = length(measure_vars)
     cnames = names(df)[id_vars]
     insert!(cnames, 1, value_name)
@@ -92,22 +87,22 @@ function stack(df::AbstractDataFrame, measure_vars::Vector{Int},
               cnames)
 end
 function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int;
-               measure_name=:variable, value_name=:value)
+               measure_name::Symbol=:variable, value_name::Symbol=:value)
     stack(df, [measure_var], [id_var];
           measure_name=measure_name, value_name=value_name)
 end
 function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_var::Int;
-               measure_name=:variable, value_name=:value)
+               measure_name::Symbol=:variable, value_name::Symbol=:value)
     stack(df, measure_vars, [id_var];
           measure_name=measure_name, value_name=value_name)
 end
 function stack(df::AbstractDataFrame, measure_var::Int, id_vars::Vector{Int};
-               measure_name=:variable, value_name=:value)
+               measure_name::Symbol=:variable, value_name::Symbol=:value)
     stackdf(df, [measure_var], id_vars;
             measure_name=measure_name, value_name=value_name)
 end
 function stack(df::AbstractDataFrame, measure_vars, id_vars;
-               measure_name=:variable, value_name=:value)
+               measure_name::Symbol=:variable, value_name::Symbol=:value)
     stack(df, index(df)[measure_vars], index(df)[id_vars];
           measure_name=measure_name, value_name=value_name)
 end
@@ -117,7 +112,7 @@ numeric_vars(df::AbstractDataFrame) =
      for T in eltypes(df)]
 
 function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
-               measure_name=:variable, value_name=:value)
+               measure_name::Symbol=:variable, value_name::Symbol=:value)
     mv_inds = index(df)[measure_vars]
     stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds);
           measure_name=measure_name, value_name=value_name)
@@ -128,21 +123,21 @@ Stacks a DataFrame; convert from a wide to long format; see
 `stack`.
 """
 function melt(df::AbstractDataFrame, id_vars::@compat(Union{Int,Symbol});
-              measure_name=:variable, value_name=:value)
+              measure_name::Symbol=:variable, value_name::Symbol=:value)
     melt(df, [id_vars]; measure_name=measure_name, value_name=value_name)
 end
 function melt(df::AbstractDataFrame, id_vars;
-              measure_name=:variable, value_name=:value)
+              measure_name::Symbol=:variable, value_name::Symbol=:value)
     id_inds = index(df)[id_vars]
     stack(df, _setdiff(1:ncol(df), id_inds), id_inds;
           measure_name=measure_name, value_name=value_name)
 end
 function melt(df::AbstractDataFrame, id_vars, measure_vars;
-              measure_name=:variable, value_name=:value)
+              measure_name::Symbol=:variable, value_name::Symbol=:value)
     stack(df, measure_vars, id_vars; measure_name=measure_name,
           value_name=value_name)
 end
-melt(df::AbstractDataFrame; measure_name=:variable, value_name=:value) =
+melt(df::AbstractDataFrame; measure_name::Symbol=:variable, value_name::Symbol=:value) =
     stack(df; measure_name=measure_name, value_name=value_name)
 
 ##############################################################################
@@ -412,10 +407,10 @@ Like `stack` and `melt`, but a view is returned rather than data
 copies.
 
 ```julia
-stackdf(df::AbstractDataFrame, measure_vars, id_vars)
-stackdf(df::AbstractDataFrame, measure_vars)
-meltdf(df::AbstractDataFrame, id_vars, measure_vars)
-meltdf(df::AbstractDataFrame, id_vars)
+stackdf(df::AbstractDataFrame, [measure_vars], [id_vars];
+        measure_name::Symbol=:variable, value_name::Symbol=:value)
+meltdf(df::AbstractDataFrame, [id_vars], [measure_vars];
+       measure_name::Symbol=:variable, value_name::Symbol=:value)
 ```
 
 ### Arguments
@@ -509,5 +504,5 @@ function meltdf(df::AbstractDataFrame, id_vars, measure_vars;
     stackdf(df, measure_vars, id_vars; measure_name=measure_name,
             value_name=value_name)
 end
-meltdf(df::AbstractDataFrame; measure_name=:variable, value_name=:value) =
+meltdf(df::AbstractDataFrame; measure_name::Symbol=:variable, value_name::Symbol=:value) =
     stackdf(df; measure_name=measure_name, value_name=value_name)
