@@ -5,3 +5,6 @@ test/data/bigrams.tsv
 docs/build/
 docs/site/
 .DS_Store
+
+# vi/vim temp files
+.*.sw?
