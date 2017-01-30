@@ -149,6 +149,12 @@ module TestData
     d1m = melt(d1[[1,3,4]], :a)
     @test names(d1m) == [:variable, :value, :a]
 
+    # Test naming of measure/value columns
+    d1s_named = stack(d1, [:a, :b], variable_name=:letter, value_name=:someval)
+    @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
+    d1m_named = melt(d1[[1,3,4]], :a, variable_name=:letter, value_name=:someval)
+    @test names(d1m_named) == [:letter, :someval, :a]
+
     stackdf(d1, :a)
     d1s = stackdf(d1, [:a, :b])
     d1s2 = stackdf(d1, [:c, :d])
@@ -161,6 +167,11 @@ module TestData
     @test isequal(d1s, d1m)
     d1m = meltdf(d1[[1,3,4]], :a)
     @test names(d1m) == [:variable, :value, :a]
+
+    d1s_named = stackdf(d1, [:a, :b], variable_name=:letter, value_name=:someval)
+    @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
+    d1m_named = meltdf(d1, [:c, :d, :e], variable_name=:letter, value_name=:someval)
+    @test names(d1m_named) == [:letter, :someval, :c, :d, :e]
 
     d1s[:id] = [1:12; 1:12]
     d1s2[:id] = [1:12; 1:12]
