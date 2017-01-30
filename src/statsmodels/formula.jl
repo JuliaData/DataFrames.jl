@@ -51,6 +51,9 @@ type ModelFrame
 end
 
 typealias AbstractFloatMatrix{T<:AbstractFloat} AbstractMatrix{T}
+typealias AbstractRealVector{T<:Real} AbstractVector{T}
+typealias NullableReal{T<:Real} Nullable{T}
+typealias NullableRealVector{T<:NullableReal} AbstractVector{T}
 
 type ModelMatrix{T <: AbstractFloatMatrix}
     m::T
@@ -234,8 +237,9 @@ end
 _droplevels!(x::Any) = x
 _droplevels!(x::Union{CategoricalArray, NullableCategoricalArray}) = droplevels!(x)
 
-is_categorical(::Union{CategoricalArray, NullableCategoricalArray}) = true
-is_categorical(::Any) = false
+is_categorical{T<:Real}(::AbstractArray{T}) = false
+is_categorical{T<:NullableReal}(::AbstractArray{T}) = false
+is_categorical(::AbstractArray) = true
 
 ## Check for non-redundancy of columns.  For instance, if x is a factor with two
 ## levels, it should be expanded into two columns in y~0+x but only one column
@@ -283,6 +287,20 @@ end
 
 const DEFAULT_CONTRASTS = DummyCoding
 
+_levels(x::Union{CategoricalArray, NullableCategoricalArray}) = levels(x)
+
+function _levels{T<:Nullable}(x::AbstractArray{T})
+    levs = [get(l) for l in unique(x) if !isnull(l)]
+    try; sort!(levs); end
+    return levs
+end
+    
+function _levels(x::AbstractArray)
+    levs = unique(x)
+    try; sort!(levs); end
+    return levs
+end
+
 ## Set up contrasts:
 ## Combine actual DF columns and contrast types if necessary to compute the
 ## actual contrasts matrices, levels, and term names (using DummyCoding
@@ -294,7 +312,7 @@ function evalcontrasts(df::AbstractDataFrame, contrasts::Dict = Dict())
         evaledContrasts[term] = ContrastsMatrix(haskey(contrasts, term) ?
                                                 contrasts[term] :
                                                 DEFAULT_CONTRASTS(),
-                                                col)
+                                                _levels(col))
     end
     return evaledContrasts
 end
@@ -319,7 +337,7 @@ ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), 
 
 ## modify contrasts in place
 function setcontrasts!(mf::ModelFrame, new_contrasts::Dict)
-    new_contrasts = Dict([ Pair(col, ContrastsMatrix(contr, mf.df[col]))
+    new_contrasts = Dict([ Pair(col, ContrastsMatrix(contr, _levels(mf.df[col])))
                       for (col, contr) in filter((k,v)->haskey(mf.df, k), new_contrasts) ])
 
     mf.contrasts = merge(mf.contrasts, new_contrasts)
@@ -352,18 +370,25 @@ function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, name::Symbol, mf::Mode
     end
 end
 
-modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::AbstractVector) =
+modelmat_cols{T<:AbstractFloatMatrix, V<:AbstractRealVector}(::Type{T}, v::V) =
     convert(T, reshape(v, length(v), 1))
 # FIXME: this inefficient method should not be needed, cf. JuliaLang/julia#18264
-modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::NullableVector) =
+modelmat_cols{T<:AbstractFloatMatrix, V<:NullableRealVector}(::Type{T}, v::V) =
     convert(T, Matrix(reshape(v, length(v), 1)))
+modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::Union{CategoricalVector, NullableCategoricalVector}) =
+    modelmat_cols(T, reshape(v, length(v), 1))
 
+# All non-real columns are considered as categorical
+# Could be made more efficient by directly storing the result into the model matrix
 """
-    modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::PooledDataVector, contrast::ContrastsMatrix)
+    modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::AbstractVector, contrast::ContrastsMatrix)
 
 Construct `ModelMatrix` columns of type `T` based on specified contrasts, ensuring that
 levels align properly.
 """
+modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::AbstractVector, contrast::ContrastsMatrix) =
+    modelmat_cols(T, categorical(v), contrast)
+
 function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T},
                                                v::Union{CategoricalVector, NullableCategoricalVector},
                                                contrast::ContrastsMatrix)

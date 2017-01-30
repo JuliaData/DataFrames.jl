@@ -547,4 +547,15 @@ X = ModelMatrix(mf).m
 X[1] = 0.0
 @test mf.df[1, :x] === Nullable(1.0)
 
+# Ensure string columns are supported
+df1 = DataFrame(A = 1:4, B = categorical(["M", "F", "F", "M"]))
+df2 = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+df3 = DataFrame(Any[1:4, ["M", "F", "F", "M"]], [:A, :B])
+
+M1 = ModelMatrix(ModelFrame(A ~ B, df1))
+M2 = ModelMatrix(ModelFrame(A ~ B, df2))
+M3 = ModelMatrix(ModelFrame(A ~ B, df3))
+
+@test (M1.m, M1.assign) == (M2.m, M2.assign) == (M3.m, M3.assign)
+
 end
