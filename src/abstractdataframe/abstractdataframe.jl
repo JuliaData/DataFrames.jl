@@ -685,76 +685,49 @@ Base.vcat(df::AbstractDataFrame) = df
 Base.vcat(dfs::AbstractDataFrame...) = vcat(AbstractDataFrame[dfs...])
 
 Base.vcat(dfs::Vector{Void}) = dfs
+
+_isnullable{A<:AbstractArray}(::Type{A}) = eltype(A) <: Nullable
+
 function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
     isempty(dfs) && return DataFrame()
-    coltyps, colnams, similars = _colinfo(dfs)
-
     res = DataFrame()
-    Nrow = sum(nrow, dfs)
-    for j in 1:length(colnams)
-        colnam = colnams[j]
-        col = similar(similars[j], coltyps[j], Nrow)
+    nrows = sum(nrow, dfs)
+    for colnam in unique(Base.flatten(names.(dfs)))
+        k = Bool[haskey(df, colnam) for df in dfs]
+        if all(k)
+            res[colnam] = vcat((dfs[i][colnam] for i in 1:length(dfs))...)
+            continue
+        end
 
-        i = 1
-        for df in dfs
-            if haskey(df, colnam)
-                copy!(col, i, df[colnam])
+        c = ((typeof(dfs[i][colnam]) for i in 1:length(dfs) if k[i])...)
+        C = Base.return_types(vcat, c)
+
+        if length(C)==1 && isleaftype(C[1])
+            if _isnullable(C[1])
+                NC = C[1]
+            else
+                NC = NullableArray{eltype(C[1])}
             end
-            i += size(df, 1)
+
+            col = NC(nrows)
+            j = 1
+            for i in 1:length(dfs)
+                if k[i]
+                    copy!(col, j, dfs[i][colnam])
+                end
+                j += nrow(dfs[i])
+            end
+        else
+            # warn("Unstable return types: ", C, " from vcat of ", [typeof(dfs[i][colnam]) for i in 1:length(dfs) if k[i]])
+
+            E = Base.promote_eltype(c...)
+            TN = NullableArray{E <: Nullable ? eltype(E) : E}
+            col = vcat((k[i] ? dfs[i][colnam] : TN(nrow(dfs[i])) for i in 1:length(dfs))...)
         end
 
         res[colnam] = col
     end
     res
-end
-
-_isnullable{T}(::AbstractArray{T}) = T <: Nullable
-const EMPTY_DATA = NullableArray(Void, 0)
-
-function _colinfo{T<:AbstractDataFrame}(dfs::Vector{T})
-    df1 = dfs[1]
-    colindex = copy(index(df1))
-    coltyps = eltypes(df1)
-    similars = collect(columns(df1))
-    nonnull_ct = Int[_isnullable(c) for c in columns(df1)]
-
-    for i in 2:length(dfs)
-        df = dfs[i]
-        for j in 1:size(df, 2)
-            col = df[j]
-            cn, ct = _names(df)[j], eltype(col)
-            if haskey(colindex, cn)
-                idx = colindex[cn]
-
-                oldtyp = coltyps[idx]
-                if !(ct <: oldtyp)
-                    coltyps[idx] = promote_type(oldtyp, ct)
-                    # Needed on Julia 0.4 since e.g.
-                    # promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T},
-                    # which is not a usable type: fall back to Nullable{Any}
-                    if VERSION < v"0.5.0-dev" &&
-                       coltyps[idx] <: Nullable && !isa(coltyps[idx].types[2], DataType)
-                        coltyps[idx] = Nullable{Any}
-                    end
-                end
-                nonnull_ct[idx] += !_isnullable(col)
-            else # new column
-                push!(colindex, cn)
-                push!(coltyps, ct)
-                push!(similars, col)
-                push!(nonnull_ct, !_isnullable(col))
-            end
-        end
-    end
-
-    for j in 1:length(colindex)
-        if nonnull_ct[j] < length(dfs) && !_isnullable(similars[j])
-            similars[j] = EMPTY_DATA
-        end
-    end
-    colnams = _names(colindex)
-
-    coltyps, colnams, similars
 end
 
 ##############################################################################
