@@ -148,3 +148,5 @@ end
 without(sdf::SubDataFrame, c::Vector{Int}) = sub(without(sdf.parent, c), sdf.rows)
 without(sdf::SubDataFrame, c::Int) = sub(without(sdf.parent, c), sdf.rows)
 without(sdf::SubDataFrame, c::Any) = sub(without(sdf.parent, c), sdf.rows)
+
+Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = sdf.parent[sdf.rows, :]

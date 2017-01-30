@@ -1,7 +1,4 @@
-module TestSort
-    using Base.Test
-    using DataFrames
-
+@testset "Sort" begin
     dv1 = NullableArray(Nullable{Int}[9, 1, 8, Nullable(), 3, 3, 7, Nullable()])
     dv2 = NullableArray(Nullable{Int}[9, 1, 8, Nullable(), 3, 3, 7, Nullable()])
     dv3 = NullableArray(1:8)
@@ -41,9 +38,22 @@ module TestSort
 
     @test isequal(df, ds)
 
-    # Check that columns that shares the same underlying array are only permuted once PR#1072
+@testset "Permutation of shared arrays (PR#1072)" begin
+    # Check that columns that share the same underlying array are only permuted once PR#1072
     df = DataFrame(a=[2,1])
     df[:b] = df[:a]
     sort!(df, cols=:a)
     @test df == DataFrame(a=[1,2],b=[1,2])
+
+    df2 = DataFrame(a=[1,2,3])
+    df2[:b] = df2[:a]
+    permute!(df2, [3,1,2])
+    @test df2 == DataFrame(a=[3,1,2],b=[3,1,2])
+
+    df3 = DataFrame(a=[1,2,3])
+    df3[:b] = df3[:a]
+    ipermute!(df3, [3,1,2])
+    @test df3 == DataFrame(a=[2,3,1],b=[2,3,1])
+end
+
 end

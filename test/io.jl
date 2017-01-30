@@ -1,7 +1,6 @@
-module TestIO
-    using Base.Test
-    using DataFrames, Compat
-    using LaTeXStrings
+using LaTeXStrings
+
+@testset "IO" begin
 
     #test_group("We can read various file types.")
 

@@ -366,17 +366,16 @@ type RepeatedVector{T} <: AbstractVector{T}
     outer::Int
 end
 
-function Base.getindex{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
+# convert RepeatedVector index into the index of the parent vector
+# N = length(parent)
+parent_index(i::Real, N::Int, inner::Int) = Base.fld1(mod1(i, inner*N), inner)
+
+function Base.getindex{T,I<:Real}(v::RepeatedVector{T}, i::AbstractVector{I})
     N = length(v.parent)
-    idx = Int[Base.fld1(mod1(j,v.inner*N),v.inner) for j in i]
-    v.parent[idx]
+    map(j -> Base.unsafe_getindex(v.parent, parent_index(j, N, v.inner)), i)
 end
-function Base.getindex{T}(v::RepeatedVector{T},i::Real)
-    N = length(v.parent)
-    idx = Base.fld1(mod1(i,v.inner*N),v.inner)
-    v.parent[idx]
-end
-Base.getindex(v::RepeatedVector,i::Range) = getindex(v, [i;])
+Base.getindex{T}(v::RepeatedVector{T}, i::Real) =
+    v.parent[parent_index(i, length(v.parent), v.inner)]
 
 Base.size(v::RepeatedVector) = (length(v),)
 Base.length(v::RepeatedVector) = v.inner * v.outer * length(v.parent)
@@ -385,6 +384,12 @@ Base.eltype{T}(v::RepeatedVector{T}) = T
 Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.inner, v.outer)
 Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 Base.unique(v::RepeatedVector) = unique(v.parent)
+
+NullableArrays.isnull(v::RepeatedVector, i::Real) = false
+NullableArrays.isnull{T}(v::RepeatedVector{Nullable{T}}, i::Int) =
+    isnull(v.parent, parent_index(i, length(v.parent), v.inner))
+NullableArrays.unsafe_getvalue_notnull{T}(v::RepeatedVector{Nullable{T}}, i::Int) =
+    NullableArrays.unsafe_getvalue_notnull(v.parent, parent_index(i, length(v.parent), v.inner))
 
 function CategoricalArrays.CategoricalArray(v::RepeatedVector)
     res = CategoricalArrays.CategoricalArray(v.parent)

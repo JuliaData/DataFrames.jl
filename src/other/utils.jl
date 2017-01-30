@@ -66,7 +66,7 @@ function make_unique(names::Vector{Symbol}; allow_duplicates=true)
         nm = names[i]
         k = 1
         while true
-            newnm = Symbol("$(nm)_$k")
+            newnm = Symbol(nm,'_',k)
             if !in(newnm, seen)
                 names[i] = newnm
                 push!(seen, newnm)
@@ -94,7 +94,7 @@ end
 function gennames(n::Integer)
     res = Array(Symbol, n)
     for i in 1:n
-        res[i] = Symbol(@sprintf "x%d" i)
+        res[i] = Symbol("x", i)
     end
     return res
 end
@@ -172,19 +172,6 @@ function _setdiff{T}(a::AbstractVector{T}, b::T)
     diff
 end
 
-function _uniqueofsorted(x::Vector)
-    idx = fill(true, length(x))
-    lastx = x[1]
-    for i = 2:length(x)
-        if lastx == x[i]
-            idx[i] = false
-        else
-            lastx = x[i]
-        end
-    end
-    x[idx]
-end
-
 # Gets the name of a function. Used in groupedataframe/grouping.jl
 function _fnames{T<:Function}(fs::Vector{T})
     λcounter = 0
@@ -201,3 +188,8 @@ end
 
 _isnull(x::Any) = false
 _isnull(x::Nullable) = isnull(x)
+
+_isnull(v::AbstractArray, inds...) = false
+# T is required to make this definition more specific than AbstractArray
+_isnull{T}(v::AbstractNullableArray{T}, inds...) = isnull(v, inds...)
+_isnull{T}(v::AbstractNullableCategoricalArray{T}, inds...) = isnull(v, inds...)

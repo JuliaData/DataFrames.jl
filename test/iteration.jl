@@ -1,5 +1,4 @@
-module TestIteration
-    using Base.Test, DataFrames, Compat
+@testset "Iteration" begin
 
     dv = NullableArray(Nullable{Int}[1, 2, Nullable()])
     dm = NullableArray([1 2; 3 4])

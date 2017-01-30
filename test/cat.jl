@@ -1,19 +1,15 @@
-module TestCat
-    using Base.Test
-    using DataFrames
-
-    #
-    # hcat
-    #
-
+@testset "concatenation" begin
     nvint = NullableArray(Nullable{Int}[1, 2, Nullable(), 4])
     nvstr = NullableArray(Nullable{String}["one", "two", Nullable(), "four"])
 
+    null_df = DataFrame(Int, 0, 0)
+    df = DataFrame(Int, 4, 3)
     df2 = DataFrame(Any[nvint, nvstr])
     df3 = DataFrame(Any[nvint])
     df4 = convert(DataFrame, [1:4 1:4])
     df5 = DataFrame(Any[NullableArray([1,2,3,4]), nvstr])
 
+@testset "hcat()" begin
     dfh = hcat(df3, df4)
     @test size(dfh, 2) == 3
     @test names(dfh) == [:x1, :x1_1, :x2]
@@ -27,14 +23,9 @@ module TestCat
     @test isequal(dfh3, DataFrames.hcat!(DataFrame(), df3, df4, df5))
 
     @test isequal(df2, DataFrames.hcat!(df2))
+end
 
-    #
-    # vcat
-    #
-
-    null_df = DataFrame(Int, 0, 0)
-    df = DataFrame(Int, 4, 3)
-
+@testset "broadcasting" begin
     # Assignment of rows
     df[1, :] = df[1, :]
     df[1:2, :] = df[1:2, :]
@@ -71,7 +62,9 @@ module TestCat
     # vector broadcasting assignment of subframes
     df[1:2, 1:2] = [3,2]
     df[[true,false,false,true], 2:3] = [2,3]
+end
 
+@testset "vcat()" begin
     vcat([])
     vcat(null_df)
     vcat(null_df, null_df)
@@ -148,4 +141,6 @@ module TestCat
 
     # vcat should be able to concatenate different implementations of AbstractDataFrame (PR #944)
     @test isequal(vcat(sub(DataFrame(A=1:3),2),DataFrame(A=4:5)), DataFrame(A=[2,4,5]))
+end
+
 end
