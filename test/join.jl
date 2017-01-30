@@ -107,4 +107,12 @@ module TestJoin
     @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "A", "B", "C"],
                                                            Quantity = [3, 4, 3, 2],
                                                            Mass = [1.5, 1.5, 2.2, 1.1])
+
+    # Test that join works when mixing Array and NullableArray (#1151)
+    df = DataFrame([collect(1:10), collect(2:11)], [:x, :y])
+    dfnull = DataFrame(x = 1:10, z = 3:12)
+    @test join(df, dfnull, on = :x) ==
+        DataFrame([collect(1:10), collect(2:11), NullableArray(3:12)], [:x, :y, :z])
+    @test join(dfnull, df, on = :x) ==
+        DataFrame([NullableArray(1:10), NullableArray(3:12), NullableArray(2:11)], [:x, :z, :y])
 end
