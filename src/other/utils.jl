@@ -43,7 +43,7 @@ function makeidentifier(s::AbstractString)
         end
     end
 
-    return takebuf_string(res)
+    return String(take!(res))
 end
 
 function make_unique(names::Vector{Symbol}; allow_duplicates=true)
