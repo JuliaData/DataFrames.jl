@@ -1,8 +1,7 @@
 DataFrames.jl
 =============
 
-[![0.6](http://pkg.julialang.org/badges/DataFrames_0.6.svg)](http://pkg.julialang.org/?pkg=DataFrames)
-[![0.7](http://pkg.julialang.org/badges/DataFrames_0.7.svg)](http://pkg.julialang.org/?pkg=DataFrames)
+[![Julia 0.5 Status](http://pkg.julialang.org/badges/DataFrames_0.5.svg)](http://pkg.julialang.org/?pkg=DataFrames&ver=0.5)
 
 [![Coverage Status](https://coveralls.io/repos/JuliaStats/DataFrames.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaStats/DataFrames.jl?branch=master)
 [![Travis Build Status](https://travis-ci.org/JuliaStats/DataFrames.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/DataFrames.jl)
