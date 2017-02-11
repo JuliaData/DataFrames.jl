@@ -50,7 +50,9 @@ if anyerrors
     throw("Tests failed")
 end
 
-stdin = joinpath(dirname(@__FILE__), "stdin.sh")
-ENV2 = copy(ENV)
-ENV2["JULIA_HOME"] = JULIA_HOME
-run(setenv(`bash $stdin`, ENV2))
+if !is_windows()
+    stdin = joinpath(dirname(@__FILE__), "stdin.sh")
+    ENV2 = copy(ENV)
+    ENV2["JULIA_HOME"] = JULIA_HOME
+    run(setenv(`sh $stdin`, ENV2))
+end
