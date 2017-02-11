@@ -3,8 +3,8 @@
 We often need to combine two or more data sets together to provide a complete picture of the topic we are studying. For example, suppose that we have the following two data sets:
 
 ```julia
-names = DataFrame(ID = [1, 2], Name = ["John Doe", "Jane Doe"])
-jobs = DataFrame(ID = [1, 2], Job = ["Lawyer", "Doctor"])
+names = DataTable(ID = [1, 2], Name = ["John Doe", "Jane Doe"])
+jobs = DataTable(ID = [1, 2], Job = ["Lawyer", "Doctor"])
 ```
 
 We might want to work with a larger data set that contains both the names and jobs for each ID. We can do this using the `join` function:
@@ -22,7 +22,7 @@ Output:
 
 In relational database theory, this operation is generally referred to as a join. The columns used to determine which rows should be combined during a join are called keys.
 
-There are seven kinds of joins supported by the DataFrames package:
+There are seven kinds of joins supported by the DataTables package:
 
 -   Inner: The output contains rows for values of the key that exist in both the first (left) and second (right) arguments to `join`.
 -   Left: The output contains rows for values of the key that exist in the first (left) argument to `join`, whether or not that value exists in the second (right) argument.
@@ -35,8 +35,8 @@ There are seven kinds of joins supported by the DataFrames package:
 You can control the kind of join that `join` performs using the `kind` keyword argument:
 
 ```julia
-a = DataFrame(ID = [1, 2], Name = ["A", "B"])
-b = DataFrame(ID = [1, 3], Job = ["Doctor", "Lawyer"])
+a = DataTable(ID = [1, 2], Name = ["A", "B"])
+b = DataTable(ID = [1, 3], Job = ["Doctor", "Lawyer"])
 join(a, b, on = :ID, kind = :inner)
 join(a, b, on = :ID, kind = :left)
 join(a, b, on = :ID, kind = :right)
@@ -54,8 +54,8 @@ join(a, b, kind = :cross)
 In order to join data frames on keys which have different names, you must first rename them so that they match. This can be done using rename!:
 
 ```julia
-a = DataFrame(ID = [1, 2], Name = ["A", "B"])
-b = DataFrame(IDNew = [1, 2], Job = ["Doctor", "Lawyer"])
+a = DataTable(ID = [1, 2], Name = ["A", "B"])
+b = DataTable(IDNew = [1, 2], Job = ["Doctor", "Lawyer"])
 rename!(b, :IDNew, :ID)
 join(a, b, on = :ID, kind = :inner)
 ```
@@ -63,10 +63,10 @@ join(a, b, on = :ID, kind = :inner)
 Or renaming multiple columns at a time:
 
 ```julia
-a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"], 
+a = DataTable(City = ["Amsterdam", "London", "London", "New York", "New York"], 
               Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"], 
               Category = [1, 2, 3, 4, 5])
-b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"], 
+b = DataTable(Location = ["Amsterdam", "London", "London", "New York", "New York"], 
               Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"], 
               Name = ["a", "b", "c", "d", "e"])
 rename!(b, [:Location => :City, :Work => :Job])

@@ -1,16 +1,16 @@
 module TestConversions
     using Base.Test
-    using DataFrames
+    using DataTables
     using DataStructures: OrderedDict, SortedDict
 
-    df = DataFrame()
+    df = DataTable()
     df[:A] = 1:5
     df[:B] = [:A, :B, :C, :D, :E]
     @test isa(convert(Array, df), Matrix{Any})
     @test convert(Array, df) == convert(Array, convert(NullableArray, df))
     @test isa(convert(Array{Any}, df), Matrix{Any})
 
-    df = DataFrame()
+    df = DataTable()
     df[:A] = 1:5
     df[:B] = 1.0:5.0
     # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
@@ -21,7 +21,7 @@ module TestConversions
     @test isa(convert(Array{Any}, df), Matrix{Any})
     @test isa(convert(Array{Float64}, df), Matrix{Float64})
 
-    df = DataFrame()
+    df = DataTable()
     df[:A] = 1.0:5.0
     df[:B] = 1.0:5.0
     a = convert(Array, df)
@@ -52,24 +52,24 @@ module TestConversions
     c = [-3.1,7]
     di = Dict("a"=>a, "b"=>b, "c"=>c)
 
-    df = convert(DataFrame,di)
-    @test isa(df,DataFrame)
+    df = convert(DataTable,di)
+    @test isa(df,DataTable)
     @test names(df) == Symbol[x for x in sort(collect(keys(di)))]
     @test isequal(df[:a], NullableArray(a))
     @test isequal(df[:b], NullableArray(b))
     @test isequal(df[:c], NullableArray(c))
 
     od = OrderedDict("c"=>c, "a"=>a, "b"=>b)
-    df = convert(DataFrame,od)
-    @test isa(df, DataFrame)
+    df = convert(DataTable,od)
+    @test isa(df, DataTable)
     @test names(df) == Symbol[x for x in keys(od)]
     @test isequal(df[:a], NullableArray(a))
     @test isequal(df[:b], NullableArray(b))
     @test isequal(df[:c], NullableArray(c))
 
     sd = SortedDict("c"=>c, "a"=>a, "b"=>b)
-    df = convert(DataFrame,sd)
-    @test isa(df, DataFrame)
+    df = convert(DataTable,sd)
+    @test isa(df, DataTable)
     @test names(df) == Symbol[x for x in keys(sd)]
     @test isequal(df[:a], NullableArray(a))
     @test isequal(df[:b], NullableArray(b))
@@ -77,6 +77,6 @@ module TestConversions
 
     a = [1.0]
     di = Dict("a"=>a, "b"=>b, "c"=>c)
-    @test_throws ArgumentError convert(DataFrame,di)
+    @test_throws ArgumentError convert(DataTable,di)
 
 end

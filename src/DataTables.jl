@@ -1,6 +1,6 @@
 VERSION >= v"0.4.0-dev+6521" && __precompile__(true)
 
-module DataFrames
+module DataTables
 
 ##############################################################################
 ##
@@ -34,16 +34,16 @@ export @~,
        @tsv_str,
        @wsv_str,
 
-       AbstractDataFrame,
+       AbstractDataTable,
        AbstractContrasts,
-       DataFrame,
-       DataFrameRow,
+       DataTable,
+       DataTableRow,
        Formula,
        GroupApplied,
-       GroupedDataFrame,
+       GroupedDataTable,
        ModelFrame,
        ModelMatrix,
-       SubDataFrame,
+       SubDataTable,
        EffectsCoding,
        DummyCoding,
        HelmertCoding,
@@ -107,25 +107,25 @@ for (dir, filename) in [
         ("other", "utils.jl"),
         ("other", "index.jl"),
 
-        ("abstractdataframe", "abstractdataframe.jl"),
-        ("dataframe", "dataframe.jl"),
-        ("subdataframe", "subdataframe.jl"),
-        ("groupeddataframe", "grouping.jl"),
-        ("dataframerow", "dataframerow.jl"),
+        ("abstractdatatable", "abstractdatatable.jl"),
+        ("datatable", "datatable.jl"),
+        ("subdatatable", "subdatatable.jl"),
+        ("groupeddatatable", "grouping.jl"),
+        ("datatablerow", "datatablerow.jl"),
 
-        ("abstractdataframe", "iteration.jl"),
-        ("abstractdataframe", "join.jl"),
-        ("abstractdataframe", "reshape.jl"),
+        ("abstractdatatable", "iteration.jl"),
+        ("abstractdatatable", "join.jl"),
+        ("abstractdatatable", "reshape.jl"),
 
-        ("abstractdataframe", "io.jl"),
-        ("dataframe", "io.jl"),
+        ("abstractdatatable", "io.jl"),
+        ("datatable", "io.jl"),
 
-        ("abstractdataframe", "show.jl"),
-        ("groupeddataframe", "show.jl"),
-        ("dataframerow", "show.jl"),
+        ("abstractdatatable", "show.jl"),
+        ("groupeddatatable", "show.jl"),
+        ("datatablerow", "show.jl"),
 
-        ("abstractdataframe", "sort.jl"),
-        ("dataframe", "sort.jl"),
+        ("abstractdatatable", "sort.jl"),
+        ("datatable", "sort.jl"),
 
         ("statsmodels", "contrasts.jl"),
         ("statsmodels", "formula.jl"),
@@ -137,4 +137,4 @@ for (dir, filename) in [
     include(joinpath(dir, filename))
 end
 
-end # module DataFrames
+end # module DataTables

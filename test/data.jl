@@ -1,7 +1,7 @@
 module TestData
     importall Base # so that we get warnings for conflicts
     using Base.Test
-    using DataFrames
+    using DataTables
     using Compat
 
     #test_group("NullableArray creation")
@@ -13,13 +13,13 @@ module TestData
     dvdict = NullableArray(Dict, 4)    # for issue #199
 
     #test_group("constructors")
-    df1 = DataFrame(Any[nvint, nvstr], [:Ints, :Strs])
-    df2 = DataFrame(Any[nvint, nvstr])
-    df3 = DataFrame(Any[nvint])
-    df4 = convert(DataFrame, [1:4 1:4])
-    df5 = DataFrame(Any[NullableArray([1,2,3,4]), nvstr])
-    df6 = DataFrame(Any[nvint, nvint, nvstr], [:A, :B, :C])
-    df7 = DataFrame(x = nvint, y = nvstr)
+    df1 = DataTable(Any[nvint, nvstr], [:Ints, :Strs])
+    df2 = DataTable(Any[nvint, nvstr])
+    df3 = DataTable(Any[nvint])
+    df4 = convert(DataTable, [1:4 1:4])
+    df5 = DataTable(Any[NullableArray([1,2,3,4]), nvstr])
+    df6 = DataTable(Any[nvint, nvint, nvstr], [:A, :B, :C])
+    df7 = DataTable(x = nvint, y = nvstr)
     @test size(df7) == (4, 2)
     @test isequal(df7[:x], nvint)
 
@@ -56,7 +56,7 @@ module TestData
     #test_group("null handling")
     @test nrow(df5[complete_cases(df5), :]) == 3
 
-    #test_context("SubDataFrames")
+    #test_context("SubDataTables")
 
     #test_group("constructors")
     # single index is rows
@@ -73,7 +73,7 @@ module TestData
     #test_context("Within")
     #test_group("Associative")
 
-    #test_group("DataFrame")
+    #test_group("DataTable")
     srand(1)
     N = 20
     #Cast to Int64 as rand() behavior differs between Int32/64
@@ -81,7 +81,7 @@ module TestData
     d2 = NullableCategoricalArray(Nullable{String}["A", "B", Nullable()])[rand(map(Int64, 1:3), N)]
     d3 = NullableArray(randn(N))
     d4 = NullableArray(randn(N))
-    df7 = DataFrame(Any[d1, d2, d3], [:d1, :d2, :d3])
+    df7 = DataTable(Any[d1, d2, d3], [:d1, :d2, :d3])
 
     #test_group("groupby")
     gd = groupby(df7, :d1)
@@ -99,7 +99,7 @@ module TestData
     end
     @test isequal(res, sum(df7[:d1]))
 
-    @test aggregate(DataFrame(a=1), identity) == DataFrame(a_identity=1)
+    @test aggregate(DataTable(a=1), identity) == DataTable(a_identity=1)
 
     df8 = aggregate(df7[[1, 3]], sum)
     @test isequal(df8[1, :d1_sum], sum(df7[:d1]))
@@ -115,13 +115,13 @@ module TestData
     df9 = aggregate(df7, :d2, [sum, length])
     @test isequal(df9, df8)
 
-    df10 = DataFrame(
+    df10 = DataTable(
         Any[[1:4;], [2:5;], ["a", "a", "a", "b" ], ["c", "d", "c", "d"]],
         [:d1, :d2, :d3, :d4]
     )
 
     gd = groupby(df10, [:d3])
-    ggd = groupby(gd[1], [:d3, :d4]) # make sure we can groupby subdataframes
+    ggd = groupby(gd[1], [:d3, :d4]) # make sure we can groupby subdatatables
     @test ggd[1][1, :d3] == "a"
     @test ggd[1][1, :d4] == "c"
     @test ggd[1][2, :d3] == "a"
@@ -130,7 +130,7 @@ module TestData
     @test ggd[2][1, :d4] == "d"
 
     #test_group("reshape")
-    d1 = DataFrame(a = repeat([1:3;], inner = [4]),
+    d1 = DataTable(a = repeat([1:3;], inner = [4]),
                    b = repeat([1:4;], inner = [3]),
                    c = randn(12),
                    d = randn(12),
@@ -184,7 +184,7 @@ module TestData
 
 
 
-    d2 = DataFrame(id1 = [:a, :a, :a, :b],
+    d2 = DataTable(id1 = [:a, :a, :a, :b],
                    id2 = [:A, :B, :B, :B],
                    id3 = [:t, :f, :t, :f],
                    val = [.1, .2, .3, .4])
@@ -193,11 +193,11 @@ module TestData
     #test_group("merge")
 
     srand(1)
-    df1 = DataFrame(a = shuffle!([1:10;]),
+    df1 = DataTable(a = shuffle!([1:10;]),
                     b = [:A,:B][rand(1:2, 10)],
                     v1 = randn(10))
 
-    df2 = DataFrame(a = shuffle!(reverse([1:5;])),
+    df2 = DataTable(a = shuffle!(reverse([1:5;])),
                     b2 = [:A,:B,:C][rand(1:3, 5)],
                     v2 = randn(5))
 
@@ -214,9 +214,9 @@ module TestData
     #                                              Nullable(), Nullable(),
     #                                              Nullable(), Nullable(), Nullable()]))
 
-    df1 = DataFrame(a = [1, 2, 3],
+    df1 = DataTable(a = [1, 2, 3],
                     b = ["America", "Europe", "Africa"])
-    df2 = DataFrame(a = [1, 2, 4],
+    df2 = DataTable(a = [1, 2, 4],
                     c = ["New World", "Old World", "New World"])
 
     m1 = join(df1, df2, on = :a, kind = :inner)
@@ -232,11 +232,11 @@ module TestData
     @test isequal(m4[:a], NullableArray([1, 2, 3, 4]))
 
     # test with nulls (issue #185)
-    df1 = DataFrame()
+    df1 = DataTable()
     df1[:A] = NullableArray(Nullable{Compat.ASCIIString}["a", "b", "a", Nullable()])
     df1[:B] = NullableArray([1, 2, 1, 3])
 
-    df2 = DataFrame()
+    df2 = DataTable()
     df2[:A] = NullableArray(Nullable{Compat.ASCIIString}["a", Nullable(), "c"])
     df2[:C] = NullableArray([1, 2, 4])
 
@@ -249,13 +249,13 @@ module TestData
     @test isequal(m2[:A], NullableArray(Nullable{Compat.ASCIIString}[Nullable(),"a","a","b","c"]))
 
     srand(1)
-    df1 = DataFrame(
+    df1 = DataTable(
         a = [:x,:y][rand(1:2, 10)],
         b = [:A,:B][rand(1:2, 10)],
         v1 = randn(10)
     )
 
-    df2 = DataFrame(
+    df2 = DataTable(
         a = [:x,:y][[1,2,1,1,2]],
         b = [:A,:B,:C][[1,1,1,2,3]],
         v2 = randn(5)
@@ -279,12 +279,12 @@ module TestData
         d[:x3] = map(x -> get(x)[3], d[:a])
         d
     end
-    df1 = DataFrame(
+    df1 = DataTable(
         a = ["abc", "abx", "axz", "def", "dfr"],
         v1 = randn(5)
     )
     df1 = spltdf(df1)
-    df2 = DataFrame(
+    df2 = DataTable(
         a = ["def", "abc","abx", "axz", "xyz"],
         v2 = randn(5)
     )
@@ -295,7 +295,7 @@ module TestData
     # @test isequal(sort(m1[:a]), sort(m2[:a]))
 
     # test nonunique() with extra argument
-    df1 = DataFrame(a = ["a", "b", "a", "b", "a", "b"], b = 1:6, c = [1:3;1:3])
+    df1 = DataTable(a = ["a", "b", "a", "b", "a", "b"], b = 1:6, c = [1:3;1:3])
     df = vcat(df1, df1)
     @test find(nonunique(df)) == collect(7:12)
     @test find(nonunique(df, :)) == collect(7:12)

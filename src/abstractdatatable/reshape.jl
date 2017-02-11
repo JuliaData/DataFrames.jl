@@ -14,19 +14,19 @@
 ##############################################################################
 
 """
-Stacks a DataFrame; convert from a wide to long format
+Stacks a DataTable; convert from a wide to long format
 
 
 ```julia
-stack(df::AbstractDataFrame, [measure_vars], [id_vars];
+stack(df::AbstractDataTable, [measure_vars], [id_vars];
       variable_name::Symbol=:variable, value_name::Symbol=:value)
-melt(df::AbstractDataFrame, [id_vars], [measure_vars];
+melt(df::AbstractDataTable, [id_vars], [measure_vars];
      variable_name::Symbol=:variable, value_name::Symbol=:value)
 ```
 
 ### Arguments
 
-* `df` : the AbstractDataFrame to be stacked
+* `df` : the AbstractDataTable to be stacked
 
 * `measure_vars` : the columns to be stacked (the measurement
   variables), a normal column indexing type, like a Symbol,
@@ -48,20 +48,20 @@ melt(df::AbstractDataFrame, [id_vars], [measure_vars];
 
 ### Result
 
-* `::DataFrame` : the long-format dataframe with column `:value`
+* `::DataTable` : the long-format datatable with column `:value`
   holding the values of the stacked columns (`measure_vars`), with
   column `:variable` a Vector of Symbols with the `measure_vars` name,
   and with columns for each of the `id_vars`.
 
 See also `stackdf` and `meltdf` for stacking methods that return a
-view into the original DataFrame. See `unstack` for converting from
+view into the original DataTable. See `unstack` for converting from
 long to wide format.
 
 
 ### Examples
 
 ```julia
-d1 = DataFrame(a = repeat([1:3;], inner = [4]),
+d1 = DataTable(a = repeat([1:3;], inner = [4]),
                b = repeat([1:4;], inner = [3]),
                c = randn(12),
                d = randn(12),
@@ -74,44 +74,44 @@ d1s_name = melt(d1, [:a, :b, :e], variable_name=:somemeasure)
 ```
 
 """
-function stack(df::AbstractDataFrame, measure_vars::Vector{Int},
+function stack(df::AbstractDataTable, measure_vars::Vector{Int},
                id_vars::Vector{Int}; variable_name::Symbol=:variable,
                value_name::Symbol=:value)
     N = length(measure_vars)
     cnames = names(df)[id_vars]
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
-    DataFrame(Any[Compat.repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
+    DataTable(Any[Compat.repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
                   vcat([df[c] for c in measure_vars]...),                    # value
                   [Compat.repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
               cnames)
 end
-function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int;
+function stack(df::AbstractDataTable, measure_var::Int, id_var::Int;
                variable_name::Symbol=:variable, value_name::Symbol=:value)
     stack(df, [measure_var], [id_var];
           variable_name=variable_name, value_name=value_name)
 end
-function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_var::Int;
+function stack(df::AbstractDataTable, measure_vars::Vector{Int}, id_var::Int;
                variable_name::Symbol=:variable, value_name::Symbol=:value)
     stack(df, measure_vars, [id_var];
           variable_name=variable_name, value_name=value_name)
 end
-function stack(df::AbstractDataFrame, measure_var::Int, id_vars::Vector{Int};
+function stack(df::AbstractDataTable, measure_var::Int, id_vars::Vector{Int};
                variable_name::Symbol=:variable, value_name::Symbol=:value)
     stackdf(df, [measure_var], id_vars;
             variable_name=variable_name, value_name=value_name)
 end
-function stack(df::AbstractDataFrame, measure_vars, id_vars;
+function stack(df::AbstractDataTable, measure_vars, id_vars;
                variable_name::Symbol=:variable, value_name::Symbol=:value)
     stack(df, index(df)[measure_vars], index(df)[id_vars];
           variable_name=variable_name, value_name=value_name)
 end
 # no vars specified, by default select only numeric columns
-numeric_vars(df::AbstractDataFrame) =
+numeric_vars(df::AbstractDataTable) =
     [T <: AbstractFloat || (T <: Nullable && eltype(T) <: AbstractFloat)
      for T in eltypes(df)]
 
-function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
+function stack(df::AbstractDataTable, measure_vars = numeric_vars(df);
                variable_name::Symbol=:variable, value_name::Symbol=:value)
     mv_inds = index(df)[measure_vars]
     stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds);
@@ -119,25 +119,25 @@ function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
 end
 
 """
-Stacks a DataFrame; convert from a wide to long format; see
+Stacks a DataTable; convert from a wide to long format; see
 `stack`.
 """
-function melt(df::AbstractDataFrame, id_vars::@compat(Union{Int,Symbol});
+function melt(df::AbstractDataTable, id_vars::@compat(Union{Int,Symbol});
               variable_name::Symbol=:variable, value_name::Symbol=:value)
     melt(df, [id_vars]; variable_name=variable_name, value_name=value_name)
 end
-function melt(df::AbstractDataFrame, id_vars;
+function melt(df::AbstractDataTable, id_vars;
               variable_name::Symbol=:variable, value_name::Symbol=:value)
     id_inds = index(df)[id_vars]
     stack(df, _setdiff(1:ncol(df), id_inds), id_inds;
           variable_name=variable_name, value_name=value_name)
 end
-function melt(df::AbstractDataFrame, id_vars, measure_vars;
+function melt(df::AbstractDataTable, id_vars, measure_vars;
               variable_name::Symbol=:variable, value_name::Symbol=:value)
     stack(df, measure_vars, id_vars; variable_name=variable_name,
           value_name=value_name)
 end
-melt(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=:value) =
+melt(df::AbstractDataTable; variable_name::Symbol=:variable, value_name::Symbol=:value) =
     stack(df; variable_name=variable_name, value_name=value_name)
 
 ##############################################################################
@@ -147,17 +147,17 @@ melt(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=
 ##############################################################################
 
 """
-Unstacks a DataFrame; convert from a long to wide format
+Unstacks a DataTable; convert from a long to wide format
 
 ```julia
-unstack(df::AbstractDataFrame, rowkey, colkey, value)
-unstack(df::AbstractDataFrame, colkey, value)
-unstack(df::AbstractDataFrame)
+unstack(df::AbstractDataTable, rowkey, colkey, value)
+unstack(df::AbstractDataTable, colkey, value)
+unstack(df::AbstractDataTable)
 ```
 
 ### Arguments
 
-* `df` : the AbstractDataFrame to be unstacked
+* `df` : the AbstractDataTable to be unstacked
 
 * `rowkey` : the column with a unique key for each row, if not given,
   find a key by grouping on anything not a `colkey` or `value`
@@ -169,13 +169,13 @@ unstack(df::AbstractDataFrame)
 
 ### Result
 
-* `::DataFrame` : the wide-format dataframe
+* `::DataTable` : the wide-format datatable
 
 
 ### Examples
 
 ```julia
-wide = DataFrame(id = 1:12,
+wide = DataTable(id = 1:12,
                  a  = repeat([1:3;], inner = [4]),
                  b  = repeat([1:4;], inner = [3]),
                  c  = randn(12),
@@ -189,7 +189,7 @@ wide2 = unstack(long, :id, :variable, :value)
 Note that there are some differences between the widened results above.
 
 """
-function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
+function unstack(df::AbstractDataTable, rowkey::Int, colkey::Int, value::Int)
     # `rowkey` integer indicating which column to place along rows
     # `colkey` integer indicating which column to place along column headers
     # `value` integer indicating which column has values
@@ -202,7 +202,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     if T <: Nullable
         T = eltype(T)
     end
-    payload = DataFrame(Any[NullableArray(T, Nrow) for i in 1:Ncol],
+    payload = DataTable(Any[NullableArray(T, Nrow) for i in 1:Ncol],
                         map(Symbol, levels(keycol)))
     nowarning = true
     for k in 1:nrow(df)
@@ -218,14 +218,14 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     end
     insert!(payload, 1, NullableArray(levels(refkeycol)), _names(df)[rowkey])
 end
-unstack(df::AbstractDataFrame, rowkey, colkey, value) =
+unstack(df::AbstractDataTable, rowkey, colkey, value) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
 
 # Version of unstack with just the colkey and value columns provided
-unstack(df::AbstractDataFrame, colkey, value) =
+unstack(df::AbstractDataTable, colkey, value) =
     unstack(df, index(df)[colkey], index(df)[value])
 
-function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
+function unstack(df::AbstractDataTable, colkey::Int, value::Int)
     # group on anything not a key or value:
     g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]))
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
@@ -242,7 +242,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     if T <: Nullable
         T = eltype(T)
     end
-    df2 = DataFrame(Any[NullableArray(T, Nrow) for i in 1:Ncol],
+    df2 = DataTable(Any[NullableArray(T, Nrow) for i in 1:Ncol],
                     map(@compat(Symbol), levels(keycol)))
     nowarning = true
     for k in 1:nrow(df)
@@ -259,7 +259,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     hcat(df1, df2)
 end
 
-unstack(df::AbstractDataFrame) = unstack(df, :id, :variable, :value)
+unstack(df::AbstractDataTable) = unstack(df, :id, :variable, :value)
 
 
 ##############################################################################
@@ -401,21 +401,21 @@ end
 ##############################################################################
 
 """
-A stacked view of a DataFrame (long format)
+A stacked view of a DataTable (long format)
 
 Like `stack` and `melt`, but a view is returned rather than data
 copies.
 
 ```julia
-stackdf(df::AbstractDataFrame, [measure_vars], [id_vars];
+stackdf(df::AbstractDataTable, [measure_vars], [id_vars];
         variable_name::Symbol=:variable, value_name::Symbol=:value)
-meltdf(df::AbstractDataFrame, [id_vars], [measure_vars];
+meltdf(df::AbstractDataTable, [id_vars], [measure_vars];
        variable_name::Symbol=:variable, value_name::Symbol=:value)
 ```
 
 ### Arguments
 
-* `df` : the wide AbstractDataFrame
+* `df` : the wide AbstractDataTable
 
 * `measure_vars` : the columns to be stacked (the measurement
   variables), a normal column indexing type, like a Symbol,
@@ -428,18 +428,18 @@ meltdf(df::AbstractDataFrame, [id_vars], [measure_vars];
 
 ### Result
 
-* `::DataFrame` : the long-format dataframe with column `:value`
+* `::DataTable` : the long-format datatable with column `:value`
   holding the values of the stacked columns (`measure_vars`), with
   column `:variable` a Vector of Symbols with the `measure_vars` name,
   and with columns for each of the `id_vars`.
 
 The result is a view because the columns are special AbstractVectors
-that return indexed views into the original DataFrame.
+that return indexed views into the original DataTable.
 
 ### Examples
 
 ```julia
-d1 = DataFrame(a = repeat([1:3;], inner = [4]),
+d1 = DataTable(a = repeat([1:3;], inner = [4]),
                b = repeat([1:4;], inner = [3]),
                c = randn(12),
                d = randn(12),
@@ -451,39 +451,39 @@ d1m = meltdf(d1, [:a, :b, :e])
 ```
 
 """
-function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int},
+function stackdf(df::AbstractDataTable, measure_vars::Vector{Int},
                  id_vars::Vector{Int}; variable_name::Symbol=:variable,
                  value_name::Symbol=:value)
     N = length(measure_vars)
     cnames = names(df)[id_vars]
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
-    DataFrame(Any[RepeatedVector(_names(df)[measure_vars], nrow(df), 1),   # variable
+    DataTable(Any[RepeatedVector(_names(df)[measure_vars], nrow(df), 1),   # variable
                   StackedVector(Any[df[:,c] for c in measure_vars]),     # value
                   [RepeatedVector(df[:,c], 1, N) for c in id_vars]...],     # id_var columns
               cnames)
 end
-function stackdf(df::AbstractDataFrame, measure_var::Int, id_var::Int;
+function stackdf(df::AbstractDataTable, measure_var::Int, id_var::Int;
                  variable_name::Symbol=:variable, value_name::Symbol=:value)
     stackdf(df, [measure_var], [id_var]; variable_name=variable_name,
             value_name=value_name)
 end
-function stackdf(df::AbstractDataFrame, measure_vars, id_var::Int;
+function stackdf(df::AbstractDataTable, measure_vars, id_var::Int;
                  variable_name::Symbol=:variable, value_name::Symbol=:value)
     stackdf(df, measure_vars, [id_var]; variable_name=variable_name,
             value_name=value_name)
 end
-function stackdf(df::AbstractDataFrame, measure_var::Int, id_vars;
+function stackdf(df::AbstractDataTable, measure_var::Int, id_vars;
                  variable_name::Symbol=:variable, value_name::Symbol=:value)
     stackdf(df, [measure_var], id_vars; variable_name=variable_name,
             value_name=value_name)
 end
-function stackdf(df::AbstractDataFrame, measure_vars, id_vars;
+function stackdf(df::AbstractDataTable, measure_vars, id_vars;
                  variable_name::Symbol=:variable, value_name::Symbol=:value)
     stackdf(df, index(df)[measure_vars], index(df)[id_vars];
             variable_name=variable_name, value_name=value_name)
 end
-function stackdf(df::AbstractDataFrame, measure_vars = numeric_vars(df);
+function stackdf(df::AbstractDataTable, measure_vars = numeric_vars(df);
                  variable_name::Symbol=:variable, value_name::Symbol=:value)
     m_inds = index(df)[measure_vars]
     stackdf(df, m_inds, _setdiff(1:ncol(df), m_inds);
@@ -491,18 +491,18 @@ function stackdf(df::AbstractDataFrame, measure_vars = numeric_vars(df);
 end
 
 """
-A stacked view of a DataFrame (long format); see `stackdf`
+A stacked view of a DataTable (long format); see `stackdf`
 """
-function meltdf(df::AbstractDataFrame, id_vars; variable_name::Symbol=:variable,
+function meltdf(df::AbstractDataTable, id_vars; variable_name::Symbol=:variable,
                 value_name::Symbol=:value)
     id_inds = index(df)[id_vars]
     stackdf(df, _setdiff(1:ncol(df), id_inds), id_inds;
             variable_name=variable_name, value_name=value_name)
 end
-function meltdf(df::AbstractDataFrame, id_vars, measure_vars;
+function meltdf(df::AbstractDataTable, id_vars, measure_vars;
                 variable_name::Symbol=:variable, value_name::Symbol=:value)
     stackdf(df, measure_vars, id_vars; variable_name=variable_name,
             value_name=value_name)
 end
-meltdf(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=:value) =
+meltdf(df::AbstractDataTable; variable_name::Symbol=:variable, value_name::Symbol=:value) =
     stackdf(df; variable_name=variable_name, value_name=value_name)

@@ -1,6 +1,6 @@
 module TestCat
     using Base.Test
-    using DataFrames
+    using DataTables
 
     #
     # hcat
@@ -9,31 +9,31 @@ module TestCat
     nvint = NullableArray(Nullable{Int}[1, 2, Nullable(), 4])
     nvstr = NullableArray(Nullable{String}["one", "two", Nullable(), "four"])
 
-    df2 = DataFrame(Any[nvint, nvstr])
-    df3 = DataFrame(Any[nvint])
-    df4 = convert(DataFrame, [1:4 1:4])
-    df5 = DataFrame(Any[NullableArray([1,2,3,4]), nvstr])
+    df2 = DataTable(Any[nvint, nvstr])
+    df3 = DataTable(Any[nvint])
+    df4 = convert(DataTable, [1:4 1:4])
+    df5 = DataTable(Any[NullableArray([1,2,3,4]), nvstr])
 
     dfh = hcat(df3, df4)
     @test size(dfh, 2) == 3
     @test names(dfh) == [:x1, :x1_1, :x2]
     @test isequal(dfh[:x1], df3[:x1])
     @test isequal(dfh, [df3 df4])
-    @test isequal(dfh, DataFrames.hcat!(DataFrame(), df3, df4))
+    @test isequal(dfh, DataTables.hcat!(DataTable(), df3, df4))
 
     dfh3 = hcat(df3, df4, df5)
     @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
     @test isequal(dfh3, hcat(dfh, df5))
-    @test isequal(dfh3, DataFrames.hcat!(DataFrame(), df3, df4, df5))
+    @test isequal(dfh3, DataTables.hcat!(DataTable(), df3, df4, df5))
 
-    @test isequal(df2, DataFrames.hcat!(df2))
+    @test isequal(df2, DataTables.hcat!(df2))
 
     #
     # vcat
     #
 
-    null_df = DataFrame(Int, 0, 0)
-    df = DataFrame(Int, 4, 3)
+    null_df = DataTable(Int, 0, 0)
+    df = DataTable(Int, 4, 3)
 
     # Assignment of rows
     df[1, :] = df[1, :]
@@ -79,7 +79,7 @@ module TestCat
     vcat(df, null_df)
     vcat(df, df)
     vcat(df, df, df)
-    @test vcat(DataFrame[]) == DataFrame()
+    @test vcat(DataTable[]) == DataTable()
 
     alt_df = deepcopy(df)
     vcat(df, alt_df)
@@ -105,18 +105,18 @@ module TestCat
     # Eltype promotion
     # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
     if VERSION >= v"0.5.0-dev"
-        @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Float64}]
-        @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Float64}]
+        @test eltypes(vcat(DataTable(a = [1]), DataTable(a = [2.1]))) == [Nullable{Float64}]
+        @test eltypes(vcat(DataTable(a = NullableArray(Int, 1)), DataTable(a = [2.1]))) == [Nullable{Float64}]
     else
-        @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Any}]
-        @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Any}]
+        @test eltypes(vcat(DataTable(a = [1]), DataTable(a = [2.1]))) == [Nullable{Any}]
+        @test eltypes(vcat(DataTable(a = NullableArray(Int, 1)), DataTable(a = [2.1]))) == [Nullable{Any}]
     end
 
     # Minimal container type promotion
-    dfa = DataFrame(a = CategoricalArray([1, 2, 2]))
-    dfb = DataFrame(a = CategoricalArray([2, 3, 4]))
-    dfc = DataFrame(a = NullableArray([2, 3, 4]))
-    dfd = DataFrame(Any[2:4], [:a])
+    dfa = DataTable(a = CategoricalArray([1, 2, 2]))
+    dfb = DataTable(a = CategoricalArray([2, 3, 4]))
+    dfc = DataTable(a = NullableArray([2, 3, 4]))
+    dfd = DataTable(Any[2:4], [:a])
     dfab = vcat(dfa, dfb)
     dfac = vcat(dfa, dfc)
     @test isequal(dfab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
@@ -132,20 +132,20 @@ module TestCat
     dc = vcat(dfd, dfc)
     @test isequal(vcat(dfc, dfd), dc)
 
-    # Zero-row DataFrames
+    # Zero-row DataTables
     dfc0 = similar(dfc, 0)
     @test isequal(vcat(dfd, dfc0, dfc), dc)
     @test eltypes(vcat(dfd, dfc0)) == eltypes(dc)
 
     # Missing columns
     rename!(dfd, :a, :b)
-    dfda = DataFrame(b = NullableArray(Nullable{Int}[2, 3, 4, Nullable(), Nullable(), Nullable()]),
+    dfda = DataTable(b = NullableArray(Nullable{Int}[2, 3, 4, Nullable(), Nullable(), Nullable()]),
                      a = NullableCategoricalVector(Nullable{Int}[Nullable(), Nullable(), Nullable(), 1, 2, 2]))
     @test isequal(vcat(dfd, dfa), dfda)
 
     # Alignment
     @test isequal(vcat(dfda, dfd, dfa), vcat(dfda, dfda))
 
-    # vcat should be able to concatenate different implementations of AbstractDataFrame (PR #944)
-    @test isequal(vcat(sub(DataFrame(A=1:3),2),DataFrame(A=4:5)), DataFrame(A=[2,4,5]))
+    # vcat should be able to concatenate different implementations of AbstractDataTable (PR #944)
+    @test isequal(vcat(sub(DataTable(A=1:3),2),DataTable(A=4:5)), DataTable(A=[2,4,5]))
 end

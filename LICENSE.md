@@ -1,4 +1,4 @@
-DataFrames.jl is licensed under the MIT License:
+DataTables.jl is licensed under the MIT License:
 
 > Copyright (c) 2012-2015: Harlan Harris, EPRI (Tom Short's code), Chris DuBois,
 > John Myles White, and other contributors.

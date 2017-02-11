@@ -1,4 +1,4 @@
-function Base.sort!(df::DataFrame; cols=Any[], alg=nothing,
+function Base.sort!(df::DataTable; cols=Any[], alg=nothing,
                     lt=isless, by=identity, rev=false, order=Forward)
     if !(isa(by, Function) || eltype(by) <: Function)
         msg = "'by' must be a Function or a vector of Functions. Perhaps you wanted 'cols'."
@@ -9,7 +9,7 @@ function Base.sort!(df::DataFrame; cols=Any[], alg=nothing,
     sort!(df, _alg, ord)
 end
 
-function Base.sort!(df::DataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
+function Base.sort!(df::DataTable, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
     p = sortperm(df, a, o)
     pp = similar(p)
     c = columns(df)

@@ -2,28 +2,28 @@
 
 Many data analysis tasks involve splitting a data set into groups, applying some functions to each of the groups and then combining the results. A standardized framework for handling this sort of computation is described in the paper, The Split-Apply-Combine Strategy for Data Analysis \<<http://www.jstatsoft.org/v40/i01>\>, written by Hadley Wickham.
 
-The DataFrames package supports the Split-Apply-Combine strategy through the `by` function, which takes in three arguments: (1) a DataFrame, (2) a column to split the DataFrame on, and (3) a function or expression to apply to each subset of the DataFrame.
+The DataTables package supports the Split-Apply-Combine strategy through the `by` function, which takes in three arguments: (1) a DataTable, (2) a column to split the DataTable on, and (3) a function or expression to apply to each subset of the DataTable.
 
 We show several examples of the `by` function applied to the `iris` dataset below:
 
 ```julia
-using DataFrames
-iris = readtable(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
+using DataTables
+iris = readtable(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"))
 
 by(iris, :Species, size)
 by(iris, :Species, df -> mean(dropnull(df[:PetalLength])))
-by(iris, :Species, df -> DataFrame(N = size(df, 1)))
+by(iris, :Species, df -> DataTable(N = size(df, 1)))
 ```
 
 The `by` function also support the `do` block form:
 
 ```julia
 by(iris, :Species) do df
-   DataFrame(m = mean(dropnull(df[:PetalLength])), s² = var(dropnull(df[:PetalLength])))
+   DataTable(m = mean(dropnull(df[:PetalLength])), s² = var(dropnull(df[:PetalLength])))
 end
 ```
 
-A second approach to the Split-Apply-Combine strategy is implemented in the `aggregate` function, which also takes three arguments: (1) a DataFrame, (2) a column (or columns) to split the DataFrame on, and a (3) function (or several functions) that are used to compute a summary of each subset of the DataFrame. Each function is applied to each column, that was not used to split the DataFrame, creating new columns of the form `$name_$function` e.g. `SepalLength_mean`. Anonymous functions and expressions that do not have a name will be called `λ1`.
+A second approach to the Split-Apply-Combine strategy is implemented in the `aggregate` function, which also takes three arguments: (1) a DataTable, (2) a column (or columns) to split the DataTable on, and a (3) function (or several functions) that are used to compute a summary of each subset of the DataTable. Each function is applied to each column, that was not used to split the DataTable, creating new columns of the form `$name_$function` e.g. `SepalLength_mean`. Anonymous functions and expressions that do not have a name will be called `λ1`.
 
 We show several examples of the `aggregate` function applied to the `iris` dataset below:
 

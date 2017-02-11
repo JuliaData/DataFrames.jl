@@ -18,9 +18,9 @@ To write data to a CSV file, use the `writetable` function:
 writetable
 ```
 
-## Supplying `DataFrame`s inline with non-standard string literals
+## Supplying `DataTable`s inline with non-standard string literals
 
-You can also provide CSV-like tabular data in a non-standard string literal to construct a new `DataFrame`, as in the following:
+You can also provide CSV-like tabular data in a non-standard string literal to construct a new `DataTable`, as in the following:
 
 ```julia
 df = csv"""

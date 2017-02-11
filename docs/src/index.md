@@ -1,4 +1,4 @@
-# DataFrames Documentation Outline
+# DataTables Documentation Outline
 
 ## Package Manual
 

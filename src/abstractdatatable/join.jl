@@ -12,8 +12,8 @@ similar_nullable{T<:Nullable}(dv::AbstractArray{T}, dims::@compat(Union{Int, Tup
 similar_nullable{T,R}(dv::CategoricalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
     NullableCategoricalArray(T, dims)
 
-similar_nullable(df::AbstractDataFrame, dims::Int) =
-    DataFrame(Any[similar_nullable(x, dims) for x in columns(df)], copy(index(df)))
+similar_nullable(df::AbstractDataTable, dims::Int) =
+    DataTable(Any[similar_nullable(x, dims) for x in columns(df)], copy(index(df)))
 
 function join_idx(left, right, max_groups)
     ## adapted from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
@@ -184,9 +184,9 @@ function sharepools(v1::AbstractArray,
             NullableCategoricalArray(refs2, pool))
 end
 
-function sharepools(df1::AbstractDataFrame, df2::AbstractDataFrame)
+function sharepools(df1::AbstractDataTable, df2::AbstractDataTable)
     # This method exists to allow merge to work with multiple columns.
-    # It takes the columns of each DataFrame and returns a categorical array
+    # It takes the columns of each DataTable and returns a categorical array
     # with a merged pool that "keys" the combination of column values.
     # The pools of the result don't really mean anything.
     dv1, dv2 = sharepools(df1[1], df2[1])
@@ -215,18 +215,18 @@ end
 
 
 """
-Join two DataFrames
+Join two DataTables
 
 ```julia
-join(df1::AbstractDataFrame,
-     df2::AbstractDataFrame;
+join(df1::AbstractDataTable,
+     df2::AbstractDataTable;
      on::Union{Symbol, Vector{Symbol}} = Symbol[],
      kind::Symbol = :inner)
 ```
 
 ### Arguments
 
-* `df1`, `df2` : the two AbstractDataFrames to be joined
+* `df1`, `df2` : the two AbstractDataTables to be joined
 
 ### Keyword Arguments
 
@@ -249,13 +249,13 @@ Null values are filled in where needed to complete joins.
 
 ### Result
 
-* `::DataFrame` : the joined DataFrame
+* `::DataTable` : the joined DataTable
 
 ### Examples
 
 ```julia
-name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
-job = DataFrame(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+name = DataTable(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+job = DataTable(ID = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
 
 join(name, job, on = :ID)
 join(name, job, on = :ID, kind = :outer)
@@ -267,8 +267,8 @@ join(name, job, kind = :cross)
 ```
 
 """
-function Base.join(df1::AbstractDataFrame,
-                   df2::AbstractDataFrame;
+function Base.join(df1::AbstractDataTable,
+                   df2::AbstractDataTable;
                    on::@compat(Union{Symbol, Vector{Symbol}}) = Symbol[],
                    kind::Symbol = :inner)
     if kind == :cross
@@ -327,10 +327,10 @@ function Base.join(df1::AbstractDataFrame,
     end
 end
 
-function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame)
+function crossjoin(df1::AbstractDataTable, df2::AbstractDataTable)
     r1, r2 = size(df1, 1), size(df2, 1)
     cols = Any[[Compat.repeat(c, inner=r2) for c in columns(df1)];
             [Compat.repeat(c, outer=r1) for c in columns(df2)]]
     colindex = merge(index(df1), index(df2))
-    DataFrame(cols, colindex)
+    DataTable(cols, colindex)
 end

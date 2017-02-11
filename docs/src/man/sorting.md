@@ -3,12 +3,12 @@
 Sorting is a fundamental component of data analysis. Basic sorting is trivial: just calling `sort!` will sort all columns, in place:
 
 ```julia
-using DataFrames
-iris = readtable(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
+using DataTables
+iris = readtable(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"))
 sort!(iris)
 ```
 
-In Sorting DataFrames, you may want to sort different columns with different options. Here are some examples showing most of the possible options:
+In Sorting DataTables, you may want to sort different columns with different options. Here are some examples showing most of the possible options:
 
 ```julia
 sort!(iris, rev = true)
@@ -18,7 +18,7 @@ sort!(iris, cols = [order(:Species, by = uppercase),
                     order(:SepalLength, rev = true)])
 ```
 
-Keywords used above include `cols` (to specify columns), `rev` (to sort a column or the whole DataFrame in reverse), and `by` (to apply a function to a column/DataFrame). Each keyword can either be a single value, or can be a tuple or array, with values corresponding to individual columns.
+Keywords used above include `cols` (to specify columns), `rev` (to sort a column or the whole DataTable in reverse), and `by` (to apply a function to a column/DataTable). Each keyword can either be a single value, or can be a tuple or array, with values corresponding to individual columns.
 
 As an alternative to using array or tuple values, `order` to specify an ordering for a particular column within a set of columns
 

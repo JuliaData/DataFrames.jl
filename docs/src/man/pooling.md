@@ -30,16 +30,16 @@ By default, a `CategoricalArray` is able to represent 2<sup>32</sup>differents l
 cv = compact(cv)
 ```
 
-Often, you will have factors encoded inside a DataFrame with `Array` or `NullableArray` columns instead of `CategoricalArray` or `NullableCategoricalArray` columns. You can do conversion of a single column using the `categorical` function:
+Often, you will have factors encoded inside a DataTable with `Array` or `NullableArray` columns instead of `CategoricalArray` or `NullableCategoricalArray` columns. You can do conversion of a single column using the `categorical` function:
 
 ```julia
 cv = categorical(v)
 ```
 
-Or you can edit the columns of a `DataFrame` in-place using the `categorical!` function:
+Or you can edit the columns of a `DataTable` in-place using the `categorical!` function:
 
 ```julia
-df = DataFrame(A = [1, 1, 1, 2, 2, 2],
+df = DataTable(A = [1, 1, 1, 2, 2, 2],
                B = ["X", "X", "X", "Y", "Y", "Y"])
 categorical!(df, [:A, :B])
 ```

@@ -3,8 +3,8 @@
 Reshape data from wide to long format using the `stack` function:
 
 ```julia
-using DataFrames
-iris = readtable(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
+using DataTables
+iris = readtable(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"))
 iris[:id] = 1:size(iris, 1)  # this makes it easier to unstack
 d = stack(iris, 1:4)
 ```
@@ -17,7 +17,7 @@ d = stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth])
 
 Note that all columns can be of different types. Type promotion follows the rules of `vcat`.
 
-The stacked DataFrame that results includes all of the columns not specified to be stacked. These are repeated for each stacked column. These are normally refered to as identifier (id) columns. In addition to the id columns, two additional columns labeled `:variable` and `:values` contain the column identifier and the stacked columns.
+The stacked DataTable that results includes all of the columns not specified to be stacked. These are repeated for each stacked column. These are normally refered to as identifier (id) columns. In addition to the id columns, two additional columns labeled `:variable` and `:values` contain the column identifier and the stacked columns.
 
 A third optional argument to `stack` represents the id columns that are repeated. This makes it easier to specify which variables you want included in the long format:
 
@@ -33,7 +33,7 @@ d = melt(iris, :Species)
 
 All other columns are assumed to be measured variables (they are stacked).
 
-You can also stack an entire DataFrame. The default stacks all floating-point columns:
+You can also stack an entire DataTable. The default stacks all floating-point columns:
 
 ```julia
 d = stack(iris)
@@ -52,7 +52,7 @@ If the remaining columns are unique, you can skip the id variable and use:
 widedf = unstack(longdf, :variable, :value)
 ```
 
-`stackdf` and `meltdf` are two additional functions that work like `stack` and `melt`, but they provide a view into the original wide DataFrame. Here is an example:
+`stackdf` and `meltdf` are two additional functions that work like `stack` and `melt`, but they provide a view into the original wide DataTable. Here is an example:
 
 ```julia
 d = stackdf(iris)
@@ -61,7 +61,7 @@ d = stackdf(iris)
 This saves memory. To create the view, several AbstractVectors are defined:
 
 `:variable` column -- `EachRepeatedVector`  
-This repeats the variables N times where N is the number of rows of the original AbstractDataFrame.
+This repeats the variables N times where N is the number of rows of the original AbstractDataTable.
 
 `:value` column -- `StackedVector`  
 This is provides a view of the original columns stacked together.
@@ -79,6 +79,6 @@ None of these reshaping functions perform any aggregation. To do aggregation, us
 
 ```julia
 d = stack(iris)
-x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(dropnull(df[:value]))))
+x = by(d, [:variable, :Species], df -> DataTable(vsum = mean(dropnull(df[:value]))))
 unstack(x, :Species, :vsum)
 ```

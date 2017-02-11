@@ -1,9 +1,9 @@
 module TestUtils
     using Base.Test
-    using DataFrames
+    using DataTables
     using Compat
 
-    import DataFrames: identifier
+    import DataTables: identifier
 
     @test identifier("%_B*_\tC*") == :_B_C_
     @test identifier("2a") == :x2a
@@ -12,9 +12,9 @@ module TestUtils
     @test identifier("begin") == :_begin
     @test identifier("end") == :_end
 
-    @test DataFrames.make_unique([:x, :x, :x_1, :x2]) == [:x, :x_2, :x_1, :x2]
-    @test_throws ArgumentError DataFrames.make_unique([:x, :x, :x_1, :x2], allow_duplicates=false)
-    @test DataFrames.make_unique([:x, :x_1, :x2], allow_duplicates=false) == [:x, :x_1, :x2]
+    @test DataTables.make_unique([:x, :x, :x_1, :x2]) == [:x, :x_2, :x_1, :x2]
+    @test_throws ArgumentError DataTables.make_unique([:x, :x, :x_1, :x2], allow_duplicates=false)
+    @test DataTables.make_unique([:x, :x_1, :x2], allow_duplicates=false) == [:x, :x_1, :x2]
 
     # Check that reserved words are up to date
     f = "$JULIA_HOME/../../src/julia-parser.scm"
@@ -31,33 +31,33 @@ module TestUtils
             error("Unable to extract keywords from 'julia-parser.scm'.")
         else
             rw = Set(split(m1.captures[1]*" "*m2.captures[1], r"\W+"))
-            @test rw == DataFrames.RESERVED_WORDS
+            @test rw == DataTables.RESERVED_WORDS
         end
     else
         warn("Unable to validate reserved words against parser. ",
              "Expected if Julia was not built from source.")
     end
 
-    @test DataFrames.countnull([1:3;]) == 0
+    @test DataTables.countnull([1:3;]) == 0
 
     data = NullableArray(rand(20))
-    @test DataFrames.countnull(data) == 0
+    @test DataTables.countnull(data) == 0
     data[sample(1:20, 11, replace=false)] = Nullable()
-    @test DataFrames.countnull(data) == 11
+    @test DataTables.countnull(data) == 11
     data[1:end] = Nullable()
-    @test DataFrames.countnull(data) == 20
+    @test DataTables.countnull(data) == 20
 
     pdata = NullableArray(sample(1:5, 20))
-    @test DataFrames.countnull(pdata) == 0
+    @test DataTables.countnull(pdata) == 0
     pdata[sample(1:20, 11, replace=false)] = Nullable()
-    @test DataFrames.countnull(pdata) == 11
+    @test DataTables.countnull(pdata) == 11
     pdata[1:end] = Nullable()
-    @test DataFrames.countnull(pdata) == 20
+    @test DataTables.countnull(pdata) == 20
 
     funs = [mean, sum, var, x -> sum(x)]
     if string(funs[end]) == "(anonymous function)" # Julia < 0.5
-        @test DataFrames._fnames(funs) == ["mean", "sum", "var", "λ1"]
+        @test DataTables._fnames(funs) == ["mean", "sum", "var", "λ1"]
     else
-        @test DataFrames._fnames(funs) == ["mean", "sum", "var", string(funs[end])]
+        @test DataTables._fnames(funs) == ["mean", "sum", "var", string(funs[end])]
     end
 end

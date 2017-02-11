@@ -21,7 +21,7 @@ _names(x::Index) = x.names
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
-# Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
+# Imported in DataTables.jl for compatibility across Julia 0.4 and 0.5
 (==)(x::Index, y::Index) = isequal(x, y)
 
 function names!(x::Index, nms::Vector{Symbol}; allow_duplicates=false)

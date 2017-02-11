@@ -12,7 +12,7 @@ before_script:
   - export PATH=$HOME/.local/bin:$PATH
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("DataFrames"); Pkg.test("DataFrames"; coverage=true)'
+  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("DataTables"); Pkg.test("DataTables"; coverage=true)'
 after_success:
-  - julia -e 'cd(Pkg.dir("DataFrames")); Pkg.add("Documenter"); Pkg.add("Query"); include(joinpath("docs", "make.jl"))'
-  - julia -e 'cd(Pkg.dir("DataFrames")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - julia -e 'cd(Pkg.dir("DataTables")); Pkg.add("Documenter"); Pkg.add("Query"); include(joinpath("docs", "make.jl"))'
+  - julia -e 'cd(Pkg.dir("DataTables")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'

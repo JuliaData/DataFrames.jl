@@ -19,7 +19,7 @@ else
 end
 
 function printtable(io::IO,
-                    df::AbstractDataFrame;
+                    df::AbstractDataTable;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
@@ -63,7 +63,7 @@ function printtable(io::IO,
     return
 end
 
-function printtable(df::AbstractDataFrame;
+function printtable(df::AbstractDataTable;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
@@ -87,7 +87,7 @@ writetable(filename, df, [keyword options])
 ### Arguments
 
 * `filename::AbstractString` : the filename to be created
-* `df::AbstractDataFrame` : the AbstractDataFrame to be written
+* `df::AbstractDataTable` : the AbstractDataTable to be written
 
 ### Keyword Arguments
 
@@ -98,12 +98,12 @@ writetable(filename, df, [keyword options])
 
 ### Result
 
-* `::DataFrame`
+* `::DataTable`
 
 ### Examples
 
 ```julia
-df = DataFrame(A = 1:10)
+df = DataTable(A = 1:10)
 writetable("output.csv", df)
 writetable("output.dat", df, separator = ',', header = false)
 writetable("output.dat", df, quotemark = '\', separator = ',')
@@ -111,7 +111,7 @@ writetable("output.dat", df, header = false)
 ```
 """
 function writetable(filename::AbstractString,
-                    df::AbstractDataFrame;
+                    df::AbstractDataTable;
                     header::Bool = true,
                     separator::Char = getseparator(filename),
                     quotemark::Char = '"',
@@ -127,7 +127,7 @@ function writetable(filename::AbstractString,
 
         # Check if number of columns matches
         if size(file_df, 2) != size(df, 2)
-            throw(DimensionMismatch("Number of columns differ between file and DataFrame"))
+            throw(DimensionMismatch("Number of columns differ between file and DataTable"))
         end
 
         # When 'append'-ing to a nonempty file,
@@ -168,7 +168,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-@compat function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
+@compat function Base.show(io::IO, ::MIME"text/html", df::AbstractDataTable)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
     write(io, "<tr>")
@@ -226,7 +226,7 @@ function latex_escape(cell::AbstractString)
     return cell
 end
 
-function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
+function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataTable)
     nrows = size(df, 1)
     ncols = size(df, 2)
     cnames = _names(df)
@@ -265,10 +265,10 @@ end
 #
 ##############################################################################
 
-@compat function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
+@compat function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataTable)
     printtable(io, df, true, ',')
 end
 
-@compat function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
+@compat function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataTable)
     printtable(io, df, true, '\t')
 end

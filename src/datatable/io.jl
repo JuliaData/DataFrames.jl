@@ -647,9 +647,9 @@ function builddf(rows::Integer,
     end
 
     if isempty(o.names)
-        return DataFrame(columns, gennames(cols))
+        return DataTable(columns, gennames(cols))
     else
-        return DataFrame(columns, o.names)
+        return DataTable(columns, o.names)
     end
 end
 
@@ -788,10 +788,10 @@ function readtable!(p::ParsedCSV,
         findcorruption(rows, cols, fields, p)
     end
 
-    # Parse contents of a buffer into a DataFrame
+    # Parse contents of a buffer into a DataTable
     df = builddf(rows, cols, bytes, fields, p, o)
 
-    # Return the final DataFrame
+    # Return the final DataTable
     return df
 end
 
@@ -886,7 +886,7 @@ readtable(filename, [keyword options])
 
 ### Result
 
-* `::DataFrame`
+* `::DataTable`
 
 ### Examples
 
@@ -999,7 +999,7 @@ end
     @csv_str(s[, flags])
     csv"[data]"fcH
 
-Construct a `DataFrame` from a non-standard string literal containing comma-
+Construct a `DataTable` from a non-standard string literal containing comma-
 separated values (CSV) using `readtable`, just as if it were being loaded from
 an external file. The suffix flags `f`, `c`, and `H` are optional. If present,
 they are equivalent to supplying named arguments to `readtable` as follows:
@@ -1017,7 +1017,7 @@ julia> df = csv\"""
            Carol,  58,         2.71
            Eve,    49,         7.77
            \"""
-4×3 DataFrames.DataFrame
+4×3 DataTables.DataTable
 │ Row │ name    │ age │ squidPerWeek │
 ├─────┼─────────┼─────┼──────────────┤
 │ 1   │ "Alice" │ 36  │ 3.14         │
@@ -1032,7 +1032,7 @@ macro csv_str(s, flags...) inlinetable(s, flags...; separator=',') end
     @csv2_str(s[, flags])
     csv2"[data]"fcH
 
-Construct a `DataFrame` from a non-standard string literal containing
+Construct a `DataTable` from a non-standard string literal containing
 semicolon-separated values using `readtable`, with comma acting as the decimal
 character, just as if it were being loaded from an external file. The suffix
 flags `f`, `c`, and `H` are optional. If present, they are equivalent to
@@ -1051,7 +1051,7 @@ julia> df = csv2\"""
            Carol;  58;         2,71
            Eve;    49;         7,77
            \"""
-4×3 DataFrames.DataFrame
+4×3 DataTables.DataTable
 │ Row │ name    │ age │ squidPerWeek │
 ├─────┼─────────┼─────┼──────────────┤
 │ 1   │ "Alice" │ 36  │ 3.14         │
@@ -1068,7 +1068,7 @@ end
     @wsv_str(s[, flags])
     wsv"[data]"fcH
 
-Construct a `DataFrame` from a non-standard string literal containing
+Construct a `DataTable` from a non-standard string literal containing
 whitespace-separated values (WSV) using `readtable`, just as if it were being
 loaded from an external file. The suffix flags `f`, `c`, and `H` are optional.
 If present, they are equivalent to supplying named arguments to `readtable` as
@@ -1087,7 +1087,7 @@ julia> df = wsv\"""
            Carol  58         2.71
            Eve    49         7.77
            \"""
-4×3 DataFrames.DataFrame
+4×3 DataTables.DataTable
 │ Row │ name    │ age │ squidPerWeek │
 ├─────┼─────────┼─────┼──────────────┤
 │ 1   │ "Alice" │ 36  │ 3.14         │
@@ -1102,7 +1102,7 @@ macro wsv_str(s, flags...) inlinetable(s, flags...; separator=' ') end
     @tsv_str(s[, flags])
     tsv"[data]"fcH
 
-Construct a `DataFrame` from a non-standard string literal containing tab-
+Construct a `DataTable` from a non-standard string literal containing tab-
 separated values (TSV) using `readtable`, just as if it were being loaded from
 an external file. The suffix flags `f`, `c`, and `H` are optional. If present,
 they are equivalent to supplying named arguments to `readtable` as follows:
@@ -1120,7 +1120,7 @@ julia> df = tsv\"""
            Carol\t58\t2.71
            Eve\t49\t7.77
            \"""
-4×3 DataFrames.DataFrame
+4×3 DataTables.DataTable
 │ Row │ name    │ age │ squidPerWeek │
 ├─────┼─────────┼─────┼──────────────┤
 │ 1   │ "Alice" │ 36  │ 3.14         │
@@ -1131,7 +1131,7 @@ julia> df = tsv\"""
 """
 macro tsv_str(s, flags...) inlinetable(s, flags...; separator='\t') end
 
-function filldf!(df::DataFrame,
+function filldf!(df::DataTable,
                  rows::Integer,
                  cols::Integer,
                  bytes::Integer,

@@ -1,5 +1,5 @@
 module TestStatsModels
-using DataFrames
+using DataTables
 using Base.Test
 using Compat
 
@@ -24,7 +24,7 @@ StatsBase.coeftable(mod::DummyMod) =
               0)
 
 ## Test fitting
-d = DataFrame()
+d = DataTable()
 d[:y] = [1:4;]
 d[:x1] = [5:8;]
 d[:x2] = [9:12;]
@@ -45,7 +45,7 @@ StatsBase.predict(mod::DummyMod, newX::Matrix) = newX * mod.beta
 mm = ModelMatrix(ModelFrame(f, d))
 @test predict(m, mm.m) == mm.m * collect(1:4)
 
-## new data from DataFrame (via ModelMatrix)
+## new data from DataTable (via ModelMatrix)
 @test isequal(predict(m, d), NullableArray(predict(m, mm.m)))
 
 d2 = deepcopy(d)

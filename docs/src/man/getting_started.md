@@ -2,7 +2,7 @@
 
 ## Installation
 
-The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using NullableArrays, DataFrames` to bring all of the relevant variables into your current namespace. In addition, we will make use of the `RDatasets` package, which provides access to hundreds of classical data sets.
+The DataTables package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataTables package and have already typed `using NullableArrays, DataTables` to bring all of the relevant variables into your current namespace. In addition, we will make use of the `RDatasets` package, which provides access to hundreds of classical data sets.
 
 ## The `Nullable` Type
 
@@ -68,24 +68,24 @@ mean(convert(Array, nv, 0))
 
 Which strategy for dealing with `null` values is most appropriate will typically depend on the specific details of your data analysis pathway.
 
-## The `DataFrame` Type
+## The `DataTable` Type
 
-The `DataFrame` type can be used to represent data tables, each column of which is an array (by default, a `NullableArray`). You can specify the columns using keyword arguments:
+The `DataTable` type can be used to represent data tables, each column of which is an array (by default, a `NullableArray`). You can specify the columns using keyword arguments:
 
 ```julia
-df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+df = DataTable(A = 1:4, B = ["M", "F", "F", "M"])
 ```
 
-It is also possible to construct a `DataFrame` in stages:
+It is also possible to construct a `DataTable` in stages:
 
 ```julia
-df = DataFrame()
+df = DataTable()
 df[:A] = 1:8
 df[:B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
 df
 ```
 
-The `DataFrame` we build in this way has 8 rows and 2 columns. You can check this using `size` function:
+The `DataTable` we build in this way has 8 rows and 2 columns. You can check this using `size` function:
 
 ```julia
 nrows = size(df, 1)
@@ -107,7 +107,7 @@ Having seen what some of the rows look like, we can try to summarize the entire 
 describe(df)
 ```
 
-To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the `DataFrame`:
+To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the `DataTable`:
 
 ```julia
 mean(dropnull(df[1]))
@@ -121,29 +121,29 @@ mean(dropnull(df[:A]))
 median(dropnull(df[:A]))
 ```
 
-We can also apply a function to each column of a `DataFrame` with the `colwise` function. For example:
+We can also apply a function to each column of a `DataTable` with the `colwise` function. For example:
 
 ```julia
-df = DataFrame(A = 1:4, B = randn(4))
+df = DataTable(A = 1:4, B = randn(4))
 colwise(c->cumsum(dropnull(c)), df)
 ```
 
 ## Accessing Classic Data Sets
 
-To see more of the functionality for working with `DataFrame` objects, we need a more complex data set to work with. We'll use the `RDatasets` package, which provides access to many of the classical data sets that are available in R.
+To see more of the functionality for working with `DataTable` objects, we need a more complex data set to work with. We'll use the `RDatasets` package, which provides access to many of the classical data sets that are available in R.
 
 For example, we can access Fisher's iris data set using the following functions:
 
 ```julia
-iris = readtable(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
+iris = readtable(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"))
 head(iris)
 ```
 
-In the next section, we'll discuss generic I/O strategy for reading and writing `DataFrame` objects that you can use to import and export your own data files.
+In the next section, we'll discuss generic I/O strategy for reading and writing `DataTable` objects that you can use to import and export your own data files.
 
-## Querying DataFrames
+## Querying DataTables
 
-While the `DataFrames` package provides basic data manipulation capabilities, users are encouraged to use the following packages for more powerful and complete data querying functionality in the spirit of [dplyr](https://github.com/hadley/dplyr) and [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx):
+While the `DataTables` package provides basic data manipulation capabilities, users are encouraged to use the following packages for more powerful and complete data querying functionality in the spirit of [dplyr](https://github.com/hadley/dplyr) and [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx):
 
-- [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) provides metaprogramming tools for `DataFrames` and associative objects. These macros improve performance and provide more convenient syntax.
-- [Query.jl](https://github.com/davidanthoff/Query.jl) provides a LINQ like interface to a large number of data sources, including `DataFrame` instances.
+- [DataTablesMeta.jl](https://github.com/JuliaStats/DataTablesMeta.jl) provides metaprogramming tools for `DataTables` and associative objects. These macros improve performance and provide more convenient syntax.
+- [Query.jl](https://github.com/davidanthoff/Query.jl) provides a LINQ like interface to a large number of data sources, including `DataTable` instances.

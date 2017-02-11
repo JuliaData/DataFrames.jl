@@ -43,7 +43,7 @@ end
 Base.:(==)(t1::Terms, t2::Terms) = all(getfield(t1, f)==getfield(t2, f) for f in fieldnames(t1))
 
 type ModelFrame
-    df::AbstractDataFrame
+    df::AbstractDataTable
     terms::Terms
     msng::BitArray
     ## mapping from df keys to contrasts matrices
@@ -226,7 +226,7 @@ function Terms(f::Formula)
 end
 
 ## Default NULL handler.  Others can be added as keyword arguments
-function null_omit(df::DataFrame)
+function null_omit(df::DataTable)
     cc = complete_cases(df)
     df[cc,:], cc
 end
@@ -247,7 +247,7 @@ is_categorical(::Any) = false
 ##
 ## This modifies the Terms, setting `trms.is_non_redundant = true` for all non-
 ## redundant evaluation terms.
-function check_non_redundancy!(trms::Terms, df::AbstractDataFrame)
+function check_non_redundancy!(trms::Terms, df::AbstractDataTable)
 
     (n_eterms, n_terms) = size(trms.factors)
 
@@ -287,7 +287,7 @@ const DEFAULT_CONTRASTS = DummyCoding
 ## Combine actual DF columns and contrast types if necessary to compute the
 ## actual contrasts matrices, levels, and term names (using DummyCoding
 ## as the default)
-function evalcontrasts(df::AbstractDataFrame, contrasts::Dict = Dict())
+function evalcontrasts(df::AbstractDataTable, contrasts::Dict = Dict())
     evaledContrasts = Dict()
     for (term, col) in eachcol(df)
         is_categorical(col) || continue
@@ -299,9 +299,9 @@ function evalcontrasts(df::AbstractDataFrame, contrasts::Dict = Dict())
     return evaledContrasts
 end
 
-function ModelFrame(trms::Terms, d::AbstractDataFrame;
+function ModelFrame(trms::Terms, d::AbstractDataTable;
                     contrasts::Dict = Dict())
-    df, msng = null_omit(DataFrame(map(x -> d[x], trms.eterms)))
+    df, msng = null_omit(DataTable(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
     for c in eachcol(df) _droplevels!(c[2]) end
 
@@ -313,9 +313,9 @@ function ModelFrame(trms::Terms, d::AbstractDataFrame;
     ModelFrame(df, trms, msng, evaledContrasts)
 end
 
-ModelFrame(df::AbstractDataFrame, term::Terms, msng::BitArray) = ModelFrame(df, term, msng, evalcontrasts(df))
-ModelFrame(f::Formula, d::AbstractDataFrame; kwargs...) = ModelFrame(Terms(f), d; kwargs...)
-ModelFrame(ex::Expr, d::AbstractDataFrame; kwargs...) = ModelFrame(Formula(ex), d; kwargs...)
+ModelFrame(df::AbstractDataTable, term::Terms, msng::BitArray) = ModelFrame(df, term, msng, evalcontrasts(df))
+ModelFrame(f::Formula, d::AbstractDataTable; kwargs...) = ModelFrame(Terms(f), d; kwargs...)
+ModelFrame(ex::Expr, d::AbstractDataTable; kwargs...) = ModelFrame(Formula(ex), d; kwargs...)
 
 ## modify contrasts in place
 function setcontrasts!(mf::ModelFrame, new_contrasts::Dict)

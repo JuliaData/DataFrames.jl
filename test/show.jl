@@ -1,9 +1,9 @@
 module TestShow
-    using DataFrames
+    using DataTables
     using Compat
     using Base.Test
     import Compat.String
-    df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+    df = DataTable(A = 1:3, B = ["x", "y", "z"])
 
     io = IOBuffer()
     show(io, df)
@@ -19,13 +19,13 @@ module TestShow
 
     if VERSION > v"0.5-"
         using Juno
-        out = DataFrames._render(df)
-        @assert out.head.xs[1] == DataFrame
+        out = DataTables._render(df)
+        @assert out.head.xs[1] == DataTable
         @assert isa(out.children()[1], Juno.Table)
         @assert size(out.children()[1].xs) == (4, 2)
     end
 
-    dfvec = DataFrame[df for _=1:3]
+    dfvec = DataTable[df for _=1:3]
     show(io, dfvec)
     showall(io, dfvec)
 
@@ -33,37 +33,37 @@ module TestShow
     show(io, gd)
     showall(io, gd)
 
-    dfr = DataFrameRow(df, 1)
+    dfr = DataTableRow(df, 1)
     show(io, dfr)
 
-    df = DataFrame(A = Array(String, 3))
+    df = DataTable(A = Array(String, 3))
 
-    A = DataFrames.StackedVector(Any[[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    A = DataTables.StackedVector(Any[[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     show(io, A)
-    A = DataFrames.RepeatedVector([1, 2, 3], 5, 1)
+    A = DataTables.RepeatedVector([1, 2, 3], 5, 1)
     show(io, A)
-    A = DataFrames.RepeatedVector([1, 2, 3], 1, 5)
+    A = DataTables.RepeatedVector([1, 2, 3], 1, 5)
     show(io, A)
 
     #Test show output for REPL and similar
-    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
+    df = DataTable(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
     @test str == """
-    2×2 DataFrames.DataFrame
+    2×2 DataTables.DataTable
     │ Row │ Fish │ Mass  │
     ├─────┼──────┼───────┤
     │ 1   │ Suzy │ 1.5   │
     │ 2   │ Amir │ #NULL │"""
 
     # Test computing width for Array{String} columns
-    df = DataFrame(Any[["a"]], [:x])
+    df = DataTable(Any[["a"]], [:x])
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
     @test str == """
-    1×1 DataFrames.DataFrame
+    1×1 DataTables.DataTable
     │ Row │ x │
     ├─────┼───┤
     │ 1   │ a │"""

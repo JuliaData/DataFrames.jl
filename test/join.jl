@@ -1,9 +1,9 @@
 module TestJoin
     using Base.Test
-    using DataFrames
+    using DataTables
 
-    name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
-    job = DataFrame(ID = [1, 2, 2, 4], Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
+    name = DataTable(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+    job = DataTable(ID = [1, 2, 2, 4], Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
 
     # Join on symbols or vectors of symbols
     join(name, job, on = :ID)
@@ -13,7 +13,7 @@ module TestJoin
     #@test_throws join(name, job)
 
     # Test output of various join types
-    outer = DataFrame(ID = [1, 2, 2, 3, 4],
+    outer = DataTable(ID = [1, 2, 2, 3, 4],
                       Name = NullableArray(Nullable{String}["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
                       Job = NullableArray(Nullable{String}["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
 
@@ -46,16 +46,16 @@ module TestJoin
     @test isequal(join(nameid, jobid, on = :ID, kind = :anti), anti[on])
 
     # Join on multiple keys
-    df1 = DataFrame(A = 1, B = 2, C = 3)
-    df2 = DataFrame(A = 1, B = 2, D = 4)
+    df1 = DataTable(A = 1, B = 2, C = 3)
+    df2 = DataTable(A = 1, B = 2, D = 4)
 
     join(df1, df2, on = [:A, :B])
 
     # Test output of cross joins
-    df1 = DataFrame(A = 1:2, B = 'a':'b')
-    df2 = DataFrame(A = 1:3, C = 3:5)
+    df1 = DataTable(A = 1:2, B = 'a':'b')
+    df2 = DataTable(A = 1:3, C = 3:5)
 
-    cross = DataFrame(A = [1, 1, 1, 2, 2, 2],
+    cross = DataTable(A = [1, 1, 1, 2, 2, 2],
                       B = ['a', 'a', 'a', 'b', 'b', 'b'],
                       C = [3, 4, 5, 3, 4, 5])
 
@@ -68,7 +68,7 @@ module TestJoin
     @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
 
     # test empty inputs
-    simple_df(len::Int, col=:A) = (df = DataFrame(); df[col]=collect(1:len); df)
+    simple_df(len::Int, col=:A) = (df = DataTable(); df[col]=collect(1:len); df)
     @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :left),  simple_df(0))
     @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :left),  simple_df(2))
     @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :left),  simple_df(0))
@@ -87,12 +87,12 @@ module TestJoin
     @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :anti),  simple_df(0))
     @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :anti),  simple_df(2))
     @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :anti),  simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
-    @test isequal(join(simple_df(0), simple_df(2, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
-    @test isequal(join(simple_df(2), simple_df(0, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
+    @test isequal(join(simple_df(0), simple_df(0, :B), kind = :cross), DataTable(A=Int[], B=Int[]))
+    @test isequal(join(simple_df(0), simple_df(2, :B), kind = :cross), DataTable(A=Int[], B=Int[]))
+    @test isequal(join(simple_df(2), simple_df(0, :B), kind = :cross), DataTable(A=Int[], B=Int[]))
 
     # issue #960
-    df1 = DataFrame(A = 1:50,
+    df1 = DataTable(A = 1:50,
                     B = 1:50,
                     C = 1)
     categorical!(df1, :A)
@@ -100,11 +100,11 @@ module TestJoin
     join(df1, df1, on = [:A, :B], kind = :inner)
 
     # Test that Array{Nullable} works when combined with NullableArray (#1088)
-    df = DataFrame(Name = Nullable{String}["A", "B", "C"],
+    df = DataTable(Name = Nullable{String}["A", "B", "C"],
                    Mass = [1.5, 2.2, 1.1])
-    df2 = DataFrame(Name = ["A", "B", "C", "A"],
+    df2 = DataTable(Name = ["A", "B", "C", "A"],
                     Quantity = [3, 3, 2, 4])
-    @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "A", "B", "C"],
+    @test join(df2, df, on=:Name, kind=:left) == DataTable(Name = ["A", "A", "B", "C"],
                                                            Quantity = [3, 4, 3, 2],
                                                            Mass = [1.5, 1.5, 2.2, 1.1])
 end

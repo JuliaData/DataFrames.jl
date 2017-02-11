@@ -1,6 +1,6 @@
 
 ```@meta
-CurrentModule = DataFrames
+CurrentModule = DataTables
 ```
 
 # Main Types
@@ -10,7 +10,7 @@ Pages = ["maintypes.md"]
 ```
 
 ```@docs
-AbstractDataFrame
-DataFrame
-SubDataFrame
+AbstractDataTable
+DataTable
+SubDataTable
 ```

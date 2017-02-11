@@ -81,7 +81,7 @@ end
 
 #' @description
 #'
-#' Generate standardized names for columns of a DataFrame. The
+#' Generate standardized names for columns of a DataTable. The
 #' first name will be :x1, the second :x2, etc.
 #'
 #' @field n::Integer The number of names to generate.
@@ -90,7 +90,7 @@ end
 #'
 #' @examples
 #'
-#' DataFrames.gennames(10)
+#' DataTables.gennames(10)
 function gennames(n::Integer)
     res = Array(Symbol, n)
     for i in 1:n
@@ -110,7 +110,7 @@ end
 #'
 #' @examples
 #'
-#' DataFrames.countnull([1, 2, 3])
+#' DataTables.countnull([1, 2, 3])
 function countnull(a::AbstractArray)
     res = 0
     for x in a
@@ -129,7 +129,7 @@ end
 #'
 #' @examples
 #'
-#' DataFrames.countnull(NullableArray([1, 2, 3]))
+#' DataTables.countnull(NullableArray([1, 2, 3]))
 countnull(a::NullableArray) = sum(a.isnull)
 
 #' @description
@@ -143,7 +143,7 @@ countnull(a::NullableArray) = sum(a.isnull)
 #'
 #' @examples
 #'
-#' DataFrames.countnull(CategoricalArray([1, 2, 3]))
+#' DataTables.countnull(CategoricalArray([1, 2, 3]))
 function countnull(a::CategoricalArray)
     res = 0
     for x in a.refs
@@ -185,7 +185,7 @@ function _uniqueofsorted(x::Vector)
     x[idx]
 end
 
-# Gets the name of a function. Used in groupedataframe/grouping.jl
+# Gets the name of a function. Used in groupedatatable/grouping.jl
 function _fnames{T<:Function}(fs::Vector{T})
     λcounter = 0
     names = map(fs) do f

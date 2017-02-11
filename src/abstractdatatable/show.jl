@@ -1,18 +1,18 @@
 #' @exported
 #' @description
 #'
-#' Returns a string summary of an AbstractDataFrame in a standardized
-#' form. For example, a standard DataFrame with 10 rows and 5 columns
-#' will be summarized as "10×5 DataFrame".
+#' Returns a string summary of an AbstractDataTable in a standardized
+#' form. For example, a standard DataTable with 10 rows and 5 columns
+#' will be summarized as "10×5 DataTable".
 #'
-#' @param df::AbstractDataFrame The AbstractDataFrame to be summarized.
+#' @param df::AbstractDataTable The AbstractDataTable to be summarized.
 #'
 #' @returns res::String The summary of `df`.
 #'
 #' @examples
 #'
-#' summary(DataFrame(A = 1:10))
-function Base.summary(df::AbstractDataFrame) # -> String
+#' summary(DataTable(A = 1:10))
+function Base.summary(df::AbstractDataTable) # -> String
     nrows, ncols = size(df)
     return @sprintf("%d×%d %s", nrows, ncols, typeof(df))
 end
@@ -68,22 +68,22 @@ ourshowcompact(io::IO, x::Nullable{String}) = isnull(x) ? showcompact(io, x) : p
 
 #' @description
 #'
-#' Calculates, for each column of an AbstractDataFrame, the maximum
+#' Calculates, for each column of an AbstractDataTable, the maximum
 #' string width used to render either the name of that column or the
-#' longest entry in that column -- among the rows of the AbstractDataFrame
+#' longest entry in that column -- among the rows of the AbstractDataTable
 #' will be rendered to IO. The widths for all columns are returned as a
 #' vector.
 #'
 #' NOTE: The last entry of the result vector is the string width of the
-#'       implicit row ID column contained in every AbstractDataFrame.
+#'       implicit row ID column contained in every AbstractDataTable.
 #'
-#' @param df::AbstractDataFrame The AbstractDataFrame whose columns will be
+#' @param df::AbstractDataTable The AbstractDataTable whose columns will be
 #'        printed.
 #' @param rowindices1::AbstractVector{Int} A set of indices of the first
-#'        chunk of the AbstractDataFrame that would be rendered to IO.
+#'        chunk of the AbstractDataTable that would be rendered to IO.
 #' @param rowindices2::AbstractVector{Int} A set of indices of the second
-#'        chunk of the AbstractDataFrame that would be rendered to IO. Can
-#'        be empty if the AbstractDataFrame would be printed without any
+#'        chunk of the AbstractDataTable that would be rendered to IO. Can
+#'        be empty if the AbstractDataTable would be printed without any
 #'        ellipses.
 #' @param rowlabel::AbstractString The label that will be used when rendered the
 #'        numeric ID's of each row. Typically, this will be set to "Row".
@@ -93,9 +93,9 @@ ourshowcompact(io::IO, x::Nullable{String}) = isnull(x) ? showcompact(io, x) : p
 #'
 #' @examples
 #'
-#' df = DataFrame(A = 1:3, B = ["x", "yy", "z"])
+#' df = DataTable(A = 1:3, B = ["x", "yy", "z"])
 #' maxwidths = getmaxwidths(df, 1:1, 3:3, :Row)
-function getmaxwidths(df::AbstractDataFrame,
+function getmaxwidths(df::AbstractDataTable,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol) # -> Vector{Int}
@@ -131,21 +131,21 @@ end
 #' @description
 #'
 #' Given the maximum widths required to render each column of an
-#' AbstractDataFrame, this returns the total number of characters
+#' AbstractDataTable, this returns the total number of characters
 #' that would be required to render an entire row to an IO system.
 #'
 #' NOTE: This width includes the whitespace and special characters used to
-#'       pretty print the AbstractDataFrame.
+#'       pretty print the AbstractDataTable.
 #'
 #' @param maxwidths::Vector{Int} The maximum width needed to render each
-#'        column of an AbstractDataFrame.
+#'        column of an AbstractDataTable.
 #'
 #' @returns totalwidth::Int The total width required to render a complete row
-#'          of the AbstractDataFrame for which `maxwidths` was computed.
+#'          of the AbstractDataTable for which `maxwidths` was computed.
 #'
 #' @examples
 #'
-#' df = DataFrame(A = 1:3, B = ["x", "yy", "z"])
+#' df = DataTable(A = 1:3, B = ["x", "yy", "z"])
 #' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row")
 #' totalwidth = getprintedwidth(maxwidths))
 function getprintedwidth(maxwidths::Vector{Int}) # -> Int
@@ -160,7 +160,7 @@ end
 
 #' @description
 #'
-#' When rendering an AbstractDataFrame to a REPL window in chunks, each of
+#' When rendering an AbstractDataTable to a REPL window in chunks, each of
 #' which will fit within the width of the REPL window, this function will
 #' return the indices of the columns that should be included in each chunk.
 #'
@@ -172,17 +172,17 @@ end
 #'       contains columns 4-5.
 #'
 #' @param maxwidths::Vector{Int} The maximum width needed to render each
-#'        column of an AbstractDataFrame.
+#'        column of an AbstractDataTable.
 #' @param splitchunks::Bool Should the output be split into chunks at all or
 #'        should only one chunk be constructed for the entire
-#'        AbstractDataFrame?
+#'        AbstractDataTable?
 #' @param availablewidth::Int The available width in the REPL.
 #'
 #' @returns chunkbounds::Vector{Int} The bounds of each chunk of columns.
 #'
 #' @examples
 #'
-#' df = DataFrame(A = 1:3, B = ["x", "yy", "z"])
+#' df = DataTable(A = 1:3, B = ["x", "yy", "z"])
 #' maxwidths = getmaxwidths(df, 1:1, 3:3, "Row")
 #' chunkbounds = getchunkbounds(maxwidths, true)
 function getchunkbounds(maxwidths::Vector{Int},
@@ -211,14 +211,14 @@ end
 
 #' @description
 #'
-#' Render a subset of rows and columns of an AbstractDataFrame to an
+#' Render a subset of rows and columns of an AbstractDataTable to an
 #' IO system. For chunked printing, this function is used to print a
 #' single chunk, starting from the first indicated column and ending with
 #' the last indicated column. Assumes that the maximum string widths
 #' required for printing have been precomputed.
 #'
 #' @param io::IO The IO system to which `df` will be printed.
-#' @param df::AbstractDataFrame An AbstractDataFrame.
+#' @param df::AbstractDataTable An AbstractDataTable.
 #' @param rowindices::AbstractVector{Int} The indices of the subset of rows
 #'        that will be rendered to `io`.
 #' @param maxwidths::Vector{Int} The pre-computed maximum string width
@@ -232,10 +232,10 @@ end
 #'
 #' @examples
 #'
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+#' df = DataTable(A = 1:3, B = ["x", "y", "z"])
 #' showrowindices(STDOUT, df, 1:2, [1, 1, 5], 1, 2)
 function showrowindices(io::IO,
-                        df::AbstractDataFrame,
+                        df::AbstractDataTable,
                         rowindices::AbstractVector{Int},
                         maxwidths::Vector{Int},
                         leftcol::Int,
@@ -250,7 +250,7 @@ function showrowindices(io::IO,
             write(io, ' ')
         end
         print(io, " │ ")
-        # Print DataFrame entry
+        # Print DataTable entry
         for j in leftcol:rightcol
             strlen = 0
             try
@@ -280,14 +280,14 @@ end
 
 #' @description
 #'
-#' Render a subset of rows (possibly in chunks) of an AbstractDataFrame to an
+#' Render a subset of rows (possibly in chunks) of an AbstractDataTable to an
 #' IO system. Users can control
 #'
 #' NOTE: The value of `maxwidths[end]` must be the string width of
 #' `rowlabel`.
 #'
 #' @param io::IO The IO system to which `df` will be printed.
-#' @param df::AbstractDataFrame An AbstractDataFrame.
+#' @param df::AbstractDataTable An AbstractDataTable.
 #' @param rowindices1::AbstractVector{Int} The indices of the first subset
 #'        of rows to be rendered.
 #' @param rowindices2::AbstractVector{Int} The indices of the second subset
@@ -295,22 +295,22 @@ end
 #'        rendering this second subset of rows.
 #' @param maxwidths::Vector{Int} The pre-computed maximum string width
 #'        required to render each column.
-#' @param splitchunks::Bool Should the printing of the AbstractDataFrame
+#' @param splitchunks::Bool Should the printing of the AbstractDataTable
 #'        be done in chunks? Defaults to `false`.
 #' @param rowlabel::Symbol What label should be printed when rendering the
 #'        numeric ID's of each row? Defaults to `"Row"`.
 #' @param displaysummary::Bool Should a brief string summary of the
-#'        AbstractDataFrame be rendered to the IO system before printing the
+#'        AbstractDataTable be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
 #'
 #' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+#' df = DataTable(A = 1:3, B = ["x", "y", "z"])
 #' showrows(STDOUT, df, 1:2, 3:3, [1, 1, 5], false, :Row, true)
 function showrows(io::IO,
-                  df::AbstractDataFrame,
+                  df::AbstractDataTable,
                   rowindices1::AbstractVector{Int},
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
@@ -404,32 +404,32 @@ end
 #' @exported
 #' @description
 #'
-#' Render an AbstractDataFrame to an IO system. The specific visual
+#' Render an AbstractDataTable to an IO system. The specific visual
 #' representation chosen depends on the width of the REPL window
-#' from which the call to `show` derives. If the DataFrame could not
+#' from which the call to `show` derives. If the DataTable could not
 #' be rendered without splitting the output into chunks, a summary of the
 #' columns is rendered instead of rendering the raw data. This dynamic
 #' response to screen width can be configured using the argument
 #' `splitchunks`.
 #'
 #' @param io::IO The IO system to which `df` will be printed.
-#' @param df::AbstractDataFrame An AbstractDataFrame.
-#' @param splitchunks::Bool Should the printing of the AbstractDataFrame
+#' @param df::AbstractDataTable An AbstractDataTable.
+#' @param splitchunks::Bool Should the printing of the AbstractDataTable
 #'        be done in chunks? Defaults to `false`.
 #' @param rowlabel::Symbol What label should be printed when rendering the
 #'        numeric ID's of each row? Defaults to `"Row"`.
 #' @param displaysummary::Bool Should a brief string summary of the
-#'        AbstractDataFrame be rendered to the IO system before printing the
+#'        AbstractDataTable be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
 #'
 #' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+#' df = DataTable(A = 1:3, B = ["x", "y", "z"])
 #' show(STDOUT, df, false, :Row, true)
 function Base.show(io::IO,
-                   df::AbstractDataFrame,
+                   df::AbstractDataTable,
                    splitchunks::Bool = true,
                    rowlabel::Symbol = @compat(Symbol("Row")),
                    displaysummary::Bool = true) # -> Void
@@ -465,21 +465,21 @@ end
 #' @exported
 #' @description
 #'
-#' Render an AbstractDataFrame to STDOUT with or without chunking. See
+#' Render an AbstractDataTable to STDOUT with or without chunking. See
 #' other `show` documentation for details. This is mainly used to force
-#' showing the AbstractDataFrame in chunks.
+#' showing the AbstractDataTable in chunks.
 #'
-#' @param df::AbstractDataFrame An AbstractDataFrame.
-#' @param splitchunks::Bool Should the printing of the AbstractDataFrame
+#' @param df::AbstractDataTable An AbstractDataTable.
+#' @param splitchunks::Bool Should the printing of the AbstractDataTable
 #'        be done in chunks? Defaults to `false`.
 #'
 #' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+#' df = DataTable(A = 1:3, B = ["x", "y", "z"])
 #' show(df, true)
-function Base.show(df::AbstractDataFrame,
+function Base.show(df::AbstractDataTable,
                    splitchunks::Bool = true) # -> Void
     return show(STDOUT, df, splitchunks)
 end
@@ -487,27 +487,27 @@ end
 #' @exported
 #' @description
 #'
-#' Render all of the rows of an AbstractDataFrame to an IO system. See
+#' Render all of the rows of an AbstractDataTable to an IO system. See
 #' `show` documentation for details.
 #'
 #' @param io::IO The IO system to which `df` will be printed.
-#' @param df::AbstractDataFrame An AbstractDataFrame.
-#' @param splitchunks::Bool Should the printing of the AbstractDataFrame
+#' @param df::AbstractDataTable An AbstractDataTable.
+#' @param splitchunks::Bool Should the printing of the AbstractDataTable
 #'        be done in chunks? Defaults to `false`.
 #' @param rowlabel::Symbol What label should be printed when rendering the
 #'        numeric ID's of each row? Defaults to `"Row"`.
 #' @param displaysummary::Bool Should a brief string summary of the
-#'        AbstractDataFrame be rendered to the IO system before printing the
+#'        AbstractDataTable be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
 #'
 #' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+#' df = DataTable(A = 1:3, B = ["x", "y", "z"])
 #' showall(STDOUT, df, false, :Row, true)
 function Base.showall(io::IO,
-                      df::AbstractDataFrame,
+                      df::AbstractDataTable,
                       splitchunks::Bool = false,
                       rowlabel::Symbol = @compat(Symbol("Row")),
                       displaysummary::Bool = true) # -> Void
@@ -529,20 +529,20 @@ end
 #' @exported
 #' @description
 #'
-#' Render all of the rows of an AbstractDataFrame to STDOUT. See
+#' Render all of the rows of an AbstractDataTable to STDOUT. See
 #' `showall` documentation for details.
 #'
-#' @param df::AbstractDataFrame An AbstractDataFrame.
-#' @param splitchunks::Bool Should the printing of the AbstractDataFrame
+#' @param df::AbstractDataTable An AbstractDataTable.
+#' @param splitchunks::Bool Should the printing of the AbstractDataTable
 #'        be done in chunks? Defaults to `false`.
 #'
 #' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+#' df = DataTable(A = 1:3, B = ["x", "y", "z"])
 #' showall(df, true)
-function Base.showall(df::AbstractDataFrame,
+function Base.showall(df::AbstractDataTable,
                       splitchunks::Bool = false) # -> Void
     showall(STDOUT, df, splitchunks)
     return
@@ -554,31 +554,31 @@ end
 #' count.
 #'
 #' @param io::IO The `io` to be rendered to.
-#' @param df::AbstractDataFrame An AbstractDataFrame.
+#' @param df::AbstractDataTable An AbstractDataTable.
 #'
 #' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
-#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+#' df = DataTable(A = 1:3, B = ["x", "y", "z"])
 #' showcols(df, true)
-function showcols(io::IO, df::AbstractDataFrame) # -> Void
+function showcols(io::IO, df::AbstractDataTable) # -> Void
     println(io, summary(df))
-    metadata = DataFrame(Name = _names(df),
+    metadata = DataTable(Name = _names(df),
                          Eltype = eltypes(df),
                          Missing = colmissing(df))
     showall(io, metadata, true, @compat(Symbol("Col #")), false)
     return
 end
 
-showcols(df::AbstractDataFrame) = showcols(STDOUT, df) # -> Void
+showcols(df::AbstractDataTable) = showcols(STDOUT, df) # -> Void
 
 using Juno
 using Juno: Inline, LazyTree, Table, Row, strong
 
 const SIZE = 25
 
-function to_matrix(df::AbstractDataFrame)
+function to_matrix(df::AbstractDataTable)
     res = Array{Any}(size(df))
     for (j, col) in enumerate(columns(df)), i = 1:length(col)
         isassigned(col, i) && (res[i, j] = col[i])
@@ -586,7 +586,7 @@ function to_matrix(df::AbstractDataFrame)
     return res
 end
 
-function _render(df::AbstractDataFrame)
+function _render(df::AbstractDataTable)
     width = min(size(df, 2), SIZE)
     height = min(size(df, 1), SIZE)
     header = map(x->strong(string(x)), reshape(names(df), 1, width))
@@ -596,4 +596,4 @@ function _render(df::AbstractDataFrame)
              () -> [view])
 end
 
-@render Inline df::AbstractDataFrame _render(df)
+@render Inline df::AbstractDataTable _render(df)

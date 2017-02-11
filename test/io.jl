@@ -1,6 +1,6 @@
 module TestIO
     using Base.Test
-    using DataFrames, Compat
+    using DataTables, Compat
     using LaTeXStrings
 
     #test_group("We can read various file types.")
@@ -211,7 +211,7 @@ module TestIO
 
     # Readtable ignorepadding
     io = IOBuffer("A , \tB  , C\n1 , \t2, 3\n")
-    @test isequal(readtable(io, ignorepadding = true), DataFrame(A = 1, B = 2, C = 3))
+    @test isequal(readtable(io, ignorepadding = true), DataTable(A = 1, B = 2, C = 3))
 
     # Readtable c-style escape options
 
@@ -333,7 +333,7 @@ module TestIO
     # Test writetable with Nullable() and compare to the results
     tf = tempname()
     isfile(tf) && rm(tf)
-    df = DataFrame(A = NullableArray(Nullable{Int}[1,Nullable()]),
+    df = DataTable(A = NullableArray(Nullable{Int}[1,Nullable()]),
                    B = NullableArray(Nullable{String}["b", Nullable()]))
     writetable(tf, df)
     @test readcsv(tf) == ["A" "B"; 1 "b"; "NULL" "NULL"]
@@ -345,10 +345,10 @@ module TestIO
     rm(tf)
 
     # Test writetable with append
-    df1 = DataFrame(a = NullableArray([1, 2, 3]), b = NullableArray([4, 5, 6]))
-    df2 = DataFrame(a = NullableArray([1, 2, 3]), b = NullableArray([4, 5, 6]))
-    df3 = DataFrame(a = NullableArray([1, 2, 3]), c = NullableArray([4, 5, 6])) # 2nd column mismatch
-    df3b = DataFrame(a = NullableArray([1, 2, 3]), b = NullableArray([4, 5, 6]), c = NullableArray([4, 5, 6])) # number of columns mismatch
+    df1 = DataTable(a = NullableArray([1, 2, 3]), b = NullableArray([4, 5, 6]))
+    df2 = DataTable(a = NullableArray([1, 2, 3]), b = NullableArray([4, 5, 6]))
+    df3 = DataTable(a = NullableArray([1, 2, 3]), c = NullableArray([4, 5, 6])) # 2nd column mismatch
+    df3b = DataTable(a = NullableArray([1, 2, 3]), b = NullableArray([4, 5, 6]), c = NullableArray([4, 5, 6])) # number of columns mismatch
 
 
     # Would use joinpath(tempdir(), randstring()) to get around tempname
@@ -390,7 +390,7 @@ module TestIO
     tf = tempname()
     isfile(tf) && rm(tf)
 
-    df = DataFrame(a = ["who's"]) # We have a ' in our string
+    df = DataTable(a = ["who's"]) # We have a ' in our string
 
     # Make sure the ' doesn't get escaped for no reason
     writetable(tf, df)
@@ -496,7 +496,7 @@ module TestIO
     @test_throws ArgumentError eval(:(csv"foo,bar"a))
 
     # Test LaTeX export
-    df = DataFrame(A = 1:4,
+    df = DataTable(A = 1:4,
                    B = ["\$10.0", "M&F", "A~B", "\\alpha"],
                    C = [L"\alpha", L"\beta", L"\gamma", L"\sum_{i=1}^n \delta_i"],
                    D = [1.0, 2.0, Nullable(), 3.0]
@@ -514,14 +514,14 @@ module TestIO
     @test reprmime(MIME("text/latex"), df) == str
 
     #Test HTML output for IJulia and similar
-    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
+    df = DataTable(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
     io = IOBuffer()
     show(io, "text/html", df)
     str = takebuf_string(io)
     @test str == "<table class=\"data-frame\"><tr><th></th><th>Fish</th><th>Mass</th></tr><tr><th>1</th><td>Suzy</td><td>1.5</td></tr><tr><th>2</th><td>Amir</td><td>#NULL</td></tr></table>"
 
     # test limit attribute of IOContext is used
-    df = DataFrame(a=collect(1:1000))
+    df = DataTable(a=collect(1:1000))
     ioc = IOContext(IOBuffer(), displaysize=(10, 10), limit=false)
     show(ioc, "text/html", df)
     @test length(takebuf_string(ioc.io)) > 10000

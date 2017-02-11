@@ -7,14 +7,14 @@ quiet = length(ARGS) > 0 && ARGS[1] == "-q"
 anyerrors = false
 
 using Base.Test
-using DataFrames
+using DataTables
 
 my_tests = ["utils.jl",
             "cat.jl",
             "data.jl",
             "index.jl",
-            "dataframe.jl",
-            "dataframerow.jl",
+            "datatable.jl",
+            "datatablerow.jl",
             "io.jl",
             "formula.jl",
             "constructors.jl",

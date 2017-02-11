@@ -1,14 +1,14 @@
-using Documenter, DataFrames
+using Documenter, DataTables
 
 # Build documentation.
 # ====================
 
 makedocs(
     # options
-    modules = [DataFrames],
+    modules = [DataTables],
     doctest = true,
     clean = false,
-    sitename = "DataFrames.jl",
+    sitename = "DataTables.jl",
     format = Documenter.Formats.HTML,
     pages = Any[
         "Introduction" => "index.md",
@@ -40,7 +40,7 @@ makedocs(
 
 deploydocs(
     # options
-    repo = "github.com/JuliaStats/DataFrames.jl.git",
+    repo = "github.com/JuliaStats/DataTables.jl.git",
     target = "build",
     deps = nothing,
     make = nothing,

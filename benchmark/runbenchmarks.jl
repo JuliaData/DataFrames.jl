@@ -2,7 +2,7 @@
 # Optional time-consuming Benchmarks
 #
 
-using DataFrames
+using DataTables
 using Benchmark
 
 benchmarks = [ "io.jl"]

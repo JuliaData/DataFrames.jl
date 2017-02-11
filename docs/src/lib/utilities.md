@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = DataFrames
+CurrentModule = DataTables
 ```
 
 # Utilities
