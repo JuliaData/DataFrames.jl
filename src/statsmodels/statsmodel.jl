@@ -86,6 +86,16 @@ function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame; 
     return(out)
 end
 
+# Predict function with confidence intervars
+function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame, interval_type::Symbol, level::Real = 0.95; kwargs...)
+    newTerms = dropresponse!(mm.mf.terms)
+    mf = ModelFrame(newTerms, df; contrasts = mm.mf.contrasts)
+    newX = ModelMatrix(mf).m
+    yp = predict(mm, newX, interval_type, level; kwargs...) # this and the below two are different from the non-confint method above
+    out = NullableArray(eltype(yp), size(df, 1), 3)
+    out[mf.msng, :] = yp
+    return(out)
+end
 
 
 # coeftable implementation
