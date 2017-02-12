@@ -285,10 +285,10 @@ Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
 ##
 ##############################################################################
 
-DataArrays.head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
-DataArrays.head(df::AbstractDataFrame) = head(df, 6)
-DataArrays.tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
-DataArrays.tail(df::AbstractDataFrame) = tail(df, 6)
+head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
+head(df::AbstractDataFrame) = head(df, 6)
+tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
+tail(df::AbstractDataFrame) = tail(df, 6)
 
 """
 Show the first or last part of an AbstractDataFrame

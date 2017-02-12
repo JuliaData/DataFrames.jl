@@ -120,7 +120,7 @@ groupby(cols) = x -> groupby(x, cols)
 
 Base.start(gd::GroupedDataFrame) = 1
 Base.next(gd::GroupedDataFrame, state::Int) =
-    (sub(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
+    (view(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
      state + 1)
 Base.done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
 Base.length(gd::GroupedDataFrame) = length(gd.starts)
@@ -129,7 +129,7 @@ Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
 Base.getindex(gd::GroupedDataFrame, idx::Int) =
-    sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
+    view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
 Base.getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) =
     GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts[I], gd.ends[I])
 

@@ -110,5 +110,5 @@ module TestCat
     @test isequal(vcat(dfda, dfd, dfa), vcat(dfda, dfda))
 
     # vcat should be able to concatenate different implementations of AbstractDataFrame (PR #944)
-    @test vcat(sub(DataFrame(A=1:3),2),DataFrame(A=4:5)) == DataFrame(A=[2,4,5])
+    @test vcat(view(DataFrame(A=1:3),2),DataFrame(A=4:5)) == DataFrame(A=[2,4,5])
 end

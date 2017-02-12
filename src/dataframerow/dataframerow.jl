@@ -19,7 +19,7 @@ end
 Base.names(r::DataFrameRow) = names(r.df)
 _names(r::DataFrameRow) = _names(r.df)
 
-Base.sub(r::DataFrameRow, c) = DataFrameRow(r.df[[c]], r.row)
+Base.view(r::DataFrameRow, c) = DataFrameRow(r.df[[c]], r.row)
 
 index(r::DataFrameRow) = index(r.df)
 

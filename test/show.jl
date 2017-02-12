@@ -10,7 +10,7 @@ module TestShow
     showall(io, df)
     showall(io, df, true)
 
-    subdf = sub(df, [2, 3]) # df[df[:A] .> 1.0, :]
+    subdf = view(df, [2, 3]) # df[df[:A] .> 1.0, :]
     show(io, subdf)
     show(io, subdf, true)
     showall(io, subdf)
