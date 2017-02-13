@@ -86,7 +86,7 @@ function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame; 
     return(out)
 end
 
-# Predict function with confidence intervars
+# Predict function with confidence intervals
 function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame, interval_type::Symbol, level::Real = 0.95; kwargs...)
     newTerms = dropresponse!(mm.mf.terms)
     mf = ModelFrame(newTerms, df; contrasts = mm.mf.contrasts)
