@@ -110,7 +110,7 @@ end
 
 # Initialize empty DataFrame objects of arbitrary size
 function DataFrame(t::Type, nrows::Integer, ncols::Integer)
-    columns = Array(Any, ncols)
+    columns = Vector{Any}(ncols)
     for i in 1:ncols
         columns[i] = DataArray(t, nrows)
     end
@@ -121,7 +121,7 @@ end
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::Vector, cnames::Vector, nrows::Integer)
     p = length(column_eltypes)
-    columns = Array(Any, p)
+    columns = Vector{Any}(p)
     for j in 1:p
         columns[j] = DataArray(column_eltypes[j], nrows)
     end
@@ -130,7 +130,7 @@ end
 # Initialize an empty DataFrame with specific eltypes and names and whether is pooled data array
 function DataFrame(column_eltypes::Vector{DataType}, cnames::Vector{Symbol}, ispda::Vector{Bool}, nrows::Integer)
     p = length(column_eltypes)
-    columns = Array(Any, p)
+    columns = Vector{Any}(p)
     for j in 1:p
       if ispda[j]
         columns[j] = PooledDataArray(column_eltypes[j], nrows)
@@ -144,7 +144,7 @@ end
 # Initialize an empty DataFrame with specific eltypes
 function DataFrame(column_eltypes::Vector, nrows::Integer)
     p = length(column_eltypes)
-    columns = Array(Any, p)
+    columns = Vector{Any}(p)
     cnames = gennames(p)
     for j in 1:p
         columns[j] = DataArray(column_eltypes[j], nrows)
@@ -221,7 +221,7 @@ ncol(df::DataFrame) = length(index(df))
 # Let getindex(df.columns[j], row_inds) from AbstractDataVector() handle
 #  the resolution of row indices
 
-typealias ColumnIndex @compat(Union{Real, Symbol})
+const ColumnIndex = @compat(Union{Real, Symbol})
 
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
@@ -689,7 +689,7 @@ function deleterows!(df::DataFrame, ind::AbstractVector{Int})
     idf = 1
     iind = 1
     ikeep = 1
-    keep = Array(Int, n-length(ind2))
+    keep = Vector{Int}(n - length(ind2))
     while idf <= n && iind <= length(ind2)
         1 <= ind2[iind] <= n || error(BoundsError())
         if idf == ind2[iind]
@@ -794,7 +794,7 @@ end
 
 function Base.convert(::Type{DataFrame}, A::Matrix)
     n = size(A, 2)
-    cols = Array(Any, n)
+    cols = Vector{Any}(n)
     for i in 1:n
         cols[i] = A[:, i]
     end
@@ -804,8 +804,8 @@ end
 function _dataframe_from_associative(dnames, d::Associative)
     p = length(dnames)
     p == 0 && return DataFrame()
-    columns  = Array(Any, p)
-    colnames = Array(Symbol, p)
+    columns  = Vector{Any}(p)
+    colnames = Vector{Symbol}(p)
     n = length(d[dnames[1]])
     for j in 1:p
         name = dnames[j]

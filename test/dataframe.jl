@@ -72,7 +72,7 @@ module TestDataFrame
     # similar / nas
     df = DataFrame(a = 1, b = "b", c = @pdata([3.3]))
     nadf = DataFrame(a = @data(Int[NA, NA]),
-                     b = DataArray(Array(String, 2), trues(2)),
+                     b = DataArray(Vector{String}(2), trues(2)),
                      c = @pdata(Float64[NA, NA]))
     @test isequal(nadf, similar(df, 2))
     @test isequal(nadf, DataFrames.nas(df, 2))

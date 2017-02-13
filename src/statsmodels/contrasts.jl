@@ -72,7 +72,7 @@ termnames(C::MyCoding, levels, baseind) = ...
 ```
 
 """
-abstract AbstractContrasts
+abstract type AbstractContrasts end
 
 # Contrasts + Levels (usually from data) = ContrastsMatrix
 type ContrastsMatrix{C <: AbstractContrasts, T}
@@ -121,7 +121,7 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::AbstractV
         throw(ArgumentError("only one level found: $(c_levels[1]) (need at least two to " *
                             "compute contrasts)."))
     end
-    
+
     # find index of base level. use contrasts.base, then default (1).
     baseind = isnull(contrasts.base) ?
               1 :

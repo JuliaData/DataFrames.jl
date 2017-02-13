@@ -30,7 +30,7 @@ end
 #' ourstrwidth("abc")
 #' ourstrwidth(10000)
 let
-    local io = IOBuffer(Array(UInt8, 80), true, true)
+    local io = IOBuffer(Vector{UInt8}(80), true, true)
     global ourstrwidth
     function ourstrwidth(x::Any) # -> Int
         truncate(io, 0)
@@ -98,7 +98,7 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol) # -> Vector{Int}
-    maxwidths = Array(Int, size(df, 2) + 1)
+    maxwidths = Vector{Int}(size(df, 2) + 1)
 
     # TODO: Move this definition somewhere else
     NAstrwidth = 2

@@ -35,10 +35,10 @@ function join_idx(left, right, max_groups)
     left_pos = 0
     right_pos = 0
 
-    left_indexer = Array(Int, tcount)
-    right_indexer = Array(Int, tcount)
-    leftonly_indexer = Array(Int, lcount)
-    rightonly_indexer = Array(Int, rcount)
+    left_indexer = Vector{Int}(tcount)
+    right_indexer = Vector{Int}(tcount)
+    leftonly_indexer = Vector{Int}(lcount)
+    rightonly_indexer = Vector{Int}(rcount)
     for i in 1:(max_groups + 1)
         lc = left_count[i]
         rc = right_count[i]
@@ -113,7 +113,7 @@ function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
     #     might be faster.
     refs = zeros(R, nrow(df))
     poolref = Dict{AbstractDataFrame, Int}()
-    pool = Array(UInt64, 0)
+    pool = Vector{UInt64}(0)
     j = 1
     for i = 1:nrow(df)
         val = df[i,:]

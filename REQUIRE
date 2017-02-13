@@ -1,5 +1,5 @@
-julia 0.4
-DataArrays 0.3.4
+julia 0.6-
+DataArrays 0.4
 StatsBase 0.11.0
 GZip
 SortingAlgorithms

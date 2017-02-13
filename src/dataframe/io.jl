@@ -418,7 +418,7 @@ function bytestotype{N <: Integer,
     end
 end
 
-let out = Array(Float64, 1)
+let out = Vector{Float64}(1)
     global bytestotype
     function bytestotype{N <: AbstractFloat,
                          T <: String,
@@ -508,13 +508,13 @@ function builddf(rows::Integer,
                  fields::Integer,
                  p::ParsedCSV,
                  o::ParseOptions)
-    columns = Array(Any, cols)
+    columns = Vector{Any}(cols)
 
     for j in 1:cols
         if isempty(o.eltypes)
-            values = Array(Int, rows)
+            values = Vector{Int}(rows)
         else
-            values = Array(o.eltypes[j], rows)
+            values = Vector{o.eltypes[j]}(rows)
         end
 
         missing = falses(rows)
@@ -600,7 +600,7 @@ function builddf(rows::Integer,
                     continue
                 else
                     is_float = false
-                    values = Array(Bool, rows)
+                    values = Vector{Bool}(rows)
                     i = 0
                     continue
                 end
@@ -621,7 +621,7 @@ function builddf(rows::Integer,
                     continue
                 else
                     is_bool = false
-                    values = Array(Compat.UTF8String, rows)
+                    values = Vector{Compat.UTF8String}(rows)
                     i = 0
                     continue
                 end
@@ -695,7 +695,7 @@ function findcorruption(rows::Integer,
                         fields::Integer,
                         p::ParsedCSV)
     n = length(p.bounds)
-    lengths = Array(Int, rows)
+    lengths = Vector{Int}(rows)
     t = 1
     for i in 1:rows
         bound = p.lines[i + 1]
@@ -834,9 +834,9 @@ function readtable(io::IO,
     end
 
     # Allocate buffers for storing metadata
-    p = ParsedCSV(Array(UInt8, nbytes),
-                  Array(Int, 1),
-                  Array(Int, 1),
+    p = ParsedCSV(Vector{UInt8}(nbytes),
+                   Vector{Int}(1),
+                   Vector{Int}(1),
                   BitArray(1))
 
     # Set parsing options
