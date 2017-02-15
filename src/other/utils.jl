@@ -43,7 +43,7 @@ function makeidentifier(s::AbstractString)
         end
     end
 
-    return takebuf_string(res)
+    return String(take!(res))
 end
 
 function make_unique(names::Vector{Symbol}; allow_duplicates=true)
@@ -92,7 +92,7 @@ end
 #'
 #' DataFrames.gennames(10)
 function gennames(n::Integer)
-    res = Array(Symbol, n)
+    res = Array{Symbol}(n)
     for i in 1:n
         res[i] = Symbol(@sprintf "x%d" i)
     end

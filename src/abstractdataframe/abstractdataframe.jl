@@ -59,7 +59,7 @@ d[[1:3; 5], :]
 
 `setindex` works similarly.
 """
-abstract AbstractDataFrame
+@compat abstract type AbstractDataFrame end
 
 ##############################################################################
 ##
@@ -509,7 +509,7 @@ function Base.convert{T}(::Type{Array{T}}, df::AbstractDataFrame)
 end
 function Base.convert{T}(::Type{Matrix{T}}, df::AbstractDataFrame)
     n, p = size(df)
-    res = Array(T, n, p)
+    res = Matrix{T}(n, p)
     idx = 1
     for (name, col) in zip(names(df), columns(df))
         anynull(col) && error("cannot convert a DataFrame containing null values to array (found for column $name)")
@@ -592,8 +592,8 @@ unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
 unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, find(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
-Base.unique(df::AbstractDataFrame) = df[!nonunique(df), :]
-Base.unique(df::AbstractDataFrame, cols::Any) = df[!nonunique(df, cols), :]
+Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
+Base.unique(df::AbstractDataFrame, cols::Any) = df[(!).(nonunique(df, cols)), :]
 
 """
 Delete duplicate rows

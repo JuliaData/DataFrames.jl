@@ -72,7 +72,7 @@ termnames(C::MyCoding, levels, baseind) = ...
 ```
 
 """
-abstract AbstractContrasts
+@compat abstract type AbstractContrasts end
 
 # Contrasts + Levels (usually from data) = ContrastsMatrix
 type ContrastsMatrix{C <: AbstractContrasts, T}

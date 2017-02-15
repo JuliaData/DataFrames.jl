@@ -48,10 +48,10 @@ function join_idx(left, right, max_groups)
     left_pos = 0
     right_pos = 0
 
-    left_indexer = Array(Int, tcount)
-    right_indexer = Array(Int, tcount)
-    leftonly_indexer = Array(Int, lcount)
-    rightonly_indexer = Array(Int, rcount)
+    left_indexer = Vector{Int}(tcount)
+    right_indexer = Vector{Int}(tcount)
+    leftonly_indexer = Vector{Int}(lcount)
+    rightonly_indexer = Vector{Int}(rcount)
     for i in 1:(max_groups + 1)
         lc = left_count[i]
         rc = right_count[i]
@@ -137,8 +137,8 @@ function sharepools{S, T}(v1::AbstractArray{S},
 
     ## TODO: allow specification of R
     R = CategoricalArrays.DefaultRefType
-    refs1 = Array(R, size(v1))
-    refs2 = Array(R, size(v2))
+    refs1 = Array{R}(size(v1))
+    refs2 = Array{R}(size(v2))
     K = promote_type(S, T)
     poolref = Dict{K, R}()
     maxref = 0

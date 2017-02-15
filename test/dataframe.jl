@@ -76,9 +76,9 @@ module TestDataFrame
 
     # similar / nulls
     df = DataFrame(a = 1, b = "b", c = CategoricalArray([3.3]))
-    nulldf = DataFrame(a = NullableArray(Int, 2),
-                       b = NullableArray(String, 2),
-                       c = NullableCategoricalArray(Float64, 2))
+    nulldf = DataFrame(a = NullableArray{Int}(2),
+                       b = NullableArray{String}(2),
+                       c = NullableCategoricalArray{Float64}(2))
     @test isequal(nulldf, similar(df, 2))
     @test isequal(nulldf, DataFrames.similar_nullable(df, 2))
 

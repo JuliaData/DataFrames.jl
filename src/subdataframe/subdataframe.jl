@@ -5,6 +5,42 @@
 ##
 ##############################################################################
 
+if VERSION >= v"0.6.0-dev.2643"
+    include_string("""
+        immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
+            parent::DataFrame
+            rows::T # maps from subdf row indexes to parent row indexes
+
+            function SubDataFrame{T}(parent::DataFrame, rows::T) where {T <: AbstractVector{Int}}
+                if length(rows) > 0
+                    rmin, rmax = extrema(rows)
+                    if rmin < 1 || rmax > size(parent, 1)
+                        throw(BoundsError())
+                    end
+                end
+                new(parent, rows)
+            end
+        end
+    """)
+else
+    @eval begin
+        immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
+            parent::DataFrame
+            rows::T # maps from subdf row indexes to parent row indexes
+
+            function SubDataFrame(parent::DataFrame, rows::T)
+                if length(rows) > 0
+                    rmin, rmax = extrema(rows)
+                    if rmin < 1 || rmax > size(parent, 1)
+                        throw(BoundsError())
+                    end
+                end
+                new(parent, rows)
+            end
+        end
+    end
+end
+
 """
 A view of row subsets of an AbstractDataFrame
 
@@ -47,20 +83,7 @@ sdf1[:,[:a,:b]]
 ```
 
 """
-immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
-    parent::DataFrame
-    rows::T # maps from subdf row indexes to parent row indexes
-
-    function SubDataFrame(parent::DataFrame, rows::T)
-        if length(rows) > 0
-            rmin, rmax = extrema(rows)
-            if rmin < 1 || rmax > size(parent, 1)
-                throw(BoundsError())
-            end
-        end
-        new(parent, rows)
-    end
-end
+SubDataFrame
 
 function SubDataFrame{T <: AbstractVector{Int}}(parent::DataFrame, rows::T)
     return SubDataFrame{T}(parent, rows)
