@@ -209,17 +209,17 @@ ncol(df::DataFrame) = length(index(df))
 # Cases:
 #
 # df[SingleColumnIndex] => AbstractDataVector
-# df[MultiColumnIndex] => (Sub)?DataFrame
+# df[MultiColumnIndex] => DataFrame
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
-# df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
-# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
-# df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
+# df[SingleRowIndex, MultiColumnIndex] => DataFrame
+# df[MultiRowIndex, SingleColumnIndex] => AbstractVector
+# df[MultiRowIndex, MultiColumnIndex] => DataFrame
 #
 # General Strategy:
 #
 # Let getindex(index(df), col_inds) from Index() handle the resolution
 #  of column indices
-# Let getindex(df.columns[j], row_inds) from AbstractDataVector() handle
+# Let getindex(df.columns[j], row_inds) from AbstractVector() handle
 #  the resolution of row indices
 
 typealias ColumnIndex @compat(Union{Real, Symbol})
@@ -230,7 +230,7 @@ function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
     return df.columns[selected_column]
 end
 
-# df[MultiColumnIndex] => (Sub)?DataFrame
+# df[MultiColumnIndex] => DataFrame
 function Base.getindex{T <: ColumnIndex}(df::DataFrame,
                                          col_inds::Union{AbstractVector{T},
                                                          AbstractVector{Nullable{T}}})
@@ -239,7 +239,7 @@ function Base.getindex{T <: ColumnIndex}(df::DataFrame,
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
-# df[:] => (Sub)?DataFrame
+# df[:] => DataFrame
 Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
 
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
@@ -248,7 +248,7 @@ function Base.getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
     return df.columns[selected_column][row_ind]
 end
 
-# df[SingleRowIndex, MultiColumnIndex] => (Sub)?DataFrame
+# df[SingleRowIndex, MultiColumnIndex] => DataFrame
 function Base.getindex{T <: ColumnIndex}(df::DataFrame,
                                          row_ind::Real,
                                          col_inds::Union{AbstractVector{T},
@@ -258,7 +258,7 @@ function Base.getindex{T <: ColumnIndex}(df::DataFrame,
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
-# df[MultiRowIndex, SingleColumnIndex] => (Sub)?AbstractDataVector
+# df[MultiRowIndex, SingleColumnIndex] => AbstractVector
 function Base.getindex{T <: Real}(df::DataFrame,
                                   row_inds::Union{AbstractVector{T}, AbstractVector{Nullable{T}}},
                                   col_ind::ColumnIndex)
@@ -266,7 +266,7 @@ function Base.getindex{T <: Real}(df::DataFrame,
     return df.columns[selected_column][row_inds]
 end
 
-# df[MultiRowIndex, MultiColumnIndex] => (Sub)?DataFrame
+# df[MultiRowIndex, MultiColumnIndex] => DataFrame
 function Base.getindex{R <: Real, T <: ColumnIndex}(df::DataFrame,
                                                     row_inds::Union{AbstractVector{R},
                                                                     AbstractVector{Nullable{R}}},
@@ -277,18 +277,18 @@ function Base.getindex{R <: Real, T <: ColumnIndex}(df::DataFrame,
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
-# df[:, SingleColumnIndex] => (Sub)?AbstractVector
-# df[:, MultiColumnIndex] => (Sub)?DataFrame
+# df[:, SingleColumnIndex] => AbstractVector
+# df[:, MultiColumnIndex] => DataFrame
 Base.getindex{T<:ColumnIndex}(df::DataFrame,
                               row_inds::Colon,
                               col_inds::Union{T, AbstractVector{T},
                                               AbstractVector{Nullable{T}}}) =
     df[col_inds]
 
-# df[SingleRowIndex, :] => (Sub)?DataFrame
+# df[SingleRowIndex, :] => DataFrame
 Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col_inds]
 
-# df[MultiRowIndex, :] => (Sub)?DataFrame
+# df[MultiRowIndex, :] => DataFrame
 function Base.getindex{R<:Real}(df::DataFrame,
                                 row_inds::Union{AbstractVector{R},
                                                 AbstractVector{Nullable{R}}},
