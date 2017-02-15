@@ -3,8 +3,11 @@ import Base: isidentifier, is_id_start_char, is_id_char
 const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
     "return", "break", "continue", "function", "macro", "quote", "let",
     "local", "global", "const", "abstract", "typealias", "type", "bitstype",
-    "immutable", "ccall", "do", "module", "baremodule", "using", "import",
+    "immutable", "do", "module", "baremodule", "using", "import",
     "export", "importall", "end", "else", "elseif", "catch", "finally"])
+
+VERSION < v"0.6.0-dev.2194" && push!(RESERVED_WORDS, "ccall")
+VERSION >= v"0.6.0-dev.2698" && push!(RESERVED_WORDS, "struct")
 
 function identifier(s::AbstractString)
     s = normalize_string(s)
