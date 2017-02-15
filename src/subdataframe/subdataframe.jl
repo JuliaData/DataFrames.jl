@@ -71,6 +71,10 @@ function SubDataFrame(parent::DataFrame, row::Integer)
     return SubDataFrame(parent, [row])
 end
 
+function SubDataFrame{S <: Integer}(parent::DataFrame, rows::AbstractVector{S})
+    return view(parent, Int(rows))
+end
+
 
 function Base.view{S <: Real}(df::DataFrame, rowinds::AbstractVector{S})
     return SubDataFrame(df, rowinds)

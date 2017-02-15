@@ -14,3 +14,5 @@ import Base: keys, values, insert!
 
 @deprecate pool categorical
 @deprecate pool! categorical!
+
+@deprecate sub(df::AbstractDataFrame, rows) view(df, rows)
