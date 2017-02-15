@@ -274,9 +274,9 @@ module TestData
 
     srand(1)
     function spltdf(d)
-        d[:x1] = map(x -> get(x)[1], d[:a])
-        d[:x2] = map(x -> get(x)[2], d[:a])
-        d[:x3] = map(x -> get(x)[3], d[:a])
+        d[:x1] = map(x -> x[1], d[:a])
+        d[:x2] = map(x -> x[2], d[:a])
+        d[:x3] = map(x -> x[3], d[:a])
         d
     end
     df1 = DataFrame(
