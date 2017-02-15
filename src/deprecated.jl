@@ -14,3 +14,5 @@ import Base: keys, values, insert!
 
 @deprecate pool categorical
 @deprecate pool! categorical!
+
+@deprecate sub(dt::AbstractDataTable, rows) view(dt, rows)

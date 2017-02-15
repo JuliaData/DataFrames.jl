@@ -8,11 +8,11 @@
 """
 A view of row subsets of an AbstractDataTable
 
-A `SubDataTable` is meant to be constructed with `sub`.  A
+A `SubDataTable` is meant to be constructed with `view`.  A
 SubDataTable is used frequently in split/apply sorts of operations.
 
 ```julia
-sub(d::AbstractDataTable, rows)
+view(d::AbstractDataTable, rows)
 ```
 
 ### Arguments
@@ -30,7 +30,7 @@ like a DataTable; copies are returned.
 
 To subset along columns, use standard column indexing as that creates
 a view to the columns by default. To subset along rows and columns,
-use column-based indexing with `sub`.
+use column-based indexing with `view`.
 
 ### Examples
 
@@ -38,11 +38,11 @@ use column-based indexing with `sub`.
 df = DataTable(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
-sdf1 = sub(df, 1:6)
-sdf2 = sub(df, df[:a] .> 1)
-sdf3 = sub(df[[1,3]], df[:a] .> 1)  # row and column subsetting
+sdf1 = view(df, 1:6)
+sdf2 = view(df, df[:a] .> 1)
+sdf3 = view(df[[1,3]], df[:a] .> 1)  # row and column subsetting
 sdf4 = groupby(df, :a)[1]  # indexing a GroupedDataTable returns a SubDataTable
-sdf5 = sub(sdf1, 1:3)
+sdf5 = view(sdf1, 1:3)
 sdf1[:,[:a,:b]]
 ```
 
@@ -71,36 +71,36 @@ function SubDataTable(parent::DataTable, row::Integer)
 end
 
 function SubDataTable{S <: Integer}(parent::DataTable, rows::AbstractVector{S})
-    return sub(parent, Int(rows))
+    return view(parent, Int(rows))
 end
 
 
-function Base.sub{S <: Real}(df::DataTable, rowinds::AbstractVector{S})
+function Base.view{S <: Real}(df::DataTable, rowinds::AbstractVector{S})
     return SubDataTable(df, rowinds)
 end
 
-function Base.sub{S <: Real}(sdf::SubDataTable, rowinds::AbstractVector{S})
+function Base.view{S <: Real}(sdf::SubDataTable, rowinds::AbstractVector{S})
     return SubDataTable(sdf.parent, sdf.rows[rowinds])
 end
 
-function Base.sub(df::DataTable, rowinds::AbstractVector{Bool})
-    return sub(df, getindex(SimpleIndex(size(df, 1)), rowinds))
+function Base.view(df::DataTable, rowinds::AbstractVector{Bool})
+    return view(df, getindex(SimpleIndex(size(df, 1)), rowinds))
 end
 
-function Base.sub(sdf::SubDataTable, rowinds::AbstractVector{Bool})
-    return sub(sdf, getindex(SimpleIndex(size(sdf, 1)), rowinds))
+function Base.view(sdf::SubDataTable, rowinds::AbstractVector{Bool})
+    return view(sdf, getindex(SimpleIndex(size(sdf, 1)), rowinds))
 end
 
-function Base.sub(adf::AbstractDataTable, rowinds::Integer)
+function Base.view(adf::AbstractDataTable, rowinds::Integer)
     return SubDataTable(adf, Int[rowinds])
 end
 
-function Base.sub(adf::AbstractDataTable, rowinds::Any)
-    return sub(adf, getindex(SimpleIndex(size(adf, 1)), rowinds))
+function Base.view(adf::AbstractDataTable, rowinds::Any)
+    return view(adf, getindex(SimpleIndex(size(adf, 1)), rowinds))
 end
 
-function Base.sub(adf::AbstractDataTable, rowinds::Any, colinds::Any)
-    return sub(adf[[colinds]], rowinds)
+function Base.view(adf::AbstractDataTable, rowinds::Any, colinds::Any)
+    return view(adf[[colinds]], rowinds)
 end
 
 ##############################################################################
@@ -145,6 +145,6 @@ function Base.delete!(sdf::SubDataTable, c::Any) # TODO: deprecate?
     return SubDataTable(delete!(sdf.parent, c), sdf.rows)
 end
 
-without(sdf::SubDataTable, c::Vector{Int}) = sub(without(sdf.parent, c), sdf.rows)
-without(sdf::SubDataTable, c::Int) = sub(without(sdf.parent, c), sdf.rows)
-without(sdf::SubDataTable, c::Any) = sub(without(sdf.parent, c), sdf.rows)
+without(sdf::SubDataTable, c::Vector{Int}) = view(without(sdf.parent, c), sdf.rows)
+without(sdf::SubDataTable, c::Int) = view(without(sdf.parent, c), sdf.rows)
+without(sdf::SubDataTable, c::Any) = view(without(sdf.parent, c), sdf.rows)

@@ -163,7 +163,7 @@ groupby(cols) = x -> groupby(x, cols)
 
 Base.start(gd::GroupedDataTable) = 1
 Base.next(gd::GroupedDataTable, state::Int) =
-    (sub(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
+    (view(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
      state + 1)
 Base.done(gd::GroupedDataTable, state::Int) = state > length(gd.starts)
 Base.length(gd::GroupedDataTable) = length(gd.starts)
@@ -172,7 +172,7 @@ Base.first(gd::GroupedDataTable) = gd[1]
 Base.last(gd::GroupedDataTable) = gd[end]
 
 Base.getindex(gd::GroupedDataTable, idx::Int) =
-    sub(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
+    view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
 Base.getindex(gd::GroupedDataTable, I::AbstractArray{Bool}) =
     GroupedDataTable(gd.parent, gd.cols, gd.idx, gd.starts[I], gd.ends[I])
 

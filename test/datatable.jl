@@ -195,7 +195,7 @@ module TestDataTable
     df = DataTable(x=[], y=[])
     @test nrow(df) == 0
     df = DataTable(x=[1:3;], y=[3:5;])
-    sdf = sub(df, df[:x] .== 4)
+    sdf = view(df, df[:x] .== 4)
     @test size(sdf, 1) == 0
 
     @test hash(convert(DataTable, [1 2; 3 4])) == hash(convert(DataTable, [1 2; 3 4]))
