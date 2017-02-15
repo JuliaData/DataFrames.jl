@@ -59,7 +59,7 @@ d[[1:3; 5], :]
 
 `setindex` works similarly.
 """
-abstract AbstractDataTable
+@compat abstract type AbstractDataTable end
 
 ##############################################################################
 ##
@@ -509,7 +509,7 @@ function Base.convert{T}(::Type{Array{T}}, dt::AbstractDataTable)
 end
 function Base.convert{T}(::Type{Matrix{T}}, dt::AbstractDataTable)
     n, p = size(dt)
-    res = Array(T, n, p)
+    res = Matrix{T}(n, p)
     idx = 1
     for (name, col) in zip(names(dt), columns(dt))
         anynull(col) && error("cannot convert a DataTable containing null values to array (found for column $name)")
@@ -592,8 +592,8 @@ unique!(dt::AbstractDataTable) = deleterows!(dt, find(nonunique(dt)))
 unique!(dt::AbstractDataTable, cols::Any) = deleterows!(dt, find(nonunique(dt, cols)))
 
 # Unique rows of an AbstractDataTable.
-Base.unique(dt::AbstractDataTable) = dt[!nonunique(dt), :]
-Base.unique(dt::AbstractDataTable, cols::Any) = dt[!nonunique(dt, cols), :]
+Base.unique(dt::AbstractDataTable) = dt[(!).(nonunique(dt)), :]
+Base.unique(dt::AbstractDataTable, cols::Any) = dt[(!).(nonunique(dt, cols)), :]
 
 """
 Delete duplicate rows

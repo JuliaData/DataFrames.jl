@@ -36,7 +36,7 @@ module TestShow
     dtr = DataTableRow(dt, 1)
     show(io, dtr)
 
-    dt = DataTable(A = Array(String, 3))
+    dt = DataTable(A = Vector{String}(3))
 
     A = DataTables.StackedVector(Any[[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     show(io, A)

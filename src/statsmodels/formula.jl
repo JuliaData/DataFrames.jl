@@ -50,7 +50,7 @@ type ModelFrame
     contrasts::Dict{Symbol, ContrastsMatrix}
 end
 
-typealias AbstractFloatMatrix{T<:AbstractFloat} AbstractMatrix{T}
+@compat AbstractFloatMatrix{T<:AbstractFloat} = AbstractMatrix{T}
 
 type ModelMatrix{T <: AbstractFloatMatrix}
     m::T
@@ -203,9 +203,9 @@ evt(a) = Any[a]
 function Terms(f::Formula)
     rhs = condense(distribute(dospecials(f.rhs)))
     tt = unique(getterms(rhs))
-    tt = tt[!(tt .== 1)]             # drop any explicit 1's
-    noint = (tt .== 0) | (tt .== -1) # should also handle :(-(expr,1))
-    tt = tt[!noint]
+    tt = tt[(!).(tt .== 1)]           # drop any explicit 1's
+    noint = (tt .== 0) .| (tt .== -1) # should also handle :(-(expr,1))
+    tt = tt[(!).(noint)]
     oo = Int[ord(t) for t in tt]     # orders of interaction terms
     if !issorted(oo)                 # sort terms by increasing order
         pp = sortperm(oo)

@@ -5,6 +5,42 @@
 ##
 ##############################################################################
 
+if VERSION >= v"0.6.0-dev.2643"
+    include_string("""
+        immutable SubDataTable{T <: AbstractVector{Int}} <: AbstractDataTable
+            parent::DataTable
+            rows::T # maps from subdf row indexes to parent row indexes
+
+            function SubDataTable{T}(parent::DataTable, rows::T) where {T <: AbstractVector{Int}}
+                if length(rows) > 0
+                    rmin, rmax = extrema(rows)
+                    if rmin < 1 || rmax > size(parent, 1)
+                        throw(BoundsError())
+                    end
+                end
+                new(parent, rows)
+            end
+        end
+    """)
+else
+    @eval begin
+        immutable SubDataTable{T <: AbstractVector{Int}} <: AbstractDataTable
+            parent::DataTable
+            rows::T # maps from subdf row indexes to parent row indexes
+
+            function SubDataTable(parent::DataTable, rows::T)
+                if length(rows) > 0
+                    rmin, rmax = extrema(rows)
+                    if rmin < 1 || rmax > size(parent, 1)
+                        throw(BoundsError())
+                    end
+                end
+                new(parent, rows)
+            end
+        end
+    end
+end
+
 """
 A view of row subsets of an AbstractDataTable
 
@@ -47,20 +83,7 @@ sdt1[:,[:a,:b]]
 ```
 
 """
-immutable SubDataTable{T <: AbstractVector{Int}} <: AbstractDataTable
-    parent::DataTable
-    rows::T # maps from subdt row indexes to parent row indexes
-
-    function SubDataTable(parent::DataTable, rows::T)
-        if length(rows) > 0
-            rmin, rmax = extrema(rows)
-            if rmin < 1 || rmax > size(parent, 1)
-                throw(BoundsError())
-            end
-        end
-        new(parent, rows)
-    end
-end
+SubDataTable
 
 function SubDataTable{T <: AbstractVector{Int}}(parent::DataTable, rows::T)
     return SubDataTable{T}(parent, rows)

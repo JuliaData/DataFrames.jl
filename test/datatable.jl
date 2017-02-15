@@ -76,9 +76,9 @@ module TestDataTable
 
     # similar / nulls
     dt = DataTable(a = 1, b = "b", c = CategoricalArray([3.3]))
-    nulldt = DataTable(a = NullableArray(Int, 2),
-                       b = NullableArray(String, 2),
-                       c = NullableCategoricalArray(Float64, 2))
+    nulldt = DataTable(a = NullableArray{Int}(2),
+                       b = NullableArray{String}(2),
+                       c = NullableCategoricalArray{Float64}(2))
     @test isequal(nulldt, similar(dt, 2))
     @test isequal(nulldt, DataTables.similar_nullable(dt, 2))
 

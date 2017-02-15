@@ -110,7 +110,7 @@ end
 
 # Initialize empty DataTable objects of arbitrary size
 function DataTable(t::Type, nrows::Integer, ncols::Integer)
-    columns = Array(Any, ncols)
+    columns = Vector{Any}(ncols)
     for i in 1:ncols
         columns[i] = NullableArray(t, nrows)
     end
@@ -121,7 +121,7 @@ end
 # Initialize an empty DataTable with specific eltypes and names
 function DataTable(column_eltypes::Vector, cnames::Vector, nrows::Integer)
     p = length(column_eltypes)
-    columns = Array(Any, p)
+    columns = Vector{Any}(p)
     for j in 1:p
         columns[j] = NullableArray(column_eltypes[j], nrows)
     end
@@ -132,12 +132,12 @@ end
 function DataTable(column_eltypes::Vector{DataType}, cnames::Vector{Symbol},
                    nominal::Vector{Bool}, nrows::Integer)
     p = length(column_eltypes)
-    columns = Array(Any, p)
+    columns = Vector{Any}(p)
     for j in 1:p
       if nominal[j]
-        columns[j] = NullableCategoricalArray(column_eltypes[j], nrows)
+        columns[j] = NullableCategoricalArray{column_eltypes[j]}(nrows)
       else
-        columns[j] = NullableArray(column_eltypes[j], nrows)
+        columns[j] = NullableArray{column_eltypes[j]}(nrows)
       end
     end
     return DataTable(columns, Index(cnames))
@@ -146,10 +146,10 @@ end
 # Initialize an empty DataTable with specific eltypes
 function DataTable(column_eltypes::Vector, nrows::Integer)
     p = length(column_eltypes)
-    columns = Array(Any, p)
+    columns = Vector{Any}(p)
     cnames = gennames(p)
     for j in 1:p
-        columns[j] = NullableArray(column_eltypes[j], nrows)
+        columns[j] = NullableArray{column_eltypes[j]}(nrows)
     end
     return DataTable(columns, Index(cnames))
 end
@@ -222,7 +222,7 @@ ncol(dt::DataTable) = length(index(dt))
 # Let getindex(dt.columns[j], row_inds) from AbstractVector() handle
 #  the resolution of row indices
 
-typealias ColumnIndex @compat(Union{Real, Symbol})
+@compat const ColumnIndex = Union{Real, Symbol}
 
 # dt[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(dt::DataTable, col_ind::ColumnIndex)
@@ -720,7 +720,7 @@ function deleterows!(dt::DataTable, ind::AbstractVector{Int})
     idt = 1
     iind = 1
     ikeep = 1
-    keep = Array(Int, n-length(ind2))
+    keep = Array{Int}(n-length(ind2))
     while idt <= n && iind <= length(ind2)
         1 <= ind2[iind] <= n || error(BoundsError())
         if idt == ind2[iind]
@@ -825,7 +825,7 @@ end
 
 function Base.convert(::Type{DataTable}, A::Matrix)
     n = size(A, 2)
-    cols = Array(Any, n)
+    cols = Vector{Any}(n)
     for i in 1:n
         cols[i] = A[:, i]
     end
@@ -835,8 +835,8 @@ end
 function _datatable_from_associative(dnames, d::Associative)
     p = length(dnames)
     p == 0 && return DataTable()
-    columns  = Array(Any, p)
-    colnames = Array(Symbol, p)
+    columns  = Vector{Any}(p)
+    colnames = Vector{Symbol}(p)
     n = length(d[dnames[1]])
     for j in 1:p
         name = dnames[j]
