@@ -16,12 +16,6 @@ module TestShow
     showall(io, subdf)
     showall(io, subdf, true)
 
-    using Juno
-    out = DataFrames._render(df)
-    @assert out.head.xs[1] == DataFrame
-    @assert isa(out.children()[1], Juno.Table)
-    @assert size(out.children()[1].xs) == (4, 2)
-
     dfvec = DataFrame[df for _=1:3]
     show(io, dfvec)
     showall(io, dfvec)

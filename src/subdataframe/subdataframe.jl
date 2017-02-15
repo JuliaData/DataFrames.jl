@@ -51,7 +51,7 @@ immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
     parent::DataFrame
     rows::T # maps from subdf row indexes to parent row indexes
 
-    function SubDataFrame(parent::DataFrame, rows::T)
+    @compat function SubDataFrame{T}(parent::DataFrame, rows::T) where T
         if length(rows) > 0
             rmin, rmax = extrema(rows)
             if rmin < 1 || rmax > size(parent, 1)

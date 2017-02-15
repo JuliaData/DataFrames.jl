@@ -3,7 +3,7 @@
 # through cleanly.
 # an Index is the usual implementation.
 # a SimpleIndex only works if the things are integer indexes, which is weird.
-abstract AbstractIndex
+@compat abstract type AbstractIndex end
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position

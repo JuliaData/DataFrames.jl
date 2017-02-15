@@ -59,7 +59,7 @@ d[[1:3; 5], :]
 
 `setindex` works similarly.
 """
-abstract AbstractDataFrame
+@compat abstract type AbstractDataFrame end
 
 ##############################################################################
 ##
@@ -468,9 +468,9 @@ complete_cases(df)
 """
 function complete_cases(df::AbstractDataFrame)
     ## Returns a Vector{Bool} of indexes of complete cases (rows with no NA's).
-    res = !isna(df[1])
+    res = .!isna(df[1])
     for i in 2:ncol(df)
-        res .&= !isna(df[i])
+        res .&= .!isna(df[i])
     end
     res
 end
@@ -598,8 +598,8 @@ unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
 unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, find(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
-Base.unique(df::AbstractDataFrame) = df[!nonunique(df), :]
-Base.unique(df::AbstractDataFrame, cols::Any) = df[!nonunique(df, cols), :]
+Base.unique(df::AbstractDataFrame) = df[.!nonunique(df), :]
+Base.unique(df::AbstractDataFrame, cols::Any) = df[.!nonunique(df, cols), :]
 
 """
 Delete duplicate rows
