@@ -7,7 +7,7 @@ particularly a Vector, DataVector, or PooledDataVector.
 **Constructors**
 
 ```julia
-DataFrame(columns::Vector{Any}, names::Vector{Symbol})
+DataFrame(columns::Vector, names::Vector{Symbol})
 DataFrame(kwargs...)
 DataFrame() # an empty DataFrame
 DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
@@ -17,7 +17,7 @@ DataFrame(ds::Vector{Associative})
 
 **Arguments**
 
-* `columns` : a Vector{Any} with each column as contents
+* `columns` : a Vector with each column as contents
 * `names` : the column names
 * `kwargs` : the key gives the column names, and the value is the
   column contents
@@ -31,7 +31,7 @@ Each column in `columns` should be the same length.
 **Notes**
 
 Most of the default constructors convert columns to `DataArrays`.  The
-base constructor, `DataFrame(columns::Vector{Any},
+base constructor, `DataFrame(columns::Vector,
 names::Vector{Symbol})` does not convert to `DataArrays`.
 
 A `DataFrame` is a lightweight object. As long as columns are not
@@ -70,10 +70,10 @@ size(df1)
 
 """
 type DataFrame <: AbstractDataFrame
-    columns::Vector{Any}
+    columns::Vector
     colindex::Index
 
-    function DataFrame(columns::Vector{Any}, colindex::Index)
+    function DataFrame(columns::Vector, colindex::Index)
         ncols = length(columns)
         if ncols > 1
             nrows = length(columns[1])
@@ -102,7 +102,7 @@ function DataFrame(; kwargs...)
     return result
 end
 
-function DataFrame(columns::Vector{Any},
+function DataFrame(columns::Vector,
                    cnames::Vector{Symbol} = gennames(length(columns)))
     return DataFrame(columns, Index(cnames))
 end
@@ -110,7 +110,7 @@ end
 
 # Initialize empty DataFrame objects of arbitrary size
 function DataFrame(t::Type, nrows::Integer, ncols::Integer)
-    columns = Vector{Any}(ncols)
+    columns = Vector(ncols)
     for i in 1:ncols
         columns[i] = DataArray(t, nrows)
     end
@@ -121,7 +121,7 @@ end
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::Vector, cnames::Vector, nrows::Integer)
     p = length(column_eltypes)
-    columns = Vector{Any}(p)
+    columns = Vector(p)
     for j in 1:p
         columns[j] = DataArray(column_eltypes[j], nrows)
     end
@@ -130,7 +130,7 @@ end
 # Initialize an empty DataFrame with specific eltypes and names and whether is pooled data array
 function DataFrame(column_eltypes::Vector{DataType}, cnames::Vector{Symbol}, ispda::Vector{Bool}, nrows::Integer)
     p = length(column_eltypes)
-    columns = Vector{Any}(p)
+    columns = Vector(p)
     for j in 1:p
       if ispda[j]
         columns[j] = PooledDataArray(column_eltypes[j], nrows)
@@ -144,7 +144,7 @@ end
 # Initialize an empty DataFrame with specific eltypes
 function DataFrame(column_eltypes::Vector, nrows::Integer)
     p = length(column_eltypes)
-    columns = Vector{Any}(p)
+    columns = Vector(p)
     cnames = gennames(p)
     for j in 1:p
         columns[j] = DataArray(column_eltypes[j], nrows)
@@ -794,7 +794,7 @@ end
 
 function Base.convert(::Type{DataFrame}, A::Matrix)
     n = size(A, 2)
-    cols = Vector{Any}(n)
+    cols = Vector(n)
     for i in 1:n
         cols[i] = A[:, i]
     end
@@ -804,7 +804,7 @@ end
 function _dataframe_from_associative(dnames, d::Associative)
     p = length(dnames)
     p == 0 && return DataFrame()
-    columns  = Vector{Any}(p)
+    columns  = Vector(p)
     colnames = Vector{Symbol}(p)
     n = length(d[dnames[1]])
     for j in 1:p
