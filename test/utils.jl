@@ -30,7 +30,8 @@ module TestUtils
         if m1 == nothing || m2 == nothing
             error("Unable to extract keywords from 'julia-parser.scm'.")
         else
-            rw = Set(split(m1.captures[1]*" "*m2.captures[1], r"\W+"))
+            s = replace(m1.captures[1]*" "*m2.captures[1], r";;.*?\n", "")
+            rw = Set(split(s, r"\W+"))
             @test rw == DataFrames.RESERVED_WORDS
         end
     else
