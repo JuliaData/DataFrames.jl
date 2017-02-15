@@ -59,7 +59,7 @@ d[[1:3; 5], :]
 
 `setindex` works similarly.
 """
-abstract type AbstractDataFrame end
+@compat abstract type AbstractDataFrame end
 
 ##############################################################################
 ##

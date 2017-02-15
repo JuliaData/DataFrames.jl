@@ -137,8 +137,8 @@ function sharepools{S, T}(v1::AbstractArray{S},
 
     ## TODO: allow specification of R
     R = CategoricalArrays.DefaultRefType
-    refs1 = Array(R, size(v1))
-    refs2 = Array(R, size(v2))
+    refs1 = Array{R}(size(v1))
+    refs2 = Array{R}(size(v2))
     K = promote_type(S, T)
     poolref = Dict{K, R}()
     maxref = 0

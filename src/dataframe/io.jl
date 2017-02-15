@@ -621,7 +621,7 @@ function builddf(rows::Integer,
                     continue
                 else
                     is_bool = false
-                    values = Vector{String}(rows)
+                    values = Vector{Compat.UTF8String}(rows)
                     i = 0
                     continue
                 end
@@ -835,8 +835,8 @@ function readtable(io::IO,
 
     # Allocate buffers for storing metadata
     p = ParsedCSV(Vector{UInt8}(nbytes),
-                   Vector{Int}(1),
-                   Vector{Int}(1),
+                  Vector{Int}(1),
+                  Vector{Int}(1),
                   BitArray(1))
 
     # Set parsing options

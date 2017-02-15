@@ -516,17 +516,17 @@ module TestIO
     df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
     io = IOBuffer()
     show(io, "text/html", df)
-    str = takebuf_string(io)
+    str = String(take!(io))
     @test str == "<table class=\"data-frame\"><tr><th></th><th>Fish</th><th>Mass</th></tr><tr><th>1</th><td>Suzy</td><td>1.5</td></tr><tr><th>2</th><td>Amir</td><td>#NULL</td></tr></table>"
 
     # test limit attribute of IOContext is used
     df = DataFrame(a=collect(1:1000))
     ioc = IOContext(IOBuffer(), displaysize=(10, 10), limit=false)
     show(ioc, "text/html", df)
-    @test length(takebuf_string(ioc.io)) > 10000
+    @test length(String(take!(ioc.io))) > 10000
 
     io = IOBuffer()
     show(io, "text/html", df)
-    @test length(takebuf_string(io)) < 10000
+    @test length(String(take!(io))) < 10000
 
 end

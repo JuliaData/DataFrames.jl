@@ -96,7 +96,7 @@ end
 #'
 #' DataFrames.gennames(10)
 function gennames(n::Integer)
-    res = Vector{Symbol}(n)
+    res = Array{Symbol}(n)
     for i in 1:n
         res[i] = Symbol(@sprintf "x%d" i)
     end
