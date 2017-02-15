@@ -60,11 +60,11 @@ module TestData
 
     #test_group("constructors")
     # single index is rows
-    sdf6a = sub(df6, 1)
-    sdf6b = sub(df6, 2:3)
-    sdf6c = sub(df6, [true, false, true, false])
+    sdf6a = view(df6, 1)
+    sdf6b = view(df6, 2:3)
+    sdf6c = view(df6, [true, false, true, false])
     @test size(sdf6a) == (1,3)
-    sdf6d = sub(df6, [1,3], :B)
+    sdf6d = view(df6, [1,3], :B)
     @test size(sdf6d) == (2,1)
 
     #test_group("ref")

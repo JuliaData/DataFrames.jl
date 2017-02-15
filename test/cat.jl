@@ -58,17 +58,17 @@ module TestCat
     df[1] = 3
     df[:x3] = 2
 
-    # assignment of subframes
+    # assignment of sub tables
     df[1, 1:2] = df[2, 2:3]
     df[1:2, 1:2] = df[2:3, 2:3]
     df[[true,false,false,true], 2:3] = df[1:2,1:2]
 
-    # scalar broadcasting assignment of subframes
+    # scalar broadcasting assignment of sub tables
     df[1, 1:2] = 3
     df[1:2, 1:2] = 3
     df[[true,false,false,true], 2:3] = 3
 
-    # vector broadcasting assignment of subframes
+    # vector broadcasting assignment of sub tables
     df[1:2, 1:2] = [3,2]
     df[[true,false,false,true], 2:3] = [2,3]
 
@@ -147,5 +147,5 @@ module TestCat
     @test isequal(vcat(dfda, dfd, dfa), vcat(dfda, dfda))
 
     # vcat should be able to concatenate different implementations of AbstractDataFrame (PR #944)
-    @test isequal(vcat(sub(DataFrame(A=1:3),2),DataFrame(A=4:5)), DataFrame(A=[2,4,5]))
+    @test isequal(vcat(view(DataFrame(A=1:3),2),DataFrame(A=4:5)), DataFrame(A=[2,4,5]))
 end
