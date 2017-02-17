@@ -12,8 +12,8 @@ similar_nullable{T<:Nullable}(dv::AbstractArray{T}, dims::@compat(Union{Int, Tup
 similar_nullable{T,R}(dv::CategoricalArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
     NullableCategoricalArray(T, dims)
 
-similar_nullable(df::AbstractDataTable, dims::Int) =
-    DataTable(Any[similar_nullable(x, dims) for x in columns(df)], copy(index(df)))
+similar_nullable(dt::AbstractDataTable, dims::Int) =
+    DataTable(Any[similar_nullable(x, dims) for x in columns(dt)], copy(index(dt)))
 
 function join_idx(left, right, max_groups)
     ## adapted from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
@@ -185,12 +185,12 @@ function sharepools{S, T}(v1::AbstractArray{S},
             NullableCategoricalArray(refs2, pool))
 end
 
-function sharepools(df1::AbstractDataTable, df2::AbstractDataTable)
+function sharepools(dt1::AbstractDataTable, dt2::AbstractDataTable)
     # This method exists to allow merge to work with multiple columns.
     # It takes the columns of each DataTable and returns a categorical array
     # with a merged pool that "keys" the combination of column values.
     # The pools of the result don't really mean anything.
-    dv1, dv2 = sharepools(df1[1], df2[1])
+    dv1, dv2 = sharepools(dt1[1], dt2[1])
     # use UInt32 instead of the minimum integer size chosen by sharepools
     # since the number of levels can be high
     refs1 = Vector{UInt32}(dv1.refs)
@@ -199,8 +199,8 @@ function sharepools(df1::AbstractDataTable, df2::AbstractDataTable)
     refs1[:] += 1
     refs2[:] += 1
     ngroups = length(levels(dv1)) + 1
-    for j = 2:ncol(df1)
-        dv1, dv2 = sharepools(df1[j], df2[j])
+    for j = 2:ncol(dt1)
+        dv1, dv2 = sharepools(dt1[j], dt2[j])
         for i = 1:length(refs1)
             refs1[i] += (dv1.refs[i]) * ngroups
         end
@@ -219,15 +219,15 @@ end
 Join two DataTables
 
 ```julia
-join(df1::AbstractDataTable,
-     df2::AbstractDataTable;
+join(dt1::AbstractDataTable,
+     dt2::AbstractDataTable;
      on::Union{Symbol, Vector{Symbol}} = Symbol[],
      kind::Symbol = :inner)
 ```
 
 ### Arguments
 
-* `df1`, `df2` : the two AbstractDataTables to be joined
+* `dt1`, `dt2` : the two AbstractDataTables to be joined
 
 ### Keyword Arguments
 
@@ -236,15 +236,15 @@ join(df1::AbstractDataTable,
 
 * `kind` : the type of join, options include:
 
-  - `:inner` : only include rows with keys that match in both `df1`
-    and `df2`, the default
-  - `:outer` : include all rows from `df1` and `df2`
-  - `:left` : include all rows from `df1`
-  - `:right` : include all rows from `df2`
-  - `:semi` : return rows of `df1` that match with the keys in `df2`
-  - `:anti` : return rows of `df1` that do not match with the keys in `df2`
+  - `:inner` : only include rows with keys that match in both `dt1`
+    and `dt2`, the default
+  - `:outer` : include all rows from `dt1` and `dt2`
+  - `:left` : include all rows from `dt1`
+  - `:right` : include all rows from `dt2`
+  - `:semi` : return rows of `dt1` that match with the keys in `dt2`
+  - `:anti` : return rows of `dt1` that do not match with the keys in `dt2`
   - `:cross` : a full Cartesian product of the key combinations; every
-    row of `df1` is matched with every row of `df2`
+    row of `dt1` is matched with every row of `dt2`
 
 Null values are filled in where needed to complete joins.
 
@@ -268,70 +268,70 @@ join(name, job, kind = :cross)
 ```
 
 """
-function Base.join(df1::AbstractDataTable,
-                   df2::AbstractDataTable;
+function Base.join(dt1::AbstractDataTable,
+                   dt2::AbstractDataTable;
                    on::@compat(Union{Symbol, Vector{Symbol}}) = Symbol[],
                    kind::Symbol = :inner)
     if kind == :cross
         if on != Symbol[]
             throw(ArgumentError("Cross joins don't use argument 'on'."))
         end
-        return crossjoin(df1, df2)
+        return crossjoin(dt1, dt2)
     elseif on == Symbol[]
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
-    dv1, dv2 = sharepools(df1[on], df2[on])
+    dv1, dv2 = sharepools(dt1[on], dt2[on])
 
     left_idx, leftonly_idx, right_idx, rightonly_idx =
         join_idx(dv1.refs, dv2.refs, length(dv1.pool))
 
     if kind == :inner
-        df2w = without(df2, on)
+        dt2w = without(dt2, on)
 
-        left = df1[left_idx, :]
-        right = df2w[right_idx, :]
+        left = dt1[left_idx, :]
+        right = dt2w[right_idx, :]
 
         return hcat!(left, right)
     elseif kind == :left
-        df2w = without(df2, on)
+        dt2w = without(dt2, on)
 
-        left = df1[[left_idx; leftonly_idx], :]
-        right = vcat(df2w[right_idx, :],
-                     similar_nullable(df2w, length(leftonly_idx)))
+        left = dt1[[left_idx; leftonly_idx], :]
+        right = vcat(dt2w[right_idx, :],
+                     similar_nullable(dt2w, length(leftonly_idx)))
 
         return hcat!(left, right)
     elseif kind == :right
-        df1w = without(df1, on)
+        dt1w = without(dt1, on)
 
-        left = vcat(df1w[left_idx, :],
-                    similar_nullable(df1w, length(rightonly_idx)))
-        right = df2[[right_idx; rightonly_idx], :]
+        left = vcat(dt1w[left_idx, :],
+                    similar_nullable(dt1w, length(rightonly_idx)))
+        right = dt2[[right_idx; rightonly_idx], :]
 
         return hcat!(left, right)
     elseif kind == :outer
-        df1w, df2w = without(df1, on),  without(df2, on)
+        dt1w, dt2w = without(dt1, on),  without(dt2, on)
 
-        mixed = hcat!(df1[left_idx, :], df2w[right_idx, :])
-        leftonly = hcat!(df1[leftonly_idx, :],
-                         similar_nullable(df2w, length(leftonly_idx)))
-        rightonly = hcat!(similar_nullable(df1w, length(rightonly_idx)),
-                          df2[rightonly_idx, :])
+        mixed = hcat!(dt1[left_idx, :], dt2w[right_idx, :])
+        leftonly = hcat!(dt1[leftonly_idx, :],
+                         similar_nullable(dt2w, length(leftonly_idx)))
+        rightonly = hcat!(similar_nullable(dt1w, length(rightonly_idx)),
+                          dt2[rightonly_idx, :])
 
         return vcat(mixed, leftonly, rightonly)
     elseif kind == :semi
-        df1[unique(left_idx), :]
+        dt1[unique(left_idx), :]
     elseif kind == :anti
-        df1[leftonly_idx, :]
+        dt1[leftonly_idx, :]
     else
         throw(ArgumentError("Unknown kind of join requested"))
     end
 end
 
-function crossjoin(df1::AbstractDataTable, df2::AbstractDataTable)
-    r1, r2 = size(df1, 1), size(df2, 1)
-    cols = Any[[Compat.repeat(c, inner=r2) for c in columns(df1)];
-            [Compat.repeat(c, outer=r1) for c in columns(df2)]]
-    colindex = merge(index(df1), index(df2))
+function crossjoin(dt1::AbstractDataTable, dt2::AbstractDataTable)
+    r1, r2 = size(dt1, 1), size(dt2, 1)
+    cols = Any[[Compat.repeat(c, inner=r2) for c in columns(dt1)];
+            [Compat.repeat(c, outer=r1) for c in columns(dt2)]]
+    colindex = merge(index(dt1), index(dt2))
     DataTable(cols, colindex)
 end

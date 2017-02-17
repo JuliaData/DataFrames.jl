@@ -9,98 +9,98 @@ module TestCat
     nvint = NullableArray(Nullable{Int}[1, 2, Nullable(), 4])
     nvstr = NullableArray(Nullable{String}["one", "two", Nullable(), "four"])
 
-    df2 = DataTable(Any[nvint, nvstr])
-    df3 = DataTable(Any[nvint])
-    df4 = convert(DataTable, [1:4 1:4])
-    df5 = DataTable(Any[NullableArray([1,2,3,4]), nvstr])
+    dt2 = DataTable(Any[nvint, nvstr])
+    dt3 = DataTable(Any[nvint])
+    dt4 = convert(DataTable, [1:4 1:4])
+    dt5 = DataTable(Any[NullableArray([1,2,3,4]), nvstr])
 
-    dfh = hcat(df3, df4)
-    @test size(dfh, 2) == 3
-    @test names(dfh) == [:x1, :x1_1, :x2]
-    @test isequal(dfh[:x1], df3[:x1])
-    @test isequal(dfh, [df3 df4])
-    @test isequal(dfh, DataTables.hcat!(DataTable(), df3, df4))
+    dth = hcat(dt3, dt4)
+    @test size(dth, 2) == 3
+    @test names(dth) == [:x1, :x1_1, :x2]
+    @test isequal(dth[:x1], dt3[:x1])
+    @test isequal(dth, [dt3 dt4])
+    @test isequal(dth, DataTables.hcat!(DataTable(), dt3, dt4))
 
-    dfh3 = hcat(df3, df4, df5)
-    @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
-    @test isequal(dfh3, hcat(dfh, df5))
-    @test isequal(dfh3, DataTables.hcat!(DataTable(), df3, df4, df5))
+    dth3 = hcat(dt3, dt4, dt5)
+    @test names(dth3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
+    @test isequal(dth3, hcat(dth, dt5))
+    @test isequal(dth3, DataTables.hcat!(DataTable(), dt3, dt4, dt5))
 
-    @test isequal(df2, DataTables.hcat!(df2))
+    @test isequal(dt2, DataTables.hcat!(dt2))
 
     #
     # vcat
     #
 
-    null_df = DataTable(Int, 0, 0)
-    df = DataTable(Int, 4, 3)
+    null_dt = DataTable(Int, 0, 0)
+    dt = DataTable(Int, 4, 3)
 
     # Assignment of rows
-    df[1, :] = df[1, :]
-    df[1:2, :] = df[1:2, :]
-    df[[true,false,false,true], :] = df[2:3, :]
+    dt[1, :] = dt[1, :]
+    dt[1:2, :] = dt[1:2, :]
+    dt[[true,false,false,true], :] = dt[2:3, :]
 
     # Scalar broadcasting assignment of rows
-    df[1, :] = 1
-    df[1:2, :] = 1
-    df[[true,false,false,true], :] = 3
+    dt[1, :] = 1
+    dt[1:2, :] = 1
+    dt[[true,false,false,true], :] = 3
 
     # Vector broadcasting assignment of rows
-    df[1:2, :] = [2,3]
-    df[[true,false,false,true], :] = [2,3]
+    dt[1:2, :] = [2,3]
+    dt[[true,false,false,true], :] = [2,3]
 
     # Assignment of columns
-    df[1] = zeros(4)
-    df[:, 2] = ones(4)
+    dt[1] = zeros(4)
+    dt[:, 2] = ones(4)
 
     # Broadcasting assignment of columns
-    df[:, 1] = 1
-    df[1] = 3
-    df[:x3] = 2
+    dt[:, 1] = 1
+    dt[1] = 3
+    dt[:x3] = 2
 
-    # assignment of sub tables
-    df[1, 1:2] = df[2, 2:3]
-    df[1:2, 1:2] = df[2:3, 2:3]
-    df[[true,false,false,true], 2:3] = df[1:2,1:2]
+    # assignment of subframes
+    dt[1, 1:2] = dt[2, 2:3]
+    dt[1:2, 1:2] = dt[2:3, 2:3]
+    dt[[true,false,false,true], 2:3] = dt[1:2,1:2]
 
-    # scalar broadcasting assignment of sub tables
-    df[1, 1:2] = 3
-    df[1:2, 1:2] = 3
-    df[[true,false,false,true], 2:3] = 3
+    # scalar broadcasting assignment of subframes
+    dt[1, 1:2] = 3
+    dt[1:2, 1:2] = 3
+    dt[[true,false,false,true], 2:3] = 3
 
-    # vector broadcasting assignment of sub tables
-    df[1:2, 1:2] = [3,2]
-    df[[true,false,false,true], 2:3] = [2,3]
+    # vector broadcasting assignment of subframes
+    dt[1:2, 1:2] = [3,2]
+    dt[[true,false,false,true], 2:3] = [2,3]
 
     vcat([])
-    vcat(null_df)
-    vcat(null_df, null_df)
-    vcat(null_df, df)
-    vcat(df, null_df)
-    vcat(df, df)
-    vcat(df, df, df)
+    vcat(null_dt)
+    vcat(null_dt, null_dt)
+    vcat(null_dt, dt)
+    vcat(dt, null_dt)
+    vcat(dt, dt)
+    vcat(dt, dt, dt)
     @test vcat(DataTable[]) == DataTable()
 
-    alt_df = deepcopy(df)
-    vcat(df, alt_df)
+    alt_dt = deepcopy(dt)
+    vcat(dt, alt_dt)
 
     # Don't fail on non-matching types
-    df[1] = zeros(Int, nrow(df))
-    vcat(df, alt_df)
+    dt[1] = zeros(Int, nrow(dt))
+    vcat(dt, alt_dt)
 
     # Don't fail on non-matching names
-    names!(alt_df, [:A, :B, :C])
-    vcat(df, alt_df)
+    names!(alt_dt, [:A, :B, :C])
+    vcat(dt, alt_dt)
 
-    dfr = vcat(df4, df4)
-    @test size(dfr, 1) == 8
-    @test names(df4) == names(dfr)
-    @test isequal(dfr, [df4; df4])
+    dtr = vcat(dt4, dt4)
+    @test size(dtr, 1) == 8
+    @test names(dt4) == names(dtr)
+    @test isequal(dtr, [dt4; dt4])
 
-    dfr = vcat(df2, df3)
-    @test size(dfr) == (8,2)
-    @test names(df2) == names(dfr)
-    @test isnull(dfr[8,:x2])
+    dtr = vcat(dt2, dt3)
+    @test size(dtr) == (8,2)
+    @test names(dt2) == names(dtr)
+    @test isnull(dtr[8,:x2])
 
     # Eltype promotion
     # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
@@ -113,38 +113,38 @@ module TestCat
     end
 
     # Minimal container type promotion
-    dfa = DataTable(a = CategoricalArray([1, 2, 2]))
-    dfb = DataTable(a = CategoricalArray([2, 3, 4]))
-    dfc = DataTable(a = NullableArray([2, 3, 4]))
-    dfd = DataTable(Any[2:4], [:a])
-    dfab = vcat(dfa, dfb)
-    dfac = vcat(dfa, dfc)
-    @test isequal(dfab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
-    @test isequal(dfac[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
-    @test isa(dfab[:a], NullableCategoricalVector{Int})
+    dta = DataTable(a = CategoricalArray([1, 2, 2]))
+    dtb = DataTable(a = CategoricalArray([2, 3, 4]))
+    dtc = DataTable(a = NullableArray([2, 3, 4]))
+    dtd = DataTable(Any[2:4], [:a])
+    dtab = vcat(dta, dtb)
+    dtac = vcat(dta, dtc)
+    @test isequal(dtab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
+    @test isequal(dtac[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
+    @test isa(dtab[:a], NullableCategoricalVector{Int})
     # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
     if VERSION >= v"0.5.0-dev"
-        @test isa(dfac[:a], NullableCategoricalVector{Int})
+        @test isa(dtac[:a], NullableCategoricalVector{Int})
     else
-        @test isa(dfac[:a], NullableCategoricalVector{Any})
+        @test isa(dtac[:a], NullableCategoricalVector{Any})
     end
     # ^^ container may flip if container promotion happens in Base/DataArrays
-    dc = vcat(dfd, dfc)
-    @test isequal(vcat(dfc, dfd), dc)
+    dc = vcat(dtd, dtc)
+    @test isequal(vcat(dtc, dtd), dc)
 
     # Zero-row DataTables
-    dfc0 = similar(dfc, 0)
-    @test isequal(vcat(dfd, dfc0, dfc), dc)
-    @test eltypes(vcat(dfd, dfc0)) == eltypes(dc)
+    dtc0 = similar(dtc, 0)
+    @test isequal(vcat(dtd, dtc0, dtc), dc)
+    @test eltypes(vcat(dtd, dtc0)) == eltypes(dc)
 
     # Missing columns
-    rename!(dfd, :a, :b)
-    dfda = DataTable(b = NullableArray(Nullable{Int}[2, 3, 4, Nullable(), Nullable(), Nullable()]),
+    rename!(dtd, :a, :b)
+    dtda = DataTable(b = NullableArray(Nullable{Int}[2, 3, 4, Nullable(), Nullable(), Nullable()]),
                      a = NullableCategoricalVector(Nullable{Int}[Nullable(), Nullable(), Nullable(), 1, 2, 2]))
-    @test isequal(vcat(dfd, dfa), dfda)
+    @test isequal(vcat(dtd, dta), dtda)
 
     # Alignment
-    @test isequal(vcat(dfda, dfd, dfa), vcat(dfda, dfda))
+    @test isequal(vcat(dtda, dtd, dta), vcat(dtda, dtda))
 
     # vcat should be able to concatenate different implementations of AbstractDataTable (PR #944)
     @test isequal(vcat(view(DataTable(A=1:3),2),DataTable(A=4:5)), DataTable(A=[2,4,5]))

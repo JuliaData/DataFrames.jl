@@ -73,59 +73,59 @@ Which strategy for dealing with `null` values is most appropriate will typically
 The `DataTable` type can be used to represent data tables, each column of which is an array (by default, a `NullableArray`). You can specify the columns using keyword arguments:
 
 ```julia
-df = DataTable(A = 1:4, B = ["M", "F", "F", "M"])
+dt = DataTable(A = 1:4, B = ["M", "F", "F", "M"])
 ```
 
 It is also possible to construct a `DataTable` in stages:
 
 ```julia
-df = DataTable()
-df[:A] = 1:8
-df[:B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
-df
+dt = DataTable()
+dt[:A] = 1:8
+dt[:B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
+dt
 ```
 
 The `DataTable` we build in this way has 8 rows and 2 columns. You can check this using `size` function:
 
 ```julia
-nrows = size(df, 1)
-ncols = size(df, 2)
+nrows = size(dt, 1)
+ncols = size(dt, 2)
 ```
 
 We can also look at small subsets of the data in a couple of different ways:
 
 ```julia
-head(df)
-tail(df)
+head(dt)
+tail(dt)
 
-df[1:3, :]
+dt[1:3, :]
 ```
 
 Having seen what some of the rows look like, we can try to summarize the entire data set using `describe`:
 
 ```julia
-describe(df)
+describe(dt)
 ```
 
 To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the `DataTable`:
 
 ```julia
-mean(dropnull(df[1]))
-median(dropnull(df[1]))
+mean(dropnull(dt[1]))
+median(dropnull(dt[1]))
 ```
 
 We could also have used column names to access individual columns:
 
 ```julia
-mean(dropnull(df[:A]))
-median(dropnull(df[:A]))
+mean(dropnull(dt[:A]))
+median(dropnull(dt[:A]))
 ```
 
 We can also apply a function to each column of a `DataTable` with the `colwise` function. For example:
 
 ```julia
-df = DataTable(A = 1:4, B = randn(4))
-colwise(c->cumsum(dropnull(c)), df)
+dt = DataTable(A = 1:4, B = randn(4))
+colwise(c->cumsum(dropnull(c)), dt)
 ```
 
 ## Accessing Classic Data Sets

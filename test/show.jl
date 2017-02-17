@@ -3,40 +3,40 @@ module TestShow
     using Compat
     using Base.Test
     import Compat.String
-    df = DataTable(A = 1:3, B = ["x", "y", "z"])
+    dt = DataTable(A = 1:3, B = ["x", "y", "z"])
 
     io = IOBuffer()
-    show(io, df)
-    show(io, df, true)
-    showall(io, df)
-    showall(io, df, true)
+    show(io, dt)
+    show(io, dt, true)
+    showall(io, dt)
+    showall(io, dt, true)
 
-    subdf = view(df, [2, 3]) # df[df[:A] .> 1.0, :]
-    show(io, subdf)
-    show(io, subdf, true)
-    showall(io, subdf)
-    showall(io, subdf, true)
+    subdt = view(dt, [2, 3]) # dt[dt[:A] .> 1.0, :]
+    show(io, subdt)
+    show(io, subdt, true)
+    showall(io, subdt)
+    showall(io, subdt, true)
 
     if VERSION > v"0.5-"
         using Juno
-        out = DataTables._render(df)
+        out = DataTables._render(dt)
         @assert out.head.xs[1] == DataTable
         @assert isa(out.children()[1], Juno.Table)
         @assert size(out.children()[1].xs) == (4, 2)
     end
 
-    dfvec = DataTable[df for _=1:3]
-    show(io, dfvec)
-    showall(io, dfvec)
+    dtvec = DataTable[dt for _=1:3]
+    show(io, dtvec)
+    showall(io, dtvec)
 
-    gd = groupby(df, :A)
+    gd = groupby(dt, :A)
     show(io, gd)
     showall(io, gd)
 
-    dfr = DataTableRow(df, 1)
-    show(io, dfr)
+    dtr = DataTableRow(dt, 1)
+    show(io, dtr)
 
-    df = DataTable(A = Array(String, 3))
+    dt = DataTable(A = Array(String, 3))
 
     A = DataTables.StackedVector(Any[[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     show(io, A)
@@ -46,9 +46,9 @@ module TestShow
     show(io, A)
 
     #Test show output for REPL and similar
-    df = DataTable(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
+    dt = DataTable(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
     io = IOBuffer()
-    show(io, df)
+    show(io, dt)
     str = String(take!(io))
     @test str == """
     2×2 DataTables.DataTable
@@ -58,9 +58,9 @@ module TestShow
     │ 2   │ Amir │ #NULL │"""
 
     # Test computing width for Array{String} columns
-    df = DataTable(Any[["a"]], [:x])
+    dt = DataTable(Any[["a"]], [:x])
     io = IOBuffer()
-    show(io, df)
+    show(io, dt)
     str = String(take!(io))
     @test str == """
     1×1 DataTables.DataTable

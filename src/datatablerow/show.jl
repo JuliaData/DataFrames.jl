@@ -11,8 +11,8 @@
 #'
 #' @examples
 #'
-#' df = DataTable(A = 1:3, B = ["x", "y", "z"])
-#' for r in eachrow(df)
+#' dt = DataTable(A = 1:3, B = ["x", "y", "z"])
+#' for r in eachrow(dt)
 #'     show(STDOUT, r)
 #' end
 function Base.show(io::IO, r::DataTableRow)

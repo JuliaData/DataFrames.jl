@@ -20,6 +20,6 @@ join
 melt
 stack
 unstack
-stackdf
-meltdf
+stackdt
+meltdt
 ```

@@ -5,9 +5,9 @@ module TestIteration
     dm = NullableArray([1 2; 3 4])
     dt = NullableArray(zeros(2, 2, 2))
 
-    df = DataTable(A = 1:2, B = 2:3)
+    dt = DataTable(A = 1:2, B = 2:3)
 
-    for row in eachrow(df)
+    for row in eachrow(dt)
         @test isa(row, DataTableRow)
         @test isequal(row[:B]-row[:A], Nullable(1))
 
@@ -15,32 +15,32 @@ module TestIteration
         @test typeof(collect(row)) == @compat Array{Tuple{Symbol, Any}, 1}
     end
 
-    for col in eachcol(df)
+    for col in eachcol(dt)
         @test isa(col, @compat Tuple{Symbol, NullableVector})
     end
 
-    @test isequal(map(x -> minimum(convert(Array, x)), eachrow(df)), Any[1,2])
-    @test isequal(map(minimum, eachcol(df)), DataTable(A = [1], B = [2]))
+    @test isequal(map(x -> minimum(convert(Array, x)), eachrow(dt)), Any[1,2])
+    @test isequal(map(minimum, eachcol(dt)), DataTable(A = [1], B = [2]))
 
-    row = DataTableRow(df, 1)
+    row = DataTableRow(dt, 1)
 
     row[:A] = 100
-    @test isequal(df[1, :A], Nullable(100))
+    @test isequal(dt[1, :A], Nullable(100))
 
     row[1] = 101
-    @test isequal(df[1, :A], Nullable(101))
+    @test isequal(dt[1, :A], Nullable(101))
 
-    df = DataTable(A = 1:4, B = ["M", "F", "F", "M"])
+    dt = DataTable(A = 1:4, B = ["M", "F", "F", "M"])
 
-    s1 = view(df, 1:3)
+    s1 = view(dt, 1:3)
     s1[2,:A] = 4
-    @test isequal(df[2, :A], Nullable(4))
-    @test isequal(view(s1, 1:2), view(df, 1:2))
+    @test isequal(dt[2, :A], Nullable(4))
+    @test isequal(view(s1, 1:2), view(dt, 1:2))
 
-    s2 = view(df, 1:2:3)
+    s2 = view(dt, 1:2:3)
     s2[2, :B] = "M"
-    @test isequal(df[3, :B], Nullable("M"))
-    @test isequal(view(s2, 1:1:2), view(df, [1,3]))
+    @test isequal(dt[3, :B], Nullable("M"))
+    @test isequal(view(s2, 1:1:2), view(dt, [1,3]))
 
-    # @test_fail for x in df; end # Raises an error
+    # @test_fail for x in dt; end # Raises an error
 end

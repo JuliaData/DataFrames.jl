@@ -46,73 +46,73 @@ module TestJoin
     @test isequal(join(nameid, jobid, on = :ID, kind = :anti), anti[on])
 
     # Join on multiple keys
-    df1 = DataTable(A = 1, B = 2, C = 3)
-    df2 = DataTable(A = 1, B = 2, D = 4)
+    dt1 = DataTable(A = 1, B = 2, C = 3)
+    dt2 = DataTable(A = 1, B = 2, D = 4)
 
-    join(df1, df2, on = [:A, :B])
+    join(dt1, dt2, on = [:A, :B])
 
     # Test output of cross joins
-    df1 = DataTable(A = 1:2, B = 'a':'b')
-    df2 = DataTable(A = 1:3, C = 3:5)
+    dt1 = DataTable(A = 1:2, B = 'a':'b')
+    dt2 = DataTable(A = 1:3, C = 3:5)
 
     cross = DataTable(A = [1, 1, 1, 2, 2, 2],
                       B = ['a', 'a', 'a', 'b', 'b', 'b'],
                       C = [3, 4, 5, 3, 4, 5])
 
-    @test isequal(join(df1, df2[[:C]], kind = :cross), cross)
+    @test isequal(join(dt1, dt2[[:C]], kind = :cross), cross)
 
     # Cross joins handle naming collisions
-    @test size(join(df1, df1, kind = :cross)) == (4, 4)
+    @test size(join(dt1, dt1, kind = :cross)) == (4, 4)
 
     # Cross joins don't take keys
-    @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
+    @test_throws ArgumentError join(dt1, dt2, on = :A, kind = :cross)
 
     # test empty inputs
-    simple_df(len::Int, col=:A) = (df = DataTable(); df[col]=collect(1:len); df)
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :left),  simple_df(0))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :left),  simple_df(2))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :left),  simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :right), simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :right), simple_df(2))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :right), simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :inner), simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :inner), simple_df(0))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :inner), simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :outer), simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :outer), simple_df(2))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :outer), simple_df(2))
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :semi),  simple_df(0))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :semi),  simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :semi),  simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :anti),  simple_df(0))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :anti),  simple_df(2))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :anti),  simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0, :B), kind = :cross), DataTable(A=Int[], B=Int[]))
-    @test isequal(join(simple_df(0), simple_df(2, :B), kind = :cross), DataTable(A=Int[], B=Int[]))
-    @test isequal(join(simple_df(2), simple_df(0, :B), kind = :cross), DataTable(A=Int[], B=Int[]))
+    simple_dt(len::Int, col=:A) = (dt = DataTable(); dt[col]=collect(1:len); dt)
+    @test isequal(join(simple_dt(0), simple_dt(0), on = :A, kind = :left),  simple_dt(0))
+    @test isequal(join(simple_dt(2), simple_dt(0), on = :A, kind = :left),  simple_dt(2))
+    @test isequal(join(simple_dt(0), simple_dt(2), on = :A, kind = :left),  simple_dt(0))
+    @test isequal(join(simple_dt(0), simple_dt(0), on = :A, kind = :right), simple_dt(0))
+    @test isequal(join(simple_dt(0), simple_dt(2), on = :A, kind = :right), simple_dt(2))
+    @test isequal(join(simple_dt(2), simple_dt(0), on = :A, kind = :right), simple_dt(0))
+    @test isequal(join(simple_dt(0), simple_dt(0), on = :A, kind = :inner), simple_dt(0))
+    @test isequal(join(simple_dt(0), simple_dt(2), on = :A, kind = :inner), simple_dt(0))
+    @test isequal(join(simple_dt(2), simple_dt(0), on = :A, kind = :inner), simple_dt(0))
+    @test isequal(join(simple_dt(0), simple_dt(0), on = :A, kind = :outer), simple_dt(0))
+    @test isequal(join(simple_dt(0), simple_dt(2), on = :A, kind = :outer), simple_dt(2))
+    @test isequal(join(simple_dt(2), simple_dt(0), on = :A, kind = :outer), simple_dt(2))
+    @test isequal(join(simple_dt(0), simple_dt(0), on = :A, kind = :semi),  simple_dt(0))
+    @test isequal(join(simple_dt(2), simple_dt(0), on = :A, kind = :semi),  simple_dt(0))
+    @test isequal(join(simple_dt(0), simple_dt(2), on = :A, kind = :semi),  simple_dt(0))
+    @test isequal(join(simple_dt(0), simple_dt(0), on = :A, kind = :anti),  simple_dt(0))
+    @test isequal(join(simple_dt(2), simple_dt(0), on = :A, kind = :anti),  simple_dt(2))
+    @test isequal(join(simple_dt(0), simple_dt(2), on = :A, kind = :anti),  simple_dt(0))
+    @test isequal(join(simple_dt(0), simple_dt(0, :B), kind = :cross), DataTable(A=Int[], B=Int[]))
+    @test isequal(join(simple_dt(0), simple_dt(2, :B), kind = :cross), DataTable(A=Int[], B=Int[]))
+    @test isequal(join(simple_dt(2), simple_dt(0, :B), kind = :cross), DataTable(A=Int[], B=Int[]))
 
     # issue #960
-    df1 = DataTable(A = 1:50,
+    dt1 = DataTable(A = 1:50,
                     B = 1:50,
                     C = 1)
-    categorical!(df1, :A)
-    categorical!(df1, :B)
-    join(df1, df1, on = [:A, :B], kind = :inner)
+    categorical!(dt1, :A)
+    categorical!(dt1, :B)
+    join(dt1, dt1, on = [:A, :B], kind = :inner)
 
     # Test that Array{Nullable} works when combined with NullableArray (#1088)
-    df = DataTable(Name = Nullable{String}["A", "B", "C"],
+    dt = DataTable(Name = Nullable{String}["A", "B", "C"],
                    Mass = [1.5, 2.2, 1.1])
-    df2 = DataTable(Name = ["A", "B", "C", "A"],
+    dt2 = DataTable(Name = ["A", "B", "C", "A"],
                     Quantity = [3, 3, 2, 4])
-    @test join(df2, df, on=:Name, kind=:left) == DataTable(Name = ["A", "A", "B", "C"],
+    @test join(dt2, dt, on=:Name, kind=:left) == DataTable(Name = ["A", "A", "B", "C"],
                                                            Quantity = [3, 4, 3, 2],
                                                            Mass = [1.5, 1.5, 2.2, 1.1])
 
     # Test that join works when mixing Array and NullableArray (#1151)
-    df = DataTable([collect(1:10), collect(2:11)], [:x, :y])
-    dfnull = DataTable(x = 1:10, z = 3:12)
-    @test join(df, dfnull, on = :x) ==
+    dt = DataTable([collect(1:10), collect(2:11)], [:x, :y])
+    dtnull = DataTable(x = 1:10, z = 3:12)
+    @test join(dt, dtnull, on = :x) ==
         DataTable([collect(1:10), collect(2:11), NullableArray(3:12)], [:x, :y, :z])
-    @test join(dfnull, df, on = :x) ==
+    @test join(dtnull, dt, on = :x) ==
         DataTable([NullableArray(1:10), NullableArray(3:12), NullableArray(2:11)], [:x, :z, :y])
 end

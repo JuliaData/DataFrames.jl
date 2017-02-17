@@ -7,35 +7,35 @@
 # TODO: Reconsider/redesign eachrow -- ~100% overhead
 
 # Iteration by rows
-immutable DFRowIterator{T <: AbstractDataTable}
-    df::T
+immutable DTRowIterator{T <: AbstractDataTable}
+    dt::T
 end
-eachrow(df::AbstractDataTable) = DFRowIterator(df)
+eachrow(dt::AbstractDataTable) = DTRowIterator(dt)
 
-Base.start(itr::DFRowIterator) = 1
-Base.done(itr::DFRowIterator, i::Int) = i > size(itr.df, 1)
-Base.next(itr::DFRowIterator, i::Int) = (DataTableRow(itr.df, i), i + 1)
-Base.size(itr::DFRowIterator) = (size(itr.df, 1), )
-Base.length(itr::DFRowIterator) = size(itr.df, 1)
-Base.getindex(itr::DFRowIterator, i::Any) = DataTableRow(itr.df, i)
-Base.map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
+Base.start(itr::DTRowIterator) = 1
+Base.done(itr::DTRowIterator, i::Int) = i > size(itr.dt, 1)
+Base.next(itr::DTRowIterator, i::Int) = (DataTableRow(itr.dt, i), i + 1)
+Base.size(itr::DTRowIterator) = (size(itr.dt, 1), )
+Base.length(itr::DTRowIterator) = size(itr.dt, 1)
+Base.getindex(itr::DTRowIterator, i::Any) = DataTableRow(itr.dt, i)
+Base.map(f::Function, dtri::DTRowIterator) = [f(row) for row in dtri]
 
 # Iteration by columns
-immutable DFColumnIterator{T <: AbstractDataTable}
-    df::T
+immutable DTColumnIterator{T <: AbstractDataTable}
+    dt::T
 end
-eachcol(df::AbstractDataTable) = DFColumnIterator(df)
+eachcol(dt::AbstractDataTable) = DTColumnIterator(dt)
 
-Base.start(itr::DFColumnIterator) = 1
-Base.done(itr::DFColumnIterator, j::Int) = j > size(itr.df, 2)
-Base.next(itr::DFColumnIterator, j::Int) = ((_names(itr.df)[j], itr.df[j]), j + 1)
-Base.size(itr::DFColumnIterator) = (size(itr.df, 2), )
-Base.length(itr::DFColumnIterator) = size(itr.df, 2)
-Base.getindex(itr::DFColumnIterator, j::Any) = itr.df[:, j]
-function Base.map(f::Function, dfci::DFColumnIterator)
+Base.start(itr::DTColumnIterator) = 1
+Base.done(itr::DTColumnIterator, j::Int) = j > size(itr.dt, 2)
+Base.next(itr::DTColumnIterator, j::Int) = ((_names(itr.dt)[j], itr.dt[j]), j + 1)
+Base.size(itr::DTColumnIterator) = (size(itr.dt, 2), )
+Base.length(itr::DTColumnIterator) = size(itr.dt, 2)
+Base.getindex(itr::DTColumnIterator, j::Any) = itr.dt[:, j]
+function Base.map(f::Function, dtci::DTColumnIterator)
     # note: `f` must return a consistent length
     res = DataTable()
-    for (n, v) in eachcol(dfci.df)
+    for (n, v) in eachcol(dtci.dt)
         res[n] = f(v)
     end
     res

@@ -19,15 +19,15 @@ else
 end
 
 function printtable(io::IO,
-                    df::AbstractDataTable;
+                    dt::AbstractDataTable;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
                     nastring::AbstractString = "NULL")
-    n, p = size(df)
-    etypes = eltypes(df)
+    n, p = size(dt)
+    etypes = eltypes(dt)
     if header
-        cnames = _names(df)
+        cnames = _names(dt)
         for j in 1:p
             print(io, quotemark)
             print(io, cnames[j])
@@ -42,13 +42,13 @@ function printtable(io::IO,
     quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
-            if !isnull(df[j],i)
+            if !isnull(dt[j],i)
                 if ! (etypes[j] <: Real)
 		    print(io, quotemark)
-		    escapedprint(io, get(df[i, j]), quotestr)
+		    escapedprint(io, get(dt[i, j]), quotestr)
 		    print(io, quotemark)
                 else
-		    print(io, df[i, j])
+		    print(io, dt[i, j])
                 end
             else
 		print(io, nastring)
@@ -63,13 +63,13 @@ function printtable(io::IO,
     return
 end
 
-function printtable(df::AbstractDataTable;
+function printtable(dt::AbstractDataTable;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
                     nastring::AbstractString = "NULL")
     printtable(STDOUT,
-               df,
+               dt,
                header = header,
                separator = separator,
                quotemark = quotemark,
@@ -81,19 +81,19 @@ end
 Write data to a tabular-file format (CSV, TSV, ...)
 
 ```julia
-writetable(filename, df, [keyword options])
+writetable(filename, dt, [keyword options])
 ```
 
 ### Arguments
 
 * `filename::AbstractString` : the filename to be created
-* `df::AbstractDataTable` : the AbstractDataTable to be written
+* `dt::AbstractDataTable` : the AbstractDataTable to be written
 
 ### Keyword Arguments
 
 * `separator::Char` -- The separator character that you would like to use. Defaults to the output of `getseparator(filename)`, which uses commas for files that end in `.csv`, tabs for files that end in `.tsv` and a single space for files that end in `.wsv`.
 * `quotemark::Char` -- The character used to delimit string fields. Defaults to `'"'`.
-* `header::Bool` -- Should the file contain a header that specifies the column names from `df`. Defaults to `true`.
+* `header::Bool` -- Should the file contain a header that specifies the column names from `dt`. Defaults to `true`.
 * `nastring::AbstractString` -- What to write in place of missing data. Defaults to `"NULL"`.
 
 ### Result
@@ -103,15 +103,15 @@ writetable(filename, df, [keyword options])
 ### Examples
 
 ```julia
-df = DataTable(A = 1:10)
-writetable("output.csv", df)
-writetable("output.dat", df, separator = ',', header = false)
-writetable("output.dat", df, quotemark = '\', separator = ',')
-writetable("output.dat", df, header = false)
+dt = DataTable(A = 1:10)
+writetable("output.csv", dt)
+writetable("output.dat", dt, separator = ',', header = false)
+writetable("output.dat", dt, quotemark = '\', separator = ',')
+writetable("output.dat", dt, header = false)
 ```
 """
 function writetable(filename::AbstractString,
-                    df::AbstractDataTable;
+                    dt::AbstractDataTable;
                     header::Bool = true,
                     separator::Char = getseparator(filename),
                     quotemark::Char = '"',
@@ -123,17 +123,17 @@ function writetable(filename::AbstractString,
     end
 
     if append && isfile(filename) && filesize(filename) > 0
-        file_df = readtable(filename, header = false, nrows = 1)
+        file_dt = readtable(filename, header = false, nrows = 1)
 
         # Check if number of columns matches
-        if size(file_df, 2) != size(df, 2)
+        if size(file_dt, 2) != size(dt, 2)
             throw(DimensionMismatch("Number of columns differ between file and DataTable"))
         end
 
         # When 'append'-ing to a nonempty file,
         # 'header' triggers a check for matching colnames
         if header
-            if any(i -> @compat(Symbol(file_df[1, i])) != index(df)[i], 1:size(df, 2))
+            if any(i -> @compat(Symbol(file_dt[1, i])) != index(dt)[i], 1:size(dt, 2))
                 throw(KeyError("Column names don't match names in file"))
             end
 
@@ -145,7 +145,7 @@ function writetable(filename::AbstractString,
 
     openfunc(filename, append ? "a" : "w") do io
         printtable(io,
-                   df,
+                   dt,
                    header = header,
                    separator = separator,
                    quotemark = quotemark,
@@ -168,8 +168,8 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-@compat function Base.show(io::IO, ::MIME"text/html", df::AbstractDataTable)
-    cnames = _names(df)
+@compat function Base.show(io::IO, ::MIME"text/html", dt::AbstractDataTable)
+    cnames = _names(dt)
     write(io, "<table class=\"data-frame\">")
     write(io, "<tr>")
     write(io, "<th></th>")
@@ -178,7 +178,7 @@ end
     end
     write(io, "</tr>")
     haslimit = get(io, :limit, true)
-    n = size(df, 1)
+    n = size(dt, 1)
     if haslimit
         tty_rows, tty_cols = _displaysize(io)
         mxrow = min(n,tty_rows)
@@ -189,7 +189,7 @@ end
         write(io, "<tr>")
         write(io, "<th>$row</th>")
         for column_name in cnames
-            cell = sprint(ourshowcompact, df[row, column_name])
+            cell = sprint(ourshowcompact, dt[row, column_name])
             write(io, "<td>$(html_escape(cell))</td>")
         end
         write(io, "</tr>")
@@ -226,10 +226,10 @@ function latex_escape(cell::AbstractString)
     return cell
 end
 
-function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataTable)
-    nrows = size(df, 1)
-    ncols = size(df, 2)
-    cnames = _names(df)
+function Base.show(io::IO, ::MIME"text/latex", dt::AbstractDataTable)
+    nrows = size(dt, 1)
+    ncols = size(dt, 2)
+    cnames = _names(dt)
     alignment = repeat("c", ncols)
     write(io, "\\begin{tabular}{r|")
     write(io, alignment)
@@ -244,7 +244,7 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataTable)
         write(io, @sprintf("%d", row))
         for col in 1:ncols
             write(io, " & ")
-            cell = df[row,col]
+            cell = dt[row,col]
             if !isnull(cell)
                 content = get(cell)
                 if mimewritable(MIME("text/latex"), content)
@@ -265,10 +265,10 @@ end
 #
 ##############################################################################
 
-@compat function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataTable)
-    printtable(io, df, true, ',')
+@compat function Base.show(io::IO, ::MIME"text/csv", dt::AbstractDataTable)
+    printtable(io, dt, true, ',')
 end
 
-@compat function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataTable)
-    printtable(io, df, true, '\t')
+@compat function Base.show(io::IO, ::MIME"text/tab-separated-values", dt::AbstractDataTable)
+    printtable(io, dt, true, '\t')
 end

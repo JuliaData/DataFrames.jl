@@ -1,31 +1,31 @@
 # Container for a DataTable row
 immutable DataTableRow{T <: AbstractDataTable}
-    df::T
+    dt::T
     row::Int
 end
 
 function Base.getindex(r::DataTableRow, idx::AbstractArray)
-    return DataTableRow(r.df[idx], r.row)
+    return DataTableRow(r.dt[idx], r.row)
 end
 
 function Base.getindex(r::DataTableRow, idx::Any)
-    return r.df[r.row, idx]
+    return r.dt[r.row, idx]
 end
 
 function Base.setindex!(r::DataTableRow, value::Any, idx::Any)
-    return setindex!(r.df, value, r.row, idx)
+    return setindex!(r.dt, value, r.row, idx)
 end
 
-Base.names(r::DataTableRow) = names(r.df)
-_names(r::DataTableRow) = _names(r.df)
+Base.names(r::DataTableRow) = names(r.dt)
+_names(r::DataTableRow) = _names(r.dt)
 
-Base.view(r::DataTableRow, c) = DataTableRow(r.df[[c]], r.row)
+Base.view(r::DataTableRow, c) = DataTableRow(r.dt[[c]], r.row)
 
-index(r::DataTableRow) = index(r.df)
+index(r::DataTableRow) = index(r.dt)
 
-Base.length(r::DataTableRow) = size(r.df, 2)
+Base.length(r::DataTableRow) = size(r.dt, 2)
 
-Base.endof(r::DataTableRow) = size(r.df, 2)
+Base.endof(r::DataTableRow) = size(r.dt, 2)
 
 Base.collect(r::DataTableRow) = @compat Tuple{Symbol, Any}[x for x in r]
 
@@ -35,12 +35,12 @@ Base.next(r::DataTableRow, s) = ((_names(r)[s], r[s]), s + 1)
 
 Base.done(r::DataTableRow, s) = s > length(r)
 
-Base.convert(::Type{Array}, r::DataTableRow) = convert(Array, r.df[r.row,:])
+Base.convert(::Type{Array}, r::DataTableRow) = convert(Array, r.dt[r.row,:])
 
 # hash of DataTable rows based on its values
 # so that duplicate rows would have the same hash
 function Base.hash(r::DataTableRow, h::UInt)
-    for col in columns(r.df)
+    for col in columns(r.dt)
         if _isnull(col[r.row])
             h = hash(false, h)
         else
@@ -56,9 +56,9 @@ end
 @compat(Base.:(==))(r1::DataTableRow, r2::DataTableRow) = isequal(r1, r2)
 
 function Base.isequal(r1::DataTableRow, r2::DataTableRow)
-    r1.df == r2.df || throw(ArgumentError("Comparing rows from different frames not supported"))
+    r1.dt == r2.dt || throw(ArgumentError("Comparing rows from different frames not supported"))
     r1.row == r2.row && return true
-    for col in columns(r1.df)
+    for col in columns(r1.dt)
         if !isequal(col[r1.row], col[r2.row])
             return false
         end

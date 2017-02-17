@@ -44,15 +44,15 @@ immutable DataTableRegressionModel{M,T} <: RegressionModel
     mm::ModelMatrix{T}
 end
 
-for (modeltype, dfmodeltype) in ((:StatisticalModel, DataTableStatisticalModel),
+for (modeltype, dtmodeltype) in ((:StatisticalModel, DataTableStatisticalModel),
                                  (:RegressionModel, DataTableRegressionModel))
     @eval begin
-        function StatsBase.fit{T<:$modeltype}(::Type{T}, f::Formula, df::AbstractDataTable,
+        function StatsBase.fit{T<:$modeltype}(::Type{T}, f::Formula, dt::AbstractDataTable,
                                               args...; contrasts::Dict = Dict(), kwargs...)
-            mf = ModelFrame(f, df, contrasts=contrasts)
+            mf = ModelFrame(f, dt, contrasts=contrasts)
             mm = ModelMatrix(mf)
             y = model_response(mf)
-            $dfmodeltype(fit(T, mm.m, y, args...; kwargs...), mf, mm)
+            $dtmodeltype(fit(T, mm.m, y, args...; kwargs...), mf, mm)
         end
     end
 end
@@ -73,15 +73,15 @@ StatsBase.r2(mm::DataTableRegressionModel, variant::Symbol) = r2(mm.model, varia
 StatsBase.adjr2(mm::DataTableRegressionModel, variant::Symbol) = adjr2(mm.model, variant)
 
 # Predict function that takes data frame as predictor instead of matrix
-function StatsBase.predict(mm::DataTableRegressionModel, df::AbstractDataTable; kwargs...)
+function StatsBase.predict(mm::DataTableRegressionModel, dt::AbstractDataTable; kwargs...)
     # copy terms, removing outcome if present (ModelFrame will complain if a
     # term is not found in the DataTable and we don't want to remove elements with missing y)
     newTerms = dropresponse!(mm.mf.terms)
     # create new model frame/matrix
-    mf = ModelFrame(newTerms, df; contrasts = mm.mf.contrasts)
+    mf = ModelFrame(newTerms, dt; contrasts = mm.mf.contrasts)
     newX = ModelMatrix(mf).m
     yp = predict(mm, newX; kwargs...)
-    out = NullableArray(eltype(yp), size(df, 1))
+    out = NullableArray(eltype(yp), size(dt, 1))
     out[mf.msng] = yp
     return(out)
 end

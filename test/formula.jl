@@ -152,50 +152,50 @@ module TestFormula
 
     ## b = DataTable()
     ## b["x2"] = DataVector(x2)
-    ## df = interaction_design_matrix(a,b)
-    ## @test df[:,1] == DataVector([0, 10., 0, 0])
-    ## @test df[:,2] == DataVector([0, 0, 11., 0])
-    ## @test df[:,3] == DataVector([0, 0, 0, 12.])
+    ## dt = interaction_design_matrix(a,b)
+    ## @test dt[:,1] == DataVector([0, 10., 0, 0])
+    ## @test dt[:,2] == DataVector([0, 0, 11., 0])
+    ## @test dt[:,3] == DataVector([0, 0, 0, 12.])
 
     #test_group("expanding an singleton expression/symbol into a DataTable")
     ## generalized expand was dropped, too
-    ## df = deepcopy(d)
-    ## r = expand(:x2, df)
+    ## dt = deepcopy(d)
+    ## r = expand(:x2, dt)
     ## @test isa(r, DataTable)
     ## @test r[:,1] == DataVector([9,10,11,12])  # TODO: test float vs int return
 
-    ## df = deepcopy(d)
+    ## dt = deepcopy(d)
     ## ex = :(log(x2))
-    ## r = expand(ex, df)
+    ## r = expand(ex, dt)
     ## @test isa(r, DataTable)
     ## @test r[:,1] == DataVector(log([9,10,11,12]))
 
     # ex = :(x1 & x2)
-    # r = expand(ex, df)
+    # r = expand(ex, dt)
     # @test isa(r, DataTable)
     # @test ncol(r) == 1
     # @test r[:,1] == DataArray([45, 60, 77, 96])
 
-    ## r = expand(:(x1 + x2), df)
+    ## r = expand(:(x1 + x2), dt)
     ## @test isa(r, DataTable)
     ## @test ncol(r) == 2
-    ## @test r[:,1] == DataVector(df["x1"])
-    ## @test r[:,2] == DataVector(df["x2"])
+    ## @test r[:,1] == DataVector(dt["x1"])
+    ## @test r[:,2] == DataVector(dt["x2"])
 
-    ## df["x1"] = CategoricalArray(x1)
-    ## r = expand(:x1, df)
+    ## dt["x1"] = CategoricalArray(x1)
+    ## r = expand(:x1, dt)
     ## @test isa(r, DataTable)
     ## @test ncol(r) == 3
     ## @test r == expand(CategoricalArray(x1), "x1", DataTable())
 
-    ## r = expand(:(x1 + x2), df)
+    ## r = expand(:(x1 + x2), dt)
     ## @test isa(r, DataTable)
     ## @test ncol(r) == 4
     ## @test r[:,1:3] == expand(CategoricalArray(x1), "x1", DataTable())
-    ## @test r[:,4] == DataVector(df["x2"])
+    ## @test r[:,4] == DataVector(dt["x2"])
 
-    ## df["x2"] = CategoricalArray(x2)
-    ## r = expand(:(x1 + x2), df)
+    ## dt["x2"] = CategoricalArray(x2)
+    ## r = expand(:(x1 + x2), dt)
     ## @test isa(r, DataTable)
     ## @test ncol(r) == 6
     ## @test r[:,1:3] == expand(CategoricalArray(x1), "x1", DataTable())
@@ -203,23 +203,23 @@ module TestFormula
 
     #test_group("Creating a model matrix using full formulas: y ~ x1 + x2, etc")
 
-    df = deepcopy(d)
+    dt = deepcopy(d)
     f = y ~ x1 & x2
-    mf = ModelFrame(f, df)
+    mf = ModelFrame(f, dt)
     mm = ModelMatrix(mf)
     @test mm.m == [ones(4) x1.*x2]
     @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     f = y ~ x1 * x2
-    mf = ModelFrame(f, df)
+    mf = ModelFrame(f, dt)
     mm = ModelMatrix(mf)
     @test mm.m == [ones(4) x1 x2 x1.*x2]
     @test mm.m == ModelMatrix{sparsetype}(mf).m
 
-    df[:x1] = CategoricalArray(x1)
+    dt[:x1] = CategoricalArray(x1)
     x1e = [[0, 1, 0, 0] [0, 0, 1, 0] [0, 0, 0, 1]]
     f = y ~ x1 * x2
-    mf = ModelFrame(f, df)
+    mf = ModelFrame(f, dt)
     mm = ModelMatrix(mf)
     @test mm.m == [ones(4) x1e x2 [0, 10, 0, 0] [0, 0, 11, 0] [0, 0, 0, 12]]
     @test mm.m == ModelMatrix{sparsetype}(mf).m
@@ -228,16 +228,16 @@ module TestFormula
 
     ## the log(x2) appears to be broken (again, in The Great Purge, by the
     ## removal of the x -> with(d, x) in the ModelFrame constructor)
-    ## df = deepcopy(d)
+    ## dt = deepcopy(d)
     ## f = y ~ x1 + log(x2)
-    ## mf = ModelFrame(f, df)
+    ## mf = ModelFrame(f, dt)
     ## mm = ModelMatrix(mf)
     ## @test mm.m == [ones(4) x1 log(x2)]
 
-    ## df = deepcopy(d)
-    ## df["x1"] = CategoricalArray([5:8])
+    ## dt = deepcopy(d)
+    ## dt["x1"] = CategoricalArray([5:8])
     ## f = Formula(:(y ~ x1 * (log(x2) + x3)))
-    ## mf = ModelFrame(f, df)
+    ## mf = ModelFrame(f, dt)
     ## mm = ModelMatrix(mf)
     ## @test mm.model_colnames == [
     ##  "(Intercept)"
@@ -256,7 +256,7 @@ module TestFormula
     #test_group("Model frame response variables")
 
     ## also does not work, not sure what used to happen but now it seems that
-    ## the LHS is assumed to be just a single symbol that indexes a DF column
+    ## the LHS is assumed to be just a single symbol that indexes a DT column
 
     ## f = x1 + x2 ~ y + x3
     ## mf = ModelFrame(f, d)
@@ -276,15 +276,15 @@ module TestFormula
     @test mm.m == ModelMatrix{sparsetype}(mf).m
     ## @test model_response(mf) == y''     # fails: Int64 vs. Float64
 
-    df = deepcopy(d)
-    df[:x1] = NullableCategoricalArray(df[:x1])
+    dt = deepcopy(d)
+    dt[:x1] = NullableCategoricalArray(dt[:x1])
 
     f = y ~ x2 + x3 + x3*x2
-    mm = ModelMatrix(ModelFrame(f, df))
+    mm = ModelMatrix(ModelFrame(f, dt))
     @test mm.m == [ones(4) x2 x3 x2.*x3]
-    mm = ModelMatrix(ModelFrame(y ~ x3*x2 + x2 + x3, df))
+    mm = ModelMatrix(ModelFrame(y ~ x3*x2 + x2 + x3, dt))
     @test mm.m == [ones(4) x3 x2 x2.*x3]
-    mm = ModelMatrix(ModelFrame(y ~ x1 + x2 + x3 + x4, df))
+    mm = ModelMatrix(ModelFrame(y ~ x1 + x2 + x3 + x4, dt))
     @test mm.m[:,2] == [0, 1., 0, 0]
     @test mm.m[:,3] == [0, 0, 1., 0]
     @test mm.m[:,4] == [0, 0, 0, 1.]
@@ -292,25 +292,25 @@ module TestFormula
     @test mm.m[:,6] == x3
     @test mm.m[:,7] == x4
 
-    mm = ModelMatrix(ModelFrame(y ~ x2 + x3 + x4, df))
+    mm = ModelMatrix(ModelFrame(y ~ x2 + x3 + x4, dt))
     @test mm.m == [ones(4) x2 x3 x4]
-    mm = ModelMatrix(ModelFrame(y ~ x2 + x2, df))
+    mm = ModelMatrix(ModelFrame(y ~ x2 + x2, dt))
     @test mm.m == [ones(4) x2]
-    mm = ModelMatrix(ModelFrame(y ~ x2*x3 + x2&x3, df))
+    mm = ModelMatrix(ModelFrame(y ~ x2*x3 + x2&x3, dt))
     @test mm.m == [ones(4) x2 x3 x2.*x3]
-    mm = ModelMatrix(ModelFrame(y ~ x2*x3*x4, df))
+    mm = ModelMatrix(ModelFrame(y ~ x2*x3*x4, dt))
     @test mm.m == [ones(4) x2 x3 x4 x2.*x3 x2.*x4 x3.*x4 x2.*x3.*x4]
-    mm = ModelMatrix(ModelFrame(y ~ x2&x3 + x2*x3, df))
+    mm = ModelMatrix(ModelFrame(y ~ x2&x3 + x2*x3, dt))
     @test mm.m == [ones(4) x2 x3 x2.*x3]
 
     f = y ~ x2 & x3 & x4
-    mf = ModelFrame(f, df)
+    mf = ModelFrame(f, dt)
     mm = ModelMatrix(mf)
     @test mm.m == [ones(4) x2.*x3.*x4]
     @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     f = y ~ x1 & x2 & x3
-    mf = ModelFrame(f, df)
+    mf = ModelFrame(f, dt)
     mm = ModelMatrix(mf)
     @test mm.m[:, 2:end] == diagm(x2.*x3)
     @test mm.m == ModelMatrix{sparsetype}(mf).m
@@ -321,10 +321,10 @@ module TestFormula
     ## set_group(d, "odd_predictors", ["x1","x3"])
     ## @test expand(:odd_predictors, d) == d["odd_predictors"]
     ## mf = ModelFrame(Formula(:(y ~ odd_predictors)), d)
-    ## @test mf.df[:,1] == d["y"]
-    ## @test mf.df[:,2] == d["x1"]
-    ## @test mf.df[:,3] == d["x3"]
-    ## @test ncol(mf.df) == 3
+    ## @test mf.dt[:,1] == d["y"]
+    ## @test mf.dt[:,2] == d["x1"]
+    ## @test mf.dt[:,3] == d["x3"]
+    ## @test ncol(mf.dt) == 3
     ## mf = ModelFrame(Formula(:(y ~ odd_predictors * x2)), d)
     ## mm = ModelMatrix(mf)
     ## @test mm.model == [ones(4) x1 x3 x2 x1.*x2 x3.*x2]
@@ -333,12 +333,12 @@ module TestFormula
     ##
     ## FAILS: behavior is wrong when no lower-order terms (1+x1+x2+x1&x2...)
     ##
-    ## df = DataTable(y=1:27,
+    ## dt = DataTable(y=1:27,
     ##                x1 = CategoricalArray(vec([x for x in 1:3, y in 4:6, z in 7:9])),
     ##                x2 = CategoricalArray(vec([y for x in 1:3, y in 4:6, z in 7:9])),
     ##                x3 = CategoricalArray(vec([z for x in 1:3, y in 4:6, z in 7:9])))
     ## f = y ~ x1 & x2 & x3
-    ## mf = ModelFrame(f, df)
+    ## mf = ModelFrame(f, dt)
     ## @test coefnames(mf)[2:end] ==
     ##     vec([string("x1: ", x, " & x2: ", y, " & x3: ", z) for
     ##          x in 2:3,
@@ -346,26 +346,26 @@ module TestFormula
     ##          z in 8:9])
 
     ## mm = ModelMatrix(mf)
-    ## @test mm.m[:,2] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 5) .* (df[:x3].==8)
-    ## @test mm.m[:,3] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 5) .* (df[:x3].==8)
-    ## @test mm.m[:,4] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 6) .* (df[:x3].==8)
-    ## @test mm.m[:,5] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 6) .* (df[:x3].==8)
-    ## @test mm.m[:,6] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 5) .* (df[:x3].==9)
-    ## @test mm.m[:,7] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 5) .* (df[:x3].==9)
-    ## @test mm.m[:,8] == 0. + (df[:x1] .== 2) .* (df[:x2] .== 6) .* (df[:x3].==9)
-    ## @test mm.m[:,9] == 0. + (df[:x1] .== 3) .* (df[:x2] .== 6) .* (df[:x3].==9)
+    ## @test mm.m[:,2] == 0. + (dt[:x1] .== 2) .* (dt[:x2] .== 5) .* (dt[:x3].==8)
+    ## @test mm.m[:,3] == 0. + (dt[:x1] .== 3) .* (dt[:x2] .== 5) .* (dt[:x3].==8)
+    ## @test mm.m[:,4] == 0. + (dt[:x1] .== 2) .* (dt[:x2] .== 6) .* (dt[:x3].==8)
+    ## @test mm.m[:,5] == 0. + (dt[:x1] .== 3) .* (dt[:x2] .== 6) .* (dt[:x3].==8)
+    ## @test mm.m[:,6] == 0. + (dt[:x1] .== 2) .* (dt[:x2] .== 5) .* (dt[:x3].==9)
+    ## @test mm.m[:,7] == 0. + (dt[:x1] .== 3) .* (dt[:x2] .== 5) .* (dt[:x3].==9)
+    ## @test mm.m[:,8] == 0. + (dt[:x1] .== 2) .* (dt[:x2] .== 6) .* (dt[:x3].==9)
+    ## @test mm.m[:,9] == 0. + (dt[:x1] .== 3) .* (dt[:x2] .== 6) .* (dt[:x3].==9)
 
     ## Distributive property of :& over :+
-    df = deepcopy(d)
+    dt = deepcopy(d)
     f = y ~ (x1+x2) & (x3+x4)
-    mf = ModelFrame(f, df)
+    mf = ModelFrame(f, dt)
     mm = ModelMatrix(mf)
     @test mm.m == hcat(ones(4), x1.*x3, x1.*x4, x2.*x3, x2.*x4)
     @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     ## Condensing nested :+ calls
     f = y ~ x1 + (x2 + (x3 + x4))
-    @test ModelMatrix(ModelFrame(f, df)).m == hcat(ones(4), x1, x2, x3, x4)
+    @test ModelMatrix(ModelFrame(f, dt)).m == hcat(ones(4), x1, x2, x3, x4)
 
 
     ## Extra levels in categorical column
@@ -387,7 +387,7 @@ module TestFormula
     @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     ## Same variable on left and right side
-    mf = ModelFrame(x1 ~ x1, df)
+    mf = ModelFrame(x1 ~ x1, dt)
     mm = ModelMatrix(mf)
     mm.m == float(model_response(mf))
 
@@ -531,20 +531,20 @@ mm = ModelMatrix(mf)
 
 
 # Ensure that random effects terms are dropped from coefnames
-df = DataTable(x = [1,2,3], y = [4,5,6])
-mf = ModelFrame(y ~ 1 + (1 | x), df)
+dt = DataTable(x = [1,2,3], y = [4,5,6])
+mf = ModelFrame(y ~ 1 + (1 | x), dt)
 @test coefnames(mf) == ["(Intercept)"]
 
-mf = ModelFrame(y ~ 0 + (1 | x), df)
+mf = ModelFrame(y ~ 0 + (1 | x), dt)
 @test_throws ErrorException ModelMatrix(mf)
 @test coefnames(mf) == Vector{Compat.UTF8String}()
 
 
-# Ensure X is not a view on df column
-df = DataTable(x = [1.0,2.0,3.0], y = [4.0,5.0,6.0])
-mf = ModelFrame(y ~ 0 + x, df)
+# Ensure X is not a view on dt column
+dt = DataTable(x = [1.0,2.0,3.0], y = [4.0,5.0,6.0])
+mf = ModelFrame(y ~ 0 + x, dt)
 X = ModelMatrix(mf).m
 X[1] = 0.0
-@test mf.df[1, :x] === Nullable(1.0)
+@test mf.dt[1, :x] === Nullable(1.0)
 
 end

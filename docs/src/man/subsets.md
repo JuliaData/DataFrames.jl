@@ -5,7 +5,7 @@ A `DataTable` supports many forms of indexing.
 ```julia
 julia> using DataTables
 
-julia> df = DataTable(A = 1:10, B = 2:2:20)
+julia> dt = DataTable(A = 1:10, B = 2:2:20)
 10×2 DataTables.DataTable
 │ Row │ A  │ B  │
 ├─────┼────┼────┤
@@ -24,7 +24,7 @@ julia> df = DataTable(A = 1:10, B = 2:2:20)
 Referring to the first column by index or name:
 
 ```julia
-julia> df[1]
+julia> dt[1]
 10-element NullableArrays.NullableArray{Int64,1}:
   1
   2
@@ -37,7 +37,7 @@ julia> df[1]
   9
  10
 
-julia> df[:A]
+julia> dt[:A]
 10-element NullableArrays.NullableArray{Int64,1}:
   1
   2
@@ -54,17 +54,17 @@ julia> df[:A]
 Refering to the first element of the first column:
 
 ```julia
-julia> df[1, 1]
+julia> dt[1, 1]
 Nullable{Int64}(1)
 
-julia> df[1, :A]
+julia> dt[1, :A]
 Nullable{Int64}(1)
 ```
 
 Selecting a subset of rows by index and an (ordered) subset of columns by name:
 
 ```julia
-julia> df[1:3, [:A, :B]]
+julia> dt[1:3, [:A, :B]]
 3×2 DataTables.DataTable
 │ Row │ A │ B │
 ├─────┼───┼───┤
@@ -72,7 +72,7 @@ julia> df[1:3, [:A, :B]]
 │ 2   │ 2 │ 4 │
 │ 3   │ 3 │ 6 │
 
-julia> df[1:3, [:B, :A]]
+julia> dt[1:3, [:B, :A]]
 3×2 DataTables.DataTable
 │ Row │ B │ A │
 ├─────┼───┼───┤

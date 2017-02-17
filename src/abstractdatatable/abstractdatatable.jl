@@ -25,8 +25,8 @@ The following are normally implemented for AbstractDataTables:
 * [`tail`](@ref) : last `n` rows
 * `convert` : convert to an array
 * `NullableArray` : convert to a NullableArray
-* [`complete_cases`](@ref) : indexes of complete cases (rows with no NA's)
-* [`complete_cases!`](@ref) : remove rows with NA's
+* [`complete_cases`](@ref) : indexes of complete cases (rows with no nulls)
+* [`complete_cases!`](@ref) : remove rows with nulls
 * [`nonunique`](@ref) : indexes of duplicate rows
 * [`unique!`](@ref) : remove duplicate rows
 * `similar` : a DataTable with similar columns as `d`
@@ -67,9 +67,9 @@ abstract AbstractDataTable
 ##
 ##############################################################################
 
-# index(df) => AbstractIndex
-# nrow(df) => Int
-# ncol(df) => Int
+# index(dt) => AbstractIndex
+# nrow(dt) => Int
+# ncol(dt) => Int
 # getindex(...)
 # setindex!(...) exclusive of methods that add new columns
 
@@ -80,36 +80,36 @@ abstract AbstractDataTable
 ##############################################################################
 
 immutable Cols{T <: AbstractDataTable} <: AbstractVector{Any}
-    df::T
+    dt::T
 end
 Base.start(::Cols) = 1
-Base.done(itr::Cols, st) = st > length(itr.df)
-Base.next(itr::Cols, st) = (itr.df[st], st + 1)
-Base.length(itr::Cols) = length(itr.df)
+Base.done(itr::Cols, st) = st > length(itr.dt)
+Base.next(itr::Cols, st) = (itr.dt[st], st + 1)
+Base.length(itr::Cols) = length(itr.dt)
 Base.size(itr::Cols, ix) = ix==1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
-Base.size(itr::Cols) = (length(itr.df),)
+Base.size(itr::Cols) = (length(itr.dt),)
 Base.linearindexing{T}(::Type{Cols{T}}) = Base.LinearFast()
-Base.getindex(itr::Cols, inds...) = getindex(itr.df, inds...)
+Base.getindex(itr::Cols, inds...) = getindex(itr.dt, inds...)
 
 # N.B. where stored as a vector, 'columns(x) = x.vector' is a bit cheaper
-columns{T <: AbstractDataTable}(df::T) = Cols{T}(df)
+columns{T <: AbstractDataTable}(dt::T) = Cols{T}(dt)
 
-Base.names(df::AbstractDataTable) = names(index(df))
-_names(df::AbstractDataTable) = _names(index(df))
+Base.names(dt::AbstractDataTable) = names(index(dt))
+_names(dt::AbstractDataTable) = _names(index(dt))
 
 """
 Set column names
 
 
 ```julia
-names!(df::AbstractDataTable, vals)
+names!(dt::AbstractDataTable, vals)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 * `vals` : column names, normally a Vector{Symbol} the same length as
-  the number of columns in `df`
+  the number of columns in `dt`
 * `allow_duplicates` : if `false` (the default), an error will be raised
   if duplicate names are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
@@ -122,41 +122,41 @@ names!(df::AbstractDataTable, vals)
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-names!(df, [:a, :b, :c])
-names!(df, [:a, :b, :a])  # throws ArgumentError
-names!(df, [:a, :b, :a], allow_duplicates=true)  # renames second :a to :a_1
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+names!(dt, [:a, :b, :c])
+names!(dt, [:a, :b, :a])  # throws ArgumentError
+names!(dt, [:a, :b, :a], allow_duplicates=true)  # renames second :a to :a_1
 ```
 
 """
-function names!(df::AbstractDataTable, vals; allow_duplicates=false)
-    names!(index(df), vals; allow_duplicates=allow_duplicates)
-    return df
+function names!(dt::AbstractDataTable, vals; allow_duplicates=false)
+    names!(index(dt), vals; allow_duplicates=allow_duplicates)
+    return dt
 end
 
-function rename!(df::AbstractDataTable, args...)
-    rename!(index(df), args...)
-    return df
+function rename!(dt::AbstractDataTable, args...)
+    rename!(index(dt), args...)
+    return dt
 end
-rename!(f::Function, df::AbstractDataTable) = rename!(df, f)
+rename!(f::Function, dt::AbstractDataTable) = rename!(dt, f)
 
-rename(df::AbstractDataTable, args...) = rename!(copy(df), args...)
-rename(f::Function, df::AbstractDataTable) = rename(df, f)
+rename(dt::AbstractDataTable, args...) = rename!(copy(dt), args...)
+rename(f::Function, dt::AbstractDataTable) = rename(dt, f)
 
 """
 Rename columns
 
 ```julia
-rename!(df::AbstractDataTable, from::Symbol, to::Symbol)
-rename!(df::AbstractDataTable, d::Associative)
-rename!(f::Function, df::AbstractDataTable)
-rename(df::AbstractDataTable, from::Symbol, to::Symbol)
-rename(f::Function, df::AbstractDataTable)
+rename!(dt::AbstractDataTable, from::Symbol, to::Symbol)
+rename!(dt::AbstractDataTable, d::Associative)
+rename!(f::Function, dt::AbstractDataTable)
+rename(dt::AbstractDataTable, from::Symbol, to::Symbol)
+rename(f::Function, dt::AbstractDataTable)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 * `d` : an Associative type that maps the original name to a new name
 * `f` : a function that has the old column name (a symbol) as input
   and new column name (a symbol) as output
@@ -168,11 +168,11 @@ rename(f::Function, df::AbstractDataTable)
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-rename(x -> @compat(Symbol)(uppercase(string(x))), df)
-rename(df, @compat(Dict(:i=>:A, :x=>:X)))
-rename(df, :y, :Y)
-rename!(df, @compat(Dict(:i=>:A, :x=>:X)))
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+rename(x -> @compat(Symbol)(uppercase(string(x))), dt)
+rename(dt, @compat(Dict(:i=>:A, :x=>:X)))
+rename(dt, :y, :Y)
+rename!(dt, @compat(Dict(:i=>:A, :x=>:X)))
 ```
 
 """
@@ -182,12 +182,12 @@ rename!(df, @compat(Dict(:i=>:A, :x=>:X)))
 Return element types of columns
 
 ```julia
-eltypes(df::AbstractDataTable)
+eltypes(dt::AbstractDataTable)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 
 **Result**
 
@@ -196,26 +196,26 @@ eltypes(df::AbstractDataTable)
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-eltypes(df)
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+eltypes(dt)
 ```
 
 """
-eltypes(df::AbstractDataTable) = map!(eltype, Vector{Type}(size(df,2)), columns(df))
+eltypes(dt::AbstractDataTable) = map!(eltype, Vector{Type}(size(dt,2)), columns(dt))
 
-Base.size(df::AbstractDataTable) = (nrow(df), ncol(df))
-function Base.size(df::AbstractDataTable, i::Integer)
+Base.size(dt::AbstractDataTable) = (nrow(dt), ncol(dt))
+function Base.size(dt::AbstractDataTable, i::Integer)
     if i == 1
-        nrow(df)
+        nrow(dt)
     elseif i == 2
-        ncol(df)
+        ncol(dt)
     else
         throw(ArgumentError("DataTables only have two dimensions"))
     end
 end
 
-Base.length(df::AbstractDataTable) = ncol(df)
-Base.endof(df::AbstractDataTable) = ncol(df)
+Base.length(dt::AbstractDataTable) = ncol(dt)
+Base.endof(dt::AbstractDataTable) = ncol(dt)
 
 Base.ndims(::AbstractDataTable) = 2
 
@@ -225,8 +225,8 @@ Base.ndims(::AbstractDataTable) = 2
 ##
 ##############################################################################
 
-Base.similar(df::AbstractDataTable, dims::Int) =
-    DataTable(Any[similar(x, dims) for x in columns(df)], copy(index(df)))
+Base.similar(dt::AbstractDataTable, dims::Int) =
+    DataTable(Any[similar(x, dims) for x in columns(dt)], copy(index(dt)))
 
 ##############################################################################
 ##
@@ -235,13 +235,13 @@ Base.similar(df::AbstractDataTable, dims::Int) =
 ##############################################################################
 
 # Imported in DataTables.jl for compatibility across Julia 0.4 and 0.5
-@compat(Base.:(==))(df1::AbstractDataTable, df2::AbstractDataTable) = isequal(df1, df2)
+@compat(Base.:(==))(dt1::AbstractDataTable, dt2::AbstractDataTable) = isequal(dt1, dt2)
 
-function Base.isequal(df1::AbstractDataTable, df2::AbstractDataTable)
-    size(df1, 2) == size(df2, 2) || return false
-    isequal(index(df1), index(df2)) || return false
-    for idx in 1:size(df1, 2)
-        isequal(df1[idx], df2[idx]) || return false
+function Base.isequal(dt1::AbstractDataTable, dt2::AbstractDataTable)
+    size(dt1, 2) == size(dt2, 2) || return false
+    isequal(index(dt1), index(dt2)) || return false
+    for idx in 1:size(dt1, 2)
+        isequal(dt1[idx], dt2[idx]) || return false
     end
     return true
 end
@@ -252,9 +252,9 @@ end
 ##
 ##############################################################################
 
-Base.haskey(df::AbstractDataTable, key::Any) = haskey(index(df), key)
-Base.get(df::AbstractDataTable, key::Any, default::Any) = haskey(df, key) ? df[key] : default
-Base.isempty(df::AbstractDataTable) = ncol(df) == 0
+Base.haskey(dt::AbstractDataTable, key::Any) = haskey(index(dt), key)
+Base.get(dt::AbstractDataTable, key::Any, default::Any) = haskey(dt, key) ? dt[key] : default
+Base.isempty(dt::AbstractDataTable) = ncol(dt) == 0
 
 ##############################################################################
 ##
@@ -262,51 +262,51 @@ Base.isempty(df::AbstractDataTable) = ncol(df) == 0
 ##
 ##############################################################################
 
-head(df::AbstractDataTable, r::Int) = df[1:min(r,nrow(df)), :]
-head(df::AbstractDataTable) = head(df, 6)
-tail(df::AbstractDataTable, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
-tail(df::AbstractDataTable) = tail(df, 6)
+head(dt::AbstractDataTable, r::Int) = dt[1:min(r,nrow(dt)), :]
+head(dt::AbstractDataTable) = head(dt, 6)
+tail(dt::AbstractDataTable, r::Int) = dt[max(1,nrow(dt)-r+1):nrow(dt), :]
+tail(dt::AbstractDataTable) = tail(dt, 6)
 
 """
 Show the first or last part of an AbstractDataTable
 
 ```julia
-head(df::AbstractDataTable, r::Int = 6)
-tail(df::AbstractDataTable, r::Int = 6)
+head(dt::AbstractDataTable, r::Int = 6)
+tail(dt::AbstractDataTable, r::Int = 6)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 * `r` : the number of rows to show
 
 **Result**
 
-* `::AbstractDataTable` : the first or last part of `df`
+* `::AbstractDataTable` : the first or last part of `dt`
 
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-head(df)
-tail(df)
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+head(dt)
+tail(dt)
 ```
 
 """
 (head, tail)
 
-# get the structure of a DF
+# get the structure of a DT
 """
 Show the structure of an AbstractDataTable, in a tree-like format
 
 ```julia
-dump(df::AbstractDataTable, n::Int = 5)
-dump(io::IO, df::AbstractDataTable, n::Int = 5)
+dump(dt::AbstractDataTable, n::Int = 5)
+dump(io::IO, dt::AbstractDataTable, n::Int = 5)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 * `n` : the number of levels to show
 * `io` : optional output descriptor
 
@@ -317,34 +317,34 @@ dump(io::IO, df::AbstractDataTable, n::Int = 5)
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-dump(df)
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+dump(dt)
 ```
 
 """
-function Base.dump(io::IO, df::AbstractDataTable, n::Int, indent)
-    println(io, typeof(df), "  $(nrow(df)) observations of $(ncol(df)) variables")
+function Base.dump(io::IO, dt::AbstractDataTable, n::Int, indent)
+    println(io, typeof(dt), "  $(nrow(dt)) observations of $(ncol(dt)) variables")
     if n > 0
-        for (name, col) in eachcol(df)
+        for (name, col) in eachcol(dt)
             print(io, indent, "  ", name, ": ")
             dump(io, col, n - 1, string(indent, "  "))
         end
     end
 end
 
-# summarize the columns of a DF
+# summarize the columns of a DT
 # TODO: clever layout in rows
 """
 Summarize the columns of an AbstractDataTable
 
 ```julia
-describe(df::AbstractDataTable)
-describe(io, df::AbstractDataTable)
+describe(dt::AbstractDataTable)
+describe(io, dt::AbstractDataTable)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 * `io` : optional output descriptor
 
 **Result**
@@ -354,24 +354,24 @@ describe(io, df::AbstractDataTable)
 **Details**
 
 If the column's base type derives from Number, compute the minimum, first
-quantile, median, mean, third quantile, and maximum. NA's are filtered and
+quantile, median, mean, third quantile, and maximum. Nulls are filtered and
 reported separately.
 
-For boolean columns, report trues, falses, and NAs.
+For boolean columns, report trues, falses, and nulls.
 
-For other types, show column characteristics and number of NAs.
+For other types, show column characteristics and number of nulls.
 
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-describe(df)
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+describe(dt)
 ```
 
 """
-StatsBase.describe(df::AbstractDataTable) = describe(STDOUT, df)
-function StatsBase.describe(io, df::AbstractDataTable)
-    for (name, col) in eachcol(df)
+StatsBase.describe(dt::AbstractDataTable) = describe(STDOUT, dt)
+function StatsBase.describe(io, dt::AbstractDataTable)
+    for (name, col) in eachcol(dt)
         println(io, name)
         describe(io, col)
         println(io, )
@@ -380,7 +380,7 @@ end
 StatsBase.describe(nv::AbstractArray) = describe(STDOUT, nv)
 function StatsBase.describe{T<:Number}(io, nv::AbstractArray{T})
     if all(_isnull, nv)
-        println(io, " * All NA * ")
+        println(io, " * All null * ")
         return
     end
     filtered = float(dropnull(nv))
@@ -398,7 +398,7 @@ end
 function StatsBase.describe{T}(io, nv::AbstractArray{T})
     ispooled = isa(nv, CategoricalVector) ? "Pooled " : ""
     nulls = countnull(nv)
-    # if nothing else, just give the length and element type and NA count
+    # if nothing else, just give the length and element type and null count
     println(io, "Length    $(length(nv))")
     println(io, "Type      $(ispooled)$(string(eltype(nv)))")
     println(io, "NULLs     $(nulls)")
@@ -436,12 +436,12 @@ end
 Indexes of complete cases (rows without null values)
 
 ```julia
-complete_cases(df::AbstractDataTable)
+complete_cases(dt::AbstractDataTable)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 
 **Result**
 
@@ -452,17 +452,17 @@ See also [`complete_cases!`](@ref).
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df[[1,4,5], :x] = Nullable()
-df[[9,10], :y] = Nullable()
-complete_cases(df)
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+dt[[1,4,5], :x] = Nullable()
+dt[[9,10], :y] = Nullable()
+complete_cases(dt)
 ```
 
 """
-function complete_cases(df::AbstractDataTable)
-    res = fill(true, size(df, 1))
-    for i in 1:size(df, 2)
-        _nonnull!(res, df[i])
+function complete_cases(dt::AbstractDataTable)
+    res = fill(true, size(dt, 1))
+    for i in 1:size(dt, 2)
+        _nonnull!(res, dt[i])
     end
     res
 end
@@ -471,12 +471,12 @@ end
 Delete rows with null values.
 
 ```julia
-complete_cases!(df::AbstractDataTable)
+complete_cases!(dt::AbstractDataTable)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 
 **Result**
 
@@ -487,31 +487,31 @@ See also [`complete_cases`](@ref).
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df[[1,4,5], :x] = Nullable()
-df[[9,10], :y] = Nullable()
-complete_cases!(df)
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+dt[[1,4,5], :x] = Nullable()
+dt[[9,10], :y] = Nullable()
+complete_cases!(dt)
 ```
 
 """
-complete_cases!(df::AbstractDataTable) = deleterows!(df, find(!complete_cases(df)))
+complete_cases!(dt::AbstractDataTable) = deleterows!(df, find(!complete_cases(dt)))
 
-function Base.convert(::Type{Array}, df::AbstractDataTable)
-    convert(Matrix, df)
+function Base.convert(::Type{Array}, dt::AbstractDataTable)
+    convert(Matrix, dt)
 end
-function Base.convert(::Type{Matrix}, df::AbstractDataTable)
-    T = reduce(promote_type, eltypes(df))
+function Base.convert(::Type{Matrix}, dt::AbstractDataTable)
+    T = reduce(promote_type, eltypes(dt))
     T <: Nullable && (T = eltype(T))
-    convert(Matrix{T}, df)
+    convert(Matrix{T}, dt)
 end
-function Base.convert{T}(::Type{Array{T}}, df::AbstractDataTable)
-    convert(Matrix{T}, df)
+function Base.convert{T}(::Type{Array{T}}, dt::AbstractDataTable)
+    convert(Matrix{T}, dt)
 end
-function Base.convert{T}(::Type{Matrix{T}}, df::AbstractDataTable)
-    n, p = size(df)
+function Base.convert{T}(::Type{Matrix{T}}, dt::AbstractDataTable)
+    n, p = size(dt)
     res = Array(T, n, p)
     idx = 1
-    for (name, col) in zip(names(df), columns(df))
+    for (name, col) in zip(names(dt), columns(dt))
         anynull(col) && error("cannot convert a DataTable containing null values to array (found for column $name)")
         copy!(res, idx, convert(Vector{T}, col))
         idx += n
@@ -519,22 +519,22 @@ function Base.convert{T}(::Type{Matrix{T}}, df::AbstractDataTable)
     return res
 end
 
-function Base.convert(::Type{NullableArray}, df::AbstractDataTable)
-    convert(NullableMatrix, df)
+function Base.convert(::Type{NullableArray}, dt::AbstractDataTable)
+    convert(NullableMatrix, dt)
 end
-function Base.convert(::Type{NullableMatrix}, df::AbstractDataTable)
-    T = reduce(promote_type, eltypes(df))
+function Base.convert(::Type{NullableMatrix}, dt::AbstractDataTable)
+    T = reduce(promote_type, eltypes(dt))
     T <: Nullable && (T = eltype(T))
-    convert(NullableMatrix{T}, df)
+    convert(NullableMatrix{T}, dt)
 end
-function Base.convert{T}(::Type{NullableArray{T}}, df::AbstractDataTable)
-    convert(NullableMatrix{T}, df)
+function Base.convert{T}(::Type{NullableArray{T}}, dt::AbstractDataTable)
+    convert(NullableMatrix{T}, dt)
 end
-function Base.convert{T}(::Type{NullableMatrix{T}}, df::AbstractDataTable)
-    n, p = size(df)
+function Base.convert{T}(::Type{NullableMatrix{T}}, dt::AbstractDataTable)
+    n, p = size(dt)
     res = NullableArray(T, n, p)
     idx = 1
-    for col in columns(df)
+    for col in columns(dt)
         copy!(res, idx, col)
         idx += n
     end
@@ -545,13 +545,13 @@ end
 Indexes of duplicate rows (a row that is a duplicate of a prior row)
 
 ```julia
-nonunique(df::AbstractDataTable)
-nonunique(df::AbstractDataTable, cols)
+nonunique(dt::AbstractDataTable)
+nonunique(dt::AbstractDataTable, cols)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 * `cols` : a column indicator (Symbol, Int, Vector{Symbol}, etc.) specifying the column(s) to compare
 
 **Result**
@@ -564,18 +564,18 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df = vcat(df, df)
-nonunique(df)
-nonunique(df, 1)
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+dt = vcat(dt, dt)
+nonunique(dt)
+nonunique(dt, 1)
 ```
 
 """
-function nonunique(df::AbstractDataTable)
-    res = fill(false, nrow(df))
+function nonunique(dt::AbstractDataTable)
+    res = fill(false, nrow(dt))
     rows = Set{DataTableRow}()
-    for i in 1:nrow(df)
-        arow = DataTableRow(df, i)
+    for i in 1:nrow(dt)
+        arow = DataTableRow(dt, i)
         if in(arow, rows)
             res[i] = true
         else
@@ -585,80 +585,80 @@ function nonunique(df::AbstractDataTable)
     res
 end
 
-nonunique(df::AbstractDataTable, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
-nonunique(df::AbstractDataTable, cols::Any) = nonunique(df[cols])
+nonunique(dt::AbstractDataTable, cols::Union{Real, Symbol}) = nonunique(dt[[cols]])
+nonunique(dt::AbstractDataTable, cols::Any) = nonunique(dt[cols])
 
-unique!(df::AbstractDataTable) = deleterows!(df, find(nonunique(df)))
-unique!(df::AbstractDataTable, cols::Any) = deleterows!(df, find(nonunique(df, cols)))
+unique!(dt::AbstractDataTable) = deleterows!(dt, find(nonunique(dt)))
+unique!(dt::AbstractDataTable, cols::Any) = deleterows!(dt, find(nonunique(dt, cols)))
 
 # Unique rows of an AbstractDataTable.
-Base.unique(df::AbstractDataTable) = df[!nonunique(df), :]
-Base.unique(df::AbstractDataTable, cols::Any) = df[!nonunique(df, cols), :]
+Base.unique(dt::AbstractDataTable) = dt[!nonunique(dt), :]
+Base.unique(dt::AbstractDataTable, cols::Any) = dt[!nonunique(dt, cols), :]
 
 """
 Delete duplicate rows
 
 ```julia
-unique(df::AbstractDataTable)
-unique(df::AbstractDataTable, cols)
-unique!(df::AbstractDataTable)
-unique!(df::AbstractDataTable, cols)
+unique(dt::AbstractDataTable)
+unique(dt::AbstractDataTable, cols)
+unique!(dt::AbstractDataTable)
+unique!(dt::AbstractDataTable, cols)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 * `cols` :  column indicator (Symbol, Int, Vector{Symbol}, etc.)
 specifying the column(s) to compare.
 
 **Result**
 
-* `::AbstractDataTable` : the updated version of `df` with unique rows.
+* `::AbstractDataTable` : the updated version of `dt` with unique rows.
 When `cols` is specified, the return DataTable contains complete rows,
-retaining in each case the first instance for which `df[cols]` is unique.
+retaining in each case the first instance for which `dt[cols]` is unique.
 
 See also [`nonunique`](@ref).
 
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df = vcat(df, df)
-unique(df)   # doesn't modify df
-unique(df, 1)
-unique!(df)  # modifies df
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+dt = vcat(dt, dt)
+unique(dt)   # doesn't modify dt
+unique(dt, 1)
+unique!(dt)  # modifies dt
 ```
 
 """
 (unique, unique!)
 
-function nonuniquekey(df::AbstractDataTable)
+function nonuniquekey(dt::AbstractDataTable)
     # Here's another (probably a lot faster) way to do `nonunique`
     # by grouping on all columns. It will fail if columns cannot be
     # made into CategoricalVector's.
-    gd = groupby(df, _names(df))
+    gd = groupby(dt, _names(dt))
     idx = [1:length(gd.idx)][gd.idx][gd.starts]
-    res = fill(true, nrow(df))
+    res = fill(true, nrow(dt))
     res[idx] = false
     res
 end
 
 # Count the number of missing values in every column of an AbstractDataTable.
-function colmissing(df::AbstractDataTable) # -> Vector{Int}
-    nrows, ncols = size(df)
+function colmissing(dt::AbstractDataTable) # -> Vector{Int}
+    nrows, ncols = size(dt)
     missing = zeros(Int, ncols)
     for j in 1:ncols
-        missing[j] = countnull(df[j])
+        missing[j] = countnull(dt[j])
     end
     return missing
 end
 
-function without(df::AbstractDataTable, icols::Vector{Int})
-    newcols = _setdiff(1:ncol(df), icols)
-    df[newcols]
+function without(dt::AbstractDataTable, icols::Vector{Int})
+    newcols = _setdiff(1:ncol(dt), icols)
+    dt[newcols]
 end
-without(df::AbstractDataTable, i::Int) = without(df, [i])
-without(df::AbstractDataTable, c::Any) = without(df, index(df)[c])
+without(dt::AbstractDataTable, i::Int) = without(dt, [i])
+without(dt::AbstractDataTable, c::Any) = without(dt, index(dt)[c])
 
 ##############################################################################
 ##
@@ -673,34 +673,34 @@ without(df::AbstractDataTable, c::Any) = without(df, index(df)[c])
 # Its first argument (currently) must be a DataTable.
 
 # catch-all to cover cases where indexing returns a DataTable and copy doesn't
-Base.hcat(df::AbstractDataTable, x) = hcat!(df[:, :], x)
+Base.hcat(dt::AbstractDataTable, x) = hcat!(dt[:, :], x)
 
-Base.hcat(df::AbstractDataTable, x, y...) = hcat!(hcat(df, x), y...)
+Base.hcat(dt::AbstractDataTable, x, y...) = hcat!(hcat(dt, x), y...)
 
 # vcat only accepts DataTables. Finds union of columns, maintaining order
-# of first df. Missing data become null values.
+# of first dt. Missing data become null values.
 
-Base.vcat(df::AbstractDataTable) = df
+Base.vcat(dt::AbstractDataTable) = dt
 
-Base.vcat(dfs::AbstractDataTable...) = vcat(AbstractDataTable[dfs...])
+Base.vcat(dts::AbstractDataTable...) = vcat(AbstractDataTable[dts...])
 
-Base.vcat(dfs::Vector{Void}) = dfs
-function Base.vcat{T<:AbstractDataTable}(dfs::Vector{T})
-    isempty(dfs) && return DataTable()
-    coltyps, colnams, similars = _colinfo(dfs)
+Base.vcat(dts::Vector{Void}) = dts
+function Base.vcat{T<:AbstractDataTable}(dts::Vector{T})
+    isempty(dts) && return DataTable()
+    coltyps, colnams, similars = _colinfo(dts)
 
     res = DataTable()
-    Nrow = sum(nrow, dfs)
+    Nrow = sum(nrow, dts)
     for j in 1:length(colnams)
         colnam = colnams[j]
         col = similar(similars[j], coltyps[j], Nrow)
 
         i = 1
-        for df in dfs
-            if haskey(df, colnam)
-                copy!(col, i, df[colnam])
+        for dt in dts
+            if haskey(dt, colnam)
+                copy!(col, i, dt[colnam])
             end
-            i += size(df, 1)
+            i += size(dt, 1)
         end
 
         res[colnam] = col
@@ -711,18 +711,18 @@ end
 _isnullable{T}(::AbstractArray{T}) = T <: Nullable
 const EMPTY_DATA = NullableArray(Void, 0)
 
-function _colinfo{T<:AbstractDataTable}(dfs::Vector{T})
-    df1 = dfs[1]
-    colindex = copy(index(df1))
-    coltyps = eltypes(df1)
-    similars = collect(columns(df1))
-    nonnull_ct = Int[_isnullable(c) for c in columns(df1)]
+function _colinfo{T<:AbstractDataTable}(dts::Vector{T})
+    dt1 = dts[1]
+    colindex = copy(index(dt1))
+    coltyps = eltypes(dt1)
+    similars = collect(columns(dt1))
+    nonnull_ct = Int[_isnullable(c) for c in columns(dt1)]
 
-    for i in 2:length(dfs)
-        df = dfs[i]
-        for j in 1:size(df, 2)
-            col = df[j]
-            cn, ct = _names(df)[j], eltype(col)
+    for i in 2:length(dts)
+        dt = dts[i]
+        for j in 1:size(dt, 2)
+            col = dt[j]
+            cn, ct = _names(dt)[j], eltype(col)
             if haskey(colindex, cn)
                 idx = colindex[cn]
 
@@ -748,7 +748,7 @@ function _colinfo{T<:AbstractDataTable}(dfs::Vector{T})
     end
 
     for j in 1:length(colindex)
-        if nonnull_ct[j] < length(dfs) && !_isnullable(similars[j])
+        if nonnull_ct[j] < length(dts) && !_isnullable(similars[j])
             similars[j] = EMPTY_DATA
         end
     end
@@ -765,10 +765,10 @@ end
 ##
 ##############################################################################
 
-function Base.hash(df::AbstractDataTable)
-    h = hash(size(df)) + 1
-    for i in 1:size(df, 2)
-        h = hash(df[i], h)
+function Base.hash(dt::AbstractDataTable)
+    h = hash(size(dt)) + 1
+    for i in 1:size(dt, 2)
+        h = hash(dt[i], h)
     end
     return @compat UInt(h)
 end
@@ -780,13 +780,13 @@ end
 Number of rows or columns in an AbstractDataTable
 
 ```julia
-nrow(df::AbstractDataTable)
-ncol(df::AbstractDataTable)
+nrow(dt::AbstractDataTable)
+ncol(dt::AbstractDataTable)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataTable
+* `dt` : the AbstractDataTable
 
 **Result**
 
@@ -799,10 +799,10 @@ NOTE: these functions may be depreciated for `size`.
 **Examples**
 
 ```julia
-df = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-size(df)
-nrow(df)
-ncol(df)
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+size(dt)
+nrow(dt)
+ncol(dt)
 ```
 
 """

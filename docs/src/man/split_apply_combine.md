@@ -11,15 +11,15 @@ using DataTables
 iris = readtable(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"))
 
 by(iris, :Species, size)
-by(iris, :Species, df -> mean(dropnull(df[:PetalLength])))
-by(iris, :Species, df -> DataTable(N = size(df, 1)))
+by(iris, :Species, dt -> mean(dropnull(dt[:PetalLength])))
+by(iris, :Species, dt -> DataTable(N = size(dt, 1)))
 ```
 
 The `by` function also support the `do` block form:
 
 ```julia
-by(iris, :Species) do df
-   DataTable(m = mean(dropnull(df[:PetalLength])), s² = var(dropnull(df[:PetalLength])))
+by(iris, :Species) do dt
+   DataTable(m = mean(dropnull(dt[:PetalLength])), s² = var(dropnull(dt[:PetalLength])))
 end
 ```
 
@@ -35,7 +35,7 @@ aggregate(iris, :Species, [sum, x->mean(dropnull(x))])
 If you only want to split the data set into subsets, use the `groupby` function:
 
 ```julia
-for subdf in groupby(iris, :Species)
-    println(size(subdf, 1))
+for subdt in groupby(iris, :Species)
+    println(size(subdt, 1))
 end
 ```

@@ -34,22 +34,22 @@ module TestDataTable
     # Copying
     #
 
-    df = DataTable(a = [2, 3], b = Any[DataTable(c = 1), DataTable(d = 2)])
-    dfc = copy(df)
-    dfdc = deepcopy(df)
+    dt = DataTable(a = [2, 3], b = Any[DataTable(c = 1), DataTable(d = 2)])
+    dtc = copy(dt)
+    dtdc = deepcopy(dt)
 
-    df[1, :a] = 4
-    get(df[1, :b])[:e] = 5
-    names!(df, [:f, :g])
+    dt[1, :a] = 4
+    get(dt[1, :b])[:e] = 5
+    names!(dt, [:f, :g])
 
-    @test names(dfc) == [:a, :b]
-    @test names(dfdc) == [:a, :b]
+    @test names(dtc) == [:a, :b]
+    @test names(dtdc) == [:a, :b]
 
-    @test get(dfc[1, :a]) === 4
-    @test get(dfdc[1, :a]) === 2
+    @test get(dtc[1, :a]) === 4
+    @test get(dtdc[1, :a]) === 2
 
-    @test names(get(dfc[1, :b])) == [:c, :e]
-    @test names(get(dfdc[1, :b])) == [:c]
+    @test names(get(dtc[1, :b])) == [:c, :e]
+    @test names(get(dtdc[1, :b])) == [:c]
 
     #
 
@@ -75,219 +75,219 @@ module TestDataTable
     @test x0[:d] == Int[]
 
     # similar / nulls
-    df = DataTable(a = 1, b = "b", c = CategoricalArray([3.3]))
-    nulldf = DataTable(a = NullableArray(Int, 2),
+    dt = DataTable(a = 1, b = "b", c = CategoricalArray([3.3]))
+    nulldt = DataTable(a = NullableArray(Int, 2),
                        b = NullableArray(String, 2),
                        c = NullableCategoricalArray(Float64, 2))
-    @test isequal(nulldf, similar(df, 2))
-    @test isequal(nulldf, DataTables.similar_nullable(df, 2))
+    @test isequal(nulldt, similar(dt, 2))
+    @test isequal(nulldt, DataTables.similar_nullable(dt, 2))
 
     # Associative methods
 
-    df = DataTable(a=[1, 2], b=[3., 4.])
-    @test haskey(df, :a)
-    @test !haskey(df, :c)
-    @test get(df, :a, -1) === df.columns[1]
-    @test get(df, :c, -1) == -1
-    @test !isempty(df)
+    dt = DataTable(a=[1, 2], b=[3., 4.])
+    @test haskey(dt, :a)
+    @test !haskey(dt, :c)
+    @test get(dt, :a, -1) === dt.columns[1]
+    @test get(dt, :c, -1) == -1
+    @test !isempty(dt)
 
-    @test empty!(df) === df
-    @test isempty(df.columns)
-    @test isempty(df)
+    @test empty!(dt) === dt
+    @test isempty(dt.columns)
+    @test isempty(dt)
 
-    df = DataTable(a=[1, 2], b=[3., 4.])
-    @test_throws BoundsError insert!(df, 5, ["a", "b"], :newcol)
-    @test_throws ErrorException insert!(df, 1, ["a"], :newcol)
-    @test isequal(insert!(df, 1, ["a", "b"], :newcol), df)
-    @test names(df) == [:newcol, :a, :b]
-    @test isequal(df[:a], NullableArray([1, 2]))
-    @test isequal(df[:b], NullableArray([3., 4.]))
-    @test isequal(df[:newcol], ["a", "b"])
+    dt = DataTable(a=[1, 2], b=[3., 4.])
+    @test_throws BoundsError insert!(dt, 5, ["a", "b"], :newcol)
+    @test_throws ErrorException insert!(dt, 1, ["a"], :newcol)
+    @test isequal(insert!(dt, 1, ["a", "b"], :newcol), dt)
+    @test names(dt) == [:newcol, :a, :b]
+    @test isequal(dt[:a], NullableArray([1, 2]))
+    @test isequal(dt[:b], NullableArray([3., 4.]))
+    @test isequal(dt[:newcol], ["a", "b"])
 
-    df = DataTable(a=[1, 2], b=[3., 4.])
-    df2 = DataTable(b=["a", "b"], c=[:c, :d])
-    @test isequal(merge!(df, df2), df)
-    @test isequal(df, DataTable(a=[1, 2], b=["a", "b"], c=[:c, :d]))
+    dt = DataTable(a=[1, 2], b=[3., 4.])
+    dt2 = DataTable(b=["a", "b"], c=[:c, :d])
+    @test isequal(merge!(dt, dt2), dt)
+    @test isequal(dt, DataTable(a=[1, 2], b=["a", "b"], c=[:c, :d]))
 
     #test_group("Empty DataTable constructors")
-    df = DataTable(Int, 10, 3)
-    @test size(df, 1) == 10
-    @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == NullableVector{Int}
-    @test typeof(df[:, 2]) == NullableVector{Int}
-    @test typeof(df[:, 3]) == NullableVector{Int}
-    @test allnull(df[:, 1])
-    @test allnull(df[:, 2])
-    @test allnull(df[:, 3])
+    dt = DataTable(Int, 10, 3)
+    @test size(dt, 1) == 10
+    @test size(dt, 2) == 3
+    @test typeof(dt[:, 1]) == NullableVector{Int}
+    @test typeof(dt[:, 2]) == NullableVector{Int}
+    @test typeof(dt[:, 3]) == NullableVector{Int}
+    @test allnull(dt[:, 1])
+    @test allnull(dt[:, 2])
+    @test allnull(dt[:, 3])
 
-    df = DataTable(Any[Int, Float64, String], 100)
-    @test size(df, 1) == 100
-    @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == NullableVector{Int}
-    @test typeof(df[:, 2]) == NullableVector{Float64}
-    @test typeof(df[:, 3]) == NullableVector{String}
-    @test allnull(df[:, 1])
-    @test allnull(df[:, 2])
-    @test allnull(df[:, 3])
+    dt = DataTable(Any[Int, Float64, String], 100)
+    @test size(dt, 1) == 100
+    @test size(dt, 2) == 3
+    @test typeof(dt[:, 1]) == NullableVector{Int}
+    @test typeof(dt[:, 2]) == NullableVector{Float64}
+    @test typeof(dt[:, 3]) == NullableVector{String}
+    @test allnull(dt[:, 1])
+    @test allnull(dt[:, 2])
+    @test allnull(dt[:, 3])
 
-    df = DataTable(Any[Int, Float64, String], [:A, :B, :C], 100)
-    @test size(df, 1) == 100
-    @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == NullableVector{Int}
-    @test typeof(df[:, 2]) == NullableVector{Float64}
-    @test typeof(df[:, 3]) == NullableVector{String}
-    @test allnull(df[:, 1])
-    @test allnull(df[:, 2])
-    @test allnull(df[:, 3])
-
-
-    df = DataTable(DataType[Int, Float64, Compat.UTF8String],[:A, :B, :C], [false,false,true],100)
-    @test size(df, 1) == 100
-    @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == NullableVector{Int}
-    @test typeof(df[:, 2]) == NullableVector{Float64}
-    @test typeof(df[:, 3]) == NullableCategoricalVector{Compat.UTF8String,UInt32}
-    @test allnull(df[:, 1])
-    @test allnull(df[:, 2])
-    @test allnull(df[:, 3])
+    dt = DataTable(Any[Int, Float64, String], [:A, :B, :C], 100)
+    @test size(dt, 1) == 100
+    @test size(dt, 2) == 3
+    @test typeof(dt[:, 1]) == NullableVector{Int}
+    @test typeof(dt[:, 2]) == NullableVector{Float64}
+    @test typeof(dt[:, 3]) == NullableVector{String}
+    @test allnull(dt[:, 1])
+    @test allnull(dt[:, 2])
+    @test allnull(dt[:, 3])
 
 
-    df = convert(DataTable, zeros(10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == Vector{Float64}
+    dt = DataTable(DataType[Int, Float64, Compat.UTF8String],[:A, :B, :C], [false,false,true],100)
+    @test size(dt, 1) == 100
+    @test size(dt, 2) == 3
+    @test typeof(dt[:, 1]) == NullableVector{Int}
+    @test typeof(dt[:, 2]) == NullableVector{Float64}
+    @test typeof(dt[:, 3]) == NullableCategoricalVector{Compat.UTF8String,UInt32}
+    @test allnull(dt[:, 1])
+    @test allnull(dt[:, 2])
+    @test allnull(dt[:, 3])
 
-    df = convert(DataTable, ones(10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == Vector{Float64}
 
-    df = convert(DataTable, eye(10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == Vector{Float64}
+    dt = convert(DataTable, zeros(10, 5))
+    @test size(dt, 1) == 10
+    @test size(dt, 2) == 5
+    @test typeof(dt[:, 1]) == Vector{Float64}
+
+    dt = convert(DataTable, ones(10, 5))
+    @test size(dt, 1) == 10
+    @test size(dt, 2) == 5
+    @test typeof(dt[:, 1]) == Vector{Float64}
+
+    dt = convert(DataTable, eye(10, 5))
+    @test size(dt, 1) == 10
+    @test size(dt, 2) == 5
+    @test typeof(dt[:, 1]) == Vector{Float64}
 
     #test_group("Other DataTable constructors")
-    df = DataTable([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
+    dt = DataTable([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
                     @compat(Dict{Any,Any}(:a=>3, :b=>'d')),
                     @compat(Dict{Any,Any}(:a=>5))])
-    @test size(df, 1) == 3
-    @test size(df, 2) == 2
-    @test typeof(df[:,:a]) == NullableVector{Int}
-    @test typeof(df[:,:b]) == NullableVector{Char}
+    @test size(dt, 1) == 3
+    @test size(dt, 2) == 2
+    @test typeof(dt[:,:a]) == NullableVector{Int}
+    @test typeof(dt[:,:b]) == NullableVector{Char}
 
-    df = DataTable([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
+    dt = DataTable([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
                     @compat(Dict{Any,Any}(:a=>3, :b=>'d')),
                     @compat(Dict{Any,Any}(:a=>5))],
                    [:a, :b])
-    @test size(df, 1) == 3
-    @test size(df, 2) == 2
-    @test typeof(df[:,:a]) == NullableVector{Int}
-    @test typeof(df[:,:b]) == NullableVector{Char}
+    @test size(dt, 1) == 3
+    @test size(dt, 2) == 2
+    @test typeof(dt[:,:a]) == NullableVector{Int}
+    @test typeof(dt[:,:b]) == NullableVector{Char}
 
     @test DataTable(NullableArray[[1,2,3],[2.5,4.5,6.5]], [:A, :B]) == DataTable(A = [1,2,3], B = [2.5,4.5,6.5])
 
     # This assignment was missing before
-    df = DataTable(Column = [:A])
-    df[1, :Column] = "Testing"
+    dt = DataTable(Column = [:A])
+    dt[1, :Column] = "Testing"
 
     # zero-row datatable and subdatatable test
-    df = DataTable(x=[], y=[])
-    @test nrow(df) == 0
-    df = DataTable(x=[1:3;], y=[3:5;])
-    sdf = view(df, df[:x] .== 4)
-    @test size(sdf, 1) == 0
+    dt = DataTable(x=[], y=[])
+    @test nrow(dt) == 0
+    dt = DataTable(x=[1:3;], y=[3:5;])
+    sdt = view(dt, dt[:x] .== 4)
+    @test size(sdt, 1) == 0
 
     @test hash(convert(DataTable, [1 2; 3 4])) == hash(convert(DataTable, [1 2; 3 4]))
     @test hash(convert(DataTable, [1 2; 3 4])) != hash(convert(DataTable, [1 3; 2 4]))
 
 
-    # push!(df, row)
-    df=DataTable( first=[1,2,3], second=["apple","orange","pear"] )
+    # push!(dt, row)
+    dt=DataTable( first=[1,2,3], second=["apple","orange","pear"] )
 
-    dfb= DataTable( first=[1,2], second=["apple","orange"] )
-    push!(dfb, Any[3,"pear"])
-    @test isequal(df, dfb)
+    dtb= DataTable( first=[1,2], second=["apple","orange"] )
+    push!(dtb, Any[3,"pear"])
+    @test isequal(dt, dtb)
 
-    dfb= DataTable( first=[1,2], second=["apple","orange"] )
-    push!(dfb, (3,"pear"))
-    @test isequal(df, dfb)
+    dtb= DataTable( first=[1,2], second=["apple","orange"] )
+    push!(dtb, (3,"pear"))
+    @test isequal(dt, dtb)
 
-    dfb= DataTable( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, (33.33,"pear"))
+    dtb= DataTable( first=[1,2], second=["apple","orange"] )
+    @test_throws ArgumentError push!(dtb, (33.33,"pear"))
 
-    dfb= DataTable( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, ("coconut",22))
+    dtb= DataTable( first=[1,2], second=["apple","orange"] )
+    @test_throws ArgumentError push!(dtb, ("coconut",22))
 
-    dfb= DataTable( first=[1,2], second=["apple","orange"] )
-    push!(dfb, @compat(Dict(:first=>3, :second=>"pear")))
-    @test isequal(df, dfb)
+    dtb= DataTable( first=[1,2], second=["apple","orange"] )
+    push!(dtb, @compat(Dict(:first=>3, :second=>"pear")))
+    @test isequal(dt, dtb)
 
-    df=DataTable( first=[1,2,3], second=["apple","orange","banana"] )
-    dfb= DataTable( first=[1,2], second=["apple","orange"] )
-    push!(dfb, @compat(Dict("first"=>3, "second"=>"banana")))
-    @test isequal(df, dfb)
+    dt=DataTable( first=[1,2,3], second=["apple","orange","banana"] )
+    dtb= DataTable( first=[1,2], second=["apple","orange"] )
+    push!(dtb, @compat(Dict("first"=>3, "second"=>"banana")))
+    @test isequal(dt, dtb)
 
-    df0= DataTable( first=[1,2], second=["apple","orange"] )
-    dfb= DataTable( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, @compat(Dict(:first=>true, :second=>false)))
-    @test isequal(df0, dfb)
+    dt0= DataTable( first=[1,2], second=["apple","orange"] )
+    dtb= DataTable( first=[1,2], second=["apple","orange"] )
+    @test_throws ArgumentError push!(dtb, @compat(Dict(:first=>true, :second=>false)))
+    @test isequal(dt0, dtb)
 
-    df0= DataTable( first=[1,2], second=["apple","orange"] )
-    dfb= DataTable( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, @compat(Dict("first"=>"chicken", "second"=>"stuff")))
-    @test isequal(df0, dfb)
+    dt0= DataTable( first=[1,2], second=["apple","orange"] )
+    dtb= DataTable( first=[1,2], second=["apple","orange"] )
+    @test_throws ArgumentError push!(dtb, @compat(Dict("first"=>"chicken", "second"=>"stuff")))
+    @test isequal(dt0, dtb)
 
     # delete!
-    df = DataTable(a=1, b=2, c=3, d=4, e=5)
-    @test_throws ArgumentError delete!(df, 0)
-    @test_throws ArgumentError delete!(df, 6)
-    @test_throws KeyError delete!(df, :f)
+    dt = DataTable(a=1, b=2, c=3, d=4, e=5)
+    @test_throws ArgumentError delete!(dt, 0)
+    @test_throws ArgumentError delete!(dt, 6)
+    @test_throws KeyError delete!(dt, :f)
 
-    d = copy(df)
+    d = copy(dt)
     delete!(d, [:a, :e, :c])
     @test names(d) == [:b, :d]
     delete!(d, :b)
-    @test isequal(d, df[[:d]])
+    @test isequal(d, dt[[:d]])
 
-    d = copy(df)
+    d = copy(dt)
     delete!(d, [2, 5, 3])
     @test names(d) == [:a, :d]
     delete!(d, 2)
-    @test isequal(d, df[[:a]])
+    @test isequal(d, dt[[:a]])
 
     # deleterows!
-    df = DataTable(a=[1, 2], b=[3., 4.])
-    @test deleterows!(df, 1) === df
-    @test isequal(df, DataTable(a=[2], b=[4.]))
+    dt = DataTable(a=[1, 2], b=[3., 4.])
+    @test deleterows!(dt, 1) === dt
+    @test isequal(dt, DataTable(a=[2], b=[4.]))
 
-    df = DataTable(a=[1, 2], b=[3., 4.])
-    @test deleterows!(df, 2) === df
-    @test isequal(df, DataTable(a=[1], b=[3.]))
+    dt = DataTable(a=[1, 2], b=[3., 4.])
+    @test deleterows!(dt, 2) === dt
+    @test isequal(dt, DataTable(a=[1], b=[3.]))
 
-    df = DataTable(a=[1, 2, 3], b=[3., 4., 5.])
-    @test deleterows!(df, 2:3) === df
-    @test isequal(df, DataTable(a=[1], b=[3.]))
+    dt = DataTable(a=[1, 2, 3], b=[3., 4., 5.])
+    @test deleterows!(dt, 2:3) === dt
+    @test isequal(dt, DataTable(a=[1], b=[3.]))
 
-    df = DataTable(a=[1, 2, 3], b=[3., 4., 5.])
-    @test deleterows!(df, [2, 3]) === df
-    @test isequal(df, DataTable(a=[1], b=[3.]))
+    dt = DataTable(a=[1, 2, 3], b=[3., 4., 5.])
+    @test deleterows!(dt, [2, 3]) === dt
+    @test isequal(dt, DataTable(a=[1], b=[3.]))
 
-    df = DataTable(a=NullableArray([1, 2]), b=NullableArray([3., 4.]))
-    @test deleterows!(df, 1) === df
-    @test isequal(df, DataTable(a=NullableArray([2]), b=NullableArray([4.])))
+    dt = DataTable(a=NullableArray([1, 2]), b=NullableArray([3., 4.]))
+    @test deleterows!(dt, 1) === dt
+    @test isequal(dt, DataTable(a=NullableArray([2]), b=NullableArray([4.])))
 
-    df = DataTable(a=NullableArray([1, 2]), b=NullableArray([3., 4.]))
-    @test deleterows!(df, 2) === df
-    @test isequal(df, DataTable(a=NullableArray([1]), b=NullableArray([3.])))
+    dt = DataTable(a=NullableArray([1, 2]), b=NullableArray([3., 4.]))
+    @test deleterows!(dt, 2) === dt
+    @test isequal(dt, DataTable(a=NullableArray([1]), b=NullableArray([3.])))
 
-    df = DataTable(a=NullableArray([1, 2, 3]), b=NullableArray([3., 4., 5.]))
-    @test deleterows!(df, 2:3) === df
-    @test isequal(df, DataTable(a=NullableArray([1]), b=NullableArray([3.])))
+    dt = DataTable(a=NullableArray([1, 2, 3]), b=NullableArray([3., 4., 5.]))
+    @test deleterows!(dt, 2:3) === dt
+    @test isequal(dt, DataTable(a=NullableArray([1]), b=NullableArray([3.])))
 
-    df = DataTable(a=NullableArray([1, 2, 3]), b=NullableArray([3., 4., 5.]))
-    @test deleterows!(df, [2, 3]) === df
-    @test isequal(df, DataTable(a=NullableArray([1]), b=NullableArray([3.])))
+    dt = DataTable(a=NullableArray([1, 2, 3]), b=NullableArray([3., 4., 5.]))
+    @test deleterows!(dt, [2, 3]) === dt
+    @test isequal(dt, DataTable(a=NullableArray([1]), b=NullableArray([3.])))
 
     # describe
     #suppress output and test that describe() does not throw
@@ -309,25 +309,25 @@ module TestDataTable
     end
 
     #Check the output of unstack
-    df = DataTable(Fish = CategoricalArray(["Bob", "Bob", "Batman", "Batman"]),
+    dt = DataTable(Fish = CategoricalArray(["Bob", "Bob", "Batman", "Batman"]),
                    Key = ["Mass", "Color", "Mass", "Color"],
                    Value = ["12 g", "Red", "18 g", "Grey"])
     # Check that reordering levels does not confuse unstack
-    levels!(df[1], ["XXX", "Bob", "Batman"])
+    levels!(dt[1], ["XXX", "Bob", "Batman"])
     #Unstack specifying a row column
-    df2 = unstack(df,:Fish, :Key, :Value)
+    dt2 = unstack(dt,:Fish, :Key, :Value)
     #Unstack without specifying a row column
-    df3 = unstack(df,:Key, :Value)
+    dt3 = unstack(dt,:Key, :Value)
     #The expected output
-    df4 = DataTable(Fish = ["XXX", "Bob", "Batman"],
+    dt4 = DataTable(Fish = ["XXX", "Bob", "Batman"],
                     Color = Nullable{String}[Nullable(), "Red", "Grey"],
                     Mass = Nullable{String}[Nullable(), "12 g", "18 g"])
-    @test isequal(df2, df4)
-    @test isequal(df3, df4[2:3, :])
+    @test isequal(dt2, dt4)
+    @test isequal(dt3, dt4[2:3, :])
     #Make sure unstack works with NULLs at the start of the value column
-    df[1,:Value] = Nullable()
-    df2 = unstack(df,:Fish, :Key, :Value)
+    dt[1,:Value] = Nullable()
+    dt2 = unstack(dt,:Fish, :Key, :Value)
     #This changes the expected result
-    df4[2,:Mass] = Nullable()
-    @test isequal(df2, df4)
+    dt4[2,:Mass] = Nullable()
+    @test isequal(dt2, dt4)
 end

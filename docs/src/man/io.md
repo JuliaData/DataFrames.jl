@@ -23,7 +23,7 @@ writetable
 You can also provide CSV-like tabular data in a non-standard string literal to construct a new `DataTable`, as in the following:
 
 ```julia
-df = csv"""
+dt = csv"""
     name,  age, squidPerWeek
     Alice,  36,         3.14
     Bob,    24,         0
@@ -35,7 +35,7 @@ df = csv"""
 The `csv` string literal prefix indicates that the data are supplied in standard comma-separated value format. Common alternative formats are also available as string literals. For semicolon-separated values, with comma as a decimal, use `csv2`:
 
 ```julia
-df = csv2"""
+dt = csv2"""
     name;  age; squidPerWeek
     Alice;  36;         3,14
     Bob;    24;         0
@@ -47,7 +47,7 @@ df = csv2"""
 For whitespace-separated values, use `wsv`:
 
 ```julia
-df = wsv"""
+dt = wsv"""
     name  age squidPerWeek
     Alice  36         3.14
     Bob    24         0
@@ -59,7 +59,7 @@ df = wsv"""
 And for tab-separated values, use `tsv`:
 
 ```julia
-df = tsv"""
+dt = tsv"""
     name	age	squidPerWeek
     Alice	36	3.14
     Bob	24	0

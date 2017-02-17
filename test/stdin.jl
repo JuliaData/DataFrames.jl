@@ -1,6 +1,6 @@
 using DataTables
 
-df = readtable(STDIN)
+dt = readtable(STDIN)
 
 io = IOBuffer()
-print(io, df)
+print(io, dt)

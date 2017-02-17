@@ -46,26 +46,26 @@ loops.
 **Examples**
 
 ```julia
-df = DataTable()
+dt = DataTable()
 v = ["x","y","z"][rand(1:3, 10)]
-df1 = DataTable(Any[collect(1:10), v, rand(10)], [:A, :B, :C])  # columns are Arrays
-df2 = DataTable(A = 1:10, B = v, C = rand(10))           # columns are NullableArrays
-dump(df1)
-dump(df2)
-describe(df2)
-DataTables.head(df1)
-df1[:A] + df2[:C]
-df1[1:4, 1:2]
-df1[[:A,:C]]
-df1[1:2, [:A,:C]]
-df1[:, [:A,:C]]
-df1[:, [1,3]]
-df1[1:4, :]
-df1[1:4, :C]
-df1[1:4, :C] = 40. * df1[1:4, :C]
-[df1; df2]  # vcat
-[df1  df2]  # hcat
-size(df1)
+dt1 = DataTable(Any[collect(1:10), v, rand(10)], [:A, :B, :C])  # columns are Arrays
+dt2 = DataTable(A = 1:10, B = v, C = rand(10))           # columns are NullableArrays
+dump(dt1)
+dump(dt2)
+describe(dt2)
+DataTables.head(dt1)
+dt1[:A] + dt2[:C]
+dt1[1:4, 1:2]
+dt1[[:A,:C]]
+dt1[1:2, [:A,:C]]
+dt1[:, [:A,:C]]
+dt1[:, [1,3]]
+dt1[1:4, :]
+dt1[1:4, :C]
+dt1[1:4, :C] = 40. * dt1[1:4, :C]
+[dt1; dt2]  # vcat
+[dt1  dt2]  # hcat
+size(dt1)
 ```
 
 """
@@ -177,14 +177,14 @@ function DataTable{D <: Associative}(ds::Vector{D}, ks::Vector)
     col_eltypes[col_eltypes .== @compat(Union{})] = Any
 
     # create empty DataTable, and fill
-    df = DataTable(col_eltypes, ks, length(ds))
+    dt = DataTable(col_eltypes, ks, length(ds))
     for (i,d) in enumerate(ds)
         for (j,k) in enumerate(ks)
-            df[i,j] = get(d, k, Nullable())
+            dt[i,j] = get(d, k, Nullable())
         end
     end
 
-    df
+    dt
 end
 
 ##############################################################################
@@ -193,12 +193,12 @@ end
 ##
 ##############################################################################
 
-index(df::DataTable) = df.colindex
-columns(df::DataTable) = df.columns
+index(dt::DataTable) = dt.colindex
+columns(dt::DataTable) = dt.columns
 
 # TODO: Remove these
-nrow(df::DataTable) = ncol(df) > 0 ? length(df.columns[1])::Int : 0
-ncol(df::DataTable) = length(index(df))
+nrow(dt::DataTable) = ncol(dt) > 0 ? length(dt.columns[1])::Int : 0
+ncol(dt::DataTable) = length(index(dt))
 
 ##############################################################################
 ##
@@ -208,97 +208,97 @@ ncol(df::DataTable) = length(index(df))
 
 # Cases:
 #
-# df[SingleColumnIndex] => AbstractDataVector
-# df[MultiColumnIndex] => DataTable
-# df[SingleRowIndex, SingleColumnIndex] => Scalar
-# df[SingleRowIndex, MultiColumnIndex] => DataTable
-# df[MultiRowIndex, SingleColumnIndex] => AbstractVector
-# df[MultiRowIndex, MultiColumnIndex] => DataTable
+# dt[SingleColumnIndex] => AbstractDataVector
+# dt[MultiColumnIndex] => DataTable
+# dt[SingleRowIndex, SingleColumnIndex] => Scalar
+# dt[SingleRowIndex, MultiColumnIndex] => DataTable
+# dt[MultiRowIndex, SingleColumnIndex] => AbstractVector
+# dt[MultiRowIndex, MultiColumnIndex] => DataTable
 #
 # General Strategy:
 #
-# Let getindex(index(df), col_inds) from Index() handle the resolution
+# Let getindex(index(dt), col_inds) from Index() handle the resolution
 #  of column indices
-# Let getindex(df.columns[j], row_inds) from AbstractVector() handle
+# Let getindex(dt.columns[j], row_inds) from AbstractVector() handle
 #  the resolution of row indices
 
 typealias ColumnIndex @compat(Union{Real, Symbol})
 
-# df[SingleColumnIndex] => AbstractDataVector
-function Base.getindex(df::DataTable, col_ind::ColumnIndex)
-    selected_column = index(df)[col_ind]
-    return df.columns[selected_column]
+# dt[SingleColumnIndex] => AbstractDataVector
+function Base.getindex(dt::DataTable, col_ind::ColumnIndex)
+    selected_column = index(dt)[col_ind]
+    return dt.columns[selected_column]
 end
 
-# df[MultiColumnIndex] => DataTable
-function Base.getindex{T <: ColumnIndex}(df::DataTable,
+# dt[MultiColumnIndex] => DataTable
+function Base.getindex{T <: ColumnIndex}(dt::DataTable,
                                          col_inds::Union{AbstractVector{T},
                                                          AbstractVector{Nullable{T}}})
-    selected_columns = index(df)[col_inds]
-    new_columns = df.columns[selected_columns]
-    return DataTable(new_columns, Index(_names(df)[selected_columns]))
+    selected_columns = index(dt)[col_inds]
+    new_columns = dt.columns[selected_columns]
+    return DataTable(new_columns, Index(_names(dt)[selected_columns]))
 end
 
-# df[:] => DataTable
-Base.getindex(df::DataTable, col_inds::Colon) = copy(df)
+# dt[:] => DataTable
+Base.getindex(dt::DataTable, col_inds::Colon) = copy(dt)
 
-# df[SingleRowIndex, SingleColumnIndex] => Scalar
-function Base.getindex(df::DataTable, row_ind::Real, col_ind::ColumnIndex)
-    selected_column = index(df)[col_ind]
-    return df.columns[selected_column][row_ind]
+# dt[SingleRowIndex, SingleColumnIndex] => Scalar
+function Base.getindex(dt::DataTable, row_ind::Real, col_ind::ColumnIndex)
+    selected_column = index(dt)[col_ind]
+    return dt.columns[selected_column][row_ind]
 end
 
-# df[SingleRowIndex, MultiColumnIndex] => DataTable
-function Base.getindex{T <: ColumnIndex}(df::DataTable,
+# dt[SingleRowIndex, MultiColumnIndex] => DataTable
+function Base.getindex{T <: ColumnIndex}(dt::DataTable,
                                          row_ind::Real,
                                          col_inds::Union{AbstractVector{T},
                                                          AbstractVector{Nullable{T}}})
-    selected_columns = index(df)[col_inds]
-    new_columns = Any[dv[[row_ind]] for dv in df.columns[selected_columns]]
-    return DataTable(new_columns, Index(_names(df)[selected_columns]))
+    selected_columns = index(dt)[col_inds]
+    new_columns = Any[dv[[row_ind]] for dv in dt.columns[selected_columns]]
+    return DataTable(new_columns, Index(_names(dt)[selected_columns]))
 end
 
-# df[MultiRowIndex, SingleColumnIndex] => AbstractVector
-function Base.getindex{T <: Real}(df::DataTable,
+# dt[MultiRowIndex, SingleColumnIndex] => AbstractVector
+function Base.getindex{T <: Real}(dt::DataTable,
                                   row_inds::Union{AbstractVector{T}, AbstractVector{Nullable{T}}},
                                   col_ind::ColumnIndex)
-    selected_column = index(df)[col_ind]
-    return df.columns[selected_column][row_inds]
+    selected_column = index(dt)[col_ind]
+    return dt.columns[selected_column][row_inds]
 end
 
-# df[MultiRowIndex, MultiColumnIndex] => DataTable
-function Base.getindex{R <: Real, T <: ColumnIndex}(df::DataTable,
+# dt[MultiRowIndex, MultiColumnIndex] => DataTable
+function Base.getindex{R <: Real, T <: ColumnIndex}(dt::DataTable,
                                                     row_inds::Union{AbstractVector{R},
                                                                     AbstractVector{Nullable{R}}},
                                                     col_inds::Union{AbstractVector{T},
                                                                     AbstractVector{Nullable{T}}})
-    selected_columns = index(df)[col_inds]
-    new_columns = Any[dv[row_inds] for dv in df.columns[selected_columns]]
-    return DataTable(new_columns, Index(_names(df)[selected_columns]))
+    selected_columns = index(dt)[col_inds]
+    new_columns = Any[dv[row_inds] for dv in dt.columns[selected_columns]]
+    return DataTable(new_columns, Index(_names(dt)[selected_columns]))
 end
 
-# df[:, SingleColumnIndex] => AbstractVector
-# df[:, MultiColumnIndex] => DataTable
-Base.getindex{T<:ColumnIndex}(df::DataTable,
+# dt[:, SingleColumnIndex] => AbstractVector
+# dt[:, MultiColumnIndex] => DataTable
+Base.getindex{T<:ColumnIndex}(dt::DataTable,
                               row_inds::Colon,
                               col_inds::Union{T, AbstractVector{T},
                                               AbstractVector{Nullable{T}}}) =
-    df[col_inds]
+    dt[col_inds]
 
-# df[SingleRowIndex, :] => DataTable
-Base.getindex(df::DataTable, row_ind::Real, col_inds::Colon) = df[[row_ind], col_inds]
+# dt[SingleRowIndex, :] => DataTable
+Base.getindex(dt::DataTable, row_ind::Real, col_inds::Colon) = dt[[row_ind], col_inds]
 
-# df[MultiRowIndex, :] => DataTable
-function Base.getindex{R<:Real}(df::DataTable,
+# dt[MultiRowIndex, :] => DataTable
+function Base.getindex{R<:Real}(dt::DataTable,
                                 row_inds::Union{AbstractVector{R},
                                                 AbstractVector{Nullable{R}}},
                                 col_inds::Colon)
-    new_columns = Any[dv[row_inds] for dv in df.columns]
-    return DataTable(new_columns, copy(index(df)))
+    new_columns = Any[dv[row_inds] for dv in dt.columns]
+    return DataTable(new_columns, copy(index(dt)))
 end
 
-# df[:, :] => (Sub)?DataTable
-Base.getindex(df::DataTable, ::Colon, ::Colon) = copy(df)
+# dt[:, :] => (Sub)?DataTable
+Base.getindex(dt::DataTable, ::Colon, ::Colon) = copy(dt)
 
 ##############################################################################
 ##
@@ -306,34 +306,34 @@ Base.getindex(df::DataTable, ::Colon, ::Colon) = copy(df)
 ##
 ##############################################################################
 
-isnextcol(df::DataTable, col_ind::Symbol) = true
-function isnextcol(df::DataTable, col_ind::Real)
-    return ncol(df) + 1 == @compat Int(col_ind)
+isnextcol(dt::DataTable, col_ind::Symbol) = true
+function isnextcol(dt::DataTable, col_ind::Real)
+    return ncol(dt) + 1 == @compat Int(col_ind)
 end
 
-function nextcolname(df::DataTable)
-    return @compat(Symbol(string("x", ncol(df) + 1)))
+function nextcolname(dt::DataTable)
+    return @compat(Symbol(string("x", ncol(dt) + 1)))
 end
 
 # Will automatically add a new column if needed
-function insert_single_column!(df::DataTable,
+function insert_single_column!(dt::DataTable,
                                dv::AbstractVector,
                                col_ind::ColumnIndex)
 
-    if ncol(df) != 0 && nrow(df) != length(dv)
+    if ncol(dt) != 0 && nrow(dt) != length(dv)
         error("New columns must have the same length as old columns")
     end
-    if haskey(index(df), col_ind)
-        j = index(df)[col_ind]
-        df.columns[j] = dv
+    if haskey(index(dt), col_ind)
+        j = index(dt)[col_ind]
+        dt.columns[j] = dv
     else
         if typeof(col_ind) <: Symbol
-            push!(index(df), col_ind)
-            push!(df.columns, dv)
+            push!(index(dt), col_ind)
+            push!(dt.columns, dv)
         else
-            if isnextcol(df, col_ind)
-                push!(index(df), nextcolname(df))
-                push!(df.columns, dv)
+            if isnextcol(dt, col_ind)
+                push!(index(dt), nextcolname(dt))
+                push!(dt.columns, dv)
             else
                 error("Cannot assign to non-existent column: $col_ind")
             end
@@ -342,21 +342,21 @@ function insert_single_column!(df::DataTable,
     return dv
 end
 
-function insert_single_entry!(df::DataTable, v::Any, row_ind::Real, col_ind::ColumnIndex)
-    if haskey(index(df), col_ind)
-        df.columns[index(df)[col_ind]][row_ind] = v
+function insert_single_entry!(dt::DataTable, v::Any, row_ind::Real, col_ind::ColumnIndex)
+    if haskey(index(dt), col_ind)
+        dt.columns[index(dt)[col_ind]][row_ind] = v
         return v
     else
         error("Cannot assign to non-existent column: $col_ind")
     end
 end
 
-function insert_multiple_entries!{T <: Real}(df::DataTable,
+function insert_multiple_entries!{T <: Real}(dt::DataTable,
                                             v::Any,
                                             row_inds::AbstractVector{T},
                                             col_ind::ColumnIndex)
-    if haskey(index(df), col_ind)
-        df.columns[index(df)[col_ind]][row_inds] = v
+    if haskey(index(dt), col_ind)
+        dt.columns[index(dt)[col_ind]][row_inds] = v
         return v
     else
         error("Cannot assign to non-existent column: $col_ind")
@@ -367,264 +367,264 @@ upgrade_vector{T<:Nullable}(v::AbstractArray{T}) = v
 upgrade_vector(v::CategoricalArray) = NullableCategoricalArray(v)
 upgrade_vector(v::AbstractArray) = NullableArray(v)
 
-function upgrade_scalar(df::DataTable, v::AbstractArray)
+function upgrade_scalar(dt::DataTable, v::AbstractArray)
     msg = "setindex!(::DataTable, ...) only broadcasts scalars, not arrays"
     throw(ArgumentError(msg))
 end
-function upgrade_scalar(df::DataTable, v::Any)
-    n = (ncol(df) == 0) ? 1 : nrow(df)
+function upgrade_scalar(dt::DataTable, v::Any)
+    n = (ncol(dt) == 0) ? 1 : nrow(dt)
     NullableArray(fill(v, n))
 end
 
-# df[SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataTable,
+# dt[SingleColumnIndex] = AbstractVector
+function Base.setindex!(dt::DataTable,
                 v::AbstractVector,
                 col_ind::ColumnIndex)
-    insert_single_column!(df, upgrade_vector(v), col_ind)
+    insert_single_column!(dt, upgrade_vector(v), col_ind)
 end
 
-# df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(DF) if NCOL(DF) > 0)
-function Base.setindex!(df::DataTable, v, col_ind::ColumnIndex)
-    if haskey(index(df), col_ind)
-        fill!(df[col_ind], v)
+# dt[SingleColumnIndex] = Single Item (EXPANDS TO NROW(DT) if NCOL(DT) > 0)
+function Base.setindex!(dt::DataTable, v, col_ind::ColumnIndex)
+    if haskey(index(dt), col_ind)
+        fill!(dt[col_ind], v)
     else
-        insert_single_column!(df, upgrade_scalar(df, v), col_ind)
+        insert_single_column!(dt, upgrade_scalar(dt, v), col_ind)
     end
-    return df
+    return dt
 end
 
-# df[MultiColumnIndex] = DataTable
-function Base.setindex!(df::DataTable,
-                new_df::DataTable,
+# dt[MultiColumnIndex] = DataTable
+function Base.setindex!(dt::DataTable,
+                new_dt::DataTable,
                 col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, find(col_inds))
+    setindex!(dt, new_dt, find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(df::DataTable,
-                                  new_df::DataTable,
+function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
+                                  new_dt::DataTable,
                                   col_inds::AbstractVector{T})
     for j in 1:length(col_inds)
-        insert_single_column!(df, new_df[j], col_inds[j])
+        insert_single_column!(dt, new_dt[j], col_inds[j])
     end
-    return df
+    return dt
 end
 
-# df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
-function Base.setindex!(df::DataTable,
+# dt[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
+function Base.setindex!(dt::DataTable,
                 v::AbstractVector,
                 col_inds::AbstractVector{Bool})
-    setindex!(df, v, find(col_inds))
+    setindex!(dt, v, find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(df::DataTable,
+function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
                                   v::AbstractVector,
                                   col_inds::AbstractVector{T})
     dv = upgrade_vector(v)
     for col_ind in col_inds
-        df[col_ind] = dv
+        dt[col_ind] = dv
     end
-    return df
+    return dt
 end
 
-# df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(DF) if NCOL(DF) > 0)
-function Base.setindex!(df::DataTable,
+# dt[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(DT) if NCOL(DT) > 0)
+function Base.setindex!(dt::DataTable,
                 val::Any,
                 col_inds::AbstractVector{Bool})
-    setindex!(df, val, find(col_inds))
+    setindex!(dt, val, find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(df::DataTable,
+function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
                                   val::Any,
                                   col_inds::AbstractVector{T})
     for col_ind in col_inds
-        df[col_ind] = val
+        dt[col_ind] = val
     end
-    return df
+    return dt
 end
 
-# df[:] = AbstractVector or Single Item
-Base.setindex!(df::DataTable, v, ::Colon) = (df[1:size(df, 2)] = v; df)
+# dt[:] = AbstractVector or Single Item
+Base.setindex!(dt::DataTable, v, ::Colon) = (dt[1:size(dt, 2)] = v; dt)
 
-# df[SingleRowIndex, SingleColumnIndex] = Single Item
-function Base.setindex!(df::DataTable,
+# dt[SingleRowIndex, SingleColumnIndex] = Single Item
+function Base.setindex!(dt::DataTable,
                 v::Any,
                 row_ind::Real,
                 col_ind::ColumnIndex)
-    insert_single_entry!(df, v, row_ind, col_ind)
+    insert_single_entry!(dt, v, row_ind, col_ind)
 end
 
-# df[SingleRowIndex, MultiColumnIndex] = Single Item
-function Base.setindex!(df::DataTable,
+# dt[SingleRowIndex, MultiColumnIndex] = Single Item
+function Base.setindex!(dt::DataTable,
                 v::Any,
                 row_ind::Real,
                 col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_ind, find(col_inds))
+    setindex!(dt, v, row_ind, find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(df::DataTable,
+function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
                                   v::Any,
                                   row_ind::Real,
                                   col_inds::AbstractVector{T})
     for col_ind in col_inds
-        insert_single_entry!(df, v, row_ind, col_ind)
+        insert_single_entry!(dt, v, row_ind, col_ind)
     end
-    return df
+    return dt
 end
 
-# df[SingleRowIndex, MultiColumnIndex] = 1-Row DataTable
-function Base.setindex!(df::DataTable,
-                new_df::DataTable,
+# dt[SingleRowIndex, MultiColumnIndex] = 1-Row DataTable
+function Base.setindex!(dt::DataTable,
+                new_dt::DataTable,
                 row_ind::Real,
                 col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_ind, find(col_inds))
+    setindex!(dt, new_dt, row_ind, find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(df::DataTable,
-                                  new_df::DataTable,
+function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
+                                  new_dt::DataTable,
                                   row_ind::Real,
                                   col_inds::AbstractVector{T})
     for j in 1:length(col_inds)
-        insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
+        insert_single_entry!(dt, new_dt[j][1], row_ind, col_inds[j])
     end
-    return df
+    return dt
 end
 
-# df[MultiRowIndex, SingleColumnIndex] = AbstractVector
-function Base.setindex!(df::DataTable,
+# dt[MultiRowIndex, SingleColumnIndex] = AbstractVector
+function Base.setindex!(dt::DataTable,
                 v::AbstractVector,
                 row_inds::AbstractVector{Bool},
                 col_ind::ColumnIndex)
-    setindex!(df, v, find(row_inds), col_ind)
+    setindex!(dt, v, find(row_inds), col_ind)
 end
-function Base.setindex!{T <: Real}(df::DataTable,
+function Base.setindex!{T <: Real}(dt::DataTable,
                            v::AbstractVector,
                            row_inds::AbstractVector{T},
                            col_ind::ColumnIndex)
-    insert_multiple_entries!(df, v, row_inds, col_ind)
-    return df
+    insert_multiple_entries!(dt, v, row_inds, col_ind)
+    return dt
 end
 
-# df[MultiRowIndex, SingleColumnIndex] = Single Item
-function Base.setindex!(df::DataTable,
+# dt[MultiRowIndex, SingleColumnIndex] = Single Item
+function Base.setindex!(dt::DataTable,
                 v::Any,
                 row_inds::AbstractVector{Bool},
                 col_ind::ColumnIndex)
-    setindex!(df, v, find(row_inds), col_ind)
+    setindex!(dt, v, find(row_inds), col_ind)
 end
-function Base.setindex!{T <: Real}(df::DataTable,
+function Base.setindex!{T <: Real}(dt::DataTable,
                            v::Any,
                            row_inds::AbstractVector{T},
                            col_ind::ColumnIndex)
-    insert_multiple_entries!(df, v, row_inds, col_ind)
-    return df
+    insert_multiple_entries!(dt, v, row_inds, col_ind)
+    return dt
 end
 
-# df[MultiRowIndex, MultiColumnIndex] = DataTable
-function Base.setindex!(df::DataTable,
-                new_df::DataTable,
+# dt[MultiRowIndex, MultiColumnIndex] = DataTable
+function Base.setindex!(dt::DataTable,
+                new_dt::DataTable,
                 row_inds::AbstractVector{Bool},
                 col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, find(row_inds), find(col_inds))
+    setindex!(dt, new_dt, find(row_inds), find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(df::DataTable,
-                                  new_df::DataTable,
+function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
+                                  new_dt::DataTable,
                                   row_inds::AbstractVector{Bool},
                                   col_inds::AbstractVector{T})
-    setindex!(df, new_df, find(row_inds), col_inds)
+    setindex!(dt, new_dt, find(row_inds), col_inds)
 end
-function Base.setindex!{R <: Real}(df::DataTable,
-                           new_df::DataTable,
+function Base.setindex!{R <: Real}(dt::DataTable,
+                           new_dt::DataTable,
                            row_inds::AbstractVector{R},
                            col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_inds, find(col_inds))
+    setindex!(dt, new_dt, row_inds, find(col_inds))
 end
-function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataTable,
-                                             new_df::DataTable,
+function Base.setindex!{R <: Real, T <: ColumnIndex}(dt::DataTable,
+                                             new_dt::DataTable,
                                              row_inds::AbstractVector{R},
                                              col_inds::AbstractVector{T})
     for j in 1:length(col_inds)
-        insert_multiple_entries!(df, new_df[:, j], row_inds, col_inds[j])
+        insert_multiple_entries!(dt, new_dt[:, j], row_inds, col_inds[j])
     end
-    return df
+    return dt
 end
 
-# df[MultiRowIndex, MultiColumnIndex] = AbstractVector
-function Base.setindex!(df::DataTable,
+# dt[MultiRowIndex, MultiColumnIndex] = AbstractVector
+function Base.setindex!(dt::DataTable,
                 v::AbstractVector,
                 row_inds::AbstractVector{Bool},
                 col_inds::AbstractVector{Bool})
-    setindex!(df, v, find(row_inds), find(col_inds))
+    setindex!(dt, v, find(row_inds), find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(df::DataTable,
+function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
                                   v::AbstractVector,
                                   row_inds::AbstractVector{Bool},
                                   col_inds::AbstractVector{T})
-    setindex!(df, v, find(row_inds), col_inds)
+    setindex!(dt, v, find(row_inds), col_inds)
 end
-function Base.setindex!{R <: Real}(df::DataTable,
+function Base.setindex!{R <: Real}(dt::DataTable,
                            v::AbstractVector,
                            row_inds::AbstractVector{R},
                            col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, find(col_inds))
+    setindex!(dt, v, row_inds, find(col_inds))
 end
-function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataTable,
+function Base.setindex!{R <: Real, T <: ColumnIndex}(dt::DataTable,
                                              v::AbstractVector,
                                              row_inds::AbstractVector{R},
                                              col_inds::AbstractVector{T})
     for col_ind in col_inds
-        insert_multiple_entries!(df, v, row_inds, col_ind)
+        insert_multiple_entries!(dt, v, row_inds, col_ind)
     end
-    return df
+    return dt
 end
 
-# df[MultiRowIndex, MultiColumnIndex] = Single Item
-function Base.setindex!(df::DataTable,
+# dt[MultiRowIndex, MultiColumnIndex] = Single Item
+function Base.setindex!(dt::DataTable,
                 v::Any,
                 row_inds::AbstractVector{Bool},
                 col_inds::AbstractVector{Bool})
-    setindex!(df, v, find(row_inds), find(col_inds))
+    setindex!(dt, v, find(row_inds), find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(df::DataTable,
+function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
                                   v::Any,
                                   row_inds::AbstractVector{Bool},
                                   col_inds::AbstractVector{T})
-    setindex!(df, v, find(row_inds), col_inds)
+    setindex!(dt, v, find(row_inds), col_inds)
 end
-function Base.setindex!{R <: Real}(df::DataTable,
+function Base.setindex!{R <: Real}(dt::DataTable,
                            v::Any,
                            row_inds::AbstractVector{R},
                            col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, find(col_inds))
+    setindex!(dt, v, row_inds, find(col_inds))
 end
-function Base.setindex!{R <: Real, T <: ColumnIndex}(df::DataTable,
+function Base.setindex!{R <: Real, T <: ColumnIndex}(dt::DataTable,
                                              v::Any,
                                              row_inds::AbstractVector{R},
                                              col_inds::AbstractVector{T})
     for col_ind in col_inds
-        insert_multiple_entries!(df, v, row_inds, col_ind)
+        insert_multiple_entries!(dt, v, row_inds, col_ind)
     end
-    return df
+    return dt
 end
 
-# df[:] = DataTable, df[:, :] = DataTable
-function Base.setindex!(df::DataTable,
-                                  new_df::DataTable,
+# dt[:] = DataTable, dt[:, :] = DataTable
+function Base.setindex!(dt::DataTable,
+                                  new_dt::DataTable,
                                   row_inds::Colon,
                                   col_inds::Colon=Colon())
-    df.columns = copy(new_df.columns)
-    df.colindex = copy(new_df.colindex)
-    df
+    dt.columns = copy(new_dt.columns)
+    dt.colindex = copy(new_dt.colindex)
+    dt
 end
 
-# df[:, :] = ...
-Base.setindex!(df::DataTable, v, ::Colon, ::Colon) =
-    (df[1:size(df, 1), 1:size(df, 2)] = v; df)
+# dt[:, :] = ...
+Base.setindex!(dt::DataTable, v, ::Colon, ::Colon) =
+    (dt[1:size(dt, 1), 1:size(dt, 2)] = v; dt)
 
-# df[Any, :] = ...
-Base.setindex!(df::DataTable, v, row_inds, ::Colon) =
-    (df[row_inds, 1:size(df, 2)] = v; df)
+# dt[Any, :] = ...
+Base.setindex!(dt::DataTable, v, row_inds, ::Colon) =
+    (dt[row_inds, 1:size(dt, 2)] = v; dt)
 
-# df[:, Any] = ...
-Base.setindex!(df::DataTable, v, ::Colon, col_inds) =
-    (df[col_inds] = v; df)
+# dt[:, Any] = ...
+Base.setindex!(dt::DataTable, v, ::Colon, col_inds) =
+    (dt[col_inds] = v; dt)
 
 # Special deletion assignment
-Base.setindex!(df::DataTable, x::Void, col_ind::Int) = delete!(df, col_ind)
+Base.setindex!(dt::DataTable, x::Void, col_ind::Int) = delete!(dt, col_ind)
 
 ##############################################################################
 ##
@@ -632,38 +632,38 @@ Base.setindex!(df::DataTable, x::Void, col_ind::Int) = delete!(df, col_ind)
 ##
 ##############################################################################
 
-Base.empty!(df::DataTable) = (empty!(df.columns); empty!(index(df)); df)
+Base.empty!(dt::DataTable) = (empty!(dt.columns); empty!(index(dt)); dt)
 
-function Base.insert!(df::DataTable, col_ind::Int, item::AbstractVector, name::Symbol)
-    0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
-    size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
+function Base.insert!(dt::DataTable, col_ind::Int, item::AbstractVector, name::Symbol)
+    0 < col_ind <= ncol(dt) + 1 || throw(BoundsError())
+    size(dt, 1) == length(item) || size(dt, 1) == 0 || error("number of rows does not match")
 
-    insert!(index(df), col_ind, name)
-    insert!(df.columns, col_ind, item)
-    df
+    insert!(index(dt), col_ind, name)
+    insert!(dt.columns, col_ind, item)
+    dt
 end
 
 # FIXME: Needed to work around a crash: JuliaLang/julia#18299
-function Base.insert!(df::DataTable, col_ind::Int, item::NullableArray, name::Symbol)
-    0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
-    size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
+function Base.insert!(dt::DataTable, col_ind::Int, item::NullableArray, name::Symbol)
+    0 < col_ind <= ncol(dt) + 1 || throw(BoundsError())
+    size(dt, 1) == length(item) || size(dt, 1) == 0 || error("number of rows does not match")
 
-    insert!(index(df), col_ind, name)
-    insert!(df.columns, col_ind, item)
-    df
+    insert!(index(dt), col_ind, name)
+    insert!(dt.columns, col_ind, item)
+    dt
 end
 
-function Base.insert!(df::DataTable, col_ind::Int, item, name::Symbol)
-    insert!(df, col_ind, upgrade_scalar(df, item), name)
+function Base.insert!(dt::DataTable, col_ind::Int, item, name::Symbol)
+    insert!(dt, col_ind, upgrade_scalar(dt, item), name)
 end
 
-function Base.merge!(df::DataTable, others::AbstractDataTable...)
+function Base.merge!(dt::DataTable, others::AbstractDataTable...)
     for other in others
         for n in _names(other)
-            df[n] = other[n]
+            dt[n] = other[n]
         end
     end
-    return df
+    return dt
 end
 
 ##############################################################################
@@ -674,12 +674,12 @@ end
 
 # A copy of a DataTable points to the original column vectors but
 #   gets its own Index.
-Base.copy(df::DataTable) = DataTable(copy(columns(df)), copy(index(df)))
+Base.copy(dt::DataTable) = DataTable(copy(columns(dt)), copy(index(dt)))
 
 # Deepcopy is recursive -- if a column is a vector of DataTables, each of
 #   those DataTables is deepcopied.
-function Base.deepcopy(df::DataTable)
-    DataTable(deepcopy(columns(df)), deepcopy(index(df)))
+function Base.deepcopy(dt::DataTable)
+    DataTable(deepcopy(columns(dt)), deepcopy(index(dt)))
 end
 
 ##############################################################################
@@ -689,54 +689,54 @@ end
 ##############################################################################
 
 # delete!() deletes columns; deleterows!() deletes rows
-# delete!(df, 1)
-# delete!(df, :Old)
-function Base.delete!(df::DataTable, inds::Vector{Int})
+# delete!(dt, 1)
+# delete!(dt, :Old)
+function Base.delete!(dt::DataTable, inds::Vector{Int})
     for ind in sort(inds, rev = true)
-        if 1 <= ind <= ncol(df)
-            splice!(df.columns, ind)
-            delete!(index(df), ind)
+        if 1 <= ind <= ncol(dt)
+            splice!(dt.columns, ind)
+            delete!(index(dt), ind)
         else
             throw(ArgumentError("Can't delete a non-existent DataTable column"))
         end
     end
-    return df
+    return dt
 end
-Base.delete!(df::DataTable, c::Int) = delete!(df, [c])
-Base.delete!(df::DataTable, c::Any) = delete!(df, index(df)[c])
+Base.delete!(dt::DataTable, c::Int) = delete!(dt, [c])
+Base.delete!(dt::DataTable, c::Any) = delete!(dt, index(dt)[c])
 
 # deleterows!()
-function deleterows!(df::DataTable, ind::@compat(Union{Integer, UnitRange{Int}}))
-    for i in 1:ncol(df)
-        df.columns[i] = deleteat!(df.columns[i], ind)
+function deleterows!(dt::DataTable, ind::@compat(Union{Integer, UnitRange{Int}}))
+    for i in 1:ncol(dt)
+        dt.columns[i] = deleteat!(dt.columns[i], ind)
     end
-    df
+    dt
 end
 
-function deleterows!(df::DataTable, ind::AbstractVector{Int})
+function deleterows!(dt::DataTable, ind::AbstractVector{Int})
     ind2 = sort(ind)
-    n = size(df, 1)
+    n = size(dt, 1)
 
-    idf = 1
+    idt = 1
     iind = 1
     ikeep = 1
     keep = Array(Int, n-length(ind2))
-    while idf <= n && iind <= length(ind2)
+    while idt <= n && iind <= length(ind2)
         1 <= ind2[iind] <= n || error(BoundsError())
-        if idf == ind2[iind]
+        if idt == ind2[iind]
             iind += 1
         else
-            keep[ikeep] = idf
+            keep[ikeep] = idt
             ikeep += 1
         end
-        idf += 1
+        idt += 1
     end
-    keep[ikeep:end] = idf:n
+    keep[ikeep:end] = idt:n
 
-    for i in 1:ncol(df)
-        df.columns[i] = df.columns[i][keep]
+    for i in 1:ncol(dt)
+        dt.columns[i] = dt.columns[i][keep]
     end
-    df
+    dt
 end
 
 ##############################################################################
@@ -746,26 +746,26 @@ end
 ##############################################################################
 
 # hcat! for 2 arguments
-function hcat!(df1::DataTable, df2::AbstractDataTable)
-    u = add_names(index(df1), index(df2))
+function hcat!(dt1::DataTable, dt2::AbstractDataTable)
+    u = add_names(index(dt1), index(dt2))
     for i in 1:length(u)
-        df1[u[i]] = df2[i]
+        dt1[u[i]] = dt2[i]
     end
 
-    return df1
+    return dt1
 end
-hcat!(df::DataTable, x::CategoricalArray) = hcat!(df, DataTable(Any[x]))
-hcat!(df::DataTable, x::NullableCategoricalArray) = hcat!(df, DataTable(Any[x]))
-hcat!(df::DataTable, x::NullableVector) = hcat!(df, DataTable(Any[x]))
-hcat!(df::DataTable, x::Vector) = hcat!(df, DataTable(Any[NullableArray(x)]))
-hcat!(df::DataTable, x) = hcat!(df, DataTable(Any[NullableArray([x])]))
+hcat!(dt::DataTable, x::CategoricalArray) = hcat!(dt, DataTable(Any[x]))
+hcat!(dt::DataTable, x::NullableCategoricalArray) = hcat!(dt, DataTable(Any[x]))
+hcat!(dt::DataTable, x::NullableVector) = hcat!(dt, DataTable(Any[x]))
+hcat!(dt::DataTable, x::Vector) = hcat!(dt, DataTable(Any[NullableArray(x)]))
+hcat!(dt::DataTable, x) = hcat!(dt, DataTable(Any[NullableArray([x])]))
 
 # hcat! for 1-n arguments
-hcat!(df::DataTable) = df
+hcat!(dt::DataTable) = dt
 hcat!(a::DataTable, b, c...) = hcat!(hcat!(a, b), c...)
 
 # hcat
-Base.hcat(df::DataTable, x) = hcat!(copy(df), x)
+Base.hcat(dt::DataTable, x) = hcat!(copy(dt), x)
 
 ##############################################################################
 ##
@@ -773,15 +773,15 @@ Base.hcat(df::DataTable, x) = hcat!(copy(df), x)
 ##
 ##############################################################################
 
-function nullable!(df::DataTable, col::ColumnIndex)
-    df[col] = NullableArray(df[col])
-    df
+function nullable!(dt::DataTable, col::ColumnIndex)
+    dt[col] = NullableArray(dt[col])
+    dt
 end
-function nullable!{T <: ColumnIndex}(df::DataTable, cols::Vector{T})
+function nullable!{T <: ColumnIndex}(dt::DataTable, cols::Vector{T})
     for col in cols
-        nullable!(df, col)
+        nullable!(dt, col)
     end
-    df
+    dt
 end
 
 ##############################################################################
@@ -790,37 +790,37 @@ end
 ##
 ##############################################################################
 
-function categorical!(df::DataTable, cname::@compat(Union{Integer, Symbol}), compact::Bool=true)
-    df[cname] = categorical(df[cname], compact)
+function categorical!(dt::DataTable, cname::@compat(Union{Integer, Symbol}), compact::Bool=true)
+    dt[cname] = categorical(dt[cname], compact)
     return
 end
 
-function categorical!{T <: @compat(Union{Integer, Symbol})}(df::DataTable, cnames::Vector{T},
+function categorical!{T <: @compat(Union{Integer, Symbol})}(dt::DataTable, cnames::Vector{T},
                                                             compact::Bool=true)
     for cname in cnames
-        df[cname] = categorical(df[cname], compact)
+        dt[cname] = categorical(dt[cname], compact)
     end
     return
 end
 
-function categorical!(df::DataTable, compact::Bool=true)
-    for i in 1:size(df, 2)
-        if eltype(df[i]) <: AbstractString
-            df[i] = categorical(df[i], compact)
+function categorical!(dt::DataTable, compact::Bool=true)
+    for i in 1:size(dt, 2)
+        if eltype(dt[i]) <: AbstractString
+            dt[i] = categorical(dt[i], compact)
         end
     end
     return
 end
 
-function Base.append!(df1::DataTable, df2::AbstractDataTable)
-   _names(df1) == _names(df2) || error("Column names do not match")
-   eltypes(df1) == eltypes(df2) || error("Column eltypes do not match")
-   ncols = size(df1, 2)
+function Base.append!(dt1::DataTable, dt2::AbstractDataTable)
+   _names(dt1) == _names(dt2) || error("Column names do not match")
+   eltypes(dt1) == eltypes(dt2) || error("Column eltypes do not match")
+   ncols = size(dt1, 2)
    # TODO: This needs to be a sort of transaction to be 100% safe
    for j in 1:ncols
-       append!(df1[j], df2[j])
+       append!(dt1[j], dt2[j])
    end
-   return df1
+   return dt1
 end
 
 function Base.convert(::Type{DataTable}, A::Matrix)
@@ -870,15 +870,15 @@ end
 ##
 ##############################################################################
 
-function Base.push!(df::DataTable, associative::Associative{Symbol,Any})
+function Base.push!(dt::DataTable, associative::Associative{Symbol,Any})
     i = 1
-    for nm in _names(df)
+    for nm in _names(dt)
         try
-            push!(df[nm], associative[nm])
+            push!(dt[nm], associative[nm])
         catch
             #clean up partial row
             for j in 1:(i - 1)
-                pop!(df[_names(df)[j]])
+                pop!(dt[_names(dt)[j]])
             end
             msg = "Error adding value to column :$nm."
             throw(ArgumentError(msg))
@@ -887,16 +887,16 @@ function Base.push!(df::DataTable, associative::Associative{Symbol,Any})
     end
 end
 
-function Base.push!(df::DataTable, associative::Associative)
+function Base.push!(dt::DataTable, associative::Associative)
     i = 1
-    for nm in _names(df)
+    for nm in _names(dt)
         try
             val = get(() -> associative[string(nm)], associative, nm)
-            push!(df[nm], val)
+            push!(dt[nm], val)
         catch
             #clean up partial row
             for j in 1:(i - 1)
-                pop!(df[_names(df)[j]])
+                pop!(dt[_names(dt)[j]])
             end
             msg = "Error adding value to column :$nm."
             throw(ArgumentError(msg))
@@ -906,21 +906,21 @@ function Base.push!(df::DataTable, associative::Associative)
 end
 
 # array and tuple like collections
-function Base.push!(df::DataTable, iterable::Any)
-    if length(iterable) != length(df.columns)
+function Base.push!(dt::DataTable, iterable::Any)
+    if length(iterable) != length(dt.columns)
         msg = "Length of iterable does not match DataTable column count."
         throw(ArgumentError(msg))
     end
     i = 1
     for t in iterable
         try
-            push!(df.columns[i], t)
+            push!(dt.columns[i], t)
         catch
             #clean up partial row
             for j in 1:(i - 1)
-                pop!(df.columns[j])
+                pop!(dt.columns[j])
             end
-            msg = "Error adding $t to column :$(_names(df)[i]). Possible type mis-match."
+            msg = "Error adding $t to column :$(_names(dt)[i]). Possible type mis-match."
             throw(ArgumentError(msg))
         end
         i += 1

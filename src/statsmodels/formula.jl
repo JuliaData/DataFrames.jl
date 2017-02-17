@@ -43,10 +43,10 @@ end
 Base.:(==)(t1::Terms, t2::Terms) = all(getfield(t1, f)==getfield(t2, f) for f in fieldnames(t1))
 
 type ModelFrame
-    df::AbstractDataTable
+    dt::AbstractDataTable
     terms::Terms
     msng::BitArray
-    ## mapping from df keys to contrasts matrices
+    ## mapping from dt keys to contrasts matrices
     contrasts::Dict{Symbol, ContrastsMatrix}
 end
 
@@ -226,9 +226,9 @@ function Terms(f::Formula)
 end
 
 ## Default NULL handler.  Others can be added as keyword arguments
-function null_omit(df::DataTable)
-    cc = complete_cases(df)
-    df[cc,:], cc
+function null_omit(dt::DataTable)
+    cc = complete_cases(dt)
+    dt[cc,:], cc
 end
 
 _droplevels!(x::Any) = x
@@ -247,7 +247,7 @@ is_categorical(::Any) = false
 ##
 ## This modifies the Terms, setting `trms.is_non_redundant = true` for all non-
 ## redundant evaluation terms.
-function check_non_redundancy!(trms::Terms, df::AbstractDataTable)
+function check_non_redundancy!(trms::Terms, dt::AbstractDataTable)
 
     (n_eterms, n_terms) = size(trms.factors)
 
@@ -261,7 +261,7 @@ function check_non_redundancy!(trms::Terms, df::AbstractDataTable)
         for i_eterm in 1:n_eterms
             ## only need to check eterms that are included and can be promoted
             ## (e.g., categorical variables that expand to multiple mm columns)
-            if Bool(trms.factors[i_eterm, i_term]) && is_categorical(df[trms.eterms[i_eterm]])
+            if Bool(trms.factors[i_eterm, i_term]) && is_categorical(dt[trms.eterms[i_eterm]])
                 dropped = trms.factors[:,i_term]
                 dropped[i_eterm] = 0
 
@@ -284,12 +284,12 @@ end
 const DEFAULT_CONTRASTS = DummyCoding
 
 ## Set up contrasts:
-## Combine actual DF columns and contrast types if necessary to compute the
+## Combine actual DT columns and contrast types if necessary to compute the
 ## actual contrasts matrices, levels, and term names (using DummyCoding
 ## as the default)
-function evalcontrasts(df::AbstractDataTable, contrasts::Dict = Dict())
+function evalcontrasts(dt::AbstractDataTable, contrasts::Dict = Dict())
     evaledContrasts = Dict()
-    for (term, col) in eachcol(df)
+    for (term, col) in eachcol(dt)
         is_categorical(col) || continue
         evaledContrasts[term] = ContrastsMatrix(haskey(contrasts, term) ?
                                                 contrasts[term] :
@@ -301,26 +301,26 @@ end
 
 function ModelFrame(trms::Terms, d::AbstractDataTable;
                     contrasts::Dict = Dict())
-    df, msng = null_omit(DataTable(map(x -> d[x], trms.eterms)))
-    names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
-    for c in eachcol(df) _droplevels!(c[2]) end
+    dt, msng = null_omit(DataTable(map(x -> d[x], trms.eterms)))
+    names!(dt, convert(Vector{Symbol}, map(string, trms.eterms)))
+    for c in eachcol(dt) _droplevels!(c[2]) end
 
-    evaledContrasts = evalcontrasts(df, contrasts)
+    evaledContrasts = evalcontrasts(dt, contrasts)
 
     ## Check for non-redundant terms, modifying terms in place
-    check_non_redundancy!(trms, df)
+    check_non_redundancy!(trms, dt)
 
-    ModelFrame(df, trms, msng, evaledContrasts)
+    ModelFrame(dt, trms, msng, evaledContrasts)
 end
 
-ModelFrame(df::AbstractDataTable, term::Terms, msng::BitArray) = ModelFrame(df, term, msng, evalcontrasts(df))
+ModelFrame(dt::AbstractDataTable, term::Terms, msng::BitArray) = ModelFrame(dt, term, msng, evalcontrasts(dt))
 ModelFrame(f::Formula, d::AbstractDataTable; kwargs...) = ModelFrame(Terms(f), d; kwargs...)
 ModelFrame(ex::Expr, d::AbstractDataTable; kwargs...) = ModelFrame(Formula(ex), d; kwargs...)
 
 ## modify contrasts in place
 function setcontrasts!(mf::ModelFrame, new_contrasts::Dict)
-    new_contrasts = Dict([ Pair(col, ContrastsMatrix(contr, mf.df[col]))
-                      for (col, contr) in filter((k,v)->haskey(mf.df, k), new_contrasts) ])
+    new_contrasts = Dict([ Pair(col, ContrastsMatrix(contr, mf.dt[col]))
+                      for (col, contr) in filter((k,v)->haskey(mf.dt, k), new_contrasts) ])
 
     mf.contrasts = merge(mf.contrasts, new_contrasts)
     return mf
@@ -334,7 +334,7 @@ Extract the response column, if present.  `DataVector` or
 """
 function StatsBase.model_response(mf::ModelFrame)
     if mf.terms.response
-        convert(Array, mf.df[mf.terms.eterms[1]])
+        convert(Array, mf.dt[mf.terms.eterms[1]])
     else
         error("Model formula one-sided")
     end
@@ -343,12 +343,12 @@ end
 ## construct model matrix columns from model frame + name (checks for contrasts)
 function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, name::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, name)
-        modelmat_cols(T, mf.df[name],
+        modelmat_cols(T, mf.dt[name],
                       non_redundant ?
                       ContrastsMatrix{FullDummyCoding}(mf.contrasts[name]) :
                       mf.contrasts[name])
     else
-        modelmat_cols(T, mf.df[name])
+        modelmat_cols(T, mf.dt[name])
     end
 end
 
@@ -436,7 +436,7 @@ end
 """
     ModelMatrix{T<:AbstractFloatMatrix}(mf::ModelFrame)
 Create a `ModelMatrix` of type `T` (default `Matrix{Float64}`) from the
-`terms` and `df` members of `mf`.
+`terms` and `dt` members of `mf`.
 
 This is basically a map-reduce where terms are mapped to columns by `cols`
 and reduced by `hcat`.  During the collection of the columns the `assign`
@@ -451,13 +451,13 @@ Mixed-effects models include "random-effects" terms which are ignored when
 creating the model matrix.
 """
 @compat function (::Type{ModelMatrix{T}}){T<:AbstractFloatMatrix}(mf::ModelFrame)
-    dfrm = mf.df
+    dtrm = mf.dt
     terms = droprandomeffects(dropresponse!(mf.terms))
 
     blocks = T[]
     assign = Int[]
     if terms.intercept
-        push!(blocks, ones(size(dfrm, 1), 1))  # columns of 1's is first block
+        push!(blocks, ones(size(dtrm, 1), 1))  # columns of 1's is first block
         push!(assign, 0)                       # this block corresponds to term zero
     end
 
@@ -496,7 +496,7 @@ creating the model matrix.
         error("Could not construct model matrix. Resulting matrix has 0 columns.")
     end
 
-    I = size(dfrm, 1)
+    I = size(dtrm, 1)
     J = mapreduce(x -> size(x, 2), +, blocks)
     X = similar(blocks[1], I, J)
     i = 1
@@ -520,12 +520,12 @@ a one-element vector is returned.
 termnames(term::Symbol, col) = [string(term)]
 function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
     if haskey(mf.contrasts, term)
-        termnames(term, mf.df[term],
+        termnames(term, mf.dt[term],
                   non_redundant ?
                   ContrastsMatrix{FullDummyCoding}(mf.contrasts[term]) :
                   mf.contrasts[term])
     else
-        termnames(term, mf.df[term])
+        termnames(term, mf.dt[term])
     end
 end
 

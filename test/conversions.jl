@@ -3,77 +3,77 @@ module TestConversions
     using DataTables
     using DataStructures: OrderedDict, SortedDict
 
-    df = DataTable()
-    df[:A] = 1:5
-    df[:B] = [:A, :B, :C, :D, :E]
-    @test isa(convert(Array, df), Matrix{Any})
-    @test convert(Array, df) == convert(Array, convert(NullableArray, df))
-    @test isa(convert(Array{Any}, df), Matrix{Any})
+    dt = DataTable()
+    dt[:A] = 1:5
+    dt[:B] = [:A, :B, :C, :D, :E]
+    @test isa(convert(Array, dt), Matrix{Any})
+    @test convert(Array, dt) == convert(Array, convert(NullableArray, dt))
+    @test isa(convert(Array{Any}, dt), Matrix{Any})
 
-    df = DataTable()
-    df[:A] = 1:5
-    df[:B] = 1.0:5.0
+    dt = DataTable()
+    dt[:A] = 1:5
+    dt[:B] = 1.0:5.0
     # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
     if VERSION >= v"0.5.0-dev"
-        @test isa(convert(Array, df), Matrix{Float64})
+        @test isa(convert(Array, dt), Matrix{Float64})
     end
-    @test convert(Array, df) == convert(Array, convert(NullableArray, df))
-    @test isa(convert(Array{Any}, df), Matrix{Any})
-    @test isa(convert(Array{Float64}, df), Matrix{Float64})
+    @test convert(Array, dt) == convert(Array, convert(NullableArray, dt))
+    @test isa(convert(Array{Any}, dt), Matrix{Any})
+    @test isa(convert(Array{Float64}, dt), Matrix{Float64})
 
-    df = DataTable()
-    df[:A] = 1.0:5.0
-    df[:B] = 1.0:5.0
-    a = convert(Array, df)
-    aa = convert(Array{Any}, df)
-    ai = convert(Array{Int}, df)
+    dt = DataTable()
+    dt[:A] = 1.0:5.0
+    dt[:B] = 1.0:5.0
+    a = convert(Array, dt)
+    aa = convert(Array{Any}, dt)
+    ai = convert(Array{Int}, dt)
     @test isa(a, Matrix{Float64})
-    @test a == convert(Array, convert(NullableArray, df))
-    @test a == convert(Matrix, df)
+    @test a == convert(Array, convert(NullableArray, dt))
+    @test a == convert(Matrix, dt)
     @test isa(aa, Matrix{Any})
-    @test aa == convert(Matrix{Any}, df)
+    @test aa == convert(Matrix{Any}, dt)
     @test isa(ai, Matrix{Int})
-    @test ai == convert(Matrix{Int}, df)
+    @test ai == convert(Matrix{Int}, dt)
 
-    df[1,1] = Nullable()
-    @test_throws ErrorException convert(Array, df)
-    na = convert(NullableArray, df)
-    naa = convert(NullableArray{Any}, df)
-    nai = convert(NullableArray{Int}, df)
+    dt[1,1] = Nullable()
+    @test_throws ErrorException convert(Array, dt)
+    na = convert(NullableArray, dt)
+    naa = convert(NullableArray{Any}, dt)
+    nai = convert(NullableArray{Int}, dt)
     @test isa(na, NullableMatrix{Float64})
-    @test isequal(na, convert(NullableMatrix, df))
+    @test isequal(na, convert(NullableMatrix, dt))
     @test isa(naa, NullableMatrix{Any})
-    @test isequal(naa, convert(NullableMatrix{Any}, df))
+    @test isequal(naa, convert(NullableMatrix{Any}, dt))
     @test isa(nai, NullableMatrix{Int})
-    @test isequal(nai, convert(NullableMatrix{Int}, df))
+    @test isequal(nai, convert(NullableMatrix{Int}, dt))
 
     a = [1.0,2.0]
     b = [-0.1,3]
     c = [-3.1,7]
     di = Dict("a"=>a, "b"=>b, "c"=>c)
 
-    df = convert(DataTable,di)
-    @test isa(df,DataTable)
-    @test names(df) == Symbol[x for x in sort(collect(keys(di)))]
-    @test isequal(df[:a], NullableArray(a))
-    @test isequal(df[:b], NullableArray(b))
-    @test isequal(df[:c], NullableArray(c))
+    dt = convert(DataTable,di)
+    @test isa(dt,DataTable)
+    @test names(dt) == Symbol[x for x in sort(collect(keys(di)))]
+    @test isequal(dt[:a], NullableArray(a))
+    @test isequal(dt[:b], NullableArray(b))
+    @test isequal(dt[:c], NullableArray(c))
 
     od = OrderedDict("c"=>c, "a"=>a, "b"=>b)
-    df = convert(DataTable,od)
-    @test isa(df, DataTable)
-    @test names(df) == Symbol[x for x in keys(od)]
-    @test isequal(df[:a], NullableArray(a))
-    @test isequal(df[:b], NullableArray(b))
-    @test isequal(df[:c], NullableArray(c))
+    dt = convert(DataTable,od)
+    @test isa(dt, DataTable)
+    @test names(dt) == Symbol[x for x in keys(od)]
+    @test isequal(dt[:a], NullableArray(a))
+    @test isequal(dt[:b], NullableArray(b))
+    @test isequal(dt[:c], NullableArray(c))
 
     sd = SortedDict("c"=>c, "a"=>a, "b"=>b)
-    df = convert(DataTable,sd)
-    @test isa(df, DataTable)
-    @test names(df) == Symbol[x for x in keys(sd)]
-    @test isequal(df[:a], NullableArray(a))
-    @test isequal(df[:b], NullableArray(b))
-    @test isequal(df[:c], NullableArray(c))
+    dt = convert(DataTable,sd)
+    @test isa(dt, DataTable)
+    @test names(dt) == Symbol[x for x in keys(sd)]
+    @test isequal(dt[:a], NullableArray(a))
+    @test isequal(dt[:b], NullableArray(b))
+    @test isequal(dt[:c], NullableArray(c))
 
     a = [1.0]
     di = Dict("a"=>a, "b"=>b, "c"=>c)
