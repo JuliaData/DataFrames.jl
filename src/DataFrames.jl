@@ -12,6 +12,7 @@ using Compat
 import Compat.String
 using Reexport
 @reexport using StatsBase
+import NullableArrays: dropnull, dropnull!
 @reexport using NullableArrays
 @reexport using CategoricalArrays
 using GZip
@@ -55,11 +56,12 @@ export @~,
        coefnames,
        colwise,
        combine,
-       complete_cases,
-       complete_cases!,
+       completecases,
        setcontrasts!,
        deleterows!,
        describe,
+       dropnull,
+       dropnull!,
        eachcol,
        eachrow,
        eltypes,

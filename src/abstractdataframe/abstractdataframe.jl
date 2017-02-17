@@ -25,8 +25,9 @@ The following are normally implemented for AbstractDataFrames:
 * [`tail`](@ref) : last `n` rows
 * `convert` : convert to an array
 * `NullableArray` : convert to a NullableArray
-* [`complete_cases`](@ref) : indexes of complete cases (rows with no nulls)
-* [`complete_cases!`](@ref) : remove rows with nulls
+* [`completecases`](@ref) : boolean vector of complete cases (rows with no nulls)
+* [`dropnull`](@ref) : remove rows with null values
+* [`dropnull!`](@ref) : remove rows with null values in-place
 * [`nonunique`](@ref) : indexes of duplicate rows
 * [`unique!`](@ref) : remove duplicate rows
 * `similar` : a DataFrame with similar columns as `d`
@@ -436,7 +437,7 @@ end
 Indexes of complete cases (rows without null values)
 
 ```julia
-complete_cases(df::AbstractDataFrame)
+completecases(df::AbstractDataFrame)
 ```
 
 **Arguments**
@@ -447,7 +448,7 @@ complete_cases(df::AbstractDataFrame)
 
 * `::Vector{Bool}` : indexes of complete cases
 
-See also [`complete_cases!`](@ref).
+See also [`dropnull`](@ref) and [`dropnull!`](@ref).
 
 **Examples**
 
@@ -455,12 +456,12 @@ See also [`complete_cases!`](@ref).
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 df[[1,4,5], :x] = Nullable()
 df[[9,10], :y] = Nullable()
-complete_cases(df)
+completecases(df)
 ```
 
 """
-function complete_cases(df::AbstractDataFrame)
-    res = fill(true, size(df, 1))
+function completecases(df::AbstractDataFrame)
+    res = trues(size(df, 1))
     for i in 1:size(df, 2)
         _nonnull!(res, df[i])
     end
@@ -468,10 +469,39 @@ function complete_cases(df::AbstractDataFrame)
 end
 
 """
-Delete rows with null values.
+Remove rows with null values.
 
 ```julia
-complete_cases!(df::AbstractDataFrame)
+dropnull(df::AbstractDataFrame)
+```
+
+**Arguments**
+
+* `df` : the AbstractDataFrame
+
+**Result**
+
+* `::AbstractDataFrame` : the updated copy
+
+See also [`completecases`](@ref) and [`dropnull!`](@ref).
+
+**Examples**
+
+```julia
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+df[[1,4,5], :x] = Nullable()
+df[[9,10], :y] = Nullable()
+dropnull(df)
+```
+
+"""
+dropnull(df::AbstractDataFrame) = deleterows!(copy(df), find(!, completecases(df)))
+
+"""
+Remove rows with null values in-place.
+
+```julia
+dropnull!(df::AbstractDataFrame)
 ```
 
 **Arguments**
@@ -482,7 +512,7 @@ complete_cases!(df::AbstractDataFrame)
 
 * `::AbstractDataFrame` : the updated version
 
-See also [`complete_cases`](@ref).
+See also [`dropnull`](@ref) and [`completecases`](@ref).
 
 **Examples**
 
@@ -490,11 +520,11 @@ See also [`complete_cases`](@ref).
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 df[[1,4,5], :x] = Nullable()
 df[[9,10], :y] = Nullable()
-complete_cases!(df)
+dropnull!(df)
 ```
 
 """
-complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(!complete_cases(df)))
+dropnull!(df::AbstractDataFrame) = deleterows!(df, find(!, completecases(df)))
 
 function Base.convert(::Type{Array}, df::AbstractDataFrame)
     convert(Matrix, df)
