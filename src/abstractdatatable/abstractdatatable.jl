@@ -25,8 +25,9 @@ The following are normally implemented for AbstractDataTables:
 * [`tail`](@ref) : last `n` rows
 * `convert` : convert to an array
 * `NullableArray` : convert to a NullableArray
-* [`complete_cases`](@ref) : indexes of complete cases (rows with no nulls)
-* [`complete_cases!`](@ref) : remove rows with nulls
+* [`completecases`](@ref) : boolean vector of complete cases (rows with no nulls)
+* [`dropnull`](@ref) : remove rows with null values
+* [`dropnull!`](@ref) : remove rows with null values in-place
 * [`nonunique`](@ref) : indexes of duplicate rows
 * [`unique!`](@ref) : remove duplicate rows
 * `similar` : a DataTable with similar columns as `d`
@@ -436,7 +437,7 @@ end
 Indexes of complete cases (rows without null values)
 
 ```julia
-complete_cases(dt::AbstractDataTable)
+completecases(dt::AbstractDataTable)
 ```
 
 **Arguments**
@@ -447,7 +448,7 @@ complete_cases(dt::AbstractDataTable)
 
 * `::Vector{Bool}` : indexes of complete cases
 
-See also [`complete_cases!`](@ref).
+See also [`dropnull`](@ref) and [`dropnull!`](@ref).
 
 **Examples**
 
@@ -455,12 +456,12 @@ See also [`complete_cases!`](@ref).
 dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 dt[[1,4,5], :x] = Nullable()
 dt[[9,10], :y] = Nullable()
-complete_cases(dt)
+completecases(dt)
 ```
 
 """
-function complete_cases(dt::AbstractDataTable)
-    res = fill(true, size(dt, 1))
+function completecases(dt::AbstractDataTable)
+    res = trues(size(dt, 1))
     for i in 1:size(dt, 2)
         _nonnull!(res, dt[i])
     end
@@ -468,10 +469,39 @@ function complete_cases(dt::AbstractDataTable)
 end
 
 """
-Delete rows with null values.
+Remove rows with null values.
 
 ```julia
-complete_cases!(dt::AbstractDataTable)
+dropnull(dt::AbstractDataTable)
+```
+
+**Arguments**
+
+* `dt` : the AbstractDataTable
+
+**Result**
+
+* `::AbstractDataTable` : the updated copy
+
+See also [`completecases`](@ref) and [`dropnull!`](@ref).
+
+**Examples**
+
+```julia
+dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+dt[[1,4,5], :x] = Nullable()
+dt[[9,10], :y] = Nullable()
+dropnull(dt)
+```
+
+"""
+dropnull(dt::AbstractDataTable) = deleterows!(copy(dt), find(!, completecases(dt)))
+
+"""
+Remove rows with null values in-place.
+
+```julia
+dropnull!(dt::AbstractDataTable)
 ```
 
 **Arguments**
@@ -482,7 +512,7 @@ complete_cases!(dt::AbstractDataTable)
 
 * `::AbstractDataTable` : the updated version
 
-See also [`complete_cases`](@ref).
+See also [`dropnull`](@ref) and [`completecases`](@ref).
 
 **Examples**
 
@@ -490,11 +520,11 @@ See also [`complete_cases`](@ref).
 dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 dt[[1,4,5], :x] = Nullable()
 dt[[9,10], :y] = Nullable()
-complete_cases!(dt)
+dropnull!(dt)
 ```
 
 """
-complete_cases!(dt::AbstractDataTable) = deleterows!(df, find(!complete_cases(dt)))
+dropnull!(dt::AbstractDataTable) = deleterows!(dt, find(!, completecases(dt)))
 
 function Base.convert(::Type{Array}, dt::AbstractDataTable)
     convert(Matrix, dt)

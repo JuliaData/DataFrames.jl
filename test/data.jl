@@ -54,7 +54,13 @@ module TestData
     @test size(dt6, 2) == 3
 
     #test_group("null handling")
-    @test nrow(dt5[complete_cases(dt5), :]) == 3
+    @test nrow(dt5[completecases(dt5), :]) == 3
+    @test nrow(dropnull(dt5)) == 3
+    returned = dropnull(dt4)
+    @test dt4 == returned && dt4 !== returned
+    @test nrow(dropnull!(dt5)) == 3
+    returned = dropnull!(dt4)
+    @test dt4 == returned && dt4 === returned
 
     #test_context("SubDataTables")
 

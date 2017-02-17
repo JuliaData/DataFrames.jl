@@ -227,7 +227,7 @@ end
 
 ## Default NULL handler.  Others can be added as keyword arguments
 function null_omit(dt::DataTable)
-    cc = complete_cases(dt)
+    cc = completecases(dt)
     dt[cc,:], cc
 end
 
