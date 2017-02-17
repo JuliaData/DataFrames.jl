@@ -383,7 +383,7 @@ function Base.setindex!(df::DataFrame,
     insert_single_column!(df, upgrade_vector(v), col_ind)
 end
 
-# df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(DF) if NCOL(DF) > 0)
+# df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(DT) if NCOL(DT) > 0)
 function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
         fill!(df[col_ind], v)
@@ -424,7 +424,7 @@ function Base.setindex!{T <: ColumnIndex}(df::DataFrame,
     return df
 end
 
-# df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(DF) if NCOL(DF) > 0)
+# df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(DT) if NCOL(DT) > 0)
 function Base.setindex!(df::DataFrame,
                 val::Any,
                 col_inds::AbstractVector{Bool})

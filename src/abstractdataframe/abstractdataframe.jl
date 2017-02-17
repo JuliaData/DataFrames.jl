@@ -25,8 +25,8 @@ The following are normally implemented for AbstractDataFrames:
 * [`tail`](@ref) : last `n` rows
 * `convert` : convert to an array
 * `NullableArray` : convert to a NullableArray
-* [`complete_cases`](@ref) : indexes of complete cases (rows with no NA's)
-* [`complete_cases!`](@ref) : remove rows with NA's
+* [`complete_cases`](@ref) : indexes of complete cases (rows with no nulls)
+* [`complete_cases!`](@ref) : remove rows with nulls
 * [`nonunique`](@ref) : indexes of duplicate rows
 * [`unique!`](@ref) : remove duplicate rows
 * `similar` : a DataFrame with similar columns as `d`
@@ -295,7 +295,7 @@ tail(df)
 """
 (head, tail)
 
-# get the structure of a DF
+# get the structure of a DT
 """
 Show the structure of an AbstractDataFrame, in a tree-like format
 
@@ -332,7 +332,7 @@ function Base.dump(io::IO, df::AbstractDataFrame, n::Int, indent)
     end
 end
 
-# summarize the columns of a DF
+# summarize the columns of a DT
 # TODO: clever layout in rows
 """
 Summarize the columns of an AbstractDataFrame
@@ -354,12 +354,12 @@ describe(io, df::AbstractDataFrame)
 **Details**
 
 If the column's base type derives from Number, compute the minimum, first
-quantile, median, mean, third quantile, and maximum. NA's are filtered and
+quantile, median, mean, third quantile, and maximum. Nulls are filtered and
 reported separately.
 
-For boolean columns, report trues, falses, and NAs.
+For boolean columns, report trues, falses, and nulls.
 
-For other types, show column characteristics and number of NAs.
+For other types, show column characteristics and number of nulls.
 
 **Examples**
 
@@ -380,7 +380,7 @@ end
 StatsBase.describe(nv::AbstractArray) = describe(STDOUT, nv)
 function StatsBase.describe{T<:Number}(io, nv::AbstractArray{T})
     if all(_isnull, nv)
-        println(io, " * All NA * ")
+        println(io, " * All null * ")
         return
     end
     filtered = float(dropnull(nv))
@@ -398,7 +398,7 @@ end
 function StatsBase.describe{T}(io, nv::AbstractArray{T})
     ispooled = isa(nv, CategoricalVector) ? "Pooled " : ""
     nulls = countnull(nv)
-    # if nothing else, just give the length and element type and NA count
+    # if nothing else, just give the length and element type and null count
     println(io, "Length    $(length(nv))")
     println(io, "Type      $(ispooled)$(string(eltype(nv)))")
     println(io, "NULLs     $(nulls)")

@@ -255,7 +255,7 @@ module TestFormula
     #test_group("Model frame response variables")
 
     ## also does not work, not sure what used to happen but now it seems that
-    ## the LHS is assumed to be just a single symbol that indexes a DF column
+    ## the LHS is assumed to be just a single symbol that indexes a DT column
 
     ## f = x1 + x2 ~ y + x3
     ## mf = ModelFrame(f, d)

@@ -298,7 +298,7 @@ end
 const DEFAULT_CONTRASTS = DummyCoding
 
 ## Set up contrasts:
-## Combine actual DF columns and contrast types if necessary to compute the
+## Combine actual DT columns and contrast types if necessary to compute the
 ## actual contrasts matrices, levels, and term names (using DummyCoding
 ## as the default)
 function evalcontrasts(df::AbstractDataFrame, contrasts::Dict = Dict())
