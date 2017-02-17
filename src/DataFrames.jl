@@ -10,6 +10,7 @@ module DataFrames
 
 using Reexport
 @reexport using StatsBase
+import NullableArrays: dropnull, dropnull!
 @reexport using NullableArrays
 @reexport using CategoricalArrays
 using GZip
@@ -55,10 +56,11 @@ export @~,
        colwise,
        combine,
        completecases,
-       completecases!,
        setcontrasts!,
        deleterows!,
        describe,
+       dropnull,
+       dropnull!,
        eachcol,
        eachrow,
        eltypes,
