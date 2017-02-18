@@ -89,7 +89,7 @@ Base.next(itr::Cols, st) = (itr.df[st], st + 1)
 Base.length(itr::Cols) = length(itr.df)
 Base.size(itr::Cols, ix) = ix==1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
 Base.size(itr::Cols) = (length(itr.df),)
-Base.linearindexing{T}(::Type{Cols{T}}) = Base.LinearFast()
+@compat Base.IndexStyle(::Type{<:Cols}) = IndexLinear()
 Base.getindex(itr::Cols, inds...) = getindex(itr.df, inds...)
 
 # N.B. where stored as a vector, 'columns(x) = x.vector' is a bit cheaper
