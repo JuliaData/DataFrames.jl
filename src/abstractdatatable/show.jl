@@ -572,28 +572,3 @@ function showcols(io::IO, dt::AbstractDataTable) # -> Void
 end
 
 showcols(dt::AbstractDataTable) = showcols(STDOUT, dt) # -> Void
-
-using Juno
-using Juno: Inline, LazyTree, Table, Row, strong
-
-const SIZE = 25
-
-function to_matrix(dt::AbstractDataTable)
-    res = Array{Any}(size(dt))
-    for (j, col) in enumerate(columns(dt)), i = 1:length(col)
-        isassigned(col, i) && (res[i, j] = col[i])
-    end
-    return res
-end
-
-function _render(dt::AbstractDataTable)
-    width = min(size(dt, 2), SIZE)
-    height = min(size(dt, 1), SIZE)
-    header = map(x->strong(string(x)), reshape(names(dt), 1, width))
-    body = Juno.undefs(to_matrix(dt))[1:height, 1:width]
-    view = Table(vcat(header, body))
-    LazyTree(Row(typeof(dt), text" ", Juno.dims(size(dt)...)),
-             () -> [view])
-end
-
-@render Inline dt::AbstractDataTable _render(dt)
