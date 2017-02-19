@@ -36,28 +36,18 @@ export @~,
        @wsv_str,
 
        AbstractDataTable,
-       AbstractContrasts,
        DataTable,
        DataTableRow,
-       Formula,
        GroupApplied,
        GroupedDataTable,
-       ModelFrame,
-       ModelMatrix,
        SubDataTable,
-       EffectsCoding,
-       DummyCoding,
-       HelmertCoding,
-       ContrastsCoding,
 
        aggregate,
        by,
        categorical!,
-       coefnames,
        colwise,
        combine,
        completecases,
-       setcontrasts!,
        deleterows!,
        describe,
        dropnull,
@@ -128,10 +118,6 @@ for (dir, filename) in [
 
         ("abstractdatatable", "sort.jl"),
         ("datatable", "sort.jl"),
-
-        ("statsmodels", "contrasts.jl"),
-        ("statsmodels", "formula.jl"),
-        ("statsmodels", "statsmodel.jl"),
 
         ("", "deprecated.jl")
     ]
