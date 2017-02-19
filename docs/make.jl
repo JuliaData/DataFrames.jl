@@ -19,7 +19,6 @@ makedocs(
             "Split-apply-combine" => "man/split_apply_combine.md",
             "Reshaping" => "man/reshaping_and_pivoting.md",
             "Sorting" => "man/sorting.md",
-            "Formulas" => "man/formulas.md",
             "Pooling" => "man/pooling.md",
             "Querying frameworks" => "man/querying_frameworks.md",
         ],
