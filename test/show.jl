@@ -17,14 +17,6 @@ module TestShow
     showall(io, subdt)
     showall(io, subdt, true)
 
-    if VERSION > v"0.5-"
-        using Juno
-        out = DataTables._render(dt)
-        @assert out.head.xs[1] == DataTable
-        @assert isa(out.children()[1], Juno.Table)
-        @assert size(out.children()[1].xs) == (4, 2)
-    end
-
     dtvec = DataTable[dt for _=1:3]
     show(io, dtvec)
     showall(io, dtvec)
