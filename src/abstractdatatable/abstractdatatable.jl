@@ -714,7 +714,6 @@ Base.vcat(dt::AbstractDataTable) = dt
 
 Base.vcat(dts::AbstractDataTable...) = vcat(AbstractDataTable[dts...])
 
-Base.vcat(dts::Vector{Void}) = dts
 function Base.vcat{T<:AbstractDataTable}(dts::Vector{T})
     isempty(dts) && return DataTable()
     coltyps, colnams, similars = _colinfo(dts)
