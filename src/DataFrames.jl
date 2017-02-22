@@ -9,7 +9,6 @@ module DataFrames
 ##############################################################################
 
 using Compat
-import Compat.String
 using Reexport
 @reexport using StatsBase
 @reexport using DataArrays
@@ -41,8 +40,6 @@ export @~,
        Formula,
        GroupApplied,
        GroupedDataFrame,
-       ModelFrame,
-       ModelMatrix,
        SubDataFrame,
        EffectsCoding,
        DummyCoding,
@@ -54,8 +51,8 @@ export @~,
        coefnames,
        colwise,
        combine,
-       complete_cases,
-       complete_cases!,
+       completecases,
+       completecases!,
        setcontrasts!,
        deleterows!,
        describe,
@@ -95,12 +92,6 @@ export @~,
 ##
 ##############################################################################
 
-if VERSION < v"0.5.0-dev+2023"
-    _displaysize(x...) = Base.tty_size()
-else
-    const _displaysize = Base.displaysize
-end
-
 for (dir, filename) in [
         ("other", "utils.jl"),
         ("other", "index.jl"),
@@ -126,8 +117,8 @@ for (dir, filename) in [
         ("dataframe", "sort.jl"),
 
         ("statsmodels", "contrasts.jl"),
-        ("statsmodels", "formula.jl"),
-        ("statsmodels", "statsmodel.jl"),
+        # ("statsmodels", "formula.jl"),
+        # ("statsmodels", "statsmodel.jl"),
 
         ("", "deprecated.jl")
     ]

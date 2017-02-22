@@ -10,12 +10,12 @@ Pages = ["utilities.md"]
 ```
 
 ...
-    
+
 ```@docs
 eltypes
 head
-complete_cases
-complete_cases!
+completecases
+completecases!
 describe
 dump
 names!
@@ -26,5 +26,3 @@ tail
 unique
 unique!
 ```
-    
-    

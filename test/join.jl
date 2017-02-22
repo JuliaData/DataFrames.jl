@@ -18,9 +18,9 @@ module TestJoin
                       Job = @data(["Lawyer", "Doctor", "Florist", NA, "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
-    right = outer[.!isna(outer[:Job]), [:Name, :ID, :Job]]
-    left = outer[.!isna(outer[:Name]), :]
-    inner = left[.!isna(left[:Job]), :]
+    right = outer[(!).(isna(outer[:Job])), [:Name, :ID, :Job]]
+    left = outer[(!).(isna(outer[:Name])), :]
+    inner = left[(!).(isna(left[:Job])), :]
     semi = unique(inner[:, [:ID, :Name]])
     anti = left[isna(left[:Job]), [:ID, :Name]]
 

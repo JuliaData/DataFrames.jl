@@ -17,7 +17,6 @@ my_tests = ["utils.jl",
             "dataframe.jl",
             "dataframerow.jl",
             "io.jl",
-            # "formula.jl",
             "constructors.jl",
             "conversions.jl",
             "sort.jl",
@@ -25,8 +24,7 @@ my_tests = ["utils.jl",
             "join.jl",
             "iteration.jl",
             "duplicates.jl",
-            "show.jl",
-            # "statsmodel.jl",
+            "show.jl"#,
             # "contrasts.jl"
             ]
 

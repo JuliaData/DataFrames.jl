@@ -12,3 +12,7 @@ import Base: keys, values, insert!
 @deprecate DataArray(df::AbstractDataFrame, T::DataType) convert(DataArray{T}, df)
 
 @deprecate read_rda(args...) FileIO.load(args...)
+
+@deprecate complete_cases(df)  complete_cases(df)
+@deprecate complete_cases!(df) complete_cases!(df)
+

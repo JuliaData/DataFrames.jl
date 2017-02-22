@@ -54,7 +54,7 @@ module TestData
     @test size(df6, 2) == 3
 
     #test_group("NA handling")
-    @test nrow(df5[complete_cases(df5), :]) == 3
+    @test nrow(df5[completecases(df5), :]) == 3
 
     #test_context("SubDataFrames")
 

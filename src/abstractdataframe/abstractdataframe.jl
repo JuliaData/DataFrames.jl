@@ -25,8 +25,8 @@ The following are normally implemented for AbstractDataFrames:
 * [`tail`]({ref}) : last `n` rows
 * `convert` : convert to an array
 * `DataArray` : convert to a DataArray
-* [`complete_cases`]({ref}) : indexes of complete cases (rows with no NA's)
-* [`complete_cases!`]({ref}) : remove rows with NA's
+* [`completecases`]({ref}) : indexes of complete cases (rows with no NA's)
+* [`completecases!`]({ref}) : remove rows with NA's
 * [`nonunique`]({ref}) : indexes of duplicate rows
 * [`unique!`]({ref}) : remove duplicate rows
 * `similar` : a DataFrame with similar columns as `d`
@@ -443,7 +443,7 @@ end
 Indexes of complete cases (rows without NA's)
 
 ```julia
-complete_cases(df::AbstractDataFrame)
+completecases(df::AbstractDataFrame)
 ```
 
 **Arguments**
@@ -454,7 +454,7 @@ complete_cases(df::AbstractDataFrame)
 
 * `::Vector{Bool}` : indexes of complete cases
 
-See also [`complete_cases!`]({ref}).
+See also [`completecases!`]({ref}).
 
 **Examples**
 
@@ -462,15 +462,15 @@ See also [`complete_cases!`]({ref}).
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 df[[1,4,5], :x] = NA
 df[[9,10], :y] = NA
-complete_cases(df)
+completecases(df)
 ```
 
 """
-function complete_cases(df::AbstractDataFrame)
+function completecases(df::AbstractDataFrame)
     ## Returns a Vector{Bool} of indexes of complete cases (rows with no NA's).
-    res = .!isna(df[1])
+    res = (!).(isna(df[1]))
     for i in 2:ncol(df)
-        res .&= .!isna(df[i])
+        res .&= (!).(isna(df[i]))
     end
     res
 end
@@ -479,7 +479,7 @@ end
 Delete rows with NA's.
 
 ```julia
-complete_cases!(df::AbstractDataFrame)
+completecases!(df::AbstractDataFrame)
 ```
 
 **Arguments**
@@ -490,7 +490,7 @@ complete_cases!(df::AbstractDataFrame)
 
 * `::AbstractDataFrame` : the updated version
 
-See also [`complete_cases`]({ref}).
+See also [`completecases`]({ref}).
 
 **Examples**
 
@@ -498,11 +498,11 @@ See also [`complete_cases`]({ref}).
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 df[[1,4,5], :x] = NA
 df[[9,10], :y] = NA
-complete_cases!(df)
+completecases!(df)
 ```
 
 """
-complete_cases!(df::AbstractDataFrame) = deleterows!(df, find(!complete_cases(df)))
+completecases!(df::AbstractDataFrame) = deleterows!(df, find(!completecases(df)))
 
 function Base.convert(::Type{Array}, df::AbstractDataFrame)
     convert(Matrix, df)
@@ -598,8 +598,8 @@ unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
 unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, find(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
-Base.unique(df::AbstractDataFrame) = df[.!nonunique(df), :]
-Base.unique(df::AbstractDataFrame, cols::Any) = df[.!nonunique(df, cols), :]
+Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
+Base.unique(df::AbstractDataFrame, cols::Any) = df[(!).(nonunique(df, cols)), :]
 
 """
 Delete duplicate rows
@@ -680,8 +680,10 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 
 # catch-all to cover cases where indexing returns a DataFrame and copy doesn't
 Base.hcat(df::AbstractDataFrame, x) = hcat!(df[:, :], x)
+Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame) = hcat!(df[:, :], df2)
 
 Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
+Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = hcat!(hcat(df1, df2), dfn...)
 
 # vcat only accepts DataFrames. Finds union of columns, maintaining order
 # of first df. Missing data becomes NAs.

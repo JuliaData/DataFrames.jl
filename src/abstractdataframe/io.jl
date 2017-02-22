@@ -181,7 +181,7 @@ end
     write(io, "</tr>")
     write(io, "</thead>")
     write(io, "<tbody>")
-    tty_rows, tty_cols = _displaysize(io)
+    tty_rows, tty_cols = Base.displaysize(io)
     mxrow = min(n,tty_rows)
     for row in 1:mxrow
         write(io, "<tr>")

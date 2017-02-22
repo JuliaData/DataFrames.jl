@@ -194,7 +194,7 @@ end
 #' chunkbounds = getchunkbounds(maxwidths, true)
 function getchunkbounds(maxwidths::Vector{Int},
                         splitchunks::Bool,
-                        availablewidth::Int=_displaysize()[2]) # -> Vector{Int}
+                        availablewidth::Int=Base.displaysize()[2]) # -> Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
     if splitchunks
@@ -335,7 +335,7 @@ function showrows(io::IO,
     end
 
     rowmaxwidth = maxwidths[ncols + 1]
-    chunkbounds = getchunkbounds(maxwidths, splitchunks, _displaysize(io)[2])
+    chunkbounds = getchunkbounds(maxwidths, splitchunks, Base.displaysize(io)[2])
     nchunks = length(chunkbounds) - 1
 
     for chunkindex in 1:nchunks
@@ -441,7 +441,7 @@ function Base.show(io::IO,
                    rowlabel::Symbol = @compat(Symbol("Row")),
                    displaysummary::Bool = true) # -> Void
     nrows = size(df, 1)
-    dsize = _displaysize(io)
+    dsize = Base.displaysize(io)
     availableheight = dsize[1] - 5
     nrowssubset = fld(availableheight, 2)
     bound = min(nrowssubset - 1, nrows)

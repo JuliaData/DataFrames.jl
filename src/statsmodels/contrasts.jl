@@ -292,7 +292,6 @@ function contrasts_matrix(C::HelmertCoding, baseind, n)
     mat = mat[[baseind; 1:(baseind-1); (baseind+1):end], :]
     return mat
 end
-    
 """
     ContrastsCoding(mat::Matrix[, base[, levels]])
 
