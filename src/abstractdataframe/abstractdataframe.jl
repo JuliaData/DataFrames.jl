@@ -714,7 +714,6 @@ Base.vcat(df::AbstractDataFrame) = df
 
 Base.vcat(dfs::AbstractDataFrame...) = vcat(AbstractDataFrame[dfs...])
 
-Base.vcat(dfs::Vector{Void}) = dfs
 function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
     isempty(dfs) && return DataFrame()
     coltyps, colnams, similars = _colinfo(dfs)
