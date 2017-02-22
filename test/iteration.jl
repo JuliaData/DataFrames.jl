@@ -11,7 +11,7 @@ module TestIteration
         @test isa(row, DataTableRow)
         @test isequal(row[:B]-row[:A], Nullable(1))
 
-        # issue #683 (https://github.com/JuliaStats/DataTables.jl/pull/683)
+        # issue #683 (https://github.com/JuliaStats/DataFrames.jl/pull/683)
         @test typeof(collect(row)) == @compat Array{Tuple{Symbol, Any}, 1}
     end
 
