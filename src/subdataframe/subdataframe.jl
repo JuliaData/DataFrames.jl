@@ -51,14 +51,14 @@ immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
     parent::DataFrame
     rows::T # maps from subdf row indexes to parent row indexes
 
-    @compat function SubDataFrame{T}(parent::DataFrame, rows::T) where T
+    function (::Type{SubDataFrame{T}}){T}(parent::DataFrame, rows::T)
         if length(rows) > 0
             rmin, rmax = extrema(rows)
             if rmin < 1 || rmax > size(parent, 1)
                 throw(BoundsError())
             end
         end
-        new(parent, rows)
+        new{T}(parent, rows)
     end
 end
 

@@ -18,15 +18,6 @@ module TestUtils
 
     # Check that reserved words are up to date
 
-    function _remove_comments(s::AbstractString)
-        idx = search(s, ";;")
-        if isempty(idx)
-           return s
-        else
-            return s[1:(first(idx) - 1)]
-        end
-    end
-
     f = "$JULIA_HOME/../../src/julia-parser.scm"
     if isfile(f)
         r1 = r"define initial-reserved-words '\(([^)]+)"
@@ -36,7 +27,8 @@ module TestUtils
         if m1 == nothing || m2 == nothing
             error("Unable to extract keywords from 'julia-parser.scm'.")
         else
-            rw = Set(mapreduce(t -> split(_remove_comments(t)), vcat, split(m1.captures[1]*"\n"*m2.captures[1], '\n')))
+            s = replace(m1.captures[1]*" "*m2.captures[1], r";;.*?\n", "")
+            rw = Set(split(s, r"\W+"))
             @test rw == DataFrames.RESERVED_WORDS
         end
     else

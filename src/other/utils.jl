@@ -2,10 +2,13 @@ import Base: isidentifier, is_id_start_char, is_id_char
 
 # FixMe! Incomplete list. E.g. `true` is missing
 const RESERVED_WORDS = Set(["local", "global", "export", "let", "bitstype",
-    "typealias", "using", "for", "struct", "while", "const", "immutable",
+    "typealias", "using", "for", "while", "const", "immutable",
     "baremodule", "continue", "import", "function", "macro", "if", "else",
     "finally", "try", "module", "elseif", "end", "begin", "quote", "do", "break",
     "catch", "abstract", "return", "type", "importall"])
+
+VERSION < v"0.6.0-dev.2194" && push!(RESERVED_WORDS, "ccall")
+VERSION >= v"0.6.0-dev.2698" && push!(RESERVED_WORDS, "struct")
 
 function identifier(s::AbstractString)
     s = normalize_string(s)
