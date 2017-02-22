@@ -502,7 +502,7 @@ completecases!(df)
 ```
 
 """
-completecases!(df::AbstractDataFrame) = deleterows!(df, find(!completecases(df)))
+completecases!(df::AbstractDataFrame) = deleterows!(df, find(!, completecases(df)))
 
 function Base.convert(::Type{Array}, df::AbstractDataFrame)
     convert(Matrix, df)
