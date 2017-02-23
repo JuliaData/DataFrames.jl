@@ -93,10 +93,6 @@ See the following for additional split-apply-combine operations:
 
 Piping methods `|>` are also provided.
 
-See the
-[DataTablesMeta](https://github.com/JuliaStats/DataTablesMeta.jl)
-package for more operations on GroupedDataTables.
-
 ### Examples
 
 ```julia

@@ -39,7 +39,7 @@ makedocs(
 
 deploydocs(
     # options
-    repo = "github.com/JuliaStats/DataTables.jl.git",
+    repo = "github.com/JuliaData/DataTables.jl.git",
     target = "build",
     deps = nothing,
     make = nothing,
