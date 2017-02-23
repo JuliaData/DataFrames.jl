@@ -93,10 +93,6 @@ See the following for additional split-apply-combine operations:
 
 Piping methods `|>` are also provided.
 
-See the
-[DataFramesMeta](https://github.com/JuliaStats/DataFramesMeta.jl)
-package for more operations on GroupedDataFrames.
-
 ### Examples
 
 ```julia
