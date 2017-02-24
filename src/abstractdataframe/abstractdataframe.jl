@@ -704,8 +704,10 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 
 # catch-all to cover cases where indexing returns a DataFrame and copy doesn't
 Base.hcat(df::AbstractDataFrame, x) = hcat!(df[:, :], x)
+Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame) = hcat!(df[:, :], df2)
 
 Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
+Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = hcat!(hcat(df1, df2), dfn...)
 
 # vcat only accepts DataFrames. Finds union of columns, maintaining order
 # of first df. Missing data become null values.

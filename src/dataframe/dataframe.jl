@@ -766,6 +766,8 @@ hcat!(a::DataFrame, b, c...) = hcat!(hcat!(a, b), c...)
 
 # hcat
 Base.hcat(df::DataFrame, x) = hcat!(copy(df), x)
+Base.hcat(df1::DataFrame, df2::AbstractDataFrame) = hcat!(copy(df1), df2)
+Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = hcat!(hcat(df1, df2), dfn...)
 
 ##############################################################################
 ##
