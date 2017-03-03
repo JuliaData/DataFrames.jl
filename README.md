@@ -18,6 +18,11 @@ Tools for working with tabular data in Julia.
 **Maintenance**: DataTables is maintained collectively by the [JuliaData collaborators](https://github.com/orgs/JuliaData/people).
 Responsiveness to pull requests and issues can vary, depending on the availability of key collaborators.
 
+For reading and writing tabular data, load the [CSV.jl](https://github.com/JuliaData/CSV.jl) package with
+```julia
+using CSV
+```
+
 [docs-latest-img]: https://img.shields.io/badge/docs-latest-blue.svg
 [docs-latest-url]: http://JuliaData.github.io/DataTables.jl/latest/
 
