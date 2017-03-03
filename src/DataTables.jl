@@ -65,7 +65,6 @@ export @~,
        nullable!,
        order,
        printtable,
-       readtable,
        rename!,
        rename,
        showcols,
@@ -73,7 +72,6 @@ export @~,
        stackdt,
        unique!,
        unstack,
-       writetable,
        head,
        tail,
 
@@ -110,7 +108,6 @@ for (dir, filename) in [
         ("abstractdatatable", "reshape.jl"),
 
         ("abstractdatatable", "io.jl"),
-        ("datatable", "io.jl"),
 
         ("abstractdatatable", "show.jl"),
         ("groupeddatatable", "show.jl"),

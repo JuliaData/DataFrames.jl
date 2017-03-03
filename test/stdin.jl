@@ -1,6 +1,7 @@
 using DataTables
+using CSV
 
-dt = readtable(STDIN)
+dt = CSV.read(STDIN)
 
 io = IOBuffer()
 print(io, dt)

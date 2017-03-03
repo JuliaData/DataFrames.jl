@@ -135,7 +135,7 @@ To see more of the functionality for working with `DataTable` objects, we need a
 For example, we can access Fisher's iris data set using the following functions:
 
 ```julia
-iris = readtable(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"))
+iris = CSV.read(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"))
 head(iris)
 ```
 
