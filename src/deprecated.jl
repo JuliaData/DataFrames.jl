@@ -10,8 +10,6 @@ import Base: keys, values, insert!
 @deprecate values(df::AbstractDataFrame) DataFrames.columns(df)
 @deprecate insert!(df::DataFrame, df2::AbstractDataFrame) merge!(df, df2)
 
-@deprecate read_rda(args...) FileIO.load(args...)
-
 @deprecate pool categorical
 @deprecate pool! categorical!
 
