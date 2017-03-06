@@ -15,205 +15,166 @@ similar_nullable{T,R}(dv::CategoricalArray{T,R}, dims::@compat(Union{Int, Tuple{
 similar_nullable(dt::AbstractDataTable, dims::Int) =
     DataTable(Any[similar_nullable(x, dims) for x in columns(dt)], copy(index(dt)))
 
-function join_idx(left, right, max_groups)
-    ## adapted from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
+# helper structure for DataTables joining
+immutable DataTableJoiner{DT1<:AbstractDataTable, DT2<:AbstractDataTable}
+    dtl::DT1
+    dtr::DT2
+    dtl_on::DT1
+    dtr_on::DT2
+    on_cols::Vector{Symbol}
 
-    # NULL group in location 0
+    function DataTableJoiner(dtl::DT1, dtr::DT2, on::Union{Symbol,Vector{Symbol}})
+        on_cols = isa(on, Symbol) ? [on] : on
+        new(dtl, dtr, dtl[on_cols], dtr[on_cols], on_cols)
+    end
+end
 
-    left_sorter, where, left_count = groupsort_indexer(left, max_groups)
-    right_sorter, where, right_count = groupsort_indexer(right, max_groups)
+DataTableJoiner{DT1<:AbstractDataTable, DT2<:AbstractDataTable}(dtl::DT1, dtr::DT2, on::Union{Symbol,Vector{Symbol}}) =
+    DataTableJoiner{DT1,DT2}(dtl, dtr, on)
 
-    # First pass, determine size of result set
-    tcount = 0
-    rcount = 0
-    lcount = 0
-    for i in 1:(max_groups + 1)
-        lc = left_count[i]
-        rc = right_count[i]
+# helper map between the row indices in original and joined table
+immutable RowIndexMap
+    "row indices in the original table"
+    orig::Vector{Int}
+    "row indices in the resulting joined table"
+    join::Vector{Int}
+end
 
-        if rc > 0 && lc > 0
-            tcount += lc * rc
-        elseif rc > 0
-            rcount += rc
+Base.length(x::RowIndexMap) = length(x.orig)
+
+# composes the joined data table using the maps between the left and right
+# table rows and the indices of rows in the result
+function compose_joined_table(joiner::DataTableJoiner,
+                              left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
+                              right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap)
+    @assert length(left_ixs) == length(right_ixs)
+    # compose left half of the result taking all left columns
+    all_orig_left_ixs = vcat(left_ixs.orig, leftonly_ixs.orig)
+    if length(leftonly_ixs) > 0
+        # combine the matched (left_ixs.orig) and non-matched (leftonly_ixs.orig) indices of the left table rows
+        # preserving the original rows order
+        all_orig_left_ixs = similar(left_ixs.orig, length(left_ixs)+length(leftonly_ixs))
+        @inbounds all_orig_left_ixs[left_ixs.join] = left_ixs.orig
+        @inbounds all_orig_left_ixs[leftonly_ixs.join] = leftonly_ixs.orig
+    else
+        # the result contains only the left rows that are matched to right rows (left_ixs)
+        all_orig_left_ixs = left_ixs.orig # no need to copy left_ixs.orig as it's not used elsewhere
+    end
+    ril = length(right_ixs)
+    loil = length(leftonly_ixs)
+    roil = length(rightonly_ixs)
+    left_dt = DataTable(Any[resize!(col[all_orig_left_ixs], length(all_orig_left_ixs)+roil)
+                            for col in columns(joiner.dtl)],
+                        names(joiner.dtl))
+
+    # compose right half of the result taking all right columns excluding on
+    dtr_noon = without(joiner.dtr, joiner.on_cols)
+    # permutation to swap rightonly and leftonly rows
+    right_perm = vcat(1:ril, ril+roil+1:ril+roil+loil, ril+1:ril+roil)
+    if length(leftonly_ixs) > 0
+        # compose right_perm with the permutation that restores left rows order
+        right_perm[vcat(right_ixs.join, leftonly_ixs.join)] = right_perm[1:ril+loil]
+    end
+    all_orig_right_ixs = vcat(right_ixs.orig, rightonly_ixs.orig)
+    right_dt = DataTable(Any[resize!(col[all_orig_right_ixs], length(all_orig_right_ixs)+loil)[right_perm]
+                             for col in columns(dtr_noon)],
+                         names(dtr_noon))
+    # merge left and right parts of the joined table
+    res = hcat!(left_dt, right_dt)
+
+    if length(rightonly_ixs.join) > 0
+        # some left rows are nulls, so the values of the "on" columns
+        # need to be taken from the right
+        for (on_col_ix, on_col) in enumerate(joiner.on_cols)
+            # fix the result of the rightjoin by taking the nonnull values from the right table
+            res[on_col][rightonly_ixs.join] = joiner.dtr_on[rightonly_ixs.orig, on_col_ix]
+        end
+    end
+    return res
+end
+
+# map the indices of the left and right joined tables
+# to the indices of the rows in the resulting table
+# if `nothing` is given, the corresponding map is not built
+function update_row_maps!(left_table::AbstractDataTable,
+                          right_table::AbstractDataTable,
+                          right_dict::RowGroupDict,
+                          left_ixs::Union{Void, RowIndexMap},
+                          leftonly_ixs::Union{Void, RowIndexMap},
+                          right_ixs::Union{Void, RowIndexMap},
+                          rightonly_mask::Union{Void, Vector{Bool}})
+    # helper functions
+    @inline update!(ixs::Void, orig_ix::Int, join_ix::Int, count::Int = 1) = nothing
+    @inline function update!(ixs::RowIndexMap, orig_ix::Int, join_ix::Int, count::Int = 1)
+        n = length(ixs.orig)
+        resize!(ixs.orig, n+count)
+        ixs.orig[n+1:end] = orig_ix
+        append!(ixs.join, join_ix:(join_ix+count-1))
+        ixs
+    end
+    @inline update!(ixs::Void, orig_ixs::AbstractArray, join_ix::Int) = nothing
+    @inline function update!(ixs::RowIndexMap, orig_ixs::AbstractArray, join_ix::Int)
+        append!(ixs.orig, orig_ixs)
+        append!(ixs.join, join_ix:(join_ix+length(orig_ixs)-1))
+        ixs
+    end
+    @inline update!(ixs::Void, orig_ixs::AbstractArray) = nothing
+    @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) = (mask[orig_ixs] = false)
+
+    # iterate over left rows and compose the left<->right index map
+    next_join_ix = 1
+    for l_ix in 1:nrow(left_table)
+        r_ixs = findrows(right_dict, left_table, l_ix)
+        if isempty(r_ixs)
+            update!(leftonly_ixs, l_ix, next_join_ix)
+            next_join_ix += 1
         else
-            lcount += lc
+            update!(left_ixs, l_ix, next_join_ix, length(r_ixs))
+            update!(right_ixs, r_ixs, next_join_ix)
+            update!(rightonly_mask, r_ixs)
+            next_join_ix += length(r_ixs)
         end
     end
-
-    # group 0 is the NULL group
-    tposition = 0
-    lposition = 0
-    rposition = 0
-
-    left_pos = 0
-    right_pos = 0
-
-    left_indexer = Vector{Int}(tcount)
-    right_indexer = Vector{Int}(tcount)
-    leftonly_indexer = Vector{Int}(lcount)
-    rightonly_indexer = Vector{Int}(rcount)
-    for i in 1:(max_groups + 1)
-        lc = left_count[i]
-        rc = right_count[i]
-        if rc == 0
-            for j in 1:lc
-                leftonly_indexer[lposition + j] = left_pos + j
-            end
-            lposition += lc
-        elseif lc == 0
-            for j in 1:rc
-                rightonly_indexer[rposition + j] = right_pos + j
-            end
-            rposition += rc
-        else
-            for j in 1:lc
-                offset = tposition + (j-1) * rc
-                for k in 1:rc
-                    left_indexer[offset + k] = left_pos + j
-                    right_indexer[offset + k] = right_pos + k
-                end
-            end
-            tposition += lc * rc
-        end
-        left_pos += lc
-        right_pos += rc
-    end
-
-    ## (left_sorter, left_indexer, leftonly_indexer,
-    ##  right_sorter, right_indexer, rightonly_indexer)
-    (left_sorter[left_indexer], left_sorter[leftonly_indexer],
-     right_sorter[right_indexer], right_sorter[rightonly_indexer])
 end
 
-function sharepools{S,N}(v1::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}},
-                         v2::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}},
-                         index::Vector{S},
-                         R)
-    tidx1 = convert(Vector{R}, indexin(CategoricalArrays.index(v1.pool), index))
-    tidx2 = convert(Vector{R}, indexin(CategoricalArrays.index(v2.pool), index))
-    refs1 = zeros(R, length(v1))
-    refs2 = zeros(R, length(v2))
-    for i in 1:length(refs1)
-        if v1.refs[i] != 0
-            refs1[i] = tidx1[v1.refs[i]]
-        end
+# map the row indices of the left and right joined tables
+# to the indices of rows in the resulting table
+# returns the 4-tuple of row indices maps for
+# - matching left rows
+# - non-matching left rows
+# - matching right rows
+# - non-matching right rows
+# if false is provided, the corresponding map is not built and the
+# tuple element is empty RowIndexMap
+function update_row_maps!(left_table::AbstractDataTable,
+                          right_table::AbstractDataTable,
+                          right_dict::RowGroupDict,
+                          map_left::Bool, map_leftonly::Bool,
+                          map_right::Bool, map_rightonly::Bool)
+    init_map(dt::AbstractDataTable, init::Bool) = init ?
+        RowIndexMap(sizehint!(Vector{Int}(), nrow(dt)),
+                    sizehint!(Vector{Int}(), nrow(dt))) : nothing
+    to_bimap(x::RowIndexMap) = x
+    to_bimap(::Void) = RowIndexMap(Vector{Int}(), Vector{Int}())
+
+    # init maps as requested
+    left_ixs = init_map(left_table, map_left)
+    leftonly_ixs = init_map(left_table, map_leftonly)
+    right_ixs = init_map(right_table, map_right)
+    rightonly_mask = map_rightonly ? fill(true, nrow(right_table)) : nothing
+    update_row_maps!(left_table, right_table, right_dict, left_ixs, leftonly_ixs, right_ixs, rightonly_mask)
+    if map_rightonly
+        rightonly_orig_ixs = find(rightonly_mask)
+        rightonly_ixs = RowIndexMap(rightonly_orig_ixs,
+                                    collect(length(right_ixs.orig) +
+                                            (leftonly_ixs === nothing ? 0 : length(leftonly_ixs)) +
+                                            (1:length(rightonly_orig_ixs))))
+    else
+        rightonly_ixs = nothing
     end
-    for i in 1:length(refs2)
-        if v2.refs[i] != 0
-            refs2[i] = tidx2[v2.refs[i]]
-        end
-    end
-    pool = CategoricalPool{S, R}(index)
-    return (CategoricalArray(refs1, pool),
-            CategoricalArray(refs2, pool))
+
+    return to_bimap(left_ixs), to_bimap(leftonly_ixs), to_bimap(right_ixs), to_bimap(rightonly_ixs)
 end
-
-function sharepools{S,N}(v1::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}},
-                         v2::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}})
-    index = sort(unique([levels(v1); levels(v2)]))
-    sz = length(index)
-
-    R = sz <= typemax(UInt8)  ? UInt8 :
-        sz <= typemax(UInt16) ? UInt16 :
-        sz <= typemax(UInt32) ? UInt32 :
-                                UInt64
-
-    # To ensure type stability during actual work
-    sharepools(v1, v2, index, R)
-end
-
-sharepools{S,N}(v1::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}},
-                v2::AbstractArray{S,N}) =
-    sharepools(v1, oftype(v1, v2))
-
-sharepools{S,N}(v1::AbstractArray{S,N},
-                v2::Union{CategoricalArray{S,N}, NullableCategoricalArray{S,N}}) =
-    sharepools(oftype(v2, v1), v2)
-
-# TODO: write an optimized version for (Nullable)CategoricalArray
-function sharepools{S, T}(v1::AbstractArray{S},
-                          v2::AbstractArray{T})
-    ## Return two categorical arrays that share the same pool.
-
-    ## TODO: allow specification of R
-    R = CategoricalArrays.DefaultRefType
-    refs1 = Array{R}(size(v1))
-    refs2 = Array{R}(size(v2))
-    K = promote_type(S, T)
-    poolref = Dict{K, R}()
-    maxref = 0
-
-    # loop through once to fill the poolref dict
-    for i = 1:length(v1)
-        if !_isnull(v1[i])
-            poolref[K(v1[i])] = 0
-        end
-    end
-    for i = 1:length(v2)
-        if !_isnull(v2[i])
-            poolref[K(v2[i])] = 0
-        end
-    end
-
-    # fill positions in poolref
-    pool = sort(collect(keys(poolref)))
-    i = 1
-    for p in pool
-        poolref[p] = i
-        i += 1
-    end
-
-    # fill in newrefs
-    zeroval = zero(R)
-    for i = 1:length(v1)
-        if _isnull(v1[i])
-            refs1[i] = zeroval
-        else
-            refs1[i] = poolref[K(v1[i])]
-        end
-    end
-    for i = 1:length(v2)
-        if _isnull(v2[i])
-            refs2[i] = zeroval
-        else
-            refs2[i] = poolref[K(v2[i])]
-        end
-    end
-
-    pool = CategoricalPool(pool)
-    return (NullableCategoricalArray(refs1, pool),
-            NullableCategoricalArray(refs2, pool))
-end
-
-function sharepools(dt1::AbstractDataTable, dt2::AbstractDataTable)
-    # This method exists to allow merge to work with multiple columns.
-    # It takes the columns of each DataTable and returns a categorical array
-    # with a merged pool that "keys" the combination of column values.
-    # The pools of the result don't really mean anything.
-    dv1, dv2 = sharepools(dt1[1], dt2[1])
-    # use UInt32 instead of the minimum integer size chosen by sharepools
-    # since the number of levels can be high
-    refs1 = Vector{UInt32}(dv1.refs)
-    refs2 = Vector{UInt32}(dv2.refs)
-    # the + 1 handles nulls
-    refs1[:] += 1
-    refs2[:] += 1
-    ngroups = length(levels(dv1)) + 1
-    for j = 2:ncol(dt1)
-        dv1, dv2 = sharepools(dt1[j], dt2[j])
-        for i = 1:length(refs1)
-            refs1[i] += (dv1.refs[i]) * ngroups
-        end
-        for i = 1:length(refs2)
-            refs2[i] += (dv2.refs[i]) * ngroups
-        end
-        ngroups *= length(levels(dv1)) + 1
-    end
-    # recode refs1 and refs2 to drop the unused column combinations and
-    # limit the pool size
-    sharepools(refs1, refs2)
-end
-
 
 """
 Join two DataTables
@@ -270,68 +231,67 @@ join(name, job, kind = :cross)
 """
 function Base.join(dt1::AbstractDataTable,
                    dt2::AbstractDataTable;
-                   on::@compat(Union{Symbol, Vector{Symbol}}) = Symbol[],
+                   on::Union{Symbol, Vector{Symbol}} = Symbol[],
                    kind::Symbol = :inner)
     if kind == :cross
-        if on != Symbol[]
-            throw(ArgumentError("Cross joins don't use argument 'on'."))
-        end
+        (on == Symbol[]) || throw(ArgumentError("Cross joins don't use argument 'on'."))
         return crossjoin(dt1, dt2)
     elseif on == Symbol[]
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
-    dv1, dv2 = sharepools(dt1[on], dt2[on])
-
-    left_idx, leftonly_idx, right_idx, rightonly_idx =
-        join_idx(dv1.refs, dv2.refs, length(dv1.pool))
+    joiner = DataTableJoiner(dt1, dt2, on)
 
     if kind == :inner
-        dt2w = without(dt2, on)
-
-        left = dt1[left_idx, :]
-        right = dt2w[right_idx, :]
-
-        return hcat!(left, right)
+        compose_joined_table(joiner, update_row_maps!(joiner.dtl_on, joiner.dtr_on,
+                                                      group_rows(joiner.dtr_on),
+                                                      true, false, true, false)...)
     elseif kind == :left
-        dt2w = without(dt2, on)
-
-        left = dt1[[left_idx; leftonly_idx], :]
-        right = vcat(dt2w[right_idx, :],
-                     similar_nullable(dt2w, length(leftonly_idx)))
-
-        return hcat!(left, right)
+        compose_joined_table(joiner, update_row_maps!(joiner.dtl_on, joiner.dtr_on,
+                                                      group_rows(joiner.dtr_on),
+                                                      true, true, true, false)...)
     elseif kind == :right
-        dt1w = without(dt1, on)
-
-        left = vcat(dt1w[left_idx, :],
-                    similar_nullable(dt1w, length(rightonly_idx)))
-        right = dt2[[right_idx; rightonly_idx], :]
-
-        return hcat!(left, right)
+        right_ixs, rightonly_ixs, left_ixs, leftonly_ixs = update_row_maps!(joiner.dtr_on, joiner.dtl_on,
+                                                                            group_rows(joiner.dtl_on),
+                                                                            true, true, true, false)
+        compose_joined_table(joiner, left_ixs, leftonly_ixs, right_ixs, rightonly_ixs)
     elseif kind == :outer
-        dt1w, dt2w = without(dt1, on),  without(dt2, on)
-
-        mixed = hcat!(dt1[left_idx, :], dt2w[right_idx, :])
-        leftonly = hcat!(dt1[leftonly_idx, :],
-                         similar_nullable(dt2w, length(leftonly_idx)))
-        rightonly = hcat!(similar_nullable(dt1w, length(rightonly_idx)),
-                          dt2[rightonly_idx, :])
-
-        return vcat(mixed, leftonly, rightonly)
+        compose_joined_table(joiner, update_row_maps!(joiner.dtl_on, joiner.dtr_on,
+                                                      group_rows(joiner.dtr_on),
+                                                      true, true, true, true)...)
     elseif kind == :semi
-        dt1[unique(left_idx), :]
+        # hash the right rows
+        dtr_on_grp = group_rows(joiner.dtr_on)
+        # iterate over left rows and leave those found in right
+        left_ixs = Vector{Int}()
+        sizehint!(left_ixs, nrow(joiner.dtl))
+        @inbounds for l_ix in 1:nrow(joiner.dtl_on)
+            if findrow(dtr_on_grp, joiner.dtl_on, l_ix) != 0
+                push!(left_ixs, l_ix)
+            end
+        end
+        return joiner.dtl[left_ixs, :]
     elseif kind == :anti
-        dt1[leftonly_idx, :]
+        # hash the right rows
+        dtr_on_grp = group_rows(joiner.dtr_on)
+        # iterate over left rows and leave those not found in right
+        leftonly_ixs = Vector{Int}()
+        sizehint!(leftonly_ixs, nrow(joiner.dtl))
+        @inbounds for l_ix in 1:nrow(joiner.dtl_on)
+            if findrow(dtr_on_grp, joiner.dtl_on, l_ix) == 0
+                push!(leftonly_ixs, l_ix)
+            end
+        end
+        return joiner.dtl[leftonly_ixs, :]
     else
-        throw(ArgumentError("Unknown kind of join requested"))
+        throw(ArgumentError("Unknown kind of join requested: $kind"))
     end
 end
 
 function crossjoin(dt1::AbstractDataTable, dt2::AbstractDataTable)
     r1, r2 = size(dt1, 1), size(dt2, 1)
-    cols = Any[[Compat.repeat(c, inner=r2) for c in columns(dt1)];
-            [Compat.repeat(c, outer=r1) for c in columns(dt2)]]
+    cols = Any[[repeat(c, inner=r2) for c in columns(dt1)];
+               [repeat(c, outer=r1) for c in columns(dt2)]]
     colindex = merge(index(dt1), index(dt2))
     DataTable(cols, colindex)
 end

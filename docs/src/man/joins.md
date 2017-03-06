@@ -51,7 +51,7 @@ Cross joins are the only kind of join that does not use a key:
 join(a, b, kind = :cross)
 ```
 
-In order to join data frames on keys which have different names, you must first rename them so that they match. This can be done using rename!:
+In order to join data tables on keys which have different names, you must first rename them so that they match. This can be done using rename!:
 
 ```julia
 a = DataTable(ID = [1, 2], Name = ["A", "B"])
@@ -63,11 +63,11 @@ join(a, b, on = :ID, kind = :inner)
 Or renaming multiple columns at a time:
 
 ```julia
-a = DataTable(City = ["Amsterdam", "London", "London", "New York", "New York"], 
-              Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"], 
+a = DataTable(City = ["Amsterdam", "London", "London", "New York", "New York"],
+              Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
               Category = [1, 2, 3, 4, 5])
-b = DataTable(Location = ["Amsterdam", "London", "London", "New York", "New York"], 
-              Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"], 
+b = DataTable(Location = ["Amsterdam", "London", "London", "New York", "New York"],
+              Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
               Name = ["a", "b", "c", "d", "e"])
 rename!(b, [:Location => :City, :Work => :Job])
 join(a, b, on = [:City, :Job])

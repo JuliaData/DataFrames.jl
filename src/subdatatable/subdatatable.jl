@@ -9,7 +9,7 @@ if VERSION >= v"0.6.0-dev.2643"
     include_string("""
         immutable SubDataTable{T <: AbstractVector{Int}} <: AbstractDataTable
             parent::DataTable
-            rows::T # maps from subdf row indexes to parent row indexes
+            rows::T # maps from subdt row indexes to parent row indexes
 
             function SubDataTable{T}(parent::DataTable, rows::T) where {T <: AbstractVector{Int}}
                 if length(rows) > 0
@@ -26,7 +26,7 @@ else
     @eval begin
         immutable SubDataTable{T <: AbstractVector{Int}} <: AbstractDataTable
             parent::DataTable
-            rows::T # maps from subdf row indexes to parent row indexes
+            rows::T # maps from subdt row indexes to parent row indexes
 
             function SubDataTable(parent::DataTable, rows::T)
                 if length(rows) > 0
@@ -164,10 +164,4 @@ end
 
 Base.map(f::Function, sdt::SubDataTable) = f(sdt) # TODO: deprecate
 
-function Base.delete!(sdt::SubDataTable, c::Any) # TODO: deprecate?
-    return SubDataTable(delete!(sdt.parent, c), sdt.rows)
-end
-
-without(sdt::SubDataTable, c::Vector{Int}) = view(without(sdt.parent, c), sdt.rows)
-without(sdt::SubDataTable, c::Int) = view(without(sdt.parent, c), sdt.rows)
-without(sdt::SubDataTable, c::Any) = view(without(sdt.parent, c), sdt.rows)
+without(sdt::SubDataTable, c) = view(without(sdt.parent, c), sdt.rows)
