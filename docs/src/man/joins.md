@@ -63,11 +63,11 @@ join(a, b, on = :ID, kind = :inner)
 Or renaming multiple columns at a time:
 
 ```julia
-a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"], 
-              Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"], 
+a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"],
+              Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
               Category = [1, 2, 3, 4, 5])
-b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"], 
-              Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"], 
+b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"],
+              Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
               Name = ["a", "b", "c", "d", "e"])
 rename!(b, [:Location => :City, :Work => :Job])
 join(a, b, on = [:City, :Job])

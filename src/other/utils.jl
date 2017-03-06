@@ -175,19 +175,6 @@ function _setdiff{T}(a::AbstractVector{T}, b::T)
     diff
 end
 
-function _uniqueofsorted(x::Vector)
-    idx = fill(true, length(x))
-    lastx = x[1]
-    for i = 2:length(x)
-        if lastx == x[i]
-            idx[i] = false
-        else
-            lastx = x[i]
-        end
-    end
-    x[idx]
-end
-
 # Gets the name of a function. Used in groupedataframe/grouping.jl
 function _fnames{T<:Function}(fs::Vector{T})
     λcounter = 0

@@ -55,69 +55,36 @@ ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Orderin
 #         the permutation induced by this ordering is used to
 #         sort the original (presumably larger) DataFrame
 
-type DTPerm{O<:@compat(Union{Ordering, AbstractVector}), DT<:AbstractDataFrame} <: Ordering
+immutable DTPerm{O<:Union{Ordering, AbstractVector}, DT<:AbstractDataFrame} <: Ordering
     ord::O
     df::DT
 end
 
-function DTPerm{O<:Ordering}(ords::AbstractVector{O}, df::AbstractDataFrame)
+function DTPerm{O<:Ordering, DT<:AbstractDataFrame}(ords::AbstractVector{O}, df::DT)
     if length(ords) != ncol(df)
         error("DTPerm: number of column orderings does not equal the number of DataFrame columns")
     end
-    DTPerm{AbstractVector{O}, typeof(df)}(ords, df)
+    DTPerm{typeof(ords), DT}(ords, df)
 end
 
-DTPerm{O<:Ordering}(o::O, df::AbstractDataFrame) = DTPerm{O,typeof(df)}(o,df)
+DTPerm{O<:Ordering, DT<:AbstractDataFrame}(o::O, df::DT) = DTPerm{O,DT}(o,df)
 
-# For sorting, a and b are row indices (first two lt definitions)
-# For issorted, the default row iterator returns DataFrameRows instead,
-# so two more lt function is defined below
-function Sort.lt{V<:AbstractVector}(o::DTPerm{V}, a, b)
-    for i = 1:ncol(o.df)
-        if lt(o.ord[i], o.df[a,i], o.df[b,i])
-            return true
-        end
-        if lt(o.ord[i], o.df[b,i], o.df[a,i])
-            return false
-        end
-    end
-    false
-end
+# get ordering function for the i-th column used for ordering
+col_ordering{O<:Ordering}(o::DTPerm{O}, i::Int) = o.ord
+col_ordering{V<:AbstractVector}(o::DTPerm{V}, i::Int) = o.ord[i]
 
-function Sort.lt{O<:Ordering}(o::DTPerm{O}, a, b)
-    for i = 1:ncol(o.df)
-        if lt(o.ord, o.df[a,i], o.df[b,i])
-            return true
-        end
-        if lt(o.ord, o.df[b,i], o.df[a,i])
-            return false
-        end
-    end
-    false
-end
+Base.@propagate_inbounds Base.getindex(o::DTPerm, i::Int, j::Int) = o.df[i, j]
+Base.@propagate_inbounds Base.getindex(o::DTPerm, a::DataFrameRow, j::Int) = a[j]
 
-function Sort.lt{V<:AbstractVector}(o::DTPerm{V}, a::DataFrameRow, b::DataFrameRow)
-    for i = 1:ncol(o.df)
-        if lt(o.ord[i], a[i], b[i])
-            return true
-        end
-        if lt(o.ord[i], b[i], a[i])
-            return false
-        end
+function Sort.lt(o::DTPerm, a, b)
+    @inbounds for i = 1:ncol(o.df)
+        ord = col_ordering(o, i)
+        va = o[a, i]
+        vb = o[b, i]
+        lt(ord, va, vb) && return true
+        lt(ord, vb, va) && return false
     end
-    false
-end
-
-function Sort.lt{O<:Ordering}(o::DTPerm{O}, a::DataFrameRow, b::DataFrameRow)
-    for i = 1:ncol(o.df)
-        if lt(o.ord, a[i], b[i])
-            return true
-        end
-        if lt(o.ord, b[i], a[i])
-            return false
-        end
-    end
-    false
+    false # a and b are equal
 end
 
 ###
@@ -306,10 +273,5 @@ for s in [:(Base.sort), :(Base.sortperm)]
 end
 
 Base.sort(df::AbstractDataFrame, a::Algorithm, o::Ordering) = df[sortperm(df, a, o),:]
-<<<<<<< HEAD
-Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DFPerm}) = sort!([1:size(df, 1);], a, o)
-Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) = sortperm(df, a, DFPerm(o,df))
-=======
-Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::@compat(Union{Perm,DTPerm})) = sort!([1:size(df, 1);], a, o)
+Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DTPerm}) = sort!([1:size(df, 1);], a, o)
 Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) = sortperm(df, a, DTPerm(o,df))
->>>>>>> Replace `df|DF` abbreviations with `dt|DT` (#7)

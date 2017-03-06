@@ -602,17 +602,14 @@ nonunique(df, 1)
 
 """
 function nonunique(df::AbstractDataFrame)
-    res = fill(false, nrow(df))
-    rows = Set{DataFrameRow}()
-    for i in 1:nrow(df)
-        arow = DataFrameRow(df, i)
-        if in(arow, rows)
-            res[i] = true
-        else
-            push!(rows, arow)
-        end
+    gslots = row_group_slots(df)[3]
+    # unique rows are the first encountered group representatives,
+    # nonunique are everything else
+    res = fill(true, nrow(df))
+    @inbounds for g_row in gslots
+        (g_row > 0) && (res[g_row] = false)
     end
-    res
+    return res
 end
 
 nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])

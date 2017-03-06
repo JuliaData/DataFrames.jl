@@ -227,7 +227,7 @@ unstack(df::AbstractDataFrame, colkey, value) =
 
 function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     # group on anything not a key or value:
-    g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]))
+    g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]), sort=true)
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
     rowkey = zeros(Int, size(df, 1))
     for i in 1:length(groupidxs)

@@ -12,20 +12,31 @@ module TestGrouping
 
     f(df) = DataFrame(cmax = maximum(df[:c]))
 
-    sdf = sort(df, cols=cols)
-    bdf = by(df, cols, f)
+    sdf = unique(df[cols])
 
-    @test isequal(bdf[cols], unique(sdf[cols]))
+    # by() without groups sorting
+    bdf = by(df, cols, f)
+    @test bdf[cols] == sdf
+
+    # by() with groups sorting
+    sbdf = by(df, cols, f, sort=true)
+    @test sbdf[cols] == sort(sdf)
 
     byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
 
     @test all(T -> T <: AbstractVector, map(typeof, colwise([sum], df)))
     @test all(T -> T <: AbstractVector, map(typeof, colwise(sum, df)))
 
+    # groupby() without groups sorting
     gd = groupby(df, cols)
     ga = map(f, gd)
 
     @test isequal(bdf, combine(ga))
+
+    # groupby() with groups sorting
+    gd = groupby(df, cols, sort=true)
+    ga = map(f, gd)
+    @test sbdf == combine(ga)
 
     g(df) = DataFrame(cmax1 = Vector(df[:cmax]) + 1)
     h(df) = g(f(df))
@@ -37,7 +48,7 @@ module TestGrouping
     @test groupby(df2, [:v1, :v2]).starts == collect(1:1000)
     @test groupby(df2, [:v2, :v1]).starts == collect(1:1000)
 
-    # grouping empty frame
+    # grouping empty table
     @test groupby(DataFrame(A=Int[]), :A).starts == Int[]
     # grouping single row
     @test groupby(DataFrame(A=Int[1]), :A).starts == Int[1]
@@ -67,11 +78,11 @@ module TestGrouping
     levels!(df[:Key1], ["Z", "B", "A"])
     levels!(df[:Key2], ["Z", "B", "A"])
     gd = groupby(df, :Key1)
-    @test isequal(gd[1], DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4))
-    @test isequal(gd[2], DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2))
+    @test isequal(gd[1], DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2))
+    @test isequal(gd[2], DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4))
     gd = groupby(df, [:Key1, :Key2])
-    @test isequal(gd[1], DataFrame(Key1="B", Key2="B", Value=4))
-    @test isequal(gd[2], DataFrame(Key1="B", Key2="A", Value=3))
-    @test isequal(gd[3], DataFrame(Key1="A", Key2="B", Value=2))
-    @test isequal(gd[4], DataFrame(Key1="A", Key2="A", Value=1))
+    @test isequal(gd[1], DataFrame(Key1="A", Key2="A", Value=1))
+    @test isequal(gd[2], DataFrame(Key1="A", Key2="B", Value=2))
+    @test isequal(gd[3], DataFrame(Key1="B", Key2="A", Value=3))
+    @test isequal(gd[4], DataFrame(Key1="B", Key2="B", Value=4))
 end

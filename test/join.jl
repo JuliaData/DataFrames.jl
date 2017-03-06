@@ -18,7 +18,7 @@ module TestJoin
                       Job = NullableArray(Nullable{String}["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
-    right = outer[Bool[!isnull(x) for x in outer[:Job]], [:Name, :ID, :Job]]
+    right = outer[Bool[!isnull(x) for x in outer[:Job]], [:ID, :Name, :Job]]
     left = outer[Bool[!isnull(x) for x in outer[:Name]], :]
     inner = left[Bool[!isnull(x) for x in left[:Job]], :]
     semi = unique(inner[:, [:ID, :Name]])
@@ -31,6 +31,8 @@ module TestJoin
     @test isequal(join(name, job, on = :ID, kind = :right), right)
     @test isequal(join(name, job, on = :ID, kind = :semi), semi)
     @test isequal(join(name, job, on = :ID, kind = :anti), anti)
+    @test_throws ArgumentError join(name, job)
+    @test_throws ArgumentError join(name, job, on=:ID, kind=:other)
 
     # Join with no non-key columns
     on = [:ID]
@@ -104,9 +106,9 @@ module TestJoin
                    Mass = [1.5, 2.2, 1.1])
     df2 = DataFrame(Name = ["A", "B", "C", "A"],
                     Quantity = [3, 3, 2, 4])
-    @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "A", "B", "C"],
-                                                           Quantity = [3, 4, 3, 2],
-                                                           Mass = [1.5, 1.5, 2.2, 1.1])
+    @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "B", "C", "A"],
+                                                           Quantity = [3, 3, 2, 4],
+                                                           Mass = [1.5, 2.2, 1.1, 1.5])
 
     # Test that join works when mixing Array and NullableArray (#1151)
     df = DataFrame([collect(1:10), collect(2:11)], [:x, :y])

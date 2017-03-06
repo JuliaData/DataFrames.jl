@@ -297,7 +297,7 @@ function Base.getindex{R<:Real}(df::DataFrame,
     return DataFrame(new_columns, copy(index(df)))
 end
 
-# df[:, :] => (Sub)?DataFrame
+# df[:, :] => DataFrame
 Base.getindex(df::DataFrame, ::Colon, ::Colon) = copy(df)
 
 ##############################################################################
@@ -792,17 +792,17 @@ end
 ##
 ##############################################################################
 
-function categorical!(df::DataFrame, cname::@compat(Union{Integer, Symbol}), compact::Bool=true)
+function categorical!(df::DataFrame, cname::Union{Integer, Symbol}, compact::Bool=true)
     df[cname] = categorical(df[cname], compact)
-    return
+    df
 end
 
-function categorical!{T <: @compat(Union{Integer, Symbol})}(df::DataFrame, cnames::Vector{T},
-                                                            compact::Bool=true)
+function categorical!{T <: Union{Integer, Symbol}}(df::DataFrame, cnames::Vector{T},
+                                                   compact::Bool=true)
     for cname in cnames
         df[cname] = categorical(df[cname], compact)
     end
-    return
+    df
 end
 
 function categorical!(df::DataFrame, compact::Bool=true)
@@ -811,7 +811,7 @@ function categorical!(df::DataFrame, compact::Bool=true)
             df[i] = categorical(df[i], compact)
         end
     end
-    return
+    df
 end
 
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
