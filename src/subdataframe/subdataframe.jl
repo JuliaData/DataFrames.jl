@@ -164,10 +164,4 @@ end
 
 Base.map(f::Function, sdf::SubDataFrame) = f(sdf) # TODO: deprecate
 
-function Base.delete!(sdf::SubDataFrame, c::Any) # TODO: deprecate?
-    return SubDataFrame(delete!(sdf.parent, c), sdf.rows)
-end
-
-without(sdf::SubDataFrame, c::Vector{Int}) = view(without(sdf.parent, c), sdf.rows)
-without(sdf::SubDataFrame, c::Int) = view(without(sdf.parent, c), sdf.rows)
-without(sdf::SubDataFrame, c::Any) = view(without(sdf.parent, c), sdf.rows)
+without(sdf::SubDataFrame, c) = view(without(sdf.parent, c), sdf.rows)

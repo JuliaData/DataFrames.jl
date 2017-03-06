@@ -26,40 +26,6 @@ end
 # Split
 #
 
-function groupsort_indexer(x::AbstractVector, ngroups::Integer, null_last::Bool=false)
-    # translated from Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
-
-    # count group sizes, location 0 for NULL
-    n = length(x)
-    # counts = x.pool
-    counts = fill(0, ngroups + 1)
-    for i = 1:n
-        counts[x[i] + 1] += 1
-    end
-
-    # mark the start of each contiguous group of like-indexed data
-    where = fill(1, ngroups + 1)
-    if null_last
-        for i = 3:ngroups+1
-            where[i] = where[i - 1] + counts[i - 1]
-        end
-        where[1] = where[end] + counts[end]
-    else
-        for i = 2:ngroups+1
-            where[i] = where[i - 1] + counts[i - 1]
-        end
-    end
-
-    # this is our indexer
-    result = fill(0, n)
-    for i = 1:n
-        label = x[i] + 1
-        result[where[label]] = i
-        where[label] += 1
-    end
-    result, where, counts
-end
-
 """
 A view of an AbstractDataFrame split into row groups
 
@@ -113,49 +79,23 @@ df |> groupby([:a, :b]) |> [sum, length]
 ```
 
 """
-function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
-    ## a subset of Wes McKinney's algorithm here:
-    ##     http://wesmckinney.com/blog/?p=489
-
-    ncols = length(cols)
-    # use CategoricalArray to get a set of integer references for each unique item
-    nv = NullableCategoricalArray(d[cols[ncols]])
-    # if there are NULLs, add 1 to the refs to avoid underflows in x later
-    anynulls = (findfirst(nv.refs, 0) > 0 ? 1 : 0)
-    # use UInt32 instead of the original array's integer size since the number of levels can be high
-    x = similar(nv.refs, UInt32)
-    for i = 1:nrow(d)
-        if nv.refs[i] == 0
-            x[i] = 1
-        else
-            x[i] = CategoricalArrays.order(nv.pool)[nv.refs[i]] + anynulls
-        end
+function groupby{T}(df::AbstractDataFrame, cols::Vector{T}; sort::Bool = false)
+    sdf = df[cols]
+    df_groups = group_rows(sdf)
+    # sort the groups
+    if sort
+        group_perm = sortperm(view(sdf, df_groups.rperm[df_groups.starts]))
+        permute!(df_groups.starts, group_perm)
+        Base.permute!!(df_groups.stops, group_perm)
     end
-    # also compute the number of groups, which is the product of the set lengths
-    ngroups = length(levels(nv)) + anynulls
-    # if there's more than 1 column, do roughly the same thing repeatedly
-    for j = (ncols - 1):-1:1
-        nv = NullableCategoricalArray(d[cols[j]])
-        anynulls = (findfirst(nv.refs, 0) > 0 ? 1 : 0)
-        for i = 1:nrow(d)
-            if nv.refs[i] != 0
-                x[i] += (CategoricalArrays.order(nv.pool)[nv.refs[i]] + anynulls - 1) * ngroups
-            end
-        end
-        ngroups = ngroups * (length(levels(nv)) + anynulls)
-        # TODO if ngroups is really big, shrink it
-    end
-    (idx, starts) = groupsort_indexer(x, ngroups)
-    # Remove zero-length groupings
-    starts = _uniqueofsorted(starts)
-    ends = starts[2:end] - 1
-    GroupedDataFrame(d, cols, idx, starts[1:end-1], ends)
+    GroupedDataFrame(df, cols, df_groups.rperm,
+                     df_groups.starts, df_groups.stops)
 end
-groupby(d::AbstractDataFrame, cols) = groupby(d, [cols])
+groupby(d::AbstractDataFrame, cols; sort::Bool = false) = groupby(d, [cols], sort = sort)
 
 # add a function curry
-groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
-groupby(cols) = x -> groupby(x, cols)
+groupby{T}(cols::Vector{T}; sort::Bool = false) = x -> groupby(x, cols, sort = sort)
+groupby(cols; sort::Bool = false) = x -> groupby(x, cols, sort = sort)
 
 Base.start(gd::GroupedDataFrame) = 1
 Base.next(gd::GroupedDataFrame, state::Int) =
@@ -313,8 +253,8 @@ Split-apply-combine in one step; apply `f` to each grouping in `d`
 based on columns `col`
 
 ```julia
-by(d::AbstractDataFrame, cols, f::Function)
-by(f::Function, d::AbstractDataFrame, cols)
+by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false)
+by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false)
 ```
 
 ### Arguments
@@ -323,6 +263,7 @@ by(f::Function, d::AbstractDataFrame, cols)
 * `cols` : a column indicator (Symbol, Int, Vector{Symbol}, etc.)
 * `f` : a function to be applied to groups; expects each argument to
   be an AbstractDataFrame
+* `sort`: sort row groups (no sorting by default)
 
 `f` can return a value, a vector, or a DataFrame. For a value or
 vector, these are merged into a column along with the `cols` keys. For
@@ -355,8 +296,10 @@ end
 ```
 
 """
-by(d::AbstractDataFrame, cols, f::Function) = combine(map(f, groupby(d, cols)))
-by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
+by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false) =
+    combine(map(f, groupby(d, cols, sort = sort)))
+by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false) =
+    by(d, cols, f, sort = sort)
 
 #
 # Aggregate convenience functions
@@ -400,26 +343,30 @@ df |> groupby(:a) |> [sum, x->mean(dropnull(x))]   # equivalent
 ```
 
 """
-aggregate(d::AbstractDataFrame, fs::Function) = aggregate(d, [fs])
-function aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T})
+aggregate(d::AbstractDataFrame, fs::Function; sort::Bool=false) = aggregate(d, [fs], sort=sort)
+function aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}; sort::Bool=false)
     headers = _makeheaders(fs, _names(d))
-    _aggregate(d, fs, headers)
+    _aggregate(d, fs, headers, sort)
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
-aggregate(gd::GroupedDataFrame, f::Function) = aggregate(gd, [f])
-function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T})
+aggregate(gd::GroupedDataFrame, f::Function; sort::Bool=false) = aggregate(gd, [f], sort=sort)
+function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false)
     headers = _makeheaders(fs, _setdiff(_names(gd), gd.cols))
-    combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
+    res = combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
+    sort && sort!(res, cols=headers)
+    res
 end
+
 (|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, fs)
 (|>){T<:Function}(gd::GroupedDataFrame, fs::Vector{T}) = aggregate(gd, fs)
 
 # Groups DataFrame by cols before applying aggregate
-function aggregate{S <: ColumnIndex, T <:Function}(d::AbstractDataFrame,
-                                     cols::@compat(Union{S, AbstractVector{S}}),
-                                     fs::@compat(Union{T, Vector{T}}))
-    aggregate(groupby(d, cols), fs)
+function aggregate{S<:ColumnIndex, T <:Function}(d::AbstractDataFrame,
+                                                 cols::Union{S, AbstractVector{S}},
+                                                 fs::Union{T, Vector{T}};
+                                                 sort::Bool=false)
+    aggregate(groupby(d, cols, sort=sort), fs)
 end
 
 function _makeheaders{T<:Function}(fs::Vector{T}, cn::Vector{Symbol})
@@ -428,6 +375,8 @@ function _makeheaders{T<:Function}(fs::Vector{T}, cn::Vector{Symbol})
             length(fnames)*length(cn))
 end
 
-function _aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol})
-    DataFrame(colwise(fs, d), headers)
+function _aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false)
+    res = DataFrame(colwise(fs, d), headers)
+    sort && sort!(res, cols=headers)
+    res
 end

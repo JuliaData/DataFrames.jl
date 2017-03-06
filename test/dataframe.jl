@@ -80,7 +80,6 @@ module TestDataFrame
                        b = NullableArray{String}(2),
                        c = NullableCategoricalArray{Float64}(2))
     @test isequal(nulldf, similar(df, 2))
-    @test isequal(nulldf, DataFrames.similar_nullable(df, 2))
 
     # Associative methods
 
@@ -330,4 +329,16 @@ module TestDataFrame
     #This changes the expected result
     df4[2,:Mass] = Nullable()
     @test isequal(df2, df4)
+
+    df = DataFrame(A = 1:10, B = 'A':'J')
+    @test !(df[:,:] === df)
+
+    @test append!(DataFrame(A = 1:2, B = 1:2), DataFrame(A = 3:4, B = 3:4)) == DataFrame(A=1:4, B = 1:4)
+    @test !any(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6)).columns)
+    @test all(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), [1,2]).columns)
+    @test all(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), [:A,:B]).columns)
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), [:A]).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), :A).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), [1]).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), 1).columns) == [1]
 end
