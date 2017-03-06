@@ -227,7 +227,7 @@ unstack(dt::AbstractDataTable, colkey, value) =
 
 function unstack(dt::AbstractDataTable, colkey::Int, value::Int)
     # group on anything not a key or value:
-    g = groupby(dt, setdiff(_names(dt), _names(dt)[[colkey, value]]))
+    g = groupby(dt, setdiff(_names(dt), _names(dt)[[colkey, value]]), sort=true)
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
     rowkey = zeros(Int, size(dt, 1))
     for i in 1:length(groupidxs)

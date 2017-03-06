@@ -80,7 +80,6 @@ module TestDataTable
                        b = NullableArray{String}(2),
                        c = NullableCategoricalArray{Float64}(2))
     @test isequal(nulldt, similar(dt, 2))
-    @test isequal(nulldt, DataTables.similar_nullable(dt, 2))
 
     # Associative methods
 
@@ -330,4 +329,16 @@ module TestDataTable
     #This changes the expected result
     dt4[2,:Mass] = Nullable()
     @test isequal(dt2, dt4)
+
+    dt = DataTable(A = 1:10, B = 'A':'J')
+    @test !(dt[:,:] === dt)
+
+    @test append!(DataTable(A = 1:2, B = 1:2), DataTable(A = 3:4, B = 3:4)) == DataTable(A=1:4, B = 1:4)
+    @test !any(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6)).columns)
+    @test all(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), [1,2]).columns)
+    @test all(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), [:A,:B]).columns)
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), [:A]).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), :A).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), [1]).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), 1).columns) == [1]
 end

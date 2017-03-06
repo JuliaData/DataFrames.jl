@@ -297,7 +297,7 @@ function Base.getindex{R<:Real}(dt::DataTable,
     return DataTable(new_columns, copy(index(dt)))
 end
 
-# dt[:, :] => (Sub)?DataTable
+# dt[:, :] => DataTable
 Base.getindex(dt::DataTable, ::Colon, ::Colon) = copy(dt)
 
 ##############################################################################
@@ -792,17 +792,17 @@ end
 ##
 ##############################################################################
 
-function categorical!(dt::DataTable, cname::@compat(Union{Integer, Symbol}), compact::Bool=true)
+function categorical!(dt::DataTable, cname::Union{Integer, Symbol}, compact::Bool=true)
     dt[cname] = categorical(dt[cname], compact)
-    return
+    dt
 end
 
-function categorical!{T <: @compat(Union{Integer, Symbol})}(dt::DataTable, cnames::Vector{T},
-                                                            compact::Bool=true)
+function categorical!{T <: Union{Integer, Symbol}}(dt::DataTable, cnames::Vector{T},
+                                                   compact::Bool=true)
     for cname in cnames
         dt[cname] = categorical(dt[cname], compact)
     end
-    return
+    dt
 end
 
 function categorical!(dt::DataTable, compact::Bool=true)
@@ -811,7 +811,7 @@ function categorical!(dt::DataTable, compact::Bool=true)
             dt[i] = categorical(dt[i], compact)
         end
     end
-    return
+    dt
 end
 
 function Base.append!(dt1::DataTable, dt2::AbstractDataTable)

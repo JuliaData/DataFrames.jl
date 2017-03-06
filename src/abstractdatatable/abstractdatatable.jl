@@ -602,17 +602,14 @@ nonunique(dt, 1)
 
 """
 function nonunique(dt::AbstractDataTable)
-    res = fill(false, nrow(dt))
-    rows = Set{DataTableRow}()
-    for i in 1:nrow(dt)
-        arow = DataTableRow(dt, i)
-        if in(arow, rows)
-            res[i] = true
-        else
-            push!(rows, arow)
-        end
+    gslots = row_group_slots(dt)[3]
+    # unique rows are the first encountered group representatives,
+    # nonunique are everything else
+    res = fill(true, nrow(dt))
+    @inbounds for g_row in gslots
+        (g_row > 0) && (res[g_row] = false)
     end
-    res
+    return res
 end
 
 nonunique(dt::AbstractDataTable, cols::Union{Real, Symbol}) = nonunique(dt[[cols]])
