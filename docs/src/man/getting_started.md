@@ -128,13 +128,35 @@ dt = DataTable(A = 1:4, B = randn(4))
 colwise(c->cumsum(dropnull(c)), dt)
 ```
 
+## Importing and Exporting Data (I/O)
 
-## IO
+For reading and writing tabular data from CSV and other delimited text files, use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
 
-For reading and writing tabular data, load the [CSV.jl](https://github.com/JuliaData/CSV.jl) package with
+If you have not used the CSV.jl package before then you may need to download it first.
 ```julia
-using CSV
+Pkg.add("CSV")
 ```
+
+The CSV.jl functions are not loaded automatically and must be imported into the session.
+```julia
+# can be imported seperately
+using DataTables
+using CSV
+# or imported together, seperated by commas
+using DataTables, CSV
+```
+
+Datasets can now be read using
+```julia
+CSV.read(...)
+```
+
+and written using
+```julia
+CSV.write(...)
+```
+
+For more information, use the REPL [help-mode](http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode) or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/)!
 
 ## Accessing Classic Data Sets
 
@@ -143,6 +165,7 @@ To see more of the functionality for working with `DataTable` objects, we need a
 For example, we can access Fisher's iris data set using the following functions:
 
 ```julia
+using CSV
 iris = CSV.read(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"))
 head(iris)
 ```
