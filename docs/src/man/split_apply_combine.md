@@ -23,7 +23,7 @@ by(iris, :Species) do df
 end
 ```
 
-A second approach to the Split-Apply-Combine strategy is implemented in the `aggregate` function, which also takes three arguments: (1) a DataFrame, (2) one or more columns to split the DataFrame on, and a (3) function (or several functions) that are used to compute a summary of each subset of the DataFrame. Each function is applied to each column, that was not used to split the DataFrame, creating new columns of the form `$name_$function` e.g. `SepalLength_mean`. Anonymous functions and expressions that do not have a name will be called `λ1`.
+A second approach to the Split-Apply-Combine strategy is implemented in the `aggregate` function, which also takes three arguments: (1) a DataFrame, (2) one or more columns to split the DataFrame on, and (3) one or more functions that are used to compute a summary of each subset of the DataFrame. Each function is applied to each column, that was not used to split the DataFrame, creating new columns of the form `$name_$function` e.g. `SepalLength_mean`. Anonymous functions and expressions that do not have a name will be called `λ1`.
 
 We show several examples of the `aggregate` function applied to the `iris` dataset below:
 
