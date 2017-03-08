@@ -51,4 +51,10 @@ module TestIO
 
     answer = Sys.WORD_SIZE == 64 ? 0x937e94e70d642cce : 0x2b8864d8
     @test hash(sprint(printtable, df)) == answer
+
+    # DataStreams
+    using CSV
+
+    df = CSV.read(joinpath(dirname(@__FILE__), "data/iris.csv"), DataFrame)
+    @test size(df) == (150, 5)
 end
