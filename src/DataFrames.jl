@@ -15,7 +15,6 @@ import NullableArrays: dropnull, dropnull!
 @reexport using CategoricalArrays
 using GZip
 using SortingAlgorithms
-
 using Base: Sort, Order
 import Base: ==, |>
 
