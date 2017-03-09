@@ -18,8 +18,6 @@ import NullableArrays: dropnull, dropnull!
 using GZip
 using SortingAlgorithms
 
-using FileIO  # remove after read_rda deprecation period
-
 using Base: Sort, Order
 import Base: ==, |>
 
@@ -65,7 +63,6 @@ export @~,
        nullable!,
        order,
        printtable,
-       readtable,
        rename!,
        rename,
        showcols,
@@ -73,7 +70,6 @@ export @~,
        stackdt,
        unique!,
        unstack,
-       writetable,
        head,
        tail,
 
@@ -111,7 +107,6 @@ for (dir, filename) in [
         ("abstractdatatable", "reshape.jl"),
 
         ("abstractdatatable", "io.jl"),
-        ("datatable", "io.jl"),
 
         ("abstractdatatable", "show.jl"),
         ("groupeddatatable", "show.jl"),

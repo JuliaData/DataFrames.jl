@@ -10,8 +10,6 @@ import Base: keys, values, insert!
 @deprecate values(dt::AbstractDataTable) DataTables.columns(dt)
 @deprecate insert!(dt::DataTable, dt2::AbstractDataTable) merge!(dt, dt2)
 
-@deprecate read_rda(args...) FileIO.load(args...)
-
 @deprecate pool categorical
 @deprecate pool! categorical!
 

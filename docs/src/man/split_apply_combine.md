@@ -8,7 +8,7 @@ We show several examples of the `by` function applied to the `iris` dataset belo
 
 ```julia
 using DataTables
-iris = readtable(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"))
+iris = CSV.read(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"))
 
 by(iris, :Species, size)
 by(iris, :Species, dt -> mean(dropnull(dt[:PetalLength])))
