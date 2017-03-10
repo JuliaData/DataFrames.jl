@@ -42,7 +42,7 @@ function printtable(io::IO,
     quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
-            if !isnull(dt[j],i)
+            if !isnull(dt[j][i])
                 if ! (etypes[j] <: Real)
 		    print(io, quotemark)
 		    escapedprint(io, get(dt[i, j]), quotestr)

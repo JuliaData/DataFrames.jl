@@ -2,6 +2,8 @@ module TestIO
     using Base.Test
     using DataTables
     using LaTeXStrings
+    using NullableArrays
+    using CategoricalArrays
 
     # Test LaTeX export
     dt = DataTable(A = 1:4,
@@ -38,4 +40,14 @@ module TestIO
     show(io, "text/html", dt)
     @test length(String(take!(io))) < 10000
 
+    dt = DataTable(A = 1:26,
+                   B = 'a':'z',
+                   C = [string(x) for x='A':'Z'],
+                   D = CategoricalArray([string(x) for x='A':'Z']),
+                   E = NullableArray(rand(26)),
+                   F = NullableArray(fill(Nullable(), 26)),
+                   G = fill(Nullable(), 26))
+
+    answer = Sys.WORD_SIZE == 64 ? 0xde54e70f51205910 : 0x340524cd
+    @test hash(sprint(printtable, dt)) == answer
 end
