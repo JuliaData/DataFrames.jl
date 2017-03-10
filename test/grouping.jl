@@ -2,14 +2,104 @@ module TestGrouping
     using Base.Test
     using DataFrames
 
+    srand(1)
     df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                    b = repeat([2, 1], outer=[4]),
                    c = randn(8))
     #df[6, :a] = Nullable()
     #df[7, :b] = Nullable()
 
-    cols = [:a, :b]
+    nullfree = DataFrame(Any[collect(1:10)], [:x1])
+    @testset "colwise" begin
+        @testset "::Function, ::AbstractDataFrame" begin
+            cw = colwise(sum, df)
+            answer = NullableArray([20, 12, -0.4283098098931877])
+            @test isa(cw, NullableArray{Any, 1})
+            @test size(cw) == (ncol(df),)
+            @test isequal(cw, answer)
 
+            cw = colwise(sum, nullfree)
+            answer = [55]
+            @test isa(cw, Array{Int, 1})
+            @test size(cw) == (ncol(nullfree),)
+            @test cw == answer
+        end
+
+        @testset "::Function, ::GroupedDataFrame" begin
+            gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+            @test colwise(length, gd) == [[2,2], [2,2]]
+        end
+
+        @testset "::Vector, ::AbstractDataFrame" begin
+            cw = colwise([sum], df)
+            answer = NullableArray([20 12 -0.4283098098931877])
+            @test isa(cw, NullableArray{Any, 2})
+            @test size(cw) == (length([sum]),ncol(df))
+            @test isequal(cw, answer)
+
+            cw = colwise([sum, minimum], nullfree)
+            answer = reshape([55, 1], (2,1))
+            @test isa(cw, Array{Int, 2})
+            @test size(cw) == (length([sum, minimum]), ncol(nullfree))
+            @test cw == answer
+
+            cw = colwise([NullableArray], nullfree)
+            answer = reshape([NullableArray(1:10)], (1,1))
+            @test isa(cw, Array{NullableArray{Int,1},2})
+            @test size(cw) == (length([NullableArray]), ncol(nullfree))
+            @test isequal(cw, answer)
+
+            @test_throws MethodError colwise(["Bob", :Susie], DataFrame(A = 1:10, B = 11:20))
+        end
+
+        @testset "::Vector, ::GroupedDataFrame" begin
+            gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+            @test colwise([length], gd) == [[2 2], [2 2]]
+        end
+
+        @testset "::Tuple, ::AbstractDataFrame" begin
+            cw = colwise((sum, length), df)
+            answer = Any[Nullable(20) Nullable(12) Nullable(-0.4283098098931877); 8 8 8]
+            @test isa(cw, Array{Any, 2})
+            @test size(cw) == (length((sum, length)), ncol(df))
+            @test isequal(cw, answer)
+
+            cw = colwise((sum, length), nullfree)
+            answer = reshape([55, 10], (2,1))
+            @test isa(cw, Array{Int, 2})
+            @test size(cw) == (length((sum, length)), ncol(nullfree))
+            @test cw == answer
+
+            cw = colwise((CategoricalArray, NullableArray), nullfree)
+            answer = reshape([CategoricalArray(1:10), NullableArray(1:10)],
+                             (length((CategoricalArray, NullableArray)), ncol(nullfree)))
+            @test typeof(cw) == Array{AbstractVector,2}
+            @test size(cw) == (length((CategoricalArray, NullableArray)), ncol(nullfree))
+            @test isequal(cw, answer)
+
+            @test_throws MethodError colwise(("Bob", :Susie), DataFrame(A = 1:10, B = 11:20))
+        end
+
+        @testset "::Tuple, ::GroupedDataFrame" begin
+            gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+            @test colwise((length), gd) == [[2,2],[2,2]]
+        end
+
+        @testset "::Function" begin
+            cw = map(colwise(sum), (nullfree, df))
+            answer = ([55], NullableArray(Any[20, 12, -0.4283098098931877]))
+            @test isequal(cw, answer)
+
+            cw = map(colwise((sum, length)), (nullfree, df))
+            answer = (reshape([55, 10], (2,1)), Any[Nullable(20) Nullable(12) Nullable(-0.4283098098931877); 8 8 8])
+            @test isequal(cw, answer)
+
+            cw = map(colwise([sum, length]), (nullfree, df))
+            @test isequal(cw, answer)
+        end
+    end
+
+    cols = [:a, :b]
     f(df) = DataFrame(cmax = maximum(df[:c]))
 
     sdf = unique(df[cols])
@@ -23,9 +113,6 @@ module TestGrouping
     @test sbdf[cols] == sort(sdf)
 
     byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
-
-    @test all(T -> T <: AbstractVector, map(typeof, colwise([sum], df)))
-    @test all(T -> T <: AbstractVector, map(typeof, colwise(sum, df)))
 
     # groupby() without groups sorting
     gd = groupby(df, cols)
