@@ -42,7 +42,7 @@ function printtable(io::IO,
     quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
-            if !isnull(df[j],i)
+            if !isnull(df[j][i])
                 if ! (etypes[j] <: Real)
 		    print(io, quotemark)
 		    escapedprint(io, get(df[i, j]), quotestr)
