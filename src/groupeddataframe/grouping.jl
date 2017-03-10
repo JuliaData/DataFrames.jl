@@ -232,21 +232,31 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 colwise(sum, df)
+colwise([sum, lenth], df)
+colwise((minimum, maximum), df)
 colwise(sum, groupby(df, :a))
 ```
 
 """
-colwise(f::Function, d::AbstractDataFrame) = Any[vcat(f(d[idx])) for idx in 1:size(d, 2)]
-colwise(f::Function, gd::GroupedDataFrame) = map(colwise(f), gd)
-colwise(f::Function) = x -> colwise(f, x)
-colwise(f) = x -> colwise(f, x)
+function colwise(f, d::AbstractDataFrame)
+    x = [f(d[i]) for i in 1:ncol(d)]
+    if eltype(x) <: Nullable
+        return NullableArray(x)
+    else
+        return x
+    end
+end
 # apply several functions to each column in a DataFrame
-colwise{T<:Function}(fns::Vector{T}, d::AbstractDataFrame) =
-    reshape(Any[vcat(f(d[idx])) for f in fns, idx in 1:size(d, 2)],
-            length(fns)*size(d, 2))
-colwise{T<:Function}(fns::Vector{T}, gd::GroupedDataFrame) = map(colwise(fns), gd)
-colwise{T<:Function}(fns::Vector{T}) = x -> colwise(fns, x)
-
+function colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame)
+    x = [f(d[i]) for f in fns, i in 1:ncol(d)]
+    if eltype(x) <: Nullable
+        return NullableArray(x)
+    else
+        return x
+    end
+end
+colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
+colwise(f) = x -> colwise(f, x)
 
 """
 Split-apply-combine in one step; apply `f` to each grouping in `d`
@@ -371,12 +381,11 @@ end
 
 function _makeheaders{T<:Function}(fs::Vector{T}, cn::Vector{Symbol})
     fnames = _fnames(fs) # see other/utils.jl
-    reshape([Symbol(colname,'_',fname) for fname in fnames, colname in cn],
-            length(fnames)*length(cn))
+    [Symbol(colname,'_',fname) for fname in fnames for colname in cn]
 end
 
 function _aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false)
-    res = DataFrame(colwise(fs, d), headers)
+    res = DataFrame(Any[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers)
     sort && sort!(res, cols=headers)
     res
 end
