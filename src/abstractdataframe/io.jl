@@ -94,6 +94,7 @@ writetable(filename, df, [keyword options])
 * `separator::Char` -- The separator character that you would like to use. Defaults to the output of `getseparator(filename)`, which uses commas for files that end in `.csv`, tabs for files that end in `.tsv` and a single space for files that end in `.wsv`.
 * `quotemark::Char` -- The character used to delimit string fields. Defaults to `'"'`.
 * `header::Bool` -- Should the file contain a header that specifies the column names from `df`. Defaults to `true`.
+* `append::Bool` -- If `filename` already exists, the dataframe is only appended to it. `append` = true turns automatically sets `header` = false but it makes sure that the names of the DataFrame being appended to the file correspond to the header in the file.
 * `nastring::AbstractString` -- What to write in place of missing data. Defaults to `"NA"`.
 
 ### Result
@@ -108,6 +109,8 @@ writetable("output.csv", df)
 writetable("output.dat", df, separator = ',', header = false)
 writetable("output.dat", df, quotemark = '\', separator = ',')
 writetable("output.dat", df, header = false)
+writetable("output.dat", df, header = true)
+writetable("output.dat", df, append = true)
 ```
 """
 function writetable(filename::AbstractString,
@@ -124,7 +127,6 @@ function writetable(filename::AbstractString,
 
     if append && isfile(filename) && filesize(filename) > 0
         file_df = readtable(filename, header = false, nrows = 1)
-
         # Check if number of columns matches
         if size(file_df, 2) != size(df, 2)
             throw(DimensionMismatch("Number of columns differ between file and DataFrame"))
@@ -133,8 +135,8 @@ function writetable(filename::AbstractString,
         # When 'append'-ing to a nonempty file,
         # 'header' triggers a check for matching colnames
         if header
-            if any(i -> @compat(Symbol(file_df[1, i])) != index(df)[i], 1:size(df, 2))
-                throw(KeyError("Column names don't match names in file"))
+            if any(i -> @compat(Symbol(file_df[1, i])) != names(df)[i], 1:size(df, 2))
+                throw(KeyError("Column names in dataframe don't match column names from header in file " * filename))
             end
 
             header = false
