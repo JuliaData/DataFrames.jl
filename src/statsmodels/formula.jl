@@ -12,16 +12,30 @@
 ## The rhs of a formula can be 1
 
 type Formula
-    lhs::@compat(Union{Symbol, Expr, Void})
-    rhs::@compat(Union{Symbol, Expr, Integer})
+    lhs::Union{Symbol, Expr, Void}
+    rhs::Union{Symbol, Expr, Integer}
 end
 
-macro ~(lhs, rhs)
-    ex = Expr(:call,
-              :Formula,
-              Base.Meta.quot(lhs),
-              Base.Meta.quot(rhs))
-    return ex
+macro formula(ex)
+    if (ex.head === :macrocall && ex.args[1] === Symbol("@~")) || (ex.head === :call && ex.args[1] === :(~))
+        length(ex.args) == 3 || error("malformed expression in formula")
+        lhs = Base.Meta.quot(ex.args[2])
+        rhs = Base.Meta.quot(ex.args[3])
+    else
+        error("expected formula separator ~, got $(ex.head)")
+    end
+    return Expr(:call, :Formula, lhs, rhs)
+end
+
+if VERSION < v"0.6.0-dev.2568"
+    macro ~(lhs, rhs)
+        Base.depwarn("The bare formula syntax lhs ~ rhs is deprecated. Use @formula(lhs ~ rhs) instead.", Symbol("@~"))
+        ex = Expr(:call,
+                  :Formula,
+                  Base.Meta.quot(lhs),
+                  Base.Meta.quot(rhs))
+        return ex
+    end
 end
 
 #

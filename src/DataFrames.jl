@@ -30,6 +30,7 @@ import Base: ==, |>
 export @~,
        @csv_str,
        @csv2_str,
+       @formula,
        @tsv_str,
        @wsv_str,
 
