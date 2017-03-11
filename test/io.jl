@@ -154,8 +154,8 @@ module TestIO
     osxpath = "$data/skiplines/complex_osx.csv"
     winpath = "$data/skiplines/complex_windows.csv"
 
-    opts1 = @compat Dict{Any,Any}(:allowcomments => true)
-    opts2 = @compat Dict{Any,Any}(:skipstart => 4, :skiprows => [6, 7, 12, 14, 17], :skipblanks => false)
+    opts1 = Dict{Any,Any}(:allowcomments => true)
+    opts2 = Dict{Any,Any}(:skipstart => 4, :skiprows => [6, 7, 12, 14, 17], :skipblanks => false)
 
     df1 = readtable(osxpath; opts1...)
     # df2 = readtable(osxpath; opts2...)

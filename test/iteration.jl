@@ -24,11 +24,11 @@ module TestIteration
         @test row[:B]-row[:A] == 1
 
         # issue #683 (https://github.com/JuliaStats/DataFrames.jl/pull/683)
-        @test typeof(collect(row)) == @compat Array{Tuple{Symbol, Any}, 1}
+        @test typeof(collect(row)) == Array{Tuple{Symbol, Any}, 1}
     end
 
     for col in eachcol(df)
-        @test isa(col, @compat Tuple{Symbol, AbstractDataVector})
+        @test isa(col, Tuple{Symbol, AbstractDataVector})
     end
 
     @test isequal(map(x -> minimum(convert(Array, x)), eachrow(df)), Any[1,2])
@@ -44,15 +44,15 @@ module TestIteration
 
     df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
-    s1 = sub(df, 1:3)
+    s1 = view(df, 1:3)
     s1[2,:A] = 4
     @test df[2, :A] == 4
-    @test sub(s1, 1:2) == sub(df, 1:2)
+    @test view(s1, 1:2) == view(df, 1:2)
 
-    s2 = sub(df, 1:2:3)
+    s2 = view(df, 1:2:3)
     s2[2, :B] = "M"
     @test df[3, :B] == "M"
-    @test sub(s2, 1:1:2) == sub(df, [1,3])
+    @test view(s2, 1:1:2) == view(df, [1,3])
 
     # @test_fail for x in df; end # Raises an error
 end

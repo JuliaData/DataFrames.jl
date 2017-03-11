@@ -10,19 +10,11 @@ module TestShow
     showall(io, df)
     showall(io, df, true)
 
-    subdf = sub(df, [2, 3]) # df[df[:A] .> 1.0, :]
+    subdf = view(df, [2, 3]) # df[df[:A] .> 1.0, :]
     show(io, subdf)
     show(io, subdf, true)
     showall(io, subdf)
     showall(io, subdf, true)
-
-    if VERSION > v"0.5-"
-        using Juno
-        out = DataFrames._render(df)
-        @assert out.head.xs[1] == DataFrame
-        @assert isa(out.children()[1], Juno.Table)
-        @assert size(out.children()[1].xs) == (4, 2)
-    end
 
     dfvec = DataFrame[df for _=1:3]
     show(io, dfvec)
@@ -35,7 +27,7 @@ module TestShow
     dfr = DataFrameRow(df, 1)
     show(io, dfr)
 
-    df = DataFrame(A = Array(String, 3))
+    df = DataFrame(A = Vector{String}(3))
 
     A = DataFrames.StackedVector(Any[[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     show(io, A)

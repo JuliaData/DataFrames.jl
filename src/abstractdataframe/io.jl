@@ -44,17 +44,17 @@ function printtable(io::IO,
         for j in 1:p
             if ! (isna(df[j],i))
                 if ! (etypes[j] <: Real)
-		    print(io, quotemark)
-		    escapedprint(io, df[i, j], quotestr)
-		    print(io, quotemark)
+                    print(io, quotemark)
+                    escapedprint(io, df[i, j], quotestr)
+                    print(io, quotemark)
                 else
-		    print(io, df[i, j])
+                    print(io, df[i, j])
                 end
             else
-		print(io, nastring)
+                print(io, nastring)
             end
             if j < p
-		print(io, separator)
+                print(io, separator)
             else
                 print(io, '\n')
             end
@@ -133,7 +133,7 @@ function writetable(filename::AbstractString,
         # When 'append'-ing to a nonempty file,
         # 'header' triggers a check for matching colnames
         if header
-            if any(i -> @compat(Symbol(file_df[1, i])) != index(df)[i], 1:size(df, 2))
+            if any(i -> Symbol(file_df[1, i]) != index(df)[i], 1:size(df, 2))
                 throw(KeyError("Column names don't match names in file"))
             end
 
@@ -181,7 +181,7 @@ end
     write(io, "</tr>")
     write(io, "</thead>")
     write(io, "<tbody>")
-    tty_rows, tty_cols = _displaysize(io)
+    tty_rows, tty_cols = displaysize(io)
     mxrow = min(n,tty_rows)
     for row in 1:mxrow
         write(io, "<tr>")

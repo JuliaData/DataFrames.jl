@@ -72,7 +72,7 @@ module TestDataFrame
     # similar / nas
     df = DataFrame(a = 1, b = "b", c = @pdata([3.3]))
     nadf = DataFrame(a = @data(Int[NA, NA]),
-                     b = DataArray(Array(String, 2), trues(2)),
+                     b = DataArray(Vector{String}(2), trues(2)),
                      c = @pdata(Float64[NA, NA]))
     @test isequal(nadf, similar(df, 2))
     @test isequal(nadf, DataFrames.nas(df, 2))
@@ -163,17 +163,17 @@ module TestDataFrame
     @test typeof(df[:, 1]) == Vector{Float64}
 
     #test_group("Other DataFrame constructors")
-    df = DataFrame([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
-                    @compat(Dict{Any,Any}(:a=>3, :b=>'d')),
-                    @compat(Dict{Any,Any}(:a=>5))])
+    df = DataFrame([Dict{Any,Any}(:a=>1, :b=>'c'),
+                    Dict{Any,Any}(:a=>3, :b=>'d'),
+                    Dict{Any,Any}(:a=>5)])
     @test size(df, 1) == 3
     @test size(df, 2) == 2
     @test typeof(df[:,:a]) == DataVector{Int}
     @test typeof(df[:,:b]) == DataVector{Char}
 
-    df = DataFrame([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
-                    @compat(Dict{Any,Any}(:a=>3, :b=>'d')),
-                    @compat(Dict{Any,Any}(:a=>5))],
+    df = DataFrame([Dict{Any,Any}(:a=>1, :b=>'c'),
+                    Dict{Any,Any}(:a=>3, :b=>'d'),
+                    Dict{Any,Any}(:a=>5)],
                    [:a, :b])
     @test size(df, 1) == 3
     @test size(df, 2) == 2
@@ -189,7 +189,7 @@ module TestDataFrame
     df = DataFrame(x=[], y=[])
     @test nrow(df) == 0
     df = DataFrame(x=[1:3;], y=[3:5;])
-    sdf = sub(df, df[:x] .== 4)
+    sdf = view(df, df[:x] .== 4)
     @test size(sdf, 1) == 0
 
     @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
@@ -214,22 +214,22 @@ module TestDataFrame
     @test_throws ArgumentError push!(dfb, ("coconut",22))
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, @compat(Dict(:first=>3, :second=>"pear")))
+    push!(dfb, Dict(:first=>3, :second=>"pear"))
     @test df==dfb
 
     df=DataFrame( first=[1,2,3], second=["apple","orange","banana"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, @compat(Dict("first"=>3, "second"=>"banana")))
+    push!(dfb, Dict("first"=>3, "second"=>"banana"))
     @test df==dfb
 
     df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, @compat(Dict(:first=>true, :second=>false)))
+    @test_throws ArgumentError push!(dfb, Dict(:first=>true, :second=>false))
     @test df0==dfb
 
     df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, @compat(Dict("first"=>"chicken", "second"=>"stuff")))
+    @test_throws ArgumentError push!(dfb, Dict("first"=>"chicken", "second"=>"stuff"))
     @test df0==dfb
 
     # delete!

@@ -62,7 +62,7 @@ type ModelFrame
     contrasts::Dict{Symbol, ContrastsMatrix}
 end
 
-typealias AbstractFloatMatrix{T<:AbstractFloat} AbstractMatrix{T}
+@compat const AbstractFloatMatrix{T<:AbstractFloat} = AbstractMatrix{T}
 
 type ModelMatrix{T <: AbstractFloatMatrix}
     m::T
@@ -116,7 +116,7 @@ end
 dospecials(a::Any) = a
 
 ## Distribution of & over +
-const distributive = @compat Dict(:& => :+)
+const distributive = Dict(:& => :+)
 
 distribute(ex::Expr) = distribute!(copy(ex))
 distribute(a::Any) = a
@@ -209,7 +209,7 @@ function Terms(f::Formula)
     rhs = condense(distribute(dospecials(f.rhs)))
     tt = unique(getterms(rhs))
     tt = tt[!(tt .== 1)]             # drop any explicit 1's
-    noint = (tt .== 0) | (tt .== -1) # should also handle :(-(expr,1))
+    noint = (tt .== 0) .| (tt .== -1) # should also handle :(-(expr,1))
     tt = tt[!noint]
     oo = Int[ord(t) for t in tt]     # orders of interaction terms
     if !issorted(oo)                 # sort terms by increasing order
@@ -476,7 +476,7 @@ creating the model matrix.
     factors = terms.factors
 
     ## Map eval. term name + redundancy bool to cached model matrix columns
-    eterm_cols = @compat Dict{Tuple{Symbol,Bool}, T}()
+    eterm_cols = Dict{Tuple{Symbol,Bool}, T}()
     ## Accumulator for each term's vector of eval. term columns.
 
     ## TODO: this method makes multiple copies of the data in the ModelFrame:
@@ -565,7 +565,7 @@ function coefnames(mf::ModelFrame)
     terms = droprandomeffects(dropresponse!(mf.terms))
 
     ## strategy mirrors ModelMatrx constructor:
-    eterm_names = @compat Dict{Tuple{Symbol,Bool}, Vector{Compat.UTF8String}}()
+    eterm_names = Dict{Tuple{Symbol,Bool}, Vector{Compat.UTF8String}}()
     term_names = Vector{Compat.UTF8String}[]
 
     if terms.intercept

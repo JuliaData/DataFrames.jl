@@ -1,17 +1,21 @@
 import Base: isidentifier, is_id_start_char, is_id_char
 
-const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
-    "return", "break", "continue", "function", "macro", "quote", "let",
-    "local", "global", "const", "abstract", "typealias", "type", "bitstype",
-    "immutable", "ccall", "do", "module", "baremodule", "using", "import",
-    "export", "importall", "end", "else", "elseif", "catch", "finally"])
+# FixMe! Incomplete list. E.g. `true` is missing
+const RESERVED_WORDS = Set(["local", "global", "export", "let", "bitstype",
+    "typealias", "using", "for", "while", "const", "immutable",
+    "baremodule", "continue", "import", "function", "macro", "if", "else",
+    "finally", "try", "module", "elseif", "end", "begin", "quote", "do", "break",
+    "catch", "abstract", "return", "type", "importall"])
+
+VERSION < v"0.6.0-dev.2194" && push!(RESERVED_WORDS, "ccall")
+VERSION >= v"0.6.0-dev.2698" && push!(RESERVED_WORDS, "struct")
 
 function identifier(s::AbstractString)
     s = normalize_string(s)
     if !isidentifier(s)
         s = makeidentifier(s)
     end
-    @compat(Symbol(in(s, RESERVED_WORDS) ? "_"*s : s))
+    Symbol(in(s, RESERVED_WORDS) ? "_"*s : s)
 end
 
 function makeidentifier(s::AbstractString)
@@ -43,7 +47,7 @@ function makeidentifier(s::AbstractString)
         end
     end
 
-    return takebuf_string(res)
+    return String(take!(res))
 end
 
 function make_unique(names::Vector{Symbol}; allow_duplicates=true)
@@ -92,7 +96,7 @@ end
 #'
 #' DataFrames.gennames(10)
 function gennames(n::Integer)
-    res = Array(Symbol, n)
+    res = Vector{Symbol}(n)
     for i in 1:n
         res[i] = Symbol(@sprintf "x%d" i)
     end

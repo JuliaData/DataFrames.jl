@@ -397,7 +397,7 @@ function bytestotype{N <: Integer,
 
     while index > left
         if UInt32('0') <= byte <= UInt32('9')
-            value += (byte - @compat(UInt8('0'))) * power
+            value += (byte - UInt8('0')) * power
             power *= 10
         else
             return value, false, false
@@ -411,14 +411,14 @@ function bytestotype{N <: Integer,
     elseif byte == UInt32('+')
         return value, left < right, false
     elseif UInt32('0') <= byte <= UInt32('9')
-        value += (byte - @compat(UInt8('0'))) * power
+        value += (byte - UInt8('0')) * power
         return value, true, false
     else
         return value, false, false
     end
 end
 
-let out = Array(Float64, 1)
+let out = Vector{Float64}(1)
     global bytestotype
     function bytestotype{N <: AbstractFloat,
                          T <: String,
@@ -508,13 +508,13 @@ function builddf(rows::Integer,
                  fields::Integer,
                  p::ParsedCSV,
                  o::ParseOptions)
-    columns = Array(Any, cols)
+    columns = Vector{Any}(cols)
 
     for j in 1:cols
         if isempty(o.eltypes)
-            values = Array(Int, rows)
+            values = Vector{Int}(rows)
         else
-            values = Array(o.eltypes[j], rows)
+            values = Vector{o.eltypes[j]}(rows)
         end
 
         missing = falses(rows)
@@ -600,7 +600,7 @@ function builddf(rows::Integer,
                     continue
                 else
                     is_float = false
-                    values = Array(Bool, rows)
+                    values = Vector{Bool}(rows)
                     i = 0
                     continue
                 end
@@ -621,7 +621,7 @@ function builddf(rows::Integer,
                     continue
                 else
                     is_bool = false
-                    values = Array(Compat.UTF8String, rows)
+                    values = Vector{Compat.UTF8String}(rows)
                     i = 0
                     continue
                 end
@@ -695,7 +695,7 @@ function findcorruption(rows::Integer,
                         fields::Integer,
                         p::ParsedCSV)
     n = length(p.bounds)
-    lengths = Array(Int, rows)
+    lengths = Vector{Int}(rows)
     t = 1
     for i in 1:rows
         bound = p.lines[i + 1]
@@ -757,7 +757,7 @@ function readtable!(p::ParsedCSV,
 
     # Extract the header
     if o.header
-        bytes, fields, rows, nextchr = readnrows!(p, io, @compat(Int64(1)), o, d, nextchr)
+        bytes, fields, rows, nextchr = readnrows!(p, io, Int64(1), o, d, nextchr)
 
         # Insert column names from header if none present
         if isempty(o.names)
@@ -766,7 +766,7 @@ function readtable!(p::ParsedCSV,
     end
 
     # Parse main data set
-    bytes, fields, rows, nextchr = readnrows!(p, io, @compat(Int64(nrows)), o, d, nextchr)
+    bytes, fields, rows, nextchr = readnrows!(p, io, Int64(nrows), o, d, nextchr)
 
     # Sanity checks
     bytes != 0 || error("Failed to read any bytes.")
@@ -834,9 +834,9 @@ function readtable(io::IO,
     end
 
     # Allocate buffers for storing metadata
-    p = ParsedCSV(Array(UInt8, nbytes),
-                  Array(Int, 1),
-                  Array(Int, 1),
+    p = ParsedCSV(Vector{UInt8}(nbytes),
+                   Vector{Int}(1),
+                   Vector{Int}(1),
                   BitArray(1))
 
     # Set parsing options

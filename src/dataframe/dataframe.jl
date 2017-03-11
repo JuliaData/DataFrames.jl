@@ -7,7 +7,7 @@ particularly a Vector, DataVector, or PooledDataVector.
 **Constructors**
 
 ```julia
-DataFrame(columns::Vector{Any}, names::Vector{Symbol})
+DataFrame(columns::Vector, names::Vector{Symbol})
 DataFrame(kwargs...)
 DataFrame() # an empty DataFrame
 DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
@@ -17,7 +17,7 @@ DataFrame(ds::Vector{Associative})
 
 **Arguments**
 
-* `columns` : a Vector{Any} with each column as contents
+* `columns` : a Vector with each column as contents
 * `names` : the column names
 * `kwargs` : the key gives the column names, and the value is the
   column contents
@@ -31,7 +31,7 @@ Each column in `columns` should be the same length.
 **Notes**
 
 Most of the default constructors convert columns to `DataArrays`.  The
-base constructor, `DataFrame(columns::Vector{Any},
+base constructor, `DataFrame(columns::Vector,
 names::Vector{Symbol})` does not convert to `DataArrays`.
 
 A `DataFrame` is a lightweight object. As long as columns are not
@@ -70,10 +70,10 @@ size(df1)
 
 """
 type DataFrame <: AbstractDataFrame
-    columns::Vector{Any}
+    columns::Vector
     colindex::Index
 
-    function DataFrame(columns::Vector{Any}, colindex::Index)
+    function DataFrame(columns::Vector, colindex::Index)
         ncols = length(columns)
         if ncols > 1
             nrows = length(columns[1])
@@ -102,15 +102,15 @@ function DataFrame(; kwargs...)
     return result
 end
 
-function DataFrame(columns::Vector{Any},
-                   cnames::Vector{Symbol} = gennames(length(columns)))
+function DataFrame(columns::Vector,
+                   cnames::Vector = gennames(length(columns)))
     return DataFrame(columns, Index(cnames))
 end
 
 
 # Initialize empty DataFrame objects of arbitrary size
 function DataFrame(t::Type, nrows::Integer, ncols::Integer)
-    columns = Array(Any, ncols)
+    columns = Vector(ncols)
     for i in 1:ncols
         columns[i] = DataArray(t, nrows)
     end
@@ -121,7 +121,7 @@ end
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::Vector, cnames::Vector, nrows::Integer)
     p = length(column_eltypes)
-    columns = Array(Any, p)
+    columns = Vector(p)
     for j in 1:p
         columns[j] = DataArray(column_eltypes[j], nrows)
     end
@@ -130,7 +130,7 @@ end
 # Initialize an empty DataFrame with specific eltypes and names and whether is pooled data array
 function DataFrame(column_eltypes::Vector{DataType}, cnames::Vector{Symbol}, ispda::Vector{Bool}, nrows::Integer)
     p = length(column_eltypes)
-    columns = Array(Any, p)
+    columns = Vector(p)
     for j in 1:p
       if ispda[j]
         columns[j] = PooledDataArray(column_eltypes[j], nrows)
@@ -144,7 +144,7 @@ end
 # Initialize an empty DataFrame with specific eltypes
 function DataFrame(column_eltypes::Vector, nrows::Integer)
     p = length(column_eltypes)
-    columns = Array(Any, p)
+    columns = Vector(p)
     cnames = gennames(p)
     for j in 1:p
         columns[j] = DataArray(column_eltypes[j], nrows)
@@ -164,7 +164,7 @@ end
 # Initialize from a Vector of Associatives (aka list of dicts)
 function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
     #get column eltypes
-    col_eltypes = Type[@compat(Union{}) for _ = 1:length(ks)]
+    col_eltypes = Type[Union{} for _ = 1:length(ks)]
     for d in ds
         for (i,k) in enumerate(ks)
             # TODO: check for user-defined "NA" values, ala pandas
@@ -173,7 +173,7 @@ function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
             end
         end
     end
-    col_eltypes[col_eltypes .== @compat(Union{})] = Any
+    col_eltypes[col_eltypes .== Union{}] = Any
 
     # create empty DataFrame, and fill
     df = DataFrame(col_eltypes, ks, length(ds))
@@ -221,7 +221,7 @@ ncol(df::DataFrame) = length(index(df))
 # Let getindex(df.columns[j], row_inds) from AbstractDataVector() handle
 #  the resolution of row indices
 
-typealias ColumnIndex @compat(Union{Real, Symbol})
+const ColumnIndex = Union{Real, Symbol}
 
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
@@ -267,7 +267,7 @@ end
 
 # df[:, SingleColumnIndex] => (Sub)?AbstractVector
 # df[:, MultiColumnIndex] => (Sub)?DataFrame
-Base.getindex{T<:ColumnIndex}(df::DataFrame, row_inds::Colon, col_inds::@compat(Union{T, AbstractVector{T}})) = df[col_inds]
+Base.getindex{T<:ColumnIndex}(df::DataFrame, row_inds::Colon, col_inds::Union{T, AbstractVector{T}}) = df[col_inds]
 
 # df[SingleRowIndex, :] => (Sub)?DataFrame
 Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col_inds]
@@ -289,11 +289,11 @@ Base.getindex(df::DataFrame, ::Colon, ::Colon) = copy(df)
 
 isnextcol(df::DataFrame, col_ind::Symbol) = true
 function isnextcol(df::DataFrame, col_ind::Real)
-    return ncol(df) + 1 == @compat Int(col_ind)
+    return ncol(df) + 1 == Int(col_ind)
 end
 
 function nextcolname(df::DataFrame)
-    return @compat(Symbol(string("x", ncol(df) + 1)))
+    return Symbol(string("x", ncol(df) + 1))
 end
 
 # Will automatically add a new column if needed
@@ -675,7 +675,7 @@ Base.delete!(df::DataFrame, c::Int) = delete!(df, [c])
 Base.delete!(df::DataFrame, c::Any) = delete!(df, index(df)[c])
 
 # deleterows!()
-function deleterows!(df::DataFrame, ind::@compat(Union{Integer, UnitRange{Int}}))
+function deleterows!(df::DataFrame, ind::Union{Integer, UnitRange{Int}})
     for i in 1:ncol(df)
         df.columns[i] = deleteat!(df.columns[i], ind)
     end
@@ -689,7 +689,7 @@ function deleterows!(df::DataFrame, ind::AbstractVector{Int})
     idf = 1
     iind = 1
     ikeep = 1
-    keep = Array(Int, n-length(ind2))
+    keep = Vector{Int}(n - length(ind2))
     while idf <= n && iind <= length(ind2)
         1 <= ind2[iind] <= n || error(BoundsError())
         if idf == ind2[iind]
@@ -733,6 +733,7 @@ hcat!(a::DataFrame, b, c...) = hcat!(hcat!(a, b), c...)
 
 # hcat
 Base.hcat(df::DataFrame, x) = hcat!(copy(df), x)
+Base.hcat(df1::DataFrame, df2::DataFrame) = hcat!(copy(df1), df2)
 
 ##############################################################################
 ##
@@ -759,12 +760,12 @@ end
 
 pool(a::AbstractVector) = compact(PooledDataArray(a))
 
-function pool!(df::DataFrame, cname::@compat(Union{Integer, Symbol}))
+function pool!(df::DataFrame, cname::Union{Integer, Symbol})
     df[cname] = pool(df[cname])
     return
 end
 
-function pool!{T <: @compat(Union{Integer, Symbol})}(df::DataFrame, cnames::Vector{T})
+function pool!{T <: Union{Integer, Symbol}}(df::DataFrame, cnames::Vector{T})
     for cname in cnames
         df[cname] = pool(df[cname])
     end
@@ -794,7 +795,7 @@ end
 
 function Base.convert(::Type{DataFrame}, A::Matrix)
     n = size(A, 2)
-    cols = Array(Any, n)
+    cols = Vector(n)
     for i in 1:n
         cols[i] = A[:, i]
     end
@@ -804,8 +805,8 @@ end
 function _dataframe_from_associative(dnames, d::Associative)
     p = length(dnames)
     p == 0 && return DataFrame()
-    columns  = Array(Any, p)
-    colnames = Array(Symbol, p)
+    columns  = Vector(p)
+    colnames = Vector{Symbol}(p)
     n = length(d[dnames[1]])
     for j in 1:p
         name = dnames[j]

@@ -1,7 +1,6 @@
 
 language: julia
 julia:
-  - 0.4
   - 0.5
   - nightly
 os:
@@ -17,4 +16,3 @@ script:
 after_success:
   - julia -e 'cd(Pkg.dir("DataFrames")); Pkg.add("Documenter"); Pkg.add("Query"); include(joinpath("docs", "make.jl"))'
   - julia -e 'cd(Pkg.dir("DataFrames")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
-  
