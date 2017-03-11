@@ -23,14 +23,16 @@ module TestGrouping
     @test all(T -> T <: AbstractVector, map(typeof, colwise(sum, df)))
 
     gd = groupby(df, cols)
-    ga = map(f, gd)
+    ga = mapdf(f, gd)
 
     @test bdf == combine(ga)
+    vgd = map(f, gd)
+    @test ga.vals == vgd
 
     g(df) = DataFrame(cmax1 = df[:cmax] + 1)
     h(df) = g(f(df))
 
-    @test combine(map(h, gd)) == combine(map(g, ga))
+    @test combine(mapdf(h, gd)) == combine(mapdf(g, ga))
 
     # issue #960
     x = pool(collect(1:20))
