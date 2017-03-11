@@ -117,8 +117,8 @@ for (dir, filename) in [
         ("dataframe", "sort.jl"),
 
         ("statsmodels", "contrasts.jl"),
-        # ("statsmodels", "formula.jl"),
-        # ("statsmodels", "statsmodel.jl"),
+        ("statsmodels", "formula.jl"),
+        ("statsmodels", "statsmodel.jl"),
 
         ("", "deprecated.jl")
     ]
