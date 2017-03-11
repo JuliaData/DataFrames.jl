@@ -88,7 +88,7 @@ function allvars(ex::Expr)
 end
 allvars(f::Formula) = unique(vcat(allvars(f.rhs), allvars(f.lhs)))
 allvars(sym::Symbol) = [sym]
-allvars(v::Any) = Array(Symbol, 0)
+allvars(v::Any) = Vector{Symbol}(0)
 
 # special operators in formulas
 const specials = Set([:+, :-, :*, :/, :&, :|, :^])
@@ -208,9 +208,9 @@ evt(a) = Any[a]
 function Terms(f::Formula)
     rhs = condense(distribute(dospecials(f.rhs)))
     tt = unique(getterms(rhs))
-    tt = tt[!(tt .== 1)]             # drop any explicit 1's
+    tt = tt[(!).(tt .== 1)]             # drop any explicit 1's
     noint = (tt .== 0) .| (tt .== -1) # should also handle :(-(expr,1))
-    tt = tt[!noint]
+    tt = tt[(!).(noint)]
     oo = Int[ord(t) for t in tt]     # orders of interaction terms
     if !issorted(oo)                 # sort terms by increasing order
         pp = sortperm(oo)
@@ -232,7 +232,7 @@ end
 
 ## Default NA handler.  Others can be added as keyword arguments
 function na_omit(df::DataFrame)
-    cc = complete_cases(df)
+    cc = completecases(df)
     df[cc,:], cc
 end
 
@@ -415,7 +415,7 @@ function droprandomeffects(trms::Terms)
     if !any(retrms)  # return trms unchanged
         trms
     elseif all(retrms) && !trms.response   # return an empty Terms object
-        Terms(Any[],Any[],Array(Bool, (0,0)),Array(Bool, (0,0)), Int[], false, trms.intercept)
+        Terms(Any[],Any[],Matrix{Bool}(0,0),Matrix{Bool}(0,0), Int[], false, trms.intercept)
     else
         # the rows of `trms.factors` correspond to `eterms`, the columns to `terms`
         # After dropping random-effects terms we drop any eterms whose rows are all false
