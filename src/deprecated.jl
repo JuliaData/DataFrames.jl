@@ -13,6 +13,6 @@ import Base: keys, values, insert!
 
 @deprecate read_rda(args...) FileIO.load(args...)
 
-@deprecate complete_cases(df)  complete_cases(df)
-@deprecate complete_cases!(df) complete_cases!(df)
+@deprecate complete_cases(df)  completecases(df)
+@deprecate complete_cases!(df) completecases!(df)
 

@@ -44,17 +44,17 @@ function printtable(io::IO,
         for j in 1:p
             if ! (isna(df[j],i))
                 if ! (etypes[j] <: Real)
-		    print(io, quotemark)
-		    escapedprint(io, df[i, j], quotestr)
-		    print(io, quotemark)
+                    print(io, quotemark)
+                    escapedprint(io, df[i, j], quotestr)
+                    print(io, quotemark)
                 else
-		    print(io, df[i, j])
+                    print(io, df[i, j])
                 end
             else
-		print(io, nastring)
+                print(io, nastring)
             end
             if j < p
-		print(io, separator)
+                print(io, separator)
             else
                 print(io, '\n')
             end
@@ -181,7 +181,7 @@ end
     write(io, "</tr>")
     write(io, "</thead>")
     write(io, "<tbody>")
-    tty_rows, tty_cols = Base.displaysize(io)
+    tty_rows, tty_cols = displaysize(io)
     mxrow = min(n,tty_rows)
     for row in 1:mxrow
         write(io, "<tr>")
