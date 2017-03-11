@@ -102,7 +102,7 @@ end
 Stacks a DataFrame; convert from a wide to long format; see
 `stack`.
 """
-melt(df::AbstractDataFrame, id_vars::@compat(Union{Int,Symbol})) = melt(df, [id_vars])
+melt(df::AbstractDataFrame, id_vars::Union{Int,Symbol}) = melt(df, [id_vars])
 function melt(df::AbstractDataFrame, id_vars)
     id_inds = index(df)[id_vars]
     stack(df, _setdiff(1:ncol(df), id_inds), id_inds)
@@ -173,8 +173,8 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     payload = DataFrame(Any[DataArray(eltype(valuecol), Nrow) for i in 1:Ncol], map(Symbol, keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
-        j = @compat Int(keycol.refs[k])
-        i = @compat Int(refkeycol.refs[k])
+        j = Int(keycol.refs[k])
+        i = Int(refkeycol.refs[k])
         if i > 0 && j > 0
             if nowarning && !isna(payload[j][i])
                 warn("Duplicate entries in unstack.")
@@ -206,10 +206,10 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     keys = unique(keycol)
     Nrow = length(g)
     Ncol = length(keycol.pool)
-    df2 = DataFrame(Any[DataArray(fill(valuecol[1], Nrow), fill(true, Nrow)) for i in 1:Ncol], map(@compat(Symbol), keycol.pool))
+    df2 = DataFrame(Any[DataArray(fill(valuecol[1], Nrow), fill(true, Nrow)) for i in 1:Ncol], map(Symbol, keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
-        j = @compat Int(keycol.refs[k])
+        j = Int(keycol.refs[k])
         i = rowkey[k]
         if i > 0 && j > 0
             if nowarning && !isna(df2[j][i])

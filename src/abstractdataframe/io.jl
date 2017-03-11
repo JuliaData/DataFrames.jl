@@ -133,7 +133,7 @@ function writetable(filename::AbstractString,
         # When 'append'-ing to a nonempty file,
         # 'header' triggers a check for matching colnames
         if header
-            if any(i -> @compat(Symbol(file_df[1, i])) != index(df)[i], 1:size(df, 2))
+            if any(i -> Symbol(file_df[1, i]) != index(df)[i], 1:size(df, 2))
                 throw(KeyError("Column names don't match names in file"))
             end
 

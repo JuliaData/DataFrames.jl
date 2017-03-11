@@ -38,12 +38,11 @@ let
         return position(io)
     end
     ourstrwidth(x::AbstractString) = strwidth(x) + 2 # -> Int
-    myconv = VERSION < v"0.4-" ? convert : Base.unsafe_convert
     ourstrwidth(s::Symbol) =
-        @compat Int(ccall(:u8_strwidth,
-                          Csize_t,
-                          (Ptr{UInt8}, ),
-                          myconv(Ptr{UInt8}, s)))
+        Int(ccall(:u8_strwidth,
+                  Csize_t,
+                  (Ptr{UInt8}, ),
+                  Base.unsafe_convert(Ptr{UInt8}, s)))
 end
 
 #' @description
@@ -322,7 +321,7 @@ function showrows(io::IO,
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
                   splitchunks::Bool = false,
-                  rowlabel::Symbol = @compat(Symbol("Row")),
+                  rowlabel::Symbol = Symbol("Row"),
                   displaysummary::Bool = true) # -> Void
     ncols = size(df, 2)
 

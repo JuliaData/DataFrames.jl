@@ -77,8 +77,8 @@ module TestData
     srand(1)
     N = 20
     #Cast to Int64 as rand() behavior differs between Int32/64
-    d1 = pdata(rand(@compat(map(Int64, 1:2)), N))
-    d2 = (@pdata ["A", "B", NA])[rand(@compat(map(Int64, 1:3)), N)]
+    d1 = pdata(rand(map(Int64, 1:2), N))
+    d2 = (@pdata ["A", "B", NA])[rand(map(Int64, 1:3), N)]
     d3 = data(randn(N))
     d4 = data(randn(N))
     df7 = DataFrame(Any[d1, d2, d3], [:d1, :d2, :d3])

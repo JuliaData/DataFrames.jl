@@ -165,10 +165,10 @@ rename(f::Function, df::AbstractDataFrame)
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-rename(x -> @compat(Symbol)(uppercase(string(x))), df)
-rename(df, @compat(Dict(:i=>:A, :x=>:X)))
+rename(x -> Symbol(uppercase(string(x))), df)
+rename(df, Dict(:i=>:A, :x=>:X))
 rename(df, :y, :Y)
-rename!(df, @compat(Dict(:i=>:A, :x=>:X)))
+rename!(df, Dict(:i=>:A, :x=>:X))
 ```
 
 """
@@ -231,10 +231,10 @@ Base.ndims(::AbstractDataFrame) = 2
 Base.similar(df::AbstractDataFrame, dims::Int) =
     DataFrame(Any[similar(x, dims) for x in columns(df)], copy(index(df)))
 
-nas{T}(dv::AbstractArray{T}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =   # TODO move to datavector.jl?
+nas{T}(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =   # TODO move to datavector.jl?
     DataArray(Array{T}(dims), trues(dims))
 
-nas{T,R}(dv::PooledDataArray{T,R}, dims::@compat(Union{Int, Tuple{Vararg{Int}}})) =
+nas{T,R}(dv::PooledDataArray{T,R}, dims::Union{Int, Tuple{Vararg{Int}}}) =
     PooledDataArray(DataArrays.RefArray(zeros(R, dims)), dv.pool)
 
 nas(df::AbstractDataFrame, dims::Int) =
@@ -772,7 +772,7 @@ function Base.hash(df::AbstractDataFrame)
     for i in 1:size(df, 2)
         h = hash(df[i], h)
     end
-    return @compat UInt(h)
+    return UInt(h)
 end
 
 

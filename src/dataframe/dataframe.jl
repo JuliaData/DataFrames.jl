@@ -164,7 +164,7 @@ end
 # Initialize from a Vector of Associatives (aka list of dicts)
 function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
     #get column eltypes
-    col_eltypes = Type[@compat(Union{}) for _ = 1:length(ks)]
+    col_eltypes = Type[Union{} for _ = 1:length(ks)]
     for d in ds
         for (i,k) in enumerate(ks)
             # TODO: check for user-defined "NA" values, ala pandas
@@ -173,7 +173,7 @@ function DataFrame{D <: Associative}(ds::Vector{D}, ks::Vector)
             end
         end
     end
-    col_eltypes[col_eltypes .== @compat(Union{})] = Any
+    col_eltypes[col_eltypes .== Union{}] = Any
 
     # create empty DataFrame, and fill
     df = DataFrame(col_eltypes, ks, length(ds))
@@ -221,7 +221,7 @@ ncol(df::DataFrame) = length(index(df))
 # Let getindex(df.columns[j], row_inds) from AbstractDataVector() handle
 #  the resolution of row indices
 
-const ColumnIndex = @compat(Union{Real, Symbol})
+const ColumnIndex = Union{Real, Symbol}
 
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
@@ -267,7 +267,7 @@ end
 
 # df[:, SingleColumnIndex] => (Sub)?AbstractVector
 # df[:, MultiColumnIndex] => (Sub)?DataFrame
-Base.getindex{T<:ColumnIndex}(df::DataFrame, row_inds::Colon, col_inds::@compat(Union{T, AbstractVector{T}})) = df[col_inds]
+Base.getindex{T<:ColumnIndex}(df::DataFrame, row_inds::Colon, col_inds::Union{T, AbstractVector{T}}) = df[col_inds]
 
 # df[SingleRowIndex, :] => (Sub)?DataFrame
 Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col_inds]
@@ -289,11 +289,11 @@ Base.getindex(df::DataFrame, ::Colon, ::Colon) = copy(df)
 
 isnextcol(df::DataFrame, col_ind::Symbol) = true
 function isnextcol(df::DataFrame, col_ind::Real)
-    return ncol(df) + 1 == @compat Int(col_ind)
+    return ncol(df) + 1 == Int(col_ind)
 end
 
 function nextcolname(df::DataFrame)
-    return @compat(Symbol(string("x", ncol(df) + 1)))
+    return Symbol(string("x", ncol(df) + 1))
 end
 
 # Will automatically add a new column if needed
@@ -675,7 +675,7 @@ Base.delete!(df::DataFrame, c::Int) = delete!(df, [c])
 Base.delete!(df::DataFrame, c::Any) = delete!(df, index(df)[c])
 
 # deleterows!()
-function deleterows!(df::DataFrame, ind::@compat(Union{Integer, UnitRange{Int}}))
+function deleterows!(df::DataFrame, ind::Union{Integer, UnitRange{Int}})
     for i in 1:ncol(df)
         df.columns[i] = deleteat!(df.columns[i], ind)
     end
@@ -760,12 +760,12 @@ end
 
 pool(a::AbstractVector) = compact(PooledDataArray(a))
 
-function pool!(df::DataFrame, cname::@compat(Union{Integer, Symbol}))
+function pool!(df::DataFrame, cname::Union{Integer, Symbol})
     df[cname] = pool(df[cname])
     return
 end
 
-function pool!{T <: @compat(Union{Integer, Symbol})}(df::DataFrame, cnames::Vector{T})
+function pool!{T <: Union{Integer, Symbol}}(df::DataFrame, cnames::Vector{T})
     for cname in cnames
         df[cname] = pool(df[cname])
     end

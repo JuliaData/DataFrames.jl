@@ -397,7 +397,7 @@ function bytestotype{N <: Integer,
 
     while index > left
         if UInt32('0') <= byte <= UInt32('9')
-            value += (byte - @compat(UInt8('0'))) * power
+            value += (byte - UInt8('0')) * power
             power *= 10
         else
             return value, false, false
@@ -411,7 +411,7 @@ function bytestotype{N <: Integer,
     elseif byte == UInt32('+')
         return value, left < right, false
     elseif UInt32('0') <= byte <= UInt32('9')
-        value += (byte - @compat(UInt8('0'))) * power
+        value += (byte - UInt8('0')) * power
         return value, true, false
     else
         return value, false, false
@@ -757,7 +757,7 @@ function readtable!(p::ParsedCSV,
 
     # Extract the header
     if o.header
-        bytes, fields, rows, nextchr = readnrows!(p, io, @compat(Int64(1)), o, d, nextchr)
+        bytes, fields, rows, nextchr = readnrows!(p, io, Int64(1), o, d, nextchr)
 
         # Insert column names from header if none present
         if isempty(o.names)
@@ -766,7 +766,7 @@ function readtable!(p::ParsedCSV,
     end
 
     # Parse main data set
-    bytes, fields, rows, nextchr = readnrows!(p, io, @compat(Int64(nrows)), o, d, nextchr)
+    bytes, fields, rows, nextchr = readnrows!(p, io, Int64(nrows), o, d, nextchr)
 
     # Sanity checks
     bytes != 0 || error("Failed to read any bytes.")
