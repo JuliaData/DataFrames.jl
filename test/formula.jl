@@ -383,7 +383,7 @@ module TestFormula
     d[:x1m] = @data [5, 6, NA, 7]
     mf = ModelFrame(@formula(y ~ x1m), d)
     mm = ModelMatrix(mf)
-    @test mm.m[:, 2] == d[complete_cases(d), :x1m]
+    @test mm.m[:, 2] == d[completecases(d), :x1m]
     @test mm.m == ModelMatrix{sparsetype}(mf).m
 
     ## Same variable on left and right side
