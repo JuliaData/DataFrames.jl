@@ -1,4 +1,4 @@
-VERSION >= v"0.4.0-dev+6521" && __precompile__(true)
+__precompile__()
 
 module DataFrames
 
@@ -9,7 +9,6 @@ module DataFrames
 ##############################################################################
 
 using Compat
-import Compat.String
 using Reexport
 @reexport using StatsBase
 @reexport using DataArrays
@@ -30,6 +29,7 @@ import Base: ==, |>
 export @~,
        @csv_str,
        @csv2_str,
+       @formula,
        @tsv_str,
        @wsv_str,
 
@@ -53,8 +53,8 @@ export @~,
        coefnames,
        colwise,
        combine,
-       complete_cases,
-       complete_cases!,
+       completecases,
+       completecases!,
        setcontrasts!,
        deleterows!,
        describe,
@@ -62,6 +62,7 @@ export @~,
        eachrow,
        eltypes,
        groupby,
+       head,
        melt,
        meltdf,
        names!,
@@ -79,6 +80,7 @@ export @~,
        showcols,
        stack,
        stackdf,
+       tail,
        unique!,
        unstack,
        writetable,
@@ -91,12 +93,6 @@ export @~,
 ## Load files
 ##
 ##############################################################################
-
-if VERSION < v"0.5.0-dev+2023"
-    _displaysize(x...) = Base.tty_size()
-else
-    const _displaysize = Base.displaysize
-end
 
 for (dir, filename) in [
         ("other", "utils.jl"),

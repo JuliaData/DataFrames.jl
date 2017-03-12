@@ -14,7 +14,7 @@ function identifier(s::AbstractString)
     if !isidentifier(s)
         s = makeidentifier(s)
     end
-    @compat(Symbol(in(s, RESERVED_WORDS) ? "_"*s : s))
+    Symbol(in(s, RESERVED_WORDS) ? "_"*s : s)
 end
 
 function makeidentifier(s::AbstractString)
@@ -46,7 +46,7 @@ function makeidentifier(s::AbstractString)
         end
     end
 
-    return takebuf_string(res)
+    return String(take!(res))
 end
 
 function make_unique(names::Vector{Symbol}; allow_duplicates=true)
@@ -95,7 +95,7 @@ end
 #'
 #' DataFrames.gennames(10)
 function gennames(n::Integer)
-    res = Array(Symbol, n)
+    res = Vector{Symbol}(n)
     for i in 1:n
         res[i] = Symbol(@sprintf "x%d" i)
     end

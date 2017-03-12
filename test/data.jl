@@ -54,17 +54,17 @@ module TestData
     @test size(df6, 2) == 3
 
     #test_group("NA handling")
-    @test nrow(df5[complete_cases(df5), :]) == 3
+    @test nrow(df5[completecases(df5), :]) == 3
 
     #test_context("SubDataFrames")
 
     #test_group("constructors")
     # single index is rows
-    sdf6a = sub(df6, 1)
-    sdf6b = sub(df6, 2:3)
-    sdf6c = sub(df6, [true, false, true, false])
+    sdf6a = view(df6, 1)
+    sdf6b = view(df6, 2:3)
+    sdf6c = view(df6, [true, false, true, false])
     @test size(sdf6a) == (1,3)
-    sdf6d = sub(df6, [1,3], :B)
+    sdf6d = view(df6, [1,3], :B)
     @test size(sdf6d) == (2,1)
 
     #test_group("ref")
@@ -77,8 +77,8 @@ module TestData
     srand(1)
     N = 20
     #Cast to Int64 as rand() behavior differs between Int32/64
-    d1 = pdata(rand(@compat(map(Int64, 1:2)), N))
-    d2 = (@pdata ["A", "B", NA])[rand(@compat(map(Int64, 1:3)), N)]
+    d1 = pdata(rand(map(Int64, 1:2), N))
+    d2 = (@pdata ["A", "B", NA])[rand(map(Int64, 1:3), N)]
     d3 = data(randn(N))
     d4 = data(randn(N))
     df7 = DataFrame(Any[d1, d2, d3], [:d1, :d2, :d3])

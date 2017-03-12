@@ -12,16 +12,30 @@
 ## The rhs of a formula can be 1
 
 type Formula
-    lhs::@compat(Union{Symbol, Expr, Void})
-    rhs::@compat(Union{Symbol, Expr, Integer})
+    lhs::Union{Symbol, Expr, Void}
+    rhs::Union{Symbol, Expr, Integer}
 end
 
-macro ~(lhs, rhs)
-    ex = Expr(:call,
-              :Formula,
-              Base.Meta.quot(lhs),
-              Base.Meta.quot(rhs))
-    return ex
+macro formula(ex)
+    if (ex.head === :macrocall && ex.args[1] === Symbol("@~")) || (ex.head === :call && ex.args[1] === :(~))
+        length(ex.args) == 3 || error("malformed expression in formula")
+        lhs = Base.Meta.quot(ex.args[2])
+        rhs = Base.Meta.quot(ex.args[3])
+    else
+        error("expected formula separator ~, got $(ex.head)")
+    end
+    return Expr(:call, :Formula, lhs, rhs)
+end
+
+if VERSION < v"0.6.0-dev.2568"
+    macro ~(lhs, rhs)
+        Base.depwarn("The bare formula syntax lhs ~ rhs is deprecated. Use @formula(lhs ~ rhs) instead.", Symbol("@~"))
+        ex = Expr(:call,
+                  :Formula,
+                  Base.Meta.quot(lhs),
+                  Base.Meta.quot(rhs))
+        return ex
+    end
 end
 
 #
@@ -48,7 +62,7 @@ type ModelFrame
     contrasts::Dict{Symbol, ContrastsMatrix}
 end
 
-typealias AbstractFloatMatrix{T<:AbstractFloat} AbstractMatrix{T}
+@compat const AbstractFloatMatrix{T<:AbstractFloat} = AbstractMatrix{T}
 
 type ModelMatrix{T <: AbstractFloatMatrix}
     m::T
@@ -74,7 +88,7 @@ function allvars(ex::Expr)
 end
 allvars(f::Formula) = unique(vcat(allvars(f.rhs), allvars(f.lhs)))
 allvars(sym::Symbol) = [sym]
-allvars(v::Any) = Array(Symbol, 0)
+allvars(v::Any) = Vector{Symbol}(0)
 
 # special operators in formulas
 const specials = Set([:+, :-, :*, :/, :&, :|, :^])
@@ -102,7 +116,7 @@ end
 dospecials(a::Any) = a
 
 ## Distribution of & over +
-const distributive = @compat Dict(:& => :+)
+const distributive = Dict(:& => :+)
 
 distribute(ex::Expr) = distribute!(copy(ex))
 distribute(a::Any) = a
@@ -194,9 +208,9 @@ evt(a) = Any[a]
 function Terms(f::Formula)
     rhs = condense(distribute(dospecials(f.rhs)))
     tt = unique(getterms(rhs))
-    tt = tt[!(tt .== 1)]             # drop any explicit 1's
-    noint = (tt .== 0) | (tt .== -1) # should also handle :(-(expr,1))
-    tt = tt[!noint]
+    tt = tt[(!).(tt .== 1)]             # drop any explicit 1's
+    noint = (tt .== 0) .| (tt .== -1) # should also handle :(-(expr,1))
+    tt = tt[(!).(noint)]
     oo = Int[ord(t) for t in tt]     # orders of interaction terms
     if !issorted(oo)                 # sort terms by increasing order
         pp = sortperm(oo)
@@ -218,7 +232,7 @@ end
 
 ## Default NA handler.  Others can be added as keyword arguments
 function na_omit(df::DataFrame)
-    cc = complete_cases(df)
+    cc = completecases(df)
     df[cc,:], cc
 end
 
@@ -401,7 +415,7 @@ function droprandomeffects(trms::Terms)
     if !any(retrms)  # return trms unchanged
         trms
     elseif all(retrms) && !trms.response   # return an empty Terms object
-        Terms(Any[],Any[],Array(Bool, (0,0)),Array(Bool, (0,0)), Int[], false, trms.intercept)
+        Terms(Any[],Any[],Matrix{Bool}(0,0),Matrix{Bool}(0,0), Int[], false, trms.intercept)
     else
         # the rows of `trms.factors` correspond to `eterms`, the columns to `terms`
         # After dropping random-effects terms we drop any eterms whose rows are all false
@@ -462,7 +476,7 @@ creating the model matrix.
     factors = terms.factors
 
     ## Map eval. term name + redundancy bool to cached model matrix columns
-    eterm_cols = @compat Dict{Tuple{Symbol,Bool}, T}()
+    eterm_cols = Dict{Tuple{Symbol,Bool}, T}()
     ## Accumulator for each term's vector of eval. term columns.
 
     ## TODO: this method makes multiple copies of the data in the ModelFrame:
@@ -551,7 +565,7 @@ function coefnames(mf::ModelFrame)
     terms = droprandomeffects(dropresponse!(mf.terms))
 
     ## strategy mirrors ModelMatrx constructor:
-    eterm_names = @compat Dict{Tuple{Symbol,Bool}, Vector{Compat.UTF8String}}()
+    eterm_names = Dict{Tuple{Symbol,Bool}, Vector{Compat.UTF8String}}()
     term_names = Vector{Compat.UTF8String}[]
 
     if terms.intercept

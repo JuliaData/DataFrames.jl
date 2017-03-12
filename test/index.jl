@@ -39,7 +39,7 @@ end
 @test names!(i, [:a,:a], allow_duplicates=true) == Index([:a,:a_1])
 @test_throws ArgumentError names!(i, [:a,:a]) 
 @test names!(i, [:a,:b]) == Index([:a,:b])
-@test rename(i, @compat(Dict(:a=>:A, :b=>:B))) == Index([:A,:B])
+@test rename(i, Dict(:a=>:A, :b=>:B)) == Index([:A,:B])
 @test rename(i, :a, :A) == Index([:A,:b])
 @test rename(i, [:a], [:A]) == Index([:A,:b])
 # @test rename(i, uppercase) == Index([:A,:B])

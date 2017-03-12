@@ -17,13 +17,10 @@ module TestUtils
     @test DataFrames.make_unique([:x, :x_1, :x2], allow_duplicates=false) == [:x, :x_1, :x2]
 
     # Check that reserved words are up to date
+
     f = "$JULIA_HOME/../../src/julia-parser.scm"
     if isfile(f)
-        if VERSION >= v"0.5.0-dev+3678"
-            r1 = r"define initial-reserved-words '\(([^)]+)"
-        else
-            r1 = r"define reserved-words '\(([^)]+)"
-        end
+        r1 = r"define initial-reserved-words '\(([^)]+)"
         r2 = r"define \(parse-block s(?: \([^)]+\))?\)\s+\(parse-Nary s (?:parse-eq '\([^(]*|down '\([^)]+\) '[^']+ ')\(([^)]+)"
         body = readstring(f)
         m1, m2 = match(r1, body), match(r2, body)
