@@ -23,7 +23,20 @@ Nullable()
 Nullable(1) + Nullable()
 ```
 
-Note that operations mixing `Nullable` and scalars (e.g. `1 + Nullable()`) are not supported.
+The `get` function can be used to extract the value from the [`Nullable`](http://docs.julialang.org/en/stable/manual/types/#nullable-types-representing-missing-values) wrapper when it is not null. For example:
+
+```julia
+julia> a = Nullable("14:00:00")
+Nullable{String}("14:00:00")
+
+julia> b = get(a)
+"14:00:00"
+
+julia> typeof(b)
+String
+```
+
+Note that operations mixing `Nullable` and scalars (e.g. `1 + Nullable(1)`) are not supported.
 
 ## The `NullableArray` Type
 
