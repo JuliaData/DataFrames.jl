@@ -24,6 +24,7 @@ my_tests = ["utils.jl",
             "grouping.jl",
             "join.jl",
             "iteration.jl",
+            "latin.jl"
             "duplicates.jl",
             "show.jl",
             "statsmodel.jl",
