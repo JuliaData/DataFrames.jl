@@ -692,7 +692,7 @@ function parsenames!(names::Vector{Symbol},
             end
         end
 
-        name = String(bytes[left:right])
+        name = encoding == :utf8 ? String(bytes[left:right]) : name = transcode(String, convert(Array{UInt32,1}, bytes[left:right]))
         if normalizenames
             name = identifier(name)
         end
