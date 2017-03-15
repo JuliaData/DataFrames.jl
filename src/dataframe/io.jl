@@ -673,7 +673,7 @@ function parsenames!(names::Vector{Symbol},
                      quoted::BitVector,
                      fields::Int,
                      normalizenames::Bool,
-                     o.encoding::Symbol)
+                     encoding::Symbol)
     if fields == 0
         error("Header line was empty")
     end
