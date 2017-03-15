@@ -672,7 +672,8 @@ function parsenames!(names::Vector{Symbol},
                      bounds::Vector{Int},
                      quoted::BitVector,
                      fields::Int,
-                     normalizenames::Bool)
+                     normalizenames::Bool,
+                     o.encoding::Symbol)
     if fields == 0
         error("Header line was empty")
     end
@@ -774,7 +775,7 @@ function readtable!(p::ParsedCSV,
 
         # Insert column names from header if none present
         if isempty(o.names)
-            parsenames!(o.names, o.ignorepadding, p.bytes, p.bounds, p.quoted, fields, o.normalizenames)
+            parsenames!(o.names, o.ignorepadding, p.bytes, p.bounds, p.quoted, fields, o.normalizenames, o.encoding)
         end
     end
 
