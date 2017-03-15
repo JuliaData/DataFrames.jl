@@ -1,9 +1,10 @@
+
 ```@meta
 CurrentModule = DataFrames
 ```
 
 # Data Manipulation
-
+    
 ```@index
 Pages = ["manipulation.md"]
 ```
@@ -13,11 +14,11 @@ Pages = ["manipulation.md"]
 ```@docs
 join
 ```
-
+    
 ## Reshaping
 
 ```@docs
-melt
+melt 
 stack
 unstack
 stackdf

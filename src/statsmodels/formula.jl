@@ -12,16 +12,30 @@
 ## The rhs of a formula can be 1
 
 type Formula
-    lhs::@compat(Union{Symbol, Expr, Void})
-    rhs::@compat(Union{Symbol, Expr, Integer})
+    lhs::Union{Symbol, Expr, Void}
+    rhs::Union{Symbol, Expr, Integer}
 end
 
-macro ~(lhs, rhs)
-    ex = Expr(:call,
-              :Formula,
-              Base.Meta.quot(lhs),
-              Base.Meta.quot(rhs))
-    return ex
+macro formula(ex)
+    if (ex.head === :macrocall && ex.args[1] === Symbol("@~")) || (ex.head === :call && ex.args[1] === :(~))
+        length(ex.args) == 3 || error("malformed expression in formula")
+        lhs = Base.Meta.quot(ex.args[2])
+        rhs = Base.Meta.quot(ex.args[3])
+    else
+        error("expected formula separator ~, got $(ex.head)")
+    end
+    return Expr(:call, :Formula, lhs, rhs)
+end
+
+if VERSION < v"0.6.0-dev.2568"
+    macro ~(lhs, rhs)
+        Base.depwarn("The bare formula syntax lhs ~ rhs is deprecated. Use @formula(lhs ~ rhs) instead.", Symbol("@~"))
+        ex = Expr(:call,
+                  :Formula,
+                  Base.Meta.quot(lhs),
+                  Base.Meta.quot(rhs))
+        return ex
+    end
 end
 
 #
@@ -40,8 +54,6 @@ type Terms
     intercept::Bool       # is there an intercept column in the model matrix?
 end
 
-Base.:(==)(t1::Terms, t2::Terms) = all(getfield(t1, f)==getfield(t2, f) for f in fieldnames(t1))
-
 type ModelFrame
     df::AbstractDataFrame
     terms::Terms
@@ -50,7 +62,7 @@ type ModelFrame
     contrasts::Dict{Symbol, ContrastsMatrix}
 end
 
-typealias AbstractFloatMatrix{T<:AbstractFloat} AbstractMatrix{T}
+@compat const AbstractFloatMatrix{T<:AbstractFloat} = AbstractMatrix{T}
 
 type ModelMatrix{T <: AbstractFloatMatrix}
     m::T
@@ -76,7 +88,7 @@ function allvars(ex::Expr)
 end
 allvars(f::Formula) = unique(vcat(allvars(f.rhs), allvars(f.lhs)))
 allvars(sym::Symbol) = [sym]
-allvars(v::Any) = Array(Symbol, 0)
+allvars(v::Any) = Vector{Symbol}(0)
 
 # special operators in formulas
 const specials = Set([:+, :-, :*, :/, :&, :|, :^])
@@ -87,31 +99,24 @@ function dospecials(ex::Expr)
     if !(a1 in specials) return ex end
     excp = copy(ex)
     excp.args = vcat(a1,map(dospecials, ex.args[2:end]))
-    if a1 == :-
-        a2, a3 = excp.args[2:3]
-        a3 == 1 || error("invalid expression $ex; subtraction only supported for -1")
-        return :($a2 + -1)
-    elseif a1 == :*
-        aa = excp.args
-        a2 = aa[2]
-        a3 = aa[3]
-        if length(aa) > 3
-            excp.args = vcat(a1, aa[3:end])
-            a3 = dospecials(excp)
-        end
-        ## this order of expansion gives the R-style ordering of interaction
-        ## terms (after sorting in increasing interaction order) for higher-
-        ## order interaction terms (e.g. x1 * x2 * x3 should expand to x1 +
-        ## x2 + x3 + x1&x2 + x1&x3 + x2&x3 + x1&x2&x3)
-        :($a2 + $a2 & $a3 + $a3)
-    else
-        excp
+    if a1 != :* return excp end
+    aa = excp.args
+    a2 = aa[2]
+    a3 = aa[3]
+    if length(aa) > 3
+        excp.args = vcat(a1, aa[3:end])
+        a3 = dospecials(excp)
     end
+    ## this order of expansion gives the R-style ordering of interaction
+    ## terms (after sorting in increasing interaction order) for higher-
+    ## order interaction terms (e.g. x1 * x2 * x3 should expand to x1 +
+    ## x2 + x3 + x1&x2 + x1&x3 + x2&x3 + x1&x2&x3)
+    :($a2 + $a2 & $a3 + $a3)
 end
 dospecials(a::Any) = a
 
 ## Distribution of & over +
-const distributive = @compat Dict(:& => :+)
+const distributive = Dict(:& => :+)
 
 distribute(ex::Expr) = distribute!(copy(ex))
 distribute(a::Any) = a
@@ -203,9 +208,9 @@ evt(a) = Any[a]
 function Terms(f::Formula)
     rhs = condense(distribute(dospecials(f.rhs)))
     tt = unique(getterms(rhs))
-    tt = tt[!(tt .== 1)]             # drop any explicit 1's
-    noint = (tt .== 0) | (tt .== -1) # should also handle :(-(expr,1))
-    tt = tt[!noint]
+    tt = tt[(!).(tt .== 1)]             # drop any explicit 1's
+    noint = (tt .== 0) .| (tt .== -1) # should also handle :(-(expr,1))
+    tt = tt[(!).(noint)]
     oo = Int[ord(t) for t in tt]     # orders of interaction terms
     if !issorted(oo)                 # sort terms by increasing order
         pp = sortperm(oo)
@@ -225,16 +230,27 @@ function Terms(f::Formula)
     Terms(tt, ev, facs, non_redundants, oo, haslhs, !any(noint))
 end
 
-## Default NULL handler.  Others can be added as keyword arguments
-function null_omit(df::DataFrame)
-    cc = complete_cases(df)
+## Default NA handler.  Others can be added as keyword arguments
+function na_omit(df::DataFrame)
+    cc = completecases(df)
     df[cc,:], cc
 end
 
-_droplevels!(x::Any) = x
-_droplevels!(x::Union{CategoricalArray, NullableCategoricalArray}) = droplevels!(x)
+## Trim the pool field of da to only those levels that occur in the refs
+function dropunusedlevels!(da::PooledDataArray)
+    rr = da.refs
+    uu = unique(rr)
+    length(uu) == length(da.pool) && return da
+    T = eltype(rr)
+    su = sort!(uu)
+    dict = Dict(zip(su, one(T):convert(T, length(uu))))
+    da.refs = map(x -> dict[x], rr)
+    da.pool = da.pool[uu]
+    da
+end
+dropunusedlevels!(x) = x
 
-is_categorical(::Union{CategoricalArray, NullableCategoricalArray}) = true
+is_categorical(::PooledDataArray) = true
 is_categorical(::Any) = false
 
 ## Check for non-redundancy of columns.  For instance, if x is a factor with two
@@ -301,9 +317,9 @@ end
 
 function ModelFrame(trms::Terms, d::AbstractDataFrame;
                     contrasts::Dict = Dict())
-    df, msng = null_omit(DataFrame(map(x -> d[x], trms.eterms)))
+    df, msng = na_omit(DataFrame(map(x -> d[x], trms.eterms)))
     names!(df, convert(Vector{Symbol}, map(string, trms.eterms)))
-    for c in eachcol(df) _droplevels!(c[2]) end
+    for c in eachcol(df) dropunusedlevels!(c[2]) end
 
     evaledContrasts = evalcontrasts(df, contrasts)
 
@@ -352,11 +368,8 @@ function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, name::Symbol, mf::Mode
     end
 end
 
-modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::AbstractVector) =
-    convert(T, reshape(v, length(v), 1))
-# FIXME: this inefficient method should not be needed, cf. JuliaLang/julia#18264
-modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::NullableVector) =
-    convert(T, Matrix(reshape(v, length(v), 1)))
+modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::DataVector) = convert(T, reshape(v.data, length(v), 1))
+modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::Vector) = convert(T, reshape(v, length(v), 1))
 
 """
     modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::PooledDataVector, contrast::ContrastsMatrix)
@@ -364,9 +377,7 @@ modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::NullableVector) =
 Construct `ModelMatrix` columns of type `T` based on specified contrasts, ensuring that
 levels align properly.
 """
-function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T},
-                                               v::Union{CategoricalVector, NullableCategoricalVector},
-                                               contrast::ContrastsMatrix)
+function modelmat_cols{T<:AbstractFloatMatrix}(::Type{T}, v::PooledDataVector, contrast::ContrastsMatrix)
     ## make sure the levels of the contrast matrix and the categorical data
     ## are the same by constructing a re-indexing vector. Indexing into
     ## reindex with v.refs will give the corresponding row number of the
@@ -404,11 +415,11 @@ function droprandomeffects(trms::Terms)
     if !any(retrms)  # return trms unchanged
         trms
     elseif all(retrms) && !trms.response   # return an empty Terms object
-        Terms(Any[],Any[],Array(Bool, (0,0)),Array(Bool, (0,0)), Int[], false, trms.intercept)
+        Terms(Any[],Any[],Matrix{Bool}(0,0),Matrix{Bool}(0,0), Int[], false, trms.intercept)
     else
         # the rows of `trms.factors` correspond to `eterms`, the columns to `terms`
         # After dropping random-effects terms we drop any eterms whose rows are all false
-        ckeep = !retrms                 # columns to retain
+        ckeep = map(!, retrms)                 # columns to retain
         facs = trms.factors[:, ckeep]
         rkeep = vec(sum(facs, 2) .> 0)
         Terms(trms.terms[ckeep], trms.eterms[rkeep], facs[rkeep, :],
@@ -432,6 +443,7 @@ function dropresponse!(trms::Terms)
         trms
     end
 end
+
 
 """
     ModelMatrix{T<:AbstractFloatMatrix}(mf::ModelFrame)
@@ -464,7 +476,7 @@ creating the model matrix.
     factors = terms.factors
 
     ## Map eval. term name + redundancy bool to cached model matrix columns
-    eterm_cols = @compat Dict{Tuple{Symbol,Bool}, T}()
+    eterm_cols = Dict{Tuple{Symbol,Bool}, T}()
     ## Accumulator for each term's vector of eval. term columns.
 
     ## TODO: this method makes multiple copies of the data in the ModelFrame:
@@ -514,8 +526,7 @@ ModelMatrix(mf::ModelFrame) = ModelMatrix{Matrix{Float64}}(mf)
     termnames(term::Symbol, col)
 Returns a vector of strings with the names of the coefficients
 associated with a term.  If the column corresponding to the term
-is not a `CategoricalArray` or `NullableCategoricalArray`,
-a one-element vector is returned.
+is not a `PooledDataArray` a one-element vector is returned.
 """
 termnames(term::Symbol, col) = [string(term)]
 function termnames(term::Symbol, mf::ModelFrame; non_redundant::Bool = false)
@@ -554,7 +565,7 @@ function coefnames(mf::ModelFrame)
     terms = droprandomeffects(dropresponse!(mf.terms))
 
     ## strategy mirrors ModelMatrx constructor:
-    eterm_names = @compat Dict{Tuple{Symbol,Bool}, Vector{Compat.UTF8String}}()
+    eterm_names = Dict{Tuple{Symbol,Bool}, Vector{Compat.UTF8String}}()
     term_names = Vector{Compat.UTF8String}[]
 
     if terms.intercept

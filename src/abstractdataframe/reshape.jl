@@ -78,30 +78,31 @@ function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vector
                   [Compat.repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
               cnames)
 end
-function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int)
-    stack(df, [measure_var], [id_var])
+function stack(df::AbstractDataFrame, measure_vars::Int, id_vars::Int)
+    stack(df, [measure_vars], [id_vars])
 end
-function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_var::Int)
-    stack(df, measure_vars, [id_var])
+function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Int)
+    stack(df, measure_vars, [id_vars])
 end
-function stack(df::AbstractDataFrame, measure_var::Int, id_vars::Vector{Int})
-    stackdf(df, [measure_var], id_vars)
+function stack(df::AbstractDataFrame, measure_vars::Int, id_vars::Vector{Int})
+    stackdf(df, [measure_vars], id_vars)
 end
 stack(df::AbstractDataFrame, measure_vars, id_vars) =
     stack(df, index(df)[measure_vars], index(df)[id_vars])
-# no vars specified, by default select only numeric columns
-numeric_vars(df::AbstractDataFrame) = [T <: AbstractFloat || (T <: Nullable && eltype(T) <: AbstractFloat)
-                                       for T in eltypes(df)]
-function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df))
+function stack(df::AbstractDataFrame, measure_vars)
     mv_inds = index(df)[measure_vars]
     stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds))
+end
+function stack(df::AbstractDataFrame)
+    idx = [1:length(df);][[t <: AbstractFloat for t in eltypes(df)]]
+    stack(df, idx)
 end
 
 """
 Stacks a DataFrame; convert from a wide to long format; see
 `stack`.
 """
-melt(df::AbstractDataFrame, id_vars::@compat(Union{Int,Symbol})) = melt(df, [id_vars])
+melt(df::AbstractDataFrame, id_vars::Union{Int,Symbol}) = melt(df, [id_vars])
 function melt(df::AbstractDataFrame, id_vars)
     id_inds = index(df)[id_vars]
     stack(df, _setdiff(1:ncol(df), id_inds), id_inds)
@@ -162,30 +163,27 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     # `rowkey` integer indicating which column to place along rows
     # `colkey` integer indicating which column to place along column headers
     # `value` integer indicating which column has values
-    refkeycol = NullableCategoricalArray(df[rowkey])
+    refkeycol = PooledDataArray(df[rowkey])
     valuecol = df[value]
-    keycol = NullableCategoricalArray(df[colkey])
+    # TODO make a version with a default refkeycol
+    keycol = PooledDataArray(df[colkey])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
-    T = eltype(valuecol)
-    if T <: Nullable
-        T = eltype(T)
-    end
-    payload = DataFrame(Any[NullableArray(T, Nrow) for i in 1:Ncol],
-                        map(Symbol, levels(keycol)))
+    # TODO make fillNA(type, length)
+    payload = DataFrame(Any[DataArray(eltype(valuecol), Nrow) for i in 1:Ncol], map(Symbol, keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
-        j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
-        i = Int(CategoricalArrays.order(refkeycol.pool)[refkeycol.refs[k]])
+        j = Int(keycol.refs[k])
+        i = Int(refkeycol.refs[k])
         if i > 0 && j > 0
-            if nowarning && !isnull(payload[j][i])
+            if nowarning && !isna(payload[j][i])
                 warn("Duplicate entries in unstack.")
                 nowarning = false
             end
             payload[j][i]  = valuecol[k]
         end
     end
-    insert!(payload, 1, NullableArray(levels(refkeycol)), _names(df)[rowkey])
+    insert!(payload, 1, refkeycol.pool, _names(df)[rowkey])
 end
 unstack(df::AbstractDataFrame, rowkey, colkey, value) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
@@ -198,28 +196,24 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     # group on anything not a key or value:
     g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]))
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
-    rowkey = zeros(Int, size(df, 1))
+    rowkey = PooledDataArray(zeros(Int, size(df, 1)), [1:length(groupidxs);])
     for i in 1:length(groupidxs)
         rowkey[groupidxs[i]] = i
     end
-    keycol = NullableCategoricalArray(df[colkey])
+    keycol = PooledDataArray(df[colkey])
     valuecol = df[value]
     df1 = df[g.idx[g.starts], g.cols]
+    keys = unique(keycol)
     Nrow = length(g)
-    Ncol = length(levels(keycol))
-    T = eltype(valuecol)
-    if T <: Nullable
-        T = eltype(T)
-    end
-    df2 = DataFrame(Any[NullableArray(T, Nrow) for i in 1:Ncol],
-                    map(@compat(Symbol), levels(keycol)))
+    Ncol = length(keycol.pool)
+    df2 = DataFrame(Any[DataArray(fill(valuecol[1], Nrow), fill(true, Nrow)) for i in 1:Ncol], map(Symbol, keycol.pool))
     nowarning = true
     for k in 1:nrow(df)
-        j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
+        j = Int(keycol.refs[k])
         i = rowkey[k]
         if i > 0 && j > 0
-            if nowarning && !isnull(df2[j][i])
-                warn("Duplicate entries in unstack at row $k.")
+            if nowarning && !isna(df2[j][i])
+                warn("Duplicate entries in unstack.")
                 nowarning = false
             end
             df2[j][i]  = valuecol[k]
@@ -249,7 +243,7 @@ NOTE: Not exported.
 ### Constructor
 
 ```julia
-StackedVector(d::AbstractVector...)
+RepeatedVector(d::AbstractVector...)
 ```
 
 ### Arguments
@@ -295,7 +289,7 @@ Base.ndims(v::StackedVector) = 1
 Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
 Base.similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
 
-CategoricalArrays.CategoricalArray(v::StackedVector) = CategoricalArray(v[:]) # could be more efficient
+DataArrays.PooledDataArray(v::StackedVector) = PooledDataArray(v[:]) # could be more efficient
 
 
 """
@@ -355,8 +349,8 @@ Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.inner, v.o
 Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 Base.unique(v::RepeatedVector) = unique(v.parent)
 
-function CategoricalArrays.CategoricalArray(v::RepeatedVector)
-    res = CategoricalArrays.CategoricalArray(v.parent)
+function DataArrays.PooledDataArray(v::RepeatedVector)
+    res = DataArrays.PooledDataArray(v.parent)
     res.refs = repeat(res.refs, inner = [v.inner], outer = [v.outer])
     res
 end
@@ -430,21 +424,25 @@ function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int}, id_vars::Vect
                   [RepeatedVector(df[:,c], 1, N) for c in id_vars]...],     # id_var columns
               cnames)
 end
-function stackdf(df::AbstractDataFrame, measure_var::Int, id_var::Int)
-    stackdf(df, [measure_var], [id_var])
+function stackdf(df::AbstractDataFrame, measure_vars::Int, id_vars::Int)
+    stackdf(df, [measure_vars], [id_vars])
 end
-function stackdf(df::AbstractDataFrame, measure_vars, id_var::Int)
-    stackdf(df, measure_vars, [id_var])
+function stackdf(df::AbstractDataFrame, measure_vars, id_vars::Int)
+    stackdf(df, measure_vars, [id_vars])
 end
-function stackdf(df::AbstractDataFrame, measure_var::Int, id_vars)
-    stackdf(df, [measure_var], id_vars)
+function stackdf(df::AbstractDataFrame, measure_vars::Int, id_vars)
+    stackdf(df, [measure_vars], id_vars)
 end
 function stackdf(df::AbstractDataFrame, measure_vars, id_vars)
     stackdf(df, index(df)[measure_vars], index(df)[id_vars])
 end
-function stackdf(df::AbstractDataFrame, measure_vars = numeric_vars(df))
+function stackdf(df::AbstractDataFrame, measure_vars)
     m_inds = index(df)[measure_vars]
     stackdf(df, m_inds, _setdiff(1:ncol(df), m_inds))
+end
+function stackdf(df::AbstractDataFrame)
+    idx = [1:length(df);][[t <: AbstractFloat for t in eltypes(df)]]
+    stackdf(df, idx)
 end
 
 """

@@ -3,7 +3,7 @@
 # through cleanly.
 # an Index is the usual implementation.
 # a SimpleIndex only works if the things are integer indexes, which is weird.
-abstract AbstractIndex
+@compat abstract type AbstractIndex end
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
@@ -112,11 +112,9 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
 end
 
 Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
-Base.getindex(x::AbstractIndex, idx::Real) = @compat Int(idx)
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Nullable{Bool}}) =
-    getindex(x, convert(Vector{Bool}, idx, false))
-Base.getindex{T<:Nullable}(x::AbstractIndex, idx::AbstractVector{T}) =
-    getindex(x, dropnull(idx))
+Base.getindex(x::AbstractIndex, idx::Real) = Int(idx)
+Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, convert(Array, idx, false))
+Base.getindex{T}(x::AbstractIndex, idx::AbstractDataVector{T}) = getindex(x, dropna(idx))
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
 Base.getindex(x::AbstractIndex, idx::Range) = [idx;]
 Base.getindex{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)

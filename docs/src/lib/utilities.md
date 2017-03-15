@@ -1,3 +1,4 @@
+
 ```@meta
 CurrentModule = DataFrames
 ```
@@ -8,11 +9,13 @@ CurrentModule = DataFrames
 Pages = ["utilities.md"]
 ```
 
+...
+
 ```@docs
 eltypes
 head
-complete_cases
-complete_cases!
+completecases
+completecases!
 describe
 dump
 names!

@@ -16,11 +16,16 @@ inds = Any[1,
            1:1,
            1.0:1.0,
            [:A],
-           NullableArray([true]),
-           NullableArray([1]),
-           NullableArray([1.0]),
-           NullableArray([:A]),
-           NullableArray([:A])]
+           @data([true]),
+           @data([1]),
+           @data([1.0]),
+           @data([:A]),
+           DataArray([:A]),
+           PooledDataArray([true]),
+           @pdata([1]),
+           @pdata([1.0]),
+           @pdata([:A]),
+           PooledDataArray([:A])]
 
 for ind in inds
     if isequal(ind, :A) || ndims(ind) == 0
@@ -34,7 +39,7 @@ end
 @test names!(i, [:a,:a], allow_duplicates=true) == Index([:a,:a_1])
 @test_throws ArgumentError names!(i, [:a,:a]) 
 @test names!(i, [:a,:b]) == Index([:a,:b])
-@test rename(i, @compat(Dict(:a=>:A, :b=>:B))) == Index([:A,:B])
+@test rename(i, Dict(:a=>:A, :b=>:B)) == Index([:A,:B])
 @test rename(i, :a, :A) == Index([:A,:b])
 @test rename(i, [:a], [:A]) == Index([:A,:b])
 # @test rename(i, uppercase) == Index([:A,:B])
@@ -57,6 +62,6 @@ end
 df = DataFrame(A=[0],B=[0])
 df[1:end] = 0.0
 df[1,:A] = 1.0
-@test df[1,:B] === Nullable(0)
+@test df[1,:B] === 0
 
 end

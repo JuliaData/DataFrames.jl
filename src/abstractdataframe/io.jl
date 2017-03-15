@@ -23,7 +23,7 @@ function printtable(io::IO,
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    nastring::AbstractString = "NULL")
+                    nastring::AbstractString = "NA")
     n, p = size(df)
     etypes = eltypes(df)
     if header
@@ -42,19 +42,19 @@ function printtable(io::IO,
     quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
-            if !isnull(df[j],i)
+            if ! (isna(df[j],i))
                 if ! (etypes[j] <: Real)
-		    print(io, quotemark)
-		    escapedprint(io, get(df[i, j]), quotestr)
-		    print(io, quotemark)
+                    print(io, quotemark)
+                    escapedprint(io, df[i, j], quotestr)
+                    print(io, quotemark)
                 else
-		    print(io, df[i, j])
+                    print(io, df[i, j])
                 end
             else
-		print(io, nastring)
+                print(io, nastring)
             end
             if j < p
-		print(io, separator)
+                print(io, separator)
             else
                 print(io, '\n')
             end
@@ -67,7 +67,7 @@ function printtable(df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    nastring::AbstractString = "NULL")
+                    nastring::AbstractString = "NA")
     printtable(STDOUT,
                df,
                header = header,
@@ -94,7 +94,7 @@ writetable(filename, df, [keyword options])
 * `separator::Char` -- The separator character that you would like to use. Defaults to the output of `getseparator(filename)`, which uses commas for files that end in `.csv`, tabs for files that end in `.tsv` and a single space for files that end in `.wsv`.
 * `quotemark::Char` -- The character used to delimit string fields. Defaults to `'"'`.
 * `header::Bool` -- Should the file contain a header that specifies the column names from `df`. Defaults to `true`.
-* `nastring::AbstractString` -- What to write in place of missing data. Defaults to `"NULL"`.
+* `nastring::AbstractString` -- What to write in place of missing data. Defaults to `"NA"`.
 
 ### Result
 
@@ -115,7 +115,7 @@ function writetable(filename::AbstractString,
                     header::Bool = true,
                     separator::Char = getseparator(filename),
                     quotemark::Char = '"',
-                    nastring::AbstractString = "NULL",
+                    nastring::AbstractString = "NA",
                     append::Bool = false)
 
     if endswith(filename, ".bz") || endswith(filename, ".bz2")
@@ -133,7 +133,7 @@ function writetable(filename::AbstractString,
         # When 'append'-ing to a nonempty file,
         # 'header' triggers a check for matching colnames
         if header
-            if any(i -> @compat(Symbol(file_df[1, i])) != index(df)[i], 1:size(df, 2))
+            if any(i -> Symbol(file_df[1, i]) != index(df)[i], 1:size(df, 2))
                 throw(KeyError("Column names don't match names in file"))
             end
 
@@ -169,27 +169,25 @@ function html_escape(cell::AbstractString)
 end
 
 @compat function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
+    n = size(df, 1)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
+    write(io, "<thead>")
     write(io, "<tr>")
     write(io, "<th></th>")
     for column_name in cnames
         write(io, "<th>$column_name</th>")
     end
     write(io, "</tr>")
-    haslimit = get(io, :limit, true)
-    n = size(df, 1)
-    if haslimit
-        tty_rows, tty_cols = _displaysize(io)
-        mxrow = min(n,tty_rows)
-    else
-        mxrow = n
-    end
+    write(io, "</thead>")
+    write(io, "<tbody>")
+    tty_rows, tty_cols = displaysize(io)
+    mxrow = min(n,tty_rows)
     for row in 1:mxrow
         write(io, "<tr>")
         write(io, "<th>$row</th>")
         for column_name in cnames
-            cell = sprint(ourshowcompact, df[row, column_name])
+            cell = string(df[row, column_name])
             write(io, "<td>$(html_escape(cell))</td>")
         end
         write(io, "</tr>")
@@ -202,61 +200,8 @@ end
         end
         write(io, "</tr>")
     end
+    write(io, "</tbody>")
     write(io, "</table>")
-end
-
-##############################################################################
-#
-# LaTeX output
-#
-##############################################################################
-
-function latex_char_escape(char::AbstractString)
-    if char == "\\"
-        return "\\textbackslash{}"
-    elseif char == "~"
-        return "\\textasciitilde{}"
-    else
-        return string("\\", char)
-    end
-end
-
-function latex_escape(cell::AbstractString)
-    cell = replace(cell, ['\\','~','#','$','%','&','_','^','{','}'], latex_char_escape)
-    return cell
-end
-
-function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
-    nrows = size(df, 1)
-    ncols = size(df, 2)
-    cnames = _names(df)
-    alignment = repeat("c", ncols)
-    write(io, "\\begin{tabular}{r|")
-    write(io, alignment)
-    write(io, "}\n")
-    write(io, "\t& ")
-    header = join(map(c -> latex_escape(string(c)), cnames), " & ")
-    write(io, header)
-    write(io, "\\\\\n")
-    write(io, "\t\\hline\n")
-    for row in 1:nrows
-        write(io, "\t")
-        write(io, @sprintf("%d", row))
-        for col in 1:ncols
-            write(io, " & ")
-            cell = df[row,col]
-            if !isnull(cell)
-                content = get(cell)
-                if mimewritable(MIME("text/latex"), content)
-                    show(io, MIME("text/latex"), content)
-                else
-                    print(io, latex_escape(string(content)))
-                end
-            end
-        end
-        write(io, " \\\\\n")
-    end
-    write(io, "\\end{tabular}\n")
 end
 
 ##############################################################################

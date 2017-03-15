@@ -30,7 +30,7 @@ end
 #' ourstrwidth("abc")
 #' ourstrwidth(10000)
 let
-    local io = IOBuffer(Array(UInt8, 80), true, true)
+    local io = IOBuffer(Vector{UInt8}(80), true, true)
     global ourstrwidth
     function ourstrwidth(x::Any) # -> Int
         truncate(io, 0)
@@ -38,12 +38,11 @@ let
         return position(io)
     end
     ourstrwidth(x::AbstractString) = strwidth(x) + 2 # -> Int
-    myconv = VERSION < v"0.4-" ? convert : Base.unsafe_convert
     ourstrwidth(s::Symbol) =
-        @compat Int(ccall(:u8_strwidth,
-                          Csize_t,
-                          (Ptr{UInt8}, ),
-                          myconv(Ptr{UInt8}, s)))
+        Int(ccall(:u8_strwidth,
+                  Csize_t,
+                  (Ptr{UInt8}, ),
+                  Base.unsafe_convert(Ptr{UInt8}, s)))
 end
 
 #' @description
@@ -99,7 +98,7 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol) # -> Vector{Int}
-    maxwidths = Array(Int, size(df, 2) + 1)
+    maxwidths = Vector{Int}(size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(Base.undef_ref_str)
 
@@ -187,7 +186,7 @@ end
 #' chunkbounds = getchunkbounds(maxwidths, true)
 function getchunkbounds(maxwidths::Vector{Int},
                         splitchunks::Bool,
-                        availablewidth::Int=_displaysize()[2]) # -> Vector{Int}
+                        availablewidth::Int=displaysize()[2]) # -> Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
     if splitchunks
@@ -315,7 +314,7 @@ function showrows(io::IO,
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
                   splitchunks::Bool = false,
-                  rowlabel::Symbol = @compat(Symbol("Row")),
+                  rowlabel::Symbol = Symbol("Row"),
                   displaysummary::Bool = true) # -> Void
     ncols = size(df, 2)
 
@@ -328,7 +327,7 @@ function showrows(io::IO,
     end
 
     rowmaxwidth = maxwidths[ncols + 1]
-    chunkbounds = getchunkbounds(maxwidths, splitchunks, _displaysize(io)[2])
+    chunkbounds = getchunkbounds(maxwidths, splitchunks, displaysize(io)[2])
     nchunks = length(chunkbounds) - 1
 
     for chunkindex in 1:nchunks
@@ -431,10 +430,10 @@ end
 function Base.show(io::IO,
                    df::AbstractDataFrame,
                    splitchunks::Bool = true,
-                   rowlabel::Symbol = @compat(Symbol("Row")),
+                   rowlabel::Symbol = Symbol("Row"),
                    displaysummary::Bool = true) # -> Void
     nrows = size(df, 1)
-    dsize = _displaysize(io)
+    dsize = displaysize(io)
     availableheight = dsize[1] - 5
     nrowssubset = fld(availableheight, 2)
     bound = min(nrowssubset - 1, nrows)
@@ -509,7 +508,7 @@ end
 function Base.showall(io::IO,
                       df::AbstractDataFrame,
                       splitchunks::Bool = false,
-                      rowlabel::Symbol = @compat(Symbol("Row")),
+                      rowlabel::Symbol = Symbol("Row"),
                       displaysummary::Bool = true) # -> Void
     rowindices1 = 1:size(df, 1)
     rowindices2 = 1:0
@@ -567,7 +566,7 @@ function showcols(io::IO, df::AbstractDataFrame) # -> Void
     metadata = DataFrame(Name = _names(df),
                          Eltype = eltypes(df),
                          Missing = colmissing(df))
-    showall(io, metadata, true, @compat(Symbol("Col #")), false)
+    showall(io, metadata, true, Symbol("Col #"), false)
     return
 end
 

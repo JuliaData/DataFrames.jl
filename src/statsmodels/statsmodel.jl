@@ -58,7 +58,7 @@ for (modeltype, dfmodeltype) in ((:StatisticalModel, DataFrameStatisticalModel),
 end
 
 # Delegate functions from StatsBase that use our new types
-typealias DataFrameModels @compat(Union{DataFrameStatisticalModel, DataFrameRegressionModel})
+const DataFrameModels = Union{DataFrameStatisticalModel, DataFrameRegressionModel}
 @delegate DataFrameModels.model [StatsBase.coef, StatsBase.confint,
                                  StatsBase.deviance, StatsBase.nulldeviance,
                                  StatsBase.loglikelihood, StatsBase.nullloglikelihood,
