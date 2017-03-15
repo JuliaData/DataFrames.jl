@@ -498,8 +498,8 @@ function bytestotype{N <: AbstractString,
     if bytematch(bytes, left, right, nastrings)
         return "", true, true
     end
-    proper_bytes = convert(Array{UInt32,1}, bytes[left:right])
-    return transcode(String, proper_bytes), true, false
+
+    return String(bytes[left:right]), true, false
 end
 
 function builddf(rows::Integer,
@@ -517,7 +517,7 @@ function builddf(rows::Integer,
             values = Vector{o.eltypes[j]}(rows)
         end
 
-        missing = fill(false, rows)
+        missing = falses(rows)
         is_int = true
         is_float = true
         is_bool = true
@@ -640,9 +640,9 @@ function builddf(rows::Integer,
         end
 
         if o.makefactors && !(is_int || is_float || is_bool)
-            columns[j] = NullableCategoricalArray(values, missing)
+            columns[j] = PooledDataArray(values, missing)
         else
-            columns[j] = NullableArray(values, missing)
+            columns[j] = DataArray(values, missing)
         end
     end
 
@@ -801,7 +801,7 @@ function readtable(io::IO,
                    separator::Char = ',',
                    quotemark::Vector{Char} = ['"'],
                    decimal::Char = '.',
-                   nastrings::Vector = ["", "NULL", "NA"],
+                   nastrings::Vector = ["", "NA"],
                    truestrings::Vector = ["T", "t", "TRUE", "true"],
                    falsestrings::Vector = ["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
@@ -874,10 +874,10 @@ readtable(filename, [keyword options])
 *   `separator::Char` -- Assume that fields are split by the `separator` character. If not specified, it will be guessed from the filename: `.csv` defaults to `','`, `.tsv` defaults to `'\t'`, `.wsv` defaults to `' '`.
 *   `quotemark::Vector{Char}` -- Assume that fields contained inside of two `quotemark` characters are quoted, which disables processing of separators and linebreaks. Set to `Char[]` to disable this feature and slightly improve performance. Defaults to `['"']`.
 *   `decimal::Char` -- Assume that the decimal place in numbers is written using the `decimal` character. Defaults to `'.'`.
-*   `nastrings::Vector{String}` -- Translate any of the strings into this vector into a NULL value. Defaults to `["", "NULL", "NA"]`.
+*   `nastrings::Vector{String}` -- Translate any of the strings into this vector into an `NA`. Defaults to `["", "NA"]`.
 *   `truestrings::Vector{String}` -- Translate any of the strings into this vector into a Boolean `true`. Defaults to `["T", "t", "TRUE", "true"]`.
 *   `falsestrings::Vector{String}` -- Translate any of the strings into this vector into a Boolean `false`. Defaults to `["F", "f", "FALSE", "false"]`.
-*   `makefactors::Bool` -- Convert string columns into `CategoricalVector`'s for use as factors. Defaults to `false`.
+*   `makefactors::Bool` -- Convert string columns into `PooledDataVector`'s for use as factors. Defaults to `false`.
 *   `nrows::Int` -- Read only `nrows` from the file. Defaults to `-1`, which indicates that the entire file should be read.
 *   `names::Vector{Symbol}` -- Use the values in this array as the names for all columns instead of or in lieu of the names in the file's header. Defaults to `[]`, which indicates that the header should be used if present or that numeric names should be invented if there is no header.
 *   `eltypes::Vector` -- Specify the types of all columns. Defaults to `[]`.
@@ -909,7 +909,7 @@ function readtable(pathname::AbstractString;
                    separator::Char = getseparator(pathname),
                    quotemark::Vector{Char} = ['"'],
                    decimal::Char = '.',
-                   nastrings::Vector = String["", "NULL", "NA"],
+                   nastrings::Vector = String["", "NA"],
                    truestrings::Vector = String["T", "t", "TRUE", "true"],
                    falsestrings::Vector = String["F", "f", "FALSE", "false"],
                    makefactors::Bool = false,
@@ -975,7 +975,7 @@ literals. Parses the string `s` containing delimiter-separated tabular data
 argument contains a list of flag characters, which, if present, are equivalent
 to supplying named arguments to `readtable` as follows:
 
-- `f`: `makefactors=true`, convert string columns to `CategoricalArray` columns
+- `f`: `makefactors=true`, convert string columns to `PooledData` columns
 - `c`: `allowcomments=true`, ignore lines beginning with `#`
 - `H`: `header=false`, do not interpret the first line as column names
 """
@@ -1004,7 +1004,7 @@ separated values (CSV) using `readtable`, just as if it were being loaded from
 an external file. The suffix flags `f`, `c`, and `H` are optional. If present,
 they are equivalent to supplying named arguments to `readtable` as follows:
 
-* `f`: `makefactors=true`, convert string columns to `CategoricalArray` columns
+* `f`: `makefactors=true`, convert string columns to `PooledDataArray` columns
 * `c`: `allowcomments=true`, ignore lines beginning with `#`
 * `H`: `header=false`, do not interpret the first line as column names
 
@@ -1038,7 +1038,7 @@ character, just as if it were being loaded from an external file. The suffix
 flags `f`, `c`, and `H` are optional. If present, they are equivalent to
 supplying named arguments to `readtable` as follows:
 
-* `f`: `makefactors=true`, convert string columns to `CategoricalArray` columns
+* `f`: `makefactors=true`, convert string columns to `PooledDataArray` columns
 * `c`: `allowcomments=true`, ignore lines beginning with `#`
 * `H`: `header=false`, do not interpret the first line as column names
 
@@ -1074,7 +1074,7 @@ loaded from an external file. The suffix flags `f`, `c`, and `H` are optional.
 If present, they are equivalent to supplying named arguments to `readtable` as
 follows:
 
-* `f`: `makefactors=true`, convert string columns to `CategoricalArray` columns
+* `f`: `makefactors=true`, convert string columns to `PooledDataArray` columns
 * `c`: `allowcomments=true`, ignore lines beginning with `#`
 * `H`: `header=false`, do not interpret the first line as column names
 
@@ -1107,7 +1107,7 @@ separated values (TSV) using `readtable`, just as if it were being loaded from
 an external file. The suffix flags `f`, `c`, and `H` are optional. If present,
 they are equivalent to supplying named arguments to `readtable` as follows:
 
-* `f`: `makefactors=true`, convert string columns to `CategoricalArray` columns
+* `f`: `makefactors=true`, convert string columns to `PooledDataArray` columns
 * `c`: `allowcomments=true`, ignore lines beginning with `#`
 * `H`: `header=false`, do not interpret the first line as column names
 

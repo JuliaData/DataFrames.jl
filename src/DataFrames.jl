@@ -11,8 +11,7 @@ module DataFrames
 using Compat
 using Reexport
 @reexport using StatsBase
-@reexport using NullableArrays
-@reexport using CategoricalArrays
+@reexport using DataArrays
 using GZip
 using SortingAlgorithms
 
@@ -51,7 +50,6 @@ export @~,
 
        aggregate,
        by,
-       categorical!,
        coefnames,
        colwise,
        combine,
@@ -73,6 +71,8 @@ export @~,
        nrow,
        nullable!,
        order,
+       pool,
+       pool!,
        printtable,
        readtable,
        rename!,
@@ -84,14 +84,9 @@ export @~,
        unique!,
        unstack,
        writetable,
-       head,
-       tail,
 
        # Remove after deprecation period
-       read_rda,
-       pool,
-       pool!
-
+       read_rda
 
 ##############################################################################
 ##

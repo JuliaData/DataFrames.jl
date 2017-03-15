@@ -140,21 +140,19 @@ end
 
 # Methods for constructing ContrastsMatrix from data. These are called in
 # ModelFrame constructor and setcontrasts!.
-ContrastsMatrix(C::AbstractContrasts,
-                v::Union{CategoricalArray, NullableCategoricalArray}) =
-    ContrastsMatrix(C, levels(v))
-ContrastsMatrix{C <: AbstractContrasts}(c::Type{C},
-                                        col::Union{CategoricalArray, NullableCategoricalArray}) =
-    throw(ArgumentError("contrast types must be instantiated (use $c() instead of $c)"))
+# TODO: add methods for new categorical types
 
+ContrastsMatrix(C::AbstractContrasts, v::PooledDataArray) =
+    ContrastsMatrix(C, levels(v))
+ContrastsMatrix{C <: AbstractContrasts}(c::Type{C}, col::PooledDataArray) =
+    throw(ArgumentError("contrast types must be instantiated (use $c() instead of $c)"))
 # given an existing ContrastsMatrix, check that all of the levels present in the
 # data are present in the contrasts. Note that this behavior is different from the
 # ContrastsMatrix constructor, which requires that the levels be exactly the same.
 # This method exists to support things like `predict` that can operate on new data
 # which may contain only a subset of the original data's levels. Checking here
 # (instead of in `modelmat_cols`) allows an informative error message.
-function ContrastsMatrix(c::ContrastsMatrix,
-                         col::Union{CategoricalArray, NullableCategoricalArray})
+function ContrastsMatrix(c::ContrastsMatrix, col::PooledDataArray)
     if !isempty(setdiff(levels(col), c.levels))
         throw(ArgumentError("there are levels in data that are not in ContrastsMatrix: " *
                             "$(setdiff(levels(col), c.levels))" *
@@ -173,8 +171,7 @@ nullify(x::Nullable) = x
 nullify(x) = Nullable(x)
 
 # Making a contrast type T only requires that there be a method for
-# contrasts_matrix(T, v::Union{CategoricalArray, NullableCategoricalArray}).
-# The rest is boilerplate.
+# contrasts_matrix(T, v::PooledDataArray). The rest is boilerplate.
 for contrastType in [:DummyCoding, :EffectsCoding, :HelmertCoding]
     @eval begin
         type $contrastType <: AbstractContrasts

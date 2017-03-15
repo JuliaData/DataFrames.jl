@@ -1,49 +1,44 @@
-# Categorical Data
+# Pooling Data (Representing Factors)
 
 Often, we have to deal with factors that take on a small number of levels:
 
 ```julia
-v = ["Group A", "Group A", "Group A",
-     "Group B", "Group B", "Group B"]
+dv = @data(["Group A", "Group A", "Group A",
+            "Group B", "Group B", "Group B"])
 ```
 
-The naive encoding used in an `Array` or in a `NullableArray` represents every entry of this vector as a full string. In contrast, we can represent the data more efficiently by replacing the strings with indices into a small pool of levels. This is what the `CategoricalArray` type does:
+The naive encoding used in a `DataArray` represents every entry of this vector as a full string. In contrast, we can represent the data more efficiently by replacing the strings with indices into a small pool of levels. This is what the `PooledDataArray` does:
 
 ```julia
-cv = CategoricalArray(["Group A", "Group A", "Group A",
-                       "Group B", "Group B", "Group B"])
+pdv = @pdata(["Group A", "Group A", "Group A",
+              "Group B", "Group B", "Group B"])
 ```
 
-A companion type, `NullableCategoricalArray`, allows storing missing values in the array: is to `CategoricalArray` what `NullableArray` is to the standard `Array` type.
-
-In addition to representing repeated data efficiently, the `CategoricalArray` type allows us to determine efficiently the allowed levels of the variable at any time using the `levels` function (note that levels may or may not be actually used in the data):
+In addition to representing repeated data efficiently, the `PooledDataArray` allows us to determine the levels of the factor at any time using the `levels` function:
 
 ```julia
-levels(cv)
+levels(pdv)
 ```
 
-The `levels!` function also allows changing the order of appearance of the levels, which can be useful for display purposes or when working with ordered variables.
-
-By default, a `CategoricalArray` is able to represent 2<sup>32</sup>differents levels. You can use less memory by calling the `compact` function:
+By default, a `PooledDataArray` is able to represent 2<sup>32</sup>differents levels. You can use less memory by calling the `compact` function:
 
 ```julia
-cv = compact(cv)
+pdv = compact(pdv)
 ```
 
-Often, you will have factors encoded inside a DataFrame with `Array` or `NullableArray` columns instead of `CategoricalArray` or `NullableCategoricalArray` columns. You can do conversion of a single column using the `categorical` function:
+Often, you will have factors encoded inside a DataFrame with `DataArray` columns instead of `PooledDataArray` columns. You can do conversion of a single column using the `pool` function:
 
 ```julia
-cv = categorical(v)
+pdv = pool(dv)
 ```
 
-Or you can edit the columns of a `DataFrame` in-place using the `categorical!` function:
+Or you can edit the columns of a `DataFrame` in-place using the `pool!` function:
 
 ```julia
 df = DataFrame(A = [1, 1, 1, 2, 2, 2],
                B = ["X", "X", "X", "Y", "Y", "Y"])
-categorical!(df, [:A, :B])
+pool!(df, [:A, :B])
 ```
 
-Using categorical arrays is important for working with the [GLM package](https://github.com/JuliaStats/GLM.jl). When fitting regression models, `CategoricalArray` and `NullableCategoricalArray` columns in the input are translated into 0/1 indicator columns in the `ModelMatrix` with one column for each of the levels of the `CategoricalArray`/`NullableCategoricalArray`. This allows one to analyze categorical data efficiently.
+Pooling columns is important for working with the [GLM package](https://github.com/JuliaStats/GLM.jl) When fitting regression models, `PooledDataArray` columns in the input are translated into 0/1 indicator columns in the `ModelMatrix` with one column for each of the levels of the `PooledDataArray`. This allows one to analyze categorical data efficiently.
 
-See the [CategoricalArrays package](https://github.com/nalimilan/CategoricalArrays.jl) for more information regarding categorical arrays.

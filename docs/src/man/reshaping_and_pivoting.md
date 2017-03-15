@@ -3,8 +3,8 @@
 Reshape data from wide to long format using the `stack` function:
 
 ```julia
-using DataFrames
-iris = readtable(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
+using DataFrames, RDatasets
+iris = dataset("datasets", "iris")
 iris[:id] = 1:size(iris, 1)  # this makes it easier to unstack
 d = stack(iris, 1:4)
 ```
@@ -79,6 +79,6 @@ None of these reshaping functions perform any aggregation. To do aggregation, us
 
 ```julia
 d = stack(iris)
-x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(dropnull(df[:value]))))
+x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(df[:value])))
 unstack(x, :Species, :vsum)
 ```
