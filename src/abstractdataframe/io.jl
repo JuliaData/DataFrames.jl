@@ -220,7 +220,7 @@ end
 
 ##############################################################################
 #
-# CSV/DataStreams-based IO
+# DataStreams-based IO
 #
 ##############################################################################
 
@@ -229,7 +229,7 @@ importall DataStreams
 # DataFrames DataStreams implementation
 function Data.schema(df::DataFrame, ::Type{Data.Column})
     return Data.Schema(map(string, names(df)),
-           DataType[typeof(A) for A in df.columns], size(df, 1))
+                       DataType[typeof(A) for A in df.columns], size(df, 1))
 end
 
 # DataFrame as a Data.Source
@@ -286,30 +286,14 @@ end
 
 Data.streamtypes(::Type{DataFrame}) = [Data.Column, Data.Field]
 
-Data.streamto!{T}(sink::DataFrame,
-                  ::Type{Data.Field},
-                  val::T,
-                  row,
-                  col,
-                  sch::Data.Schema{false}) = push!(sink.columns[col]::Vector{T}, val)
-Data.streamto!{T}(sink::DataFrame,
-                  ::Type{Data.Field},
-                  val::Nullable{T},
-                  row,
-                  col,
-                  sch::Data.Schema{false}) = push!(sink.columns[col]::DataVector{T}, isnull(val) ? NA : get(val))
-Data.streamto!{T}(sink::DataFrame,
-                  ::Type{Data.Field},
-                  val::T,
-                  row,
-                  col,
-                  sch::Data.Schema{true}) = (sink.columns[col]::Vector{T})[row] = val
-Data.streamto!{T}(sink::DataFrame,
-                  ::Type{Data.Field},
-                  val::Nullable{T},
-                  row,
-                  col,
-                  sch::Data.Schema{true}) = (sink.columns[col]::DataVector{T})[row] = isnull(val) ? NA : get(val)
+Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::T, row, col, sch::Data.Schema{false}) =
+    push!(sink.columns[col]::Vector{T}, val)
+Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::Nullable{T}, row, col, sch::Data.Schema{false}) =
+    push!(sink.columns[col]::DataVector{T}, isnull(val) ? NA : get(val))
+Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::T, row, col, sch::Data.Schema{true}) =
+    (sink.columns[col]::Vector{T})[row] = val
+Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::Nullable{T}, row, col, sch::Data.Schema{true}) =
+    (sink.columns[col]::DataVector{T})[row] = isnull(val) ? NA : get(val)
 
 function Data.streamto!{T}(sink::DataFrame, ::Type{Data.Column}, column::T, row, col, sch::Data.Schema)
     if row == 0
