@@ -217,3 +217,93 @@ end
 @compat function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
     printtable(io, df, true, '\t')
 end
+
+##############################################################################
+#
+# CSV IO
+#
+##############################################################################
+
+# DataFrames DataStreams definitions
+importall DataStreams
+
+# DataFrames DataStreams implementation
+function Data.schema(df::DataFrame, ::Type{Data.Column})
+    return Data.Schema(map(string, names(df)),
+            DataType[typeof(A) for A in df.columns], size(df, 1))
+end
+
+# DataFrame as a Data.Source
+function Data.isdone(source::DataFrame, row, col)
+    rows, cols = size(source)NullableArray
+    return row > rows || col > cols
+end
+
+Data.streamtype(::Type{DataFrame}, ::Type{Data.Column}) = true
+Data.streamtype(::Type{DataFrame}, ::Type{Data.Field}) = true
+
+Data.streamfrom{T <: AbstractVector}(source::DataFrame, ::Type{Data.Column}, ::Type{T}, col) = (@inbounds A = source.columns[col]::T; return A)
+Data.streamfrom{T}(source::DataFrame, ::Type{Data.Column}, ::Type{T}, col) = (@inbounds A = source.columns[col]; return A)
+Data.streamfrom{T}(source::DataFrame, ::Type{Data.Field}, ::Type{T}, row, col) = (@inbounds A = Data.streamfrom(source, Data.Column, T, col); return A[row]::T)
+
+# DataFrame as a Data.Sink
+allocate{T}(::Type{T}, rows, ref) = Array{T}(rows)
+allocate{T}(::Type{Vector{T}}, rows, ref) = Array{T}(rows)
+
+allocate{T}(::Type{Nullable{T}}, rows, ref) = NullableArray{T, 1}(Array{T}(rows), fill(true, rows), isempty(ref) ? UInt8[] : ref)
+
+if isdefined(Main, :DataArray)
+    allocate{T}(::Type{DataVector{T}}, rows, ref) = DataArray{T}(rows)
+end
+
+function DataFrame{T <: Data.StreamType}(sch::Data.Schema, ::Type{T}=Data.Field, append::Bool=false, ref::Vector{UInt8}=UInt8[], args...)
+    rows, cols = size(sch)
+    rows = max(0, T <: Data.Column ? 0 : rows) # don't pre-allocate for Column streaming
+    columns = Vector{Any}(cols)
+    types = Data.types(sch)
+    for i = 1:cols
+        columns[i] = allocate(types[i], rows, ref)
+    end
+    return DataFrame(columns, map(Symbol, Data.header(sch)))
+end
+
+# given an existing DataFrame (`sink`), make any necessary changes for streaming source
+# with Data.Schema `sch` to it, given we know if we'll be `appending` or not
+function DataFrame(sink, sch::Data.Schema, ::Type{Data.Field}, append::Bool, ref::Vector{UInt8})
+    rows, cols = size(sch)
+    newsize = max(0, rows) + (append ? size(sink, 1) : 0)
+    # need to make sure we don't break a NullableArray{WeakRefString{UInt8}} when appending
+    if append
+        for (i, T) in enumerate(Data.types(sch))
+            if T <: Nullable{WeakRefString{UInt8}}
+                sink.columns[i] = NullableArray(String[string(get(x, "")) for x in sink.columns[i]])
+                sch.types[i] = Nullable{String}
+            end
+        end
+    end
+    newsize != size(sink, 1) && foreach(x->resize!(x, newsize), sink.columns)
+    sch.rows = newsize
+    return sink
+end
+function DataFrame(sink, sch::Data.Schema, ::Type{Data.Column}, append::Bool, ref::Vector{UInt8})
+    rows, cols = size(sch)
+    append ? (sch.rows += size(sink, 1)) : foreach(empty!, sink.columns)
+    return sink
+end
+
+Data.streamtypes(::Type{DataFrame}) = [Data.Column, Data.Field]
+
+Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::T, row, col, sch::Data.Schema{false}) = push!(sink.columns[col]::Vector{T}, val)
+Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::Nullable{T}, row, col, sch::Data.Schema{false}) = push!(sink.columns[col]::NullableArray{T}, val)
+
+Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::T, row, col, sch::Data.Schema{true}) = (sink.columns[col]::Vector{T})[row] = val
+Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::Nullable{T}, row, col, sch::Data.Schema{true}) = (sink.columns[col]::NullableArray{T})[row] = val
+
+function Data.streamto!{T}(sink::DataFrame, ::Type{Data.Column}, column::T, row, col, sch::Data.Schema)
+    if row == 0
+        sink.columns[col] = column
+    else
+        append!(sink.columns[col]::T, column)
+    end
+    return length(column)
+end
