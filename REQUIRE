@@ -7,3 +7,4 @@ Reexport
 Compat 0.18.0
 FileIO 0.1.2
 NullableArrays
+CSV
