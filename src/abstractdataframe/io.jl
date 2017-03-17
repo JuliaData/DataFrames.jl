@@ -220,11 +220,10 @@ end
 
 ##############################################################################
 #
-# CSV IO
+# CSV/DataStreams-based IO
 #
 ##############################################################################
 
-# DataFrames DataStreams definitions
 importall DataStreams
 
 # DataFrames DataStreams implementation
@@ -242,25 +241,30 @@ end
 Data.streamtype(::Type{DataFrame}, ::Type{Data.Column}) = true
 Data.streamtype(::Type{DataFrame}, ::Type{Data.Field}) = true
 
-Data.streamfrom{T <: AbstractVector}(source::DataFrame, ::Type{Data.Column}, ::Type{T}, col) = (@inbounds A = source.columns[col]::T; return A)
-Data.streamfrom{T}(source::DataFrame, ::Type{Data.Column}, ::Type{T}, col) = (@inbounds A = source.columns[col]; return A)
-Data.streamfrom{T}(source::DataFrame, ::Type{Data.Field}, ::Type{T}, row, col) = (@inbounds A = Data.streamfrom(source, Data.Column, T, col); return A[row]::T)
+Data.streamfrom{T <: AbstractVector}(source::DataFrame, ::Type{Data.Column}, ::Type{T}, col) = (
+    @inbounds A = source.columns[col]::T; return A)
+Data.streamfrom{T}(source::DataFrame, ::Type{Data.Column}, ::Type{T}, col) = (
+    @inbounds A = source.columns[col]; return A)
+Data.streamfrom{T}(source::DataFrame, ::Type{Data.Field}, ::Type{T}, row, col) = (
+    @inbounds A = Data.streamfrom(source, Data.Column, T, col); return A[row]::T)
 
 # DataFrame as a Data.Sink
-allocate{T}(::Type{T}, rows, ref) = Array{T}(rows)
-allocate{T}(::Type{Vector{T}}, rows, ref) = Array{T}(rows)
+allocate{T}(::Type{T}, rows) = Vector{T}(rows)
+allocate{T}(::Type{Vector{T}}, rows) = Vector{T}(rows)
+allocate{T}(::Type{Nullable{T}}, rows) = DataArray(Vector{T}(rows))
+allocate{T}(::Type{DataVector{T}}, rows) = DataArray(Vector{T}(rows))
+allocate{S,R}(::Type{PooledDataVector{S,R}}, rows) = PooledDataArray{S,1,R}(rows)
 
-if isdefined(Main, :DataArray)
-    allocate{T}(::Type{DataVector{T}}, rows, ref) = DataArray{T}(rows)
-end
-
-function DataFrame{T <: Data.StreamType}(sch::Data.Schema, ::Type{T}=Data.Field, append::Bool=false, ref::Vector{UInt8}=UInt8[], args...)
+function DataFrame{T <: Data.StreamType}(sch::Data.Schema,
+                                         ::Type{T}=Data.Field,
+                                         append::Bool=false,
+                                         ref::Vector{UInt8}=UInt8[], args...)
     rows, cols = size(sch)
     rows = max(0, T <: Data.Column ? 0 : rows) # don't pre-allocate for Column streaming
     columns = Vector{Any}(cols)
     types = Data.types(sch)
     for i = 1:cols
-        columns[i] = allocate(types[i], rows, ref)
+        columns[i] = allocate(types[i], rows)
     end
     return DataFrame(columns, map(Symbol, Data.header(sch)))
 end
@@ -270,15 +274,6 @@ end
 function DataFrame(sink, sch::Data.Schema, ::Type{Data.Field}, append::Bool, ref::Vector{UInt8})
     rows, cols = size(sch)
     newsize = max(0, rows) + (append ? size(sink, 1) : 0)
-    # need to make sure we don't break a NullableArray{WeakRefString{UInt8}} when appending
-    # if append
-    #     for (i, T) in enumerate(Data.types(sch))
-    #         if T <: Nullable{WeakRefString{UInt8}}
-    #             sink.columns[i] = NullableArray(String[string(get(x, "")) for x in sink.columns[i]])
-    #             sch.types[i] = Nullable{String}
-    #         end
-    #     end
-    # end
     newsize != size(sink, 1) && foreach(x->resize!(x, newsize), sink.columns)
     sch.rows = newsize
     return sink
@@ -291,11 +286,30 @@ end
 
 Data.streamtypes(::Type{DataFrame}) = [Data.Column, Data.Field]
 
-Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::T, row, col, sch::Data.Schema{false}) = push!(sink.columns[col]::Vector{T}, val)
-# Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::Nullable{T}, row, col, sch::Data.Schema{false}) = push!(sink.columns[col]::NullableArray{T}, val)
-
-Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::T, row, col, sch::Data.Schema{true}) = (sink.columns[col]::Vector{T})[row] = val
-# Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::Nullable{T}, row, col, sch::Data.Schema{true}) = (sink.columns[col]::NullableArray{T})[row] = val
+Data.streamto!{T}(sink::DataFrame,
+                  ::Type{Data.Field},
+                  val::T,
+                  row,
+                  col,
+                  sch::Data.Schema{false}) = push!(sink.columns[col]::Vector{T}, val)
+Data.streamto!{T}(sink::DataFrame,
+                  ::Type{Data.Field},
+                  val::Nullable{T},
+                  row,
+                  col,
+                  sch::Data.Schema{false}) = push!(sink.columns[col]::DataVector{T}, isnull(val) ? NA : get(val))
+Data.streamto!{T}(sink::DataFrame,
+                  ::Type{Data.Field},
+                  val::T,
+                  row,
+                  col,
+                  sch::Data.Schema{true}) = (sink.columns[col]::Vector{T})[row] = val
+Data.streamto!{T}(sink::DataFrame,
+                  ::Type{Data.Field},
+                  val::Nullable{T},
+                  row,
+                  col,
+                  sch::Data.Schema{true}) = (sink.columns[col]::DataVector{T})[row] = isnull(val) ? NA : get(val)
 
 function Data.streamto!{T}(sink::DataFrame, ::Type{Data.Column}, column::T, row, col, sch::Data.Schema)
     if row == 0
