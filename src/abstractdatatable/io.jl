@@ -196,7 +196,7 @@ end
 
 ##############################################################################
 #
-# CSV IO
+# CSV/DataStreams-based IO
 #
 ##############################################################################
 
@@ -217,28 +217,36 @@ end
 Data.streamtype(::Type{DataTable}, ::Type{Data.Column}) = true
 Data.streamtype(::Type{DataTable}, ::Type{Data.Field}) = true
 
-Data.streamfrom{T <: AbstractVector}(source::DataTable, ::Type{Data.Column}, ::Type{T}, col) = (@inbounds A = source.columns[col]::T; return A)
-Data.streamfrom{T}(source::DataTable, ::Type{Data.Column}, ::Type{T}, col) = (@inbounds A = source.columns[col]; return A)
-Data.streamfrom{T}(source::DataTable, ::Type{Data.Field}, ::Type{T}, row, col) = (@inbounds A = Data.streamfrom(source, Data.Column, T, col); return A[row]::T)
+Data.streamfrom{T <: AbstractVector}(source::DataTable, ::Type{Data.Column}, ::Type{T}, col) = (
+    @inbounds A = source.columns[col]::T; return A)
+Data.streamfrom{T}(source::DataTable, ::Type{Data.Column}, ::Type{T}, col) = (
+    @inbounds A = source.columns[col]; return A)
+Data.streamfrom{T}(source::DataTable, ::Type{Data.Field}, ::Type{T}, row, col) = (
+    @inbounds A = Data.streamfrom(source, Data.Column, T, col); return A[row]::T)
 
 # DataTable as a Data.Sink
 allocate{T}(::Type{T}, rows, ref) = Array{T}(rows)
 allocate{T}(::Type{Vector{T}}, rows, ref) = Array{T}(rows)
 
-allocate{T}(::Type{Nullable{T}}, rows, ref) = NullableArray{T, 1}(Array{T}(rows), fill(true, rows), isempty(ref) ? UInt8[] : ref)
-allocate{T}(::Type{NullableVector{T}}, rows, ref) = NullableArray{T, 1}(Array{T}(rows), fill(true, rows), isempty(ref) ? UInt8[] : ref)
+allocate{T}(::Type{Nullable{T}}, rows, ref) =
+    NullableArray{T, 1}(Array{T}(rows), fill(true, rows), isempty(ref) ? UInt8[] : ref)
+allocate{T}(::Type{NullableVector{T}}, rows, ref) =
+    NullableArray{T, 1}(Array{T}(rows), fill(true, rows), isempty(ref) ? UInt8[] : ref)
 
-allocate{S,R}(::Type{CategoricalArrays.CategoricalValue{S,R}}, rows, ref) = CategoricalArray{S,1,R}(rows)
-allocate{S,R}(::Type{CategoricalVector{S,R}}, rows, ref) = CategoricalArray{S,1,R}(rows)
+allocate{S,R}(::Type{CategoricalArrays.CategoricalValue{S,R}}, rows, ref) =
+    CategoricalArray{S,1,R}(rows)
+allocate{S,R}(::Type{CategoricalVector{S,R}}, rows, ref) =
+    CategoricalArray{S,1,R}(rows)
 
-allocate{S,R}(::Type{Nullable{CategoricalArrays.CategoricalValue{S,R}}}, rows, ref) = NullableCategoricalArray{S,1,R}(rows)
-allocate{S,R}(::Type{NullableCategoricalVector{S,R}}, rows, ref) = NullableCategoricalArray{S,1,R}(rows)
+allocate{S,R}(::Type{Nullable{CategoricalArrays.CategoricalValue{S,R}}}, rows, ref) =
+    NullableCategoricalArray{S,1,R}(rows)
+allocate{S,R}(::Type{NullableCategoricalVector{S,R}}, rows, ref) =
+    NullableCategoricalArray{S,1,R}(rows)
 
-if isdefined(Main, :DataArray)
-    allocate{T}(::Type{DataVector{T}}, rows, ref) = DataArray{T}(rows)
-end
-
-function DataTable{T <: Data.StreamType}(sch::Data.Schema, ::Type{T}=Data.Field, append::Bool=false, ref::Vector{UInt8}=UInt8[], args...)
+function DataTable{T <: Data.StreamType}(sch::Data.Schema,
+                                         ::Type{T}=Data.Field,
+                                         append::Bool=false,
+                                         ref::Vector{UInt8}=UInt8[], args...)
     rows, cols = size(sch)
     rows = max(0, T <: Data.Column ? 0 : rows) # don't pre-allocate for Column streaming
     columns = Vector{Any}(cols)
@@ -251,14 +259,16 @@ end
 
 # given an existing DataTable (`sink`), make any necessary changes for streaming source
 # with Data.Schema `sch` to it, given we know if we'll be `appending` or not
-function DataTable(sink, sch::Data.Schema, ::Type{Data.Field}, append::Bool, ref::Vector{UInt8})
+function DataTable(sink, sch::Data.Schema, ::Type{Data.Field}, append::Bool,
+                   ref::Vector{UInt8})
     rows, cols = size(sch)
     newsize = max(0, rows) + (append ? size(sink, 1) : 0)
     # need to make sure we don't break a NullableVector{WeakRefString{UInt8}} when appending
     if append
         for (i, T) in enumerate(Data.types(sch))
             if T <: Nullable{WeakRefString{UInt8}}
-                sink.columns[i] = NullableArray(String[string(get(x, "")) for x in sink.columns[i]])
+                sink.columns[i] = NullableArray(String[string(get(x, ""))
+                                                       for x in sink.columns[i]])
                 sch.types[i] = Nullable{String}
             end
         end
@@ -275,16 +285,61 @@ end
 
 Data.streamtypes(::Type{DataTable}) = [Data.Column, Data.Field]
 
-Data.streamto!{T}(sink::DataTable, ::Type{Data.Field}, val::T, row, col, sch::Data.Schema{false}) = push!(sink.columns[col]::Vector{T}, val)
-Data.streamto!{T}(sink::DataTable, ::Type{Data.Field}, val::Nullable{T}, row, col, sch::Data.Schema{false}) = push!(sink.columns[col]::NullableVector{T}, val)
-Data.streamto!{T, R}(sink::DataTable, ::Type{Data.Field}, val::CategoricalValue{T, R}, row, col, sch::Data.Schema{false}) = push!(sink.columns[col]::CategoricalVector{T, R}, val)
-Data.streamto!{T, R}(sink::DataTable, ::Type{Data.Field}, val::Nullable{CategoricalValue{T, R}}, row, col, sch::Data.Schema{false}) = push!(sink.columns[col]::NullableCategoricalVector{T, R}, val)
+Data.streamto!{T}(sink::DataTable,
+                  ::Type{Data.Field},
+                  val::T,
+                  row,
+                  col,
+                  sch::Data.Schema{false}) = push!(sink.columns[col]::Vector{T}, val)
+Data.streamto!{T}(sink::DataTable,
+                  ::Type{Data.Field},
+                  val::Nullable{T},
+                  row,
+                  col,
+                  sch::Data.Schema{false}) = push!(sink.columns[col]::NullableVector{T}, val)
+Data.streamto!{T, R}(sink::DataTable,
+                     ::Type{Data.Field},
+                     val::CategoricalValue{T, R},
+                     row,
+                     col,
+                     sch::Data.Schema{false}) = push!(sink.columns[col]::CategoricalVector{T, R}, val)
+Data.streamto!{T, R}(sink::DataTable,
+                     ::Type{Data.Field},
+                     val::Nullable{CategoricalValue{T, R}},
+                     row,
+                     col,
+                     sch::Data.Schema{false}) = push!(sink.columns[col]::NullableCategoricalVector{T, R}, val)
 
-Data.streamto!{T}(sink::DataTable, ::Type{Data.Field}, val::T, row, col, sch::Data.Schema{true}) = (sink.columns[col]::Vector{T})[row] = val
-Data.streamto!{T}(sink::DataTable, ::Type{Data.Field}, val::Nullable{T}, row, col, sch::Data.Schema{true}) = (sink.columns[col]::NullableVector{T})[row] = val
-Data.streamto!(sink::DataTable, ::Type{Data.Field}, val::Nullable{WeakRefString{UInt8}}, row, col, sch::Data.Schema{true}) = (sink.columns[col][row] = val)
-Data.streamto!{T, R}(sink::DataTable, ::Type{Data.Field}, val::CategoricalValue{T, R}, row, col, sch::Data.Schema{true}) = (sink.columns[col]::CategoricalVector{T, R})[row] = val
-Data.streamto!{T, R}(sink::DataTable, ::Type{Data.Field}, val::Nullable{CategoricalValue{T, R}}, row, col, sch::Data.Schema{true}) = (sink.columns[col]::NullableCategoricalVector{T, R})[row] = val
+Data.streamto!{T}(sink::DataTable,
+                  ::Type{Data.Field},
+                  val::T,
+                  row,
+                  col,
+                  sch::Data.Schema{true}) = (sink.columns[col]::Vector{T})[row] = val
+Data.streamto!{T}(sink::DataTable,
+                  ::Type{Data.Field},
+                  val::Nullable{T},
+                  row,
+                  col,
+                  sch::Data.Schema{true}) = (sink.columns[col]::NullableVector{T})[row] = val
+Data.streamto!(sink::DataTable,
+               ::Type{Data.Field},
+               val::Nullable{WeakRefString{UInt8}},
+               row,
+               col,
+               sch::Data.Schema{true}) = sink.columns[col][row] = val
+Data.streamto!{T, R}(sink::DataTable,
+                     ::Type{Data.Field},
+                     val::CategoricalValue{T, R},
+                     row,
+                     col,
+                     sch::Data.Schema{true}) = (sink.columns[col]::CategoricalVector{T, R})[row] = val
+Data.streamto!{T, R}(sink::DataTable,
+                     ::Type{Data.Field},
+                     val::Nullable{CategoricalValue{T, R}},
+                     row,
+                     col,
+                     sch::Data.Schema{true}) = (sink.columns[col]::NullableCategoricalVector{T, R})[row] = val
 
 function Data.streamto!{T}(sink::DataTable, ::Type{Data.Column}, column::T, row, col, sch::Data.Schema)
     if row == 0
