@@ -241,12 +241,12 @@ end
 Data.streamtype(::Type{DataFrame}, ::Type{Data.Column}) = true
 Data.streamtype(::Type{DataFrame}, ::Type{Data.Field}) = true
 
-Data.streamfrom{T <: AbstractVector}(source::DataFrame, ::Type{Data.Column}, ::Type{T}, col) = (
-    @inbounds A = source.columns[col]::T; return A)
-Data.streamfrom{T}(source::DataFrame, ::Type{Data.Column}, ::Type{T}, col) = (
-    @inbounds A = source.columns[col]; return A)
-Data.streamfrom{T}(source::DataFrame, ::Type{Data.Field}, ::Type{T}, row, col) = (
-    @inbounds A = Data.streamfrom(source, Data.Column, T, col); return A[row]::T)
+Data.streamfrom{T <: AbstractVector}(source::DataFrame, ::Type{Data.Column}, ::Type{T}, col) =
+    (@inbounds A = source.columns[col]::T; return A)
+Data.streamfrom{T}(source::DataFrame, ::Type{Data.Column}, ::Type{T}, col) =
+    (@inbounds A = source.columns[col]; return A)
+Data.streamfrom{T}(source::DataFrame, ::Type{Data.Field}, ::Type{T}, row, col) =
+    (@inbounds A = Data.streamfrom(source, Data.Column, T, col); return A[row]::T)
 
 # DataFrame as a Data.Sink
 allocate{T}(::Type{T}, rows) = Vector{T}(rows)
