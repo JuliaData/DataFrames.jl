@@ -289,11 +289,11 @@ Data.streamtypes(::Type{DataFrame}) = [Data.Column, Data.Field]
 Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::T, row, col, sch::Data.Schema{false}) =
     push!(sink.columns[col]::Vector{T}, val)
 Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::Nullable{T}, row, col, sch::Data.Schema{false}) =
-    push!(sink.columns[col]::DataVector{T}, isnull(val) ? NA : get(val))
+    push!(sink.columns[col]::DataVector{T}, get(val, NA))
 Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::T, row, col, sch::Data.Schema{true}) =
     (sink.columns[col]::Vector{T})[row] = val
 Data.streamto!{T}(sink::DataFrame, ::Type{Data.Field}, val::Nullable{T}, row, col, sch::Data.Schema{true}) =
-    (sink.columns[col]::DataVector{T})[row] = isnull(val) ? NA : get(val)
+    (sink.columns[col]::DataVector{T})[row] = get(val, NA)
 
 function Data.streamto!{T}(sink::DataFrame, ::Type{Data.Column}, column::T, row, col, sch::Data.Schema)
     if row == 0
