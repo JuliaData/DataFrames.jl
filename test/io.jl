@@ -40,14 +40,15 @@ module TestIO
     show(io, "text/html", df)
     @test length(String(take!(io))) < 10000
 
-    df = DataFrame(A = 1:26,
-                   B = 'a':'z',
-                   C = [string(x) for x='A':'Z'],
-                   D = CategoricalArray([string(x) for x='A':'Z']),
-                   E = NullableArray(rand(26)),
-                   F = NullableArray(fill(Nullable(), 26)),
-                   G = fill(Nullable(), 26))
+    df = DataFrame(A = 1:3,
+                   B = 'a':'c',
+                   C = ["A", "B", "C"],
+                   D = CategoricalArray('a':'c'),
+                   E = NullableCategoricalArray(["A", "B", "C"]),
+                   E = NullableArray(1:3),
+                   F = NullableArray(fill(Nullable(), 3)),
+                   G = fill(Nullable(), 3))
 
-    answer = Sys.WORD_SIZE == 64 ? 0xde54e70f51205910 : 0x340524cd
+    answer = Sys.WORD_SIZE == 64 ? 0x937e94e70d642cce : 0x2b8864d8
     @test hash(sprint(printtable, df)) == answer
 end
