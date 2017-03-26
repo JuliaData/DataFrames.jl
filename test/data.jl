@@ -66,6 +66,10 @@ module TestData
     @test size(sdf6a) == (1,3)
     sdf6d = view(df6, [1,3], :B)
     @test size(sdf6d) == (2,1)
+    sdf6e = view(df6, 0x01)
+    @test size(sdf6e) == (1,3)
+    sdf6f = view(df6, UInt64[1, 2])
+    @test size(sdf6f) == (2,3)
 
     #test_group("ref")
     @test sdf6a[1,2] == 4
