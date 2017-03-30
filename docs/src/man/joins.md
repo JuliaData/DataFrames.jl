@@ -3,8 +3,8 @@
 We often need to combine two or more data sets together to provide a complete picture of the topic we are studying. For example, suppose that we have the following two data sets:
 
 ```julia
-names = DataFrame(ID = [1, 2], Name = ["John Doe", "Jane Doe"])
-jobs = DataFrame(ID = [1, 2], Job = ["Lawyer", "Doctor"])
+names = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
+jobs = DataFrame(ID = [20, 40], Job = ["Lawyer", "Doctor"])
 ```
 
 We might want to work with a larger data set that contains both the names and jobs for each ID. We can do this using the `join` function:
@@ -17,8 +17,8 @@ Output:
 
 | Row | ID | Name       | Job      | 
 |-----|----|------------|----------|
-| 1   | 1  | "John Doe" | "Lawyer" |
-| 2   | 1  | "Jane Doe" | "Doctor" |
+| 1   | 20 | "John Doe" | "Lawyer" |
+| 2   | 40 | "Jane Doe" | "Doctor" |
 
 In relational database theory, this operation is generally referred to as a join. The columns used to determine which rows should be combined during a join are called keys.
 
@@ -35,8 +35,8 @@ There are seven kinds of joins supported by the DataFrames package:
 You can control the kind of join that `join` performs using the `kind` keyword argument:
 
 ```julia
-a = DataFrame(ID = [1, 2], Name = ["A", "B"])
-b = DataFrame(ID = [1, 3], Job = ["Doctor", "Lawyer"])
+a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
+b = DataFrame(ID = [20, 60], Job = ["Lawyer", "Astronaut"])
 join(a, b, on = :ID, kind = :inner)
 join(a, b, on = :ID, kind = :left)
 join(a, b, on = :ID, kind = :right)
