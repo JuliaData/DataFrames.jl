@@ -751,14 +751,9 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame)
     for i in 1:length(u)
         df1[u[i]] = df2[i]
     end
-
     return df1
 end
-hcat!(df::DataFrame, x::CategoricalArray) = hcat!(df, DataFrame(Any[x]))
-hcat!(df::DataFrame, x::NullableCategoricalArray) = hcat!(df, DataFrame(Any[x]))
-hcat!(df::DataFrame, x::NullableVector) = hcat!(df, DataFrame(Any[x]))
-hcat!(df::DataFrame, x::Vector) = hcat!(df, DataFrame(Any[NullableArray(x)]))
-hcat!(df::DataFrame, x) = hcat!(df, DataFrame(Any[NullableArray([x])]))
+hcat!(df::DataFrame, x::AbstractVector) = hcat!(df, DataFrame(Any[x]))
 
 # hcat! for 1-n arguments
 hcat!(df::DataFrame) = df
