@@ -44,17 +44,18 @@ function printtable(io::IO,
         for j in 1:p
             if !isnull(df[j][i])
                 if ! (etypes[j] <: Real)
-		    print(io, quotemark)
-		    escapedprint(io, get(df[i, j]), quotestr)
-		    print(io, quotemark)
+                    print(io, quotemark)
+                    x = unsafe_get(df[i, j])
+                    escapedprint(io, x, quotestr)
+                    print(io, quotemark)
                 else
-		    print(io, df[i, j])
+                    print(io, df[i, j])
                 end
             else
-		print(io, nastring)
+                print(io, nastring)
             end
             if j < p
-		print(io, separator)
+                print(io, separator)
             else
                 print(io, '\n')
             end
@@ -167,7 +168,7 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
             write(io, " & ")
             cell = df[row,col]
             if !isnull(cell)
-                content = get(cell)
+                content = unsafe_get(cell)
                 if mimewritable(MIME("text/latex"), content)
                     show(io, MIME("text/latex"), content)
                 else
