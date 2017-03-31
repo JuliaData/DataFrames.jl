@@ -751,14 +751,9 @@ function hcat!(dt1::DataTable, dt2::AbstractDataTable)
     for i in 1:length(u)
         dt1[u[i]] = dt2[i]
     end
-
     return dt1
 end
-hcat!(dt::DataTable, x::CategoricalArray) = hcat!(dt, DataTable(Any[x]))
-hcat!(dt::DataTable, x::NullableCategoricalArray) = hcat!(dt, DataTable(Any[x]))
-hcat!(dt::DataTable, x::NullableVector) = hcat!(dt, DataTable(Any[x]))
-hcat!(dt::DataTable, x::Vector) = hcat!(dt, DataTable(Any[NullableArray(x)]))
-hcat!(dt::DataTable, x) = hcat!(dt, DataTable(Any[NullableArray([x])]))
+hcat!(dt::DataTable, x::AbstractVector) = hcat!(dt, DataTable(Any[x]))
 
 # hcat! for 1-n arguments
 hcat!(dt::DataTable) = dt
