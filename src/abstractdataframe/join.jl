@@ -9,13 +9,10 @@ similar_nullable{T}(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) 
 similar_nullable{T<:Nullable}(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =
     NullableArray{eltype(T)}(dims)
 
-similar_nullable{T,R}(dv::CategoricalArray{T,R}, dims::Union{Int, Tuple{Vararg{Int}}}) =
+similar_nullable{T}(dv::CategoricalArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =
     NullableCategoricalArray{T}(dims)
 
-similar_nullable(df::AbstractDataFrame, dims::Int) =
-    DataFrame(Any[similar_nullable(x, dims) for x in columns(df)], copy(index(df)))
-
-similar_nullable{T,R}(dv::NullableCategoricalArray{T,R}, dims::Union{Int, Tuple{Vararg{Int}}}) =
+similar_nullable{T}(dv::NullableCategoricalArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =
     NullableCategoricalArray{T}(dims)
 
 # helper structure for DataFrames joining
@@ -47,31 +44,28 @@ Base.length(x::RowIndexMap) = length(x.orig)
 
 # composes the joined data frame using the maps between the left and right
 # table rows and the indices of rows in the result
-function compose_joined_table(joiner::DataFrameJoiner,
+function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
                               left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
                               right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap)
     @assert length(left_ixs) == length(right_ixs)
     # compose left half of the result taking all left columns
     all_orig_left_ixs = vcat(left_ixs.orig, leftonly_ixs.orig)
-    if length(leftonly_ixs) > 0
+
+    ril = length(right_ixs)
+    lil = length(left_ixs)
+    loil = length(leftonly_ixs)
+    roil = length(rightonly_ixs)
+
+    if loil > 0
         # combine the matched (left_ixs.orig) and non-matched (leftonly_ixs.orig) indices of the left table rows
         # preserving the original rows order
-        all_orig_left_ixs = similar(left_ixs.orig, length(left_ixs)+length(leftonly_ixs))
+        all_orig_left_ixs = similar(left_ixs.orig, lil + loil)
         @inbounds all_orig_left_ixs[left_ixs.join] = left_ixs.orig
         @inbounds all_orig_left_ixs[leftonly_ixs.join] = leftonly_ixs.orig
     else
         # the result contains only the left rows that are matched to right rows (left_ixs)
         all_orig_left_ixs = left_ixs.orig # no need to copy left_ixs.orig as it's not used elsewhere
     end
-    ril = length(right_ixs)
-    loil = length(leftonly_ixs)
-    roil = length(rightonly_ixs)
-    left_df = DataFrame(Any[resize!(col[all_orig_left_ixs], length(all_orig_left_ixs)+roil)
-                            for col in columns(joiner.dfl)],
-                        names(joiner.dfl))
-
-    # compose right half of the result taking all right columns excluding on
-    dfr_noon = without(joiner.dfr, joiner.on_cols)
     # permutation to swap rightonly and leftonly rows
     right_perm = vcat(1:ril, ril+roil+1:ril+roil+loil, ril+1:ril+roil)
     if length(leftonly_ixs) > 0
@@ -79,21 +73,43 @@ function compose_joined_table(joiner::DataFrameJoiner,
         right_perm[vcat(right_ixs.join, leftonly_ixs.join)] = right_perm[1:ril+loil]
     end
     all_orig_right_ixs = vcat(right_ixs.orig, rightonly_ixs.orig)
-    right_df = DataFrame(Any[resize!(col[all_orig_right_ixs], length(all_orig_right_ixs)+loil)[right_perm]
-                             for col in columns(dfr_noon)],
-                         names(dfr_noon))
-    # merge left and right parts of the joined table
-    res = hcat!(left_df, right_df)
+
+    # compose right half of the result taking all right columns excluding on
+    dfr_noon = without(joiner.dfr, joiner.on_cols)
+
+    nrow = length(all_orig_left_ixs) + roil
+    @assert nrow == length(all_orig_right_ixs) + loil
+    ncleft = ncol(joiner.dfl)
+    cols = Vector{Any}(ncleft + ncol(dfr_noon))
+    _similar = kind == :inner ? similar : similar_nullable
+    for (i, col) in enumerate(columns(joiner.dfl))
+        cols[i] = _similar(col, nrow)
+        fillcolumn!(cols[i], col, all_orig_left_ixs)
+    end
+    for (i, col) in enumerate(columns(dfr_noon))
+        cols[i+ncleft] = _similar(col, nrow)
+        fillcolumn!(cols[i+ncleft], col, all_orig_right_ixs)
+        permute!(cols[i+ncleft], right_perm)
+    end
+    res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)))
 
     if length(rightonly_ixs.join) > 0
         # some left rows are nulls, so the values of the "on" columns
         # need to be taken from the right
         for (on_col_ix, on_col) in enumerate(joiner.on_cols)
             # fix the result of the rightjoin by taking the nonnull values from the right table
-            res[on_col][rightonly_ixs.join] = joiner.dfr_on[rightonly_ixs.orig, on_col_ix]
+            offset = nrow - length(rightonly_ixs.orig)
+            fillcolumn!(res[on_col], joiner.dfr_on[on_col_ix], rightonly_ixs.orig, offset)
         end
     end
     return res
+end
+
+function fillcolumn!{T1, T2}(dfcol::AbstractVector{T1}, refcol::AbstractVector{T2},
+                             indices::Vector{Int}, offset::Int=0)
+    @inbounds for (j, k) in enumerate(indices)
+        dfcol[j+offset] = refcol[k]
+    end
 end
 
 # map the indices of the left and right joined tables
@@ -210,7 +226,8 @@ join(df1::AbstractDataFrame,
   - `:cross` : a full Cartesian product of the key combinations; every
     row of `df1` is matched with every row of `df2`
 
-Null values are filled in where needed to complete joins.
+For the three join operations that may introduce missing values (`:outer`, `:left`,
+and `:right`), all columns of the returned data frame will be nullable.
 
 ### Result
 
@@ -246,22 +263,21 @@ function Base.join(df1::AbstractDataFrame,
     joiner = DataFrameJoiner(df1, df2, on)
 
     if kind == :inner
-        compose_joined_table(joiner, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                                      group_rows(joiner.dfr_on),
-                                                      true, false, true, false)...)
+        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                                            group_rows(joiner.dfr_on),
+                                                            true, false, true, false)...)
     elseif kind == :left
-        compose_joined_table(joiner, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                                      group_rows(joiner.dfr_on),
-                                                      true, true, true, false)...)
+        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                                            group_rows(joiner.dfr_on),
+                                                            true, true, true, false)...)
     elseif kind == :right
-        right_ixs, rightonly_ixs, left_ixs, leftonly_ixs = update_row_maps!(joiner.dfr_on, joiner.dfl_on,
-                                                                            group_rows(joiner.dfl_on),
-                                                                            true, true, true, false)
-        compose_joined_table(joiner, left_ixs, leftonly_ixs, right_ixs, rightonly_ixs)
+        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfr_on, joiner.dfl_on,
+                                                            group_rows(joiner.dfl_on),
+                                                            true, true, true, false)[[3, 4, 1, 2]]...)
     elseif kind == :outer
-        compose_joined_table(joiner, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                                      group_rows(joiner.dfr_on),
-                                                      true, true, true, true)...)
+        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                                            group_rows(joiner.dfr_on),
+                                                            true, true, true, true)...)
     elseif kind == :semi
         # hash the right rows
         dfr_on_grp = group_rows(joiner.dfr_on)
