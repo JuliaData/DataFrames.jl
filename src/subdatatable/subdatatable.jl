@@ -90,40 +90,42 @@ function SubDataTable{T <: AbstractVector{Int}}(parent::DataTable, rows::T)
 end
 
 function SubDataTable(parent::DataTable, row::Integer)
-    return SubDataTable(parent, [row])
+    return SubDataTable(parent, [Int(row)])
 end
 
 function SubDataTable{S <: Integer}(parent::DataTable, rows::AbstractVector{S})
-    return view(parent, Int(rows))
+    return SubDataTable(parent, convert(Vector{Int}, rows))
 end
 
-
-function Base.view{S <: Real}(dt::DataTable, rowinds::AbstractVector{S})
-    return SubDataTable(dt, rowinds)
+function SubDataTable(parent::DataTable, rows::AbstractVector{Bool})
+    return SubDataTable(parent, find(rows))
 end
 
-function Base.view{S <: Real}(sdt::SubDataTable, rowinds::AbstractVector{S})
+function SubDataTable{T<:Integer}(sdt::SubDataTable, rowinds::Union{T, AbstractVector{T}})
     return SubDataTable(sdt.parent, sdt.rows[rowinds])
 end
 
-function Base.view(dt::DataTable, rowinds::AbstractVector{Bool})
-    return view(dt, getindex(SimpleIndex(size(dt, 1)), rowinds))
+function Base.view{T<:Nullable}(adt::AbstractDataTable, rowinds::AbstractVector{T})
+    # Vector{<:Nullable} need to be checked for nulls and the values lifted
+    any(isnull, rowinds) && throw(NullException())
+    return SubDataTable(adt, get.(rowinds))
 end
 
-function Base.view(sdt::SubDataTable, rowinds::AbstractVector{Bool})
-    return view(sdt, getindex(SimpleIndex(size(sdt, 1)), rowinds))
-end
-
-function Base.view(adt::AbstractDataTable, rowinds::Integer)
-    return view(adt, Int[rowinds])
+function Base.view(adt::AbstractDataTable, rowinds::NullableVector)
+    # convert for NullableVectors will throw NullException if nulls present
+    return SubDataTable(adt, convert(Vector, rowinds))
 end
 
 function Base.view(adt::AbstractDataTable, rowinds::Any)
-    return view(adt, getindex(SimpleIndex(size(adt, 1)), rowinds))
+    return SubDataTable(adt, rowinds)
+end
+
+function Base.view(adt::AbstractDataTable, rowinds::Any, colinds::AbstractVector)
+    return SubDataTable(adt[colinds], rowinds)
 end
 
 function Base.view(adt::AbstractDataTable, rowinds::Any, colinds::Any)
-    return view(adt[[colinds]], rowinds)
+    return SubDataTable(adt[[colinds]], rowinds)
 end
 
 ##############################################################################

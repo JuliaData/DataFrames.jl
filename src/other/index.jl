@@ -1,8 +1,6 @@
 # an AbstractIndex is a thing that can be used to look up ordered things by name, but that
 # will also accept a position or set of positions or range or other things and pass them
 # through cleanly.
-# an Index is the usual implementation.
-# a SimpleIndex only works if the things are integer indexes, which is weird.
 @compat abstract type AbstractIndex end
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...
@@ -121,14 +119,6 @@ Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
 Base.getindex(x::AbstractIndex, idx::Range) = [idx;]
 Base.getindex{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
-
-type SimpleIndex <: AbstractIndex
-    length::Integer
-end
-SimpleIndex() = SimpleIndex(0)
-Base.length(x::SimpleIndex) = x.length
-Base.names(x::SimpleIndex) = nothing
-_names(x::SimpleIndex) = nothing
 
 # Helpers
 
