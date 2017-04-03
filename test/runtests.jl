@@ -23,7 +23,8 @@ my_tests = ["utils.jl",
             "join.jl",
             "iteration.jl",
             "duplicates.jl",
-            "show.jl"]
+            "show.jl",
+            "subdataframe.jl"]
 
 println("Running tests:")
 

@@ -90,40 +90,42 @@ function SubDataFrame{T <: AbstractVector{Int}}(parent::DataFrame, rows::T)
 end
 
 function SubDataFrame(parent::DataFrame, row::Integer)
-    return SubDataFrame(parent, [row])
+    return SubDataFrame(parent, [Int(row)])
 end
 
 function SubDataFrame{S <: Integer}(parent::DataFrame, rows::AbstractVector{S})
-    return view(parent, Int(rows))
+    return SubDataFrame(parent, convert(Vector{Int}, rows))
 end
 
-
-function Base.view{S <: Real}(df::DataFrame, rowinds::AbstractVector{S})
-    return SubDataFrame(df, rowinds)
+function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool})
+    return SubDataFrame(parent, find(rows))
 end
 
-function Base.view{S <: Real}(sdf::SubDataFrame, rowinds::AbstractVector{S})
+function SubDataFrame{T<:Integer}(sdf::SubDataFrame, rowinds::Union{T, AbstractVector{T}})
     return SubDataFrame(sdf.parent, sdf.rows[rowinds])
 end
 
-function Base.view(df::DataFrame, rowinds::AbstractVector{Bool})
-    return view(df, getindex(SimpleIndex(size(df, 1)), rowinds))
+function Base.view{T<:Nullable}(adf::AbstractDataFrame, rowinds::AbstractVector{T})
+    # Vector{<:Nullable} need to be checked for nulls and the values lifted
+    any(isnull, rowinds) && throw(NullException())
+    return SubDataFrame(adf, get.(rowinds))
 end
 
-function Base.view(sdf::SubDataFrame, rowinds::AbstractVector{Bool})
-    return view(sdf, getindex(SimpleIndex(size(sdf, 1)), rowinds))
-end
-
-function Base.view(adf::AbstractDataFrame, rowinds::Integer)
-    return view(adf, Int[rowinds])
+function Base.view(adf::AbstractDataFrame, rowinds::NullableVector)
+    # convert for NullableVectors will throw NullException if nulls present
+    return SubDataFrame(adf, convert(Vector, rowinds))
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Any)
-    return view(adf, getindex(SimpleIndex(size(adf, 1)), rowinds))
+    return SubDataFrame(adf, rowinds)
+end
+
+function Base.view(adf::AbstractDataFrame, rowinds::Any, colinds::AbstractVector)
+    return SubDataFrame(adf[colinds], rowinds)
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Any, colinds::Any)
-    return view(adf[[colinds]], rowinds)
+    return SubDataFrame(adf[[colinds]], rowinds)
 end
 
 ##############################################################################
