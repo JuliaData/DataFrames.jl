@@ -146,7 +146,7 @@ module TestGrouping
     groupby(dt, [:v1, :v2])
 
     dt2 = by(e->1, DataTable(x=Int64[]), :x)
-    @test size(dt2) == (0,1)
+    @test size(dt2) == (0,2)
     @test isequal(sum(dt2[:x]), Nullable(0))
 
     # Check that reordering levels does not confuse groupby
