@@ -28,6 +28,23 @@ module TestCat
 
     @test isequal(df2, DataFrames.hcat!(df2))
 
+    @testset "hcat ::AbstractDataFrame" begin
+        df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
+        gd = groupby(df, :A)
+        answer = DataFrame(A = fill('A', 4), B = 1:4, A_1 = 'B', B_1 = 5:8, A_2 = 'C', B_2 = 9:12)
+        @test hcat(gd...) == answer
+        answer = answer[1:4]
+        @test hcat(gd[1], gd[2]) == answer
+    end
+
+    @testset "hcat ::Vectors" begin
+        df = DataFrame()
+        DataFrames.hcat!(df, NullableCategoricalVector(1:10))
+        @test isequal(df[1], NullableCategoricalVector(1:10))
+        DataFrames.hcat!(df, NullableArray(1:10))
+        @test isequal(df[2], NullableArray(1:10))
+    end
+
     #
     # vcat
     #
