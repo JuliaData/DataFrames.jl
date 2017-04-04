@@ -54,8 +54,8 @@ join(a, b, kind = :cross)
 In order to join data frames on keys which have different names, you must first rename them so that they match. This can be done using rename!:
 
 ```julia
-a = DataFrame(ID = [1, 2], Name = ["A", "B"])
-b = DataFrame(IDNew = [1, 2], Job = ["Doctor", "Lawyer"])
+a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
+b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
 rename!(b, :IDNew, :ID)
 join(a, b, on = :ID, kind = :inner)
 ```
