@@ -73,7 +73,6 @@ export @~,
        tail,
 
        # Remove after deprecation period
-       read_rda,
        pool,
        pool!
 
