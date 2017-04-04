@@ -379,4 +379,50 @@ module TestDataFrame
         b = unstack(df, :variable, :value)
         @test a == b == DataFrame(id = Nullable[1, 2], a = [3, Nullable()], b = [Nullable(), 4])
     end
+
+    @testset "rename" begin
+        df = DataFrame(A = 1:3, B = 'A':'C')
+        @test names(rename(df, :A, :A_1)) == [:A_1, :B]
+        @test names(df) == [:A, :B]
+        @test names(rename!(df, :A, :A_1)) == [:A_1, :B]
+        @test names(df) == [:A_1, :B]
+    end
+
+    @testset "size" begin
+        df = DataFrame(A = 1:3, B = 'A':'C')
+        @test_throws ArgumentError size(df, 3)
+        @test length(df) == 2
+        @test ndims(df) == 2
+    end
+
+    @testset "description" begin
+        df = DataFrame(A = 1:10)
+        @test head(df) == DataFrame(A = 1:6)
+        @test head(df, 1) == DataFrame(A = 1)
+        @test tail(df) == DataFrame(A = 5:10)
+        @test tail(df, 1) == DataFrame(A = 10)
+    end
+
+    @testset "misc" begin
+        df = DataFrame(Any[collect('A':'C')])
+        @test sprint(dump, df) == """
+                                  DataFrames.DataFrame  3 observations of 1 variables
+                                    x1: Array{Char}((3,))
+                                      1: Char A
+                                      2: Char B
+                                      3: Char C
+                                  """
+        df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
+        @test DataFrames.without(df, 1) == DataFrame(B = repeat('A':'C', inner=4))
+    end
+
+    @testset "column conversions" begin
+        df = DataFrame(Any[collect(1:10), collect(1:10)])
+        @test !isa(df[1], NullableArray)
+        nullable!(df, 1)
+        @test isa(df[1], NullableArray)
+        @test !isa(df[2], NullableArray)
+        nullable!(df, [1,2])
+        @test isa(df[1], NullableArray) && isa(df[2], NullableArray)
+    end
 end
