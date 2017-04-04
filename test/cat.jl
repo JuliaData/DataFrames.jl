@@ -28,6 +28,23 @@ module TestCat
 
     @test isequal(dt2, DataTables.hcat!(dt2))
 
+    @testset "hcat ::AbstractDataTable" begin
+        dt = DataTable(A = repeat('A':'C', inner=4), B = 1:12)
+        gd = groupby(dt, :A)
+        answer = DataTable(A = fill('A', 4), B = 1:4, A_1 = 'B', B_1 = 5:8, A_2 = 'C', B_2 = 9:12)
+        @test hcat(gd...) == answer
+        answer = answer[1:4]
+        @test hcat(gd[1], gd[2]) == answer
+    end
+
+    @testset "hcat ::Vectors" begin
+        dt = DataTable()
+        DataTables.hcat!(dt, NullableCategoricalVector(1:10))
+        @test isequal(dt[1], NullableCategoricalVector(1:10))
+        DataTables.hcat!(dt, NullableArray(1:10))
+        @test isequal(dt[2], NullableArray(1:10))
+    end
+
     #
     # vcat
     #

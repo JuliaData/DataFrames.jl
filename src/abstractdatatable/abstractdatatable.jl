@@ -690,7 +690,7 @@ without(dt::AbstractDataTable, c::Any) = without(dt, index(dt)[c])
 
 # catch-all to cover cases where indexing returns a DataTable and copy doesn't
 Base.hcat(dt::AbstractDataTable, x) = hcat!(dt[:, :], x)
-Base.hcat(dt1::AbstractDataTable, dt2::AbstractDataTable) = hcat!(dt[:, :], dt2)
+Base.hcat(dt1::AbstractDataTable, dt2::AbstractDataTable) = hcat!(dt1[:, :], dt2)
 
 Base.hcat(dt::AbstractDataTable, x, y...) = hcat!(hcat(dt, x), y...)
 Base.hcat(dt1::AbstractDataTable, dt2::AbstractDataTable, dtn::AbstractDataTable...) = hcat!(hcat(dt1, dt2), dtn...)
