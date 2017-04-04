@@ -659,17 +659,6 @@ unique!(dt)  # modifies dt
 """
 (unique, unique!)
 
-function nonuniquekey(dt::AbstractDataTable)
-    # Here's another (probably a lot faster) way to do `nonunique`
-    # by grouping on all columns. It will fail if columns cannot be
-    # made into CategoricalVector's.
-    gd = groupby(dt, _names(dt))
-    idx = [1:length(gd.idx)][gd.idx][gd.starts]
-    res = fill(true, nrow(dt))
-    res[idx] = false
-    res
-end
-
 # Count the number of missing values in every column of an AbstractDataTable.
 function colmissing(dt::AbstractDataTable) # -> Vector{Int}
     nrows, ncols = size(dt)
