@@ -706,83 +706,97 @@ Base.hcat(dt1::AbstractDataTable, dt2::AbstractDataTable) = hcat!(dt[:, :], dt2)
 Base.hcat(dt::AbstractDataTable, x, y...) = hcat!(hcat(dt, x), y...)
 Base.hcat(dt1::AbstractDataTable, dt2::AbstractDataTable, dtn::AbstractDataTable...) = hcat!(hcat(dt1, dt2), dtn...)
 
-# vcat only accepts DataTables. Finds union of columns, maintaining order
-# of first dt. Missing data become null values.
-
-Base.vcat(dt::AbstractDataTable) = dt
-
-Base.vcat(dts::AbstractDataTable...) = vcat(AbstractDataTable[dts...])
-
-function Base.vcat{T<:AbstractDataTable}(dts::Vector{T})
-    isempty(dts) && return DataTable()
-    coltyps, colnams, similars = _colinfo(dts)
-
-    res = DataTable()
-    Nrow = sum(nrow, dts)
-    for j in 1:length(colnams)
-        colnam = colnams[j]
-        col = similar(similars[j], coltyps[j], Nrow)
-
-        i = 1
-        for dt in dts
-            if haskey(dt, colnam)
-                copy!(col, i, dt[colnam])
-            end
-            i += size(dt, 1)
-        end
-
-        res[colnam] = col
+@generated function promote_col_type(cols::AbstractVector...)
+    elty = Base.promote_eltype(cols...)
+    if elty <: Nullable
+        elty = eltype(elty)
     end
-    res
+    if elty <: CategoricalValue
+        elty = elty.parameters[1]
+    end
+    if any(col -> eltype(col) <: Nullable, cols)
+        if any(col -> col <: Union{AbstractCategoricalArray, AbstractNullableCategoricalArray}, cols)
+            return :(NullableCategoricalVector{$elty})
+        else
+            return :(NullableVector{$elty})
+        end
+    else
+        if any(col -> col <: Union{AbstractCategoricalArray, AbstractNullableCategoricalArray}, cols)
+            return :(CategoricalVector{$elty})
+        else
+            return :(Vector{$elty})
+        end
+    end
 end
 
-_isnullable{T}(::AbstractArray{T}) = T <: Nullable
-const EMPTY_DATA = NullableArray(Void, 0)
+"""
+    vcat(dts::AbstractDataTable...)
 
-function _colinfo{T<:AbstractDataTable}(dts::Vector{T})
-    dt1 = dts[1]
-    colindex = copy(index(dt1))
-    coltyps = eltypes(dt1)
-    similars = collect(columns(dt1))
-    nonnull_ct = Int[_isnullable(c) for c in columns(dt1)]
+Vertically concatenate `AbstractDataTables` that have the same column names in
+the same order.
 
-    for i in 2:length(dts)
-        dt = dts[i]
-        for j in 1:size(dt, 2)
-            col = dt[j]
-            cn, ct = _names(dt)[j], eltype(col)
-            if haskey(colindex, cn)
-                idx = colindex[cn]
-
-                oldtyp = coltyps[idx]
-                if !(ct <: oldtyp)
-                    coltyps[idx] = promote_type(oldtyp, ct)
-                    # Needed on Julia 0.4 since e.g.
-                    # promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T},
-                    # which is not a usable type: fall back to Nullable{Any}
-                    if VERSION < v"0.5.0-dev" &&
-                       coltyps[idx] <: Nullable && !isa(coltyps[idx].types[2], DataType)
-                        coltyps[idx] = Nullable{Any}
-                    end
-                end
-                nonnull_ct[idx] += !_isnullable(col)
-            else # new column
-                push!(colindex, cn)
-                push!(coltyps, ct)
-                push!(similars, col)
-                push!(nonnull_ct, !_isnullable(col))
+# Example
+```jldoctest
+julia> dt1 = DataTable(A=1:3, B=1:3);
+julia> dt2 = DataTable(A=4:6, B=4:6);
+julia> vcat(dt1, dt2)
+6×2 DataTables.DataTable
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ 1 │
+│ 2   │ 2 │ 2 │
+│ 3   │ 3 │ 3 │
+│ 4   │ 4 │ 4 │
+│ 5   │ 5 │ 5 │
+│ 6   │ 6 │ 6 │
+```
+"""
+Base.vcat(dt::AbstractDataTable) = dt
+function Base.vcat(dts::AbstractDataTable...)
+    isempty(dts) && return DataTable()
+    allheaders = map(names, dts)
+    if all(h -> length(h) == 0, allheaders)
+        return DataTable()
+    end
+    uniqueheaders = unique(allheaders)
+    if length(uniqueheaders) > 1
+        unionunique = union(uniqueheaders...)
+        coldiff = setdiff(unionunique, intersect(uniqueheaders...))
+        if !isempty(coldiff)
+            # if any datatables are a full superset of names, skip them
+            filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
+            estrings = Vector{String}(length(uniqueheaders))
+            for (i, u) in enumerate(uniqueheaders)
+                matching = find(h -> u == h, allheaders)
+                headerdiff = setdiff(coldiff, u)
+                cols = join(headerdiff, ", ", " and ")
+                args = join(matching, ", ", " and ")
+                estrings[i] = "column(s) $cols are missing from argument(s) $args"
+            end
+            throw(ArgumentError(join(estrings, ", ", ", and ")))
+        else
+            estrings = Vector{String}(length(uniqueheaders))
+            for (i, u) in enumerate(uniqueheaders)
+                indices = find(a -> a == u, allheaders)
+                estrings[i] = "column order of argument(s) $(join(indices, ", ", " and "))"
+            end
+            throw(ArgumentError(join(estrings, " != ")))
+        end
+    else
+        header = uniqueheaders[1]
+        cols = Vector{Any}(length(header))
+        for i in 1:length(cols)
+            data = [dt[i] for dt in dts]
+            lens = map(length, data)
+            cols[i] = promote_col_type(data...)(sum(lens))
+            offset = 1
+            for j in 1:length(data)
+                copy!(cols[i], offset, data[j])
+                offset += lens[j]
             end
         end
+        return DataTable(cols, header)
     end
-
-    for j in 1:length(colindex)
-        if nonnull_ct[j] < length(dts) && !_isnullable(similars[j])
-            similars[j] = EMPTY_DATA
-        end
-    end
-    colnams = _names(colindex)
-
-    coltyps, colnams, similars
 end
 
 ##############################################################################
