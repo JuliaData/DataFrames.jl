@@ -48,5 +48,6 @@ module TestConstructors
     @test_throws BoundsError SubDataTable(DataTable(A=1), 0)
     @test isequal(SubDataTable(DataTable(A=1), 1), DataTable(A=1))
     @test isequal(SubDataTable(DataTable(A=1:10), 1:4), DataTable(A=1:4))
+    @test isequal(view(SubDataTable(DataTable(A=1:10), 1:4), 2), DataTable(A=2))
     @test isequal(view(SubDataTable(DataTable(A=1:10), 1:4), [true, true, false, false]), DataTable(A=1:2))
 end

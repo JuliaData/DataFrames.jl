@@ -115,7 +115,7 @@ function Base.view(sdt::SubDataTable, rowinds::AbstractVector{Bool})
 end
 
 function Base.view(adt::AbstractDataTable, rowinds::Integer)
-    return SubDataTable(adt, Int[rowinds])
+    return view(adt, Int[rowinds])
 end
 
 function Base.view(adt::AbstractDataTable, rowinds::Any)
