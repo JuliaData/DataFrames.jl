@@ -20,4 +20,9 @@ module TestDuplicates
     @test isequal(updt, unique(pdt))
     unique!(pdt)
     @test isequal(pdt, updt)
+
+    @testset "missing" begin
+        dt = DataTable(A = 1:12, B = repeat('A':'C', inner=4))
+        @test DataTables.colmissing(dt) == [0, 0]
+    end
 end

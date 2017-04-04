@@ -379,4 +379,50 @@ module TestDataTable
         b = unstack(dt, :variable, :value)
         @test a == b == DataTable(id = Nullable[1, 2], a = [3, Nullable()], b = [Nullable(), 4])
     end
+
+    @testset "rename" begin
+        dt = DataTable(A = 1:3, B = 'A':'C')
+        @test names(rename(dt, :A, :A_1)) == [:A_1, :B]
+        @test names(dt) == [:A, :B]
+        @test names(rename!(dt, :A, :A_1)) == [:A_1, :B]
+        @test names(dt) == [:A_1, :B]
+    end
+
+    @testset "size" begin
+        dt = DataTable(A = 1:3, B = 'A':'C')
+        @test_throws ArgumentError size(dt, 3)
+        @test length(dt) == 2
+        @test ndims(dt) == 2
+    end
+
+    @testset "description" begin
+        dt = DataTable(A = 1:10)
+        @test head(dt) == DataTable(A = 1:6)
+        @test head(dt, 1) == DataTable(A = 1)
+        @test tail(dt) == DataTable(A = 5:10)
+        @test tail(dt, 1) == DataTable(A = 10)
+    end
+
+    @testset "misc" begin
+        dt = DataTable(Any[collect('A':'C')])
+        @test sprint(dump, dt) == """
+                                  DataTables.DataTable  3 observations of 1 variables
+                                    x1: Array{Char}((3,))
+                                      1: Char A
+                                      2: Char B
+                                      3: Char C
+                                  """
+        dt = DataTable(A = 1:12, B = repeat('A':'C', inner=4))
+        @test DataTables.without(dt, 1) == DataTable(B = repeat('A':'C', inner=4))
+    end
+
+    @testset "column conversions" begin
+        dt = DataTable(Any[collect(1:10), collect(1:10)])
+        @test !isa(dt[1], NullableArray)
+        nullable!(dt, 1)
+        @test isa(dt[1], NullableArray)
+        @test !isa(dt[2], NullableArray)
+        nullable!(dt, [1,2])
+        @test isa(dt[1], NullableArray) && isa(dt[2], NullableArray)
+    end
 end
