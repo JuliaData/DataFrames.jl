@@ -115,7 +115,7 @@ function Base.view(sdf::SubDataFrame, rowinds::AbstractVector{Bool})
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Integer)
-    return SubDataFrame(adf, Int[rowinds])
+    return view(adf, Int[rowinds])
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Any)
