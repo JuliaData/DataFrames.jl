@@ -706,83 +706,97 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame) = hcat!(df[:, :], df2)
 Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = hcat!(hcat(df1, df2), dfn...)
 
-# vcat only accepts DataFrames. Finds union of columns, maintaining order
-# of first df. Missing data become null values.
-
-Base.vcat(df::AbstractDataFrame) = df
-
-Base.vcat(dfs::AbstractDataFrame...) = vcat(AbstractDataFrame[dfs...])
-
-function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
-    isempty(dfs) && return DataFrame()
-    coltyps, colnams, similars = _colinfo(dfs)
-
-    res = DataFrame()
-    Nrow = sum(nrow, dfs)
-    for j in 1:length(colnams)
-        colnam = colnams[j]
-        col = similar(similars[j], coltyps[j], Nrow)
-
-        i = 1
-        for df in dfs
-            if haskey(df, colnam)
-                copy!(col, i, df[colnam])
-            end
-            i += size(df, 1)
-        end
-
-        res[colnam] = col
+@generated function promote_col_type(cols::AbstractVector...)
+    elty = Base.promote_eltype(cols...)
+    if elty <: Nullable
+        elty = eltype(elty)
     end
-    res
+    if elty <: CategoricalValue
+        elty = elty.parameters[1]
+    end
+    if any(col -> eltype(col) <: Nullable, cols)
+        if any(col -> col <: Union{AbstractCategoricalArray, AbstractNullableCategoricalArray}, cols)
+            return :(NullableCategoricalVector{$elty})
+        else
+            return :(NullableVector{$elty})
+        end
+    else
+        if any(col -> col <: Union{AbstractCategoricalArray, AbstractNullableCategoricalArray}, cols)
+            return :(CategoricalVector{$elty})
+        else
+            return :(Vector{$elty})
+        end
+    end
 end
 
-_isnullable{T}(::AbstractArray{T}) = T <: Nullable
-const EMPTY_DATA = NullableArray(Void, 0)
+"""
+    vcat(dfs::AbstractDataFrame...)
 
-function _colinfo{T<:AbstractDataFrame}(dfs::Vector{T})
-    df1 = dfs[1]
-    colindex = copy(index(df1))
-    coltyps = eltypes(df1)
-    similars = collect(columns(df1))
-    nonnull_ct = Int[_isnullable(c) for c in columns(df1)]
+Vertically concatenate `AbstractDataFrames` that have the same column names in
+the same order.
 
-    for i in 2:length(dfs)
-        df = dfs[i]
-        for j in 1:size(df, 2)
-            col = df[j]
-            cn, ct = _names(df)[j], eltype(col)
-            if haskey(colindex, cn)
-                idx = colindex[cn]
-
-                oldtyp = coltyps[idx]
-                if !(ct <: oldtyp)
-                    coltyps[idx] = promote_type(oldtyp, ct)
-                    # Needed on Julia 0.4 since e.g.
-                    # promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T},
-                    # which is not a usable type: fall back to Nullable{Any}
-                    if VERSION < v"0.5.0-dev" &&
-                       coltyps[idx] <: Nullable && !isa(coltyps[idx].types[2], DataType)
-                        coltyps[idx] = Nullable{Any}
-                    end
-                end
-                nonnull_ct[idx] += !_isnullable(col)
-            else # new column
-                push!(colindex, cn)
-                push!(coltyps, ct)
-                push!(similars, col)
-                push!(nonnull_ct, !_isnullable(col))
+# Example
+```jldoctest
+julia> df1 = DataFrame(A=1:3, B=1:3);
+julia> df2 = DataFrame(A=4:6, B=4:6);
+julia> vcat(df1, df2)
+6×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ 1 │
+│ 2   │ 2 │ 2 │
+│ 3   │ 3 │ 3 │
+│ 4   │ 4 │ 4 │
+│ 5   │ 5 │ 5 │
+│ 6   │ 6 │ 6 │
+```
+"""
+Base.vcat(df::AbstractDataFrame) = df
+function Base.vcat(dfs::AbstractDataFrame...)
+    isempty(dfs) && return DataFrame()
+    allheaders = map(names, dfs)
+    if all(h -> length(h) == 0, allheaders)
+        return DataFrame()
+    end
+    uniqueheaders = unique(allheaders)
+    if length(uniqueheaders) > 1
+        unionunique = union(uniqueheaders...)
+        coldiff = setdiff(unionunique, intersect(uniqueheaders...))
+        if !isempty(coldiff)
+            # if any dataframes are a full superset of names, skip them
+            filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
+            estrings = Vector{String}(length(uniqueheaders))
+            for (i, u) in enumerate(uniqueheaders)
+                matching = find(h -> u == h, allheaders)
+                headerdiff = setdiff(coldiff, u)
+                cols = join(headerdiff, ", ", " and ")
+                args = join(matching, ", ", " and ")
+                estrings[i] = "column(s) $cols are missing from argument(s) $args"
+            end
+            throw(ArgumentError(join(estrings, ", ", ", and ")))
+        else
+            estrings = Vector{String}(length(uniqueheaders))
+            for (i, u) in enumerate(uniqueheaders)
+                indices = find(a -> a == u, allheaders)
+                estrings[i] = "column order of argument(s) $(join(indices, ", ", " and "))"
+            end
+            throw(ArgumentError(join(estrings, " != ")))
+        end
+    else
+        header = uniqueheaders[1]
+        cols = Vector{Any}(length(header))
+        for i in 1:length(cols)
+            data = [df[i] for df in dfs]
+            lens = map(length, data)
+            cols[i] = promote_col_type(data...)(sum(lens))
+            offset = 1
+            for j in 1:length(data)
+                copy!(cols[i], offset, data[j])
+                offset += lens[j]
             end
         end
+        return DataFrame(cols, header)
     end
-
-    for j in 1:length(colindex)
-        if nonnull_ct[j] < length(dfs) && !_isnullable(similars[j])
-            similars[j] = EMPTY_DATA
-        end
-    end
-    colnams = _names(colindex)
-
-    coltyps, colnams, similars
 end
 
 ##############################################################################

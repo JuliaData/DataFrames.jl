@@ -72,14 +72,14 @@ module TestCat
     df[1:2, 1:2] = [3,2]
     df[[true,false,false,true], 2:3] = [2,3]
 
-    vcat([])
-    vcat(null_df)
-    vcat(null_df, null_df)
-    vcat(null_df, df)
-    vcat(df, null_df)
-    vcat(df, df)
-    vcat(df, df, df)
-    @test vcat(DataFrame[]) == DataFrame()
+    @test vcat(null_df) == DataFrame()
+    @test vcat(null_df, null_df) == DataFrame()
+    @test_throws ArgumentError vcat(null_df, df)
+    @test_throws ArgumentError vcat(df, null_df)
+    @test eltypes(vcat(df, df)) == [Nullable{Float64}, Nullable{Float64}, Nullable{Int}]
+    @test size(vcat(df, df)) == (size(df,1)*2, size(df,2))
+    @test eltypes(vcat(df, df, df)) == [Nullable{Float64}, Nullable{Float64}, Nullable{Int}]
+    @test size(vcat(df, df, df)) == (size(df,1)*3, size(df,2))
 
     alt_df = deepcopy(df)
     vcat(df, alt_df)
@@ -88,29 +88,13 @@ module TestCat
     df[1] = zeros(Int, nrow(df))
     vcat(df, alt_df)
 
-    # Don't fail on non-matching names
-    names!(alt_df, [:A, :B, :C])
-    vcat(df, alt_df)
-
     dfr = vcat(df4, df4)
     @test size(dfr, 1) == 8
     @test names(df4) == names(dfr)
     @test isequal(dfr, [df4; df4])
 
-    dfr = vcat(df2, df3)
-    @test size(dfr) == (8,2)
-    @test names(df2) == names(dfr)
-    @test isnull(dfr[8,:x2])
-
-    # Eltype promotion
-    # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
-    if VERSION >= v"0.5.0-dev"
-        @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Float64}]
-        @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Float64}]
-    else
-        @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Any}]
-        @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Any}]
-    end
+    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Float64}]
+    @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Float64}]
 
     # Minimal container type promotion
     dfa = DataFrame(a = CategoricalArray([1, 2, 2]))
@@ -122,12 +106,7 @@ module TestCat
     @test isequal(dfab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
     @test isequal(dfac[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
     @test isa(dfab[:a], NullableCategoricalVector{Int})
-    # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
-    if VERSION >= v"0.5.0-dev"
-        @test isa(dfac[:a], NullableCategoricalVector{Int})
-    else
-        @test isa(dfac[:a], NullableCategoricalVector{Any})
-    end
+    @test isa(dfac[:a], NullableCategoricalVector{Int})
     # ^^ container may flip if container promotion happens in Base/DataArrays
     dc = vcat(dfd, dfc)
     @test isequal(vcat(dfc, dfd), dc)
@@ -137,15 +116,120 @@ module TestCat
     @test isequal(vcat(dfd, dfc0, dfc), dc)
     @test eltypes(vcat(dfd, dfc0)) == eltypes(dc)
 
-    # Missing columns
-    rename!(dfd, :a, :b)
-    dfda = DataFrame(b = NullableArray(Nullable{Int}[2, 3, 4, Nullable(), Nullable(), Nullable()]),
-                     a = NullableCategoricalVector(Nullable{Int}[Nullable(), Nullable(), Nullable(), 1, 2, 2]))
-    @test isequal(vcat(dfd, dfa), dfda)
-
-    # Alignment
-    @test isequal(vcat(dfda, dfd, dfa), vcat(dfda, dfda))
-
     # vcat should be able to concatenate different implementations of AbstractDataFrame (PR #944)
     @test isequal(vcat(view(DataFrame(A=1:3),2),DataFrame(A=4:5)), DataFrame(A=[2,4,5]))
+
+    @testset "vcat >2 args" begin
+        @test vcat(DataFrame(), DataFrame(), DataFrame()) == DataFrame()
+        df = DataFrame(x = trues(1), y = falses(1))
+        @test vcat(df, df, df) == DataFrame(x = trues(3), y = falses(3))
+    end
+
+    @testset "vcat mixed coltypes" begin
+        drf = CategoricalArrays.DefaultRefType
+        df = vcat(DataFrame([[1]], [:x]), DataFrame([[1.0]], [:x]))
+        @test df == DataFrame([[1.0, 1.0]], [:x])
+        @test typeof.(df.columns) == [Vector{Float64}]
+        df = vcat(DataFrame([[1]], [:x]), DataFrame([["1"]], [:x]))
+        @test df == DataFrame([[1, "1"]], [:x])
+        @test typeof.(df.columns) == [Vector{Any}]
+        df = vcat(DataFrame([NullableArray([1])], [:x]), DataFrame([[1]], [:x]))
+        @test df == DataFrame([NullableArray([1, 1])], [:x])
+        @test typeof.(df.columns) == [NullableVector{Int}]
+        df = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
+        @test df == DataFrame([CategoricalArray([1, 1])], [:x])
+        @test typeof.(df.columns) == [CategoricalVector{Int, drf}]
+        df = vcat(DataFrame([CategoricalArray([1])], [:x]),
+                  DataFrame([NullableArray([1])], [:x]))
+        @test df == DataFrame([NullableCategoricalArray([1, 1])], [:x])
+        @test typeof.(df.columns) == [NullableCategoricalVector{Int, drf}]
+        df = vcat(DataFrame([CategoricalArray([1])], [:x]),
+                  DataFrame([NullableCategoricalArray([1])], [:x]))
+        @test df == DataFrame([NullableCategoricalArray([1, 1])], [:x])
+        @test typeof.(df.columns) == [NullableCategoricalVector{Int, drf}]
+        df = vcat(DataFrame([NullableArray([1])], [:x]),
+                  DataFrame([NullableArray(["1"])], [:x]))
+        @test df == DataFrame([NullableArray([1, "1"])], [:x])
+        @test typeof.(df.columns) == [NullableVector{Any}]
+        df = vcat(DataFrame([CategoricalArray([1])], [:x]),
+                  DataFrame([CategoricalArray(["1"])], [:x]))
+        @test df == DataFrame([CategoricalArray([1, "1"])], [:x])
+        @test typeof.(df.columns) == [CategoricalVector{Any, drf}]
+        df = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
+        @test df == DataFrame([[true, false]], [:x])
+        @test typeof.(df.columns) == [Vector{Bool}]
+    end
+
+    @testset "vcat errors" begin
+        err = @test_throws ArgumentError vcat(DataFrame(), DataFrame(), DataFrame(x=[]))
+        @test err.value.msg == "column(s) x are missing from argument(s) 1 and 2"
+        err = @test_throws ArgumentError vcat(DataFrame(), DataFrame(), DataFrame(x=[1]))
+        @test err.value.msg == "column(s) x are missing from argument(s) 1 and 2"
+        df1 = DataFrame(A = 1:3, B = 1:3)
+        df2 = DataFrame(A = 1:3)
+        # right missing 1 column
+        err = @test_throws ArgumentError vcat(df1, df2)
+        @test err.value.msg == "column(s) B are missing from argument(s) 2"
+        # left missing 1 column
+        err = @test_throws ArgumentError vcat(df2, df1)
+        @test err.value.msg == "column(s) B are missing from argument(s) 1"
+        # multiple missing 1 column
+        err = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2, df2)
+        @test err.value.msg == "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
+        # argument missing >1 columns
+        df1 = DataFrame(A = 1:3, B = 1:3, C = 1:3, D = 1:3, E = 1:3)
+        err = @test_throws ArgumentError vcat(df1, df2)
+        @test err.value.msg == "column(s) B, C, D and E are missing from argument(s) 2"
+        # >1 arguments missing >1 columns
+        err = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2)
+        @test err.value.msg == "column(s) B, C, D and E are missing from argument(s) 2, 3, 4 and 5"
+        # out of order
+        df2 = df1[reverse(names(df1))]
+        err = @test_throws ArgumentError vcat(df1, df2)
+        @test err.value.msg == "column order of argument(s) 1 != column order of argument(s) 2"
+        # first group >1 arguments
+        err = @test_throws ArgumentError vcat(df1, df1, df2)
+        @test err.value.msg == "column order of argument(s) 1 and 2 != column order of argument(s) 3"
+        # second group >1 arguments
+        err = @test_throws ArgumentError vcat(df1, df2, df2)
+        @test err.value.msg == "column order of argument(s) 1 != column order of argument(s) 2 and 3"
+        # first and second groups >1 argument
+        err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2)
+        @test err.value.msg == "column order of argument(s) 1, 2 and 3 != column order of argument(s) 4, 5 and 6"
+        # >2 groups out of order
+        srand(1)
+        df3 = df1[shuffle(names(df1))]
+        err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
+        @test err.value.msg == "column order of argument(s) 1, 2 and 3 != column order of argument(s) 4, 5 and 6 != column order of argument(s) 7, 8, 9 and 10"
+        # missing columns throws error before out of order columns
+        df1 = DataFrame(A = 1, B = 1)
+        df2 = DataFrame(A = 1)
+        df3 = DataFrame(B = 1, A = 1)
+        err = @test_throws ArgumentError vcat(df1, df2, df3)
+        @test err.value.msg == "column(s) B are missing from argument(s) 2"
+        # unique columns for both sides
+        df1 = DataFrame(A = 1, B = 1, C = 1, D = 1)
+        df2 = DataFrame(A = 1, C = 1, D = 1, E = 1, F = 1)
+        err = @test_throws ArgumentError vcat(df1, df2)
+        @test err.value.msg == "column(s) E and F are missing from argument(s) 1, and column(s) B are missing from argument(s) 2"
+        err = @test_throws ArgumentError vcat(df1, df1, df2, df2)
+        @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, and column(s) B are missing from argument(s) 3 and 4"
+        df3 = DataFrame(A = 1, B = 1, C = 1, D = 1, E = 1)
+        err = @test_throws ArgumentError vcat(df1, df2, df3)
+        @test err.value.msg == "column(s) E and F are missing from argument(s) 1, column(s) B are missing from argument(s) 2, and column(s) F are missing from argument(s) 3"
+        err = @test_throws ArgumentError vcat(df1, df1, df2, df2, df3, df3)
+        @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, column(s) B are missing from argument(s) 3 and 4, and column(s) F are missing from argument(s) 5 and 6"
+        err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3)
+        @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 and 3, column(s) B are missing from argument(s) 4, 5 and 6, and column(s) F are missing from argument(s) 7, 8 and 9"
+        # df4 is a superset of names found in all other dataframes and won't be shown in error
+        df4 = DataFrame(A = 1, B = 1, C = 1, D = 1, E = 1, F = 1)
+        err = @test_throws ArgumentError vcat(df1, df2, df3, df4)
+        @test err.value.msg == "column(s) E and F are missing from argument(s) 1, column(s) B are missing from argument(s) 2, and column(s) F are missing from argument(s) 3"
+        err = @test_throws ArgumentError vcat(df1, df1, df2, df2, df3, df3, df4, df4)
+        @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, column(s) B are missing from argument(s) 3 and 4, and column(s) F are missing from argument(s) 5 and 6"
+        err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df4, df4, df4)
+        @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 and 3, column(s) B are missing from argument(s) 4, 5 and 6, and column(s) F are missing from argument(s) 7, 8 and 9"
+        err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2, df3, df4, df1, df2, df3, df4)
+        @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, column(s) B are missing from argument(s) 2, 6 and 10, and column(s) F are missing from argument(s) 3, 7 and 11"
+    end
 end
