@@ -62,16 +62,13 @@ immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
     end
 end
 
-function SubDataFrame{T <: AbstractVector{Int}}(parent::DataFrame, rows::T)
-    return SubDataFrame{T}(parent, rows)
+function SubDataFrame{T <: Integer}(parent::DataFrame, rows::AbstractVector{T})
+    rows = convert(Vector{Int}, rows)
+    return SubDataFrame{typeof(rows)}(parent, rows)
 end
 
 function SubDataFrame(parent::DataFrame, row::Integer)
     return SubDataFrame(parent, [row])
-end
-
-function SubDataFrame{S <: Integer}(parent::DataFrame, rows::AbstractVector{S})
-    return view(parent, Int(rows))
 end
 
 
