@@ -113,8 +113,8 @@ module TestCat
     end
 
     # Minimal container type promotion
-    dta = DataTable(a = CategoricalArray([1, 2, 2]))
-    dtb = DataTable(a = CategoricalArray([2, 3, 4]))
+    dta = DataTable(a = NullableCategoricalArray([1, 2, 2]))
+    dtb = DataTable(a = NullableCategoricalArray([2, 3, 4]))
     dtc = DataTable(a = NullableArray([2, 3, 4]))
     dtd = DataTable(Any[2:4], [:a])
     dtab = vcat(dta, dtb)
@@ -122,13 +122,7 @@ module TestCat
     @test isequal(dtab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
     @test isequal(dtac[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
     @test isa(dtab[:a], NullableCategoricalVector{Int})
-    # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
-    if VERSION >= v"0.5.0-dev"
-        @test isa(dtac[:a], NullableCategoricalVector{Int})
-    else
-        @test isa(dtac[:a], NullableCategoricalVector{Any})
-    end
-    # ^^ container may flip if container promotion happens in Base/DataArrays
+    @test isa(dtac[:a], NullableCategoricalVector{Int})
     dc = vcat(dtd, dtc)
     @test isequal(vcat(dtc, dtd), dc)
 
@@ -147,5 +141,7 @@ module TestCat
     @test isequal(vcat(dtda, dtd, dta), vcat(dtda, dtda))
 
     # vcat should be able to concatenate different implementations of AbstractDataTable (PR #944)
-    @test isequal(vcat(view(DataTable(A=1:3),2),DataTable(A=4:5)), DataTable(A=[2,4,5]))
+    x = view(DataTable(A = NullableArray(1:3)), 2)
+    y = DataTable(A = NullableArray(4:5))
+    @test isequal(vcat(x, y), DataTable(A = NullableArray([2, 4, 5])))
 end

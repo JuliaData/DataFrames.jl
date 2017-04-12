@@ -34,7 +34,8 @@ module TestDataTable
     # Copying
     #
 
-    dt = DataTable(a = [2, 3], b = Any[DataTable(c = 1), DataTable(d = 2)])
+    dt = DataTable(a = NullableArray([2, 3]),
+                   b = NullableArray([DataTable(c = 1), DataTable(d = 2)]))
     dtc = copy(dt)
     dtdc = deepcopy(dt)
 
@@ -68,14 +69,16 @@ module TestDataTable
     @test_throws ErrorException x0[:d] = 1:3
 
     # Insert single value
-    x[:d] = 3
+    x[:d] = Nullable(3)
     @test isequal(x[:d], NullableArray([3, 3, 3]))
 
     x0[:d] = 3
     @test x0[:d] == Int[]
 
     # similar / nulls
-    dt = DataTable(a = 1, b = "b", c = CategoricalArray([3.3]))
+    dt = DataTable(a = NullableArray([1]),
+                   b = NullableArray(["b"]),
+                   c = NullableCategoricalArray([3.3]))
     nulldt = DataTable(a = NullableArray{Int}(2),
                        b = NullableArray{String}(2),
                        c = NullableCategoricalArray{Float64}(2))
@@ -94,7 +97,7 @@ module TestDataTable
     @test isempty(dt.columns)
     @test isempty(dt)
 
-    dt = DataTable(a=[1, 2], b=[3., 4.])
+    dt = DataTable(a=NullableArray([1, 2]), b=NullableArray([3., 4.]))
     @test_throws BoundsError insert!(dt, 5, ["a", "b"], :newcol)
     @test_throws ErrorException insert!(dt, 1, ["a"], :newcol)
     @test isequal(insert!(dt, 1, ["a", "b"], :newcol), dt)
@@ -109,7 +112,7 @@ module TestDataTable
     @test isequal(dt, DataTable(a=[1, 2], b=["a", "b"], c=[:c, :d]))
 
     #test_group("Empty DataTable constructors")
-    dt = DataTable(Int, 10, 3)
+    dt = DataTable(Nullable{Int}, 10, 3)
     @test size(dt, 1) == 10
     @test size(dt, 2) == 3
     @test typeof(dt[:, 1]) == NullableVector{Int}
@@ -119,7 +122,7 @@ module TestDataTable
     @test allnull(dt[:, 2])
     @test allnull(dt[:, 3])
 
-    dt = DataTable(Any[Int, Float64, String], 100)
+    dt = DataTable([Nullable{Int}, Nullable{Float64}, Nullable{String}], 100)
     @test size(dt, 1) == 100
     @test size(dt, 2) == 3
     @test typeof(dt[:, 1]) == NullableVector{Int}
@@ -129,7 +132,7 @@ module TestDataTable
     @test allnull(dt[:, 2])
     @test allnull(dt[:, 3])
 
-    dt = DataTable(Any[Int, Float64, String], [:A, :B, :C], 100)
+    dt = DataTable([Nullable{Int}, Nullable{Float64}, Nullable{String}], [:A, :B, :C], 100)
     @test size(dt, 1) == 100
     @test size(dt, 2) == 3
     @test typeof(dt[:, 1]) == NullableVector{Int}
@@ -140,12 +143,13 @@ module TestDataTable
     @test allnull(dt[:, 3])
 
 
-    dt = DataTable(DataType[Int, Float64, Compat.UTF8String],[:A, :B, :C], [false,false,true],100)
+    dt = DataTable([Nullable{Int}, Nullable{Float64}, Nullable{String}], [:A, :B, :C],
+                   [false, false, true],100)
     @test size(dt, 1) == 100
     @test size(dt, 2) == 3
     @test typeof(dt[:, 1]) == NullableVector{Int}
     @test typeof(dt[:, 2]) == NullableVector{Float64}
-    @test typeof(dt[:, 3]) == NullableCategoricalVector{Compat.UTF8String,UInt32}
+    @test typeof(dt[:, 3]) == NullableCategoricalVector{String,UInt32}
     @test allnull(dt[:, 1])
     @test allnull(dt[:, 2])
     @test allnull(dt[:, 3])
@@ -166,25 +170,8 @@ module TestDataTable
     @test size(dt, 2) == 5
     @test typeof(dt[:, 1]) == Vector{Float64}
 
-    #test_group("Other DataTable constructors")
-    dt = DataTable([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
-                    @compat(Dict{Any,Any}(:a=>3, :b=>'d')),
-                    @compat(Dict{Any,Any}(:a=>5))])
-    @test size(dt, 1) == 3
-    @test size(dt, 2) == 2
-    @test typeof(dt[:,:a]) == NullableVector{Int}
-    @test typeof(dt[:,:b]) == NullableVector{Char}
-
-    dt = DataTable([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
-                    @compat(Dict{Any,Any}(:a=>3, :b=>'d')),
-                    @compat(Dict{Any,Any}(:a=>5))],
-                   [:a, :b])
-    @test size(dt, 1) == 3
-    @test size(dt, 2) == 2
-    @test typeof(dt[:,:a]) == NullableVector{Int}
-    @test typeof(dt[:,:b]) == NullableVector{Char}
-
-    @test DataTable(NullableArray[[1,2,3],[2.5,4.5,6.5]], [:A, :B]) == DataTable(A = [1,2,3], B = [2.5,4.5,6.5])
+    @test DataTable(NullableArray[[1,2,3],[2.5,4.5,6.5]], [:A, :B]) ==
+        DataTable(A = NullableArray([1,2,3]), B = NullableArray([2.5,4.5,6.5]))
 
     # This assignment was missing before
     dt = DataTable(Column = [:A])
@@ -308,9 +295,9 @@ module TestDataTable
     end
 
     #Check the output of unstack
-    dt = DataTable(Fish = CategoricalArray(["Bob", "Bob", "Batman", "Batman"]),
-                   Key = ["Mass", "Color", "Mass", "Color"],
-                   Value = ["12 g", "Red", "18 g", "Grey"])
+    dt = DataTable(Fish = NullableCategoricalArray(["Bob", "Bob", "Batman", "Batman"]),
+                   Key = Nullable{String}["Mass", "Color", "Mass", "Color"],
+                   Value = Nullable{String}["12 g", "Red", "18 g", "Grey"])
     # Check that reordering levels does not confuse unstack
     levels!(dt[1], ["XXX", "Bob", "Batman"])
     #Unstack specifying a row column
@@ -318,11 +305,12 @@ module TestDataTable
     #Unstack without specifying a row column
     dt3 = unstack(dt,:Key, :Value)
     #The expected output
-    dt4 = DataTable(Fish = ["XXX", "Bob", "Batman"],
+    dt4 = DataTable(Fish = Nullable{String}["XXX", "Bob", "Batman"],
                     Color = Nullable{String}[Nullable(), "Red", "Grey"],
                     Mass = Nullable{String}[Nullable(), "12 g", "18 g"])
     @test isequal(dt2, dt4)
-    @test isequal(dt3, dt4[2:3, :])
+    # first column stays as CategoricalArray in dt3
+    @test isequal(dt3[:, 2:3], dt4[2:3, 2:3])
     #Make sure unstack works with NULLs at the start of the value column
     dt[1,:Value] = Nullable()
     dt2 = unstack(dt,:Fish, :Key, :Value)
@@ -334,13 +322,14 @@ module TestDataTable
     @test !(dt[:,:] === dt)
 
     @test append!(DataTable(A = 1:2, B = 1:2), DataTable(A = 3:4, B = 3:4)) == DataTable(A=1:4, B = 1:4)
-    @test !any(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6)).columns)
-    @test all(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), [1,2]).columns)
-    @test all(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), [:A,:B]).columns)
-    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), [:A]).columns) == [1]
-    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), :A).columns) == [1]
-    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), [1]).columns) == [1]
-    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataTable(A=1:3, B=4:6), 1).columns) == [1]
+    dt = DataTable(A = NullableArray(1:3), B = NullableArray(4:6))
+    @test !any(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(dt)).columns)
+    @test all(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(dt), [1,2]).columns)
+    @test all(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(dt), [:A,:B]).columns)
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(dt), [:A]).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(dt), :A).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(dt), [1]).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(dt), 1).columns) == [1]
 
     @testset "unstack nullable promotion" begin
         dt = DataTable(Any[repeat(1:2, inner=4), repeat('a':'d', outer=2), collect(1:8)],

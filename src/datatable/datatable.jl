@@ -74,32 +74,45 @@ type DataTable <: AbstractDataTable
     colindex::Index
 
     function DataTable(columns::Vector{Any}, colindex::Index)
-        ncols = length(columns)
-        if ncols > 1
-            nrows = length(columns[1])
-            equallengths = true
-            for i in 2:ncols
-                equallengths &= length(columns[i]) == nrows
+        if length(columns) == length(colindex) == 0
+            return new(Vector{Any}(0), Index())
+        elseif length(columns) != length(colindex)
+            throw(DimensionMismatch("Number of columns ($(length(columns))) and number of column names ($(length(colindex))) are not equal"))
+        end
+        lengths = [isa(col, AbstractArray) ? length(col) : 1 for col in columns]
+        minlen, maxlen = extrema(lengths)
+        if minlen == 0 && maxlen == 0
+            return new(columns, colindex)
+        elseif minlen != maxlen || minlen == maxlen == 1
+            # recycle scalars
+            for i in 1:length(columns)
+                isa(columns[i], AbstractArray) && continue
+                columns[i] = fill(columns[i], maxlen)
+                lengths[i] = maxlen
             end
-            if !equallengths
-                msg = "All columns in a DataTable must be the same length"
-                throw(ArgumentError(msg))
+            uls = unique(lengths)
+            if length(uls) != 1
+                strnames = string.(names(colindex))
+                estrings = ["column length $u for column(s) " *
+                            join(strnames[lengths .== u], ", ", " and ") for (i, u) in enumerate(uls)]
+                throw(DimensionMismatch(join(estrings, " is incompatible with ", ", and is incompatible with ")))
             end
         end
-        if length(colindex) != ncols
-            msg = "Columns and column index must be the same length"
-            throw(ArgumentError(msg))
+        for (i, c) in enumerate(columns)
+            if isa(c, Range)
+                columns[i] = collect(c)
+            elseif !isa(c, AbstractVector)
+                throw(DimensionMismatch("columns must be 1-dimensional"))
+            end
         end
         new(columns, colindex)
     end
 end
 
 function DataTable(; kwargs...)
-    result = DataTable(Any[], Index())
-    for (k, v) in kwargs
-        result[k] = v
-    end
-    return result
+    colnames = Symbol[k for (k,v) in kwargs]
+    columns = Any[v for (k,v) in kwargs]
+    DataTable(columns, Index(colnames))
 end
 
 function DataTable(columns::AbstractVector,
@@ -107,84 +120,54 @@ function DataTable(columns::AbstractVector,
     return DataTable(convert(Vector{Any}, columns), Index(convert(Vector{Symbol}, cnames)))
 end
 
-
-# Initialize empty DataTable objects of arbitrary size
-function DataTable(t::Type, nrows::Integer, ncols::Integer)
-    columns = Vector{Any}(ncols)
-    for i in 1:ncols
-        columns[i] = NullableArray(t, nrows)
-    end
-    cnames = gennames(ncols)
-    return DataTable(columns, Index(cnames))
-end
-
 # Initialize an empty DataTable with specific eltypes and names
-function DataTable(column_eltypes::Vector, cnames::Vector, nrows::Integer)
-    p = length(column_eltypes)
-    columns = Vector{Any}(p)
-    for j in 1:p
-        columns[j] = NullableArray(column_eltypes[j], nrows)
-    end
-    return DataTable(columns, Index(cnames))
-end
-# Initialize an empty DataTable with specific eltypes and names
-# and whether a nominal array should be created
-function DataTable(column_eltypes::Vector{DataType}, cnames::Vector{Symbol},
-                   nominal::Vector{Bool}, nrows::Integer)
-    p = length(column_eltypes)
-    columns = Vector{Any}(p)
-    for j in 1:p
-      if nominal[j]
-        columns[j] = NullableCategoricalArray{column_eltypes[j]}(nrows)
-      else
-        columns[j] = NullableArray{column_eltypes[j]}(nrows)
-      end
-    end
-    return DataTable(columns, Index(cnames))
-end
-
-# Initialize an empty DataTable with specific eltypes
-function DataTable(column_eltypes::Vector, nrows::Integer)
-    p = length(column_eltypes)
-    columns = Vector{Any}(p)
-    cnames = gennames(p)
-    for j in 1:p
-        columns[j] = NullableArray{column_eltypes[j]}(nrows)
-    end
-    return DataTable(columns, Index(cnames))
-end
-
-# Initialize from a Vector of Associatives (aka list of dicts)
-function DataTable{D <: Associative}(ds::Vector{D})
-    ks = Set()
-    for d in ds
-        union!(ks, keys(d))
-    end
-    DataTable(ds, [ks...])
-end
-
-# Initialize from a Vector of Associatives (aka list of dicts)
-function DataTable{D <: Associative}(ds::Vector{D}, ks::Vector)
-    #get column eltypes
-    col_eltypes = Type[@compat(Union{}) for _ = 1:length(ks)]
-    for d in ds
-        for (i,k) in enumerate(ks)
-            if haskey(d, k) && !_isnull(d[k])
-                col_eltypes[i] = promote_type(col_eltypes[i], typeof(d[k]))
+function DataTable{T<:Type}(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol}, nrows::Integer)
+    numcols = length(column_eltypes)
+    columns = Vector{Any}(numcols)
+    for j in 1:numcols
+        elty = column_eltypes[j]
+        if elty <: Nullable
+            if eltype(elty) <: CategoricalValue
+                columns[j] = NullableCategoricalArray{eltype(elty)}(nrows)
+            else
+                columns[j] = NullableVector{eltype(elty)}(nrows)
+            end
+        else
+            if elty <: CategoricalValue
+                columns[j] = CategoricalVector{elty}(nrows)
+            else
+                columns[j] = Vector{elty}(nrows)
             end
         end
     end
-    col_eltypes[col_eltypes .== @compat(Union{})] = Any
+    return DataTable(columns, Index(convert(Vector{Symbol}, cnames)))
+end
 
-    # create empty DataTable, and fill
-    dt = DataTable(col_eltypes, ks, length(ds))
-    for (i,d) in enumerate(ds)
-        for (j,k) in enumerate(ks)
-            dt[i,j] = get(d, k, Nullable())
+# Initialize an empty DataTable with specific eltypes and names
+# and whether a nominal array should be created
+function DataTable{T<:Type}(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                            nominal::Vector{Bool}, nrows::Integer)
+    # upcast Vector{DataType} -> Vector{Type} which can hold CategoricalValues
+    updated_types = convert(Vector{Type}, column_eltypes)
+    for i in eachindex(nominal)
+        nominal[i] || continue
+        if updated_types[i] <: Nullable
+            updated_types[i] = Nullable{CategoricalValue{eltype(updated_types[i])}}
+        else
+            updated_types[i] = CategoricalValue{updated_types[i]}
         end
     end
+    return DataTable(updated_types, cnames, nrows)
+end
 
-    dt
+# Initialize empty DataTable objects of arbitrary size
+function DataTable(t::Type, nrows::Integer, ncols::Integer)
+    return DataTable(fill(t, ncols), nrows)
+end
+
+# Initialize an empty DataTable with specific eltypes
+function DataTable{T<:Type}(column_eltypes::AbstractVector{T}, nrows::Integer)
+    return DataTable(column_eltypes, gennames(length(column_eltypes)), nrows)
 end
 
 ##############################################################################
@@ -363,24 +346,20 @@ function insert_multiple_entries!{T <: Real}(dt::DataTable,
     end
 end
 
-upgrade_vector{T<:Nullable}(v::AbstractArray{T}) = v
-upgrade_vector(v::CategoricalArray) = NullableCategoricalArray(v)
-upgrade_vector(v::AbstractArray) = NullableArray(v)
-
 function upgrade_scalar(dt::DataTable, v::AbstractArray)
     msg = "setindex!(::DataTable, ...) only broadcasts scalars, not arrays"
     throw(ArgumentError(msg))
 end
 function upgrade_scalar(dt::DataTable, v::Any)
     n = (ncol(dt) == 0) ? 1 : nrow(dt)
-    NullableArray(fill(v, n))
+    fill(v, n)
 end
 
 # dt[SingleColumnIndex] = AbstractVector
 function Base.setindex!(dt::DataTable,
                 v::AbstractVector,
                 col_ind::ColumnIndex)
-    insert_single_column!(dt, upgrade_vector(v), col_ind)
+    insert_single_column!(dt, v, col_ind)
 end
 
 # dt[SingleColumnIndex] = Single Item (EXPANDS TO NROW(DT) if NCOL(DT) > 0)
@@ -417,9 +396,8 @@ end
 function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
                                   v::AbstractVector,
                                   col_inds::AbstractVector{T})
-    dv = upgrade_vector(v)
     for col_ind in col_inds
-        dt[col_ind] = dv
+        dt[col_ind] = v
     end
     return dt
 end
@@ -754,11 +732,7 @@ function hcat!(dt1::DataTable, dt2::AbstractDataTable)
 
     return dt1
 end
-hcat!(dt::DataTable, x::CategoricalArray) = hcat!(dt, DataTable(Any[x]))
-hcat!(dt::DataTable, x::NullableCategoricalArray) = hcat!(dt, DataTable(Any[x]))
-hcat!(dt::DataTable, x::NullableVector) = hcat!(dt, DataTable(Any[x]))
-hcat!(dt::DataTable, x::Vector) = hcat!(dt, DataTable(Any[NullableArray(x)]))
-hcat!(dt::DataTable, x) = hcat!(dt, DataTable(Any[NullableArray([x])]))
+hcat!(dt::DataTable, x::AbstractVector) = hcat!(dt, DataTable(Any[x]))
 
 # hcat! for 1-n arguments
 hcat!(dt::DataTable) = dt
@@ -825,7 +799,7 @@ function Base.append!(dt1::DataTable, dt2::AbstractDataTable)
    return dt1
 end
 
-function Base.convert(::Type{DataTable}, A::Matrix)
+function Base.convert(::Type{DataTable}, A::AbstractMatrix)
     n = size(A, 2)
     cols = Vector{Any}(n)
     for i in 1:n
@@ -834,35 +808,16 @@ function Base.convert(::Type{DataTable}, A::Matrix)
     return DataTable(cols, Index(gennames(n)))
 end
 
-function _datatable_from_associative(dnames, d::Associative)
-    p = length(dnames)
-    p == 0 && return DataTable()
-    columns  = Vector{Any}(p)
-    colnames = Vector{Symbol}(p)
-    n = length(d[dnames[1]])
-    for j in 1:p
-        name = dnames[j]
-        col = d[name]
-        if length(col) != n
-            throw(ArgumentError("All columns in Dict must have the same length"))
-        end
-        columns[j] = NullableArray(col)
-        colnames[j] = Symbol(name)
-    end
-    return DataTable(columns, Index(colnames))
-end
-
 function Base.convert(::Type{DataTable}, d::Associative)
-    dnames = collect(keys(d))
-    return _datatable_from_associative(dnames, d)
-end
-
-# A Dict is not sorted or otherwise ordered, and it's nicer to return a
-# DataTable which is ordered in some way
-function Base.convert(::Type{DataTable}, d::Dict)
-    dnames = collect(keys(d))
-    sort!(dnames)
-    return _datatable_from_associative(dnames, d)
+    colnames = keys(d)
+    if isa(d, Dict)
+        colnames = sort!(collect(keys(d)))
+    else
+        colnames = keys(d)
+    end
+    colindex = Index(Symbol[k for k in colnames])
+    columns = Any[d[c] for c in colnames]
+    DataTable(columns, colindex)
 end
 
 

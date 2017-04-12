@@ -16,7 +16,7 @@ module TestData
     dt1 = DataTable(Any[nvint, nvstr], [:Ints, :Strs])
     dt2 = DataTable(Any[nvint, nvstr])
     dt3 = DataTable(Any[nvint])
-    dt4 = convert(DataTable, [1:4 1:4])
+    dt4 = DataTable(Any[NullableArray(1:4), NullableArray(1:4)])
     dt5 = DataTable(Any[NullableArray([1,2,3,4]), nvstr])
     dt6 = DataTable(Any[nvint, nvint, nvstr], [:A, :B, :C])
     dt7 = DataTable(x = nvint, y = nvstr)
@@ -45,9 +45,9 @@ module TestData
     #test_group("assign")
     dt6[3] = NullableArray(["un", "deux", "troix", "quatre"])
     @test isequal(dt6[1, 3], Nullable("un"))
-    dt6[:B] = [4, 3, 2, 1]
+    dt6[:B] = NullableArray([4, 3, 2, 1])
     @test isequal(dt6[1,2], Nullable(4))
-    dt6[:D] = [true, false, true, false]
+    dt6[:D] = NullableArray([true, false, true, false])
     @test isequal(dt6[1,4], Nullable(true))
     delete!(dt6, :D)
     @test names(dt6) == [:A, :B, :C]
@@ -143,11 +143,11 @@ module TestData
     @test ggd[2][1, :d4] == "d"
 
     #test_group("reshape")
-    d1 = DataTable(a = repeat([1:3;], inner = [4]),
-                   b = repeat([1:4;], inner = [3]),
-                   c = randn(12),
-                   d = randn(12),
-                   e = map(string, 'a':'l'))
+    d1 = DataTable(a = NullableArray(repeat([1:3;], inner = [4])),
+                   b = NullableArray(repeat([1:4;], inner = [3])),
+                   c = NullableArray(randn(12)),
+                   d = NullableArray(randn(12)),
+                   e = NullableArray(map(string, 'a':'l')))
 
     stack(d1, :a)
     d1s = stack(d1, [:a, :b])
@@ -186,8 +186,8 @@ module TestData
     d1m_named = meltdt(d1, [:c, :d, :e], variable_name=:letter, value_name=:someval)
     @test names(d1m_named) == [:letter, :someval, :c, :d, :e]
 
-    d1s[:id] = [1:12; 1:12]
-    d1s2[:id] = [1:12; 1:12]
+    d1s[:id] = NullableArray([1:12; 1:12])
+    d1s2[:id] =  NullableArray([1:12; 1:12])
     d1us = unstack(d1s, :id, :variable, :value)
     d1us2 = unstack(d1s2)
     d1us3 = unstack(d1s2, :variable, :value)
@@ -206,13 +206,13 @@ module TestData
     #test_group("merge")
 
     srand(1)
-    dt1 = DataTable(a = shuffle!([1:10;]),
-                    b = [:A,:B][rand(1:2, 10)],
-                    v1 = randn(10))
+    dt1 = DataTable(a = shuffle!(NullableArray(1:10)),
+                    b = NullableArray(rand([:A,:B], 10)),
+                    v1 = NullableArray(randn(10)))
 
-    dt2 = DataTable(a = shuffle!(reverse([1:5;])),
-                    b2 = [:A,:B,:C][rand(1:3, 5)],
-                    v2 = randn(5))
+    dt2 = DataTable(a = shuffle!(NullableArray(1:5)),
+                    b2 = NullableArray(rand([:A,:B,:C], 5)),
+                    v2 = NullableArray(randn(5)))
 
     m1 = join(dt1, dt2, on = :a, kind=:inner)
     @test isequal(m1[:a], dt1[:a][dt1[:a].values .<= 5]) # preserves dt1 order
@@ -230,10 +230,10 @@ module TestData
     #                                              Nullable(), Nullable(),
     #                                              Nullable(), Nullable(), Nullable()]))
 
-    dt1 = DataTable(a = [1, 2, 3],
-                    b = ["America", "Europe", "Africa"])
-    dt2 = DataTable(a = [1, 2, 4],
-                    c = ["New World", "Old World", "New World"])
+    dt1 = DataTable(a = NullableArray([1, 2, 3]),
+                    b = NullableArray(["America", "Europe", "Africa"]))
+    dt2 = DataTable(a = NullableArray([1, 2, 4]),
+                    c = NullableArray(["New World", "Old World", "New World"]))
 
     m1 = join(dt1, dt2, on = :a, kind = :inner)
     @test isequal(m1[:a], NullableArray([1, 2]))
@@ -266,15 +266,15 @@ module TestData
 
     srand(1)
     dt1 = DataTable(
-        a = [:x,:y][rand(1:2, 10)],
-        b = [:A,:B][rand(1:2, 10)],
-        v1 = randn(10)
+        a = NullableArray(rand([:x,:y], 10)),
+        b = NullableArray(rand([:A,:B], 10)),
+        v1 = NullableArray(randn(10))
     )
 
     dt2 = DataTable(
-        a = [:x,:y][[1,2,1,1,2]],
-        b = [:A,:B,:C][[1,1,1,2,3]],
-        v2 = randn(5)
+        a = NullableArray([:x,:y][[1,2,1,1,2]]),
+        b = NullableArray([:A,:B,:C][[1,1,1,2,3]]),
+        v2 = NullableArray(randn(5))
     )
     dt2[1,:a] = Nullable()
 
@@ -311,7 +311,9 @@ module TestData
     # @test isequal(sort(m1[:a]), sort(m2[:a]))
 
     # test nonunique() with extra argument
-    dt1 = DataTable(a = ["a", "b", "a", "b", "a", "b"], b = 1:6, c = [1:3;1:3])
+    dt1 = DataTable(a = NullableArray(["a", "b", "a", "b", "a", "b"]),
+                    b = NullableArray(1:6),
+                    c = NullableArray([1:3;1:3]))
     dt = vcat(dt1, dt1)
     @test find(nonunique(dt)) == collect(7:12)
     @test find(nonunique(dt, :)) == collect(7:12)

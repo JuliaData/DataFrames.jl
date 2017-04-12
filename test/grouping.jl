@@ -3,9 +3,9 @@ module TestGrouping
     using DataTables
 
     srand(1)
-    dt = DataTable(a = repeat([1, 2, 3, 4], outer=[2]),
-                   b = repeat([2, 1], outer=[4]),
-                   c = randn(8))
+    dt = DataTable(a = NullableArray(repeat([1, 2, 3, 4], outer=[2])),
+                   b = NullableArray(repeat([2, 1], outer=[4])),
+                   c = NullableArray(randn(8)))
     #dt[6, :a] = Nullable()
     #dt[7, :b] = Nullable()
 
@@ -125,7 +125,7 @@ module TestGrouping
     ga = map(f, gd)
     @test sbdt == combine(ga)
 
-    g(dt) = DataTable(cmax1 = Vector(dt[:cmax]) + 1)
+    g(dt) = DataTable(cmax1 = [get(c) + 1 for c in dt[:cmax]])
     h(dt) = g(f(dt))
 
     @test isequal(combine(map(h, gd)), combine(map(g, ga)))
@@ -147,7 +147,7 @@ module TestGrouping
 
     dt2 = by(e->1, DataTable(x=Int64[]), :x)
     @test size(dt2) == (0,1)
-    @test isequal(sum(dt2[:x]), Nullable(0))
+    @test isequal(sum(dt2[:x]), 0)
 
     # Check that reordering levels does not confuse groupby
     dt = DataTable(Key1 = CategoricalArray(["A", "A", "B", "B"]),

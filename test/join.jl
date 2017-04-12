@@ -2,8 +2,10 @@ module TestJoin
     using Base.Test
     using DataTables
 
-    name = DataTable(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
-    job = DataTable(ID = [1, 2, 2, 4], Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
+    name = DataTable(ID = NullableArray([1, 2, 3]),
+                     Name = NullableArray(["John Doe", "Jane Doe", "Joe Blogs"]))
+    job = DataTable(ID = NullableArray([1, 2, 2, 4]),
+                    Job = NullableArray(["Lawyer", "Doctor", "Florist", "Farmer"]))
 
     # Join on symbols or vectors of symbols
     join(name, job, on = :ID)
@@ -13,9 +15,9 @@ module TestJoin
     #@test_throws join(name, job)
 
     # Test output of various join types
-    outer = DataTable(ID = [1, 2, 2, 3, 4],
-                      Name = NullableArray(Nullable{String}["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
-                      Job = NullableArray(Nullable{String}["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
+    outer = DataTable(ID = NullableArray([1, 2, 2, 3, 4]),
+                      Name = NullableArray(["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
+                      Job = NullableArray(["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
     right = outer[Bool[!isnull(x) for x in outer[:Job]], [:ID, :Name, :Job]]
@@ -112,9 +114,9 @@ module TestJoin
 
     # Test that join works when mixing Array and NullableArray (#1151)
     dt = DataTable([collect(1:10), collect(2:11)], [:x, :y])
-    dtnull = DataTable(x = 1:10, z = 3:12)
+    dtnull = DataTable(x = NullableArray(1:10), z = NullableArray(3:12))
     @test join(dt, dtnull, on = :x) ==
         DataTable([collect(1:10), collect(2:11), NullableArray(3:12)], [:x, :y, :z])
     @test join(dtnull, dt, on = :x) ==
-        DataTable([NullableArray(1:10), NullableArray(3:12), NullableArray(2:11)], [:x, :z, :y])
+        DataTable([NullableArray(1:10), NullableArray(3:12), collect(2:11)], [:x, :z, :y])
 end
