@@ -57,6 +57,6 @@ end
 df = DataFrame(A=[0],B=[0])
 df[1:end] = 0.0
 df[1,:A] = 1.0
-@test df[1,:B] === Nullable(0)
+@test df[1,:B] === 0
 
 end

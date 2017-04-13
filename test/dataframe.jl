@@ -34,7 +34,8 @@ module TestDataFrame
     # Copying
     #
 
-    df = DataFrame(a = [2, 3], b = Any[DataFrame(c = 1), DataFrame(d = 2)])
+    df = DataFrame(a = NullableArray([2, 3]),
+                   b = NullableArray([DataFrame(c = 1), DataFrame(d = 2)]))
     dfc = copy(df)
     dfdc = deepcopy(df)
 
@@ -68,14 +69,16 @@ module TestDataFrame
     @test_throws ErrorException x0[:d] = 1:3
 
     # Insert single value
-    x[:d] = 3
+    x[:d] = Nullable(3)
     @test isequal(x[:d], NullableArray([3, 3, 3]))
 
     x0[:d] = 3
     @test x0[:d] == Int[]
 
     # similar / nulls
-    df = DataFrame(a = 1, b = "b", c = CategoricalArray([3.3]))
+    df = DataFrame(a = NullableArray([1]),
+                   b = NullableArray(["b"]),
+                   c = NullableCategoricalArray([3.3]))
     nulldf = DataFrame(a = NullableArray{Int}(2),
                        b = NullableArray{String}(2),
                        c = NullableCategoricalArray{Float64}(2))
@@ -94,7 +97,7 @@ module TestDataFrame
     @test isempty(df.columns)
     @test isempty(df)
 
-    df = DataFrame(a=[1, 2], b=[3., 4.])
+    df = DataFrame(a=NullableArray([1, 2]), b=NullableArray([3., 4.]))
     @test_throws BoundsError insert!(df, 5, ["a", "b"], :newcol)
     @test_throws ErrorException insert!(df, 1, ["a"], :newcol)
     @test isequal(insert!(df, 1, ["a", "b"], :newcol), df)
@@ -109,7 +112,7 @@ module TestDataFrame
     @test isequal(df, DataFrame(a=[1, 2], b=["a", "b"], c=[:c, :d]))
 
     #test_group("Empty DataFrame constructors")
-    df = DataFrame(Int, 10, 3)
+    df = DataFrame(Nullable{Int}, 10, 3)
     @test size(df, 1) == 10
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == NullableVector{Int}
@@ -119,7 +122,7 @@ module TestDataFrame
     @test all(isnull, df[:, 2])
     @test all(isnull, df[:, 3])
 
-    df = DataFrame(Any[Int, Float64, String], 100)
+    df = DataFrame([Nullable{Int}, Nullable{Float64}, Nullable{String}], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == NullableVector{Int}
@@ -129,7 +132,8 @@ module TestDataFrame
     @test all(isnull, df[:, 2])
     @test all(isnull, df[:, 3])
 
-    df = DataFrame(Any[Int, Float64, String], [:A, :B, :C], 100)
+    df = DataFrame([Nullable{Int}, Nullable{Float64}, Nullable{String}],
+                   [:A, :B, :C], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == NullableVector{Int}
@@ -140,7 +144,8 @@ module TestDataFrame
     @test all(isnull, df[:, 3])
 
 
-    df = DataFrame(DataType[Int, Float64, Compat.UTF8String],[:A, :B, :C], [false,false,true],100)
+    df = DataFrame([Nullable{Int}, Nullable{Float64}, Nullable{String}],
+                   [:A, :B, :C], [false, false, true],100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == NullableVector{Int}
@@ -149,7 +154,6 @@ module TestDataFrame
     @test all(isnull, df[:, 1])
     @test all(isnull, df[:, 2])
     @test all(isnull, df[:, 3])
-
 
     df = convert(DataFrame, zeros(10, 5))
     @test size(df, 1) == 10
@@ -166,25 +170,8 @@ module TestDataFrame
     @test size(df, 2) == 5
     @test typeof(df[:, 1]) == Vector{Float64}
 
-    #test_group("Other DataFrame constructors")
-    df = DataFrame([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
-                    @compat(Dict{Any,Any}(:a=>3, :b=>'d')),
-                    @compat(Dict{Any,Any}(:a=>5))])
-    @test size(df, 1) == 3
-    @test size(df, 2) == 2
-    @test typeof(df[:,:a]) == NullableVector{Int}
-    @test typeof(df[:,:b]) == NullableVector{Char}
-
-    df = DataFrame([@compat(Dict{Any,Any}(:a=>1, :b=>'c')),
-                    @compat(Dict{Any,Any}(:a=>3, :b=>'d')),
-                    @compat(Dict{Any,Any}(:a=>5))],
-                   [:a, :b])
-    @test size(df, 1) == 3
-    @test size(df, 2) == 2
-    @test typeof(df[:,:a]) == NullableVector{Int}
-    @test typeof(df[:,:b]) == NullableVector{Char}
-
-    @test DataFrame(NullableArray[[1,2,3],[2.5,4.5,6.5]], [:A, :B]) == DataFrame(A = [1,2,3], B = [2.5,4.5,6.5])
+    @test DataFrame(NullableArray[[1,2,3],[2.5,4.5,6.5]], [:A, :B]) ==
+        DataFrame(A = NullableArray([1,2,3]), B = NullableArray([2.5,4.5,6.5]))
 
     # This assignment was missing before
     df = DataFrame(Column = [:A])
@@ -308,9 +295,9 @@ module TestDataFrame
     end
 
     #Check the output of unstack
-    df = DataFrame(Fish = CategoricalArray(["Bob", "Bob", "Batman", "Batman"]),
-                   Key = ["Mass", "Color", "Mass", "Color"],
-                   Value = ["12 g", "Red", "18 g", "Grey"])
+    df = DataFrame(Fish = NullableCategoricalArray(["Bob", "Bob", "Batman", "Batman"]),
+                   Key = Nullable{String}["Mass", "Color", "Mass", "Color"],
+                   Value = Nullable{String}["12 g", "Red", "18 g", "Grey"])
     # Check that reordering levels does not confuse unstack
     levels!(df[1], ["XXX", "Bob", "Batman"])
     #Unstack specifying a row column
@@ -318,11 +305,13 @@ module TestDataFrame
     #Unstack without specifying a row column
     df3 = unstack(df,:Key, :Value)
     #The expected output
-    df4 = DataFrame(Fish = ["XXX", "Bob", "Batman"],
+    df4 = DataFrame(Fish = Nullable{String}["XXX", "Bob", "Batman"],
                     Color = Nullable{String}[Nullable(), "Red", "Grey"],
                     Mass = Nullable{String}[Nullable(), "12 g", "18 g"])
     @test isequal(df2, df4)
-    @test isequal(df3, df4[2:3, :])
+    @test typeof(df2[:Fish]) <: NullableCategoricalArray{String,1,UInt32}
+    # first column stays as CategoricalArray in df3
+    @test isequal(df3[:, 2:3], df4[2:3, 2:3])
     #Make sure unstack works with NULLs at the start of the value column
     df[1,:Value] = Nullable()
     df2 = unstack(df,:Fish, :Key, :Value)
@@ -334,13 +323,14 @@ module TestDataFrame
     @test !(df[:,:] === df)
 
     @test append!(DataFrame(A = 1:2, B = 1:2), DataFrame(A = 3:4, B = 3:4)) == DataFrame(A=1:4, B = 1:4)
-    @test !any(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6)).columns)
-    @test all(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), [1,2]).columns)
-    @test all(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), [:A,:B]).columns)
-    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), [:A]).columns) == [1]
-    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), :A).columns) == [1]
-    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), [1]).columns) == [1]
-    @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), 1).columns) == [1]
+    df = DataFrame(A = NullableArray(1:3), B = NullableArray(4:6))
+    @test all(c -> isa(c, NullableArray), categorical!(deepcopy(df)).columns)
+    @test all(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(df), [1,2]).columns)
+    @test all(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(df), [:A,:B]).columns)
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(df), [:A]).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(df), :A).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(df), [1]).columns) == [1]
+    @test find(c -> isa(c, NullableCategoricalArray), categorical!(deepcopy(df), 1).columns) == [1]
 
     @testset "unstack nullable promotion" begin
         df = DataFrame(Any[repeat(1:2, inner=4), repeat('a':'d', outer=2), collect(1:8)],

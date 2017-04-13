@@ -49,7 +49,7 @@ module TestIO
                    F = NullableArray(fill(Nullable(), 3)),
                    G = fill(Nullable(), 3))
 
-    answer = Sys.WORD_SIZE == 64 ? 0x937e94e70d642cce : 0x2b8864d8
+    answer = Sys.WORD_SIZE == 64 ? 0x3bd4a4a099ae8aac : 0x5ecdc4bb
     @test hash(sprint(printtable, df)) == answer
 
     # DataStreams

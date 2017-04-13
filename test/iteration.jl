@@ -5,7 +5,7 @@ module TestIteration
     dm = NullableArray([1 2; 3 4])
     dt = NullableArray(zeros(2, 2, 2))
 
-    df = DataFrame(A = 1:2, B = 2:3)
+    df = DataFrame(A = NullableArray(1:2), B = NullableArray(2:3))
 
     for row in eachrow(df)
         @test isa(row, DataFrameRow)
@@ -20,7 +20,7 @@ module TestIteration
     end
 
     @test isequal(map(x -> minimum(convert(Array, x)), eachrow(df)), Any[1,2])
-    @test isequal(map(minimum, eachcol(df)), DataFrame(A = [1], B = [2]))
+    @test isequal(map(minimum, eachcol(df)), DataFrame(A = Nullable{Int}[1], B = Nullable{Int}[2]))
 
     row = DataFrameRow(df, 1)
 
@@ -30,7 +30,7 @@ module TestIteration
     row[1] = 101
     @test isequal(df[1, :A], Nullable(101))
 
-    df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+    df = DataFrame(A = NullableArray(1:4), B = NullableArray(["M", "F", "F", "M"]))
 
     s1 = view(df, 1:3)
     s1[2,:A] = 4

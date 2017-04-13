@@ -16,7 +16,7 @@ module TestData
     df1 = DataFrame(Any[nvint, nvstr], [:Ints, :Strs])
     df2 = DataFrame(Any[nvint, nvstr])
     df3 = DataFrame(Any[nvint])
-    df4 = convert(DataFrame, [1:4 1:4])
+    df4 = DataFrame(Any[NullableArray(1:4), NullableArray(1:4)])
     df5 = DataFrame(Any[NullableArray([1,2,3,4]), nvstr])
     df6 = DataFrame(Any[nvint, nvint, nvstr], [:A, :B, :C])
     df7 = DataFrame(x = nvint, y = nvstr)
@@ -45,9 +45,9 @@ module TestData
     #test_group("assign")
     df6[3] = NullableArray(["un", "deux", "troix", "quatre"])
     @test isequal(df6[1, 3], Nullable("un"))
-    df6[:B] = [4, 3, 2, 1]
+    df6[:B] = NullableArray([4, 3, 2, 1])
     @test isequal(df6[1,2], Nullable(4))
-    df6[:D] = [true, false, true, false]
+    df6[:D] = NullableArray([true, false, true, false])
     @test isequal(df6[1,4], Nullable(true))
     delete!(df6, :D)
     @test names(df6) == [:A, :B, :C]
@@ -114,13 +114,13 @@ module TestData
     @test isequal(df8[1:2, :d2], NullableCategoricalArray(["A", "B"]))
     @test size(df8, 1) == 3
     @test size(df8, 2) == 5
-    @test get(sum(df8[:d1_length])) == N
-    @test all(df8[:d1_length].values .> 0)
-    @test df8[:d1_length].values == [4, 5, 11]
+    @test sum(df8[:d1_length]) == N
+    @test all(df8[:d1_length] .> 0)
+    @test df8[:d1_length] == [4, 5, 11]
     @test isequal(df8, aggregate(groupby(df7, :d2, sort=true), [sum, length]))
-    @test isequal(df8[1, :d1_length], Nullable(4))
-    @test isequal(df8[2, :d1_length], Nullable(5))
-    @test isequal(df8[3, :d1_length], Nullable(11))
+    @test isequal(df8[1, :d1_length], 4)
+    @test isequal(df8[2, :d1_length], 5)
+    @test isequal(df8[3, :d1_length], 11)
     @test isequal(df8, aggregate(groupby(df7, :d2), [sum, length], sort=true))
 
     df9 = df7 |> groupby([:d2], sort=true) |> [sum, length]
@@ -143,11 +143,11 @@ module TestData
     @test ggd[2][1, :d4] == "d"
 
     #test_group("reshape")
-    d1 = DataFrame(a = repeat([1:3;], inner = [4]),
-                   b = repeat([1:4;], inner = [3]),
-                   c = randn(12),
-                   d = randn(12),
-                   e = map(string, 'a':'l'))
+    d1 = DataFrame(a = NullableArray(repeat([1:3;], inner = [4])),
+                   b = NullableArray(repeat([1:4;], inner = [3])),
+                   c = NullableArray(randn(12)),
+                   d = NullableArray(randn(12)),
+                   e = NullableArray(map(string, 'a':'l')))
 
     stack(d1, :a)
     d1s = stack(d1, [:a, :b])
@@ -186,8 +186,8 @@ module TestData
     d1m_named = meltdf(d1, [:c, :d, :e], variable_name=:letter, value_name=:someval)
     @test names(d1m_named) == [:letter, :someval, :c, :d, :e]
 
-    d1s[:id] = [1:12; 1:12]
-    d1s2[:id] = [1:12; 1:12]
+    d1s[:id] = NullableArray([1:12; 1:12])
+    d1s2[:id] =  NullableArray([1:12; 1:12])
     d1us = unstack(d1s, :id, :variable, :value)
     d1us2 = unstack(d1s2)
     d1us3 = unstack(d1s2, :variable, :value)
@@ -206,13 +206,13 @@ module TestData
     #test_group("merge")
 
     srand(1)
-    df1 = DataFrame(a = shuffle!([1:10;]),
-                    b = [:A,:B][rand(1:2, 10)],
-                    v1 = randn(10))
+    df1 = DataFrame(a = shuffle!(NullableArray(1:10)),
+                    b = NullableArray(rand([:A,:B], 10)),
+                    v1 = NullableArray(randn(10)))
 
-    df2 = DataFrame(a = shuffle!(reverse([1:5;])),
-                    b2 = [:A,:B,:C][rand(1:3, 5)],
-                    v2 = randn(5))
+    df2 = DataFrame(a = shuffle!(NullableArray(1:5)),
+                    b2 = NullableArray(rand([:A,:B,:C], 5)),
+                    v2 = NullableArray(randn(5)))
 
     m1 = join(df1, df2, on = :a, kind=:inner)
     @test isequal(m1[:a], df1[:a][df1[:a].values .<= 5]) # preserves df1 order
@@ -230,10 +230,10 @@ module TestData
     #                                              Nullable(), Nullable(),
     #                                              Nullable(), Nullable(), Nullable()]))
 
-    df1 = DataFrame(a = [1, 2, 3],
-                    b = ["America", "Europe", "Africa"])
-    df2 = DataFrame(a = [1, 2, 4],
-                    c = ["New World", "Old World", "New World"])
+    df1 = DataFrame(a = NullableArray([1, 2, 3]),
+                    b = NullableArray(["America", "Europe", "Africa"]))
+    df2 = DataFrame(a = NullableArray([1, 2, 4]),
+                    c = NullableArray(["New World", "Old World", "New World"]))
 
     m1 = join(df1, df2, on = :a, kind = :inner)
     @test isequal(m1[:a], NullableArray([1, 2]))
@@ -266,15 +266,15 @@ module TestData
 
     srand(1)
     df1 = DataFrame(
-        a = [:x,:y][rand(1:2, 10)],
-        b = [:A,:B][rand(1:2, 10)],
-        v1 = randn(10)
+        a = NullableArray(rand([:x,:y], 10)),
+        b = NullableArray(rand([:A,:B], 10)),
+        v1 = NullableArray(randn(10))
     )
 
     df2 = DataFrame(
-        a = [:x,:y][[1,2,1,1,2]],
-        b = [:A,:B,:C][[1,1,1,2,3]],
-        v2 = randn(5)
+        a = NullableArray([:x,:y][[1,2,1,1,2]]),
+        b = NullableArray([:A,:B,:C][[1,1,1,2,3]]),
+        v2 = NullableArray(randn(5))
     )
     df2[1,:a] = Nullable()
 
@@ -311,7 +311,9 @@ module TestData
     # @test isequal(sort(m1[:a]), sort(m2[:a]))
 
     # test nonunique() with extra argument
-    df1 = DataFrame(a = ["a", "b", "a", "b", "a", "b"], b = 1:6, c = [1:3;1:3])
+    df1 = DataFrame(a = NullableArray(["a", "b", "a", "b", "a", "b"]),
+                    b = NullableArray(1:6),
+                    c = NullableArray([1:3;1:3]))
     df = vcat(df1, df1)
     @test find(nonunique(df)) == collect(7:12)
     @test find(nonunique(df, :)) == collect(7:12)

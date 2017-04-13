@@ -22,8 +22,8 @@ module TestConversions
     @test isa(convert(Array{Float64}, df), Matrix{Float64})
 
     df = DataFrame()
-    df[:A] = 1.0:5.0
-    df[:B] = 1.0:5.0
+    df[:A] = NullableArray(1.0:5.0)
+    df[:B] = NullableArray(1.0:5.0)
     a = convert(Array, df)
     aa = convert(Array{Any}, df)
     ai = convert(Array{Int}, df)
@@ -47,9 +47,9 @@ module TestConversions
     @test isa(nai, NullableMatrix{Int})
     @test isequal(nai, convert(NullableMatrix{Int}, df))
 
-    a = [1.0,2.0]
-    b = [-0.1,3]
-    c = [-3.1,7]
+    a = NullableArray([1.0,2.0])
+    b = NullableArray([-0.1,3])
+    c = NullableArray([-3.1,7])
     di = Dict("a"=>a, "b"=>b, "c"=>c)
 
     df = convert(DataFrame,di)
@@ -77,6 +77,6 @@ module TestConversions
 
     a = [1.0]
     di = Dict("a"=>a, "b"=>b, "c"=>c)
-    @test_throws ArgumentError convert(DataFrame,di)
+    @test_throws DimensionMismatch convert(DataFrame,di)
 
 end

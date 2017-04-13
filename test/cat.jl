@@ -93,9 +93,9 @@ module TestCat
     @test vcat(null_df, null_df) == DataFrame()
     @test_throws ArgumentError vcat(null_df, df)
     @test_throws ArgumentError vcat(df, null_df)
-    @test eltypes(vcat(df, df)) == [Nullable{Float64}, Nullable{Float64}, Nullable{Int}]
+    @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
     @test size(vcat(df, df)) == (size(df,1)*2, size(df,2))
-    @test eltypes(vcat(df, df, df)) == [Nullable{Float64}, Nullable{Float64}, Nullable{Int}]
+    @test eltypes(vcat(df, df, df)) == Type[Float64,Float64,Int]
     @test size(vcat(df, df, df)) == (size(df,1)*3, size(df,2))
 
     alt_df = deepcopy(df)
@@ -110,12 +110,12 @@ module TestCat
     @test names(df4) == names(dfr)
     @test isequal(dfr, [df4; df4])
 
-    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Nullable{Float64}]
-    @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == [Nullable{Float64}]
+    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == Type[Float64]
+    @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == Type[Nullable{Float64}]
 
     # Minimal container type promotion
-    dfa = DataFrame(a = CategoricalArray([1, 2, 2]))
-    dfb = DataFrame(a = CategoricalArray([2, 3, 4]))
+    dfa = DataFrame(a = NullableCategoricalArray([1, 2, 2]))
+    dfb = DataFrame(a = NullableCategoricalArray([2, 3, 4]))
     dfc = DataFrame(a = NullableArray([2, 3, 4]))
     dfd = DataFrame(Any[2:4], [:a])
     dfab = vcat(dfa, dfb)
@@ -249,4 +249,7 @@ module TestCat
         err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2, df3, df4, df1, df2, df3, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, column(s) B are missing from argument(s) 2, 6 and 10, and column(s) F are missing from argument(s) 3, 7 and 11"
     end
+    x = view(DataFrame(A = NullableArray(1:3)), 2)
+    y = DataFrame(A = NullableArray(4:5))
+    @test isequal(vcat(x, y), DataFrame(A = NullableArray([2, 4, 5])))
 end
