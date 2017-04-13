@@ -2,8 +2,10 @@ module TestJoin
     using Base.Test
     using DataFrames
 
-    name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
-    job = DataFrame(ID = [1, 2, 2, 4], Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
+    name = DataFrame(ID = NullableArray([1, 2, 3]),
+                     Name = NullableArray(["John Doe", "Jane Doe", "Joe Blogs"]))
+    job = DataFrame(ID = NullableArray([1, 2, 2, 4]),
+                    Job = NullableArray(["Lawyer", "Doctor", "Florist", "Farmer"]))
 
     # Join on symbols or vectors of symbols
     join(name, job, on = :ID)
@@ -13,9 +15,9 @@ module TestJoin
     #@test_throws join(name, job)
 
     # Test output of various join types
-    outer = DataFrame(ID = [1, 2, 2, 3, 4],
-                      Name = NullableArray(Nullable{String}["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
-                      Job = NullableArray(Nullable{String}["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
+    outer = DataFrame(ID = NullableArray([1, 2, 2, 3, 4]),
+                      Name = NullableArray(["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
+                      Job = NullableArray(["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
     right = outer[Bool[!isnull(x) for x in outer[:Job]], [:ID, :Name, :Job]]
@@ -70,7 +72,7 @@ module TestJoin
     @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
 
     # test empty inputs
-    simple_df(len::Int, col=:A) = (df = DataFrame(); df[col]=collect(1:len); df)
+    simple_df(len::Int, col=:A) = (df = DataFrame(); df[col]=NullableArray(collect(1:len)); df)
     @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :left),  simple_df(0))
     @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :left),  simple_df(2))
     @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :left),  simple_df(0))
@@ -106,13 +108,13 @@ module TestJoin
                    Mass = [1.5, 2.2, 1.1])
     df2 = DataFrame(Name = ["A", "B", "C", "A"],
                     Quantity = [3, 3, 2, 4])
-    @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "B", "C", "A"],
-                                                           Quantity = [3, 3, 2, 4],
-                                                           Mass = [1.5, 2.2, 1.1, 1.5])
+    @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = NullableArray(["A", "B", "C", "A"]),
+                                                           Quantity = NullableArray([3, 3, 2, 4]),
+                                                           Mass = NullableArray([1.5, 2.2, 1.1, 1.5]))
 
     # Test that join works when mixing Array and NullableArray (#1151)
     df = DataFrame([collect(1:10), collect(2:11)], [:x, :y])
-    dfnull = DataFrame(x = 1:10, z = 3:12)
+    dfnull = DataFrame(x = NullableArray(1:10), z = NullableArray(3:12))
     @test join(df, dfnull, on = :x) ==
         DataFrame([collect(1:10), collect(2:11), NullableArray(3:12)], [:x, :y, :z])
     @test join(dfnull, df, on = :x) ==

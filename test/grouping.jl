@@ -3,9 +3,9 @@ module TestGrouping
     using DataFrames
 
     srand(1)
-    df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-                   b = repeat([2, 1], outer=[4]),
-                   c = randn(8))
+    df = DataFrame(a = NullableArray(repeat([1, 2, 3, 4], outer=[2])),
+                   b = NullableArray(repeat([2, 1], outer=[4])),
+                   c = NullableArray(randn(8)))
     #df[6, :a] = Nullable()
     #df[7, :b] = Nullable()
 
@@ -125,7 +125,7 @@ module TestGrouping
     ga = map(f, gd)
     @test sbdf == combine(ga)
 
-    g(df) = DataFrame(cmax1 = Vector(df[:cmax]) + 1)
+    g(df) = DataFrame(cmax1 = [get(c) + 1 for c in df[:cmax]])
     h(df) = g(f(df))
 
     @test isequal(combine(map(h, gd)), combine(map(g, ga)))
@@ -147,7 +147,7 @@ module TestGrouping
 
     df2 = by(e->1, DataFrame(x=Int64[]), :x)
     @test size(df2) == (0,2)
-    @test isequal(sum(df2[:x]), Nullable(0))
+    @test isequal(sum(df2[:x]), 0)
 
     # Check that reordering levels does not confuse groupby
     df = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B"]),
