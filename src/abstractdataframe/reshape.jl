@@ -308,7 +308,7 @@ function pivot(df::AbstractDataFrame, rowfields, colfield::Symbol, valuesfield::
     catfields::AbstractVector{Symbol} = cat(1,rowfields, colfield)
     dfs  = DataFrame[]
     opsv =[]
-    if(isa(ops, Array))
+    if isa(ops, Array)
         opsv = ops
     else
         push!(opsv,ops)
