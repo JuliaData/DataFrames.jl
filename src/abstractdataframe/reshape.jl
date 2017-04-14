@@ -233,17 +233,22 @@ unstack(df::AbstractDataFrame) = unstack(df, :id, :variable, :value)
 Pivot and optionally filter and sort in a single function
 
 ```julia
-pivot(df::AbstractDataFrame, rowFields, colField, valuesField; <keyword arguments>)
+pivot(df::AbstractDataFrame, rowfields, colfield, valuesfield; <keyword arguments>)
+pivot(df::AbstractDataFrame, rowfields, colfield, valuesfield)
 ```
 
 # Arguments
 * `df::AbstractDataFrame`: the original dataframe, in stacked version (dim1,dim2,dim3... value)
-* `rowFields`:             the field(s) to be used as row categories (also known as IDs or keys)
-* `colField::Symbol`:      the field containing the values to be used as column headers
-* `valuesField::Symbol`:   the column containing the values to reshape
+* `rowfields`:             the field(s) to be used as row categories (also known as IDs or keys)
+* `colfield::Symbol`:      the field containing the values to be used as column headers
+* `valuesfield::Symbol`:   the column containing the values to reshape
 * `ops=sum`:               the operation(s) to perform on the data, default on summing them (see notes)
 * `filter::Dict`:          an optional filter, in the form of a dictionary of column_to_filter => [list of ammissible values]
 * `sort`:                  optional row field(s) to sort (see notes)
+
+### Result
+
+* `::DataFrame` : the pivoted dataframe
 
 # Notes
 * ops can be any supported Julia operation over a single array, for example: `sum`, `mean`, `length`, `countnz`, `maximum`, `minimum`, `var`, `std`, `prod`.
@@ -279,14 +284,14 @@ julia> pivDf  = pivot(longDf, [:product, :region,], :year, :value,
  │ 8   │ "banana" │ "EU"   │ "var"  │ 2.0  │ 0.5  │
 ```
 """
-function pivot(df::AbstractDataFrame, rowFields, colField::Symbol, valuesField::Symbol; ops=sum, filter::Dict=Dict(), sort=[])
-
+function pivot(df::AbstractDataFrame, rowfields, colfield::Symbol, valuesfield::Symbol; ops=sum, filter::Dict=Dict(), sort=[])
+ 
     for (k,v) in filter
-      df = df[ [i in v for i in df[k]], :]
+        df = df[ [i in v for i in df[k]], :]
     end
 
     sortv = []
-    sortOptions = []
+    sortoptions = []
     if(isa(sort, Array))
         sortv = sort
     else
@@ -294,13 +299,13 @@ function pivot(df::AbstractDataFrame, rowFields, colField::Symbol, valuesField::
     end
     for i in sortv
         if(isa(i, Tuple))
-          push!(sortOptions, order(i[1], rev = i[2]))
+            push!(sortoptions, order(i[1], rev = i[2]))
         else
-          push!(sortOptions, order(i))
+            push!(sortoptions, order(i))
         end
     end
-    
-    catFields::AbstractVector{Symbol} = cat(1,rowFields, colField)
+
+    catfields::AbstractVector{Symbol} = cat(1,rowfields, colfield)
     dfs  = DataFrame[]
     opsv =[]
     if(isa(ops, Array))
@@ -310,9 +315,9 @@ function pivot(df::AbstractDataFrame, rowFields, colField::Symbol, valuesField::
     end
 
     for op in opsv
-        dft = by(df, catFields) do df2
+        dft = by(df, catfields) do df2
             a = DataFrame()
-            a[valuesField] = op(df2[valuesField])
+            a[valuesfield] = op(df2[valuesfield])
             if(length(opsv)>1)
                 a[:op] = string(op)
             end
@@ -322,11 +327,10 @@ function pivot(df::AbstractDataFrame, rowFields, colField::Symbol, valuesField::
     end
 
     df = vcat(dfs)
-    df = unstack(df,colField,valuesField)
-    sort!(df, cols = sortOptions)
+    df = unstack(df,colfield,valuesfield)
+    sort!(df, cols = sortoptions)
     return df
 end
-
 
 
 ##############################################################################
