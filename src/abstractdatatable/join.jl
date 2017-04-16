@@ -15,6 +15,9 @@ similar_nullable{T,R}(dv::CategoricalArray{T,R}, dims::@compat(Union{Int, Tuple{
 similar_nullable(dt::AbstractDataTable, dims::Int) =
     DataTable(Any[similar_nullable(x, dims) for x in columns(dt)], copy(index(dt)))
 
+similar_nullable{T,R}(dv::NullableCategoricalArray{T,R}, dims::Union{Int, Tuple{Vararg{Int}}}) =
+    NullableCategoricalArray{T}(dims)
+
 # helper structure for DataTables joining
 immutable DataTableJoiner{DT1<:AbstractDataTable, DT2<:AbstractDataTable}
     dtl::DT1
