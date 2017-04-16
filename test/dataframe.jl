@@ -341,4 +341,24 @@ module TestDataFrame
     @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), :A).columns) == [1]
     @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), [1]).columns) == [1]
     @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), 1).columns) == [1]
+
+    @testset "duplicate entries in unstack warnings" begin
+        df = DataFrame(id=NullableArray([1, 2, 1, 2]), variable=["a", "b", "a", "b"], value=[3, 4, 5, 6])
+        @static if VERSION >= v"0.6.0-dev.1980"
+            @test_warn "Duplicate entries in unstack." unstack(df, :id, :variable, :value)
+            @test_warn "Duplicate entries in unstack at row 3." unstack(df, :variable, :value)
+        end
+        a = unstack(df, :id, :variable, :value)
+        b = unstack(df, :variable, :value)
+        @test a == b == DataFrame(id = Nullable[1, 2], a = [5, Nullable()], b = [Nullable(), 6])
+
+        df = DataFrame(id=NullableArray(1:2), variable=["a", "b"], value=3:4)
+        @static if VERSION >= v"0.6.0-dev.1980"
+            @test_nowarn unstack(df, :id, :variable, :value)
+            @test_nowarn unstack(df, :variable, :value)
+        end
+        a = unstack(df, :id, :variable, :value)
+        b = unstack(df, :variable, :value)
+        @test a == b == DataFrame(id = Nullable[1, 2], a = [3, Nullable()], b = [Nullable(), 4])
+    end
 end
