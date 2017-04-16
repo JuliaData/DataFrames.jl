@@ -198,12 +198,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     keycol = NullableCategoricalArray(df[colkey])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
-    T = eltype(valuecol)
-    if T <: Nullable
-        T = eltype(T)
-    end
-    payload = DataFrame(Any[NullableArray(T, Nrow) for i in 1:Ncol],
-                        map(Symbol, levels(keycol)))
+    payload = DataFrame(Any[similar_nullable(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
     nowarning = true
     for k in 1:nrow(df)
         j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
@@ -216,7 +211,9 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
             payload[j][i]  = valuecol[k]
         end
     end
-    insert!(payload, 1, NullableArray(levels(refkeycol)), _names(df)[rowkey])
+    levs = levels(refkeycol)
+    col = similar_nullable(df[rowkey], length(levs))
+    insert!(payload, 1, copy!(col, levs), _names(df)[rowkey])
 end
 unstack(df::AbstractDataFrame, rowkey, colkey, value) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
@@ -235,15 +232,10 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     end
     keycol = NullableCategoricalArray(df[colkey])
     valuecol = df[value]
-    df1 = df[g.idx[g.starts], g.cols]
+    df1 = nullable!(df[g.idx[g.starts], g.cols], g.cols)
     Nrow = length(g)
     Ncol = length(levels(keycol))
-    T = eltype(valuecol)
-    if T <: Nullable
-        T = eltype(T)
-    end
-    df2 = DataFrame(Any[NullableArray(T, Nrow) for i in 1:Ncol],
-                    map(@compat(Symbol), levels(keycol)))
+    df2 = DataFrame(Any[similar_nullable(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
     nowarning = true
     for k in 1:nrow(df)
         j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
