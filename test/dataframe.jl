@@ -342,6 +342,24 @@ module TestDataFrame
     @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), [1]).columns) == [1]
     @test find(c -> isa(c, NullableCategoricalArray), categorical!(DataFrame(A=1:3, B=4:6), 1).columns) == [1]
 
+    @testset "unstack nullable promotion" begin
+        df = DataFrame(Any[repeat(1:2, inner=4), repeat('a':'d', outer=2), collect(1:8)],
+                       [:id, :variable, :value])
+        udf = unstack(df)
+        @test udf == unstack(df, :variable, :value) == unstack(df, :id, :variable, :value)
+        @test udf == DataFrame(Any[Nullable[1, 2], Nullable[1, 5], Nullable[2, 6],
+                                   Nullable[3, 7], Nullable[4, 8]], [:id, :a, :b, :c, :d])
+        @test all(typeof.(udf.columns) .== NullableVector{Int})
+        df = DataFrame(Any[categorical(repeat(1:2, inner=4)),
+                           categorical(repeat('a':'d', outer=2)), categorical(1:8)],
+                       [:id, :variable, :value])
+        udf = unstack(df)
+        @test udf == unstack(df, :variable, :value) == unstack(df, :id, :variable, :value)
+        @test udf == DataFrame(Any[Nullable[1, 2], Nullable[1, 5], Nullable[2, 6],
+                                   Nullable[3, 7], Nullable[4, 8]], [:id, :a, :b, :c, :d])
+        @test all(typeof.(udf.columns) .== NullableCategoricalVector{Int, UInt32})
+    end
+
     @testset "duplicate entries in unstack warnings" begin
         df = DataFrame(id=NullableArray([1, 2, 1, 2]), variable=["a", "b", "a", "b"], value=[3, 4, 5, 6])
         @static if VERSION >= v"0.6.0-dev.1980"
