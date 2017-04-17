@@ -159,14 +159,19 @@ using CSV
 using DataFrames, CSV
 ```
 
-Datasets can now be read using
+A dataset can now be read from a CSV file at path `input` using
 ```julia
-CSV.read(...)
+CSV.read(input, DataFrame)
 ```
 
-and written using
+Note the second positional argument of `DataFrame`. This instructs the CSV package to output
+a `DataFrame` rather than the default `DataFrame`. Keyword arguments may be passed to
+`CSV.read` after this second argument.
+
+A DataFrame can be written to a CSV file at path `output` using
 ```julia
-CSV.write(...)
+df = DataFrame(x = 1, y = 2)
+CSV.write(output, df)
 ```
 
 For more information, use the REPL [help-mode](http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode) or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/)!
@@ -179,7 +184,7 @@ For example, we can access Fisher's iris data set using the following functions:
 
 ```julia
 using CSV
-iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
+iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"), DataFrame)
 head(iris)
 ```
 

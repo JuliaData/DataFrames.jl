@@ -5,7 +5,7 @@ Reshape data from wide to long format using the `stack` function:
 ```julia
 using DataFrames
 using CSV
-iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
+iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"), DataFrame)
 iris[:id] = 1:size(iris, 1)  # this makes it easier to unstack
 d = stack(iris, 1:4)
 ```
