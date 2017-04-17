@@ -4,7 +4,8 @@ Sorting is a fundamental component of data analysis. Basic sorting is trivial: j
 
 ```julia
 using DataFrames
-iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
+using CSV
+iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"), DataFrame)
 sort!(iris)
 ```
 
