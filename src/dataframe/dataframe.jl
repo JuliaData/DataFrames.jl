@@ -119,7 +119,7 @@ function DataFrame(t::Type, nrows::Integer, ncols::Integer)
 end
 
 # Initialize an empty DataFrame with specific eltypes and names
-function DataFrame(column_eltypes::Vector, cnames::Vector, nrows::Integer)
+function DataFrame(column_eltypes::Vector{DataType}, cnames::Vector{Symbol}, nrows::Integer)
     p = length(column_eltypes)
     columns = Vector(p)
     for j in 1:p
