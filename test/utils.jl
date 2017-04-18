@@ -61,14 +61,14 @@ module TestUtils
 
     @testset "describe" begin
         io = IOBuffer()
-        df = DataFrame(Any[collect(1:4), DataArray(Int, 4),
-                           PooledDataArray(collect(3:6)),
-                           PooledDataArray(Int, 4)],
-                       [:array, :naarray, :pooledarray, :napooledarray])
+        df = DataFrame(Any[collect(1:4), NullableArray(2:5),
+                           CategoricalArray(3:6),
+                           NullableCategoricalArray(4:7)],
+                       [:arr, :nullarr, :cat, :nullcat])
         describe(io, df)
         @test String(take!(io)) ==
             """
-            array
+            arr
             Summary Stats:
             Mean:           2.500000
             Minimum:        1.000000
@@ -79,30 +79,32 @@ module TestUtils
             Length:         4
             Type:           $Int
 
-            naarray
+            nullarr
             Summary Stats:
-            Type:           $Int
-            Number Missing: 4
-            % Missing:      100.000000
-
-            pooledarray
-            Summary Stats:
-            Mean:           4.500000
-            Minimum:        3.000000
-            1st Quartile:   3.750000
-            Median:         4.500000
-            3rd Quartile:   5.250000
-            Maximum:        6.000000
+            Mean:           3.500000
+            Minimum:        2.000000
+            1st Quartile:   2.750000
+            Median:         3.500000
+            3rd Quartile:   4.250000
+            Maximum:        5.000000
             Length:         4
             Type:           $Int
             Number Missing: 0
             % Missing:      0.000000
 
-            napooledarray
+            cat
             Summary Stats:
-            Type:           $Int
-            Number Missing: 4
-            % Missing:      100.000000
+            Length:         4
+            Type:           CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}
+            Number Unique:  4
+
+            nullcat
+            Summary Stats:
+            Length:         4
+            Type:           Nullable{CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}}
+            Number Unique:  4
+            Number Missing: 0
+            % Missing:      0.000000
 
             """
     end

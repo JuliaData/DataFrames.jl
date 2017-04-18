@@ -1,5 +1,5 @@
 julia 0.5
-NullableArrays 0.1.0
+NullableArrays 0.1.1
 CategoricalArrays 0.1.2
 StatsBase 0.11.0
 SortingAlgorithms
