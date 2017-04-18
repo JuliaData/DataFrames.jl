@@ -61,4 +61,54 @@ module TestUtils
     else
         @test DataFrames._fnames(funs) == ["mean", "sum", "var", string(funs[end])]
     end
+
+    @testset "describe" begin
+        io = IOBuffer()
+        df = DataFrame(Any[collect(1:4), NullableArray(2:5),
+                           CategoricalArray(3:6),
+                           NullableCategoricalArray(4:7)],
+                       [:arr, :nullarr, :cat, :nullcat])
+        describe(io, df)
+        @test String(take!(io)) ==
+            """
+            arr
+            Summary Stats:
+            Mean:           2.500000
+            Minimum:        1.000000
+            1st Quartile:   1.750000
+            Median:         2.500000
+            3rd Quartile:   3.250000
+            Maximum:        4.000000
+            Length:         4
+            Type:           $Int
+
+            nullarr
+            Summary Stats:
+            Mean:           3.500000
+            Minimum:        2.000000
+            1st Quartile:   2.750000
+            Median:         3.500000
+            3rd Quartile:   4.250000
+            Maximum:        5.000000
+            Length:         4
+            Type:           $Int
+            Number Missing: 0
+            % Missing:      0.000000
+
+            cat
+            Summary Stats:
+            Length:         4
+            Type:           CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}
+            Number Unique:  4
+
+            nullcat
+            Summary Stats:
+            Length:         4
+            Type:           Nullable{CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}}
+            Number Unique:  4
+            Number Missing: 0
+            % Missing:      0.000000
+
+            """
+    end
 end

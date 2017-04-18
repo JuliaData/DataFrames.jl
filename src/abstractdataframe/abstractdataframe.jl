@@ -378,35 +378,6 @@ function StatsBase.describe(io, df::AbstractDataFrame)
         println(io, )
     end
 end
-StatsBase.describe(nv::AbstractArray) = describe(STDOUT, nv)
-function StatsBase.describe{T<:Number}(io, nv::AbstractArray{T})
-    if all(_isnull, nv)
-        println(io, " * All null * ")
-        return
-    end
-    filtered = float(dropnull(nv))
-    qs = quantile(filtered, [0, .25, .5, .75, 1])
-    statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
-    statVals = [qs[1:3]; mean(filtered); qs[4:5]]
-    for i = 1:6
-        println(io, string(rpad(statNames[i], 10, " "), " ", string(statVals[i])))
-    end
-    nulls = countnull(nv)
-    println(io, "NULLs      $(nulls)")
-    println(io, "NULL %     $(round(nulls*100/length(nv), 2))%")
-    return
-end
-function StatsBase.describe{T}(io, nv::AbstractArray{T})
-    ispooled = isa(nv, CategoricalVector) ? "Pooled " : ""
-    nulls = countnull(nv)
-    # if nothing else, just give the length and element type and null count
-    println(io, "Length    $(length(nv))")
-    println(io, "Type      $(ispooled)$(string(eltype(nv)))")
-    println(io, "NULLs     $(nulls)")
-    println(io, "NULL %    $(round(nulls*100/length(nv), 2))%")
-    println(io, "Unique    $(length(unique(nv)))")
-    return
-end
 
 ##############################################################################
 ##
