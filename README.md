@@ -9,6 +9,9 @@ DataFrames.jl
 [![Travis Build Status](https://travis-ci.org/JuliaStats/DataFrames.jl.svg?branch=master)](https://travis-ci.org/JuliaStats/DataFrames.jl)
 [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/85h1i9lll64jpg3y/branch/master?svg=true)](https://ci.appveyor.com/project/nalimilan/dataframes-jl/branch/master)
 
+[![Documentation Status](https://readthedocs.org/projects/dataframesjl/badge/?version=stable)](http://dataframesjl.readthedocs.io/en/latest/?badge=stable)
+[![Documentation Status](https://readthedocs.org/projects/dataframesjl/badge/?version=latest)](http://dataframesjl.readthedocs.io/en/latest/?badge=latest)
+
 Tools for working with tabular data in Julia.
 For datasets based on `NullableArray`s rather than `DataArray`s, see the [DataTables.jl](https://github.com/JuliaData/DataTables.jl) package.
 
