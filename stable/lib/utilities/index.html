@@ -13,7 +13,7 @@
       
         <link rel="shortcut icon" href="../../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.1, mkdocs-material-1.3.0">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.4">
     
     
       
@@ -24,9 +24,9 @@
       <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application-1d1da4857d.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application-b1a1975878.css">
       
-        <link rel="stylesheet" href="../../assets/stylesheets/application-66fa0d9bba.palette.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/application-f78e5cb881.palette.css">
       
     
     
@@ -96,12 +96,18 @@
   <div class="md-search__overlay"></div>
   <div class="md-search__inner">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
+      <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
       <label class="md-icon md-search__icon" for="search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result"></div>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
       </div>
     </div>
   </div>
@@ -511,7 +517,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L177-L199' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L177-L199' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.head' href='#DataFrames.head'>#</a>
 <strong><code>DataFrames.head</code></strong> &mdash; <em>Function</em>.</p>
 <p>Show the first or last part of an AbstractDataFrame</p>
@@ -536,7 +542,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L293-L318' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L293-L318' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.completecases' href='#DataFrames.completecases'>#</a>
 <strong><code>DataFrames.completecases</code></strong> &mdash; <em>Function</em>.</p>
 <p>Indexes of complete cases (rows without NA's)</p>
@@ -561,7 +567,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L442-L468' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L442-L468' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.completecases!' href='#DataFrames.completecases!'>#</a>
 <strong><code>DataFrames.completecases!</code></strong> &mdash; <em>Function</em>.</p>
 <p>Delete rows with NA's.</p>
@@ -586,7 +592,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L478-L504' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L478-L504' class='documenter-source'>source</a><br></p>
 <p><a id='StatsBase.describe' href='#StatsBase.describe'>#</a>
 <strong><code>StatsBase.describe</code></strong> &mdash; <em>Function</em>.</p>
 <div class="codehilite"><pre><span></span>describe(a)
@@ -620,7 +626,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L364-L398' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L364-L398' class='documenter-source'>source</a><br></p>
 <p><a id='Base.dump' href='#Base.dump'>#</a>
 <strong><code>Base.dump</code></strong> &mdash; <em>Function</em>.</p>
 <p>Show the structure of an AbstractDataFrame, in a tree-like format</p>
@@ -645,7 +651,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L322-L347' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L322-L347' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.names!' href='#DataFrames.names!'>#</a>
 <strong><code>DataFrames.names!</code></strong> &mdash; <em>Function</em>.</p>
 <p>Set column names</p>
@@ -671,7 +677,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L96-L127' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L96-L127' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.nonunique' href='#DataFrames.nonunique'>#</a>
 <strong><code>DataFrames.nonunique</code></strong> &mdash; <em>Function</em>.</p>
 <p>Indexes of complete cases (rows without NA's)</p>
@@ -698,7 +704,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L550-L579' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L550-L579' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.rename' href='#DataFrames.rename'>#</a>
 <strong><code>DataFrames.rename</code></strong> &mdash; <em>Function</em>.</p>
 <p>Rename columns</p>
@@ -729,7 +735,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L142-L174' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L142-L174' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.rename!' href='#DataFrames.rename!'>#</a>
 <strong><code>DataFrames.rename!</code></strong> &mdash; <em>Function</em>.</p>
 <p>Rename columns</p>
@@ -760,7 +766,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L142-L174' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L142-L174' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.tail' href='#DataFrames.tail'>#</a>
 <strong><code>DataFrames.tail</code></strong> &mdash; <em>Function</em>.</p>
 <p>Show the first or last part of an AbstractDataFrame</p>
@@ -785,7 +791,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L293-L318' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L293-L318' class='documenter-source'>source</a><br></p>
 <p><a id='Base.unique' href='#Base.unique'>#</a>
 <strong><code>Base.unique</code></strong> &mdash; <em>Function</em>.</p>
 <p>Delete duplicate rows</p>
@@ -817,7 +823,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L604-L638' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L604-L638' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.unique!' href='#DataFrames.unique!'>#</a>
 <strong><code>DataFrames.unique!</code></strong> &mdash; <em>Function</em>.</p>
 <p>Delete duplicate rows</p>
@@ -849,7 +855,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/abstractdataframe.jl#L604-L638' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/abstractdataframe.jl#L604-L638' class='documenter-source'>source</a><br></p>
                 
                   
                 
@@ -919,7 +925,7 @@
       
     </div>
     
-      <script src="../../assets/javascripts/application-7aa26ad9ec.js"></script>
+      <script src="../../assets/javascripts/application-0b7df094bf.js"></script>
       <script>app.initialize({url:{base:"../.."}})</script>
       
         <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>

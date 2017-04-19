@@ -13,7 +13,7 @@
       
         <link rel="shortcut icon" href="../../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.1, mkdocs-material-1.3.0">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.5.4">
     
     
       
@@ -24,9 +24,9 @@
       <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application-1d1da4857d.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application-b1a1975878.css">
       
-        <link rel="stylesheet" href="../../assets/stylesheets/application-66fa0d9bba.palette.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/application-f78e5cb881.palette.css">
       
     
     
@@ -96,12 +96,18 @@
   <div class="md-search__overlay"></div>
   <div class="md-search__inner">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
+      <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
       <label class="md-icon md-search__icon" for="search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result"></div>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
       </div>
     </div>
   </div>
@@ -592,7 +598,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/dataframe/io.jl#L860-L906' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/dataframe/io.jl#L860-L906' class='documenter-source'>source</a><br></p>
 <p><code>readtable</code> requires that you specify the path of the file that you would like to read as a <code>String</code>. To read data from a non-file source, you may also supply an <code>IO</code> object. It supports many additional keyword arguments: these are documented in the section on advanced I/O operations.</p>
 <p><a id='Exporting-data-to-a-tabular-data-file-1'></a></p>
 <h2 id="exporting-data-to-a-tabular-data-file">Exporting data to a tabular data file</h2>
@@ -629,7 +635,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/19503c12bc70adc269dfa2159bf5950c458ff20a/src/abstractdataframe/io.jl#L80-L112' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/4652000f0984157702b4c8e7a2bc054b90a4e7d3/src/abstractdataframe/io.jl#L80-L112' class='documenter-source'>source</a><br></p>
 <p><a id='Supplying-DataFrames-inline-with-non-standard-string-literals-1'></a></p>
 <h2 id="supplying-dataframes-inline-with-non-standard-string-literals">Supplying <code>DataFrame</code>s inline with non-standard string literals</h2>
 <p>You can also provide CSV-like tabular data in a non-standard string literal to construct a new <code>DataFrame</code>, as in the following:</p>
@@ -743,7 +749,7 @@
       
     </div>
     
-      <script src="../../assets/javascripts/application-7aa26ad9ec.js"></script>
+      <script src="../../assets/javascripts/application-0b7df094bf.js"></script>
       <script>app.initialize({url:{base:"../.."}})</script>
       
         <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
