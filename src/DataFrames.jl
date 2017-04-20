@@ -11,7 +11,7 @@ module DataFrames
 using Compat
 import Compat.String
 using Reexport
-@reexport using StatsBase
+using StatsBase
 import NullableArrays: dropnull, dropnull!
 @reexport using NullableArrays
 @reexport using CategoricalArrays

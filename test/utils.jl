@@ -2,7 +2,7 @@ module TestUtils
     using Base.Test
     using DataFrames
     using Compat
-
+    using StatsBase
     import DataFrames: identifier
 
     @test identifier("%_B*_\tC*") == :_B_C_
