@@ -2,7 +2,7 @@ module TestUtils
     using Base.Test
     using DataTables
     using Compat
-
+    using StatsBase
     import DataTables: identifier
 
     @test identifier("%_B*_\tC*") == :_B_C_
