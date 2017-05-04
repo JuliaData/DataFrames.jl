@@ -115,9 +115,9 @@ module TestDataFrame
     @test typeof(df[:, 1]) == NullableVector{Int}
     @test typeof(df[:, 2]) == NullableVector{Int}
     @test typeof(df[:, 3]) == NullableVector{Int}
-    @test allnull(df[:, 1])
-    @test allnull(df[:, 2])
-    @test allnull(df[:, 3])
+    @test all(isnull, df[:, 1])
+    @test all(isnull, df[:, 2])
+    @test all(isnull, df[:, 3])
 
     df = DataFrame(Any[Int, Float64, String], 100)
     @test size(df, 1) == 100
@@ -125,9 +125,9 @@ module TestDataFrame
     @test typeof(df[:, 1]) == NullableVector{Int}
     @test typeof(df[:, 2]) == NullableVector{Float64}
     @test typeof(df[:, 3]) == NullableVector{String}
-    @test allnull(df[:, 1])
-    @test allnull(df[:, 2])
-    @test allnull(df[:, 3])
+    @test all(isnull, df[:, 1])
+    @test all(isnull, df[:, 2])
+    @test all(isnull, df[:, 3])
 
     df = DataFrame(Any[Int, Float64, String], [:A, :B, :C], 100)
     @test size(df, 1) == 100
@@ -135,9 +135,9 @@ module TestDataFrame
     @test typeof(df[:, 1]) == NullableVector{Int}
     @test typeof(df[:, 2]) == NullableVector{Float64}
     @test typeof(df[:, 3]) == NullableVector{String}
-    @test allnull(df[:, 1])
-    @test allnull(df[:, 2])
-    @test allnull(df[:, 3])
+    @test all(isnull, df[:, 1])
+    @test all(isnull, df[:, 2])
+    @test all(isnull, df[:, 3])
 
 
     df = DataFrame(DataType[Int, Float64, Compat.UTF8String],[:A, :B, :C], [false,false,true],100)
@@ -146,9 +146,9 @@ module TestDataFrame
     @test typeof(df[:, 1]) == NullableVector{Int}
     @test typeof(df[:, 2]) == NullableVector{Float64}
     @test typeof(df[:, 3]) == NullableCategoricalVector{Compat.UTF8String,UInt32}
-    @test allnull(df[:, 1])
-    @test allnull(df[:, 2])
-    @test allnull(df[:, 3])
+    @test all(isnull, df[:, 1])
+    @test all(isnull, df[:, 2])
+    @test all(isnull, df[:, 3])
 
 
     df = convert(DataFrame, zeros(10, 5))
