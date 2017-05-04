@@ -542,7 +542,7 @@ function Base.convert{T}(::Type{Matrix{T}}, df::AbstractDataFrame)
     res = Matrix{T}(n, p)
     idx = 1
     for (name, col) in zip(names(df), columns(df))
-        anynull(col) && error("cannot convert a DataFrame containing null values to array (found for column $name)")
+        any(isnull, col) && error("cannot convert a DataFrame containing null values to array (found for column $name)")
         copy!(res, idx, convert(Vector{T}, col))
         idx += n
     end
