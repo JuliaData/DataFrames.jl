@@ -115,9 +115,9 @@ module TestDataTable
     @test typeof(dt[:, 1]) == NullableVector{Int}
     @test typeof(dt[:, 2]) == NullableVector{Int}
     @test typeof(dt[:, 3]) == NullableVector{Int}
-    @test allnull(dt[:, 1])
-    @test allnull(dt[:, 2])
-    @test allnull(dt[:, 3])
+    @test all(isnull, dt[:, 1])
+    @test all(isnull, dt[:, 2])
+    @test all(isnull, dt[:, 3])
 
     dt = DataTable(Any[Int, Float64, String], 100)
     @test size(dt, 1) == 100
@@ -125,9 +125,9 @@ module TestDataTable
     @test typeof(dt[:, 1]) == NullableVector{Int}
     @test typeof(dt[:, 2]) == NullableVector{Float64}
     @test typeof(dt[:, 3]) == NullableVector{String}
-    @test allnull(dt[:, 1])
-    @test allnull(dt[:, 2])
-    @test allnull(dt[:, 3])
+    @test all(isnull, dt[:, 1])
+    @test all(isnull, dt[:, 2])
+    @test all(isnull, dt[:, 3])
 
     dt = DataTable(Any[Int, Float64, String], [:A, :B, :C], 100)
     @test size(dt, 1) == 100
@@ -135,9 +135,9 @@ module TestDataTable
     @test typeof(dt[:, 1]) == NullableVector{Int}
     @test typeof(dt[:, 2]) == NullableVector{Float64}
     @test typeof(dt[:, 3]) == NullableVector{String}
-    @test allnull(dt[:, 1])
-    @test allnull(dt[:, 2])
-    @test allnull(dt[:, 3])
+    @test all(isnull, dt[:, 1])
+    @test all(isnull, dt[:, 2])
+    @test all(isnull, dt[:, 3])
 
 
     dt = DataTable(DataType[Int, Float64, Compat.UTF8String],[:A, :B, :C], [false,false,true],100)
@@ -146,9 +146,9 @@ module TestDataTable
     @test typeof(dt[:, 1]) == NullableVector{Int}
     @test typeof(dt[:, 2]) == NullableVector{Float64}
     @test typeof(dt[:, 3]) == NullableCategoricalVector{Compat.UTF8String,UInt32}
-    @test allnull(dt[:, 1])
-    @test allnull(dt[:, 2])
-    @test allnull(dt[:, 3])
+    @test all(isnull, dt[:, 1])
+    @test all(isnull, dt[:, 2])
+    @test all(isnull, dt[:, 3])
 
 
     dt = convert(DataTable, zeros(10, 5))
