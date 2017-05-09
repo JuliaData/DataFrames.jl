@@ -404,35 +404,6 @@ function StatsBase.describe(io, df::AbstractDataFrame)
         println(io, )
     end
 end
-StatsBase.describe(dv::AbstractArray) = describe(STDOUT, dv)
-function StatsBase.describe{T<:Number}(io, dv::AbstractArray{T})
-    if all(isna, dv)
-        println(io, " * All NA * ")
-        return
-    end
-    filtered = float(dropna(dv))
-    qs = quantile(filtered, [0, .25, .5, .75, 1])
-    statNames = ["Min", "1st Qu.", "Median", "Mean", "3rd Qu.", "Max"]
-    statVals = [qs[1:3]; mean(filtered); qs[4:5]]
-    for i = 1:6
-        println(io, string(rpad(statNames[i], 8, " "), " ", string(statVals[i])))
-    end
-    nas = count(isna, dv)
-    println(io, "NAs      $nas")
-    println(io, "NA%      $(round(nas*100/length(dv), 2))%")
-    return
-end
-function StatsBase.describe{T}(io, dv::AbstractArray{T})
-    ispooled = isa(dv, PooledDataVector) ? "Pooled " : ""
-    nmiss = count(isna, dv)
-    # if nothing else, just give the length and element type and NA count
-    println(io, "Length  $(length(dv))")
-    println(io, "Type    $(ispooled)$(string(eltype(dv)))")
-    println(io, "NAs     $nmiss")
-    println(io, "NA%     $(round(nmiss*100/length(dv), 2))%")
-    println(io, "Unique  $(length(unique(dv)))")
-    return
-end
 
 ##############################################################################
 ##

@@ -58,4 +58,52 @@ module TestUtils
     else
         @test DataFrames._fnames(funs) == ["mean", "sum", "var", string(funs[end])]
     end
+
+    @testset "describe" begin
+        io = IOBuffer()
+        df = DataFrame(Any[collect(1:4), DataArray(Int, 4),
+                           PooledDataArray(collect(3:6)),
+                           PooledDataArray(Int, 4)],
+                       [:array, :naarray, :pooledarray, :napooledarray])
+        describe(io, df)
+        @test String(take!(io)) ==
+            """
+            array
+            Summary Stats:
+            Mean:           2.500000
+            Minimum:        1.000000
+            1st Quartile:   1.750000
+            Median:         2.500000
+            3rd Quartile:   3.250000
+            Maximum:        4.000000
+            Length:         4
+            Type:           $Int
+
+            naarray
+            Summary Stats:
+            Type:           $Int
+            Number Missing: 4
+            % Missing:      100.000000
+
+            pooledarray
+            Summary Stats:
+            Mean:           4.500000
+            Minimum:        3.000000
+            1st Quartile:   3.750000
+            Median:         4.500000
+            3rd Quartile:   5.250000
+            Maximum:        6.000000
+            Length:         4
+            Type:           $Int
+            Number Missing: 0
+            % Missing:      0.000000
+
+            napooledarray
+            Summary Stats:
+            Type:           $Int
+            Number Missing: 4
+            % Missing:      100.000000
+
+            """
+    end
 end
