@@ -406,7 +406,7 @@ function StatsBase.describe(io, df::AbstractDataFrame)
 end
 StatsBase.describe(dv::AbstractArray) = describe(STDOUT, dv)
 function StatsBase.describe{T<:Number}(io, dv::AbstractArray{T})
-    if all(isna(dv))
+    if all(isna, dv)
         println(io, " * All NA * ")
         return
     end
@@ -417,18 +417,19 @@ function StatsBase.describe{T<:Number}(io, dv::AbstractArray{T})
     for i = 1:6
         println(io, string(rpad(statNames[i], 8, " "), " ", string(statVals[i])))
     end
-    nas = sum(isna(dv))
+    nas = count(isna, dv)
     println(io, "NAs      $nas")
     println(io, "NA%      $(round(nas*100/length(dv), 2))%")
     return
 end
 function StatsBase.describe{T}(io, dv::AbstractArray{T})
     ispooled = isa(dv, PooledDataVector) ? "Pooled " : ""
+    nmiss = count(isna, dv)
     # if nothing else, just give the length and element type and NA count
     println(io, "Length  $(length(dv))")
     println(io, "Type    $(ispooled)$(string(eltype(dv)))")
-    println(io, "NAs     $(sum(isna(dv)))")
-    println(io, "NA%     $(round(sum(isna(dv))*100/length(dv), 2))%")
+    println(io, "NAs     $nmiss")
+    println(io, "NA%     $(round(nmiss*100/length(dv), 2))%")
     println(io, "Unique  $(length(unique(dv)))")
     return
 end
@@ -468,9 +469,9 @@ completecases(df)
 """
 function completecases(df::AbstractDataFrame)
     ## Returns a Vector{Bool} of indexes of complete cases (rows with no NA's).
-    res = (!).(isna(df[1]))
+    res = (!).(isna.(df[1]))
     for i in 2:ncol(df)
-        res .&= (!).(isna(df[i]))
+        res .&= (!).(isna.(df[i]))
     end
     res
 end
@@ -519,7 +520,7 @@ function Base.convert{T}(::Type{Matrix{T}}, df::AbstractDataFrame)
     res = Matrix{T}(n, p)
     idx = 1
     for col in columns(df)
-        anyna(col) && error("DataFrame contains NAs")
+        any(isna, col) && error("DataFrame contains NAs")
         copy!(res, idx, data(col))
         idx += n
     end

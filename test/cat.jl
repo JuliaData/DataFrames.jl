@@ -78,7 +78,7 @@ module TestCat
     dfr = vcat(df2, df3)
     @test size(dfr) == (8,2)
     @test names(df2) == names(dfr)
-    @test isna(dfr[8,:x2])
+    @test isna.(dfr[8,:x2])
 
     # Eltype promotion
     @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Float64]
