@@ -2,8 +2,10 @@ module TestJoin
     using Base.Test
     using DataTables
 
-    name = DataTable(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
-    job = DataTable(ID = [1, 2, 2, 4], Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
+    name = DataTable(ID = NullableArray([1, 2, 3]),
+                     Name = NullableArray(["John Doe", "Jane Doe", "Joe Blogs"]))
+    job = DataTable(ID = NullableArray([1, 2, 2, 4]),
+                    Job = NullableArray(["Lawyer", "Doctor", "Florist", "Farmer"]))
 
     # Join on symbols or vectors of symbols
     join(name, job, on = :ID)
@@ -13,9 +15,9 @@ module TestJoin
     #@test_throws join(name, job)
 
     # Test output of various join types
-    outer = DataTable(ID = [1, 2, 2, 3, 4],
-                      Name = NullableArray(Nullable{String}["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
-                      Job = NullableArray(Nullable{String}["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
+    outer = DataTable(ID = NullableArray([1, 2, 2, 3, 4]),
+                      Name = NullableArray(["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
+                      Job = NullableArray(["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
     right = outer[Bool[!isnull(x) for x in outer[:Job]], [:ID, :Name, :Job]]
@@ -70,7 +72,7 @@ module TestJoin
     @test_throws ArgumentError join(dt1, dt2, on = :A, kind = :cross)
 
     # test empty inputs
-    simple_dt(len::Int, col=:A) = (dt = DataTable(); dt[col]=collect(1:len); dt)
+    simple_dt(len::Int, col=:A) = (dt = DataTable(); dt[col]=NullableArray(collect(1:len)); dt)
     @test isequal(join(simple_dt(0), simple_dt(0), on = :A, kind = :left),  simple_dt(0))
     @test isequal(join(simple_dt(2), simple_dt(0), on = :A, kind = :left),  simple_dt(2))
     @test isequal(join(simple_dt(0), simple_dt(2), on = :A, kind = :left),  simple_dt(0))
@@ -106,13 +108,13 @@ module TestJoin
                    Mass = [1.5, 2.2, 1.1])
     dt2 = DataTable(Name = ["A", "B", "C", "A"],
                     Quantity = [3, 3, 2, 4])
-    @test join(dt2, dt, on=:Name, kind=:left) == DataTable(Name = ["A", "B", "C", "A"],
-                                                           Quantity = [3, 3, 2, 4],
-                                                           Mass = [1.5, 2.2, 1.1, 1.5])
+    @test join(dt2, dt, on=:Name, kind=:left) == DataTable(Name = NullableArray(["A", "B", "C", "A"]),
+                                                           Quantity = NullableArray([3, 3, 2, 4]),
+                                                           Mass = NullableArray([1.5, 2.2, 1.1, 1.5]))
 
     # Test that join works when mixing Array and NullableArray (#1151)
     dt = DataTable([collect(1:10), collect(2:11)], [:x, :y])
-    dtnull = DataTable(x = 1:10, z = 3:12)
+    dtnull = DataTable(x = NullableArray(1:10), z = NullableArray(3:12))
     @test join(dt, dtnull, on = :x) ==
         DataTable([collect(1:10), collect(2:11), NullableArray(3:12)], [:x, :y, :z])
     @test join(dtnull, dt, on = :x) ==

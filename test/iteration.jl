@@ -5,7 +5,7 @@ module TestIteration
     dm = NullableArray([1 2; 3 4])
     dt = NullableArray(zeros(2, 2, 2))
 
-    dt = DataTable(A = 1:2, B = 2:3)
+    dt = DataTable(A = NullableArray(1:2), B = NullableArray(2:3))
 
     for row in eachrow(dt)
         @test isa(row, DataTableRow)
@@ -20,7 +20,7 @@ module TestIteration
     end
 
     @test isequal(map(x -> minimum(convert(Array, x)), eachrow(dt)), Any[1,2])
-    @test isequal(map(minimum, eachcol(dt)), DataTable(A = [1], B = [2]))
+    @test isequal(map(minimum, eachcol(dt)), DataTable(A = Nullable{Int}[1], B = Nullable{Int}[2]))
 
     row = DataTableRow(dt, 1)
 
@@ -30,7 +30,7 @@ module TestIteration
     row[1] = 101
     @test isequal(dt[1, :A], Nullable(101))
 
-    dt = DataTable(A = 1:4, B = ["M", "F", "F", "M"])
+    dt = DataTable(A = NullableArray(1:4), B = NullableArray(["M", "F", "F", "M"]))
 
     s1 = view(dt, 1:3)
     s1[2,:A] = 4
