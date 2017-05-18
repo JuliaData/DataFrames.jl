@@ -57,6 +57,6 @@ end
 dt = DataTable(A=[0],B=[0])
 dt[1:end] = 0.0
 dt[1,:A] = 1.0
-@test dt[1,:B] === Nullable(0)
+@test dt[1,:B] === 0
 
 end
