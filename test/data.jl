@@ -32,7 +32,7 @@ module TestData
 
     #test_group("ref")
     @test df6[2, 3] == "two"
-    @test isna(df6[3, 3])
+    @test isna.(df6[3, 3])
     @test df6[2, :C] == "two"
     @test isequal(df6[:B], dvint)
     @test size(df6[[2,3]], 2) == 2
@@ -278,9 +278,9 @@ module TestData
 
     #test_group("New DataVector constructors")
     dv = DataArray(Int, 5)
-    @test all(isna(dv))
+    @test all(isna, dv)
     dv = DataArray(Float64, 5)
-    @test all(isna(dv))
+    @test all(isna, dv)
     dv = @data(zeros(5))
     @test all(dv .== 0.0)
     dv = @data(ones(5))
@@ -288,7 +288,7 @@ module TestData
 
     # No more NA corruption
     dv = @data(ones(10_000))
-    @test !any(isna(dv))
+    @test !any(isna, dv)
 
     PooledDataArray(falses(2), falses(2))
     PooledDataArray(falses(2), trues(2))
