@@ -108,7 +108,7 @@ function stack(dt::AbstractDataTable, measure_vars, id_vars;
 end
 # no vars specified, by default select only numeric columns
 numeric_vars(dt::AbstractDataTable) =
-    [T <: AbstractFloat || (T <: Nullable && eltype(T) <: AbstractFloat)
+    [T <: AbstractFloat || (T >: Null && Nulls.T(T) <: AbstractFloat)
      for T in eltypes(dt)]
 
 function stack(dt::AbstractDataTable, measure_vars = numeric_vars(dt);
@@ -193,9 +193,9 @@ function unstack(dt::AbstractDataTable, rowkey::Int, colkey::Int, value::Int)
     # `rowkey` integer indicating which column to place along rows
     # `colkey` integer indicating which column to place along column headers
     # `value` integer indicating which column has values
-    refkeycol = NullableCategoricalArray(dt[rowkey])
+    refkeycol = CategoricalArray{Union{eltype(dt[rowkey]), Null}}(dt[rowkey])
     valuecol = dt[value]
-    keycol = NullableCategoricalArray(dt[colkey])
+    keycol = CategoricalArray{Union{eltype(dt[colkey]), Null}}(dt[colkey])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     payload = DataTable(Any[similar_nullable(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
@@ -230,7 +230,7 @@ function unstack(dt::AbstractDataTable, colkey::Int, value::Int)
     for i in 1:length(groupidxs)
         rowkey[groupidxs[i]] = i
     end
-    keycol = NullableCategoricalArray(dt[colkey])
+    keycol = CategoricalArray{Union{eltype(dt[colkey]), Null}}(dt[colkey])
     valuecol = dt[value]
     dt1 = nullable!(dt[g.idx[g.starts], g.cols], g.cols)
     Nrow = length(g)
@@ -316,7 +316,8 @@ Base.size(v::StackedVector) = (length(v),)
 Base.length(v::StackedVector) = sum(map(length, v.components))
 Base.ndims(v::StackedVector) = 1
 Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
-Base.similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
+Base.similar(v::StackedVector, T::Type, dims::Union{Integer, AbstractUnitRange}...) =
+    similar(v.components[1], T, dims...)
 
 CategoricalArrays.CategoricalArray(v::StackedVector) = CategoricalArray(v[:]) # could be more efficient
 

@@ -1,55 +1,54 @@
 module TestConstructors
-    using Base.Test
-    using DataTables, DataTables.Index
+    using Base.Test, DataTables, DataTables.Index
 
     #
     # DataTable
     #
 
     dt = DataTable()
-    @test isequal(dt.columns, Any[])
-    @test isequal(dt.colindex, Index())
+    @test dt.columns == Any[]
+    @test dt.colindex == Index()
 
-    dt = DataTable(Any[NullableCategoricalVector(zeros(3)),
-                       NullableCategoricalVector(ones(3))],
+    dt = DataTable(Any[CategoricalVector{Union{Float64, Null}}(zeros(3)),
+                       CategoricalVector{Union{Float64, Null}}(ones(3))],
                    Index([:x1, :x2]))
     @test size(dt, 1) == 3
     @test size(dt, 2) == 2
 
-    @test isequal(dt, DataTable(Any[NullableCategoricalVector(zeros(3)),
-                                    NullableCategoricalVector(ones(3))]))
-    @test isequal(dt, DataTable(x1 = NullableArray([0.0, 0.0, 0.0]),
-                                x2 = NullableArray([1.0, 1.0, 1.0])))
+    @test dt == DataTable(Any[CategoricalVector{Union{Float64, Null}}(zeros(3)),
+                              CategoricalVector{Union{Float64, Null}}(ones(3))])
+    @test dt == DataTable(x1 = Union{Int, Null}[0.0, 0.0, 0.0],
+                          x2 = Union{Int, Null}[1.0, 1.0, 1.0])
 
-    dt2 = convert(DataTable, NullableArray([0.0 1.0;
-                                            0.0 1.0;
-                                            0.0 1.0]))
+    dt2 = convert(DataTable, Union{Float64, Null}[0.0 1.0;
+                                                  0.0 1.0;
+                                                  0.0 1.0])
     names!(dt2, [:x1, :x2])
-    @test isequal(dt[:x1], NullableArray(dt2[:x1]))
-    @test isequal(dt[:x2], NullableArray(dt2[:x2]))
+    @test dt[:x1] == dt2[:x1]
+    @test dt[:x2] == dt2[:x2]
 
-    @test isequal(dt, DataTable(x1 = NullableArray([0.0, 0.0, 0.0]),
-                                x2 = NullableArray([1.0, 1.0, 1.0])))
-    @test isequal(dt, DataTable(x1 = NullableArray([0.0, 0.0, 0.0]),
-                                x2 = NullableArray([1.0, 1.0, 1.0]),
-                                x3 = NullableArray([2.0, 2.0, 2.0]))[[:x1, :x2]])
+    @test dt == DataTable(x1 = Union{Float64, Null}[0.0, 0.0, 0.0],
+                          x2 = Union{Float64, Null}[1.0, 1.0, 1.0])
+    @test dt == DataTable(x1 = Union{Float64, Null}[0.0, 0.0, 0.0],
+                          x2 = Union{Float64, Null}[1.0, 1.0, 1.0],
+                          x3 = Union{Float64, Null}[2.0, 2.0, 2.0])[[:x1, :x2]]
 
-    dt = DataTable(Nullable{Int}, 2, 2)
+    dt = DataTable(Union{Int, Null}, 2, 2)
     @test size(dt) == (2, 2)
-    @test eltypes(dt) == [Nullable{Int}, Nullable{Int}]
+    @test eltypes(dt) == [Union{Int, Null}, Union{Int, Null}]
 
-    dt = DataTable([Nullable{Int}, Nullable{Float64}], [:x1, :x2], 2)
+    dt = DataTable([Union{Int, Null}, Union{Float64, Null}], [:x1, :x2], 2)
     @test size(dt) == (2, 2)
-    @test eltypes(dt) == [Nullable{Int}, Nullable{Float64}]
+    @test eltypes(dt) == [Union{Int, Null}, Union{Float64, Null}]
 
-    @test isequal(dt, DataTable([Nullable{Int}, Nullable{Float64}], 2))
+    @test dt == DataTable([Union{Int, Null}, Union{Float64, Null}], 2)
 
     @test_throws BoundsError SubDataTable(DataTable(A=1), 0)
     @test_throws BoundsError SubDataTable(DataTable(A=1), 0)
-    @test isequal(SubDataTable(DataTable(A=1), 1), DataTable(A=1))
-    @test isequal(SubDataTable(DataTable(A=1:10), 1:4), DataTable(A=1:4))
-    @test isequal(view(SubDataTable(DataTable(A=1:10), 1:4), 2), DataTable(A=2))
-    @test isequal(view(SubDataTable(DataTable(A=1:10), 1:4), [true, true, false, false]), DataTable(A=1:2))
+    @test SubDataTable(DataTable(A=1), 1) == DataTable(A=1)
+    @test SubDataTable(DataTable(A=1:10), 1:4) == DataTable(A=1:4)
+    @test view(SubDataTable(DataTable(A=1:10), 1:4), 2) == DataTable(A=2)
+    @test view(SubDataTable(DataTable(A=1:10), 1:4), [true, true, false, false]) == DataTable(A=1:2)
 
     @test DataTable(a=1, b=1:2) == DataTable(a=[1,1], b=[1,2])
 
@@ -75,11 +74,11 @@ module TestConstructors
         dt = DataTable(A = 1:3, B = 2:4, C = 3:5)
         answer = [Array{Int,1}, Array{Int,1}, Array{Int,1}]
         @test map(typeof, dt.columns) == answer
-        dt[:D] = NullableArray([4, 5, Nullable()])
-        push!(answer, NullableArray{Int,1})
+        dt[:D] = [4, 5, null]
+        push!(answer, Vector{Union{Int, Null}})
         @test map(typeof, dt.columns) == answer
         dt[:E] = 'c'
-        push!(answer, Array{Char,1})
+        push!(answer, Vector{Char})
         @test map(typeof, dt.columns) == answer
     end
 end

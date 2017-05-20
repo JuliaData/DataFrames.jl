@@ -2,7 +2,7 @@
 An AbstractDataTable that stores a set of named columns
 
 The columns are normally AbstractVectors stored in memory,
-particularly a Vector, NullableVector, or CategoricalVector.
+particularly a Vector or CategoricalVector.
 
 **Constructors**
 
@@ -30,10 +30,6 @@ Each column in `columns` should be the same length.
 
 **Notes**
 
-Most of the default constructors convert columns to `NullableArray`.  The
-base constructor, `DataTable(columns::Vector{Any},
-names::Vector{Symbol})` does not convert to `NullableArray`.
-
 A `DataTable` is a lightweight object. As long as columns are not
 manipulated, creation of a DataTable from existing AbstractVectors is
 inexpensive. For example, indexing on columns is inexpensive, but
@@ -48,8 +44,8 @@ loops.
 ```julia
 dt = DataTable()
 v = ["x","y","z"][rand(1:3, 10)]
-dt1 = DataTable(Any[collect(1:10), v, rand(10)], [:A, :B, :C])  # columns are Arrays
-dt2 = DataTable(A = 1:10, B = v, C = rand(10))           # columns are NullableArrays
+dt1 = DataTable(Any[collect(1:10), v, rand(10)], [:A, :B, :C])
+dt2 = DataTable(A = 1:10, B = v, C = rand(10))
 dump(dt1)
 dump(dt2)
 describe(dt2)
@@ -122,15 +118,13 @@ end
 
 # Initialize an empty DataTable with specific eltypes and names
 function DataTable{T<:Type}(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol}, nrows::Integer)
-    numcols = length(column_eltypes)
-    columns = Vector{Any}(numcols)
-    for j in 1:numcols
-        elty = column_eltypes[j]
-        if elty <: Nullable
-            if eltype(elty) <: CategoricalValue
-                columns[j] = NullableCategoricalArray{eltype(elty)}(nrows)
+    columns = Vector{Any}(length(column_eltypes))
+    for (j, elty) in enumerate(column_eltypes)
+        if elty >: Null
+            if Nulls.T(elty) <: CategoricalValue
+                columns[j] = CategoricalArray{Union{Nulls.T(elty).parameters[1], Null}}(nrows)
             else
-                columns[j] = NullableVector{eltype(elty)}(nrows)
+                columns[j] = nulls(elty, nrows)
             end
         else
             if elty <: CategoricalValue
@@ -151,8 +145,8 @@ function DataTable{T<:Type}(column_eltypes::AbstractVector{T}, cnames::AbstractV
     updated_types = convert(Vector{Type}, column_eltypes)
     for i in eachindex(nominal)
         nominal[i] || continue
-        if updated_types[i] <: Nullable
-            updated_types[i] = Nullable{CategoricalValue{eltype(updated_types[i])}}
+        if updated_types[i] >: Null
+            updated_types[i] = Union{CategoricalValue{Nulls.T(updated_types[i])}, Null}
         else
             updated_types[i] = CategoricalValue{updated_types[i]}
         end
@@ -214,9 +208,8 @@ function Base.getindex(dt::DataTable, col_ind::ColumnIndex)
 end
 
 # dt[MultiColumnIndex] => DataTable
-function Base.getindex{T <: ColumnIndex}(dt::DataTable,
-                                         col_inds::Union{AbstractVector{T},
-                                                         AbstractVector{Nullable{T}}})
+function Base.getindex(dt::DataTable,
+                       col_inds::AbstractVector{<:Union{ColumnIndex, Null}})
     selected_columns = index(dt)[col_inds]
     new_columns = dt.columns[selected_columns]
     return DataTable(new_columns, Index(_names(dt)[selected_columns]))
@@ -232,29 +225,26 @@ function Base.getindex(dt::DataTable, row_ind::Real, col_ind::ColumnIndex)
 end
 
 # dt[SingleRowIndex, MultiColumnIndex] => DataTable
-function Base.getindex{T <: ColumnIndex}(dt::DataTable,
-                                         row_ind::Real,
-                                         col_inds::Union{AbstractVector{T},
-                                                         AbstractVector{Nullable{T}}})
+function Base.getindex(dt::DataTable,
+                       row_ind::Real,
+                       col_inds::AbstractVector{<:Union{ColumnIndex, Null}})
     selected_columns = index(dt)[col_inds]
     new_columns = Any[dv[[row_ind]] for dv in dt.columns[selected_columns]]
     return DataTable(new_columns, Index(_names(dt)[selected_columns]))
 end
 
 # dt[MultiRowIndex, SingleColumnIndex] => AbstractVector
-function Base.getindex{T <: Real}(dt::DataTable,
-                                  row_inds::Union{AbstractVector{T}, AbstractVector{Nullable{T}}},
-                                  col_ind::ColumnIndex)
+function Base.getindex(dt::DataTable,
+                       row_inds::AbstractVector{<:Union{Real, Null}},
+                       col_ind::ColumnIndex)
     selected_column = index(dt)[col_ind]
     return dt.columns[selected_column][row_inds]
 end
 
 # dt[MultiRowIndex, MultiColumnIndex] => DataTable
-function Base.getindex{R <: Real, T <: ColumnIndex}(dt::DataTable,
-                                                    row_inds::Union{AbstractVector{R},
-                                                                    AbstractVector{Nullable{R}}},
-                                                    col_inds::Union{AbstractVector{T},
-                                                                    AbstractVector{Nullable{T}}})
+function Base.getindex(dt::DataTable,
+                       row_inds::AbstractVector{<:Union{Real, Null}},
+                       col_inds::AbstractVector{<:Union{ColumnIndex, Null}})
     selected_columns = index(dt)[col_inds]
     new_columns = Any[dv[row_inds] for dv in dt.columns[selected_columns]]
     return DataTable(new_columns, Index(_names(dt)[selected_columns]))
@@ -262,20 +252,16 @@ end
 
 # dt[:, SingleColumnIndex] => AbstractVector
 # dt[:, MultiColumnIndex] => DataTable
-Base.getindex{T<:ColumnIndex}(dt::DataTable,
-                              row_inds::Colon,
-                              col_inds::Union{T, AbstractVector{T},
-                                              AbstractVector{Nullable{T}}}) =
-    dt[col_inds]
+Base.getindex(dt::DataTable, row_ind::Colon, col_inds::Union{T, AbstractVector{T}}) where
+    T <: Union{ColumnIndex, Null} = dt[col_inds]
 
 # dt[SingleRowIndex, :] => DataTable
 Base.getindex(dt::DataTable, row_ind::Real, col_inds::Colon) = dt[[row_ind], col_inds]
 
 # dt[MultiRowIndex, :] => DataTable
-function Base.getindex{R<:Real}(dt::DataTable,
-                                row_inds::Union{AbstractVector{R},
-                                                AbstractVector{Nullable{R}}},
-                                col_inds::Colon)
+function Base.getindex(dt::DataTable,
+                       row_inds::AbstractVector{<:Union{Real, Null}},
+                       col_inds::Colon)
     new_columns = Any[dv[row_inds] for dv in dt.columns]
     return DataTable(new_columns, copy(index(dt)))
 end
@@ -291,11 +277,11 @@ Base.getindex(dt::DataTable, ::Colon, ::Colon) = copy(dt)
 
 isnextcol(dt::DataTable, col_ind::Symbol) = true
 function isnextcol(dt::DataTable, col_ind::Real)
-    return ncol(dt) + 1 == @compat Int(col_ind)
+    return ncol(dt) + 1 == Int(col_ind)
 end
 
 function nextcolname(dt::DataTable)
-    return @compat(Symbol(string("x", ncol(dt) + 1)))
+    return Symbol(string("x", ncol(dt) + 1))
 end
 
 # Will automatically add a new column if needed
@@ -334,10 +320,10 @@ function insert_single_entry!(dt::DataTable, v::Any, row_ind::Real, col_ind::Col
     end
 end
 
-function insert_multiple_entries!{T <: Real}(dt::DataTable,
-                                            v::Any,
-                                            row_inds::AbstractVector{T},
-                                            col_ind::ColumnIndex)
+function insert_multiple_entries!(dt::DataTable,
+                                  v::Any,
+                                  row_inds::AbstractVector{<:Real},
+                                  col_ind::ColumnIndex)
     if haskey(index(dt), col_ind)
         dt.columns[index(dt)[col_ind]][row_inds] = v
         return v
@@ -356,9 +342,7 @@ function upgrade_scalar(dt::DataTable, v::Any)
 end
 
 # dt[SingleColumnIndex] = AbstractVector
-function Base.setindex!(dt::DataTable,
-                v::AbstractVector,
-                col_ind::ColumnIndex)
+function Base.setindex!(dt::DataTable, v::AbstractVector, col_ind::ColumnIndex)
     insert_single_column!(dt, v, col_ind)
 end
 
@@ -373,14 +357,12 @@ function Base.setindex!(dt::DataTable, v, col_ind::ColumnIndex)
 end
 
 # dt[MultiColumnIndex] = DataTable
-function Base.setindex!(dt::DataTable,
-                new_dt::DataTable,
-                col_inds::AbstractVector{Bool})
+function Base.setindex!(dt::DataTable, new_dt::DataTable, col_inds::AbstractVector{Bool})
     setindex!(dt, new_dt, find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
-                                  new_dt::DataTable,
-                                  col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable,
+                        new_dt::DataTable,
+                        col_inds::AbstractVector{<:ColumnIndex})
     for j in 1:length(col_inds)
         insert_single_column!(dt, new_dt[j], col_inds[j])
     end
@@ -388,14 +370,12 @@ function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
 end
 
 # dt[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
-function Base.setindex!(dt::DataTable,
-                v::AbstractVector,
-                col_inds::AbstractVector{Bool})
+function Base.setindex!(dt::DataTable, v::AbstractVector, col_inds::AbstractVector{Bool})
     setindex!(dt, v, find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
-                                  v::AbstractVector,
-                                  col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable,
+                        v::AbstractVector,
+                        col_inds::AbstractVector{<:ColumnIndex})
     for col_ind in col_inds
         dt[col_ind] = v
     end
@@ -404,13 +384,11 @@ end
 
 # dt[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(DT) if NCOL(DT) > 0)
 function Base.setindex!(dt::DataTable,
-                val::Any,
-                col_inds::AbstractVector{Bool})
+                        val::Any,
+                        col_inds::AbstractVector{Bool})
     setindex!(dt, val, find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
-                                  val::Any,
-                                  col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable, val::Any, col_inds::AbstractVector{<:ColumnIndex})
     for col_ind in col_inds
         dt[col_ind] = val
     end
@@ -421,24 +399,21 @@ end
 Base.setindex!(dt::DataTable, v, ::Colon) = (dt[1:size(dt, 2)] = v; dt)
 
 # dt[SingleRowIndex, SingleColumnIndex] = Single Item
-function Base.setindex!(dt::DataTable,
-                v::Any,
-                row_ind::Real,
-                col_ind::ColumnIndex)
+function Base.setindex!(dt::DataTable, v::Any, row_ind::Real, col_ind::ColumnIndex)
     insert_single_entry!(dt, v, row_ind, col_ind)
 end
 
 # dt[SingleRowIndex, MultiColumnIndex] = Single Item
 function Base.setindex!(dt::DataTable,
-                v::Any,
-                row_ind::Real,
-                col_inds::AbstractVector{Bool})
+                        v::Any,
+                        row_ind::Real,
+                        col_inds::AbstractVector{Bool})
     setindex!(dt, v, row_ind, find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
-                                  v::Any,
-                                  row_ind::Real,
-                                  col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable,
+                        v::Any,
+                        row_ind::Real,
+                        col_inds::AbstractVector{<:ColumnIndex})
     for col_ind in col_inds
         insert_single_entry!(dt, v, row_ind, col_ind)
     end
@@ -447,15 +422,15 @@ end
 
 # dt[SingleRowIndex, MultiColumnIndex] = 1-Row DataTable
 function Base.setindex!(dt::DataTable,
-                new_dt::DataTable,
-                row_ind::Real,
-                col_inds::AbstractVector{Bool})
+                        new_dt::DataTable,
+                        row_ind::Real,
+                        col_inds::AbstractVector{Bool})
     setindex!(dt, new_dt, row_ind, find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
-                                  new_dt::DataTable,
-                                  row_ind::Real,
-                                  col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable,
+                        new_dt::DataTable,
+                        row_ind::Real,
+                        col_inds::AbstractVector{<:ColumnIndex})
     for j in 1:length(col_inds)
         insert_single_entry!(dt, new_dt[j][1], row_ind, col_inds[j])
     end
@@ -464,57 +439,57 @@ end
 
 # dt[MultiRowIndex, SingleColumnIndex] = AbstractVector
 function Base.setindex!(dt::DataTable,
-                v::AbstractVector,
-                row_inds::AbstractVector{Bool},
-                col_ind::ColumnIndex)
+                        v::AbstractVector,
+                        row_inds::AbstractVector{Bool},
+                        col_ind::ColumnIndex)
     setindex!(dt, v, find(row_inds), col_ind)
 end
-function Base.setindex!{T <: Real}(dt::DataTable,
-                           v::AbstractVector,
-                           row_inds::AbstractVector{T},
-                           col_ind::ColumnIndex)
+function Base.setindex!(dt::DataTable,
+                        v::AbstractVector,
+                        row_inds::AbstractVector{<:Real},
+                        col_ind::ColumnIndex)
     insert_multiple_entries!(dt, v, row_inds, col_ind)
     return dt
 end
 
 # dt[MultiRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(dt::DataTable,
-                v::Any,
-                row_inds::AbstractVector{Bool},
-                col_ind::ColumnIndex)
+                        v::Any,
+                        row_inds::AbstractVector{Bool},
+                        col_ind::ColumnIndex)
     setindex!(dt, v, find(row_inds), col_ind)
 end
-function Base.setindex!{T <: Real}(dt::DataTable,
-                           v::Any,
-                           row_inds::AbstractVector{T},
-                           col_ind::ColumnIndex)
+function Base.setindex!(dt::DataTable,
+                        v::Any,
+                        row_inds::AbstractVector{<:Real},
+                        col_ind::ColumnIndex)
     insert_multiple_entries!(dt, v, row_inds, col_ind)
     return dt
 end
 
 # dt[MultiRowIndex, MultiColumnIndex] = DataTable
 function Base.setindex!(dt::DataTable,
-                new_dt::DataTable,
-                row_inds::AbstractVector{Bool},
-                col_inds::AbstractVector{Bool})
+                        new_dt::DataTable,
+                        row_inds::AbstractVector{Bool},
+                        col_inds::AbstractVector{Bool})
     setindex!(dt, new_dt, find(row_inds), find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
-                                  new_dt::DataTable,
-                                  row_inds::AbstractVector{Bool},
-                                  col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable,
+                        new_dt::DataTable,
+                        row_inds::AbstractVector{Bool},
+                        col_inds::AbstractVector{<:ColumnIndex})
     setindex!(dt, new_dt, find(row_inds), col_inds)
 end
-function Base.setindex!{R <: Real}(dt::DataTable,
-                           new_dt::DataTable,
-                           row_inds::AbstractVector{R},
-                           col_inds::AbstractVector{Bool})
+function Base.setindex!(dt::DataTable,
+                        new_dt::DataTable,
+                        row_inds::AbstractVector{<:Real},
+                        col_inds::AbstractVector{Bool})
     setindex!(dt, new_dt, row_inds, find(col_inds))
 end
-function Base.setindex!{R <: Real, T <: ColumnIndex}(dt::DataTable,
-                                             new_dt::DataTable,
-                                             row_inds::AbstractVector{R},
-                                             col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable,
+                        new_dt::DataTable,
+                        row_inds::AbstractVector{<:Real},
+                        col_inds::AbstractVector{<:ColumnIndex})
     for j in 1:length(col_inds)
         insert_multiple_entries!(dt, new_dt[:, j], row_inds, col_inds[j])
     end
@@ -523,27 +498,27 @@ end
 
 # dt[MultiRowIndex, MultiColumnIndex] = AbstractVector
 function Base.setindex!(dt::DataTable,
-                v::AbstractVector,
-                row_inds::AbstractVector{Bool},
-                col_inds::AbstractVector{Bool})
+                        v::AbstractVector,
+                        row_inds::AbstractVector{Bool},
+                        col_inds::AbstractVector{Bool})
     setindex!(dt, v, find(row_inds), find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
-                                  v::AbstractVector,
-                                  row_inds::AbstractVector{Bool},
-                                  col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable,
+                        v::AbstractVector,
+                        row_inds::AbstractVector{Bool},
+                        col_inds::AbstractVector{<:ColumnIndex})
     setindex!(dt, v, find(row_inds), col_inds)
 end
-function Base.setindex!{R <: Real}(dt::DataTable,
-                           v::AbstractVector,
-                           row_inds::AbstractVector{R},
-                           col_inds::AbstractVector{Bool})
+function Base.setindex!(dt::DataTable,
+                        v::AbstractVector,
+                        row_inds::AbstractVector{<:Real},
+                        col_inds::AbstractVector{Bool})
     setindex!(dt, v, row_inds, find(col_inds))
 end
-function Base.setindex!{R <: Real, T <: ColumnIndex}(dt::DataTable,
-                                             v::AbstractVector,
-                                             row_inds::AbstractVector{R},
-                                             col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable,
+                        v::AbstractVector,
+                        row_inds::AbstractVector{<:Real},
+                        col_inds::AbstractVector{<:ColumnIndex})
     for col_ind in col_inds
         insert_multiple_entries!(dt, v, row_inds, col_ind)
     end
@@ -552,27 +527,27 @@ end
 
 # dt[MultiRowIndex, MultiColumnIndex] = Single Item
 function Base.setindex!(dt::DataTable,
-                v::Any,
-                row_inds::AbstractVector{Bool},
-                col_inds::AbstractVector{Bool})
+                        v::Any,
+                        row_inds::AbstractVector{Bool},
+                        col_inds::AbstractVector{Bool})
     setindex!(dt, v, find(row_inds), find(col_inds))
 end
-function Base.setindex!{T <: ColumnIndex}(dt::DataTable,
-                                  v::Any,
-                                  row_inds::AbstractVector{Bool},
-                                  col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable,
+                        v::Any,
+                        row_inds::AbstractVector{Bool},
+                        col_inds::AbstractVector{<:ColumnIndex})
     setindex!(dt, v, find(row_inds), col_inds)
 end
-function Base.setindex!{R <: Real}(dt::DataTable,
-                           v::Any,
-                           row_inds::AbstractVector{R},
-                           col_inds::AbstractVector{Bool})
+function Base.setindex!(dt::DataTable,
+                        v::Any,
+                        row_inds::AbstractVector{<:Real},
+                        col_inds::AbstractVector{Bool})
     setindex!(dt, v, row_inds, find(col_inds))
 end
-function Base.setindex!{R <: Real, T <: ColumnIndex}(dt::DataTable,
-                                             v::Any,
-                                             row_inds::AbstractVector{R},
-                                             col_inds::AbstractVector{T})
+function Base.setindex!(dt::DataTable,
+                        v::Any,
+                        row_inds::AbstractVector{<:Real},
+                        col_inds::AbstractVector{<:ColumnIndex})
     for col_ind in col_inds
         insert_multiple_entries!(dt, v, row_inds, col_ind)
     end
@@ -581,9 +556,9 @@ end
 
 # dt[:] = DataTable, dt[:, :] = DataTable
 function Base.setindex!(dt::DataTable,
-                                  new_dt::DataTable,
-                                  row_inds::Colon,
-                                  col_inds::Colon=Colon())
+                        new_dt::DataTable,
+                        row_inds::Colon,
+                        col_inds::Colon=Colon())
     dt.columns = copy(new_dt.columns)
     dt.colindex = copy(new_dt.colindex)
     dt
@@ -613,16 +588,6 @@ Base.setindex!(dt::DataTable, x::Void, col_ind::Int) = delete!(dt, col_ind)
 Base.empty!(dt::DataTable) = (empty!(dt.columns); empty!(index(dt)); dt)
 
 function Base.insert!(dt::DataTable, col_ind::Int, item::AbstractVector, name::Symbol)
-    0 < col_ind <= ncol(dt) + 1 || throw(BoundsError())
-    size(dt, 1) == length(item) || size(dt, 1) == 0 || error("number of rows does not match")
-
-    insert!(index(dt), col_ind, name)
-    insert!(dt.columns, col_ind, item)
-    dt
-end
-
-# FIXME: Needed to work around a crash: JuliaLang/julia#18299
-function Base.insert!(dt::DataTable, col_ind::Int, item::NullableArray, name::Symbol)
     0 < col_ind <= ncol(dt) + 1 || throw(BoundsError())
     size(dt, 1) == length(item) || size(dt, 1) == 0 || error("number of rows does not match")
 
@@ -684,7 +649,7 @@ Base.delete!(dt::DataTable, c::Int) = delete!(dt, [c])
 Base.delete!(dt::DataTable, c::Any) = delete!(dt, index(dt)[c])
 
 # deleterows!()
-function deleterows!(dt::DataTable, ind::@compat(Union{Integer, UnitRange{Int}}))
+function deleterows!(dt::DataTable, ind::Union{Integer, UnitRange{Int}})
     for i in 1:ncol(dt)
         dt.columns[i] = deleteat!(dt.columns[i], ind)
     end
@@ -749,7 +714,7 @@ Base.hcat(dt1::DataTable, dt2::AbstractDataTable, dtn::AbstractDataTable...) = h
 ##############################################################################
 
 function nullable!(dt::DataTable, col::ColumnIndex)
-    dt[col] = NullableArray(dt[col])
+    dt[col] = Vector{Union{eltype(dt[col]), Null}}(dt[col])
     dt
 end
 function nullable!{T <: ColumnIndex}(dt::DataTable, cols::Vector{T})
@@ -765,23 +730,22 @@ end
 ##
 ##############################################################################
 
-function categorical!(dt::DataTable, cname::Union{Integer, Symbol}, compact::Bool=true)
-    dt[cname] = categorical(dt[cname], compact)
+function categorical!(dt::DataTable, cname::Union{Integer, Symbol})
+    dt[cname] = CategoricalVector(dt[cname])
     dt
 end
 
-function categorical!{T <: Union{Integer, Symbol}}(dt::DataTable, cnames::Vector{T},
-                                                   compact::Bool=true)
+function categorical!(dt::DataTable, cnames::Vector{<:Union{Integer, Symbol}})
     for cname in cnames
-        dt[cname] = categorical(dt[cname], compact)
+        dt[cname] = CategoricalVector(dt[cname])
     end
     dt
 end
 
-function categorical!(dt::DataTable, compact::Bool=true)
+function categorical!(dt::DataTable)
     for i in 1:size(dt, 2)
         if eltype(dt[i]) <: AbstractString
-            dt[i] = categorical(dt[i], compact)
+            dt[i] = CategoricalVector(dt[i])
         end
     end
     dt

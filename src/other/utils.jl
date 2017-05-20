@@ -117,27 +117,14 @@ end
 function countnull(a::AbstractArray)
     res = 0
     for x in a
-        res += _isnull(x)
+        res += isnull(x)
     end
     return res
 end
 
 #' @description
 #'
-#' Count the number of missing values in a NullableArray.
-#'
-#' @field a::NullableArray The NullableArray whose missing values are to be counted.
-#'
-#' @returns count::Int The number of null values in `a`.
-#'
-#' @examples
-#'
-#' DataTables.countnull(NullableArray([1, 2, 3]))
-countnull(a::NullableArray) = sum(a.isnull)
-
-#' @description
-#'
-#' Count the number of missing values in a NullableCategoricalArray.
+#' Count the number of missing values in a CategoricalArray.
 #'
 #' @field na::CategoricalArray The CategoricalArray whose missing values
 #'        are to be counted.
@@ -168,6 +155,3 @@ function _fnames{T<:Function}(fs::Vector{T})
     end
     names
 end
-
-_isnull(x::Any) = false
-_isnull(x::Nullable) = isnull(x)

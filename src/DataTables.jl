@@ -8,14 +8,9 @@ module DataTables
 ##
 ##############################################################################
 
-using Compat
-import Compat.String
-using Reexport
-using StatsBase
-import NullableArrays: dropnull, dropnull!
-@reexport using NullableArrays
-@reexport using CategoricalArrays
-using SortingAlgorithms
+using Compat, Reexport, StatsBase, SortingAlgorithms
+@reexport using CategoricalArrays, Nulls
+
 using Base: Sort, Order
 import Base: ==, |>
 

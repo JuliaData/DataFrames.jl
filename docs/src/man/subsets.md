@@ -25,7 +25,7 @@ Referring to the first column by index or name:
 
 ```julia
 julia> dt[1]
-10-element NullableArrays.NullableArray{Int64,1}:
+10-element Array{Int64,1}:
   1
   2
   3
@@ -38,7 +38,7 @@ julia> dt[1]
  10
 
 julia> dt[:A]
-10-element NullableArrays.NullableArray{Int64,1}:
+10-element Array{Int64,1}:
   1
   2
   3
@@ -55,10 +55,10 @@ Refering to the first element of the first column:
 
 ```julia
 julia> dt[1, 1]
-Nullable{Int64}(1)
+1
 
 julia> dt[1, :A]
-Nullable{Int64}(1)
+1
 ```
 
 Selecting a subset of rows by index and an (ordered) subset of columns by name:

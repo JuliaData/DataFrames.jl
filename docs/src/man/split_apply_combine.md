@@ -12,7 +12,7 @@ using CSV
 iris = CSV.read(joinpath(Pkg.dir("DataTables"), "test/data/iris.csv"), DataTable)
 
 by(iris, :Species, size)
-by(iris, :Species, dt -> mean(dropnull(dt[:PetalLength])))
+by(iris, :Species, dt -> mean(Nulls.skip(dt[:PetalLength])))
 by(iris, :Species, dt -> DataTable(N = size(dt, 1)))
 ```
 
@@ -20,7 +20,7 @@ The `by` function also support the `do` block form:
 
 ```julia
 by(iris, :Species) do dt
-   DataTable(m = mean(dropnull(dt[:PetalLength])), s² = var(dropnull(dt[:PetalLength])))
+   DataTable(m = mean(Nulls.skip(dt[:PetalLength])), s² = var(Nulls.skip(dt[:PetalLength])))
 end
 ```
 
@@ -30,7 +30,7 @@ We show several examples of the `aggregate` function applied to the `iris` datas
 
 ```julia
 aggregate(iris, :Species, sum)
-aggregate(iris, :Species, [sum, x->mean(dropnull(x))])
+aggregate(iris, :Species, [sum, x->mean(Nulls.skip(x))])
 ```
 
 If you only want to split the data set into subsets, use the `groupby` function:

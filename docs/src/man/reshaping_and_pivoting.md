@@ -80,6 +80,6 @@ None of these reshaping functions perform any aggregation. To do aggregation, us
 
 ```julia
 d = stack(iris)
-x = by(d, [:variable, :Species], dt -> DataTable(vsum = mean(dropnull(dt[:value]))))
+x = by(d, [:variable, :Species], dt -> DataTable(vsum = mean(Nulls.skip(dt[:value]))))
 unstack(x, :Species, :vsum)
 ```

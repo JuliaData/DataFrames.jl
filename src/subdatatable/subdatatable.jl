@@ -85,7 +85,7 @@ sdt1[:,[:a,:b]]
 """
 SubDataTable
 
-function SubDataTable{T <: AbstractVector{Int}}(parent::DataTable, rows::T)
+function SubDataTable(parent::DataTable, rows::T) where {T <: AbstractVector{Int}}
     return SubDataTable{T}(parent, rows)
 end
 
@@ -93,7 +93,7 @@ function SubDataTable(parent::DataTable, row::Integer)
     return SubDataTable(parent, [Int(row)])
 end
 
-function SubDataTable{S <: Integer}(parent::DataTable, rows::AbstractVector{S})
+function SubDataTable(parent::DataTable, rows::AbstractVector{<:Integer})
     return SubDataTable(parent, convert(Vector{Int}, rows))
 end
 
@@ -101,19 +101,14 @@ function SubDataTable(parent::DataTable, rows::AbstractVector{Bool})
     return SubDataTable(parent, find(rows))
 end
 
-function SubDataTable{T<:Integer}(sdt::SubDataTable, rowinds::Union{T, AbstractVector{T}})
+function SubDataTable(sdt::SubDataTable, rowinds::Union{T, AbstractVector{T}}) where {T <: Integer}
     return SubDataTable(sdt.parent, sdt.rows[rowinds])
 end
 
-function Base.view{T<:Nullable}(adt::AbstractDataTable, rowinds::AbstractVector{T})
-    # Vector{<:Nullable} need to be checked for nulls and the values lifted
+function Base.view(adt::AbstractDataTable, rowinds::AbstractVector{T}) where {T >: Null}
+    # Vector{>:Null} need to be checked for nulls
     any(isnull, rowinds) && throw(NullException())
-    return SubDataTable(adt, get.(rowinds))
-end
-
-function Base.view(adt::AbstractDataTable, rowinds::NullableVector)
-    # convert for NullableVectors will throw NullException if nulls present
-    return SubDataTable(adt, convert(Vector, rowinds))
+    return SubDataTable(adt, convert(Vector{Nulls.T(T)}, rowinds))
 end
 
 function Base.view(adt::AbstractDataTable, rowinds::Any)

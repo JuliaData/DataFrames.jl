@@ -1,6 +1,5 @@
 module TestSubDataTable
-    using Base.Test
-    using DataTables
+    using Base.Test, DataTables
 
     @testset "view -- DataTable" begin
         dt = DataTable(x = 1:10, y = 1.0:10.0)
@@ -33,15 +32,11 @@ module TestSubDataTable
         @test view(dt, Integer[1, 2]) == head(dt, 2)
         @test view(dt, UInt[1, 2]) == head(dt, 2)
         @test view(dt, BigInt[1, 2]) == head(dt, 2)
-        @test view(dt, Nullable{Int}[1, 2]) == head(dt, 2)
-        @test view(dt, Nullable{Integer}[1, 2]) == head(dt, 2)
-        @test view(dt, Nullable{UInt}[1, 2]) == head(dt, 2)
-        @test view(dt, Nullable{BigInt}[1, 2]) == head(dt, 2)
-        @test view(dt, NullableArray([1, 2])) == head(dt, 2)
-        @test view(dt, NullableArray{Integer}([1, 2])) == head(dt, 2)
-        @test view(dt, NullableArray{UInt}([1, 2])) == head(dt, 2)
-        @test view(dt, NullableArray{BigInt}([1, 2])) == head(dt, 2)
-        @test_throws NullException view(dt, [Nullable(), 1])
+        @test view(dt, Union{Int, Null}[1, 2]) == head(dt, 2)
+        @test view(dt, Union{Integer, Null}[1, 2]) == head(dt, 2)
+        @test view(dt, Union{UInt, Null}[1, 2]) == head(dt, 2)
+        @test view(dt, Union{BigInt, Null}[1, 2]) == head(dt, 2)
+        @test_throws NullException view(dt, [null, 1])
     end
 
     @testset "view -- SubDataTable" begin
@@ -75,14 +70,10 @@ module TestSubDataTable
         @test view(dt, Integer[1, 2]) == head(dt, 2)
         @test view(dt, UInt[1, 2]) == head(dt, 2)
         @test view(dt, BigInt[1, 2]) == head(dt, 2)
-        @test view(dt, Nullable{Int}[1, 2]) == head(dt, 2)
-        @test view(dt, Nullable{Integer}[1, 2]) == head(dt, 2)
-        @test view(dt, Nullable{UInt}[1, 2]) == head(dt, 2)
-        @test view(dt, Nullable{BigInt}[1, 2]) == head(dt, 2)
-        @test view(dt, NullableArray([1, 2])) == head(dt, 2)
-        @test view(dt, NullableArray{Integer}([1, 2])) == head(dt, 2)
-        @test view(dt, NullableArray{UInt}([1, 2])) == head(dt, 2)
-        @test view(dt, NullableArray{BigInt}([1, 2])) == head(dt, 2)
-        @test_throws NullException view(dt, [Nullable(), 1])
+        @test view(dt, Union{Int, Null}[1, 2]) == head(dt, 2)
+        @test view(dt, Union{Integer, Null}[1, 2]) == head(dt, 2)
+        @test view(dt, Union{UInt, Null}[1, 2]) == head(dt, 2)
+        @test view(dt, Union{BigInt, Null}[1, 2]) == head(dt, 2)
+        @test_throws NullException view(dt, [null, 1])
     end
 end

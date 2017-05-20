@@ -1,25 +1,22 @@
 module TestDuplicates
-    using Base.Test
-    using DataTables
+    using Base.Test, DataTables
 
     dt = DataTable(a = [1, 2, 3, 3, 4])
     udt = DataTable(a = [1, 2, 3, 4])
-    @test isequal(nonunique(dt), [false, false, false, true, false])
-    @test isequal(udt, unique(dt))
+    @test nonunique(dt) == [false, false, false, true, false]
+    @test udt == unique(dt)
     unique!(dt)
-    @test isequal(dt, udt)
+    @test dt == udt
 
-    pdt = DataTable(a = NullableCategoricalArray(Nullable{String}["a", "a", Nullable(),
-                                             Nullable(), "b", Nullable(), "a", Nullable()]),
-                    b = NullableCategoricalArray(Nullable{String}["a", "b", Nullable(),
-                                                              Nullable(), "b", "a", "a", "a"]))
-    updt = DataTable(a = NullableCategoricalArray(Nullable{String}["a", "a", Nullable(), "b", Nullable()]),
-                     b = NullableCategoricalArray(Nullable{String}["a", "b", Nullable(), "b", "a"]))
-    @test isequal(nonunique(pdt), [false, false, false, true, false, false, true, true])
-    @test isequal(nonunique(updt), falses(5) )
-    @test isequal(updt, unique(pdt))
+    pdt = DataTable(a = CategoricalArray(["a", "a", null, null, "b", null, "a", null]),
+                    b = CategoricalArray(["a", "b", null, null, "b", "a", "a", "a"]))
+    updt = DataTable(a = CategoricalArray(["a", "a", null, "b", null]),
+                     b = CategoricalArray(["a", "b", null, "b", "a"]))
+    @test nonunique(pdt) == [false, false, false, true, false, false, true, true]
+    @test nonunique(updt) == falses(5)
+    @test updt == unique(pdt)
     unique!(pdt)
-    @test isequal(pdt, updt)
+    @test pdt == updt
 
     @testset "missing" begin
         dt = DataTable(A = 1:12, B = repeat('A':'C', inner=4))

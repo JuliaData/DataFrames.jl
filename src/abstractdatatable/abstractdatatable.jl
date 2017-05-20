@@ -24,7 +24,6 @@ The following are normally implemented for AbstractDataTables:
 * [`head`](@ref) : first `n` rows
 * [`tail`](@ref) : last `n` rows
 * `convert` : convert to an array
-* `NullableArray` : convert to a NullableArray
 * [`completecases`](@ref) : boolean vector of complete cases (rows with no nulls)
 * [`dropnull`](@ref) : remove rows with null values
 * [`dropnull!`](@ref) : remove rows with null values in-place
@@ -170,10 +169,10 @@ rename(f::Function, dt::AbstractDataTable)
 
 ```julia
 dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-rename(x -> @compat(Symbol)(uppercase(string(x))), dt)
-rename(dt, @compat(Dict(:i=>:A, :x=>:X)))
+rename(x -> Symbol(uppercase(string(x))), dt)
+rename(dt, Dict(:i=>:A, :x=>:X))
 rename(dt, :y, :Y)
-rename!(dt, @compat(Dict(:i=>:A, :x=>:X)))
+rename!(dt, Dict(:i=>:A, :x=>:X))
 ```
 
 """
@@ -227,7 +226,7 @@ Base.ndims(::AbstractDataTable) = 2
 ##############################################################################
 
 Base.similar(dt::AbstractDataTable, dims::Int) =
-    DataTable(Any[similar(x, dims) for x in columns(dt)], copy(index(dt)))
+    DataTable(Any[similar_nullable(x, dims) for x in columns(dt)], copy(index(dt)))
 
 ##############################################################################
 ##
@@ -236,7 +235,7 @@ Base.similar(dt::AbstractDataTable, dims::Int) =
 ##############################################################################
 
 # Imported in DataTables.jl for compatibility across Julia 0.4 and 0.5
-@compat(Base.:(==))(dt1::AbstractDataTable, dt2::AbstractDataTable) = isequal(dt1, dt2)
+Base.:(==)(dt1::AbstractDataTable, dt2::AbstractDataTable) = isequal(dt1, dt2)
 
 function Base.isequal(dt1::AbstractDataTable, dt2::AbstractDataTable)
     size(dt1, 2) == size(dt2, 2) || return false
@@ -379,6 +378,22 @@ function StatsBase.describe(io, dt::AbstractDataTable)
     end
 end
 
+function StatsBase.describe{T}(io::IO, X::AbstractVector{Union{T, Null}})
+    nullcount = count(isnull, X)
+    pnull = 100 * nullcount/length(X)
+    if pnull != 100 && T <: Real
+        show(io, StatsBase.summarystats(collect(Nulls.skip(X))))
+    else
+        println(io, "Summary Stats:")
+    end
+    println(io, "Length:         $(length(X))")
+    println(io, "Type:           $(eltype(X))")
+    !(T <: Real) && println(io, "Number Unique:  $(length(unique(X)))")
+    println(io, "Number Missing: $(nullcount)")
+    @printf(io, "%% Missing:      %.6f\n", pnull)
+    return
+end
+
 ##############################################################################
 ##
 ## Miscellaneous
@@ -386,18 +401,12 @@ end
 ##############################################################################
 
 function _nonnull!(res, col)
-    for (i, el) in enumerate(col)
-        res[i] &= !_isnull(el)
+    @inbounds for (i, el) in enumerate(col)
+        res[i] &= !isnull(el)
     end
 end
 
-function _nonnull!(res, col::NullableArray)
-    for (i, el) in enumerate(col.isnull)
-        res[i] &= !el
-    end
-end
-
-function _nonnull!(res, col::NullableCategoricalArray)
+function _nonnull!(res, col::CategoricalArray{>: Null})
     for (i, el) in enumerate(col.refs)
         res[i] &= el > 0
     end
@@ -424,9 +433,11 @@ See also [`dropnull`](@ref) and [`dropnull!`](@ref).
 **Examples**
 
 ```julia
-dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-dt[[1,4,5], :x] = Nullable()
-dt[[9,10], :y] = Nullable()
+dt = DataTable(i = 1:10,
+               x = Vector{Union{Null, Float64}}(rand(10)),
+               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
+dt[[1,4,5], :x] = null
+dt[[9,10], :y] = null
 completecases(dt)
 ```
 
@@ -459,9 +470,11 @@ See also [`completecases`](@ref) and [`dropnull!`](@ref).
 **Examples**
 
 ```julia
-dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-dt[[1,4,5], :x] = Nullable()
-dt[[9,10], :y] = Nullable()
+dt = DataTable(i = 1:10,
+               x = Vector{Union{Null, Float64}}(rand(10)),
+               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
+dt[[1,4,5], :x] = null
+dt[[9,10], :y] = null
 dropnull(dt)
 ```
 
@@ -488,9 +501,11 @@ See also [`dropnull`](@ref) and [`completecases`](@ref).
 **Examples**
 
 ```julia
-dt = DataTable(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-dt[[1,4,5], :x] = Nullable()
-dt[[9,10], :y] = Nullable()
+dt = DataTable(i = 1:10,
+               x = Vector{Union{Null, Float64}}(rand(10)),
+               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
+dt[[1,4,5], :x] = null
+dt[[9,10], :y] = null
 dropnull!(dt)
 ```
 
@@ -502,7 +517,6 @@ function Base.convert(::Type{Array}, dt::AbstractDataTable)
 end
 function Base.convert(::Type{Matrix}, dt::AbstractDataTable)
     T = reduce(promote_type, eltypes(dt))
-    T <: Nullable && (T = eltype(T))
     convert(Matrix{T}, dt)
 end
 function Base.convert{T}(::Type{Array{T}}, dt::AbstractDataTable)
@@ -513,30 +527,8 @@ function Base.convert{T}(::Type{Matrix{T}}, dt::AbstractDataTable)
     res = Matrix{T}(n, p)
     idx = 1
     for (name, col) in zip(names(dt), columns(dt))
-        any(isnull, col) && error("cannot convert a DataTable containing null values to array (found for column $name)")
+        !(T >: Null) && any(isnull, col) && error("cannot convert a DataTable containing null values to array (found for column $name)")
         copy!(res, idx, convert(Vector{T}, col))
-        idx += n
-    end
-    return res
-end
-
-function Base.convert(::Type{NullableArray}, dt::AbstractDataTable)
-    convert(NullableMatrix, dt)
-end
-function Base.convert(::Type{NullableMatrix}, dt::AbstractDataTable)
-    T = reduce(promote_type, eltypes(dt))
-    T <: Nullable && (T = eltype(T))
-    convert(NullableMatrix{T}, dt)
-end
-function Base.convert{T}(::Type{NullableArray{T}}, dt::AbstractDataTable)
-    convert(NullableMatrix{T}, dt)
-end
-function Base.convert{T}(::Type{NullableMatrix{T}}, dt::AbstractDataTable)
-    n, p = size(dt)
-    res = NullableArray(T, n, p)
-    idx = 1
-    for col in columns(dt)
-        copy!(res, idx, col)
         idx += n
     end
     return res
@@ -586,7 +578,7 @@ end
 nonunique(dt::AbstractDataTable, cols::Union{Real, Symbol}) = nonunique(dt[[cols]])
 nonunique(dt::AbstractDataTable, cols::Any) = nonunique(dt[cols])
 
-if isdefined(Base, :unique!) # Julia >= 0.7
+if isdefined(:unique!)
     import Base.unique!
 end
 
@@ -658,7 +650,7 @@ without(dt::AbstractDataTable, c::Any) = without(dt, index(dt)[c])
 ##############################################################################
 
 # hcat's first argument must be an AbstractDataTable
-# Trailing arguments (currently) may also be NullableVectors, Vectors, or scalars.
+# Trailing arguments (currently) may also be vectors or scalars.
 
 # hcat! is defined in datatables/datatables.jl
 # Its first argument (currently) must be a DataTable.
@@ -671,24 +663,21 @@ Base.hcat(dt::AbstractDataTable, x, y...) = hcat!(hcat(dt, x), y...)
 Base.hcat(dt1::AbstractDataTable, dt2::AbstractDataTable, dtn::AbstractDataTable...) = hcat!(hcat(dt1, dt2), dtn...)
 
 @generated function promote_col_type(cols::AbstractVector...)
-    elty = Base.promote_eltype(cols...)
-    if elty <: Nullable
-        elty = eltype(elty)
+    T = promote_type(map(x -> Nulls.T(eltype(x)), cols)...)
+    if T <: CategoricalValue
+        T = T.parameters[1]
     end
-    if elty <: CategoricalValue
-        elty = elty.parameters[1]
-    end
-    if any(col -> eltype(col) <: Nullable, cols)
-        if any(col -> col <: Union{AbstractCategoricalArray, AbstractNullableCategoricalArray}, cols)
-            return :(NullableCategoricalVector{$elty})
+    if any(col -> eltype(col) >: Null, cols)
+        if any(col -> col <: AbstractCategoricalArray, cols)
+            return :(CategoricalVector{Union{$T, Null}})
         else
-            return :(NullableVector{$elty})
+            return :(Vector{Union{$T, Null}})
         end
     else
-        if any(col -> col <: Union{AbstractCategoricalArray, AbstractNullableCategoricalArray}, cols)
-            return :(CategoricalVector{$elty})
+        if any(col -> col <: AbstractCategoricalArray, cols)
+            return :(CategoricalVector{$T})
         else
-            return :(Vector{$elty})
+            return :(Vector{$T})
         end
     end
 end
@@ -776,7 +765,7 @@ function Base.hash(dt::AbstractDataTable)
     for i in 1:size(dt, 2)
         h = hash(dt[i], h)
     end
-    return @compat UInt(h)
+    return UInt(h)
 end
 
 
