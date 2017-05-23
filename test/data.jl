@@ -68,6 +68,37 @@ module TestData
     sdf6f = view(df6, UInt64[1, 2])
     @test size(sdf6f) == (2,3)
 
+    #test_group("getindex")
+    # ensure indexing column by a single item (by integer/symbol) results in an Array
+    v6a = sdf6a[1]
+    @test isa(v6a, Vector)
+    @test v6a == df6[1, :][1]
+    v6b = sdf6a[:A]
+    @test isa(v6b, Vector)
+    @test v6b == df6[1, :][:A]
+    # ensure indexing by a collection of columns (by integer/symbol) results in a view
+    # and that indexing by colon results in a DataFrame
+    sdf6g = sdf6a[[1, 2]]
+    @test isa(sdf6g, SubDataFrame)
+    @test isa(sdf6g[:], DataFrame)
+    @test isequal(sdf6g[:], df6[1, [1, 2]])
+    @test all(sdf6g.parent[col] === sdf6a.parent[col] for col in size(sdf6g, 2))
+    sdf6h = sdf6a[[:A, :B]]
+    @test isa(sdf6h, SubDataFrame)
+    @test isa(sdf6h[:], DataFrame)
+    @test isequal(sdf6h[:], df6[1, [:A, :B]])
+    @test all(sdf6h.parent[col] === sdf6a.parent[col] for col in names(sdf6h))
+    # ensure row indexing (by colon/integer/vector) results in a DataFrame
+    sdf6i = sdf6b[:, [:A, :B]]
+    @test isa(sdf6i, DataFrame)
+    @test isequal(sdf6i, df6[[2, 3], [:A, :B]])
+    sdf6j = sdf6b[2, [:A, :B]]
+    @test isa(sdf6j, DataFrame)
+    @test isequal(sdf6j, df6[3, [:A, :B]])
+    sdf6k = sdf6b[[1, 2], [:A, :B]]
+    @test isa(sdf6k, DataFrame)
+    @test isequal(sdf6k, df6[[2, 3], [:A, :B]])
+
     #test_group("ref")
     @test sdf6a[1,2] == 4
 
