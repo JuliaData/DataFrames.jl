@@ -381,7 +381,8 @@ function bytestotype{N <: Integer,
                                   nastrings::Vector{T},
                                   wasquoted::Bool = false,
                                   truestrings::Vector{P} = P[],
-                                  falsestrings::Vector{P} = P[])
+                                  falsestrings::Vector{P} = P[],
+                                  encoding::Symbol = :utf8)
     if left > right
         return 0, true, true
     end
@@ -429,7 +430,8 @@ let out = Vector{Float64}(1)
                                       nastrings::Vector{T},
                                       wasquoted::Bool = false,
                                       truestrings::Vector{P} = P[],
-                                      falsestrings::Vector{P} = P[])
+                                      falsestrings::Vector{P} = P[],
+                                      encoding::Symbol = :utf8)
         if left > right
             return 0.0, true, true
         end
@@ -459,7 +461,8 @@ function bytestotype{N <: Bool,
                                   nastrings::Vector{T},
                                   wasquoted::Bool = false,
                                   truestrings::Vector{P} = P[],
-                                  falsestrings::Vector{P} = P[])
+                                  falsestrings::Vector{P} = P[],
+                                  encoding::Symbol = :utf8)
     if left > right
         return false, true, true
     end
@@ -486,7 +489,8 @@ function bytestotype{N <: AbstractString,
                                   nastrings::Vector{T},
                                   wasquoted::Bool = false,
                                   truestrings::Vector{P} = P[],
-                                  falsestrings::Vector{P} = P[])
+                                  falsestrings::Vector{P} = P[],
+                                  encoding::Symbol = :utf8)
     if left > right
         if wasquoted
             return "", true, false
@@ -498,8 +502,12 @@ function bytestotype{N <: AbstractString,
     if bytematch(bytes, left, right, nastrings)
         return "", true, true
     end
-
-    return String(bytes[left:right]), true, false
+    if encoding == :utf8
+        return String(bytes[left:right]), true, false
+    else 
+        proper_bytes = convert(Array{UInt32,1}, bytes[left:right])
+        return transcode(String, proper_bytes), true, false
+    end
 end
 
 function builddf(rows::Integer,
@@ -554,7 +562,8 @@ function builddf(rows::Integer,
                                 o.nastrings,
                                 wasquoted,
                                 o.truestrings,
-                                o.falsestrings)
+                                o.falsestrings,
+                                o.encoding)
 
                 # Don't go to guess type zone
                 if wasparsed
@@ -576,7 +585,8 @@ function builddf(rows::Integer,
                               o.nastrings,
                               wasquoted,
                               o.truestrings,
-                              o.falsestrings)
+                              o.falsestrings,
+                              o.encoding)
                 if wasparsed
                     continue
                 else
@@ -595,7 +605,8 @@ function builddf(rows::Integer,
                               o.nastrings,
                               wasquoted,
                               o.truestrings,
-                              o.falsestrings)
+                              o.falsestrings,
+                              o.encoding)
                 if wasparsed
                     continue
                 else
@@ -616,7 +627,8 @@ function builddf(rows::Integer,
                               o.nastrings,
                               wasquoted,
                               o.truestrings,
-                              o.falsestrings)
+                              o.falsestrings, 
+                              o.encoding)
                 if wasparsed
                     continue
                 else
@@ -636,7 +648,8 @@ function builddf(rows::Integer,
                           o.nastrings,
                           wasquoted,
                           o.truestrings,
-                          o.falsestrings)
+                          o.falsestrings, 
+                          o.encoding)
         end
 
         if o.makefactors && !(is_int || is_float || is_bool)
@@ -659,7 +672,8 @@ function parsenames!(names::Vector{Symbol},
                      bounds::Vector{Int},
                      quoted::BitVector,
                      fields::Int,
-                     normalizenames::Bool)
+                     normalizenames::Bool,
+                     encoding::Symbol)
     if fields == 0
         error("Header line was empty")
     end
@@ -679,7 +693,7 @@ function parsenames!(names::Vector{Symbol},
             end
         end
 
-        name = String(bytes[left:right])
+        name = encoding == :utf8 ? String(bytes[left:right]) : name = transcode(String, convert(Array{UInt32,1}, bytes[left:right]))
         if normalizenames
             name = identifier(name)
         end
@@ -761,7 +775,7 @@ function readtable!(p::ParsedCSV,
 
         # Insert column names from header if none present
         if isempty(o.names)
-            parsenames!(o.names, o.ignorepadding, p.bytes, p.bounds, p.quoted, fields, o.normalizenames)
+            parsenames!(o.names, o.ignorepadding, p.bytes, p.bounds, p.quoted, fields, o.normalizenames, o.encoding)
         end
     end
 
@@ -817,9 +831,7 @@ function readtable(io::IO,
                    encoding::Symbol = :utf8,
                    allowescapes::Bool = false,
                    normalizenames::Bool = true)
-    if encoding != :utf8
-        throw(ArgumentError("Argument 'encoding' only supports ':utf8' currently."))
-    elseif !isempty(skiprows)
+    if !isempty(skiprows)
         throw(ArgumentError("Argument 'skiprows' is not yet supported."))
     elseif decimal != '.'
         throw(ArgumentError("Argument 'decimal' is not yet supported."))
@@ -1186,7 +1198,8 @@ function filldf!(df::DataFrame,
                           o.nastrings,
                           wasquoted,
                           o.truestrings,
-                          o.falsestrings)
+                          o.falsestrings, 
+                          o.encoding)
 
             if !wasparsed
                 error("Failed to parse entry")
