@@ -114,7 +114,7 @@ numeric_vars(dt::AbstractDataTable) =
 function stack(dt::AbstractDataTable, measure_vars = numeric_vars(dt);
                variable_name::Symbol=:variable, value_name::Symbol=:value)
     mv_inds = index(dt)[measure_vars]
-    stack(dt, mv_inds, _setdiff(1:ncol(dt), mv_inds);
+    stack(dt, mv_inds, setdiff(1:ncol(dt), mv_inds);
           variable_name=variable_name, value_name=value_name)
 end
 
@@ -129,7 +129,7 @@ end
 function melt(dt::AbstractDataTable, id_vars;
               variable_name::Symbol=:variable, value_name::Symbol=:value)
     id_inds = index(dt)[id_vars]
-    stack(dt, _setdiff(1:ncol(dt), id_inds), id_inds;
+    stack(dt, setdiff(1:ncol(dt), id_inds), id_inds;
           variable_name=variable_name, value_name=value_name)
 end
 function melt(dt::AbstractDataTable, id_vars, measure_vars;
@@ -478,7 +478,7 @@ end
 function stackdt(dt::AbstractDataTable, measure_vars = numeric_vars(dt);
                  variable_name::Symbol=:variable, value_name::Symbol=:value)
     m_inds = index(dt)[measure_vars]
-    stackdt(dt, m_inds, _setdiff(1:ncol(dt), m_inds);
+    stackdt(dt, m_inds, setdiff(1:ncol(dt), m_inds);
             variable_name=variable_name, value_name=value_name)
 end
 
@@ -488,7 +488,7 @@ A stacked view of a DataTable (long format); see `stackdt`
 function meltdt(dt::AbstractDataTable, id_vars; variable_name::Symbol=:variable,
                 value_name::Symbol=:value)
     id_inds = index(dt)[id_vars]
-    stackdt(dt, _setdiff(1:ncol(dt), id_inds), id_inds;
+    stackdt(dt, setdiff(1:ncol(dt), id_inds), id_inds;
             variable_name=variable_name, value_name=value_name)
 end
 function meltdt(dt::AbstractDataTable, id_vars, measure_vars;

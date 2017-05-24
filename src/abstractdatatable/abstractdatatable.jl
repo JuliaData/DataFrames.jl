@@ -641,7 +641,7 @@ function colmissing(dt::AbstractDataTable) # -> Vector{Int}
 end
 
 function without(dt::AbstractDataTable, icols::Vector{Int})
-    newcols = _setdiff(1:ncol(dt), icols)
+    newcols = setdiff(1:ncol(dt), icols)
     dt[newcols]
 end
 without(dt::AbstractDataTable, i::Int) = without(dt, [i])
