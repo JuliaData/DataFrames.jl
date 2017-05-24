@@ -155,26 +155,6 @@ function countnull(a::CategoricalArray)
     return res
 end
 
-function _setdiff{T}(a::AbstractVector{T}, b::AbstractVector{T})
-    diff = T[]
-    for val in a
-        if !(val in b)
-            push!(diff, val)
-        end
-    end
-    diff
-end
-# because unions and parametric types don't compose, yet
-function _setdiff{T}(a::AbstractVector{T}, b::T)
-    diff = T[]
-    for val in a
-        if !(val in b)
-            push!(diff, val)
-        end
-    end
-    diff
-end
-
 # Gets the name of a function. Used in groupedataframe/grouping.jl
 function _fnames{T<:Function}(fs::Vector{T})
     λcounter = 0

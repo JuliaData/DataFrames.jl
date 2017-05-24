@@ -114,7 +114,7 @@ numeric_vars(df::AbstractDataFrame) =
 function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
                variable_name::Symbol=:variable, value_name::Symbol=:value)
     mv_inds = index(df)[measure_vars]
-    stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds);
+    stack(df, mv_inds, setdiff(1:ncol(df), mv_inds);
           variable_name=variable_name, value_name=value_name)
 end
 
@@ -129,7 +129,7 @@ end
 function melt(df::AbstractDataFrame, id_vars;
               variable_name::Symbol=:variable, value_name::Symbol=:value)
     id_inds = index(df)[id_vars]
-    stack(df, _setdiff(1:ncol(df), id_inds), id_inds;
+    stack(df, setdiff(1:ncol(df), id_inds), id_inds;
           variable_name=variable_name, value_name=value_name)
 end
 function melt(df::AbstractDataFrame, id_vars, measure_vars;
@@ -478,7 +478,7 @@ end
 function stackdf(df::AbstractDataFrame, measure_vars = numeric_vars(df);
                  variable_name::Symbol=:variable, value_name::Symbol=:value)
     m_inds = index(df)[measure_vars]
-    stackdf(df, m_inds, _setdiff(1:ncol(df), m_inds);
+    stackdf(df, m_inds, setdiff(1:ncol(df), m_inds);
             variable_name=variable_name, value_name=value_name)
 end
 
@@ -488,7 +488,7 @@ A stacked view of a DataFrame (long format); see `stackdf`
 function meltdf(df::AbstractDataFrame, id_vars; variable_name::Symbol=:variable,
                 value_name::Symbol=:value)
     id_inds = index(df)[id_vars]
-    stackdf(df, _setdiff(1:ncol(df), id_inds), id_inds;
+    stackdf(df, setdiff(1:ncol(df), id_inds), id_inds;
             variable_name=variable_name, value_name=value_name)
 end
 function meltdf(df::AbstractDataFrame, id_vars, measure_vars;
