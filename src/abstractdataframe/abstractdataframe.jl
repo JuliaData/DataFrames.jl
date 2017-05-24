@@ -641,7 +641,7 @@ function colmissing(df::AbstractDataFrame) # -> Vector{Int}
 end
 
 function without(df::AbstractDataFrame, icols::Vector{Int})
-    newcols = _setdiff(1:ncol(df), icols)
+    newcols = setdiff(1:ncol(df), icols)
     df[newcols]
 end
 without(df::AbstractDataFrame, i::Int) = without(df, [i])

@@ -362,7 +362,7 @@ end
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 aggregate(gd::GroupedDataFrame, f::Function; sort::Bool=false) = aggregate(gd, [f], sort=sort)
 function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false)
-    headers = _makeheaders(fs, _setdiff(_names(gd), gd.cols))
+    headers = _makeheaders(fs, setdiff(_names(gd), gd.cols))
     res = combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
     sort && sort!(res, cols=headers)
     res
