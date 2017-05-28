@@ -1,6 +1,6 @@
 # The Split-Apply-Combine Strategy
 
-Many data analysis tasks involve splitting a data set into groups, applying some functions to each of the groups and then combining the results. A standardized framework for handling this sort of computation is described in the paper, The Split-Apply-Combine Strategy for Data Analysis \<<http://www.jstatsoft.org/v40/i01>\>, written by Hadley Wickham.
+Many data analysis tasks involve splitting a data set into groups, applying some functions to each of the groups and then combining the results. A standardized framework for handling this sort of computation is described in the paper "[The Split-Apply-Combine Strategy for Data Analysis](http://www.jstatsoft.org/v40/i01)", written by Hadley Wickham.
 
 The DataTables package supports the Split-Apply-Combine strategy through the `by` function, which takes in three arguments: (1) a DataTable, (2) one or more columns to split the DataTable on, and (3) a function or expression to apply to each subset of the DataTable.
 
