@@ -14,12 +14,11 @@ makedocs(
         "Introduction" => "index.md",
         "User Guide" => Any[
             "Getting Started" => "man/getting_started.md",
-            "IO" => "man/io.md",
             "Joins" => "man/joins.md",
             "Split-apply-combine" => "man/split_apply_combine.md",
             "Reshaping" => "man/reshaping_and_pivoting.md",
             "Sorting" => "man/sorting.md",
-            "Pooling" => "man/pooling.md",
+            "Categorical Data" => "man/categorical.md",
             "Querying frameworks" => "man/querying_frameworks.md",
         ],
         "API" => Any[
