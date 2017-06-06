@@ -38,16 +38,17 @@ module TestShow
     show(io, A)
 
     #Test show output for REPL and similar
-    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
+    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()],
+                   E = NullableCategoricalArray(["a", Nullable()]))
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
     @test str == """
-    2×2 DataFrames.DataFrame
-    │ Row │ Fish │ Mass  │
-    ├─────┼──────┼───────┤
-    │ 1   │ Suzy │ 1.5   │
-    │ 2   │ Amir │ #NULL │"""
+    2×3 DataFrames.DataFrame
+    │ Row │ Fish │ Mass  │ E     │
+    ├─────┼──────┼───────┼───────┤
+    │ 1   │ Suzy │ 1.5   │ a     │
+    │ 2   │ Amir │ #NULL │ #NULL │"""
 
     # Test computing width for Array{String} columns
     df = DataFrame(Any[["a"]], [:x])
