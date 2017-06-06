@@ -5,17 +5,11 @@
 ##############################################################################
 
 function escapedprint(io::IO, x::Any, escapes::AbstractString)
-    print(io, x)
+    ourshowcompact(io, x)
 end
 
-if VERSION < v"0.5.0-dev+4354"
-    function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
-        print_escaped(io, x, escapes)
-    end
-else
-    function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
-        escape_string(io, x, escapes)
-    end
+function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
+    escape_string(io, x, escapes)
 end
 
 function printtable(io::IO,
@@ -172,7 +166,7 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
                 if mimewritable(MIME("text/latex"), content)
                     show(io, MIME("text/latex"), content)
                 else
-                    print(io, latex_escape(string(content)))
+                    print(io, latex_escape(sprint(ourshowcompact, content)))
                 end
             end
         end
