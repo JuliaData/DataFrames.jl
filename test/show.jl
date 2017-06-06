@@ -38,16 +38,17 @@ module TestShow
     show(io, A)
 
     #Test show output for REPL and similar
-    dt = DataTable(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()])
+    dt = DataTable(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()],
+                   E = NullableCategoricalArray(["a", Nullable()]))
     io = IOBuffer()
     show(io, dt)
     str = String(take!(io))
     @test str == """
-    2×2 DataTables.DataTable
-    │ Row │ Fish │ Mass  │
-    ├─────┼──────┼───────┤
-    │ 1   │ Suzy │ 1.5   │
-    │ 2   │ Amir │ #NULL │"""
+    2×3 DataTables.DataTable
+    │ Row │ Fish │ Mass  │ E     │
+    ├─────┼──────┼───────┼───────┤
+    │ 1   │ Suzy │ 1.5   │ a     │
+    │ 2   │ Amir │ #NULL │ #NULL │"""
 
     # Test computing width for Array{String} columns
     dt = DataTable(Any[["a"]], [:x])
