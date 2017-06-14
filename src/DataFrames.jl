@@ -12,6 +12,7 @@ using Compat
 using Reexport
 @reexport using StatsBase
 @reexport using DataArrays
+using StringEncodings
 using GZip
 using SortingAlgorithms
 
@@ -84,6 +85,7 @@ export @~,
        unique!,
        unstack,
        writetable,
+       encodings,
 
        # Remove after deprecation period
        read_rda

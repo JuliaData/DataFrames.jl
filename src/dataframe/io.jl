@@ -22,7 +22,7 @@ immutable ParseOptions{S <: String, T <: String}
     skipstart::Int
     skiprows::AbstractVector{Int}
     skipblanks::Bool
-    encoding::Symbol
+    encoding::String
     allowescapes::Bool
     normalizenames::Bool
 end
@@ -814,11 +814,11 @@ function readtable(io::IO,
                    skipstart::Integer = 0,
                    skiprows::AbstractVector{Int} = Int[],
                    skipblanks::Bool = true,
-                   encoding::Symbol = :utf8,
+                   encoding::String = "UTF-8",
                    allowescapes::Bool = false,
                    normalizenames::Bool = true)
-    if encoding != :utf8
-        throw(ArgumentError("Argument 'encoding' only supports ':utf8' currently."))
+    if !any(encodings().==encoding)
+        throw(ArgumentError("Encoding $encoding is not supported check 'encodings()' for all list of all supported encodings."))
     elseif !isempty(skiprows)
         throw(ArgumentError("Argument 'skiprows' is not yet supported."))
     elseif decimal != '.'
@@ -848,7 +848,13 @@ function readtable(io::IO,
                      allowescapes, normalizenames)
 
     # Use the IO stream method for readtable()
-    df = readtable!(p, io, nrows, o)
+    if encoding=="UTF-8"
+      df = readtable!(p, io, nrows, o)
+    else # we wrap the IO stream in a decoder
+      d_io=StringDecoder(io,encoding, "UTF-8")
+      df = readtable!(p,d_io, nrows, o)
+      close(d_io)
+    end
 
     # Close the IO stream
     close(io)
@@ -887,7 +893,7 @@ readtable(filename, [keyword options])
 *   `skipstart::Int` -- Specify the number of initial rows to skip. Defaults to `0`.
 *   `skiprows::Vector{Int}` -- Specify the indices of lines in the input to ignore. Defaults to `[]`.
 *   `skipblanks::Bool` -- Skip any blank lines in input. Defaults to `true`.
-*   `encoding::Symbol` -- Specify the file's encoding as either `:utf8` or `:latin1`. Defaults to `:utf8`.
+*   `encoding::String` -- Specify the file's encoding, see the list of supported encodings by running `encodings()` . Defaults to "UTF-8".
 *   `normalizenames::Bool` -- Ensure that column names are valid Julia identifiers. For instance this renames a column named `"a b"` to `"a_b"` which can then be accessed with `:a_b` instead of `Symbol("a b")`. Defaults to `true`.
 
 ### Result
@@ -922,7 +928,7 @@ function readtable(pathname::AbstractString;
                    skipstart::Integer = 0,
                    skiprows::AbstractVector{Int} = Int[],
                    skipblanks::Bool = true,
-                   encoding::Symbol = :utf8,
+                   encoding::String = "UTF-8",
                    allowescapes::Bool = false,
                    normalizenames::Bool = true)
     # Open an IO stream based on pathname
