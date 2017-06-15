@@ -847,11 +847,11 @@ function readtable(io::IO,
 
     # Use the IO stream method for readtable()
     if encoding == "UTF-8"
-      df = readtable!(p, io, nrows, o)
+        df = readtable!(p, io, nrows, o)
     else # we wrap the IO stream in a decoder
-      d_io = StringEncodings.StringDecoder(io, encoding, "UTF-8")
-      df = readtable!(p, d_io, nrows, o)
-      close(d_io)
+        d_io = StringEncodings.StringDecoder(io, encoding)
+        df = readtable!(p, d_io, nrows, o)
+        close(d_io)
     end
 
     # Close the IO stream
