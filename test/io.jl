@@ -324,6 +324,15 @@ module TestIO
     io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
     @test names(readtable(io, normalizenames=false)) == [Symbol(abnormal),Symbol("%_B*\tC*"),:end]
 
+    # Testing reading files with none utf8 encoding
+
+    # this fails for utf8 with exception
+    df = readtable("$data/encoding/latin1.csv", encoding="LATIN1")
+    @test df[1, 2] == "Sí"
+
+    df = readtable("$data/encoding/latin1.csv", encoding=:latin1)
+    @test df[1, 2] == "Sí"
+
     # Test writetable with NA and compare to the results
     tf = tempname()
     isfile(tf) && rm(tf)
