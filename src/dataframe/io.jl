@@ -22,7 +22,7 @@ immutable ParseOptions{S <: String, T <: String}
     skipstart::Int
     skiprows::AbstractVector{Int}
     skipblanks::Bool
-    encoding::Union{Symbol,String}
+    encoding::String
     allowescapes::Bool
     normalizenames::Bool
 end
@@ -814,12 +814,10 @@ function readtable(io::IO,
                    skipstart::Integer = 0,
                    skiprows::AbstractVector{Int} = Int[],
                    skipblanks::Bool = true,
-                   encoding::Union{Symbol,String} = :utf8,
+                   encoding::String = "UTF-8",
                    allowescapes::Bool = false,
                    normalizenames::Bool = true)
-    if encoding != :utf8 && encoding != :latin1 && typeof(encoding)!=String
-        throw(ArgumentError("Argument 'encoding' only supports ':utf8', ':latin1', or a valid encoding string from the list 'StringEncodings.encodings()'."))
-    elseif !isempty(skiprows)
+    if !isempty(skiprows)
         throw(ArgumentError("Argument 'skiprows' is not yet supported."))
     elseif decimal != '.'
         throw(ArgumentError("Argument 'decimal' is not yet supported."))
@@ -848,12 +846,8 @@ function readtable(io::IO,
                      allowescapes, normalizenames)
 
     # Use the IO stream method for readtable()
-    if encoding == :utf8 || encoding == "UTF-8"
+    if encoding == "UTF-8"
       df = readtable!(p, io, nrows, o)
-    elseif encoding == :latin1 # we wrap the IO stream in a decoder
-      d_io = StringEncodings.StringDecoder(io, "LATIN1", "UTF-8")
-      df = readtable!(p, d_io, nrows, o)
-      close(d_io)
     else # we wrap the IO stream in a decoder
       d_io = StringEncodings.StringDecoder(io, encoding, "UTF-8")
       df = readtable!(p, d_io, nrows, o)
@@ -897,7 +891,7 @@ readtable(filename, [keyword options])
 *   `skipstart::Int` -- Specify the number of initial rows to skip. Defaults to `0`.
 *   `skiprows::Vector{Int}` -- Specify the indices of lines in the input to ignore. Defaults to `[]`.
 *   `skipblanks::Bool` -- Skip any blank lines in input. Defaults to `true`.
-*   `encoding::Union{Symbol,String}` -- Specify the file's encoding, supported symbols are `:utf8` or `:latin1`. Defaults to `:utf8`. More encodings are supported when specified as strings, the list of platform supported encodings can be found by running `StringEncodings.encodings()`".
+*   `encoding::String` -- Specify the file's encoding, see the list of platform supported encodings by running `StringEncodings.encodings()`. Defaults to "UTF-8"".
 *   `normalizenames::Bool` -- Ensure that column names are valid Julia identifiers. For instance this renames a column named `"a b"` to `"a_b"` which can then be accessed with `:a_b` instead of `Symbol("a b")`. Defaults to `true`.
 
 ### Result
@@ -932,7 +926,7 @@ function readtable(pathname::AbstractString;
                    skipstart::Integer = 0,
                    skiprows::AbstractVector{Int} = Int[],
                    skipblanks::Bool = true,
-                   encoding::Union{Symbol,String} = :utf8,
+                   encoding::String = "UTF-8",
                    allowescapes::Bool = false,
                    normalizenames::Bool = true)
     # Open an IO stream based on pathname

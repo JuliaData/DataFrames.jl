@@ -330,9 +330,6 @@ module TestIO
     df = readtable("$data/encoding/latin1.csv", encoding="LATIN1")
     @test df[1, 2] == "Sí"
 
-    df = readtable("$data/encoding/latin1.csv", encoding=:latin1)
-    @test df[1, 2] == "Sí"
-
     # Test writetable with NA and compare to the results
     tf = tempname()
     isfile(tf) && rm(tf)
