@@ -12,7 +12,6 @@ using Compat
 using Reexport
 @reexport using StatsBase
 @reexport using DataArrays
-import StringEncodings
 using GZip
 using SortingAlgorithms
 
