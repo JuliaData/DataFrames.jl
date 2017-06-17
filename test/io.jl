@@ -325,10 +325,11 @@ module TestIO
     @test names(readtable(io, normalizenames=false)) == [Symbol(abnormal),Symbol("%_B*\tC*"),:end]
 
     # Testing reading files with non utf8 encoding
-
-    # this fails for utf8 with exception
-    df = readtable("$data/encoding/latin1.csv", encoding="LATIN1")
-    @test df[1, 2] == "Sí"
+    if DataFrames.ENCODING_PACKAGE_READY
+        # this fails for utf8 with exception
+        df = readtable("$data/encoding/latin1.csv", encoding="LATIN1")
+        @test df[1, 2] == "Sí"
+    end
 
     # Test writetable with NA and compare to the results
     tf = tempname()
