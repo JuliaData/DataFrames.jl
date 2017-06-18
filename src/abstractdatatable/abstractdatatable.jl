@@ -586,6 +586,10 @@ end
 nonunique(dt::AbstractDataTable, cols::Union{Real, Symbol}) = nonunique(dt[[cols]])
 nonunique(dt::AbstractDataTable, cols::Any) = nonunique(dt[cols])
 
+if isdefined(Base, :unique!) # Julia >= 0.7
+    import Base.unique!
+end
+
 unique!(dt::AbstractDataTable) = deleterows!(dt, find(nonunique(dt)))
 unique!(dt::AbstractDataTable, cols::Any) = deleterows!(dt, find(nonunique(dt, cols)))
 
