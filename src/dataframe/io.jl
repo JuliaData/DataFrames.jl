@@ -849,8 +849,7 @@ function readtable(io::IO,
     if encoding == "UTF-8"
         df = readtable!(p, io, nrows, o)
     else # we wrap the IO stream in a decoder
-        ENCODING_PACKAGE_READY || throw("Non-UTF8 decoding not possible, 'StringEncodings' not installed.")
-        d_io = _decoder(io, encoding)
+        d_io = StringEncodings.StringDecoder(io, encoding)
         df = readtable!(p, d_io, nrows, o)
         close(d_io)
     end
@@ -860,16 +859,6 @@ function readtable(io::IO,
 
     # Return the resulting DataFrame
     return df
-end
-
-# Import  "StringEncodings" if available and set up decoder
-ENCODING_PACKAGE_READY = false
-try Pkg.installed("StringEncodings")
-    import StringEncodings
-    @eval _decoder = StringEncodings.StringDecoder
-    ENCODING_PACKAGE_READY = true
-catch
-    @eval _decoder(io,from)=io
 end
 
 """
