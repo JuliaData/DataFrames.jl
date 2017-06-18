@@ -865,11 +865,9 @@ end
 # Import  "StringEncodings" if available and set up decoder
 ENCODING_PACKAGE_READY = false
 try Pkg.installed("StringEncodings")
-    @eval begin
-        import StringEncodings
-         _decoder = StringEncodings.StringDecoder
-        ENCODING_PACKAGE_READY = true
-    end
+    import StringEncodings
+    @eval _decoder = StringEncodings.StringDecoder
+    ENCODING_PACKAGE_READY = true
 catch
     @eval _decoder(io,from)=io
 end
