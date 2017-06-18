@@ -128,18 +128,4 @@ for (dir, filename) in [
     include(joinpath(dir, filename))
 end
 
-# Import  "StringEncodings" if available and set up decoder
-_decoder=nothing
-ENCODING_PACKAGE_READY = false
-function __init__()
-    try Pkg.installed("StringEncodings")
-        @eval begin
-            import StringEncodings
-             _decoder = StringEncodings.StringDecoder
-            ENCODING_PACKAGE_READY = true
-        end
-    catch
-    end
-end
-
 end # module DataFrames
