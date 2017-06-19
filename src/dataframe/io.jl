@@ -850,8 +850,11 @@ function readtable(io::IO,
         df = readtable!(p, io, nrows, o)
     else # we wrap the IO stream in a decoder
         d_io = StringEncodings.StringDecoder(io, encoding)
-        df = readtable!(p, d_io, nrows, o)
-        close(d_io)
+        try
+            df = readtable!(p, d_io, nrows, o)
+        finally
+            close(d_io)
+        end
     end
 
     # Close the IO stream
