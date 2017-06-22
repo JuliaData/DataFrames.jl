@@ -5,6 +5,7 @@
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
       
         <meta name="description" content="package for working with tabular data in Julia">
       
@@ -13,7 +14,7 @@
       
         <link rel="shortcut icon" href="../../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.6.3">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.7.4">
     
     
       
@@ -21,12 +22,12 @@
       
     
     
-      <script src="../../assets/javascripts/modernizr-56ade86843.js"></script>
+      <script src="../../assets/javascripts/modernizr-1df76c4e58.js"></script>
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application-e2807e330f.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application-769c285a91.css">
       
-        <link rel="stylesheet" href="../../assets/stylesheets/application-f78e5cb881.palette.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/application-02c2a4388f.palette.css">
       
     
     
@@ -102,7 +103,7 @@
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result">
+        <div class="md-search-result" data-md-component="result" data-md-lang-search="">
           <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
             Type to start searching
           </div>
@@ -114,9 +115,9 @@
 </div>
         
       </div>
-      <div class="md-flex__cell md-flex__cell--shrink">
-        <div class="md-header-nav__source">
-          
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
             
 
 
@@ -136,9 +137,9 @@
     </div>
   </a>
 
-          
+          </div>
         </div>
-      </div>
+      
     </div>
   </nav>
 </header>
@@ -531,32 +532,26 @@
 
 <p>A query is started with the <code>@from</code> macro and consists of a series of query commands. Query.jl provides commands that can filter, project, join, group, flatten and group data from a <code>DataFrame</code>. A query can return an iterator, or one can materialize the results of a query into a variety of data structures, including a new <code>DataFrame</code>.</p>
 <p>A simple example of a query looks like this:</p>
-<div class="codehilite"><pre><span></span><span class="k">using</span> <span class="n">DataFrames</span><span class="p">,</span> <span class="n">Query</span>
-
-<span class="n">df</span> <span class="o">=</span> <span class="n">DataFrame</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;John&quot;</span><span class="p">,</span> <span class="s">&quot;Sally&quot;</span><span class="p">,</span> <span class="s">&quot;Roger&quot;</span><span class="p">],</span> <span class="n">age</span><span class="o">=</span><span class="p">[</span><span class="mf">54.</span><span class="p">,</span> <span class="mf">34.</span><span class="p">,</span> <span class="mf">79.</span><span class="p">],</span> <span class="n">children</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
-
-<span class="n">q1</span> <span class="o">=</span> <span class="nd">@from</span> <span class="n">i</span> <span class="kp">in</span> <span class="n">df</span> <span class="k">begin</span>
-     <span class="nd">@where</span> <span class="n">i</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;</span> <span class="mi">40</span>
-     <span class="nd">@select</span> <span class="p">{</span><span class="n">number_of_children</span><span class="o">=</span><span class="n">i</span><span class="o">.</span><span class="n">children</span><span class="p">,</span> <span class="n">i</span><span class="o">.</span><span class="n">name</span><span class="p">}</span>
-     <span class="nd">@collect</span> <span class="n">DataFrame</span>
-<span class="k">end</span>
-</pre></div>
-
-
-<div class="codehilite"><pre><span></span>2×2 DataFrames.DataFrame
-│ Row │ number_of_children │ name    │
-├─────┼────────────────────┼─────────┤
-│ 1   │ 0                  │ &quot;John&quot;  │
-│ 2   │ 4                  │ &quot;Roger&quot; │
-</pre></div>
+<p>```@example 1
+using DataFrames, Query</p>
+<p>df = DataFrame(name=["John", "Sally", "Roger"], age=[54., 34., 79.], children=[0, 2, 4])</p>
+<p>q1 = @from i in df begin
+     @where i.age &gt; 40
+     @select {number_of_children=i.children, i.name}
+     @collect DataFrame
+end</p>
+<div class="codehilite"><pre><span></span><span class="nt">The</span> <span class="nt">query</span> <span class="nt">starts</span> <span class="nt">with</span> <span class="nt">the</span> <span class="err">`</span><span class="p">@</span><span class="k">from</span><span class="err">`</span> <span class="nt">macro</span><span class="o">.</span> <span class="nt">The</span> <span class="nt">first</span> <span class="nt">argument</span> <span class="err">`</span><span class="nt">i</span><span class="err">`</span> <span class="nt">is</span> <span class="nt">the</span> <span class="nt">name</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">range</span> <span class="nt">variable</span> <span class="nt">that</span> <span class="nt">will</span> <span class="nt">be</span> <span class="nt">used</span> <span class="nt">to</span> <span class="nt">refer</span> <span class="nt">to</span> <span class="nt">an</span> <span class="nt">individual</span> <span class="nt">row</span> <span class="nt">in</span> <span class="nt">later</span> <span class="nt">query</span> <span class="nt">commands</span><span class="o">.</span> <span class="nt">The</span> <span class="nt">next</span> <span class="nt">argument</span> <span class="err">`</span><span class="nt">df</span><span class="err">`</span> <span class="nt">is</span> <span class="nt">the</span> <span class="nt">data</span> <span class="nt">source</span> <span class="nt">that</span> <span class="nt">one</span> <span class="nt">wants</span> <span class="nt">to</span> <span class="nt">query</span><span class="o">.</span> <span class="nt">The</span> <span class="err">`</span><span class="p">@</span><span class="k">where</span><span class="err">`</span> <span class="nt">command</span> <span class="nt">in</span> <span class="nt">this</span> <span class="nt">query</span> <span class="nt">will</span> <span class="nt">filter</span> <span class="nt">the</span> <span class="nt">source</span> <span class="nt">data</span> <span class="nt">by</span> <span class="nt">applying</span> <span class="nt">the</span> <span class="nt">filter</span> <span class="nt">condition</span> <span class="err">`</span><span class="nt">i</span><span class="p">.</span><span class="nc">age</span> <span class="o">&gt;</span> <span class="nt">40</span><span class="err">`</span><span class="o">.</span> <span class="nt">This</span> <span class="nt">filters</span> <span class="nt">out</span> <span class="nt">any</span> <span class="nt">rows</span> <span class="nt">in</span> <span class="nt">which</span> <span class="nt">the</span> <span class="err">`</span><span class="nt">age</span><span class="err">`</span> <span class="nt">column</span> <span class="nt">is</span> <span class="nt">not</span> <span class="nt">larger</span> <span class="nt">than</span> <span class="nt">40</span><span class="o">.</span> <span class="nt">The</span> <span class="err">`</span><span class="p">@</span><span class="k">select</span><span class="err">`</span> <span class="nt">command</span> <span class="nt">then</span> <span class="nt">projects</span> <span class="nt">the</span> <span class="nt">columns</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">source</span> <span class="nt">data</span> <span class="nt">onto</span> <span class="nt">a</span> <span class="nt">new</span> <span class="nt">column</span> <span class="nt">structure</span><span class="o">.</span> <span class="nt">The</span> <span class="nt">example</span> <span class="nt">here</span> <span class="nt">applies</span> <span class="nt">three</span> <span class="nt">specific</span> <span class="nt">modifications</span><span class="o">:</span> <span class="nt">1</span><span class="o">)</span> <span class="nt">it</span> <span class="nt">only</span> <span class="nt">keeps</span> <span class="nt">a</span> <span class="nt">subset</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">columns</span> <span class="nt">in</span> <span class="nt">the</span> <span class="nt">source</span> <span class="err">`</span><span class="nt">DataFrame</span><span class="err">`</span><span class="o">,</span> <span class="nt">i</span><span class="p">.</span><span class="nc">e</span><span class="o">.</span> <span class="nt">the</span> <span class="err">`</span><span class="nt">age</span><span class="err">`</span> <span class="nt">column</span> <span class="nt">will</span> <span class="nt">not</span> <span class="nt">be</span> <span class="nt">part</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">transformed</span> <span class="nt">data</span><span class="p">;</span> <span class="nt">2</span><span class="o">)</span> <span class="nt">it</span> <span class="nt">changes</span> <span class="nt">the</span> <span class="nt">order</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">two</span> <span class="nt">columns</span> <span class="nt">that</span> <span class="nt">are</span> <span class="nt">selected</span><span class="p">;</span> <span class="nt">and</span> <span class="nt">3</span><span class="o">)</span> <span class="nt">it</span> <span class="nt">renames</span> <span class="nt">one</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">columns</span> <span class="nt">that</span> <span class="nt">is</span> <span class="nt">selected</span> <span class="nt">from</span> <span class="err">`</span><span class="nt">children</span><span class="err">`</span> <span class="nt">to</span> <span class="err">`</span><span class="nt">number_of_children</span><span class="err">`</span><span class="o">.</span> <span class="nt">The</span> <span class="nt">example</span> <span class="nt">query</span> <span class="nt">uses</span> <span class="nt">the</span> <span class="err">`</span><span class="p">{}</span><span class="err">`</span> <span class="nt">syntax</span> <span class="nt">to</span> <span class="nt">achieve</span> <span class="nt">this</span><span class="o">.</span> <span class="nt">A</span> <span class="err">`</span><span class="p">{}</span><span class="err">`</span> <span class="nt">in</span> <span class="nt">a</span> <span class="nt">Query</span><span class="p">.</span><span class="nc">jl</span> <span class="nt">expression</span> <span class="nt">instantiates</span> <span class="nt">a</span> <span class="nt">new</span> <span class="cp">[</span><span class="nx">NamedTuple</span><span class="cp">]</span><span class="o">(</span><span class="nt">https</span><span class="o">://</span><span class="nt">github</span><span class="p">.</span><span class="nc">com</span><span class="o">/</span><span class="nt">blackrock</span><span class="o">/</span><span class="nt">NamedTuples</span><span class="p">.</span><span class="nc">jl</span><span class="o">),</span> <span class="nt">i</span><span class="p">.</span><span class="nc">e</span><span class="o">.</span> <span class="nt">it</span> <span class="nt">is</span> <span class="nt">a</span> <span class="nt">shortcut</span> <span class="nt">for</span> <span class="nt">writing</span> <span class="err">`</span><span class="p">@</span><span class="k">NT</span><span class="o">(</span><span class="nt">number_of_children</span><span class="o">=&gt;</span><span class="nt">i</span><span class="p">.</span><span class="nc">children</span><span class="o">,</span> <span class="nt">name</span><span class="o">=&gt;</span><span class="nt">i</span><span class="p">.</span><span class="nc">name</span><span class="o">)</span><span class="err">`</span><span class="o">.</span> <span class="nt">The</span> <span class="err">`</span><span class="p">@</span><span class="k">collect</span><span class="err">`</span> <span class="nt">statement</span> <span class="nt">determines</span> <span class="nt">the</span> <span class="nt">data</span> <span class="nt">structure</span> <span class="nt">that</span> <span class="nt">the</span> <span class="nt">query</span> <span class="nt">returns</span><span class="o">.</span> <span class="nt">In</span> <span class="nt">this</span> <span class="nt">example</span> <span class="nt">the</span> <span class="nt">results</span> <span class="nt">are</span> <span class="nt">returned</span> <span class="nt">as</span> <span class="nt">a</span> <span class="err">`</span><span class="nt">DataFrame</span><span class="err">`</span><span class="o">.</span>
 
 
-<p>The query starts with the <code>@from</code> macro. The first argument <code>i</code> is the name of the range variable that will be used to refer to an individual row in later query commands. The next argument <code>df</code> is the data source that one wants to query. The <code>@where</code> command in this query will filter the source data by applying the filter condition <code>i.age &gt; 40</code>. This filters out any rows in which the <code>age</code> column is not larger than 40. The <code>@select</code> command then projects the columns of the source data onto a new column structure. The example here applies three specific modifications: 1) it only keeps a subset of the columns in the source <code>DataFrame</code>, i.e. the <code>age</code> column will not be part of the transformed data; 2) it changes the order of the two columns that are selected; and 3) it renames one of the columns that is selected from <code>children</code> to <code>number_of_children</code>. The example query uses the <code>{}</code> syntax to achieve this. A <code>{}</code> in a Query.jl expression instantiates a new <a href="https://github.com/blackrock/NamedTuples.jl">NamedTuple</a>, i.e. it is a shortcut for writing <code>@NT(number_of_children=&gt;i.children, name=&gt;i.name)</code>. The <code>@collect</code> statement determines the data structure that the query returns. In this example the results are returned as a <code>DataFrame</code>.</p>
-<p>A query without a <code>@collect</code> statement returns a standard julia iterator that can be used with any normal julia language construct that can deal with iterators. The following code returns a julia iterator for the query results:</p>
-<div class="codehilite"><pre><span></span><span class="n">q2</span> <span class="o">=</span> <span class="nd">@from</span> <span class="n">i</span> <span class="kp">in</span> <span class="n">df</span> <span class="k">begin</span>
-     <span class="nd">@where</span> <span class="n">i</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;</span> <span class="mi">40</span>
-     <span class="nd">@select</span> <span class="p">{</span><span class="n">number_of_children</span><span class="o">=</span><span class="n">i</span><span class="o">.</span><span class="n">children</span><span class="p">,</span> <span class="n">i</span><span class="o">.</span><span class="n">name</span><span class="p">}</span>
-<span class="k">end</span>
+<span class="nt">A</span> <span class="nt">query</span> <span class="nt">without</span> <span class="nt">a</span> <span class="err">`</span><span class="p">@</span><span class="k">collect</span><span class="err">`</span> <span class="nt">statement</span> <span class="nt">returns</span> <span class="nt">a</span> <span class="nt">standard</span> <span class="nt">julia</span> <span class="nt">iterator</span> <span class="nt">that</span> <span class="nt">can</span> <span class="nt">be</span> <span class="nt">used</span> <span class="nt">with</span> <span class="nt">any</span> <span class="nt">normal</span> <span class="nt">julia</span> <span class="nt">language</span> <span class="nt">construct</span> <span class="nt">that</span> <span class="nt">can</span> <span class="nt">deal</span> <span class="nt">with</span> <span class="nt">iterators</span><span class="o">.</span> <span class="nt">The</span> <span class="nt">following</span> <span class="nt">code</span> <span class="nt">returns</span> <span class="nt">a</span> <span class="nt">julia</span> <span class="nt">iterator</span> <span class="nt">for</span> <span class="nt">the</span> <span class="nt">query</span> <span class="nt">results</span><span class="o">:</span>
+
+
+<span class="err">```</span><span class="p">@</span><span class="k">example</span> <span class="nt">1</span>
+<span class="nt">q2</span> <span class="o">=</span> <span class="p">@</span><span class="k">from</span> <span class="nt">i</span> <span class="nt">in</span> <span class="nt">df</span> <span class="nt">begin</span>
+     <span class="p">@</span><span class="k">where</span> <span class="nt">i</span><span class="p">.</span><span class="nc">age</span> <span class="o">&gt;</span> <span class="nt">40</span>
+     <span class="p">@</span><span class="k">select</span> <span class="p">{</span><span class="nt">number_of_children</span><span class="o">=</span><span class="nt">i</span><span class="p">.</span><span class="nc">children</span><span class="o">,</span> <span class="nt">i</span><span class="p">.</span><span class="nc">name</span><span class="p">}</span>
+<span class="nt">end</span>
+<span class="nt">nothing</span> <span class="err">#</span> <span class="nt">hide</span>
 </pre></div>
 
 
@@ -576,19 +571,12 @@ y = [i.name for i in q2 if i.number_of_children &gt; 0]
 
 
 <p>The last example (extracting only the name and applying a second filter) could of course be completely expressed as a query expression:</p>
-<div class="codehilite"><pre><span></span><span class="n">q3</span> <span class="o">=</span> <span class="nd">@from</span> <span class="n">i</span> <span class="kp">in</span> <span class="n">df</span> <span class="k">begin</span>
-     <span class="nd">@where</span> <span class="n">i</span><span class="o">.</span><span class="n">age</span> <span class="o">&gt;</span> <span class="mi">40</span> <span class="o">&amp;&amp;</span> <span class="n">i</span><span class="o">.</span><span class="n">children</span> <span class="o">&gt;</span> <span class="mi">0</span>
-     <span class="nd">@select</span> <span class="n">i</span><span class="o">.</span><span class="n">name</span>
-     <span class="nd">@collect</span>
-<span class="k">end</span>
-</pre></div>
-
-
-<div class="codehilite"><pre><span></span>1-element Array{Query.DataValue{String},1}:
- &quot;Roger&quot;
-</pre></div>
-
-
+<p><code>@example 1
+q3 = @from i in df begin
+     @where i.age &gt; 40 &amp;&amp; i.children &gt; 0
+     @select i.name
+     @collect
+end</code></p>
 <p>A query that ends with a <code>@collect</code> statement without a specific type will materialize the query results into an array. Note also the difference in the <code>@select</code> statement: The previous queries all used the <code>{}</code> syntax in the <code>@select</code> statement to project results into a tabular format. The last query instead just selects a single value from each row in the <code>@select</code> statement.</p>
 <p>These examples only scratch the surface of what one can do with <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a>, and the interested reader is referred to the <a href="http://www.david-anthoff.com/Query.jl/stable/">Query.jl documentation</a> for more information.</p>
                 
@@ -660,7 +648,9 @@ y = [i.name for i in q2 if i.number_of_children &gt; 0]
       
     </div>
     
-      <script src="../../assets/javascripts/application-6b4ff16fa7.js"></script>
+      <script src="../../assets/javascripts/application-c35428f87f.js"></script>
+      
+      
       <script>app.initialize({url:{base:"../.."}})</script>
       
         <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
