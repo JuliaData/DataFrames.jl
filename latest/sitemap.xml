@@ -4,7 +4,7 @@
     
     <url>
      <loc>/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
     
@@ -13,55 +13,55 @@
         
     <url>
      <loc>/man/getting_started/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/man/io/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/man/joins/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/man/split_apply_combine/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/man/reshaping_and_pivoting/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/man/sorting/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/man/formulas/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/man/pooling/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/man/querying_frameworks/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
@@ -71,19 +71,19 @@
         
     <url>
      <loc>/lib/maintypes/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/lib/utilities/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/lib/manipulation/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
@@ -93,13 +93,13 @@
         
     <url>
      <loc>/NEWS/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
      <loc>/LICENSE/</loc>
-     <lastmod>2017-06-22</lastmod>
+     <lastmod>2017-06-23</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
