@@ -36,6 +36,7 @@ end
 
 function rename!(x::Index, nms)
     for (from, to) in nms
+        from == to && continue # No change, nothing to do
         if haskey(x, to)
             error("Tried renaming $from to $to, when $to already exists in the Index.")
         end
