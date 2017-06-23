@@ -36,8 +36,12 @@ end
 @test names!(i, [:a,:b]) == Index([:a,:b])
 @test rename(i, @compat(Dict(:a=>:A, :b=>:B))) == Index([:A,:B])
 @test rename(i, :a, :A) == Index([:A,:b])
+@test rename(i, :a, :a) == Index([:a,:b])
 @test rename(i, [:a], [:A]) == Index([:A,:b])
-# @test rename(i, uppercase) == Index([:A,:B])
+@test rename(i, [:a], [:a]) == Index([:a,:b])
+@test rename(x->Symbol(uppercase(string(x))), i) == Index([:A,:B])
+@test rename(x->Symbol(lowercase(string(x))), i) == Index([:a,:b])
+
 @test delete!(i, :a) == Index([:b])
 push!(i, :C)
 @test delete!(i, 1) == Index([:C])
