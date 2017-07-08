@@ -38,57 +38,57 @@ module TestIO
 
     @test size(df) == (58788, 25)
 
-    @test df[1, 1] === 1
-    @test df[1, 2] == "\$"
-    @test df[1, 3] === 1971
-    @test df[1, 4] === 121
-    @test df[1, 5] === NA
-    @test df[1, 6] === 6.4
-    @test df[1, 7] === 348
-    @test df[1, 8] === 4.5
-    @test df[1, 9] === 4.5
-    @test df[1, 10] === 4.5
-    @test df[1, 11] === 4.5
-    @test df[1, 12] === 14.5
-    @test df[1, 13] === 24.5
-    @test df[1, 14] === 24.5
-    @test df[1, 15] === 14.5
-    @test df[1, 16] === 4.5
-    @test df[1, 17] === 4.5
-    @test df[1, 18] == ""
-    @test df[1, 19] === 0
-    @test df[1, 20] === 0
-    @test df[1, 21] === 1
-    @test df[1, 22] === 1
-    @test df[1, 23] === 0
-    @test df[1, 24] === 0
-    @test df[1, 25] === 0
+    @test df[1, 1] === Nullable(1)
+    @test isequal(df[1, 2], Nullable("\$"))
+    @test df[1, 3] === Nullable(1971)
+    @test df[1, 4] === Nullable(121)
+    @test isnull(df[1, 5])
+    @test df[1, 6] === Nullable(6.4)
+    @test df[1, 7] === Nullable(348)
+    @test df[1, 8] === Nullable(4.5)
+    @test df[1, 9] === Nullable(4.5)
+    @test df[1, 10] === Nullable(4.5)
+    @test df[1, 11] === Nullable(4.5)
+    @test df[1, 12] === Nullable(14.5)
+    @test df[1, 13] === Nullable(24.5)
+    @test df[1, 14] === Nullable(24.5)
+    @test df[1, 15] === Nullable(14.5)
+    @test df[1, 16] === Nullable(4.5)
+    @test df[1, 17] === Nullable(4.5)
+    @test isequal(df[1, 18], Nullable(""))
+    @test df[1, 19] === Nullable(0)
+    @test df[1, 20] === Nullable(0)
+    @test df[1, 21] === Nullable(1)
+    @test df[1, 22] === Nullable(1)
+    @test df[1, 23] === Nullable(0)
+    @test df[1, 24] === Nullable(0)
+    @test df[1, 25] === Nullable(0)
 
-    @test df[end, 1] === 58788
-    @test df[end, 2] == "xXx: State of the Union"
-    @test df[end, 3] === 2005
-    @test df[end, 4] === 101
-    @test df[end, 5] === 87000000
-    @test df[end, 6] === 3.9
-    @test df[end, 7] === 1584
-    @test df[end, 8] === 24.5
-    @test df[end, 9] === 4.5
-    @test df[end, 10] === 4.5
-    @test df[end, 11] === 4.5
-    @test df[end, 12] === 4.5
-    @test df[end, 13] === 14.5
-    @test df[end, 14] === 4.5
-    @test df[end, 15] === 4.5
-    @test df[end, 16] === 4.5
-    @test df[end, 17] === 14.5
-    @test df[end, 18] == "PG-13"
-    @test df[end, 19] === 1
-    @test df[end, 20] === 0
-    @test df[end, 21] === 0
-    @test df[end, 22] === 0
-    @test df[end, 23] === 0
-    @test df[end, 24] === 0
-    @test df[end, 25] === 0
+    @test df[end, 1] === Nullable(58788)
+    @test isequal(df[end, 2], Nullable("xXx: State of the Union"))
+    @test df[end, 3] === Nullable(2005)
+    @test df[end, 4] === Nullable(101)
+    @test df[end, 5] === Nullable(87000000)
+    @test df[end, 6] === Nullable(3.9)
+    @test df[end, 7] === Nullable(1584)
+    @test df[end, 8] === Nullable(24.5)
+    @test df[end, 9] === Nullable(4.5)
+    @test df[end, 10] === Nullable(4.5)
+    @test df[end, 11] === Nullable(4.5)
+    @test df[end, 12] === Nullable(4.5)
+    @test df[end, 13] === Nullable(14.5)
+    @test df[end, 14] === Nullable(4.5)
+    @test df[end, 15] === Nullable(4.5)
+    @test df[end, 16] === Nullable(4.5)
+    @test df[end, 17] === Nullable(14.5)
+    @test isequal(df[end, 18], Nullable("PG-13"))
+    @test df[end, 19] === Nullable(1)
+    @test df[end, 20] === Nullable(0)
+    @test df[end, 21] === Nullable(0)
+    @test df[end, 22] === Nullable(0)
+    @test df[end, 23] === Nullable(0)
+    @test df[end, 24] === Nullable(0)
+    @test df[end, 25] === Nullable(0)
 
     #test_group("readtable handles common separators and infers them from extensions.")
 
@@ -97,9 +97,9 @@ module TestIO
     df3 = readtable("$data/separators/sample_data.wsv")
     df4 = readtable("$data/separators/sample_data_white.txt", separator = ' ')
 
-    @test df1 == df2
-    @test df2 == df3
-    @test df3 == df4
+    @test isequal(df1, df2)
+    @test isequal(df2, df3)
+    @test isequal(df3, df4)
 
     readtable("$data/quoting/quotedwhitespace.txt", separator = ' ')
 
@@ -129,23 +129,25 @@ module TestIO
     # df10 = readtable("$data/skiplines/skipfront.csv", skipstart = 3, header = false, skiprows = [4, 6])
     # names!(df10, names(df1))
 
-    @test df2 == df1
-    @test df3 == df1
-    @test df4 == df1
+    @test isequal(df2, df1)
+    @test isequal(df3, df1)
+    @test isequal(df4, df1)
 
     # Windows EOLS
-    @test df5 == df1
-    @test df6 == df1
-    @test df7 == df1
-    @test df8 == df1
+    @test isequal(df5, df1)
+    @test isequal(df6, df1)
+    @test isequal(df7, df1)
+    @test isequal(df8, df1)
 
-    # @test df9 == df1[3:end]
-    # @test df10 == df1[[1, 3:end]]
+    # @test isequal(df9, df1[3:end])
+    # @test isequal(df10, df1[[1, 3:end]])
 
     function normalize_eol!(df)
         for (name, col) in eachcol(df)
             if eltype(col) <: AbstractString
                 df[name] = map(s -> replace(s, "\r\n", "\n"), col)
+            elseif eltype(col) <: Nullable && eltype(eltype(col)) <: AbstractString
+                df[name] = map(s -> replace(get(s), "\r\n", "\n"), col)
             end
         end
         df
@@ -163,16 +165,16 @@ module TestIO
     # df2w = readtable(winpath; opts2...)
 
     # Normalize line endings in both and test equality
-    @test normalize_eol!(df1w) == normalize_eol!(df1)
+    @test isequal(normalize_eol!(df1w), normalize_eol!(df1))
     # @test normalize_eol!(df2w) == df1
 
     opts1[:nrows] = 3
     opts2[:nrows] = 3
 
-    @test normalize_eol!(readtable(osxpath; opts1...)) == df1[1:3, :]
-    # @test readtable(osxpath; opts2...) == df1[1:3, :]
-    @test normalize_eol!(readtable(winpath; opts1...)) == df1[1:3, :]
-    # @test readtable(winpath; opts2...) == df1[1:3, :]
+    @test isequal(normalize_eol!(readtable(osxpath; opts1...)), df1[1:3, :])
+    # @test isequalreadtable(osxpath; opts2...), df1[1:3, :]
+    @test isequal(normalize_eol!(readtable(winpath; opts1...)), df1[1:3, :])
+    # @test isequalreadtable(winpath; opts2...), df1[1:3, :])
 
     #test_group("readtable handles custom delimiters.")
 
@@ -181,55 +183,55 @@ module TestIO
     readtable("$data/separators/sample_data.csv", quotemark = Char[])
     @test_throws ErrorException readtable("$data/newlines/embedded_osx.csv", quotemark = Char[])
     df = readtable("$data/quoting/single.csv", quotemark = ['\''])
-    @test df == readtable("$data/quoting/mixed.csv", quotemark = ['\'', '"'])
+    @test isequal(df, readtable("$data/quoting/mixed.csv", quotemark = ['\'', '"']))
 
     # df = readtable("$data/decimal/period.csv")
-    # @test df[2, :A] == 0.3
-    # @test df[2, :B] == 4.0
+    # @test isequaldf[2, :A], 0.3)
+    # @test isequaldf[2, :B], 4.0)
 
-    # @test df == readtable("$data/decimal/comma.tsv", decimal = ',')
+    # @test isequal(df, readtable("$data/decimal/comma.tsv", decimal = ','))
 
     #test_group("readtable column names.")
 
     ns = [:Var1, :Var2, :Var3, :Var4, :Var5]
     df = readtable("$data/typeinference/mixedtypes.csv")
     names!(df, ns)
-    @test df == readtable("$data/typeinference/mixedtypes.csv", names = ns)
+    @test isequal(df, readtable("$data/typeinference/mixedtypes.csv", names = ns))
 
     df = readtable("$data/separators/sample_data.csv", header = false, names = ns[1:3])
-    @test df[1, :Var1] == 0
+    @test isequal(df[1, :Var1], Nullable(0))
     df = readtable("$data/separators/sample_data.csv", names = ns[1:3])
-    @test df[1, :Var1] == 1
+    @test isequal(df[1, :Var1], Nullable(1))
 
     #test_group("Properties of data frames returned by readtable method.")
 
     # Readtable ignorepadding
     io = IOBuffer("A , \tB  , C\n1 , \t2, 3\n")
-    @test readtable(io, ignorepadding = true) == DataFrame(A = 1, B = 2, C = 3)
+    @test isequal(readtable(io, ignorepadding = true), DataFrame(A = 1, B = 2, C = 3))
 
     # Readtable c-style escape options
 
     df = readtable("$data/escapes/escapes.csv", allowescapes = true)
-    @test df[1, :V] == "\t\r\n"
-    @test df[2, :V] == "\\\\t"
-    @test df[3, :V] == "\\\""
+    @test isequal(df[1, :V], Nullable("\t\r\n"))
+    @test isequal(df[2, :V], Nullable("\\\\t"))
+    @test isequal(df[3, :V], Nullable("\\\""))
 
     df = readtable("$data/escapes/escapes.csv")
-    @test df[1, :V] == "\\t\\r\\n"
-    @test df[2, :V] == "\\\\t"
-    @test df[3, :V] == "\\\""
+    @test isequal(df[1, :V], Nullable("\\t\\r\\n"))
+    @test isequal(df[2, :V], Nullable("\\\\t"))
+    @test isequal(df[3, :V], Nullable("\\\""))
 
     # df = readtable("$data/escapes/escapes.csv", escapechars = ['"'], nrows = 2)
-    # @test df[1, :V] == "\\t\\r\\n"
-    # @test df[2, :V] == "\\\\\\\\t"
+    # @test isequal(df[1, :V], "\\t\\r\\n")
+    # @test isequal(df[2, :V], "\\\\\\\\t")
 
     # Readtable with makefactors active should only make factors from columns
     # of strings.
     filename = "$data/factors/mixedvartypes.csv"
     df = readtable(filename, makefactors = true)
 
-    @test typeof(df[:factorvar]) == PooledDataArray{Compat.UTF8String,UInt32,1}
-    @test typeof(df[:floatvar]) == DataArray{Float64,1}
+    @test isa(df[:factorvar], NullableCategoricalArray{Compat.UTF8String,1})
+    @test isa(df[:floatvar], NullableArray{Float64,1})
 
     # Readtable shouldn't silently drop data when reading highly compressed gz.
     df = readtable("$data/compressed/1000x2.csv.gz")
@@ -238,79 +240,79 @@ module TestIO
     # Readtable type inference
     filename = "$data/typeinference/bool.csv"
     df = readtable(filename)
-    @test typeof(df[:Name]) == DataArray{Compat.UTF8String,1}
-    @test typeof(df[:IsMale]) == DataArray{Bool,1}
-    @test df[:IsMale][1] == true
-    @test df[:IsMale][4] == false
+    @test isa(df[:Name], NullableArray{Compat.UTF8String,1})
+    @test isa(df[:IsMale], NullableArray{Bool,1})
+    @test get(df[:IsMale][1])
+    @test !get(df[:IsMale][4])
 
     filename = "$data/typeinference/standardtypes.csv"
     df = readtable(filename)
-    @test typeof(df[:IntColumn]) == DataArray{Int,1}
-    @test typeof(df[:IntlikeColumn]) == DataArray{Float64,1}
-    @test typeof(df[:FloatColumn]) == DataArray{Float64,1}
-    @test typeof(df[:BoolColumn]) == DataArray{Bool,1}
-    @test typeof(df[:StringColumn]) == DataArray{Compat.UTF8String,1}
+    @test isa(df[:IntColumn], NullableArray{Int,1})
+    @test isa(df[:IntlikeColumn], NullableArray{Float64,1})
+    @test isa(df[:FloatColumn], NullableArray{Float64,1})
+    @test isa(df[:BoolColumn], NullableArray{Bool,1})
+    @test isa(df[:StringColumn], NullableArray{Compat.UTF8String,1})
 
     filename = "$data/typeinference/mixedtypes.csv"
     df = readtable(filename)
-    @test typeof(df[:c1]) == DataArray{Compat.UTF8String,1}
-    @test df[:c1][1] == "1"
-    @test df[:c1][2] == "2.0"
-    @test df[:c1][3] == "true"
-    @test typeof(df[:c2]) == DataArray{Float64,1}
-    @test df[:c2][1] == 1.0
-    @test df[:c2][2] == 3.0
-    @test df[:c2][3] == 4.5
-    @test typeof(df[:c3]) == DataArray{Compat.UTF8String,1}
-    @test df[:c3][1] == "0"
-    @test df[:c3][2] == "1"
-    @test df[:c3][3] == "f"
-    @test typeof(df[:c4]) == DataArray{Bool,1}
-    @test df[:c4][1] == true
-    @test df[:c4][2] == false
-    @test df[:c4][3] == true
-    @test typeof(df[:c5]) == DataArray{Compat.UTF8String,1}
-    @test df[:c5][1] == "False"
-    @test df[:c5][2] == "true"
-    @test df[:c5][3] == "true"
+    @test isa(df[:c1], NullableArray{Compat.UTF8String,1})
+    @test isequal(df[:c1][1], Nullable("1"))
+    @test isequal(df[:c1][2], Nullable("2.0"))
+    @test isequal(df[:c1][3], Nullable("true"))
+    @test isa(df[:c2], NullableArray{Float64,1})
+    @test isequal(df[:c2][1], Nullable(1.0))
+    @test isequal(df[:c2][2], Nullable(3.0))
+    @test isequal(df[:c2][3], Nullable(4.5))
+    @test isa(df[:c3], NullableArray{Compat.UTF8String,1})
+    @test isequal(df[:c3][1], Nullable("0"))
+    @test isequal(df[:c3][2], Nullable("1"))
+    @test isequal(df[:c3][3], Nullable("f"))
+    @test isa(df[:c4], NullableArray{Bool,1})
+    @test isequal(df[:c4][1], Nullable(true))
+    @test isequal(df[:c4][2], Nullable(false))
+    @test isequal(df[:c4][3], Nullable(true))
+    @test isa(df[:c5], NullableArray{Compat.UTF8String,1})
+    @test isequal(df[:c5][1], Nullable("False"))
+    @test isequal(df[:c5][2], Nullable("true"))
+    @test isequal(df[:c5][3], Nullable("true"))
 
     # Readtable defining column types
     filename = "$data/definedtypes/mixedvartypes.csv"
 
     df = readtable(filename)
-    @test typeof(df[:n]) == DataArray{Int,1}
-    @test df[:n][1] == 1
-    @test typeof(df[:s]) == DataArray{Compat.UTF8String,1}
-    @test df[:s][1] == "text"
-    @test typeof(df[:f]) == DataArray{Float64,1}
-    @test df[:f][1] == 2.3
-    @test typeof(df[:b]) == DataArray{Bool,1}
-    @test df[:b][1] == true
+    @test isa(df[:n], NullableArray{Int,1})
+    @test isequal(df[:n][1], Nullable(1))
+    @test isa(df[:s], NullableArray{Compat.UTF8String,1})
+    @test isequal(df[:s][1], Nullable("text"))
+    @test isa(df[:f], NullableArray{Float64,1})
+    @test isequal(df[:f][1], Nullable(2.3))
+    @test isa(df[:b], NullableArray{Bool,1})
+    @test isequal(df[:b][1], Nullable(true))
 
     df = readtable(filename, eltypes = [Int64, Compat.UTF8String, Float64, Bool])
-    @test typeof(df[:n]) == DataArray{Int64,1}
-    @test df[:n][1] == 1
-    @test typeof(df[:s]) == DataArray{Compat.UTF8String,1}
-    @test df[:s][1] == "text"
-    @test df[:s][4] == "text ole"
-    @test typeof(df[:f]) == DataArray{Float64,1}
-    @test df[:f][1] == 2.3
-    @test typeof(df[:b]) == DataArray{Bool,1}
-    @test df[:b][1] == true
-    @test df[:b][2] == false
+    @test isa(df[:n], NullableArray{Int64,1})
+    @test isequal(df[:n][1], Nullable(1))
+    @test isa(df[:s], NullableArray{Compat.UTF8String,1})
+    @test isequal(df[:s][1], Nullable("text"))
+    @test isequal(df[:s][4], Nullable("text ole"))
+    @test isa(df[:f], NullableArray{Float64,1})
+    @test isequal(df[:f][1], Nullable(2.3))
+    @test isa(df[:b], NullableArray{Bool,1})
+    @test isequal(df[:b][1], Nullable(true))
+    @test isequal(df[:b][2], Nullable(false))
 
     df = readtable(filename, eltypes = [Int64, Compat.UTF8String, Float64, Compat.UTF8String])
-    @test typeof(df[:n]) == DataArray{Int64,1}
-    @test df[:n][1] == 1.0
-    @test isna(df[:s][3])
-    @test typeof(df[:f]) == DataArray{Float64,1}
+    @test isa(df[:n], NullableArray{Int64,1})
+    @test isequal(df[:n][1], Nullable(1.0))
+    @test isnull(df[:s][3])
+    @test isa(df[:f], NullableArray{Float64,1})
     # Float are not converted to int
-    @test df[:f][1] == 2.3
-    @test df[:f][2] == 0.2
-    @test df[:f][3] == 5.7
-    @test typeof(df[:b]) == DataArray{Compat.UTF8String,1}
-    @test df[:b][1] == "T"
-    @test df[:b][2] == "FALSE"
+    @test isequal(df[:f][1], Nullable(2.3))
+    @test isequal(df[:f][2], Nullable(0.2))
+    @test isequal(df[:f][3], Nullable(5.7))
+    @test isa(df[:b], NullableArray{Compat.UTF8String,1})
+    @test isequal(df[:b][1], Nullable("T"))
+    @test isequal(df[:b][2], Nullable("FALSE"))
 
     # Readtable name normalization
     abnormal = "\u212b"
@@ -324,12 +326,13 @@ module TestIO
     io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
     @test names(readtable(io, normalizenames=false)) == [Symbol(abnormal),Symbol("%_B*\tC*"),:end]
 
-    # Test writetable with NA and compare to the results
+    # Test writetable with Nullable() and compare to the results
     tf = tempname()
     isfile(tf) && rm(tf)
-    df = DataFrame(A = @data([1,NA]), B = @data(["b", NA]))
+    df = DataFrame(A = NullableArray(Nullable{Int}[1,Nullable()]),
+                   B = NullableArray(Nullable{String}["b", Nullable()]))
     writetable(tf, df)
-    @test readcsv(tf) == ["A" "B"; 1 "b"; "NA" "NA"]
+    @test readcsv(tf) == ["A" "B"; 1 "b"; "NULL" "NULL"]    
 
     # Test writetable with nastring set and compare to the results
     isfile(tf) && rm(tf)
@@ -338,10 +341,10 @@ module TestIO
     rm(tf)
 
     # Test writetable with append
-    df1 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
-    df2 = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]))
-    df3 = DataFrame(a = @data([1, 2, 3]), c = @data([4, 5, 6])) # 2nd column mismatch
-    df3b = DataFrame(a = @data([1, 2, 3]), b = @data([4, 5, 6]), c = @data([4, 5, 6])) # number of columns mismatch
+    df1 = DataFrame(a = NullableArray([1, 2, 3]), b = NullableArray([4, 5, 6]))
+    df2 = DataFrame(a = NullableArray([1, 2, 3]), b = NullableArray([4, 5, 6]))
+    df3 = DataFrame(a = NullableArray([1, 2, 3]), c = NullableArray([4, 5, 6])) # 2nd column mismatch
+    df3b = DataFrame(a = NullableArray([1, 2, 3]), b = NullableArray([4, 5, 6]), c = NullableArray([4, 5, 6])) # number of columns mismatch
 
 
     # Would use joinpath(tempdir(), randstring()) to get around tempname
@@ -352,22 +355,22 @@ module TestIO
 
     # Written as normal if file doesn't exist
     writetable(tf, df1, append = true)
-    @test readtable(tf) == df1
+    @test isequal(readtable(tf), df1)
 
     # Written as normal if file is empty
     open(io -> print(io, ""), tf, "w")
     writetable(tf, df1, append = true)
-    @test readtable(tf) == df1
+    @test isequal(readtable(tf), df1)
 
     # Appends to existing file if append == true
     writetable(tf, df1)
     writetable(tf, df2, header = false, append = true)
-    @test readtable(tf) == vcat(df1, df2)
+    @test isequal(readtable(tf), vcat(df1, df2))
 
     # Overwrites file if append == false
     writetable(tf, df1)
     writetable(tf, df2)
-    @test readtable(tf) == df2
+    @test isequal(readtable(tf), df2)
 
     # Enforces matching column names iff append == true && header == true
     writetable(tf, df2)
@@ -387,7 +390,7 @@ module TestIO
 
     # Make sure the ' doesn't get escaped for no reason
     writetable(tf, df)
-    @test readtable(tf) == df
+    @test isequal(readtable(tf), df)
 
     # Make sure the ' does get escaped when needed
     writetable(tf, df, quotemark='\'')
@@ -405,10 +408,10 @@ module TestIO
         """
     @test size(df1) == (4, 3)
     @test names(df1) == [:name, :age, :squidPerWeek]
-    @test df1[1] == ["Alice","Bob","Carol","Eve"]
-    @test df1[2] == [36,24,58,49]
-    @test df1[3] == [3.14,0,2.71,7.77]
-    @test typeof(df1[1]) <: DataArray
+    @test isequal(df1[1], NullableArray(["Alice","Bob","Carol","Eve"]))
+    @test isequal(df1[2], NullableArray([36,24,58,49]))
+    @test isequal(df1[3], NullableArray([3.14,0,2.71,7.77]))
+    @test isa(df1[1], NullableArray{Compat.UTF8String,1})
 
     # Test @wsv_str
     df2 = wsv"""
@@ -418,7 +421,7 @@ module TestIO
         Carol  58         2.71
         Eve    49         7.77
         """
-    @test df2 == df1
+    @test isequal(df2, df1)
 
     # Test @tsv_str
     df3 = tsv"""
@@ -428,7 +431,7 @@ module TestIO
         Carol	58	2.71
         Eve	49	7.77
         """
-    @test df3 == df1
+    @test isequal(df3, df1)
 
     # csv2 can't be tested until non-'.' decimals are implemented
     #df4 = csv2"""
@@ -438,7 +441,7 @@ module TestIO
     #    Carol;  58;         2,71
     #    Eve;    49;         7,77
     #    """
-    #@test df4 == df1
+    #@test isequal(df4, df1)
 
     # Test 'f' flag
     df5 = csv"""
@@ -448,7 +451,7 @@ module TestIO
         Carol,  58,         2.71
         Eve,    49,         7.77
         """f
-    @test typeof(df5[1]) <: PooledDataArray
+    @test isa(df5[1], NullableCategoricalArray{Compat.UTF8String,1})
 
     # Test 'c' flag
     df6 = csv"""
@@ -458,7 +461,7 @@ module TestIO
         #Carol,  58,         2.71
         Eve,    49,         7.77
         """c
-    @test df6 == df1[[1,2,4],:]
+    @test isequal(df6, df1[[1,2,4],:])
 
     # Test 'H' flag
     df7 = csv"""
@@ -468,7 +471,8 @@ module TestIO
         Eve,    49,         7.77
         """H
     @test names(df7) == [:x1,:x2,:x3]
-    @test Array(df7) == Array(df1)
+    names!(df7, names(df1))
+    @test isequal(df7, df1)
 
     # Test multiple flags at once
     df8 = csv"""
@@ -477,9 +481,10 @@ module TestIO
         #Carol,  58,         2.71
         Eve,    49,         7.77
         """fcH
-    @test typeof(df8[1]) <: PooledDataArray
+    @test isa(df8[1], NullableCategoricalArray{Compat.UTF8String,1})
     @test names(df8) == [:x1,:x2,:x3]
-    @test Array(df8) == Array(df1[[1,2,4],:])
+    names!(df8, names(df1))
+    @test isequal(df8, df1[[1,2,4],:])
 
     # Test invalid flag
     # Need to wrap macro call inside eval to prevent the error from being

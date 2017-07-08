@@ -4,24 +4,24 @@ module TestData
     using DataFrames
     using Compat
 
-    #test_group("DataVector creation")
-    dvint = @data([1, 2, NA, 4])
-    dvint2 = data([5:8;])
-    dvint3 = data(5:8)
-    dvflt = @data([1.0, 2, NA, 4])
-    dvstr = @data(["one", "two", NA, "four"])
-    dvdict = DataArray(Dict, 4)    # for issue #199
+    #test_group("NullableArray creation")
+    nvint = NullableArray(Nullable{Int}[1, 2, Nullable(), 4])
+    nvint2 = NullableArray(5:8)
+    nvint3 = NullableArray(5:8)
+    nvflt = NullableArray(Nullable{Float64}[1.0, 2.0, Nullable(), 4.0])
+    nvstr = NullableArray(Nullable{Compat.ASCIIString}["one", "two", Nullable(), "four"])
+    dvdict = NullableArray(Dict, 4)    # for issue #199
 
     #test_group("constructors")
-    df1 = DataFrame(Any[dvint, dvstr], [:Ints, :Strs])
-    df2 = DataFrame(Any[dvint, dvstr])
-    df3 = DataFrame(Any[dvint])
+    df1 = DataFrame(Any[nvint, nvstr], [:Ints, :Strs])
+    df2 = DataFrame(Any[nvint, nvstr])
+    df3 = DataFrame(Any[nvint])
     df4 = convert(DataFrame, [1:4 1:4])
-    df5 = DataFrame(Any[@data([1,2,3,4]), dvstr])
-    df6 = DataFrame(Any[dvint, dvint, dvstr], [:A, :B, :C])
-    df7 = DataFrame(x = dvint, y = dvstr)
+    df5 = DataFrame(Any[NullableArray([1,2,3,4]), nvstr])
+    df6 = DataFrame(Any[nvint, nvint, nvstr], [:A, :B, :C])
+    df7 = DataFrame(x = nvint, y = nvstr)
     @test size(df7) == (4, 2)
-    @test isequal(df7[:x], dvint)
+    @test isequal(df7[:x], nvint)
 
     #test_group("description functions")
     @test size(df6, 1) == 4
@@ -31,10 +31,10 @@ module TestData
     @test names(df7) == [:x, :y]
 
     #test_group("ref")
-    @test df6[2, 3] == "two"
-    @test isna(df6[3, 3])
-    @test df6[2, :C] == "two"
-    @test isequal(df6[:B], dvint)
+    @test isequal(df6[2, 3], Nullable("two"))
+    @test isnull(df6[3, 3])
+    @test isequal(df6[2, :C], Nullable("two"))
+    @test isequal(df6[:B], nvint)
     @test size(df6[[2,3]], 2) == 2
     @test size(df6[2,:], 1) == 1
     @test size(df6[[1, 3], [1, 3]]) == (2, 2)
@@ -43,17 +43,17 @@ module TestData
     # lots more to do
 
     #test_group("assign")
-    df6[3] = @data(["un", "deux", "troix", "quatre"])
-    @test df6[1, 3] == "un"
+    df6[3] = NullableArray(["un", "deux", "troix", "quatre"])
+    @test isequal(df6[1, 3], Nullable("un"))
     df6[:B] = [4, 3, 2, 1]
-    @test df6[1,2] == 4
+    @test isequal(df6[1,2], Nullable(4))
     df6[:D] = [true, false, true, false]
-    @test df6[1,4] == true
+    @test isequal(df6[1,4], Nullable(true))
     delete!(df6, :D)
     @test names(df6) == [:A, :B, :C]
     @test size(df6, 2) == 3
 
-    #test_group("NA handling")
+    #test_group("null handling")
     @test nrow(df5[complete_cases(df5), :]) == 3
 
     #test_context("SubDataFrames")
@@ -68,7 +68,7 @@ module TestData
     @test size(sdf6d) == (2,1)
 
     #test_group("ref")
-    @test sdf6a[1,2] == 4
+    @test isequal(sdf6a[1,2], Nullable(4))
 
     #test_context("Within")
     #test_group("Associative")
@@ -77,35 +77,35 @@ module TestData
     srand(1)
     N = 20
     #Cast to Int64 as rand() behavior differs between Int32/64
-    d1 = pdata(rand(@compat(map(Int64, 1:2)), N))
-    d2 = (@pdata ["A", "B", NA])[rand(@compat(map(Int64, 1:3)), N)]
-    d3 = data(randn(N))
-    d4 = data(randn(N))
+    d1 = NullableArray(rand(map(Int64, 1:2), N))
+    d2 = NullableCategoricalArray(Nullable{String}["A", "B", Nullable()])[rand(map(Int64, 1:3), N)]
+    d3 = NullableArray(randn(N))
+    d4 = NullableArray(randn(N))
     df7 = DataFrame(Any[d1, d2, d3], [:d1, :d2, :d3])
 
     #test_group("groupby")
     gd = groupby(df7, :d1)
     @test length(gd) == 2
-    # @test isequal(gd[2]["d2"], PooledDataVector["A", "B", NA, "A", NA, NA, NA, NA])
-    @test sum(gd[2][:d3]) == sum(df7[:d3][dropna(df7[:d1] .== 2)])
+    # @test isequal(gd[2]["d2"], CategoricalVector["A", "B", Nullable(), "A", Nullable(), Nullable(), Nullable(), Nullable()])
+    @test isequal(sum(gd[2][:d3]), sum(df7[:d3][Vector(df7[:d1]) .== 2]))
 
     g1 = groupby(df7, [:d1, :d2])
     g2 = groupby(df7, [:d2, :d1])
-    @test sum(g1[1][:d3]) == sum(g2[1][:d3])
+    @test isequal(sum(g1[1][:d3]), sum(g2[1][:d3]))
 
-    res = 0.0
+    res = Nullable(0.0)
     for x in g1
         res += sum(x[:d1])
     end
-    @test res == sum(df7[:d1])
+    @test isequal(res, sum(df7[:d1]))
 
     df8 = aggregate(df7[[1, 3]], sum)
-    @test df8[1, :d1_sum] == sum(df7[:d1])
+    @test isequal(df8[1, :d1_sum], sum(df7[:d1]))
 
     df8 = aggregate(df7, :d2, [sum, length])
     @test size(df8, 1) == 3
     @test size(df8, 2) == 5
-    @test df8[2, :d1_length] == 4
+    @test isequal(df8[2, :d1_length], Nullable(4))
     @test isequal(df8, aggregate(groupby(df7, :d2), [sum, length]))
 
     df9 = df7 |> groupby([:d2]) |> [sum, length]
@@ -189,11 +189,17 @@ module TestData
                     v2 = randn(5))
 
     m1 = join(df1, df2, on = :a)
-    @test isequal(m1[:a], @data([1, 2, 3, 4, 5]))
+    @test isequal(m1[:a], NullableArray([1, 2, 3, 4, 5]))
     # TODO: Re-enable
-    # m2 = join(df1, df2, on = :a, kind = :outer)
-    # @test isequal(m2[:b2], DataVector["A", "B", "B", "B", "B", NA, NA, NA, NA, NA])
-    # @test isequal(m2[:b2], DataVector["B", "B", "B", "C", "B", NA, NA, NA, NA, NA])
+    m2 = join(df1, df2, on = :a, kind = :outer)
+    # @test isequal(m2[:b2],
+    #               NullableArray(Nullable{String}["A", "B", "B", "B", "B",
+    #                                              Nullable(), Nullable(),
+    #                                              Nullable(), Nullable(), Nullable()]))
+    # @test isequal(m2[:b2],
+    #               NullableArray(Nullable{String}["B", "B", "B", "C", "B",
+    #                                              Nullable(), Nullable(),
+    #                                              Nullable(), Nullable(), Nullable()]))
 
     df1 = DataFrame(a = [1, 2, 3],
                     b = ["America", "Europe", "Africa"])
@@ -201,33 +207,33 @@ module TestData
                     c = ["New World", "Old World", "New World"])
 
     m1 = join(df1, df2, on = :a, kind = :inner)
-    @test isequal(m1[:a], @data([1, 2]))
+    @test isequal(m1[:a], NullableArray([1, 2]))
 
     m2 = join(df1, df2, on = :a, kind = :left)
-    @test isequal(m2[:a], @data([1, 2, 3]))
+    @test isequal(m2[:a], NullableArray([1, 2, 3]))
 
     m3 = join(df1, df2, on = :a, kind = :right)
-    @test isequal(m3[:a], @data([1, 2, 4]))
+    @test isequal(m3[:a], NullableArray([1, 2, 4]))
 
     m4 = join(df1, df2, on = :a, kind = :outer)
-    @test isequal(m4[:a], @data([1, 2, 3, 4]))
+    @test isequal(m4[:a], NullableArray([1, 2, 3, 4]))
 
-    # test with NAs (issue #185)
+    # test with nulls (issue #185)
     df1 = DataFrame()
-    df1[:A] = @data(["a", "b", "a", NA])
-    df1[:B] = @data([1, 2, 1, 3])
+    df1[:A] = NullableArray(Nullable{Compat.ASCIIString}["a", "b", "a", Nullable()])
+    df1[:B] = NullableArray([1, 2, 1, 3])
 
     df2 = DataFrame()
-    df2[:A] = @data(["a", NA, "c"])
-    df2[:C] = @data([1, 2, 4])
+    df2[:A] = NullableArray(Nullable{Compat.ASCIIString}["a", Nullable(), "c"])
+    df2[:C] = NullableArray([1, 2, 4])
 
     m1 = join(df1, df2, on = :A)
     @test size(m1) == (3,3)
-    @test isequal(m1[:A], @data([NA,"a","a"]))
+    @test isequal(m1[:A], NullableArray(Nullable{Compat.ASCIIString}[Nullable(),"a","a"]))
 
     m2 = join(df1, df2, on = :A, kind = :outer)
     @test size(m2) == (5,3)
-    @test isequal(m2[:A], @data([NA,"a","a","b","c"]))
+    @test isequal(m2[:A], NullableArray(Nullable{Compat.ASCIIString}[Nullable(),"a","a","b","c"]))
 
     srand(1)
     df1 = DataFrame(
@@ -241,20 +247,23 @@ module TestData
         b = [:A,:B,:C][[1,1,1,2,3]],
         v2 = randn(5)
     )
-    df2[1,:a] = NA
+    df2[1,:a] = Nullable()
 
     # # TODO: Restore this functionality
     # m1 = join(df1, df2, on = [:a,:b])
-    # @test isequal(m1[:a], DataArray(["x", "x", "y", "y", fill("x", 5)]))
+    # @test isequal(m1[:a], NullableArray(["x", "x", "y", "y", fill("x", 5)]))
     # m2 = join(df1, df2, on = ["a","b"], kind = :outer)
-    # @test isequal(m2[10,:v2], NA)
-    # @test isequal(m2[:a], DataVector["x", "x", "y", "y", "x", "x", "x", "x", "x", "y", NA, "y"])
+    # @test isequal(m2[10,:v2], Nullable())
+    # @test isequal(m2[:a],
+    #               NullableArray(Nullable{String}["x", "x", "y", "y",
+    #                                              "x", "x", "x", "x", "x", "y",
+    #                                              Nullable(), "y"])
 
     srand(1)
     function spltdf(d)
-        d[:x1] = map(x -> x[1], d[:a])
-        d[:x2] = map(x -> x[2], d[:a])
-        d[:x3] = map(x -> x[3], d[:a])
+        d[:x1] = map(x -> get(x)[1], d[:a])
+        d[:x2] = map(x -> get(x)[2], d[:a])
+        d[:x3] = map(x -> get(x)[3], d[:a])
         d
     end
     df1 = DataFrame(
@@ -272,39 +281,6 @@ module TestData
     # m2 = join(df1, df2, on = [:x1, :x2, :x3])
     # @test isequal(sort(m1[:a]), sort(m2[:a]))
 
-    #test_group("New DataVector constructors")
-    dv = DataArray(Int, 5)
-    @test all(isna(dv))
-    dv = DataArray(Float64, 5)
-    @test all(isna(dv))
-    dv = @data(zeros(5))
-    @test all(dv .== 0.0)
-    dv = @data(ones(5))
-    @test all(dv .== 1.0)
-
-    # No more NA corruption
-    dv = @data(ones(10_000))
-    @test !any(isna(dv))
-
-    PooledDataArray(falses(2), falses(2))
-    PooledDataArray(falses(2), trues(2))
-
-    # Test vectorized comparisons work for DataVector's and PooledDataVector's
-    @data([1, 2, NA]) .== 1
-    @pdata([1, 2, NA]) .== 1
-    @data(["1", "2", NA]) .== "1"
-    @pdata(["1", "2", NA]) .== "1"
-
-    # Test unique()
-    #test_group("unique()")
-    # TODO: Restore this
-    # dv = DataArray(1:4)
-    # dv[4] = NA
-    # @test (1 in unique(dv))
-    # @test (2 in unique(dv))
-    # @test (3 in unique(dv))
-    # @test (NA in unique(dv))
-
     # test nonunique() with extra argument
     df1 = DataFrame(a = ["a", "b", "a", "b", "a", "b"], b = 1:6, c = [1:3;1:3])
     df = vcat(df1, df1)
@@ -317,29 +293,16 @@ module TestData
     @test find(nonunique(df, 1)) == collect(3:12)
 
     # Test unique() with extra argument
-    @test unique(df) == df1
-    @test unique(df, :) == df1
-    @test unique(df, Colon()) == df1
-    @test unique(df, 2:3) == df1
-    @test unique(df, 3) == df1[1:3,:]
-    @test unique(df, [1, 3]) == df1
-    @test unique(df, [:a, :c]) == df1
-    @test unique(df, :a) == df1[1:2,:]
+    @test isequal(unique(df), df1)
+    @test isequal(unique(df, :), df1)
+    @test isequal(unique(df, Colon()), df1)
+    @test isequal(unique(df, 2:3), df1)
+    @test isequal(unique(df, 3), df1[1:3,:])
+    @test isequal(unique(df, [1, 3]), df1)
+    @test isequal(unique(df, [:a, :c]), df1)
+    @test isequal(unique(df, :a), df1[1:2,:])
 
     #test unique!() with extra argument
     unique!(df, [1, 3])
-    @test df == df1    
-
-    #test_group("find()")
-    dv = DataArray([true, false, true])
-    @test isequal(find(dv), [1, 3])
-
-    pdv = PooledDataArray([true, false, true])
-    @test isequal(find(pdv), [1, 3])
-
-    dv[1] = NA
-    @test isequal(find(dv), [3])
-
-    pdv[1] = NA
-    @test isequal(find(pdv), [3])
+    @test isequal(df, df1)
 end

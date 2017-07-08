@@ -12,7 +12,8 @@ using Compat
 import Compat.String
 using Reexport
 @reexport using StatsBase
-@reexport using DataArrays
+@reexport using NullableArrays
+@reexport using CategoricalArrays
 using GZip
 using SortingAlgorithms
 
@@ -50,6 +51,7 @@ export @~,
 
        aggregate,
        by,
+       categorical!,
        coefnames,
        colwise,
        combine,
@@ -70,8 +72,6 @@ export @~,
        nrow,
        nullable!,
        order,
-       pool,
-       pool!,
        printtable,
        readtable,
        rename!,
@@ -82,9 +82,14 @@ export @~,
        unique!,
        unstack,
        writetable,
+       head,
+       tail,
 
        # Remove after deprecation period
-       read_rda
+       read_rda,
+       pool,
+       pool!
+
 
 ##############################################################################
 ##

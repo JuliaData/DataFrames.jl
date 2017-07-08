@@ -14,15 +14,15 @@ module TestJoin
 
     # Test output of various join types
     outer = DataFrame(ID = [1, 2, 2, 3, 4],
-                      Name = @data(["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", NA]),
-                      Job = @data(["Lawyer", "Doctor", "Florist", NA, "Farmer"]))
+                      Name = NullableArray(Nullable{String}["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", Nullable()]),
+                      Job = NullableArray(Nullable{String}["Lawyer", "Doctor", "Florist", Nullable(), "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
-    right = outer[!isna(outer[:Job]), [:Name, :ID, :Job]]
-    left = outer[!isna(outer[:Name]), :]
-    inner = left[!isna(left[:Job]), :]
+    right = outer[Bool[!isnull(x) for x in outer[:Job]], [:Name, :ID, :Job]]
+    left = outer[Bool[!isnull(x) for x in outer[:Name]], :]
+    inner = left[Bool[!isnull(x) for x in left[:Job]], :]
     semi = unique(inner[:, [:ID, :Name]])
-    anti = left[isna(left[:Job]), [:ID, :Name]]
+    anti = left[Bool[isnull(x) for x in left[:Job]], [:ID, :Name]]
 
     @test isequal(join(name, job, on = :ID), inner)
     @test isequal(join(name, job, on = :ID, kind = :inner), inner)
@@ -59,7 +59,7 @@ module TestJoin
                       B = ['a', 'a', 'a', 'b', 'b', 'b'],
                       C = [3, 4, 5, 3, 4, 5])
 
-    @test join(df1, df2[[:C]], kind = :cross) == cross
+    @test isequal(join(df1, df2[[:C]], kind = :cross), cross)
 
     # Cross joins handle naming collisions
     @test size(join(df1, df1, kind = :cross)) == (4, 4)
@@ -71,7 +71,7 @@ module TestJoin
     df1 = DataFrame(A = 1:50,
                     B = 1:50,
                     C = 1)
-    pool!(df1, :A)
-    pool!(df1, :B)
+    categorical!(df1, :A)
+    categorical!(df1, :B)
     join(df1, df1, on = [:A, :B], kind = :inner)
 end

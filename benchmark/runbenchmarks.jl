@@ -5,9 +5,7 @@
 using DataFrames
 using Benchmark
 
-benchmarks = ["datavector.jl",
-              "datamatrix.jl",
-              "io.jl"]
+benchmarks = [ "io.jl"]
 
 # TODO: Print summary to stdout_stream, while printing results
 #       to file with appends.
