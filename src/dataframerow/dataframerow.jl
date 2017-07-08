@@ -41,7 +41,7 @@ Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, r.df[r.row,:])
 # so that duplicate rows would have the same hash
 function Base.hash(r::DataFrameRow, h::UInt)
     for col in columns(r.df)
-        if isna(col, r.row)
+        if _isnull(col[r.row])
             h = hash(false, h)
         else
             h = hash(true, hash(col[r.row], h))
@@ -50,34 +50,16 @@ function Base.hash(r::DataFrameRow, h::UInt)
     return h
 end
 
-# compare two elements in the array
-_isequalelms(a::Array, i::Int, j::Int) = isequal(a[i], a[j])
-
-# compare the two elements in the data array
-function _isequalelms(a::DataArray, i::Int, j::Int)
-    if isna(a, i)
-        return isna(a, j)
-    else
-        return !isna(a, j) && isequal(a.data[i], a.data[j])
-    end
-end
-
-# compare two elements in the pooled array
-# NOTE assume there are no duplicated elements in the pool
-_isequalelms(a::PooledDataArray, i::Int, j::Int) = isequal(a.refs[i], a.refs[j])
-
 # comparison of DataFrame rows
 # only the rows of the same DataFrame could be compared
 # rows are equal if they have the same values (while the row indices could differ)
+@compat(Base.:(==))(r1::DataFrameRow, r2::DataFrameRow) = isequal(r1, r2)
+
 function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
-    if r1.df !== r2.df
-        throw(ArgumentError("Comparing rows from different frames not supported"))
-    end
-    if r1.row == r2.row
-        return true
-    end
+    r1.df == r2.df || throw(ArgumentError("Comparing rows from different frames not supported"))
+    r1.row == r2.row && return true
     for col in columns(r1.df)
-        if !_isequalelms(col, r1.row, r2.row)
+        if !isequal(col[r1.row], col[r2.row])
             return false
         end
     end

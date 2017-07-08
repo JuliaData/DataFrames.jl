@@ -15,7 +15,7 @@ full = join(names, jobs, on = :ID)
 
 Output:
 
-| Row | ID | Name       | Job      | 
+| Row | ID | Name       | Job      |
 |-----|----|------------|----------|
 | 1   | 20 | "John Doe" | "Lawyer" |
 | 2   | 40 | "Jane Doe" | "Doctor" |

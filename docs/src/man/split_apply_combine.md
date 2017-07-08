@@ -7,12 +7,11 @@ The DataFrames package supports the Split-Apply-Combine strategy through the `by
 We show several examples of the `by` function applied to the `iris` dataset below:
 
 ```julia
-using DataFrames, RDatasets
-
-iris = dataset("datasets", "iris")
+using DataFrames
+iris = DataFrames.loadiris()
 
 by(iris, :Species, size)
-by(iris, :Species, df -> mean(df[:PetalLength]))
+by(iris, :Species, df -> mean(dropnull(df[:PetalLength])))
 by(iris, :Species, df -> DataFrame(N = size(df, 1)))
 ```
 
@@ -20,7 +19,7 @@ The `by` function also support the `do` block form:
 
 ```julia
 by(iris, :Species) do df
-   DataFrame(m = mean(df[:PetalLength]), s² = var(df[:PetalLength]))
+   DataFrame(m = mean(dropnull(df[:PetalLength])), s² = var(dropnull(df[:PetalLength])))
 end
 ```
 
@@ -30,7 +29,7 @@ We show several examples of the `aggregate` function applied to the `iris` datas
 
 ```julia
 aggregate(iris, :Species, sum)
-aggregate(iris, :Species, [sum, mean])
+aggregate(iris, :Species, [sum, x->mean(dropnull(x))])
 ```
 
 If you only want to split the data set into subsets, use the `groupby` function:

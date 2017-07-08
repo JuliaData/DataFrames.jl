@@ -1,6 +1,7 @@
-julia 0.6-
-DataArrays 0.5
-StatsBase 0.11.0
+julia 0.5
+NullableArrays 0.0.8
+CategoricalArrays 0.0.6
+StatsBase 0.8.3
 GZip
 SortingAlgorithms
 Reexport

@@ -81,7 +81,7 @@ function StatsBase.predict(mm::DataFrameRegressionModel, df::AbstractDataFrame; 
     mf = ModelFrame(newTerms, df; contrasts = mm.mf.contrasts)
     newX = ModelMatrix(mf).m
     yp = predict(mm, newX; kwargs...)
-    out = DataArray(eltype(yp), size(df, 1))
+    out = NullableArray(eltype(yp), size(df, 1))
     out[mf.msng] = yp
     return(out)
 end
