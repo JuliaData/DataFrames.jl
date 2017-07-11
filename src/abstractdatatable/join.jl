@@ -141,9 +141,11 @@ function update_row_maps!(left_table::AbstractDataTable,
     @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) = (mask[orig_ixs] = false)
 
     # iterate over left rows and compose the left<->right index map
+    right_dict_cols = ntuple(i -> right_dict.dt[i], ncol(right_dict.dt))
+    left_table_cols = ntuple(i -> left_table[i], ncol(left_table))
     next_join_ix = 1
     for l_ix in 1:nrow(left_table)
-        r_ixs = findrows(right_dict, left_table, l_ix)
+        r_ixs = findrows(right_dict, left_table, right_dict_cols, left_table_cols, l_ix)
         if isempty(r_ixs)
             update!(leftonly_ixs, l_ix, next_join_ix)
             next_join_ix += 1
@@ -284,8 +286,10 @@ function Base.join(dt1::AbstractDataTable,
         # iterate over left rows and leave those found in right
         left_ixs = Vector{Int}()
         sizehint!(left_ixs, nrow(joiner.dtl))
+        dtr_on_grp_cols = ntuple(i -> dtr_on_grp.dt[i], ncol(dtr_on_grp.dt))
+        dtl_on_cols = ntuple(i -> joiner.dtl_on[i], ncol(joiner.dtl_on))
         @inbounds for l_ix in 1:nrow(joiner.dtl_on)
-            if findrow(dtr_on_grp, joiner.dtl_on, l_ix) != 0
+            if findrow(dtr_on_grp, joiner.dtl_on, dtr_on_grp_cols, dtl_on_cols, l_ix) != 0
                 push!(left_ixs, l_ix)
             end
         end
@@ -296,8 +300,10 @@ function Base.join(dt1::AbstractDataTable,
         # iterate over left rows and leave those not found in right
         leftonly_ixs = Vector{Int}()
         sizehint!(leftonly_ixs, nrow(joiner.dtl))
+        dtr_on_grp_cols = ntuple(i -> dtr_on_grp.dt[i], ncol(dtr_on_grp.dt))
+        dtl_on_cols = ntuple(i -> joiner.dtl_on[i], ncol(joiner.dtl_on))
         @inbounds for l_ix in 1:nrow(joiner.dtl_on)
-            if findrow(dtr_on_grp, joiner.dtl_on, l_ix) == 0
+            if findrow(dtr_on_grp, joiner.dtl_on, dtr_on_grp_cols, dtl_on_cols, l_ix) == 0
                 push!(leftonly_ixs, l_ix)
             end
         end

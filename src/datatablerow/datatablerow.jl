@@ -52,14 +52,16 @@ end
 
 # hash of DataTable rows based on its values
 # so that duplicate rows would have the same hash
-function rowhash(dt::DataTable, r::Int, h::UInt = zero(UInt))
-    @inbounds for col in columns(dt)
-        h = hash_colel(col, r, h)
-    end
-    return h
+# table columns are passed as a tuple of vectors to ensure type specialization
+rowhash(cols::Tuple{AbstractVector}, r::Int, h::UInt = zero(UInt))::UInt =
+    hash_colel(cols[1], r, h)
+function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UInt))::UInt
+    h = hash_colel(cols[1], r, h)
+    rowhash(Base.tail(cols), r, h)
 end
 
-Base.hash(r::DataTableRow, h::UInt = zero(UInt)) = rowhash(r.dt, r.row, h)
+Base.hash(r::DataTableRow, h::UInt = zero(UInt)) =
+    rowhash(ntuple(i -> r.dt[i], ncol(r.dt)), r.row, h)
 
 # comparison of DataTable rows
 # only the rows of the same DataTable could be compared
@@ -80,6 +82,19 @@ isequal_colel(a::Any, b::Any) = isequal(a, b)
 isequal_colel(a::Nullable, b::Any) = !isnull(a) & isequal(unsafe_get(a), b)
 isequal_colel(a::Any, b::Nullable) = isequal_colel(b, a)
 isequal_colel(a::Nullable, b::Nullable) = isequal(a, b)
+
+# table columns are passed as a tuple of vectors to ensure type specialization
+isequal_row(cols::Tuple{AbstractVector}, r1::Int, r2::Int) =
+    isequal_colel(cols[1][r1], cols[1][r2])
+isequal_row(cols::Tuple{Vararg{AbstractVector}}, r1::Int, r2::Int) =
+    isequal_colel(cols[1][r1], cols[1][r2]) && isequal_row(Base.tail(cols), r1, r2)
+
+isequal_row(cols1::Tuple{AbstractVector}, r1::Int, cols2::Tuple{AbstractVector}, r2::Int) =
+    isequal_colel(cols1[1][r1], cols2[1][r2])
+isequal_row(cols1::Tuple{Vararg{AbstractVector}}, r1::Int,
+            cols2::Tuple{Vararg{AbstractVector}}, r2::Int) =
+    isequal_colel(cols1[1][r1], cols2[1][r2]) &&
+        isequal_row(Base.tail(cols1), r1, Base.tail(cols2), r2)
 
 function isequal_row(dt1::AbstractDataTable, r1::Int, dt2::AbstractDataTable, r2::Int)
     if dt1 === dt2

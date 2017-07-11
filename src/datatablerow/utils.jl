@@ -80,10 +80,13 @@ end
 # 3) slot array for a hash map, non-zero values are
 #    the indices of the first row in a group
 # Optional group vector is set to the group indices of each row
-function row_group_slots(dt::AbstractDataTable,
+row_group_slots(dt::AbstractDataTable, groups::Union{Vector{Int}, Void} = nothing) =
+    row_group_slots(ntuple(i -> dt[i], ncol(dt)), hashrows(dt), groups)
+
+function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
+                         rhashes::AbstractVector{UInt},
                          groups::Union{Vector{Int}, Void} = nothing)
-    @assert groups === nothing || length(groups) == nrow(dt)
-    rhashes = hashrows(dt)
+    @assert groups === nothing || length(groups) == length(cols[1])
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataTables.jl/pull/17#discussion_r102481481
     sz = Base._tablesz(length(rhashes))
     @assert sz >= length(rhashes)
@@ -102,17 +105,10 @@ function row_group_slots(dt::AbstractDataTable,
                 gix = ngroups += 1
                 break
             elseif rhashes[i] == rhashes[g_row] # occupied slot, check if miss or hit
-                eq = true
-                for col in columns(dt)
-                    if !isequal_colel(col, i, g_row)
-                        eq = false # miss
-                        break
-                    end
-                end
-                if eq # hit
+                if isequal_row(cols, i, g_row) # hit
                     gix = groups !== nothing ? groups[g_row] : 0
-                    break
                 end
+                break
             end
             slotix = slotix & szm1 + 1 # check the next slot
             probe += 1
@@ -158,17 +154,21 @@ function group_rows(dt::AbstractDataTable)
 end
 
 # Find index of a row in gd that matches given row by content, 0 if not found
-function findrow(gd::RowGroupDict, dt::DataTable, row::Int)
+function findrow(gd::RowGroupDict,
+                 dt::DataTable,
+                 gd_cols::Tuple{Vararg{AbstractVector}},
+                 dt_cols::Tuple{Vararg{AbstractVector}},
+                 row::Int)
     (gd.dt === dt) && return row # same table, return itself
     # different tables, content matching required
-    rhash = rowhash(dt, row)
+    rhash = rowhash(dt_cols, row)
     szm1 = length(gd.gslots)-1
     slotix = ini_slotix = rhash & szm1 + 1
     while true
         g_row = gd.gslots[slotix]
         if g_row == 0 || # not found
             (rhash == gd.rhashes[g_row] &&
-            isequal_row(gd.dt, g_row, dt, row)) # found
+            isequal_row(gd_cols, g_row, dt_cols, row)) # found
             return g_row
         end
         slotix = (slotix & szm1) + 1 # miss, try the next slot
@@ -179,15 +179,20 @@ end
 
 # Find indices of rows in 'gd' that match given row by content.
 # return empty set if no row matches
-function findrows(gd::RowGroupDict, dt::DataTable, row::Int)
-    g_row = findrow(gd, dt, row)
+function findrows(gd::RowGroupDict,
+                  dt::DataTable,
+                  gd_cols::Tuple{Vararg{AbstractVector}},
+                  dt_cols::Tuple{Vararg{AbstractVector}},
+                  row::Int)
+    g_row = findrow(gd, dt, gd_cols, dt_cols, row)
     (g_row == 0) && return view(gd.rperm, 0:-1)
     gix = gd.groups[g_row]
     return view(gd.rperm, gd.starts[gix]:gd.stops[gix])
 end
 
 function Base.getindex(gd::RowGroupDict, dtr::DataTableRow)
-    g_row = findrow(gd, dtr.dt, dtr.row)
+    g_row = findrow(gd, dtr.dt, ntuple(i -> gd.dt[i], ncol(gd.dt)),
+                    ntuple(i -> dtr.dt[i], ncol(dtr.dt)), dtr.row)
     (g_row == 0) && throw(KeyError(dtr))
     gix = gd.groups[g_row]
     return view(gd.rperm, gd.starts[gix]:gd.stops[gix])
