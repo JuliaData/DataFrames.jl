@@ -317,4 +317,9 @@ module TestDataFrame
     df4[2,:Mass] = NA
     @test isequal(df2, df4)
 
+
+    let d = DataFrames.DataFrame([["hello", "world"]], [:strs])
+        d[:num] = [1,2]
+        @test d[:num] == [1,2]
+    end
 end
