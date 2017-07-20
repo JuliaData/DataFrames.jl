@@ -70,7 +70,7 @@ size(df1)
 
 """
 type DataFrame <: AbstractDataFrame
-    columns::Vector
+    columns::Vector{Any}
     colindex::Index
 
     function DataFrame(columns::Vector, colindex::Index)
