@@ -136,12 +136,12 @@ module TestDataFrame
     @test all(isna, df[:, 3])
 
 
-    df = DataFrame(DataType[Int, Float64, Compat.UTF8String],[:A, :B, :C], [false,false,true],100)
+    df = DataFrame(DataType[Int, Float64, String],[:A, :B, :C], [false,false,true],100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
     @test typeof(df[:, 2]) == DataVector{Float64}
-    @test typeof(df[:, 3]) == PooledDataVector{Compat.UTF8String,UInt32}
+    @test typeof(df[:, 3]) == PooledDataVector{String,UInt32}
     @test all(isna, df[:, 1])
     @test all(isna, df[:, 2])
     @test all(isna, df[:, 3])
