@@ -1,7 +1,6 @@
 module TestStatsModels
 using DataFrames
 using Base.Test
-using Compat
 
 # Tests for statsmodel.jl
 

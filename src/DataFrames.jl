@@ -8,7 +8,6 @@ module DataFrames
 ##
 ##############################################################################
 
-using Compat
 using Reexport
 @reexport using StatsBase
 @reexport using DataArrays

@@ -168,7 +168,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-@compat function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
+function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     n = size(df, 1)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
@@ -210,10 +210,10 @@ end
 #
 ##############################################################################
 
-@compat function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
+function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
     printtable(io, df, true, ',')
 end
 
-@compat function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
+function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
     printtable(io, df, true, '\t')
 end
