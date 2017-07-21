@@ -537,7 +537,7 @@ mf = ModelFrame(@formula(y ~ 1 + (1 | x)), df)
 
 mf = ModelFrame(@formula(y ~ 0 + (1 | x)), df)
 @test_throws ErrorException ModelMatrix(mf)
-@test coefnames(mf) == Vector{Compat.UTF8String}()
+@test coefnames(mf) == Vector{String}()
 
 
 # Ensure X is not a view on df column

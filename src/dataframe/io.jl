@@ -621,7 +621,7 @@ function builddf(rows::Integer,
                     continue
                 else
                     is_bool = false
-                    values = Vector{Compat.UTF8String}(rows)
+                    values = Vector{String}(rows)
                     i = 0
                     continue
                 end
@@ -629,7 +629,7 @@ function builddf(rows::Integer,
 
             # (4) Fallback to String
             values[i], wasparsed, missing[i] =
-              bytestotype(Compat.UTF8String,
+              bytestotype(String,
                           p.bytes,
                           left,
                           right,
@@ -827,8 +827,8 @@ function readtable(io::IO,
 
     if !isempty(eltypes)
         for j in 1:length(eltypes)
-            if !(eltypes[j] in [Compat.UTF8String, Bool, Float64, Int64])
-                throw(ArgumentError("Invalid eltype $(eltypes[j]) encountered.\nValid eltypes: $(Compat.UTF8String), Bool, Float64 or Int64"))
+            if !(eltypes[j] in [String, Bool, Float64, Int64])
+                throw(ArgumentError("Invalid eltype $(eltypes[j]) encountered.\nValid eltypes: $(String), Bool, Float64 or Int64"))
             end
         end
     end
@@ -1175,7 +1175,7 @@ function filldf!(df::DataFrame,
 
             # NB: Assumes perfect type stability
             # Use subtypes here
-            if !(T in [Int, Float64, Bool, Compat.UTF8String])
+            if !(T in [Int, Float64, Bool, String])
                 error("Invalid eltype encountered")
             end
             c.data[i], wasparsed, c.na[i] =

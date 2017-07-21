@@ -89,7 +89,7 @@ fit(DummyMod, f3, d, contrasts = Dict(:x1p => EffectsCoding(),
 
 ## Another dummy model type to test fall-through show method
 immutable DummyModTwo <: RegressionModel
-    msg::Compat.UTF8String
+    msg::String
 end
 
 StatsBase.fit(::Type{DummyModTwo}, ::Matrix, ::Vector) = DummyModTwo("hello!")
