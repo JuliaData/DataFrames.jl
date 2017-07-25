@@ -289,7 +289,7 @@ function contrasts_matrix(C::HelmertCoding, baseind, n)
     end
 
     # re-shuffle the rows such that base is the all -1.0 row (currently first)
-    mat = mat[[baseind; 1:(baseind-1); (baseind+1):end], :]
+    mat = mat[[baseind; 1:(baseind-1); (baseind+1):n], :]
     return mat
 end
 
