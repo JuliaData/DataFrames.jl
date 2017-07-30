@@ -144,7 +144,7 @@ module TestIO
 
     function normalize_eol!(df)
         for (name, col) in eachcol(df)
-            if eltype(col) <: AbstractString
+            if eltype(col) <: DataArrays.Data{AbstractString}
                 df[name] = map(s -> replace(s, "\r\n", "\n"), col)
             end
         end

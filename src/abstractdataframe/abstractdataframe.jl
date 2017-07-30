@@ -439,9 +439,8 @@ completecases(df)
 
 """
 function completecases(df::AbstractDataFrame)
-    ## Returns a Vector{Bool} of indexes of complete cases (rows with no NA's).
-    res = (!).(isna.(df[1]))
-    for i in 2:ncol(df)
+    res = trues(size(df, 1))
+    for i in 1:ncol(df)
         res .&= (!).(isna.(df[i]))
     end
     res
@@ -480,7 +479,7 @@ function Base.convert(::Type{Array}, df::AbstractDataFrame)
     convert(Matrix, df)
 end
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
-    T = reduce(typejoin, eltypes(df))
+    T = mapreduce(DataArrays.extractT, typejoin, eltypes(df))
     convert(Matrix{T}, df)
 end
 function Base.convert{T}(::Type{Array{T}}, df::AbstractDataFrame)
@@ -502,7 +501,7 @@ function Base.convert(::Type{DataArray}, df::AbstractDataFrame)
     convert(DataMatrix, df)
 end
 function Base.convert(::Type{DataMatrix}, df::AbstractDataFrame)
-    T = reduce(typejoin, eltypes(df))
+    T = mapreduce(DataArrays.extractT, typejoin, eltypes(df))
     convert(DataMatrix{T}, df)
 end
 function Base.convert{T}(::Type{DataArray{T}}, df::AbstractDataFrame)

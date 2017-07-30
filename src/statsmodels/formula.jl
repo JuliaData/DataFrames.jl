@@ -62,7 +62,7 @@ type ModelFrame
     contrasts::Dict{Symbol, ContrastsMatrix}
 end
 
-const AbstractFloatMatrix{T<:AbstractFloat} = AbstractMatrix{T}
+const AbstractFloatMatrix{T<:DataArrays.Data{AbstractFloat}} = AbstractMatrix{T}
 
 type ModelMatrix{T <: AbstractFloatMatrix}
     m::T

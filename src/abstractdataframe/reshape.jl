@@ -94,7 +94,7 @@ function stack(df::AbstractDataFrame, measure_vars)
     stack(df, mv_inds, _setdiff(1:ncol(df), mv_inds))
 end
 function stack(df::AbstractDataFrame)
-    idx = [1:length(df);][[t <: AbstractFloat for t in eltypes(df)]]
+    idx = [1:length(df);][[t <: DataArrays.Data{AbstractFloat} for t in eltypes(df)]]
     stack(df, idx)
 end
 
@@ -102,7 +102,7 @@ end
 Stacks a DataFrame; convert from a wide to long format; see
 `stack`.
 """
-melt(df::AbstractDataFrame, id_vars::Union{Int,Symbol}) = melt(df, [id_vars])
+melt(df::AbstractDataFrame, id_vars::DataArrays.Data{Int}) = melt(df, [id_vars])
 function melt(df::AbstractDataFrame, id_vars)
     id_inds = index(df)[id_vars]
     stack(df, _setdiff(1:ncol(df), id_inds), id_inds)
@@ -441,7 +441,7 @@ function stackdf(df::AbstractDataFrame, measure_vars)
     stackdf(df, m_inds, _setdiff(1:ncol(df), m_inds))
 end
 function stackdf(df::AbstractDataFrame)
-    idx = [1:length(df);][[t <: AbstractFloat for t in eltypes(df)]]
+    idx = [1:length(df);][[t <: DataArrays.Data{AbstractFloat} for t in eltypes(df)]]
     stackdf(df, idx)
 end
 
