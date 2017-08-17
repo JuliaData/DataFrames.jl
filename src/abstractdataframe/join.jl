@@ -168,7 +168,7 @@ join(df1::AbstractDataFrame,
 
 ### Result
 
-* `::DataFrame` : the joined DataFrame 
+* `::DataFrame` : the joined DataFrame
 
 ### Examples
 
@@ -248,8 +248,8 @@ end
 
 function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame)
     r1, r2 = size(df1, 1), size(df2, 1)
-    cols = Any[[Compat.repeat(c, inner=r2) for c in columns(df1)];
-            [Compat.repeat(c, outer=r1) for c in columns(df2)]]
+    cols = Any[[repeat(c, inner=r2) for c in columns(df1)];
+            [repeat(c, outer=r1) for c in columns(df2)]]
     colindex = merge(index(df1), index(df2))
     DataFrame(cols, colindex)
 end

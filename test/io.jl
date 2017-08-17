@@ -1,6 +1,6 @@
 module TestIO
     using Base.Test
-    using DataFrames, Compat
+    using DataFrames
 
     #test_group("We can read various file types.")
 

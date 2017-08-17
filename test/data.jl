@@ -2,7 +2,6 @@ module TestData
     importall Base # so that we get warnings for conflicts
     using Base.Test
     using DataFrames
-    using Compat
 
     #test_group("DataVector creation")
     dvint = @data([1, 2, NA, 4])
@@ -332,7 +331,7 @@ module TestData
 
     #test unique!() with extra argument
     unique!(df, [1, 3])
-    @test df == df1    
+    @test df == df1
 
     #test_group("find()")
     dv = DataArray([true, false, true])

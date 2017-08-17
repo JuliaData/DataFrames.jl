@@ -62,7 +62,7 @@ type ModelFrame
     contrasts::Dict{Symbol, ContrastsMatrix}
 end
 
-@compat const AbstractFloatMatrix{T<:AbstractFloat} = AbstractMatrix{T}
+const AbstractFloatMatrix{T<:AbstractFloat} = AbstractMatrix{T}
 
 type ModelMatrix{T <: AbstractFloatMatrix}
     m::T
@@ -290,7 +290,7 @@ function check_non_redundancy!(trms::Terms, df::AbstractDataFrame)
         end
         ## once we've checked all the eterms in this term, add it to the list
         ## of encountered terms/columns
-        push!(encountered_columns, Compat.view(trms.factors, :, i_term))
+        push!(encountered_columns, view(trms.factors, :, i_term))
     end
 
     return trms.is_non_redundant
@@ -400,7 +400,7 @@ function expandcols{T<:AbstractFloatMatrix}(trm::Vector{T})
     else
         a = trm[1]
         b = expandcols(trm[2 : end])
-        reduce(hcat, [broadcast(*, a, Compat.view(b, :, j)) for j in 1 : size(b, 2)])
+        reduce(hcat, [broadcast(*, a, view(b, :, j)) for j in 1 : size(b, 2)])
     end
 end
 
@@ -462,7 +462,7 @@ If there is an intercept in the model, that column occurs first and its
 Mixed-effects models include "random-effects" terms which are ignored when
 creating the model matrix.
 """
-@compat function (::Type{ModelMatrix{T}}){T<:AbstractFloatMatrix}(mf::ModelFrame)
+function (::Type{ModelMatrix{T}}){T<:AbstractFloatMatrix}(mf::ModelFrame)
     dfrm = mf.df
     terms = droprandomeffects(dropresponse!(mf.terms))
 
@@ -489,9 +489,9 @@ creating the model matrix.
     for (i_term, term) in enumerate(terms.terms)
         term_cols = T[]
         ## Pull out the eval terms, and the non-redundancy flags for this term
-        ff = Compat.view(factors, :, i_term)
-        eterms = Compat.view(terms.eterms, ff)
-        non_redundants = Compat.view(terms.is_non_redundant, ff, i_term)
+        ff = view(factors, :, i_term)
+        eterms = view(terms.eterms, ff)
+        non_redundants = view(terms.is_non_redundant, ff, i_term)
         ## Get cols for each eval term (either previously generated, or generating
         ## and storing as necessary)
         for (et, nr) in zip(eterms, non_redundants)
@@ -579,9 +579,9 @@ function coefnames(mf::ModelFrame)
         ## names for columns for eval terms
         names = Vector{String}[]
 
-        ff = Compat.view(factors, :, i_term)
-        eterms = Compat.view(terms.eterms, ff)
-        non_redundants = Compat.view(terms.is_non_redundant, ff, i_term)
+        ff = view(factors, :, i_term)
+        eterms = view(terms.eterms, ff)
+        non_redundants = view(terms.is_non_redundant, ff, i_term)
 
         for (et, nr) in zip(eterms, non_redundants)
             if !haskey(eterm_names, (et, nr))

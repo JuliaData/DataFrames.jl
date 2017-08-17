@@ -27,7 +27,7 @@ generated (during `ModelFrame` construction).
 For `C <: AbstractContrast`:
 
 ```julia
-C()                                     # levels are inferred later 
+C()                                     # levels are inferred later
 C(levels = ::Vector{Any})               # levels checked against data later
 C(base = ::Any)                         # specify base level
 C(levels = ::Vector{Any}, base = ::Any) # specify levels and base
@@ -72,7 +72,7 @@ termnames(C::MyCoding, levels, baseind) = ...
 ```
 
 """
-@compat abstract type AbstractContrasts end
+abstract type AbstractContrasts end
 
 # Contrasts + Levels (usually from data) = ContrastsMatrix
 type ContrastsMatrix{C <: AbstractContrasts, T}
@@ -96,7 +96,7 @@ function ContrastsMatrix{C <: AbstractContrasts}(contrasts::C, levels::AbstractV
     # what does that mean? either:
     #
     # 1. contrasts.levels == levels (best case)
-    # 2. data levels missing from contrast: would generate empty/undefined rows. 
+    # 2. data levels missing from contrast: would generate empty/undefined rows.
     #    better to filter data frame first
     # 3. contrast levels missing from data: would have empty columns, generate a
     #    rank-deficient model matrix.
@@ -181,7 +181,7 @@ for contrastType in [:DummyCoding, :EffectsCoding, :HelmertCoding]
         ## constructor with optional keyword arguments, defaulting to Nullables
         $contrastType(;
                       base=Nullable{Any}(),
-                      levels=Nullable{Vector}()) = 
+                      levels=Nullable{Vector}()) =
                           $contrastType(nullify(base),
                                         nullify(levels))
     end
@@ -318,7 +318,7 @@ check_contrasts_size(mat::Matrix, n_lev) =
                         "Expected $((n_lev, n_lev-1)), got $(size(mat))"))
 
 ## constructor with optional keyword arguments, defaulting to Nullables
-ContrastsCoding(mat::Matrix; base=Nullable{Any}(), levels=Nullable{Vector}()) = 
+ContrastsCoding(mat::Matrix; base=Nullable{Any}(), levels=Nullable{Vector}()) =
     ContrastsCoding(mat, nullify(base), nullify(levels))
 
 function contrasts_matrix(C::ContrastsCoding, baseind, n)
