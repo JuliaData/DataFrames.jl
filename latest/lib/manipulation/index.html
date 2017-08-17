@@ -14,7 +14,7 @@
       
         <link rel="shortcut icon" href="../../assets/images/favicon.png">
       
-      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.7.4">
+      <meta name="generator" content="mkdocs-0.16.3, mkdocs-material-1.8.1">
     
     
       
@@ -25,7 +25,7 @@
       <script src="../../assets/javascripts/modernizr-1df76c4e58.js"></script>
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/application-769c285a91.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/application-bfecc7305d.css">
       
         <link rel="stylesheet" href="../../assets/stylesheets/application-02c2a4388f.palette.css">
       
@@ -93,17 +93,17 @@
         
           <label class="md-icon md-icon--search md-header-nav__button" for="search"></label>
           
-<div class="md-search" data-md-component="search">
+<div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="search"></label>
   <div class="md-search__inner">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" required placeholder="Search" accesskey="s" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
+      <input type="text" class="md-search__input" name="query" required placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query">
       <label class="md-icon md-search__icon" for="search"></label>
       <button type="reset" class="md-icon md-search__icon" data-md-component="reset">close</button>
     </form>
     <div class="md-search__output">
       <div class="md-search__scrollwrap" data-md-scrollfix>
-        <div class="md-search-result" data-md-component="result" data-md-lang-search="">
+        <div class="md-search-result" data-md-component="result" data-md-lang-search="" data-md-lang-tokenizer="[\s\-]+">
           <div class="md-search-result__meta" data-md-lang-result-none="No matching documents" data-md-lang-result-one="1 matching document" data-md-lang-result-other="# matching documents">
             Type to start searching
           </div>
@@ -595,13 +595,13 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/join.jl#L136-L188' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/86e56e221adb1fdb9b4dca76a6c2ddbb5ae3cf8f/src/abstractdataframe/join.jl#L136-L188' class='documenter-source'>source</a><br></p>
 <p><a id='Reshaping-1'></a></p>
 <h2 id="reshaping">Reshaping</h2>
 <p><a id='DataFrames.melt' href='#DataFrames.melt'>#</a>
 <strong><code>DataFrames.melt</code></strong> &mdash; <em>Function</em>.</p>
 <p>Stacks a DataFrame; convert from a wide to long format; see <code>stack</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L101-L104' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/86e56e221adb1fdb9b4dca76a6c2ddbb5ae3cf8f/src/abstractdataframe/reshape.jl#L101-L104' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.stack' href='#DataFrames.stack'>#</a>
 <strong><code>DataFrames.stack</code></strong> &mdash; <em>Function</em>.</p>
 <p>Stacks a DataFrame; convert from a wide to long format</p>
@@ -638,7 +638,7 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L16-L70' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/86e56e221adb1fdb9b4dca76a6c2ddbb5ae3cf8f/src/abstractdataframe/reshape.jl#L16-L70' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.unstack' href='#DataFrames.unstack'>#</a>
 <strong><code>DataFrames.unstack</code></strong> &mdash; <em>Function</em>.</p>
 <p>Unstacks a DataFrame; convert from a long to wide format</p>
@@ -674,7 +674,7 @@
 
 
 <p>Note that there are some differences between the widened results above.</p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L119-L161' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/86e56e221adb1fdb9b4dca76a6c2ddbb5ae3cf8f/src/abstractdataframe/reshape.jl#L119-L161' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.stackdf' href='#DataFrames.stackdf'>#</a>
 <strong><code>DataFrames.stackdf</code></strong> &mdash; <em>Function</em>.</p>
 <p>A stacked view of a DataFrame (long format)</p>
@@ -710,11 +710,11 @@
 </pre></div>
 
 
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L366-L416' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/86e56e221adb1fdb9b4dca76a6c2ddbb5ae3cf8f/src/abstractdataframe/reshape.jl#L366-L416' class='documenter-source'>source</a><br></p>
 <p><a id='DataFrames.meltdf' href='#DataFrames.meltdf'>#</a>
 <strong><code>DataFrames.meltdf</code></strong> &mdash; <em>Function</em>.</p>
 <p>A stacked view of a DataFrame (long format); see <code>stackdf</code></p>
-<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/2b8a2bd4e58384f9993ff3884ba04cdd68e3d0e3/src/abstractdataframe/reshape.jl#L448-L450' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaStats/DataFrames.jl/tree/86e56e221adb1fdb9b4dca76a6c2ddbb5ae3cf8f/src/abstractdataframe/reshape.jl#L448-L450' class='documenter-source'>source</a><br></p>
                 
                   
                 
@@ -784,7 +784,7 @@
       
     </div>
     
-      <script src="../../assets/javascripts/application-c35428f87f.js"></script>
+      <script src="../../assets/javascripts/application-6940329b9f.js"></script>
       
       
       <script>app.initialize({url:{base:"../.."}})</script>
