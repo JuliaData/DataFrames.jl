@@ -1,10 +1,10 @@
 import Base: isidentifier, is_id_start_char, is_id_char
 
-const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
-    "return", "break", "continue", "function", "macro", "quote", "let",
-    "local", "global", "const", "abstract", "typealias", "type", "bitstype",
-    "immutable", "do", "module", "baremodule", "using", "import",
-    "export", "importall", "end", "else", "elseif", "catch", "finally"])
+const RESERVED_WORDS = Set(["local", "global", "export", "let", "bitstype",
+    "typealias", "using", "for", "while", "const", "immutable",
+    "baremodule", "continue", "import", "function", "macro", "if", "else",
+    "finally", "try", "module", "elseif", "end", "begin", "quote", "do", "break",
+    "catch", "abstract", "return", "type", "importall"])
 
 VERSION < v"0.6.0-dev.2194" && push!(RESERVED_WORDS, "ccall")
 VERSION >= v"0.6.0-dev.2698" && push!(RESERVED_WORDS, "struct")
