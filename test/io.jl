@@ -31,7 +31,7 @@ module TestIO
     show(io, "text/html", df)
     str = String(take!(io))
     @test str ==
-        "<table class=\"data-frame\"><thread><tr><th></th><th>Fish</th><th>Mass</th><th>E</th></tr></thread>" *
+        "<table class=\"data-frame\"><thead><tr><th></th><th>Fish</th><th>Mass</th><th>E</th></tr></thead>" *
         "<tbody><tr><th>1</th><td>Suzy</td><td>1.5</td><td>a</td></tr>" *
         "<tr><th>2</th><td>Amir</td><td>#NULL</td><td>#NULL</td></tr></tbody></table>"
 
