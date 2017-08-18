@@ -99,7 +99,7 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     haslimit = get(io, :limit, true)
     n = size(df, 1)
     if haslimit
-        tty_rows, tty_cols = _displaysize(io)
+        tty_rows, tty_cols = Base.displaysize(io)
         mxrow = min(n,tty_rows)
     else
         mxrow = n
