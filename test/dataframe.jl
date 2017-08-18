@@ -1,6 +1,7 @@
 module TestDataFrame
     using Base.Test
     using DataFrames
+    using Compat
 
     #
     # Equality

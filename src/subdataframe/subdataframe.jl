@@ -85,9 +85,8 @@ sdf1[:,[:a,:b]]
 """
 SubDataFrame
 
-function SubDataFrame{T <: Integer}(parent::DataFrame, rows::AbstractVector{T})
-    rows = convert(Vector{Int}, rows)
-    return SubDataFrame{typeof(rows)}(parent, rows)
+function SubDataFrame{T <: AbstractVector{Int}}(parent::DataFrame, rows::T)
+    return SubDataFrame{T}(parent, rows)
 end
 
 function SubDataFrame(parent::DataFrame, row::Integer)

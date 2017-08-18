@@ -2,6 +2,7 @@ module TestData
     importall Base # so that we get warnings for conflicts
     using Base.Test
     using DataFrames
+    using Compat
 
     #test_group("NullableArray creation")
     nvint = NullableArray(Nullable{Int}[1, 2, Nullable(), 4])

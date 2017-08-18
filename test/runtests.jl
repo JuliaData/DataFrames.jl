@@ -8,6 +8,7 @@ anyerrors = false
 
 using Base.Test
 using DataFrames
+using Compat
 
 my_tests = ["utils.jl",
             "cat.jl",

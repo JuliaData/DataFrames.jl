@@ -31,9 +31,9 @@ module TestIO
     show(io, "text/html", df)
     str = String(take!(io))
     @test str ==
-        "<table class=\"data-frame\"><tr><th></th><th>Fish</th><th>Mass</th><th>E</th></tr>" *
-        "<tr><th>1</th><td>Suzy</td><td>1.5</td><td>a</td></tr>" *
-        "<tr><th>2</th><td>Amir</td><td>#NULL</td><td>#NULL</td></tr></table>"
+        "<table class=\"data-frame\"><thread><tr><th></th><th>Fish</th><th>Mass</th><th>E</th></tr></thread>" *
+        "<tbody><tr><th>1</th><td>Suzy</td><td>1.5</td><td>a</td></tr>" *
+        "<tr><th>2</th><td>Amir</td><td>#NULL</td><td>#NULL</td></tr></tbody></table>"
 
 
     # test limit attribute of IOContext is used
