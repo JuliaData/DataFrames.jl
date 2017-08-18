@@ -3,7 +3,7 @@ module TestIteration
 
     dv = NullableArray(Nullable{Int}[1, 2, Nullable()])
     dm = NullableArray([1 2; 3 4])
-    dt = NullableArray(zeros(2, 2, 2))
+    df = NullableArray(zeros(2, 2, 2))
 
     df = DataFrame(A = NullableArray(1:2), B = NullableArray(2:3))
 

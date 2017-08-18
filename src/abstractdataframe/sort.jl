@@ -46,37 +46,37 @@ end
 ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Ordering) =
              Order.ord(lt,by,rev,order)
 
-# DTPerm: defines a permutation on a particular DataFrame, using
+# DFPerm: defines a permutation on a particular DataFrame, using
 #         a single ordering (O<:Ordering) or a list of column orderings
 #         (O<:AbstractVector{Ordering}), one per DataFrame column
 #
 #         If a user only specifies a few columns, the DataFrame
-#         contained in the DTPerm only contains those columns, and
+#         contained in the DFPerm only contains those columns, and
 #         the permutation induced by this ordering is used to
 #         sort the original (presumably larger) DataFrame
 
-immutable DTPerm{O<:Union{Ordering, AbstractVector}, DT<:AbstractDataFrame} <: Ordering
+immutable DFPerm{O<:Union{Ordering, AbstractVector}, DF<:AbstractDataFrame} <: Ordering
     ord::O
-    df::DT
+    df::DF
 end
 
-function DTPerm{O<:Ordering, DT<:AbstractDataFrame}(ords::AbstractVector{O}, df::DT)
+function DFPerm{O<:Ordering, DF<:AbstractDataFrame}(ords::AbstractVector{O}, df::DF)
     if length(ords) != ncol(df)
-        error("DTPerm: number of column orderings does not equal the number of DataFrame columns")
+        error("DFPerm: number of column orderings does not equal the number of DataFrame columns")
     end
-    DTPerm{typeof(ords), DT}(ords, df)
+    DFPerm{typeof(ords), DF}(ords, df)
 end
 
-DTPerm{O<:Ordering, DT<:AbstractDataFrame}(o::O, df::DT) = DTPerm{O,DT}(o,df)
+DFPerm{O<:Ordering, DF<:AbstractDataFrame}(o::O, df::DF) = DFPerm{O,DF}(o,df)
 
 # get ordering function for the i-th column used for ordering
-col_ordering{O<:Ordering}(o::DTPerm{O}, i::Int) = o.ord
-col_ordering{V<:AbstractVector}(o::DTPerm{V}, i::Int) = o.ord[i]
+col_ordering{O<:Ordering}(o::DFPerm{O}, i::Int) = o.ord
+col_ordering{V<:AbstractVector}(o::DFPerm{V}, i::Int) = o.ord[i]
 
-Base.@propagate_inbounds Base.getindex(o::DTPerm, i::Int, j::Int) = o.df[i, j]
-Base.@propagate_inbounds Base.getindex(o::DTPerm, a::DataFrameRow, j::Int) = a[j]
+Base.@propagate_inbounds Base.getindex(o::DFPerm, i::Int, j::Int) = o.df[i, j]
+Base.@propagate_inbounds Base.getindex(o::DFPerm, a::DataFrameRow, j::Int) = a[j]
 
-function Sort.lt(o::DTPerm, a, b)
+function Sort.lt(o::DFPerm, a, b)
     @inbounds for i = 1:ncol(o.df)
         ord = col_ordering(o, i)
         va = o[a, i]
@@ -97,7 +97,7 @@ end
 ## Case 1a: single order
 ######
 ordering(df::AbstractDataFrame, lt::Function, by::Function, rev::Bool, order::Ordering) =
-    DTPerm(Order.ord(lt, by, rev, order), df)
+    DFPerm(Order.ord(lt, by, rev, order), df)
 
 ######
 ## Case 1b: lt, by, rev, and order are Arrays
@@ -108,7 +108,7 @@ function ordering{S<:Function, T<:Function}(df::AbstractDataFrame,
     if !(length(lt) == length(by) == length(rev) == length(order) == size(df,2))
         throw(ArgumentError("Orderings must be specified for all DataFrame columns"))
     end
-    DTPerm([Order.ord(_lt, _by, _rev, _order) for (_lt, _by, _rev, _order) in zip(lt, by, rev, order)], df)
+    DFPerm([Order.ord(_lt, _by, _rev, _order) for (_lt, _by, _rev, _order) in zip(lt, by, rev, order)], df)
 end
 
 ################
@@ -152,10 +152,10 @@ function ordering(df::AbstractDataFrame, cols::AbstractVector, lt::Function, by:
 
     # Simplify ordering when all orderings are the same
     if all([ords[i] == ords[1] for i = 2:length(ords)])
-        return DTPerm(ords[1], df[newcols])
+        return DFPerm(ords[1], df[newcols])
     end
 
-    return DTPerm(ords, df[newcols])
+    return DFPerm(ords, df[newcols])
 end
 
 ######
@@ -193,10 +193,10 @@ function ordering{S<:Function, T<:Function}(df::AbstractDataFrame, cols::Abstrac
 
     # Simplify ordering when all orderings are the same
     if all([ords[i] == ords[1] for i = 2:length(ords)])
-        return DTPerm(ords[1], df[newcols])
+        return DFPerm(ords[1], df[newcols])
     end
 
-    return DTPerm(ords, df[newcols])
+    return DFPerm(ords, df[newcols])
 end
 
 ######
@@ -273,5 +273,5 @@ for s in [:(Base.sort), :(Base.sortperm)]
 end
 
 Base.sort(df::AbstractDataFrame, a::Algorithm, o::Ordering) = df[sortperm(df, a, o),:]
-Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DTPerm}) = sort!([1:size(df, 1);], a, o)
-Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) = sortperm(df, a, DTPerm(o,df))
+Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DFPerm}) = sort!([1:size(df, 1);], a, o)
+Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Ordering) = sortperm(df, a, DFPerm(o,df))

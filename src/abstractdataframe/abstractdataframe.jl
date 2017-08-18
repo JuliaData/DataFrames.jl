@@ -296,7 +296,7 @@ tail(df)
 """
 (head, tail)
 
-# get the structure of a DT
+# get the structure of a DF
 """
 Show the structure of an AbstractDataFrame, in a tree-like format
 
@@ -333,7 +333,7 @@ function Base.dump(io::IO, df::AbstractDataFrame, n::Int, indent)
     end
 end
 
-# summarize the columns of a DT
+# summarize the columns of a DF
 # TODO: clever layout in rows
 """
 Summarize the columns of an AbstractDataFrame

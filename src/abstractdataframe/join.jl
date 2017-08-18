@@ -16,11 +16,11 @@ similar_nullable{T}(dv::NullableCategoricalArray{T}, dims::Union{Int, Tuple{Vara
     NullableCategoricalArray{T}(dims)
 
 # helper structure for DataFrames joining
-immutable DataFrameJoiner{DT1<:AbstractDataFrame, DT2<:AbstractDataFrame}
-    dfl::DT1
-    dfr::DT2
-    dfl_on::DT1
-    dfr_on::DT2
+immutable DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
+    dfl::DF1
+    dfr::DF2
+    dfl_on::DF1
+    dfr_on::DF2
     on_cols::Vector{Symbol}
 end
 
