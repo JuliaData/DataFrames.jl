@@ -1,5 +1,5 @@
 module TestIteration
-    using Base.Test, DataFrames, Compat
+    using Base.Test, DataFrames
 
     dv = NullableArray(Nullable{Int}[1, 2, Nullable()])
     dm = NullableArray([1 2; 3 4])
@@ -16,7 +16,7 @@ module TestIteration
     end
 
     for col in eachcol(df)
-        @test isa(col, @compat Tuple{Symbol, NullableVector})
+        @test isa(col, Tuple{Symbol, NullableVector})
     end
 
     @test isequal(map(x -> minimum(convert(Array, x)), eachrow(df)), Any[1,2])

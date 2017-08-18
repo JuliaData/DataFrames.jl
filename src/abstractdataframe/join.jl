@@ -22,15 +22,12 @@ immutable DataFrameJoiner{DT1<:AbstractDataFrame, DT2<:AbstractDataFrame}
     dfl_on::DT1
     dfr_on::DT2
     on_cols::Vector{Symbol}
-
-    function DataFrameJoiner(dfl::DT1, dfr::DT2, on::Union{Symbol,Vector{Symbol}})
-        on_cols = isa(on, Symbol) ? [on] : on
-        new(dfl, dfr, dfl[on_cols], dfr[on_cols], on_cols)
-    end
 end
 
-DataFrameJoiner{DT1<:AbstractDataFrame, DT2<:AbstractDataFrame}(dfl::DT1, dfr::DT2, on::Union{Symbol,Vector{Symbol}}) =
-    DataFrameJoiner{DT1,DT2}(dfl, dfr, on)
+function DataFrameJoiner(dfl::AbstractDataFrame, dfr::AbstractDataFrame, on::Union{Symbol,Vector{Symbol}})
+    on_cols = isa(on, Symbol) ? [on] : on
+    DataFrameJoiner{typeof(dfl), typeof(dfr)}(dfl, dfr, dfl[on_cols], dfr[on_cols], on_cols)
+end
 
 # helper map between the row indices in original and joined table
 immutable RowIndexMap

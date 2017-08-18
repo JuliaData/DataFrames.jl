@@ -8,8 +8,6 @@ module DataFrames
 ##
 ##############################################################################
 
-using Compat
-using Compat.String
 using Reexport
 using StatsBase
 import NullableArrays: dropnull, dropnull!

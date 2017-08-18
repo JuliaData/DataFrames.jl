@@ -1,8 +1,6 @@
 module TestShow
     using DataFrames
-    using Compat
     using Base.Test
-    import Compat.String
     df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 
     io = IOBuffer()

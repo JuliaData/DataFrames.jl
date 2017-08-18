@@ -1,7 +1,7 @@
 # an AbstractIndex is a thing that can be used to look up ordered things by name, but that
 # will also accept a position or set of positions or range or other things and pass them
 # through cleanly.
-@compat abstract type AbstractIndex end
+abstract type AbstractIndex end
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
@@ -20,7 +20,7 @@ Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 # Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
-(==)(x::Index, y::Index) = isequal(x, y)
+Base.:(==)(x::Index, y::Index) = isequal(x, y)
 
 function names!(x::Index, nms::Vector{Symbol}; allow_duplicates=false)
     if length(nms) != length(x)
@@ -111,7 +111,7 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
 end
 
 Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
-Base.getindex(x::AbstractIndex, idx::Real) = @compat Int(idx)
+Base.getindex(x::AbstractIndex, idx::Real) = Int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Nullable{Bool}}) =
     getindex(x, convert(Vector{Bool}, idx, false))
 Base.getindex{T<:Nullable}(x::AbstractIndex, idx::AbstractVector{T}) =

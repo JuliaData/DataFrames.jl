@@ -205,7 +205,7 @@ ncol(df::DataFrame) = length(index(df))
 # Let getindex(df.columns[j], row_inds) from AbstractVector() handle
 #  the resolution of row indices
 
-@compat const ColumnIndex = Union{Real, Symbol}
+const ColumnIndex = Union{Real, Symbol}
 
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)

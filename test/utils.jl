@@ -1,7 +1,6 @@
 module TestUtils
     using Base.Test
     using DataFrames
-    using Compat
     using StatsBase
     import DataFrames: identifier
 

@@ -84,7 +84,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-@compat function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
+function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
     write(io, "<thread>")
