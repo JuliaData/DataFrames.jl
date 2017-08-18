@@ -101,7 +101,8 @@ module TestIO
     @test df2 == df3
     @test df3 == df4
 
-    readtable("$data/quoting/quotedwhitespace.txt", separator = ' ')
+    @test (readtable("$data/quoting/quotedwhitespace.txt", separator = ' ') ==
+           readtable("$data/quoting/quotedwhitespace.txt", separator = " " ))
 
     #test_group("readtable handles common newlines.")
 
