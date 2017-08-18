@@ -1,7 +1,6 @@
 module TestDataFrame
     using Base.Test
-    using DataFrames, Compat
-    import Compat.String
+    using DataFrames
 
     #
     # Equality
@@ -150,7 +149,7 @@ module TestDataFrame
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == NullableVector{Int}
     @test typeof(df[:, 2]) == NullableVector{Float64}
-    @test typeof(df[:, 3]) == NullableCategoricalVector{Compat.UTF8String,UInt32}
+    @test typeof(df[:, 3]) == NullableCategoricalVector{String,UInt32}
     @test all(isnull, df[:, 1])
     @test all(isnull, df[:, 2])
     @test all(isnull, df[:, 3])
@@ -206,22 +205,22 @@ module TestDataFrame
     @test_throws ArgumentError push!(dfb, ("coconut",22))
 
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, @compat(Dict(:first=>3, :second=>"pear")))
+    push!(dfb, Dict(:first=>3, :second=>"pear"))
     @test isequal(df, dfb)
 
     df=DataFrame( first=[1,2,3], second=["apple","orange","banana"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, @compat(Dict("first"=>3, "second"=>"banana")))
+    push!(dfb, Dict("first"=>3, "second"=>"banana"))
     @test isequal(df, dfb)
 
     df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, @compat(Dict(:first=>true, :second=>false)))
+    @test_throws ArgumentError push!(dfb, Dict(:first=>true, :second=>false))
     @test isequal(df0, dfb)
 
     df0= DataFrame( first=[1,2], second=["apple","orange"] )
     dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, @compat(Dict("first"=>"chicken", "second"=>"stuff")))
+    @test_throws ArgumentError push!(dfb, Dict("first"=>"chicken", "second"=>"stuff"))
     @test isequal(df0, dfb)
 
     # delete!

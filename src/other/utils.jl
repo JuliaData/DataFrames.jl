@@ -14,7 +14,7 @@ function identifier(s::AbstractString)
     if !isidentifier(s)
         s = makeidentifier(s)
     end
-    @compat(Symbol(in(s, RESERVED_WORDS) ? "_"*s : s))
+    Symbol(in(s, RESERVED_WORDS) ? "_"*s : s)
 end
 
 function makeidentifier(s::AbstractString)

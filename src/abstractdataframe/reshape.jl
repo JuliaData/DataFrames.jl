@@ -81,9 +81,9 @@ function stack(df::AbstractDataFrame, measure_vars::Vector{Int},
     cnames = names(df)[id_vars]
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
-    DataFrame(Any[Compat.repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
-                  vcat([df[c] for c in measure_vars]...),                    # value
-                  [Compat.repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
+    DataFrame(Any[repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
+                  vcat([df[c] for c in measure_vars]...),             # value
+                  [repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
               cnames)
 end
 function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int;
@@ -122,7 +122,7 @@ end
 Stacks a DataFrame; convert from a wide to long format; see
 `stack`.
 """
-function melt(df::AbstractDataFrame, id_vars::@compat(Union{Int,Symbol});
+function melt(df::AbstractDataFrame, id_vars::Union{Int,Symbol};
               variable_name::Symbol=:variable, value_name::Symbol=:value)
     melt(df, [id_vars]; variable_name=variable_name, value_name=value_name)
 end

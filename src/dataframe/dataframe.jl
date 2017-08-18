@@ -205,7 +205,7 @@ ncol(df::DataFrame) = length(index(df))
 # Let getindex(df.columns[j], row_inds) from AbstractVector() handle
 #  the resolution of row indices
 
-@compat const ColumnIndex = Union{Real, Symbol}
+const ColumnIndex = Union{Real, Symbol}
 
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
@@ -291,11 +291,11 @@ Base.getindex(df::DataFrame, ::Colon, ::Colon) = copy(df)
 
 isnextcol(df::DataFrame, col_ind::Symbol) = true
 function isnextcol(df::DataFrame, col_ind::Real)
-    return ncol(df) + 1 == @compat Int(col_ind)
+    return ncol(df) + 1 == Int(col_ind)
 end
 
 function nextcolname(df::DataFrame)
-    return @compat(Symbol(string("x", ncol(df) + 1)))
+    return Symbol(string("x", ncol(df) + 1))
 end
 
 # Will automatically add a new column if needed
@@ -684,7 +684,7 @@ Base.delete!(df::DataFrame, c::Int) = delete!(df, [c])
 Base.delete!(df::DataFrame, c::Any) = delete!(df, index(df)[c])
 
 # deleterows!()
-function deleterows!(df::DataFrame, ind::@compat(Union{Integer, UnitRange{Int}}))
+function deleterows!(df::DataFrame, ind::Union{Integer, UnitRange{Int}})
     for i in 1:ncol(df)
         df.columns[i] = deleteat!(df.columns[i], ind)
     end

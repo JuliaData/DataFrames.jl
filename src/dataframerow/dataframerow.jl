@@ -66,7 +66,7 @@ Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) = rowhash(r.df, r.row, h)
 # rows are equal if they have the same values (while the row indices could differ)
 # returns Nullable{Bool}
 # if all non-null values are equal, but there are nulls, returns null
-@compat(Base.:(==))(r1::DataFrameRow, r2::DataFrameRow) = isequal(r1, r2)
+Base.:(==)(r1::DataFrameRow, r2::DataFrameRow) = isequal(r1, r2)
 
 function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
     isequal_row(r1.df, r1.row, r2.df, r2.row)

@@ -84,7 +84,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-@compat function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
+function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
     write(io, "<tr>")
@@ -96,7 +96,7 @@ end
     haslimit = get(io, :limit, true)
     n = size(df, 1)
     if haslimit
-        tty_rows, tty_cols = _displaysize(io)
+        tty_rows, tty_cols = Base.displaysize(io)
         mxrow = min(n,tty_rows)
     else
         mxrow = n
@@ -181,11 +181,11 @@ end
 #
 ##############################################################################
 
-@compat function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
+function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
     printtable(io, df, true, ',')
 end
 
-@compat function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
+function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
     printtable(io, df, true, '\t')
 end
 

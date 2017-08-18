@@ -13,10 +13,8 @@ module TestConversions
     df = DataFrame()
     df[:A] = 1:5
     df[:B] = 1.0:5.0
-    # Fails on Julia 0.4 since promote_type(Nullable{Int}, Nullable{Float64}) gives Nullable{T}
-    if VERSION >= v"0.5.0-dev"
-        @test isa(convert(Array, df), Matrix{Float64})
-    end
+    @test isa(convert(Array, df), Matrix{Float64})
+
     @test convert(Array, df) == convert(Array, convert(NullableArray, df))
     @test isa(convert(Array{Any}, df), Matrix{Any})
     @test isa(convert(Array{Float64}, df), Matrix{Float64})

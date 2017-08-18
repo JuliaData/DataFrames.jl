@@ -1,5 +1,5 @@
 module TestIteration
-    using Base.Test, DataFrames, Compat
+    using Base.Test, DataFrames
 
     dv = NullableArray(Nullable{Int}[1, 2, Nullable()])
     dm = NullableArray([1 2; 3 4])
@@ -12,11 +12,11 @@ module TestIteration
         @test isequal(row[:B]-row[:A], Nullable(1))
 
         # issue #683 (https://github.com/JuliaStats/DataFrames.jl/pull/683)
-        @test typeof(collect(row)) == @compat Array{Tuple{Symbol, Any}, 1}
+        @test typeof(collect(row)) == Array{Tuple{Symbol, Any}, 1}
     end
 
     for col in eachcol(df)
-        @test isa(col, @compat Tuple{Symbol, NullableVector})
+        @test isa(col, Tuple{Symbol, NullableVector})
     end
 
     @test isequal(map(x -> minimum(convert(Array, x)), eachrow(df)), Any[1,2])

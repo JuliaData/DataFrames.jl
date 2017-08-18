@@ -8,8 +8,6 @@ module DataFrames
 ##
 ##############################################################################
 
-using Compat
-import Compat.String
 using Reexport
 using StatsBase
 import NullableArrays: dropnull, dropnull!
@@ -81,12 +79,6 @@ export @~,
 ## Load files
 ##
 ##############################################################################
-
-if VERSION < v"0.5.0-dev+2023"
-    _displaysize(x...) = Base.tty_size()
-else
-    const _displaysize = Base.displaysize
-end
 
 for (dir, filename) in [
         ("other", "utils.jl"),

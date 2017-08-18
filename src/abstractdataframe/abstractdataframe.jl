@@ -60,7 +60,7 @@ d[[1:3; 5], :]
 
 `setindex` works similarly.
 """
-@compat abstract type AbstractDataFrame end
+abstract type AbstractDataFrame end
 
 ##############################################################################
 ##
@@ -89,7 +89,7 @@ Base.next(itr::Cols, st) = (itr.df[st], st + 1)
 Base.length(itr::Cols) = length(itr.df)
 Base.size(itr::Cols, ix) = ix==1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
 Base.size(itr::Cols) = (length(itr.df),)
-@compat Base.IndexStyle(::Type{<:Cols}) = IndexLinear()
+Base.IndexStyle(::Type{<:Cols}) = IndexLinear()
 Base.getindex(itr::Cols, inds...) = getindex(itr.df, inds...)
 
 # N.B. where stored as a vector, 'columns(x) = x.vector' is a bit cheaper
@@ -170,10 +170,10 @@ rename(f::Function, df::AbstractDataFrame)
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-rename(x -> @compat(Symbol)(uppercase(string(x))), df)
-rename(df, @compat(Dict(:i=>:A, :x=>:X)))
+rename(x -> Symbol(uppercase(string(x))), df)
+rename(df, Dict(:i=>:A, :x=>:X))
 rename(df, :y, :Y)
-rename!(df, @compat(Dict(:i=>:A, :x=>:X)))
+rename!(df, Dict(:i=>:A, :x=>:X))
 ```
 
 """
@@ -236,7 +236,7 @@ Base.similar(df::AbstractDataFrame, dims::Int) =
 ##############################################################################
 
 # Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
-@compat(Base.:(==))(df1::AbstractDataFrame, df2::AbstractDataFrame) = isequal(df1, df2)
+Base.:(==)(df1::AbstractDataFrame, df2::AbstractDataFrame) = isequal(df1, df2)
 
 function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
@@ -776,7 +776,7 @@ function Base.hash(df::AbstractDataFrame)
     for i in 1:size(df, 2)
         h = hash(df[i], h)
     end
-    return @compat UInt(h)
+    return UInt(h)
 end
 
 
