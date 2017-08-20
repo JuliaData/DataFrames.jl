@@ -40,11 +40,11 @@ module TestConstructors
 
     df = DataFrame(Int, 2, 2)
     @test size(df) == (2, 2)
-    @test all(eltypes(df) .== [Int, Int])
+    @test all(eltypes(df) .== [DataArrays.Data{Int}, DataArrays.Data{Int}])
 
     df = DataFrame([Int, Float64], [:x1, :x2], 2)
     @test size(df) == (2, 2)
-    @test all(eltypes(df) .== Any[Int, Float64])
+    @test all(eltypes(df) .== Any[DataArrays.Data{Int}, DataArrays.Data{Float64}])
 
     @test isequal(df, DataFrame([Int, Float64], 2))
 
