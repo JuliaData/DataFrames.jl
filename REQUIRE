@@ -5,3 +5,6 @@ GZip
 SortingAlgorithms
 Reexport
 FileIO 0.1.2
+TableTraits 0.0.1
+DataValues 0.2.0
+NamedTuples 1.0.0
