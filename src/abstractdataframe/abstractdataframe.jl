@@ -439,8 +439,7 @@ completecases(df)
 
 """
 function completecases(df::AbstractDataFrame)
-    ## Returns a Vector{Bool} of indexes of complete cases (rows with no NA's).
-    res = (!).(isna.(df[1]))
+    res::AbstractVector{Bool} = (!).(isna.(df[1]))
     for i in 2:ncol(df)
         res .&= (!).(isna.(df[i]))
     end

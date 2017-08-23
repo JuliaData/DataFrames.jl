@@ -316,4 +316,8 @@ module TestDataFrame
     df4[2,:Mass] = NA
     @test isequal(df2, df4)
 
+
+    # completecases fix for #1212
+    df = DataFrame(A = Any[1, 2, 3, 4], B = Any[true, false, true, false])
+    @test isa(completecases(df), AbstractVector{Bool})
 end
