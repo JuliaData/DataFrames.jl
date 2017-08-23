@@ -438,8 +438,8 @@ completecases(df)
 ```
 
 """
-function completecases(df::AbstractDataFrame)::AbstractVector{Bool}
-    res = (!).(isna.(df[1]))
+function completecases(df::AbstractDataFrame)
+    res::AbstractVector{Bool} = (!).(isna.(df[1]))
     for i in 2:ncol(df)
         res .&= (!).(isna.(df[i]))
     end
