@@ -121,6 +121,8 @@ for (dir, filename) in [
         ("statsmodels", "formula.jl"),
         ("statsmodels", "statsmodel.jl"),
 
+        ("other", "tabletraits.jl"),
+
         ("", "deprecated.jl")
     ]
 
