@@ -37,6 +37,12 @@ module TestConstructors
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0],
                                 x2 = [1.0, 1.0, 1.0],
                                 x3 = [2.0, 2.0, 2.0])[[:x1, :x2]])
+    @test isequal(df, DataFrame(x1 = 0.0,
+                                x2 = [1.0, 1.0, 1.0]))
+    @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0],
+                                x2 = 1.0))
+    @test isequal(df, DataFrame(x1 = [0.0],
+                                x2 = [1.0, 1.0, 1.0]))
 
     df = DataFrame(Int, 2, 2)
     @test size(df) == (2, 2)

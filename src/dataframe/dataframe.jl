@@ -94,10 +94,35 @@ type DataFrame <: AbstractDataFrame
     end
 end
 
+# Return an AbstractVector of length `len` filled with `x`.
+# `x` is returned as is if it is `length(x)` == `len`.
+# If `x` is of length 1, recycle to length `len`.
+rep_len(x, len) = rep([x], len)
+function rep_len(x::AbstractVector, len)
+    if length(x) == len
+        return x
+    elseif length(x) == 1 
+        return rep(x, len)
+    else
+        error("inappropriate lengths")
+    end
+end
+
 function DataFrame(; kwargs...)
     result = DataFrame(Any[], Index())
+    if length(kwargs) == 0
+        return result
+    end
+    len = mapreduce(x -> length(x[2]), max, kwargs)
+    if len == 0
+        return DataFrame(Any[kv[2] for kv in kwargs], 
+                         Symbol[kv[1] for kv in kwargs])
+    end
     for (k, v) in kwargs
-        result[k] = v
+        if length(v) != 1 && length(v) != len 
+            error("Incompatible lengths of arguments")
+        end
+        result[k] = rep_len(v, len)
     end
     return result
 end
