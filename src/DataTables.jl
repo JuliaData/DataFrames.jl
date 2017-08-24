@@ -25,13 +25,7 @@ import Base: ==, |>
 ##
 ##############################################################################
 
-export @~,
-       @csv_str,
-       @csv2_str,
-       @tsv_str,
-       @wsv_str,
-
-       AbstractDataTable,
+export AbstractDataTable,
        DataTable,
        DataTableRow,
        GroupApplied,
