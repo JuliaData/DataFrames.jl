@@ -78,6 +78,7 @@ for (dir, filename) in [
 
         ("abstractdataframe", "abstractdataframe.jl"),
         ("dataframe", "dataframe.jl"),
+        ("subdataframe", "subdataframe.jl"),
         ("groupeddataframe", "grouping.jl"),
         ("dataframerow", "dataframerow.jl"),
         ("dataframerow", "utils.jl"),
