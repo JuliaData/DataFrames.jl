@@ -1,6 +1,5 @@
 module TestIndex
-using Base.Test
-using DataFrames, DataFrames.Index
+using Base.Test, DataFrames, DataFrames.Index
 
 i = Index()
 push!(i, :A)
@@ -16,15 +15,14 @@ inds = Any[1,
            1:1,
            1.0:1.0,
            [:A],
-           NullableArray([true]),
-           NullableArray([1]),
-           NullableArray([1.0]),
-           NullableArray([:A]),
-           NullableArray([:A])]
+           Union{Bool, Null}[true],
+           Union{Int, Null}[1],
+           Union{Float64, Null}[1.0],
+           Union{Symbol, Null}[:A]]
 
 for ind in inds
-    if isequal(ind, :A) || ndims(ind) == 0
-        @test isequal(i[ind], 1)
+    if ind == :A || ndims(ind) == 0
+        @test i[ind] == 1
     else
         @test (i[ind] == [1])
     end
@@ -58,9 +56,9 @@ end
 #= Aliasing & Mutation =#
 
 # columns should not alias if scalar broadcasted
-df = DataFrame(A=[0],B=[0])
-df[1:end] = 0.0
-df[1,:A] = 1.0
-@test df[1,:B] === 0
+dt = DataFrame(A=[0],B=[0])
+dt[1:end] = 0.0
+dt[1,:A] = 1.0
+@test dt[1,:B] === 0
 
 end

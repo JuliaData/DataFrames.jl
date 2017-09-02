@@ -1,28 +1,25 @@
 module TestDuplicates
-    using Base.Test
-    using DataFrames
+    using Base.Test, DataFrames
 
-    df = DataFrame(a = [1, 2, 3, 3, 4])
-    udf = DataFrame(a = [1, 2, 3, 4])
-    @test isequal(nonunique(df), [false, false, false, true, false])
-    @test isequal(udf, unique(df))
-    unique!(df)
-    @test isequal(df, udf)
+    dt = DataFrame(a = [1, 2, 3, 3, 4])
+    udt = DataFrame(a = [1, 2, 3, 4])
+    @test nonunique(dt) == [false, false, false, true, false]
+    @test udt == unique(dt)
+    unique!(dt)
+    @test dt == udt
 
-    pdf = DataFrame(a = NullableCategoricalArray(Nullable{String}["a", "a", Nullable(),
-                                             Nullable(), "b", Nullable(), "a", Nullable()]),
-                    b = NullableCategoricalArray(Nullable{String}["a", "b", Nullable(),
-                                                              Nullable(), "b", "a", "a", "a"]))
-    updf = DataFrame(a = NullableCategoricalArray(Nullable{String}["a", "a", Nullable(), "b", Nullable()]),
-                     b = NullableCategoricalArray(Nullable{String}["a", "b", Nullable(), "b", "a"]))
-    @test isequal(nonunique(pdf), [false, false, false, true, false, false, true, true])
-    @test isequal(nonunique(updf), falses(5) )
-    @test isequal(updf, unique(pdf))
-    unique!(pdf)
-    @test isequal(pdf, updf)
+    pdt = DataFrame(a = CategoricalArray(["a", "a", null, null, "b", null, "a", null]),
+                    b = CategoricalArray(["a", "b", null, null, "b", "a", "a", "a"]))
+    updt = DataFrame(a = CategoricalArray(["a", "a", null, "b", null]),
+                     b = CategoricalArray(["a", "b", null, "b", "a"]))
+    @test nonunique(pdt) == [false, false, false, true, false, false, true, true]
+    @test nonunique(updt) == falses(5)
+    @test updt == unique(pdt)
+    unique!(pdt)
+    @test pdt == updt
 
     @testset "missing" begin
-        df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
-        @test DataFrames.colmissing(df) == [0, 0]
+        dt = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
+        @test DataFrames.colmissing(dt) == [0, 0]
     end
 end

@@ -3,6 +3,7 @@ CurrentModule = DataFrames
 ```
 
 # Data Manipulation
+
 ```@index
 Pages = ["manipulation.md"]
 ```
@@ -19,6 +20,6 @@ join
 melt
 stack
 unstack
-stackdf
-meltdf
+stackdt
+meltdt
 ```
