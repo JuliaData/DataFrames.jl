@@ -107,59 +107,59 @@ julia> nulls(Int, 1, 3)
 The `DataFrame` type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments:
 
 ```julia
-dt = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 ```
 
 It is also possible to construct a `DataFrame` in stages:
 
 ```julia
-dt = DataFrame()
-dt[:A] = 1:8
-dt[:B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
-dt
+df = DataFrame()
+df[:A] = 1:8
+df[:B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
+df
 ```
 
 The `DataFrame` we build in this way has 8 rows and 2 columns. You can check this using `size` function:
 
 ```julia
-nrows = size(dt, 1)
-ncols = size(dt, 2)
+nrows = size(df, 1)
+ncols = size(df, 2)
 ```
 
 We can also look at small subsets of the data in a couple of different ways:
 
 ```julia
-head(dt)
-tail(dt)
+head(df)
+tail(df)
 
-dt[1:3, :]
+df[1:3, :]
 ```
 
 Having seen what some of the rows look like, we can try to summarize the entire data set using `describe`:
 
 ```julia
-describe(dt)
+describe(df)
 ```
 
 To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the `DataFrame`:
 
 ```julia
-mean(Nulls.skip(dt[1]))
-median(Nulls.skip(dt[1]))
+mean(Nulls.skip(df[1]))
+median(Nulls.skip(df[1]))
 ```
 
 We could also have used column names to access individual columns:
 
 ```julia
-mean(Nulls.skip(dt[:A]))
-median(Nulls.skip(dt[:A]))
+mean(Nulls.skip(df[:A]))
+median(Nulls.skip(df[:A]))
 ```
 
 We can also apply a function to each column of a `DataFrame` with the `colwise` function. For example:
 
 ```julia
-dt = DataFrame(A = 1:4, B = randn(4))
-colwise(c->cumsum(Nulls.skip(c)), dt)
+df = DataFrame(A = 1:4, B = randn(4))
+colwise(c->cumsum(Nulls.skip(c)), df)
 ```
 
 ## Importing and Exporting Data (I/O)
@@ -191,8 +191,8 @@ a `DataFrame` rather than the default `DataFrame`. Keyword arguments may be pass
 
 A DataFrame can be written to a CSV file at path `output` using
 ```julia
-dt = DataFrame(x = 1, y = 2)
-CSV.write(output, dt)
+df = DataFrame(x = 1, y = 2)
+CSV.write(output, df)
 ```
 
 For more information, use the REPL [help-mode](http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode) or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/)!

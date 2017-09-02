@@ -12,15 +12,15 @@ using CSV
 iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"), DataFrame)
 
 by(iris, :Species, size)
-by(iris, :Species, dt -> mean(Nulls.skip(dt[:PetalLength])))
-by(iris, :Species, dt -> DataFrame(N = size(dt, 1)))
+by(iris, :Species, df -> mean(Nulls.skip(df[:PetalLength])))
+by(iris, :Species, df -> DataFrame(N = size(df, 1)))
 ```
 
 The `by` function also support the `do` block form:
 
 ```julia
-by(iris, :Species) do dt
-   DataFrame(m = mean(Nulls.skip(dt[:PetalLength])), s² = var(Nulls.skip(dt[:PetalLength])))
+by(iris, :Species) do df
+   DataFrame(m = mean(Nulls.skip(df[:PetalLength])), s² = var(Nulls.skip(df[:PetalLength])))
 end
 ```
 
@@ -36,7 +36,7 @@ aggregate(iris, :Species, [sum, x->mean(Nulls.skip(x))])
 If you only want to split the data set into subsets, use the `groupby` function:
 
 ```julia
-for subdt in groupby(iris, :Species)
-    println(size(subdt, 1))
+for subdf in groupby(iris, :Species)
+    println(size(subdf, 1))
 end
 ```

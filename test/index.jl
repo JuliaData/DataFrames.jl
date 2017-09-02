@@ -56,9 +56,9 @@ end
 #= Aliasing & Mutation =#
 
 # columns should not alias if scalar broadcasted
-dt = DataFrame(A=[0],B=[0])
-dt[1:end] = 0.0
-dt[1,:A] = 1.0
-@test dt[1,:B] === 0
+df = DataFrame(A=[0],B=[0])
+df[1:end] = 0.0
+df[1,:A] = 1.0
+@test df[1,:B] === 0
 
 end

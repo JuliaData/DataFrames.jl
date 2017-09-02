@@ -48,7 +48,7 @@ melt(df::AbstractDataFrame, [id_vars], [measure_vars];
 
 ### Result
 
-* `::DataFrame` : the long-format dataframe with column `:value`
+* `::DataFrame` : the long-format DataFrame with column `:value`
   holding the values of the stacked columns (`measure_vars`), with
   column `:variable` a Vector of Symbols with the `measure_vars` name,
   and with columns for each of the `id_vars`.
@@ -108,7 +108,7 @@ function stack(df::AbstractDataFrame, measure_vars, id_vars;
 end
 # no vars specified, by default select only numeric columns
 numeric_vars(df::AbstractDataFrame) =
-    [T <: AbstractFloat || (T <: Nullable && eltype(T) <: AbstractFloat)
+    [T <: AbstractFloat || (T >: Null && Nulls.T(T) <: AbstractFloat)
      for T in eltypes(df)]
 
 function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
@@ -169,7 +169,7 @@ unstack(df::AbstractDataFrame)
 
 ### Result
 
-* `::DataFrame` : the wide-format dataframe
+* `::DataFrame` : the wide-format DataFrame
 
 
 ### Examples
@@ -193,9 +193,9 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     # `rowkey` integer indicating which column to place along rows
     # `colkey` integer indicating which column to place along column headers
     # `value` integer indicating which column has values
-    refkeycol = NullableCategoricalArray(df[rowkey])
+    refkeycol = CategoricalArray{Union{eltype(df[rowkey]), Null}}(df[rowkey])
     valuecol = df[value]
-    keycol = NullableCategoricalArray(df[colkey])
+    keycol = CategoricalArray{Union{eltype(df[colkey]), Null}}(df[colkey])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
     payload = DataFrame(Any[similar_nullable(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
@@ -230,7 +230,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     for i in 1:length(groupidxs)
         rowkey[groupidxs[i]] = i
     end
-    keycol = NullableCategoricalArray(df[colkey])
+    keycol = CategoricalArray{Union{eltype(df[colkey]), Null}}(df[colkey])
     valuecol = df[value]
     df1 = nullable!(df[g.idx[g.starts], g.cols], g.cols)
     Nrow = length(g)
@@ -316,7 +316,8 @@ Base.size(v::StackedVector) = (length(v),)
 Base.length(v::StackedVector) = sum(map(length, v.components))
 Base.ndims(v::StackedVector) = 1
 Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
-Base.similar(v::StackedVector, T, dims::Dims) = similar(v.components[1], T, dims)
+Base.similar(v::StackedVector, T::Type, dims::Union{Integer, AbstractUnitRange}...) =
+    similar(v.components[1], T, dims...)
 
 CategoricalArrays.CategoricalArray(v::StackedVector) = CategoricalArray(v[:]) # could be more efficient
 
@@ -420,7 +421,7 @@ meltdf(df::AbstractDataFrame, [id_vars], [measure_vars];
 
 ### Result
 
-* `::DataFrame` : the long-format dataframe with column `:value`
+* `::DataFrame` : the long-format DataFrame with column `:value`
   holding the values of the stacked columns (`measure_vars`), with
   column `:variable` a Vector of Symbols with the `measure_vars` name,
   and with columns for each of the `id_vars`.

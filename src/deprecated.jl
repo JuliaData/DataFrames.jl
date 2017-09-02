@@ -6,15 +6,9 @@ import Base: @deprecate
 @deprecate nullable!(colnums::Array{Int,1}, df::AbstractDataFrame) nullable!(df, colnums)
 
 import Base: keys, values, insert!
-@deprecate keys(dt::AbstractDataFrame) names(dt)
-@deprecate values(dt::AbstractDataFrame) DataFrames.columns(dt)
-@deprecate insert!(dt::DataFrame, dt2::AbstractDataFrame) merge!(dt, dt2)
-
-@deprecate pool categorical
-@deprecate pool! categorical!
-
-@deprecate complete_cases! dropnull!
-@deprecate complete_cases completecases
+@deprecate keys(df::AbstractDataFrame) names(df)
+@deprecate values(df::AbstractDataFrame) DataFrames.columns(df)
+@deprecate insert!(df::DataFrame, df2::AbstractDataFrame) merge!(df, df2)
 
 @deprecate pool categorical
 @deprecate pool! categorical!
@@ -23,6 +17,3 @@ import Base: keys, values, insert!
 @deprecate complete_cases completecases
 
 @deprecate sub(df::AbstractDataFrame, rows) view(df, rows)
-
-@deprecate stackdf stackdf
-@deprecate meltdf meltdf

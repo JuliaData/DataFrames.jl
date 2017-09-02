@@ -3,11 +3,11 @@ module TestIteration
 
     dv = [1, 2, null]
     dm = Union{Int, Null}[1 2; 3 4]
-    dt = Array{Union{Int, Null}}(zeros(2, 2, 2))
+    df = Array{Union{Int, Null}}(zeros(2, 2, 2))
 
-    dt = DataFrame(A = Vector{Union{Int, Null}}(1:2), B = Vector{Union{Int, Null}}(2:3))
+    df = DataFrame(A = Vector{Union{Int, Null}}(1:2), B = Vector{Union{Int, Null}}(2:3))
 
-    for row in eachrow(dt)
+    for row in eachrow(df)
         @test isa(row, DataFrameRow)
         @test (row[:B] - row[:A]) == 1
 
@@ -15,32 +15,32 @@ module TestIteration
         @test typeof(collect(row)) == Array{Tuple{Symbol, Any}, 1}
     end
 
-    for col in eachcol(dt)
+    for col in eachcol(df)
         @test isa(col, Tuple{Symbol, AbstractVector})
     end
 
-    @test map(x -> minimum(convert(Array, x)), eachrow(dt)) == Any[1,2]
-    @test map(minimum, eachcol(dt)) == DataFrame(A = [1], B = [2])
+    @test map(x -> minimum(convert(Array, x)), eachrow(df)) == Any[1,2]
+    @test map(minimum, eachcol(df)) == DataFrame(A = [1], B = [2])
 
-    row = DataFrameRow(dt, 1)
+    row = DataFrameRow(df, 1)
 
     row[:A] = 100
-    @test dt[1, :A] == 100
+    @test df[1, :A] == 100
 
     row[1] = 101
-    @test dt[1, :A] == 101
+    @test df[1, :A] == 101
 
-    dt = DataFrame(A = Vector{Union{Int, Null}}(1:4), B = Union{String, Null}["M", "F", "F", "M"])
+    df = DataFrame(A = Vector{Union{Int, Null}}(1:4), B = Union{String, Null}["M", "F", "F", "M"])
 
-    s1 = view(dt, 1:3)
+    s1 = view(df, 1:3)
     s1[2,:A] = 4
-    @test dt[2, :A] == 4
-    @test view(s1, 1:2) == view(dt, 1:2)
+    @test df[2, :A] == 4
+    @test view(s1, 1:2) == view(df, 1:2)
 
-    s2 = view(dt, 1:2:3)
+    s2 = view(df, 1:2:3)
     s2[2, :B] = "M"
-    @test dt[3, :B] == "M"
-    @test view(s2, 1:1:2) == view(dt, [1,3])
+    @test df[3, :B] == "M"
+    @test view(s2, 1:1:2) == view(df, [1,3])
 
-    # @test_fail for x in dt; end # Raises an error
+    # @test_fail for x in df; end # Raises an error
 end

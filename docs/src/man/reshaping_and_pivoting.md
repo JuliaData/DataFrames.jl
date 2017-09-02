@@ -43,20 +43,20 @@ d = stack(iris)
 `unstack` converts from a long format to a wide format. The default is requires specifying which columns are an id variable, column variable names, and column values:
 
 ```julia
-longdt = melt(iris, [:Species, :id])
-widedt = unstack(longdt, :id, :variable, :value)
+longdf = melt(iris, [:Species, :id])
+widedf = unstack(longdf, :id, :variable, :value)
 ```
 
 If the remaining columns are unique, you can skip the id variable and use:
 
 ```julia
-widedt = unstack(longdt, :variable, :value)
+widedf = unstack(longdf, :variable, :value)
 ```
 
-`stackdt` and `meltdt` are two additional functions that work like `stack` and `melt`, but they provide a view into the original wide DataFrame. Here is an example:
+`stackdf` and `meltdf` are two additional functions that work like `stack` and `melt`, but they provide a view into the original wide DataFrame. Here is an example:
 
 ```julia
-d = stackdt(iris)
+d = stackdf(iris)
 ```
 
 This saves memory. To create the view, several AbstractVectors are defined:
@@ -73,13 +73,13 @@ This repeats the original columns N times where N is the number of columns stack
 For more details on the storage representation, see:
 
 ```julia
-dump(stackdt(iris))
+dump(stackdf(iris))
 ```
 
 None of these reshaping functions perform any aggregation. To do aggregation, use the split-apply-combine functions in combination with reshaping. Here is an example:
 
 ```julia
 d = stack(iris)
-x = by(d, [:variable, :Species], dt -> DataFrame(vsum = mean(Nulls.skip(dt[:value]))))
+x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(Nulls.skip(df[:value]))))
 unstack(x, :Species, :vsum)
 ```

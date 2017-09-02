@@ -5,19 +5,39 @@
 ##
 ##############################################################################
 
+if VERSION >= v"0.6.0-dev.2643"
+    include_string("""
+        immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
+            parent::DataFrame
+            rows::T # maps from subdf row indexes to parent row indexes
 
-immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
-    parent::DataFrame
-    rows::T # maps from subdf row indexes to parent row indexes
-
-    function SubDataFrame{T}(parent::DataFrame, rows::T) where {T <: AbstractVector{Int}}
-        if length(rows) > 0
-            rmin, rmax = extrema(rows)
-            if rmin < 1 || rmax > size(parent, 1)
-                throw(BoundsError())
+            function SubDataFrame{T}(parent::DataFrame, rows::T) where {T <: AbstractVector{Int}}
+                if length(rows) > 0
+                    rmin, rmax = extrema(rows)
+                    if rmin < 1 || rmax > size(parent, 1)
+                        throw(BoundsError())
+                    end
+                end
+                new(parent, rows)
             end
         end
-        new(parent, rows)
+    """)
+else
+    @eval begin
+        immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
+            parent::DataFrame
+            rows::T # maps from subdf row indexes to parent row indexes
+
+            function SubDataFrame(parent::DataFrame, rows::T)
+                if length(rows) > 0
+                    rmin, rmax = extrema(rows)
+                    if rmin < 1 || rmax > size(parent, 1)
+                        throw(BoundsError())
+                    end
+                end
+                new(parent, rows)
+            end
+        end
     end
 end
 
@@ -65,7 +85,7 @@ sdf1[:,[:a,:b]]
 """
 SubDataFrame
 
-function SubDataFrame{T <: AbstractVector{Int}}(parent::DataFrame, rows::T)
+function SubDataFrame(parent::DataFrame, rows::T) where {T <: AbstractVector{Int}}
     return SubDataFrame{T}(parent, rows)
 end
 
@@ -73,7 +93,7 @@ function SubDataFrame(parent::DataFrame, row::Integer)
     return SubDataFrame(parent, [Int(row)])
 end
 
-function SubDataFrame{S <: Integer}(parent::DataFrame, rows::AbstractVector{S})
+function SubDataFrame(parent::DataFrame, rows::AbstractVector{<:Integer})
     return SubDataFrame(parent, convert(Vector{Int}, rows))
 end
 
@@ -81,19 +101,14 @@ function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool})
     return SubDataFrame(parent, find(rows))
 end
 
-function SubDataFrame{T<:Integer}(sdf::SubDataFrame, rowinds::Union{T, AbstractVector{T}})
+function SubDataFrame(sdf::SubDataFrame, rowinds::Union{T, AbstractVector{T}}) where {T <: Integer}
     return SubDataFrame(sdf.parent, sdf.rows[rowinds])
 end
 
-function Base.view{T<:Nullable}(adf::AbstractDataFrame, rowinds::AbstractVector{T})
-    # Vector{<:Nullable} need to be checked for nulls and the values lifted
+function Base.view(adf::AbstractDataFrame, rowinds::AbstractVector{T}) where {T >: Null}
+    # Vector{>:Null} need to be checked for nulls
     any(isnull, rowinds) && throw(NullException())
-    return SubDataFrame(adf, get.(rowinds))
-end
-
-function Base.view(adf::AbstractDataFrame, rowinds::NullableVector)
-    # convert for NullableVectors will throw NullException if nulls present
-    return SubDataFrame(adf, convert(Vector, rowinds))
+    return SubDataFrame(adf, convert(Vector{Nulls.T(T)}, rowinds))
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Any)

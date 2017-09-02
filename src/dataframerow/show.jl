@@ -11,8 +11,8 @@
 #'
 #' @examples
 #'
-#' dt = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' for r in eachrow(dt)
+#' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+#' for r in eachrow(df)
 #'     show(STDOUT, r)
 #' end
 function Base.show(io::IO, r::DataFrameRow)

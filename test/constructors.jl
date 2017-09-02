@@ -5,43 +5,43 @@ module TestConstructors
     # DataFrame
     #
 
-    dt = DataFrame()
-    @test dt.columns == Any[]
-    @test dt.colindex == Index()
+    df = DataFrame()
+    @test df.columns == Any[]
+    @test df.colindex == Index()
 
-    dt = DataFrame(Any[CategoricalVector{Union{Float64, Null}}(zeros(3)),
+    df = DataFrame(Any[CategoricalVector{Union{Float64, Null}}(zeros(3)),
                        CategoricalVector{Union{Float64, Null}}(ones(3))],
                    Index([:x1, :x2]))
-    @test size(dt, 1) == 3
-    @test size(dt, 2) == 2
+    @test size(df, 1) == 3
+    @test size(df, 2) == 2
 
-    @test dt == DataFrame(Any[CategoricalVector{Union{Float64, Null}}(zeros(3)),
+    @test df == DataFrame(Any[CategoricalVector{Union{Float64, Null}}(zeros(3)),
                               CategoricalVector{Union{Float64, Null}}(ones(3))])
-    @test dt == DataFrame(x1 = Union{Int, Null}[0.0, 0.0, 0.0],
+    @test df == DataFrame(x1 = Union{Int, Null}[0.0, 0.0, 0.0],
                           x2 = Union{Int, Null}[1.0, 1.0, 1.0])
 
-    dt2 = convert(DataFrame, Union{Float64, Null}[0.0 1.0;
+    df2 = convert(DataFrame, Union{Float64, Null}[0.0 1.0;
                                                   0.0 1.0;
                                                   0.0 1.0])
-    names!(dt2, [:x1, :x2])
-    @test dt[:x1] == dt2[:x1]
-    @test dt[:x2] == dt2[:x2]
+    names!(df2, [:x1, :x2])
+    @test df[:x1] == df2[:x1]
+    @test df[:x2] == df2[:x2]
 
-    @test dt == DataFrame(x1 = Union{Float64, Null}[0.0, 0.0, 0.0],
+    @test df == DataFrame(x1 = Union{Float64, Null}[0.0, 0.0, 0.0],
                           x2 = Union{Float64, Null}[1.0, 1.0, 1.0])
-    @test dt == DataFrame(x1 = Union{Float64, Null}[0.0, 0.0, 0.0],
+    @test df == DataFrame(x1 = Union{Float64, Null}[0.0, 0.0, 0.0],
                           x2 = Union{Float64, Null}[1.0, 1.0, 1.0],
                           x3 = Union{Float64, Null}[2.0, 2.0, 2.0])[[:x1, :x2]]
 
-    dt = DataFrame(Union{Int, Null}, 2, 2)
-    @test size(dt) == (2, 2)
-    @test eltypes(dt) == [Union{Int, Null}, Union{Int, Null}]
+    df = DataFrame(Union{Int, Null}, 2, 2)
+    @test size(df) == (2, 2)
+    @test eltypes(df) == [Union{Int, Null}, Union{Int, Null}]
 
-    dt = DataFrame([Union{Int, Null}, Union{Float64, Null}], [:x1, :x2], 2)
-    @test size(dt) == (2, 2)
-    @test eltypes(dt) == [Union{Int, Null}, Union{Float64, Null}]
+    df = DataFrame([Union{Int, Null}, Union{Float64, Null}], [:x1, :x2], 2)
+    @test size(df) == (2, 2)
+    @test eltypes(df) == [Union{Int, Null}, Union{Float64, Null}]
 
-    @test dt == DataFrame([Union{Int, Null}, Union{Float64, Null}], 2)
+    @test df == DataFrame([Union{Int, Null}, Union{Float64, Null}], 2)
 
     @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0)
     @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0)
@@ -53,9 +53,9 @@ module TestConstructors
     @test DataFrame(a=1, b=1:2) == DataFrame(a=[1,1], b=[1,2])
 
     @testset "associative" begin
-        dt = DataFrame(Dict(:A => 1:3, :B => 4:6))
-        @test dt == DataFrame(A = 1:3, B = 4:6)
-        @test eltypes(dt) == [Int, Int]
+        df = DataFrame(Dict(:A => 1:3, :B => 4:6))
+        @test df == DataFrame(A = 1:3, B = 4:6)
+        @test eltypes(df) == [Int, Int]
     end
 
     @testset "recyclers" begin
@@ -71,14 +71,14 @@ module TestConstructors
     end
 
     @testset "column types" begin
-        dt = DataFrame(A = 1:3, B = 2:4, C = 3:5)
+        df = DataFrame(A = 1:3, B = 2:4, C = 3:5)
         answer = [Array{Int,1}, Array{Int,1}, Array{Int,1}]
-        @test map(typeof, dt.columns) == answer
-        dt[:D] = [4, 5, null]
+        @test map(typeof, df.columns) == answer
+        df[:D] = [4, 5, null]
         push!(answer, Vector{Union{Int, Null}})
-        @test map(typeof, dt.columns) == answer
-        dt[:E] = 'c'
+        @test map(typeof, df.columns) == answer
+        df[:E] = 'c'
         push!(answer, Vector{Char})
-        @test map(typeof, dt.columns) == answer
+        @test map(typeof, df.columns) == answer
     end
 end

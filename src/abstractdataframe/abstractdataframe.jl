@@ -24,7 +24,6 @@ The following are normally implemented for AbstractDataFrames:
 * [`head`](@ref) : first `n` rows
 * [`tail`](@ref) : last `n` rows
 * `convert` : convert to an array
-* `NullableArray` : convert to a NullableArray
 * [`completecases`](@ref) : boolean vector of complete cases (rows with no nulls)
 * [`dropnull`](@ref) : remove rows with null values
 * [`dropnull!`](@ref) : remove rows with null values in-place
@@ -227,7 +226,7 @@ Base.ndims(::AbstractDataFrame) = 2
 ##############################################################################
 
 Base.similar(df::AbstractDataFrame, dims::Int) =
-    DataFrame(Any[similar(x, dims) for x in columns(df)], copy(index(df)))
+    DataFrame(Any[similar_nullable(x, dims) for x in columns(df)], copy(index(df)))
 
 ##############################################################################
 ##
@@ -296,7 +295,7 @@ tail(df)
 """
 (head, tail)
 
-# get the structure of a DF
+# get the structure of a df
 """
 Show the structure of an AbstractDataFrame, in a tree-like format
 
@@ -333,7 +332,7 @@ function Base.dump(io::IO, df::AbstractDataFrame, n::Int, indent)
     end
 end
 
-# summarize the columns of a DF
+# summarize the columns of a df
 # TODO: clever layout in rows
 """
 Summarize the columns of an AbstractDataFrame
@@ -379,6 +378,22 @@ function StatsBase.describe(io, df::AbstractDataFrame)
     end
 end
 
+function StatsBase.describe{T}(io::IO, X::AbstractVector{Union{T, Null}})
+    nullcount = count(isnull, X)
+    pnull = 100 * nullcount/length(X)
+    if pnull != 100 && T <: Real
+        show(io, StatsBase.summarystats(collect(Nulls.skip(X))))
+    else
+        println(io, "Summary Stats:")
+    end
+    println(io, "Length:         $(length(X))")
+    println(io, "Type:           $(eltype(X))")
+    !(T <: Real) && println(io, "Number Unique:  $(length(unique(X)))")
+    println(io, "Number Missing: $(nullcount)")
+    @printf(io, "%% Missing:      %.6f\n", pnull)
+    return
+end
+
 ##############################################################################
 ##
 ## Miscellaneous
@@ -386,18 +401,12 @@ end
 ##############################################################################
 
 function _nonnull!(res, col)
-    for (i, el) in enumerate(col)
-        res[i] &= !_isnull(el)
+    @inbounds for (i, el) in enumerate(col)
+        res[i] &= !isnull(el)
     end
 end
 
-function _nonnull!(res, col::NullableArray)
-    for (i, el) in enumerate(col.isnull)
-        res[i] &= !el
-    end
-end
-
-function _nonnull!(res, col::NullableCategoricalArray)
+function _nonnull!(res, col::CategoricalArray{>: Null})
     for (i, el) in enumerate(col.refs)
         res[i] &= el > 0
     end
@@ -424,9 +433,11 @@ See also [`dropnull`](@ref) and [`dropnull!`](@ref).
 **Examples**
 
 ```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df[[1,4,5], :x] = Nullable()
-df[[9,10], :y] = Nullable()
+df = DataFrame(i = 1:10,
+               x = Vector{Union{Null, Float64}}(rand(10)),
+               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
+df[[1,4,5], :x] = null
+df[[9,10], :y] = null
 completecases(df)
 ```
 
@@ -459,9 +470,11 @@ See also [`completecases`](@ref) and [`dropnull!`](@ref).
 **Examples**
 
 ```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df[[1,4,5], :x] = Nullable()
-df[[9,10], :y] = Nullable()
+df = DataFrame(i = 1:10,
+               x = Vector{Union{Null, Float64}}(rand(10)),
+               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
+df[[1,4,5], :x] = null
+df[[9,10], :y] = null
 dropnull(df)
 ```
 
@@ -488,9 +501,11 @@ See also [`dropnull`](@ref) and [`completecases`](@ref).
 **Examples**
 
 ```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df[[1,4,5], :x] = Nullable()
-df[[9,10], :y] = Nullable()
+df = DataFrame(i = 1:10,
+               x = Vector{Union{Null, Float64}}(rand(10)),
+               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
+df[[1,4,5], :x] = null
+df[[9,10], :y] = null
 dropnull!(df)
 ```
 
@@ -502,7 +517,6 @@ function Base.convert(::Type{Array}, df::AbstractDataFrame)
 end
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(promote_type, eltypes(df))
-    T <: Nullable && (T = eltype(T))
     convert(Matrix{T}, df)
 end
 function Base.convert{T}(::Type{Array{T}}, df::AbstractDataFrame)
@@ -513,30 +527,8 @@ function Base.convert{T}(::Type{Matrix{T}}, df::AbstractDataFrame)
     res = Matrix{T}(n, p)
     idx = 1
     for (name, col) in zip(names(df), columns(df))
-        any(isnull, col) && error("cannot convert a DataFrame containing null values to array (found for column $name)")
+        !(T >: Null) && any(isnull, col) && error("cannot convert a DataFrame containing null values to array (found for column $name)")
         copy!(res, idx, convert(Vector{T}, col))
-        idx += n
-    end
-    return res
-end
-
-function Base.convert(::Type{NullableArray}, df::AbstractDataFrame)
-    convert(NullableMatrix, df)
-end
-function Base.convert(::Type{NullableMatrix}, df::AbstractDataFrame)
-    T = reduce(promote_type, eltypes(df))
-    T <: Nullable && (T = eltype(T))
-    convert(NullableMatrix{T}, df)
-end
-function Base.convert{T}(::Type{NullableArray{T}}, df::AbstractDataFrame)
-    convert(NullableMatrix{T}, df)
-end
-function Base.convert{T}(::Type{NullableMatrix{T}}, df::AbstractDataFrame)
-    n, p = size(df)
-    res = NullableArray(T, n, p)
-    idx = 1
-    for col in columns(df)
-        copy!(res, idx, col)
         idx += n
     end
     return res
@@ -586,7 +578,7 @@ end
 nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
-if isdefined(Base, :unique!) # Julia >= 0.7
+if isdefined(:unique!)
     import Base.unique!
 end
 
@@ -658,9 +650,9 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 ##############################################################################
 
 # hcat's first argument must be an AbstractDataFrame
-# Trailing arguments (currently) may also be NullableVectors, Vectors, or scalars.
+# Trailing arguments (currently) may also be vectors or scalars.
 
-# hcat! is defined in dataframes/dataframes.jl
+# hcat! is defined in DataFrames/DataFrames.jl
 # Its first argument (currently) must be a DataFrame.
 
 # catch-all to cover cases where indexing returns a DataFrame and copy doesn't
@@ -671,24 +663,21 @@ Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = hcat!(hcat(df1, df2), dfn...)
 
 @generated function promote_col_type(cols::AbstractVector...)
-    elty = Base.promote_eltype(cols...)
-    if elty <: Nullable
-        elty = eltype(elty)
+    T = promote_type(map(x -> Nulls.T(eltype(x)), cols)...)
+    if T <: CategoricalValue
+        T = T.parameters[1]
     end
-    if elty <: CategoricalValue
-        elty = elty.parameters[1]
-    end
-    if any(col -> eltype(col) <: Nullable, cols)
-        if any(col -> col <: Union{AbstractCategoricalArray, AbstractNullableCategoricalArray}, cols)
-            return :(NullableCategoricalVector{$elty})
+    if any(col -> eltype(col) >: Null, cols)
+        if any(col -> col <: AbstractCategoricalArray, cols)
+            return :(CategoricalVector{Union{$T, Null}})
         else
-            return :(NullableVector{$elty})
+            return :(Vector{Union{$T, Null}})
         end
     else
-        if any(col -> col <: Union{AbstractCategoricalArray, AbstractNullableCategoricalArray}, cols)
-            return :(CategoricalVector{$elty})
+        if any(col -> col <: AbstractCategoricalArray, cols)
+            return :(CategoricalVector{$T})
         else
-            return :(Vector{$elty})
+            return :(Vector{$T})
         end
     end
 end
@@ -727,7 +716,7 @@ function Base.vcat(dfs::AbstractDataFrame...)
         unionunique = union(uniqueheaders...)
         coldiff = setdiff(unionunique, intersect(uniqueheaders...))
         if !isempty(coldiff)
-            # if any dataframes are a full superset of names, skip them
+            # if any DataFrames are a full superset of names, skip them
             filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
             estrings = Vector{String}(length(uniqueheaders))
             for (i, u) in enumerate(uniqueheaders)

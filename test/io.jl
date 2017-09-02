@@ -3,7 +3,7 @@ module TestIO
     using LaTeXStrings
 
     # Test LaTeX export
-    dt = DataFrame(A = 1:4,
+    df = DataFrame(A = 1:4,
                    B = ["\$10.0", "M&F", "A~B", "\\alpha"],
                    C = [L"\alpha", L"\beta", L"\gamma", L"\sum_{i=1}^n \delta_i"],
                    D = [1.0, 2.0, null, 3.0],
@@ -19,26 +19,26 @@ module TestIO
         \t4 & 4 & \\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d \\\\
         \\end{tabular}
         """
-    @test reprmime(MIME("text/latex"), dt) == str
+    @test reprmime(MIME("text/latex"), df) == str
 
     #Test HTML output for IJulia and similar
-    dt = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, null])
+    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, null])
     io = IOBuffer()
-    show(io, "text/html", dt)
+    show(io, "text/html", df)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><tr><th></th><th>Fish</th><th>Mass</th></tr><tr><th>1</th><td>Suzy</td><td>1.5</td></tr><tr><th>2</th><td>Amir</td><td>null</td></tr></table>"
 
     # test limit attribute of IOContext is used
-    dt = DataFrame(a=collect(1:1000))
+    df = DataFrame(a=collect(1:1000))
     ioc = IOContext(IOBuffer(), displaysize=(10, 10), limit=false)
-    show(ioc, "text/html", dt)
+    show(ioc, "text/html", df)
     @test length(String(take!(ioc.io))) > 10000
 
     io = IOBuffer()
-    show(io, "text/html", dt)
+    show(io, "text/html", df)
     @test length(String(take!(io))) < 10000
 
-    dt = DataFrame(A = 1:3,
+    df = DataFrame(A = 1:3,
                    B = 'a':'c',
                    C = ["A", "B", "C"],
                    D = CategoricalArray('a':'c'),
@@ -47,7 +47,7 @@ module TestIO
                    G = nulls(3),
                    H = fill(null, 3))
 
-    @test sprint(printtable, dt) ==
+    @test sprint(printtable, df) ==
         """
         "A","B","C","D","E","F","G","H"
         1,"'a'","A","'a'","A","1",null,null

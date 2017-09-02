@@ -24,7 +24,7 @@ julia> df = DataFrame(A = 1:10, B = 2:2:20)
 Referring to the first column by index or name:
 
 ```julia
-julia> dt[1]
+julia> df[1]
 10-element Array{Int64,1}:
   1
   2
@@ -37,7 +37,7 @@ julia> dt[1]
   9
  10
 
-julia> dt[:A]
+julia> df[:A]
 10-element Array{Int64,1}:
   1
   2
@@ -54,17 +54,17 @@ julia> dt[:A]
 Refering to the first element of the first column:
 
 ```julia
-julia> dt[1, 1]
+julia> df[1, 1]
 1
 
-julia> dt[1, :A]
+julia> df[1, :A]
 1
 ```
 
 Selecting a subset of rows by index and an (ordered) subset of columns by name:
 
 ```julia
-julia> dt[1:3, [:A, :B]]
+julia> df[1:3, [:A, :B]]
 3×2 DataFrames.DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
@@ -72,7 +72,7 @@ julia> dt[1:3, [:A, :B]]
 │ 2   │ 2 │ 4 │
 │ 3   │ 3 │ 6 │
 
-julia> dt[1:3, [:B, :A]]
+julia> df[1:3, [:B, :A]]
 3×2 DataFrames.DataFrame
 │ Row │ B │ A │
 ├─────┼───┼───┤

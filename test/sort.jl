@@ -16,33 +16,33 @@ module TestSort
     @test sort(d, cols=[:dv1, :cv1])[:dv3] == sortperm(dv1)
     @test sort(d, cols=[:dv1, :dv3])[:dv3] == sortperm(dv1)
 
-    dt = DataFrame(rank=rand(1:12, 1000),
+    df = DataFrame(rank=rand(1:12, 1000),
                    chrom=rand(1:24, 1000),
                    pos=rand(1:100000, 1000))
 
-    @test issorted(sort(dt))
-    @test issorted(sort(dt, rev=true), rev=true)
-    @test issorted(sort(dt, cols=[:chrom,:pos])[[:chrom,:pos]])
+    @test issorted(sort(df))
+    @test issorted(sort(df, rev=true), rev=true)
+    @test issorted(sort(df, cols=[:chrom,:pos])[[:chrom,:pos]])
 
-    ds = sort(dt, cols=(order(:rank, rev=true),:chrom,:pos))
+    ds = sort(df, cols=(order(:rank, rev=true),:chrom,:pos))
     @test issorted(ds, cols=(order(:rank, rev=true),:chrom,:pos))
     @test issorted(ds, rev=(true, false, false))
 
-    ds2 = sort(dt, cols=(:rank, :chrom, :pos), rev=(true, false, false))
+    ds2 = sort(df, cols=(:rank, :chrom, :pos), rev=(true, false, false))
     @test issorted(ds2, cols=(order(:rank, rev=true), :chrom, :pos))
     @test issorted(ds2, rev=(true, false, false))
 
-    @test isequal(ds2, ds)
+    @test ds2 == ds
 
-    sort!(dt, cols=(:rank, :chrom, :pos), rev=(true, false, false))
-    @test issorted(dt, cols=(order(:rank, rev=true), :chrom, :pos))
-    @test issorted(dt, rev=(true, false, false))
+    sort!(df, cols=(:rank, :chrom, :pos), rev=(true, false, false))
+    @test issorted(df, cols=(order(:rank, rev=true), :chrom, :pos))
+    @test issorted(df, rev=(true, false, false))
 
-    @test dt == ds
+    @test df == ds
 
     # Check that columns that shares the same underlying array are only permuted once PR#1072
-    dt = DataFrame(a=[2,1])
-    dt[:b] = dt[:a]
-    sort!(dt, cols=:a)
-    @test dt == DataFrame(a=[1,2],b=[1,2])
+    df = DataFrame(a=[2,1])
+    df[:b] = df[:a]
+    sort!(df, cols=:a)
+    @test df == DataFrame(a=[1,2],b=[1,2])
 end

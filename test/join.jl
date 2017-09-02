@@ -49,122 +49,122 @@ module TestJoin
     @test join(nameid, jobid, on = :ID, kind = :anti) == anti[on]
 
     # Join on multiple keys
-    dt1 = DataFrame(A = 1, B = 2, C = 3)
-    dt2 = DataFrame(A = 1, B = 2, D = 4)
+    df1 = DataFrame(A = 1, B = 2, C = 3)
+    df2 = DataFrame(A = 1, B = 2, D = 4)
 
-    join(dt1, dt2, on = [:A, :B])
+    join(df1, df2, on = [:A, :B])
 
     # Test output of cross joins
-    dt1 = DataFrame(A = 1:2, B = 'a':'b')
-    dt2 = DataFrame(A = 1:3, C = 3:5)
+    df1 = DataFrame(A = 1:2, B = 'a':'b')
+    df2 = DataFrame(A = 1:3, C = 3:5)
 
     cross = DataFrame(A = [1, 1, 1, 2, 2, 2],
                       B = ['a', 'a', 'a', 'b', 'b', 'b'],
                       C = [3, 4, 5, 3, 4, 5])
 
-    @test join(dt1, dt2[[:C]], kind = :cross) == cross
+    @test join(df1, df2[[:C]], kind = :cross) == cross
 
     # Cross joins handle naming collisions
-    @test size(join(dt1, dt1, kind = :cross)) == (4, 4)
+    @test size(join(df1, df1, kind = :cross)) == (4, 4)
 
     # Cross joins don't take keys
-    @test_throws ArgumentError join(dt1, dt2, on = :A, kind = :cross)
+    @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
 
     # test empty inputs
-    simple_dt(len::Int, col=:A) = (dt = DataFrame();
-                                   dt[col]=Vector{Union{Int, Null}}(1:len);
-                                   dt)
-    @test join(simple_dt(0), simple_dt(0), on = :A, kind = :left) == simple_dt(0)
-    @test join(simple_dt(2), simple_dt(0), on = :A, kind = :left) == simple_dt(2)
-    @test join(simple_dt(0), simple_dt(2), on = :A, kind = :left) == simple_dt(0)
-    @test join(simple_dt(0), simple_dt(0), on = :A, kind = :right) == simple_dt(0)
-    @test join(simple_dt(0), simple_dt(2), on = :A, kind = :right) == simple_dt(2)
-    @test join(simple_dt(2), simple_dt(0), on = :A, kind = :right) == simple_dt(0)
-    @test join(simple_dt(0), simple_dt(0), on = :A, kind = :inner) == simple_dt(0)
-    @test join(simple_dt(0), simple_dt(2), on = :A, kind = :inner) == simple_dt(0)
-    @test join(simple_dt(2), simple_dt(0), on = :A, kind = :inner) == simple_dt(0)
-    @test join(simple_dt(0), simple_dt(0), on = :A, kind = :outer) == simple_dt(0)
-    @test join(simple_dt(0), simple_dt(2), on = :A, kind = :outer) == simple_dt(2)
-    @test join(simple_dt(2), simple_dt(0), on = :A, kind = :outer) == simple_dt(2)
-    @test join(simple_dt(0), simple_dt(0), on = :A, kind = :semi) == simple_dt(0)
-    @test join(simple_dt(2), simple_dt(0), on = :A, kind = :semi) == simple_dt(0)
-    @test join(simple_dt(0), simple_dt(2), on = :A, kind = :semi) == simple_dt(0)
-    @test join(simple_dt(0), simple_dt(0), on = :A, kind = :anti) == simple_dt(0)
-    @test join(simple_dt(2), simple_dt(0), on = :A, kind = :anti) == simple_dt(2)
-    @test join(simple_dt(0), simple_dt(2), on = :A, kind = :anti) == simple_dt(0)
-    @test join(simple_dt(0), simple_dt(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
-    @test join(simple_dt(0), simple_dt(2, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
-    @test join(simple_dt(2), simple_dt(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
+    simple_df(len::Int, col=:A) = (df = DataFrame();
+                                   df[col]=Vector{Union{Int, Null}}(1:len);
+                                   df)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :left) == simple_df(0)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :left) == simple_df(2)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :left) == simple_df(0)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :right) == simple_df(0)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :right) == simple_df(2)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :right) == simple_df(0)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :inner) == simple_df(0)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :inner) == simple_df(0)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :inner) == simple_df(0)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :outer) == simple_df(0)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :outer) == simple_df(2)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :outer) == simple_df(2)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :semi) == simple_df(0)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :semi) == simple_df(0)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :semi) == simple_df(0)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :anti) == simple_df(0)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :anti) == simple_df(2)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :anti) == simple_df(0)
+    @test join(simple_df(0), simple_df(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
+    @test join(simple_df(0), simple_df(2, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
+    @test join(simple_df(2), simple_df(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
 
     # test empty inputs
-    simple_df(len::Int, col=:A) = (df = DataFrame(); df[col]=NullableArray(collect(1:len)); df)
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :left),  simple_df(0))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :left),  simple_df(2))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :left),  simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :right), simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :right), simple_df(2))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :right), simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :inner), simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :inner), simple_df(0))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :inner), simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :outer), simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :outer), simple_df(2))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :outer), simple_df(2))
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :semi),  simple_df(0))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :semi),  simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :semi),  simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0), on = :A, kind = :anti),  simple_df(0))
-    @test isequal(join(simple_df(2), simple_df(0), on = :A, kind = :anti),  simple_df(2))
-    @test isequal(join(simple_df(0), simple_df(2), on = :A, kind = :anti),  simple_df(0))
-    @test isequal(join(simple_df(0), simple_df(0, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
-    @test isequal(join(simple_df(0), simple_df(2, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
-    @test isequal(join(simple_df(2), simple_df(0, :B), kind = :cross), DataFrame(A=Int[], B=Int[]))
+    simple_df(len::Int, col=:A) = (df = DataFrame(); df[col]=collect(1:len); df)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :left) ==  simple_df(0)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :left) ==  simple_df(2)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :left) ==  simple_df(0)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :right) == simple_df(0)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :right) == simple_df(2)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :right) == simple_df(0)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :inner) == simple_df(0)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :inner) == simple_df(0)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :inner) == simple_df(0)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :outer) == simple_df(0)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :outer) == simple_df(2)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :outer) == simple_df(2)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :semi) ==  simple_df(0)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :semi) ==  simple_df(0)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :semi) ==  simple_df(0)
+    @test join(simple_df(0), simple_df(0), on = :A, kind = :anti) ==  simple_df(0)
+    @test join(simple_df(2), simple_df(0), on = :A, kind = :anti) ==  simple_df(2)
+    @test join(simple_df(0), simple_df(2), on = :A, kind = :anti) ==  simple_df(0)
+    @test join(simple_df(0), simple_df(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
+    @test join(simple_df(0), simple_df(2, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
+    @test join(simple_df(2), simple_df(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
 
     # issue #960
-    dt1 = DataFrame(A = 1:50,
+    df1 = DataFrame(A = 1:50,
                     B = 1:50,
                     C = 1)
-    categorical!(dt1, :A)
-    categorical!(dt1, :B)
-    join(dt1, dt1, on = [:A, :B], kind = :inner)
+    categorical!(df1, :A)
+    categorical!(df1, :B)
+    join(df1, df1, on = [:A, :B], kind = :inner)
 
     # Test that join works when mixing Array{Union{T, Null}} with Array{T} (issue #1088)
-    dt = DataFrame(Name = Union{String, Null}["A", "B", "C"],
+    df = DataFrame(Name = Union{String, Null}["A", "B", "C"],
                    Mass = [1.5, 2.2, 1.1])
-    dt2 = DataFrame(Name = ["A", "B", "C", "A"],
+    df2 = DataFrame(Name = ["A", "B", "C", "A"],
                     Quantity = [3, 3, 2, 4])
-    @test join(dt2, dt, on=:Name, kind=:left) == DataFrame(Name = ["A", "B", "C", "A"],
+    @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "B", "C", "A"],
                                                            Quantity = [3, 3, 2, 4],
                                                            Mass = [1.5, 2.2, 1.1, 1.5])
 
     # Test that join works when mixing Array{Union{T, Null}} with Array{T} (issue #1151)
-    dt = DataFrame([collect(1:10), collect(2:11)], [:x, :y])
-    dtnull = DataFrame(x = Vector{Union{Int, Null}}(1:10), z = Vector{Union{Int, Null}}(3:12))
-    @test join(dt, dtnull, on = :x) ==
+    df = DataFrame([collect(1:10), collect(2:11)], [:x, :y])
+    dfnull = DataFrame(x = Vector{Union{Int, Null}}(1:10), z = Vector{Union{Int, Null}}(3:12))
+    @test join(df, dfnull, on = :x) ==
         DataFrame([collect(1:10), collect(2:11), collect(3:12)], [:x, :y, :z])
-    @test join(dtnull, dt, on = :x) ==
+    @test join(dfnull, df, on = :x) ==
         DataFrame([Vector{Union{Int, Null}}(1:10), Vector{Union{Int, Null}}(3:12), collect(2:11)], [:x, :z, :y])
 
     @testset "all joins" begin
-        dt1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
-        dt2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
+        df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
+        df2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
         N = null
 
-        @test join(dt1, dt2, kind=:cross) ==
+        @test join(df1, df2, kind=:cross) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
                           repeat([1, 3, 5], inner = 5),
                           repeat([0, 1, 2, 3, 4], outer = 3),
                           repeat([0, 1, 2, 3, 4], outer = 3)],
                       [:id, :fid, :id_1, :fid_1])
-        @test typeof.(join(dt1, dt2, kind=:cross).columns) ==
+        @test typeof.(join(df1, df2, kind=:cross).columns) ==
             [Vector{Int}, Vector{Float64}, Vector{Int}, Vector{Float64}]
 
-        i(on) = join(dt1, dt2, on = on, kind = :inner)
-        l(on) = join(dt1, dt2, on = on, kind = :left)
-        r(on) = join(dt1, dt2, on = on, kind = :right)
-        o(on) = join(dt1, dt2, on = on, kind = :outer)
-        s(on) = join(dt1, dt2, on = on, kind = :semi)
-        a(on) = join(dt1, dt2, on = on, kind = :anti)
+        i(on) = join(df1, df2, on = on, kind = :inner)
+        l(on) = join(df1, df2, on = on, kind = :left)
+        r(on) = join(df1, df2, on = on, kind = :right)
+        o(on) = join(df1, df2, on = on, kind = :outer)
+        s(on) = join(df1, df2, on = on, kind = :semi)
+        a(on) = join(df1, df2, on = on, kind = :anti)
 
         @test s(:id) ==
               s(:fid) ==
@@ -229,27 +229,27 @@ module TestJoin
     end
 
     @testset "all joins with CategoricalArrays" begin
-        dt1 = DataFrame(Any[CategoricalArray([1, 3, 5]),
+        df1 = DataFrame(Any[CategoricalArray([1, 3, 5]),
                             CategoricalArray([1.0, 3.0, 5.0])], [:id, :fid])
-        dt2 = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
+        df2 = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
                             CategoricalArray([0.0, 1.0, 2.0, 3.0, 4.0])], [:id, :fid])
         N = null
 
-        @test join(dt1, dt2, kind=:cross) ==
+        @test join(df1, df2, kind=:cross) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
                           repeat([1, 3, 5], inner = 5),
                           repeat([0, 1, 2, 3, 4], outer = 3),
                           repeat([0, 1, 2, 3, 4], outer = 3)],
                       [:id, :fid, :id_1, :fid_1])
-        @test all(isa.(join(dt1, dt2, kind=:cross).columns,
+        @test all(isa.(join(df1, df2, kind=:cross).columns,
                        [CategoricalVector{T} for T in (Int, Float64, Int, Float64)]))
 
-        i(on) = join(dt1, dt2, on = on, kind = :inner)
-        l(on) = join(dt1, dt2, on = on, kind = :left)
-        r(on) = join(dt1, dt2, on = on, kind = :right)
-        o(on) = join(dt1, dt2, on = on, kind = :outer)
-        s(on) = join(dt1, dt2, on = on, kind = :semi)
-        a(on) = join(dt1, dt2, on = on, kind = :anti)
+        i(on) = join(df1, df2, on = on, kind = :inner)
+        l(on) = join(df1, df2, on = on, kind = :left)
+        r(on) = join(df1, df2, on = on, kind = :right)
+        o(on) = join(df1, df2, on = on, kind = :outer)
+        s(on) = join(df1, df2, on = on, kind = :semi)
+        a(on) = join(df1, df2, on = on, kind = :anti)
 
         @test s(:id) ==
               s(:fid) ==

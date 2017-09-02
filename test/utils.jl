@@ -58,11 +58,11 @@ module TestUtils
 
     @testset "describe" begin
         io = IOBuffer()
-        dt = DataFrame(Any[collect(1:4), Vector{Union{Int, Null}}(2:5),
+        df = DataFrame(Any[collect(1:4), Vector{Union{Int, Null}}(2:5),
                            CategoricalArray(3:6),
                            CategoricalArray{Union{Int, Null}}(4:7)],
                        [:arr, :nullarr, :cat, :nullcat])
-        describe(io, dt)
+        describe(io, df)
         DRT = CategoricalArrays.DefaultRefType
         # Julia 0.7
         nullfirst =
@@ -154,9 +154,9 @@ module TestUtils
 
     @testset "describe" begin
         io = IOBuffer()
-        df = DataFrame(Any[collect(1:4), NullableArray(2:5),
+        df = DataFrame(Any[collect(1:4), collect(Union{Int, Null}, 2:5),
                            CategoricalArray(3:6),
-                           NullableCategoricalArray(4:7)],
+                           CategoricalArray{Union{Int, Null}}(4:7)],
                        [:arr, :nullarr, :cat, :nullcat])
         describe(io, df)
         @test String(take!(io)) ==
@@ -181,7 +181,7 @@ module TestUtils
             3rd Quartile:   4.250000
             Maximum:        5.000000
             Length:         4
-            Type:           $Int
+            Type:           Union{$Int, Nulls.Null}
             Number Missing: 0
             % Missing:      0.000000
 
@@ -194,7 +194,7 @@ module TestUtils
             nullcat
             Summary Stats:
             Length:         4
-            Type:           Nullable{CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}}
+            Type:           Union{CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}, Nulls.Null}
             Number Unique:  4
             Number Missing: 0
             % Missing:      0.000000

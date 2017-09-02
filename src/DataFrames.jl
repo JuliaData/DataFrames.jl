@@ -1,5 +1,4 @@
-__precompile__()
-
+__precompile__(true)
 module DataFrames
 
 ##############################################################################
@@ -8,12 +7,9 @@ module DataFrames
 ##
 ##############################################################################
 
-using Reexport
-using StatsBase
-import NullableArrays: dropnull, dropnull!
-@reexport using NullableArrays
-@reexport using CategoricalArrays
-using SortingAlgorithms
+using Reexport, StatsBase, SortingAlgorithms
+@reexport using CategoricalArrays, Nulls
+
 using Base: Sort, Order
 import Base: ==, |>
 
@@ -23,14 +19,7 @@ import Base: ==, |>
 ##
 ##############################################################################
 
-export @~,
-       @csv_str,
-       @csv2_str,
-       @formula,
-       @tsv_str,
-       @wsv_str,
-
-       AbstractDataFrame,
+export AbstractDataFrame,
        DataFrame,
        DataFrameRow,
        GroupApplied,
@@ -51,7 +40,6 @@ export @~,
        eachrow,
        eltypes,
        groupby,
-       head,
        melt,
        meltdf,
        names!,
@@ -66,7 +54,6 @@ export @~,
        showcols,
        stack,
        stackdf,
-       tail,
        unique!,
        unstack,
        head,
@@ -83,13 +70,15 @@ export @~,
 ##
 ##############################################################################
 
+const _displaysize = Base.displaysize
+
 for (dir, filename) in [
         ("other", "utils.jl"),
         ("other", "index.jl"),
 
         ("abstractdataframe", "abstractdataframe.jl"),
         ("dataframe", "dataframe.jl"),
-        ("subdataframe", "subdataframe.jl"),
+        ("dataframe", "dataframe.jl"),
         ("groupeddataframe", "grouping.jl"),
         ("dataframerow", "dataframerow.jl"),
         ("dataframerow", "utils.jl"),

@@ -1,25 +1,25 @@
 module TestDuplicates
     using Base.Test, DataFrames
 
-    dt = DataFrame(a = [1, 2, 3, 3, 4])
-    udt = DataFrame(a = [1, 2, 3, 4])
-    @test nonunique(dt) == [false, false, false, true, false]
-    @test udt == unique(dt)
-    unique!(dt)
-    @test dt == udt
+    df = DataFrame(a = [1, 2, 3, 3, 4])
+    udf = DataFrame(a = [1, 2, 3, 4])
+    @test nonunique(df) == [false, false, false, true, false]
+    @test udf == unique(df)
+    unique!(df)
+    @test df == udf
 
-    pdt = DataFrame(a = CategoricalArray(["a", "a", null, null, "b", null, "a", null]),
+    pdf = DataFrame(a = CategoricalArray(["a", "a", null, null, "b", null, "a", null]),
                     b = CategoricalArray(["a", "b", null, null, "b", "a", "a", "a"]))
-    updt = DataFrame(a = CategoricalArray(["a", "a", null, "b", null]),
+    updf = DataFrame(a = CategoricalArray(["a", "a", null, "b", null]),
                      b = CategoricalArray(["a", "b", null, "b", "a"]))
-    @test nonunique(pdt) == [false, false, false, true, false, false, true, true]
-    @test nonunique(updt) == falses(5)
-    @test updt == unique(pdt)
-    unique!(pdt)
-    @test pdt == updt
+    @test nonunique(pdf) == [false, false, false, true, false, false, true, true]
+    @test nonunique(updf) == falses(5)
+    @test updf == unique(pdf)
+    unique!(pdf)
+    @test pdf == updf
 
     @testset "missing" begin
-        dt = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
-        @test DataFrames.colmissing(dt) == [0, 0]
+        df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
+        @test DataFrames.colmissing(df) == [0, 0]
     end
 end

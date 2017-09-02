@@ -35,13 +35,8 @@ There are seven kinds of joins supported by the DataFrames package:
 You can control the kind of join that `join` performs using the `kind` keyword argument:
 
 ```julia
-<<<<<<< HEAD
 a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
 b = DataFrame(ID = [20, 60], Job = ["Lawyer", "Astronaut"])
-=======
-a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
-b = DataFrame(ID = [20, 60], Job = ["Lawyer", "Astronaut"])
->>>>>>> b196630fa9ba02372a25dec222425d9b804f5fd5
 join(a, b, on = :ID, kind = :inner)
 join(a, b, on = :ID, kind = :left)
 join(a, b, on = :ID, kind = :right)
@@ -56,19 +51,11 @@ Cross joins are the only kind of join that does not use a key:
 join(a, b, kind = :cross)
 ```
 
-<<<<<<< HEAD
-In order to join data frames on keys which have different names, you must first rename them so that they match. This can be done using rename!:
-
-```julia
-a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
-b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
-=======
 In order to join data tables on keys which have different names, you must first rename them so that they match. This can be done using rename!:
 
 ```julia
 a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
 b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
->>>>>>> b196630fa9ba02372a25dec222425d9b804f5fd5
 rename!(b, :IDNew, :ID)
 join(a, b, on = :ID, kind = :inner)
 ```
@@ -76,17 +63,10 @@ join(a, b, on = :ID, kind = :inner)
 Or renaming multiple columns at a time:
 
 ```julia
-<<<<<<< HEAD
 a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"],
               Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
               Category = [1, 2, 3, 4, 5])
 b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"],
-=======
-a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"],
-              Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
-              Category = [1, 2, 3, 4, 5])
-b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"],
->>>>>>> b196630fa9ba02372a25dec222425d9b804f5fd5
               Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
               Name = ["a", "b", "c", "d", "e"])
 rename!(b, [:Location => :City, :Work => :Job])

@@ -2,19 +2,19 @@ module TestGrouping
     using Base.Test, DataFrames
 
     srand(1)
-    dt = DataFrame(a = repeat(Union{Int, Null}[1, 2, 3, 4], outer=[2]),
+    df = DataFrame(a = repeat(Union{Int, Null}[1, 2, 3, 4], outer=[2]),
                    b = repeat(Union{Int, Null}[2, 1], outer=[4]),
                    c = Vector{Union{Float64, Null}}(randn(8)))
-    #dt[6, :a] = null
-    #dt[7, :b] = null
+    #df[6, :a] = null
+    #df[7, :b] = null
 
     nullfree = DataFrame(Any[collect(1:10)], [:x1])
     @testset "colwise" begin
         @testset "::Function, ::AbstractDataFrame" begin
-            cw = colwise(sum, dt)
+            cw = colwise(sum, df)
             answer = [20, 12, -0.4283098098931877]
             @test isa(cw, Vector{Real})
-            @test size(cw) == (ncol(dt),)
+            @test size(cw) == (ncol(df),)
             @test cw == answer
 
             cw = colwise(sum, nullfree)
@@ -30,10 +30,10 @@ module TestGrouping
         end
 
         @testset "::Vector, ::AbstractDataFrame" begin
-            cw = colwise([sum], dt)
+            cw = colwise([sum], df)
             answer = [20 12 -0.4283098098931877]
             @test isa(cw, Array{Real, 2})
-            @test size(cw) == (length([sum]),ncol(dt))
+            @test size(cw) == (length([sum]),ncol(df))
             @test cw == answer
 
             cw = colwise([sum, minimum], nullfree)
@@ -57,10 +57,10 @@ module TestGrouping
         end
 
         @testset "::Tuple, ::AbstractDataFrame" begin
-            cw = colwise((sum, length), dt)
+            cw = colwise((sum, length), df)
             answer = Any[20 12 -0.4283098098931877; 8 8 8]
             @test isa(cw, Array{Real, 2})
-            @test size(cw) == (length((sum, length)), ncol(dt))
+            @test size(cw) == (length((sum, length)), ncol(df))
             @test cw == answer
 
             cw = colwise((sum, length), nullfree)
@@ -85,49 +85,49 @@ module TestGrouping
         end
 
         @testset "::Function" begin
-            cw = map(colwise(sum), (nullfree, dt))
+            cw = map(colwise(sum), (nullfree, df))
             answer = ([55], Real[20, 12, -0.4283098098931877])
             @test cw == answer
 
-            cw = map(colwise((sum, length)), (nullfree, dt))
+            cw = map(colwise((sum, length)), (nullfree, df))
             answer = (reshape([55, 10], (2,1)), Any[20 12 -0.4283098098931877; 8 8 8])
             @test cw == answer
 
-            cw = map(colwise([sum, length]), (nullfree, dt))
+            cw = map(colwise([sum, length]), (nullfree, df))
             @test cw == answer
         end
     end
 
     cols = [:a, :b]
-    f(dt) = DataFrame(cmax = maximum(dt[:c]))
+    f(df) = DataFrame(cmax = maximum(df[:c]))
 
-    sdt = unique(dt[cols])
+    sdf = unique(df[cols])
 
     # by() without groups sorting
-    bdt = by(dt, cols, f)
-    @test bdt[cols] == sdt
+    bdf = by(df, cols, f)
+    @test bdf[cols] == sdf
 
     # by() with groups sorting
-    sbdt = by(dt, cols, f, sort=true)
-    @test sbdt[cols] == sort(sdt)
+    sbdf = by(df, cols, f, sort=true)
+    @test sbdf[cols] == sort(sdf)
 
-    byf = by(dt, :a, dt -> DataFrame(bsum = sum(dt[:b])))
+    byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
 
     # groupby() without groups sorting
-    gd = groupby(dt, cols)
+    gd = groupby(df, cols)
     ga = map(f, gd)
 
-    @test bdt == combine(ga)
+    @test bdf == combine(ga)
 
     # groupby() with groups sorting
-    gd = groupby(dt, cols, sort=true)
+    gd = groupby(df, cols, sort=true)
     ga = map(f, gd)
-    @test sbdt == combine(ga)
+    @test sbdf == combine(ga)
 
-    g(dt) = DataFrame(cmax1 = [c + 1 for c in dt[:cmax]])
-    h(dt) = g(f(dt))
+    g(df) = DataFrame(cmax1 = [c + 1 for c in df[:cmax]])
+    h(df) = g(f(df))
 
-    @test isequal(combine(map(h, gd)), combine(map(g, ga)))
+    @test combine(map(h, gd)) == combine(map(g, ga))
 
     # testing pool overflow
     df2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
@@ -140,9 +140,9 @@ module TestGrouping
     @test groupby(DataFrame(A=Int[1]), :A).starts == Int[1]
 
     # testing pool overflow
-    dt2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
-    @test groupby(dt2, [:v1, :v2]).starts == collect(1:1000)
-    @test groupby(dt2, [:v2, :v1]).starts == collect(1:1000)
+    df2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
+    @test groupby(df2, [:v1, :v2]).starts == collect(1:1000)
+    @test groupby(df2, [:v2, :v1]).starts == collect(1:1000)
 
     # grouping empty table
     @test groupby(DataFrame(A=Int[]), :A).starts == Int[]
@@ -151,32 +151,32 @@ module TestGrouping
 
     # issue #960
     x = CategoricalArray(collect(1:20))
-    dt = DataFrame(v1=x, v2=x)
-    groupby(dt, [:v1, :v2])
+    df = DataFrame(v1=x, v2=x)
+    groupby(df, [:v1, :v2])
 
-    dt2 = by(e->1, DataFrame(x=Int64[]), :x)
-    @test size(dt2) == (0,2)
-    @test sum(dt2[:x]) == 0
+    df2 = by(e->1, DataFrame(x=Int64[]), :x)
+    @test size(df2) == (0,2)
+    @test sum(df2[:x]) == 0
 
     # Check that reordering levels does not confuse groupby
-    dt = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B"]),
+    df = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B"]),
                    Key2 = CategoricalArray(["A", "B", "A", "B"]),
                    Value = 1:4)
-    gd = groupby(dt, :Key1)
+    gd = groupby(df, :Key1)
     @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2)
     @test gd[2] == DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4)
-    gd = groupby(dt, [:Key1, :Key2])
+    gd = groupby(df, [:Key1, :Key2])
     @test gd[1] == DataFrame(Key1="A", Key2="A", Value=1)
     @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
     @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
     @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
     # Reorder levels, add unused level
-    levels!(dt[:Key1], ["Z", "B", "A"])
-    levels!(dt[:Key2], ["Z", "B", "A"])
-    gd = groupby(dt, :Key1)
+    levels!(df[:Key1], ["Z", "B", "A"])
+    levels!(df[:Key2], ["Z", "B", "A"])
+    gd = groupby(df, :Key1)
     @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2)
     @test gd[2] == DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4)
-    gd = groupby(dt, [:Key1, :Key2])
+    gd = groupby(df, [:Key1, :Key2])
     @test gd[1] == DataFrame(Key1="A", Key2="A", Value=1)
     @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
     @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
