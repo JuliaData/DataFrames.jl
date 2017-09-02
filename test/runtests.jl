@@ -13,8 +13,8 @@ my_tests = ["utils.jl",
             "cat.jl",
             "data.jl",
             "index.jl",
-            "DataFrame.jl",
-            "DataFramerow.jl",
+            "dataframe.jl",
+            "dataframerow.jl",
             "io.jl",
             "constructors.jl",
             "conversions.jl",
@@ -24,7 +24,7 @@ my_tests = ["utils.jl",
             "iteration.jl",
             "duplicates.jl",
             "show.jl",
-            "subDataFrame.jl"]
+            "subdataframe.jl"]
 
 println("Running tests:")
 
