@@ -1,32 +1,31 @@
 module TestCat
-    using Base.Test
-    using DataFrames
+    using Base.Test, DataFrames
 
     #
     # hcat
     #
 
-    nvint = NullableArray(Nullable{Int}[1, 2, Nullable(), 4])
-    nvstr = NullableArray(Nullable{String}["one", "two", Nullable(), "four"])
+    nvint = [1, 2, null, 4]
+    nvstr = ["one", "two", null, "four"]
 
     df2 = DataFrame(Any[nvint, nvstr])
     df3 = DataFrame(Any[nvint])
     df4 = convert(DataFrame, [1:4 1:4])
-    df5 = DataFrame(Any[NullableArray([1,2,3,4]), nvstr])
+    df5 = DataFrame(Any[Union{Int, Null}[1,2,3,4], nvstr])
 
     dfh = hcat(df3, df4)
     @test size(dfh, 2) == 3
     @test names(dfh) == [:x1, :x1_1, :x2]
-    @test isequal(dfh[:x1], df3[:x1])
-    @test isequal(dfh, [df3 df4])
-    @test isequal(dfh, DataFrames.hcat!(DataFrame(), df3, df4))
+    @test dfh[:x1] == df3[:x1]
+    @test dfh == [df3 df4]
+    @test dfh == DataFrames.hcat!(DataFrame(), df3, df4)
 
     dfh3 = hcat(df3, df4, df5)
     @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
-    @test isequal(dfh3, hcat(dfh, df5))
-    @test isequal(dfh3, DataFrames.hcat!(DataFrame(), df3, df4, df5))
+    @test dfh3 == hcat(dfh, df5)
+    @test dfh3 == DataFrames.hcat!(DataFrame(), df3, df4, df5)
 
-    @test isequal(df2, DataFrames.hcat!(df2))
+    @test df2 == DataFrames.hcat!(df2)
 
     @testset "hcat ::AbstractDataFrame" begin
         df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
@@ -39,10 +38,27 @@ module TestCat
 
     @testset "hcat ::Vectors" begin
         df = DataFrame()
-        DataFrames.hcat!(df, NullableCategoricalVector(1:10))
-        @test isequal(df[1], NullableCategoricalVector(1:10))
-        DataFrames.hcat!(df, NullableArray(1:10))
-        @test isequal(df[2], NullableArray(1:10))
+        DataFrames.hcat!(df, CategoricalVector{Union{Int, Null}}(1:10))
+        @test df[1] == collect(1:10)
+        DataFrames.hcat!(df, 1:10)
+        @test df[2] == collect(1:10)
+    end
+
+    @testset "hcat ::AbstractDataFrame" begin
+        df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
+        gd = groupby(df, :A)
+        answer = DataFrame(A = fill('A', 4), B = 1:4, A_1 = 'B', B_1 = 5:8, A_2 = 'C', B_2 = 9:12)
+        @test hcat(gd...) == answer
+        answer = answer[1:4]
+        @test hcat(gd[1], gd[2]) == answer
+    end
+
+    @testset "hcat ::Vectors" begin
+        df = DataFrame()
+        DataFrames.hcat!(df, CategoricalVector{Union{Int, Null}}(1:10))
+        @test df[1] == CategoricalVector(1:10)
+        DataFrames.hcat!(df, collect(1:10))
+        @test df[2] == collect(1:10)
     end
 
     #
@@ -94,9 +110,9 @@ module TestCat
     @test_throws ArgumentError vcat(null_df, df)
     @test_throws ArgumentError vcat(df, null_df)
     @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
-    @test size(vcat(df, df)) == (size(df,1)*2, size(df,2))
-    @test eltypes(vcat(df, df, df)) == Type[Float64,Float64,Int]
-    @test size(vcat(df, df, df)) == (size(df,1)*3, size(df,2))
+    @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
+    @test eltypes(vcat(df, df, df)) == Type[Float64, Float64, Int]
+    @test size(vcat(df, df, df)) == (size(df, 1) * 3, size(df, 2))
 
     alt_df = deepcopy(df)
     vcat(df, alt_df)
@@ -108,33 +124,33 @@ module TestCat
     dfr = vcat(df4, df4)
     @test size(dfr, 1) == 8
     @test names(df4) == names(dfr)
-    @test isequal(dfr, [df4; df4])
+    @test dfr == [df4; df4]
 
     @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == Type[Float64]
-    @test eltypes(vcat(DataFrame(a = NullableArray(Int, 1)), DataFrame(a = [2.1]))) == Type[Nullable{Float64}]
+    @test eltypes(vcat(DataFrame(a = nulls(Int, 1)), DataFrame(a = Union{Float64, Null}[2.1]))) == Type[Union{Float64, Null}]
 
     # Minimal container type promotion
-    dfa = DataFrame(a = NullableCategoricalArray([1, 2, 2]))
-    dfb = DataFrame(a = NullableCategoricalArray([2, 3, 4]))
-    dfc = DataFrame(a = NullableArray([2, 3, 4]))
+    dfa = DataFrame(a = CategoricalArray{Union{Int, Null}}([1, 2, 2]))
+    dfb = DataFrame(a = CategoricalArray{Union{Int, Null}}([2, 3, 4]))
+    dfc = DataFrame(a = Union{Int, Null}[2, 3, 4])
     dfd = DataFrame(Any[2:4], [:a])
     dfab = vcat(dfa, dfb)
     dfac = vcat(dfa, dfc)
-    @test isequal(dfab[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
-    @test isequal(dfac[:a], Nullable{Int}[1, 2, 2, 2, 3, 4])
-    @test isa(dfab[:a], NullableCategoricalVector{Int})
-    @test isa(dfac[:a], NullableCategoricalVector{Int})
+    @test dfab[:a] == [1, 2, 2, 2, 3, 4]
+    @test dfac[:a] == [1, 2, 2, 2, 3, 4]
+    @test isa(dfab[:a], CategoricalVector{Union{Int, Null}})
+    @test isa(dfac[:a], CategoricalVector{Union{Int, Null}})
     # ^^ container may flip if container promotion happens in Base/DataArrays
     dc = vcat(dfd, dfc)
-    @test isequal(vcat(dfc, dfd), dc)
+    @test vcat(dfc, dfd) == dc
 
     # Zero-row DataFrames
     dfc0 = similar(dfc, 0)
-    @test isequal(vcat(dfd, dfc0, dfc), dc)
+    @test vcat(dfd, dfc0, dfc) == dc
     @test eltypes(vcat(dfd, dfc0)) == eltypes(dc)
 
     # vcat should be able to concatenate different implementations of AbstractDataFrame (PR #944)
-    @test isequal(vcat(view(DataFrame(A=1:3),2),DataFrame(A=4:5)), DataFrame(A=[2,4,5]))
+    @test vcat(view(DataFrame(A=1:3),2),DataFrame(A=4:5)) == DataFrame(A=[2,4,5])
 
     @testset "vcat >2 args" begin
         @test vcat(DataFrame(), DataFrame(), DataFrame()) == DataFrame()
@@ -143,35 +159,34 @@ module TestCat
     end
 
     @testset "vcat mixed coltypes" begin
-        drf = CategoricalArrays.DefaultRefType
         df = vcat(DataFrame([[1]], [:x]), DataFrame([[1.0]], [:x]))
         @test df == DataFrame([[1.0, 1.0]], [:x])
         @test typeof.(df.columns) == [Vector{Float64}]
         df = vcat(DataFrame([[1]], [:x]), DataFrame([["1"]], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
         @test typeof.(df.columns) == [Vector{Any}]
-        df = vcat(DataFrame([NullableArray([1])], [:x]), DataFrame([[1]], [:x]))
-        @test df == DataFrame([NullableArray([1, 1])], [:x])
-        @test typeof.(df.columns) == [NullableVector{Int}]
+        df = vcat(DataFrame([Union{Null, Int}[1]], [:x]), DataFrame([[1]], [:x]))
+        @test df == DataFrame([[1, 1]], [:x])
+        @test typeof.(df.columns) == [Vector{Union{Null, Int}}]
         df = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
-        @test df == DataFrame([CategoricalArray([1, 1])], [:x])
-        @test typeof.(df.columns) == [CategoricalVector{Int, drf}]
+        @test df == DataFrame([[1, 1]], [:x])
+        @test typeof(df[:x]) <: CategoricalVector{Int}
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
-                  DataFrame([NullableArray([1])], [:x]))
-        @test df == DataFrame([NullableCategoricalArray([1, 1])], [:x])
-        @test typeof.(df.columns) == [NullableCategoricalVector{Int, drf}]
+                  DataFrame([Union{Null, Int}[1]], [:x]))
+        @test df == DataFrame([[1, 1]], [:x])
+        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Null}}
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
-                  DataFrame([NullableCategoricalArray([1])], [:x]))
-        @test df == DataFrame([NullableCategoricalArray([1, 1])], [:x])
-        @test typeof.(df.columns) == [NullableCategoricalVector{Int, drf}]
-        df = vcat(DataFrame([NullableArray([1])], [:x]),
-                  DataFrame([NullableArray(["1"])], [:x]))
-        @test df == DataFrame([NullableArray([1, "1"])], [:x])
-        @test typeof.(df.columns) == [NullableVector{Any}]
+                  DataFrame([CategoricalArray{Union{Int, Null}}([1])], [:x]))
+        @test df == DataFrame([[1, 1]], [:x])
+        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Null}}
+        df = vcat(DataFrame([Union{Int, Null}[1]], [:x]),
+                  DataFrame([["1"]], [:x]))
+        @test df == DataFrame([[1, "1"]], [:x])
+        @test typeof.(df.columns) == [Vector{Any}]
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([CategoricalArray(["1"])], [:x]))
-        @test df == DataFrame([CategoricalArray([1, "1"])], [:x])
-        @test typeof.(df.columns) == [CategoricalVector{Any, drf}]
+        @test df == DataFrame([[1, "1"]], [:x])
+        @test typeof(df[:x]) <: CategoricalVector{Any}
         df = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
         @test df == DataFrame([[true, false]], [:x])
         @test typeof.(df.columns) == [Vector{Bool}]
@@ -238,7 +253,7 @@ module TestCat
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, column(s) B are missing from argument(s) 3 and 4, and column(s) F are missing from argument(s) 5 and 6"
         err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 and 3, column(s) B are missing from argument(s) 4, 5 and 6, and column(s) F are missing from argument(s) 7, 8 and 9"
-        # df4 is a superset of names found in all other dataframes and won't be shown in error
+        # df4 is a superset of names found in all other DataFrames and won't be shown in error
         df4 = DataFrame(A = 1, B = 1, C = 1, D = 1, E = 1, F = 1)
         err = @test_throws ArgumentError vcat(df1, df2, df3, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, column(s) B are missing from argument(s) 2, and column(s) F are missing from argument(s) 3"
@@ -249,7 +264,7 @@ module TestCat
         err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2, df3, df4, df1, df2, df3, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, column(s) B are missing from argument(s) 2, 6 and 10, and column(s) F are missing from argument(s) 3, 7 and 11"
     end
-    x = view(DataFrame(A = NullableArray(1:3)), 2)
-    y = DataFrame(A = NullableArray(4:5))
-    @test isequal(vcat(x, y), DataFrame(A = NullableArray([2, 4, 5])))
+    x = view(DataFrame(A = Vector{Union{Null, Int}}(1:3)), 2)
+    y = DataFrame(A = 4:5)
+    @test vcat(x, y) == DataFrame(A = [2, 4, 5])
 end

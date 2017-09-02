@@ -1,25 +1,22 @@
 module TestDuplicates
-    using Base.Test
-    using DataFrames
+    using Base.Test, DataFrames
 
     df = DataFrame(a = [1, 2, 3, 3, 4])
     udf = DataFrame(a = [1, 2, 3, 4])
-    @test isequal(nonunique(df), [false, false, false, true, false])
-    @test isequal(udf, unique(df))
+    @test nonunique(df) == [false, false, false, true, false]
+    @test udf == unique(df)
     unique!(df)
-    @test isequal(df, udf)
+    @test df == udf
 
-    pdf = DataFrame(a = NullableCategoricalArray(Nullable{String}["a", "a", Nullable(),
-                                             Nullable(), "b", Nullable(), "a", Nullable()]),
-                    b = NullableCategoricalArray(Nullable{String}["a", "b", Nullable(),
-                                                              Nullable(), "b", "a", "a", "a"]))
-    updf = DataFrame(a = NullableCategoricalArray(Nullable{String}["a", "a", Nullable(), "b", Nullable()]),
-                     b = NullableCategoricalArray(Nullable{String}["a", "b", Nullable(), "b", "a"]))
-    @test isequal(nonunique(pdf), [false, false, false, true, false, false, true, true])
-    @test isequal(nonunique(updf), falses(5) )
-    @test isequal(updf, unique(pdf))
+    pdf = DataFrame(a = CategoricalArray(["a", "a", null, null, "b", null, "a", null]),
+                    b = CategoricalArray(["a", "b", null, null, "b", "a", "a", "a"]))
+    updf = DataFrame(a = CategoricalArray(["a", "a", null, "b", null]),
+                     b = CategoricalArray(["a", "b", null, "b", "a"]))
+    @test nonunique(pdf) == [false, false, false, true, false, false, true, true]
+    @test nonunique(updf) == falses(5)
+    @test updf == unique(pdf)
     unique!(pdf)
-    @test isequal(pdf, updf)
+    @test pdf == updf
 
     @testset "missing" begin
         df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))

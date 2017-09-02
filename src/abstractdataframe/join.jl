@@ -2,18 +2,9 @@
 ## Join / merge
 ##
 
-# Like similar, but returns a nullable array
+# Like similar, but returns a array that can have nulls and is initialized with nulls
 similar_nullable{T}(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =
-    NullableArray{T}(dims)
-
-similar_nullable{T<:Nullable}(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =
-    NullableArray{eltype(T)}(dims)
-
-similar_nullable{T}(dv::CategoricalArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =
-    NullableCategoricalArray{T}(dims)
-
-similar_nullable{T}(dv::NullableCategoricalArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =
-    NullableCategoricalArray{T}(dims)
+    fill!(similar(dv, Union{T, Null}, dims), null)
 
 # helper structure for DataFrames joining
 immutable DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
@@ -23,12 +14,14 @@ immutable DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
     dfr_on::DF2
     on_cols::Vector{Symbol}
 
+    function DataFrameJoiner{DF1, DF2}(dfl::DF1, dfr::DF2, on::Union{Symbol,Vector{Symbol}}) where {DF1, DF2}
+        on_cols = isa(on, Symbol) ? [on] : on
+        new(dfl, dfr, dfl[on_cols], dfr[on_cols], on_cols)
+    end
 end
 
-function DataFrameJoiner(dfl::AbstractDataFrame, dfr::AbstractDataFrame, on::Union{Symbol,Vector{Symbol}})
-    on_cols = isa(on, Symbol) ? [on] : on
-    DataFrameJoiner{typeof(dfl), typeof(dfr)}(dfl, dfr, dfl[on_cols], dfr[on_cols], on_cols)
-end
+DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}(dfl::DF1, dfr::DF2, on::Union{Symbol,Vector{Symbol}}) =
+    DataFrameJoiner{DF1,DF2}(dfl, dfr, on)
 
 # helper map between the row indices in original and joined table
 immutable RowIndexMap
@@ -40,7 +33,7 @@ end
 
 Base.length(x::RowIndexMap) = length(x.orig)
 
-# composes the joined data frame using the maps between the left and right
+# composes the joined data table using the maps between the left and right
 # table rows and the indices of rows in the result
 function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
                               left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
@@ -139,9 +132,11 @@ function update_row_maps!(left_table::AbstractDataFrame,
     @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) = (mask[orig_ixs] = false)
 
     # iterate over left rows and compose the left<->right index map
+    right_dict_cols = ntuple(i -> right_dict.df[i], ncol(right_dict.df))
+    left_table_cols = ntuple(i -> left_table[i], ncol(left_table))
     next_join_ix = 1
     for l_ix in 1:nrow(left_table)
-        r_ixs = findrows(right_dict, left_table, l_ix)
+        r_ixs = findrows(right_dict, left_table, right_dict_cols, left_table_cols, l_ix)
         if isempty(r_ixs)
             update!(leftonly_ixs, l_ix, next_join_ix)
             next_join_ix += 1
@@ -225,7 +220,7 @@ join(df1::AbstractDataFrame,
     row of `df1` is matched with every row of `df2`
 
 For the three join operations that may introduce missing values (`:outer`, `:left`,
-and `:right`), all columns of the returned data frame will be nullable.
+and `:right`), all columns of the returned data table will be nullable.
 
 ### Result
 
@@ -282,8 +277,10 @@ function Base.join(df1::AbstractDataFrame,
         # iterate over left rows and leave those found in right
         left_ixs = Vector{Int}()
         sizehint!(left_ixs, nrow(joiner.dfl))
+        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[i], ncol(dfr_on_grp.df))
+        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], ncol(joiner.dfl_on))
         @inbounds for l_ix in 1:nrow(joiner.dfl_on)
-            if findrow(dfr_on_grp, joiner.dfl_on, l_ix) != 0
+            if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) != 0
                 push!(left_ixs, l_ix)
             end
         end
@@ -294,8 +291,10 @@ function Base.join(df1::AbstractDataFrame,
         # iterate over left rows and leave those not found in right
         leftonly_ixs = Vector{Int}()
         sizehint!(leftonly_ixs, nrow(joiner.dfl))
+        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[i], ncol(dfr_on_grp.df))
+        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], ncol(joiner.dfl_on))
         @inbounds for l_ix in 1:nrow(joiner.dfl_on)
-            if findrow(dfr_on_grp, joiner.dfl_on, l_ix) == 0
+            if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) == 0
                 push!(leftonly_ixs, l_ix)
             end
         end

@@ -51,7 +51,7 @@ Cross joins are the only kind of join that does not use a key:
 join(a, b, kind = :cross)
 ```
 
-In order to join data frames on keys which have different names, you must first rename them so that they match. This can be done using rename!:
+In order to join data tables on keys which have different names, you must first rename them so that they match. This can be done using rename!:
 
 ```julia
 a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])

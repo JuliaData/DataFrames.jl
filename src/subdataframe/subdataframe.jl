@@ -85,7 +85,7 @@ sdf1[:,[:a,:b]]
 """
 SubDataFrame
 
-function SubDataFrame{T <: AbstractVector{Int}}(parent::DataFrame, rows::T)
+function SubDataFrame(parent::DataFrame, rows::T) where {T <: AbstractVector{Int}}
     return SubDataFrame{T}(parent, rows)
 end
 
@@ -93,7 +93,7 @@ function SubDataFrame(parent::DataFrame, row::Integer)
     return SubDataFrame(parent, [Int(row)])
 end
 
-function SubDataFrame{S <: Integer}(parent::DataFrame, rows::AbstractVector{S})
+function SubDataFrame(parent::DataFrame, rows::AbstractVector{<:Integer})
     return SubDataFrame(parent, convert(Vector{Int}, rows))
 end
 
@@ -101,19 +101,14 @@ function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool})
     return SubDataFrame(parent, find(rows))
 end
 
-function SubDataFrame{T<:Integer}(sdf::SubDataFrame, rowinds::Union{T, AbstractVector{T}})
+function SubDataFrame(sdf::SubDataFrame, rowinds::Union{T, AbstractVector{T}}) where {T <: Integer}
     return SubDataFrame(sdf.parent, sdf.rows[rowinds])
 end
 
-function Base.view{T<:Nullable}(adf::AbstractDataFrame, rowinds::AbstractVector{T})
-    # Vector{<:Nullable} need to be checked for nulls and the values lifted
+function Base.view(adf::AbstractDataFrame, rowinds::AbstractVector{T}) where {T >: Null}
+    # Vector{>:Null} need to be checked for nulls
     any(isnull, rowinds) && throw(NullException())
-    return SubDataFrame(adf, get.(rowinds))
-end
-
-function Base.view(adf::AbstractDataFrame, rowinds::NullableVector)
-    # convert for NullableVectors will throw NullException if nulls present
-    return SubDataFrame(adf, convert(Vector, rowinds))
+    return SubDataFrame(adf, convert(Vector{Nulls.T(T)}, rowinds))
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Any)

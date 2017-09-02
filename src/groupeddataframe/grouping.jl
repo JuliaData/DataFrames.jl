@@ -37,7 +37,7 @@ groupby(cols)
 ### Arguments
 
 * `d` : an AbstractDataFrame to split (optional, see [Returns](#returns))
-* `cols` : data frame columns to group by
+* `cols` : data table columns to group by
 
 ### Returns
 
@@ -72,8 +72,8 @@ vcat([g[:b] for g in gd]...)
 for g in gd
     println(g)
 end
-map(d -> mean(dropnull(d[:c])), gd)   # returns a GroupApplied object
-combine(map(d -> mean(dropnull(d[:c])), gd))
+map(d -> mean(Nulls.skip(d[:c])), gd)   # returns a GroupApplied object
+combine(map(d -> mean(Nulls.skip(d[:c])), gd))
 df |> groupby(:a) |> [sum, length]
 df |> groupby([:a, :b]) |> [sum, length]
 ```
@@ -187,7 +187,7 @@ combine(ga::GroupApplied)
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
-combine(map(d -> mean(dropnull(d[:c])), gd))
+combine(map(d -> mean(Nulls.skip(d[:c])), gd))
 ```
 
 """
@@ -238,23 +238,10 @@ colwise(sum, groupby(df, :a))
 ```
 
 """
-function colwise(f, d::AbstractDataFrame)
-    x = [f(d[i]) for i in 1:ncol(d)]
-    if eltype(x) <: Nullable
-        return NullableArray(x)
-    else
-        return x
-    end
-end
+colwise(f, d::AbstractDataFrame) = [f(d[i]) for i in 1:ncol(d)]
+
 # apply several functions to each column in a DataFrame
-function colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame)
-    x = [f(d[i]) for f in fns, i in 1:ncol(d)]
-    if eltype(x) <: Nullable
-        return NullableArray(x)
-    else
-        return x
-    end
-end
+colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for f in fns, i in 1:ncol(d)]
 colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
 colwise(f) = x -> colwise(f, x)
 
@@ -297,11 +284,11 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 by(df, :a, d -> sum(d[:c]))
-by(df, :a, d -> 2 * dropnull(d[:c]))
-by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(dropnull(d[:c]))))
-by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(dropnull(d[:c]))))
+by(df, :a, d -> 2 * Nulls.skip(d[:c]))
+by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(Nulls.skip(d[:c]))))
+by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(Nulls.skip(d[:c]))))
 by(df, [:a, :b]) do d
-    DataFrame(m = mean(dropnull(d[:c])), v = var(dropnull(d[:c])))
+    DataFrame(m = mean(Nulls.skip(d[:c])), v = var(Nulls.skip(d[:c])))
 end
 ```
 
@@ -347,9 +334,9 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 aggregate(df, :a, sum)
-aggregate(df, :a, [sum, x->mean(dropnull(x))])
-aggregate(groupby(df, :a), [sum, x->mean(dropnull(x))])
-df |> groupby(:a) |> [sum, x->mean(dropnull(x))]   # equivalent
+aggregate(df, :a, [sum, x->mean(Nulls.skip(x))])
+aggregate(groupby(df, :a), [sum, x->mean(Nulls.skip(x))])
+df |> groupby(:a) |> [sum, x->mean(Nulls.skip(x))]   # equivalent
 ```
 
 """

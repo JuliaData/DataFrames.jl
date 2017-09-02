@@ -1,6 +1,5 @@
 module TestSubDataFrame
-    using Base.Test
-    using DataFrames
+    using Base.Test, DataFrames
 
     @testset "view -- DataFrame" begin
         df = DataFrame(x = 1:10, y = 1.0:10.0)
@@ -33,15 +32,11 @@ module TestSubDataFrame
         @test view(df, Integer[1, 2]) == head(df, 2)
         @test view(df, UInt[1, 2]) == head(df, 2)
         @test view(df, BigInt[1, 2]) == head(df, 2)
-        @test view(df, Nullable{Int}[1, 2]) == head(df, 2)
-        @test view(df, Nullable{Integer}[1, 2]) == head(df, 2)
-        @test view(df, Nullable{UInt}[1, 2]) == head(df, 2)
-        @test view(df, Nullable{BigInt}[1, 2]) == head(df, 2)
-        @test view(df, NullableArray([1, 2])) == head(df, 2)
-        @test view(df, NullableArray{Integer}([1, 2])) == head(df, 2)
-        @test view(df, NullableArray{UInt}([1, 2])) == head(df, 2)
-        @test view(df, NullableArray{BigInt}([1, 2])) == head(df, 2)
-        @test_throws NullException view(df, [Nullable(), 1])
+        @test view(df, Union{Int, Null}[1, 2]) == head(df, 2)
+        @test view(df, Union{Integer, Null}[1, 2]) == head(df, 2)
+        @test view(df, Union{UInt, Null}[1, 2]) == head(df, 2)
+        @test view(df, Union{BigInt, Null}[1, 2]) == head(df, 2)
+        @test_throws NullException view(df, [null, 1])
     end
 
     @testset "view -- SubDataFrame" begin
@@ -75,14 +70,10 @@ module TestSubDataFrame
         @test view(df, Integer[1, 2]) == head(df, 2)
         @test view(df, UInt[1, 2]) == head(df, 2)
         @test view(df, BigInt[1, 2]) == head(df, 2)
-        @test view(df, Nullable{Int}[1, 2]) == head(df, 2)
-        @test view(df, Nullable{Integer}[1, 2]) == head(df, 2)
-        @test view(df, Nullable{UInt}[1, 2]) == head(df, 2)
-        @test view(df, Nullable{BigInt}[1, 2]) == head(df, 2)
-        @test view(df, NullableArray([1, 2])) == head(df, 2)
-        @test view(df, NullableArray{Integer}([1, 2])) == head(df, 2)
-        @test view(df, NullableArray{UInt}([1, 2])) == head(df, 2)
-        @test view(df, NullableArray{BigInt}([1, 2])) == head(df, 2)
-        @test_throws NullException view(df, [Nullable(), 1])
+        @test view(df, Union{Int, Null}[1, 2]) == head(df, 2)
+        @test view(df, Union{Integer, Null}[1, 2]) == head(df, 2)
+        @test view(df, Union{UInt, Null}[1, 2]) == head(df, 2)
+        @test view(df, Union{BigInt, Null}[1, 2]) == head(df, 2)
+        @test_throws NullException view(df, [null, 1])
     end
 end

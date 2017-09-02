@@ -2,88 +2,109 @@
 
 ## Installation
 
-The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using NullableArrays, DataFrames` to bring all of the relevant variables into your current namespace. In addition, we will make use of the `RDatasets` package, which provides access to hundreds of classical data sets.
+The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataFrames` to bring all of the relevant variables into your current namespace.
 
-## The `Nullable` Type
+## The `Null` Type
 
-To get started, let's examine the `Nullable` type. Objects of this type can either hold a value, or represent a missing value (`null`). For example, this is a `Nullable` holding the integer `1`:
-
-```julia
-Nullable(1)
-```
-
-And this represents a missing value:
-```julia
-Nullable()
-```
-
-`Nullable` objects support all standard operators, which return another `Nullable`. One of the essential properties of `null` values is that they poison other items. To see this, try to add something like `Nullable(1)` to `Nullable()`:
+To get started, let's examine the `Null` type. `Null` is a type implemented by [Nulls.jl](https://github.com/JuliaData/Nulls.jl) to represent missing data. `null` is an instance of the type `Null` used to represent a missing value.
 
 ```julia
-Nullable(1) + Nullable()
+julia> using DataFrames
+
+julia> null
+null
+
+julia> typeof(null)
+Nulls.Null
+
 ```
 
-The `get` function can be used to extract the value from the [`Nullable`](http://docs.julialang.org/en/stable/manual/types/#nullable-types-representing-missing-values) wrapper when it is not null. For example:
+The `Null` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a null value and the element-type of the returned vector is `Union{Nulls.Null, Int64}`.
 
 ```julia
-julia> a = Nullable("14:00:00")
-Nullable{String}("14:00:00")
+julia> x = [1, 2, null]
+3-element Array{Union{Nulls.Null, Int64},1}:
+ 1
+ 2
+  null
 
-julia> b = get(a)
-"14:00:00"
+julia> eltype(x)
+Union{Nulls.Null, Int64}
 
-julia> typeof(b)
-String
+julia> Union{Null, Int}
+Union{Nulls.Null, Int64}
+
+julia> eltype(x) == Union{Null, Int}
+true
+
 ```
 
-Note that operations mixing `Nullable` and scalars (e.g. `1 + Nullable(1)`) are not supported.
-
-## The `NullableArray` Type
-
-`Nullable` objects can be stored in a standard `Array` just like any value:
+`null` values can be excluded when performing operations by using `Nulls.skip`, which returns a memory-efficient iterator.
 
 ```julia
-v = Nullable{Int}[1, 3, 4, 5, 4]
+julia> Nulls.skip(x)
+Base.Generator{Base.Iterators.Filter{Nulls.##4#6{Nulls.Null},Array{Union{Nulls.Null, Int64},1}},Nulls.##3#5}(Nulls.#3, Base.Iterators.Filter{Nulls.##4#6{Nulls.Null},Array{Union{Nulls.Null, Int64},1}}(Nulls.#4, Union{Nulls.Null, Int64}[1, 2, null]))
+
 ```
 
-But arrays of `Nullable` are inefficient, both in terms of computation costs and of memory use. `NullableArrays` provide a more efficient storage, and behave like `Array{Nullable}` objects.
+The output of `Nulls.skip` can be passed directly into functions as an argument. For example, we can find the `sum` of all non-null values or `collect` the non-null values into a new null-free vector.
 
 ```julia
-nv = NullableArray(Nullable{Int}[Nullable(), 3, 2, 5, 4])
+julia> sum(Nulls.skip(x))
+3
+
+julia> collect(Nulls.skip(x))
+2-element Array{Int64,1}:
+ 1
+ 2
+
 ```
 
-In many cases we're willing to just ignore missing values and remove them from our vector. We can do that using the `dropnull` function:
+`null` elements can be replaced with other values via `Nulls.replace`.
 
 ```julia
-dropnull(nv)
-mean(dropnull(nv))
+julia> collect(Nulls.replace(x, 1))
+3-element Array{Int64,1}:
+ 1
+ 2
+ 1
+
 ```
 
-Instead of removing `null` values, you can try to convert the `NullableArray` into a normal Julia `Array` using `convert`:
+The function `Nulls.T` returns the element-type `T` in `Union{T, Null}`.
 
 ```julia
-convert(Array, nv)
+julia> Nulls.T(eltype(x))
+Int64
+
 ```
 
-This fails in the presence of `null` values, but will succeed if there are no `null` values:
+Use `nulls` to generate nullable `Vector`s and `Array`s, using the optional first argument to specify the element-type.
 
 ```julia
-nv[1] = 3
-convert(Array, nv)
+julia> nulls(1)
+1-element Array{Nulls.Null,1}:
+ null
+
+julia> nulls(3)
+3-element Array{Nulls.Null,1}:
+ null
+ null
+ null
+
+julia> nulls(1, 3)
+1×3 Array{Nulls.Null,2}:
+ null  null  null
+
+julia> nulls(Int, 1, 3)
+1×3 Array{Union{Nulls.Null, Int64},2}:
+ null  null  null
+
 ```
-
-In addition to removing `null` values and hoping they won't occur, you can also replace any `null` values using the `convert` function, which takes a replacement value as an argument:
-
-```julia
-nv = NullableArray(Nullable{Int}[Nullable(), 3, 2, 5, 4])
-mean(convert(Array, nv, 0))
-```
-
-Which strategy for dealing with `null` values is most appropriate will typically depend on the specific details of your data analysis pathway.
 
 ## The `DataFrame` Type
 
-The `DataFrame` type can be used to represent data tables, each column of which is an array (by default, a `NullableArray`). You can specify the columns using keyword arguments:
+The `DataFrame` type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments:
 
 ```julia
 df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
@@ -123,27 +144,27 @@ describe(df)
 To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the `DataFrame`:
 
 ```julia
-mean(dropnull(df[1]))
-median(dropnull(df[1]))
+mean(Nulls.skip(df[1]))
+median(Nulls.skip(df[1]))
 ```
 
 We could also have used column names to access individual columns:
 
 ```julia
-mean(dropnull(df[:A]))
-median(dropnull(df[:A]))
+mean(Nulls.skip(df[:A]))
+median(Nulls.skip(df[:A]))
 ```
 
 We can also apply a function to each column of a `DataFrame` with the `colwise` function. For example:
 
 ```julia
 df = DataFrame(A = 1:4, B = randn(4))
-colwise(c->cumsum(dropnull(c)), df)
+colwise(c->cumsum(Nulls.skip(c)), df)
 ```
 
 ## Importing and Exporting Data (I/O)
 
-For reading and writing tabular data from CSV and other delimited text files, use the [CSV.jl](https://github.com/JuliaStats/CSV.jl) package.
+For reading and writing tabular data from CSV and other delimited text files, use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
 
 If you have not used the CSV.jl package before then you may need to download it first.
 ```julia
@@ -178,9 +199,7 @@ For more information, use the REPL [help-mode](http://docs.julialang.org/en/stab
 
 ## Accessing Classic Data Sets
 
-To see more of the functionality for working with `DataFrame` objects, we need a more complex data set to work with. We'll use the `RDatasets` package, which provides access to many of the classical data sets that are available in R.
-
-For example, we can access Fisher's iris data set using the following functions:
+To see more of the functionality for working with `DataFrame` objects, we need a more complex data set to work with. We can access Fisher's iris data set using the following functions:
 
 ```julia
 using CSV
@@ -189,6 +208,10 @@ head(iris)
 ```
 
 In the next section, we'll discuss generic I/O strategy for reading and writing `DataFrame` objects that you can use to import and export your own data files.
+
+## Querying DataFrames
+
+While the `DataFrames` package provides basic data manipulation capabilities, users are encouraged to use the following packages for more powerful and complete data querying functionality in the spirit of [dplyr](https://github.com/hadley/dplyr) and [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx):
 
 ## Querying DataFrames
 

@@ -1,6 +1,6 @@
 module TestShow
-    using DataFrames
-    using Base.Test
+    using Base.Test, DataFrames
+
     df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 
     io = IOBuffer()
@@ -36,17 +36,16 @@ module TestShow
     show(io, A)
 
     #Test show output for REPL and similar
-    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, Nullable()],
-                   E = NullableCategoricalArray(["a", Nullable()]))
+    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, null])
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
     @test str == """
-    2×3 DataFrames.DataFrame
-    │ Row │ Fish │ Mass  │ E     │
-    ├─────┼──────┼───────┼───────┤
-    │ 1   │ Suzy │ 1.5   │ a     │
-    │ 2   │ Amir │ #NULL │ #NULL │"""
+    2×2 DataFrames.DataFrame
+    │ Row │ Fish │ Mass │
+    ├─────┼──────┼──────┤
+    │ 1   │ Suzy │ 1.5  │
+    │ 2   │ Amir │ null │"""
 
     # Test computing width for Array{String} columns
     df = DataFrame(Any[["a"]], [:x])

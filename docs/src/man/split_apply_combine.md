@@ -12,7 +12,7 @@ using CSV
 iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"), DataFrame)
 
 by(iris, :Species, size)
-by(iris, :Species, df -> mean(dropnull(df[:PetalLength])))
+by(iris, :Species, df -> mean(Nulls.skip(df[:PetalLength])))
 by(iris, :Species, df -> DataFrame(N = size(df, 1)))
 ```
 
@@ -20,7 +20,7 @@ The `by` function also support the `do` block form:
 
 ```julia
 by(iris, :Species) do df
-   DataFrame(m = mean(dropnull(df[:PetalLength])), s² = var(dropnull(df[:PetalLength])))
+   DataFrame(m = mean(Nulls.skip(df[:PetalLength])), s² = var(Nulls.skip(df[:PetalLength])))
 end
 ```
 
@@ -30,7 +30,7 @@ We show several examples of the `aggregate` function applied to the `iris` datas
 
 ```julia
 aggregate(iris, :Species, sum)
-aggregate(iris, :Species, [sum, x->mean(dropnull(x))])
+aggregate(iris, :Species, [sum, x->mean(Nulls.skip(x))])
 ```
 
 If you only want to split the data set into subsets, use the `groupby` function:

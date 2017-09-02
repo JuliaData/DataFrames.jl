@@ -1,5 +1,4 @@
-VERSION >= v"0.4.0-dev+6521" && __precompile__(true)
-
+__precompile__(true)
 module DataFrames
 
 ##############################################################################
@@ -8,12 +7,9 @@ module DataFrames
 ##
 ##############################################################################
 
-using Reexport
-using StatsBase
-import NullableArrays: dropnull, dropnull!
-@reexport using NullableArrays
-@reexport using CategoricalArrays
-using SortingAlgorithms
+using Reexport, StatsBase, SortingAlgorithms
+@reexport using CategoricalArrays, Nulls
+
 using Base: Sort, Order
 import Base: ==, |>
 
@@ -23,13 +19,7 @@ import Base: ==, |>
 ##
 ##############################################################################
 
-export @~,
-       @csv_str,
-       @csv2_str,
-       @tsv_str,
-       @wsv_str,
-
-       AbstractDataFrame,
+export AbstractDataFrame,
        DataFrame,
        DataFrameRow,
        GroupApplied,
@@ -79,6 +69,8 @@ export @~,
 ## Load files
 ##
 ##############################################################################
+
+const _displaysize = Base.displaysize
 
 for (dir, filename) in [
         ("other", "utils.jl"),

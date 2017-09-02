@@ -1,8 +1,8 @@
 julia 0.6
-NullableArrays 0.1.1
-CategoricalArrays 0.1.2
+Nulls 0.0.6
+CategoricalArrays 0.2.0
 StatsBase 0.11.0
 SortingAlgorithms
 Reexport
-WeakRefStrings 0.1.3
-DataStreams 0.1.0
+WeakRefStrings 0.3.0
+DataStreams 0.2.0
