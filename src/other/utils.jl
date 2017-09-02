@@ -1,6 +1,5 @@
 import Base: isidentifier, is_id_start_char, is_id_char
 
-# FixMe! Incomplete list. E.g. `true` is missing
 const RESERVED_WORDS = Set(["local", "global", "export", "let", "bitstype",
     "typealias", "using", "for", "while", "const", "immutable",
     "baremodule", "continue", "import", "function", "macro", "if", "else",
@@ -58,7 +57,7 @@ function make_unique(names::Vector{Symbol}; allow_duplicates=true)
         name = names[i]
         in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
-    
+
     if !allow_duplicates && length(dups) > 0
         d = unique(names[dups])
         msg = """Duplicate variable names: $d.
@@ -96,95 +95,54 @@ end
 #'
 #' DataFrames.gennames(10)
 function gennames(n::Integer)
-    res = Vector{Symbol}(n)
+    res = Array{Symbol}(n)
     for i in 1:n
         res[i] = Symbol(@sprintf "x%d" i)
     end
     return res
 end
 
-#' @description
-#'
-#' Count the number of missing values in an Array.
-#'
-#' NOTE: This function always returns 0.
-#'
-#' @field a::Array The Array whose missing values are to be counted.
-#'
-#' @returns count::Int The number of missing values in `a`.
-#'
-#' @examples
-#'
-#' DataFrames.countna([1, 2, 3])
-countna(a::Array) = 0
 
 #' @description
 #'
-#' Count the number of missing values in a DataArray.
+#' Count the number of null values in an array.
 #'
-#' @field da::DataArray The DataArray whose missing values are to be counted.
+#' @field a::AbstractArray The array whose missing values are to be counted.
 #'
-#' @returns count::Int The number of missing values in `a`.
-#'
-#' @examples
-#'
-#' DataFrames.countna(@data([1, 2, 3]))
-countna(da::DataArray) = sum(da.na)
-
-#' @description
-#'
-#' Count the number of missing values in a PooledDataArray.
-#'
-#' @field pda::PooledDataArray The PooledDataArray whose missing values
-#'        are to be counted.
-#'
-#' @returns count::Int The number of missing values in `a`.
+#' @returns count::Int The number of null values in `a`.
 #'
 #' @examples
 #'
-#' DataFrames.countna(@pdata([1, 2, 3]))
-function countna(da::PooledDataArray)
+#' DataFrames.countnull([1, 2, 3])
+function countnull(a::AbstractArray)
     res = 0
-    for i in 1:length(da)
-        res += da.refs[i] == 0
+    for x in a
+        res += isnull(x)
     end
     return res
 end
 
-function _setdiff{T}(a::AbstractVector{T}, b::AbstractVector{T})
-    diff = T[]
-    for val in a
-        if !(val in b)
-            push!(diff, val)
-        end
+#' @description
+#'
+#' Count the number of missing values in a CategoricalArray.
+#'
+#' @field na::CategoricalArray The CategoricalArray whose missing values
+#'        are to be counted.
+#'
+#' @returns count::Int The number of null values in `a`.
+#'
+#' @examples
+#'
+#' DataFrames.countnull(CategoricalArray([1, 2, 3]))
+function countnull(a::CategoricalArray)
+    res = 0
+    for x in a.refs
+        res += x == 0
     end
-    diff
-end
-# because unions and parametric types don't compose, yet
-function _setdiff{T}(a::AbstractVector{T}, b::T)
-    diff = T[]
-    for val in a
-        if !(val in b)
-            push!(diff, val)
-        end
-    end
-    diff
-end
-
-function _uniqueofsorted(x::Vector)
-    idx = fill(true, length(x))
-    lastx = x[1]
-    for i = 2:length(x)
-        if lastx == x[i]
-            idx[i] = false
-        else
-            lastx = x[i]
-        end
-    end
-    x[idx]
+    return res
 end
 
-# Gets the name of a function. Used in groupedataframe/grouping.jl
+# Gets the name of a function. Used in groupeDataFrame/grouping.jl
 function _fnames{T<:Function}(fs::Vector{T})
     λcounter = 0
     names = map(fs) do f
@@ -197,3 +155,4 @@ function _fnames{T<:Function}(fs::Vector{T})
     end
     names
 end
+

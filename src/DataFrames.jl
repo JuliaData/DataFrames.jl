@@ -1,5 +1,4 @@
-__precompile__()
-
+__precompile__(true)
 module DataFrames
 
 ##############################################################################
@@ -8,13 +7,8 @@ module DataFrames
 ##
 ##############################################################################
 
-using Reexport
-@reexport using StatsBase
-@reexport using DataArrays
-using GZip
-using SortingAlgorithms
-
-using FileIO  # remove after read_rda deprecation period
+using Reexport, StatsBase, SortingAlgorithms
+@reexport using CategoricalArrays, Nulls
 
 using Base: Sort, Order
 import Base: ==, |>
@@ -25,43 +19,27 @@ import Base: ==, |>
 ##
 ##############################################################################
 
-export @~,
-       @csv_str,
-       @csv2_str,
-       @formula,
-       @tsv_str,
-       @wsv_str,
-
-       AbstractDataFrame,
-       AbstractContrasts,
+export AbstractDataFrame,
        DataFrame,
        DataFrameRow,
-       Formula,
        GroupApplied,
        GroupedDataFrame,
-       ModelFrame,
-       ModelMatrix,
        SubDataFrame,
-       EffectsCoding,
-       DummyCoding,
-       HelmertCoding,
-       ContrastsCoding,
 
        aggregate,
        by,
-       coefnames,
+       categorical!,
        colwise,
        combine,
        completecases,
-       completecases!,
-       setcontrasts!,
        deleterows!,
        describe,
+       dropnull,
+       dropnull!,
        eachcol,
        eachrow,
        eltypes,
        groupby,
-       head,
        melt,
        meltdf,
        names!,
@@ -70,28 +48,29 @@ export @~,
        nrow,
        nullable!,
        order,
-       pool,
-       pool!,
        printtable,
-       readtable,
        rename!,
        rename,
        showcols,
        stack,
        stackdf,
-       tail,
        unique!,
        unstack,
-       writetable,
+       head,
+       tail,
 
        # Remove after deprecation period
-       read_rda
+       pool,
+       pool!
+
 
 ##############################################################################
 ##
 ## Load files
 ##
 ##############################################################################
+
+const _displaysize = Base.displaysize
 
 for (dir, filename) in [
         ("other", "utils.jl"),
@@ -102,13 +81,13 @@ for (dir, filename) in [
         ("subdataframe", "subdataframe.jl"),
         ("groupeddataframe", "grouping.jl"),
         ("dataframerow", "dataframerow.jl"),
+        ("dataframerow", "utils.jl"),
 
         ("abstractdataframe", "iteration.jl"),
         ("abstractdataframe", "join.jl"),
         ("abstractdataframe", "reshape.jl"),
 
         ("abstractdataframe", "io.jl"),
-        ("dataframe", "io.jl"),
 
         ("abstractdataframe", "show.jl"),
         ("groupeddataframe", "show.jl"),
@@ -116,10 +95,6 @@ for (dir, filename) in [
 
         ("abstractdataframe", "sort.jl"),
         ("dataframe", "sort.jl"),
-
-        ("statsmodels", "contrasts.jl"),
-        ("statsmodels", "formula.jl"),
-        ("statsmodels", "statsmodel.jl"),
 
         ("", "deprecated.jl")
     ]

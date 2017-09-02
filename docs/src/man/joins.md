@@ -15,7 +15,7 @@ full = join(names, jobs, on = :ID)
 
 Output:
 
-| Row | ID | Name       | Job      | 
+| Row | ID | Name       | Job      |
 |-----|----|------------|----------|
 | 1   | 20 | "John Doe" | "Lawyer" |
 | 2   | 40 | "Jane Doe" | "Doctor" |
@@ -49,4 +49,26 @@ Cross joins are the only kind of join that does not use a key:
 
 ```julia
 join(a, b, kind = :cross)
+```
+
+In order to join data tables on keys which have different names, you must first rename them so that they match. This can be done using rename!:
+
+```julia
+a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
+b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
+rename!(b, :IDNew, :ID)
+join(a, b, on = :ID, kind = :inner)
+```
+
+Or renaming multiple columns at a time:
+
+```julia
+a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"],
+              Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
+              Category = [1, 2, 3, 4, 5])
+b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"],
+              Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
+              Name = ["a", "b", "c", "d", "e"])
+rename!(b, [:Location => :City, :Work => :Job])
+join(a, b, on = [:City, :Job])
 ```

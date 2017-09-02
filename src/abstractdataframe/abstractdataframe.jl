@@ -11,24 +11,24 @@ type in that it allows indexing by a key (the columns).
 
 The following are normally implemented for AbstractDataFrames:
 
-* [`describe`]({ref}) : summarize columns
-* [`dump`]({ref}) : show structure
+* [`describe`](@ref) : summarize columns
+* [`dump`](@ref) : show structure
 * `hcat` : horizontal concatenation
 * `vcat` : vertical concatenation
 * `names` : columns names
-* [`names!`]({ref}) : set columns names
-* [`rename!`]({ref}) : rename columns names based on keyword arguments
-* [`eltypes`]({ref}) : `eltype` of each column
+* [`names!`](@ref) : set columns names
+* [`rename!`](@ref) : rename columns names based on keyword arguments
+* [`eltypes`](@ref) : `eltype` of each column
 * `length` : number of columns
 * `size` : (nrows, ncols)
-* [`head`]({ref}) : first `n` rows
-* [`tail`]({ref}) : last `n` rows
+* [`head`](@ref) : first `n` rows
+* [`tail`](@ref) : last `n` rows
 * `convert` : convert to an array
-* `DataArray` : convert to a DataArray
-* [`completecases`]({ref}) : indexes of complete cases (rows with no NA's)
-* [`completecases!`]({ref}) : remove rows with NA's
-* [`nonunique`]({ref}) : indexes of duplicate rows
-* [`unique!`]({ref}) : remove duplicate rows
+* [`completecases`](@ref) : boolean vector of complete cases (rows with no nulls)
+* [`dropnull`](@ref) : remove rows with null values
+* [`dropnull!`](@ref) : remove rows with null values in-place
+* [`nonunique`](@ref) : indexes of duplicate rows
+* [`unique!`](@ref) : remove duplicate rows
 * `similar` : a DataFrame with similar columns as `d`
 
 **Indexing**
@@ -79,13 +79,17 @@ abstract type AbstractDataFrame end
 ##
 ##############################################################################
 
-immutable Cols{T <: AbstractDataFrame}
+immutable Cols{T <: AbstractDataFrame} <: AbstractVector{Any}
     df::T
 end
 Base.start(::Cols) = 1
 Base.done(itr::Cols, st) = st > length(itr.df)
 Base.next(itr::Cols, st) = (itr.df[st], st + 1)
 Base.length(itr::Cols) = length(itr.df)
+Base.size(itr::Cols, ix) = ix==1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
+Base.size(itr::Cols) = (length(itr.df),)
+Base.IndexStyle(::Type{<:Cols}) = IndexLinear()
+Base.getindex(itr::Cols, inds...) = getindex(itr.df, inds...)
 
 # N.B. where stored as a vector, 'columns(x) = x.vector' is a bit cheaper
 columns{T <: AbstractDataFrame}(df::T) = Cols{T}(df)
@@ -175,7 +179,7 @@ rename!(df, Dict(:i=>:A, :x=>:X))
 (rename!, rename)
 
 """
-Column elemental types
+Return element types of columns
 
 ```julia
 eltypes(df::AbstractDataFrame)
@@ -187,7 +191,7 @@ eltypes(df::AbstractDataFrame)
 
 **Result**
 
-* `::Vector{Type}` : the elemental type of each column
+* `::Vector{Type}` : the element type of each column
 
 **Examples**
 
@@ -197,14 +201,7 @@ eltypes(df)
 ```
 
 """
-function eltypes(df::AbstractDataFrame)
-    ncols = size(df, 2)
-    res = Vector{Type}(ncols)
-    for j in 1:ncols
-        res[j] = eltype(df[j])
-    end
-    return res
-end
+eltypes(df::AbstractDataFrame) = map!(eltype, Vector{Type}(size(df,2)), columns(df))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
@@ -213,7 +210,7 @@ function Base.size(df::AbstractDataFrame, i::Integer)
     elseif i == 2
         ncol(df)
     else
-        throw(ArgumentError("DataFrames have only two dimensions"))
+        throw(ArgumentError("DataFrames only have two dimensions"))
     end
 end
 
@@ -229,22 +226,16 @@ Base.ndims(::AbstractDataFrame) = 2
 ##############################################################################
 
 Base.similar(df::AbstractDataFrame, dims::Int) =
-    DataFrame(Any[similar(x, dims) for x in columns(df)], copy(index(df)))
-
-nas{T}(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =   # TODO move to datavector.jl?
-    DataArray(Array{T}(dims), trues(dims))
-
-nas{T,R}(dv::PooledDataArray{T,R}, dims::Union{Int, Tuple{Vararg{Int}}}) =
-    PooledDataArray(DataArrays.RefArray(zeros(R, dims)), dv.pool)
-
-nas(df::AbstractDataFrame, dims::Int) =
-    DataFrame(Any[nas(x, dims) for x in columns(df)], copy(index(df)))
+    DataFrame(Any[similar_nullable(x, dims) for x in columns(df)], copy(index(df)))
 
 ##############################################################################
 ##
 ## Equality
 ##
 ##############################################################################
+
+# Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
+Base.:(==)(df1::AbstractDataFrame, df2::AbstractDataFrame) = isequal(df1, df2)
 
 function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
@@ -253,20 +244,6 @@ function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
         isequal(df1[idx], df2[idx]) || return false
     end
     return true
-end
-
-# Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
-function (==)(df1::AbstractDataFrame, df2::AbstractDataFrame)
-    size(df1, 2) == size(df2, 2) || return false
-    isequal(index(df1), index(df2)) || return false
-    eq = true
-    for idx in 1:size(df1, 2)
-        coleq = df1[idx] == df2[idx]
-        # coleq could be NA
-        !isequal(coleq, false) || return false
-        eq &= coleq
-    end
-    return eq
 end
 
 ##############################################################################
@@ -318,7 +295,7 @@ tail(df)
 """
 (head, tail)
 
-# get the structure of a DF
+# get the structure of a df
 """
 Show the structure of an AbstractDataFrame, in a tree-like format
 
@@ -341,7 +318,7 @@ dump(io::IO, df::AbstractDataFrame, n::Int = 5)
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-str(df)
+dump(df)
 ```
 
 """
@@ -355,11 +332,7 @@ function Base.dump(io::IO, df::AbstractDataFrame, n::Int, indent)
     end
 end
 
-function Base.dump(io::IO, dv::AbstractDataVector, n::Int, indent)
-    println(io, typeof(dv), "(", length(dv), ") ", dv[1:min(4, end)])
-end
-
-# summarize the columns of a DF
+# summarize the columns of a df
 # TODO: clever layout in rows
 """
 Summarize the columns of an AbstractDataFrame
@@ -381,12 +354,12 @@ describe(io, df::AbstractDataFrame)
 **Details**
 
 If the column's base type derives from Number, compute the minimum, first
-quantile, median, mean, third quantile, and maximum. NA's are filtered and
+quantile, median, mean, third quantile, and maximum. Nulls are filtered and
 reported separately.
 
-For boolean columns, report trues, falses, and NAs.
+For boolean columns, report trues, falses, and nulls.
 
-For other types, show column characteristics and number of NAs.
+For other types, show column characteristics and number of nulls.
 
 **Examples**
 
@@ -405,14 +378,43 @@ function StatsBase.describe(io, df::AbstractDataFrame)
     end
 end
 
+function StatsBase.describe{T}(io::IO, X::AbstractVector{Union{T, Null}})
+    nullcount = count(isnull, X)
+    pnull = 100 * nullcount/length(X)
+    if pnull != 100 && T <: Real
+        show(io, StatsBase.summarystats(collect(Nulls.skip(X))))
+    else
+        println(io, "Summary Stats:")
+    end
+    println(io, "Length:         $(length(X))")
+    println(io, "Type:           $(eltype(X))")
+    !(T <: Real) && println(io, "Number Unique:  $(length(unique(X)))")
+    println(io, "Number Missing: $(nullcount)")
+    @printf(io, "%% Missing:      %.6f\n", pnull)
+    return
+end
+
 ##############################################################################
 ##
 ## Miscellaneous
 ##
 ##############################################################################
 
+function _nonnull!(res, col)
+    @inbounds for (i, el) in enumerate(col)
+        res[i] &= !isnull(el)
+    end
+end
+
+function _nonnull!(res, col::CategoricalArray{>: Null})
+    for (i, el) in enumerate(col.refs)
+        res[i] &= el > 0
+    end
+end
+
+
 """
-Indexes of complete cases (rows without NA's)
+Indexes of complete cases (rows without null values)
 
 ```julia
 completecases(df::AbstractDataFrame)
@@ -426,31 +428,64 @@ completecases(df::AbstractDataFrame)
 
 * `::Vector{Bool}` : indexes of complete cases
 
-See also [`completecases!`]({ref}).
+See also [`dropnull`](@ref) and [`dropnull!`](@ref).
 
 **Examples**
 
 ```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df[[1,4,5], :x] = NA
-df[[9,10], :y] = NA
+df = DataFrame(i = 1:10,
+               x = Vector{Union{Null, Float64}}(rand(10)),
+               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
+df[[1,4,5], :x] = null
+df[[9,10], :y] = null
 completecases(df)
 ```
 
 """
 function completecases(df::AbstractDataFrame)
-    res::AbstractVector{Bool} = (!).(isna.(df[1]))
-    for i in 2:ncol(df)
-        res .&= (!).(isna.(df[i]))
+    res = trues(size(df, 1))
+    for i in 1:size(df, 2)
+        _nonnull!(res, df[i])
     end
     res
 end
 
 """
-Delete rows with NA's.
+Remove rows with null values.
 
 ```julia
-completecases!(df::AbstractDataFrame)
+dropnull(df::AbstractDataFrame)
+```
+
+**Arguments**
+
+* `df` : the AbstractDataFrame
+
+**Result**
+
+* `::AbstractDataFrame` : the updated copy
+
+See also [`completecases`](@ref) and [`dropnull!`](@ref).
+
+**Examples**
+
+```julia
+df = DataFrame(i = 1:10,
+               x = Vector{Union{Null, Float64}}(rand(10)),
+               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
+df[[1,4,5], :x] = null
+df[[9,10], :y] = null
+dropnull(df)
+```
+
+"""
+dropnull(df::AbstractDataFrame) = deleterows!(copy(df), find(!, completecases(df)))
+
+"""
+Remove rows with null values in-place.
+
+```julia
+dropnull!(df::AbstractDataFrame)
 ```
 
 **Arguments**
@@ -461,25 +496,27 @@ completecases!(df::AbstractDataFrame)
 
 * `::AbstractDataFrame` : the updated version
 
-See also [`completecases`]({ref}).
+See also [`dropnull`](@ref) and [`completecases`](@ref).
 
 **Examples**
 
 ```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df[[1,4,5], :x] = NA
-df[[9,10], :y] = NA
-completecases!(df)
+df = DataFrame(i = 1:10,
+               x = Vector{Union{Null, Float64}}(rand(10)),
+               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
+df[[1,4,5], :x] = null
+df[[9,10], :y] = null
+dropnull!(df)
 ```
 
 """
-completecases!(df::AbstractDataFrame) = deleterows!(df, find(!, completecases(df)))
+dropnull!(df::AbstractDataFrame) = deleterows!(df, find(!, completecases(df)))
 
 function Base.convert(::Type{Array}, df::AbstractDataFrame)
     convert(Matrix, df)
 end
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
-    T = reduce(typejoin, eltypes(df))
+    T = reduce(promote_type, eltypes(df))
     convert(Matrix{T}, df)
 end
 function Base.convert{T}(::Type{Array{T}}, df::AbstractDataFrame)
@@ -489,37 +526,16 @@ function Base.convert{T}(::Type{Matrix{T}}, df::AbstractDataFrame)
     n, p = size(df)
     res = Matrix{T}(n, p)
     idx = 1
-    for col in columns(df)
-        any(isna, col) && error("DataFrame contains NAs")
-        copy!(res, idx, data(col))
-        idx += n
-    end
-    return res
-end
-
-function Base.convert(::Type{DataArray}, df::AbstractDataFrame)
-    convert(DataMatrix, df)
-end
-function Base.convert(::Type{DataMatrix}, df::AbstractDataFrame)
-    T = reduce(typejoin, eltypes(df))
-    convert(DataMatrix{T}, df)
-end
-function Base.convert{T}(::Type{DataArray{T}}, df::AbstractDataFrame)
-    convert(DataMatrix{T}, df)
-end
-function Base.convert{T}(::Type{DataMatrix{T}}, df::AbstractDataFrame)
-    n, p = size(df)
-    res = DataArray(T, n, p)
-    idx = 1
-    for col in columns(df)
-        copy!(res, idx, col)
+    for (name, col) in zip(names(df), columns(df))
+        !(T >: Null) && any(isnull, col) && error("cannot convert a DataFrame containing null values to array (found for column $name)")
+        copy!(res, idx, convert(Vector{T}, col))
         idx += n
     end
     return res
 end
 
 """
-Indexes of complete cases (rows without NA's)
+Indexes of duplicate rows (a row that is a duplicate of a prior row)
 
 ```julia
 nonunique(df::AbstractDataFrame)
@@ -536,7 +552,7 @@ nonunique(df::AbstractDataFrame, cols)
 * `::Vector{Bool}` : indicates whether the row is a duplicate of some
   prior row
 
-See also [`unique`]({ref}) and [`unique!`]({ref}).
+See also [`unique`](@ref) and [`unique!`](@ref).
 
 **Examples**
 
@@ -549,23 +565,20 @@ nonunique(df, 1)
 
 """
 function nonunique(df::AbstractDataFrame)
-    res = fill(false, nrow(df))
-    rows = Set{DataFrameRow}()
-    for i in 1:nrow(df)
-        arow = DataFrameRow(df, i)
-        if in(arow, rows)
-            res[i] = true
-        else
-            push!(rows, arow)
-        end
+    gslots = row_group_slots(df)[3]
+    # unique rows are the first encountered group representatives,
+    # nonunique are everything else
+    res = fill(true, nrow(df))
+    @inbounds for g_row in gslots
+        (g_row > 0) && (res[g_row] = false)
     end
-    res
+    return res
 end
 
 nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
-if isdefined(Base, :unique!) # Julia >= 0.7
+if isdefined(:unique!)
     import Base.unique!
 end
 
@@ -598,7 +611,7 @@ specifying the column(s) to compare.
 When `cols` is specified, the return DataFrame contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
 
-See also [`nonunique`]({ref}).
+See also [`nonunique`](@ref).
 
 **Examples**
 
@@ -613,29 +626,18 @@ unique!(df)  # modifies df
 """
 (unique, unique!)
 
-function nonuniquekey(df::AbstractDataFrame)
-    # Here's another (probably a lot faster) way to do `nonunique`
-    # by grouping on all columns. It will fail if columns cannot be
-    # made into PooledDataVector's.
-    gd = groupby(df, _names(df))
-    idx = [1:length(gd.idx)][gd.idx][gd.starts]
-    res = fill(true, nrow(df))
-    res[idx] = false
-    res
-end
-
 # Count the number of missing values in every column of an AbstractDataFrame.
 function colmissing(df::AbstractDataFrame) # -> Vector{Int}
     nrows, ncols = size(df)
     missing = zeros(Int, ncols)
     for j in 1:ncols
-        missing[j] = countna(df[j])
+        missing[j] = countnull(df[j])
     end
     return missing
 end
 
 function without(df::AbstractDataFrame, icols::Vector{Int})
-    newcols = _setdiff(1:ncol(df), icols)
+    newcols = setdiff(1:ncol(df), icols)
     df[newcols]
 end
 without(df::AbstractDataFrame, i::Int) = without(df, [i])
@@ -648,97 +650,113 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 ##############################################################################
 
 # hcat's first argument must be an AbstractDataFrame
-# Trailing arguments (currently) may also be DataVectors, Vectors, or scalars.
+# Trailing arguments (currently) may also be vectors or scalars.
 
-# hcat! is defined in dataframes/dataframes.jl
+# hcat! is defined in DataFrames/DataFrames.jl
 # Its first argument (currently) must be a DataFrame.
 
 # catch-all to cover cases where indexing returns a DataFrame and copy doesn't
 Base.hcat(df::AbstractDataFrame, x) = hcat!(df[:, :], x)
-Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame) = hcat!(df[:, :], df2)
+Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame) = hcat!(df1[:, :], df2)
 
 Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = hcat!(hcat(df1, df2), dfn...)
 
-# vcat only accepts DataFrames. Finds union of columns, maintaining order
-# of first df. Missing data becomes NAs.
-
-Base.vcat(df::AbstractDataFrame) = df
-
-Base.vcat(dfs::AbstractDataFrame...) = vcat(AbstractDataFrame[dfs...])
-
-Base.vcat(dfs::Vector{Void}) = dfs
-function Base.vcat{T<:AbstractDataFrame}(dfs::Vector{T})
-    isempty(dfs) && return DataFrame()
-    coltyps, colnams, similars = _colinfo(dfs)
-
-    res = DataFrame()
-    Nrow = sum(nrow, dfs)
-    for j in 1:length(colnams)
-        colnam = colnams[j]
-        col = similar(similars[j], coltyps[j], Nrow)
-
-        i = 1
-        for df in dfs
-            if haskey(df, colnam) && eltype(df[colnam]) != NAtype
-                copy!(col, i, df[colnam])
-            end
-            i += size(df, 1)
-        end
-
-        res[colnam] = col
+@generated function promote_col_type(cols::AbstractVector...)
+    T = promote_type(map(x -> Nulls.T(eltype(x)), cols)...)
+    if T <: CategoricalValue
+        T = T.parameters[1]
     end
-    res
+    if any(col -> eltype(col) >: Null, cols)
+        if any(col -> col <: AbstractCategoricalArray, cols)
+            return :(CategoricalVector{Union{$T, Null}})
+        else
+            return :(Vector{Union{$T, Null}})
+        end
+    else
+        if any(col -> col <: AbstractCategoricalArray, cols)
+            return :(CategoricalVector{$T})
+        else
+            return :(Vector{$T})
+        end
+    end
 end
 
-_isnullable(::AbstractArray) = false
-_isnullable(::AbstractDataArray) = true
-const EMPTY_DATA = DataArray(Void, 0)
+"""
+    vcat(dfs::AbstractDataFrame...)
 
-function _colinfo{T<:AbstractDataFrame}(dfs::Vector{T})
-    df1 = dfs[1]
-    colindex = copy(index(df1))
-    coltyps = eltypes(df1)
-    similars = collect(columns(df1))
-    nonnull_ct = Int[_isnullable(c) for c in columns(df1)]
+Vertically concatenate `AbstractDataFrames` that have the same column names in
+the same order.
 
-    for i in 2:length(dfs)
-        df = dfs[i]
-        for j in 1:size(df, 2)
-            col = df[j]
-            cn, ct = _names(df)[j], eltype(col)
-            if haskey(colindex, cn)
-                idx = colindex[cn]
-
-                oldtyp = coltyps[idx]
-                if !(ct <: oldtyp)
-                    coltyps[idx] = promote_type(oldtyp, ct)
-                end
-                nonnull_ct[idx] += !_isnullable(col)
-            else # new column
-                push!(colindex, cn)
-                push!(coltyps, ct)
-                push!(similars, col)
-                push!(nonnull_ct, !_isnullable(col))
+# Example
+```jldoctest
+julia> df1 = DataFrame(A=1:3, B=1:3);
+julia> df2 = DataFrame(A=4:6, B=4:6);
+julia> vcat(df1, df2)
+6×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ 1 │
+│ 2   │ 2 │ 2 │
+│ 3   │ 3 │ 3 │
+│ 4   │ 4 │ 4 │
+│ 5   │ 5 │ 5 │
+│ 6   │ 6 │ 6 │
+```
+"""
+Base.vcat(df::AbstractDataFrame) = df
+function Base.vcat(dfs::AbstractDataFrame...)
+    isempty(dfs) && return DataFrame()
+    allheaders = map(names, dfs)
+    if all(h -> length(h) == 0, allheaders)
+        return DataFrame()
+    end
+    uniqueheaders = unique(allheaders)
+    if length(uniqueheaders) > 1
+        unionunique = union(uniqueheaders...)
+        coldiff = setdiff(unionunique, intersect(uniqueheaders...))
+        if !isempty(coldiff)
+            # if any DataFrames are a full superset of names, skip them
+            filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
+            estrings = Vector{String}(length(uniqueheaders))
+            for (i, u) in enumerate(uniqueheaders)
+                matching = find(h -> u == h, allheaders)
+                headerdiff = setdiff(coldiff, u)
+                cols = join(headerdiff, ", ", " and ")
+                args = join(matching, ", ", " and ")
+                estrings[i] = "column(s) $cols are missing from argument(s) $args"
+            end
+            throw(ArgumentError(join(estrings, ", ", ", and ")))
+        else
+            estrings = Vector{String}(length(uniqueheaders))
+            for (i, u) in enumerate(uniqueheaders)
+                indices = find(a -> a == u, allheaders)
+                estrings[i] = "column order of argument(s) $(join(indices, ", ", " and "))"
+            end
+            throw(ArgumentError(join(estrings, " != ")))
+        end
+    else
+        header = uniqueheaders[1]
+        cols = Vector{Any}(length(header))
+        for i in 1:length(cols)
+            data = [df[i] for df in dfs]
+            lens = map(length, data)
+            cols[i] = promote_col_type(data...)(sum(lens))
+            offset = 1
+            for j in 1:length(data)
+                copy!(cols[i], offset, data[j])
+                offset += lens[j]
             end
         end
+        return DataFrame(cols, header)
     end
-
-    for j in 1:length(colindex)
-        if nonnull_ct[j] < length(dfs) && !_isnullable(similars[j])
-            similars[j] = EMPTY_DATA
-        end
-    end
-    colnams = _names(colindex)
-
-    coltyps, colnams, similars
 end
 
 ##############################################################################
 ##
 ## Hashing
 ##
-## Make sure this agrees with is_equals()
+## Make sure this agrees with isequals()
 ##
 ##############################################################################
 
@@ -769,7 +787,7 @@ ncol(df::AbstractDataFrame)
 
 * `::AbstractDataFrame` : the updated version
 
-See also [`size`]({ref}).
+See also [`size`](@ref).
 
 NOTE: these functions may be depreciated for `size`.
 

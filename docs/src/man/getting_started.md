@@ -2,75 +2,109 @@
 
 ## Installation
 
-The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataArrays, DataFrames` to bring all of the relevant variables into your current namespace. In addition, we will make use of the `RDatasets` package, which provides access to hundreds of classical data sets.
+The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataFrames` to bring all of the relevant variables into your current namespace.
 
-## The `NA` Value
+## The `Null` Type
 
-To get started, let's examine the `NA` value. Type the following into the REPL:
+To get started, let's examine the `Null` type. `Null` is a type implemented by [Nulls.jl](https://github.com/JuliaData/Nulls.jl) to represent missing data. `null` is an instance of the type `Null` used to represent a missing value.
 
 ```julia
-NA
+julia> using DataFrames
+
+julia> null
+null
+
+julia> typeof(null)
+Nulls.Null
+
 ```
 
-One of the essential properties of `NA` is that it poisons other items. To see this, try to add something like `1` to `NA`:
+The `Null` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a null value and the element-type of the returned vector is `Union{Nulls.Null, Int64}`.
 
 ```julia
-1 + NA
+julia> x = [1, 2, null]
+3-element Array{Union{Nulls.Null, Int64},1}:
+ 1
+ 2
+  null
+
+julia> eltype(x)
+Union{Nulls.Null, Int64}
+
+julia> Union{Null, Int}
+Union{Nulls.Null, Int64}
+
+julia> eltype(x) == Union{Null, Int}
+true
+
 ```
 
-## The `DataArray` Type
-
-Now that we see that `NA` is working, let's insert one into a `DataArray`. We'll create one now using the `@data` macro:
+`null` values can be excluded when performing operations by using `Nulls.skip`, which returns a memory-efficient iterator.
 
 ```julia
-dv = @data([NA, 3, 2, 5, 4])
+julia> Nulls.skip(x)
+Base.Generator{Base.Iterators.Filter{Nulls.##4#6{Nulls.Null},Array{Union{Nulls.Null, Int64},1}},Nulls.##3#5}(Nulls.#3, Base.Iterators.Filter{Nulls.##4#6{Nulls.Null},Array{Union{Nulls.Null, Int64},1}}(Nulls.#4, Union{Nulls.Null, Int64}[1, 2, null]))
+
 ```
 
-To see how `NA` poisons even complex calculations, let's try to take the mean of the five numbers stored in `dv`:
+The output of `Nulls.skip` can be passed directly into functions as an argument. For example, we can find the `sum` of all non-null values or `collect` the non-null values into a new null-free vector.
 
 ```julia
-mean(dv)
+julia> sum(Nulls.skip(x))
+3
+
+julia> collect(Nulls.skip(x))
+2-element Array{Int64,1}:
+ 1
+ 2
+
 ```
 
-In many cases we're willing to just ignore `NA` values and remove them from our vector. We can do that using the `dropna` function:
+`null` elements can be replaced with other values via `Nulls.replace`.
 
 ```julia
-dropna(dv)
-mean(dropna(dv))
+julia> collect(Nulls.replace(x, 1))
+3-element Array{Int64,1}:
+ 1
+ 2
+ 1
+
 ```
 
-Instead of removing `NA` values, you can try to conver the `DataArray` into a normal Julia `Array` using `convert`:
+The function `Nulls.T` returns the element-type `T` in `Union{T, Null}`.
 
 ```julia
-convert(Array, dv)
+julia> Nulls.T(eltype(x))
+Int64
+
 ```
 
-This fails in the presence of `NA` values, but will succeed if there are no `NA` values:
+Use `nulls` to generate nullable `Vector`s and `Array`s, using the optional first argument to specify the element-type.
 
 ```julia
-dv[1] = 3
-convert(Array, dv)
-```
+julia> nulls(1)
+1-element Array{Nulls.Null,1}:
+ null
 
-In addition to removing `NA` values and hoping they won't occur, you can also replace any `NA` values using the `convert` function, which takes a replacement value as an argument:
+julia> nulls(3)
+3-element Array{Nulls.Null,1}:
+ null
+ null
+ null
 
-```julia
-dv = @data([NA, 3, 2, 5, 4])
-mean(convert(Array, dv, 11))
-```
+julia> nulls(1, 3)
+1×3 Array{Nulls.Null,2}:
+ null  null  null
 
-Which strategy for dealing with `NA` values is most appropriate will typically depend on the specific details of your data analysis pathway.
+julia> nulls(Int, 1, 3)
+1×3 Array{Union{Nulls.Null, Int64},2}:
+ null  null  null
 
-Although the examples above employed only 1D `DataArray` objects, the `DataArray` type defines a completely generic N-dimensional array type. Operations on generic `DataArray` objects work in higher dimensions in the same way that they work on Julia's Base `Array` type:
-
-```julia
-dm = @data([NA 0.0; 0.0 1.0])
-dm * dm
 ```
 
 ## The `DataFrame` Type
 
-The `DataFrame` type can be used to represent data tables, each column of which is a `DataArray`. You can specify the columns using keyword arguments:
+The `DataFrame` type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments:
 
 ```julia
 df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
@@ -110,35 +144,77 @@ describe(df)
 To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the `DataFrame`:
 
 ```julia
-mean(df[1])
-median(df[1])
+mean(Nulls.skip(df[1]))
+median(Nulls.skip(df[1]))
 ```
 
 We could also have used column names to access individual columns:
 
 ```julia
-mean(df[:A])
-median(df[:A])
+mean(Nulls.skip(df[:A]))
+median(Nulls.skip(df[:A]))
 ```
 
 We can also apply a function to each column of a `DataFrame` with the `colwise` function. For example:
 
 ```julia
 df = DataFrame(A = 1:4, B = randn(4))
-colwise(cumsum, df)
+colwise(c->cumsum(Nulls.skip(c)), df)
 ```
+
+## Importing and Exporting Data (I/O)
+
+For reading and writing tabular data from CSV and other delimited text files, use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
+
+If you have not used the CSV.jl package before then you may need to download it first.
+```julia
+Pkg.add("CSV")
+```
+
+The CSV.jl functions are not loaded automatically and must be imported into the session.
+```julia
+# can be imported separately
+using DataFrames
+using CSV
+# or imported together, separated by commas
+using DataFrames, CSV
+```
+
+A dataset can now be read from a CSV file at path `input` using
+```julia
+CSV.read(input, DataFrame)
+```
+
+Note the second positional argument of `DataFrame`. This instructs the CSV package to output
+a `DataFrame` rather than the default `DataFrame`. Keyword arguments may be passed to
+`CSV.read` after this second argument.
+
+A DataFrame can be written to a CSV file at path `output` using
+```julia
+df = DataFrame(x = 1, y = 2)
+CSV.write(output, df)
+```
+
+For more information, use the REPL [help-mode](http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode) or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/)!
 
 ## Accessing Classic Data Sets
 
-To see more of the functionality for working with `DataFrame` objects, we need a more complex data set to work with. We'll use the `RDatasets` package, which provides access to many of the classical data sets that are available in R.
-
-For example, we can access Fisher's iris data set using the following functions:
+To see more of the functionality for working with `DataFrame` objects, we need a more complex data set to work with. We can access Fisher's iris data set using the following functions:
 
 ```julia
-using RDatasets
-iris = dataset("datasets", "iris")
+using CSV
+iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"), DataFrame)
 head(iris)
 ```
 
 In the next section, we'll discuss generic I/O strategy for reading and writing `DataFrame` objects that you can use to import and export your own data files.
 
+## Querying DataFrames
+
+While the `DataFrames` package provides basic data manipulation capabilities, users are encouraged to use the following packages for more powerful and complete data querying functionality in the spirit of [dplyr](https://github.com/hadley/dplyr) and [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx):
+
+## Querying DataFrames
+
+While the `DataFrames` package provides basic data manipulation capabilities, users are encouraged to use the following packages for more powerful and complete data querying functionality in the spirit of [dplyr](https://github.com/hadley/dplyr) and [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx):
+
+- [Query.jl](https://github.com/davidanthoff/Query.jl) provides a LINQ like interface to a large number of data sources, including `DataFrame` instances.

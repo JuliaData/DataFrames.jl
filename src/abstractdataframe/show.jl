@@ -37,7 +37,8 @@ let
         ourshowcompact(io, x)
         return position(io)
     end
-    ourstrwidth(x::AbstractString) = strwidth(x) + 2 # -> Int
+    ourstrwidth(x::AbstractString) = strwidth(x) # -> Int
+    myconv = VERSION < v"0.4-" ? convert : Base.unsafe_convert
     ourstrwidth(s::Symbol) =
         Int(ccall(:u8_strwidth,
                   Csize_t,
@@ -61,8 +62,10 @@ end
 #' ourshowcompact(STDOUT, "abc")
 #' ourshowcompact(STDOUT, 10000)
 ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Void
-ourshowcompact(io::IO, x::AbstractString) = showcompact(io, x) # -> Void
+ourshowcompact(io::IO, x::AbstractString) = print(io, x) # -> Void
 ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Void
+ourshowcompact(io::IO, x::CategoricalValue{<:AbstractString}) =
+    print(io, String(x)) # -> Void
 
 #' @description
 #'
@@ -99,8 +102,6 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowlabel::Symbol) # -> Vector{Int}
     maxwidths = Vector{Int}(size(df, 2) + 1)
 
-    # TODO: Move this definition somewhere else
-    NAstrwidth = 2
     undefstrwidth = ourstrwidth(Base.undef_ref_str)
 
     j = 1
@@ -109,17 +110,11 @@ function getmaxwidths(df::AbstractDataFrame,
         maxwidth = ourstrwidth(name)
 
         # (2) Consider length of longest entry in that column
-        for indices in (rowindices1, rowindices2)
-            for i in indices
-                if isna(col, i)
-                    maxwidth = max(maxwidth, NAstrwidth)
-                else
-                    try
-                        maxwidth = max(maxwidth, ourstrwidth(col[i]))
-                    catch
-                        maxwidth = max(maxwidth, undefstrwidth)
-                    end
-                end
+        for indices in (rowindices1, rowindices2), i in indices
+            try
+                maxwidth = max(maxwidth, ourstrwidth(col[i]))
+            catch
+                maxwidth = max(maxwidth, undefstrwidth)
             end
         end
         maxwidths[j] = maxwidth
@@ -440,7 +435,7 @@ function Base.show(io::IO,
                    rowlabel::Symbol = Symbol("Row"),
                    displaysummary::Bool = true) # -> Void
     nrows = size(df, 1)
-    dsize = displaysize(io)
+    dsize = _displaysize(io)
     availableheight = dsize[1] - 5
     nrowssubset = fld(availableheight, 2)
     bound = min(nrowssubset - 1, nrows)

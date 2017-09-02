@@ -25,6 +25,7 @@ end
 #
 # Split
 #
+
 """
 A view of an AbstractDataFrame split into row groups
 
@@ -35,14 +36,13 @@ groupby(cols)
 
 ### Arguments
 
-* `d` : an AbstractDataFrame
-* `cols` : an 
-
-If `d` is not provided, a curried version of groupby is given.
+* `d` : an AbstractDataFrame to split (optional, see [Returns](#returns))
+* `cols` : data table columns to group by
 
 ### Returns
 
 * `::GroupedDataFrame` : a grouped view into `d`
+* `::Function`: a function `x -> groupby(x, cols)` (if `d` is not specified)
 
 ### Details
 
@@ -59,10 +59,6 @@ See the following for additional split-apply-combine operations:
 
 Piping methods `|>` are also provided.
 
-See the
-[DataFramesMeta](https://github.com/JuliaStats/DataFramesMeta.jl)
-package for more operations on GroupedDataFrames.
-
 ### Examples
 
 ```julia
@@ -76,47 +72,30 @@ vcat([g[:b] for g in gd]...)
 for g in gd
     println(g)
 end
-map(d -> mean(d[:c]), gd)   # returns a GroupApplied object
-combine(map(d -> mean(d[:c]), gd))
+map(d -> mean(Nulls.skip(d[:c])), gd)   # returns a GroupApplied object
+combine(map(d -> mean(Nulls.skip(d[:c])), gd))
 df |> groupby(:a) |> [sum, length]
 df |> groupby([:a, :b]) |> [sum, length]
 ```
 
 """
-function groupby{T}(d::AbstractDataFrame, cols::Vector{T})
-    ## a subset of Wes McKinney's algorithm here:
-    ##     http://wesmckinney.com/blog/?p=489
-
-    ncols = length(cols)
-    # use the pool trick to get a set of integer references for each unique item
-    dv = PooledDataArray(d[cols[ncols]])
-    # if there are NAs, add 1 to the refs to avoid underflows in x later
-    dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-    # use UInt32 instead of the PDA's integer size since the number of levels can be high
-    x = copy!(similar(dv.refs, UInt32), dv.refs) .+ dv_has_nas
-    # also compute the number of groups, which is the product of the set lengths
-    ngroups = length(dv.pool) + dv_has_nas
-    # if there's more than 1 column, do roughly the same thing repeatedly
-    for j = (ncols - 1):-1:1
-        dv = PooledDataArray(d[cols[j]])
-        dv_has_nas = (findfirst(dv.refs, 0) > 0 ? 1 : 0)
-        for i = 1:nrow(d)
-            x[i] += (dv.refs[i] + dv_has_nas- 1) * ngroups
-        end
-        ngroups = ngroups * (length(dv.pool) + dv_has_nas)
-        # TODO if ngroups is really big, shrink it
+function groupby{T}(df::AbstractDataFrame, cols::Vector{T}; sort::Bool = false)
+    sdf = df[cols]
+    df_groups = group_rows(sdf)
+    # sort the groups
+    if sort
+        group_perm = sortperm(view(sdf, df_groups.rperm[df_groups.starts]))
+        permute!(df_groups.starts, group_perm)
+        Base.permute!!(df_groups.stops, group_perm)
     end
-    (idx, starts) = DataArrays.groupsort_indexer(x, ngroups)
-    # Remove zero-length groupings
-    starts = _uniqueofsorted(starts)
-    ends = starts[2:end] - 1
-    GroupedDataFrame(d, cols, idx, starts[1:end-1], ends)
+    GroupedDataFrame(df, cols, df_groups.rperm,
+                     df_groups.starts, df_groups.stops)
 end
-groupby(d::AbstractDataFrame, cols) = groupby(d, [cols])
+groupby(d::AbstractDataFrame, cols; sort::Bool = false) = groupby(d, [cols], sort = sort)
 
 # add a function curry
-groupby{T}(cols::Vector{T}) = x -> groupby(x, cols)
-groupby(cols) = x -> groupby(x, cols)
+groupby{T}(cols::Vector{T}; sort::Bool = false) = x -> groupby(x, cols, sort = sort)
+groupby(cols; sort::Bool = false) = x -> groupby(x, cols, sort = sort)
 
 Base.start(gd::GroupedDataFrame) = 1
 Base.next(gd::GroupedDataFrame, state::Int) =
@@ -159,15 +138,14 @@ Not meant to be constructed directly, see `groupby` abnd
 provided for a GroupApplied object.
 
 """
-type GroupApplied
+immutable GroupApplied{T<:AbstractDataFrame}
     gd::GroupedDataFrame
-    vals::Vector
+    vals::Vector{T}
 
-    function GroupApplied(gd, vals)
-        if length(gd) != length(vals)
-            error("GroupApplied requires keys and vals be of equal length.")
-        end
-        new(gd, vals)
+    function (::Type{GroupApplied})(gd::GroupedDataFrame, vals::Vector)
+        length(gd) == length(vals) ||
+            throw(DimensionMismatch("GroupApplied requires keys and vals be of equal length (got $(length(gd)) and $(length(vals)))."))
+        new{eltype(vals)}(gd, vals)
     end
 end
 
@@ -178,10 +156,10 @@ end
 
 # map() sweeps along groups
 function Base.map(f::Function, gd::GroupedDataFrame)
-    GroupApplied(gd, AbstractDataFrame[wrap(f(d)) for d in gd])
+    GroupApplied(gd, [wrap(f(df)) for df in gd])
 end
 function Base.map(f::Function, ga::GroupApplied)
-    GroupApplied(ga.gd, AbstractDataFrame[wrap(f(d)) for d in ga.vals])
+    GroupApplied(ga.gd, [wrap(f(df)) for df in ga.vals])
 end
 
 wrap(df::AbstractDataFrame) = df
@@ -209,23 +187,21 @@ combine(ga::GroupApplied)
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
-combine(map(d -> mean(d[:c]), gd))
+combine(map(d -> mean(Nulls.skip(d[:c])), gd))
 ```
 
 """
 function combine(ga::GroupApplied)
     gd, vals = ga.gd, ga.vals
-    # Could be made shorter with a rep(x, lengths) function
-    # See JuliaLang/julia#16443
-    idx = Vector{Int}(sum(Int[size(val, 1) for val in vals]))
+    valscat = vcat(vals...)
+    idx = Vector{Int}(size(valscat, 1))
     j = 0
-    for i in 1:length(vals)
-        n = size(vals[i], 1)
-        @inbounds idx[j + (1:n)] = gd.idx[gd.starts[i]]
+    @inbounds for (start, val) in zip(gd.starts, vals)
+        n = size(val, 1)
+        idx[j + (1:n)] = gd.idx[start]
         j += n
     end
-    ret = gd.parent[idx, gd.cols]
-    hcat!(ret, vcat(vals))
+    hcat!(gd.parent[idx, gd.cols], valscat)
 end
 
 
@@ -256,27 +232,26 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 colwise(sum, df)
+colwise([sum, lenth], df)
+colwise((minimum, maximum), df)
 colwise(sum, groupby(df, :a))
 ```
 
 """
-colwise(f::Function, d::AbstractDataFrame) = Any[[f(d[idx])] for idx in 1:size(d, 2)]
-colwise(f::Function, gd::GroupedDataFrame) = map(colwise(f), gd)
-colwise(f::Function) = x -> colwise(f, x)
-colwise(f) = x -> colwise(f, x)
-# apply several functions to each column in a DataFrame
-colwise{T<:Function}(fns::Vector{T}, d::AbstractDataFrame) = Any[[f(d[idx])] for f in fns, idx in 1:size(d, 2)][:]
-colwise{T<:Function}(fns::Vector{T}, gd::GroupedDataFrame) = map(colwise(fns), gd)
-colwise{T<:Function}(fns::Vector{T}) = x -> colwise(fns, x)
+colwise(f, d::AbstractDataFrame) = [f(d[i]) for i in 1:ncol(d)]
 
+# apply several functions to each column in a DataFrame
+colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for f in fns, i in 1:ncol(d)]
+colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
+colwise(f) = x -> colwise(f, x)
 
 """
 Split-apply-combine in one step; apply `f` to each grouping in `d`
 based on columns `col`
 
 ```julia
-by(d::AbstractDataFrame, cols, f::Function)
-by(f::Function, d::AbstractDataFrame, cols)
+by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false)
+by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false)
 ```
 
 ### Arguments
@@ -285,6 +260,7 @@ by(f::Function, d::AbstractDataFrame, cols)
 * `cols` : a column indicator (Symbol, Int, Vector{Symbol}, etc.)
 * `f` : a function to be applied to groups; expects each argument to
   be an AbstractDataFrame
+* `sort`: sort row groups (no sorting by default)
 
 `f` can return a value, a vector, or a DataFrame. For a value or
 vector, these are merged into a column along with the `cols` keys. For
@@ -299,7 +275,7 @@ notation can be used.
 
 ### Returns
 
-* `::DataFrame` 
+* `::DataFrame`
 
 ### Examples
 
@@ -308,17 +284,19 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 by(df, :a, d -> sum(d[:c]))
-by(df, :a, d -> 2 * d[:c])
-by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(d[:c])))
-by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(d[:c])))
+by(df, :a, d -> 2 * Nulls.skip(d[:c]))
+by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(Nulls.skip(d[:c]))))
+by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(Nulls.skip(d[:c]))))
 by(df, [:a, :b]) do d
-    DataFrame(m = mean(d[:c]), v = var(d[:c]))
+    DataFrame(m = mean(Nulls.skip(d[:c])), v = var(Nulls.skip(d[:c])))
 end
 ```
 
 """
-by(d::AbstractDataFrame, cols, f::Function) = combine(map(f, groupby(d, cols)))
-by(f::Function, d::AbstractDataFrame, cols) = by(d, cols, f)
+by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false) =
+    combine(map(f, groupby(d, cols, sort = sort)))
+by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false) =
+    by(d, cols, f, sort = sort)
 
 #
 # Aggregate convenience functions
@@ -347,7 +325,7 @@ same length.
 
 ### Returns
 
-* `::DataFrame` 
+* `::DataFrame`
 
 ### Examples
 
@@ -356,40 +334,45 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 aggregate(df, :a, sum)
-aggregate(df, :a, [sum, mean])
-aggregate(groupby(df, :a), [sum, mean])
-df |> groupby(:a) |> [sum, mean]   # equivalent
+aggregate(df, :a, [sum, x->mean(Nulls.skip(x))])
+aggregate(groupby(df, :a), [sum, x->mean(Nulls.skip(x))])
+df |> groupby(:a) |> [sum, x->mean(Nulls.skip(x))]   # equivalent
 ```
 
 """
-aggregate(d::AbstractDataFrame, fs::Function) = aggregate(d, [fs])
-function aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T})
+aggregate(d::AbstractDataFrame, fs::Function; sort::Bool=false) = aggregate(d, [fs], sort=sort)
+function aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}; sort::Bool=false)
     headers = _makeheaders(fs, _names(d))
-    _aggregate(d, fs, headers)
+    _aggregate(d, fs, headers, sort)
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
-aggregate(gd::GroupedDataFrame, fs::Function) = aggregate(gd, [fs])
-function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T})
-    headers = _makeheaders(fs, _setdiff(_names(gd), gd.cols))
-    combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
+aggregate(gd::GroupedDataFrame, f::Function; sort::Bool=false) = aggregate(gd, [f], sort=sort)
+function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false)
+    headers = _makeheaders(fs, setdiff(_names(gd), gd.cols))
+    res = combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
+    sort && sort!(res, cols=headers)
+    res
 end
+
 (|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, fs)
 (|>){T<:Function}(gd::GroupedDataFrame, fs::Vector{T}) = aggregate(gd, fs)
 
 # Groups DataFrame by cols before applying aggregate
-function aggregate{S <: ColumnIndex, T <:Function}(d::AbstractDataFrame,
-                                     cols::Union{S, AbstractVector{S}},
-                                     fs::Union{T, Vector{T}})
-    aggregate(groupby(d, cols), fs)
+function aggregate{S<:ColumnIndex, T <:Function}(d::AbstractDataFrame,
+                                                 cols::Union{S, AbstractVector{S}},
+                                                 fs::Union{T, Vector{T}};
+                                                 sort::Bool=false)
+    aggregate(groupby(d, cols, sort=sort), fs)
 end
 
 function _makeheaders{T<:Function}(fs::Vector{T}, cn::Vector{Symbol})
     fnames = _fnames(fs) # see other/utils.jl
-    scn = [string(x) for x in cn]
-    [Symbol("$(colname)_$(fname)") for fname in fnames, colname in scn][:]
+    [Symbol(colname,'_',fname) for fname in fnames for colname in cn]
 end
 
-function _aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol})
-    DataFrame(colwise(fs, d), headers)
+function _aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false)
+    res = DataFrame(Any[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers)
+    sort && sort!(res, cols=headers)
+    res
 end
