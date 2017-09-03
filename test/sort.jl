@@ -1,20 +1,19 @@
 module TestSort
-    using Base.Test
-    using DataFrames
+    using Base.Test, DataFrames
 
-    dv1 = @data([9, 1, 8, NA, 3, 3, 7, NA])
-    dv2 = 1.0 * dv1
-    dv3 = DataArray([1:8;])
-    pdv1 = convert(PooledDataArray, dv1)
+    dv1 = [9, 1, 8, null, 3, 3, 7, null]
+    dv2 = [9, 1, 8, null, 3, 3, 7, null]
+    dv3 = Vector{Union{Int, Null}}(1:8)
+    cv1 = CategoricalArray(dv1, ordered=true)
 
-    d = DataFrame(dv1 = dv1, dv2 = dv2, dv3 = dv3, pdv1 = pdv1)
+    d = DataFrame(dv1 = dv1, dv2 = dv2, dv3 = dv3, cv1 = cv1)
 
     @test sortperm(d) == sortperm(dv1)
     @test sortperm(d[[:dv3, :dv1]]) == sortperm(dv3)
     @test sort(d, cols=:dv1)[:dv3] == sortperm(dv1)
     @test sort(d, cols=:dv2)[:dv3] == sortperm(dv1)
-    @test sort(d, cols=:pdv1)[:dv3] == sortperm(dv1)
-    @test sort(d, cols=[:dv1, :pdv1])[:dv3] == sortperm(dv1)
+    @test sort(d, cols=:cv1)[:dv3] == sortperm(dv1)
+    @test sort(d, cols=[:dv1, :cv1])[:dv3] == sortperm(dv1)
     @test sort(d, cols=[:dv1, :dv3])[:dv3] == sortperm(dv1)
 
     df = DataFrame(rank=rand(1:12, 1000),

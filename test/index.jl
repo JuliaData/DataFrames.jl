@@ -1,6 +1,5 @@
 module TestIndex
-using Base.Test
-using DataFrames, DataFrames.Index
+using Base.Test, DataFrames, DataFrames.Index
 
 i = Index()
 push!(i, :A)
@@ -16,20 +15,14 @@ inds = Any[1,
            1:1,
            1.0:1.0,
            [:A],
-           @data([true]),
-           @data([1]),
-           @data([1.0]),
-           @data([:A]),
-           DataArray([:A]),
-           PooledDataArray([true]),
-           @pdata([1]),
-           @pdata([1.0]),
-           @pdata([:A]),
-           PooledDataArray([:A])]
+           Union{Bool, Null}[true],
+           Union{Int, Null}[1],
+           Union{Float64, Null}[1.0],
+           Union{Symbol, Null}[:A]]
 
 for ind in inds
-    if isequal(ind, :A) || ndims(ind) == 0
-        @test isequal(i[ind], 1)
+    if ind == :A || ndims(ind) == 0
+        @test i[ind] == 1
     else
         @test (i[ind] == [1])
     end

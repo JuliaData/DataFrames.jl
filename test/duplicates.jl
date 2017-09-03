@@ -1,21 +1,25 @@
 module TestDuplicates
-    using Base.Test
-    using DataFrames
+    using Base.Test, DataFrames
 
     df = DataFrame(a = [1, 2, 3, 3, 4])
     udf = DataFrame(a = [1, 2, 3, 4])
-    @test isequal(nonunique(df), [false, false, false, true, false])
-    @test isequal(udf, unique(df))
+    @test nonunique(df) == [false, false, false, true, false]
+    @test udf == unique(df)
     unique!(df)
-    @test isequal(df, udf)
+    @test df == udf
 
-    pdf = DataFrame( a = PooledDataArray( @data ["a", "a", NA, NA, "b", NA, "a", NA] ),
-                     b = PooledDataArray( @data ["a", "b", NA, NA, "b", "a", "a", "a"] ) )
-    updf = DataFrame( a = PooledDataArray( @data ["a", "a", NA, "b", NA] ),
-                      b = PooledDataArray( @data ["a", "b", NA, "b", "a"] ) )
-    @test isequal(nonunique(pdf), [false, false, false, true, false, false, true, true])
-    @test isequal(nonunique(updf), falses(5) )
-    @test isequal(updf, unique(pdf))
+    pdf = DataFrame(a = CategoricalArray(["a", "a", null, null, "b", null, "a", null]),
+                    b = CategoricalArray(["a", "b", null, null, "b", "a", "a", "a"]))
+    updf = DataFrame(a = CategoricalArray(["a", "a", null, "b", null]),
+                     b = CategoricalArray(["a", "b", null, "b", "a"]))
+    @test nonunique(pdf) == [false, false, false, true, false, false, true, true]
+    @test nonunique(updf) == falses(5)
+    @test updf == unique(pdf)
     unique!(pdf)
-    @test isequal(pdf, updf)
+    @test pdf == updf
+
+    @testset "missing" begin
+        df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
+        @test DataFrames.colmissing(df) == [0, 0]
+    end
 end

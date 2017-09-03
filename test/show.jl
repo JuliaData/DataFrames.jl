@@ -1,6 +1,6 @@
 module TestShow
-    using DataFrames
-    
+    using Base.Test, DataFrames
+
     df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 
     io = IOBuffer()
@@ -35,4 +35,26 @@ module TestShow
     A = DataFrames.RepeatedVector([1, 2, 3], 1, 5)
     show(io, A)
 
+    #Test show output for REPL and similar
+    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, null])
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    2×2 DataFrames.DataFrame
+    │ Row │ Fish │ Mass │
+    ├─────┼──────┼──────┤
+    │ 1   │ Suzy │ 1.5  │
+    │ 2   │ Amir │ null │"""
+
+    # Test computing width for Array{String} columns
+    df = DataFrame(Any[["a"]], [:x])
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    1×1 DataFrames.DataFrame
+    │ Row │ x │
+    ├─────┼───┤
+    │ 1   │ a │"""
 end

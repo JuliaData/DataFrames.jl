@@ -1,8 +1,6 @@
 # an AbstractIndex is a thing that can be used to look up ordered things by name, but that
 # will also accept a position or set of positions or range or other things and pass them
 # through cleanly.
-# an Index is the usual implementation.
-# a SimpleIndex only works if the things are integer indexes, which is weird.
 abstract type AbstractIndex end
 
 type Index <: AbstractIndex   # an OrderedDict would be nice here...
@@ -22,7 +20,7 @@ Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 # Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
-(==)(x::Index, y::Index) = isequal(x, y)
+Base.:(==)(x::Index, y::Index) = isequal(x, y)
 
 function names!(x::Index, nms::Vector{Symbol}; allow_duplicates=false)
     if length(nms) != length(x)
@@ -114,20 +112,14 @@ end
 
 Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::Real) = Int(idx)
-Base.getindex(x::AbstractIndex, idx::AbstractDataVector{Bool}) = getindex(x, convert(Array, idx, false))
-Base.getindex{T}(x::AbstractIndex, idx::AbstractDataVector{T}) = getindex(x, dropna(idx))
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Null}}) =
+    getindex(x, collect(Nulls.replace(idx, false)))
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
+Base.getindex{T >: Null}(x::AbstractIndex, idx::AbstractVector{T}) =
+    getindex(x, collect(Nulls.skip(idx)))
 Base.getindex(x::AbstractIndex, idx::Range) = [idx;]
 Base.getindex{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
-
-type SimpleIndex <: AbstractIndex
-    length::Integer
-end
-SimpleIndex() = SimpleIndex(0)
-Base.length(x::SimpleIndex) = x.length
-Base.names(x::SimpleIndex) = nothing
-_names(x::SimpleIndex) = nothing
 
 # Helpers
 

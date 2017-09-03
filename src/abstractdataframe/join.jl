@@ -2,136 +2,191 @@
 ## Join / merge
 ##
 
-function join_idx(left, right, max_groups)
-    ## adapted from Wes McKinney's full_outer_join in pandas (file: src/join.pyx).
+# Like similar, but returns a array that can have nulls and is initialized with nulls
+similar_nullable{T}(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =
+    fill!(similar(dv, Union{T, Null}, dims), null)
 
-    # NA group in location 0
+# helper structure for DataFrames joining
+immutable DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
+    dfl::DF1
+    dfr::DF2
+    dfl_on::DF1
+    dfr_on::DF2
+    on_cols::Vector{Symbol}
 
-    left_sorter, where, left_count = DataArrays.groupsort_indexer(left, max_groups)
-    right_sorter, where, right_count = DataArrays.groupsort_indexer(right, max_groups)
-
-    # First pass, determine size of result set
-    tcount = 0
-    rcount = 0
-    lcount = 0
-    for i in 1:(max_groups + 1)
-        lc = left_count[i]
-        rc = right_count[i]
-
-        if rc > 0 && lc > 0
-            tcount += lc * rc
-        elseif rc > 0
-            rcount += rc
-        else
-            lcount += lc
-        end
+    function DataFrameJoiner{DF1, DF2}(dfl::DF1, dfr::DF2, on::Union{Symbol,Vector{Symbol}}) where {DF1, DF2}
+        on_cols = isa(on, Symbol) ? [on] : on
+        new(dfl, dfr, dfl[on_cols], dfr[on_cols], on_cols)
     end
-
-    # group 0 is the NA group
-    tposition = 0
-    lposition = 0
-    rposition = 0
-
-    left_pos = 0
-    right_pos = 0
-
-    left_indexer = Vector{Int}(tcount)
-    right_indexer = Vector{Int}(tcount)
-    leftonly_indexer = Vector{Int}(lcount)
-    rightonly_indexer = Vector{Int}(rcount)
-    for i in 1:(max_groups + 1)
-        lc = left_count[i]
-        rc = right_count[i]
-        if rc == 0
-            for j in 1:lc
-                leftonly_indexer[lposition + j] = left_pos + j
-            end
-            lposition += lc
-        elseif lc == 0
-            for j in 1:rc
-                rightonly_indexer[rposition + j] = right_pos + j
-            end
-            rposition += rc
-        else
-            for j in 1:lc
-                offset = tposition + (j-1) * rc
-                for k in 1:rc
-                    left_indexer[offset + k] = left_pos + j
-                    right_indexer[offset + k] = right_pos + k
-                end
-            end
-            tposition += lc * rc
-        end
-        left_pos += lc
-        right_pos += rc
-    end
-
-    ## (left_sorter, left_indexer, leftonly_indexer,
-    ##  right_sorter, right_indexer, rightonly_indexer)
-    (left_sorter[left_indexer], left_sorter[leftonly_indexer],
-     right_sorter[right_indexer], right_sorter[rightonly_indexer])
 end
 
-function DataArrays.PooledDataVecs(df1::AbstractDataFrame,
-                                   df2::AbstractDataFrame)
-    # This method exists to allow merge to work with multiple columns.
-    # It takes the columns of each DataFrame and returns a DataArray
-    # with a merged pool that "keys" the combination of column values.
-    # The pools of the result don't really mean anything.
-    dv1, dv2 = PooledDataVecs(df1[1], df2[1])
-    # use UInt32 instead of the minimum integer size chosen by PooledDataVecs
-    # since the number of levels can be high
-    refs1 = Vector{UInt32}(dv1.refs)
-    refs2 = Vector{UInt32}(dv2.refs)
-    # the + 1 handles NA's
-    refs1[:] += 1
-    refs2[:] += 1
-    ngroups = length(dv1.pool) + 1
-    for j = 2:ncol(df1)
-        dv1, dv2 = PooledDataVecs(df1[j], df2[j])
-        for i = 1:length(refs1)
-            refs1[i] += (dv1.refs[i]) * ngroups
-        end
-        for i = 1:length(refs2)
-            refs2[i] += (dv2.refs[i]) * ngroups
-        end
-        ngroups *= (length(dv1.pool) + 1)
-    end
-    # recode refs1 and refs2 to drop the unused column combinations and
-    # limit the pool size
-    PooledDataVecs( refs1, refs2 )
+DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}(dfl::DF1, dfr::DF2, on::Union{Symbol,Vector{Symbol}}) =
+    DataFrameJoiner{DF1,DF2}(dfl, dfr, on)
+
+# helper map between the row indices in original and joined table
+immutable RowIndexMap
+    "row indices in the original table"
+    orig::Vector{Int}
+    "row indices in the resulting joined table"
+    join::Vector{Int}
 end
 
-function DataArrays.PooledDataArray{R}(df::AbstractDataFrame, ::Type{R})
-    # This method exists to allow another way for merge to work with
-    # multiple columns. It takes the columns of the DataFrame and
-    # returns a DataArray with a merged pool that "keys" the
-    # combination of column values.
-    # Notes:
-    #   - I skipped the sort to make it faster.
-    #   - Converting each individual one-row DataFrame to a Tuple
-    #     might be faster.
-    refs = zeros(R, nrow(df))
-    poolref = Dict{AbstractDataFrame, Int}()
-    pool = Vector{UInt64}(0)
-    j = 1
-    for i = 1:nrow(df)
-        val = df[i,:]
-        if haskey(poolref, val)
-            refs[i] = poolref[val]
+Base.length(x::RowIndexMap) = length(x.orig)
+
+# composes the joined data table using the maps between the left and right
+# table rows and the indices of rows in the result
+function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
+                              left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
+                              right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap)
+    @assert length(left_ixs) == length(right_ixs)
+    # compose left half of the result taking all left columns
+    all_orig_left_ixs = vcat(left_ixs.orig, leftonly_ixs.orig)
+
+    ril = length(right_ixs)
+    lil = length(left_ixs)
+    loil = length(leftonly_ixs)
+    roil = length(rightonly_ixs)
+
+    if loil > 0
+        # combine the matched (left_ixs.orig) and non-matched (leftonly_ixs.orig) indices of the left table rows
+        # preserving the original rows order
+        all_orig_left_ixs = similar(left_ixs.orig, lil + loil)
+        @inbounds all_orig_left_ixs[left_ixs.join] = left_ixs.orig
+        @inbounds all_orig_left_ixs[leftonly_ixs.join] = leftonly_ixs.orig
+    else
+        # the result contains only the left rows that are matched to right rows (left_ixs)
+        all_orig_left_ixs = left_ixs.orig # no need to copy left_ixs.orig as it's not used elsewhere
+    end
+    # permutation to swap rightonly and leftonly rows
+    right_perm = vcat(1:ril, ril+roil+1:ril+roil+loil, ril+1:ril+roil)
+    if length(leftonly_ixs) > 0
+        # compose right_perm with the permutation that restores left rows order
+        right_perm[vcat(right_ixs.join, leftonly_ixs.join)] = right_perm[1:ril+loil]
+    end
+    all_orig_right_ixs = vcat(right_ixs.orig, rightonly_ixs.orig)
+
+    # compose right half of the result taking all right columns excluding on
+    dfr_noon = without(joiner.dfr, joiner.on_cols)
+
+    nrow = length(all_orig_left_ixs) + roil
+    @assert nrow == length(all_orig_right_ixs) + loil
+    ncleft = ncol(joiner.dfl)
+    cols = Vector{Any}(ncleft + ncol(dfr_noon))
+    _similar = kind == :inner ? similar : similar_nullable
+    for (i, col) in enumerate(columns(joiner.dfl))
+        cols[i] = _similar(col, nrow)
+        fillcolumn!(cols[i], col, all_orig_left_ixs)
+    end
+    for (i, col) in enumerate(columns(dfr_noon))
+        cols[i+ncleft] = _similar(col, nrow)
+        fillcolumn!(cols[i+ncleft], col, all_orig_right_ixs)
+        permute!(cols[i+ncleft], right_perm)
+    end
+    res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)))
+
+    if length(rightonly_ixs.join) > 0
+        # some left rows are nulls, so the values of the "on" columns
+        # need to be taken from the right
+        for (on_col_ix, on_col) in enumerate(joiner.on_cols)
+            # fix the result of the rightjoin by taking the nonnull values from the right table
+            offset = nrow - length(rightonly_ixs.orig)
+            fillcolumn!(res[on_col], joiner.dfr_on[on_col_ix], rightonly_ixs.orig, offset)
+        end
+    end
+    return res
+end
+
+function fillcolumn!{T1, T2}(dfcol::AbstractVector{T1}, refcol::AbstractVector{T2},
+                             indices::Vector{Int}, offset::Int=0)
+    @inbounds for (j, k) in enumerate(indices)
+        dfcol[j+offset] = refcol[k]
+    end
+end
+
+# map the indices of the left and right joined tables
+# to the indices of the rows in the resulting table
+# if `nothing` is given, the corresponding map is not built
+function update_row_maps!(left_table::AbstractDataFrame,
+                          right_table::AbstractDataFrame,
+                          right_dict::RowGroupDict,
+                          left_ixs::Union{Void, RowIndexMap},
+                          leftonly_ixs::Union{Void, RowIndexMap},
+                          right_ixs::Union{Void, RowIndexMap},
+                          rightonly_mask::Union{Void, Vector{Bool}})
+    # helper functions
+    @inline update!(ixs::Void, orig_ix::Int, join_ix::Int, count::Int = 1) = nothing
+    @inline function update!(ixs::RowIndexMap, orig_ix::Int, join_ix::Int, count::Int = 1)
+        n = length(ixs.orig)
+        resize!(ixs.orig, n+count)
+        ixs.orig[n+1:end] = orig_ix
+        append!(ixs.join, join_ix:(join_ix+count-1))
+        ixs
+    end
+    @inline update!(ixs::Void, orig_ixs::AbstractArray, join_ix::Int) = nothing
+    @inline function update!(ixs::RowIndexMap, orig_ixs::AbstractArray, join_ix::Int)
+        append!(ixs.orig, orig_ixs)
+        append!(ixs.join, join_ix:(join_ix+length(orig_ixs)-1))
+        ixs
+    end
+    @inline update!(ixs::Void, orig_ixs::AbstractArray) = nothing
+    @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) = (mask[orig_ixs] = false)
+
+    # iterate over left rows and compose the left<->right index map
+    right_dict_cols = ntuple(i -> right_dict.df[i], ncol(right_dict.df))
+    left_table_cols = ntuple(i -> left_table[i], ncol(left_table))
+    next_join_ix = 1
+    for l_ix in 1:nrow(left_table)
+        r_ixs = findrows(right_dict, left_table, right_dict_cols, left_table_cols, l_ix)
+        if isempty(r_ixs)
+            update!(leftonly_ixs, l_ix, next_join_ix)
+            next_join_ix += 1
         else
-            push!(pool, hash(val))
-            refs[i] = j
-            poolref[val] = j
-            j += 1
+            update!(left_ixs, l_ix, next_join_ix, length(r_ixs))
+            update!(right_ixs, r_ixs, next_join_ix)
+            update!(rightonly_mask, r_ixs)
+            next_join_ix += length(r_ixs)
         end
     end
-    return PooledDataArray(DataArrays.RefArray(refs), pool)
 end
 
-DataArrays.PooledDataArray(df::AbstractDataFrame) = PooledDataArray(df, DEFAULT_POOLED_REF_TYPE)
+# map the row indices of the left and right joined tables
+# to the indices of rows in the resulting table
+# returns the 4-tuple of row indices maps for
+# - matching left rows
+# - non-matching left rows
+# - matching right rows
+# - non-matching right rows
+# if false is provided, the corresponding map is not built and the
+# tuple element is empty RowIndexMap
+function update_row_maps!(left_table::AbstractDataFrame,
+                          right_table::AbstractDataFrame,
+                          right_dict::RowGroupDict,
+                          map_left::Bool, map_leftonly::Bool,
+                          map_right::Bool, map_rightonly::Bool)
+    init_map(df::AbstractDataFrame, init::Bool) = init ?
+        RowIndexMap(sizehint!(Vector{Int}(), nrow(df)),
+                    sizehint!(Vector{Int}(), nrow(df))) : nothing
+    to_bimap(x::RowIndexMap) = x
+    to_bimap(::Void) = RowIndexMap(Vector{Int}(), Vector{Int}())
 
+    # init maps as requested
+    left_ixs = init_map(left_table, map_left)
+    leftonly_ixs = init_map(left_table, map_leftonly)
+    right_ixs = init_map(right_table, map_right)
+    rightonly_mask = map_rightonly ? fill(true, nrow(right_table)) : nothing
+    update_row_maps!(left_table, right_table, right_dict, left_ixs, leftonly_ixs, right_ixs, rightonly_mask)
+    if map_rightonly
+        rightonly_orig_ixs = find(rightonly_mask)
+        rightonly_ixs = RowIndexMap(rightonly_orig_ixs,
+                                    collect(length(right_ixs.orig) +
+                                            (leftonly_ixs === nothing ? 0 : length(leftonly_ixs)) +
+                                            (1:length(rightonly_orig_ixs))))
+    else
+        rightonly_ixs = nothing
+    end
 
+    return to_bimap(left_ixs), to_bimap(leftonly_ixs), to_bimap(right_ixs), to_bimap(rightonly_ixs)
+end
 
 """
 Join two DataFrames
@@ -164,7 +219,8 @@ join(df1::AbstractDataFrame,
   - `:cross` : a full Cartesian product of the key combinations; every
     row of `df1` is matched with every row of `df2`
 
-`NA`s are filled in where needed to complete joins.
+For the three join operations that may introduce missing values (`:outer`, `:left`,
+and `:right`), all columns of the returned data table will be nullable.
 
 ### Result
 
@@ -191,65 +247,67 @@ function Base.join(df1::AbstractDataFrame,
                    on::Union{Symbol, Vector{Symbol}} = Symbol[],
                    kind::Symbol = :inner)
     if kind == :cross
-        if on != Symbol[]
-            throw(ArgumentError("Cross joins don't use argument 'on'."))
-        end
+        (on == Symbol[]) || throw(ArgumentError("Cross joins don't use argument 'on'."))
         return crossjoin(df1, df2)
     elseif on == Symbol[]
         throw(ArgumentError("Missing join argument 'on'."))
     end
 
-    dv1, dv2 = PooledDataVecs(df1[on], df2[on])
-
-    left_idx, leftonly_idx, right_idx, rightonly_idx =
-        join_idx(dv1.refs, dv2.refs, length(dv1.pool))
+    joiner = DataFrameJoiner(df1, df2, on)
 
     if kind == :inner
-        df2w = without(df2, on)
-
-        left = df1[left_idx, :]
-        right = df2w[right_idx, :]
-
-        return hcat!(left, right)
+        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                                            group_rows(joiner.dfr_on),
+                                                            true, false, true, false)...)
     elseif kind == :left
-        df2w = without(df2, on)
-
-        left = df1[[left_idx; leftonly_idx], :]
-        right = vcat(df2w[right_idx, :],
-                     nas(df2w, length(leftonly_idx)))
-
-        return hcat!(left, right)
+        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                                            group_rows(joiner.dfr_on),
+                                                            true, true, true, false)...)
     elseif kind == :right
-        df1w = without(df1, on)
-
-        left = vcat(df1w[left_idx, :],
-                    nas(df1w, length(rightonly_idx)))
-        right = df2[[right_idx; rightonly_idx], :]
-
-        return hcat!(left, right)
+        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfr_on, joiner.dfl_on,
+                                                            group_rows(joiner.dfl_on),
+                                                            true, true, true, false)[[3, 4, 1, 2]]...)
     elseif kind == :outer
-        df1w, df2w = without(df1, on),  without(df2, on)
-
-        mixed = hcat!(df1[left_idx, :], df2w[right_idx, :])
-        leftonly = hcat!(df1[leftonly_idx, :],
-                         nas(df2w, length(leftonly_idx)))
-        rightonly = hcat!(nas(df1w, length(rightonly_idx)),
-                          df2[rightonly_idx, :])
-
-        return vcat(mixed, leftonly, rightonly)
+        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                                            group_rows(joiner.dfr_on),
+                                                            true, true, true, true)...)
     elseif kind == :semi
-        df1[unique(left_idx), :]
+        # hash the right rows
+        dfr_on_grp = group_rows(joiner.dfr_on)
+        # iterate over left rows and leave those found in right
+        left_ixs = Vector{Int}()
+        sizehint!(left_ixs, nrow(joiner.dfl))
+        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[i], ncol(dfr_on_grp.df))
+        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], ncol(joiner.dfl_on))
+        @inbounds for l_ix in 1:nrow(joiner.dfl_on)
+            if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) != 0
+                push!(left_ixs, l_ix)
+            end
+        end
+        return joiner.dfl[left_ixs, :]
     elseif kind == :anti
-        df1[leftonly_idx, :]
+        # hash the right rows
+        dfr_on_grp = group_rows(joiner.dfr_on)
+        # iterate over left rows and leave those not found in right
+        leftonly_ixs = Vector{Int}()
+        sizehint!(leftonly_ixs, nrow(joiner.dfl))
+        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[i], ncol(dfr_on_grp.df))
+        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], ncol(joiner.dfl_on))
+        @inbounds for l_ix in 1:nrow(joiner.dfl_on)
+            if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) == 0
+                push!(leftonly_ixs, l_ix)
+            end
+        end
+        return joiner.dfl[leftonly_ixs, :]
     else
-        throw(ArgumentError("Unknown kind of join requested"))
+        throw(ArgumentError("Unknown kind of join requested: $kind"))
     end
 end
 
 function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame)
     r1, r2 = size(df1, 1), size(df2, 1)
     cols = Any[[repeat(c, inner=r2) for c in columns(df1)];
-            [repeat(c, outer=r1) for c in columns(df2)]]
+               [repeat(c, outer=r1) for c in columns(df2)]]
     colindex = merge(index(df1), index(df2))
     DataFrame(cols, colindex)
 end

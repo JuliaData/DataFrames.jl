@@ -5,6 +5,42 @@
 ##
 ##############################################################################
 
+if VERSION >= v"0.6.0-dev.2643"
+    include_string("""
+        immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
+            parent::DataFrame
+            rows::T # maps from subdf row indexes to parent row indexes
+
+            function SubDataFrame{T}(parent::DataFrame, rows::T) where {T <: AbstractVector{Int}}
+                if length(rows) > 0
+                    rmin, rmax = extrema(rows)
+                    if rmin < 1 || rmax > size(parent, 1)
+                        throw(BoundsError())
+                    end
+                end
+                new(parent, rows)
+            end
+        end
+    """)
+else
+    @eval begin
+        immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
+            parent::DataFrame
+            rows::T # maps from subdf row indexes to parent row indexes
+
+            function SubDataFrame(parent::DataFrame, rows::T)
+                if length(rows) > 0
+                    rmin, rmax = extrema(rows)
+                    if rmin < 1 || rmax > size(parent, 1)
+                        throw(BoundsError())
+                    end
+                end
+                new(parent, rows)
+            end
+        end
+    end
+end
+
 """
 A view of row subsets of an AbstractDataFrame
 
@@ -47,57 +83,44 @@ sdf1[:,[:a,:b]]
 ```
 
 """
-immutable SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
-    parent::DataFrame
-    rows::T # maps from subdf row indexes to parent row indexes
+SubDataFrame
 
-    function (::Type{SubDataFrame{T}}){T}(parent::DataFrame, rows::T)
-        if length(rows) > 0
-            rmin, rmax = extrema(rows)
-            if rmin < 1 || rmax > size(parent, 1)
-                throw(BoundsError())
-            end
-        end
-        new{T}(parent, rows)
-    end
-end
-
-function SubDataFrame{T <: Integer}(parent::DataFrame, rows::AbstractVector{T})
-    rows = convert(Vector{Int}, rows)
-    return SubDataFrame{typeof(rows)}(parent, rows)
+function SubDataFrame(parent::DataFrame, rows::T) where {T <: AbstractVector{Int}}
+    return SubDataFrame{T}(parent, rows)
 end
 
 function SubDataFrame(parent::DataFrame, row::Integer)
-    return SubDataFrame(parent, [row])
+    return SubDataFrame(parent, [Int(row)])
 end
 
-
-function Base.view{S <: Real}(df::DataFrame, rowinds::AbstractVector{S})
-    return SubDataFrame(df, rowinds)
+function SubDataFrame(parent::DataFrame, rows::AbstractVector{<:Integer})
+    return SubDataFrame(parent, convert(Vector{Int}, rows))
 end
 
-function Base.view{S <: Real}(sdf::SubDataFrame, rowinds::AbstractVector{S})
+function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool})
+    return SubDataFrame(parent, find(rows))
+end
+
+function SubDataFrame(sdf::SubDataFrame, rowinds::Union{T, AbstractVector{T}}) where {T <: Integer}
     return SubDataFrame(sdf.parent, sdf.rows[rowinds])
 end
 
-function Base.view(df::DataFrame, rowinds::AbstractVector{Bool})
-    return view(df, getindex(SimpleIndex(size(df, 1)), rowinds))
-end
-
-function Base.view(sdf::SubDataFrame, rowinds::AbstractVector{Bool})
-    return view(sdf, getindex(SimpleIndex(size(sdf, 1)), rowinds))
-end
-
-function Base.view(adf::AbstractDataFrame, rowinds::Integer)
-    return SubDataFrame(adf, Int[rowinds])
+function Base.view(adf::AbstractDataFrame, rowinds::AbstractVector{T}) where {T >: Null}
+    # Vector{>:Null} need to be checked for nulls
+    any(isnull, rowinds) && throw(NullException())
+    return SubDataFrame(adf, convert(Vector{Nulls.T(T)}, rowinds))
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Any)
-    return view(adf, getindex(SimpleIndex(size(adf, 1)), rowinds))
+    return SubDataFrame(adf, rowinds)
+end
+
+function Base.view(adf::AbstractDataFrame, rowinds::Any, colinds::AbstractVector)
+    return SubDataFrame(adf[colinds], rowinds)
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Any, colinds::Any)
-    return view(adf[[colinds]], rowinds)
+    return SubDataFrame(adf[[colinds]], rowinds)
 end
 
 ##############################################################################
@@ -138,10 +161,4 @@ end
 
 Base.map(f::Function, sdf::SubDataFrame) = f(sdf) # TODO: deprecate
 
-function Base.delete!(sdf::SubDataFrame, c::Any) # TODO: deprecate?
-    return SubDataFrame(delete!(sdf.parent, c), sdf.rows)
-end
-
-without(sdf::SubDataFrame, c::Vector{Int}) = view(without(sdf.parent, c), sdf.rows)
-without(sdf::SubDataFrame, c::Int) = view(without(sdf.parent, c), sdf.rows)
-without(sdf::SubDataFrame, c::Any) = view(without(sdf.parent, c), sdf.rows)
+without(sdf::SubDataFrame, c) = view(without(sdf.parent, c), sdf.rows)

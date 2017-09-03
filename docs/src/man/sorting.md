@@ -3,9 +3,9 @@
 Sorting is a fundamental component of data analysis. Basic sorting is trivial: just calling `sort!` will sort all columns, in place:
 
 ```julia
-using DataFrames, RDatasets
-
-iris = dataset("datasets", "iris")
+using DataFrames
+using CSV
+iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"), DataFrame)
 sort!(iris)
 ```
 
