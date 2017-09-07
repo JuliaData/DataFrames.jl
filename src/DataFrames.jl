@@ -27,6 +27,7 @@ export AbstractDataFrame,
        SubDataFrame,
 
        aggregate,
+       allvars,
        by,
        categorical!,
        colwise,
