@@ -104,10 +104,11 @@ julia> nulls(Int, 1, 3)
 
 ## The `DataFrame` Type
 
-The `DataFrame` type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments:
+The `DataFrame` type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments or pairs:
 
 ```julia
 df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+df = DataFrame(:A => 1:4, :B => ["M", "F", "F", "M"])
 ```
 
 It is also possible to construct a `DataFrame` in stages:

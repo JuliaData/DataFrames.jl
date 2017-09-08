@@ -9,6 +9,7 @@ particularly a Vector or CategoricalVector.
 ```julia
 DataFrame(columns::Vector, names::Vector{Symbol})
 DataFrame(kwargs...)
+DataFrame(pairs::Pair{Symbol}...)
 DataFrame() # an empty DataFrame
 DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
 DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer)
@@ -105,10 +106,18 @@ type DataFrame <: AbstractDataFrame
     end
 end
 
-function DataFrame(; kwargs...)
-    colnames = Symbol[k for (k,v) in kwargs]
-    columns = Any[v for (k,v) in kwargs]
+function DataFrame(pairs::Pair{Symbol,<:Any}...)
+    colnames = Symbol[k for (k,v) in pairs]
+    columns = Any[v for (k,v) in pairs]
     DataFrame(columns, Index(colnames))
+end
+
+function DataFrame(; kwargs...)
+    if isempty(kwargs)
+        DataFrame(Any[], Index())
+    else
+        DataFrame((k => v for (k,v) in kwargs)...)
+    end
 end
 
 function DataFrame(columns::AbstractVector,

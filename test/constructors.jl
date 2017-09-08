@@ -52,6 +52,16 @@ module TestConstructors
 
     @test DataFrame(a=1, b=1:2) == DataFrame(a=[1,1], b=[1,2])
 
+    @testset "pair constructor" begin
+        df = DataFrame(:x1 => zeros(3), :x2 => ones(3))
+        @test size(df, 1) == 3
+        @test size(df, 2) == 2
+        @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
+
+        df = DataFrame(:type => [], :begin => [])
+        @test names(df) == [:type, :begin]
+    end
+
     @testset "associative" begin
         df = DataFrame(Dict(:A => 1:3, :B => 4:6))
         @test df == DataFrame(A = 1:3, B = 4:6)
