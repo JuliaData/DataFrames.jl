@@ -105,8 +105,9 @@ function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
     (size(r1.df, 2) == size(r2.df, 2)) ||
         throw(ArgumentError("Rows of the data tables that have different number of columns cannot be compared ($(size(df1, 2)) and $(size(df2, 2)))"))
     @inbounds for i in 1:size(r1.df, 2)
-        isless(r1.df[i][r1.row], r2.df[i][r2.row]) && return true
-        isequal(r1.df[i][r1.row], r2.df[i][r2.row]) || return false
+        if !isequal(r1.df[i][r1.row], r2.df[i][r2.row])
+            return isless(r1.df[i][r1.row], r2.df[i][r2.row])
+        end
     end
-    return true
+    return false
 end
