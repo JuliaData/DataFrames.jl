@@ -10,6 +10,12 @@
 immutable DFRowIterator{T <: AbstractDataFrame}
     df::T
 end
+"""
+    eachrow(df) => DataFrames.DFRowIterator
+
+Iterate a DataFrame row by row, with each row represented as a `DataFrameRow`,
+which is a view that acts like a one-row DataFrame.
+"""
 eachrow(df::AbstractDataFrame) = DFRowIterator(df)
 
 Base.start(itr::DFRowIterator) = 1
