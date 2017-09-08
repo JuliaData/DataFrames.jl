@@ -12,7 +12,7 @@ Pages = ["utilities.md"]
 eltypes
 head
 completecases
-describe
+summarize
 dropnull
 dropnull!
 dump

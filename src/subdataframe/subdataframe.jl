@@ -60,7 +60,7 @@ view(d::AbstractDataFrame, rows)
 ### Notes
 
 A `SubDataFrame` is an AbstractDataFrame, so expect that most
-DataFrame functions should work. Such methods include `describe`,
+DataFrame functions should work. Such methods include `summarize`,
 `dump`, `nrow`, `size`, `by`, `stack`, and `join`. Indexing is just
 like a DataFrame; copies are returned.
 

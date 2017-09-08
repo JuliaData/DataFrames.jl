@@ -223,29 +223,9 @@ ordering(df::AbstractDataFrame, cols::Tuple, args...) = ordering(df, [cols...], 
 # Default sorting algorithm
 ###########################
 
-# TimSort is fast for data with structure, but only if the DataFrame is large enough
-# TODO: 8192 is informed but somewhat arbitrary
-
-Sort.defalg(df::AbstractDataFrame) = size(df, 1) < 8192 ? Sort.MergeSort : SortingAlgorithms.TimSort
-
-# For DataFrames, we can choose the algorithm based on the column type and requested ordering
-function Sort.defalg{T<:Real}(df::AbstractDataFrame, ::Type{T}, o::Ordering)
-    # If we're sorting a single numerical column in forward or reverse,
-    # RadixSort will generally be the fastest stable sort
-    if isbits(T) && sizeof(T) <= 8 && (o==Order.Forward || o==Order.Reverse)
-        SortingAlgorithms.RadixSort
-    else
-        Sort.defalg(df)
-    end
-end
-Sort.defalg(df::AbstractDataFrame,        ::Type,            o::Ordering) = Sort.defalg(df)
-Sort.defalg(df::AbstractDataFrame, col    ::ColumnIndex,     o::Ordering) = Sort.defalg(df, eltype(df[col]), o)
-Sort.defalg(df::AbstractDataFrame, col_ord::UserColOrdering, o::Ordering) = Sort.defalg(df, col_ord.col, o)
-Sort.defalg(df::AbstractDataFrame, cols,                     o::Ordering) = Sort.defalg(df)
-
 function Sort.defalg(df::AbstractDataFrame, o::Ordering; alg=nothing, cols=[])
     alg != nothing && return alg
-    Sort.defalg(df, cols, o)
+    Sort.MergeSort
 end
 
 ########################

@@ -272,23 +272,23 @@ module TestDataFrame
     @test deleterows!(df, [2, 3]) === df
     @test df == DataFrame(a=[1], b=[3.0])
 
-    # describe
-    #suppress output and test that describe() does not throw
+    # summarize
+    #suppress output and test that summarize() does not throw
     devnull = is_unix() ? "/dev/null" : "nul"
     open(devnull, "w") do f
-        @test nothing == describe(f, DataFrame(a=[1, 2], b=Any["3", null]))
+        @test nothing == summarize(f, DataFrame(a=[1, 2], b=Any["3", null]))
         @test nothing ==
-              describe(f, DataFrame(a=Union{Int, Null}[1, 2],
+              summarize(f, DataFrame(a=Union{Int, Null}[1, 2],
                                     b=["3", null]))
         @test nothing ==
-              describe(f, DataFrame(a=CategoricalArray([1, 2]),
+              summarize(f, DataFrame(a=CategoricalArray([1, 2]),
                                     b=CategoricalArray(["3", null])))
-        @test nothing == describe(f, [1, 2, 3])
-        @test nothing == describe(f, [1, 2, 3])
-        @test nothing == describe(f, CategoricalArray([1, 2, 3]))
-        @test nothing == describe(f, Any["1", "2", null])
-        @test nothing == describe(f, ["1", "2", null])
-        @test nothing == describe(f, CategoricalArray(["1", "2", null]))
+        @test nothing == summarize(f, [1, 2, 3])
+        @test nothing == summarize(f, [1, 2, 3])
+        @test nothing == summarize(f, CategoricalArray([1, 2, 3]))
+        @test nothing == summarize(f, Any["1", "2", null])
+        @test nothing == summarize(f, ["1", "2", null])
+        @test nothing == summarize(f, CategoricalArray(["1", "2", null]))
     end
 
     #Check the output of unstack

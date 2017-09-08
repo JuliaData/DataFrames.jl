@@ -48,7 +48,7 @@ df1 = DataFrame(Any[collect(1:10), v, rand(10)], [:A, :B, :C])
 df2 = DataFrame(A = 1:10, B = v, C = rand(10))
 dump(df1)
 dump(df2)
-describe(df2)
+summarize(df2)
 DataFrames.head(df1)
 df1[:A] + df2[:C]
 df1[1:4, 1:2]
