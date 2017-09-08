@@ -70,8 +70,8 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
 
     nrow = length(all_orig_left_ixs) + roil
     @assert nrow == length(all_orig_right_ixs) + loil
-    ncleft = ncol(joiner.dfl)
-    cols = Vector{Any}(ncleft + ncol(dfr_noon))
+    ncleft = size(joiner.dfl, 2)
+    cols = Vector{Any}(ncleft + size(dfr_noon, 2))
     _similar = kind == :inner ? similar : similar_nullable
     for (i, col) in enumerate(columns(joiner.dfl))
         cols[i] = _similar(col, nrow)
@@ -132,10 +132,10 @@ function update_row_maps!(left_table::AbstractDataFrame,
     @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) = (mask[orig_ixs] = false)
 
     # iterate over left rows and compose the left<->right index map
-    right_dict_cols = ntuple(i -> right_dict.df[i], ncol(right_dict.df))
-    left_table_cols = ntuple(i -> left_table[i], ncol(left_table))
+    right_dict_cols = ntuple(i -> right_dict.df[i], size(right_dict.df, 2))
+    left_table_cols = ntuple(i -> left_table[i], size(left_table, 2))
     next_join_ix = 1
-    for l_ix in 1:nrow(left_table)
+    for l_ix in 1:size(left_table, 1)
         r_ixs = findrows(right_dict, left_table, right_dict_cols, left_table_cols, l_ix)
         if isempty(r_ixs)
             update!(leftonly_ixs, l_ix, next_join_ix)
@@ -164,8 +164,8 @@ function update_row_maps!(left_table::AbstractDataFrame,
                           map_left::Bool, map_leftonly::Bool,
                           map_right::Bool, map_rightonly::Bool)
     init_map(df::AbstractDataFrame, init::Bool) = init ?
-        RowIndexMap(sizehint!(Vector{Int}(), nrow(df)),
-                    sizehint!(Vector{Int}(), nrow(df))) : nothing
+        RowIndexMap(sizehint!(Vector{Int}(), size(df, 1)),
+                    sizehint!(Vector{Int}(), size(df, 1))) : nothing
     to_bimap(x::RowIndexMap) = x
     to_bimap(::Void) = RowIndexMap(Vector{Int}(), Vector{Int}())
 
@@ -173,7 +173,7 @@ function update_row_maps!(left_table::AbstractDataFrame,
     left_ixs = init_map(left_table, map_left)
     leftonly_ixs = init_map(left_table, map_leftonly)
     right_ixs = init_map(right_table, map_right)
-    rightonly_mask = map_rightonly ? fill(true, nrow(right_table)) : nothing
+    rightonly_mask = map_rightonly ? fill(true, size(right_table, 1)) : nothing
     update_row_maps!(left_table, right_table, right_dict, left_ixs, leftonly_ixs, right_ixs, rightonly_mask)
     if map_rightonly
         rightonly_orig_ixs = find(rightonly_mask)
@@ -276,10 +276,10 @@ function Base.join(df1::AbstractDataFrame,
         dfr_on_grp = group_rows(joiner.dfr_on)
         # iterate over left rows and leave those found in right
         left_ixs = Vector{Int}()
-        sizehint!(left_ixs, nrow(joiner.dfl))
-        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[i], ncol(dfr_on_grp.df))
-        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], ncol(joiner.dfl_on))
-        @inbounds for l_ix in 1:nrow(joiner.dfl_on)
+        sizehint!(left_ixs, size(joiner.dfl, 1))
+        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[i], size(dfr_on_grp.df, 2))
+        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], size(joiner.dfl_on, 2))
+        @inbounds for l_ix in 1:size(joiner.dfl_on, 1)
             if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) != 0
                 push!(left_ixs, l_ix)
             end
@@ -290,10 +290,10 @@ function Base.join(df1::AbstractDataFrame,
         dfr_on_grp = group_rows(joiner.dfr_on)
         # iterate over left rows and leave those not found in right
         leftonly_ixs = Vector{Int}()
-        sizehint!(leftonly_ixs, nrow(joiner.dfl))
-        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[i], ncol(dfr_on_grp.df))
-        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], ncol(joiner.dfl_on))
-        @inbounds for l_ix in 1:nrow(joiner.dfl_on)
+        sizehint!(leftonly_ixs, size(joiner.dfl, 1))
+        dfr_on_grp_cols = ntuple(i -> dfr_on_grp.df[i], size(dfr_on_grp.df, 2))
+        dfl_on_cols = ntuple(i -> joiner.dfl_on[i], size(joiner.dfl_on, 2))
+        @inbounds for l_ix in 1:size(joiner.dfl_on, 1)
             if findrow(dfr_on_grp, joiner.dfl_on, dfr_on_grp_cols, dfl_on_cols, l_ix) == 0
                 push!(leftonly_ixs, l_ix)
             end

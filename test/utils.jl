@@ -19,7 +19,7 @@ module TestUtils
     if isfile(f)
         r1 = r"define initial-reserved-words '\(([^)]+)"
         r2 = r"define \(parse-block s(?: \([^)]+\))?\)\s+\(parse-Nary s (?:parse-eq '\([^(]*|down '\([^)]+\) '[^']+ ')\(([^)]+)"
-        body = readstring(f)
+        body = read(f, String)
         m1, m2 = match(r1, body), match(r2, body)
         if m1 == nothing || m2 == nothing
             error("Unable to extract keywords from 'julia-parser.scm'.")
@@ -181,7 +181,7 @@ module TestUtils
             3rd Quartile:   4.250000
             Maximum:        5.000000
             Length:         4
-            Type:           Union{$Int, Nulls.Null}
+            Type:           Union{Nulls.Null, $Int}
             Number Missing: 0
             % Missing:      0.000000
 
@@ -194,7 +194,7 @@ module TestUtils
             nullcat
             Summary Stats:
             Length:         4
-            Type:           Union{CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}, Nulls.Null}
+            Type:           Union{Nulls.Null, CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}}
             Number Unique:  4
             Number Missing: 0
             % Missing:      0.000000

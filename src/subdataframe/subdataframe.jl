@@ -131,9 +131,11 @@ end
 
 index(sdf::SubDataFrame) = index(sdf.parent)
 
-# TODO: Remove these
-nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(sdf.rows)::Int : 0
-ncol(sdf::SubDataFrame) = length(index(sdf))
+Base.size(sdf::SubDataFrame) = ((length(index(sdf)) > 0 ? length(sdf.rows) : 0),
+    length(index(sdf)))
+Base.size(sdf::SubDataFrame, i::Int) = i == 1 ? 
+    (length(index(sdf)) > 0 ? length(sdf.rows) : 0) :
+    i == 2 ? length(index(sdf)) : throw(ArgumentError("invalid DataFrame dimension"))
 
 function Base.getindex(sdf::SubDataFrame, colinds::Any)
     return sdf.parent[sdf.rows, colinds]

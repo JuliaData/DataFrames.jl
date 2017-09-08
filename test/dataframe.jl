@@ -176,7 +176,7 @@ module TestDataFrame
 
     # zero-row DataFrame and subDataFrame test
     df = DataFrame(x=[], y=[])
-    @test nrow(df) == 0
+    @test size(df, 1) == 0
     df = DataFrame(x=[1:3;], y=[3:5;])
     sdf = view(df, df[:x] .== 4)
     @test size(sdf, 1) == 0
@@ -387,7 +387,6 @@ module TestDataFrame
     @testset "size" begin
         df = DataFrame(A = 1:3, B = 'A':'C')
         @test_throws ArgumentError size(df, 3)
-        @test length(df) == 2
         @test ndims(df) == 2
     end
 

@@ -57,7 +57,7 @@ function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UIn
 end
 
 Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
-    rowhash(ntuple(i -> r.df[i], ncol(r.df)), r.row, h)
+    rowhash(ntuple(i -> r.df[i], size(r.df, 2)), r.row, h)
 
 # comparison of DataFrame rows
 # only the rows of the same DataFrame could be compared
@@ -91,8 +91,8 @@ function isequal_row(df1::AbstractDataFrame, r1::Int, df2::AbstractDataFrame, r2
         if r1 == r2
             return true
         end
-    elseif !(ncol(df1) == ncol(df2))
-        throw(ArgumentError("Rows of the tables that have different number of columns cannot be compared. Got $(ncol(df1)) and $(ncol(df2)) columns"))
+    elseif !(size(df1, 2) == size(df2, 2))
+        throw(ArgumentError("Rows of the tables that have different number of columns cannot be compared. Got $(size(df1, 2)) and $(size(df2, 2)) columns"))
     end
     @inbounds for (col1, col2) in zip(columns(df1), columns(df2))
         isequal(col1[r1], col2[r2]) || return false
@@ -102,9 +102,9 @@ end
 
 # lexicographic ordering on DataFrame rows, null > !null
 function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
-    (ncol(r1.df) == ncol(r2.df)) ||
-        throw(ArgumentError("Rows of the data tables that have different number of columns cannot be compared ($(ncol(df1)) and $(ncol(df2)))"))
-    @inbounds for i in 1:ncol(r1.df)
+    (size(r1.df, 2) == size(r2.df, 2)) ||
+        throw(ArgumentError("Rows of the data tables that have different number of columns cannot be compared ($(size(df1, 2)) and $(size(df2, 2)))"))
+    @inbounds for i in 1:size(r1.df, 2)
         isless(r1.df[i][r1.row], r2.df[i][r2.row]) && return true
         isequal(r1.df[i][r1.row], r2.df[i][r2.row]) || return false
     end

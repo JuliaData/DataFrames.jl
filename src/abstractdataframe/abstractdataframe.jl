@@ -68,8 +68,8 @@ abstract type AbstractDataFrame end
 ##############################################################################
 
 # index(df) => AbstractIndex
-# nrow(df) => Int
-# ncol(df) => Int
+# size(df, 1) => Int
+# size(df, 2) => Int
 # getindex(...)
 # setindex!(...) exclusive of methods that add new columns
 
@@ -203,19 +203,7 @@ eltypes(df)
 """
 eltypes(df::AbstractDataFrame) = map!(eltype, Vector{Type}(size(df,2)), columns(df))
 
-Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
-function Base.size(df::AbstractDataFrame, i::Integer)
-    if i == 1
-        nrow(df)
-    elseif i == 2
-        ncol(df)
-    else
-        throw(ArgumentError("DataFrames only have two dimensions"))
-    end
-end
-
-Base.length(df::AbstractDataFrame) = ncol(df)
-Base.endof(df::AbstractDataFrame) = ncol(df)
+Base.endof(df::AbstractDataFrame) = size(df, 2)
 
 Base.ndims(::AbstractDataFrame) = 2
 
@@ -254,7 +242,7 @@ end
 
 Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
 Base.get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
-Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
+Base.isempty(df::AbstractDataFrame) = size(df, 2) == 0
 
 ##############################################################################
 ##
@@ -262,9 +250,9 @@ Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
 ##
 ##############################################################################
 
-head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
+head(df::AbstractDataFrame, r::Int) = df[1:min(r,size(df, 1)), :]
 head(df::AbstractDataFrame) = head(df, 6)
-tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
+tail(df::AbstractDataFrame, r::Int) = df[max(1,size(df, 1)-r+1):size(df, 1), :]
 tail(df::AbstractDataFrame) = tail(df, 6)
 
 """
@@ -323,7 +311,7 @@ dump(df)
 
 """
 function Base.dump(io::IO, df::AbstractDataFrame, n::Int, indent)
-    println(io, typeof(df), "  $(nrow(df)) observations of $(ncol(df)) variables")
+    println(io, typeof(df), "  $(size(df, 1)) observations of $(size(df, 2)) variables")
     if n > 0
         for (name, col) in eachcol(df)
             print(io, indent, "  ", name, ": ")
@@ -568,7 +556,7 @@ function nonunique(df::AbstractDataFrame)
     gslots = row_group_slots(df)[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
-    res = fill(true, nrow(df))
+    res = fill(true, size(df, 1))
     @inbounds for g_row in gslots
         (g_row > 0) && (res[g_row] = false)
     end
@@ -637,7 +625,7 @@ function colmissing(df::AbstractDataFrame) # -> Vector{Int}
 end
 
 function without(df::AbstractDataFrame, icols::Vector{Int})
-    newcols = setdiff(1:ncol(df), icols)
+    newcols = setdiff(1:size(df, 2), icols)
     df[newcols]
 end
 without(df::AbstractDataFrame, i::Int) = without(df, [i])
@@ -767,38 +755,3 @@ function Base.hash(df::AbstractDataFrame)
     end
     return UInt(h)
 end
-
-
-## Documentation for methods defined elsewhere
-
-"""
-Number of rows or columns in an AbstractDataFrame
-
-```julia
-nrow(df::AbstractDataFrame)
-ncol(df::AbstractDataFrame)
-```
-
-**Arguments**
-
-* `df` : the AbstractDataFrame
-
-**Result**
-
-* `::AbstractDataFrame` : the updated version
-
-See also [`size`](@ref).
-
-NOTE: these functions may be depreciated for `size`.
-
-**Examples**
-
-```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-size(df)
-nrow(df)
-ncol(df)
-```
-
-"""
-# nrow, ncol

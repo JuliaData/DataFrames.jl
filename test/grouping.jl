@@ -14,13 +14,13 @@ module TestGrouping
             cw = colwise(sum, df)
             answer = [20, 12, -0.4283098098931877]
             @test isa(cw, Vector{Real})
-            @test size(cw) == (ncol(df),)
+            @test size(cw) == (size(df, 2),)
             @test cw == answer
 
             cw = colwise(sum, nullfree)
             answer = [55]
             @test isa(cw, Array{Int, 1})
-            @test size(cw) == (ncol(nullfree),)
+            @test size(cw) == (size(nullfree, 2),)
             @test cw == answer
         end
 
@@ -33,19 +33,19 @@ module TestGrouping
             cw = colwise([sum], df)
             answer = [20 12 -0.4283098098931877]
             @test isa(cw, Array{Real, 2})
-            @test size(cw) == (length([sum]),ncol(df))
+            @test size(cw) == (length([sum]),size(df, 2))
             @test cw == answer
 
             cw = colwise([sum, minimum], nullfree)
             answer = reshape([55, 1], (2,1))
             @test isa(cw, Array{Int, 2})
-            @test size(cw) == (length([sum, minimum]), ncol(nullfree))
+            @test size(cw) == (length([sum, minimum]), size(nullfree, 2))
             @test cw == answer
 
             cw = colwise([Vector{Union{Int, Null}}], nullfree)
             answer = reshape([Vector{Union{Int, Null}}(1:10)], (1,1))
             @test isa(cw, Array{Vector{Union{Int, Null}},2})
-            @test size(cw) == (1, ncol(nullfree))
+            @test size(cw) == (1, size(nullfree, 2))
             @test cw == answer
 
             @test_throws MethodError colwise(["Bob", :Susie], DataFrame(A = 1:10, B = 11:20))
@@ -60,20 +60,20 @@ module TestGrouping
             cw = colwise((sum, length), df)
             answer = Any[20 12 -0.4283098098931877; 8 8 8]
             @test isa(cw, Array{Real, 2})
-            @test size(cw) == (length((sum, length)), ncol(df))
+            @test size(cw) == (length((sum, length)), size(df, 2))
             @test cw == answer
 
             cw = colwise((sum, length), nullfree)
             answer = reshape([55, 10], (2,1))
             @test isa(cw, Array{Int, 2})
-            @test size(cw) == (length((sum, length)), ncol(nullfree))
+            @test size(cw) == (length((sum, length)), size(nullfree, 2))
             @test cw == answer
 
             cw = colwise((CategoricalArray, Vector{Union{Int, Null}}), nullfree)
             answer = reshape([CategoricalArray(1:10), Vector{Union{Int, Null}}(1:10)],
-                             (2, ncol(nullfree)))
+                             (2, size(nullfree, 2)))
             @test typeof(cw) == Array{AbstractVector,2}
-            @test size(cw) == (2, ncol(nullfree))
+            @test size(cw) == (2, size(nullfree, 2))
             @test cw == answer
 
             @test_throws MethodError colwise(("Bob", :Susie), DataFrame(A = 1:10, B = 11:20))

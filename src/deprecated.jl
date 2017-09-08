@@ -17,3 +17,8 @@ import Base: keys, values, insert!
 @deprecate complete_cases completecases
 
 @deprecate sub(df::AbstractDataFrame, rows) view(df, rows)
+
+import Base: length
+@deprecate length(df::AbstractDataFrame) size(df, 2)
+@deprecate ncol(df::AbstractDataFrame) size(df, 2)
+@deprecate nrow(df::AbstractDataFrame) size(df, 1)

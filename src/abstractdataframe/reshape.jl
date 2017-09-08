@@ -81,7 +81,7 @@ function stack(df::AbstractDataFrame, measure_vars::Vector{Int},
     cnames = names(df)[id_vars]
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
-    DataFrame(Any[repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
+    DataFrame(Any[repeat(_names(df)[measure_vars], inner=size(df, 1)),   # variable
                   vcat([df[c] for c in measure_vars]...),             # value
                   [repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
               cnames)
@@ -114,7 +114,7 @@ numeric_vars(df::AbstractDataFrame) =
 function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
                variable_name::Symbol=:variable, value_name::Symbol=:value)
     mv_inds = index(df)[measure_vars]
-    stack(df, mv_inds, setdiff(1:ncol(df), mv_inds);
+    stack(df, mv_inds, setdiff(1:size(df, 2), mv_inds);
           variable_name=variable_name, value_name=value_name)
 end
 
@@ -129,7 +129,7 @@ end
 function melt(df::AbstractDataFrame, id_vars;
               variable_name::Symbol=:variable, value_name::Symbol=:value)
     id_inds = index(df)[id_vars]
-    stack(df, setdiff(1:ncol(df), id_inds), id_inds;
+    stack(df, setdiff(1:size(df, 2), id_inds), id_inds;
           variable_name=variable_name, value_name=value_name)
 end
 function melt(df::AbstractDataFrame, id_vars, measure_vars;
@@ -200,7 +200,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     Ncol = length(keycol.pool)
     payload = DataFrame(Any[similar_nullable(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
     nowarning = true
-    for k in 1:nrow(df)
+    for k in 1:size(df, 1)
         j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
         i = Int(CategoricalArrays.order(refkeycol.pool)[refkeycol.refs[k]])
         if i > 0 && j > 0
@@ -237,7 +237,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     Ncol = length(levels(keycol))
     df2 = DataFrame(Any[similar_nullable(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
     nowarning = true
-    for k in 1:nrow(df)
+    for k in 1:size(df, 1)
         j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
         i = rowkey[k]
         if i > 0 && j > 0
@@ -451,7 +451,7 @@ function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int},
     cnames = names(df)[id_vars]
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
-    DataFrame(Any[RepeatedVector(_names(df)[measure_vars], nrow(df), 1),   # variable
+    DataFrame(Any[RepeatedVector(_names(df)[measure_vars], size(df, 1), 1),   # variable
                   StackedVector(Any[df[:,c] for c in measure_vars]),     # value
                   [RepeatedVector(df[:,c], 1, N) for c in id_vars]...],     # id_var columns
               cnames)
@@ -479,7 +479,7 @@ end
 function stackdf(df::AbstractDataFrame, measure_vars = numeric_vars(df);
                  variable_name::Symbol=:variable, value_name::Symbol=:value)
     m_inds = index(df)[measure_vars]
-    stackdf(df, m_inds, setdiff(1:ncol(df), m_inds);
+    stackdf(df, m_inds, setdiff(1:size(df, 2), m_inds);
             variable_name=variable_name, value_name=value_name)
 end
 
@@ -489,7 +489,7 @@ A stacked view of a DataFrame (long format); see `stackdf`
 function meltdf(df::AbstractDataFrame, id_vars; variable_name::Symbol=:variable,
                 value_name::Symbol=:value)
     id_inds = index(df)[id_vars]
-    stackdf(df, setdiff(1:ncol(df), id_inds), id_inds;
+    stackdf(df, setdiff(1:size(df, 2), id_inds), id_inds;
             variable_name=variable_name, value_name=value_name)
 end
 function meltdf(df::AbstractDataFrame, id_vars, measure_vars;

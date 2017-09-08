@@ -118,7 +118,7 @@ module TestCat
     vcat(df, alt_df)
 
     # Don't fail on non-matching types
-    df[1] = zeros(Int, nrow(df))
+    df[1] = zeros(Int, size(df, 1))
     vcat(df, alt_df)
 
     dfr = vcat(df4, df4)

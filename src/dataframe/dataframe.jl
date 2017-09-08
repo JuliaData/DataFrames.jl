@@ -173,9 +173,11 @@ end
 index(df::DataFrame) = df.colindex
 columns(df::DataFrame) = df.columns
 
-# TODO: Remove these
-nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1])::Int : 0
-ncol(df::DataFrame) = length(index(df))
+Base.size(df::DataFrame) = ((length(df.columns) > 0 ? length(df.columns[1]) : 0),
+                            length(index(df)))
+Base.size(df::DataFrame, i::Int) = i == 1 ? 
+    (length(df.columns) > 0 ? length(df.columns[1]) : 0) :
+    i == 2 ? length(index(df)) : throw(ArgumentError("invalid DataFrame dimension"))
 
 ##############################################################################
 ##
@@ -277,11 +279,11 @@ Base.getindex(df::DataFrame, ::Colon, ::Colon) = copy(df)
 
 isnextcol(df::DataFrame, col_ind::Symbol) = true
 function isnextcol(df::DataFrame, col_ind::Real)
-    return ncol(df) + 1 == Int(col_ind)
+    return size(df, 2) + 1 == Int(col_ind)
 end
 
 function nextcolname(df::DataFrame)
-    return Symbol(string("x", ncol(df) + 1))
+    return Symbol(string("x", size(df, 2) + 1))
 end
 
 # Will automatically add a new column if needed
@@ -289,7 +291,7 @@ function insert_single_column!(df::DataFrame,
                                dv::AbstractVector,
                                col_ind::ColumnIndex)
 
-    if ncol(df) != 0 && nrow(df) != length(dv)
+    if size(df, 2) != 0 && size(df, 1) != length(dv)
         error("New columns must have the same length as old columns")
     end
     if haskey(index(df), col_ind)
@@ -337,7 +339,7 @@ function upgrade_scalar(df::DataFrame, v::AbstractArray)
     throw(ArgumentError(msg))
 end
 function upgrade_scalar(df::DataFrame, v::Any)
-    n = (ncol(df) == 0) ? 1 : nrow(df)
+    n = (size(df, 2) == 0) ? 1 : size(df, 1)
     fill(v, n)
 end
 
@@ -346,7 +348,7 @@ function Base.setindex!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex)
     insert_single_column!(df, v, col_ind)
 end
 
-# df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(df) if NCOL(df) > 0)
+# df[SingleColumnIndex] = Single Item (EXPANDS TO size(df, 1) if size(df, 2) > 0)
 function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
         fill!(df[col_ind], v)
@@ -382,7 +384,7 @@ function Base.setindex!(df::DataFrame,
     return df
 end
 
-# df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(df) if NCOL(df) > 0)
+# df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO size(df, 1) if size(df, 2) > 0)
 function Base.setindex!(df::DataFrame,
                         val::Any,
                         col_inds::AbstractVector{Bool})
@@ -588,7 +590,7 @@ Base.setindex!(df::DataFrame, x::Void, col_ind::Int) = delete!(df, col_ind)
 Base.empty!(df::DataFrame) = (empty!(df.columns); empty!(index(df)); df)
 
 function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol)
-    0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
+    0 < col_ind <= size(df, 2) + 1 || throw(BoundsError())
     size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
 
     insert!(index(df), col_ind, name)
@@ -636,7 +638,7 @@ end
 # delete!(df, :Old)
 function Base.delete!(df::DataFrame, inds::Vector{Int})
     for ind in sort(inds, rev = true)
-        if 1 <= ind <= ncol(df)
+        if 1 <= ind <= size(df, 2)
             splice!(df.columns, ind)
             delete!(index(df), ind)
         else
@@ -650,7 +652,7 @@ Base.delete!(df::DataFrame, c::Any) = delete!(df, index(df)[c])
 
 # deleterows!()
 function deleterows!(df::DataFrame, ind::Union{Integer, UnitRange{Int}})
-    for i in 1:ncol(df)
+    for i in 1:size(df, 2)
         df.columns[i] = deleteat!(df.columns[i], ind)
     end
     df
@@ -676,7 +678,7 @@ function deleterows!(df::DataFrame, ind::AbstractVector{Int})
     end
     keep[ikeep:end] = idf:n
 
-    for i in 1:ncol(df)
+    for i in 1:size(df, 2)
         df.columns[i] = df.columns[i][keep]
     end
     df
@@ -778,7 +780,7 @@ function Base.convert(::Type{DataFrame}, d::Associative)
     else
         colnames = keys(d)
     end
-    colindex = Index(Symbol[k for k in colnames])
+    colindex = Index([Symbol(k) for k in colnames])
     columns = Any[d[c] for c in colnames]
     DataFrame(columns, colindex)
 end

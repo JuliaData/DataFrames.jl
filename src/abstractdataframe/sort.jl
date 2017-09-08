@@ -61,7 +61,7 @@ immutable DFPerm{O<:Union{Ordering, AbstractVector}, DF<:AbstractDataFrame} <: O
 end
 
 function DFPerm{O<:Ordering, DF<:AbstractDataFrame}(ords::AbstractVector{O}, df::DF)
-    if length(ords) != ncol(df)
+    if length(ords) != size(df, 2)
         error("DFPerm: number of column orderings does not equal the number of DataFrame columns")
     end
     DFPerm{typeof(ords), DF}(ords, df)
@@ -77,7 +77,7 @@ Base.@propagate_inbounds Base.getindex(o::DFPerm, i::Int, j::Int) = o.df[i, j]
 Base.@propagate_inbounds Base.getindex(o::DFPerm, a::DataFrameRow, j::Int) = a[j]
 
 function Sort.lt(o::DFPerm, a, b)
-    @inbounds for i = 1:ncol(o.df)
+    @inbounds for i = 1:size(o.df, 2)
         ord = col_ordering(o, i)
         va = o[a, i]
         vb = o[b, i]

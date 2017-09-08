@@ -45,11 +45,11 @@ module TestData
     @test size(df6, 2) == 3
 
     #test_group("null handling")
-    @test nrow(df5[completecases(df5), :]) == 3
-    @test nrow(dropnull(df5)) == 3
+    @test size(df5[completecases(df5), :], 1) == 3
+    @test size(dropnull(df5), 1) == 3
     returned = dropnull(df4)
     @test df4 == returned && df4 !== returned
-    @test nrow(dropnull!(df5)) == 3
+    @test size(dropnull!(df5), 1) == 3
     returned = dropnull!(df4)
     @test df4 == returned && df4 === returned
 

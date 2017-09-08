@@ -238,10 +238,10 @@ colwise(sum, groupby(df, :a))
 ```
 
 """
-colwise(f, d::AbstractDataFrame) = [f(d[i]) for i in 1:ncol(d)]
+colwise(f, d::AbstractDataFrame) = [f(d[i]) for i in 1:size(d, 2)]
 
 # apply several functions to each column in a DataFrame
-colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for f in fns, i in 1:ncol(d)]
+colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for f in fns, i in 1:size(d, 2)]
 colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
 colwise(f) = x -> colwise(f, x)
 

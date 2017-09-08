@@ -52,7 +52,7 @@ end
 
 # Calculate the vector of `df` rows hash values.
 function hashrows(df::AbstractDataFrame)
-    res = zeros(UInt, nrow(df))
+    res = zeros(UInt, size(df, 1))
     for col in columns(df)
         hashrows_col!(res, col)
     end
@@ -67,7 +67,7 @@ end
 #    the indices of the first row in a group
 # Optional group vector is set to the group indices of each row
 row_group_slots(df::AbstractDataFrame, groups::Union{Vector{Int}, Void} = nothing) =
-    row_group_slots(ntuple(i -> df[i], ncol(df)), hashrows(df), groups)
+    row_group_slots(ntuple(i -> df[i], size(df, 2)), hashrows(df), groups)
 
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          rhashes::AbstractVector{UInt},
@@ -110,7 +110,7 @@ end
 # Builds RowGroupDict for a given DataFrame.
 # Partly uses the code of Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
 function group_rows(df::AbstractDataFrame)
-    groups = Vector{Int}(nrow(df))
+    groups = Vector{Int}(size(df, 1))
     ngroups, rhashes, gslots = row_group_slots(df, groups)
 
     # count elements in each group
@@ -177,8 +177,8 @@ function findrows(gd::RowGroupDict,
 end
 
 function Base.getindex(gd::RowGroupDict, dfr::DataFrameRow)
-    g_row = findrow(gd, dfr.df, ntuple(i -> gd.df[i], ncol(gd.df)),
-                    ntuple(i -> dfr.df[i], ncol(dfr.df)), dfr.row)
+    g_row = findrow(gd, dfr.df, ntuple(i -> gd.df[i], size(gd.df, 2)),
+                    ntuple(i -> dfr.df[i], size(dfr.df, 2)), dfr.row)
     (g_row == 0) && throw(KeyError(dfr))
     gix = gd.groups[g_row]
     return view(gd.rperm, gd.starts[gix]:gd.stops[gix])

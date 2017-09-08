@@ -208,13 +208,13 @@ DataFrameStream(df::DataFrame) = DataFrameStream(Tuple(df.columns), string.(name
 # DataFrame Data.Source implementation
 function Data.schema(df::DataFrame)
     return Data.Schema(Type[eltype(A) for A in df.columns],
-                       string.(names(df)), length(df) == 0 ? 0 : length(df.columns[1]))
+                       string.(names(df)), size(df, 1))
 end
 
 Data.isdone(source::DataFrame, row, col, rows, cols) = row > rows || col > cols
 function Data.isdone(source::DataFrame, row, col)
-    cols = length(source)
-    return Data.isdone(source, row, col, cols == 0 ? 0 : length(df.columns[1]), cols)
+    rows, cols = size(source)
+    return Data.isdone(source, row, col, rows, cols)
 end
 
 Data.streamtype(::Type{DataFrame}, ::Type{Data.Column}) = true
