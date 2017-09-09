@@ -73,7 +73,7 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          rhashes::AbstractVector{UInt},
                          groups::Union{Vector{Int}, Void} = nothing)
     @assert groups === nothing || length(groups) == length(cols[1])
-    # inspired by Dict code from base cf. https://github.com/JuliaStats/DataFrames.jl/pull/17#discussion_r102481481
+    # inspired by Dict code from base cf. https://github.com/JuliaData/DataFrames.jl/pull/17#discussion_r102481481
     sz = Base._tablesz(length(rhashes))
     @assert sz >= length(rhashes)
     szm1 = sz-1
