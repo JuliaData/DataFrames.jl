@@ -14,13 +14,13 @@
 #                  which allows a user to specify column specific orderings
 #                  with "order(column, rev=true,...)"
 
-type UserColOrdering{T<:ColumnIndex}
+mutable struct UserColOrdering{T<:ColumnIndex}
     col::T
     kwargs
 end
 
 # This is exported, and lets a user define orderings for a particular column
-order{T<:ColumnIndex}(col::T; kwargs...) = UserColOrdering{T}(col, kwargs)
+order(col::T; kwargs...) where {T<:ColumnIndex} = UserColOrdering{T}(col, kwargs)
 
 # Allow getting the column even if it is not wrapped in a UserColOrdering
 _getcol(o::UserColOrdering) = o.col
@@ -55,23 +55,23 @@ ordering(col::ColumnIndex, lt::Function, by::Function, rev::Bool, order::Orderin
 #         the permutation induced by this ordering is used to
 #         sort the original (presumably larger) DataFrame
 
-immutable DFPerm{O<:Union{Ordering, AbstractVector}, DF<:AbstractDataFrame} <: Ordering
+struct DFPerm{O<:Union{Ordering, AbstractVector}, DF<:AbstractDataFrame} <: Ordering
     ord::O
     df::DF
 end
 
-function DFPerm{O<:Ordering, DF<:AbstractDataFrame}(ords::AbstractVector{O}, df::DF)
+function DFPerm(ords::AbstractVector{O}, df::DF) where {O<:Ordering, DF<:AbstractDataFrame}
     if length(ords) != ncol(df)
         error("DFPerm: number of column orderings does not equal the number of DataFrame columns")
     end
     DFPerm{typeof(ords), DF}(ords, df)
 end
 
-DFPerm{O<:Ordering, DF<:AbstractDataFrame}(o::O, df::DF) = DFPerm{O,DF}(o,df)
+DFPerm(o::O, df::DF) where {O<:Ordering, DF<:AbstractDataFrame} = DFPerm{O,DF}(o,df)
 
 # get ordering function for the i-th column used for ordering
-col_ordering{O<:Ordering}(o::DFPerm{O}, i::Int) = o.ord
-col_ordering{V<:AbstractVector}(o::DFPerm{V}, i::Int) = o.ord[i]
+col_ordering(o::DFPerm{O}, i::Int) where {O<:Ordering} = o.ord
+col_ordering(o::DFPerm{V}, i::Int) where {V<:AbstractVector} = o.ord[i]
 
 Base.@propagate_inbounds Base.getindex(o::DFPerm, i::Int, j::Int) = o.df[i, j]
 Base.@propagate_inbounds Base.getindex(o::DFPerm, a::DataFrameRow, j::Int) = a[j]
@@ -102,9 +102,9 @@ ordering(df::AbstractDataFrame, lt::Function, by::Function, rev::Bool, order::Or
 ######
 ## Case 1b: lt, by, rev, and order are Arrays
 ######
-function ordering{S<:Function, T<:Function}(df::AbstractDataFrame,
-                                            lt::AbstractVector{S}, by::AbstractVector{T},
-                                            rev::AbstractVector{Bool}, order::AbstractVector)
+function ordering(df::AbstractDataFrame,
+                  lt::AbstractVector{S}, by::AbstractVector{T},
+                  rev::AbstractVector{Bool}, order::AbstractVector) where {S<:Function, T<:Function}
     if !(length(lt) == length(by) == length(rev) == length(order) == size(df,2))
         throw(ArgumentError("Orderings must be specified for all DataFrame columns"))
     end
@@ -161,9 +161,9 @@ end
 ######
 # Case 3b: cols, lt, by, rev, and order are all arrays
 ######
-function ordering{S<:Function, T<:Function}(df::AbstractDataFrame, cols::AbstractVector,
-                                            lt::AbstractVector{S}, by::AbstractVector{T},
-                                            rev::AbstractVector{Bool}, order::AbstractVector)
+function ordering(df::AbstractDataFrame, cols::AbstractVector,
+                  lt::AbstractVector{S}, by::AbstractVector{T},
+                  rev::AbstractVector{Bool}, order::AbstractVector) where {S<:Function, T<:Function}
 
     if !(length(lt) == length(by) == length(rev) == length(order))
         throw(ArgumentError("All ordering arguments must be 1 or the same length."))
@@ -229,7 +229,7 @@ ordering(df::AbstractDataFrame, cols::Tuple, args...) = ordering(df, [cols...], 
 Sort.defalg(df::AbstractDataFrame) = size(df, 1) < 8192 ? Sort.MergeSort : SortingAlgorithms.TimSort
 
 # For DataFrames, we can choose the algorithm based on the column type and requested ordering
-function Sort.defalg{T<:Real}(df::AbstractDataFrame, ::Type{T}, o::Ordering)
+function Sort.defalg(df::AbstractDataFrame, ::Type{T}, o::Ordering) where T<:Real
     # If we're sorting a single numerical column in forward or reverse,
     # RadixSort will generally be the fastest stable sort
     if isbits(T) && sizeof(T) <= 8 && (o==Order.Forward || o==Order.Reverse)

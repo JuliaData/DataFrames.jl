@@ -3,11 +3,11 @@
 ##
 
 # Like similar, but returns a array that can have nulls and is initialized with nulls
-similar_nullable{T}(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) =
+similar_nullable(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
     fill!(similar(dv, Union{T, Null}, dims), null)
 
 # helper structure for DataFrames joining
-immutable DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
+struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
     dfl::DF1
     dfr::DF2
     dfl_on::DF1
@@ -20,11 +20,11 @@ immutable DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
     end
 end
 
-DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}(dfl::DF1, dfr::DF2, on::Union{Symbol,Vector{Symbol}}) =
+DataFrameJoiner(dfl::DF1, dfr::DF2, on::Union{Symbol,Vector{Symbol}}) where {DF1<:AbstractDataFrame, DF2<:AbstractDataFrame} =
     DataFrameJoiner{DF1,DF2}(dfl, dfr, on)
 
 # helper map between the row indices in original and joined table
-immutable RowIndexMap
+struct RowIndexMap
     "row indices in the original table"
     orig::Vector{Int}
     "row indices in the resulting joined table"
@@ -96,8 +96,8 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     return res
 end
 
-function fillcolumn!{T1, T2}(dfcol::AbstractVector{T1}, refcol::AbstractVector{T2},
-                             indices::Vector{Int}, offset::Int=0)
+function fillcolumn!(dfcol::AbstractVector{T1}, refcol::AbstractVector{T2},
+                     indices::Vector{Int}, offset::Int=0) where {T1, T2}
     @inbounds for (j, k) in enumerate(indices)
         dfcol[j+offset] = refcol[k]
     end

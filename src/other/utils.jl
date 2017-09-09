@@ -143,7 +143,7 @@ function countnull(a::CategoricalArray)
 end
 
 # Gets the name of a function. Used in groupeDataFrame/grouping.jl
-function _fnames{T<:Function}(fs::Vector{T})
+function _fnames(fs::Vector{T}) where T<:Function
     λcounter = 0
     names = map(fs) do f
         name = string(f)

@@ -3,7 +3,7 @@
 # through cleanly.
 abstract type AbstractIndex end
 
-type Index <: AbstractIndex   # an OrderedDict would be nice here...
+mutable struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
 end
@@ -115,10 +115,10 @@ Base.getindex(x::AbstractIndex, idx::Real) = Int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Null}}) =
     getindex(x, collect(Nulls.replace(idx, false)))
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
-Base.getindex{T >: Null}(x::AbstractIndex, idx::AbstractVector{T}) =
+Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T >: Null} =
     getindex(x, collect(Nulls.skip(idx)))
 Base.getindex(x::AbstractIndex, idx::Range) = [idx;]
-Base.getindex{T <: Real}(x::AbstractIndex, idx::AbstractVector{T}) = convert(Vector{Int}, idx)
+Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T <: Real} = convert(Vector{Int}, idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 
 # Helpers
