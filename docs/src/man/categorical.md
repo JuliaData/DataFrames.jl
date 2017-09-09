@@ -52,4 +52,4 @@ categorical!(df, [:A, :B])
 
 Using categorical arrays is important for working with the [GLM package](https://github.com/JuliaStats/GLM.jl). When fitting regression models, `CategoricalArray` columns in the input are translated into 0/1 indicator columns in the `ModelMatrix` with one column for each of the levels of the `CategoricalArray`. This allows one to analyze categorical data efficiently.
 
-See the [CategoricalArrays package](https://github.com/JuliaStats/CategoricalArrays.jl) for more information regarding categorical arrays.
+See the [CategoricalArrays package](https://github.com/JuliaData/CategoricalArrays.jl) for more information regarding categorical arrays.

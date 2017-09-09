@@ -38,7 +38,7 @@ makedocs(
 
 deploydocs(
     # options
-    repo = "github.com/JuliaStats/DataFrames.jl.git",
+    repo = "github.com/JuliaData/DataFrames.jl.git",
     target = "build",
     deps = nothing,
     make = nothing,
