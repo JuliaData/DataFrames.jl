@@ -1,7 +1,5 @@
 # Querying frameworks
 
-## Query.jl
-
 The [Query.jl](https://github.com/davidanthoff/Query.jl) package provides advanced data manipulation capabilities for `DataFrames` (and many other data structures). This section provides a short introduction to the package, the [Query.jl documentation](http://www.david-anthoff.com/Query.jl/stable/) has a more comprehensive documentation of the package.
 
 To get started, install the Query.jl package:
