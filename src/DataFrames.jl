@@ -7,7 +7,7 @@ module DataFrames
 ##
 ##############################################################################
 
-using Reexport, StatsBase, SortingAlgorithms
+using Reexport
 @reexport using CategoricalArrays, Nulls
 
 using Base: Sort, Order
@@ -33,7 +33,7 @@ export AbstractDataFrame,
        combine,
        completecases,
        deleterows!,
-       describe,
+       summarize,
        dropnull,
        dropnull!,
        eachcol,

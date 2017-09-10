@@ -136,10 +136,10 @@ tail(df)
 df[1:3, :]
 ```
 
-Having seen what some of the rows look like, we can try to summarize the entire data set using `describe`:
+Having seen what some of the rows look like, we can try to summarize the entire data set using `summarize`:
 
 ```julia
-describe(df)
+summarize(df)
 ```
 
 To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the `DataFrame`:

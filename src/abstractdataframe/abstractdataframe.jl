@@ -11,7 +11,7 @@ type in that it allows indexing by a key (the columns).
 
 The following are normally implemented for AbstractDataFrames:
 
-* [`describe`](@ref) : summarize columns
+* [`summarize`](@ref) : summarize columns
 * [`dump`](@ref) : show structure
 * `hcat` : horizontal concatenation
 * `vcat` : vertical concatenation
@@ -338,8 +338,8 @@ end
 Summarize the columns of an AbstractDataFrame
 
 ```julia
-describe(df::AbstractDataFrame)
-describe(io, df::AbstractDataFrame)
+summarize(df::AbstractDataFrame)
+summarize(io, df::AbstractDataFrame)
 ```
 
 **Arguments**
@@ -365,24 +365,51 @@ For other types, show column characteristics and number of nulls.
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-describe(df)
+summarize(df)
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame) = describe(STDOUT, df)
-function StatsBase.describe(io, df::AbstractDataFrame)
+summarize(df::AbstractDataFrame) = summarize(STDOUT, df)
+function summarize(io, df::AbstractDataFrame)
     for (name, col) in eachcol(df)
         println(io, name)
-        describe(io, col)
+        summarize(io, col)
         println(io, )
     end
 end
 
-function StatsBase.describe{T}(io::IO, X::AbstractVector{Union{T, Null}})
+function summarize(io::IO, X::AbstractVector{T}) where {T}
+    if T <: Real
+        summarystats(io, collect(X))
+    else
+        println(io, "Summary Stats:")
+    end
+    println(io, "Length:         $(length(X))")
+    println(io, "Type:           $(eltype(X))")
+    !(T <: Real) && println(io, "Number Unique:  $(length(unique(X)))")
+    return
+end
+
+function summarystats(io::IO, a::AbstractArray{T}) where T<:Real
+    m = mean(a)
+    qs = quantile(a, [0.00, 0.25, 0.50, 0.75, 1.00])
+    R = typeof(convert(AbstractFloat, zero(T)))
+    println(io, "Summary Stats:")
+    @printf(io, "Mean:           %.6f\n", convert(R, m))
+    @printf(io, "Minimum:        %.6f\n", convert(R, qs[1]))
+    @printf(io, "1st Quartile:   %.6f\n", convert(R, qs[2]))
+    @printf(io, "Median:         %.6f\n", convert(R, qs[3]))
+    @printf(io, "3rd Quartile:   %.6f\n", convert(R, qs[4]))
+    @printf(io, "Maximum:        %.6f\n", convert(R, qs[5]))
+end
+
+function summarize(io::IO, X::AbstractVector{Union{T, Null}}) where {T}
+    nullcount = count(isnull, X)
+    pnull = 100 * nullcount / length(X)
     nullcount = count(isnull, X)
     pnull = 100 * nullcount/length(X)
     if pnull != 100 && T <: Real
-        show(io, StatsBase.summarystats(collect(Nulls.skip(X))))
+        summarystats(io, collect(Nulls.skip(X)))
     else
         println(io, "Summary Stats:")
     end
