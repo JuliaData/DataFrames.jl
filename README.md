@@ -9,7 +9,6 @@ DataFrames.jl
 [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/85h1i9lll64jpg3y/branch/master?svg=true)](https://ci.appveyor.com/project/nalimilan/dataframes-jl/branch/master)
 
 Tools for working with tabular data in Julia.
-For datasets based on `NullableArray`s rather than `DataArray`s, see the [DataTables.jl](https://github.com/JuliaData/DataTables.jl) package.
 
 **Installation**: at the Julia REPL, `Pkg.add("DataFrames")`
 
