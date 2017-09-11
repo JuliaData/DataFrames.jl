@@ -61,7 +61,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Getting Started",
     "title": "Installation",
     "category": "section",
-    "text": "The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed using DataFrames to bring all of the relevant variables into your current namespace."
+    "text": "The DataFrames package is available through the Julia package system and can be installed using the following command:Pkg.add(\"DataFrames\")Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed using DataFrames to bring all of the relevant variables into your current namespace."
 },
 
 {
@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Getting Started",
     "title": "The Null Type",
     "category": "section",
-    "text": "To get started, let's examine the Null type. Null is a type implemented by Nulls.jl to represent missing data. null is an instance of the type Null used to represent a missing value.julia> using DataFrames\n\njulia> null\nnull\n\njulia> typeof(null)\nNulls.Null\nThe Null type lets users create Vectors and DataFrame columns with missing values. Here we create a vector with a null value and the element-type of the returned vector is Union{Nulls.Null, Int64}.julia> x = [1, 2, null]\n3-element Array{Union{Nulls.Null, Int64},1}:\n 1\n 2\n  null\n\njulia> eltype(x)\nUnion{Nulls.Null, Int64}\n\njulia> Union{Null, Int}\nUnion{Nulls.Null, Int64}\n\njulia> eltype(x) == Union{Null, Int}\ntrue\nnull values can be excluded when performing operations by using Nulls.skip, which returns a memory-efficient iterator.julia> Nulls.skip(x)\nBase.Generator{Base.Iterators.Filter{Nulls.##4#6{Nulls.Null},Array{Union{Nulls.Null, Int64},1}},Nulls.##3#5}(Nulls.#3, Base.Iterators.Filter{Nulls.##4#6{Nulls.Null},Array{Union{Nulls.Null, Int64},1}}(Nulls.#4, Union{Nulls.Null, Int64}[1, 2, null]))\nThe output of Nulls.skip can be passed directly into functions as an argument. For example, we can find the sum of all non-null values or collect the non-null values into a new null-free vector.julia> sum(Nulls.skip(x))\n3\n\njulia> collect(Nulls.skip(x))\n2-element Array{Int64,1}:\n 1\n 2\nnull elements can be replaced with other values via Nulls.replace.julia> collect(Nulls.replace(x, 1))\n3-element Array{Int64,1}:\n 1\n 2\n 1\nThe function Nulls.T returns the element-type T in Union{T, Null}.julia> Nulls.T(eltype(x))\nInt64\nUse nulls to generate nullable Vectors and Arrays, using the optional first argument to specify the element-type.julia> nulls(1)\n1-element Array{Nulls.Null,1}:\n null\n\njulia> nulls(3)\n3-element Array{Nulls.Null,1}:\n null\n null\n null\n\njulia> nulls(1, 3)\n1×3 Array{Nulls.Null,2}:\n null  null  null\n\njulia> nulls(Int, 1, 3)\n1×3 Array{Union{Nulls.Null, Int64},2}:\n null  null  null\n"
+    "text": "To get started, let's examine the Null type. Null is a type implemented by the Nulls.jl package to represent missing data. null is an instance of the type Null used to represent a missing value.julia> using DataFrames\n\njulia> null\nnull\n\njulia> typeof(null)\nNulls.Null\nThe Null type lets users create Vectors and DataFrame columns with missing values. Here we create a vector with a null value and the element-type of the returned vector is Union{Nulls.Null, Int64}.julia> x = [1, 2, null]\n3-element Array{Union{Nulls.Null, Int64},1}:\n 1\n 2\n  null\n\njulia> eltype(x)\nUnion{Nulls.Null, Int64}\n\njulia> Union{Null, Int}\nUnion{Nulls.Null, Int64}\n\njulia> eltype(x) == Union{Null, Int}\ntrue\nnull values can be excluded when performing operations by using Nulls.skip, which returns a memory-efficient iterator.julia> Nulls.skip(x)\nBase.Generator{Base.Iterators.Filter{Nulls.##4#6{Nulls.Null},Array{Union{Nulls.Null, Int64},1}},Nulls.##3#5}(Nulls.#3, Base.Iterators.Filter{Nulls.##4#6{Nulls.Null},Array{Union{Nulls.Null, Int64},1}}(Nulls.#4, Union{Nulls.Null, Int64}[1, 2, null]))\nThe output of Nulls.skip can be passed directly into functions as an argument. For example, we can find the sum of all non-null values or collect the non-null values into a new null-free vector.julia> sum(Nulls.skip(x))\n3\n\njulia> collect(Nulls.skip(x))\n2-element Array{Int64,1}:\n 1\n 2\nnull elements can be replaced with other values via Nulls.replace.julia> collect(Nulls.replace(x, 1))\n3-element Array{Int64,1}:\n 1\n 2\n 1\nThe function Nulls.T returns the element-type T in Union{T, Null}.julia> Nulls.T(eltype(x))\nInt64\nUse nulls to generate nullable Vectors and Arrays, using the optional first argument to specify the element-type.julia> nulls(1)\n1-element Array{Nulls.Null,1}:\n null\n\njulia> nulls(3)\n3-element Array{Nulls.Null,1}:\n null\n null\n null\n\njulia> nulls(1, 3)\n1×3 Array{Nulls.Null,2}:\n null  null  null\n\njulia> nulls(Int, 1, 3)\n1×3 Array{Union{Nulls.Null, Int64},2}:\n null  null  null\n"
 },
 
 {
@@ -85,15 +85,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Getting Started",
     "title": "Importing and Exporting Data (I/O)",
     "category": "section",
-    "text": "For reading and writing tabular data from CSV and other delimited text files, use the CSV.jl package.If you have not used the CSV.jl package before then you may need to download it first.Pkg.add(\"CSV\")The CSV.jl functions are not loaded automatically and must be imported into the session.# can be imported separately\nusing DataFrames\nusing CSV\n# or imported together, separated by commas\nusing DataFrames, CSVA dataset can now be read from a CSV file at path input usingCSV.read(input, DataFrame)Note the second positional argument of DataFrame. This instructs the CSV package to output a DataFrame rather than the default DataFrame. Keyword arguments may be passed to CSV.read after this second argument.A DataFrame can be written to a CSV file at path output usingdf = DataFrame(x = 1, y = 2)\nCSV.write(output, df)For more information, use the REPL help-mode or checkout the online CSV.jl documentation!"
+    "text": "For reading and writing tabular data from CSV and other delimited text files, use the CSV.jl package.If you have not used the CSV.jl package before then you may need to install it first:Pkg.add(\"CSV\")The CSV.jl functions are not loaded automatically and must be imported into the session.using CSVA dataset can now be read from a CSV file at path input usingCSV.read(input)A DataFrame can be written to a CSV file at path output usingdf = DataFrame(x = 1, y = 2)\nCSV.write(output, df)The behavior of CSV functions can be adapted via keyword arguments. For more information, use the REPL help-mode or checkout the online CSV.jl documentation."
 },
 
 {
-    "location": "man/getting_started.html#Accessing-Classic-Data-Sets-1",
+    "location": "man/getting_started.html#Loading-a-Classic-Data-Set-1",
     "page": "Getting Started",
-    "title": "Accessing Classic Data Sets",
+    "title": "Loading a Classic Data Set",
     "category": "section",
-    "text": "To see more of the functionality for working with DataFrame objects, we need a more complex data set to work with. We can access Fisher's iris data set using the following functions:using CSV\niris = CSV.read(joinpath(Pkg.dir(\"DataFrames\"), \"test/data/iris.csv\"), DataFrame)\nhead(iris)In the next section, we'll discuss generic I/O strategy for reading and writing DataFrame objects that you can use to import and export your own data files."
+    "text": "To see more of the functionality for working with DataFrame objects, we need a more complex data set to work with. We can access Fisher's iris data set using the following functions:using CSV\niris = CSV.read(joinpath(Pkg.dir(\"DataFrames\"), \"test/data/iris.csv\"))\nhead(iris)"
 },
 
 {
@@ -101,15 +101,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Getting Started",
     "title": "Querying DataFrames",
     "category": "section",
-    "text": "While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use the following packages for more powerful and complete data querying functionality in the spirit of dplyr and LINQ:"
-},
-
-{
-    "location": "man/getting_started.html#Querying-DataFrames-2",
-    "page": "Getting Started",
-    "title": "Querying DataFrames",
-    "category": "section",
-    "text": "While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use the following packages for more powerful and complete data querying functionality in the spirit of dplyr and LINQ:Query.jl provides a LINQ like interface to a large number of data sources, including DataFrame instances."
+    "text": "While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use the Query.jl, which provides a LINQ-like interface to a large number of data sources, including DataFrame instances. See the Querying frameworks  section for more information."
 },
 
 {
@@ -204,14 +196,6 @@ var documenterSearchIndex = {"docs": [
     "location": "man/querying_frameworks.html#Querying-frameworks-1",
     "page": "Querying frameworks",
     "title": "Querying frameworks",
-    "category": "section",
-    "text": ""
-},
-
-{
-    "location": "man/querying_frameworks.html#Query.jl-1",
-    "page": "Querying frameworks",
-    "title": "Query.jl",
     "category": "section",
     "text": "The Query.jl package provides advanced data manipulation capabilities for DataFrames (and many other data structures). This section provides a short introduction to the package, the Query.jl documentation has a more comprehensive documentation of the package.To get started, install the Query.jl package:Pkg.add(\"Query\")A query is started with the @from macro and consists of a series of query commands. Query.jl provides commands that can filter, project, join, group, flatten and group data from a DataFrame. A query can return an iterator, or one can materialize the results of a query into a variety of data structures, including a new DataFrame.A simple example of a query looks like this:using DataFrames, Queryusing DataFrames, Query\n\ndf = DataFrame(name=[\"John\", \"Sally\", \"Roger\"], age=[54., 34., 79.], children=[0, 2, 4])\n\nq1 = @from i in df begin\n     @where i.age > 40\n     @select {number_of_children=i.children, i.name}\n     @collect DataFrame\nendThe query starts with the @from macro. The first argument i is the name of the range variable that will be used to refer to an individual row in later query commands. The next argument df is the data source that one wants to query. The @where command in this query will filter the source data by applying the filter condition i.age > 40. This filters out any rows in which the age column is not larger than 40. The @select command then projects the columns of the source data onto a new column structure. The example here applies three specific modifications: 1) it only keeps a subset of the columns in the source DataFrame, i.e. the age column will not be part of the transformed data; 2) it changes the order of the two columns that are selected; and 3) it renames one of the columns that is selected from children to number_of_children. The example query uses the {} syntax to achieve this. A {} in a Query.jl expression instantiates a new NamedTuple, i.e. it is a shortcut for writing @NT(number_of_children=>i.children, name=>i.name). The @collect statement determines the data structure that the query returns. In this example the results are returned as a DataFrame.A query without a @collect statement returns a standard julia iterator that can be used with any normal julia language construct that can deal with iterators. The following code returns a julia iterator for the query results:q2 = @from i in df begin\n     @where i.age > 40\n     @select {number_of_children=i.children, i.name}\nend\nnothing # hideOne can loop over the results using a standard julia for statement:total_children = 0\nfor i in q2\n    total_children += i.number_of_children\nend\n\nprintln(\"Total number of children: $(get(total_children))\")Or one can use a comprehension to extract the name of a subset of rows:y = [i.name for i in q2 if i.number_of_children > 0]The last example (extracting only the name and applying a second filter) could of course be completely expressed as a query expression:q3 = @from i in df begin\n     @where i.age > 40 && i.children > 0\n     @select i.name\n     @collect\nendA query that ends with a @collect statement without a specific type will materialize the query results into an array. Note also the difference in the @select statement: The previous queries all used the {} syntax in the @select statement to project results into a tabular format. The last query instead just selects a single value from each row in the @select statement.These examples only scratch the surface of what one can do with Query.jl, and the interested reader is referred to the Query.jl documentation for more information."
 },
