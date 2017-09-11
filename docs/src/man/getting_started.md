@@ -2,11 +2,16 @@
 
 ## Installation
 
-The DataFrames package is available through the Julia package system. Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataFrames` to bring all of the relevant variables into your current namespace.
+The DataFrames package is available through the Julia package system and can be installed using the following command:
+```julia
+Pkg.add("DataFrames")
+```
+
+Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataFrames` to bring all of the relevant variables into your current namespace.
 
 ## The `Null` Type
 
-To get started, let's examine the `Null` type. `Null` is a type implemented by [Nulls.jl](https://github.com/JuliaData/Nulls.jl) to represent missing data. `null` is an instance of the type `Null` used to represent a missing value.
+To get started, let's examine the `Null` type. `Null` is a type implemented by the [Nulls.jl](https://github.com/JuliaData/Nulls.jl) package to represent missing data. `null` is an instance of the type `Null` used to represent a missing value.
 
 ```julia
 julia> using DataFrames
@@ -167,28 +172,20 @@ colwise(c->cumsum(Nulls.skip(c)), df)
 
 For reading and writing tabular data from CSV and other delimited text files, use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
 
-If you have not used the CSV.jl package before then you may need to download it first.
+If you have not used the CSV.jl package before then you may need to install it first:
 ```julia
 Pkg.add("CSV")
 ```
 
 The CSV.jl functions are not loaded automatically and must be imported into the session.
 ```julia
-# can be imported separately
-using DataFrames
 using CSV
-# or imported together, separated by commas
-using DataFrames, CSV
 ```
 
 A dataset can now be read from a CSV file at path `input` using
 ```julia
-CSV.read(input, DataFrame)
+CSV.read(input)
 ```
-
-Note the second positional argument of `DataFrame`. This instructs the CSV package to output
-a `DataFrame` rather than the default `DataFrame`. Keyword arguments may be passed to
-`CSV.read` after this second argument.
 
 A DataFrame can be written to a CSV file at path `output` using
 ```julia
@@ -196,26 +193,18 @@ df = DataFrame(x = 1, y = 2)
 CSV.write(output, df)
 ```
 
-For more information, use the REPL [help-mode](http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode) or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/)!
+The behavior of CSV functions can be adapted via keyword arguments. For more information, use the REPL [help-mode](http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode) or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).
 
-## Accessing Classic Data Sets
+## Loading a Classic Data Set
 
 To see more of the functionality for working with `DataFrame` objects, we need a more complex data set to work with. We can access Fisher's iris data set using the following functions:
 
 ```julia
 using CSV
-iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"), DataFrame)
+iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"))
 head(iris)
 ```
 
-In the next section, we'll discuss generic I/O strategy for reading and writing `DataFrame` objects that you can use to import and export your own data files.
-
 ## Querying DataFrames
 
-While the `DataFrames` package provides basic data manipulation capabilities, users are encouraged to use the following packages for more powerful and complete data querying functionality in the spirit of [dplyr](https://github.com/hadley/dplyr) and [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx):
-
-## Querying DataFrames
-
-While the `DataFrames` package provides basic data manipulation capabilities, users are encouraged to use the following packages for more powerful and complete data querying functionality in the spirit of [dplyr](https://github.com/hadley/dplyr) and [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx):
-
-- [Query.jl](https://github.com/davidanthoff/Query.jl) provides a LINQ like interface to a large number of data sources, including `DataFrame` instances.
+While the `DataFrames` package provides basic data manipulation capabilities, users are encouraged to use the [Query.jl](https://github.com/davidanthoff/Query.jl), which provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources, including `DataFrame` instances. See the [Querying frameworks](@ref)  section for more information.
