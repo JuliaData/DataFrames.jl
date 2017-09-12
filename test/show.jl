@@ -1,19 +1,40 @@
 module TestShow
     using Base.Test, DataFrames
 
-    df = DataFrame(A = 1:3, B = ["x", "y", "z"])
+    df = DataFrame(A = 1:4, B = ["x\"", "∀ε⫺0: x+ε⫺x", "z\$", "AB\nC"], C = Float32[1.0, 2.0, 3.0, 4.0])
+    srand(1)
+    df_big = DataFrame(rand(50,50))
 
     io = IOBuffer()
     show(io, df)
     show(io, df, true)
     showall(io, df)
-    showall(io, df, true)
+    showall(io, df, false)
+    showcols(io, df, false, false)
+    showcols(io, df, true, false)
+    showcols(io, df, false, true)
+    showcols(io, df, true, true)
+
+    show(io, df_big)
+    show(io, df_big, true)
+    showall(io, df_big)
+    showall(io, df_big, false)
+    showcols(io, df_big, false, false)
+    showcols(io, df_big, true, false)
+    showcols(io, df_big, false, true)
+    showcols(io, df_big, true, true)
+
+    df_small = DataFrame(rand(1,5))
+    showcols(df_small)
+
+    df_min = DataFrame(rand(0,5))
+    showcols(df_min)
 
     subdf = view(df, [2, 3]) # df[df[:A] .> 1.0, :]
     show(io, subdf)
     show(io, subdf, true)
     showall(io, subdf)
-    showall(io, subdf, true)
+    showall(io, subdf, false)
 
     dfvec = DataFrame[df for _=1:3]
     show(io, dfvec)
