@@ -66,7 +66,7 @@ size(df1)
 ```
 
 """
-type DataFrame <: AbstractDataFrame
+mutable struct DataFrame <: AbstractDataFrame
     columns::Vector
     colindex::Index
 
@@ -126,7 +126,7 @@ function DataFrame(columns::AbstractVector,
 end
 
 # Initialize an empty DataFrame with specific eltypes and names
-function DataFrame{T<:Type}(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol}, nrows::Integer)
+function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol}, nrows::Integer) where T<:Type
     columns = Vector{Any}(length(column_eltypes))
     for (j, elty) in enumerate(column_eltypes)
         if elty >: Null
@@ -148,8 +148,8 @@ end
 
 # Initialize an empty DataFrame with specific eltypes and names
 # and whether a nominal array should be created
-function DataFrame{T<:Type}(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-                            nominal::Vector{Bool}, nrows::Integer)
+function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                   nominal::Vector{Bool}, nrows::Integer) where T<:Type
     # upcast Vector{DataType} -> Vector{Type} which can hold CategoricalValues
     updated_types = convert(Vector{Type}, column_eltypes)
     for i in eachindex(nominal)
@@ -169,7 +169,7 @@ function DataFrame(t::Type, nrows::Integer, ncols::Integer)
 end
 
 # Initialize an empty DataFrame with specific eltypes
-function DataFrame{T<:Type}(column_eltypes::AbstractVector{T}, nrows::Integer)
+function DataFrame(column_eltypes::AbstractVector{T}, nrows::Integer) where T<:Type
     return DataFrame(column_eltypes, gennames(length(column_eltypes)), nrows)
 end
 
@@ -726,7 +726,7 @@ function nullable!(df::DataFrame, col::ColumnIndex)
     df[col] = Vector{Union{eltype(df[col]), Null}}(df[col])
     df
 end
-function nullable!{T <: ColumnIndex}(df::DataFrame, cols::Vector{T})
+function nullable!(df::DataFrame, cols::Vector{T}) where T <: ColumnIndex
     for col in cols
         nullable!(df, col)
     end

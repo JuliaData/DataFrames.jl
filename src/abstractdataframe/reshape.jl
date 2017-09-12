@@ -286,7 +286,7 @@ StackedVector(Any[[1,2], [9,10], [11,12]])  # [1,2,9,10,11,12]
 ```
 
 """
-type StackedVector <: AbstractVector{Any}
+mutable struct StackedVector <: AbstractVector{Any}
     components::Vector{Any}
 end
 
@@ -304,7 +304,7 @@ function Base.getindex(v::StackedVector,i::Real)
     v.components[j][k]
 end
 
-function Base.getindex{I<:Real}(v::StackedVector,i::AbstractVector{I})
+function Base.getindex(v::StackedVector,i::AbstractVector{I}) where I<:Real
     result = similar(v.components[1], length(i))
     for idx in 1:length(i)
         result[idx] = v[i[idx]]
@@ -353,18 +353,18 @@ RepeatedVector([1,2], 2, 2)   # [1,2,1,2,1,2,1,2]
 ```
 
 """
-type RepeatedVector{T} <: AbstractVector{T}
+mutable struct RepeatedVector{T} <: AbstractVector{T}
     parent::AbstractVector{T}
     inner::Int
     outer::Int
 end
 
-function Base.getindex{T,I<:Real}(v::RepeatedVector{T},i::AbstractVector{I})
+function Base.getindex(v::RepeatedVector{T},i::AbstractVector{I}) where {T,I<:Real}
     N = length(v.parent)
     idx = Int[Base.fld1(mod1(j,v.inner*N),v.inner) for j in i]
     v.parent[idx]
 end
-function Base.getindex{T}(v::RepeatedVector{T},i::Real)
+function Base.getindex(v::RepeatedVector{T},i::Real) where T
     N = length(v.parent)
     idx = Base.fld1(mod1(i,v.inner*N),v.inner)
     v.parent[idx]
@@ -374,7 +374,7 @@ Base.getindex(v::RepeatedVector,i::Range) = getindex(v, [i;])
 Base.size(v::RepeatedVector) = (length(v),)
 Base.length(v::RepeatedVector) = v.inner * v.outer * length(v.parent)
 Base.ndims(v::RepeatedVector) = 1
-Base.eltype{T}(v::RepeatedVector{T}) = T
+Base.eltype(v::RepeatedVector{T}) where {T} = T
 Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.inner, v.outer)
 Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
 Base.unique(v::RepeatedVector) = unique(v.parent)

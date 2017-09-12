@@ -79,7 +79,7 @@ abstract type AbstractDataFrame end
 ##
 ##############################################################################
 
-immutable Cols{T <: AbstractDataFrame} <: AbstractVector{Any}
+struct Cols{T <: AbstractDataFrame} <: AbstractVector{Any}
     df::T
 end
 Base.start(::Cols) = 1
@@ -92,7 +92,7 @@ Base.IndexStyle(::Type{<:Cols}) = IndexLinear()
 Base.getindex(itr::Cols, inds...) = getindex(itr.df, inds...)
 
 # N.B. where stored as a vector, 'columns(x) = x.vector' is a bit cheaper
-columns{T <: AbstractDataFrame}(df::T) = Cols{T}(df)
+columns(df::T) where {T <: AbstractDataFrame} = Cols{T}(df)
 
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
@@ -378,7 +378,7 @@ function StatsBase.describe(io, df::AbstractDataFrame)
     end
 end
 
-function StatsBase.describe{T}(io::IO, X::AbstractVector{Union{T, Null}})
+function StatsBase.describe(io::IO, X::AbstractVector{Union{T, Null}}) where T
     nullcount = count(isnull, X)
     pnull = 100 * nullcount/length(X)
     if pnull != 100 && T <: Real
@@ -519,10 +519,10 @@ function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
     T = reduce(promote_type, eltypes(df))
     convert(Matrix{T}, df)
 end
-function Base.convert{T}(::Type{Array{T}}, df::AbstractDataFrame)
+function Base.convert(::Type{Array{T}}, df::AbstractDataFrame) where T
     convert(Matrix{T}, df)
 end
-function Base.convert{T}(::Type{Matrix{T}}, df::AbstractDataFrame)
+function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     n, p = size(df)
     res = Matrix{T}(n, p)
     idx = 1

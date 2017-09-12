@@ -14,7 +14,7 @@ view into the AbstractDataFrame grouped by rows.
 
 Not meant to be constructed directly, see `groupby`.
 """
-type GroupedDataFrame
+mutable struct GroupedDataFrame
     parent::AbstractDataFrame
     cols::Vector         # columns used for sorting
     idx::Vector{Int}     # indexing vector when sorted by the given columns
@@ -79,7 +79,7 @@ df |> groupby([:a, :b]) |> [sum, length]
 ```
 
 """
-function groupby{T}(df::AbstractDataFrame, cols::Vector{T}; sort::Bool = false)
+function groupby(df::AbstractDataFrame, cols::Vector{T}; sort::Bool = false) where T
     sdf = df[cols]
     df_groups = group_rows(sdf)
     # sort the groups
@@ -94,7 +94,7 @@ end
 groupby(d::AbstractDataFrame, cols; sort::Bool = false) = groupby(d, [cols], sort = sort)
 
 # add a function curry
-groupby{T}(cols::Vector{T}; sort::Bool = false) = x -> groupby(x, cols, sort = sort)
+groupby(cols::Vector{T}; sort::Bool = false) where {T} = x -> groupby(x, cols, sort = sort)
 groupby(cols; sort::Bool = false) = x -> groupby(x, cols, sort = sort)
 
 Base.start(gd::GroupedDataFrame) = 1
@@ -138,7 +138,7 @@ Not meant to be constructed directly, see `groupby` abnd
 provided for a GroupApplied object.
 
 """
-immutable GroupApplied{T<:AbstractDataFrame}
+struct GroupApplied{T<:AbstractDataFrame}
     gd::GroupedDataFrame
     vals::Vector{T}
 
@@ -341,14 +341,14 @@ df |> groupby(:a) |> [sum, x->mean(Nulls.skip(x))]   # equivalent
 
 """
 aggregate(d::AbstractDataFrame, fs::Function; sort::Bool=false) = aggregate(d, [fs], sort=sort)
-function aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}; sort::Bool=false)
+function aggregate(d::AbstractDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Function
     headers = _makeheaders(fs, _names(d))
     _aggregate(d, fs, headers, sort)
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 aggregate(gd::GroupedDataFrame, f::Function; sort::Bool=false) = aggregate(gd, [f], sort=sort)
-function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false)
+function aggregate(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Function
     headers = _makeheaders(fs, setdiff(_names(gd), gd.cols))
     res = combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
     sort && sort!(res, cols=headers)
@@ -356,22 +356,22 @@ function aggregate{T<:Function}(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=
 end
 
 (|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, fs)
-(|>){T<:Function}(gd::GroupedDataFrame, fs::Vector{T}) = aggregate(gd, fs)
+(|>)(gd::GroupedDataFrame, fs::Vector{T}) where {T<:Function} = aggregate(gd, fs)
 
 # Groups DataFrame by cols before applying aggregate
-function aggregate{S<:ColumnIndex, T <:Function}(d::AbstractDataFrame,
-                                                 cols::Union{S, AbstractVector{S}},
-                                                 fs::Union{T, Vector{T}};
-                                                 sort::Bool=false)
+function aggregate(d::AbstractDataFrame,
+                   cols::Union{S, AbstractVector{S}},
+                   fs::Union{T, Vector{T}};
+                   sort::Bool=false) where {S<:ColumnIndex, T <:Function}
     aggregate(groupby(d, cols, sort=sort), fs)
 end
 
-function _makeheaders{T<:Function}(fs::Vector{T}, cn::Vector{Symbol})
+function _makeheaders(fs::Vector{T}, cn::Vector{Symbol}) where T<:Function
     fnames = _fnames(fs) # see other/utils.jl
     [Symbol(colname,'_',fname) for fname in fnames for colname in cn]
 end
 
-function _aggregate{T<:Function}(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false)
+function _aggregate(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false) where T<:Function
     res = DataFrame(Any[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers)
     sort && sort!(res, cols=headers)
     res

@@ -1,5 +1,5 @@
 # Container for a DataFrame row
-immutable DataFrameRow{T <: AbstractDataFrame}
+struct DataFrameRow{T <: AbstractDataFrame}
     df::T
     row::Int
 end

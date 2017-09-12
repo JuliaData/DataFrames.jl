@@ -1,7 +1,7 @@
 # Rows grouping.
 # Maps row contents to the indices of all the equal rows.
 # Used by groupby(), join(), nonunique()
-immutable RowGroupDict{T<:AbstractDataFrame}
+struct RowGroupDict{T<:AbstractDataFrame}
     "source data table"
     df::T
     "number of groups"
@@ -30,7 +30,7 @@ function hashrows_col!(h::Vector{UInt}, v::AbstractVector)
 end
 
 # should give the same hash as AbstractVector{T}
-function hashrows_col!{T}(h::Vector{UInt}, v::AbstractCategoricalVector{T})
+function hashrows_col!(h::Vector{UInt}, v::AbstractCategoricalVector{T}) where T
     # TODO is it possible to optimize by hashing the pool values once?
     @inbounds for (i, ref) in enumerate(v.refs)
         h[i] = hash(CategoricalArrays.index(v.pool)[ref], h[i])
