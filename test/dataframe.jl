@@ -93,6 +93,7 @@ module TestDataFrame
     @test empty!(df) === df
     @test isempty(df.columns)
     @test isempty(df)
+    @test isempty(DataFrame(a=[], b=[]))
 
     df = DataFrame(a=Union{Int, Null}[1, 2], b=Union{Float64, Null}[3.0, 4.0])
     @test_throws BoundsError insert!(df, 5, ["a", "b"], :newcol)

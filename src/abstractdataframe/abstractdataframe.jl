@@ -254,7 +254,7 @@ end
 
 Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
 Base.get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
-Base.isempty(df::AbstractDataFrame) = ncol(df) == 0
+Base.isempty(df::AbstractDataFrame) = size(df, 2) == 0 || size(df, 1) == 0
 
 ##############################################################################
 ##
