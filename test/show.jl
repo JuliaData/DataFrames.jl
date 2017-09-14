@@ -1,20 +1,59 @@
 module TestShow
     using Base.Test, DataFrames
 
-    df = DataFrame(A = 1:4, B = ["x\"", "∀ε⫺0: x+ε⫺x", "z\$", "AB\nC"], C = Float32[1.0, 2.0, 3.0, 4.0])
+    # In the future newline characte \n should be added to this test case
+    df = DataFrame(A = 1:4, B = ["x\"", "∀ε⫺0: x+ε⫺x", "z\$", "ABC"],
+                   C = Float32[1.0, 2.0, 3.0, 4.0])
     srand(1)
     df_big = DataFrame(rand(50,50))
 
-    io = IOBuffer()
-    show(io, df)
-    show(io, df, true)
-    showall(io, df)
-    showall(io, df, false)
-    showcols(io, df, false, false)
-    showcols(io, df, true, false)
-    showcols(io, df, false, true)
-    showcols(io, df, true, true)
+    refstr = """
+    4×3 DataFrames.DataFrame
+    │ Row │ A │ B             │ C   │
+    ├─────┼───┼───────────────┼─────┤
+    │ 1   │ 1 │ x\"            │ 1.0 │
+    │ 2   │ 2 │ ∀ε⫺0: x+ε⫺x │ 2.0 │
+    │ 3   │ 3 │ z\$            │ 3.0 │
+    │ 4   │ 4 │ ABC           │ 4.0 │"""
 
+    for f in [show, showall], allcols in [true, false]
+        io = IOBuffer()
+        f(io, df, allcols)
+        str = String(take!(io))
+        @test str == refstr
+    end
+
+    refstr = """
+    4×3 DataFrames.DataFrame
+    
+    │ Col # │ Name │ Eltype  │ Missing │
+    ├───────┼──────┼─────────┼─────────┤
+    │ 1     │ A    │ Int64   │ 0       │
+    │ 2     │ B    │ String  │ 0       │
+    │ 3     │ C    │ Float32 │ 0       │"""
+    for a in [true, false]
+        io = IOBuffer()
+        showcols(io, df, a, false)
+        str = String(take!(io))
+        @test str == refstr
+    end
+
+    refstr = """
+    4×3 DataFrames.DataFrame
+    
+    │ Col # │ Name │ Eltype  │ Missing │ Values          │
+    ├───────┼──────┼─────────┼─────────┼─────────────────┤
+    │ 1     │ A    │ Int64   │ 0       │ 1  …  4         │
+    │ 2     │ B    │ String  │ 0       │ \"x\\\"\"  …  \"ABC\" │
+    │ 3     │ C    │ Float32 │ 0       │ 1.0  …  4.0     │"""
+    for a in [true, false]
+        io = IOBuffer()
+        showcols(io, df, a, true)
+        str = String(take!(io))
+        @test str == refstr
+    end
+
+    io = IOBuffer()
     show(io, df_big)
     show(io, df_big, true)
     showall(io, df_big)
@@ -24,11 +63,35 @@ module TestShow
     showcols(io, df_big, false, true)
     showcols(io, df_big, true, true)
 
-    df_small = DataFrame(rand(1,5))
-    showcols(df_small)
+    io = IOBuffer()
+    df_small = DataFrame([1.0:5.0;])
+    showcols(io, df_small)
+    str = String(take!(io))
+    @test str == """
+    1×5 DataFrames.DataFrame
+    
+    │ Col # │ Name │ Eltype  │ Missing │ Values │
+    ├───────┼──────┼─────────┼─────────┼────────┤
+    │ 1     │ x1   │ Float64 │ 0       │ 1.0    │
+    │ 2     │ x2   │ Float64 │ 0       │ 2.0    │
+    │ 3     │ x3   │ Float64 │ 0       │ 3.0    │
+    │ 4     │ x4   │ Float64 │ 0       │ 4.0    │
+    │ 5     │ x5   │ Float64 │ 0       │ 5.0    │"""
 
+    io = IOBuffer()
     df_min = DataFrame(rand(0,5))
-    showcols(df_min)
+    showcols(io, df_min)
+    str = String(take!(io))
+    @test str == """
+    0×5 DataFrames.DataFrame
+    
+    │ Col # │ Name │ Eltype  │ Missing │
+    ├───────┼──────┼─────────┼─────────┤
+    │ 1     │ x1   │ Float64 │ 0       │
+    │ 2     │ x2   │ Float64 │ 0       │
+    │ 3     │ x3   │ Float64 │ 0       │
+    │ 4     │ x4   │ Float64 │ 0       │
+    │ 5     │ x5   │ Float64 │ 0       │"""
 
     subdf = view(df, [2, 3]) # df[df[:A] .> 1.0, :]
     show(io, subdf)

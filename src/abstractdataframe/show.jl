@@ -318,7 +318,7 @@ function showrows(io::IO,
                   maxwidths::Vector{Int},
                   splitchunks::Bool = false,
                   allcols::Bool = true,
-                  rowlabel::Symbol = Symbol("Row"),
+                  rowlabel::Symbol = :Row,
                   displaysummary::Bool = true) # -> Void
     ncols = size(df, 2)
 
@@ -439,7 +439,7 @@ end
 function Base.show(io::IO,
                    df::AbstractDataFrame,
                    allcols::Bool = false,
-                   rowlabel::Symbol = Symbol("Row"),
+                   rowlabel::Symbol = :Row,
                    displaysummary::Bool = true) # -> Void
     nrows = size(df, 1)
     dsize = displaysize(io)
@@ -514,7 +514,7 @@ end
 function Base.showall(io::IO,
                       df::AbstractDataFrame,
                       allcols::Bool = true,
-                      rowlabel::Symbol = Symbol("Row"),
+                      rowlabel::Symbol = :Row,
                       displaysummary::Bool = true) # -> Void
     rowindices1 = 1:size(df, 1)
     rowindices2 = 1:0
@@ -562,33 +562,35 @@ end
 #'
 #' @param io::IO The `io` to be rendered to.
 #' @param df::AbstractDataFrame An AbstractDataFrame.
-#' @param allcols::Bool If `false` (default), only a subset of columns
+#' @param all::Bool If `false` (default), only a subset of columns
 #'        fitting on the screen is printed.
-#' @param values::Bool If `true` (default), first and last value of
-#'        each column is printed.
+#' @param values::Bool If `true` (default), the first and the last value of
+#'        each column are printed.
 #'
 #' @returns o::Void A `nothing` value.
 #'
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' showcols(STDOUT, df)
-function showcols(io::IO, df::AbstractDataFrame, allcols::Bool = false, values::Bool = true) # -> Void
+#' showcols(df)
+function showcols(io::IO, df::AbstractDataFrame, all::Bool = false,
+                  values::Bool = true) # -> Void
     println(io, summary(df))
     metadata = DataFrame(Name = _names(df),
                          Eltype = eltypes(df),
                          Missing = colmissing(df))
     nrows, ncols = size(df)
     if values && nrows > 0
+        # type of Values column is now String; it might need to be changed
+        # if the way strings are printed in data frames changes
         if nrows == 1
-            metadata[:Values] = [Symbol(sprint(showcompact, df[1, i])) for i in 1:ncols]
+            metadata[:Values] = [sprint(showcompact, df[1, i]) for i in 1:ncols]
         else
-            metadata[:Values] = [Symbol(sprint(showcompact, df[1, i]),
-                                        "  …  ",
-                                        sprint(showcompact, df[end, i])) for i in 1:ncols]
+            metadata[:Values] = [sprint(showcompact, df[1, i]) * "  …  " *
+                                 sprint(showcompact, df[end, i]) for i in 1:ncols]
         end
     end
-    (allcols?showall:show)(io, metadata, true, Symbol("Col #"), false)
+    (all?showall:show)(io, metadata, true, Symbol("Col #"), false)
     return
 end
 
