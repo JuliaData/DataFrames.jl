@@ -230,6 +230,8 @@ Data.streamtypes(::Type{DataFrame}) = [Data.Column, Data.Field]
 Data.weakrefstrings(::Type{DataFrame}) = true
 
 allocate(::Type{T}, rows, ref) where {T} = Vector{T}(rows)
+allocate(::Type{T}, rows, ref) where {T <: Union{CategoricalValue, Null}} =
+    CategoricalArray{CategoricalArrays.unwrap_catvalue_type(T)}(rows)
 allocate(::Type{T}, rows, ref) where {T <: Union{WeakRefString, Null}} =
     WeakRefStringArray(ref, T, rows)
 
