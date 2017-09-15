@@ -23,7 +23,6 @@ module TestShow
 
     refstr = """
     4×3 DataFrames.DataFrame
-    
     │ Col # │ Name │ Eltype  │ Missing │
     ├───────┼──────┼─────────┼─────────┤
     │ 1     │ A    │ Int64   │ 0       │
@@ -38,7 +37,6 @@ module TestShow
 
     refstr = """
     4×3 DataFrames.DataFrame
-    
     │ Col # │ Name │ Eltype  │ Missing │ Values      │
     ├───────┼──────┼─────────┼─────────┼─────────────┤
     │ 1     │ A    │ Int64   │ 0       │ 1  …  4     │
@@ -156,7 +154,6 @@ module TestShow
     str = String(take!(io.io))
     @test str == """
     25×5 DataFrames.DataFrame
-    
     │ Col # │ Name │ Eltype  │ Missing │
     ├───────┼──────┼─────────┼─────────┤
     │ 1     │ x1   │ Float64 │ 0       │
@@ -170,7 +167,6 @@ module TestShow
     str = String(take!(io.io))
     @test str == """
     25×5 DataFrames.DataFrame
-    
     │ Col # │ Name │ Eltype  │ Missing │
     ├───────┼──────┼─────────┼─────────┤
     │ 1     │ x1   │ Float64 │ 0       │
@@ -184,7 +180,6 @@ module TestShow
     str = String(take!(io.io))
     @test str == """
     25×5 DataFrames.DataFrame
-    
     │ Col # │ Name │ Eltype  │ Missing │
     ├───────┼──────┼─────────┼─────────┤
     │ 1     │ x1   │ Float64 │ 0       │
@@ -206,7 +201,6 @@ module TestShow
     str = String(take!(io.io))
     @test str == """
     25×5 DataFrames.DataFrame
-    
     │ Col # │ Name │ Eltype  │ Missing │ Values                │
     ├───────┼──────┼─────────┼─────────┼───────────────────────┤
     │ 1     │ x1   │ Float64 │ 0       │ 0.236033  …  0.751313 │
@@ -221,7 +215,6 @@ module TestShow
     str = String(take!(io))
     @test str == """
     1×5 DataFrames.DataFrame
-    
     │ Col # │ Name │ Eltype  │ Missing │ Values │
     ├───────┼──────┼─────────┼─────────┼────────┤
     │ 1     │ x1   │ Float64 │ 0       │ 1.0    │
@@ -236,7 +229,6 @@ module TestShow
     str = String(take!(io))
     @test str == """
     0×5 DataFrames.DataFrame
-    
     │ Col # │ Name │ Eltype  │ Missing │
     ├───────┼──────┼─────────┼─────────┤
     │ 1     │ x1   │ Float64 │ 0       │
@@ -288,7 +280,6 @@ module TestShow
     str = String(take!(io))
     @test str == """
     2×2 DataFrames.DataFrame
-
     │ Col # │ Name │ Eltype                     │ Missing │ Values        │
     ├───────┼──────┼────────────────────────────┼─────────┼───────────────┤
     │ 1     │ Fish │ String                     │ 0       │ Suzy  …  Amir │

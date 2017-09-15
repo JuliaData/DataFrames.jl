@@ -576,7 +576,7 @@ end
 #' showcols(df)
 function showcols(io::IO, df::AbstractDataFrame, all::Bool = false,
                   values::Bool = true) # -> Void
-    println(io, summary(df))
+    print(io, summary(df))
     metadata = DataFrame(Name = _names(df),
                          Eltype = eltypes(df),
                          Missing = colmissing(df))
