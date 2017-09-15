@@ -99,6 +99,10 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol) # -> Vector{Int}
+    # TODO: correct calculation of width for the cases:
+    # 1) DataFrame(a=["∀ε⫺0: x+ε⫺x"])
+    # 2) DataFrame(a=[[1:30;]])
+    # 3) decide how '\r', '\n', '\t' characters should be handled in strings
     maxwidths = Vector{Int}(size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(Base.undef_ref_str)
@@ -298,7 +302,7 @@ end
 #' @param splitchunks::Bool Should the printing of the AbstractDataFrame
 #'        be done in chunks? Defaults to `false`.
 #' @param allcols::Bool Should only one chunk be printed if printing in
-#'        chunks? Defaults to `false`.
+#'        chunks? Defaults to `true`.
 #' @param rowlabel::Symbol What label should be printed when rendering the
 #'        numeric ID's of each row? Defaults to `"Row"`.
 #' @param displaysummary::Bool Should a brief string summary of the
@@ -331,10 +335,7 @@ function showrows(io::IO,
 
     rowmaxwidth = maxwidths[ncols + 1]
     chunkbounds = getchunkbounds(maxwidths, splitchunks, displaysize(io)[2])
-    nchunks = length(chunkbounds) - 1
-    if !allcols
-        nchunks = min(nchunks, 1)
-    end
+    nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
 
     header = displaysummary ? summary(df) : ""
     if !allcols && length(chunkbounds) > 2
@@ -581,13 +582,11 @@ function showcols(io::IO, df::AbstractDataFrame, all::Bool = false,
                          Missing = colmissing(df))
     nrows, ncols = size(df)
     if values && nrows > 0
-        # type of Values column is now String; it might need to be changed
-        # if the way strings are printed in data frames changes
         if nrows == 1
-            metadata[:Values] = [sprint(showcompact, df[1, i]) for i in 1:ncols]
+            metadata[:Values] = [sprint(ourshowcompact, df[1, i]) for i in 1:ncols]
         else
-            metadata[:Values] = [sprint(showcompact, df[1, i]) * "  …  " *
-                                 sprint(showcompact, df[end, i]) for i in 1:ncols]
+            metadata[:Values] = [sprint(ourshowcompact, df[1, i]) * "  …  " *
+                                 sprint(ourshowcompact, df[end, i]) for i in 1:ncols]
         end
     end
     (all?showall:show)(io, metadata, true, Symbol("Col #"), false)
@@ -601,7 +600,7 @@ end
 #' count.
 #'
 #' @param df::AbstractDataFrame An AbstractDataFrame.
-#' @param allcols::Bool If `false` (default), only a subset of columns
+#' @param all::Bool If `false` (default), only a subset of columns
 #'        fitting on the screen is printed.
 #' @param values::Bool If `true` (default), first and last value of
 #'        each column is printed.
@@ -612,7 +611,6 @@ end
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showcols(df)
-function showcols(df::AbstractDataFrame, allcols::Bool=false, values::Bool=true)
-    showcols(STDOUT, df, allcols, values) # -> Void
+function showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true)
+    showcols(STDOUT, df, all, values) # -> Void
 end
-
