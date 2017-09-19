@@ -19,7 +19,7 @@ module TestUtils
     if isfile(f)
         r1 = r"define initial-reserved-words '\(([^)]+)"
         r2 = r"define \(parse-block s(?: \([^)]+\))?\)\s+\(parse-Nary s (?:parse-eq '\([^(]*|down '\([^)]+\) '[^']+ ')\(([^)]+)"
-        body = readstring(f)
+        body = read(f, String)
         m1, m2 = match(r1, body), match(r2, body)
         if m1 == nothing || m2 == nothing
             error("Unable to extract keywords from 'julia-parser.scm'.")
@@ -159,7 +159,8 @@ module TestUtils
                            CategoricalArray{Union{Int, Null}}(4:7)],
                        [:arr, :nullarr, :cat, :nullcat])
         describe(io, df)
-        @test String(take!(io)) ==
+        # Julia 0.7
+        nullfirst =
             """
             arr
             Summary Stats:
@@ -181,7 +182,7 @@ module TestUtils
             3rd Quartile:   4.250000
             Maximum:        5.000000
             Length:         4
-            Type:           Union{$Int, Nulls.Null}
+            Type:           Union{Nulls.Null, $Int}
             Number Missing: 0
             % Missing:      0.000000
 
@@ -194,11 +195,55 @@ module TestUtils
             nullcat
             Summary Stats:
             Length:         4
-            Type:           Union{CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}, Nulls.Null}
+            Type:           Union{Nulls.Null, CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}}
             Number Unique:  4
             Number Missing: 0
             % Missing:      0.000000
 
             """
+        # Julia 0.6
+        nullsecond =
+            """
+            arr
+            Summary Stats:
+            Mean:           2.500000
+            Minimum:        1.000000
+            1st Quartile:   1.750000
+            Median:         2.500000
+            3rd Quartile:   3.250000
+            Maximum:        4.000000
+            Length:         4
+            Type:           $Int
+
+            nullarr
+            Summary Stats:
+            Mean:           3.500000
+            Minimum:        2.000000
+            1st Quartile:   2.750000
+            Median:         3.500000
+            3rd Quartile:   4.250000
+            Maximum:        5.000000
+            Length:         4
+            Type:           Union{Nulls.Null, $Int}
+            Number Missing: 0
+            % Missing:      0.000000
+
+            cat
+            Summary Stats:
+            Length:         4
+            Type:           CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}
+            Number Unique:  4
+
+            nullcat
+            Summary Stats:
+            Length:         4
+            Type:           Union{Nulls.Null, CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}}
+            Number Unique:  4
+            Number Missing: 0
+            % Missing:      0.000000
+
+            """
+            out = String(take!(io))
+            @test (out == nullfirst || out == nullsecond)
     end
 end
