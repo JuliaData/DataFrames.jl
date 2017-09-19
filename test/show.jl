@@ -273,7 +273,7 @@ module TestShow
     │ Row │ Fish │ Mass │
     ├─────┼──────┼──────┤
     │ 1   │ Suzy │ 1.5  │
-    │ 2   │ Amir │ null │"""
+    │ 2   │ Amir │*null │"""
 
     io = IOBuffer()
     showcols(io, df)
@@ -284,6 +284,32 @@ module TestShow
     ├───────┼──────┼────────────────────────────┼─────────┼───────────────┤
     │ 1     │ Fish │ String                     │ 0       │ Suzy  …  Amir │
     │ 2     │ Mass │ Union{Float64, Nulls.Null} │ 1       │ 1.5  …  null  │"""
+
+    # Test showing null
+    df = DataFrame(A=[:Symbol, null, :null],
+                   B=[null, "String", "null"],
+                   C=[:null, "null", null])
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    3×3 DataFrames.DataFrame
+    │ Row │ A      │ B      │ C    │
+    ├─────┼────────┼────────┼──────┤
+    │ 1   │ Symbol │*null   │ null │
+    │ 2   │*null   │ String │ null │
+    │ 3   │ null   │ null   │*null │"""
+
+    io = IOBuffer()
+    showcols(io, df)
+    str = String(take!(io))
+    @test str == """
+    3×3 DataFrames.DataFrame
+    │ Col # │ Name │ Eltype                    │ Missing │ Values          │
+    ├───────┼──────┼───────────────────────────┼─────────┼─────────────────┤
+    │ 1     │ A    │ Union{Nulls.Null, Symbol} │ 1       │ Symbol  …  null │
+    │ 2     │ B    │ Union{Nulls.Null, String} │ 1       │ null  …  null   │
+    │ 3     │ C    │ Any                       │ 1       │ null  …  null   │"""
 
     # Test computing width for Array{String} columns
     df = DataFrame(Any[["a"]], [:x])

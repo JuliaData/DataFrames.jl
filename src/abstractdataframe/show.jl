@@ -253,9 +253,10 @@ function showrowindices(io::IO,
         for _ in 1:padding
             write(io, ' ')
         end
-        print(io, " │ ")
+        print(io, " │")
         # Print DataFrame entry
         for j in leftcol:rightcol
+            print(io, isnull(df[i,j]) ? "*" : " ")
             strlen = 0
             try
                 strlen = ourstrwidth(df[i, j])
@@ -275,7 +276,7 @@ function showrowindices(io::IO,
                     print(io, " │\n")
                 end
             else
-                print(io, " │ ")
+                print(io, " │")
             end
         end
     end
