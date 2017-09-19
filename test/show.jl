@@ -2,7 +2,7 @@ module TestShow
     using Base.Test, DataFrames
 
     # In the future newline characte \n should be added to this test case
-    df = DataFrame(A = 1:4, B = ["x\"", "∀ε⫺0: x+ε⫺x", "z\$", "ABC"],
+    df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε⫺0: x+ε⫺x", "z\$", "ABC"],
                    C = Float32[1.0, 2.0, 3.0, 4.0])
 
     refstr = """
