@@ -230,8 +230,10 @@ Data.streamtypes(::Type{DataFrame}) = [Data.Column, Data.Field]
 Data.weakrefstrings(::Type{DataFrame}) = true
 
 allocate(::Type{T}, rows, ref) where {T} = Vector{T}(rows)
-allocate(::Type{T}, rows, ref) where {T <: Union{CategoricalValue, Null}} =
-    CategoricalArray{CategoricalArrays.unwrap_catvalue_type(T)}(rows)
+allocate(::Type{CategoricalValue{T, R}}, rows, ref) where {T, R} =
+    CategoricalArray{T, 1, R}(rows)
+allocate(::Type{Union{Null, CategoricalValue{T, R}}}, rows, ref) where {T, R} =
+    CategoricalArray{Union{Null, T}, 1, R}(rows)
 allocate(::Type{T}, rows, ref) where {T <: Union{WeakRefString, Null}} =
     WeakRefStringArray(ref, T, rows)
 
@@ -295,8 +297,13 @@ DataFrame(sink, sch::Data.Schema, ::Type{S}, append::Bool;
 @inline Data.streamto!(sink::DataFrameStream, ::Type{Data.Field}, val,
                        row, col::Int, ::Type{Val{true}}) =
     sink.columns[col][row] = val
-@inline Data.streamto!(sink::DataFrameStream, ::Type{Data.Column}, column,
-                       row, col::Int, knownrows) =
+@inline function Data.streamto!(sink::DataFrameStream, ::Type{Data.Column}, column,
+                       row, col::Int, knownrows)
+    # @show sink.columns[col]
+    # @show column
     append!(sink.columns[col], column)
+    # @show sink.columns[col]
+end
+    
 
 Data.close!(df::DataFrameStream) = DataFrame(collect(Any, df.columns), Symbol.(df.header))
