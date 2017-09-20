@@ -58,7 +58,7 @@ ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Void
 ourshowcompact(io::IO, x::AbstractString) = escape_string(io, x, "") # -> Void
 ourshowcompact(io::IO, x::Symbol) = ourshowcompact(io, string(x)) # -> Void
 ourshowcompact(io::IO, x::CategoricalValue{<:AbstractString}) =
-    ourshowcompact(io, string(x)) # -> Void
+    ourshowcompact(io, String(x)) # -> Void
 
 #' @description
 #'

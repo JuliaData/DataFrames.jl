@@ -268,12 +268,17 @@ module TestShow
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
-    @test str == """
+    @test str == (Base.have_color ? """
     2×2 DataFrames.DataFrame
     │ Row │ Fish │ Mass │
     ├─────┼──────┼──────┤
     │ 1   │ Suzy │ 1.5  │
-    │ 2   │ Amir │ \e[93mnull\e[39m │"""
+    │ 2   │ Amir │ \e[93mnull\e[39m │""" : """
+    2×2 DataFrames.DataFrame
+    │ Row │ Fish │ Mass │
+    ├─────┼──────┼──────┤
+    │ 1   │ Suzy │ 1.5  │
+    │ 2   │ Amir │ null │""")
 
     io = IOBuffer()
     showcols(io, df)
@@ -292,13 +297,19 @@ module TestShow
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
-    @test str == """
+    @test str == (Base.have_color ? """
     3×3 DataFrames.DataFrame
     │ Row │ A      │ B      │ C    │
     ├─────┼────────┼────────┼──────┤
     │ 1   │ Symbol │ \e[93mnull\e[39m   │ null │
     │ 2   │ \e[93mnull\e[39m   │ String │ null │
-    │ 3   │ null   │ null   │ \e[93mnull\e[39m │"""
+    │ 3   │ null   │ null   │ \e[93mnull\e[39m │""" : """
+    3×3 DataFrames.DataFrame
+    │ Row │ A      │ B      │ C    │
+    ├─────┼────────┼────────┼──────┤
+    │ 1   │ Symbol │ null   │ null │
+    │ 2   │ null   │ String │ null │
+    │ 3   │ null   │ null   │ null │""")
 
     io = IOBuffer()
     showcols(io, df)
