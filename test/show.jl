@@ -291,9 +291,9 @@ module TestShow
     │ 2     │ Mass │ Union{Float64, Nulls.Null} │ 1       │ 1.5  …  null  │"""
 
     # Test showing null
-    df = DataFrame(A=[:Symbol, null, :null],
-                   B=[null, "String", "null"],
-                   C=[:null, "null", null])
+    df = DataFrame(A = [:Symbol, null, :null],
+                   B = [null, "String", "null"],
+                   C = [:null, "null", null])
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))

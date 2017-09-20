@@ -57,8 +57,6 @@ end
 ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Void
 ourshowcompact(io::IO, x::AbstractString) = escape_string(io, x, "") # -> Void
 ourshowcompact(io::IO, x::Symbol) = ourshowcompact(io, string(x)) # -> Void
-ourshowcompact(io::IO, x::CategoricalValue{<:AbstractString}) =
-    ourshowcompact(io, String(x)) # -> Void
 
 #' @description
 #'
@@ -251,7 +249,7 @@ function showrowindices(io::IO,
                 s = df[i, j]
                 strlen = ourstrwidth(s)
                 if isnull(s)
-                    print_with_color(:light_yellow, io, s)
+                    print_with_color(:light_black, io, s)
                 else
                     ourshowcompact(io, s)
                 end
