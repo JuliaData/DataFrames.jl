@@ -236,6 +236,7 @@ allocate(::Type{Union{Null, CategoricalValue{T, R}}}, rows, ref) where {T, R} =
     CategoricalArray{Union{Null, T}, 1, R}(rows)
 allocate(::Type{T}, rows, ref) where {T <: Union{WeakRefString, Null}} =
     WeakRefStringArray(ref, T, rows)
+allocate(::Type{Null}, rows, ref) = nulls(rows)
 
 # Construct or modify a DataFrame to be ready to stream data from a source with `sch`
 function DataFrame(sch::Data.Schema{R}, ::Type{S}=Data.Field,
