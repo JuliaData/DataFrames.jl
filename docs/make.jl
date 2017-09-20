@@ -9,7 +9,7 @@ makedocs(
     doctest = true,
     clean = false,
     sitename = "DataFrames.jl",
-    format = Documenter.Formats.HTML,
+    format = :html,
     pages = Any[
         "Introduction" => "index.md",
         "User Guide" => Any[
