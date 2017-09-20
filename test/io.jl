@@ -16,7 +16,7 @@ module TestIO
         \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 & a \\\\
         \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 &  \\\\
         \t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  & c \\\\
-        \t4 & 4 & \\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d \\\\
+        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d \\\\
         \\end{tabular}
         """
     @test reprmime(MIME("text/latex"), df) == str
