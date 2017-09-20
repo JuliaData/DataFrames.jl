@@ -35,14 +35,8 @@ let
     function ourstrwidth(x::Any) # -> Int
         truncate(io, 0)
         ourshowcompact(io, x)
-        return position(io)
+        strwidth(String(take!(io)))
     end
-    ourstrwidth(x::AbstractString) = strwidth(x) # -> Int
-    ourstrwidth(s::Symbol) =
-        Int(ccall(:u8_strwidth,
-                  Csize_t,
-                  (Ptr{UInt8}, ),
-                  Base.unsafe_convert(Ptr{UInt8}, s)))
 end
 
 #' @description
@@ -61,10 +55,10 @@ end
 #' ourshowcompact(STDOUT, "abc")
 #' ourshowcompact(STDOUT, 10000)
 ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Void
-ourshowcompact(io::IO, x::AbstractString) = print(io, x) # -> Void
-ourshowcompact(io::IO, x::Symbol) = print(io, x) # -> Void
+ourshowcompact(io::IO, x::AbstractString) = escape_string(io, x, "") # -> Void
+ourshowcompact(io::IO, x::Symbol) = ourshowcompact(io, string(x)) # -> Void
 ourshowcompact(io::IO, x::CategoricalValue{<:AbstractString}) =
-    print(io, String(x)) # -> Void
+    ourshowcompact(io, string(x)) # -> Void
 
 #' @description
 #'
@@ -99,10 +93,6 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol) # -> Vector{Int}
-    # TODO: correct calculation of width for the cases:
-    # 1) DataFrame(a=["∀ε⫺0: x+ε⫺x"])
-    # 2) DataFrame(a=[[1:30;]])
-    # 3) decide how '\r', '\n', '\t' characters should be handled in strings
     maxwidths = Vector{Int}(size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(Base.undef_ref_str)
@@ -253,14 +243,18 @@ function showrowindices(io::IO,
         for _ in 1:padding
             write(io, ' ')
         end
-        print(io, " │")
+        print(io, " │ ")
         # Print DataFrame entry
         for j in leftcol:rightcol
-            print(io, isnull(df[i,j]) ? "*" : " ")
             strlen = 0
             try
-                strlen = ourstrwidth(df[i, j])
-                ourshowcompact(io, df[i, j])
+                s = df[i, j]
+                strlen = ourstrwidth(s)
+                if isnull(s)
+                    print_with_color(:light_yellow, io, s)
+                else
+                    ourshowcompact(io, s)
+                end
             catch
                 strlen = ourstrwidth(Base.undef_ref_str)
                 ourshowcompact(io, Base.undef_ref_str)
@@ -276,7 +270,7 @@ function showrowindices(io::IO,
                     print(io, " │\n")
                 end
             else
-                print(io, " │")
+                print(io, " │ ")
             end
         end
     end
