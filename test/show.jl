@@ -273,7 +273,7 @@ module TestShow
     │ Row │ Fish │ Mass │
     ├─────┼──────┼──────┤
     │ 1   │ Suzy │ 1.5  │
-    │ 2   │ Amir │ \e[93mnull\e[39m │""" : """
+    │ 2   │ Amir │ \e[90mnull\e[39m │""" : """
     2×2 DataFrames.DataFrame
     │ Row │ Fish │ Mass │
     ├─────┼──────┼──────┤
@@ -291,9 +291,9 @@ module TestShow
     │ 2     │ Mass │ Union{Float64, Nulls.Null} │ 1       │ 1.5  …  null  │"""
 
     # Test showing null
-    df = DataFrame(A=[:Symbol, null, :null],
-                   B=[null, "String", "null"],
-                   C=[:null, "null", null])
+    df = DataFrame(A = [:Symbol, null, :null],
+                   B = [null, "String", "null"],
+                   C = [:null, "null", null])
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
@@ -301,9 +301,9 @@ module TestShow
     3×3 DataFrames.DataFrame
     │ Row │ A      │ B      │ C    │
     ├─────┼────────┼────────┼──────┤
-    │ 1   │ Symbol │ \e[93mnull\e[39m   │ null │
-    │ 2   │ \e[93mnull\e[39m   │ String │ null │
-    │ 3   │ null   │ null   │ \e[93mnull\e[39m │""" : """
+    │ 1   │ Symbol │ \e[90mnull\e[39m   │ null │
+    │ 2   │ \e[90mnull\e[39m   │ String │ null │
+    │ 3   │ null   │ null   │ \e[90mnull\e[39m │""" : """
     3×3 DataFrames.DataFrame
     │ Row │ A      │ B      │ C    │
     ├─────┼────────┼────────┼──────┤
