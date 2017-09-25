@@ -582,7 +582,7 @@ function showcols(io::IO, df::AbstractDataFrame, all::Bool = false,
                                  sprint(ourshowcompact, df[end, i]) for i in 1:ncols]
         end
     end
-    (all?showall:show)(io, metadata, true, Symbol("Col #"), false)
+    (all ? showall : show)(io, metadata, true, Symbol("Col #"), false)
     return
 end
 
