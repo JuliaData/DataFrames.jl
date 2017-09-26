@@ -2,17 +2,17 @@ module TestShow
     using Base.Test, DataFrames
 
     # In the future newline character \n should be added to this test case
-    df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε⫺0: x+ε⫺x", "z\$", "ABC"],
+    df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "ABC"],
                    C = Float32[1.0, 2.0, 3.0, 4.0])
 
     refstr = """
     4×3 DataFrames.DataFrame
-    │ Row │ A │ B             │ C   │
-    ├─────┼───┼───────────────┼─────┤
-    │ 1   │ 1 │ x\"            │ 1.0 │
-    │ 2   │ 2 │ ∀ε⫺0: x+ε⫺x │ 2.0 │
-    │ 3   │ 3 │ z\$            │ 3.0 │
-    │ 4   │ 4 │ ABC           │ 4.0 │"""
+    │ Row │ A │ B           │ C   │
+    ├─────┼───┼─────────────┼─────┤
+    │ 1   │ 1 │ x\"          │ 1.0 │
+    │ 2   │ 2 │ ∀ε>0: x+ε>x │ 2.0 │
+    │ 3   │ 3 │ z\$          │ 3.0 │
+    │ 4   │ 4 │ ABC         │ 4.0 │"""
 
     for f in [show, showall], allcols in [true, false]
         io = IOBuffer()
@@ -268,12 +268,17 @@ module TestShow
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
-    @test str == """
+    @test str == (Base.have_color ? """
     2×2 DataFrames.DataFrame
     │ Row │ Fish │ Mass │
     ├─────┼──────┼──────┤
     │ 1   │ Suzy │ 1.5  │
-    │ 2   │ Amir │ null │"""
+    │ 2   │ Amir │ \e[90mnull\e[39m │""" : """
+    2×2 DataFrames.DataFrame
+    │ Row │ Fish │ Mass │
+    ├─────┼──────┼──────┤
+    │ 1   │ Suzy │ 1.5  │
+    │ 2   │ Amir │ null │""")
 
     io = IOBuffer()
     showcols(io, df)
@@ -285,6 +290,38 @@ module TestShow
     │ 1     │ Fish │ String                     │ 0       │ Suzy  …  Amir │
     │ 2     │ Mass │ Union{Float64, Nulls.Null} │ 1       │ 1.5  …  null  │"""
 
+    # Test showing null
+    df = DataFrame(A = [:Symbol, null, :null],
+                   B = [null, "String", "null"],
+                   C = [:null, "null", null])
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == (Base.have_color ? """
+    3×3 DataFrames.DataFrame
+    │ Row │ A      │ B      │ C    │
+    ├─────┼────────┼────────┼──────┤
+    │ 1   │ Symbol │ \e[90mnull\e[39m   │ null │
+    │ 2   │ \e[90mnull\e[39m   │ String │ null │
+    │ 3   │ null   │ null   │ \e[90mnull\e[39m │""" : """
+    3×3 DataFrames.DataFrame
+    │ Row │ A      │ B      │ C    │
+    ├─────┼────────┼────────┼──────┤
+    │ 1   │ Symbol │ null   │ null │
+    │ 2   │ null   │ String │ null │
+    │ 3   │ null   │ null   │ null │""")
+
+    io = IOBuffer()
+    showcols(io, df)
+    str = String(take!(io))
+    @test str == """
+    3×3 DataFrames.DataFrame
+    │ Col # │ Name │ Eltype                    │ Missing │ Values          │
+    ├───────┼──────┼───────────────────────────┼─────────┼─────────────────┤
+    │ 1     │ A    │ Union{Nulls.Null, Symbol} │ 1       │ Symbol  …  null │
+    │ 2     │ B    │ Union{Nulls.Null, String} │ 1       │ null  …  null   │
+    │ 3     │ C    │ Any                       │ 1       │ null  …  null   │"""
+
     # Test computing width for Array{String} columns
     df = DataFrame(Any[["a"]], [:x])
     io = IOBuffer()
@@ -295,4 +332,21 @@ module TestShow
     │ Row │ x │
     ├─────┼───┤
     │ 1   │ a │"""
+
+    # Test escape characters
+    df = DataFrame(a = ["1\n1", "2\t2", "3\r3", "4\$4", "5\"5", "6\\6"])
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    6×1 DataFrames.DataFrame
+    │ Row │ a    │
+    ├─────┼──────┤
+    │ 1   │ 1\\n1 │
+    │ 2   │ 2\\t2 │
+    │ 3   │ 3\\r3 │
+    │ 4   │ 4\$4  │
+    │ 5   │ 5\"5  │
+    │ 6   │ 6\\\\6 │"""
+
 end

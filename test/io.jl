@@ -16,7 +16,7 @@ module TestIO
         \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 & a \\\\
         \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 &  \\\\
         \t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  & c \\\\
-        \t4 & 4 & \\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d \\\\
+        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d \\\\
         \\end{tabular}
         """
     @test reprmime(MIME("text/latex"), df) == str
@@ -44,7 +44,7 @@ module TestIO
     df = DataFrame(A = 1:3,
                    B = 'a':'c',
                    C = ["A", "B", "C"],
-                   D = CategoricalArray('a':'c'),
+                   D = CategoricalArray(string.('a':'c')),
                    E = CategoricalArray(["A", "B", null]),
                    F = Vector{Union{Int, Null}}(1:3),
                    G = nulls(3),
@@ -53,9 +53,9 @@ module TestIO
     @test sprint(printtable, df) ==
         """
         "A","B","C","D","E","F","G","H"
-        1,"'a'","A","'a'","A","1",null,null
-        2,"'b'","B","'b'","B","2",null,null
-        3,"'c'","C","'c'",null,"3",null,null
+        1,"'a'","A","a","A","1",null,null
+        2,"'b'","B","b","B","2",null,null
+        3,"'c'","C","c",null,"3",null,null
         """
 
     # DataStreams
