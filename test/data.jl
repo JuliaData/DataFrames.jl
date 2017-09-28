@@ -1,6 +1,7 @@
 module TestData
     using Base.Test, DataFrames
     importall Base # so that we get warnings for conflicts
+    const ≅ = isequal
 
     #test_group("constructors")
     df1 = DataFrame(Any[[1, 2, null, 4], ["one", "two", null, "four"]], [:Ints, :Strs])
@@ -12,7 +13,7 @@ module TestData
                     [:A, :B, :C])
     df7 = DataFrame(x = [1, 2, null, 4], y = ["one", "two", null, "four"])
     @test size(df7) == (4, 2)
-    @test df7[:x] == [1, 2, null, 4]
+    @test df7[:x] ≅ [1, 2, null, 4]
 
     #test_group("description functions")
     @test size(df6, 1) == 4
@@ -25,7 +26,7 @@ module TestData
     @test df6[2, 3] == "two"
     @test isnull(df6[3, 3])
     @test df6[2, :C] == "two"
-    @test df6[:B] == [1, 2, null, 4]
+    @test df6[:B] ≅ [1, 2, null, 4]
     @test size(df6[[2,3]], 2) == 2
     @test size(df6[2,:], 1) == 1
     @test size(df6[[1, 3], [1, 3]]) == (2, 2)
@@ -87,7 +88,7 @@ module TestData
     #test_group("groupby")
     gd = groupby(df7, :d1)
     @test length(gd) == 2
-    @test gd[2][:d2] == CategoricalVector(["B", null, "A", null, null, null, null, null, "A"])
+    @test gd[2][:d2] ≅ ["B", null, "A", null, null, null, null, null, "A"]
     @test sum(gd[2][:d3]) == sum(df7[:d3][df7[:d1] .== 2])
 
     g1 = groupby(df7, [:d1, :d2])
@@ -207,7 +208,7 @@ module TestData
     @test m2[:a] == df1[:a] # preserves df1 order
     @test m2[:b] == df1[:b] # preserves df1 order
     m2 = join(df1, df2, on = :a, kind = :outer)
-    @test m2[:b2] == [null, :A, :A, null, :C, null, null, :B, null, :A]
+    @test m2[:b2] ≅ [null, :A, :A, null, :C, null, null, :B, null, :A]
 
     df1 = DataFrame(a = Union{Int, Null}[1, 2, 3],
                     b = Union{String, Null}["America", "Europe", "Africa"])
@@ -237,11 +238,11 @@ module TestData
 
     m1 = join(df1, df2, on = :A)
     @test size(m1) == (3,3)
-    @test m1[:A] == ["a","a", null]
+    @test m1[:A] ≅ ["a","a", null]
 
     m2 = join(df1, df2, on = :A, kind = :outer)
     @test size(m2) == (5,3)
-    @test m2[:A] == ["a", "b", "a", null, "c"]
+    @test m2[:A] ≅ ["a", "b", "a", null, "c"]
 
     srand(1)
     df1 = DataFrame(
@@ -260,8 +261,8 @@ module TestData
     m1 = join(df1, df2, on = [:a,:b])
     @test m1[:a] == Union{Nulls.Null, Symbol}[:x, :x, :y, :y, :y, :x, :x, :x]
     m2 = join(df1, df2, on = [:a,:b], kind = :outer)
-    @test m2[10,:v2] == null
-    @test m2[:a] == [:x, :x, :y, :y, :y, :x, :x, :y, :x, :y, null, :y]
+    @test isnull(m2[10,:v2])
+    @test m2[:a] ≅ [:x, :x, :y, :y, :y, :x, :x, :y, :x, :y, null, :y]
 
     srand(1)
     function spltdf(d)

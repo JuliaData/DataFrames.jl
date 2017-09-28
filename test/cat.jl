@@ -1,5 +1,6 @@
 module TestCat
     using Base.Test, DataFrames
+    const ≅ = isequal
 
     #
     # hcat
@@ -15,8 +16,8 @@ module TestCat
 
     dfh = hcat(df3, df4)
     @test size(dfh, 2) == 3
-    @test names(dfh) == [:x1, :x1_1, :x2]
-    @test dfh[:x1] == df3[:x1]
+    @test names(dfh) ≅ [:x1, :x1_1, :x2]
+    @test dfh[:x1] ≅ df3[:x1]
     @test dfh == [df3 df4]
     @test dfh == DataFrames.hcat!(DataFrame(), df3, df4)
 
