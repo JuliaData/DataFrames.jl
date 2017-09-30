@@ -1,6 +1,7 @@
 module TestConversions
     using Base.Test, DataFrames
     using DataStructures: OrderedDict, SortedDict
+    const ≅ = isequal
 
     df = DataFrame()
     df[:A] = 1:5
@@ -35,11 +36,11 @@ module TestConversions
     naa = convert(Array{Union{Any, Null}}, df)
     nai = convert(Array{Union{Int, Null}}, df)
     @test isa(na, Matrix{Union{Float64, Null}})
-    @test na == convert(Matrix, df)
+    @test na ≅ convert(Matrix, df)
     @test isa(naa, Matrix{Union{Any, Null}})
-    @test naa == convert(Matrix{Union{Any, Null}}, df)
+    @test naa ≅ convert(Matrix{Union{Any, Null}}, df)
     @test isa(nai, Matrix{Union{Int, Null}})
-    @test nai == convert(Matrix{Union{Int, Null}}, df)
+    @test nai ≅ convert(Matrix{Union{Int, Null}}, df)
 
     a = Union{Float64, Null}[1.0,2.0]
     b = Union{Float64, Null}[-0.1,3]
