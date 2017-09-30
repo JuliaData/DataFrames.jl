@@ -1,5 +1,6 @@
 module TestDuplicates
     using Base.Test, DataFrames
+    const ≅ = isequal
 
     df = DataFrame(a = [1, 2, 3, 3, 4])
     udf = DataFrame(a = [1, 2, 3, 4])
@@ -14,9 +15,9 @@ module TestDuplicates
                      b = CategoricalArray(["a", "b", null, "b", "a"]))
     @test nonunique(pdf) == [false, false, false, true, false, false, true, true]
     @test nonunique(updf) == falses(5)
-    @test updf == unique(pdf)
+    @test updf ≅ unique(pdf)
     unique!(pdf)
-    @test pdf == updf
+    @test pdf ≅ updf
 
     @testset "missing" begin
         df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))

@@ -1,5 +1,6 @@
 module TestConstructors
     using Base.Test, DataFrames, DataFrames.Index
+    const ≅ = isequal
 
     #
     # DataFrame
@@ -41,7 +42,7 @@ module TestConstructors
     @test size(df) == (2, 2)
     @test eltypes(df) == [Union{Int, Null}, Union{Float64, Null}]
 
-    @test df == DataFrame([Union{Int, Null}, Union{Float64, Null}], 2)
+    @test df ≅ DataFrame([Union{Int, Null}, Union{Float64, Null}], 2)
 
     @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0)
     @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0)
