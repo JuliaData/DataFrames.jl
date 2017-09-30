@@ -1,5 +1,7 @@
 module TestDataFrame
     using Base.Test, DataFrames
+    const ≅ = isequal
+    const ≇ = !isequal
 
     #
     # Equality
@@ -11,7 +13,7 @@ module TestDataFrame
     @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], c=[4, 5, 6])
     @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(b=[4, 5, 6], a=[1, 2, 3])
     @test DataFrame(a=[1, 2, 2], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
-    @test DataFrame(a=[1, 2, null], b=[4, 5, 6]) ==
+    @test DataFrame(a=[1, 2, null], b=[4, 5, 6]) ≅
                   DataFrame(a=[1, 2, null], b=[4, 5, 6])
 
     @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) == DataFrame(a=[1, 2, 3], b=[4, 5, 6])
@@ -22,9 +24,9 @@ module TestDataFrame
     @test DataFrame(a=[1, 2, 2], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
     @test DataFrame(a=[1, 3, null], b=[4, 5, 6]) !=
              DataFrame(a=[1, 2, null], b=[4, 5, 6])
-    @test DataFrame(a=[1, 2, null], b=[4, 5, 6]) ==
+    @test DataFrame(a=[1, 2, null], b=[4, 5, 6]) ≅
                 DataFrame(a=[1, 2, null], b=[4, 5, 6])
-    @test DataFrame(a=[1, 2, null], b=[4, 5, 6]) !=
+    @test DataFrame(a=[1, 2, null], b=[4, 5, 6]) ≇
                 DataFrame(a=[1, 2, 3], b=[4, 5, 6])
 
     #
@@ -79,7 +81,7 @@ module TestDataFrame
     nulldf = DataFrame(a = nulls(Int, 2),
                        b = nulls(String, 2),
                        c = CategoricalArray{Union{Float64, Null}}(2))
-    @test nulldf == similar(df, 2)
+    @test nulldf ≅ similar(df, 2)
 
     # Associative methods
 
@@ -306,7 +308,7 @@ module TestDataFrame
     df4 = DataFrame(Fish = Union{String, Null}["XXX", "Bob", "Batman"],
                     Color = Union{String, Null}[null, "Red", "Grey"],
                     Mass = Union{String, Null}[null, "12 g", "18 g"])
-    @test df2 == df4
+    @test df2 ≅ df4
     @test typeof(df2[:Fish]) <: CategoricalVector{Union{String, Null}}
     # first column stays as CategoricalArray in df3
     @test df3[:, 2:3] == df4[2:3, 2:3]
@@ -315,7 +317,7 @@ module TestDataFrame
     df2 = unstack(df, :Fish, :Key, :Value)
     #This changes the expected result
     df4[2,:Mass] = null
-    @test df2 == df4
+    @test df2 ≅ df4
 
     df = DataFrame(A = 1:10, B = 'A':'J')
     @test !(df[:,:] === df)
@@ -365,7 +367,7 @@ module TestDataFrame
         end
         a = unstack(df, :id, :variable, :value)
         b = unstack(df, :variable, :value)
-        @test a == b == DataFrame(id = [1, 2], a = [5, null], b = [null, 6])
+        @test a ≅ b ≅ DataFrame(id = [1, 2], a = [5, null], b = [null, 6])
 
         df = DataFrame(id=1:2, variable=["a", "b"], value=3:4)
         @static if VERSION >= v"0.6.0-dev.1980"
@@ -374,7 +376,7 @@ module TestDataFrame
         end
         a = unstack(df, :id, :variable, :value)
         b = unstack(df, :variable, :value)
-        @test a == b == DataFrame(id = [1, 2], a = [3, null], b = [null, 4])
+        @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, null], b = [null, 4])
     end
 
     @testset "rename" begin

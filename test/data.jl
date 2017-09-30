@@ -113,16 +113,16 @@ module TestData
     @test sum(df8[:d1_length]) == N
     @test all(df8[:d1_length] .> 0)
     @test df8[:d1_length] == [4, 5, 11]
-    @test df8 == aggregate(groupby(df7, :d2, sort=true), [sum, length])
+    @test df8 ≅ aggregate(groupby(df7, :d2, sort=true), [sum, length])
     @test df8[1, :d1_length] == 4
     @test df8[2, :d1_length] == 5
     @test df8[3, :d1_length] == 11
-    @test df8 == aggregate(groupby(df7, :d2), [sum, length], sort=true)
+    @test df8 ≅ aggregate(groupby(df7, :d2), [sum, length], sort=true)
 
     df9 = df7 |> groupby([:d2], sort=true) |> [sum, length]
-    @test df9 == df8
+    @test df9 ≅ df8
     df9 = aggregate(df7, :d2, [sum, length], sort=true)
-    @test df9 == df8
+    @test df9 ≅ df8
 
     df10 = DataFrame(
         Any[[1:4;], [2:5;], ["a", "a", "a", "b" ], ["c", "d", "c", "d"]],

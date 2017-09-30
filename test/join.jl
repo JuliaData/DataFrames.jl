@@ -1,5 +1,6 @@
 module TestJoin
     using Base.Test, DataFrames
+    const ≅ = isequal
 
     name = DataFrame(ID = Union{Int, Null}[1, 2, 3],
                      Name = Union{String, Null}["John Doe", "Jane Doe", "Joe Blogs"])
@@ -27,9 +28,9 @@ module TestJoin
 
     @test join(name, job, on = :ID) == inner
     @test join(name, job, on = :ID, kind = :inner) == inner
-    @test join(name, job, on = :ID, kind = :outer) == outer
-    @test join(name, job, on = :ID, kind = :left) == left
-    @test join(name, job, on = :ID, kind = :right) == right
+    @test join(name, job, on = :ID, kind = :outer) ≅ outer
+    @test join(name, job, on = :ID, kind = :left) ≅ left
+    @test join(name, job, on = :ID, kind = :right) ≅ right
     @test join(name, job, on = :ID, kind = :semi) == semi
     @test join(name, job, on = :ID, kind = :anti) == anti
     @test_throws ArgumentError join(name, job)
@@ -148,7 +149,6 @@ module TestJoin
     @testset "all joins" begin
         df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
         df2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
-        N = null
 
         @test join(df1, df2, kind=:cross) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
@@ -182,36 +182,36 @@ module TestJoin
         on = :id
         @test i(on) == DataFrame(Any[[1, 3], [1, 3], [1, 3]], [:id, :fid, :fid_1])
         @test typeof.(i(on).columns) == [Vector{Int}, Vector{Float64}, Vector{Float64}]
-        @test l(on) == DataFrame(id = [1, 3, 5],
-                                 fid = [1, 3, 5],
-                                 fid_1 = [1, 3, N])
+        @test l(on) ≅ DataFrame(id = [1, 3, 5],
+                                fid = [1, 3, 5],
+                                fid_1 = [1, 3, null])
         @test typeof.(l(on).columns) ==
             [Vector{Union{T, Null}} for T in (Int, Float64, Float64)]
-        @test r(on) == DataFrame(id = [1, 3, 0, 2, 4],
-                                 fid = [1, 3, N, N, N],
-                                 fid_1 = [1, 3, 0, 2, 4])
+        @test r(on) ≅ DataFrame(id = [1, 3, 0, 2, 4],
+                                fid = [1, 3, null, null, null],
+                                fid_1 = [1, 3, 0, 2, 4])
         @test typeof.(r(on).columns) ==
             [Vector{Union{T, Null}} for T in (Int, Float64, Float64)]
-        @test o(on) == DataFrame(id = [1, 3, 5, 0, 2, 4],
-                                 fid = [1, 3, 5, N, N, N],
-                                 fid_1 = [1, 3, N, 0, 2, 4])
+        @test o(on) ≅ DataFrame(id = [1, 3, 5, 0, 2, 4],
+                                fid = [1, 3, 5, null, null, null],
+                                fid_1 = [1, 3, null, 0, 2, 4])
         @test typeof.(o(on).columns) ==
             [Vector{Union{T, Null}} for T in (Int, Float64, Float64)]
 
         on = :fid
         @test i(on) == DataFrame(Any[[1, 3], [1.0, 3.0], [1, 3]], [:id, :fid, :id_1])
         @test typeof.(i(on).columns) == [Vector{Int}, Vector{Float64}, Vector{Int}]
-        @test l(on) == DataFrame(id = [1, 3, 5],
-                                 fid = [1, 3, 5],
-                                 id_1 = [1, 3, N])
+        @test l(on) ≅ DataFrame(id = [1, 3, 5],
+                                fid = [1, 3, 5],
+                                id_1 = [1, 3, null])
         @test typeof.(l(on).columns) == [Vector{Union{T, Null}} for T in (Int,Float64,Int)]
-        @test r(on) == DataFrame(id = [1, 3, N, N, N],
-                                 fid = [1, 3, 0, 2, 4],
-                                 id_1 = [1, 3, 0, 2, 4])
+        @test r(on) ≅ DataFrame(id = [1, 3, null, null, null],
+                                fid = [1, 3, 0, 2, 4],
+                                id_1 = [1, 3, 0, 2, 4])
         @test typeof.(r(on).columns) == [Vector{Union{T, Null}} for T in (Int,Float64,Int)]
-        @test o(on) == DataFrame(id = [1, 3, 5, N, N, N],
-                                 fid = [1, 3, 5, 0, 2, 4],
-                                 id_1 = [1, 3, N, 0, 2, 4])
+        @test o(on) ≅ DataFrame(id = [1, 3, 5, null, null, null],
+                                fid = [1, 3, 5, 0, 2, 4],
+                                id_1 = [1, 3, null, 0, 2, 4])
         @test typeof.(o(on).columns) == [Vector{Union{T, Null}} for T in (Int,Float64,Int)]
 
         on = [:id, :fid]
@@ -233,7 +233,6 @@ module TestJoin
                             CategoricalArray([1.0, 3.0, 5.0])], [:id, :fid])
         df2 = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
                             CategoricalArray([0.0, 1.0, 2.0, 3.0, 4.0])], [:id, :fid])
-        N = null
 
         @test join(df1, df2, kind=:cross) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
@@ -273,19 +272,19 @@ module TestJoin
         @test i(on) == DataFrame(Any[[1, 3], [1, 3], [1, 3]], [:id, :fid, :fid_1])
         @test all(isa.(i(on).columns,
                        [CategoricalVector{T} for T in (Int, Float64, Float64)]))
-        @test l(on) == DataFrame(id = [1, 3, 5],
-                                 fid = [1, 3, 5],
-                                 fid_1 = [1, 3, N])
+        @test l(on) ≅ DataFrame(id = [1, 3, 5],
+                                fid = [1, 3, 5],
+                                fid_1 = [1, 3, null])
         @test all(isa.(l(on).columns,
                        [CategoricalVector{Union{T, Null}} for T in (Int,Float64,Float64)]))
-        @test r(on) == DataFrame(id = [1, 3, 0, 2, 4],
-                                 fid = [1, 3, N, N, N],
-                                 fid_1 = [1, 3, 0, 2, 4])
+        @test r(on) ≅ DataFrame(id = [1, 3, 0, 2, 4],
+                                fid = [1, 3, null, null, null],
+                                fid_1 = [1, 3, 0, 2, 4])
         @test all(isa.(r(on).columns,
                        [CategoricalVector{Union{T, Null}} for T in (Int,Float64,Float64)]))
-        @test o(on) == DataFrame(id = [1, 3, 5, 0, 2, 4],
-                                 fid = [1, 3, 5, N, N, N],
-                                 fid_1 = [1, 3, N, 0, 2, 4])
+        @test o(on) ≅ DataFrame(id = [1, 3, 5, 0, 2, 4],
+                                fid = [1, 3, 5, null, null, null],
+                                fid_1 = [1, 3, null, 0, 2, 4])
         @test all(isa.(o(on).columns,
                        [CategoricalVector{Union{T, Null}} for T in (Int,Float64,Float64)]))
 
@@ -293,19 +292,19 @@ module TestJoin
         @test i(on) == DataFrame(Any[[1, 3], [1.0, 3.0], [1, 3]], [:id, :fid, :id_1])
         @test all(isa.(i(on).columns,
                        [CategoricalVector{T} for T in (Int, Float64, Int)]))
-        @test l(on) == DataFrame(id = [1, 3, 5],
-                                 fid = [1, 3, 5],
-                                 id_1 = [1, 3, N])
+        @test l(on) ≅ DataFrame(id = [1, 3, 5],
+                                fid = [1, 3, 5],
+                                id_1 = [1, 3, null])
         @test all(isa.(l(on).columns,
                        [CategoricalVector{Union{T, Null}} for T in (Int, Float64, Int)]))
-        @test r(on) == DataFrame(id = [1, 3, N, N, N],
-                                 fid = [1, 3, 0, 2, 4],
-                                 id_1 = [1, 3, 0, 2, 4])
+        @test r(on) ≅ DataFrame(id = [1, 3, null, null, null],
+                                fid = [1, 3, 0, 2, 4],
+                                id_1 = [1, 3, 0, 2, 4])
         @test all(isa.(r(on).columns,
                        [CategoricalVector{Union{T, Null}} for T in (Int, Float64, Int)]))
-        @test o(on) == DataFrame(id = [1, 3, 5, N, N, N],
-                                 fid = [1, 3, 5, 0, 2, 4],
-                                 id_1 = [1, 3, N, 0, 2, 4])
+        @test o(on) ≅ DataFrame(id = [1, 3, 5, null, null, null],
+                                fid = [1, 3, 5, 0, 2, 4],
+                                id_1 = [1, 3, null, 0, 2, 4])
         @test all(isa.(o(on).columns,
                        [CategoricalVector{Union{T, Null}} for T in (Int, Float64, Int)]))
 

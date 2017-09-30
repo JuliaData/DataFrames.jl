@@ -18,15 +18,15 @@ module TestCat
     @test size(dfh, 2) == 3
     @test names(dfh) ≅ [:x1, :x1_1, :x2]
     @test dfh[:x1] ≅ df3[:x1]
-    @test dfh == [df3 df4]
-    @test dfh == DataFrames.hcat!(DataFrame(), df3, df4)
+    @test dfh ≅ [df3 df4]
+    @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4)
 
     dfh3 = hcat(df3, df4, df5)
     @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
-    @test dfh3 == hcat(dfh, df5)
-    @test dfh3 == DataFrames.hcat!(DataFrame(), df3, df4, df5)
+    @test dfh3 ≅ hcat(dfh, df5)
+    @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5)
 
-    @test df2 == DataFrames.hcat!(df2)
+    @test df2 ≅ DataFrames.hcat!(df2)
 
     @testset "hcat ::AbstractDataFrame" begin
         df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
