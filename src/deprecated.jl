@@ -51,7 +51,7 @@ writetable(filename, df, [keyword options])
 df = DataFrame(A = 1:10)
 writetable("output.csv", df)
 writetable("output.dat", df, separator = ',', header = false)
-writetable("output.dat", df, quotemark = '\', separator = ',')
+writetable("output.dat", df, quotemark = '\'', separator = ',')
 writetable("output.dat", df, header = false)
 ```
 """
