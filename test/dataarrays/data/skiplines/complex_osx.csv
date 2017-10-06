@@ -1,0 +1,17 @@
+# handle me with allowcomments or skipstart
+# blank rows to follow
+
+
+RawRow,String
+
+
+8,"multi-
+line
+text"
+11,"text"
+
+13,"text"
+# so, allowcoments+skipblanks | skipstart+skiprows, w/o header, nrows
+15,"text"
+16,"text"
+
