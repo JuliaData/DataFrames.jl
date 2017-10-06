@@ -1,20 +1,19 @@
 module TestConversions
     using Base.Test
     using DataFrames
+    using DataArrays
     using DataStructures: OrderedDict, SortedDict
 
     df = DataFrame()
     df[:A] = 1:5
     df[:B] = [:A, :B, :C, :D, :E]
     @test isa(convert(Array, df), Matrix{Any})
-    @test convert(Array, df) == convert(Array, convert(DataArray, df))
     @test isa(convert(Array{Any}, df), Matrix{Any})
 
     df = DataFrame()
     df[:A] = 1:5
     df[:B] = 1.0:5.0
-    @test isa(convert(Array, df), Matrix{Real})
-    @test convert(Array, df) == convert(Array, convert(DataArray, df))
+    @test isa(convert(Array, df), Matrix{Union{Float64, Null}})
     @test isa(convert(Array{Any}, df), Matrix{Any})
     @test isa(convert(Array{Float64}, df), Matrix{Float64})
 
@@ -24,8 +23,7 @@ module TestConversions
     a = convert(Array, df)
     aa = convert(Array{Any}, df)
     ai = convert(Array{Int}, df)
-    @test isa(a, Matrix{Float64})
-    @test a == convert(Array, convert(DataArray, df))
+    @test isa(a, Matrix{Union{Float64, Null}})
     @test a == convert(Matrix, df)
     @test isa(aa, Matrix{Any})
     @test aa == convert(Matrix{Any}, df)
@@ -33,16 +31,15 @@ module TestConversions
     @test ai == convert(Matrix{Int}, df)
 
     df[1,1] = NA
-    @test_throws ErrorException convert(Array, df)
-    da = convert(DataArray, df)
-    daa = convert(DataArray{Any}, df)
-    dai = convert(DataArray{Int}, df)
-    @test isa(da, DataMatrix{Float64})
-    @test isequal(da, convert(DataMatrix, df))
-    @test isa(daa, DataMatrix{Any})
-    @test isequal(daa, convert(DataMatrix{Any}, df))
-    @test isa(dai, DataMatrix{Int})
-    @test isequal(dai, convert(DataMatrix{Int}, df))
+    da = convert(Array, df)
+    daa = convert(Array{Any}, df)
+    dai = convert(Array{Union{Int, Null}}, df)
+    @test isa(da, Matrix{Union{Float64, Null}})
+    @test isequal(da, convert(Matrix, df))
+    @test isa(daa, Matrix{Any})
+    @test isequal(daa, convert(Matrix{Any}, df))
+    @test isa(dai, Matrix{Union{Int, Null}})
+    @test isequal(dai, convert(Matrix{Union{Int, Null}}, df))
 
     a = [1.0,2.0]
     b = [-0.1,3]
@@ -74,6 +71,6 @@ module TestConversions
 
     a = [1.0]
     di = Dict("a"=>a, "b"=>b, "c"=>c)
-    @test_throws ArgumentError convert(DataFrame,di)
+    @test_throws DimensionMismatch convert(DataFrame,di)
 
 end

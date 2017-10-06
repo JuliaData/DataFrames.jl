@@ -1,3 +1,5 @@
+using DataArrays
+
 """
 An AbstractDataFrame that stores a set of named columns
 
@@ -102,9 +104,19 @@ mutable struct DataFrame <: AbstractDataFrame
                 throw(DimensionMismatch("columns must be 1-dimensional"))
             end
         end
-        new(columns, colindex)
+        new(Any[to_da(c) for c in columns], colindex)
     end
 end
+
+function to_da(x::CategoricalArray{T}) where {T}
+    ret = PooledDataArray(Nulls.T(T), size(x))
+    for i in eachindex(x, ret)
+        isnull(x) || (ret[i] = x[i])
+    end
+    ret
+end
+to_da(x::PooledDataArray) = x
+to_da(x::AbstractArray) = DataArray(x)
 
 function DataFrame(pairs::Pair{Symbol,<:Any}...)
     colnames = Symbol[k for (k,v) in pairs]
@@ -303,15 +315,15 @@ function insert_single_column!(df::DataFrame,
     end
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
-        df.columns[j] = dv
+        df.columns[j] = to_da(dv)
     else
         if typeof(col_ind) <: Symbol
             push!(index(df), col_ind)
-            push!(df.columns, dv)
+            push!(df.columns, to_da(dv))
         else
             if isnextcol(df, col_ind)
                 push!(index(df), nextcolname(df))
-                push!(df.columns, dv)
+                push!(df.columns, to_da(dv))
             else
                 error("Cannot assign to non-existent column: $col_ind")
             end

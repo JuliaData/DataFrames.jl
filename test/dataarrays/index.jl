@@ -1,6 +1,7 @@
 module TestIndex
 using Base.Test
 using DataFrames, DataFrames.Index
+using DataArrays
 
 i = Index()
 push!(i, :A)

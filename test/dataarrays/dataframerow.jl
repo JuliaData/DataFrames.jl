@@ -1,6 +1,7 @@
 module TestDataFrameRow
     using Base.Test
     using DataFrames
+    using DataArrays
 
     df = DataFrame(a=@data([1,   2,   3,   1,   2,   2 ]),
                    b=@data([2.0, NA,  1.2, 2.0, NA,  NA]),

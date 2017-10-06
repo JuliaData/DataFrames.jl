@@ -1,6 +1,7 @@
 module TestJoin
     using Base.Test
     using DataFrames
+    using DataArrays
 
     name = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"])
     job = DataFrame(ID = [1, 2, 2, 4], Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
@@ -18,7 +19,7 @@ module TestJoin
                       Job = @data(["Lawyer", "Doctor", "Florist", NA, "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
-    right = outer[(!).(isna.(outer[:Job])), [:Name, :ID, :Job]]
+    right = outer[(!).(isna.(outer[:Job])), [:ID, :Name, :Job]]
     left = outer[(!).(isna.(outer[:Name])), :]
     inner = left[(!).(isna.(left[:Job])), :]
     semi = unique(inner[:, [:ID, :Name]])

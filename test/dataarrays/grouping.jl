@@ -1,6 +1,7 @@
 module TestGrouping
     using Base.Test
     using DataFrames
+    using DataArrays
 
     df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                    b = repeat([2, 1], outer=[4]),
@@ -19,8 +20,8 @@ module TestGrouping
 
     byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
 
-    @test all(T -> T <: AbstractVector, map(typeof, colwise([sum], df)))
-    @test all(T -> T <: AbstractVector, map(typeof, colwise(sum, df)))
+    @test map(typeof, colwise([sum], df)) == [Int Int Float64]
+    @test map(typeof, colwise(sum, df)) == [Int, Int, Float64]
 
     gd = groupby(df, cols)
     ga = map(f, gd)
@@ -38,6 +39,6 @@ module TestGrouping
     groupby(df, [:v1, :v2])
 
     df2 = by(e->1, DataFrame(x=Int64[]), :x)
-    @test size(df2) == (0,1)
+    @test size(df2) == (0,2)
     @test sum(df2[:x]) == 0
 end

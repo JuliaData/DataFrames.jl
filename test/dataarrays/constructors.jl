@@ -1,6 +1,7 @@
 module TestConstructors
     using Base.Test
     using DataFrames, DataFrames.Index
+    using DataArrays
 
     #
     # DataFrame
@@ -40,13 +41,13 @@ module TestConstructors
 
     df = DataFrame(Int, 2, 2)
     @test size(df) == (2, 2)
-    @test all(eltypes(df) .== [Int, Int])
+    @test all(eltypes(df) .== [Union{Int, Null}, Union{Int, Null}])
 
-    df = DataFrame([Int, Float64], [:x1, :x2], 2)
+    df = DataFrame([Union{Int, Null}, Union{Float64, Null}], [:x1, :x2], 2)
     @test size(df) == (2, 2)
-    @test all(eltypes(df) .== Any[Int, Float64])
+    @test all(eltypes(df) .== Any[Union{Int, Null}, Union{Float64, Null}])
 
-    @test isequal(df, DataFrame([Int, Float64], 2))
+    @test isequal(df, DataFrame([Union{Int, Null}, Union{Float64, Null}], 2))
 
 
 

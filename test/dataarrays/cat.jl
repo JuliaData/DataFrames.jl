@@ -1,6 +1,7 @@
 module TestCat
     using Base.Test
     using DataFrames
+    using DataArrays
 
     #
     # hcat
@@ -32,7 +33,7 @@ module TestCat
     # vcat
     #
 
-    null_df = DataFrame(Int, 0, 0)
+    null_df = DataFrame(Int, 0, 3)
     df = DataFrame(Int, 4, 3)
 
     # Assignment of rows
@@ -57,7 +58,7 @@ module TestCat
     vcat(df, null_df)
     vcat(df, df)
     vcat(df, df, df)
-    @test vcat(DataFrame[]) == DataFrame()
+    @test vcat(DataFrame()) == DataFrame()
 
     alt_df = deepcopy(df)
     vcat(df, alt_df)
@@ -66,23 +67,20 @@ module TestCat
     df[1] = zeros(Int, nrow(df))
     vcat(df, alt_df)
 
-    # Don't fail on non-matching names
+    # Fail on non-matching names
     names!(alt_df, [:A, :B, :C])
-    vcat(df, alt_df)
+    @test_throws ArgumentError vcat(df, alt_df)
 
     dfr = vcat(df4, df4)
     @test size(dfr, 1) == 8
     @test names(df4) == names(dfr)
     @test isequal(dfr, [df4; df4])
 
-    dfr = vcat(df2, df3)
-    @test size(dfr) == (8,2)
-    @test names(df2) == names(dfr)
-    @test isna.(dfr[8,:x2])
+    @test_throws ArgumentError vcat(df2, df3)
 
     # Eltype promotion
-    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Float64]
-    @test eltypes(vcat(DataFrame(a = [NA]), DataFrame(a = [2.1]))) == [Float64]
+    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Union{Float64, Null}]
+    @test eltypes(vcat(DataFrame(a = [NA]), DataFrame(a = [2.1]))) == [Union{Float64, Null}]
 
     # Minimal container type promotion
     dfa = DataFrame(a = @pdata([1, 2, 2]))
@@ -104,10 +102,10 @@ module TestCat
     rename!(dfd, :a, :b)
     dfda = DataFrame(b = @data([2, 3, 4, NA, NA, NA]),
                      a = @pdata([NA, NA, NA, 1, 2, 2]))
-    @test isequal(vcat(dfd, dfa), dfda)
+    @test_throws ArgumentError vcat(dfd, dfa)
 
     # Alignment
-    @test isequal(vcat(dfda, dfd, dfa), vcat(dfda, dfda))
+    @test_throws ArgumentError vcat(dfda, dfd, dfa)
 
     # vcat should be able to concatenate different implementations of AbstractDataFrame (PR #944)
     @test vcat(view(DataFrame(A=1:3),2),DataFrame(A=4:5)) == DataFrame(A=[2,4,5])

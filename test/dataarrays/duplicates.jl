@@ -1,6 +1,7 @@
 module TestDuplicates
     using Base.Test
     using DataFrames
+    using DataArrays
 
     df = DataFrame(a = [1, 2, 3, 3, 4])
     udf = DataFrame(a = [1, 2, 3, 4])

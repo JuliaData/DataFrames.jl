@@ -20,6 +20,7 @@ import Base: keys, values, insert!
 
 
 ## write.table
+using GZip
 
 export writetable
 """

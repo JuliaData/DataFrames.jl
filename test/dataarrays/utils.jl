@@ -1,7 +1,7 @@
 module TestUtils
     using Base.Test
     using DataFrames
-    using DataFrames
+    using DataArrays
 
     import DataFrames: identifier
 
@@ -62,6 +62,8 @@ module TestUtils
             Maximum:        4.000000
             Length:         4
             Type:           $Int
+            Number Missing: 0
+            % Missing:      0.000000
 
             naarray
             Summary Stats:

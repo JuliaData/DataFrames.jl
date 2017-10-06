@@ -1,6 +1,7 @@
 module TestIO
     using Base.Test
     using DataFrames
+    using DataArrays
 
     #test_group("We can read various file types.")
 
@@ -144,7 +145,7 @@ module TestIO
 
     function normalize_eol!(df)
         for (name, col) in eachcol(df)
-            if eltype(col) <: AbstractString
+            if eltype(col) <: Union{AbstractString, Null}
                 df[name] = map(s -> replace(s, "\r\n", "\n"), col)
             end
         end

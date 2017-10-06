@@ -1,6 +1,7 @@
 module TestDataFrame
     using Base.Test
     using DataFrames
+    using DataArrays
 
     #
     # Equality
@@ -74,7 +75,6 @@ module TestDataFrame
                      b = DataArray(Vector{String}(2), trues(2)),
                      c = @pdata(Float64[NA, NA]))
     @test isequal(nadf, similar(df, 2))
-    @test isequal(nadf, DataFrames.nas(df, 2))
 
     # Associative methods
 
@@ -104,7 +104,7 @@ module TestDataFrame
     @test isequal(df, DataFrame(a=[1, 2], b=["a", "b"], c=[:c, :d]))
 
     #test_group("Empty DataFrame constructors")
-    df = DataFrame(Int, 10, 3)
+    df = DataFrame(Union{Int, Null}, 10, 3)
     @test size(df, 1) == 10
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
@@ -114,7 +114,7 @@ module TestDataFrame
     @test all(isna, df[:, 2])
     @test all(isna, df[:, 3])
 
-    df = DataFrame(Any[Int, Float64, String], 100)
+    df = DataFrame([Union{Int, Null}, Union{Float64, Null}, Union{String, Null}], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
@@ -124,7 +124,8 @@ module TestDataFrame
     @test all(isna, df[:, 2])
     @test all(isna, df[:, 3])
 
-    df = DataFrame(Any[Int, Float64, String], [:A, :B, :C], 100)
+    df = DataFrame([Union{Int, Null}, Union{Float64, Null}, Union{String, Null}],
+                   [:A, :B, :C], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
@@ -135,7 +136,8 @@ module TestDataFrame
     @test all(isna, df[:, 3])
 
 
-    df = DataFrame(DataType[Int, Float64, String],[:A, :B, :C], [false,false,true],100)
+    df = DataFrame([Union{Int, Null}, Union{Float64, Null}, Union{String, Null}],
+                   [:A, :B, :C], [false,false,true], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
     @test typeof(df[:, 1]) == DataVector{Int}
@@ -149,35 +151,17 @@ module TestDataFrame
     df = convert(DataFrame, zeros(10, 5))
     @test size(df, 1) == 10
     @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == Vector{Float64}
+    @test typeof(df[:, 1]) == DataVector{Float64}
 
     df = convert(DataFrame, ones(10, 5))
     @test size(df, 1) == 10
     @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == Vector{Float64}
+    @test typeof(df[:, 1]) == DataVector{Float64}
 
     df = convert(DataFrame, eye(10, 5))
     @test size(df, 1) == 10
     @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == Vector{Float64}
-
-    #test_group("Other DataFrame constructors")
-    df = DataFrame([Dict{Any,Any}(:a=>1, :b=>'c'),
-                    Dict{Any,Any}(:a=>3, :b=>'d'),
-                    Dict{Any,Any}(:a=>5)])
-    @test size(df, 1) == 3
-    @test size(df, 2) == 2
-    @test typeof(df[:,:a]) == DataVector{Int}
-    @test typeof(df[:,:b]) == DataVector{Char}
-
-    df = DataFrame([Dict{Any,Any}(:a=>1, :b=>'c'),
-                    Dict{Any,Any}(:a=>3, :b=>'d'),
-                    Dict{Any,Any}(:a=>5)],
-                   [:a, :b])
-    @test size(df, 1) == 3
-    @test size(df, 2) == 2
-    @test typeof(df[:,:a]) == DataVector{Int}
-    @test typeof(df[:,:b]) == DataVector{Char}
+    @test typeof(df[:, 1]) == DataVector{Float64}
 
 
     # This assignment was missing before

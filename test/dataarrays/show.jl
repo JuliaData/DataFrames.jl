@@ -1,5 +1,6 @@
 module TestShow
     using DataFrames
+    using DataArrays
     
     df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 

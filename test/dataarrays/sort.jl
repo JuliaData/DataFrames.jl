@@ -1,6 +1,7 @@
 module TestSort
     using Base.Test
     using DataFrames
+    using DataArrays
 
     dv1 = @data([9, 1, 8, NA, 3, 3, 7, NA])
     dv2 = 1.0 * dv1

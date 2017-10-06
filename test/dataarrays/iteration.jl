@@ -1,23 +1,12 @@
 module TestIteration
     using Base.Test, DataFrames
+    using DataArrays
 
     dv = @data([1, 2, NA])
     dm = DataArray([1 2; 3 4])
     dt = DataArray(zeros(2, 2, 2))
 
     df = DataFrame(A = 1:2, B = 2:3)
-
-    for el in dv
-        @test ndims(el) == 0
-    end
-
-    for el in dm
-        @test ndims(el) == 0
-    end
-
-    for el in dt
-        @test ndims(el) == 0
-    end
 
     for row in eachrow(df)
         @test isa(row, DataFrameRow)
