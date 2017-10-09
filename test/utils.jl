@@ -49,13 +49,6 @@ module TestUtils
     pdata[1:end] = null
     @test DataFrames.countnull(pdata) == 20
 
-    funs = [mean, sum, var, x -> sum(x)]
-    if string(funs[end]) == "(anonymous function)" # Julia < 0.5
-        @test DataFrames._fnames(funs) == ["mean", "sum", "var", "λ1"]
-    else
-        @test DataFrames._fnames(funs) == ["mean", "sum", "var", string(funs[end])]
-    end
-
     @testset "describe" begin
         io = IOBuffer()
         df = DataFrame(Any[collect(1:4), Vector{Union{Int, Null}}(2:5),

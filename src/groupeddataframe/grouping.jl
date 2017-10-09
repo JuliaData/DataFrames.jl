@@ -320,9 +320,6 @@ aggregate(gd::GroupedDataFrame, fs)
 * `fs` : a function or vector of functions to be applied to vectors
   within groups; expects each argument to be a column vector
 
-Each `fs` should return a value or vector. All returns must be the
-same length.
-
 ### Returns
 
 * `::DataFrame`
@@ -342,16 +339,23 @@ df |> groupby(:a) |> [sum, x->mean(Nulls.skip(x))]   # equivalent
 """
 aggregate(d::AbstractDataFrame, fs::Function; sort::Bool=false) = aggregate(d, [fs], sort=sort)
 function aggregate(d::AbstractDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Function
-    headers = _makeheaders(fs, _names(d))
-    _aggregate(d, fs, headers, sort)
+    headers = [Symbol(c, "_", f) for f in fs for c in names(d)]
+    res = DataFrame(Any[f(d[c]) for f in fs for c in names(d)], headers)
+    sort && sort!(res)
+    res
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 aggregate(gd::GroupedDataFrame, f::Function; sort::Bool=false) = aggregate(gd, [f], sort=sort)
 function aggregate(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Function
-    headers = _makeheaders(fs, setdiff(_names(gd), gd.cols))
-    res = combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
-    sort && sort!(res, cols=headers)
+    res = gd.parent[gd.idx[gd.starts], gd.cols]
+    cols = setdiff(names(gd.parent), gd.cols)
+    for f in fs
+        for c in cols
+            res[Symbol(c, "_", f)] = [f(g[c]) for g in gd]
+        end
+    end
+    sort && sort!(res)
     res
 end
 
@@ -364,15 +368,4 @@ function aggregate(d::AbstractDataFrame,
                    fs::Union{T, Vector{T}};
                    sort::Bool=false) where {S<:ColumnIndex, T <:Function}
     aggregate(groupby(d, cols, sort=sort), fs)
-end
-
-function _makeheaders(fs::Vector{T}, cn::Vector{Symbol}) where T<:Function
-    fnames = _fnames(fs) # see other/utils.jl
-    [Symbol(colname,'_',fname) for fname in fnames for colname in cn]
-end
-
-function _aggregate(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false) where T<:Function
-    res = DataFrame(Any[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers)
-    sort && sort!(res, cols=headers)
-    res
 end
