@@ -673,7 +673,7 @@ Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = hcat!(hcat(df1, df2), dfn...)
 
 @generated function promote_col_type(cols::AbstractVector...)
-    T = promote_type(map(x -> Nulls.T(eltype(x)), cols)...)
+    T = mapreduce(x -> Nulls.T(eltype(x)), promote_type, cols)
     if T <: CategoricalValue
         T = T.parameters[1]
     end
