@@ -740,20 +740,28 @@ end
 ##############################################################################
 
 function categorical!(df::DataFrame, cname::Union{Integer, Symbol})
-    df[cname] = CategoricalVector(df[cname])
+    if Nulls.T(eltype(df[cname])) <: AbstractString
+        df[cname] = CategoricalVector(df[cname])
+    else
+        Base.depwarn("CategoricalVectors are designed to work with String values and their use on other column types is deprecated", :categorical!)
+    end
     df
 end
 
 function categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}})
     for cname in cnames
-        df[cname] = CategoricalVector(df[cname])
+        if Nulls.T(eltype(df[cname])) <: AbstractString
+            df[cname] = CategoricalVector(df[cname])
+        else
+            Base.depwarn("CategoricalVectors are designed to work with String values and their use on other column types is deprecated", :categorical!)
+        end
     end
     df
 end
 
 function categorical!(df::DataFrame)
     for i in 1:size(df, 2)
-        if eltype(df[i]) <: AbstractString
+        if Nulls.T(eltype(df[i])) <: AbstractString
             df[i] = CategoricalVector(df[i])
         end
     end
