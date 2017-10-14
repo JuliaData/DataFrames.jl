@@ -79,8 +79,8 @@ module TestCat
     @test_throws ArgumentError vcat(df2, df3)
 
     # Eltype promotion
-    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Union{Float64, Null}]
-    @test eltypes(vcat(DataFrame(a = [NA]), DataFrame(a = [2.1]))) == [Union{Float64, Null}]
+    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Float64]
+    @test eltypes(vcat(DataFrame(a = @data([1, NA])), DataFrame(a = [2.1]))) == [Union{Float64, Null}]
 
     # Minimal container type promotion
     dfa = DataFrame(a = @pdata([1, 2, 2]))

@@ -17,7 +17,7 @@ module TestIteration
     end
 
     for col in eachcol(df)
-        @test isa(col, Tuple{Symbol, AbstractDataVector})
+        @test isa(col, Tuple{Symbol, Vector})
     end
 
     @test isequal(map(x -> minimum(convert(Array, x)), eachrow(df)), Any[1,2])

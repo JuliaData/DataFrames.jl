@@ -11,15 +11,15 @@ module TestConversions
     @test isa(convert(Array{Any}, df), Matrix{Any})
 
     df = DataFrame()
-    df[:A] = 1:5
-    df[:B] = 1.0:5.0
+    df[:A] = DataArray(1:5)
+    df[:B] = DataArray(1.0:5.0)
     @test isa(convert(Array, df), Matrix{Union{Float64, Null}})
     @test isa(convert(Array{Any}, df), Matrix{Any})
     @test isa(convert(Array{Float64}, df), Matrix{Float64})
 
     df = DataFrame()
-    df[:A] = 1.0:5.0
-    df[:B] = 1.0:5.0
+    df[:A] = DataArray(1.0:5.0)
+    df[:B] = DataArray(1.0:5.0)
     a = convert(Array, df)
     aa = convert(Array{Any}, df)
     ai = convert(Array{Int}, df)

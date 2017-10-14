@@ -229,8 +229,8 @@ module TestIO
     filename = "$data/factors/mixedvartypes.csv"
     df = readtable(filename, makefactors = true)
 
-    @test typeof(df[:factorvar]) == PooledDataArray{String,UInt32,1}
-    @test typeof(df[:floatvar]) == DataArray{Float64,1}
+    @test df[:factorvar] isa CategoricalArray{Union{String, Null},1}
+    @test df[:floatvar] isa Array{Union{Float64, Null},1}
 
     # Readtable shouldn't silently drop data when reading highly compressed gz.
     df = readtable("$data/compressed/1000x2.csv.gz")
@@ -239,38 +239,38 @@ module TestIO
     # Readtable type inference
     filename = "$data/typeinference/bool.csv"
     df = readtable(filename)
-    @test typeof(df[:Name]) == DataArray{String,1}
-    @test typeof(df[:IsMale]) == DataArray{Bool,1}
+    @test typeof(df[:Name]) == Array{Union{String, Null},1}
+    @test typeof(df[:IsMale]) == Array{Union{Bool, Null},1}
     @test df[:IsMale][1] == true
     @test df[:IsMale][4] == false
 
     filename = "$data/typeinference/standardtypes.csv"
     df = readtable(filename)
-    @test typeof(df[:IntColumn]) == DataArray{Int,1}
-    @test typeof(df[:IntlikeColumn]) == DataArray{Float64,1}
-    @test typeof(df[:FloatColumn]) == DataArray{Float64,1}
-    @test typeof(df[:BoolColumn]) == DataArray{Bool,1}
-    @test typeof(df[:StringColumn]) == DataArray{String,1}
+    @test typeof(df[:IntColumn]) == Array{Union{Int, Null},1}
+    @test typeof(df[:IntlikeColumn]) == Array{Union{Float64, Null},1}
+    @test typeof(df[:FloatColumn]) == Array{Union{Float64, Null},1}
+    @test typeof(df[:BoolColumn]) == Array{Union{Bool, Null},1}
+    @test typeof(df[:StringColumn]) == Array{Union{String, Null},1}
 
     filename = "$data/typeinference/mixedtypes.csv"
     df = readtable(filename)
-    @test typeof(df[:c1]) == DataArray{String,1}
+    @test typeof(df[:c1]) == Array{Union{String, Null},1}
     @test df[:c1][1] == "1"
     @test df[:c1][2] == "2.0"
     @test df[:c1][3] == "true"
-    @test typeof(df[:c2]) == DataArray{Float64,1}
+    @test typeof(df[:c2]) == Array{Union{Float64, Null},1}
     @test df[:c2][1] == 1.0
     @test df[:c2][2] == 3.0
     @test df[:c2][3] == 4.5
-    @test typeof(df[:c3]) == DataArray{String,1}
+    @test typeof(df[:c3]) == Array{Union{String, Null},1}
     @test df[:c3][1] == "0"
     @test df[:c3][2] == "1"
     @test df[:c3][3] == "f"
-    @test typeof(df[:c4]) == DataArray{Bool,1}
+    @test typeof(df[:c4]) == Array{Union{Bool, Null},1}
     @test df[:c4][1] == true
     @test df[:c4][2] == false
     @test df[:c4][3] == true
-    @test typeof(df[:c5]) == DataArray{String,1}
+    @test typeof(df[:c5]) == Array{Union{String, Null},1}
     @test df[:c5][1] == "False"
     @test df[:c5][2] == "true"
     @test df[:c5][3] == "true"
@@ -279,37 +279,37 @@ module TestIO
     filename = "$data/definedtypes/mixedvartypes.csv"
 
     df = readtable(filename)
-    @test typeof(df[:n]) == DataArray{Int,1}
+    @test typeof(df[:n]) == Array{Union{Int, Null},1}
     @test df[:n][1] == 1
-    @test typeof(df[:s]) == DataArray{String,1}
+    @test typeof(df[:s]) == Array{Union{String, Null},1}
     @test df[:s][1] == "text"
-    @test typeof(df[:f]) == DataArray{Float64,1}
+    @test typeof(df[:f]) == Array{Union{Float64, Null},1}
     @test df[:f][1] == 2.3
-    @test typeof(df[:b]) == DataArray{Bool,1}
+    @test typeof(df[:b]) == Array{Union{Bool, Null},1}
     @test df[:b][1] == true
 
     df = readtable(filename, eltypes = [Int64, String, Float64, Bool])
-    @test typeof(df[:n]) == DataArray{Int64,1}
+    @test typeof(df[:n]) == Array{Union{Int64, Null},1}
     @test df[:n][1] == 1
-    @test typeof(df[:s]) == DataArray{String,1}
+    @test typeof(df[:s]) == Array{Union{String, Null},1}
     @test df[:s][1] == "text"
     @test df[:s][4] == "text ole"
-    @test typeof(df[:f]) == DataArray{Float64,1}
+    @test typeof(df[:f]) == Array{Union{Float64, Null},1}
     @test df[:f][1] == 2.3
-    @test typeof(df[:b]) == DataArray{Bool,1}
+    @test typeof(df[:b]) == Array{Union{Bool, Null},1}
     @test df[:b][1] == true
     @test df[:b][2] == false
 
     df = readtable(filename, eltypes = [Int64, String, Float64, String])
-    @test typeof(df[:n]) == DataArray{Int64,1}
+    @test typeof(df[:n]) == Array{Union{Int64, Null},1}
     @test df[:n][1] == 1.0
     @test isna(df[:s][3])
-    @test typeof(df[:f]) == DataArray{Float64,1}
+    @test typeof(df[:f]) == Array{Union{Float64, Null},1}
     # Float are not converted to int
     @test df[:f][1] == 2.3
     @test df[:f][2] == 0.2
     @test df[:f][3] == 5.7
-    @test typeof(df[:b]) == DataArray{String,1}
+    @test typeof(df[:b]) == Array{Union{String, Null},1}
     @test df[:b][1] == "T"
     @test df[:b][2] == "FALSE"
 
@@ -409,7 +409,7 @@ module TestIO
     @test df1[1] == ["Alice","Bob","Carol","Eve"]
     @test df1[2] == [36,24,58,49]
     @test df1[3] == [3.14,0,2.71,7.77]
-    @test typeof(df1[1]) <: DataArray
+    @test typeof(df1[1]) <: Array
 
     # Test @wsv_str
     df2 = wsv"""
@@ -449,7 +449,7 @@ module TestIO
         Carol,  58,         2.71
         Eve,    49,         7.77
         """f
-    @test typeof(df5[1]) <: PooledDataArray
+    @test typeof(df5[1]) <: CategoricalArray
 
     # Test 'c' flag
     df6 = csv"""
@@ -478,7 +478,7 @@ module TestIO
         #Carol,  58,         2.71
         Eve,    49,         7.77
         """fcH
-    @test typeof(df8[1]) <: PooledDataArray
+    @test typeof(df8[1]) <: CategoricalArray
     @test names(df8) == [:x1,:x2,:x3]
     @test Array(df8) == Array(df1[[1,2,4],:])
 

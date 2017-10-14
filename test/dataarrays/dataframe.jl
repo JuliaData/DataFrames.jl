@@ -107,9 +107,9 @@ module TestDataFrame
     df = DataFrame(Union{Int, Null}, 10, 3)
     @test size(df, 1) == 10
     @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == DataVector{Int}
-    @test typeof(df[:, 2]) == DataVector{Int}
-    @test typeof(df[:, 3]) == DataVector{Int}
+    @test typeof(df[:, 1]) == Vector{Union{Int, Null}}
+    @test typeof(df[:, 2]) == Vector{Union{Int, Null}}
+    @test typeof(df[:, 3]) == Vector{Union{Int, Null}}
     @test all(isna, df[:, 1])
     @test all(isna, df[:, 2])
     @test all(isna, df[:, 3])
@@ -117,9 +117,9 @@ module TestDataFrame
     df = DataFrame([Union{Int, Null}, Union{Float64, Null}, Union{String, Null}], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == DataVector{Int}
-    @test typeof(df[:, 2]) == DataVector{Float64}
-    @test typeof(df[:, 3]) == DataVector{String}
+    @test typeof(df[:, 1]) == Vector{Union{Int, Null}}
+    @test typeof(df[:, 2]) == Vector{Union{Float64, Null}}
+    @test typeof(df[:, 3]) == Vector{Union{String, Null}}
     @test all(isna, df[:, 1])
     @test all(isna, df[:, 2])
     @test all(isna, df[:, 3])
@@ -128,9 +128,9 @@ module TestDataFrame
                    [:A, :B, :C], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == DataVector{Int}
-    @test typeof(df[:, 2]) == DataVector{Float64}
-    @test typeof(df[:, 3]) == DataVector{String}
+    @test typeof(df[:, 1]) == Vector{Union{Int, Null}}
+    @test typeof(df[:, 2]) == Vector{Union{Float64, Null}}
+    @test typeof(df[:, 3]) == Vector{Union{String, Null}}
     @test all(isna, df[:, 1])
     @test all(isna, df[:, 2])
     @test all(isna, df[:, 3])
@@ -140,9 +140,9 @@ module TestDataFrame
                    [:A, :B, :C], [false,false,true], 100)
     @test size(df, 1) == 100
     @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == DataVector{Int}
-    @test typeof(df[:, 2]) == DataVector{Float64}
-    @test typeof(df[:, 3]) == PooledDataVector{String,UInt32}
+    @test typeof(df[:, 1]) == Vector{Union{Int, Null}}
+    @test typeof(df[:, 2]) == Vector{Union{Float64, Null}}
+    @test df[:, 3] isa CategoricalVector{Union{String, Null},UInt32}
     @test all(isna, df[:, 1])
     @test all(isna, df[:, 2])
     @test all(isna, df[:, 3])
@@ -151,17 +151,17 @@ module TestDataFrame
     df = convert(DataFrame, zeros(10, 5))
     @test size(df, 1) == 10
     @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == DataVector{Float64}
+    @test typeof(df[:, 1]) == Vector{Float64}
 
     df = convert(DataFrame, ones(10, 5))
     @test size(df, 1) == 10
     @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == DataVector{Float64}
+    @test typeof(df[:, 1]) == Vector{Float64}
 
     df = convert(DataFrame, eye(10, 5))
     @test size(df, 1) == 10
     @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == DataVector{Float64}
+    @test typeof(df[:, 1]) == Vector{Float64}
 
 
     # This assignment was missing before
@@ -282,15 +282,17 @@ module TestDataFrame
     end
 
     #Check the output of unstack
-    df = DataFrame(Fish = ["Bob", "Bob", "Batman", "Batman"],
-        Key = ["Mass", "Color", "Mass", "Color"],
-        Value = ["12 g", "Red", "18 g", "Grey"])
+    df = DataFrame(Fish = DataArray(["Bob", "Bob", "Batman", "Batman"]),
+        Key = DataArray(["Mass", "Color", "Mass", "Color"]),
+        Value = DataArray(["12 g", "Red", "18 g", "Grey"]))
     #Unstack specifying a row column
     df2 = unstack(df,:Fish, :Key, :Value)
     #Unstack without specifying a row column
     df3 = unstack(df,:Key, :Value)
     #The expected output
-    df4 = DataFrame(Fish = ["Batman", "Bob"], Color = ["Grey", "Red"], Mass = ["18 g", "12 g"])
+    df4 = DataFrame(Fish = DataArray(["Batman", "Bob"]),
+                    Color = DataArray(["Grey", "Red"]),
+                    Mass = DataArray(["18 g", "12 g"]))
     @test df2 == df4
     @test df3 == df4
     #Make sure unstack works with NAs at the start of the value column

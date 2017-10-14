@@ -243,7 +243,7 @@ module TestData
     )
 
     df2 = DataFrame(
-        a = [:x,:y][[1,2,1,1,2]],
+        a = Union{Symbol, Null}[:x,:y][[1,2,1,1,2]],
         b = [:A,:B,:C][[1,1,1,2,3]],
         v2 = randn(5)
     )

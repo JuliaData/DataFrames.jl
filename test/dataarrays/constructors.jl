@@ -19,29 +19,29 @@ module TestConstructors
     @test isequal(df,
                   DataFrame(Any[data(zeros(3)), data(ones(3))]))
     @test isequal(df,
-                  DataFrame(x1 = [0.0, 0.0, 0.0],
-                            x2 = [1.0, 1.0, 1.0]))
+                  DataFrame(x1 = @data([0.0, 0.0, 0.0]),
+                            x2 = @data([1.0, 1.0, 1.0])))
 
-    df2 = convert(DataFrame, [0.0 1.0;
-                              0.0 1.0;
-                              0.0 1.0])
+    df2 = convert(DataFrame, @data([0.0 1.0;
+                                    0.0 1.0;
+                                    0.0 1.0]))
     names!(df2, [:x1, :x2])
     @test isequal(df, df2)
 
     @test isequal(df,
-                  convert(DataFrame, [0.0 1.0;
-                                      0.0 1.0;
-                                      0.0 1.0]))
+                  convert(DataFrame, @data([0.0 1.0;
+                                            0.0 1.0;
+                                            0.0 1.0])))
 
-    @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0],
-                                x2 = [1.0, 1.0, 1.0]))
-    @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0],
-                                x2 = [1.0, 1.0, 1.0],
-                                x3 = [2.0, 2.0, 2.0])[[:x1, :x2]])
+    @test isequal(df, DataFrame(x1 = @data([0.0, 0.0, 0.0]),
+                                x2 = @data([1.0, 1.0, 1.0])))
+    @test isequal(df, DataFrame(x1 = @data([0.0, 0.0, 0.0]),
+                                x2 = @data([1.0, 1.0, 1.0]),
+                                x3 = @data([2.0, 2.0, 2.0]))[[:x1, :x2]])
 
     df = DataFrame(Int, 2, 2)
     @test size(df) == (2, 2)
-    @test all(eltypes(df) .== [Union{Int, Null}, Union{Int, Null}])
+    @test all(eltypes(df) .== [Int, Int])
 
     df = DataFrame([Union{Int, Null}, Union{Float64, Null}], [:x1, :x2], 2)
     @test size(df) == (2, 2)
