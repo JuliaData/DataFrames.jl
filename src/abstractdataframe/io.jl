@@ -234,8 +234,10 @@ allocate(::Type{CategoricalValue{T, R}}, rows, ref) where {T, R} =
     CategoricalArray{T, 1, R}(rows)
 allocate(::Type{Union{Null, CategoricalValue{T, R}}}, rows, ref) where {T, R} =
     CategoricalArray{Union{Null, T}, 1, R}(rows)
-allocate(::Type{T}, rows, ref) where {T <: Union{WeakRefString, Null}} =
-    WeakRefStringArray(ref, T, rows)
+allocate(::Type{WeakRefString{T}}, rows, ref) where {T} =
+    WeakRefStringArray(ref, WeakRefString{T}, rows)
+allocate(::Type{Union{Null, WeakRefString{T}}}, rows, ref) where {T} =
+    WeakRefStringArray(ref, Union{Null, WeakRefString{T}}, rows)
 allocate(::Type{Null}, rows, ref) = nulls(rows)
 
 # Construct or modify a DataFrame to be ready to stream data from a source with `sch`
@@ -300,10 +302,7 @@ DataFrame(sink, sch::Data.Schema, ::Type{S}, append::Bool;
     sink.columns[col][row] = val
 @inline function Data.streamto!(sink::DataFrameStream, ::Type{Data.Column}, column,
                        row, col::Int, knownrows)
-    # @show sink.columns[col]
-    # @show column
     append!(sink.columns[col], column)
-    # @show sink.columns[col]
 end
     
 
