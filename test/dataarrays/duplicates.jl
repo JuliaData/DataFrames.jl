@@ -10,10 +10,10 @@ module TestDuplicates
     unique!(df)
     @test isequal(df, udf)
 
-    pdf = DataFrame( a = PooledDataArray( @data ["a", "a", NA, NA, "b", NA, "a", NA] ),
-                     b = PooledDataArray( @data ["a", "b", NA, NA, "b", "a", "a", "a"] ) )
-    updf = DataFrame( a = PooledDataArray( @data ["a", "a", NA, "b", NA] ),
-                      b = PooledDataArray( @data ["a", "b", NA, "b", "a"] ) )
+    pdf = DataFrame( a = PooledDataArray( @data ["a", "a", null, null, "b", null, "a", null] ),
+                     b = PooledDataArray( @data ["a", "b", null, null, "b", "a", "a", "a"] ) )
+    updf = DataFrame( a = PooledDataArray( @data ["a", "a", null, "b", null] ),
+                      b = PooledDataArray( @data ["a", "b", null, "b", "a"] ) )
     @test isequal(nonunique(pdf), [false, false, false, true, false, false, true, true])
     @test isequal(nonunique(updf), falses(5) )
     @test isequal(updf, unique(pdf))

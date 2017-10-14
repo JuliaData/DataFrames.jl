@@ -4,10 +4,10 @@ module TestDataFrameRow
     using DataArrays
 
     df = DataFrame(a=@data([1,   2,   3,   1,   2,   2 ]),
-                   b=@data([2.0, NA,  1.2, 2.0, NA,  NA]),
-                   c=@data(["A", "B", "C", "A", "B", NA]),
+                   b=@data([2.0, null,  1.2, 2.0, null,  null]),
+                   c=@data(["A", "B", "C", "A", "B", null]),
                    d=PooledDataArray(
-                     @data([:A,  NA,  :C,  :A,  NA,  :C])))
+                     @data([:A,  null,  :C,  :A,  null,  :C])))
     df2 = DataFrame(a = @data([1, 2, 3]))
 
     #

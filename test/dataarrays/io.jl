@@ -43,7 +43,7 @@ module TestIO
     @test df[1, 2] == "\$"
     @test df[1, 3] === 1971
     @test df[1, 4] === 121
-    @test df[1, 5] === NA
+    @test df[1, 5] === null
     @test df[1, 6] === 6.4
     @test df[1, 7] === 348
     @test df[1, 8] === 4.5
@@ -303,7 +303,7 @@ module TestIO
     df = readtable(filename, eltypes = [Int64, String, Float64, String])
     @test typeof(df[:n]) == Array{Union{Int64, Null},1}
     @test df[:n][1] == 1.0
-    @test isna(df[:s][3])
+    @test isnull(df[:s][3])
     @test typeof(df[:f]) == Array{Union{Float64, Null},1}
     # Float are not converted to int
     @test df[:f][1] == 2.3
@@ -325,10 +325,10 @@ module TestIO
     io = IOBuffer(abnormal*",%_B*\tC*,end\n1,2,3\n")
     @test names(readtable(io, normalizenames=false)) == [Symbol(abnormal),Symbol("%_B*\tC*"),:end]
 
-    # Test writetable with NA and compare to the results
+    # Test writetable with null and compare to the results
     tf = tempname()
     isfile(tf) && rm(tf)
-    df = DataFrame(A = @data([1,NA]), B = @data(["b", NA]))
+    df = DataFrame(A = @data([1,null]), B = @data(["b", null]))
     writetable(tf, df)
     @test readcsv(tf) == ["A" "B"; 1 "b"; "NA" "NA"]
 

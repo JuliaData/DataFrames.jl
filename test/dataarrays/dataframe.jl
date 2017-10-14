@@ -13,7 +13,7 @@ module TestDataFrame
     @test !isequal(DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, 3]), c=@data([4, 5, 6])))
     @test !isequal(DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])), DataFrame(b=@data([4, 5, 6]), a=@data([1, 2, 3])))
     @test !isequal(DataFrame(a=@data([1, 2, 2]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
-    @test isequal(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])))
+    @test isequal(DataFrame(a=@data([1, 2, null]), b=@data([4, 5, 6])), DataFrame(a=@data([1, 2, null]), b=@data([4, 5, 6])))
 
     @test DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6]))
     @test DataFrame(a=@data([1, 2]), b=@data([4, 5])) != DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6]))
@@ -21,9 +21,9 @@ module TestDataFrame
     @test DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])) != DataFrame(a=@data([1, 2, 3]), c=@data([4, 5, 6]))
     @test DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])) != DataFrame(b=@data([4, 5, 6]), a=@data([1, 2, 3]))
     @test DataFrame(a=@data([1, 2, 2]), b=@data([4, 5, 6])) != DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6]))
-    @test DataFrame(a=@data([1, 3, NA]), b=@data([4, 5, 6])) != DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6]))
-    @test isna(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])))
-    @test isna(DataFrame(a=@data([1, 2, NA]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
+    @test DataFrame(a=@data([1, 3, null]), b=@data([4, 5, 6])) != DataFrame(a=@data([1, 2, null]), b=@data([4, 5, 6]))
+    @test isnull(DataFrame(a=@data([1, 2, null]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, null]), b=@data([4, 5, 6])))
+    @test isnull(DataFrame(a=@data([1, 2, null]), b=@data([4, 5, 6])) == DataFrame(a=@data([1, 2, 3]), b=@data([4, 5, 6])))
 
     #
     # Copying
@@ -71,9 +71,9 @@ module TestDataFrame
 
     # similar / nas
     df = DataFrame(a = 1, b = "b", c = @pdata([3.3]))
-    nadf = DataFrame(a = @data(Int[NA, NA]),
+    nadf = DataFrame(a = @data(Int[null, null]),
                      b = DataArray(Vector{String}(2), trues(2)),
-                     c = @pdata(Float64[NA, NA]))
+                     c = @pdata(Float64[null, null]))
     @test isequal(nadf, similar(df, 2))
 
     # Associative methods
@@ -110,9 +110,9 @@ module TestDataFrame
     @test typeof(df[:, 1]) == Vector{Union{Int, Null}}
     @test typeof(df[:, 2]) == Vector{Union{Int, Null}}
     @test typeof(df[:, 3]) == Vector{Union{Int, Null}}
-    @test all(isna, df[:, 1])
-    @test all(isna, df[:, 2])
-    @test all(isna, df[:, 3])
+    @test all(isnull, df[:, 1])
+    @test all(isnull, df[:, 2])
+    @test all(isnull, df[:, 3])
 
     df = DataFrame([Union{Int, Null}, Union{Float64, Null}, Union{String, Null}], 100)
     @test size(df, 1) == 100
@@ -120,9 +120,9 @@ module TestDataFrame
     @test typeof(df[:, 1]) == Vector{Union{Int, Null}}
     @test typeof(df[:, 2]) == Vector{Union{Float64, Null}}
     @test typeof(df[:, 3]) == Vector{Union{String, Null}}
-    @test all(isna, df[:, 1])
-    @test all(isna, df[:, 2])
-    @test all(isna, df[:, 3])
+    @test all(isnull, df[:, 1])
+    @test all(isnull, df[:, 2])
+    @test all(isnull, df[:, 3])
 
     df = DataFrame([Union{Int, Null}, Union{Float64, Null}, Union{String, Null}],
                    [:A, :B, :C], 100)
@@ -131,9 +131,9 @@ module TestDataFrame
     @test typeof(df[:, 1]) == Vector{Union{Int, Null}}
     @test typeof(df[:, 2]) == Vector{Union{Float64, Null}}
     @test typeof(df[:, 3]) == Vector{Union{String, Null}}
-    @test all(isna, df[:, 1])
-    @test all(isna, df[:, 2])
-    @test all(isna, df[:, 3])
+    @test all(isnull, df[:, 1])
+    @test all(isnull, df[:, 2])
+    @test all(isnull, df[:, 3])
 
 
     df = DataFrame([Union{Int, Null}, Union{Float64, Null}, Union{String, Null}],
@@ -143,9 +143,9 @@ module TestDataFrame
     @test typeof(df[:, 1]) == Vector{Union{Int, Null}}
     @test typeof(df[:, 2]) == Vector{Union{Float64, Null}}
     @test df[:, 3] isa CategoricalVector{Union{String, Null},UInt32}
-    @test all(isna, df[:, 1])
-    @test all(isna, df[:, 2])
-    @test all(isna, df[:, 3])
+    @test all(isnull, df[:, 1])
+    @test all(isnull, df[:, 2])
+    @test all(isnull, df[:, 3])
 
 
     df = convert(DataFrame, zeros(10, 5))
@@ -270,15 +270,15 @@ module TestDataFrame
     #suppress output and test that describe() does not throw
     devnull = is_unix() ? "/dev/null" : "nul"
     open(devnull, "w") do f
-        @test nothing == describe(f, DataFrame(a=[1, 2], b=Any["3", NA]))
-        @test nothing == describe(f, DataFrame(a=@data([1, 2]), b=@data(["3", NA])))
-        @test nothing == describe(f, DataFrame(a=@pdata([1, 2]), b=@pdata(["3", NA])))
+        @test nothing == describe(f, DataFrame(a=[1, 2], b=Any["3", null]))
+        @test nothing == describe(f, DataFrame(a=@data([1, 2]), b=@data(["3", null])))
+        @test nothing == describe(f, DataFrame(a=@pdata([1, 2]), b=@pdata(["3", null])))
         @test nothing == describe(f, [1, 2, 3])
         @test nothing == describe(f, @data([1, 2, 3]))
         @test nothing == describe(f, @pdata([1, 2, 3]))
-        @test nothing == describe(f, Any["1", "2", NA])
-        @test nothing == describe(f, @data(["1", "2", NA]))
-        @test nothing == describe(f, @pdata(["1", "2", NA]))
+        @test nothing == describe(f, Any["1", "2", null])
+        @test nothing == describe(f, @data(["1", "2", null]))
+        @test nothing == describe(f, @pdata(["1", "2", null]))
     end
 
     #Check the output of unstack
@@ -295,11 +295,11 @@ module TestDataFrame
                     Mass = DataArray(["18 g", "12 g"]))
     @test df2 == df4
     @test df3 == df4
-    #Make sure unstack works with NAs at the start of the value column
-    df[1,:Value] = NA
+    #Make sure unstack works with nulls at the start of the value column
+    df[1,:Value] = null
     df2 = unstack(df,:Fish, :Key, :Value)
     #This changes the expected result
-    df4[2,:Mass] = NA
+    df4[2,:Mass] = null
     @test isequal(df2, df4)
 
 

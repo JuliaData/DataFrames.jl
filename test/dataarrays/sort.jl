@@ -3,7 +3,7 @@ module TestSort
     using DataFrames
     using DataArrays
 
-    dv1 = @data([9, 1, 8, NA, 3, 3, 7, NA])
+    dv1 = @data([9, 1, 8, null, 3, 3, 7, null])
     dv2 = 1.0 * dv1
     dv3 = DataArray([1:8;])
     pdv1 = convert(PooledDataArray, dv1)

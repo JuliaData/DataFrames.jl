@@ -7,8 +7,8 @@ module TestCat
     # hcat
     #
 
-    dvint = @data([1, 2, NA, 4])
-    dvstr = @data(["one", "two", NA, "four"])
+    dvint = @data([1, 2, null, 4])
+    dvstr = @data(["one", "two", null, "four"])
 
     df2 = DataFrame(Any[dvint, dvstr])
     df3 = DataFrame(Any[dvint])
@@ -80,7 +80,7 @@ module TestCat
 
     # Eltype promotion
     @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == [Float64]
-    @test eltypes(vcat(DataFrame(a = @data([1, NA])), DataFrame(a = [2.1]))) == [Union{Float64, Null}]
+    @test eltypes(vcat(DataFrame(a = @data([1, null])), DataFrame(a = [2.1]))) == [Union{Float64, Null}]
 
     # Minimal container type promotion
     dfa = DataFrame(a = @pdata([1, 2, 2]))
@@ -100,8 +100,8 @@ module TestCat
 
     # Missing columns
     rename!(dfd, :a, :b)
-    dfda = DataFrame(b = @data([2, 3, 4, NA, NA, NA]),
-                     a = @pdata([NA, NA, NA, 1, 2, 2]))
+    dfda = DataFrame(b = @data([2, 3, 4, null, null, null]),
+                     a = @pdata([null, null, null, 1, 2, 2]))
     @test_throws ArgumentError vcat(dfd, dfa)
 
     # Alignment

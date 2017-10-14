@@ -30,7 +30,7 @@ module TestConversions
     @test isa(ai, Matrix{Int})
     @test ai == convert(Matrix{Int}, df)
 
-    df[1,1] = NA
+    df[1,1] = null
     da = convert(Array, df)
     daa = convert(Array{Any}, df)
     dai = convert(Array{Union{Int, Null}}, df)

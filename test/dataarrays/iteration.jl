@@ -2,7 +2,7 @@ module TestIteration
     using Base.Test, DataFrames
     using DataArrays
 
-    dv = @data([1, 2, NA])
+    dv = @data([1, 2, null])
     dm = DataArray([1 2; 3 4])
     dt = DataArray(zeros(2, 2, 2))
 

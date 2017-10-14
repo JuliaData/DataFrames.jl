@@ -15,15 +15,15 @@ module TestJoin
 
     # Test output of various join types
     outer = DataFrame(ID = [1, 2, 2, 3, 4],
-                      Name = @data(["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", NA]),
-                      Job = @data(["Lawyer", "Doctor", "Florist", NA, "Farmer"]))
+                      Name = @data(["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", null]),
+                      Job = @data(["Lawyer", "Doctor", "Florist", null, "Farmer"]))
 
     # (Tests use current column ordering but don't promote it)
-    right = outer[(!).(isna.(outer[:Job])), [:ID, :Name, :Job]]
-    left = outer[(!).(isna.(outer[:Name])), :]
-    inner = left[(!).(isna.(left[:Job])), :]
+    right = outer[(!).(isnull.(outer[:Job])), [:ID, :Name, :Job]]
+    left = outer[(!).(isnull.(outer[:Name])), :]
+    inner = left[(!).(isnull.(left[:Job])), :]
     semi = unique(inner[:, [:ID, :Name]])
-    anti = left[isna.(left[:Job]), [:ID, :Name]]
+    anti = left[isnull.(left[:Job]), [:ID, :Name]]
 
     @test isequal(join(name, job, on = :ID), inner)
     @test isequal(join(name, job, on = :ID, kind = :inner), inner)
@@ -72,7 +72,7 @@ module TestJoin
     df1 = DataFrame(A = 1:50,
                     B = 1:50,
                     C = 1)
-    pool!(df1, :A)
-    pool!(df1, :B)
+    categorical!(df1, :A)
+    categorical!(df1, :B)
     join(df1, df1, on = [:A, :B], kind = :inner)
 end

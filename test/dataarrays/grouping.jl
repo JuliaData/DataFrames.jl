@@ -6,8 +6,8 @@ module TestGrouping
     df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                    b = repeat([2, 1], outer=[4]),
                    c = randn(8))
-    #df[6, :a] = NA
-    #df[7, :b] = NA
+    #df[6, :a] = null
+    #df[7, :b] = null
 
     cols = [:a, :b]
 
