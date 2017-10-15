@@ -155,7 +155,7 @@ module TestGrouping
     groupby(df, [:v1, :v2])
 
     df2 = by(e->1, DataFrame(x=Int64[]), :x)
-    @test size(df2) == (0,2)
+    @test size(df2) == (0, 1)
     @test sum(df2[:x]) == 0
 
     # Check that reordering levels does not confuse groupby
