@@ -2,7 +2,7 @@
 
 A `DataFrame` supports many forms of indexing.
 
-```julia
+```jldoctest subsets
 julia> using DataFrames
 
 julia> df = DataFrame(A = 1:10, B = 2:2:20)
@@ -19,11 +19,12 @@ julia> df = DataFrame(A = 1:10, B = 2:2:20)
 │ 8   │ 8  │ 16 │
 │ 9   │ 9  │ 18 │
 │ 10  │ 10 │ 20 │
+
 ```
 
 Referring to the first column by index or name:
 
-```julia
+```jldoctest subsets
 julia> df[1]
 10-element Array{Int64,1}:
   1
@@ -49,21 +50,23 @@ julia> df[:A]
   8
   9
  10
+
  ```
 
 Refering to the first element of the first column:
 
-```julia
+```jldoctest subsets
 julia> df[1, 1]
 1
 
 julia> df[1, :A]
 1
+
 ```
 
 Selecting a subset of rows by index and an (ordered) subset of columns by name:
 
-```julia
+```jldoctest subsets
 julia> df[1:3, [:A, :B]]
 3×2 DataFrames.DataFrame
 │ Row │ A │ B │
@@ -79,4 +82,5 @@ julia> df[1:3, [:B, :A]]
 │ 1   │ 2 │ 1 │
 │ 2   │ 4 │ 2 │
 │ 3   │ 6 │ 3 │
+
 ```
