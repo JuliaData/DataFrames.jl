@@ -1,5 +1,6 @@
 module TestGrouping
     using Base.Test, DataFrames
+    const ≅ = isequal
 
     srand(1)
     df = DataFrame(a = repeat(Union{Int, Null}[1, 2, 3, 4], outer=[2]),
@@ -181,4 +182,68 @@ module TestGrouping
     @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
     @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
     @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
+
+    @testset "grouping with nulls" begin
+        df = DataFrame(Key1 = ["A", null, "B", "B", "A"],
+                       Key2 = CategoricalArray(["B", "A", "A", null, "A"]),
+                       Value = 1:5)
+
+        @testset "sort=false, skipnull=false" begin
+            gd = groupby(df, :Key1)
+            @test length(gd) == 3
+            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
+            @test gd[2] ≅ DataFrame(Key1=null, Key2="A", Value=2)
+            @test gd[3] ≅ DataFrame(Key1=["B", "B"], Key2=["A", null], Value=3:4)
+
+            gd = groupby(df, [:Key1, :Key2])
+            @test length(gd) == 5
+            @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
+            @test gd[2] ≅ DataFrame(Key1=null, Key2="A", Value=2)
+            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+            @test gd[4] ≅ DataFrame(Key1="B", Key2=null, Value=4)
+            @test gd[5] ≅ DataFrame(Key1="A", Key2="A", Value=5)
+        end
+
+        @testset "sort=false, skipnull=true" begin
+            gd = groupby(df, :Key1, skipnull=true)
+            @test length(gd) == 2
+            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
+            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", null], Value=3:4)
+
+            gd = groupby(df, [:Key1, :Key2], skipnull=true)
+            @test length(gd) == 3
+            @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
+            @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
+            @test gd[3] == DataFrame(Key1="A", Key2="A", Value=5)
+        end
+
+        @testset "sort=true, skipnull=false" begin
+            gd = groupby(df, :Key1, sort=true)
+            @test length(gd) == 3
+            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
+            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", null], Value=3:4)
+            @test gd[3] ≅ DataFrame(Key1=null, Key2="A", Value=2)
+
+            gd = groupby(df, [:Key1, :Key2], sort=true)
+            @test length(gd) == 5
+            @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=5)            
+            @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
+            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+            @test gd[4] ≅ DataFrame(Key1="B", Key2=null, Value=4)
+            @test gd[5] ≅ DataFrame(Key1=null, Key2="A", Value=2)        
+        end
+
+        @testset "sort=false, skipnull=true" begin
+            gd = groupby(df, :Key1, sort=true, skipnull=true)
+            @test length(gd) == 2
+            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
+            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", null], Value=3:4)
+
+            gd = groupby(df, [:Key1, :Key2], sort=true, skipnull=true)
+            @test length(gd) == 3
+            @test gd[1] == DataFrame(Key1="A", Key2="A", Value=5)
+            @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
+            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+        end
+    end
 end
