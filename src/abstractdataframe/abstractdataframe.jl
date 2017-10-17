@@ -715,7 +715,8 @@ julia> vcat(df1, df2)
 ```
 """
 Base.vcat(df::AbstractDataFrame) = df
-function Base.vcat(dfs::AbstractDataFrame...)
+Base.vcat(dfs::AbstractDataFrame...) = _vcat(collect(dfs))
+function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     isempty(dfs) && return DataFrame()
     allheaders = map(names, dfs)
     if all(h -> length(h) == 0, allheaders)
