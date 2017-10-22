@@ -322,21 +322,25 @@ module TestDataFrame
     df = DataFrame(A = 1:10, B = 'A':'J')
     @test !(df[:,:] === df)
 
-    @test append!(DataFrame(A = 1:2, B = 1:2), DataFrame(A = 3:4, B = 3:4)) == DataFrame(A=1:4, B = 1:4)
-    df = DataFrame(A = Vector{Union{Int, Null}}(1:3), B = Vector{Union{Int, Null}}(4:6))
+    @test append!(DataFrame(A = ["A", "B"], B = ["A", "B"]),
+                  DataFrame(A = ["C", "D"], B = ["C", "D"])) ==
+        DataFrame(A = ["A", "B", "C", "D"], B = ["A", "B", "C", "D"])
+    df = DataFrame(A = Union{String, Null}["A", "B", "C"],
+                   B = Union{String, Null}["D", "E", "F"])
     DRT = CategoricalArrays.DefaultRefType
-    @test all(c -> isa(c, Vector{Union{Int, Null}}), categorical!(deepcopy(df)).columns)
-    @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Null}},
+    @test all(c -> typeof(c) <: CategoricalVector{Union{String, Null}},
+              categorical!(deepcopy(df)).columns)
+    @test all(c -> typeof(c) <: CategoricalVector{Union{String, Null}},
               categorical!(deepcopy(df), [1,2]).columns)
-    @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Null}},
+    @test all(c -> typeof(c) <: CategoricalVector{Union{String, Null}},
               categorical!(deepcopy(df), [:A,:B]).columns)
-    @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Null}},
+    @test findfirst(c -> typeof(c) <: CategoricalVector{Union{String, Null}},
                     categorical!(deepcopy(df), [:A]).columns) == 1
-    @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Null}},
+    @test findfirst(c -> typeof(c) <: CategoricalVector{Union{String, Null}},
                     categorical!(deepcopy(df), :A).columns) == 1
-    @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Null}},
+    @test findfirst(c -> typeof(c) <: CategoricalVector{Union{String, Null}},
                     categorical!(deepcopy(df), [1]).columns) == 1
-    @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Null}},
+    @test findfirst(c -> typeof(c) <: CategoricalVector{Union{String, Null}},
                     categorical!(deepcopy(df), 1).columns) == 1
 
     @testset "unstack nullable promotion" begin
