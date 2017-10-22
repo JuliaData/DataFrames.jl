@@ -30,14 +30,16 @@ end
 A view of an AbstractDataFrame split into row groups
 
 ```julia
-groupby(d::AbstractDataFrame, cols)
-groupby(cols)
+groupby(d::AbstractDataFrame, cols; sort = false, skipnull = false)
+groupby(cols; sort = false, skipnull = false)
 ```
 
 ### Arguments
 
 * `d` : an AbstractDataFrame to split (optional, see [Returns](#returns))
 * `cols` : data table columns to group by
+* `sort`: whether to sort rows according to the values of the grouping columns `cols`
+* `skipnull`: whether to skip rows with `null` values in one of the grouping columns `cols`
 
 ### Returns
 
@@ -79,9 +81,10 @@ df |> groupby([:a, :b]) |> [sum, length]
 ```
 
 """
-function groupby(df::AbstractDataFrame, cols::Vector{T}; sort::Bool = false) where T
+function groupby(df::AbstractDataFrame, cols::Vector{T};
+                 sort::Bool = false, skipnull::Bool = false) where T
     sdf = df[cols]
-    df_groups = group_rows(sdf)
+    df_groups = group_rows(sdf, skipnull)
     # sort the groups
     if sort
         group_perm = sortperm(view(sdf, df_groups.rperm[df_groups.starts]))
@@ -91,11 +94,15 @@ function groupby(df::AbstractDataFrame, cols::Vector{T}; sort::Bool = false) whe
     GroupedDataFrame(df, cols, df_groups.rperm,
                      df_groups.starts, df_groups.stops)
 end
-groupby(d::AbstractDataFrame, cols; sort::Bool = false) = groupby(d, [cols], sort = sort)
+groupby(d::AbstractDataFrame, cols;
+        sort::Bool = false, skipnull::Bool = false) =
+    groupby(d, [cols], sort = sort, skipnull = skipnull)
 
 # add a function curry
-groupby(cols::Vector{T}; sort::Bool = false) where {T} = x -> groupby(x, cols, sort = sort)
-groupby(cols; sort::Bool = false) = x -> groupby(x, cols, sort = sort)
+groupby(cols::Vector{T}; sort::Bool = false, skipnull::Bool = false) where {T} =
+    x -> groupby(x, cols, sort = sort, skipnull = skipnull)
+groupby(cols; sort::Bool = false, skipnull::Bool = false) =
+    x -> groupby(x, cols, sort = sort, skipnull = skipnull)
 
 Base.start(gd::GroupedDataFrame) = 1
 Base.next(gd::GroupedDataFrame, state::Int) =

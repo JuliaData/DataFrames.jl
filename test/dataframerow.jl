@@ -44,7 +44,7 @@ module TestDataFrameRow
 
 
     # check that hashrows() function generates the same hashes as DataFrameRow
-    df_rowhashes = DataFrames.hashrows(df)
+    df_rowhashes, _ = DataFrames.hashrows(df, false)
     @test df_rowhashes == [hash(dr) for dr in eachrow(df)]
 
     # test incompatible frames
