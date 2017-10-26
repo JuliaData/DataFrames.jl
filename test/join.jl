@@ -325,4 +325,50 @@ module TestJoin
         @test all(isa.(o(on).columns,
                        [CategoricalVector{Union{T, Missing}} for T in (Int, Float64)]))
     end
+
+    @testset "maintain CategoricalArray levels ordering on join - non-`on` cols" begin
+        A = DataFrame(a = [1, 2, 3], b = ["a", "b", "c"])
+        B = DataFrame(b = ["a", "b", "c"], c = CategoricalVector(["a", "b", "b"]))
+        levels!(B[:c], ["b", "a"])
+        @test levels(join(A, B, on=:b, kind=:inner)[:c]) == ["b", "a"]
+        @test levels(join(B, A, on=:b, kind=:inner)[:c]) == ["b", "a"]
+        @test levels(join(A, B, on=:b, kind=:left)[:c]) == ["b", "a"]
+        @test levels(join(A, B, on=:b, kind=:right)[:c]) == ["b", "a"]
+        @test levels(join(A, B, on=:b, kind=:outer)[:c]) == ["b", "a"]
+        @test levels(join(B, A, on=:b, kind = :semi)[:c]) == ["b", "a"]
+    end
+
+    @testset "maintain CategoricalArray levels ordering on join - ordering conflicts" begin
+        A = DataFrame(a = [1, 2, 3, 4], b = CategoricalVector(["a", "b", "c", "d"]))
+        levels!(A[:b], ["d", "c", "b", "a"])
+        B = DataFrame(b = CategoricalVector(["a", "b", "c"]), c = [5, 6, 7])
+        @test levels(join(A, B, on=:b, kind=:inner)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(B, A, on=:b, kind=:inner)[:b]) == ["a", "b", "c"]
+        @test levels(join(A, B, on=:b, kind=:left)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(B, A, on=:b, kind=:left)[:b]) == ["a", "b", "c"]
+        @test levels(join(A, B, on=:b, kind=:right)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(B, A, on=:b, kind=:right)[:b]) == ["a", "b", "d", "c"]
+        @test levels(join(B, A, on=:b, kind=:outer)[:b]) == ["a", "b", "d", "c"]
+        @test levels(join(A, B, on=:b, kind=:outer)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(A, B, on=:b, kind = :semi)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(B, A, on=:b, kind = :semi)[:b]) == ["a", "b", "c"]
+    end
+
+    @testset "maintain CategoricalArray levels ordering on join - left is categorical" begin
+        A = DataFrame(a = [1, 2, 3, 4], b = CategoricalVector(["a", "b", "c", "d"]))
+        levels!(A[:b], ["d", "c", "b", "a"])
+        B = DataFrame(b = ["a", "b", "c"], c = [5, 6, 7])
+        @test levels(join(A, B, on=:b)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(B, A, on=:b)[:b]) == ["a", "b", "c"]
+        @test levels(join(A, B, on=:b, kind=:inner)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(B, A, on=:b, kind=:inner)[:b]) == ["a", "b", "c"]
+        @test levels(join(A, B, on=:b, kind=:left)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(B, A, on=:b, kind=:left)[:b]) == ["a", "b", "c"]
+        @test levels(join(A, B, on=:b, kind=:right)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(B, A, on=:b, kind=:right)[:b]) == ["a", "b", "c", "d"]
+        @test levels(join(A, B, on=:b, kind=:outer)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(B, A, on=:b, kind=:outer)[:b]) == ["a", "b", "c", "d"]
+        @test levels(join(A, B, on=:b, kind = :semi)[:b]) == ["d", "c", "b", "a"]
+        @test levels(join(B, A, on=:b, kind = :semi)[:b]) == ["a", "b", "c"]
+    end
 end
