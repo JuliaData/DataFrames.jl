@@ -56,7 +56,7 @@ In order to join data tables on keys which have different names, you must first 
 ```julia
 a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
 b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
-rename!(b, :IDNew, :ID)
+rename!(b, :IDNew => :ID)
 join(a, b, on = :ID, kind = :inner)
 ```
 
@@ -69,6 +69,6 @@ a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"],
 b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"],
               Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
               Name = ["a", "b", "c", "d", "e"])
-rename!(b, [:Location => :City, :Work => :Job])
+rename!(b, :Location => :City, :Work => :Job)
 join(a, b, on = [:City, :Job])
 ```
