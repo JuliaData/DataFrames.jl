@@ -9,12 +9,12 @@ join(a, b, on = :ID, kind = :outer)
 join(a, b, on = :ID, kind = :semi)
 join(a, b, on = :ID, kind = :anti)</code></pre><p>Cross joins are the only kind of join that does not use a key:</p><pre><code class="language-julia">join(a, b, kind = :cross)</code></pre><p>In order to join data tables on keys which have different names, you must first rename them so that they match. This can be done using rename!:</p><pre><code class="language-julia">a = DataFrame(ID = [20, 40], Name = [&quot;John Doe&quot;, &quot;Jane Doe&quot;])
 b = DataFrame(IDNew = [20, 40], Job = [&quot;Lawyer&quot;, &quot;Doctor&quot;])
-rename!(b, :IDNew, :ID)
+rename!(b, :IDNew =&gt; :ID)
 join(a, b, on = :ID, kind = :inner)</code></pre><p>Or renaming multiple columns at a time:</p><pre><code class="language-julia">a = DataFrame(City = [&quot;Amsterdam&quot;, &quot;London&quot;, &quot;London&quot;, &quot;New York&quot;, &quot;New York&quot;],
               Job = [&quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Doctor&quot;, &quot;Doctor&quot;],
               Category = [1, 2, 3, 4, 5])
 b = DataFrame(Location = [&quot;Amsterdam&quot;, &quot;London&quot;, &quot;London&quot;, &quot;New York&quot;, &quot;New York&quot;],
               Work = [&quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Doctor&quot;, &quot;Doctor&quot;],
               Name = [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot;])
-rename!(b, [:Location =&gt; :City, :Work =&gt; :Job])
+rename!(b, :Location =&gt; :City, :Work =&gt; :Job)
 join(a, b, on = [:City, :Job])</code></pre><footer><hr/><a class="previous" href="getting_started.html"><span class="direction">Previous</span><span class="title">Getting Started</span></a><a class="next" href="split_apply_combine.html"><span class="direction">Next</span><span class="title">Split-apply-combine</span></a></footer></article></body></html>
