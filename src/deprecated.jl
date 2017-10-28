@@ -1267,3 +1267,10 @@ macro tsv_str(s, flags...)
                  :tsv_str)
     inlinetable(s, flags...; separator='\t')
 end
+
+@deprecate rename!(x::AbstractDataFrame, from::AbstractArray, to::AbstractArray) rename!(x, [f=>t for (f, t) in zip(from, to)])
+@deprecate rename!(x::AbstractDataFrame, from::Symbol, to::Symbol) rename!(x, from => to)
+@deprecate rename!(x::Index, f::Function) rename!(f, x)
+@deprecate rename(x::AbstractDataFrame, from::AbstractArray, to::AbstractArray) rename(x, [f=>t for (f, t) in zip(from, to)])
+@deprecate rename(x::AbstractDataFrame, from::Symbol, to::Symbol) rename(x, from => to)
+@deprecate rename(x::Index, f::Function) rename(f, x)
