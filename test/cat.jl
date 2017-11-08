@@ -110,9 +110,9 @@ module TestCat
     @test vcat(null_df, null_df) == DataFrame()
     @test_throws ArgumentError vcat(null_df, df)
     @test_throws ArgumentError vcat(df, null_df)
-    @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
+    @test eltypes(vcat(df, df)) == Type[Union{Float64, Null}, Union{Float64, Null}, Union{Int, Null}]
     @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
-    @test eltypes(vcat(df, df, df)) == Type[Float64, Float64, Int]
+    @test eltypes(vcat(df, df, df)) == Type[Union{Float64, Null}, Union{Float64, Null}, Union{Int, Null}]
     @test size(vcat(df, df, df)) == (size(df, 1) * 3, size(df, 2))
 
     alt_df = deepcopy(df)
@@ -127,7 +127,7 @@ module TestCat
     @test names(df4) == names(dfr)
     @test dfr == [df4; df4]
 
-    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == Type[Float64]
+    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == Type[Union{Float64, Null}]
     @test eltypes(vcat(DataFrame(a = nulls(Int, 1)), DataFrame(a = Union{Float64, Null}[2.1]))) == Type[Union{Float64, Null}]
 
     # Minimal container type promotion
@@ -139,8 +139,8 @@ module TestCat
     dfac = vcat(dfa, dfc)
     @test dfab[:a] == [1, 2, 2, 2, 3, 4]
     @test dfac[:a] == [1, 2, 2, 2, 3, 4]
-    @test isa(dfab[:a], CategoricalVector{Union{Int, Null}})
-    @test isa(dfac[:a], CategoricalVector{Union{Int, Null}})
+    @test isa(dfab[:a], DataVector{Int})
+    @test isa(dfac[:a], DataVector{Int})
     # ^^ container may flip if container promotion happens in Base/DataArrays
     dc = vcat(dfd, dfc)
     @test vcat(dfc, dfd) == dc
@@ -162,35 +162,35 @@ module TestCat
     @testset "vcat mixed coltypes" begin
         df = vcat(DataFrame([[1]], [:x]), DataFrame([[1.0]], [:x]))
         @test df == DataFrame([[1.0, 1.0]], [:x])
-        @test typeof.(df.columns) == [Vector{Float64}]
+        @test typeof.(df.columns) == [DataVector{Float64}]
         df = vcat(DataFrame([[1]], [:x]), DataFrame([["1"]], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
-        @test typeof.(df.columns) == [Vector{Any}]
+        @test typeof.(df.columns) == [DataVector{Any}]
         df = vcat(DataFrame([Union{Null, Int}[1]], [:x]), DataFrame([[1]], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof.(df.columns) == [Vector{Union{Null, Int}}]
+        @test typeof.(df.columns) == [DataVector{Int}]
         df = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof(df[:x]) <: CategoricalVector{Int}
+        @test typeof(df[:x]) <: DataVector{Int}
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([Union{Null, Int}[1]], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Null}}
+        @test typeof(df[:x]) <: DataVector{Int}
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([CategoricalArray{Union{Int, Null}}([1])], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Null}}
+        @test typeof(df[:x]) <: DataVector{Int}
         df = vcat(DataFrame([Union{Int, Null}[1]], [:x]),
                   DataFrame([["1"]], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
-        @test typeof.(df.columns) == [Vector{Any}]
+        @test typeof.(df.columns) == [DataVector{Any}]
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([CategoricalArray(["1"])], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
-        @test typeof(df[:x]) <: CategoricalVector{Any}
+        @test typeof(df[:x]) <: DataVector{Any}
         df = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
         @test df == DataFrame([[true, false]], [:x])
-        @test typeof.(df.columns) == [Vector{Bool}]
+        @test typeof.(df.columns) == [DataVector{Bool}]
     end
 
     @testset "vcat errors" begin

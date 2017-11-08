@@ -1,0 +1,4 @@
+"IntColumn","IntlikeColumn","FloatColumn","BoolColumn","StringColumn"
+1,1.0,3.1,true,"stuff"
+2,7.0,-3.1e8,false,"blah"
+-1,7.0,-3.1e-8,false,"gah"
