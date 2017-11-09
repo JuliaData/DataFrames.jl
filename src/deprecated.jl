@@ -106,14 +106,14 @@ end
 
 ## read.table
 
-immutable ParsedCSV
+struct ParsedCSV
     bytes::Vector{UInt8} # Raw bytes from CSV file
     bounds::Vector{Int}  # Right field boundary indices
     lines::Vector{Int}   # Line break indices
     quoted::BitVector    # Was field quoted in text
 end
 
-immutable ParseOptions{S <: String, T <: String}
+struct ParseOptions{S <: String, T <: String}
     header::Bool
     separator::Char
     quotemarks::Vector{Char}
@@ -137,7 +137,7 @@ end
 
 # Dispatch on values of ParseOptions to avoid running
 #   unused checks for every byte read
-immutable ParseType{ALLOWCOMMENTS, SKIPBLANKS, ALLOWESCAPES, SPC_SEP} end
+struct ParseType{ALLOWCOMMENTS, SKIPBLANKS, ALLOWESCAPES, SPC_SEP} end
 ParseType(o::ParseOptions) = ParseType{o.allowcomments, o.skipblanks, o.allowescapes, o.separator == ' '}()
 
 macro read_peek_eof(io, nextchr)
@@ -460,10 +460,10 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
     end
 end
 
-function bytematch{T <: String}(bytes::Vector{UInt8},
-                                    left::Integer,
-                                    right::Integer,
-                                    exemplars::Vector{T})
+function bytematch(bytes::Vector{UInt8},
+                       left::Integer,
+                       right::Integer,
+                       exemplars::Vector{T}) where T <: String
     l = right - left + 1
     for index in 1:length(exemplars)
         exemplar = exemplars[index]
@@ -480,16 +480,16 @@ function bytematch{T <: String}(bytes::Vector{UInt8},
     return false
 end
 
-function bytestotype{N <: Integer,
-                     T <: String,
-                     P <: String}(::Type{N},
-                                  bytes::Vector{UInt8},
-                                  left::Integer,
-                                  right::Integer,
-                                  nastrings::Vector{T},
-                                  wasquoted::Bool = false,
-                                  truestrings::Vector{P} = P[],
-                                  falsestrings::Vector{P} = P[])
+function bytestotype(::Type{N},
+                     bytes::Vector{UInt8},
+                     left::Integer,
+                     right::Integer,
+                     nastrings::Vector{T},
+                     wasquoted::Bool = false,
+                     truestrings::Vector{P} = P[],
+                     falsestrings::Vector{P} = P[]) where {N <: Integer,
+                                                         T <: String,
+                                                         P <: String}
     if left > right
         return 0, true, true
     end
@@ -528,16 +528,16 @@ end
 
 let out = Vector{Float64}(1)
     global bytestotype
-    function bytestotype{N <: AbstractFloat,
-                         T <: String,
-                         P <: String}(::Type{N},
-                                      bytes::Vector{UInt8},
-                                      left::Integer,
-                                      right::Integer,
-                                      nastrings::Vector{T},
-                                      wasquoted::Bool = false,
-                                      truestrings::Vector{P} = P[],
-                                      falsestrings::Vector{P} = P[])
+    function bytestotype(::Type{N},
+                         bytes::Vector{UInt8},
+                         left::Integer,
+                         right::Integer,
+                         nastrings::Vector{T},
+                         wasquoted::Bool = false,
+                         truestrings::Vector{P} = P[],
+                         falsestrings::Vector{P} = P[]) where {N <: AbstractFloat,
+                                                             T <: String,
+                                                             P <: String}
         if left > right
             return 0.0, true, true
         end
@@ -558,16 +558,16 @@ let out = Vector{Float64}(1)
     end
 end
 
-function bytestotype{N <: Bool,
-                     T <: String,
-                     P <: String}(::Type{N},
-                                  bytes::Vector{UInt8},
-                                  left::Integer,
-                                  right::Integer,
-                                  nastrings::Vector{T},
-                                  wasquoted::Bool = false,
-                                  truestrings::Vector{P} = P[],
-                                  falsestrings::Vector{P} = P[])
+function bytestotype(::Type{N},
+                     bytes::Vector{UInt8},
+                     left::Integer,
+                     right::Integer,
+                     nastrings::Vector{T},
+                     wasquoted::Bool = false,
+                     truestrings::Vector{P} = P[],
+                     falsestrings::Vector{P} = P[]) where {N <: Bool,
+                                                         T <: String,
+                                                         P <: String}
     if left > right
         return false, true, true
     end
@@ -585,16 +585,16 @@ function bytestotype{N <: Bool,
     end
 end
 
-function bytestotype{N <: AbstractString,
-                     T <: String,
-                     P <: String}(::Type{N},
-                                  bytes::Vector{UInt8},
-                                  left::Integer,
-                                  right::Integer,
-                                  nastrings::Vector{T},
-                                  wasquoted::Bool = false,
-                                  truestrings::Vector{P} = P[],
-                                  falsestrings::Vector{P} = P[])
+function bytestotype(::Type{N},
+                     bytes::Vector{UInt8},
+                     left::Integer,
+                     right::Integer,
+                     nastrings::Vector{T},
+                     wasquoted::Bool = false,
+                     truestrings::Vector{P} = P[],
+                     falsestrings::Vector{P} = P[]) where {N <: AbstractString,
+                                                         T <: String,
+                                                         P <: String}
     if left > right
         if wasquoted
             return "", true, false
