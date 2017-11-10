@@ -596,7 +596,7 @@ end
 nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
-if @isdefined(:unique!)
+if @isdefined unique!
     import Base.unique!
 end
 
