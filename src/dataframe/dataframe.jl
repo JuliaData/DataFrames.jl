@@ -147,13 +147,13 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
 end
 
 # Initialize an empty DataFrame with specific eltypes and names
-# and whether a nominal array should be created
+# and whether a CategoricalArray should be created
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-                   nominal::Vector{Bool}, nrows::Integer) where T<:Type
+                   categorical::Vector{Bool}, nrows::Integer) where T<:Type
     # upcast Vector{DataType} -> Vector{Type} which can hold CategoricalValues
     updated_types = convert(Vector{Type}, column_eltypes)
-    for i in eachindex(nominal)
-        nominal[i] || continue
+    for i in eachindex(categorical)
+        categorical[i] || continue
         if updated_types[i] >: Null
             updated_types[i] = Union{CategoricalValue{Nulls.T(updated_types[i])}, Null}
         else
