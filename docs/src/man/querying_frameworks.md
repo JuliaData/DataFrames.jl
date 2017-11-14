@@ -8,7 +8,7 @@ To get started, install the Query.jl package:
 Pkg.add("Query")
 ```
 
-A query is started with the `@from` macro and consists of a series of query commands. Query.jl provides commands that can filter, project, join, group, flatten and group data from a `DataFrame`. A query can return an iterator, or one can materialize the results of a query into a variety of data structures, including a new `DataFrame`.
+A query is started with the `@from` macro and consists of a series of query commands. Query.jl provides commands that can filter, project, join, flatten and group data from a `DataFrame`. A query can return an iterator, or one can materialize the results of a query into a variety of data structures, including a new `DataFrame`.
 
 A simple example of a query looks like this:
 

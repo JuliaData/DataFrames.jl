@@ -130,7 +130,7 @@ julia> b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
 │ 1   │ 20    │ Lawyer │
 │ 2   │ 40    │ Doctor │
 
-julia> rename!(b, :IDNew, :ID)
+julia> rename!(b, :IDNew => :ID)
 2×2 DataFrames.DataFrame
 │ Row │ ID │ Job    │
 ├─────┼────┼────────┤
@@ -173,7 +173,7 @@ julia> b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "N
 │ 4   │ New York  │ Doctor │ d    │
 │ 5   │ New York  │ Doctor │ e    │
 
-julia> rename!(b, [:Location => :City, :Work => :Job])
+julia> rename!(b, :Location => :City, :Work => :Job)
 5×3 DataFrames.DataFrame
 │ Row │ City      │ Job    │ Name │
 ├─────┼───────────┼────────┼──────┤

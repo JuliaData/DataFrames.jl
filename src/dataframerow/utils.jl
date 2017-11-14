@@ -22,15 +22,25 @@ end
 
 # "kernel" functions for hashrows()
 # adjust row hashes by the hashes of column elements
-function hashrows_col!(h::Vector{UInt}, v::AbstractVector)
+function hashrows_col!(h::Vector{UInt},
+                       n::Vector{Bool},
+                       v::AbstractVector{T}) where T
     @inbounds for i in eachindex(h)
-        h[i] = hash(v[i], h[i])
+        el = v[i]
+        h[i] = hash(el, h[i])
+        if T >: Null && length(n) > 0
+            # el isa Null should be redundant
+            # but it gives much more efficient code on Julia 0.6
+            n[i] |= (el isa Null || isnull(el))
+        end
     end
     h
 end
 
 # should give the same hash as AbstractVector{T}
-function hashrows_col!(h::Vector{UInt}, v::AbstractCategoricalVector{T}) where T
+function hashrows_col!(h::Vector{UInt},
+                       n::Vector{Bool},
+                       v::AbstractCategoricalVector{T}) where T
     # TODO is it possible to optimize by hashing the pool values once?
     @inbounds for (i, ref) in enumerate(v.refs)
         h[i] = hash(CategoricalArrays.index(v.pool)[ref], h[i])
@@ -40,23 +50,29 @@ end
 
 # should give the same hash as AbstractVector{T}
 # enables efficient sequential memory access pattern
-function hashrows_col!(h::Vector{UInt}, v::AbstractCategoricalVector{>: Null})
+function hashrows_col!(h::Vector{UInt},
+                       n::Vector{Bool},
+                       v::AbstractCategoricalVector{>: Null})
     # TODO is it possible to optimize by hashing the pool values once?
     @inbounds for (i, ref) in enumerate(v.refs)
-        h[i] = ref == 0 ?
-               hash(null, h[i]) :
-               hash(CategoricalArrays.index(v.pool)[ref], h[i])
+        if ref == 0
+            h[i] = hash(null, h[i])
+            length(n) > 0 && (n[i] = true)
+        else
+            h[i] = hash(CategoricalArrays.index(v.pool)[ref], h[i])
+        end
     end
     h
 end
 
 # Calculate the vector of `df` rows hash values.
-function hashrows(df::AbstractDataFrame)
-    res = zeros(UInt, nrow(df))
+function hashrows(df::AbstractDataFrame, skipnull::Bool)
+    rhashes = zeros(UInt, nrow(df))
+    nulls = fill(false, skipnull ? nrow(df) : 0)
     for col in columns(df)
-        hashrows_col!(res, col)
+        hashrows_col!(rhashes, nulls, col)
     end
-    return res
+    return (rhashes, nulls)
 end
 
 # Helper function for RowGroupDict.
@@ -66,39 +82,50 @@ end
 # 3) slot array for a hash map, non-zero values are
 #    the indices of the first row in a group
 # Optional group vector is set to the group indices of each row
-row_group_slots(df::AbstractDataFrame, groups::Union{Vector{Int}, Void} = nothing) =
-    row_group_slots(ntuple(i -> df[i], ncol(df)), hashrows(df), groups)
+function row_group_slots(df::AbstractDataFrame,
+                         groups::Union{Vector{Int}, Void} = nothing,
+                         skipnull::Bool = false)
+    rhashes, nulls = hashrows(df, skipnull)
+    row_group_slots(ntuple(i -> df[i], ncol(df)), rhashes, nulls, groups, skipnull)
+end
 
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          rhashes::AbstractVector{UInt},
-                         groups::Union{Vector{Int}, Void} = nothing)
+                         nulls::AbstractVector{Bool},
+                         groups::Union{Vector{Int}, Void} = nothing,
+                         skipnull::Bool = false)
     @assert groups === nothing || length(groups) == length(cols[1])
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataFrames.jl/pull/17#discussion_r102481481
     sz = Base._tablesz(length(rhashes))
     @assert sz >= length(rhashes)
     szm1 = sz-1
     gslots = zeros(Int, sz)
-    ngroups = 0
-    @inbounds for i in eachindex(rhashes)
+    # If nulls are to be skipped, they will all go to group 1
+    ngroups = skipnull ? 1 : 0
+    @inbounds for i in eachindex(rhashes, nulls)
         # find the slot and group index for a row
         slotix = rhashes[i] & szm1 + 1
-        gix = 0
+        # Use 0 for non-null values to catch bugs if group is not found
+        gix = skipnull && nulls[i] ? 1 : 0
         probe = 0
-        while true
-            g_row = gslots[slotix]
-            if g_row == 0 # unoccupied slot, current row starts a new group
-                gslots[slotix] = i
-                gix = ngroups += 1
-                break
-            elseif rhashes[i] == rhashes[g_row] # occupied slot, check if miss or hit
-                if isequal_row(cols, i, g_row) # hit
-                    gix = groups !== nothing ? groups[g_row] : 0
+        # Skip rows contaning at least one null (assigning them to group 0)
+        if !skipnull || !nulls[i]
+            while true
+                g_row = gslots[slotix]
+                if g_row == 0 # unoccupied slot, current row starts a new group
+                    gslots[slotix] = i
+                    gix = ngroups += 1
+                    break
+                elseif rhashes[i] == rhashes[g_row] # occupied slot, check if miss or hit
+                    if isequal_row(cols, i, g_row) # hit
+                        gix = groups !== nothing ? groups[g_row] : 0
+                    end
+                    break
                 end
-                break
+                slotix = slotix & szm1 + 1 # check the next slot
+                probe += 1
+                @assert probe < sz
             end
-            slotix = slotix & szm1 + 1 # check the next slot
-            probe += 1
-            @assert probe < sz
         end
         if groups !== nothing
             groups[i] = gix
@@ -109,9 +136,9 @@ end
 
 # Builds RowGroupDict for a given DataFrame.
 # Partly uses the code of Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
-function group_rows(df::AbstractDataFrame)
+function group_rows(df::AbstractDataFrame, skipnull::Bool = false)
     groups = Vector{Int}(nrow(df))
-    ngroups, rhashes, gslots = row_group_slots(df, groups)
+    ngroups, rhashes, gslots = row_group_slots(df, groups, skipnull)
 
     # count elements in each group
     stops = zeros(Int, ngroups)
@@ -136,6 +163,14 @@ function group_rows(df::AbstractDataFrame)
         stops[gix] += 1
     end
     stops .-= 1
+
+    # drop group 1 which contains rows with nulls in grouping columns
+    if skipnull
+        splice!(starts, 1)
+        splice!(stops, 1)
+        ngroups -= 1
+    end
+
     return RowGroupDict(df, ngroups, rhashes, gslots, groups, rperm, starts, stops)
 end
 

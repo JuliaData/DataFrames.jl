@@ -138,28 +138,35 @@ function rename!(df::AbstractDataFrame, args...)
     rename!(index(df), args...)
     return df
 end
-rename!(f::Function, df::AbstractDataFrame) = rename!(df, f)
+function rename!(f::Function, df::AbstractDataFrame)
+    rename!(f, index(df))
+    return df
+end
 
 rename(df::AbstractDataFrame, args...) = rename!(copy(df), args...)
-rename(f::Function, df::AbstractDataFrame) = rename(df, f)
+rename(f::Function, df::AbstractDataFrame) = rename!(f, copy(df))
 
 """
 Rename columns
 
 ```julia
-rename!(df::AbstractDataFrame, from::Symbol, to::Symbol)
-rename!(df::AbstractDataFrame, d::Associative)
+rename!(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
+rename!(df::AbstractDataFrame, d::Associative{Symbol,Symbol})
+rename!(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
 rename!(f::Function, df::AbstractDataFrame)
-rename(df::AbstractDataFrame, from::Symbol, to::Symbol)
+rename(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
+rename(df::AbstractDataFrame, d::Associative{Symbol,Symbol})
+rename(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
 rename(f::Function, df::AbstractDataFrame)
 ```
 
 **Arguments**
 
 * `df` : the AbstractDataFrame
-* `d` : an Associative type that maps the original name to a new name
-* `f` : a function that has the old column name (a symbol) as input
-  and new column name (a symbol) as output
+* `d` : an Associative type or an AbstractArray of pairs that maps
+  the original names to new names
+* `f` : a function which for each column takes the old name (a Symbol)
+  and returns the new name (a Symbol)
 
 **Result**
 
@@ -169,10 +176,11 @@ rename(f::Function, df::AbstractDataFrame)
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+rename(df, :i => :A, :x => :X)
+rename(df, [:i => :A, :x => :X])
+rename(df, Dict(:i => :A, :x => :X))
 rename(x -> Symbol(uppercase(string(x))), df)
-rename(df, Dict(:i=>:A, :x=>:X))
-rename(df, :y, :Y)
-rename!(df, Dict(:i=>:A, :x=>:X))
+rename!(df, Dict(:i =>: A, :x => :X))
 ```
 
 """
@@ -715,7 +723,8 @@ julia> vcat(df1, df2)
 ```
 """
 Base.vcat(df::AbstractDataFrame) = df
-function Base.vcat(dfs::AbstractDataFrame...)
+Base.vcat(dfs::AbstractDataFrame...) = _vcat(collect(dfs))
+function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     isempty(dfs) && return DataFrame()
     allheaders = map(names, dfs)
     if all(h -> length(h) == 0, allheaders)
