@@ -82,18 +82,12 @@ function make_unique(names::Vector{Symbol}; allow_duplicates=true)
     return names
 end
 
-#' @description
-#'
-#' Generate standardized names for columns of a DataFrame. The
-#' first name will be :x1, the second :x2, etc.
-#'
-#' @field n::Integer The number of names to generate.
-#'
-#' @returns names::Vector{Symbol} A vector of standardized column names.
-#'
-#' @examples
-#'
-#' DataFrames.gennames(10)
+"""
+    gennames(n::Integer)
+
+Generate standardized names for columns of a DataFrame. The first name will be `:x1`, the
+second `:x2`, etc.
+"""
 function gennames(n::Integer)
     res = Array{Symbol}(n)
     for i in 1:n
@@ -103,17 +97,11 @@ function gennames(n::Integer)
 end
 
 
-#' @description
-#'
-#' Count the number of null values in an array.
-#'
-#' @field a::AbstractArray The array whose missing values are to be counted.
-#'
-#' @returns count::Int The number of null values in `a`.
-#'
-#' @examples
-#'
-#' DataFrames.countnull([1, 2, 3])
+"""
+    countnull(a::AbstractArray)
+
+Count the number of `null` values in an array.
+"""
 function countnull(a::AbstractArray)
     res = 0
     for x in a
@@ -122,18 +110,6 @@ function countnull(a::AbstractArray)
     return res
 end
 
-#' @description
-#'
-#' Count the number of missing values in a CategoricalArray.
-#'
-#' @field na::CategoricalArray The CategoricalArray whose missing values
-#'        are to be counted.
-#'
-#' @returns count::Int The number of null values in `a`.
-#'
-#' @examples
-#'
-#' DataFrames.countnull(CategoricalArray([1, 2, 3]))
 function countnull(a::CategoricalArray)
     res = 0
     for x in a.refs
@@ -155,4 +131,3 @@ function _fnames(fs::Vector{T}) where T<:Function
     end
     names
 end
-

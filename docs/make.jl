@@ -19,16 +19,11 @@ makedocs(
             "Reshaping" => "man/reshaping_and_pivoting.md",
             "Sorting" => "man/sorting.md",
             "Categorical Data" => "man/categorical.md",
-            "Querying frameworks" => "man/querying_frameworks.md",
+            "Querying frameworks" => "man/querying_frameworks.md"
         ],
         "API" => Any[
-            "Main types" => "lib/maintypes.md",
-            "Utilities" => "lib/utilities.md",
-            "Data manipulation" => "lib/manipulation.md",
-        ],
-        "About" => Any[
-            "Release Notes" => "NEWS.md",
-            "License" => "LICENSE.md",
+            "Types" => "lib/types.md",
+            "Functions" => "lib/functions.md"
         ]
     ]
 )

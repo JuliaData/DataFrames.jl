@@ -50,7 +50,7 @@ module TestIO
                    G = nulls(3),
                    H = fill(null, 3))
 
-    @test sprint(printtable, df) ==
+    @test sprint(DataFrames.printtable, df) ==
         """
         "A","B","C","D","E","F","G","H"
         1,"'a'","A","a","A","1",null,null
