@@ -8,7 +8,7 @@ module DataFrames
 ##############################################################################
 
 using Reexport, StatsBase, SortingAlgorithms
-@reexport using CategoricalArrays, Nulls
+@reexport using CategoricalArrays, Missings
 
 using Base: Sort, Order
 import Base: ==, |>
@@ -26,6 +26,7 @@ export AbstractDataFrame,
        GroupedDataFrame,
        SubDataFrame,
 
+       allow_missing!,
        aggregate,
        by,
        categorical!,
@@ -34,8 +35,8 @@ export AbstractDataFrame,
        completecases,
        deleterows!,
        describe,
-       dropnull,
-       dropnull!,
+       dropmissing,
+       dropmissing!,
        eachcol,
        eachrow,
        eltypes,
@@ -47,7 +48,6 @@ export AbstractDataFrame,
        ncol,
        nonunique,
        nrow,
-       nullable!,
        order,
        rename!,
        rename,

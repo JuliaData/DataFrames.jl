@@ -3,13 +3,13 @@ module TestGrouping
     const ≅ = isequal
 
     srand(1)
-    df = DataFrame(a = repeat(Union{Int, Null}[1, 2, 3, 4], outer=[2]),
-                   b = repeat(Union{Int, Null}[2, 1], outer=[4]),
-                   c = Vector{Union{Float64, Null}}(randn(8)))
-    #df[6, :a] = null
-    #df[7, :b] = null
+    df = DataFrame(a = repeat(Union{Int, Missing}[1, 2, 3, 4], outer=[2]),
+                   b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
+                   c = Vector{Union{Float64, Missing}}(randn(8)))
+    #df[6, :a] = missing
+    #df[7, :b] = missing
 
-    nullfree = DataFrame(Any[collect(1:10)], [:x1])
+    missingfree = DataFrame(Any[collect(1:10)], [:x1])
     @testset "colwise" begin
         @testset "::Function, ::AbstractDataFrame" begin
             cw = colwise(sum, df)
@@ -18,10 +18,10 @@ module TestGrouping
             @test size(cw) == (ncol(df),)
             @test cw == answer
 
-            cw = colwise(sum, nullfree)
+            cw = colwise(sum, missingfree)
             answer = [55]
             @test isa(cw, Array{Int, 1})
-            @test size(cw) == (ncol(nullfree),)
+            @test size(cw) == (ncol(missingfree),)
             @test cw == answer
         end
 
@@ -37,16 +37,16 @@ module TestGrouping
             @test size(cw) == (length([sum]),ncol(df))
             @test cw == answer
 
-            cw = colwise([sum, minimum], nullfree)
+            cw = colwise([sum, minimum], missingfree)
             answer = reshape([55, 1], (2,1))
             @test isa(cw, Array{Int, 2})
-            @test size(cw) == (length([sum, minimum]), ncol(nullfree))
+            @test size(cw) == (length([sum, minimum]), ncol(missingfree))
             @test cw == answer
 
-            cw = colwise([Vector{Union{Int, Null}}], nullfree)
-            answer = reshape([Vector{Union{Int, Null}}(1:10)], (1,1))
-            @test isa(cw, Array{Vector{Union{Int, Null}},2})
-            @test size(cw) == (1, ncol(nullfree))
+            cw = colwise([Vector{Union{Int, Missing}}], missingfree)
+            answer = reshape([Vector{Union{Int, Missing}}(1:10)], (1,1))
+            @test isa(cw, Array{Vector{Union{Int, Missing}},2})
+            @test size(cw) == (1, ncol(missingfree))
             @test cw == answer
 
             @test_throws MethodError colwise(["Bob", :Susie], DataFrame(A = 1:10, B = 11:20))
@@ -64,17 +64,17 @@ module TestGrouping
             @test size(cw) == (length((sum, length)), ncol(df))
             @test cw == answer
 
-            cw = colwise((sum, length), nullfree)
+            cw = colwise((sum, length), missingfree)
             answer = reshape([55, 10], (2,1))
             @test isa(cw, Array{Int, 2})
-            @test size(cw) == (length((sum, length)), ncol(nullfree))
+            @test size(cw) == (length((sum, length)), ncol(missingfree))
             @test cw == answer
 
-            cw = colwise((CategoricalArray, Vector{Union{Int, Null}}), nullfree)
-            answer = reshape([CategoricalArray(1:10), Vector{Union{Int, Null}}(1:10)],
-                             (2, ncol(nullfree)))
+            cw = colwise((CategoricalArray, Vector{Union{Int, Missing}}), missingfree)
+            answer = reshape([CategoricalArray(1:10), Vector{Union{Int, Missing}}(1:10)],
+                             (2, ncol(missingfree)))
             @test typeof(cw) == Array{AbstractVector,2}
-            @test size(cw) == (2, ncol(nullfree))
+            @test size(cw) == (2, ncol(missingfree))
             @test cw == answer
 
             @test_throws MethodError colwise(("Bob", :Susie), DataFrame(A = 1:10, B = 11:20))
@@ -86,15 +86,15 @@ module TestGrouping
         end
 
         @testset "::Function" begin
-            cw = map(colwise(sum), (nullfree, df))
+            cw = map(colwise(sum), (missingfree, df))
             answer = ([55], Real[20, 12, -0.4283098098931877])
             @test cw == answer
 
-            cw = map(colwise((sum, length)), (nullfree, df))
+            cw = map(colwise((sum, length)), (missingfree, df))
             answer = (reshape([55, 10], (2,1)), Any[20 12 -0.4283098098931877; 8 8 8])
             @test cw == answer
 
-            cw = map(colwise([sum, length]), (nullfree, df))
+            cw = map(colwise([sum, length]), (missingfree, df))
             @test cw == answer
         end
     end
@@ -183,63 +183,63 @@ module TestGrouping
     @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
     @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
 
-    @testset "grouping with nulls" begin
-        df = DataFrame(Key1 = ["A", null, "B", "B", "A"],
-                       Key2 = CategoricalArray(["B", "A", "A", null, "A"]),
+    @testset "grouping with missings" begin
+        df = DataFrame(Key1 = ["A", missing, "B", "B", "A"],
+                       Key2 = CategoricalArray(["B", "A", "A", missing, "A"]),
                        Value = 1:5)
 
-        @testset "sort=false, skipnull=false" begin
+        @testset "sort=false, skipmissing=false" begin
             gd = groupby(df, :Key1)
             @test length(gd) == 3
             @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gd[2] ≅ DataFrame(Key1=null, Key2="A", Value=2)
-            @test gd[3] ≅ DataFrame(Key1=["B", "B"], Key2=["A", null], Value=3:4)
+            @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
+            @test gd[3] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
 
             gd = groupby(df, [:Key1, :Key2])
             @test length(gd) == 5
             @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gd[2] ≅ DataFrame(Key1=null, Key2="A", Value=2)
+            @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
             @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gd[4] ≅ DataFrame(Key1="B", Key2=null, Value=4)
+            @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=4)
             @test gd[5] ≅ DataFrame(Key1="A", Key2="A", Value=5)
         end
 
-        @testset "sort=false, skipnull=true" begin
-            gd = groupby(df, :Key1, skipnull=true)
+        @testset "sort=false, skipmissing=true" begin
+            gd = groupby(df, :Key1, skipmissing=true)
             @test length(gd) == 2
             @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", null], Value=3:4)
+            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
 
-            gd = groupby(df, [:Key1, :Key2], skipnull=true)
+            gd = groupby(df, [:Key1, :Key2], skipmissing=true)
             @test length(gd) == 3
             @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
             @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
             @test gd[3] == DataFrame(Key1="A", Key2="A", Value=5)
         end
 
-        @testset "sort=true, skipnull=false" begin
+        @testset "sort=true, skipmissing=false" begin
             gd = groupby(df, :Key1, sort=true)
             @test length(gd) == 3
             @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", null], Value=3:4)
-            @test gd[3] ≅ DataFrame(Key1=null, Key2="A", Value=2)
+            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
+            @test gd[3] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
 
             gd = groupby(df, [:Key1, :Key2], sort=true)
             @test length(gd) == 5
             @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=5)            
             @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
             @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gd[4] ≅ DataFrame(Key1="B", Key2=null, Value=4)
-            @test gd[5] ≅ DataFrame(Key1=null, Key2="A", Value=2)        
+            @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=4)
+            @test gd[5] ≅ DataFrame(Key1=missing, Key2="A", Value=2)        
         end
 
-        @testset "sort=false, skipnull=true" begin
-            gd = groupby(df, :Key1, sort=true, skipnull=true)
+        @testset "sort=false, skipmissing=true" begin
+            gd = groupby(df, :Key1, sort=true, skipmissing=true)
             @test length(gd) == 2
             @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", null], Value=3:4)
+            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
 
-            gd = groupby(df, [:Key1, :Key2], sort=true, skipnull=true)
+            gd = groupby(df, [:Key1, :Key2], sort=true, skipmissing=true)
             @test length(gd) == 3
             @test gd[1] == DataFrame(Key1="A", Key2="A", Value=5)
             @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)

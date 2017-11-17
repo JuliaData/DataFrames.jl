@@ -108,7 +108,7 @@ function stack(df::AbstractDataFrame, measure_vars, id_vars;
 end
 # no vars specified, by default select only numeric columns
 numeric_vars(df::AbstractDataFrame) =
-    [T <: AbstractFloat || (T >: Null && Nulls.T(T) <: AbstractFloat)
+    [T <: AbstractFloat || (T >: Missing && Missings.T(T) <: AbstractFloat)
      for T in eltypes(df)]
 
 function stack(df::AbstractDataFrame, measure_vars = numeric_vars(df);
@@ -193,18 +193,18 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     # `rowkey` integer indicating which column to place along rows
     # `colkey` integer indicating which column to place along column headers
     # `value` integer indicating which column has values
-    refkeycol = CategoricalArray{Union{eltype(df[rowkey]), Null}}(df[rowkey])
+    refkeycol = CategoricalArray{Union{eltype(df[rowkey]), Missing}}(df[rowkey])
     valuecol = df[value]
-    keycol = CategoricalArray{Union{eltype(df[colkey]), Null}}(df[colkey])
+    keycol = CategoricalArray{Union{eltype(df[colkey]), Missing}}(df[colkey])
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
-    payload = DataFrame(Any[similar_nullable(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
+    payload = DataFrame(Any[similar_missing(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
     nowarning = true
     for k in 1:nrow(df)
         j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
         i = Int(CategoricalArrays.order(refkeycol.pool)[refkeycol.refs[k]])
         if i > 0 && j > 0
-            if nowarning && !isnull(payload[j][i])
+            if nowarning && !ismissing(payload[j][i])
                 warn("Duplicate entries in unstack.")
                 nowarning = false
             end
@@ -212,7 +212,7 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
         end
     end
     levs = levels(refkeycol)
-    col = similar_nullable(df[rowkey], length(levs))
+    col = similar_missing(df[rowkey], length(levs))
     insert!(payload, 1, copy!(col, levs), _names(df)[rowkey])
 end
 unstack(df::AbstractDataFrame, rowkey, colkey, value) =
@@ -230,18 +230,18 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     for i in 1:length(groupidxs)
         rowkey[groupidxs[i]] = i
     end
-    keycol = CategoricalArray{Union{eltype(df[colkey]), Null}}(df[colkey])
+    keycol = CategoricalArray{Union{eltype(df[colkey]), Missing}}(df[colkey])
     valuecol = df[value]
-    df1 = nullable!(df[g.idx[g.starts], g.cols], g.cols)
+    df1 = allow_missing!(df[g.idx[g.starts], g.cols], g.cols)
     Nrow = length(g)
     Ncol = length(levels(keycol))
-    df2 = DataFrame(Any[similar_nullable(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
+    df2 = DataFrame(Any[similar_missing(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
     nowarning = true
     for k in 1:nrow(df)
         j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
         i = rowkey[k]
         if i > 0 && j > 0
-            if nowarning && !isnull(df2[j][i])
+            if nowarning && !ismissing(df2[j][i])
                 warn("Duplicate entries in unstack at row $k.")
                 nowarning = false
             end

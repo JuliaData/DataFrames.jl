@@ -9,10 +9,10 @@ module TestDuplicates
     unique!(df)
     @test df == udf
 
-    pdf = DataFrame(a = CategoricalArray(["a", "a", null, null, "b", null, "a", null]),
-                    b = CategoricalArray(["a", "b", null, null, "b", "a", "a", "a"]))
-    updf = DataFrame(a = CategoricalArray(["a", "a", null, "b", null]),
-                     b = CategoricalArray(["a", "b", null, "b", "a"]))
+    pdf = DataFrame(a = CategoricalArray(["a", "a", missing, missing, "b", missing, "a", missing]),
+                    b = CategoricalArray(["a", "b", missing, missing, "b", "a", "a", "a"]))
+    updf = DataFrame(a = CategoricalArray(["a", "a", missing, "b", missing]),
+                     b = CategoricalArray(["a", "b", missing, "b", "a"]))
     @test nonunique(pdf) == [false, false, false, true, false, false, true, true]
     @test nonunique(updf) == falses(5)
     @test updf ≅ unique(pdf)

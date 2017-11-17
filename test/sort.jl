@@ -1,9 +1,9 @@
 module TestSort
     using Base.Test, DataFrames
 
-    dv1 = [9, 1, 8, null, 3, 3, 7, null]
-    dv2 = [9, 1, 8, null, 3, 3, 7, null]
-    dv3 = Vector{Union{Int, Null}}(1:8)
+    dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
+    dv2 = [9, 1, 8, missing, 3, 3, 7, missing]
+    dv3 = Vector{Union{Int, Missing}}(1:8)
     cv1 = CategoricalArray(dv1, ordered=true)
 
     d = DataFrame(dv1 = dv1, dv2 = dv2, dv3 = dv3, cv1 = cv1)

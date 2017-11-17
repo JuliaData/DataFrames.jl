@@ -129,11 +129,11 @@ end
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol}, nrows::Integer) where T<:Type
     columns = Vector{Any}(length(column_eltypes))
     for (j, elty) in enumerate(column_eltypes)
-        if elty >: Null
-            if Nulls.T(elty) <: CategoricalValue
-                columns[j] = CategoricalArray{Union{Nulls.T(elty).parameters[1], Null}}(nrows)
+        if elty >: Missing
+            if Missings.T(elty) <: CategoricalValue
+                columns[j] = CategoricalArray{Union{Missings.T(elty).parameters[1], Missing}}(nrows)
             else
-                columns[j] = nulls(elty, nrows)
+                columns[j] = missings(elty, nrows)
             end
         else
             if elty <: CategoricalValue
@@ -154,8 +154,8 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
     updated_types = convert(Vector{Type}, column_eltypes)
     for i in eachindex(categorical)
         categorical[i] || continue
-        if updated_types[i] >: Null
-            updated_types[i] = Union{CategoricalValue{Nulls.T(updated_types[i])}, Null}
+        if updated_types[i] >: Missing
+            updated_types[i] = Union{CategoricalValue{Missings.T(updated_types[i])}, Missing}
         else
             updated_types[i] = CategoricalValue{updated_types[i]}
         end
@@ -218,7 +218,7 @@ end
 
 # df[MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame,
-                       col_inds::AbstractVector{<:Union{ColumnIndex, Null}})
+                       col_inds::AbstractVector{<:Union{ColumnIndex, Missing}})
     selected_columns = index(df)[col_inds]
     new_columns = df.columns[selected_columns]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
@@ -236,7 +236,7 @@ end
 # df[SingleRowIndex, MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame,
                        row_ind::Real,
-                       col_inds::AbstractVector{<:Union{ColumnIndex, Null}})
+                       col_inds::AbstractVector{<:Union{ColumnIndex, Missing}})
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[[row_ind]] for dv in df.columns[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
@@ -244,7 +244,7 @@ end
 
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector
 function Base.getindex(df::DataFrame,
-                       row_inds::AbstractVector{<:Union{Real, Null}},
+                       row_inds::AbstractVector{<:Union{Real, Missing}},
                        col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
     return df.columns[selected_column][row_inds]
@@ -252,8 +252,8 @@ end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame,
-                       row_inds::AbstractVector{<:Union{Real, Null}},
-                       col_inds::AbstractVector{<:Union{ColumnIndex, Null}})
+                       row_inds::AbstractVector{<:Union{Real, Missing}},
+                       col_inds::AbstractVector{<:Union{ColumnIndex, Missing}})
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[row_inds] for dv in df.columns[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
@@ -262,14 +262,14 @@ end
 # df[:, SingleColumnIndex] => AbstractVector
 # df[:, MultiColumnIndex] => DataFrame
 Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{T, AbstractVector{T}}) where
-    T <: Union{ColumnIndex, Null} = df[col_inds]
+    T <: Union{ColumnIndex, Missing} = df[col_inds]
 
 # df[SingleRowIndex, :] => DataFrame
 Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col_inds]
 
 # df[MultiRowIndex, :] => DataFrame
 function Base.getindex(df::DataFrame,
-                       row_inds::AbstractVector{<:Union{Real, Null}},
+                       row_inds::AbstractVector{<:Union{Real, Missing}},
                        col_inds::Colon)
     new_columns = Any[dv[row_inds] for dv in df.columns]
     return DataFrame(new_columns, copy(index(df)))
@@ -718,17 +718,17 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = h
 
 ##############################################################################
 ##
-## Nullability
+## Missing values support
 ##
 ##############################################################################
 
-function nullable!(df::DataFrame, col::ColumnIndex)
-    df[col] = Vector{Union{eltype(df[col]), Null}}(df[col])
+function allow_missing!(df::DataFrame, col::ColumnIndex)
+    df[col] = Vector{Union{eltype(df[col]), Missing}}(df[col])
     df
 end
-function nullable!(df::DataFrame, cols::Vector{T}) where T <: ColumnIndex
+function allow_missing!(df::DataFrame, cols::Vector{T}) where T <: ColumnIndex
     for col in cols
-        nullable!(df, col)
+        allow_missing!(df, col)
     end
     df
 end

@@ -33,21 +33,21 @@ module TestUtils
              "Expected if Julia was not built from source.")
     end
 
-    @test DataFrames.countnull([1:3;]) == 0
+    @test DataFrames.countmissing([1:3;]) == 0
 
-    data = Vector{Union{Float64, Null}}(rand(20))
-    @test DataFrames.countnull(data) == 0
-    data[sample(1:20, 11, replace=false)] = null
-    @test DataFrames.countnull(data) == 11
-    data[1:end] = null
-    @test DataFrames.countnull(data) == 20
+    data = Vector{Union{Float64, Missing}}(rand(20))
+    @test DataFrames.countmissing(data) == 0
+    data[sample(1:20, 11, replace=false)] = missing
+    @test DataFrames.countmissing(data) == 11
+    data[1:end] = missing
+    @test DataFrames.countmissing(data) == 20
 
-    pdata = Vector{Union{Int, Null}}(sample(1:5, 20))
-    @test DataFrames.countnull(pdata) == 0
-    pdata[sample(1:20, 11, replace=false)] = null
-    @test DataFrames.countnull(pdata) == 11
-    pdata[1:end] = null
-    @test DataFrames.countnull(pdata) == 20
+    pdata = Vector{Union{Int, Missing}}(sample(1:5, 20))
+    @test DataFrames.countmissing(pdata) == 0
+    pdata[sample(1:20, 11, replace=false)] = missing
+    @test DataFrames.countmissing(pdata) == 11
+    pdata[1:end] = missing
+    @test DataFrames.countmissing(pdata) == 20
 
     funs = [mean, sum, var, x -> sum(x)]
     if string(funs[end]) == "(anonymous function)" # Julia < 0.5
@@ -58,14 +58,14 @@ module TestUtils
 
     @testset "describe" begin
         io = IOBuffer()
-        df = DataFrame(Any[collect(1:4), Vector{Union{Int, Null}}(2:5),
+        df = DataFrame(Any[collect(1:4), Vector{Union{Int, Missing}}(2:5),
                            CategoricalArray(3:6),
-                           CategoricalArray{Union{Int, Null}}(4:7)],
-                       [:arr, :nullarr, :cat, :nullcat])
+                           CategoricalArray{Union{Int, Missing}}(4:7)],
+                       [:arr, :missingarr, :cat, :missingcat])
         describe(io, df)
         DRT = CategoricalArrays.DefaultRefType
         # Julia 0.7
-        nullfirst =
+        missingfirst =
             """
             arr
             Summary Stats:
@@ -78,7 +78,7 @@ module TestUtils
             Length:         4
             Type:           $Int
 
-            nullarr
+            missingarr
             Summary Stats:
             Mean:           3.500000
             Minimum:        2.000000
@@ -87,7 +87,7 @@ module TestUtils
             3rd Quartile:   4.250000
             Maximum:        5.000000
             Length:         4
-            Type:           Union{Nulls.Null, $Int}
+            Type:           Union{Missings.Missing, $Int}
             Number Missing: 0
             % Missing:      0.000000
 
@@ -97,17 +97,17 @@ module TestUtils
             Type:           CategoricalArrays.CategoricalValue{$Int,$DRT}
             Number Unique:  4
 
-            nullcat
+            missingcat
             Summary Stats:
             Length:         4
-            Type:           Union{Nulls.Null, CategoricalArrays.CategoricalValue{$Int,$DRT}}
+            Type:           Union{Missings.Missing, CategoricalArrays.CategoricalValue{$Int,$DRT}}
             Number Unique:  4
             Number Missing: 0
             % Missing:      0.000000
 
             """
         # Julia 0.6
-        nullsecond =
+        missingsecond =
             """
             arr
             Summary Stats:
@@ -120,7 +120,7 @@ module TestUtils
             Length:         4
             Type:           $Int
 
-            nullarr
+            missingarr
             Summary Stats:
             Mean:           3.500000
             Minimum:        2.000000
@@ -129,7 +129,7 @@ module TestUtils
             3rd Quartile:   4.250000
             Maximum:        5.000000
             Length:         4
-            Type:           Union{$Int, Nulls.Null}
+            Type:           Union{$Int, Missings.Missing}
             Number Missing: 0
             % Missing:      0.000000
 
@@ -139,25 +139,25 @@ module TestUtils
             Type:           CategoricalArrays.CategoricalValue{$Int,$DRT}
             Number Unique:  4
 
-            nullcat
+            missingcat
             Summary Stats:
             Length:         4
-            Type:           Union{CategoricalArrays.CategoricalValue{$Int,$DRT}, Nulls.Null}
+            Type:           Union{CategoricalArrays.CategoricalValue{$Int,$DRT}, Missings.Missing}
             Number Unique:  4
             Number Missing: 0
             % Missing:      0.000000
 
             """
             out = String(take!(io))
-            @test (out == nullfirst || out == nullsecond)
+            @test (out == missingfirst || out == missingsecond)
     end
 
     @testset "describe" begin
         io = IOBuffer()
-        df = DataFrame(Any[collect(1:4), collect(Union{Int, Null}, 2:5),
+        df = DataFrame(Any[collect(1:4), collect(Union{Int, Missing}, 2:5),
                            CategoricalArray(3:6),
-                           CategoricalArray{Union{Int, Null}}(4:7)],
-                       [:arr, :nullarr, :cat, :nullcat])
+                           CategoricalArray{Union{Int, Missing}}(4:7)],
+                       [:arr, :missingarr, :cat, :missingcat])
         describe(io, df)
         @test String(take!(io)) ==
             """
@@ -172,7 +172,7 @@ module TestUtils
             Length:         4
             Type:           $Int
 
-            nullarr
+            missingarr
             Summary Stats:
             Mean:           3.500000
             Minimum:        2.000000
@@ -181,7 +181,7 @@ module TestUtils
             3rd Quartile:   4.250000
             Maximum:        5.000000
             Length:         4
-            Type:           Union{$Int, Nulls.Null}
+            Type:           Union{$Int, Missings.Missing}
             Number Missing: 0
             % Missing:      0.000000
 
@@ -191,10 +191,10 @@ module TestUtils
             Type:           CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}
             Number Unique:  4
 
-            nullcat
+            missingcat
             Summary Stats:
             Length:         4
-            Type:           Union{CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}, Nulls.Null}
+            Type:           Union{CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}, Missings.Missing}
             Number Unique:  4
             Number Missing: 0
             % Missing:      0.000000

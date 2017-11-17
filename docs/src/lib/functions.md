@@ -26,13 +26,14 @@ meltdf
 ## Basics
 
 ```@docs
+allow_missing!
 categorical!
 combine
 completecases
 deleterows!
 describe
-dropnull
-dropnull!
+dropmissing
+dropmissing!
 eachcol
 eachrow
 eltypes
@@ -40,7 +41,6 @@ head
 names
 names!
 nonunique
-nullable!
 order
 rename!
 rename
