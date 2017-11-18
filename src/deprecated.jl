@@ -3,10 +3,10 @@ import Base: @deprecate
 @deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
 @deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 
-@deprecate nullable!(df::AbstractDataFrame, col::ColumnIndex) allow_missing!(df, col)
-@deprecate nullable!(df::AbstractDataFrame, cols::Vector{<:ColumnIndex}) allow_missing!(df, cols)
-@deprecate nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame) allow_missing!(df, colnames)
-@deprecate nullable!(colnums::Array{Int,1}, df::AbstractDataFrame) allow_missing!(df, colnums)
+@deprecate nullable!(df::AbstractDataFrame, col::ColumnIndex) allowmissing!(df, col)
+@deprecate nullable!(df::AbstractDataFrame, cols::Vector{<:ColumnIndex}) allowmissing!(df, cols)
+@deprecate nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame) allowmissing!(df, colnames)
+@deprecate nullable!(colnums::Array{Int,1}, df::AbstractDataFrame) allowmissing!(df, colnums)
 
 import Base: keys, values, insert!
 @deprecate keys(df::AbstractDataFrame) names(df)

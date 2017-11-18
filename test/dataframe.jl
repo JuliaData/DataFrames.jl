@@ -435,10 +435,10 @@ module TestDataFrame
     @testset "column conversions" begin
         df = DataFrame(Any[collect(1:10), collect(1:10)])
         @test !isa(df[1], Vector{Union{Int, Missing}})
-        allow_missing!(df, 1)
+        allowmissing!(df, 1)
         @test isa(df[1], Vector{Union{Int, Missing}})
         @test !isa(df[2], Vector{Union{Int, Missing}})
-        allow_missing!(df, [1,2])
+        allowmissing!(df, [1,2])
         @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
     end
 end

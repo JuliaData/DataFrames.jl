@@ -26,7 +26,7 @@ meltdf
 ## Basics
 
 ```@docs
-allow_missing!
+allowmissing!
 categorical!
 combine
 completecases

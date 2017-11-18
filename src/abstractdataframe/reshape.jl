@@ -232,7 +232,7 @@ function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     end
     keycol = CategoricalArray{Union{eltype(df[colkey]), Missing}}(df[colkey])
     valuecol = df[value]
-    df1 = allow_missing!(df[g.idx[g.starts], g.cols], g.cols)
+    df1 = allowmissing!(df[g.idx[g.starts], g.cols], g.cols)
     Nrow = length(g)
     Ncol = length(levels(keycol))
     df2 = DataFrame(Any[similar_missing(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
