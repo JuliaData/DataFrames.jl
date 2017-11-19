@@ -3,14 +3,17 @@
 CurrentModule = DataFrames
 ```
 
-# Main Types
+# Types
 
 ```@index
-Pages = ["maintypes.md"]
+Pages = ["types.md"]
 ```
 
 ```@docs
 AbstractDataFrame
 DataFrame
+DataFrameRow
+GroupApplied
+GroupedDataFrame
 SubDataFrame
 ```
