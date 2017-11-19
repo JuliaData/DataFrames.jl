@@ -86,7 +86,7 @@ end
 
 function Base.view(adf::AbstractDataFrame, rowinds::AbstractVector{T}) where {T >: Missing}
     # Vector{>:Missing} need to be checked for missings
-    any(ismissing, rowinds) && throw(MissingException())
+    any(ismissing, rowinds) && throw(MissingException("missing values are not allowed in indices"))
     return SubDataFrame(adf, convert(Vector{Missings.T(T)}, rowinds))
 end
 
