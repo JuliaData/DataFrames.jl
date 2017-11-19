@@ -11,7 +11,7 @@ using Reexport, StatsBase, SortingAlgorithms
 @reexport using CategoricalArrays, Nulls
 
 using Base: Sort, Order
-import Base: ==, |>
+import Base: ==, |>, unique!
 
 ##############################################################################
 ##

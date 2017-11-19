@@ -461,9 +461,9 @@ for allowcomments in tf, skipblanks in tf, allowescapes in tf, wsv in tf
 end
 
 function bytematch(bytes::Vector{UInt8},
-                       left::Integer,
-                       right::Integer,
-                       exemplars::Vector{T}) where T <: String
+                   left::Integer,
+                   right::Integer,
+                   exemplars::Vector{T}) where T <: String
     l = right - left + 1
     for index in 1:length(exemplars)
         exemplar = exemplars[index]
@@ -488,8 +488,8 @@ function bytestotype(::Type{N},
                      wasquoted::Bool = false,
                      truestrings::Vector{P} = P[],
                      falsestrings::Vector{P} = P[]) where {N <: Integer,
-                                                         T <: String,
-                                                         P <: String}
+                                                           T <: String,
+                                                           P <: String}
     if left > right
         return 0, true, true
     end
@@ -535,9 +535,10 @@ let out = Vector{Float64}(1)
                          nastrings::Vector{T},
                          wasquoted::Bool = false,
                          truestrings::Vector{P} = P[],
-                         falsestrings::Vector{P} = P[]) where {N <: AbstractFloat,
-                                                             T <: String,
-                                                             P <: String}
+                         falsestrings::Vector{P} = P[]) where {
+                         N <: AbstractFloat,
+                         T <: String,
+                         P <: String}
         if left > right
             return 0.0, true, true
         end
