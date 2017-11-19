@@ -7,7 +7,7 @@ module DataFrames
 ##
 ##############################################################################
 
-using Reexport, StatsBase, SortingAlgorithms
+using Reexport, StatsBase, SortingAlgorithms, Compat
 @reexport using CategoricalArrays, Nulls
 
 using Base: Sort, Order
