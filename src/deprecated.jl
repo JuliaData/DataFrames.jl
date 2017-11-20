@@ -596,8 +596,8 @@ function bytestotype(::Type{N},
                      wasquoted::Bool = false,
                      truestrings::Vector{P} = P[],
                      falsestrings::Vector{P} = P[]) where {N <: AbstractString,
-                                                         T <: String,
-                                                         P <: String}
+                                                           T <: String,
+                                                           P <: String}
     if left > right
         if wasquoted
             return "", true, false
