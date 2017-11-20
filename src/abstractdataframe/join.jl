@@ -2,9 +2,9 @@
 ## Join / merge
 ##
 
-# Like similar, but returns a array that can have nulls and is initialized with nulls
-similar_nullable(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
-    fill!(similar(dv, Union{T, Null}, dims), null)
+# Like similar, but returns a array that can have missings and is initialized with missings
+similar_missing(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
+    fill!(similar(dv, Union{T, Missing}, dims), missing)
 
 # helper structure for DataFrames joining
 struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
@@ -72,7 +72,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     @assert nrow == length(all_orig_right_ixs) + loil
     ncleft = ncol(joiner.dfl)
     cols = Vector{Any}(ncleft + ncol(dfr_noon))
-    _similar = kind == :inner ? similar : similar_nullable
+    _similar = kind == :inner ? similar : similar_missing
     for (i, col) in enumerate(columns(joiner.dfl))
         cols[i] = _similar(col, nrow)
         fillcolumn!(cols[i], col, all_orig_left_ixs)
@@ -85,10 +85,10 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)))
 
     if length(rightonly_ixs.join) > 0
-        # some left rows are nulls, so the values of the "on" columns
+        # some left rows are missings, so the values of the "on" columns
         # need to be taken from the right
         for (on_col_ix, on_col) in enumerate(joiner.on_cols)
-            # fix the result of the rightjoin by taking the nonnull values from the right table
+            # fix the result of the rightjoin by taking the nonmissing values from the right table
             offset = nrow - length(rightonly_ixs.orig)
             fillcolumn!(res[on_col], joiner.dfr_on[on_col_ix], rightonly_ixs.orig, offset)
         end
@@ -220,7 +220,7 @@ join(df1::AbstractDataFrame,
     row of `df1` is matched with every row of `df2`
 
 For the three join operations that may introduce missing values (`:outer`, `:left`,
-and `:right`), all columns of the returned data table will be nullable.
+and `:right`), all columns of the returned data table will support missing values.
 
 ### Result
 

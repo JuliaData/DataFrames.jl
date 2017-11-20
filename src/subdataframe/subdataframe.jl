@@ -84,10 +84,10 @@ function SubDataFrame(sdf::SubDataFrame, rowinds::Union{T, AbstractVector{T}}) w
     return SubDataFrame(sdf.parent, sdf.rows[rowinds])
 end
 
-function Base.view(adf::AbstractDataFrame, rowinds::AbstractVector{T}) where {T >: Null}
-    # Vector{>:Null} need to be checked for nulls
-    any(isnull, rowinds) && throw(NullException())
-    return SubDataFrame(adf, convert(Vector{Nulls.T(T)}, rowinds))
+function Base.view(adf::AbstractDataFrame, rowinds::AbstractVector{T}) where {T >: Missing}
+    # Vector{>:Missing} need to be checked for missings
+    any(ismissing, rowinds) && throw(MissingException("missing values are not allowed in indices"))
+    return SubDataFrame(adf, convert(Vector{Missings.T(T)}, rowinds))
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Any)

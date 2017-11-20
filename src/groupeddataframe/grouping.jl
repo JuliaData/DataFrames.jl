@@ -30,8 +30,8 @@ end
 A view of an AbstractDataFrame split into row groups
 
 ```julia
-groupby(d::AbstractDataFrame, cols; sort = false, skipnull = false)
-groupby(cols; sort = false, skipnull = false)
+groupby(d::AbstractDataFrame, cols; sort = false, skipmissing = false)
+groupby(cols; sort = false, skipmissing = false)
 ```
 
 ### Arguments
@@ -39,7 +39,7 @@ groupby(cols; sort = false, skipnull = false)
 * `d` : an AbstractDataFrame to split (optional, see [Returns](#returns))
 * `cols` : data table columns to group by
 * `sort`: whether to sort rows according to the values of the grouping columns `cols`
-* `skipnull`: whether to skip rows with `null` values in one of the grouping columns `cols`
+* `skipmissing`: whether to skip rows with `missing` values in one of the grouping columns `cols`
 
 ### Returns
 
@@ -74,17 +74,17 @@ vcat([g[:b] for g in gd]...)
 for g in gd
     println(g)
 end
-map(d -> mean(Nulls.skip(d[:c])), gd)   # returns a GroupApplied object
-combine(map(d -> mean(Nulls.skip(d[:c])), gd))
+map(d -> mean(Missings.skip(d[:c])), gd)   # returns a GroupApplied object
+combine(map(d -> mean(Missings.skip(d[:c])), gd))
 df |> groupby(:a) |> [sum, length]
 df |> groupby([:a, :b]) |> [sum, length]
 ```
 
 """
 function groupby(df::AbstractDataFrame, cols::Vector{T};
-                 sort::Bool = false, skipnull::Bool = false) where T
+                 sort::Bool = false, skipmissing::Bool = false) where T
     sdf = df[cols]
-    df_groups = group_rows(sdf, skipnull)
+    df_groups = group_rows(sdf, skipmissing)
     # sort the groups
     if sort
         group_perm = sortperm(view(sdf, df_groups.rperm[df_groups.starts]))
@@ -95,14 +95,14 @@ function groupby(df::AbstractDataFrame, cols::Vector{T};
                      df_groups.starts, df_groups.stops)
 end
 groupby(d::AbstractDataFrame, cols;
-        sort::Bool = false, skipnull::Bool = false) =
-    groupby(d, [cols], sort = sort, skipnull = skipnull)
+        sort::Bool = false, skipmissing::Bool = false) =
+    groupby(d, [cols], sort = sort, skipmissing = skipmissing)
 
 # add a function curry
-groupby(cols::Vector{T}; sort::Bool = false, skipnull::Bool = false) where {T} =
-    x -> groupby(x, cols, sort = sort, skipnull = skipnull)
-groupby(cols; sort::Bool = false, skipnull::Bool = false) =
-    x -> groupby(x, cols, sort = sort, skipnull = skipnull)
+groupby(cols::Vector{T}; sort::Bool = false, skipmissing::Bool = false) where {T} =
+    x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
+groupby(cols; sort::Bool = false, skipmissing::Bool = false) =
+    x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
 
 Base.start(gd::GroupedDataFrame) = 1
 Base.next(gd::GroupedDataFrame, state::Int) =
@@ -194,7 +194,7 @@ combine(ga::GroupApplied)
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
-combine(map(d -> mean(Nulls.skip(d[:c])), gd))
+combine(map(d -> mean(Missings.skip(d[:c])), gd))
 ```
 
 """
@@ -291,11 +291,11 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 by(df, :a, d -> sum(d[:c]))
-by(df, :a, d -> 2 * Nulls.skip(d[:c]))
-by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(Nulls.skip(d[:c]))))
-by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(Nulls.skip(d[:c]))))
+by(df, :a, d -> 2 * Missings.skip(d[:c]))
+by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(Missings.skip(d[:c]))))
+by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(Missings.skip(d[:c]))))
 by(df, [:a, :b]) do d
-    DataFrame(m = mean(Nulls.skip(d[:c])), v = var(Nulls.skip(d[:c])))
+    DataFrame(m = mean(Missings.skip(d[:c])), v = var(Missings.skip(d[:c])))
 end
 ```
 
@@ -341,9 +341,9 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 aggregate(df, :a, sum)
-aggregate(df, :a, [sum, x->mean(Nulls.skip(x))])
-aggregate(groupby(df, :a), [sum, x->mean(Nulls.skip(x))])
-df |> groupby(:a) |> [sum, x->mean(Nulls.skip(x))]   # equivalent
+aggregate(df, :a, [sum, x->mean(Missings.skip(x))])
+aggregate(groupby(df, :a), [sum, x->mean(Missings.skip(x))])
+df |> groupby(:a) |> [sum, x->mean(Missings.skip(x))]   # equivalent
 ```
 
 """

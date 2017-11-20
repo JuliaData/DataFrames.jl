@@ -1,10 +1,10 @@
 julia 0.6
-Nulls 0.0.6
-CategoricalArrays 0.2.1
+Missings
+CategoricalArrays 0.3.0
 StatsBase 0.11.0
 SortingAlgorithms
 Reexport
-WeakRefStrings 0.3.0
-DataStreams 0.2.0
+WeakRefStrings 0.4.0
+DataStreams 0.3.0
 GZip
 Compat 0.32.0

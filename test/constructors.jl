@@ -10,39 +10,39 @@ module TestConstructors
     @test df.columns == Any[]
     @test df.colindex == Index()
 
-    df = DataFrame(Any[CategoricalVector{Union{Float64, Null}}(zeros(3)),
-                       CategoricalVector{Union{Float64, Null}}(ones(3))],
+    df = DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
+                       CategoricalVector{Union{Float64, Missing}}(ones(3))],
                    Index([:x1, :x2]))
     @test size(df, 1) == 3
     @test size(df, 2) == 2
 
-    @test df == DataFrame(Any[CategoricalVector{Union{Float64, Null}}(zeros(3)),
-                              CategoricalVector{Union{Float64, Null}}(ones(3))])
-    @test df == DataFrame(x1 = Union{Int, Null}[0.0, 0.0, 0.0],
-                          x2 = Union{Int, Null}[1.0, 1.0, 1.0])
+    @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
+                              CategoricalVector{Union{Float64, Missing}}(ones(3))])
+    @test df == DataFrame(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
+                          x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
 
-    df2 = convert(DataFrame, Union{Float64, Null}[0.0 1.0;
+    df2 = convert(DataFrame, Union{Float64, Missing}[0.0 1.0;
                                                   0.0 1.0;
                                                   0.0 1.0])
     names!(df2, [:x1, :x2])
     @test df[:x1] == df2[:x1]
     @test df[:x2] == df2[:x2]
 
-    @test df == DataFrame(x1 = Union{Float64, Null}[0.0, 0.0, 0.0],
-                          x2 = Union{Float64, Null}[1.0, 1.0, 1.0])
-    @test df == DataFrame(x1 = Union{Float64, Null}[0.0, 0.0, 0.0],
-                          x2 = Union{Float64, Null}[1.0, 1.0, 1.0],
-                          x3 = Union{Float64, Null}[2.0, 2.0, 2.0])[[:x1, :x2]]
+    @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
+                          x2 = Union{Float64, Missing}[1.0, 1.0, 1.0])
+    @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
+                          x2 = Union{Float64, Missing}[1.0, 1.0, 1.0],
+                          x3 = Union{Float64, Missing}[2.0, 2.0, 2.0])[[:x1, :x2]]
 
-    df = DataFrame(Union{Int, Null}, 2, 2)
+    df = DataFrame(Union{Int, Missing}, 2, 2)
     @test size(df) == (2, 2)
-    @test eltypes(df) == [Union{Int, Null}, Union{Int, Null}]
+    @test eltypes(df) == [Union{Int, Missing}, Union{Int, Missing}]
 
-    df = DataFrame([Union{Int, Null}, Union{Float64, Null}], [:x1, :x2], 2)
+    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}], [:x1, :x2], 2)
     @test size(df) == (2, 2)
-    @test eltypes(df) == [Union{Int, Null}, Union{Float64, Null}]
+    @test eltypes(df) == [Union{Int, Missing}, Union{Float64, Missing}]
 
-    @test df ≅ DataFrame([Union{Int, Null}, Union{Float64, Null}], 2)
+    @test df ≅ DataFrame([Union{Int, Missing}, Union{Float64, Missing}], 2)
 
     @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0)
     @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0)
@@ -85,8 +85,8 @@ module TestConstructors
         df = DataFrame(A = 1:3, B = 2:4, C = 3:5)
         answer = [Array{Int,1}, Array{Int,1}, Array{Int,1}]
         @test map(typeof, df.columns) == answer
-        df[:D] = [4, 5, null]
-        push!(answer, Vector{Union{Int, Null}})
+        df[:D] = [4, 5, missing]
+        push!(answer, Vector{Union{Int, Missing}})
         @test map(typeof, df.columns) == answer
         df[:E] = 'c'
         push!(answer, Vector{Char})

@@ -6,13 +6,13 @@ module TestCat
     # hcat
     #
 
-    nvint = [1, 2, null, 4]
-    nvstr = ["one", "two", null, "four"]
+    nvint = [1, 2, missing, 4]
+    nvstr = ["one", "two", missing, "four"]
 
     df2 = DataFrame(Any[nvint, nvstr])
     df3 = DataFrame(Any[nvint])
     df4 = convert(DataFrame, [1:4 1:4])
-    df5 = DataFrame(Any[Union{Int, Null}[1,2,3,4], nvstr])
+    df5 = DataFrame(Any[Union{Int, Missing}[1,2,3,4], nvstr])
 
     dfh = hcat(df3, df4)
     @test size(dfh, 2) == 3
@@ -39,7 +39,7 @@ module TestCat
 
     @testset "hcat ::Vectors" begin
         df = DataFrame()
-        DataFrames.hcat!(df, CategoricalVector{Union{Int, Null}}(1:10))
+        DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10))
         @test df[1] == collect(1:10)
         DataFrames.hcat!(df, 1:10)
         @test df[2] == collect(1:10)
@@ -56,7 +56,7 @@ module TestCat
 
     @testset "hcat ::Vectors" begin
         df = DataFrame()
-        DataFrames.hcat!(df, CategoricalVector{Union{Int, Null}}(1:10))
+        DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10))
         @test df[1] == CategoricalVector(1:10)
         DataFrames.hcat!(df, collect(1:10))
         @test df[2] == collect(1:10)
@@ -66,7 +66,7 @@ module TestCat
     # vcat
     #
 
-    null_df = DataFrame(Int, 0, 0)
+    missing_df = DataFrame(Int, 0, 0)
     df = DataFrame(Int, 4, 3)
 
     # Assignment of rows
@@ -106,10 +106,10 @@ module TestCat
     df[1:2, 1:2] = [3,2]
     df[[true,false,false,true], 2:3] = [2,3]
 
-    @test vcat(null_df) == DataFrame()
-    @test vcat(null_df, null_df) == DataFrame()
-    @test_throws ArgumentError vcat(null_df, df)
-    @test_throws ArgumentError vcat(df, null_df)
+    @test vcat(missing_df) == DataFrame()
+    @test vcat(missing_df, missing_df) == DataFrame()
+    @test_throws ArgumentError vcat(missing_df, df)
+    @test_throws ArgumentError vcat(df, missing_df)
     @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
     @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
     @test eltypes(vcat(df, df, df)) == Type[Float64, Float64, Int]
@@ -128,19 +128,19 @@ module TestCat
     @test dfr == [df4; df4]
 
     @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == Type[Float64]
-    @test eltypes(vcat(DataFrame(a = nulls(Int, 1)), DataFrame(a = Union{Float64, Null}[2.1]))) == Type[Union{Float64, Null}]
+    @test eltypes(vcat(DataFrame(a = missings(Int, 1)), DataFrame(a = Union{Float64, Missing}[2.1]))) == Type[Union{Float64, Missing}]
 
     # Minimal container type promotion
-    dfa = DataFrame(a = CategoricalArray{Union{Int, Null}}([1, 2, 2]))
-    dfb = DataFrame(a = CategoricalArray{Union{Int, Null}}([2, 3, 4]))
-    dfc = DataFrame(a = Union{Int, Null}[2, 3, 4])
+    dfa = DataFrame(a = CategoricalArray{Union{Int, Missing}}([1, 2, 2]))
+    dfb = DataFrame(a = CategoricalArray{Union{Int, Missing}}([2, 3, 4]))
+    dfc = DataFrame(a = Union{Int, Missing}[2, 3, 4])
     dfd = DataFrame(Any[2:4], [:a])
     dfab = vcat(dfa, dfb)
     dfac = vcat(dfa, dfc)
     @test dfab[:a] == [1, 2, 2, 2, 3, 4]
     @test dfac[:a] == [1, 2, 2, 2, 3, 4]
-    @test isa(dfab[:a], CategoricalVector{Union{Int, Null}})
-    @test isa(dfac[:a], CategoricalVector{Union{Int, Null}})
+    @test isa(dfab[:a], CategoricalVector{Union{Int, Missing}})
+    @test isa(dfac[:a], CategoricalVector{Union{Int, Missing}})
     # ^^ container may flip if container promotion happens in Base/DataArrays
     dc = vcat(dfd, dfc)
     @test vcat(dfc, dfd) == dc
@@ -166,21 +166,21 @@ module TestCat
         df = vcat(DataFrame([[1]], [:x]), DataFrame([["1"]], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
         @test typeof.(df.columns) == [Vector{Any}]
-        df = vcat(DataFrame([Union{Null, Int}[1]], [:x]), DataFrame([[1]], [:x]))
+        df = vcat(DataFrame([Union{Missing, Int}[1]], [:x]), DataFrame([[1]], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof.(df.columns) == [Vector{Union{Null, Int}}]
+        @test typeof.(df.columns) == [Vector{Union{Missing, Int}}]
         df = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
         @test typeof(df[:x]) <: CategoricalVector{Int}
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
-                  DataFrame([Union{Null, Int}[1]], [:x]))
+                  DataFrame([Union{Missing, Int}[1]], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Null}}
+        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Missing}}
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
-                  DataFrame([CategoricalArray{Union{Int, Null}}([1])], [:x]))
+                  DataFrame([CategoricalArray{Union{Int, Missing}}([1])], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Null}}
-        df = vcat(DataFrame([Union{Int, Null}[1]], [:x]),
+        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Missing}}
+        df = vcat(DataFrame([Union{Int, Missing}[1]], [:x]),
                   DataFrame([["1"]], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
         @test typeof.(df.columns) == [Vector{Any}]
@@ -265,7 +265,7 @@ module TestCat
         err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2, df3, df4, df1, df2, df3, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, column(s) B are missing from argument(s) 2, 6 and 10, and column(s) F are missing from argument(s) 3, 7 and 11"
     end
-    x = view(DataFrame(A = Vector{Union{Null, Int}}(1:3)), 2)
+    x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2)
     y = DataFrame(A = 4:5)
     @test vcat(x, y) == DataFrame(A = [2, 4, 5])
 end
