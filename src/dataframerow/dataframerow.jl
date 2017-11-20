@@ -41,9 +41,9 @@ Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, r.df[r.row,:])
 Base.@propagate_inbounds hash_colel(v::AbstractArray, i, h::UInt = zero(UInt)) = hash(v[i], h)
 Base.@propagate_inbounds hash_colel(v::AbstractCategoricalArray, i, h::UInt = zero(UInt)) =
     hash(CategoricalArrays.index(v.pool)[v.refs[i]], h)
-Base.@propagate_inbounds function hash_colel(v::AbstractCategoricalArray{>: Null}, i, h::UInt = zero(UInt))
+Base.@propagate_inbounds function hash_colel(v::AbstractCategoricalArray{>: Missing}, i, h::UInt = zero(UInt))
     ref = v.refs[i]
-    ref == 0 ? hash(null, h) : hash(CategoricalArrays.index(v.pool)[ref], h)
+    ref == 0 ? hash(missing, h) : hash(CategoricalArrays.index(v.pool)[ref], h)
 end
 
 # hash of DataFrame rows based on its values
@@ -62,7 +62,7 @@ Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
 # comparison of DataFrame rows
 # only the rows of the same DataFrame could be compared
 # rows are equal if they have the same values (while the row indices could differ)
-# if all non-null values are equal, but there are nulls, returns null
+# if all non-missing values are equal, but there are missings, returns missing
 Base.:(==)(r1::DataFrameRow, r2::DataFrameRow) = isequal(r1, r2)
 
 function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
@@ -100,7 +100,7 @@ function isequal_row(df1::AbstractDataFrame, r1::Int, df2::AbstractDataFrame, r2
     return true
 end
 
-# lexicographic ordering on DataFrame rows, null > !null
+# lexicographic ordering on DataFrame rows, missing > !missing
 function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
     (ncol(r1.df) == ncol(r2.df)) ||
         throw(ArgumentError("Rows of the data tables that have different number of columns cannot be compared ($(ncol(df1)) and $(ncol(df2)))"))

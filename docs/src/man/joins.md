@@ -65,25 +65,25 @@ julia> join(names, jobs, on = :ID, kind = :inner)
 
 julia> join(names, jobs, on = :ID, kind = :left)
 2×3 DataFrames.DataFrame
-│ Row │ ID │ Name     │ Job    │
-├─────┼────┼──────────┼────────┤
-│ 1   │ 20 │ John Doe │ Lawyer │
-│ 2   │ 40 │ Jane Doe │ null   │
+│ Row │ ID │ Name     │ Job     │
+├─────┼────┼──────────┼─────────┤
+│ 1   │ 20 │ John Doe │ Lawyer  │
+│ 2   │ 40 │ Jane Doe │ missing │
 
 julia> join(names, jobs, on = :ID, kind = :right)
 2×3 DataFrames.DataFrame
 │ Row │ ID │ Name     │ Job       │
 ├─────┼────┼──────────┼───────────┤
 │ 1   │ 20 │ John Doe │ Lawyer    │
-│ 2   │ 60 │ null     │ Astronaut │
+│ 2   │ 60 │ missing  │ Astronaut │
 
 julia> join(names, jobs, on = :ID, kind = :outer)
 3×3 DataFrames.DataFrame
-│ Row │ ID │ Name     │ Job       │
-├─────┼────┼──────────┼───────────┤
-│ 1   │ 20 │ John Doe │ Lawyer    │
-│ 2   │ 40 │ Jane Doe │ null      │
-│ 3   │ 60 │ null     │ Astronaut │
+│ Row │ ID │ Name        │ Job       │
+├─────┼────┼─────────────┼───────────┤
+│ 1   │ 20 │ John Doe    │ Lawyer    │
+│ 2   │ 40 │ Jane Doe    │ missing   │
+│ 3   │ 60 │ missing     │ Astronaut │
 
 julia> join(names, jobs, on = :ID, kind = :semi)
 1×2 DataFrames.DataFrame

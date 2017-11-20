@@ -30,20 +30,20 @@ julia> cv = CategoricalArray(v)
 
 ```
 
-`CategoricalArrays` support missing values via the `Nulls` package.
+`CategoricalArrays` support missing values via the `Missings` package.
 
 ```jldoctest categorical
-julia> using Nulls
+julia> using Missings
 
-julia> cv = CategoricalArray(["Group A", null, "Group A",
-                              "Group B", "Group B", null])
-6-element CategoricalArrays.CategoricalArray{Union{Nulls.Null, String},1,UInt32}:
+julia> cv = CategoricalArray(["Group A", missing, "Group A",
+                              "Group B", "Group B", missing])
+6-element CategoricalArrays.CategoricalArray{Union{Missings.Missing, String},1,UInt32}:
  "Group A"
- null
+ missing
  "Group A"
  "Group B"
  "Group B"
- null
+ missing
 ```
 
 In addition to representing repeated data efficiently, the `CategoricalArray` type allows us to determine efficiently the allowed levels of the variable at any time using the `levels` function (note that levels may or may not be actually used in the data):
@@ -67,13 +67,13 @@ julia> levels(cv)
  "Group A"
 
 julia> sort(cv)
-6-element CategoricalArrays.CategoricalArray{Union{Nulls.Null, String},1,UInt32}:
+6-element CategoricalArrays.CategoricalArray{Union{Missings.Missing, String},1,UInt32}:
  "Group B"
  "Group B"
  "Group A"
  "Group A"
- null
- null
+ missing
+ missing
 
 ```
 
@@ -81,13 +81,13 @@ By default, a `CategoricalArray` is able to represent 2<sup>32</sup>differents l
 
 ```jldoctest categorical
 julia> cv = compress(cv)
-6-element CategoricalArrays.CategoricalArray{Union{Nulls.Null, String},1,UInt8}:
+6-element CategoricalArrays.CategoricalArray{Union{Missings.Missing, String},1,UInt8}:
  "Group A"
- null
+ missing
  "Group A"
  "Group B"
  "Group B"
- null
+ missing
 
 ```
 

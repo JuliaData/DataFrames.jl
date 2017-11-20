@@ -1,11 +1,11 @@
 module TestIteration
     using Base.Test, DataFrames
 
-    dv = [1, 2, null]
-    dm = Union{Int, Null}[1 2; 3 4]
-    df = Array{Union{Int, Null}}(zeros(2, 2, 2))
+    dv = [1, 2, missing]
+    dm = Union{Int, Missing}[1 2; 3 4]
+    df = Array{Union{Int, Missing}}(zeros(2, 2, 2))
 
-    df = DataFrame(A = Vector{Union{Int, Null}}(1:2), B = Vector{Union{Int, Null}}(2:3))
+    df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
 
     for row in eachrow(df)
         @test isa(row, DataFrameRow)
@@ -30,7 +30,7 @@ module TestIteration
     row[1] = 101
     @test df[1, :A] == 101
 
-    df = DataFrame(A = Vector{Union{Int, Null}}(1:4), B = Union{String, Null}["M", "F", "F", "M"])
+    df = DataFrame(A = Vector{Union{Int, Missing}}(1:4), B = Union{String, Missing}["M", "F", "F", "M"])
 
     s1 = view(df, 1:3)
     s1[2,:A] = 4

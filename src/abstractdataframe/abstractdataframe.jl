@@ -24,9 +24,9 @@ The following are normally implemented for AbstractDataFrames:
 * [`head`](@ref) : first `n` rows
 * [`tail`](@ref) : last `n` rows
 * `convert` : convert to an array
-* [`completecases`](@ref) : boolean vector of complete cases (rows with no nulls)
-* [`dropnull`](@ref) : remove rows with null values
-* [`dropnull!`](@ref) : remove rows with null values in-place
+* [`completecases`](@ref) : boolean vector of complete cases (rows with no missings)
+* [`dropmissing`](@ref) : remove rows with missing values
+* [`dropmissing!`](@ref) : remove rows with missing values in-place
 * [`nonunique`](@ref) : indexes of duplicate rows
 * [`unique!`](@ref) : remove duplicate rows
 * `similar` : a DataFrame with similar columns as `d`
@@ -234,7 +234,7 @@ Base.ndims(::AbstractDataFrame) = 2
 ##############################################################################
 
 Base.similar(df::AbstractDataFrame, dims::Int) =
-    DataFrame(Any[similar_nullable(x, dims) for x in columns(df)], copy(index(df)))
+    DataFrame(Any[similar_missing(x, dims) for x in columns(df)], copy(index(df)))
 
 ##############################################################################
 ##
@@ -248,7 +248,7 @@ function Base.:(==)(df1::AbstractDataFrame, df2::AbstractDataFrame)
     eq = true
     for idx in 1:size(df1, 2)
         coleq = df1[idx] == df2[idx]
-        # coleq could be null
+        # coleq could be missing
         !isequal(coleq, false) || return false
         eq &= coleq
     end
@@ -372,12 +372,12 @@ describe(io, df::AbstractDataFrame)
 **Details**
 
 If the column's base type derives from Number, compute the minimum, first
-quantile, median, mean, third quantile, and maximum. Nulls are filtered and
+quantile, median, mean, third quantile, and maximum. Missings are filtered and
 reported separately.
 
-For boolean columns, report trues, falses, and nulls.
+For boolean columns, report trues, falses, and missings.
 
-For other types, show column characteristics and number of nulls.
+For other types, show column characteristics and number of missings.
 
 **Examples**
 
@@ -396,19 +396,19 @@ function StatsBase.describe(io, df::AbstractDataFrame)
     end
 end
 
-function StatsBase.describe(io::IO, X::AbstractVector{Union{T, Null}}) where T
-    nullcount = count(isnull, X)
-    pnull = 100 * nullcount/length(X)
-    if pnull != 100 && T <: Real
-        show(io, StatsBase.summarystats(collect(Nulls.skip(X))))
+function StatsBase.describe(io::IO, X::AbstractVector{Union{T, Missing}}) where T
+    missingcount = count(ismissing, X)
+    pmissing = 100 * missingcount/length(X)
+    if pmissing != 100 && T <: Real
+        show(io, StatsBase.summarystats(collect(Missings.skip(X))))
     else
         println(io, "Summary Stats:")
     end
     println(io, "Length:         $(length(X))")
     println(io, "Type:           $(eltype(X))")
     !(T <: Real) && println(io, "Number Unique:  $(length(unique(X)))")
-    println(io, "Number Missing: $(nullcount)")
-    @printf(io, "%% Missing:      %.6f\n", pnull)
+    println(io, "Number Missing: $(missingcount)")
+    @printf(io, "%% Missing:      %.6f\n", pmissing)
     return
 end
 
@@ -418,13 +418,13 @@ end
 ##
 ##############################################################################
 
-function _nonnull!(res, col)
+function _nonmissing!(res, col)
     @inbounds for (i, el) in enumerate(col)
-        res[i] &= !isnull(el)
+        res[i] &= !ismissing(el)
     end
 end
 
-function _nonnull!(res, col::CategoricalArray{>: Null})
+function _nonmissing!(res, col::CategoricalArray{>: Missing})
     for (i, el) in enumerate(col.refs)
         res[i] &= el > 0
     end
@@ -432,7 +432,7 @@ end
 
 
 """
-Indexes of complete cases (rows without null values)
+Indexes of complete cases (rows without missing values)
 
 ```julia
 completecases(df::AbstractDataFrame)
@@ -446,16 +446,16 @@ completecases(df::AbstractDataFrame)
 
 * `::Vector{Bool}` : indexes of complete cases
 
-See also [`dropnull`](@ref) and [`dropnull!`](@ref).
+See also [`dropmissing`](@ref) and [`dropmissing!`](@ref).
 
 **Examples**
 
 ```julia
 df = DataFrame(i = 1:10,
-               x = Vector{Union{Null, Float64}}(rand(10)),
-               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
-df[[1,4,5], :x] = null
-df[[9,10], :y] = null
+               x = Vector{Union{Missing, Float64}}(rand(10)),
+               y = Vector{Union{Missing, String}}(rand(["a", "b", "c"], 10)))
+df[[1,4,5], :x] = missing
+df[[9,10], :y] = missing
 completecases(df)
 ```
 
@@ -463,16 +463,16 @@ completecases(df)
 function completecases(df::AbstractDataFrame)
     res = trues(size(df, 1))
     for i in 1:size(df, 2)
-        _nonnull!(res, df[i])
+        _nonmissing!(res, df[i])
     end
     res
 end
 
 """
-Remove rows with null values.
+Remove rows with missing values.
 
 ```julia
-dropnull(df::AbstractDataFrame)
+dropmissing(df::AbstractDataFrame)
 ```
 
 **Arguments**
@@ -483,27 +483,27 @@ dropnull(df::AbstractDataFrame)
 
 * `::AbstractDataFrame` : the updated copy
 
-See also [`completecases`](@ref) and [`dropnull!`](@ref).
+See also [`completecases`](@ref) and [`dropmissing!`](@ref).
 
 **Examples**
 
 ```julia
 df = DataFrame(i = 1:10,
-               x = Vector{Union{Null, Float64}}(rand(10)),
-               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
-df[[1,4,5], :x] = null
-df[[9,10], :y] = null
-dropnull(df)
+               x = Vector{Union{Missing, Float64}}(rand(10)),
+               y = Vector{Union{Missing, String}}(rand(["a", "b", "c"], 10)))
+df[[1,4,5], :x] = missing
+df[[9,10], :y] = missing
+dropmissing(df)
 ```
 
 """
-dropnull(df::AbstractDataFrame) = deleterows!(copy(df), find(!, completecases(df)))
+dropmissing(df::AbstractDataFrame) = deleterows!(copy(df), find(!, completecases(df)))
 
 """
-Remove rows with null values in-place.
+Remove rows with missing values in-place.
 
 ```julia
-dropnull!(df::AbstractDataFrame)
+dropmissing!(df::AbstractDataFrame)
 ```
 
 **Arguments**
@@ -514,21 +514,21 @@ dropnull!(df::AbstractDataFrame)
 
 * `::AbstractDataFrame` : the updated version
 
-See also [`dropnull`](@ref) and [`completecases`](@ref).
+See also [`dropmissing`](@ref) and [`completecases`](@ref).
 
 **Examples**
 
 ```julia
 df = DataFrame(i = 1:10,
-               x = Vector{Union{Null, Float64}}(rand(10)),
-               y = Vector{Union{Null, String}}(rand(["a", "b", "c"], 10)))
-df[[1,4,5], :x] = null
-df[[9,10], :y] = null
-dropnull!(df)
+               x = Vector{Union{Missing, Float64}}(rand(10)),
+               y = Vector{Union{Missing, String}}(rand(["a", "b", "c"], 10)))
+df[[1,4,5], :x] = missing
+df[[9,10], :y] = missing
+dropmissing!(df)
 ```
 
 """
-dropnull!(df::AbstractDataFrame) = deleterows!(df, find(!, completecases(df)))
+dropmissing!(df::AbstractDataFrame) = deleterows!(df, find(!, completecases(df)))
 
 function Base.convert(::Type{Array}, df::AbstractDataFrame)
     convert(Matrix, df)
@@ -545,7 +545,7 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     res = Matrix{T}(n, p)
     idx = 1
     for (name, col) in zip(names(df), columns(df))
-        !(T >: Null) && any(isnull, col) && error("cannot convert a DataFrame containing null values to array (found for column $name)")
+        !(T >: Missing) && any(ismissing, col) && error("cannot convert a DataFrame containing missing values to array (found for column $name)")
         copy!(res, idx, convert(Vector{T}, col))
         idx += n
     end
@@ -649,7 +649,7 @@ function colmissing(df::AbstractDataFrame) # -> Vector{Int}
     nrows, ncols = size(df)
     missing = zeros(Int, ncols)
     for j in 1:ncols
-        missing[j] = countnull(df[j])
+        missing[j] = countmissing(df[j])
     end
     return missing
 end
@@ -681,15 +681,15 @@ Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = hcat!(hcat(df1, df2), dfn...)
 
 @generated function promote_col_type(cols::AbstractVector...)
-    T = mapreduce(x -> Nulls.T(eltype(x)), promote_type, cols)
+    T = mapreduce(x -> Missings.T(eltype(x)), promote_type, cols)
     if T <: CategoricalValue
         T = T.parameters[1]
     end
-    if any(col -> eltype(col) >: Null, cols)
+    if any(col -> eltype(col) >: Missing, cols)
         if any(col -> col <: AbstractCategoricalArray, cols)
-            return :(CategoricalVector{Union{$T, Null}})
+            return :(CategoricalVector{Union{$T, Missing}})
         else
-            return :(Vector{Union{$T, Null}})
+            return :(Vector{Union{$T, Missing}})
         end
     else
         if any(col -> col <: AbstractCategoricalArray, cols)

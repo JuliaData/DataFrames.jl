@@ -9,66 +9,66 @@ Pkg.add("DataFrames")
 
 Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataFrames` to bring all of the relevant variables into your current namespace.
 
-## The `Null` Type
+## The `Missing` Type
 
-To get started, let's examine the `Null` type. `Null` is a type implemented by the [Nulls.jl](https://github.com/JuliaData/Nulls.jl) package to represent missing data. `null` is an instance of the type `Null` used to represent a missing value.
+To get started, let's examine the `Missing` type. `Missing` is a type implemented by the [Missings.jl](https://github.com/JuliaData/Missings.jl) package to represent missing data. `missing` is an instance of the type `Missing` used to represent a missing value.
 
-```jldoctest nulls
+```jldoctest missings
 julia> using DataFrames
 
-julia> null
-null
+julia> missing
+missing
 
-julia> typeof(null)
-Nulls.Null
+julia> typeof(missing)
+Missings.Missing
 
 ```
 
-The `Null` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a null value and the element-type of the returned vector is `Union{Nulls.Null, Int64}`.
+The `Missing` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a missing value and the element-type of the returned vector is `Union{Missings.Missing, Int64}`.
 
-```jldoctest nulls
-julia> x = [1, 2, null]
-3-element Array{Union{Nulls.Null, Int64},1}:
+```jldoctest missings
+julia> x = [1, 2, missing]
+3-element Array{Union{Missings.Missing, Int64},1}:
  1
  2
-  null
+  missing
 
 julia> eltype(x)
-Union{Nulls.Null, Int64}
+Union{Missings.Missing, Int64}
 
-julia> Union{Null, Int}
-Union{Nulls.Null, Int64}
+julia> Union{Missing, Int}
+Union{Missings.Missing, Int64}
 
-julia> eltype(x) == Union{Null, Int}
+julia> eltype(x) == Union{Missing, Int}
 true
 
 ```
 
-`null` values can be excluded when performing operations by using `Nulls.skip`, which returns a memory-efficient iterator.
+`missing` values can be excluded when performing operations by using `Missings.skip`, which returns a memory-efficient iterator.
 
-```jldoctest nulls
-julia> Nulls.skip(x)
-Base.Generator{Base.Iterators.Filter{Nulls.##4#6,Array{Union{Int64, Nulls.Null},1}},Nulls.##3#5}(Nulls.#3, Base.Iterators.Filter{Nulls.##4#6,Array{Union{Int64, Nulls.Null},1}}(Nulls.#4, Union{Int64, Nulls.Null}[1, 2, null]))
+```jldoctest missings
+julia> Missings.skip(x)
+Base.Generator{Base.Iterators.Filter{Missings.##4#6,Array{Union{Int64, Missings.Missing},1}},Missings.##3#5}(Missings.#3, Base.Iterators.Filter{Missings.##4#6,Array{Union{Int64, Missings.Missing},1}}(Missings.#4, Union{Int64, Missings.Missing}[1, 2, missing]))
 
 ```
 
-The output of `Nulls.skip` can be passed directly into functions as an argument. For example, we can find the `sum` of all non-null values or `collect` the non-null values into a new null-free vector.
+The output of `Missings.skip` can be passed directly into functions as an argument. For example, we can find the `sum` of all non-missing values or `collect` the non-missing values into a new missing-free vector.
 
-```jldoctest nulls
-julia> sum(Nulls.skip(x))
+```jldoctest missings
+julia> sum(Missings.skip(x))
 3
 
-julia> collect(Nulls.skip(x))
+julia> collect(Missings.skip(x))
 2-element Array{Int64,1}:
  1
  2
 
 ```
 
-`null` elements can be replaced with other values via `Nulls.replace`.
+`missing` elements can be replaced with other values via `Missings.replace`.
 
-```jldoctest nulls
-julia> collect(Nulls.replace(x, 1))
+```jldoctest missings
+julia> collect(Missings.replace(x, 1))
 3-element Array{Int64,1}:
  1
  2
@@ -76,37 +76,37 @@ julia> collect(Nulls.replace(x, 1))
 
 ```
 
-The function `Nulls.T` returns the element-type `T` in `Union{T, Null}`.
+The function `Missings.T` returns the element-type `T` in `Union{T, Missing}`.
 
-```jldoctest nulls
+```jldoctest missings
 julia> eltype(x)
-Union{Int64, Nulls.Null}
+Union{Int64, Missings.Missing}
 
-julia> Nulls.T(eltype(x))
+julia> Missings.T(eltype(x))
 Int64
 
 ```
 
-Use `nulls` to generate nullable `Vector`s and `Array`s, using the optional first argument to specify the element-type.
+Use `missings` to generate `Vector`s and `Array`s supporting missing values, using the optional first argument to specify the element-type.
 
-```jldoctest nulls
-julia> nulls(1)
-1-element Array{Nulls.Null,1}:
- null
+```jldoctest missings
+julia> missings(1)
+1-element Array{Missings.Missing,1}:
+ missing
 
-julia> nulls(3)
-3-element Array{Nulls.Null,1}:
- null
- null
- null
+julia> missings(3)
+3-element Array{Missings.Missing,1}:
+ missing
+ missing
+ missing
 
-julia> nulls(1, 3)
-1×3 Array{Nulls.Null,2}:
- null  null  null
+julia> missings(1, 3)
+1×3 Array{Missings.Missing,2}:
+ missing  missing  missing
 
-julia> nulls(Int, 1, 3)
-1×3 Array{Union{Nulls.Null, Int64},2}:
- null  null  null
+julia> missings(Int, 1, 3)
+1×3 Array{Union{Missings.Missing, Int64},2}:
+ missing  missing  missing
 
 ```
 
@@ -256,22 +256,22 @@ beforehand. Here we will replace all odd-numbered rows in the first column with 
 to show how to handle the above example when missing values are present in your dataset.
 
 ```jldoctest dataframe
-julia> df[:A] = [isodd(i) ? null : value for (i, value) in enumerate(df[:A])];
+julia> df[:A] = [isodd(i) ? missing : value for (i, value) in enumerate(df[:A])];
 
 julia> df
 8×2 DataFrames.DataFrame
-│ Row │ A    │ B │
-├─────┼──────┼───┤
-│ 1   │ null │ M │
-│ 2   │ 2    │ F │
-│ 3   │ null │ F │
-│ 4   │ 4    │ M │
-│ 5   │ null │ F │
-│ 6   │ 6    │ M │
-│ 7   │ null │ M │
-│ 8   │ 8    │ F │
+│ Row │ A       │ B │
+├─────┼─────────┼───┤
+│ 1   │ missing │ M │
+│ 2   │ 2       │ F │
+│ 3   │ missing │ F │
+│ 4   │ 4       │ M │
+│ 5   │ missing │ F │
+│ 6   │ 6       │ M │
+│ 7   │ missing │ M │
+│ 8   │ 8       │ F │
 
-julia> mean(Nulls.skip(df[:A]))
+julia> mean(Missings.skip(df[:A]))
 5.0
 
 ```

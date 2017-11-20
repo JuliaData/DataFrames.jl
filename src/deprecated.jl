@@ -2,8 +2,11 @@ import Base: @deprecate
 
 @deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
 @deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
-@deprecate nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame) nullable!(df, colnames)
-@deprecate nullable!(colnums::Array{Int,1}, df::AbstractDataFrame) nullable!(df, colnums)
+
+@deprecate nullable!(df::AbstractDataFrame, col::ColumnIndex) allowmissing!(df, col)
+@deprecate nullable!(df::AbstractDataFrame, cols::Vector{<:ColumnIndex}) allowmissing!(df, cols)
+@deprecate nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame) allowmissing!(df, colnames)
+@deprecate nullable!(colnums::Array{Int,1}, df::AbstractDataFrame) allowmissing!(df, colnums)
 
 import Base: keys, values, insert!
 @deprecate keys(df::AbstractDataFrame) names(df)
@@ -13,7 +16,7 @@ import Base: keys, values, insert!
 @deprecate pool categorical
 @deprecate pool! categorical!
 
-@deprecate complete_cases! dropnull!
+@deprecate complete_cases! dropmissing!
 @deprecate complete_cases completecases
 
 @deprecate sub(df::AbstractDataFrame, rows) view(df, rows)
@@ -747,12 +750,12 @@ function builddf(rows::Integer,
                           o.falsestrings)
         end
 
-        vals = similar(values, Union{eltype(values), Null})
+        vals = similar(values, Union{eltype(values), Missing})
         @inbounds for i in eachindex(vals)
-            vals[i] = missing[i] ? null : values[i]
+            vals[i] = missing[i] ? missing : values[i]
         end
         if o.makefactors && !(is_int || is_float || is_bool)
-            columns[j] = CategoricalArray{Union{eltype(values), Null}}(vals)
+            columns[j] = CategoricalArray{Union{eltype(values), Missing}}(vals)
         else
             columns[j] = vals
         end
@@ -988,7 +991,7 @@ readtable(filename, [keyword options])
 *   `separator::Char` -- Assume that fields are split by the `separator` character. If not specified, it will be guessed from the filename: `.csv` defaults to `','`, `.tsv` defaults to `'\t'`, `.wsv` defaults to `' '`.
 *   `quotemark::Vector{Char}` -- Assume that fields contained inside of two `quotemark` characters are quoted, which disables processing of separators and linebreaks. Set to `Char[]` to disable this feature and slightly improve performance. Defaults to `['"']`.
 *   `decimal::Char` -- Assume that the decimal place in numbers is written using the `decimal` character. Defaults to `'.'`.
-*   `nastrings::Vector{String}` -- Translate any of the strings into this vector into a `null`. Defaults to `["", "NA"]`.
+*   `nastrings::Vector{String}` -- Translate any of the strings into this vector into a `missing`. Defaults to `["", "NA"]`.
 *   `truestrings::Vector{String}` -- Translate any of the strings into this vector into a Boolean `true`. Defaults to `["T", "t", "TRUE", "true"]`.
 *   `falsestrings::Vector{String}` -- Translate any of the strings into this vector into a Boolean `false`. Defaults to `["F", "f", "FALSE", "false"]`.
 *   `makefactors::Bool` -- Convert string columns into `PooledDataVector`'s for use as factors. Defaults to `false`.

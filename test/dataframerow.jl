@@ -1,10 +1,10 @@
 module TestDataFrameRow
     using Base.Test, DataFrames
 
-    df = DataFrame(a=Union{Int, Null}[1, 2, 3, 1, 2, 2],
-                   b=[2.0, null, 1.2, 2.0, null, null],
-                   c=["A", "B", "C", "A", "B", null],
-                   d=CategoricalArray([:A, null, :C, :A, null, :C]))
+    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
+                   b=[2.0, missing, 1.2, 2.0, missing, missing],
+                   c=["A", "B", "C", "A", "B", missing],
+                   d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
     df2 = DataFrame(a = [1, 2, 3])
 
     #
@@ -18,9 +18,9 @@ module TestDataFrameRow
     @test DataFrameRow(df, 2) != DataFrameRow(df, 6)
 
     # isless()
-    df4 = DataFrame(a=[1, 1, 2, 2, 2, 2, null, null],
-                    b=Union{Float64, Null}[2.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0],
-                    c=[:B, null, :A, :C, :D, :D, :A, :A])
+    df4 = DataFrame(a=[1, 1, 2, 2, 2, 2, missing, missing],
+                    b=Union{Float64, Missing}[2.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0],
+                    c=[:B, missing, :A, :C, :D, :D, :A, :A])
     @test isless(DataFrameRow(df4, 1), DataFrameRow(df4, 2))
     @test !isless(DataFrameRow(df4, 2), DataFrameRow(df4, 1))
     @test !isless(DataFrameRow(df4, 1), DataFrameRow(df4, 1))

@@ -17,34 +17,34 @@ module TestConversions
     @test isa(convert(Array{Float64}, df), Matrix{Float64})
 
     df = DataFrame()
-    df[:A] = Vector{Union{Float64, Null}}(1.0:5.0)
-    df[:B] = Vector{Union{Float64, Null}}(1.0:5.0)
+    df[:A] = Vector{Union{Float64, Missing}}(1.0:5.0)
+    df[:B] = Vector{Union{Float64, Missing}}(1.0:5.0)
     a = convert(Array, df)
     aa = convert(Array{Any}, df)
     ai = convert(Array{Int}, df)
-    @test isa(a, Matrix{Union{Float64, Null}})
-    @test a == convert(Array, convert(Array{Union{Float64, Null}}, df))
+    @test isa(a, Matrix{Union{Float64, Missing}})
+    @test a == convert(Array, convert(Array{Union{Float64, Missing}}, df))
     @test a == convert(Matrix, df)
     @test isa(aa, Matrix{Any})
     @test aa == convert(Matrix{Any}, df)
     @test isa(ai, Matrix{Int})
     @test ai == convert(Matrix{Int}, df)
 
-    df[1,1] = null
+    df[1,1] = missing
     @test_throws ErrorException convert(Array{Float64}, df)
-    na = convert(Array{Union{Float64, Null}}, df)
-    naa = convert(Array{Union{Any, Null}}, df)
-    nai = convert(Array{Union{Int, Null}}, df)
-    @test isa(na, Matrix{Union{Float64, Null}})
+    na = convert(Array{Union{Float64, Missing}}, df)
+    naa = convert(Array{Union{Any, Missing}}, df)
+    nai = convert(Array{Union{Int, Missing}}, df)
+    @test isa(na, Matrix{Union{Float64, Missing}})
     @test na ≅ convert(Matrix, df)
-    @test isa(naa, Matrix{Union{Any, Null}})
-    @test naa ≅ convert(Matrix{Union{Any, Null}}, df)
-    @test isa(nai, Matrix{Union{Int, Null}})
-    @test nai ≅ convert(Matrix{Union{Int, Null}}, df)
+    @test isa(naa, Matrix{Union{Any, Missing}})
+    @test naa ≅ convert(Matrix{Union{Any, Missing}}, df)
+    @test isa(nai, Matrix{Union{Int, Missing}})
+    @test nai ≅ convert(Matrix{Union{Int, Missing}}, df)
 
-    a = Union{Float64, Null}[1.0,2.0]
-    b = Union{Float64, Null}[-0.1,3]
-    c = Union{Float64, Null}[-3.1,7]
+    a = Union{Float64, Missing}[1.0,2.0]
+    b = Union{Float64, Missing}[-0.1,3]
+    c = Union{Float64, Missing}[-3.1,7]
     di = Dict("a"=>a, "b"=>b, "c"=>c)
 
     df = convert(DataFrame, di)

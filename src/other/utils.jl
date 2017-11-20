@@ -98,19 +98,19 @@ end
 
 
 """
-    countnull(a::AbstractArray)
+    countmissing(a::AbstractArray)
 
-Count the number of `null` values in an array.
+Count the number of `missing` values in an array.
 """
-function countnull(a::AbstractArray)
+function countmissing(a::AbstractArray)
     res = 0
     for x in a
-        res += isnull(x)
+        res += ismissing(x)
     end
     return res
 end
 
-function countnull(a::CategoricalArray)
+function countmissing(a::CategoricalArray)
     res = 0
     for x in a.refs
         res += x == 0

@@ -15,10 +15,10 @@ inds = Any[1,
            1:1,
            1.0:1.0,
            [:A],
-           Union{Bool, Null}[true],
-           Union{Int, Null}[1],
-           Union{Float64, Null}[1.0],
-           Union{Symbol, Null}[:A]]
+           Union{Bool, Missing}[true],
+           Union{Int, Missing}[1],
+           Union{Float64, Missing}[1.0],
+           Union{Symbol, Missing}[:A]]
 
 for ind in inds
     if ind == :A || ndims(ind) == 0

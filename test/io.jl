@@ -6,8 +6,8 @@ module TestIO
     df = DataFrame(A = 1:4,
                    B = ["\$10.0", "M&F", "A~B", "\\alpha"],
                    C = [L"\alpha", L"\beta", L"\gamma", L"\sum_{i=1}^n \delta_i"],
-                   D = [1.0, 2.0, null, 3.0],
-                   E = CategoricalArray(["a", null, "c", "d"])
+                   D = [1.0, 2.0, missing, 3.0],
+                   E = CategoricalArray(["a", missing, "c", "d"])
                    )
     str = """
         \\begin{tabular}{r|ccccc}
@@ -22,14 +22,14 @@ module TestIO
     @test reprmime(MIME("text/latex"), df) == str
 
     #Test HTML output for IJulia and similar
-    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, null])
+    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
     io = IOBuffer()
     show(io, "text/html", df)
     str = String(take!(io))
     @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                  "</th><th>Fish</th><th>Mass</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
-                 "<tr><th>2</th><td>Amir</td><td>null</td></tr></tbody></table>"
+                 "<tr><th>2</th><td>Amir</td><td>missing</td></tr></tbody></table>"
 
     # test limit attribute of IOContext is used
     df = DataFrame(a=collect(1:1000))
@@ -45,35 +45,35 @@ module TestIO
                    B = 'a':'c',
                    C = ["A", "B", "C"],
                    D = CategoricalArray(string.('a':'c')),
-                   E = CategoricalArray(["A", "B", null]),
-                   F = Vector{Union{Int, Null}}(1:3),
-                   G = nulls(3),
-                   H = fill(null, 3))
+                   E = CategoricalArray(["A", "B", missing]),
+                   F = Vector{Union{Int, Missing}}(1:3),
+                   G = missings(3),
+                   H = fill(missing, 3))
 
     @test sprint(DataFrames.printtable, df) ==
         """
         "A","B","C","D","E","F","G","H"
-        1,"'a'","A","a","A","1",null,null
-        2,"'b'","B","b","B","2",null,null
-        3,"'c'","C","c",null,"3",null,null
+        1,"'a'","A","a","A","1",missing,missing
+        2,"'b'","B","b","B","2",missing,missing
+        3,"'c'","C","c",missing,"3",missing,missing
         """
 
     # DataStreams
     using DataStreams
     I = DataFrames.DataFrame(id = Int64[1, 2, 3, 4, 5],
-        firstname = Union{String, Null}["Benjamin", "Wayne", "Sean", "Charles", null],
+        firstname = Union{String, Missing}["Benjamin", "Wayne", "Sean", "Charles", missing],
         lastname = String["Chavez", "Burke", "Richards", "Long", "Rose"],
-        salary = Union{Float64, Null}[null, 46134.1, 45046.2, 30555.6, 88894.1],
+        salary = Union{Float64, Missing}[missing, 46134.1, 45046.2, 30555.6, 88894.1],
         rate = Float64[39.44, 33.8, 15.64, 17.67, 34.6],
-        hired = Union{Date, Null}[Date("2011-07-07"), Date("2016-02-19"), null, Date("2002-01-05"), Date("2008-05-15")],
+        hired = Union{Date, Missing}[Date("2011-07-07"), Date("2016-02-19"), missing, Date("2002-01-05"), Date("2008-05-15")],
         fired = DateTime[DateTime("2016-04-07T14:07:00"), DateTime("2015-03-19T15:01:00"), DateTime("2006-11-18T05:07:00"), DateTime("2002-07-18T06:24:00"), DateTime("2007-09-29T12:09:00")],
-        reserved = nulls(5)
+        reserved = missings(5)
     )
     sink = DataStreams.Data.close!(DataStreams.Data.stream!(I, deepcopy(I)))
     sch = DataStreams.Data.schema(sink)
     @test size(sch) == (5, 8)
     @test DataStreams.Data.header(sch) == ["id","firstname","lastname","salary","rate","hired","fired","reserved"]
-    @test DataStreams.Data.types(sch) == (Int64, Union{String, Null}, String, Union{Float64, Null}, Float64, Union{Date, Null}, DateTime, Null)
+    @test DataStreams.Data.types(sch) == (Int64, Union{String, Missing}, String, Union{Float64, Missing}, Float64, Union{Date, Missing}, DateTime, Missing)
     @test sink[:id] == [1,2,3,4,5]
 
     transforms = Dict(1=>x->x+1)
@@ -81,14 +81,14 @@ module TestIO
     sch = DataStreams.Data.schema(sink)
     @test size(sch) == (10, 8)
     @test DataStreams.Data.header(sch) == ["id","firstname","lastname","salary","rate","hired","fired","reserved"]
-    @test DataStreams.Data.types(sch) == (Int64, Union{String, Null}, String, Union{Float64, Null}, Float64, Union{Date, Null}, DateTime, Null)
+    @test DataStreams.Data.types(sch) == (Int64, Union{String, Missing}, String, Union{Float64, Missing}, Float64, Union{Date, Missing}, DateTime, Missing)
     @test sink[:id] == [1,2,3,4,5,2,3,4,5,6]
 
     sink = DataStreams.Data.close!(Data.stream!(I, DataFrame, deepcopy(I)))
     sch = DataStreams.Data.schema(sink)
     @test size(sch) == (5, 8)
     @test DataStreams.Data.header(sch) == ["id","firstname","lastname","salary","rate","hired","fired","reserved"]
-    @test DataStreams.Data.types(sch) == (Int64, Union{String, Null}, String, Union{Float64, Null}, Float64, Union{Date, Null}, DateTime, Null)
+    @test DataStreams.Data.types(sch) == (Int64, Union{String, Missing}, String, Union{Float64, Missing}, Float64, Union{Date, Missing}, DateTime, Missing)
     @test sink[:id] == [1,2,3,4,5]
 
     # test DataFrameStream creation

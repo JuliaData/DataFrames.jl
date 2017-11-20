@@ -17,7 +17,7 @@ function printtable(io::IO,
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    nastring::AbstractString = "null")
+                    nastring::AbstractString = "missing")
     n, p = size(df)
     etypes = eltypes(df)
     if header
@@ -36,7 +36,7 @@ function printtable(io::IO,
     quotestr = string(quotemark)
     for i in 1:n
         for j in 1:p
-            if !isnull(df[j][i])
+            if !ismissing(df[j][i])
                 if ! (etypes[j] <: Real)
                     print(io, quotemark)
                     escapedprint(io, df[i, j], quotestr)
@@ -61,7 +61,7 @@ function printtable(df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    nastring::AbstractString = "null")
+                    nastring::AbstractString = "missing")
     printtable(STDOUT,
                df,
                header = header,
@@ -164,7 +164,7 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
         for col in 1:ncols
             write(io, " & ")
             cell = df[row,col]
-            if !isnull(cell)
+            if !ismissing(cell)
                 if mimewritable(MIME("text/latex"), cell)
                     show(io, MIME("text/latex"), cell)
                 else
@@ -232,13 +232,13 @@ Data.weakrefstrings(::Type{DataFrame}) = true
 allocate(::Type{T}, rows, ref) where {T} = Vector{T}(rows)
 allocate(::Type{CategoricalValue{T, R}}, rows, ref) where {T, R} =
     CategoricalArray{T, 1, R}(rows)
-allocate(::Type{Union{Null, CategoricalValue{T, R}}}, rows, ref) where {T, R} =
-    CategoricalArray{Union{Null, T}, 1, R}(rows)
+allocate(::Type{Union{Missing, CategoricalValue{T, R}}}, rows, ref) where {T, R} =
+    CategoricalArray{Union{Missing, T}, 1, R}(rows)
 allocate(::Type{WeakRefString{T}}, rows, ref) where {T} =
     WeakRefStringArray(ref, WeakRefString{T}, rows)
-allocate(::Type{Union{Null, WeakRefString{T}}}, rows, ref) where {T} =
-    WeakRefStringArray(ref, Union{Null, WeakRefString{T}}, rows)
-allocate(::Type{Null}, rows, ref) = nulls(rows)
+allocate(::Type{Union{Missing, WeakRefString{T}}}, rows, ref) where {T} =
+    WeakRefStringArray(ref, Union{Missing, WeakRefString{T}}, rows)
+allocate(::Type{Missing}, rows, ref) = missings(rows)
 
 # Construct or modify a DataFrame to be ready to stream data from a source with `sch`
 function DataFrame(sch::Data.Schema{R}, ::Type{S}=Data.Field,

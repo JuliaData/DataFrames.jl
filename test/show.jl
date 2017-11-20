@@ -264,63 +264,69 @@ module TestShow
     show(io, A)
 
     #Test show output for REPL and similar
-    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, null])
+    df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
     @test str == (Base.have_color ? """
     2×2 DataFrames.DataFrame
-    │ Row │ Fish │ Mass │
-    ├─────┼──────┼──────┤
-    │ 1   │ Suzy │ 1.5  │
-    │ 2   │ Amir │ \e[90mnull\e[39m │""" : """
+    │ Row │ Fish │ Mass    │
+    ├─────┼──────┼─────────┤
+    │ 1   │ Suzy │ 1.5     │
+    │ 2   │ Amir │ \e[90mmissing\e[39m │""" : """
     2×2 DataFrames.DataFrame
-    │ Row │ Fish │ Mass │
-    ├─────┼──────┼──────┤
-    │ 1   │ Suzy │ 1.5  │
-    │ 2   │ Amir │ null │""")
+    │ Row │ Fish │ Mass    │
+    ├─────┼──────┼─────────┤
+    │ 1   │ Suzy │ 1.5     │
+    │ 2   │ Amir │ missing │""")
 
     io = IOBuffer()
     showcols(io, df)
     str = String(take!(io))
     @test str == """
     2×2 DataFrames.DataFrame
-    │ Col # │ Name │ Eltype                     │ Missing │ Values        │
-    ├───────┼──────┼────────────────────────────┼─────────┼───────────────┤
-    │ 1     │ Fish │ String                     │ 0       │ Suzy  …  Amir │
-    │ 2     │ Mass │ Union{Float64, Nulls.Null} │ 1       │ 1.5  …  null  │"""
+    │ Col # │ Name │ Eltype                           │ Missing │ Values          │
+    ├───────┼──────┼──────────────────────────────────┼─────────┼─────────────────┤
+    │ 1     │ Fish │ String                           │ 0       │ Suzy  …  Amir   │
+    │ 2     │ Mass │ Union{Float64, Missings.Missing} │ 1       │ 1.5  …  missing │"""
 
-    # Test showing null
-    df = DataFrame(A = [:Symbol, null, :null],
-                   B = [null, "String", "null"],
-                   C = [:null, "null", null])
+    # Test showing missing
+    df = DataFrame(A = [:Symbol, missing, :missing],
+                   B = [missing, "String", "missing"],
+                   C = [:missing, "missing", missing])
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
     @test str == (Base.have_color ? """
     3×3 DataFrames.DataFrame
-    │ Row │ A      │ B      │ C    │
-    ├─────┼────────┼────────┼──────┤
-    │ 1   │ Symbol │ \e[90mnull\e[39m   │ null │
-    │ 2   │ \e[90mnull\e[39m   │ String │ null │
-    │ 3   │ null   │ null   │ \e[90mnull\e[39m │""" : """
+    │ Row │ A       │ B       │ C       │
+    ├─────┼─────────┼─────────┼─────────┤
+    │ 1   │ Symbol  │ \e[90mmissing\e[39m │ missing │
+    │ 2   │ \e[90mmissing\e[39m │ String  │ missing │
+    │ 3   │ missing │ missing │ \e[90mmissing\e[39m │""" : """
     3×3 DataFrames.DataFrame
-    │ Row │ A      │ B      │ C    │
-    ├─────┼────────┼────────┼──────┤
-    │ 1   │ Symbol │ null   │ null │
-    │ 2   │ null   │ String │ null │
-    │ 3   │ null   │ null   │ null │""")
+    │ Row │ A       │ B       │ C       │
+    ├─────┼─────────┼─────────┼─────────┤
+    │ 1   │ Symbol  │ missing │ missing │
+    │ 2   │ missing │ String  │ missing │
+    │ 3   │ missing │ missing │ missing │""")
 
     io = IOBuffer()
     showcols(io, df)
     str = String(take!(io))
     @test str == """
     3×3 DataFrames.DataFrame
-    │ Col # │ Name │ Eltype                    │ Missing │ Values          │
-    ├───────┼──────┼───────────────────────────┼─────────┼─────────────────┤
-    │ 1     │ A    │ Union{Nulls.Null, Symbol} │ 1       │ Symbol  …  null │
-    │ 2     │ B    │ Union{Nulls.Null, String} │ 1       │ null  …  null   │
-    │ 3     │ C    │ Any                       │ 1       │ null  …  null   │"""
+    │ Col # │ Name │ Eltype                          │ Missing │
+    ├───────┼──────┼─────────────────────────────────┼─────────┤
+    │ 1     │ A    │ Union{Missings.Missing, Symbol} │ 1       │
+    │ 2     │ B    │ Union{Missings.Missing, String} │ 1       │
+    │ 3     │ C    │ Any                             │ 1       │
+    
+    │ Col # │ Values              │
+    ├───────┼─────────────────────┤
+    │ 1     │ Symbol  …  missing  │
+    │ 2     │ missing  …  missing │
+    │ 3     │ missing  …  missing │"""
 
     # Test computing width for Array{String} columns
     df = DataFrame(Any[["a"]], [:x])
