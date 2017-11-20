@@ -96,7 +96,7 @@ mutable struct DataFrame <: AbstractDataFrame
             end
         end
         for (i, c) in enumerate(columns)
-            if isa(c, Range)
+            if isa(c, AbstractRange)
                 columns[i] = collect(c)
             elseif !isa(c, AbstractVector)
                 throw(DimensionMismatch("columns must be 1-dimensional"))
