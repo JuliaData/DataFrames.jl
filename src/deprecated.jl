@@ -538,9 +538,9 @@ let out = Vector{Float64}(1)
                          nastrings::Vector{T},
                          wasquoted::Bool = false,
                          truestrings::Vector{P} = P[],
-                         falsestrings::Vector{P} = P[]) where { N <: AbstractFloat,
-                                                                T <: String,
-                                                                P <: String}
+                         falsestrings::Vector{P} = P[]) where {N <: AbstractFloat,
+                                                               T <: String,
+                                                               P <: String}
         if left > right
             return 0.0, true, true
         end
