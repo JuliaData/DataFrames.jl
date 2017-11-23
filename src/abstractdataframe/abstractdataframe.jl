@@ -400,7 +400,7 @@ function StatsBase.describe(io::IO, X::AbstractVector{Union{T, Missing}}) where 
     missingcount = count(ismissing, X)
     pmissing = 100 * missingcount/length(X)
     if pmissing != 100 && T <: Real
-        show(io, StatsBase.summarystats(collect(Missings.skip(X))))
+        show(io, StatsBase.summarystats(collect(skipmissing(X))))
     else
         println(io, "Summary Stats:")
     end
