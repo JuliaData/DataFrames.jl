@@ -44,21 +44,21 @@ true
 
 ```
 
-`missing` values can be excluded when performing operations by using `Missings.skip`, which returns a memory-efficient iterator.
+`missing` values can be excluded when performing operations by using `skipmissing`, which returns a memory-efficient iterator.
 
 ```jldoctest missings
-julia> Missings.skip(x)
-Base.Generator{Base.Iterators.Filter{Missings.##4#6,Array{Union{Int64, Missings.Missing},1}},Missings.##3#5}(Missings.#3, Base.Iterators.Filter{Missings.##4#6,Array{Union{Int64, Missings.Missing},1}}(Missings.#4, Union{Int64, Missings.Missing}[1, 2, missing]))
+julia> skipmissing(x)
+Missings.EachSkipMissing{Array{Union{$Int, Missings.Missing},1}}(Union{$Int, Missings.Missing}[1, 2, missing])
 
 ```
 
-The output of `Missings.skip` can be passed directly into functions as an argument. For example, we can find the `sum` of all non-missing values or `collect` the non-missing values into a new missing-free vector.
+The output of `skipmissing` can be passed directly into functions as an argument. For example, we can find the `sum` of all non-missing values or `collect` the non-missing values into a new missing-free vector.
 
 ```jldoctest missings
-julia> sum(Missings.skip(x))
+julia> sum(skipmissing(x))
 3
 
-julia> collect(Missings.skip(x))
+julia> collect(skipmissing(x))
 2-element Array{Int64,1}:
  1
  2
@@ -271,7 +271,7 @@ julia> df
 │ 7   │ missing │ M │
 │ 8   │ 8       │ F │
 
-julia> mean(Missings.skip(df[:A]))
+julia> mean(skipmissing(df[:A]))
 5.0
 
 ```

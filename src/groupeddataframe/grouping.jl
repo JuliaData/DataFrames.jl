@@ -74,8 +74,8 @@ vcat([g[:b] for g in gd]...)
 for g in gd
     println(g)
 end
-map(d -> mean(Missings.skip(d[:c])), gd)   # returns a GroupApplied object
-combine(map(d -> mean(Missings.skip(d[:c])), gd))
+map(d -> mean(skipmissing(d[:c])), gd)   # returns a GroupApplied object
+combine(map(d -> mean(skipmissing(d[:c])), gd))
 df |> groupby(:a) |> [sum, length]
 df |> groupby([:a, :b]) |> [sum, length]
 ```
@@ -194,7 +194,7 @@ combine(ga::GroupApplied)
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
-combine(map(d -> mean(Missings.skip(d[:c])), gd))
+combine(map(d -> mean(skipmissing(d[:c])), gd))
 ```
 
 """
@@ -291,11 +291,11 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 by(df, :a, d -> sum(d[:c]))
-by(df, :a, d -> 2 * Missings.skip(d[:c]))
-by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(Missings.skip(d[:c]))))
-by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(Missings.skip(d[:c]))))
+by(df, :a, d -> 2 * skipmissing(d[:c]))
+by(df, :a, d -> DataFrame(c_sum = sum(d[:c]), c_mean = mean(skipmissing(d[:c]))))
+by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(skipmissing(d[:c]))))
 by(df, [:a, :b]) do d
-    DataFrame(m = mean(Missings.skip(d[:c])), v = var(Missings.skip(d[:c])))
+    DataFrame(m = mean(skipmissing(d[:c])), v = var(skipmissing(d[:c])))
 end
 ```
 
@@ -341,9 +341,9 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 aggregate(df, :a, sum)
-aggregate(df, :a, [sum, x->mean(Missings.skip(x))])
-aggregate(groupby(df, :a), [sum, x->mean(Missings.skip(x))])
-df |> groupby(:a) |> [sum, x->mean(Missings.skip(x))]   # equivalent
+aggregate(df, :a, [sum, x->mean(skipmissing(x))])
+aggregate(groupby(df, :a), [sum, x->mean(skipmissing(x))])
+df |> groupby(:a) |> [sum, x->mean(skipmissing(x))]   # equivalent
 ```
 
 """
