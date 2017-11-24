@@ -6,7 +6,7 @@ using Documenter, DataFrames
 makedocs(
     # options
     modules = [DataFrames],
-    doctest = true,
+    doctest = false,
     clean = false,
     sitename = "DataFrames.jl",
     format = :html,
