@@ -1,70 +1,204 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Getting Started · DataFrames.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="DataFrames.jl logo"/></a><h1>DataFrames.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li class="current"><a class="toctext" href="getting_started.html">Getting Started</a><ul class="internal"><li><a class="toctext" href="#Installation-1">Installation</a></li><li><a class="toctext" href="#The-Null-Type-1">The <code>Null</code> Type</a></li><li><a class="toctext" href="#The-DataFrame-Type-1">The <code>DataFrame</code> Type</a></li><li><a class="toctext" href="#Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></li><li><a class="toctext" href="#Loading-a-Classic-Data-Set-1">Loading a Classic Data Set</a></li><li><a class="toctext" href="#Querying-DataFrames-1">Querying DataFrames</a></li></ul></li><li><a class="toctext" href="joins.html">Joins</a></li><li><a class="toctext" href="split_apply_combine.html">Split-apply-combine</a></li><li><a class="toctext" href="reshaping_and_pivoting.html">Reshaping</a></li><li><a class="toctext" href="sorting.html">Sorting</a></li><li><a class="toctext" href="categorical.html">Categorical Data</a></li><li><a class="toctext" href="querying_frameworks.html">Querying frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../lib/maintypes.html">Main types</a></li><li><a class="toctext" href="../lib/utilities.html">Utilities</a></li><li><a class="toctext" href="../lib/manipulation.html">Data manipulation</a></li></ul></li><li><span class="toctext">About</span><ul><li><a class="toctext" href="../NEWS.html">Release Notes</a></li><li><a class="toctext" href="../LICENSE.html">License</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href="getting_started.html">Getting Started</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/getting_started.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Getting Started</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Getting-Started-1" href="#Getting-Started-1">Getting Started</a></h1><h2><a class="nav-anchor" id="Installation-1" href="#Installation-1">Installation</a></h2><p>The DataFrames package is available through the Julia package system and can be installed using the following command:</p><pre><code class="language-julia">Pkg.add(&quot;DataFrames&quot;)</code></pre><p>Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed <code>using DataFrames</code> to bring all of the relevant variables into your current namespace.</p><h2><a class="nav-anchor" id="The-Null-Type-1" href="#The-Null-Type-1">The <code>Null</code> Type</a></h2><p>To get started, let&#39;s examine the <code>Null</code> type. <code>Null</code> is a type implemented by the <a href="https://github.com/JuliaData/Nulls.jl">Nulls.jl</a> package to represent missing data. <code>null</code> is an instance of the type <code>Null</code> used to represent a missing value.</p><pre><code class="language-julia">julia&gt; using DataFrames
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Getting Started · DataFrames.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="DataFrames.jl logo"/></a><h1>DataFrames.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li class="current"><a class="toctext" href="getting_started.html">Getting Started</a><ul class="internal"><li><a class="toctext" href="#Installation-1">Installation</a></li><li><a class="toctext" href="#The-Missing-Type-1">The <code>Missing</code> Type</a></li><li><a class="toctext" href="#The-DataFrame-Type-1">The <code>DataFrame</code> Type</a></li><li><a class="toctext" href="#Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></li><li><a class="toctext" href="#Loading-a-Classic-Data-Set-1">Loading a Classic Data Set</a></li><li><a class="toctext" href="#Querying-DataFrames-1">Querying DataFrames</a></li></ul></li><li><a class="toctext" href="joins.html">Joins</a></li><li><a class="toctext" href="split_apply_combine.html">Split-apply-combine</a></li><li><a class="toctext" href="reshaping_and_pivoting.html">Reshaping</a></li><li><a class="toctext" href="sorting.html">Sorting</a></li><li><a class="toctext" href="categorical.html">Categorical Data</a></li><li><a class="toctext" href="querying_frameworks.html">Querying frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../lib/types.html">Types</a></li><li><a class="toctext" href="../lib/functions.html">Functions</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href="getting_started.html">Getting Started</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/getting_started.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Getting Started</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Getting-Started-1" href="#Getting-Started-1">Getting Started</a></h1><h2><a class="nav-anchor" id="Installation-1" href="#Installation-1">Installation</a></h2><p>The DataFrames package is available through the Julia package system and can be installed using the following command:</p><pre><code class="language-julia">Pkg.add(&quot;DataFrames&quot;)</code></pre><p>Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed <code>using DataFrames</code> to bring all of the relevant variables into your current namespace.</p><h2><a class="nav-anchor" id="The-Missing-Type-1" href="#The-Missing-Type-1">The <code>Missing</code> Type</a></h2><p>To get started, let&#39;s examine the <code>Missing</code> type. <code>Missing</code> is a type implemented by the <a href="https://github.com/JuliaData/Missings.jl">Missings.jl</a> package to represent missing data. <code>missing</code> is an instance of the type <code>Missing</code> used to represent a missing value.</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
 
-julia&gt; null
-null
+julia&gt; missing
+missing
 
-julia&gt; typeof(null)
-Nulls.Null
-</code></pre><p>The <code>Null</code> type lets users create <code>Vector</code>s and <code>DataFrame</code> columns with missing values. Here we create a vector with a null value and the element-type of the returned vector is <code>Union{Nulls.Null, Int64}</code>.</p><pre><code class="language-julia">julia&gt; x = [1, 2, null]
-3-element Array{Union{Nulls.Null, Int64},1}:
+julia&gt; typeof(missing)
+Missings.Missing
+</code></pre><p>The <code>Missing</code> type lets users create <code>Vector</code>s and <code>DataFrame</code> columns with missing values. Here we create a vector with a missing value and the element-type of the returned vector is <code>Union{Missings.Missing, Int64}</code>.</p><pre><code class="language-julia-repl">julia&gt; x = [1, 2, missing]
+3-element Array{Union{Missings.Missing, Int64},1}:
  1
  2
-  null
+  missing
 
 julia&gt; eltype(x)
-Union{Nulls.Null, Int64}
+Union{Missings.Missing, Int64}
 
-julia&gt; Union{Null, Int}
-Union{Nulls.Null, Int64}
+julia&gt; Union{Missing, Int}
+Union{Missings.Missing, Int64}
 
-julia&gt; eltype(x) == Union{Null, Int}
+julia&gt; eltype(x) == Union{Missing, Int}
 true
-</code></pre><p><code>null</code> values can be excluded when performing operations by using <code>Nulls.skip</code>, which returns a memory-efficient iterator.</p><pre><code class="language-julia">julia&gt; Nulls.skip(x)
-Base.Generator{Base.Iterators.Filter{Nulls.##4#6{Nulls.Null},Array{Union{Nulls.Null, Int64},1}},Nulls.##3#5}(Nulls.#3, Base.Iterators.Filter{Nulls.##4#6{Nulls.Null},Array{Union{Nulls.Null, Int64},1}}(Nulls.#4, Union{Nulls.Null, Int64}[1, 2, null]))
-</code></pre><p>The output of <code>Nulls.skip</code> can be passed directly into functions as an argument. For example, we can find the <code>sum</code> of all non-null values or <code>collect</code> the non-null values into a new null-free vector.</p><pre><code class="language-julia">julia&gt; sum(Nulls.skip(x))
+</code></pre><p><code>missing</code> values can be excluded when performing operations by using <code>skipmissing</code>, which returns a memory-efficient iterator.</p><pre><code class="language-julia-repl">julia&gt; skipmissing(x)
+Missings.EachSkipMissing{Array{Union{$Int, Missings.Missing},1}}(Union{$Int, Missings.Missing}[1, 2, missing])
+</code></pre><p>The output of <code>skipmissing</code> can be passed directly into functions as an argument. For example, we can find the <code>sum</code> of all non-missing values or <code>collect</code> the non-missing values into a new missing-free vector.</p><pre><code class="language-julia-repl">julia&gt; sum(skipmissing(x))
 3
 
-julia&gt; collect(Nulls.skip(x))
+julia&gt; collect(skipmissing(x))
 2-element Array{Int64,1}:
  1
  2
-</code></pre><p><code>null</code> elements can be replaced with other values via <code>Nulls.replace</code>.</p><pre><code class="language-julia">julia&gt; collect(Nulls.replace(x, 1))
+</code></pre><p><code>missing</code> elements can be replaced with other values via <code>Missings.replace</code>.</p><pre><code class="language-julia-repl">julia&gt; collect(Missings.replace(x, 1))
 3-element Array{Int64,1}:
  1
  2
  1
-</code></pre><p>The function <code>Nulls.T</code> returns the element-type <code>T</code> in <code>Union{T, Null}</code>.</p><pre><code class="language-julia">julia&gt; Nulls.T(eltype(x))
+</code></pre><p>The function <code>Missings.T</code> returns the element-type <code>T</code> in <code>Union{T, Missing}</code>.</p><pre><code class="language-julia-repl">julia&gt; eltype(x)
+Union{Int64, Missings.Missing}
+
+julia&gt; Missings.T(eltype(x))
 Int64
-</code></pre><p>Use <code>nulls</code> to generate nullable <code>Vector</code>s and <code>Array</code>s, using the optional first argument to specify the element-type.</p><pre><code class="language-julia">julia&gt; nulls(1)
-1-element Array{Nulls.Null,1}:
- null
+</code></pre><p>Use <code>missings</code> to generate <code>Vector</code>s and <code>Array</code>s supporting missing values, using the optional first argument to specify the element-type.</p><pre><code class="language-julia-repl">julia&gt; missings(1)
+1-element Array{Missings.Missing,1}:
+ missing
 
-julia&gt; nulls(3)
-3-element Array{Nulls.Null,1}:
- null
- null
- null
+julia&gt; missings(3)
+3-element Array{Missings.Missing,1}:
+ missing
+ missing
+ missing
 
-julia&gt; nulls(1, 3)
-1×3 Array{Nulls.Null,2}:
- null  null  null
+julia&gt; missings(1, 3)
+1×3 Array{Missings.Missing,2}:
+ missing  missing  missing
 
-julia&gt; nulls(Int, 1, 3)
-1×3 Array{Union{Nulls.Null, Int64},2}:
- null  null  null
-</code></pre><h2><a class="nav-anchor" id="The-DataFrame-Type-1" href="#The-DataFrame-Type-1">The <code>DataFrame</code> Type</a></h2><p>The <code>DataFrame</code> type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments or pairs:</p><pre><code class="language-julia">df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
-df = DataFrame(:A =&gt; 1:4, :B =&gt; [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])</code></pre><p>It is also possible to construct a <code>DataFrame</code> in stages:</p><pre><code class="language-julia">df = DataFrame()
-df[:A] = 1:8
-df[:B] = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;]
-df</code></pre><p>The <code>DataFrame</code> we build in this way has 8 rows and 2 columns. You can check this using <code>size</code> function:</p><pre><code class="language-julia">nrows = size(df, 1)
-ncols = size(df, 2)</code></pre><p>We can also look at small subsets of the data in a couple of different ways:</p><pre><code class="language-julia">head(df)
-tail(df)
+julia&gt; missings(Int, 1, 3)
+1×3 Array{Union{Missings.Missing, Int64},2}:
+ missing  missing  missing
+</code></pre><h2><a class="nav-anchor" id="The-DataFrame-Type-1" href="#The-DataFrame-Type-1">The <code>DataFrame</code> Type</a></h2><p>The <code>DataFrame</code> type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments or pairs:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
 
-df[1:3, :]</code></pre><p>Having seen what some of the rows look like, we can try to summarize the entire data set using <code>describe</code>:</p><pre><code class="language-julia">describe(df)</code></pre><p>To focus our search, we start looking at just the means and medians of specific columns. In the example below, we use numeric indexing to access the columns of the <code>DataFrame</code>:</p><pre><code class="language-julia">mean(Nulls.skip(df[1]))
-median(Nulls.skip(df[1]))</code></pre><p>We could also have used column names to access individual columns:</p><pre><code class="language-julia">mean(Nulls.skip(df[:A]))
-median(Nulls.skip(df[:A]))</code></pre><p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>colwise</code> function. For example:</p><pre><code class="language-julia">df = DataFrame(A = 1:4, B = randn(4))
-colwise(c-&gt;cumsum(Nulls.skip(c)), df)</code></pre><h2><a class="nav-anchor" id="Importing-and-Exporting-Data-(I/O)-1" href="#Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></h2><p>For reading and writing tabular data from CSV and other delimited text files, use the <a href="https://github.com/JuliaData/CSV.jl">CSV.jl</a> package.</p><p>If you have not used the CSV.jl package before then you may need to install it first:</p><pre><code class="language-julia">Pkg.add(&quot;CSV&quot;)</code></pre><p>The CSV.jl functions are not loaded automatically and must be imported into the session.</p><pre><code class="language-julia">using CSV</code></pre><p>A dataset can now be read from a CSV file at path <code>input</code> using</p><pre><code class="language-julia">CSV.read(input)</code></pre><p>A DataFrame can be written to a CSV file at path <code>output</code> using</p><pre><code class="language-julia">df = DataFrame(x = 1, y = 2)
-CSV.write(output, df)</code></pre><p>The behavior of CSV functions can be adapted via keyword arguments. For more information, use the REPL <a href="http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode">help-mode</a> or checkout the online <a href="https://juliadata.github.io/CSV.jl/stable/">CSV.jl documentation</a>.</p><h2><a class="nav-anchor" id="Loading-a-Classic-Data-Set-1" href="#Loading-a-Classic-Data-Set-1">Loading a Classic Data Set</a></h2><p>To see more of the functionality for working with <code>DataFrame</code> objects, we need a more complex data set to work with. We can access Fisher&#39;s iris data set using the following functions:</p><pre><code class="language-julia">using CSV
-iris = CSV.read(joinpath(Pkg.dir(&quot;DataFrames&quot;), &quot;test/data/iris.csv&quot;))
-head(iris)</code></pre><h2><a class="nav-anchor" id="Querying-DataFrames-1" href="#Querying-DataFrames-1">Querying DataFrames</a></h2><p>While the <code>DataFrames</code> package provides basic data manipulation capabilities, users are encouraged to use the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a>, which provides a <a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources, including <code>DataFrame</code> instances. See the <a href="querying_frameworks.html#Querying-frameworks-1">Querying frameworks</a>  section for more information.</p><footer><hr/><a class="previous" href="../index.html"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="joins.html"><span class="direction">Next</span><span class="title">Joins</span></a></footer></article></body></html>
+julia&gt; DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
+4×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ M │
+│ 2   │ 2 │ F │
+│ 3   │ 3 │ F │
+│ 4   │ 4 │ M │
+</code></pre><p>It is also possible to construct a <code>DataFrame</code> in stages:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame()
+0×0 DataFrames.DataFrame
+
+
+julia&gt; df[:A] = 1:8
+1:8
+
+julia&gt; df[:B] = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;]
+8-element Array{String,1}:
+ &quot;M&quot;
+ &quot;F&quot;
+ &quot;F&quot;
+ &quot;M&quot;
+ &quot;F&quot;
+ &quot;M&quot;
+ &quot;M&quot;
+ &quot;F&quot;
+
+julia&gt; df
+8×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ M │
+│ 2   │ 2 │ F │
+│ 3   │ 3 │ F │
+│ 4   │ 4 │ M │
+│ 5   │ 5 │ F │
+│ 6   │ 6 │ M │
+│ 7   │ 7 │ M │
+│ 8   │ 8 │ F │
+</code></pre><p>The <code>DataFrame</code> we build in this way has 8 rows and 2 columns. You can check this using the <code>size</code> function:</p><pre><code class="language-julia-repl">julia&gt; size(df, 1) == 8
+true
+
+julia&gt; size(df, 2) == 2
+true
+
+julia&gt; size(df) == (8, 2)
+true
+</code></pre><p>We can also look at small subsets of the data in a couple of different ways:</p><pre><code class="language-julia-repl">julia&gt; head(df)
+6×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ M │
+│ 2   │ 2 │ F │
+│ 3   │ 3 │ F │
+│ 4   │ 4 │ M │
+│ 5   │ 5 │ F │
+│ 6   │ 6 │ M │
+
+julia&gt; tail(df)
+6×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 3 │ F │
+│ 2   │ 4 │ M │
+│ 3   │ 5 │ F │
+│ 4   │ 6 │ M │
+│ 5   │ 7 │ M │
+│ 6   │ 8 │ F │
+
+julia&gt; df[1:3, :]
+3×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ M │
+│ 2   │ 2 │ F │
+│ 3   │ 3 │ F │
+</code></pre><p>Having seen what some of the rows look like, we can try to summarize the entire data set using <code>describe</code>:</p><pre><code class="language-julia-repl">julia&gt; describe(df)
+A
+Summary Stats:
+Mean:           4.500000
+Minimum:        1.000000
+1st Quartile:   2.750000
+Median:         4.500000
+3rd Quartile:   6.250000
+Maximum:        8.000000
+Length:         8
+Type:           Int64
+
+B
+Summary Stats:
+Length:         8
+Type:           String
+Number Unique:  2
+
+</code></pre><p>To access individual columns of the dataset, you refer to the column names by their symbol or by their numerical index. Here we extract the first column, <code>:A</code>, and use it to compute the mean and variance.</p><pre><code class="language-julia-repl">julia&gt; mean(df[:A]) == mean(df[1]) == 4.5
+true
+
+julia&gt; var(df[:A]) ==  var(df[1]) == 6.0
+true
+</code></pre><p>If your dataset has missing values, most functions will require you to remove them beforehand. Here we will replace all odd-numbered rows in the first column with missing data to show how to handle the above example when missing values are present in your dataset.</p><pre><code class="language-julia-repl">julia&gt; df[:A] = [isodd(i) ? missing : value for (i, value) in enumerate(df[:A])];
+
+julia&gt; df
+8×2 DataFrames.DataFrame
+│ Row │ A       │ B │
+├─────┼─────────┼───┤
+│ 1   │ missing │ M │
+│ 2   │ 2       │ F │
+│ 3   │ missing │ F │
+│ 4   │ 4       │ M │
+│ 5   │ missing │ F │
+│ 6   │ 6       │ M │
+│ 7   │ missing │ M │
+│ 8   │ 8       │ F │
+
+julia&gt; mean(skipmissing(df[:A]))
+5.0
+</code></pre><p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>colwise</code> function. For example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+4×2 DataFrames.DataFrame
+│ Row │ A │ B   │
+├─────┼───┼─────┤
+│ 1   │ 1 │ 4.0 │
+│ 2   │ 2 │ 3.0 │
+│ 3   │ 3 │ 2.0 │
+│ 4   │ 4 │ 1.0 │
+
+julia&gt; colwise(sum, df)
+2-element Array{Real,1}:
+ 10
+ 10.0
+</code></pre><h2><a class="nav-anchor" id="Importing-and-Exporting-Data-(I/O)-1" href="#Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></h2><p>For reading and writing tabular data from CSV and other delimited text files, use the <a href="https://github.com/JuliaData/CSV.jl">CSV.jl</a> package.</p><p>If you have not used the CSV.jl package before then you may need to install it first:</p><pre><code class="language-julia">Pkg.add(&quot;CSV&quot;)</code></pre><p>The CSV.jl functions are not loaded automatically and must be imported into the session.</p><pre><code class="language-julia">using CSV</code></pre><p>A dataset can now be read from a CSV file at path <code>input</code> using</p><pre><code class="language-julia">CSV.read(input)</code></pre><p>A DataFrame can be written to a CSV file at path <code>output</code> using</p><pre><code class="language-julia">df = DataFrame(x = 1, y = 2)
+CSV.write(output, df)</code></pre><p>The behavior of CSV functions can be adapted via keyword arguments. For more information, use the REPL <a href="http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode">help-mode</a> or checkout the online <a href="https://juliadata.github.io/CSV.jl/stable/">CSV.jl documentation</a>.</p><h2><a class="nav-anchor" id="Loading-a-Classic-Data-Set-1" href="#Loading-a-Classic-Data-Set-1">Loading a Classic Data Set</a></h2><p>To see more of the functionality for working with <code>DataFrame</code> objects, we need a more complex data set to work with. We can access Fisher&#39;s iris data set using the following functions:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames, CSV
+
+julia&gt; iris = CSV.read(joinpath(Pkg.dir(&quot;DataFrames&quot;), &quot;test/data/iris.csv&quot;));
+
+julia&gt; head(iris)
+6×5 DataFrames.DataFrame
+│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
+├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
+│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ setosa  │
+│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ setosa  │
+│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ setosa  │
+│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ setosa  │
+│ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ setosa  │
+│ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa  │
+</code></pre><h2><a class="nav-anchor" id="Querying-DataFrames-1" href="#Querying-DataFrames-1">Querying DataFrames</a></h2><p>While the <code>DataFrames</code> package provides basic data manipulation capabilities, users are encouraged to use the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a>, which provides a <a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources, including <code>DataFrame</code> instances. See the <a href="querying_frameworks.html#Querying-frameworks-1">Querying frameworks</a>  section for more information.</p><footer><hr/><a class="previous" href="../index.html"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="joins.html"><span class="direction">Next</span><span class="title">Joins</span></a></footer></article></body></html>
