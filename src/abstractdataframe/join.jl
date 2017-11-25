@@ -75,11 +75,11 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     _similar = kind == :inner ? similar : similar_missing
     for (i, col) in enumerate(columns(joiner.dfl))
         cols[i] = _similar(col, nrow)
-        fillcolumn!(cols[i], col, all_orig_left_ixs)
+        copy!(cols[i], view(col, all_orig_left_ixs))
     end
     for (i, col) in enumerate(columns(dfr_noon))
         cols[i+ncleft] = _similar(col, nrow)
-        fillcolumn!(cols[i+ncleft], col, all_orig_right_ixs)
+        copy!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
     end
     res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)))
@@ -89,18 +89,11 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         # need to be taken from the right
         for (on_col_ix, on_col) in enumerate(joiner.on_cols)
             # fix the result of the rightjoin by taking the nonmissing values from the right table
-            offset = nrow - length(rightonly_ixs.orig)
-            fillcolumn!(res[on_col], joiner.dfr_on[on_col_ix], rightonly_ixs.orig, offset)
+            offset = nrow - length(rightonly_ixs.orig) + 1
+            copy!(res[on_col], offset, view(joiner.dfr_on[on_col_ix], rightonly_ixs.orig))
         end
     end
     return res
-end
-
-function fillcolumn!(dfcol::AbstractVector{T1}, refcol::AbstractVector{T2},
-                     indices::Vector{Int}, offset::Int=0) where {T1, T2}
-    @inbounds for (j, k) in enumerate(indices)
-        dfcol[j+offset] = refcol[k]
-    end
 end
 
 # map the indices of the left and right joined tables
@@ -221,6 +214,9 @@ join(df1::AbstractDataFrame,
 
 For the three join operations that may introduce missing values (`:outer`, `:left`,
 and `:right`), all columns of the returned data table will support missing values.
+
+When merging `on` categorical columns that differ in the ordering of their levels, the
+ordering of the left `DataFrame` takes precedence over the ordering of the right `DataFrame`
 
 ### Result
 
