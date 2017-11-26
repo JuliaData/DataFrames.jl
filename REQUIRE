@@ -7,3 +7,4 @@ Reexport
 WeakRefStrings 0.4.0
 DataStreams 0.3.0
 GZip
+Compat 0.36.0

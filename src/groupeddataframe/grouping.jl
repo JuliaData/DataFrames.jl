@@ -205,7 +205,7 @@ function combine(ga::GroupApplied)
     j = 0
     @inbounds for (start, val) in zip(gd.starts, vals)
         n = size(val, 1)
-        idx[j + (1:n)] = gd.idx[start]
+        idx[j .+ (1:n)] = gd.idx[start]
         j += n
     end
     hcat!(gd.parent[idx, gd.cols], valscat)

@@ -35,7 +35,7 @@ let
     function ourstrwidth(x::Any) # -> Int
         truncate(io, 0)
         ourshowcompact(io, x)
-        strwidth(String(take!(io)))
+        textwidth(String(take!(io)))
     end
 end
 
