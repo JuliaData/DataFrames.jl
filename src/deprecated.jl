@@ -23,7 +23,7 @@ import Base: keys, values, insert!
 
 
 ## write.table
-using GZip
+using CodecZlib, TranscodingStreams
 
 export writetable
 """
@@ -92,9 +92,9 @@ function writetable(filename::AbstractString,
         end
     end
 
-    openfunc = endswith(filename, ".gz") ? gzopen : open
+    encoder = endswith(filename, ".gz") ? GzipCompressorStream : NoopStream
 
-    openfunc(filename, append ? "a" : "w") do io
+    open(encoder, filename, append ? "a" : "w") do io
         printtable(io,
                    df,
                    header = header,

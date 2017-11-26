@@ -6,5 +6,5 @@ SortingAlgorithms
 Reexport
 WeakRefStrings 0.4.0
 DataStreams 0.3.0
-GZip
+CodecZlib 0.4
 Compat 0.36.0
