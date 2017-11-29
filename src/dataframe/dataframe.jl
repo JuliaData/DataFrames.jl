@@ -726,7 +726,7 @@ function allowmissing!(df::DataFrame, col::ColumnIndex)
     df[col] = Vector{Union{eltype(df[col]), Missing}}(df[col])
     df
 end
-function allowmissing!(df::DataFrame, cols::Vector{T}) where T <: ColumnIndex
+function allowmissing!(df::DataFrame, cols::AbstractVector{<: ColumnIndex}=1:size(df, 2))
     for col in cols
         allowmissing!(df, col)
     end
