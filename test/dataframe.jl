@@ -438,7 +438,13 @@ module TestDataFrame
         allowmissing!(df, 1)
         @test isa(df[1], Vector{Union{Int, Missing}})
         @test !isa(df[2], Vector{Union{Int, Missing}})
+
+        df = DataFrame(Any[collect(1:10), collect(1:10)])        
         allowmissing!(df, [1,2])
+        @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
+
+        df = DataFrame(Any[collect(1:10), collect(1:10)])        
+        allowmissing!(df)
         @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
     end
 end
