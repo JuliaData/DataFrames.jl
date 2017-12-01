@@ -721,11 +721,29 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = h
 ## Missing values support
 ##
 ##############################################################################
+"""
+    allowmissing!(df::DataFrame)
+
+Convert all columns of a `DataFrame` from element type `T` to
+`Union{T, Missing}` to support missing values.
+
+    allowmissing!(df::DataFrame, col::Union{Integer, Symbol})
+
+Convert a single column of a `DataFrame` from element type `T` to
+`Union{T, Missing}` to support missing values.
+
+    allowmissing!(df::DataFrame, cols::AbstractVector{<:Union{Integer, Symbol}})
+
+Convert multiple columns of a `DataFrame` from element-type `T` to
+`Union{T, Missing}` to support missing values.
+"""
+function allowmissing! end
 
 function allowmissing!(df::DataFrame, col::ColumnIndex)
-    df[col] = Vector{Union{eltype(df[col]), Missing}}(df[col])
+    df[col] = allowmissing(df[col])
     df
 end
+
 function allowmissing!(df::DataFrame, cols::AbstractVector{<: ColumnIndex}=1:size(df, 2))
     for col in cols
         allowmissing!(df, col)

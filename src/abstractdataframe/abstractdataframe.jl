@@ -233,8 +233,17 @@ Base.ndims(::AbstractDataFrame) = 2
 ##
 ##############################################################################
 
-Base.similar(df::AbstractDataFrame, dims::Int) =
-    DataFrame(Any[similar_missing(x, dims) for x in columns(df)], copy(index(df)))
+"""
+    similar(df::DataFrame[, rows::Int])
+
+Create a new `DataFrame` with the same column names and column element types
+as `df`. An optional second argument can be provided to request a number of rows
+that is different than the number of rows present in `df`.
+"""
+function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
+    rows < 0 && throw(ArgumentError("the number of rows must be positive"))
+    DataFrame(Any[similar(x, rows) for x in columns(df)], copy(index(df)))
+end
 
 ##############################################################################
 ##
