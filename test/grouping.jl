@@ -84,19 +84,6 @@ module TestGrouping
             gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
             @test colwise((length), gd) == [[2,2],[2,2]]
         end
-
-        @testset "::Function" begin
-            cw = map(colwise(sum), (missingfree, df))
-            answer = ([55], Real[20, 12, -0.4283098098931877])
-            @test cw == answer
-
-            cw = map(colwise((sum, length)), (missingfree, df))
-            answer = (reshape([55, 10], (2,1)), Any[20 12 -0.4283098098931877; 8 8 8])
-            @test cw == answer
-
-            cw = map(colwise([sum, length]), (missingfree, df))
-            @test cw == answer
-        end
     end
 
     cols = [:a, :b]

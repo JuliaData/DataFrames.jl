@@ -235,7 +235,7 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 colwise(sum, df)
-colwise([sum, lenth], df)
+colwise([sum, length], df)
 colwise((minimum, maximum), df)
 colwise(sum, groupby(df, :a))
 ```
@@ -246,7 +246,6 @@ colwise(f, d::AbstractDataFrame) = [f(d[i]) for i in 1:ncol(d)]
 # apply several functions to each column in a DataFrame
 colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for f in fns, i in 1:ncol(d)]
 colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
-colwise(f) = x -> colwise(f, x)
 
 """
 Split-apply-combine in one step; apply `f` to each grouping in `d`
