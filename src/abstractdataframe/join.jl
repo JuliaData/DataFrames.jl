@@ -300,6 +300,11 @@ function Base.join(df1::AbstractDataFrame,
     end
 end
 
+function Base.join(right::AbstractDataFrame; on=Symbol[], kind=:inner)
+    # for pipelining with |>
+    return left -> join(left, right; on=on, kind=kind)
+end
+
 function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame)
     r1, r2 = size(df1, 1), size(df2, 1)
     cols = Any[[repeat(c, inner=r2) for c in columns(df1)];
