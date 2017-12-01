@@ -1283,3 +1283,5 @@ import Base: |>
 @deprecate (|>)(gd::GroupedDataFrame, fs::Function) aggregate(gd, fs)
 @deprecate (|>)(gd::GroupedDataFrame, fs::Vector{T}) where {T<:Function} aggregate(gd, fs)
 @deprecate colwise(f) x -> colwise(f, x)
+@deprecate groupby(cols::Vector{T}; sort::Bool = false, skipmissing::Bool = false) where {T} x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
+@deprecate groupby(cols; sort::Bool = false, skipmissing::Bool = false) x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)

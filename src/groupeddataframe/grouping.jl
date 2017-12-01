@@ -94,12 +94,6 @@ groupby(d::AbstractDataFrame, cols;
         sort::Bool = false, skipmissing::Bool = false) =
     groupby(d, [cols], sort = sort, skipmissing = skipmissing)
 
-# add a function curry
-groupby(cols::Vector{T}; sort::Bool = false, skipmissing::Bool = false) where {T} =
-    x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
-groupby(cols; sort::Bool = false, skipmissing::Bool = false) =
-    x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
-
 Base.start(gd::GroupedDataFrame) = 1
 Base.next(gd::GroupedDataFrame, state::Int) =
     (view(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
