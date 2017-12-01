@@ -24,22 +24,22 @@ Missings.Missing
 
 ```
 
-The `Missing` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a missing value and the element-type of the returned vector is `Union{Missings.Missing, Int64}`.
+The `Missing` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a missing value and the element-type of the returned vector is `Union{Float64, Missings.Missing}`.
 
 ```jldoctest missings
-julia> x = [1, 2, missing]
-3-element Array{Union{Missings.Missing, Int64},1}:
- 1
- 2
+julia> x = [1.0, 2.0, missing]
+3-element Array{Union{Float64, Missings.Missing},1}:
+ 1.0
+ 2.0
   missing
 
 julia> eltype(x)
-Union{Missings.Missing, Int64}
+Union{Float64, Missings.Missing}
 
-julia> Union{Missing, Int}
-Union{Missings.Missing, Int64}
+julia> Union{Missing, Float64}
+Union{Float64, Missings.Missing}
 
-julia> eltype(x) == Union{Missing, Int}
+julia> eltype(x) == Union{Missing, Float64}
 true
 
 ```
@@ -48,7 +48,7 @@ true
 
 ```jldoctest missings
 julia> skipmissing(x)
-Missings.EachSkipMissing{Array{Union{$Int, Missings.Missing},1}}(Union{$Int, Missings.Missing}[1, 2, missing])
+Missings.EachSkipMissing{Array{Union{Float64, Missings.Missing},1}}(Union{Float64, Missings.Missing}[1.0, 2.0, missing])
 
 ```
 
@@ -56,23 +56,23 @@ The output of `skipmissing` can be passed directly into functions as an argument
 
 ```jldoctest missings
 julia> sum(skipmissing(x))
-3
+3.0
 
 julia> collect(skipmissing(x))
-2-element Array{Int64,1}:
- 1
- 2
+2-element Array{Float64,1}:
+ 1.0
+ 2.0
 
 ```
 
 `missing` elements can be replaced with other values via `Missings.replace`.
 
 ```jldoctest missings
-julia> collect(Missings.replace(x, 1))
-3-element Array{Int64,1}:
- 1
- 2
- 1
+julia> collect(Missings.replace(x, 1.0))
+3-element Array{Float64,1}:
+ 1.0
+ 2.0
+ 1.0
 
 ```
 
@@ -80,10 +80,10 @@ The function `Missings.T` returns the element-type `T` in `Union{T, Missing}`.
 
 ```jldoctest missings
 julia> eltype(x)
-Union{Int64, Missings.Missing}
+Union{Float64, Missings.Missing}
 
 julia> Missings.T(eltype(x))
-Int64
+Float64
 
 ```
 
@@ -104,8 +104,8 @@ julia> missings(1, 3)
 1×3 Array{Missings.Missing,2}:
  missing  missing  missing
 
-julia> missings(Int, 1, 3)
-1×3 Array{Union{Missings.Missing, Int64},2}:
+julia> missings(Float64, 1, 3)
+1×3 Array{Union{Float64, Missings.Missing},2}:
  missing  missing  missing
 
 ```
@@ -135,8 +135,8 @@ julia> df = DataFrame()
 0×0 DataFrames.DataFrame
 
 
-julia> df[:A] = 1:8
-1:8
+julia> df[:A] = 1.0:8.0
+1.0:1.0:8.0
 
 julia> df[:B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
 8-element Array{String,1}:
@@ -151,16 +151,16 @@ julia> df[:B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
 
 julia> df
 8×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
-│ 2   │ 2 │ F │
-│ 3   │ 3 │ F │
-│ 4   │ 4 │ M │
-│ 5   │ 5 │ F │
-│ 6   │ 6 │ M │
-│ 7   │ 7 │ M │
-│ 8   │ 8 │ F │
+│ Row │ A   │ B │
+├─────┼─────┼───┤
+│ 1   │ 1.0 │ M │
+│ 2   │ 2.0 │ F │
+│ 3   │ 3.0 │ F │
+│ 4   │ 4.0 │ M │
+│ 5   │ 5.0 │ F │
+│ 6   │ 6.0 │ M │
+│ 7   │ 7.0 │ M │
+│ 8   │ 8.0 │ F │
 
 ```
 
@@ -184,33 +184,33 @@ We can also look at small subsets of the data in a couple of different ways:
 ```jldoctest dataframe
 julia> head(df)
 6×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
-│ 2   │ 2 │ F │
-│ 3   │ 3 │ F │
-│ 4   │ 4 │ M │
-│ 5   │ 5 │ F │
-│ 6   │ 6 │ M │
+│ Row │ A   │ B │
+├─────┼─────┼───┤
+│ 1   │ 1.0 │ M │
+│ 2   │ 2.0 │ F │
+│ 3   │ 3.0 │ F │
+│ 4   │ 4.0 │ M │
+│ 5   │ 5.0 │ F │
+│ 6   │ 6.0 │ M │
 
 julia> tail(df)
 6×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 3 │ F │
-│ 2   │ 4 │ M │
-│ 3   │ 5 │ F │
-│ 4   │ 6 │ M │
-│ 5   │ 7 │ M │
-│ 6   │ 8 │ F │
+│ Row │ A   │ B │
+├─────┼─────┼───┤
+│ 1   │ 3.0 │ F │
+│ 2   │ 4.0 │ M │
+│ 3   │ 5.0 │ F │
+│ 4   │ 6.0 │ M │
+│ 5   │ 7.0 │ M │
+│ 6   │ 8.0 │ F │
 
 julia> df[1:3, :]
 3×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
-│ 2   │ 2 │ F │
-│ 3   │ 3 │ F │
+│ Row │ A   │ B │
+├─────┼─────┼───┤
+│ 1   │ 1.0 │ M │
+│ 2   │ 2.0 │ F │
+│ 3   │ 3.0 │ F │
 
 ```
 
@@ -227,7 +227,7 @@ Median:         4.500000
 3rd Quartile:   6.250000
 Maximum:        8.000000
 Length:         8
-Type:           Int64
+Type:           Float64
 
 B
 Summary Stats:
@@ -263,13 +263,13 @@ julia> df
 │ Row │ A       │ B │
 ├─────┼─────────┼───┤
 │ 1   │ missing │ M │
-│ 2   │ 2       │ F │
+│ 2   │ 2.0     │ F │
 │ 3   │ missing │ F │
-│ 4   │ 4       │ M │
+│ 4   │ 4.0     │ M │
 │ 5   │ missing │ F │
-│ 6   │ 6       │ M │
+│ 6   │ 6.0     │ M │
 │ 7   │ missing │ M │
-│ 8   │ 8       │ F │
+│ 8   │ 8.0     │ F │
 
 julia> mean(skipmissing(df[:A]))
 5.0
