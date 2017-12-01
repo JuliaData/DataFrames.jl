@@ -59,8 +59,6 @@ See the following for additional split-apply-combine operations:
 * `combine` : combine (obviously)
 * `colwise` : apply a function to each column in an AbstractDataFrame or GroupedDataFrame
 
-Piping methods `|>` are also provided.
-
 ### Examples
 
 ```julia
@@ -76,8 +74,6 @@ for g in gd
 end
 map(d -> mean(skipmissing(d[:c])), gd)   # returns a GroupApplied object
 combine(map(d -> mean(skipmissing(d[:c])), gd))
-df |> groupby(:a) |> [sum, length]
-df |> groupby([:a, :b]) |> [sum, length]
 ```
 
 """
@@ -343,7 +339,6 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
 aggregate(df, :a, sum)
 aggregate(df, :a, [sum, x->mean(skipmissing(x))])
 aggregate(groupby(df, :a), [sum, x->mean(skipmissing(x))])
-df |> groupby(:a) |> [sum, x->mean(skipmissing(x))]   # equivalent
 ```
 
 """
@@ -361,9 +356,6 @@ function aggregate(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false) where 
     sort && sort!(res, cols=headers)
     res
 end
-
-(|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, fs)
-(|>)(gd::GroupedDataFrame, fs::Vector{T}) where {T<:Function} = aggregate(gd, fs)
 
 # Groups DataFrame by cols before applying aggregate
 function aggregate(d::AbstractDataFrame,

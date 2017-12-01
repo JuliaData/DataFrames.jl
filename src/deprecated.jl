@@ -1277,3 +1277,9 @@ end
 @deprecate rename(x::AbstractDataFrame, from::AbstractArray, to::AbstractArray) rename(x, [f=>t for (f, t) in zip(from, to)])
 @deprecate rename(x::AbstractDataFrame, from::Symbol, to::Symbol) rename(x, from => to)
 @deprecate rename(x::Index, f::Function) rename(f, x)
+
+# Pipeline
+import Base: |>
+@deprecate (|>)(gd::GroupedDataFrame, fs::Function) aggregate(gd, fs)
+@deprecate (|>)(gd::GroupedDataFrame, fs::Vector{T}) where {T<:Function} aggregate(gd, fs)
+

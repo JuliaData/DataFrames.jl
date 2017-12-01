@@ -11,7 +11,7 @@ using Reexport, StatsBase, SortingAlgorithms, Compat
 @reexport using CategoricalArrays, Missings
 
 using Base: Sort, Order
-import Base: ==, |>
+import Base: ==
 
 ##############################################################################
 ##
