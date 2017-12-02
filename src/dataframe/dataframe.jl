@@ -705,6 +705,12 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame)
     end
     return df1
 end
+
+# definition required to avoid hcat! ambiguity
+function hcat!(df1::DataFrame, df2::DataFrame)
+    invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2)
+end
+
 hcat!(df::DataFrame, x::AbstractVector) = hcat!(df, DataFrame(Any[x]))
 hcat!(x::AbstractVector, df::DataFrame) = hcat!(DataFrame(Any[x]), df)
 hcat!(x, df::DataFrame) = throw(ArgumentError("x must be a vector or a data frame"))
