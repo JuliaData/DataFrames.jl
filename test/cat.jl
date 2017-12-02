@@ -62,6 +62,15 @@ module TestCat
         @test df[2] == collect(1:10)
     end
 
+    @testset "hcat ::Vectors" begin
+        df = DataFrame()
+        df2 = hcat(DataFrames.CategoricalVector{Union{Int, Missing}}(1:10), df)
+        @test df2[1] == collect(1:10)
+        df3 = hcat(11:20, df2)
+        @test df3[1] == collect(11:20)
+        @test_throws ArgumentError hcat("a", df)
+        @test_throws ArgumentError hcat(df, "a")
+    end
     #
     # vcat
     #

@@ -697,7 +697,7 @@ end
 ##
 ##############################################################################
 
-# hcat! for 2 arguments
+# hcat! for 2 arguments, only a vector or a data frame is allowed
 function hcat!(df1::DataFrame, df2::AbstractDataFrame)
     u = add_names(index(df1), index(df2))
     for i in 1:length(u)
@@ -706,6 +706,9 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame)
     return df1
 end
 hcat!(df::DataFrame, x::AbstractVector) = hcat!(df, DataFrame(Any[x]))
+hcat!(x::AbstractVector, df::DataFrame) = hcat!(DataFrame(Any[x]), df)
+hcat!(x, df::DataFrame) = throw(ArgumentError("x must be a vector or a data frame"))
+hcat!(df::DataFrame, x) = throw(ArgumentError("x must be a vector or a data frame"))
 
 # hcat! for 1-n arguments
 hcat!(df::DataFrame) = df
