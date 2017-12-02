@@ -184,6 +184,7 @@ combine(ga::GroupApplied)
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
+gd = groupby(df, :a)
 combine(map(d -> mean(skipmissing(d[:c])), gd))
 ```
 
