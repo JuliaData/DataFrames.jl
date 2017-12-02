@@ -59,8 +59,6 @@ See the following for additional split-apply-combine operations:
 * `combine` : combine (obviously)
 * `colwise` : apply a function to each column in an AbstractDataFrame or GroupedDataFrame
 
-Piping methods `|>` are also provided.
-
 ### Examples
 
 ```julia
@@ -76,8 +74,6 @@ for g in gd
 end
 map(d -> mean(skipmissing(d[:c])), gd)   # returns a GroupApplied object
 combine(map(d -> mean(skipmissing(d[:c])), gd))
-df |> groupby(:a) |> [sum, length]
-df |> groupby([:a, :b]) |> [sum, length]
 ```
 
 """
@@ -97,12 +93,6 @@ end
 groupby(d::AbstractDataFrame, cols;
         sort::Bool = false, skipmissing::Bool = false) =
     groupby(d, [cols], sort = sort, skipmissing = skipmissing)
-
-# add a function curry
-groupby(cols::Vector{T}; sort::Bool = false, skipmissing::Bool = false) where {T} =
-    x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
-groupby(cols; sort::Bool = false, skipmissing::Bool = false) =
-    x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
 
 Base.start(gd::GroupedDataFrame) = 1
 Base.next(gd::GroupedDataFrame, state::Int) =
@@ -239,7 +229,7 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 colwise(sum, df)
-colwise([sum, lenth], df)
+colwise([sum, length], df)
 colwise((minimum, maximum), df)
 colwise(sum, groupby(df, :a))
 ```
@@ -250,7 +240,6 @@ colwise(f, d::AbstractDataFrame) = [f(d[i]) for i in 1:ncol(d)]
 # apply several functions to each column in a DataFrame
 colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for f in fns, i in 1:ncol(d)]
 colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
-colwise(f) = x -> colwise(f, x)
 
 """
 Split-apply-combine in one step; apply `f` to each grouping in `d`
@@ -343,7 +332,6 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
 aggregate(df, :a, sum)
 aggregate(df, :a, [sum, x->mean(skipmissing(x))])
 aggregate(groupby(df, :a), [sum, x->mean(skipmissing(x))])
-df |> groupby(:a) |> [sum, x->mean(skipmissing(x))]   # equivalent
 ```
 
 """
@@ -361,9 +349,6 @@ function aggregate(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false) where 
     sort && sort!(res, cols=headers)
     res
 end
-
-(|>)(gd::GroupedDataFrame, fs::Function) = aggregate(gd, fs)
-(|>)(gd::GroupedDataFrame, fs::Vector{T}) where {T<:Function} = aggregate(gd, fs)
 
 # Groups DataFrame by cols before applying aggregate
 function aggregate(d::AbstractDataFrame,

@@ -119,8 +119,6 @@ module TestData
     @test df8[3, :d1_length] == 11
     @test df8 ≅ aggregate(groupby(df7, :d2), [sum, length], sort=true)
 
-    df9 = df7 |> groupby([:d2], sort=true) |> [sum, length]
-    @test df9 ≅ df8
     df9 = aggregate(df7, :d2, [sum, length], sort=true)
     @test df9 ≅ df8
 
