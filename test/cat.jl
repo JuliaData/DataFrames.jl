@@ -62,10 +62,10 @@ module TestCat
         df = DataFrame()
         df2 = hcat(CategoricalVector{Union{Int, Missing}}(1:10), df)
         @test df2[1] == collect(1:10)
-        @test names(df2) == ["x1"]
+        @test names(df2) == [:x1]
         df3 = hcat(11:20, df2)
         @test df3[1] == collect(11:20)
-        @test names(df3) == ["x1", "x1_1"]
+        @test names(df3) == [:x1, :x1_1]
 
         @test_throws ArgumentError hcat("a", df)
         @test_throws ArgumentError hcat(df, "a")
