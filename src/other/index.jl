@@ -116,8 +116,14 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
     find(idx)
 end
-Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T >: Missing} =
-    getindex(x, collect(skipmissing(idx)))
+function Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T >: Missing}
+    idx2 = collect(skipmissing(idx)) # idx can be Any and we have to handle it
+    length(idx2) == 0 && return Int[] # special case of empty idx2
+    # now only accept either numbers, Bool or Symbols
+    idx2[1] isa Real && return convert(Vector{Int}, idx2)
+    idx2[1] isa Bool && return convert(Vector{Bool}, idx2)
+    getindex(x, convert(Vector{Symbol}, idx2))
+end
 Base.getindex(x::AbstractIndex, idx::AbstractRange) = [idx;]
 Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T <: Real} = convert(Vector{Int}, idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
