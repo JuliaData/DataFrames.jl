@@ -37,14 +37,6 @@ module TestCat
         @test hcat(gd[1], gd[2]) == answer
     end
 
-    @testset "hcat ::Vectors" begin
-        df = DataFrame()
-        DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10))
-        @test df[1] == collect(1:10)
-        DataFrames.hcat!(df, 1:10)
-        @test df[2] == collect(1:10)
-    end
-
     @testset "hcat ::AbstractDataFrame" begin
         df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
         gd = groupby(df, :A)
@@ -57,17 +49,24 @@ module TestCat
     @testset "hcat ::Vectors" begin
         df = DataFrame()
         DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10))
+        @test df[1] == collect(1:10)
+        DataFrames.hcat!(df, 1:10)
+        @test df[2] == collect(1:10)
+
+        df = DataFrame()
+        DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10))
         @test df[1] == CategoricalVector(1:10)
         DataFrames.hcat!(df, collect(1:10))
         @test df[2] == collect(1:10)
-    end
 
-    @testset "hcat ::Vectors" begin
         df = DataFrame()
-        df2 = hcat(DataFrames.CategoricalVector{Union{Int, Missing}}(1:10), df)
+        df2 = hcat(CategoricalVector{Union{Int, Missing}}(1:10), df)
         @test df2[1] == collect(1:10)
+        @test names(df2) == ["x1"]
         df3 = hcat(11:20, df2)
         @test df3[1] == collect(11:20)
+        @test names(df3) == ["x1", "x1_1"]
+
         @test_throws ArgumentError hcat("a", df)
         @test_throws ArgumentError hcat(df, "a")
     end
