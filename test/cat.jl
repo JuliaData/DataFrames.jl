@@ -50,14 +50,11 @@ module TestCat
         df = DataFrame()
         DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10))
         @test df[1] == collect(1:10)
+        @test df[1] == CategoricalVector(1:10)
         DataFrames.hcat!(df, 1:10)
         @test df[2] == collect(1:10)
-
-        df = DataFrame()
-        DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10))
-        @test df[1] == CategoricalVector(1:10)
         DataFrames.hcat!(df, collect(1:10))
-        @test df[2] == collect(1:10)
+        @test df[3] == collect(1:10)
 
         df = DataFrame()
         df2 = hcat(CategoricalVector{Union{Int, Missing}}(1:10), df)
