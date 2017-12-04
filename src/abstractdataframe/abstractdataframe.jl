@@ -668,6 +668,7 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 ##############################################################################
 
 # hcat's first argument must be an AbstractDataFrame
+# or AbstractVector if the second argument is AbstractDataFrame
 # Trailing arguments (currently) may also be vectors or scalars.
 
 # hcat! is defined in DataFrames/DataFrames.jl
@@ -675,6 +676,7 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 
 # catch-all to cover cases where indexing returns a DataFrame and copy doesn't
 Base.hcat(df::AbstractDataFrame, x) = hcat!(df[:, :], x)
+Base.hcat(x, df::AbstractDataFrame) = hcat!(x, df[:, :])
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame) = hcat!(df1[:, :], df2)
 
 Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
