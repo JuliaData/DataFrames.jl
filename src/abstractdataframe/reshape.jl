@@ -220,7 +220,7 @@ unstack(df::AbstractDataFrame, rowkey::ColumnIndex,
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
 
 # Version of unstack with just the colkey and value columns provided
-unstack(df::AbstractDataFrame, colkey, value) =
+unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex) =
     unstack(df, index(df)[colkey], index(df)[value])
 
 function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
