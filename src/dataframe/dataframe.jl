@@ -714,10 +714,10 @@ end
 hcat!(df::DataFrame, x::AbstractVector) = hcat!(df, DataFrame(Any[x]))
 hcat!(x::AbstractVector, df::DataFrame) = hcat!(DataFrame(Any[x]), df)
 function hcat!(x, df::DataFrame)
-    throw(ArgumentError("x must be AbstaractVector or AbstractDataFrame"))
+    throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
 end
 function hcat!(df::DataFrame, x)
-    throw(ArgumentError("x must be AbstaractVector or AbstractDataFrame"))
+    throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
 end
 
 # hcat! for 1-n arguments

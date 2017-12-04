@@ -46,10 +46,9 @@ module TestCat
         @test hcat(gd[1], gd[2]) == answer
     end
 
-    @testset "hcat ::Vectors" begin
+    @testset "hcat ::AbstractVectors" begin
         df = DataFrame()
         DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10))
-        @test df[1] == collect(1:10)
         @test df[1] == CategoricalVector(1:10)
         DataFrames.hcat!(df, 1:10)
         @test df[2] == collect(1:10)
