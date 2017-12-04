@@ -215,8 +215,8 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     col = similar_missing(df[rowkey], length(levs))
     insert!(payload, 1, copy!(col, levs), _names(df)[rowkey])
 end
-unstack(df::AbstractDataFrame, rowkey::Union{Symbol, Real},
-        colkey::Union{Symbol, Real}, value::Union{Symbol, Real}) =
+unstack(df::AbstractDataFrame, rowkey::ColumnIndex,
+        colkey::ColumnIndex, value::ColumnIndex) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
 
 # Version of unstack with just the colkey and value columns provided
