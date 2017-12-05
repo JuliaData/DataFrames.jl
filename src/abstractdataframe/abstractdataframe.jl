@@ -234,7 +234,7 @@ Base.ndims(::AbstractDataFrame) = 2
 ##############################################################################
 
 """
-    similar(df::DataFrame[, rows::Int])
+    similar(df::DataFrame[, rows::Integer])
 
 Create a new `DataFrame` with the same column names and column element types
 as `df`. An optional second argument can be provided to request a number of rows
