@@ -736,7 +736,7 @@ Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = h
 ##############################################################################
 
 function allowmissing!(df::DataFrame, col::ColumnIndex)
-    df[col] = Vector{Union{eltype(df[col]), Missing}}(df[col])
+    df[col] = allowmissing(df[col])
     df
 end
 function allowmissing!(df::DataFrame, cols::AbstractVector{<: ColumnIndex}=1:size(df, 2))
