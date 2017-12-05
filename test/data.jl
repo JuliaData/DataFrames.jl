@@ -189,8 +189,15 @@ module TestData
     @test d1us2[:d] == d1[:d]
     @test d1us2[:3] == d1[:d]
 
-    #test_group("merge")
+    # test unstack with exactly one key column that is not passed
+    df1 = melt(DataFrame(rand(10,10)))
+    df1[:id] = 1:100
+    @test size(unstack(df1, :variable, :value)) == (100, 11)
 
+    # test empty keycol
+    @test_throws ArgumentError unstack(melt(DataFrame(rand(3,2))), :variable, :value)
+
+    #test_group("merge")
     srand(1)
     df1 = DataFrame(a = shuffle!(Vector{Union{Int, Missing}}(1:10)),
                     b = rand(Union{Symbol, Missing}[:A,:B], 10),

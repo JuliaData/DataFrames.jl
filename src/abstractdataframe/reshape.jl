@@ -194,6 +194,9 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     # `colkey` integer indicating which column to place along column headers
     # `value` integer indicating which column has values
     refkeycol = CategoricalArray{Union{eltype(df[rowkey]), Missing}}(df[rowkey])
+    # make sure we report only levels actually present in rowkey column
+    # this is consistent with how the other unstack method based on groupby works
+    droplevels!(refkeycol)
     valuecol = df[value]
     keycol = CategoricalArray{Union{eltype(df[colkey]), Missing}}(df[colkey])
     Nrow = length(refkeycol.pool)
@@ -215,16 +218,19 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     col = similar_missing(df[rowkey], length(levs))
     insert!(payload, 1, copy!(col, levs), _names(df)[rowkey])
 end
-unstack(df::AbstractDataFrame, rowkey, colkey, value) =
+unstack(df::AbstractDataFrame, rowkey::ColumnIndex,
+        colkey::ColumnIndex, value::ColumnIndex) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
 
 # Version of unstack with just the colkey and value columns provided
-unstack(df::AbstractDataFrame, colkey, value) =
+unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex) =
     unstack(df, index(df)[colkey], index(df)[value])
 
 function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
     # group on anything not a key or value:
-    g = groupby(df, setdiff(_names(df), _names(df)[[colkey, value]]), sort=true)
+    rowkeys = setdiff(_names(df), _names(df)[[colkey, value]])
+    length(rowkeys) == 0 && throw(ArgumentError("No key column found"))
+    g = groupby(df, rowkeys, sort=true)
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
     rowkey = zeros(Int, size(df, 1))
     for i in 1:length(groupidxs)
