@@ -189,8 +189,7 @@ module TestData
     @test d1us2[:d] == d1[:d]
     @test d1us2[:3] == d1[:d]
 
-    #
-
+    # test unstack with exactly one key column that is not passed
     df1 = melt(DataFrame(rand(10,10)))
     df1[:id] = 1:100
     @test size(unstack(df1, :variable, :value)) == (100, 11)

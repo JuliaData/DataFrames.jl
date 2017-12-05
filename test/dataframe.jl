@@ -304,14 +304,14 @@ module TestDataFrame
     df2 = unstack(df, :Fish, :Key, :Value)
     #Unstack without specifying a row column
     df3 = unstack(df, :Key, :Value)
-    #The expected output
-    df4 = DataFrame(Fish = Union{String, Missing}["XXX", "Bob", "Batman"],
-                    Color = Union{String, Missing}[missing, "Red", "Grey"],
-                    Mass = Union{String, Missing}[missing, "12 g", "18 g"])
+    #The expected output, XXX level should be dropped as it has no rows with this key
+    df4 = DataFrame(Fish = Union{String, Missing}["Bob", "Batman"],
+                    Color = Union{String, Missing}["Red", "Grey"],
+                    Mass = Union{String, Missing}["12 g", "18 g"])
     @test df2 ≅ df4
     @test typeof(df2[:Fish]) <: CategoricalVector{Union{String, Missing}}
     # first column stays as CategoricalArray in df3
-    @test df3[:, 2:3] == df4[2:3, 2:3]
+    @test df3 == df4
     #Make sure unstack works with missing values at the start of the value column
     df[1,:Value] = missing
     df2 = unstack(df, :Fish, :Key, :Value)
