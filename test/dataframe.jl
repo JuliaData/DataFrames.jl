@@ -316,7 +316,7 @@ module TestDataFrame
     df[1,:Value] = missing
     df2 = unstack(df, :Fish, :Key, :Value)
     #This changes the expected result
-    df4[2,:Mass] = missing
+    df4[1,:Mass] = missing
     @test df2 ≅ df4
 
     df = DataFrame(A = 1:10, B = 'A':'J')
