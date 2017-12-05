@@ -194,6 +194,8 @@ function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
     # `colkey` integer indicating which column to place along column headers
     # `value` integer indicating which column has values
     refkeycol = CategoricalArray{Union{eltype(df[rowkey]), Missing}}(df[rowkey])
+    # make sure we report only levels actually present in rowkey column
+    # this is consistent with how groupby works
     droplevels!(refkeycol)
     valuecol = df[value]
     keycol = CategoricalArray{Union{eltype(df[colkey]), Missing}}(df[colkey])
