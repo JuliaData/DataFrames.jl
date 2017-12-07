@@ -628,7 +628,7 @@ function builddf(rows::Integer,
             values = Vector{o.eltypes[j]}(rows)
         end
 
-        missing = falses(rows)
+        msng = falses(rows)
         is_int = true
         is_float = true
         is_bool = true
@@ -657,7 +657,7 @@ function builddf(rows::Integer,
 
             # If eltypes has been defined, use it
             if !isempty(o.eltypes)
-                values[i], wasparsed, missing[i] =
+                values[i], wasparsed, msng[i] =
                     bytestotype(o.eltypes[j],
                                 p.bytes,
                                 left,
@@ -679,7 +679,7 @@ function builddf(rows::Integer,
 
             # (1) Try to parse values as Int's
             if is_int
-                values[i], wasparsed, missing[i] =
+                values[i], wasparsed, msng[i] =
                   bytestotype(Int64,
                               p.bytes,
                               left,
@@ -698,7 +698,7 @@ function builddf(rows::Integer,
 
             # (2) Try to parse as Float64's
             if is_float
-                values[i], wasparsed, missing[i] =
+                values[i], wasparsed, msng[i] =
                   bytestotype(Float64,
                               p.bytes,
                               left,
@@ -719,7 +719,7 @@ function builddf(rows::Integer,
 
             # (3) Try to parse as Bool's
             if is_bool
-                values[i], wasparsed, missing[i] =
+                values[i], wasparsed, msng[i] =
                   bytestotype(Bool,
                               p.bytes,
                               left,
@@ -739,7 +739,7 @@ function builddf(rows::Integer,
             end
 
             # (4) Fallback to String
-            values[i], wasparsed, missing[i] =
+            values[i], wasparsed, msng[i] =
               bytestotype(String,
                           p.bytes,
                           left,
@@ -752,7 +752,7 @@ function builddf(rows::Integer,
 
         vals = similar(values, Union{eltype(values), Missing})
         @inbounds for i in eachindex(vals)
-            vals[i] = missing[i] ? missing : values[i]
+            vals[i] = msng[i] ? missing : values[i]
         end
         if o.makefactors && !(is_int || is_float || is_bool)
             columns[j] = CategoricalArray{Union{eltype(values), Missing}}(vals)
