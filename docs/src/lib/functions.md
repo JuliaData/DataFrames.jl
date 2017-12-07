@@ -46,6 +46,7 @@ rename!
 rename
 show
 showcols
+similar
 size
 sort
 sort!
