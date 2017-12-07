@@ -2,7 +2,7 @@
 # will also accept a position or set of positions or range or other things and pass them
 # through cleanly.
 abstract type AbstractIndex end
-
+const ColumnIndex = Union{Real, Symbol}
 mutable struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
@@ -113,8 +113,8 @@ Base.getindex(x::AbstractIndex, idx::Real) = Int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}}) =
     getindex(x, collect(Missings.replace(idx, false)))
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool}) = find(idx)
-Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T >: Missing} =
-    getindex(x, collect(skipmissing(idx)))
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{T, Missing}}) where
+    {T <: ColumnIndex} = getindex(x, collect(skipmissing(idx)))
 Base.getindex(x::AbstractIndex, idx::AbstractRange) = [idx;]
 Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T <: Real} = convert(Vector{Int}, idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]

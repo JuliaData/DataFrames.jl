@@ -28,6 +28,9 @@ for ind in inds
     end
 end
 
+@test_throws MethodError i[[]]
+@test i[Int[]] == Int[]
+@test i[Symbol[]] == Int[]
 @test names(i) == [:A,:B]
 @test names!(i, [:a,:a], allow_duplicates=true) == Index([:a,:a_1])
 @test_throws ArgumentError names!(i, [:a,:a])

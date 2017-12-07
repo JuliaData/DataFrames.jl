@@ -208,8 +208,6 @@ ncol(df::DataFrame) = length(index(df))
 # Let getindex(df.columns[j], row_inds) from AbstractVector() handle
 #  the resolution of row indices
 
-const ColumnIndex = Union{Real, Symbol}
-
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
