@@ -143,6 +143,22 @@ module TestData
                    d = Array{Union{Float64, Missing}}(randn(12)),
                    e = Array{Union{String, Missing}}(map(string, 'a':'l')))
 
+    # test empty measures or ids
+    for T in (Integer, Symbol)
+        dx = stack(d1, T[], [:a])
+        @test size(dx) == (0, 3)
+        @test names(dx) == [:variable, :value, :a]
+        dx = stack(d1, :a, T[])
+        @test size(dx) == (12, 2)
+        @test names(dx) == [:variable, :value]
+        dx = melt(d1, T[], [:a])
+        @test size(dx) == (12, 2)
+        @test names(dx) == [:variable, :value]
+        dx = melt(d1, :a, T[])
+        @test size(dx) == (0, 3)
+        @test names(dx) == [:variable, :value, :a]
+    end
+
     stack(d1, :a)
     d1s = stack(d1, [:a, :b])
     d1s2 = stack(d1, [:c, :d])
