@@ -6,21 +6,34 @@
 similar_missing(dv::AbstractArray{T}, dims::Union{Int, Tuple{Vararg{Int}}}) where {T} =
     fill!(similar(dv, Union{T, Missing}, dims), missing)
 
+const OnType = Union{Symbol, NTuple{2,Symbol}, Pair{Symbol,Symbol}}
+
 # helper structure for DataFrames joining
 struct DataFrameJoiner{DF1<:AbstractDataFrame, DF2<:AbstractDataFrame}
     dfl::DF1
     dfr::DF2
     dfl_on::DF1
     dfr_on::DF2
-    on_cols::Vector{Symbol}
+    left_on::Vector{Symbol}
+    right_on::Vector{Symbol}
 
-    function DataFrameJoiner{DF1, DF2}(dfl::DF1, dfr::DF2, on::Union{Symbol,Vector{Symbol}}) where {DF1, DF2}
-        on_cols = isa(on, Symbol) ? [on] : on
-        new(dfl, dfr, dfl[on_cols], dfr[on_cols], on_cols)
+    function DataFrameJoiner{DF1, DF2}(dfl::DF1, dfr::DF2,
+                                       on::Union{<:OnType, AbstractVector{<:OnType}}) where {DF1, DF2}
+
+        on_cols = isa(on, Vector) ? on : [on]
+        if eltype(on_cols) == Symbol
+            left_on = on_cols
+            right_on = on_cols
+        else
+            left_on = [first(x) for x in on_cols]
+            right_on = [last(x) for x in on_cols]
+        end
+        new(dfl, dfr, dfl[left_on], dfr[right_on], left_on, right_on)
     end
 end
 
-DataFrameJoiner(dfl::DF1, dfr::DF2, on::Union{Symbol,Vector{Symbol}}) where {DF1<:AbstractDataFrame, DF2<:AbstractDataFrame} =
+DataFrameJoiner(dfl::DF1, dfr::DF2, on::Union{<:OnType, AbstractVector{<:OnType}}) where
+    {DF1<:AbstractDataFrame, DF2<:AbstractDataFrame} =
     DataFrameJoiner{DF1,DF2}(dfl, dfr, on)
 
 # helper map between the row indices in original and joined table
@@ -66,7 +79,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     all_orig_right_ixs = vcat(right_ixs.orig, rightonly_ixs.orig)
 
     # compose right half of the result taking all right columns excluding on
-    dfr_noon = without(joiner.dfr, joiner.on_cols)
+    dfr_noon = without(joiner.dfr, joiner.right_on)
 
     nrow = length(all_orig_left_ixs) + roil
     @assert nrow == length(all_orig_right_ixs) + loil
@@ -87,7 +100,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     if length(rightonly_ixs.join) > 0
         # some left rows are missings, so the values of the "on" columns
         # need to be taken from the right
-        for (on_col_ix, on_col) in enumerate(joiner.on_cols)
+        for (on_col_ix, on_col) in enumerate(joiner.left_on)
             # fix the result of the rightjoin by taking the nonmissing values from the right table
             offset = nrow - length(rightonly_ixs.orig) + 1
             copy!(res[on_col], offset, view(joiner.dfr_on[on_col_ix], rightonly_ixs.orig))
@@ -182,14 +195,9 @@ function update_row_maps!(left_table::AbstractDataFrame,
 end
 
 """
-Join two DataFrames
+    join(df1, df2; on = Symbol[], kind = :inner)
 
-```julia
-join(df1::AbstractDataFrame,
-     df2::AbstractDataFrame;
-     on::Union{Symbol, Vector{Symbol}} = Symbol[],
-     kind::Symbol = :inner)
-```
+Join two `DataFrame` objects
 
 ### Arguments
 
@@ -197,8 +205,11 @@ join(df1::AbstractDataFrame,
 
 ### Keyword Arguments
 
-* `on` : a Symbol or Vector{Symbol}, the column(s) used as keys when
-  joining; required argument except for `kind = :cross`
+* `on` : A column, or vector of columns to join df1 and df2 on. If the column(s)
+    that df1 and df2 will be joined on have different names, then the columns
+    should be `(left, right)` tuples or `left => right` pairs, or a vector of
+    such tuples or pairs. `on` is a required argument for all joins except for
+    `kind = :cross`
 
 * `kind` : the type of join, options include:
 
@@ -235,12 +246,16 @@ join(name, job, on = :ID, kind = :right)
 join(name, job, on = :ID, kind = :semi)
 join(name, job, on = :ID, kind = :anti)
 join(name, job, kind = :cross)
+
+job2 = DataFrame(identifier = [1, 2, 4], Job = ["Lawyer", "Doctor", "Farmer"])
+join(name, job2, on = (:ID, :identifier))
+join(name, job2, on = :ID => :identifier)
 ```
 
 """
 function Base.join(df1::AbstractDataFrame,
                    df2::AbstractDataFrame;
-                   on::Union{Symbol, Vector{Symbol}} = Symbol[],
+                   on::Union{<:OnType, AbstractVector{<:OnType}} = Symbol[],
                    kind::Symbol = :inner)
     if kind == :cross
         (on == Symbol[]) || throw(ArgumentError("Cross joins don't use argument 'on'."))
