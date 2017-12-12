@@ -68,34 +68,29 @@ export AbstractDataFrame,
 ##
 ##############################################################################
 
-for (dir, filename) in [
-        ("other", "utils.jl"),
-        ("other", "index.jl"),
+include("other/utils.jl")
+include("other/index.jl")
 
-        ("abstractdataframe", "abstractdataframe.jl"),
-        ("dataframe", "dataframe.jl"),
-        ("subdataframe", "subdataframe.jl"),
-        ("groupeddataframe", "grouping.jl"),
-        ("dataframerow", "dataframerow.jl"),
-        ("dataframerow", "utils.jl"),
+include("abstractdataframe/abstractdataframe.jl")
+include("dataframe/dataframe.jl")
+include("subdataframe/subdataframe.jl")
+include("groupeddataframe/grouping.jl")
+include("dataframerow/dataframerow.jl")
+include("dataframerow/utils.jl")
 
-        ("abstractdataframe", "iteration.jl"),
-        ("abstractdataframe", "join.jl"),
-        ("abstractdataframe", "reshape.jl"),
+include("abstractdataframe/iteration.jl")
+include("abstractdataframe/join.jl")
+include("abstractdataframe/reshape.jl")
 
-        ("abstractdataframe", "io.jl"),
+include("abstractdataframe/io.jl")
 
-        ("abstractdataframe", "show.jl"),
-        ("groupeddataframe", "show.jl"),
-        ("dataframerow", "show.jl"),
+include("abstractdataframe/show.jl")
+include("groupeddataframe/show.jl")
+include("dataframerow/show.jl")
 
-        ("abstractdataframe", "sort.jl"),
-        ("dataframe", "sort.jl"),
+include("abstractdataframe/sort.jl")
+include("dataframe/sort.jl")
 
-        ("", "deprecated.jl")
-    ]
-
-    include(joinpath(dir, filename))
-end
+include("deprecated.jl")
 
 end # module DataFrames
