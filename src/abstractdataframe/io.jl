@@ -214,7 +214,7 @@ end
 Data.isdone(source::DataFrame, row, col, rows, cols) = row > rows || col > cols
 function Data.isdone(source::DataFrame, row, col)
     cols = length(source)
-    return Data.isdone(source, row, col, cols == 0 ? 0 : length(df.columns[1]), cols)
+    return Data.isdone(source, row, col, cols == 0 ? 0 : length(source.columns[1]), cols)
 end
 
 Data.streamtype(::Type{DataFrame}, ::Type{Data.Column}) = true
