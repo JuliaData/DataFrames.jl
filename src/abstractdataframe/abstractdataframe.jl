@@ -786,16 +786,17 @@ end
 ##
 ## Hashing
 ##
-## Make sure this agrees with isequals()
-##
 ##############################################################################
 
-function Base.hash(df::AbstractDataFrame)
-    h = hash(size(df)) + 1
+const hashdf_seed = UInt == UInt32 ? 0xfd8bb02e : 0x6215bada8c8c46de
+
+function Base.hash(df::AbstractDataFrame, h::UInt)
+    h += hashdf_seed
+    h += hash(size(df))
     for i in 1:size(df, 2)
         h = hash(df[i], h)
     end
-    return UInt(h)
+    return h
 end
 
 
