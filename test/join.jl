@@ -186,17 +186,17 @@ module TestJoin
                                 fid = [1, 3, 5],
                                 fid_1 = [1, 3, missing])
         @test typeof.(l(on).columns) ==
-            [Vector{Union{T, Missing}} for T in (Int, Float64, Float64)]
+            [Vector{Int}, Vector{Float64}, Vector{Union{Float64, Missing}}]
         @test r(on) ≅ DataFrame(id = [1, 3, 0, 2, 4],
                                 fid = [1, 3, missing, missing, missing],
                                 fid_1 = [1, 3, 0, 2, 4])
         @test typeof.(r(on).columns) ==
-            [Vector{Union{T, Missing}} for T in (Int, Float64, Float64)]
+            [Vector{Int}, Vector{Union{Float64, Missing}}, Vector{Float64}]
         @test o(on) ≅ DataFrame(id = [1, 3, 5, 0, 2, 4],
                                 fid = [1, 3, 5, missing, missing, missing],
                                 fid_1 = [1, 3, missing, 0, 2, 4])
         @test typeof.(o(on).columns) ==
-            [Vector{Union{T, Missing}} for T in (Int, Float64, Float64)]
+            [Vector{Int}, Vector{Union{Float64, Missing}}, Vector{Union{Float64, Missing}}]
 
         on = :fid
         @test i(on) == DataFrame(Any[[1, 3], [1.0, 3.0], [1, 3]], [:id, :fid, :id_1])
@@ -204,28 +204,25 @@ module TestJoin
         @test l(on) ≅ DataFrame(id = [1, 3, 5],
                                 fid = [1, 3, 5],
                                 id_1 = [1, 3, missing])
-        @test typeof.(l(on).columns) == [Vector{Union{T, Missing}} for T in (Int,Float64,Int)]
+        @test typeof.(l(on).columns) == [Vector{Int}, Vector{Float64}, Vector{Union{Int, Missing}}]
         @test r(on) ≅ DataFrame(id = [1, 3, missing, missing, missing],
                                 fid = [1, 3, 0, 2, 4],
                                 id_1 = [1, 3, 0, 2, 4])
-        @test typeof.(r(on).columns) == [Vector{Union{T, Missing}} for T in (Int,Float64,Int)]
+        @test typeof.(r(on).columns) == [Vector{Union{Int, Missing}}, Vector{Float64}, Vector{Int}]
         @test o(on) ≅ DataFrame(id = [1, 3, 5, missing, missing, missing],
                                 fid = [1, 3, 5, 0, 2, 4],
                                 id_1 = [1, 3, missing, 0, 2, 4])
-        @test typeof.(o(on).columns) == [Vector{Union{T, Missing}} for T in (Int,Float64,Int)]
+        @test typeof.(o(on).columns) == [Vector{Union{Int, Missing}}, Vector{Float64}, Vector{Union{Int, Missing}}]
 
         on = [:id, :fid]
         @test i(on) == DataFrame(Any[[1, 3], [1, 3]], [:id, :fid])
         @test typeof.(i(on).columns) == [Vector{Int}, Vector{Float64}]
         @test l(on) == DataFrame(id = [1, 3, 5], fid = [1, 3, 5])
-        @test typeof.(l(on).columns) == [Vector{Union{Int, Missing}},
-                                         Vector{Union{Float64, Missing}}]
+        @test typeof.(l(on).columns) == [Vector{Int}, Vector{Float64}]
         @test r(on) == DataFrame(id = [1, 3, 0, 2, 4], fid = [1, 3, 0, 2, 4])
-        @test typeof.(r(on).columns) == [Vector{Union{Int, Missing}},
-                                         Vector{Union{Float64, Missing}}]
+        @test typeof.(r(on).columns) == [Vector{Int}, Vector{Float64}]
         @test o(on) == DataFrame(id = [1, 3, 5, 0, 2, 4], fid = [1, 3, 5, 0, 2, 4])
-        @test typeof.(o(on).columns) == [Vector{Union{Int, Missing}},
-                                         Vector{Union{Float64, Missing}}]
+        @test typeof.(o(on).columns) == [Vector{Int}, Vector{Float64}]
     end
 
     @testset "all joins with CategoricalArrays" begin
@@ -276,17 +273,17 @@ module TestJoin
                                 fid = [1, 3, 5],
                                 fid_1 = [1, 3, missing])
         @test all(isa.(l(on).columns,
-                       [CategoricalVector{Union{T, Missing}} for T in (Int,Float64,Float64)]))
+                       [CategoricalVector{T} for T in (Int,Float64,Union{Float64, Missing})]))
         @test r(on) ≅ DataFrame(id = [1, 3, 0, 2, 4],
                                 fid = [1, 3, missing, missing, missing],
                                 fid_1 = [1, 3, 0, 2, 4])
         @test all(isa.(r(on).columns,
-                       [CategoricalVector{Union{T, Missing}} for T in (Int,Float64,Float64)]))
+                       [CategoricalVector{T} for T in (Int,Union{Float64, Missing},Float64)]))
         @test o(on) ≅ DataFrame(id = [1, 3, 5, 0, 2, 4],
                                 fid = [1, 3, 5, missing, missing, missing],
                                 fid_1 = [1, 3, missing, 0, 2, 4])
         @test all(isa.(o(on).columns,
-                       [CategoricalVector{Union{T, Missing}} for T in (Int,Float64,Float64)]))
+                       [CategoricalVector{T} for T in (Int,Union{Float64,Missing},Union{Float64, Missing})]))
 
         on = :fid
         @test i(on) == DataFrame(Any[[1, 3], [1.0, 3.0], [1, 3]], [:id, :fid, :id_1])
@@ -296,17 +293,17 @@ module TestJoin
                                 fid = [1, 3, 5],
                                 id_1 = [1, 3, missing])
         @test all(isa.(l(on).columns,
-                       [CategoricalVector{Union{T, Missing}} for T in (Int, Float64, Int)]))
+                       [CategoricalVector{T} for T in (Int, Float64, Union{Int, Missing})]))
         @test r(on) ≅ DataFrame(id = [1, 3, missing, missing, missing],
                                 fid = [1, 3, 0, 2, 4],
                                 id_1 = [1, 3, 0, 2, 4])
         @test all(isa.(r(on).columns,
-                       [CategoricalVector{Union{T, Missing}} for T in (Int, Float64, Int)]))
+                       [CategoricalVector{T} for T in (Union{Int, Missing}, Float64, Int)]))
         @test o(on) ≅ DataFrame(id = [1, 3, 5, missing, missing, missing],
                                 fid = [1, 3, 5, 0, 2, 4],
                                 id_1 = [1, 3, missing, 0, 2, 4])
         @test all(isa.(o(on).columns,
-                       [CategoricalVector{Union{T, Missing}} for T in (Int, Float64, Int)]))
+                       [CategoricalVector{T} for T in (Union{Int, Missing}, Float64, Union{Int, Missing})]))
 
         on = [:id, :fid]
         @test i(on) == DataFrame(Any[[1, 3], [1, 3]], [:id, :fid])
@@ -315,15 +312,15 @@ module TestJoin
         @test l(on) == DataFrame(id = [1, 3, 5],
                                  fid = [1, 3, 5])
         @test all(isa.(l(on).columns,
-                       [CategoricalVector{Union{T, Missing}} for T in (Int, Float64)]))
+                       [CategoricalVector{T} for T in (Int, Float64)]))
         @test r(on) == DataFrame(id = [1, 3, 0, 2, 4],
                                  fid = [1, 3, 0, 2, 4])
         @test all(isa.(r(on).columns,
-                       [CategoricalVector{Union{T, Missing}} for T in (Int, Float64)]))
+                       [CategoricalVector{T} for T in (Int, Float64)]))
         @test o(on) == DataFrame(id = [1, 3, 5, 0, 2, 4],
                                  fid = [1, 3, 5, 0, 2, 4])
         @test all(isa.(o(on).columns,
-                       [CategoricalVector{Union{T, Missing}} for T in (Int, Float64)]))
+                       [CategoricalVector{T} for T in (Int, Float64)]))
     end
 
     @testset "maintain CategoricalArray levels ordering on join - non-`on` cols" begin
