@@ -462,4 +462,38 @@ module TestJoin
         @test join(left, right, on = [:id => :ID, :sid => :SID], kind=:anti) ==
             DataFrame(id = 1:2, sid = string.(1:2))
     end
+
+    @testset "join with a column of type Any" begin
+        l = DataFrame(a=Any[1:7;], b=[1:7;])
+        r = DataFrame(a=Any[3:10;], b=[3:10;])
+
+        # join by :a and :b (Any is the on-column)
+        @test join(l, r, on=[:a, :b], kind=:inner) ≅ DataFrame(a=Any[3:7;], b=3:7)
+        @test eltypes(join(l, r, on=[:a, :b], kind=:inner)) == [Any, Int]
+
+        @test join(l, r, on=[:a, :b], kind=:left) ≅ DataFrame(a=Any[1:7;], b=1:7)
+        @test eltypes(join(l, r, on=[:a, :b], kind=:left)) == [Any, Int]
+
+        @test join(l, r, on=[:a, :b], kind=:right) ≅ DataFrame(a=Any[3:10;], b=3:10)
+        @test eltypes(join(l, r, on=[:a, :b], kind=:right)) == [Any, Int]
+
+        @test join(l, r, on=[:a, :b], kind=:outer) ≅ DataFrame(a=Any[1:10;], b=1:10)
+        @test eltypes(join(l, r, on=[:a, :b], kind=:outer)) == [Any, Int]
+
+        # join by :b (Any is not on-column)
+        @test join(l, r, on=:b, kind=:inner) ≅ DataFrame(a=Any[3:7;], b=3:7, a_1=Any[3:7;])
+        @test eltypes(join(l, r, on=:b, kind=:inner)) == [Any, Int, Any]
+
+        @test join(l, r, on=:b, kind=:left) ≅
+            DataFrame(a=Any[1:7;], b=1:7, a_1=[fill(missing, 2); 3:7;])
+        @test eltypes(join(l, r, on=:b, kind=:left)) == [Any, Int, Any]
+
+        @test join(l, r, on=:b, kind=:right) ≅
+            DataFrame(a=[3:7; fill(missing, 3)], b=3:10, a_1=Any[3:10;])
+        @test eltypes(join(l, r, on=:b, kind=:right)) == [Any, Int, Any]
+
+        @test join(l, r, on=:b, kind=:outer) ≅
+            DataFrame(a=[1:7; fill(missing, 3)], b=1:10, a_1=[fill(missing, 2); 3:10;])
+        @test eltypes(join(l, r, on=:b, kind=:outer)) == [Any, Int, Any]
+    end
 end
