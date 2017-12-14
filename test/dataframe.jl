@@ -189,7 +189,7 @@ module TestDataFrame
 
     @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
     @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
-
+    @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]), zero(UInt))
 
     # push!(df, row)
     df=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
