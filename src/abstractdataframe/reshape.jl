@@ -150,8 +150,12 @@ melt(df::AbstractDataFrame; variable_name::Symbol=:variable, value_name::Symbol=
 Unstacks a DataFrame; convert from a long to wide format
 
 ```julia
-unstack(df::AbstractDataFrame, rowkey, colkey, value)
-unstack(df::AbstractDataFrame, colkey, value)
+unstack(df::AbstractDataFrame, rowkeys::Union{Symbol, Integer},
+        colkey::Union{Symbol, Integer}, value::Union{Symbol, Integer})
+unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Union{Symbol, Integer}},
+        colkey::Union{Symbol, Integer}, value::Union{Symbol, Integer})
+unstack(df::AbstractDataFrame, colkey::Union{Symbol, Integer},
+        value::Union{Symbol, Integer})
 unstack(df::AbstractDataFrame)
 ```
 
@@ -159,7 +163,7 @@ unstack(df::AbstractDataFrame)
 
 * `df` : the AbstractDataFrame to be unstacked
 
-* `rowkey` : the column with a unique key for each row, if not given,
+* `rowkeys` : the column(s) with a unique key for each row, if not given,
   find a key by grouping on anything not a `colkey` or `value`
 
 * `colkey` : the column holding the column names in wide format,
@@ -171,6 +175,10 @@ unstack(df::AbstractDataFrame)
 
 * `::DataFrame` : the wide-format DataFrame
 
+If `colkey` contains `missing` values then they will be skipped and a warning will be printed.
+
+If combination of `rowkeys` and `colkey` contains duplicate entries then last `value` will
+be retained and a warning will be printed.
 
 ### Examples
 
@@ -185,39 +193,70 @@ long = stack(wide)
 wide0 = unstack(long)
 wide1 = unstack(long, :variable, :value)
 wide2 = unstack(long, :id, :variable, :value)
+wide3 = unstack(long, [:id, :a], :variable, :value)
 ```
 Note that there are some differences between the widened results above.
-
 """
 function unstack(df::AbstractDataFrame, rowkey::Int, colkey::Int, value::Int)
-    # `rowkey` integer indicating which column to place along rows
-    # `colkey` integer indicating which column to place along column headers
-    # `value` integer indicating which column has values
-    refkeycol = CategoricalArray{Union{eltype(df[rowkey]), Missing}}(df[rowkey])
-    # make sure we report only levels actually present in rowkey column
-    # this is consistent with how the other unstack method based on groupby works
+    refkeycol = categorical(df[rowkey])
     droplevels!(refkeycol)
+    keycol = categorical(df[colkey])
+    droplevels!(keycol)
     valuecol = df[value]
-    keycol = CategoricalArray{Union{eltype(df[colkey]), Missing}}(df[colkey])
+    _unstack(df, rowkey, colkey, value, keycol, valuecol, refkeycol)
+end
+
+function _unstack(df::AbstractDataFrame, rowkey::Int,
+                  colkey::Int, value::Int, keycol, valuecol, refkeycol)
     Nrow = length(refkeycol.pool)
     Ncol = length(keycol.pool)
-    payload = DataFrame(Any[similar_missing(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
-    nowarning = true
+    unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
+    hadmissing = false # have we encountered missing in refkeycol
+    mask_filled = falses(Nrow+1, Ncol) # has a given [col,row] entry been filled?
+    warned_dup = false # have we already printed duplicate entries warning?
+    warned_missing = false # have we already printed missing in keycol warning?
+    keycol_order = Vector{Int}(CategoricalArrays.order(keycol.pool))
+    refkeycol_order = Vector{Int}(CategoricalArrays.order(refkeycol.pool))
     for k in 1:nrow(df)
-        j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
-        i = Int(CategoricalArrays.order(refkeycol.pool)[refkeycol.refs[k]])
-        if i > 0 && j > 0
-            if nowarning && !ismissing(payload[j][i])
-                warn("Duplicate entries in unstack.")
-                nowarning = false
+        kref = keycol.refs[k]
+        if kref <= 0 # we have found missing in colkey
+            if !warned_missing
+                warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
+                warned_missing = true
             end
-            payload[j][i]  = valuecol[k]
+            continue # skip processing it
         end
+        j = keycol_order[kref]
+        refkref = refkeycol.refs[k]
+        if refkref <= 0 # we have found missing in rowkey
+            if !hadmissing # if it is the first time we have to add a new row
+                hadmissing = true
+                # we use the fact that missing is greater than anything
+                for i in eachindex(unstacked_val)
+                    push!(unstacked_val[i], missing)
+                end
+            end
+            i = length(unstacked_val[1])
+        else
+            i = refkeycol_order[refkref]
+        end
+        if !warned_dup && mask_filled[i, j]
+            warn("Duplicate entries in unstack at row $k for key "*
+                 "$(refkeycol[k]) and variable $(keycol[k]).")
+            warned_dup = true
+        end
+        unstacked_val[j][i] = valuecol[k]
+        mask_filled[i, j] = true
     end
     levs = levels(refkeycol)
-    col = similar_missing(df[rowkey], length(levs))
-    insert!(payload, 1, copy!(col, levs), _names(df)[rowkey])
+    # we have to handle a case with missings in refkeycol as levs will skip missing
+    col = similar(df[rowkey], length(levs) + hadmissing)
+    copy!(col, levs)
+    hadmissing && (col[end] = missing)
+    df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)))
+    insert!(df2, 1, col, _names(df)[rowkey])
 end
+
 unstack(df::AbstractDataFrame, rowkey::ColumnIndex,
         colkey::ColumnIndex, value::ColumnIndex) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
@@ -226,34 +265,61 @@ unstack(df::AbstractDataFrame, rowkey::ColumnIndex,
 unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex) =
     unstack(df, index(df)[colkey], index(df)[value])
 
-function unstack(df::AbstractDataFrame, colkey::Int, value::Int)
-    # group on anything not a key or value:
-    rowkeys = setdiff(_names(df), _names(df)[[colkey, value]])
+# group on anything not a key or value
+unstack(df::AbstractDataFrame, colkey::Int, value::Int) =
+    unstack(df, setdiff(_names(df), _names(df)[[colkey, value]]), colkey, value)
+
+unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex, value::ColumnIndex) =
+    unstack(df, rowkeys, index(df)[colkey], index(df)[value])
+
+unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Real}, colkey::Int, value::Int) =
+    unstack(df, names(df)[rowkeys], colkey, value)
+
+function unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol}, colkey::Int, value::Int)
     length(rowkeys) == 0 && throw(ArgumentError("No key column found"))
+    length(rowkeys) == 1 && return unstack(df, rowkeys[1], colkey, value)
     g = groupby(df, rowkeys, sort=true)
+    keycol = categorical(df[colkey])
+    droplevels!(keycol)
+    valuecol = df[value]
+    _unstack(df, rowkeys, colkey, value, keycol, valuecol, g)
+end
+
+function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
+                  colkey::Int, value::Int, keycol, valuecol, g)
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
     rowkey = zeros(Int, size(df, 1))
     for i in 1:length(groupidxs)
         rowkey[groupidxs[i]] = i
     end
-    keycol = CategoricalArray{Union{eltype(df[colkey]), Missing}}(df[colkey])
-    valuecol = df[value]
-    df1 = allowmissing!(df[g.idx[g.starts], g.cols], g.cols)
+    df1 = df[g.idx[g.starts], g.cols]
     Nrow = length(g)
     Ncol = length(levels(keycol))
-    df2 = DataFrame(Any[similar_missing(valuecol, Nrow) for i in 1:Ncol], map(Symbol, levels(keycol)))
-    nowarning = true
+    unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
+    mask_filled = falses(Nrow, Ncol)
+    warned_dup = false
+    warned_missing = false
+    keycol_order = Vector{Int}(CategoricalArrays.order(keycol.pool))
     for k in 1:nrow(df)
-        j = Int(CategoricalArrays.order(keycol.pool)[keycol.refs[k]])
-        i = rowkey[k]
-        if i > 0 && j > 0
-            if nowarning && !ismissing(df2[j][i])
-                warn("Duplicate entries in unstack at row $k.")
-                nowarning = false
+        kref = keycol.refs[k]
+        if kref <= 0
+            if !warned_missing
+                warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
+                warned_missing = true
             end
-            df2[j][i]  = valuecol[k]
+            continue
         end
+        j = keycol_order[kref]
+        i = rowkey[k]
+        if !warned_dup && mask_filled[i, j]
+            warn("Duplicate entries in unstack at row $k for key "*
+                 "$(tuple((df[1,s] for s in rowkeys)...)) and variable $(keycol[k]).")
+            warned_dup = true
+        end
+        unstacked_val[j][i] = valuecol[k]
+        mask_filled[i, j] = true
     end
+    df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)))
     hcat(df1, df2)
 end
 
