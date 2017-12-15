@@ -212,7 +212,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
     Ncol = length(keycol.pool)
     unstacked_val = [similar_missing(valuecol, Nrow) for i in 1:Ncol]
     hadmissing = false # have we encountered missing in refkeycol
-    mask_filled = falses(Nrow+1, Ncol) # has a given [col,row] entry been filled?
+    mask_filled = falses(Nrow+1, Ncol) # has a given [row,col] entry been filled?
     warned_dup = false # have we already printed duplicate entries warning?
     warned_missing = false # have we already printed missing in keycol warning?
     keycol_order = Vector{Int}(CategoricalArrays.order(keycol.pool))
