@@ -9,9 +9,9 @@ module TestUtils
     @test identifier("begin") == :_begin
     @test identifier("end") == :_end
 
-    @test DataFrames.make_unique([:x, :x, :x_1, :x2]) == [:x, :x_2, :x_1, :x2]
-    @test_throws ArgumentError DataFrames.make_unique([:x, :x, :x_1, :x2], allow_duplicates=false)
-    @test DataFrames.make_unique([:x, :x_1, :x2], allow_duplicates=false) == [:x, :x_1, :x2]
+    @test DataFrames._makeunique([:x, :x, :x_1, :x2]) == [:x, :x_2, :x_1, :x2]
+    @test_throws ArgumentError DataFrames._makeunique([:x, :x, :x_1, :x2], makeunique=false)
+    @test DataFrames._makeunique([:x, :x_1, :x2], makeunique=false) == [:x, :x_1, :x2]
 
     # Check that reserved words are up to date
 

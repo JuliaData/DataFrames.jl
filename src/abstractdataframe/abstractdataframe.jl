@@ -110,7 +110,7 @@ names!(df::AbstractDataFrame, vals)
 * `df` : the AbstractDataFrame
 * `vals` : column names, normally a Vector{Symbol} the same length as
   the number of columns in `df`
-* `allow_duplicates` : if `false` (the default), an error will be raised
+* `makeunique` : if `false` (the default), an error will be raised
   if duplicate names are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
 
@@ -125,12 +125,17 @@ names!(df::AbstractDataFrame, vals)
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 names!(df, [:a, :b, :c])
 names!(df, [:a, :b, :a])  # throws ArgumentError
-names!(df, [:a, :b, :a], allow_duplicates=true)  # renames second :a to :a_1
+names!(df, [:a, :b, :a], makeunique=true)  # renames second :a to :a_1
 ```
 
 """
-function names!(df::AbstractDataFrame, vals; allow_duplicates=false)
-    names!(index(df), vals; allow_duplicates=allow_duplicates)
+# TODO: remove allow_duplicates after deprecation period
+function names!(df::AbstractDataFrame, vals; allow_duplicates=false, makeunique::Bool=false)
+    if allow_duplicates
+        Base.depwarn("Keyword allow_duplicates is deprecated. Use makeunique.", :names!)
+        makeunique = true
+    end
+    names!(index(df), vals, makeunique=makeunique)
     return df
 end
 
@@ -171,6 +176,9 @@ rename(f::Function, df::AbstractDataFrame)
 **Result**
 
 * `::AbstractDataFrame` : the updated result
+
+New names are processed sequentially. A new name must not exist in the `DataFrame`
+at the moment an attempt to rename a column is performed.
 
 **Examples**
 
@@ -678,18 +686,25 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 
 # hcat's first argument must be an AbstractDataFrame
 # or AbstractVector if the second argument is AbstractDataFrame
-# Trailing arguments (currently) may also be vectors or scalars.
+# Trailing arguments (currently) may also be vectors.
 
 # hcat! is defined in DataFrames/DataFrames.jl
 # Its first argument (currently) must be a DataFrame.
 
 # catch-all to cover cases where indexing returns a DataFrame and copy doesn't
-Base.hcat(df::AbstractDataFrame, x) = hcat!(df[:, :], x)
-Base.hcat(x, df::AbstractDataFrame) = hcat!(x, df[:, :])
-Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame) = hcat!(df1[:, :], df2)
 
-Base.hcat(df::AbstractDataFrame, x, y...) = hcat!(hcat(df, x), y...)
-Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = hcat!(hcat(df1, df2), dfn...)
+# TODO: after deprecation period change all to makeunique::Bool=false
+Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=true) =
+    hcat!(df[:, :], x, makeunique=makeunique)
+Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=true) =
+    hcat!(x, df[:, :], makeunique=makeunique)
+Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=true) =
+    hcat!(df1[:, :], df2, makeunique=makeunique)
+Base.hcat(df::AbstractDataFrame, x, y...; makeunique::Bool=true) =
+    hcat!(hcat(df, x, makeunique=makeunique), y..., makeunique=makeunique)
+Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
+          makeunique::Bool=true) =
+    hcat!(hcat(df1, df2, makeunique=makeunique), dfn..., makeunique=makeunique)
 
 @generated function promote_col_type(cols::AbstractVector...)
     T = mapreduce(x -> Missings.T(eltype(x)), promote_type, cols)

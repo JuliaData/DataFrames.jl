@@ -7,8 +7,10 @@ mutable struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
 end
-function Index(names::Vector{Symbol}; allow_duplicates=true)
-    u = make_unique(names, allow_duplicates=allow_duplicates)
+
+# TODO: after deprecation period change all to makeunique::Bool=false
+function Index(names::Vector{Symbol}; makeunique::Bool=true)
+    u = _makeunique(names, makeunique=makeunique)
     lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
     Index(lookup, u)
 end
@@ -22,11 +24,16 @@ Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.name
 # Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
 Base.:(==)(x::Index, y::Index) = isequal(x, y)
 
-function names!(x::Index, nms::Vector{Symbol}; allow_duplicates=false)
+# TODO: after deprecation period remove allow_duplicates
+function names!(x::Index, nms::Vector{Symbol}; allow_duplicates=false, makeunique::Bool=false)
+    if allow_duplicates
+        Base.depwarn("Keyword allow_duplicates is deprecated. Use makeunique.", :names!)
+        makeunique = true
+    end
     if length(nms) != length(x)
         throw(ArgumentError("Length of nms doesn't match length of x."))
     end
-    newindex = Index(nms, allow_duplicates=allow_duplicates)
+    newindex = Index(nms, makeunique=makeunique)
     x.names = newindex.names
     x.lookup = newindex.lookup
     return x
@@ -61,8 +68,9 @@ function Base.push!(x::Index, nm::Symbol)
     return x
 end
 
-function Base.merge!(x::Index, y::Index)
-    adds = add_names(x, y)
+# TODO: change makeunique to false after deprecation period
+function Base.merge!(x::Index, y::Index; makeunique::Bool=true)
+    adds = add_names(x, y, makeunique=makeunique)
     i = length(x)
     for add in adds
         i += 1
@@ -72,7 +80,9 @@ function Base.merge!(x::Index, y::Index)
     return x
 end
 
-Base.merge(x::Index, y::Index) = merge!(copy(x), y)
+# TODO: change makeunique to false after deprecation period
+Base.merge(x::Index, y::Index; makeunique::Bool=true) =
+    merge!(copy(x), y, makeunique=makeunique)
 
 function Base.delete!(x::Index, idx::Integer)
     # reset the lookup's beyond the deleted item
@@ -124,7 +134,8 @@ Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for 
 
 # Helpers
 
-function add_names(ind::Index, add_ind::Index)
+# TODO: change makeunique to false after deprecation period
+function add_names(ind::Index, add_ind::Index; makeunique::Bool=true)
     u = names(add_ind)
 
     seen = Set(_names(ind))
@@ -133,6 +144,15 @@ function add_names(ind::Index, add_ind::Index)
     for i in 1:length(u)
         name = u[i]
         in(name, seen) ? push!(dups, i) : push!(seen, name)
+    end
+    if length(dups) > 0
+        if makeunique
+            Base.depwarn("Keyword makeunique will be false by default.", :add_names)
+        else
+            msg = """Duplicate variable names: $(u[dups]).
+                     Pass makeunique=true to make them unique using a suffix automatically."""
+            throw(ArgumentError(msg))
+        end
     end
     for i in dups
         nm = u[i]

@@ -365,7 +365,7 @@ function _makeheaders(fs::Vector{T}, cn::Vector{Symbol}) where T<:Function
 end
 
 function _aggregate(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false) where T<:Function
-    res = DataFrame(Any[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers)
+    res = DataFrame(Any[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers) # after deprecation period this will disallow duplicate names
     sort && sort!(res, cols=headers)
     res
 end

@@ -109,6 +109,13 @@ module TestDataFrame
     @test df[:b] == [3.0, 4.0]
     @test df[:newcol] == ["a", "b"]
 
+    @test insert!(df, 1, ["a1", "b1"], :newcol, makeunique=true) == df
+    @test names(df) == [:newcol_1, :newcol, :a, :b]
+    @test df[:a] == [1, 2]
+    @test df[:b] == [3.0, 4.0]
+    @test df[:newcol] == ["a", "b"]
+    @test df[:newcol_1] == ["a1", "b1"]
+
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
     df2 = DataFrame(b=["a", "b"], c=[:c, :d])
     @test merge!(df, df2) == df
