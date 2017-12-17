@@ -143,20 +143,6 @@ module TestData
                    d = Array{Union{Float64, Missing}}(randn(12)),
                    e = Array{Union{String, Missing}}(map(string, 'a':'l')))
 
-    # test empty measures or ids
-    dx = stack(d1, [], [:a])
-    @test size(dx) == (0, 3)
-    @test names(dx) == [:variable, :value, :a]
-    dx = stack(d1, :a, [])
-    @test size(dx) == (12, 2)
-    @test names(dx) == [:variable, :value]
-    dx = melt(d1, [], [:a])
-    @test size(dx) == (12, 2)
-    @test names(dx) == [:variable, :value]
-    dx = melt(d1, :a, [])
-    @test size(dx) == (0, 3)
-    @test names(dx) == [:variable, :value, :a]
-
     stack(d1, :a)
     d1s = stack(d1, [:a, :b])
     d1s2 = stack(d1, [:c, :d])
@@ -175,6 +161,20 @@ module TestData
     @test names(d1s_named) == [:letter, :someval, :c, :d, :e]
     d1m_named = melt(d1[[1,3,4]], :a, variable_name=:letter, value_name=:someval)
     @test names(d1m_named) == [:letter, :someval, :a]
+
+    # test empty measures or ids
+    dx = stack(d1, [], [:a])
+    @test size(dx) == (0, 3)
+    @test names(dx) == [:variable, :value, :a]
+    dx = stack(d1, :a, [])
+    @test size(dx) == (12, 2)
+    @test names(dx) == [:variable, :value]
+    dx = melt(d1, [], [:a])
+    @test size(dx) == (12, 2)
+    @test names(dx) == [:variable, :value]
+    dx = melt(d1, :a, [])
+    @test size(dx) == (0, 3)
+    @test names(dx) == [:variable, :value, :a]
 
     stackdf(d1, :a)
     d1s = stackdf(d1, [:a, :b])

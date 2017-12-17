@@ -125,8 +125,19 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T >: Mis
     getindex(x, convert(Vector{Symbol}, idx2))
 end
 Base.getindex(x::AbstractIndex, idx::AbstractRange) = [idx;]
-Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T <: Real} = convert(Vector{Int}, idx)
+Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Union{Real, Missing}}) =
+    Int[i for i in skipmissing(idx)]
+Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Real}) = convert(Vector{Int}, idx)
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Symbol, Missing}}) =
+    [x.lookup[i] for i in skipmissing(idx)]
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+function Base.getindex(x::AbstractIndex, idx::AbstractVector)
+    idxs = skipmissing(idx)
+    try # allow either vector of numbers
+        return Int[i for i in idxs]
+    end
+    [x.lookup[i] for i in idxs] # or Symbols
+end
 
 # Helpers
 
