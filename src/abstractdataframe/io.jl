@@ -229,7 +229,7 @@ Data.streamfrom(source::DataFrame, ::Type{Data.Field}, ::Type{T}, row, col) wher
 Data.streamtypes(::Type{DataFrame}) = [Data.Column, Data.Field]
 Data.weakrefstrings(::Type{DataFrame}) = true
 
-allocate(::Type{T}, rows, ref) where {T} = Vector{T}(rows)
+allocate(::Type{T}, rows, ref) where {T} = Vector{T}(uninitialized, rows)
 allocate(::Type{CategoricalString{R}}, rows, ref) where {R} = CategoricalArray{String, 1, R}(rows)
 allocate(::Type{Union{CategoricalString{R}, Missing}}, rows, ref) where {R} = CategoricalArray{Union{String, Missing}, 1, R}(rows)
 allocate(::Type{CategoricalValue{T, R}}, rows, ref) where {T, R} =
