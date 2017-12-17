@@ -1,6 +1,10 @@
 __precompile__(true)
 module DataFrames
 
+if !isdefined(Base, :pairs)
+    pairs(x) = x
+end
+
 ##############################################################################
 ##
 ## Dependencies
