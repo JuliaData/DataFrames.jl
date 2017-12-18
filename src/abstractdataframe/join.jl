@@ -85,25 +85,41 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     @assert nrow == length(all_orig_right_ixs) + loil
     ncleft = ncol(joiner.dfl)
     cols = Vector{Any}(ncleft + ncol(dfr_noon))
-    _similar = kind == :inner ? similar : similar_missing
+    # inner and left joins preserve non-missingness of the left frame
+    _similar_left = kind == :inner || kind == :left ? similar : similar_missing
     for (i, col) in enumerate(columns(joiner.dfl))
-        cols[i] = _similar(col, nrow)
+        cols[i] = _similar_left(col, nrow)
         copy!(cols[i], view(col, all_orig_left_ixs))
     end
+    # inner and right joins preserve non-missingness of the right frame
+    _similar_right = kind == :inner || kind == :right ? similar : similar_missing
     for (i, col) in enumerate(columns(dfr_noon))
-        cols[i+ncleft] = _similar(col, nrow)
+        cols[i+ncleft] = _similar_right(col, nrow)
         copy!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
     end
     res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)))
 
     if length(rightonly_ixs.join) > 0
-        # some left rows are missings, so the values of the "on" columns
+        # some left rows are missing, so the values of the "on" columns
         # need to be taken from the right
         for (on_col_ix, on_col) in enumerate(joiner.left_on)
             # fix the result of the rightjoin by taking the nonmissing values from the right table
             offset = nrow - length(rightonly_ixs.orig) + 1
             copy!(res[on_col], offset, view(joiner.dfr_on[on_col_ix], rightonly_ixs.orig))
+        end
+    end
+    if kind ∈ (:right, :outer) && !isempty(rightonly_ixs.join)
+        # At this point on-columns of the result allow missing values, because
+        # right-only rows were filled with missing values when processing joiner.dfl
+        # However, when the right on-column (plus the left one for the outer join)
+        # does not allow missing values, the result should also disallow them.
+        for (on_col_ix, on_col) in enumerate(joiner.left_on)
+            LT = eltype(joiner.dfl_on[on_col_ix])
+            RT = eltype(joiner.dfr_on[on_col_ix])
+            if !(RT >: Missing) && (kind == :right || !(LT >: Missing))
+                res[on_col] = disallowmissing(res[on_col])
+            end
         end
     end
     return res
