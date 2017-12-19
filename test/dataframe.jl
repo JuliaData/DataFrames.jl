@@ -1,5 +1,5 @@
 module TestDataFrame
-    using Base.Test, DataFrames
+    using Compat, Compat.Test, DataFrames
     const ≅ = isequal
     const ≇ = !isequal
 

@@ -6,7 +6,7 @@ fatalerrors = length(ARGS) > 0 && ARGS[1] == "-f"
 quiet = length(ARGS) > 0 && ARGS[1] == "-q"
 anyerrors = false
 
-using Base.Test
+using Compat, Compat.Test
 using DataFrames
 
 my_tests = ["utils.jl",

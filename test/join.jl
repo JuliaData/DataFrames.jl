@@ -1,5 +1,5 @@
 module TestJoin
-    using Base.Test, DataFrames
+    using Compat, Compat.Test, DataFrames
     const ≅ = isequal
 
     name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],

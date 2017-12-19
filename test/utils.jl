@@ -1,5 +1,5 @@
 module TestUtils
-    using Base.Test, DataFrames, StatsBase
+    using Compat, Compat.Test, DataFrames, StatsBase
     import DataFrames: identifier
 
     @test identifier("%_B*_\tC*") == :_B_C_

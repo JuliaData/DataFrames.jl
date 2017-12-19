@@ -1,5 +1,5 @@
 module TestCat
-    using Base.Test, DataFrames
+    using Compat, Compat.Test, DataFrames
     const ≅ = isequal
 
     #

@@ -1,5 +1,5 @@
 module TestData
-    using Base.Test, DataFrames
+    using Compat, Compat.Test, DataFrames
     importall Base # so that we get warnings for conflicts
     const ≅ = isequal
 
