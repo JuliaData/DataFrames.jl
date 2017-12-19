@@ -1,5 +1,5 @@
 module TestIO
-    using Base.Test, DataFrames, CategoricalArrays
+    using Compat, Compat.Test, DataFrames, CategoricalArrays
     using LaTeXStrings
 
     # Test LaTeX export

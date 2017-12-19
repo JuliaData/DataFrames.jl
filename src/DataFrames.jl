@@ -1,10 +1,6 @@
 __precompile__(true)
 module DataFrames
 
-if !isdefined(Base, :pairs)
-    pairs(x) = x
-end
-
 ##############################################################################
 ##
 ## Dependencies
@@ -14,6 +10,13 @@ end
 using Reexport, StatsBase, SortingAlgorithms, Compat
 @reexport using CategoricalArrays, Missings
 using Base: Sort, Order
+
+if VERSION >= v"0.7.0-DEV.2915"
+    using Unicode
+end
+if VERSION >= v"0.7.0-DEV.3052"
+    using Printf
+end
 
 ##############################################################################
 ##

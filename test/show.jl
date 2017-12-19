@@ -1,5 +1,5 @@
 module TestShow
-    using Base.Test, DataFrames
+    using Compat, Compat.Test, DataFrames
 
     # In the future newline character \n should be added to this test case
     df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "ABC"],

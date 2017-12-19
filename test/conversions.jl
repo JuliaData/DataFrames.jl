@@ -1,5 +1,5 @@
 module TestConversions
-    using Base.Test, DataFrames
+    using Compat, Compat.Test, DataFrames
     using DataStructures: OrderedDict, SortedDict
     const ≅ = isequal
 
