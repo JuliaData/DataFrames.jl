@@ -19,9 +19,9 @@ which is a view that acts like a one-row DataFrame.
 eachrow(df::AbstractDataFrame) = DFRowIterator(df)
 
 Base.start(itr::DFRowIterator) = 1
-Base.done(itr::DFRowIterator, i::Int) = i > length(itr)
+Base.done(itr::DFRowIterator, i::Int) = i > size(itr.df, 1)
 Base.next(itr::DFRowIterator, i::Int) = (DataFrameRow(itr.df, i), i + 1)
-Base.size(itr::DFRowIterator) = (length(itr), )
+Base.size(itr::DFRowIterator) = (size(itr.df, 1), )
 Base.length(itr::DFRowIterator) = size(itr.df, 1)
 Base.getindex(itr::DFRowIterator, i::Any) = DataFrameRow(itr.df, i)
 Base.map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
@@ -33,7 +33,7 @@ end
 eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
 
 Base.start(itr::DFColumnIterator) = 1
-Base.done(itr::DFColumnIterator, j::Int) = j > length(itr)
+Base.done(itr::DFColumnIterator, j::Int) = j > length
 Base.next(itr::DFColumnIterator, j::Int) = ((_names(itr.df)[j], itr.df[j]), j + 1)
 Base.size(itr::DFColumnIterator) = (length(itr), )
 Base.length(itr::DFColumnIterator) = size(itr.df, 2)
