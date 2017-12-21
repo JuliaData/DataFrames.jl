@@ -33,9 +33,9 @@ end
 eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
 
 Base.start(itr::DFColumnIterator) = 1
-Base.done(itr::DFColumnIterator, j::Int) = j > length
+Base.done(itr::DFColumnIterator, j::Int) = j > size(itr.df, 2)
 Base.next(itr::DFColumnIterator, j::Int) = ((_names(itr.df)[j], itr.df[j]), j + 1)
-Base.size(itr::DFColumnIterator) = (length(itr), )
+Base.size(itr::DFColumnIterator) = (size(itr.df, 2), )
 Base.length(itr::DFColumnIterator) = size(itr.df, 2)
 Base.getindex(itr::DFColumnIterator, j::Any) = itr.df[:, j]
 function Base.map(f::Function, dfci::DFColumnIterator)
