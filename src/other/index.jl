@@ -113,7 +113,7 @@ Base.getindex(x::AbstractIndex, idx::Real) = Int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}}) =
     getindex(x, collect(Missings.replace(idx, false)))
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
-    length(x) == length(idx) || Base.throw_boundserror(x, idx)
+    length(x) == length(idx) || throw(BoundsError(x, idx))
     find(idx)
 end
 Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T >: Missing} =
