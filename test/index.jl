@@ -8,14 +8,14 @@ push!(i, :B)
 inds = Any[1,
            1.0,
            :A,
-           [true],
+           [true, false],
            trues(1),
            [1],
            [1.0],
            1:1,
            1.0:1.0,
            [:A],
-           Union{Bool, Missing}[true],
+           Union{Bool, Missing}[true, false],
            Union{Int, Missing}[1],
            Union{Float64, Missing}[1.0],
            Union{Symbol, Missing}[:A]]
@@ -27,6 +27,9 @@ for ind in inds
         @test (i[ind] == [1])
     end
 end
+
+@test_throws BoundsError i[[true]]
+@test_throws BoundsError i[[true, false, true]]
 
 @test names(i) == [:A,:B]
 @test names!(i, [:a,:a], allow_duplicates=true) == Index([:a,:a_1])
