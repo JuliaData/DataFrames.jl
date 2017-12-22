@@ -254,7 +254,6 @@ end
 
 # df[:, SingleColumnIndex] => AbstractVector
 # df[:, MultiColumnIndex] => DataFrame
-# df[:, :] => DataFrame
 Base.getindex(df::DataFrame, row_ind::Colon, col_inds) = df[col_inds]
 
 # df[SingleRowIndex, :] => DataFrame
@@ -265,6 +264,9 @@ function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::Colon)
     new_columns = Any[dv[row_inds] for dv in df.columns]
     return DataFrame(new_columns, copy(index(df)))
 end
+
+# df[:, :] => DataFrame
+Base.getindex(df::DataFrame, ::Colon, ::Colon) = copy(df)
 
 ##############################################################################
 ##

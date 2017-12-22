@@ -132,11 +132,10 @@ Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Symbol, Missing}}) =
     [x.lookup[i] for i in skipmissing(idx)]
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 function Base.getindex(x::AbstractIndex, idx::AbstractVector)
-    idxs = skipmissing(idx)
-    try # allow either vector of numbers
-        return Int[i for i in idxs]
-    end
-    [x.lookup[i] for i in idxs] # or Symbols
+    idxs = [convert(Union{Int, Symbol, Bool}, i) for i in skipmissing(idx)]
+    eltype(idxs) <: Int && return idxs
+    eltype(idxs) <: Bool && return getindex(x, Vector{Bool}(idxs))
+    [x.lookup[i] for i in idxs]
 end
 
 # Helpers
