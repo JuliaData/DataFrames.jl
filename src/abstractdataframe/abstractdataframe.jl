@@ -539,6 +539,63 @@ dropmissing!(df)
 """
 dropmissing!(df::AbstractDataFrame) = deleterows!(df, find(!, completecases(df)))
 
+"""
+    filter(function, df::AbstractDataFrame)
+
+Return a copy of data frame `df` containing only rows for which `function`
+returns `true`. The function is passed a `DataFrameRow` as its only argument.
+
+# Examples
+```
+julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+4×2 DataFrames.DataFrame
+│ Row │ x │ y │
+├─────┼───┼───┤
+│ 1   │ 3 │ b │
+│ 2   │ 1 │ c │
+│ 3   │ 2 │ a │
+│ 4   │ 1 │ b │
+
+julia> filter(row -> row[:x] > 1, df)
+2×2 DataFrames.DataFrame
+│ Row │ x │ y │
+├─────┼───┼───┤
+│ 1   │ 3 │ b │
+│ 2   │ 2 │ a │
+```
+"""
+Base.filter(f, df::AbstractDataFrame) = df[collect(f(r)::Bool for r in eachrow(df)), :]
+
+"""
+    filter!(function, df::AbstractDataFrame)
+
+Remove rows from data frame `df` for which `function` returns `false`.
+The function is passed a `DataFrameRow` as its only argument.
+
+# Examples
+```
+julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+4×2 DataFrames.DataFrame
+│ Row │ x │ y │
+├─────┼───┼───┤
+│ 1   │ 3 │ b │
+│ 2   │ 1 │ c │
+│ 3   │ 2 │ a │
+│ 4   │ 1 │ b │
+
+julia> filter!(row -> row[:x] > 1, df);
+
+julia> df
+2×2 DataFrames.DataFrame
+│ Row │ x │ y │
+├─────┼───┼───┤
+│ 1   │ 3 │ b │
+│ 2   │ 2 │ a │
+```
+"""
+Base.filter!(f, df::AbstractDataFrame) =
+    deleterows!(df, find(!f, eachrow(df)))
+
 function Base.convert(::Type{Array}, df::AbstractDataFrame)
     convert(Matrix, df)
 end

@@ -84,3 +84,26 @@ julia> df[1:3, [:B, :A]]
 │ 3   │ 6 │ 3 │
 
 ```
+
+Selecting a subset of rows matching a condition:
+
+```jldoctest subsets
+julia> filter(row -> row[:A] > 5, df)
+5×2 DataFrames.DataFrame
+│ Row │ A  │ B  │
+├─────┼────┼────┤
+│ 1   │ 6  │ 12 │
+│ 2   │ 7  │ 14 │
+│ 3   │ 8  │ 16 │
+│ 4   │ 9  │ 18 │
+│ 5   │ 10 │ 20 │
+
+julia> filter(row -> (row[:A] > 5) && (row[:B] < 15), df)
+2×2 DataFrames.DataFrame
+│ Row │ A │ B  │
+├─────┼───┼────┤
+│ 1   │ 6 │ 12 │
+│ 2   │ 7 │ 14 │
+```
+
+`filter!` behaves the same way, but modifies the data frame in place.
