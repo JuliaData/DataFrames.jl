@@ -10,8 +10,12 @@ module DataFrames
 using Reexport, StatsBase, SortingAlgorithms, Compat
 @reexport using CategoricalArrays, Missings
 using Base: Sort, Order
-using Compat: pairs
 
+if VERSION >= v"0.7.0-DEV.2738"
+    const kwpairs = pairs
+else
+    kwpairs(x::AbstractArray) = (first(v) => last(v) for v in x)
+end
 if VERSION >= v"0.7.0-DEV.2915"
     using Unicode
 end
