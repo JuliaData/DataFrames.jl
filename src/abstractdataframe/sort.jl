@@ -252,25 +252,176 @@ end
 ## Actual sort functions
 ########################
 
-Base.issorted(df::AbstractDataFrame; cols=Any[], lt=isless, by=identity, rev=false, order=Forward) =
-    issorted(eachrow(df), ordering(df, cols, lt, by, rev, order))
+"""
+    issorted(df::AbstractDataFrame, cols;
+             lt=isless, by=identity, rev::Bool=false, order::Ordering=Forward)
+
+Test whether data frame `df` sorted by column(s) `cols`.
+`cols` can be either a `Symbol` or `Integer` column index, or
+a tuple of vector of such indices.
+
+If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
+only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
+corresponding column index (see example below).
+See other methods for a description of other keyword arguments.
+"""
+function Base.issorted(df::AbstractDataFrame, cols_new=[]; cols=[],
+                       lt=isless, by=identity, rev=false, order=Forward)
+    if cols != []
+        Base.depwarn("issorted(df, cols=cols) is deprecated, use issorted(df, cols) instead",
+                     :issorted)
+        cols_new = cols
+    end
+    issorted(eachrow(df), ordering(df, cols_new, lt, by, rev, order))
+end
 
 # sort and sortperm functions
 
 for s in [:(Base.sort), :(Base.sortperm)]
     @eval begin
-        function $s(df::AbstractDataFrame; cols=Any[], alg=nothing,
-                    lt=isless, by=identity, rev=false, order=Forward)
+        function $s(df::AbstractDataFrame, cols_new=[]; cols=[],
+                    alg=nothing, lt=isless, by=identity, rev=false, order=Forward)
             if !(isa(by, Function) || eltype(by) <: Function)
                 msg = "'by' must be a Function or a vector of Functions. Perhaps you wanted 'cols'."
                 throw(ArgumentError(msg))
             end
-            ord = ordering(df, cols, lt, by, rev, order)
-            _alg = Sort.defalg(df, ord; alg=alg, cols=cols)
+            if cols != []
+                fname = $s
+                Base.depwarn("$fname(df, cols=cols) is deprecated, use $fname(df, cols) instead",
+                             $s)
+                cols_new = cols
+            end
+            ord = ordering(df, cols_new, lt, by, rev, order)
+            _alg = Sort.defalg(df, ord; alg=alg, cols=cols_new)
             $s(df, _alg, ord)
         end
     end
 end
+
+"""
+    sort(df::AbstractDataFrame, cols;
+         alg::Union{Algorithm, Void}=nothing, lt=isless, by=identity,
+         rev::Bool=false, order::Ordering=Forward)
+
+Return a copy of data frame `df` sorted by column(s) `cols`.
+`cols` can be either a `Symbol` or `Integer` column index, or
+a tuple of vector of such indices.
+
+If `alg` is `nothing` (the default), the most appropriate algorithm is
+chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
+on the type of the sorting columns and on the number of rows in `df`.
+If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
+only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
+corresponding column index (see example below).
+See [`sort!`](@ref) for a description of other keyword arguments.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+4×2 DataFrames.DataFrame
+│ Row │ x │ y │
+├─────┼───┼───┤
+│ 1   │ 3 │ b │
+│ 2   │ 1 │ c │
+│ 3   │ 2 │ a │
+│ 4   │ 1 │ b │
+
+julia> sort(df, :x)
+4×2 DataFrames.DataFrame
+│ Row │ x │ y │
+├─────┼───┼───┤
+│ 1   │ 1 │ c │
+│ 2   │ 1 │ b │
+│ 3   │ 2 │ a │
+│ 4   │ 3 │ b │
+
+julia> sort(df, (:x, :y))
+4×2 DataFrames.DataFrame
+│ Row │ x │ y │
+├─────┼───┼───┤
+│ 1   │ 1 │ b │
+│ 2   │ 1 │ c │
+│ 3   │ 2 │ a │
+│ 4   │ 3 │ b │
+
+julia> sort(df, (:x, :y), rev=true)
+4×2 DataFrames.DataFrame
+│ Row │ x │ y │
+├─────┼───┼───┤
+│ 1   │ 3 │ b │
+│ 2   │ 2 │ a │
+│ 3   │ 1 │ c │
+│ 4   │ 1 │ b │
+
+julia> sort(df, (:x, order(:y, rev=true)))
+4×2 DataFrames.DataFrame
+│ Row │ x │ y │
+├─────┼───┼───┤
+│ 1   │ 1 │ c │
+│ 2   │ 1 │ b │
+│ 3   │ 2 │ a │
+│ 4   │ 3 │ b │
+````
+"""
+sort(::AbstractDataFrame, ::Any)
+
+"""
+    sortperm(df::AbstractDataFrame, cols;
+             alg::Union{Algorithm, Void}=nothing, lt=isless, by=identity,
+             rev::Bool=false, order::Ordering=Forward)
+
+Return a permutation vector of row indices of data frame `df` that puts them in
+sorted order according to column(s) `cols`.
+
+If `alg` is `nothing` (the default), the most appropriate algorithm is
+chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
+on the type of the sorting columns and on the number of rows in `df`.
+If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
+only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
+corresponding column index (see example below).
+See other methods for a description of other keyword arguments.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+4×2 DataFrames.DataFrame
+│ Row │ x │ y │
+├─────┼───┼───┤
+│ 1   │ 3 │ b │
+│ 2   │ 1 │ c │
+│ 3   │ 2 │ a │
+│ 4   │ 1 │ b │
+
+julia> sortperm(df, :x)
+4-element Array{Int64,1}:
+ 2
+ 4
+ 3
+ 1
+
+julia> sortperm(df, (:x, :y))
+4-element Array{Int64,1}:
+ 4
+ 2
+ 3
+ 1
+
+julia> sortperm(df, (:x, :y), rev=true)
+4-element Array{Int64,1}:
+ 1
+ 3
+ 2
+ 4
+
+ julia> sortperm(df, (:x, order(:y, rev=true)))
+ 4-element Array{Int64,1}:
+  2
+  4
+  3
+  1
+````
+"""
+sortperm(::AbstractDataFrame, ::Any)
 
 Base.sort(df::AbstractDataFrame, a::Algorithm, o::Ordering) = df[sortperm(df, a, o),:]
 Base.sortperm(df::AbstractDataFrame, a::Algorithm, o::Union{Perm,DFPerm}) = sort!([1:size(df, 1);], a, o)
