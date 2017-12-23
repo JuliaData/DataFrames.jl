@@ -116,7 +116,7 @@ function DataFrame(; kwargs...)
     if isempty(kwargs)
         DataFrame(Any[], Index())
     else
-        DataFrame((k => v for (k,v) in pairs(kwargs))...)
+        DataFrame(kwpairs(kwargs)...)
     end
 end
 
