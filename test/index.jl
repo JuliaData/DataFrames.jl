@@ -9,7 +9,6 @@ inds = Any[1,
            1.0,
            :A,
            [true, false],
-           trues(1),
            [1],
            [1.0],
            1:1,
@@ -21,6 +20,7 @@ inds = Any[1,
            Union{Symbol, Missing}[:A]]
 
 for ind in inds
+    println(ind)
     if ind == :A || ndims(ind) == 0
         @test i[ind] == 1
     else
