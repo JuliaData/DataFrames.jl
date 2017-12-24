@@ -27,7 +27,7 @@ Base.:(==)(x::Index, y::Index) = isequal(x, y)
 # TODO: after deprecation period remove allow_duplicates
 function names!(x::Index, nms::Vector{Symbol}; allow_duplicates=false, makeunique::Bool=false)
     if allow_duplicates
-        Base.depwarn("Keyword allow_duplicates is deprecated. Use makeunique.", :names!)
+        Base.depwarn("Keyword argument allow_duplicates is deprecated. Use makeunique.", :names!)
         makeunique = true
     end
     if length(nms) != length(x)
@@ -134,8 +134,7 @@ Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for 
 
 # Helpers
 
-# TODO: change makeunique to false after deprecation period
-function add_names(ind::Index, add_ind::Index; makeunique::Bool=true)
+function add_names(ind::Index, add_ind::Index; makeunique::Bool=false)
     u = names(add_ind)
 
     seen = Set(_names(ind))
@@ -146,12 +145,12 @@ function add_names(ind::Index, add_ind::Index; makeunique::Bool=true)
         in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
     if length(dups) > 0
-        if makeunique
-            Base.depwarn("Keyword makeunique will be false by default.", :add_names)
-        else
-            msg = """Duplicate variable names: $(u[dups]).
-                     Pass makeunique=true to make them unique using a suffix automatically."""
-            throw(ArgumentError(msg))
+        if !makeunique
+            Base.depwarn("Keyword argument makeunique will be false by default.", :add_names)
+            # TODO: uncomment the lines below after deprecation period
+            # msg = """Duplicate variable names: $(u[dups]).
+            #          Pass makeunique=true to make them unique using a suffix automatically."""
+            # throw(ArgumentError(msg))
         end
     end
     for i in dups

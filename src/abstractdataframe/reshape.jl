@@ -84,7 +84,7 @@ function stack(df::AbstractDataFrame, measure_vars::Vector{Int},
     DataFrame(Any[repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
                   vcat([df[c] for c in measure_vars]...),             # value
                   [repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
-              cnames) # TODO update this comment later: now it allows duplicate names, but after deprecation it will not
+              cnames) # duplicate names not allowed
 end
 function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int;
                variable_name::Symbol=:variable, value_name::Symbol=:value)
@@ -254,7 +254,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
     copy!(col, levs)
     hadmissing && (col[end] = missing)
     df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)))
-    insert!(df2, 1, col, _names(df)[rowkey]) # TODO update this comment later: now it allows duplicate names, but after deprecation it will not
+    insert!(df2, 1, col, _names(df)[rowkey]) # duplicate names not allowed
 end
 
 unstack(df::AbstractDataFrame, rowkey::ColumnIndex,
@@ -320,7 +320,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
         mask_filled[i, j] = true
     end
     df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)))
-    hcat(df1, df2) # TODO update this comment later: now it allows duplicate names, but after deprecation it will not
+    hcat(df1, df2) # duplicate names not allowed
 end
 
 unstack(df::AbstractDataFrame) = unstack(df, :id, :variable, :value)

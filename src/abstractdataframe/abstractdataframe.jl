@@ -177,7 +177,7 @@ rename(f::Function, df::AbstractDataFrame)
 
 * `::AbstractDataFrame` : the updated result
 
-New names are processed sequentially. A new name must not exist in the `DataFrame`
+New names are processed sequentially. A new name must not already exist in the `DataFrame`
 at the moment an attempt to rename a column is performed.
 
 **Examples**
