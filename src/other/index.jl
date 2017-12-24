@@ -110,32 +110,30 @@ end
 
 Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::Real) = Int(idx)
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}}) =
-    getindex(x, collect(Missings.replace(idx, false)))
+Base.getindex(x::AbstractIndex, idx::AbstractRange) = [idx;]
+Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Real}) = Vector{Int}(idx)
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
     find(idx)
 end
-function Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T >: Missing}
-    idx2 = collect(skipmissing(idx)) # idx can be Any and we have to handle it
-    length(idx2) == 0 && return Int[] # special case of empty idx2
-    # now only accept either numbers, Bool or Symbols
-    idx2[1] isa Real && return convert(Vector{Int}, idx2)
-    idx2[1] isa Bool && return convert(Vector{Bool}, idx2)
-    getindex(x, convert(Vector{Symbol}, idx2))
-end
-Base.getindex(x::AbstractIndex, idx::AbstractRange) = [idx;]
-Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Union{Real, Missing}}) =
-    Int[i for i in skipmissing(idx)]
-Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Real}) = convert(Vector{Int}, idx)
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Symbol, Missing}}) =
-    [x.lookup[i] for i in skipmissing(idx)]
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+
+# catch all method handling cases when type of idx is not narrowest possible, Any in particular
+# also it handles passing missing values in idx
 function Base.getindex(x::AbstractIndex, idx::AbstractVector)
-    idxs = [convert(Union{Int, Symbol, Bool}, i) for i in skipmissing(idx)]
-    eltype(idxs) <: Int && return idxs
-    eltype(idxs) <: Bool && return getindex(x, Vector{Bool}(idxs))
-    [x.lookup[i] for i in idxs]
+    idxs = filter(!ismissing, idx)
+    if length(idxs) != length(idx)
+        Base.depwarn("using missing in column indexing is deprecated", :getindex)
+    end
+    length(idxs) == 0 && return Int[] # special case of empty idxs
+    # below is not very efficient, but has to be done as in Bool case we replaced missing by false
+    # after deprecation period when Missing is disallowed this will not be a problem
+    idxs[1] isa Bool && return getindex(x, Bool[ismissing(v) ? false : v for v in idx])
+    idxs[1] isa Real && return Vector{Int}(idxs)
+    idxs[1] isa Symbol && return [x.lookup[i] for i in idxs]
+    throw(ArgumentError("idx[1] has type $(typeof(idx[1]));"*
+                        "getindex supports only indexing by integers, booleans or symbols"))
 end
 
 # Helpers

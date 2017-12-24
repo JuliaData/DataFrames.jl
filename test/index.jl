@@ -36,6 +36,9 @@ end
 @test_throws BoundsError i[[true]]
 @test_throws BoundsError i[[true, false, true]]
 
+@test_throws ArgumentError i[["a"]]
+@test_throws ArgumentError i[Any["a"]]
+
 @test i[[]] == Int[]
 @test i[Int[]] == Int[]
 @test i[Symbol[]] == Int[]
