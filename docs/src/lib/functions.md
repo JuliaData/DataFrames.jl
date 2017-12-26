@@ -37,6 +37,8 @@ dropmissing!
 eachcol
 eachrow
 eltypes
+filter
+filter!
 head
 names
 names!
