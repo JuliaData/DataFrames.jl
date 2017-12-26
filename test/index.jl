@@ -22,7 +22,6 @@ inds = Any[1,
            Any[1, missing],
            Any[:A],
            Any[:A, missing],
-           Any[true, missing],
            [true, missing]]
 
 for ind in inds
@@ -36,6 +35,7 @@ end
 @test_throws BoundsError i[[true]]
 @test_throws BoundsError i[[true, false, true]]
 
+@test_throws ArgumentError i[Any[true, missing]]
 @test_throws ArgumentError i[["a"]]
 @test_throws ArgumentError i[Any["a"]]
 

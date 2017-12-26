@@ -109,7 +109,12 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
 end
 
 Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
-Base.getindex(x::AbstractIndex, idx::Real) = Int(idx)
+
+function Base.getindex(x::AbstractIndex, idx::Real)
+    idx isa Bool && Base.depwarn("Indexing with Bool values is deprecated")
+    Int(idx)
+end
+
 Base.getindex(x::AbstractIndex, idx::AbstractRange) = [idx;]
 Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Real}) = Vector{Int}(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
@@ -129,11 +134,16 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector)
     length(idxs) == 0 && return Int[] # special case of empty idxs
     # below is not very efficient, but has to be done as in Bool case we replaced missing by false
     # after deprecation period when Missing is disallowed this will not be a problem
-    idxs[1] isa Bool && return getindex(x, Bool[ismissing(v) ? false : v for v in idx])
+    if idxs[1] isa Bool
+        if eltype(idx) == Union{Bool, Missings.Missing}
+            return getindex(x, Bool[ismissing(v) ? false : v for v in idx])
+        end
+        throw(ArgumentError("Indexing with Bool values is not allowed"))
+    end
     idxs[1] isa Real && return Vector{Int}(idxs)
     idxs[1] isa Symbol && return [x.lookup[i] for i in idxs]
     throw(ArgumentError("idx[1] has type $(typeof(idx[1]));"*
-                        "getindex supports only indexing by integers, booleans or symbols"))
+                        "DataFrame only supports indexing columns with integers, symbols or boolean vectors"))
 end
 
 # Helpers
