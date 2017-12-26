@@ -325,7 +325,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Basics",
     "category": "section",
-    "text": "allowmissing!\ncategorical!\ncombine\ncompletecases\ndeleterows!\ndescribe\ndropmissing\ndropmissing!\neachcol\neachrow\neltypes\nhead\nnames\nnames!\nnonunique\norder\nrename!\nrename\nshow\nshowcols\nsimilar\nsize\nsort\nsort!\ntail\nunique!"
+    "text": "allowmissing!\ncategorical!\ncombine\ncompletecases\ndeleterows!\ndescribe\ndropmissing\ndropmissing!\neachcol\neachrow\neltypes\nfilter\nfilter!\nhead\nnames\nnames!\nnonunique\norder\nrename!\nrename\nshow\nshowcols\nsimilar\nsize\nsort\nsort!\ntail\nunique!"
 },
 
 ]}
