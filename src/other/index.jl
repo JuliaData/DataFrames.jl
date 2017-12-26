@@ -110,44 +110,40 @@ end
 
 Base.getindex(x::AbstractIndex, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
-
-function Base.getindex(x::AbstractIndex, idx::Real)
-    idx isa Bool && Base.depwarn("Indexing with Bool values is deprecated", :getindex)
-    idx isa Integer || Base.depwarn("Indexing with values that are not Integer is deprecated", :getindex)
-    Int(idx)
-end
-
-function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Real})
-    any(v -> v isa Bool, idx) && Base.depwarn("Indexing with Bool values is deprecated")
-    all(v -> v isa Integer, idx) || Base.depwarn("Indexing with values that are not Integer is deprecated", :getindex)
-    Vector{Int}(idx)
-end
+Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
+Base.getindex(x::AbstractIndex, idx::AbstractRange) = getindex(x, collect(idx))
 
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
     find(idx)
 end
 
-Base.getindex(x::AbstractIndex, idx::AbstractRange) = getindex(x, collect(idx))
+function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
+    # TODO: this line should be changed to throw an error after deprecation
+    if any(v -> v isa Bool, idx)
+        Base.depwarn("Indexing with Bool values is deprecated except for Vector{Bool}")
+    end
+    Vector{Int}(idx)
+end
 
 # catch all method handling cases when type of idx is not narrowest possible, Any in particular
 # also it handles passing missing values in idx
 function Base.getindex(x::AbstractIndex, idx::AbstractVector)
+    # TODO: passing missing will throw an error after deprecation
     idxs = filter(!ismissing, idx)
     if length(idxs) != length(idx)
         Base.depwarn("using missing in column indexing is deprecated", :getindex)
     end
     length(idxs) == 0 && return Int[] # special case of empty idxs
-    # below is not very efficient, but has to be done as in Bool case we replaced missing by false
-    # after deprecation period when Missing is disallowed this will not be a problem
-    if idxs[1] isa Bool
-        if eltype(idx) == Union{Bool, Missings.Missing}
-            return getindex(x, Bool[ismissing(v) ? false : v for v in idx])
+    if idxs[1] isa Real
+        if !all(v -> v isa Integer && !(v isa Bool), idxs)
+            # TODO: this line should be changed to throw an error after deprecation
+            Base.depwarn("indexing by vector of numbers other than Integer is deprecated", :getindex)
         end
-        throw(ArgumentError("Indexing with Bool values is not allowed"))
+        return Vector{Int}(idxs)
     end
-    idxs[1] isa Real && return getindex(x, Vector{Real}(idxs))
-    idxs[1] isa Symbol && return [x.lookup[i] for i in idxs]
+    idxs[1] isa Symbol && return getindex(x, Vector{Symbol}(idxs))
     throw(ArgumentError("idx[1] has type $(typeof(idx[1])); "*
                         "DataFrame only supports indexing columns with integers, symbols or boolean vectors"))
 end

@@ -20,6 +20,7 @@ inds = Any[1,
            Union{Symbol, Missing}[:A],
            Any[1],
            Any[1, missing],
+           Any[true, missing],
            Any[:A],
            Any[:A, missing],
            [true, missing]]
@@ -35,7 +36,6 @@ end
 @test_throws BoundsError i[[true]]
 @test_throws BoundsError i[[true, false, true]]
 
-@test_throws ArgumentError i[Any[true, missing]]
 @test_throws ArgumentError i[["a"]]
 @test_throws ArgumentError i[Any["a"]]
 
