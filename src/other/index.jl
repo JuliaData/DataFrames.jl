@@ -8,9 +8,8 @@ mutable struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     names::Vector{Symbol}
 end
 
-# TODO: after deprecation period change all to makeunique::Bool=false
-function Index(names::Vector{Symbol}; makeunique::Bool=true)
-    u = _makeunique(names, makeunique=makeunique)
+function Index(names::Vector{Symbol}; makeunique::Bool=false)
+    u = make_unique(names, makeunique=makeunique)
     lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
     Index(lookup, u)
 end
@@ -24,11 +23,16 @@ Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.name
 # Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
 Base.:(==)(x::Index, y::Index) = isequal(x, y)
 
-# TODO: after deprecation period remove allow_duplicates
+# TODO: after deprecation period remove allow_duplicates part of code
 function names!(x::Index, nms::Vector{Symbol}; allow_duplicates=false, makeunique::Bool=false)
     if allow_duplicates
         Base.depwarn("Keyword argument allow_duplicates is deprecated. Use makeunique.", :names!)
-        makeunique = true
+    elseif !makeunique
+        if length(unique(nms)) != length(nms)
+            msg = """Duplicate variable names: $nms.
+                     Pass makeunique=true to make them unique using a suffix automatically."""
+            throw(ArgumentError(msg))
+        end
     end
     if length(nms) != length(x)
         throw(ArgumentError("Length of nms doesn't match length of x."))
@@ -68,8 +72,7 @@ function Base.push!(x::Index, nm::Symbol)
     return x
 end
 
-# TODO: change makeunique to false after deprecation period
-function Base.merge!(x::Index, y::Index; makeunique::Bool=true)
+function Base.merge!(x::Index, y::Index; makeunique::Bool=false)
     adds = add_names(x, y, makeunique=makeunique)
     i = length(x)
     for add in adds
@@ -80,8 +83,7 @@ function Base.merge!(x::Index, y::Index; makeunique::Bool=true)
     return x
 end
 
-# TODO: change makeunique to false after deprecation period
-Base.merge(x::Index, y::Index; makeunique::Bool=true) =
+Base.merge(x::Index, y::Index; makeunique::Bool=false) =
     merge!(copy(x), y, makeunique=makeunique)
 
 function Base.delete!(x::Index, idx::Integer)
@@ -146,7 +148,7 @@ function add_names(ind::Index, add_ind::Index; makeunique::Bool=false)
     end
     if length(dups) > 0
         if !makeunique
-            Base.depwarn("Keyword argument makeunique will be false by default.", :add_names)
+            Base.depwarn("Duplicate variable names are deprecated: pass makeunique=true to add a suffix automatically.", :add_names)
             # TODO: uncomment the lines below after deprecation period
             # msg = """Duplicate variable names: $(u[dups]).
             #          Pass makeunique=true to make them unique using a suffix automatically."""

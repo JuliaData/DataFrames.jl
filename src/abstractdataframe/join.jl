@@ -49,11 +49,10 @@ Base.length(x::RowIndexMap) = length(x.orig)
 # composes the joined data table using the maps between the left and right
 # table rows and the indices of rows in the result
 
-# TODO: after deprecation period change all to makeunique::Bool=false
 function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
                               left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
                               right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap;
-                              makeunique::Bool=true)
+                              makeunique::Bool=false)
     @assert length(left_ixs) == length(right_ixs)
     # compose left half of the result taking all left columns
     all_orig_left_ixs = vcat(left_ixs.orig, leftonly_ixs.orig)
@@ -272,11 +271,10 @@ join(name, job2, on = :ID => :identifier)
 ```
 
 """
-# TODO: after deprecation period change all to makeunique::Bool=false
 function Base.join(df1::AbstractDataFrame,
                    df2::AbstractDataFrame;
                    on::Union{<:OnType, AbstractVector{<:OnType}} = Symbol[],
-                   kind::Symbol = :inner, makeunique::Bool=true)
+                   kind::Symbol = :inner, makeunique::Bool=false)
     if kind == :cross
         (on == Symbol[]) || throw(ArgumentError("Cross joins don't use argument 'on'."))
         return crossjoin(df1, df2, makeunique=makeunique)
@@ -339,8 +337,7 @@ function Base.join(df1::AbstractDataFrame,
     end
 end
 
-# TODO: after deprecation period change all to makeunique::Bool=false
-function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=true)
+function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=false)
     r1, r2 = size(df1, 1), size(df2, 1)
     colindex = merge(index(df1), index(df2), makeunique=makeunique)
     cols = Any[[repeat(c, inner=r2) for c in columns(df1)];

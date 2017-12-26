@@ -307,6 +307,5 @@ DataFrame(sink, sch::Data.Schema, ::Type{S}, append::Bool;
     append!(sink.columns[col], column)
 end
     
-# TODO: after deprecation period change all to makeunique::Bool=false
-Data.close!(df::DataFrameStream, makeunique::Bool=true) =
+Data.close!(df::DataFrameStream, makeunique::Bool=false) =
     DataFrame(collect(Any, df.columns), Symbol.(df.header), makeunique=makeunique)

@@ -133,9 +133,8 @@ names!(df, [:a, :b, :a], makeunique=true)  # renames second :a to :a_1
 function names!(df::AbstractDataFrame, vals; allow_duplicates=false, makeunique::Bool=false)
     if allow_duplicates
         Base.depwarn("Keyword allow_duplicates is deprecated. Use makeunique.", :names!)
-        makeunique = true
     end
-    names!(index(df), vals, makeunique=makeunique)
+    names!(index(df), vals, allow_duplicates=allow_duplicates, makeunique=makeunique)
     return df
 end
 
@@ -693,17 +692,16 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 
 # catch-all to cover cases where indexing returns a DataFrame and copy doesn't
 
-# TODO: after deprecation period change all to makeunique::Bool=false
-Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=true) =
+Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=false) =
     hcat!(df[:, :], x, makeunique=makeunique)
-Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=true) =
+Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=false) =
     hcat!(x, df[:, :], makeunique=makeunique)
-Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=true) =
+Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=false) =
     hcat!(df1[:, :], df2, makeunique=makeunique)
-Base.hcat(df::AbstractDataFrame, x, y...; makeunique::Bool=true) =
+Base.hcat(df::AbstractDataFrame, x, y...; makeunique::Bool=false) =
     hcat!(hcat(df, x, makeunique=makeunique), y..., makeunique=makeunique)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
-          makeunique::Bool=true) =
+          makeunique::Bool=false) =
     hcat!(hcat(df1, df2, makeunique=makeunique), dfn..., makeunique=makeunique)
 
 @generated function promote_col_type(cols::AbstractVector...)

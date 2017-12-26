@@ -106,34 +106,30 @@ mutable struct DataFrame <: AbstractDataFrame
     end
 end
 
-# TODO: after deprecation period change all to makeunique::Bool=false
-function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=true)::DataFrame
+function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false)::DataFrame
     colnames = Symbol[k for (k,v) in pairs]
     columns = Any[v for (k,v) in pairs]
     DataFrame(columns, Index(colnames, makeunique=makeunique))
 end
 
-# TODO: after deprecation period change all to makeunique::Bool=false
 function DataFrame(; kwargs...)
     if isempty(kwargs)
         DataFrame(Any[], Index())
     else
-        DataFrame(kwpairs(kwargs)..., makeunique=true)
+        DataFrame(kwpairs(kwargs)...)
     end
 end
 
-# TODO: after deprecation period change all to makeunique::Bool=false
 function DataFrame(columns::AbstractVector,
                    cnames::AbstractVector{Symbol} = gennames(length(columns));
-                   makeunique::Bool=true)::DataFrame
+                   makeunique::Bool=false)::DataFrame
     return DataFrame(convert(Vector{Any}, columns), Index(convert(Vector{Symbol}, cnames),
                      makeunique=makeunique))
 end
 
 # Initialize an empty DataFrame with specific eltypes and names
-# TODO: after deprecation period change all to makeunique::Bool=false
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-                   nrows::Integer; makeunique::Bool=true)::DataFrame where T<:Type
+                   nrows::Integer; makeunique::Bool=false)::DataFrame where T<:Type
     columns = Vector{Any}(length(column_eltypes))
     for (j, elty) in enumerate(column_eltypes)
         if elty >: Missing
@@ -155,10 +151,9 @@ end
 
 # Initialize an empty DataFrame with specific eltypes and names
 # and whether a CategoricalArray should be created
-# TODO: after deprecation period change all to makeunique::Bool=false
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    categorical::Vector{Bool}, nrows::Integer;
-                   makeunique::Bool=true)::DataFrame where T<:Type
+                   makeunique::Bool=false)::DataFrame where T<:Type
     # upcast Vector{DataType} -> Vector{Type} which can hold CategoricalValues
     updated_types = convert(Vector{Type}, column_eltypes)
     for i in eachindex(categorical)
@@ -606,7 +601,7 @@ Base.setindex!(df::DataFrame, x::Void, col_ind::Int) = delete!(df, col_ind)
 Base.empty!(df::DataFrame) = (empty!(df.columns); empty!(index(df)); df)
 
 """
-Inserts a column into a `DataFrame` in place.
+insert a column into a `DataFrame` in place.
 
 
 ```julia
@@ -806,8 +801,7 @@ end
 ##############################################################################
 
 # hcat! for 2 arguments, only a vector or a data frame is allowed
-# TODO: after deprecation period change all to makeunique::Bool=false
-function hcat!(df1::DataFrame, df2::AbstractDataFrame; makeunique::Bool=true)
+function hcat!(df1::DataFrame, df2::AbstractDataFrame; makeunique::Bool=false)
     u = add_names(index(df1), index(df2), makeunique=makeunique)
     for i in 1:length(u)
         df1[u[i]] = df2[i]
@@ -816,37 +810,33 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame; makeunique::Bool=true)
 end
 
 # definition required to avoid hcat! ambiguity
-# TODO: after deprecation period change all to makeunique::Bool=false
-function hcat!(df1::DataFrame, df2::DataFrame; makeunique::Bool=true)
+function hcat!(df1::DataFrame, df2::DataFrame; makeunique::Bool=false)
     invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2, makeunique=makeunique)
 end
 
-# TODO: after deprecation period change all to makeunique::Bool=false
-hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=true) =
+hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false) =
     hcat!(df, DataFrame(Any[x]), makeunique=makeunique)
-hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=true) =
+hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false) =
     hcat!(DataFrame(Any[x]), df, makeunique=makeunique)
-function hcat!(x, df::DataFrame; makeunique::Bool=true)
+function hcat!(x, df::DataFrame; makeunique::Bool=false)
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
 end
-function hcat!(df::DataFrame, x; makeunique::Bool=true)
+function hcat!(df::DataFrame, x; makeunique::Bool=false)
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
 end
 
 # hcat! for 1-n arguments
-# TODO: after deprecation period change all to makeunique::Bool=false
-hcat!(df::DataFrame; makeunique::Bool=true) = df
-hcat!(a::DataFrame, b, c...; makeunique::Bool=true) =
+hcat!(df::DataFrame; makeunique::Bool=false) = df
+hcat!(a::DataFrame, b, c...; makeunique::Bool=false) =
     hcat!(hcat!(a, b, makeunique=makeunique), c..., makeunique=makeunique)
 
 # hcat
-# TODO: after deprecation period change all to makeunique::Bool=false
-Base.hcat(df::DataFrame, x; makeunique::Bool=true) =
+Base.hcat(df::DataFrame, x; makeunique::Bool=false) =
     hcat!(copy(df), x, makeunique=makeunique)
-Base.hcat(df1::DataFrame, df2::AbstractDataFrame; makeunique::Bool=true) =
+Base.hcat(df1::DataFrame, df2::AbstractDataFrame; makeunique::Bool=false) =
     hcat!(copy(df1), df2, makeunique=makeunique)
 Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
-          makeunique::Bool=true) =
+          makeunique::Bool=false) =
     hcat!(hcat(df1, df2, makeunique=makeunique), dfn..., makeunique=makeunique)
 
 ##############################################################################
