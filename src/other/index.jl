@@ -108,21 +108,27 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     x
 end
 
-Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
+Base.getindex(x::AbstractIndex, idx::Symbol) = x.lookup[idx]
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 
 function Base.getindex(x::AbstractIndex, idx::Real)
-    idx isa Bool && Base.depwarn("Indexing with Bool values is deprecated")
+    idx isa Bool && Base.depwarn("Indexing with Bool values is deprecated", :getindex)
+    idx isa Integer || Base.depwarn("Indexing with values that are not Integer is deprecated", :getindex)
     Int(idx)
 end
 
-Base.getindex(x::AbstractIndex, idx::AbstractRange) = [idx;]
-Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Real}) = Vector{Int}(idx)
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Real})
+    any(v -> v isa Bool, idx) && Base.depwarn("Indexing with Bool values is deprecated")
+    all(v -> v isa Integer, idx) || Base.depwarn("Indexing with values that are not Integer is deprecated", :getindex)
+    Vector{Int}(idx)
+end
 
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
     find(idx)
 end
+
+Base.getindex(x::AbstractIndex, idx::AbstractRange) = getindex(x, collect(idx))
 
 # catch all method handling cases when type of idx is not narrowest possible, Any in particular
 # also it handles passing missing values in idx
@@ -140,9 +146,9 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector)
         end
         throw(ArgumentError("Indexing with Bool values is not allowed"))
     end
-    idxs[1] isa Real && return Vector{Int}(idxs)
+    idxs[1] isa Real && return getindex(x, Vector{Real}(idxs))
     idxs[1] isa Symbol && return [x.lookup[i] for i in idxs]
-    throw(ArgumentError("idx[1] has type $(typeof(idx[1]));"*
+    throw(ArgumentError("idx[1] has type $(typeof(idx[1])); "*
                         "DataFrame only supports indexing columns with integers, symbols or boolean vectors"))
 end
 
