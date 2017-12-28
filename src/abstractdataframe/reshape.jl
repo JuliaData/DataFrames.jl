@@ -98,8 +98,8 @@ function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_var::Int;
 end
 function stack(df::AbstractDataFrame, measure_var::Int, id_vars::Vector{Int};
                variable_name::Symbol=:variable, value_name::Symbol=:value)
-    stackdf(df, [measure_var], id_vars;
-            variable_name=variable_name, value_name=value_name)
+    stack(df, [measure_var], id_vars;
+          variable_name=variable_name, value_name=value_name)
 end
 function stack(df::AbstractDataFrame, measure_vars, id_vars;
                variable_name::Symbol=:variable, value_name::Symbol=:value)
