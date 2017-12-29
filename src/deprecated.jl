@@ -1296,7 +1296,3 @@ function Base.getindex(x::AbstractIndex, idx::Real)
     Int(idx)
 end
 
-function Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}})
-    Base.depwarn("passing Vector{Union{Bool, Missing}} for indexing is deprecated", :getindex)
-    getindex(x, collect(Missings.replace(idx, false)))
-end

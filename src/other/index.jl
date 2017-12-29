@@ -119,6 +119,14 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     find(idx)
 end
 
+function Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}})
+    if any(ismissing, idx)
+        # TODO: this line should be changed to throw an error after deprecation
+        Base.depwarn("using missing in column indexing is deprecated", :getindex)
+    end
+    getindex(x, collect(Missings.replace(idx, false)))
+end
+
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     # TODO: this line should be changed to throw an error after deprecation
     if any(v -> v isa Bool, idx)
