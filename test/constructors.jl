@@ -92,4 +92,11 @@ module TestConstructors
         push!(answer, Vector{Char})
         @test map(typeof, df.columns) == answer
     end
+
+    @testset "categorical constructor" begin
+        df = DataFrame([Int, String], [:a, :b], [false, true], 3)
+        @test !(df[:a] isa CategoricalVector)
+        @test df[:b] isa CategoricalVector
+        @test_throws ArgumentError DataFrame([Int, String], [:a, :b], [true], 3)
+    end
 end

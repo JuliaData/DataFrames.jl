@@ -152,6 +152,9 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
                    categorical::Vector{Bool}, nrows::Integer) where T<:Type
     # upcast Vector{DataType} -> Vector{Type} which can hold CategoricalValues
     updated_types = convert(Vector{Type}, column_eltypes)
+    if length(categorical) != length(updated_types)
+        throw(ArgumentError("lengths of column_eltypes and categorical arguments must be identical"))
+    end
     for i in eachindex(categorical)
         categorical[i] || continue
         if updated_types[i] >: Missing
