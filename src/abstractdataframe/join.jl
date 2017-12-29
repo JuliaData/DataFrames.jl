@@ -241,10 +241,11 @@ Join two `DataFrame` objects
   - `:cross` : a full Cartesian product of the key combinations; every
     row of `df1` is matched with every row of `df2`
 
-* `makeunique` : how to handle columns with duplicate names other than `on` in joined tables:
 
-  - `false` : throw an error if duplicate column names are present
-  - `true` : duplicate column names in `df2` will be deduplicated by adding a suffix
+* `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found in columns not joined on;
+  if `true`, duplicate names will be suffixed with `_i`
+  (`i` starting at 1 for the first duplicate).
 
 For the three join operations that may introduce missing values (`:outer`, `:left`,
 and `:right`), all columns of the returned data table will support missing values.

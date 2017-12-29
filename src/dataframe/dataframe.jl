@@ -22,11 +22,9 @@ DataFrame(ds::Vector{Associative})
 
 * `columns` : a Vector with each column as contents
 * `names` : the column names
-* `makeunique` : keyword argument indicating how to handle duplicates in `names`
-
-  - `false` : throw an error if duplicates are present
-  - `true` : deduplicate column names by adding a suffix
-
+* `makeunique` : if `false` (the default), an error will be raised
+  if duplicates in `names` are found; if `true`, duplicate names will be suffixed
+  with `_i` (`i` starting at 1 for the first duplicate).
 * `kwargs` : the key gives the column names, and the value is the
   column contents
 * `t` : elemental type of all columns
@@ -702,7 +700,7 @@ merge!(df::DataFrame, others::AbstractDataFrame...)
 
 For every column `c` with name `n` in `others` sequentially perform `df[n] = c`.
 In particular, if there are duplicate column names present in `df` and `others`
-the last encountered columnwill be retained.
+the last encountered column will be retained.
 This behavior is identical with how `merge!` works for any `Associative` type.
 Use `join` if you want to join two `DataFrame`s.
 
