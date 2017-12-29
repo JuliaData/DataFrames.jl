@@ -213,7 +213,7 @@ function update_row_maps!(left_table::AbstractDataFrame,
 end
 
 """
-    join(df1, df2; on = Symbol[], kind = :inner)
+    join(df1, df2; on = Symbol[], kind = :inner, makeunique = false)
 
 Join two `DataFrame` objects
 
@@ -240,6 +240,11 @@ Join two `DataFrame` objects
   - `:anti` : return rows of `df1` that do not match with the keys in `df2`
   - `:cross` : a full Cartesian product of the key combinations; every
     row of `df1` is matched with every row of `df2`
+
+* `makeunique` : how to handle columns with duplicate names other than `on` in joined tables:
+
+  - `false` : throw an error if duplicate column names are present
+  - `true` : duplicate column names in `df2` will be deduplicated by adding a suffix
 
 For the three join operations that may introduce missing values (`:outer`, `:left`,
 and `:right`), all columns of the returned data table will support missing values.

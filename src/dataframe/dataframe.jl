@@ -7,12 +7,14 @@ particularly a Vector or CategoricalVector.
 **Constructors**
 
 ```julia
-DataFrame(columns::Vector, names::Vector{Symbol})
+DataFrame(columns::Vector, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
-DataFrame(pairs::Pair{Symbol}...)
+DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false)
 DataFrame() # an empty DataFrame
 DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
-DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer)
+DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer; makeunique::Bool=false)
+DataFrame(column_eltypes::Vector, cnames::Vector, categorical::Vector, nrows::Integer;
+          makeunique::Bool=false)
 DataFrame(ds::Vector{Associative})
 ```
 
@@ -20,11 +22,18 @@ DataFrame(ds::Vector{Associative})
 
 * `columns` : a Vector with each column as contents
 * `names` : the column names
+* `makeunique` : keyword argument indicating how to handle duplicates in `names`
+
+  - `false` : throw an error if duplicates are present
+  - `true` : deduplicate column names by adding a suffix
+
 * `kwargs` : the key gives the column names, and the value is the
   column contents
 * `t` : elemental type of all columns
 * `nrows`, `ncols` : number of rows and columns
 * `column_eltypes` : elemental type of each column
+* `categorical` : `Vector{Bool}` indicating which columns should be converted to
+                  `CategoricalVector`
 * `ds` : a vector of Associatives
 
 Each column in `columns` should be the same length.
@@ -692,6 +701,8 @@ merge!(df::DataFrame, others::AbstractDataFrame...)
 ```
 
 For every column `c` with name `n` in `others` sequentially performs `df[n] = c`.
+In particular, if there are duplicate column names present in `df` and `others`
+the last encountered columnwill be retained.
 This behavior is identical with how `merge!` works for any `Associative` type.
 Use `join` if you want to join two `DataFrame`s.
 
