@@ -11,7 +11,6 @@ inds = Any[1,
            [true, false],
            [1],
            [1.0],
-           1:1,
            1.0:1.0,
            [:A],
            Union{Bool, Missing}[true, false],
@@ -32,6 +31,8 @@ for ind in inds
         @test (i[ind] == [1])
     end
 end
+
+@test i[1:1] == 1:1
 
 @test_throws BoundsError i[[true]]
 @test_throws BoundsError i[[true, false, true]]

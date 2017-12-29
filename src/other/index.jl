@@ -112,7 +112,8 @@ Base.getindex(x::AbstractIndex, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
-Base.getindex(x::AbstractIndex, idx::AbstractRange) = getindex(x, collect(idx))
+Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
+Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
 
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))

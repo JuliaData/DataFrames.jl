@@ -74,8 +74,8 @@ d1s_name = melt(d1, [:a, :b, :e], variable_name=:somemeasure)
 ```
 
 """
-function stack(df::AbstractDataFrame, measure_vars::Vector{Int},
-               id_vars::Vector{Int}; variable_name::Symbol=:variable,
+function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
+               id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
                value_name::Symbol=:value)
     N = length(measure_vars)
     cnames = names(df)[id_vars]
@@ -91,12 +91,12 @@ function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int;
     stack(df, [measure_var], [id_var];
           variable_name=variable_name, value_name=value_name)
 end
-function stack(df::AbstractDataFrame, measure_vars::Vector{Int}, id_var::Int;
+function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer}, id_var::Int;
                variable_name::Symbol=:variable, value_name::Symbol=:value)
     stack(df, measure_vars, [id_var];
           variable_name=variable_name, value_name=value_name)
 end
-function stack(df::AbstractDataFrame, measure_var::Int, id_vars::Vector{Int};
+function stack(df::AbstractDataFrame, measure_var::Int, id_vars::AbstractVector{<:Integer};
                variable_name::Symbol=:variable, value_name::Symbol=:value)
     stackdf(df, [measure_var], id_vars;
             variable_name=variable_name, value_name=value_name)
@@ -516,8 +516,8 @@ d1m = meltdf(d1, [:a, :b, :e])
 ```
 
 """
-function stackdf(df::AbstractDataFrame, measure_vars::Vector{Int},
-                 id_vars::Vector{Int}; variable_name::Symbol=:variable,
+function stackdf(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
+                 id_vars::AbstractVector{<:Integer}; variable_name::Symbol=:variable,
                  value_name::Symbol=:value)
     N = length(measure_vars)
     cnames = names(df)[id_vars]
