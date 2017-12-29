@@ -153,8 +153,8 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
     # upcast Vector{DataType} -> Vector{Type} which can hold CategoricalValues
     updated_types = convert(Vector{Type}, column_eltypes)
     if length(categorical) != length(column_eltypes)
-        throw(ArgumentError("arguments column_eltypes and categorical must have the same length " *
-                            "(got $(length(column_eltypes)) and $(length(categorical)))"))
+        throw(DimensionMismatch("arguments column_eltypes and categorical must have the same length " *
+                                "(got $(length(column_eltypes)) and $(length(categorical)))"))
     end
     for i in eachindex(categorical)
         categorical[i] || continue
