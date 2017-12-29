@@ -1285,3 +1285,25 @@ import Base: |>
 @deprecate colwise(f) x -> colwise(f, x)
 @deprecate groupby(cols::Vector{T}; sort::Bool = false, skipmissing::Bool = false) where {T} x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
 @deprecate groupby(cols; sort::Bool = false, skipmissing::Bool = false) x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
+
+function Base.getindex(x::AbstractIndex, idx::Bool)
+    Base.depwarn("Indexing with Bool values is deprecated except for Vector{Bool}", :getindex)
+    1
+end
+
+function Base.getindex(x::AbstractIndex, idx::Real)
+    Base.depwarn("Indexing with values that are not Integer is deprecated", :getindex)
+    Int(idx)
+end
+
+function Base.getindex(x::AbstractIndex, idx::AbstractRange)
+    Base.depwarn("Indexing with range of values that are not Integer is deprecated", :getindex)
+    getindex(x, collect(idx))
+end
+
+
+function Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool})
+    Base.depwarn("Indexing with range of Bool is deprecated", :getindex)
+    collect(Int, idx)
+end
+

@@ -219,6 +219,7 @@ ncol(df::DataFrame) = length(index(df))
 # Let getindex(df.columns[j], row_inds) from AbstractVector() handle
 #  the resolution of row indices
 
+# TODO: change Real to Integer in this union after deprecation period
 const ColumnIndex = Union{Real, Symbol}
 
 # df[SingleColumnIndex] => AbstractDataVector
@@ -228,8 +229,7 @@ function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
 end
 
 # df[MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame,
-                       col_inds::AbstractVector{<:Union{ColumnIndex, Missing}})
+function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = df.columns[selected_columns]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
@@ -245,26 +245,20 @@ function Base.getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
 end
 
 # df[SingleRowIndex, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame,
-                       row_ind::Real,
-                       col_inds::AbstractVector{<:Union{ColumnIndex, Missing}})
+function Base.getindex(df::DataFrame, row_ind::Real, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[[row_ind]] for dv in df.columns[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector
-function Base.getindex(df::DataFrame,
-                       row_inds::AbstractVector{<:Union{Real, Missing}},
-                       col_ind::ColumnIndex)
+function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
     return df.columns[selected_column][row_inds]
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame,
-                       row_inds::AbstractVector{<:Union{Real, Missing}},
-                       col_inds::AbstractVector{<:Union{ColumnIndex, Missing}})
+function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[row_inds] for dv in df.columns[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
@@ -272,16 +266,13 @@ end
 
 # df[:, SingleColumnIndex] => AbstractVector
 # df[:, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::Colon, col_inds::Union{T, AbstractVector{T}}) where
-    T <: Union{ColumnIndex, Missing} = df[col_inds]
+Base.getindex(df::DataFrame, row_ind::Colon, col_inds) = df[col_inds]
 
 # df[SingleRowIndex, :] => DataFrame
 Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col_inds]
 
 # df[MultiRowIndex, :] => DataFrame
-function Base.getindex(df::DataFrame,
-                       row_inds::AbstractVector{<:Union{Real, Missing}},
-                       col_inds::Colon)
+function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::Colon)
     new_columns = Any[dv[row_inds] for dv in df.columns]
     return DataFrame(new_columns, copy(index(df)))
 end

@@ -162,6 +162,20 @@ module TestData
     d1m_named = melt(d1[[1,3,4]], :a, variable_name=:letter, value_name=:someval)
     @test names(d1m_named) == [:letter, :someval, :a]
 
+    # test empty measures or ids
+    dx = stack(d1, [], [:a])
+    @test size(dx) == (0, 3)
+    @test names(dx) == [:variable, :value, :a]
+    dx = stack(d1, :a, [])
+    @test size(dx) == (12, 2)
+    @test names(dx) == [:variable, :value]
+    dx = melt(d1, [], [:a])
+    @test size(dx) == (12, 2)
+    @test names(dx) == [:variable, :value]
+    dx = melt(d1, :a, [])
+    @test size(dx) == (0, 3)
+    @test names(dx) == [:variable, :value, :a]
+
     stackdf(d1, :a)
     d1s = stackdf(d1, [:a, :b])
     d1s2 = stackdf(d1, [:c, :d])

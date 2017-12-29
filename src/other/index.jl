@@ -120,19 +120,54 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     x
 end
 
-Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
-Base.getindex(x::AbstractIndex, idx::Real) = Int(idx)
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}}) =
-    getindex(x, collect(Missings.replace(idx, false)))
+Base.getindex(x::AbstractIndex, idx::Symbol) = x.lookup[idx]
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
+Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
+Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
+
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
     find(idx)
 end
-Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T >: Missing} =
-    getindex(x, collect(skipmissing(idx)))
-Base.getindex(x::AbstractIndex, idx::AbstractRange) = [idx;]
-Base.getindex(x::AbstractIndex, idx::AbstractVector{T}) where {T <: Real} = convert(Vector{Int}, idx)
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+
+function Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}})
+    if any(ismissing, idx)
+        # TODO: this line should be changed to throw an error after deprecation
+        Base.depwarn("using missing in column indexing is deprecated", :getindex)
+    end
+    getindex(x, collect(Missings.replace(idx, false)))
+end
+
+function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
+    # TODO: this line should be changed to throw an error after deprecation
+    if any(v -> v isa Bool, idx)
+        Base.depwarn("Indexing with Bool values is deprecated except for Vector{Bool}")
+    end
+    Vector{Int}(idx)
+end
+
+# catch all method handling cases when type of idx is not narrowest possible, Any in particular
+# also it handles passing missing values in idx
+function Base.getindex(x::AbstractIndex, idx::AbstractVector)
+    # TODO: passing missing will throw an error after deprecation
+    idxs = filter(!ismissing, idx)
+    if length(idxs) != length(idx)
+        Base.depwarn("using missing in column indexing is deprecated", :getindex)
+    end
+    length(idxs) == 0 && return Int[] # special case of empty idxs
+    if idxs[1] isa Real
+        if !all(v -> v isa Integer && !(v isa Bool), idxs)
+            # TODO: this line should be changed to throw an error after deprecation
+            Base.depwarn("indexing by vector of numbers other than Integer is deprecated", :getindex)
+        end
+        return Vector{Int}(idxs)
+    end
+    idxs[1] isa Symbol && return getindex(x, Vector{Symbol}(idxs))
+    throw(ArgumentError("idx[1] has type $(typeof(idx[1])); "*
+                        "DataFrame only supports indexing columns with integers, symbols or boolean vectors"))
+end
 
 # Helpers
 

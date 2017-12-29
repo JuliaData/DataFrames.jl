@@ -11,13 +11,18 @@ inds = Any[1,
            [true, false],
            [1],
            [1.0],
-           1:1,
            1.0:1.0,
            [:A],
            Union{Bool, Missing}[true, false],
            Union{Int, Missing}[1],
            Union{Float64, Missing}[1.0],
-           Union{Symbol, Missing}[:A]]
+           Union{Symbol, Missing}[:A],
+           Any[1],
+           Any[1, missing],
+           Any[true, missing],
+           Any[:A],
+           Any[:A, missing],
+           [true, missing]]
 
 for ind in inds
     if ind == :A || ndims(ind) == 0
@@ -27,8 +32,17 @@ for ind in inds
     end
 end
 
+@test i[1:1] == 1:1
+
 @test_throws BoundsError i[[true]]
 @test_throws BoundsError i[[true, false, true]]
+
+@test_throws ArgumentError i[["a"]]
+@test_throws ArgumentError i[Any["a"]]
+
+@test i[[]] == Int[]
+@test i[Int[]] == Int[]
+@test i[Symbol[]] == Int[]
 
 @test names(i) == [:A,:B]
 @test names!(i, [:a,:a], allow_duplicates=true) == Index([:a,:a_1])
