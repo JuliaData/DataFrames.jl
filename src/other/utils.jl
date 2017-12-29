@@ -49,7 +49,7 @@ function makeidentifier(s::AbstractString)
     return String(take!(res))
 end
 
-function make_unique(names::Vector{Symbol}; allow_duplicates=true)
+function make_unique(names::Vector{Symbol}; makeunique::Bool=false)
     seen = Set{Symbol}()
     names = copy(names)
     dups = Int[]
@@ -58,11 +58,14 @@ function make_unique(names::Vector{Symbol}; allow_duplicates=true)
         in(name, seen) ? push!(dups, i) : push!(seen, name)
     end
 
-    if !allow_duplicates && length(dups) > 0
-        d = unique(names[dups])
-        msg = """Duplicate variable names: $d.
-                 Pass allow_duplicates=true to make them unique using a suffix automatically."""
-        throw(ArgumentError(msg))
+    if length(dups) > 0
+        if !makeunique
+            Base.depwarn("Duplicate variable names are deprecated: pass makeunique=true to add a suffix automatically.", :make_unique)
+            # TODO: uncomment the lines below after deprecation period
+            # msg = """Duplicate variable names: $(u[dups]).
+            #          Pass makeunique=true to make them unique using a suffix automatically."""
+            # throw(ArgumentError(msg))
+        end
     end
 
     for i in dups

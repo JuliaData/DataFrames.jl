@@ -48,9 +48,11 @@ Base.length(x::RowIndexMap) = length(x.orig)
 
 # composes the joined data table using the maps between the left and right
 # table rows and the indices of rows in the result
+
 function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
                               left_ixs::RowIndexMap, leftonly_ixs::RowIndexMap,
-                              right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap)
+                              right_ixs::RowIndexMap, rightonly_ixs::RowIndexMap;
+                              makeunique::Bool=false)
     @assert length(left_ixs) == length(right_ixs)
     # compose left half of the result taking all left columns
     all_orig_left_ixs = vcat(left_ixs.orig, leftonly_ixs.orig)
@@ -98,7 +100,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         copy!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
     end
-    res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)))
+    res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)), makeunique=makeunique)
 
     if length(rightonly_ixs.join) > 0
         # some left rows are missing, so the values of the "on" columns
@@ -211,7 +213,7 @@ function update_row_maps!(left_table::AbstractDataFrame,
 end
 
 """
-    join(df1, df2; on = Symbol[], kind = :inner)
+    join(df1, df2; on = Symbol[], kind = :inner, makeunique = false)
 
 Join two `DataFrame` objects
 
@@ -238,6 +240,12 @@ Join two `DataFrame` objects
   - `:anti` : return rows of `df1` that do not match with the keys in `df2`
   - `:cross` : a full Cartesian product of the key combinations; every
     row of `df1` is matched with every row of `df2`
+
+
+* `makeunique` : if `false` (the default), an error will be raised
+  if duplicate names are found in columns not joined on;
+  if `true`, duplicate names will be suffixed with `_i`
+  (`i` starting at 1 for the first duplicate).
 
 For the three join operations that may introduce missing values (`:outer`, `:left`,
 and `:right`), all columns of the returned data table will support missing values.
@@ -272,10 +280,10 @@ join(name, job2, on = :ID => :identifier)
 function Base.join(df1::AbstractDataFrame,
                    df2::AbstractDataFrame;
                    on::Union{<:OnType, AbstractVector{<:OnType}} = Symbol[],
-                   kind::Symbol = :inner)
+                   kind::Symbol = :inner, makeunique::Bool=false)
     if kind == :cross
         (on == Symbol[]) || throw(ArgumentError("Cross joins don't use argument 'on'."))
-        return crossjoin(df1, df2)
+        return crossjoin(df1, df2, makeunique=makeunique)
     elseif on == Symbol[]
         throw(ArgumentError("Missing join argument 'on'."))
     end
@@ -285,19 +293,23 @@ function Base.join(df1::AbstractDataFrame,
     if kind == :inner
         compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                                             group_rows(joiner.dfr_on),
-                                                            true, false, true, false)...)
+                                                            true, false, true, false)...,
+                                                            makeunique=makeunique)
     elseif kind == :left
         compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                                             group_rows(joiner.dfr_on),
-                                                            true, true, true, false)...)
+                                                            true, true, true, false)...,
+                                                            makeunique=makeunique)
     elseif kind == :right
         compose_joined_table(joiner, kind, update_row_maps!(joiner.dfr_on, joiner.dfl_on,
                                                             group_rows(joiner.dfl_on),
-                                                            true, true, true, false)[[3, 4, 1, 2]]...)
+                                                            true, true, true, false)[[3, 4, 1, 2]]...,
+                                                            makeunique=makeunique)
     elseif kind == :outer
         compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                                             group_rows(joiner.dfr_on),
-                                                            true, true, true, true)...)
+                                                            true, true, true, true)...,
+                                                            makeunique=makeunique)
     elseif kind == :semi
         # hash the right rows
         dfr_on_grp = group_rows(joiner.dfr_on)
@@ -331,10 +343,10 @@ function Base.join(df1::AbstractDataFrame,
     end
 end
 
-function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame)
+function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=false)
     r1, r2 = size(df1, 1), size(df2, 1)
+    colindex = merge(index(df1), index(df2), makeunique=makeunique)
     cols = Any[[repeat(c, inner=r2) for c in columns(df1)];
                [repeat(c, outer=r1) for c in columns(df2)]]
-    colindex = merge(index(df1), index(df2))
     DataFrame(cols, colindex)
 end

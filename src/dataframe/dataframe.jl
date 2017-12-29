@@ -7,12 +7,14 @@ particularly a Vector or CategoricalVector.
 **Constructors**
 
 ```julia
-DataFrame(columns::Vector, names::Vector{Symbol})
+DataFrame(columns::Vector, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
-DataFrame(pairs::Pair{Symbol}...)
+DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false)
 DataFrame() # an empty DataFrame
 DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
-DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer)
+DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer; makeunique::Bool=false)
+DataFrame(column_eltypes::Vector, cnames::Vector, categorical::Vector, nrows::Integer;
+          makeunique::Bool=false)
 DataFrame(ds::Vector{Associative})
 ```
 
@@ -20,11 +22,16 @@ DataFrame(ds::Vector{Associative})
 
 * `columns` : a Vector with each column as contents
 * `names` : the column names
+* `makeunique` : if `false` (the default), an error will be raised
+  if duplicates in `names` are found; if `true`, duplicate names will be suffixed
+  with `_i` (`i` starting at 1 for the first duplicate).
 * `kwargs` : the key gives the column names, and the value is the
   column contents
 * `t` : elemental type of all columns
 * `nrows`, `ncols` : number of rows and columns
 * `column_eltypes` : elemental type of each column
+* `categorical` : `Vector{Bool}` indicating which columns should be converted to
+                  `CategoricalVector`
 * `ds` : a vector of Associatives
 
 Each column in `columns` should be the same length.
@@ -106,10 +113,10 @@ mutable struct DataFrame <: AbstractDataFrame
     end
 end
 
-function DataFrame(pairs::Pair{Symbol,<:Any}...)
+function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false)::DataFrame
     colnames = Symbol[k for (k,v) in pairs]
     columns = Any[v for (k,v) in pairs]
-    DataFrame(columns, Index(colnames))
+    DataFrame(columns, Index(colnames, makeunique=makeunique))
 end
 
 function DataFrame(; kwargs...)
@@ -121,12 +128,15 @@ function DataFrame(; kwargs...)
 end
 
 function DataFrame(columns::AbstractVector,
-                   cnames::AbstractVector{Symbol} = gennames(length(columns)))
-    return DataFrame(convert(Vector{Any}, columns), Index(convert(Vector{Symbol}, cnames)))
+                   cnames::AbstractVector{Symbol} = gennames(length(columns));
+                   makeunique::Bool=false)::DataFrame
+    return DataFrame(convert(Vector{Any}, columns), Index(convert(Vector{Symbol}, cnames),
+                     makeunique=makeunique))
 end
 
 # Initialize an empty DataFrame with specific eltypes and names
-function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol}, nrows::Integer) where T<:Type
+function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                   nrows::Integer; makeunique::Bool=false)::DataFrame where T<:Type
     columns = Vector{Any}(length(column_eltypes))
     for (j, elty) in enumerate(column_eltypes)
         if elty >: Missing
@@ -143,13 +153,14 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
             end
         end
     end
-    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames)))
+    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames), makeunique=makeunique))
 end
 
 # Initialize an empty DataFrame with specific eltypes and names
 # and whether a CategoricalArray should be created
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-                   categorical::Vector{Bool}, nrows::Integer) where T<:Type
+                   categorical::Vector{Bool}, nrows::Integer;
+                   makeunique::Bool=false)::DataFrame where T<:Type
     # upcast Vector{DataType} -> Vector{Type} which can hold CategoricalValues
     updated_types = convert(Vector{Type}, column_eltypes)
     for i in eachindex(categorical)
@@ -160,7 +171,7 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
             updated_types[i] = CategoricalValue{updated_types[i]}
         end
     end
-    return DataFrame(updated_types, cnames, nrows)
+    return DataFrame(updated_types, cnames, nrows, makeunique=makeunique)
 end
 
 # Initialize empty DataFrame objects of arbitrary size
@@ -596,19 +607,120 @@ Base.setindex!(df::DataFrame, x::Void, col_ind::Int) = delete!(df, col_ind)
 
 Base.empty!(df::DataFrame) = (empty!(df.columns); empty!(index(df)); df)
 
-function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol)
+"""
+Insert a column into a data frame in place.
+
+
+```julia
+insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol;
+        makeunique::Bool=false)
+```
+
+### Arguments
+
+* `df` : the DataFrame to which we want to add a column
+
+* `col_ind` : a position at which we want to insert a column
+
+* `item` : a column to be inserted into `df`
+
+* `name` : column name
+
+* `makeunique` : Defines what to do if `name` already exists in `df`;
+  if it is `false` an error will be thrown; if it is `true` a new unique name will
+  be generated by adding a suffix
+
+### Result
+
+* `::DataFrame` : a `DataFrame` with added column.
+
+### Examples
+
+```jldoctest
+julia> d = DataFrame(a=1:3)
+3×1 DataFrames.DataFrame
+│ Row │ a │
+├─────┼───┤
+│ 1   │ 1 │
+│ 2   │ 2 │
+│ 3   │ 3 │
+
+julia> insert!(d, 1, 'a':'c', :b)
+3×2 DataFrames.DataFrame
+│ Row │ b   │ a │
+├─────┼─────┼───┤
+│ 1   │ 'a' │ 1 │
+│ 2   │ 'b' │ 2 │
+│ 3   │ 'c' │ 3 │
+```
+
+"""
+function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol;
+                      makeunique::Bool=false)
     0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
     size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
 
+    if haskey(df, name)
+        if makeunique
+            k = 1
+            while true
+                # we only make sure that new column name is unique
+                # if df originally had duplicates in names we do not fix it
+                nn = Symbol("$(name)_$k")
+                if !haskey(df, nn)
+                    name = nn
+                    break
+                end
+                k += 1
+            end
+        else
+            # TODO: remove depwarn and uncomment ArgumentError below
+            Base.depwarn("Inserting duplicate column name is deprecated, use makeunique=true.", :insert!)
+            # msg = """Duplicate variable name $(name).
+            #      Pass makeunique=true to make it unique using a suffix automatically."""
+            # throw(ArgumentError(msg))
+        end
+    end
     insert!(index(df), col_ind, name)
     insert!(df.columns, col_ind, item)
     df
 end
 
-function Base.insert!(df::DataFrame, col_ind::Int, item, name::Symbol)
-    insert!(df, col_ind, upgrade_scalar(df, item), name)
+function Base.insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false)
+    insert!(df, col_ind, upgrade_scalar(df, item), name, makeunique=makeunique)
 end
 
+"""
+Merge data frames.
+
+
+```julia
+merge!(df::DataFrame, others::AbstractDataFrame...)
+```
+
+For every column `c` with name `n` in `others` sequentially perform `df[n] = c`.
+In particular, if there are duplicate column names present in `df` and `others`
+the last encountered column will be retained.
+This behavior is identical with how `merge!` works for any `Associative` type.
+Use `join` if you want to join two `DataFrame`s.
+
+**Arguments**
+
+* `df` : the DataFrame to merge into
+* `others` : `AbstractDataFrame`s to be merged into `df`
+
+**Result**
+
+* `::DataFrame` : the updated result. Columns with duplicate names are overwritten.
+
+**Examples**
+
+```julia
+df = DataFrame(id = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
+df2 = DataFrame(id = 11:20, z = rand(10))
+merge!(df, df2)  # column z is added, column id is overwritten
+```
+"""
 function Base.merge!(df::DataFrame, others::AbstractDataFrame...)
     for other in others
         for n in _names(other)
@@ -698,8 +810,8 @@ end
 ##############################################################################
 
 # hcat! for 2 arguments, only a vector or a data frame is allowed
-function hcat!(df1::DataFrame, df2::AbstractDataFrame)
-    u = add_names(index(df1), index(df2))
+function hcat!(df1::DataFrame, df2::AbstractDataFrame; makeunique::Bool=false)
+    u = add_names(index(df1), index(df2), makeunique=makeunique)
     for i in 1:length(u)
         df1[u[i]] = df2[i]
     end
@@ -707,27 +819,34 @@ function hcat!(df1::DataFrame, df2::AbstractDataFrame)
 end
 
 # definition required to avoid hcat! ambiguity
-function hcat!(df1::DataFrame, df2::DataFrame)
-    invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2)
+function hcat!(df1::DataFrame, df2::DataFrame; makeunique::Bool=false)
+    invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2, makeunique=makeunique)
 end
 
-hcat!(df::DataFrame, x::AbstractVector) = hcat!(df, DataFrame(Any[x]))
-hcat!(x::AbstractVector, df::DataFrame) = hcat!(DataFrame(Any[x]), df)
-function hcat!(x, df::DataFrame)
+hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false) =
+    hcat!(df, DataFrame(Any[x]), makeunique=makeunique)
+hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false) =
+    hcat!(DataFrame(Any[x]), df, makeunique=makeunique)
+function hcat!(x, df::DataFrame; makeunique::Bool=false)
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
 end
-function hcat!(df::DataFrame, x)
+function hcat!(df::DataFrame, x; makeunique::Bool=false)
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
 end
 
 # hcat! for 1-n arguments
-hcat!(df::DataFrame) = df
-hcat!(a::DataFrame, b, c...) = hcat!(hcat!(a, b), c...)
+hcat!(df::DataFrame; makeunique::Bool=false) = df
+hcat!(a::DataFrame, b, c...; makeunique::Bool=false) =
+    hcat!(hcat!(a, b, makeunique=makeunique), c..., makeunique=makeunique)
 
 # hcat
-Base.hcat(df::DataFrame, x) = hcat!(copy(df), x)
-Base.hcat(df1::DataFrame, df2::AbstractDataFrame) = hcat!(copy(df1), df2)
-Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...) = hcat!(hcat(df1, df2), dfn...)
+Base.hcat(df::DataFrame, x; makeunique::Bool=false) =
+    hcat!(copy(df), x, makeunique=makeunique)
+Base.hcat(df1::DataFrame, df2::AbstractDataFrame; makeunique::Bool=false) =
+    hcat!(copy(df1), df2, makeunique=makeunique)
+Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
+          makeunique::Bool=false) =
+    hcat!(hcat(df1, df2, makeunique=makeunique), dfn..., makeunique=makeunique)
 
 ##############################################################################
 ##

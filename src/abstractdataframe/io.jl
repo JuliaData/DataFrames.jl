@@ -307,5 +307,6 @@ DataFrame(sink, sch::Data.Schema, ::Type{S}, append::Bool;
     append!(sink.columns[col], column)
 end
     
+Data.close!(df::DataFrameStream) =
+    DataFrame(collect(Any, df.columns), Symbol.(df.header), makeunique=true)
 
-Data.close!(df::DataFrameStream) = DataFrame(collect(Any, df.columns), Symbol.(df.header))
