@@ -610,7 +610,7 @@ Base.setindex!(df::DataFrame, x::Void, col_ind::Int) = delete!(df, col_ind)
 Base.empty!(df::DataFrame) = (empty!(df.columns); empty!(index(df)); df)
 
 """
-insert a column into a `DataFrame` in place.
+Insert a column into a data frame in place.
 
 
 ```julia
@@ -693,14 +693,14 @@ function Base.insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeuniqu
 end
 
 """
-Merge `DataFrame`s
+Merge data frames.
 
 
 ```julia
 merge!(df::DataFrame, others::AbstractDataFrame...)
 ```
 
-For every column `c` with name `n` in `others` sequentially performs `df[n] = c`.
+For every column `c` with name `n` in `others` sequentially perform `df[n] = c`.
 In particular, if there are duplicate column names present in `df` and `others`
 the last encountered columnwill be retained.
 This behavior is identical with how `merge!` works for any `Associative` type.
