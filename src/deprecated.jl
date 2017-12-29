@@ -1,5 +1,10 @@
 import Base: @deprecate
 
+function DataFrame(columns::AbstractVector)
+    Base.depwarn("calling vector of vectors constructor without passing column names is deprecated", :DataFrame)
+    DataFrame(columns, gennames(length(columns)))
+end
+
 @deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
 @deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 
