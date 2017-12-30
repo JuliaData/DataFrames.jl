@@ -8,6 +8,7 @@ particularly a Vector or CategoricalVector.
 
 ```julia
 DataFrame(columns::Vector, names::Vector{Symbol}; makeunique::Bool=false)
+DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false)
 DataFrame() # an empty DataFrame
@@ -20,7 +21,7 @@ DataFrame(ds::Vector{Associative})
 
 **Arguments**
 
-* `columns` : a Vector with each column as contents
+* `columns` : a Vector with each column as contents or a Matrix
 * `names` : the column names
 * `makeunique` : if `false` (the default), an error will be raised
   if duplicates in `names` are found; if `true`, duplicate names will be suffixed
@@ -81,7 +82,8 @@ mutable struct DataFrame <: AbstractDataFrame
         if length(columns) == length(colindex) == 0
             return new(Vector{Any}(0), Index())
         elseif length(columns) != length(colindex)
-            throw(DimensionMismatch("Number of columns ($(length(columns))) and number of column names ($(length(colindex))) are not equal"))
+            throw(DimensionMismatch("Number of columns ($(length(columns))) and number of" *
+                                    " column names ($(length(colindex))) are not equal"))
         end
         lengths = [isa(col, AbstractArray) ? length(col) : 1 for col in columns]
         minlen, maxlen = extrema(lengths)
@@ -127,12 +129,19 @@ function DataFrame(; kwargs...)
     end
 end
 
-function DataFrame(columns::AbstractVector,
-                   cnames::AbstractVector{Symbol} = gennames(length(columns));
+function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
                    makeunique::Bool=false)::DataFrame
+    if !all(col -> isa(col, AbstractVector), columns)
+        # change to throw(ArgumentError("columns argument must be a vector of AbstractVector objects"))
+        Base.depwarn("passing columns argument with non-AbstractVector entries is deprecated", :DataFrame)
+    end
     return DataFrame(convert(Vector{Any}, columns), Index(convert(Vector{Symbol}, cnames),
                      makeunique=makeunique))
 end
+
+DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
+          makeunique::Bool=false) =
+    DataFrame(Any[columns[:, i] for i in 1:size(columns, 2)], cnames, makeunique=makeunique)
 
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
@@ -916,14 +925,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
    return df1
 end
 
-function Base.convert(::Type{DataFrame}, A::AbstractMatrix)
-    n = size(A, 2)
-    cols = Vector{Any}(n)
-    for i in 1:n
-        cols[i] = A[:, i]
-    end
-    return DataFrame(cols, Index(gennames(n)))
-end
+Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 function Base.convert(::Type{DataFrame}, d::Associative)
     colnames = keys(d)

@@ -28,6 +28,20 @@ module TestConstructors
     @test df[:x1] == df2[:x1]
     @test df[:x2] == df2[:x2]
 
+    df2 = DataFrame([0.0 1.0;
+                     0.0 1.0;
+                     0.0 1.0])
+    names!(df2, [:x1, :x2])
+    @test df[:x1] == df2[:x1]
+    @test df[:x2] == df2[:x2]
+
+    df2 = DataFrame([0.0 1.0;
+                     0.0 1.0;
+                     0.0 1.0], [:a, :b])
+    names!(df2, [:a, :b])
+    @test df[:x1] == df2[:a]
+    @test df[:x2] == df2[:b]
+
     @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
                           x2 = Union{Float64, Missing}[1.0, 1.0, 1.0])
     @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
