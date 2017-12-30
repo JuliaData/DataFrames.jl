@@ -131,7 +131,7 @@ end
 
 function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
                    makeunique::Bool=false)::DataFrame
-    if !any(col -> isa(col, AbstractVector), columns)
+    if !all(col -> isa(col, AbstractVector), columns)
         # change to throw(ArgumentError("columns argument must be a vector containing at least one vector"))
         Base.depwarn("passing columns argument containing only scalars is deprecated", :DataFrame)
     end
