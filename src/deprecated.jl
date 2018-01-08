@@ -1050,45 +1050,45 @@ function readtable(pathname::AbstractString;
     Base.depwarn("readtable is deprecated, use CSV.read from the CSV package instead",
                  :readtable)
 
+    _r(io) = readtable(io,
+                       nbytes,
+                       header = header,
+                       separator = separator,
+                       quotemark = quotemark,
+                       decimal = decimal,
+                       nastrings = nastrings,
+                       truestrings = truestrings,
+                       falsestrings = falsestrings,
+                       makefactors = makefactors,
+                       nrows = nrows,
+                       names = names,
+                       eltypes = eltypes,
+                       allowcomments = allowcomments,
+                       commentmark = commentmark,
+                       ignorepadding = ignorepadding,
+                       skipstart = skipstart,
+                       skiprows = skiprows,
+                       skipblanks = skipblanks,
+                       encoding = encoding,
+                       allowescapes = allowescapes,
+                       normalizenames = normalizenames)
+
     # Open an IO stream based on pathname
     # (1) Path is an HTTP or FTP URL
     if startswith(pathname, "http://") || startswith(pathname, "ftp://")
         error("URL retrieval not yet implemented")
     # (2) Path is GZip file
     elseif endswith(pathname, ".gz")
-        io = gzopen(pathname, "r")
         nbytes = 2 * filesize(pathname)
+        io = open(_r, GzipDecompressorStream, pathname, "r")
     # (3) Path is BZip2 file
     elseif endswith(pathname, ".bz") || endswith(pathname, ".bz2")
         error("BZip2 decompression not yet implemented")
     # (4) Path is an uncompressed file
     else
-        io = open(pathname, "r")
         nbytes = filesize(pathname)
+        io = open(_r, pathname, "r")
     end
-
-    return readtable(io,
-                     nbytes,
-                     header = header,
-                     separator = separator,
-                     quotemark = quotemark,
-                     decimal = decimal,
-                     nastrings = nastrings,
-                     truestrings = truestrings,
-                     falsestrings = falsestrings,
-                     makefactors = makefactors,
-                     nrows = nrows,
-                     names = names,
-                     eltypes = eltypes,
-                     allowcomments = allowcomments,
-                     commentmark = commentmark,
-                     ignorepadding = ignorepadding,
-                     skipstart = skipstart,
-                     skiprows = skiprows,
-                     skipblanks = skipblanks,
-                     encoding = encoding,
-                     allowescapes = allowescapes,
-                     normalizenames = normalizenames)
 end
 
 """
