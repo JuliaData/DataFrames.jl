@@ -1312,3 +1312,6 @@ function Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool})
     collect(Int, idx)
 end
 
+import Base: vcat
+@deprecate vcat(x::Vector{<:AbstractDataFrame}) vcat(x...)
+
