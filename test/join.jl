@@ -1,5 +1,5 @@
 module TestJoin
-    using Compat, Compat.Test, DataFrames
+    using Compat, Compat.Test, Base.Test, DataFrames, DataFrames.similar_missing
     const ≅ = isequal
 
     name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],
@@ -495,5 +495,68 @@ module TestJoin
         @test join(l, r, on=:b, kind=:outer) ≅
             DataFrame(a=[1:7; fill(missing, 3)], b=1:10, a_1=[fill(missing, 2); 3:10;])
         @test eltypes(join(l, r, on=:b, kind=:outer)) == [Any, Int, Any]
+    end
+
+    @testset "joins with categorical columns and no matching rows" begin
+        l = DataFrame(a=1:3, b=categorical(["a", "b", "c"]))
+        r = DataFrame(a=4:5, b=categorical(["d", "e"]))
+        nl = size(l, 1)
+        nr = size(r, 1)
+
+        CS = eltype(l[:b])
+
+        # joins by a and b
+        @test join(l, r, on=[:a, :b], kind=:inner) ≅ DataFrame(a=Int[], b=similar(l[:a], 0))
+        @test eltypes(join(l, r, on=[:a, :b], kind=:inner)) == [Int, CS]
+
+        @test join(l, r, on=[:a, :b], kind=:left) ≅ DataFrame(a=l[:a], b=l[:b])
+        @test eltypes(join(l, r, on=[:a, :b], kind=:left)) == [Int, CS]
+
+        @test join(l, r, on=[:a, :b], kind=:right) ≅ DataFrame(a=r[:a], b=r[:b])
+        @test eltypes(join(l, r, on=[:a, :b], kind=:right)) == [Int, CS]
+
+        @test join(l, r, on=[:a, :b], kind=:outer) ≅
+            DataFrame(a=vcat(l[:a], r[:a]), b=vcat(l[:b], r[:b]))
+        @test eltypes(join(l, r, on=[:a, :b], kind=:outer)) == [Int, CS]
+
+        # joins by a
+        @test join(l, r, on=:a, kind=:inner) ≅
+            DataFrame(a=Int[], b=similar(l[:b], 0), b_1=similar(r[:b], 0))
+        @test eltypes(join(l, r, on=:a, kind=:inner)) == [Int, CS, CS]
+
+        @test join(l, r, on=:a, kind=:left) ≅
+            DataFrame(a=l[:a], b=l[:b], b_1=similar_missing(r[:b], nl))
+        @test eltypes(join(l, r, on=:a, kind=:left)) == [Int, CS, Union{CS, Missing}]
+
+        @test join(l, r, on=:a, kind=:right) ≅
+            DataFrame(a=r[:a], b=similar_missing(l[:b], nr), b_1=r[:b])
+        @test eltypes(join(l, r, on=:a, kind=:right)) == [Int, Union{CS, Missing}, CS]
+
+        @test join(l, r, on=:a, kind=:outer) ≅
+            DataFrame(a=vcat(l[:a], r[:a]),
+                      b=vcat(l[:b], fill(missing, nr)),
+                      b_1=vcat(fill(missing, nl), r[:b]))
+        @test eltypes(join(l, r, on=:a, kind=:outer)) ==
+            [Int, Union{CS, Missing}, Union{CS, Missing}]
+
+        # joins by b
+        @test join(l, r, on=:b, kind=:inner) ≅
+            DataFrame(a=Int[], b=similar(l[:b], 0), a_1=similar(r[:b], 0))
+        @test eltypes(join(l, r, on=:b, kind=:inner)) == [Int, CS, Int]
+
+        @test join(l, r, on=:b, kind=:left) ≅
+            DataFrame(a=l[:a], b=l[:b], a_1=fill(missing, nl))
+        @test eltypes(join(l, r, on=:b, kind=:left)) == [Int, CS, Union{Int, Missing}]
+
+        @test join(l, r, on=:b, kind=:right) ≅
+            DataFrame(a=fill(missing, nr), b=r[:b], a_1=r[:a])
+        @test eltypes(join(l, r, on=:b, kind=:right)) == [Union{Int, Missing}, CS, Int]
+
+        @test join(l, r, on=:b, kind=:outer) ≅
+            DataFrame(a=vcat(l[:a], fill(missing, nr)),
+                      b=vcat(l[:b], r[:b]),
+                      a_1=vcat(fill(missing, nl), r[:a]))
+        @test eltypes(join(l, r, on=:b, kind=:outer)) ==
+            [Union{Int, Missing}, CS, Union{Int, Missing}]
     end
 end
