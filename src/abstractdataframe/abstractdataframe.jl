@@ -763,8 +763,8 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
 
 @generated function promote_col_type(cols::AbstractVector...)
     T = mapreduce(x -> Missings.T(eltype(x)), promote_type, cols)
-    if T <: CategoricalValue
-        T = T.parameters[1]
+    if CategoricalArrays.iscatvalue(T)
+        T = CategoricalArrays.leveltype(T)
     end
     if any(col -> eltype(col) >: Missing, cols)
         if any(col -> col <: AbstractCategoricalArray, cols)

@@ -157,6 +157,10 @@ module TestCat
     # vcat should be able to concatenate different implementations of AbstractDataFrame (PR #944)
     @test vcat(view(DataFrame(A=1:3),2),DataFrame(A=4:5)) == DataFrame(A=[2,4,5])
 
+    # vcat should be able to combine a DataFrame with a column full of Missings
+    df = DataFrame(A=1:3, B=missing)
+    @test isequal(vcat(df, df), DataFrame(A=repeat(1:3, outer=2), B=missing))
+
     @testset "vcat >2 args" begin
         @test vcat(DataFrame(), DataFrame(), DataFrame()) == DataFrame()
         df = DataFrame(x = trues(1), y = falses(1))
