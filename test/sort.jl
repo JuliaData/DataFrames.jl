@@ -35,6 +35,7 @@ module TestSort
     @test ds2 == ds
 
     sort!(df, cols=(:rank, :chrom, :pos), rev=(true, false, false))
+    @test_throws ArgumentError sort!(df, by = 1)
     @test issorted(df, cols=(order(:rank, rev=true), :chrom, :pos))
     @test issorted(df, rev=(true, false, false))
 
