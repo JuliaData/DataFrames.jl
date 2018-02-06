@@ -102,7 +102,7 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     gslots = zeros(Int, sz)
     # If missings are to be skipped, they will all go to group 1
     ngroups = skipmissing ? 1 : 0
-    @inbounds for i in eachindex(rhashes, missings)
+    @inbounds for i in eachindex(rhashes)
         # find the slot and group index for a row
         slotix = rhashes[i] & szm1 + 1
         # Use 0 for non-missing values to catch bugs if group is not found
