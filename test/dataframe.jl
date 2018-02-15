@@ -287,7 +287,7 @@ module TestDataFrame
 
     # describe
     #suppress output and test that describe() does not throw
-    devmissing = is_unix() ? "/dev/null" : "nul"
+    devmissing = Compat.Sys.isunix() ? "/dev/null" : "nul"
     open(devmissing, "w") do f
         @test nothing == describe(f, DataFrame(a=[1, 2], b=Any["3", missing]))
         @test nothing ==

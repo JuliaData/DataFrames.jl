@@ -155,11 +155,11 @@ Rename columns
 
 ```julia
 rename!(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
-rename!(df::AbstractDataFrame, d::Associative{Symbol,Symbol})
+rename!(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})
 rename!(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
 rename!(f::Function, df::AbstractDataFrame)
 rename(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)
-rename(df::AbstractDataFrame, d::Associative{Symbol,Symbol})
+rename(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})
 rename(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})
 rename(f::Function, df::AbstractDataFrame)
 ```

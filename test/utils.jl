@@ -16,11 +16,11 @@ module TestUtils
 
     # Check that reserved words are up to date
 
-    f = "$JULIA_HOME/../../src/julia-parser.scm"
+    f = "$(Compat.Sys.BINDIR)/../../src/julia-parser.scm"
     if isfile(f)
         r1 = r"define initial-reserved-words '\(([^)]+)"
         r2 = r"define \(parse-block s(?: \([^)]+\))?\)\s+\(parse-Nary s (?:parse-eq '\([^(]*|down '\([^)]+\) '[^']+ ')\(([^)]+)"
-        body = readstring(f)
+        body = read(f, String)
         m1, m2 = match(r1, body), match(r2, body)
         if m1 == nothing || m2 == nothing
             error("Unable to extract keywords from 'julia-parser.scm'.")

@@ -83,7 +83,7 @@ end
 #    the indices of the first row in a group
 # Optional group vector is set to the group indices of each row
 function row_group_slots(df::AbstractDataFrame,
-                         groups::Union{Vector{Int}, Void} = nothing,
+                         groups::Union{Vector{Int}, Nothing} = nothing,
                          skipmissing::Bool = false)
     rhashes, missings = hashrows(df, skipmissing)
     row_group_slots(ntuple(i -> df[i], ncol(df)), rhashes, missings, groups, skipmissing)
@@ -92,7 +92,7 @@ end
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          rhashes::AbstractVector{UInt},
                          missings::AbstractVector{Bool},
-                         groups::Union{Vector{Int}, Void} = nothing,
+                         groups::Union{Vector{Int}, Nothing} = nothing,
                          skipmissing::Bool = false)
     @assert groups === nothing || length(groups) == length(cols[1])
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataFrames.jl/pull/17#discussion_r102481481
