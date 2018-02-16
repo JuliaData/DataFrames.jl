@@ -16,7 +16,7 @@ DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbit
 DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer; makeunique::Bool=false)
 DataFrame(column_eltypes::Vector, cnames::Vector, categorical::Vector, nrows::Integer;
           makeunique::Bool=false)
-DataFrame(ds::Vector{Associative})
+DataFrame(ds::Vector{AbstractDict})
 ```
 
 **Arguments**
@@ -80,7 +80,7 @@ mutable struct DataFrame <: AbstractDataFrame
 
     function DataFrame(columns::Vector{Any}, colindex::Index)
         if length(columns) == length(colindex) == 0
-            return new(Vector{Any}(0), Index())
+            return new(Vector{Any}(uninitialized, 0), Index())
         elseif length(columns) != length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of" *
                                     " column names ($(length(colindex))) are not equal"))
@@ -601,7 +601,7 @@ Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
     (df[col_inds] = v; df)
 
 # Special deletion assignment
-Base.setindex!(df::DataFrame, x::Void, col_ind::Int) = delete!(df, col_ind)
+Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = delete!(df, col_ind)
 
 ##############################################################################
 ##
@@ -927,7 +927,7 @@ end
 
 Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
-function Base.convert(::Type{DataFrame}, d::Associative)
+function Base.convert(::Type{DataFrame}, d::AbstractDict)
     colnames = keys(d)
     if isa(d, Dict)
         colnames = sort!(collect(keys(d)))
@@ -946,7 +946,7 @@ end
 ##
 ##############################################################################
 
-function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})
+function Base.push!(df::DataFrame, associative::AbstractDict{Symbol,Any})
     i = 1
     for nm in _names(df)
         try
@@ -963,7 +963,7 @@ function Base.push!(df::DataFrame, associative::Associative{Symbol,Any})
     end
 end
 
-function Base.push!(df::DataFrame, associative::Associative)
+function Base.push!(df::DataFrame, associative::AbstractDict)
     i = 1
     for nm in _names(df)
         try

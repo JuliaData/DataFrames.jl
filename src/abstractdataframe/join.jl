@@ -133,12 +133,12 @@ end
 function update_row_maps!(left_table::AbstractDataFrame,
                           right_table::AbstractDataFrame,
                           right_dict::RowGroupDict,
-                          left_ixs::Union{Void, RowIndexMap},
-                          leftonly_ixs::Union{Void, RowIndexMap},
-                          right_ixs::Union{Void, RowIndexMap},
-                          rightonly_mask::Union{Void, Vector{Bool}})
+                          left_ixs::Union{Nothing, RowIndexMap},
+                          leftonly_ixs::Union{Nothing, RowIndexMap},
+                          right_ixs::Union{Nothing, RowIndexMap},
+                          rightonly_mask::Union{Nothing, Vector{Bool}})
     # helper functions
-    @inline update!(ixs::Void, orig_ix::Int, join_ix::Int, count::Int = 1) = nothing
+    @inline update!(ixs::Nothing, orig_ix::Int, join_ix::Int, count::Int = 1) = nothing
     @inline function update!(ixs::RowIndexMap, orig_ix::Int, join_ix::Int, count::Int = 1)
         n = length(ixs.orig)
         resize!(ixs.orig, n+count)
@@ -146,13 +146,13 @@ function update_row_maps!(left_table::AbstractDataFrame,
         append!(ixs.join, join_ix:(join_ix+count-1))
         ixs
     end
-    @inline update!(ixs::Void, orig_ixs::AbstractArray, join_ix::Int) = nothing
+    @inline update!(ixs::Nothing, orig_ixs::AbstractArray, join_ix::Int) = nothing
     @inline function update!(ixs::RowIndexMap, orig_ixs::AbstractArray, join_ix::Int)
         append!(ixs.orig, orig_ixs)
         append!(ixs.join, join_ix:(join_ix+length(orig_ixs)-1))
         ixs
     end
-    @inline update!(ixs::Void, orig_ixs::AbstractArray) = nothing
+    @inline update!(ixs::Nothing, orig_ixs::AbstractArray) = nothing
     @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) = (mask[orig_ixs] = false)
 
     # iterate over left rows and compose the left<->right index map
@@ -191,7 +191,7 @@ function update_row_maps!(left_table::AbstractDataFrame,
         RowIndexMap(sizehint!(Vector{Int}(), nrow(df)),
                     sizehint!(Vector{Int}(), nrow(df))) : nothing
     to_bimap(x::RowIndexMap) = x
-    to_bimap(::Void) = RowIndexMap(Vector{Int}(), Vector{Int}())
+    to_bimap(::Nothing) = RowIndexMap(Vector{Int}(), Vector{Int}())
 
     # init maps as requested
     left_ixs = init_map(left_table, map_left)
