@@ -36,6 +36,10 @@ module TestSubDataFrame
         @test view(df, Union{Integer, Missing}[1, 2]) == head(df, 2)
         @test view(df, Union{UInt, Missing}[1, 2]) == head(df, 2)
         @test view(df, Union{BigInt, Missing}[1, 2]) == head(df, 2)
+        @test view(df, :) == df
+        @test view(df, :, :) == df
+        @test view(df, 1, :) == head(df, 1)
+        @test view(df, :, 1) == df[:, [1]]
         @test_throws MissingException view(df, [missing, 1])
     end
 
@@ -74,6 +78,10 @@ module TestSubDataFrame
         @test view(df, Union{Integer, Missing}[1, 2]) == head(df, 2)
         @test view(df, Union{UInt, Missing}[1, 2]) == head(df, 2)
         @test view(df, Union{BigInt, Missing}[1, 2]) == head(df, 2)
+        @test view(df, :) == df
+        @test view(df, :, :) == df
+        @test view(df, 1, :) == head(df, 1)
+        @test view(df, :, 1) == df[:, [1]]
         @test_throws MissingException view(df, [missing, 1])
     end
 end
