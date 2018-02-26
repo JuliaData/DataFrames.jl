@@ -58,6 +58,7 @@ module TestDataFrame
 
     z = vcat(v, x)
 
+    # TODO: change test to throw an error after deprecation
     z2 = z[:, [1, 1, 2]]
     @test names(z2) == [:a, :a_1, :b]
 

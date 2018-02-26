@@ -301,8 +301,8 @@ module TestData
     )
     df2 = spltdf(df2)
 
-    m1 = join(df1, df2, on = :a)
-    m2 = join(df1, df2, on = [:x1, :x2, :x3])
+    m1 = join(df1, df2, on = :a, makeunique=true)
+    m2 = join(df1, df2, on = [:x1, :x2, :x3], makeunique=true)
     @test sort(m1[:a]) == sort(m2[:a])
 
     # test nonunique() with extra argument

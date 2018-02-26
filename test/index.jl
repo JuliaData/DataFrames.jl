@@ -6,23 +6,19 @@ push!(i, :A)
 push!(i, :B)
 
 inds = Any[1,
-           1.0,
+           big(1),
            :A,
            [true, false],
            [1],
-           [1.0],
-           1.0:1.0,
+           [big(1)],
+           big(1):big(1),
            [:A],
            Union{Bool, Missing}[true, false],
            Union{Int, Missing}[1],
-           Union{Float64, Missing}[1.0],
+           Union{BigInt, Missing}[big(1)],
            Union{Symbol, Missing}[:A],
            Any[1],
-           Any[1, missing],
-           Any[true, missing],
-           Any[:A],
-           Any[:A, missing],
-           [true, missing]]
+           Any[:A]]
 
 for ind in inds
     if ind == :A || ndims(ind) == 0
@@ -31,6 +27,18 @@ for ind in inds
         @test (i[ind] == [1])
     end
 end
+
+# TODO: add tests that above indices throw error after deprecation period
+# [1.0,
+# 1.0:1.0,
+# [true],
+# [false],
+# true,
+# false,
+# Any[1, missing],
+# Any[true, missing],
+# Any[:A, missing],
+# [true, missing]]
 
 @test i[1:1] == 1:1
 
@@ -45,7 +53,7 @@ end
 @test i[Symbol[]] == Int[]
 
 @test names(i) == [:A,:B]
-@test names!(i, [:a,:a], allow_duplicates=true) == Index([:a,:a_1])
+@test names!(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
 @test_throws ArgumentError names!(i, [:a,:a])
 @test names!(i, [:a,:b]) == Index([:a,:b])
 @test rename(i, Dict(:a=>:A, :b=>:B)) == Index([:A,:B])
