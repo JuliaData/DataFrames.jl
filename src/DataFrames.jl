@@ -9,14 +9,23 @@ module DataFrames
 
 using Reexport, StatsBase, SortingAlgorithms, Compat
 @reexport using CategoricalArrays, Missings
-using Base: Sort, Order
+using Base.Sort
+using Base.Order
 using Compat.Unicode
 using Compat.Printf
 
 if VERSION >= v"0.7.0-DEV.2738"
+    using Unicode: normalize
+
     const kwpairs = pairs
 else
     kwpairs(x::AbstractArray) = (first(v) => last(v) for v in x)
+    macro isdefined(sym)
+        sym = Expr(:quote, sym)
+        esc(:(isdefined($sym)))
+    end
+    using Compat.IOBuffer
+    const normalize = normalize_string  # requires that we don't use LinearAlgebra normalize
 end
 
 ##############################################################################
@@ -99,6 +108,6 @@ include("dataframerow/show.jl")
 include("abstractdataframe/sort.jl")
 include("dataframe/sort.jl")
 
-include("deprecated.jl")
+# include("deprecated.jl")
 
 end # module DataFrames

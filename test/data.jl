@@ -5,10 +5,10 @@ module TestData
 
     #test_group("constructors")
     df1 = DataFrame(Any[[1, 2, missing, 4], ["one", "two", missing, "four"]], [:Ints, :Strs])
-    df2 = DataFrame(Any[[1, 2, missing, 4], ["one", "two", missing, "four"]])
-    df3 = DataFrame(Any[[1, 2, missing, 4]])
-    df4 = DataFrame(Any[Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)])
-    df5 = DataFrame(Any[Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]])
+    df2 = DataFrame(Any[[1, 2, missing, 4], ["one", "two", missing, "four"]], [:x1, :x2])
+    df3 = DataFrame(Any[[1, 2, missing, 4]], [:x1])
+    df4 = DataFrame(Any[Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)], [:x1, :x2])
+    df5 = DataFrame(Any[Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]], [:x1, :x2])
     df6 = DataFrame(Any[[1, 2, missing, 4], [1, 2, missing, 4], ["one", "two", missing, "four"]],
                     [:A, :B, :C])
     df7 = DataFrame(x = [1, 2, missing, 4], y = ["one", "two", missing, "four"])
@@ -301,8 +301,8 @@ module TestData
     )
     df2 = spltdf(df2)
 
-    m1 = join(df1, df2, on = :a)
-    m2 = join(df1, df2, on = [:x1, :x2, :x3])
+    m1 = join(df1, df2, on = :a, makeunique=true)
+    m2 = join(df1, df2, on = [:x1, :x2, :x3], makeunique=true)
     @test sort(m1[:a]) == sort(m2[:a])
 
     # test nonunique() with extra argument

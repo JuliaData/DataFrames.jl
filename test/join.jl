@@ -66,7 +66,7 @@ module TestJoin
     @test join(df1, df2[[:C]], kind = :cross) == cross
 
     # Cross joins handle naming collisions
-    @test size(join(df1, df1, kind = :cross)) == (4, 4)
+    @test size(join(df1, df1, kind = :cross; makeunique=true)) == (4, 4)
 
     # Cross joins don't take keys
     @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
@@ -127,7 +127,7 @@ module TestJoin
                     C = 1)
     categorical!(df1, :A)
     categorical!(df1, :B)
-    join(df1, df1, on = [:A, :B], kind = :inner)
+    join(df1, df1, on = [:A, :B], kind = :inner; makeunique=true)
 
     # Test that join works when mixing Array{Union{T, Missing}} with Array{T} (issue #1088)
     df = DataFrame(Name = Union{String, Missing}["A", "B", "C"],
@@ -159,12 +159,12 @@ module TestJoin
         @test typeof.(join(df1, df2, kind=:cross).columns) ==
             [Vector{Int}, Vector{Float64}, Vector{Int}, Vector{Float64}]
 
-        i(on) = join(df1, df2, on = on, kind = :inner)
-        l(on) = join(df1, df2, on = on, kind = :left)
-        r(on) = join(df1, df2, on = on, kind = :right)
-        o(on) = join(df1, df2, on = on, kind = :outer)
-        s(on) = join(df1, df2, on = on, kind = :semi)
-        a(on) = join(df1, df2, on = on, kind = :anti)
+        i(on) = join(df1, df2, on = on, kind = :inner, makeunique=true)
+        l(on) = join(df1, df2, on = on, kind = :left, makeunique=true)
+        r(on) = join(df1, df2, on = on, kind = :right, makeunique=true)
+        o(on) = join(df1, df2, on = on, kind = :outer, makeunique=true)
+        s(on) = join(df1, df2, on = on, kind = :semi, makeunique=true)
+        a(on) = join(df1, df2, on = on, kind = :anti, makeunique=true)
 
         @test s(:id) ==
               s(:fid) ==
@@ -231,21 +231,21 @@ module TestJoin
         df2 = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
                             CategoricalArray([0.0, 1.0, 2.0, 3.0, 4.0])], [:id, :fid])
 
-        @test join(df1, df2, kind=:cross) ==
+        @test join(df1, df2, kind=:cross, makeunique=true) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
                           repeat([1, 3, 5], inner = 5),
                           repeat([0, 1, 2, 3, 4], outer = 3),
                           repeat([0, 1, 2, 3, 4], outer = 3)],
                       [:id, :fid, :id_1, :fid_1])
-        @test all(isa.(join(df1, df2, kind=:cross).columns,
+        @test all(isa.(join(df1, df2, kind=:cross, makeunique=true).columns,
                        [CategoricalVector{T} for T in (Int, Float64, Int, Float64)]))
 
-        i(on) = join(df1, df2, on = on, kind = :inner)
-        l(on) = join(df1, df2, on = on, kind = :left)
-        r(on) = join(df1, df2, on = on, kind = :right)
-        o(on) = join(df1, df2, on = on, kind = :outer)
-        s(on) = join(df1, df2, on = on, kind = :semi)
-        a(on) = join(df1, df2, on = on, kind = :anti)
+        i(on) = join(df1, df2, on = on, kind = :inner, makeunique=true)
+        l(on) = join(df1, df2, on = on, kind = :left, makeunique=true)
+        r(on) = join(df1, df2, on = on, kind = :right, makeunique=true)
+        o(on) = join(df1, df2, on = on, kind = :outer, makeunique=true)
+        s(on) = join(df1, df2, on = on, kind = :semi, makeunique=true)
+        a(on) = join(df1, df2, on = on, kind = :anti, makeunique=true)
 
         @test s(:id) ==
               s(:fid) ==
@@ -520,43 +520,43 @@ module TestJoin
         @test eltypes(join(l, r, on=[:a, :b], kind=:outer)) == [Int, CS]
 
         # joins by a
-        @test join(l, r, on=:a, kind=:inner) ≅
+        @test join(l, r, on=:a, kind=:inner, makeunique=true) ≅
             DataFrame(a=Int[], b=similar(l[:b], 0), b_1=similar(r[:b], 0))
-        @test eltypes(join(l, r, on=:a, kind=:inner)) == [Int, CS, CS]
+        @test eltypes(join(l, r, on=:a, kind=:inner, makeunique=true)) == [Int, CS, CS]
 
-        @test join(l, r, on=:a, kind=:left) ≅
+        @test join(l, r, on=:a, kind=:left, makeunique=true) ≅
             DataFrame(a=l[:a], b=l[:b], b_1=similar_missing(r[:b], nl))
-        @test eltypes(join(l, r, on=:a, kind=:left)) == [Int, CS, Union{CS, Missing}]
+        @test eltypes(join(l, r, on=:a, kind=:left, makeunique=true)) == [Int, CS, Union{CS, Missing}]
 
-        @test join(l, r, on=:a, kind=:right) ≅
+        @test join(l, r, on=:a, kind=:right, makeunique=true) ≅
             DataFrame(a=r[:a], b=similar_missing(l[:b], nr), b_1=r[:b])
-        @test eltypes(join(l, r, on=:a, kind=:right)) == [Int, Union{CS, Missing}, CS]
+        @test eltypes(join(l, r, on=:a, kind=:right, makeunique=true)) == [Int, Union{CS, Missing}, CS]
 
-        @test join(l, r, on=:a, kind=:outer) ≅
+        @test join(l, r, on=:a, kind=:outer, makeunique=true) ≅
             DataFrame(a=vcat(l[:a], r[:a]),
                       b=vcat(l[:b], fill(missing, nr)),
                       b_1=vcat(fill(missing, nl), r[:b]))
-        @test eltypes(join(l, r, on=:a, kind=:outer)) ==
+        @test eltypes(join(l, r, on=:a, kind=:outer, makeunique=true)) ==
             [Int, Union{CS, Missing}, Union{CS, Missing}]
 
         # joins by b
-        @test join(l, r, on=:b, kind=:inner) ≅
+        @test join(l, r, on=:b, kind=:inner, makeunique=true) ≅
             DataFrame(a=Int[], b=similar(l[:b], 0), a_1=similar(r[:b], 0))
-        @test eltypes(join(l, r, on=:b, kind=:inner)) == [Int, CS, Int]
+        @test eltypes(join(l, r, on=:b, kind=:inner, makeunique=true)) == [Int, CS, Int]
 
-        @test join(l, r, on=:b, kind=:left) ≅
+        @test join(l, r, on=:b, kind=:left, makeunique=true) ≅
             DataFrame(a=l[:a], b=l[:b], a_1=fill(missing, nl))
-        @test eltypes(join(l, r, on=:b, kind=:left)) == [Int, CS, Union{Int, Missing}]
+        @test eltypes(join(l, r, on=:b, kind=:left, makeunique=true)) == [Int, CS, Union{Int, Missing}]
 
-        @test join(l, r, on=:b, kind=:right) ≅
+        @test join(l, r, on=:b, kind=:right, makeunique=true) ≅
             DataFrame(a=fill(missing, nr), b=r[:b], a_1=r[:a])
-        @test eltypes(join(l, r, on=:b, kind=:right)) == [Union{Int, Missing}, CS, Int]
+        @test eltypes(join(l, r, on=:b, kind=:right, makeunique=true)) == [Union{Int, Missing}, CS, Int]
 
-        @test join(l, r, on=:b, kind=:outer) ≅
+        @test join(l, r, on=:b, kind=:outer, makeunique=true) ≅
             DataFrame(a=vcat(l[:a], fill(missing, nr)),
                       b=vcat(l[:b], r[:b]),
                       a_1=vcat(fill(missing, nl), r[:a]))
-        @test eltypes(join(l, r, on=:b, kind=:outer)) ==
+        @test eltypes(join(l, r, on=:b, kind=:outer, makeunique=true)) ==
             [Union{Int, Missing}, CS, Union{Int, Missing}]
     end
 end

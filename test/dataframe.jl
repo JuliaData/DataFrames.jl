@@ -58,8 +58,9 @@ module TestDataFrame
 
     z = vcat(v, x)
 
-    z2 = z[:, [1, 1, 2]]
-    @test names(z2) == [:a, :a_1, :b]
+    # TODO does getindex require makeunique argument?, currently this depwarns
+    # z2 = z[:, [1, 1, 2]]
+    # @test names(z2) == [:a, :a_1, :b]
 
     #test_group("DataFrame assignment")
     # Insert single column
@@ -520,7 +521,7 @@ module TestDataFrame
     end
 
     @testset "misc" begin
-        df = DataFrame(Any[collect('A':'C')])
+        df = DataFrame(Any[collect('A':'C')], [:x1])
         @test sprint(dump, df) == """
                                   DataFrames.DataFrame  3 observations of 1 variables
                                     x1: Array{Char}((3,))
@@ -533,13 +534,13 @@ module TestDataFrame
     end
 
     @testset "column conversions" begin
-        df = DataFrame(Any[collect(1:10), collect(1:10)])
+        df = DataFrame(Any[collect(1:10), collect(1:10)], [:x1, :x2])
         @test !isa(df[1], Vector{Union{Int, Missing}})
         allowmissing!(df, 1)
         @test isa(df[1], Vector{Union{Int, Missing}})
         @test !isa(df[2], Vector{Union{Int, Missing}})
 
-        df = DataFrame(Any[collect(1:10), collect(1:10)])
+        df = DataFrame(Any[collect(1:10), collect(1:10)], [:x1, :x2])
         allowmissing!(df, [1,2])
         @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
 
@@ -548,7 +549,7 @@ module TestDataFrame
         @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
 
         df = DataFrame(Any[CategoricalArray(1:10),
-                           CategoricalArray(string.('a':'j'))])
+                           CategoricalArray(string.('a':'j'))], [:x1, :x2])
         allowmissing!(df)
         @test all(issubtype.(typeof.(df.columns), CategoricalVector))
         @test eltypes(df)[1] <: Union{CategoricalValue{Int}, Missing}

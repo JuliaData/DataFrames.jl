@@ -158,7 +158,7 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector)
     end
     length(idxs) == 0 && return Int[] # special case of empty idxs
     if idxs[1] isa Real
-        if !all(v -> v isa Integer && !(v isa Bool), idxs)
+        if !all(v -> v isa Union{<:Integer,Symbol}, idxs)
             # TODO: this line should be changed to throw an error after deprecation
             Base.depwarn("indexing by vector of numbers other than Integer is deprecated", :getindex)
         end

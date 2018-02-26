@@ -10,7 +10,7 @@ VERSION < v"0.6.0-dev.2194" && push!(RESERVED_WORDS, "ccall")
 VERSION >= v"0.6.0-dev.2698" && push!(RESERVED_WORDS, "struct")
 
 function identifier(s::AbstractString)
-    s = normalize_string(s)
+    s = normalize(s)
     if !isidentifier(s)
         s = makeidentifier(s)
     end
@@ -21,7 +21,7 @@ function makeidentifier(s::AbstractString)
     i = start(s)
     done(s, i) && return "x"
 
-    res = IOBuffer(sizeof(s) + 1)
+    res = IOBuffer(zeros(UInt8, sizeof(s)+1), write=true)
 
     (c, i) = next(s, i)
     under = if is_id_start_char(c)
@@ -46,7 +46,9 @@ function makeidentifier(s::AbstractString)
         end
     end
 
-    return String(take!(res))
+    # return String(take!(res))
+    # TODO this is to fix a bug in Compat for 0.6
+    String(res.data[1:(res.ptr-1)])
 end
 
 function make_unique(names::Vector{Symbol}; makeunique::Bool=false)
@@ -92,7 +94,7 @@ Generate standardized names for columns of a DataFrame. The first name will be `
 second `:x2`, etc.
 """
 function gennames(n::Integer)
-    res = Array{Symbol}(n)
+    res = Array{Symbol}(uninitialized, n)
     for i in 1:n
         res[i] = Symbol(@sprintf "x%d" i)
     end

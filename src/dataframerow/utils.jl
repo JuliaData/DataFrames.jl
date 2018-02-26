@@ -137,7 +137,7 @@ end
 # Builds RowGroupDict for a given DataFrame.
 # Partly uses the code of Wes McKinney's groupsort_indexer in pandas (file: src/groupby.pyx).
 function group_rows(df::AbstractDataFrame, skipmissing::Bool = false)
-    groups = Vector{Int}(nrow(df))
+    groups = Vector{Int}(uninitialized, nrow(df))
     ngroups, rhashes, gslots = row_group_slots(df, groups, skipmissing)
 
     # count elements in each group
@@ -147,7 +147,7 @@ function group_rows(df::AbstractDataFrame, skipmissing::Bool = false)
     end
 
     # group start positions in a sorted table
-    starts = Vector{Int}(ngroups)
+    starts = Vector{Int}(uninitialized, ngroups)
     if !isempty(starts)
         starts[1] = 1
         @inbounds for i in 1:(ngroups-1)
@@ -156,8 +156,8 @@ function group_rows(df::AbstractDataFrame, skipmissing::Bool = false)
     end
 
     # define row permutation that sorts them into groups
-    rperm = Vector{Int}(length(groups))
-    copy!(stops, starts)
+    rperm = Vector{Int}(uninitialized, length(groups))
+    copyto!(stops, starts)
     @inbounds for (i, gix) in enumerate(groups)
         rperm[stops[gix]] = i
         stops[gix] += 1

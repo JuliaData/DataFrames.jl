@@ -86,18 +86,18 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     nrow = length(all_orig_left_ixs) + roil
     @assert nrow == length(all_orig_right_ixs) + loil
     ncleft = ncol(joiner.dfl)
-    cols = Vector{Any}(ncleft + ncol(dfr_noon))
+    cols = Vector{Any}(uninitialized, ncleft + ncol(dfr_noon))
     # inner and left joins preserve non-missingness of the left frame
     _similar_left = kind == :inner || kind == :left ? similar : similar_missing
     for (i, col) in enumerate(columns(joiner.dfl))
         cols[i] = _similar_left(col, nrow)
-        copy!(cols[i], view(col, all_orig_left_ixs))
+        copyto!(cols[i], view(col, all_orig_left_ixs))
     end
     # inner and right joins preserve non-missingness of the right frame
     _similar_right = kind == :inner || kind == :right ? similar : similar_missing
     for (i, col) in enumerate(columns(dfr_noon))
         cols[i+ncleft] = _similar_right(col, nrow)
-        copy!(cols[i+ncleft], view(col, all_orig_right_ixs))
+        copyto!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
     end
     res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)), makeunique=makeunique)
@@ -108,7 +108,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         for (on_col_ix, on_col) in enumerate(joiner.left_on)
             # fix the result of the rightjoin by taking the nonmissing values from the right table
             offset = nrow - length(rightonly_ixs.orig) + 1
-            copy!(res[on_col], offset, view(joiner.dfr_on[on_col_ix], rightonly_ixs.orig))
+            copyto!(res[on_col], offset, view(joiner.dfr_on[on_col_ix], rightonly_ixs.orig))
         end
     end
     if kind ∈ (:right, :outer) && !isempty(rightonly_ixs.join)

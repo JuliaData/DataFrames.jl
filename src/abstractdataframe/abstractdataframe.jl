@@ -97,6 +97,7 @@ columns(df::T) where {T <: AbstractDataFrame} = Cols{T}(df)
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
+# TODO: remove allow_duplicates after deprecation period
 """
 Set column names
 
@@ -129,7 +130,6 @@ names!(df, [:a, :b, :a], makeunique=true)  # renames second :a to :a_1
 ```
 
 """
-# TODO: remove allow_duplicates after deprecation period
 function names!(df::AbstractDataFrame, vals; allow_duplicates=false, makeunique::Bool=false)
     if allow_duplicates
         Base.depwarn("Keyword argument allow_duplicates is deprecated. Use makeunique.", :names!)
@@ -669,7 +669,7 @@ end
 nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
-if isdefined(:unique!)
+if @isdefined(unique!)
     import Base.unique!
 end
 
@@ -872,6 +872,7 @@ end
 
 ## Documentation for methods defined elsewhere
 
+# nrow, ncol
 """
 Number of rows or columns in an AbstractDataFrame
 
@@ -902,4 +903,3 @@ ncol(df)
 ```
 
 """
-# nrow, ncol
