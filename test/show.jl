@@ -210,7 +210,7 @@ module TestShow
     │ 5     │ x5   │ Float64 │ 0       │ 0.138763  …  0.649056 │"""
 
     io = IOBuffer()
-    df_small = DataFrame([1.0:5.0;], [:x1])
+    df_small = DataFrame(reduce(hcat, 1.0:5.0))
     showcols(io, df_small)
     str = String(take!(io))
     @test str == """
@@ -224,7 +224,7 @@ module TestShow
     │ 5     │ x5   │ Float64 │ 0       │ 5.0    │"""
 
     io = IOBuffer()
-    df_min = DataFrame(rand(0,5), [:x1])
+    df_min = DataFrame(rand(0,5))
     showcols(io, df_min)
     str = String(take!(io))
     @test str == """

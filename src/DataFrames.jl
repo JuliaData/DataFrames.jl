@@ -20,12 +20,9 @@ if VERSION >= v"0.7.0-DEV.2738"
     const kwpairs = pairs
 else
     kwpairs(x::AbstractArray) = (first(v) => last(v) for v in x)
-    macro isdefined(sym)
-        sym = Expr(:quote, sym)
-        esc(:(isdefined($sym)))
-    end
     using Compat.IOBuffer
-    const normalize = normalize_string  # requires that we don't use LinearAlgebra normalize
+    import Base.LinAlg: normalize
+    normalize(str::AbstractString) = normalize_string(str)
 end
 
 ##############################################################################
