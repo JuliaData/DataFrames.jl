@@ -135,7 +135,7 @@ end
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}})
     if any(ismissing, idx)
         # TODO: this line should be changed to throw an error after deprecation
-        # throw(ArgumentError("missing values for column indexing are not alloved"))
+        # throw(ArgumentError("missing values are not allowed for column indexing"))
         Base.depwarn("using missing in column indexing is deprecated", :getindex)
     end
     getindex(x, collect(Missings.replace(idx, false)))
@@ -144,7 +144,7 @@ end
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
         # TODO: this line should be changed to throw an error after deprecation
-        # throw(ArgumentError("Bool values are not allowed for indexing except for Vector{Bool}"))
+        # throw(ArgumentError("Bool values except for Vector{Bool} are not allowed for column indexing"))
         Base.depwarn("Indexing with Bool values is deprecated except for Vector{Bool}")
     end
     Vector{Int}(idx)
@@ -156,7 +156,7 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector)
     idxs = filter(!ismissing, idx)
     if length(idxs) != length(idx)
         # TODO: passing missing will throw an error after deprecation
-        # throw(ArgumentError("missing values for column indexing are not alloved"))
+        # throw(ArgumentError("missing values are not allowed for column indexing"))
         Base.depwarn("using missing in column indexing is deprecated", :getindex)
     end
     length(idxs) == 0 && return Int[] # special case of empty idxs
