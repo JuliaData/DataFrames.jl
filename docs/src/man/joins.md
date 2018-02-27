@@ -79,11 +79,11 @@ julia> join(names, jobs, on = :ID, kind = :right)
 
 julia> join(names, jobs, on = :ID, kind = :outer)
 3×3 DataFrames.DataFrame
-│ Row │ ID │ Name        │ Job       │
-├─────┼────┼─────────────┼───────────┤
-│ 1   │ 20 │ John Doe    │ Lawyer    │
-│ 2   │ 40 │ Jane Doe    │ missing   │
-│ 3   │ 60 │ missing     │ Astronaut │
+│ Row │ ID │ Name     │ Job       │
+├─────┼────┼──────────┼───────────┤
+│ 1   │ 20 │ John Doe │ Lawyer    │
+│ 2   │ 40 │ Jane Doe │ missing   │
+│ 3   │ 60 │ missing  │ Astronaut │
 
 julia> join(names, jobs, on = :ID, kind = :semi)
 1×2 DataFrames.DataFrame

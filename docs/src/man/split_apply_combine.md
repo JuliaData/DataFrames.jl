@@ -78,7 +78,7 @@ julia> by(iris, :Species) do df
 A second approach to the Split-Apply-Combine strategy is implemented in the `aggregate` function, which also takes three arguments: (1) a DataFrame, (2) one or more columns to split the DataFrame on, and (3) one or more functions that are used to compute a summary of each subset of the DataFrame. Each function is applied to each column that was not used to split the DataFrame, creating new columns of the form `$name_$function`. For named functions like `mean` this will produce columns with names like `SepalLength_mean`. For anonymous functions like `x -> sqrt(x)^e`, which Julia tracks and references by a numerical identifier e.g. `#12`, the produced columns will be `SepalLength_#12`. We show several examples of the `aggregate` function applied to the `iris` dataset below:
 
 ```jldoctest sac
-julia> aggregate(iris, :Species, length)
+julia> showall(aggregate(iris, :Species, length))
 3×5 DataFrames.DataFrame
 │ Row │ Species    │ SepalLength_length │ SepalWidth_length │ PetalLength_length │ PetalWidth_length │
 ├─────┼────────────┼────────────────────┼───────────────────┼────────────────────┼───────────────────┤
@@ -86,7 +86,7 @@ julia> aggregate(iris, :Species, length)
 │ 2   │ versicolor │ 50                 │ 50                │ 50                 │ 50                │
 │ 3   │ virginica  │ 50                 │ 50                │ 50                 │ 50                │
 
-julia> aggregate(iris, :Species, [sum, mean])
+julia> showall(aggregate(iris, :Species, [sum, mean]))
 3×9 DataFrames.DataFrame
 │ Row │ Species    │ SepalLength_sum │ SepalWidth_sum │ PetalLength_sum │ PetalWidth_sum │ SepalLength_mean │ SepalWidth_mean │ PetalLength_mean │ PetalWidth_mean │
 ├─────┼────────────┼─────────────────┼────────────────┼─────────────────┼────────────────┼──────────────────┼─────────────────┼──────────────────┼─────────────────┤

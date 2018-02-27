@@ -51,7 +51,7 @@ julia> df[:A]
   9
  10
 
- ```
+```
 
 Refering to the first element of the first column:
 
