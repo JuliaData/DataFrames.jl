@@ -69,17 +69,17 @@ module TestConstructors
     @test DataFrame(a=1, b=1:2) == DataFrame(a=[1,1], b=[1,2])
 
     @testset "pair constructor" begin
-        df = DataFrame(:x1 => zeros(3), :x2 => ones(3))
+        global df = DataFrame(:x1 => zeros(3), :x2 => ones(3))
         @test size(df, 1) == 3
         @test size(df, 2) == 2
         @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
 
-        df = DataFrame(:type => [], :begin => [])
+        global df = DataFrame(:type => [], :begin => [])
         @test names(df) == [:type, :begin]
     end
 
     @testset "associative" begin
-        df = DataFrame(Dict(:A => 1:3, :B => 4:6))
+        global df = DataFrame(Dict(:A => 1:3, :B => 4:6))
         @test df == DataFrame(A = 1:3, B = 4:6)
         @test eltypes(df) == [Int, Int]
     end
@@ -97,7 +97,7 @@ module TestConstructors
     end
 
     @testset "column types" begin
-        df = DataFrame(A = 1:3, B = 2:4, C = 3:5)
+        global df = DataFrame(A = 1:3, B = 2:4, C = 3:5)
         answer = [Array{Int,1}, Array{Int,1}, Array{Int,1}]
         @test map(typeof, df.columns) == answer
         df[:D] = [4, 5, missing]
@@ -109,7 +109,7 @@ module TestConstructors
     end
 
     @testset "categorical constructor" begin
-        df = DataFrame([Int, String], [:a, :b], [false, true], 3)
+        global df = DataFrame([Int, String], [:a, :b], [false, true], 3)
         @test !(df[:a] isa CategoricalVector)
         @test df[:b] isa CategoricalVector
         @test_throws DimensionMismatch DataFrame([Int, String], [:a, :b], [true], 3)

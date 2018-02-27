@@ -200,7 +200,7 @@ function update_row_maps!(left_table::AbstractDataFrame,
     rightonly_mask = map_rightonly ? fill(true, nrow(right_table)) : nothing
     update_row_maps!(left_table, right_table, right_dict, left_ixs, leftonly_ixs, right_ixs, rightonly_mask)
     if map_rightonly
-        rightonly_orig_ixs = find(rightonly_mask)
+        rightonly_orig_ixs = findall(rightonly_mask)
         rightonly_ixs = RowIndexMap(rightonly_orig_ixs,
                                     collect(length(right_ixs.orig) +
                                             (leftonly_ixs === nothing ? 0 : length(leftonly_ixs)) +

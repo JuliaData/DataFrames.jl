@@ -192,7 +192,7 @@ combine(map(d -> mean(skipmissing(d[:c])), gd))
 function combine(ga::GroupApplied)
     gd, vals = ga.gd, ga.vals
     valscat = _vcat(vals)
-    idx = Vector{Int}(size(valscat, 1))
+    idx = Vector{Int}(uninitialized, size(valscat, 1))
     j = 0
     @inbounds for (start, val) in zip(gd.starts, vals)
         n = size(val, 1)

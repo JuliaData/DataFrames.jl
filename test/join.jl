@@ -147,8 +147,8 @@ module TestJoin
         DataFrame([Vector{Union{Int, Missing}}(1:10), Vector{Union{Int, Missing}}(3:12), collect(2:11)], [:x, :z, :y])
 
     @testset "all joins" begin
-        df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
-        df2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
+        global df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
+        global df2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
 
         @test join(df1, df2, kind=:cross, makeunique=true) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
@@ -226,10 +226,10 @@ module TestJoin
     end
 
     @testset "all joins with CategoricalArrays" begin
-        df1 = DataFrame(Any[CategoricalArray([1, 3, 5]),
-                            CategoricalArray([1.0, 3.0, 5.0])], [:id, :fid])
-        df2 = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
-                            CategoricalArray([0.0, 1.0, 2.0, 3.0, 4.0])], [:id, :fid])
+        global df1 = DataFrame(Any[CategoricalArray([1, 3, 5]),
+                               CategoricalArray([1.0, 3.0, 5.0])], [:id, :fid])
+        global df2 = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
+                               CategoricalArray([0.0, 1.0, 2.0, 3.0, 4.0])], [:id, :fid])
 
         @test join(df1, df2, kind=:cross, makeunique=true) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),

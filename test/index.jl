@@ -1,5 +1,6 @@
 module TestIndex
-using Compat, Compat.Test, DataFrames, DataFrames.Index
+using Compat, Compat.Test, DataFrames
+using DataFrames: Index
 
 i = Index()
 push!(i, :A)

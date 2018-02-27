@@ -624,13 +624,13 @@ function builddf(rows::Integer,
                  fields::Integer,
                  p::ParsedCSV,
                  o::ParseOptions)
-    columns = Vector{Any}(cols)
+    columns = Vector{Any}(uninitialized, cols)
 
     for j in 1:cols
         if isempty(o.eltypes)
-            values = Vector{Int}(rows)
+            values = Vector{Int}(uninitialized, rows)
         else
-            values = Vector{o.eltypes[j]}(rows)
+            values = Vector{o.eltypes[j]}(uninitialized, rows)
         end
 
         msng = falses(rows)
@@ -827,7 +827,7 @@ function findcorruption(rows::Integer,
         lengths[i] = f
     end
     m = median(lengths)
-    corruptrows = find(lengths .!= m)
+    corruptrows = findall(lengths .!= m)
     l = corruptrows[1]
     error(@sprintf("Saw %d rows, %d columns and %d fields\n * Line %d has %d columns\n",
                    rows,

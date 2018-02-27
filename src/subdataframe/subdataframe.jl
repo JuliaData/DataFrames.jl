@@ -77,7 +77,7 @@ function SubDataFrame(parent::DataFrame, rows::AbstractVector{<:Integer})
 end
 
 function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool})
-    return SubDataFrame(parent, find(rows))
+    return SubDataFrame(parent, findall(rows))
 end
 
 function SubDataFrame(sdf::SubDataFrame, rowinds::Union{T, AbstractVector{T}}) where {T <: Integer}

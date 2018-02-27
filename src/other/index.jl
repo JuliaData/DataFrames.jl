@@ -129,7 +129,7 @@ Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, id
 
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
-    find(idx)
+    findall(idx)
 end
 
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}})

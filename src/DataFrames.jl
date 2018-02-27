@@ -16,14 +16,16 @@ using Compat.Printf
 
 if VERSION >= v"0.7.0-DEV.2738"
     using Unicode: normalize
-
+    import Base: lastindex
     const kwpairs = pairs
 else
     kwpairs(x::AbstractArray) = (first(v) => last(v) for v in x)
     using Compat.IOBuffer
     import Base.LinAlg: normalize
     normalize(str::AbstractString) = normalize_string(str)
+    macro warn(str...) esc(:(warn($str...))) end
 end
+
 
 ##############################################################################
 ##
@@ -105,6 +107,6 @@ include("dataframerow/show.jl")
 include("abstractdataframe/sort.jl")
 include("dataframe/sort.jl")
 
-# include("deprecated.jl")
+include("deprecated.jl")
 
 end # module DataFrames

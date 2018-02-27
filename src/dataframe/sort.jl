@@ -20,7 +20,7 @@ function Base.sort!(df::DataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering
             continue
         end
 
-        copy!(pp,p)
+        copyto!(pp,p)
         Base.permute!!(col, pp)
     end
     df

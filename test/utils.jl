@@ -1,5 +1,11 @@
 module TestUtils
     using Compat, Compat.Test, DataFrames, StatsBase
+    if VERSION ≤ v"0.7.0-"
+        using Compat.Random
+        using DataFrames.@warn
+    else
+        using Random
+    end
     import DataFrames: identifier
 
     @test identifier("%_B*_\tC*") == :_B_C_
@@ -31,7 +37,7 @@ module TestUtils
             @test rw == DataFrames.RESERVED_WORDS
         end
     else
-        warn("Unable to validate reserved words against parser. ",
+        @warn("Unable to validate reserved words against parser. ",
              "Expected if Julia was not built from source.")
     end
 
@@ -89,20 +95,20 @@ module TestUtils
             3rd Quartile:   4.250000
             Maximum:        5.000000
             Length:         4
-            Type:           Union{Missings.Missing, $Int}
+            Type:           Union{Missing, $Int}
             Number Missing: 0
             % Missing:      0.000000
 
             cat
             Summary Stats:
             Length:         4
-            Type:           CategoricalArrays.CategoricalValue{$Int,$DRT}
+            Type:           CategoricalValue{$Int,$DRT}
             Number Unique:  4
 
             missingcat
             Summary Stats:
             Length:         4
-            Type:           Union{Missings.Missing, CategoricalArrays.CategoricalValue{$Int,$DRT}}
+            Type:           Union{Missing, CategoricalValue{$Int,$DRT}}
             Number Unique:  4
             Number Missing: 0
             % Missing:      0.000000
@@ -151,6 +157,8 @@ module TestUtils
 
             """
             out = String(take!(io))
+            # TODO this test is very sensitive to irrelevant details of show implementations 
+            # should probably be reconsidered
             @test (out == missingfirst || out == missingsecond)
     end
 
@@ -161,7 +169,50 @@ module TestUtils
                            CategoricalArray{Union{Int, Missing}}(4:7)],
                        [:arr, :missingarr, :cat, :missingcat])
         describe(io, df)
-        @test String(take!(io)) ==
+        # Julia 0.7
+        missingfirst =
+            """
+            arr
+            Summary Stats:
+            Mean:           2.500000
+            Minimum:        1.000000
+            1st Quartile:   1.750000
+            Median:         2.500000
+            3rd Quartile:   3.250000
+            Maximum:        4.000000
+            Length:         4
+            Type:           $Int
+
+            missingarr
+            Summary Stats:
+            Mean:           3.500000
+            Minimum:        2.000000
+            1st Quartile:   2.750000
+            Median:         3.500000
+            3rd Quartile:   4.250000
+            Maximum:        5.000000
+            Length:         4
+            Type:           Union{Missing, $Int}
+            Number Missing: 0
+            % Missing:      0.000000
+
+            cat
+            Summary Stats:
+            Length:         4
+            Type:           CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}
+            Number Unique:  4
+
+            missingcat
+            Summary Stats:
+            Length:         4
+            Type:           Union{Missing, CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}}
+            Number Unique:  4
+            Number Missing: 0
+            % Missing:      0.000000
+
+            """
+        # Julia 0.6
+        missingsecond =
             """
             arr
             Summary Stats:
@@ -202,5 +253,7 @@ module TestUtils
             % Missing:      0.000000
 
             """
+        out = String(take!(io))
+        @test (out == missingfirst || out == missingsecond)
     end
 end
