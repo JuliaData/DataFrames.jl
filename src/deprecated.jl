@@ -1296,17 +1296,6 @@ function Base.getindex(x::AbstractIndex, idx::Real)
     Int(idx)
 end
 
-function Base.getindex(x::AbstractIndex, idx::AbstractRange)
-    Base.depwarn("Indexing with range of values that are not Integer is deprecated", :getindex)
-    getindex(x, collect(idx))
-end
-
-
-function Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool})
-    Base.depwarn("Indexing with range of Bool is deprecated", :getindex)
-    collect(Int, idx)
-end
-
 import Base: vcat
 @deprecate vcat(x::Vector{<:AbstractDataFrame}) vcat(x...)
 

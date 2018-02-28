@@ -14,17 +14,20 @@ module TestCat
     df4 = convert(DataFrame, [1:4 1:4])
     df5 = DataFrame(Any[Union{Int, Missing}[1,2,3,4], nvstr])
 
-    dfh = hcat(df3, df4)
+    dfh = hcat(df3, df4, makeunique=true)
     @test size(dfh, 2) == 3
     @test names(dfh) ≅ [:x1, :x1_1, :x2]
     @test dfh[:x1] ≅ df3[:x1]
-    @test dfh ≅ [df3 df4]
-    @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4)
+    @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4, makeunique=true)
 
-    dfh3 = hcat(df3, df4, df5)
+    dfa = DataFrame(a=[1,2])
+    dfb = DataFrame(b=[3,missing])
+    @test hcat(dfa, dfb) ≅ [dfa dfb]
+
+    dfh3 = hcat(df3, df4, df5, makeunique=true)
     @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
-    @test dfh3 ≅ hcat(dfh, df5)
-    @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5)
+    @test dfh3 ≅ hcat(dfh, df5, makeunique=true)
+    @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, makeunique=true)
 
     @test df2 ≅ DataFrames.hcat!(df2)
 
@@ -32,34 +35,34 @@ module TestCat
         df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
         gd = groupby(df, :A)
         answer = DataFrame(A = fill('A', 4), B = 1:4, A_1 = 'B', B_1 = 5:8, A_2 = 'C', B_2 = 9:12)
-        @test hcat(gd...) == answer
+        @test hcat(gd..., makeunique=true) == answer
         answer = answer[1:4]
-        @test hcat(gd[1], gd[2]) == answer
+        @test hcat(gd[1], gd[2], makeunique=true) == answer
     end
 
     @testset "hcat ::AbstractDataFrame" begin
         df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
         gd = groupby(df, :A)
         answer = DataFrame(A = fill('A', 4), B = 1:4, A_1 = 'B', B_1 = 5:8, A_2 = 'C', B_2 = 9:12)
-        @test hcat(gd...) == answer
+        @test hcat(gd..., makeunique=true) == answer
         answer = answer[1:4]
-        @test hcat(gd[1], gd[2]) == answer
+        @test hcat(gd[1], gd[2], makeunique=true) == answer
     end
 
     @testset "hcat ::AbstractVectors" begin
         df = DataFrame()
         DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10))
         @test df[1] == CategoricalVector(1:10)
-        DataFrames.hcat!(df, 1:10)
+        DataFrames.hcat!(df, 1:10, makeunique=true)
         @test df[2] == collect(1:10)
-        DataFrames.hcat!(df, collect(1:10))
+        DataFrames.hcat!(df, collect(1:10), makeunique=true)
         @test df[3] == collect(1:10)
 
         df = DataFrame()
         df2 = hcat(CategoricalVector{Union{Int, Missing}}(1:10), df)
         @test df2[1] == collect(1:10)
         @test names(df2) == [:x1]
-        df3 = hcat(11:20, df2)
+        df3 = hcat(11:20, df2, makeunique=true)
         @test df3[1] == collect(11:20)
         @test names(df3) == [:x1, :x1_1]
 

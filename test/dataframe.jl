@@ -58,6 +58,8 @@ module TestDataFrame
 
     z = vcat(v, x)
 
+    # TODO: uncomment the line below after deprecation
+    # @test_throws ArgumentError z[:, [1, 1, 2]]
     z2 = z[:, [1, 1, 2]]
     @test names(z2) == [:a, :a_1, :b]
 
