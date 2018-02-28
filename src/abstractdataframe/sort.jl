@@ -258,7 +258,7 @@ end
 
 Test whether data frame `df` sorted by column(s) `cols`.
 `cols` can be either a `Symbol` or `Integer` column index, or
-a tuple of vector of such indices.
+a tuple or vector of such indices.
 
 If `rev` is `true`, reverse sorting is performed. To enable reverse sorting
 only for some columns, pass `order(c, rev=true)` in `cols`, with `c` the
@@ -305,7 +305,7 @@ end
 
 Return a copy of data frame `df` sorted by column(s) `cols`.
 `cols` can be either a `Symbol` or `Integer` column index, or
-a tuple of vector of such indices.
+a tuple or vector of such indices.
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
