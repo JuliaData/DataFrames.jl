@@ -210,7 +210,7 @@ module TestShow
     │ 5     │ x5   │ Float64 │ 0       │ 0.138763  …  0.649056 │"""
 
     io = IOBuffer()
-    df_small = DataFrame([1.0:5.0;])
+    df_small = DataFrame(transpose([1.0:5.0;]))
     showcols(io, df_small)
     str = String(take!(io))
     @test str == """
