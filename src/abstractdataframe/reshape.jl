@@ -242,7 +242,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
         end
         if !warned_dup && mask_filled[i, j]
             @warn("Duplicate entries in unstack at row $k for key "*
-                 "$(refkeycol[k]) and variable $(keycol[k]).")
+                  "$(refkeycol[k]) and variable $(keycol[k]).")
             warned_dup = true
         end
         unstacked_val[j][i] = valuecol[k]

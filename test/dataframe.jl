@@ -425,20 +425,16 @@ module TestDataFrame
         df = DataFrame(id=Union{Int, Missing}[1, 2, 1, 2],
                        id2=Union{Int, Missing}[1, 2, 1, 2], 
                        variable=["a", "b", "a", "b"], value=[3, 4, 5, 6])
-        @static if VERSION >= v"0.6.0-dev.1980"
-            @test_warn "Duplicate entries in unstack at row 3 for key 1 and variable a." unstack(df, :id, :variable, :value)
-            @test_warn "Duplicate entries in unstack at row 3 for key (1, 1) and variable a." unstack(df, :variable, :value)
-        end
+        @test_warn "Duplicate entries in unstack at row 3 for key 1 and variable a." unstack(df, :id, :variable, :value)
+        @test_warn "Duplicate entries in unstack at row 3 for key (1, 1) and variable a." unstack(df, :variable, :value)
         a = unstack(df, :id, :variable, :value)
         @test a ≅ DataFrame(id = [1, 2], a = [5, missing], b = [missing, 6])
         b = unstack(df, :variable, :value)
         @test b ≅ DataFrame(id = [1, 2], id2 = [1, 2], a = [5, missing], b = [missing, 6])
 
         df = DataFrame(id=1:2, variable=["a", "b"], value=3:4)
-        @static if VERSION >= v"0.6.0-dev.1980"
-            @test_nowarn unstack(df, :id, :variable, :value)
-            @test_nowarn unstack(df, :variable, :value)
-        end
+        @test_nowarn unstack(df, :id, :variable, :value)
+        @test_nowarn unstack(df, :variable, :value)
         a = unstack(df, :id, :variable, :value)
         b = unstack(df, :variable, :value)
         @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, missing], b = [missing, 4])

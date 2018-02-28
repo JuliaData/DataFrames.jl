@@ -2,7 +2,7 @@ module TestConversions
     using Compat, Compat.Test, DataFrames
     using DataStructures: OrderedDict, SortedDict
     const ≅ = isequal
-    if VERSION ≥ "0.7.0-"
+    if VERSION ≥ v"0.7.0-"
         using InteractiveUtils
     end
 

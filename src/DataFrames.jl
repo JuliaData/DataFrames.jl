@@ -23,7 +23,7 @@ else
     using Compat.IOBuffer
     import Base.LinAlg: normalize
     normalize(str::AbstractString) = normalize_string(str)
-    macro warn(str...) esc(:(warn($str...))) end
+    macro warn(str...) esc(:(warn($(str...)))) end
 end
 
 
