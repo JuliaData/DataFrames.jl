@@ -77,9 +77,9 @@ end
 ##############################################################################
 
 function html_escape(cell::AbstractString)
-    cell = replace(cell, "&", "&amp;")
-    cell = replace(cell, "<", "&lt;")
-    cell = replace(cell, ">", "&gt;")
+    cell = replace(cell, "&"=>"&amp;")
+    cell = replace(cell, "<"=>"&lt;")
+    cell = replace(cell, ">"=>"&gt;")
     return cell
 end
 
@@ -139,10 +139,11 @@ function latex_char_escape(char::AbstractString)
         return string("\\", char)
     end
 end
+# in 0.7 this function will only ever get passed Char, in 0.6 always gets SubString
+latex_char_escape(char::Char) = latex_char_escape(string(char))
 
 function latex_escape(cell::AbstractString)
-    cell = replace(cell, ['\\','~','#','$','%','&','_','^','{','}'], latex_char_escape)
-    return cell
+    replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
 function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
@@ -165,7 +166,7 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
             write(io, " & ")
             cell = df[row,col]
             if !ismissing(cell)
-                if mimewritable(MIME("text/latex"), cell)
+                if showable(MIME("text/latex"), cell)
                     show(io, MIME("text/latex"), cell)
                 else
                     print(io, latex_escape(sprint(ourshowcompact, cell)))

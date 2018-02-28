@@ -249,7 +249,7 @@ function showrowindices(io::IO,
                 s = df[i, j]
                 strlen = ourstrwidth(s)
                 if ismissing(s)
-                    print_with_color(:light_black, io, s)
+                    printstyled(io, s, color=:light_black)
                 else
                     ourshowcompact(io, s)
                 end

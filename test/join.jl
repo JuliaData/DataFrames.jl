@@ -1,5 +1,6 @@
 module TestJoin
-    using Compat, Compat.Test, Base.Test, DataFrames, DataFrames.similar_missing
+    using Compat, Compat.Test, DataFrames
+    using DataFrames: similar_missing
     const ≅ = isequal
 
     name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],
@@ -179,7 +180,7 @@ module TestJoin
               typeof.(a(:fid).columns) ==
               typeof.(a([:id, :fid]).columns) == [Vector{Int}, Vector{Float64}]
 
-        on = :id
+        global on = :id
         @test i(on) == DataFrame(Any[[1, 3], [1, 3], [1, 3]], [:id, :fid, :fid_1])
         @test typeof.(i(on).columns) == [Vector{Int}, Vector{Float64}, Vector{Float64}]
         @test l(on) ≅ DataFrame(id = [1, 3, 5],
@@ -198,7 +199,7 @@ module TestJoin
         @test typeof.(o(on).columns) ==
             [Vector{Int}, Vector{Union{Float64, Missing}}, Vector{Union{Float64, Missing}}]
 
-        on = :fid
+        global on = :fid
         @test i(on) == DataFrame(Any[[1, 3], [1.0, 3.0], [1, 3]], [:id, :fid, :id_1])
         @test typeof.(i(on).columns) == [Vector{Int}, Vector{Float64}, Vector{Int}]
         @test l(on) ≅ DataFrame(id = [1, 3, 5],
@@ -214,7 +215,7 @@ module TestJoin
                                 id_1 = [1, 3, missing, 0, 2, 4])
         @test typeof.(o(on).columns) == [Vector{Union{Int, Missing}}, Vector{Float64}, Vector{Union{Int, Missing}}]
 
-        on = [:id, :fid]
+        global on = [:id, :fid]
         @test i(on) == DataFrame(Any[[1, 3], [1, 3]], [:id, :fid])
         @test typeof.(i(on).columns) == [Vector{Int}, Vector{Float64}]
         @test l(on) == DataFrame(id = [1, 3, 5], fid = [1, 3, 5])
@@ -265,7 +266,7 @@ module TestJoin
         @test all(isa.(a(:id).columns,
                        [CategoricalVector{T} for T in (Int, Float64)]))
 
-        on = :id
+        global on = :id
         @test i(on) == DataFrame(Any[[1, 3], [1, 3], [1, 3]], [:id, :fid, :fid_1])
         @test all(isa.(i(on).columns,
                        [CategoricalVector{T} for T in (Int, Float64, Float64)]))
@@ -285,7 +286,7 @@ module TestJoin
         @test all(isa.(o(on).columns,
                        [CategoricalVector{T} for T in (Int,Union{Float64,Missing},Union{Float64, Missing})]))
 
-        on = :fid
+        global on = :fid
         @test i(on) == DataFrame(Any[[1, 3], [1.0, 3.0], [1, 3]], [:id, :fid, :id_1])
         @test all(isa.(i(on).columns,
                        [CategoricalVector{T} for T in (Int, Float64, Int)]))
@@ -305,7 +306,7 @@ module TestJoin
         @test all(isa.(o(on).columns,
                        [CategoricalVector{T} for T in (Union{Int, Missing}, Float64, Union{Int, Missing})]))
 
-        on = [:id, :fid]
+        global on = [:id, :fid]
         @test i(on) == DataFrame(Any[[1, 3], [1, 3]], [:id, :fid])
         @test all(isa.(i(on).columns,
                        [CategoricalVector{T} for T in (Int, Float64)]))

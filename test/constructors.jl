@@ -1,5 +1,6 @@
 module TestConstructors
-    using Compat, Compat.Test, DataFrames, DataFrames.Index
+    using Compat, Compat.Test, DataFrames
+    using DataFrames: Index
     const ≅ = isequal
 
     #

@@ -1,6 +1,9 @@
 module TestIO
     using Compat, Compat.Test, DataFrames, CategoricalArrays
     using LaTeXStrings
+    if VERSION ≥ v"0.7.0-"
+        using Dates
+    end
 
     # Test LaTeX export
     df = DataFrame(A = 1:4,

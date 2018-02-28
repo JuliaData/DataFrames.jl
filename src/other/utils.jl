@@ -46,9 +46,7 @@ function makeidentifier(s::AbstractString)
         end
     end
 
-    # return String(take!(res))
-    # TODO this is to fix a bug in Compat for 0.6
-    String(res.data[1:(res.ptr-1)])
+    return String(take!(res))
 end
 
 function make_unique(names::Vector{Symbol}; makeunique::Bool=false)

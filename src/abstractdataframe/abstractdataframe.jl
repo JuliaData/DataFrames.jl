@@ -230,7 +230,8 @@ function Base.size(df::AbstractDataFrame, i::Integer)
 end
 
 Base.length(df::AbstractDataFrame) = ncol(df)
-Base.endof(df::AbstractDataFrame) = ncol(df)
+lastindex(df::AbstractDataFrame) = ncol(df)
+lastindex(df::AbstractDataFrame, n::Integer) = size(df, n)
 
 Base.ndims(::AbstractDataFrame) = 2
 
