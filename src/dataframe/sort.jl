@@ -6,7 +6,7 @@
 
 Sort data frame `df` by column(s) `cols`.
 `cols` can be either a `Symbol` or `Integer` column index, or
-a tuple of vector of such indices.
+a tuple or vector of such indices.
 
 If `alg` is `nothing` (the default), the most appropriate algorithm is
 chosen automatically among `TimSort`, `MergeSort` and `RadixSort` depending
