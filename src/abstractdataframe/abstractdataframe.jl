@@ -435,6 +435,7 @@ end
 ##############################################################################
 
 function _nonmissing!(res, col)
+    eltype(col) >: Missing || return
     @inbounds for (i, el) in enumerate(col)
         res[i] &= !ismissing(el)
     end
