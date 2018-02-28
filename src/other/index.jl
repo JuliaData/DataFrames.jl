@@ -135,14 +135,16 @@ end
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}})
     if any(ismissing, idx)
         # TODO: this line should be changed to throw an error after deprecation
+        # throw(ArgumentError("missing values are not allowed for column indexing"))
         Base.depwarn("using missing in column indexing is deprecated", :getindex)
     end
     getindex(x, collect(Missings.replace(idx, false)))
 end
 
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
-    # TODO: this line should be changed to throw an error after deprecation
     if any(v -> v isa Bool, idx)
+        # TODO: this line should be changed to throw an error after deprecation
+        # throw(ArgumentError("Bool values except for Vector{Bool} are not allowed for column indexing"))
         Base.depwarn("Indexing with Bool values is deprecated except for Vector{Bool}")
     end
     Vector{Int}(idx)
@@ -151,15 +153,17 @@ end
 # catch all method handling cases when type of idx is not narrowest possible, Any in particular
 # also it handles passing missing values in idx
 function Base.getindex(x::AbstractIndex, idx::AbstractVector)
-    # TODO: passing missing will throw an error after deprecation
     idxs = filter(!ismissing, idx)
     if length(idxs) != length(idx)
+        # TODO: passing missing will throw an error after deprecation
+        # throw(ArgumentError("missing values are not allowed for column indexing"))
         Base.depwarn("using missing in column indexing is deprecated", :getindex)
     end
     length(idxs) == 0 && return Int[] # special case of empty idxs
     if idxs[1] isa Real
         if !all(v -> v isa Union{<:Integer,Symbol}, idxs)
             # TODO: this line should be changed to throw an error after deprecation
+            # throw(ArgumentError("Only Integer values allowed when indexing by vector of numbers"))
             Base.depwarn("indexing by vector of numbers other than Integer is deprecated", :getindex)
         end
         return Vector{Int}(idxs)

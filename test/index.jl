@@ -29,6 +29,32 @@ for ind in inds
     end
 end
 
+# TODO: change this to throw an error after deprecation
+# @test_throws MethodError i[1.0]
+# @test_throws MethodError i[true]
+# @test_throws MethodError i[false]
+# @test_throws ArgumentError i[Any[1, missing]]
+# @test_throws ArgumentError i[[1, missing]]
+# @test_throws ArgumentError i[[true, missing]]
+# @test_throws ArgumentError i[Any[true, missing]]
+# @test_throws ArgumentError i[[:A, missing]]
+# @test_throws ArgumentError i[Any[:A, missing]]
+# @test_throws ArgumentError i[1.0:1.0]
+# @test_throws ArgumentError i[[1.0]]
+# @test_throws ArgumentError i[Any[1.0]]
+inds = Any[1.0, true, false,
+           Any[1, missing], [1, missing],
+           [true, missing], Any[true, missing],
+           [:A, missing], Any[:A, missing],
+           1.0:1.0, [1.0], Any[1.0]]
+for ind in inds
+    if ind == :A || ndims(ind) == 0
+        @test i[ind] == 1
+    else
+        @test (i[ind] == [1])
+    end
+end
+
 @test i[1:1] == 1:1
 
 @test_throws BoundsError i[[true]]

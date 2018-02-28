@@ -68,6 +68,10 @@ function SubDataFrame(parent::DataFrame, rows::T) where {T <: AbstractVector{Int
     return SubDataFrame{T}(parent, rows)
 end
 
+function SubDataFrame(parent::DataFrame, rows::Colon)
+    return SubDataFrame(parent, 1:nrow(parent))
+end
+
 function SubDataFrame(parent::DataFrame, row::Integer)
     return SubDataFrame(parent, [Int(row)])
 end
@@ -84,6 +88,10 @@ function SubDataFrame(sdf::SubDataFrame, rowinds::Union{T, AbstractVector{T}}) w
     return SubDataFrame(sdf.parent, sdf.rows[rowinds])
 end
 
+function SubDataFrame(sdf::SubDataFrame, rowinds::Colon)
+    return sdf
+end
+
 function Base.view(adf::AbstractDataFrame, rowinds::AbstractVector{T}) where {T >: Missing}
     # Vector{>:Missing} need to be checked for missings
     any(ismissing, rowinds) && throw(MissingException("missing values are not allowed in indices"))
@@ -94,12 +102,12 @@ function Base.view(adf::AbstractDataFrame, rowinds::Any)
     return SubDataFrame(adf, rowinds)
 end
 
-function Base.view(adf::AbstractDataFrame, rowinds::Any, colinds::AbstractVector)
+function Base.view(adf::AbstractDataFrame, rowinds::Any, colinds::Union{Colon, AbstractVector})
     return SubDataFrame(adf[colinds], rowinds)
 end
 
-function Base.view(adf::AbstractDataFrame, rowinds::Any, colinds::Any)
-    return SubDataFrame(adf[[colinds]], rowinds)
+function Base.view(adf::AbstractDataFrame, rowinds::Any, colind::ColumnIndex)
+    return SubDataFrame(adf[[colind]], rowinds)
 end
 
 ##############################################################################

@@ -62,6 +62,7 @@ module TestDataFrame
     # should throw ArgumentError after deprecation period
     # @test_throws ArgumentError z[:, [1, 1, 2]]
 
+
     #test_group("DataFrame assignment")
     # Insert single column
     x0 = x[Int[], :]

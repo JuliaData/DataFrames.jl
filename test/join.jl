@@ -122,6 +122,7 @@ module TestJoin
     @test join(simple_df2(0), simple_df2(2, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
     @test join(simple_df2(2), simple_df2(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
 
+
     # issue #960
     df1 = DataFrame(A = 1:50,
                     B = 1:50,
@@ -141,11 +142,13 @@ module TestJoin
 
     # Test that join works when mixing Array{Union{T, Missing}} with Array{T} (issue #1151)
     df = DataFrame([collect(1:10), collect(2:11)], [:x, :y])
-    dfmissing = DataFrame(x = Vector{Union{Int, Missing}}(1:10), z = Vector{Union{Int, Missing}}(3:12))
+    dfmissing = DataFrame(x = Vector{Union{Int, Missing}}(1:10),
+                          z = Vector{Union{Int, Missing}}(3:12))
     @test join(df, dfmissing, on = :x) ==
         DataFrame([collect(1:10), collect(2:11), collect(3:12)], [:x, :y, :z])
     @test join(dfmissing, df, on = :x) ==
-        DataFrame([Vector{Union{Int, Missing}}(1:10), Vector{Union{Int, Missing}}(3:12), collect(2:11)], [:x, :z, :y])
+        DataFrame([Vector{Union{Int, Missing}}(1:10), Vector{Union{Int, Missing}}(3:12),
+                   collect(2:11)], [:x, :z, :y])
 
     @testset "all joins" begin
         global df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
@@ -205,15 +208,18 @@ module TestJoin
         @test l(on) ≅ DataFrame(id = [1, 3, 5],
                                 fid = [1, 3, 5],
                                 id_1 = [1, 3, missing])
-        @test typeof.(l(on).columns) == [Vector{Int}, Vector{Float64}, Vector{Union{Int, Missing}}]
+        @test typeof.(l(on).columns) == [Vector{Int}, Vector{Float64},
+                                         Vector{Union{Int, Missing}}]
         @test r(on) ≅ DataFrame(id = [1, 3, missing, missing, missing],
                                 fid = [1, 3, 0, 2, 4],
                                 id_1 = [1, 3, 0, 2, 4])
-        @test typeof.(r(on).columns) == [Vector{Union{Int, Missing}}, Vector{Float64}, Vector{Int}]
+        @test typeof.(r(on).columns) == [Vector{Union{Int, Missing}}, Vector{Float64},
+                                         Vector{Int}]
         @test o(on) ≅ DataFrame(id = [1, 3, 5, missing, missing, missing],
                                 fid = [1, 3, 5, 0, 2, 4],
                                 id_1 = [1, 3, missing, 0, 2, 4])
-        @test typeof.(o(on).columns) == [Vector{Union{Int, Missing}}, Vector{Float64}, Vector{Union{Int, Missing}}]
+        @test typeof.(o(on).columns) == [Vector{Union{Int, Missing}}, Vector{Float64},
+                                         Vector{Union{Int, Missing}}]
 
         global on = [:id, :fid]
         @test i(on) == DataFrame(Any[[1, 3], [1, 3]], [:id, :fid])

@@ -24,9 +24,11 @@ module TestCat
     @test dfh[:x1] ≅ df3[:x1]
     @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4, makeunique=true)
 
+
     dfa = DataFrame(a=[1,2])
     dfb = DataFrame(b=[3,missing])
     @test hcat(dfa, dfb) ≅ [dfa dfb]
+
 
     dfh3 = hcat(df3, df4, df5, makeunique=true)
     @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
@@ -63,6 +65,7 @@ module TestCat
         DataFrames.hcat!(df, df_, makeunique=true)
         @test df[2] == collect(1:10)
         DataFrames.hcat!(df, df__, makeunique=true)
+
         @test df[3] == collect(1:10)
 
         df = DataFrame()
@@ -72,6 +75,7 @@ module TestCat
         @test names(df2) == [:x1]
         df_ = DataFrame(x1=11:20)
         global df3 = hcat(df_, df2, makeunique=true)
+
         @test df3[1] == collect(11:20)
         @test names(df3) == [:x1, :x1_1]
 
