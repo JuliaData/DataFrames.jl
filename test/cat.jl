@@ -22,8 +22,11 @@ module TestCat
     @test size(dfh, 2) == 3
     @test names(dfh) ≅ [:x1, :x1_1, :x2]
     @test dfh[:x1] ≅ df3[:x1]
-    @test dfh ≅ hcat(df3, df4, makeunique=true)
     @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4, makeunique=true)
+
+    dfa = DataFrame(a=[1,2])
+    dfb = DataFrame(b=[3,missing])
+    @test hcat(dfa, dfb) ≅ [dfa dfb]
 
     dfh3 = hcat(df3, df4, df5, makeunique=true)
     @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
@@ -36,7 +39,7 @@ module TestCat
         df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
         gd = groupby(df, :A)
         answer = DataFrame(A = fill('A', 4), B = 1:4, A_1 = 'B', B_1 = 5:8, A_2 = 'C', B_2 = 9:12)
-        @test hcat(gd...; makeunique=true) == answer
+        @test hcat(gd..., makeunique=true) == answer
         answer = answer[1:4]
         @test hcat(gd[1], gd[2], makeunique=true) == answer
     end
@@ -45,7 +48,7 @@ module TestCat
         df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
         gd = groupby(df, :A)
         answer = DataFrame(A = fill('A', 4), B = 1:4, A_1 = 'B', B_1 = 5:8, A_2 = 'C', B_2 = 9:12)
-        @test hcat(gd...; makeunique=true) == answer
+        @test hcat(gd..., makeunique=true) == answer
         answer = answer[1:4]
         @test hcat(gd[1], gd[2], makeunique=true) == answer
     end

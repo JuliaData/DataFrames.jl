@@ -7,11 +7,15 @@ push!(i, :A)
 push!(i, :B)
 
 inds = Any[1,
+           big(1),
            :A,
            [true, false],
            [1],
+           [big(1)],
+           big(1):big(1),
            [:A],
            Union{Int, Missing}[1],
+           Union{BigInt, Missing}[big(1)],
            Union{Symbol, Missing}[:A],
            Any[1],
            Any[true],
@@ -39,7 +43,7 @@ end
 
 @test names(i) == [:A,:B]
 @test names!(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
-# @test_throws ArgumentError names!(i, [:a,:a], makeunique=true)  # TODO why would this throw an error?
+@test_throws ArgumentError names!(i, [:a,:a])
 @test names!(i, [:a,:b]) == Index([:a,:b])
 @test rename(i, Dict(:a=>:A, :b=>:B)) == Index([:A,:B])
 @test rename(i, :a => :A) == Index([:A,:b])

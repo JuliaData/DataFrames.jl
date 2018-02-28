@@ -58,9 +58,9 @@ module TestDataFrame
 
     z = vcat(v, x)
 
-    # TODO does getindex require makeunique argument?, currently this depwarns
-    # z2 = z[:, [1, 1, 2]]
-    # @test names(z2) == [:a, :a_1, :b]
+    # TODO: currently this throws deprecation warning
+    # should throw ArgumentError after deprecation period
+    # @test_throws ArgumentError z[:, [1, 1, 2]]
 
     #test_group("DataFrame assignment")
     # Insert single column
