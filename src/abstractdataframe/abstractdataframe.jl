@@ -784,8 +784,8 @@ end
 
 
 # TODO this function to be removed after CategoricalArrays update
-_promote_col_type(::Type{T}, n::Integer) where T = T(uninitialized, n)
-_promote_col_type(::Type{T}, n::Integer) where T<:AbstractCategoricalArray = T(n)
+_promote_col_type(::Type{T}, n::Integer) where {T} = T(uninitialized, n)
+_promote_col_type(::Type{T}, n::Integer) where {T<:AbstractCategoricalArray} = T(n)
 
 """
     vcat(dfs::AbstractDataFrame...)

@@ -1,10 +1,6 @@
 module TestCat
-    using Compat, Compat.Test, DataFrames
+    using Compat, Compat.Test, Compat.Random, DataFrames
     const ≅ = isequal
-
-    if VERSION ≥ v"0.7.0-"
-        using Random
-    end
 
     #
     # hcat
@@ -13,10 +9,10 @@ module TestCat
     nvint = [1, 2, missing, 4]
     nvstr = ["one", "two", missing, "four"]
 
-    df2 = convert(DataFrame, Any[nvint nvstr])
-    df3 = DataFrame(Any[nvint], [:x1])
+    df2 = DataFrame(Any[nvint, nvstr])
+    df3 = DataFrame(Any[nvint])
     df4 = convert(DataFrame, [1:4 1:4])
-    df5 = DataFrame(Any[Union{Int, Missing}[1,2,3,4], nvstr], [:x1, :x2])
+    df5 = DataFrame(Any[Union{Int, Missing}[1,2,3,4], nvstr])
 
     dfh = hcat(df3, df4, makeunique=true)
     @test size(dfh, 2) == 3
@@ -24,11 +20,9 @@ module TestCat
     @test dfh[:x1] ≅ df3[:x1]
     @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4, makeunique=true)
 
-
     dfa = DataFrame(a=[1,2])
     dfb = DataFrame(b=[3,missing])
     @test hcat(dfa, dfb) ≅ [dfa dfb]
-
 
     dfh3 = hcat(df3, df4, df5, makeunique=true)
     @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
@@ -58,13 +52,11 @@ module TestCat
     @testset "hcat ::AbstractVectors" begin
         df = DataFrame()
         global df2 = DataFrame(x1=CategoricalVector{Union{Int,Missing}}(1:10))
-        df_ = DataFrame(x1=1:10)
-        df__ = DataFrame(x1=collect(1:10))
         DataFrames.hcat!(df, df2, makeunique=true)
         @test df[1] == CategoricalVector(1:10)
-        DataFrames.hcat!(df, df_, makeunique=true)
+        DataFrames.hcat!(df, 1:10, makeunique=true)
         @test df[2] == collect(1:10)
-        DataFrames.hcat!(df, df__, makeunique=true)
+        DataFrames.hcat!(df, collect(1:10), makeunique=true)
 
         @test df[3] == collect(1:10)
 
@@ -73,8 +65,7 @@ module TestCat
         global df2 = hcat(df_, df, makeunique=true)
         @test df2[1] == collect(1:10)
         @test names(df2) == [:x1]
-        df_ = DataFrame(x1=11:20)
-        global df3 = hcat(df_, df2, makeunique=true)
+        global df3 = hcat(11:20, df2, makeunique=true)
 
         @test df3[1] == collect(11:20)
         @test names(df3) == [:x1, :x1_1]

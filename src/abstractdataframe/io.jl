@@ -130,17 +130,27 @@ end
 #
 ##############################################################################
 
-function latex_char_escape(char::AbstractString)
-    if char == "\\"
-        return "\\textbackslash{}"
-    elseif char == "~"
-        return "\\textasciitilde{}"
-    else
-        return string("\\", char)
+if VERSION ≥ v"0.7.0-"
+    function latex_char_escape(char::Char)
+        if char == '\\'
+            return "\\textbackslash{}"
+        elseif char == '~'
+            return "\\textasciitilde{}"
+        else
+            return string('\\', char)
+        end
+    end
+else
+    function latex_char_escape(char::AbstractString)
+        if char == "\\"
+            return "\\textbackslash{}"
+        elseif char == "~"
+            return "\\textasciitilde{}"
+        else
+            return string("\\", char)
+        end
     end
 end
-# in 0.7 this function will only ever get passed Char, in 0.6 always gets SubString
-latex_char_escape(char::Char) = latex_char_escape(string(char))
 
 function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)

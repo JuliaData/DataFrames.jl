@@ -13,6 +13,7 @@ using Base.Sort
 using Base.Order
 using Compat.Unicode
 using Compat.Printf
+using Compat: @warn
 
 if VERSION >= v"0.7.0-DEV.2738"
     using Unicode: normalize
@@ -24,7 +25,6 @@ else
     import Compat: lastindex
     import Base.LinAlg: normalize
     normalize(str::AbstractString) = normalize_string(str)
-    macro warn(str...) esc(:(warn($(str...)))) end
 end
 
 

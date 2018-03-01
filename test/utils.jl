@@ -1,11 +1,6 @@
 module TestUtils
-    using Compat, Compat.Test, DataFrames, StatsBase
-    if VERSION ≤ v"0.7.0-"
-        using Compat.Random
-        using DataFrames.@warn
-    else
-        using Random
-    end
+    using Compat, Compat.Test, DataFrames, StatsBase, Compat.Random
+    using Compat: @warn
     import DataFrames: identifier
 
     @test identifier("%_B*_\tC*") == :_B_C_
@@ -18,8 +13,7 @@ module TestUtils
     @test DataFrames.make_unique([:x, :x, :x_1, :x2], makeunique=true) == [:x, :x_2, :x_1, :x2]
     # TODO uncomment this line after deprecation period when makeunique=false throws error
     # @test_throws ArgumentError DataFrames.make_unique([:x, :x, :x_1, :x2], makeunique=false)
-    # TODO below is commented out for now for warning sanity
-    # @test DataFrames.make_unique([:x, :x_1, :x2], makeunique=false) == [:x, :x_1, :x2]
+    @test DataFrames.make_unique([:x, :x_1, :x2], makeunique=false) == [:x, :x_1, :x2]
 
     # Check that reserved words are up to date
 
@@ -38,7 +32,7 @@ module TestUtils
         end
     else
         @warn("Unable to validate reserved words against parser. ",
-             "Expected if Julia was not built from source.")
+              "Expected if Julia was not built from source.")
     end
 
     @test DataFrames.countmissing([1:3;]) == 0
@@ -73,7 +67,7 @@ module TestUtils
         describe(io, df)
         DRT = CategoricalArrays.DefaultRefType
         # Julia 0.7
-        missingfirst =
+        str =
             """
             arr
             Summary Stats:
@@ -95,62 +89,20 @@ module TestUtils
             3rd Quartile:   4.250000
             Maximum:        5.000000
             Length:         4
-            Type:           Union{Missing, $Int}
+            Type:           $(Union{Missing,Int})
             Number Missing: 0
             % Missing:      0.000000
 
             cat
             Summary Stats:
             Length:         4
-            Type:           CategoricalValue{$Int,$DRT}
+            Type:           $(CategoricalValue{Int,DRT})
             Number Unique:  4
 
             missingcat
             Summary Stats:
             Length:         4
-            Type:           Union{Missing, CategoricalValue{$Int,$DRT}}
-            Number Unique:  4
-            Number Missing: 0
-            % Missing:      0.000000
-
-            """
-        # Julia 0.6
-        missingsecond =
-            """
-            arr
-            Summary Stats:
-            Mean:           2.500000
-            Minimum:        1.000000
-            1st Quartile:   1.750000
-            Median:         2.500000
-            3rd Quartile:   3.250000
-            Maximum:        4.000000
-            Length:         4
-            Type:           $Int
-
-            missingarr
-            Summary Stats:
-            Mean:           3.500000
-            Minimum:        2.000000
-            1st Quartile:   2.750000
-            Median:         3.500000
-            3rd Quartile:   4.250000
-            Maximum:        5.000000
-            Length:         4
-            Type:           Union{$Int, Missings.Missing}
-            Number Missing: 0
-            % Missing:      0.000000
-
-            cat
-            Summary Stats:
-            Length:         4
-            Type:           CategoricalArrays.CategoricalValue{$Int,$DRT}
-            Number Unique:  4
-
-            missingcat
-            Summary Stats:
-            Length:         4
-            Type:           Union{CategoricalArrays.CategoricalValue{$Int,$DRT}, Missings.Missing}
+            Type:           $(Union{Missing, CategoricalValue{Int,DRT}})
             Number Unique:  4
             Number Missing: 0
             % Missing:      0.000000
@@ -159,7 +111,7 @@ module TestUtils
             out = String(take!(io))
             # TODO this test is very sensitive to irrelevant details of show implementations 
             # should probably be reconsidered
-            @test (out == missingfirst || out == missingsecond)
+            @test out == str
     end
 
     @testset "describe" begin
@@ -170,7 +122,7 @@ module TestUtils
                        [:arr, :missingarr, :cat, :missingcat])
         describe(io, df)
         # Julia 0.7
-        missingfirst =
+        str =
             """
             arr
             Summary Stats:
@@ -192,68 +144,26 @@ module TestUtils
             3rd Quartile:   4.250000
             Maximum:        5.000000
             Length:         4
-            Type:           Union{Missing, $Int}
+            Type:           $(Union{Missing, Int})
             Number Missing: 0
             % Missing:      0.000000
 
             cat
             Summary Stats:
             Length:         4
-            Type:           CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}
+            Type:           $(CategoricalValue{Int,CategoricalArrays.DefaultRefType})
             Number Unique:  4
 
             missingcat
             Summary Stats:
             Length:         4
-            Type:           Union{Missing, CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}}
-            Number Unique:  4
-            Number Missing: 0
-            % Missing:      0.000000
-
-            """
-        # Julia 0.6
-        missingsecond =
-            """
-            arr
-            Summary Stats:
-            Mean:           2.500000
-            Minimum:        1.000000
-            1st Quartile:   1.750000
-            Median:         2.500000
-            3rd Quartile:   3.250000
-            Maximum:        4.000000
-            Length:         4
-            Type:           $Int
-
-            missingarr
-            Summary Stats:
-            Mean:           3.500000
-            Minimum:        2.000000
-            1st Quartile:   2.750000
-            Median:         3.500000
-            3rd Quartile:   4.250000
-            Maximum:        5.000000
-            Length:         4
-            Type:           Union{$Int, Missings.Missing}
-            Number Missing: 0
-            % Missing:      0.000000
-
-            cat
-            Summary Stats:
-            Length:         4
-            Type:           CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}
-            Number Unique:  4
-
-            missingcat
-            Summary Stats:
-            Length:         4
-            Type:           Union{CategoricalArrays.CategoricalValue{$Int,$(CategoricalArrays.DefaultRefType)}, Missings.Missing}
+            Type:           $(Union{Missing, CategoricalValue{Int,CategoricalArrays.DefaultRefType}})
             Number Unique:  4
             Number Missing: 0
             % Missing:      0.000000
 
             """
         out = String(take!(io))
-        @test (out == missingfirst || out == missingsecond)
+        @test out == str
     end
 end

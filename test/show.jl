@@ -1,19 +1,12 @@
 module TestShow
     using Compat, Compat.Test, DataFrames
 
-    if VERSION ≥ v"0.7.0-"
-        using Random
-        dataframe_str = "DataFrame"
-    else
-        dataframe_str = "DataFrames.DataFrame"
-    end
-
     # In the future newline character \n should be added to this test case
     df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "ABC"],
                    C = Float32[1.0, 2.0, 3.0, 4.0])
 
     refstr = """
-    4×3 $dataframe_str
+    4×3 $DataFrame
     │ Row │ A │ B           │ C   │
     ├─────┼───┼─────────────┼─────┤
     │ 1   │ 1 │ x\"          │ 1.0 │
@@ -29,7 +22,7 @@ module TestShow
     end
 
     refstr = """
-    4×3 $dataframe_str
+    4×3 $DataFrame
     │ Col # │ Name │ Eltype  │ Missing │
     ├───────┼──────┼─────────┼─────────┤
     │ 1     │ A    │ Int64   │ 0       │
@@ -43,7 +36,7 @@ module TestShow
     end
 
     refstr = """
-    4×3 $dataframe_str
+    4×3 $DataFrame
     │ Col # │ Name │ Eltype  │ Missing │ Values      │
     ├───────┼──────┼─────────┼─────────┼─────────────┤
     │ 1     │ A    │ Int64   │ 0       │ 1  …  4     │
@@ -63,7 +56,7 @@ module TestShow
     show(io, df_big)
     str = String(take!(io.io))
     @test str == """
-    25×5 $dataframe_str. Omitted printing of 2 columns
+    25×5 $DataFrame. Omitted printing of 2 columns
     │ Row │ x1       │ x2       │ x3       │
     ├─────┼──────────┼──────────┼──────────┤
     │ 1   │ 0.236033 │ 0.644883 │ 0.440897 │
@@ -75,7 +68,7 @@ module TestShow
     show(io, df_big, true)
     str = String(take!(io.io))
     @test str == """
-    25×5 $dataframe_str
+    25×5 $DataFrame
     │ Row │ x1       │ x2       │ x3       │
     ├─────┼──────────┼──────────┼──────────┤
     │ 1   │ 0.236033 │ 0.644883 │ 0.440897 │
@@ -94,7 +87,7 @@ module TestShow
     showall(io, df_big)
     str = String(take!(io.io))
     @test str == """
-    25×5 $dataframe_str
+    25×5 $DataFrame
     │ Row │ x1         │ x2        │ x3        │ x4        │ x5        │
     ├─────┼────────────┼───────────┼───────────┼───────────┼───────────┤
     │ 1   │ 0.236033   │ 0.644883  │ 0.440897  │ 0.580782  │ 0.138763  │
@@ -127,7 +120,7 @@ module TestShow
     showall(io, df_big, false)
     str = String(take!(io.io))
     @test str == """
-    25×5 $dataframe_str. Omitted printing of 3 columns
+    25×5 $DataFrame. Omitted printing of 3 columns
     │ Row │ x1         │ x2        │
     ├─────┼────────────┼───────────┤
     │ 1   │ 0.236033   │ 0.644883  │
@@ -160,7 +153,7 @@ module TestShow
     showcols(io, df_big, false, false)
     str = String(take!(io.io))
     @test str == """
-    25×5 $dataframe_str
+    25×5 $DataFrame
     │ Col # │ Name │ Eltype  │ Missing │
     ├───────┼──────┼─────────┼─────────┤
     │ 1     │ x1   │ Float64 │ 0       │
@@ -173,7 +166,7 @@ module TestShow
     showcols(io, df_big, true, false)
     str = String(take!(io.io))
     @test str == """
-    25×5 $dataframe_str
+    25×5 $DataFrame
     │ Col # │ Name │ Eltype  │ Missing │
     ├───────┼──────┼─────────┼─────────┤
     │ 1     │ x1   │ Float64 │ 0       │
@@ -186,7 +179,7 @@ module TestShow
     showcols(io, df_big, false, true)
     str = String(take!(io.io))
     @test str == """
-    25×5 $dataframe_str
+    25×5 $DataFrame
     │ Col # │ Name │ Eltype  │ Missing │
     ├───────┼──────┼─────────┼─────────┤
     │ 1     │ x1   │ Float64 │ 0       │
@@ -207,7 +200,7 @@ module TestShow
     showcols(io, df_big, true, true)
     str = String(take!(io.io))
     @test str == """
-    25×5 $dataframe_str
+    25×5 $DataFrame
     │ Col # │ Name │ Eltype  │ Missing │ Values                │
     ├───────┼──────┼─────────┼─────────┼───────────────────────┤
     │ 1     │ x1   │ Float64 │ 0       │ 0.236033  …  0.751313 │
@@ -221,7 +214,7 @@ module TestShow
     showcols(io, df_small)
     str = String(take!(io))
     @test str == """
-    1×5 $dataframe_str
+    1×5 $DataFrame
     │ Col # │ Name │ Eltype  │ Missing │ Values │
     ├───────┼──────┼─────────┼─────────┼────────┤
     │ 1     │ x1   │ Float64 │ 0       │ 1.0    │
@@ -235,7 +228,7 @@ module TestShow
     showcols(io, df_min)
     str = String(take!(io))
     @test str == """
-    0×5 $dataframe_str
+    0×5 $DataFrame
     │ Col # │ Name │ Eltype  │ Missing │
     ├───────┼──────┼─────────┼─────────┤
     │ 1     │ x1   │ Float64 │ 0       │
@@ -276,12 +269,12 @@ module TestShow
     show(io, df)
     str = String(take!(io))
     @test str == (Base.have_color ? """
-    2×2 $dataframe_str
+    2×2 $DataFrame
     │ Row │ Fish │ Mass    │
     ├─────┼──────┼─────────┤
     │ 1   │ Suzy │ 1.5     │
     │ 2   │ Amir │ \e[90mmissing\e[39m │""" : """
-    2×2 $dataframe_str
+    2×2 $DataFrame
     │ Row │ Fish │ Mass    │
     ├─────┼──────┼─────────┤
     │ 1   │ Suzy │ 1.5     │
@@ -291,11 +284,11 @@ module TestShow
     showcols(io, df)
     str = String(take!(io))
     @test str == """
-    2×2 $dataframe_str
+    2×2 $DataFrame
     │ Col # │ Name │ Eltype                           │ Missing │ Values          │
     ├───────┼──────┼──────────────────────────────────┼─────────┼─────────────────┤
     │ 1     │ Fish │ String                           │ 0       │ Suzy  …  Amir   │
-    │ 2     │ Mass │ Union{Float64, Missings.Missing} │ 1       │ 1.5  …  missing │"""
+    │ 2     │ Mass │ Union{Float64, $Missing} │ 1       │ 1.5  …  missing │"""
 
     # Test showing missing
     df = DataFrame(A = [:Symbol, missing, :missing],
@@ -305,13 +298,13 @@ module TestShow
     show(io, df)
     str = String(take!(io))
     @test str == (Base.have_color ? """
-    3×3 $dataframe_str
+    3×3 $DataFrame
     │ Row │ A       │ B       │ C       │
     ├─────┼─────────┼─────────┼─────────┤
     │ 1   │ Symbol  │ \e[90mmissing\e[39m │ missing │
     │ 2   │ \e[90mmissing\e[39m │ String  │ missing │
     │ 3   │ missing │ missing │ \e[90mmissing\e[39m │""" : """
-    3×3 $dataframe_str
+    3×3 $DataFrame
     │ Row │ A       │ B       │ C       │
     ├─────┼─────────┼─────────┼─────────┤
     │ 1   │ Symbol  │ missing │ missing │
@@ -322,11 +315,11 @@ module TestShow
     showcols(io, df)
     str = String(take!(io))
     @test str == """
-    3×3 $dataframe_str
+    3×3 $DataFrame
     │ Col # │ Name │ Eltype                          │ Missing │
     ├───────┼──────┼─────────────────────────────────┼─────────┤
-    │ 1     │ A    │ Union{Missings.Missing, Symbol} │ 1       │
-    │ 2     │ B    │ Union{Missings.Missing, String} │ 1       │
+    │ 1     │ A    │ Union{$Missing, Symbol} │ 1       │
+    │ 2     │ B    │ Union{$Missing, String} │ 1       │
     │ 3     │ C    │ Any                             │ 1       │
     
     │ Col # │ Values              │
@@ -341,7 +334,7 @@ module TestShow
     show(io, df)
     str = String(take!(io))
     @test str == """
-    1×1 $dataframe_str
+    1×1 $DataFrame
     │ Row │ x │
     ├─────┼───┤
     │ 1   │ a │"""
@@ -352,7 +345,7 @@ module TestShow
     show(io, df)
     str = String(take!(io))
     @test str == """
-    6×1 $dataframe_str
+    6×1 $DataFrame
     │ Row │ a    │
     ├─────┼──────┤
     │ 1   │ 1\\n1 │

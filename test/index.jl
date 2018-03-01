@@ -18,7 +18,6 @@ inds = Any[1,
            Union{BigInt, Missing}[big(1)],
            Union{Symbol, Missing}[:A],
            Any[1],
-           Any[true],
            Any[:A]]
 
 for ind in inds

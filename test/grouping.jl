@@ -1,9 +1,6 @@
 module TestGrouping
-    using Compat, Compat.Test, DataFrames
+    using Compat, Compat.Test, DataFrames, Compat.Random
     const ≅ = isequal
-    if VERSION ≥ v"0.7.0-"
-        using Random
-    end
 
     srand(1)
     df = DataFrame(a = repeat(Union{Int, Missing}[1, 2, 3, 4], outer=[2]),

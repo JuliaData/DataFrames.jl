@@ -1,10 +1,7 @@
 module TestConversions
-    using Compat, Compat.Test, DataFrames
+    using Compat, Compat.Test, DataFrames, Compat.InteractiveUtils
     using DataStructures: OrderedDict, SortedDict
     const ≅ = isequal
-    if VERSION ≥ v"0.7.0-"
-        using InteractiveUtils
-    end
 
     df = DataFrame()
     df[:A] = 1:5

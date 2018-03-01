@@ -1,12 +1,9 @@
 module TestData
-    using Compat, Compat.Test, DataFrames
+    using Compat, Compat.Test, DataFrames, Compat.Random
     # TODO this already generates a huge wall of warnings
     # better way of doing this?
     # importall Base # so that we get warnings for conflicts
     const ≅ = isequal
-    if VERSION ≥ v"0.7.0-"
-        using Random
-    end
 
     #test_group("constructors")
     df1 = DataFrame(Any[[1, 2, missing, 4], ["one", "two", missing, "four"]], [:Ints, :Strs])

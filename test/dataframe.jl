@@ -51,17 +51,7 @@ module TestDataFrame
     @test names(dfc[1, :b]) == [:c, :e]
     @test names(dfdc[1, :b]) == [:c]
 
-    #
-
     x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
-    v = DataFrame(a = [5, 6, 7], b = [8, 9, 10])
-
-    z = vcat(v, x)
-
-    # TODO: currently this throws deprecation warning
-    # should throw ArgumentError after deprecation period
-    # @test_throws ArgumentError z[:, [1, 1, 2]]
-
 
     #test_group("DataFrame assignment")
     # Insert single column
