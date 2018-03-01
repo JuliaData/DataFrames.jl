@@ -1,16 +1,15 @@
 module TestData
     using Compat, Compat.Test, DataFrames, Compat.Random
-    # TODO this already generates a huge wall of warnings
-    # better way of doing this?
+    # TODO: need to find a better way of accomplishing below
     # importall Base # so that we get warnings for conflicts
     const ≅ = isequal
 
     #test_group("constructors")
     df1 = DataFrame(Any[[1, 2, missing, 4], ["one", "two", missing, "four"]], [:Ints, :Strs])
-    df2 = DataFrame(Any[[1, 2, missing, 4], ["one", "two", missing, "four"]], [:x1, :x2])
+    df2 = DataFrame(Any[[1, 2, missing, 4], ["one", "two", missing, "four"]])
     df3 = DataFrame(Any[[1, 2, missing, 4]], [:x1])
-    df4 = DataFrame(Any[Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)], [:x1, :x2])
-    df5 = DataFrame(Any[Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]], [:x1, :x2])
+    df4 = DataFrame(Any[Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)])
+    df5 = DataFrame(Any[Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]])
     df6 = DataFrame(Any[[1, 2, missing, 4], [1, 2, missing, 4], ["one", "two", missing, "four"]],
                     [:A, :B, :C])
     df7 = DataFrame(x = [1, 2, missing, 4], y = ["one", "two", missing, "four"])

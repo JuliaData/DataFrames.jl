@@ -66,7 +66,6 @@ module TestUtils
                        [:arr, :missingarr, :cat, :missingcat])
         describe(io, df)
         DRT = CategoricalArrays.DefaultRefType
-        # Julia 0.7
         str =
             """
             arr
@@ -109,8 +108,6 @@ module TestUtils
 
             """
             out = String(take!(io))
-            # TODO this test is very sensitive to irrelevant details of show implementations 
-            # should probably be reconsidered
             @test out == str
     end
 
@@ -121,7 +118,6 @@ module TestUtils
                            CategoricalArray{Union{Int, Missing}}(4:7)],
                        [:arr, :missingarr, :cat, :missingcat])
         describe(io, df)
-        # Julia 0.7
         str =
             """
             arr

@@ -100,7 +100,7 @@ Base.next(gd::GroupedDataFrame, state::Int) =
      state + 1)
 Base.done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
 Base.length(gd::GroupedDataFrame) = length(gd.starts)
-lastindex(gd::GroupedDataFrame) = length(gd.starts)
+Compat.lastindex(gd::GroupedDataFrame) = length(gd.starts)
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 

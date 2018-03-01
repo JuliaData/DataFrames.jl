@@ -230,8 +230,8 @@ function Base.size(df::AbstractDataFrame, i::Integer)
 end
 
 Base.length(df::AbstractDataFrame) = ncol(df)
-lastindex(df::AbstractDataFrame) = ncol(df)
-lastindex(df::AbstractDataFrame, n::Integer) = size(df, n)
+Compat.lastindex(df::AbstractDataFrame) = ncol(df)
+Compat.lastindex(df::AbstractDataFrame, n::Integer) = size(df, n)
 
 Base.ndims(::AbstractDataFrame) = 2
 
@@ -782,11 +782,6 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
     end
 end
 
-
-# TODO this function to be removed after CategoricalArrays update
-_promote_col_type(::Type{T}, n::Integer) where {T} = T(uninitialized, n)
-_promote_col_type(::Type{T}, n::Integer) where {T<:AbstractCategoricalArray} = T(n)
-
 """
     vcat(dfs::AbstractDataFrame...)
 
@@ -847,8 +842,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
         for i in 1:length(cols)
             data = [df[i] for df in dfs]
             lens = map(length, data)
-            # cols[i] = promote_col_type(data...)(uninitialized, sum(lens))
-            cols[i] = _promote_col_type(promote_col_type(data...), sum(lens))
+            cols[i] = promote_col_type(data...)(uninitialized, sum(lens))
             offset = 1
             for j in 1:length(data)
                 copyto!(cols[i], offset, data[j])

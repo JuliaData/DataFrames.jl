@@ -17,12 +17,10 @@ using Compat: @warn
 
 if VERSION >= v"0.7.0-DEV.2738"
     using Unicode: normalize
-    import Base: lastindex
     const kwpairs = pairs
 else
     kwpairs(x::AbstractArray) = (first(v) => last(v) for v in x)
     using Compat.IOBuffer
-    import Compat: lastindex
     import Base.LinAlg: normalize
     normalize(str::AbstractString) = normalize_string(str)
 end

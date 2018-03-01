@@ -25,7 +25,7 @@ index(r::DataFrameRow) = index(r.df)
 
 Base.length(r::DataFrameRow) = size(r.df, 2)
 
-lastindex(r::DataFrameRow) = size(r.df, 2)
+Compat.lastindex(r::DataFrameRow) = size(r.df, 2)
 
 Base.collect(r::DataFrameRow) = Tuple{Symbol, Any}[x for x in r]
 

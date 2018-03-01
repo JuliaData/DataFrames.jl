@@ -72,7 +72,7 @@ module TestDataFrame
                    c = CategoricalArray{Union{Float64, Missing}}([3.3]))
     missingdf = DataFrame(a = missings(Int, 2),
                           b = missings(String, 2),
-                          c = CategoricalArray{Union{Float64, Missing}}(2))
+                          c = CategoricalArray{Union{Float64, Missing}}(uninitialized, 2))
     # https://github.com/JuliaData/Missings.jl/issues/66
     # @test missingdf ≅ similar(df, 2)
     @test typeof.(similar(df, 2).columns) == typeof.(missingdf.columns)

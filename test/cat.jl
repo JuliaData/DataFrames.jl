@@ -51,24 +51,22 @@ module TestCat
 
     @testset "hcat ::AbstractVectors" begin
         df = DataFrame()
-        dfb = DataFrame(x1=CategoricalVector{Union{Int,Missing}}(1:10))
-        DataFrames.hcat!(df, dfb, makeunique=true)
+        DataFrames.hcat!(df, CategoricalVector{Union{Int,Missing}}(1:10), makeunique=true)
         @test df[1] == CategoricalVector(1:10)
         DataFrames.hcat!(df, 1:10, makeunique=true)
         @test df[2] == collect(1:10)
         DataFrames.hcat!(df, collect(1:10), makeunique=true)
-
         @test df[3] == collect(1:10)
 
         df = DataFrame()
         df_ = DataFrame(x1=CategoricalVector{Union{Int,Missing}}(1:10))
-        dfb = hcat(df_, df, makeunique=true)
-        @test dfb[1] == collect(1:10)
-        @test names(dfb) == [:x1]
-        dfc = hcat(11:20, dfb, makeunique=true)
+        dfc = hcat(df_, df, makeunique=true)
+        @test dfc[1] == collect(1:10)
+        @test names(dfc) == [:x1]
+        dfd = hcat(11:20, dfc, makeunique=true)
 
-        @test dfc[1] == collect(11:20)
-        @test names(dfc) == [:x1, :x1_1]
+        @test dfd[1] == collect(11:20)
+        @test names(dfd) == [:x1, :x1_1]
 
         @test_throws ArgumentError hcat("a", df, makeunique=true)
         @test_throws ArgumentError hcat(df, "a", makeunique=true)
