@@ -121,7 +121,7 @@ function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false)::DataFr
     DataFrame(columns, Index(colnames, makeunique=makeunique))
 end
 
-DataFrame(dict::Dict{Symbol,<:Any}) = convert(DataFrame, dict)
+DataFrame(dict::AbstractDict) = convert(DataFrame, dict)
 
 function DataFrame(; kwargs...)
     if isempty(kwargs)
