@@ -435,7 +435,10 @@ end
 ##############################################################################
 
 function _nonmissing!(res, col)
+    
+    # workaround until JuliaLang/julia#21256 is fixed
     eltype(col) >: Missing || return
+    
     @inbounds for (i, el) in enumerate(col)
         res[i] &= !ismissing(el)
     end
