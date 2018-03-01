@@ -347,7 +347,7 @@ aggregate(gd::GroupedDataFrame, f::Function; sort::Bool=false) = aggregate(gd, [
 function aggregate(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Function
     headers = _makeheaders(fs, setdiff(_names(gd), gd.cols))
     res = combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
-    sort && sort!(res, cols=headers)
+    sort && sort!(res, headers)
     res
 end
 
@@ -366,6 +366,6 @@ end
 
 function _aggregate(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false) where T<:Function
     res = DataFrame(Any[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers)
-    sort && sort!(res, cols=headers)
+    sort && sort!(res, headers)
     res
 end
