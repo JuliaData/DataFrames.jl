@@ -38,17 +38,17 @@ module TestJoin
     @test_throws ArgumentError join(name, job, on=:ID, kind=:other)
 
     # Join with no non-key columns
-    on = [:ID]
-    nameid = name[on]
-    jobid = job[on]
+    on_ = [:ID]
+    nameid = name[on_]
+    jobid = job[on_]
 
-    @test join(nameid, jobid, on = :ID) == inner[on]
-    @test join(nameid, jobid, on = :ID, kind = :inner) == inner[on]
-    @test join(nameid, jobid, on = :ID, kind = :outer) == outer[on]
-    @test join(nameid, jobid, on = :ID, kind = :left) == left[on]
-    @test join(nameid, jobid, on = :ID, kind = :right) == right[on]
-    @test join(nameid, jobid, on = :ID, kind = :semi) == semi[on]
-    @test join(nameid, jobid, on = :ID, kind = :anti) == anti[on]
+    @test join(nameid, jobid, on = :ID) == inner[on_]
+    @test join(nameid, jobid, on = :ID, kind = :inner) == inner[on_]
+    @test join(nameid, jobid, on = :ID, kind = :outer) == outer[on_]
+    @test join(nameid, jobid, on = :ID, kind = :left) == left[on_]
+    @test join(nameid, jobid, on = :ID, kind = :right) == right[on_]
+    @test join(nameid, jobid, on = :ID, kind = :semi) == semi[on_]
+    @test join(nameid, jobid, on = :ID, kind = :anti) == anti[on_]
 
     # Join on multiple keys
     df1 = DataFrame(A = 1, B = 2, C = 3)
@@ -151,24 +151,24 @@ module TestJoin
                    collect(2:11)], [:x, :z, :y])
 
     @testset "all joins" begin
-        global df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
-        global df2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
+        dfa = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
+        dfb = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
 
-        @test join(df1, df2, kind=:cross, makeunique=true) ==
+        @test join(dfa, dfb, kind=:cross, makeunique=true) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
                           repeat([1, 3, 5], inner = 5),
                           repeat([0, 1, 2, 3, 4], outer = 3),
                           repeat([0, 1, 2, 3, 4], outer = 3)],
                       [:id, :fid, :id_1, :fid_1])
-        @test typeof.(join(df1, df2, kind=:cross, makeunique=true).columns) ==
+        @test typeof.(join(dfa, dfb, kind=:cross, makeunique=true).columns) ==
             [Vector{Int}, Vector{Float64}, Vector{Int}, Vector{Float64}]
 
-        i(on) = join(df1, df2, on = on, kind = :inner, makeunique=true)
-        l(on) = join(df1, df2, on = on, kind = :left, makeunique=true)
-        r(on) = join(df1, df2, on = on, kind = :right, makeunique=true)
-        o(on) = join(df1, df2, on = on, kind = :outer, makeunique=true)
-        s(on) = join(df1, df2, on = on, kind = :semi, makeunique=true)
-        a(on) = join(df1, df2, on = on, kind = :anti, makeunique=true)
+        i(on) = join(dfa, dfb, on = on, kind = :inner, makeunique=true)
+        l(on) = join(dfa, dfb, on = on, kind = :left, makeunique=true)
+        r(on) = join(dfa, dfb, on = on, kind = :right, makeunique=true)
+        o(on) = join(dfa, dfb, on = on, kind = :outer, makeunique=true)
+        s(on) = join(dfa, dfb, on = on, kind = :semi, makeunique=true)
+        a(on) = join(dfa, dfb, on = on, kind = :anti, makeunique=true)
 
         @test s(:id) ==
               s(:fid) ==
@@ -183,7 +183,7 @@ module TestJoin
               typeof.(a(:fid).columns) ==
               typeof.(a([:id, :fid]).columns) == [Vector{Int}, Vector{Float64}]
 
-        global on = :id
+        on = :id
         @test i(on) == DataFrame(Any[[1, 3], [1, 3], [1, 3]], [:id, :fid, :fid_1])
         @test typeof.(i(on).columns) == [Vector{Int}, Vector{Float64}, Vector{Float64}]
         @test l(on) ≅ DataFrame(id = [1, 3, 5],
@@ -202,7 +202,7 @@ module TestJoin
         @test typeof.(o(on).columns) ==
             [Vector{Int}, Vector{Union{Float64, Missing}}, Vector{Union{Float64, Missing}}]
 
-        global on = :fid
+        on = :fid
         @test i(on) == DataFrame(Any[[1, 3], [1.0, 3.0], [1, 3]], [:id, :fid, :id_1])
         @test typeof.(i(on).columns) == [Vector{Int}, Vector{Float64}, Vector{Int}]
         @test l(on) ≅ DataFrame(id = [1, 3, 5],
@@ -221,7 +221,7 @@ module TestJoin
         @test typeof.(o(on).columns) == [Vector{Union{Int, Missing}}, Vector{Float64},
                                          Vector{Union{Int, Missing}}]
 
-        global on = [:id, :fid]
+        on = [:id, :fid]
         @test i(on) == DataFrame(Any[[1, 3], [1, 3]], [:id, :fid])
         @test typeof.(i(on).columns) == [Vector{Int}, Vector{Float64}]
         @test l(on) == DataFrame(id = [1, 3, 5], fid = [1, 3, 5])
@@ -233,26 +233,26 @@ module TestJoin
     end
 
     @testset "all joins with CategoricalArrays" begin
-        global df1 = DataFrame(Any[CategoricalArray([1, 3, 5]),
-                               CategoricalArray([1.0, 3.0, 5.0])], [:id, :fid])
-        global df2 = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
+        dfa = DataFrame(Any[CategoricalArray([1, 3, 5]),
+                        CategoricalArray([1.0, 3.0, 5.0])], [:id, :fid])
+        dfb = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
                                CategoricalArray([0.0, 1.0, 2.0, 3.0, 4.0])], [:id, :fid])
 
-        @test join(df1, df2, kind=:cross, makeunique=true) ==
+        @test join(dfa, dfb, kind=:cross, makeunique=true) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
                           repeat([1, 3, 5], inner = 5),
                           repeat([0, 1, 2, 3, 4], outer = 3),
                           repeat([0, 1, 2, 3, 4], outer = 3)],
                       [:id, :fid, :id_1, :fid_1])
-        @test all(isa.(join(df1, df2, kind=:cross, makeunique=true).columns,
+        @test all(isa.(join(dfa, dfb, kind=:cross, makeunique=true).columns,
                        [CategoricalVector{T} for T in (Int, Float64, Int, Float64)]))
 
-        i(on) = join(df1, df2, on = on, kind = :inner, makeunique=true)
-        l(on) = join(df1, df2, on = on, kind = :left, makeunique=true)
-        r(on) = join(df1, df2, on = on, kind = :right, makeunique=true)
-        o(on) = join(df1, df2, on = on, kind = :outer, makeunique=true)
-        s(on) = join(df1, df2, on = on, kind = :semi, makeunique=true)
-        a(on) = join(df1, df2, on = on, kind = :anti, makeunique=true)
+        i(on) = join(dfa, dfb, on = on, kind = :inner, makeunique=true)
+        l(on) = join(dfa, dfb, on = on, kind = :left, makeunique=true)
+        r(on) = join(dfa, dfb, on = on, kind = :right, makeunique=true)
+        o(on) = join(dfa, dfb, on = on, kind = :outer, makeunique=true)
+        s(on) = join(dfa, dfb, on = on, kind = :semi, makeunique=true)
+        a(on) = join(dfa, dfb, on = on, kind = :anti, makeunique=true)
 
         @test s(:id) ==
               s(:fid) ==
@@ -272,7 +272,7 @@ module TestJoin
         @test all(isa.(a(:id).columns,
                        [CategoricalVector{T} for T in (Int, Float64)]))
 
-        global on = :id
+        on = :id
         @test i(on) == DataFrame(Any[[1, 3], [1, 3], [1, 3]], [:id, :fid, :fid_1])
         @test all(isa.(i(on).columns,
                        [CategoricalVector{T} for T in (Int, Float64, Float64)]))
@@ -292,7 +292,7 @@ module TestJoin
         @test all(isa.(o(on).columns,
                        [CategoricalVector{T} for T in (Int,Union{Float64,Missing},Union{Float64, Missing})]))
 
-        global on = :fid
+        on = :fid
         @test i(on) == DataFrame(Any[[1, 3], [1.0, 3.0], [1, 3]], [:id, :fid, :id_1])
         @test all(isa.(i(on).columns,
                        [CategoricalVector{T} for T in (Int, Float64, Int)]))
@@ -312,7 +312,7 @@ module TestJoin
         @test all(isa.(o(on).columns,
                        [CategoricalVector{T} for T in (Union{Int, Missing}, Float64, Union{Int, Missing})]))
 
-        global on = [:id, :fid]
+        on = [:id, :fid]
         @test i(on) == DataFrame(Any[[1, 3], [1, 3]], [:id, :fid])
         @test all(isa.(i(on).columns,
                        [CategoricalVector{T} for T in (Int, Float64)]))

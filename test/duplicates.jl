@@ -20,7 +20,7 @@ module TestDuplicates
     @test pdf ≅ updf
 
     @testset "missing" begin
-        global df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
-        @test DataFrames.colmissing(df) == [0, 0]
+        dfa = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
+        @test DataFrames.colmissing(dfa) == [0, 0]
     end
 end
