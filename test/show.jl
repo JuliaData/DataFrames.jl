@@ -283,12 +283,22 @@ module TestShow
     io = IOBuffer()
     showcols(io, df)
     str = String(take!(io))
-    @test str == """
-    2×2 $DataFrame
-    │ Col # │ Name │ Eltype                           │ Missing │ Values          │
-    ├───────┼──────┼──────────────────────────────────┼─────────┼─────────────────┤
-    │ 1     │ Fish │ String                           │ 0       │ Suzy  …  Amir   │
-    │ 2     │ Mass │ Union{Float64, $Missing} │ 1       │ 1.5  …  missing │"""
+    if VERSION ≥ v"0.7.0-"
+        ref = """
+        2×2 $DataFrame
+        │ Col # │ Name │ Eltype                  │ Missing │ Values          │
+        ├───────┼──────┼─────────────────────────┼─────────┼─────────────────┤
+        │ 1     │ Fish │ String                  │ 0       │ Suzy  …  Amir   │
+        │ 2     │ Mass │ $(Union{Missing,Float64}) │ 1       │ 1.5  …  missing │"""
+    else
+        ref = """
+        2×2 $DataFrame
+        │ Col # │ Name │ Eltype                           │ Missing │ Values          │
+        ├───────┼──────┼──────────────────────────────────┼─────────┼─────────────────┤
+        │ 1     │ Fish │ String                           │ 0       │ Suzy  …  Amir   │
+        │ 2     │ Mass │ Union{Float64, $Missing} │ 1       │ 1.5  …  missing │"""
+    end
+    @test str == ref
 
     # Test showing missing
     df = DataFrame(A = [:Symbol, missing, :missing],
@@ -314,19 +324,36 @@ module TestShow
     io = IOBuffer()
     showcols(io, df)
     str = String(take!(io))
-    @test str == """
-    3×3 $DataFrame
-    │ Col # │ Name │ Eltype                          │ Missing │
-    ├───────┼──────┼─────────────────────────────────┼─────────┤
-    │ 1     │ A    │ Union{$Missing, Symbol} │ 1       │
-    │ 2     │ B    │ Union{$Missing, String} │ 1       │
-    │ 3     │ C    │ Any                             │ 1       │
-    
-    │ Col # │ Values              │
-    ├───────┼─────────────────────┤
-    │ 1     │ Symbol  …  missing  │
-    │ 2     │ missing  …  missing │
-    │ 3     │ missing  …  missing │"""
+    if VERSION ≥ v"0.7.0-"
+        ref = """
+        3×3 $DataFrame
+        │ Col # │ Name │ Eltype                 │ Missing │
+        ├───────┼──────┼────────────────────────┼─────────┤
+        │ 1     │ A    │ $(Union{Missing,Symbol}) │ 1       │
+        │ 2     │ B    │ $(Union{Missing,String}) │ 1       │
+        │ 3     │ C    │ Any                    │ 1       │
+        
+        │ Col # │ Values              │
+        ├───────┼─────────────────────┤
+        │ 1     │ Symbol  …  missing  │
+        │ 2     │ missing  …  missing │
+        │ 3     │ missing  …  missing │"""
+    else
+        ref = """
+        3×3 $DataFrame
+        │ Col # │ Name │ Eltype                          │ Missing │
+        ├───────┼──────┼─────────────────────────────────┼─────────┤
+        │ 1     │ A    │ $(Union{Missing,Symbol}) │ 1       │
+        │ 2     │ B    │ $(Union{Missing,String}) │ 1       │
+        │ 3     │ C    │ Any                             │ 1       │
+        
+        │ Col # │ Values              │
+        ├───────┼─────────────────────┤
+        │ 1     │ Symbol  …  missing  │
+        │ 2     │ missing  …  missing │
+        │ 3     │ missing  …  missing │"""
+    end
+    @test str == ref
 
     # Test computing width for Array{String} columns
     df = DataFrame(Any[["a"]], [:x])
