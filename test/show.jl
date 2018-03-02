@@ -283,7 +283,7 @@ module TestShow
     io = IOBuffer()
     showcols(io, df)
     str = String(take!(io))
-    if VERSION ≥ v"0.7.0-"
+    if VERSION ≥ v"0.7.0-DEV.2762"
         ref = """
         2×2 $DataFrame
         │ Col # │ Name │ Eltype                  │ Missing │ Values          │
@@ -324,7 +324,7 @@ module TestShow
     io = IOBuffer()
     showcols(io, df)
     str = String(take!(io))
-    if VERSION ≥ v"0.7.0-"
+    if VERSION ≥ v"0.7.0-DEV.2762"
         ref = """
         3×3 $DataFrame
         │ Col # │ Name │ Eltype                 │ Missing │
