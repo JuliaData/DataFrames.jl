@@ -38,17 +38,17 @@ module TestJoin
     @test_throws ArgumentError join(name, job, on=:ID, kind=:other)
 
     # Join with no non-key columns
-    on_ = [:ID]
-    nameid = name[on_]
-    jobid = job[on_]
+    on = [:ID]
+    nameid = name[on]
+    jobid = job[on]
 
-    @test join(nameid, jobid, on = :ID) == inner[on_]
-    @test join(nameid, jobid, on = :ID, kind = :inner) == inner[on_]
-    @test join(nameid, jobid, on = :ID, kind = :outer) == outer[on_]
-    @test join(nameid, jobid, on = :ID, kind = :left) == left[on_]
-    @test join(nameid, jobid, on = :ID, kind = :right) == right[on_]
-    @test join(nameid, jobid, on = :ID, kind = :semi) == semi[on_]
-    @test join(nameid, jobid, on = :ID, kind = :anti) == anti[on_]
+    @test join(nameid, jobid, on = :ID) == inner[on]
+    @test join(nameid, jobid, on = :ID, kind = :inner) == inner[on]
+    @test join(nameid, jobid, on = :ID, kind = :outer) == outer[on]
+    @test join(nameid, jobid, on = :ID, kind = :left) == left[on]
+    @test join(nameid, jobid, on = :ID, kind = :right) == right[on]
+    @test join(nameid, jobid, on = :ID, kind = :semi) == semi[on]
+    @test join(nameid, jobid, on = :ID, kind = :anti) == anti[on]
 
     # Join on multiple keys
     df1 = DataFrame(A = 1, B = 2, C = 3)
@@ -72,56 +72,63 @@ module TestJoin
     # Cross joins don't take keys
     @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
 
-    # test empty inputs
-    simple_df(len::Int, col=:A) = (df = DataFrame();
-                                   df[col]=Vector{Union{Int, Missing}}(1:len);
-                                   df)
-    @test join(simple_df(0), simple_df(0), on = :A, kind = :left) == simple_df(0)
-    @test join(simple_df(2), simple_df(0), on = :A, kind = :left) == simple_df(2)
-    @test join(simple_df(0), simple_df(2), on = :A, kind = :left) == simple_df(0)
-    @test join(simple_df(0), simple_df(0), on = :A, kind = :right) == simple_df(0)
-    @test join(simple_df(0), simple_df(2), on = :A, kind = :right) == simple_df(2)
-    @test join(simple_df(2), simple_df(0), on = :A, kind = :right) == simple_df(0)
-    @test join(simple_df(0), simple_df(0), on = :A, kind = :inner) == simple_df(0)
-    @test join(simple_df(0), simple_df(2), on = :A, kind = :inner) == simple_df(0)
-    @test join(simple_df(2), simple_df(0), on = :A, kind = :inner) == simple_df(0)
-    @test join(simple_df(0), simple_df(0), on = :A, kind = :outer) == simple_df(0)
-    @test join(simple_df(0), simple_df(2), on = :A, kind = :outer) == simple_df(2)
-    @test join(simple_df(2), simple_df(0), on = :A, kind = :outer) == simple_df(2)
-    @test join(simple_df(0), simple_df(0), on = :A, kind = :semi) == simple_df(0)
-    @test join(simple_df(2), simple_df(0), on = :A, kind = :semi) == simple_df(0)
-    @test join(simple_df(0), simple_df(2), on = :A, kind = :semi) == simple_df(0)
-    @test join(simple_df(0), simple_df(0), on = :A, kind = :anti) == simple_df(0)
-    @test join(simple_df(2), simple_df(0), on = :A, kind = :anti) == simple_df(2)
-    @test join(simple_df(0), simple_df(2), on = :A, kind = :anti) == simple_df(0)
-    @test join(simple_df(0), simple_df(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
-    @test join(simple_df(0), simple_df(2, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
-    @test join(simple_df(2), simple_df(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
+    @testset "Test empty inputs 1" begin
+        simple_df(len::Int, col=:A) = (df = DataFrame();
+                                       df[col]=Vector{Union{Int, Missing}}(1:len);
+                                       df)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :left) == simple_df(0)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :left) == simple_df(2)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :left) == simple_df(0)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :right) == simple_df(0)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :right) == simple_df(2)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :right) == simple_df(0)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :inner) == simple_df(0)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :inner) == simple_df(0)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :inner) == simple_df(0)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :outer) == simple_df(0)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :outer) == simple_df(2)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :outer) == simple_df(2)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :semi) == simple_df(0)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :semi) == simple_df(0)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :semi) == simple_df(0)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :anti) == simple_df(0)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :anti) == simple_df(2)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :anti) == simple_df(0)
+        @test join(simple_df(0), simple_df(0, :B), kind = :cross) == DataFrame(A=Int[],
+                                                                               B=Int[])
+        @test join(simple_df(0), simple_df(2, :B), kind = :cross) == DataFrame(A=Int[],
+                                                                               B=Int[])
+        @test join(simple_df(2), simple_df(0, :B), kind = :cross) == DataFrame(A=Int[],
+                                                                               B=Int[])
+    end
 
-    # test empty inputs
-    simple_df2(len::Int, col=:A) = (df = DataFrame(); df[col]=collect(1:len); df)
-    @test join(simple_df2(0), simple_df2(0), on = :A, kind = :left) ==  simple_df2(0)
-    @test join(simple_df2(2), simple_df2(0), on = :A, kind = :left) ==  simple_df2(2)
-    @test join(simple_df2(0), simple_df2(2), on = :A, kind = :left) ==  simple_df2(0)
-    @test join(simple_df2(0), simple_df2(0), on = :A, kind = :right) == simple_df2(0)
-    @test join(simple_df2(0), simple_df2(2), on = :A, kind = :right) == simple_df2(2)
-    @test join(simple_df2(2), simple_df2(0), on = :A, kind = :right) == simple_df2(0)
-    @test join(simple_df2(0), simple_df2(0), on = :A, kind = :inner) == simple_df2(0)
-    @test join(simple_df2(0), simple_df2(2), on = :A, kind = :inner) == simple_df2(0)
-    @test join(simple_df2(2), simple_df2(0), on = :A, kind = :inner) == simple_df2(0)
-    @test join(simple_df2(0), simple_df2(0), on = :A, kind = :outer) == simple_df2(0)
-    @test join(simple_df2(0), simple_df2(2), on = :A, kind = :outer) == simple_df2(2)
-    @test join(simple_df2(2), simple_df2(0), on = :A, kind = :outer) == simple_df2(2)
-    @test join(simple_df2(0), simple_df2(0), on = :A, kind = :semi) ==  simple_df2(0)
-    @test join(simple_df2(2), simple_df2(0), on = :A, kind = :semi) ==  simple_df2(0)
-    @test join(simple_df2(0), simple_df2(2), on = :A, kind = :semi) ==  simple_df2(0)
-    @test join(simple_df2(0), simple_df2(0), on = :A, kind = :anti) ==  simple_df2(0)
-    @test join(simple_df2(2), simple_df2(0), on = :A, kind = :anti) ==  simple_df2(2)
-    @test join(simple_df2(0), simple_df2(2), on = :A, kind = :anti) ==  simple_df2(0)
-    @test join(simple_df2(0), simple_df2(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
-    @test join(simple_df2(0), simple_df2(2, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
-    @test join(simple_df2(2), simple_df2(0, :B), kind = :cross) == DataFrame(A=Int[], B=Int[])
-
+    @testset "Test empty inputs 2" begin
+        simple_df(len::Int, col=:A) = (df = DataFrame(); df[col]=collect(1:len); df)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :left) ==  simple_df(0)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :left) ==  simple_df(2)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :left) ==  simple_df(0)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :right) == simple_df(0)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :right) == simple_df(2)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :right) == simple_df(0)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :inner) == simple_df(0)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :inner) == simple_df(0)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :inner) == simple_df(0)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :outer) == simple_df(0)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :outer) == simple_df(2)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :outer) == simple_df(2)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :semi) ==  simple_df(0)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :semi) ==  simple_df(0)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :semi) ==  simple_df(0)
+        @test join(simple_df(0), simple_df(0), on = :A, kind = :anti) ==  simple_df(0)
+        @test join(simple_df(2), simple_df(0), on = :A, kind = :anti) ==  simple_df(2)
+        @test join(simple_df(0), simple_df(2), on = :A, kind = :anti) ==  simple_df(0)
+        @test join(simple_df(0), simple_df(0, :B), kind = :cross) == DataFrame(A=Int[],
+                                                                               B=Int[])
+        @test join(simple_df(0), simple_df(2, :B), kind = :cross) == DataFrame(A=Int[],
+                                                                               B=Int[])
+        @test join(simple_df(2), simple_df(0, :B), kind = :cross) == DataFrame(A=Int[],
+                                                                               B=Int[])
+    end
 
     # issue #960
     df1 = DataFrame(A = 1:50,
@@ -234,9 +241,9 @@ module TestJoin
 
     @testset "all joins with CategoricalArrays" begin
         dfa = DataFrame(Any[CategoricalArray([1, 3, 5]),
-                        CategoricalArray([1.0, 3.0, 5.0])], [:id, :fid])
+                            CategoricalArray([1.0, 3.0, 5.0])], [:id, :fid])
         dfb = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
-                               CategoricalArray([0.0, 1.0, 2.0, 3.0, 4.0])], [:id, :fid])
+                            CategoricalArray([0.0, 1.0, 2.0, 3.0, 4.0])], [:id, :fid])
 
         @test join(dfa, dfb, kind=:cross, makeunique=true) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
@@ -488,7 +495,7 @@ module TestJoin
         @test eltypes(join(l, r, on=[:a, :b], kind=:outer)) == [Any, Int]
 
         # join by :b (Any is not on-column)
-        @test join(l, r, on=:b, kind=:inner, makeunique=true) ≅ 
+        @test join(l, r, on=:b, kind=:inner, makeunique=true) ≅
             DataFrame(a=Any[3:7;], b=3:7, a_1=Any[3:7;])
         @test eltypes(join(l, r, on=:b, kind=:inner, makeunique=true)) == [Any, Int, Any]
 
@@ -534,12 +541,12 @@ module TestJoin
 
         @test join(l, r, on=:a, kind=:left, makeunique=true) ≅
             DataFrame(a=l[:a], b=l[:b], b_1=similar_missing(r[:b], nl))
-        @test eltypes(join(l, r, on=:a, kind=:left, makeunique=true)) == 
+        @test eltypes(join(l, r, on=:a, kind=:left, makeunique=true)) ==
             [Int, CS, Union{CS, Missing}]
 
         @test join(l, r, on=:a, kind=:right, makeunique=true) ≅
             DataFrame(a=r[:a], b=similar_missing(l[:b], nr), b_1=r[:b])
-        @test eltypes(join(l, r, on=:a, kind=:right, makeunique=true)) == 
+        @test eltypes(join(l, r, on=:a, kind=:right, makeunique=true)) ==
             [Int, Union{CS, Missing}, CS]
 
         @test join(l, r, on=:a, kind=:outer, makeunique=true) ≅
@@ -556,12 +563,12 @@ module TestJoin
 
         @test join(l, r, on=:b, kind=:left, makeunique=true) ≅
             DataFrame(a=l[:a], b=l[:b], a_1=fill(missing, nl))
-        @test eltypes(join(l, r, on=:b, kind=:left, makeunique=true)) == 
+        @test eltypes(join(l, r, on=:b, kind=:left, makeunique=true)) ==
             [Int, CS, Union{Int, Missing}]
 
         @test join(l, r, on=:b, kind=:right, makeunique=true) ≅
             DataFrame(a=fill(missing, nr), b=r[:b], a_1=r[:a])
-        @test eltypes(join(l, r, on=:b, kind=:right, makeunique=true)) == 
+        @test eltypes(join(l, r, on=:b, kind=:right, makeunique=true)) ==
             [Union{Int, Missing}, CS, Int]
 
         @test join(l, r, on=:b, kind=:outer, makeunique=true) ≅

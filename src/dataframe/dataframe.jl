@@ -121,7 +121,17 @@ function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false)::DataFr
     DataFrame(columns, Index(colnames, makeunique=makeunique))
 end
 
-DataFrame(dict::AbstractDict) = convert(DataFrame, dict)
+function DataFrame(d::AbstractDict)
+    colnames = keys(d)
+    if isa(d, Dict)
+        colnames = sort!(collect(keys(d)))
+    else
+        colnames = keys(d)
+    end
+    colindex = Index(Symbol[k for k in colnames])
+    columns = Any[d[c] for c in colnames]
+    DataFrame(columns, colindex)
+end
 
 function DataFrame(; kwargs...)
     if isempty(kwargs)
@@ -930,17 +940,7 @@ end
 
 Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
-function Base.convert(::Type{DataFrame}, d::AbstractDict)
-    colnames = keys(d)
-    if isa(d, Dict)
-        colnames = sort!(collect(keys(d)))
-    else
-        colnames = keys(d)
-    end
-    colindex = Index(Symbol[k for k in colnames])
-    columns = Any[d[c] for c in colnames]
-    DataFrame(columns, colindex)
-end
+Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 
 
 ##############################################################################

@@ -8,7 +8,7 @@ const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
 
 
 function identifier(s::AbstractString)
-    s = normalize(s)
+    s = Unicode.normalize(s)
     if !isidentifier(s)
         s = makeidentifier(s)
     end

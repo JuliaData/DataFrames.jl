@@ -130,7 +130,7 @@ end
 #
 ##############################################################################
 
-if VERSION ≥ v"0.7.0-"
+if VERSION ≥ v"0.7.0-DEV.4059"
     function latex_char_escape(char::Char)
         if char == '\\'
             return "\\textbackslash{}"
