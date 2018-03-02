@@ -158,24 +158,24 @@ module TestJoin
                    collect(2:11)], [:x, :z, :y])
 
     @testset "all joins" begin
-        dfa = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
-        dfb = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
+        df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
+        df2 = DataFrame(Any[[0, 1, 2, 3, 4], [0.0, 1.0, 2.0, 3.0, 4.0]], [:id, :fid])
 
-        @test join(dfa, dfb, kind=:cross, makeunique=true) ==
+        @test join(df1, df2, kind=:cross, makeunique=true) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
                           repeat([1, 3, 5], inner = 5),
                           repeat([0, 1, 2, 3, 4], outer = 3),
                           repeat([0, 1, 2, 3, 4], outer = 3)],
                       [:id, :fid, :id_1, :fid_1])
-        @test typeof.(join(dfa, dfb, kind=:cross, makeunique=true).columns) ==
+        @test typeof.(join(df1, df2, kind=:cross, makeunique=true).columns) ==
             [Vector{Int}, Vector{Float64}, Vector{Int}, Vector{Float64}]
 
-        i(on) = join(dfa, dfb, on = on, kind = :inner, makeunique=true)
-        l(on) = join(dfa, dfb, on = on, kind = :left, makeunique=true)
-        r(on) = join(dfa, dfb, on = on, kind = :right, makeunique=true)
-        o(on) = join(dfa, dfb, on = on, kind = :outer, makeunique=true)
-        s(on) = join(dfa, dfb, on = on, kind = :semi, makeunique=true)
-        a(on) = join(dfa, dfb, on = on, kind = :anti, makeunique=true)
+        i(on) = join(df1, df2, on = on, kind = :inner, makeunique=true)
+        l(on) = join(df1, df2, on = on, kind = :left, makeunique=true)
+        r(on) = join(df1, df2, on = on, kind = :right, makeunique=true)
+        o(on) = join(df1, df2, on = on, kind = :outer, makeunique=true)
+        s(on) = join(df1, df2, on = on, kind = :semi, makeunique=true)
+        a(on) = join(df1, df2, on = on, kind = :anti, makeunique=true)
 
         @test s(:id) ==
               s(:fid) ==
@@ -240,26 +240,26 @@ module TestJoin
     end
 
     @testset "all joins with CategoricalArrays" begin
-        dfa = DataFrame(Any[CategoricalArray([1, 3, 5]),
+        df1 = DataFrame(Any[CategoricalArray([1, 3, 5]),
                             CategoricalArray([1.0, 3.0, 5.0])], [:id, :fid])
-        dfb = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
+        df2 = DataFrame(Any[CategoricalArray([0, 1, 2, 3, 4]),
                             CategoricalArray([0.0, 1.0, 2.0, 3.0, 4.0])], [:id, :fid])
 
-        @test join(dfa, dfb, kind=:cross, makeunique=true) ==
+        @test join(df1, df2, kind=:cross, makeunique=true) ==
             DataFrame(Any[repeat([1, 3, 5], inner = 5),
                           repeat([1, 3, 5], inner = 5),
                           repeat([0, 1, 2, 3, 4], outer = 3),
                           repeat([0, 1, 2, 3, 4], outer = 3)],
                       [:id, :fid, :id_1, :fid_1])
-        @test all(isa.(join(dfa, dfb, kind=:cross, makeunique=true).columns,
+        @test all(isa.(join(df1, df2, kind=:cross, makeunique=true).columns,
                        [CategoricalVector{T} for T in (Int, Float64, Int, Float64)]))
 
-        i(on) = join(dfa, dfb, on = on, kind = :inner, makeunique=true)
-        l(on) = join(dfa, dfb, on = on, kind = :left, makeunique=true)
-        r(on) = join(dfa, dfb, on = on, kind = :right, makeunique=true)
-        o(on) = join(dfa, dfb, on = on, kind = :outer, makeunique=true)
-        s(on) = join(dfa, dfb, on = on, kind = :semi, makeunique=true)
-        a(on) = join(dfa, dfb, on = on, kind = :anti, makeunique=true)
+        i(on) = join(df1, df2, on = on, kind = :inner, makeunique=true)
+        l(on) = join(df1, df2, on = on, kind = :left, makeunique=true)
+        r(on) = join(df1, df2, on = on, kind = :right, makeunique=true)
+        o(on) = join(df1, df2, on = on, kind = :outer, makeunique=true)
+        s(on) = join(df1, df2, on = on, kind = :semi, makeunique=true)
+        a(on) = join(df1, df2, on = on, kind = :anti, makeunique=true)
 
         @test s(:id) ==
               s(:fid) ==

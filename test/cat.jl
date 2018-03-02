@@ -59,14 +59,12 @@ module TestCat
         @test df[3] == collect(1:10)
 
         df = DataFrame()
-        df_ = DataFrame(x1=CategoricalVector{Union{Int,Missing}}(1:10))
-        dfc = hcat(df_, df, makeunique=true)
-        @test dfc[1] == collect(1:10)
-        @test names(dfc) == [:x1]
-        dfd = hcat(11:20, dfc, makeunique=true)
-
-        @test dfd[1] == collect(11:20)
-        @test names(dfd) == [:x1, :x1_1]
+        df2 = hcat(CategoricalVector{Union{Int,Missing}}(1:10), df, makeunique=true)
+        @test df2[1] == collect(1:10)
+        @test names(df2) == [:x1]
+        df3 = hcat(11:20, df2, makeunique=true)
+        @test df3[1] == collect(11:20)
+        @test names(df3) == [:x1, :x1_1]
 
         @test_throws ArgumentError hcat("a", df, makeunique=true)
         @test_throws ArgumentError hcat(df, "a", makeunique=true)
@@ -168,42 +166,42 @@ module TestCat
 
     @testset "vcat >2 args" begin
         @test vcat(DataFrame(), DataFrame(), DataFrame()) == DataFrame()
-        dfa = DataFrame(x = trues(1), y = falses(1))
-        @test vcat(dfa, dfa, dfa) == DataFrame(x = trues(3), y = falses(3))
+        df = DataFrame(x = trues(1), y = falses(1))
+        @test vcat(df, df, df) == DataFrame(x = trues(3), y = falses(3))
     end
 
     @testset "vcat mixed coltypes" begin
-        dfa = vcat(DataFrame([[1]], [:x]), DataFrame([[1.0]], [:x]))
-        @test dfa == DataFrame([[1.0, 1.0]], [:x])
-        @test typeof.(dfa.columns) == [Vector{Float64}]
-        dfa = vcat(DataFrame([[1]], [:x]), DataFrame([["1"]], [:x]))
-        @test dfa == DataFrame([[1, "1"]], [:x])
-        @test typeof.(dfa.columns) == [Vector{Any}]
-        dfa = vcat(DataFrame([Union{Missing, Int}[1]], [:x]), DataFrame([[1]], [:x]))
-        @test dfa == DataFrame([[1, 1]], [:x])
-        @test typeof.(dfa.columns) == [Vector{Union{Missing, Int}}]
-        dfa = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
-        @test dfa == DataFrame([[1, 1]], [:x])
-        @test typeof(dfa[:x]) <: CategoricalVector{Int}
-        dfa = vcat(DataFrame([CategoricalArray([1])], [:x]),
+        df = vcat(DataFrame([[1]], [:x]), DataFrame([[1.0]], [:x]))
+        @test df == DataFrame([[1.0, 1.0]], [:x])
+        @test typeof.(df.columns) == [Vector{Float64}]
+        df = vcat(DataFrame([[1]], [:x]), DataFrame([["1"]], [:x]))
+        @test df == DataFrame([[1, "1"]], [:x])
+        @test typeof.(df.columns) == [Vector{Any}]
+        df = vcat(DataFrame([Union{Missing, Int}[1]], [:x]), DataFrame([[1]], [:x]))
+        @test df == DataFrame([[1, 1]], [:x])
+        @test typeof.(df.columns) == [Vector{Union{Missing, Int}}]
+        df = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
+        @test df == DataFrame([[1, 1]], [:x])
+        @test typeof(df[:x]) <: CategoricalVector{Int}
+        df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([Union{Missing, Int}[1]], [:x]))
-        @test dfa == DataFrame([[1, 1]], [:x])
-        @test typeof(dfa[:x]) <: CategoricalVector{Union{Int, Missing}}
-        dfa = vcat(DataFrame([CategoricalArray([1])], [:x]),
+        @test df == DataFrame([[1, 1]], [:x])
+        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Missing}}
+        df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([CategoricalArray{Union{Int, Missing}}([1])], [:x]))
-        @test dfa == DataFrame([[1, 1]], [:x])
-        @test typeof(dfa[:x]) <: CategoricalVector{Union{Int, Missing}}
-        dfa = vcat(DataFrame([Union{Int, Missing}[1]], [:x]),
+        @test df == DataFrame([[1, 1]], [:x])
+        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Missing}}
+        df = vcat(DataFrame([Union{Int, Missing}[1]], [:x]),
                   DataFrame([["1"]], [:x]))
-        @test dfa == DataFrame([[1, "1"]], [:x])
-        @test typeof.(dfa.columns) == [Vector{Any}]
-        dfa = vcat(DataFrame([CategoricalArray([1])], [:x]),
+        @test df == DataFrame([[1, "1"]], [:x])
+        @test typeof.(df.columns) == [Vector{Any}]
+        df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([CategoricalArray(["1"])], [:x]))
-        @test dfa == DataFrame([[1, "1"]], [:x])
-        @test typeof(dfa[:x]) <: CategoricalVector{Any}
-        dfa = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
-        @test dfa == DataFrame([[true, false]], [:x])
-        @test typeof.(dfa.columns) == [Vector{Bool}]
+        @test df == DataFrame([[1, "1"]], [:x])
+        @test typeof(df[:x]) <: CategoricalVector{Any}
+        df = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
+        @test df == DataFrame([[true, false]], [:x])
+        @test typeof.(df.columns) == [Vector{Bool}]
     end
 
     @testset "vcat errors" begin
@@ -211,71 +209,71 @@ module TestCat
         @test err.value.msg == "column(s) x are missing from argument(s) 1 and 2"
         err = @test_throws ArgumentError vcat(DataFrame(), DataFrame(), DataFrame(x=[1]))
         @test err.value.msg == "column(s) x are missing from argument(s) 1 and 2"
-        dfa = DataFrame(A = 1:3, B = 1:3)
-        dfb = DataFrame(A = 1:3)
+        df1 = DataFrame(A = 1:3, B = 1:3)
+        df2 = DataFrame(A = 1:3)
         # right missing 1 column
-        err = @test_throws ArgumentError vcat(dfa, dfb)
+        err = @test_throws ArgumentError vcat(df1, df2)
         @test err.value.msg == "column(s) B are missing from argument(s) 2"
         # left missing 1 column
-        err = @test_throws ArgumentError vcat(dfb, dfa)
+        err = @test_throws ArgumentError vcat(df2, df1)
         @test err.value.msg == "column(s) B are missing from argument(s) 1"
         # multiple missing 1 column
-        err = @test_throws ArgumentError vcat(dfa, dfb, dfb, dfb, dfb, dfb)
+        err = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2, df2)
         @test err.value.msg == "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
         # argument missing >1 columns
-        dfa = DataFrame(A = 1:3, B = 1:3, C = 1:3, D = 1:3, E = 1:3)
-        err = @test_throws ArgumentError vcat(dfa, dfb)
+        df1 = DataFrame(A = 1:3, B = 1:3, C = 1:3, D = 1:3, E = 1:3)
+        err = @test_throws ArgumentError vcat(df1, df2)
         @test err.value.msg == "column(s) B, C, D and E are missing from argument(s) 2"
         # >1 arguments missing >1 columns
-        err = @test_throws ArgumentError vcat(dfa, dfb, dfb, dfb, dfb)
+        err = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2)
         @test err.value.msg == "column(s) B, C, D and E are missing from argument(s) 2, 3, 4 and 5"
         # out of order
-        dfb = dfa[reverse(names(dfa))]
-        err = @test_throws ArgumentError vcat(dfa, dfb)
+        df2 = df1[reverse(names(df1))]
+        err = @test_throws ArgumentError vcat(df1, df2)
         @test err.value.msg == "column order of argument(s) 1 != column order of argument(s) 2"
         # first group >1 arguments
-        err = @test_throws ArgumentError vcat(dfa, dfa, dfb)
+        err = @test_throws ArgumentError vcat(df1, df1, df2)
         @test err.value.msg == "column order of argument(s) 1 and 2 != column order of argument(s) 3"
         # second group >1 arguments
-        err = @test_throws ArgumentError vcat(dfa, dfb, dfb)
+        err = @test_throws ArgumentError vcat(df1, df2, df2)
         @test err.value.msg == "column order of argument(s) 1 != column order of argument(s) 2 and 3"
         # first and second groups >1 argument
-        err = @test_throws ArgumentError vcat(dfa, dfa, dfa, dfb, dfb, dfb)
+        err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2)
         @test err.value.msg == "column order of argument(s) 1, 2 and 3 != column order of argument(s) 4, 5 and 6"
         # >2 groups out of order
         srand(1)
-        dfc = dfa[shuffle(names(dfa))]
-        err = @test_throws ArgumentError vcat(dfa, dfa, dfa, dfb, dfb, dfb, dfc, dfc, dfc, dfc)
+        df3 = df1[shuffle(names(df1))]
+        err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
         @test err.value.msg == "column order of argument(s) 1, 2 and 3 != column order of argument(s) 4, 5 and 6 != column order of argument(s) 7, 8, 9 and 10"
         # missing columns throws error before out of order columns
-        dfa = DataFrame(A = 1, B = 1)
-        dfb = DataFrame(A = 1)
-        dfc = DataFrame(B = 1, A = 1)
-        err = @test_throws ArgumentError vcat(dfa, dfb, dfc)
+        df1 = DataFrame(A = 1, B = 1)
+        df2 = DataFrame(A = 1)
+        df3 = DataFrame(B = 1, A = 1)
+        err = @test_throws ArgumentError vcat(df1, df2, df3)
         @test err.value.msg == "column(s) B are missing from argument(s) 2"
         # unique columns for both sides
-        dfa = DataFrame(A = 1, B = 1, C = 1, D = 1)
-        dfb = DataFrame(A = 1, C = 1, D = 1, E = 1, F = 1)
-        err = @test_throws ArgumentError vcat(dfa, dfb)
+        df1 = DataFrame(A = 1, B = 1, C = 1, D = 1)
+        df2 = DataFrame(A = 1, C = 1, D = 1, E = 1, F = 1)
+        err = @test_throws ArgumentError vcat(df1, df2)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, and column(s) B are missing from argument(s) 2"
-        err = @test_throws ArgumentError vcat(dfa, dfa, dfb, dfb)
+        err = @test_throws ArgumentError vcat(df1, df1, df2, df2)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, and column(s) B are missing from argument(s) 3 and 4"
-        dfc = DataFrame(A = 1, B = 1, C = 1, D = 1, E = 1)
-        err = @test_throws ArgumentError vcat(dfa, dfb, dfc)
+        df3 = DataFrame(A = 1, B = 1, C = 1, D = 1, E = 1)
+        err = @test_throws ArgumentError vcat(df1, df2, df3)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, column(s) B are missing from argument(s) 2, and column(s) F are missing from argument(s) 3"
-        err = @test_throws ArgumentError vcat(dfa, dfa, dfb, dfb, dfc, dfc)
+        err = @test_throws ArgumentError vcat(df1, df1, df2, df2, df3, df3)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, column(s) B are missing from argument(s) 3 and 4, and column(s) F are missing from argument(s) 5 and 6"
-        err = @test_throws ArgumentError vcat(dfa, dfa, dfa, dfb, dfb, dfb, dfc, dfc, dfc)
+        err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 and 3, column(s) B are missing from argument(s) 4, 5 and 6, and column(s) F are missing from argument(s) 7, 8 and 9"
         # df4 is a superset of names found in all other DataFrames and won't be shown in error
-        dfd = DataFrame(A = 1, B = 1, C = 1, D = 1, E = 1, F = 1)
-        err = @test_throws ArgumentError vcat(dfa, dfb, dfc, dfd)
+        df4 = DataFrame(A = 1, B = 1, C = 1, D = 1, E = 1, F = 1)
+        err = @test_throws ArgumentError vcat(df1, df2, df3, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, column(s) B are missing from argument(s) 2, and column(s) F are missing from argument(s) 3"
-        err = @test_throws ArgumentError vcat(dfa, dfa, dfb, dfb, dfc, dfc, dfd, dfd)
+        err = @test_throws ArgumentError vcat(df1, df1, df2, df2, df3, df3, df4, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1 and 2, column(s) B are missing from argument(s) 3 and 4, and column(s) F are missing from argument(s) 5 and 6"
-        err = @test_throws ArgumentError vcat(dfa, dfa, dfa, dfb, dfb, dfb, dfc, dfc, dfc, dfd, dfd, dfd)
+        err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df4, df4, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 2 and 3, column(s) B are missing from argument(s) 4, 5 and 6, and column(s) F are missing from argument(s) 7, 8 and 9"
-        err = @test_throws ArgumentError vcat(dfa, dfb, dfc, dfd, dfa, dfb, dfc, dfd, dfa, dfb, dfc, dfd)
+        err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2, df3, df4, df1, df2, df3, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, column(s) B are missing from argument(s) 2, 6 and 10, and column(s) F are missing from argument(s) 3, 7 and 11"
     end
     x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2)

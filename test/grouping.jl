@@ -26,8 +26,8 @@ module TestGrouping
         end
 
         @testset "::Function, ::GroupedDataFrame" begin
-            gda = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
-            @test colwise(length, gda) == [[2,2], [2,2]]
+            gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+            @test colwise(length, gd) == [[2,2], [2,2]]
         end
 
         @testset "::Vector, ::AbstractDataFrame" begin
@@ -53,8 +53,8 @@ module TestGrouping
         end
 
         @testset "::Vector, ::GroupedDataFrame" begin
-            gda = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
-            @test colwise([length], gda) == [[2 2], [2 2]]
+            gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+            @test colwise([length], gd) == [[2 2], [2 2]]
         end
 
         @testset "::Tuple, ::AbstractDataFrame" begin
@@ -81,8 +81,8 @@ module TestGrouping
         end
 
         @testset "::Tuple, ::GroupedDataFrame" begin
-            gda = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
-            @test colwise((length), gda) == [[2,2],[2,2]]
+            gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+            @test colwise((length), gd) == [[2,2],[2,2]]
         end
     end
 
@@ -171,66 +171,66 @@ module TestGrouping
     @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
 
     @testset "grouping with missings" begin
-        dfa= DataFrame(Key1 = ["A", missing, "B", "B", "A"],
+        df= DataFrame(Key1 = ["A", missing, "B", "B", "A"],
                               Key2 = CategoricalArray(["B", "A", "A", missing, "A"]),
                               Value = 1:5)
 
         @testset "sort=false, skipmissing=false" begin
-            gda = groupby(dfa, :Key1)
-            @test length(gda) == 3
-            @test gda[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gda[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
-            @test gda[3] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
+            gd = groupby(df, :Key1)
+            @test length(gd) == 3
+            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
+            @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
+            @test gd[3] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
 
-            gda = groupby(dfa, [:Key1, :Key2])
-            @test length(gda) == 5
-            @test gda[1] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gda[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
-            @test gda[3] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gda[4] ≅ DataFrame(Key1="B", Key2=missing, Value=4)
-            @test gda[5] ≅ DataFrame(Key1="A", Key2="A", Value=5)
+            gd = groupby(df, [:Key1, :Key2])
+            @test length(gd) == 5
+            @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
+            @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
+            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+            @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=4)
+            @test gd[5] ≅ DataFrame(Key1="A", Key2="A", Value=5)
         end
 
         @testset "sort=false, skipmissing=true" begin
-            gda = groupby(dfa, :Key1, skipmissing=true)
-            @test length(gda) == 2
-            @test gda[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gda[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
+            gd = groupby(df, :Key1, skipmissing=true)
+            @test length(gd) == 2
+            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
+            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
 
-            gda = groupby(dfa, [:Key1, :Key2], skipmissing=true)
-            @test length(gda) == 3
-            @test gda[1] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gda[2] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gda[3] == DataFrame(Key1="A", Key2="A", Value=5)
+            gd = groupby(df, [:Key1, :Key2], skipmissing=true)
+            @test length(gd) == 3
+            @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
+            @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
+            @test gd[3] == DataFrame(Key1="A", Key2="A", Value=5)
         end
 
         @testset "sort=true, skipmissing=false" begin
-            gda = groupby(dfa, :Key1, sort=true)
-            @test length(gda) == 3
-            @test gda[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gda[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
-            @test gda[3] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
+            gd = groupby(df, :Key1, sort=true)
+            @test length(gd) == 3
+            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
+            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
+            @test gd[3] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
 
-            gda = groupby(dfa, [:Key1, :Key2], sort=true)
-            @test length(gda) == 5
-            @test gda[1] ≅ DataFrame(Key1="A", Key2="A", Value=5)            
-            @test gda[2] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gda[3] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gda[4] ≅ DataFrame(Key1="B", Key2=missing, Value=4)
-            @test gda[5] ≅ DataFrame(Key1=missing, Key2="A", Value=2)        
+            gd = groupby(df, [:Key1, :Key2], sort=true)
+            @test length(gd) == 5
+            @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=5)            
+            @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
+            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+            @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=4)
+            @test gd[5] ≅ DataFrame(Key1=missing, Key2="A", Value=2)        
         end
 
         @testset "sort=false, skipmissing=true" begin
-            gda = groupby(dfa, :Key1, sort=true, skipmissing=true)
-            @test length(gda) == 2
-            @test gda[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gda[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
+            gd = groupby(df, :Key1, sort=true, skipmissing=true)
+            @test length(gd) == 2
+            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
+            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
 
-            gda = groupby(dfa, [:Key1, :Key2], sort=true, skipmissing=true)
-            @test length(gda) == 3
-            @test gda[1] == DataFrame(Key1="A", Key2="A", Value=5)
-            @test gda[2] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gda[3] == DataFrame(Key1="B", Key2="A", Value=3)
+            gd = groupby(df, [:Key1, :Key2], sort=true, skipmissing=true)
+            @test length(gd) == 3
+            @test gd[1] == DataFrame(Key1="A", Key2="A", Value=5)
+            @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
+            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
         end
     end
 end

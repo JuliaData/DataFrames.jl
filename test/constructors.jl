@@ -69,19 +69,19 @@ module TestConstructors
     @test DataFrame(a=1, b=1:2) == DataFrame(a=[1,1], b=[1,2])
 
     @testset "pair constructor" begin
-        dfa = DataFrame(:x1 => zeros(3), :x2 => ones(3))
-        @test size(dfa, 1) == 3
-        @test size(dfa, 2) == 2
-        @test isequal(dfa, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
+        df = DataFrame(:x1 => zeros(3), :x2 => ones(3))
+        @test size(df, 1) == 3
+        @test size(df, 2) == 2
+        @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
 
-        dfa = DataFrame(:type => [], :begin => [])
-        @test names(dfa) == [:type, :begin]
+        df = DataFrame(:type => [], :begin => [])
+        @test names(df) == [:type, :begin]
     end
 
     @testset "associative" begin
-        dfa = DataFrame(Dict(:A => 1:3, :B => 4:6))
-        @test dfa == DataFrame(A = 1:3, B = 4:6)
-        @test eltypes(dfa) == [Int, Int]
+        df = DataFrame(Dict(:A => 1:3, :B => 4:6))
+        @test df == DataFrame(A = 1:3, B = 4:6)
+        @test eltypes(df) == [Int, Int]
     end
 
     @testset "recyclers" begin
@@ -97,21 +97,21 @@ module TestConstructors
     end
 
     @testset "column types" begin
-        dfa = DataFrame(A = 1:3, B = 2:4, C = 3:5)
+        df = DataFrame(A = 1:3, B = 2:4, C = 3:5)
         answer = [Array{Int,1}, Array{Int,1}, Array{Int,1}]
-        @test map(typeof, dfa.columns) == answer
-        dfa[:D] = [4, 5, missing]
+        @test map(typeof, df.columns) == answer
+        df[:D] = [4, 5, missing]
         push!(answer, Vector{Union{Int, Missing}})
-        @test map(typeof, dfa.columns) == answer
-        dfa[:E] = 'c'
+        @test map(typeof, df.columns) == answer
+        df[:E] = 'c'
         push!(answer, Vector{Char})
-        @test map(typeof, dfa.columns) == answer
+        @test map(typeof, df.columns) == answer
     end
 
     @testset "categorical constructor" begin
-        dfa = DataFrame([Int, String], [:a, :b], [false, true], 3)
-        @test !(dfa[:a] isa CategoricalVector)
-        @test dfa[:b] isa CategoricalVector
+        df = DataFrame([Int, String], [:a, :b], [false, true], 3)
+        @test !(df[:a] isa CategoricalVector)
+        @test df[:b] isa CategoricalVector
         @test_throws DimensionMismatch DataFrame([Int, String], [:a, :b], [true], 3)
     end
 end
