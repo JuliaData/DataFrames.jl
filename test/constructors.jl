@@ -18,8 +18,7 @@ module TestConstructors
     @test size(df, 2) == 2
 
     @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                              CategoricalVector{Union{Float64, Missing}}(ones(3))],
-                          [:x1,:x2])
+                              CategoricalVector{Union{Float64, Missing}}(ones(3))])
     @test df == DataFrame(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
                           x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
 
