@@ -100,7 +100,7 @@ Base.next(gd::GroupedDataFrame, state::Int) =
      state + 1)
 Base.done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
 Base.length(gd::GroupedDataFrame) = length(gd.starts)
-Base.endof(gd::GroupedDataFrame) = length(gd.starts)
+Compat.lastindex(gd::GroupedDataFrame) = length(gd.starts)
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
@@ -192,7 +192,7 @@ combine(map(d -> mean(skipmissing(d[:c])), gd))
 function combine(ga::GroupApplied)
     gd, vals = ga.gd, ga.vals
     valscat = _vcat(vals)
-    idx = Vector{Int}(size(valscat, 1))
+    idx = Vector{Int}(uninitialized, size(valscat, 1))
     j = 0
     @inbounds for (start, val) in zip(gd.starts, vals)
         n = size(val, 1)

@@ -51,17 +51,7 @@ module TestDataFrame
     @test names(dfc[1, :b]) == [:c, :e]
     @test names(dfdc[1, :b]) == [:c]
 
-    #
-
     x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
-    v = DataFrame(a = [5, 6, 7], b = [8, 9, 10])
-
-    z = vcat(v, x)
-
-    # TODO: uncomment the line below after deprecation
-    # @test_throws ArgumentError z[:, [1, 1, 2]]
-    z2 = z[:, [1, 1, 2]]
-    @test names(z2) == [:a, :a_1, :b]
 
     #test_group("DataFrame assignment")
     # Insert single column
@@ -82,7 +72,7 @@ module TestDataFrame
                    c = CategoricalArray{Union{Float64, Missing}}([3.3]))
     missingdf = DataFrame(a = missings(Int, 2),
                           b = missings(String, 2),
-                          c = CategoricalArray{Union{Float64, Missing}}(2))
+                          c = CategoricalArray{Union{Float64, Missing}}(uninitialized, 2))
     # https://github.com/JuliaData/Missings.jl/issues/66
     # @test missingdf ≅ similar(df, 2)
     @test typeof.(similar(df, 2).columns) == typeof.(missingdf.columns)
@@ -426,20 +416,16 @@ module TestDataFrame
         df = DataFrame(id=Union{Int, Missing}[1, 2, 1, 2],
                        id2=Union{Int, Missing}[1, 2, 1, 2], 
                        variable=["a", "b", "a", "b"], value=[3, 4, 5, 6])
-        @static if VERSION >= v"0.6.0-dev.1980"
-            @test_warn "Duplicate entries in unstack at row 3 for key 1 and variable a." unstack(df, :id, :variable, :value)
-            @test_warn "Duplicate entries in unstack at row 3 for key (1, 1) and variable a." unstack(df, :variable, :value)
-        end
+        @test_warn "Duplicate entries in unstack at row 3 for key 1 and variable a." unstack(df, :id, :variable, :value)
+        @test_warn "Duplicate entries in unstack at row 3 for key (1, 1) and variable a." unstack(df, :variable, :value)
         a = unstack(df, :id, :variable, :value)
         @test a ≅ DataFrame(id = [1, 2], a = [5, missing], b = [missing, 6])
         b = unstack(df, :variable, :value)
         @test b ≅ DataFrame(id = [1, 2], id2 = [1, 2], a = [5, missing], b = [missing, 6])
 
         df = DataFrame(id=1:2, variable=["a", "b"], value=3:4)
-        @static if VERSION >= v"0.6.0-dev.1980"
-            @test_nowarn unstack(df, :id, :variable, :value)
-            @test_nowarn unstack(df, :variable, :value)
-        end
+        @test_nowarn unstack(df, :id, :variable, :value)
+        @test_nowarn unstack(df, :variable, :value)
         a = unstack(df, :id, :variable, :value)
         b = unstack(df, :variable, :value)
         @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, missing], b = [missing, 4])

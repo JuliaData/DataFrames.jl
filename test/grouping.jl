@@ -1,5 +1,5 @@
 module TestGrouping
-    using Compat, Compat.Test, DataFrames
+    using Compat, Compat.Test, DataFrames, Compat.Random
     const ≅ = isequal
 
     srand(1)

@@ -1,5 +1,5 @@
 module TestIO
-    using Compat, Compat.Test, DataFrames, CategoricalArrays
+    using Compat, Compat.Test, DataFrames, CategoricalArrays, Compat.Dates
     using LaTeXStrings
 
     # Test LaTeX export

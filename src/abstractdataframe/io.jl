@@ -77,9 +77,9 @@ end
 ##############################################################################
 
 function html_escape(cell::AbstractString)
-    cell = replace(cell, "&", "&amp;")
-    cell = replace(cell, "<", "&lt;")
-    cell = replace(cell, ">", "&gt;")
+    cell = replace(cell, "&"=>"&amp;")
+    cell = replace(cell, "<"=>"&lt;")
+    cell = replace(cell, ">"=>"&gt;")
     return cell
 end
 
@@ -130,19 +130,30 @@ end
 #
 ##############################################################################
 
-function latex_char_escape(char::AbstractString)
-    if char == "\\"
-        return "\\textbackslash{}"
-    elseif char == "~"
-        return "\\textasciitilde{}"
-    else
-        return string("\\", char)
+if VERSION ≥ v"0.7.0-DEV.4059"
+    function latex_char_escape(char::Char)
+        if char == '\\'
+            return "\\textbackslash{}"
+        elseif char == '~'
+            return "\\textasciitilde{}"
+        else
+            return string('\\', char)
+        end
+    end
+else
+    function latex_char_escape(char::AbstractString)
+        if char == "\\"
+            return "\\textbackslash{}"
+        elseif char == "~"
+            return "\\textasciitilde{}"
+        else
+            return string("\\", char)
+        end
     end
 end
 
 function latex_escape(cell::AbstractString)
-    cell = replace(cell, ['\\','~','#','$','%','&','_','^','{','}'], latex_char_escape)
-    return cell
+    replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
 function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
@@ -165,7 +176,7 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
             write(io, " & ")
             cell = df[row,col]
             if !ismissing(cell)
-                if mimewritable(MIME("text/latex"), cell)
+                if showable(MIME("text/latex"), cell)
                     show(io, MIME("text/latex"), cell)
                 else
                     print(io, latex_escape(sprint(ourshowcompact, cell)))
@@ -230,12 +241,13 @@ Data.streamtypes(::Type{DataFrame}) = [Data.Column, Data.Field]
 Data.weakrefstrings(::Type{DataFrame}) = true
 
 allocate(::Type{T}, rows, ref) where {T} = Vector{T}(uninitialized, rows)
-allocate(::Type{CategoricalString{R}}, rows, ref) where {R} = CategoricalArray{String, 1, R}(rows)
-allocate(::Type{Union{CategoricalString{R}, Missing}}, rows, ref) where {R} = CategoricalArray{Union{String, Missing}, 1, R}(rows)
+allocate(::Type{CategoricalString{R}}, rows, ref) where {R} = CategoricalArray{String, 1, R}(uninitialized, rows)
+allocate(::Type{Union{CategoricalString{R}, Missing}}, rows, ref) where {R} = 
+    CategoricalArray{Union{String, Missing}, 1, R}(uninitialized, rows)
 allocate(::Type{CategoricalValue{T, R}}, rows, ref) where {T, R} =
-    CategoricalArray{T, 1, R}(rows)
+    CategoricalArray{T, 1, R}(uninitialized, rows)
 allocate(::Type{Union{Missing, CategoricalValue{T, R}}}, rows, ref) where {T, R} =
-    CategoricalArray{Union{Missing, T}, 1, R}(rows)
+    CategoricalArray{Union{Missing, T}, 1, R}(uninitialized, rows)
 allocate(::Type{WeakRefString{T}}, rows, ref) where {T} =
     WeakRefStringArray(ref, WeakRefString{T}, rows)
 allocate(::Type{Union{Missing, WeakRefString{T}}}, rows, ref) where {T} =

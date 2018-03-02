@@ -3,14 +3,12 @@ import Base: isidentifier, is_id_start_char, is_id_char
 const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
     "return", "break", "continue", "function", "macro", "quote", "let",
     "local", "global", "const", "abstract", "typealias", "type", "bitstype",
-    "immutable", "do", "module", "baremodule", "using", "import",
+    "immutable", "do", "module", "baremodule", "using", "import", "struct",
     "export", "importall", "end", "else", "elseif", "catch", "finally"])
 
-VERSION < v"0.6.0-dev.2194" && push!(RESERVED_WORDS, "ccall")
-VERSION >= v"0.6.0-dev.2698" && push!(RESERVED_WORDS, "struct")
 
 function identifier(s::AbstractString)
-    s = normalize_string(s)
+    s = Unicode.normalize(s)
     if !isidentifier(s)
         s = makeidentifier(s)
     end
@@ -21,7 +19,7 @@ function makeidentifier(s::AbstractString)
     i = start(s)
     done(s, i) && return "x"
 
-    res = IOBuffer(sizeof(s) + 1)
+    res = IOBuffer(zeros(UInt8, sizeof(s)+1), write=true)
 
     (c, i) = next(s, i)
     under = if is_id_start_char(c)
@@ -92,7 +90,7 @@ Generate standardized names for columns of a DataFrame. The first name will be `
 second `:x2`, etc.
 """
 function gennames(n::Integer)
-    res = Array{Symbol}(n)
+    res = Array{Symbol}(uninitialized, n)
     for i in 1:n
         res[i] = Symbol(@sprintf "x%d" i)
     end

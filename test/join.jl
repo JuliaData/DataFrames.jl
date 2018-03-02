@@ -1,5 +1,6 @@
 module TestJoin
-    using Compat, Compat.Test, Base.Test, DataFrames, DataFrames.similar_missing
+    using Compat, Compat.Test, DataFrames
+    using DataFrames: similar_missing
     const ≅ = isequal
 
     name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],

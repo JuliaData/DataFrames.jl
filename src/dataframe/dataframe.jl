@@ -121,6 +121,18 @@ function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false)::DataFr
     DataFrame(columns, Index(colnames, makeunique=makeunique))
 end
 
+function DataFrame(d::AbstractDict)
+    colnames = keys(d)
+    if isa(d, Dict)
+        colnames = sort!(collect(keys(d)))
+    else
+        colnames = keys(d)
+    end
+    colindex = Index(Symbol[k for k in colnames])
+    columns = Any[d[c] for c in colnames]
+    DataFrame(columns, colindex)
+end
+
 function DataFrame(; kwargs...)
     if isempty(kwargs)
         DataFrame(Any[], Index())
@@ -147,7 +159,7 @@ DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(siz
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    nrows::Integer; makeunique::Bool=false)::DataFrame where T<:Type
-    columns = Vector{Any}(length(column_eltypes))
+    columns = Vector{Any}(uninitialized, length(column_eltypes))
     for (j, elty) in enumerate(column_eltypes)
         if elty >: Missing
             if Missings.T(elty) <: CategoricalValue
@@ -159,7 +171,7 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
             if elty <: CategoricalValue
                 columns[j] = CategoricalVector{elty}(nrows)
             else
-                columns[j] = Vector{elty}(nrows)
+                columns[j] = Vector{elty}(uninitialized, nrows)
             end
         end
     end
@@ -383,7 +395,7 @@ end
 
 # df[MultiColumnIndex] = DataFrame
 function Base.setindex!(df::DataFrame, new_df::DataFrame, col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, find(col_inds))
+    setindex!(df, new_df, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
@@ -396,7 +408,7 @@ end
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
 function Base.setindex!(df::DataFrame, v::AbstractVector, col_inds::AbstractVector{Bool})
-    setindex!(df, v, find(col_inds))
+    setindex!(df, v, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
@@ -411,7 +423,7 @@ end
 function Base.setindex!(df::DataFrame,
                         val::Any,
                         col_inds::AbstractVector{Bool})
-    setindex!(df, val, find(col_inds))
+    setindex!(df, val, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:ColumnIndex})
     for col_ind in col_inds
@@ -433,7 +445,7 @@ function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_ind::Real,
                         col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_ind, find(col_inds))
+    setindex!(df, v, row_ind, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
@@ -450,7 +462,7 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_ind::Real,
                         col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_ind, find(col_inds))
+    setindex!(df, new_df, row_ind, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
@@ -467,7 +479,7 @@ function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_ind::ColumnIndex)
-    setindex!(df, v, find(row_inds), col_ind)
+    setindex!(df, v, findall(row_inds), col_ind)
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
@@ -482,7 +494,7 @@ function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_ind::ColumnIndex)
-    setindex!(df, v, find(row_inds), col_ind)
+    setindex!(df, v, findall(row_inds), col_ind)
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
@@ -497,19 +509,19 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, find(row_inds), find(col_inds))
+    setindex!(df, new_df, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, new_df, find(row_inds), col_inds)
+    setindex!(df, new_df, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{<:Real},
                         col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_inds, find(col_inds))
+    setindex!(df, new_df, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
@@ -526,19 +538,19 @@ function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{Bool})
-    setindex!(df, v, find(row_inds), find(col_inds))
+    setindex!(df, v, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, v, find(row_inds), col_inds)
+    setindex!(df, v, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{<:Real},
                         col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, find(col_inds))
+    setindex!(df, v, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
@@ -555,19 +567,19 @@ function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{Bool})
-    setindex!(df, v, find(row_inds), find(col_inds))
+    setindex!(df, v, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
-    setindex!(df, v, find(row_inds), col_inds)
+    setindex!(df, v, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{<:Real},
                         col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_inds, find(col_inds))
+    setindex!(df, v, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
@@ -789,7 +801,7 @@ function deleterows!(df::DataFrame, ind::AbstractVector{Int})
     idf = 1
     iind = 1
     ikeep = 1
-    keep = Vector{Int}(n-length(ind2))
+    keep = Vector{Int}(uninitialized, n-length(ind2))
     while idf <= n && iind <= length(ind2)
         1 <= ind2[iind] <= n || error(BoundsError())
         if idf == ind2[iind]
@@ -928,17 +940,7 @@ end
 
 Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
-function Base.convert(::Type{DataFrame}, d::AbstractDict)
-    colnames = keys(d)
-    if isa(d, Dict)
-        colnames = sort!(collect(keys(d)))
-    else
-        colnames = keys(d)
-    end
-    colindex = Index(Symbol[k for k in colnames])
-    columns = Any[d[c] for c in colnames]
-    DataFrame(columns, colindex)
-end
+Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 
 
 ##############################################################################

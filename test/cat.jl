@@ -1,5 +1,5 @@
 module TestCat
-    using Compat, Compat.Test, DataFrames
+    using Compat, Compat.Test, Compat.Random, DataFrames
     const ≅ = isequal
 
     #
@@ -29,7 +29,7 @@ module TestCat
     @test dfh3 ≅ hcat(dfh, df5, makeunique=true)
     @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, makeunique=true)
 
-    @test df2 ≅ DataFrames.hcat!(df2)
+    @test df2 ≅ DataFrames.hcat!(df2, makeunique=true)
 
     @testset "hcat ::AbstractDataFrame" begin
         df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
@@ -51,7 +51,7 @@ module TestCat
 
     @testset "hcat ::AbstractVectors" begin
         df = DataFrame()
-        DataFrames.hcat!(df, CategoricalVector{Union{Int, Missing}}(1:10))
+        DataFrames.hcat!(df, CategoricalVector{Union{Int,Missing}}(1:10), makeunique=true)
         @test df[1] == CategoricalVector(1:10)
         DataFrames.hcat!(df, 1:10, makeunique=true)
         @test df[2] == collect(1:10)
@@ -59,15 +59,15 @@ module TestCat
         @test df[3] == collect(1:10)
 
         df = DataFrame()
-        df2 = hcat(CategoricalVector{Union{Int, Missing}}(1:10), df)
+        df2 = hcat(CategoricalVector{Union{Int,Missing}}(1:10), df, makeunique=true)
         @test df2[1] == collect(1:10)
         @test names(df2) == [:x1]
         df3 = hcat(11:20, df2, makeunique=true)
         @test df3[1] == collect(11:20)
         @test names(df3) == [:x1, :x1_1]
 
-        @test_throws ArgumentError hcat("a", df)
-        @test_throws ArgumentError hcat(df, "a")
+        @test_throws ArgumentError hcat("a", df, makeunique=true)
+        @test_throws ArgumentError hcat(df, "a", makeunique=true)
     end
     #
     # vcat

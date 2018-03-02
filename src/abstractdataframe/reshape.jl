@@ -221,7 +221,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
         kref = keycol.refs[k]
         if kref <= 0 # we have found missing in colkey
             if !warned_missing
-                warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
+                @warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
                 warned_missing = true
             end
             continue # skip processing it
@@ -241,8 +241,8 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
             i = refkeycol_order[refkref]
         end
         if !warned_dup && mask_filled[i, j]
-            warn("Duplicate entries in unstack at row $k for key "*
-                 "$(refkeycol[k]) and variable $(keycol[k]).")
+            @warn("Duplicate entries in unstack at row $k for key "*
+                  "$(refkeycol[k]) and variable $(keycol[k]).")
             warned_dup = true
         end
         unstacked_val[j][i] = valuecol[k]
@@ -304,7 +304,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
         kref = keycol.refs[k]
         if kref <= 0
             if !warned_missing
-                warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
+                @warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
                 warned_missing = true
             end
             continue
@@ -312,7 +312,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
         j = keycol_order[kref]
         i = rowkey[k]
         if !warned_dup && mask_filled[i, j]
-            warn("Duplicate entries in unstack at row $k for key "*
+            @warn("Duplicate entries in unstack at row $k for key "*
                  "$(tuple((df[1,s] for s in rowkeys)...)) and variable $(keycol[k]).")
             warned_dup = true
         end

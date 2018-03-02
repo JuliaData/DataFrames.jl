@@ -97,6 +97,7 @@ columns(df::T) where {T <: AbstractDataFrame} = Cols{T}(df)
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
+# TODO: remove allow_duplicates after deprecation period
 """
 Set column names
 
@@ -129,7 +130,6 @@ names!(df, [:a, :b, :a], makeunique=true)  # renames second :a to :a_1
 ```
 
 """
-# TODO: remove allow_duplicates after deprecation period
 function names!(df::AbstractDataFrame, vals; allow_duplicates=false, makeunique::Bool=false)
     if allow_duplicates
         Base.depwarn("Keyword argument allow_duplicates is deprecated. Use makeunique.", :names!)
@@ -216,7 +216,7 @@ eltypes(df)
 ```
 
 """
-eltypes(df::AbstractDataFrame) = map!(eltype, Vector{Type}(size(df,2)), columns(df))
+eltypes(df::AbstractDataFrame) = map!(eltype, Vector{Type}(uninitialized, size(df,2)), columns(df))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
@@ -230,7 +230,7 @@ function Base.size(df::AbstractDataFrame, i::Integer)
 end
 
 Base.length(df::AbstractDataFrame) = ncol(df)
-Base.endof(df::AbstractDataFrame) = ncol(df)
+Compat.lastindex(df::AbstractDataFrame) = ncol(df)
 
 Base.ndims(::AbstractDataFrame) = 2
 
@@ -516,7 +516,7 @@ dropmissing(df)
 ```
 
 """
-dropmissing(df::AbstractDataFrame) = deleterows!(copy(df), find(!, completecases(df)))
+dropmissing(df::AbstractDataFrame) = deleterows!(copy(df), findall(!, completecases(df)))
 
 """
 Remove rows with missing values in-place.
@@ -547,7 +547,7 @@ dropmissing!(df)
 ```
 
 """
-dropmissing!(df::AbstractDataFrame) = deleterows!(df, find(!, completecases(df)))
+dropmissing!(df::AbstractDataFrame) = deleterows!(df, findall(!, completecases(df)))
 
 """
     filter(function, df::AbstractDataFrame)
@@ -604,7 +604,7 @@ julia> df
 ```
 """
 Base.filter!(f, df::AbstractDataFrame) =
-    deleterows!(df, find(!f, eachrow(df)))
+    deleterows!(df, findall(!f, eachrow(df)))
 
 function Base.convert(::Type{Array}, df::AbstractDataFrame)
     convert(Matrix, df)
@@ -618,11 +618,11 @@ function Base.convert(::Type{Array{T}}, df::AbstractDataFrame) where T
 end
 function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     n, p = size(df)
-    res = Matrix{T}(n, p)
+    res = Matrix{T}(uninitialized, n, p)
     idx = 1
     for (name, col) in zip(names(df), columns(df))
         !(T >: Missing) && any(ismissing, col) && error("cannot convert a DataFrame containing missing values to array (found for column $name)")
-        copy!(res, idx, convert(Vector{T}, col))
+        copyto!(res, idx, convert(Vector{T}, col))
         idx += n
     end
     return res
@@ -672,12 +672,12 @@ end
 nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
-if isdefined(:unique!)
+if isdefined(Base, :unique!)
     import Base.unique!
 end
 
-unique!(df::AbstractDataFrame) = deleterows!(df, find(nonunique(df)))
-unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, find(nonunique(df, cols)))
+unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
+unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
@@ -821,9 +821,9 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
         if !isempty(coldiff)
             # if any DataFrames are a full superset of names, skip them
             filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
-            estrings = Vector{String}(length(uniqueheaders))
+            estrings = Vector{String}(uninitialized, length(uniqueheaders))
             for (i, u) in enumerate(uniqueheaders)
-                matching = find(h -> u == h, allheaders)
+                matching = findall(h -> u == h, allheaders)
                 headerdiff = setdiff(coldiff, u)
                 cols = join(headerdiff, ", ", " and ")
                 args = join(matching, ", ", " and ")
@@ -831,23 +831,23 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
             end
             throw(ArgumentError(join(estrings, ", ", ", and ")))
         else
-            estrings = Vector{String}(length(uniqueheaders))
+            estrings = Vector{String}(uninitialized, length(uniqueheaders))
             for (i, u) in enumerate(uniqueheaders)
-                indices = find(a -> a == u, allheaders)
+                indices = findall(a -> a == u, allheaders)
                 estrings[i] = "column order of argument(s) $(join(indices, ", ", " and "))"
             end
             throw(ArgumentError(join(estrings, " != ")))
         end
     else
         header = uniqueheaders[1]
-        cols = Vector{Any}(length(header))
+        cols = Vector{Any}(uninitialized, length(header))
         for i in 1:length(cols)
             data = [df[i] for df in dfs]
             lens = map(length, data)
-            cols[i] = promote_col_type(data...)(sum(lens))
+            cols[i] = promote_col_type(data...)(uninitialized, sum(lens))
             offset = 1
             for j in 1:length(data)
-                copy!(cols[i], offset, data[j])
+                copyto!(cols[i], offset, data[j])
                 offset += lens[j]
             end
         end
@@ -875,6 +875,7 @@ end
 
 ## Documentation for methods defined elsewhere
 
+# nrow, ncol
 """
 Number of rows or columns in an AbstractDataFrame
 
@@ -905,4 +906,3 @@ ncol(df)
 ```
 
 """
-# nrow, ncol

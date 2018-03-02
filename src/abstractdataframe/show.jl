@@ -30,7 +30,7 @@ end
 #' ourstrwidth("abc")
 #' ourstrwidth(10000)
 let
-    local io = IOBuffer(Vector{UInt8}(80), true, true)
+    local io = IOBuffer(Vector{UInt8}(uninitialized, 80), read=true, write=true)
     global ourstrwidth
     function ourstrwidth(x::Any) # -> Int
         truncate(io, 0)
@@ -91,7 +91,7 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol) # -> Vector{Int}
-    maxwidths = Vector{Int}(size(df, 2) + 1)
+    maxwidths = Vector{Int}(uninitialized, size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(Base.undef_ref_str)
 
@@ -249,7 +249,7 @@ function showrowindices(io::IO,
                 s = df[i, j]
                 strlen = ourstrwidth(s)
                 if ismissing(s)
-                    print_with_color(:light_black, io, s)
+                    printstyled(io, s, color=:light_black)
                 else
                     ourshowcompact(io, s)
                 end

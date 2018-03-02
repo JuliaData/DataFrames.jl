@@ -1,6 +1,5 @@
 module TestData
-    using Compat, Compat.Test, DataFrames
-    importall Base # so that we get warnings for conflicts
+    using Compat, Compat.Test, DataFrames, Compat.Random
     const ≅ = isequal
 
     #test_group("constructors")
