@@ -171,9 +171,9 @@ module TestGrouping
     @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
 
     @testset "grouping with missings" begin
-        df= DataFrame(Key1 = ["A", missing, "B", "B", "A"],
-                      Key2 = CategoricalArray(["B", "A", "A", missing, "A"]),
-                      Value = 1:5)
+        df = DataFrame(Key1 = ["A", missing, "B", "B", "A"],
+                       Key2 = CategoricalArray(["B", "A", "A", missing, "A"]),
+                       Value = 1:5)
 
         @testset "sort=false, skipmissing=false" begin
             gd = groupby(df, :Key1)
