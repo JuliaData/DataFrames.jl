@@ -231,7 +231,6 @@ end
 
 Base.length(df::AbstractDataFrame) = ncol(df)
 Compat.lastindex(df::AbstractDataFrame) = ncol(df)
-Compat.lastindex(df::AbstractDataFrame, n::Integer) = size(df, n)
 
 Base.ndims(::AbstractDataFrame) = 2
 
