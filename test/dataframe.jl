@@ -108,6 +108,21 @@ module TestDataFrame
     @test df[:newcol] == ["a", "b"]
     @test df[:newcol_1] == ["a1", "b1"]
 
+    df = DataFrame(a=[1,2], a_1=[3,4])
+    @test_warn r"Inserting" insert!(df, 1, [11,12], :a)
+    df = DataFrame(a=[1,2], a_1=[3,4])
+    insert!(df, 1, [11,12], :a, makeunique=true)
+    @test names(df) == [:a_2, :a, :a_1]
+    insert!(df, 4, [11,12], :a, makeunique=true)
+    @test names(df) == [:a_2, :a, :a_1, :a_3]
+    @test_throws BoundsError insert!(df, 10, [11,12], :a, makeunique=true)
+    df = DataFrame(a=[1,2], a_1=[3,4])
+    insert!(df, 1, 11, :a, makeunique=true)
+    @test names(df) == [:a_2, :a, :a_1]
+    insert!(df, 4, 11, :a, makeunique=true)
+    @test names(df) == [:a_2, :a, :a_1, :a_3]
+    @test_throws BoundsError insert!(df, 10, 11, :a, makeunique=true)
+
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
     df2 = DataFrame(b=["a", "b"], c=[:c, :d])
     @test merge!(df, df2) == df

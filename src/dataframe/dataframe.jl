@@ -691,8 +691,9 @@ function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::S
                 k += 1
             end
         else
-            # TODO: remove depwarn and uncomment ArgumentError below
+            # TODO: remove depwarn and call and uncomment ArgumentError below
             Base.depwarn("Inserting duplicate column name is deprecated, use makeunique=true.", :insert!)
+            insert!(df, col_ind, item, name; makeunique=true) # temporary fix to avoid duplicates
             # msg = """Duplicate variable name $(name).
             #      Pass makeunique=true to make it unique using a suffix automatically."""
             # throw(ArgumentError(msg))
