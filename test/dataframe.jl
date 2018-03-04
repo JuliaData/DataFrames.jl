@@ -56,8 +56,8 @@ module TestDataFrame
     #test_group("DataFrame assignment")
     # Insert single column
     x0 = x[Int[], :]
-    @test_throws ErrorException x0[:d] = [1]
-    @test_throws ErrorException x0[:d] = 1:3
+    @test_throws ArgumentError x0[:d] = [1]
+    @test_throws ArgumentError x0[:d] = 1:3
 
     # Insert single value
     x[:d] = 3
@@ -557,5 +557,14 @@ module TestDataFrame
 
         e = @test_throws ArgumentError similar(df, -1)
         @test e.value.msg == "the number of rows must be positive"
+    end
+
+    @testset "setindex! special cases" begin
+        df = DataFrame(rand(3,2), [:x3, :x3_1])
+        @test_throws ArgumentError df[3] = [1, 2]
+        @test_throws ArgumentError df[4] = [1, 2, 3]
+        df[3] = [1,2,3]
+        df[4] = [1,2,3]
+        @test names(df) == [:x3, :x3_1, :x3_2, :x4]
     end
 end

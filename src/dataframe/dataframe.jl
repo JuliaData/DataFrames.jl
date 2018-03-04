@@ -312,13 +312,15 @@ Base.getindex(df::DataFrame, ::Colon, ::Colon) = copy(df)
 ##
 ##############################################################################
 
-isnextcol(df::DataFrame, col_ind::Symbol) = true
-function isnextcol(df::DataFrame, col_ind::Real)
-    return ncol(df) + 1 == Int(col_ind)
-end
-
 function nextcolname(df::DataFrame)
-    return Symbol(string("x", ncol(df) + 1))
+    col = Symbol(string("x", ncol(df) + 1))
+    haskey(index(df), col) || return col
+    i = 1
+    while true
+        col = Symbol(string("x", ncol(df) + 1, "_", i))
+        haskey(index(df), col) || return col
+        i += 1
+    end
 end
 
 # Will automatically add a new column if needed
@@ -327,7 +329,7 @@ function insert_single_column!(df::DataFrame,
                                col_ind::ColumnIndex)
 
     if ncol(df) != 0 && nrow(df) != length(dv)
-        error("New columns must have the same length as old columns")
+        throw(ArgumentError("New columns must have the same length as old columns"))
     end
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
@@ -337,11 +339,11 @@ function insert_single_column!(df::DataFrame,
             push!(index(df), col_ind)
             push!(df.columns, dv)
         else
-            if isnextcol(df, col_ind)
+            if ncol(df) + 1 == Int(col_ind)
                 push!(index(df), nextcolname(df))
                 push!(df.columns, dv)
             else
-                error("Cannot assign to non-existent column: $col_ind")
+                throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
             end
         end
     end
