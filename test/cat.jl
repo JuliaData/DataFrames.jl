@@ -119,15 +119,27 @@ module TestCat
     @test_throws ArgumentError vcat(df, missing_df)
     @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
     @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
+    res = vcat(df, df)
+    @test res[1:size(df, 1), :] == df
+    @test res[1+size(df, 1):end, :] == df
     @test eltypes(vcat(df, df, df)) == Type[Float64, Float64, Int]
     @test size(vcat(df, df, df)) == (size(df, 1) * 3, size(df, 2))
+    res = vcat(df, df, df)
+    s = size(df, 1)
+    for i in 1:3
+        @test res[1+(i-1)*s:i*s, :] == df
+    end
 
     alt_df = deepcopy(df)
-    vcat(df, alt_df)
+    @test vcat(df, alt_df) == DataFrame([[3.0,2.0,3.0,3.0,3.0,2.0,3.0,3.0],
+                                         [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
+                                         [2,2,2,3,2,2,2,3]])
 
     # Don't fail on non-matching types
     df[1] = zeros(Int, nrow(df))
-    vcat(df, alt_df)
+    @test vcat(df, alt_df) == DataFrame([[0.0,0.0,0.0,0.0,3.0,2.0,3.0,3.0],
+                                         [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
+                                         [2,2,2,3,2,2,2,3]])
 
     dfr = vcat(df4, df4)
     @test size(dfr, 1) == 8
@@ -204,6 +216,40 @@ module TestCat
         @test typeof.(df.columns) == [Vector{Bool}]
     end
 
+    @testset "vcat out of order" begin
+        df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
+        df2 = DataFrame(colwise(x->2x, df1), reverse(names(df1)))
+        @test vcat(df1, df2) == DataFrame([[1, 2, 3, 14, 16, 18],
+                                           [4, 5, 6, 8, 10, 12],
+                                           [7, 8, 9, 2, 4, 6]], [:A, :B, :C])
+        @test vcat(df1, df1, df2) == DataFrame([[1, 2, 3, 1, 2, 3, 14, 16, 18],
+                                                [4, 5, 6, 4, 5, 6, 8, 10, 12],
+                                                [7, 8, 9, 7, 8, 9, 2, 4, 6]], [:A, :B, :C])
+        @test vcat(df1, df2, df2) == DataFrame([[1, 2, 3, 14, 16, 18, 14, 16, 18],
+                                                [4, 5, 6, 8, 10, 12, 8, 10, 12],
+                                                [7, 8, 9, 2, 4, 6, 2, 4, 6]], [:A, :B, :C])
+        @test vcat(df2, df1, df2) == DataFrame([[2, 4, 6, 7, 8, 9, 2, 4, 6],
+                                                [8, 10, 12, 4, 5, 6, 8, 10, 12],
+                                                [14, 16, 18, 1, 2, 3, 14, 16, 18]] ,[:C, :B, :A]) 
+        @test size(vcat(df1, df1, df1, df2, df2, df2)) == (18, 3)
+        df3 = df1[[1, 3, 2]]
+        res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
+        @test size(res) == (30, 3)
+        @test res[1:3,:] == df1
+        @test res[4:6,:] == df1
+        @test res[7:9,:] == df1
+        @test res[10:12,:] == df2[names(res)]
+        @test res[13:15,:] == df2[names(res)]
+        @test res[16:18,:] == df2[names(res)]
+        @test res[19:21,:] == df3[names(res)]
+        @test res[22:24,:] == df3[names(res)]
+        @test res[25:27,:] == df3[names(res)]
+        df1 = DataFrame(A = 1, B = 2)
+        df2 = DataFrame(B = 12, A = 11)
+        df3 = DataFrame(A = [1, 11], B = [2, 12])
+        @test [df1; df2] == df3
+    end
+
     @testset "vcat errors" begin
         err = @test_throws ArgumentError vcat(DataFrame(), DataFrame(), DataFrame(x=[]))
         @test err.value.msg == "column(s) x are missing from argument(s) 1 and 2"
@@ -227,25 +273,7 @@ module TestCat
         # >1 arguments missing >1 columns
         err = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2)
         @test err.value.msg == "column(s) B, C, D and E are missing from argument(s) 2, 3, 4 and 5"
-        # out of order
-        df2 = df1[reverse(names(df1))]
-        err = @test_throws ArgumentError vcat(df1, df2)
-        @test err.value.msg == "column order of argument(s) 1 != column order of argument(s) 2"
-        # first group >1 arguments
-        err = @test_throws ArgumentError vcat(df1, df1, df2)
-        @test err.value.msg == "column order of argument(s) 1 and 2 != column order of argument(s) 3"
-        # second group >1 arguments
-        err = @test_throws ArgumentError vcat(df1, df2, df2)
-        @test err.value.msg == "column order of argument(s) 1 != column order of argument(s) 2 and 3"
-        # first and second groups >1 argument
-        err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2)
-        @test err.value.msg == "column order of argument(s) 1, 2 and 3 != column order of argument(s) 4, 5 and 6"
-        # >2 groups out of order
-        srand(1)
-        df3 = df1[shuffle(names(df1))]
-        err = @test_throws ArgumentError vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
-        @test err.value.msg == "column order of argument(s) 1, 2 and 3 != column order of argument(s) 4, 5 and 6 != column order of argument(s) 7, 8, 9 and 10"
-        # missing columns throws error before out of order columns
+        # missing columns throws error
         df1 = DataFrame(A = 1, B = 1)
         df2 = DataFrame(A = 1)
         df3 = DataFrame(B = 1, A = 1)
