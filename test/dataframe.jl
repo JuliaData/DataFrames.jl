@@ -239,7 +239,7 @@ module TestDataFrame
 
         df=DataFrame( first=[1,2,3], second=["apple","orange","banana"] )
         dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-        push!(dfb, Dict("first"=>3, "second"=>"banana"))
+        push!(dfb, Dict(:first=>3, :second=>"banana"))
         @test df == dfb
 
         df0= DataFrame( first=[1,2], second=["apple","orange"] )
@@ -249,7 +249,7 @@ module TestDataFrame
 
         df0= DataFrame( first=[1,2], second=["apple","orange"] )
         dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-        @test_throws ArgumentError push!(dfb, Dict("first"=>"chicken", "second"=>"stuff"))
+        @test_throws ArgumentError push!(dfb, Dict(:first=>"chicken", :second=>"stuff"))
         @test df0 == dfb
 
         df0=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
@@ -429,14 +429,16 @@ module TestDataFrame
 
     @testset "categorical!" begin
         df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
-        @test eltypes(categorical!(df)) == [CategoricalArrays.CategoricalString{UInt32},
-                                            Char, Bool, Int64,
-                                            CategoricalArrays.CategoricalString{UInt32}]
-        @test eltypes(categorical!(df, names(df))) == [CategoricalArrays.CategoricalString{UInt32},
-                                                       CategoricalArrays.CategoricalValue{Char,UInt32},
-                                                       CategoricalArrays.CategoricalValue{Bool,UInt32},
-                                                       CategoricalArrays.CategoricalValue{Int64,UInt32},
-                                                       CategoricalArrays.CategoricalString{UInt32}]
+        @test all(map(<:, eltypes(categorical!(df)),
+                      [CategoricalArrays.CategoricalString,
+                       Char, Bool, Int,
+                       CategoricalArrays.CategoricalString]))
+        @test all(map(<:, eltypes(categorical!(df, names(df))),
+                      [CategoricalArrays.CategoricalString,
+                       CategoricalArrays.CategoricalValue{Char},
+                       CategoricalArrays.CategoricalValue{Bool},
+                       CategoricalArrays.CategoricalValue{Int},
+                       CategoricalArrays.CategoricalString]))
     end
 
     @testset "unstack promotion to support missing values" begin

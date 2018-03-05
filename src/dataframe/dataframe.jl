@@ -33,7 +33,7 @@ DataFrame(ds::AbstractDict)
 * `column_eltypes` : elemental type of each column
 * `categorical` : `Vector{Bool}` indicating which columns should be converted to
                   `CategoricalVector`
-* `ds` : `AbstractDict`
+* `ds` : `AbstractDict` of columns
 
 Each column in `columns` should be the same length.
 
@@ -956,7 +956,11 @@ function Base.push!(df::DataFrame, associative::AbstractDict)
     i = 1
     for nm in _names(df)
         try
-            val = get(() -> associative[string(nm)], associative, nm)
+            val = get(() -> (Base.depwarn("push!(::DataFrame, ::AbstractDict) with "*
+                                          "AbstractDict keys other than Symbol is deprecated",
+                 :push!); associative[string(nm)]), associative, nm)
+            # after deprecation replace above line by
+            # val = associative[nm]
             push!(df[nm], val)
         catch
             #clean up partial row
