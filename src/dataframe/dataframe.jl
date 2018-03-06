@@ -952,15 +952,19 @@ Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 ##
 ##############################################################################
 
-function Base.push!(df::DataFrame, associative::AbstractDict)
+function Base.push!(df::DataFrame, dict::AbstractDict)
     i = 1
     for nm in _names(df)
         try
-            val = get(() -> (Base.depwarn("push!(::DataFrame, ::AbstractDict) with "*
-                                          "AbstractDict keys other than Symbol is deprecated",
-                 :push!); associative[string(nm)]), associative, nm)
-            # after deprecation replace above line by
-            # val = associative[nm]
+            val = get(dict, nm) do
+                v = dict[string(nm)]
+                Base.depwarn("push!(::DataFrame, ::AbstractDict) with " *
+                             "AbstractDict keys other than Symbol is deprecated",
+                             :push!)
+                v
+            end
+            # after deprecation replace above call by
+            # val = dict[nm]
             push!(df[nm], val)
         catch
             #clean up partial row
