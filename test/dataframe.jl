@@ -582,4 +582,32 @@ module TestDataFrame
         df[4] = [1,2,3]
         @test names(df) == [:x3, :x3_1, :x3_2, :x4]
     end
+
+    @testset "handling of end in indexing" begin
+        z = DataFrame(rand(4,5))
+        for x in [z, view(z, 1:4)]
+            y = deepcopy(x)
+            @test x[end] == x[5]
+            @test x[end:end] == x[5:5]
+            @test x[end, :] == x[4, :]
+            @test x[end, end] == x[4,5]
+            @test x[2:end, 2:end] == x[2:4,2:5]
+            x[end] = 1:4
+            y[5] = 1:4
+            @test x == y
+            x[4:end] = DataFrame([11:14, 21:24])
+            y[4] = [11:14;]
+            y[5] = [21:24;]
+            @test x == y
+            x[end, :] = 111
+            y[4, :] = 111
+            @test x == y
+            x[end,end] = 1000
+            y[4,5] = 1000
+            @test x == y
+            x[2:end, 2:end] = 0
+            y[2:4, 2:5] = 0
+            @test x == y
+        end
+    end
 end
