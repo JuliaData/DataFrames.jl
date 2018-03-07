@@ -789,13 +789,30 @@ end
 """
     vcat(dfs::AbstractDataFrame...)
 
-Vertically concatenate `AbstractDataFrames` that have the same column names in
-the same order.
+Vertically concatenate `AbstractDataFrames`.
+
+Column names in all passed data frames must be the same, but they can have
+different order. In such cases the order of names in the first passed
+`DataFrame` is used.
 
 # Example
 ```jldoctest
 julia> df1 = DataFrame(A=1:3, B=1:3);
 julia> df2 = DataFrame(A=4:6, B=4:6);
+julia> vcat(df1, df2)
+6×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ 1 │
+│ 2   │ 2 │ 2 │
+│ 3   │ 3 │ 3 │
+│ 4   │ 4 │ 4 │
+│ 5   │ 5 │ 5 │
+│ 6   │ 6 │ 6 │
+
+
+julia> df1 = DataFrame(A=1:3, B=1:3);
+julia> df2 = DataFrame(B=4:6, A=4:6);
 julia> vcat(df1, df2)
 6×2 DataFrames.DataFrame
 │ Row │ A │ B │
@@ -813,48 +830,39 @@ Base.vcat(dfs::AbstractDataFrame...) = _vcat(collect(dfs))
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     isempty(dfs) && return DataFrame()
     allheaders = map(names, dfs)
-    if all(h -> length(h) == 0, allheaders)
-        return DataFrame()
-    end
     uniqueheaders = unique(allheaders)
-    if length(uniqueheaders) > 1
-        unionunique = union(uniqueheaders...)
-        coldiff = setdiff(unionunique, intersect(uniqueheaders...))
-        if !isempty(coldiff)
-            # if any DataFrames are a full superset of names, skip them
-            filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
-            estrings = Vector{String}(uninitialized, length(uniqueheaders))
-            for (i, u) in enumerate(uniqueheaders)
-                matching = findall(h -> u == h, allheaders)
-                headerdiff = setdiff(coldiff, u)
-                cols = join(headerdiff, ", ", " and ")
-                args = join(matching, ", ", " and ")
-                estrings[i] = "column(s) $cols are missing from argument(s) $args"
-            end
-            throw(ArgumentError(join(estrings, ", ", ", and ")))
-        else
-            estrings = Vector{String}(uninitialized, length(uniqueheaders))
-            for (i, u) in enumerate(uniqueheaders)
-                indices = findall(a -> a == u, allheaders)
-                estrings[i] = "column order of argument(s) $(join(indices, ", ", " and "))"
-            end
-            throw(ArgumentError(join(estrings, " != ")))
+    unionunique = union(uniqueheaders...)
+    intersectunique = intersect(uniqueheaders...)
+    coldiff = setdiff(unionunique, intersectunique)
+
+    if !isempty(coldiff)
+        # if any DataFrames are a full superset of names, skip them
+        filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
+        estrings = Vector{String}(uninitialized, length(uniqueheaders))
+        for (i, u) in enumerate(uniqueheaders)
+            matching = findall(h -> u == h, allheaders)
+            headerdiff = setdiff(coldiff, u)
+            cols = join(headerdiff, ", ", " and ")
+            args = join(matching, ", ", " and ")
+            estrings[i] = "column(s) $cols are missing from argument(s) $args"
         end
-    else
-        header = uniqueheaders[1]
-        cols = Vector{Any}(uninitialized, length(header))
-        for i in 1:length(cols)
-            data = [df[i] for df in dfs]
-            lens = map(length, data)
-            cols[i] = promote_col_type(data...)(uninitialized, sum(lens))
-            offset = 1
-            for j in 1:length(data)
-                copyto!(cols[i], offset, data[j])
-                offset += lens[j]
-            end
-        end
-        return DataFrame(cols, header)
+        throw(ArgumentError(join(estrings, ", ", ", and ")))
     end
+
+    header = allheaders[1]
+    length(header) == 0 && return DataFrame()
+    cols = Vector{Any}(uninitialized, length(header))
+    for (i, name) in enumerate(header)
+        data = [df[name] for df in dfs]
+        lens = map(length, data)
+        cols[i] = promote_col_type(data...)(uninitialized, sum(lens))
+        offset = 1
+        for j in 1:length(data)
+            copyto!(cols[i], offset, data[j])
+            offset += lens[j]
+        end
+    end
+    return DataFrame(cols, header)
 end
 
 ##############################################################################
