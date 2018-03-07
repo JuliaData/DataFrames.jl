@@ -205,41 +205,63 @@ module TestDataFrame
     @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
     @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]), zero(UInt))
 
-    # push!(df, row)
-    df=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
+    @testset "push!(df, row)" begin
+        df=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, Any[3,"pear"])
-    @test df == dfb
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        dfc= DataFrame( first=[1,2], second=["apple","orange"] )
+        push!(dfb, Any[3,"pear"])
+        @test df == dfb
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, (3,"pear"))
-    @test df == dfb
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        push!(dfb, (3,"pear"))
+        @test df == dfb
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, (33.33,"pear"))
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        @test_throws ArgumentError push!(dfb, (33.33,"pear"))
+        @test dfc == dfb
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, ("coconut",22))
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        @test_throws ArgumentError push!(dfb, (1,"2",3))
+        @test dfc == dfb
 
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, Dict(:first=>3, :second=>"pear"))
-    @test df == dfb
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        @test_throws ArgumentError push!(dfb, ("coconut",22))
+        @test dfc == dfb
 
-    df=DataFrame( first=[1,2,3], second=["apple","orange","banana"] )
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    push!(dfb, Dict("first"=>3, "second"=>"banana"))
-    @test df == dfb
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        @test_throws ArgumentError push!(dfb, (11,22))
+        @test dfc == dfb
 
-    df0= DataFrame( first=[1,2], second=["apple","orange"] )
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, Dict(:first=>true, :second=>false))
-    @test df0 == dfb
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        push!(dfb, Dict(:first=>3, :second=>"pear"))
+        @test df == dfb
 
-    df0= DataFrame( first=[1,2], second=["apple","orange"] )
-    dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-    @test_throws ArgumentError push!(dfb, Dict("first"=>"chicken", "second"=>"stuff"))
-    @test df0 == dfb
+        df=DataFrame( first=[1,2,3], second=["apple","orange","banana"] )
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        push!(dfb, Dict(:first=>3, :second=>"banana"))
+        @test df == dfb
+
+        df0= DataFrame( first=[1,2], second=["apple","orange"] )
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        @test_throws ArgumentError push!(dfb, Dict(:first=>true, :second=>false))
+        @test df0 == dfb
+
+        df0= DataFrame( first=[1,2], second=["apple","orange"] )
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        @test_throws ArgumentError push!(dfb, Dict(:first=>"chicken", :second=>"stuff"))
+        @test df0 == dfb
+
+        df0=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
+        dfb=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
+        @test_throws ArgumentError push!(dfb, Dict(:first=>"chicken", :second=>1))
+        @test df0 == dfb
+
+        df0=DataFrame( first=["1","2","3"], second=["apple","orange","pear"] )
+        dfb=DataFrame( first=["1","2","3"], second=["apple","orange","pear"] )
+        @test_throws ArgumentError push!(dfb, Dict(:first=>"chicken", :second=>1))
+        @test df0 == dfb
+    end
 
     # delete!
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
@@ -404,6 +426,20 @@ module TestDataFrame
                     categorical!(deepcopy(df), [1]).columns) == 1
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
                     categorical!(deepcopy(df), 1).columns) == 1
+
+    @testset "categorical!" begin
+        df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
+        @test all(map(<:, eltypes(categorical!(df)),
+                      [CategoricalArrays.CategoricalString,
+                       Char, Bool, Int,
+                       CategoricalArrays.CategoricalString]))
+        @test all(map(<:, eltypes(categorical!(df, names(df))),
+                      [CategoricalArrays.CategoricalString,
+                       CategoricalArrays.CategoricalValue{Char},
+                       CategoricalArrays.CategoricalValue{Bool},
+                       CategoricalArrays.CategoricalValue{Int},
+                       CategoricalArrays.CategoricalString]))
+    end
 
     @testset "unstack promotion to support missing values" begin
         df = DataFrame(Any[repeat(1:2, inner=4), repeat('a':'d', outer=2), collect(1:8)],

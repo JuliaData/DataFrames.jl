@@ -16,7 +16,7 @@ DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbit
 DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer; makeunique::Bool=false)
 DataFrame(column_eltypes::Vector, cnames::Vector, categorical::Vector, nrows::Integer;
           makeunique::Bool=false)
-DataFrame(ds::Vector{AbstractDict})
+DataFrame(ds::AbstractDict)
 ```
 
 **Arguments**
@@ -33,7 +33,7 @@ DataFrame(ds::Vector{AbstractDict})
 * `column_eltypes` : elemental type of each column
 * `categorical` : `Vector{Bool}` indicating which columns should be converted to
                   `CategoricalVector`
-* `ds` : a vector of Associatives
+* `ds` : `AbstractDict` of columns
 
 Each column in `columns` should be the same length.
 
@@ -620,7 +620,7 @@ Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = delete!(df, col_ind)
 
 ##############################################################################
 ##
-## Mutating Associative methods
+## Mutating AbstractDict methods
 ##
 ##############################################################################
 
@@ -721,7 +721,7 @@ merge!(df::DataFrame, others::AbstractDataFrame...)
 For every column `c` with name `n` in `others` sequentially perform `df[n] = c`.
 In particular, if there are duplicate column names present in `df` and `others`
 the last encountered column will be retained.
-This behavior is identical with how `merge!` works for any `Associative` type.
+This behavior is identical with how `merge!` works for any `AbstractDict` type.
 Use `join` if you want to join two `DataFrame`s.
 
 **Arguments**
@@ -952,28 +952,19 @@ Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 ##
 ##############################################################################
 
-function Base.push!(df::DataFrame, associative::AbstractDict{Symbol,Any})
+function Base.push!(df::DataFrame, dict::AbstractDict)
     i = 1
     for nm in _names(df)
         try
-            push!(df[nm], associative[nm])
-        catch
-            #clean up partial row
-            for j in 1:(i - 1)
-                pop!(df[_names(df)[j]])
+            val = get(dict, nm) do
+                v = dict[string(nm)]
+                Base.depwarn("push!(::DataFrame, ::AbstractDict) with " *
+                             "AbstractDict keys other than Symbol is deprecated",
+                             :push!)
+                v
             end
-            msg = "Error adding value to column :$nm."
-            throw(ArgumentError(msg))
-        end
-        i += 1
-    end
-end
-
-function Base.push!(df::DataFrame, associative::AbstractDict)
-    i = 1
-    for nm in _names(df)
-        try
-            val = get(() -> associative[string(nm)], associative, nm)
+            # after deprecation replace above call by
+            # val = dict[nm]
             push!(df[nm], val)
         catch
             #clean up partial row
