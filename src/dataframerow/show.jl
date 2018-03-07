@@ -13,7 +13,7 @@
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' for r in eachrow(df)
-#'     show(STDOUT, r)
+#'     show(stdout, r)
 #' end
 function Base.show(io::IO, r::DataFrameRow)
     labelwidth = mapreduce(n -> length(string(n)), max, _names(r)) + 2

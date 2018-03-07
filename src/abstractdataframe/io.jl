@@ -62,7 +62,7 @@ function printtable(df::AbstractDataFrame;
                     separator::Char = ',',
                     quotemark::Char = '"',
                     nastring::AbstractString = "missing")
-    printtable(STDOUT,
+    printtable(stdout,
                df,
                header = header,
                separator = separator,
