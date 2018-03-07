@@ -231,6 +231,8 @@ end
 
 Base.length(df::AbstractDataFrame) = ncol(df)
 Compat.lastindex(df::AbstractDataFrame) = ncol(df)
+Compat.lastindex(df::AbstractDataFrame, i) = last(axes(df, i))
+Compat.axes(df, i) = axes(df)[i]
 
 Base.ndims(::AbstractDataFrame) = 2
 
