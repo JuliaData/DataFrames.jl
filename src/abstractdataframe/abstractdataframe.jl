@@ -405,7 +405,7 @@ describe(df)
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame) = describe(STDOUT, df)
+StatsBase.describe(df::AbstractDataFrame) = describe(stdout, df)
 function StatsBase.describe(io, df::AbstractDataFrame)
     for (name, col) in eachcol(df)
         println(io, name)

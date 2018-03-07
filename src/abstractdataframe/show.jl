@@ -52,8 +52,8 @@ end
 #'
 #' @examples
 #'
-#' ourshowcompact(STDOUT, "abc")
-#' ourshowcompact(STDOUT, 10000)
+#' ourshowcompact(stdout, "abc")
+#' ourshowcompact(stdout, 10000)
 ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Void
 ourshowcompact(io::IO, x::AbstractString) = escape_string(io, x, "") # -> Void
 ourshowcompact(io::IO, x::Symbol) = ourshowcompact(io, string(x)) # -> Void
@@ -225,7 +225,7 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' showrowindices(STDOUT, df, 1:2, [1, 1, 5], 1, 2)
+#' showrowindices(stdout, df, 1:2, [1, 1, 5], 1, 2)
 function showrowindices(io::IO,
                         df::AbstractDataFrame,
                         rowindices::AbstractVector{Int},
@@ -307,7 +307,7 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' showrows(STDOUT, df, 1:2, 3:3, [1, 1, 5], false, :Row, true)
+#' showrows(stdout, df, 1:2, 3:3, [1, 1, 5], false, :Row, true)
 function showrows(io::IO,
                   df::AbstractDataFrame,
                   rowindices1::AbstractVector{Int},
@@ -429,7 +429,7 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' show(STDOUT, df, false, :Row, true)
+#' show(stdout, df, false, :Row, true)
 function Base.show(io::IO,
                    df::AbstractDataFrame,
                    allcols::Bool = false,
@@ -464,7 +464,7 @@ end
 #' @exported
 #' @description
 #'
-#' Render an AbstractDataFrame to STDOUT with or without chunking. See
+#' Render an AbstractDataFrame to stdout with or without chunking. See
 #' other `show` documentation for details. This is mainly used to force
 #' showing the AbstractDataFrame in chunks.
 #'
@@ -480,7 +480,7 @@ end
 #' show(df, true)
 function Base.show(df::AbstractDataFrame,
                    allcols::Bool = false) # -> Void
-    return show(STDOUT, df, allcols)
+    return show(stdout, df, allcols)
 end
 
 #' @exported
@@ -504,7 +504,7 @@ end
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
-#' showall(STDOUT, df, false, :Row, true)
+#' showall(stdout, df, false, :Row, true)
 function Base.showall(io::IO,
                       df::AbstractDataFrame,
                       allcols::Bool = true,
@@ -529,7 +529,7 @@ end
 #' @exported
 #' @description
 #'
-#' Render all of the rows of an AbstractDataFrame to STDOUT. See
+#' Render all of the rows of an AbstractDataFrame to stdout. See
 #' `showall` documentation for details.
 #'
 #' @param df::AbstractDataFrame An AbstractDataFrame.
@@ -544,7 +544,7 @@ end
 #' showall(df, true)
 function Base.showall(df::AbstractDataFrame,
                       allcols::Bool = true) # -> Void
-    showall(STDOUT, df, allcols)
+    showall(stdout, df, allcols)
     return
 end
 
@@ -605,5 +605,5 @@ end
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showcols(df)
 function showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true)
-    showcols(STDOUT, df, all, values) # -> Void
+    showcols(stdout, df, all, values) # -> Void
 end
