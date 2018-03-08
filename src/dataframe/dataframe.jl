@@ -339,6 +339,12 @@ function insert_single_column!(df::DataFrame,
             push!(index(df), col_ind)
             push!(df.columns, dv)
         else
+            if !(typeof(col_ind) <: Integer)
+                throw(ArgumentError("Only Integer numbers accepted for column indexing"))
+            end
+            if isa(col_ind, Bool)
+                throw(ArgumentError("Bool values are not allowed for column indexing"))
+            end
             if ncol(df) + 1 == Int(col_ind)
                 push!(index(df), nextcolname(df))
                 push!(df.columns, dv)
@@ -351,11 +357,17 @@ function insert_single_column!(df::DataFrame,
 end
 
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
+    if !(typeof(col_ind) <: Union{Integer,Symbol})
+        throw(ArgumentError("Only Integer numbers accepted for column indexing"))
+    end
+    if isa(col_ind, Bool)
+        throw(ArgumentError("Bool values are not allowed for column indexing"))
+    end
     if haskey(index(df), col_ind)
         df.columns[index(df)[col_ind]][row_ind] = v
         return v
     else
-        error("Cannot assign to non-existent column: $col_ind")
+        throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
     end
 end
 
@@ -383,11 +395,18 @@ end
 # df[SingleColumnIndex] = AbstractVector
 function Base.setindex!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex)
     insert_single_column!(df, v, col_ind)
+    return df
 end
 
 # df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(df) if NCOL(df) > 0)
 function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
+        if !(typeof(col_ind) <: Union{Integer,Symbol})
+            throw(ArgumentError("Only Integer numbers accepted for column indexing"))
+        end
+        if isa(col_ind, Bool)
+            throw(ArgumentError("Bool values are not allowed for column indexing"))
+        end
         fill!(df[col_ind], v)
     else
         insert_single_column!(df, upgrade_scalar(df, v), col_ind)
@@ -396,12 +415,15 @@ function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
 end
 
 # df[MultiColumnIndex] = DataFrame
-function Base.setindex!(df::DataFrame, new_df::DataFrame, col_inds::AbstractVector{Bool})
+function Base.setindex!(df::DataFrame, new_df::DataFrame,
+                        col_inds::AbstractVector{<:Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, new_df, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         col_inds::AbstractVector{<:ColumnIndex})
+    # it is allowed that new_df has more columns than required
     for j in 1:length(col_inds)
         insert_single_column!(df, new_df[j], col_inds[j])
     end
@@ -409,12 +431,17 @@ function Base.setindex!(df::DataFrame,
 end
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
-function Base.setindex!(df::DataFrame, v::AbstractVector, col_inds::AbstractVector{Bool})
+function Base.setindex!(df::DataFrame, v::AbstractVector,
+                        col_inds::AbstractVector{<:Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, v, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         col_inds::AbstractVector{<:ColumnIndex})
+    # this allows to add arbitrarily many columns to a DataFrame, e.g.
+    # x = DataFrame(); x[1:10] = rand(3)
+    # will create 10 new columns in x
     for col_ind in col_inds
         df[col_ind] = v
     end
@@ -424,29 +451,35 @@ end
 # df[MultiColumnIndex] = Single Item (REPEATED FOR EACH COLUMN; EXPANDS TO NROW(df) if NCOL(df) > 0)
 function Base.setindex!(df::DataFrame,
                         val::Any,
-                        col_inds::AbstractVector{Bool})
+                        col_inds::AbstractVector{<:Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, val, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:ColumnIndex})
+    # this allows to add arbitrarily many columns to a DataFrame, e.g.
+    # x = DataFrame(); x[1:10] = 3
+    # will create 10 new columns in x
     for col_ind in col_inds
         df[col_ind] = val
     end
     return df
 end
 
-# df[:] = AbstractVector or Single Item
+# df[:] = DataFrame, AbstractVector or Single Item
 Base.setindex!(df::DataFrame, v, ::Colon) = (df[1:size(df, 2)] = v; df)
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
     insert_single_entry!(df, v, row_ind, col_ind)
+    df
 end
 
 # df[SingleRowIndex, MultiColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_ind::Real,
-                        col_inds::AbstractVector{Bool})
+                        col_inds::AbstractVector{<:Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, v, row_ind, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
@@ -463,13 +496,15 @@ end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_ind::Real,
-                        col_inds::AbstractVector{Bool})
+                        col_inds::AbstractVector{<:Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, new_df, row_ind, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_ind::Real,
                         col_inds::AbstractVector{<:ColumnIndex})
+    nrow(new_df) == 1 || throw(ArgumentError("Source DataFrame contains multiple rows"))
     for j in 1:length(col_inds)
         insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
     end
@@ -510,7 +545,8 @@ end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
+                        col_inds::AbstractVector{<:Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, new_df, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
@@ -522,7 +558,8 @@ end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{Bool})
+                        col_inds::AbstractVector{<:Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, new_df, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
@@ -530,7 +567,7 @@ function Base.setindex!(df::DataFrame,
                         row_inds::AbstractVector{<:Real},
                         col_inds::AbstractVector{<:ColumnIndex})
     for j in 1:length(col_inds)
-        insert_multiple_entries!(df, new_df[:, j], row_inds, col_inds[j])
+        insert_multiple_entries!(df, new_df[j], row_inds, col_inds[j])
     end
     return df
 end
@@ -539,7 +576,8 @@ end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
+                        col_inds::AbstractVector{<:Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, v, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
@@ -551,7 +589,8 @@ end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{Bool})
+                        col_inds::AbstractVector{Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, v, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
@@ -568,7 +607,8 @@ end
 function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
-                        col_inds::AbstractVector{Bool})
+                        col_inds::AbstractVector{Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, v, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
@@ -580,7 +620,8 @@ end
 function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{<:Real},
-                        col_inds::AbstractVector{Bool})
+                        col_inds::AbstractVector{Union{Bool,Missing}})
+    length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, v, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,

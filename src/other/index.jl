@@ -145,7 +145,7 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
         # TODO: this line should be changed to throw an error after deprecation
         # throw(ArgumentError("Bool values except for Vector{Bool} are not allowed for column indexing"))
-        Base.depwarn("Indexing with Bool values is deprecated except for Vector{Bool}")
+        Base.depwarn("Indexing with Bool values is deprecated except for Vector{Bool}", :getindex)
     end
     Vector{Int}(idx)
 end

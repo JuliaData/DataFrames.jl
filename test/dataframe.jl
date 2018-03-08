@@ -617,6 +617,28 @@ module TestDataFrame
         df[3] = [1,2,3]
         df[4] = [1,2,3]
         @test names(df) == [:x3, :x3_1, :x3_2, :x4]
+        @test_throws BoundsError df[[true,false,true,false,true,false]] = df
+        @test_throws BoundsError df[[true,false,true,false,true,false]] = [1,2,3]
+        @test_throws BoundsError df[[true,false,true,false,true,false]] = 1
+        @test_throws TypeError df[[true, true, true, missing]] = df
+        @test_throws TypeError df[[true, true, true, missing]] = [1,2,3]
+        @test_throws TypeError df[[true, true, true, missing]] = 1
+        df[Union{Bool,Missing}[true, false, false, false]] = DataFrame([[100,100,100]])
+        @test df[1] == [100,100,100]
+        df[Union{Bool,Missing}[true, false, false, false]] = [0,0,0]
+        @test df[1] == [0,0,0]
+        df[Union{Bool,Missing}[true, false, false, false]] = 1000
+        @test df[1] == [1000,1000,1000]
+
+        df1 = DataFrame()
+        df1[1:10] = rand(3)
+        @test size(df1) == (3, 10)
+        df1 = DataFrame()
+        df1[1:10] = 3
+        @test size(df1) == (1, 10)
+
+        @test_throws ArgumentError df1[1.0] = 1
+        @test_throws ArgumentError df1[true] = 1
     end
 
     @testset "handling of end in indexing" begin
