@@ -1299,3 +1299,10 @@ end
 import Base: vcat
 @deprecate vcat(x::Vector{<:AbstractDataFrame}) vcat(x...)
 
+# Special deletion assignment
+function Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int)
+    Base.depwarn("Removing columns from DataFrame by assigning nothing " *
+                 "is deprecated. Use delete!(df, col_ind) instead.", :DataFrame)
+    delete!(df, col_ind)
+end
+

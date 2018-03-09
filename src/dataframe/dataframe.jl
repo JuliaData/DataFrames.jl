@@ -68,6 +68,7 @@ df1[:, [1,3]]
 df1[1:4, :]
 df1[1:4, :C]
 df1[1:4, :C] = 40. * df1[1:4, :C]
+df1[4] = "new column"
 [df1; df2]  # vcat
 [df1  df2]  # hcat
 size(df1)
@@ -326,7 +327,7 @@ end
 # Will automatically add a new column if needed
 function insert_single_column!(df::DataFrame,
                                dv::AbstractVector,
-                               col_ind::ColumnIndex)
+                               col_ind::Union{Integer, Symbol})
 
     if ncol(df) != 0 && nrow(df) != length(dv)
         throw(ArgumentError("New columns must have the same length as old columns"))
@@ -339,11 +340,8 @@ function insert_single_column!(df::DataFrame,
             push!(index(df), col_ind)
             push!(df.columns, dv)
         else
-            if !(typeof(col_ind) <: Integer)
-                throw(ArgumentError("Only Integer numbers accepted for column indexing"))
-            end
             if isa(col_ind, Bool)
-                throw(ArgumentError("Bool values are not allowed for column indexing"))
+                throw(ArgumentError("column indexing with signle Bool value is not allowed"))
             end
             if ncol(df) + 1 == Int(col_ind)
                 push!(index(df), nextcolname(df))
@@ -395,7 +393,6 @@ end
 # df[SingleColumnIndex] = AbstractVector
 function Base.setindex!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex)
     insert_single_column!(df, v, col_ind)
-    return df
 end
 
 # df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(df) if NCOL(df) > 0)
@@ -411,7 +408,7 @@ function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
     else
         insert_single_column!(df, upgrade_scalar(df, v), col_ind)
     end
-    return df
+    return v
 end
 
 # df[MultiColumnIndex] = DataFrame
@@ -423,7 +420,11 @@ end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         col_inds::AbstractVector{<:ColumnIndex})
-    # it is allowed that new_df has more columns than required
+    if length(col_inds) != ncol(new_df)
+        Base.depwarn("Number of columns in RHS DataFrame should be equal to number of assignments.", :insert!)
+    end
+    # after deprecation replace above warning by
+    # length(col_inds) != ncol(new_df) && throw(ArgumentError("Number of columns in RHS DataFrame must be equal to number of assignments"))
     for j in 1:length(col_inds)
         insert_single_column!(df, new_df[j], col_inds[j])
     end
@@ -504,7 +505,7 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_ind::Real,
                         col_inds::AbstractVector{<:ColumnIndex})
-    nrow(new_df) == 1 || throw(ArgumentError("Source DataFrame contains multiple rows"))
+    nrow(new_df) == 1 || throw(ArgumentError("source DataFrame should contain a single row"))
     for j in 1:length(col_inds)
         insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
     end
@@ -655,9 +656,6 @@ Base.setindex!(df::DataFrame, v, row_inds, ::Colon) =
 # df[:, Any] = ...
 Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
     (df[col_inds] = v; df)
-
-# Special deletion assignment
-Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = delete!(df, col_ind)
 
 ##############################################################################
 ##

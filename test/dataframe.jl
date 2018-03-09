@@ -633,9 +633,15 @@ module TestDataFrame
         df1 = DataFrame()
         df1[1:10] = rand(3)
         @test size(df1) == (3, 10)
+        for i in 2:10
+            @test df1[1] == df1[i]
+        end
         df1 = DataFrame()
         df1[1:10] = 3
         @test size(df1) == (1, 10)
+        for i in 2:10
+            @test [3] == df1[i]
+        end
 
         @test_throws ArgumentError df1[1.0] = 1
         @test_throws ArgumentError df1[true] = 1
