@@ -330,7 +330,9 @@ function insert_single_column!(df::DataFrame,
                                col_ind::Union{Integer, Symbol})
 
     if ncol(df) != 0 && nrow(df) != length(dv)
-        throw(ArgumentError("New columns must have the same length as old columns"))
+        throw(ArgumentError("new column has $(length(dv)) elements and it must have " *
+                            "the same length as number of rows in the target DataFrame " *
+                            "which is equal to $(nrow(df))"))
     end
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
@@ -341,31 +343,29 @@ function insert_single_column!(df::DataFrame,
             push!(df.columns, dv)
         else
             if isa(col_ind, Bool)
-                throw(ArgumentError("column indexing with signle Bool value is not allowed"))
+                throw(ArgumentError("column indexing with a signle Bool value is not allowed"))
             end
             if ncol(df) + 1 == Int(col_ind)
                 push!(index(df), nextcolname(df))
                 push!(df.columns, dv)
             else
-                throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
+                throw(ArgumentError("cannot assign to non-existent column: $col_ind"))
             end
         end
     end
     return dv
 end
 
-function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
-    if !(typeof(col_ind) <: Union{Integer,Symbol})
-        throw(ArgumentError("Only Integer numbers accepted for column indexing"))
-    end
+function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real,
+                              col_ind::Union{Integer,Symbol})
     if isa(col_ind, Bool)
-        throw(ArgumentError("Bool values are not allowed for column indexing"))
+        throw(ArgumentError("column indexing with a signle Bool value is not allowed"))
     end
     if haskey(index(df), col_ind)
         df.columns[index(df)[col_ind]][row_ind] = v
         return v
     else
-        throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
+        throw(ArgumentError("cannot assign to non-existent column: $col_ind"))
     end
 end
 
@@ -377,7 +377,7 @@ function insert_multiple_entries!(df::DataFrame,
         df.columns[index(df)[col_ind]][row_inds] = v
         return v
     else
-        error("Cannot assign to non-existent column: $col_ind")
+        throw(ArgumentError("cannot assign to non-existent column: $col_ind"))
     end
 end
 
@@ -390,19 +390,69 @@ function upgrade_scalar(df::DataFrame, v::Any)
     fill(v, n)
 end
 
-# df[SingleColumnIndex] = AbstractVector
+
+"""
+    setindex!(df::DataFrame, v, col_ind::Union{Integer, Symbol})
+
+If `v` is not an `AbstractVector` then column `col_ind` is filled with `v`.
+Otherwise `v` is used as a column vector (no data copying is performed).
+`col_ind` can be either a `Symbol` or `Integer` (except `Bool`).
+If `col_ind` is present in a `DataFrame` then:
+* if `v` is an abstract vector then it replaces `df[col_ind]`
+* if `v` i not an abstract vector then existing `df[col_ind]` is filled with `v`
+  (which will fail if `v` cannot be converted to `eltype(df[col_ind])`)
+If `col_ind` is not present in a `DataFrame` then an appropriate column is added to it.
+In particular you can add a column number `ncol(df)+1` to a `DataFrame` this way.
+
+    setindex!(df::DataFrame, v, col_inds::AbstractVector})
+
+`col_inds` can be either vector of `Symbol`, `Integer`, `Union{Bool, Missing}` or `:`.
+
+If `v` is not a `DataFrame` then assignment rules follow single column `setindex!`.
+
+If `v` is a `DataFrame` then assignment to `col_inds` take columns from `v` sequentially
+disregarding their names.  Number of rows of `df` and `v` must be identical in this case.
+Additionally number of columns in `v` must be equal to length of `col_inds`.
+
+You can create new columns in `df` this way and the rules are the same as for `setindex!`
+on a single column.
+
+If `col_inds<:AbstractVector{Union{Bool, Missing}}` then it must only contain `Bool` values
+and its length must be equal to number of columns in `df`.
+
+Assignment of columns `col_inds` to `df` is performed sequentially which matters if
+`col_inds` contains duplicates or if one wants to create multiple new columns in `df` using
+`Integer` column index.
+
+
+    setindex!(df::DataFrame, v, row_ind, col_ind)
+
+The rules are the same as for inserting whole columns with the following additional convention:
+* you cannot create new columns when passing row index (except if it is `:` see last rule below)
+* row indexing follows standard indexing rules in Base
+* if `v` is `AbstractVector` its length must be equal to number of rows selected by `row_ind`
+  and its elements must be convertible to a type of elements in the column assigned to;
+  otherwise `v` is treated as scalar and broadcasted to all entries of a target column except
+  when it is a `DataFrame` in which case the same rules as for column assignment of `DataFrame`
+  apply with an additional restriction that `v` must have the same number of rows as selected
+  by `row_ind`;
+* if `row_ind` is `:` then it behaves exactly like `setindex!` without row selection except
+  when `v` is a `DataFrame` in which case `df[:]` and `df[:,:]` performs a copy of `v` to `df`
+
+In all above rules if `DataFrame` is mentioned on right hand side of an assignment it may not
+be replaced by other subtype of `AbstractDataFrame`, e.g `SubDataFrame` as they are treated
+as scalars.
+"""
 function Base.setindex!(df::DataFrame, v::AbstractVector, col_ind::ColumnIndex)
+    # df[SingleColumnIndex] = AbstractVector
     insert_single_column!(df, v, col_ind)
 end
 
 # df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(df) if NCOL(df) > 0)
-function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
+function Base.setindex!(df::DataFrame, v, col_ind::Union{Integer, Symbol})
     if haskey(index(df), col_ind)
-        if !(typeof(col_ind) <: Union{Integer,Symbol})
-            throw(ArgumentError("Only Integer numbers accepted for column indexing"))
-        end
         if isa(col_ind, Bool)
-            throw(ArgumentError("Bool values are not allowed for column indexing"))
+            throw(ArgumentError("column indexing with a signle Bool value is not allowed"))
         end
         fill!(df[col_ind], v)
     else
@@ -421,7 +471,9 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         col_inds::AbstractVector{<:ColumnIndex})
     if length(col_inds) != ncol(new_df)
-        Base.depwarn("Number of columns in RHS DataFrame should be equal to number of assignments.", :insert!)
+        Base.depwarn("number of columns in RHS DataFrame is $(ncol(new_df)) " *
+                     "and it should be equal to number of assignments $(length(col_inds)).",
+                     :insert!)
     end
     # after deprecation replace above warning by
     # length(col_inds) != ncol(new_df) && throw(ArgumentError("Number of columns in RHS DataFrame must be equal to number of assignments"))
@@ -472,7 +524,7 @@ Base.setindex!(df::DataFrame, v, ::Colon) = (df[1:size(df, 2)] = v; df)
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
     insert_single_entry!(df, v, row_ind, col_ind)
-    df
+    v
 end
 
 # df[SingleRowIndex, MultiColumnIndex] = Single Item
@@ -505,7 +557,7 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_ind::Real,
                         col_inds::AbstractVector{<:ColumnIndex})
-    nrow(new_df) == 1 || throw(ArgumentError("source DataFrame should contain a single row"))
+    nrow(new_df) == 1 || throw(ArgumentError("source DataFrame must contain a single row"))
     for j in 1:length(col_inds)
         insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
     end
@@ -517,6 +569,7 @@ function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_ind::ColumnIndex)
+    length(row_inds) != nrow(df) && throw(BoundsError(df, row_inds))
     setindex!(df, v, findall(row_inds), col_ind)
 end
 function Base.setindex!(df::DataFrame,
@@ -532,6 +585,7 @@ function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_ind::ColumnIndex)
+    length(row_inds) != nrow(df) && throw(BoundsError(df, row_inds))
     setindex!(df, v, findall(row_inds), col_ind)
 end
 function Base.setindex!(df::DataFrame,
@@ -547,6 +601,7 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:Union{Bool,Missing}})
+    length(row_inds) != nrow(df) && throw(BoundsError(df, row_inds))
     length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, new_df, findall(row_inds), findall(col_inds))
 end
@@ -554,6 +609,7 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
+    length(row_inds) != nrow(df) && throw(BoundsError(df, row_inds))
     setindex!(df, new_df, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
@@ -567,6 +623,11 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{<:Real},
                         col_inds::AbstractVector{<:ColumnIndex})
+    if length(col_inds) != ncol(new_df)
+        Base.depwarn("number of columns in RHS DataFrame is $(ncol(new_df)) " *
+                     "and it should be equal to number of assignments $(length(col_inds)).",
+                     :insert!)
+    end
     for j in 1:length(col_inds)
         insert_multiple_entries!(df, new_df[j], row_inds, col_inds[j])
     end
@@ -578,6 +639,7 @@ function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:Union{Bool,Missing}})
+    length(row_inds) != nrow(df) && throw(BoundsError(df, row_inds))
     length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, v, findall(row_inds), findall(col_inds))
 end
@@ -585,6 +647,7 @@ function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
+    length(row_inds) != nrow(df) && throw(BoundsError(df, row_inds))
     setindex!(df, v, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
@@ -609,6 +672,7 @@ function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{Union{Bool,Missing}})
+    length(row_inds) != nrow(df) && throw(BoundsError(df, row_inds))
     length(col_inds) != ncol(df) && throw(BoundsError(df, col_inds))
     setindex!(df, v, findall(row_inds), findall(col_inds))
 end
@@ -616,6 +680,7 @@ function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
+    length(row_inds) != nrow(df) && throw(BoundsError(df, row_inds))
     setindex!(df, v, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
@@ -647,15 +712,15 @@ end
 
 # df[:, :] = ...
 Base.setindex!(df::DataFrame, v, ::Colon, ::Colon) =
-    (df[1:size(df, 1), 1:size(df, 2)] = v; df)
+    (df[1:size(df, 1), 1:size(df, 2)] = v; v)
 
 # df[Any, :] = ...
 Base.setindex!(df::DataFrame, v, row_inds, ::Colon) =
-    (df[row_inds, 1:size(df, 2)] = v; df)
+    (df[row_inds, 1:size(df, 2)] = v; v)
 
 # df[:, Any] = ...
 Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
-    (df[col_inds] = v; df)
+    (df[col_inds] = v; v)
 
 ##############################################################################
 ##
@@ -733,7 +798,7 @@ function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::S
             end
         else
             # TODO: remove depwarn and call and uncomment ArgumentError below
-            Base.depwarn("Inserting duplicate column name is deprecated, use makeunique=true.", :insert!)
+            Base.depwarn("inserting duplicate column name is deprecated, use makeunique=true.", :insert!)
             insert!(df, col_ind, item, name; makeunique=true) # temporary fix to avoid duplicates
             # msg = """Duplicate variable name $(name).
             #      Pass makeunique=true to make it unique using a suffix automatically."""
