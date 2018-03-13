@@ -90,7 +90,7 @@ Generate standardized names for columns of a DataFrame. The first name will be `
 second `:x2`, etc.
 """
 function gennames(n::Integer)
-    res = Array{Symbol}(uninitialized, n)
+    res = Array{Symbol}(undef, n)
     for i in 1:n
         res[i] = Symbol(@sprintf "x%d" i)
     end
