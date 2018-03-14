@@ -619,13 +619,13 @@ function builddf(rows::Integer,
                  fields::Integer,
                  p::ParsedCSV,
                  o::ParseOptions)
-    columns = Vector{Any}(uninitialized, cols)
+    columns = Vector{Any}(undef, cols)
 
     for j in 1:cols
         if isempty(o.eltypes)
-            values = Vector{Int}(uninitialized, rows)
+            values = Vector{Int}(undef, rows)
         else
-            values = Vector{o.eltypes[j]}(uninitialized, rows)
+            values = Vector{o.eltypes[j]}(undef, rows)
         end
 
         msng = falses(rows)
@@ -711,7 +711,7 @@ function builddf(rows::Integer,
                     continue
                 else
                     is_float = false
-                    values = Vector{Bool}(uninitialized, rows)
+                    values = Vector{Bool}(undef, rows)
                     i = 0
                     continue
                 end
@@ -732,7 +732,7 @@ function builddf(rows::Integer,
                     continue
                 else
                     is_bool = false
-                    values = Vector{String}(uninitialized, rows)
+                    values = Vector{String}(undef, rows)
                     i = 0
                     continue
                 end
@@ -810,7 +810,7 @@ function findcorruption(rows::Integer,
                         fields::Integer,
                         p::ParsedCSV)
     n = length(p.bounds)
-    lengths = Vector{Int}(uninitialized, rows)
+    lengths = Vector{Int}(undef, rows)
     t = 1
     for i in 1:rows
         bound = p.lines[i + 1]
@@ -949,9 +949,9 @@ function readtable(io::IO,
     end
 
     # Allocate buffers for storing metadata
-    p = ParsedCSV(Vector{UInt8}(uninitialized, nbytes),
-                   Vector{Int}(uninitialized, 1),
-                   Vector{Int}(uninitialized, 1),
+    p = ParsedCSV(Vector{UInt8}(undef, nbytes),
+                  Vector{Int}(undef, 1),
+                  Vector{Int}(undef, 1),
                   BitArray(1))
 
     # Set parsing options

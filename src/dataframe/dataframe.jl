@@ -80,7 +80,7 @@ mutable struct DataFrame <: AbstractDataFrame
 
     function DataFrame(columns::Vector{Any}, colindex::Index)
         if length(columns) == length(colindex) == 0
-            return new(Vector{Any}(uninitialized, 0), Index())
+            return new(Vector{Any}(undef, 0), Index())
         elseif length(columns) != length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of" *
                                     " column names ($(length(colindex))) are not equal"))
@@ -159,7 +159,7 @@ DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(siz
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    nrows::Integer; makeunique::Bool=false)::DataFrame where T<:Type
-    columns = Vector{Any}(uninitialized, length(column_eltypes))
+    columns = Vector{Any}(undef, length(column_eltypes))
     for (j, elty) in enumerate(column_eltypes)
         if elty >: Missing
             if Missings.T(elty) <: CategoricalValue
@@ -171,7 +171,7 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
             if elty <: CategoricalValue
                 columns[j] = CategoricalVector{elty}(nrows)
             else
-                columns[j] = Vector{elty}(uninitialized, nrows)
+                columns[j] = Vector{elty}(undef, nrows)
             end
         end
     end
@@ -804,7 +804,7 @@ function deleterows!(df::DataFrame, ind::AbstractVector{Int})
     idf = 1
     iind = 1
     ikeep = 1
-    keep = Vector{Int}(uninitialized, n-length(ind2))
+    keep = Vector{Int}(undef, n-length(ind2))
     while idf <= n && iind <= length(ind2)
         1 <= ind2[iind] <= n || error(BoundsError())
         if idf == ind2[iind]

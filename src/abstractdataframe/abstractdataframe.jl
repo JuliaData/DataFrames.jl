@@ -216,7 +216,7 @@ eltypes(df)
 ```
 
 """
-eltypes(df::AbstractDataFrame) = map!(eltype, Vector{Type}(uninitialized, size(df,2)), columns(df))
+eltypes(df::AbstractDataFrame) = map!(eltype, Vector{Type}(undef, size(df,2)), columns(df))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
@@ -620,7 +620,7 @@ function Base.convert(::Type{Array{T}}, df::AbstractDataFrame) where T
 end
 function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     n, p = size(df)
-    res = Matrix{T}(uninitialized, n, p)
+    res = Matrix{T}(undef, n, p)
     idx = 1
     for (name, col) in zip(names(df), columns(df))
         !(T >: Missing) && any(ismissing, col) && error("cannot convert a DataFrame containing missing values to array (found for column $name)")
@@ -838,7 +838,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     if !isempty(coldiff)
         # if any DataFrames are a full superset of names, skip them
         filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
-        estrings = Vector{String}(uninitialized, length(uniqueheaders))
+        estrings = Vector{String}(undef, length(uniqueheaders))
         for (i, u) in enumerate(uniqueheaders)
             matching = findall(h -> u == h, allheaders)
             headerdiff = setdiff(coldiff, u)
@@ -851,11 +851,11 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
 
     header = allheaders[1]
     length(header) == 0 && return DataFrame()
-    cols = Vector{Any}(uninitialized, length(header))
+    cols = Vector{Any}(undef, length(header))
     for (i, name) in enumerate(header)
         data = [df[name] for df in dfs]
         lens = map(length, data)
-        cols[i] = promote_col_type(data...)(uninitialized, sum(lens))
+        cols[i] = promote_col_type(data...)(undef, sum(lens))
         offset = 1
         for j in 1:length(data)
             copyto!(cols[i], offset, data[j])
