@@ -35,6 +35,7 @@ export AbstractDataFrame,
        SubDataFrame,
 
        allowmissing!,
+       disallowmissing!,
        aggregate,
        by,
        categorical!,

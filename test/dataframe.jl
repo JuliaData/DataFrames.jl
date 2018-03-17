@@ -577,14 +577,23 @@ module TestDataFrame
         allowmissing!(df, 1)
         @test isa(df[1], Vector{Union{Int, Missing}})
         @test !isa(df[2], Vector{Union{Int, Missing}})
+        df[1,1] = missing
+        @test_throws MethodError disallowmissing!(df, 1)
+        df[1,1] = 1
+        disallowmissing!(df, 1)
+        @test isa(df[1], Vector{Int})
 
         df = DataFrame(Any[collect(1:10), collect(1:10)])
         allowmissing!(df, [1,2])
         @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
+        disallowmissing!(df, [1,2])
+        @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
 
         df = DataFrame(Any[collect(1:10), collect(1:10)])
         allowmissing!(df)
         @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
+        disallowmissing!(df)
+        @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
 
         df = DataFrame(Any[CategoricalArray(1:10),
                            CategoricalArray(string.('a':'j'))])
@@ -592,6 +601,13 @@ module TestDataFrame
         @test all(issubtype.(typeof.(df.columns), CategoricalVector))
         @test eltypes(df)[1] <: Union{CategoricalValue{Int}, Missing}
         @test eltypes(df)[2] <: Union{CategoricalString, Missing}
+        df[1,2] = missing
+        @test_throws MissingException disallowmissing!(df)
+        df[1,2] = "a"
+        disallowmissing!(df)
+        @test all(issubtype.(typeof.(df.columns), CategoricalVector))
+        @test eltypes(df)[1] <: CategoricalValue{Int}
+        @test eltypes(df)[2] <: CategoricalString
     end
 
     @testset "similar" begin

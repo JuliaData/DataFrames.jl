@@ -903,6 +903,36 @@ function allowmissing!(df::DataFrame, cols::AbstractVector{<: ColumnIndex}=1:siz
     df
 end
 
+"""
+    disallowmissing!(df::DataFrame)
+
+Convert all columns of a `df` from element type `Union{T, Missing}` to
+`T` to drop support for missing values.
+
+    disallowmissing!(df::DataFrame, col::Union{Integer, Symbol})
+
+Convert a single column of a `df` from element type `Union{T, Missing}` to
+`T` to drop support for missing values.
+
+    disallowmissing!(df::DataFrame, cols::AbstractVector{<:Union{Integer, Symbol}})
+
+Convert multiple columns of a `df` from element type `Union{T, Missing}` to
+`T` to drop support for missing values.
+"""
+function disallowmissing! end
+
+function disallowmissing!(df::DataFrame, col::ColumnIndex)
+    df[col] = disallowmissing(df[col])
+    df
+end
+
+function disallowmissing!(df::DataFrame, cols::AbstractVector{<: ColumnIndex}=1:size(df, 2))
+    for col in cols
+        disallowmissing!(df, col)
+    end
+    df
+end
+
 ##############################################################################
 ##
 ## Pooling
