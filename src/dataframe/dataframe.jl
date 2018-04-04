@@ -162,14 +162,14 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
     columns = Vector{Any}(undef, length(column_eltypes))
     for (j, elty) in enumerate(column_eltypes)
         if elty >: Missing
-            if Missings.T(elty) <: CategoricalValue
-                columns[j] = CategoricalArray{Union{Missings.T(elty).parameters[1], Missing}}(nrows)
+            if Missings.T(elty) <: CategoricalArrays.CatValue
+                columns[j] = CategoricalArray{elty}(undef, nrows)
             else
                 columns[j] = missings(elty, nrows)
             end
         else
-            if elty <: CategoricalValue
-                columns[j] = CategoricalVector{elty}(nrows)
+            if elty <: CategoricalArrays.CatValue
+                columns[j] = CategoricalVector{elty}(undef, nrows)
             else
                 columns[j] = Vector{elty}(undef, nrows)
             end
