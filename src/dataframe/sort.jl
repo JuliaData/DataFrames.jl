@@ -75,7 +75,7 @@ function Base.sort!(df::DataFrame, cols_new=[]; cols=[], alg=nothing,
                      :sort!)
         cols_new = cols
     end
-    ord = ordering(df, cols, lt, by, rev, order)
+    ord = ordering(df, cols_new, lt, by, rev, order)
     _alg = Sort.defalg(df, ord; alg=alg, cols=cols_new)
     sort!(df, _alg, ord)
 end
