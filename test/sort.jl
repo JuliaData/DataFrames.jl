@@ -42,6 +42,17 @@ module TestSort
 
     @test df == ds
 
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test issorted(df, :x) == false
+    @test issorted(sort(df, :x), :x) == true
+
+    x = DataFrame(a=1:3,b=3:-1:1,c=3:-1:1)
+    @test issorted(x) == true
+    @test issorted(x, [:b,:c]) == false
+    @test issorted(x[2:3], [:b,:c]) == false
+    @test issorted(sort(x,[2,3]), [:b,:c]) == true
+    @test issorted(sort(x[2:3]), [:b,:c]) == true
+
     # Check that columns that shares the same underlying array are only permuted once PR#1072
     df = DataFrame(a=[2,1])
     df[:b] = df[:a]
