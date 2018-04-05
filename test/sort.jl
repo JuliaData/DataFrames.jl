@@ -47,4 +47,9 @@ module TestSort
     df[:b] = df[:a]
     sort!(df, :a)
     @test df == DataFrame(a=[1,2],b=[1,2])
+
+    x = DataFrame(x=[1,2,3,4], y=[1,3,2,4])
+    sort!(x, :y)
+    @test x[:y] == [1,2,3,4]
+    @test x[:x] == [1,3,2,4]
 end
