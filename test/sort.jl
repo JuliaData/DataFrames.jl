@@ -63,4 +63,47 @@ module TestSort
     sort!(x, :y)
     @test x[:y] == [1,2,3,4]
     @test x[:x] == [1,3,2,4]
+
+    @test_throws ArgumentError sort(x, by=:x)
+
+    srand(1)
+    df_rand = DataFrame(rand(100, 4))
+    for n1 in names(df_rand)
+        @test sort(df_rand, n1)[n1] == sort(df_rand[n1])
+        @test sort(df_rand, [n1])[n1] == sort(df_rand[n1])
+        for n2 in setdiff(names(df_rand), [n1])
+            @test sort(df_rand, [n1,n2])[n1] == sort(df_rand[n1])
+        end
+    end
+    for n1 in names(df_rand)
+        @test sort!(df_rand, n1)[n1] == sort(df_rand[n1])
+        @test issorted(df_rand, n1)
+        @test sort!(df_rand, [n1])[n1] == sort(df_rand[n1])
+        @test issorted(df_rand, [n1])
+        for n2 in setdiff(names(df_rand), [n1])
+            @test sort!(df_rand, [n1,n2])[n1] == sort(df_rand[n1])
+            @test issorted(df_rand, n1)
+        end
+    end
+
+    srand(1)
+    df_rand = DataFrame(rand(100, 4))
+    df_rand[:x1] = shuffle([fill(1, 50); fill(2, 50)])
+    df_rand[:x4] = shuffle([fill(1, 50); fill(2, 50)])
+    for n1 in [:x1, :x4]
+        for n2 in setdiff(names(df_rand), [n1])
+            v = sort(df_rand, [n1,n2])
+            @test issorted(v[n1])
+            @test issorted(v[v[n1].==1, n2])
+            @test issorted(v[v[n1].==2, n2])
+        end
+    end
+    for n1 in [:x1, :x4]
+        for n2 in setdiff(names(df_rand), [n1])
+            v = sort!(df_rand, [n1,n2])
+            @test issorted(v[n1])
+            @test issorted(v[v[n1].==1, n2])
+            @test issorted(v[v[n1].==2, n2])
+        end
+    end
 end
