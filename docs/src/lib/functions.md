@@ -32,6 +32,7 @@ combine
 completecases
 deleterows!
 describe
+disallowmissing!
 dropmissing
 dropmissing!
 eachcol
