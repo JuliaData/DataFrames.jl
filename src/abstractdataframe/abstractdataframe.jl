@@ -406,6 +406,7 @@ describe(df)
 
 """
 StatsBase.describe(df::AbstractDataFrame) = describe(stdout, df)
+function Statsbase.describe(df::AbstractDataFrame)
     function get_stats(col::AbstractArray{T} where T <: Real)
         stats = summarystats(col)
         t = [stats.mean  stats.min stats.median  stats.max  eltype(col) false 0]
