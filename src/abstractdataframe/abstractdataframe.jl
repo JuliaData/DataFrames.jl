@@ -406,47 +406,24 @@ describe(df)
 
 """
 StatsBase.describe(df::AbstractDataFrame) = describe(stdout, df)
-function DataFrames.describe(io::IO, df::AbstractDataFrame)
     function get_stats(col::AbstractArray{T} where T <: Real)
         stats = summarystats(col)
-        t = [stats.mean 
-        stats.min
-        stats.median 
-        stats.max 
-        eltype(col) 
-        false 0]
+        t = [stats.mean  stats.min stats.median  stats.max  eltype(col) false 0]
     end
     
     function get_stats(col::AbstractArray{Union{T, Missing}} where T <: Real)
         stats = summarystats(collect(skipmissing(col)))
-        t = [stats.mean 
-        stats.min 
-        stats.median 
-        stats.max 
-        Missings.T(eltype(col)) 
-        true 
-        count(ismissing, col)/length(col)]
+ 		t = [stats.mean stats.min stats.median stats.max Missings.T(eltype(col)) true count(ismissing, col)/length(col)]
     end
     
     function get_stats(col)
-        t = [nothing 
-        nothing 
-        nothing 
-        nothing 
-        eltype(col) 
-        false 
-        0]
+        t = [nothing nothing nothing nothing eltype(col) false 0]
     end
     
     function get_stats(col:: AbstractArray{Union{T, Missing}} where T)
-        t = [nothing 
-        nothing 
-        nothing 
-        nothing 
-        Missings.T(eltype(col)) 
-        true 
-        count(ismissing, col)/length(col)]
+        t = [nothing nothing nothing nothing Missings.T(eltype(col)) true count(ismissing, col)/length(col)]
     end 
+
 
     sumstats = DataFrame(Variable = Vector{Symbol}(0), 
         mean = [], 
