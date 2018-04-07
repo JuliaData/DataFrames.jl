@@ -314,24 +314,39 @@ module TestDataFrame
     @test deleterows!(df, [2, 3]) === df
     @test df == DataFrame(a=[1], b=[3.0])
 
-    # describe
-    #suppress output and test that describe() does not throw
-    devmissing = Compat.Sys.isunix() ? "/dev/null" : "nul"
-    open(devmissing, "w") do f
-        @test nothing == describe(f, DataFrame(a=[1, 2], b=Any["3", missing]))
-        @test nothing ==
-              describe(f, DataFrame(a=Union{Int, Missing}[1, 2],
-                                    b=["3", missing]))
-        @test nothing ==
-              describe(f, DataFrame(a=CategoricalArray([1, 2]),
-                                    b=CategoricalArray(["3", missing])))
-        @test nothing == describe(f, [1, 2, 3])
-        @test nothing == describe(f, [1, 2, 3])
-        @test nothing == describe(f, CategoricalArray([1, 2, 3]))
-        @test nothing == describe(f, Any["1", "2", missing])
-        @test nothing == describe(f, ["1", "2", missing])
-        @test nothing == describe(f, CategoricalArray(["1", "2", missing]))
-    end
+  # Test that the describe output handles all values and missings properly
+    # construct the test DataFrame
+    Variable = [:number, :number_missing, :non_number, :non_number_missing]
+    Mean = [2.5, 2.0, nothing, nothing]
+    Min = [1.0, 1.0, nothing, nothing]
+    Median = [2.5, 2.0, nothing, nothing]
+    Max = [4.0, 3.0, nothing, nothing]
+    Eltype = [Int64, Int64, String, String]
+    allowMissing = [false, true, false, true]
+    fracMissing = [0, .25, 0, .25]
+    describe_output = DataFrame(
+        Variable = Variable,
+        mean = Mean,
+        min = Min, 
+        median = Median, 
+        max = Max, 
+        eltype = Eltype,
+        allowMissing = allowMissing,
+        fracMissing = fracMissing, 
+        )
+
+    # Construct output DataFrame
+    vec_number = [1, 2, 3, 4]
+    vec_number_missing = [1,2, 3, missing]
+    vec_non_number = ["a", "b", "c", "d"] 
+    vec_non_number_missing = ["a", "b", "c", missing]  
+    
+    df = DataFrame(number = vec_number, 
+        number_missing = vec_number_missing, 
+        non_number = vec_non_number, 
+        non_number_missing = vec_non_number_missing)
+    # Check the output
+    @test describe_output == describe(df)
 
     #Check the output of unstack
     df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
