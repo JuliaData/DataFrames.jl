@@ -270,11 +270,12 @@ function Base.issorted(df::AbstractDataFrame, cols_new=[]; cols=[],
         cols_new = cols
     end
     if cols_new isa ColumnIndex
-        return issorted(df[cols_new], lt=lt, by=by, rev=rev, order=order)
+        issorted(df[cols_new], lt=lt, by=by, rev=rev, order=order)
     elseif length(cols_new) == 1
-        return issorted(df[cols_new[1]], lt=lt, by=by, rev=rev, order=order)
+        issorted(df[cols_new[1]], lt=lt, by=by, rev=rev, order=order)
+    else
+        issorted(1:nrow(df), ordering(df, cols_new, lt, by, rev, order))
     end
-    issorted(1:nrow(df), ordering(df, cols_new, lt, by, rev, order))
 end
 
 # sort and sortperm functions
