@@ -92,6 +92,7 @@ include("dataframerow/utils.jl")
 include("abstractdataframe/iteration.jl")
 include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
+include("dataframe/reshape.jl")
 
 include("abstractdataframe/io.jl")
 
