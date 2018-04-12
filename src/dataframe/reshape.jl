@@ -1,5 +1,5 @@
 """
-    permute!(df::DataFrame, p::AbstractVector)
+    permutecols!(df::DataFrame, p::AbstractVector)
 
 Permute the columns of `df` in-place, according to permutation `p`.
 
@@ -16,7 +16,7 @@ julia> df = DataFrame(; a=1:5, b=2:6, c=3:7)
 │ 4   │ 4 │ 5 │ 6 │
 │ 5   │ 5 │ 6 │ 7 │
 
-julia> permute!(df, [2, 1, 3]);
+julia> permutecols!(df, [2, 1, 3]);
 
 julia> df
 5×3 DataFrames.DataFrame
@@ -28,7 +28,7 @@ julia> df
 │ 4   │ 5 │ 4 │ 6 │
 │ 5   │ 6 │ 5 │ 7 │
 
-julia> permute!(df, [:c, :a, :b]);
+julia> permutecols!(df, [:c, :a, :b]);
 
 julia> df
 5×3 DataFrames.DataFrame
@@ -41,12 +41,14 @@ julia> df
 │ 5   │ 7 │ 5 │ 6 │
 ```
 """
-function Base.permute!(df::DataFrame, p::AbstractVector)
-    length(p) == size(df, 2) && isperm(p) || error("$p is not a valid permutation of df")
+function permutecols!(df::DataFrame, p::AbstractVector)
+    length(p) == size(df, 2) && isperm(p) || error("$p is not a valid column permutation")
     permute!(DataFrames.columns(df), p)
     df.colindex = DataFrames.Index(
         Dict(names(df)[j] => i for (i, j) in enumerate(p)), [names(df)[j] for j in p]
     )
 end
 
-Base.permute!(df::DataFrame, p::AbstractVector{Symbol}) = permute!(df, indexin(p,names(df)))
+function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
+    permutecols!(df, indexin(p,names(df)))
+end

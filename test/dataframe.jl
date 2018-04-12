@@ -663,7 +663,7 @@ module TestDataFrame
         end
     end
 
-    @testset "permute!" begin
+    @testset "permutecols!" begin
         column_sets = [
             (1:5, 2:6, 3:7),
             (1.0:5.0, 2.0:6.0, 3.0:7.0),
@@ -678,9 +678,9 @@ module TestDataFrame
 
             df = deepcopy(original)
             expected = deepcopy(original)
-            permute!(df, [:a])
+            permutecols!(df, [:a])
             @test df == expected
-            permute!(df, [1])
+            permutecols!(df, [1])
             @test df == expected
 
             # Two columns
@@ -688,17 +688,17 @@ module TestDataFrame
 
             df = deepcopy(original)
             expected = deepcopy(original)
-            permute!(df, [:a, :b])
+            permutecols!(df, [:a, :b])
             @test df == expected
-            permute!(df, 1:2)
+            permutecols!(df, 1:2)
             @test df == expected
 
             df = deepcopy(original)
             expected = DataFrame(; b=b, a=a)
-            permute!(df, [:b, :a])
+            permutecols!(df, [:b, :a])
             @test df == expected
             df = deepcopy(original)
-            permute!(df, [2, 1])
+            permutecols!(df, [2, 1])
             @test df == expected
 
             # Three columns
@@ -706,60 +706,60 @@ module TestDataFrame
 
             df = deepcopy(original)
             expected = deepcopy(original)
-            permute!(df, [:a, :b, :c])
+            permutecols!(df, [:a, :b, :c])
             @test df == expected
-            permute!(df, 1:3)
+            permutecols!(df, 1:3)
             @test df == expected
 
             df = deepcopy(original)
             expected = DataFrame(; b=b, c=c, a=a)
-            permute!(df, [:b, :c, :a])
+            permutecols!(df, [:b, :c, :a])
             @test df == expected
             df = deepcopy(original)
-            permute!(df, [2, 3, 1])
+            permutecols!(df, [2, 3, 1])
             @test df == expected
 
             df = deepcopy(original)
             expected = DataFrame(; c=c, a=a, b=b)
-            permute!(df, [:c, :a, :b])
+            permutecols!(df, [:c, :a, :b])
             @test df == expected
             df = deepcopy(original)
-            permute!(df, [3, 1, 2])
+            permutecols!(df, [3, 1, 2])
             @test df == expected
 
             df = deepcopy(original)
             expected = DataFrame(; a=a, c=c, b=b)
-            permute!(df, [:a, :c, :b])
+            permutecols!(df, [:a, :c, :b])
             @test df == expected
             df = deepcopy(original)
-            permute!(df, [1, 3, 2])
+            permutecols!(df, [1, 3, 2])
             @test df == expected
 
             df = deepcopy(original)
             expected = DataFrame(; b=b, a=a, c=c)
-            permute!(df, [:b, :a, :c])
+            permutecols!(df, [:b, :a, :c])
             @test df == expected
             df = deepcopy(original)
-            permute!(df, [2, 1, 3])
+            permutecols!(df, [2, 1, 3])
             @test df == expected
 
             df = deepcopy(original)
             expected = DataFrame(; c=c, b=b, a=a)
-            permute!(df, [:c, :b, :a])
+            permutecols!(df, [:c, :b, :a])
             @test df == expected
             df = deepcopy(original)
-            permute!(df, [3, 2, 1])
+            permutecols!(df, [3, 2, 1])
             @test df == expected
 
             # Invalid
             df = DataFrame(; a=a, b=b, c=c)
-            @test_throws Exception permute!(df, [:a, :b])
-            @test_throws Exception permute!(df, 1:4)
-            @test_throws Exception permute!(df, [:a, :b, :c, :d])
-            @test_throws Exception permute!(df, [1, 3])
-            @test_throws Exception permute!(df, [:a, :c])
-            @test_throws Exception permute!(df, [1, 2, 3, 1])
-            @test_throws Exception permute!(df, [:a, :b, :c, :a])
+            @test_throws Exception permutecols!(df, [:a, :b])
+            @test_throws Exception permutecols!(df, 1:4)
+            @test_throws Exception permutecols!(df, [:a, :b, :c, :d])
+            @test_throws Exception permutecols!(df, [1, 3])
+            @test_throws Exception permutecols!(df, [:a, :c])
+            @test_throws Exception permutecols!(df, [1, 2, 3, 1])
+            @test_throws Exception permutecols!(df, [:a, :b, :c, :a])
         end
     end
 end
