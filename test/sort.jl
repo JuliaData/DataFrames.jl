@@ -42,6 +42,17 @@ module TestSort
 
     @test df == ds
 
+    df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+    @test !issorted(df, :x)
+    @test issorted(sort(df, :x), :x)
+
+    x = DataFrame(a=1:3,b=3:-1:1,c=3:-1:1)
+    @test issorted(x)
+    @test !issorted(x, [:b,:c])
+    @test !issorted(x[2:3], [:b,:c])
+    @test issorted(sort(x,[2,3]), [:b,:c])
+    @test issorted(sort(x[2:3]), [:b,:c])
+
     # Check that columns that shares the same underlying array are only permuted once PR#1072
     df = DataFrame(a=[2,1])
     df[:b] = df[:a]
@@ -52,4 +63,43 @@ module TestSort
     sort!(x, :y)
     @test x[:y] == [1,2,3,4]
     @test x[:x] == [1,3,2,4]
+
+    @test_throws ArgumentError sort(x, by=:x)
+
+    srand(1)
+    # here there will be probably no ties
+    df_rand1 = DataFrame(rand(100, 4))
+    # but here we know we will have ties
+    df_rand2 = df_rand1[:]
+    df_rand2[:x1] = shuffle([fill(1, 50); fill(2, 50)])
+    df_rand2[:x4] = shuffle([fill(1, 50); fill(2, 50)])
+
+    # test sorting by 1 column
+    for df_rand in [df_rand1, df_rand2]
+        # testing sort
+        for n1 in names(df_rand)
+            # passing column name
+            @test sort(df_rand, n1) == df_rand[sortperm(df_rand[n1]),:]
+            # passing vector with one column name
+            @test sort(df_rand, [n1]) == df_rand[sortperm(df_rand[n1]),:]
+            # passing vector with two column names
+            for n2 in setdiff(names(df_rand), [n1])
+                @test sort(df_rand, [n1,n2]) == df_rand[sortperm(collect(zip(df_rand[n1],
+                                                                             df_rand[n2]))),:]
+            end
+        end
+        # testing if sort! is consistent with issorted and sort
+        ref_df = df_rand[:]
+        for n1 in names(df_rand)
+            @test sort!(df_rand, n1) == sort(ref_df, n1)
+            @test issorted(df_rand, n1)
+            @test sort!(df_rand, [n1]) == sort(ref_df, [n1])
+            @test issorted(df_rand, [n1])
+            for n2 in setdiff(names(df_rand), [n1])
+                @test sort!(df_rand, [n1, n2]) == sort(ref_df, [n1, n2])
+                @test issorted(df_rand, n1)
+                @test issorted(df_rand, [n1, n2])
+            end
+        end
+    end
 end
