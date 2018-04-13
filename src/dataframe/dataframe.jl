@@ -40,14 +40,17 @@ Each column in `columns` should be the same length.
 **Notes**
 
 A `DataFrame` is a lightweight object. As long as columns are not
-manipulated, creation of a DataFrame from existing AbstractVectors is
+manipulated, creation of a `DataFrame` from existing AbstractVectors is
 inexpensive. For example, indexing on columns is inexpensive, but
 indexing by rows is expensive because copies are made of each column.
-An exception is assignment of `AbstractRange` as a column of
-`DataFrame` in which case it is collected to a vector.
 
-Because column types can vary, a DataFrame is not type stable. For
-performance-critical code, do not index into a DataFrame inside of
+If a column is passed to a `DataFrame` constructor or is assigned as a whole
+using `setindex!` then its reference is stored in the `DataFrame`. An exception
+to this rule is assignment of `AbstractRange` as a column in which case it is
+collected to a vector.
+
+Because column types can vary, a `DataFrame` is not type stable. For
+performance-critical code, do not index into a `DataFrame` inside of
 loops.
 
 **Examples**
