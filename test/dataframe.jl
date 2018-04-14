@@ -620,7 +620,7 @@ module TestDataFrame
     end
 
     @testset "passing range to a DataFrame" begin
-        df =DataFrame(a=1:3, b='a':'c')
+        df = DataFrame(a=1:3, b='a':'c')
         df[:c] = 1:3
         df[:d] = 'a':'c'
         @test all(typeof(df[i]) <: Vector for i in 1:ncol(df))
