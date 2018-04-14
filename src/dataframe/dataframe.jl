@@ -46,8 +46,8 @@ indexing by rows is expensive because copies are made of each column.
 
 If a column is passed to a `DataFrame` constructor or is assigned as a whole
 using `setindex!` then its reference is stored in the `DataFrame`. An exception
-to this rule is assignment of `AbstractRange` as a column in which case it is
-collected to a vector.
+to this rule is assignment of an `AbstractRange` as a column, in which case the
+range is collected to a `Vector`.
 
 Because column types can vary, a `DataFrame` is not type stable. For
 performance-critical code, do not index into a `DataFrame` inside of
