@@ -716,12 +716,12 @@ module TestDataFrame
 
         # Invalid
         df = DataFrame(a=a, b=b, c=c)
-        @test_throws Exception permutecols!(df, [:a, :b])
-        @test_throws Exception permutecols!(df, 1:4)
-        @test_throws Exception permutecols!(df, [:a, :b, :c, :d])
-        @test_throws Exception permutecols!(df, [1, 3])
-        @test_throws Exception permutecols!(df, [:a, :c])
-        @test_throws Exception permutecols!(df, [1, 2, 3, 1])
-        @test_throws Exception permutecols!(df, [:a, :b, :c, :a])
+        @test_throws ArgumentError permutecols!(df, [:a, :b])
+        @test_throws ArgumentError permutecols!(df, 1:4)
+        @test_throws KeyError permutecols!(df, [:a, :b, :c, :d])
+        @test_throws ArgumentError permutecols!(df, [1, 3])
+        @test_throws ArgumentError permutecols!(df, [:a, :c])
+        @test_throws ArgumentError permutecols!(df, [1, 2, 3, 1])
+        @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :a])
     end
 end

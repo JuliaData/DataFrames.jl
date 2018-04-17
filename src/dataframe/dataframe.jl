@@ -1082,7 +1082,9 @@ julia> df
 ```
 """
 function permutecols!(df::DataFrame, p::AbstractVector)
-    length(p) == size(df, 2) && isperm(p) || error("$p is not a valid column permutation")
+    if !(length(p) == size(df, 2) && isperm(p))
+        throw(ArgumentError("$p is not a valid column permutation for this DataFrame"))
+    end
     permute!(columns(df), p)
     df.colindex = Index(names(df)[p])
 end
