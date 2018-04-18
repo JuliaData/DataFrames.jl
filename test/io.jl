@@ -31,6 +31,15 @@ module TestIO
                  "<tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td>Amir</td><td>missing</td></tr></tbody></table>"
 
+    df = DataFrame(Fish = Vector{String}(undef, 2), Mass = [1.5, missing])
+    io = IOBuffer()
+    show(io, "text/html", df)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>Fish</th><th>Mass</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+
     # test limit attribute of IOContext is used
     df = DataFrame(a=collect(1:1000))
     ioc = IOContext(IOBuffer(), displaysize=(10, 10), limit=false)

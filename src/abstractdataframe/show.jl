@@ -102,9 +102,9 @@ function getmaxwidths(df::AbstractDataFrame,
 
         # (2) Consider length of longest entry in that column
         for indices in (rowindices1, rowindices2), i in indices
-            try
+            if isassigned(col, i)
                 maxwidth = max(maxwidth, ourstrwidth(col[i]))
-            catch
+            else
                 maxwidth = max(maxwidth, undefstrwidth)
             end
         end
@@ -245,7 +245,7 @@ function showrowindices(io::IO,
         # Print DataFrame entry
         for j in leftcol:rightcol
             strlen = 0
-            try
+            if isassigned(df[j], i)
                 s = df[i, j]
                 strlen = ourstrwidth(s)
                 if ismissing(s)
@@ -253,7 +253,7 @@ function showrowindices(io::IO,
                 else
                     ourshowcompact(io, s)
                 end
-            catch
+            else
                 strlen = ourstrwidth(Base.undef_ref_str)
                 ourshowcompact(io, Base.undef_ref_str)
             end
