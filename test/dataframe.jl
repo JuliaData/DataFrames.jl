@@ -263,7 +263,7 @@ module TestDataFrame
         @test df0 == dfb
 
         df = DataFrame(x=[1])
-        DataFrames.push!(df, Dict(:x=>2), Dict(:x=>3))
+        push!(df, Dict(:x=>2), Dict(:x=>3))
         @test df[:x] == [1,2,3]
     end
 
