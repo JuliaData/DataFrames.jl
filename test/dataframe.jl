@@ -262,12 +262,12 @@ module TestDataFrame
         @test_throws ArgumentError push!(dfb, Dict(:first=>"chicken", :second=>1))
         @test df0 == dfb
 
-        df = DataFrame(x=[1])
+        df = DataFrame(x=1)
         push!(df, Dict(:x=>2), Dict(:x=>3))
         @test df[:x] == [1,2,3]
     
-        df = DataFrame(:x=>[1], :y=>[2])
-        DataFrames.push!(df, [3, 4], [5, 6])
+        df = DataFrame(x=1, y=2)
+        push!(df, [3, 4], [5, 6])
         @test df[:x] == [1, 3, 5] && df[:y] == [2, 4, 6]
     end
 
