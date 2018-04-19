@@ -303,7 +303,7 @@ end
 
 """
     sort(df::AbstractDataFrame, cols;
-         alg::Union{Algorithm, Void}=nothing, lt=isless, by=identity,
+         alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
          rev::Bool=false, order::Ordering=Forward)
 
 Return a copy of data frame `df` sorted by column(s) `cols`.
@@ -370,7 +370,7 @@ sort(::AbstractDataFrame, ::Any)
 
 """
     sortperm(df::AbstractDataFrame, cols;
-             alg::Union{Algorithm, Void}=nothing, lt=isless, by=identity,
+             alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
              rev::Bool=false, order::Ordering=Forward)
 
 Return a permutation vector of row indices of data frame `df` that puts them in
