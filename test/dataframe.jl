@@ -677,4 +677,66 @@ module TestDataFrame
             @test x == y
         end
     end
+
+    @testset "permutecols!" begin
+        a, b, c = 1:5, 2:6, 3:7
+        original = DataFrame(a=a, b=b, c=c)
+
+        df = deepcopy(original)
+        expected = deepcopy(original)
+        permutecols!(df, [:a, :b, :c])
+        @test df == expected
+        permutecols!(df, 1:3)
+        @test df == expected
+
+        df = deepcopy(original)
+        expected = DataFrame(b=b, c=c, a=a)
+        permutecols!(df, [:b, :c, :a])
+        @test df == expected
+        df = deepcopy(original)
+        permutecols!(df, [2, 3, 1])
+        @test df == expected
+
+        df = deepcopy(original)
+        expected = DataFrame(c=c, a=a, b=b)
+        permutecols!(df, [:c, :a, :b])
+        @test df == expected
+        df = deepcopy(original)
+        permutecols!(df, [3, 1, 2])
+        @test df == expected
+
+        df = deepcopy(original)
+        expected = DataFrame(a=a, c=c, b=b)
+        permutecols!(df, [:a, :c, :b])
+        @test df == expected
+        df = deepcopy(original)
+        permutecols!(df, [1, 3, 2])
+        @test df == expected
+
+        df = deepcopy(original)
+        expected = DataFrame(b=b, a=a, c=c)
+        permutecols!(df, [:b, :a, :c])
+        @test df == expected
+        df = deepcopy(original)
+        permutecols!(df, [2, 1, 3])
+        @test df == expected
+
+        df = deepcopy(original)
+        expected = DataFrame(c=c, b=b, a=a)
+        permutecols!(df, [:c, :b, :a])
+        @test df == expected
+        df = deepcopy(original)
+        permutecols!(df, [3, 2, 1])
+        @test df == expected
+
+        # Invalid
+        df = DataFrame(a=a, b=b, c=c)
+        @test_throws ArgumentError permutecols!(df, [:a, :b])
+        @test_throws ArgumentError permutecols!(df, 1:4)
+        @test_throws KeyError permutecols!(df, [:a, :b, :c, :d])
+        @test_throws ArgumentError permutecols!(df, [1, 3])
+        @test_throws ArgumentError permutecols!(df, [:a, :c])
+        @test_throws ArgumentError permutecols!(df, [1, 2, 3, 1])
+        @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :a])
+    end
 end

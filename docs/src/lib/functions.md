@@ -55,4 +55,5 @@ sort
 sort!
 tail
 unique!
+permutecols!
 ```
