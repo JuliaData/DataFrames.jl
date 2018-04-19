@@ -1012,6 +1012,7 @@ function Base.push!(df::DataFrame, dict::AbstractDict)
         end
         i += 1
     end
+    df
 end
 
 # array and tuple like collections
@@ -1034,4 +1035,5 @@ function Base.push!(df::DataFrame, iterable::Any)
         end
         i += 1
     end
+    df
 end
