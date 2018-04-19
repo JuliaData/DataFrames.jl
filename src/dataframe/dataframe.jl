@@ -40,12 +40,17 @@ Each column in `columns` should be the same length.
 **Notes**
 
 A `DataFrame` is a lightweight object. As long as columns are not
-manipulated, creation of a DataFrame from existing AbstractVectors is
+manipulated, creation of a `DataFrame` from existing AbstractVectors is
 inexpensive. For example, indexing on columns is inexpensive, but
 indexing by rows is expensive because copies are made of each column.
 
-Because column types can vary, a DataFrame is not type stable. For
-performance-critical code, do not index into a DataFrame inside of
+If a column is passed to a `DataFrame` constructor or is assigned as a whole
+using `setindex!` then its reference is stored in the `DataFrame`. An exception
+to this rule is assignment of an `AbstractRange` as a column, in which case the
+range is collected to a `Vector`.
+
+Because column types can vary, a `DataFrame` is not type stable. For
+performance-critical code, do not index into a `DataFrame` inside of
 loops.
 
 **Examples**
@@ -325,12 +330,13 @@ end
 
 # Will automatically add a new column if needed
 function insert_single_column!(df::DataFrame,
-                               dv::AbstractVector,
+                               v::AbstractVector,
                                col_ind::ColumnIndex)
 
-    if ncol(df) != 0 && nrow(df) != length(dv)
+    if ncol(df) != 0 && nrow(df) != length(v)
         throw(ArgumentError("New columns must have the same length as old columns"))
     end
+    dv = isa(v, AbstractRange) ? collect(v) : v
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
         df.columns[j] = dv
