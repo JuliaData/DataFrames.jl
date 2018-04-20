@@ -178,7 +178,7 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
         write(io, @sprintf("%d", row))
         for col in 1:ncols
             write(io, " & ")
-            cell = df[row,col]
+            cell = isassigned(df[col], row) ? df[row,col] : Base.undef_ref_str
             if !ismissing(cell)
                 if showable(MIME("text/latex"), cell)
                     show(io, MIME("text/latex"), cell)
