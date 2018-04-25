@@ -291,7 +291,7 @@ for s in [:(Base.sort), :(Base.sortperm)]
             if cols != []
                 fname = $s
                 Base.depwarn("$fname(df, cols=cols) is deprecated, use $fname(df, cols) instead",
-                             $s)
+                             Symbol($s))
                 cols_new = cols
             end
             ord = ordering(df, cols_new, lt, by, rev, order)
