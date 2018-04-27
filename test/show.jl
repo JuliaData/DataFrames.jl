@@ -265,20 +265,29 @@ module TestShow
 
     #Test show output for REPL and similar
     df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
-    io = IOBuffer()
-    show(io, df)
-    str = String(take!(io))
-    @test str == (Base.have_color ? """
-    2×2 $DataFrame
-    │ Row │ Fish │ Mass    │
-    ├─────┼──────┼─────────┤
-    │ 1   │ Suzy │ 1.5     │
-    │ 2   │ Amir │ \e[90mmissing\e[39m │""" : """
-    2×2 $DataFrame
-    │ Row │ Fish │ Mass    │
-    ├─────┼──────┼─────────┤
-    │ 1   │ Suzy │ 1.5     │
-    │ 2   │ Amir │ missing │""")
+    if VERSION >= v"0.7.0-DEV.3077"
+        @test sprint(show, df, context=:color=>true) == """
+        2×2 DataFrame
+        │ Row │ Fish │ Mass    │
+        ├─────┼──────┼─────────┤
+        │ 1   │ Suzy │ 1.5     │
+        │ 2   │ Amir │ \e[90mmissing\e[39m │"""
+    else
+        io = IOBuffer()
+        show(io, df)
+        str = String(take!(io))
+        @test str == (Base.have_color ? """
+        2×2 $DataFrame
+        │ Row │ Fish │ Mass    │
+        ├─────┼──────┼─────────┤
+        │ 1   │ Suzy │ 1.5     │
+        │ 2   │ Amir │ \e[90mmissing\e[39m │""" : """
+        2×2 $DataFrame
+        │ Row │ Fish │ Mass    │
+        ├─────┼──────┼─────────┤
+        │ 1   │ Suzy │ 1.5     │
+        │ 2   │ Amir │ missing │""")
+    end
 
     io = IOBuffer()
     showcols(io, df)
@@ -304,27 +313,45 @@ module TestShow
     df = DataFrame(A = [:Symbol, missing, :missing],
                    B = [missing, "String", "missing"],
                    C = [:missing, "missing", missing])
-    io = IOBuffer()
-    show(io, df)
-    str = String(take!(io))
-    @test str == (Base.have_color ? """
-    3×3 $DataFrame
-    │ Row │ A       │ B       │ C       │
-    ├─────┼─────────┼─────────┼─────────┤
-    │ 1   │ Symbol  │ \e[90mmissing\e[39m │ missing │
-    │ 2   │ \e[90mmissing\e[39m │ String  │ missing │
-    │ 3   │ missing │ missing │ \e[90mmissing\e[39m │""" : """
-    3×3 $DataFrame
-    │ Row │ A       │ B       │ C       │
-    ├─────┼─────────┼─────────┼─────────┤
-    │ 1   │ Symbol  │ missing │ missing │
-    │ 2   │ missing │ String  │ missing │
-    │ 3   │ missing │ missing │ missing │""")
+    if VERSION ≥ v"0.7.0-DEV.2762"
+        @test sprint(show, df, context=:color=>true) == """
+        3×3 DataFrame
+        │ Row │ A       │ B       │ C       │
+        ├─────┼─────────┼─────────┼─────────┤
+        │ 1   │ Symbol  │ \e[90mmissing\e[39m │ missing │
+        │ 2   │ \e[90mmissing\e[39m │ String  │ missing │
+        │ 3   │ missing │ missing │ \e[90mmissing\e[39m │"""
+    else
+        io = IOBuffer()
+        show(io, df)
+        str = String(take!(io))
+        @test str == (Base.have_color ? """
+        3×3 $DataFrame
+        │ Row │ A       │ B       │ C       │
+        ├─────┼─────────┼─────────┼─────────┤
+        │ 1   │ Symbol  │ \e[90mmissing\e[39m │ missing │
+        │ 2   │ \e[90mmissing\e[39m │ String  │ missing │
+        │ 3   │ missing │ missing │ \e[90mmissing\e[39m │""" : """
+        3×3 $DataFrame
+        │ Row │ A       │ B       │ C       │
+        ├─────┼─────────┼─────────┼─────────┤
+        │ 1   │ Symbol  │ missing │ missing │
+        │ 2   │ missing │ String  │ missing │
+        │ 3   │ missing │ missing │ missing │""")
+    end
 
     io = IOBuffer()
     showcols(io, df)
     str = String(take!(io))
     if VERSION ≥ v"0.7.0-DEV.2762"
+        ref = """
+        3×3 DataFrame
+        │ Col # │ Name │ Eltype                 │ Missing │ Values              │
+        ├───────┼──────┼────────────────────────┼─────────┼─────────────────────┤
+        │ 1     │ A    │ Union{Missing, Symbol} │ 1       │ Symbol  …  missing  │
+        │ 2     │ B    │ Union{Missing, String} │ 1       │ missing  …  missing │
+        │ 3     │ C    │ Any                    │ 1       │ missing  …  missing │"""
+    elseif VERSION ≥ v"0.7.0-DEV.2762"
         ref = """
         3×3 $DataFrame
         │ Col # │ Name │ Eltype                 │ Missing │

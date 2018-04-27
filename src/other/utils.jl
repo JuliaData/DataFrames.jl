@@ -2,10 +2,13 @@ import Base: isidentifier, is_id_start_char, is_id_char
 
 const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
     "return", "break", "continue", "function", "macro", "quote", "let",
-    "local", "global", "const", "abstract", "typealias", "type", "bitstype",
+    "local", "global", "const", "type",
     "immutable", "do", "module", "baremodule", "using", "import", "struct",
     "export", "importall", "end", "else", "elseif", "catch", "finally"])
 
+if VERSION < v"0.7.0-DEV.3220"
+    push!(RESERVED_WORDS, "bitstype", "typealias", "abstract")
+end
 
 function identifier(s::AbstractString)
     s = Unicode.normalize(s)

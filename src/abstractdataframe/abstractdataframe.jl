@@ -606,7 +606,7 @@ julia> df
 ```
 """
 Base.filter!(f, df::AbstractDataFrame) =
-    deleterows!(df, findall(!f, eachrow(df)))
+    deleterows!(df, findall(collect(!f(r)::Bool for r in eachrow(df))))
 
 function Base.convert(::Type{Array}, df::AbstractDataFrame)
     convert(Matrix, df)
