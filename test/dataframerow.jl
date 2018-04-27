@@ -72,4 +72,16 @@ module TestDataFrameRow
     # grouping single row
     gd = DataFrames.group_rows(df5[1,:])
     @test gd.ngroups == 1
+
+    # getproperty, setproperty! and propertynames
+    if VERSION >= v"0.7.0-DEV.3067"
+        r = DataFrameRow(df, 1)
+        @test Base.propertynames(r) == names(df)
+        @test r.a === 1
+        @test r.b === 2.0
+        r.a = 2
+        @test r.a === 2
+        r.b = 1
+        @test r.b === 1.0
+    end
 end

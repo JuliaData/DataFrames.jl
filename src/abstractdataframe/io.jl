@@ -218,13 +218,11 @@ struct DataFrameStream{T}
     columns::T
     header::Vector{String}
 end
-DataFrameStream(df::DataFrame) = DataFrameStream(Tuple(df.columns), string.(names(df)))
+DataFrameStream(df::DataFrame) = DataFrameStream(Tuple(columns(df)), string.(names(df)))
 
 # DataFrame Data.Source implementation
-function Data.schema(df::DataFrame)
-    return Data.Schema(Type[eltype(A) for A in df.columns],
-                       string.(names(df)), length(df) == 0 ? 0 : length(df.columns[1]))
-end
+Data.schema(df::DataFrame) =
+    Data.Schema(Type[eltype(A) for A in columns(df)], string.(names(df)), size(df, 1))
 
 Data.isdone(source::DataFrame, row, col, rows, cols) = row > rows || col > cols
 function Data.isdone(source::DataFrame, row, col)
@@ -283,7 +281,7 @@ function DataFrame(sch::Data.Schema{R}, ::Type{S}=Data.Field,
                 # to the # of rows in the source
             newsize = ifelse(S == Data.Column || !R, 0,
                         ifelse(append, sinkrows + sch.rows, sch.rows))
-            foreach(col->resize!(col, newsize), sink.columns)
+            foreach(col->resize!(col, newsize), columns(sink))
             sch.rows = newsize
         end
         # take care of a possible reference from source by addint to WeakRefStringArrays
@@ -322,7 +320,7 @@ DataFrame(sink, sch::Data.Schema, ::Type{S}, append::Bool;
                        row, col::Int, knownrows)
     append!(sink.columns[col], column)
 end
-    
+
 Data.close!(df::DataFrameStream) =
     DataFrame(collect(Any, df.columns), Symbol.(df.header), makeunique=true)
 

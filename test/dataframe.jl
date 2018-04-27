@@ -1,5 +1,6 @@
 module TestDataFrame
     using Compat, Compat.Test, DataFrames
+    using DataFrames: columns
     const ≅ = isequal
     const ≇ = !isequal
 
@@ -75,7 +76,7 @@ module TestDataFrame
                           c = CategoricalArray{Union{Float64, Missing}}(undef, 2))
     # https://github.com/JuliaData/Missings.jl/issues/66
     # @test missingdf ≅ similar(df, 2)
-    @test typeof.(similar(df, 2).columns) == typeof.(missingdf.columns)
+    @test typeof.(columns(similar(df, 2))) == typeof.(columns(missingdf))
     @test size(similar(df, 2)) == size(missingdf)
 
     # Associative methods
@@ -83,12 +84,12 @@ module TestDataFrame
     df = DataFrame(a=[1, 2], b=[3.0, 4.0])
     @test haskey(df, :a)
     @test !haskey(df, :c)
-    @test get(df, :a, -1) === df.columns[1]
+    @test get(df, :a, -1) === columns(df)[1]
     @test get(df, :c, -1) == -1
     @test !isempty(df)
 
     @test empty!(df) === df
-    @test isempty(df.columns)
+    @test isempty(columns(df))
     @test isempty(df)
     @test isempty(DataFrame(a=[], b=[]))
 
@@ -425,19 +426,19 @@ module TestDataFrame
     @test append!(DataFrame(A = 1:2, B = 1:2), DataFrame(A = 3:4, B = 3:4)) == DataFrame(A=1:4, B = 1:4)
     df = DataFrame(A = Vector{Union{Int, Missing}}(1:3), B = Vector{Union{Int, Missing}}(4:6))
     DRT = CategoricalArrays.DefaultRefType
-    @test all(c -> isa(c, Vector{Union{Int, Missing}}), categorical!(deepcopy(df)).columns)
+    @test all(c -> isa(c, Vector{Union{Int, Missing}}), columns(categorical!(deepcopy(df))))
     @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-              categorical!(deepcopy(df), [1,2]).columns)
+              columns(categorical!(deepcopy(df), [1,2])))
     @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-              categorical!(deepcopy(df), [:A,:B]).columns)
+              columns(categorical!(deepcopy(df), [:A,:B])))
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-                    categorical!(deepcopy(df), [:A]).columns) == 1
+                    columns(categorical!(deepcopy(df), [:A]))) == 1
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-                    categorical!(deepcopy(df), :A).columns) == 1
+                    columns(categorical!(deepcopy(df), :A))) == 1
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-                    categorical!(deepcopy(df), [1]).columns) == 1
+                    columns(categorical!(deepcopy(df), [1]))) == 1
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-                    categorical!(deepcopy(df), 1).columns) == 1
+                    columns(categorical!(deepcopy(df), 1))) == 1
 
     @testset "categorical!" begin
         df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
@@ -462,7 +463,7 @@ module TestDataFrame
                                    Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
                                    Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
         @test isa(udf[1], Vector{Int})
-        @test all(isa.(udf.columns[2:end], Vector{Union{Int, Missing}}))
+        @test all(isa.(columns(udf)[2:end], Vector{Union{Int, Missing}}))
         df = DataFrame(Any[categorical(repeat(1:2, inner=4)),
                            categorical(repeat('a':'d', outer=2)), categorical(1:8)],
                        [:id, :variable, :value])
@@ -472,7 +473,7 @@ module TestDataFrame
                                    Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
                                    Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
         @test isa(udf[1], CategoricalVector{Int})
-        @test all(isa.(udf.columns[2:end], CategoricalVector{Union{Int, Missing}}))
+        @test all(isa.(columns(udf)[2:end], CategoricalVector{Union{Int, Missing}}))
     end
 
     @testset "duplicate entries in unstack warnings" begin
@@ -628,14 +629,14 @@ module TestDataFrame
         df = DataFrame(Any[CategoricalArray(1:10),
                            CategoricalArray(string.('a':'j'))])
         allowmissing!(df)
-        @test all(issubtype.(typeof.(df.columns), CategoricalVector))
+        @test all(issubtype.(typeof.(columns(df)), CategoricalVector))
         @test eltypes(df)[1] <: Union{CategoricalValue{Int}, Missing}
         @test eltypes(df)[2] <: Union{CategoricalString, Missing}
         df[1,2] = missing
         @test_throws MissingException disallowmissing!(df)
         df[1,2] = "a"
         disallowmissing!(df)
-        @test all(issubtype.(typeof.(df.columns), CategoricalVector))
+        @test all(issubtype.(typeof.(columns(df)), CategoricalVector))
         @test eltypes(df)[1] <: CategoricalValue{Int}
         @test eltypes(df)[2] <: CategoricalString
     end
@@ -645,12 +646,12 @@ module TestDataFrame
                        b = CategoricalArray(["foo"]),
                        c = [0.0],
                        d = CategoricalArray([0.0]))
-        @test typeof.(similar(df).columns) == typeof.(df.columns)
+        @test typeof.(columns(similar(df))) == typeof.(columns(df))
         @test size(similar(df)) == size(df)
 
         rows = size(df, 1) + 5
         @test size(similar(df, rows)) == (rows, size(df, 2))
-        @test typeof.(similar(df, rows).columns) == typeof.(df.columns)
+        @test typeof.(columns(similar(df, rows))) == typeof.(columns(df))
 
         e = @test_throws ArgumentError similar(df, -1)
         @test e.value.msg == "the number of rows must be positive"
@@ -760,5 +761,31 @@ module TestDataFrame
         @test_throws ArgumentError permutecols!(df, [:a, :c])
         @test_throws ArgumentError permutecols!(df, [1, 2, 3, 1])
         @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :a])
+    end
+
+    if VERSION >= v"0.7.0-DEV.3067"
+        @testset "getproperty, setproperty! and propertynames" begin
+            x = collect(1:10)
+            y = collect(1.0:10.0)
+            z = collect(10:-1:1)
+            df = DataFrame(x = x, y = y)
+
+            @test Base.propertynames(df) == names(df)
+
+            @test df.x === x
+            @test df.y === y
+            @test_throws KeyError df.z
+
+            df.x = 2:11
+            @test df.x == 2:11
+            @test x == 1:10
+            df.y = 1
+            @test df.y == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+            @test df.y === y
+            df.z = z
+            @test df.z === z
+            df.zz = 1
+            @test df.zz == df.y
+        end
     end
 end
