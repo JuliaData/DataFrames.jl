@@ -7,16 +7,17 @@ module TestIO
                    B = ["\$10.0", "M&F", "A~B", "\\alpha"],
                    C = [L"\alpha", L"\beta", L"\gamma", L"\sum_{i=1}^n \delta_i"],
                    D = [1.0, 2.0, missing, 3.0],
-                   E = CategoricalArray(["a", missing, "c", "d"])
+                   E = CategoricalArray(["a", missing, "c", "d"]),
+                   F = Vector{String}(undef, 4)
                    )
     str = """
-        \\begin{tabular}{r|ccccc}
-        \t& A & B & C & D & E\\\\
+        \\begin{tabular}{r|cccccc}
+        \t& A & B & C & D & E & F\\\\
         \t\\hline
-        \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 & a \\\\
-        \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 &  \\\\
-        \t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  & c \\\\
-        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d \\\\
+        \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 & a & \\#undef \\\\
+        \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 &  & \\#undef \\\\
+        \t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  & c & \\#undef \\\\
+        \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d & \\#undef \\\\
         \\end{tabular}
         """
     @test reprmime(MIME("text/latex"), df) == str
@@ -30,6 +31,15 @@ module TestIO
                  "</th><th>Fish</th><th>Mass</th></tr></thead><tbody>" *
                  "<tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
                  "<tr><th>2</th><td>Amir</td><td>missing</td></tr></tbody></table>"
+
+    df = DataFrame(Fish = Vector{String}(undef, 2), Mass = [1.5, missing])
+    io = IOBuffer()
+    show(io, "text/html", df)
+    str = String(take!(io))
+    @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+                 "</th><th>Fish</th><th>Mass</th></tr></thead><tbody>" *
+                 "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
+                 "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
 
     # test limit attribute of IOContext is used
     df = DataFrame(a=collect(1:1000))

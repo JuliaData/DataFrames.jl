@@ -73,14 +73,11 @@ DFPerm(o::O, df::DF) where {O<:Ordering, DF<:AbstractDataFrame} = DFPerm{O,DF}(o
 col_ordering(o::DFPerm{O}, i::Int) where {O<:Ordering} = o.ord
 col_ordering(o::DFPerm{V}, i::Int) where {V<:AbstractVector} = o.ord[i]
 
-Base.@propagate_inbounds Base.getindex(o::DFPerm, i::Int, j::Int) = o.df[i, j]
-Base.@propagate_inbounds Base.getindex(o::DFPerm, a::DataFrameRow, j::Int) = a[j]
-
 function Sort.lt(o::DFPerm, a, b)
-    @inbounds for i = 1:ncol(o.df)
+    @inbounds for i in 1:ncol(o.df)
         ord = col_ordering(o, i)
-        va = o[a, i]
-        vb = o[b, i]
+        va = o.df[a, i]
+        vb = o.df[b, i]
         lt(ord, va, vb) && return true
         lt(ord, vb, va) && return false
     end
@@ -272,7 +269,13 @@ function Base.issorted(df::AbstractDataFrame, cols_new=[]; cols=[],
                      :issorted)
         cols_new = cols
     end
-    issorted(eachrow(df), ordering(df, cols_new, lt, by, rev, order))
+    if cols_new isa ColumnIndex
+        issorted(df[cols_new], lt=lt, by=by, rev=rev, order=order)
+    elseif length(cols_new) == 1
+        issorted(df[cols_new[1]], lt=lt, by=by, rev=rev, order=order)
+    else
+        issorted(1:nrow(df), ordering(df, cols_new, lt, by, rev, order))
+    end
 end
 
 # sort and sortperm functions
@@ -288,7 +291,7 @@ for s in [:(Base.sort), :(Base.sortperm)]
             if cols != []
                 fname = $s
                 Base.depwarn("$fname(df, cols=cols) is deprecated, use $fname(df, cols) instead",
-                             $s)
+                             Symbol($s))
                 cols_new = cols
             end
             ord = ordering(df, cols_new, lt, by, rev, order)
@@ -300,7 +303,7 @@ end
 
 """
     sort(df::AbstractDataFrame, cols;
-         alg::Union{Algorithm, Void}=nothing, lt=isless, by=identity,
+         alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
          rev::Bool=false, order::Ordering=Forward)
 
 Return a copy of data frame `df` sorted by column(s) `cols`.
@@ -367,7 +370,7 @@ sort(::AbstractDataFrame, ::Any)
 
 """
     sortperm(df::AbstractDataFrame, cols;
-             alg::Union{Algorithm, Void}=nothing, lt=isless, by=identity,
+             alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
              rev::Bool=false, order::Ordering=Forward)
 
 Return a permutation vector of row indices of data frame `df` that puts them in

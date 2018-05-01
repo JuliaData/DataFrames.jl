@@ -77,9 +77,8 @@ module TestData
     #test_group("DataFrame")
     srand(1)
     N = 20
-    #Cast to Int64 as rand() behavior differs between Int32/64
-    d1 = Vector{Union{Int64, Missing}}(rand(map(Int64, 1:2), N))
-    d2 = CategoricalArray(["A", "B", missing])[rand(map(Int64, 1:3), N)]
+    d1 = Vector{Union{Int64, Missing}}(rand(1:2, N))
+    d2 = CategoricalArray(["A", "B", missing])[rand(1:3, N)]
     d3 = randn(N)
     d4 = randn(N)
     df7 = DataFrame(Any[d1, d2, d3], [:d1, :d2, :d3])
@@ -87,12 +86,14 @@ module TestData
     #test_group("groupby")
     gd = groupby(df7, :d1)
     @test length(gd) == 2
-    @test gd[2][:d2] ≅ ["B", missing, "A", missing, missing, missing, missing, missing, "A"]
-    @test sum(gd[2][:d3]) == sum(df7[:d3][df7[:d1] .== 2])
+    @test gd[1][:d2] ≅ d2[d1 .== 1]
+    @test gd[2][:d2] ≅ d2[d1 .== 2]
+    @test gd[1][:d3] == d3[d1 .== 1]
+    @test gd[2][:d3] == d3[d1 .== 2]
 
     g1 = groupby(df7, [:d1, :d2])
     g2 = groupby(df7, [:d2, :d1])
-    @test sum(g1[1][:d3]) == sum(g2[1][:d3])
+    @test g1[1][:d3] == g2[1][:d3]
 
     res = 0.0
     for x in g1
@@ -111,12 +112,11 @@ module TestData
     @test size(df8, 2) == 5
     @test sum(df8[:d1_length]) == N
     @test all(df8[:d1_length] .> 0)
-    @test df8[:d1_length] == [4, 5, 11]
-    @test df8 ≅ aggregate(groupby(df7, :d2, sort=true), [sum, length])
-    @test df8[1, :d1_length] == 4
-    @test df8[2, :d1_length] == 5
-    @test df8[3, :d1_length] == 11
-    @test df8 ≅ aggregate(groupby(df7, :d2), [sum, length], sort=true)
+    @test df8[:d1_length] == [sum(isequal.(d2, "A")), sum(isequal.(d2, "B")), sum(ismissing.(d2))]
+    adf = aggregate(groupby(df7, :d2, sort=true), [sum, length])
+    @test df8 ≅ adf
+    adf = aggregate(groupby(df7, :d2), [sum, length], sort=true)
+    @test sort(df8, [:d1_sum, :d3_sum, :d1_length, :d3_length]) ≅ adf
 
     df9 = aggregate(df7, :d2, [sum, length], sort=true)
     @test df9 ≅ df8
@@ -225,8 +225,12 @@ module TestData
     m2 = join(df1, df2, on = :a, kind = :outer)
     @test m2[:a] == df1[:a] # preserves df1 order
     @test m2[:b] == df1[:b] # preserves df1 order
-    m2 = join(df1, df2, on = :a, kind = :outer)
-    @test m2[:b2] ≅ [missing, :A, :A, missing, :C, missing, missing, :B, missing, :A]
+    @test m2[indexin(df1[:a], m2[:a]), :b] == df1[:b]
+    @test m2[indexin(df2[:a], m2[:a]), :b2] == df2[:b2]
+    @test m2[indexin(df1[:a], m2[:a]), :v1] == df1[:v1]
+    @test m2[indexin(df2[:a], m2[:a]), :v2] == df2[:v2]
+    @test all(ismissing, m2[map(x -> !in(x, df2[:a]), m2[:a]), :b2])
+    @test all(ismissing, m2[map(x -> !in(x, df2[:a]), m2[:a]), :v2])
 
     df1 = DataFrame(a = Union{Int, Missing}[1, 2, 3],
                     b = Union{String, Missing}["America", "Europe", "Africa"])

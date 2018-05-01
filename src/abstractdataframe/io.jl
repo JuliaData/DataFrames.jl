@@ -107,7 +107,11 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
         write(io, "<tr>")
         write(io, "<th>$row</th>")
         for column_name in cnames
-            cell = sprint(ourshowcompact, df[row, column_name])
+            if isassigned(df[column_name], row)
+                cell = sprint(ourshowcompact, df[row, column_name])
+            else
+                cell = sprint(ourshowcompact, Base.undef_ref_str)
+            end
             write(io, "<td>$(html_escape(cell))</td>")
         end
         write(io, "</tr>")
@@ -174,7 +178,7 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
         write(io, @sprintf("%d", row))
         for col in 1:ncols
             write(io, " & ")
-            cell = df[row,col]
+            cell = isassigned(df[col], row) ? df[row,col] : Base.undef_ref_str
             if !ismissing(cell)
                 if showable(MIME("text/latex"), cell)
                     show(io, MIME("text/latex"), cell)

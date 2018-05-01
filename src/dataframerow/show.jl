@@ -7,7 +7,7 @@
 #' @param io::IO The IO system where rendering will take place.
 #' @param r::DataFrameRow The DataFrameRow to be rendered to `io`.
 #'
-#' @returns o::Void A `nothing` value.
+#' @returns `nothing` value.
 #'
 #' @examples
 #'

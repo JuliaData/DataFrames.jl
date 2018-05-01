@@ -40,12 +40,17 @@ Each column in `columns` should be the same length.
 **Notes**
 
 A `DataFrame` is a lightweight object. As long as columns are not
-manipulated, creation of a DataFrame from existing AbstractVectors is
+manipulated, creation of a `DataFrame` from existing AbstractVectors is
 inexpensive. For example, indexing on columns is inexpensive, but
 indexing by rows is expensive because copies are made of each column.
 
-Because column types can vary, a DataFrame is not type stable. For
-performance-critical code, do not index into a DataFrame inside of
+If a column is passed to a `DataFrame` constructor or is assigned as a whole
+using `setindex!` then its reference is stored in the `DataFrame`. An exception
+to this rule is assignment of an `AbstractRange` as a column, in which case the
+range is collected to a `Vector`.
+
+Because column types can vary, a `DataFrame` is not type stable. For
+performance-critical code, do not index into a `DataFrame` inside of
 loops.
 
 **Examples**
@@ -325,12 +330,13 @@ end
 
 # Will automatically add a new column if needed
 function insert_single_column!(df::DataFrame,
-                               dv::AbstractVector,
+                               v::AbstractVector,
                                col_ind::ColumnIndex)
 
-    if ncol(df) != 0 && nrow(df) != length(dv)
+    if ncol(df) != 0 && nrow(df) != length(v)
         throw(ArgumentError("New columns must have the same length as old columns"))
     end
+    dv = isa(v, AbstractRange) ? collect(v) : v
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
         df.columns[j] = dv
@@ -1006,6 +1012,7 @@ function Base.push!(df::DataFrame, dict::AbstractDict)
         end
         i += 1
     end
+    df
 end
 
 # array and tuple like collections
@@ -1028,4 +1035,68 @@ function Base.push!(df::DataFrame, iterable::Any)
         end
         i += 1
     end
+    df
+end
+
+##############################################################################
+##
+## Reorder columns
+##
+##############################################################################
+
+"""
+    permutecols!(df::DataFrame, p::AbstractVector)
+
+Permute the columns of `df` in-place, according to permutation `p`. Elements of `p` may be
+either column indices (`Int`) or names (`Symbol`), but cannot be a combination of both. All
+columns must be listed.
+
+### Examples
+
+```julia
+julia> df = DataFrame(a=1:5, b=2:6, c=3:7)
+5×3 DataFrames.DataFrame
+│ Row │ a │ b │ c │
+├─────┼───┼───┼───┤
+│ 1   │ 1 │ 2 │ 3 │
+│ 2   │ 2 │ 3 │ 4 │
+│ 3   │ 3 │ 4 │ 5 │
+│ 4   │ 4 │ 5 │ 6 │
+│ 5   │ 5 │ 6 │ 7 │
+
+julia> permutecols!(df, [2, 1, 3]);
+
+julia> df
+5×3 DataFrames.DataFrame
+│ Row │ b │ a │ c │
+├─────┼───┼───┼───┤
+│ 1   │ 2 │ 1 │ 3 │
+│ 2   │ 3 │ 2 │ 4 │
+│ 3   │ 4 │ 3 │ 5 │
+│ 4   │ 5 │ 4 │ 6 │
+│ 5   │ 6 │ 5 │ 7 │
+
+julia> permutecols!(df, [:c, :a, :b]);
+
+julia> df
+5×3 DataFrames.DataFrame
+│ Row │ c │ a │ b │
+├─────┼───┼───┼───┤
+│ 1   │ 3 │ 1 │ 2 │
+│ 2   │ 4 │ 2 │ 3 │
+│ 3   │ 5 │ 3 │ 4 │
+│ 4   │ 6 │ 4 │ 5 │
+│ 5   │ 7 │ 5 │ 6 │
+```
+"""
+function permutecols!(df::DataFrame, p::AbstractVector)
+    if !(length(p) == size(df, 2) && isperm(p))
+        throw(ArgumentError("$p is not a valid column permutation for this DataFrame"))
+    end
+    permute!(columns(df), p)
+    df.colindex = Index(names(df)[p])
+end
+
+function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
+    permutecols!(df, getindex.(df.colindex.lookup, p))
 end

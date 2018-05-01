@@ -1,7 +1,7 @@
 
 """
     sort!(df::AbstractDataFrame, cols;
-          alg::Union{Algorithm, Void}=nothing, lt=isless, by=identity,
+          alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,
           rev::Bool=false, order::Ordering=Forward)
 
 Sort data frame `df` by column(s) `cols`.

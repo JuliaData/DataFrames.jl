@@ -109,7 +109,11 @@ module TestDataFrame
     @test df[:newcol_1] == ["a1", "b1"]
 
     df = DataFrame(a=[1,2], a_1=[3,4])
-    @test_warn r"Inserting" insert!(df, 1, [11,12], :a)
+    @static if VERSION >= v"0.7.0-DEV.2988"
+        @test_logs (:warn, r"Inserting") insert!(df, 1, [11,12], :a)
+    else
+        @test_warn r"Inserting" insert!(df, 1, [11,12], :a)
+    end
     df = DataFrame(a=[1,2], a_1=[3,4])
     insert!(df, 1, [11,12], :a, makeunique=true)
     @test names(df) == [:a_2, :a, :a_1]
@@ -261,6 +265,14 @@ module TestDataFrame
         dfb=DataFrame( first=["1","2","3"], second=["apple","orange","pear"] )
         @test_throws ArgumentError push!(dfb, Dict(:first=>"chicken", :second=>1))
         @test df0 == dfb
+
+        df = DataFrame(x=1)
+        push!(df, Dict(:x=>2), Dict(:x=>3))
+        @test df[:x] == [1,2,3]
+    
+        df = DataFrame(x=1, y=2)
+        push!(df, [3, 4], [5, 6])
+        @test df[:x] == [1, 3, 5] && df[:y] == [2, 4, 6]
     end
 
     # delete!
@@ -480,10 +492,15 @@ module TestDataFrame
 
     @testset "duplicate entries in unstack warnings" begin
         df = DataFrame(id=Union{Int, Missing}[1, 2, 1, 2],
-                       id2=Union{Int, Missing}[1, 2, 1, 2], 
+                       id2=Union{Int, Missing}[1, 2, 1, 2],
                        variable=["a", "b", "a", "b"], value=[3, 4, 5, 6])
-        @test_warn "Duplicate entries in unstack at row 3 for key 1 and variable a." unstack(df, :id, :variable, :value)
-        @test_warn "Duplicate entries in unstack at row 3 for key (1, 1) and variable a." unstack(df, :variable, :value)
+        @static if VERSION >= v"0.7.0-DEV.2988"
+            @test_logs (:warn, "Duplicate entries in unstack at row 3 for key 1 and variable a.") unstack(df, :id, :variable, :value)
+            @test_logs (:warn, "Duplicate entries in unstack at row 3 for key (1, 1) and variable a.") unstack(df, :variable, :value)
+        else
+            @test_warn "Duplicate entries in unstack at row 3 for key 1 and variable a." unstack(df, :id, :variable, :value)
+            @test_warn "Duplicate entries in unstack at row 3 for key (1, 1) and variable a." unstack(df, :variable, :value)
+        end
         a = unstack(df, :id, :variable, :value)
         @test a ≅ DataFrame(id = [1, 2], a = [5, missing], b = [missing, 6])
         b = unstack(df, :variable, :value)
@@ -497,15 +514,24 @@ module TestDataFrame
         @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, missing], b = [missing, 4])
 
         df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1,1])
-        @test_warn "Duplicate entries in unstack at row 2 for key 1 and variable x." unstack(df, :variable, :value)
-        @test_warn "Duplicate entries in unstack at row 2 for key 1 and variable x." unstack(df)
+        @static if VERSION >= v"0.7.0-DEV.2988"
+            @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :variable, :value)
+            @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df)
+        else
+            @test_warn "Duplicate entries in unstack at row 2 for key 1 and variable x." unstack(df, :variable, :value)
+            @test_warn "Duplicate entries in unstack at row 2 for key 1 and variable x." unstack(df)
+        end
     end
 
     @testset "missing values in colkey" begin
         df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                        variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                        value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-        @test_warn "Missing value in variable variable at row 3. Skipping." unstack(df)
+        @static if VERSION >= v"0.7.0-DEV.2988"
+            @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df)
+        else
+            @test_warn "Missing value in variable variable at row 3. Skipping." unstack(df)
+        end
         udf = unstack(df)
         @test names(udf) == [:id, :a, :b, :missing]
         @test udf[:missing] ≅ [missing, 9.0, missing]
@@ -513,7 +539,11 @@ module TestDataFrame
                        id2=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                        variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                        value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-        @test_warn "Missing value in variable variable at row 3. Skipping." unstack(df, 3, 4)
+        @static if VERSION >= v"0.7.0-DEV.2988"
+            @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, 3, 4)
+        else
+            @test_warn "Missing value in variable variable at row 3. Skipping." unstack(df, 3, 4)
+        end
         udf = unstack(df, 3, 4)
         @test names(udf) == [:id, :id2, :a, :b, :missing]
         @test udf[:missing] ≅ [missing, 9.0, missing]
@@ -576,7 +606,7 @@ module TestDataFrame
     @testset "misc" begin
         df = DataFrame(Any[collect('A':'C')])
         @test sprint(dump, df) == """
-                                  DataFrames.DataFrame  3 observations of 1 variables
+                                  $DataFrame  3 observations of 1 variables
                                     x1: Array{Char}((3,))
                                       1: Char A
                                       2: Char B
@@ -650,6 +680,13 @@ module TestDataFrame
         @test names(df) == [:x3, :x3_1, :x3_2, :x4]
     end
 
+    @testset "passing range to a DataFrame" begin
+        df = DataFrame(a=1:3, b='a':'c')
+        df[:c] = 1:3
+        df[:d] = 'a':'c'
+        @test all(typeof(df[i]) <: Vector for i in 1:ncol(df))
+    end
+
     @testset "handling of end in indexing" begin
         z = DataFrame(rand(4,5))
         for x in [z, view(z, 1:4)]
@@ -676,5 +713,67 @@ module TestDataFrame
             y[2:4, 2:5] = 0
             @test x == y
         end
+    end
+
+    @testset "permutecols!" begin
+        a, b, c = 1:5, 2:6, 3:7
+        original = DataFrame(a=a, b=b, c=c)
+
+        df = deepcopy(original)
+        expected = deepcopy(original)
+        permutecols!(df, [:a, :b, :c])
+        @test df == expected
+        permutecols!(df, 1:3)
+        @test df == expected
+
+        df = deepcopy(original)
+        expected = DataFrame(b=b, c=c, a=a)
+        permutecols!(df, [:b, :c, :a])
+        @test df == expected
+        df = deepcopy(original)
+        permutecols!(df, [2, 3, 1])
+        @test df == expected
+
+        df = deepcopy(original)
+        expected = DataFrame(c=c, a=a, b=b)
+        permutecols!(df, [:c, :a, :b])
+        @test df == expected
+        df = deepcopy(original)
+        permutecols!(df, [3, 1, 2])
+        @test df == expected
+
+        df = deepcopy(original)
+        expected = DataFrame(a=a, c=c, b=b)
+        permutecols!(df, [:a, :c, :b])
+        @test df == expected
+        df = deepcopy(original)
+        permutecols!(df, [1, 3, 2])
+        @test df == expected
+
+        df = deepcopy(original)
+        expected = DataFrame(b=b, a=a, c=c)
+        permutecols!(df, [:b, :a, :c])
+        @test df == expected
+        df = deepcopy(original)
+        permutecols!(df, [2, 1, 3])
+        @test df == expected
+
+        df = deepcopy(original)
+        expected = DataFrame(c=c, b=b, a=a)
+        permutecols!(df, [:c, :b, :a])
+        @test df == expected
+        df = deepcopy(original)
+        permutecols!(df, [3, 2, 1])
+        @test df == expected
+
+        # Invalid
+        df = DataFrame(a=a, b=b, c=c)
+        @test_throws ArgumentError permutecols!(df, [:a, :b])
+        @test_throws ArgumentError permutecols!(df, 1:4)
+        @test_throws KeyError permutecols!(df, [:a, :b, :c, :d])
+        @test_throws ArgumentError permutecols!(df, [1, 3])
+        @test_throws ArgumentError permutecols!(df, [:a, :c])
+        @test_throws ArgumentError permutecols!(df, [1, 2, 3, 1])
+        @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :a])
     end
 end

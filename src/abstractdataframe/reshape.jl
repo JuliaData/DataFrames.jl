@@ -251,7 +251,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
     levs = levels(refkeycol)
     # we have to handle a case with missings in refkeycol as levs will skip missing
     col = similar(df[rowkey], length(levs) + hadmissing)
-    copy!(col, levs)
+    copyto!(col, levs)
     hadmissing && (col[end] = missing)
     df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)))
     insert!(df2, 1, col, _names(df)[rowkey])

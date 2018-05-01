@@ -102,9 +102,9 @@ function getmaxwidths(df::AbstractDataFrame,
 
         # (2) Consider length of longest entry in that column
         for indices in (rowindices1, rowindices2), i in indices
-            try
+            if isassigned(col, i)
                 maxwidth = max(maxwidth, ourstrwidth(col[i]))
-            catch
+            else
                 maxwidth = max(maxwidth, undefstrwidth)
             end
         end
@@ -245,7 +245,7 @@ function showrowindices(io::IO,
         # Print DataFrame entry
         for j in leftcol:rightcol
             strlen = 0
-            try
+            if isassigned(df[j], i)
                 s = df[i, j]
                 strlen = ourstrwidth(s)
                 if ismissing(s)
@@ -253,7 +253,7 @@ function showrowindices(io::IO,
                 else
                     ourshowcompact(io, s)
                 end
-            catch
+            else
                 strlen = ourstrwidth(Base.undef_ref_str)
                 ourshowcompact(io, Base.undef_ref_str)
             end
@@ -424,7 +424,7 @@ end
 #'        AbstractDataFrame be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
 #'
-#' @returns o::Void A `nothing` value.
+#' @returns `nothing` value.
 #'
 #' @examples
 #'
@@ -434,7 +434,7 @@ function Base.show(io::IO,
                    df::AbstractDataFrame,
                    allcols::Bool = false,
                    rowlabel::Symbol = :Row,
-                   displaysummary::Bool = true) # -> Void
+                   displaysummary::Bool = true) # -> Nothing
     nrows = size(df, 1)
     dsize = displaysize(io)
     availableheight = dsize[1] - 5
@@ -472,14 +472,14 @@ end
 #' @param allcols::Bool Should only a subset of columns that fits
 #'        the device width be printed? Defaults to `false`.
 #'
-#' @returns o::Void A `nothing` value.
+#' @returns `nothing` value.
 #'
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' show(df, true)
 function Base.show(df::AbstractDataFrame,
-                   allcols::Bool = false) # -> Void
+                   allcols::Bool = false) # -> Nothing
     return show(stdout, df, allcols)
 end
 
@@ -499,7 +499,7 @@ end
 #'        AbstractDataFrame be rendered to the IO system before printing the
 #'        contents of the renderable rows? Defaults to `true`.
 #'
-#' @returns o::Void A `nothing` value.
+#' @returns `nothing` value.
 #'
 #' @examples
 #'
@@ -509,7 +509,7 @@ function Base.showall(io::IO,
                       df::AbstractDataFrame,
                       allcols::Bool = true,
                       rowlabel::Symbol = :Row,
-                      displaysummary::Bool = true) # -> Void
+                      displaysummary::Bool = true) # -> Nothing
     rowindices1 = 1:size(df, 1)
     rowindices2 = 1:0
     maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel)
@@ -536,14 +536,14 @@ end
 #' @param allcols::Bool Should only a subset of columns that fits
 #'        the device width be printed? Defaults to `true`.
 #'
-#' @returns o::Void A `nothing` value.
+#' @returns `nothing` value.
 #'
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showall(df, true)
 function Base.showall(df::AbstractDataFrame,
-                      allcols::Bool = true) # -> Void
+                      allcols::Bool = true) # -> Nothing
     showall(stdout, df, allcols)
     return
 end
@@ -561,14 +561,14 @@ end
 #' @param values::Bool If `true` (default), the first and the last value of
 #'        each column are printed.
 #'
-#' @returns o::Void A `nothing` value.
+#' @returns `nothing` value.
 #'
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showcols(df)
 function showcols(io::IO, df::AbstractDataFrame, all::Bool = false,
-                  values::Bool = true) # -> Void
+                  values::Bool = true) # -> Nothing
     print(io, summary(df))
     metadata = DataFrame(Name = _names(df),
                          Eltype = eltypes(df),
@@ -598,12 +598,12 @@ end
 #' @param values::Bool If `true` (default), first and last value of
 #'        each column is printed.
 #'
-#' @returns o::Void A `nothing` value.
+#' @returns `nothing` value.
 #'
 #' @examples
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showcols(df)
 function showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true)
-    showcols(stdout, df, all, values) # -> Void
+    showcols(stdout, df, all, values) # -> Nothing
 end
