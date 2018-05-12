@@ -27,7 +27,7 @@ The following are normally implemented for AbstractDataFrames:
 * [`completecases`](@ref) : boolean vector of complete cases (rows with no missings)
 * [`dropmissing`](@ref) : remove rows with missing values
 * [`dropmissing!`](@ref) : remove rows with missing values in-place
-* [`nonunique`](@ref) : indexes of duplicate rows
+* [`noNunique`](@ref) : indexes of duplicate rows
 * [`unique!`](@ref) : remove duplicate rows
 * `similar` : a DataFrame with similar columns as `d`
 
@@ -405,10 +405,10 @@ describe(df)
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame) = describe(stdout, df)
+StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
 function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :Nmissing, :datatype])
     # Check that people don't specify the wrong fields. 
-    allowed_fields = [:mean, :sd, :min, :q25, :median, :q75, :max, :datatype, :NUnique,:Nmissing]
+    allowed_fields = [:mean, :sd, :min, :q25, :median, :q75, :max, :datatype, :Nunique, :Nmissing]
     for i in colstats 
         if !contains(==, allowed_fields, i) 
             error("""
@@ -421,7 +421,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
                 :max,
                 :datatype,
                 :Nmissing,
-                :NUnique""") 
+                :Nunique""") 
         end
     end
     # Define 4 functions for getting summary statistics 
@@ -438,7 +438,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
             :max => stats.max,
             :datatype=> eltype(col),
             :Nmissing => nothing,
-            :NUnique => nothing
+            :Nunique => nothing
         )
     end
     
@@ -454,7 +454,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
             :max => stats.max,
             :datatype=> Missings.T(eltype(col)),
             :Nmissing => count(ismissing(col)),
-            :NUnique => nothing
+            :Nunique => nothing
         )
     end
     
@@ -469,7 +469,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
             :max => nothing,
             :datatype=> eltype(col),
             :Nmissing => nothing,
-            :NUnique => length(unique(col))
+            :Nunique => length(unique(col))
         )   
     end
     
@@ -484,7 +484,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
             :max => nothing,
             :datatype=> Missings.T(eltype(col)),
             :Nmissing => count(ismissing(col)),
-            :NUnique => length(unique(col))
+            :Nunique => length(unique(col))
         )    
     end 
     # Takes in a column and returns a row vector of the statistics
@@ -712,8 +712,8 @@ end
 Indexes of duplicate rows (a row that is a duplicate of a prior row)
 
 ```julia
-nonunique(df::AbstractDataFrame)
-nonunique(df::AbstractDataFrame, cols)
+noNunique(df::AbstractDataFrame)
+noNunique(df::AbstractDataFrame, cols)
 ```
 
 **Arguments**
@@ -733,15 +733,15 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 df = vcat(df, df)
-nonunique(df)
-nonunique(df, 1)
+noNunique(df)
+noNunique(df, 1)
 ```
 
 """
-function nonunique(df::AbstractDataFrame)
+function noNunique(df::AbstractDataFrame)
     gslots = row_group_slots(df)[3]
     # unique rows are the first encountered group representatives,
-    # nonunique are everything else
+    # noNunique are everything else
     res = fill(true, nrow(df))
     @inbounds for g_row in gslots
         (g_row > 0) && (res[g_row] = false)
@@ -749,19 +749,19 @@ function nonunique(df::AbstractDataFrame)
     return res
 end
 
-nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
-nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
+noNunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = noNunique(df[[cols]])
+noNunique(df::AbstractDataFrame, cols::Any) = noNunique(df[cols])
 
 if isdefined(Base, :unique!)
     import Base.unique!
 end
 
-unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
-unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, findall(nonunique(df, cols)))
+unique!(df::AbstractDataFrame) = deleterows!(df, findall(noNunique(df)))
+unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, findall(noNunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
-Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::Any) = df[(!).(nonunique(df, cols)), :]
+Base.unique(df::AbstractDataFrame) = df[(!).(noNunique(df)), :]
+Base.unique(df::AbstractDataFrame, cols::Any) = df[(!).(noNunique(df, cols)), :]
 
 """
 Delete duplicate rows
@@ -785,7 +785,7 @@ specifying the column(s) to compare.
 When `cols` is specified, the return DataFrame contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
 
-See also [`nonunique`](@ref).
+See also [`noNunique`](@ref).
 
 **Examples**
 
@@ -909,13 +909,13 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     isempty(dfs) && return DataFrame()
     allheaders = map(names, dfs)
     uniqueheaders = unique(allheaders)
-    unionunique = union(uniqueheaders...)
+    unioNunique = union(uniqueheaders...)
     intersectunique = intersect(uniqueheaders...)
-    coldiff = setdiff(unionunique, intersectunique)
+    coldiff = setdiff(unioNunique, intersectunique)
 
     if !isempty(coldiff)
         # if any DataFrames are a full superset of names, skip them
-        filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
+        filter!(u -> Set(u) != Set(unioNunique), uniqueheaders)
         estrings = Vector{String}(undef, length(uniqueheaders))
         for (i, u) in enumerate(uniqueheaders)
             matching = findall(h -> u == h, allheaders)
