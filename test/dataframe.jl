@@ -325,40 +325,44 @@ module TestDataFrame
     df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
     @test deleterows!(df, [2, 3]) === df
     @test df == DataFrame(a=[1], b=[3.0])
-
-  # Test that the describe output handles all values and missings properly
-    # construct the test DataFrame
-    Variable = [:number, :number_missing, :non_number, :non_number_missing]
-    Mean = [2.5, 2.0, nothing, nothing]
-    Min = [1.0, 1.0, nothing, nothing]
-    Median = [2.5, 2.0, nothing, nothing]
-    Max = [4.0, 3.0, nothing, nothing]
-    Eltype = [Int64, Int64, String, String]
-    allowMissing = [false, true, false, true]
-    fracMissing = [0, .25, 0, .25]
+    
+    # Test that the describe output handles all values and missings properly
+    # construct the output dataframe
+    struct MySuperLongNameForAStructIsThisToolong end
+    variable = Vector{Any}([:number, :number_missing, :non_number, :non_number_missing, :long_struct])
+    mean = [2.5, 2.0, nothing, nothing, nothing]
+    min = [1.0, 1.0, nothing, nothing, nothing]
+    median = [2.5, 2.0, nothing, nothing, nothing]
+    max = [4.0, 3.0, nothing, nothing, nothing]
+    Nmissing = [nothing, 0, nothing, 0, nothing]
+    datatype = Vector{Any}([Int64, Int64, String, String, MySuperLongNameForAStructIsThisToolong])
     describe_output = DataFrame(
-        Variable = Variable,
-        mean = Mean,
-        min = Min, 
-        median = Median, 
-        max = Max, 
-        eltype = Eltype,
-        allowMissing = allowMissing,
-        fracMissing = fracMissing, 
+        variable = variable,
+        mean = mean,
+        min = min, 
+        median = median, 
+        max = max, 
+        Nmissing = Nmissing,
+        datatype= datatype
         )
-
-    # Construct output DataFrame
+    
+    # Construct the test dataframe 
     vec_number = [1, 2, 3, 4]
     vec_number_missing = [1,2, 3, missing]
     vec_non_number = ["a", "b", "c", "d"] 
     vec_non_number_missing = ["a", "b", "c", missing]  
     
+    long_struct = [MySuperLongNameForAStructIsThisToolong() for i in 1:4]
+    
     df = DataFrame(number = vec_number, 
         number_missing = vec_number_missing, 
         non_number = vec_non_number, 
-        non_number_missing = vec_non_number_missing)
-    # Check the output
-    @test describe_output == describe(df)
+        non_number_missing = vec_non_number_missing,
+        long_struct = long_struct)
+    
+    #show(describe(df))
+    #show(describe_output)
+    @test describe(df) == describe_output
 
     #Check the output of unstack
     df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),

@@ -406,57 +406,107 @@ describe(df)
 
 """
 StatsBase.describe(df::AbstractDataFrame) = describe(stdout, df)
-function StatsBase.describe(io, df::AbstractDataFrame)
+function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :NMissing, :type])
+    # Check that people don't specify the wrong fields. 
+    allowed_fields = [:mean, :sd, :min, :q25, :median, :q75, :max, :datatype, :NUnique,:Nmissing]
+    for i in colstats 
+        if !contains(==, allowed_fields, i) 
+            error("""
+                Not an allowed field. Allowed fields are:
+                :mean,
+                :min,
+                :q25,
+                :median,
+                :q75,
+                :max,
+                :datatype,
+                :Nmissing,
+                :NUnique""") 
+        end
+    end
+    # Define 4 functions for getting summary statistics 
+    # use a dict because we dont know which measures the user wants
     function get_stats(col::AbstractArray{T} where T <: Real)
         stats = summarystats(col)
-        t = [stats.mean  stats.min stats.median  stats.max  eltype(col) false 0]
+        stats_dict = Dict(
+            :mean => stats.mean,
+            :sd => sqrt(var(col)),
+            :min => stats.min ,
+            :q25 => stats.q25,
+            :median => stats.median,
+            :q75 => stats.q75,
+            :max => stats.max,
+            :datatype=> eltype(col),
+            :Nmissing => nothing,
+            :NUnique => nothing
+        )
     end
     
     function get_stats(col::AbstractArray{Union{T, Missing}} where T <: Real)
         stats = summarystats(collect(skipmissing(col)))
- 		t = [stats.mean stats.min stats.median stats.max Missings.T(eltype(col)) true count(ismissing, col)/length(col)]
+        stats_dict = Dict(
+            :mean => stats.mean,
+            :sd => sqrt(var(collect(skipmissing(col)))),
+            :min => stats.min ,
+            :q25 => stats.q25,
+            :median => stats.median,
+            :q75 => stats.q75,
+            :max => stats.max,
+            :datatype=> Missings.T(eltype(col)),
+            :Nmissing => count(ismissing(col)),
+            :NUnique => nothing
+        )
     end
     
     function get_stats(col)
-        t = [nothing nothing nothing nothing eltype(col) false 0]
+        stats_dict = Dict(
+            :mean => nothing,
+            :sd => nothing,
+            :min => nothing,
+            :q25 => nothing,
+            :median => nothing,
+            :q75 => nothing,
+            :max => nothing,
+            :datatype=> eltype(col),
+            :Nmissing => nothing,
+            :NUnique => length(unique(col))
+        )   
     end
     
-    function get_stats(col:: AbstractArray{Union{T, Missing}} where T)
-        t = [nothing nothing nothing nothing Missings.T(eltype(col)) true count(ismissing, col)/length(col)]
+    function get_stats(col:: AbstractArray{Union{T, Missing}} where T <: Any)
+        stats_dict = Dict(
+            :mean => nothing,
+            :sd => nothing,
+            :min => nothing,
+            :q25 => nothing,
+            :median => nothing,
+            :q75 => nothing,
+            :max => nothing,
+            :datatype=> Missings.T(eltype(col)),
+            :Nmissing => count(ismissing(col)),
+            :NUnique => length(unique(col))
+        )    
     end 
-
-
-    sumstats = DataFrame(Variable = Vector{Symbol}(0), 
-        mean = [], 
-        min = [], 
-        median = [], 
-        max = [], 
-        eltype = [], 
-        allowMissing = [], 
-        fracMissing = [])
-    for (name, col) in eachcol(df)
-        t = [name get_stats(col)]
-        push!(sumstats, t)
+    # Takes in a column and returns a row vector of the statistics
+    function spread(col)
+        d = get_stats(col) # a Dict
+        row = Array{Any}(1,0)
+        for f in colstats
+            row = [row d[f]]
+        end
+        row
     end
-    return sumstats
-    print(io, sumstats)
+    # Append the summary stats into a matrix
+    data = Array{Any}(0,length(colstats))
+    for (name, col) in eachcol(df) 
+        data = [data; spread(col)]
+    end
+   # Add a column for variable names
+   data = DataFrame([names(df) data])
+   # Add the names for the Variable column and all the summary stats
+   names!(data, [:variable; colstats])
 end
 
-function StatsBase.describe(io::IO, X::AbstractVector{Union{T, Missing}}) where T
-    missingcount = count(ismissing, X)
-    pmissing = 100 * missingcount/length(X)
-    if pmissing != 100 && T <: Real
-        show(io, StatsBase.summarystats(collect(skipmissing(X))))
-    else
-        println(io, "Summary Stats:")
-    end
-    println(io, "Length:         $(length(X))")
-    println(io, "Type:           $(eltype(X))")
-    !(T <: Real) && println(io, "Number Unique:  $(length(unique(X)))")
-    println(io, "Number Missing: $(missingcount)")
-    @printf(io, "%% Missing:      %.6f\n", pmissing)
-    return
-end
 
 ##############################################################################
 ##
