@@ -328,43 +328,45 @@ module TestDataFrame
     
     # Test that the describe output handles all values and missings properly
     # construct the output dataframe
-    struct MySuperLongNameForAStructIsThisToolong end
-    variable = Vector{Any}([:number, :number_missing, :non_number, :non_number_missing, :long_struct])
-    mean = [2.5, 2.0, nothing, nothing, nothing]
-    min = [1.0, 1.0, nothing, nothing, nothing]
-    median = [2.5, 2.0, nothing, nothing, nothing]
-    max = [4.0, 3.0, nothing, nothing, nothing]
-    Nmissing = [nothing, 0, nothing, 0, nothing]
-    datatype = Vector{Any}([Int64, Int64, String, String, MySuperLongNameForAStructIsThisToolong])
-    describe_output = DataFrame(
-        variable = variable,
-        mean = mean,
-        min = min, 
-        median = median, 
-        max = max, 
-        Nmissing = Nmissing,
-        datatype= datatype
-        )
+    @testset "describe(df)" begin
+        struct MySuperLongNameForAStructIsThisToolong end
+        variable = Vector{Any}([:number, :number_missing, :non_number, :non_number_missing, :long_struct])
+        mean = [2.5, 2.0, nothing, nothing, nothing]
+        min = [1.0, 1.0, nothing, nothing, nothing]
+        median = [2.5, 2.0, nothing, nothing, nothing]
+        max = [4.0, 3.0, nothing, nothing, nothing]
+        Nmissing = [nothing, 0, nothing, 0, nothing]
+        datatype = Vector{Any}([Int64, Int64, String, String, MySuperLongNameForAStructIsThisToolong])
+        describe_output = DataFrame(
+            variable = variable,
+            mean = mean,
+            min = min, 
+            median = median, 
+            max = max, 
+            Nmissing = Nmissing,
+            datatype= datatype
+            )
+        
+        # Construct the test dataframe 
+        vec_number = [1, 2, 3, 4]
+        vec_number_missing = [1,2, 3, missing]
+        vec_non_number = ["a", "b", "c", "d"] 
+        vec_non_number_missing = ["a", "b", "c", missing]  
+        
+        long_struct = [MySuperLongNameForAStructIsThisToolong() for i in 1:4]
+        
+        df = DataFrame(number = vec_number, 
+            number_missing = vec_number_missing, 
+            non_number = vec_non_number, 
+            non_number_missing = vec_non_number_missing,
+            long_struct = long_struct)
+        
+        @test describe(df) == describe_output
     
-    # Construct the test dataframe 
-    vec_number = [1, 2, 3, 4]
-    vec_number_missing = [1,2, 3, missing]
-    vec_non_number = ["a", "b", "c", "d"] 
-    vec_non_number_missing = ["a", "b", "c", missing]  
-    
-    long_struct = [MySuperLongNameForAStructIsThisToolong() for i in 1:4]
-    
-    df = DataFrame(number = vec_number, 
-        number_missing = vec_number_missing, 
-        non_number = vec_non_number, 
-        non_number_missing = vec_non_number_missing,
-        long_struct = long_struct)
-    
-    @test describe(df) == describe_output
-
-    # Test that the keyword arguments works
-    describe_output_mean = describe_output[[:variable, :mean]]
-    @test describe(df, colstats = [:mean]) == describe_output_mean
+        # Test that the keyword arguments works
+        describe_output_mean = describe_output[[:variable, :mean]]
+        @test describe(df, colstats = [:mean]) == describe_output_mean
+    end 
 
     #Check the output of unstack
     df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
