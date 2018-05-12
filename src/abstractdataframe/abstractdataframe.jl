@@ -386,7 +386,7 @@ describe(io, df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :Nmi
 
 **Result**
 
-* a DataFrame where each row is a variabe of your input DataFrame and each 
+* a DataFrame where each row represents a variable of your input DataFrame and each 
 column is a summary statistic
 
 **Details**
@@ -402,7 +402,7 @@ Missings are filtered in the calculation of all statistics, however the optional
 argument `Nmissing` will report the number of missing values of that variable. 
 If the column does not allow missing values, `nothing` is returned. 
 Consequently, `Nmissing = 0` (and not nothing) indicates that the column allows
-missing values, but does not contain any at that time. 
+missing values, but does not contain any at the time. 
 
 **Examples**
 
