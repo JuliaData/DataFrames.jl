@@ -490,22 +490,22 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
     # Takes in a column and returns a row vector of the statistics
     function spread(col)
         d = get_stats(col) # a Dict
-        row = Array{Any}(1,0)
-        for f in colstats
-            row = [row d[f]]
-        end
-        row
+        row = [d[f] for f in colstats]
+        reshape(row, 1, length(row))
     end
     # Append the summary stats into a matrix
-    data = Array{Any}(0,length(colstats))
+    data = Array{Any}(size(df,2),length(colstats))
+    i = 1
     for (name, col) in eachcol(df) 
-        data = [data; spread(col)]
+        data[i,:] = spread(col)
+        i+=1
     end
    # Add a column for variable names
    data = DataFrame([names(df) data])
    # Add the names for the Variable column and all the summary stats
    names!(data, [:variable; colstats])
 end
+
 
 
 ##############################################################################
