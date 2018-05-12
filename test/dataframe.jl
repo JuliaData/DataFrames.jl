@@ -328,8 +328,8 @@ module TestDataFrame
     
     # Test that the describe output handles all values and missings properly
     # construct the output dataframe
+    struct MySuperLongNameForAStructIsThisToolong end
     @testset "describe(df)" begin
-        struct MySuperLongNameForAStructIsThisToolong end
         variable = Vector{Any}([:number, :number_missing, :non_number, :non_number_missing, :long_struct])
         mean = [2.5, 2.0, nothing, nothing, nothing]
         min = [1.0, 1.0, nothing, nothing, nothing]
