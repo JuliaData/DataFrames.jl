@@ -27,7 +27,7 @@ The following are normally implemented for AbstractDataFrames:
 * [`completecases`](@ref) : boolean vector of complete cases (rows with no missings)
 * [`dropmissing`](@ref) : remove rows with missing values
 * [`dropmissing!`](@ref) : remove rows with missing values in-place
-* [`noNunique`](@ref) : indexes of duplicate rows
+* [`nonunique`](@ref) : indexes of duplicate rows
 * [`unique!`](@ref) : remove duplicate rows
 * `similar` : a DataFrame with similar columns as `d`
 
@@ -719,8 +719,8 @@ end
 Indexes of duplicate rows (a row that is a duplicate of a prior row)
 
 ```julia
-noNunique(df::AbstractDataFrame)
-noNunique(df::AbstractDataFrame, cols)
+nonunique(df::AbstractDataFrame)
+nonunique(df::AbstractDataFrame, cols)
 ```
 
 **Arguments**
@@ -740,15 +740,15 @@ See also [`unique`](@ref) and [`unique!`](@ref).
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 df = vcat(df, df)
-noNunique(df)
-noNunique(df, 1)
+nonunique(df)
+nonunique(df, 1)
 ```
 
 """
-function noNunique(df::AbstractDataFrame)
+function nonunique(df::AbstractDataFrame)
     gslots = row_group_slots(df)[3]
     # unique rows are the first encountered group representatives,
-    # noNunique are everything else
+    # nonunique are everything else
     res = fill(true, nrow(df))
     @inbounds for g_row in gslots
         (g_row > 0) && (res[g_row] = false)
@@ -756,19 +756,19 @@ function noNunique(df::AbstractDataFrame)
     return res
 end
 
-noNunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = noNunique(df[[cols]])
-noNunique(df::AbstractDataFrame, cols::Any) = noNunique(df[cols])
+nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
+nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
 if isdefined(Base, :unique!)
     import Base.unique!
 end
 
-unique!(df::AbstractDataFrame) = deleterows!(df, findall(noNunique(df)))
-unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, findall(noNunique(df, cols)))
+unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
+unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
-Base.unique(df::AbstractDataFrame) = df[(!).(noNunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::Any) = df[(!).(noNunique(df, cols)), :]
+Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
+Base.unique(df::AbstractDataFrame, cols::Any) = df[(!).(nonunique(df, cols)), :]
 
 """
 Delete duplicate rows
@@ -792,7 +792,7 @@ specifying the column(s) to compare.
 When `cols` is specified, the return DataFrame contains complete rows,
 retaining in each case the first instance for which `df[cols]` is unique.
 
-See also [`noNunique`](@ref).
+See also [`nonunique`](@ref).
 
 **Examples**
 
