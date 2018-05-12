@@ -374,28 +374,35 @@ end
 Summarize the columns of an AbstractDataFrame
 
 ```julia
-describe(df::AbstractDataFrame)
-describe(io, df::AbstractDataFrame)
+describe(df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :Nmissing, :datatype])
+describe(io, df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :Nmissing, :datatype])
 ```
 
 **Arguments**
 
 * `df` : the AbstractDataFrame
 * `io` : optional output descriptor
+* `colstats` a vector of symbols representing the summaristatistics you wish to report
 
 **Result**
 
-* nothing
+* a DataFrame where each row represents a variable of your input DataFrame and each 
+column is a summary statistic
 
 **Details**
 
-If the column's base type derives from Number, compute the minimum, first
-quantile, median, mean, third quantile, and maximum. Missings are filtered and
-reported separately.
+If the column's base type derives from Number, compute the mean, standard 
+deviation, minimum, first quantile, median, third quantile, and maximum. If 
+a column is not numeric, these statistics are populated with `nothing`s. 
 
-For boolean columns, report trues, falses, and missings.
+For variables of *all* types, `describe` can also report the type of the 
+variable and the number of unique values. 
 
-For other types, show column characteristics and number of missings.
+Missings are filtered in the calculation of all statistics, however the optional
+argument `Nmissing` will report the number of missing values of that variable. 
+If the column does not allow missing values, `nothing` is returned. 
+Consequently, `Nmissing = 0` (and not nothing) indicates that the column allows
+missing values, but does not contain any at the time. 
 
 **Examples**
 
