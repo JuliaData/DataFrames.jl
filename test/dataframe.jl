@@ -362,7 +362,10 @@ module TestDataFrame
     
     @test describe(df) == describe_output
 
-    
+    # Test that the keyword arguments works
+    describe_output_mean = describe_output[[:variable, :mean]]
+    @test describe(df, colstats = [:mean]) == describe_output_mean
+
     #Check the output of unstack
     df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
                    Key = CategoricalArray{Union{String, Missing}}(["Mass", "Color", "Mass", "Color"]),

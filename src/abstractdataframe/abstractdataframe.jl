@@ -405,10 +405,10 @@ describe(df)
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame) = describe(stdout, df)
+StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
 function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :Nmissing, :datatype])
     # Check that people don't specify the wrong fields. 
-    allowed_fields = [:mean, :sd, :min, :q25, :median, :q75, :max, :datatype, :NUnique,:Nmissing]
+    allowed_fields = [:mean, :sd, :min, :q25, :median, :q75, :max, :datatype, :Nunique, :Nmissing]
     for i in colstats 
         if !contains(==, allowed_fields, i) 
             error("""
@@ -421,7 +421,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
                 :max,
                 :datatype,
                 :Nmissing,
-                :NUnique""") 
+                :Nunique""") 
         end
     end
     # Define 4 functions for getting summary statistics 
@@ -438,7 +438,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
             :max => stats.max,
             :datatype=> eltype(col),
             :Nmissing => nothing,
-            :NUnique => nothing
+            :Nunique => nothing
         )
     end
     
@@ -454,7 +454,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
             :max => stats.max,
             :datatype=> Missings.T(eltype(col)),
             :Nmissing => count(ismissing(col)),
-            :NUnique => nothing
+            :Nunique => nothing
         )
     end
     
@@ -469,7 +469,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
             :max => nothing,
             :datatype=> eltype(col),
             :Nmissing => nothing,
-            :NUnique => length(unique(col))
+            :Nunique => length(unique(col))
         )   
     end
     
@@ -484,7 +484,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, 
             :max => nothing,
             :datatype=> Missings.T(eltype(col)),
             :Nmissing => count(ismissing(col)),
-            :NUnique => length(unique(col))
+            :Nunique => length(unique(col))
         )    
     end 
     # Takes in a column and returns a row vector of the statistics
