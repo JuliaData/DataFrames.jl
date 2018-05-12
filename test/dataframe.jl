@@ -360,10 +360,9 @@ module TestDataFrame
         non_number_missing = vec_non_number_missing,
         long_struct = long_struct)
     
-    #show(describe(df))
-    #show(describe_output)
     @test describe(df) == describe_output
 
+    
     #Check the output of unstack
     df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
                    Key = CategoricalArray{Union{String, Missing}}(["Mass", "Color", "Mass", "Color"]),

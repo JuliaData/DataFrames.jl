@@ -406,7 +406,7 @@ describe(df)
 
 """
 StatsBase.describe(df::AbstractDataFrame) = describe(stdout, df)
-function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :NMissing, :type])
+function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :Nmissing, :type])
     # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :sd, :min, :q25, :median, :q75, :max, :datatype, :NUnique,:Nmissing]
     for i in colstats 
