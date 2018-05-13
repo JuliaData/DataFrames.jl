@@ -348,7 +348,7 @@ module TestDataFrame
         )
     
         @test describe_output == describe(df)
-        @test describe_output[:variable, :mean] == describe(df, stats = [:mean])
+        @test describe_output[[:variable, :mean] == describe(df, stats = [:mean])
     end 
 
     #Check the output of unstack
