@@ -371,23 +371,21 @@ end
 # summarize the columns of a df
 # TODO: clever layout in rows
 """
-Summarize the columns of an AbstractDataFrame
-
 ```julia
-describe(df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :Nmissing, :datatype])
-describe(io, df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :Nmissing, :datatype])
+describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :Nmissing, :datatype])
+describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :Nmissing, :datatype])
 ```
 
 **Arguments**
 
 * `df` : the AbstractDataFrame
 * `io` : optional output descriptor
-* `colstats` a vector of symbols representing the summaristatistics you wish to report
+* `stats::AbstractVector{Symbol}`: the summary statistics to report
 
 **Result**
 
-* a DataFrame where each row represents a variable of your input DataFrame and each 
-column is a summary statistic
+* A `DataFrame` where each row represents a variable and each column a summary statistic.
+
 
 **Details**
 
@@ -395,13 +393,13 @@ If the column's base type derives from Number, compute the mean, standard
 deviation, minimum, first quantile, median, third quantile, and maximum. If 
 a column is not numeric, these statistics are populated with `nothing`s. 
 
-For variables of *all* types, `describe` can also report the type of the 
+Will also report the type of the 
 variable and the number of unique values. 
 
-Missings are filtered in the calculation of all statistics, however the optional
-argument `Nmissing` will report the number of missing values of that variable. 
+Missing values are filtered in the calculation of all statistics, however the column
+`nmissing` will report the number of missing values of that variable. 
 If the column does not allow missing values, `nothing` is returned. 
-Consequently, `Nmissing = 0` (and not nothing) indicates that the column allows
+Consequently, `nmissing = 0` (and not nothing) indicates that the column allows
 missing values, but does not contain any at the time. 
 
 **Examples**
@@ -414,103 +412,94 @@ describe(df)
 """
 StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
 function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :Nmissing, :datatype])
-    # Check that people don't specify the wrong fields. 
-    allowed_fields = [:mean, :sd, :min, :q25, :median, :q75, :max, :datatype, :Nunique, :Nmissing]
-    for i in colstats 
-        if !contains(==, allowed_fields, i) 
-            error("""
-                Not an allowed field. Allowed fields are:
-                :mean,
-                :min,
-                :q25,
-                :median,
-                :q75,
-                :max,
-                :datatype,
-                :Nmissing,
-                :Nunique""") 
-        end
-    end
+     # Check that people don't specify the wrong fields. 
+    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :eltype, :nunique,:nmissing] 
+    if !issubset(stats, allowed_fields) 
+        disallowed_fields = setdiff(stats, allowed_fields)
+       error("Not an allowed field. Allowed fields are:mean, :min, :q25, 
+        :median, :q75, :max, :eltype, :nmissing, :nunique. The field(s)
+        you entered which are not allowed are $disallowed_fields") 
+   end
     # Define 4 functions for getting summary statistics 
     # use a dict because we dont know which measures the user wants
-    function get_stats(col::AbstractArray{T} where T <: Real)
-        stats = summarystats(col)
-        stats_dict = Dict(
-            :mean => stats.mean,
-            :sd => sqrt(var(col)),
-            :min => stats.min ,
-            :q25 => stats.q25,
-            :median => stats.median,
-            :q75 => stats.q75,
-            :max => stats.max,
-            :datatype=> eltype(col),
-            :Nmissing => nothing,
-            :Nunique => nothing
+    function get_stats(col::AbstractArray{<:Real})
+        sumstats = summarystats(col)
+        Dict(
+            :mean => sumstats.mean,
+            :std => std(col),
+            :min => sumstats.min ,
+            :q25 => sumstats.q25,
+            :median => sumstats.median,
+            :q75 => sumstats.q75,
+            :max => sumstats.max,
+            :eltype => eltype(col),
+            :nmissing => nothing,
+            :nunique => nothing
         )
     end
     
-    function get_stats(col::AbstractArray{Union{T, Missing}} where T <: Real)
-        stats = summarystats(collect(skipmissing(col)))
-        stats_dict = Dict(
-            :mean => stats.mean,
-            :sd => sqrt(var(collect(skipmissing(col)))),
-            :min => stats.min ,
-            :q25 => stats.q25,
-            :median => stats.median,
-            :q75 => stats.q75,
-            :max => stats.max,
-            :datatype=> Missings.T(eltype(col)),
-            :Nmissing => count(ismissing(col)),
-            :Nunique => nothing
+    function get_stats(col::AbstractArray{<:Union{Real, Missing}})
+        nomissing = collect(skipmissing(col))
+        sumstats = summarystats(nomissing)
+        Dict(
+            :mean => sumstats.mean,
+            :std => std(nomissing),
+            :min => sumstats.min ,
+            :q25 => sumstats.q25,
+            :median => sumstats.median,
+            :q75 => sumstats.q75,
+            :max => sumstats.max,
+            :eltype => Missings.T(eltype(col)),
+            :nmissing => count(ismissing, col),
+            :nunique => nothing
         )
     end
     
     function get_stats(col)
-        stats_dict = Dict(
+        Dict(
             :mean => nothing,
-            :sd => nothing,
+            :std => nothing,
             :min => nothing,
             :q25 => nothing,
             :median => nothing,
             :q75 => nothing,
             :max => nothing,
-            :datatype=> eltype(col),
-            :Nmissing => nothing,
-            :Nunique => length(unique(col))
+            :eltype => eltype(col),
+            :nmissing => nothing,
+            :nunique => length(unique(col))
         )   
     end
     
     function get_stats(col:: AbstractArray{Union{T, Missing}} where T <: Any)
-        stats_dict = Dict(
+        Dict(
             :mean => nothing,
-            :sd => nothing,
+            :std => nothing,
             :min => nothing,
             :q25 => nothing,
             :median => nothing,
             :q75 => nothing,
             :max => nothing,
-            :datatype=> Missings.T(eltype(col)),
-            :Nmissing => count(ismissing(col)),
-            :Nunique => length(unique(col))
+            :eltype => Missings.T(eltype(col)),
+            :nmissing => count(ismissing, col),
+            :nunique => length(unique(col))
         )    
     end 
-    # Takes in a column and returns a row vector of the statistics
-    function spread(col)
-        d = get_stats(col) # a Dict
-        row = [d[f] for f in colstats]
-        reshape(row, 1, length(row))
-    end
-    # Append the summary stats into a matrix
-    data = Array{Any}(size(df,2),length(colstats))
+
+    # Put the summary stats into the return dataframe
+    data = DataFrame(Any, size(df,2), length(stats) + 1)
+    names!(data, [:variable; stats])
+    data[:variable] = names(df)
     i = 1
     for (name, col) in eachcol(df) 
-        data[i,:] = spread(col)
-        i+=1
+        d = get_stats(col) # a Dict
+        for stat in stats
+            data[i, stat] = d[stat]
+        end
+       i+=1
     end
    # Add a column for variable names
-   data = DataFrame([names(df) data])
    # Add the names for the Variable column and all the summary stats
-   names!(data, [:variable; colstats])
+   return data
 end
 
 
