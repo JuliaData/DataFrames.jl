@@ -411,7 +411,7 @@ describe(df)
 
 """
 StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
-function StatsBase.describe(io, df::AbstractDataFrame; colstats = [:mean, :min, :median, :max, :Nmissing, :datatype])
+function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :Nmissing, :datatype])
      # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :eltype, :nunique,:nmissing] 
     if !issubset(stats, allowed_fields) 
