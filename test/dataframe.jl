@@ -329,23 +329,20 @@ module TestDataFrame
     # Test describe
     struct MySuperLongNameForAStructIsThisToolong end
     @testset "describe(df)" begin
-        describe_output = DataFrame(
-            variable = [:number, :number_missing, :non_number, :non_number_missing, :long_struct],
-            mean = [2.5, 2.0, nothing, nothing, nothing],
-            min = [1.0, 1.0, nothing, nothing, nothing],
-            median = [2.5, 2.0, nothing, nothing, nothing],
-            max = [4.0, 3.0, nothing, nothing, nothing],
-            nmissing = [nothing, 1, nothing, 1, nothing],
-            eltype= [Int64, Int64, String, String, MySuperLongNameForAStructIsThisToolong]
-        )
+        describe_output = DataFrame(variable = [:number, :number_missing, :non_number, :non_number_missing, :long_struct],
+                                    mean = [2.5, 2.0, nothing, nothing, nothing],
+                                    min = [1.0, 1.0, nothing, nothing, nothing],
+                                    median = [2.5, 2.0, nothing, nothing, nothing],
+                                    max = [4.0, 3.0, nothing, nothing, nothing],
+                                    nmissing = [nothing, 1, nothing, 1, nothing],
+                                    eltype= [Int64, Int64, String, String, MySuperLongNameForAStructIsThisToolong])
     
         # Construct the test dataframe
         df = DataFrame(number = [1, 2, 3, 4],
-            number_missing = [1,2, 3, missing],
-            non_number = ["a", "b", "c", "d"],
-            non_number_missing = ["a", "b", "c", missing],
-            long_struct = [MySuperLongNameForAStructIsThisToolong() for i in 1:4]
-        )
+                       number_missing = [1,2, 3, missing],
+                       non_number = ["a", "b", "c", "d"],
+                       non_number_missing = ["a", "b", "c", missing],
+                       long_struct = [MySuperLongNameForAStructIsThisToolong() for i in 1:4])
     
         @test describe_output == describe(df)
         @test describe_output[[:variable, :mean]] == describe(df, stats = [:mean])

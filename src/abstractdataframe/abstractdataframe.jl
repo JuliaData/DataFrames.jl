@@ -380,7 +380,9 @@ describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissi
 
 * `df` : the AbstractDataFrame
 * `io` : optional output descriptor
-* `stats::AbstractVector{Symbol}`: the summary statistics to report
+* `stats::AbstractVector{Symbol}`: the summary statistics to report. Allowed 
+fields are `:mean, :std, :min, :q25, :median, :q75, :max, :eltype, :nunique, 
+and :nmissing`
 
 **Result**
 
@@ -413,7 +415,7 @@ describe(df)
 StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
 function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :eltype])
      # Check that people don't specify the wrong fields. 
-    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :eltype, :nunique,:nmissing] 
+    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :eltype, :nunique, :nmissing] 
     if !issubset(stats, allowed_fields) 
         disallowed_fields = setdiff(stats, allowed_fields)
        error("Not an allowed field. Allowed fields are:mean, :min, :q25, 
