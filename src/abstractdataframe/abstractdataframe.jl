@@ -372,8 +372,8 @@ end
 # TODO: clever layout in rows
 """
 ```julia
-describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :Nmissing, :datatype])
-describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :Nmissing, :datatype])
+describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :datatype])
+describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :datatype])
 ```
 
 **Arguments**
@@ -389,7 +389,7 @@ describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :Nmissi
 
 **Details**
 
-If the column's base type derives from Number, compute the mean, standard 
+If the column's base type derives from `Number`, compute the mean, standard 
 deviation, minimum, first quantile, median, third quantile, and maximum. If 
 a column is not numeric, these statistics are populated with `nothing`s. 
 
@@ -399,7 +399,7 @@ variable and the number of unique values.
 Missing values are filtered in the calculation of all statistics, however the column
 `nmissing` will report the number of missing values of that variable. 
 If the column does not allow missing values, `nothing` is returned. 
-Consequently, `nmissing = 0` (and not nothing) indicates that the column allows
+Consequently, `nmissing = 0` indicates that the column allows
 missing values, but does not contain any at the time. 
 
 **Examples**
@@ -426,8 +426,8 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
         sumstats = summarystats(col)
         Dict(
             :mean => sumstats.mean,
-            :std => std(col),
-            :min => sumstats.min ,
+            :std => Compat.std(col, mean = sumstats.mean),
+            :min => sumstats.min,
             :q25 => sumstats.q25,
             :median => sumstats.median,
             :q75 => sumstats.q75,
@@ -443,8 +443,8 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
         sumstats = summarystats(nomissing)
         Dict(
             :mean => sumstats.mean,
-            :std => std(nomissing),
-            :min => sumstats.min ,
+            :std => Compat.std(nomissing, mean = sumstats.mean),
+            :min => sumstats.min,
             :q25 => sumstats.q25,
             :median => sumstats.median,
             :q75 => sumstats.q75,
@@ -454,6 +454,21 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
             :nunique => nothing
         )
     end
+
+    function get_stats(col::AbstractArray{>:Missing})
+        Dict(
+            :mean => nothing,
+            :std => nothing,
+            :min => nothing,
+            :q25 => nothing,
+            :median => nothing,
+            :q75 => nothing,
+            :max => nothing,
+            :eltype => Missings.T(eltype(col)),
+            :nmissing => count(ismissing, col),
+            :nunique => length(unique(col))
+        )    
+    end 
     
     function get_stats(col)
         Dict(
@@ -469,40 +484,19 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
             :nunique => length(unique(col))
         )   
     end
-    
-    function get_stats(col:: AbstractArray{Union{T, Missing}} where T <: Any)
-        Dict(
-            :mean => nothing,
-            :std => nothing,
-            :min => nothing,
-            :q25 => nothing,
-            :median => nothing,
-            :q75 => nothing,
-            :max => nothing,
-            :eltype => Missings.T(eltype(col)),
-            :nmissing => count(ismissing, col),
-            :nunique => length(unique(col))
-        )    
-    end 
 
     # Put the summary stats into the return dataframe
-    data = DataFrame(Any, size(df,2), length(stats) + 1)
-    names!(data, [:variable; stats])
+    data = DataFrame()
     data[:variable] = names(df)
-    i = 1
-    for (name, col) in eachcol(df) 
-        d = get_stats(col) # a Dict
-        for stat in stats
-            data[i, stat] = d[stat]
-        end
-       i+=1
+
+    # An array of Dicts for summary statistics
+    columns = [get_stats(col) for (name,col) in eachcol(df)] 
+    for stat in stats
+        # for each statistic, loop through the columns array to find values
+        data[stat] = [columns[i][stat] for i in 1:size(df, 2)]
     end
-   # Add a column for variable names
-   # Add the names for the Variable column and all the summary stats
    return data
 end
-
-
 
 ##############################################################################
 ##
