@@ -7,7 +7,10 @@ module TestIteration
 
     df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
 
-    for row in eachrow(df)
+    eachrow_df = eachrow(df)
+    @test size(eachrow_df) == (2,)
+    @test eachrow_df[1][:A] == 1
+    for row in eachrow_df
         @test isa(row, DataFrameRow)
         @test (row[:B] - row[:A]) == 1
 
@@ -15,6 +18,9 @@ module TestIteration
         @test typeof(collect(row)) == Array{Tuple{Symbol, Any}, 1}
     end
 
+    eachcol_df = eachcol(df)
+    @test size(eachcol_df) == (2,)
+    @test eachcol_df[:A][1] == 1
     for col in eachcol(df)
         @test isa(col, Tuple{Symbol, AbstractVector})
     end
