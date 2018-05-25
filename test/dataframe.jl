@@ -345,7 +345,11 @@ module TestDataFrame
                        long_struct = [MySuperLongNameForAStructIsThisToolong() for i in 1:4])
     
         @test describe_output == describe(df)
+<<<<<<< HEAD
         @test describe_output[[:variable, :mean]] == describe(df, stats = [:mean])
+=======
+        @test describe_output[[:variable, :mean] == describe(df, stats = [:mean])
+>>>>>>> 5d410e6... fix test
     end 
 
     #Check the output of unstack
