@@ -395,8 +395,8 @@ If the column's base type derives from `Number`, compute the mean, standard
 deviation, minimum, first quantile, median, third quantile, and maximum. If 
 a column is not numeric, these statistics are populated with `nothing`s. 
 
-Will also report the type of the 
-variable and the number of unique values. 
+For non-numeric types, `describe` can also report the number of missing values 
+with `nunique` specified in the `stats` keyword argument. 
 
 Missing values are filtered in the calculation of all statistics, however the column
 `nmissing` will report the number of missing values of that variable. 
@@ -422,6 +422,7 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
                  allowed = "Allowed fields are: $allowed_fields."
                  throw(ArgumentError(not_allowed * allowed)) 
    end
+
     # Define 4 functions for getting summary statistics 
     # use a dict because we dont know which measures the user wants
     function get_stats(col::AbstractArray{<:Real})
@@ -492,12 +493,13 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
     data[:variable] = names(df)
 
     # An array of Dicts for summary statistics
-    columns = [get_stats(col) for (name,col) in eachcol(df)] 
+    columns = [get_stats(col) for col in df.columns] 
     for stat in stats
         # for each statistic, loop through the columns array to find values
-        data[stat] = [columns[i][stat] for i in 1:size(df, 2)]
+        # letting the comprehension choose the appropriate type
+        data[stat] = [col[stat] for col in columns]
     end
-   return data
+    return data
 end
 
 ##############################################################################
