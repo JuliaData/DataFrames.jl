@@ -417,10 +417,10 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
      # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :eltype, :nunique, :nmissing] 
     if !issubset(stats, allowed_fields) 
-        disallowed_fields = setdiff(stats, allowed_fields)
-       error("Not an allowed field. Allowed fields are:mean, :min, :q25, 
-        :median, :q75, :max, :eltype, :nmissing, :nunique. The field(s)
-        you entered which are not allowed are $disallowed_fields") 
+                 disallowed_fields = setdiff(stats, allowed_fields)
+                 not_allowed = "Field(s) not allowed: $disallowed_fields. "
+                 allowed = "Allowed fields are: $allowed_fields."
+                 throw(ArgumentError(not_allowed * allowed)) 
    end
     # Define 4 functions for getting summary statistics 
     # use a dict because we dont know which measures the user wants
