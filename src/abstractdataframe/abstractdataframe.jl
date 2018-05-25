@@ -415,7 +415,7 @@ describe(df)
 """
 StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
 function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :eltype])
-     # Check that people don't specify the wrong fields. 
+    # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :nunique, :nmissing, :eltype] 
     if !issubset(stats, allowed_fields) 
         disallowed_fields = setdiff(stats, allowed_fields)
