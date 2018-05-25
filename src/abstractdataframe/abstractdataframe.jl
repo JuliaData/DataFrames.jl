@@ -368,9 +368,10 @@ function Base.dump(io::IO, df::AbstractDataFrame, n::Int, indent)
     end
 end
 
-# summarize the columns of a df
-# TODO: clever layout in rows
+
 """
+Report descriptive statistics for a DataFrame
+
 ```julia
 describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :datatype])
 describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :datatype])
@@ -381,13 +382,12 @@ describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissi
 * `df` : the AbstractDataFrame
 * `io` : optional output descriptor
 * `stats::AbstractVector{Symbol}`: the summary statistics to report. Allowed 
-fields are `:mean, :std, :min, :q25, :median, :q75, :max, :eltype, :nunique, 
-and :nmissing`
+  fields are `:mean, :std, :min, :q25, :median, :q75, :max, :eltype, :nunique, 
+  and :nmissing`
 
 **Result**
 
 * A `DataFrame` where each row represents a variable and each column a summary statistic.
-
 
 **Details**
 
