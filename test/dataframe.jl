@@ -327,29 +327,41 @@ module TestDataFrame
     @test df == DataFrame(a=[1], b=[3.0])
     
     # Test describe
-    struct MySuperLongNameForAStructIsThisToolong end
+    struct CustomStruct end
     @testset "describe(df)" begin
-        describe_output = DataFrame(variable = [:number, :number_missing, :non_number, :non_number_missing, :long_struct],
-                                    mean = [2.5, 2.0, nothing, nothing, nothing],
-                                    min = [1.0, 1.0, nothing, nothing, nothing],
-                                    median = [2.5, 2.0, nothing, nothing, nothing],
-                                    max = [4.0, 3.0, nothing, nothing, nothing],
-                                    nmissing = [nothing, 1, nothing, 1, nothing],
-                                    eltype= [Int64, Int64, String, String, MySuperLongNameForAStructIsThisToolong])
-    
         # Construct the test dataframe
         df = DataFrame(number = [1, 2, 3, 4],
                        number_missing = [1,2, 3, missing],
                        non_number = ["a", "b", "c", "d"],
                        non_number_missing = ["a", "b", "c", missing],
-                       long_struct = [MySuperLongNameForAStructIsThisToolong() for i in 1:4])
-    
+                       custom_struct = [CustomStruct() for i in 1:4],
+                       dates  = Date.([2000, 2001, 2003, 2004]))
+
+        describe_output = DataFrame(variable = [:number, :number_missing, :non_number, :non_number_missing, :custom_struct, :dates],
+                                    mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                    min = [1.0, 1.0, nothing, nothing, nothing, nothing],
+                                    median = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                    max = [4.0, 3.0, nothing, nothing, nothing, nothing],
+                                    nmissing = [nothing, 1, nothing, 1, nothing, nothing],
+                                    eltype= [Int64, Int64, String, String, CustomStruct, Date])
+        describe_output_all_stats = DataFrame(variable = [:number, :number_missing, :non_number, :non_number_missing, :custom_struct, :dates],
+                                              mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                              std = [Compat.std(df[:number]), 1.0, nothing, nothing, nothing, nothing],
+                                              min = [1.0, 1.0, nothing, nothing, nothing, nothing],
+                                              q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
+                                              median = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                              q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
+                                              max = [4.0, 3.0, nothing, nothing, nothing, nothing],
+                                              nunique = [nothing, nothing, 4, 4, 1, 4],
+                                              nmissing = [nothing, 1, nothing, 1, nothing, nothing],
+                                              eltype= [Int64, Int64, String, String, CustomStruct, Date])
+
+        
+        # Test that it works as a whole, without keyword arguments
         @test describe_output == describe(df)
-<<<<<<< HEAD
-        @test describe_output[[:variable, :mean]] == describe(df, stats = [:mean])
-=======
-        @test describe_output[[:variable, :mean] == describe(df, stats = [:mean])
->>>>>>> 5d410e6... fix test
+
+        # Test that it works with all keyword arguments
+        @test describe_output_all_stats == describe(df, stats = [:mean, :std, :min, :q25, :median, :q75, :max, :nunique, :nmissing, :eltype])
     end 
 
     #Check the output of unstack

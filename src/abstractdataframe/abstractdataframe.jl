@@ -396,7 +396,8 @@ deviation, minimum, first quantile, median, third quantile, and maximum. If
 a column is not numeric, these statistics are populated with `nothing`s. 
 
 For non-numeric types, `describe` can also report the number of missing values 
-with `nunique` specified in the `stats` keyword argument. 
+with `nunique` specified in the `stats` keyword argument. For numeric types, 
+`nunique` will return `nothing`s.
 
 Missing values are filtered in the calculation of all statistics, however the column
 `nmissing` will report the number of missing values of that variable. 
@@ -415,7 +416,7 @@ describe(df)
 StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
 function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :eltype])
      # Check that people don't specify the wrong fields. 
-    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :eltype, :nunique, :nmissing] 
+    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :nunique, :nmissing, :eltype] 
     if !issubset(stats, allowed_fields) 
                  disallowed_fields = setdiff(stats, allowed_fields)
                  not_allowed = "Field(s) not allowed: $disallowed_fields. "
@@ -435,9 +436,9 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
             :median => sumstats.median,
             :q75 => sumstats.q75,
             :max => sumstats.max,
-            :eltype => eltype(col),
             :nmissing => nothing,
-            :nunique => nothing
+            :nunique => nothing,
+            :eltype => eltype(col)
         )
     end
     
@@ -452,9 +453,9 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
             :median => sumstats.median,
             :q75 => sumstats.q75,
             :max => sumstats.max,
-            :eltype => Missings.T(eltype(col)),
             :nmissing => count(ismissing, col),
-            :nunique => nothing
+            :nunique => nothing,
+            :eltype => Missings.T(eltype(col))
         )
     end
 
@@ -467,9 +468,9 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
             :median => nothing,
             :q75 => nothing,
             :max => nothing,
-            :eltype => Missings.T(eltype(col)),
             :nmissing => count(ismissing, col),
-            :nunique => length(unique(col))
+            :nunique => length(unique(col)),
+            :eltype => Missings.T(eltype(col))
         )    
     end 
     
@@ -482,9 +483,9 @@ function StatsBase.describe(io, df::AbstractDataFrame; stats = [:mean, :min, :me
             :median => nothing,
             :q75 => nothing,
             :max => nothing,
-            :eltype => eltype(col),
             :nmissing => nothing,
-            :nunique => length(unique(col))
+            :nunique => length(unique(col)),
+            :eltype => eltype(col)
         )   
     end
 
