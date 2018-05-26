@@ -1104,15 +1104,32 @@ function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
 end
 
 
+"""
+   metadict(df::DataFrame)
+
+Return the table dictionary.
+"""
 function metadict(df::DataFrame)
     return df.meta
 end
 
-function metadict(df::DataFrame, nm::Symbol)
-    return df.colindex.meta[df.colindex.lookup[nm]]
+
+"""
+   metadict(df::DataFrame, column::Symbol)
+
+Return the column `column` dictionary.
+"""
+function metadict(df::DataFrame, column::Symbol)
+    return df.colindex.meta[df.colindex.lookup[column]]
 end
 
 
+"""
+   metaget(df::DataFrame, key; default=nothing)
+
+Returns the metadata entry with key `key` from the table dictionary.
+If the key is not present the value of the `default` keyword will be returned.
+"""
 function metaget(df::DataFrame, key; default=nothing)
     d = metadict(df)
     if haskey(d, key)
@@ -1121,21 +1138,38 @@ function metaget(df::DataFrame, key; default=nothing)
     return default
 end
 
-function metaget(df::DataFrame, nm::Symbol, key; default=nothing)
-    d = metadict(df, nm)
+
+"""
+   metaget(df::DataFrame, column::Symbol, key; default=nothing)
+
+Returns the metadata entry with key `key` from the column `column` dictionary.
+If the key is not present the value of the `default` keyword will be returned. """
+function metaget(df::DataFrame, column::Symbol, key; default=nothing)
+    d = metadict(df, column)
     if haskey(d, key)
         return d[key]
     end
     return default
 end
 
+
+"""
+   metaset!(df::DataFrame, key, value)
+
+Set an entry in the table metadata dictionary with key `key` and value `value`.
+"""
 function metaset!(df::DataFrame, key, value)
     d = metadict(df)
     d[key] = value
 end
 
-function metaset!(df::DataFrame, nm::Symbol, key, value)
-    d = metadict(df, nm)
+"""
+   metaset!(df::DataFrame, column::Symbol, key, value)
+
+Set an entry in the column `column` metadata dictionary with key `key` and value `value`.
+"""
+function metaset!(df::DataFrame, column::Symbol, key, value)
+    d = metadict(df, column)
     d[key] = value
 end
 
