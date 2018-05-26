@@ -25,6 +25,7 @@ my_tests = ["utils.jl",
             "duplicates.jl",
             "show.jl",
             "subdataframe.jl",
+            "meta.jl",
             "deprecated.jl"]
 
 println("Running tests:")

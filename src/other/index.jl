@@ -6,18 +6,24 @@ abstract type AbstractIndex end
 mutable struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
+    meta::Vector{Dict{Any,Any}}
 end
 
 function Index(names::Vector{Symbol}; makeunique::Bool=false)
     u = make_unique(names, makeunique=makeunique)
     lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
-    Index(lookup, u)
+
+    meta = Vector{Dict{Any,Any}}(length(u))
+    for i in 1:length(u)
+        meta[i] = Dict{Any,Any}()
+    end
+    Index(lookup, u, meta)
 end
-Index() = Index(Dict{Symbol, Int}(), Symbol[])
+Index() = Index(Dict{Symbol, Int}(), Symbol[], Vector{Dict{Any,Any}}(0))
 Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = copy(x.names)
 _names(x::Index) = x.names
-Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
+Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names), copy(x.meta))
 Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 # Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
@@ -69,6 +75,7 @@ Base.keys(x::Index) = names(x)
 function Base.push!(x::Index, nm::Symbol)
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
+    push!(x.meta, Dict{Any,Any}())
     return x
 end
 
@@ -78,6 +85,7 @@ function Base.merge!(x::Index, y::Index; makeunique::Bool=false)
     for add in adds
         i += 1
         x.lookup[add] = i
+        append!(x.meta, deepcopy(y.meta[i-length(x)]))
     end
     append!(x.names, adds)
     return x
@@ -93,6 +101,7 @@ function Base.delete!(x::Index, idx::Integer)
     end
     delete!(x.lookup, x.names[idx])
     deleteat!(x.names, idx)
+    deleteat!(x.meta, idx)
     return x
 end
 
@@ -107,6 +116,7 @@ end
 function Base.empty!(x::Index)
     empty!(x.lookup)
     empty!(x.names)
+    empty!(x.meta)
     x
 end
 
@@ -117,6 +127,7 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     end
     x.lookup[nm] = idx
     insert!(x.names, idx, nm)
+    insert!(x.meta , idx, Dict{Any,Any}())
     x
 end
 

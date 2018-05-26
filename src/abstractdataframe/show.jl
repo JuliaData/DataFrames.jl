@@ -573,6 +573,22 @@ function showcols(io::IO, df::AbstractDataFrame, all::Bool = false,
     metadata = DataFrame(Name = _names(df),
                          Eltype = eltypes(df),
                          Missing = colmissing(df))
+
+    try
+        descr = string.(metaget.(df, names(df), :descr, default=""))
+        if (length(unique(descr)) > 1)  ||
+            descr[1] != ""
+            metadata[:Descr] = descr
+        end
+    end
+    try
+        unit = string.(metaget.(df, names(df), :unit, default=""))
+        if (length(unique(unit)) > 1)  ||
+            unit[1] != ""
+            metadata[:Unit] = unit
+        end
+    end
+
     nrows, ncols = size(df)
     if values && nrows > 0
         if nrows == 1

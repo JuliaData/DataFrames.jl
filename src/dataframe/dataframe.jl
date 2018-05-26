@@ -80,12 +80,14 @@ size(df1)
 
 """
 mutable struct DataFrame <: AbstractDataFrame
+    meta::Dict{Any, Any}
     columns::Vector
     colindex::Index
 
     function DataFrame(columns::Vector{Any}, colindex::Index)
+        meta=Dict{Any,Any}()
         if length(columns) == length(colindex) == 0
-            return new(Vector{Any}(undef, 0), Index())
+            return new(Dict{Any,Any}(), Vector{Any}(undef, 0), Index())
         elseif length(columns) != length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of" *
                                     " column names ($(length(colindex))) are not equal"))
@@ -93,7 +95,7 @@ mutable struct DataFrame <: AbstractDataFrame
         lengths = [isa(col, AbstractArray) ? length(col) : 1 for col in columns]
         minlen, maxlen = extrema(lengths)
         if minlen == 0 && maxlen == 0
-            return new(columns, colindex)
+            return new(meta, columns, colindex)
         elseif minlen != maxlen || minlen == maxlen == 1
             # recycle scalars
             for i in 1:length(columns)
@@ -116,7 +118,7 @@ mutable struct DataFrame <: AbstractDataFrame
                 throw(DimensionMismatch("columns must be 1-dimensional"))
             end
         end
-        new(columns, colindex)
+        new(meta, columns, colindex)
     end
 end
 
@@ -1100,3 +1102,40 @@ end
 function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
     permutecols!(df, getindex.(df.colindex.lookup, p))
 end
+
+
+function metadict(df::DataFrame)
+    return df.meta
+end
+
+function metadict(df::DataFrame, nm::Symbol)
+    return df.colindex.meta[df.colindex.lookup[nm]]
+end
+
+
+function metaget(df::DataFrame, key; default=nothing)
+    d = metadict(df)
+    if haskey(d, key)
+        return d[key]
+    end
+    return default
+end
+
+function metaget(df::DataFrame, nm::Symbol, key; default=nothing)
+    d = metadict(df, nm)
+    if haskey(d, key)
+        return d[key]
+    end
+    return default
+end
+
+function metaset!(df::DataFrame, key, value)
+    d = metadict(df)
+    d[key] = value
+end
+
+function metaset!(df::DataFrame, nm::Symbol, key, value)
+    d = metadict(df, nm)
+    d[key] = value
+end
+
