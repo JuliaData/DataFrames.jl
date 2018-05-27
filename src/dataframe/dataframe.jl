@@ -80,12 +80,12 @@ size(df1)
 
 """
 mutable struct DataFrame <: AbstractDataFrame
-    meta::Dict{Any, Any}
+    meta::MetaDict
     columns::Vector
     colindex::Index
 
     function DataFrame(columns::Vector{Any}, colindex::Index)
-        meta=Dict{Any,Any}()
+        meta = MetaDict()
         if length(columns) == length(colindex) == 0
             return new(Dict{Any,Any}(), Vector{Any}(undef, 0), Index())
         elseif length(columns) != length(colindex)
@@ -1104,6 +1104,8 @@ function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
 end
 
 
+
+
 """
    metadict(df::DataFrame)
 
@@ -1125,12 +1127,12 @@ end
 
 
 """
-   metaget(df::DataFrame, key; default=nothing)
+   meta(df::DataFrame, key::Union{Symbol,String}; default=nothing)
 
 Returns the metadata entry with key `key` from the table dictionary.
 If the key is not present the value of the `default` keyword will be returned.
 """
-function metaget(df::DataFrame, key; default=nothing)
+function meta(df::DataFrame, key::MetaKey; default=nothing)
     d = metadict(df)
     if haskey(d, key)
         return d[key]
@@ -1140,11 +1142,11 @@ end
 
 
 """
-   metaget(df::DataFrame, column::Symbol, key; default=nothing)
+   meta(df::DataFrame, column::Symbol, key::Union{Symbol,String}; default=nothing)
 
 Returns the metadata entry with key `key` from the column `column` dictionary.
 If the key is not present the value of the `default` keyword will be returned. """
-function metaget(df::DataFrame, column::Symbol, key; default=nothing)
+function meta(df::DataFrame, column::Symbol, key::MetaKey; default=nothing)
     d = metadict(df, column)
     if haskey(d, key)
         return d[key]
@@ -1154,22 +1156,43 @@ end
 
 
 """
-   metaset!(df::DataFrame, key, value)
+   metaset!(df::DataFrame, key::Union{Symbol,String}, value)
 
 Set an entry in the table metadata dictionary with key `key` and value `value`.
 """
-function metaset!(df::DataFrame, key, value)
+function metaset!(df::DataFrame, key::MetaKey, value)
     d = metadict(df)
     d[key] = value
 end
 
 """
-   metaset!(df::DataFrame, column::Symbol, key, value)
+   metaset!(df::DataFrame, column::Symbol, key::Union{Symbol,String}, value)
 
 Set an entry in the column `column` metadata dictionary with key `key` and value `value`.
 """
-function metaset!(df::DataFrame, column::Symbol, key, value)
+function metaset!(df::DataFrame, column::Symbol, key::MetaKey, value)
     d = metadict(df, column)
     d[key] = value
 end
 
+
+
+"""
+   metakeys(df::DataFrame)
+
+Return an `Array{Symbol}` of keys in the table metadata dictionary.
+"""
+function metakeys(df::DataFrame)
+    d = metadict(df)
+    keys(d)
+end
+
+"""
+   metakeys(df::DataFrame)
+
+Return an `Array{Symbol}` of keys in the column `column` metadata dictionary.
+"""
+function metakeys(df::DataFrame, column::Symbol)
+    d = metadict(df, column)
+    keys(d)
+end

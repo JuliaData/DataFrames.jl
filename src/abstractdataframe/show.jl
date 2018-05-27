@@ -575,14 +575,14 @@ function showcols(io::IO, df::AbstractDataFrame, all::Bool = false,
                          Missing = colmissing(df))
 
     try
-        descr = string.(metaget.(df, names(df), :descr, default=""))
+        descr = string.(meta.(df, names(df), :descr, default=""))
         if (length(unique(descr)) > 1)  ||
             descr[1] != ""
             metadata[:Descr] = descr
         end
     end
     try
-        unit = string.(metaget.(df, names(df), :unit, default=""))
+        unit = string.(meta.(df, names(df), :unit, default=""))
         if (length(unique(unit)) > 1)  ||
             unit[1] != ""
             metadata[:Unit] = unit

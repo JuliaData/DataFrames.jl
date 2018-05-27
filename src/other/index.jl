@@ -1,3 +1,9 @@
+# Type for metadata keys
+const MetaKey  = Union{Symbol,String}
+
+# Type for metadata dictionaries
+const MetaDict = Dict{MetaKey, Any}
+
 # an AbstractIndex is a thing that can be used to look up ordered things by name, but that
 # will also accept a position or set of positions or range or other things and pass them
 # through cleanly.
@@ -6,16 +12,16 @@ abstract type AbstractIndex end
 mutable struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
-    meta::Vector{Dict{Any,Any}}
+    meta::Vector{MetaDict}
 end
 
 function Index(names::Vector{Symbol}; makeunique::Bool=false)
     u = make_unique(names, makeunique=makeunique)
     lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
 
-    meta = Vector{Dict{Any,Any}}(length(u))
+    meta = Vector{MetaDict}(length(u))
     for i in 1:length(u)
-        meta[i] = Dict{Any,Any}()
+        meta[i] = MetaDict()
     end
     Index(lookup, u, meta)
 end
@@ -75,7 +81,7 @@ Base.keys(x::Index) = names(x)
 function Base.push!(x::Index, nm::Symbol)
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
-    push!(x.meta, Dict{Any,Any}())
+    push!(x.meta, MetaDict())
     return x
 end
 
