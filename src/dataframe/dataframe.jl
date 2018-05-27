@@ -1,3 +1,9 @@
+# Type for metadata keys
+const MetaKey  = Union{Symbol,String}
+
+# Type for metadata dictionaries
+const MetaDict = Dict{MetaKey, Any}
+
 """
 An AbstractDataFrame that stores a set of named columns
 
@@ -81,21 +87,29 @@ size(df1)
 """
 mutable struct DataFrame <: AbstractDataFrame
     meta::MetaDict
+    colmeta::Vector{MetaDict}
     columns::Vector
     colindex::Index
 
     function DataFrame(columns::Vector{Any}, colindex::Index)
         meta = MetaDict()
+        colmeta = Vector{MetaDict}()
+
         if length(columns) == length(colindex) == 0
-            return new(Dict{Any,Any}(), Vector{Any}(undef, 0), Index())
+            return new(meta, colmeta, Vector{Any}(undef, 0), Index())
         elseif length(columns) != length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of" *
                                     " column names ($(length(colindex))) are not equal"))
         end
+
+        for i in 1:length(colindex)
+            push!(colmeta, MetaDict())
+        end
+
         lengths = [isa(col, AbstractArray) ? length(col) : 1 for col in columns]
         minlen, maxlen = extrema(lengths)
         if minlen == 0 && maxlen == 0
-            return new(meta, columns, colindex)
+            return new(meta, colmeta, columns, colindex)
         elseif minlen != maxlen || minlen == maxlen == 1
             # recycle scalars
             for i in 1:length(columns)
@@ -118,7 +132,7 @@ mutable struct DataFrame <: AbstractDataFrame
                 throw(DimensionMismatch("columns must be 1-dimensional"))
             end
         end
-        new(meta, columns, colindex)
+        new(meta, colmeta, columns, colindex)
     end
 end
 
@@ -265,11 +279,11 @@ end
 function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = df.columns[selected_columns]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    return deepcopymeta!(DataFrame(new_columns, Index(_names(df)[selected_columns])), df)
 end
 
 # df[:] => DataFrame
-Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
+Base.getindex(df::DataFrame, col_inds::Colon) = copymeta!(copy(df), df)
 
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
 function Base.getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
@@ -281,7 +295,7 @@ end
 function Base.getindex(df::DataFrame, row_ind::Real, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[[row_ind]] for dv in df.columns[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    return deepcopymeta!(DataFrame(new_columns, Index(_names(df)[selected_columns])), df)
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector
@@ -294,7 +308,7 @@ end
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[row_inds] for dv in df.columns[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    return deepcopymeta!(DataFrame(new_columns, Index(_names(df)[selected_columns])), df)
 end
 
 # df[:, SingleColumnIndex] => AbstractVector
@@ -307,11 +321,11 @@ Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col
 # df[MultiRowIndex, :] => DataFrame
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::Colon)
     new_columns = Any[dv[row_inds] for dv in df.columns]
-    return DataFrame(new_columns, copy(index(df)))
+    return deepcopymeta!(DataFrame(new_columns, copy(index(df))), df)
 end
 
 # df[:, :] => DataFrame
-Base.getindex(df::DataFrame, ::Colon, ::Colon) = copy(df)
+Base.getindex(df::DataFrame, ::Colon, ::Colon) = copymeta!(copy(df), df)
 
 ##############################################################################
 ##
@@ -346,10 +360,12 @@ function insert_single_column!(df::DataFrame,
         if typeof(col_ind) <: Symbol
             push!(index(df), col_ind)
             push!(df.columns, dv)
+            push!(df.colmeta, MetaDict())
         else
             if ncol(df) + 1 == Int(col_ind)
                 push!(index(df), nextcolname(df))
                 push!(df.columns, dv)
+                push!(df.colmeta, MetaDict())
             else
                 throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
             end
@@ -412,6 +428,11 @@ function Base.setindex!(df::DataFrame,
                         col_inds::AbstractVector{<:ColumnIndex})
     for j in 1:length(col_inds)
         insert_single_column!(df, new_df[j], col_inds[j])
+        if typeof(col_inds[j]) <: Integer
+            mergemeta!(df, names(df)[col_inds[j]], new_df, names(new_df)[j])
+        else
+            mergemeta!(df, col_inds[j], new_df, names(new_df)[j])
+        end
     end
     return df
 end
@@ -711,6 +732,7 @@ function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::S
     end
     insert!(index(df), col_ind, name)
     insert!(df.columns, col_ind, item)
+    insert!(df.colmeta, col_ind, MetaDict())
     df
 end
 
@@ -754,6 +776,7 @@ function Base.merge!(df::DataFrame, others::AbstractDataFrame...)
         for n in _names(other)
             df[n] = other[n]
         end
+        mergemeta!(df, other)
     end
     return df
 end
@@ -766,12 +789,12 @@ end
 
 # A copy of a DataFrame points to the original column vectors but
 #   gets its own Index.
-Base.copy(df::DataFrame) = DataFrame(copy(columns(df)), copy(index(df)))
+Base.copy(df::DataFrame) = copymeta!(DataFrame(copy(columns(df)), copy(index(df))), df)
 
 # Deepcopy is recursive -- if a column is a vector of DataFrames, each of
 #   those DataFrames is deepcopied.
 function Base.deepcopy(df::DataFrame)
-    DataFrame(deepcopy(columns(df)), deepcopy(index(df)))
+    deepcopymeta!(DataFrame(deepcopy(columns(df)), deepcopy(index(df))), df)
 end
 
 ##############################################################################
@@ -1104,6 +1127,73 @@ function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
 end
 
 
+##############################################################################
+##
+## Metadata
+##
+##############################################################################
+function sharemeta!(dest::DataFrame, source::DataFrame)
+    dest.meta = source.meta
+    for col in names(dest)
+        if col in names(source)
+            dest.colmeta[dest.colindex.lookup[col]] = source.colmeta[source.colindex.lookup[col]]
+        end
+    end
+    return dest
+end
+
+function copymeta!(dest::DataFrame, source::DataFrame)
+    dest.meta = copy(source.meta)
+    for col in names(dest)
+        if col in names(source)
+            dest.colmeta[dest.colindex.lookup[col]] = copy(source.colmeta[source.colindex.lookup[col]])
+        end
+    end
+    return dest
+end
+
+function deepcopymeta!(dest::DataFrame, source::DataFrame)
+    dest.meta = deepcopy(source.meta)
+    for col in names(dest)
+        if col in names(source)
+            dest.colmeta[dest.colindex.lookup[col]] = deepcopy(source.colmeta[source.colindex.lookup[col]])
+        end
+    end
+    return dest
+end
+
+
+function mergemeta!(dest::DataFrame, destcol::Symbol, source::DataFrame, sourcecol::Symbol)
+    for key in metakeys(source, sourcecol)
+        metaset!(dest, destcol, key, meta(source, sourcecol, key))
+    end
+    return dest
+end
+
+function mergemeta!(dest::DataFrame, source::DataFrame)
+    for key in metakeys(source)
+        metaset!(dest, key, meta(source, key))
+    end
+    for col in names(dest)
+        if col in names(source)
+            mergemeta!(dest, col, source, col)
+        end
+    end
+    return dest
+end
+
+
+function emptymeta!(df::DataFrame, col::Symbol)
+    df.colmeta[df.colindex.lookup[col]] = MetaDict()
+end
+
+function emptymeta!(df::DataFrame)
+    df.meta = MetaDict()
+    for col in names(df)
+        emptymeta!(df, col)
+    end
+end
+
 
 
 """
@@ -1122,7 +1212,7 @@ end
 Return the column `column` dictionary.
 """
 function metadict(df::DataFrame, column::Symbol)
-    return df.colindex.meta[df.colindex.lookup[column]]
+    return df.colmeta[df.colindex.lookup[column]]
 end
 
 
@@ -1165,6 +1255,7 @@ function metaset!(df::DataFrame, key::MetaKey, value)
     d[key] = value
 end
 
+
 """
    metaset!(df::DataFrame, column::Symbol, key::Union{Symbol,String}, value)
 
@@ -1186,6 +1277,7 @@ function metakeys(df::DataFrame)
     d = metadict(df)
     keys(d)
 end
+
 
 """
    metakeys(df::DataFrame)

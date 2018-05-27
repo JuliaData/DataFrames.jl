@@ -1,9 +1,3 @@
-# Type for metadata keys
-const MetaKey  = Union{Symbol,String}
-
-# Type for metadata dictionaries
-const MetaDict = Dict{MetaKey, Any}
-
 # an AbstractIndex is a thing that can be used to look up ordered things by name, but that
 # will also accept a position or set of positions or range or other things and pass them
 # through cleanly.
@@ -12,24 +6,18 @@ abstract type AbstractIndex end
 mutable struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
-    meta::Vector{MetaDict}
 end
 
 function Index(names::Vector{Symbol}; makeunique::Bool=false)
     u = make_unique(names, makeunique=makeunique)
     lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
-
-    meta = Vector{MetaDict}(length(u))
-    for i in 1:length(u)
-        meta[i] = MetaDict()
-    end
-    Index(lookup, u, meta)
+    Index(lookup, u)
 end
-Index() = Index(Dict{Symbol, Int}(), Symbol[], Vector{Dict{Any,Any}}(0))
+Index() = Index(Dict{Symbol, Int}(), Symbol[])
 Base.length(x::Index) = length(x.names)
 Base.names(x::Index) = copy(x.names)
 _names(x::Index) = x.names
-Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names), copy(x.meta))
+Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
 Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
 # Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
@@ -81,7 +69,6 @@ Base.keys(x::Index) = names(x)
 function Base.push!(x::Index, nm::Symbol)
     x.lookup[nm] = length(x) + 1
     push!(x.names, nm)
-    push!(x.meta, MetaDict())
     return x
 end
 
@@ -91,7 +78,6 @@ function Base.merge!(x::Index, y::Index; makeunique::Bool=false)
     for add in adds
         i += 1
         x.lookup[add] = i
-        append!(x.meta, deepcopy(y.meta[i-length(x)]))
     end
     append!(x.names, adds)
     return x
@@ -107,7 +93,6 @@ function Base.delete!(x::Index, idx::Integer)
     end
     delete!(x.lookup, x.names[idx])
     deleteat!(x.names, idx)
-    deleteat!(x.meta, idx)
     return x
 end
 
@@ -122,7 +107,6 @@ end
 function Base.empty!(x::Index)
     empty!(x.lookup)
     empty!(x.names)
-    empty!(x.meta)
     x
 end
 
@@ -133,7 +117,6 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     end
     x.lookup[nm] = idx
     insert!(x.names, idx, nm)
-    insert!(x.meta , idx, Dict{Any,Any}())
     x
 end
 

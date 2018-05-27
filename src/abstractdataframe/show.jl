@@ -623,3 +623,65 @@ end
 function showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true)
     showcols(stdout, df, all, values) # -> Nothing
 end
+
+
+
+"""
+   showmeta(df::DataFrame, column::Symbol)
+
+Pretty print of column `column` metadata.
+"""
+function showmeta(df::DataFrame, column::Symbol)
+    keys = collect(metakeys(df, column))
+    order = sortperm(string.(keys))
+    for key in keys[order]
+        if typeof(key) == Symbol
+            print_with_color(:blue,  "   $key = ")
+        else
+            print_with_color(:green, "   $key = ")
+        end
+        try
+            print(string(meta(df, column, key)))
+        catch
+            print("...")
+        end
+        print_with_color(:light_black, " (", string(typeof(meta(df, column, key))), ")\n")
+    end
+end
+showmeta(sub::SubDataFrame, column::Symbol) = showmeta(sub.parent, column)
+
+
+"""
+   showmeta(df::DataFrame, showColumnMeta=true)
+
+Pretty print of table metadata.  Column metadata are also printed, unless the second argument is `false`.
+"""
+function showmeta(df::DataFrame, showColumnMeta=true)
+    print_with_color(:bold, "Table metadata:")
+    print_with_color(:default, " (keys are shown in")
+    print_with_color(:blue, " blue for symbols")
+    print_with_color(:default, " and")
+    print_with_color(:green, " green for strings)\n")
+    keys = collect(metakeys(df))
+    order = sortperm(string.(keys))
+    for key in keys[order]
+        if typeof(key) == Symbol
+            print_with_color(:blue,  "$key = ")
+        else
+            print_with_color(:green, "$key = ")
+        end
+        try
+            print(string(meta(df, key)))
+        catch
+            print("...")
+        end
+        print_with_color(:light_black, " (" * string(typeof(meta(df, key))) * ")\n")
+    end
+    if showColumnMeta
+        for col in names(df)
+            print_with_color(:bold,  " - $col:\n")
+            showmeta(df, col)
+        end
+    end
+end
+showmeta(sub::SubDataFrame, showColumnMeta=true) = showmeta(sub.parent, showColumnMeta)

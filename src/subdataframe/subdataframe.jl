@@ -103,11 +103,11 @@ function Base.view(adf::AbstractDataFrame, rowinds::Any)
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Any, colinds::Union{Colon, AbstractVector})
-    return SubDataFrame(adf[colinds], rowinds)
+    return SubDataFrame(sharemeta!(adf[colinds], adf), rowinds)
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds::Any, colind::ColumnIndex)
-    return SubDataFrame(adf[[colind]], rowinds)
+    return SubDataFrame(sharemeta!(adf[[colind]], adf), rowinds)
 end
 
 ##############################################################################
@@ -149,3 +149,18 @@ end
 Base.map(f::Function, sdf::SubDataFrame) = f(sdf) # TODO: deprecate
 
 without(sdf::SubDataFrame, c) = view(without(sdf.parent, c), sdf.rows)
+
+
+
+##############################################################################
+##
+## Metadata
+##
+##############################################################################
+metadict(sub::SubDataFrame) = metadict(sub.parent)
+metadict(sub::SubDataFrame, column::Symbol) = metadict(sub.parent, column)
+meta(sub::SubDataFrame, key::MetaKey; default=nothing) = meta(sub.parent, key, default=default)
+meta(sub::SubDataFrame, column::Symbol, key::MetaKey; default=nothing) = meta(sub.parent, column, key, default=default)
+metakeys(sub::SubDataFrame) = metakeys(sub.parent)
+metakeys(sub::SubDataFrame, column::Symbol) = metakeys(sub.parent, column)
+sharemeta!(dest::DataFrame, source::SubDataFrame) = sharemeta!(dest, source.parent)
