@@ -327,24 +327,23 @@ module TestDataFrame
     @test df == DataFrame(a=[1], b=[3.0])
     
     # Test describe
-    struct CustomStruct end
     @testset "describe(df)" begin
         # Construct the test dataframe
         df = DataFrame(number = [1, 2, 3, 4],
                        number_missing = [1,2, 3, missing],
                        non_number = ["a", "b", "c", "d"],
                        non_number_missing = ["a", "b", "c", missing],
-                       custom_struct = [CustomStruct() for i in 1:4],
-                       dates  = Date.([2000, 2001, 2003, 2004]))
+                       dates  = Date.([2000, 2001, 2003, 2004]),
+                       catarray = CategoricalArray([1,2,1,2]))
 
-        describe_output = DataFrame(variable = [:number, :number_missing, :non_number, :non_number_missing, :custom_struct, :dates],
+        describe_output = DataFrame(variable = [:number, :number_missing, :non_number, :non_number_missing, :dates, :catarray],
                                     mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                     min = [1.0, 1.0, nothing, nothing, nothing, nothing],
                                     median = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                     max = [4.0, 3.0, nothing, nothing, nothing, nothing],
                                     nmissing = [nothing, 1, nothing, 1, nothing, nothing],
-                                    eltype= [Int64, Int64, String, String, CustomStruct, Date])
-        describe_output_all_stats = DataFrame(variable = [:number, :number_missing, :non_number, :non_number_missing, :custom_struct, :dates],
+                                    eltype= [Int, Int, String, String, Date, eltype(df[:catarray])])
+        describe_output_all_stats = DataFrame(variable = [:number, :number_missing, :non_number, :non_number_missing, :dates, :catarray],
                                               mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               std = [Compat.std(df[:number]), 1.0, nothing, nothing, nothing, nothing],
                                               min = [1.0, 1.0, nothing, nothing, nothing, nothing],
@@ -352,16 +351,18 @@ module TestDataFrame
                                               median = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
                                               max = [4.0, 3.0, nothing, nothing, nothing, nothing],
-                                              nunique = [nothing, nothing, 4, 4, 1, 4],
+                                              nunique = [nothing, nothing, 4, 4, 4, 2],
                                               nmissing = [nothing, 1, nothing, 1, nothing, nothing],
-                                              eltype= [Int64, Int64, String, String, CustomStruct, Date])
+                                              eltype= [Int, Int, String, String, Date, eltype(df[:catarray])])
 
         
         # Test that it works as a whole, without keyword arguments
         @test describe_output == describe(df)
 
         # Test that it works with all keyword arguments
-        @test describe_output_all_stats == describe(df, stats = [:mean, :std, :min, :q25, :median, :q75, :max, :nunique, :nmissing, :eltype])
+        @test describe_output_all_stats == describe(df, 
+              stats = [:mean, :std, :min, :q25, :median, :q75, :max, 
+                       :nunique, :nmissing, :eltype])
     end 
 
     #Check the output of unstack
