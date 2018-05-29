@@ -395,7 +395,7 @@ If the column's base type derives from `Number`, compute the mean, standard
 deviation, minimum, first quantile, median, third quantile, and maximum. If 
 a column is not numeric, these statistics are populated with `nothing`s. 
 
-When `:nunique` is contained `stats` vector, `describe` will report the 
+When `stats` contains `:nunique`, `describe` will report the 
 number of unique values in a column. If a column's base type derives from `Number`,
 `:nunique` will return `nothing`s.
 
@@ -414,9 +414,11 @@ describe(df)
 
 """
 StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
-function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector{Symbol} = [:mean, :min, :median, :max, :nmissing, :eltype])
+function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector{Symbol} = 
+                            [:mean, :min, :median, :max, :nmissing, :eltype])
     # Check that people don't specify the wrong fields. 
-    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, :max, :nunique, :nmissing, :eltype] 
+    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, 
+                      :max, :nunique, :nmissing, :eltype] 
     if !issubset(stats, allowed_fields) 
         disallowed_fields = setdiff(stats, allowed_fields)
         not_allowed = "Field(s) not allowed: $disallowed_fields. "

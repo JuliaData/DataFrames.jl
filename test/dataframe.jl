@@ -1,5 +1,5 @@
 module TestDataFrame
-    using Compat, Compat.Test, DataFrames
+    using Compat, Compat.Test, Compat.Dates, DataFrames
     const ≅ = isequal
     const ≇ = !isequal
 
@@ -336,16 +336,20 @@ module TestDataFrame
                        dates  = Date.([2000, 2001, 2003, 2004]),
                        catarray = CategoricalArray([1,2,1,2]))
 
-        describe_output = DataFrame(variable = [:number, :number_missing, :non_number, :non_number_missing, :dates, :catarray],
+        describe_output = DataFrame(variable = [:number, :number_missing, :non_number, 
+                                                :non_number_missing, :dates, :catarray],
                                     mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                     min = [1.0, 1.0, nothing, nothing, nothing, nothing],
                                     median = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                     max = [4.0, 3.0, nothing, nothing, nothing, nothing],
                                     nmissing = [nothing, 1, nothing, 1, nothing, nothing],
-                                    eltype= [Int, Int, String, String, Date, eltype(df[:catarray])])
-        describe_output_all_stats = DataFrame(variable = [:number, :number_missing, :non_number, :non_number_missing, :dates, :catarray],
+                                    eltype = [Int, Int, String, String, Date, eltype(df[:catarray])])
+        describe_output_all_stats = DataFrame(variable = [:number, :number_missing, 
+                                                          :non_number, :non_number_missing,
+                                                          :dates, :catarray],
                                               mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                              std = [Compat.std(df[:number]), 1.0, nothing, nothing, nothing, nothing],
+                                              std = [Compat.std(df[:number]), 1.0, nothing, 
+                                                     nothing, nothing, nothing],
                                               min = [1.0, 1.0, nothing, nothing, nothing, nothing],
                                               q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
                                               median = [2.5, 2.0, nothing, nothing, nothing, nothing],
@@ -353,15 +357,16 @@ module TestDataFrame
                                               max = [4.0, 3.0, nothing, nothing, nothing, nothing],
                                               nunique = [nothing, nothing, 4, 4, 4, 2],
                                               nmissing = [nothing, 1, nothing, 1, nothing, nothing],
-                                              eltype= [Int, Int, String, String, Date, eltype(df[:catarray])])
+                                              eltype = [Int, Int, String, String, Date, 
+                                                        eltype(df[:catarray])])
 
         
         # Test that it works as a whole, without keyword arguments
         @test describe_output == describe(df)
 
         # Test that it works with all keyword arguments
-        @test describe_output_all_stats == describe(df, 
-              stats = [:mean, :std, :min, :q25, :median, :q75, :max, 
+        @test describe_output_all_stats == 
+              describe(df, stats = [:mean, :std, :min, :q25, :median, :q75, :max, 
                        :nunique, :nmissing, :eltype])
     end 
 
