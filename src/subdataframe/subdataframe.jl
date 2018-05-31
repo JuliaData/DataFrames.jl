@@ -85,12 +85,21 @@ function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool})
 end
 
 function SubDataFrame(sdf::SubDataFrame, rowinds::Union{T, AbstractVector{T}}) where {T <: Integer}
-    return SubDataFrame(sdf.parent, sdf.rows[rowinds])
+    return SubDataFrame(parent(sdf), rows(sdf)[rowinds])
 end
 
 function SubDataFrame(sdf::SubDataFrame, rowinds::Colon)
     return sdf
 end
+
+"""
+    parent(sdf::SubDataFrame)
+
+Return the parent data frame of `sdf`.
+"""
+Base.parent(sdf::SubDataFrame) = getfield(sdf, :parent)
+
+rows(sdf::SubDataFrame) = getfield(sdf, :rows)
 
 function Base.view(adf::AbstractDataFrame, rowinds::AbstractVector{T}) where {T >: Missing}
     # Vector{>:Missing} need to be checked for missings
@@ -116,27 +125,27 @@ end
 ##
 ##############################################################################
 
-index(sdf::SubDataFrame) = index(sdf.parent)
+index(sdf::SubDataFrame) = index(parent(sdf))
 
 # TODO: Remove these
-nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(sdf.rows)::Int : 0
+nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(rows(sdf))::Int : 0
 ncol(sdf::SubDataFrame) = length(index(sdf))
 
 function Base.getindex(sdf::SubDataFrame, colinds::Any)
-    return sdf.parent[sdf.rows, colinds]
+    return parent(sdf)[rows(sdf), colinds]
 end
 
 function Base.getindex(sdf::SubDataFrame, rowinds::Any, colinds::Any)
-    return sdf.parent[sdf.rows[rowinds], colinds]
+    return parent(sdf)[rows(sdf)[rowinds], colinds]
 end
 
 function Base.setindex!(sdf::SubDataFrame, val::Any, colinds::Any)
-    sdf.parent[sdf.rows, colinds] = val
+    parent(sdf)[rows(sdf), colinds] = val
     return sdf
 end
 
 function Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
-    sdf.parent[sdf.rows[rowinds], colinds] = val
+    parent(sdf)[rows(sdf)[rowinds], colinds] = val
     return sdf
 end
 
@@ -148,4 +157,4 @@ end
 
 Base.map(f::Function, sdf::SubDataFrame) = f(sdf) # TODO: deprecate
 
-without(sdf::SubDataFrame, c) = view(without(sdf.parent, c), sdf.rows)
+without(sdf::SubDataFrame, c) = view(without(parent(sdf), c), rows(sdf))

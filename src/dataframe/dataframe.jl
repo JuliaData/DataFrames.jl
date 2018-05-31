@@ -221,11 +221,11 @@ end
 ##
 ##############################################################################
 
-index(df::DataFrame) = df.colindex
-columns(df::DataFrame) = df.columns
+index(df::DataFrame) = getfield(df, :colindex)
+columns(df::DataFrame) = getfield(df, :columns)
 
 # TODO: Remove these
-nrow(df::DataFrame) = ncol(df) > 0 ? length(df.columns[1])::Int : 0
+nrow(df::DataFrame) = ncol(df) > 0 ? length(columns(df)[1])::Int : 0
 ncol(df::DataFrame) = length(index(df))
 
 ##############################################################################
@@ -247,7 +247,7 @@ ncol(df::DataFrame) = length(index(df))
 #
 # Let getindex(index(df), col_inds) from Index() handle the resolution
 #  of column indices
-# Let getindex(df.columns[j], row_inds) from AbstractVector() handle
+# Let getindex(columns(df)[j], row_inds) from AbstractVector() handle
 #  the resolution of row indices
 
 # TODO: change Real to Integer in this union after deprecation period
@@ -256,13 +256,13 @@ const ColumnIndex = Union{Real, Symbol}
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
-    return df.columns[selected_column]
+    return columns(df)[selected_column]
 end
 
 # df[MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
-    new_columns = df.columns[selected_columns]
+    new_columns = columns(df)[selected_columns]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
@@ -272,26 +272,26 @@ Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
 function Base.getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
-    return df.columns[selected_column][row_ind]
+    return columns(df)[selected_column][row_ind]
 end
 
 # df[SingleRowIndex, MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, row_ind::Real, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
-    new_columns = Any[dv[[row_ind]] for dv in df.columns[selected_columns]]
+    new_columns = Any[dv[[row_ind]] for dv in columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
-    return df.columns[selected_column][row_inds]
+    return columns(df)[selected_column][row_inds]
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
-    new_columns = Any[dv[row_inds] for dv in df.columns[selected_columns]]
+    new_columns = Any[dv[row_inds] for dv in columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
@@ -304,7 +304,7 @@ Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col
 
 # df[MultiRowIndex, :] => DataFrame
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::Colon)
-    new_columns = Any[dv[row_inds] for dv in df.columns]
+    new_columns = Any[dv[row_inds] for dv in columns(df)]
     return DataFrame(new_columns, copy(index(df)))
 end
 
@@ -339,15 +339,15 @@ function insert_single_column!(df::DataFrame,
     dv = isa(v, AbstractRange) ? collect(v) : v
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
-        df.columns[j] = dv
+        columns(df)[j] = dv
     else
         if typeof(col_ind) <: Symbol
             push!(index(df), col_ind)
-            push!(df.columns, dv)
+            push!(columns(df), dv)
         else
             if ncol(df) + 1 == Int(col_ind)
                 push!(index(df), nextcolname(df))
-                push!(df.columns, dv)
+                push!(columns(df), dv)
             else
                 throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
             end
@@ -358,7 +358,7 @@ end
 
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
-        df.columns[index(df)[col_ind]][row_ind] = v
+        columns(df)[index(df)[col_ind]][row_ind] = v
         return v
     else
         error("Cannot assign to non-existent column: $col_ind")
@@ -370,7 +370,7 @@ function insert_multiple_entries!(df::DataFrame,
                                   row_inds::AbstractVector{<:Real},
                                   col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
-        df.columns[index(df)[col_ind]][row_inds] = v
+        columns(df)[index(df)[col_ind]][row_inds] = v
         return v
     else
         error("Cannot assign to non-existent column: $col_ind")
@@ -604,8 +604,8 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::Colon,
                         col_inds::Colon=Colon())
-    df.columns = copy(new_df.columns)
-    df.colindex = copy(new_df.colindex)
+    setfield!(df, :columns, copy(columns(new_df)))
+    setfield!(df, :colindex, copy(index(new_df)))
     df
 end
 
@@ -630,7 +630,7 @@ Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = delete!(df, col_ind)
 ##
 ##############################################################################
 
-Base.empty!(df::DataFrame) = (empty!(df.columns); empty!(index(df)); df)
+Base.empty!(df::DataFrame) = (empty!(columns(df)); empty!(index(df)); df)
 
 """
 Insert a column into a data frame in place.
@@ -708,7 +708,7 @@ function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::S
         end
     end
     insert!(index(df), col_ind, name)
-    insert!(df.columns, col_ind, item)
+    insert!(columns(df), col_ind, item)
     df
 end
 
@@ -784,7 +784,7 @@ end
 function Base.delete!(df::DataFrame, inds::Vector{Int})
     for ind in sort(inds, rev = true)
         if 1 <= ind <= ncol(df)
-            splice!(df.columns, ind)
+            splice!(columns(df), ind)
             delete!(index(df), ind)
         else
             throw(ArgumentError("Can't delete a non-existent DataFrame column"))
@@ -798,7 +798,7 @@ Base.delete!(df::DataFrame, c::Any) = delete!(df, index(df)[c])
 # deleterows!()
 function deleterows!(df::DataFrame, ind::Union{Integer, UnitRange{Int}})
     for i in 1:ncol(df)
-        df.columns[i] = deleteat!(df.columns[i], ind)
+        columns(df)[i] = deleteat!(columns(df)[i], ind)
     end
     df
 end
@@ -824,7 +824,7 @@ function deleterows!(df::DataFrame, ind::AbstractVector{Int})
     keep[ikeep:end] = idf:n
 
     for i in 1:ncol(df)
-        df.columns[i] = df.columns[i][keep]
+        columns(df)[i] = columns(df)[i][keep]
     end
     df
 end
@@ -1017,18 +1017,18 @@ end
 
 # array and tuple like collections
 function Base.push!(df::DataFrame, iterable::Any)
-    if length(iterable) != length(df.columns)
+    if length(iterable) != size(df, 2)
         msg = "Length of iterable does not match DataFrame column count."
         throw(ArgumentError(msg))
     end
     i = 1
     for t in iterable
         try
-            push!(df.columns[i], t)
+            push!(columns(df)[i], t)
         catch
             #clean up partial row
             for j in 1:(i - 1)
-                pop!(df.columns[j])
+                pop!(columns(df)[j])
             end
             msg = "Error adding $t to column :$(_names(df)[i]). Possible type mis-match."
             throw(ArgumentError(msg))
@@ -1094,9 +1094,9 @@ function permutecols!(df::DataFrame, p::AbstractVector)
         throw(ArgumentError("$p is not a valid column permutation for this DataFrame"))
     end
     permute!(columns(df), p)
-    df.colindex = Index(names(df)[p])
+    setfield!(df, :colindex, Index(names(df)[p]))
 end
 
 function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
-    permutecols!(df, getindex.(df.colindex.lookup, p))
+    permutecols!(df, getindex.(index(df).lookup, p))
 end

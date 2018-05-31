@@ -4,28 +4,44 @@ struct DataFrameRow{T <: AbstractDataFrame}
     row::Int
 end
 
+
+"""
+    parent(r::DataFrameRow)
+
+Return the parent data frame of `r`.
+"""
+Base.parent(r::DataFrameRow) = getfield(r, :df)
+row(r::DataFrameRow) = getfield(r, :row)
+
 function Base.getindex(r::DataFrameRow, idx::AbstractArray)
-    return DataFrameRow(r.df[idx], r.row)
+    return DataFrameRow(parent(r)[idx], row(r))
 end
 
 function Base.getindex(r::DataFrameRow, idx::Any)
-    return r.df[r.row, idx]
+    return parent(r)[row(r), idx]
 end
 
 function Base.setindex!(r::DataFrameRow, value::Any, idx::Any)
-    return setindex!(r.df, value, r.row, idx)
+    return setindex!(parent(r), value, row(r), idx)
 end
 
-Base.names(r::DataFrameRow) = names(r.df)
-_names(r::DataFrameRow) = _names(r.df)
+Base.names(r::DataFrameRow) = names(parent(r))
+_names(r::DataFrameRow) = _names(parent(r))
 
-Base.view(r::DataFrameRow, c) = DataFrameRow(r.df[[c]], r.row)
+if VERSION >= v"0.7.0-DEV.3067"
+    Base.getproperty(r::DataFrameRow, idx::Symbol) = getindex(r, idx)
+    Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
+    # Private fields are never exposed since they can conflict with column names
+    Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
+end
 
-index(r::DataFrameRow) = index(r.df)
+Base.view(r::DataFrameRow, c) = DataFrameRow(parent(r)[[c]], row(r))
 
-Base.length(r::DataFrameRow) = size(r.df, 2)
+index(r::DataFrameRow) = index(parent(r))
 
-Compat.lastindex(r::DataFrameRow) = size(r.df, 2)
+Base.length(r::DataFrameRow) = size(parent(r), 2)
+
+Compat.lastindex(r::DataFrameRow) = size(parent(r), 2)
 
 Base.collect(r::DataFrameRow) = Tuple{Symbol, Any}[x for x in r]
 
@@ -35,7 +51,7 @@ Base.next(r::DataFrameRow, s) = ((_names(r)[s], r[s]), s + 1)
 
 Base.done(r::DataFrameRow, s) = s > length(r)
 
-Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, r.df[r.row,:])
+Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, parent(r)[row(r),:])
 
 # hash column element
 Base.@propagate_inbounds hash_colel(v::AbstractArray, i, h::UInt = zero(UInt)) = hash(v[i], h)
@@ -57,7 +73,7 @@ function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UIn
 end
 
 Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
-    rowhash(ntuple(i -> r.df[i], ncol(r.df)), r.row, h)
+    rowhash(ntuple(i -> parent(r)[i], ncol(parent(r))), row(r), h)
 
 # comparison of DataFrame rows
 # only the rows of the same DataFrame could be compared
@@ -66,7 +82,7 @@ Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
 Base.:(==)(r1::DataFrameRow, r2::DataFrameRow) = isequal(r1, r2)
 
 function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
-    isequal_row(r1.df, r1.row, r2.df, r2.row)
+    isequal_row(parent(r1), row(r1), parent(r2), row(r2))
 end
 
 # internal method for comparing the elements of the same data table column
@@ -102,11 +118,11 @@ end
 
 # lexicographic ordering on DataFrame rows, missing > !missing
 function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
-    (ncol(r1.df) == ncol(r2.df)) ||
+    (ncol(parent(r1)) == ncol(parent(r2))) ||
         throw(ArgumentError("Rows of the data tables that have different number of columns cannot be compared ($(ncol(df1)) and $(ncol(df2)))"))
-    @inbounds for i in 1:ncol(r1.df)
-        if !isequal(r1.df[i][r1.row], r2.df[i][r2.row])
-            return isless(r1.df[i][r1.row], r2.df[i][r2.row])
+    @inbounds for i in 1:ncol(parent(r1))
+        if !isequal(parent(r1)[i][row(r1)], parent(r2)[i][row(r2)])
+            return isless(parent(r1)[i][row(r1)], parent(r2)[i][row(r2)])
         end
     end
     return false
