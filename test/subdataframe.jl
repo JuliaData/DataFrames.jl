@@ -84,4 +84,27 @@ module TestSubDataFrame
         @test view(df, :, 1) == df[:, [1]]
         @test_throws MissingException view(df, [missing, 1])
     end
+
+    if VERSION >= v"0.7.0-DEV.3067"
+        @testset "getproperty, setproperty! and propertynames" begin
+            x = collect(1:10)
+            y = collect(1.0:10.0)
+            df = view(DataFrame(x = x, y = y), 2:6)
+
+            @test Base.propertynames(df) == names(df)
+
+            @test df.x == 2:6
+            @test df.y == 2:6
+            @test_throws KeyError df.z
+
+            df.x = 1:5
+            @test df.x == 1:5
+            @test x == [1; 1:5; 7:10]
+            df.y = 1
+            @test df.y == [1, 1, 1, 1, 1]
+            @test y == [1; 1; 1; 1; 1; 1; 7:10]
+            @test_throws ErrorException df.z = 1:5
+            @test_throws ErrorException df.z = 1
+        end
+    end
 end

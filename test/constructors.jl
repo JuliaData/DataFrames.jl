@@ -1,6 +1,6 @@
 module TestConstructors
     using Compat, Compat.Test, DataFrames
-    using DataFrames: Index
+    using DataFrames: Index, columns, index
     const ≅ = isequal
 
     #
@@ -8,8 +8,8 @@ module TestConstructors
     #
 
     df = DataFrame()
-    @test df.columns == Any[]
-    @test df.colindex == Index()
+    @test columns(df) == Any[]
+    @test index(df) == Index()
 
     df = DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                        CategoricalVector{Union{Float64, Missing}}(ones(3))],
@@ -99,13 +99,13 @@ module TestConstructors
     @testset "column types" begin
         df = DataFrame(A = 1:3, B = 2:4, C = 3:5)
         answer = [Array{Int,1}, Array{Int,1}, Array{Int,1}]
-        @test map(typeof, df.columns) == answer
+        @test map(typeof, columns(df)) == answer
         df[:D] = [4, 5, missing]
         push!(answer, Vector{Union{Int, Missing}})
-        @test map(typeof, df.columns) == answer
+        @test map(typeof, columns(df)) == answer
         df[:E] = 'c'
         push!(answer, Vector{Char})
-        @test map(typeof, df.columns) == answer
+        @test map(typeof, columns(df)) == answer
     end
 
     @testset "categorical constructor" begin
