@@ -1,5 +1,5 @@
 module TestDataFrame
-    using Compat, Compat.Test, DataFrames
+    using Compat, Compat.Test, Compat.Dates, DataFrames
     using DataFrames: columns
     const ≅ = isequal
     const ≇ = !isequal
@@ -326,25 +326,50 @@ module TestDataFrame
     df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
     @test deleterows!(df, [2, 3]) === df
     @test df == DataFrame(a=[1], b=[3.0])
+    
+    # Test describe
+    @testset "describe(df)" begin
+        # Construct the test dataframe
+        df = DataFrame(number = [1, 2, 3, 4],
+                       number_missing = [1,2, 3, missing],
+                       non_number = ["a", "b", "c", "d"],
+                       non_number_missing = ["a", "b", "c", missing],
+                       dates  = Date.([2000, 2001, 2003, 2004]),
+                       catarray = CategoricalArray([1,2,1,2]))
 
-    # describe
-    #suppress output and test that describe() does not throw
-    devmissing = Compat.Sys.isunix() ? "/dev/null" : "nul"
-    open(devmissing, "w") do f
-        @test nothing == describe(f, DataFrame(a=[1, 2], b=Any["3", missing]))
-        @test nothing ==
-              describe(f, DataFrame(a=Union{Int, Missing}[1, 2],
-                                    b=["3", missing]))
-        @test nothing ==
-              describe(f, DataFrame(a=CategoricalArray([1, 2]),
-                                    b=CategoricalArray(["3", missing])))
-        @test nothing == describe(f, [1, 2, 3])
-        @test nothing == describe(f, [1, 2, 3])
-        @test nothing == describe(f, CategoricalArray([1, 2, 3]))
-        @test nothing == describe(f, Any["1", "2", missing])
-        @test nothing == describe(f, ["1", "2", missing])
-        @test nothing == describe(f, CategoricalArray(["1", "2", missing]))
-    end
+        describe_output = DataFrame(variable = [:number, :number_missing, :non_number, 
+                                                :non_number_missing, :dates, :catarray],
+                                    mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                    min = [1.0, 1.0, nothing, nothing, nothing, nothing],
+                                    median = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                    max = [4.0, 3.0, nothing, nothing, nothing, nothing],
+                                    nmissing = [nothing, 1, nothing, 1, nothing, nothing],
+                                    eltype = [Int, Int, String, String, Date, eltype(df[:catarray])])
+        describe_output_all_stats = DataFrame(variable = [:number, :number_missing, 
+                                                          :non_number, :non_number_missing,
+                                                          :dates, :catarray],
+                                              mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                              std = [Compat.std(df[:number]), 1.0, nothing, 
+                                                     nothing, nothing, nothing],
+                                              min = [1.0, 1.0, nothing, nothing, nothing, nothing],
+                                              q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
+                                              median = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                              q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
+                                              max = [4.0, 3.0, nothing, nothing, nothing, nothing],
+                                              nunique = [nothing, nothing, 4, 4, 4, 2],
+                                              nmissing = [nothing, 1, nothing, 1, nothing, nothing],
+                                              eltype = [Int, Int, String, String, Date, 
+                                                        eltype(df[:catarray])])
+
+        
+        # Test that it works as a whole, without keyword arguments
+        @test describe_output == describe(df)
+
+        # Test that it works with all keyword arguments
+        @test describe_output_all_stats == 
+              describe(df, stats = [:mean, :std, :min, :q25, :median, :q75, :max, 
+                       :nunique, :nmissing, :eltype])
+    end 
 
     #Check the output of unstack
     df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
