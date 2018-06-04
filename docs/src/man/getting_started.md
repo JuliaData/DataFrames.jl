@@ -128,7 +128,42 @@ julia> DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
 ```
 
-It is also possible to construct a `DataFrame` in stages:
+### Constructing Row by Row
+It is possible to construct a `DataFrame` row by row,
+
+First an dataframe with empty columns is constructed:
+
+```jldoctest dataframe
+julia> df = DataFrame(A = Int[], B=String[])
+0×2 DataFrames.DataFrame
+```
+
+Rows can then be added as Vectors (making sure to get the column order right).
+
+
+```jldoctest dataframe
+julia> push!(df, [1, "M"])
+1×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ M │
+```
+
+or as Dictionaries (They key is used to select the column)
+
+```jldoctest dataframe
+julia> push!(df, Dict(:B=>"F", :A=>2))
+2×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ M │
+│ 2   │ 2 │ F │
+```
+
+
+
+### Constructing Column by Column
+It is also possible to construct a `DataFrame` one column at a time.
 
 ```jldoctest dataframe
 julia> df = DataFrame()
@@ -179,6 +214,11 @@ true
 
 ```
 
+
+## Working with Dataframes
+
+### Taking a subset
+
 We can also look at small subsets of the data in a couple of different ways:
 
 ```jldoctest dataframe
@@ -213,6 +253,8 @@ julia> df[1:3, :]
 │ 3   │ 3 │ F │
 
 ```
+
+### Summarizing with `describe`
 
 Having seen what some of the rows look like, we can try to summarize the entire data set using `describe`:
 
@@ -251,6 +293,8 @@ true
 
 ```
 
+### Missing Data
+
 If your dataset has missing values, most functions will require you to remove them
 beforehand. Here we will replace all odd-numbered rows in the first column with missing data
 to show how to handle the above example when missing values are present in your dataset.
@@ -276,6 +320,7 @@ julia> mean(skipmissing(df[:A]))
 
 ```
 
+### Column-wise operations
 We can also apply a function to each column of a `DataFrame` with the `colwise` function. For example:
 
 ```jldoctest dataframe
@@ -322,7 +367,7 @@ CSV.write(output, df)
 
 The behavior of CSV functions can be adapted via keyword arguments. For more information, use the REPL [help-mode](http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode) or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).
 
-## Loading a Classic Data Set
+### Loading a Classic Data Set
 
 To see more of the functionality for working with `DataFrame` objects, we need a more complex data set to work with. We can access Fisher's iris data set using the following functions:
 
