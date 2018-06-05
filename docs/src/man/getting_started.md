@@ -138,7 +138,7 @@ julia> df = DataFrame(A = Int[], B=String[])
 0×2 DataFrames.DataFrame
 ```
 
-Rows can then be added as Vectors (making sure to get the column order right).
+Rows can then be added as `Vector`s; with the order matching that of columns.
 
 
 ```jldoctest dataframe
@@ -149,7 +149,7 @@ julia> push!(df, [1, "M"])
 │ 1   │ 1 │ M │
 ```
 
-or as Dictionaries (They key is used to select the column)
+Rows can also be added as `AbstractDict`s; where the dictionary keys match the column names.
 
 ```jldoctest dataframe
 julia> push!(df, Dict(:B=>"F", :A=>2))
