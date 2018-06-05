@@ -128,39 +128,6 @@ julia> DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
 ```
 
-### Constructing Row by Row
-It is possible to construct a `DataFrame` row by row,
-
-First an dataframe with empty columns is constructed:
-
-```jldoctest dataframe
-julia> df = DataFrame(A = Int[], B=String[])
-0×2 DataFrames.DataFrame
-```
-
-Rows can then be added as `Vector`s; with the order matching that of columns.
-
-
-```jldoctest dataframe
-julia> push!(df, [1, "M"])
-1×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
-```
-
-Rows can also be added as `AbstractDict`s; where the dictionary keys match the column names.
-
-```jldoctest dataframe
-julia> push!(df, Dict(:B=>"F", :A=>2))
-2×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
-│ 2   │ 2 │ F │
-```
-
-
 
 ### Constructing Column by Column
 It is also possible to construct a `DataFrame` one column at a time.
@@ -214,6 +181,41 @@ true
 
 ```
 
+### Constructing Row by Row
+It is possible to construct a `DataFrame` row by row.
+
+First an dataframe with empty columns is constructed:
+
+```jldoctest dataframe
+julia> df = DataFrame(A = Int[], B=String[])
+0×2 DataFrames.DataFrame
+```
+
+Rows can then be added as `Vector`s; with the order matching that of columns.
+
+
+```jldoctest dataframe
+julia> push!(df, [1, "M"])
+1×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ M │
+```
+
+Rows can also be added as `AbstractDict`s; where the dictionary keys match the column names.
+
+```jldoctest dataframe
+julia> push!(df, Dict(:B=>"F", :A=>2))
+2×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ M │
+│ 2   │ 2 │ F │
+```
+
+Note that constructing a `DataFrame` row by row is signficantly less performant than constructing it all at once,
+or column by column.
+For many use, cases this will not matter, but for very large `DataFrame`s,  this may be a consideration.
 
 ## Working with Dataframes
 
