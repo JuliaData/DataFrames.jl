@@ -171,6 +171,33 @@ julia> colwise(sum, df)
 
 ```
 
+### Data frames with Missing values
+If your dataset has missing values, most functions will require you to remove them
+beforehand. Here we will replace all odd-numbered rows in the first column with missing data
+to show how to handle the above example when missing values are present in your dataset.
+For more information see [Missing Data](@ref).
+
+```jldoctest dataframe
+julia> df[:A] = [isodd(i) ? missing : value for (i, value) in enumerate(df[:A])];
+
+julia> df
+8×2 DataFrames.DataFrame
+│ Row │ A       │ B │
+├─────┼─────────┼───┤
+│ 1   │ missing │ M │
+│ 2   │ 2       │ F │
+│ 3   │ missing │ F │
+│ 4   │ 4       │ M │
+│ 5   │ missing │ F │
+│ 6   │ 6       │ M │
+│ 7   │ missing │ M │
+│ 8   │ 8       │ F │
+
+julia> mean(skipmissing(df[:A]))
+5.0
+
+```
+
 ## Importing and Exporting Data (I/O)
 
 For reading and writing tabular data from CSV and other delimited text files, use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
