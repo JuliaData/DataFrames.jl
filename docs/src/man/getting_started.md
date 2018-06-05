@@ -9,8 +9,6 @@ Pkg.add("DataFrames")
 
 Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataFrames` to bring all of the relevant variables into your current namespace.
 
-
-
 ## The `DataFrame` Type
 
 The `DataFrame` type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments or pairs:
@@ -246,9 +244,6 @@ julia> head(iris)
 │ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa  │
 
 ```
-
-
-
 
 ## Querying DataFrames
 
