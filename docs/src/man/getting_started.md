@@ -187,12 +187,11 @@ It is possible to construct a `DataFrame` row by row.
 First an dataframe with empty columns is constructed:
 
 ```jldoctest dataframe
-julia> df = DataFrame(A = Int[], B=String[])
+julia> df = DataFrame(A = Int[], B = String[])
 0×2 DataFrames.DataFrame
 ```
 
 Rows can then be added as `Vector`s; with the order matching that of columns.
-
 
 ```jldoctest dataframe
 julia> push!(df, [1, "M"])
@@ -205,7 +204,7 @@ julia> push!(df, [1, "M"])
 Rows can also be added as `AbstractDict`s; where the dictionary keys match the column names.
 
 ```jldoctest dataframe
-julia> push!(df, Dict(:B=>"F", :A=>2))
+julia> push!(df, Dict(:B => "F", :A => 2))
 2×2 DataFrames.DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
