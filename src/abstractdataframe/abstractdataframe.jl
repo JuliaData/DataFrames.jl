@@ -518,15 +518,16 @@ function get_stats(col::AbstractArray{String})
 end
 
 function get_stats(col::AbstractArray{>:Missing})
-    q = try quantile(collect(skipmissing(col)), [.25, .5, .75]) catch [nothing, nothing, nothing] end
+    nomissing = collect(skipmissing(col))
+    q = try quantile(nomissing, [.25, .5, .75]) catch [nothing, nothing, nothing] end
     Dict(
-        :mean => try mean(col) catch end,
-        :std => try Compat.std(col) catch end,
-        :min => try minimum(col) catch end,
+        :mean => try mean(nomissing) catch end,
+        :std => try Compat.std(nomissing) catch end,
+        :min => try minimum(nomissing) catch end,
         :q25 => q[1],
         :median => q[2],
         :q75 => q[3],
-        :max => try maximum(col) catch end,
+        :max => try maximum(nomissing) catch end,
         :nmissing => count(ismissing, col),
         :nunique => length(unique(col)),
         :eltype => Missings.T(eltype(col))
