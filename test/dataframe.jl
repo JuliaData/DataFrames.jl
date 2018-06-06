@@ -343,6 +343,7 @@ module TestDataFrame
                                     min = [1.0, 1.0, nothing, nothing, Date(2000), nothing],
                                     median = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                     max = [4.0, 3.0, nothing, nothing, Date(2004), nothing],
+                                    nunique = [nothing, nothing, 4, 4, 2],
                                     nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                     eltype = [Int, Int, String, String, Date, eltype(df[:catarray])])
         describe_output_all_stats = DataFrame(variable = [:number, :number_missing, 
@@ -358,6 +359,8 @@ module TestDataFrame
                                               max = [4.0, 3.0, nothing, nothing, Date(2004), nothing],
                                               nunique = [nothing, nothing, 4, 4, 4, 2],
                                               nmissing = [nothing, 1, nothing, 1, nothing, nothing],
+                                              first = [1, 1, "a", "a", Date(2000), 1],
+                                              last = [4, missing, "d", missing, Date(2004), 2],
                                               eltype = [Int, Int, String, String, Date, 
                                                         eltype(df[:catarray])])
 
@@ -367,8 +370,7 @@ module TestDataFrame
 
         # Test that it works with all keyword arguments
         @test describe_output_all_stats == 
-              describe(df, stats = [:mean, :std, :min, :q25, :median, :q75, :max, 
-                       :nunique, :nmissing, :eltype])
+              describe(df, allstats = true)
     end 
 
     #Check the output of unstack
