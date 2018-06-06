@@ -398,12 +398,12 @@ describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissi
 
 **Details**
 
-If the column's base type derives from `Number`, compute the mean, standard 
+If the column's base type derives from `Real`, compute the mean, standard 
 deviation, minimum, first quantile, median, third quantile, and maximum. If 
 a column is not numeric, these statistics are populated with `nothing`s. 
 
 When `stats` contains `:nunique`, `describe` will report the 
-number of unique values in a column. If a column's base type derives from `Number`,
+number of unique values in a column. If a column's base type derives from `Real`,
 `:nunique` will return `nothing`s.
 
 Missing values are filtered in the calculation of all statistics, however the column
@@ -448,25 +448,12 @@ function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector
     return data
 end
 
-# Define 4 functions for getting summary statistics 
+# Define 6 functions for getting summary statistics 
 # use a dict because we dont know which measures the user wants
 # Outside of the `describe` function due to something with 0.7
-function get_stats(col::AbstractArray{<:Real})
-    sumstats = summarystats(col)
-    Dict(
-        :mean => sumstats.mean,
-        :std => Compat.std(col, mean = sumstats.mean),
-        :min => sumstats.min,
-        :q25 => sumstats.q25,
-        :median => sumstats.median,
-        :q75 => sumstats.q75,
-        :max => sumstats.max,
-        :nmissing => nothing,
-        :nunique => nothing,
-        :eltype => eltype(col)
-    )
-end
 
+# We have functions for Real, String, and Any, each with and without missing
+# values
 function get_stats(col::AbstractArray{<:Union{Real, Missing}})
     nomissing = collect(skipmissing(col))
     sumstats = summarystats(nomissing)
@@ -484,7 +471,23 @@ function get_stats(col::AbstractArray{<:Union{Real, Missing}})
     )
 end
 
-function get_stats(col::AbstractArray{>:Missing})
+function get_stats(col::AbstractArray{<:Real})
+    sumstats = summarystats(col)
+    Dict(
+        :mean => sumstats.mean,
+        :std => Compat.std(col, mean = sumstats.mean),
+        :min => sumstats.min,
+        :q25 => sumstats.q25,
+        :median => sumstats.median,
+        :q75 => sumstats.q75,
+        :max => sumstats.max,
+        :nmissing => nothing,
+        :nunique => nothing,
+        :eltype => eltype(col)
+    )
+end
+
+function get_stats(col::AbstractArray{Union{String,Missing}})
     Dict(
         :mean => nothing,
         :std => nothing,
@@ -499,7 +502,7 @@ function get_stats(col::AbstractArray{>:Missing})
     )    
 end 
 
-function get_stats(col)
+function get_stats(col::AbstractArray{String})
     Dict(
         :mean => nothing,
         :std => nothing,
@@ -508,6 +511,38 @@ function get_stats(col)
         :median => nothing,
         :q75 => nothing,
         :max => nothing,
+        :nmissing => nothing,
+        :nunique => length(unique(col)),
+        :eltype => eltype(col)
+    )   
+end
+
+function get_stats(col::AbstractArray{>:Missing})
+    q = try quantile(collect(skipmissing(col)), [.25, .5, .75]) catch [nothing, nothing, nothing] end
+    Dict(
+        :mean => try mean(col) catch end,
+        :std => try Compat.std(col) catch end,
+        :min => try minimum(col) catch end,
+        :q25 => q[1],
+        :median => q[2],
+        :q75 => q[3],
+        :max => try maximum(col) catch end,
+        :nmissing => count(ismissing, col),
+        :nunique => length(unique(col)),
+        :eltype => Missings.T(eltype(col))
+    )    
+end 
+
+function get_stats(col)
+    q = try quantile(col, [.25, .5, .75]) catch [nothing, nothing, nothing] end
+    Dict(
+        :mean => try mean(col) catch end,
+        :std => try Compat.std(col) catch end,
+        :min => try minimum(col) catch end,
+        :q25 => q[1],
+        :median => q[2],
+        :q75 => q[3],
+        :max => try maximum(col) catch end,
         :nmissing => nothing,
         :nunique => length(unique(col)),
         :eltype => eltype(col)
