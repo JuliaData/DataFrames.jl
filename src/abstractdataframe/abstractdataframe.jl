@@ -380,8 +380,8 @@ end
 Report descriptive statistics for a data frame
 
 ```julia
-describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :datatype])
-describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :datatype])
+describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :nunique, :eltype])
+describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :nunique, :eltype])
 ```
 
 **Arguments**
@@ -390,7 +390,7 @@ describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissi
 * `io` : optional output descriptor
 * `stats::AbstractVector{Symbol}`: the summary statistics to report. Allowed 
   fields are `:mean`, `:std`, `:min`, `:q25`, `:median`, `:q75`, `:max`, `:eltype`, 
-  `:nunique`, and `:nmissing`
+  `:nunique`, `first', `last`, and `:nmissing`
 
 **Result**
 
@@ -422,10 +422,11 @@ describe(df)
 """
 StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
 function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector{Symbol} = 
-                            [:mean, :min, :median, :max, :nmissing, :eltype])
+                            [:mean, :min, :median, :max, :nunique, :nmissing, :eltype], 
+                            allstats = false)
     # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, 
-                      :max, :nunique, :nmissing, :eltype] 
+                      :max, :nunique, :nmissing, :first, :last, :eltype] 
     if !issubset(stats, allowed_fields) 
         disallowed_fields = setdiff(stats, allowed_fields)
         not_allowed = "Field(s) not allowed: $disallowed_fields. "
@@ -433,6 +434,8 @@ function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector
         throw(ArgumentError(not_allowed * allowed)) 
     end
 
+    # See if the user wants to show all summary statistics
+    allstats == true ? stats = allowed_fields : nothing
     
     # Put the summary stats into the return dataframe
     data = DataFrame()
@@ -467,6 +470,8 @@ function get_stats(col::AbstractArray{<:Union{Real, Missing}})
         :max => sumstats.max,
         :nmissing => count(ismissing, col),
         :nunique => nothing,
+        :first => first(col),
+        :last => last(col),
         :eltype => Missings.T(eltype(col))
     )
 end
@@ -483,6 +488,8 @@ function get_stats(col::AbstractArray{<:Real})
         :max => sumstats.max,
         :nmissing => nothing,
         :nunique => nothing,
+        :first => first(col),
+        :last => last(col),
         :eltype => eltype(col)
     )
 end
@@ -498,6 +505,8 @@ function get_stats(col::AbstractArray{Union{String,Missing}})
         :max => nothing,
         :nmissing => count(ismissing, col),
         :nunique => length(unique(col)),
+        :first => first(col),
+        :last => last(col),        
         :eltype => Missings.T(eltype(col))
     )    
 end 
@@ -513,6 +522,8 @@ function get_stats(col::AbstractArray{String})
         :max => nothing,
         :nmissing => nothing,
         :nunique => length(unique(col)),
+        :first => first(col),
+        :last => last(col),        
         :eltype => eltype(col)
     )   
 end
@@ -530,6 +541,8 @@ function get_stats(col::AbstractArray{>:Missing})
         :max => try maximum(nomissing) catch end,
         :nmissing => count(ismissing, col),
         :nunique => length(unique(col)),
+        :first => first(col),
+        :last => last(col),        
         :eltype => Missings.T(eltype(col))
     )    
 end 
@@ -546,6 +559,8 @@ function get_stats(col)
         :max => try maximum(col) catch end,
         :nmissing => nothing,
         :nunique => length(unique(col)),
+        :first => first(col),
+        :last => last(col),        
         :eltype => eltype(col)
     )   
 end
