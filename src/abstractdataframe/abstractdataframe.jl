@@ -398,9 +398,12 @@ describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissi
 
 **Details**
 
-If the column's base type derives from `Real`, compute the mean, standard 
-deviation, minimum, first quantile, median, third quantile, and maximum. If 
-a column is not numeric, these statistics are populated with `nothing`s. 
+* If the column's base type derives from `Real`, compute the mean, standard 
+  deviation, minimum, first quantile, median, third quantile, and maximum. 
+* If a column's type derives from `String`, these statistics are populated with `nothing`s.
+* If a column derives from neither `Real` nor `String`, `describe` will attempt to 
+  calculate all summary statistics and return `nothing` for summary statistics that 
+  are not defined for that type.
 
 When `stats` contains `:nunique`, `describe` will report the 
 number of unique values in a column. If a column's base type derives from `Real`,

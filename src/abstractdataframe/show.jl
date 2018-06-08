@@ -569,6 +569,7 @@ end
 #' showcols(df)
 function showcols(io::IO, df::AbstractDataFrame, all::Bool = false,
                   values::Bool = true) # -> Nothing
+    Base.depwarn("showcols has been deprecated. Use `describe(df, stats = [:eltype, :missing, :first, :last]` instead", :showcols)
     print(io, summary(df))
     metadata = DataFrame(Name = _names(df),
                          Eltype = eltypes(df),
