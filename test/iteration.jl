@@ -7,14 +7,18 @@ module TestIteration
 
     df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
 
+    @test size(eachrow(df)) == (size(df, 1),)
+    @test eachrow(df)[1] == DataFrameRow(df, 1)
     for row in eachrow(df)
         @test isa(row, DataFrameRow)
         @test (row[:B] - row[:A]) == 1
-
         # issue #683 (https://github.com/JuliaData/DataFrames.jl/pull/683)
         @test typeof(collect(row)) == Array{Tuple{Symbol, Any}, 1}
     end
 
+    @test size(eachcol(df)) == (size(df, 2),)
+    @test length(eachcol(df)) == size(df, 2)
+    @test eachcol(df)[1] == df[:, 1]
     for col in eachcol(df)
         @test isa(col, Tuple{Symbol, AbstractVector})
     end
