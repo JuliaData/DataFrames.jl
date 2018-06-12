@@ -82,10 +82,11 @@ size(df1)
 mutable struct DataFrame <: AbstractDataFrame
     columns::Vector
     colindex::Index
+    metadata::MetaData
 
     function DataFrame(columns::Vector{Any}, colindex::Index)
         if length(columns) == length(colindex) == 0
-            return new(Vector{Any}(undef, 0), Index())
+            return new(Vector{Any}(undef, 0), Index(), MetaData())
         elseif length(columns) != length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of" *
                                     " column names ($(length(colindex))) are not equal"))
@@ -93,7 +94,7 @@ mutable struct DataFrame <: AbstractDataFrame
         lengths = [isa(col, AbstractArray) ? length(col) : 1 for col in columns]
         minlen, maxlen = extrema(lengths)
         if minlen == 0 && maxlen == 0
-            return new(columns, colindex)
+            return new(columns, colindex, MetaData())
         elseif minlen != maxlen || minlen == maxlen == 1
             # recycle scalars
             for i in 1:length(columns)
@@ -116,8 +117,13 @@ mutable struct DataFrame <: AbstractDataFrame
                 throw(DimensionMismatch("columns must be 1-dimensional"))
             end
         end
-        new(columns, colindex)
+        new(columns, colindex, MetaData())
     end
+
+    function DataFrame(columns::Vector{Any}, colindex::Index, metadata::MetaData)
+        new(columns, colindex, metadata)
+    end
+
 end
 
 function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false)::DataFrame
@@ -147,7 +153,8 @@ function DataFrame(; kwargs...)
 end
 
 function DataFrame(columns::AbstractVector,
-                   cnames::AbstractVector{Symbol}=gennames(length(columns));
+                   cnames::AbstractVector{Symbol}=gennames(length(columns)),
+                   metadata = MetaData();
                    makeunique::Bool=false)::DataFrame
     if !all(col -> isa(col, AbstractVector), columns)
         # change to throw(ArgumentError("columns argument must be a vector of AbstractVector objects"))
@@ -223,6 +230,7 @@ end
 
 index(df::DataFrame) = getfield(df, :colindex)
 columns(df::DataFrame) = getfield(df, :columns)
+metadata(df::DataFrame) = getfield(df, :metadata)
 
 # TODO: Remove these
 nrow(df::DataFrame) = ncol(df) > 0 ? length(columns(df)[1])::Int : 0
@@ -263,7 +271,8 @@ end
 function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = columns(df)[selected_columns]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    new_metadata = metadata(df)[selected_columns]
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]), new_metadata)
 end
 
 # df[:] => DataFrame
@@ -279,7 +288,8 @@ end
 function Base.getindex(df::DataFrame, row_ind::Real, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[[row_ind]] for dv in columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    # no subsetting required for metadata cause rows dont matter
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]), metadata(df)[selected_columns])
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector
@@ -292,7 +302,8 @@ end
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[row_inds] for dv in columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    new_metadata = metadata(df)[selected_columns]
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]), metadata(df)[selected_columns])
 end
 
 # df[:, SingleColumnIndex] => AbstractVector
@@ -305,7 +316,7 @@ Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col
 # df[MultiRowIndex, :] => DataFrame
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::Colon)
     new_columns = Any[dv[row_inds] for dv in columns(df)]
-    return DataFrame(new_columns, copy(index(df)))
+    return DataFrame(new_columns, copy(index(df)), copy(metadata(df)))
 end
 
 # df[:, :] => DataFrame
@@ -344,10 +355,12 @@ function insert_single_column!(df::DataFrame,
         if typeof(col_ind) <: Symbol
             push!(index(df), col_ind)
             push!(columns(df), dv)
+            addcolumn!(metadata(df)) # adds an empty string to all vectors of metadata
         else
             if ncol(df) + 1 == Int(col_ind)
                 push!(index(df), nextcolname(df))
                 push!(columns(df), dv)
+                addcolumn!(metadata(df))
             else
                 throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
             end
@@ -606,6 +619,7 @@ function Base.setindex!(df::DataFrame,
                         col_inds::Colon=Colon())
     setfield!(df, :columns, copy(columns(new_df)))
     setfield!(df, :colindex, copy(index(new_df)))
+    setfield!(df, :metadata, copy(metadata(new_df)))
     df
 end
 
@@ -709,6 +723,7 @@ function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::S
     end
     insert!(index(df), col_ind, name)
     insert!(columns(df), col_ind, item)
+    insert!(metadata(df), col_ind)
     df
 end
 
@@ -748,6 +763,8 @@ merge!(df, df2)  # column z is added, column id is overwritten
 ```
 """
 function Base.merge!(df::DataFrame, others::AbstractDataFrame...)
+    # this wiil have to become more complicated with the addition of
+    # metadata
     for other in others
         for n in _names(other)
             df[n] = other[n]
@@ -764,12 +781,12 @@ end
 
 # A copy of a DataFrame points to the original column vectors but
 #   gets its own Index.
-Base.copy(df::DataFrame) = DataFrame(copy(columns(df)), copy(index(df)))
+Base.copy(df::DataFrame) = DataFrame(copy(columns(df)), copy(index(df)), copy(metadata(df)))
 
 # Deepcopy is recursive -- if a column is a vector of DataFrames, each of
 #   those DataFrames is deepcopied.
 function Base.deepcopy(df::DataFrame)
-    DataFrame(deepcopy(columns(df)), deepcopy(index(df)))
+    DataFrame(deepcopy(columns(df)), deepcopy(index(df)), deepcopy(metadata(df)))
 end
 
 ##############################################################################
@@ -1094,9 +1111,38 @@ function permutecols!(df::DataFrame, p::AbstractVector)
         throw(ArgumentError("$p is not a valid column permutation for this DataFrame"))
     end
     permute!(columns(df), p)
+    permute!(metadata(df), p)
     setfield!(df, :colindex, Index(names(df)[p]))
 end
 
 function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
     permutecols!(df, getindex.(index(df).lookup, p))
 end
+
+
+##############################################################################
+##
+## Set and Get MetaData 
+##
+##############################################################################
+function addlabel!(df::DataFrame, var::Symbol, label::String)
+    ind = index(df)[var]
+    # pass the number of columns to the function so that it can create a new array of 
+    # strings of the right size. 
+    # TODO: maybe figure out a more elegant way of doing this. 
+    addmeta!(df.metadata, ind, ncol(df), :label, label)
+end
+
+function showlabel(df::DataFrame, var::Symbol)
+    ind = index(df)[var]
+    println("Variable label for $(var):")
+    label = getmeta(df.metadata, :label, ind)
+    println("\t" * label)
+end
+
+function showlabels(df::DataFrame)
+    for name in names(df)
+        showlabel(df, name)
+    end
+end
+

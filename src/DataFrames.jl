@@ -69,6 +69,10 @@ export AbstractDataFrame,
        tail,
        permutecols!,
 
+       addlabel!,
+       showlabel,
+       showlabels,
+
        # Remove after deprecation period
        pool,
        pool!
@@ -82,6 +86,7 @@ export AbstractDataFrame,
 
 include("other/utils.jl")
 include("other/index.jl")
+include("other/metadata.jl")
 
 include("abstractdataframe/abstractdataframe.jl")
 include("dataframe/dataframe.jl")
