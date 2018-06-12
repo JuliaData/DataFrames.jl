@@ -340,9 +340,9 @@ module TestDataFrame
         describe_output = DataFrame(variable = [:number, :number_missing, :string, 
                                                 :string_missing, :dates, :catarray],
                                     mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                    min = [1.0, 1.0, nothing, nothing, Date(2000), nothing],
+                                    min = [1.0, 1.0, "a", "a", Date(2000), nothing],
                                     median = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                    max = [4.0, 3.0, nothing, nothing, Date(2004), nothing],
+                                    max = [4.0, 3.0, "d", "c", Date(2004), nothing],
                                     nunique = [nothing, nothing, 4, 4, 4, 2],
                                     nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                     eltype = [Int, Int, String, String, Date, eltype(df[:catarray])])
@@ -352,11 +352,11 @@ module TestDataFrame
                                               mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               std = [Compat.std(df[:number]), 1.0, nothing, 
                                                      nothing, nothing, nothing],
-                                              min = [1.0, 1.0, nothing, nothing, Date(2000), nothing],
+                                              min = [1.0, 1.0, "a", "a", Date(2000), nothing],
                                               q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
                                               median = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
-                                              max = [4.0, 3.0, nothing, nothing, Date(2004), nothing],
+                                              max = [4.0, 3.0, "d", "c", Date(2004), nothing],
                                               nunique = [nothing, nothing, 4, 4, 4, 2],
                                               nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                               first = [1, 1, "a", "a", Date(2000), 1],
@@ -373,7 +373,7 @@ module TestDataFrame
 
         # Test that it works with all keyword arguments
         # Use isqual because we have `missing`s in this dataframe
-        @test isequal(describe_output_all_stats, describe(df, allstats = true))
+        @test isequal(describe_output_all_stats, describe(df, all = true))
     end 
 
     #Check the output of unstack
