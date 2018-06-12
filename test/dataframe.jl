@@ -373,7 +373,7 @@ module TestDataFrame
 
         # Test that it works with all keyword arguments
         # Use isqual because we have `missing`s in this dataframe
-        @test isequal(describe_output_all_stats, describe(df, all = true))
+        @test describe_output_all_stats ≅ describe(df, all = true)
     end 
 
     #Check the output of unstack
