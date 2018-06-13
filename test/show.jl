@@ -21,34 +21,6 @@ module TestShow
         @test str == refstr
     end
 
-    refstr = """
-    4×3 $DataFrame
-    │ Col # │ Name │ Eltype  │ Missing │
-    ├───────┼──────┼─────────┼─────────┤
-    │ 1     │ A    │ Int64   │ 0       │
-    │ 2     │ B    │ String  │ 0       │
-    │ 3     │ C    │ Float32 │ 0       │"""
-    for a in [true, false]
-        io = IOBuffer()
-        showcols(io, df, a, false)
-        str = String(take!(io))
-        @test str == refstr
-    end
-
-    refstr = """
-    4×3 $DataFrame
-    │ Col # │ Name │ Eltype  │ Missing │ Values      │
-    ├───────┼──────┼─────────┼─────────┼─────────────┤
-    │ 1     │ A    │ Int64   │ 0       │ 1  …  4     │
-    │ 2     │ B    │ String  │ 0       │ x\"  …  ABC  │
-    │ 3     │ C    │ Float32 │ 0       │ 1.0  …  4.0 │"""
-    for a in [true, false]
-        io = IOBuffer()
-        showcols(io, df, a, true)
-        str = String(take!(io))
-        @test str == refstr
-    end
-
     srand(1)
     df_big = DataFrame(rand(25,5))
 
@@ -149,94 +121,6 @@ module TestShow
     │ 24  │ 0.278582   │ 0.241591  │
     │ 25  │ 0.751313   │ 0.884837  │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(10,40))
-    showcols(io, df_big, false, false)
-    str = String(take!(io.io))
-    @test str == """
-    25×5 $DataFrame
-    │ Col # │ Name │ Eltype  │ Missing │
-    ├───────┼──────┼─────────┼─────────┤
-    │ 1     │ x1   │ Float64 │ 0       │
-    │ 2     │ x2   │ Float64 │ 0       │
-    │ 3     │ x3   │ Float64 │ 0       │
-    │ 4     │ x4   │ Float64 │ 0       │
-    │ 5     │ x5   │ Float64 │ 0       │"""
-
-    io = IOContext(IOBuffer(), :displaysize=>(10,40))
-    showcols(io, df_big, true, false)
-    str = String(take!(io.io))
-    @test str == """
-    25×5 $DataFrame
-    │ Col # │ Name │ Eltype  │ Missing │
-    ├───────┼──────┼─────────┼─────────┤
-    │ 1     │ x1   │ Float64 │ 0       │
-    │ 2     │ x2   │ Float64 │ 0       │
-    │ 3     │ x3   │ Float64 │ 0       │
-    │ 4     │ x4   │ Float64 │ 0       │
-    │ 5     │ x5   │ Float64 │ 0       │"""
-
-    io = IOContext(IOBuffer(), :displaysize=>(10,40))
-    showcols(io, df_big, false, true)
-    str = String(take!(io.io))
-    @test str == """
-    25×5 $DataFrame
-    │ Col # │ Name │ Eltype  │ Missing │
-    ├───────┼──────┼─────────┼─────────┤
-    │ 1     │ x1   │ Float64 │ 0       │
-    │ 2     │ x2   │ Float64 │ 0       │
-    │ 3     │ x3   │ Float64 │ 0       │
-    │ 4     │ x4   │ Float64 │ 0       │
-    │ 5     │ x5   │ Float64 │ 0       │
-    
-    │ Col # │ Values                │
-    ├───────┼───────────────────────┤
-    │ 1     │ 0.236033  …  0.751313 │
-    │ 2     │ 0.644883  …  0.884837 │
-    │ 3     │ 0.440897  …  0.550334 │
-    │ 4     │ 0.580782  …  0.339081 │
-    │ 5     │ 0.138763  …  0.649056 │"""
-
-    io = IOContext(IOBuffer(), :displaysize=>(10,40))
-    showcols(io, df_big, true, true)
-    str = String(take!(io.io))
-    @test str == """
-    25×5 $DataFrame
-    │ Col # │ Name │ Eltype  │ Missing │ Values                │
-    ├───────┼──────┼─────────┼─────────┼───────────────────────┤
-    │ 1     │ x1   │ Float64 │ 0       │ 0.236033  …  0.751313 │
-    │ 2     │ x2   │ Float64 │ 0       │ 0.644883  …  0.884837 │
-    │ 3     │ x3   │ Float64 │ 0       │ 0.440897  …  0.550334 │
-    │ 4     │ x4   │ Float64 │ 0       │ 0.580782  …  0.339081 │
-    │ 5     │ x5   │ Float64 │ 0       │ 0.138763  …  0.649056 │"""
-
-    io = IOBuffer()
-    df_small = DataFrame(transpose([1.0:5.0;]))
-    showcols(io, df_small)
-    str = String(take!(io))
-    @test str == """
-    1×5 $DataFrame
-    │ Col # │ Name │ Eltype  │ Missing │ Values │
-    ├───────┼──────┼─────────┼─────────┼────────┤
-    │ 1     │ x1   │ Float64 │ 0       │ 1.0    │
-    │ 2     │ x2   │ Float64 │ 0       │ 2.0    │
-    │ 3     │ x3   │ Float64 │ 0       │ 3.0    │
-    │ 4     │ x4   │ Float64 │ 0       │ 4.0    │
-    │ 5     │ x5   │ Float64 │ 0       │ 5.0    │"""
-
-    io = IOBuffer()
-    df_min = DataFrame(rand(0,5))
-    showcols(io, df_min)
-    str = String(take!(io))
-    @test str == """
-    0×5 $DataFrame
-    │ Col # │ Name │ Eltype  │ Missing │
-    ├───────┼──────┼─────────┼─────────┤
-    │ 1     │ x1   │ Float64 │ 0       │
-    │ 2     │ x2   │ Float64 │ 0       │
-    │ 3     │ x3   │ Float64 │ 0       │
-    │ 4     │ x4   │ Float64 │ 0       │
-    │ 5     │ x5   │ Float64 │ 0       │"""
-
     subdf = view(df, [2, 3]) # df[df[:A] .> 1.0, :]
     show(io, subdf)
     show(io, subdf, true)
@@ -289,26 +173,7 @@ module TestShow
         │ 2   │ Amir │ missing │""")
     end
 
-    io = IOBuffer()
-    showcols(io, df)
-    str = String(take!(io))
-    if VERSION ≥ v"0.7.0-DEV.2762"
-        ref = """
-        2×2 $DataFrame
-        │ Col # │ Name │ Eltype                  │ Missing │ Values          │
-        ├───────┼──────┼─────────────────────────┼─────────┼─────────────────┤
-        │ 1     │ Fish │ String                  │ 0       │ Suzy  …  Amir   │
-        │ 2     │ Mass │ $(Union{Missing,Float64}) │ 1       │ 1.5  …  missing │"""
-    else
-        ref = """
-        2×2 $DataFrame
-        │ Col # │ Name │ Eltype                           │ Missing │ Values          │
-        ├───────┼──────┼──────────────────────────────────┼─────────┼─────────────────┤
-        │ 1     │ Fish │ String                           │ 0       │ Suzy  …  Amir   │
-        │ 2     │ Mass │ Union{Float64, $Missing} │ 1       │ 1.5  …  missing │"""
-    end
-    @test str == ref
-
+  
     # Test showing missing
     df = DataFrame(A = [:Symbol, missing, :missing],
                    B = [missing, "String", "missing"],
@@ -339,48 +204,6 @@ module TestShow
         │ 2   │ missing │ String  │ missing │
         │ 3   │ missing │ missing │ missing │""")
     end
-
-    io = IOBuffer()
-    showcols(io, df)
-    str = String(take!(io))
-    if VERSION ≥ v"0.7.0-DEV.2762"
-        ref = """
-        3×3 DataFrame
-        │ Col # │ Name │ Eltype                 │ Missing │ Values              │
-        ├───────┼──────┼────────────────────────┼─────────┼─────────────────────┤
-        │ 1     │ A    │ Union{Missing, Symbol} │ 1       │ Symbol  …  missing  │
-        │ 2     │ B    │ Union{Missing, String} │ 1       │ missing  …  missing │
-        │ 3     │ C    │ Any                    │ 1       │ missing  …  missing │"""
-    elseif VERSION ≥ v"0.7.0-DEV.2762"
-        ref = """
-        3×3 $DataFrame
-        │ Col # │ Name │ Eltype                 │ Missing │
-        ├───────┼──────┼────────────────────────┼─────────┤
-        │ 1     │ A    │ $(Union{Missing,Symbol}) │ 1       │
-        │ 2     │ B    │ $(Union{Missing,String}) │ 1       │
-        │ 3     │ C    │ Any                    │ 1       │
-        
-        │ Col # │ Values              │
-        ├───────┼─────────────────────┤
-        │ 1     │ Symbol  …  missing  │
-        │ 2     │ missing  …  missing │
-        │ 3     │ missing  …  missing │"""
-    else
-        ref = """
-        3×3 $DataFrame
-        │ Col # │ Name │ Eltype                          │ Missing │
-        ├───────┼──────┼─────────────────────────────────┼─────────┤
-        │ 1     │ A    │ $(Union{Missing,Symbol}) │ 1       │
-        │ 2     │ B    │ $(Union{Missing,String}) │ 1       │
-        │ 3     │ C    │ Any                             │ 1       │
-        
-        │ Col # │ Values              │
-        ├───────┼─────────────────────┤
-        │ 1     │ Symbol  …  missing  │
-        │ 2     │ missing  …  missing │
-        │ 3     │ missing  …  missing │"""
-    end
-    @test str == ref
 
     # Test computing width for Array{String} columns
     df = DataFrame(Any[["a"]], [:x])

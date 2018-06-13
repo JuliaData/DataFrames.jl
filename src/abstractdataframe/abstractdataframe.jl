@@ -390,7 +390,7 @@ describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissi
 * `io` : optional output descriptor
 * `stats::AbstractVector{Symbol}`: the summary statistics to report. Allowed 
   fields are `:mean`, `:std`, `:min`, `:q25`, `:median`, `:q75`, `:max`, `:eltype`, 
-  `:nunique`, `:first`, `:last`, and `:nmissing`
+  `:nunique`, `:first`, `:last`, `:nmissing`, and `:all`
 
 **Result**
 
@@ -398,16 +398,15 @@ describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissi
 
 **Details**
 
-* If the column's base type derives from `Real`, compute the mean, standard 
-  deviation, minimum, first quantile, median, third quantile, and maximum. 
-* If a column's type derives from `String`, these statistics are populated with `nothing`s.
-* If a column derives from neither `Real` nor `String`, `describe` will attempt to 
-  calculate all summary statistics and return `nothing` for summary statistics that 
-  are not defined for that type.
+For `Real` columns, compute the mean, standard eviation, minimum, first quantile, median, 
+third quantile, and maximum. If a column does not derive from `Real`, `describe` will 
+attempt to calculate all statistics, using `nothing` as a fall-back in the case of an error.
 
 When `stats` contains `:nunique`, `describe` will report the 
 number of unique values in a column. If a column's base type derives from `Real`,
-`:nunique` will return `nothing`s.
+`:nunique` will return `nothing`s. 
+
+When `stats` contains `:all`, `describe` will report all summary statistics.
 
 Missing values are filtered in the calculation of all statistics, however the column
 `:nmissing` will report the number of missing values of that variable. 
@@ -425,11 +424,10 @@ describe(df)
 """
 StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
 function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector{Symbol} = 
-                            [:mean, :min, :median, :max, :nunique, :nmissing, :eltype], 
-                            all = false)
+                            [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
     # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, 
-                      :max, :nunique, :nmissing, :first, :last, :eltype] 
+                      :max, :nunique, :nmissing, :first, :last, :eltype, :all] 
     if !issubset(stats, allowed_fields) 
         disallowed_fields = setdiff(stats, allowed_fields)
         not_allowed = "Field(s) not allowed: $disallowed_fields. "
@@ -438,7 +436,11 @@ function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector
     end
 
     # See if the user wants to show all summary statistics
-    all == true ? stats = allowed_fields : nothing
+    if contains(==, stats, :all) 
+        stats = [:mean, :std, :min, :q25, :median, :q75, 
+                 :max, :nunique, :nmissing, :first, :last, :eltype]
+    end
+
     
     # Put the summary stats into the return dataframe
     data = DataFrame()
@@ -458,56 +460,27 @@ end
 # use a dict because we dont know which measures the user wants
 # Outside of the `describe` function due to something with 0.7
 
-function get_stats(col::AbstractArray{<:Union{Real, Missing}})
-    nomissing = collect(skipmissing(col))
-    sumstats = summarystats(nomissing)
-    Dict(
-        :mean => sumstats.mean,
-        :std => Compat.std(nomissing, mean = sumstats.mean),
-        :min => sumstats.min,
-        :q25 => sumstats.q25,
-        :median => sumstats.median,
-        :q75 => sumstats.q75,
-        :max => sumstats.max,
-        :nmissing => count(ismissing, col),
-        :nunique => nothing,
-        :first => first(col),
-        :last => last(col),
-        :eltype => Missings.T(eltype(col))
-    )
-end
-
-function get_stats(col::AbstractArray{<:Real})
-    sumstats = summarystats(col)
-    Dict(
-        :mean => sumstats.mean,
-        :std => Compat.std(col, mean = sumstats.mean),
-        :min => sumstats.min,
-        :q25 => sumstats.q25,
-        :median => sumstats.median,
-        :q75 => sumstats.q75,
-        :max => sumstats.max,
-        :nmissing => nothing,
-        :nunique => nothing,
-        :first => first(col),
-        :last => last(col),
-        :eltype => eltype(col)
-    )
-end
-
 function get_stats(col::AbstractArray{>:Missing})
     nomissing = collect(skipmissing(col))
+    
     q = try quantile(nomissing, [.25, .5, .75]) catch [nothing, nothing, nothing] end
+    ex = try extrema(nomissing) catch (nothing, nothing) end
+    if typeof(nomissing) <: AbstractArray{<:Real}
+        u = nothing
+    else 
+        u = try length(unique(nomissing)) catch end 
+    end
+
     Dict(
         :mean => try mean(nomissing) catch end,
         :std => try Compat.std(nomissing) catch end,
-        :min => try minimum(nomissing) catch end,
+        :min => ex[1],
         :q25 => q[1],
         :median => q[2],
         :q75 => q[3],
-        :max => try maximum(nomissing) catch end,
+        :max => ex[2],
         :nmissing => count(ismissing, col),
-        :nunique => length(unique(col)),
+        :nunique => u,
         :first => first(col),
         :last => last(col),        
         :eltype => Missings.T(eltype(col))
@@ -516,16 +489,23 @@ end
 
 function get_stats(col)
     q = try quantile(col, [.25, .5, .75]) catch [nothing, nothing, nothing] end
+    ex = try extrema(col) catch (nothing, nothing) end
+    if typeof(col) <: AbstractArray{<:Real}
+        u = nothing
+    else 
+        u = try length(unique(col)) catch end
+    end
+
     Dict(
         :mean => try mean(col) catch end,
         :std => try Compat.std(col) catch end,
-        :min => try minimum(col) catch end,
+        :min => ex[1],
         :q25 => q[1],
         :median => q[2],
         :q75 => q[3],
-        :max => try maximum(col) catch end,
+        :max => ex[2],
         :nmissing => nothing,
-        :nunique => length(unique(col)),
+        :nunique => u,
         :first => first(col),
         :last => last(col),        
         :eltype => eltype(col)
