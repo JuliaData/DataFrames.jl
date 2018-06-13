@@ -435,7 +435,6 @@ function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector
         throw(ArgumentError(not_allowed * allowed)) 
     end
 
-    # See if the user wants to show all summary statistics
     if contains(==, stats, :all) 
         stats = [:mean, :std, :min, :q25, :median, :q75, 
                  :max, :nunique, :nmissing, :first, :last, :eltype]
@@ -465,7 +464,7 @@ function get_stats(col::AbstractArray{>:Missing})
     
     q = try quantile(nomissing, [.25, .5, .75]) catch [nothing, nothing, nothing] end
     ex = try extrema(nomissing) catch (nothing, nothing) end
-    if typeof(nomissing) <: AbstractArray{<:Real}
+    if eltype(nomissing) <: Real
         u = nothing
     else 
         u = try length(unique(nomissing)) catch end 
@@ -490,7 +489,7 @@ end
 function get_stats(col)
     q = try quantile(col, [.25, .5, .75]) catch [nothing, nothing, nothing] end
     ex = try extrema(col) catch (nothing, nothing) end
-    if typeof(col) <: AbstractArray{<:Real}
+    if eltype(col) <: Real
         u = nothing
     else 
         u = try length(unique(col)) catch end

@@ -372,7 +372,6 @@ module TestDataFrame
         @test describe_output[[:variable, :mean]] == describe(df, stats = [:mean])
 
         # Test that it works with all keyword arguments
-        # Use isqual because we have `missing`s in this dataframe
         @test describe_output_all_stats ≅ describe(df, stats = [:all])
     end 
 
