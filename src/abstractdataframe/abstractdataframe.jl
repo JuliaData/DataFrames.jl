@@ -422,8 +422,7 @@ describe(df)
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
-function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector{Symbol} = 
+function StatsBase.describe(df::AbstractDataFrame; stats::AbstractVector{Symbol} = 
                             [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
     # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, 
