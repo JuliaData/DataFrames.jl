@@ -340,10 +340,10 @@ module TestDataFrame
         describe_output = DataFrame(variable = [:number, :number_missing, :string, 
                                                 :string_missing, :dates, :catarray],
                                     mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                    min = [1.0, 1.0, nothing, nothing, Date(2000), nothing],
+                                    min = [1.0, 1.0, "a", "a", Date(2000), nothing],
                                     median = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                    max = [4.0, 3.0, nothing, nothing, Date(2004), nothing],
-                                    nunique = [nothing, nothing, 4, 4, 4, 2],
+                                    max = [4.0, 3.0, "d", "c", Date(2004), nothing],
+                                    nunique = [nothing, nothing, 4, 3, 4, 2],
                                     nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                     eltype = [Int, Int, String, String, Date, eltype(df[:catarray])])
         describe_output_all_stats = DataFrame(variable = [:number, :number_missing, 
@@ -352,12 +352,12 @@ module TestDataFrame
                                               mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               std = [Compat.std(df[:number]), 1.0, nothing, 
                                                      nothing, nothing, nothing],
-                                              min = [1.0, 1.0, nothing, nothing, Date(2000), nothing],
+                                              min = [1.0, 1.0, "a", "a", Date(2000), nothing],
                                               q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
                                               median = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
-                                              max = [4.0, 3.0, nothing, nothing, Date(2004), nothing],
-                                              nunique = [nothing, nothing, 4, 4, 4, 2],
+                                              max = [4.0, 3.0, "d", "c", Date(2004), nothing],
+                                              nunique = [nothing, nothing, 4, 3, 4, 2],
                                               nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                               first = [1, 1, "a", "a", Date(2000), 1],
                                               last = [4, missing, "d", missing, Date(2004), 2],
@@ -372,8 +372,7 @@ module TestDataFrame
         @test describe_output[[:variable, :mean]] == describe(df, stats = [:mean])
 
         # Test that it works with all keyword arguments
-        # Use isqual because we have `missing`s in this dataframe
-        @test isequal(describe_output_all_stats, describe(df, allstats = true))
+        @test describe_output_all_stats ≅ describe(df, stats = :all)
     end 
 
     #Check the output of unstack

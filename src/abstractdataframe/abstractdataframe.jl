@@ -381,16 +381,15 @@ Report descriptive statistics for a data frame
 
 ```julia
 describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :nunique, :eltype])
-describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :nunique, :eltype])
 ```
 
 **Arguments**
 
 * `df` : the AbstractDataFrame
-* `io` : optional output descriptor
-* `stats::AbstractVector{Symbol}`: the summary statistics to report. Allowed 
-  fields are `:mean`, `:std`, `:min`, `:q25`, `:median`, `:q75`, `:max`, `:eltype`, 
-  `:nunique`, `first', `last`, and `:nmissing`
+* `stats::Union{Symbol,AbstractVector{Symbol}}` : the summary statistics to report. If 
+  a vector, allowed fields are `:mean`, `:std`, `:min`, `:q25`, `:median`, 
+  `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and `:nmissing`. If set to
+  `:all`, all summary statistics are reported.
 
 **Result**
 
@@ -398,12 +397,9 @@ describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissi
 
 **Details**
 
-* If the column's base type derives from `Real`, compute the mean, standard 
-  deviation, minimum, first quantile, median, third quantile, and maximum. 
-* If a column's type derives from `String`, these statistics are populated with `nothing`s.
-* If a column derives from neither `Real` nor `String`, `describe` will attempt to 
-  calculate all summary statistics and return `nothing` for summary statistics that 
-  are not defined for that type.
+For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median, 
+third quantile, and maximum. If a column does not derive from `Real`, `describe` will 
+attempt to calculate all statistics, using `nothing` as a fall-back in the case of an error.
 
 When `stats` contains `:nunique`, `describe` will report the 
 number of unique values in a column. If a column's base type derives from `Real`,
@@ -413,32 +409,42 @@ Missing values are filtered in the calculation of all statistics, however the co
 `:nmissing` will report the number of missing values of that variable. 
 If the column does not allow missing values, `nothing` is returned. 
 Consequently, `nmissing = 0` indicates that the column allows
-missing values, but does not currently contain any. 
+missing values, but does not currently contain any.
 
 **Examples**
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 describe(df)
+describe(df, stats = :all)
+describe(df, stats = [:min, :max])
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame; kwargs...) = describe(stdout, df; kwargs...)
-function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector{Symbol} = 
-                            [:mean, :min, :median, :max, :nunique, :nmissing, :eltype], 
-                            allstats = false)
+function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractVector{Symbol}} = 
+                            [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
     # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, 
-                      :max, :nunique, :nmissing, :first, :last, :eltype] 
-    if !issubset(stats, allowed_fields) 
-        disallowed_fields = setdiff(stats, allowed_fields)
-        not_allowed = "Field(s) not allowed: $disallowed_fields. "
-        allowed = "Allowed fields are: $allowed_fields."
-        throw(ArgumentError(not_allowed * allowed)) 
+                      :max, :nunique, :nmissing, :first, :last, :eltype]
+    allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
+    if stats == :all
+        stats = allowed_fields 
     end
 
-    # See if the user wants to show all summary statistics
-    allstats == true ? stats = allowed_fields : nothing
+    if typeof(stats) == Symbol 
+        if !(stats in allowed_fields)
+            throw(ArgumentError(":$stats not allowed." * allowed_msg))
+        else 
+            stats = [stats]
+        end
+    end
+
+    if !issubset(stats, allowed_fields)
+        disallowed_fields = setdiff(stats, allowed_fields)
+        not_allowed = "Field(s) not allowed: :" * join(disallowed_fields, ", :") * "."
+        throw(ArgumentError(not_allowed * allowed_msg)) 
+    end
+
     
     # Put the summary stats into the return dataframe
     data = DataFrame()
@@ -454,96 +460,32 @@ function StatsBase.describe(io::IO, df::AbstractDataFrame; stats::AbstractVector
     return data
 end
 
-# Define 6 functions for getting summary statistics 
+# Define functions for getting summary statistics 
 # use a dict because we dont know which measures the user wants
 # Outside of the `describe` function due to something with 0.7
 
-# We have functions for Real, String, and Any, each with and without missing
-# values
-function get_stats(col::AbstractArray{<:Union{Real, Missing}})
-    nomissing = collect(skipmissing(col))
-    sumstats = summarystats(nomissing)
-    Dict(
-        :mean => sumstats.mean,
-        :std => Compat.std(nomissing, mean = sumstats.mean),
-        :min => sumstats.min,
-        :q25 => sumstats.q25,
-        :median => sumstats.median,
-        :q75 => sumstats.q75,
-        :max => sumstats.max,
-        :nmissing => count(ismissing, col),
-        :nunique => nothing,
-        :first => first(col),
-        :last => last(col),
-        :eltype => Missings.T(eltype(col))
-    )
-end
-
-function get_stats(col::AbstractArray{<:Real})
-    sumstats = summarystats(col)
-    Dict(
-        :mean => sumstats.mean,
-        :std => Compat.std(col, mean = sumstats.mean),
-        :min => sumstats.min,
-        :q25 => sumstats.q25,
-        :median => sumstats.median,
-        :q75 => sumstats.q75,
-        :max => sumstats.max,
-        :nmissing => nothing,
-        :nunique => nothing,
-        :first => first(col),
-        :last => last(col),
-        :eltype => eltype(col)
-    )
-end
-
-function get_stats(col::AbstractArray{Union{String,Missing}})
-    Dict(
-        :mean => nothing,
-        :std => nothing,
-        :min => nothing,
-        :q25 => nothing,
-        :median => nothing,
-        :q75 => nothing,
-        :max => nothing,
-        :nmissing => count(ismissing, col),
-        :nunique => length(unique(col)),
-        :first => first(col),
-        :last => last(col),        
-        :eltype => Missings.T(eltype(col))
-    )    
-end 
-
-function get_stats(col::AbstractArray{String})
-    Dict(
-        :mean => nothing,
-        :std => nothing,
-        :min => nothing,
-        :q25 => nothing,
-        :median => nothing,
-        :q75 => nothing,
-        :max => nothing,
-        :nmissing => nothing,
-        :nunique => length(unique(col)),
-        :first => first(col),
-        :last => last(col),        
-        :eltype => eltype(col)
-    )   
-end
-
 function get_stats(col::AbstractArray{>:Missing})
     nomissing = collect(skipmissing(col))
+    
     q = try quantile(nomissing, [.25, .5, .75]) catch [nothing, nothing, nothing] end
+    ex = try extrema(nomissing) catch (nothing, nothing) end
+    m = try mean(nomissing) catch end
+    if eltype(nomissing) <: Real
+        u = nothing
+    else 
+        u = try length(unique(nomissing)) catch end 
+    end
+
     Dict(
-        :mean => try mean(nomissing) catch end,
-        :std => try Compat.std(nomissing) catch end,
-        :min => try minimum(nomissing) catch end,
+        :mean => m,
+        :std => try Compat.std(nomissing, mean = m) catch end,
+        :min => ex[1],
         :q25 => q[1],
         :median => q[2],
         :q75 => q[3],
-        :max => try maximum(nomissing) catch end,
+        :max => ex[2],
         :nmissing => count(ismissing, col),
-        :nunique => length(unique(col)),
+        :nunique => u,
         :first => first(col),
         :last => last(col),        
         :eltype => Missings.T(eltype(col))
@@ -552,16 +494,24 @@ end
 
 function get_stats(col)
     q = try quantile(col, [.25, .5, .75]) catch [nothing, nothing, nothing] end
+    ex = try extrema(col) catch (nothing, nothing) end
+    m = try mean(col) catch end
+    if eltype(col) <: Real
+        u = nothing
+    else 
+        u = try length(unique(col)) catch end
+    end
+
     Dict(
-        :mean => try mean(col) catch end,
-        :std => try Compat.std(col) catch end,
-        :min => try minimum(col) catch end,
+        :mean => m,
+        :std => try Compat.std(col, mean = m) catch end,
+        :min => ex[1],
         :q25 => q[1],
         :median => q[2],
         :q75 => q[3],
-        :max => try maximum(col) catch end,
+        :max => ex[2],
         :nmissing => nothing,
-        :nunique => length(unique(col)),
+        :nunique => u,
         :first => first(col),
         :last => last(col),        
         :eltype => eltype(col)
