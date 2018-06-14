@@ -386,10 +386,10 @@ describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, 
 **Arguments**
 
 * `df` : the AbstractDataFrame
-* `stats::Union{Symbol,AbstractVector{Symbol}`: the summary statistics to report. If 
-  `stats` is a vector, allowed fields are `:mean`, `:std`, `:min`, `:q25`, `:median`, 
-  `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and `:nmissing`. `stats` may also
-  be equal to the `Symbol` `:all`.
+* `stats::Union{Symbol,AbstractVector{Symbol}}` : the summary statistics to report. If 
+  a vector, allowed fields are `:mean`, `:std`, `:min`, `:q25`, `:median`, 
+  `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and `:nmissing`. If set to
+  `:all`, all summary statistics are reported.
 
 **Result**
 
@@ -405,8 +405,6 @@ When `stats` contains `:nunique`, `describe` will report the
 number of unique values in a column. If a column's base type derives from `Real`,
 `:nunique` will return `nothing`s. 
 
-When `stats` equals `:all`, `describe` will report all summary statistics.
-
 Missing values are filtered in the calculation of all statistics, however the column
 `:nmissing` will report the number of missing values of that variable. 
 If the column does not allow missing values, `nothing` is returned. 
@@ -418,6 +416,8 @@ missing values, but does not currently contain any.
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 describe(df)
+describe(df, stats = :all)
+describe(df, stats = [:min, :max])
 ```
 
 """
