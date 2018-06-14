@@ -425,23 +425,26 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
                             [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
     # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, 
-                      :max, :nunique, :nmissing, :first, :last, :eltype] 
-    
-    if typeof(stats) == Symbol && stats != :all 
-        not_allowed = "Field(s) not allowed: $stats. "
-        allowed = "Allowed fields are: $allowed_fields, or `stats = :all`"
-        throw(ArgumentError(not_allowed * allowed)) 
-    elseif typeof(stats) <: AbstractVector && !issubset(stats, allowed_fields)
-        disallowed_fields = setdiff(stats, allowed_fields)
-        not_allowed = "Field(s) not allowed: $disallowed_fields. "
-        allowed = "Allowed fields are: $allowed_fields, or `stats = :all`"
-        throw(ArgumentError(not_allowed * allowed)) 
+                      :max, :nunique, :nmissing, :first, :last, :eltype]
+    allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
+    if stats == :all
+        stats = allowed_fields 
     end
 
-    if stats == :all
-        stats = [:mean, :std, :min, :q25, :median, :q75, 
-                 :max, :nunique, :nmissing, :first, :last, :eltype]
+    if typeof(stats) == Symbol 
+        if !(stats in allowed_fields)
+            throw(ArgumentError(":$stats not allowed." * allowed_msg))
+        else 
+            stats = [stats]
+        end
     end
+
+    if !issubset(stats, allowed_fields)
+        disallowed_fields = setdiff(stats, allowed_fields)
+        not_allowed = "Field(s) not allowed: :" * join(disallowed_fields, ", :") * "."
+        throw(ArgumentError(not_allowed * allowed_msg)) 
+    end
+
     
     # Put the summary stats into the return dataframe
     data = DataFrame()
