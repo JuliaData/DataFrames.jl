@@ -381,16 +381,15 @@ Report descriptive statistics for a data frame
 
 ```julia
 describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :nunique, :eltype])
-describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :nunique, :eltype])
 ```
 
 **Arguments**
 
 * `df` : the AbstractDataFrame
-* `io` : optional output descriptor
-* `stats::AbstractVector{Symbol}`: the summary statistics to report. Allowed 
-  fields are `:mean`, `:std`, `:min`, `:q25`, `:median`, `:q75`, `:max`, `:eltype`, 
-  `:nunique`, `:first`, `:last`, `:nmissing`, and `:all`
+* `stats::Union{Symbol,AbstractVector{Symbol}`: the summary statistics to report. If 
+  `stats` is a vector, allowed fields are `:mean`, `:std`, `:min`, `:q25`, `:median`, 
+  `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and `:nmissing`. `stats` may also
+  be equal to the `Symbol` `:all`.
 
 **Result**
 
@@ -398,7 +397,7 @@ describe(io, df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissi
 
 **Details**
 
-For `Real` columns, compute the mean, standard eviation, minimum, first quantile, median, 
+For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median, 
 third quantile, and maximum. If a column does not derive from `Real`, `describe` will 
 attempt to calculate all statistics, using `nothing` as a fall-back in the case of an error.
 
@@ -422,7 +421,7 @@ describe(df)
 ```
 
 """
-function StatsBase.describe(df::AbstractDataFrame; stats = 
+function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractVector{Symbol}} = 
                             [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
     # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, 
