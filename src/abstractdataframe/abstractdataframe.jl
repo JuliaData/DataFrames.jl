@@ -406,7 +406,7 @@ When `stats` contains `:nunique`, `describe` will report the
 number of unique values in a column. If a column's base type derives from `Real`,
 `:nunique` will return `nothing`s. 
 
-When `stats` contains `:all`, `describe` will report all summary statistics.
+When `stats` equals `:all`, `describe` will report all summary statistics.
 
 Missing values are filtered in the calculation of all statistics, however the column
 `:nmissing` will report the number of missing values of that variable. 
@@ -422,23 +422,27 @@ describe(df)
 ```
 
 """
-function StatsBase.describe(df::AbstractDataFrame; stats::AbstractVector{Symbol} = 
+function StatsBase.describe(df::AbstractDataFrame; stats = 
                             [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
     # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, 
-                      :max, :nunique, :nmissing, :first, :last, :eltype, :all] 
-    if !issubset(stats, allowed_fields) 
+                      :max, :nunique, :nmissing, :first, :last, :eltype] 
+    
+    if typeof(stats) == Symbol && stats != :all 
+        not_allowed = "Field(s) not allowed: $stats. "
+        allowed = "Allowed fields are: $allowed_fields, or `stats = :all`"
+        throw(ArgumentError(not_allowed * allowed)) 
+    elseif typeof(stats) <: AbstractVector && !issubset(stats, allowed_fields)
         disallowed_fields = setdiff(stats, allowed_fields)
         not_allowed = "Field(s) not allowed: $disallowed_fields. "
-        allowed = "Allowed fields are: $allowed_fields."
+        allowed = "Allowed fields are: $allowed_fields, or `stats = :all`"
         throw(ArgumentError(not_allowed * allowed)) 
     end
 
-    if contains(==, stats, :all) 
+    if stats == :all
         stats = [:mean, :std, :min, :q25, :median, :q75, 
                  :max, :nunique, :nmissing, :first, :last, :eltype]
     end
-
     
     # Put the summary stats into the return dataframe
     data = DataFrame()
@@ -463,6 +467,7 @@ function get_stats(col::AbstractArray{>:Missing})
     
     q = try quantile(nomissing, [.25, .5, .75]) catch [nothing, nothing, nothing] end
     ex = try extrema(nomissing) catch (nothing, nothing) end
+    m = try mean(nomissing) catch end
     if eltype(nomissing) <: Real
         u = nothing
     else 
@@ -470,8 +475,8 @@ function get_stats(col::AbstractArray{>:Missing})
     end
 
     Dict(
-        :mean => try mean(nomissing) catch end,
-        :std => try Compat.std(nomissing) catch end,
+        :mean => m,
+        :std => try Compat.std(nomissing, mean = m) catch end,
         :min => ex[1],
         :q25 => q[1],
         :median => q[2],
@@ -488,6 +493,7 @@ end
 function get_stats(col)
     q = try quantile(col, [.25, .5, .75]) catch [nothing, nothing, nothing] end
     ex = try extrema(col) catch (nothing, nothing) end
+    m = try mean(col) catch end
     if eltype(col) <: Real
         u = nothing
     else 
@@ -495,8 +501,8 @@ function get_stats(col)
     end
 
     Dict(
-        :mean => try mean(col) catch end,
-        :std => try Compat.std(col) catch end,
+        :mean => m,
+        :std => try Compat.std(col, mean = m) catch end,
         :min => ex[1],
         :q25 => q[1],
         :median => q[2],
