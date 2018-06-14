@@ -403,13 +403,13 @@ attempt to calculate all statistics, using `nothing` as a fall-back in the case 
 
 When `stats` contains `:nunique`, `describe` will report the 
 number of unique values in a column. If a column's base type derives from `Real`,
-`:nunique` will return `nothing`s. 
+`:nunique` will return `nothing`s.
 
 Missing values are filtered in the calculation of all statistics, however the column
 `:nmissing` will report the number of missing values of that variable. 
 If the column does not allow missing values, `nothing` is returned. 
 Consequently, `nmissing = 0` indicates that the column allows
-missing values, but does not currently contain any. 
+missing values, but does not currently contain any.
 
 **Examples**
 
