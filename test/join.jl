@@ -578,7 +578,6 @@ module TestJoin
         @test eltypes(join(l, r, on=:b, kind=:outer, makeunique=true)) ==
             [Union{Int, Missing}, CS, Union{Int, Missing}]
     end
-
     @testset "indicator columns" begin
         outer_indicator = DataFrame(ID = [1, 2, 2, 3, 4],
                                     Name = ["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", missing],
@@ -602,5 +601,63 @@ module TestJoin
 
         @test join(name2, job2, on = :ID, kind = :outer, indicator=:_left,
                    makeunique=true) ≅ outer_indicator
+    end
+    @testset "test checks of merge key uniqueness" begin
+        @test_throws ArgumentError join(name, job, on=:ID, validate=(false, true))
+        @test_throws ArgumentError join(name, job, on=:ID, validate=(true, true))
+        @test_throws ArgumentError join(job, name, on=:ID, validate=(true, false))
+        @test_throws ArgumentError join(job, name, on=:ID, validate=(true, true))
+        @test_throws ArgumentError join(job, job, on=:ID, validate=(true, true))
+
+        @test join(name, job, on=:ID, validate=(true, false)) ==  inner
+        @test join(name, job, on=:ID, kind=:inner, validate=(false, false)) == inner
+
+        # Make sure ok with various special values
+        for special in [missing, NaN, 0.0, -0.0]
+            name_w_special = DataFrame(ID = [1, 2, 3, special],
+                                       Name = ["John Doe", "Jane Doe", "Joe Blogs", "Maria Tester"])
+            @test join(name_w_special, job, on=:ID, validate=(true, false)) ==  inner
+
+            # Make sure duplicated special values still an exception
+            name_w_special_dups = DataFrame(ID = [1, 2, 3, special, special],
+                                            Name = ["John Doe", "Jane Doe", "Joe Blogs",
+                                                    "Maria Tester", "Jill Jillerson"])
+            @test_throws ArgumentError join(name_w_special_dups, name, on=:ID,
+                                            validate=(true, false))
+        end
+
+        # Check 0.0 and -0.0 seen as different
+        name_w_zeros = DataFrame(ID = [1, 2, 3, 0.0, -0.0],
+                                 Name = ["John Doe", "Jane Doe",
+                                         "Joe Blogs", "Maria Tester",
+                                         "Jill Jillerson"])
+        name_w_zeros2 = DataFrame(ID = [1, 2, 3, 0.0, -0.0],
+                                  Name = ["John Doe", "Jane Doe",
+                                          "Joe Blogs", "Maria Tester",
+                                          "Jill Jillerson"],
+                                  Name_1 = ["John Doe", "Jane Doe",
+                                            "Joe Blogs", "Maria Tester",
+                                            "Jill Jillerson"])
+
+        @test join(name_w_zeros, name_w_zeros, on=:ID, validate=(true, true)) ≅ name_w_zeros2
+
+        # Check for multiple-column merge keys
+        name_multi = DataFrame(ID1 = [1, 1, 2],
+                               ID2 = ["a", "b", "a"],
+                               Name = ["John Doe", "Jane Doe", "Joe Blogs"])
+        job_multi = DataFrame(ID1 = [1, 2, 2, 4],
+                              ID2 = ["a", "b", "b", "c"],
+                              Job = ["Lawyer", "Doctor", "Florist", "Farmer"])
+        outer_multi = DataFrame(ID1 = [1, 1, 2, 2, 2, 4],
+                                ID2 = ["a", "b", "a", "b", "b", "c"],
+                                Name = ["John Doe", "Jane Doe", "Joe Blogs",
+                                        missing, missing, missing],
+                                Job = ["Lawyer", missing, missing,
+                                       "Doctor", "Florist",  "Farmer"])
+
+         @test join(name_multi, job_multi, on=[:ID1, :ID2], kind=:outer,
+                    validate=(true, false)) ≅ outer_multi
+         @test_throws ArgumentError join(name_multi, job_multi, on=[:ID1, :ID2], kind=:outer,
+                                         validate=(false, true))
     end
 end
