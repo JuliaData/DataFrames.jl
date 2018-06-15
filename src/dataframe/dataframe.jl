@@ -764,9 +764,11 @@ merge!(df, df2)  # column z is added, column id is overwritten
 ```
 """
 function Base.merge!(df::DataFrame, others::AbstractDataFrame...)
-    # this wiil have to become more complicated with the addition of
-    # metadata
     for other in others
+        notinother = setdiff(names(other), names(df))
+        notinother_cols = index(other)[notinother]
+        othermeta = metadata(other)[notinother_cols]
+        append!(metadata(df), othermeta)
         for n in _names(other)
             df[n] = other[n]
         end
@@ -1126,6 +1128,12 @@ end
 ## Set and Get MetaData 
 ##
 ##############################################################################
+
+"""
+    addlabel!(df::DataFrame, var::Symbol, label::String)
+
+Adds a label to a DataFrame. Does not add other metadata.
+"""
 function addlabel!(df::DataFrame, var::Symbol, label::String)
     ind = index(df)[var]
     # pass the number of columns to the function so that it can create a new array of 
@@ -1134,6 +1142,11 @@ function addlabel!(df::DataFrame, var::Symbol, label::String)
     addmeta!(df.metadata, ind, ncol(df), :label, label)
 end
 
+"""
+    showlabel(df::DataFrame, var::Symbol)
+
+Prints the label (not other metadata) for a single variable of a dataframe. 
+"""
 function showlabel(df::DataFrame, var::Symbol)
     ind = index(df)[var]
     println("Variable label for $(var):")
@@ -1141,16 +1154,16 @@ function showlabel(df::DataFrame, var::Symbol)
     println("\t" * label)
 end
 
+"""
+    showlabels(df::DataFrame)
+
+Prints all the labels for all variables in a dataframe. 
+
+Does not print other metadata, functionality will be added soon.
+"""
 function showlabels(df::DataFrame)
     for name in names(df)
         showlabel(df, name)
-    end
-end
-
-# Just used to add metadata easily for testing. 
-function addlabels!(df::DataFrame)
-    for name in names(df)
-        addlabel!(df, name, "Variable label for variable $name")
     end
 end
 

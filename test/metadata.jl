@@ -8,6 +8,14 @@ io = IOBuffer()
 df1 = DataFrame(a = [1, 2], b = [3, 4])
 df2 = DataFrame(c = [3, 4], d = [5, 6])
 
+# Just used to add metadata easily for testing. 
+function addlabels!(df::DataFrame)
+    for name in names(df)
+        addlabel!(df, name, "Variable label for variable $name")
+    end
+end
+
+
 addlabels!(df1)
 addlabels!(df2)
 
@@ -17,7 +25,6 @@ str = @capture_out showlabels(df1)
 \tVariable label for variable a
 Variable label for b:
 \tVariable label for variable b\n"
-println("Everything is working!")
 
 merge!(df1, df2)
 str = @capture_out showlabels(df1)
@@ -27,9 +34,9 @@ str = @capture_out showlabels(df1)
 Variable label for b:
 \tVariable label for variable b
 Variable label for c:
-\t
+\tVariable label for variable c
 Variable label for d:
-\t"
+\tVariable label for variable d\n" 
 
 
 

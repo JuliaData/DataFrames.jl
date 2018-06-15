@@ -70,7 +70,6 @@ export AbstractDataFrame,
        permutecols!,
 
        addlabel!,
-       addlabels!,
        showlabel,
        showlabels,
 

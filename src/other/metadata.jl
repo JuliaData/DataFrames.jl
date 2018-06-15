@@ -78,7 +78,7 @@ function Base.insert!(x::MetaData, col_ind::Int)
 	end
 end
 
-function Base.vcat(leftmeta::MetaData, rightmeta::MetaData)
+function Base.append!(leftmeta::MetaData, rightmeta::MetaData)
 	notonleft = setdiff(keys(leftmeta.columndata), keys(rightmeta.columndata))
 	notonright = setdiff(keys(rightmeta.columndata), keys(leftmeta.columndata))
 
@@ -90,13 +90,17 @@ function Base.vcat(leftmeta::MetaData, rightmeta::MetaData)
 		newfield!(rightmeta, x)
 	end
 
-	# now they should have the same fields 
-	new_metadata = MetaData
-	for key in keys(leftmeta)
-		new_metadata.columndata[key] = 
+	for key in keys(leftmeta.columndata)
+		leftmeta.columndata[key] = 
 			vcat(leftmeta.columndata[key], rightmeta.columndata[key])
 	end
 end
+
+function append(leftmeta::MetaData, rightmeta::MetaData)
+	newmeta = copy(leftmeta)
+	vcat!(newmeta, rightmeta)
+end
+
 
 # deleting columns is handled by get_index? 
 
