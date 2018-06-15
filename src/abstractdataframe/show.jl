@@ -54,7 +54,7 @@ end
 #'
 #' ourshowcompact(stdout, "abc")
 #' ourshowcompact(stdout, 10000)
-ourshowcompact(io::IO, x::Any) = showcompact(io, x) # -> Void
+ourshowcompact(io::IO, x::Any) = show(IOContext(io, :compact=>true), x) # -> Void
 ourshowcompact(io::IO, x::AbstractString) = escape_string(io, x, "") # -> Void
 ourshowcompact(io::IO, x::Symbol) = ourshowcompact(io, string(x)) # -> Void
 
