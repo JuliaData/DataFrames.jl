@@ -1299,3 +1299,5 @@ end
 import Base: vcat
 @deprecate vcat(x::Vector{<:AbstractDataFrame}) vcat(x...)
 
+@deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, stats = [:eltype, :nmissing, :first, :last])
+@deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, stats = [:eltype, :nmissing, :first, :last]), all)
