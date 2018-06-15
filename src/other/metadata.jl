@@ -65,29 +65,36 @@ function addcolumn!(x::MetaData)
 	end
 end
 
-function insert!(x::MetaData, col_ind::Int)
+# For creating a new column
+function addcolumn!(x::MetaData)
+	for key in keys(x.columndata)
+		push!(x.columndata[key], "")
+	end
+end
+
+function Base.insert!(x::MetaData, col_ind::Int)
 	for key in keys(x.columndata)
 		insert!(x.columndata[key], col_ind, "")
 	end
 end
 
-function Base.vcat(left::Metadata, right::MetaData)
-	notonleft = setdiff(keys(left.columndata), keys(right.columndata))
-	notonright = setdiff(keys(right.columndata), keys(left.columndata))
+function Base.vcat(leftmeta::MetaData, rightmeta::MetaData)
+	notonleft = setdiff(keys(leftmeta.columndata), keys(rightmeta.columndata))
+	notonright = setdiff(keys(rightmeta.columndata), keys(leftmeta.columndata))
 
 	for x in notonleft
-		newfield!(left, x)
+		newfield!(leftmeta, x)
 	end
 
 	for x in notonright
-		newfield!(right, x)
+		newfield!(rightmeta, x)
 	end
 
 	# now they should have the same fields 
 	new_metadata = MetaData
-	for key in keys(left)
+	for key in keys(leftmeta)
 		new_metadata.columndata[key] = 
-			vcat(left.columndata[key], right.columndata.[key])
+			vcat(leftmeta.columndata[key], rightmeta.columndata[key])
 	end
 end
 

@@ -356,6 +356,7 @@ function insert_single_column!(df::DataFrame,
             push!(index(df), col_ind)
             push!(columns(df), dv)
             addcolumn!(metadata(df)) # adds an empty string to all vectors of metadata
+            # todo: change this to push!() and be able consistency to fields
         else
             if ncol(df) + 1 == Int(col_ind)
                 push!(index(df), nextcolname(df))
@@ -1143,6 +1144,13 @@ end
 function showlabels(df::DataFrame)
     for name in names(df)
         showlabel(df, name)
+    end
+end
+
+# Just used to add metadata easily for testing. 
+function addlabels!(df::DataFrame)
+    for name in names(df)
+        addlabel!(df, name, "Variable label for variable $name")
     end
 end
 
