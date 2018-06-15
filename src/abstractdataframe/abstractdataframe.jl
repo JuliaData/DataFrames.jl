@@ -426,13 +426,13 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
     # Check that people don't specify the wrong fields. 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75, 
                       :max, :nunique, :nmissing, :first, :last, :eltype]
-    allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
     if stats == :all
         stats = allowed_fields 
     end
 
-    if typeof(stats) == Symbol 
+    if stats isa Symbol
         if !(stats in allowed_fields)
+            allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
             throw(ArgumentError(":$stats not allowed." * allowed_msg))
         else 
             stats = [stats]
@@ -441,6 +441,7 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
 
     if !issubset(stats, allowed_fields)
         disallowed_fields = setdiff(stats, allowed_fields)
+        allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
         not_allowed = "Field(s) not allowed: :" * join(disallowed_fields, ", :") * "."
         throw(ArgumentError(not_allowed * allowed_msg)) 
     end
