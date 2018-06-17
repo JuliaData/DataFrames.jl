@@ -130,7 +130,7 @@ julia> DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
 
 ### Constructing Column by Column
-It is also possible to construct a `DataFrame` one column at a time.
+It is possible to construct a `DataFrame` one column at a time.
 
 ```jldoctest dataframe
 julia> df = DataFrame()
@@ -182,9 +182,9 @@ true
 ```
 
 ### Constructing Row by Row
-It is possible to construct a `DataFrame` row by row.
+It is also possible to construct a `DataFrame` row by row.
 
-First an dataframe with empty columns is constructed:
+First a `DataFrame` with empty columns is constructed:
 
 ```jldoctest dataframe
 julia> df = DataFrame(A = Int[], B = String[])
@@ -201,7 +201,7 @@ julia> push!(df, [1, "M"])
 │ 1   │ 1 │ M │
 ```
 
-Rows can also be added as `AbstractDict`s; where the dictionary keys match the column names.
+Rows can also be added as `Dict`s (or similar); where the dictionary keys match the column names.
 
 ```jldoctest dataframe
 julia> push!(df, Dict(:B => "F", :A => 2))
