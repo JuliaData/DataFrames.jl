@@ -452,7 +452,14 @@ module TestDataFrame
     df = DataFrame(A = 1:10, B = 'A':'J')
     @test !(df[:,:] === df)
 
-    @test append!(DataFrame(A = 1:2, B = 1:2), DataFrame(A = 3:4, B = 3:4)) == DataFrame(A=1:4, B = 1:4)
+    df = DataFrame(A = 1:2, B = 1:2)
+    df2 = DataFrame(A=1:4, B = 1:4)
+    @test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
+    @test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
+    @test df == df2
+    @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
+    @test df == df2
+
     df = DataFrame(A = Vector{Union{Int, Missing}}(1:3), B = Vector{Union{Int, Missing}}(4:6))
     DRT = CategoricalArrays.DefaultRefType
     @test all(c -> isa(c, Vector{Union{Int, Missing}}), columns(categorical!(deepcopy(df))))
