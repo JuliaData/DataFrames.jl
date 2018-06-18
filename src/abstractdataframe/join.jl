@@ -247,6 +247,11 @@ Join two `DataFrame` objects
   if `true`, duplicate names will be suffixed with `_i`
   (`i` starting at 1 for the first duplicate).
 
+* `indicator` : Default: `nothing`. If a `Symbol`, adds categorical indicator
+   column named `Symbol` for whether a row appeared in only `df1` (`"left_only"`),
+   only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
+   the column name will be modified if `makeunique=true`.
+
 For the three join operations that may introduce missing values (`:outer`, `:left`,
 and `:right`), all columns of the returned data table will support missing values.
 
@@ -280,7 +285,21 @@ join(name, job2, on = :ID => :identifier)
 function Base.join(df1::AbstractDataFrame,
                    df2::AbstractDataFrame;
                    on::Union{<:OnType, AbstractVector{<:OnType}} = Symbol[],
-                   kind::Symbol = :inner, makeunique::Bool=false)
+                   kind::Symbol = :inner, makeunique::Bool=false,
+                   indicator::Union{Nothing, Symbol} = nothing)
+    if indicator !== nothing
+        indicator_cols = ["_left", "_right"]
+        for i in 1:2
+            while (haskey(index(df1), Symbol(indicator_cols[i])) ||
+                   haskey(index(df2), Symbol(indicator_cols[i])) ||
+                   Symbol(indicator_cols[i]) == indicator)
+                 indicator_cols[i] *= 'X'
+            end
+         end
+        df1[Symbol(indicator_cols[1])] = trues(nrow(df1))
+        df2[Symbol(indicator_cols[2])] = trues(nrow(df2))
+    end
+
     if kind == :cross
         (on == Symbol[]) || throw(ArgumentError("Cross joins don't use argument 'on'."))
         return crossjoin(df1, df2, makeunique=makeunique)
@@ -291,25 +310,25 @@ function Base.join(df1::AbstractDataFrame,
     joiner = DataFrameJoiner(df1, df2, on)
 
     if kind == :inner
-        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
-                                                            group_rows(joiner.dfr_on),
-                                                            true, false, true, false)...,
-                                                            makeunique=makeunique)
+        joined = compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+                                                                     group_rows(joiner.dfr_on),
+                                                                     true, false, true, false)...,
+                                      makeunique=makeunique)
     elseif kind == :left
-        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+        joined = compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                                             group_rows(joiner.dfr_on),
                                                             true, true, true, false)...,
-                                                            makeunique=makeunique)
+                                      makeunique=makeunique)
     elseif kind == :right
-        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfr_on, joiner.dfl_on,
+        joined = compose_joined_table(joiner, kind, update_row_maps!(joiner.dfr_on, joiner.dfl_on,
                                                             group_rows(joiner.dfl_on),
                                                             true, true, true, false)[[3, 4, 1, 2]]...,
-                                                            makeunique=makeunique)
+                                      makeunique=makeunique)
     elseif kind == :outer
-        compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
+        joined = compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
                                                             group_rows(joiner.dfr_on),
                                                             true, true, true, true)...,
-                                                            makeunique=makeunique)
+                                      makeunique=makeunique)
     elseif kind == :semi
         # hash the right rows
         dfr_on_grp = group_rows(joiner.dfr_on)
@@ -323,7 +342,7 @@ function Base.join(df1::AbstractDataFrame,
                 push!(left_ixs, l_ix)
             end
         end
-        return joiner.dfl[left_ixs, :]
+        joined = joiner.dfl[left_ixs, :]
     elseif kind == :anti
         # hash the right rows
         dfr_on_grp = group_rows(joiner.dfr_on)
@@ -337,10 +356,24 @@ function Base.join(df1::AbstractDataFrame,
                 push!(leftonly_ixs, l_ix)
             end
         end
-        return joiner.dfl[leftonly_ixs, :]
+        joined = joiner.dfl[leftonly_ixs, :]
     else
         throw(ArgumentError("Unknown kind of join requested: $kind"))
     end
+
+    if indicator !== nothing
+        left = joined[Symbol(indicator_cols[1])]
+        right = joined[Symbol(indicator_cols[2])]
+
+        refs = UInt8[coalesce(l, false) + 2 * coalesce(r, false) for (l, r) in zip(left, right)]
+        indicatorcol = CategoricalArray{String,1}(refs, CategoricalPool{String,UInt8}(["left_only", "right_only", "both"]))
+        joined = hcat(joined, DataFrame(indicator => indicatorcol), makeunique=makeunique)
+
+        delete!(joined, Symbol(indicator_cols[1]))
+        delete!(joined, Symbol(indicator_cols[2]))
+    end
+
+    return joined
 end
 
 function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=false)
