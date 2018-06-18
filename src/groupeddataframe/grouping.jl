@@ -77,8 +77,8 @@ combine(map(d -> mean(skipmissing(d[:c])), gd))
 ```
 
 """
-function groupby(df::AbstractDataFrame, cols::Vector{T};
-                 sort::Bool = false, skipmissing::Bool = false) where T
+function groupby(df::AbstractDataFrame, cols::Vector;
+                 sort::Bool = false, skipmissing::Bool = false)
     sdf = df[cols]
     df_groups = group_rows(sdf, skipmissing)
     # sort the groups
@@ -345,7 +345,7 @@ end
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 aggregate(gd::GroupedDataFrame, f::Function; sort::Bool=false) = aggregate(gd, [f], sort=sort)
 function aggregate(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Function
-    headers = _makeheaders(fs, setdiff(_names(gd), gd.cols))
+    headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent[gd.cols])))
     res = combine(map(x -> _aggregate(without(x, gd.cols), fs, headers), gd))
     sort && sort!(res, headers)
     res
