@@ -585,7 +585,7 @@ module TestJoin
                                     Job = ["Lawyer", "Doctor", "Florist", missing, "Farmer"],
                                     _merge = ["both", "both", "both", "left_only", "right_only"])
 
-        # Checks to makes sure bug found in #1434 which modified input args resolved.
+        # Check that input data frame isn't modified (#1434)
         pre_join_name = copy(name)
         pre_join_job = copy(job)
         @test join(name, job, on = :ID, kind = :outer, indicator=:_merge,
