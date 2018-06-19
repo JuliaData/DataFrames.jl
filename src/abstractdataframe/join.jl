@@ -296,8 +296,8 @@ function Base.join(df1::AbstractDataFrame,
                  indicator_cols[i] *= 'X'
             end
          end
-        df1[Symbol(indicator_cols[1])] = trues(nrow(df1))
-        df2[Symbol(indicator_cols[2])] = trues(nrow(df2))
+         df1 = hcat(df1, DataFrame(Dict(indicator_cols[1] => trues(nrow(df1)))))
+         df2 = hcat(df2, DataFrame(Dict(indicator_cols[2] => trues(nrow(df2)))))
     end
 
     if kind == :cross

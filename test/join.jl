@@ -584,8 +584,14 @@ module TestJoin
                                     Name = ["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", missing],
                                     Job = ["Lawyer", "Doctor", "Florist", missing, "Farmer"],
                                     _merge = ["both", "both", "both", "left_only", "right_only"])
+
+        # Checks to makes sure bug found in #1434 which modified input args resolved.
+        pre_join_name = copy(name)
+        pre_join_job = copy(job)
         @test join(name, job, on = :ID, kind = :outer, indicator=:_merge,
                    makeunique=true) ≅ outer_indicator
+        @test name ≅ pre_join_name
+        @test job ≅ pre_join_job
 
         # Works with conflicting names
         name2 = DataFrame(ID = [1, 2, 3], Name = ["John Doe", "Jane Doe", "Joe Blogs"],
