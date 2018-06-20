@@ -471,7 +471,7 @@ function get_stats(col::AbstractArray{>:Missing})
     q = try quantile(nomissing, [.25, .5, .75]) catch [nothing, nothing, nothing] end
     ex = try extrema(nomissing) catch (nothing, nothing) end
     m = try mean(nomissing) catch end
-    if eltype(nomissing) <: Real
+    if (eltype(nomissing) <: Real) && !(eltype(nomissing) <: Integer)
         u = nothing
     else 
         u = try length(unique(nomissing)) catch end 
