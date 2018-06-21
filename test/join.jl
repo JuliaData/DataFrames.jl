@@ -578,6 +578,7 @@ module TestJoin
         @test eltypes(join(l, r, on=:b, kind=:outer, makeunique=true)) ==
             [Union{Int, Missing}, CS, Union{Int, Missing}]
     end
+
     @testset "indicator columns" begin
         outer_indicator = DataFrame(ID = [1, 2, 2, 3, 4],
                                     Name = ["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", missing],
@@ -608,6 +609,7 @@ module TestJoin
         @test join(name2, job2, on = :ID, kind = :outer, indicator=:_left,
                    makeunique=true) ≅ outer_indicator
     end
+
     @testset "test checks of merge key uniqueness" begin
         @test_throws ArgumentError join(name, job, on=:ID, validate=(false, true))
         @test_throws ArgumentError join(name, job, on=:ID, validate=(true, true))
