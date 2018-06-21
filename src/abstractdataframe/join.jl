@@ -213,7 +213,8 @@ function update_row_maps!(left_table::AbstractDataFrame,
 end
 
 """
-    join(df1, df2; on = Symbol[], kind = :inner, makeunique = false)
+    join(df1, df2; on = Symbol[], kind = :inner, makeunique = false,
+         indicator = nothing, validate = (false, false))
 
 Join two `DataFrame` objects
 
@@ -252,6 +253,12 @@ Join two `DataFrame` objects
    only `df2` (`"right_only"`) or in both (`"both"`). If `Symbol` is already in use,
    the column name will be modified if `makeunique=true`.
 
+* `validate` : whether to check that columns passed as the `on` argument
+   define unique keys in each input data frame (according to [`isequal`](@ref)).
+   Can be a tuple or a pair, with the first element indicating whether to
+   run check for `df1` and the second element for `df2`.
+   By default no check is performed.
+
 For the three join operations that may introduce missing values (`:outer`, `:left`,
 and `:right`), all columns of the returned data table will support missing values.
 
@@ -286,7 +293,8 @@ function Base.join(df1::AbstractDataFrame,
                    df2::AbstractDataFrame;
                    on::Union{<:OnType, AbstractVector{<:OnType}} = Symbol[],
                    kind::Symbol = :inner, makeunique::Bool=false,
-                   indicator::Union{Nothing, Symbol} = nothing)
+                   indicator::Union{Nothing, Symbol} = nothing,
+                   validate::Union{Pair{Bool, Bool}, Tuple{Bool, Bool}}=(false, false))
     if indicator !== nothing
         indicator_cols = ["_left", "_right"]
         for i in 1:2
@@ -308,6 +316,26 @@ function Base.join(df1::AbstractDataFrame,
     end
 
     joiner = DataFrameJoiner(df1, df2, on)
+
+    # Check merge key validity
+    left_invalid = validate[1] ? any(nonunique(joiner.dfl, joiner.left_on)) : false
+    right_invalid = validate[2] ? any(nonunique(joiner.dfr, joiner.right_on)) : false
+
+    if left_invalid && right_invalid
+        first_error_df1 = findfirst(nonunique(joiner.dfl, joiner.left_on))
+        first_error_df2 = findfirst(nonunique(joiner.dfr, joiner.right_on))
+        throw(ArgumentError("Merge key(s) are not unique in both df1 and df2. " *
+                            "First duplicate in df1 at $first_error_df1. " *
+                            "First duplicate in df2 at $first_error_df2"))
+    elseif left_invalid
+        first_error = findfirst(nonunique(joiner.dfl, joiner.left_on))
+        throw(ArgumentError("Merge key(s) in df1 are not unique. " *
+                            "First duplicate at row $first_error"))
+    elseif right_invalid
+        first_error = findfirst(nonunique(joiner.dfr, joiner.right_on))
+        throw(ArgumentError("Merge key(s) in df2 are not unique. " *
+                            "First duplicate at row $first_error"))
+    end
 
     if kind == :inner
         joined = compose_joined_table(joiner, kind, update_row_maps!(joiner.dfl_on, joiner.dfr_on,
