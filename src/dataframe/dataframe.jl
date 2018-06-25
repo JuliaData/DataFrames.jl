@@ -724,7 +724,7 @@ function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::S
     end
     insert!(index(df), col_ind, name)
     insert!(columns(df), col_ind, item)
-    insert!(metadata(df), col_ind)
+    insert!(metadata(df), col_ind, nothing)
     df
 end
 
@@ -1134,7 +1134,7 @@ end
 
 Adds a label to a DataFrame. Does not add other metadata.
 """
-function addlabel!(df::DataFrame, var::Symbol, label::String)
+function addlabel!(df::DataFrame, var::Symbol, label)
     ind = index(df)[var]
     # pass the number of columns to the function so that it can create a new array of 
     # strings of the right size. 
@@ -1151,7 +1151,8 @@ function showlabel(df::DataFrame, var::Symbol)
     ind = index(df)[var]
     println("Variable label for $(var):")
     label = getmeta(df.metadata, :label, ind)
-    println("\t" * label)
+    print("\t")
+    println(label)
 end
 
 """
