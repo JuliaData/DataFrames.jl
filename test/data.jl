@@ -113,13 +113,21 @@ module TestData
     @test sum(df8[:d1_length]) == N
     @test all(df8[:d1_length] .> 0)
     @test df8[:d1_length] == [sum(isequal.(d2, "A")), sum(isequal.(d2, "B")), sum(ismissing.(d2))]
+    df8′ = aggregate(df7, 2, [sum, length], sort=true)
+    @test df8 ≅ df8′
     adf = aggregate(groupby(df7, :d2, sort=true), [sum, length])
     @test df8 ≅ adf
+    adf′ = aggregate(groupby(df7, 2, sort=true), [sum, length])
+    @test df8 ≅ adf′
     adf = aggregate(groupby(df7, :d2), [sum, length], sort=true)
     @test sort(df8, [:d1_sum, :d3_sum, :d1_length, :d3_length]) ≅ adf
+    adf′ = aggregate(groupby(df7, 2), [sum, length], sort=true)
+    @test adf ≅ adf′
 
     df9 = aggregate(df7, :d2, [sum, length], sort=true)
     @test df9 ≅ df8
+    df9′ = aggregate(df7, 2, [sum, length], sort=true)
+    @test df9′ ≅ df8
 
     df10 = DataFrame(
         Any[[1:4;], [2:5;], ["a", "a", "a", "b" ], ["c", "d", "c", "d"]],
