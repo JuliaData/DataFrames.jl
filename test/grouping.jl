@@ -233,4 +233,11 @@ module TestGrouping
             @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
         end
     end
+
+    @testset "iteration protocol" begin
+        gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+        for v in gd
+            @test size(v) == (2,2)
+        end
+    end
 end

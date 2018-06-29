@@ -94,11 +94,22 @@ groupby(d::AbstractDataFrame, cols;
         sort::Bool = false, skipmissing::Bool = false) =
     groupby(d, [cols], sort = sort, skipmissing = skipmissing)
 
-Base.start(gd::GroupedDataFrame) = 1
-Base.next(gd::GroupedDataFrame, state::Int) =
-    (view(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
-     state + 1)
-Base.done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
+if VERSION < v"0.7.0-DEV.5126"
+    Base.start(gd::GroupedDataFrame) = 1
+    Base.next(gd::GroupedDataFrame, state::Int) =
+        (view(gd.parent, gd.idx[gd.starts[state]:gd.ends[state]]),
+         state + 1)
+    Base.done(gd::GroupedDataFrame, state::Int) = state > length(gd.starts)
+else
+    function Base.iterate(gd::GroupedDataFrame, i=1)
+        if i > length(gd.starts)
+            nothing
+        else
+            (view(gd.parent, gd.idx[gd.starts[i]:gd.ends[i]]), i+1)
+        end
+    end
+end
+
 Base.length(gd::GroupedDataFrame) = length(gd.starts)
 Compat.lastindex(gd::GroupedDataFrame) = length(gd.starts)
 Base.first(gd::GroupedDataFrame) = gd[1]
@@ -196,7 +207,7 @@ function combine(ga::GroupApplied)
     j = 0
     @inbounds for (start, val) in zip(gd.starts, vals)
         n = size(val, 1)
-        idx[j .+ (1:n)] = gd.idx[start]
+        idx[j .+ (1:n)] .= gd.idx[start]
         j += n
     end
     hcat!(gd.parent[idx, gd.cols], valscat)
