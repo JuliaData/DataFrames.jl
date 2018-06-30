@@ -967,14 +967,20 @@ function categorical!(df::DataFrame)
 end
 
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
-   _names(df1) == _names(df2) || error("Column names do not match")
-   eltypes(df1) == eltypes(df2) || error("Column eltypes do not match")
-   ncols = size(df1, 2)
-   # TODO: This needs to be a sort of transaction to be 100% safe
-   for j in 1:ncols
-       append!(df1[j], df2[j])
-   end
-   return df1
+    _names(df1) == _names(df2) || error("Column names do not match")
+    nrows, ncols = size(df1)
+    try
+        for j in 1:ncols
+            append!(df1[j], df2[j])
+        end
+    catch err
+        # Undo changes in case of error
+        for j in 1:ncols
+            resize!(df1[j], nrows)
+        end
+        rethrow(err)
+    end
+    return df1
 end
 
 Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
