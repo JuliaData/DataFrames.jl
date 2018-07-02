@@ -129,9 +129,9 @@ julia> DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 ```
 
 
-### Constructing Column By Column
+### Constructing Column by Column
 
-It is possible to construct a `DataFrame` one column at a time.
+It is also possible to construct a `DataFrame` one column at a time.
 
 ```jldoctest dataframe
 julia> df = DataFrame()
@@ -182,7 +182,7 @@ true
 
 ```
 
-### Constructing Row By Row
+### Constructing Row by Row
 
 It is also possible to construct a `DataFrame` row by row.
 
@@ -217,9 +217,9 @@ julia> push!(df, Dict(:B => "F", :A => 2))
 Note that constructing a `DataFrame` row by row is significantly less performant than constructing it all at once, or column by column.
 For many use-cases this will not matter, but for very large `DataFrame`s  this may be a consideration.
 
-## Working With Dataframes
+## Working with Data Frames
 
-### Taking A Subset
+### Taking a Subset
 
 We can also look at small subsets of the data in a couple of different ways:
 
@@ -256,7 +256,7 @@ julia> df[1:3, :]
 
 ```
 
-### Summarizing With `describe`
+### Summarizing with `describe`
 
 Having seen what some of the rows look like, we can try to summarize the entire data set using `describe`:
 
@@ -322,7 +322,7 @@ julia> mean(skipmissing(df[:A]))
 
 ```
 
-### Column-wise Operations
+### Column-Wise Operations
 
 We can also apply a function to each column of a `DataFrame` with the `colwise` function. For example:
 
@@ -343,7 +343,7 @@ julia> colwise(sum, df)
 
 ```
 
-## Importing And Exporting Data (I/O)
+## Importing and Exporting Data (I/O)
 
 For reading and writing tabular data from CSV and other delimited text files, use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.
 
@@ -368,9 +368,9 @@ df = DataFrame(x = 1, y = 2)
 CSV.write(output, df)
 ```
 
-The behaviour of CSV functions can be adapted via keyword arguments. For more information, use the REPL [help-mode](http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode) or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).
+The behavior of CSV functions can be adapted via keyword arguments. For more information, use the REPL [help-mode](http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode) or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).
 
-### Loading A Classic Data Set
+### Loading a Classic Data Set
 
 To see more of the functionality for working with `DataFrame` objects, we need a more complex data set to work with. We can access Fisher's iris data set using the following functions:
 
