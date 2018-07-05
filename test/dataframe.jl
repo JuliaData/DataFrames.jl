@@ -221,6 +221,10 @@ module TestDataFrame
         @test df == dfb
 
         dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        push!(dfb, DataFrameRow(df, 3))
+        @test df == dfb
+
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
         @test_throws ArgumentError push!(dfb, (33.33,"pear"))
         @test dfc == dfb
 

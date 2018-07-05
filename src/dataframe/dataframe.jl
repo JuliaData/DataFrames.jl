@@ -256,9 +256,6 @@ ncol(df::DataFrame) = length(index(df))
 # Let getindex(columns(df)[j], row_inds) from AbstractVector() handle
 #  the resolution of row indices
 
-# TODO: change Real to Integer in this union after deprecation period
-const ColumnIndex = Union{Real, Symbol}
-
 # df[SingleColumnIndex] => AbstractDataVector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
@@ -1063,6 +1060,8 @@ function Base.push!(df::DataFrame, iterable::Any)
     end
     df
 end
+
+Base.push!(df::DataFrame, r::DataFrameRow) = push!(df, values(r))
 
 ##############################################################################
 ##
