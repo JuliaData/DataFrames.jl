@@ -134,23 +134,10 @@ julia&gt; df[1:3, :]
 │ 2   │ 2 │ F │
 │ 3   │ 3 │ F │
 </code></pre><p>Having seen what some of the rows look like, we can try to summarize the entire data set using <code>describe</code>:</p><pre><code class="language-julia-repl">julia&gt; describe(df)
-A
-Summary Stats:
-Mean:           4.500000
-Minimum:        1.000000
-1st Quartile:   2.750000
-Median:         4.500000
-3rd Quartile:   6.250000
-Maximum:        8.000000
-Length:         8
-Type:           Int64
-
-B
-Summary Stats:
-Length:         8
-Type:           String
-Number Unique:  2
-
+│ Row │ variable │ mean    │ min │ median  │ max │ nunique │ nmissing │ eltype │
+├─────┼──────────┼─────────┼─────┼─────────┼─────┼─────────┼──────────┼────────┤
+│ 1   │ A        │ 4.5     │ 1   │ 4.5     │ 8   │ nothing │ nothing  │ Int64  │
+│ 2   │ B        │ nothing │ F   │ nothing │ M   │ 2       │ nothing  │ String │
 </code></pre><p>To access individual columns of the dataset, you refer to the column names by their symbol or by their numerical index. Here we extract the first column, <code>:A</code>, and use it to compute the mean and variance.</p><pre><code class="language-julia-repl">julia&gt; mean(df[:A]) == mean(df[1]) == 4.5
 true
 
