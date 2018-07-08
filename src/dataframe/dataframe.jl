@@ -84,9 +84,9 @@ mutable struct DataFrame <: AbstractDataFrame
     colindex::Index
     metadata::MetaData
 
-    function DataFrame(columns::Vector{Any}, colindex::Index)
+    function DataFrame(columns::Vector{Any}, colindex::Index, metadata::MetaData=MetaData())
         if length(columns) == length(colindex) == 0
-            return new(Vector{Any}(undef, 0), Index(), MetaData())
+            return new(Vector{Any}(undef, 0), Index(), metadata)
         elseif length(columns) != length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of" *
                                     " column names ($(length(colindex))) are not equal"))
@@ -94,7 +94,7 @@ mutable struct DataFrame <: AbstractDataFrame
         lengths = [isa(col, AbstractArray) ? length(col) : 1 for col in columns]
         minlen, maxlen = extrema(lengths)
         if minlen == 0 && maxlen == 0
-            return new(columns, colindex, MetaData())
+            return new(columns, colindex, metadata)
         elseif minlen != maxlen || minlen == maxlen == 1
             # recycle scalars
             for i in 1:length(columns)
@@ -117,10 +117,6 @@ mutable struct DataFrame <: AbstractDataFrame
                 throw(DimensionMismatch("columns must be 1-dimensional"))
             end
         end
-        new(columns, colindex, MetaData())
-    end
-
-    function DataFrame(columns::Vector{Any}, colindex::Index, metadata::MetaData)
         new(columns, colindex, metadata)
     end
 
@@ -302,7 +298,6 @@ end
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[row_inds] for dv in columns(df)[selected_columns]]
-    new_metadata = metadata(df)[selected_columns]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), metadata(df)[selected_columns])
 end
 
@@ -355,13 +350,12 @@ function insert_single_column!(df::DataFrame,
         if typeof(col_ind) <: Symbol
             push!(index(df), col_ind)
             push!(columns(df), dv)
-            addcolumn!(metadata(df)) # adds an empty string to all vectors of metadata
-            # todo: change this to push!() and be able consistency to fields
+            push!(metadata(df), nothing)
         else
             if ncol(df) + 1 == Int(col_ind)
                 push!(index(df), nextcolname(df))
                 push!(columns(df), dv)
-                addcolumn!(metadata(df))
+                push!(metadata(df), nothing)
             else
                 throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
             end
@@ -765,10 +759,20 @@ merge!(df, df2)  # column z is added, column id is overwritten
 """
 function Base.merge!(df::DataFrame, others::AbstractDataFrame...)
     for other in others
-        notinother = setdiff(names(other), names(df))
-        notinother_cols = index(other)[notinother]
-        othermeta = metadata(other)[notinother_cols]
-        append!(metadata(df), othermeta)
+        d = diff_indices(index(other), index(df))
+        #=
+        returns the indices of the columns in the left dataframe that are not
+        in the dataframe on the right.  
+        defined in index.jl
+        =#
+
+        #=
+        This function awkwardly needs the number of columns in both the 
+        base dataframe and the right (just the different columns) dataframe. 
+        because since we might have to create new fields, we need to tell 
+        metadata how long those vectors in the columndata Dict are. 
+        =#
+        append!(metadata(df), metadata(other)[d], ncol(df), length(d))
         for n in _names(other)
             df[n] = other[n]
         end
@@ -1140,12 +1144,12 @@ end
 
 Adds a label to a DataFrame. Does not add other metadata.
 """
-function addlabel!(df::DataFrame, var::Symbol, label)
+function addmeta!(df::DataFrame, var::Symbol, field::Symbol, info)
     ind = index(df)[var]
     # pass the number of columns to the function so that it can create a new array of 
     # strings of the right size. 
     # TODO: maybe figure out a more elegant way of doing this. 
-    addmeta!(df.metadata, ind, ncol(df), :label, label)
+    addmeta!(df.metadata, ind, ncol(df), field, info)
 end
 
 """
@@ -1153,24 +1157,26 @@ end
 
 Prints the label (not other metadata) for a single variable of a dataframe. 
 """
-function showlabel(df::DataFrame, var::Symbol)
+function getmeta(df::DataFrame, var::Symbol, field::Symbol)
     ind = index(df)[var]
-    println("Variable label for $(var):")
-    label = getmeta(df.metadata, :label, ind)
-    print("\t")
-    println(label)
+    getmeta(df.metadata, ind, field)
 end
 
 """
-    showlabels(df::DataFrame)
-
-Prints all the labels for all variables in a dataframe. 
-
-Does not print other metadata, functionality will be added soon.
+Prints (does not return anything), all the MetaData
+for a given field.
 """
-function showlabels(df::DataFrame)
-    for name in names(df)
-        showlabel(df, name)
+function showmeta(df::DataFrame, fields::Union{Symbol, Vector{Symbol}}=collect(keys(metadata(df).columndata)))
+    
+    if fields isa Symbol 
+        fields = [fields] 
+    end 
+
+    d = DataFrame(variable = names(df))
+
+    for field in fields
+        d[field] = getmeta.(df, names(df), field)
     end
-end
 
+    d
+end

@@ -33,35 +33,23 @@ function Base.permute(x::MetaData, p::AbstractVector)
     permute!(new_metadata, p)
 end
 
-function newfield!(x::MetaData, ncol::Int, field::Symbol,)
-    x.columndata[field] = Vector{Any}([nothing for i in 1:ncol]) 
+
+function newfield!(x::MetaData, ncol::Int, field::Symbol, info)
+    x.columndata[field] = Vector{Union{typeof(info), Nothing}}([nothing for i in 1:ncol])
 end
 
 function addmeta!(x::MetaData, col_ind::Int, ncol::Int, field::Symbol, info)
     if !haskey(x.columndata, field)
-        newfield!(x, ncol, field)
+        newfield!(x, ncol, field, info)
     end
     x.columndata[field][col_ind] = info
+    return nothing
 end
 
-function getlabel(x::MetaData, col_ind::Int)
-    if haskey(x.columndata, :label)
-        return x.columndata[:label][col_ind]
-    else 
-        return ""
-    end
-end
-
-function addcolumn!(x::MetaData)
+# For creating a new column in the dataframe
+function Base.push!(x::MetaData, info)
     for key in keys(x.columndata)
-        push!(x.columndata[key], "")
-    end
-end
-
-# For creating a new column
-function addcolumn!(x::MetaData)
-    for key in keys(x.columndata)
-        push!(x.columndata[key], "")
+        push!(x.columndata[key], info)
     end
 end
 
@@ -71,16 +59,16 @@ function Base.insert!(x::MetaData, col_ind::Int, item)
     end
 end
 
-function Base.append!(leftmeta::MetaData, rightmeta::MetaData)
-    notonleft = setdiff(keys(leftmeta.columndata), keys(rightmeta.columndata))
-    notonright = setdiff(keys(rightmeta.columndata), keys(leftmeta.columndata))
+function Base.append!(leftmeta::MetaData, rightmeta::MetaData, ncol_left::Int, ncol_right::Int)
+    notonleft = setdiff(keys(rightmeta.columndata), keys(leftmeta.columndata))
+    notonright = setdiff(keys(leftmeta.columndata), keys(rightmeta.columndata))
 
-    for x in notonleft
-        newfield!(leftmeta, x)
+    for field in notonleft
+        newfield!(leftmeta, ncol_left, field, nothing)
     end
 
-    for x in notonright
-        newfield!(rightmeta, x)
+    for field in notonright
+        newfield!(rightmeta, ncol_right, field, nothing)
     end
 
     for key in keys(leftmeta.columndata)
@@ -90,28 +78,14 @@ function Base.append!(leftmeta::MetaData, rightmeta::MetaData)
 end
 
 function append(leftmeta::MetaData, rightmeta::MetaData)
-    newmeta = copy(leftmeta)
-    vcat!(newmeta, rightmeta)
+    append!(copy(leftmeta), rightmeta)
 end
 
 # deleting columns is handled by get_index? 
-
-function getmeta(x::MetaData, field::Symbol, col_ind::Int)
+function getmeta(x::MetaData, col_ind::Int, field::Symbol)
     if haskey(x.columndata, field)
         return x.columndata[field][col_ind]
     else
-        return "Field does not exist"
+        error("The field does not exist")
     end
 end
-
-
-
-
-
-
-
-
-
-
-
-

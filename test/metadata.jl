@@ -3,41 +3,27 @@ module TestMetaData
     using Suppressor
     using Compat: @warn
 
-io = IOBuffer()
-
 df1 = DataFrame(a = [1, 2], b = [3, 4])
 df2 = DataFrame(c = [3, 4], d = [5, 6])
 
 # Just used to add metadata easily for testing. 
-function addlabels!(df::DataFrame)
-    for name in names(df)
-        addlabel!(df, name, "Variable label for variable $name")
-    end
-end
+addmeta!(df, :a, :label, "A label for variable a")
 
+testdata = DataFrame(variable = names(df1), label = 
+    ["A label for variable a",
+    nothing])
 
-addlabels!(df1)
-addlabels!(df2)
+@test showmeta(df1) == testdata
 
-str = @capture_out showlabels(df1)
-@test str ==
-"Variable label for a:
-\tVariable label for variable a
-Variable label for b:
-\tVariable label for variable b\n"
+mergeddata = merge!(df1, df2)
+testmergeddata = DataFrame(variable = names(mergeddata,
+    label = 
+    ["A label for variable a",
+    nothing, 
+    nothing,
+    nothing,
+    nothing]))
 
-merge!(df1, df2)
-str = @capture_out showlabels(df1)
-@test str == 
-"Variable label for a:
-\tVariable label for variable a
-Variable label for b:
-\tVariable label for variable b
-Variable label for c:
-\tVariable label for variable c
-Variable label for d:
-\tVariable label for variable d\n" 
-
-
+@test showmeta(mergeddata) == testmergeddata
 
 end # module TestMetaData
