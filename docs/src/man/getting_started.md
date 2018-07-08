@@ -218,23 +218,10 @@ Having seen what some of the rows look like, we can try to summarize the entire 
 
 ```jldoctest dataframe
 julia> describe(df)
-A
-Summary Stats:
-Mean:           4.500000
-Minimum:        1.000000
-1st Quartile:   2.750000
-Median:         4.500000
-3rd Quartile:   6.250000
-Maximum:        8.000000
-Length:         8
-Type:           Int64
-
-B
-Summary Stats:
-Length:         8
-Type:           String
-Number Unique:  2
-
+│ Row │ variable │ mean    │ min │ median  │ max │ nunique │ nmissing │ eltype │
+├─────┼──────────┼─────────┼─────┼─────────┼─────┼─────────┼──────────┼────────┤
+│ 1   │ A        │ 4.5     │ 1   │ 4.5     │ 8   │ nothing │ nothing  │ Int64  │
+│ 2   │ B        │ nothing │ F   │ nothing │ M   │ 2       │ nothing  │ String │
 
 ```
 
