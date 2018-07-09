@@ -250,7 +250,6 @@ function showrowindices(io::IO,
                 strlen = ourstrwidth(s)
                 if ismissing(s)
                     printstyled(io, s, color=:light_black)
-                    strlen = 1
                 elseif s === nothing
                     strlen = 0
                 else
