@@ -218,8 +218,6 @@ module TestShow
     │ 2   │ 2.0 │ g         │
     │ 3   │ 3.0 │           │"""
 
-
-
     # Test computing width for Array{String} columns
     df = DataFrame(Any[["a"]], [:x])
     io = IOBuffer()
