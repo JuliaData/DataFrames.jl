@@ -249,7 +249,7 @@ function showrowindices(io::IO,
                 s = df[i, j]
                 strlen = ourstrwidth(s)
                 if ismissing(s)
-                    printstyled(io, "m", color=:light_black)
+                    printstyled(io, "missing", color=:light_black)
                     strlen = 1
                 elseif s === nothing
                     strlen = 0
