@@ -69,7 +69,55 @@ var documenterSearchIndex = {"docs": [
     "page": "Getting Started",
     "title": "The DataFrame Type",
     "category": "section",
-    "text": "The DataFrame type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments or pairs:julia> using DataFrames\n\njulia> DataFrame(A = 1:4, B = [\"M\", \"F\", \"F\", \"M\"])\n4×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ M │\n│ 2   │ 2 │ F │\n│ 3   │ 3 │ F │\n│ 4   │ 4 │ M │\nIt is also possible to construct a DataFrame in stages:julia> df = DataFrame()\n0×0 DataFrames.DataFrame\n\n\njulia> df[:A] = 1:8\n1:8\n\njulia> df[:B] = [\"M\", \"F\", \"F\", \"M\", \"F\", \"M\", \"M\", \"F\"]\n8-element Array{String,1}:\n \"M\"\n \"F\"\n \"F\"\n \"M\"\n \"F\"\n \"M\"\n \"M\"\n \"F\"\n\njulia> df\n8×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ M │\n│ 2   │ 2 │ F │\n│ 3   │ 3 │ F │\n│ 4   │ 4 │ M │\n│ 5   │ 5 │ F │\n│ 6   │ 6 │ M │\n│ 7   │ 7 │ M │\n│ 8   │ 8 │ F │\nThe DataFrame we build in this way has 8 rows and 2 columns. You can check this using the size function:julia> size(df, 1) == 8\ntrue\n\njulia> size(df, 2) == 2\ntrue\n\njulia> size(df) == (8, 2)\ntrue\nWe can also look at small subsets of the data in a couple of different ways:julia> head(df)\n6×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ M │\n│ 2   │ 2 │ F │\n│ 3   │ 3 │ F │\n│ 4   │ 4 │ M │\n│ 5   │ 5 │ F │\n│ 6   │ 6 │ M │\n\njulia> tail(df)\n6×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 3 │ F │\n│ 2   │ 4 │ M │\n│ 3   │ 5 │ F │\n│ 4   │ 6 │ M │\n│ 5   │ 7 │ M │\n│ 6   │ 8 │ F │\n\njulia> df[1:3, :]\n3×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ M │\n│ 2   │ 2 │ F │\n│ 3   │ 3 │ F │\nHaving seen what some of the rows look like, we can try to summarize the entire data set using describe:julia> describe(df)\n│ Row │ variable │ mean    │ min │ median  │ max │ nunique │ nmissing │ eltype │\n├─────┼──────────┼─────────┼─────┼─────────┼─────┼─────────┼──────────┼────────┤\n│ 1   │ A        │ 4.5     │ 1   │ 4.5     │ 8   │ nothing │ nothing  │ Int64  │\n│ 2   │ B        │ nothing │ F   │ nothing │ M   │ 2       │ nothing  │ String │\nTo access individual columns of the dataset, you refer to the column names by their symbol or by their numerical index. Here we extract the first column, :A, and use it to compute the mean and variance.julia> mean(df[:A]) == mean(df[1]) == 4.5\ntrue\n\njulia> var(df[:A]) ==  var(df[1]) == 6.0\ntrue\nWe can also apply a function to each column of a DataFrame with the colwise function. For example:julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)\n4×2 DataFrames.DataFrame\n│ Row │ A │ B   │\n├─────┼───┼─────┤\n│ 1   │ 1 │ 4.0 │\n│ 2   │ 2 │ 3.0 │\n│ 3   │ 3 │ 2.0 │\n│ 4   │ 4 │ 1.0 │\n\njulia> colwise(sum, df)\n2-element Array{Real,1}:\n 10\n 10.0"
+    "text": "The DataFrame type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments or pairs:julia> using DataFrames\n\njulia> DataFrame(A = 1:4, B = [\"M\", \"F\", \"F\", \"M\"])\n4×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ M │\n│ 2   │ 2 │ F │\n│ 3   │ 3 │ F │\n│ 4   │ 4 │ M │\n"
+},
+
+{
+    "location": "man/getting_started.html#Constructing-Column-by-Column-1",
+    "page": "Getting Started",
+    "title": "Constructing Column by Column",
+    "category": "section",
+    "text": "It is also possible to construct a DataFrame one column at a time.julia> df = DataFrame()\n0×0 DataFrames.DataFrame\n\n\njulia> df[:A] = 1:8\n1:8\n\njulia> df[:B] = [\"M\", \"F\", \"F\", \"M\", \"F\", \"M\", \"M\", \"F\"]\n8-element Array{String,1}:\n \"M\"\n \"F\"\n \"F\"\n \"M\"\n \"F\"\n \"M\"\n \"M\"\n \"F\"\n\njulia> df\n8×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ M │\n│ 2   │ 2 │ F │\n│ 3   │ 3 │ F │\n│ 4   │ 4 │ M │\n│ 5   │ 5 │ F │\n│ 6   │ 6 │ M │\n│ 7   │ 7 │ M │\n│ 8   │ 8 │ F │\nThe DataFrame we build in this way has 8 rows and 2 columns. You can check this using the size function:julia> size(df, 1) == 8\ntrue\n\njulia> size(df, 2) == 2\ntrue\n\njulia> size(df) == (8, 2)\ntrue\n"
+},
+
+{
+    "location": "man/getting_started.html#Constructing-Row-by-Row-1",
+    "page": "Getting Started",
+    "title": "Constructing Row by Row",
+    "category": "section",
+    "text": "It is also possible to construct a DataFrame row by row.First a DataFrame with empty columns is constructed:julia> df = DataFrame(A = Int[], B = String[])\n0×2 DataFrames.DataFrameRows can then be added as Vectors, where the row order matches the columns order:julia> push!(df, [1, \"M\"])\n1×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ M │Rows can also be added as Dicts, where the dictionary keys match the column names:julia> push!(df, Dict(:B => \"F\", :A => 2))\n2×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ M │\n│ 2   │ 2 │ F │Note that constructing a DataFrame row by row is significantly less performant than constructing it all at once, or column by column. For many use-cases this will not matter, but for very large DataFrames  this may be a consideration."
+},
+
+{
+    "location": "man/getting_started.html#Working-with-Data-Frames-1",
+    "page": "Getting Started",
+    "title": "Working with Data Frames",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "man/getting_started.html#Taking-a-Subset-1",
+    "page": "Getting Started",
+    "title": "Taking a Subset",
+    "category": "section",
+    "text": "We can also look at small subsets of the data in a couple of different ways:julia> head(df)\n6×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ M │\n│ 2   │ 2 │ F │\n│ 3   │ 3 │ F │\n│ 4   │ 4 │ M │\n│ 5   │ 5 │ F │\n│ 6   │ 6 │ M │\n\njulia> tail(df)\n6×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 3 │ F │\n│ 2   │ 4 │ M │\n│ 3   │ 5 │ F │\n│ 4   │ 6 │ M │\n│ 5   │ 7 │ M │\n│ 6   │ 8 │ F │\n\njulia> df[1:3, :]\n3×2 DataFrames.DataFrame\n│ Row │ A │ B │\n├─────┼───┼───┤\n│ 1   │ 1 │ M │\n│ 2   │ 2 │ F │\n│ 3   │ 3 │ F │\n"
+},
+
+{
+    "location": "man/getting_started.html#Summarizing-with-describe-1",
+    "page": "Getting Started",
+    "title": "Summarizing with describe",
+    "category": "section",
+    "text": "Having seen what some of the rows look like, we can try to summarize the entire data set using describe:julia> describe(df)\n│ Row │ variable │ mean    │ min │ median  │ max │ nunique │ nmissing │ eltype │\n├─────┼──────────┼─────────┼─────┼─────────┼─────┼─────────┼──────────┼────────┤\n│ 1   │ A        │ 4.5     │ 1   │ 4.5     │ 8   │ nothing │ nothing  │ Int64  │\n│ 2   │ B        │ nothing │ F   │ nothing │ M   │ 2       │ nothing  │ String │\nTo access individual columns of the dataset, you refer to the column names by their symbol or by their numerical index. Here we extract the first column, :A, and use it to compute the mean and variance.julia> mean(df[:A]) == mean(df[1]) == 4.5\ntrue\n\njulia> var(df[:A]) ==  var(df[1]) == 6.0\ntrue\n"
+},
+
+{
+    "location": "man/getting_started.html#Column-Wise-Operations-1",
+    "page": "Getting Started",
+    "title": "Column-Wise Operations",
+    "category": "section",
+    "text": "We can also apply a function to each column of a DataFrame with the colwise function. For example:julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)\n4×2 DataFrames.DataFrame\n│ Row │ A │ B   │\n├─────┼───┼─────┤\n│ 1   │ 1 │ 4.0 │\n│ 2   │ 2 │ 3.0 │\n│ 3   │ 3 │ 2.0 │\n│ 4   │ 4 │ 1.0 │\n\njulia> colwise(sum, df)\n2-element Array{Real,1}:\n 10\n 10.0"
 },
 
 {
