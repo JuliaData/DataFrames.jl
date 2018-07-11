@@ -332,32 +332,35 @@ module TestDataFrame
         # Construct the test dataframe
         df = DataFrame(number = [1, 2, 3, 4],
                        number_missing = [1,2, 3, missing],
-                       non_number = ["a", "b", "c", "d"],
-                       non_number_missing = ["a", "b", "c", missing],
+                       string = ["a", "b", "c", "d"],
+                       string_missing = ["a", "b", "c", missing],
                        dates  = Date.([2000, 2001, 2003, 2004]),
                        catarray = CategoricalArray([1,2,1,2]))
 
-        describe_output = DataFrame(variable = [:number, :number_missing, :non_number, 
-                                                :non_number_missing, :dates, :catarray],
+        describe_output = DataFrame(variable = [:number, :number_missing, :string, 
+                                                :string_missing, :dates, :catarray],
                                     mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                    min = [1.0, 1.0, nothing, nothing, nothing, nothing],
+                                    min = [1.0, 1.0, "a", "a", Date(2000), nothing],
                                     median = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                    max = [4.0, 3.0, nothing, nothing, nothing, nothing],
+                                    max = [4.0, 3.0, "d", "c", Date(2004), nothing],
+                                    nunique = [nothing, nothing, 4, 3, 4, 2],
                                     nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                     eltype = [Int, Int, String, String, Date, eltype(df[:catarray])])
         describe_output_all_stats = DataFrame(variable = [:number, :number_missing, 
-                                                          :non_number, :non_number_missing,
+                                                          :string, :string_missing,
                                                           :dates, :catarray],
                                               mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               std = [Compat.std(df[:number]), 1.0, nothing, 
                                                      nothing, nothing, nothing],
-                                              min = [1.0, 1.0, nothing, nothing, nothing, nothing],
+                                              min = [1.0, 1.0, "a", "a", Date(2000), nothing],
                                               q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
                                               median = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
-                                              max = [4.0, 3.0, nothing, nothing, nothing, nothing],
-                                              nunique = [nothing, nothing, 4, 4, 4, 2],
+                                              max = [4.0, 3.0, "d", "c", Date(2004), nothing],
+                                              nunique = [nothing, nothing, 4, 3, 4, 2],
                                               nmissing = [nothing, 1, nothing, 1, nothing, nothing],
+                                              first = [1, 1, "a", "a", Date(2000), 1],
+                                              last = [4, missing, "d", missing, Date(2004), 2],
                                               eltype = [Int, Int, String, String, Date, 
                                                         eltype(df[:catarray])])
 
@@ -365,10 +368,11 @@ module TestDataFrame
         # Test that it works as a whole, without keyword arguments
         @test describe_output == describe(df)
 
+        # Test that it works with one stats argument
+        @test describe_output[[:variable, :mean]] == describe(df, stats = [:mean])
+
         # Test that it works with all keyword arguments
-        @test describe_output_all_stats == 
-              describe(df, stats = [:mean, :std, :min, :q25, :median, :q75, :max, 
-                       :nunique, :nmissing, :eltype])
+        @test describe_output_all_stats ≅ describe(df, stats = :all)
     end 
 
     #Check the output of unstack
@@ -448,7 +452,14 @@ module TestDataFrame
     df = DataFrame(A = 1:10, B = 'A':'J')
     @test !(df[:,:] === df)
 
-    @test append!(DataFrame(A = 1:2, B = 1:2), DataFrame(A = 3:4, B = 3:4)) == DataFrame(A=1:4, B = 1:4)
+    df = DataFrame(A = 1:2, B = 1:2)
+    df2 = DataFrame(A=1:4, B = 1:4)
+    @test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
+    @test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
+    @test df == df2
+    @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
+    @test df == df2
+
     df = DataFrame(A = Vector{Union{Int, Missing}}(1:3), B = Vector{Union{Int, Missing}}(4:6))
     DRT = CategoricalArrays.DefaultRefType
     @test all(c -> isa(c, Vector{Union{Int, Missing}}), columns(categorical!(deepcopy(df))))

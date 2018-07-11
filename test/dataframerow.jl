@@ -7,6 +7,8 @@ module TestDataFrameRow
                    d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
     df2 = DataFrame(a = [1, 2, 3])
 
+    @test names(DataFrameRow(df, 1)) == [:a, :b, :c, :d]
+
     #
     # Equality
     #
@@ -41,7 +43,6 @@ module TestDataFrameRow
     @test hash(DataFrameRow(df, 1)) == hash(DataFrameRow(df, 4))
     @test hash(DataFrameRow(df, 2)) == hash(DataFrameRow(df, 5))
     @test hash(DataFrameRow(df, 2)) != hash(DataFrameRow(df, 6))
-
 
     # check that hashrows() function generates the same hashes as DataFrameRow
     df_rowhashes, _ = DataFrames.hashrows(df, false)
