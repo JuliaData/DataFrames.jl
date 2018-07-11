@@ -13,7 +13,7 @@ module TestIteration
         @test isa(row, DataFrameRow)
         @test (row[:B] - row[:A]) == 1
         # issue #683 (https://github.com/JuliaData/DataFrames.jl/pull/683)
-        @test typeof(collect(row)) == Array{Tuple{Symbol, Any}, 1}
+        @test typeof(collect(row)) == Array{Pair{Symbol, Int}, 1}
     end
 
     @test size(eachcol(df)) == (size(df, 2),)

@@ -40,4 +40,7 @@ module TestDeprecated
     @test sort(df; cols=[:b, :a]) == DataFrame(a=[2, 3, 1], b=[4, 5, 6])
     sort!(df; cols=[:b, :a])
     @test df == DataFrame(a=[2, 3, 1], b=[4, 5, 6])
+
+    @test first.(collect(DataFrameRow(df, 1))) == [:a, :b]
+    @test last.(collect(DataFrameRow(df, 1))) == [df[1, 1], df[1, 2]]
 end
