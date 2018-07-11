@@ -27,7 +27,9 @@ julia> DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
 
 ```
 
-It is also possible to construct a `DataFrame` in stages:
+### Constructing Column by Column
+
+It is also possible to construct a `DataFrame` one column at a time.
 
 ```jldoctest dataframe
 julia> df = DataFrame()
@@ -63,8 +65,8 @@ julia> df
 
 ```
 
-The `DataFrame` we build in this way has 8 rows and 2 columns. You can check this using the
-`size` function:
+The `DataFrame` we build in this way has 8 rows and 2 columns.
+You can check this using the `size` function:
 
 ```jldoctest dataframe
 julia> size(df, 1) == 8
@@ -77,6 +79,46 @@ julia> size(df) == (8, 2)
 true
 
 ```
+
+### Constructing Row by Row
+
+It is also possible to construct a `DataFrame` row by row.
+
+First a `DataFrame` with empty columns is constructed:
+
+```jldoctest dataframe
+julia> df = DataFrame(A = Int[], B = String[])
+0×2 DataFrames.DataFrame
+```
+
+Rows can then be added as `Vector`s, where the row order matches the columns order:
+
+```jldoctest dataframe
+julia> push!(df, [1, "M"])
+1×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ M │
+```
+
+Rows can also be added as `Dict`s, where the dictionary keys match the column names:
+
+```jldoctest dataframe
+julia> push!(df, Dict(:B => "F", :A => 2))
+2×2 DataFrames.DataFrame
+│ Row │ A │ B │
+├─────┼───┼───┤
+│ 1   │ 1 │ M │
+│ 2   │ 2 │ F │
+```
+
+Note that constructing a `DataFrame` row by row is significantly less performant than
+constructing it all at once, or column by column. For many use-cases this will not matter,
+but for very large `DataFrame`s  this may be a consideration.
+
+## Working with Data Frames
+
+### Taking a Subset
 
 We can also look at small subsets of the data in a couple of different ways:
 
@@ -113,6 +155,8 @@ julia> df[1:3, :]
 
 ```
 
+### Summarizing with `describe`
+
 Having seen what some of the rows look like, we can try to summarize the entire data set using `describe`:
 
 ```jldoctest dataframe
@@ -136,6 +180,8 @@ julia> var(df[:A]) ==  var(df[1]) == 6.0
 true
 
 ```
+
+### Column-Wise Operations
 
 We can also apply a function to each column of a `DataFrame` with the `colwise` function. For example:
 
