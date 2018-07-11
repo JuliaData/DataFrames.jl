@@ -22,6 +22,7 @@ Pages = ["man/getting_started.md",
          "man/reshaping_and_pivoting.md",
          "man/sorting.md",
          "man/categorical.md",
+         "man/missing.md",
          "man/querying_frameworks.md"]
 Depth = 2
 ```
