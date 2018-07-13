@@ -20,7 +20,7 @@ module TestIO
         \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d & \\#undef \\\\
         \\end{tabular}
         """
-    @test reprmime(MIME("text/latex"), df) == str
+    @test repr(MIME("text/latex"), df) == str
 
     #Test HTML output for IJulia and similar
     df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
@@ -43,7 +43,7 @@ module TestIO
 
     # test limit attribute of IOContext is used
     df = DataFrame(a=collect(1:1000))
-    ioc = IOContext(IOBuffer(), displaysize=(10, 10), limit=false)
+    ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => false)
     show(ioc, "text/html", df)
     @test length(String(take!(ioc.io))) > 10000
 

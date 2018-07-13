@@ -1,5 +1,5 @@
 module TestDataFrame
-    using Compat, Compat.Test, Compat.Dates, DataFrames
+    using Dates, DataFrames, LinearAlgebra, Statistics, Random, Test
     using DataFrames: columns
     const ≅ = isequal
     const ≇ = !isequal
@@ -110,11 +110,7 @@ module TestDataFrame
     @test df[:newcol_1] == ["a1", "b1"]
 
     df = DataFrame(a=[1,2], a_1=[3,4])
-    @static if VERSION >= v"0.7.0-DEV.2988"
-        @test_logs (:warn, r"Inserting") insert!(df, 1, [11,12], :a)
-    else
-        @test_warn r"Inserting" insert!(df, 1, [11,12], :a)
-    end
+    @test_logs (:warn, r"Inserting") insert!(df, 1, [11,12], :a)
     df = DataFrame(a=[1,2], a_1=[3,4])
     insert!(df, 1, [11,12], :a, makeunique=true)
     @test names(df) == [:a_2, :a, :a_1]
@@ -186,7 +182,7 @@ module TestDataFrame
     @test size(df, 2) == 5
     @test typeof(df[:, 1]) == Vector{Float64}
 
-    df = convert(DataFrame, eye(10, 5))
+    df = convert(DataFrame, Matrix{Float64}(I, 10, 5))
     @test size(df, 1) == 10
     @test size(df, 2) == 5
     @test typeof(df[:, 1]) == Vector{Float64}
@@ -350,7 +346,7 @@ module TestDataFrame
                                                           :string, :string_missing,
                                                           :dates, :catarray],
                                               mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                              std = [Compat.std(df[:number]), 1.0, nothing, 
+                                              std = [Statistics.std(df[:number]), 1.0, nothing, 
                                                      nothing, nothing, nothing],
                                               min = [1.0, 1.0, "a", "a", Date(2000), nothing],
                                               q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
@@ -516,13 +512,8 @@ module TestDataFrame
         df = DataFrame(id=Union{Int, Missing}[1, 2, 1, 2],
                        id2=Union{Int, Missing}[1, 2, 1, 2],
                        variable=["a", "b", "a", "b"], value=[3, 4, 5, 6])
-        @static if VERSION >= v"0.7.0-DEV.2988"
-            @test_logs (:warn, "Duplicate entries in unstack at row 3 for key 1 and variable a.") unstack(df, :id, :variable, :value)
-            @test_logs (:warn, "Duplicate entries in unstack at row 3 for key (1, 1) and variable a.") unstack(df, :variable, :value)
-        else
-            @test_warn "Duplicate entries in unstack at row 3 for key 1 and variable a." unstack(df, :id, :variable, :value)
-            @test_warn "Duplicate entries in unstack at row 3 for key (1, 1) and variable a." unstack(df, :variable, :value)
-        end
+        @test_logs (:warn, "Duplicate entries in unstack at row 3 for key 1 and variable a.") unstack(df, :id, :variable, :value)
+        @test_logs (:warn, "Duplicate entries in unstack at row 3 for key (1, 1) and variable a.") unstack(df, :variable, :value)
         a = unstack(df, :id, :variable, :value)
         @test a ≅ DataFrame(id = [1, 2], a = [5, missing], b = [missing, 6])
         b = unstack(df, :variable, :value)
@@ -536,24 +527,15 @@ module TestDataFrame
         @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, missing], b = [missing, 4])
 
         df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1,1])
-        @static if VERSION >= v"0.7.0-DEV.2988"
-            @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :variable, :value)
-            @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df)
-        else
-            @test_warn "Duplicate entries in unstack at row 2 for key 1 and variable x." unstack(df, :variable, :value)
-            @test_warn "Duplicate entries in unstack at row 2 for key 1 and variable x." unstack(df)
-        end
+        @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :variable, :value)
+        @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df)
     end
 
     @testset "missing values in colkey" begin
         df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                        variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                        value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-        @static if VERSION >= v"0.7.0-DEV.2988"
-            @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df)
-        else
-            @test_warn "Missing value in variable variable at row 3. Skipping." unstack(df)
-        end
+        @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df)
         udf = unstack(df)
         @test names(udf) == [:id, :a, :b, :missing]
         @test udf[:missing] ≅ [missing, 9.0, missing]
@@ -561,11 +543,7 @@ module TestDataFrame
                        id2=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                        variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                        value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-        @static if VERSION >= v"0.7.0-DEV.2988"
-            @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, 3, 4)
-        else
-            @test_warn "Missing value in variable variable at row 3. Skipping." unstack(df, 3, 4)
-        end
+        @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, 3, 4)
         udf = unstack(df, 3, 4)
         @test names(udf) == [:id, :id2, :a, :b, :missing]
         @test udf[:missing] ≅ [missing, 9.0, missing]
@@ -799,29 +777,27 @@ module TestDataFrame
         @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :a])
     end
 
-    if VERSION >= v"0.7.0-DEV.3067"
-        @testset "getproperty, setproperty! and propertynames" begin
-            x = collect(1:10)
-            y = collect(1.0:10.0)
-            z = collect(10:-1:1)
-            df = DataFrame(x = x, y = y)
+    @testset "getproperty, setproperty! and propertynames" begin
+        x = collect(1:10)
+        y = collect(1.0:10.0)
+        z = collect(10:-1:1)
+        df = DataFrame(x = x, y = y)
 
-            @test Base.propertynames(df) == names(df)
+        @test Base.propertynames(df) == names(df)
 
-            @test df.x === x
-            @test df.y === y
-            @test_throws KeyError df.z
+        @test df.x === x
+        @test df.y === y
+        @test_throws KeyError df.z
 
-            df.x = 2:11
-            @test df.x == 2:11
-            @test x == 1:10
-            df.y = 1
-            @test df.y == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-            @test df.y === y
-            df.z = z
-            @test df.z === z
-            df.zz = 1
-            @test df.zz == df.y
-        end
+        df.x = 2:11
+        @test df.x == 2:11
+        @test x == 1:10
+        df.y = 1
+        @test df.y == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        @test df.y === y
+        df.z = z
+        @test df.z === z
+        df.zz = 1
+        @test df.zz == df.y
     end
 end

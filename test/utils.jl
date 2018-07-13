@@ -1,5 +1,5 @@
 module TestUtils
-    using Compat, Compat.Test, DataFrames, StatsBase, Compat.Random
+    using Compat, Test, DataFrames, Statistics, StatsBase, Random
     using Compat: @warn
     import DataFrames: identifier
 

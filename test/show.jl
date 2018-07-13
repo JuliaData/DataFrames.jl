@@ -1,5 +1,5 @@
 module TestShow
-    using Compat, Compat.Test, DataFrames
+    using Compat, DataFrames, Random, Test
 
     # In the future newline character \n should be added to this test case
     df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "ABC"],
@@ -138,7 +138,7 @@ module TestShow
     dfr = DataFrameRow(df, 1)
     show(io, dfr)
 
-    df = DataFrame(A = Vector{String}(3))
+    df = DataFrame(A = Vector{String}(undef, 3))
 
     A = DataFrames.StackedVector(Any[[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     show(io, A)
@@ -149,69 +149,32 @@ module TestShow
 
     #Test show output for REPL and similar
     df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
-    if VERSION >= v"0.7.0-DEV.3077"
-        @test sprint(show, df, context=:color=>true) == """
+    @test sprint(show, df, context=:color=>true) == """
         2×2 DataFrame
         │ Row │ Fish │ Mass    │
         ├─────┼──────┼─────────┤
         │ 1   │ Suzy │ 1.5     │
         │ 2   │ Amir │ \e[90mmissing\e[39m │"""
-    else
-        io = IOBuffer()
-        show(io, df)
-        str = String(take!(io))
-        @test str == (Base.have_color ? """
-        2×2 $DataFrame
-        │ Row │ Fish │ Mass    │
-        ├─────┼──────┼─────────┤
-        │ 1   │ Suzy │ 1.5     │
-        │ 2   │ Amir │ \e[90mmissing\e[39m │""" : """
-        2×2 $DataFrame
-        │ Row │ Fish │ Mass    │
-        ├─────┼──────┼─────────┤
-        │ 1   │ Suzy │ 1.5     │
-        │ 2   │ Amir │ missing │""")
-    end
-
   
     # Test showing missing
     df = DataFrame(A = [:Symbol, missing, :missing],
                    B = [missing, "String", "missing"],
                    C = [:missing, "missing", missing])
-    if VERSION ≥ v"0.7.0-DEV.2762"
-        @test sprint(show, df, context=:color=>true) == """
+    @test sprint(show, df, context=:color=>true) == """
         3×3 DataFrame
         │ Row │ A       │ B       │ C       │
         ├─────┼─────────┼─────────┼─────────┤
         │ 1   │ Symbol  │ \e[90mmissing\e[39m │ missing │
         │ 2   │ \e[90mmissing\e[39m │ String  │ missing │
         │ 3   │ missing │ missing │ \e[90mmissing\e[39m │"""
-    else
-        io = IOBuffer()
-        show(io, df)
-        str = String(take!(io))
-        @test str == (Base.have_color ? """
-        3×3 $DataFrame
-        │ Row │ A       │ B       │ C       │
-        ├─────┼─────────┼─────────┼─────────┤
-        │ 1   │ Symbol  │ \e[90mmissing\e[39m │ missing │
-        │ 2   │ \e[90mmissing\e[39m │ String  │ missing │
-        │ 3   │ missing │ missing │ \e[90mmissing\e[39m │""" : """
-        3×3 $DataFrame
-        │ Row │ A       │ B       │ C       │
-        ├─────┼─────────┼─────────┼─────────┤
-        │ 1   │ Symbol  │ missing │ missing │
-        │ 2   │ missing │ String  │ missing │
-        │ 3   │ missing │ missing │ missing │""")
-    end
-
+                   
     # Test showing nothing
     df_nothing = DataFrame(A = [1.0, 2.0, 3.0], B = ["something", "g", nothing])
     io = IOBuffer()
     show(io, df_nothing)
     str = String(take!(io))
     @test str == """
-    3×2 DataFrames.DataFrame
+    3×2 $DataFrame
     │ Row │ A   │ B         │
     ├─────┼─────┼───────────┤
     │ 1   │ 1.0 │ something │

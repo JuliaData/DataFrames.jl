@@ -7,19 +7,12 @@ module DataFrames
 ##
 ##############################################################################
 
-using Reexport, StatsBase, SortingAlgorithms, Compat
+using Reexport, StatsBase, SortingAlgorithms, Compat, Statistics, Unicode, Printf
 @reexport using CategoricalArrays, Missings
 using Base.Sort, Base.Order
-using Compat.Unicode, Compat.Printf
 using Compat: @warn
 
-if VERSION >= v"0.7.0-DEV.2738"
-    const kwpairs = pairs
-else
-    kwpairs(x::AbstractArray) = (first(v) => last(v) for v in x)
-    using Compat.IOBuffer
-end
-
+const kwpairs = pairs
 
 ##############################################################################
 ##

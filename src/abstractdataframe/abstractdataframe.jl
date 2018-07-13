@@ -236,12 +236,10 @@ Compat.axes(df, i) = axes(df)[i]
 
 Base.ndims(::AbstractDataFrame) = 2
 
-if VERSION >= v"0.7.0-DEV.3067"
-    Base.getproperty(df::AbstractDataFrame, col_ind::Symbol) = getindex(df, col_ind)
-    Base.setproperty!(df::AbstractDataFrame, col_ind::Symbol, x) = setindex!(df, x, col_ind)
-    # Private fields are never exposed since they can conflict with column names
-    Base.propertynames(df::AbstractDataFrame, private::Bool=false) = names(df)
-end
+Base.getproperty(df::AbstractDataFrame, col_ind::Symbol) = getindex(df, col_ind)
+Base.setproperty!(df::AbstractDataFrame, col_ind::Symbol, x) = setindex!(df, x, col_ind)
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(df::AbstractDataFrame, private::Bool=false) = names(df)
 
 ##############################################################################
 ##
@@ -468,8 +466,8 @@ end
 function get_stats(col::AbstractArray{>:Missing})
     nomissing = collect(skipmissing(col))
     
-    q = try quantile(nomissing, [.25, .5, .75]) catch [nothing, nothing, nothing] end
-    ex = try extrema(nomissing) catch (nothing, nothing) end
+    q = try quantile(nomissing, [.25, .5, .75]) catch; [nothing, nothing, nothing] end
+    ex = try extrema(nomissing) catch; (nothing, nothing) end
     m = try mean(nomissing) catch end
     if eltype(nomissing) <: Real
         u = nothing
@@ -479,7 +477,7 @@ function get_stats(col::AbstractArray{>:Missing})
 
     Dict(
         :mean => m,
-        :std => try Compat.std(nomissing, mean = m) catch end,
+        :std => try std(nomissing, mean = m) catch end,
         :min => ex[1],
         :q25 => q[1],
         :median => q[2],
@@ -494,8 +492,8 @@ function get_stats(col::AbstractArray{>:Missing})
 end 
 
 function get_stats(col)
-    q = try quantile(col, [.25, .5, .75]) catch [nothing, nothing, nothing] end
-    ex = try extrema(col) catch (nothing, nothing) end
+    q = try quantile(col, [.25, .5, .75]) catch; [nothing, nothing, nothing] end
+    ex = try extrema(col) catch; (nothing, nothing) end
     m = try mean(col) catch end
     if eltype(col) <: Real
         u = nothing
@@ -505,7 +503,7 @@ function get_stats(col)
 
     Dict(
         :mean => m,
-        :std => try Compat.std(col, mean = m) catch end,
+        :std => try std(col, mean = m) catch end,
         :min => ex[1],
         :q25 => q[1],
         :median => q[2],

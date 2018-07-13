@@ -370,7 +370,7 @@ function insert_multiple_entries!(df::DataFrame,
                                   row_inds::AbstractVector{<:Real},
                                   col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
-        columns(df)[index(df)[col_ind]][row_inds] = v
+        columns(df)[index(df)[col_ind]][row_inds] .= v
         return v
     else
         error("Cannot assign to non-existent column: $col_ind")
