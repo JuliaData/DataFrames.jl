@@ -1,4 +1,5 @@
 environment:
+  JULIA_PROJECT: "@."
   matrix:
   - JULIA_URL: "https://julialang-s3.julialang.org/bin/winnt/x86/0.6/julia-0.6-latest-win32.exe"
   - JULIA_URL: "https://julialang-s3.julialang.org/bin/winnt/x64/0.6/julia-0.6-latest-win64.exe"
@@ -36,10 +37,19 @@ install:
   - C:\projects\julia-binary.exe /S /D=C:\projects\julia
 
 build_script:
-# Need to convert from shallow to complete for Pkg.clone to work
-  - IF EXIST .git\shallow (git fetch --unshallow)
-  - C:\projects\julia\bin\julia -e "versioninfo();
-      Pkg.clone(pwd(), \"DataFrames\"); Pkg.build(\"DataFrames\")"
+  - C:\projects\julia\bin\julia -e "
+      if VERSION >= v\"0.7-\"
+          using InteractiveUtils; versioninfo();
+          using Pkg; Pkg.build()
+      else
+          versioninfo();
+          Pkg.clone(pwd(), \"DataFrames\"); Pkg.build(\"DataFrames\")
+      end"
 
 test_script:
-  - C:\projects\julia\bin\julia -e "Pkg.test(\"DataFrames\")"
+  - C:\projects\julia\bin\julia -e "
+      if VERSION >= v\"0.7-\"
+          using Pkg; Pkg.test()
+      else
+          Pkg.test(\"DataFrames\")
+      end"
