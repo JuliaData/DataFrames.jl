@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # The `Missing` Type
 
 `Missing` is a type implemented by the [Missings.jl](https://github.com/JuliaData/Missings.jl) package to represent missing data. `missing` is an instance of the type `Missing` used to represent a missing value.
@@ -197,6 +196,4 @@ julia> missings(1, 3)
 julia> missings(Int, 1, 3)
 1×3 Array{Union{Missings.Missing, Int64},2}:
  missing  missing  missing
-
->>>>>>> 8a8efd19e484ff28a4a380ef8a40dd317792bdf9
 ```
