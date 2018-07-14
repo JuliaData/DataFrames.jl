@@ -17,7 +17,7 @@ function printtable(io::IO,
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    missingstring::AbstractString = "missing")
+                    nastring::AbstractString = "missing")
     n, p = size(df)
     etypes = eltypes(df)
     if header
@@ -45,7 +45,7 @@ function printtable(io::IO,
                     print(io, df[i, j])
                 end
             else
-                print(io, missingstring)
+                print(io, nastring)
             end
             if j < p
                 print(io, separator)
@@ -61,13 +61,13 @@ function printtable(df::AbstractDataFrame;
                     header::Bool = true,
                     separator::Char = ',',
                     quotemark::Char = '"',
-                    missingstring::AbstractString = "missing")
+                    nastring::AbstractString = "missing")
     printtable(stdout,
                df,
                header = header,
                separator = separator,
                quotemark = quotemark,
-               missingstring = missingstring)
+               nastring = nastring)
     return
 end
 ##############################################################################

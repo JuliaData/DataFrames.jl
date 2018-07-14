@@ -57,7 +57,6 @@ end
 ourshowcompact(io::IO, x::Any) = show(IOContext(io, :compact=>true), x) # -> Void
 ourshowcompact(io::IO, x::AbstractString) = escape_string(io, x, "") # -> Void
 ourshowcompact(io::IO, x::Symbol) = ourshowcompact(io, string(x)) # -> Void
-ourshowcompact(io::IO, x::Nothing) = print("")
 
 #' @description
 #'
