@@ -149,8 +149,7 @@ function DataFrame(; kwargs...)
 end
 
 function DataFrame(columns::AbstractVector,
-                   cnames::AbstractVector{Symbol}=gennames(length(columns)),
-                   metadata = MetaData();
+                   cnames::AbstractVector{Symbol}=gennames(length(columns));
                    makeunique::Bool=false)::DataFrame
     if !all(col -> isa(col, AbstractVector), columns)
         # change to throw(ArgumentError("columns argument must be a vector of AbstractVector objects"))
@@ -267,8 +266,7 @@ end
 function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = columns(df)[selected_columns]
-    new_metadata = metadata(df)[selected_columns]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]), new_metadata)
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]), metadata(df)[selected_columns])
 end
 
 # df[:] => DataFrame
@@ -284,7 +282,6 @@ end
 function Base.getindex(df::DataFrame, row_ind::Real, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[[row_ind]] for dv in columns(df)[selected_columns]]
-    # no subsetting required for metadata cause rows dont matter
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), metadata(df)[selected_columns])
 end
 
@@ -759,20 +756,7 @@ merge!(df, df2)  # column z is added, column id is overwritten
 """
 function Base.merge!(df::DataFrame, others::AbstractDataFrame...)
     for other in others
-        d = diff_indices(index(other), index(df))
-        #=
-        returns the indices of the columns in the left dataframe that are not
-        in the dataframe on the right.  
-        defined in index.jl
-        =#
-
-        #=
-        This function awkwardly needs the number of columns in both the 
-        base dataframe and the right (just the different columns) dataframe. 
-        because since we might have to create new fields, we need to tell 
-        metadata how long those vectors in the columndata Dict are. 
-        =#
-        append!(metadata(df), metadata(other)[d], ncol(df), length(d))
+        merge!(metadata(df), metadata(other), index(df), index(other))
         for n in _names(other)
             df[n] = other[n]
         end
@@ -1144,12 +1128,9 @@ end
 
 Adds a label to a DataFrame. Does not add other metadata.
 """
-function addmeta!(df::DataFrame, var::Symbol, field::Symbol, info)
-    ind = index(df)[var]
-    # pass the number of columns to the function so that it can create a new array of 
-    # strings of the right size. 
-    # TODO: maybe figure out a more elegant way of doing this. 
-    addmeta!(df.metadata, ind, ncol(df), field, info)
+function metadata!(df::DataFrame, var::Symbol, field::Symbol, info)
+    addmeta!(df.metadata, index(df)[var], ncol(df), field, info)
+    return df
 end
 
 """
@@ -1157,16 +1138,15 @@ end
 
 Prints the label (not other metadata) for a single variable of a dataframe. 
 """
-function getmeta(df::DataFrame, var::Symbol, field::Symbol)
-    ind = index(df)[var]
-    getmeta(df.metadata, ind, field)
+function metadata(df::DataFrame, var::Symbol, field::Symbol)
+    metadata(df).dict[field][index(df)[var]]
 end
 
 """
 Prints (does not return anything), all the MetaData
 for a given field.
 """
-function showmeta(df::DataFrame, fields::Union{Symbol, Vector{Symbol}}=collect(keys(metadata(df).columndata)))
+function showmeta(df::DataFrame, fields::Union{Symbol, Vector{Symbol}}=collect(keys(metadata(df).dict)))
     
     if fields isa Symbol 
         fields = [fields] 

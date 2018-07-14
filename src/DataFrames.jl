@@ -69,8 +69,8 @@ export AbstractDataFrame,
        tail,
        permutecols!,
 
-       addmeta!, 
-       getmeta,
+       metadata!, 
+       metadata,
        showmeta,
 
        # Remove after deprecation period

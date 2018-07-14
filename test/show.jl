@@ -205,6 +205,19 @@ module TestShow
         │ 3   │ missing │ missing │ missing │""")
     end
 
+    # Test showing nothing
+    df_nothing = DataFrame(A = [1.0, 2.0, 3.0], B = ["g", "g", nothing])
+    io = IOBuffer()
+    show(io, df_nothing)
+    str = String(take!(io))
+    @test str == """
+    3×2 DataFrames.DataFrame
+    │ Row │ A   │ B │
+    ├─────┼─────┼───┤
+    │ 1   │ 1.0 │ g │
+    │ 2   │ 2.0 │ g │
+    │ 3   │ 3.0 │   │"""
+
     # Test computing width for Array{String} columns
     df = DataFrame(Any[["a"]], [:x])
     io = IOBuffer()
