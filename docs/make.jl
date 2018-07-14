@@ -19,7 +19,6 @@ makedocs(
             "Reshaping" => "man/reshaping_and_pivoting.md",
             "Sorting" => "man/sorting.md",
             "Categorical Data" => "man/categorical.md",
-            "Missing Data" => "man/missing.md", 
             "Querying frameworks" => "man/querying_frameworks.md"
         ],
         "API" => Any[

@@ -100,6 +100,11 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         copyto!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
     end
+    # To do: 
+    # 1. Make a new metadata that is append(metadata(joiner.df1), metadata(df_noon))
+    # 2. Make a new constructor so that we can construct a new dataframe
+    # 3. long term, add optional arguments to choose which metadata gets put in. 
+    # Haven't added this yet because I only want to focus on dataframe/dataframe.jl for now.
     res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)), makeunique=makeunique)
 
     if length(rightonly_ixs.join) > 0

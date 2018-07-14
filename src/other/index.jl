@@ -96,6 +96,14 @@ function Base.delete!(x::Index, idx::Integer)
     return x
 end
 
+"""
+Returns returns the indices of the columns in x that are not in y. 
+"""
+function diff_indices(x::Index, y::Index)
+    x_and_not_y = setdiff(names(x), names(y))
+    x_and_not_y_cols = x[x_and_not_y]
+end
+
 function Base.delete!(x::Index, nm::Symbol)
     if !haskey(x.lookup, nm)
         return x
