@@ -206,7 +206,7 @@ module TestShow
     end
 
     # Test showing nothing
-    df_nothing = DataFrame(A = [1.0, 2.0, 3.0], B = ["g", "g", nothing])
+    df_nothing = DataFrame(A = [1.0, 2.0, 3.0], B = ["something", "g", nothing])
     io = IOBuffer()
     show(io, df_nothing)
     str = String(take!(io))
