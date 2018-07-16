@@ -1,6 +1,5 @@
 module TestUtils
-    using Compat, Test, DataFrames, Statistics, StatsBase, Random
-    using Compat: @warn
+    using Test, DataFrames, Statistics, StatsBase, Random
     import DataFrames: identifier
 
     @test identifier("%_B*_\tC*") == :_B_C_
@@ -17,7 +16,7 @@ module TestUtils
 
     # Check that reserved words are up to date
 
-    f = "$(Compat.Sys.BINDIR)/../../src/julia-parser.scm"
+    f = "$(Sys.BINDIR)/../../src/julia-parser.scm"
     if isfile(f)
         r1 = r"define initial-reserved-words '\(([^)]+)"
         r2 = r"define \(parse-block s(?: \([^)]+\))?\)\s+\(parse-Nary s (?:parse-eq '\([^(]*|down '\([^)]+\) '[^']+ ')\(([^)]+)"

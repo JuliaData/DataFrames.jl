@@ -346,7 +346,7 @@ module TestDataFrame
                                                           :string, :string_missing,
                                                           :dates, :catarray],
                                               mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                              std = [Statistics.std(df[:number]), 1.0, nothing, 
+                                              std = [std(df[:number]), 1.0, nothing, 
                                                      nothing, nothing, nothing],
                                               min = [1.0, 1.0, "a", "a", Date(2000), nothing],
                                               q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],

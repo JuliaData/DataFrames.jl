@@ -135,7 +135,13 @@ end
 ##############################################################################
 
 function latex_char_escape(char::Char)
-    char == '\\' ? "\\textbackslash{}" : char == '~' ? "\\textasciitilde{}" : string('\\', char)
+    if char == '\\'
+        return "\\textbackslash{}"
+    elseif char == '~'
+        return "\\textasciitilde{}"
+    else
+        return string('\\', char)
+    end
 end
 
 function latex_escape(cell::AbstractString)

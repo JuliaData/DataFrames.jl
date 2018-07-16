@@ -12,8 +12,6 @@ using Reexport, StatsBase, SortingAlgorithms, Compat, Statistics, Unicode, Print
 using Base.Sort, Base.Order
 using Compat: @warn
 
-const kwpairs = pairs
-
 ##############################################################################
 ##
 ## Exported methods and types (in addition to everything reexported above)

@@ -142,7 +142,7 @@ function DataFrame(; kwargs...)
     if isempty(kwargs)
         DataFrame(Any[], Index())
     else
-        DataFrame(kwpairs(kwargs)...)
+        DataFrame(pairs(kwargs)...)
     end
 end
 
