@@ -15,12 +15,11 @@ function identifier(s::AbstractString)
 end
 
 function makeidentifier(s::AbstractString)
-    i = firstindex(s)
-    i > ncodeunits(s) && return "x"
+    (iresult = iterate(s)) === nothing && return "x"
 
     res = IOBuffer(zeros(UInt8, sizeof(s)+1), write=true)
 
-    (c, i) = iterate(s, i)
+    (c, i) = iresult
     under = if is_id_start_char(c)
         write(res, c)
         c == '_'
@@ -32,8 +31,8 @@ function makeidentifier(s::AbstractString)
         true
     end
 
-    while i ≤ ncodeunits(s)
-        (c, i) = iterate(s, i)
+    while (iresult = iterate(s, i)) !== nothing
+        (c, i) = iresult
         if c != '_' && is_id_char(c)
             write(res, c)
             under = false

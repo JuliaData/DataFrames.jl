@@ -10,7 +10,6 @@ module DataFrames
 using Reexport, StatsBase, SortingAlgorithms, Compat, Statistics, Unicode, Printf
 @reexport using CategoricalArrays, Missings
 using Base.Sort, Base.Order
-using Compat: @warn
 
 ##############################################################################
 ##
