@@ -160,6 +160,7 @@ julia> df[1:3, :]
 Having seen what some of the rows look like, we can try to summarize the entire data set using `describe`:
 
 ```jldoctest dataframe
+julia> describe(df)
 2×8 DataFrames.DataFrame
 │ Row │ variable │ mean │ min │ median │ max │ nunique │ nmissing │ eltype │
 ├─────┼──────────┼──────┼─────┼────────┼─────┼─────────┼──────────┼────────┤
