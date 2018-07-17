@@ -1,36 +1,37 @@
 module TestCat
-    using Compat, Compat.Test, Compat.Random, DataFrames
+    using Test, Random, DataFrames
     using DataFrames: columns
     const ≅ = isequal
 
     #
     # hcat
     #
+    @testset "hcat" begin
+        nvint = [1, 2, missing, 4]
+        nvstr = ["one", "two", missing, "four"]
 
-    nvint = [1, 2, missing, 4]
-    nvstr = ["one", "two", missing, "four"]
+        df2 = DataFrame(Any[nvint, nvstr])
+        df3 = DataFrame(Any[nvint])
+        df4 = convert(DataFrame, [1:4 1:4])
+        df5 = DataFrame(Any[Union{Int, Missing}[1,2,3,4], nvstr])
 
-    df2 = DataFrame(Any[nvint, nvstr])
-    df3 = DataFrame(Any[nvint])
-    df4 = convert(DataFrame, [1:4 1:4])
-    df5 = DataFrame(Any[Union{Int, Missing}[1,2,3,4], nvstr])
+        dfh = hcat(df3, df4, makeunique=true)
+        @test size(dfh, 2) == 3
+        @test names(dfh) ≅ [:x1, :x1_1, :x2]
+        @test dfh[:x1] ≅ df3[:x1]
+        @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4, makeunique=true)
 
-    dfh = hcat(df3, df4, makeunique=true)
-    @test size(dfh, 2) == 3
-    @test names(dfh) ≅ [:x1, :x1_1, :x2]
-    @test dfh[:x1] ≅ df3[:x1]
-    @test dfh ≅ DataFrames.hcat!(DataFrame(), df3, df4, makeunique=true)
+        dfa = DataFrame(a=[1,2])
+        dfb = DataFrame(b=[3,missing])
+        @test hcat(dfa, dfb) ≅ [dfa dfb]
 
-    dfa = DataFrame(a=[1,2])
-    dfb = DataFrame(b=[3,missing])
-    @test hcat(dfa, dfb) ≅ [dfa dfb]
+        dfh3 = hcat(df3, df4, df5, makeunique=true)
+        @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
+        @test dfh3 ≅ hcat(dfh, df5, makeunique=true)
+        @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, makeunique=true)
 
-    dfh3 = hcat(df3, df4, df5, makeunique=true)
-    @test names(dfh3) == [:x1, :x1_1, :x2, :x1_2, :x2_1]
-    @test dfh3 ≅ hcat(dfh, df5, makeunique=true)
-    @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, makeunique=true)
-
-    @test df2 ≅ DataFrames.hcat!(df2, makeunique=true)
+        @test df2 ≅ DataFrames.hcat!(df2, makeunique=true)
+    end
 
     @testset "hcat ::AbstractDataFrame" begin
         df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
@@ -74,108 +75,75 @@ module TestCat
     # vcat
     #
 
-    missing_df = DataFrame(Int, 0, 0)
-    df = DataFrame(Int, 4, 3)
+    @testset "vcat" begin
+        missing_df = DataFrame(Int, 0, 0)
+        df = DataFrame(Int, 4, 3)
 
-    # Assignment of rows
-    df[1, :] = df[1, :]
-    df[1:2, :] = df[1:2, :]
-    df[[true,false,false,true], :] = df[2:3, :]
+        # Assignment of rows
+        df[1, :] = df[1, :]
+        df[1:2, :] = df[1:2, :]
+        df[[true,false,false,true], :] = df[2:3, :]
 
-    # Scalar broadcasting assignment of rows
-    df[1, :] = 1
-    df[1:2, :] = 1
-    df[[true,false,false,true], :] = 3
+        # Scalar broadcasting assignment of rows
+        df[1, :] = 1
+        df[1:2, :] = 1
+        df[[true,false,false,true], :] = 3
 
-    # Vector broadcasting assignment of rows
-    df[1:2, :] = [2,3]
-    df[[true,false,false,true], :] = [2,3]
+        # Vector broadcasting assignment of rows
+        df[1:2, :] = [2,3]
+        df[[true,false,false,true], :] = [2,3]
 
-    # Assignment of columns
-    df[1] = zeros(4)
-    df[:, 2] = ones(4)
+        # Assignment of columns
+        df[1] = zeros(4)
+        df[:, 2] = ones(4)
 
-    # Broadcasting assignment of columns
-    df[:, 1] = 1
-    df[1] = 3
-    df[:x3] = 2
+        # Broadcasting assignment of columns
+        df[:, 1] = 1
+        df[1] = 3
+        df[:x3] = 2
 
-    # assignment of subtables
-    df[1, 1:2] = df[2, 2:3]
-    df[1:2, 1:2] = df[2:3, 2:3]
-    df[[true,false,false,true], 2:3] = df[1:2,1:2]
+        # assignment of subtables
+        df[1, 1:2] = df[2, 2:3]
+        df[1:2, 1:2] = df[2:3, 2:3]
+        df[[true,false,false,true], 2:3] = df[1:2,1:2]
 
-    # scalar broadcasting assignment of subtables
-    df[1, 1:2] = 3
-    df[1:2, 1:2] = 3
-    df[[true,false,false,true], 2:3] = 3
+        # scalar broadcasting assignment of subtables
+        df[1, 1:2] = 3
+        df[1:2, 1:2] = 3
+        df[[true,false,false,true], 2:3] = 3
 
-    # vector broadcasting assignment of subtables
-    df[1:2, 1:2] = [3,2]
-    df[[true,false,false,true], 2:3] = [2,3]
+        # vector broadcasting assignment of subtables
+        df[1:2, 1:2] = [3,2]
+        df[[true,false,false,true], 2:3] = [2,3]
 
-    @test vcat(missing_df) == DataFrame()
-    @test vcat(missing_df, missing_df) == DataFrame()
-    @test_throws ArgumentError vcat(missing_df, df)
-    @test_throws ArgumentError vcat(df, missing_df)
-    @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
-    @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
-    res = vcat(df, df)
-    @test res[1:size(df, 1), :] == df
-    @test res[1+size(df, 1):end, :] == df
-    @test eltypes(vcat(df, df, df)) == Type[Float64, Float64, Int]
-    @test size(vcat(df, df, df)) == (size(df, 1) * 3, size(df, 2))
-    res = vcat(df, df, df)
-    s = size(df, 1)
-    for i in 1:3
-        @test res[1+(i-1)*s:i*s, :] == df
+        @test vcat(missing_df) == DataFrame()
+        @test vcat(missing_df, missing_df) == DataFrame()
+        @test_throws ArgumentError vcat(missing_df, df)
+        @test_throws ArgumentError vcat(df, missing_df)
+        @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
+        @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
+        res = vcat(df, df)
+        @test res[1:size(df, 1), :] == df
+        @test res[1+size(df, 1):end, :] == df
+        @test eltypes(vcat(df, df, df)) == Type[Float64, Float64, Int]
+        @test size(vcat(df, df, df)) == (size(df, 1) * 3, size(df, 2))
+        res = vcat(df, df, df)
+        s = size(df, 1)
+        for i in 1:3
+            @test res[1+(i-1)*s:i*s, :] == df
+        end
+
+        alt_df = deepcopy(df)
+        @test vcat(df, alt_df) == DataFrame([[3.0,2.0,3.0,3.0,3.0,2.0,3.0,3.0],
+                                             [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
+                                             [2,2,2,3,2,2,2,3]])
+
+        # Don't fail on non-matching types
+        df[1] = zeros(Int, nrow(df))
+        @test vcat(df, alt_df) == DataFrame([[0.0,0.0,0.0,0.0,3.0,2.0,3.0,3.0],
+                                             [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
+                                             [2,2,2,3,2,2,2,3]])
     end
-
-    alt_df = deepcopy(df)
-    @test vcat(df, alt_df) == DataFrame([[3.0,2.0,3.0,3.0,3.0,2.0,3.0,3.0],
-                                         [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
-                                         [2,2,2,3,2,2,2,3]])
-
-    # Don't fail on non-matching types
-    df[1] = zeros(Int, nrow(df))
-    @test vcat(df, alt_df) == DataFrame([[0.0,0.0,0.0,0.0,3.0,2.0,3.0,3.0],
-                                         [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
-                                         [2,2,2,3,2,2,2,3]])
-
-    dfr = vcat(df4, df4)
-    @test size(dfr, 1) == 8
-    @test names(df4) == names(dfr)
-    @test dfr == [df4; df4]
-
-    @test eltypes(vcat(DataFrame(a = [1]), DataFrame(a = [2.1]))) == Type[Float64]
-    @test eltypes(vcat(DataFrame(a = missings(Int, 1)), DataFrame(a = Union{Float64, Missing}[2.1]))) == Type[Union{Float64, Missing}]
-
-    # Minimal container type promotion
-    dfa = DataFrame(a = CategoricalArray{Union{Int, Missing}}([1, 2, 2]))
-    dfb = DataFrame(a = CategoricalArray{Union{Int, Missing}}([2, 3, 4]))
-    dfc = DataFrame(a = Union{Int, Missing}[2, 3, 4])
-    dfd = DataFrame(Any[2:4], [:a])
-    dfab = vcat(dfa, dfb)
-    dfac = vcat(dfa, dfc)
-    @test dfab[:a] == [1, 2, 2, 2, 3, 4]
-    @test dfac[:a] == [1, 2, 2, 2, 3, 4]
-    @test isa(dfab[:a], CategoricalVector{Union{Int, Missing}})
-    @test isa(dfac[:a], CategoricalVector{Union{Int, Missing}})
-    # ^^ container may flip if container promotion happens in Base/DataArrays
-    dc = vcat(dfd, dfc)
-    @test vcat(dfc, dfd) == dc
-
-    # Zero-row DataFrames
-    dfc0 = similar(dfc, 0)
-    @test vcat(dfd, dfc0, dfc) == dc
-    @test eltypes(vcat(dfd, dfc0)) == eltypes(dc)
-
-    # vcat should be able to concatenate different implementations of AbstractDataFrame (PR #944)
-    @test vcat(view(DataFrame(A=1:3),2),DataFrame(A=4:5)) == DataFrame(A=[2,4,5])
-
-    # vcat should be able to combine a DataFrame with a column full of Missings
-    df = DataFrame(A=1:3, B=missing)
-    @test isequal(vcat(df, df), DataFrame(A=repeat(1:3, outer=2), B=missing))
 
     @testset "vcat >2 args" begin
         @test vcat(DataFrame(), DataFrame(), DataFrame()) == DataFrame()

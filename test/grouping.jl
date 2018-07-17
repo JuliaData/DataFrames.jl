@@ -1,5 +1,5 @@
 module TestGrouping
-    using Compat, Compat.Test, DataFrames, Compat.Random
+    using Test, DataFrames, Random
     const ≅ = isequal
 
     srand(1)
@@ -171,18 +171,18 @@ module TestGrouping
     @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
 
     @testset "grouping with missings" begin
-        df = DataFrame(Key1 = ["A", missing, "B", "B", "A"],
-                       Key2 = CategoricalArray(["B", "A", "A", missing, "A"]),
-                       Value = 1:5)
+        global df = DataFrame(Key1 = ["A", missing, "B", "B", "A"],
+                              Key2 = CategoricalArray(["B", "A", "A", missing, "A"]),
+                              Value = 1:5)
 
         @testset "sort=false, skipmissing=false" begin
-            gd = groupby(df, :Key1)
+            global gd = groupby(df, :Key1)
             @test length(gd) == 3
             @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
             @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
             @test gd[3] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
 
-            gd = groupby(df, [:Key1, :Key2])
+            global gd = groupby(df, [:Key1, :Key2])
             @test length(gd) == 5
             @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
             @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
@@ -192,12 +192,12 @@ module TestGrouping
         end
 
         @testset "sort=false, skipmissing=true" begin
-            gd = groupby(df, :Key1, skipmissing=true)
+            global gd = groupby(df, :Key1, skipmissing=true)
             @test length(gd) == 2
             @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
             @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
 
-            gd = groupby(df, [:Key1, :Key2], skipmissing=true)
+            global gd = groupby(df, [:Key1, :Key2], skipmissing=true)
             @test length(gd) == 3
             @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
             @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
@@ -205,13 +205,13 @@ module TestGrouping
         end
 
         @testset "sort=true, skipmissing=false" begin
-            gd = groupby(df, :Key1, sort=true)
+            global gd = groupby(df, :Key1, sort=true)
             @test length(gd) == 3
             @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
             @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
             @test gd[3] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
 
-            gd = groupby(df, [:Key1, :Key2], sort=true)
+            global gd = groupby(df, [:Key1, :Key2], sort=true)
             @test length(gd) == 5
             @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=5)            
             @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
@@ -221,12 +221,12 @@ module TestGrouping
         end
 
         @testset "sort=false, skipmissing=true" begin
-            gd = groupby(df, :Key1, sort=true, skipmissing=true)
+            global gd = groupby(df, :Key1, sort=true, skipmissing=true)
             @test length(gd) == 2
             @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
             @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
 
-            gd = groupby(df, [:Key1, :Key2], sort=true, skipmissing=true)
+            global gd = groupby(df, [:Key1, :Key2], sort=true, skipmissing=true)
             @test length(gd) == 3
             @test gd[1] == DataFrame(Key1="A", Key2="A", Value=5)
             @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
@@ -235,7 +235,7 @@ module TestGrouping
     end
 
     @testset "iteration protocol" begin
-        gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+        global gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
         for v in gd
             @test size(v) == (2,2)
         end
