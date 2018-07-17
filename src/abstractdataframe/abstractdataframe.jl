@@ -820,7 +820,7 @@ function colmissing(df::AbstractDataFrame) # -> Vector{Int}
     return missing
 end
 
-function without(df::AbstractDataFrame, icols::Vector{Int})
+function without(df::AbstractDataFrame, icols::Vector{<:Integer})
     newcols = setdiff(1:ncol(df), icols)
     df[newcols]
 end
