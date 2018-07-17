@@ -30,7 +30,7 @@ module TestUtils
             if m1 == nothing || m2 == nothing
                 error("Unable to extract keywords from 'julia-parser.scm'.")
             else
-                s = replace(m1.captures[1]*" "*m2.captures[1], r";;.*?\n", "")
+                s = replace(string(m1.captures[1]," ",m2.captures[1]), r";;.*?\n" => "")
                 rw = Set(split(s, r"\W+"))
                 @test rw == DataFrames.RESERVED_WORDS
             end
@@ -45,16 +45,16 @@ module TestUtils
 
         data = Vector{Union{Float64, Missing}}(rand(20))
         @test DataFrames.countmissing(data) == 0
-        data[sample(1:20, 11, replace=false)] = missing
+        data[sample(1:20, 11, replace=false)] .= missing
         @test DataFrames.countmissing(data) == 11
-        data[1:end] = missing
+        data[1:end] .= missing
         @test DataFrames.countmissing(data) == 20
 
         pdata = Vector{Union{Int, Missing}}(sample(1:5, 20))
         @test DataFrames.countmissing(pdata) == 0
-        pdata[sample(1:20, 11, replace=false)] = missing
+        pdata[sample(1:20, 11, replace=false)] .= missing
         @test DataFrames.countmissing(pdata) == 11
-        pdata[1:end] = missing
+        pdata[1:end] .= missing
         @test DataFrames.countmissing(pdata) == 20
     end
 
