@@ -86,7 +86,8 @@ julia&gt; df[1:3, :]
 │ 1   │ 1 │ M │
 │ 2   │ 2 │ F │
 │ 3   │ 3 │ F │
-</code></pre><h3><a class="nav-anchor" id="Summarizing-with-describe-1" href="#Summarizing-with-describe-1">Summarizing with <code>describe</code></a></h3><p>Having seen what some of the rows look like, we can try to summarize the entire data set using <code>describe</code>:</p><pre><code class="language-julia">2×8 DataFrames.DataFrame
+</code></pre><h3><a class="nav-anchor" id="Summarizing-with-describe-1" href="#Summarizing-with-describe-1">Summarizing with <code>describe</code></a></h3><p>Having seen what some of the rows look like, we can try to summarize the entire data set using <code>describe</code>:</p><pre><code class="language-julia-repl">julia&gt; describe(df)
+2×8 DataFrames.DataFrame
 │ Row │ variable │ mean │ min │ median │ max │ nunique │ nmissing │ eltype │
 ├─────┼──────────┼──────┼─────┼────────┼─────┼─────────┼──────────┼────────┤
 │ 1   │ A        │ 4.5  │ 1   │ 4.5    │ 8   │         │          │ Int64  │

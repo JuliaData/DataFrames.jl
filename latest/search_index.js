@@ -109,7 +109,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Getting Started",
     "title": "Summarizing with describe",
     "category": "section",
-    "text": "Having seen what some of the rows look like, we can try to summarize the entire data set using describe:2×8 DataFrames.DataFrame\n│ Row │ variable │ mean │ min │ median │ max │ nunique │ nmissing │ eltype │\n├─────┼──────────┼──────┼─────┼────────┼─────┼─────────┼──────────┼────────┤\n│ 1   │ A        │ 4.5  │ 1   │ 4.5    │ 8   │         │          │ Int64  │\n│ 2   │ B        │      │ F   │        │ M   │ 2       │          │ String │\nTo access individual columns of the dataset, you refer to the column names by their symbol or by their numerical index. Here we extract the first column, :A, and use it to compute the mean and variance.julia> mean(df[:A]) == mean(df[1]) == 4.5\ntrue\n\njulia> var(df[:A]) ==  var(df[1]) == 6.0\ntrue\n"
+    "text": "Having seen what some of the rows look like, we can try to summarize the entire data set using describe:julia> describe(df)\n2×8 DataFrames.DataFrame\n│ Row │ variable │ mean │ min │ median │ max │ nunique │ nmissing │ eltype │\n├─────┼──────────┼──────┼─────┼────────┼─────┼─────────┼──────────┼────────┤\n│ 1   │ A        │ 4.5  │ 1   │ 4.5    │ 8   │         │          │ Int64  │\n│ 2   │ B        │      │ F   │        │ M   │ 2       │          │ String │\nTo access individual columns of the dataset, you refer to the column names by their symbol or by their numerical index. Here we extract the first column, :A, and use it to compute the mean and variance.julia> mean(df[:A]) == mean(df[1]) == 4.5\ntrue\n\njulia> var(df[:A]) ==  var(df[1]) == 6.0\ntrue\n"
 },
 
 {
