@@ -324,13 +324,13 @@ module TestData
                     b = Vector{Union{Int, Missing}}(1:6),
                     c = Union{Int, Missing}[1:3;1:3])
     df = vcat(df1, df1)
-    @test find(nonunique(df)) == collect(7:12)
-    @test find(nonunique(df, :)) == collect(7:12)
-    @test find(nonunique(df, Colon())) == collect(7:12)
-    @test find(nonunique(df, :a)) == collect(3:12)
-    @test find(nonunique(df, [:a, :c])) == collect(7:12)
-    @test find(nonunique(df, [1, 3])) == collect(7:12)
-    @test find(nonunique(df, 1)) == collect(3:12)
+    @test findall(nonunique(df)) == collect(7:12)
+    @test findall(nonunique(df, :)) == collect(7:12)
+    @test findall(nonunique(df, Colon())) == collect(7:12)
+    @test findall(nonunique(df, :a)) == collect(3:12)
+    @test findall(nonunique(df, [:a, :c])) == collect(7:12)
+    @test findall(nonunique(df, [1, 3])) == collect(7:12)
+    @test findall(nonunique(df, 1)) == collect(3:12)
 
     # Test unique() with extra argument
     @test unique(df) == df1
