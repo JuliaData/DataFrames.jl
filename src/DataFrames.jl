@@ -68,6 +68,7 @@ export AbstractDataFrame,
        head,
        tail,
        permutecols!,
+       rowwise, 
 
        # Remove after deprecation period
        pool,

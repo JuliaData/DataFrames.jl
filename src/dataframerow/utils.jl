@@ -218,3 +218,28 @@ function Base.getindex(gd::RowGroupDict, dfr::DataFrameRow)
     gix = gd.groups[g_row]
     return view(gd.rperm, gd.starts[gix]:gd.stops[gix])
 end
+
+"""
+    rowwise(f::Function, df::DataFrame)
+
+Performs a function alonw an array from each row in a DataFrame, 
+returning an array of length `nrow(df)`
+
+```julia
+julia> df = DataFrame(a = [2,200], b = [4,400])
+2×2 DataFrames.DataFrame
+│ Row │ a   │ b   │
+├─────┼─────┼─────┤
+│ 1   │ 2   │ 4   │
+│ 2   │ 200 │ 400 │
+
+julia> t = rowwise(mean, df)
+2-element Array{Float64,1}:
+   3.0
+ 300.0
+ ```
+
+"""
+function rowwise(f::Function, df::DataFrame)
+    t = [f([x[2] for x in collect(row)]) for row in eachrow(df)]
+end

@@ -74,6 +74,10 @@ module TestDataFrameRow
     gd = DataFrames.group_rows(df5[1,:])
     @test gd.ngroups == 1
 
+    # rowwise operator 
+    df = DataFrame(a = [2,200], b = [4,400])
+    @test rowwise(Compat.mean, df) = [3.0, 300]
+
     # getproperty, setproperty! and propertynames
     if VERSION >= v"0.7.0-DEV.3067"
         r = DataFrameRow(df, 1)
