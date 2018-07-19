@@ -12,42 +12,42 @@ module TestConstructors
         @test index(df) == Index()
 
         df = DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                        CategoricalVector{Union{Float64, Missing}}(ones(3))],
-                    Index([:x1, :x2]))
+                       CategoricalVector{Union{Float64, Missing}}(ones(3))],
+                       Index([:x1, :x2]))
         @test size(df, 1) == 3
         @test size(df, 2) == 2
 
         @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                                CategoricalVector{Union{Float64, Missing}}(ones(3))])
+                                  CategoricalVector{Union{Float64, Missing}}(ones(3))])
         @test df == DataFrame(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
-                            x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
+                              x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
 
         df2 = convert(DataFrame, Union{Float64, Missing}[0.0 1.0;
-                                                    0.0 1.0;
-                                                    0.0 1.0])
+                                                         0.0 1.0;
+                                                         0.0 1.0])
         names!(df2, [:x1, :x2])
         @test df[:x1] == df2[:x1]
         @test df[:x2] == df2[:x2]
 
         df2 = DataFrame([0.0 1.0;
-                        0.0 1.0;
-                        0.0 1.0])
+                         0.0 1.0;
+                         0.0 1.0])
         names!(df2, [:x1, :x2])
         @test df[:x1] == df2[:x1]
         @test df[:x2] == df2[:x2]
 
         df2 = DataFrame([0.0 1.0;
-                        0.0 1.0;
-                        0.0 1.0], [:a, :b])
+                         0.0 1.0;
+                         0.0 1.0], [:a, :b])
         names!(df2, [:a, :b])
         @test df[:x1] == df2[:a]
         @test df[:x2] == df2[:b]
 
         @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
-                            x2 = Union{Float64, Missing}[1.0, 1.0, 1.0])
+                              x2 = Union{Float64, Missing}[1.0, 1.0, 1.0])
         @test df == DataFrame(x1 = Union{Float64, Missing}[0.0, 0.0, 0.0],
-                            x2 = Union{Float64, Missing}[1.0, 1.0, 1.0],
-                            x3 = Union{Float64, Missing}[2.0, 2.0, 2.0])[[:x1, :x2]]
+                              x2 = Union{Float64, Missing}[1.0, 1.0, 1.0],
+                              x3 = Union{Float64, Missing}[2.0, 2.0, 2.0])[[:x1, :x2]]
 
         df = DataFrame(Union{Int, Missing}, 2, 2)
         @test size(df) == (2, 2)
@@ -68,7 +68,7 @@ module TestConstructors
 
         @test DataFrame(a=1, b=1:2) == DataFrame(a=[1,1], b=[1,2])
     end
-    
+
     @testset "pair constructor" begin
         df = DataFrame(:x1 => zeros(3), :x2 => ones(3))
         @test size(df, 1) == 3
