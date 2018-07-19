@@ -1,5 +1,5 @@
 module TestShow
-    using Compat, DataFrames, Random, Test
+    using DataFrames, Random, Test
 
     # In the future newline character \n should be added to this test case
     df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "ABC"],

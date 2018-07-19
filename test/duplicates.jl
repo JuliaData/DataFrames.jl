@@ -1,5 +1,5 @@
 module TestDuplicates
-    using Compat, Compat.Test, DataFrames
+    using Test, DataFrames
     const ≅ = isequal
 
     df = DataFrame(a = [1, 2, 3, 3, 4])

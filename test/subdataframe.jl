@@ -1,5 +1,5 @@
 module TestSubDataFrame
-    using Compat, Compat.Test, DataFrames
+    using Test, DataFrames
 
     @testset "view -- DataFrame" begin
         df = DataFrame(x = 1:10, y = 1.0:10.0)

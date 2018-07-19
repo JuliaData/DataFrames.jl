@@ -1,5 +1,5 @@
 module TestData
-    using Compat, Compat.Test, DataFrames, Compat.Random
+    using Test, DataFrames, Random
     const ≅ = isequal
 
     @testset "constructors" begin

@@ -1,5 +1,5 @@
 module TestDataFrameRow
-    using Compat, Compat.Test, DataFrames
+    using Test, DataFrames
 
     df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
                    b=[2.0, missing, 1.2, 2.0, missing, missing],
