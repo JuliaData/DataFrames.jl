@@ -335,9 +335,9 @@ module TestDataFrame
         describe_output = DataFrame(variable = [:number, :number_missing, :string, 
                                                 :string_missing, :dates, :catarray],
                                     mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                    min = [1.0, 1.0, "a", "a", Date(2000), nothing],
+                                    min = [1.0, 1.0, "a", "a", Date(2000), 1],
                                     median = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                    max = [4.0, 3.0, "d", "c", Date(2004), nothing],
+                                    max = [4.0, 3.0, "d", "c", Date(2004), 2],
                                     nunique = [nothing, nothing, 4, 3, 4, 2],
                                     nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                     eltype = [Int, Int, String, String, Date, eltype(df[:catarray])])
@@ -347,11 +347,11 @@ module TestDataFrame
                                               mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               std = [std(df[:number]), 1.0, nothing, 
                                                      nothing, nothing, nothing],
-                                              min = [1.0, 1.0, "a", "a", Date(2000), nothing],
+                                              min = [1.0, 1.0, "a", "a", Date(2000), 1],
                                               q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
                                               median = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
-                                              max = [4.0, 3.0, "d", "c", Date(2004), nothing],
+                                              max = [4.0, 3.0, "d", "c", Date(2004), 2],
                                               nunique = [nothing, nothing, 4, 3, 4, 2],
                                               nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                               first = [1, 1, "a", "a", Date(2000), 1],
@@ -607,9 +607,9 @@ module TestDataFrame
         @test sprint(dump, df) == """
                                   $DataFrame  3 observations of 1 variables
                                     x1: Array{Char}((3,))
-                                      1: Char A
-                                      2: Char B
-                                      3: Char C
+                                      1: Char 'A'
+                                      2: Char 'B'
+                                      3: Char 'C'
                                   """
         df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
         # @test DataFrames.without(df, 1) == DataFrame(B = repeat('A':'C', inner=4))

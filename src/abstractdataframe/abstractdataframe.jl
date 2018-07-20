@@ -372,6 +372,8 @@ function Base.dump(io::IO, df::AbstractDataFrame, n::Int, indent)
         end
     end
 end
+Base.dump(io::IOContext, df::AbstractDataFrame, n::Int, indent) =
+    invoke(dump, Tuple{IO, AbstractDataFrame, Int, Any}, io, df, n, indent)
 
 
 """
