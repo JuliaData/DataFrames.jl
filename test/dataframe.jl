@@ -1,214 +1,208 @@
 module TestDataFrame
-    using Compat, Compat.Test, Compat.Dates, DataFrames
+    using Dates, DataFrames, LinearAlgebra, Statistics, Random, Test
     using DataFrames: columns
     const ≅ = isequal
     const ≇ = !isequal
 
-    #
-    # Equality
-    #
+    @testset "equality" begin
+        @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) == DataFrame(a=[1, 2, 3], b=[4, 5, 6])
+        @test DataFrame(a=[1, 2], b=[4, 5]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
+        @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3])
+        @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], c=[4, 5, 6])
+        @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(b=[4, 5, 6], a=[1, 2, 3])
+        @test DataFrame(a=[1, 2, 2], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
+        @test DataFrame(a=[1, 2, missing], b=[4, 5, 6]) ≅
+                    DataFrame(a=[1, 2, missing], b=[4, 5, 6])
 
-    @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) == DataFrame(a=[1, 2, 3], b=[4, 5, 6])
-    @test DataFrame(a=[1, 2], b=[4, 5]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
-    @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3])
-    @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], c=[4, 5, 6])
-    @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(b=[4, 5, 6], a=[1, 2, 3])
-    @test DataFrame(a=[1, 2, 2], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
-    @test DataFrame(a=[1, 2, missing], b=[4, 5, 6]) ≅
-                  DataFrame(a=[1, 2, missing], b=[4, 5, 6])
-
-    @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) == DataFrame(a=[1, 2, 3], b=[4, 5, 6])
-    @test DataFrame(a=[1, 2], b=[4, 5]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
-    @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3])
-    @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], c=[4, 5, 6])
-    @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(b=[4, 5, 6], a=[1, 2, 3])
-    @test DataFrame(a=[1, 2, 2], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
-    @test DataFrame(a=[1, 3, missing], b=[4, 5, 6]) !=
-             DataFrame(a=[1, 2, missing], b=[4, 5, 6])
-    @test DataFrame(a=[1, 2, missing], b=[4, 5, 6]) ≅
+        @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) == DataFrame(a=[1, 2, 3], b=[4, 5, 6])
+        @test DataFrame(a=[1, 2], b=[4, 5]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
+        @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3])
+        @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], c=[4, 5, 6])
+        @test DataFrame(a=[1, 2, 3], b=[4, 5, 6]) != DataFrame(b=[4, 5, 6], a=[1, 2, 3])
+        @test DataFrame(a=[1, 2, 2], b=[4, 5, 6]) != DataFrame(a=[1, 2, 3], b=[4, 5, 6])
+        @test DataFrame(a=[1, 3, missing], b=[4, 5, 6]) !=
                 DataFrame(a=[1, 2, missing], b=[4, 5, 6])
-    @test DataFrame(a=[1, 2, missing], b=[4, 5, 6]) ≇
-                DataFrame(a=[1, 2, 3], b=[4, 5, 6])
-
-    #
-    # Copying
-    #
-
-    df = DataFrame(a = Union{Int, Missing}[2, 3],
-                   b = Union{DataFrame, Missing}[DataFrame(c = 1), DataFrame(d = 2)])
-    dfc = copy(df)
-    dfdc = deepcopy(df)
-
-    df[1, :a] = 4
-    df[1, :b][:e] = 5
-    names!(df, [:f, :g])
-
-    @test names(dfc) == [:a, :b]
-    @test names(dfdc) == [:a, :b]
-
-    @test dfc[1, :a] === 4
-    @test dfdc[1, :a] === 2
-
-    @test names(dfc[1, :b]) == [:c, :e]
-    @test names(dfdc[1, :b]) == [:c]
-
-    x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
-
-    #test_group("DataFrame assignment")
-    # Insert single column
-    x0 = x[Int[], :]
-    @test_throws ArgumentError x0[:d] = [1]
-    @test_throws ArgumentError x0[:d] = 1:3
-
-    # Insert single value
-    x[:d] = 3
-    @test x[:d] == [3, 3, 3]
-
-    x0[:d] = 3
-    @test x0[:d] == Int[]
-
-    # similar / missings
-    df = DataFrame(a = Union{Int, Missing}[1],
-                   b = Union{String, Missing}["b"],
-                   c = CategoricalArray{Union{Float64, Missing}}([3.3]))
-    missingdf = DataFrame(a = missings(Int, 2),
-                          b = missings(String, 2),
-                          c = CategoricalArray{Union{Float64, Missing}}(undef, 2))
-    # https://github.com/JuliaData/Missings.jl/issues/66
-    # @test missingdf ≅ similar(df, 2)
-    @test typeof.(columns(similar(df, 2))) == typeof.(columns(missingdf))
-    @test size(similar(df, 2)) == size(missingdf)
-
-    # Associative methods
-
-    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
-    @test haskey(df, :a)
-    @test !haskey(df, :c)
-    @test get(df, :a, -1) === columns(df)[1]
-    @test get(df, :c, -1) == -1
-    @test !isempty(df)
-
-    @test empty!(df) === df
-    @test isempty(columns(df))
-    @test isempty(df)
-    @test isempty(DataFrame(a=[], b=[]))
-
-    df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
-    @test_throws BoundsError insert!(df, 5, ["a", "b"], :newcol)
-    @test_throws ErrorException insert!(df, 1, ["a"], :newcol)
-    @test insert!(df, 1, ["a", "b"], :newcol) == df
-    @test names(df) == [:newcol, :a, :b]
-    @test df[:a] == [1, 2]
-    @test df[:b] == [3.0, 4.0]
-    @test df[:newcol] == ["a", "b"]
-
-    @test insert!(df, 1, ["a1", "b1"], :newcol, makeunique=true) == df
-    @test names(df) == [:newcol_1, :newcol, :a, :b]
-    @test df[:a] == [1, 2]
-    @test df[:b] == [3.0, 4.0]
-    @test df[:newcol] == ["a", "b"]
-    @test df[:newcol_1] == ["a1", "b1"]
-
-    df = DataFrame(a=[1,2], a_1=[3,4])
-    @static if VERSION >= v"0.7.0-DEV.2988"
-        @test_logs (:warn, r"Inserting") insert!(df, 1, [11,12], :a)
-    else
-        @test_warn r"Inserting" insert!(df, 1, [11,12], :a)
+        @test DataFrame(a=[1, 2, missing], b=[4, 5, 6]) ≅
+                    DataFrame(a=[1, 2, missing], b=[4, 5, 6])
+        @test DataFrame(a=[1, 2, missing], b=[4, 5, 6]) ≇
+                    DataFrame(a=[1, 2, 3], b=[4, 5, 6])
     end
-    df = DataFrame(a=[1,2], a_1=[3,4])
-    insert!(df, 1, [11,12], :a, makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1]
-    insert!(df, 4, [11,12], :a, makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1, :a_3]
-    @test_throws BoundsError insert!(df, 10, [11,12], :a, makeunique=true)
-    df = DataFrame(a=[1,2], a_1=[3,4])
-    insert!(df, 1, 11, :a, makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1]
-    insert!(df, 4, 11, :a, makeunique=true)
-    @test names(df) == [:a_2, :a, :a_1, :a_3]
-    @test_throws BoundsError insert!(df, 10, 11, :a, makeunique=true)
 
-    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
-    df2 = DataFrame(b=["a", "b"], c=[:c, :d])
-    @test merge!(df, df2) == df
-    @test df == DataFrame(a=[1, 2], b=["a", "b"], c=[:c, :d])
+    @testset "copying" begin
+        df = DataFrame(a = Union{Int, Missing}[2, 3],
+                    b = Union{DataFrame, Missing}[DataFrame(c = 1), DataFrame(d = 2)])
+        dfc = copy(df)
+        dfdc = deepcopy(df)
 
-    #test_group("Empty DataFrame constructors")
-    df = DataFrame(Union{Int, Missing}, 10, 3)
-    @test size(df, 1) == 10
-    @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[:, 2]) == Vector{Union{Int, Missing}}
-    @test typeof(df[:, 3]) == Vector{Union{Int, Missing}}
-    @test all(ismissing, df[:, 1])
-    @test all(ismissing, df[:, 2])
-    @test all(ismissing, df[:, 3])
+        df[1, :a] = 4
+        df[1, :b][:e] = 5
+        names!(df, [:f, :g])
 
-    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}], 100)
-    @test size(df, 1) == 100
-    @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
-    @test all(ismissing, df[:, 1])
-    @test all(ismissing, df[:, 2])
-    @test all(ismissing, df[:, 3])
+        @test names(dfc) == [:a, :b]
+        @test names(dfdc) == [:a, :b]
 
-    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
-                   [:A, :B, :C], 100)
-    @test size(df, 1) == 100
-    @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
-    @test all(ismissing, df[:, 1])
-    @test all(ismissing, df[:, 2])
-    @test all(ismissing, df[:, 3])
+        @test dfc[1, :a] === 4
+        @test dfdc[1, :a] === 2
 
-    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
-                   [:A, :B, :C], [false, false, true], 100)
-    @test size(df, 1) == 100
-    @test size(df, 2) == 3
-    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[:, 3]) <: CategoricalVector{Union{String, Missing}}
-    @test all(ismissing, df[:, 1])
-    @test all(ismissing, df[:, 2])
-    @test all(ismissing, df[:, 3])
+        @test names(dfc[1, :b]) == [:c, :e]
+        @test names(dfdc[1, :b]) == [:c]
 
-    df = convert(DataFrame, zeros(10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == Vector{Float64}
+        x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
 
-    df = convert(DataFrame, ones(10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == Vector{Float64}
+        #test_group("DataFrame assignment")
+        # Insert single column
+        x0 = x[Int[], :]
+        @test_throws ArgumentError x0[:d] = [1]
+        @test_throws ArgumentError x0[:d] = 1:3
 
-    df = convert(DataFrame, eye(10, 5))
-    @test size(df, 1) == 10
-    @test size(df, 2) == 5
-    @test typeof(df[:, 1]) == Vector{Float64}
+        # Insert single value
+        x[:d] = 3
+        @test x[:d] == [3, 3, 3]
 
-    @test DataFrame([Union{Int, Missing}[1, 2, 3], Union{Float64, Missing}[2.5, 4.5, 6.5]],
-                    [:A, :B]) ==
-        DataFrame(A = Union{Int, Missing}[1, 2, 3], B = Union{Float64, Missing}[2.5, 4.5, 6.5])
+        x0[:d] = 3
+        @test x0[:d] == Int[]
+    end
 
-    # This assignment was missing before
-    df = DataFrame(Column = [:A])
-    df[1, :Column] = "Testing"
+    @testset "similar / missings" begin
+        df = DataFrame(a = Union{Int, Missing}[1],
+                    b = Union{String, Missing}["b"],
+                    c = CategoricalArray{Union{Float64, Missing}}([3.3]))
+        missingdf = DataFrame(a = missings(Int, 2),
+                            b = missings(String, 2),
+                            c = CategoricalArray{Union{Float64, Missing}}(undef, 2))
+        # https://github.com/JuliaData/Missings.jl/issues/66
+        # @test missingdf ≅ similar(df, 2)
+        @test typeof.(columns(similar(df, 2))) == typeof.(columns(missingdf))
+        @test size(similar(df, 2)) == size(missingdf)
+    end
 
-    # zero-row DataFrame and subDataFrame test
-    df = DataFrame(x=[], y=[])
-    @test nrow(df) == 0
-    df = DataFrame(x=[1:3;], y=[3:5;])
-    sdf = view(df, df[:x] .== 4)
-    @test size(sdf, 1) == 0
+    @testset "Associative methods" begin
+        df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+        @test haskey(df, :a)
+        @test !haskey(df, :c)
+        @test get(df, :a, -1) === columns(df)[1]
+        @test get(df, :c, -1) == -1
+        @test !isempty(df)
 
-    @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
-    @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
-    @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]), zero(UInt))
+        @test empty!(df) === df
+        @test isempty(columns(df))
+        @test isempty(df)
+        @test isempty(DataFrame(a=[], b=[]))
+
+        df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
+        @test_throws BoundsError insert!(df, 5, ["a", "b"], :newcol)
+        @test_throws ErrorException insert!(df, 1, ["a"], :newcol)
+        @test insert!(df, 1, ["a", "b"], :newcol) == df
+        @test names(df) == [:newcol, :a, :b]
+        @test df[:a] == [1, 2]
+        @test df[:b] == [3.0, 4.0]
+        @test df[:newcol] == ["a", "b"]
+
+        @test insert!(df, 1, ["a1", "b1"], :newcol, makeunique=true) == df
+        @test names(df) == [:newcol_1, :newcol, :a, :b]
+        @test df[:a] == [1, 2]
+        @test df[:b] == [3.0, 4.0]
+        @test df[:newcol] == ["a", "b"]
+        @test df[:newcol_1] == ["a1", "b1"]
+
+        df = DataFrame(a=[1,2], a_1=[3,4])
+        @test_logs (:warn, r"Inserting") insert!(df, 1, [11,12], :a)
+        df = DataFrame(a=[1,2], a_1=[3,4])
+        insert!(df, 1, [11,12], :a, makeunique=true)
+        @test names(df) == [:a_2, :a, :a_1]
+        insert!(df, 4, [11,12], :a, makeunique=true)
+        @test names(df) == [:a_2, :a, :a_1, :a_3]
+        @test_throws BoundsError insert!(df, 10, [11,12], :a, makeunique=true)
+        df = DataFrame(a=[1,2], a_1=[3,4])
+        insert!(df, 1, 11, :a, makeunique=true)
+        @test names(df) == [:a_2, :a, :a_1]
+        insert!(df, 4, 11, :a, makeunique=true)
+        @test names(df) == [:a_2, :a, :a_1, :a_3]
+        @test_throws BoundsError insert!(df, 10, 11, :a, makeunique=true)
+
+        df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+        df2 = DataFrame(b=["a", "b"], c=[:c, :d])
+        @test merge!(df, df2) == df
+        @test df == DataFrame(a=[1, 2], b=["a", "b"], c=[:c, :d])
+    end
+
+    @testset "Empty DataFrame constructors" begin
+        df = DataFrame(Union{Int, Missing}, 10, 3)
+        @test size(df, 1) == 10
+        @test size(df, 2) == 3
+        @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+        @test typeof(df[:, 2]) == Vector{Union{Int, Missing}}
+        @test typeof(df[:, 3]) == Vector{Union{Int, Missing}}
+        @test all(ismissing, df[:, 1])
+        @test all(ismissing, df[:, 2])
+        @test all(ismissing, df[:, 3])
+
+        df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}], 100)
+        @test size(df, 1) == 100
+        @test size(df, 2) == 3
+        @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+        @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+        @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
+        @test all(ismissing, df[:, 1])
+        @test all(ismissing, df[:, 2])
+        @test all(ismissing, df[:, 3])
+
+        df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
+                    [:A, :B, :C], 100)
+        @test size(df, 1) == 100
+        @test size(df, 2) == 3
+        @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+        @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+        @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
+        @test all(ismissing, df[:, 1])
+        @test all(ismissing, df[:, 2])
+        @test all(ismissing, df[:, 3])
+
+        df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
+                    [:A, :B, :C], [false, false, true], 100)
+        @test size(df, 1) == 100
+        @test size(df, 2) == 3
+        @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+        @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+        @test typeof(df[:, 3]) <: CategoricalVector{Union{String, Missing}}
+        @test all(ismissing, df[:, 1])
+        @test all(ismissing, df[:, 2])
+        @test all(ismissing, df[:, 3])
+
+        df = convert(DataFrame, zeros(10, 5))
+        @test size(df, 1) == 10
+        @test size(df, 2) == 5
+        @test typeof(df[:, 1]) == Vector{Float64}
+
+        df = convert(DataFrame, ones(10, 5))
+        @test size(df, 1) == 10
+        @test size(df, 2) == 5
+        @test typeof(df[:, 1]) == Vector{Float64}
+
+        df = convert(DataFrame, Matrix{Float64}(I, 10, 5))
+        @test size(df, 1) == 10
+        @test size(df, 2) == 5
+        @test typeof(df[:, 1]) == Vector{Float64}
+
+        @test DataFrame([Union{Int, Missing}[1, 2, 3], Union{Float64, Missing}[2.5, 4.5, 6.5]],
+                        [:A, :B]) ==
+            DataFrame(A = Union{Int, Missing}[1, 2, 3], B = Union{Float64, Missing}[2.5, 4.5, 6.5])
+
+        # This assignment was missing before
+        df = DataFrame(Column = [:A])
+        df[1, :Column] = "Testing"
+
+        # zero-row DataFrame and subDataFrame test
+        df = DataFrame(x=[], y=[])
+        @test nrow(df) == 0
+        df = DataFrame(x=[1:3;], y=[3:5;])
+        sdf = view(df, df[:x] .== 4)
+        @test size(sdf, 1) == 0
+
+        @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
+        @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))
+        @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]), zero(UInt))
+    end
 
     @testset "push!(df, row)" begin
         df=DataFrame( first=[1,2,3], second=["apple","orange","pear"] )
@@ -276,59 +270,60 @@ module TestDataFrame
         @test df[:x] == [1, 3, 5] && df[:y] == [2, 4, 6]
     end
 
-    # delete!
-    df = DataFrame(a=1, b=2, c=3, d=4, e=5)
-    @test_throws ArgumentError delete!(df, 0)
-    @test_throws ArgumentError delete!(df, 6)
-    @test_throws KeyError delete!(df, :f)
+    @testset "delete!" begin
+        df = DataFrame(a=1, b=2, c=3, d=4, e=5)
+        @test_throws ArgumentError delete!(df, 0)
+        @test_throws ArgumentError delete!(df, 6)
+        @test_throws KeyError delete!(df, :f)
 
-    d = copy(df)
-    delete!(d, [:a, :e, :c])
-    @test names(d) == [:b, :d]
-    delete!(d, :b)
-    @test d == DataFrame(d=4)
+        d = copy(df)
+        delete!(d, [:a, :e, :c])
+        @test names(d) == [:b, :d]
+        delete!(d, :b)
+        @test d == DataFrame(d=4)
 
-    d = copy(df)
-    delete!(d, [2, 5, 3])
-    @test names(d) == [:a, :d]
-    delete!(d, 2)
-    @test d == DataFrame(a=1)
+        d = copy(df)
+        delete!(d, [2, 5, 3])
+        @test names(d) == [:a, :d]
+        delete!(d, 2)
+        @test d == DataFrame(a=1)
+    end
 
-    # deleterows!
-    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
-    @test deleterows!(df, 1) === df
-    @test df == DataFrame(a=[2], b=[4.0])
+    @testset "deleterows!" begin
+        df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+        @test deleterows!(df, 1) === df
+        @test df == DataFrame(a=[2], b=[4.0])
 
-    df = DataFrame(a=[1, 2], b=[3.0, 4.0])
-    @test deleterows!(df, 2) === df
-    @test df == DataFrame(a=[1], b=[3.0])
+        df = DataFrame(a=[1, 2], b=[3.0, 4.0])
+        @test deleterows!(df, 2) === df
+        @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
-    @test deleterows!(df, 2:3) === df
-    @test df == DataFrame(a=[1], b=[3.0])
+        df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
+        @test deleterows!(df, 2:3) === df
+        @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
-    @test deleterows!(df, [2, 3]) === df
-    @test df == DataFrame(a=[1], b=[3.0])
+        df = DataFrame(a=[1, 2, 3], b=[3.0, 4.0, 5.0])
+        @test deleterows!(df, [2, 3]) === df
+        @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
-    @test deleterows!(df, 1) === df
-    @test df == DataFrame(a=[2], b=[4.0])
+        df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
+        @test deleterows!(df, 1) === df
+        @test df == DataFrame(a=[2], b=[4.0])
 
-    df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
-    @test deleterows!(df, 2) === df
-    @test df == DataFrame(a=[1], b=[3.0])
+        df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
+        @test deleterows!(df, 2) === df
+        @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
-    @test deleterows!(df, 2:3) === df
-    @test df == DataFrame(a=[1], b=[3.0])
+        df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
+        @test deleterows!(df, 2:3) === df
+        @test df == DataFrame(a=[1], b=[3.0])
 
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
-    @test deleterows!(df, [2, 3]) === df
-    @test df == DataFrame(a=[1], b=[3.0])
-    
-    # Test describe
-    @testset "describe(df)" begin
+        df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
+        @test deleterows!(df, [2, 3]) === df
+        @test df == DataFrame(a=[1], b=[3.0])
+    end
+
+    @testset "describe" begin
         # Construct the test dataframe
         df = DataFrame(number = [1, 2, 3, 4],
                        number_missing = [1,2, 3, missing],
@@ -340,9 +335,9 @@ module TestDataFrame
         describe_output = DataFrame(variable = [:number, :number_missing, :string, 
                                                 :string_missing, :dates, :catarray],
                                     mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                    min = [1.0, 1.0, "a", "a", Date(2000), nothing],
+                                    min = [1.0, 1.0, "a", "a", Date(2000), 1],
                                     median = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                    max = [4.0, 3.0, "d", "c", Date(2004), nothing],
+                                    max = [4.0, 3.0, "d", "c", Date(2004), 2],
                                     nunique = [nothing, nothing, 4, 3, 4, 2],
                                     nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                     eltype = [Int, Int, String, String, Date, eltype(df[:catarray])])
@@ -350,13 +345,13 @@ module TestDataFrame
                                                           :string, :string_missing,
                                                           :dates, :catarray],
                                               mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                              std = [Compat.std(df[:number]), 1.0, nothing, 
+                                              std = [std(df[:number]), 1.0, nothing, 
                                                      nothing, nothing, nothing],
-                                              min = [1.0, 1.0, "a", "a", Date(2000), nothing],
+                                              min = [1.0, 1.0, "a", "a", Date(2000), 1],
                                               q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
                                               median = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                               q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
-                                              max = [4.0, 3.0, "d", "c", Date(2004), nothing],
+                                              max = [4.0, 3.0, "d", "c", Date(2004), 2],
                                               nunique = [nothing, nothing, 4, 3, 4, 2],
                                               nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                               first = [1, 1, "a", "a", Date(2000), 1],
@@ -516,13 +511,8 @@ module TestDataFrame
         df = DataFrame(id=Union{Int, Missing}[1, 2, 1, 2],
                        id2=Union{Int, Missing}[1, 2, 1, 2],
                        variable=["a", "b", "a", "b"], value=[3, 4, 5, 6])
-        @static if VERSION >= v"0.7.0-DEV.2988"
-            @test_logs (:warn, "Duplicate entries in unstack at row 3 for key 1 and variable a.") unstack(df, :id, :variable, :value)
-            @test_logs (:warn, "Duplicate entries in unstack at row 3 for key (1, 1) and variable a.") unstack(df, :variable, :value)
-        else
-            @test_warn "Duplicate entries in unstack at row 3 for key 1 and variable a." unstack(df, :id, :variable, :value)
-            @test_warn "Duplicate entries in unstack at row 3 for key (1, 1) and variable a." unstack(df, :variable, :value)
-        end
+        @test_logs (:warn, "Duplicate entries in unstack at row 3 for key 1 and variable a.") unstack(df, :id, :variable, :value)
+        @test_logs (:warn, "Duplicate entries in unstack at row 3 for key (1, 1) and variable a.") unstack(df, :variable, :value)
         a = unstack(df, :id, :variable, :value)
         @test a ≅ DataFrame(id = [1, 2], a = [5, missing], b = [missing, 6])
         b = unstack(df, :variable, :value)
@@ -536,24 +526,15 @@ module TestDataFrame
         @test a ≅ b ≅ DataFrame(id = [1, 2], a = [3, missing], b = [missing, 4])
 
         df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1,1])
-        @static if VERSION >= v"0.7.0-DEV.2988"
-            @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :variable, :value)
-            @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df)
-        else
-            @test_warn "Duplicate entries in unstack at row 2 for key 1 and variable x." unstack(df, :variable, :value)
-            @test_warn "Duplicate entries in unstack at row 2 for key 1 and variable x." unstack(df)
-        end
+        @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :variable, :value)
+        @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df)
     end
 
     @testset "missing values in colkey" begin
         df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                        variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                        value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-        @static if VERSION >= v"0.7.0-DEV.2988"
-            @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df)
-        else
-            @test_warn "Missing value in variable variable at row 3. Skipping." unstack(df)
-        end
+        @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df)
         udf = unstack(df)
         @test names(udf) == [:id, :a, :b, :missing]
         @test udf[:missing] ≅ [missing, 9.0, missing]
@@ -561,11 +542,7 @@ module TestDataFrame
                        id2=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                        variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                        value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-        @static if VERSION >= v"0.7.0-DEV.2988"
-            @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, 3, 4)
-        else
-            @test_warn "Missing value in variable variable at row 3. Skipping." unstack(df, 3, 4)
-        end
+        @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, 3, 4)
         udf = unstack(df, 3, 4)
         @test names(udf) == [:id, :id2, :a, :b, :missing]
         @test udf[:missing] ≅ [missing, 9.0, missing]
@@ -630,9 +607,9 @@ module TestDataFrame
         @test sprint(dump, df) == """
                                   $DataFrame  3 observations of 1 variables
                                     x1: Array{Char}((3,))
-                                      1: Char A
-                                      2: Char B
-                                      3: Char C
+                                      1: Char 'A'
+                                      2: Char 'B'
+                                      3: Char 'C'
                                   """
         df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
         # @test DataFrames.without(df, 1) == DataFrame(B = repeat('A':'C', inner=4))
@@ -799,29 +776,27 @@ module TestDataFrame
         @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :a])
     end
 
-    if VERSION >= v"0.7.0-DEV.3067"
-        @testset "getproperty, setproperty! and propertynames" begin
-            x = collect(1:10)
-            y = collect(1.0:10.0)
-            z = collect(10:-1:1)
-            df = DataFrame(x = x, y = y)
+    @testset "getproperty, setproperty! and propertynames" begin
+        x = collect(1:10)
+        y = collect(1.0:10.0)
+        z = collect(10:-1:1)
+        df = DataFrame(x = x, y = y)
 
-            @test Base.propertynames(df) == names(df)
+        @test Base.propertynames(df) == names(df)
 
-            @test df.x === x
-            @test df.y === y
-            @test_throws KeyError df.z
+        @test df.x === x
+        @test df.y === y
+        @test_throws KeyError df.z
 
-            df.x = 2:11
-            @test df.x == 2:11
-            @test x == 1:10
-            df.y = 1
-            @test df.y == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-            @test df.y === y
-            df.z = z
-            @test df.z === z
-            df.zz = 1
-            @test df.zz == df.y
-        end
+        df.x = 2:11
+        @test df.x == 2:11
+        @test x == 1:10
+        df.y = 1
+        @test df.y == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        @test df.y === y
+        df.z = z
+        @test df.z === z
+        df.zz = 1
+        @test df.zz == df.y
     end
 end

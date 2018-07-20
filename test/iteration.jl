@@ -1,5 +1,5 @@
 module TestIteration
-    using Compat, Compat.Test, DataFrames
+    using Test, DataFrames
 
     dv = [1, 2, missing]
     dm = Union{Int, Missing}[1 2; 3 4]

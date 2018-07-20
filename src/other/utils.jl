@@ -6,10 +6,6 @@ const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
     "immutable", "do", "module", "baremodule", "using", "import", "struct",
     "export", "importall", "end", "else", "elseif", "catch", "finally"])
 
-if VERSION < v"0.7.0-DEV.3220"
-    push!(RESERVED_WORDS, "bitstype", "typealias", "abstract")
-end
-
 function identifier(s::AbstractString)
     s = Unicode.normalize(s)
     if !isidentifier(s)
@@ -19,12 +15,11 @@ function identifier(s::AbstractString)
 end
 
 function makeidentifier(s::AbstractString)
-    i = start(s)
-    done(s, i) && return "x"
+    (iresult = iterate(s)) === nothing && return "x"
 
     res = IOBuffer(zeros(UInt8, sizeof(s)+1), write=true)
 
-    (c, i) = next(s, i)
+    (c, i) = iresult
     under = if is_id_start_char(c)
         write(res, c)
         c == '_'
@@ -36,8 +31,8 @@ function makeidentifier(s::AbstractString)
         true
     end
 
-    while !done(s, i)
-        (c, i) = next(s, i)
+    while (iresult = iterate(s, i)) !== nothing
+        (c, i) = iresult
         if c != '_' && is_id_char(c)
             write(res, c)
             under = false

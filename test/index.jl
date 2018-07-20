@@ -1,5 +1,5 @@
 module TestIndex
-using Compat, Compat.Test, DataFrames
+using Test, DataFrames
 using DataFrames: Index
 
 i = Index()

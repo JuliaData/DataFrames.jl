@@ -1,5 +1,5 @@
 module TestSort
-    using Compat, Compat.Test, DataFrames
+    using DataFrames, Random, Test
 
     dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
     dv2 = [9, 1, 8, missing, 3, 3, 7, missing]

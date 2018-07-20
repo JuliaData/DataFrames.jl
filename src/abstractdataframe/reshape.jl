@@ -290,7 +290,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
     groupidxs = [g.idx[g.starts[i]:g.ends[i]] for i in 1:length(g.starts)]
     rowkey = zeros(Int, size(df, 1))
     for i in 1:length(groupidxs)
-        rowkey[groupidxs[i]] = i
+        rowkey[groupidxs[i]] .= i
     end
     df1 = df[g.idx[g.starts], g.cols]
     Nrow = length(g)

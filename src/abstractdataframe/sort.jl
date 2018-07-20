@@ -30,7 +30,7 @@ _getcol(x) = x
 # Get an Ordering for a single column
 ###
 function ordering(col_ord::UserColOrdering, lt::Function, by::Function, rev::Bool, order::Ordering)
-    for (k,v) in kwpairs(col_ord.kwargs)
+    for (k,v) in pairs(col_ord.kwargs)
         if     k == :lt;    lt    = v
         elseif k == :by;    by    = v
         elseif k == :rev;   rev   = v
