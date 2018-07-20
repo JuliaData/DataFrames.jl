@@ -1,6 +1,6 @@
-julia 0.7.0-beta
+julia 0.7.0-beta2
 Missings 0.2.3
-CategoricalArrays 0.3.6
+CategoricalArrays 0.3.11
 StatsBase 0.11.0
 SortingAlgorithms
 Reexport
