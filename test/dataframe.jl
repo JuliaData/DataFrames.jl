@@ -720,9 +720,9 @@ module TestDataFrame
 
         df = deepcopy(original)
         expected = deepcopy(original)
-        permutecols!(df, [:a, :b, :c])
+        @test permutecols!(df, [:a, :b, :c]) == expected
         @test df == expected
-        permutecols!(df, 1:3)
+        @test permutecols!(df, 1:3) == expected
         @test df == expected
 
         df = deepcopy(original)

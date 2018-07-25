@@ -1101,6 +1101,7 @@ function permutecols!(df::DataFrame, p::AbstractVector)
     end
     permute!(columns(df), p)
     setfield!(df, :colindex, Index(names(df)[p]))
+    df
 end
 
 function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
