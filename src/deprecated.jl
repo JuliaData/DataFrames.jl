@@ -529,7 +529,7 @@ function bytestotype(::Type{N},
     end
 end
 
-let out = Vector{Float64}(1)
+let out = Vector{Float64}(undef, 1)
     global bytestotype
     function bytestotype(::Type{N},
                          bytes::Vector{UInt8},
