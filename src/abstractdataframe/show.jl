@@ -1,4 +1,8 @@
-export showall
+@static if isdefined(Base, :showall)
+    import Base: showall
+else
+    export showall
+end
 
 #' @exported
 #' @description
