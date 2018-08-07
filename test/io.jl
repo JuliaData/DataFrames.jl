@@ -1,5 +1,6 @@
 module TestIO
     using Test, DataFrames, CategoricalArrays, Dates
+    # commented out for 1.0 release because LaTeXStrings can't load; re-enable once it has updated for 1.0
     # using LaTeXStrings
 
     # # Test LaTeX export
