@@ -75,7 +75,7 @@ module TestData
         #test_group("Associative")
 
         #test_group("DataFrame")
-        srand(1)
+        Random.seed!(1)
         N = 20
         d1 = Vector{Union{Int64, Missing}}(rand(1:2, N))
         d2 = CategoricalArray(["A", "B", missing])[rand(1:3, N)]
@@ -221,7 +221,7 @@ module TestData
     end
 
     @testset "merge" begin
-        srand(1)
+        Random.seed!(1)
         df1 = DataFrame(a = shuffle!(Vector{Union{Int, Missing}}(1:10)),
                         b = rand(Union{Symbol, Missing}[:A,:B], 10),
                         v1 = Vector{Union{Float64, Missing}}(randn(10)))
@@ -277,7 +277,7 @@ module TestData
         @test m2[:A] ≅ ["a", "b", "a", missing, "c"]
     end
 
-    srand(1)
+    Random.seed!(1)
     df1 = DataFrame(
         a = rand(Union{Symbol, Missing}[:x,:y], 10),
         b = rand(Union{Symbol, Missing}[:A,:B], 10),
@@ -297,7 +297,7 @@ module TestData
     @test ismissing(m2[10,:v2])
     @test m2[:a] ≅ [:x, :x, :y, :y, :y, :x, :x, :y, :x, :y, missing, :y]
 
-    srand(1)
+    Random.seed!(1)
     function spltdf(d)
         d[:x1] = map(x -> x[1], d[:a])
         d[:x2] = map(x -> x[2], d[:a])

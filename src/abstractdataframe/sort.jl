@@ -229,7 +229,7 @@ Sort.defalg(df::AbstractDataFrame) = size(df, 1) < 8192 ? Sort.MergeSort : Sorti
 function Sort.defalg(df::AbstractDataFrame, ::Type{T}, o::Ordering) where T<:Real
     # If we're sorting a single numerical column in forward or reverse,
     # RadixSort will generally be the fastest stable sort
-    if isbits(T) && sizeof(T) <= 8 && (o==Order.Forward || o==Order.Reverse)
+    if isbitstype(T) && sizeof(T) <= 8 && (o==Order.Forward || o==Order.Reverse)
         SortingAlgorithms.RadixSort
     else
         Sort.defalg(df)

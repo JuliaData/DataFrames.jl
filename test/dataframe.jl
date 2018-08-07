@@ -179,7 +179,7 @@ module TestDataFrame
         @test size(df, 2) == 5
         @test typeof(df[:, 1]) == Vector{Float64}
 
-        df = convert(DataFrame, Matrix{Float64}(I, 10, 5))
+        df = convert(DataFrame, Matrix{Float64}(undef, 10, 5))
         @test size(df, 1) == 10
         @test size(df, 2) == 5
         @test typeof(df[:, 1]) == Vector{Float64}
@@ -190,7 +190,7 @@ module TestDataFrame
 
         # This assignment was missing before
         df = DataFrame(Column = [:A])
-        df[1, :Column] = "Testing"
+        df[1, :Column] = :Testing
 
         # zero-row DataFrame and subDataFrame test
         df = DataFrame(x=[], y=[])
@@ -642,14 +642,14 @@ module TestDataFrame
         df = DataFrame(Any[CategoricalArray(1:10),
                            CategoricalArray(string.('a':'j'))])
         allowmissing!(df)
-        @test all(issubtype.(typeof.(columns(df)), CategoricalVector))
+        @test all(x->x <: CategoricalVector, typeof.(columns(df)))
         @test eltypes(df)[1] <: Union{CategoricalValue{Int}, Missing}
         @test eltypes(df)[2] <: Union{CategoricalString, Missing}
         df[1,2] = missing
         @test_throws MissingException disallowmissing!(df)
         df[1,2] = "a"
         disallowmissing!(df)
-        @test all(issubtype.(typeof.(columns(df)), CategoricalVector))
+        @test all(x->x <: CategoricalVector, typeof.(columns(df)))
         @test eltypes(df)[1] <: CategoricalValue{Int}
         @test eltypes(df)[2] <: CategoricalString
     end

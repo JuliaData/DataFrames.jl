@@ -21,7 +21,6 @@ import Base: keys, values, insert!
 
 @deprecate sub(df::AbstractDataFrame, rows) view(df, rows)
 
-
 ## write.table
 using CodecZlib, TranscodingStreams
 

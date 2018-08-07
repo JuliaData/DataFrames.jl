@@ -49,7 +49,7 @@ module TestConversions
 
     df = convert(DataFrame, di)
     @test isa(df, DataFrame)
-    @test names(df) == Symbol[x for x in sort(collect(keys(di)))]
+    @test names(df) == [Symbol(x) for x in sort(collect(keys(di)))]
     @test df[:a] == a
     @test df[:b] == b
     @test df[:c] == c
@@ -57,7 +57,7 @@ module TestConversions
     od = OrderedDict("c"=>c, "a"=>a, "b"=>b)
     df = convert(DataFrame,od)
     @test isa(df, DataFrame)
-    @test names(df) == Symbol[x for x in keys(od)]
+    @test names(df) == [Symbol(x) for x in keys(od)]
     @test df[:a] == a
     @test df[:b] == b
     @test df[:c] == c
@@ -65,7 +65,7 @@ module TestConversions
     sd = SortedDict("c"=>c, "a"=>a, "b"=>b)
     df = convert(DataFrame,sd)
     @test isa(df, DataFrame)
-    @test names(df) == Symbol[x for x in keys(sd)]
+    @test names(df) == [Symbol(x) for x in keys(sd)]
     @test df[:a] == a
     @test df[:b] == b
     @test df[:c] == c

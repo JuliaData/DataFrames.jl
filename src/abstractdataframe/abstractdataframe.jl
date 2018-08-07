@@ -82,9 +82,10 @@ abstract type AbstractDataFrame end
 struct Cols{T <: AbstractDataFrame} <: AbstractVector{Any}
     df::T
 end
-Base.start(::Cols) = 1
-Base.done(itr::Cols, st) = st > length(itr.df)
-Base.next(itr::Cols, st) = (itr.df[st], st + 1)
+function Base.iterate(c::Cols, st=1)
+    st > length(itr.df) && return nothing
+    return (itr.df[st], st + 1)
+end
 Base.length(itr::Cols) = length(itr.df)
 Base.size(itr::Cols, ix) = ix==1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
 Base.size(itr::Cols) = (length(itr.df),)
