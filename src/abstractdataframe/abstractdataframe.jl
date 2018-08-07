@@ -443,7 +443,7 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
         disallowed_fields = setdiff(stats, allowed_fields)
         allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
         not_allowed = "Field(s) not allowed: :" * join(disallowed_fields, ", :") * "."
-        throw(ArgumentError(not_allowed * allowed_msg)) 
+        throw(ArgumentError(not_allowed * allowed_msg))
     end
 
     
@@ -487,8 +487,8 @@ function get_stats(col::AbstractArray{>:Missing})
         :max => ex[2],
         :nmissing => count(ismissing, col),
         :nunique => u,
-        :first => first(col),
-        :last => last(col),        
+        :first => isempty(col) ? nothing : first(col),
+        :last => isempty(col) ? nothing : last(col),
         :eltype => Missings.T(eltype(col))
     )    
 end 
@@ -513,8 +513,8 @@ function get_stats(col)
         :max => ex[2],
         :nmissing => nothing,
         :nunique => u,
-        :first => first(col),
-        :last => last(col),        
+        :first => isempty(col) ? nothing : first(col),
+        :last => isempty(col) ? nothing : last(col),
         :eltype => eltype(col)
     )   
 end
