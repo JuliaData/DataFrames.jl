@@ -1,3 +1,9 @@
+@static if isdefined(Base, :showall)
+    import Base: showall
+else
+    export showall
+end
+
 #' @exported
 #' @description
 #'
@@ -508,7 +514,7 @@ end
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showall(stdout, df, false, :Row, true)
-function Base.showall(io::IO,
+function showall(io::IO,
                       df::AbstractDataFrame,
                       allcols::Bool = true,
                       rowlabel::Symbol = :Row,
@@ -545,8 +551,10 @@ end
 #'
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showall(df, true)
-function Base.showall(df::AbstractDataFrame,
+function showall(df::AbstractDataFrame,
                       allcols::Bool = true) # -> Nothing
     showall(stdout, df, allcols)
     return
 end
+
+showall(io::IO, dfvec::AbstractVector{T}) where {T <: AbstractDataFrame} = foreach(df->showall(io, df), dfvec)

@@ -1,10 +1,10 @@
 import Base: isidentifier, is_id_start_char, is_id_char
 
-const RESERVED_WORDS = Set(["begin", "while", "if", "for", "try",
-    "return", "break", "continue", "function", "macro", "quote", "let",
-    "local", "global", "const", "type",
-    "immutable", "do", "module", "baremodule", "using", "import", "struct",
-    "export", "importall", "end", "else", "elseif", "catch", "finally"])
+const RESERVED_WORDS = Set(["local", "global", "export", "let",
+    "for", "struct", "while", "const", "continue", "import",
+    "function", "if", "else", "try", "begin", "break", "catch",
+    "return", "using", "baremodule", "macro", "finally",
+    "module", "elseif", "end", "quote", "do"])
 
 function identifier(s::AbstractString)
     s = Unicode.normalize(s)

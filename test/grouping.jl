@@ -2,7 +2,7 @@ module TestGrouping
     using Test, DataFrames, Random
     const ≅ = isequal
 
-    srand(1)
+    Random.seed!(1)
     df = DataFrame(a = repeat(Union{Int, Missing}[1, 2, 3, 4], outer=[2]),
                    b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
                    c = Vector{Union{Float64, Missing}}(randn(8)))

@@ -66,7 +66,7 @@ module TestSort
 
     @test_throws ArgumentError sort(x, by=:x)
 
-    srand(1)
+    Random.seed!(1)
     # here there will be probably no ties
     df_rand1 = DataFrame(rand(100, 4))
     # but here we know we will have ties

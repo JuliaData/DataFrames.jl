@@ -43,11 +43,10 @@ Compat.lastindex(r::DataFrameRow) = size(parent(r), 2)
 
 Base.collect(r::DataFrameRow) = Tuple{Symbol, Any}[x for x in r]
 
-Base.start(r::DataFrameRow) = 1
-
-Base.next(r::DataFrameRow, s) = ((_names(r)[s], r[s]), s + 1)
-
-Base.done(r::DataFrameRow, s) = s > length(r)
+function Base.iterate(r::DataFrameRow, st=1)
+    st > length(r) && return nothing
+    return ((_names(r)[st], r[st]), st + 1)
+end
 
 Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, parent(r)[row(r),:])
 

@@ -21,7 +21,7 @@ module TestShow
         @test str == refstr
     end
 
-    srand(1)
+    Random.seed!(1)
     df_big = DataFrame(rand(25,5))
 
     io = IOContext(IOBuffer(), :displaysize=>(10,40))
