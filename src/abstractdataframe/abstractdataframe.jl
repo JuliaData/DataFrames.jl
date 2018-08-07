@@ -430,11 +430,6 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
         stats = allowed_fields 
     end
 
-    if size(df, 1) == 0
-        stats = [:nmissing, :eltype]
-        warn("This DataFrame has 0 rows, so describe output has been truncated")
-    end
-
     if stats isa Symbol
         if !(stats in allowed_fields)
             allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
@@ -448,7 +443,7 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
         disallowed_fields = setdiff(stats, allowed_fields)
         allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
         not_allowed = "Field(s) not allowed: :" * join(disallowed_fields, ", :") * "."
-        throw(ArgumentError(not_allowed * allowed_msg)) 
+        throw(ArgumentError(not_allowed * allowed_msg))
     end
 
     
@@ -492,8 +487,8 @@ function get_stats(col::AbstractArray{>:Missing})
         :max => ex[2],
         :nmissing => count(ismissing, col),
         :nunique => u,
-        :first => try first(col) catch end,
-        :last => try last(col) catch end,        
+        :first => isempty(col) ? nothing : first(col),
+        :last => isempty(col) ? nothing : last(col),
         :eltype => Missings.T(eltype(col))
     )    
 end 
@@ -518,8 +513,8 @@ function get_stats(col)
         :max => ex[2],
         :nmissing => nothing,
         :nunique => u,
-        :first => try first(col) catch end,
-        :last => try last(col) catch end,        
+        :first => isempty(col) ? nothing : first(col),
+        :last => isempty(col) ? nothing : last(col),
         :eltype => eltype(col)
     )   
 end
