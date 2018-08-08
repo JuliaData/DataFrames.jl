@@ -857,7 +857,8 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
           makeunique::Bool=false) =
     hcat!(hcat(df1, df2, makeunique=makeunique), dfn..., makeunique=makeunique)
 
-@generated function promote_col_type(cols::AbstractVector...)
+@generated function promote_col_type(cols::T) where {T <: Tuple}
+    cols = T.parameters
     T = mapreduce(x -> Missings.T(eltype(x)), promote_type, cols)
     if CategoricalArrays.iscatvalue(T)
         T = CategoricalArrays.leveltype(T)
@@ -946,7 +947,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     for (i, name) in enumerate(header)
         data = [df[name] for df in dfs]
         lens = map(length, data)
-        cols[i] = promote_col_type(data...)(undef, sum(lens))
+        cols[i] = promote_col_type(Tuple(data))(undef, sum(lens))
         offset = 1
         for j in 1:length(data)
             copyto!(cols[i], offset, data[j])
