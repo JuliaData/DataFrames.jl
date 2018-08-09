@@ -15,6 +15,9 @@ module TestConversions
     @test isa(convert(Array, df), Matrix{Float64})
     @test isa(convert(Array{Any}, df), Matrix{Any})
     @test isa(convert(Array{Float64}, df), Matrix{Float64})
+    @test isa(Matrix(df), Matrix{Float64})
+    @test isa(Matrix{Any}(df), Matrix{Any})
+    @test isa(Matrix{Float64}(df), Matrix{Float64})
 
     df = DataFrame()
     df[:A] = Vector{Union{Float64, Missing}}(1.0:5.0)
@@ -25,10 +28,13 @@ module TestConversions
     @test isa(a, Matrix{Union{Float64, Missing}})
     @test a == convert(Array, convert(Array{Union{Float64, Missing}}, df))
     @test a == convert(Matrix, df)
+    @test a == Matrix(df)
     @test isa(aa, Matrix{Any})
     @test aa == convert(Matrix{Any}, df)
+    @test aa == Matrix{Any}(df)
     @test isa(ai, Matrix{Int})
     @test ai == convert(Matrix{Int}, df)
+    @test ai == Matrix{Int}(df)
 
     df[1,1] = missing
     @test_throws ErrorException convert(Array{Float64}, df)
@@ -37,10 +43,13 @@ module TestConversions
     nai = convert(Array{Union{Int, Missing}}, df)
     @test isa(na, Matrix{Union{Float64, Missing}})
     @test na ≅ convert(Matrix, df)
+    @test na ≅ Matrix(df)
     @test isa(naa, Matrix{Union{Any, Missing}})
     @test naa ≅ convert(Matrix{Union{Any, Missing}}, df)
+    @test naa ≅ Matrix{Union{Any, Missing}}(df)
     @test isa(nai, Matrix{Union{Int, Missing}})
     @test nai ≅ convert(Matrix{Union{Int, Missing}}, df)
+    @test nai ≅ Matrix{Union{Int, Missing}}(df)
 
     a = Union{Float64, Missing}[1.0,2.0]
     b = Union{Float64, Missing}[-0.1,3]
