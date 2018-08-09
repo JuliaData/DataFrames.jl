@@ -720,6 +720,8 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     end
     return res
 end
+Base.Matrix(df::AbstractDataFrame) = Base.convert(Matrix, df)
+Base.Matrix{T}(df::AbstractDataFrame) where T = Base.convert(Matrix{T}, df)
 
 """
 Indexes of duplicate rows (a row that is a duplicate of a prior row)
