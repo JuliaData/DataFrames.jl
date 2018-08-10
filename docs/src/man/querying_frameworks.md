@@ -1,6 +1,6 @@
 # Querying frameworks
 
-The [Query.jl](https://github.com/davidanthoff/Query.jl) package provides advanced data manipulation capabilities for `DataFrames` (and many other data structures). This section provides a short introduction to the package, the [Query.jl documentation](http://www.david-anthoff.com/Query.jl/stable/) has a more comprehensive documentation of the package.
+The [Query.jl](https://github.com/queryverse/Query.jl) package provides advanced data manipulation capabilities for `DataFrames` (and many other data structures). This section provides a short introduction to the package, the [Query.jl documentation](http://www.queryverse.org/Query.jl/stable/) has a more comprehensive documentation of the package.
 
 To get started, install the Query.jl package:
 
@@ -87,4 +87,4 @@ julia> q3 = @from i in df begin
 
 A query that ends with a `@collect` statement without a specific type will materialize the query results into an array. Note also the difference in the `@select` statement: The previous queries all used the `{}` syntax in the `@select` statement to project results into a tabular format. The last query instead just selects a single value from each row in the `@select` statement.
 
-These examples only scratch the surface of what one can do with [Query.jl](https://github.com/davidanthoff/Query.jl), and the interested reader is referred to the [Query.jl documentation](http://www.david-anthoff.com/Query.jl/stable/) for more information.
+These examples only scratch the surface of what one can do with [Query.jl](https://github.com/queryverse/Query.jl), and the interested reader is referred to the [Query.jl documentation](http://www.queryverse.org/Query.jl/stable/) for more information.
