@@ -82,7 +82,7 @@ abstract type AbstractDataFrame end
 struct Cols{T <: AbstractDataFrame} <: AbstractVector{Any}
     df::T
 end
-function Base.iterate(c::Cols, st=1)
+function Base.iterate(itr::Cols, st=1)
     st > length(itr.df) && return nothing
     return (itr.df[st], st + 1)
 end
