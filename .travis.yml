@@ -1,7 +1,7 @@
 language: julia
 
 julia:
-  - 0.6
+  - 0.7
   - nightly
 
 os:
@@ -18,10 +18,9 @@ notifications:
 before_script:
   - export PATH=$HOME/.local/bin:$PATH
 
-
 ## uncomment the following lines to override the default test script
 #script:
 #  - julia -e 'Pkg.build(); Pkg.test(; coverage=true)'
 after_success:
-  - julia -e 'cd(Pkg.dir("DataFrames")); Pkg.add("Documenter"); Pkg.add("Query"); Pkg.add("CSV"); include(joinpath("docs", "make.jl"))'
-  - julia -e 'cd(Pkg.dir("DataFrames")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - julia -e 'using Pkg; cd(Pkg.dir("DataFrames")); Pkg.add("Documenter"); Pkg.add("Query"); Pkg.add("CSV"); include(joinpath("docs", "make.jl"))'
+  - julia -e 'using Pkg; cd(Pkg.dir("DataFrames")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'

@@ -142,7 +142,7 @@ function update_row_maps!(left_table::AbstractDataFrame,
     @inline function update!(ixs::RowIndexMap, orig_ix::Int, join_ix::Int, count::Int = 1)
         n = length(ixs.orig)
         resize!(ixs.orig, n+count)
-        ixs.orig[n+1:end] = orig_ix
+        ixs.orig[n+1:end] .= orig_ix
         append!(ixs.join, join_ix:(join_ix+count-1))
         ixs
     end
@@ -153,7 +153,7 @@ function update_row_maps!(left_table::AbstractDataFrame,
         ixs
     end
     @inline update!(ixs::Nothing, orig_ixs::AbstractArray) = nothing
-    @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) = (mask[orig_ixs] = false)
+    @inline update!(mask::Vector{Bool}, orig_ixs::AbstractArray) = (mask[orig_ixs] .= false)
 
     # iterate over left rows and compose the left<->right index map
     right_dict_cols = ntuple(i -> right_dict.df[i], ncol(right_dict.df))
@@ -172,6 +172,8 @@ function update_row_maps!(left_table::AbstractDataFrame,
         end
     end
 end
+
+adjustrange(i, rng) = UnitRange(rng.start + i, rng.stop + i)
 
 # map the row indices of the left and right joined tables
 # to the indices of rows in the resulting table
@@ -202,9 +204,9 @@ function update_row_maps!(left_table::AbstractDataFrame,
     if map_rightonly
         rightonly_orig_ixs = findall(rightonly_mask)
         rightonly_ixs = RowIndexMap(rightonly_orig_ixs,
-                                    collect(length(right_ixs.orig) +
-                                            (leftonly_ixs === nothing ? 0 : length(leftonly_ixs)) +
-                                            (1:length(rightonly_orig_ixs))))
+                                    collect(adjustrange(length(right_ixs.orig) +
+                                            (leftonly_ixs === nothing ? 0 : length(leftonly_ixs)),
+                                            1:length(rightonly_orig_ixs))))
     else
         rightonly_ixs = nothing
     end

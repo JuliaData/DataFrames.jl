@@ -134,25 +134,13 @@ end
 #
 ##############################################################################
 
-if VERSION ≥ v"0.7.0-DEV.4059"
-    function latex_char_escape(char::Char)
-        if char == '\\'
-            return "\\textbackslash{}"
-        elseif char == '~'
-            return "\\textasciitilde{}"
-        else
-            return string('\\', char)
-        end
-    end
-else
-    function latex_char_escape(char::AbstractString)
-        if char == "\\"
-            return "\\textbackslash{}"
-        elseif char == "~"
-            return "\\textasciitilde{}"
-        else
-            return string("\\", char)
-        end
+function latex_char_escape(char::Char)
+    if char == '\\'
+        return "\\textbackslash{}"
+    elseif char == '~'
+        return "\\textasciitilde{}"
+    else
+        return string('\\', char)
     end
 end
 

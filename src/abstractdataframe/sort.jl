@@ -30,7 +30,7 @@ _getcol(x) = x
 # Get an Ordering for a single column
 ###
 function ordering(col_ord::UserColOrdering, lt::Function, by::Function, rev::Bool, order::Ordering)
-    for (k,v) in kwpairs(col_ord.kwargs)
+    for (k,v) in pairs(col_ord.kwargs)
         if     k == :lt;    lt    = v
         elseif k == :by;    by    = v
         elseif k == :rev;   rev   = v
@@ -229,7 +229,7 @@ Sort.defalg(df::AbstractDataFrame) = size(df, 1) < 8192 ? Sort.MergeSort : Sorti
 function Sort.defalg(df::AbstractDataFrame, ::Type{T}, o::Ordering) where T<:Real
     # If we're sorting a single numerical column in forward or reverse,
     # RadixSort will generally be the fastest stable sort
-    if isbits(T) && sizeof(T) <= 8 && (o==Order.Forward || o==Order.Reverse)
+    if isbitstype(T) && sizeof(T) <= 8 && (o==Order.Forward || o==Order.Reverse)
         SortingAlgorithms.RadixSort
     else
         Sort.defalg(df)

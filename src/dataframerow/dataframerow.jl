@@ -28,12 +28,10 @@ end
 Base.names(r::DataFrameRow) = names(parent(r))
 _names(r::DataFrameRow) = _names(parent(r))
 
-if VERSION >= v"0.7.0-DEV.3067"
-    Base.getproperty(r::DataFrameRow, idx::Symbol) = getindex(r, idx)
-    Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
-    # Private fields are never exposed since they can conflict with column names
-    Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
-end
+Base.getproperty(r::DataFrameRow, idx::Symbol) = getindex(r, idx)
+Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
 Base.view(r::DataFrameRow, c) = DataFrameRow(parent(r)[[c]], row(r))
 
@@ -45,11 +43,10 @@ Compat.lastindex(r::DataFrameRow) = size(parent(r), 2)
 
 Base.collect(r::DataFrameRow) = Tuple{Symbol, Any}[x for x in r]
 
-Base.start(r::DataFrameRow) = 1
-
-Base.next(r::DataFrameRow, s) = ((_names(r)[s], r[s]), s + 1)
-
-Base.done(r::DataFrameRow, s) = s > length(r)
+function Base.iterate(r::DataFrameRow, st=1)
+    st > length(r) && return nothing
+    return ((_names(r)[st], r[st]), st + 1)
+end
 
 Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, parent(r)[row(r),:])
 

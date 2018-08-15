@@ -1,5 +1,5 @@
 module TestSort
-    using Compat, Compat.Test, DataFrames
+    using DataFrames, Random, Test
 
     dv1 = [9, 1, 8, missing, 3, 3, 7, missing]
     dv2 = [9, 1, 8, missing, 3, 3, 7, missing]
@@ -66,7 +66,7 @@ module TestSort
 
     @test_throws ArgumentError sort(x, by=:x)
 
-    srand(1)
+    Random.seed!(1)
     # here there will be probably no ties
     df_rand1 = DataFrame(rand(100, 4))
     # but here we know we will have ties

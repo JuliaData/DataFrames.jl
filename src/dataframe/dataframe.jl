@@ -121,7 +121,7 @@ mutable struct DataFrame <: AbstractDataFrame
 end
 
 function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false)::DataFrame
-    colnames = Symbol[k for (k,v) in pairs]
+    colnames = [Symbol(k) for (k,v) in pairs]
     columns = Any[v for (k,v) in pairs]
     DataFrame(columns, Index(colnames, makeunique=makeunique))
 end
@@ -133,7 +133,7 @@ function DataFrame(d::AbstractDict)
     else
         colnames = keys(d)
     end
-    colindex = Index(Symbol[k for k in colnames])
+    colindex = Index([Symbol(k) for k in colnames])
     columns = Any[d[c] for c in colnames]
     DataFrame(columns, colindex)
 end
@@ -142,7 +142,7 @@ function DataFrame(; kwargs...)
     if isempty(kwargs)
         DataFrame(Any[], Index())
     else
-        DataFrame(kwpairs(kwargs)...)
+        DataFrame(pairs(kwargs)...)
     end
 end
 
@@ -370,7 +370,7 @@ function insert_multiple_entries!(df::DataFrame,
                                   row_inds::AbstractVector{<:Real},
                                   col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
-        columns(df)[index(df)[col_ind]][row_inds] = v
+        columns(df)[index(df)[col_ind]][row_inds] .= v
         return v
     else
         error("Cannot assign to non-existent column: $col_ind")
@@ -1104,5 +1104,6 @@ function permutecols!(df::DataFrame, p::AbstractVector)
 end
 
 function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
-    permutecols!(df, getindex.(index(df).lookup, p))
+    lu = index(df).lookup
+    permutecols!(df, [lu[x] for x in p])
 end

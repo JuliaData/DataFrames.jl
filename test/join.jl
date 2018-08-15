@@ -1,20 +1,12 @@
 module TestJoin
-    using Compat, Compat.Test, DataFrames
+    using Test, DataFrames
     using DataFrames: similar_missing, columns
     const ≅ = isequal
 
     name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],
-                     Name = Union{String, Missing}["John Doe", "Jane Doe", "Joe Blogs"])
+                    Name = Union{String, Missing}["John Doe", "Jane Doe", "Joe Blogs"])
     job = DataFrame(ID = Union{Int, Missing}[1, 2, 2, 4],
                     Job = Union{String, Missing}["Lawyer", "Doctor", "Florist", "Farmer"])
-
-    # Join on symbols or vectors of symbols
-    join(name, job, on = :ID)
-    join(name, job, on = [:ID])
-
-    # Soon we won't allow natural joins
-    @test_throws ArgumentError join(name, job)
-
     # Test output of various join types
     outer = DataFrame(ID = [1, 2, 2, 3, 4],
                       Name = ["John Doe", "Jane Doe", "Jane Doe", "Joe Blogs", missing],
@@ -26,51 +18,61 @@ module TestJoin
     inner = left[Bool[!ismissing(x) for x in left[:Job]], :]
     semi = unique(inner[:, [:ID, :Name]])
     anti = left[Bool[ismissing(x) for x in left[:Job]], [:ID, :Name]]
+    
+    @testset "join types" begin
+        # Join on symbols or vectors of symbols
+        join(name, job, on = :ID)
+        join(name, job, on = [:ID])
+    
+        # Soon we won't allow natural joins
+        @test_throws ArgumentError join(name, job)
+    
 
-    @test join(name, job, on = :ID) == inner
-    @test join(name, job, on = :ID, kind = :inner) == inner
-    @test join(name, job, on = :ID, kind = :outer) ≅ outer
-    @test join(name, job, on = :ID, kind = :left) ≅ left
-    @test join(name, job, on = :ID, kind = :right) ≅ right
-    @test join(name, job, on = :ID, kind = :semi) == semi
-    @test join(name, job, on = :ID, kind = :anti) == anti
-    @test_throws ArgumentError join(name, job)
-    @test_throws ArgumentError join(name, job, on=:ID, kind=:other)
+        @test join(name, job, on = :ID) == inner
+        @test join(name, job, on = :ID, kind = :inner) == inner
+        @test join(name, job, on = :ID, kind = :outer) ≅ outer
+        @test join(name, job, on = :ID, kind = :left) ≅ left
+        @test join(name, job, on = :ID, kind = :right) ≅ right
+        @test join(name, job, on = :ID, kind = :semi) == semi
+        @test join(name, job, on = :ID, kind = :anti) == anti
+        @test_throws ArgumentError join(name, job)
+        @test_throws ArgumentError join(name, job, on=:ID, kind=:other)
 
-    # Join with no non-key columns
-    on = [:ID]
-    nameid = name[on]
-    jobid = job[on]
+        # Join with no non-key columns
+        on = [:ID]
+        nameid = name[on]
+        jobid = job[on]
 
-    @test join(nameid, jobid, on = :ID) == inner[on]
-    @test join(nameid, jobid, on = :ID, kind = :inner) == inner[on]
-    @test join(nameid, jobid, on = :ID, kind = :outer) == outer[on]
-    @test join(nameid, jobid, on = :ID, kind = :left) == left[on]
-    @test join(nameid, jobid, on = :ID, kind = :right) == right[on]
-    @test join(nameid, jobid, on = :ID, kind = :semi) == semi[on]
-    @test join(nameid, jobid, on = :ID, kind = :anti) == anti[on]
+        @test join(nameid, jobid, on = :ID) == inner[on]
+        @test join(nameid, jobid, on = :ID, kind = :inner) == inner[on]
+        @test join(nameid, jobid, on = :ID, kind = :outer) == outer[on]
+        @test join(nameid, jobid, on = :ID, kind = :left) == left[on]
+        @test join(nameid, jobid, on = :ID, kind = :right) == right[on]
+        @test join(nameid, jobid, on = :ID, kind = :semi) == semi[on]
+        @test join(nameid, jobid, on = :ID, kind = :anti) == anti[on]
 
-    # Join on multiple keys
-    df1 = DataFrame(A = 1, B = 2, C = 3)
-    df2 = DataFrame(A = 1, B = 2, D = 4)
+        # Join on multiple keys
+        df1 = DataFrame(A = 1, B = 2, C = 3)
+        df2 = DataFrame(A = 1, B = 2, D = 4)
 
-    join(df1, df2, on = [:A, :B])
+        join(df1, df2, on = [:A, :B])
 
-    # Test output of cross joins
-    df1 = DataFrame(A = 1:2, B = 'a':'b')
-    df2 = DataFrame(A = 1:3, C = 3:5)
+        # Test output of cross joins
+        df1 = DataFrame(A = 1:2, B = 'a':'b')
+        df2 = DataFrame(A = 1:3, C = 3:5)
 
-    cross = DataFrame(A = [1, 1, 1, 2, 2, 2],
-                      B = ['a', 'a', 'a', 'b', 'b', 'b'],
-                      C = [3, 4, 5, 3, 4, 5])
+        cross = DataFrame(A = [1, 1, 1, 2, 2, 2],
+                        B = ['a', 'a', 'a', 'b', 'b', 'b'],
+                        C = [3, 4, 5, 3, 4, 5])
 
-    @test join(df1, df2[[:C]], kind = :cross) == cross
+        @test join(df1, df2[[:C]], kind = :cross) == cross
 
-    # Cross joins handle naming collisions
-    @test size(join(df1, df1, kind = :cross, makeunique=true)) == (4, 4)
+        # Cross joins handle naming collisions
+        @test size(join(df1, df1, kind = :cross, makeunique=true)) == (4, 4)
 
-    # Cross joins don't take keys
-    @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
+        # Cross joins don't take keys
+        @test_throws ArgumentError join(df1, df2, on = :A, kind = :cross)
+    end
 
     @testset "Test empty inputs 1" begin
         simple_df(len::Int, col=:A) = (df = DataFrame();
@@ -130,32 +132,32 @@ module TestJoin
                                                                                B=Int[])
     end
 
-    # issue #960
-    df1 = DataFrame(A = 1:50,
-                    B = 1:50,
-                    C = 1)
-    categorical!(df1, :A)
-    categorical!(df1, :B)
-    join(df1, df1, on = [:A, :B], kind = :inner, makeunique=true)
+    @testset "issue #960" begin
+        df1 = DataFrame(A = 1:50,
+                        B = 1:50,
+                        C = 1)
+        categorical!(df1, :A)
+        categorical!(df1, :B)
+        join(df1, df1, on = [:A, :B], kind = :inner, makeunique=true)
+        # Test that join works when mixing Array{Union{T, Missing}} with Array{T} (issue #1088)
+        df = DataFrame(Name = Union{String, Missing}["A", "B", "C"],
+                    Mass = [1.5, 2.2, 1.1])
+        df2 = DataFrame(Name = ["A", "B", "C", "A"],
+                        Quantity = [3, 3, 2, 4])
+        @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "B", "C", "A"],
+                                                            Quantity = [3, 3, 2, 4],
+                                                            Mass = [1.5, 2.2, 1.1, 1.5])
 
-    # Test that join works when mixing Array{Union{T, Missing}} with Array{T} (issue #1088)
-    df = DataFrame(Name = Union{String, Missing}["A", "B", "C"],
-                   Mass = [1.5, 2.2, 1.1])
-    df2 = DataFrame(Name = ["A", "B", "C", "A"],
-                    Quantity = [3, 3, 2, 4])
-    @test join(df2, df, on=:Name, kind=:left) == DataFrame(Name = ["A", "B", "C", "A"],
-                                                           Quantity = [3, 3, 2, 4],
-                                                           Mass = [1.5, 2.2, 1.1, 1.5])
-
-    # Test that join works when mixing Array{Union{T, Missing}} with Array{T} (issue #1151)
-    df = DataFrame([collect(1:10), collect(2:11)], [:x, :y])
-    dfmissing = DataFrame(x = Vector{Union{Int, Missing}}(1:10),
-                          z = Vector{Union{Int, Missing}}(3:12))
-    @test join(df, dfmissing, on = :x) ==
-        DataFrame([collect(1:10), collect(2:11), collect(3:12)], [:x, :y, :z])
-    @test join(dfmissing, df, on = :x) ==
-        DataFrame([Vector{Union{Int, Missing}}(1:10), Vector{Union{Int, Missing}}(3:12),
-                   collect(2:11)], [:x, :z, :y])
+        # Test that join works when mixing Array{Union{T, Missing}} with Array{T} (issue #1151)
+        df = DataFrame([collect(1:10), collect(2:11)], [:x, :y])
+        dfmissing = DataFrame(x = Vector{Union{Int, Missing}}(1:10),
+                            z = Vector{Union{Int, Missing}}(3:12))
+        @test join(df, dfmissing, on = :x) ==
+            DataFrame([collect(1:10), collect(2:11), collect(3:12)], [:x, :y, :z])
+        @test join(dfmissing, df, on = :x) ==
+            DataFrame([Vector{Union{Int, Missing}}(1:10), Vector{Union{Int, Missing}}(3:12),
+                    collect(2:11)], [:x, :z, :y])
+    end
 
     @testset "all joins" begin
         df1 = DataFrame(Any[[1, 3, 5], [1.0, 3.0, 5.0]], [:id, :fid])
@@ -343,10 +345,10 @@ module TestJoin
         levels!(B[:c], ["b", "a"])
         @test levels(join(A, B, on=:b, kind=:inner)[:c]) == ["b", "a"]
         @test levels(join(B, A, on=:b, kind=:inner)[:c]) == ["b", "a"]
-        @test levels(join(A, B, on=:b, kind=:left)[:c]) == ["b", "a"]
+        @test levels(join(A, B, on=:b, kind =:left)[:c]) == ["b", "a"]
         @test levels(join(A, B, on=:b, kind=:right)[:c]) == ["b", "a"]
         @test levels(join(A, B, on=:b, kind=:outer)[:c]) == ["b", "a"]
-        @test levels(join(B, A, on=:b, kind = :semi)[:c]) == ["b", "a"]
+        @test levels(join(B, A, on=:b, kind =:semi)[:c]) == ["b", "a"]
     end
 
     @testset "maintain CategoricalArray levels ordering on join - ordering conflicts" begin
@@ -384,8 +386,8 @@ module TestJoin
     end
 
     @testset "join on columns with different left/right names" begin
-        left = DataFrame(id = 1:7, sid = string.(1:7))
-        right = DataFrame(ID = 3:10, SID = string.(3:10))
+        global left = DataFrame(id = 1:7, sid = string.(1:7))
+        global right = DataFrame(ID = 3:10, SID = string.(3:10))
         @test join(left, right, on = (:id, :ID), kind=:inner) ==
             DataFrame(id = 3:7, sid = string.(3:7), SID = string.(3:7))
         @test join(left, right, on = :id => :ID, kind=:inner) ==
