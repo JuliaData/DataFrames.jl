@@ -387,8 +387,8 @@ describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, 
 **Arguments**
 
 * `df` : the AbstractDataFrame
-* `stats::Union{Symbol,AbstractVector{Symbol}}` : the summary statistics to report. If 
-  a vector, allowed fields are `:mean`, `:std`, `:min`, `:q25`, `:median`, 
+* `stats::Union{Symbol,AbstractVector{Symbol}}` : the summary statistics to report. If
+  a vector, allowed fields are `:mean`, `:std`, `:min`, `:q25`, `:median`,
   `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and `:nmissing`. If set to
   `:all`, all summary statistics are reported.
 
@@ -398,17 +398,17 @@ describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, 
 
 **Details**
 
-For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median, 
-third quantile, and maximum. If a column does not derive from `Real`, `describe` will 
+For `Real` columns, compute the mean, standard deviation, minimum, first quantile, median,
+third quantile, and maximum. If a column does not derive from `Real`, `describe` will
 attempt to calculate all statistics, using `nothing` as a fall-back in the case of an error.
 
-When `stats` contains `:nunique`, `describe` will report the 
+When `stats` contains `:nunique`, `describe` will report the
 number of unique values in a column. If a column's base type derives from `Real`,
 `:nunique` will return `nothing`s.
 
 Missing values are filtered in the calculation of all statistics, however the column
-`:nmissing` will report the number of missing values of that variable. 
-If the column does not allow missing values, `nothing` is returned. 
+`:nmissing` will report the number of missing values of that variable.
+If the column does not allow missing values, `nothing` is returned.
 Consequently, `nmissing = 0` indicates that the column allows
 missing values, but does not currently contain any.
 
@@ -422,20 +422,20 @@ describe(df, stats = [:min, :max])
 ```
 
 """
-function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractVector{Symbol}} = 
+function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractVector{Symbol}} =
                             [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
-    # Check that people don't specify the wrong fields. 
-    allowed_fields = [:mean, :std, :min, :q25, :median, :q75, 
+    # Check that people don't specify the wrong fields.
+    allowed_fields = [:mean, :std, :min, :q25, :median, :q75,
                       :max, :nunique, :nmissing, :first, :last, :eltype]
     if stats == :all
-        stats = allowed_fields 
+        stats = allowed_fields
     end
 
     if stats isa Symbol
         if !(stats in allowed_fields)
             allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
             throw(ArgumentError(":$stats not allowed." * allowed_msg))
-        else 
+        else
             stats = [stats]
         end
     end
@@ -447,13 +447,13 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
         throw(ArgumentError(not_allowed * allowed_msg))
     end
 
-    
+
     # Put the summary stats into the return dataframe
     data = DataFrame()
     data[:variable] = names(df)
 
     # An array of Dicts for summary statistics
-    column_stats_dicts = [get_stats(col) for col in columns(df)] 
+    column_stats_dicts = [get_stats(col) for col in columns(df)]
     for stat in stats
         # for each statistic, loop through the columns array to find values
         # letting the comprehension choose the appropriate type
@@ -462,20 +462,20 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
     return data
 end
 
-# Define functions for getting summary statistics 
+# Define functions for getting summary statistics
 # use a dict because we dont know which measures the user wants
 # Outside of the `describe` function due to something with 0.7
 
 function get_stats(col::AbstractArray{>:Missing})
     nomissing = collect(skipmissing(col))
-    
+
     q = try quantile(nomissing, [.25, .5, .75]) catch; [nothing, nothing, nothing] end
     ex = try extrema(nomissing) catch; (nothing, nothing) end
     m = try mean(nomissing) catch end
     if eltype(nomissing) <: Real
         u = nothing
-    else 
-        u = try length(unique(nomissing)) catch end 
+    else
+        u = try length(unique(nomissing)) catch end
     end
 
     Dict(
@@ -491,8 +491,8 @@ function get_stats(col::AbstractArray{>:Missing})
         :first => isempty(col) ? nothing : first(col),
         :last => isempty(col) ? nothing : last(col),
         :eltype => Missings.T(eltype(col))
-    )    
-end 
+    )
+end
 
 function get_stats(col)
     q = try quantile(col, [.25, .5, .75]) catch; [nothing, nothing, nothing] end
@@ -500,7 +500,7 @@ function get_stats(col)
     m = try mean(col) catch end
     if eltype(col) <: Real
         u = nothing
-    else 
+    else
         u = try length(unique(col)) catch end
     end
 
@@ -517,7 +517,7 @@ function get_stats(col)
         :first => isempty(col) ? nothing : first(col),
         :last => isempty(col) ? nothing : last(col),
         :eltype => eltype(col)
-    )   
+    )
 end
 
 
@@ -530,7 +530,7 @@ end
 function _nonmissing!(res, col)
     # workaround until JuliaLang/julia#21256 is fixed
     eltype(col) >: Missing || return
-    
+
     @inbounds for (i, el) in enumerate(col)
         res[i] &= !ismissing(el)
     end
@@ -720,6 +720,8 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     end
     return res
 end
+Base.Matrix(df::AbstractDataFrame) = Base.convert(Matrix, df)
+Base.Matrix{T}(df::AbstractDataFrame) where {T} = Base.convert(Matrix{T}, df)
 
 """
 Indexes of duplicate rows (a row that is a duplicate of a prior row)
