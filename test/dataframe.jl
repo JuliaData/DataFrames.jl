@@ -426,7 +426,7 @@ module TestDataFrame
     # test empty set of grouping variables
     @test_throws ArgumentError unstack(df, Int[], :Key, :Value)
     @test_throws ArgumentError unstack(df, Symbol[], :Key, :Value)
-    @test_throws KeyError unstack(stack(DataFrame(rand(10, 10))))
+    @test_throws ArgumentError unstack(stack(DataFrame(rand(10, 10))))
 
     # test missing value in grouping variable
     mdf = DataFrame(id=[missing,1,2,3], a=1:4, b=1:4)

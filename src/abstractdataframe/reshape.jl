@@ -323,7 +323,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
     hcat(df1, df2)
 end
 
-unstack(df::AbstractDataFrame) = unstack(df, :id, :variable, :value)
+unstack(df::AbstractDataFrame) = unstack(df, :variable, :value)
 
 
 ##############################################################################

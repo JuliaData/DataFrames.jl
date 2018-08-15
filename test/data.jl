@@ -209,7 +209,8 @@ module TestData
         d1us3 = unstack(d1s2, :variable, :value)
         @test d1us[:a] == d1[:a]
         @test d1us2[:d] == d1[:d]
-        @test d1us2[:3] == d1[:d]
+        @test d1us2[6] == d1[:d]
+        @test d1us2 == d1us3
 
         # test unstack with exactly one key column that is not passed
         df1 = melt(DataFrame(rand(10,10)))
