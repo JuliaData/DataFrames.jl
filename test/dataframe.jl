@@ -720,49 +720,49 @@ module TestDataFrame
 
         df = deepcopy(original)
         expected = deepcopy(original)
-        permutecols!(df, [:a, :b, :c])
+        @test permutecols!(df, [:a, :b, :c]) === df
         @test df == expected
-        permutecols!(df, 1:3)
+        @test permutecols!(df, 1:3) === df
         @test df == expected
 
         df = deepcopy(original)
         expected = DataFrame(b=b, c=c, a=a)
-        permutecols!(df, [:b, :c, :a])
+        permutecols!(df, [:b, :c, :a]) === df
         @test df == expected
         df = deepcopy(original)
-        permutecols!(df, [2, 3, 1])
+        permutecols!(df, [2, 3, 1]) === df
         @test df == expected
 
         df = deepcopy(original)
         expected = DataFrame(c=c, a=a, b=b)
-        permutecols!(df, [:c, :a, :b])
+        permutecols!(df, [:c, :a, :b]) === df
         @test df == expected
         df = deepcopy(original)
-        permutecols!(df, [3, 1, 2])
+        permutecols!(df, [3, 1, 2]) === df
         @test df == expected
 
         df = deepcopy(original)
         expected = DataFrame(a=a, c=c, b=b)
-        permutecols!(df, [:a, :c, :b])
+        permutecols!(df, [:a, :c, :b]) === df
         @test df == expected
         df = deepcopy(original)
-        permutecols!(df, [1, 3, 2])
+        permutecols!(df, [1, 3, 2]) === df
         @test df == expected
 
         df = deepcopy(original)
         expected = DataFrame(b=b, a=a, c=c)
-        permutecols!(df, [:b, :a, :c])
+        permutecols!(df, [:b, :a, :c]) === df
         @test df == expected
         df = deepcopy(original)
-        permutecols!(df, [2, 1, 3])
+        permutecols!(df, [2, 1, 3]) === df
         @test df == expected
 
         df = deepcopy(original)
         expected = DataFrame(c=c, b=b, a=a)
-        permutecols!(df, [:c, :b, :a])
+        permutecols!(df, [:c, :b, :a]) === df
         @test df == expected
         df = deepcopy(original)
-        permutecols!(df, [3, 2, 1])
+        permutecols!(df, [3, 2, 1]) === df
         @test df == expected
 
         # Invalid
