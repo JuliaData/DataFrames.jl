@@ -19,6 +19,7 @@ function Base.show(io::IO, r::DataFrameRow)
     labelwidth = mapreduce(n -> length(string(n)), max, _names(r)) + 2
     @printf(io, "DataFrameRow (row %d)\n", row(r))
     for (label, value) in r
-        println(io, rpad(label, labelwidth, ' '), value)
+        println(io, rpad(label, labelwidth, ' '), something(value, ""))
     end
 end
+

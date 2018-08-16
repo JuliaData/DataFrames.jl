@@ -83,4 +83,10 @@ module TestDataFrameRow
     @test r.a === 2
     r.b = 1
     @test r.b === 1.0
+
+    df = DataFrame(a=nothing, b=1)
+    io = IOBuffer()
+    show(io, DataFrameRow(df, 1))
+    @test String(take!(io)) == "DataFrameRow (row 1)\na  \nb  1\n"
 end
+
