@@ -527,7 +527,7 @@ module TestDataFrame
 
         df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1,1])
         @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :variable, :value)
-        @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df)
+        @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :id, :variable, :value)
     end
 
     @testset "missing values in colkey" begin
