@@ -515,10 +515,10 @@ end
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showall(stdout, df, false, :Row, true)
 function showall(io::IO,
-                      df::AbstractDataFrame,
-                      allcols::Bool = true,
-                      rowlabel::Symbol = :Row,
-                      displaysummary::Bool = true) # -> Nothing
+                 df::AbstractDataFrame,
+                 allcols::Bool = true,
+                 rowlabel::Symbol = :Row,
+                 displaysummary::Bool = true) # -> Nothing
     rowindices1 = 1:size(df, 1)
     rowindices2 = 1:0
     maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel)
@@ -552,7 +552,7 @@ end
 #' df = DataFrame(A = 1:3, B = ["x", "y", "z"])
 #' showall(df, true)
 function showall(df::AbstractDataFrame,
-                      allcols::Bool = true) # -> Nothing
+                 allcols::Bool = true) # -> Nothing
     showall(stdout, df, allcols)
     return
 end
