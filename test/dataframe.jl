@@ -372,8 +372,7 @@ module TestDataFrame
 	# Test that describe works with a dataframe with no observations
 	df = DataFrame(a = Int[], b = String[], c = [])
 	@test describe(df, stats = :mean) ≅ DataFrame(variable = [:a, :b, :c], 
-                                                       mean = [NaN, nothing, nothing]) 
-	
+                                                       mean = [NaN, nothing, nothing]) 	
     end 
 
     #Check the output of unstack
