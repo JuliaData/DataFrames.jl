@@ -22,6 +22,8 @@ module TestConstructors
         @test df == DataFrame(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
                               x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
 
+        @test df === DataFrame(df) # in the future this will fail as constructor will return a copy
+
         df2 = convert(DataFrame, Union{Float64, Missing}[0.0 1.0;
                                                          0.0 1.0;
                                                          0.0 1.0])
