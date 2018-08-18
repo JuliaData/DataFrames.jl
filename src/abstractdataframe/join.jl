@@ -173,8 +173,6 @@ function update_row_maps!(left_table::AbstractDataFrame,
     end
 end
 
-adjustrange(i, rng) = UnitRange(rng.start + i, rng.stop + i)
-
 # map the row indices of the left and right joined tables
 # to the indices of rows in the resulting table
 # returns the 4-tuple of row indices maps for
@@ -204,9 +202,9 @@ function update_row_maps!(left_table::AbstractDataFrame,
     if map_rightonly
         rightonly_orig_ixs = findall(rightonly_mask)
         rightonly_ixs = RowIndexMap(rightonly_orig_ixs,
-                                    collect(adjustrange(length(right_ixs.orig) +
-                                            (leftonly_ixs === nothing ? 0 : length(leftonly_ixs)),
-                                            1:length(rightonly_orig_ixs))))
+                                    collect(length(right_ixs.orig) +
+                                            (leftonly_ixs === nothing ? 0 : length(leftonly_ixs)) .+
+                                            (1:length(rightonly_orig_ixs))))
     else
         rightonly_ixs = nothing
     end
