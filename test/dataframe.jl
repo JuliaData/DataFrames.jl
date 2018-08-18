@@ -368,6 +368,12 @@ module TestDataFrame
 
         # Test that it works with all keyword arguments
         @test describe_output_all_stats ≅ describe(df, stats = :all)
+         
+	# Test that describe works with a dataframe with no observations
+	df = DataFrame(a = Int[], b = String[], c = [])
+	@test describe(df, stats = :mean) ≅ DataFrame(variable = [:a, :b, :c], 
+                                                       mean = [NaN, nothing, nothing]) 
+	
     end 
 
     #Check the output of unstack
