@@ -122,7 +122,7 @@ end
 
 function DataFrame(df::DataFrame)
     Base.depwarn("In the future DataFrame constructor called with a `DataFrame` argument will return a copy. " *
-                 "Use `convert(DataFrame, df) to avoid copying if `df` is a `DataFrame`.", :DataFrame)
+                 "Use `convert(DataFrame, df)` to avoid copying if `df` is a `DataFrame`.", :DataFrame)
     return df
 end
 
