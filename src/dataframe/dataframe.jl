@@ -120,6 +120,12 @@ mutable struct DataFrame <: AbstractDataFrame
     end
 end
 
+function DataFrame(df::DataFrame)
+    Base.depwarn("In the future DataFrame constructor called with a `DataFrame` argument will return a copy. " *
+                 "Use `convert(DataFrame, df)` to avoid copying if `df` is a `DataFrame`.", :DataFrame)
+    return df
+end
+
 function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false)::DataFrame
     colnames = [Symbol(k) for (k,v) in pairs]
     columns = Any[v for (k,v) in pairs]
