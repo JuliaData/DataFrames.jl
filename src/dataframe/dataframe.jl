@@ -231,8 +231,8 @@ index(df::DataFrame) = getfield(df, :colindex)
 columns(df::DataFrame) = getfield(df, :columns)
 
 # TODO: Remove these
-nrow(df::DataFrame) = ncol(df) > 0 ? length(columns(df)[1]) : 0
-ncol(df::DataFrame) = length(index(df))
+nrow(df::DataFrame)::Int = ncol(df) > 0 ? Int(length(columns(df)[1])) : zero(Int)
+ncol(df::DataFrame)::Int = Int(length(index(df)))
 
 ##############################################################################
 ##
