@@ -592,6 +592,8 @@ module TestDataFrame
         @test_throws ArgumentError size(df, 3)
         @test length(df) == 2
         @test ndims(df) == 2
+        @inferred nrow(df)
+        @inferred ncol(df)
     end
 
     @testset "description" begin
