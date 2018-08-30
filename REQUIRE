@@ -10,3 +10,4 @@ CodecZlib 0.4
 TranscodingStreams
 Compat 0.59.0
 Tables
+IteratorInterfaceExtensions
