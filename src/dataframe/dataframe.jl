@@ -231,8 +231,8 @@ index(df::DataFrame) = getfield(df, :colindex)
 columns(df::DataFrame) = getfield(df, :columns)
 
 # note: these type assertions are required to pass tests
-nrow(df::DataFrame)::Int = ncol(df) > 0 ? length(columns(df)[1]) : zero(Int)
-ncol(df::DataFrame)::Int = length(index(df))
+nrow(df::DataFrame) = ncol(df) > 0 ? length(columns(df)[1])::Int : 0
+ncol(df::DataFrame) = length(index(df))
 
 ##############################################################################
 ##
