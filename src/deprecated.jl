@@ -1300,3 +1300,6 @@ import Base: vcat
 
 @deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, stats = [:eltype, :nmissing, :first, :last])
 @deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, stats = [:eltype, :nmissing, :first, :last]), all)
+
+import Base: collect
+@deprecate collect(r::DataFrameRow) collect(pairs(r))

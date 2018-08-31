@@ -488,7 +488,7 @@ module TestDataFrame
     @testset "unstack promotion to support missing values" begin
         df = DataFrame(Any[repeat(1:2, inner=4), repeat('a':'d', outer=2), collect(1:8)],
                        [:id, :variable, :value])
-        udf = unstack(df)
+        udf = unstack(df, :variable, :value)
         @test udf == unstack(df, :variable, :value) == unstack(df, :id, :variable, :value)
         @test udf == DataFrame(Any[Union{Int, Missing}[1, 2], Union{Int, Missing}[1, 5],
                                    Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
@@ -498,7 +498,7 @@ module TestDataFrame
         df = DataFrame(Any[categorical(repeat(1:2, inner=4)),
                            categorical(repeat('a':'d', outer=2)), categorical(1:8)],
                        [:id, :variable, :value])
-        udf = unstack(df)
+        udf = unstack(df, :variable, :value)
         @test udf == unstack(df, :variable, :value) == unstack(df, :id, :variable, :value)
         @test udf == DataFrame(Any[Union{Int, Missing}[1, 2], Union{Int, Missing}[1, 5],
                                    Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
@@ -527,15 +527,15 @@ module TestDataFrame
 
         df = DataFrame(variable=["x", "x"], value=[missing, missing], id=[1,1])
         @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :variable, :value)
-        @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df)
+        @test_logs (:warn, "Duplicate entries in unstack at row 2 for key 1 and variable x.") unstack(df, :id, :variable, :value)
     end
 
     @testset "missing values in colkey" begin
         df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
                        variable=["a", "b", missing, "a", "b", "missing", "a", "b", "missing"],
                        value=[missing, 2.0, 3.0, 4.0, 5.0, missing, 7.0, missing, 9.0])
-        @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df)
-        udf = unstack(df)
+        @test_logs (:warn, "Missing value in variable variable at row 3. Skipping.") unstack(df, :variable, :value)
+        udf = unstack(df, :variable, :value)
         @test names(udf) == [:id, :a, :b, :missing]
         @test udf[:missing] ≅ [missing, 9.0, missing]
         df = DataFrame(id=[1, 1, 1, missing, missing, missing, 2, 2, 2],
@@ -592,6 +592,8 @@ module TestDataFrame
         @test_throws ArgumentError size(df, 3)
         @test length(df) == 2
         @test ndims(df) == 2
+        @inferred nrow(df)
+        @inferred ncol(df)
     end
 
     @testset "description" begin
