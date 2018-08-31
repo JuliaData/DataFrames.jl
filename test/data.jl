@@ -1,5 +1,5 @@
 module TestData
-    using Test, DataFrames, Random
+    using Test, DataFrames, Random, Statistics
     const ≅ = isequal
 
     @testset "constructors" begin
@@ -123,6 +123,12 @@ module TestData
         @test sort(df8, [:d1_sum, :d3_sum, :d1_length, :d3_length]) ≅ adf
         adf′ = aggregate(groupby(df7, 2), [sum, length], sort=true)
         @test adf ≅ adf′
+
+        # Check column names
+        anonf = x -> sum(x)
+        adf = aggregate(df7, :d2, [mean, anonf])
+        @test names(adf) == [:d2, :d1_mean, :d3_mean,
+                             Symbol(:d1_, nameof(anonf)), Symbol(:d3_, nameof(anonf))]
 
         df9 = aggregate(df7, :d2, [sum, length], sort=true)
         @test df9 ≅ df8
