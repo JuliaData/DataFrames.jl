@@ -60,10 +60,24 @@ end
 #'
 #' ourshowcompact(stdout, "abc")
 #' ourshowcompact(stdout, 10000)
-ourshowcompact(io::IO, x::Any) = show(IOContext(io, :compact=>true), x) # -> Void
+ourshowcompact(io::IO, x::Any) = show(IOContext(io, :compact=>true, :typeinfo=>typeof(x)),
+                                      x) # -> Void
 ourshowcompact(io::IO, x::AbstractString) = escape_string(io, x, "") # -> Void
 ourshowcompact(io::IO, x::Symbol) = ourshowcompact(io, string(x)) # -> Void
 ourshowcompact(io::IO, x::Nothing) = nothing 
+
+#' @description
+#'
+#' Returns compact string representation of type T
+function compacttype(T::Type, maxwidth::Int)
+    maxwidth = max(maxwidth, 2)
+    T === Any && return "Any"
+    T === Missing && return "Missing"
+    T >: Missing && return compacttype(Base.nonmissingtype(T), maxwidth-1) * "⍰"
+    sT = string(T)
+    length(sT) ≤ maxwidth && return sT
+    match(Regex("^.\\w{0,$(maxwidth-2)}"), string(T)).match * "…"
+end
 
 #' @description
 #'
@@ -115,13 +129,12 @@ function getmaxwidths(df::AbstractDataFrame,
                 maxwidth = max(maxwidth, undefstrwidth)
             end
         end
-        maxwidths[j] = maxwidth
+        maxwidths[j] = max(maxwidth, ourstrwidth(compacttype(eltype(col), 8)))
         j += 1
     end
 
     rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
     rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
-
     maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2), ourstrwidth(rowlabel))
 
     return maxwidths
@@ -370,6 +383,27 @@ function showrows(io::IO,
             end
         end
 
+        # Print column types
+        @printf io "│ "
+        padding = rowmaxwidth
+        for itr in 1:padding
+            write(io, ' ')
+        end
+        @printf io " │ "
+        for j in leftcol:rightcol
+            s = compacttype(eltype(df[j]), maxwidths[j])
+            ourshowcompact(io, s)
+            padding = maxwidths[j] - ourstrwidth(s)
+            for itr in 1:padding
+                write(io, ' ')
+            end
+            if j == rightcol
+                print(io, " │\n")
+            else
+                print(io, " │ ")
+            end
+        end
+
         # Print table bounding line
         write(io, '├')
         for itr in 1:(rowmaxwidth + 2)
@@ -446,7 +480,7 @@ function Base.show(io::IO,
                    displaysummary::Bool = true) # -> Nothing
     nrows = size(df, 1)
     dsize = displaysize(io)
-    availableheight = dsize[1] - 5
+    availableheight = dsize[1] - 6
     nrowssubset = fld(availableheight, 2)
     bound = min(nrowssubset - 1, nrows)
     if nrows <= availableheight
