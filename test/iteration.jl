@@ -9,6 +9,7 @@ module TestIteration
 
     @test size(eachrow(df)) == (size(df, 1),)
     @test eachrow(df)[1] == DataFrameRow(df, 1)
+    @test typeof(collect(eachrow(df))) == Vector{DataFrameRow{DataFrame}}
     for row in eachrow(df)
         @test isa(row, DataFrameRow)
         @test (row[:B] - row[:A]) == 1
@@ -19,6 +20,7 @@ module TestIteration
     @test size(eachcol(df)) == (size(df, 2),)
     @test length(eachcol(df)) == size(df, 2)
     @test eachcol(df)[1] == df[:, 1]
+    @test typeof(collect(eachcol(df))) == Vector{Tuple{Symbol, Any}}
     for col in eachcol(df)
         @test isa(col, Tuple{Symbol, AbstractVector})
     end
