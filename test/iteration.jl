@@ -10,7 +10,7 @@ module TestIteration
     @test size(eachrow(df)) == (size(df, 1),)
     @test eachrow(df)[1] == DataFrameRow(df, 1)
     @test collect(eachrow(df)) isa Vector{DataFrameRow{DataFrame}}
-    @test eltype(collect(eachrow(df))) == DataFrameRow{DataFrame}
+    @test eltype(eachrow(df)) == DataFrameRow{DataFrame}
     for row in eachrow(df)
         @test isa(row, DataFrameRow)
         @test (row[:B] - row[:A]) == 1
@@ -22,7 +22,7 @@ module TestIteration
     @test length(eachcol(df)) == size(df, 2)
     @test eachcol(df)[1] == df[:, 1]
     @test collect(eachcol(df)) isa Vector{Tuple{Symbol, Any}}
-    @test eltype(collect(eachcol(df))) == Tuple{Symbol, Any}
+    @test eltype(eachcol(df)) == Tuple{Symbol, Any}
     for col in eachcol(df)
         @test isa(col, Tuple{Symbol, AbstractVector})
     end
