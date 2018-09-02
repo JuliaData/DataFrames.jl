@@ -60,8 +60,8 @@ end
 #'
 #' ourshowcompact(stdout, "abc")
 #' ourshowcompact(stdout, 10000)
-ourshowcompact(io::IO, x::Any) = show(IOContext(io, :compact=>true, :typeinfo=>typeof(x)),
-                                      x) # -> Void
+ourshowcompact(io::IO, x::Any) =
+    show(IOContext(io, :compact=>true, :typeinfo=>typeof(x)), x) # -> Void
 ourshowcompact(io::IO, x::AbstractString) = escape_string(io, x, "") # -> Void
 ourshowcompact(io::IO, x::Symbol) = ourshowcompact(io, string(x)) # -> Void
 ourshowcompact(io::IO, x::Nothing) = nothing 
@@ -69,14 +69,23 @@ ourshowcompact(io::IO, x::Nothing) = nothing
 #' @description
 #'
 #' Returns compact string representation of type T
-function compacttype(T::Type, maxwidth::Int)
-    maxwidth = max(maxwidth, 2)
+function compacttype(T::Type, maxwidth::Int=8)
     T === Any && return "Any"
     T === Missing && return "Missing"
-    T >: Missing && return compacttype(Base.nonmissingtype(T), maxwidth-1) * "⍰"
     sT = string(T)
     length(sT) ≤ maxwidth && return sT
-    match(Regex("^.\\w{0,$(maxwidth-2)}"), string(T)).match * "…"
+    if T >: Missing
+        T = Base.nonmissingtype(T)
+        sT = string(T)
+        suffix = "⍰"
+        # handle the case when after removing Missing union type name is short
+        length(sT) < 8 && return sT * suffix
+    else
+        suffix = ""
+    end
+    T <: Union{CategoricalString, CategoricalValue} && return "Cat…"*suffix
+    # we abbreviate consistently to total of 8 characters
+    match(Regex("^.\\w{0,$(7-length(suffix))}"), sT).match * "…"*suffix
 end
 
 #' @description
@@ -129,7 +138,7 @@ function getmaxwidths(df::AbstractDataFrame,
                 maxwidth = max(maxwidth, undefstrwidth)
             end
         end
-        maxwidths[j] = max(maxwidth, ourstrwidth(compacttype(eltype(col), 8)))
+        maxwidths[j] = max(maxwidth, ourstrwidth(compacttype(eltype(col))))
         j += 1
     end
 
@@ -368,7 +377,7 @@ function showrows(io::IO,
         for itr in 1:padding
             write(io, ' ')
         end
-        @printf io " │ "
+        print(io, " │ ")
         for j in leftcol:rightcol
             s = _names(df)[j]
             ourshowcompact(io, s)
@@ -384,16 +393,16 @@ function showrows(io::IO,
         end
 
         # Print column types
-        @printf io "│ "
+        print(io, "│ ")
         padding = rowmaxwidth
         for itr in 1:padding
             write(io, ' ')
         end
-        @printf io " │ "
+        print(io, " │ ")
         for j in leftcol:rightcol
             s = compacttype(eltype(df[j]), maxwidths[j])
-            ourshowcompact(io, s)
-            padding = maxwidths[j] - ourstrwidth(s)
+            printstyled(io, s, color=:light_black)
+            padding = maxwidths[j] - textwidth(s)
             for itr in 1:padding
                 write(io, ' ')
             end
