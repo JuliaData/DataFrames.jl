@@ -57,9 +57,4 @@ module TestUtils
         pdata[1:end] .= missing
         @test DataFrames.countmissing(pdata) == 20
     end
-
-    @testset "fnames" begin
-        funs = [mean, sum, var]
-        @test DataFrames._fnames(funs) == ["Statistics.mean", "sum", "Statistics.var"]
-    end
 end

@@ -116,17 +116,3 @@ function countmissing(a::CategoricalArray)
     end
     return res
 end
-
-# Gets the name of a function. Used in groupeDataFrame/grouping.jl
-function _fnames(fs::Vector{T}) where T<:Function
-    λcounter = 0
-    names = map(fs) do f
-        name = string(f)
-        if name == "(anonymous function)" # Anonymous functions with Julia < 0.5
-            λcounter += 1
-            name = "λ$(λcounter)"
-        end
-        name
-    end
-    names
-end
