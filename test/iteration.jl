@@ -9,16 +9,20 @@ module TestIteration
 
     @test size(eachrow(df)) == (size(df, 1),)
     @test eachrow(df)[1] == DataFrameRow(df, 1)
+    @test collect(eachrow(df)) isa Vector{DataFrameRow{DataFrame}}
+    @test eltype(eachrow(df)) == DataFrameRow{DataFrame}
     for row in eachrow(df)
         @test isa(row, DataFrameRow)
         @test (row[:B] - row[:A]) == 1
         # issue #683 (https://github.com/JuliaData/DataFrames.jl/pull/683)
-        @test typeof(collect(row)) == Array{Pair{Symbol, Int}, 1}
+        @test collect(row) isa Vector{Pair{Symbol, Int}}
     end
 
     @test size(eachcol(df)) == (size(df, 2),)
     @test length(eachcol(df)) == size(df, 2)
     @test eachcol(df)[1] == df[:, 1]
+    @test collect(eachcol(df)) isa Vector{Tuple{Symbol, Any}}
+    @test eltype(eachcol(df)) == Tuple{Symbol, Any}
     for col in eachcol(df)
         @test isa(col, Tuple{Symbol, AbstractVector})
     end
