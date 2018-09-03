@@ -9,3 +9,4 @@ DataStreams 0.3.0
 CodecZlib 0.4
 TranscodingStreams
 Compat 0.59.0
+DataArrays 0.7.0
