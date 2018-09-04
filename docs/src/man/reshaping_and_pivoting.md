@@ -5,7 +5,7 @@ Reshape data from wide to long format using the `stack` function:
 ```jldoctest reshape
 julia> using DataFrames, CSV
 
-julia> iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"));
+julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.csv"));
 
 julia> head(iris)
 6×5 DataFrames.DataFrame

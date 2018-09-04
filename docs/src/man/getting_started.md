@@ -236,7 +236,7 @@ To see more of the functionality for working with `DataFrame` objects, we need a
 ```jldoctest csv
 julia> using DataFrames, CSV
 
-julia> iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"));
+julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.csv"));
 
 julia> head(iris)
 6×5 DataFrames.DataFrame
