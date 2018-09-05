@@ -7,8 +7,11 @@ Tables.rowaccess(::Type{DataFrame}) = true
 Tables.rows(df::DataFrame) = eachrow(df)
 
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltypes(df))
+Tables.schema(df::DFRowIterator) = Tables.schema(df.df)
 
-fromcolumns(x) = DataFrame(Any[collect(c) for c in Tables.eachcolumn(x)], collect(propertynames(x)))
+getvector(x::AbstractVector) = x
+getvector(x) = collect(x)
+fromcolumns(x) = DataFrame(Any[getvector(c) for c in Tables.eachcolumn(x)], collect(propertynames(x)))
 
 function DataFrame(x::T) where {T}
     if Tables.istable(T)
