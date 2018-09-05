@@ -17,6 +17,7 @@ DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer; makeunique::Boo
 DataFrame(column_eltypes::Vector, cnames::Vector, categorical::Vector, nrows::Integer;
           makeunique::Bool=false)
 DataFrame(ds::AbstractDict)
+DataFrame(table)
 ```
 
 **Arguments**
@@ -34,6 +35,8 @@ DataFrame(ds::AbstractDict)
 * `categorical` : `Vector{Bool}` indicating which columns should be converted to
                   `CategoricalVector`
 * `ds` : `AbstractDict` of columns
+* `table`: a "catchall" constructor that accepts any type that implements the
+  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
 
 Each column in `columns` should be the same length.
 
