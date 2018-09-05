@@ -4,7 +4,7 @@ Tables.istable(::Type{<:AbstractDataFrame}) = true
 Tables.columnaccess(::Type{<:AbstractDataFrame}) = true
 Tables.columns(df::AbstractDataFrame) = df
 Tables.rowaccess(::Type{DataFrame}) = true
-Tables.rows(df::DataFrame) = eachrow(df)
+Tables.rows(df::DataFrame) = Tables.rows(columntable(df))
 
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltypes(df))
 Tables.schema(df::DFRowIterator) = Tables.schema(df.df)

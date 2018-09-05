@@ -25,7 +25,7 @@ function Base.iterate(nt::EltypeUnknownIterator, st=1)
 end
 
 @testset "Tables" begin
-    df = DataFrame(a=[1, 2, 3], b=[:a, :b, :c])
+    df = DataFrame(a=Int64[1, 2, 3], b=[:a, :b, :c])
 
     @testset "basics" begin
         @test Tables.istable(df)
