@@ -128,10 +128,10 @@ interface input. Some example uses are:
 df = DataFrame(a=[1, 2, 3], b=[:a, :b, :c])
 
 # write DataFrame out to csv file
-df |> CSV.write("dataframe.csv")
+CSV.write(df, "dataframe.csv")
 
 # store DataFrame in an SQLite database table
-df |> SQLite.load!(db, "dataframe_table")
+SQLite.load!(df, db, "dataframe_table")
 
 # transform a DataFrame through Query.jl package
 df = df |> @map({a=_.a + 1, _.b}) |> DataFrame

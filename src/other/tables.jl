@@ -20,7 +20,7 @@ function DataFrame(x::T) where {T}
     y = IteratorInterfaceExtensions.getiterator(x)
     yT = typeof(y)
     if Base.isiterable(yT)
-        Base.depwarn("constructing a DataFrame from an iterator is deprecated; $T should support the Tables.jl interface", nothing)
+        # Base.depwarn("constructing a DataFrame from an iterator is deprecated; $T should support the Tables.jl interface", nothing)
         if Base.IteratorEltype(yT) === Base.HasEltype() && eltype(y) <: NamedTuple
             return fromcolumns(Tables.buildcolumns(Tables.Schema(eltype(y)), y))
         else
