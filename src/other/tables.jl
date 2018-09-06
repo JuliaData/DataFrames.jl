@@ -37,3 +37,4 @@ Base.append!(df::DataFrame, x) = append!(df, DataFrame(x))
 DataFrame(x::Vector{T}) where {T <: NamedTuple} = fromcolumns(Tables.columns(x))
 
 IteratorInterfaceExtensions.getiterator(df::DataFrame) = Tables.datavaluerows(df)
+IteratorInterfaceExtensions.isiterable(x::DataFrame) = true

@@ -35,7 +35,7 @@ end
         @test Tables.schema(df) == Tables.schema(Tables.rows(df)) == Tables.schema(Tables.columns(df))
 
         row = first(Tables.rows(df))
-        @test propertynames(row) == [:a, :b]
+        @test propertynames(row) == (:a, :b)
         @test getproperty(row, :a) == 1
         @test getproperty(row, :b) == :a
     end
