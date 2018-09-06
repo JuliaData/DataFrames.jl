@@ -16,7 +16,7 @@ end
 
 getvector(x::AbstractVector) = x
 getvector(x) = collect(x)
-fromcolumns(x, makeunique) = DataFrame(Any[getvector(c) for c in Tables.eachcolumn(x)], collect(propertynames(x)); makeunique=makeunique)
+fromcolumns(x, makeunique) = DataFrame(Any[getvector(c) for c in Tables.eachcolumn(x)], collect(Symbol, propertynames(x)); makeunique=makeunique)
 
 function DataFrame(x::T; makeunique::Bool=false) where {T}
     if Tables.istable(T)

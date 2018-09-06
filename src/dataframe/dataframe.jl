@@ -17,7 +17,7 @@ DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer; makeunique::Boo
 DataFrame(column_eltypes::Vector, cnames::Vector, categorical::Vector, nrows::Integer;
           makeunique::Bool=false)
 DataFrame(ds::AbstractDict)
-DataFrame(table)
+DataFrame(table; makeunique::Bool=false)
 ```
 
 **Arguments**
