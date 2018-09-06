@@ -24,6 +24,34 @@ function Base.iterate(nt::EltypeUnknownIterator, st=1)
     return nt.elements[st], st + 1
 end
 
+struct DuplicateNamesTable
+end
+Tables.istable(::Type{DuplicateNamesTable}) = true
+Tables.rowaccess(::Type{DuplicateNamesTable}) = true
+Tables.rows(x::DuplicateNamesTable) = x
+Tables.schema(x::DuplicateNamesTable) = Tables.Schema((:a, :a, :b), Tuple{Float64, Float64, Float64})
+
+Base.length(x::DuplicateNamesTable) = 3
+Base.eltype(x::DuplicateNamesTable) = DuplicateRow
+
+function Base.iterate(d::DuplicateNamesTable, st=1)
+    st > length(d) && return nothing
+    return DuplicateNameRow(), st + 1
+end
+
+struct DuplicateNameRow
+end
+Base.getproperty(d::DuplicateNameRow, nm::Symbol) = 1.0
+
+struct DuplicateNamesColumnTable
+end
+Tables.istable(::Type{DuplicateNamesColumnTable}) = true
+Tables.columnaccess(::Type{DuplicateNamesColumnTable}) = true
+Tables.columns(x::DuplicateNamesColumnTable) = x
+Tables.schema(x::DuplicateNamesColumnTable) = Tables.Schema((:a, :a, :b), Tuple{Float64, Float64, Float64})
+Base.getproperty(d::DuplicateNamesColumnTable, nm::Symbol) = [1.0, 2.0, 3.0]
+Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
+
 @testset "Tables" begin
     df = DataFrame(a=Int64[1, 2, 3], b=[:a, :b, :c])
 
@@ -71,6 +99,15 @@ end
         df = DataFrame(a=[1, missing, 3], b=[missing, 'a', "hey"])
         @test isequal(df, DataFrame(Tables.rowtable(df)))
         @test isequal(df, DataFrame(Tables.columntable(df)))
+
+        dn = DuplicateNamesTable()
+        @test_throws ErrorException (dn |> DataFrame)
+
+        dn = DuplicateNamesColumnTable()
+        df = dn |> DataFrame
+        @test size(df) == (3, 3)
+        @test names(df) == [:a, :a_1, :b]
+        @test DataFrame(dn; makeunique=false) == DataFrame(dn; makeunique=true)
 
         # non-Tables.jl constructor fallbacks
         nt = (a=1, b=:a, c=missing)
