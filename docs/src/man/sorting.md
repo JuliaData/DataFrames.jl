@@ -5,7 +5,7 @@ Sorting is a fundamental component of data analysis. Basic sorting is trivial: j
 ```jldoctest sort
 julia> using DataFrames, CSV
 
-julia> iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"));
+julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.csv"));
 
 julia> sort!(iris);
 
@@ -60,7 +60,7 @@ julia> tail(iris)
 │ 5   │ 4.4         │ 2.9        │ 1.4         │ 0.2        │ setosa  │
 │ 6   │ 4.3         │ 3.0        │ 1.1         │ 0.1        │ setosa  │
 
-julia> sort!(iris, cols = [:SepalWidth, :SepalLength]);
+julia> sort!(iris, (:SepalWidth, :SepalLength));
 
 julia> head(iris)
 6×5 DataFrames.DataFrame
@@ -84,8 +84,8 @@ julia> tail(iris)
 │ 5   │ 5.5         │ 4.2        │ 1.4         │ 0.2        │ setosa  │
 │ 6   │ 5.7         │ 4.4        │ 1.5         │ 0.4        │ setosa  │
 
-julia> sort!(iris, cols = [order(:Species, by = uppercase),
-                           order(:SepalLength, rev = true)]);
+julia> sort!(iris, (order(:Species, by = uppercase),
+                    order(:SepalLength, rev = true)));
 
 julia> head(iris)
 6×5 DataFrames.DataFrame
@@ -111,14 +111,14 @@ julia> tail(iris)
 
 ```
 
-Keywords used above include `cols` (to specify columns), `rev` (to sort a column or the whole DataFrame in reverse), and `by` (to apply a function to a column/DataFrame). Each keyword can either be a single value, or can be a tuple or array, with values corresponding to individual columns.
+Keywords used above include `rev` (to sort a column or the whole DataFrame in reverse), and `by` (to apply a function to a column/DataFrame). Each keyword can either be a single value, or can be a tuple or array, with values corresponding to individual columns.
 
 As an alternative to using array or tuple values, `order` to specify an ordering for a particular column within a set of columns
 
 The following two examples show two ways to sort the `iris` dataset with the same result: `Species` will be ordered in reverse lexicographic order, and within species, rows will be sorted by increasing sepal length and width:
 
 ```jldoctest sort
-julia> sort!(iris, cols = (:Species, :SepalLength, :SepalWidth),
+julia> sort!(iris, (:Species, :SepalLength, :SepalWidth),
                     rev = (true, false, false));
 
 julia> head(iris)
@@ -143,7 +143,7 @@ julia> tail(iris)
 │ 5   │ 5.7         │ 4.4        │ 1.5         │ 0.4        │ setosa  │
 │ 6   │ 5.8         │ 4.0        │ 1.2         │ 0.2        │ setosa  │
 
-julia> sort!(iris, cols = (order(:Species, rev = true), :SepalLength, :SepalWidth));
+julia> sort!(iris, (order(:Species, rev = true), :SepalLength, :SepalWidth));
 
 julia> head(iris)
 6×5 DataFrames.DataFrame

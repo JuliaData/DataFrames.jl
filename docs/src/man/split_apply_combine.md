@@ -9,7 +9,7 @@ We show several examples of the `by` function applied to the `iris` dataset belo
 ```jldoctest sac
 julia> using DataFrames, CSV
 
-julia> iris = CSV.read(joinpath(Pkg.dir("DataFrames"), "test/data/iris.csv"));
+julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.csv"));
 
 julia> head(iris)
 6×5 DataFrames.DataFrame
