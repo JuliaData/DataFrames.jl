@@ -97,6 +97,7 @@ module TestConstructors
         @test_throws DimensionMismatch DataFrame(Any[collect(1:10)], DataFrames.Index([:A, :B]))
         @test_throws DimensionMismatch DataFrame(A = rand(2,2))
         @test_throws DimensionMismatch DataFrame(A = rand(2,1))
+        @test_throws ArgumentError DataFrame([1, 2, 3])
     end
 
     @testset "column types" begin
