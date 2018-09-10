@@ -168,7 +168,8 @@ end
 
 """
     getchunkbounds(maxwidths::Vector{Int},
-                   availablewidth::Int=displaysize()[2])
+                   splitchunks::Bool,
+                   availablewidth::Int)
 
 When rendering an `AbstractDataFrame`` to a REPL window in chunks, each of
 which will fit within the width of the REPL window, this function will
@@ -198,28 +199,33 @@ julia> maxwidths = DataFrames.getmaxwidths(df, 1:1, 3:3, :Row)
  1
  3
 
-julia> DataFrames.getchunkbounds(maxwidths)
+julia> DataFrames.getchunkbounds(maxwidths, true, displaysize()[2])
 2-element Array{Int64,1}:
  0
  2
 ```
 """
 function getchunkbounds(maxwidths::Vector{Int},
-                        availablewidth::Int=displaysize()[2]) # -> Vector{Int}
+                        splitchunks::Bool,
+                        availablewidth::Int) # -> Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
-    chunkbounds = [0]
-    # Include 2 spaces + 2 | characters for row/col label
-    totalwidth = rowmaxwidth + 4
-    for j in 1:ncols
-        # Include 2 spaces + | character in per-column character count
-        totalwidth += maxwidths[j] + 3
-        if totalwidth > availablewidth
-            push!(chunkbounds, j - 1)
-            totalwidth = rowmaxwidth + 4 + maxwidths[j] + 3
+    if splitchunks
+        chunkbounds = [0]
+        # Include 2 spaces + 2 | characters for row/col label
+        totalwidth = rowmaxwidth + 4
+        for j in 1:ncols
+            # Include 2 spaces + | character in per-column character count
+            totalwidth += maxwidths[j] + 3
+            if totalwidth > availablewidth
+                push!(chunkbounds, j - 1)
+                totalwidth = rowmaxwidth + 4 + maxwidths[j] + 3
+            end
         end
+        push!(chunkbounds, ncols)
+    else
+        chunkbounds = [0, ncols]
     end
-    push!(chunkbounds, ncols)
     return chunkbounds
 end
 
@@ -315,6 +321,7 @@ end
              rowindices1::AbstractVector{Int},
              rowindices2::AbstractVector{Int},
              maxwidths::Vector{Int},
+             splitchunks::Bool = false,
              allcols::Bool = false,
              rowlabel::Symbol = :Row,
              displaysummary::Bool = true)
@@ -347,7 +354,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
 
-julia> DataFrames.showrows(stdout, df, 1:2, 3:3, [1, 1, 5], true, :Row, true)
+julia> DataFrames.showrows(stdout, df, 1:2, 3:3, [1, 1, 5], false, true, :Row, true)
 
 3×2 DataFrame
 │ Row   │ A │ B │
@@ -363,6 +370,7 @@ function showrows(io::IO,
                   rowindices1::AbstractVector{Int},
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
+                  splitchunks::Bool = false,
                   allcols::Bool = false,
                   rowlabel::Symbol = :Row,
                   displaysummary::Bool = true) # -> Void
@@ -376,7 +384,7 @@ function showrows(io::IO,
     end
 
     rowmaxwidth = maxwidths[ncols + 1]
-    chunkbounds = getchunkbounds(maxwidths, displaysize(io)[2])
+    chunkbounds = getchunkbounds(maxwidths, splitchunks, displaysize(io)[2])
     nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
 
     header = displaysummary ? summary(df) : ""
@@ -478,8 +486,9 @@ end
 
 """
     show([io::IO,] df::AbstractDataFrame;
-         allrows::Bool = false,
-         allcols::Bool = false,
+         allrows::Bool = !get(io, :limit, false),
+         allcols::Bool = !get(io, :limit, false),
+         allgroups::Bool = !get(io, :limit, false),
          rowlabel::Symbol = :Row,
          summary::Bool = true)
 
@@ -488,12 +497,15 @@ representation chosen depends on the width of the display.
 
 - `io::IO`: The I/O stream to which `df` will be printed.
 - `df::AbstractDataFrame`: The data frame to print.
-- `allrows::Bool = false`: Whether to print all rows, rather than
-   a subset that fits the device height.
-- `allcols::Bool = false`: Whether to print all columns, rather than
-   a subset that fits the device width.
-- `allgroups::Bool = false`: Whether to print all groups rather than
+- `allrows::Bool `: Whether to print all rows, rather than
+   a subset that fits the device height. By default this is the case only if
+   `io` has the `limit` `IOContext` property set.
+- `allcols::Bool`: Whether to print all columns, rather than
+   a subset that fits the device width.By default this is the case only if
+   `io` has the `limit` `IOContext` property set.
+- `allgroups::Bool`: Whether to print all groups rather than
   the first and last, when `df` is a `GroupedDataFrame`.
+  By default this is the case only if `io` has the `limit` `IOContext` property set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
 
@@ -514,8 +526,8 @@ julia> show(df, allcols=true)
 """
 function Base.show(io::IO,
                    df::AbstractDataFrame;
-                   allrows::Bool = false,
-                   allcols::Bool = false,
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true) # -> Nothing
     nrows = size(df, 1)
@@ -532,11 +544,13 @@ function Base.show(io::IO,
     end
     maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel)
     width = getprintedwidth(maxwidths)
+    splitchunks = get(io, :limit, false)
     showrows(io,
              df,
              rowindices1,
              rowindices2,
              maxwidths,
+             splitchunks,
              allcols,
              rowlabel,
              summary)

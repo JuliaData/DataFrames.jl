@@ -28,12 +28,12 @@ function Base.show(io::IO, gd::GroupedDataFrame;
 end
 
 function Base.show(df::GroupedDataFrame;
-                   allgroups::Bool = true,
-                   allrows::Bool = false,
-                   allcols::Bool = false,
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false),
+                   allgroups::Bool = !get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true) # -> Nothing
     return show(stdout, df,
-                allgroups=allgroups, allrows=allrows, allcols=allcols,
+                allrows=allrows, allcols=allcols, allgroups=allgroups,
                 rowlabel=rowlabel, summary=summary)
 end
