@@ -27,10 +27,10 @@ function DataFrame(x::T; makeunique::Bool=false) where {T}
     if Base.isiterable(yT)
         # Base.depwarn("constructing a DataFrame from an iterator is deprecated; $T should support the Tables.jl interface", nothing)
         if Base.IteratorEltype(yT) === Base.HasEltype() && eltype(y) <: NamedTuple
-            return fromcolumns(Tables.buildcolumns(Tables.Schema(eltype(y)), y), makeunique)
+            return fromcolumns(Tables.columns(Tables.DataValueUnwrapper(y)), makeunique)
         else
             # non-NamedTuple or UnknownEltype
-            return fromcolumns(Tables.buildcolumns(nothing, y), makeunique)
+            return fromcolumns(Tables.buildcolumns(nothing, Tables.DataValueUnwrapper(y)), makeunique)
         end
     end
     throw(ArgumentError("unable to construct DataFrame from $T"))
