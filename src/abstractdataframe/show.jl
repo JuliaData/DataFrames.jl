@@ -402,7 +402,7 @@ function showrows(io::IO,
         for j in leftcol:rightcol
             s = compacttype(eltype(df[j]), maxwidths[j])
             printstyled(io, s, color=:light_black)
-            padding = maxwidths[j] - textwidth(s)
+            padding = maxwidths[j] - ourstrwidth(s)
             for itr in 1:padding
                 write(io, ' ')
             end
