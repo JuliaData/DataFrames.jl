@@ -1,36 +1,44 @@
 function Base.show(io::IO, gd::GroupedDataFrame;
-                   allgroups::Bool = false,
-                   allrows::Bool = false,
-                   allcols::Bool = false,
+                   allgroups::Bool = !get(io, :limit, false),
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true)
     N = length(gd)
-    println(io, "$(typeof(gd))  $N groups with keys: $(gd.cols)")
-    if allrows
+    keystr = N > 1 ? "keys" : "key"
+    keys = join(':' .* string.([:A, :B]), ", ")
+    summary && print(io, "$(typeof(gd)) with $N groups based on $keystr: $keys")
+    if allgroups
         for i = 1:N
-            println(io, "gd[$i]:")
-            show(io, gd[i],
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel, summary=summary)
+            nrows = size(gd[i], 1)
+            rows = nrows > 1 ? "rows" : "row"
+            print(io, "\nGroup $i: $nrows $rows")
+            show(io, gd[i], summary=false,
+                 allrows=allrows, allcols=allcols, rowlabel=rowlabel)
         end
     else
         if N > 0
-            println(io, "First Group:")
-            show(io, gd[1],
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel, summary=summary)
+            nrows = size(gd[1], 1)
+            rows = nrows > 1 ? "rows" : "row"
+            print(io, "\nFirst Group: $nrows $rows")
+            show(io, gd[1], summary=false,
+                 allrows=allrows, allcols=allcols, rowlabel=rowlabel)
         end
         if N > 1
             print(io, "\n⋮\n")
-            println(io, "Last Group:")
-            show(io, gd[N],
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel, summary=summary)
+            nnrows = size(gd[N], 1)
+            rows = nrows > 1 ? "rows" : "row"
+            print(io, "Last Group: $nrows $rows")
+            show(io, gd[N], summary=false,
+                 allrows=allrows, allcols=allcols, rowlabel=rowlabel)
         end
     end
 end
 
 function Base.show(df::GroupedDataFrame;
-                   allrows::Bool = !get(io, :limit, false),
-                   allcols::Bool = !get(io, :limit, false),
-                   allgroups::Bool = !get(io, :limit, false),
+                   allrows::Bool = false,
+                   allcols::Bool = false,
+                   allgroups::Bool = false,
                    rowlabel::Symbol = :Row,
                    summary::Bool = true) # -> Nothing
     return show(stdout, df,

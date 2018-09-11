@@ -185,20 +185,62 @@ module TestShow
     │ 24  │ 0.278582   │ 0.241591  │
     │ 25  │ 0.751313   │ 0.884837  │"""
 
-    subdf = view(df, [2, 3]) # df[df[:A] .> 1.0, :]
-    show(io, subdf)
+    subdf = view(df, [2, 3])
+    io = IOBuffer()
+    show(io, subdf, allrows=true, allcols=false)
+    str = String(take!(io))
+    @test str == """
+    2×3 SubDataFrame{Array{Int64,1}}
+    │ Row │ A │ B           │ C   │
+    ├─────┼───┼─────────────┼─────┤
+    │ 1   │ 2 │ ∀ε>0: x+ε>x │ 2.0 │
+    │ 2   │ 3 │ z\$          │ 3.0 │"""
     show(io, subdf, allrows=true)
     show(io, subdf, allcols=true)
     show(io, subdf, allcols=true, allrows=true)
 
     gd = groupby(df, :A)
-    show(io, subdf)
-    show(io, subdf, allrows=true)
-    show(io, subdf, allcols=true)
-    show(io, subdf, allcols=true, allrows=true)
+    io = IOContext(IOBuffer(), :limit=>true)
+    show(io, gd)
+    str = String(take!(io.io))
+    @test str == """
+    GroupedDataFrame with 4 groups based on keys: :A, :B
+    First Group: 1 row
+    │ Row │ A │ B  │ C   │
+    ├─────┼───┼────┼─────┤
+    │ 1   │ 1 │ x" │ 1.0 │
+    ⋮
+    Last Group: 1 row
+    │ Row │ A │ B   │ C   │
+    ├─────┼───┼─────┼─────┤
+    │ 1   │ 4 │ ABC │ 4.0 │"""
+    show(io, gd, allgroups=true)
+    str = String(take!(io.io))
+    @test str == """
+    GroupedDataFrame with 4 groups based on keys: :A, :B
+    Group 1: 1 row
+    │ Row │ A │ B  │ C   │
+    ├─────┼───┼────┼─────┤
+    │ 1   │ 1 │ x" │ 1.0 │
+    Group 2: 1 row
+    │ Row │ A │ B           │ C   │
+    ├─────┼───┼─────────────┼─────┤
+    │ 1   │ 2 │ ∀ε>0: x+ε>x │ 2.0 │
+    Group 3: 1 row
+    │ Row │ A │ B  │ C   │
+    ├─────┼───┼────┼─────┤
+    │ 1   │ 3 │ z\$ │ 3.0 │
+    Group 4: 1 row
+    │ Row │ A │ B   │ C   │
+    ├─────┼───┼─────┼─────┤
+    │ 1   │ 4 │ ABC │ 4.0 │"""
 
     dfr = DataFrameRow(df, 1)
-    show(io, dfr)
+    @test string(dfr) == """
+    DataFrameRow (row 1)
+    A  1
+    B  x"
+    C  1.0"""
 
     df = DataFrame(A = Vector{String}(undef, 3))
 
