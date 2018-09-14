@@ -29,19 +29,18 @@ for ind in inds
     end
 end
 
-# TODO: change this to throw an error after deprecation
-# @test_throws MethodError i[1.0]
-# @test_throws MethodError i[true]
-# @test_throws MethodError i[false]
-# @test_throws ArgumentError i[Any[1, missing]]
-# @test_throws ArgumentError i[[1, missing]]
-# @test_throws ArgumentError i[[true, missing]]
-# @test_throws ArgumentError i[Any[true, missing]]
-# @test_throws ArgumentError i[[:A, missing]]
-# @test_throws ArgumentError i[Any[:A, missing]]
-# @test_throws ArgumentError i[1.0:1.0]
-# @test_throws ArgumentError i[[1.0]]
-# @test_throws ArgumentError i[Any[1.0]]
+@test_throws MethodError i[1.0]
+@test_throws ArgumentError i[true]
+@test_throws ArgumentError i[false]
+@test_throws ArgumentError i[Any[1, missing]]
+@test_throws ArgumentError i[[1, missing]]
+@test_throws ArgumentError i[[true, missing]]
+@test_throws ArgumentError i[Any[true, missing]]
+@test_throws ArgumentError i[[:A, missing]]
+@test_throws ArgumentError i[Any[:A, missing]]
+@test_throws ArgumentError i[1.0:1.0]
+@test_throws ArgumentError i[[1.0]]
+@test_throws ArgumentError i[Any[1.0]]
 
 @test i[1:1] == 1:1
 
