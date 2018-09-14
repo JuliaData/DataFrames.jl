@@ -1,4 +1,4 @@
-using Tables, IteratorInterfaceExtensions
+using Tables, TableTraits, IteratorInterfaceExtensions
 
 Tables.istable(::Type{<:AbstractDataFrame}) = true
 Tables.columnaccess(::Type{<:AbstractDataFrame}) = true
@@ -22,16 +22,15 @@ function DataFrame(x::T; makeunique::Bool=false) where {T}
     if Tables.istable(T)
         return fromcolumns(Tables.columns(x), makeunique)
     end
-    y = IteratorInterfaceExtensions.getiterator(x)
-    yT = typeof(y)
-    if Base.isiterable(yT)
+    it = TableTraits.isiterabletable(x)
+    if it === true
         # Base.depwarn("constructing a DataFrame from an iterator is deprecated; $T should support the Tables.jl interface", nothing)
-        if Base.IteratorEltype(yT) === Base.HasEltype() && eltype(y) <: NamedTuple
-            return fromcolumns(Tables.columns(Tables.DataValueUnwrapper(y)), makeunique)
-        else
-            # non-NamedTuple or UnknownEltype
-            return fromcolumns(Tables.buildcolumns(nothing, Tables.DataValueUnwrapper(y)), makeunique)
-        end
+        y = IteratorInterfaceExtensions.getiterator(x)
+        return fromcolumns(Tables.columns(Tables.DataValueUnwrapper(y)), makeunique)
+    elseif it === missing
+        y = IteratorInterfaceExtensions.getiterator(x)
+        # non-NamedTuple or EltypeUnknown
+        return fromcolumns(Tables.buildcolumns(nothing, Tables.DataValueUnwrapper(y)), makeunique)
     end
     throw(ArgumentError("unable to construct DataFrame from $T"))
 end
@@ -43,3 +42,4 @@ DataFrame(x::Vector{T}; makeunique::Bool=false) where {T <: NamedTuple} = fromco
 
 IteratorInterfaceExtensions.getiterator(df::DataFrame) = Tables.datavaluerows(df)
 IteratorInterfaceExtensions.isiterable(x::DataFrame) = true
+TableTraits.isiterabletable(x::DataFrame) = true

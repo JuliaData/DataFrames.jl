@@ -11,3 +11,4 @@ TranscodingStreams
 Compat 0.59.0
 Tables
 IteratorInterfaceExtensions
+TableTraits
