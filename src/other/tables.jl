@@ -7,12 +7,6 @@ Tables.rowaccess(::Type{DataFrame}) = true
 Tables.rows(df::DataFrame) = Tables.rows(columntable(df))
 
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltypes(df))
-Tables.schema(df::DFRowIterator) = Tables.schema(df.df)
-
-@inline function Base.getproperty(r::DataFrameRow, ::Type{T}, col::Int, nm::Symbol) where {T}
-    @inbounds v = (getfield(getfield(r, 1), 1)[col])[getfield(r, 2)]::T
-    return v
-end
 
 getvector(x::AbstractVector) = x
 getvector(x) = collect(x)
@@ -36,9 +30,6 @@ function DataFrame(x::T; makeunique::Bool=false) where {T}
 end
 
 Base.append!(df::DataFrame, x) = append!(df, DataFrame(x))
-
-# This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
-DataFrame(x::Vector{T}; makeunique::Bool=false) where {T <: NamedTuple} = fromcolumns(Tables.columns(x), makeunique)
 
 IteratorInterfaceExtensions.getiterator(df::DataFrame) = Tables.datavaluerows(df)
 IteratorInterfaceExtensions.isiterable(x::DataFrame) = true
