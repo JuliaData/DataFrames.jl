@@ -559,8 +559,8 @@ function Base.show(io::IO,
 end
 
 function Base.show(df::AbstractDataFrame;
-                   allrows::Bool = !get(stdout, :limit, false),
-                   allcols::Bool = !get(stdout, :limit, false),
+                   allrows::Bool = !get(stdout, :limit, true),
+                   allcols::Bool = !get(stdout, :limit, true),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true) # -> Nothing
     return show(stdout, df,
