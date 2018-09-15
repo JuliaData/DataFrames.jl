@@ -29,6 +29,7 @@ Base.names(r::DataFrameRow) = names(parent(r))
 _names(r::DataFrameRow) = _names(parent(r))
 
 Base.getproperty(r::DataFrameRow, idx::Symbol) = getindex(r, idx)
+Base.getproperty(r::DataFrameRow, idx::AbstractString) = getproperty(r, Symbol(idx))
 Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
