@@ -5,6 +5,7 @@ The [Query.jl](https://github.com/queryverse/Query.jl) package provides advanced
 To get started, install the Query.jl package:
 
 ```julia
+using Pkg
 Pkg.add("Query")
 ```
 
@@ -15,7 +16,9 @@ A simple example of a query looks like this:
 ```jldoctest query
 julia> using DataFrames, Query
 
-julia> df = DataFrame(name=["John", "Sally", "Roger"], age=[54., 34., 79.], children=[0, 2, 4])
+julia> df = DataFrame(name=["John", "Sally", "Roger"],
+                      age=[54., 34., 79.],
+                      children=[0, 2, 4])
 3×3 DataFrames.DataFrame
 │ Row │ name  │ age  │ children │
 ├─────┼───────┼──────┼──────────┤

@@ -2,8 +2,10 @@
 
 ## Installation
 
-The DataFrames package is available through the Julia package system and can be installed using the following command:
+The DataFrames package is available through the Julia package system and can be installed using the following commands:
+
 ```julia
+using Pkg
 Pkg.add("DataFrames")
 ```
 
@@ -11,35 +13,68 @@ Throughout the rest of this tutorial, we will assume that you have installed the
 
 ## The `DataFrame` Type
 
-The `DataFrame` type can be used to represent data tables, each column of which is a vector. You can specify the columns using keyword arguments or pairs:
+Objects of the `DataFrame` type represent a data table as a series of vectors, each corresponding to a column or variable. The simplest way of constructing a `DataFrame` is to pass column vectors using keyword arguments or pairs:
 
 ```jldoctest dataframe
 julia> using DataFrames
 
-julia> DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
-4×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
-│ 2   │ 2 │ F │
-│ 3   │ 3 │ F │
-│ 4   │ 4 │ M │
+julia> df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+4×2 DataFrame
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ M      │
+│ 2   │ 2     │ F      │
+│ 3   │ 3     │ F      │
+│ 4   │ 4     │ M      │
 
+```
+
+Columns can be accessed via `df.col` or `df[:col]`. The latter syntax is more flexible as it allows passing a variable holding the name of the column, and not only a literal name. Note that column names are symbols (`:col` or `Symbol("col")`) rather than strings (`"col"`). Columns can also be accessed using an integer index specifying their position.
+
+```jldoctest dataframe
+julia> df.A
+4-element Array{Int64,1}:
+ 1
+ 2
+ 3
+ 4
+
+julia> df.A === df[:A]
+true
+
+julia> df.A === df[1]
+true
+
+julia> firstcolumn = :A
+:A
+
+julia> df[firstcolumn] === df.A
+true
+```
+
+Column names can be obtained using the `names` function:
+
+```jldoctest dataframe
+julia> names(df)
+2-element Array{Symbol,1}:
+ :A
+ :B
 ```
 
 ### Constructing Column by Column
 
-It is also possible to construct a `DataFrame` one column at a time.
+It is also possible to start with an empty `DataFrame` and add columns to it one by one:
 
 ```jldoctest dataframe
 julia> df = DataFrame()
 0×0 DataFrames.DataFrame
 
 
-julia> df[:A] = 1:8
+julia> df.A = 1:8
 1:8
 
-julia> df[:B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
+julia> df.B = ["M", "F", "F", "M", "F", "M", "M", "F"]
 8-element Array{String,1}:
  "M"
  "F"
@@ -51,65 +86,74 @@ julia> df[:B] = ["M", "F", "F", "M", "F", "M", "M", "F"]
  "F"
 
 julia> df
-8×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
-│ 2   │ 2 │ F │
-│ 3   │ 3 │ F │
-│ 4   │ 4 │ M │
-│ 5   │ 5 │ F │
-│ 6   │ 6 │ M │
-│ 7   │ 7 │ M │
-│ 8   │ 8 │ F │
+8×2 DataFrame
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ M      │
+│ 2   │ 2     │ F      │
+│ 3   │ 3     │ F      │
+│ 4   │ 4     │ M      │
+│ 5   │ 5     │ F      │
+│ 6   │ 6     │ M      │
+│ 7   │ 7     │ M      │
+│ 8   │ 8     │ F      │
 
 ```
 
 The `DataFrame` we build in this way has 8 rows and 2 columns.
-You can check this using the `size` function:
+This can be checked using the `size` function:
 
 ```jldoctest dataframe
-julia> size(df, 1) == 8
-true
+julia> size(df, 1)
+8
 
-julia> size(df, 2) == 2
-true
+julia> size(df, 2)
+2
 
-julia> size(df) == (8, 2)
-true
+julia> size(df)
+(8, 2)
 
 ```
 
 ### Constructing Row by Row
 
-It is also possible to construct a `DataFrame` row by row.
-
-First a `DataFrame` with empty columns is constructed:
+It is also possible to fill a `DataFrame` row by row. Let us construct an empty data frame with two columns (note that the first column can only contain integers and the second one can only contain strings):
 
 ```jldoctest dataframe
 julia> df = DataFrame(A = Int[], B = String[])
 0×2 DataFrames.DataFrame
 ```
 
-Rows can then be added as `Vector`s, where the row order matches the columns order:
+Rows can then be added as tuples or vectors, where the order of elements matches that of columns:
 
 ```jldoctest dataframe
-julia> push!(df, [1, "M"])
+julia> push!(df, (1, "M"))
 1×2 DataFrames.DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ 1 │ M │
+
+julia> push!(df, [2, "N"])
+2×2 DataFrames.DataFrame
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ M      │
+│ 2   │ 2     │ N      │
 ```
 
 Rows can also be added as `Dict`s, where the dictionary keys match the column names:
 
 ```jldoctest dataframe
-julia> push!(df, Dict(:B => "F", :A => 2))
-2×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
-│ 2   │ 2 │ F │
+julia> push!(df, Dict(:B => "F", :A => 3))
+3×2 DataFrames.DataFrame
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ M      │
+│ 2   │ 2     │ N      │
+│ 3   │ 3     │ F      │
 ```
 
 Note that constructing a `DataFrame` row by row is significantly less performant than
@@ -118,68 +162,223 @@ but for very large `DataFrame`s  this may be a consideration.
 
 ## Working with Data Frames
 
-### Taking a Subset
+### Examining the Data
 
-We can also look at small subsets of the data in a couple of different ways:
+The default printing of `DataFrame` objects only includes a sample of rows and columns that fits on screen:
+
+```jldoctest dataframe
+julia> df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
+500×3 DataFrame
+│ Row │ A     │ B     │ C     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 1     │ 1     │
+│ 2   │ 3     │ 1     │ 2     │
+│ 3   │ 5     │ 1     │ 3     │
+│ 4   │ 7     │ 1     │ 4     │
+⋮
+│ 496 │ 991   │ 10    │ 496   │
+│ 497 │ 993   │ 10    │ 497   │
+│ 498 │ 995   │ 10    │ 498   │
+│ 499 │ 997   │ 10    │ 499   │
+│ 500 │ 999   │ 10    │ 500   │
+```
+
+Printing options can be adjusted by calling the `show` function manually: `show(df, allrows=true)` prints all rows even if they do not fit on screen and `show(df, allcols=true)` does the same for columns.
+
+The `head` and `tail` functions can be used to look at the first and last rows of a data frame (respectively):
 
 ```jldoctest dataframe
 julia> head(df)
-6×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
-│ 2   │ 2 │ F │
-│ 3   │ 3 │ F │
-│ 4   │ 4 │ M │
-│ 5   │ 5 │ F │
-│ 6   │ 6 │ M │
+6×3 DataFrame
+│ Row │ A     │ B     │ C     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 1     │ 1     │
+│ 2   │ 3     │ 1     │ 2     │
+│ 3   │ 5     │ 1     │ 3     │
+│ 4   │ 7     │ 1     │ 4     │
+│ 5   │ 9     │ 1     │ 5     │
+│ 6   │ 11    │ 1     │ 6     │
 
 julia> tail(df)
-6×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 3 │ F │
-│ 2   │ 4 │ M │
-│ 3   │ 5 │ F │
-│ 4   │ 6 │ M │
-│ 5   │ 7 │ M │
-│ 6   │ 8 │ F │
+6×3 DataFrame
+│ Row │ A     │ B     │ C     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 989   │ 10    │ 495   │
+│ 2   │ 991   │ 10    │ 496   │
+│ 3   │ 993   │ 10    │ 497   │
+│ 4   │ 995   │ 10    │ 498   │
+│ 5   │ 997   │ 10    │ 499   │
+│ 6   │ 999   │ 10    │ 500   │
+```
 
+### Taking a Subset
+
+Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon `:` indicates that all items (rows or columns depending on its position) should be retained:
+
+```jldoctest dataframe
 julia> df[1:3, :]
-3×2 DataFrames.DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
-│ 2   │ 2 │ F │
-│ 3   │ 3 │ F │
+3×3 DataFrame
+│ Row │ A     │ B     │ C     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 1     │ 1     │
+│ 2   │ 3     │ 1     │ 2     │
+│ 3   │ 5     │ 1     │ 3     │
 
+julia> df[[1, 5, 10], :]
+3×3 DataFrame
+│ Row │ A     │ B     │ C     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 1     │ 1     │
+│ 2   │ 9     │ 1     │ 5     │
+│ 3   │ 19    │ 1     │ 10    │
+
+julia> df[:, [:A, :B]]
+500×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 3     │ 1     │
+│ 3   │ 5     │ 1     │
+│ 4   │ 7     │ 1     │
+⋮
+│ 496 │ 991   │ 10    │
+│ 497 │ 993   │ 10    │
+│ 498 │ 995   │ 10    │
+│ 499 │ 997   │ 10    │
+│ 500 │ 999   │ 10    │
+
+julia> df[1:3, [:B, :A]]
+3×2 DataFrame
+│ Row │ B     │ A     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 1     │ 3     │
+│ 3   │ 1     │ 5     │
+
+julia> df[[3, 1], [:C]]
+2×1 DataFrame
+│ Row │ C     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 3     │
+│ 2   │ 1     │
 ```
 
-### Summarizing with `describe`
-
-Having seen what some of the rows look like, we can try to summarize the entire data set using `describe`:
+Do note that `df[[:A]]` and `df[:, [:A]]` return a `DataFrame` object, while `df[:A]` and `df[:, :A]` return a vector:
 
 ```jldoctest dataframe
+julia> df[[:A]]
+500×1 DataFrame
+│ Row │ A     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 3     │
+│ 3   │ 5     │
+│ 4   │ 7     │
+⋮
+│ 496 │ 991   │
+│ 497 │ 993   │
+│ 498 │ 995   │
+│ 499 │ 997   │
+│ 500 │ 999   │
+
+julia> df[[:A]] == df[:, [:A]]
+true
+
+julia> df[:A]
+500-element Array{Int64,1}:
+   1
+   3
+   5
+   7
+   9
+  11
+   ⋮
+ 991
+ 993
+ 995
+ 997
+ 999
+
+julia> df[:A] == df[:, :A]
+true
+```
+
+In the first cases, `[:A]` is a vector, indicating that the resulting object should be a `DataFrame`, since a vector can contain one or more column names. On the other hand, `:A` is a single symbol, indicating that a single column vector should be extracted.
+
+The indexing syntax can also be used to select rows based on conditions on variables:
+
+```jldoctest dataframe
+julia> df[df.A .> 500, :]
+250×3 DataFrame
+│ Row │ A     │ B     │ C     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 501   │ 6     │ 251   │
+│ 2   │ 503   │ 6     │ 252   │
+│ 3   │ 505   │ 6     │ 253   │
+│ 4   │ 507   │ 6     │ 254   │
+⋮
+│ 246 │ 991   │ 10    │ 496   │
+│ 247 │ 993   │ 10    │ 497   │
+│ 248 │ 995   │ 10    │ 498   │
+│ 249 │ 997   │ 10    │ 499   │
+│ 250 │ 999   │ 10    │ 500   │
+
+julia> df[(df.A .> 500) .& (300 .< df.C .< 400), :]
+99×3 DataFrame
+│ Row │ A     │ B     │ C     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 601   │ 7     │ 301   │
+│ 2   │ 603   │ 7     │ 302   │
+│ 3   │ 605   │ 7     │ 303   │
+│ 4   │ 607   │ 7     │ 304   │
+⋮
+│ 95  │ 789   │ 8     │ 395   │
+│ 96  │ 791   │ 8     │ 396   │
+│ 97  │ 793   │ 8     │ 397   │
+│ 98  │ 795   │ 8     │ 398   │
+│ 99  │ 797   │ 8     │ 399   │
+```
+
+While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:
+- the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources
+- the [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package provides interfaces similar to LINQ and [dplyr](https://dplyr.tidyverse.org)
+
+See the [Querying frameworks](@ref) section for more information.
+
+### Summarizing Data
+
+The `describe` function returns a data frame summarizing the elementary statistics and information about each column:
+
+```jldoctest dataframe
+julia> df = DataFrame(A = 1:4, B = ["M", "F", "F", "M"])
+
 julia> describe(df)
-2×8 DataFrames.DataFrame
-│ Row │ variable │ mean │ min │ median │ max │ nunique │ nmissing │ eltype │
-├─────┼──────────┼──────┼─────┼────────┼─────┼─────────┼──────────┼────────┤
-│ 1   │ A        │ 4.5  │ 1   │ 4.5    │ 8   │         │          │ Int64  │
-│ 2   │ B        │      │ F   │        │ M   │ 2       │          │ String │
+2×8 DataFrame
+│ Row │ variable │ mean   │ min │ median │ max │ nunique │ nmissing │ eltype   │
+│     │ Symbol   │ Union… │ Any │ Union… │ Any │ Union…  │ Nothing  │ DataType │
+├─────┼──────────┼────────┼─────┼────────┼─────┼─────────┼──────────┼──────────┤
+│ 1   │ A        │ 2.5    │ 1   │ 2.5    │ 4   │         │          │ Int64    │
+│ 2   │ B        │        │ F   │        │ M   │ 2       │          │ String   │
 
 ```
 
-To access individual columns of the dataset, you refer to the column names by their symbol
-or by their numerical index. Here we extract the first column, `:A`, and use it to compute
-the mean and variance.
-
+Of course, one can also compute descrptive statistics directly on individual columns:
 ```jldoctest dataframe
-julia> mean(df[:A]) == mean(df[1]) == 4.5
-true
+julia> using Statistics
 
-julia> var(df[:A]) ==  var(df[1]) == 6.0
-true
-
+julia> mean(df.A)
+2.5
 ```
 
 ### Column-Wise Operations
@@ -208,6 +407,7 @@ For reading and writing tabular data from CSV and other delimited text files, us
 
 If you have not used the CSV.jl package before then you may need to install it first:
 ```julia
+using Pkg
 Pkg.add("CSV")
 ```
 
@@ -227,30 +427,4 @@ df = DataFrame(x = 1, y = 2)
 CSV.write(output, df)
 ```
 
-The behavior of CSV functions can be adapted via keyword arguments. For more information, use the REPL [help-mode](http://docs.julialang.org/en/stable/manual/interacting-with-julia/#help-mode) or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).
-
-## Loading a Classic Data Set
-
-To see more of the functionality for working with `DataFrame` objects, we need a more complex data set to work with. We can access Fisher's iris data set using the following functions:
-
-```jldoctest csv
-julia> using DataFrames, CSV
-
-julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.csv"));
-
-julia> head(iris)
-6×5 DataFrames.DataFrame
-│ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
-├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
-│ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ setosa  │
-│ 2   │ 4.9         │ 3.0        │ 1.4         │ 0.2        │ setosa  │
-│ 3   │ 4.7         │ 3.2        │ 1.3         │ 0.2        │ setosa  │
-│ 4   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ setosa  │
-│ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ setosa  │
-│ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa  │
-
-```
-
-## Querying DataFrames
-
-While the `DataFrames` package provides basic data manipulation capabilities, users are encouraged to use the [Query.jl](https://github.com/davidanthoff/Query.jl), which provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources, including `DataFrame` instances. See the [Querying frameworks](@ref)  section for more information.
+The behavior of CSV functions can be adapted via keyword arguments. For more information, see `?CSV.read` and `CSV.write`, or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).
