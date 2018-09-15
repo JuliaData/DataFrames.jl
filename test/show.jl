@@ -190,7 +190,7 @@ module TestShow
     show(io, subdf, allrows=true, allcols=false)
     str = String(take!(io))
     @test str == """
-    2×3 SubDataFrame{Array{Int64,1}}
+    2×3 SubDataFrame{Array{$Int,1}}
     │ Row │ A     │ B           │ C       │
     │     │ Int64 │ String      │ Float32 │
     ├─────┼───────┼─────────────┼─────────┤
