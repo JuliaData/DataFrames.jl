@@ -63,9 +63,9 @@ module TestShow
     show(io, df_big, allrows=true, allcols=true)
     str = String(take!(io.io))
     @test str == """
-    25×5 $DataFrame
+    25×5 DataFrame
     │ Row │ x1         │ x2        │
-    |     │ Float64    │ Float64   │
+    │     │ Float64    │ Float64   │
     ├─────┼────────────┼───────────┤
     │ 1   │ 0.236033   │ 0.644883  │
     │ 2   │ 0.346517   │ 0.0778264 │
@@ -92,9 +92,9 @@ module TestShow
     │ 23  │ 0.873544   │ 0.524975  │
     │ 24  │ 0.278582   │ 0.241591  │
     │ 25  │ 0.751313   │ 0.884837  │
-
+    
     │ Row │ x3        │ x4        │
-    |     │ Float64   │ Float64   |
+    │     │ Float64   │ Float64   │
     ├─────┼───────────┼───────────┤
     │ 1   │ 0.440897  │ 0.580782  │
     │ 2   │ 0.404673  │ 0.768359  │
@@ -121,9 +121,9 @@ module TestShow
     │ 23  │ 0.393193  │ 0.681415  │
     │ 24  │ 0.990741  │ 0.762276  │
     │ 25  │ 0.550334  │ 0.339081  │
-
+    
     │ Row │ x5        │
-    |     │ Float64   |
+    │     │ Float64   │
     ├─────┼───────────┤
     │ 1   │ 0.138763  │
     │ 2   │ 0.456446  │
@@ -191,10 +191,11 @@ module TestShow
     str = String(take!(io))
     @test str == """
     2×3 SubDataFrame{Array{Int64,1}}
-    │ Row │ A │ B           │ C   │
-    ├─────┼───┼─────────────┼─────┤
-    │ 1   │ 2 │ ∀ε>0: x+ε>x │ 2.0 │
-    │ 2   │ 3 │ z\$          │ 3.0 │"""
+    │ Row │ A     │ B           │ C       │
+    │     │ Int64 │ String      │ Float32 │
+    ├─────┼───────┼─────────────┼─────────┤
+    │ 1   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │
+    │ 2   │ 3     │ z\$          │ 3.0     │"""
     show(io, subdf, allrows=true)
     show(io, subdf, allcols=true)
     show(io, subdf, allcols=true, allrows=true)
@@ -206,34 +207,40 @@ module TestShow
     @test str == """
     GroupedDataFrame with 4 groups based on keys: :A, :B
     First Group: 1 row
-    │ Row │ A │ B  │ C   │
-    ├─────┼───┼────┼─────┤
-    │ 1   │ 1 │ x" │ 1.0 │
+    │ Row │ A     │ B      │ C       │
+    │     │ Int64 │ String │ Float32 │
+    ├─────┼───────┼────────┼─────────┤
+    │ 1   │ 1     │ x"     │ 1.0     │
     ⋮
     Last Group: 1 row
-    │ Row │ A │ B   │ C   │
-    ├─────┼───┼─────┼─────┤
-    │ 1   │ 4 │ ABC │ 4.0 │"""
+    │ Row │ A     │ B      │ C       │
+    │     │ Int64 │ String │ Float32 │
+    ├─────┼───────┼────────┼─────────┤
+    │ 1   │ 4     │ A\\nC   │ 4.0     │"""
     show(io, gd, allgroups=true)
     str = String(take!(io.io))
     @test str == """
     GroupedDataFrame with 4 groups based on keys: :A, :B
     Group 1: 1 row
-    │ Row │ A │ B  │ C   │
-    ├─────┼───┼────┼─────┤
-    │ 1   │ 1 │ x" │ 1.0 │
+    │ Row │ A     │ B      │ C       │
+    │     │ Int64 │ String │ Float32 │
+    ├─────┼───────┼────────┼─────────┤
+    │ 1   │ 1     │ x\"     │ 1.0     │
     Group 2: 1 row
-    │ Row │ A │ B           │ C   │
-    ├─────┼───┼─────────────┼─────┤
-    │ 1   │ 2 │ ∀ε>0: x+ε>x │ 2.0 │
+    │ Row │ A     │ B           │ C       │
+    │     │ Int64 │ String      │ Float32 │
+    ├─────┼───────┼─────────────┼─────────┤
+    │ 1   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │
     Group 3: 1 row
-    │ Row │ A │ B  │ C   │
-    ├─────┼───┼────┼─────┤
-    │ 1   │ 3 │ z\$ │ 3.0 │
+    │ Row │ A     │ B      │ C       │
+    │     │ Int64 │ String │ Float32 │
+    ├─────┼───────┼────────┼─────────┤
+    │ 1   │ 3     │ z\$     │ 3.0     │
     Group 4: 1 row
-    │ Row │ A │ B   │ C   │
-    ├─────┼───┼─────┼─────┤
-    │ 1   │ 4 │ ABC │ 4.0 │"""
+    │ Row │ A     │ B      │ C       │
+    │     │ Int64 │ String │ Float32 │
+    ├─────┼───────┼────────┼─────────┤
+    │ 1   │ 4     │ A\\nC   │ 4.0     │"""
 
     dfr = DataFrameRow(df, 1)
     @test string(dfr) == """
