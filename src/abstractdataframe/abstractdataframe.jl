@@ -238,6 +238,7 @@ Compat.axes(df, i) = axes(df)[i]
 Base.ndims(::AbstractDataFrame) = 2
 
 Base.getproperty(df::AbstractDataFrame, col_ind::Symbol) = getindex(df, col_ind)
+Base.getproperty(df::AbstractDataFrame, col_ind::AbstractString) = getproperty(df, Symbol(col_ind))
 Base.setproperty!(df::AbstractDataFrame, col_ind::Symbol, x) = setindex!(df, x, col_ind)
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(df::AbstractDataFrame, private::Bool=false) = names(df)
