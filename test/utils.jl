@@ -1,43 +1,10 @@
 module TestUtils
     using Test, DataFrames, Statistics, StatsBase, Random
-    import DataFrames: identifier
-
-    @testset "identifier" begin
-        @test identifier("%_B*_\tC*") == :_B_C_
-        @test identifier("2a") == :x2a
-        @test identifier("!") == :x!
-        @test identifier("\t_*") == :_
-        @test identifier("begin") == :_begin
-        @test identifier("end") == :_end
-    end
-
     @testset "make_unique" begin
         @test DataFrames.make_unique([:x, :x, :x_1, :x2], makeunique=true) == [:x, :x_2, :x_1, :x2]
         # TODO uncomment this line after deprecation period when makeunique=false throws error
         #@test_throws ArgumentError DataFrames.make_unique([:x, :x, :x_1, :x2], makeunique=false)
         @test DataFrames.make_unique([:x, :x_1, :x2], makeunique=false) == [:x, :x_1, :x2]
-    end
-
-    # Check that reserved words are up to date
-
-    @testset "reserved words" begin
-        f = "$(Sys.BINDIR)/../../src/julia-parser.scm"
-        if isfile(f)
-            r1 = r"define initial-reserved-words '\(([^)]+)"
-            r2 = r"define \(parse-block s(?: \([^)]+\))?\)\s+\(parse-Nary s (?:parse-eq '\([^(]*|down '\([^)]+\) '[^']+ ')\(([^)]+)"
-            body = read(f, String)
-            m1, m2 = match(r1, body), match(r2, body)
-            if m1 == nothing || m2 == nothing
-                error("Unable to extract keywords from 'julia-parser.scm'.")
-            else
-                s = replace(string(m1.captures[1]," ",m2.captures[1]), r";;.*?\n" => "")
-                rw = Set(split(s, r"\W+"))
-                @test rw == DataFrames.RESERVED_WORDS
-            end
-        else
-            @warn("Unable to validate reserved words against parser. ",
-                  "Expected if Julia was not built from source.")
-        end
     end
 
     @testset "countmissing" begin
