@@ -42,7 +42,7 @@ julia> by(iris, :Species, size)
 │ 2   │ versicolor │ (50, 5) │
 │ 3   │ virginica  │ (50, 5) │
 
-julia> by(iris, :Species, df -> mean(df[:PetalLength]))
+julia> by(iris, :Species, df -> mean(df.PetalLength))
 3×2 DataFrame
 │ Row │ Species    │ x1    │
 ├─────┼────────────┼───────┤
@@ -64,7 +64,7 @@ The `by` function also support the `do` block form:
 
 ```jldoctest sac
 julia> by(iris, :Species) do df
-          DataFrame(m = mean(df[:PetalLength]), s² = var(df[:PetalLength]))
+          DataFrame(m = mean(df.PetalLength), s² = var(df.PetalLength))
        end
 3×3 DataFrame
 │ Row │ Species    │ m     │ s²        │
