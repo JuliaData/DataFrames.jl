@@ -6,6 +6,7 @@ end
 let
     local io = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
     global ourstrwidth
+
     """
         DataFrames.ourstrwidth(x::Any)
 
@@ -57,13 +58,13 @@ end
                             rowlabel::Symbol)
 
 Calculate, for each column of an AbstractDataFrame, the maximum
-string width used to render either the name of that column or the
-longest entry in that column -- among the rows of the AbstractDataFrame
+string width used to render the name of that column, its type, and the
+longest entry in that column -- among the rows of the data frame
 will be rendered to IO. The widths for all columns are returned as a
 vector.
 
 Return a `Vector{Int}` giving the maximum string widths required to render
-each column, including that column's name.
+each column, including that column's name and type.
 
 NOTE: The last entry of the result vector is the string width of the
 implicit row ID column contained in every `AbstractDataFrame`.
@@ -342,7 +343,7 @@ NOTE: The value of `maxwidths[end]` must be the string width of
 - `maxwidths::Vector{Int}`: The pre-computed maximum string width
   required to render each column.
 - `allcols::Bool = false`: Whether to print all columns, rather than
-   a subset that fits the device width.
+  a subset that fits the device width.
 - `rowlabel::Symbol`: What label should be printed when rendering the
   numeric ID's of each row? Defaults to `:Row`.
 - `displaysummary::Bool`: Should a brief string summary of the
@@ -498,11 +499,11 @@ representation chosen depends on the width of the display.
 - `io::IO`: The I/O stream to which `df` will be printed.
 - `df::AbstractDataFrame`: The data frame to print.
 - `allrows::Bool `: Whether to print all rows, rather than
-   a subset that fits the device height. By default this is the case only if
-   `io` has the `limit` `IOContext` property set.
+  a subset that fits the device height. By default this is the case only if
+  `io` has the `limit` `IOContext` property set.
 - `allcols::Bool`: Whether to print all columns, rather than
-   a subset that fits the device width.By default this is the case only if
-   `io` has the `limit` `IOContext` property set.
+  a subset that fits the device width. By default this is the case only if
+  `io` has the `limit` `IOContext` property set.
 - `allgroups::Bool`: Whether to print all groups rather than
   the first and last, when `df` is a `GroupedDataFrame`.
   By default this is the case only if `io` has the `limit` `IOContext` property set.
@@ -558,8 +559,8 @@ function Base.show(io::IO,
 end
 
 function Base.show(df::AbstractDataFrame;
-                   allrows::Bool = false,
-                   allcols::Bool = false,
+                   allrows::Bool = !get(stdout, :limit, false),
+                   allcols::Bool = !get(stdout, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true) # -> Nothing
     return show(stdout, df,
