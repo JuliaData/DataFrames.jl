@@ -2,17 +2,18 @@ module TestShow
     using DataFrames, Random, Test
 
     # In the future newline character \n should be added to this test case
-    df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "ABC"],
+    df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
                    C = Float32[1.0, 2.0, 3.0, 4.0])
 
     refstr = """
-    4×3 $DataFrame
-    │ Row │ A │ B           │ C   │
-    ├─────┼───┼─────────────┼─────┤
-    │ 1   │ 1 │ x\"          │ 1.0 │
-    │ 2   │ 2 │ ∀ε>0: x+ε>x │ 2.0 │
-    │ 3   │ 3 │ z\$          │ 3.0 │
-    │ 4   │ 4 │ ABC         │ 4.0 │"""
+    4×3 DataFrame
+    │ Row │ A     │ B           │ C       │
+    │     │ Int64 │ String      │ Float32 │
+    ├─────┼───────┼─────────────┼─────────┤
+    │ 1   │ 1     │ x"          │ 1.0     │
+    │ 2   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │
+    │ 3   │ 3     │ z\$          │ 3.0     │
+    │ 4   │ 4     │ A\\nC        │ 4.0     │"""
 
     for f in [show, showall], allcols in [true, false]
         io = IOBuffer()
@@ -28,8 +29,9 @@ module TestShow
     show(io, df_big)
     str = String(take!(io.io))
     @test str == """
-    25×5 $DataFrame. Omitted printing of 2 columns
+    25×5 DataFrame. Omitted printing of 2 columns
     │ Row │ x1       │ x2       │ x3       │
+    │     │ Float64  │ Float64  │ Float64  │
     ├─────┼──────────┼──────────┼──────────┤
     │ 1   │ 0.236033 │ 0.644883 │ 0.440897 │
     ⋮
@@ -40,8 +42,9 @@ module TestShow
     show(io, df_big, true)
     str = String(take!(io.io))
     @test str == """
-    25×5 $DataFrame
+    25×5 DataFrame
     │ Row │ x1       │ x2       │ x3       │
+    │     │ Float64  │ Float64  │ Float64  │
     ├─────┼──────────┼──────────┼──────────┤
     │ 1   │ 0.236033 │ 0.644883 │ 0.440897 │
     ⋮
@@ -49,6 +52,7 @@ module TestShow
     │ 25  │ 0.751313 │ 0.884837 │ 0.550334 │
     
     │ Row │ x4       │ x5       │
+    │     │ Float64  │ Float64  │
     ├─────┼──────────┼──────────┤
     │ 1   │ 0.580782 │ 0.138763 │
     ⋮
@@ -59,8 +63,9 @@ module TestShow
     showall(io, df_big)
     str = String(take!(io.io))
     @test str == """
-    25×5 $DataFrame
+    25×5 DataFrame
     │ Row │ x1         │ x2        │ x3        │ x4        │ x5        │
+    │     │ Float64    │ Float64   │ Float64   │ Float64   │ Float64   │
     ├─────┼────────────┼───────────┼───────────┼───────────┼───────────┤
     │ 1   │ 0.236033   │ 0.644883  │ 0.440897  │ 0.580782  │ 0.138763  │
     │ 2   │ 0.346517   │ 0.0778264 │ 0.404673  │ 0.768359  │ 0.456446  │
@@ -92,8 +97,9 @@ module TestShow
     showall(io, df_big, false)
     str = String(take!(io.io))
     @test str == """
-    25×5 $DataFrame. Omitted printing of 3 columns
+    25×5 DataFrame. Omitted printing of 3 columns
     │ Row │ x1         │ x2        │
+    │     │ Float64    │ Float64   │
     ├─────┼────────────┼───────────┤
     │ 1   │ 0.236033   │ 0.644883  │
     │ 2   │ 0.346517   │ 0.0778264 │
@@ -151,10 +157,11 @@ module TestShow
     df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
     @test sprint(show, df, context=:color=>true) == """
         2×2 DataFrame
-        │ Row │ Fish │ Mass    │
-        ├─────┼──────┼─────────┤
-        │ 1   │ Suzy │ 1.5     │
-        │ 2   │ Amir │ \e[90mmissing\e[39m │"""
+        │ Row │ Fish   │ Mass     │
+        │     │ \e[90mString\e[39m │ \e[90mFloat64⍰\e[39m │
+        ├─────┼────────┼──────────┤
+        │ 1   │ Suzy   │ 1.5      │
+        │ 2   │ Amir   │ \e[90mmissing\e[39m  │"""
   
     # Test showing missing
     df = DataFrame(A = [:Symbol, missing, :missing],
@@ -163,11 +170,12 @@ module TestShow
     @test sprint(show, df, context=:color=>true) == """
         3×3 DataFrame
         │ Row │ A       │ B       │ C       │
+        │     │ \e[90mSymbol⍰\e[39m │ \e[90mString⍰\e[39m │ \e[90mAny\e[39m     │
         ├─────┼─────────┼─────────┼─────────┤
         │ 1   │ Symbol  │ \e[90mmissing\e[39m │ missing │
         │ 2   │ \e[90mmissing\e[39m │ String  │ missing │
         │ 3   │ missing │ missing │ \e[90mmissing\e[39m │"""
-                   
+
     # Test showing nothing
     df_nothing = DataFrame(A = [1.0, 2.0, 3.0], B = ["g", "g", nothing])
     io = IOBuffer()
@@ -175,11 +183,12 @@ module TestShow
     str = String(take!(io))
     @test str == """
     3×2 DataFrame
-    │ Row │ A   │ B │
-    ├─────┼─────┼───┤
-    │ 1   │ 1.0 │ g │
-    │ 2   │ 2.0 │ g │
-    │ 3   │ 3.0 │   │"""
+    │ Row │ A       │ B      │
+    │     │ Float64 │ Union… │
+    ├─────┼─────────┼────────┤
+    │ 1   │ 1.0     │ g      │
+    │ 2   │ 2.0     │ g      │
+    │ 3   │ 3.0     │        │"""
 
     # Test computing width for Array{String} columns
     df = DataFrame(Any[["a"]], [:x])
@@ -187,10 +196,11 @@ module TestShow
     show(io, df)
     str = String(take!(io))
     @test str == """
-    1×1 $DataFrame
-    │ Row │ x │
-    ├─────┼───┤
-    │ 1   │ a │"""
+    1×1 DataFrame
+    │ Row │ x      │
+    │     │ String │
+    ├─────┼────────┤
+    │ 1   │ a      │"""
 
     # Test escape characters
     df = DataFrame(a = ["1\n1", "2\t2", "3\r3", "4\$4", "5\"5", "6\\6"])
@@ -198,14 +208,29 @@ module TestShow
     show(io, df)
     str = String(take!(io))
     @test str == """
-    6×1 $DataFrame
-    │ Row │ a    │
-    ├─────┼──────┤
-    │ 1   │ 1\\n1 │
-    │ 2   │ 2\\t2 │
-    │ 3   │ 3\\r3 │
-    │ 4   │ 4\$4  │
-    │ 5   │ 5\"5  │
-    │ 6   │ 6\\\\6 │"""
+    6×1 DataFrame
+    │ Row │ a      │
+    │     │ String │
+    ├─────┼────────┤
+    │ 1   │ 1\\n1   │
+    │ 2   │ 2\\t2   │
+    │ 3   │ 3\\r3   │
+    │ 4   │ 4\$4    │
+    │ 5   │ 5"5    │
+    │ 6   │ 6\\\\6   │"""
+
+    # Test categorical values
+    df = DataFrame(a = categorical([1,2,3]), b = categorical(["a", "b", missing]))
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    3×2 DataFrame
+    │ Row │ a            │ b             │
+    │     │ Categorical… │ Categorical…⍰ │
+    ├─────┼──────────────┼───────────────┤
+    │ 1   │ 1            │ a             │
+    │ 2   │ 2            │ b             │
+    │ 3   │ 3            │ missing       │"""
 
 end
