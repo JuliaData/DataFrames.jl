@@ -48,24 +48,3 @@ function gennames(n::Integer)
     return res
 end
 
-
-"""
-    countmissing(a::AbstractArray)
-
-Count the number of `missing` values in an array.
-"""
-function countmissing(a::AbstractArray)
-    res = 0
-    for x in a
-        res += ismissing(x)
-    end
-    return res
-end
-
-function countmissing(a::CategoricalArray)
-    res = 0
-    for x in a.refs
-        res += x == 0
-    end
-    return res
-end
