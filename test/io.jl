@@ -79,7 +79,7 @@ module TestIO
 
     @testset "DataStreams" begin
         using DataStreams
-        I = DataFrames.DataFrame(id = Int64[1, 2, 3, 4, 5],
+        I = DataFrame(id = Int64[1, 2, 3, 4, 5],
             firstname = Union{String, Missing}["Benjamin", "Wayne", "Sean", "Charles", missing],
             lastname = String["Chavez", "Burke", "Richards", "Long", "Rose"],
             salary = Union{Float64, Missing}[missing, 46134.1, 45046.2, 30555.6, 88894.1],

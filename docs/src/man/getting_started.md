@@ -68,7 +68,7 @@ It is also possible to start with an empty `DataFrame` and add columns to it one
 
 ```jldoctest dataframe
 julia> df = DataFrame()
-0×0 DataFrames.DataFrame
+0×0 DataFrame
 
 
 julia> df.A = 1:8
@@ -122,20 +122,20 @@ It is also possible to fill a `DataFrame` row by row. Let us construct an empty 
 
 ```jldoctest dataframe
 julia> df = DataFrame(A = Int[], B = String[])
-0×2 DataFrames.DataFrame
+0×2 DataFrame
 ```
 
 Rows can then be added as tuples or vectors, where the order of elements matches that of columns:
 
 ```jldoctest dataframe
 julia> push!(df, (1, "M"))
-1×2 DataFrames.DataFrame
+1×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ 1 │ M │
 
 julia> push!(df, [2, "N"])
-2×2 DataFrames.DataFrame
+2×2 DataFrame
 │ Row │ A     │ B      │
 │     │ Int64 │ String │
 ├─────┼───────┼────────┤
@@ -147,7 +147,7 @@ Rows can also be added as `Dict`s, where the dictionary keys match the column na
 
 ```jldoctest dataframe
 julia> push!(df, Dict(:B => "F", :A => 3))
-3×2 DataFrames.DataFrame
+3×2 DataFrame
 │ Row │ A     │ B      │
 │     │ Int64 │ String │
 ├─────┼───────┼────────┤
@@ -387,7 +387,7 @@ We can also apply a function to each column of a `DataFrame` with the `colwise` 
 
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
-4×2 DataFrames.DataFrame
+4×2 DataFrame
 │ Row │ A │ B   │
 ├─────┼───┼─────┤
 │ 1   │ 1 │ 4.0 │

@@ -100,7 +100,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A = ["A", "B", "C", "D", "D", "A"],
                       B = ["X", "X", "X", "Y", "Y", "Y"])
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ A │ X │
@@ -116,7 +116,7 @@ julia> eltypes(df)
  String
 
 julia> categorical!(df, :A) # change the column `:A` to be categorical
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ A │ X │
@@ -132,7 +132,7 @@ julia> eltypes(df)
  String
 
 julia> categorical!(df) # change all columns to be categorical
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ A │ X │

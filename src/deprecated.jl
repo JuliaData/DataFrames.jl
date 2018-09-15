@@ -1138,7 +1138,7 @@ julia> df = csv\"""
            Carol,  58,         2.71
            Eve,    49,         7.77
            \"""
-4×3 DataFrames.DataFrame
+4×3 DataFrame
 │ Row │ name    │ age │ squidPerWeek │
 ├─────┼─────────┼─────┼──────────────┤
 │ 1   │ "Alice" │ 36  │ 3.14         │
@@ -1177,7 +1177,7 @@ julia> df = csv2\"""
            Carol;  58;         2,71
            Eve;    49;         7,77
            \"""
-4×3 DataFrames.DataFrame
+4×3 DataFrame
 │ Row │ name    │ age │ squidPerWeek │
 ├─────┼─────────┼─────┼──────────────┤
 │ 1   │ "Alice" │ 36  │ 3.14         │
@@ -1216,7 +1216,7 @@ julia> df = wsv\"""
            Carol  58         2.71
            Eve    49         7.77
            \"""
-4×3 DataFrames.DataFrame
+4×3 DataFrame
 │ Row │ name    │ age │ squidPerWeek │
 ├─────┼─────────┼─────┼──────────────┤
 │ 1   │ "Alice" │ 36  │ 3.14         │
@@ -1254,7 +1254,7 @@ julia> df = tsv\"""
            Carol\t58\t2.71
            Eve\t49\t7.77
            \"""
-4×3 DataFrames.DataFrame
+4×3 DataFrame
 │ Row │ name    │ age │ squidPerWeek │
 ├─────┼─────────┼─────┼──────────────┤
 │ 1   │ "Alice" │ 36  │ 3.14         │
