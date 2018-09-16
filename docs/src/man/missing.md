@@ -1,10 +1,8 @@
-# The `Missing` Type
+# Missing Data
 
-`Missing` is a type implemented by the [Missings.jl](https://github.com/JuliaData/Missings.jl) package to represent missing data. `missing` is an instance of the type `Missing` used to represent a missing value.
+In Julia, missing values in data are represented using the special object `missing`, which is the single instance of the type `Missing`.
 
-```jldoctest missings
-julia> using DataFrames
-
+```jldoctest
 julia> missing
 missing
 
@@ -37,7 +35,7 @@ true
 
 ```jldoctest missings
 julia> skipmissing(x)
-Missings.EachSkipMissing{Array{Union{$Int, Missing},1}}(Union{$Int, Missing}[1, 2, missing])
+Base.SkipMissing{Array{Union{Missing, Int64},1}}(Union{Missing, Int64}[1, 2, missing])
 
 ```
 
@@ -54,14 +52,35 @@ julia> collect(skipmissing(x))
 
 ```
 
-`missing` elements can be replaced with other values via `Missings.replace`.
+The function `coalesce` can be used to replace missing values with another value (note the dot, indicating that the replacement should be applied to all entries in `x`):
 
 ```jldoctest missings
+julia> coalesce.(x, 0)
+3-element Array{Int64,1}:
+ 1
+ 2
+ 0
+
+```
+
+The [Missings.jl](https://github.com/JuliaData/Missings.jl) package provides a few convenience functions to work with missing values.
+
+The function `Missings.replace` returns an iterator which replaces `missing` elements with another value:
+
+```jldoctest missings
+julia> using Missings
+
+julia> Missings.replace(x, 1)
+Missings.EachReplaceMissing{Array{Union{Missing, Int64},1},Int64}(Union{Missing, Int64}[1, 2, missing], 1)
+
 julia> collect(Missings.replace(x, 1))
 3-element Array{Int64,1}:
  1
  2
  1
+
+julia> collect(Missings.replace(x, 1)) == coalesce.(x, 1)
+true
 
 ```
 
@@ -76,7 +95,7 @@ Int64
 
 ```
 
-Use `missings` to generate `Vector`s and `Array`s supporting missing values, using the optional first argument to specify the element-type.
+The `missings` function constructs `Vector`s and `Array`s supporting missing values, using the optional first argument to specify the element-type.
 
 ```jldoctest missings
 julia> missings(1)
@@ -98,3 +117,5 @@ julia> missings(Int, 1, 3)
  missing  missing  missing
 
 ```
+
+See the [Julia manual](https://docs.julialang.org/en/stable/manual/missing/) for more information about missing values.
