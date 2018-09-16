@@ -298,7 +298,7 @@ module TestData
     df2[1,:a] = missing
 
     m1 = join(df1, df2, on = [:a,:b])
-    @test m1[:a] == Union{Missings.Missing, Symbol}[:x, :x, :y, :y, :y, :x, :x, :x]
+    @test m1[:a] == Union{Missing, Symbol}[:x, :x, :y, :y, :y, :x, :x, :x]
     m2 = join(df1, df2, on = [:a,:b], kind = :outer)
     @test ismissing(m2[10,:v2])
     @test m2[:a] ≅ [:x, :x, :y, :y, :y, :x, :x, :y, :x, :y, missing, :y]

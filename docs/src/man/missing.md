@@ -9,24 +9,24 @@ julia> missing
 missing
 
 julia> typeof(missing)
-Missings.Missing
+Missing
 
 ```
 
-The `Missing` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a missing value and the element-type of the returned vector is `Union{Missings.Missing, Int64}`.
+The `Missing` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a missing value and the element-type of the returned vector is `Union{Missing, Int64}`.
 
 ```jldoctest missings
 julia> x = [1, 2, missing]
-3-element Array{Union{Missings.Missing, Int64},1}:
+3-element Array{Union{Missing, Int64},1}:
  1
  2
   missing
 
 julia> eltype(x)
-Union{Missings.Missing, Int64}
+Union{Missing, Int64}
 
 julia> Union{Missing, Int}
-Union{Missings.Missing, Int64}
+Union{Missing, Int64}
 
 julia> eltype(x) == Union{Missing, Int}
 true
@@ -37,7 +37,7 @@ true
 
 ```jldoctest missings
 julia> skipmissing(x)
-Missings.EachSkipMissing{Array{Union{$Int, Missings.Missing},1}}(Union{$Int, Missings.Missing}[1, 2, missing])
+Missings.EachSkipMissing{Array{Union{$Int, Missing},1}}(Union{$Int, Missing}[1, 2, missing])
 
 ```
 
@@ -69,7 +69,7 @@ The function `Missings.T` returns the element-type `T` in `Union{T, Missing}`.
 
 ```jldoctest missings
 julia> eltype(x)
-Union{Int64, Missings.Missing}
+Union{Int64, Missing}
 
 julia> Missings.T(eltype(x))
 Int64
@@ -80,21 +80,21 @@ Use `missings` to generate `Vector`s and `Array`s supporting missing values, usi
 
 ```jldoctest missings
 julia> missings(1)
-1-element Array{Missings.Missing,1}:
+1-element Array{Missing,1}:
  missing
 
 julia> missings(3)
-3-element Array{Missings.Missing,1}:
+3-element Array{Missing,1}:
  missing
  missing
  missing
 
 julia> missings(1, 3)
-1×3 Array{Missings.Missing,2}:
+1×3 Array{Missing,2}:
  missing  missing  missing
 
 julia> missings(Int, 1, 3)
-1×3 Array{Union{Missings.Missing, Int64},2}:
+1×3 Array{Union{Missing, Int64},2}:
  missing  missing  missing
 
 ```
