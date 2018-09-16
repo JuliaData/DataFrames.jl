@@ -827,7 +827,7 @@ end
 
 # definition required to avoid hcat! ambiguity
 function hcat!(df1::DataFrame, df2::DataFrame; makeunique::Bool=false)
-    invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2, makeunique=makeunique)
+    invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2, makeunique=makeunique)::DataFrame
 end
 
 hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false) =

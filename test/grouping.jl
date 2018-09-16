@@ -2,15 +2,14 @@ module TestGrouping
     using Test, DataFrames, Random
     const ≅ = isequal
 
-    Random.seed!(1)
-    df = DataFrame(a = repeat(Union{Int, Missing}[1, 2, 3, 4], outer=[2]),
-                   b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
-                   c = Vector{Union{Float64, Missing}}(randn(8)))
-    #df[6, :a] = missing
-    #df[7, :b] = missing
-
-    missingfree = DataFrame([collect(1:10)], [:x1])
     @testset "colwise" begin
+        Random.seed!(1)
+        df = DataFrame(a = repeat(Union{Int, Missing}[1, 3, 2, 4], outer=[2]),
+                       b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
+                       c = Vector{Union{Float64, Missing}}(randn(8)))
+
+        missingfree = DataFrame(Any[collect(1:10)], [:x1])
+
         @testset "::Function, ::AbstractDataFrame" begin
             cw = colwise(sum, df)
             answer = [20, 12, -0.4283098098931877]
@@ -86,93 +85,153 @@ module TestGrouping
         end
     end
 
-    cols = [:a, :b]
-    f(df) = DataFrame(cmax = maximum(df[:, :c]))
-    #TODO: enable line below after getindex deprecation
-    # f(df) = DataFrame(cmax = maximum(df[:c]))
+    @testset "by and groupby" begin
+        Random.seed!(1)
+        df = DataFrame(a = repeat(Union{Int, Missing}[1, 3, 2, 4], outer=[2]),
+                       b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
+                       c = Vector{Union{Float64, Missing}}(randn(8)))
 
-    sdf = unique(df[cols])
+        cols = [:a, :b]
+        f(df) = DataFrame(cmax = maximum(df[:, :c]))
+        g(df) = (cmax = maximum(df[:, :c]),)
+        h(df) = maximum(df[:, :c])
+        #TODO: enable lines below after getindex deprecation
+        # f(df) = DataFrame(cmax = maximum(df[:c]))
+        # g(df) = (cmax = maximum(df[:c]),)
+        # h(df) = maximum(df[:c])
 
-    # by() without groups sorting
-    bdf = by(df, cols, f)
-    @test bdf[cols] == sdf
+        res = unique(df[cols])
+        res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
+                    for (a, b) in zip(res.a, res.b)]
+        sres = sort(res)
 
-    # by() with groups sorting
-    sbdf = by(df, cols, f, sort=true)
-    @test sbdf[cols] == sort(sdf)
+        # by() without groups sorting
+        @test sort(by(df, cols, identity, sort=true)[[:a, :b, :c]]) == sort(df)
+        @test by(df, cols, f) == res
+        @test by(df, cols, g) == res
+        @test rename(by(df, cols, h), :x1 => :cmax) == res
 
-    byf = by(df, :a, df -> DataFrame(bsum = sum(df[:, :b])))
-    #TODO: enable line below after getindex deprecation
-    # byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
+        # by() with groups sorting
+        @test by(df, cols, identity, sort=true)[[:a, :b, :c]] == sort(df, cols)
+        @test by(df, cols, f, sort=true) == sres
+        @test by(df, cols, g, sort=true) == sres
+        @test rename(by(df, cols, h, sort=true), :x1 => :cmax) == sres
 
-    # groupby() without groups sorting
-    gd = groupby(df, cols)
-    ga = map(f, gd)
+        @test by(df, [:a], f) == by(df, :a, f)
+        @test by(df, [:a], f, sort=true) == by(df, :a, f, sort=true)
 
-    @test bdf == combine(ga)
+        # groupby() without groups sorting
+        gd = groupby(df, cols)
+        @test sort(map(identity, gd)[[:a, :b, :c]]) == sort(df)
+        @test map(f, gd) == res
+        @test map(g, gd) == res
+        @test rename(map(h, gd), :x1 => :cmax) == res
 
-    # groupby() with groups sorting
-    gd = groupby(df, cols, sort=true)
-    ga = map(f, gd)
-    @test sbdf == combine(ga)
+        # groupby() with groups sorting
+        gd = groupby(df, cols, sort=true)
+        for i in 1:length(gd)
+            @test all(gd[i].a .== sres.a[i])
+            @test all(gd[i].b .== sres.b[i])
+        end
+        @test map(identity, gd)[[:a, :b, :c]] == sort(df, cols)
+        @test map(f, gd) == sres
+        @test map(g, gd) == sres
+        @test rename(map(h, gd), :x1 => :cmax) == sres
 
-    g(df) = DataFrame(cmax1 = [c + 1 for c in df[:cmax]])
-    h(df) = g(f(df))
+        # testing pool overflow
+        df2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
+        @test groupby(df2, [:v1, :v2]).starts == collect(1:1000)
+        @test groupby(df2, [:v2, :v1]).starts == collect(1:1000)
 
-    @test combine(map(h, gd)) == combine(map(g, ga))
+        # grouping empty table
+        @test groupby(DataFrame(A=Int[]), :A).starts == Int[]
+        # grouping single row
+        @test groupby(DataFrame(A=Int[1]), :A).starts == Int[1]
 
-    # testing pool overflow
-    df2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
-    @test groupby(df2, [:v1, :v2]).starts == collect(1:1000)
-    @test groupby(df2, [:v2, :v1]).starts == collect(1:1000)
+        # issue #960
+        x = CategoricalArray(collect(1:20))
+        df = DataFrame(v1=x, v2=x)
+        groupby(df, [:v1, :v2])
 
-    # grouping empty table
-    @test groupby(DataFrame(A=Int[]), :A).starts == Int[]
-    # grouping single row
-    @test groupby(DataFrame(A=Int[1]), :A).starts == Int[1]
+        df2 = by(e->1, DataFrame(x=Int64[]), :x)
+        @test size(df2) == (0, 1)
+        @test sum(df2[:x]) == 0
 
-    # testing pool overflow
-    df2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
-    @test groupby(df2, [:v1, :v2]).starts == collect(1:1000)
-    @test groupby(df2, [:v2, :v1]).starts == collect(1:1000)
+        # Check that reordering levels does not confuse groupby
+        df = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B"]),
+                       Key2 = CategoricalArray(["A", "B", "A", "B"]),
+                       Value = 1:4)
+        gd = groupby(df, :Key1)
+        @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2)
+        @test gd[2] == DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4)
+        gd = groupby(df, [:Key1, :Key2])
+        @test gd[1] == DataFrame(Key1="A", Key2="A", Value=1)
+        @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
+        @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+        @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
+        # Reorder levels, add unused level
+        levels!(df[:Key1], ["Z", "B", "A"])
+        levels!(df[:Key2], ["Z", "B", "A"])
+        gd = groupby(df, :Key1)
+        @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2)
+        @test gd[2] == DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4)
+        gd = groupby(df, [:Key1, :Key2])
+        @test gd[1] == DataFrame(Key1="A", Key2="A", Value=1)
+        @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
+        @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+        @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
 
-    # grouping empty table
-    @test groupby(DataFrame(A=Int[]), :A).starts == Int[]
-    # grouping single row
-    @test groupby(DataFrame(A=Int[1]), :A).starts == Int[1]
 
-    # issue #960
-    x = CategoricalArray(collect(1:20))
-    df = DataFrame(v1=x, v2=x)
-    groupby(df, [:v1, :v2])
+        df = DataFrame(x = [1, 2, 3], y = [2, 3, 1])
 
-    df2 = by(e->1, DataFrame(x=Int64[]), :x)
-    @test size(df2) == (0, 1)
-    @test sum(df2[:x]) == 0
+        # Test with some groups returning empty data frames
+        @test by(d -> d.x == [1] ? DataFrame(z=[]) : DataFrame(z=1), df, :x) ==
+            DataFrame(x=[2, 3], z=[1, 1])
 
-    # Check that reordering levels does not confuse groupby
-    df = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B"]),
-                   Key2 = CategoricalArray(["A", "B", "A", "B"]),
-                   Value = 1:4)
-    gd = groupby(df, :Key1)
-    @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2)
-    @test gd[2] == DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4)
-    gd = groupby(df, [:Key1, :Key2])
-    @test gd[1] == DataFrame(Key1="A", Key2="A", Value=1)
-    @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
-    @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-    @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
-    # Reorder levels, add unused level
-    levels!(df[:Key1], ["Z", "B", "A"])
-    levels!(df[:Key2], ["Z", "B", "A"])
-    gd = groupby(df, :Key1)
-    @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2)
-    @test gd[2] == DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4)
-    gd = groupby(df, [:Key1, :Key2])
-    @test gd[1] == DataFrame(Key1="A", Key2="A", Value=1)
-    @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
-    @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-    @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
+        # Test that returning values of different types works with NamedTuple
+        res = by(d -> d.x == [1] ? 1 : 2.0, df, :x)
+        @test res.x1 isa Vector{Float64}
+        @test res.x1 == [1, 2, 2]
+        # Two columns need to be widened at different times
+        res = by(d -> (a=d.x == [1] ? 1 : 2.0, b=d.x == [3] ? missing : "a"), df, :x)
+        @test res.a isa Vector{Float64}
+        @test res.a == [1, 2, 2]
+        @test res.b isa Vector{Union{String,Missing}}
+        @test res.b ≅ ["a", "a", missing]
+        # Corner case: two columns need to be widened at the same time
+        res = by(d -> (a=d.x == [1] ? 1 : 2.0, b=d.x == [1] ? missing : "a"), df, :x)
+        @test res.a isa Vector{Float64}
+        @test res.a == [1, 2, 2]
+        @test res.b isa Vector{Union{String,Missing}}
+        @test res.b ≅ [missing, "a", "a"]
+
+        # Test that returning values of different types works with DataFrame
+        res = by(d -> DataFrame(x1 = d.x == [1] ? 1 : 2.0), df, :x)
+        @test res.x1 isa Vector{Float64}
+        @test res.x1 == [1, 2, 2]
+        # Two columns need to be widened at different times
+        res = by(d -> DataFrame(a=d.x == [1] ? 1 : 2.0, b=d.x == [3] ? missing : "a"), df, :x)
+        @test res.a isa Vector{Float64}
+        @test res.a == [1, 2, 2]
+        @test res.b isa Vector{Union{String,Missing}}
+        @test res.b ≅ ["a", "a", missing]
+        # Corner case: two columns need to be widened at the same time
+        res = by(d -> DataFrame(a=d.x == [1] ? 1 : 2.0, b=d.x == [1] ? missing : "a"), df, :x)
+        @test res.a isa Vector{Float64}
+        @test res.a == [1, 2, 2]
+        @test res.b isa Vector{Union{String,Missing}}
+        @test res.b ≅ [missing, "a", "a"]
+
+        # Test with incompatible return values
+        @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1,) : DataFrame(x1=1), df, :x)
+        @test_throws ArgumentError by(d -> d.x == [1] ? NamedTuple() : (x1=1), df, :x)
+        @test_throws ArgumentError by(d -> d.x == [1] ? (a=1, b=2) : (b=2, a=1), df, :x)
+        @test_throws ArgumentError by(d -> d.x == [1] ? 1 : DataFrame(x1=1), df, :x)
+        @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame() : DataFrame(x1=1), df, :x)
+        @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame(a=1, b=2) : DataFrame(b=2, a=1), df, :x)
+        # Special case allowed due to how implementation works
+        @test by(d -> d.x == [1] ? 1 : (x1=1), df, :x) == by(d -> 1, df, :x)
+    end
 
     @testset "grouping with missings" begin
         global df = DataFrame(Key1 = ["A", missing, "B", "B", "A"],
@@ -217,11 +276,11 @@ module TestGrouping
 
             global gd = groupby(df, [:Key1, :Key2], sort=true)
             @test length(gd) == 5
-            @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=5)            
+            @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=5)
             @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
             @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
             @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=4)
-            @test gd[5] ≅ DataFrame(Key1=missing, Key2="A", Value=2)        
+            @test gd[5] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
         end
 
         @testset "sort=false, skipmissing=true" begin

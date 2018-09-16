@@ -7,6 +7,7 @@ module DataFrames
 ##############################################################################
 
 using Reexport, StatsBase, SortingAlgorithms, Compat, Statistics, Unicode, Printf
+using Base.Iterators
 @reexport using CategoricalArrays, Missings
 using Base.Sort, Base.Order
 
@@ -28,7 +29,6 @@ export AbstractDataFrame,
        by,
        categorical!,
        colwise,
-       combine,
        completecases,
        deletecols!,
        deleterows!,

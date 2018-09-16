@@ -27,7 +27,7 @@ meltdf
 
 ```@docs
 allowmissing!
-combine
+map
 completecases
 describe
 disallowmissing!

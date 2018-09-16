@@ -103,6 +103,12 @@ end
 
 SubDataFrame(sdf::SubDataFrame, rowinds::Colon) = sdf
 
+Base.copy(sdf::SubDataFrame) = sdf[:]
+Base.deepcopy(sdf::SubDataFrame) = sdf[:]
+
+DataFrame(sdf::SubDataFrame) = sdf[:]
+Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = sdf[:]
+
 """
     parent(sdf::SubDataFrame)
 
@@ -216,8 +222,6 @@ end
 ##############################################################################
 
 Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), :]
-
-Base.map(f::Function, sdf::SubDataFrame) = f(sdf) # TODO: deprecate
 
 without(sdf::SubDataFrame, c) = view(without(parent(sdf), c), rows(sdf), :)
 # Resolve a method ambiguity
