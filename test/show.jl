@@ -1,6 +1,18 @@
 module TestShow
     using DataFrames, Random, Test
 
+    function capture_stdout(f::Function)
+        oldstdout = stdout
+        rd, wr = redirect_stdout()
+        f()
+        str = String(readavailable(rd))
+        redirect_stdout(oldstdout)
+        size = displaysize(rd)
+        close(rd)
+        close(wr)
+        str, size
+    end
+
     # In the future newline character \n should be added to this test case
     df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
                    C = Float32[1.0, 2.0, 3.0, 4.0])
@@ -15,9 +27,9 @@ module TestShow
     │ 3   │ 3     │ z\$          │ 3.0     │
     │ 4   │ 4     │ A\\nC        │ 4.0     │"""
 
-    for f in [show, showall], allcols in [true, false]
+    for allrows in [true, false], allcols in [true, false]
         io = IOBuffer()
-        f(io, df, allcols)
+        show(io, df, allcols=allcols)
         str = String(take!(io))
         @test str == refstr
     end
@@ -25,7 +37,7 @@ module TestShow
     Random.seed!(1)
     df_big = DataFrame(rand(25,5))
 
-    io = IOContext(IOBuffer(), :displaysize=>(10,40))
+    io = IOContext(IOBuffer(), :displaysize=>(10,40), :limit=>true)
     show(io, df_big)
     str = String(take!(io.io))
     @test str == """
@@ -38,8 +50,8 @@ module TestShow
     │ 24  │ 0.278582 │ 0.241591 │ 0.990741 │
     │ 25  │ 0.751313 │ 0.884837 │ 0.550334 │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(10,40))
-    show(io, df_big, true)
+    io = IOContext(IOBuffer(), :displaysize=>(10,40), :limit=>true)
+    show(io, df_big, allcols=true)
     str = String(take!(io.io))
     @test str == """
     25×5 DataFrame
@@ -59,42 +71,100 @@ module TestShow
     │ 24  │ 0.762276 │ 0.755415 │
     │ 25  │ 0.339081 │ 0.649056 │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(10,40))
-    showall(io, df_big)
+    io = IOContext(IOBuffer(), :displaysize=>(10,40), :limit=>true)
+    show(io, df_big, allrows=true, allcols=true)
     str = String(take!(io.io))
     @test str == """
     25×5 DataFrame
-    │ Row │ x1         │ x2        │ x3        │ x4        │ x5        │
-    │     │ Float64    │ Float64   │ Float64   │ Float64   │ Float64   │
-    ├─────┼────────────┼───────────┼───────────┼───────────┼───────────┤
-    │ 1   │ 0.236033   │ 0.644883  │ 0.440897  │ 0.580782  │ 0.138763  │
-    │ 2   │ 0.346517   │ 0.0778264 │ 0.404673  │ 0.768359  │ 0.456446  │
-    │ 3   │ 0.312707   │ 0.848185  │ 0.736787  │ 0.519525  │ 0.739918  │
-    │ 4   │ 0.00790928 │ 0.0856352 │ 0.953803  │ 0.514863  │ 0.816004  │
-    │ 5   │ 0.488613   │ 0.553206  │ 0.0951856 │ 0.998136  │ 0.114529  │
-    │ 6   │ 0.210968   │ 0.46335   │ 0.519675  │ 0.603682  │ 0.748928  │
-    │ 7   │ 0.951916   │ 0.185821  │ 0.0135403 │ 0.758775  │ 0.878108  │
-    │ 8   │ 0.999905   │ 0.111981  │ 0.303399  │ 0.590953  │ 0.930481  │
-    │ 9   │ 0.251662   │ 0.976312  │ 0.702557  │ 0.722086  │ 0.896291  │
-    │ 10  │ 0.986666   │ 0.0516146 │ 0.596537  │ 0.953207  │ 0.663145  │
-    │ 11  │ 0.555751   │ 0.53803   │ 0.638935  │ 0.384411  │ 0.472799  │
-    │ 12  │ 0.437108   │ 0.455692  │ 0.872347  │ 0.320011  │ 0.880525  │
-    │ 13  │ 0.424718   │ 0.279395  │ 0.548635  │ 0.865625  │ 0.0141033 │
-    │ 14  │ 0.773223   │ 0.178246  │ 0.262992  │ 0.45457   │ 0.502774  │
-    │ 15  │ 0.28119    │ 0.548983  │ 0.526443  │ 0.420287  │ 0.224851  │
-    │ 16  │ 0.209472   │ 0.370971  │ 0.465019  │ 0.225151  │ 0.287858  │
-    │ 17  │ 0.251379   │ 0.894166  │ 0.275519  │ 0.286169  │ 0.104033  │
-    │ 18  │ 0.0203749  │ 0.648054  │ 0.461823  │ 0.309144  │ 0.475749  │
-    │ 19  │ 0.287702   │ 0.417039  │ 0.951861  │ 0.170391  │ 0.416681  │
-    │ 20  │ 0.859512   │ 0.144566  │ 0.288737  │ 0.147162  │ 0.521387  │
-    │ 21  │ 0.0769509  │ 0.622403  │ 0.661232  │ 0.230063  │ 0.908499  │
-    │ 22  │ 0.640396   │ 0.872334  │ 0.194568  │ 0.0929292 │ 0.102832  │
-    │ 23  │ 0.873544   │ 0.524975  │ 0.393193  │ 0.681415  │ 0.670421  │
-    │ 24  │ 0.278582   │ 0.241591  │ 0.990741  │ 0.762276  │ 0.755415  │
-    │ 25  │ 0.751313   │ 0.884837  │ 0.550334  │ 0.339081  │ 0.649056  │"""
+    │ Row │ x1         │ x2        │
+    │     │ Float64    │ Float64   │
+    ├─────┼────────────┼───────────┤
+    │ 1   │ 0.236033   │ 0.644883  │
+    │ 2   │ 0.346517   │ 0.0778264 │
+    │ 3   │ 0.312707   │ 0.848185  │
+    │ 4   │ 0.00790928 │ 0.0856352 │
+    │ 5   │ 0.488613   │ 0.553206  │
+    │ 6   │ 0.210968   │ 0.46335   │
+    │ 7   │ 0.951916   │ 0.185821  │
+    │ 8   │ 0.999905   │ 0.111981  │
+    │ 9   │ 0.251662   │ 0.976312  │
+    │ 10  │ 0.986666   │ 0.0516146 │
+    │ 11  │ 0.555751   │ 0.53803   │
+    │ 12  │ 0.437108   │ 0.455692  │
+    │ 13  │ 0.424718   │ 0.279395  │
+    │ 14  │ 0.773223   │ 0.178246  │
+    │ 15  │ 0.28119    │ 0.548983  │
+    │ 16  │ 0.209472   │ 0.370971  │
+    │ 17  │ 0.251379   │ 0.894166  │
+    │ 18  │ 0.0203749  │ 0.648054  │
+    │ 19  │ 0.287702   │ 0.417039  │
+    │ 20  │ 0.859512   │ 0.144566  │
+    │ 21  │ 0.0769509  │ 0.622403  │
+    │ 22  │ 0.640396   │ 0.872334  │
+    │ 23  │ 0.873544   │ 0.524975  │
+    │ 24  │ 0.278582   │ 0.241591  │
+    │ 25  │ 0.751313   │ 0.884837  │
+    
+    │ Row │ x3        │ x4        │
+    │     │ Float64   │ Float64   │
+    ├─────┼───────────┼───────────┤
+    │ 1   │ 0.440897  │ 0.580782  │
+    │ 2   │ 0.404673  │ 0.768359  │
+    │ 3   │ 0.736787  │ 0.519525  │
+    │ 4   │ 0.953803  │ 0.514863  │
+    │ 5   │ 0.0951856 │ 0.998136  │
+    │ 6   │ 0.519675  │ 0.603682  │
+    │ 7   │ 0.0135403 │ 0.758775  │
+    │ 8   │ 0.303399  │ 0.590953  │
+    │ 9   │ 0.702557  │ 0.722086  │
+    │ 10  │ 0.596537  │ 0.953207  │
+    │ 11  │ 0.638935  │ 0.384411  │
+    │ 12  │ 0.872347  │ 0.320011  │
+    │ 13  │ 0.548635  │ 0.865625  │
+    │ 14  │ 0.262992  │ 0.45457   │
+    │ 15  │ 0.526443  │ 0.420287  │
+    │ 16  │ 0.465019  │ 0.225151  │
+    │ 17  │ 0.275519  │ 0.286169  │
+    │ 18  │ 0.461823  │ 0.309144  │
+    │ 19  │ 0.951861  │ 0.170391  │
+    │ 20  │ 0.288737  │ 0.147162  │
+    │ 21  │ 0.661232  │ 0.230063  │
+    │ 22  │ 0.194568  │ 0.0929292 │
+    │ 23  │ 0.393193  │ 0.681415  │
+    │ 24  │ 0.990741  │ 0.762276  │
+    │ 25  │ 0.550334  │ 0.339081  │
+    
+    │ Row │ x5        │
+    │     │ Float64   │
+    ├─────┼───────────┤
+    │ 1   │ 0.138763  │
+    │ 2   │ 0.456446  │
+    │ 3   │ 0.739918  │
+    │ 4   │ 0.816004  │
+    │ 5   │ 0.114529  │
+    │ 6   │ 0.748928  │
+    │ 7   │ 0.878108  │
+    │ 8   │ 0.930481  │
+    │ 9   │ 0.896291  │
+    │ 10  │ 0.663145  │
+    │ 11  │ 0.472799  │
+    │ 12  │ 0.880525  │
+    │ 13  │ 0.0141033 │
+    │ 14  │ 0.502774  │
+    │ 15  │ 0.224851  │
+    │ 16  │ 0.287858  │
+    │ 17  │ 0.104033  │
+    │ 18  │ 0.475749  │
+    │ 19  │ 0.416681  │
+    │ 20  │ 0.521387  │
+    │ 21  │ 0.908499  │
+    │ 22  │ 0.102832  │
+    │ 23  │ 0.670421  │
+    │ 24  │ 0.755415  │
+    │ 25  │ 0.649056  │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(10,40))
-    showall(io, df_big, false)
+    io = IOContext(IOBuffer(), :displaysize=>(10,40), :limit=>true)
+    show(io, df_big, allrows=true, allcols=false)
     str = String(take!(io.io))
     @test str == """
     25×5 DataFrame. Omitted printing of 3 columns
@@ -127,22 +197,95 @@ module TestShow
     │ 24  │ 0.278582   │ 0.241591  │
     │ 25  │ 0.751313   │ 0.884837  │"""
 
-    subdf = view(df, [2, 3]) # df[df[:A] .> 1.0, :]
-    show(io, subdf)
-    show(io, subdf, true)
-    showall(io, subdf)
-    showall(io, subdf, false)
+    # Test two-argument show
+    str1, size = capture_stdout() do
+        show(df)
+    end
+    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
+    show(io, df)
+    str2 = String(take!(io.io))
+    @test str1 == str2
 
-    dfvec = DataFrame[df for _=1:3]
-    show(io, dfvec)
-    showall(io, dfvec)
+    str1, size = capture_stdout() do
+        show(df_big)
+    end
+    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
+    show(io, df_big)
+    str2 = String(take!(io.io))
+    @test str1 == str2
+
+    subdf = view(df, [2, 3])
+    io = IOBuffer()
+    show(io, subdf, allrows=true, allcols=false)
+    str = String(take!(io))
+    @test str == """
+    2×3 SubDataFrame{Array{$Int,1}}
+    │ Row │ A     │ B           │ C       │
+    │     │ Int64 │ String      │ Float32 │
+    ├─────┼───────┼─────────────┼─────────┤
+    │ 1   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │
+    │ 2   │ 3     │ z\$          │ 3.0     │"""
+    show(io, subdf, allrows=true)
+    show(io, subdf, allcols=true)
+    show(io, subdf, allcols=true, allrows=true)
 
     gd = groupby(df, :A)
+    io = IOContext(IOBuffer(), :limit=>true)
     show(io, gd)
-    showall(io, gd)
+    str = String(take!(io.io))
+    @test str == """
+    GroupedDataFrame with 4 groups based on keys: :A, :B
+    First Group: 1 row
+    │ Row │ A     │ B      │ C       │
+    │     │ Int64 │ String │ Float32 │
+    ├─────┼───────┼────────┼─────────┤
+    │ 1   │ 1     │ x"     │ 1.0     │
+    ⋮
+    Last Group: 1 row
+    │ Row │ A     │ B      │ C       │
+    │     │ Int64 │ String │ Float32 │
+    ├─────┼───────┼────────┼─────────┤
+    │ 1   │ 4     │ A\\nC   │ 4.0     │"""
+    show(io, gd, allgroups=true)
+    str = String(take!(io.io))
+    @test str == """
+    GroupedDataFrame with 4 groups based on keys: :A, :B
+    Group 1: 1 row
+    │ Row │ A     │ B      │ C       │
+    │     │ Int64 │ String │ Float32 │
+    ├─────┼───────┼────────┼─────────┤
+    │ 1   │ 1     │ x\"     │ 1.0     │
+    Group 2: 1 row
+    │ Row │ A     │ B           │ C       │
+    │     │ Int64 │ String      │ Float32 │
+    ├─────┼───────┼─────────────┼─────────┤
+    │ 1   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │
+    Group 3: 1 row
+    │ Row │ A     │ B      │ C       │
+    │     │ Int64 │ String │ Float32 │
+    ├─────┼───────┼────────┼─────────┤
+    │ 1   │ 3     │ z\$     │ 3.0     │
+    Group 4: 1 row
+    │ Row │ A     │ B      │ C       │
+    │     │ Int64 │ String │ Float32 │
+    ├─────┼───────┼────────┼─────────┤
+    │ 1   │ 4     │ A\\nC   │ 4.0     │"""
+
+    # Test two-argument show
+    str1, size = capture_stdout() do
+        show(gd)
+    end
+    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
+    show(io, gd)
+    str2 = String(take!(io.io))
+    @test str1 == str2
 
     dfr = DataFrameRow(df, 1)
-    show(io, dfr)
+    @test string(dfr) == """
+    DataFrameRow (row 1)
+    A  1
+    B  x"
+    C  1.0"""
 
     df = DataFrame(A = Vector{String}(undef, 3))
 
@@ -153,7 +296,7 @@ module TestShow
     A = DataFrames.RepeatedVector([1, 2, 3], 1, 5)
     show(io, A)
 
-    #Test show output for REPL and similar
+    #Test colored show output (for REPL and similar)
     df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
     @test sprint(show, df, context=:color=>true) == """
         2×2 DataFrame
@@ -162,7 +305,7 @@ module TestShow
         ├─────┼────────┼──────────┤
         │ 1   │ Suzy   │ 1.5      │
         │ 2   │ Amir   │ \e[90mmissing\e[39m  │"""
-  
+
     # Test showing missing
     df = DataFrame(A = [:Symbol, missing, :missing],
                    B = [missing, "String", "missing"],

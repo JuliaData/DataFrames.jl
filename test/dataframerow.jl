@@ -93,6 +93,6 @@ module TestDataFrameRow
     df = DataFrame(a=nothing, b=1)
     io = IOBuffer()
     show(io, DataFrameRow(df, 1))
-    @test String(take!(io)) == "DataFrameRow (row 1)\na  \nb  1\n"
+    @test String(take!(io)) == "DataFrameRow (row 1)\na  \nb  1"
 end
 
