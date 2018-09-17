@@ -2,7 +2,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                    allgroups::Bool = !get(io, :limit, false),
                    allrows::Bool = !get(io, :limit, false),
                    allcols::Bool = !get(io, :limit, false),
-                   split::Bool = get(io, :limit, false),
+                   splitcols::Bool = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true)
     N = length(gd)
@@ -40,10 +40,10 @@ function Base.show(df::GroupedDataFrame;
                    allrows::Bool = !get(stdout, :limit, true),
                    allcols::Bool = !get(stdout, :limit, true),
                    allgroups::Bool = !get(stdout, :limit, true),
-                   split::Bool = get(stdout, :limit, true),
+                   splitcols::Bool = get(stdout, :limit, true),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true) # -> Nothing
     return show(stdout, df,
-                allrows=allrows, allcols=allcols, allgroups=allgroups, split=split,
+                allrows=allrows, allcols=allcols, allgroups=allgroups, splitcols=splitcols,
                 rowlabel=rowlabel, summary=summary)
 end

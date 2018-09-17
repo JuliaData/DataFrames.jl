@@ -70,7 +70,6 @@ NOTE: The last entry of the result vector is the string width of the
 implicit row ID column contained in every `AbstractDataFrame`.
 
 # Arguments
-
 - `df::AbstractDataFrame`: The data frame whose columns will be printed.
 - `rowindices1::AbstractVector{Int}: A set of indices of the first
   chunk of the AbstractDataFrame that would be rendered to IO.
@@ -82,7 +81,6 @@ implicit row ID column contained in every `AbstractDataFrame`.
   numeric ID's of each row. Typically, this will be set to "Row".
 
 # Examples
-
 ```jldoctest
 julia> using DataFrames
 
@@ -169,10 +167,10 @@ end
 
 """
     getchunkbounds(maxwidths::Vector{Int},
-                   split::Bool,
+                   splitcols::Bool,
                    availablewidth::Int)
 
-When rendering an `AbstractDataFrame`` to a REPL window in chunks, each of
+When rendering an `AbstractDataFrame` to a REPL window in chunks, each of
 which will fit within the width of the REPL window, this function will
 return the indices of the columns that should be included in each chunk.
 
@@ -186,6 +184,8 @@ contains columns 4-5.
 # Arguments
 - `maxwidths::Vector{Int}`: The maximum width needed to render each
   column of an AbstractDataFrame.
+- `splitcols::Bool`: Whether to split printing in chunks of columns
+  fitting the screen width rather than printing all columns in the same block.
 - `availablewidth::Int`: The available width in the REPL.
 
 # Examples
@@ -207,11 +207,11 @@ julia> DataFrames.getchunkbounds(maxwidths, true, displaysize()[2])
 ```
 """
 function getchunkbounds(maxwidths::Vector{Int},
-                        split::Bool,
+                        splitcols::Bool,
                         availablewidth::Int) # -> Vector{Int}
     ncols = length(maxwidths) - 1
     rowmaxwidth = maxwidths[ncols + 1]
-    if split
+    if splitcols
         chunkbounds = [0]
         # Include 2 spaces + 2 | characters for row/col label
         totalwidth = rowmaxwidth + 4
@@ -322,7 +322,7 @@ end
              rowindices1::AbstractVector{Int},
              rowindices2::AbstractVector{Int},
              maxwidths::Vector{Int},
-             split::Bool = false,
+             splitcols::Bool = false,
              allcols::Bool = false,
              rowlabel::Symbol = :Row,
              displaysummary::Bool = true)
@@ -333,6 +333,7 @@ I/O stream.
 NOTE: The value of `maxwidths[end]` must be the string width of
 `rowlabel`.
 
+# Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
 - `df::AbstractDataFrame`: An AbstractDataFrame.
 - `rowindices1::AbstractVector{Int}`: The indices of the first subset
@@ -344,6 +345,8 @@ NOTE: The value of `maxwidths[end]` must be the string width of
   required to render each column.
 - `allcols::Bool = false`: Whether to print all columns, rather than
   a subset that fits the device width.
+- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the screen width
+  rather than printing all columns in the same block.
 - `rowlabel::Symbol`: What label should be printed when rendering the
   numeric ID's of each row? Defaults to `:Row`.
 - `displaysummary::Bool`: Should a brief string summary of the
@@ -371,7 +374,7 @@ function showrows(io::IO,
                   rowindices1::AbstractVector{Int},
                   rowindices2::AbstractVector{Int},
                   maxwidths::Vector{Int},
-                  split::Bool = false,
+                  splitcols::Bool = false,
                   allcols::Bool = false,
                   rowlabel::Symbol = :Row,
                   displaysummary::Bool = true) # -> Void
@@ -385,7 +388,7 @@ function showrows(io::IO,
     end
 
     rowmaxwidth = maxwidths[ncols + 1]
-    chunkbounds = getchunkbounds(maxwidths, split, displaysize(io)[2])
+    chunkbounds = getchunkbounds(maxwidths, splitcols, displaysize(io)[2])
     nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
 
     header = displaysummary ? summary(df) : ""
@@ -497,6 +500,11 @@ end
 Render a data frame to an I/O stream. The specific visual
 representation chosen depends on the width of the display.
 
+If `io` is omitted, the result is printed to `stdout`,
+and `allrows`, `allcols` and `allgroups` default to `false`
+while `splitcols` defaults to `true`.
+
+# Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
 - `df::AbstractDataFrame`: The data frame to print.
 - `allrows::Bool `: Whether to print all rows, rather than
@@ -509,7 +517,7 @@ representation chosen depends on the width of the display.
   the first and last, when `df` is a `GroupedDataFrame`.
   By default this is the case only if `io` does not have the `IOContext` property
   `limit` set.
-- `split::Bool`: Whether to split printing in chunks of columns fitting the screen width
+- `splitcols::Bool`: Whether to split printing in chunks of columns fitting the screen width
   rather than printing all columns in the same block. Only applies if `allcols` is `true`.
   By default this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
@@ -534,7 +542,7 @@ function Base.show(io::IO,
                    df::AbstractDataFrame;
                    allrows::Bool = !get(io, :limit, false),
                    allcols::Bool = !get(io, :limit, false),
-                   split = get(io, :limit, false),
+                   splitcols = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true) # -> Nothing
     nrows = size(df, 1)
@@ -556,7 +564,7 @@ function Base.show(io::IO,
              rowindices1,
              rowindices2,
              maxwidths,
-             split,
+             splitcols,
              allcols,
              rowlabel,
              summary)
@@ -566,10 +574,10 @@ end
 function Base.show(df::AbstractDataFrame;
                    allrows::Bool = !get(stdout, :limit, true),
                    allcols::Bool = !get(stdout, :limit, true),
-                   split = get(stdout, :limit, true),
+                   splitcols = get(stdout, :limit, true),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true) # -> Nothing
     return show(stdout, df,
-                allrows=allrows, allcols=allcols, split=split,
+                allrows=allrows, allcols=allcols, splitcols=splitcols,
                 rowlabel=rowlabel, summary=summary)
 end
