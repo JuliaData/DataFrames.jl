@@ -440,7 +440,7 @@ Base.length(v::RepeatedVector) = v.inner * v.outer * length(v.parent)
 Base.ndims(v::RepeatedVector) = 1
 Base.eltype(v::RepeatedVector{T}) where {T} = T
 Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.inner, v.outer)
-Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
+Base.similar(v::RepeatedVector, T::Type, dims::Dims) = similar(v.parent, T, dims)
 Base.unique(v::RepeatedVector) = unique(v.parent)
 
 function CategoricalArrays.CategoricalArray(v::RepeatedVector)
