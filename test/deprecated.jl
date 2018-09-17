@@ -1,5 +1,6 @@
 module TestDeprecated
     using Test, DataFrames
+    import DataFrames: identifier
 
     # deprecation warning for automatically generating dup column name from indexing
     x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])

@@ -198,9 +198,15 @@ module TestData
         @test_broken d1s[2][true]
         @test_broken d1s[2][1.0]
         
-        # Those two tests check indexing by a vector of Bool values
+        # Those two tests check indexing by a vector
         d1s[1][trues(24)] == d1s[1]
         d1s[2][trues(24)] == d1s[2]
+        d1s[1][:] == d1s[1]
+        d1s[2][:] == d1s[2]
+        d1s[1][1:24] == d1s[1]
+        d1s[2][1:24] == d1s[2]
+        [d1s[1][1:12]; d1s[1][13:24]] == d1s[1]
+        [d1s[2][1:12]; d1s[2][13:24]] == d1s[2]
 
         d1s2 = stackdf(d1, [:c, :d])
         d1s3 = stackdf(d1)
