@@ -787,10 +787,10 @@ function makeidentifier(s::AbstractString)
     res = IOBuffer(zeros(UInt8, sizeof(s)+1), write=true)
 
     (c, i) = iresult
-    under = if DataFrames.is_id_start_char(c)
+    under = if Base.is_id_start_char(c)
         write(res, c)
         c == '_'
-    elseif DataFrames.is_id_char(c)
+    elseif Base.is_id_char(c)
         write(res, 'x', c)
         false
     else
@@ -800,7 +800,7 @@ function makeidentifier(s::AbstractString)
 
     while (iresult = iterate(s, i)) !== nothing
         (c, i) = iresult
-        if c != '_' && DataFrames.is_id_char(c)
+        if c != '_' && Base.is_id_char(c)
             write(res, c)
             under = false
         elseif !under
