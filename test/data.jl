@@ -190,6 +190,9 @@ module TestData
         @test size(dx) == (0, 3)
         @test names(dx) == [:variable, :value, :a]
 
+        @test stackdf(d1, :a) == stackdf(d1, [:a])
+
+        # Tests of RepeatedVector and StackedVector indexing
         d1s = stackdf(d1, [:a, :b])
         @test d1s[1][[1,24]] == [:a, :b]
         @test d1s[2][[1,24]] == [1, 4]
@@ -198,7 +201,7 @@ module TestData
         @test_broken d1s[2][true]
         @test_broken d1s[2][1.0]
         
-        # Those two tests check indexing by a vector
+        # Those tests check indexing RepeatedVector/StackedVector by a vector
         d1s[1][trues(24)] == d1s[1]
         d1s[2][trues(24)] == d1s[2]
         d1s[1][:] == d1s[1]
