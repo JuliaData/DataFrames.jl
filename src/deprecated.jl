@@ -1,4 +1,3 @@
-import Base: isidentifier, is_id_start_char, is_id_char
 import Base: @deprecate
 
 @deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
@@ -776,7 +775,7 @@ const RESERVED_WORDS = Set(["local", "global", "export", "let",
 
 function identifier(s::AbstractString)
     s = Unicode.normalize(s)
-    if !isidentifier(s)
+    if !DataFrames.isidentifier(s)
         s = makeidentifier(s)
     end
     Symbol(in(s, RESERVED_WORDS) ? "_"*s : s)
@@ -788,10 +787,10 @@ function makeidentifier(s::AbstractString)
     res = IOBuffer(zeros(UInt8, sizeof(s)+1), write=true)
 
     (c, i) = iresult
-    under = if is_id_start_char(c)
+    under = if DataFrames.is_id_start_char(c)
         write(res, c)
         c == '_'
-    elseif is_id_char(c)
+    elseif DataFrames.is_id_char(c)
         write(res, 'x', c)
         false
     else
@@ -801,7 +800,7 @@ function makeidentifier(s::AbstractString)
 
     while (iresult = iterate(s, i)) !== nothing
         (c, i) = iresult
-        if c != '_' && is_id_char(c)
+        if c != '_' && DataFrames.is_id_char(c)
             write(res, c)
             under = false
         elseif !under
