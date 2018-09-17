@@ -1,6 +1,18 @@
 module TestShow
     using DataFrames, Random, Test
 
+    function capture_stdout(f::Function)
+        oldstdout = stdout
+        rd, wr = redirect_stdout()
+        f()
+        str = String(readavailable(rd))
+        redirect_stdout(oldstdout)
+        size = displaysize(rd)
+        close(rd)
+        close(wr)
+        str, size
+    end
+
     # In the future newline character \n should be added to this test case
     df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
                    C = Float32[1.0, 2.0, 3.0, 4.0])
@@ -185,6 +197,23 @@ module TestShow
     │ 24  │ 0.278582   │ 0.241591  │
     │ 25  │ 0.751313   │ 0.884837  │"""
 
+    # Test two-argument show
+    str1, size = capture_stdout() do
+        show(df)
+    end
+    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
+    show(io, df)
+    str2 = String(take!(io.io))
+    @test str1 == str2
+
+    str1, size = capture_stdout() do
+        show(df_big)
+    end
+    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
+    show(io, df_big)
+    str2 = String(take!(io.io))
+    @test str1 == str2
+
     subdf = view(df, [2, 3])
     io = IOBuffer()
     show(io, subdf, allrows=true, allcols=false)
@@ -242,6 +271,15 @@ module TestShow
     ├─────┼───────┼────────┼─────────┤
     │ 1   │ 4     │ A\\nC   │ 4.0     │"""
 
+    # Test two-argument show
+    str1, size = capture_stdout() do
+        show(gd)
+    end
+    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
+    show(io, gd)
+    str2 = String(take!(io.io))
+    @test str1 == str2
+
     dfr = DataFrameRow(df, 1)
     @test string(dfr) == """
     DataFrameRow (row 1)
@@ -258,7 +296,7 @@ module TestShow
     A = DataFrames.RepeatedVector([1, 2, 3], 1, 5)
     show(io, A)
 
-    #Test show output for REPL and similar
+    #Test colored show output (for REPL and similar)
     df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
     @test sprint(show, df, context=:color=>true) == """
         2×2 DataFrame
