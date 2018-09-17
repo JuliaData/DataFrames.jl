@@ -547,7 +547,7 @@ function Base.show(io::IO,
                    summary::Bool = true) # -> Nothing
     nrows = size(df, 1)
     dsize = displaysize(io)
-    availableheight = dsize[1] - 6
+    availableheight = dsize[1] - 7
     nrowssubset = fld(availableheight, 2)
     bound = min(nrowssubset - 1, nrows)
     if allrows || nrows <= availableheight
