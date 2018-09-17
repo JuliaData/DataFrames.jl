@@ -775,7 +775,7 @@ const RESERVED_WORDS = Set(["local", "global", "export", "let",
 
 function identifier(s::AbstractString)
     s = Unicode.normalize(s)
-    if !DataFrames.isidentifier(s)
+    if !Base.isidentifier(s)
         s = makeidentifier(s)
     end
     Symbol(in(s, RESERVED_WORDS) ? "_"*s : s)
