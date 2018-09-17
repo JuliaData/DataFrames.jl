@@ -191,13 +191,14 @@ module TestData
         @test names(dx) == [:variable, :value, :a]
 
         d1s = stackdf(d1, [:a, :b])
-        # TODO: add tests for Bool and Real for d1s columns 1 and 2 after deprecation of getindex
-        # d1s[1][true]
-        # d1s[1][1.0]
-        # d1s[2][true]
-        # d1s[2][1.0]
+        @test d1s[1][[1,24]] == [:a, :b]
+        @test d1s[2][[1,24]] == [1, 4]
+        @test_broken d1s[1][true]
+        @test_broken d1s[1][1.0]
+        @test_broken d1s[2][true]
+        @test_broken d1s[2][1.0]
         
-        # Those two tests check indexing by Vector{Bool} that were broken earlier
+        # Those two tests check indexing by a vector of Bool values
         d1s[1][trues(24)] == d1s[1]
         d1s[2][trues(24)] == d1s[2]
 

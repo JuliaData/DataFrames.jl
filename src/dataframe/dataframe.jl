@@ -303,7 +303,8 @@ end
 # df[:, SingleColumnIndex] => AbstractVector
 # df[:, MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, row_ind::Colon, col_inds)
-    Base.depwarn("indexing with colon as row will create a copy of rows in the future", :getindex)
+    Base.depwarn("indexing with colon as row will create a copy in the future" *
+                 " use df[col_inds] to get the columns without copying", :getindex)
     df[col_inds]
 end
 

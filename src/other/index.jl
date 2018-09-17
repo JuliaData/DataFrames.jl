@@ -142,7 +142,7 @@ end
 
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
-        throw(ArgumentError("Bool values except for Vector{Bool} are not allowed for column indexing"))
+        throw(ArgumentError("Bool values except for AbstractVector{Bool} are not allowed for column indexing"))
     end
     Vector{Int}(idx)
 end

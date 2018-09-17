@@ -1360,3 +1360,22 @@ import Base: show
 @deprecate showall(io::IO, df::GroupedDataFrame) show(io, df, allgroups=true)
 @deprecate showall(df::GroupedDataFrame) show(df, allgroups=true)
 
+function Base.getindex(v::RepeatedVector, i::Bool)
+    Base.depwarn("Indexing RepeatedVector with Bool is deprecated", :getindex)
+    v[1]
+end
+
+function Base.getindex(v::RepeatedVector, i::Real)
+    Base.depwarn("Indexing RepeatedVector with Real is deprecated", :getindex)
+    v[Int(i)]
+end
+
+function Base.getindex(v::StackedVector,i::Bool)
+    Base.depwarn("Indexing StackedVector with Bool is deprecated", :getindex)
+    v[1]
+end
+
+function Base.getindex(v::StackedVector,i::Real)
+    Base.depwarn("Indexing StackedVector with Real is deprecated", :getindex)
+    v[Int(i)]
+end

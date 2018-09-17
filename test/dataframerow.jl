@@ -84,8 +84,11 @@ module TestDataFrameRow
     r.b = 1
     @test r.b === 1.0
 
-    # keys, values and iteration
+    # getindex
     r = DataFrameRow(df, 1)
+    @test r[:] == r
+
+    # keys, values and iteration
     @test keys(r) == names(df)
     @test values(r) == (df[1, 1], df[1, 2], df[1, 3], df[1, 4])
     @test collect(pairs(r)) == [:a=>df[1, 1], :b=>df[1, 2], :c=>df[1, 3], :d=>df[1, 4]]
