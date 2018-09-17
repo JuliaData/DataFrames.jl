@@ -815,16 +815,6 @@ unique!(df)  # modifies df
 """
 (unique, unique!)
 
-# Count the number of missing values in every column of an AbstractDataFrame.
-function colmissing(df::AbstractDataFrame) # -> Vector{Int}
-    nrows, ncols = size(df)
-    missing = zeros(Int, ncols)
-    for j in 1:ncols
-        missing[j] = countmissing(df[j])
-    end
-    return missing
-end
-
 function without(df::AbstractDataFrame, icols::Vector{<:Integer})
     newcols = setdiff(1:ncol(df), icols)
     df[newcols]
