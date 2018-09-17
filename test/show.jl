@@ -37,7 +37,7 @@ module TestShow
     Random.seed!(1)
     df_big = DataFrame(rand(25,5))
 
-    io = IOContext(IOBuffer(), :displaysize=>(10,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
     show(io, df_big)
     str = String(take!(io.io))
     @test str == """
@@ -50,7 +50,7 @@ module TestShow
     │ 24  │ 0.278582 │ 0.241591 │ 0.990741 │
     │ 25  │ 0.751313 │ 0.884837 │ 0.550334 │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(10,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
     show(io, df_big, allcols=true)
     str = String(take!(io.io))
     @test str == """
@@ -71,7 +71,7 @@ module TestShow
     │ 24  │ 0.762276 │ 0.755415 │
     │ 25  │ 0.339081 │ 0.649056 │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(10,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
     show(io, df_big, allrows=true, allcols=true)
     str = String(take!(io.io))
     @test str == """
@@ -163,7 +163,7 @@ module TestShow
     │ 24  │ 0.755415  │
     │ 25  │ 0.649056  │"""
 
-    io = IOContext(IOBuffer(), :displaysize=>(10,40), :limit=>true)
+    io = IOContext(IOBuffer(), :displaysize=>(11,40), :limit=>true)
     show(io, df_big, allrows=true, allcols=false)
     str = String(take!(io.io))
     @test str == """
