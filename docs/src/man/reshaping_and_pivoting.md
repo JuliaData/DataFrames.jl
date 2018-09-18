@@ -8,7 +8,7 @@ julia> using DataFrames, CSV
 julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.csv"));
 
 julia> head(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
 │ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ setosa  │
@@ -19,7 +19,7 @@ julia> head(iris)
 │ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa  │
 
 julia> tail(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species   │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────┤
 │ 1   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ virginica │
@@ -33,7 +33,7 @@ julia> tail(iris)
 julia> d = stack(iris, 1:4);
 
 julia> head(d)
-6×3 DataFrames.DataFrame
+6×3 DataFrame
 │ Row │ variable    │ value │ Species │
 ├─────┼─────────────┼───────┼─────────┤
 │ 1   │ SepalLength │ 5.1   │ setosa  │
@@ -44,7 +44,7 @@ julia> head(d)
 │ 6   │ SepalLength │ 5.4   │ setosa  │
 
 julia> tail(d)
-6×3 DataFrames.DataFrame
+6×3 DataFrame
 │ Row │ variable   │ value │ Species   │
 ├─────┼────────────┼───────┼───────────┤
 │ 1   │ PetalWidth │ 2.5   │ virginica │
@@ -62,7 +62,7 @@ The second optional argument to `stack` indicates the columns to be stacked. The
 julia> d = stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth]);
 
 julia> head(d)
-6×3 DataFrames.DataFrame
+6×3 DataFrame
 │ Row │ variable    │ value │ Species │
 ├─────┼─────────────┼───────┼─────────┤
 │ 1   │ SepalLength │ 5.1   │ setosa  │
@@ -73,7 +73,7 @@ julia> head(d)
 │ 6   │ SepalLength │ 5.4   │ setosa  │
 
 julia> tail(d)
-6×3 DataFrames.DataFrame
+6×3 DataFrame
 │ Row │ variable   │ value │ Species   │
 ├─────┼────────────┼───────┼───────────┤
 │ 1   │ PetalWidth │ 2.5   │ virginica │
@@ -95,7 +95,7 @@ A third optional argument to `stack` represents the id columns that are repeated
 julia> d = stack(iris, [:SepalLength, :SepalWidth], :Species);
 
 julia> head(d)
-6×3 DataFrames.DataFrame
+6×3 DataFrame
 │ Row │ variable    │ value │ Species │
 ├─────┼─────────────┼───────┼─────────┤
 │ 1   │ SepalLength │ 5.1   │ setosa  │
@@ -106,7 +106,7 @@ julia> head(d)
 │ 6   │ SepalLength │ 5.4   │ setosa  │
 
 julia> tail(d)
-6×3 DataFrames.DataFrame
+6×3 DataFrame
 │ Row │ variable   │ value │ Species   │
 ├─────┼────────────┼───────┼───────────┤
 │ 1   │ SepalWidth │ 3.3   │ virginica │
@@ -124,7 +124,7 @@ julia> tail(d)
 julia> d = melt(iris, :Species);
 
 julia> head(d)
-6×3 DataFrames.DataFrame
+6×3 DataFrame
 │ Row │ variable    │ value │ Species │
 ├─────┼─────────────┼───────┼─────────┤
 │ 1   │ SepalLength │ 5.1   │ setosa  │
@@ -135,7 +135,7 @@ julia> head(d)
 │ 6   │ SepalLength │ 5.4   │ setosa  │
 
 julia> tail(d)
-6×3 DataFrames.DataFrame
+6×3 DataFrame
 │ Row │ variable   │ value │ Species   │
 ├─────┼────────────┼───────┼───────────┤
 │ 1   │ PetalWidth │ 2.5   │ virginica │
@@ -156,7 +156,7 @@ julia> iris[:id] = 1:size(iris, 1)
 julia> longdf = melt(iris, [:Species, :id]);
 
 julia> head(longdf)
-6×4 DataFrames.DataFrame
+6×4 DataFrame
 │ Row │ variable    │ value │ Species │ id │
 ├─────┼─────────────┼───────┼─────────┼────┤
 │ 1   │ SepalLength │ 5.1   │ setosa  │ 1  │
@@ -167,7 +167,7 @@ julia> head(longdf)
 │ 6   │ SepalLength │ 5.4   │ setosa  │ 6  │
 
 julia> tail(longdf)
-6×4 DataFrames.DataFrame
+6×4 DataFrame
 │ Row │ variable   │ value │ Species   │ id  │
 ├─────┼────────────┼───────┼───────────┼─────┤
 │ 1   │ PetalWidth │ 2.5   │ virginica │ 145 │
@@ -180,7 +180,7 @@ julia> tail(longdf)
 julia> widedf = unstack(longdf, :id, :variable, :value);
 
 julia> head(widedf)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ id │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
 ├─────┼────┼─────────────┼────────────┼─────────────┼────────────┤
 │ 1   │ 1  │ 1.4         │ 0.2        │ 5.1         │ 3.5        │
@@ -191,7 +191,7 @@ julia> head(widedf)
 │ 6   │ 6  │ 1.7         │ 0.4        │ 5.4         │ 3.9        │
 
 julia> tail(widedf)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ id  │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
 ├─────┼─────┼─────────────┼────────────┼─────────────┼────────────┤
 │ 1   │ 145 │ 5.7         │ 2.5        │ 6.7         │ 3.3        │
@@ -209,7 +209,7 @@ If the remaining columns are unique, you can skip the id variable and use:
 julia> longdf = melt(iris, [:Species, :id]);
 
 julia> head(longdf)
-6×4 DataFrames.DataFrame
+6×4 DataFrame
 │ Row │ variable    │ value │ Species │ id │
 ├─────┼─────────────┼───────┼─────────┼────┤
 │ 1   │ SepalLength │ 5.1   │ setosa  │ 1  │
@@ -222,7 +222,7 @@ julia> head(longdf)
 julia> widedf = unstack(longdf, :variable, :value);
 
 julia> head(widedf)
-6×6 DataFrames.DataFrame
+6×6 DataFrame
 │ Row │ Species │ id │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
 ├─────┼─────────┼────┼─────────────┼────────────┼─────────────┼────────────┤
 │ 1   │ setosa  │ 1  │ 1.4         │ 0.2        │ 5.1         │ 3.5        │
@@ -240,7 +240,7 @@ julia> head(widedf)
 julia> d = stackdf(iris);
 
 julia> head(d)
-6×4 DataFrames.DataFrame
+6×4 DataFrame
 │ Row │ variable    │ value │ Species │ id │
 ├─────┼─────────────┼───────┼─────────┼────┤
 │ 1   │ SepalLength │ 5.1   │ setosa  │ 1  │
@@ -251,7 +251,7 @@ julia> head(d)
 │ 6   │ SepalLength │ 5.4   │ setosa  │ 6  │
 
 julia> tail(d)
-6×4 DataFrames.DataFrame
+6×4 DataFrame
 │ Row │ variable   │ value │ Species   │ id  │
 ├─────┼────────────┼───────┼───────────┼─────┤
 │ 1   │ PetalWidth │ 2.5   │ virginica │ 145 │
@@ -280,7 +280,7 @@ None of these reshaping functions perform any aggregation. To do aggregation, us
 julia> d = melt(iris, :Species);
 
 julia> head(d)
-6×3 DataFrames.DataFrame
+6×3 DataFrame
 │ Row │ variable    │ value │ Species │
 ├─────┼─────────────┼───────┼─────────┤
 │ 1   │ SepalLength │ 5.1   │ setosa  │
@@ -293,7 +293,7 @@ julia> head(d)
 julia> x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(df[:value])));
 
 julia> head(x)
-6×3 DataFrames.DataFrame
+6×3 DataFrame
 │ Row │ variable    │ Species    │ vsum  │
 ├─────┼─────────────┼────────────┼───────┤
 │ 1   │ SepalLength │ setosa     │ 5.006 │
@@ -304,7 +304,7 @@ julia> head(x)
 │ 6   │ SepalWidth  │ virginica  │ 2.974 │
 
 julia> head(unstack(x, :Species, :vsum))
-5×4 DataFrames.DataFrame
+5×4 DataFrame
 │ Row │ variable    │ setosa │ versicolor │ virginica │
 ├─────┼─────────────┼────────┼────────────┼───────────┤
 │ 1   │ PetalLength │ 1.462  │ 4.26       │ 5.552     │

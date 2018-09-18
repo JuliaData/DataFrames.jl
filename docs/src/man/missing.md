@@ -1,32 +1,30 @@
-# The `Missing` Type
+# Missing Data
 
-`Missing` is a type implemented by the [Missings.jl](https://github.com/JuliaData/Missings.jl) package to represent missing data. `missing` is an instance of the type `Missing` used to represent a missing value.
+In Julia, missing values in data are represented using the special object `missing`, which is the single instance of the type `Missing`.
 
-```jldoctest missings
-julia> using DataFrames
-
+```jldoctest
 julia> missing
 missing
 
 julia> typeof(missing)
-Missings.Missing
+Missing
 
 ```
 
-The `Missing` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a missing value and the element-type of the returned vector is `Union{Missings.Missing, Int64}`.
+The `Missing` type lets users create `Vector`s and `DataFrame` columns with missing values. Here we create a vector with a missing value and the element-type of the returned vector is `Union{Missing, Int64}`.
 
 ```jldoctest missings
 julia> x = [1, 2, missing]
-3-element Array{Union{Missings.Missing, Int64},1}:
+3-element Array{Union{Missing, Int64},1}:
  1
  2
   missing
 
 julia> eltype(x)
-Union{Missings.Missing, Int64}
+Union{Missing, Int64}
 
 julia> Union{Missing, Int}
-Union{Missings.Missing, Int64}
+Union{Missing, Int64}
 
 julia> eltype(x) == Union{Missing, Int}
 true
@@ -37,7 +35,7 @@ true
 
 ```jldoctest missings
 julia> skipmissing(x)
-Missings.EachSkipMissing{Array{Union{$Int, Missings.Missing},1}}(Union{$Int, Missings.Missing}[1, 2, missing])
+Base.SkipMissing{Array{Union{Missing, Int64},1}}(Union{Missing, Int64}[1, 2, missing])
 
 ```
 
@@ -54,14 +52,35 @@ julia> collect(skipmissing(x))
 
 ```
 
-`missing` elements can be replaced with other values via `Missings.replace`.
+The function `coalesce` can be used to replace missing values with another value (note the dot, indicating that the replacement should be applied to all entries in `x`):
 
 ```jldoctest missings
+julia> coalesce.(x, 0)
+3-element Array{Int64,1}:
+ 1
+ 2
+ 0
+
+```
+
+The [Missings.jl](https://github.com/JuliaData/Missings.jl) package provides a few convenience functions to work with missing values.
+
+The function `Missings.replace` returns an iterator which replaces `missing` elements with another value:
+
+```jldoctest missings
+julia> using Missings
+
+julia> Missings.replace(x, 1)
+Missings.EachReplaceMissing{Array{Union{Missing, Int64},1},Int64}(Union{Missing, Int64}[1, 2, missing], 1)
+
 julia> collect(Missings.replace(x, 1))
 3-element Array{Int64,1}:
  1
  2
  1
+
+julia> collect(Missings.replace(x, 1)) == coalesce.(x, 1)
+true
 
 ```
 
@@ -69,32 +88,34 @@ The function `Missings.T` returns the element-type `T` in `Union{T, Missing}`.
 
 ```jldoctest missings
 julia> eltype(x)
-Union{Int64, Missings.Missing}
+Union{Int64, Missing}
 
 julia> Missings.T(eltype(x))
 Int64
 
 ```
 
-Use `missings` to generate `Vector`s and `Array`s supporting missing values, using the optional first argument to specify the element-type.
+The `missings` function constructs `Vector`s and `Array`s supporting missing values, using the optional first argument to specify the element-type.
 
 ```jldoctest missings
 julia> missings(1)
-1-element Array{Missings.Missing,1}:
+1-element Array{Missing,1}:
  missing
 
 julia> missings(3)
-3-element Array{Missings.Missing,1}:
+3-element Array{Missing,1}:
  missing
  missing
  missing
 
 julia> missings(1, 3)
-1×3 Array{Missings.Missing,2}:
+1×3 Array{Missing,2}:
  missing  missing  missing
 
 julia> missings(Int, 1, 3)
-1×3 Array{Union{Missings.Missing, Int64},2}:
+1×3 Array{Union{Missing, Int64},2}:
  missing  missing  missing
 
 ```
+
+See the [Julia manual](https://docs.julialang.org/en/stable/manual/missing/) for more information about missing values.

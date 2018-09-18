@@ -651,7 +651,7 @@ returns `true`. The function is passed a `DataFrameRow` as its only argument.
 # Examples
 ```
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-4×2 DataFrames.DataFrame
+4×2 DataFrame
 │ Row │ x │ y │
 ├─────┼───┼───┤
 │ 1   │ 3 │ b │
@@ -660,7 +660,7 @@ julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 │ 4   │ 1 │ b │
 
 julia> filter(row -> row[:x] > 1, df)
-2×2 DataFrames.DataFrame
+2×2 DataFrame
 │ Row │ x │ y │
 ├─────┼───┼───┤
 │ 1   │ 3 │ b │
@@ -678,7 +678,7 @@ The function is passed a `DataFrameRow` as its only argument.
 # Examples
 ```
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-4×2 DataFrames.DataFrame
+4×2 DataFrame
 │ Row │ x │ y │
 ├─────┼───┼───┤
 │ 1   │ 3 │ b │
@@ -689,7 +689,7 @@ julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 julia> filter!(row -> row[:x] > 1, df);
 
 julia> df
-2×2 DataFrames.DataFrame
+2×2 DataFrame
 │ Row │ x │ y │
 ├─────┼───┼───┤
 │ 1   │ 3 │ b │
@@ -883,7 +883,7 @@ different order. In such cases the order of names in the first passed
 julia> df1 = DataFrame(A=1:3, B=1:3);
 julia> df2 = DataFrame(A=4:6, B=4:6);
 julia> vcat(df1, df2)
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ 1 │ 1 │
@@ -897,7 +897,7 @@ julia> vcat(df1, df2)
 julia> df1 = DataFrame(A=1:3, B=1:3);
 julia> df2 = DataFrame(B=4:6, A=4:6);
 julia> vcat(df1, df2)
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ 1 │ 1 │

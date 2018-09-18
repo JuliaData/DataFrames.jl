@@ -321,7 +321,7 @@ See [`sort!`](@ref) for a description of other keyword arguments.
 # Examples
 ```jldoctest
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-4×2 DataFrames.DataFrame
+4×2 DataFrame
 │ Row │ x │ y │
 ├─────┼───┼───┤
 │ 1   │ 3 │ b │
@@ -330,7 +330,7 @@ julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 │ 4   │ 1 │ b │
 
 julia> sort(df, :x)
-4×2 DataFrames.DataFrame
+4×2 DataFrame
 │ Row │ x │ y │
 ├─────┼───┼───┤
 │ 1   │ 1 │ c │
@@ -339,7 +339,7 @@ julia> sort(df, :x)
 │ 4   │ 3 │ b │
 
 julia> sort(df, (:x, :y))
-4×2 DataFrames.DataFrame
+4×2 DataFrame
 │ Row │ x │ y │
 ├─────┼───┼───┤
 │ 1   │ 1 │ b │
@@ -348,7 +348,7 @@ julia> sort(df, (:x, :y))
 │ 4   │ 3 │ b │
 
 julia> sort(df, (:x, :y), rev=true)
-4×2 DataFrames.DataFrame
+4×2 DataFrame
 │ Row │ x │ y │
 ├─────┼───┼───┤
 │ 1   │ 3 │ b │
@@ -357,7 +357,7 @@ julia> sort(df, (:x, :y), rev=true)
 │ 4   │ 1 │ b │
 
 julia> sort(df, (:x, order(:y, rev=true)))
-4×2 DataFrames.DataFrame
+4×2 DataFrame
 │ Row │ x │ y │
 ├─────┼───┼───┤
 │ 1   │ 1 │ c │
@@ -387,7 +387,7 @@ See other methods for a description of other keyword arguments.
 # Examples
 ```jldoctest
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-4×2 DataFrames.DataFrame
+4×2 DataFrame
 │ Row │ x │ y │
 ├─────┼───┼───┤
 │ 1   │ 3 │ b │

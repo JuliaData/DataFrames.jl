@@ -668,7 +668,7 @@ insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol;
 
 ```jldoctest
 julia> d = DataFrame(a=1:3)
-3×1 DataFrames.DataFrame
+3×1 DataFrame
 │ Row │ a │
 ├─────┼───┤
 │ 1   │ 1 │
@@ -676,7 +676,7 @@ julia> d = DataFrame(a=1:3)
 │ 3   │ 3 │
 
 julia> insert!(d, 1, 'a':'c', :b)
-3×2 DataFrames.DataFrame
+3×2 DataFrame
 │ Row │ b   │ a │
 ├─────┼─────┼───┤
 │ 1   │ 'a' │ 1 │
@@ -1066,7 +1066,7 @@ columns must be listed.
 
 ```julia
 julia> df = DataFrame(a=1:5, b=2:6, c=3:7)
-5×3 DataFrames.DataFrame
+5×3 DataFrame
 │ Row │ a │ b │ c │
 ├─────┼───┼───┼───┤
 │ 1   │ 1 │ 2 │ 3 │
@@ -1078,7 +1078,7 @@ julia> df = DataFrame(a=1:5, b=2:6, c=3:7)
 julia> permutecols!(df, [2, 1, 3]);
 
 julia> df
-5×3 DataFrames.DataFrame
+5×3 DataFrame
 │ Row │ b │ a │ c │
 ├─────┼───┼───┼───┤
 │ 1   │ 2 │ 1 │ 3 │
@@ -1090,7 +1090,7 @@ julia> df
 julia> permutecols!(df, [:c, :a, :b]);
 
 julia> df
-5×3 DataFrames.DataFrame
+5×3 DataFrame
 │ Row │ c │ a │ b │
 ├─────┼───┼───┼───┤
 │ 1   │ 3 │ 1 │ 2 │

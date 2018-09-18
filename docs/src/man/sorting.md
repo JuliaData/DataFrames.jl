@@ -10,7 +10,7 @@ julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.
 julia> sort!(iris);
 
 julia> head(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
 │ 1   │ 4.3         │ 3.0        │ 1.1         │ 0.1        │ setosa  │
@@ -21,7 +21,7 @@ julia> head(iris)
 │ 6   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ setosa  │
 
 julia> tail(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species   │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────┤
 │ 1   │ 7.6         │ 3.0        │ 6.6         │ 2.1        │ virginica │
@@ -39,7 +39,7 @@ In Sorting DataFrames, you may want to sort different columns with different opt
 julia> sort!(iris, rev = true);
 
 julia> head(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species   │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────┤
 │ 1   │ 7.9         │ 3.8        │ 6.4         │ 2.0        │ virginica │
@@ -50,7 +50,7 @@ julia> head(iris)
 │ 6   │ 7.6         │ 3.0        │ 6.6         │ 2.1        │ virginica │
 
 julia> tail(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
 │ 1   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ setosa  │
@@ -63,7 +63,7 @@ julia> tail(iris)
 julia> sort!(iris, (:SepalWidth, :SepalLength));
 
 julia> head(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species    │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼────────────┤
 │ 1   │ 5.0         │ 2.0        │ 3.5         │ 1.0        │ versicolor │
@@ -74,7 +74,7 @@ julia> head(iris)
 │ 6   │ 5.0         │ 2.3        │ 3.3         │ 1.0        │ versicolor │
 
 julia> tail(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
 │ 1   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa  │
@@ -88,7 +88,7 @@ julia> sort!(iris, (order(:Species, by = uppercase),
                     order(:SepalLength, rev = true)));
 
 julia> head(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
 │ 1   │ 5.8         │ 4.0        │ 1.2         │ 0.2        │ setosa  │
@@ -99,7 +99,7 @@ julia> head(iris)
 │ 6   │ 5.4         │ 3.4        │ 1.7         │ 0.2        │ setosa  │
 
 julia> tail(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species   │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────┤
 │ 1   │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ virginica │
@@ -122,7 +122,7 @@ julia> sort!(iris, (:Species, :SepalLength, :SepalWidth),
                     rev = (true, false, false));
 
 julia> head(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species   │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────┤
 │ 1   │ 4.9         │ 2.5        │ 4.5         │ 1.7        │ virginica │
@@ -133,7 +133,7 @@ julia> head(iris)
 │ 6   │ 5.8         │ 2.8        │ 5.1         │ 2.4        │ virginica │
 
 julia> tail(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
 │ 1   │ 5.4         │ 3.9        │ 1.3         │ 0.4        │ setosa  │
@@ -146,7 +146,7 @@ julia> tail(iris)
 julia> sort!(iris, (order(:Species, rev = true), :SepalLength, :SepalWidth));
 
 julia> head(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species   │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────┤
 │ 1   │ 4.9         │ 2.5        │ 4.5         │ 1.7        │ virginica │
@@ -157,7 +157,7 @@ julia> head(iris)
 │ 6   │ 5.8         │ 2.8        │ 5.1         │ 2.4        │ virginica │
 
 julia> tail(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
 │ 1   │ 5.4         │ 3.9        │ 1.3         │ 0.4        │ setosa  │

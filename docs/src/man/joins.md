@@ -6,14 +6,14 @@ We often need to combine two or more data sets together to provide a complete pi
 julia> using DataFrames
 
 julia> names = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
-2×2 DataFrames.DataFrame
+2×2 DataFrame
 │ Row │ ID │ Name     │
 ├─────┼────┼──────────┤
 │ 1   │ 20 │ John Doe │
 │ 2   │ 40 │ Jane Doe │
 
 julia> jobs = DataFrame(ID = [20, 40], Job = ["Lawyer", "Doctor"])
-2×2 DataFrames.DataFrame
+2×2 DataFrame
 │ Row │ ID │ Job    │
 ├─────┼────┼────────┤
 │ 1   │ 20 │ Lawyer │
@@ -25,7 +25,7 @@ We might want to work with a larger data set that contains both the names and jo
 
 ```jldoctest joins
 julia> join(names, jobs, on = :ID)
-2×3 DataFrames.DataFrame
+2×3 DataFrame
 │ Row │ ID │ Name     │ Job    │
 ├─────┼────┼──────────┼────────┤
 │ 1   │ 20 │ John Doe │ Lawyer │
@@ -51,34 +51,34 @@ You can control the kind of join that `join` performs using the `kind` keyword a
 
 ```jldoctest joins
 julia> jobs = DataFrame(ID = [20, 60], Job = ["Lawyer", "Astronaut"])
-2×2 DataFrames.DataFrame
+2×2 DataFrame
 │ Row │ ID │ Job       │
 ├─────┼────┼───────────┤
 │ 1   │ 20 │ Lawyer    │
 │ 2   │ 60 │ Astronaut │
 
 julia> join(names, jobs, on = :ID, kind = :inner)
-1×3 DataFrames.DataFrame
+1×3 DataFrame
 │ Row │ ID │ Name     │ Job    │
 ├─────┼────┼──────────┼────────┤
 │ 1   │ 20 │ John Doe │ Lawyer │
 
 julia> join(names, jobs, on = :ID, kind = :left)
-2×3 DataFrames.DataFrame
+2×3 DataFrame
 │ Row │ ID │ Name     │ Job     │
 ├─────┼────┼──────────┼─────────┤
 │ 1   │ 20 │ John Doe │ Lawyer  │
 │ 2   │ 40 │ Jane Doe │ missing │
 
 julia> join(names, jobs, on = :ID, kind = :right)
-2×3 DataFrames.DataFrame
+2×3 DataFrame
 │ Row │ ID │ Name     │ Job       │
 ├─────┼────┼──────────┼───────────┤
 │ 1   │ 20 │ John Doe │ Lawyer    │
 │ 2   │ 60 │ missing  │ Astronaut │
 
 julia> join(names, jobs, on = :ID, kind = :outer)
-3×3 DataFrames.DataFrame
+3×3 DataFrame
 │ Row │ ID │ Name        │ Job       │
 ├─────┼────┼─────────────┼───────────┤
 │ 1   │ 20 │ John Doe    │ Lawyer    │
@@ -86,13 +86,13 @@ julia> join(names, jobs, on = :ID, kind = :outer)
 │ 3   │ 60 │ missing     │ Astronaut │
 
 julia> join(names, jobs, on = :ID, kind = :semi)
-1×2 DataFrames.DataFrame
+1×2 DataFrame
 │ Row │ ID │ Name     │
 ├─────┼────┼──────────┤
 │ 1   │ 20 │ John Doe │
 
 julia> join(names, jobs, on = :ID, kind = :anti)
-1×2 DataFrames.DataFrame
+1×2 DataFrame
 │ Row │ ID │ Name     │
 ├─────┼────┼──────────┤
 │ 1   │ 40 │ Jane Doe │
@@ -103,7 +103,7 @@ Cross joins are the only kind of join that does not use a key:
 
 ```jldoctest joins
 julia> join(names, jobs, kind = :cross)
-4×4 DataFrames.DataFrame
+4×4 DataFrame
 │ Row │ ID │ Name     │ ID_1 │ Job       │
 ├─────┼────┼──────────┼──────┼───────────┤
 │ 1   │ 20 │ John Doe │ 20   │ Lawyer    │
@@ -117,28 +117,28 @@ In order to join data tables on keys which have different names, you must first 
 
 ```jldoctest joins
 julia> a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
-2×2 DataFrames.DataFrame
+2×2 DataFrame
 │ Row │ ID │ Name     │
 ├─────┼────┼──────────┤
 │ 1   │ 20 │ John Doe │
 │ 2   │ 40 │ Jane Doe │
 
 julia> b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
-2×2 DataFrames.DataFrame
+2×2 DataFrame
 │ Row │ IDNew │ Job    │
 ├─────┼───────┼────────┤
 │ 1   │ 20    │ Lawyer │
 │ 2   │ 40    │ Doctor │
 
 julia> rename!(b, :IDNew => :ID)
-2×2 DataFrames.DataFrame
+2×2 DataFrame
 │ Row │ ID │ Job    │
 ├─────┼────┼────────┤
 │ 1   │ 20 │ Lawyer │
 │ 2   │ 40 │ Doctor │
 
 julia> join(a, b, on = :ID, kind = :inner)
-2×3 DataFrames.DataFrame
+2×3 DataFrame
 │ Row │ ID │ Name     │ Job    │
 ├─────┼────┼──────────┼────────┤
 │ 1   │ 20 │ John Doe │ Lawyer │
@@ -152,7 +152,7 @@ Or renaming multiple columns at a time:
 julia> a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"],
                      Job = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
                      Category = [1, 2, 3, 4, 5])
-5×3 DataFrames.DataFrame
+5×3 DataFrame
 │ Row │ City      │ Job    │ Category │
 ├─────┼───────────┼────────┼──────────┤
 │ 1   │ Amsterdam │ Lawyer │ 1        │
@@ -164,7 +164,7 @@ julia> a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New Y
 julia> b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "New York"],
                      Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
                      Name = ["a", "b", "c", "d", "e"])
-5×3 DataFrames.DataFrame
+5×3 DataFrame
 │ Row │ Location  │ Work   │ Name │
 ├─────┼───────────┼────────┼──────┤
 │ 1   │ Amsterdam │ Lawyer │ a    │
@@ -174,7 +174,7 @@ julia> b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "N
 │ 5   │ New York  │ Doctor │ e    │
 
 julia> rename!(b, :Location => :City, :Work => :Job)
-5×3 DataFrames.DataFrame
+5×3 DataFrame
 │ Row │ City      │ Job    │ Name │
 ├─────┼───────────┼────────┼──────┤
 │ 1   │ Amsterdam │ Lawyer │ a    │
@@ -184,7 +184,7 @@ julia> rename!(b, :Location => :City, :Work => :Job)
 │ 5   │ New York  │ Doctor │ e    │
 
 julia> join(a, b, on = [:City, :Job])
-9×4 DataFrames.DataFrame
+9×4 DataFrame
 │ Row │ City      │ Job    │ Category │ Name │
 ├─────┼───────────┼────────┼──────────┼──────┤
 │ 1   │ Amsterdam │ Lawyer │ 1        │ a    │

@@ -12,7 +12,7 @@ julia> using DataFrames, CSV
 julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.csv"));
 
 julia> head(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
 │ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ setosa  │
@@ -23,7 +23,7 @@ julia> head(iris)
 │ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa  │
 
 julia> tail(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species   │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────┤
 │ 1   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ virginica │
@@ -35,15 +35,15 @@ julia> tail(iris)
 
 
 julia> by(iris, :Species, size)
-3×2 DataFrames.DataFrame
+3×2 DataFrame
 │ Row │ Species    │ x1      │
 ├─────┼────────────┼─────────┤
 │ 1   │ setosa     │ (50, 5) │
 │ 2   │ versicolor │ (50, 5) │
 │ 3   │ virginica  │ (50, 5) │
 
-julia> by(iris, :Species, df -> mean(df[:PetalLength]))
-3×2 DataFrames.DataFrame
+julia> by(iris, :Species, df -> mean(df.PetalLength))
+3×2 DataFrame
 │ Row │ Species    │ x1    │
 ├─────┼────────────┼───────┤
 │ 1   │ setosa     │ 1.462 │
@@ -51,7 +51,7 @@ julia> by(iris, :Species, df -> mean(df[:PetalLength]))
 │ 3   │ virginica  │ 5.552 │
 
 julia> by(iris, :Species, df -> DataFrame(N = size(df, 1)))
-3×2 DataFrames.DataFrame
+3×2 DataFrame
 │ Row │ Species    │ N  │
 ├─────┼────────────┼────┤
 │ 1   │ setosa     │ 50 │
@@ -64,9 +64,9 @@ The `by` function also support the `do` block form:
 
 ```jldoctest sac
 julia> by(iris, :Species) do df
-          DataFrame(m = mean(df[:PetalLength]), s² = var(df[:PetalLength]))
+          DataFrame(m = mean(df.PetalLength), s² = var(df.PetalLength))
        end
-3×3 DataFrames.DataFrame
+3×3 DataFrame
 │ Row │ Species    │ m     │ s²        │
 ├─────┼────────────┼───────┼───────────┤
 │ 1   │ setosa     │ 1.462 │ 0.0301592 │
@@ -79,7 +79,7 @@ A second approach to the Split-Apply-Combine strategy is implemented in the `agg
 
 ```jldoctest sac
 julia> aggregate(iris, :Species, length)
-3×5 DataFrames.DataFrame
+3×5 DataFrame
 │ Row │ Species    │ SepalLength_length │ SepalWidth_length │ PetalLength_length │ PetalWidth_length │
 ├─────┼────────────┼────────────────────┼───────────────────┼────────────────────┼───────────────────┤
 │ 1   │ setosa     │ 50                 │ 50                │ 50                 │ 50                │
@@ -87,7 +87,7 @@ julia> aggregate(iris, :Species, length)
 │ 3   │ virginica  │ 50                 │ 50                │ 50                 │ 50                │
 
 julia> aggregate(iris, :Species, [sum, mean])
-3×9 DataFrames.DataFrame
+3×9 DataFrame
 │ Row │ Species    │ SepalLength_sum │ SepalWidth_sum │ PetalLength_sum │ PetalWidth_sum │ SepalLength_mean │ SepalWidth_mean │ PetalLength_mean │ PetalWidth_mean │
 ├─────┼────────────┼─────────────────┼────────────────┼─────────────────┼────────────────┼──────────────────┼─────────────────┼──────────────────┼─────────────────┤
 │ 1   │ setosa     │ 250.3           │ 171.4          │ 73.1            │ 12.3           │ 5.006            │ 3.428           │ 1.462            │ 0.246           │

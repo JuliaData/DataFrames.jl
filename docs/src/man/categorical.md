@@ -37,7 +37,7 @@ julia> using Missings
 
 julia> cv = CategoricalArray(["Group A", missing, "Group A",
                               "Group B", "Group B", missing])
-6-element CategoricalArrays.CategoricalArray{Union{Missings.Missing, String},1,UInt32}:
+6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt32}:
  "Group A"
  missing
  "Group A"
@@ -67,7 +67,7 @@ julia> levels(cv)
  "Group A"
 
 julia> sort(cv)
-6-element CategoricalArrays.CategoricalArray{Union{Missings.Missing, String},1,UInt32}:
+6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt32}:
  "Group B"
  "Group B"
  "Group A"
@@ -81,7 +81,7 @@ By default, a `CategoricalArray` is able to represent 2<sup>32</sup>differents l
 
 ```jldoctest categorical
 julia> cv = compress(cv)
-6-element CategoricalArrays.CategoricalArray{Union{Missings.Missing, String},1,UInt8}:
+6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt8}:
  "Group A"
  missing
  "Group A"
@@ -100,7 +100,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A = ["A", "B", "C", "D", "D", "A"],
                       B = ["X", "X", "X", "Y", "Y", "Y"])
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ A │ X │
@@ -116,7 +116,7 @@ julia> eltypes(df)
  String
 
 julia> categorical!(df, :A) # change the column `:A` to be categorical
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ A │ X │
@@ -132,7 +132,7 @@ julia> eltypes(df)
  String
 
 julia> categorical!(df) # change all columns to be categorical
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ A │ X │
