@@ -21,7 +21,7 @@ julia&gt; cv = CategoricalArray(v)
 
 julia&gt; cv = CategoricalArray([&quot;Group A&quot;, missing, &quot;Group A&quot;,
                               &quot;Group B&quot;, &quot;Group B&quot;, missing])
-6-element CategoricalArrays.CategoricalArray{Union{Missings.Missing, String},1,UInt32}:
+6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt32}:
  &quot;Group A&quot;
  missing
  &quot;Group A&quot;
@@ -39,7 +39,7 @@ julia&gt; levels(cv)
  &quot;Group A&quot;
 
 julia&gt; sort(cv)
-6-element CategoricalArrays.CategoricalArray{Union{Missings.Missing, String},1,UInt32}:
+6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt32}:
  &quot;Group B&quot;
  &quot;Group B&quot;
  &quot;Group A&quot;
@@ -47,7 +47,7 @@ julia&gt; sort(cv)
  missing
  missing
 </code></pre><p>By default, a <code>CategoricalArray</code> is able to represent 2&lt;sup&gt;32&lt;/sup&gt;differents levels. You can use less memory by calling the <code>compress</code> function:</p><pre><code class="language-julia-repl">julia&gt; cv = compress(cv)
-6-element CategoricalArrays.CategoricalArray{Union{Missings.Missing, String},1,UInt8}:
+6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt8}:
  &quot;Group A&quot;
  missing
  &quot;Group A&quot;
@@ -58,7 +58,7 @@ julia&gt; sort(cv)
 
 julia&gt; df = DataFrame(A = [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;D&quot;, &quot;A&quot;],
                       B = [&quot;X&quot;, &quot;X&quot;, &quot;X&quot;, &quot;Y&quot;, &quot;Y&quot;, &quot;Y&quot;])
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ A │ X │
@@ -74,7 +74,7 @@ julia&gt; eltypes(df)
  String
 
 julia&gt; categorical!(df, :A) # change the column `:A` to be categorical
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ A │ X │
@@ -90,7 +90,7 @@ julia&gt; eltypes(df)
  String
 
 julia&gt; categorical!(df) # change all columns to be categorical
-6×2 DataFrames.DataFrame
+6×2 DataFrame
 │ Row │ A │ B │
 ├─────┼───┼───┤
 │ 1   │ A │ X │

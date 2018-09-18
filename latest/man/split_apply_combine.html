@@ -4,7 +4,7 @@
 julia&gt; iris = CSV.read(joinpath(dirname(pathof(DataFrames)), &quot;../test/data/iris.csv&quot;));
 
 julia&gt; head(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼─────────┤
 │ 1   │ 5.1         │ 3.5        │ 1.4         │ 0.2        │ setosa  │
@@ -15,7 +15,7 @@ julia&gt; head(iris)
 │ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa  │
 
 julia&gt; tail(iris)
-6×5 DataFrames.DataFrame
+6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species   │
 ├─────┼─────────────┼────────────┼─────────────┼────────────┼───────────┤
 │ 1   │ 6.7         │ 3.3        │ 5.7         │ 2.5        │ virginica │
@@ -27,15 +27,15 @@ julia&gt; tail(iris)
 
 
 julia&gt; by(iris, :Species, size)
-3×2 DataFrames.DataFrame
+3×2 DataFrame
 │ Row │ Species    │ x1      │
 ├─────┼────────────┼─────────┤
 │ 1   │ setosa     │ (50, 5) │
 │ 2   │ versicolor │ (50, 5) │
 │ 3   │ virginica  │ (50, 5) │
 
-julia&gt; by(iris, :Species, df -&gt; mean(df[:PetalLength]))
-3×2 DataFrames.DataFrame
+julia&gt; by(iris, :Species, df -&gt; mean(df.PetalLength))
+3×2 DataFrame
 │ Row │ Species    │ x1    │
 ├─────┼────────────┼───────┤
 │ 1   │ setosa     │ 1.462 │
@@ -43,23 +43,23 @@ julia&gt; by(iris, :Species, df -&gt; mean(df[:PetalLength]))
 │ 3   │ virginica  │ 5.552 │
 
 julia&gt; by(iris, :Species, df -&gt; DataFrame(N = size(df, 1)))
-3×2 DataFrames.DataFrame
+3×2 DataFrame
 │ Row │ Species    │ N  │
 ├─────┼────────────┼────┤
 │ 1   │ setosa     │ 50 │
 │ 2   │ versicolor │ 50 │
 │ 3   │ virginica  │ 50 │
 </code></pre><p>The <code>by</code> function also support the <code>do</code> block form:</p><pre><code class="language-julia-repl">julia&gt; by(iris, :Species) do df
-          DataFrame(m = mean(df[:PetalLength]), s² = var(df[:PetalLength]))
+          DataFrame(m = mean(df.PetalLength), s² = var(df.PetalLength))
        end
-3×3 DataFrames.DataFrame
+3×3 DataFrame
 │ Row │ Species    │ m     │ s²        │
 ├─────┼────────────┼───────┼───────────┤
 │ 1   │ setosa     │ 1.462 │ 0.0301592 │
 │ 2   │ versicolor │ 4.26  │ 0.220816  │
 │ 3   │ virginica  │ 5.552 │ 0.304588  │
 </code></pre><p>A second approach to the Split-Apply-Combine strategy is implemented in the <code>aggregate</code> function, which also takes three arguments: (1) a DataFrame, (2) one or more columns to split the DataFrame on, and (3) one or more functions that are used to compute a summary of each subset of the DataFrame. Each function is applied to each column that was not used to split the DataFrame, creating new columns of the form <code>$name_$function</code>. For named functions like <code>mean</code> this will produce columns with names like <code>SepalLength_mean</code>. For anonymous functions like <code>x -&gt; sqrt(x)^e</code>, which Julia tracks and references by a numerical identifier e.g. <code>#12</code>, the produced columns will be <code>SepalLength_#12</code>. We show several examples of the <code>aggregate</code> function applied to the <code>iris</code> dataset below:</p><pre><code class="language-julia-repl">julia&gt; aggregate(iris, :Species, length)
-3×5 DataFrames.DataFrame
+3×5 DataFrame
 │ Row │ Species    │ SepalLength_length │ SepalWidth_length │ PetalLength_length │ PetalWidth_length │
 ├─────┼────────────┼────────────────────┼───────────────────┼────────────────────┼───────────────────┤
 │ 1   │ setosa     │ 50                 │ 50                │ 50                 │ 50                │
@@ -67,7 +67,7 @@ julia&gt; by(iris, :Species, df -&gt; DataFrame(N = size(df, 1)))
 │ 3   │ virginica  │ 50                 │ 50                │ 50                 │ 50                │
 
 julia&gt; aggregate(iris, :Species, [sum, mean])
-3×9 DataFrames.DataFrame
+3×9 DataFrame
 │ Row │ Species    │ SepalLength_sum │ SepalWidth_sum │ PetalLength_sum │ PetalWidth_sum │ SepalLength_mean │ SepalWidth_mean │ PetalLength_mean │ PetalWidth_mean │
 ├─────┼────────────┼─────────────────┼────────────────┼─────────────────┼────────────────┼──────────────────┼─────────────────┼──────────────────┼─────────────────┤
 │ 1   │ setosa     │ 250.3           │ 171.4          │ 73.1            │ 12.3           │ 5.006            │ 3.428           │ 1.462            │ 0.246           │
