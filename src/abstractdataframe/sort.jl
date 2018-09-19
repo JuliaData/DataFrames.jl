@@ -369,7 +369,7 @@ julia> sort(df, (:x, order(:y, rev=true)))
 │ 2   │ 1     │ b      │
 │ 3   │ 2     │ a      │
 │ 4   │ 3     │ b      │
-````
+```
 """
 sort(::AbstractDataFrame, ::Any)
 
@@ -428,7 +428,7 @@ julia> sortperm(df, (:x, :y), rev=true)
   4
   3
   1
-````
+```
 """
 sortperm(::AbstractDataFrame, ::Any)
 

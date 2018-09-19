@@ -67,7 +67,7 @@ julia> sort!(df, (:x, order(:y, rev=true)))
 │ 2   │ 1     │ b      │
 │ 3   │ 2     │ a      │
 │ 4   │ 3     │ b      │
-````
+```
 """
 function Base.sort!(df::DataFrame, cols_new=[]; cols=[], alg=nothing,
                     lt=isless, by=identity, rev=false, order=Forward)
