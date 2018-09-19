@@ -1,6 +1,8 @@
 # Querying frameworks
 
-The [Query.jl](https://github.com/queryverse/Query.jl) package provides advanced data manipulation capabilities for `DataFrames` (and many other data structures). This section provides a short introduction to the package, the [Query.jl documentation](http://www.queryverse.org/Query.jl/stable/) has a more comprehensive documentation of the package.
+## Query.jl
+
+The [Query.jl](https://github.com/queryverse/Query.jl) package provides advanced data manipulation capabilities for `DataFrame`s (and many other data structures). This section provides a short introduction to the package, the [Query.jl documentation](http://www.queryverse.org/Query.jl/stable/) has a more comprehensive documentation of the package.
 
 To get started, install the Query.jl package:
 
@@ -20,11 +22,12 @@ julia> df = DataFrame(name=["John", "Sally", "Roger"],
                       age=[54., 34., 79.],
                       children=[0, 2, 4])
 3×3 DataFrame
-│ Row │ name  │ age  │ children │
-├─────┼───────┼──────┼──────────┤
-│ 1   │ John  │ 54.0 │ 0        │
-│ 2   │ Sally │ 34.0 │ 2        │
-│ 3   │ Roger │ 79.0 │ 4        │
+│ Row │ name   │ age     │ children │
+│     │ String │ Float64 │ Int64    │
+├─────┼────────┼─────────┼──────────┤
+│ 1   │ John   │ 54.0    │ 0        │
+│ 2   │ Sally  │ 34.0    │ 2        │
+│ 3   │ Roger  │ 79.0    │ 4        │
 
 julia> q1 = @from i in df begin
             @where i.age > 40
@@ -32,11 +35,11 @@ julia> q1 = @from i in df begin
             @collect DataFrame
        end
 2×2 DataFrame
-│ Row │ number_of_children │ name  │
-├─────┼────────────────────┼───────┤
-│ 1   │ 0                  │ John  │
-│ 2   │ 4                  │ Roger │
-
+│ Row │ number_of_children │ name   │
+│     │ Int64              │ String │
+├─────┼────────────────────┼────────┤
+│ 1   │ 0                  │ John   │
+│ 2   │ 4                  │ Roger  │
 ```
 
 The query starts with the `@from` macro. The first argument `i` is the name of the range variable that will be used to refer to an individual row in later query commands. The next argument `df` is the data source that one wants to query. The `@where` command in this query will filter the source data by applying the filter condition `i.age > 40`. This filters out any rows in which the `age` column is not larger than 40. The `@select` command then projects the columns of the source data onto a new column structure. The example here applies three specific modifications: 1) it only keeps a subset of the columns in the source `DataFrame`, i.e. the `age` column will not be part of the transformed data; 2) it changes the order of the two columns that are selected; and 3) it renames one of the columns that is selected from `children` to `number_of_children`. The example query uses the `{}` syntax to achieve this. A `{}` in a Query.jl expression instantiates a new [NamedTuple](https://github.com/blackrock/NamedTuples.jl), i.e. it is a shortcut for writing `@NT(number_of_children=>i.children, name=>i.name)`. The `@collect` statement determines the data structure that the query returns. In this example the results are returned as a `DataFrame`.
@@ -58,7 +61,7 @@ julia> total_children = 0
 0
 
 julia> for i in q2
-           total_children += i.number_of_children
+           global total_children += i.number_of_children
        end
 
 julia> total_children
@@ -91,3 +94,41 @@ julia> q3 = @from i in df begin
 A query that ends with a `@collect` statement without a specific type will materialize the query results into an array. Note also the difference in the `@select` statement: The previous queries all used the `{}` syntax in the `@select` statement to project results into a tabular format. The last query instead just selects a single value from each row in the `@select` statement.
 
 These examples only scratch the surface of what one can do with [Query.jl](https://github.com/queryverse/Query.jl), and the interested reader is referred to the [Query.jl documentation](http://www.queryverse.org/Query.jl/stable/) for more information.
+
+## DataFramesMeta.jl
+
+The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package provides a macro based interface allowing to work with `DataFrame`s.
+
+First install the DataFramesMeta.jl package:
+
+```julia
+using Pkg
+Pkg.add("DataFramesMeta")
+```
+
+Here is a minimal example of usage of the package:
+
+```jldoctest dataframesmeta
+julia> using DataFrames, DataFramesMeta
+
+julia> df = DataFrame(name=["John", "Sally", "Roger"],
+                      age=[54., 34., 79.],
+                      children=[0, 2, 4])
+3×3 DataFrame
+│ Row │ name   │ age     │ children │
+│     │ String │ Float64 │ Int64    │
+├─────┼────────┼─────────┼──────────┤
+│ 1   │ John   │ 54.0    │ 0        │
+│ 2   │ Sally  │ 34.0    │ 2        │
+│ 3   │ Roger  │ 79.0    │ 4        │
+
+julia> @linq df |>
+       where(:age .> 40) |>
+       select(number_of_children=:children, :name)
+2×2 DataFrame
+│ Row │ number_of_children │ name   │
+│     │ Int64              │ String │
+├─────┼────────────────────┼────────┤
+│ 1   │ 0                  │ John   │
+│ 2   │ 4                  │ Roger  │
+```

@@ -652,19 +652,21 @@ returns `true`. The function is passed a `DataFrameRow` as its only argument.
 ```
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 4×2 DataFrame
-│ Row │ x │ y │
-├─────┼───┼───┤
-│ 1   │ 3 │ b │
-│ 2   │ 1 │ c │
-│ 3   │ 2 │ a │
-│ 4   │ 1 │ b │
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 1     │ c      │
+│ 3   │ 2     │ a      │
+│ 4   │ 1     │ b      │
 
 julia> filter(row -> row[:x] > 1, df)
 2×2 DataFrame
-│ Row │ x │ y │
-├─────┼───┼───┤
-│ 1   │ 3 │ b │
-│ 2   │ 2 │ a │
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 2     │ a      │
 ```
 """
 Base.filter(f, df::AbstractDataFrame) = df[collect(f(r)::Bool for r in eachrow(df)), :]
@@ -679,21 +681,23 @@ The function is passed a `DataFrameRow` as its only argument.
 ```
 julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
 4×2 DataFrame
-│ Row │ x │ y │
-├─────┼───┼───┤
-│ 1   │ 3 │ b │
-│ 2   │ 1 │ c │
-│ 3   │ 2 │ a │
-│ 4   │ 1 │ b │
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 1     │ c      │
+│ 3   │ 2     │ a      │
+│ 4   │ 1     │ b      │
 
 julia> filter!(row -> row[:x] > 1, df);
 
 julia> df
 2×2 DataFrame
-│ Row │ x │ y │
-├─────┼───┼───┤
-│ 1   │ 3 │ b │
-│ 2   │ 2 │ a │
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 2     │ a      │
 ```
 """
 Base.filter!(f, df::AbstractDataFrame) =
@@ -881,31 +885,20 @@ different order. In such cases the order of names in the first passed
 # Example
 ```jldoctest
 julia> df1 = DataFrame(A=1:3, B=1:3);
+
 julia> df2 = DataFrame(A=4:6, B=4:6);
+
 julia> vcat(df1, df2)
 6×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ 1 │
-│ 2   │ 2 │ 2 │
-│ 3   │ 3 │ 3 │
-│ 4   │ 4 │ 4 │
-│ 5   │ 5 │ 5 │
-│ 6   │ 6 │ 6 │
-
-
-julia> df1 = DataFrame(A=1:3, B=1:3);
-julia> df2 = DataFrame(B=4:6, A=4:6);
-julia> vcat(df1, df2)
-6×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ 1 │
-│ 2   │ 2 │ 2 │
-│ 3   │ 3 │ 3 │
-│ 4   │ 4 │ 4 │
-│ 5   │ 5 │ 5 │
-│ 6   │ 6 │ 6 │
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 4     │ 4     │
+│ 5   │ 5     │ 5     │
+│ 6   │ 6     │ 6     │
 ```
 """
 Base.vcat(df::AbstractDataFrame) = df

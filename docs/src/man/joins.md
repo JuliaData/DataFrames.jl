@@ -7,17 +7,19 @@ julia> using DataFrames
 
 julia> names = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
 2×2 DataFrame
-│ Row │ ID │ Name     │
-├─────┼────┼──────────┤
-│ 1   │ 20 │ John Doe │
-│ 2   │ 40 │ Jane Doe │
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 20    │ John Doe │
+│ 2   │ 40    │ Jane Doe │
 
 julia> jobs = DataFrame(ID = [20, 40], Job = ["Lawyer", "Doctor"])
 2×2 DataFrame
-│ Row │ ID │ Job    │
-├─────┼────┼────────┤
-│ 1   │ 20 │ Lawyer │
-│ 2   │ 40 │ Doctor │
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 20    │ Lawyer │
+│ 2   │ 40    │ Doctor │
 
 ```
 
@@ -26,10 +28,11 @@ We might want to work with a larger data set that contains both the names and jo
 ```jldoctest joins
 julia> join(names, jobs, on = :ID)
 2×3 DataFrame
-│ Row │ ID │ Name     │ Job    │
-├─────┼────┼──────────┼────────┤
-│ 1   │ 20 │ John Doe │ Lawyer │
-│ 2   │ 40 │ Jane Doe │ Doctor │
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String   │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 20    │ John Doe │ Lawyer │
+│ 2   │ 40    │ Jane Doe │ Doctor │
 
 ```
 
@@ -52,64 +55,72 @@ You can control the kind of join that `join` performs using the `kind` keyword a
 ```jldoctest joins
 julia> jobs = DataFrame(ID = [20, 60], Job = ["Lawyer", "Astronaut"])
 2×2 DataFrame
-│ Row │ ID │ Job       │
-├─────┼────┼───────────┤
-│ 1   │ 20 │ Lawyer    │
-│ 2   │ 60 │ Astronaut │
+│ Row │ ID    │ Job       │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 20    │ Lawyer    │
+│ 2   │ 60    │ Astronaut │
 
 julia> join(names, jobs, on = :ID, kind = :inner)
 1×3 DataFrame
-│ Row │ ID │ Name     │ Job    │
-├─────┼────┼──────────┼────────┤
-│ 1   │ 20 │ John Doe │ Lawyer │
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String   │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 20    │ John Doe │ Lawyer │
 
 julia> join(names, jobs, on = :ID, kind = :left)
 2×3 DataFrame
-│ Row │ ID │ Name     │ Job     │
-├─────┼────┼──────────┼─────────┤
-│ 1   │ 20 │ John Doe │ Lawyer  │
-│ 2   │ 40 │ Jane Doe │ missing │
+│ Row │ ID    │ Name     │ Job     │
+│     │ Int64 │ String   │ String⍰ │
+├─────┼───────┼──────────┼─────────┤
+│ 1   │ 20    │ John Doe │ Lawyer  │
+│ 2   │ 40    │ Jane Doe │ missing │
 
 julia> join(names, jobs, on = :ID, kind = :right)
 2×3 DataFrame
-│ Row │ ID │ Name     │ Job       │
-├─────┼────┼──────────┼───────────┤
-│ 1   │ 20 │ John Doe │ Lawyer    │
-│ 2   │ 60 │ missing  │ Astronaut │
+│ Row │ ID    │ Name     │ Job       │
+│     │ Int64 │ String⍰  │ String    │
+├─────┼───────┼──────────┼───────────┤
+│ 1   │ 20    │ John Doe │ Lawyer    │
+│ 2   │ 60    │ missing  │ Astronaut │
 
 julia> join(names, jobs, on = :ID, kind = :outer)
 3×3 DataFrame
-│ Row │ ID │ Name        │ Job       │
-├─────┼────┼─────────────┼───────────┤
-│ 1   │ 20 │ John Doe    │ Lawyer    │
-│ 2   │ 40 │ Jane Doe    │ missing   │
-│ 3   │ 60 │ missing     │ Astronaut │
+│ Row │ ID    │ Name     │ Job       │
+│     │ Int64 │ String⍰  │ String⍰   │
+├─────┼───────┼──────────┼───────────┤
+│ 1   │ 20    │ John Doe │ Lawyer    │
+│ 2   │ 40    │ Jane Doe │ missing   │
+│ 3   │ 60    │ missing  │ Astronaut │
 
 julia> join(names, jobs, on = :ID, kind = :semi)
 1×2 DataFrame
-│ Row │ ID │ Name     │
-├─────┼────┼──────────┤
-│ 1   │ 20 │ John Doe │
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 20    │ John Doe │
 
 julia> join(names, jobs, on = :ID, kind = :anti)
 1×2 DataFrame
-│ Row │ ID │ Name     │
-├─────┼────┼──────────┤
-│ 1   │ 40 │ Jane Doe │
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 40    │ Jane Doe │
 
 ```
 
 Cross joins are the only kind of join that does not use a key:
 
 ```jldoctest joins
-julia> join(names, jobs, kind = :cross)
+julia> join(names, jobs, kind = :cross, makeunique=true)
 4×4 DataFrame
-│ Row │ ID │ Name     │ ID_1 │ Job       │
-├─────┼────┼──────────┼──────┼───────────┤
-│ 1   │ 20 │ John Doe │ 20   │ Lawyer    │
-│ 2   │ 20 │ John Doe │ 60   │ Astronaut │
-│ 3   │ 40 │ Jane Doe │ 20   │ Lawyer    │
-│ 4   │ 40 │ Jane Doe │ 60   │ Astronaut │
+│ Row │ ID    │ Name     │ ID_1  │ Job       │
+│     │ Int64 │ String   │ Int64 │ String    │
+├─────┼───────┼──────────┼───────┼───────────┤
+│ 1   │ 20    │ John Doe │ 20    │ Lawyer    │
+│ 2   │ 20    │ John Doe │ 60    │ Astronaut │
+│ 3   │ 40    │ Jane Doe │ 20    │ Lawyer    │
+│ 4   │ 40    │ Jane Doe │ 60    │ Astronaut │
 
 ```
 
@@ -118,31 +129,35 @@ In order to join data tables on keys which have different names, you must first 
 ```jldoctest joins
 julia> a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
 2×2 DataFrame
-│ Row │ ID │ Name     │
-├─────┼────┼──────────┤
-│ 1   │ 20 │ John Doe │
-│ 2   │ 40 │ Jane Doe │
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 20    │ John Doe │
+│ 2   │ 40    │ Jane Doe │
 
 julia> b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
 2×2 DataFrame
 │ Row │ IDNew │ Job    │
+│     │ Int64 │ String │
 ├─────┼───────┼────────┤
 │ 1   │ 20    │ Lawyer │
 │ 2   │ 40    │ Doctor │
 
 julia> rename!(b, :IDNew => :ID)
 2×2 DataFrame
-│ Row │ ID │ Job    │
-├─────┼────┼────────┤
-│ 1   │ 20 │ Lawyer │
-│ 2   │ 40 │ Doctor │
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 20    │ Lawyer │
+│ 2   │ 40    │ Doctor │
 
 julia> join(a, b, on = :ID, kind = :inner)
 2×3 DataFrame
-│ Row │ ID │ Name     │ Job    │
-├─────┼────┼──────────┼────────┤
-│ 1   │ 20 │ John Doe │ Lawyer │
-│ 2   │ 40 │ Jane Doe │ Doctor │
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String   │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 20    │ John Doe │ Lawyer │
+│ 2   │ 40    │ Jane Doe │ Doctor │
 
 ```
 
@@ -154,6 +169,7 @@ julia> a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New Y
                      Category = [1, 2, 3, 4, 5])
 5×3 DataFrame
 │ Row │ City      │ Job    │ Category │
+│     │ String    │ String │ Int64    │
 ├─────┼───────────┼────────┼──────────┤
 │ 1   │ Amsterdam │ Lawyer │ 1        │
 │ 2   │ London    │ Lawyer │ 2        │
@@ -165,36 +181,39 @@ julia> b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "N
                      Work = ["Lawyer", "Lawyer", "Lawyer", "Doctor", "Doctor"],
                      Name = ["a", "b", "c", "d", "e"])
 5×3 DataFrame
-│ Row │ Location  │ Work   │ Name │
-├─────┼───────────┼────────┼──────┤
-│ 1   │ Amsterdam │ Lawyer │ a    │
-│ 2   │ London    │ Lawyer │ b    │
-│ 3   │ London    │ Lawyer │ c    │
-│ 4   │ New York  │ Doctor │ d    │
-│ 5   │ New York  │ Doctor │ e    │
+│ Row │ Location  │ Work   │ Name   │
+│     │ String    │ String │ String │
+├─────┼───────────┼────────┼────────┤
+│ 1   │ Amsterdam │ Lawyer │ a      │
+│ 2   │ London    │ Lawyer │ b      │
+│ 3   │ London    │ Lawyer │ c      │
+│ 4   │ New York  │ Doctor │ d      │
+│ 5   │ New York  │ Doctor │ e      │
 
 julia> rename!(b, :Location => :City, :Work => :Job)
 5×3 DataFrame
-│ Row │ City      │ Job    │ Name │
-├─────┼───────────┼────────┼──────┤
-│ 1   │ Amsterdam │ Lawyer │ a    │
-│ 2   │ London    │ Lawyer │ b    │
-│ 3   │ London    │ Lawyer │ c    │
-│ 4   │ New York  │ Doctor │ d    │
-│ 5   │ New York  │ Doctor │ e    │
+│ Row │ City      │ Job    │ Name   │
+│     │ String    │ String │ String │
+├─────┼───────────┼────────┼────────┤
+│ 1   │ Amsterdam │ Lawyer │ a      │
+│ 2   │ London    │ Lawyer │ b      │
+│ 3   │ London    │ Lawyer │ c      │
+│ 4   │ New York  │ Doctor │ d      │
+│ 5   │ New York  │ Doctor │ e      │
 
 julia> join(a, b, on = [:City, :Job])
 9×4 DataFrame
-│ Row │ City      │ Job    │ Category │ Name │
-├─────┼───────────┼────────┼──────────┼──────┤
-│ 1   │ Amsterdam │ Lawyer │ 1        │ a    │
-│ 2   │ London    │ Lawyer │ 2        │ b    │
-│ 3   │ London    │ Lawyer │ 2        │ c    │
-│ 4   │ London    │ Lawyer │ 3        │ b    │
-│ 5   │ London    │ Lawyer │ 3        │ c    │
-│ 6   │ New York  │ Doctor │ 4        │ d    │
-│ 7   │ New York  │ Doctor │ 4        │ e    │
-│ 8   │ New York  │ Doctor │ 5        │ d    │
-│ 9   │ New York  │ Doctor │ 5        │ e    │
+│ Row │ City      │ Job    │ Category │ Name   │
+│     │ String    │ String │ Int64    │ String │
+├─────┼───────────┼────────┼──────────┼────────┤
+│ 1   │ Amsterdam │ Lawyer │ 1        │ a      │
+│ 2   │ London    │ Lawyer │ 2        │ b      │
+│ 3   │ London    │ Lawyer │ 2        │ c      │
+│ 4   │ London    │ Lawyer │ 3        │ b      │
+│ 5   │ London    │ Lawyer │ 3        │ c      │
+│ 6   │ New York  │ Doctor │ 4        │ d      │
+│ 7   │ New York  │ Doctor │ 4        │ e      │
+│ 8   │ New York  │ Doctor │ 5        │ d      │
+│ 9   │ New York  │ Doctor │ 5        │ e      │
 
 ```

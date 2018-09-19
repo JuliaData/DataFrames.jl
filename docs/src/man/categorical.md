@@ -101,14 +101,15 @@ julia> using DataFrames
 julia> df = DataFrame(A = ["A", "B", "C", "D", "D", "A"],
                       B = ["X", "X", "X", "Y", "Y", "Y"])
 6×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ A │ X │
-│ 2   │ B │ X │
-│ 3   │ C │ X │
-│ 4   │ D │ Y │
-│ 5   │ D │ Y │
-│ 6   │ A │ Y │
+│ Row │ A      │ B      │
+│     │ String │ String │
+├─────┼────────┼────────┤
+│ 1   │ A      │ X      │
+│ 2   │ B      │ X      │
+│ 3   │ C      │ X      │
+│ 4   │ D      │ Y      │
+│ 5   │ D      │ Y      │
+│ 6   │ A      │ Y      │
 
 julia> eltypes(df)
 2-element Array{Type,1}:
@@ -117,14 +118,15 @@ julia> eltypes(df)
 
 julia> categorical!(df, :A) # change the column `:A` to be categorical
 6×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ A │ X │
-│ 2   │ B │ X │
-│ 3   │ C │ X │
-│ 4   │ D │ Y │
-│ 5   │ D │ Y │
-│ 6   │ A │ Y │
+│ Row │ A            │ B      │
+│     │ Categorical… │ String │
+├─────┼──────────────┼────────┤
+│ 1   │ A            │ X      │
+│ 2   │ B            │ X      │
+│ 3   │ C            │ X      │
+│ 4   │ D            │ Y      │
+│ 5   │ D            │ Y      │
+│ 6   │ A            │ Y      │
 
 julia> eltypes(df)
 2-element Array{Type,1}:
@@ -133,14 +135,15 @@ julia> eltypes(df)
 
 julia> categorical!(df) # change all columns to be categorical
 6×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ A │ X │
-│ 2   │ B │ X │
-│ 3   │ C │ X │
-│ 4   │ D │ Y │
-│ 5   │ D │ Y │
-│ 6   │ A │ Y │
+│ Row │ A            │ B            │
+│     │ Categorical… │ Categorical… │
+├─────┼──────────────┼──────────────┤
+│ 1   │ A            │ X            │
+│ 2   │ B            │ X            │
+│ 3   │ C            │ X            │
+│ 4   │ D            │ Y            │
+│ 5   │ D            │ Y            │
+│ 6   │ A            │ Y            │
 
 julia> eltypes(df)
 2-element Array{Type,1}:

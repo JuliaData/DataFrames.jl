@@ -130,9 +130,10 @@ Rows can then be added as tuples or vectors, where the order of elements matches
 ```jldoctest dataframe
 julia> push!(df, (1, "M"))
 1×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ M      │
 
 julia> push!(df, [2, "N"])
 2×2 DataFrame
@@ -388,12 +389,13 @@ We can also apply a function to each column of a `DataFrame` with the `colwise` 
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
-│ Row │ A │ B   │
-├─────┼───┼─────┤
-│ 1   │ 1 │ 4.0 │
-│ 2   │ 2 │ 3.0 │
-│ 3   │ 3 │ 2.0 │
-│ 4   │ 4 │ 1.0 │
+│ Row │ A     │ B       │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 1     │ 4.0     │
+│ 2   │ 2     │ 3.0     │
+│ 3   │ 3     │ 2.0     │
+│ 4   │ 4     │ 1.0     │
 
 julia> colwise(sum, df)
 2-element Array{Real,1}:
