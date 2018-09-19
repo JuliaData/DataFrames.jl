@@ -97,7 +97,7 @@ These examples only scratch the surface of what one can do with [Query.jl](https
 
 ## DataFramesMeta.jl
 
-The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package provides a macro based interface allowing to work with `DataFrame`s.
+The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package provides a macro-based interface allowing to work with `DataFrame`s.
 
 First install the DataFramesMeta.jl package:
 

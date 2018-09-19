@@ -112,7 +112,7 @@ julia> join(names, jobs, on = :ID, kind = :anti)
 Cross joins are the only kind of join that does not use a key:
 
 ```jldoctest joins
-julia> join(names, jobs, kind = :cross, makeunique=true)
+julia> join(names, jobs, kind = :cross, makeunique = true)
 4×4 DataFrame
 │ Row │ ID    │ Name     │ ID_1  │ Job       │
 │     │ Int64 │ String   │ Int64 │ String    │
