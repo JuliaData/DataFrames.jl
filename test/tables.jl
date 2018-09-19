@@ -107,7 +107,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         df = dn |> DataFrame
         @test size(df) == (3, 3)
         @test names(df) == [:a, :a_1, :b]
-        @test DataFrame(dn; makeunique=false) == DataFrame(dn; makeunique=true)
+        @test DataFrame(dn) == DataFrame(dn)
 
         # non-Tables.jl constructor fallbacks
         nt = (a=1, b=:a, c=missing)
