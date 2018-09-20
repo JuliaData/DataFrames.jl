@@ -200,7 +200,7 @@ end
 function _combine(first::AbstractDataFrame, f::Function, gd::GroupedDataFrame)
     m = size(first, 2)
     idx = Vector{Int}()
-    initialcols = ntuple(i -> Vector{eltype(first[i])}(), m)
+    initialcols = ntuple(i -> similar(first[i], 0), m)
     cols = _combine!(first, initialcols, idx, 1, 1, f, gd, names(first))
     valscat = DataFrame(collect(cols), names(first))
     idx, valscat
@@ -254,8 +254,8 @@ function _combine!(first::NamedTuple, cols::NTuple{N, AbstractVector}, idx::Vect
                     if S <: T
                         return cols[k]
                     else
-                        return copyto!(Vector{promote_type(S, T)}(undef, len), 1,
-                                    cols[k], 1, k >= j ? i-1 : i)
+                        return copyto!(similar(cols[k], promote_type(S, T)), 1,
+                                       cols[k], 1, k >= j ? i-1 : i)
                     end
                 end
             end
