@@ -358,15 +358,15 @@ julia> using DataFrames
 
 julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
 
-julia> DataFrames.showrows(stdout, df, 1:2, 3:3, [1, 1, 5], false, true, :Row, true)
-
+julia> DataFrames.showrows(stdout, df, 1:2, 3:3, [5, 6, 3], false, true, :Row, true)
 3×2 DataFrame
-│ Row   │ A │ B │
-├───────┼───┼───┤
-│ 1     │ 1 │ x │
-│ 2     │ 2 │ y │
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ x      │
+│ 2   │ 2     │ y      │
 ⋮
-│ 3     │ 3 │ z │
+│ 3   │ 3     │ z      │
 ```
 """
 function showrows(io::IO,
@@ -531,11 +531,12 @@ julia> df = DataFrame(A = 1:3, B = ["x", "y", "z"]);
 
 julia> show(df, allcols=true)
 3×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ x │
-│ 2   │ 2 │ y │
-│ 3   │ 3 │ z │
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ x      │
+│ 2   │ 2     │ y      │
+│ 3   │ 3     │ z      │
 ```
 """
 function Base.show(io::IO,
