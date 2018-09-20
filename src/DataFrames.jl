@@ -94,4 +94,6 @@ include("dataframe/sort.jl")
 
 include("deprecated.jl")
 
+include("other/tables.jl")
+
 end # module DataFrames

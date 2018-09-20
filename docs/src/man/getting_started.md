@@ -161,6 +161,27 @@ Note that constructing a `DataFrame` row by row is significantly less performant
 constructing it all at once, or column by column. For many use-cases this will not matter,
 but for very large `DataFrame`s  this may be a consideration.
 
+### Constructing from another table type
+
+DataFrames supports the [Tables.jl](https://github.com/JuliaData/Tables.jl) interface for
+interacting with tabular data. This means that a DataFrame can be used as a "source"
+to any package that expects a Tables.jl interface input, (file format packages,
+data manipulation packages, etc.). A DataFrame can also be a sink for any Tables.jl
+interface input. Some example uses are:
+
+```julia
+df = DataFrame(a=[1, 2, 3], b=[:a, :b, :c])
+
+# write DataFrame out to csv file
+CSV.write(df, "dataframe.csv")
+
+# store DataFrame in an SQLite database table
+SQLite.load!(df, db, "dataframe_table")
+
+# transform a DataFrame through Query.jl package
+df = df |> @map({a=_.a + 1, _.b}) |> DataFrame
+```
+
 ## Working with Data Frames
 
 ### Examining the Data
