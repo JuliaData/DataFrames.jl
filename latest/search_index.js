@@ -89,6 +89,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "man/getting_started.html#Constructing-from-another-table-type-1",
+    "page": "Getting Started",
+    "title": "Constructing from another table type",
+    "category": "section",
+    "text": "DataFrames supports the Tables.jl interface for interacting with tabular data. This means that a DataFrame can be used as a \"source\" to any package that expects a Tables.jl interface input, (file format packages, data manipulation packages, etc.). A DataFrame can also be a sink for any Tables.jl interface input. Some example uses are:df = DataFrame(a=[1, 2, 3], b=[:a, :b, :c])\n\n# write DataFrame out to csv file\nCSV.write(df, \"dataframe.csv\")\n\n# store DataFrame in an SQLite database table\nSQLite.load!(df, db, \"dataframe_table\")\n\n# transform a DataFrame through Query.jl package\ndf = df |> @map({a=_.a + 1, _.b}) |> DataFrame"
+},
+
+{
     "location": "man/getting_started.html#Working-with-Data-Frames-1",
     "page": "Getting Started",
     "title": "Working with Data Frames",

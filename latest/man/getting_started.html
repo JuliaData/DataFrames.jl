@@ -91,7 +91,16 @@ julia&gt; push!(df, [2, &quot;N&quot;])
 ├─────┼───────┼────────┤
 │ 1   │ 1     │ M      │
 │ 2   │ 2     │ N      │
-│ 3   │ 3     │ F      │</code></pre><p>Note that constructing a <code>DataFrame</code> row by row is significantly less performant than constructing it all at once, or column by column. For many use-cases this will not matter, but for very large <code>DataFrame</code>s  this may be a consideration.</p><h2><a class="nav-anchor" id="Working-with-Data-Frames-1" href="#Working-with-Data-Frames-1">Working with Data Frames</a></h2><h3><a class="nav-anchor" id="Examining-the-Data-1" href="#Examining-the-Data-1">Examining the Data</a></h3><p>The default printing of <code>DataFrame</code> objects only includes a sample of rows and columns that fits on screen:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
+│ 3   │ 3     │ F      │</code></pre><p>Note that constructing a <code>DataFrame</code> row by row is significantly less performant than constructing it all at once, or column by column. For many use-cases this will not matter, but for very large <code>DataFrame</code>s  this may be a consideration.</p><h3><a class="nav-anchor" id="Constructing-from-another-table-type-1" href="#Constructing-from-another-table-type-1">Constructing from another table type</a></h3><p>DataFrames supports the <a href="https://github.com/JuliaData/Tables.jl">Tables.jl</a> interface for interacting with tabular data. This means that a DataFrame can be used as a &quot;source&quot; to any package that expects a Tables.jl interface input, (file format packages, data manipulation packages, etc.). A DataFrame can also be a sink for any Tables.jl interface input. Some example uses are:</p><pre><code class="language-julia">df = DataFrame(a=[1, 2, 3], b=[:a, :b, :c])
+
+# write DataFrame out to csv file
+CSV.write(df, &quot;dataframe.csv&quot;)
+
+# store DataFrame in an SQLite database table
+SQLite.load!(df, db, &quot;dataframe_table&quot;)
+
+# transform a DataFrame through Query.jl package
+df = df |&gt; @map({a=_.a + 1, _.b}) |&gt; DataFrame</code></pre><h2><a class="nav-anchor" id="Working-with-Data-Frames-1" href="#Working-with-Data-Frames-1">Working with Data Frames</a></h2><h3><a class="nav-anchor" id="Examining-the-Data-1" href="#Examining-the-Data-1">Examining the Data</a></h3><p>The default printing of <code>DataFrame</code> objects only includes a sample of rows and columns that fits on screen:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
 500×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
