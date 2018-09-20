@@ -246,14 +246,17 @@ function _combine!(first::NamedTuple, cols::NTuple{N, AbstractVector}, idx::Vect
         row = wrap(f(gd[i]))
         j = fill_row!(row, cols, i, 1, colnames)
         if j !== nothing # Need to widen column type
-            newcols = ntuple(n) do k
-                S = typeof(row[k])
-                T = eltype(cols[k])
-                if S <: T
-                    return cols[k]
-                else
-                    return copyto!(Vector{promote_type(S, T)}(undef, len), 1,
-                                   cols[k], 1, k >= j ? i-1 : i)
+            local newcols
+            let i = i, j = j, cols=cols, row=row # Workaround for julia#15276
+                newcols = ntuple(n) do k
+                    S = typeof(row[k])
+                    T = eltype(cols[k])
+                    if S <: T
+                        return cols[k]
+                    else
+                        return copyto!(Vector{promote_type(S, T)}(undef, len), 1,
+                                    cols[k], 1, k >= j ? i-1 : i)
+                    end
                 end
             end
             return _combine!(row, newcols, idx, i, j, f, gd, colnames)
@@ -303,13 +306,16 @@ function _combine!(first::AbstractDataFrame, cols::NTuple{N, AbstractVector},
         rows = wrap(f(gd[i]))
         j = append_rows!(rows, cols, 1, colnames)
         if j !== nothing # Need to widen column type
-            newcols = ntuple(n) do k
-                S = eltype(rows[k])
-                T = eltype(cols[k])
-                if S <: T
-                    return cols[k]
-                else
-                    return copyto!(similar(cols[k], promote_type(S, T)), cols[k])
+            local newcols
+            let i = i, j = j, cols=cols, rows=rows # Workaround for julia#15276
+                newcols = ntuple(n) do k
+                    S = eltype(rows[k])
+                    T = eltype(cols[k])
+                    if S <: T
+                        return cols[k]
+                    else
+                        return copyto!(similar(cols[k], promote_type(S, T)), cols[k])
+                    end
                 end
             end
             return _combine!(rows, newcols, idx, i, j, f, gd, colnames)
