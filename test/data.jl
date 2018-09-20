@@ -378,4 +378,8 @@ module TestData
     df = DataFrame(x = [3, 1, 2, 1, missing], y = ["b", "c", "a", "b", "c"])
     @test_throws TypeError filter(r -> r[:x] > 1, df)
     @test_throws TypeError filter!(r -> r[:x] > 1, df)
+
+    #test corner case of getindex
+    df = DataFrame(x=[1], y=[1])
+    @test_throws ArgumentError df[true, 1:2]
 end
