@@ -59,14 +59,15 @@ julia&gt; sort(cv)
 julia&gt; df = DataFrame(A = [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;D&quot;, &quot;A&quot;],
                       B = [&quot;X&quot;, &quot;X&quot;, &quot;X&quot;, &quot;Y&quot;, &quot;Y&quot;, &quot;Y&quot;])
 6×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ A │ X │
-│ 2   │ B │ X │
-│ 3   │ C │ X │
-│ 4   │ D │ Y │
-│ 5   │ D │ Y │
-│ 6   │ A │ Y │
+│ Row │ A      │ B      │
+│     │ String │ String │
+├─────┼────────┼────────┤
+│ 1   │ A      │ X      │
+│ 2   │ B      │ X      │
+│ 3   │ C      │ X      │
+│ 4   │ D      │ Y      │
+│ 5   │ D      │ Y      │
+│ 6   │ A      │ Y      │
 
 julia&gt; eltypes(df)
 2-element Array{Type,1}:
@@ -75,14 +76,15 @@ julia&gt; eltypes(df)
 
 julia&gt; categorical!(df, :A) # change the column `:A` to be categorical
 6×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ A │ X │
-│ 2   │ B │ X │
-│ 3   │ C │ X │
-│ 4   │ D │ Y │
-│ 5   │ D │ Y │
-│ 6   │ A │ Y │
+│ Row │ A            │ B      │
+│     │ Categorical… │ String │
+├─────┼──────────────┼────────┤
+│ 1   │ A            │ X      │
+│ 2   │ B            │ X      │
+│ 3   │ C            │ X      │
+│ 4   │ D            │ Y      │
+│ 5   │ D            │ Y      │
+│ 6   │ A            │ Y      │
 
 julia&gt; eltypes(df)
 2-element Array{Type,1}:
@@ -91,14 +93,15 @@ julia&gt; eltypes(df)
 
 julia&gt; categorical!(df) # change all columns to be categorical
 6×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ A │ X │
-│ 2   │ B │ X │
-│ 3   │ C │ X │
-│ 4   │ D │ Y │
-│ 5   │ D │ Y │
-│ 6   │ A │ Y │
+│ Row │ A            │ B            │
+│     │ Categorical… │ Categorical… │
+├─────┼──────────────┼──────────────┤
+│ 1   │ A            │ X            │
+│ 2   │ B            │ X            │
+│ 3   │ C            │ X            │
+│ 4   │ D            │ Y            │
+│ 5   │ D            │ Y            │
+│ 6   │ A            │ Y            │
 
 julia&gt; eltypes(df)
 2-element Array{Type,1}:

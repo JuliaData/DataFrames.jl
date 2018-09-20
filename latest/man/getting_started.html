@@ -73,9 +73,10 @@ julia&gt; size(df)
 </code></pre><h3><a class="nav-anchor" id="Constructing-Row-by-Row-1" href="#Constructing-Row-by-Row-1">Constructing Row by Row</a></h3><p>It is also possible to fill a <code>DataFrame</code> row by row. Let us construct an empty data frame with two columns (note that the first column can only contain integers and the second one can only contain strings):</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = Int[], B = String[])
 0×2 DataFrame</code></pre><p>Rows can then be added as tuples or vectors, where the order of elements matches that of columns:</p><pre><code class="language-julia-repl">julia&gt; push!(df, (1, &quot;M&quot;))
 1×2 DataFrame
-│ Row │ A │ B │
-├─────┼───┼───┤
-│ 1   │ 1 │ M │
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ M      │
 
 julia&gt; push!(df, [2, &quot;N&quot;])
 2×2 DataFrame
@@ -254,16 +255,17 @@ julia&gt; describe(df)
 julia&gt; mean(df.A)
 2.5</code></pre><h3><a class="nav-anchor" id="Column-Wise-Operations-1" href="#Column-Wise-Operations-1">Column-Wise Operations</a></h3><p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>colwise</code> function. For example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
-│ Row │ A │ B   │
-├─────┼───┼─────┤
-│ 1   │ 1 │ 4.0 │
-│ 2   │ 2 │ 3.0 │
-│ 3   │ 3 │ 2.0 │
-│ 4   │ 4 │ 1.0 │
+│ Row │ A     │ B       │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 1     │ 4.0     │
+│ 2   │ 2     │ 3.0     │
+│ 3   │ 3     │ 2.0     │
+│ 4   │ 4     │ 1.0     │
 
 julia&gt; colwise(sum, df)
 2-element Array{Real,1}:
  10
  10.0</code></pre><h2><a class="nav-anchor" id="Importing-and-Exporting-Data-(I/O)-1" href="#Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></h2><p>For reading and writing tabular data from CSV and other delimited text files, use the <a href="https://github.com/JuliaData/CSV.jl">CSV.jl</a> package.</p><p>If you have not used the CSV.jl package before then you may need to install it first:</p><pre><code class="language-julia">using Pkg
 Pkg.add(&quot;CSV&quot;)</code></pre><p>The CSV.jl functions are not loaded automatically and must be imported into the session.</p><pre><code class="language-julia">using CSV</code></pre><p>A dataset can now be read from a CSV file at path <code>input</code> using</p><pre><code class="language-julia">CSV.read(input)</code></pre><p>A DataFrame can be written to a CSV file at path <code>output</code> using</p><pre><code class="language-julia">df = DataFrame(x = 1, y = 2)
-CSV.write(output, df)</code></pre><p>The behavior of CSV functions can be adapted via keyword arguments. For more information, see <code>?CSV.read</code> and <code>CSV.write</code>, or checkout the online <a href="https://juliadata.github.io/CSV.jl/stable/">CSV.jl documentation</a>.</p><footer><hr/><a class="previous" href="../index.html"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="joins.html"><span class="direction">Next</span><span class="title">Joins</span></a></footer></article></body></html>
+CSV.write(output, df)</code></pre><p>The behavior of CSV functions can be adapted via keyword arguments. For more information, see <code>?CSV.read</code> and <code>?CSV.write</code>, or checkout the online <a href="https://juliadata.github.io/CSV.jl/stable/">CSV.jl documentation</a>.</p><footer><hr/><a class="previous" href="../index.html"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="joins.html"><span class="direction">Next</span><span class="title">Joins</span></a></footer></article></body></html>
