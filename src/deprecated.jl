@@ -1330,16 +1330,6 @@ import Base: |>
 @deprecate groupby(cols::Vector{T}; sort::Bool = false, skipmissing::Bool = false) where {T} x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
 @deprecate groupby(cols; sort::Bool = false, skipmissing::Bool = false) x -> groupby(x, cols, sort = sort, skipmissing = skipmissing)
 
-function Base.getindex(x::AbstractIndex, idx::Bool)
-    Base.depwarn("Indexing with Bool values is deprecated except for Vector{Bool}", :getindex)
-    1
-end
-
-function Base.getindex(x::AbstractIndex, idx::Real)
-    Base.depwarn("Indexing with values that are not Integer is deprecated", :getindex)
-    Int(idx)
-end
-
 import Base: vcat
 @deprecate vcat(x::Vector{<:AbstractDataFrame}) vcat(x...)
 
@@ -1370,3 +1360,22 @@ import Base: show
 @deprecate showall(io::IO, df::GroupedDataFrame) show(io, df, allgroups=true)
 @deprecate showall(df::GroupedDataFrame) show(df, allgroups=true)
 
+function Base.getindex(v::RepeatedVector, i::Bool)
+    Base.depwarn("Indexing RepeatedVector with Bool is deprecated", :getindex)
+    v[1]
+end
+
+function Base.getindex(v::RepeatedVector, i::Real)
+    Base.depwarn("Indexing RepeatedVector with Real is deprecated", :getindex)
+    v[Int(i)]
+end
+
+function Base.getindex(v::StackedVector,i::Bool)
+    Base.depwarn("Indexing StackedVector with Bool is deprecated", :getindex)
+    v[1]
+end
+
+function Base.getindex(v::StackedVector,i::Real)
+    Base.depwarn("Indexing StackedVector with Real is deprecated", :getindex)
+    v[Int(i)]
+end

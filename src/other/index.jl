@@ -122,6 +122,7 @@ end
 
 Base.getindex(x::AbstractIndex, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+Base.getindex(x::AbstractIndex, idx::Bool) = throw(ArgumentError("invalid index: $idx of type Bool"))
 Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
 Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
@@ -134,18 +135,14 @@ end
 
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}})
     if any(ismissing, idx)
-        # TODO: this line should be changed to throw an error after deprecation
-        # throw(ArgumentError("missing values are not allowed for column indexing"))
-        Base.depwarn("using missing in column indexing is deprecated", :getindex)
+        throw(ArgumentError("missing values are not allowed for column indexing"))
     end
     getindex(x, collect(Missings.replace(idx, false)))
 end
 
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
-        # TODO: this line should be changed to throw an error after deprecation
-        # throw(ArgumentError("Bool values except for Vector{Bool} are not allowed for column indexing"))
-        Base.depwarn("Indexing with Bool values is deprecated except for Vector{Bool}")
+        throw(ArgumentError("Bool values except for AbstractVector{Bool} are not allowed for column indexing"))
     end
     Vector{Int}(idx)
 end
@@ -155,16 +152,12 @@ end
 function Base.getindex(x::AbstractIndex, idx::AbstractVector)
     idxs = filter(!ismissing, idx)
     if length(idxs) != length(idx)
-        # TODO: passing missing will throw an error after deprecation
-        # throw(ArgumentError("missing values are not allowed for column indexing"))
-        Base.depwarn("using missing in column indexing is deprecated", :getindex)
+        throw(ArgumentError("missing values are not allowed for column indexing"))
     end
     length(idxs) == 0 && return Int[] # special case of empty idxs
     if idxs[1] isa Real
         if !all(v -> v isa Integer && !(v isa Bool), idxs)
-            # TODO: this line should be changed to throw an error after deprecation
-            # throw(ArgumentError("Only Integer values allowed when indexing by vector of numbers"))
-            Base.depwarn("indexing by vector of numbers other than Integer is deprecated", :getindex)
+            throw(ArgumentError("Only Integer values allowed when indexing by vector of numbers"))
         end
         return Vector{Int}(idxs)
     end

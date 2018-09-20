@@ -25,7 +25,7 @@ end
 Base.eltype(::DFRowIterator{T}) where {T} = DataFrameRow{T}
 Base.size(itr::DFRowIterator) = (size(itr.df, 1), )
 Base.length(itr::DFRowIterator) = size(itr.df, 1)
-Base.getindex(itr::DFRowIterator, i::Any) = DataFrameRow(itr.df, i)
+Base.getindex(itr::DFRowIterator, i) = DataFrameRow(itr.df, i)
 Base.map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
 
 # Iteration by columns
@@ -41,7 +41,7 @@ end
 Base.eltype(::DFColumnIterator) = Tuple{Symbol, Any}
 Base.size(itr::DFColumnIterator) = (size(itr.df, 2), )
 Base.length(itr::DFColumnIterator) = size(itr.df, 2)
-Base.getindex(itr::DFColumnIterator, j::Any) = itr.df[:, j]
+Base.getindex(itr::DFColumnIterator, j) = itr.df[j]
 function Base.map(f::Function, dfci::DFColumnIterator)
     # note: `f` must return a consistent length
     res = DataFrame()

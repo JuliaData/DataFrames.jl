@@ -302,7 +302,11 @@ end
 
 # df[:, SingleColumnIndex] => AbstractVector
 # df[:, MultiColumnIndex] => DataFrame
-Base.getindex(df::DataFrame, row_ind::Colon, col_inds) = df[col_inds]
+function Base.getindex(df::DataFrame, row_ind::Colon, col_inds)
+    Base.depwarn("indexing with colon as row will create a copy in the future" *
+                 " use df[col_inds] to get the columns without copying", :getindex)
+    df[col_inds]
+end
 
 # df[SingleRowIndex, :] => DataFrame
 Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col_inds]
@@ -314,7 +318,10 @@ function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::Colon)
 end
 
 # df[:, :] => DataFrame
-Base.getindex(df::DataFrame, ::Colon, ::Colon) = copy(df)
+function Base.getindex(df::DataFrame, ::Colon, ::Colon)
+    Base.depwarn("indexing with colon as row will create a copy of rows in the future", :getindex)
+    copy(df)
+end
 
 ##############################################################################
 ##

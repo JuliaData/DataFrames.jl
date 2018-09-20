@@ -17,9 +17,11 @@ function Base.getindex(r::DataFrameRow, idx::AbstractArray)
     return DataFrameRow(parent(r)[idx], row(r))
 end
 
-function Base.getindex(r::DataFrameRow, idx::Any)
+function Base.getindex(r::DataFrameRow, idx::ColumnIndex)
     return parent(r)[row(r), idx]
 end
+
+Base.getindex(r::DataFrameRow, ::Colon) = r
 
 function Base.setindex!(r::DataFrameRow, value::Any, idx::Any)
     return setindex!(parent(r), value, row(r), idx)

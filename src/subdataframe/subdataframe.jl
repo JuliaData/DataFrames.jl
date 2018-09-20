@@ -131,11 +131,11 @@ index(sdf::SubDataFrame) = index(parent(sdf))
 nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(rows(sdf))::Int : 0
 ncol(sdf::SubDataFrame) = length(index(sdf))
 
-function Base.getindex(sdf::SubDataFrame, colinds::Any)
+function Base.getindex(sdf::SubDataFrame, colinds)
     return parent(sdf)[rows(sdf), colinds]
 end
 
-function Base.getindex(sdf::SubDataFrame, rowinds::Any, colinds::Any)
+function Base.getindex(sdf::SubDataFrame, rowinds, colinds)
     return parent(sdf)[rows(sdf)[rowinds], colinds]
 end
 

@@ -368,7 +368,7 @@ mutable struct StackedVector <: AbstractVector{Any}
     components::Vector{Any}
 end
 
-function Base.getindex(v::StackedVector,i::Real)
+function Base.getindex(v::StackedVector,i::Integer)
     lengths = [length(x)::Int for x in v.components]
     cumlengths = [0; cumsum(lengths)]
     j = searchsortedlast(cumlengths .+ 1, i)
@@ -380,14 +380,6 @@ function Base.getindex(v::StackedVector,i::Real)
         error("indexing bounds error")
     end
     v.components[j][k]
-end
-
-function Base.getindex(v::StackedVector,i::AbstractVector{I}) where I<:Real
-    result = similar(v.components[1], length(i))
-    for idx in 1:length(i)
-        result[idx] = v[i[idx]]
-    end
-    result
 end
 
 Base.size(v::StackedVector) = (length(v),)
@@ -437,24 +429,18 @@ mutable struct RepeatedVector{T} <: AbstractVector{T}
     outer::Int
 end
 
-function Base.getindex(v::RepeatedVector{T},i::AbstractVector{I}) where {T,I<:Real}
-    N = length(v.parent)
-    idx = Int[Base.fld1(mod1(j,v.inner*N),v.inner) for j in i]
-    v.parent[idx]
-end
-function Base.getindex(v::RepeatedVector{T},i::Real) where T
+function Base.getindex(v::RepeatedVector, i::Integer)
     N = length(v.parent)
     idx = Base.fld1(mod1(i,v.inner*N),v.inner)
     v.parent[idx]
 end
-Base.getindex(v::RepeatedVector,i::AbstractRange) = getindex(v, [i;])
 
 Base.size(v::RepeatedVector) = (length(v),)
 Base.length(v::RepeatedVector) = v.inner * v.outer * length(v.parent)
 Base.ndims(v::RepeatedVector) = 1
 Base.eltype(v::RepeatedVector{T}) where {T} = T
 Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.inner, v.outer)
-Base.similar(v::RepeatedVector, T, dims::Dims) = similar(v.parent, T, dims)
+Base.similar(v::RepeatedVector, T::Type, dims::Dims) = similar(v.parent, T, dims)
 Base.unique(v::RepeatedVector) = unique(v.parent)
 
 function CategoricalArrays.CategoricalArray(v::RepeatedVector)
