@@ -155,12 +155,9 @@ function DataFrame(; kwargs...)
     end
 end
 
-function DataFrame(columns::AbstractVector,
+function DataFrame(columns::AbstractVector{<:AbstractVector},
                    cnames::AbstractVector{Symbol}=gennames(length(columns));
                    makeunique::Bool=false)::DataFrame
-    if !all(col -> isa(col, AbstractVector), columns)
-        throw(ArgumentError("columns argument must be a vector of AbstractVector objects"))
-    end
     return DataFrame(convert(Vector{Any}, columns), Index(convert(Vector{Symbol}, cnames),
                      makeunique=makeunique))
 end
