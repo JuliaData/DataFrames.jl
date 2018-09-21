@@ -221,9 +221,12 @@ end
                             "for all groups (got $colnames and $(propertynames(row)))"))
     end
     @inbounds for j in colstart:length(cols)
-        col = cols[j]
         val = row[j]
-        if val isa eltype(col)
+        col = cols[j]
+        S = typeof(val)
+        T = eltype(col)
+        U = promote_type(S, T)
+        if S <: T || U <: T
             col[i] = val
         else
             return j
@@ -251,7 +254,8 @@ function _combine!(first::NamedTuple, cols::NTuple{N, AbstractVector}, idx::Vect
                 newcols = ntuple(n) do k
                     S = typeof(row[k])
                     T = eltype(cols[k])
-                    if S <: T
+                    U = promote_type(S, T)
+                    if S <: T || U <: T
                         cols[k]
                     else
                         copyto!(Tables.allocatecolumn(promote_type(S, T), length(cols[k])),
@@ -279,9 +283,11 @@ function append_rows!(rows, cols::NTuple{N, AbstractVector},
                             "for all groups (got $(Tuple(colnames)) and $(Tuple(names(rows))))"))
     end
     @inbounds for j in colstart:length(cols)
-        col = cols[j]
         vals = rows[j]
-        if eltype(vals) <: eltype(col)
+        col = cols[j]
+        S = eltype(vals)
+        T = eltype(col)
+        if S <: T || promote_type(S, T) <: T
             append!(col, vals)
         else
             return j
@@ -311,11 +317,11 @@ function _combine!(first::AbstractDataFrame, cols::NTuple{N, AbstractVector},
                 newcols = ntuple(n) do k
                     S = eltype(rows[k])
                     T = eltype(cols[k])
-                    if S <: T
+                    U = promote_type(S, T)
+                    if U <: T
                         cols[k]
                     else
-                        copyto!(Tables.allocatecolumn(promote_type(S, T), length(cols[k])),
-                                cols[k])
+                        copyto!(Tables.allocatecolumn(U, length(cols[k])), cols[k])
                     end
                 end
             end
