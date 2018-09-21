@@ -181,11 +181,16 @@ module TestGrouping
         @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
         @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
 
-        # Check that CategoricalArray column is preserved
+        # Check that CategoricalArray column is preserved...
         res = map(d -> DataFrame(x=d[1]), groupby(df, :Key1))
         @test res.x isa CategoricalVector{String}
         res = map(d -> (x=d[1],), groupby(df, :Key1))
-        @test_broken res.x isa CategoricalVector{String}
+        @test res.x isa CategoricalVector{String}
+        # ...even when first value is not categorical
+        res = map(d -> DataFrame(x=d[1]), groupby(df, :Key1))
+        @test res.x isa CategoricalVector{String}
+        res = map(d -> (x=d[1],), groupby(df, :Key1))
+        @test res.x isa CategoricalVector{String}
 
         df = DataFrame(x = [1, 2, 3], y = [2, 3, 1])
 

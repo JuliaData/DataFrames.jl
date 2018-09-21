@@ -191,7 +191,7 @@ function _combine(first::NamedTuple, f::Function, gd::GroupedDataFrame)
     m = length(first)
     n = length(gd)
     idx = Vector{Int}(undef, n)
-    initialcols = ntuple(i -> Vector{typeof(first[i])}(undef, n), m)
+    initialcols = ntuple(i -> Tables.allocatecolumn(typeof(first[i]), n), m)
     cols = _combine!(first, initialcols, idx, 1, 1, f, gd, propertynames(first))
     valscat = DataFrame(collect(cols), collect(propertynames(first)))
     idx, valscat
@@ -252,10 +252,10 @@ function _combine!(first::NamedTuple, cols::NTuple{N, AbstractVector}, idx::Vect
                     S = typeof(row[k])
                     T = eltype(cols[k])
                     if S <: T
-                        return cols[k]
+                        cols[k]
                     else
-                        return copyto!(similar(cols[k], promote_type(S, T)), 1,
-                                       cols[k], 1, k >= j ? i-1 : i)
+                        copyto!(Tables.allocatecolumn(promote_type(S, T), length(cols[k])),
+                                1, cols[k], 1, k >= j ? i-1 : i)
                     end
                 end
             end
@@ -312,9 +312,10 @@ function _combine!(first::AbstractDataFrame, cols::NTuple{N, AbstractVector},
                     S = eltype(rows[k])
                     T = eltype(cols[k])
                     if S <: T
-                        return cols[k]
+                        cols[k]
                     else
-                        return copyto!(similar(cols[k], promote_type(S, T)), cols[k])
+                        copyto!(Tables.allocatecolumn(promote_type(S, T), length(cols[k])),
+                                cols[k])
                     end
                 end
             end
