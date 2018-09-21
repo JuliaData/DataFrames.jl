@@ -516,8 +516,8 @@ function stackdf(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
     DataFrame(Any[RepeatedVector(_names(df)[measure_vars], nrow(df), 1),   # variable
-                  StackedVector(Any[df[:,c] for c in measure_vars]),     # value
-                  [RepeatedVector(df[:,c], 1, N) for c in id_vars]...],     # id_var columns
+                  StackedVector(Any[df[c] for c in measure_vars]),     # value
+                  [RepeatedVector(df[c], 1, N) for c in id_vars]...],     # id_var columns
               cnames)
 end
 function stackdf(df::AbstractDataFrame, measure_var::Int, id_var::Int;
