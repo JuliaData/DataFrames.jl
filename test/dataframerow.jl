@@ -54,7 +54,7 @@ module TestDataFrameRow
     # test RowGroupDict
     N = 20
     d1 = rand(map(Int64, 1:2), N)
-    df5 = DataFrame(Any[d1], [:d1])
+    df5 = DataFrame(AbstractVector[d1], [:d1])
     df6 = DataFrame(d1 = [2,3])
 
     # test_group("groupby")
