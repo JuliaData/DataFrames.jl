@@ -164,7 +164,7 @@ end
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
           makeunique::Bool=false) =
-    DataFrame(Any[columns[:, i] for i in 1:size(columns, 2)], cnames, makeunique=makeunique)
+    DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames, makeunique=makeunique)
 
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
@@ -864,9 +864,9 @@ function hcat!(df1::DataFrame, df2::DataFrame; makeunique::Bool=false)
 end
 
 hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false) =
-    hcat!(df, DataFrame(Any[x]), makeunique=makeunique)
+    hcat!(df, DataFrame(AbstractVector[x]), makeunique=makeunique)
 hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false) =
-    hcat!(DataFrame(Any[x]), df, makeunique=makeunique)
+    hcat!(DataFrame(AbstractVector[x]), df, makeunique=makeunique)
 function hcat!(x, df::DataFrame; makeunique::Bool=false)
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
 end
