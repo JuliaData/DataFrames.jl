@@ -927,7 +927,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
 
     header = allheaders[1]
     length(header) == 0 && return DataFrame()
-    cols = Vector{Any}(undef, length(header))
+    cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
         data = [df[name] for df in dfs]
         lens = map(length, data)

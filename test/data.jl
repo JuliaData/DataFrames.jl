@@ -3,12 +3,12 @@ module TestData
     const ≅ = isequal
 
     @testset "constructors" begin
-        df1 = DataFrame(Any[[1, 2, missing, 4], ["one", "two", missing, "four"]], [:Ints, :Strs])
-        df2 = DataFrame(Any[[1, 2, missing, 4], ["one", "two", missing, "four"]])
-        df3 = DataFrame(Any[[1, 2, missing, 4]])
-        df4 = DataFrame(Any[Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)])
-        df5 = DataFrame(Any[Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]])
-        df6 = DataFrame(Any[[1, 2, missing, 4], [1, 2, missing, 4], ["one", "two", missing, "four"]],
+        df1 = DataFrame(AbstractVector[[1, 2, missing, 4], ["one", "two", missing, "four"]], [:Ints, :Strs])
+        df2 = DataFrame(AbstractVector[[1, 2, missing, 4], ["one", "two", missing, "four"]])
+        df3 = DataFrame(AbstractVector[[1, 2, missing, 4]])
+        df4 = DataFrame(AbstractVector[Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)])
+        df5 = DataFrame(AbstractVector[Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]])
+        df6 = DataFrame(AbstractVector[[1, 2, missing, 4], [1, 2, missing, 4], ["one", "two", missing, "four"]],
                         [:A, :B, :C])
         df7 = DataFrame(x = [1, 2, missing, 4], y = ["one", "two", missing, "four"])
         @test size(df7) == (4, 2)
@@ -81,7 +81,7 @@ module TestData
         d2 = CategoricalArray(["A", "B", missing])[rand(1:3, N)]
         d3 = randn(N)
         d4 = randn(N)
-        df7 = DataFrame(Any[d1, d2, d3], [:d1, :d2, :d3])
+        df7 = DataFrame(AbstractVector[d1, d2, d3], [:d1, :d2, :d3])
 
         #test_group("groupby")
         gd = groupby(df7, :d1)
@@ -136,7 +136,7 @@ module TestData
         @test df9′ ≅ df8
 
         df10 = DataFrame(
-            Any[[1:4;], [2:5;], ["a", "a", "a", "b" ], ["c", "d", "c", "d"]],
+            AbstractVector[[1:4;], [2:5;], ["a", "a", "a", "b" ], ["c", "d", "c", "d"]],
             [:d1, :d2, :d3, :d4]
         )
 

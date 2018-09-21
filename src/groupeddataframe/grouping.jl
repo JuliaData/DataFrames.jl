@@ -366,7 +366,7 @@ _makeheaders(fs::Vector{<:Function}, cn::Vector{Symbol}) =
     [Symbol(colname, '_', nameof(f)) for f in fs for colname in cn]
 
 function _aggregate(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false) where T<:Function
-    res = DataFrame(Any[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers)
+    res = DataFrame(AbstractVector[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers)
     sort && sort!(res, headers)
     res
 end
