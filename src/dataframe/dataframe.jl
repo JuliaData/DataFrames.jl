@@ -285,7 +285,7 @@ end
 
 # df[SingleRowIndex, MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, row_ind::Bool, col_inds::AbstractVector)
-    throw(ArgumentError("invalid inxdex: $row_ind of type Bool"))
+    throw(ArgumentError("invalid index: $row_ind of type Bool"))
 end
 
 # df[SingleRowIndex, MultiColumnIndex] => DataFrame
