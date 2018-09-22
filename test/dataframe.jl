@@ -496,8 +496,8 @@ module TestDataFrame
         udf = unstack(df, :variable, :value)
         @test udf == unstack(df, :variable, :value) == unstack(df, :id, :variable, :value)
         @test udf == DataFrame([Union{Int, Missing}[1, 2], Union{Int, Missing}[1, 5],
-                                   Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
-                                   Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
+                                Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
+                                Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
         @test isa(udf[1], Vector{Int})
         @test all(isa.(columns(udf)[2:end], Vector{Union{Int, Missing}}))
         df = DataFrame([categorical(repeat(1:2, inner=4)),
@@ -506,8 +506,8 @@ module TestDataFrame
         udf = unstack(df, :variable, :value)
         @test udf == unstack(df, :variable, :value) == unstack(df, :id, :variable, :value)
         @test udf == DataFrame([Union{Int, Missing}[1, 2], Union{Int, Missing}[1, 5],
-                                   Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
-                                   Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
+                                Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
+                                Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
         @test isa(udf[1], CategoricalVector{Int})
         @test all(isa.(columns(udf)[2:end], CategoricalVector{Union{Int, Missing}}))
     end
