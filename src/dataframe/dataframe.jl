@@ -83,12 +83,13 @@ size(df1)
 
 """
 mutable struct DataFrame <: AbstractDataFrame
-    columns::Vector{Any}
+    columns::Vector{AbstractVector}
     colindex::Index
 
-    function DataFrame(columns::Vector{Any}, colindex::Index)
+    function DataFrame(columns::Union{Vector{Any}, Vector{AbstractVector}},
+                       colindex::Index)
         if length(columns) == length(colindex) == 0
-            return new([], Index())
+            return new(AbstractVector[], Index())
         elseif length(columns) != length(colindex)
             throw(DimensionMismatch("Number of columns ($(length(columns))) and number of" *
                                     " column names ($(length(colindex))) are not equal"))
@@ -119,7 +120,7 @@ mutable struct DataFrame <: AbstractDataFrame
                 throw(DimensionMismatch("columns must be 1-dimensional"))
             end
         end
-        new(columns, colindex)
+        new(convert(Vector{AbstractVector}, columns), colindex)
     end
 end
 
@@ -158,7 +159,7 @@ end
 function DataFrame(columns::AbstractVector{<:AbstractVector},
                    cnames::AbstractVector{Symbol}=gennames(length(columns));
                    makeunique::Bool=false)::DataFrame
-    return DataFrame(convert(Vector{Any}, columns),
+    return DataFrame(convert(Vector{AbstractVector}, columns),
                      Index(convert(Vector{Symbol}, cnames), makeunique=makeunique))
 end
 
@@ -169,7 +170,7 @@ DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(siz
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    nrows::Integer; makeunique::Bool=false)::DataFrame where T<:Type
-    columns = Vector{Any}(undef, length(column_eltypes))
+    columns = Vector{AbstractVector}(undef, length(column_eltypes))
     for (j, elty) in enumerate(column_eltypes)
         if elty >: Missing
             if Missings.T(elty) <: CategoricalArrays.CatValue
