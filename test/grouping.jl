@@ -8,7 +8,7 @@ module TestGrouping
                        b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
                        c = Vector{Union{Float64, Missing}}(randn(8)))
 
-        missingfree = DataFrame(Any[collect(1:10)], [:x1])
+        missingfree = DataFrame([collect(1:10)], [:x1])
 
         @testset "::Function, ::AbstractDataFrame" begin
             cw = colwise(sum, df)
