@@ -996,7 +996,7 @@ function readtable(io::IO,
     p = ParsedCSV(Vector{UInt8}(undef, nbytes),
                   Vector{Int}(undef, 1),
                   Vector{Int}(undef, 1),
-                  BitArray(1))
+                  BitArray(undef, 1))
 
     # Set parsing options
     o = ParseOptions(header, separator, quotemark, decimal,
