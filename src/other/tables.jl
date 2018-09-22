@@ -26,6 +26,9 @@ function DataFrame(x)
         # non-NamedTuple or EltypeUnknown
         return fromcolumns(Tables.buildcolumns(nothing, Tables.DataValueUnwrapper(y)))
     end
+    if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
+        return DataFrame(Vector{AbstractVector}(x))
+    end
     throw(ArgumentError("unable to construct DataFrame from $(typeof(x))"))
 end
 

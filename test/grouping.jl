@@ -9,7 +9,7 @@ module TestGrouping
     #df[6, :a] = missing
     #df[7, :b] = missing
 
-    missingfree = DataFrame(AbstractVector[collect(1:10)], [:x1])
+    missingfree = DataFrame([collect(1:10)], [:x1])
     @testset "colwise" begin
         @testset "::Function, ::AbstractDataFrame" begin
             cw = colwise(sum, df)
