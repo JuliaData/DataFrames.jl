@@ -10,10 +10,10 @@ module TestCat
         nvint = [1, 2, missing, 4]
         nvstr = ["one", "two", missing, "four"]
 
-        df2 = DataFrame(Any[nvint, nvstr])
-        df3 = DataFrame(Any[nvint])
+        df2 = DataFrame(AbstractVector[nvint, nvstr])
+        df3 = DataFrame(AbstractVector[nvint])
         df4 = convert(DataFrame, [1:4 1:4])
-        df5 = DataFrame(Any[Union{Int, Missing}[1,2,3,4], nvstr])
+        df5 = DataFrame(AbstractVector[Union{Int, Missing}[1,2,3,4], nvstr])
 
         dfh = hcat(df3, df4, makeunique=true)
         @test size(dfh, 2) == 3

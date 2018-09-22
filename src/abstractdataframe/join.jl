@@ -86,7 +86,7 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     nrow = length(all_orig_left_ixs) + roil
     @assert nrow == length(all_orig_right_ixs) + loil
     ncleft = ncol(joiner.dfl)
-    cols = Vector{Any}(undef, ncleft + ncol(dfr_noon))
+    cols = Vector{AbstractVector}(undef, ncleft + ncol(dfr_noon))
     # inner and left joins preserve non-missingness of the left frame
     _similar_left = kind == :inner || kind == :left ? similar : similar_missing
     for (i, col) in enumerate(columns(joiner.dfl))
