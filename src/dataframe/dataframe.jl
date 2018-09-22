@@ -86,7 +86,7 @@ mutable struct DataFrame <: AbstractDataFrame
     columns::Vector{AbstractVector}
     colindex::Index
 
-    function DataFrame(columns::Vector{Any}, colindex::Index)
+    function DataFrame(columns::Vector, colindex::Index)
         if length(columns) == length(colindex) == 0
             return new(Vector{Any}(undef, 0), Index())
         elseif length(columns) != length(colindex)
