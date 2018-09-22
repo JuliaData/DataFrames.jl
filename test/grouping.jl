@@ -254,6 +254,12 @@ module TestGrouping
         @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame(a=1, b=2) : DataFrame(b=2, a=1), df, :x)
         # Special case allowed due to how implementation works
         @test by(d -> d.x == [1] ? 1 : (x1=1), df, :x) == by(d -> 1, df, :x)
+
+        # Test that columns names and types are respected for empty input
+        df = DataFrame(x=Int[], y=String[])
+        res = by(d -> 1, df, :x)
+        @test size(res) == (0, 1)
+        @test res.x isa Vector{Int}
     end
 
     @testset "grouping with missings" begin
