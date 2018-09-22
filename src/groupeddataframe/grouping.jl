@@ -225,8 +225,7 @@ end
         col = cols[j]
         S = typeof(val)
         T = eltype(col)
-        U = promote_type(S, T)
-        if S <: T || U <: T
+        if S <: T || promote_type(S, T) <: T
             col[i] = val
         else
             return j
@@ -258,7 +257,7 @@ function _combine!(first::NamedTuple, cols::NTuple{N, AbstractVector}, idx::Vect
                     if S <: T || U <: T
                         cols[k]
                     else
-                        copyto!(Tables.allocatecolumn(promote_type(S, T), length(cols[k])),
+                        copyto!(Tables.allocatecolumn(U, length(cols[k])),
                                 1, cols[k], 1, k >= j ? i-1 : i)
                     end
                 end
@@ -318,7 +317,7 @@ function _combine!(first::AbstractDataFrame, cols::NTuple{N, AbstractVector},
                     S = eltype(rows[k])
                     T = eltype(cols[k])
                     U = promote_type(S, T)
-                    if U <: T
+                    if S <: T || U <: T
                         cols[k]
                     else
                         copyto!(Tables.allocatecolumn(U, length(cols[k])), cols[k])
