@@ -393,11 +393,187 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "lib/functions.html#DataFrames.allowmissing!",
+    "page": "Functions",
+    "title": "DataFrames.allowmissing!",
+    "category": "function",
+    "text": "allowmissing!(df::DataFrame)\n\nConvert all columns of a df from element type T to Union{T, Missing} to support missing values.\n\nallowmissing!(df::DataFrame, col::Union{Integer, Symbol})\n\nConvert a single column of a df from element type T to Union{T, Missing} to support missing values.\n\nallowmissing!(df::DataFrame, cols::AbstractVector{<:Union{Integer, Symbol}})\n\nConvert multiple columns of a df from element type T to Union{T, Missing} to support missing values.\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.combine",
+    "page": "Functions",
+    "title": "DataFrames.combine",
+    "category": "function",
+    "text": "Combine a GroupApplied object (rudimentary)\n\ncombine(ga::GroupApplied)\n\nArguments\n\nga : a GroupApplied\n\nReturns\n\n::DataFrame\n\nExamples\n\ndf = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),\n               b = repeat([2, 1], outer=[4]),\n               c = randn(8))\ngd = groupby(df, :a)\ncombine(map(d -> mean(skipmissing(d[:c])), gd))\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.completecases",
+    "page": "Functions",
+    "title": "DataFrames.completecases",
+    "category": "function",
+    "text": "Indexes of complete cases (rows without missing values)\n\ncompletecases(df::AbstractDataFrame)\n\nArguments\n\ndf : the AbstractDataFrame\n\nResult\n\n::Vector{Bool} : indexes of complete cases\n\nSee also dropmissing and dropmissing!.\n\nExamples\n\ndf = DataFrame(i = 1:10,\n               x = Vector{Union{Missing, Float64}}(rand(10)),\n               y = Vector{Union{Missing, String}}(rand([\"a\", \"b\", \"c\"], 10)))\ndf[[1,4,5], :x] = missing\ndf[[9,10], :y] = missing\ncompletecases(df)\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#StatsBase.describe",
+    "page": "Functions",
+    "title": "StatsBase.describe",
+    "category": "function",
+    "text": "Report descriptive statistics for a data frame\n\ndescribe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :nunique, :eltype])\n\nArguments\n\ndf : the AbstractDataFrame\nstats::Union{Symbol,AbstractVector{Symbol}} : the summary statistics to report. If a vector, allowed fields are :mean, :std, :min, :q25, :median, :q75, :max, :eltype, :nunique, :first, :last, and :nmissing. If set to :all, all summary statistics are reported.\n\nResult\n\nA DataFrame where each row represents a variable and each column a summary statistic.\n\nDetails\n\nFor Real columns, compute the mean, standard deviation, minimum, first quantile, median, third quantile, and maximum. If a column does not derive from Real, describe will attempt to calculate all statistics, using nothing as a fall-back in the case of an error.\n\nWhen stats contains :nunique, describe will report the number of unique values in a column. If a column\'s base type derives from Real, :nunique will return nothings.\n\nMissing values are filtered in the calculation of all statistics, however the column :nmissing will report the number of missing values of that variable. If the column does not allow missing values, nothing is returned. Consequently, nmissing = 0 indicates that the column allows missing values, but does not currently contain any.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\ndescribe(df)\ndescribe(df, stats = :all)\ndescribe(df, stats = [:min, :max])\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.disallowmissing!",
+    "page": "Functions",
+    "title": "DataFrames.disallowmissing!",
+    "category": "function",
+    "text": "disallowmissing!(df::DataFrame)\n\nConvert all columns of a df from element type Union{T, Missing} to T to drop support for missing values.\n\ndisallowmissing!(df::DataFrame, col::Union{Integer, Symbol})\n\nConvert a single column of a df from element type Union{T, Missing} to T to drop support for missing values.\n\ndisallowmissing!(df::DataFrame, cols::AbstractVector{<:Union{Integer, Symbol}})\n\nConvert multiple columns of a df from element type Union{T, Missing} to T to drop support for missing values.\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.dropmissing",
+    "page": "Functions",
+    "title": "DataFrames.dropmissing",
+    "category": "function",
+    "text": "Remove rows with missing values.\n\ndropmissing(df::AbstractDataFrame)\n\nArguments\n\ndf : the AbstractDataFrame\n\nResult\n\n::AbstractDataFrame : the updated copy\n\nSee also completecases and dropmissing!.\n\nExamples\n\ndf = DataFrame(i = 1:10,\n               x = Vector{Union{Missing, Float64}}(rand(10)),\n               y = Vector{Union{Missing, String}}(rand([\"a\", \"b\", \"c\"], 10)))\ndf[[1,4,5], :x] = missing\ndf[[9,10], :y] = missing\ndropmissing(df)\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.dropmissing!",
+    "page": "Functions",
+    "title": "DataFrames.dropmissing!",
+    "category": "function",
+    "text": "Remove rows with missing values in-place.\n\ndropmissing!(df::AbstractDataFrame)\n\nArguments\n\ndf : the AbstractDataFrame\n\nResult\n\n::AbstractDataFrame : the updated version\n\nSee also dropmissing and completecases.\n\nExamples\n\ndf = DataFrame(i = 1:10,\n               x = Vector{Union{Missing, Float64}}(rand(10)),\n               y = Vector{Union{Missing, String}}(rand([\"a\", \"b\", \"c\"], 10)))\ndf[[1,4,5], :x] = missing\ndf[[9,10], :y] = missing\ndropmissing!(df)\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.eachrow",
+    "page": "Functions",
+    "title": "DataFrames.eachrow",
+    "category": "function",
+    "text": "eachrow(df) => DataFrames.DFRowIterator\n\nIterate a DataFrame row by row, with each row represented as a DataFrameRow, which is a view that acts like a one-row DataFrame.\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.eltypes",
+    "page": "Functions",
+    "title": "DataFrames.eltypes",
+    "category": "function",
+    "text": "Return element types of columns\n\neltypes(df::AbstractDataFrame)\n\nArguments\n\ndf : the AbstractDataFrame\n\nResult\n\n::Vector{Type} : the element type of each column\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\neltypes(df)\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#Base.filter",
+    "page": "Functions",
+    "title": "Base.filter",
+    "category": "function",
+    "text": "filter(function, df::AbstractDataFrame)\n\nReturn a copy of data frame df containing only rows for which function returns true. The function is passed a DataFrameRow as its only argument.\n\nExamples\n\njulia> df = DataFrame(x = [3, 1, 2, 1], y = [\"b\", \"c\", \"a\", \"b\"])\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 3     │ b      │\n│ 2   │ 1     │ c      │\n│ 3   │ 2     │ a      │\n│ 4   │ 1     │ b      │\n\njulia> filter(row -> row[:x] > 1, df)\n2×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 3     │ b      │\n│ 2   │ 2     │ a      │\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#Base.filter!",
+    "page": "Functions",
+    "title": "Base.filter!",
+    "category": "function",
+    "text": "filter!(function, df::AbstractDataFrame)\n\nRemove rows from data frame df for which function returns false. The function is passed a DataFrameRow as its only argument.\n\nExamples\n\njulia> df = DataFrame(x = [3, 1, 2, 1], y = [\"b\", \"c\", \"a\", \"b\"])\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 3     │ b      │\n│ 2   │ 1     │ c      │\n│ 3   │ 2     │ a      │\n│ 4   │ 1     │ b      │\n\njulia> filter!(row -> row[:x] > 1, df);\n\njulia> df\n2×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 3     │ b      │\n│ 2   │ 2     │ a      │\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.head",
+    "page": "Functions",
+    "title": "DataFrames.head",
+    "category": "function",
+    "text": "Show the first or last part of an AbstractDataFrame\n\nhead(df::AbstractDataFrame, r::Int = 6)\ntail(df::AbstractDataFrame, r::Int = 6)\n\nArguments\n\ndf : the AbstractDataFrame\nr : the number of rows to show\n\nResult\n\n::AbstractDataFrame : the first or last part of df\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\nhead(df)\ntail(df)\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.names!",
+    "page": "Functions",
+    "title": "DataFrames.names!",
+    "category": "function",
+    "text": "Set column names\n\nnames!(df::AbstractDataFrame, vals)\n\nArguments\n\ndf : the AbstractDataFrame\nvals : column names, normally a Vector{Symbol} the same length as the number of columns in df\nmakeunique : if false (the default), an error will be raised if duplicate names are found; if true, duplicate names will be suffixed with _i (i starting at 1 for the first duplicate).\n\nResult\n\n::AbstractDataFrame : the updated result\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\nnames!(df, [:a, :b, :c])\nnames!(df, [:a, :b, :a])  # throws ArgumentError\nnames!(df, [:a, :b, :a], makeunique=true)  # renames second :a to :a_1\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.nonunique",
+    "page": "Functions",
+    "title": "DataFrames.nonunique",
+    "category": "function",
+    "text": "Indexes of duplicate rows (a row that is a duplicate of a prior row)\n\nnonunique(df::AbstractDataFrame)\nnonunique(df::AbstractDataFrame, cols)\n\nArguments\n\ndf : the AbstractDataFrame\ncols : a column indicator (Symbol, Int, Vector{Symbol}, etc.) specifying the column(s) to compare\n\nResult\n\n::Vector{Bool} : indicates whether the row is a duplicate of some prior row\n\nSee also unique and unique!.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\ndf = vcat(df, df)\nnonunique(df)\nnonunique(df, 1)\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.rename!",
+    "page": "Functions",
+    "title": "DataFrames.rename!",
+    "category": "function",
+    "text": "Rename columns\n\nrename!(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)\nrename!(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})\nrename!(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})\nrename!(f::Function, df::AbstractDataFrame)\nrename(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)\nrename(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})\nrename(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})\nrename(f::Function, df::AbstractDataFrame)\n\nArguments\n\ndf : the AbstractDataFrame\nd : an Associative type or an AbstractArray of pairs that maps the original names to new names\nf : a function which for each column takes the old name (a Symbol) and returns the new name (a Symbol)\n\nResult\n\n::AbstractDataFrame : the updated result\n\nNew names are processed sequentially. A new name must not already exist in the DataFrame at the moment an attempt to rename a column is performed.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\nrename(df, :i => :A, :x => :X)\nrename(df, [:i => :A, :x => :X])\nrename(df, Dict(:i => :A, :x => :X))\nrename(x -> Symbol(uppercase(string(x))), df)\nrename!(df, Dict(:i =>: A, :x => :X))\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.rename",
+    "page": "Functions",
+    "title": "DataFrames.rename",
+    "category": "function",
+    "text": "Rename columns\n\nrename!(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)\nrename!(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})\nrename!(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})\nrename!(f::Function, df::AbstractDataFrame)\nrename(df::AbstractDataFrame, (from => to)::Pair{Symbol, Symbol}...)\nrename(df::AbstractDataFrame, d::AbstractDict{Symbol,Symbol})\nrename(df::AbstractDataFrame, d::AbstractArray{Pair{Symbol,Symbol}})\nrename(f::Function, df::AbstractDataFrame)\n\nArguments\n\ndf : the AbstractDataFrame\nd : an Associative type or an AbstractArray of pairs that maps the original names to new names\nf : a function which for each column takes the old name (a Symbol) and returns the new name (a Symbol)\n\nResult\n\n::AbstractDataFrame : the updated result\n\nNew names are processed sequentially. A new name must not already exist in the DataFrame at the moment an attempt to rename a column is performed.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\nrename(df, :i => :A, :x => :X)\nrename(df, [:i => :A, :x => :X])\nrename(df, Dict(:i => :A, :x => :X))\nrename(x -> Symbol(uppercase(string(x))), df)\nrename!(df, Dict(:i =>: A, :x => :X))\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#Base.show",
+    "page": "Functions",
+    "title": "Base.show",
+    "category": "function",
+    "text": "show([io::IO,] df::AbstractDataFrame;\n     allrows::Bool = !get(io, :limit, false),\n     allcols::Bool = !get(io, :limit, false),\n     allgroups::Bool = !get(io, :limit, false),\n     splitcols::Bool = get(io, :limit, false),\n     rowlabel::Symbol = :Row,\n     summary::Bool = true)\n\nRender a data frame to an I/O stream. The specific visual representation chosen depends on the width of the display.\n\nIf io is omitted, the result is printed to stdout, and allrows, allcols and allgroups default to false while splitcols defaults to true.\n\nArguments\n\nio::IO: The I/O stream to which df will be printed.\ndf::AbstractDataFrame: The data frame to print.\nallrows::Bool: Whether to print all rows, rather than a subset that fits the device height. By default this is the case only if io does not have the IOContext property limit set.\nallcols::Bool: Whether to print all columns, rather than a subset that fits the device width. By default this is the case only if io does not have the IOContext property limit set.\nallgroups::Bool: Whether to print all groups rather than the first and last, when df is a GroupedDataFrame. By default this is the case only if io does not have the IOContext property limit set.\nsplitcols::Bool: Whether to split printing in chunks of columns fitting the screen width rather than printing all columns in the same block. Only applies if allcols is true. By default this is the case only if io has the IOContext property limit set.\nrowlabel::Symbol = :Row: The label to use for the column containing row numbers.\nsummary::Bool = true: Whether to print a brief string summary of the data frame.\n\nExamples\n\njulia> using DataFrames\n\njulia> df = DataFrame(A = 1:3, B = [\"x\", \"y\", \"z\"]);\n\njulia> show(df, allcols=true)\n3×2 DataFrame\n│ Row │ A     │ B      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 1     │ x      │\n│ 2   │ 2     │ y      │\n│ 3   │ 3     │ z      │\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#Base.sort",
+    "page": "Functions",
+    "title": "Base.sort",
+    "category": "function",
+    "text": "sort(df::AbstractDataFrame, cols;\n     alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,\n     rev::Bool=false, order::Ordering=Forward)\n\nReturn a copy of data frame df sorted by column(s) cols. cols can be either a Symbol or Integer column index, or a tuple or vector of such indices.\n\nIf alg is nothing (the default), the most appropriate algorithm is chosen automatically among TimSort, MergeSort and RadixSort depending on the type of the sorting columns and on the number of rows in df. If rev is true, reverse sorting is performed. To enable reverse sorting only for some columns, pass order(c, rev=true) in cols, with c the corresponding column index (see example below). See sort! for a description of other keyword arguments.\n\nExamples\n\njulia> df = DataFrame(x = [3, 1, 2, 1], y = [\"b\", \"c\", \"a\", \"b\"])\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 3     │ b      │\n│ 2   │ 1     │ c      │\n│ 3   │ 2     │ a      │\n│ 4   │ 1     │ b      │\n\njulia> sort(df, :x)\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 1     │ c      │\n│ 2   │ 1     │ b      │\n│ 3   │ 2     │ a      │\n│ 4   │ 3     │ b      │\n\njulia> sort(df, (:x, :y))\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 1     │ b      │\n│ 2   │ 1     │ c      │\n│ 3   │ 2     │ a      │\n│ 4   │ 3     │ b      │\n\njulia> sort(df, (:x, :y), rev=true)\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 3     │ b      │\n│ 2   │ 2     │ a      │\n│ 3   │ 1     │ c      │\n│ 4   │ 1     │ b      │\n\njulia> sort(df, (:x, order(:y, rev=true)))\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 1     │ c      │\n│ 2   │ 1     │ b      │\n│ 3   │ 2     │ a      │\n│ 4   │ 3     │ b      │\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#Base.sort!",
+    "page": "Functions",
+    "title": "Base.sort!",
+    "category": "function",
+    "text": "sort!(df::AbstractDataFrame, cols;\n      alg::Union{Algorithm, Nothing}=nothing, lt=isless, by=identity,\n      rev::Bool=false, order::Ordering=Forward)\n\nSort data frame df by column(s) cols. cols can be either a Symbol or Integer column index, or a tuple or vector of such indices.\n\nIf alg is nothing (the default), the most appropriate algorithm is chosen automatically among TimSort, MergeSort and RadixSort depending on the type of the sorting columns and on the number of rows in df. If rev is true, reverse sorting is performed. To enable reverse sorting only for some columns, pass order(c, rev=true) in cols, with c the corresponding column index (see example below). See other methods for a description of other keyword arguments.\n\nExamples\n\njulia> df = DataFrame(x = [3, 1, 2, 1], y = [\"b\", \"c\", \"a\", \"b\"])\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 3     │ b      │\n│ 2   │ 1     │ c      │\n│ 3   │ 2     │ a      │\n│ 4   │ 1     │ b      │\n\njulia> sort!(df, :x)\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 1     │ c      │\n│ 2   │ 1     │ b      │\n│ 3   │ 2     │ a      │\n│ 4   │ 3     │ b      │\n\njulia> sort!(df, (:x, :y))\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 1     │ b      │\n│ 2   │ 1     │ c      │\n│ 3   │ 2     │ a      │\n│ 4   │ 3     │ b      │\n\njulia> sort!(df, (:x, :y), rev=true)\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 3     │ b      │\n│ 2   │ 2     │ a      │\n│ 3   │ 1     │ c      │\n│ 4   │ 1     │ b      │\n\njulia> sort!(df, (:x, order(:y, rev=true)))\n4×2 DataFrame\n│ Row │ x     │ y      │\n│     │ Int64 │ String │\n├─────┼───────┼────────┤\n│ 1   │ 1     │ c      │\n│ 2   │ 1     │ b      │\n│ 3   │ 2     │ a      │\n│ 4   │ 3     │ b      │\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.tail",
+    "page": "Functions",
+    "title": "DataFrames.tail",
+    "category": "function",
+    "text": "Show the first or last part of an AbstractDataFrame\n\nhead(df::AbstractDataFrame, r::Int = 6)\ntail(df::AbstractDataFrame, r::Int = 6)\n\nArguments\n\ndf : the AbstractDataFrame\nr : the number of rows to show\n\nResult\n\n::AbstractDataFrame : the first or last part of df\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\nhead(df)\ntail(df)\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#Base.unique!",
+    "page": "Functions",
+    "title": "Base.unique!",
+    "category": "function",
+    "text": "Delete duplicate rows\n\nunique(df::AbstractDataFrame)\nunique(df::AbstractDataFrame, cols)\nunique!(df::AbstractDataFrame)\nunique!(df::AbstractDataFrame, cols)\n\nArguments\n\ndf : the AbstractDataFrame\ncols :  column indicator (Symbol, Int, Vector{Symbol}, etc.)\n\nspecifying the column(s) to compare.\n\nResult\n\n::AbstractDataFrame : the updated version of df with unique rows.\n\nWhen cols is specified, the return DataFrame contains complete rows, retaining in each case the first instance for which df[cols] is unique.\n\nSee also nonunique.\n\nExamples\n\ndf = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10))\ndf = vcat(df, df)\nunique(df)   # doesn\'t modify df\nunique(df, 1)\nunique!(df)  # modifies df\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.permutecols!",
+    "page": "Functions",
+    "title": "DataFrames.permutecols!",
+    "category": "function",
+    "text": "permutecols!(df::DataFrame, p::AbstractVector)\n\nPermute the columns of df in-place, according to permutation p. Elements of p may be either column indices (Int) or names (Symbol), but cannot be a combination of both. All columns must be listed.\n\nExamples\n\njulia> df = DataFrame(a=1:5, b=2:6, c=3:7)\n5×3 DataFrame\n│ Row │ a     │ b     │ c     │\n│     │ Int64 │ Int64 │ Int64 │\n├─────┼───────┼───────┼───────┤\n│ 1   │ 1     │ 2     │ 3     │\n│ 2   │ 2     │ 3     │ 4     │\n│ 3   │ 3     │ 4     │ 5     │\n│ 4   │ 4     │ 5     │ 6     │\n│ 5   │ 5     │ 6     │ 7     │\n\njulia> permutecols!(df, [2, 1, 3]);\n\njulia> df\n5×3 DataFrame\n│ Row │ b     │ a     │ c     │\n│     │ Int64 │ Int64 │ Int64 │\n├─────┼───────┼───────┼───────┤\n│ 1   │ 2     │ 1     │ 3     │\n│ 2   │ 3     │ 2     │ 4     │\n│ 3   │ 4     │ 3     │ 5     │\n│ 4   │ 5     │ 4     │ 6     │\n│ 5   │ 6     │ 5     │ 7     │\n\njulia> permutecols!(df, [:c, :a, :b]);\n\njulia> df\n5×3 DataFrame\n│ Row │ c     │ a     │ b     │\n│     │ Int64 │ Int64 │ Int64 │\n├─────┼───────┼───────┼───────┤\n│ 1   │ 3     │ 1     │ 2     │\n│ 2   │ 4     │ 2     │ 3     │\n│ 3   │ 5     │ 3     │ 4     │\n│ 4   │ 6     │ 4     │ 5     │\n│ 5   │ 7     │ 5     │ 6     │\n\n\n\n\n\n"
+},
+
+{
     "location": "lib/functions.html#Basics-1",
     "page": "Functions",
     "title": "Basics",
     "category": "section",
-    "text": "allowmissing!\ncategorical!\ncombine\ncompletecases\ndeleterows!\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachcol\neachrow\neltypes\nfilter\nfilter!\nhead\nnames\nnames!\nnonunique\norder\nrename!\nrename\nshow\nshowcols\nsimilar\nsize\nsort\nsort!\ntail\nunique!\npermutecols!"
+    "text": "allowmissing!\ncombine\ncompletecases\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neltypes\nfilter\nfilter!\nhead\nnames!\nnonunique\nrename!\nrename\nshow\nsort\nsort!\ntail\nunique!\npermutecols!"
 },
 
 ]}
