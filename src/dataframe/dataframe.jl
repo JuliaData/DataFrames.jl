@@ -433,8 +433,9 @@ end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        df[col_ind] = v
+    df[col_inds[1]] = v
+    for col_ind in col_inds[2:end]
+        df[col_ind] = copy(v)
     end
     return df
 end
