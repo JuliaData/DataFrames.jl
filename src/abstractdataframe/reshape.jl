@@ -189,7 +189,7 @@ wide = DataFrame(id = 1:12,
                  c  = randn(12),
                  d  = randn(12))
 
-long = stack(wide)
+long = stack(wide,[:c,:d])
 wide0 = unstack(long)
 wide1 = unstack(long, :variable, :value)
 wide2 = unstack(long, :id, :variable, :value)
