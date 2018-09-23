@@ -693,6 +693,11 @@ module TestDataFrame
         @test all(typeof(df[i]) <: Vector for i in 1:ncol(df))
     end
 
+    @teststet "test corner case of getindex" begin
+        df = DataFrame(x=[1], y=[1])
+        @test_throws ArgumentError df[true, 1:2]
+    end
+
     @testset "handling of end in indexing" begin
         z = DataFrame(rand(4,5))
         for x in [z, view(z, 1:4)]
