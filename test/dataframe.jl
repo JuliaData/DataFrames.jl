@@ -491,23 +491,23 @@ module TestDataFrame
     end
 
     @testset "unstack promotion to support missing values" begin
-        df = DataFrame(AbstractVector[repeat(1:2, inner=4), repeat('a':'d', outer=2), collect(1:8)],
+        df = DataFrame([repeat(1:2, inner=4), repeat('a':'d', outer=2), collect(1:8)],
                        [:id, :variable, :value])
         udf = unstack(df, :variable, :value)
         @test udf == unstack(df, :variable, :value) == unstack(df, :id, :variable, :value)
-        @test udf == DataFrame(AbstractVector[Union{Int, Missing}[1, 2], Union{Int, Missing}[1, 5],
-                                   Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
-                                   Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
+        @test udf == DataFrame([Union{Int, Missing}[1, 2], Union{Int, Missing}[1, 5],
+                                Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
+                                Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
         @test isa(udf[1], Vector{Int})
         @test all(isa.(columns(udf)[2:end], Vector{Union{Int, Missing}}))
-        df = DataFrame(AbstractVector[categorical(repeat(1:2, inner=4)),
+        df = DataFrame([categorical(repeat(1:2, inner=4)),
                            categorical(repeat('a':'d', outer=2)), categorical(1:8)],
                        [:id, :variable, :value])
         udf = unstack(df, :variable, :value)
         @test udf == unstack(df, :variable, :value) == unstack(df, :id, :variable, :value)
-        @test udf == DataFrame(AbstractVector[Union{Int, Missing}[1, 2], Union{Int, Missing}[1, 5],
-                                   Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
-                                   Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
+        @test udf == DataFrame([Union{Int, Missing}[1, 2], Union{Int, Missing}[1, 5],
+                                Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
+                                Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
         @test isa(udf[1], CategoricalVector{Int})
         @test all(isa.(columns(udf)[2:end], CategoricalVector{Union{Int, Missing}}))
     end
@@ -610,7 +610,7 @@ module TestDataFrame
     end
 
     @testset "misc" begin
-        df = DataFrame(AbstractVector[collect('A':'C')])
+        df = DataFrame([collect('A':'C')])
         @test sprint(dump, df) == """
                                   $DataFrame  3 observations of 1 variables
                                     x1: Array{Char}((3,))
@@ -623,7 +623,7 @@ module TestDataFrame
     end
 
     @testset "column conversions" begin
-        df = DataFrame(AbstractVector[collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)])
         @test !isa(df[1], Vector{Union{Int, Missing}})
         allowmissing!(df, 1)
         @test isa(df[1], Vector{Union{Int, Missing}})
@@ -634,20 +634,20 @@ module TestDataFrame
         disallowmissing!(df, 1)
         @test isa(df[1], Vector{Int})
 
-        df = DataFrame(AbstractVector[collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)])
         allowmissing!(df, [1,2])
         @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
         disallowmissing!(df, [1,2])
         @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
 
-        df = DataFrame(AbstractVector[collect(1:10), collect(1:10)])
+        df = DataFrame([collect(1:10), collect(1:10)])
         allowmissing!(df)
         @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
         disallowmissing!(df)
         @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
 
-        df = DataFrame(AbstractVector[CategoricalArray(1:10),
-                           CategoricalArray(string.('a':'j'))])
+        df = DataFrame([CategoricalArray(1:10),
+                        CategoricalArray(string.('a':'j'))])
         allowmissing!(df)
         @test all(x->x <: CategoricalVector, typeof.(columns(df)))
         @test eltypes(df)[1] <: Union{CategoricalValue{Int}, Missing}

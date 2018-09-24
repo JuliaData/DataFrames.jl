@@ -334,7 +334,7 @@ module TestShow
     │ 3   │ 3.0     │        │"""
 
     # Test computing width for Array{String} columns
-    df = DataFrame(AbstractVector[["a"]], [:x])
+    df = DataFrame([["a"]], [:x])
     io = IOBuffer()
     show(io, df)
     str = String(take!(io))
