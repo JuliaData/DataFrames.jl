@@ -281,6 +281,11 @@ function Base.getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
 end
 
 # df[SingleRowIndex, MultiColumnIndex] => DataFrame
+function Base.getindex(df::DataFrame, row_ind::Bool, col_inds::AbstractVector)
+    throw(ArgumentError("invalid row index: $row_ind of type Bool"))
+end
+
+# df[SingleRowIndex, MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, row_ind::Real, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = Any[dv[[row_ind]] for dv in columns(df)[selected_columns]]
