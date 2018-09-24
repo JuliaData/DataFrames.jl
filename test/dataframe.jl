@@ -693,7 +693,7 @@ module TestDataFrame
         @test all(typeof(df[i]) <: Vector for i in 1:ncol(df))
     end
 
-    @teststet "test corner case of getindex" begin
+    @testset "test corner case of getindex" begin
         df = DataFrame(x=[1], y=[1])
         @test_throws ArgumentError df[true, 1:2]
     end
