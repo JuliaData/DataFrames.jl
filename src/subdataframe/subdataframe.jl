@@ -160,3 +160,8 @@ Base.map(f::Function, sdf::SubDataFrame) = f(sdf) # TODO: deprecate
 without(sdf::SubDataFrame, c) = view(without(parent(sdf), c), rows(sdf))
 # Resolve a method ambiguity
 without(sdf::SubDataFrame, c::Vector{<:Integer}) = view(without(parent(sdf), c), rows(sdf))
+
+Base.getproperty(df::SubDataFrame, col_ind::Symbol) = getindex(df, col_ind)
+Base.setproperty!(df::SubDataFrame, col_ind::Symbol, x) = setindex!(df, x, col_ind)
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(df::SubDataFrame, private::Bool=false) = names(df)

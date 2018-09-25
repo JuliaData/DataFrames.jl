@@ -644,6 +644,17 @@ Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = delete!(df, col_ind)
 
 ##############################################################################
 ##
+## getproperty/setproperty!
+##
+##############################################################################
+
+Base.getproperty(df::DataFrame, col_ind::Symbol) = getindex(df, col_ind)
+Base.setproperty!(df::DataFrame, col_ind::Symbol, x) = setindex!(df, x, col_ind)
+# Private fields are never exposed since they can conflict with column names
+Base.propertynames(df::DataFrame, private::Bool=false) = names(df)
+
+##############################################################################
+##
 ## Mutating AbstractDict methods
 ##
 ##############################################################################
