@@ -931,7 +931,8 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     for (i, name) in enumerate(header)
         data = [df[name] for df in dfs]
         lens = map(length, data)
-        cols[i] = promote_col_type(data...)(undef, sum(lens))
+        T = mapreduce(eltype, promote_type, data)
+        cols[i] = Tables.allocatecolumn(T, sum(lens))
         offset = 1
         for j in 1:length(data)
             copyto!(cols[i], offset, data[j])
