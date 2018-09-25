@@ -163,15 +163,15 @@ module TestCat
         @test typeof.(columns(df)) == [Vector{Union{Missing, Int}}]
         df = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof(df[:x]) <: CategoricalVector{Int}
+        @test df[:x] isa Vector{Int}
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([Union{Missing, Int}[1]], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Missing}}
+        @test df[:x] isa Vector{Union{Int, Missing}}
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([CategoricalArray{Union{Int, Missing}}([1])], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof(df[:x]) <: CategoricalVector{Union{Int, Missing}}
+        @test df[:x] isa CategoricalVector{Union{Int, Missing}}
         df = vcat(DataFrame([Union{Int, Missing}[1]], [:x]),
                   DataFrame([["1"]], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
@@ -179,7 +179,7 @@ module TestCat
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([CategoricalArray(["1"])], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
-        @test typeof(df[:x]) <: CategoricalVector{Any}
+        @test df[:x] isa CategoricalVector{Any}
         df = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
         @test df == DataFrame([[true, false]], [:x])
         @test typeof.(columns(df)) == [Vector{Bool}]

@@ -126,7 +126,7 @@ module TestDataFrame
         @test df == DataFrame(a=[1, 2], b=["a", "b"], c=[:c, :d])
     end
 
-    @testset "Empty DataFrame constructors" begin
+    @testset "DataFrame constructors" begin
         df = DataFrame(Union{Int, Missing}, 10, 3)
         @test size(df, 1) == 10
         @test size(df, 2) == 3
@@ -198,6 +198,10 @@ module TestDataFrame
         df = DataFrame(x=[1:3;], y=[3:5;])
         sdf = view(df, df[:x] .== 4)
         @test size(sdf, 1) == 0
+
+        # Test that vector type is correctly determined from scalar type
+        df = DataFrame(x=categorical(["a"])[1])
+        @test df.x isa CategoricalVector{String}
 
         @test hash(convert(DataFrame, [1 2; 3 4])) == hash(convert(DataFrame, [1 2; 3 4]))
         @test hash(convert(DataFrame, [1 2; 3 4])) != hash(convert(DataFrame, [1 3; 2 4]))

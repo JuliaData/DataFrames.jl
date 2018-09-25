@@ -102,7 +102,8 @@ mutable struct DataFrame <: AbstractDataFrame
             # recycle scalars
             for i in 1:length(columns)
                 isa(columns[i], AbstractArray) && continue
-                columns[i] = fill(columns[i], maxlen)
+                columns[i] = fill!(Tables.allocatecolumn(typeof(columns[i]), maxlen),
+                                   columns[i])
                 lengths[i] = maxlen
             end
             uls = unique(lengths)
@@ -179,22 +180,10 @@ DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(siz
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    nrows::Integer; makeunique::Bool=false)::DataFrame where T<:Type
-    columns = Vector{AbstractVector}(undef, length(column_eltypes))
-    for (j, elty) in enumerate(column_eltypes)
-        if elty >: Missing
-            if Missings.T(elty) <: CategoricalArrays.CatValue
-                columns[j] = CategoricalArray{elty}(undef, nrows)
-            else
-                columns[j] = missings(elty, nrows)
-            end
-        else
-            if elty <: CategoricalArrays.CatValue
-                columns[j] = CategoricalVector{elty}(undef, nrows)
-            else
-                columns[j] = Vector{elty}(undef, nrows)
-            end
-        end
-    end
+    columns = AbstractVector[elty >: Missing ?
+                             fill!(Tables.allocatecolumn(elty, nrows), missing) :
+                             Tables.allocatecolumn(elty, nrows)
+                             for elty in column_eltypes]
     return DataFrame(columns, Index(convert(Vector{Symbol}, cnames), makeunique=makeunique))
 end
 
@@ -211,10 +200,12 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
     end
     for i in eachindex(categorical)
         categorical[i] || continue
+        elty = CategoricalArrays.catvaluetype(Missings.T(updated_types[i]),
+                                              CategoricalArrays.DefaultRefType)
         if updated_types[i] >: Missing
-            updated_types[i] = Union{CategoricalValue{Missings.T(updated_types[i])}, Missing}
+            updated_types[i] = Union{elty, Missing}
         else
-            updated_types[i] = CategoricalValue{updated_types[i]}
+            updated_types[i] = elty
         end
     end
     return DataFrame(updated_types, cnames, nrows, makeunique=makeunique)
