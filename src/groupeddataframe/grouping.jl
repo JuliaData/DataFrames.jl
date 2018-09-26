@@ -372,3 +372,9 @@ function _aggregate(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}
     sort && sort!(res, headers)
     res
 end
+
+# A describe function for a GroupedDataFrame, returning a GroupedDataFrame
+function StatsBase.describe(g::GroupedDataFrame; kwargs...)
+       des = combine(map(d -> describe(d; kwargs...), g)) # a dataframe
+       groupby(des, g.cols) # group it again
+end

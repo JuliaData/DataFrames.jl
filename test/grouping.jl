@@ -240,4 +240,16 @@ module TestGrouping
             @test size(v) == (2,2)
         end
     end
+
+    @testset "gouped describe" begin 
+        global gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+        global correct = groupby( 
+            DataFrame(
+                A = [:A, :A, :B, :B], 
+                variable = [:A, :B, :A, :B], 
+                mean = [nothing, 1.5, nothing, 3.5]), :A)
+        @test describe(gd, stats = :mean)[1] == correct[1]
+    end
 end
+
+
