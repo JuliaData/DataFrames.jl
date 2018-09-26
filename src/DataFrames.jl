@@ -73,10 +73,10 @@ include("other/utils.jl")
 include("other/index.jl")
 
 include("abstractdataframe/abstractdataframe.jl")
-include("dataframerow/dataframerow.jl")
 include("dataframe/dataframe.jl")
 include("subdataframe/subdataframe.jl")
 include("groupeddataframe/grouping.jl")
+include("dataframerow/dataframerow.jl")
 include("dataframerow/utils.jl")
 
 include("abstractdataframe/iteration.jl")

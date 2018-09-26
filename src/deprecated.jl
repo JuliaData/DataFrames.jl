@@ -1339,6 +1339,9 @@ import Base: vcat
 import Base: collect
 @deprecate collect(r::DataFrameRow) collect(pairs(r))
 
+# Once `collect(::DataFrameRow)` emits values this method is no longer necessary
+Base.push!(df::DataFrame, r::DataFrameRow) = push!(df, values(r))
+
 import Base: show
 @deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(io, df, allcols=allcols, rowlabel=rowlabel, summary=summary)
 @deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol) show(io, df, allcols=allcols, rowlabel=rowlabel)

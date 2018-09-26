@@ -3,9 +3,6 @@
 # through cleanly.
 abstract type AbstractIndex end
 
-# TODO: change Real to Integer in this union after deprecation period
-const ColumnIndex = Union{Real, Symbol}
-
 mutable struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
