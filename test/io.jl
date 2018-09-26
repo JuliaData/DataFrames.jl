@@ -32,7 +32,8 @@ module TestIO
         show(io, "text/html", df)
         str = String(take!(io))
         @test str == "<table class=\"data-frame\"><thead><tr><th>" *
-                    "</th><th>Fish</th><th>Mass</th></tr></thead><tbody>" *
+                    "</th><th>Fish</th><th>Mass</th></tr>" *
+                    "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
                     "<tr><th>1</th><td>Suzy</td><td>1.5</td></tr>" *
                     "<tr><th>2</th><td>Amir</td><td>missing</td></tr></tbody></table>"
 
@@ -41,7 +42,8 @@ module TestIO
         show(io, "text/html", df)
         str = String(take!(io))
         @test str == "<table class=\"data-frame\"><thead><tr><th>" *
-                    "</th><th>Fish</th><th>Mass</th></tr></thead><tbody>" *
+                    "</th><th>Fish</th><th>Mass</th></tr>" *
+                    "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
                     "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
                     "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
     end

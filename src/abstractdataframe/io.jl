@@ -90,7 +90,14 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     write(io, "<tr>")
     write(io, "<th></th>")
     for column_name in cnames
-        write(io, "<th>$column_name</th>")
+        write(io, "<th>$(html_escape(String(column_name)))</th>")
+    end
+    write(io, "</tr>")
+    write(io, "<tr>")
+    write(io, "<th></th>")
+    for j in 1:ncol(df)
+        s = html_escape(compacttype(eltype(df[j])))
+        write(io, "<th>$s</th>")
     end
     write(io, "</tr>")
     write(io, "</thead>")
