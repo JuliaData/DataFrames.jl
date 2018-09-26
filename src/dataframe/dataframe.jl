@@ -554,7 +554,7 @@ function Base.setindex!(df::DataFrame,
                         row_inds::AbstractVector{<:Real},
                         col_inds::AbstractVector{<:ColumnIndex})
     for j in 1:length(col_inds)
-        insert_multiple_entries!(df, new_df[:, j], row_inds, col_inds[j])
+        insert_multiple_entries!(df, new_df[j], row_inds, col_inds[j])
     end
     return df
 end

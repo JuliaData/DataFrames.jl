@@ -842,11 +842,11 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 # catch-all to cover cases where indexing returns a DataFrame and copy doesn't
 
 Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=false) =
-    hcat!(df[:, :], x, makeunique=makeunique)
+    hcat!(df[:], x, makeunique=makeunique)
 Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=false) =
-    hcat!(x, df[:, :], makeunique=makeunique)
+    hcat!(x, df[:], makeunique=makeunique)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=false) =
-    hcat!(df1[:, :], df2, makeunique=makeunique)
+    hcat!(df1[:], df2, makeunique=makeunique)
 Base.hcat(df::AbstractDataFrame, x, y...; makeunique::Bool=false) =
     hcat!(hcat(df, x, makeunique=makeunique), y..., makeunique=makeunique)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
