@@ -155,7 +155,7 @@ end
 ##
 ##############################################################################
 
-copy(sdf::SubDataFrame) = sdf[:]
+Base.copy(sdf::SubDataFrame) = sdf[:]
 
 Base.map(f::Function, sdf::SubDataFrame) = f(sdf) # TODO: deprecate
 
