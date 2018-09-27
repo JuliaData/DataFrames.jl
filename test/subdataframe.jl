@@ -1,6 +1,14 @@
 module TestSubDataFrame
     using Test, DataFrames
 
+    @testset "copy - SubDataFrame" begin
+        df = DataFrame(x = 1:10, y = 1.0:10.0)
+        sdf = view(df, 1:2, 1:1)
+        @test sdf isa SubDataFrame
+        @test copy(sdf) isa DataFrame
+        @test isequal(sdf, copy(sdf))
+    end
+
     @testset "view -- DataFrame" begin
         df = DataFrame(x = 1:10, y = 1.0:10.0)
         @test view(df, 1) == head(df, 1)

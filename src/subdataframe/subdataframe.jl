@@ -155,6 +155,8 @@ end
 ##
 ##############################################################################
 
+copy(sdf::SubDataFrame) = sdf[:]
+
 Base.map(f::Function, sdf::SubDataFrame) = f(sdf) # TODO: deprecate
 
 without(sdf::SubDataFrame, c) = view(without(parent(sdf), c), rows(sdf))

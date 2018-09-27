@@ -15,7 +15,9 @@ module TestCat
         df4 = convert(DataFrame, [1:4 1:4])
         df5 = DataFrame([Union{Int, Missing}[1,2,3,4], nvstr])
 
+        ref_df = copy(df3)
         dfh = hcat(df3, df4, makeunique=true)
+        @test isequal(ref_df, df3) # make sure that df3 is not mutated by hcat
         @test size(dfh, 2) == 3
         @test names(dfh) ≅ [:x1, :x1_1, :x2]
         @test dfh[:x1] ≅ df3[:x1]
@@ -62,9 +64,12 @@ module TestCat
 
         df = DataFrame()
         df2 = hcat(CategoricalVector{Union{Int,Missing}}(1:10), df, makeunique=true)
+        @test isempty(df)
         @test df2[1] == collect(1:10)
         @test names(df2) == [:x1]
+        ref_df = copy(df2)
         df3 = hcat(11:20, df2, makeunique=true)
+        @test isequal(df2, ref_df)
         @test df3[1] == collect(11:20)
         @test names(df3) == [:x1, :x1_1]
 
