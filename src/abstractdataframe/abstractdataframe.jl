@@ -15,7 +15,7 @@ The following are normally implemented for AbstractDataFrames:
 * [`dump`](@ref) : show structure
 * `hcat` : horizontal concatenation
 * `vcat` : vertical concatenation
-* `repeat` : repeat rows
+* [`repeat`](@ref) : repeat data frame
 * `names` : columns names
 * [`names!`](@ref) : set columns names
 * [`rename!`](@ref) : rename columns names based on keyword arguments
@@ -449,7 +449,7 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
     end
 
 
-    # Put the summary stats into the return dataframe
+    # Put the summary stats into the return data frame
     data = DataFrame()
     data[:variable] = names(df)
 
@@ -952,9 +952,8 @@ end
 """
     repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1)
 
-Construct repeat each row using the `inner` argument specifies the number of
-times that each row will be repeated while the `outer` argument specifies how
-many times the combination should be repeated.
+Return a data frame by repeating `df` using the `inner` and `outer` argument
+from `repeat` for arrays.
 
 # Example
 ```jldoctest
@@ -986,12 +985,12 @@ julia> repeat(df, inner = 2, outer = 3)
 ```
 """
 Base.repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1) =
-            map(x -> repeat(x, inner = inner, outer = outer), eachcol(df))
+    map(x -> repeat(x, inner = inner, outer = outer), eachcol(df))
 
 """
     repeat(df::AbstractDataFrame, count::Integer)
 
-Construct repeat each row `count` times.
+Return a data frame by repeating `df` `count` times.
 
 # Example
 ```jldoctest
@@ -1015,7 +1014,7 @@ julia> repeat(df, 2)
 ```
 """
 Base.repeat(df::AbstractDataFrame, count::Integer) =
-            map(x -> repeat(x, count), eachcol(df))
+    map(x -> repeat(x, count), eachcol(df))
 
 ##############################################################################
 ##
