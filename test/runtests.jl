@@ -10,6 +10,7 @@ using Test, Random, DataFrames
 
 my_tests = ["utils.jl",
             "cat.jl",
+            "repeat.jl",
             "data.jl",
             "index.jl",
             "dataframe.jl",
