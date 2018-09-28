@@ -17,7 +17,7 @@ module TestCat
 
         ref_df = copy(df3)
         dfh = hcat(df3, df4, makeunique=true)
-        @test isequal(ref_df, df3) # make sure that df3 is not mutated by hcat
+        @test ref_df == df3 # make sure that df3 is not mutated by hcat
         @test size(dfh, 2) == 3
         @test names(dfh) ≅ [:x1, :x1_1, :x2]
         @test dfh[:x1] ≅ df3[:x1]
@@ -69,7 +69,7 @@ module TestCat
         @test names(df2) == [:x1]
         ref_df = copy(df2)
         df3 = hcat(11:20, df2, makeunique=true)
-        @test isequal(df2, ref_df)
+        @test df2 == ref_df
         @test df3[1] == collect(11:20)
         @test names(df3) == [:x1, :x1_1]
 
