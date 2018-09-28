@@ -15,7 +15,7 @@ The following are normally implemented for AbstractDataFrames:
 * [`dump`](@ref) : show structure
 * `hcat` : horizontal concatenation
 * `vcat` : vertical concatenation
-* [`repeat`](@ref) : repeat data frame
+* [`repeat`](@ref) : repeat rows
 * `names` : columns names
 * [`names!`](@ref) : set columns names
 * [`rename!`](@ref) : rename columns names based on keyword arguments
@@ -952,8 +952,9 @@ end
 """
     repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1)
 
-Return a data frame by repeating `df` using the `inner` and `outer` argument
-from `repeat` for arrays.
+Construct a data frame by repeating rows in `df`. `inner` specifies how many
+times each row is repeated, and `outer` specifies how many times the full set
+of rows is repeated.
 
 # Example
 ```jldoctest
@@ -990,7 +991,8 @@ Base.repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1) =
 """
     repeat(df::AbstractDataFrame, count::Integer)
 
-Return a data frame by repeating `df` `count` times.
+Construct a data frame by repeating each row in `df` the number of times
+specified by `count`.
 
 # Example
 ```jldoctest
