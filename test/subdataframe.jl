@@ -6,7 +6,7 @@ module TestSubDataFrame
         sdf = view(df, 1:2, 1:1)
         @test sdf isa SubDataFrame
         @test copy(sdf) isa DataFrame
-        @test isequal(sdf, copy(sdf))
+        @test sdf == copy(sdf)
     end
 
     @testset "view -- DataFrame" begin
