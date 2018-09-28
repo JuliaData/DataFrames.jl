@@ -156,8 +156,8 @@ This determines the shape of the resulting data frame:
 
 In all cases, the resulting data frame contains all the grouping columns in addition
 to those listed above. Note that `f` must always return the same type of object for
-all groups, and (if a named tuple or data frame) with the same fields or columns in the
-same order. Returning a single value or a named tuple is significantly faster than
+all groups, and (if a named tuple or data frame) with the same fields or columns.
+Returning a single value or a named tuple is significantly faster than
 returning a vector or a data frame.
 
 The resulting data frame will be sorted if `sort=true` was passed to the [`groupby`](@ref)
@@ -216,13 +216,18 @@ end
     elseif length(row) != N
         throw(ArgumentError("return value must have the same number of columns " *
                             "for all groups (got $N and $(length(row)))"))
-    elseif propertynames(row) != colnames
-        throw(ArgumentError("return value must have the same column names " *
-                            "for all groups (got $colnames and $(propertynames(row)))"))
     end
     @inbounds for j in colstart:length(cols)
         val = row[j]
         col = cols[j]
+        cn = colnames[j]
+        local val
+        try
+            val = row[cn]
+        catch
+            throw(ArgumentError("return value must have the same column names " *
+                                "for all groups (got $colnames and $(propertynames(row)))"))
+        end
         S = typeof(val)
         T = eltype(col)
         if S <: T || promote_type(S, T) <: T
@@ -277,13 +282,18 @@ function append_rows!(rows, cols::NTuple{N, AbstractVector},
     elseif size(rows, 2) != N
         throw(ArgumentError("return value must have the same number of columns " *
                             "for all groups (got $N and $(size(rows, 2)))"))
-    elseif names(rows) != colnames
-        throw(ArgumentError("return value must have the same column names " *
-                            "for all groups (got $(Tuple(colnames)) and $(Tuple(names(rows))))"))
     end
     @inbounds for j in colstart:length(cols)
         vals = rows[j]
         col = cols[j]
+        cn = colnames[j]
+        local vals
+        try
+            vals = rows[cn]
+        catch
+            throw(ArgumentError("return value must have the same column names " *
+                                "for all groups (got $(Tuple(colnames)) and $(Tuple(names(rows))))"))
+        end
         S = eltype(vals)
         T = eltype(col)
         if S <: T || promote_type(S, T) <: T
@@ -402,8 +412,8 @@ This determines the shape of the resulting data frame:
 
 In all cases, the resulting data frame contains all the grouping columns in addition
 to those listed above. Note that `f` must always return the same type of object for
-all groups, and (if a named tuple or data frame) with the same fields or columns in the
-same order. Returning a single value or a named tuple is significantly faster than
+all groups, and (if a named tuple or data frame) with the same fields or columns.
+Returning a single value or a named tuple is significantly faster than
 returning a vector or a data frame.
 
 A method is defined with `f` as the first argument, so do-block

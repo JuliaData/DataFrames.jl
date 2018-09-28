@@ -245,13 +245,17 @@ module TestGrouping
         @test res.b isa Vector{Union{String,Missing}}
         @test res.b ≅ [missing, "a", "a"]
 
+        # Test return values with columns in different orders
+        @test by(d -> d.x == [1] ? (x1=1, x2=3) : (x2=2, x1=4), df, :x) ==
+            DataFrame(x=1:3, x1=[1, 4, 4], x2=[3, 2, 2])
+        @test by(d -> d.x == [1] ? DataFrame(x1=1, x2=3) : DataFrame(x2=2, x1=4), df, :x) ==
+            DataFrame(x=1:3, x1=[1, 4, 4], x2=[3, 2, 2])
+
         # Test with incompatible return values
         @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1,) : DataFrame(x1=1), df, :x)
         @test_throws ArgumentError by(d -> d.x == [1] ? NamedTuple() : (x1=1), df, :x)
-        @test_throws ArgumentError by(d -> d.x == [1] ? (a=1, b=2) : (b=2, a=1), df, :x)
         @test_throws ArgumentError by(d -> d.x == [1] ? 1 : DataFrame(x1=1), df, :x)
         @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame() : DataFrame(x1=1), df, :x)
-        @test_throws ArgumentError by(d -> d.x == [1] ? DataFrame(a=1, b=2) : DataFrame(b=2, a=1), df, :x)
         # Special case allowed due to how implementation works
         @test by(d -> d.x == [1] ? 1 : (x1=1), df, :x) == by(d -> 1, df, :x)
 
