@@ -106,7 +106,7 @@ module TestGrouping
         sres = sort(res)
 
         # by() without groups sorting
-        @test sort(by(df, cols, identity, sort=true)[[:a, :b, :c]]) == sort(df)
+        @test sort(by(df, cols, identity)[[:a, :b, :c]]) == sort(df)
         @test by(df, cols, f) == res
         @test by(df, cols, g) == res
         @test rename(by(df, cols, h), :x1 => :cmax) == res
@@ -122,10 +122,10 @@ module TestGrouping
 
         # groupby() without groups sorting
         gd = groupby(df, cols)
-        @test sort(map(identity, gd)[[:a, :b, :c]]) == sort(df)
-        @test map(f, gd) == res
-        @test map(g, gd) == res
-        @test rename(map(h, gd), :x1 => :cmax) == res
+        @test sort(combine(identity, gd)[[:a, :b, :c]]) == sort(df)
+        @test combine(f, gd) == res
+        @test combine(g, gd) == res
+        @test rename(combine(h, gd), :x1 => :cmax) == res
 
         # groupby() with groups sorting
         gd = groupby(df, cols, sort=true)
@@ -133,10 +133,10 @@ module TestGrouping
             @test all(gd[i].a .== sres.a[i])
             @test all(gd[i].b .== sres.b[i])
         end
-        @test map(identity, gd)[[:a, :b, :c]] == sort(df, cols)
-        @test map(f, gd) == sres
-        @test map(g, gd) == sres
-        @test rename(map(h, gd), :x1 => :cmax) == sres
+        @test combine(identity, gd)[[:a, :b, :c]] == sort(df, cols)
+        @test combine(f, gd) == sres
+        @test combine(g, gd) == sres
+        @test rename(combine(h, gd), :x1 => :cmax) == sres
 
         # testing pool overflow
         df2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
@@ -182,27 +182,27 @@ module TestGrouping
         @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
 
         # Check that CategoricalArray column is preserved when returning a value...
-        res = map(d -> DataFrame(x=d[1, :Key2]), groupby(df, :Key1))
+        res = combine(d -> DataFrame(x=d[1, :Key2]), groupby(df, :Key1))
         @test res.x isa CategoricalVector{String}
-        res = map(d -> (x=d[1, :Key2],), groupby(df, :Key1))
+        res = combine(d -> (x=d[1, :Key2],), groupby(df, :Key1))
         @test res.x isa CategoricalVector{String}
         # ...and when returning an array
-        res = map(d -> DataFrame(x=d[:Key1]), groupby(df, :Key1))
+        res = combine(d -> DataFrame(x=d[:Key1]), groupby(df, :Key1))
         @test res.x isa CategoricalVector{String}
 
         # Check that CategoricalArray and String give a String...
-        res = map(d -> d.Key1 == ["A", "A"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
-                  groupby(df, :Key1))
+        res = combine(d -> d.Key1 == ["A", "A"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
+                      groupby(df, :Key1))
         @test res.x isa Vector{String}
-        res = map(d -> d.Key1 == ["A", "A"] ? (x=d[1, :Key1],) : (x="C",),
-                  groupby(df, :Key1))
+        res = combine(d -> d.Key1 == ["A", "A"] ? (x=d[1, :Key1],) : (x="C",),
+                      groupby(df, :Key1))
         @test res.x isa Vector{String}
         # ...even when CategoricalString comes second
-        res = map(d -> d.Key1 == ["B", "B"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
-                  groupby(df, :Key1))
+        res = combine(d -> d.Key1 == ["B", "B"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
+                      groupby(df, :Key1))
         @test res.x isa Vector{String}
-        res = map(d -> d.Key1 == ["B", "B"] ? (x=d[1, :Key1],) : (x="C",),
-                  groupby(df, :Key1))
+        res = combine(d -> d.Key1 == ["B", "B"] ? (x=d[1, :Key1],) : (x="C",),
+                      groupby(df, :Key1))
         @test res.x isa Vector{String}
 
         df = DataFrame(x = [1, 2, 3], y = [2, 3, 1])
@@ -264,6 +264,53 @@ module TestGrouping
         res = by(d -> 1, df, :x)
         @test size(res) == (0, 1)
         @test res.x isa Vector{Int}
+    end
+
+    @testset "map(f, ::GroupedDataFrame)" begin
+        Random.seed!(1)
+        df = DataFrame(a = repeat(Union{Int, Missing}[1, 3, 2, 4], outer=[2]),
+                       b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
+                       c = Vector{Union{Float64, Missing}}(randn(8)))
+
+        cols = [:a, :b]
+        f(df) = DataFrame(cmax = maximum(df[:c]))
+        g(df) = (cmax = maximum(df[:c]),)
+        h(df) = maximum(df[:c])
+
+        res = unique(df[cols])
+        res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
+                    for (a, b) in zip(res.a, res.b)]
+        sres = sort(res)
+
+        # map() without groups sorting
+        gd = groupby(df, cols)
+        res = map(d -> d[[:c]], gd)
+        @test length(gd) == length(res)
+        @test res[1] == gd[1] && res[2] == gd[2] && res[3] == gd[3] && res[4] == gd[4]
+        res = map(f, groupby(df, cols))
+        @test vcat(res[1], res[2], res[3], res[4]) == by(f, df, cols)
+        res = map(g, groupby(df, cols))
+        @test vcat(res[1], res[2], res[3], res[4]) == by(g, df, cols)
+        res = map(h, groupby(df, cols))
+        @test vcat(res[1], res[2], res[3], res[4]) == by(df, cols, h)
+
+        # map() with groups sorting
+        gd = groupby(df, cols, sort=true)
+        res = map(d -> d[[:c]], gd)
+        @test length(gd) == length(res)
+        @test res[1] == gd[1] && res[2] == gd[2] && res[3] == gd[3] && res[4] == gd[4]
+        res = map(f, groupby(df, cols, sort=true))
+        @test vcat(res[1], res[2], res[3], res[4]) == by(f, df, cols, sort=true)
+        res = map(g, groupby(df, cols, sort=true))
+        @test vcat(res[1], res[2], res[3], res[4]) == by(g, df, cols, sort=true)
+        res = map(h, groupby(df, cols, sort=true))
+        @test vcat(res[1], res[2], res[3], res[4]) == by(df, cols, h, sort=true)
+
+        # Test with some groups returning empty data frames
+        df = DataFrame(x = [1, 2, 3], y = [2, 3, 1])
+        res = map(d -> d.x == [1] ? DataFrame(z=[]) : DataFrame(z=1), groupby(df, :x))
+        @test length(res) == 2
+        @test vcat(res[1], res[2]) == DataFrame(x=[2, 3], z=[1, 1])
     end
 
     @testset "grouping with missings" begin

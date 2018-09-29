@@ -42,14 +42,17 @@ groupby(cols; sort = false, skipmissing = false)
 
 An iterator over a `GroupedDataFrame` returns a `SubDataFrame` view
 for each grouping into `d`. A `GroupedDataFrame` also supports
-indexing by groups and `map` (which applies a function to each group
+indexing by groups, `map` (which applies a function to each group)
+and `combine` (which applies a function to each group
 and combines the result into a data frame).
 
 See the following for additional split-apply-combine operations:
 
 * `by` : split-apply-combine using functions
 * `aggregate` : split-apply-combine; applies functions in the form of a cross product
-* `colwise` : apply a function to each column in an AbstractDataFrame or GroupedDataFrame
+* `colwise` : apply a function to each column in an `AbstractDataFrame` or `GroupedDataFrame`
+* `map` : apply a function to each group of a `GroupedDataFrame` (without combining)
+* `combine` : combine a `GroupedDataFrame`, optionally applying a function to each group
 
 ### Examples
 
@@ -65,6 +68,7 @@ for g in gd
     println(g)
 end
 map(d -> mean(skipmissing(d[:c])), gd)
+combine(d -> mean(skipmissing(d[:c])), gd)
 ```
 
 """
@@ -127,23 +131,77 @@ wrap(s::Union{AbstractVector, Tuple}) = DataFrame(x1 = s)
 wrap(s::Any) = (x1 = s,)
 
 """
-Apply a function to each group of rows and combine the result
+    map(f::Function, gd::GroupedDataFrame)
+
+Apply a function to each group of rows and return a `GroupedDataFrame`.
+
+For each group in `gd`, `f` is passed a `SubDataFrame` view holding the corresponding rows.
+`f` can return a single value, a named tuple, a vector, or a data frame.
+This determines the shape of the resulting data frame:
+- A single value gives a data frame with a single column and one row per group.
+- A named tuple gives a data frame with one column for each field in the named tuple
+  and one row per group.
+- A vector gives a data frame with a single column and as many rows
+  for each group as the length of the returned vector for that group.
+- A data frame gives a data frame with the same columns and as many rows
+  for each group as the rows returned for that group.
+
+In all cases, the resulting `GroupedDataFrame` contains all the grouping columns in addition
+to those listed above. Note that `f` must always return the same type of object for
+all groups, and (if a named tuple or data frame) with the same fields or columns.
+Returning a single value or a named tuple is significantly faster than
+returning a vector or a data frame.
+
+### Examples
 
 ```julia
-map(f::Function, gd::GroupedDataFrame)
+df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+               b = repeat([2, 1], outer=[4]),
+               c = randn(8))
+gd = groupby(df, :a)
+map(d -> sum(skipmissing(d[:c])), gd)
 ```
 
-### Arguments
+### See also
 
-* `gd` : a `GroupedDataFrame` object
+`combine(f, gd)` returns a `DataFrame` rather than a `GroupedDataFrame`
 
-### Returns
+"""
+function Base.map(f::Function, gd::GroupedDataFrame)
+    if length(gd) > 0
+        idx, valscat = _combine(wrap(f(gd[1])), f, gd)
+        parent = hcat!(gd.parent[idx, gd.cols], valscat)
+        starts = Vector{Int}(undef, length(gd))
+        ends = Vector{Int}(undef, length(gd))
+        starts[1] = 1
+        j = 2
+        @inbounds for i in 2:length(idx)
+            if idx[i] != idx[i-1]
+                starts[j] = i
+                ends[j-1] = i - 1
+                j += 1
+            end
+        end
+        # In case some groups have to be dropped
+        resize!(starts, j-1)
+        resize!(ends, j-1)
+        ends[end] = length(idx)
+        return GroupedDataFrame(parent, gd.cols, collect(1:length(idx)), starts, ends)
+    else
+        return GroupedDataFrame(similar(gd.parent[gd.cols], 0), gd.cols,
+                                Int[], Int[], Int[])
+    end
+end
 
-* `::DataFrame`
+"""
+    combine(gd::GroupedDataFrame)
+    combine(f::Function, gd::GroupedDataFrame)
 
-### Details
+Transform a `GroupedDataFrame` into a `DataFrame`.
+If a function `f` is provided, it is called for each group in `gd` with a `SubDataFrame` view
+holding the corresponding rows, and the returned `DataFrame` then consists of the returned rows
+plus the grouping columns.
 
-For each group in `gd`, `f` is passed a `SubDataFrame` view with the corresponding rows.
 `f` can return a single value, a named tuple, a vector, or a data frame.
 This determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
@@ -175,17 +233,22 @@ map(d -> sum(skipmissing(d[:c])), gd)
 
 ### See also
 
-`by(f, df, cols)` is a shorthand for `map(f, groupby(df, cols))`.
+[`by(f, df, cols)`](@ref) is a shorthand for `combine(f, groupby(df, cols))`.
+
+[`map`](@ref): `combine(f, groupby(df, cols))` is a more efficient equivalent
+of `combine(map(f, groupby(df, cols)))`.
 
 """
-function Base.map(f::Function, gd::GroupedDataFrame)
+function combine(f::Function, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(wrap(f(gd[1])), f, gd)
         return hcat!(gd.parent[idx, gd.cols], valscat)
     else
-        return similar(gd.parent, 0)[gd.cols]
+        return similar(gd.parent[gd.cols], 0)
     end
 end
+
+combine(gd::GroupedDataFrame) = combine(identity, gd)
 
 function _combine(first::NamedTuple, f::Function, gd::GroupedDataFrame)
     m = length(first)
@@ -419,7 +482,7 @@ returning a vector or a data frame.
 A method is defined with `f` as the first argument, so do-block
 notation can be used.
 
-`by(d, cols, f)` is equivalent to `map(f, groupby(d, cols))`.
+`by(d, cols, f)` is equivalent to `combine(f, groupby(d, cols))`.
 
 ### Returns
 
@@ -442,7 +505,7 @@ end
 
 """
 by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false) =
-    map(f, groupby(d, cols, sort = sort))
+    combine(f, groupby(d, cols, sort = sort))
 by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false) =
     by(d, cols, f, sort = sort)
 
@@ -497,7 +560,7 @@ end
 aggregate(gd::GroupedDataFrame, f::Function; sort::Bool=false) = aggregate(gd, [f], sort=sort)
 function aggregate(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Function
     headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent[gd.cols])))
-    res = map(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
+    res = combine(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
     sort && sort!(res, headers)
     res
 end

@@ -14,8 +14,10 @@ Pages = ["functions.md"]
 aggregate
 by
 colwise
+combine
 groupby
 join
+map
 melt
 stack
 unstack
@@ -27,7 +29,6 @@ meltdf
 
 ```@docs
 allowmissing!
-map
 completecases
 describe
 disallowmissing!
