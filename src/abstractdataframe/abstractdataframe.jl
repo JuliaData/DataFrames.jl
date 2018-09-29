@@ -544,103 +544,199 @@ end
 
 
 """
-Indexes of complete cases (rows without missing values)
+    completecases(df::AbstractDataFrame)
+    completecases(df::AbstractDataFrame, cols::AbstractVector)
+    completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
+
+Return a Boolean vector with `true` entries indicating rows without missing values
+(complete cases) in data frame `df`. If `cols` is provided, only missing values in
+the corresponding columns are considered.
+
+See also: [`dropmissing`](@ref) and [`dropmissing!`](@ref).
+Use `findall(completecases(df))` to get the indices of the rows.
+
+# Examples
 
 ```julia
-completecases(df::AbstractDataFrame)
-```
+julia> df = DataFrame(i = 1:5,
+                      x = [missing, 4, missing, 2, 1],
+                      y = [missing, missing, "c", "d", "e"])
+5×3 DataFrame
+│ Row │ i     │ x       │ y       │
+│     │ Int64 │ Int64⍰  │ String⍰ │
+├─────┼───────┼─────────┼─────────┤
+│ 1   │ 1     │ missing │ missing │
+│ 2   │ 2     │ 4       │ missing │
+│ 3   │ 3     │ missing │ c       │
+│ 4   │ 4     │ 2       │ d       │
+│ 5   │ 5     │ 1       │ e       │
 
-**Arguments**
+julia> completecases(df)
+5-element BitArray{1}:
+ false
+ false
+ false
+  true
+  true
 
-* `df` : the AbstractDataFrame
+julia> completecases(df, :x)
+5-element BitArray{1}:
+ false
+  true
+ false
+  true
+  true
 
-**Result**
-
-* `::Vector{Bool}` : indexes of complete cases
-
-See also [`dropmissing`](@ref) and [`dropmissing!`](@ref).
-
-**Examples**
-
-```julia
-df = DataFrame(i = 1:10,
-               x = Vector{Union{Missing, Float64}}(rand(10)),
-               y = Vector{Union{Missing, String}}(rand(["a", "b", "c"], 10)))
-df[[1,4,5], :x] = missing
-df[[9,10], :y] = missing
-completecases(df)
+julia> completecases(df, [:x, :y])
+5-element BitArray{1}:
+ false
+ false
+ false
+  true
+  true
 ```
 
 """
-function completecases(df::AbstractDataFrame)
+function completecases(df::AbstractDataFrame, cols::AbstractVector=1:size(df, 2))
     res = trues(size(df, 1))
-    for i in 1:size(df, 2)
+    for i in cols
         _nonmissing!(res, df[i])
     end
     res
 end
 
-"""
-Remove rows with missing values.
-
-```julia
-dropmissing(df::AbstractDataFrame)
-```
-
-**Arguments**
-
-* `df` : the AbstractDataFrame
-
-**Result**
-
-* `::AbstractDataFrame` : the updated copy
-
-See also [`completecases`](@ref) and [`dropmissing!`](@ref).
-
-**Examples**
-
-```julia
-df = DataFrame(i = 1:10,
-               x = Vector{Union{Missing, Float64}}(rand(10)),
-               y = Vector{Union{Missing, String}}(rand(["a", "b", "c"], 10)))
-df[[1,4,5], :x] = missing
-df[[9,10], :y] = missing
-dropmissing(df)
-```
+function completecases(df::AbstractDataFrame, col::Union{Integer, Symbol})
+    res = trues(size(df, 1))
+    _nonmissing!(res, df[col])
+    res
+end
 
 """
-dropmissing(df::AbstractDataFrame) = deleterows!(copy(df), findall(!, completecases(df)))
+    dropmissing(df::AbstractDataFrame)
+    dropmissing(df::AbstractDataFrame, cols::AbstractVector)
+    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
-"""
-Remove rows with missing values in-place.
+Return a copy of data frame `df` excluding rows with missing values.
+If `cols` is provided, only missing values in the corresponding columns are considered.
 
-```julia
-dropmissing!(df::AbstractDataFrame)
-```
+See also: [`completecases`](@ref) and [`dropmissing!`](@ref).
 
-**Arguments**
-
-* `df` : the AbstractDataFrame
-
-**Result**
-
-* `::AbstractDataFrame` : the updated version
-
-See also [`dropmissing`](@ref) and [`completecases`](@ref).
-
-**Examples**
+# Examples
 
 ```julia
-df = DataFrame(i = 1:10,
-               x = Vector{Union{Missing, Float64}}(rand(10)),
-               y = Vector{Union{Missing, String}}(rand(["a", "b", "c"], 10)))
-df[[1,4,5], :x] = missing
-df[[9,10], :y] = missing
-dropmissing!(df)
+julia> df = DataFrame(i = 1:5,
+                      x = [missing, 4, missing, 2, 1],
+                      y = [missing, missing, "c", "d", "e"])
+5×3 DataFrame
+│ Row │ i     │ x       │ y       │
+│     │ Int64 │ Int64⍰  │ String⍰ │
+├─────┼───────┼─────────┼─────────┤
+│ 1   │ 1     │ missing │ missing │
+│ 2   │ 2     │ 4       │ missing │
+│ 3   │ 3     │ missing │ c       │
+│ 4   │ 4     │ 2       │ d       │
+│ 5   │ 5     │ 1       │ e       │
+
+julia> dropmissing(df)
+2×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 4     │ 2      │ d       │
+│ 2   │ 5     │ 1      │ e       │
+
+julia> dropmissing(df, :x)
+3×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 2     │ 4      │ missing │
+│ 2   │ 4     │ 2      │ d       │
+│ 3   │ 5     │ 1      │ e       │
+
+julia> dropmissing(df, [:x, :y])
+2×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 4     │ 2      │ d       │
+│ 2   │ 5     │ 1      │ e       │
 ```
 
 """
-dropmissing!(df::AbstractDataFrame) = deleterows!(df, findall(!, completecases(df)))
+dropmissing(df::AbstractDataFrame,
+            cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2)) =
+    deleterows!(copy(df), findall(!, completecases(df, cols)))
+
+"""
+    dropmissing!(df::AbstractDataFrame)
+    dropmissing!(df::AbstractDataFrame, cols::AbstractVector)
+    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol})
+
+Remove rows with missing values from data frame `df` and return it.
+If `cols` is provided, only missing values in the corresponding columns are considered.
+
+See also: [`dropmissing`](@ref) and [`completecases`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(i = 1:5,
+                      x = [missing, 4, missing, 2, 1],
+                      y = [missing, missing, "c", "d", "e"])
+5×3 DataFrame
+│ Row │ i     │ x       │ y       │
+│     │ Int64 │ Int64⍰  │ String⍰ │
+├─────┼───────┼─────────┼─────────┤
+│ 1   │ 1     │ missing │ missing │
+│ 2   │ 2     │ 4       │ missing │
+│ 3   │ 3     │ missing │ c       │
+│ 4   │ 4     │ 2       │ d       │
+│ 5   │ 5     │ 1       │ e       │
+
+julia> df1 = copy(df);
+
+julia> dropmissing!(df1);
+
+julia> df1
+2×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 4     │ 2      │ d       │
+│ 2   │ 5     │ 1      │ e       │
+
+julia> df2 = copy(df);
+
+julia> dropmissing!(df2, :x);
+
+julia> df2
+3×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 2     │ 4      │ missing │
+│ 2   │ 4     │ 2      │ d       │
+│ 3   │ 5     │ 1      │ e       │
+
+julia> df3 = copy(df);
+
+julia> dropmissing!(df3, [:x, :y]);
+
+
+julia> df3
+2×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 4     │ 2      │ d       │
+│ 2   │ 5     │ 1      │ e       │
+```
+
+"""
+dropmissing!(df::AbstractDataFrame,
+             cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2)) =
+    deleterows!(df, findall(!, completecases(df, cols)))
 
 """
     filter(function, df::AbstractDataFrame)

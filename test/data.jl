@@ -45,13 +45,29 @@ module TestData
         @test size(df6, 2) == 3
 
         #test_group("missing handling")
-        @test nrow(df5[completecases(df5), :]) == 3
-        @test nrow(dropmissing(df5)) == 3
+        @test df5[completecases(df5), :] == df5[[1, 2, 4], :]
+        @test dropmissing(df5) == df5[[1, 2, 4], :]
         returned = dropmissing(df4)
         @test df4 == returned && df4 !== returned
-        @test nrow(dropmissing!(df5)) == 3
-        returned = dropmissing!(df4)
-        @test df4 == returned && df4 === returned
+        df5b = deepcopy(df5)
+        @test dropmissing!(df5b) === df5b
+        @test df5b == df5[[1, 2, 4], :]
+        df4b = deepcopy(df4)
+        @test dropmissing!(df4b) === df4b
+        @test df4b == df4
+
+        for cols in (:x2, [:x2], [:x1, :x2], 2, [2], 1:2)
+            @test df5[completecases(df5, cols), :] == df5[[1, 2, 4], :]
+            @test dropmissing(df5, cols) == df5[[1, 2, 4], :]
+            returned = dropmissing(df4, cols)
+            @test df4 == returned && df4 !== returned
+            df5b = deepcopy(df5)
+            @test dropmissing!(df5b, cols) === df5b
+            @test df5b == df5[[1, 2, 4], :]
+            df4b = deepcopy(df4)
+            @test dropmissing!(df4b, cols) === df4b
+            @test df4b == df4
+        end
 
         #test_context("SubDataFrames")
 
