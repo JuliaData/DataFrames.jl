@@ -1018,7 +1018,7 @@ function Base.push!(df::DataFrame, col::Union{AbstractDict, NamedTuple})
     i = 1
     for nm in _names(df)
         try
-            val = get(dict, nm) do
+            val = get(col, nm) do
                 v = dict[string(nm)]
                 Base.depwarn("push!(::DataFrame, ::AbstractDict) with " *
                              "AbstractDict keys other than Symbol is deprecated",
