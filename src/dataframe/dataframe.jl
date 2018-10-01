@@ -1014,7 +1014,7 @@ Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 ##
 ##############################################################################
 
-function Base.push!(df::DataFrame, dict::AbstractDict)
+function Base.push!(df::DataFrame, col::Union{AbstractDict, NamedTuple})
     i = 1
     for nm in _names(df)
         try
