@@ -246,18 +246,17 @@ module TestDataFrame
         @test df == dfb
 
         dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-        push!(dfb, (first=3, second="pear"))
+        push!(dfb, (first=3, second="banana"))
         @test df == dfb
 
         dfb= DataFrame( first=[1,2], second=["apple","orange"] )
-        push!(dfb, (second="pear", first=3))
+        push!(dfb, (second="banana", first=3))
         @test df == dfb
 
         dfb= DataFrame( first=[1,2], second=["apple","orange"] )
         @test_throws ArgumentError push!(dfb, (second=3, first=3))
         @test df == dfb
 
-        df=DataFrame( first=[1,2,3], second=["apple","orange","banana"] )
         dfb= DataFrame( first=[1,2], second=["apple","orange"] )
         push!(dfb, (second="banana", first=3))
         @test df == dfb
