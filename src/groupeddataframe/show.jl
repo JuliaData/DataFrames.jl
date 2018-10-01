@@ -6,7 +6,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                    rowlabel::Symbol = :Row,
                    summary::Bool = true)
     N = length(gd)
-    keys = join(':' .* string.(gd.cols), ", ")
+    keys = join(':' .* string.(names(gd.parent)[gd.cols]), ", ")
     keystr = length(gd.cols) > 1 ? "keys" : "key"
     groupstr = N > 1 ? "groups" : "group"
     summary && print(io, "$(typeof(gd)) with $N $groupstr based on $keystr: $keys")
