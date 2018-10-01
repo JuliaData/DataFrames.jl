@@ -93,6 +93,8 @@ module TestDataFrameRow
     @test values(r) == (df[1, 1], df[1, 2], df[1, 3], df[1, 4])
     @test collect(pairs(r)) == [:a=>df[1, 1], :b=>df[1, 2], :c=>df[1, 3], :d=>df[1, 4]]
 
+    @test haskey(r, :a)
+
     df = DataFrame(a=nothing, b=1)
     io = IOBuffer()
     show(io, DataFrameRow(df, 1))
