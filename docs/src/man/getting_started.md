@@ -236,6 +236,26 @@ julia> tail(df)
 │ 6   │ 999   │ 10    │ 500   │
 ```
 
+Also notice that when `DataFrame` is printed to the console or rendered in HTML (e.g. in Jupyter Notebook) you get an information about type of elements held in its columns. For example in this case:
+
+```jldoctest dataframe
+julia> DataFrame(a = 1:2, b = [1.0, missing],
+                 c = categorical('a':'b'), d = [big(1.0), missing])
+2×4 DataFrame
+│ Row │ a     │ b        │ c            │ d         │
+│     │ Int64 │ Float64⍰ │ Categorical… │ BigFloa…⍰ │
+├─────┼───────┼──────────┼──────────────┼───────────┤
+│ 1   │ 1     │ 1.0      │ 'a'          │ 1.0       │
+│ 2   │ 2     │ missing  │ 'b'          │ missing   │
+```
+
+we can observe that:
+
+* the first column `:a` can hold elements of type `Int64`;
+* the second column `:b` can hold `Float64` or `Missing`, which is indicated by `⍰` printed after the name of type;
+* the third column `:c` can hold categorical data; here we notice `…`, which indicates that the actual name of the type was long and got truncated;
+* the type information in fourth column `:d` presents a situation where the name is both truncated and the type allows `Missing`.
+
 ### Taking a Subset
 
 Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon `:` indicates that all items (rows or columns depending on its position) should be retained:

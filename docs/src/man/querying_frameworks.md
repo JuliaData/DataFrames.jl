@@ -1,5 +1,101 @@
 # Querying frameworks
 
+## DataFramesMeta.jl
+
+The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package provides a macro-based interface allowing to work with `DataFrame`s.
+
+First install the DataFramesMeta.jl package:
+
+```julia
+using Pkg
+Pkg.add("DataFramesMeta")
+```
+
+The major benefit of the package is that it allows you to refer to columns of a `DataFrame` as `Symbol`s. Therefore instead of writing `VeryLongDataFrameName.variable` you can simply write `:variable` in expressions. Additionally you can chain a sequence of transformations of a `DataFrame` using `@linq` macro.
+
+Here is a minimal example of usage of the package. Observe that we refer to names of columns using only their names and that chaining is performed using `@link` macro and `|>` function:
+
+```jldoctest dataframesmeta
+julia> using DataFrames, DataFramesMeta
+
+julia> df = DataFrame(name=["John", "Sally", "Roger"],
+                      age=[54., 34., 79.],
+                      children=[0, 2, 4])
+3×3 DataFrame
+│ Row │ name   │ age     │ children │
+│     │ String │ Float64 │ Int64    │
+├─────┼────────┼─────────┼──────────┤
+│ 1   │ John   │ 54.0    │ 0        │
+│ 2   │ Sally  │ 34.0    │ 2        │
+│ 3   │ Roger  │ 79.0    │ 4        │
+
+julia> @linq df |>
+       where(:age .> 40) |>
+       select(number_of_children=:children, :name)
+2×2 DataFrame
+│ Row │ number_of_children │ name   │
+│     │ Int64              │ String │
+├─────┼────────────────────┼────────┤
+│ 1   │ 0                  │ John   │
+│ 2   │ 4                  │ Roger  │
+```
+
+In the following examples we show that DataFramesMeta.jl also supports split-apply-combine pattern:
+
+```jldoctest dataframesmeta
+julia> df = DataFrame(key=repeat(1:3, 4), value=1:12)
+12×2 DataFrame
+│ Row │ key   │ value │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 4     │
+│ 5   │ 2     │ 5     │
+│ 6   │ 3     │ 6     │
+│ 7   │ 1     │ 7     │
+│ 8   │ 2     │ 8     │
+│ 9   │ 3     │ 9     │
+│ 10  │ 1     │ 10    │
+│ 11  │ 2     │ 11    │
+│ 12  │ 3     │ 12    │
+
+julia> @linq df |>
+       where(:value .> 3) |>
+       by(:key, min=minimum(:value), max=maximum(:value)) |>
+       select(:key, range=:max-:min)
+3×2 DataFrame
+│ Row │ key   │ range │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 6     │
+│ 2   │ 2     │ 6     │
+│ 3   │ 3     │ 6     │
+
+julia> @linq df |>
+       groupby(:key) |>
+       transform(value0 = :value .- minimum(:value))
+12×3 DataFrame
+│ Row │ key   │ value │ value0 │
+│     │ Int64 │ Int64 │ Int64  │
+├─────┼───────┼───────┼────────┤
+│ 1   │ 1     │ 1     │ 0      │
+│ 2   │ 1     │ 4     │ 3      │
+│ 3   │ 1     │ 7     │ 6      │
+│ 4   │ 1     │ 10    │ 9      │
+│ 5   │ 2     │ 2     │ 0      │
+│ 6   │ 2     │ 5     │ 3      │
+│ 7   │ 2     │ 8     │ 6      │
+│ 8   │ 2     │ 11    │ 9      │
+│ 9   │ 3     │ 3     │ 0      │
+│ 10  │ 3     │ 6     │ 3      │
+│ 11  │ 3     │ 9     │ 6      │
+│ 12  │ 3     │ 12    │ 9      │
+```
+
+You can find more details about how this package can be used on [DataFramesMeata.jl](https://github.com/JuliaStats/DataFramesMeta.jl) GitHub page.
+
 ## Query.jl
 
 The [Query.jl](https://github.com/queryverse/Query.jl) package provides advanced data manipulation capabilities for `DataFrame`s (and many other data structures). This section provides a short introduction to the package, the [Query.jl documentation](http://www.queryverse.org/Query.jl/stable/) has a more comprehensive documentation of the package.
@@ -94,41 +190,3 @@ julia> q3 = @from i in df begin
 A query that ends with a `@collect` statement without a specific type will materialize the query results into an array. Note also the difference in the `@select` statement: The previous queries all used the `{}` syntax in the `@select` statement to project results into a tabular format. The last query instead just selects a single value from each row in the `@select` statement.
 
 These examples only scratch the surface of what one can do with [Query.jl](https://github.com/queryverse/Query.jl), and the interested reader is referred to the [Query.jl documentation](http://www.queryverse.org/Query.jl/stable/) for more information.
-
-## DataFramesMeta.jl
-
-The [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package provides a macro-based interface allowing to work with `DataFrame`s.
-
-First install the DataFramesMeta.jl package:
-
-```julia
-using Pkg
-Pkg.add("DataFramesMeta")
-```
-
-Here is a minimal example of usage of the package:
-
-```jldoctest dataframesmeta
-julia> using DataFrames, DataFramesMeta
-
-julia> df = DataFrame(name=["John", "Sally", "Roger"],
-                      age=[54., 34., 79.],
-                      children=[0, 2, 4])
-3×3 DataFrame
-│ Row │ name   │ age     │ children │
-│     │ String │ Float64 │ Int64    │
-├─────┼────────┼─────────┼──────────┤
-│ 1   │ John   │ 54.0    │ 0        │
-│ 2   │ Sally  │ 34.0    │ 2        │
-│ 3   │ Roger  │ 79.0    │ 4        │
-
-julia> @linq df |>
-       where(:age .> 40) |>
-       select(number_of_children=:children, :name)
-2×2 DataFrame
-│ Row │ number_of_children │ name   │
-│     │ Int64              │ String │
-├─────┼────────────────────┼────────┤
-│ 1   │ 0                  │ John   │
-│ 2   │ 4                  │ Roger  │
-```
