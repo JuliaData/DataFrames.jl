@@ -94,6 +94,7 @@ module TestDataFrameRow
     @test collect(pairs(r)) == [:a=>df[1, 1], :b=>df[1, 2], :c=>df[1, 3], :d=>df[1, 4]]
 
     @test haskey(r, :a)
+    @test !haskey(r, :zzz)
 
     df = DataFrame(a=nothing, b=1)
     io = IOBuffer()
