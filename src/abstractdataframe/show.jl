@@ -42,7 +42,7 @@ function compacttype(T::Type, maxwidth::Int=8)
         sT = string(T)
         suffix = "⍰"
         # handle the case when after removing Missing union type name is short
-        length(sT) < 8 && return sT * suffix
+        length(sT) ≤ 8 && return sT * suffix
     else
         suffix = ""
     end

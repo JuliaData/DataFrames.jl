@@ -376,4 +376,17 @@ module TestShow
     │ 2   │ 2            │ b             │
     │ 3   │ 3            │ missing       │"""
 
+    # Test BigFloat
+    df = DataFrame(a = [big(1.0), missing])
+    io = IOBuffer()
+    show(io, df)
+    str = String(take!(io))
+    @test str == """
+    2×1 DataFrame
+    │ Row │ a         │
+    │     │ BigFloat⍰ │
+    ├─────┼───────────┤
+    │ 1   │ 1.0       │
+    │ 2   │ missing   │"""
+
 end
