@@ -136,7 +136,14 @@ julia&gt; tail(df)
 │ 3   │ 993   │ 10    │ 497   │
 │ 4   │ 995   │ 10    │ 498   │
 │ 5   │ 997   │ 10    │ 499   │
-│ 6   │ 999   │ 10    │ 500   │</code></pre><h3><a class="nav-anchor" id="Taking-a-Subset-1" href="#Taking-a-Subset-1">Taking a Subset</a></h3><p>Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon <code>:</code> indicates that all items (rows or columns depending on its position) should be retained:</p><pre><code class="language-julia-repl">julia&gt; df[1:3, :]
+│ 6   │ 999   │ 10    │ 500   │</code></pre><p>Also notice that when <code>DataFrame</code> is printed to the console or rendered in HTML (e.g. in Jupyter Notebook) you get an information about type of elements held in its columns. For example in this case:</p><pre><code class="language-julia-repl">julia&gt; DataFrame(a = 1:2, b = [1.0, missing],
+                 c = categorical(&#39;a&#39;:&#39;b&#39;), d = [1//2, missing])
+2×4 DataFrame
+│ Row │ a     │ b        │ c            │ d         │
+│     │ Int64 │ Float64⍰ │ Categorical… │ Rationa…⍰ │
+├─────┼───────┼──────────┼──────────────┼───────────┤
+│ 1   │ 1     │ 1.0      │ &#39;a&#39;          │ 1//2      │
+│ 2   │ 2     │ missing  │ &#39;b&#39;          │ missing   │</code></pre><p>we can observe that:</p><ul><li>the first column <code>:a</code> can hold elements of type <code>Int64</code>;</li><li>the second column <code>:b</code> can hold <code>Float64</code> or <code>Missing</code>, which is indicated by <code>⍰</code> printed after the name of type;</li><li>the third column <code>:c</code> can hold categorical data; here we notice <code>…</code>, which indicates that the actual name of the type was long and got truncated;</li><li>the type information in fourth column <code>:d</code> presents a situation where the name is both truncated and the type allows <code>Missing</code>.</li></ul><h3><a class="nav-anchor" id="Taking-a-Subset-1" href="#Taking-a-Subset-1">Taking a Subset</a></h3><p>Specific subsets of a data frame can be extracted using the indexing syntax, similar to matrices. The colon <code>:</code> indicates that all items (rows or columns depending on its position) should be retained:</p><pre><code class="language-julia-repl">julia&gt; df[1:3, :]
 3×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -250,7 +257,7 @@ julia&gt; df[(df.A .&gt; 500) .&amp; (300 .&lt; df.C .&lt; 400), :]
 │ 96  │ 791   │ 8     │ 396   │
 │ 97  │ 793   │ 8     │ 397   │
 │ 98  │ 795   │ 8     │ 398   │
-│ 99  │ 797   │ 8     │ 399   │</code></pre><p>While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a <a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources</li><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a> package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></li></ul><p>See the <a href="querying_frameworks.html#Querying-frameworks-1">Querying frameworks</a> section for more information.</p><h3><a class="nav-anchor" id="Summarizing-Data-1" href="#Summarizing-Data-1">Summarizing Data</a></h3><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
+│ 99  │ 797   │ 8     │ 399   │</code></pre><p>While the DataFrames package provides basic data manipulation capabilities, users are encouraged to use querying frameworks for more convenient and powerful operations:</p><ul><li>the <a href="https://github.com/davidanthoff/Query.jl">Query.jl</a> package provides a <a href="https://msdn.microsoft.com/en-us/library/bb397926.aspx">LINQ</a>-like interface to a large number of data sources</li><li>the <a href="https://github.com/JuliaStats/DataFramesMeta.jl">DataFramesMeta.jl</a> package provides interfaces similar to LINQ and <a href="https://dplyr.tidyverse.org">dplyr</a></li></ul><p>See the <a href="man/@ref">Querying frameworks</a> section for more information.</p><h3><a class="nav-anchor" id="Summarizing-Data-1" href="#Summarizing-Data-1">Summarizing Data</a></h3><p>The <code>describe</code> function returns a data frame summarizing the elementary statistics and information about each column:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = [&quot;M&quot;, &quot;F&quot;, &quot;F&quot;, &quot;M&quot;])
 
 julia&gt; describe(df)
 2×8 DataFrame
