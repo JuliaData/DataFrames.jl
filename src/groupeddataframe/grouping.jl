@@ -170,12 +170,13 @@ wrap(s::Any) = DataFrame(x1 = s)
 Combine a GroupApplied object (rudimentary)
 
 ```julia
-combine(ga::GroupApplied)
+combine(ga::GroupApplied; append_keys::Bool=false)
 ```
 
 ### Arguments
 
 * `ga` : a GroupApplied
+* `append_keys` : whether or not to append the grouped by columns.
 
 ### Returns
 
@@ -192,7 +193,7 @@ combine(map(d -> mean(skipmissing(d[:c])), gd))
 ```
 
 """
-function combine(ga::GroupApplied)
+function combine(ga::GroupApplied; append_keys::Bool=false)
     gd, vals = ga.gd, ga.vals
     valscat = _vcat(vals)
     idx = Vector{Int}(undef, size(valscat, 1))
@@ -202,7 +203,7 @@ function combine(ga::GroupApplied)
         idx[j .+ (1:n)] .= gd.idx[start]
         j += n
     end
-    hcat!(gd.parent[idx, gd.cols], valscat)
+    append_keys ? hcat!(gd.parent[idx, gd.cols], valscat) : valscat
 end
 
 
@@ -250,8 +251,8 @@ Split-apply-combine in one step; apply `f` to each grouping in `d`
 based on columns `col`
 
 ```julia
-by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false)
-by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false)
+by(d::AbstractDataFrame, cols, f::Function; sort::Bool=false, append_keys::Bool=false)
+by(f::Function, d::AbstractDataFrame, cols; sort::Bool=false, append_keys::Bool=false)
 ```
 
 ### Arguments
@@ -261,6 +262,7 @@ by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false)
 * `f` : a function to be applied to groups; expects each argument to
   be an AbstractDataFrame
 * `sort`: sort row groups (no sorting by default)
+* `append_keys`: whether or not to include the columns that the DataFrame was grouped by
 
 `f` can return a value, a vector, or a DataFrame. For a value or
 vector, these are merged into a column along with the `cols` keys. For
@@ -293,10 +295,10 @@ end
 ```
 
 """
-by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false) =
-    combine(map(f, groupby(d, cols, sort = sort)))
-by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false) =
-    by(d, cols, f, sort = sort)
+by(d::AbstractDataFrame, cols, f::Function; sort::Bool=false, append_keys::Bool=false) =
+    combine(map(f, groupby(d, cols, sort=sort)), append_keys=append_keys)
+by(f::Function, d::AbstractDataFrame, cols; sort::Bool=false, append_keys::Bool=false) =
+    by(d, cols, f, sort=sort, append_keys=append_keys)
 
 #
 # Aggregate convenience functions

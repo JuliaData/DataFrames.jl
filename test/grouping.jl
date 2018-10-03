@@ -92,30 +92,30 @@ module TestGrouping
     sdf = unique(df[cols])
 
     # by() without groups sorting
-    bdf = by(df, cols, f)
+    bdf = by(df, cols, f, append_keys=true)
     @test bdf[cols] == sdf
 
     # by() with groups sorting
-    sbdf = by(df, cols, f, sort=true)
+    sbdf = by(df, cols, f, sort=true, append_keys=true)
     @test sbdf[cols] == sort(sdf)
 
-    byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
+    byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])), append_keys=true)
 
     # groupby() without groups sorting
     gd = groupby(df, cols)
     ga = map(f, gd)
 
-    @test bdf == combine(ga)
+    @test bdf == combine(ga, append_keys=true)
 
     # groupby() with groups sorting
     gd = groupby(df, cols, sort=true)
     ga = map(f, gd)
-    @test sbdf == combine(ga)
+    @test sbdf == combine(ga, append_keys=true)
 
     g(df) = DataFrame(cmax1 = [c + 1 for c in df[:cmax]])
     h(df) = g(f(df))
 
-    @test combine(map(h, gd)) == combine(map(g, ga))
+    @test combine(map(h, gd), append_keys=true) == combine(map(g, ga), append_keys=true)
 
     # testing pool overflow
     df2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
@@ -142,7 +142,7 @@ module TestGrouping
     df = DataFrame(v1=x, v2=x)
     groupby(df, [:v1, :v2])
 
-    df2 = by(e->1, DataFrame(x=Int64[]), :x)
+    df2 = by(e->1, DataFrame(x=Int64[]), :x, append_keys=true)
     @test size(df2) == (0, 1)
     @test sum(df2[:x]) == 0
 
