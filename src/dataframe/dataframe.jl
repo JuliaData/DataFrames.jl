@@ -1014,19 +1014,19 @@ Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 ##
 ##############################################################################
 
-function Base.push!(df::DataFrame, dict::AbstractDict)
+function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple})
     i = 1
     for nm in _names(df)
         try
-            val = get(dict, nm) do
-                v = dict[string(nm)]
+            val = get(row, nm) do
+                v = row[string(nm)]
                 Base.depwarn("push!(::DataFrame, ::AbstractDict) with " *
                              "AbstractDict keys other than Symbol is deprecated",
                              :push!)
                 v
             end
             # after deprecation replace above call by
-            # val = dict[nm]
+            # val = row[nm]
             push!(df[nm], val)
         catch
             #clean up partial row

@@ -245,6 +245,23 @@ module TestDataFrame
         push!(dfb, Dict(:first=>3, :second=>"banana"))
         @test df == dfb
 
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        push!(dfb, (first=3, second="banana"))
+        @test df == dfb
+
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        push!(dfb, (second="banana", first=3))
+        @test df == dfb
+
+        df0= DataFrame( first=[1,2], second=["apple","orange"] )
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        @test_throws ArgumentError push!(dfb, (second=3, first=3))
+        @test df0 == dfb
+
+        dfb= DataFrame( first=[1,2], second=["apple","orange"] )
+        push!(dfb, (second="banana", first=3))
+        @test df == dfb
+
         df0= DataFrame( first=[1,2], second=["apple","orange"] )
         dfb= DataFrame( first=[1,2], second=["apple","orange"] )
         @test_throws ArgumentError push!(dfb, Dict(:first=>true, :second=>false))
@@ -268,7 +285,7 @@ module TestDataFrame
         df = DataFrame(x=1)
         push!(df, Dict(:x=>2), Dict(:x=>3))
         @test df[:x] == [1,2,3]
-    
+
         df = DataFrame(x=1, y=2)
         push!(df, [3, 4], [5, 6])
         @test df[:x] == [1, 3, 5] && df[:y] == [2, 4, 6]
@@ -336,7 +353,7 @@ module TestDataFrame
                        dates  = Date.([2000, 2001, 2003, 2004]),
                        catarray = CategoricalArray([1,2,1,2]))
 
-        describe_output = DataFrame(variable = [:number, :number_missing, :string, 
+        describe_output = DataFrame(variable = [:number, :number_missing, :string,
                                                 :string_missing, :dates, :catarray],
                                     mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                     min = [1.0, 1.0, "a", "a", Date(2000), 1],
@@ -345,11 +362,11 @@ module TestDataFrame
                                     nunique = [nothing, nothing, 4, 3, 4, 2],
                                     nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                     eltype = [Int, Int, String, String, Date, eltype(df[:catarray])])
-        describe_output_all_stats = DataFrame(variable = [:number, :number_missing, 
+        describe_output_all_stats = DataFrame(variable = [:number, :number_missing,
                                                           :string, :string_missing,
                                                           :dates, :catarray],
                                               mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                              std = [std(df[:number]), 1.0, nothing, 
+                                              std = [std(df[:number]), 1.0, nothing,
                                                      nothing, nothing, nothing],
                                               min = [1.0, 1.0, "a", "a", Date(2000), 1],
                                               q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
@@ -360,10 +377,10 @@ module TestDataFrame
                                               nmissing = [nothing, 1, nothing, 1, nothing, nothing],
                                               first = [1, 1, "a", "a", Date(2000), 1],
                                               last = [4, missing, "d", missing, Date(2004), 2],
-                                              eltype = [Int, Int, String, String, Date, 
+                                              eltype = [Int, Int, String, String, Date,
                                                         eltype(df[:catarray])])
 
-        
+
         # Test that it works as a whole, without keyword arguments
         @test describe_output == describe(df)
 
@@ -372,12 +389,12 @@ module TestDataFrame
 
         # Test that it works with all keyword arguments
         @test describe_output_all_stats ≅ describe(df, stats = :all)
-         
+
         # Test that describe works with a dataframe with no observations
         df = DataFrame(a = Int[], b = String[], c = [])
-        @test describe(df, stats = :mean) ≅ DataFrame(variable = [:a, :b, :c], 
-                                                      mean = [NaN, nothing, nothing]) 	
-    end 
+        @test describe(df, stats = :mean) ≅ DataFrame(variable = [:a, :b, :c],
+                                                      mean = [NaN, nothing, nothing])
+    end
 
     #Check the output of unstack
     df = DataFrame(Fish = CategoricalArray{Union{String, Missing}}(["Bob", "Bob", "Batman", "Batman"]),
