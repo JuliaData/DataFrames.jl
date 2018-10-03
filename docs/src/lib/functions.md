@@ -42,6 +42,7 @@ names!
 nonunique
 rename!
 rename
+repeat
 show
 sort
 sort!
