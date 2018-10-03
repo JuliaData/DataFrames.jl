@@ -240,12 +240,12 @@ Also notice that when `DataFrame` is printed to the console or rendered in HTML 
 
 ```jldoctest dataframe
 julia> DataFrame(a = 1:2, b = [1.0, missing],
-                 c = categorical('a':'b'), d = [big(1.0), missing])
+                 c = categorical('a':'b'), d = [1//2, missing])
 2×4 DataFrame
 │ Row │ a     │ b        │ c            │ d         │
-│     │ Int64 │ Float64⍰ │ Categorical… │ BigFloa…⍰ │
+│     │ Int64 │ Float64⍰ │ Categorical… │ Rationa…⍰ │
 ├─────┼───────┼──────────┼──────────────┼───────────┤
-│ 1   │ 1     │ 1.0      │ 'a'          │ 1.0       │
+│ 1   │ 1     │ 1.0      │ 'a'          │ 1//2      │
 │ 2   │ 2     │ missing  │ 'b'          │ missing   │
 ```
 
