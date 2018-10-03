@@ -521,6 +521,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "lib/functions.html#Base.repeat",
+    "page": "Functions",
+    "title": "Base.repeat",
+    "category": "function",
+    "text": "repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1)\n\nConstruct a data frame by repeating rows in df. inner specifies how many times each row is repeated, and outer specifies how many times the full set of rows is repeated.\n\nExample\n\njulia> df = DataFrame(a = 1:2, b = 3:4)\n2×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 3     │\n│ 2   │ 2     │ 4     │\n\njulia> repeat(df, inner = 2, outer = 3)\n12×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 3     │\n│ 2   │ 1     │ 3     │\n│ 3   │ 2     │ 4     │\n│ 4   │ 2     │ 4     │\n│ 5   │ 1     │ 3     │\n│ 6   │ 1     │ 3     │\n│ 7   │ 2     │ 4     │\n│ 8   │ 2     │ 4     │\n│ 9   │ 1     │ 3     │\n│ 10  │ 1     │ 3     │\n│ 11  │ 2     │ 4     │\n│ 12  │ 2     │ 4     │\n\n\n\n\n\nrepeat(df::AbstractDataFrame, count::Integer)\n\nConstruct a data frame by repeating each row in df the number of times specified by count.\n\nExample\n\njulia> df = DataFrame(a = 1:2, b = 3:4)\n2×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 3     │\n│ 2   │ 2     │ 4     │\n\njulia> repeat(df, 2)\n4×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 3     │\n│ 2   │ 2     │ 4     │\n│ 3   │ 1     │ 3     │\n│ 4   │ 2     │ 4     │\n\n\n\n\n\n"
+},
+
+{
     "location": "lib/functions.html#Base.show",
     "page": "Functions",
     "title": "Base.show",
@@ -573,7 +581,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Basics",
     "category": "section",
-    "text": "allowmissing!\ncombine\ncompletecases\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neltypes\nfilter\nfilter!\nhead\nnames!\nnonunique\nrename!\nrename\nshow\nsort\nsort!\ntail\nunique!\npermutecols!"
+    "text": "allowmissing!\ncombine\ncompletecases\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neltypes\nfilter\nfilter!\nhead\nnames!\nnonunique\nrename!\nrename\nrepeat\nshow\nsort\nsort!\ntail\nunique!\npermutecols!"
 },
 
 ]}
