@@ -1,6 +1,6 @@
 # Data manipulation frameworks
 
-There are two most popular frameworks that provide convenience methods to manipulate `DataFrame`s: DataFramesMeta.jl and Query.jl. They implement a functionality similar to what you might know from [dplyr](https://dplyr.tidyverse.org/) or [LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query).
+Two popular frameworks provide convenience methods to manipulate `DataFrame`s: DataFramesMeta.jl and Query.jl. They implement a functionality similar to [dplyr](https://dplyr.tidyverse.org/) or [LINQ](https://en.wikipedia.org/wiki/Language_Integrated_Query).
 
 ## DataFramesMeta.jl
 
@@ -96,7 +96,7 @@ julia> @linq df |>
 │ 12  │ 3     │ 12    │ 9      │
 ```
 
-You can find more details about how this package can be used on the [DataFramesMeata.jl GitHub page](https://github.com/JuliaStats/DataFramesMeta.jl) GitHub page.
+You can find more details about how this package can be used on the [DataFramesMeta.jl GitHub page](https://github.com/JuliaData/DataFramesMeta.jl).
 
 ## Query.jl
 
