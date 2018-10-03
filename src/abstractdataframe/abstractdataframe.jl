@@ -80,7 +80,7 @@ abstract type AbstractDataFrame end
 ##
 ##############################################################################
 
-struct Cols{T <: AbstractDataFrame} <: AbstractVector{Any}
+struct Cols{T <: AbstractDataFrame} <: AbstractVector{AbstractVector}
     df::T
 end
 function Base.iterate(itr::Cols, st=1)
