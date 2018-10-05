@@ -597,9 +597,9 @@ julia> completecases(df, [:x, :y])
 ```
 
 """
-function completecases(df::AbstractDataFrame, cols::AbstractVector=1:size(df, 2))
+function completecases(df::AbstractDataFrame)
     res = trues(size(df, 1))
-    for i in cols
+    for i in 1:size(df, 2)
         _nonmissing!(res, df[i])
     end
     res
@@ -610,6 +610,9 @@ function completecases(df::AbstractDataFrame, col::Union{Integer, Symbol})
     _nonmissing!(res, df[col])
     res
 end
+
+completecases(df::AbstractDataFrame, cols::AbstractVector) =
+    completecases(df[cols])
 
 """
     dropmissing(df::AbstractDataFrame)

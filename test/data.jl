@@ -56,7 +56,7 @@ module TestData
         @test dropmissing!(df4b) === df4b
         @test df4b == df4
 
-        for cols in (:x2, [:x2], [:x1, :x2], 2, [2], 1:2)
+        for cols in (:x2, [:x2], [:x1, :x2], 2, [2], 1:2, [true, true], [false, true])
             @test df5[completecases(df5, cols), :] == df5[[1, 2, 4], :]
             @test dropmissing(df5, cols) == df5[[1, 2, 4], :]
             returned = dropmissing(df4, cols)
@@ -64,6 +64,8 @@ module TestData
             df5b = deepcopy(df5)
             @test dropmissing!(df5b, cols) === df5b
             @test df5b == df5[[1, 2, 4], :]
+            @test dropmissing(df5, cols) == df5b
+            @test df5 != df5b
             df4b = deepcopy(df4)
             @test dropmissing!(df4b, cols) === df4b
             @test df4b == df4
