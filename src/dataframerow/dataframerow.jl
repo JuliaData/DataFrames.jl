@@ -62,7 +62,7 @@ Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[col][row(r)], length(r))
 
 # hash column element
 Base.@propagate_inbounds hash_colel(v::AbstractArray, i, h::UInt = zero(UInt)) = hash(v[i], h)
-Base.@propagate_inbounds function hash_colel(v::AbstractCategoricalArray{>: Missing}, i, h::UInt = zero(UInt))
+Base.@propagate_inbounds function hash_colel(v::AbstractCategoricalArray, i, h::UInt = zero(UInt))
     ref = v.refs[i]
     if eltype(v) >: Missing && ref == 0
         hash(missing, h)
