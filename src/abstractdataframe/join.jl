@@ -397,8 +397,8 @@ function Base.join(df1::AbstractDataFrame,
         indicatorcol = CategoricalArray{String,1}(refs, CategoricalPool{String,UInt8}(["left_only", "right_only", "both"]))
         joined = hcat(joined, DataFrame(indicator => indicatorcol), makeunique=makeunique)
 
-        delete!(joined, Symbol(indicator_cols[1]))
-        delete!(joined, Symbol(indicator_cols[2]))
+        deletecols!(joined, Symbol(indicator_cols[1]))
+        deletecols!(joined, Symbol(indicator_cols[2]))
     end
 
     return joined

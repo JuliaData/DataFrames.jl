@@ -640,7 +640,7 @@ Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
     (df[col_inds] = v; df)
 
 # Special deletion assignment
-Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = delete!(df, col_ind)
+Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = deletecols!(df, col_ind)
 
 ##############################################################################
 ##
@@ -655,8 +655,8 @@ Insert a column into a data frame in place.
 
 
 ```julia
-insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol;
-        makeunique::Bool=false)
+insertcol!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol;
+           makeunique::Bool=false)
 ```
 
 ### Arguments
@@ -689,7 +689,7 @@ julia> d = DataFrame(a=1:3)
 │ 2   │ 2     │
 │ 3   │ 3     │
 
-julia> insert!(d, 1, 'a':'c', :b)
+julia> insertcol!(d, 1, 'a':'c', :b)
 3×2 DataFrame
 │ Row │ b    │ a     │
 │     │ Char │ Int64 │
@@ -700,8 +700,8 @@ julia> insert!(d, 1, 'a':'c', :b)
 ```
 
 """
-function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol;
-                      makeunique::Bool=false)
+function insertcol!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol;
+                    makeunique::Bool=false)
     0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
     size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
 
@@ -720,8 +720,8 @@ function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::S
             end
         else
             # TODO: remove depwarn and call and uncomment ArgumentError below
-            Base.depwarn("Inserting duplicate column name is deprecated, use makeunique=true.", :insert!)
-            insert!(df, col_ind, item, name; makeunique=true) # temporary fix to avoid duplicates
+            Base.depwarn("Inserting duplicate column name is deprecated, use makeunique=true.", :insertcol!)
+            insertcol!(df, col_ind, item, name; makeunique=true) # temporary fix to avoid duplicates
             # msg = """Duplicate variable name $(name).
             #      Pass makeunique=true to make it unique using a suffix automatically."""
             # throw(ArgumentError(msg))
@@ -732,48 +732,8 @@ function Base.insert!(df::DataFrame, col_ind::Int, item::AbstractVector, name::S
     df
 end
 
-function Base.insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false)
-    insert!(df, col_ind, upgrade_scalar(df, item), name, makeunique=makeunique)
-end
-
-"""
-Merge data frames.
-
-
-```julia
-merge!(df::DataFrame, others::AbstractDataFrame...)
-```
-
-For every column `c` with name `n` in `others` sequentially perform `df[n] = c`.
-In particular, if there are duplicate column names present in `df` and `others`
-the last encountered column will be retained.
-This behavior is identical with how `merge!` works for any `AbstractDict` type.
-Use `join` if you want to join two `DataFrame`s.
-
-**Arguments**
-
-* `df` : the DataFrame to merge into
-* `others` : `AbstractDataFrame`s to be merged into `df`
-
-**Result**
-
-* `::DataFrame` : the updated result. Columns with duplicate names are overwritten.
-
-**Examples**
-
-```julia
-df = DataFrame(id = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-df2 = DataFrame(id = 11:20, z = rand(10))
-merge!(df, df2)  # column z is added, column id is overwritten
-```
-"""
-function Base.merge!(df::DataFrame, others::AbstractDataFrame...)
-    for other in others
-        for n in _names(other)
-            df[n] = other[n]
-        end
-    end
-    return df
+function insertcol!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false)
+    insertcol!(df, col_ind, upgrade_scalar(df, item), name, makeunique=makeunique)
 end
 
 ##############################################################################
@@ -798,10 +758,7 @@ end
 ##
 ##############################################################################
 
-# delete!() deletes columns; deleterows!() deletes rows
-# delete!(df, 1)
-# delete!(df, :Old)
-function Base.delete!(df::DataFrame, inds::Vector{Int})
+function deletecols!(df::DataFrame, inds::Vector{Int})
     for ind in sort(inds, rev = true)
         if 1 <= ind <= ncol(df)
             splice!(columns(df), ind)
@@ -812,10 +769,9 @@ function Base.delete!(df::DataFrame, inds::Vector{Int})
     end
     return df
 end
-Base.delete!(df::DataFrame, c::Int) = delete!(df, [c])
-Base.delete!(df::DataFrame, c::Any) = delete!(df, index(df)[c])
+deletecols!(df::DataFrame, c::Int) = deletecols!(df, [c])
+deletecols!(df::DataFrame, c::Any) = deletecols!(df, index(df)[c])
 
-# deleterows!()
 function deleterows!(df::DataFrame, ind::Union{Integer, UnitRange{Int}})
     for i in 1:ncol(df)
         columns(df)[i] = deleteat!(columns(df)[i], ind)

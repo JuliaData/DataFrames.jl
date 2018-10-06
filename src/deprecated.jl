@@ -11,7 +11,7 @@ import Base: @deprecate
 import Base: keys, values, insert!
 @deprecate keys(df::AbstractDataFrame) names(df)
 @deprecate values(df::AbstractDataFrame) DataFrames.columns(df)
-@deprecate insert!(df::DataFrame, df2::AbstractDataFrame) merge!(df, df2)
+@deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[col] = df2[col], names(df2)); df)
 
 @deprecate pool categorical
 @deprecate pool! categorical!
@@ -1379,3 +1379,9 @@ function Base.getindex(v::StackedVector,i::Real)
     Base.depwarn("Indexing StackedVector with Real is deprecated", :getindex)
     v[Int(i)]
 end
+
+import Base: delete!, insert!, merge!
+@deprecate delete!(df::AbstractDataFrame, cols::Any) deletecols!(df, cols)
+@deprecate insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false) insertcol!(df, col_ind, item, name; makeunique=makeunique)
+@deprecate merge!(df1::DataFrame, df2::AbstractDataFrame) (foreach(col -> df1[col] = df2[col], names(df2)); df1)
+
