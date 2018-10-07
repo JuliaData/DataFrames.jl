@@ -240,4 +240,19 @@ module TestGrouping
             @test size(v) == (2,2)
         end
     end
+
+    @testset "getindex" begin
+        df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                       b = repeat([2, 1], outer=[4]))
+        gd = groupby(df, :a)
+        @test gd[1] isa SubDataFrame
+        @test_throws BoundsError gd[5]
+        @test_throws ArgumentError gd[true]
+        @test_throws MethodError gd["a"]
+        @test gd[[true, false, false, false]] isa GroupedDataFrame
+        @test_throws BoundsError gd[[true, false]]
+        @test gd[:] isa GroupedDataFrame
+        @test gd[[1,2]] isa GroupedDataFrame
+        @test_throws BoundsError gd[1:5]
+    end
 end
