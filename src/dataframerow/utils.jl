@@ -28,22 +28,9 @@ function hashrows_col!(h::Vector{UInt},
     @inbounds for i in eachindex(h)
         el = v[i]
         h[i] = hash(el, h[i])
-        if T >: Missing && length(n) > 0
-            # el isa Missing should be redundant
-            # but it gives much more efficient code on Julia 0.6
-            n[i] |= (el isa Missing || ismissing(el))
+        if length(n) > 0
+            n[i] |= ismissing(el)
         end
-    end
-    h
-end
-
-# should give the same hash as AbstractVector{T}
-function hashrows_col!(h::Vector{UInt},
-                       n::Vector{Bool},
-                       v::AbstractCategoricalVector{T}) where T
-    # TODO is it possible to optimize by hashing the pool values once?
-    @inbounds for (i, ref) in enumerate(v.refs)
-        h[i] = hash(CategoricalArrays.index(v.pool)[ref], h[i])
     end
     h
 end
@@ -52,10 +39,10 @@ end
 # enables efficient sequential memory access pattern
 function hashrows_col!(h::Vector{UInt},
                        n::Vector{Bool},
-                       v::AbstractCategoricalVector{>: Missing})
+                       v::AbstractCategoricalVector)
     # TODO is it possible to optimize by hashing the pool values once?
     @inbounds for (i, ref) in enumerate(v.refs)
-        if ref == 0
+        if eltype(v) >: Missing && ref == 0
             h[i] = hash(missing, h[i])
             length(n) > 0 && (n[i] = true)
         else
