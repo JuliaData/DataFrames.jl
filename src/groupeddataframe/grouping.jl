@@ -117,20 +117,11 @@ Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
 function Base.:(==)(gd1::GroupedDataFrame, gd2::GroupedDataFrame)
     res = gd1.parent == gd2.parent
     ismissing(res) && return missing
-    res &&
-    (gd1.cols == gd2.cols) &&
-    (gd1.idx == gd2.idx) &&
-    (gd1.starts == gd2.starts) &&
-    (gd1.ends == gd2.ends)
+    res && gd1.cols == gd2.cols
 end
 
-function Base.isequal(gd1::GroupedDataFrame, gd2::GroupedDataFrame)
-    isequal(gd1.parent, gd2.parent) &&
-    isequal(gd1.cols, gd2.cols) &&
-    isequal(gd1.idx, gd2.idx) &&
-    isequal(gd1.starts, gd2.starts) &&
-    isequal(gd1.ends, gd2.ends)
-end
+Base.isequal(gd1::GroupedDataFrame, gd2::GroupedDataFrame) =
+    isequal(gd1.parent, gd2.parent) && isequal(gd1.cols, gd2.cols)
 
 Base.names(gd::GroupedDataFrame) = names(gd.parent)
 _names(gd::GroupedDataFrame) = _names(gd.parent)

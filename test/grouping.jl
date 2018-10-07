@@ -264,7 +264,7 @@ module TestGrouping
         gd4 = gd[[1,2]]
         @test gd4 isa GroupedDataFrame
         @test length(gd4) == 2
-        for i in 1:4
+        for i in 1:2
             @test gd4[i] == gd[i]
         end
         @test_throws BoundsError gd[1:5]
