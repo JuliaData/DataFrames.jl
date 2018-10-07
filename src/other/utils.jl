@@ -1,15 +1,22 @@
-function make_unique(names::Vector{Symbol}; makeunique::Bool=false)
+function make_unique!(names::Vector{Symbol}, src::Vector{Symbol}; makeunique::Bool=false)
+    if length(names) != length(src)
+        throw(ArgumentError("Length of src doesn't match length of names."))
+    end
     seen = Set{Symbol}()
-    names = copy(names)
     dups = Int[]
     for i in 1:length(names)
-        name = names[i]
-        in(name, seen) ? push!(dups, i) : push!(seen, name)
+        name = src[i]
+        if in(name, seen)
+            push!(dups, i)
+        else
+            names[i] = src[i]
+            push!(seen, name)
+        end
     end
 
     if length(dups) > 0
         if !makeunique
-            Base.depwarn("Duplicate variable names are deprecated: pass makeunique=true to add a suffix automatically.", :make_unique)
+            Base.depwarn("Duplicate variable names are deprecated: pass makeunique=true to add a suffix automatically.", :make_unique!)
             # TODO: uncomment the lines below after deprecation period
             # msg = """Duplicate variable names: $(u[dups]).
             #          Pass makeunique=true to make them unique using a suffix automatically."""
@@ -18,7 +25,7 @@ function make_unique(names::Vector{Symbol}; makeunique::Bool=false)
     end
 
     for i in dups
-        nm = names[i]
+        nm = src[i]
         k = 1
         while true
             newnm = Symbol("$(nm)_$k")
@@ -32,6 +39,10 @@ function make_unique(names::Vector{Symbol}; makeunique::Bool=false)
     end
 
     return names
+end
+
+function make_unique(names::Vector{Symbol}; makeunique::Bool=false)
+    make_unique!(similar(names), names, makeunique=makeunique)
 end
 
 """

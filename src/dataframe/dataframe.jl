@@ -1123,7 +1123,7 @@ function permutecols!(df::DataFrame, p::AbstractVector)
         throw(ArgumentError("$p is not a valid column permutation for this DataFrame"))
     end
     permute!(columns(df), p)
-    permutecols!(getfield(df, :colindex), p)
+    @inbounds permute!(index(df), p)
     df
 end
 

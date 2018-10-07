@@ -3,7 +3,7 @@
 # through cleanly.
 abstract type AbstractIndex end
 
-mutable struct Index <: AbstractIndex   # an OrderedDict would be nice here...
+struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
 end
@@ -37,9 +37,11 @@ function names!(x::Index, nms::Vector{Symbol}; allow_duplicates=false, makeuniqu
     if length(nms) != length(x)
         throw(ArgumentError("Length of nms doesn't match length of x."))
     end
-    newindex = Index(nms, makeunique=makeunique)
-    x.names = newindex.names
-    x.lookup = newindex.lookup
+    make_unique!(x.names, nms, makeunique=makeunique)
+    empty!(x.lookup)
+    for (i, n) in enumerate(x.names)
+        x.lookup[n] = i
+    end
     return x
 end
 
@@ -61,12 +63,16 @@ rename!(f::Function, x::Index) = rename!(x, [(x=>f(x)) for x in x.names])
 rename(x::Index, args...) = rename!(copy(x), args...)
 rename(f::Function, x::Index) = rename!(f, copy(x))
 
-function permutecols!(x::Index, p::AbstractVector)
-    # to be callsed by permutecols! for DataFrame
-    # thefefore assumes that `p` is a valid permutation
-    newindex = Index(_names(x)[p])
-    x.names = newindex.names
-    x.lookup = newindex.lookup
+@inline function Base.permute!(x::Index, p::AbstractVector)
+    @boundscheck if !(length(p) == length(x) && isperm(p))
+        throw(ArgumentError("$p is not a valid column permutation for this Index"))
+    end
+    oldnames = copy(_names(x))
+    for (i, j) in enumerate(p)
+        n = oldnames[j]
+        x.names[i] = n
+        x.lookup[n] = i
+    end
     x
 end
 
