@@ -119,6 +119,9 @@ module TestDataFrame
         insertcol!(df, 4, 11, :a, makeunique=true)
         @test names(df) == [:a_2, :a, :a_1, :a_3]
         @test_throws BoundsError insertcol!(df, 10, 11, :a, makeunique=true)
+
+        df = DataFrame()
+        @test insertcol!(df, 1, [1], :x) == DataFrame(x = [1])
     end
 
     @testset "DataFrame constructors" begin

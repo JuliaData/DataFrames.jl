@@ -700,7 +700,7 @@ julia> insertcol!(d, 1, 'a':'c', :b)
 function insertcol!(df::DataFrame, col_ind::Int, item::AbstractVector, name::Symbol;
                     makeunique::Bool=false)
     0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
-    size(df, 1) == length(item) || size(df, 1) == 0 || error("number of rows does not match")
+    size(df, 1) == length(item) || size(df, 2) == 0 || error("number of rows does not match")
 
     if haskey(df, name)
         if makeunique
