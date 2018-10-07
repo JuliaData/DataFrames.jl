@@ -111,6 +111,8 @@ Base.getindex(gd::GroupedDataFrame, idx::Integer) =
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
 Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray) =
     GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts[idxs], gd.ends[idxs])
+Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
+    GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts, gd.ends)
 
 function Base.:(==)(gd1::GroupedDataFrame, gd2::GroupedDataFrame)
     res = gd1.parent == gd2.parent
