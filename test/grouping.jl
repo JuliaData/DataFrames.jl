@@ -276,7 +276,7 @@ module TestGrouping
         df2 = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                         b = [1:7;missing])
         gd1 = groupby(df1, :a)
-        gd2 = groupby(df1, :a)
+        gd2 = groupby(df2, :a)
         @test gd1 == gd1
         @test isequal(gd1, gd1)
         @test ismissing(gd1 == gd2)
