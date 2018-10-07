@@ -639,9 +639,6 @@ Base.setindex!(df::DataFrame, v, row_inds, ::Colon) =
 Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
     (df[col_inds] = v; df)
 
-# Special deletion assignment
-Base.setindex!(df::DataFrame, x::Nothing, col_ind::Int) = deletecols!(df, col_ind)
-
 ##############################################################################
 ##
 ## Mutating AbstractDict methods
