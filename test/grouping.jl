@@ -243,16 +243,45 @@ module TestGrouping
 
     @testset "getindex" begin
         df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-                       b = repeat([2, 1], outer=[4]))
+                       b = 1:8)
         gd = groupby(df, :a)
         @test gd[1] isa SubDataFrame
+        @test gd[1] == view(df, [1, 5], :)
         @test_throws BoundsError gd[5]
         @test_throws ArgumentError gd[true]
         @test_throws MethodError gd["a"]
-        @test gd[[true, false, false, false]] isa GroupedDataFrame
+        gd2 = gd[[true, false, false, false]]
+        @test length(gd2) == 1
+        @test gd2[1] == gd[1]
         @test_throws BoundsError gd[[true, false]]
-        @test gd[:] isa GroupedDataFrame
-        @test gd[[1,2]] isa GroupedDataFrame
+        gd3 = gd[:]
+        @test gd3 isa GroupedDataFrame
+        @test length(gd3) == 4
+        @test gd3 == gd
+        for i in 1:4
+            @test gd3[i] == gd[i]
+        end
+        gd4 = gd[[1,2]]
+        @test gd4 isa GroupedDataFrame
+        @test length(gd4) == 2
+        for i in 1:4
+            @test gd4[i] == gd[i]
+        end
         @test_throws BoundsError gd[1:5]
+    end
+
+    @testset "== and isequal" begin
+        df1 = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                        b = 1:8)
+        df2 = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                        b = [1:7;missing])
+        gd1 = groupby(df1, :a)
+        gd2 = groupby(df1, :a)
+        @test gd1 == gd1
+        @test isequal(gd1, gd1)
+        @test ismissing(gd1 == gd2)
+        @test !isequal(gd1, gd2)
+        @test ismissing(gd2 == gd2)
+        @test isequal(gd2, gd2)
     end
 end
