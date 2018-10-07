@@ -1382,7 +1382,7 @@ end
 
 import Base: delete!, insert!, merge!
 @deprecate delete!(df::AbstractDataFrame, cols::Any) deletecols!(df, cols)
-@deprecate insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false) insertcol!(df, col_ind, item, name; makeunique=makeunique)
+@deprecate insert!(df::DataFrame, col_ind::Int, item, name::Symbol; makeunique::Bool=false) insertcol!(df, col_ind, name => item; makeunique=makeunique)
 @deprecate merge!(df1::DataFrame, df2::AbstractDataFrame) (foreach(col -> df1[col] = df2[col], names(df2)); df1)
 
 import Base: setindex!

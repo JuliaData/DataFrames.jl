@@ -90,15 +90,15 @@ module TestDataFrame
         @test isempty(DataFrame(a=[], b=[]))
 
         df = DataFrame(a=Union{Int, Missing}[1, 2], b=Union{Float64, Missing}[3.0, 4.0])
-        @test_throws BoundsError insertcol!(df, 5, ["a", "b"], :newcol)
-        @test_throws ErrorException insertcol!(df, 1, ["a"], :newcol)
-        @test insertcol!(df, 1, ["a", "b"], :newcol) == df
+        @test_throws BoundsError insertcol!(df, 5, :newcol => ["a", "b"], )
+        @test_throws ErrorException insertcol!(df, 1, :newcol => ["a"])
+        @test insertcol!(df, 1, :newcol => ["a", "b"]) == df
         @test names(df) == [:newcol, :a, :b]
         @test df[:a] == [1, 2]
         @test df[:b] == [3.0, 4.0]
         @test df[:newcol] == ["a", "b"]
 
-        @test insertcol!(df, 1, ["a1", "b1"], :newcol, makeunique=true) == df
+        @test insertcol!(df, 1, :newcol => ["a1", "b1"], makeunique=true) == df
         @test names(df) == [:newcol_1, :newcol, :a, :b]
         @test df[:a] == [1, 2]
         @test df[:b] == [3.0, 4.0]
@@ -106,22 +106,27 @@ module TestDataFrame
         @test df[:newcol_1] == ["a1", "b1"]
 
         df = DataFrame(a=[1,2], a_1=[3,4])
-        @test_logs (:warn, r"Inserting") insertcol!(df, 1, [11,12], :a)
+        @test_logs (:warn, r"Inserting") insertcol!(df, 1, :a => [11,12])
         df = DataFrame(a=[1,2], a_1=[3,4])
-        insertcol!(df, 1, [11,12], :a, makeunique=true)
+        insertcol!(df, 1, :a => [11,12], makeunique=true)
         @test names(df) == [:a_2, :a, :a_1]
-        insertcol!(df, 4, [11,12], :a, makeunique=true)
+        insertcol!(df, 4, :a => [11,12], makeunique=true)
         @test names(df) == [:a_2, :a, :a_1, :a_3]
-        @test_throws BoundsError insertcol!(df, 10, [11,12], :a, makeunique=true)
+        @test_throws BoundsError insertcol!(df, 10, :a => [11,12], makeunique=true)
         df = DataFrame(a=[1,2], a_1=[3,4])
-        insertcol!(df, 1, 11, :a, makeunique=true)
+        insertcol!(df, 1, :a => 11, makeunique=true)
         @test names(df) == [:a_2, :a, :a_1]
-        insertcol!(df, 4, 11, :a, makeunique=true)
+        insertcol!(df, 4, :a => 11, makeunique=true)
         @test names(df) == [:a_2, :a, :a_1, :a_3]
-        @test_throws BoundsError insertcol!(df, 10, 11, :a, makeunique=true)
+        @test_throws BoundsError insertcol!(df, 10, :a => 11, makeunique=true)
+
+        df = DataFrame(x = 1:2)
+        @test insertcol!(df, 2, y=2:3) == DataFrame(x=1:2, y=2:3)
+        @test_throws ArgumentError insertcol!(df, 2)
+        @test_throws ArgumentError insertcol!(df, 2, a=1, b=2)
 
         df = DataFrame()
-        @test insertcol!(df, 1, [1], :x) == DataFrame(x = [1])
+        @test insertcol!(df, 1, x=[1]) == DataFrame(x = [1])
     end
 
     @testset "DataFrame constructors" begin
