@@ -61,6 +61,15 @@ rename!(f::Function, x::Index) = rename!(x, [(x=>f(x)) for x in x.names])
 rename(x::Index, args...) = rename!(copy(x), args...)
 rename(f::Function, x::Index) = rename!(f, copy(x))
 
+function permutecols!(x::Index, p::AbstractVector)
+    # to be callsed by permutecols! for DataFrame
+    # thefefore assumes that `p` is a valid permutation
+    newindex = Index(_names(x)[p])
+    x.names = newindex.names
+    x.lookup = newindex.lookup
+    x
+end
+
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
 Base.haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
 Base.keys(x::Index) = names(x)
