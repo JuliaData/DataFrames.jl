@@ -14,7 +14,7 @@
 #                  which allows a user to specify column specific orderings
 #                  with "order(column, rev=true,...)"
 
-mutable struct UserColOrdering{T<:ColumnIndex}
+struct UserColOrdering{T<:ColumnIndex}
     col::T
     kwargs
 end

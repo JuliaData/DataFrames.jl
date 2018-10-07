@@ -82,7 +82,7 @@ size(df1)
 ```
 
 """
-mutable struct DataFrame <: AbstractDataFrame
+struct DataFrame <: AbstractDataFrame
     columns::Vector{AbstractVector}
     colindex::Index
 
