@@ -14,7 +14,7 @@ view into the AbstractDataFrame grouped by rows.
 
 Not meant to be constructed directly, see `groupby`.
 """
-mutable struct GroupedDataFrame
+struct GroupedDataFrame
     parent::AbstractDataFrame
     cols::Vector         # columns used for sorting
     idx::Vector{Int}     # indexing vector when sorted by the given columns
@@ -107,10 +107,21 @@ Compat.lastindex(gd::GroupedDataFrame) = length(gd.starts)
 Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
-Base.getindex(gd::GroupedDataFrame, idx::Int) =
+Base.getindex(gd::GroupedDataFrame, idx::Integer) =
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
-Base.getindex(gd::GroupedDataFrame, I::AbstractArray{Bool}) =
-    GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts[I], gd.ends[I])
+Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray) =
+    GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts[idxs], gd.ends[idxs])
+Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
+    GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts, gd.ends)
+
+function Base.:(==)(gd1::GroupedDataFrame, gd2::GroupedDataFrame)
+    res = gd1.parent == gd2.parent
+    ismissing(res) && return missing
+    res && gd1.cols == gd2.cols
+end
+
+Base.isequal(gd1::GroupedDataFrame, gd2::GroupedDataFrame) =
+    isequal(gd1.parent, gd2.parent) && isequal(gd1.cols, gd2.cols)
 
 Base.names(gd::GroupedDataFrame) = names(gd.parent)
 _names(gd::GroupedDataFrame) = _names(gd.parent)
