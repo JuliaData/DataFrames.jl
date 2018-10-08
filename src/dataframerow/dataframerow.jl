@@ -4,7 +4,6 @@ struct DataFrameRow{T <: AbstractDataFrame}
     row::Int
 end
 
-
 """
     parent(r::DataFrameRow)
 
@@ -13,15 +12,19 @@ Return the parent data frame of `r`.
 Base.parent(r::DataFrameRow) = getfield(r, :df)
 row(r::DataFrameRow) = getfield(r, :row)
 
-function Base.getindex(r::DataFrameRow, idx::AbstractArray)
-    return DataFrameRow(parent(r)[idx], row(r))
-end
-
 function Base.getindex(r::DataFrameRow, idx::ColumnIndex)
     return parent(r)[row(r), idx]
 end
 
-Base.getindex(r::DataFrameRow, ::Colon) = r
+function Base.getindex(r::DataFrameRow, idxs::AbstractVector)
+    Base.depwarn("dfr[idxs] will create a `NamedTuple` in the future.", :getindex)
+    return DataFrameRow(parent(r)[idxs], row(r))
+end
+
+function Base.getindex(r::DataFrameRow, ::Colon)
+    Base.depwarn("dfr[:] will create a `NamedTuple` in the future.", :getindex)
+    r
+end
 
 function Base.setindex!(r::DataFrameRow, value::Any, idx::Any)
     return setindex!(parent(r), value, row(r), idx)
@@ -37,7 +40,13 @@ Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
-Base.view(r::DataFrameRow, c) = DataFrameRow(parent(r)[[c]], row(r))
+function Base.view(r::DataFrameRow, col::ColumnIndex)
+    Base.depwarn("view(dfr, col] a `0`-dimensional view in the future.", :getindex)
+    DataFrameRow(parent(r)[[col]], row(r))
+end
+
+Base.view(r::DataFrameRow, cols) = DataFrameRow(parent(r)[cols], row(r))
+Base.view(r::DataFrameRow, ::Colon) = r
 
 index(r::DataFrameRow) = index(parent(r))
 
