@@ -287,5 +287,10 @@ module TestGrouping
         @test !isequal(gd1, gd2)
         @test ismissing(gd2 == gd2)
         @test isequal(gd2, gd2)
+        df1.c = df1.a
+        df2.c = df2.a
+        @test gd1 != groupby(df2, :c)
+        df2[7, :b] = 10
+        @test gd1 != gd2
     end
 end
