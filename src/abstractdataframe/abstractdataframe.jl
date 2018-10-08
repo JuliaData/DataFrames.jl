@@ -817,8 +817,16 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     res = Matrix{T}(undef, n, p)
     idx = 1
     for (name, col) in zip(names(df), columns(df))
-        !(T >: Missing) && any(ismissing, col) && error("cannot convert a DataFrame containing missing values to array (found for column $name)")
-        copyto!(res, idx, convert(Vector{T}, col))
+        try
+            copyto!(res, idx, col)
+        catch err
+            if err isa MethodError && err.f == convert &&
+               !(T >: Missing) && any(ismissing, col)
+                error("cannot convert a DataFrame containing missing values to Matrix{$T} (found for column $name)")
+            else
+                rethrow(err)
+            end
+        end
         idx += n
     end
     return res
