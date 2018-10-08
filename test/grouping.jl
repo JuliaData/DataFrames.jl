@@ -299,7 +299,7 @@ module TestGrouping
         gd3 = groupby(df3, :a)
         gd4 = groupby(df4, :a)
         @test ismissing(gd3 == gd4)
-        @test isequal(gd3, gd4)
+        @test !isequal(gd3, gd4)
         gd3 = groupby(df3, :a, skipmissing = true)
         gd4 = groupby(df4, :a, skipmissing = true)
         @test gd3 == gd4
