@@ -254,7 +254,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
     copyto!(col, levs)
     hadmissing && (col[end] = missing)
     df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)))
-    insertcol!(df2, 1, _names(df)[rowkey] => col)
+    insertcols!(df2, 1, _names(df)[rowkey] => col)
 end
 
 unstack(df::AbstractDataFrame, rowkey::ColumnIndex,

@@ -652,10 +652,10 @@ Insert a column into a data frame in place.
 
 
 ```julia
-insertcol!(df::DataFrame, ind::Int; name=col,
-           makeunique::Bool=false)
-insertcol!(df::DataFrame, ind::Int, (:name => col)::Pair{Symbol,<:AbstractVector};
-           makeunique::Bool=false)
+insertcols!(df::DataFrame, ind::Int; name=col,
+            makeunique::Bool=false)
+insertcols!(df::DataFrame, ind::Int, (:name => col)::Pair{Symbol,<:AbstractVector};
+            makeunique::Bool=false)
 ```
 
 ### Arguments
@@ -688,7 +688,7 @@ julia> d = DataFrame(a=1:3)
 │ 2   │ 2     │
 │ 3   │ 3     │
 
-julia> insertcol!(d, 1, b=['a', 'b', 'c'])
+julia> insertcols!(d, 1, b=['a', 'b', 'c'])
 3×2 DataFrame
 │ Row │ b    │ a     │
 │     │ Char │ Int64 │
@@ -697,7 +697,7 @@ julia> insertcol!(d, 1, b=['a', 'b', 'c'])
 │ 2   │ 'b'  │ 2     │
 │ 3   │ 'c'  │ 3     │
 
-julia> insertcol!(d, 1, :c => [2, 3, 4])
+julia> insertcols!(d, 1, :c => [2, 3, 4])
 3×3 DataFrame
 │ Row │ c     │ b    │ a     │
 │     │ Int64 │ Char │ Int64 │
@@ -708,8 +708,8 @@ julia> insertcol!(d, 1, :c => [2, 3, 4])
 ```
 
 """
-function insertcol!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:AbstractVector};
-                    makeunique::Bool=false)
+function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:AbstractVector};
+                     makeunique::Bool=false)
     name, item = name_col
     0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
     size(df, 1) == length(item) || size(df, 2) == 0 || error("number of rows does not match")
@@ -729,8 +729,8 @@ function insertcol!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstra
             end
         else
             # TODO: remove depwarn and call and uncomment ArgumentError below
-            Base.depwarn("Inserting duplicate column name is deprecated, use makeunique=true.", :insertcol!)
-            insertcol!(df, col_ind, name => item; makeunique=true) # temporary fix to avoid duplicates
+            Base.depwarn("Inserting duplicate column name is deprecated, use makeunique=true.", :insertcols!)
+            insertcols!(df, col_ind, name => item; makeunique=true) # temporary fix to avoid duplicates
             # msg = """Duplicate variable name $(name).
             #      Pass makeunique=true to make it unique using a suffix automatically."""
             # throw(ArgumentError(msg))
@@ -741,12 +741,12 @@ function insertcol!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstra
     df
 end
 
-insertcol!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol}; makeunique::Bool=false) =
-    insertcol!(df, col_ind, name_col[1] => upgrade_scalar(df, name_col[2]), makeunique=makeunique)
+insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol}; makeunique::Bool=false) =
+    insertcols!(df, col_ind, name_col[1] => upgrade_scalar(df, name_col[2]), makeunique=makeunique)
 
-function insertcol!(df::DataFrame, col_ind::Int; makeunique::Bool=false, name_col...)
+function insertcols!(df::DataFrame, col_ind::Int; makeunique::Bool=false, name_col...)
     length(name_col) == 1 || throw(ArgumentError("one and only one column must be provided"))
-    insertcol!(df, col_ind, makeunique=makeunique, keys(name_col)[1] => name_col[1])
+    insertcols!(df, col_ind, makeunique=makeunique, keys(name_col)[1] => name_col[1])
 end
 
 
