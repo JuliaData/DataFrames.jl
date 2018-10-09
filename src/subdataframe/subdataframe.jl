@@ -135,7 +135,13 @@ end
 function Base.view(adf::AbstractDataFrame, rowind::Integer, colind::ColumnIndex)
     Base.depwarn("`view(adf, rowind, colind)` will create a 0-dimensional view into `adf[colind]` in the future." *
                  " Use `view(adf, [rowind], [colind])` instead.", :view)
-    return SubDataFrame(adf[colind], [rowind])
+    return SubDataFrame(adf[[colind]], [rowind])
+end
+
+function Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon)
+    Base.depwarn("`view(adf, rowind, :)` will create a `DataFrameRow` in the future." *
+                 " Use `view(adf, [rowind], :)` to create a `SubDataFrame`", :view)
+    return SubDataFrame(adf, [rowind])
 end
 
 function Base.view(adf::AbstractDataFrame, rowind::Integer, colinds)
