@@ -177,7 +177,7 @@ ncol(sdf::SubDataFrame) = length(index(sdf))
 function Base.getindex(sdf::SubDataFrame, colind::ColumnIndex)
     Base.depwarn("`sdf[colind]` will create a view of `parent(sdf)[colind]` in the future." *
                  " Use sdf[:, [colind]]` to get a `DataFrame`.", :getindex)
-    return parent(sdf)[rows(sdf), colinds]
+    return parent(sdf)[rows(sdf), colind]
 end
 
 function Base.getindex(sdf::SubDataFrame, colinds)

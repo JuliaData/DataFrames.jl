@@ -14,7 +14,6 @@ inds = Any[1,
            [big(1)],
            big(1):big(1),
            [:A],
-           Union{Bool, Missing}[true, false],
            Union{Int, Missing}[1],
            Union{BigInt, Missing}[big(1)],
            Union{Symbol, Missing}[:A],
@@ -32,6 +31,7 @@ end
 @test_throws MethodError i[1.0]
 @test_throws ArgumentError i[true]
 @test_throws ArgumentError i[false]
+@test_throws ArgumentError i[Union{Bool, Missing}[true, false]]
 @test_throws MethodError i[Any[1, missing]]
 @test_throws MethodError i[[1, missing]]
 @test_throws MethodError i[[true, missing]]
