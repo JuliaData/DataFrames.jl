@@ -287,5 +287,22 @@ module TestGrouping
         @test !isequal(gd1, gd2)
         @test ismissing(gd2 == gd2)
         @test isequal(gd2, gd2)
+        df1.c = df1.a
+        df2.c = df2.a
+        @test gd1 != groupby(df2, :c)
+        df2[7, :b] = 10
+        @test gd1 != gd2
+        df3 = DataFrame(a = repeat([1, 2, 3, missing], outer=[2]),
+                        b = 1:8)
+        df4 = DataFrame(a = repeat([1, 2, 3, missing], outer=[2]),
+                        b = [1:7;missing])
+        gd3 = groupby(df3, :a)
+        gd4 = groupby(df4, :a)
+        @test ismissing(gd3 == gd4)
+        @test !isequal(gd3, gd4)
+        gd3 = groupby(df3, :a, skipmissing = true)
+        gd4 = groupby(df4, :a, skipmissing = true)
+        @test gd3 == gd4
+        @test isequal(gd3, gd4)
     end
 end
