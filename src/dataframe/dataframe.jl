@@ -82,7 +82,7 @@ size(df1)
 ```
 
 """
-mutable struct DataFrame <: AbstractDataFrame
+struct DataFrame <: AbstractDataFrame
     columns::Vector{AbstractVector}
     colindex::Index
 
@@ -1123,11 +1123,10 @@ function permutecols!(df::DataFrame, p::AbstractVector)
         throw(ArgumentError("$p is not a valid column permutation for this DataFrame"))
     end
     permute!(columns(df), p)
-    setfield!(df, :colindex, Index(names(df)[p]))
+    @inbounds permute!(index(df), p)
     df
 end
 
 function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
-    lu = index(df).lookup
-    permutecols!(df, [lu[x] for x in p])
+    permutecols!(df, index(df)[p])
 end

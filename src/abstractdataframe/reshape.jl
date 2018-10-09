@@ -364,7 +364,7 @@ StackedVector(Any[[1,2], [9,10], [11,12]])  # [1,2,9,10,11,12]
 ```
 
 """
-mutable struct StackedVector <: AbstractVector{Any}
+struct StackedVector <: AbstractVector{Any}
     components::Vector{Any}
 end
 
@@ -423,7 +423,7 @@ RepeatedVector([1,2], 2, 2)   # [1,2,1,2,1,2,1,2]
 ```
 
 """
-mutable struct RepeatedVector{T} <: AbstractVector{T}
+struct RepeatedVector{T} <: AbstractVector{T}
     parent::AbstractVector{T}
     inner::Int
     outer::Int
