@@ -41,7 +41,10 @@ Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
 Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
 function Base.view(r::DataFrameRow, col::ColumnIndex)
-    Base.depwarn("view(dfr, col] a `0`-dimensional view in the future.", :getindex)
+    if col isa Bool
+        throw(ArgumentError("invalid column index: $col of type Bool"))
+    end
+    Base.depwarn("view(dfr, col) will return a `0`-dimensional view in the future.", :getindex)
     DataFrameRow(parent(r)[[col]], row(r))
 end
 

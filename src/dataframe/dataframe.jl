@@ -242,7 +242,7 @@ ncol(df::DataFrame) = length(index(df))
 
 const ColumnIndex = Union{Integer, Symbol}
 
-# df[SingleColumnIndex] => AbstractVector, alias
+# df[SingleColumnIndex] => AbstractVector, the same vector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
     return columns(df)[selected_column]
@@ -264,28 +264,24 @@ function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::ColumnIndex)
     return columns(df)[selected_column][row_ind]
 end
 
-# df[SingleRowIndex, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Bool, col_inds::AbstractVector)
-    throw(ArgumentError("invalid row index: $row_ind of type Bool"))
-end
-
 # df[SingleRowIndex, MultiColumnIndex] => DataFrame (will be NamedTuple)
 function Base.getindex(df::DataFrame, row_ind::Integer, col_inds::AbstractVector)
-    Base.depwarn("Selecting a single row from a `DataFrame` will return a `NamedTuple` in future.", :getindex)
+    if row_ind isa Bool
+        throw(ArgumentError("invalid row index: $row_ind of type Bool"))
+    end
+    Base.depwarn("Selecting a single row from a `DataFrame` will return a `NamedTuple` in the future.", :getindex)
     selected_columns = index(df)[col_inds]
-    new_columns = AbstractVector[dv[[row_ind]] for dv in columns(df)[selected_columns]]
+    new_columns = AbstractVector[[dv[row_ind]] for dv in columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
 # df[SingleRowIndex, :] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Bool, ::Colon)
-    throw(ArgumentError("invalid row index: $row_ind of type Bool"))
-end
-
-# df[SingleRowIndex, :] => DataFrame
 function Base.getindex(df::DataFrame, row_ind::Integer, ::Colon)
-    Base.depwarn("Selecting a single row from a `DataFrame` will return a `NamedTupe` in future.", :getindex)
-    new_columns = AbstractVector[[dv[[row_ind]]] for dv in columns(df)]
+    if row_ind isa Bool
+        throw(ArgumentError("invalid row index: $row_ind of type Bool"))
+    end
+    Base.depwarn("Selecting a single row from a `DataFrame` will return a `NamedTuple` in the future.", :getindex)
+    new_columns = AbstractVector[[dv[row_ind]] for dv in columns(df)]
     return DataFrame(new_columns, copy(index(df)))
 end
 

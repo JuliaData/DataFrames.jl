@@ -77,8 +77,8 @@ function SubDataFrame(parent::DataFrame, row::Bool)
 end
 
 function SubDataFrame(parent::DataFrame, row::Integer)
-    Base.depwarn("Creation of `SubDataFrame` with a single row is deprecated. " *
-                 "In the future `DataFrameRow` will be used in this case.", :SubDataFrame)
+    Base.depwarn("Creation of `SubDataFrame` with an `Integer` `row` is deprecated. " *
+                 "Use `SubDataFrame(parent, [row])` instead.", :SubDataFrame)
     return SubDataFrame(parent, [Int(row)])
 end
 
@@ -92,7 +92,7 @@ end
 function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool})
     if length(rows) != nrow(parent)
         throw(ArgumentError("invalid length of `AbstractVector{Bool}` row index" *
-                            " (got $(length(rows)), expected $(nrow(parent))"))
+                            " (got $(length(rows)), expected $(nrow(parent)))"))
     end
     return SubDataFrame(parent, findall(rows))
 end
@@ -103,9 +103,6 @@ function SubDataFrame(parent::DataFrame, rows::AbstractVector)
     end
     return SubDataFrame(parent, convert(Vector{Int}, rows))
 end
-
-SubDataFrame(parent::DataFrame, rows) =
-    SubDataFrame(parent, (1:nrow(parent))[rows])
 
 function SubDataFrame(sdf::SubDataFrame, rowinds)
     return SubDataFrame(parent(sdf), rows(sdf)[rowinds])
@@ -130,20 +127,21 @@ rows(sdf::SubDataFrame) = getfield(sdf, :rows)
 # after deprecation period
 
 function Base.view(adf::AbstractDataFrame, rowinds)
-    Base.depwarn("`view(adf, x)` will be translated to `view(adf, x, :)` in the future.", :view)
+    Base.depwarn("`view(adf, x)` will select all rows and columns `x` from `adf` in the future. " *
+                 "Use `view(adf, x, :)` to select rows `x` and all columns from `adf` instead.", :view)
     return SubDataFrame(adf, rowinds)
 end
 
 function Base.view(adf::AbstractDataFrame, rowind::Integer, colind::ColumnIndex)
     Base.depwarn("`view(adf, rowind, colind)` will create a 0-dimensional view into `adf[colind]` in the future." *
-                 " Use `view(adf, rowind:rowind, [colind])` instead.", :view)
-    return SubDataFrame(adf[colind], rowind)
+                 " Use `view(adf, [rowind], [colind])` instead.", :view)
+    return SubDataFrame(adf[colind], [rowind])
 end
 
 function Base.view(adf::AbstractDataFrame, rowind::Integer, colinds)
-    Base.depwarn("`view(adf, x)` will create a `DataFrameRow` in the future." *
-                 " Use `view(adf, x:x)` instead", :view)
-    return SubDataFrame(adf[colinds], rowind)
+    Base.depwarn("`view(adf, rowind, colinds)` will create a `DataFrameRow` in the future." *
+                 " Use `view(adf, [rowind], colinds)` to create a `SubDataFrame`", :view)
+    return SubDataFrame(adf[colinds], [rowind])
 end
 
 function Base.view(adf::AbstractDataFrame, rowinds, colinds)
@@ -190,6 +188,11 @@ end
 
 function Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex)
     return parent(sdf)[rows(sdf)[rowind], colind]
+end
+
+function Base.getindex(sdf::SubDataFrame, rowind::Integer, colinds)
+    Base.depwarn("Selecting a single row from a `SubDataFrame` will return a `NamedTuple` in the future.", :getindex)
+    return parent(sdf)[rows(sdf)[rowind], colinds]
 end
 
 function Base.getindex(sdf::SubDataFrame, rowinds, colinds)

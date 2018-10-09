@@ -156,14 +156,9 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
     findall(idx)
 end
-function Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}})
-    getindex(x, diallowmissing(idx))
-end
 
 # catch all method handling cases when type of idx is not narrowest possible, Any in particular
-# also it handles passing missing values in idx
-function Base.getindex(x::AbstractIndex, idx::AbstractVector)
-    idxs = disallowmissing(idx)
+function Base.getindex(x::DataFrames.AbstractIndex, idxs::AbstractVector)
     length(idxs) == 0 && return Int[] # special case of empty idxs
     if idxs[1] isa Real
         if !all(v -> v isa Integer && !(v isa Bool), idxs)
@@ -172,7 +167,7 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector)
         return convert(Vector{Int}, idxs)
     end
     idxs[1] isa Symbol && return getindex(x, convert(Vector{Symbol}, idxs))
-    throw(ArgumentError("idx[1] has type $(typeof(idx[1])); "*
+    throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); "*
                         "DataFrame only supports indexing columns with integers, symbols or boolean vectors"))
 end
 
