@@ -225,6 +225,6 @@ Base.copy(sdf::SubDataFrame) = sdf[:]
 
 Base.map(f::Function, sdf::SubDataFrame) = f(sdf) # TODO: deprecate
 
-without(sdf::SubDataFrame, c) = view(without(parent(sdf), c), rows(sdf))
+without(sdf::SubDataFrame, c) = view(without(parent(sdf), c), rows(sdf), :)
 # Resolve a method ambiguity
-without(sdf::SubDataFrame, c::Vector{<:Integer}) = view(without(parent(sdf), c), rows(sdf))
+without(sdf::SubDataFrame, c::Vector{<:Integer}) = view(without(parent(sdf), c), rows(sdf), :)

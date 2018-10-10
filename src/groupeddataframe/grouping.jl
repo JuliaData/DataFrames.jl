@@ -83,7 +83,7 @@ function groupby(df::AbstractDataFrame, cols::Vector;
     df_groups = group_rows(sdf, skipmissing)
     # sort the groups
     if sort
-        group_perm = sortperm(view(sdf, df_groups.rperm[df_groups.starts]))
+        group_perm = sortperm(view(sdf, df_groups.rperm[df_groups.starts], :))
         permute!(df_groups.starts, group_perm)
         Base.permute!!(df_groups.stops, group_perm)
     end
@@ -98,7 +98,7 @@ function Base.iterate(gd::GroupedDataFrame, i=1)
     if i > length(gd.starts)
         nothing
     else
-        (view(gd.parent, gd.idx[gd.starts[i]:gd.ends[i]]), i+1)
+        (view(gd.parent, gd.idx[gd.starts[i]:gd.ends[i]], :), i+1)
     end
 end
 
@@ -108,7 +108,7 @@ Base.first(gd::GroupedDataFrame) = gd[1]
 Base.last(gd::GroupedDataFrame) = gd[end]
 
 Base.getindex(gd::GroupedDataFrame, idx::Integer) =
-    view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]])
+    view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]], :)
 Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray) =
     GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts[idxs], gd.ends[idxs])
 Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
