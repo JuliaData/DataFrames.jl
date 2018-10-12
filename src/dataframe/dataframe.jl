@@ -269,7 +269,8 @@ function Base.getindex(df::DataFrame, row_ind::Integer, col_inds::AbstractVector
     if row_ind isa Bool
         throw(ArgumentError("invalid row index: $row_ind of type Bool"))
     end
-    Base.depwarn("Selecting a single row from a `DataFrame` will return a `NamedTuple` in the future.", :getindex)
+    Base.depwarn("Selecting a single row from a `DataFrame` will return a `NamedTuple` in the future. " *
+                 "To get a `DataFrame` use `df[row_ind:row_ind, col_inds]`.", :getindex)
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[[dv[row_ind]] for dv in columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
@@ -280,7 +281,8 @@ function Base.getindex(df::DataFrame, row_ind::Integer, ::Colon)
     if row_ind isa Bool
         throw(ArgumentError("invalid row index: $row_ind of type Bool"))
     end
-    Base.depwarn("Selecting a single row from a `DataFrame` will return a `NamedTuple` in the future.", :getindex)
+    Base.depwarn("Selecting a single row from a `DataFrame` will return a `NamedTuple` in the future. " *
+                 "To get a `DataFrame` use `df[row_ind:row_ind, :]`.", :getindex)
     new_columns = AbstractVector[[dv[row_ind]] for dv in columns(df)]
     return DataFrame(new_columns, copy(index(df)))
 end
@@ -301,8 +303,8 @@ end
 # df[:, SingleColumnIndex] => AbstractVector
 # df[:, MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, row_ind::Colon, col_inds)
-    Base.depwarn("indexing with colon as row will create a copy in the future" *
-                 " use df[col_inds] to get the columns without copying", :getindex)
+    Base.depwarn("Sndexing with colon as row will create a copy in the future. " *
+                 "Use `df[col_inds]` to get the columns without copying", :getindex)
     df[col_inds]
 end
 
@@ -314,8 +316,8 @@ end
 
 # df[:, :] => DataFrame
 function Base.getindex(df::DataFrame, ::Colon, ::Colon)
-    Base.depwarn("indexing with colon as row will create a copy of column vectors in the" *
-                 " future; use df[:] to get the columns without copying", :getindex)
+    Base.depwarn("Indexing with colon as row will create a copy of column vectors in the" *
+                 " future. use `df[:]` to get the columns without copying", :getindex)
     copy(df)
 end
 

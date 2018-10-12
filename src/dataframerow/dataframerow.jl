@@ -17,12 +17,14 @@ function Base.getindex(r::DataFrameRow, idx::ColumnIndex)
 end
 
 function Base.getindex(r::DataFrameRow, idxs::AbstractVector)
-    Base.depwarn("dfr[idxs] will create a `NamedTuple` in the future.", :getindex)
+    Base.depwarn("`dfr[idxs]` will create a `NamedTuple` in the future. " *
+                 "Use `view(dfr, idxs)` to get a `DataFrameRow`.", :getindex)
     return DataFrameRow(parent(r)[idxs], row(r))
 end
 
 function Base.getindex(r::DataFrameRow, ::Colon)
-    Base.depwarn("dfr[:] will create a `NamedTuple` in the future.", :getindex)
+    Base.depwarn("`dfr[:]` will create a `NamedTuple` in the future. " *
+                 "Use `view(dfr, :)` to get a `DataFrameRow`.", :getindex)
     r
 end
 
@@ -44,7 +46,8 @@ function Base.view(r::DataFrameRow, col::ColumnIndex)
     if col isa Bool
         throw(ArgumentError("invalid column index: $col of type Bool"))
     end
-    Base.depwarn("view(dfr, col) will return a `0`-dimensional view in the future.", :getindex)
+    Base.depwarn("`view(dfr, col)` will return a `0`-dimensional view in the future." *
+                 " Use `view(dfr, [col]` to get a `DataFrameRow`.", :getindex)
     DataFrameRow(parent(r)[[col]], row(r))
 end
 

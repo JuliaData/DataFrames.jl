@@ -197,7 +197,8 @@ function Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex)
 end
 
 function Base.getindex(sdf::SubDataFrame, rowind::Integer, colinds)
-    Base.depwarn("Selecting a single row from a `SubDataFrame` will return a `NamedTuple` in the future.", :getindex)
+    Base.depwarn("Selecting a single row from a `SubDataFrame` will return a `NamedTuple` in the future. " *
+                 "Use `sdf[rowind:rowind, colinds]` to get a `DataFrame`.", :getindex)
     return parent(sdf)[rows(sdf)[rowind], colinds]
 end
 
