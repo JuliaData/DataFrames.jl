@@ -100,5 +100,12 @@ module TestDataFrameRow
     io = IOBuffer()
     show(io, DataFrameRow(df, 1))
     @test String(take!(io)) == "DataFrameRow (row 1)\na  \nb  1"
-end
 
+    # copy
+
+    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
+                   b=[2.0, missing, 1.2, 2.0, missing, missing],
+                   c=["A", "B", "C", "A", "B", missing])
+    @test copy(DataFrameRow(df, 1)) == (a = 1, b = 2.0, c = "A")
+    @test isequal(copy(DataFrameRow(df, 2)), (a = 2, b = missing, c = "B"))
+end

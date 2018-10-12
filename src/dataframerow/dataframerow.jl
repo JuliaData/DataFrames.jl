@@ -62,6 +62,8 @@ Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, parent(r)[row(r),:
 Base.keys(r::DataFrameRow) = names(parent(r))
 Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[col][row(r)], length(r))
 
+Base.copy(r::DataFrameRow) = NamedTuple{Tuple(keys(r))}(values(r))
+
 # hash column element
 Base.@propagate_inbounds hash_colel(v::AbstractArray, i, h::UInt = zero(UInt)) = hash(v[i], h)
 Base.@propagate_inbounds function hash_colel(v::AbstractCategoricalArray, i, h::UInt = zero(UInt))
