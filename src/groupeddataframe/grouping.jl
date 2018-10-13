@@ -82,7 +82,7 @@ function groupby(df::AbstractDataFrame, cols::Vector;
         permute!(df_groups.starts, group_perm)
         Base.permute!!(df_groups.stops, group_perm)
     end
-    GroupedDataFrame(df, DataFrames.index(df)[cols], df_groups.rperm,
+    GroupedDataFrame(df, index(df)[cols], df_groups.rperm,
                      df_groups.starts, df_groups.stops)
 end
 groupby(d::AbstractDataFrame, cols;
@@ -126,8 +126,9 @@ _names(gd::GroupedDataFrame) = _names(gd.parent)
 
 wrap(df::AbstractDataFrame) = df
 wrap(nt::NamedTuple) = nt
+wrap(r::DataFrameRow) = r
 wrap(A::Matrix) = convert(DataFrame, A)
-wrap(s::Union{AbstractVector, Tuple}) = DataFrame(x1 = s)
+wrap(s::AbstractVector) = DataFrame(x1 = s)
 wrap(s::Any) = (x1 = s,)
 
 """
@@ -139,7 +140,7 @@ For each group in `gd`, `f` is passed a `SubDataFrame` view holding the correspo
 `f` can return a single value, a named tuple, a vector, or a data frame.
 This determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
-- A named tuple gives a data frame with one column for each field in the named tuple
+- A named tuple or a `DataFrameRow` gives a data frame with one column for each field
   and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
@@ -205,7 +206,7 @@ plus the grouping columns.
 `f` can return a single value, a named tuple, a vector, or a data frame.
 This determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
-- A named tuple gives a data frame with one column for each field in the named tuple
+- A named tuple or a `DataFrameRow` gives a data frame with one column for each field
   and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
@@ -250,12 +251,13 @@ end
 
 combine(gd::GroupedDataFrame) = combine(identity, gd)
 
-function _combine(first::NamedTuple, f::Function, gd::GroupedDataFrame)
+function _combine(first::Union{NamedTuple, DataFrameRow}, f::Function,
+                  gd::GroupedDataFrame)
     m = length(first)
     n = length(gd)
     idx = Vector{Int}(undef, n)
     initialcols = ntuple(i -> Tables.allocatecolumn(typeof(first[i]), n), m)
-    cols = _combine!(first, initialcols, idx, 1, 1, f, gd, propertynames(first))
+    cols = _combine!(first, initialcols, idx, 1, 1, f, gd, tuple(propertynames(first)...))
     valscat = DataFrame(collect(cols), collect(propertynames(first)))
     idx, valscat
 end
@@ -273,9 +275,9 @@ end
 @noinline function fill_row!(row, cols::NTuple{N, AbstractVector},
                              i::Integer, colstart::Integer,
                              colnames::NTuple{N, Symbol}) where N
-    if !isa(row, NamedTuple)
+    if !isa(row, Union{NamedTuple, DataFrameRow})
         throw(ArgumentError("return value must not change its kind (single value, " *
-                            "named tuple, vector or data frame) across groups"))
+                            "`NamedTuple`/`DataFrameRow`, vector or data frame) across groups"))
     elseif length(row) != N
         throw(ArgumentError("return value must have the same number of columns " *
                             "for all groups (got $N and $(length(row)))"))
@@ -302,8 +304,8 @@ end
     return nothing
 end
 
-function _combine!(first::NamedTuple, cols::NTuple{N, AbstractVector}, idx::Vector{Int},
-                   rowstart::Integer, colstart::Integer,
+function _combine!(first::Union{NamedTuple, DataFrameRow}, cols::NTuple{N, AbstractVector},
+                   idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                    f::Function, gd::GroupedDataFrame, colnames::NTuple{N, Symbol}) where N
     n = length(first)
     len = length(gd)
@@ -341,7 +343,7 @@ function append_rows!(rows, cols::NTuple{N, AbstractVector},
                       colstart::Integer, colnames::AbstractVector{Symbol}) where N
     if !isa(rows, AbstractDataFrame)
         throw(ArgumentError("return value must not change its kind (single value, " *
-                            "named tuple, vector or data frame) across groups"))
+                            "`NamedTuple`/`DataFrameRow`, vector or data frame) across groups"))
     elseif size(rows, 2) != N
         throw(ArgumentError("return value must have the same number of columns " *
                             "for all groups (got $N and $(size(rows, 2)))"))
@@ -466,8 +468,8 @@ For each group in `gd`, `f` is passed a `SubDataFrame` view with the correspondi
 `f` can return a single value, a named tuple, a vector, or a data frame.
 This determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
-- A named tuple gives a data frame with one column for each field in the named tuple
-  and one row per group.
+- A named tuple or a `DataFrameRow` gives a data frame with one column for each field
+and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
 - A data frame gives a data frame with the same columns and as many rows

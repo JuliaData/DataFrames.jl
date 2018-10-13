@@ -207,6 +207,14 @@ module TestGrouping
 
         df = DataFrame(x = [1, 2, 3], y = [2, 3, 1])
 
+        # Test function returning DataFrameRow
+        res = by(d -> DataFrameRow(d, 1), df, :x)
+        @test res == DataFrame(x=df.x, x_1=df.x, y=df.y)
+
+        # Test function returning Tuple
+        res = by(d -> (sum(d.y),), df, :x)
+        @test res == DataFrame(x=df.x, x1=tuple.([2, 3, 1]))
+
         # Test with some groups returning empty data frames
         @test by(d -> d.x == [1] ? DataFrame(z=[]) : DataFrame(z=1), df, :x) ==
             DataFrame(x=[2, 3], z=[1, 1])
