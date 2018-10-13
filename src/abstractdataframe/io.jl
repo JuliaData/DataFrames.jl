@@ -12,6 +12,16 @@ function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
     escape_string(io, x, escapes)
 end
 
+function digitsep(value::Integer)
+    # Adapted from https://github.com/IainNZ/Humanize.jl
+    value = string(abs(value))
+    group_ends = reverse(collect(length(value): -3 :1))
+    groups = [value[max(end_index - 2, 1):end_index]
+              for end_index in group_ends]
+    return join(groups, ",")
+end
+
+
 function printtable(io::IO,
                     df::AbstractDataFrame;
                     header::Bool = true,
@@ -133,6 +143,7 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     end
     write(io, "</tbody>")
     write(io, "</table>")
+    write(io, "<p>$(digitsep(n)) rows x $(digitsep(ncol(df))  ) columns</p>")
 end
 
 ##############################################################################
@@ -239,7 +250,7 @@ Data.weakrefstrings(::Type{DataFrame}) = true
 
 allocate(::Type{T}, rows, ref) where {T} = Vector{T}(undef, rows)
 allocate(::Type{CategoricalString{R}}, rows, ref) where {R} = CategoricalArray{String, 1, R}(undef, rows)
-allocate(::Type{Union{CategoricalString{R}, Missing}}, rows, ref) where {R} = 
+allocate(::Type{Union{CategoricalString{R}, Missing}}, rows, ref) where {R} =
     CategoricalArray{Union{String, Missing}, 1, R}(undef, rows)
 allocate(::Type{CategoricalValue{T, R}}, rows, ref) where {T, R} =
     CategoricalArray{T, 1, R}(undef, rows)
@@ -318,4 +329,3 @@ end
 
 Data.close!(df::DataFrameStream) =
     DataFrame(collect(AbstractVector, df.columns), Symbol.(df.header), makeunique=true)
-
