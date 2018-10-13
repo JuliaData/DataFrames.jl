@@ -24,7 +24,8 @@ end
 # adjust row hashes by the hashes of column elements
 function hashrows_col!(h::Vector{UInt},
                        n::Vector{Bool},
-                       v::AbstractVector{T}) where T
+                       v::AbstractVector{T},
+                       firstcol::Bool) where T
     @inbounds for i in eachindex(h)
         el = v[i]
         h[i] = hash(el, h[i])
@@ -36,17 +37,32 @@ function hashrows_col!(h::Vector{UInt},
 end
 
 # should give the same hash as AbstractVector{T}
-# enables efficient sequential memory access pattern
 function hashrows_col!(h::Vector{UInt},
                        n::Vector{Bool},
-                       v::AbstractCategoricalVector)
-    # TODO is it possible to optimize by hashing the pool values once?
-    @inbounds for (i, ref) in enumerate(v.refs)
-        if eltype(v) >: Missing && ref == 0
-            h[i] = hash(missing, h[i])
-            length(n) > 0 && (n[i] = true)
-        else
-            h[i] = hash(CategoricalArrays.index(v.pool)[ref], h[i])
+                       v::AbstractCategoricalVector,
+                       firstcol::Bool)
+    # When hashing the first column, no need to take into account previous hash,
+    # which is always zero
+    if firstcol
+        hashes = Vector{UInt}(undef, length(levels(v.pool))+1)
+        hashes[1] = hash(missing)
+        hashes[2:end] .= hash.(CategoricalArrays.index(v.pool))
+        @inbounds for (i, ref) in enumerate(v.refs)
+            h[i] = hashes[ref+1]
+        end
+    else
+        @inbounds for (i, ref) in enumerate(v.refs)
+            if eltype(v) >: Missing && ref == 0
+                h[i] = hash(missing, h[i])
+            else
+                h[i] = hash(CategoricalArrays.index(v.pool)[ref], h[i])
+            end
+        end
+    end
+    # Doing this step separately is faster, as it would disable SIMD above
+    if eltype(v) >: Missing && length(n) > 0
+        @inbounds for (i, ref) in enumerate(v.refs)
+            n[i] |= (ref == 0)
         end
     end
     h
@@ -56,8 +72,9 @@ end
 function hashrows(df::AbstractDataFrame, skipmissing::Bool)
     rhashes = zeros(UInt, nrow(df))
     missings = fill(false, skipmissing ? nrow(df) : 0)
-    for col in columns(df)
-        hashrows_col!(rhashes, missings, col)
+    cols = columns(df)
+    for i in 1:ncol(df)
+        hashrows_col!(rhashes, missings, cols[i], i == 1)
     end
     return (rhashes, missings)
 end
