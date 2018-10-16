@@ -128,4 +128,18 @@ module TestIO
         dfs = DataFrame(sch)
         DataStreams.Data.close!(dfs)
     end
+
+    @testset "csv/tsv output" begin
+        df = DataFrame(a = [1,2], b = [1.0, 2.0])
+        sprint(show, "text/csv", df) == """
+        a,b
+        1,1.0
+        2,2.0
+        """
+        sprint(show, "text/tab-separated-values", df) == """
+        a\tb
+        1\t1.0
+        2\t2.0
+        """
+    end
 end
