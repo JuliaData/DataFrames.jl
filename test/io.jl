@@ -131,13 +131,13 @@ module TestIO
 
     @testset "csv/tsv output" begin
         df = DataFrame(a = [1,2], b = [1.0, 2.0])
-        sprint(show, "text/csv", df) == """
-        a,b
+        @test sprint(show, "text/csv", df) == """
+        "a","b"
         1,1.0
         2,2.0
         """
-        sprint(show, "text/tab-separated-values", df) == """
-        a\tb
+        @test sprint(show, "text/tab-separated-values", df) == """
+        "a"\t"b"
         1\t1.0
         2\t2.0
         """
