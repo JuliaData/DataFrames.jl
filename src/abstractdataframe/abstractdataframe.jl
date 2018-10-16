@@ -848,7 +848,7 @@ nonunique(df, 1)
 
 """
 function nonunique(df::AbstractDataFrame)
-    gslots = row_group_slots(df)[3]
+    gslots = row_group_slots(ntuple(i -> df[i], ncol(df)), Val(true))[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
     res = fill(true, nrow(df))
