@@ -527,6 +527,29 @@ function Base.setindex!(df::DataFrame,
     end
     df
 end
+# df[SingleRowIndex, MultiColumnIndex] = iterable
+function Base.setindex!(df::DataFrame,
+                        iterable::AbstractVector,
+                        row_ind::Real,
+                        col_inds::AbstractVector{<:ColumnIndex})
+    if length(iterable) != length(col_inds)
+        msg = "Length of iterable does not match DataFrame column count."
+        throw(ArgumentError(msg))
+    end
+    old_row = df[row_ind, col_inds]
+    for (val, col_ind) in zip(iterable, col_inds)
+        try
+            insert_single_entry!(df, val, row_ind, col_ind)
+        catch
+            #clean up partial row
+            df[row_ind, col_inds] = old_row
+            msg = "Error adding $val to column :$(_names(df)[col_ind])." *
+                  " Possible type mis-match."
+            throw(ArgumentError(msg))
+        end
+    end
+    df
+end
 
 # df[MultiRowIndex, SingleColumnIndex] = AbstractVector
 function Base.setindex!(df::DataFrame,

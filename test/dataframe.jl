@@ -707,7 +707,7 @@ module TestDataFrame
         @test names(df) == [:x3, :x3_1, :x3_2, :x4]
     end
 
-    @testset "setindex! sets row with dict" begin
+    @testset "setindex! sets row with dict/iterable" begin
         df = DataFrame(a=[0, 0], b=['a', 'a'])
         dfa = DataFrame(a=0:1, b='a':'b')
         df[2, :] = Dict(:a => 1, :b => 'b')
@@ -720,6 +720,19 @@ module TestDataFrame
         df = DataFrame(a=[0, 0], b=['a', 'a'])
         dfc = deepcopy(df)
         @test_throws ArgumentError df[2, :] = Dict(:a => 1)
+        @test df == dfc
+
+        df[2, :] = [1, 'b']
+        @test df == dfa
+
+        df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
+        dfa = DataFrame(a=0:1, b=['a', 'a'], c=0:1)
+        df[2, [:a, :c]] = [1, 1]
+        @test df == dfa
+
+        df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
+        dfc = deepcopy(df)
+        @test_throws ArgumentError df[2, :] = [1, 1]
         @test df == dfc
     end
 
