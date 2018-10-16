@@ -707,6 +707,22 @@ module TestDataFrame
         @test names(df) == [:x3, :x3_1, :x3_2, :x4]
     end
 
+    @testset "setindex! sets row with dict" begin
+        df = DataFrame(a=[0, 0], b=['a', 'a'])
+        dfa = DataFrame(a=0:1, b='a':'b')
+        df[2, :] = Dict(:a => 1, :b => 'b')
+        @test df == dfa
+
+        df = DataFrame(a=[0, 0], b=['a', 'a'])
+        df[2, :] = (a=1, b='b')
+        @test df == dfa
+
+        df = DataFrame(a=[0, 0], b=['a', 'a'])
+        dfc = deepcopy(df)
+        @test_throws ArgumentError df[2, :] = Dict(:a => 1)
+        @test df == dfc
+    end
+
     @testset "passing range to a DataFrame" begin
         df = DataFrame(a=1:3, b='a':'c')
         df[:c] = 1:3

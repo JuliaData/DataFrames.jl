@@ -500,6 +500,34 @@ function Base.setindex!(df::DataFrame,
     return df
 end
 
+# df[SingleRowIndex, :] = Union{AbstractDict, NamedTuple}
+function Base.setindex!(df::DataFrame,
+                        row::Union{AbstractDict, NamedTuple},
+                        row_ind::Real,
+                        ::Colon)
+    old_row = df[row_ind, :]
+    for nm in _names(df)
+        try
+            # after deprecation replace this call with `val = row[nm]`
+            val = get(row, nm) do
+                v = row[string(nm)]
+                msg = "setindex!(::DataFrame, ::AbstractDict, ::Real, " *
+                      "::Colon) with AbstractDict keys other than Symbol " *
+                      "is deprecated"
+                Base.depwarn(msg, :setindex!)
+                v
+            end
+            insert_single_entry!(df, val, row_ind, nm)
+        catch
+            # clean up partial row
+            df[row_ind, :] = old_row
+            msg = "Error adding value to column :$nm."
+            throw(ArgumentError(msg))
+        end
+    end
+    df
+end
+
 # df[MultiRowIndex, SingleColumnIndex] = AbstractVector
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
