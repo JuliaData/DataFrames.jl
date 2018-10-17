@@ -24,5 +24,5 @@ script:
   - julia --check-bounds=yes -e 'using Pkg; Pkg.clone(pwd()); Pkg.build("DataFrames"); Pkg.test("DataFrames"; coverage=true)'
 
 after_success:
-  - julia -e 'using Pkg; cd(Pkg.dir("DataFrames")); Pkg.add("Documenter"); Pkg.add("Query"); Pkg.add("CSV"); include(joinpath("docs", "make.jl"))'
+  - julia -e 'using Pkg; cd(Pkg.dir("DataFrames")); ps=Pkg.PackageSpec(name="Documenter", version="0.19"); Pkg.add(ps); Pkg.pin(ps); Pkg.add("Query"); Pkg.add("CSV"); include(joinpath("docs", "make.jl"))'
   - julia -e 'using Pkg; cd(Pkg.dir("DataFrames")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
