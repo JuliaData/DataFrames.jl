@@ -714,7 +714,7 @@ module TestDataFrame
         @test df == dfa
 
         df = DataFrame(a=[0, 0], b=['a', 'a'])
-        df[2, :] = (a=1, b='b')
+        df[2, :] = (b='b', a=1)
         @test df == dfa
 
         df = DataFrame(a=[0, 0], b=['a', 'a'])
