@@ -725,10 +725,22 @@ module TestDataFrame
         df[2, :] = [1, 'b']
         @test df == dfa
 
+        df = DataFrame(a=[0, 0], b=['a', 'a'])
+        df[2, :] = (1, 'b')
+        @test df == dfa
+
         df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
         dfa = DataFrame(a=0:1, b=['a', 'a'], c=0:1)
         df[2, [:a, :c]] = [1, 1]
         @test df == dfa
+
+        # df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
+        # df[2, :] = DataFrameRow(dfa, 2)
+        # @test df == dfa
+        #
+        # df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
+        # df[2, [:a, :c]] .= 1
+        # @test df == dfa
 
         df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
         dfc = deepcopy(df)

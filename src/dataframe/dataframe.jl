@@ -466,23 +466,6 @@ function Base.setindex!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnInd
     insert_single_entry!(df, v, row_ind, col_ind)
 end
 
-# df[SingleRowIndex, MultiColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_ind::Real,
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, v, row_ind, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        v::Any,
-                        row_ind::Real,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for col_ind in col_inds
-        insert_single_entry!(df, v, row_ind, col_ind)
-    end
-    return df
-end
-
 # df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
@@ -519,25 +502,43 @@ function Base.setindex!(df::DataFrame,
     end
     df
 end
-# df[SingleRowIndex, MultiColumnIndex] = iterable
+
+# df[SingleRowIndex, MultiColumnIndex] = iterable (or scalar, being deprecated)
 function Base.setindex!(df::DataFrame,
-                        iterable::AbstractVector,
+                        v::Any,
+                        row_ind::Real,
+                        col_inds::AbstractVector{Bool})
+    setindex!(df, v, row_ind, findall(col_inds))
+end
+function Base.setindex!(df::DataFrame,
+                        v::Any,
                         row_ind::Real,
                         col_inds::AbstractVector{<:ColumnIndex})
-    if length(iterable) != length(col_inds)
-        msg = "Length of iterable does not match DataFrame column count."
-        throw(ArgumentError(msg))
-    end
-    old_row = df[row_ind, col_inds]
-    for (val, col_ind) in zip(iterable, col_inds)
-        try
-            insert_single_entry!(df, val, row_ind, col_ind)
-        catch
-            #clean up partial row
-            df[row_ind, col_inds] = old_row
-            msg = "Error adding $val to column :$(_names(df)[col_ind])." *
-                  " Possible type mis-match."
+    # remove this check after implicit scalar broadcasting is deprecated
+    if applicable(length, v) && Base.IteratorSize(v) != Base.HasShape{0}()
+        if length(v) != length(col_inds)
+            msg = "Length of iterable does not match DataFrame column count."
             throw(ArgumentError(msg))
+        end
+        old_row = df[row_ind, col_inds]
+        for (val, col_ind) in zip(v, col_inds)
+            try
+                insert_single_entry!(df, val, row_ind, col_ind)
+            catch
+                #clean up partial row
+                df[row_ind, col_inds] = old_row
+                msg = "Error adding $val to column :$(_names(df)[col_ind])." *
+                      " Possible type mis-match."
+                throw(ArgumentError(msg))
+            end
+        end
+    else
+        msg = "Implicitly broadcasting setindex! with a scalar " *
+              "across columns is deprecated, use .= instead, i.e. " *
+              "df[row, :] .= val"
+        Base.depwarn(msg, :setindex!)
+        for col_ind in col_inds
+            insert_single_entry!(df, v, row_ind, col_ind)
         end
     end
     df
