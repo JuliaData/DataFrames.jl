@@ -283,7 +283,6 @@ end
                             "for all groups (got $N and $(length(row)))"))
     end
     @inbounds for j in colstart:length(cols)
-        val = row[j]
         col = cols[j]
         cn = colnames[j]
         local val
@@ -339,6 +338,13 @@ function _combine!(first::Union{NamedTuple, DataFrameRow}, cols::NTuple{N, Abstr
     cols
 end
 
+# This needs to be in a separate function
+# to work around a crash due to JuliaLang/julia#29430
+@noinline function do_append!(do_it, col, vals)
+    do_it && append!(col, vals)
+    return do_it
+end
+
 function append_rows!(rows, cols::NTuple{N, AbstractVector},
                       colstart::Integer, colnames::AbstractVector{Symbol}) where N
     if !isa(rows, AbstractDataFrame)
@@ -349,7 +355,6 @@ function append_rows!(rows, cols::NTuple{N, AbstractVector},
                             "for all groups (got $N and $(size(rows, 2)))"))
     end
     @inbounds for j in colstart:length(cols)
-        vals = rows[j]
         col = cols[j]
         cn = colnames[j]
         local vals
@@ -361,9 +366,7 @@ function append_rows!(rows, cols::NTuple{N, AbstractVector},
         end
         S = eltype(vals)
         T = eltype(col)
-        if S <: T || promote_type(S, T) <: T
-            append!(col, vals)
-        else
+        if !do_append!(S <: T || promote_type(S, T) <: T, col, vals)
             return j
         end
     end

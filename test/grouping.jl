@@ -181,21 +181,19 @@ module TestGrouping
         @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
         @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
 
-        # TODO: uncomment once JuliaLang/julia#29430 is fixed
         # Check that CategoricalArray column is preserved when returning a value...
-        # res = combine(d -> DataFrame(x=d[1, :Key2]), groupby(df, :Key1))
-        # @test res.x isa CategoricalVector{String}
+        res = combine(d -> DataFrame(x=d[1, :Key2]), groupby(df, :Key1))
+        @test res.x isa CategoricalVector{String}
         res = combine(d -> (x=d[1, :Key2],), groupby(df, :Key1))
         @test res.x isa CategoricalVector{String}
         # ...and when returning an array
-        # res = combine(d -> DataFrame(x=d[:Key1]), groupby(df, :Key1))
-        # @test res.x isa CategoricalVector{String}
+        res = combine(d -> DataFrame(x=d[:Key1]), groupby(df, :Key1))
+        @test res.x isa CategoricalVector{String}
 
-        # TODO: uncomment once JuliaLang/julia#29430 is fixed
         # Check that CategoricalArray and String give a String...
-        # res = combine(d -> d.Key1 == ["A", "A"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
-        #              groupby(df, :Key1))
-        # @test res.x isa Vector{String}
+        res = combine(d -> d.Key1 == ["A", "A"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
+                     groupby(df, :Key1))
+        @test res.x isa Vector{String}
         res = combine(d -> d.Key1 == ["A", "A"] ? (x=d[1, :Key1],) : (x="C",),
                       groupby(df, :Key1))
         @test res.x isa Vector{String}
