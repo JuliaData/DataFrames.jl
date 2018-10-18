@@ -707,7 +707,7 @@ module TestDataFrame
         @test names(df) == [:x3, :x3_1, :x3_2, :x4]
     end
 
-    @testset "setindex! sets row with dict/iterable" begin
+    @testset "setindex! tests" begin
         df = DataFrame(a=[0, 0], b=['a', 'a'])
         dfa = DataFrame(a=0:1, b='a':'b')
         df[2, :] = Dict(:a => 1, :b => 'b')
@@ -745,13 +745,21 @@ module TestDataFrame
         @test_throws ArgumentError df[2, [:a, :c]] = [1.5, 1]
         @test df == dfc
 
-        # df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
-        # df[2, :] = DataFrameRow(dfa, 2)
-        # @test df == dfa
-        #
-        # df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
-        # df[2, [:a, :c]] .= 1
-        # @test df == dfa
+        df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
+        @test_skip begin
+            df[2, :] = DataFrameRow(dfa, 2)
+            df == dfa
+        end
+
+        df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
+        @test_skip begin
+            df[2, [:a, :c]] .= 1
+            df == dfa
+        end
+
+        df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
+        df[2, :] = dfa[2, :]
+        @test df == dfa
     end
 
     @testset "passing range to a DataFrame" begin

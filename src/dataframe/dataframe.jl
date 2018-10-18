@@ -466,23 +466,6 @@ function Base.setindex!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnInd
     insert_single_entry!(df, v, row_ind, col_ind)
 end
 
-# df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_ind::Real,
-                        col_inds::AbstractVector{Bool})
-    setindex!(df, new_df, row_ind, findall(col_inds))
-end
-function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
-                        row_ind::Real,
-                        col_inds::AbstractVector{<:ColumnIndex})
-    for j in 1:length(col_inds)
-        insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
-    end
-    return df
-end
-
 # df[SingleRowIndex, :] = Union{AbstractDict, NamedTuple}
 function Base.setindex!(df::DataFrame,
                         row::Union{AbstractDict, NamedTuple},
@@ -572,6 +555,50 @@ function Base.setindex!(df::DataFrame,
                         col_ind::ColumnIndex)
     insert_multiple_entries!(df, v, row_inds, col_ind)
     return df
+end
+
+function checkdimensions(new_df::AbstractDataFrame,
+                         row_inds::Any,
+                         col_inds::Any)
+    new_rows, new_cols = size(new_df)
+    # note that length(::Number) == 1
+    if (new_rows, new_cols) != (length(row_inds), length(col_inds))
+        msg = "Tried to assign $new_rows×$new_cols dataframe to " *
+              "$(length(row_inds))×$(length(col_inds)) destination"
+        throw(DimensionMismatch(msg))
+    end
+end
+
+function usenames(df::DataFrame,
+                  new_df::AbstractDataFrame,
+                  col_inds::AbstractVector{<:ColumnIndex})
+    new_names = _names(new_df)
+    subset = all(name -> haskey(df, name), new_names)
+    subset && issetequal(index(df)[new_names], index(df)[col_inds])
+end
+
+# df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
+function Base.setindex!(df::DataFrame,
+                        new_df::AbstractDataFrame,
+                        row_ind::Real,
+                        col_inds::AbstractVector{Bool})
+    setindex!(df, new_df, row_ind, findall(col_inds))
+end
+function Base.setindex!(df::DataFrame,
+                        new_df::AbstractDataFrame,
+                        row_ind::Real,
+                        col_inds::AbstractVector{<:ColumnIndex})
+    checkdimensions(new_df, row_ind, col_inds)
+    if usenames(df, new_df, col_inds)
+        for col_name in _names(new_df)
+            insert_single_entry!(df, new_df[col_name][1], row_ind, col_name)
+        end
+    else # use column order
+        for (j, col_ind) in enumerate(col_inds)
+            insert_single_entry!(df, new_df[j][1], row_ind, col_ind)
+        end
+    end
+    df
 end
 
 # df[MultiRowIndex, MultiColumnIndex] = DataFrame
