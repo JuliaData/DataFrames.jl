@@ -194,11 +194,11 @@ end
 ##############################################################################
 
 function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
-    printtable(io, df, true, ',')
+    printtable(io, df, header = true, separator = ',')
 end
 
 function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
-    printtable(io, df, true, '\t')
+    printtable(io, df, header = true, separator = '\t')
 end
 
 ##############################################################################
@@ -239,7 +239,7 @@ Data.weakrefstrings(::Type{DataFrame}) = true
 
 allocate(::Type{T}, rows, ref) where {T} = Vector{T}(undef, rows)
 allocate(::Type{CategoricalString{R}}, rows, ref) where {R} = CategoricalArray{String, 1, R}(undef, rows)
-allocate(::Type{Union{CategoricalString{R}, Missing}}, rows, ref) where {R} = 
+allocate(::Type{Union{CategoricalString{R}, Missing}}, rows, ref) where {R} =
     CategoricalArray{Union{String, Missing}, 1, R}(undef, rows)
 allocate(::Type{CategoricalValue{T, R}}, rows, ref) where {T, R} =
     CategoricalArray{T, 1, R}(undef, rows)
@@ -318,4 +318,3 @@ end
 
 Data.close!(df::DataFrameStream) =
     DataFrame(collect(AbstractVector, df.columns), Symbol.(df.header), makeunique=true)
-
