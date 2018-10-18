@@ -40,7 +40,7 @@ module TestData
         @test df6[1,2] == 4
         df6[:D] = [true, false, true, false]
         @test df6[1,4]
-        delete!(df6, :D)
+        deletecols!(df6, :D)
         @test names(df6) == [:A, :B, :C]
         @test size(df6, 2) == 3
 

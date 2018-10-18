@@ -30,6 +30,7 @@ export AbstractDataFrame,
        colwise,
        combine,
        completecases,
+       deletecols!,
        deleterows!,
        describe,
        disallowmissing!,
@@ -40,6 +41,7 @@ export AbstractDataFrame,
        eltypes,
        groupby,
        head,
+       insertcols!,
        melt,
        meltdf,
        names!,
@@ -56,11 +58,7 @@ export AbstractDataFrame,
        unstack,
        head,
        tail,
-       permutecols!,
-
-       # Remove after deprecation period
-       pool,
-       pool!
+       permutecols!
 
 
 ##############################################################################
