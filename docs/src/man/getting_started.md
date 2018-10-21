@@ -124,9 +124,10 @@ It is also possible to fill a `DataFrame` row by row. Let us construct an empty 
 julia> df = DataFrame(A = Int[], B = String[])
 0×2 DataFrame
 ```
-Additionally, a `DataFrame` object can be constructed from a named tuple, or an arbitrary number of named tuples:
+Additionally, a `DataFrame` object can be constructed from a named tuple, or an arbitrary number of named tuples. The order and types of the elements in the named tuples speciefy the order of the columns and their type:
 
-```julia> r1 = (A = 1, B = "M")
+```jldoctest dataframe
+julia> r1 = (A = 1, B = "M")
 (A = 1, B = "M")
 
 julia> r2 = (A = 2, B = "N")
