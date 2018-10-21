@@ -124,6 +124,24 @@ It is also possible to fill a `DataFrame` row by row. Let us construct an empty 
 julia> df = DataFrame(A = Int[], B = String[])
 0×2 DataFrame
 ```
+Additionally, a `DataFrame` object can be constructed from a named tuple, or an arbitrary number of named tuples:
+
+```julia> r1 = (A = 1, B = "M")
+(A = 1, B = "M")
+
+julia> r2 = (A = 2, B = "N")
+(A = 2, B = "N")
+
+julia> df = DataFrame([r1, r2])
+2×2 DataFrame
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ M      │
+│ 2   │ 2     │ N      │
+
+```
+
 
 Rows can then be added as tuples or vectors, where the order of elements matches that of columns:
 
