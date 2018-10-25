@@ -569,12 +569,24 @@ function checkdimensions(new_df::AbstractDataFrame,
     end
 end
 
-function usenames(df::DataFrame,
+function checknames(df::DataFrame,
                   new_df::AbstractDataFrame,
                   col_inds::AbstractVector{<:ColumnIndex})
     new_names = _names(new_df)
     subset = all(name -> haskey(df, name), new_names)
-    subset && issetequal(index(df)[new_names], index(df)[col_inds])
+    if !subset || !issetequal(index(df)[new_names], index(df)[col_inds])
+        msg = "Column names in inserted dataframe don't match the columns " *
+              "being inserted into"
+        throw(ArgumentError(msg))
+    end
+end
+
+function checkpreconditions(df::DataFrame,
+                            new_df::AbstractDataFrame,
+                            row_inds::Any,
+                            col_inds::Any)
+    checkdimensions(new_df, row_inds, col_inds)
+    checknames(df, new_df, col_inds)
 end
 
 # df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
@@ -588,12 +600,7 @@ function Base.setindex!(df::DataFrame,
                         new_df::AbstractDataFrame,
                         row_ind::Real,
                         col_inds::AbstractVector{<:ColumnIndex})
-    checkdimensions(new_df, row_ind, col_inds)
-    if !usenames(df, new_df, col_inds)
-        msg = "Column names in inserted dataframe don't match the columns " *
-              "being inserted into"
-        throw(ArgumentError(msg))
-    end
+    checkpreconditions(df, new_df, row_ind, col_inds)
     for col_name in _names(new_df)
         insert_single_entry!(df, new_df[col_name][1], row_ind, col_name)
     end
@@ -623,8 +630,9 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{<:Real},
                         col_inds::AbstractVector{<:ColumnIndex})
-    for j in 1:length(col_inds)
-        insert_multiple_entries!(df, new_df[j], row_inds, col_inds[j])
+    checkpreconditions(df, new_df, row_inds, col_inds)
+    for col_name in _names(new_df)
+        insert_multiple_entries!(df, new_df[col_name], row_inds, col_name)
     end
     return df
 end

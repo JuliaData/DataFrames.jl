@@ -786,7 +786,7 @@ module TestDataFrame
             x[end] = 1:4
             y[5] = 1:4
             @test x == y
-            x[4:end] = DataFrame([11:14, 21:24])
+            x[4:end] = DataFrame(:x4 => 11:14, :x5 => 21:24)
             y[4] = [11:14;]
             y[5] = [21:24;]
             @test x == y

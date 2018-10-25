@@ -108,9 +108,9 @@ module TestCat
         df[:x3] = 2
 
         # assignment of subtables
-        df[1, 1:2] = df[2, 2:3]
-        df[1:2, 1:2] = df[2:3, 2:3]
-        df[[true,false,false,true], 2:3] = df[1:2,1:2]
+        df[1, 1:2] = df[2, 1:2]
+        df[1:2, 1:2] = df[2:3, 1:2]
+        df[[true,false,false,true], 2:3] = df[1:2,2:3]
 
         # scalar broadcasting assignment of subtables
         df[1, 1:2] = 3
@@ -204,7 +204,7 @@ module TestCat
                                                 [7, 8, 9, 2, 4, 6, 2, 4, 6]], [:A, :B, :C])
         @test vcat(df2, df1, df2) == DataFrame([[2, 4, 6, 7, 8, 9, 2, 4, 6],
                                                 [8, 10, 12, 4, 5, 6, 8, 10, 12],
-                                                [14, 16, 18, 1, 2, 3, 14, 16, 18]] ,[:C, :B, :A]) 
+                                                [14, 16, 18, 1, 2, 3, 14, 16, 18]] ,[:C, :B, :A])
         @test size(vcat(df1, df1, df1, df2, df2, df2)) == (18, 3)
         df3 = df1[[1, 3, 2]]
         res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
