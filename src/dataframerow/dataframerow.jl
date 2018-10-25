@@ -4,6 +4,15 @@ struct DataFrameRow{T <: AbstractDataFrame}
     row::Int
 end
 
+# this is defined here because it has to be after the DataFrameRow definition
+# df[SingleRowIndex, MultiColumnIndex] = DataFrameRow
+function Base.setindex!(df::DataFrame,
+          val::DataFrameRow,
+          row_ind::Real,
+          col_inds::AbstractVector{<:ColumnIndex})
+    df[row_ind, col_inds] = parent(val)[row(val), :]
+    df
+end
 
 """
     parent(r::DataFrameRow)

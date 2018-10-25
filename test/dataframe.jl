@@ -746,13 +746,13 @@ module TestDataFrame
         @test df == dfc
 
         df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
-        @test_skip begin
+        @test begin
             df[2, :] = DataFrameRow(dfa, 2)
             df == dfa
         end
 
         df = DataFrame(a=[0, 0], b=['a', 'a'], c=[0, 0])
-        @test_skip begin
+        @test_broken begin
             df[2, [:a, :c]] .= 1
             df == dfa
         end
