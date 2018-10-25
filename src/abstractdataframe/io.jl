@@ -143,7 +143,6 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     end
     write(io, "</tbody>")
     write(io, "</table>")
-    write(io, "<p>$(digitsep(n)) rows x $(digitsep(ncol(df))  ) columns</p>")
 end
 
 ##############################################################################
