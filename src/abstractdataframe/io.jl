@@ -120,6 +120,7 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     else
         mxrow = n
     end
+    write(io, "<p>$(digitsep(n)) rows × $(digitsep(ncol(df))) columns</p>")
     for row in 1:mxrow
         write(io, "<tr>")
         write(io, "<th>$row</th>")
