@@ -589,14 +589,13 @@ function Base.setindex!(df::DataFrame,
                         row_ind::Real,
                         col_inds::AbstractVector{<:ColumnIndex})
     checkdimensions(new_df, row_ind, col_inds)
-    if usenames(df, new_df, col_inds)
-        for col_name in _names(new_df)
-            insert_single_entry!(df, new_df[col_name][1], row_ind, col_name)
-        end
-    else # use column order
-        for (j, col_ind) in enumerate(col_inds)
-            insert_single_entry!(df, new_df[j][1], row_ind, col_ind)
-        end
+    if !usenames(df, new_df, col_inds)
+        msg = "Column names in inserted dataframe don't match the columns " *
+              "being inserted into"
+        throw(ArgumentError(msg))
+    end
+    for col_name in _names(new_df)
+        insert_single_entry!(df, new_df[col_name][1], row_ind, col_name)
     end
     df
 end
