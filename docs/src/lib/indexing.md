@@ -42,7 +42,7 @@ copying vectors is avoided where possible. If it is performed a description expl
 * `df[col]` -> the vector contained in column `col`;
 * `df[cols]` -> a freshly allocated `DataFrame` containing the vectors contained in columns `cols`;
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[col][row]`;
-* `df[row, cols]` -> a `NamedTuple` containing data from row `row` in columns `cols`;
+* `df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon and `df[cols]` otherwise;
 * `df[rows, col]` -> a copy of the vector `df[col]` with only the entries corresponding to `rows` selected, the same as `df[col][rows]`;
 * `df[rows, cols]` -> a `DataFrame` containing copies of columns `cols` with only the entries corresponding to `rows` selected.
 * `@view df[col]` -> the vector contained in column `col` (this is equivalent to `df[col]`);
@@ -56,19 +56,19 @@ copying vectors is avoided where possible. If it is performed a description expl
 * `sdf[col]` -> a view of the vector contained in column `col` of `parent(sdf)` with `DataFrames.rows(sdf)` as a selector;
 * `sdf[cols]` -> a `SubDataFrame`, with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
 * `sdf[row, col]` -> a value contained in row `row` of column `col`;
-* `sdf[row, cols]` -> a `NamedTuple` containing data from row `row` in columns `cols`;
+* `sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
 * `sdf[rows, col]` -> a copy of a vector `sdf[col]` with only rows `rows` selected;
 * `sdf[rows, cols]` -> a `DataFrame` containing columns `cols` and `df[rows, col]` as a vector in each `col` in `cols`.
 * `@view sdf[col]` -> a view of vector contained in column `col` of `parent(sdf)` with `DataFrames.rows(sdf)` as selector;
-* `@view sdf[cols]` -> a `SubDataFrame` with parent `parent(sdf)` if `cols` is a colon and `parent(df)[cols]` otherwise;
+* `@view sdf[cols]` -> a `SubDataFrame` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
 * `@view sdf[row, col]` -> translates to `view(sdf[col], row)` (a `0`-dimensional view into `df[col]`);
-* `@view sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(df)[cols]` otherwise;
+* `@view sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
 * `@view sdf[rows, col]` -> translates to `view(sdf[col], rows)` (a standard view into `sdf[col]` vector);
 * `@view sdf[rows, cols]` -> a `SubDataFrame` with parent `parent(sdf)` if `cols` is a colon and `sdf[cols]` otherwise.
 
 `DataFrameRow`:
 * `dfr[col]` -> the value contained in column `col` of `dfr`;
-* `dfr[cols]` -> a `NamedTuple` containing data from columns `cols` of `dfr`;
+* `dfr[cols]` -> a `DataFrameRow` with parent `parent(dfr)` if `cols` is a colon and `parent(dfr)[cols]` otherwise;
 * `@view dfr[col]` -> a `0`-dimensional view into `parent(dfr)[DataFrames.row(dfr), col]`;
 * `@view dfr[cols]` -> a `DataFrameRow` with parent `parent(dfr)` if `cols` is a colon and `parent(dfr)[cols]` otherwise;
 

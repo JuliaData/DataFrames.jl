@@ -264,12 +264,12 @@ function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::ColumnIndex)
     return columns(df)[selected_column][row_ind]
 end
 
-# df[SingleRowIndex, MultiColumnIndex] => DataFrame (will be NamedTuple)
+# df[SingleRowIndex, MultiColumnIndex] => DataFrame (will be DatFrameRow)
 function Base.getindex(df::DataFrame, row_ind::Integer, col_inds::AbstractVector)
     if row_ind isa Bool
         throw(ArgumentError("invalid row index: $row_ind of type Bool"))
     end
-    Base.depwarn("Selecting a single row from a `DataFrame` will return a `NamedTuple` in the future. " *
+    Base.depwarn("Selecting a single row from a `DataFrame` will return a `DataFrameRow` in the future. " *
                  "To get a `DataFrame` use `df[row_ind:row_ind, col_inds]`.", :getindex)
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[[dv[row_ind]] for dv in columns(df)[selected_columns]]
@@ -281,7 +281,7 @@ function Base.getindex(df::DataFrame, row_ind::Integer, ::Colon)
     if row_ind isa Bool
         throw(ArgumentError("invalid row index: $row_ind of type Bool"))
     end
-    Base.depwarn("Selecting a single row from a `DataFrame` will return a `NamedTuple` in the future. " *
+    Base.depwarn("Selecting a single row from a `DataFrame` will return a `DataFrameRow` in the future. " *
                  "To get a `DataFrame` use `df[row_ind:row_ind, :]`.", :getindex)
     new_columns = AbstractVector[[dv[row_ind]] for dv in columns(df)]
     return DataFrame(new_columns, copy(index(df)))

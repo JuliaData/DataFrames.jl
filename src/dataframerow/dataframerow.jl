@@ -16,17 +16,10 @@ function Base.getindex(r::DataFrameRow, idx::ColumnIndex)
     return parent(r)[row(r), idx]
 end
 
-function Base.getindex(r::DataFrameRow, idxs::AbstractVector)
-    Base.depwarn("`dfr[idxs]` will create a `NamedTuple` in the future. " *
-                 "Use `view(dfr, idxs)` to get a `DataFrameRow`.", :getindex)
-    return DataFrameRow(parent(r)[idxs], row(r))
-end
+Base.getindex(r::DataFrameRow, idxs::AbstractVector) =
+    DataFrameRow(parent(r)[idxs], row(r))
 
-function Base.getindex(r::DataFrameRow, ::Colon)
-    Base.depwarn("`dfr[:]` will create a `NamedTuple` in the future. " *
-                 "Use `view(dfr, :)` to get a `DataFrameRow`.", :getindex)
-    r
-end
+Base.getindex(r::DataFrameRow, ::Colon) = r
 
 function Base.setindex!(r::DataFrameRow, value::Any, idx::Any)
     return setindex!(parent(r), value, row(r), idx)
