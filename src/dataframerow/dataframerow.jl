@@ -62,6 +62,11 @@ Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, parent(r)[row(r),:
 Base.keys(r::DataFrameRow) = names(parent(r))
 Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[col][row(r)], length(r))
 
+"""
+    copy(dfr::DataFrameRow)
+
+Convert `DataFrameRow` to a `NamedTuple`.
+"""
 Base.copy(r::DataFrameRow) = NamedTuple{Tuple(keys(r))}(values(r))
 
 # hash column element
