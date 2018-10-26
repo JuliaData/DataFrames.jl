@@ -57,7 +57,18 @@ function Base.iterate(r::DataFrameRow, st)
     return ((_names(r)[st], r[st]), st + 1)
 end
 
-Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, parent(r)[row(r),:])
+function Base.convert(::Type{Array}, r::DataFrameRow)
+    Base.depwarn("Conversion of `DataFrameRow` to a `Matrix` is deprecated. " *
+                 "`Vector` will be returned in the future.", :convert)
+    convert(Array, parent(r)[row(r),:])
+end
+Base.convert(::Type{Vector}, dfr::DataFrameRow) =
+    [dfr[i] for i in 1:length(dfr)]
+Base.convert(::Type{Vector{T}}, dfr::DataFrameRow) where T =
+    T[dfr[i] for i in 1:length(dfr)]
+Base.Vector(dfr::DataFrameRow) = Base.convert(Vector, df)
+Base.Vector{T}(dfr::DataFrameRow) where T = Base.convert(Vector{T}, df)
+
 
 Base.keys(r::DataFrameRow) = names(parent(r))
 Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[col][row(r)], length(r))

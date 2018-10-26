@@ -100,5 +100,12 @@ module TestDataFrameRow
     io = IOBuffer()
     show(io, DataFrameRow(df, 1))
     @test String(take!(io)) == "DataFrameRow (row 1)\na  \nb  1"
+
+    df = DataFrame(a=[1, missing], b=[2.0, 3.0])
+    dfr = DataFrameRow(df, 1)
+    @test Vector(dfr) == Real[1, 2.0]
+    @test eltype(Vector(dfr)) == Real
+    @test Vector{Int}(dfr) == [1, 2]
+    @test eltype(Vector{Int}(dfr)) == Int
 end
 
