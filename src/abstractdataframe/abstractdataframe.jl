@@ -99,7 +99,6 @@ columns(df::T) where {T <: AbstractDataFrame} = Cols{T}(df)
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
-# TODO: remove allow_duplicates after deprecation period
 """
 Set column names
 
@@ -132,11 +131,8 @@ names!(df, [:a, :b, :a], makeunique=true)  # renames second :a to :a_1
 ```
 
 """
-function names!(df::AbstractDataFrame, vals; allow_duplicates=false, makeunique::Bool=false)
-    if allow_duplicates
-        Base.depwarn("Keyword argument allow_duplicates is deprecated. Use makeunique.", :names!)
-    end
-    names!(index(df), vals, allow_duplicates=allow_duplicates, makeunique=makeunique)
+function names!(df::AbstractDataFrame, vals; makeunique::Bool=false)
+    names!(index(df), vals, makeunique=makeunique)
     return df
 end
 

@@ -23,11 +23,8 @@ Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.name
 # Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
 Base.:(==)(x::Index, y::Index) = isequal(x, y)
 
-# TODO: after deprecation period remove allow_duplicates part of code
-function names!(x::Index, nms::Vector{Symbol}; allow_duplicates=false, makeunique::Bool=false)
-    if allow_duplicates
-        Base.depwarn("Keyword argument allow_duplicates is deprecated. Use makeunique.", :names!)
-    elseif !makeunique
+function names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false)
+    if !makeunique
         if length(unique(nms)) != length(nms)
             msg = """Duplicate variable names: $nms.
                      Pass makeunique=true to make them unique using a suffix automatically."""
@@ -195,11 +192,9 @@ function add_names(ind::Index, add_ind::Index; makeunique::Bool=false)
     end
     if length(dups) > 0
         if !makeunique
-            Base.depwarn("Duplicate variable names are deprecated: pass makeunique=true to add a suffix automatically.", :add_names)
-            # TODO: uncomment the lines below after deprecation period
-            # msg = """Duplicate variable names: $(u[dups]).
-            #          Pass makeunique=true to make them unique using a suffix automatically."""
-            # throw(ArgumentError(msg))
+            msg = """Duplicate variable names: $(u[dups]).
+                     Pass makeunique=true to make them unique using a suffix automatically."""
+            throw(ArgumentError(msg))
         end
     end
     for i in dups
