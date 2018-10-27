@@ -872,7 +872,6 @@ module TestDataFrame
         x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
         v = DataFrame(a = [5, 6, 7], b = [8, 9, 10])
         z = vcat(v, x)
-        z2 = z[:, [1, 1, 2]]
         @test_throws ArgumentError z[:, [1, 1, 2]]
     end
 end
