@@ -35,8 +35,12 @@ In the descriptions below `df` represents a `DataFrame`, `sdf` is a `SubDataFram
 
 ## `getindex`
 
-The following list specifies return types of `getindex` operations depending on argument types. In all operations
-copying vectors is avoided where possible. If it is performed a description explicitly mentions that the data is *copied*.
+The following list specifies return types of `getindex` operations depending on argument types.
+
+In all operations copying vectors is avoided where possible.
+If it is performed a description explicitly mentions that the data is *copied*.
+
+For performance reasons, accessing, via `getindex` or `view`, a single `row` and multiple `cols` of a `DataFrame`, a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a view-like type).
 
 `DataFrame`:
 * `df[col]` -> the vector contained in column `col`;
