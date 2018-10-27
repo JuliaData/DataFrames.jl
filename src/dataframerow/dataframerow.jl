@@ -57,9 +57,7 @@ function Base.iterate(r::DataFrameRow, st)
     return ((_names(r)[st], r[st]), st + 1)
 end
 
-function Base.convert(::Type{Array}, r::DataFrameRow)
-    convert(Array, parent(r)[row(r),:])
-end
+Base.convert(::Type{Array}, r::DataFrameRow) = convert(Array, parent(r)[row(r), :])
 Base.convert(::Type{Vector}, dfr::DataFrameRow) =
     [dfr[i] for i in 1:length(dfr)]
 Base.convert(::Type{Vector{T}}, dfr::DataFrameRow) where T =
