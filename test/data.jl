@@ -146,7 +146,10 @@ module TestData
         anonf = x -> sum(x)
         adf = aggregate(df7, :d2, [mean, anonf])
         @test names(adf) == [:d2, :d1_mean, :d3_mean,
-                             Symbol(:d1_, nameof(anonf)), Symbol(:d3_, nameof(anonf))]
+                             :d1_λ, :d3_λ]
+        adf = aggregate(df7, :d2, [mean, mean, anonf, anonf])
+        @test names(adf) == [:d2, :d1_mean, :d3_mean, :d1_mean_1, :d3_mean_1,
+                             :d1_λ, :d3_λ, :d1_λ_1, :d3_λ_1]
 
         df9 = aggregate(df7, :d2, [sum, length], sort=true)
         @test df9 ≅ df8
