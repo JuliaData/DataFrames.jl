@@ -58,8 +58,6 @@ function Base.iterate(r::DataFrameRow, st)
 end
 
 function Base.convert(::Type{Array}, r::DataFrameRow)
-    Base.depwarn("Conversion of `DataFrameRow` to a `Matrix` is deprecated. " *
-                 "`Vector` will be returned in the future.", :convert)
     convert(Array, parent(r)[row(r),:])
 end
 Base.convert(::Type{Vector}, dfr::DataFrameRow) =
