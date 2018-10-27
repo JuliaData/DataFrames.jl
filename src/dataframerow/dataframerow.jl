@@ -65,7 +65,7 @@ Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[col][row(r)], length(r))
 """
     copy(dfr::DataFrameRow)
 
-Convert `DataFrameRow` to a `NamedTuple`.
+Convert a `DataFrameRow` to a `NamedTuple`.
 """
 Base.copy(r::DataFrameRow) = NamedTuple{Tuple(keys(r))}(values(r))
 
