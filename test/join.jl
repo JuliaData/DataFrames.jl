@@ -649,7 +649,8 @@ module TestJoin
                                             "Joe Blogs", "Maria Tester",
                                             "Jill Jillerson"])
 
-        @test join(name_w_zeros, name_w_zeros, on=:ID, validate=(true, true)) ≅ name_w_zeros2
+        @test join(name_w_zeros, name_w_zeros, on=:ID, validate=(true, true),
+                   makeunique=true) ≅ name_w_zeros2
 
         # Check for multiple-column merge keys
         name_multi = DataFrame(ID1 = [1, 1, 2],

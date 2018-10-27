@@ -16,7 +16,7 @@ function make_unique!(names::Vector{Symbol}, src::Vector{Symbol}; makeunique::Bo
 
     if length(dups) > 0
         if !makeunique
-            msg = """Duplicate variable names: $(u[dups]).
+            msg = """Duplicate variable names: $(src[dups]).
                      Pass makeunique=true to make them unique using a suffix automatically."""
             throw(ArgumentError(msg))
         end

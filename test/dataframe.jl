@@ -106,7 +106,7 @@ module TestDataFrame
         @test df[:newcol_1] == ["a1", "b1"]
 
         df = DataFrame(a=[1,2], a_1=[3,4])
-        @test_logs (:warn, r"Inserting") insertcols!(df, 1, :a => [11,12])
+        @test_throws ArgumentError insertcols!(df, 1, :a => [11,12])
         df = DataFrame(a=[1,2], a_1=[3,4])
         insertcols!(df, 1, :a => [11,12], makeunique=true)
         @test names(df) == [:a_2, :a, :a_1]
