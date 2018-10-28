@@ -192,8 +192,8 @@ function add_names(ind::Index, add_ind::Index; makeunique::Bool=false)
     end
     if length(dups) > 0
         if !makeunique
-            msg = """Duplicate variable names: $(u[dups]).
-                     Pass makeunique=true to make them unique using a suffix automatically."""
+            msg = "Duplicate variable names: $(u[dups]). Pass makeunique=true" *
+                  " to make them unique using a suffix automatically."
             throw(ArgumentError(msg))
         end
     end
