@@ -728,7 +728,7 @@ function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstr
                 k += 1
             end
         else
-            msg = "Duplicate variable name $(name). Pass makeunique=true" *
+            msg = "Duplicate variable name $name. Pass makeunique=true" *
                   " to make it unique using a suffix automatically."
             throw(ArgumentError(msg))
         end

@@ -26,8 +26,10 @@ Base.:(==)(x::Index, y::Index) = isequal(x, y)
 function names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false)
     if !makeunique
         if length(unique(nms)) != length(nms)
-            msg = """Duplicate variable names: $nms.
-                     Pass makeunique=true to make them unique using a suffix automatically."""
+            dup = unique(nms[nonunique(DataFrame(nms=nms))])
+            dupstr = join(string.(':', dup), ", ", " and ")
+            msg = "Duplicate variable names: $dupstr. Pass makeunique=true" *
+                  " to make them unique using a suffix automatically."
             throw(ArgumentError(msg))
         end
     end
@@ -192,7 +194,8 @@ function add_names(ind::Index, add_ind::Index; makeunique::Bool=false)
     end
     if length(dups) > 0
         if !makeunique
-            msg = "Duplicate variable names: $(u[dups]). Pass makeunique=true" *
+            dupstr = join(string.(':', unique(u[dups])), ", ", " and ")
+            msg = "Duplicate variable names: $dupstr. Pass makeunique=true" *
                   " to make them unique using a suffix automatically."
             throw(ArgumentError(msg))
         end
