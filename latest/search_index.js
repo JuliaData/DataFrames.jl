@@ -29,7 +29,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "API",
     "category": "section",
-    "text": "Pages = [\"lib/types.md\", \"lib/functions.md\"]\nDepth = 2"
+    "text": "Pages = [\"lib/types.md\", \"lib/functions.md\", \"lib/indexing.md\"]\nDepth = 2"
 },
 
 {
