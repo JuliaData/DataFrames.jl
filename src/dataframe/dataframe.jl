@@ -240,26 +240,9 @@ ncol(df::DataFrame) = length(index(df))
 ##
 ##############################################################################
 
-# Cases:
-#
-# df[SingleColumnIndex] => AbstractDataVector
-# df[MultiColumnIndex] => DataFrame
-# df[SingleRowIndex, SingleColumnIndex] => Scalar
-# df[SingleRowIndex, MultiColumnIndex] => DataFrame
-# df[MultiRowIndex, SingleColumnIndex] => AbstractVector
-# df[MultiRowIndex, MultiColumnIndex] => DataFrame
-#
-# General Strategy:
-#
-# Let getindex(index(df), col_inds) from Index() handle the resolution
-#  of column indices
-# Let getindex(columns(df)[j], row_inds) from AbstractVector() handle
-#  the resolution of row indices
+const ColumnIndex = Union{Integer, Symbol}
 
-# TODO: change Real to Integer in this union after deprecation period
-const ColumnIndex = Union{Real, Symbol}
-
-# df[SingleColumnIndex] => AbstractDataVector
+# df[SingleColumnIndex] => AbstractVector, the same vector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
     return columns(df)[selected_column]
@@ -276,24 +259,35 @@ end
 Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
 
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
-function Base.getindex(df::DataFrame, row_ind::Real, col_ind::ColumnIndex)
+function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
     return columns(df)[selected_column][row_ind]
 end
 
-# df[SingleRowIndex, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Bool, col_inds::AbstractVector)
-    throw(ArgumentError("invalid row index: $row_ind of type Bool"))
-end
-
-# df[SingleRowIndex, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Real, col_inds::AbstractVector)
+# df[SingleRowIndex, MultiColumnIndex] => DataFrame (will be DatFrameRow)
+function Base.getindex(df::DataFrame, row_ind::Integer, col_inds::AbstractVector)
+    if row_ind isa Bool
+        throw(ArgumentError("invalid row index: $row_ind of type Bool"))
+    end
+    Base.depwarn("Selecting a single row from a `DataFrame` will return a `DataFrameRow` in the future. " *
+                 "To get a `DataFrame` use `df[row_ind:row_ind, col_inds]`.", :getindex)
     selected_columns = index(df)[col_inds]
-    new_columns = Any[dv[[row_ind]] for dv in columns(df)[selected_columns]]
+    new_columns = AbstractVector[[dv[row_ind]] for dv in columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
-# df[MultiRowIndex, SingleColumnIndex] => AbstractVector
+# df[SingleRowIndex, :] => DataFrame
+function Base.getindex(df::DataFrame, row_ind::Integer, ::Colon)
+    if row_ind isa Bool
+        throw(ArgumentError("invalid row index: $row_ind of type Bool"))
+    end
+    Base.depwarn("Selecting a single row from a `DataFrame` will return a `DataFrameRow` in the future. " *
+                 "To get a `DataFrame` use `df[row_ind:row_ind, :]`.", :getindex)
+    new_columns = AbstractVector[[dv[row_ind]] for dv in columns(df)]
+    return DataFrame(new_columns, copy(index(df)))
+end
+
+# df[MultiRowIndex, SingleColumnIndex] => AbstractVector, copy
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
     return columns(df)[selected_column][row_inds]
@@ -302,30 +296,28 @@ end
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
-    new_columns = Any[dv[row_inds] for dv in columns(df)[selected_columns]]
+    new_columns = AbstractVector[dv[row_inds] for dv in columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
 # df[:, SingleColumnIndex] => AbstractVector
 # df[:, MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, row_ind::Colon, col_inds)
-    Base.depwarn("indexing with colon as row will create a copy in the future" *
-                 " use df[col_inds] to get the columns without copying", :getindex)
+    Base.depwarn("Indexing with colon as row will create a copy in the future. " *
+                 "Use `df[col_inds]` to get the columns without copying", :getindex)
     df[col_inds]
 end
 
-# df[SingleRowIndex, :] => DataFrame
-Base.getindex(df::DataFrame, row_ind::Real, col_inds::Colon) = df[[row_ind], col_inds]
-
 # df[MultiRowIndex, :] => DataFrame
-function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::Colon)
-    new_columns = Any[dv[row_inds] for dv in columns(df)]
+function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
+    new_columns = AbstractVector[dv[row_inds] for dv in columns(df)]
     return DataFrame(new_columns, copy(index(df)))
 end
 
 # df[:, :] => DataFrame
 function Base.getindex(df::DataFrame, ::Colon, ::Colon)
-    Base.depwarn("indexing with colon as row will create a copy of rows in the future", :getindex)
+    Base.depwarn("Indexing with colon as row will create a copy of column vectors in the" *
+                 " future. use `df[:]` to get the columns without copying", :getindex)
     copy(df)
 end
 

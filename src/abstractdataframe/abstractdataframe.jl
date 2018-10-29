@@ -134,7 +134,7 @@ names!(df, [:a, :b, :a], makeunique=true)  # renames second :a to :a_1
 """
 function names!(df::AbstractDataFrame, vals; allow_duplicates=false, makeunique::Bool=false)
     if allow_duplicates
-        Base.depwarn("Keyword argument allow_duplicates is deprecated. Use makeunique.", :names!)
+        Base.depwarn("Keyword argument allow_duplicates is deprecated. Use `makeunique` keyword argument.", :names!)
     end
     names!(index(df), vals, allow_duplicates=allow_duplicates, makeunique=makeunique)
     return df
