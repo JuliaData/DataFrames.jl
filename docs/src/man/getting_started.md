@@ -124,7 +124,7 @@ It is also possible to fill a `DataFrame` row by row. Let us construct an empty 
 julia> df = DataFrame(A = Int[], B = String[])
 0×2 DataFrame
 ```
-Additionally, a `DataFrame` object can be constructed from a named tuple, or an arbitrary number of named tuples. The order and types of the elements in the named tuples speciefy the order of the columns and their type:
+Additionally, a `DataFrame` object can be constructed from an array of named tuples, where each tuple of the array corresponds to a row of the new data frame. The order and types of the elements in each of the named tuples specify the order of the columns and their types:
 
 ```jldoctest dataframe
 julia> r1 = (A = 1, B = "M")
@@ -147,33 +147,40 @@ julia> df = DataFrame([r1, r2])
 Rows can then be added as tuples or vectors, where the order of elements matches that of columns:
 
 ```jldoctest dataframe
-julia> push!(df, (1, "M"))
-1×2 DataFrame
-│ Row │ A     │ B      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ M      │
-
-julia> push!(df, [2, "N"])
-2×2 DataFrame
-│ Row │ A     │ B      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ M      │
-│ 2   │ 2     │ N      │
-```
-
-Rows can also be added as `Dict`s, where the dictionary keys match the column names:
-
-```jldoctest dataframe
-julia> push!(df, Dict(:B => "F", :A => 3))
+julia> push!(df, (3, "O"))
 3×2 DataFrame
 │ Row │ A     │ B      │
 │     │ Int64 │ String │
 ├─────┼───────┼────────┤
 │ 1   │ 1     │ M      │
 │ 2   │ 2     │ N      │
-│ 3   │ 3     │ F      │
+│ 3   │ 3     │ O      │
+
+julia> push!(df, [4, "P"])
+4×2 DataFrame
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ M      │
+│ 2   │ 2     │ N      │
+│ 3   │ 3     │ O      │
+│ 4   │ 4     │ P      │
+```
+
+
+Rows can also be added as `Dict`s, where the dictionary keys match the column names:
+
+```jldoctest dataframe
+julia> push!(df, Dict(:B => "Q", :A => 5))
+5×2 DataFrame
+│ Row │ A     │ B      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 1     │ M      │
+│ 2   │ 2     │ N      │
+│ 3   │ 3     │ O      │
+│ 4   │ 4     │ P      │
+│ 5   │ 5     │ Q      │
 ```
 
 Note that constructing a `DataFrame` row by row is significantly less performant than
