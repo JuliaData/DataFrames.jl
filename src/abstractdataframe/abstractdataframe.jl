@@ -189,6 +189,9 @@ rename(df, :i => :A, :x => :X)
 rename(df, [:i => :A, :x => :X])
 rename(df, Dict(:i => :A, :x => :X))
 rename(x -> Symbol(uppercase(string(x))), df)
+rename(df) do x
+    x |> string |> lowercase |> Symbol
+end
 rename!(df, Dict(:i =>: A, :x => :X))
 ```
 
