@@ -41,12 +41,13 @@ function hashrows_col!(h::Vector{UInt},
                        n::Vector{Bool},
                        v::AbstractCategoricalVector,
                        firstcol::Bool)
+    index = CategoricalArrays.index(v.pool)
     # When hashing the first column, no need to take into account previous hash,
     # which is always zero
     if firstcol
         hashes = Vector{UInt}(undef, length(levels(v.pool))+1)
         hashes[1] = hash(missing)
-        hashes[2:end] .= hash.(CategoricalArrays.index(v.pool))
+        hashes[2:end] .= hash.(index)
         @inbounds for (i, ref) in enumerate(v.refs)
             h[i] = hashes[ref+1]
         end
@@ -55,7 +56,7 @@ function hashrows_col!(h::Vector{UInt},
             if eltype(v) >: Missing && ref == 0
                 h[i] = hash(missing, h[i])
             else
-                h[i] = hash(CategoricalArrays.index(v.pool)[ref], h[i])
+                h[i] = hash(index[ref], h[i])
             end
         end
     end
