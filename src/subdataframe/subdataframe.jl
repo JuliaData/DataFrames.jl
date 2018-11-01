@@ -1,5 +1,5 @@
 """
-    SubDataFrame
+    SubDataFrame{<:AbstractVector{Int}} <: AbstractDataFrame
 
 A view of row subsets of an AbstractDataFrame
 
@@ -42,7 +42,7 @@ sdf1[:,[:a,:b]]
 ```
 
 """
-struct SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
+struct SubDataFrame{T<:AbstractVector{Int}} <: AbstractDataFrame
     parent::DataFrame
     rows::T # maps from subdf row indexes to parent row indexes
 

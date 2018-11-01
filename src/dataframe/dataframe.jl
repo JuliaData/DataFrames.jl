@@ -1,5 +1,5 @@
 """
-    DataFrame
+    DataFrame <: AbstractDataFrame
 
 An AbstractDataFrame that stores a set of named columns
 

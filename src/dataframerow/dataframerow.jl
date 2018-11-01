@@ -1,9 +1,9 @@
 """
-    DataFrameRow
+    DataFrameRow{<:AbstractDataFrame}
 
 A view of one row of an AbstractDataFrame.
 """
-struct DataFrameRow{T <: AbstractDataFrame}
+struct DataFrameRow{T<:AbstractDataFrame}
     df::T
     row::Int
 end
