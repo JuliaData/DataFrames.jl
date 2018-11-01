@@ -1,14 +1,6 @@
-#
-#  Split - Apply - Combine operations
-#
-
-##############################################################################
-##
-## GroupedDataFrame...
-##
-##############################################################################
-
 """
+    GroupedDataFrame
+
 The result of a `groupby` operation on an AbstractDataFrame; a
 view into the AbstractDataFrame grouped by rows.
 

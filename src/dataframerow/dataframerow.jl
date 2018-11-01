@@ -1,4 +1,8 @@
-# Container for a DataFrame row
+"""
+    DataFrameRow
+
+A view of one row of an AbstractDataFrame.
+"""
 struct DataFrameRow{T <: AbstractDataFrame}
     df::T
     row::Int
