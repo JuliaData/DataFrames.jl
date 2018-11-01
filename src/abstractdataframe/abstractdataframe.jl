@@ -193,6 +193,7 @@ rename(df) do x
     x |> string |> uppercase |> Symbol
 end
 rename!(df, Dict(:i =>: A, :x => :X))
+df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 rename!(df) do x
     x |> string |> uppercase |> Symbol
 end
