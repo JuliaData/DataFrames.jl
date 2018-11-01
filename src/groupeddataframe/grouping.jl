@@ -376,11 +376,16 @@ function aggregate(d::AbstractDataFrame,
     aggregate(groupby(d, cols, sort=sort), fs)
 end
 
+function funname(f)
+    n = nameof(f)
+    String(n)[1] == '#' ? :function : n
+end
+
 _makeheaders(fs::Vector{<:Function}, cn::Vector{Symbol}) =
-    [Symbol(colname, '_', nameof(f)) for f in fs for colname in cn]
+    [Symbol(colname, '_', funname(f)) for f in fs for colname in cn]
 
 function _aggregate(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false) where T<:Function
-    res = DataFrame(AbstractVector[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers)
+    res = DataFrame(AbstractVector[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
     sort && sort!(res, headers)
     res
 end
