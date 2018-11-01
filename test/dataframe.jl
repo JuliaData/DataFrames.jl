@@ -106,7 +106,7 @@ module TestDataFrame
         @test df[:newcol_1] == ["a1", "b1"]
 
         df = DataFrame(a=[1,2], a_1=[3,4])
-        @test_logs (:warn, r"Inserting") insertcols!(df, 1, :a => [11,12])
+        @test_throws ArgumentError insertcols!(df, 1, :a => [11,12])
         df = DataFrame(a=[1,2], a_1=[3,4])
         insertcols!(df, 1, :a => [11,12], makeunique=true)
         @test names(df) == [:a_2, :a, :a_1]
@@ -866,5 +866,12 @@ module TestDataFrame
         @test df.z === z
         df.zz = 1
         @test df.zz == df.y
+    end
+
+    @testset "duplicate column names" begin
+        x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
+        v = DataFrame(a = [5, 6, 7], b = [8, 9, 10])
+        z = vcat(v, x)
+        @test_throws ArgumentError z[:, [1, 1, 2]]
     end
 end

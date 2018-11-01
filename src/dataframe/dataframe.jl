@@ -720,12 +720,9 @@ function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstr
                 k += 1
             end
         else
-            # TODO: remove depwarn and call and uncomment ArgumentError below
-            Base.depwarn("Inserting duplicate column name is deprecated, use makeunique=true.", :insertcols!)
-            insertcols!(df, col_ind, name => item; makeunique=true) # temporary fix to avoid duplicates
-            # msg = """Duplicate variable name $(name).
-            #      Pass makeunique=true to make it unique using a suffix automatically."""
-            # throw(ArgumentError(msg))
+            msg = "Duplicate variable name $name. Pass makeunique=true" *
+                  " to make it unique using a suffix automatically."
+            throw(ArgumentError(msg))
         end
     end
     insert!(index(df), col_ind, name)

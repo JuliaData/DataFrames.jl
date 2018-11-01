@@ -104,10 +104,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         @test_throws ErrorException (dn |> DataFrame)
 
         dn = DuplicateNamesColumnTable()
-        df = dn |> DataFrame
-        @test size(df) == (3, 3)
-        @test names(df) == [:a, :a_1, :b]
-        @test DataFrame(dn) == DataFrame(dn)
+        @test_throws ArgumentError (dn |> DataFrame)
 
         # non-Tables.jl constructor fallbacks
         nt = (a=1, b=:a, c=missing)

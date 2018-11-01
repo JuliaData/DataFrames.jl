@@ -2,16 +2,6 @@ module TestDeprecated
     using Test, DataFrames
     import DataFrames: identifier
 
-    # deprecation warning for automatically generating dup column name from indexing
-    x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
-    v = DataFrame(a = [5, 6, 7], b = [8, 9, 10])
-    z = vcat(v, x)
-    z2 = z[:, [1, 1, 2]]
-    @test names(z2) == [:a, :a_1, :b]
-
-    # TODO: uncomment the line below after deprecation, and move to dataframe.jl
-    # @test_throws ArgumentError z[:, [1, 1, 2]]
-
     # old sort(df; cols=...) syntax
     df = DataFrame(a=[1, 3, 2], b=[6, 5, 4])
     @test sort(df; cols=[:a, :b]) == DataFrame(a=[1, 2, 3], b=[6, 4, 5])

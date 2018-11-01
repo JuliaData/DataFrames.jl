@@ -16,11 +16,10 @@ function make_unique!(names::Vector{Symbol}, src::Vector{Symbol}; makeunique::Bo
 
     if length(dups) > 0
         if !makeunique
-            Base.depwarn("Duplicate variable names are deprecated: pass makeunique=true to add a suffix automatically.", :make_unique!)
-            # TODO: uncomment the lines below after deprecation period
-            # msg = """Duplicate variable names: $(u[dups]).
-            #          Pass makeunique=true to make them unique using a suffix automatically."""
-            # throw(ArgumentError(msg))
+            dupstr = join(string.(':', unique(src[dups])), ", ", " and ")
+            msg = "Duplicate variable names: $dupstr. Pass makeunique=true " *
+                  "to make them unique using a suffix automatically."
+            throw(ArgumentError(msg))
         end
     end
 
