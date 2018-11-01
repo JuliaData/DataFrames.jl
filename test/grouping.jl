@@ -92,19 +92,19 @@ module TestGrouping
                        c = Vector{Union{Float64, Missing}}(randn(8)))
 
         cols = [:a, :b]
-        f(df) = DataFrame(cmax = maximum(df[:, :c]))
-        g(df) = (cmax = maximum(df[:, :c]),)
-        h(df) = maximum(df[:, :c])
-        i(df) = [maximum(df[:, :c]), minimum(df[:, :c])]
-        j(df) = reshape([maximum(df[:, :c]), minimum(df[:, :c])], 2, 1)
-        k(df) = [maximum(df[:, :c]) minimum(df[:, :c])]
+        f1(df) = DataFrame(cmax = maximum(df[:, :c]))
+        f2(df) = (cmax = maximum(df[:, :c]),)
+        f3(df) = maximum(df[:, :c])
+        f4(df) = [maximum(df[:, :c]), minimum(df[:, :c])]
+        f5(df) = reshape([maximum(df[:, :c]), minimum(df[:, :c])], 2, 1)
+        f6(df) = [maximum(df[:, :c]) minimum(df[:, :c])]
         #TODO: enable lines below after getindex deprecation
-        # f(df) = DataFrame(cmax = maximum(df[:c]))
-        # g(df) = (cmax = maximum(df[:c]),)
-        # h(df) = maximum(df[:c])
-        # i(df) = [maximum(df[:c]), minimum(df[:c])]
-        # j(df) = reshape([maximum(df[:c]), minimum(df[:c])], 2, 1)
-        # k(df) = [maximum(df[:c]) minimum(df[:c])]
+        # f1(df) = DataFrame(cmax = maximum(df[:c]))
+        # f2(df) = (cmax = maximum(df[:c]),)
+        # f3(df) = maximum(df[:c])
+        # f4(df) = [maximum(df[:c]), minimum(df[:c])]
+        # f5(df) = reshape([maximum(df[:c]), minimum(df[:c])], 2, 1)
+        # f6(df) = [maximum(df[:c]) minimum(df[:c])]
 
         res = unique(df[cols])
         res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
@@ -127,37 +127,38 @@ module TestGrouping
             sort(hcat(df, df[cols], makeunique=true))[[:a, :b, :a_1, :b_1, :c]]
         @test sort(by(df, cols, df -> DataFrameRow(df, 1))[[:a, :b, :c]]) ==
             sort(df[.!nonunique(df, cols), :])
-        @test by(df, cols, f) == res
-        @test by(df, cols, g) == res
-        @test rename(by(df, cols, h), :x1 => :cmax) == res
-        @test by(df, cols, i) == res2
-        @test by(df, cols, j) == res2
-        @test by(df, cols, k) == res3
+        @test by(df, cols, f1) == res
+        @test by(df, cols, f2) == res
+        @test rename(by(df, cols, f3), :x1 => :cmax) == res
+        @test by(df, cols, f4) == res2
+        @test by(df, cols, f5) == res2
+        @test by(df, cols, f6) == res3
 
         # by() with groups sorting
         @test by(df, cols, identity, sort=true) ==
             sort(hcat(df, df[cols], makeunique=true), cols)[[:a, :b, :a_1, :b_1, :c]]
         @test by(df, cols, df -> DataFrameRow(df, 1), sort=true)[[:a, :b, :c]] ==
             sort(df[.!nonunique(df, cols), :])
-        @test by(df, cols, f, sort=true) == sres
-        @test by(df, cols, g, sort=true) == sres
-        @test rename(by(df, cols, h, sort=true), :x1 => :cmax) == sres
-        @test by(df, cols, i, sort=true) == sres2
-        @test by(df, cols, j, sort=true) == sres2
-        @test by(df, cols, k, sort=true) == sres3
+        @test by(df, cols, f1, sort=true) == sres
+        @test by(df, cols, f2, sort=true) == sres
+        @test rename(by(df, cols, f3, sort=true), :x1 => :cmax) == sres
+        @test by(df, cols, f4, sort=true) == sres2
+        @test by(df, cols, f5, sort=true) == sres2
+        @test by(df, cols, f6, sort=true) == sres3
 
-        @test by(df, [:a], f) == by(df, :a, f)
-        @test by(df, [:a], f, sort=true) == by(df, :a, f, sort=true)
+        @test by(df, [:a], f1) == by(df, :a, f1)
+        @test by(df, [:a], f1, sort=true) == by(df, :a, f1, sort=true)
 
         # groupby() without groups sorting
         gd = groupby(df, cols)
-        @test sort(combine(identity, gd)[[:a, :b, :c]]) == sort(df)
-        @test combine(f, gd) == res
-        @test combine(g, gd) == res
-        @test rename(combine(h, gd), :x1 => :cmax) == res
-        @test combine(i, gd) == res2
-        @test combine(j, gd) == res2
-        @test combine(k, gd) == res3
+        @test sort(combine(identity, gd)) ==
+            sort(hcat(df, df[cols], makeunique=true))[[:a, :b, :a_1, :b_1, :c]]
+        @test combine(f1, gd) == res
+        @test combine(f2, gd) == res
+        @test rename(combine(f3, gd), :x1 => :cmax) == res
+        @test combine(f4, gd) == res2
+        @test combine(f5, gd) == res2
+        @test combine(f6, gd) == res3
 
         # groupby() with groups sorting
         gd = groupby(df, cols, sort=true)
@@ -165,13 +166,14 @@ module TestGrouping
             @test all(gd[i].a .== sres.a[i])
             @test all(gd[i].b .== sres.b[i])
         end
-        @test combine(identity, gd)[[:a, :b, :c]] == sort(df, cols)
-        @test combine(f, gd) == sres
-        @test combine(g, gd) == sres
-        @test rename(combine(h, gd), :x1 => :cmax) == sres
-        @test combine(i, gd) == sres2
-        @test combine(j, gd) == sres2
-        @test combine(k, gd) == sres3
+        @test combine(identity, gd) ==
+            sort(hcat(df, df[cols], makeunique=true), cols)[[:a, :b, :a_1, :b_1, :c]]
+        @test combine(f1, gd) == sres
+        @test combine(f2, gd) == sres
+        @test rename(combine(f3, gd), :x1 => :cmax) == sres
+        @test combine(f4, gd) == sres2
+        @test combine(f5, gd) == sres2
+        @test combine(f6, gd) == sres3
 
         # testing pool overflow
         df2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
