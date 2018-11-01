@@ -190,13 +190,9 @@ rename(df, [:i => :A, :x => :X])
 rename(df, Dict(:i => :A, :x => :X))
 rename(x -> Symbol(uppercase(string(x))), df)
 rename(df) do x
-    x |> string |> uppercase |> Symbol
+    Symbol(uppercase(string(x)))
 end
 rename!(df, Dict(:i =>: A, :x => :X))
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-rename!(df) do x
-    x |> string |> uppercase |> Symbol
-end
 ```
 
 """
