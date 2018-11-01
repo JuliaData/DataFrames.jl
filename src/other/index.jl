@@ -135,25 +135,14 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
 end
 
 Base.getindex(x::AbstractIndex, idx::Symbol) = x.lookup[idx]
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 Base.getindex(x::AbstractIndex, idx::Bool) = throw(ArgumentError("invalid index: $idx of type Bool"))
 Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
+
+Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
 Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
 Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
-
-function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
-    length(x) == length(idx) || throw(BoundsError(x, idx))
-    findall(idx)
-end
-
-function Base.getindex(x::AbstractIndex, idx::AbstractVector{Union{Bool, Missing}})
-    if any(ismissing, idx)
-        throw(ArgumentError("missing values are not allowed for column indexing"))
-    end
-    getindex(x, collect(Missings.replace(idx, false)))
-end
-
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
         throw(ArgumentError("Bool values except for AbstractVector{Bool} are not allowed for column indexing"))
@@ -161,22 +150,23 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     Vector{Int}(idx)
 end
 
+Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool}) = getindex(x, collect(idx))
+function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
+    length(x) == length(idx) || throw(BoundsError(x, idx))
+    findall(idx)
+end
+
 # catch all method handling cases when type of idx is not narrowest possible, Any in particular
-# also it handles passing missing values in idx
-function Base.getindex(x::AbstractIndex, idx::AbstractVector)
-    idxs = filter(!ismissing, idx)
-    if length(idxs) != length(idx)
-        throw(ArgumentError("missing values are not allowed for column indexing"))
-    end
+function Base.getindex(x::DataFrames.AbstractIndex, idxs::AbstractVector)
     length(idxs) == 0 && return Int[] # special case of empty idxs
     if idxs[1] isa Real
         if !all(v -> v isa Integer && !(v isa Bool), idxs)
             throw(ArgumentError("Only Integer values allowed when indexing by vector of numbers"))
         end
-        return Vector{Int}(idxs)
+        return convert(Vector{Int}, idxs)
     end
-    idxs[1] isa Symbol && return getindex(x, Vector{Symbol}(idxs))
-    throw(ArgumentError("idx[1] has type $(typeof(idx[1])); "*
+    idxs[1] isa Symbol && return getindex(x, convert(Vector{Symbol}, idxs))
+    throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); "*
                         "DataFrame only supports indexing columns with integers, symbols or boolean vectors"))
 end
 

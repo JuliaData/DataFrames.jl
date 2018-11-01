@@ -48,7 +48,7 @@ module TestSubDataFrame
         @test view(df, :, :) == df
         @test view(df, 1, :) == head(df, 1)
         @test view(df, :, 1) == df[:, [1]]
-        @test_throws MissingException view(df, [missing, 1])
+        @test_throws ArgumentError view(df, [missing, 1])
     end
 
     @testset "view -- SubDataFrame" begin
@@ -90,7 +90,7 @@ module TestSubDataFrame
         @test view(df, :, :) == df
         @test view(df, 1, :) == head(df, 1)
         @test view(df, :, 1) == df[:, [1]]
-        @test_throws MissingException view(df, [missing, 1])
+        @test_throws ArgumentError view(df, [missing, 1])
     end
 
     @testset "getproperty, setproperty! and propertynames" begin

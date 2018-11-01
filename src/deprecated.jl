@@ -19,7 +19,7 @@ import Base: keys, values, insert!
 @deprecate complete_cases! dropmissing!
 @deprecate complete_cases completecases
 
-@deprecate sub(df::AbstractDataFrame, rows) view(df, rows)
+@deprecate sub(df::AbstractDataFrame, rows) view(df, rows, :)
 
 ## write.table
 using CodecZlib, TranscodingStreams
