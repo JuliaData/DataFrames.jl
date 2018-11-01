@@ -101,11 +101,18 @@ module TestDataFrameRow
     show(io, DataFrameRow(df, 1))
     @test String(take!(io)) == "DataFrameRow (row 1)\na  \nb  1"
 
+    # convert
     df = DataFrame(a=[1, missing], b=[2.0, 3.0])
     dfr = DataFrameRow(df, 1)
     @test convert(Vector, dfr)::Vector{Real} == Real[1, 2.0]
     @test convert(Vector{Int}, dfr)::Vector{Int} == [1, 2]
     @test Vector(dfr)::Vector{Real} == Real[1, 2.0]
     @test Vector{Int}(dfr)::Vector{Int} == [1, 2]
-end
 
+    # copy
+    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
+                   b=[2.0, missing, 1.2, 2.0, missing, missing],
+                   c=["A", "B", "C", "A", "B", missing])
+    @test copy(DataFrameRow(df, 1)) == (a = 1, b = 2.0, c = "A")
+    @test isequal(copy(DataFrameRow(df, 2)), (a = 2, b = missing, c = "B"))
+end

@@ -30,7 +30,7 @@ Depth = 2
 ## API
 
 ```@contents
-Pages = ["lib/types.md", "lib/functions.md"]
+Pages = ["lib/types.md", "lib/functions.md", "lib/indexing.md"]
 Depth = 2
 ```
 
