@@ -8,8 +8,8 @@ Not meant to be constructed directly, see `groupby`.
 """
 struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
-    cols::Vector{Int}    # columns used for sorting
-    idx::Vector{Int}     # indexing vector when sorted by the given columns
+    cols::Vector{Int}    # columns used for grouping
+    idx::Vector{Int}     # indexing vector when grouped by the given columns
     starts::Vector{Int}  # starts of groups
     ends::Vector{Int}    # ends of groups
 end
@@ -67,14 +67,15 @@ vcat([g[:b] for g in gd]...)
 for g in gd
     println(g)
 end
-map(d -> mean(skipmissing(d[:c])), gd)
-combine(d -> mean(skipmissing(d[:c])), gd)
+map(d -> sum(skipmissing(d[:c])), gd)
+combine(d -> sum(skipmissing(d[:c])), gd)
 ```
 
 """
-function groupby(df::AbstractDataFrame, cols::Vector;
+function groupby(df::AbstractDataFrame, cols::AbstractVector;
                  sort::Bool = false, skipmissing::Bool = false)
-    sdf = df[cols]
+    intcols = index(df)[cols]
+    sdf = df[intcols]
     df_groups = group_rows(sdf, skipmissing)
     # sort the groups
     if sort
@@ -82,7 +83,7 @@ function groupby(df::AbstractDataFrame, cols::Vector;
         permute!(df_groups.starts, group_perm)
         Base.permute!!(df_groups.stops, group_perm)
     end
-    GroupedDataFrame(df, index(df)[cols], df_groups.rperm,
+    GroupedDataFrame(df, intcols, df_groups.rperm,
                      df_groups.starts, df_groups.stops)
 end
 groupby(d::AbstractDataFrame, cols;
@@ -124,12 +125,12 @@ end
 Base.names(gd::GroupedDataFrame) = names(gd.parent)
 _names(gd::GroupedDataFrame) = _names(gd.parent)
 
-wrap(df::AbstractDataFrame) = df
-wrap(nt::NamedTuple) = nt
-wrap(r::DataFrameRow) = r
-wrap(A::Matrix) = convert(DataFrame, A)
-wrap(s::AbstractVector) = DataFrame(x1 = s)
-wrap(s::Any) = (x1 = s,)
+# Wrapping automatically adds column names when the value returned
+# by the user-provided function lacks them
+wrap(x::Union{AbstractDataFrame, NamedTuple, DataFrameRow}) = x
+wrap(x::AbstractMatrix) = convert(DataFrame, x)
+wrap(x::AbstractVector) = DataFrame(x1 = x)
+wrap(x::Any) = (x1 = x,)
 
 """
     map(f::Function, gd::GroupedDataFrame)
@@ -137,14 +138,14 @@ wrap(s::Any) = (x1 = s,)
 Apply a function to each group of rows and return a `GroupedDataFrame`.
 
 For each group in `gd`, `f` is passed a `SubDataFrame` view holding the corresponding rows.
-`f` can return a single value, a named tuple, a vector, or a data frame.
-This determines the shape of the resulting data frame:
+`f` can return a single value, a row or multiple rows. The type of the returned value
+determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
 - A named tuple or a `DataFrameRow` gives a data frame with one column for each field
   and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
-- A data frame gives a data frame with the same columns and as many rows
+- A data frame or a matrix gives a data frame with the same columns and as many rows
   for each group as the rows returned for that group.
 
 In all cases, the resulting `GroupedDataFrame` contains all the grouping columns in addition
@@ -203,14 +204,14 @@ If a function `f` is provided, it is called for each group in `gd` with a `SubDa
 holding the corresponding rows, and the returned `DataFrame` then consists of the returned rows
 plus the grouping columns.
 
-`f` can return a single value, a named tuple, a vector, or a data frame.
-This determines the shape of the resulting data frame:
+`f` can return a single value, a row or multiple rows. The type of the returned value
+determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
 - A named tuple or a `DataFrameRow` gives a data frame with one column for each field
   and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
-- A data frame gives a data frame with the same columns and as many rows
+- A data frame or a matrix gives a data frame with the same columns and as many rows
   for each group as the rows returned for that group.
 
 In all cases, the resulting data frame contains all the grouping columns in addition
@@ -229,7 +230,7 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 gd = groupby(df, :a)
-map(d -> sum(skipmissing(d[:c])), gd)
+combine(d -> sum(skipmissing(d[:c])), gd)
 ```
 
 ### See also
@@ -243,7 +244,7 @@ of `combine(map(f, groupby(df, cols)))`.
 function combine(f::Function, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(wrap(f(gd[1])), f, gd)
-        return hcat!(gd.parent[idx, gd.cols], valscat)
+        return hcat!(gd.parent[idx, gd.cols], valscat, makeunique=true)
     else
         return similar(gd.parent[gd.cols], 0)
     end
@@ -496,6 +497,7 @@ notation can be used.
 ### Examples
 
 ```julia
+using Statistics
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
@@ -546,6 +548,7 @@ same length.
 ### Examples
 
 ```julia
+using Statistics
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))

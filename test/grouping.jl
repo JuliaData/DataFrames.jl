@@ -95,27 +95,56 @@ module TestGrouping
         f(df) = DataFrame(cmax = maximum(df[:, :c]))
         g(df) = (cmax = maximum(df[:, :c]),)
         h(df) = maximum(df[:, :c])
+        i(df) = [maximum(df[:, :c]), minimum(df[:, :c])]
+        j(df) = reshape([maximum(df[:, :c]), minimum(df[:, :c])], 2, 1)
+        k(df) = [maximum(df[:, :c]) minimum(df[:, :c])]
         #TODO: enable lines below after getindex deprecation
         # f(df) = DataFrame(cmax = maximum(df[:c]))
         # g(df) = (cmax = maximum(df[:c]),)
         # h(df) = maximum(df[:c])
+        # i(df) = [maximum(df[:c]), minimum(df[:c])]
+        # j(df) = reshape([maximum(df[:c]), minimum(df[:c])], 2, 1)
+        # k(df) = [maximum(df[:c]) minimum(df[:c])]
 
         res = unique(df[cols])
         res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
                     for (a, b) in zip(res.a, res.b)]
-        sres = sort(res)
+        res2 = unique(df[cols])[repeat(1:4, inner=2), :]
+        res2.x1 = collect(Iterators.flatten([[maximum(df[(df.a .== a) .& (df.b .== b), :c]),
+                                              minimum(df[(df.a .== a) .& (df.b .== b), :c])]
+                                              for (a, b) in zip(res.a, res.b)]))
+        res3 = unique(df[cols])
+        res3.x1 = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
+                   for (a, b) in zip(res.a, res.b)]
+        res3.x2 = [minimum(df[(df.a .== a) .& (df.b .== b), :c])
+                   for (a, b) in zip(res.a, res.b)]
+        sres = sort(res, cols)
+        sres2 = sort(res2, cols)
+        sres3 = sort(res3, cols)
 
         # by() without groups sorting
-        @test sort(by(df, cols, identity)[[:a, :b, :c]]) == sort(df)
+        @test sort(by(df, cols, identity)) ==
+            sort(hcat(df, df[cols], makeunique=true))[[:a, :b, :a_1, :b_1, :c]]
+        @test sort(by(df, cols, df -> DataFrameRow(df, 1))[[:a, :b, :c]]) ==
+            sort(df[.!nonunique(df, cols), :])
         @test by(df, cols, f) == res
         @test by(df, cols, g) == res
         @test rename(by(df, cols, h), :x1 => :cmax) == res
+        @test by(df, cols, i) == res2
+        @test by(df, cols, j) == res2
+        @test by(df, cols, k) == res3
 
         # by() with groups sorting
-        @test by(df, cols, identity, sort=true)[[:a, :b, :c]] == sort(df, cols)
+        @test by(df, cols, identity, sort=true) ==
+            sort(hcat(df, df[cols], makeunique=true), cols)[[:a, :b, :a_1, :b_1, :c]]
+        @test by(df, cols, df -> DataFrameRow(df, 1), sort=true)[[:a, :b, :c]] ==
+            sort(df[.!nonunique(df, cols), :])
         @test by(df, cols, f, sort=true) == sres
         @test by(df, cols, g, sort=true) == sres
         @test rename(by(df, cols, h, sort=true), :x1 => :cmax) == sres
+        @test by(df, cols, i, sort=true) == sres2
+        @test by(df, cols, j, sort=true) == sres2
+        @test by(df, cols, k, sort=true) == sres3
 
         @test by(df, [:a], f) == by(df, :a, f)
         @test by(df, [:a], f, sort=true) == by(df, :a, f, sort=true)
@@ -126,6 +155,9 @@ module TestGrouping
         @test combine(f, gd) == res
         @test combine(g, gd) == res
         @test rename(combine(h, gd), :x1 => :cmax) == res
+        @test combine(i, gd) == res2
+        @test combine(j, gd) == res2
+        @test combine(k, gd) == res3
 
         # groupby() with groups sorting
         gd = groupby(df, cols, sort=true)
@@ -137,6 +169,9 @@ module TestGrouping
         @test combine(f, gd) == sres
         @test combine(g, gd) == sres
         @test rename(combine(h, gd), :x1 => :cmax) == sres
+        @test combine(i, gd) == sres2
+        @test combine(j, gd) == sres2
+        @test combine(k, gd) == sres3
 
         # testing pool overflow
         df2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
