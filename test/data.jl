@@ -27,7 +27,9 @@ module TestData
         @test df6[2, :C] == "two"
         @test df6[:B] ≅ [1, 2, missing, 4]
         @test size(df6[[2,3]], 2) == 2
-        @test size(df6[2,:], 1) == 1
+        # TODO: reenable after getinex deprecation period
+        # @test size(df6[2,:], 1) == 1
+        @test size(df6[2:2,:], 1) == 1
         @test size(df6[[1, 3], [1, 3]]) == (2, 2)
         @test size(df6[1:2, 1:2]) == (2, 2)
         @test size(head(df6,2)) == (2, 3)
@@ -75,15 +77,15 @@ module TestData
 
         #test_group("constructors")
         # single index is rows
-        sdf6a = view(df6, 1)
-        sdf6b = view(df6, 2:3)
+        sdf6a = view(df6, 1, :)
+        sdf6b = view(df6, 2:3, :)
         sdf6c = view(df6, [true, false, true, false])
         @test size(sdf6a) == (1,3)
         sdf6d = view(df6, [1,3], :B)
         @test size(sdf6d) == (2,1)
-        sdf6e = view(df6, 0x01)
+        sdf6e = view(df6, [0x01], :)
         @test size(sdf6e) == (1,3)
-        sdf6f = view(df6, UInt64[1, 2])
+        sdf6f = view(df6, UInt64[1, 2], :)
         @test size(sdf6f) == (2,3)
 
         #test_group("ref")

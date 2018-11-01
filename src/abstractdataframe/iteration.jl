@@ -36,7 +36,13 @@ eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
 
 function Base.iterate(itr::DFColumnIterator, j=1)
     j > size(itr.df, 2) && return nothing
-    return ((_names(itr.df)[j], itr.df[j]), j + 1)
+    # TODO: remove this condition after getindex deprecation
+    if itr.df isa SubDataFrame
+        ((_names(itr.df)[j], itr.df[:, j]), j + 1)
+    else
+    # TODO: only this line will be required
+        ((_names(itr.df)[j], itr.df[j]), j + 1)
+    end
 end
 Base.eltype(::DFColumnIterator) = Tuple{Symbol, Any}
 Base.size(itr::DFColumnIterator) = (size(itr.df, 2), )

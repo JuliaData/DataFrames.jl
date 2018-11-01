@@ -85,7 +85,14 @@ struct Cols{T <: AbstractDataFrame} <: AbstractVector{AbstractVector}
 end
 function Base.iterate(itr::Cols, st=1)
     st > length(itr.df) && return nothing
-    return (itr.df[st], st + 1)
+    # TODO: remove the condition and replace with code commented out
+    # after getindex deprecation period
+    # (itr.df[st], st + 1)
+    if itr.df isa SubDataFrame
+        (itr.df[:, st], st + 1)
+    else
+        (itr.df[st], st + 1)
+    end
 end
 Base.length(itr::Cols) = length(itr.df)
 Base.size(itr::Cols, ix) = ix==1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
@@ -296,6 +303,8 @@ end
 
 Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
 Base.get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
+# TODO: remove this method after getindex deprecation period
+Base.get(df::SubDataFrame, key::Any, default::Any) = haskey(df, key) ? df[:, key] : default
 Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
 
 ##############################################################################
@@ -610,9 +619,28 @@ function completecases(df::AbstractDataFrame, col::Union{Integer, Symbol})
     res
 end
 
+# TODO: remove this method after getindex deprecation period
+function completecases(df::SubDataFrame)
+    res = trues(size(df, 1))
+    for i in 1:size(df, 2)
+        _nonmissing!(res, df[:, i])
+    end
+    res
+end
+
+# TODO: remove this method after getindex deprecation period
+function completecases(df::SubDataFrame, col::Union{Integer, Symbol})
+    res = trues(size(df, 1))
+    _nonmissing!(res, df[:, col])
+    res
+end
+
 completecases(df::AbstractDataFrame, cols::AbstractVector) =
     completecases(df[cols])
 
+# TODO: remove this method after getindex deprecation period
+completecases(df::SubDataFrame, cols::AbstractVector) =
+    completecases(df[:, cols])
 """
     dropmissing(df::AbstractDataFrame)
     dropmissing(df::AbstractDataFrame, cols::AbstractVector)
@@ -877,6 +905,10 @@ end
 nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
+# TODO: remove those two methods after getindex deprecation period
+nonunique(df::SubDataFrame, cols::Union{Real, Symbol}) = nonunique(df[:, [cols]])
+nonunique(df::SubDataFrame, cols::Any) = nonunique(df[:, cols])
+
 if isdefined(Base, :unique!)
     import Base.unique!
 end
@@ -927,7 +959,9 @@ unique!(df)  # modifies df
 
 function without(df::AbstractDataFrame, icols::Vector{<:Integer})
     newcols = setdiff(1:ncol(df), icols)
-    df[newcols]
+    # TODO: replace with commented out code after deprecation period
+    # df[newcols]
+    df isa SubDataFrame ? df[:, newcols] : df[newcols]
 end
 without(df::AbstractDataFrame, i::Int) = without(df, [i])
 without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
@@ -1035,7 +1069,9 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     length(header) == 0 && return DataFrame()
     cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
-        data = [df[name] for df in dfs]
+        # TODO: replace with commented out code after getindex deprecation
+        # data = [df[name] for df in dfs]
+        data = [df isa SubDataFrame ? df[:, name] : df[name] for df in dfs]
         lens = map(length, data)
         T = mapreduce(eltype, promote_type, data)
         cols[i] = Tables.allocatecolumn(T, sum(lens))
@@ -1135,7 +1171,9 @@ function Base.hash(df::AbstractDataFrame, h::UInt)
     h += hashdf_seed
     h += hash(size(df))
     for i in 1:size(df, 2)
-        h = hash(df[i], h)
+        # TODO: replace with commented out code after getindex deprecation
+        # h = hash(df[i], h)
+        h = hash(df isa SubDataFrame ? df[:, i] : df[i], h)
     end
     return h
 end

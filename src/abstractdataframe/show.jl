@@ -284,7 +284,9 @@ function showrowindices(io::IO,
         # Print DataFrame entry
         for j in leftcol:rightcol
             strlen = 0
-            if isassigned(df[j], i)
+            # TODO: after gedindex deprecation replace with code commented out
+            # if isassigned(df[j], i)
+            if isassigned(df isa SubDataFrame ? df[:, j] : df[j], i)
                 s = df[i, j]
                 strlen = ourstrwidth(s)
                 if ismissing(s)
@@ -430,7 +432,11 @@ function showrows(io::IO,
         end
         print(io, " │ ")
         for j in leftcol:rightcol
-            s = compacttype(eltype(df[j]), maxwidths[j])
+            if df isa SubDataFrame
+                s = compacttype(eltype(parent(df)[j]), maxwidths[j])
+            else
+                s = compacttype(eltype(df[j]), maxwidths[j])
+            end
             printstyled(io, s, color=:light_black)
             padding = maxwidths[j] - ourstrwidth(s)
             for itr in 1:padding
