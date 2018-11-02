@@ -284,7 +284,7 @@ module TestCat
         err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2, df3, df4, df1, df2, df3, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, column(s) B are missing from argument(s) 2, 6 and 10, and column(s) F are missing from argument(s) 3, 7 and 11"
     end
-    x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2)
+    x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
     y = DataFrame(A = 4:5)
     @test vcat(x, y) == DataFrame(A = [2, 4, 5])
 end

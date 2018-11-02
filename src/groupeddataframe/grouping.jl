@@ -79,7 +79,8 @@ combine(map(d -> mean(skipmissing(d[:c])), gd))
 """
 function groupby(df::AbstractDataFrame, cols::Vector;
                  sort::Bool = false, skipmissing::Bool = false)
-    sdf = df[cols]
+    # TODO: decide if we want this or retain `sdf` as a SubDataFrame after deprecation
+    sdf = df isa SubDataFrame ? df[:, cols] : df[cols]
     df_groups = group_rows(sdf, skipmissing)
     # sort the groups
     if sort

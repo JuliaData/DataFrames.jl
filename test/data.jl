@@ -77,16 +77,20 @@ module TestData
 
         #test_group("constructors")
         # single index is rows
-        sdf6a = view(df6, 1, :)
+        sdf6a = view(df6, 1:1, :)
         sdf6b = view(df6, 2:3, :)
-        sdf6c = view(df6, [true, false, true, false])
+        sdf6c = view(df6, [true, false, true, false], :)
         @test size(sdf6a) == (1,3)
-        sdf6d = view(df6, [1,3], :B)
+        sdf6d = view(df6, [1,3], [:B])
         @test size(sdf6d) == (2,1)
         sdf6e = view(df6, [0x01], :)
         @test size(sdf6e) == (1,3)
         sdf6f = view(df6, UInt64[1, 2], :)
         @test size(sdf6f) == (2,3)
+        # TODO: add those tests after getindex deprecation period
+        # sdf6g = view(df6, [1,3], :B)
+        # sdf6h = view(df6, 1, :B)
+        # sdf6i = view(df6, 1, [:B])
 
         #test_group("ref")
         @test sdf6a[1,2] == 4
@@ -106,18 +110,18 @@ module TestData
         #test_group("groupby")
         gd = groupby(df7, :d1)
         @test length(gd) == 2
-        @test gd[1][:d2] ≅ d2[d1 .== 1]
-        @test gd[2][:d2] ≅ d2[d1 .== 2]
-        @test gd[1][:d3] == d3[d1 .== 1]
-        @test gd[2][:d3] == d3[d1 .== 2]
+        @test gd[1][:, :d2] ≅ d2[d1 .== 1]
+        @test gd[2][:, :d2] ≅ d2[d1 .== 2]
+        @test gd[1][:, :d3] == d3[d1 .== 1]
+        @test gd[2][:, :d3] == d3[d1 .== 2]
 
         g1 = groupby(df7, [:d1, :d2])
         g2 = groupby(df7, [:d2, :d1])
-        @test g1[1][:d3] == g2[1][:d3]
+        @test g1[1][:, :d3] == g2[1][:, :d3]
 
         res = 0.0
         for x in g1
-            res += sum(x[:d1])
+            res += sum(x[:, :d1])
         end
         @test res == sum(df7[:d1])
 
@@ -218,10 +222,11 @@ module TestData
         d1s = stackdf(d1, [:a, :b])
         @test d1s[1][[1,24]] == [:a, :b]
         @test d1s[2][[1,24]] == [1, 4]
-        @test_broken d1s[1][true]
-        @test_broken d1s[1][1.0]
-        @test_broken d1s[2][true]
-        @test_broken d1s[2][1.0]
+        # TODO: enable those tests after deprecation period of getindex
+        # @test d1s[1][true]
+        # @test d1s[1][1.0]
+        # @test d1s[2][true]
+        # @test d1s[2][1.0]
         
         # Those tests check indexing RepeatedVector/StackedVector by a vector
         d1s[1][trues(24)] == d1s[1]

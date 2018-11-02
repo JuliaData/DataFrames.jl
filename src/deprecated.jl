@@ -1419,11 +1419,6 @@ completecases(df::SubDataFrame, cols::AbstractVector) =
 nonunique(df::SubDataFrame, cols::Union{Real, Symbol}) = nonunique(df[:, [cols]])
 nonunique(df::SubDataFrame, cols::Any) = nonunique(df[:, cols])
 
-function without(df::SubDataFrame, icols::Vector{<:Integer})
-    newcols = setdiff(1:ncol(df), icols)
-    df[:, newcols]
-end
-
 function Base.hash(df::SubDataFrame, h::UInt)
     h += hashdf_seed
     h += hash(size(df))
@@ -1433,10 +1428,12 @@ function Base.hash(df::SubDataFrame, h::UInt)
     return h
 end
 
-function Base.iterate(itr::DFColumnIterator{SubDataFrame}, j=1)
+function Base.iterate(itr::DFColumnIterator{<:SubDataFrame}, j=1)
     j > size(itr.df, 2) && return nothing
     return ((_names(itr.df)[j], itr.df[:, j]), j + 1)
 end
+
+Base.getindex(itr::DFColumnIterator{<:SubDataFrame}, j) = itr.df[:, j]
 
 function showrowindices(io::IO,
                         df::SubDataFrame,
