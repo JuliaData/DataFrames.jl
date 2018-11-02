@@ -818,9 +818,7 @@ end
 function hcat!(df1::DataFrame, df2::AbstractDataFrame; makeunique::Bool=false)
     u = add_names(index(df1), index(df2), makeunique=makeunique)
     for i in 1:length(u)
-        # the condition makes sure that we do not store
-        # column views in df1 in case df2 is a SubDataFrame
-        df1[u[i]] = df2 isa SubDataFrame ? df2[:, i] : df2[i]
+        df1[u[i]] = df2[i]
     end
     return df1
 end
@@ -952,9 +950,7 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     nrows, ncols = size(df1)
     try
         for j in 1:ncols
-            # TODO: after getindex deprecation period replace with the code commented out
-            # append!(df1[j], df2[j])
-            append!(df1[j], df2 isa SubDataFrame ? df2[:, j] : df2[j])
+            append!(df1[j], df2[j])
         end
     catch err
         # Undo changes in case of error

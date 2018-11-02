@@ -1387,3 +1387,252 @@ import Base: delete!, insert!, merge!
 
 import Base: setindex!
 @deprecate setindex!(df::DataFrame, x::Nothing, col_ind::Int) deletecols!(df, col_ind)
+
+# TODO: START: Deprecations to be removed after getindex deprecation period finishes
+
+function Base.iterate(itr::Cols{SubDataFrame}, st=1)
+    st > length(itr.df) && return nothing
+    # after deprecation we will return a view, now we materialize a vector
+    return (itr.df[:, st], st + 1)
+end
+
+# after deprecation we will return a view, now we materialize a vector
+Base.get(df::SubDataFrame, key::Any, default::Any) = haskey(df, key) ? df[:, key] : default
+
+function completecases(df::SubDataFrame)
+    res = trues(size(df, 1))
+    for i in 1:size(df, 2)
+        _nonmissing!(res, df[:, i])
+    end
+    res
+end
+
+function completecases(df::SubDataFrame, col::Union{Integer, Symbol})
+    res = trues(size(df, 1))
+    _nonmissing!(res, df[:, col])
+    res
+end
+
+completecases(df::SubDataFrame, cols::AbstractVector) =
+    completecases(df[:, cols])
+
+nonunique(df::SubDataFrame, cols::Union{Real, Symbol}) = nonunique(df[:, [cols]])
+nonunique(df::SubDataFrame, cols::Any) = nonunique(df[:, cols])
+
+function without(df::SubDataFrame, icols::Vector{<:Integer})
+    newcols = setdiff(1:ncol(df), icols)
+    df[:, newcols]
+end
+
+function Base.hash(df::SubDataFrame, h::UInt)
+    h += hashdf_seed
+    h += hash(size(df))
+    for i in 1:size(df, 2)
+        h = hash(df[:, i], h)
+    end
+    return h
+end
+
+function Base.iterate(itr::DFColumnIterator{SubDataFrame}, j=1)
+    j > size(itr.df, 2) && return nothing
+    return ((_names(itr.df)[j], itr.df[:, j]), j + 1)
+end
+
+function showrowindices(io::IO,
+                        df::SubDataFrame,
+                        rowindices::AbstractVector{Int},
+                        maxwidths::Vector{Int},
+                        leftcol::Int,
+                        rightcol::Int) # -> Void
+    rowmaxwidth = maxwidths[end]
+
+    for i in rowindices
+        # Print row ID
+        @printf io "│ %d" i
+        padding = rowmaxwidth - ndigits(i)
+        for _ in 1:padding
+            write(io, ' ')
+        end
+        print(io, " │ ")
+        # Print DataFrame entry
+        for j in leftcol:rightcol
+            strlen = 0
+            if isassigned(df[:, j], i)
+                s = df[i, j]
+                strlen = ourstrwidth(s)
+                if ismissing(s)
+                    printstyled(io, s, color=:light_black)
+                elseif s === nothing
+                    strlen = 0
+                else
+                    ourshowcompact(io, s)
+                end
+            else
+                strlen = ourstrwidth(Base.undef_ref_str)
+                ourshowcompact(io, Base.undef_ref_str)
+            end
+            padding = maxwidths[j] - strlen
+            for _ in 1:padding
+                write(io, ' ')
+            end
+            if j == rightcol
+                if i == rowindices[end]
+                    print(io, " │")
+                else
+                    print(io, " │\n")
+                end
+            else
+                print(io, " │ ")
+            end
+        end
+    end
+    return
+end
+
+function showrows(io::IO,
+                  df::SubDataFrame,
+                  rowindices1::AbstractVector{Int},
+                  rowindices2::AbstractVector{Int},
+                  maxwidths::Vector{Int},
+                  splitcols::Bool = false,
+                  allcols::Bool = false,
+                  rowlabel::Symbol = :Row,
+                  displaysummary::Bool = true) # -> Void
+    ncols = size(df, 2)
+
+    if isempty(rowindices1)
+        if displaysummary
+            println(io, summary(df))
+        end
+        return
+    end
+
+    rowmaxwidth = maxwidths[ncols + 1]
+    chunkbounds = getchunkbounds(maxwidths, splitcols, displaysize(io)[2])
+    nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
+
+    header = displaysummary ? summary(df) : ""
+    if !allcols && length(chunkbounds) > 2
+        header *= ". Omitted printing of $(chunkbounds[end] - chunkbounds[2]) columns"
+    end
+    println(io, header)
+
+    for chunkindex in 1:nchunks
+        leftcol = chunkbounds[chunkindex] + 1
+        rightcol = chunkbounds[chunkindex + 1]
+
+        # Print column names
+        @printf io "│ %s" rowlabel
+        padding = rowmaxwidth - ourstrwidth(rowlabel)
+        for itr in 1:padding
+            write(io, ' ')
+        end
+        print(io, " │ ")
+        for j in leftcol:rightcol
+            s = _names(df)[j]
+            ourshowcompact(io, s)
+            padding = maxwidths[j] - ourstrwidth(s)
+            for itr in 1:padding
+                write(io, ' ')
+            end
+            if j == rightcol
+                print(io, " │\n")
+            else
+                print(io, " │ ")
+            end
+        end
+
+        # Print column types
+        print(io, "│ ")
+        padding = rowmaxwidth
+        for itr in 1:padding
+            write(io, ' ')
+        end
+        print(io, " │ ")
+        for j in leftcol:rightcol
+            s = compacttype(eltype(df[:, j]), maxwidths[j])
+            printstyled(io, s, color=:light_black)
+            padding = maxwidths[j] - ourstrwidth(s)
+            for itr in 1:padding
+                write(io, ' ')
+            end
+            if j == rightcol
+                print(io, " │\n")
+            else
+                print(io, " │ ")
+            end
+        end
+
+        # Print table bounding line
+        write(io, '├')
+        for itr in 1:(rowmaxwidth + 2)
+            write(io, '─')
+        end
+        write(io, '┼')
+        for j in leftcol:rightcol
+            for itr in 1:(maxwidths[j] + 2)
+                write(io, '─')
+            end
+            if j < rightcol
+                write(io, '┼')
+            else
+                write(io, '┤')
+            end
+        end
+        write(io, '\n')
+
+        # Print main table body, potentially in two abbreviated sections
+        showrowindices(io,
+                       df,
+                       rowindices1,
+                       maxwidths,
+                       leftcol,
+                       rightcol)
+
+        if !isempty(rowindices2)
+            print(io, "\n⋮\n")
+            showrowindices(io,
+                           df,
+                           rowindices2,
+                           maxwidths,
+                           leftcol,
+                           rightcol)
+        end
+
+        # Print newlines to separate chunks
+        if chunkindex < nchunks
+            print(io, "\n\n")
+        end
+    end
+
+    return
+end
+
+function hcat!(df1::DataFrame, df2::SubDataFrame; makeunique::Bool=false)
+    u = add_names(index(df1), index(df2), makeunique=makeunique)
+    for i in 1:length(u)
+        # after deprecation period of getindex we will store a view here
+        df1[u[i]] = df2[:, i]
+    end
+    return df1
+end
+
+function Base.append!(df1::DataFrame, df2::SubDataFrame)
+    _names(df1) == _names(df2) || error("Column names do not match")
+    nrows, ncols = size(df1)
+    try
+        for j in 1:ncols
+            append!(df1[j], df2[:, j])
+        end
+    catch err
+        # Undo changes in case of error
+        for j in 1:ncols
+            resize!(df1[j], nrows)
+        end
+        rethrow(err)
+    end
+    return df1
+end
+
+
+# TODO: END:   Deprecations to be removed after getindex deprecation period finishes
