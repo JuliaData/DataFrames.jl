@@ -257,11 +257,12 @@ module TestData
         d1s[:id] = Union{Int, Missing}[1:12; 1:12]
         d1s2[:id] =  Union{Int, Missing}[1:12; 1:12]
         d1us = unstack(d1s, :id, :variable, :value)
-        d1us2 = unstack(d1s2)
+        d1us2 = unstack(d1s2, :id, :variable, :value)
         d1us3 = unstack(d1s2, :variable, :value)
         @test d1us[:a] == d1[:a]
         @test d1us2[:d] == d1[:d]
-        @test d1us2[:3] == d1[:d]
+        @test d1us2[3] == d1[:d]
+        @test d1us3[:d] == d1[:d]
 
         # test unstack with exactly one key column that is not passed
         df1 = melt(DataFrame(rand(10,10)))

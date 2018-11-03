@@ -1631,5 +1631,24 @@ function Base.append!(df1::DataFrame, df2::SubDataFrame)
     return df1
 end
 
+function groupby(df::SubDataFrame, cols::Vector;
+                 sort::Bool = false, skipmissing::Bool = false)
+    sdf = df[:, cols]
+    df_groups = group_rows(sdf, skipmissing)
+    # sort the groups
+    if sort
+        group_perm = sortperm(view(sdf, df_groups.rperm[df_groups.starts], :))
+        permute!(df_groups.starts, group_perm)
+        Base.permute!!(df_groups.stops, group_perm)
+    end
+    GroupedDataFrame(df, cols, df_groups.rperm,
+                     df_groups.starts, df_groups.stops)
+end
+
+function _aggregate(d::SubDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false) where T<:Function
+    res = DataFrame(AbstractVector[vcat(f(d[:, i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
+    sort && sort!(res, headers)
+    res
+end
 
 # TODO: END:   Deprecations to be removed after getindex deprecation period finishes
