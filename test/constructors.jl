@@ -76,8 +76,8 @@ module TestConstructors
         # @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0)
         @test SubDataFrame(DataFrame(A=1), 1:1) == DataFrame(A=1)
         @test SubDataFrame(DataFrame(A=1:10), 1:4) == DataFrame(A=1:4)
-        @test view(SubDataFrame(DataFrame(A=1:10), 1:4), 2) == DataFrame(A=2)
-        @test view(SubDataFrame(DataFrame(A=1:10), 1:4), [true, true, false, false]) == DataFrame(A=1:2)
+        @test view(SubDataFrame(DataFrame(A=1:10), 1:4), 2, :) == DataFrame(A=2)
+        @test view(SubDataFrame(DataFrame(A=1:10), 1:4), [true, true, false, false], :) == DataFrame(A=1:2)
 
         @test DataFrame(a=1, b=1:2) == DataFrame(a=[1,1], b=[1,2])
     end

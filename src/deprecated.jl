@@ -1717,4 +1717,6 @@ function Base.isequal(df1::SubDataFrame, df2::SubDataFrame)
     return true
 end
 
+colwise(f, d::SubDataFrame) = [f(d[:, i]) for i in 1:ncol(d)]
+
 # TODO: END:   Deprecations to be removed after getindex deprecation period finishes
