@@ -1718,5 +1718,6 @@ function Base.isequal(df1::SubDataFrame, df2::SubDataFrame)
 end
 
 colwise(f, d::SubDataFrame) = [f(d[:, i]) for i in 1:ncol(d)]
+colwise(fns::Union{AbstractVector, Tuple}, d::SubDataFrame) = [f(d[:, i]) for f in fns, i in 1:ncol(d)]
 
 # TODO: END:   Deprecations to be removed after getindex deprecation period finishes
