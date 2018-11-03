@@ -489,12 +489,13 @@ module TestDataFrame
     # test empty set of grouping variables
     @test_throws ArgumentError unstack(df, Int[], :Key, :Value)
     @test_throws ArgumentError unstack(df, Symbol[], :Key, :Value)
-    @test_throws KeyError unstack(stack(DataFrame(rand(10, 10))))
+    @test_throws KeyError unstack(stack(DataFrame(rand(10, 10))),
+                                  :id, :variable, :value)
 
     # test missing value in grouping variable
     mdf = DataFrame(id=[missing,1,2,3], a=1:4, b=1:4)
-    @test unstack(melt(mdf, :id))[1:3,:] == sort(mdf)[1:3,:]
-    @test unstack(melt(mdf, :id))[:,2:3] == sort(mdf)[:,2:3]
+    @test unstack(melt(mdf, :id), :id, :variable, :value)[1:3,:] == sort(mdf)[1:3,:]
+    @test unstack(melt(mdf, :id), :id, :variable, :value)[2:3] == sort(mdf)[2:3]
 
     # test more than one grouping column
     wide = DataFrame(id = 1:12,
@@ -505,10 +506,12 @@ module TestDataFrame
 
     long = stack(wide)
     wide3 = unstack(long, [:id, :a], :variable, :value)
-    @test wide3 == wide[:, [1, 2, 4, 5]]
+    @test wide3 == wide[[1, 2, 4, 5]]
 
     df = DataFrame(A = 1:10, B = 'A':'J')
-    @test !(df[:,:] === df)
+    @test !(df[:] === df)
+    # TODO: uncomment after getindex deprecation period
+    # @test !(df[:,:] === df)
 
     df = DataFrame(A = 1:2, B = 1:2)
     df2 = DataFrame(A=1:4, B = 1:4)
@@ -619,7 +622,7 @@ module TestDataFrame
         allowmissing!(x, :x1)
         x[1, :x1] = missing
         y = melt(x, [:id, :id2])
-        z = unstack(y)
+        z = unstack(y, :id, :variable, :value)
         @test all(isequal(z[n], x[n]) for n in names(z))
         z = unstack(y, :variable, :value)
         @test all(isequal(z[n], x[n]) for n in names(x))
@@ -758,11 +761,13 @@ module TestDataFrame
 
     @testset "handling of end in indexing" begin
         z = DataFrame(rand(4,5))
-        for x in [z, view(z, 1:4, :)]
+        for x in [z] # TODO: re-enable view after getindex deprecation: , view(z, 1:4, :)]
             y = deepcopy(x)
             @test x[end] == x[5]
             @test x[end:end] == x[5:5]
-            @test x[end, :] == x[4, :]
+            # TODO: re-enable after getindex deprecation
+            # @test x[end, :] == x[4, :]
+            @test x[end:end, :] == x[4:4, :]
             @test x[end, end] == x[4,5]
             @test x[2:end, 2:end] == x[2:4,2:5]
             x[end] = 1:4
@@ -906,6 +911,8 @@ module TestDataFrame
         x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
         v = DataFrame(a = [5, 6, 7], b = [8, 9, 10])
         z = vcat(v, x)
-        @test_throws ArgumentError z[:, [1, 1, 2]]
+        #TODO: re-enable after getindex deprecation
+        # @test_throws ArgumentError z[:, [1, 1, 2]]
+        @test_throws ArgumentError z[[1, 1, 2]]
     end
 end
