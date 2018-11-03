@@ -11,14 +11,14 @@ Pages = ["types.md"]
 
 ## Type hierarchy design
 
-`AbstractDataFrame` is an abstract type that provides database-like interface.
+`AbstractDataFrame` is an abstract type that provides an interface for working with tabular data.
 
 A key subtype of the `AbstractDataFrame` type is a `DataFrame` type that uses columnar data storage.
 
 The package provides a `SubDataFrame` type that is also `AbstractDataFrame` subtype.
-Is a view into `DataFrame`. It stores only a reference to parent `DataFrame` and information about
-which rows from the parent are selected. Typically it is created by using the `view` function or
-is returned by indexing into a `GroupedDataFrame` object.
+The `SubDataFrame` type is a view into `DataFrame`. It stores only a reference to parent `DataFrame`
+and information about which rows from the parent are selected. Typically it is created by using the `view`
+function or is returned by indexing into a `GroupedDataFrame` object.
 
 A `GroupedDataFrame` type is a type that allows to store the information about the result of grouping
 operation performed on a data frame. It is intended to be created as a result of a call to the `groupby` function.

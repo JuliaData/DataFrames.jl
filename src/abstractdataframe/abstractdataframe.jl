@@ -1,8 +1,8 @@
 """
     AbstractDataFrame
 
-An abstract type for which all concrete types expose a database-like
-interface.
+An abstract type for which all concrete types expose an interface
+for working with tabular data.
 
 **Common methods**
 
