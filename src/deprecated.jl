@@ -1414,7 +1414,7 @@ function completecases(df::SubDataFrame, col::Union{Integer, Symbol})
 end
 
 completecases(df::SubDataFrame, cols::AbstractVector) =
-    completecases(SubDataFrame(parend(df)[cols], rows(df))
+    completecases(SubDataFrame(parend(df)[cols], rows(df)))
 
 nonunique(df::SubDataFrame, cols::Union{Real, Symbol}) =
     nonunique(view(parent(df)[cos], rows(df)))
