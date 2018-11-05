@@ -1414,7 +1414,7 @@ function completecases(df::SubDataFrame, col::Union{Integer, Symbol})
 end
 
 completecases(df::SubDataFrame, cols::AbstractVector) =
-    completecases(SubDataFrame(parend(df)[cols], rows(df)))
+    completecases(SubDataFrame(parent(df)[cols], rows(df)))
 
 nonunique(df::SubDataFrame, cols::Union{Real, Symbol}) =
     nonunique(view(parent(df)[cos], rows(df)))
@@ -1658,7 +1658,7 @@ function Base.:(==)(df1::SubDataFrame, df2::AbstractDataFrame)
     isequal(index(df1), index(df2)) || return false
     eq = true
     for idx in 1:size(df1, 2)
-        coleq = view(df1[idx], rows(df1)) == df2[idx]
+        coleq = view(parent(df1)[idx], rows(df1)) == df2[idx]
         # coleq could be missing
         !isequal(coleq, false) || return false
         eq &= coleq
@@ -1670,7 +1670,7 @@ function Base.isequal(df1::SubDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
     isequal(index(df1), index(df2)) || return false
     for idx in 1:size(df1, 2)
-        isequal(view(df1[idx], rows(df1)), df2[idx]) || return false
+        isequal(view(parent(df1)[idx], rows(df1)), df2[idx]) || return false
     end
     return true
 end
@@ -1680,7 +1680,7 @@ function Base.:(==)(df1::AbstractDataFrame, df2::SubDataFrame)
     isequal(index(df1), index(df2)) || return false
     eq = true
     for idx in 1:size(df1, 2)
-        coleq = df1[idx] == view(df2[idx], rows(df2))
+        coleq = df1[idx] == view(parent(df2)[idx], rows(df2))
         # coleq could be missing
         !isequal(coleq, false) || return false
         eq &= coleq
@@ -1692,7 +1692,7 @@ function Base.isequal(df1::AbstractDataFrame, df2::SubDataFrame)
     size(df1, 2) == size(df2, 2) || return false
     isequal(index(df1), index(df2)) || return false
     for idx in 1:size(df1, 2)
-        isequal(df1[idx], view(df2[idx], rows(df2))) || return false
+        isequal(df1[idx], view(parent(df2)[idx], rows(df2))) || return false
     end
     return true
 end
@@ -1702,7 +1702,7 @@ function Base.:(==)(df1::SubDataFrame, df2::SubDataFrame)
     isequal(index(df1), index(df2)) || return false
     eq = true
     for idx in 1:size(df1, 2)
-        coleq = view(df1[idx], rows(df1)) == view(df2[idx], rows(df2))
+        coleq = view(parent(df1)[idx], rows(df1)) == view(parent(df2)[idx], rows(df2))
         # coleq could be missing
         !isequal(coleq, false) || return false
         eq &= coleq
@@ -1714,12 +1714,19 @@ function Base.isequal(df1::SubDataFrame, df2::SubDataFrame)
     size(df1, 2) == size(df2, 2) || return false
     isequal(index(df1), index(df2)) || return false
     for idx in 1:size(df1, 2)
-        isequal(view(df1[idx], rows(df1)), view(df2[idx], rows(df2))) || return false
+        isequal(view(parent(df1)[idx], rows(df1)), view(parent(df2)[idx], rows(df2))) || return false
     end
     return true
 end
 
 colwise(f, d::SubDataFrame) = [f(d[:, i]) for i in 1:ncol(d)]
 colwise(fns::Union{AbstractVector, Tuple}, d::SubDataFrame) = [f(d[:, i]) for f in fns, i in 1:ncol(d)]
+
+function row_group_slots(df::SubDataFrame,
+                         groups::Union{Vector{Int}, Nothing} = nothing,
+                         skipmissing::Bool = false)
+    rhashes, missings = hashrows(df, skipmissing)
+    row_group_slots(ntuple(i -> view(parent(df)[i], rows(df)), ncol(df)), rhashes, missings, groups, skipmissing)
+end
 
 # TODO: END:   Deprecations to be removed after getindex deprecation period finishes
