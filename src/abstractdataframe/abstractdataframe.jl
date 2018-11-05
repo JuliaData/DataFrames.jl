@@ -1037,7 +1037,10 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     for (i, name) in enumerate(header)
         # TODO: replace with commented out code after getindex deprecation
         # data = [df[name] for df in dfs]
-        data = [df isa DataFrame ? df[name] : df[:, name] for df in dfs]
+        # the code below assumes that only DataFrame and SubDataFrame
+        # are subtypes of AbstractDataFrame
+        # it should be removed ASAP after deprecation
+        data = [df isa DataFrame ? df[name] : view(parent(df)[colind], rows(df)) for df in dfs]
         lens = map(length, data)
         T = mapreduce(eltype, promote_type, data)
         cols[i] = Tables.allocatecolumn(T, sum(lens))

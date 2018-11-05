@@ -1402,28 +1402,30 @@ Base.get(df::SubDataFrame, key::Any, default::Any) = haskey(df, key) ? df[:, key
 function completecases(df::SubDataFrame)
     res = trues(size(df, 1))
     for i in 1:size(df, 2)
-        _nonmissing!(res, df[:, i])
+        _nonmissing!(res, view(parent(df)[i], rows(df)))
     end
     res
 end
 
 function completecases(df::SubDataFrame, col::Union{Integer, Symbol})
     res = trues(size(df, 1))
-    _nonmissing!(res, df[:, col])
+    _nonmissing!(res, view(parent(df)[col], rows(df)))
     res
 end
 
 completecases(df::SubDataFrame, cols::AbstractVector) =
-    completecases(df[:, cols])
+    completecases(SubDataFrame(parend(df)[cols], rows(df))
 
-nonunique(df::SubDataFrame, cols::Union{Real, Symbol}) = nonunique(df[:, [cols]])
-nonunique(df::SubDataFrame, cols::Any) = nonunique(df[:, cols])
+nonunique(df::SubDataFrame, cols::Union{Real, Symbol}) =
+    nonunique(view(parent(df)[cos], rows(df)))
+nonunique(df::SubDataFrame, cols::Any) =
+    nonunique(SubDataFrame(parent(df)[cols], rows(df)))
 
 function Base.hash(df::SubDataFrame, h::UInt)
     h += hashdf_seed
     h += hash(size(df))
     for i in 1:size(df, 2)
-        h = hash(df[:, i], h)
+        h = hash(view(parent(df)[i], rows(df)), h)
     end
     return h
 end
@@ -1454,7 +1456,7 @@ function showrowindices(io::IO,
         # Print DataFrame entry
         for j in leftcol:rightcol
             strlen = 0
-            if isassigned(df[:, j], i)
+            if isassigned(view(parent(df)[j], rows(df)), i)
                 s = df[i, j]
                 strlen = ourstrwidth(s)
                 if ismissing(s)
@@ -1547,7 +1549,7 @@ function showrows(io::IO,
         end
         print(io, " │ ")
         for j in leftcol:rightcol
-            s = compacttype(eltype(df[:, j]), maxwidths[j])
+            s = compacttype(eltype(parent(df)[j]), maxwidths[j])
             printstyled(io, s, color=:light_black)
             padding = maxwidths[j] - ourstrwidth(s)
             for itr in 1:padding
@@ -1619,7 +1621,7 @@ function Base.append!(df1::DataFrame, df2::SubDataFrame)
     nrows, ncols = size(df1)
     try
         for j in 1:ncols
-            append!(df1[j], df2[:, j])
+            append!(df1[j], view(parent(df2)[j], rows(df2)))
         end
     catch err
         # Undo changes in case of error
@@ -1633,7 +1635,7 @@ end
 
 function groupby(df::SubDataFrame, cols::Vector;
                  sort::Bool = false, skipmissing::Bool = false)
-    sdf = df[:, cols]
+    sdf = SubDataFrame(parent(df)[cols], rows(df))
     df_groups = group_rows(sdf, skipmissing)
     # sort the groups
     if sort
@@ -1646,7 +1648,7 @@ function groupby(df::SubDataFrame, cols::Vector;
 end
 
 function _aggregate(d::SubDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false) where T<:Function
-    res = DataFrame(AbstractVector[vcat(f(d[:, i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
+    res = DataFrame(AbstractVector[vcat(f(view(parent(d)[i], rows(d)))) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
     sort && sort!(res, headers)
     res
 end
@@ -1656,7 +1658,7 @@ function Base.:(==)(df1::SubDataFrame, df2::AbstractDataFrame)
     isequal(index(df1), index(df2)) || return false
     eq = true
     for idx in 1:size(df1, 2)
-        coleq = df1[:, idx] == df2[idx]
+        coleq = view(df1[idx], rows(df1)) == df2[idx]
         # coleq could be missing
         !isequal(coleq, false) || return false
         eq &= coleq
@@ -1668,7 +1670,7 @@ function Base.isequal(df1::SubDataFrame, df2::AbstractDataFrame)
     size(df1, 2) == size(df2, 2) || return false
     isequal(index(df1), index(df2)) || return false
     for idx in 1:size(df1, 2)
-        isequal(df1[:, idx], df2[idx]) || return false
+        isequal(view(df1[idx], rows(df1)), df2[idx]) || return false
     end
     return true
 end
@@ -1678,7 +1680,7 @@ function Base.:(==)(df1::AbstractDataFrame, df2::SubDataFrame)
     isequal(index(df1), index(df2)) || return false
     eq = true
     for idx in 1:size(df1, 2)
-        coleq = df1[idx] == df2[:, idx]
+        coleq = df1[idx] == view(df2[idx], rows(df2))
         # coleq could be missing
         !isequal(coleq, false) || return false
         eq &= coleq
@@ -1690,7 +1692,7 @@ function Base.isequal(df1::AbstractDataFrame, df2::SubDataFrame)
     size(df1, 2) == size(df2, 2) || return false
     isequal(index(df1), index(df2)) || return false
     for idx in 1:size(df1, 2)
-        isequal(df1[idx], df2[:, idx]) || return false
+        isequal(df1[idx], view(df2[idx], rows(df2))) || return false
     end
     return true
 end
@@ -1700,7 +1702,7 @@ function Base.:(==)(df1::SubDataFrame, df2::SubDataFrame)
     isequal(index(df1), index(df2)) || return false
     eq = true
     for idx in 1:size(df1, 2)
-        coleq = df1[:, idx] == df2[:, idx]
+        coleq = view(df1[idx], rows(df1)) == view(df2[idx], rows(df2))
         # coleq could be missing
         !isequal(coleq, false) || return false
         eq &= coleq
@@ -1712,7 +1714,7 @@ function Base.isequal(df1::SubDataFrame, df2::SubDataFrame)
     size(df1, 2) == size(df2, 2) || return false
     isequal(index(df1), index(df2)) || return false
     for idx in 1:size(df1, 2)
-        isequal(df1[:, idx], df2[:, idx]) || return false
+        isequal(view(df1[idx], rows(df1)), view(df2[idx], rows(df2))) || return false
     end
     return true
 end
