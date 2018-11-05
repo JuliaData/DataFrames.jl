@@ -1,4 +1,6 @@
 """
+    DataFrame <: AbstractDataFrame
+
 An AbstractDataFrame that stores a set of named columns
 
 The columns are normally AbstractVectors stored in memory,

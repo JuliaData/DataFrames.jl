@@ -29,7 +29,8 @@ makedocs(
         ],
         "API" => Any[
             "Types" => "lib/types.md",
-            "Functions" => "lib/functions.md"
+            "Functions" => "lib/functions.md",
+            "Indexing" => "lib/indexing.md"
         ]
     ]
 )

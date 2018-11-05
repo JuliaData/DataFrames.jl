@@ -1,26 +1,6 @@
-##############################################################################
-##
-## We use SubDataFrame's to maintain a reference to a subset of a DataFrame
-## without making copies.
-##
-##############################################################################
-
-struct SubDataFrame{T <: AbstractVector{Int}} <: AbstractDataFrame
-    parent::DataFrame
-    rows::T # maps from subdf row indexes to parent row indexes
-
-    function SubDataFrame{T}(parent::DataFrame, rows::T) where {T <: AbstractVector{Int}}
-        if length(rows) > 0
-            rmin, rmax = extrema(rows)
-            if rmin < 1 || rmax > size(parent, 1)
-                throw(BoundsError())
-            end
-        end
-        new(parent, rows)
-    end
-end
-
 """
+    SubDataFrame{<:AbstractVector{Int}} <: AbstractDataFrame
+
 A view of row subsets of an AbstractDataFrame
 
 A `SubDataFrame` is meant to be constructed with `view`.  A
@@ -62,7 +42,20 @@ sdf1[:,[:a,:b]]
 ```
 
 """
-SubDataFrame
+struct SubDataFrame{T<:AbstractVector{Int}} <: AbstractDataFrame
+    parent::DataFrame
+    rows::T # maps from subdf row indexes to parent row indexes
+
+    function SubDataFrame{T}(parent::DataFrame, rows::T) where {T <: AbstractVector{Int}}
+        if length(rows) > 0
+            rmin, rmax = extrema(rows)
+            if rmin < 1 || rmax > size(parent, 1)
+                throw(BoundsError())
+            end
+        end
+        new(parent, rows)
+    end
+end
 
 function SubDataFrame(parent::DataFrame, rows::T) where {T <: AbstractVector{Int}}
     return SubDataFrame{T}(parent, rows)

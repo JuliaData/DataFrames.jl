@@ -38,6 +38,7 @@ eltypes
 filter
 filter!
 head
+insertcols!
 names!
 nonunique
 rename!
