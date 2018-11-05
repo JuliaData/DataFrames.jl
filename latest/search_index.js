@@ -285,7 +285,63 @@ var documenterSearchIndex = {"docs": [
     "page": "Types",
     "title": "Types",
     "category": "section",
-    "text": "Pages = [\"types.md\"]AbstractDataFrame\nDataFrame\nDataFrameRow\nGroupApplied\nGroupedDataFrame\nSubDataFrame"
+    "text": "Pages = [\"types.md\"]"
+},
+
+{
+    "location": "lib/types.html#Type-hierarchy-design-1",
+    "page": "Types",
+    "title": "Type hierarchy design",
+    "category": "section",
+    "text": "AbstractDataFrame is an abstract type that provides an interface for data frame types. It is not intended as a fully generic interface for working with tabular data, which is the role of interfaces defined by Tables.jl instead.DataFrame is the most fundamental subtype of AbstractDataFrame, which stores a set of columns as AbstractVector objects.SubDataFrame is an AbstractDataFrame subtype representing a view into a DataFrame. It stores only a reference to the parent DataFrame and information about which rows from the parent are selected. Typically it is created using the view function or is returned by indexing into a GroupedDataFrame object.GroupedDataFrame is a type that stores the result of a  grouping operation performed on an AbstractDataFrame. It is intended to be created as a result of a call to the groupby function.DataFrameRow is a view into a single row of an AbstractDataFrame. It stores only a reference to a parent AbstractDataFrame and information about which row from the parent is selected. The DataFrameRow type supports iteration over columns of the row and is similar in functionality to the NamedTuple type, but allows for modification of data stored in the parent AbstractDataFrame and reflects changes done to the parent after the creation of the view. Typically objects of the DataFrameRow type are encountered when returned by the eachrow function. In the future accessing a single row of a data frame via getindex or view will return a DataFrameRow."
+},
+
+{
+    "location": "lib/types.html#DataFrames.AbstractDataFrame",
+    "page": "Types",
+    "title": "DataFrames.AbstractDataFrame",
+    "category": "type",
+    "text": "AbstractDataFrame\n\nAn abstract type for which all concrete types expose an interface for working with tabular data.\n\nCommon methods\n\nAn AbstractDataFrame is a two-dimensional table with Symbols for column names. An AbstractDataFrame is also similar to an Associative type in that it allows indexing by a key (the columns).\n\nThe following are normally implemented for AbstractDataFrames:\n\ndescribe : summarize columns\ndump : show structure\nhcat : horizontal concatenation\nvcat : vertical concatenation\nrepeat : repeat rows\nnames : columns names\nnames! : set columns names\nrename! : rename columns names based on keyword arguments\neltypes : eltype of each column\nlength : number of columns\nsize : (nrows, ncols)\nhead : first n rows\ntail : last n rows\nconvert : convert to an array\ncompletecases : boolean vector of complete cases (rows with no missings)\ndropmissing : remove rows with missing values\ndropmissing! : remove rows with missing values in-place\nnonunique : indexes of duplicate rows\nunique! : remove duplicate rows\nsimilar : a DataFrame with similar columns as d\n\nIndexing\n\nTable columns are accessed (getindex) by a single index that can be a symbol identifier, an integer, or a vector of each. If a single column is selected, just the column object is returned. If multiple columns are selected, some AbstractDataFrame is returned.\n\nd[:colA]\nd[3]\nd[[:colA, :colB]]\nd[[1:3; 5]]\n\nRows and columns can be indexed like a Matrix with the added feature of indexing columns by name.\n\nd[1:3, :colA]\nd[3,3]\nd[3,:]\nd[3,[:colA, :colB]]\nd[:, [:colA, :colB]]\nd[[1:3; 5], :]\n\nsetindex works similarly.\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/types.html#DataFrames.DataFrame",
+    "page": "Types",
+    "title": "DataFrames.DataFrame",
+    "category": "type",
+    "text": "DataFrame <: AbstractDataFrame\n\nAn AbstractDataFrame that stores a set of named columns\n\nThe columns are normally AbstractVectors stored in memory, particularly a Vector or CategoricalVector.\n\nConstructors\n\nDataFrame(columns::Vector, names::Vector{Symbol}; makeunique::Bool=false)\nDataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)\nDataFrame(kwargs...)\nDataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false)\nDataFrame() # an empty DataFrame\nDataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size\nDataFrame(column_eltypes::Vector, names::Vector, nrows::Integer; makeunique::Bool=false)\nDataFrame(column_eltypes::Vector, cnames::Vector, categorical::Vector, nrows::Integer;\n          makeunique::Bool=false)\nDataFrame(ds::AbstractDict)\nDataFrame(table; makeunique::Bool=false)\n\nArguments\n\ncolumns : a Vector with each column as contents or a Matrix\nnames : the column names\nmakeunique : if false (the default), an error will be raised if duplicates in names are found; if true, duplicate names will be suffixed with _i (i starting at 1 for the first duplicate).\nkwargs : the key gives the column names, and the value is the column contents\nt : elemental type of all columns\nnrows, ncols : number of rows and columns\ncolumn_eltypes : elemental type of each column\ncategorical : Vector{Bool} indicating which columns should be converted to                 CategoricalVector\nds : AbstractDict of columns\ntable: any type that implements the Tables.jl interface\n\nEach column in columns should be the same length.\n\nNotes\n\nA DataFrame is a lightweight object. As long as columns are not manipulated, creation of a DataFrame from existing AbstractVectors is inexpensive. For example, indexing on columns is inexpensive, but indexing by rows is expensive because copies are made of each column.\n\nIf a column is passed to a DataFrame constructor or is assigned as a whole using setindex! then its reference is stored in the DataFrame. An exception to this rule is assignment of an AbstractRange as a column, in which case the range is collected to a Vector.\n\nBecause column types can vary, a DataFrame is not type stable. For performance-critical code, do not index into a DataFrame inside of loops.\n\nExamples\n\ndf = DataFrame()\nv = [\"x\",\"y\",\"z\"][rand(1:3, 10)]\ndf1 = DataFrame(Any[collect(1:10), v, rand(10)], [:A, :B, :C])\ndf2 = DataFrame(A = 1:10, B = v, C = rand(10))\ndump(df1)\ndump(df2)\ndescribe(df2)\nhead(df1)\ndf1[:A] + df2[:C]\ndf1[1:4, 1:2]\ndf1[[:A,:C]]\ndf1[1:2, [:A,:C]]\ndf1[:, [:A,:C]]\ndf1[:, [1,3]]\ndf1[1:4, :]\ndf1[1:4, :C]\ndf1[1:4, :C] = 40. * df1[1:4, :C]\n[df1; df2]  # vcat\n[df1  df2]  # hcat\nsize(df1)\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/types.html#DataFrames.DataFrameRow",
+    "page": "Types",
+    "title": "DataFrames.DataFrameRow",
+    "category": "type",
+    "text": "DataFrameRow{<:AbstractDataFrame}\n\nA view of one row of an AbstractDataFrame.\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/types.html#DataFrames.GroupedDataFrame",
+    "page": "Types",
+    "title": "DataFrames.GroupedDataFrame",
+    "category": "type",
+    "text": "GroupedDataFrame\n\nThe result of a groupby operation on an AbstractDataFrame; a view into the AbstractDataFrame grouped by rows.\n\nNot meant to be constructed directly, see groupby.\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/types.html#DataFrames.SubDataFrame",
+    "page": "Types",
+    "title": "DataFrames.SubDataFrame",
+    "category": "type",
+    "text": "SubDataFrame{<:AbstractVector{Int}} <: AbstractDataFrame\n\nA view of row subsets of an AbstractDataFrame\n\nA SubDataFrame is meant to be constructed with view.  A SubDataFrame is used frequently in split/apply sorts of operations.\n\nview(d::AbstractDataFrame, rows)\n\nArguments\n\nd : an AbstractDataFrame\nrows : any indexing type for rows, typically an Int, AbstractVector{Int}, AbstractVector{Bool}, or a Range\n\nNotes\n\nA SubDataFrame is an AbstractDataFrame, so expect that most DataFrame functions should work. Such methods include describe, dump, nrow, size, by, stack, and join. Indexing is just like a DataFrame; copies are returned.\n\nTo subset along columns, use standard column indexing as that creates a view to the columns by default. To subset along rows and columns, use column-based indexing with view.\n\nExamples\n\ndf = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),\n               b = repeat([2, 1], outer=[4]),\n               c = randn(8))\nsdf1 = view(df, 1:6)\nsdf2 = view(df, df[:a] .> 1)\nsdf3 = view(df[[1,3]], df[:a] .> 1)  # row and column subsetting\nsdf4 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame\nsdf5 = view(sdf1, 1:3)\nsdf1[:,[:a,:b]]\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/types.html#Types-specification-1",
+    "page": "Types",
+    "title": "Types specification",
+    "category": "section",
+    "text": "AbstractDataFrame\nDataFrame\nDataFrameRow\nGroupedDataFrame\nSubDataFrame"
 },
 
 {
@@ -489,6 +545,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "lib/functions.html#DataFrames.insertcols!",
+    "page": "Functions",
+    "title": "DataFrames.insertcols!",
+    "category": "function",
+    "text": "Insert a column into a data frame in place.\n\ninsertcols!(df::DataFrame, ind::Int; name=col,\n            makeunique::Bool=false)\ninsertcols!(df::DataFrame, ind::Int, (:name => col)::Pair{Symbol,<:AbstractVector};\n            makeunique::Bool=false)\n\nArguments\n\ndf : the DataFrame to which we want to add a column\nind : a position at which we want to insert a column\nname : the name of the new column\ncol : an AbstractVector giving the contents of the new column\nmakeunique : Defines what to do if name already exists in df; if it is false an error will be thrown; if it is true a new unique name will be generated by adding a suffix\n\nResult\n\n::DataFrame : a DataFrame with added column.\n\nExamples\n\njulia> d = DataFrame(a=1:3)\n3×1 DataFrame\n│ Row │ a     │\n│     │ Int64 │\n├─────┼───────┤\n│ 1   │ 1     │\n│ 2   │ 2     │\n│ 3   │ 3     │\n\njulia> insertcols!(d, 1, b=[\'a\', \'b\', \'c\'])\n3×2 DataFrame\n│ Row │ b    │ a     │\n│     │ Char │ Int64 │\n├─────┼──────┼───────┤\n│ 1   │ \'a\'  │ 1     │\n│ 2   │ \'b\'  │ 2     │\n│ 3   │ \'c\'  │ 3     │\n\njulia> insertcols!(d, 1, :c => [2, 3, 4])\n3×3 DataFrame\n│ Row │ c     │ b    │ a     │\n│     │ Int64 │ Char │ Int64 │\n├─────┼───────┼──────┼───────┤\n│ 1   │ 2     │ \'a\'  │ 1     │\n│ 2   │ 3     │ \'b\'  │ 2     │\n│ 3   │ 4     │ \'c\'  │ 3     │\n\n\n\n\n\n"
+},
+
+{
     "location": "lib/functions.html#DataFrames.names!",
     "page": "Functions",
     "title": "DataFrames.names!",
@@ -581,7 +645,47 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Basics",
     "category": "section",
-    "text": "allowmissing!\ncombine\ncompletecases\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neltypes\nfilter\nfilter!\nhead\nnames!\nnonunique\nrename!\nrename\nrepeat\nshow\nsort\nsort!\ntail\nunique!\npermutecols!"
+    "text": "allowmissing!\ncombine\ncompletecases\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neltypes\nfilter\nfilter!\nhead\ninsertcols!\nnames!\nnonunique\nrename!\nrename\nrepeat\nshow\nsort\nsort!\ntail\nunique!\npermutecols!"
+},
+
+{
+    "location": "lib/indexing.html#",
+    "page": "Indexing",
+    "title": "Indexing",
+    "category": "page",
+    "text": "CurrentModule = DataFrames"
+},
+
+{
+    "location": "lib/indexing.html#Indexing-1",
+    "page": "Indexing",
+    "title": "Indexing",
+    "category": "section",
+    "text": "Pages = [\"indexing.md\"]"
+},
+
+{
+    "location": "lib/indexing.html#General-rules-1",
+    "page": "Indexing",
+    "title": "General rules",
+    "category": "section",
+    "text": "The following rules explain target functionality of how getindex, setindex!, and view are intended to work with DataFrame, SubDataFrame and DataFrameRow objects.The rules for a valid type of index into a column are the following:a value, later denoted as col:\na Symbol;\nan Integer that is not Bool;\na vector, later denoted as cols:\na vector of Symbol (does not have to be a subtype of AbstractVector{Symbol});\na vector of Integer other than Bool (does not have to be a subtype of AbstractVector{<:Integer});\na vector of Bool that has to be a subtype of AbstractVector{Bool}.\na colon.The rules for a valid type of index into a row are the following:a value, later denoted as row:\nan Integer that is not Bool;\na vector, later denoted as rows:\na vector of Integer other than Bool (does not have to be a subtype of AbstractVector{<:Integer});\na vector of Bool that has to be a subtype of AbstractVector{Bool};\na colon.In the descriptions below df represents a DataFrame, sdf is a SubDataFrame and dfr is a DataFrameRow."
+},
+
+{
+    "location": "lib/indexing.html#getindex-1",
+    "page": "Indexing",
+    "title": "getindex",
+    "category": "section",
+    "text": "The following list specifies return types of getindex operations depending on argument types.In all operations copying vectors is avoided where possible. If it is performed a description explicitly mentions that the data is copied.For performance reasons, accessing, via getindex or view, a single row and multiple cols of a DataFrame, a SubDataFrame or a DataFrameRow always returns a DataFrameRow (which is a view-like type).DataFrame:df[col] -> the vector contained in column col;\ndf[cols] -> a freshly allocated DataFrame containing the vectors contained in columns cols;\ndf[row, col] -> the value contained in row row of column col, the same as df[col][row];\ndf[row, cols] -> a DataFrameRow with parent df if cols is a colon and df[cols] otherwise;\ndf[rows, col] -> a copy of the vector df[col] with only the entries corresponding to rows selected, the same as df[col][rows];\ndf[rows, cols] -> a DataFrame containing copies of columns cols with only the entries corresponding to rows selected.\n@view df[col] -> the vector contained in column col (this is equivalent to df[col]);\n@view df[cols] -> a SubDataFrame with parent df if cols is a colon and df[cols] otherwise;\n@view df[row, col] -> a 0-dimensional view into df[col], the same as view(df[col], row);\n@view df[row, cols] -> a DataFrameRow with parent df if cols is a colon and df[cols] otherwise;\n@view df[rows, col] -> a view into df[col] with rows selected, the same as view(df[col], rows);\n@view df[rows, cols] -> a SubDataFrame with rows selected with parent df if cols is a colon and df[cols] otherwise.SubDataFrame:sdf[col] -> a view of the vector contained in column col of parent(sdf) with DataFrames.rows(sdf) as a selector;\nsdf[cols] -> a SubDataFrame, with parent parent(sdf) if cols is a colon and parent(sdf)[cols] otherwise;\nsdf[row, col] -> a value contained in row row of column col;\nsdf[row, cols] -> a DataFrameRow with parent parent(sdf) if cols is a colon and parent(sdf)[cols] otherwise;\nsdf[rows, col] -> a copy of a vector sdf[col] with only rows rows selected;\nsdf[rows, cols] -> a DataFrame containing columns cols and df[rows, col] as a vector in each col in cols.\n@view sdf[col] -> a view of vector contained in column col of parent(sdf) with DataFrames.rows(sdf) as selector;\n@view sdf[cols] -> a SubDataFrame with parent parent(sdf) if cols is a colon and parent(sdf)[cols] otherwise;\n@view sdf[row, col] -> translates to view(sdf[col], row) (a 0-dimensional view into df[col]);\n@view sdf[row, cols] -> a DataFrameRow with parent parent(sdf) if cols is a colon and parent(sdf)[cols] otherwise;\n@view sdf[rows, col] -> translates to view(sdf[col], rows) (a standard view into sdf[col] vector);\n@view sdf[rows, cols] -> a SubDataFrame with parent parent(sdf) if cols is a colon and sdf[cols] otherwise.DataFrameRow:dfr[col] -> the value contained in column col of dfr;\ndfr[cols] -> a DataFrameRow with parent parent(dfr) if cols is a colon and parent(dfr)[cols] otherwise;\n@view dfr[col] -> a 0-dimensional view into parent(dfr)[DataFrames.row(dfr), col];\n@view dfr[cols] -> a DataFrameRow with parent parent(dfr) if cols is a colon and parent(dfr)[cols] otherwise;"
+},
+
+{
+    "location": "lib/indexing.html#setindex!-1",
+    "page": "Indexing",
+    "title": "setindex!",
+    "category": "section",
+    "text": "Under construction"
 },
 
 ]}
