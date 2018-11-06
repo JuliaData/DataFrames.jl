@@ -1,10 +1,5 @@
 import Base: @deprecate
 
-function Base.map(f::Function, sdf::SubDataFrame)
-    Base.depwarn("Calling map on SuBDataFrame is deprecated", :map)
-    f(sdf)
-end
-
 @deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
 @deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 
