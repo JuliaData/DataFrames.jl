@@ -21,8 +21,8 @@ module TestIteration
     @test size(eachcol(df)) == (size(df, 2),)
     @test length(eachcol(df)) == size(df, 2)
     @test eachcol(df)[1] == df[:, 1]
-    @test collect(eachcol(df)) isa Vector{Tuple{Symbol, Any}}
-    @test eltype(eachcol(df)) == Tuple{Symbol, Any}
+    @test collect(eachcol(df)) isa Vector{Tuple{Symbol, AbstractVector}}
+    @test eltype(eachcol(df)) == Tuple{Symbol, AbstractVector}
     for col in eachcol(df)
         @test isa(col, Tuple{Symbol, AbstractVector})
     end
