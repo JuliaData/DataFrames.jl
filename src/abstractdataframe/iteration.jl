@@ -7,14 +7,23 @@
 # TODO: Reconsider/redesign eachrow -- ~100% overhead
 
 # Iteration by rows
+"""
+    DFRowIterator{<:AbstractDataFrame}
+
+Iterator over rows of an `AbstractDataFrame`.
+Each returned value is represented as a `DataFrameRow`.
+
+A value of this type is returned by `eachrow` function.
+"""
 struct DFRowIterator{T <: AbstractDataFrame}
     df::T
 end
-"""
-    eachrow(df) => DataFrames.DFRowIterator
 
-Iterate a DataFrame row by row, with each row represented as a `DataFrameRow`,
-which is a view that acts like a one-row DataFrame.
+"""
+    eachrow(::AbstractDataFrame)
+
+Return `DFRowIterator` that iterates an `AbstractDataFrame` row by row,
+with each row represented as a `DataFrameRow`.
 """
 eachrow(df::AbstractDataFrame) = DFRowIterator(df)
 
@@ -29,16 +38,31 @@ Base.getindex(itr::DFRowIterator, i) = DataFrameRow(itr.df, i)
 Base.map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
 
 # Iteration by columns
+"""
+    DFColumnIterator{<:AbstractDataFrame}
+
+Iterator over columns of an `AbstractDataFrame`.
+Each returned value is a tuple consisting of column name and column data.
+
+A value of this type is returned by `eachcol` function.
+"""
 struct DFColumnIterator{T <: AbstractDataFrame}
     df::T
 end
+
+"""
+    eachcol(::AbstractDataFrame)
+
+Return `DFColumnIterator` that iterates an `AbstractDataFrame` column by column.
+Iteration returns a tuple consisting of column name and column data.
+"""
 eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
 
 function Base.iterate(itr::DFColumnIterator, j=1)
     j > size(itr.df, 2) && return nothing
     return ((_names(itr.df)[j], itr.df[j]), j + 1)
 end
-Base.eltype(::DFColumnIterator) = Tuple{Symbol, Any}
+Base.eltype(::DFColumnIterator) = Tuple{Symbol, AbstractVector}
 Base.size(itr::DFColumnIterator) = (size(itr.df, 2), )
 Base.length(itr::DFColumnIterator) = size(itr.df, 2)
 Base.getindex(itr::DFColumnIterator, j) = itr.df[j]

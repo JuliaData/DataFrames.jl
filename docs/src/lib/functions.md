@@ -34,6 +34,7 @@ disallowmissing!
 dropmissing
 dropmissing!
 eachrow
+eachcol
 eltypes
 filter
 filter!
