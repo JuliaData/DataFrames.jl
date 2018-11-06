@@ -55,6 +55,17 @@ end
 
 Return `DFColumnIterator` that iterates an `AbstractDataFrame` column by column.
 Iteration returns a tuple consisting of column name and column data.
+
+`DFColumnIterator` has a custom implementation of the `map` function which
+returns a `DataFrame` and assumes that a function argument passed do
+the `map` function accepts only column data.
+
+**Examples**
+
+```julia
+df = DataFrame(x=1:4, y=11:14)
+map(sum, eachcol(df)) == DataFrame(x=10, y=50)
+```
 """
 eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
 
