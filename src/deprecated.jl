@@ -1729,4 +1729,14 @@ function row_group_slots(df::SubDataFrame,
     row_group_slots(ntuple(i -> view(parent(df)[i], rows(df)), ncol(df)), rhashes, missings, groups, skipmissing)
 end
 
+function hashrows(df::SubDataFrame, skipmissing::Bool)
+    rhashes = zeros(UInt, nrow(df))
+    missings = fill(false, skipmissing ? nrow(df) : 0)
+    cols = columns(df)
+    for i in 1:ncol(df)
+        hashrows_col!(rhashes, missings, view(parent(df)[i], rows(df)), i == 1)
+    end
+    return (rhashes, missings)
+end
+
 # TODO: END:   Deprecations to be removed after getindex deprecation period finishes
