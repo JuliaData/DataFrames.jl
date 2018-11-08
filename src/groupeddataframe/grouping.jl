@@ -161,10 +161,10 @@ end
 #
 
 # map() sweeps along groups
-function Base.map(f::Function, gd::GroupedDataFrame)
+function Base.map(f::Union{Function, Type}, gd::GroupedDataFrame)
     GroupApplied(gd, [wrap(f(df)) for df in gd])
 end
-function Base.map(f::Function, ga::GroupApplied)
+function Base.map(f::Union{Function, Type}, ga::GroupApplied)
     GroupApplied(ga.gd, [wrap(f(df)) for df in ga.vals])
 end
 

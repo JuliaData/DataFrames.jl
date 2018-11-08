@@ -28,7 +28,9 @@ module TestIteration
     end
 
     @test map(x -> minimum(convert(Array, x)), eachrow(df)) == Any[1,2]
+    @test map(Vector, eachrow(df)) == [[1, 2], [2, 3]]
     @test map(minimum, eachcol(df)) == DataFrame(A = [1], B = [2])
+    @test eltypes(map(Vector{Float64}, eachcol(df))) == [Float64, Float64]
 
     row = DataFrameRow(df, 1)
 
