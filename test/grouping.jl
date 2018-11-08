@@ -87,7 +87,9 @@ module TestGrouping
     end
 
     cols = [:a, :b]
-    f(df) = DataFrame(cmax = maximum(df[:c]))
+    f(df) = DataFrame(cmax = maximum(df[:, :c]))
+    #TODO: enable line below after getindex deprecation
+    # f(df) = DataFrame(cmax = maximum(df[:c]))
 
     sdf = unique(df[cols])
 
@@ -99,7 +101,9 @@ module TestGrouping
     sbdf = by(df, cols, f, sort=true)
     @test sbdf[cols] == sort(sdf)
 
-    byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
+    byf = by(df, :a, df -> DataFrame(bsum = sum(df[:, :b])))
+    #TODO: enable line below after getindex deprecation
+    # byf = by(df, :a, df -> DataFrame(bsum = sum(df[:b])))
 
     # groupby() without groups sorting
     gd = groupby(df, cols)

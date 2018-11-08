@@ -214,7 +214,7 @@ module TestShow
     str2 = String(take!(io.io))
     @test str1 == str2
 
-    subdf = view(df, [2, 3])
+    subdf = view(df, [2, 3], :)
     io = IOBuffer()
     show(io, subdf, allrows=true, allcols=false)
     str = String(take!(io))

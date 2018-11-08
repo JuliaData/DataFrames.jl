@@ -16,7 +16,7 @@ module TestJoin
     right = outer[Bool[!ismissing(x) for x in outer[:Job]], [:ID, :Name, :Job]]
     left = outer[Bool[!ismissing(x) for x in outer[:Name]], :]
     inner = left[Bool[!ismissing(x) for x in left[:Job]], :]
-    semi = unique(inner[:, [:ID, :Name]])
+    semi = unique(inner[[:ID, :Name]])
     anti = left[Bool[ismissing(x) for x in left[:Job]], [:ID, :Name]]
     
     @testset "join types" begin

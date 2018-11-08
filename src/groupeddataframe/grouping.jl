@@ -161,10 +161,10 @@ end
 #
 
 # map() sweeps along groups
-function Base.map(f::Function, gd::GroupedDataFrame)
+function Base.map(f::Union{Function, Type}, gd::GroupedDataFrame)
     GroupApplied(gd, [wrap(f(df)) for df in gd])
 end
-function Base.map(f::Function, ga::GroupApplied)
+function Base.map(f::Union{Function, Type}, ga::GroupApplied)
     GroupApplied(ga.gd, [wrap(f(df)) for df in ga.vals])
 end
 
@@ -247,7 +247,7 @@ colwise(sum, groupby(df, :a))
 """
 colwise(f, d::AbstractDataFrame) = [f(d[i]) for i in 1:ncol(d)]
 
-# apply several functions to each column in a DataFrame
+# apply several functions to each column in a data frame
 colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for f in fns, i in 1:ncol(d)]
 colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
 

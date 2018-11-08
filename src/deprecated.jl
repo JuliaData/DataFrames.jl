@@ -1387,3 +1387,356 @@ import Base: delete!, insert!, merge!
 
 import Base: setindex!
 @deprecate setindex!(df::DataFrame, x::Nothing, col_ind::Int) deletecols!(df, col_ind)
+
+# TODO: START: Deprecations to be removed after getindex deprecation period finishes
+
+function Base.iterate(itr::Cols{SubDataFrame}, st=1)
+    st > length(itr.df) && return nothing
+    # after deprecation we will return a view, now we materialize a vector
+    return (itr.df[:, st], st + 1)
+end
+
+# after deprecation we will return a view, now we materialize a vector
+Base.get(df::SubDataFrame, key::Any, default::Any) = haskey(df, key) ? df[:, key] : default
+
+function completecases(df::SubDataFrame)
+    res = trues(size(df, 1))
+    for i in 1:size(df, 2)
+        _nonmissing!(res, view(parent(df)[i], rows(df)))
+    end
+    res
+end
+
+function completecases(df::SubDataFrame, col::Union{Integer, Symbol})
+    res = trues(size(df, 1))
+    _nonmissing!(res, view(parent(df)[col], rows(df)))
+    res
+end
+
+completecases(df::SubDataFrame, cols::AbstractVector) =
+    completecases(SubDataFrame(parent(df)[cols], rows(df)))
+
+nonunique(df::SubDataFrame, cols::Union{Real, Symbol}) =
+    nonunique(view(parent(df)[cos], rows(df)))
+nonunique(df::SubDataFrame, cols::Any) =
+    nonunique(SubDataFrame(parent(df)[cols], rows(df)))
+
+function Base.hash(df::SubDataFrame, h::UInt)
+    h += hashdf_seed
+    h += hash(size(df))
+    for i in 1:size(df, 2)
+        h = hash(view(parent(df)[i], rows(df)), h)
+    end
+    return h
+end
+
+function Base.iterate(itr::DFColumnIterator{<:SubDataFrame}, j=1)
+    j > size(itr.df, 2) && return nothing
+    return ((_names(itr.df)[j], itr.df[:, j]), j + 1)
+end
+
+Base.getindex(itr::DFColumnIterator{<:SubDataFrame}, j) = itr.df[:, j]
+
+function showrowindices(io::IO,
+                        df::SubDataFrame,
+                        rowindices::AbstractVector{Int},
+                        maxwidths::Vector{Int},
+                        leftcol::Int,
+                        rightcol::Int) # -> Void
+    rowmaxwidth = maxwidths[end]
+
+    for i in rowindices
+        # Print row ID
+        @printf io "│ %d" i
+        padding = rowmaxwidth - ndigits(i)
+        for _ in 1:padding
+            write(io, ' ')
+        end
+        print(io, " │ ")
+        # Print DataFrame entry
+        for j in leftcol:rightcol
+            strlen = 0
+            if isassigned(view(parent(df)[j], rows(df)), i)
+                s = df[i, j]
+                strlen = ourstrwidth(s)
+                if ismissing(s)
+                    printstyled(io, s, color=:light_black)
+                elseif s === nothing
+                    strlen = 0
+                else
+                    ourshowcompact(io, s)
+                end
+            else
+                strlen = ourstrwidth(Base.undef_ref_str)
+                ourshowcompact(io, Base.undef_ref_str)
+            end
+            padding = maxwidths[j] - strlen
+            for _ in 1:padding
+                write(io, ' ')
+            end
+            if j == rightcol
+                if i == rowindices[end]
+                    print(io, " │")
+                else
+                    print(io, " │\n")
+                end
+            else
+                print(io, " │ ")
+            end
+        end
+    end
+    return
+end
+
+function showrows(io::IO,
+                  df::SubDataFrame,
+                  rowindices1::AbstractVector{Int},
+                  rowindices2::AbstractVector{Int},
+                  maxwidths::Vector{Int},
+                  splitcols::Bool = false,
+                  allcols::Bool = false,
+                  rowlabel::Symbol = :Row,
+                  displaysummary::Bool = true) # -> Void
+    ncols = size(df, 2)
+
+    if isempty(rowindices1)
+        if displaysummary
+            println(io, summary(df))
+        end
+        return
+    end
+
+    rowmaxwidth = maxwidths[ncols + 1]
+    chunkbounds = getchunkbounds(maxwidths, splitcols, displaysize(io)[2])
+    nchunks = allcols ? length(chunkbounds) - 1 : min(length(chunkbounds) - 1, 1)
+
+    header = displaysummary ? summary(df) : ""
+    if !allcols && length(chunkbounds) > 2
+        header *= ". Omitted printing of $(chunkbounds[end] - chunkbounds[2]) columns"
+    end
+    println(io, header)
+
+    for chunkindex in 1:nchunks
+        leftcol = chunkbounds[chunkindex] + 1
+        rightcol = chunkbounds[chunkindex + 1]
+
+        # Print column names
+        @printf io "│ %s" rowlabel
+        padding = rowmaxwidth - ourstrwidth(rowlabel)
+        for itr in 1:padding
+            write(io, ' ')
+        end
+        print(io, " │ ")
+        for j in leftcol:rightcol
+            s = _names(df)[j]
+            ourshowcompact(io, s)
+            padding = maxwidths[j] - ourstrwidth(s)
+            for itr in 1:padding
+                write(io, ' ')
+            end
+            if j == rightcol
+                print(io, " │\n")
+            else
+                print(io, " │ ")
+            end
+        end
+
+        # Print column types
+        print(io, "│ ")
+        padding = rowmaxwidth
+        for itr in 1:padding
+            write(io, ' ')
+        end
+        print(io, " │ ")
+        for j in leftcol:rightcol
+            s = compacttype(eltype(parent(df)[j]), maxwidths[j])
+            printstyled(io, s, color=:light_black)
+            padding = maxwidths[j] - ourstrwidth(s)
+            for itr in 1:padding
+                write(io, ' ')
+            end
+            if j == rightcol
+                print(io, " │\n")
+            else
+                print(io, " │ ")
+            end
+        end
+
+        # Print table bounding line
+        write(io, '├')
+        for itr in 1:(rowmaxwidth + 2)
+            write(io, '─')
+        end
+        write(io, '┼')
+        for j in leftcol:rightcol
+            for itr in 1:(maxwidths[j] + 2)
+                write(io, '─')
+            end
+            if j < rightcol
+                write(io, '┼')
+            else
+                write(io, '┤')
+            end
+        end
+        write(io, '\n')
+
+        # Print main table body, potentially in two abbreviated sections
+        showrowindices(io,
+                       df,
+                       rowindices1,
+                       maxwidths,
+                       leftcol,
+                       rightcol)
+
+        if !isempty(rowindices2)
+            print(io, "\n⋮\n")
+            showrowindices(io,
+                           df,
+                           rowindices2,
+                           maxwidths,
+                           leftcol,
+                           rightcol)
+        end
+
+        # Print newlines to separate chunks
+        if chunkindex < nchunks
+            print(io, "\n\n")
+        end
+    end
+
+    return
+end
+
+function hcat!(df1::DataFrame, df2::SubDataFrame; makeunique::Bool=false)
+    u = add_names(index(df1), index(df2), makeunique=makeunique)
+    for i in 1:length(u)
+        # after deprecation period of getindex we will store a view here
+        df1[u[i]] = df2[:, i]
+    end
+    return df1
+end
+
+function Base.append!(df1::DataFrame, df2::SubDataFrame)
+    _names(df1) == _names(df2) || error("Column names do not match")
+    nrows, ncols = size(df1)
+    try
+        for j in 1:ncols
+            append!(df1[j], view(parent(df2)[j], rows(df2)))
+        end
+    catch err
+        # Undo changes in case of error
+        for j in 1:ncols
+            resize!(df1[j], nrows)
+        end
+        rethrow(err)
+    end
+    return df1
+end
+
+function groupby(df::SubDataFrame, cols::Vector;
+                 sort::Bool = false, skipmissing::Bool = false)
+    sdf = SubDataFrame(parent(df)[cols], rows(df))
+    df_groups = group_rows(sdf, skipmissing)
+    # sort the groups
+    if sort
+        group_perm = sortperm(view(sdf, df_groups.rperm[df_groups.starts], :))
+        permute!(df_groups.starts, group_perm)
+        Base.permute!!(df_groups.stops, group_perm)
+    end
+    GroupedDataFrame(df, cols, df_groups.rperm,
+                     df_groups.starts, df_groups.stops)
+end
+
+function _aggregate(d::SubDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false) where T<:Function
+    res = DataFrame(AbstractVector[vcat(f(view(parent(d)[i], rows(d)))) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
+    sort && sort!(res, headers)
+    res
+end
+
+function Base.:(==)(df1::SubDataFrame, df2::AbstractDataFrame)
+    size(df1, 2) == size(df2, 2) || return false
+    isequal(index(df1), index(df2)) || return false
+    eq = true
+    for idx in 1:size(df1, 2)
+        coleq = view(parent(df1)[idx], rows(df1)) == df2[idx]
+        # coleq could be missing
+        !isequal(coleq, false) || return false
+        eq &= coleq
+    end
+    return eq
+end
+
+function Base.isequal(df1::SubDataFrame, df2::AbstractDataFrame)
+    size(df1, 2) == size(df2, 2) || return false
+    isequal(index(df1), index(df2)) || return false
+    for idx in 1:size(df1, 2)
+        isequal(view(parent(df1)[idx], rows(df1)), df2[idx]) || return false
+    end
+    return true
+end
+
+function Base.:(==)(df1::AbstractDataFrame, df2::SubDataFrame)
+    size(df1, 2) == size(df2, 2) || return false
+    isequal(index(df1), index(df2)) || return false
+    eq = true
+    for idx in 1:size(df1, 2)
+        coleq = df1[idx] == view(parent(df2)[idx], rows(df2))
+        # coleq could be missing
+        !isequal(coleq, false) || return false
+        eq &= coleq
+    end
+    return eq
+end
+
+function Base.isequal(df1::AbstractDataFrame, df2::SubDataFrame)
+    size(df1, 2) == size(df2, 2) || return false
+    isequal(index(df1), index(df2)) || return false
+    for idx in 1:size(df1, 2)
+        isequal(df1[idx], view(parent(df2)[idx], rows(df2))) || return false
+    end
+    return true
+end
+
+function Base.:(==)(df1::SubDataFrame, df2::SubDataFrame)
+    size(df1, 2) == size(df2, 2) || return false
+    isequal(index(df1), index(df2)) || return false
+    eq = true
+    for idx in 1:size(df1, 2)
+        coleq = view(parent(df1)[idx], rows(df1)) == view(parent(df2)[idx], rows(df2))
+        # coleq could be missing
+        !isequal(coleq, false) || return false
+        eq &= coleq
+    end
+    return eq
+end
+
+function Base.isequal(df1::SubDataFrame, df2::SubDataFrame)
+    size(df1, 2) == size(df2, 2) || return false
+    isequal(index(df1), index(df2)) || return false
+    for idx in 1:size(df1, 2)
+        isequal(view(parent(df1)[idx], rows(df1)), view(parent(df2)[idx], rows(df2))) || return false
+    end
+    return true
+end
+
+colwise(f, d::SubDataFrame) = [f(d[:, i]) for i in 1:ncol(d)]
+colwise(fns::Union{AbstractVector, Tuple}, d::SubDataFrame) = [f(d[:, i]) for f in fns, i in 1:ncol(d)]
+
+function row_group_slots(df::SubDataFrame,
+                         groups::Union{Vector{Int}, Nothing} = nothing,
+                         skipmissing::Bool = false)
+    rhashes, missings = hashrows(df, skipmissing)
+    row_group_slots(ntuple(i -> view(parent(df)[i], rows(df)), ncol(df)), rhashes, missings, groups, skipmissing)
+end
+
+function hashrows(df::SubDataFrame, skipmissing::Bool)
+    rhashes = zeros(UInt, nrow(df))
+    missings = fill(false, skipmissing ? nrow(df) : 0)
+    cols = columns(df)
+    for i in 1:ncol(df)
+        hashrows_col!(rhashes, missings, view(parent(df)[i], rows(df)), i == 1)
+    end
+    return (rhashes, missings)
+end
+
+# TODO: END:   Deprecations to be removed after getindex deprecation period finishes
