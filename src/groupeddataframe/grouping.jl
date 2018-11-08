@@ -133,7 +133,7 @@ wrap(x::AbstractVector) = DataFrame(x1 = x)
 wrap(x::Any) = (x1 = x,)
 
 """
-    map(f::Function, gd::GroupedDataFrame)
+    map(f::Union{Function, Type}, gd::GroupedDataFrame)
 
 Apply a function to each group of rows and return a `GroupedDataFrame`.
 
