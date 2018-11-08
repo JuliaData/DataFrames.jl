@@ -13,7 +13,7 @@
 Iterator over rows of an `AbstractDataFrame`.
 Each returned value is represented as a `DataFrameRow`.
 
-A value of this type is returned by `eachrow` function.
+A value of this type is returned by the [`eachrow`](@link) function.
 """
 struct DFRowIterator{T <: AbstractDataFrame}
     df::T
