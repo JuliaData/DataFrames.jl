@@ -293,7 +293,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Types",
     "title": "Type hierarchy design",
     "category": "section",
-    "text": "AbstractDataFrame is an abstract type that provides an interface for data frame types. It is not intended as a fully generic interface for working with tabular data, which is the role of interfaces defined by Tables.jl instead.DataFrame is the most fundamental subtype of AbstractDataFrame, which stores a set of columns as AbstractVector objects.SubDataFrame is an AbstractDataFrame subtype representing a view into a DataFrame. It stores only a reference to the parent DataFrame and information about which rows from the parent are selected. Typically it is created using the view function or is returned by indexing into a GroupedDataFrame object.GroupedDataFrame is a type that stores the result of a  grouping operation performed on an AbstractDataFrame. It is intended to be created as a result of a call to the groupby function.DataFrameRow is a view into a single row of an AbstractDataFrame. It stores only a reference to a parent AbstractDataFrame and information about which row from the parent is selected. The DataFrameRow type supports iteration over columns of the row and is similar in functionality to the NamedTuple type, but allows for modification of data stored in the parent AbstractDataFrame and reflects changes done to the parent after the creation of the view. Typically objects of the DataFrameRow type are encountered when returned by the eachrow function. In the future accessing a single row of a data frame via getindex or view will return a DataFrameRow."
+    "text": "AbstractDataFrame is an abstract type that provides an interface for data frame types. It is not intended as a fully generic interface for working with tabular data, which is the role of interfaces defined by Tables.jl instead.DataFrame is the most fundamental subtype of AbstractDataFrame, which stores a set of columns as AbstractVector objects.SubDataFrame is an AbstractDataFrame subtype representing a view into a DataFrame. It stores only a reference to the parent DataFrame and information about which rows from the parent are selected. Typically it is created using the view function or is returned by indexing into a GroupedDataFrame object.GroupedDataFrame is a type that stores the result of a  grouping operation performed on an AbstractDataFrame. It is intended to be created as a result of a call to the groupby function.DataFrameRow is a view into a single row of an AbstractDataFrame. It stores only a reference to a parent AbstractDataFrame and information about which row from the parent is selected. The DataFrameRow type supports iteration over columns of the row and is similar in functionality to the NamedTuple type, but allows for modification of data stored in the parent AbstractDataFrame and reflects changes done to the parent after the creation of the view. Typically objects of the DataFrameRow type are encountered when returned by the eachrow function. In the future accessing a single row of a data frame via getindex or view will return a DataFrameRow.Additionally the eachrow and eachcol functions return values of the DFRowIterator and DFColumnIterator types respectively. Those types are not exported and should not be constructed directly. They respectively serve as iterators over rows and columns of an AbstractDataFrame."
 },
 
 {
@@ -337,11 +337,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "lib/types.html#DataFrames.DFRowIterator",
+    "page": "Types",
+    "title": "DataFrames.DFRowIterator",
+    "category": "type",
+    "text": "DFRowIterator{<:AbstractDataFrame}\n\nIterator over rows of an AbstractDataFrame, with each row represented as a DataFrameRow.\n\nA value of this type is returned by the eachrow function.\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/types.html#DataFrames.DFColumnIterator",
+    "page": "Types",
+    "title": "DataFrames.DFColumnIterator",
+    "category": "type",
+    "text": "DFColumnIterator{<:AbstractDataFrame}\n\nIterator over columns of an AbstractDataFrame. Each returned value is a tuple consisting of column name and column vector.\n\nA value of this type is returned by the eachcol function.\n\n\n\n\n\n"
+},
+
+{
     "location": "lib/types.html#Types-specification-1",
     "page": "Types",
     "title": "Types specification",
     "category": "section",
-    "text": "AbstractDataFrame\nDataFrame\nDataFrameRow\nGroupedDataFrame\nSubDataFrame"
+    "text": "AbstractDataFrame\nDataFrame\nDataFrameRow\nGroupedDataFrame\nSubDataFrame\nDFRowIterator\nDFColumnIterator"
 },
 
 {
@@ -517,7 +533,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "DataFrames.eachrow",
     "category": "function",
-    "text": "eachrow(df) => DataFrames.DFRowIterator\n\nIterate a DataFrame row by row, with each row represented as a DataFrameRow, which is a view that acts like a one-row DataFrame.\n\n\n\n\n\n"
+    "text": "eachrow(df::AbstractDataFrame)\n\nReturn a DFRowIterator that iterates an AbstractDataFrame row by row, with each row represented as a DataFrameRow.\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.eachcol",
+    "page": "Functions",
+    "title": "DataFrames.eachcol",
+    "category": "function",
+    "text": "eachcol(df::AbstractDataFrame)\n\nReturn a DFColumnIterator that iterates an AbstractDataFrame column by column. Iteration returns a tuple consisting of column name and column vector.\n\nDFColumnIterator has a custom implementation of the map function which returns a DataFrame and assumes that a function argument passed do the map function accepts takes only a column vector.\n\nExamples\n\njulia> df = DataFrame(x=1:4, y=11:14)\n4×2 DataFrame\n│ Row │ x     │ y     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 11    │\n│ 2   │ 2     │ 12    │\n│ 3   │ 3     │ 13    │\n│ 4   │ 4     │ 14    │\n\njulia> map(sum, eachcol(df))\n1×2 DataFrame\n│ Row │ x     │ y     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 10    │ 50    │\n\n\n\n\n\n"
 },
 
 {
@@ -653,7 +677,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Basics",
     "category": "section",
-    "text": "allowmissing!\ncompletecases\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neltypes\nfilter\nfilter!\nhead\ninsertcols!\nnames!\nnonunique\nrename!\nrename\nrepeat\nshow\nsort\nsort!\ntail\nunique!\npermutecols!"
+    "text": "allowmissing!\ncompletecases\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\nhead\ninsertcols!\nnames!\nnonunique\nrename!\nrename\nrepeat\nshow\nsort\nsort!\ntail\nunique!\npermutecols!"
 },
 
 {
