@@ -44,7 +44,7 @@ Base.map(f::Function, dfri::DFRowIterator) = [f(row) for row in dfri]
 Iterator over columns of an `AbstractDataFrame`.
 Each returned value is a tuple consisting of column name and column vector.
 
-A value of this type is returned by `eachcol` function.
+A value of this type is returned by the [`eachcol`](@link) function.
 """
 struct DFColumnIterator{T <: AbstractDataFrame}
     df::T
