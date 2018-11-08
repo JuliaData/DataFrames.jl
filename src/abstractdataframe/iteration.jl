@@ -20,7 +20,7 @@ struct DFRowIterator{T <: AbstractDataFrame}
 end
 
 """
-    eachrow(::AbstractDataFrame)
+    eachrow(df::AbstractDataFrame)
 
 Return `DFRowIterator` that iterates an `AbstractDataFrame` row by row,
 with each row represented as a `DataFrameRow`.
