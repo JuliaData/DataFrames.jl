@@ -10,8 +10,8 @@
 """
     DFRowIterator{<:AbstractDataFrame}
 
-Iterator over rows of an `AbstractDataFrame`.
-Each returned value is represented as a `DataFrameRow`.
+Iterator over rows of an `AbstractDataFrame`,
+with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@link) function.
 """
@@ -61,9 +61,19 @@ the `map` function accepts takes only a column vector.
 
 **Examples**
 
-```julia
-df = DataFrame(x=1:4, y=11:14)
-map(sum, eachcol(df)) == DataFrame(x=10, y=50)
+```jldoctest
+julia> df = DataFrame(x=1:4, y=11:14)
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 11    │
+│ 2   │ 2     │ 12    │
+│ 3   │ 3     │ 13    │
+│ 4   │ 4     │ 14    │
+
+julia> map(sum, eachcol(df)) == DataFrame(x=10, y=50)
+true
 ```
 """
 eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
