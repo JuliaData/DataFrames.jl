@@ -51,7 +51,7 @@ struct DFColumnIterator{T <: AbstractDataFrame}
 end
 
 """
-    eachcol(::AbstractDataFrame)
+    eachcol(df::AbstractDataFrame)
 
 Return `DFColumnIterator` that iterates an `AbstractDataFrame` column by column.
 Iteration returns a tuple consisting of column name and column data.
