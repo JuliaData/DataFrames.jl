@@ -8,7 +8,7 @@ module DataFrames
 
 using Reexport, StatsBase, SortingAlgorithms, Compat, Statistics, Unicode, Printf
 @reexport using CategoricalArrays, Missings
-using Base.Sort, Base.Order
+using Base.Sort, Base.Order, Base.Iterators
 
 ##############################################################################
 ##
@@ -73,8 +73,8 @@ include("other/index.jl")
 include("abstractdataframe/abstractdataframe.jl")
 include("dataframe/dataframe.jl")
 include("subdataframe/subdataframe.jl")
-include("groupeddataframe/grouping.jl")
 include("dataframerow/dataframerow.jl")
+include("groupeddataframe/grouping.jl")
 include("dataframerow/utils.jl")
 
 include("abstractdataframe/iteration.jl")
