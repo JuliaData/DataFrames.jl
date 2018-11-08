@@ -58,7 +58,7 @@ Iteration returns a tuple consisting of column name and column vector.
 
 `DFColumnIterator` has a custom implementation of the `map` function which
 returns a `DataFrame` and assumes that a function argument passed do
-the `map` function accepts only column data.
+the `map` function accepts takes only a column vector.
 
 **Examples**
 
