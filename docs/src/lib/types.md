@@ -33,9 +33,19 @@ and reflects changes done to the parent after the creation of the view.
 Typically objects of the `DataFrameRow` type are encountered when returned by the `eachrow` function.
 In the future accessing a single row of a data frame via `getindex` or `view` will return a `DataFrameRow`.
 
-Additionally the `eachrow` and `eachcol` functions return values of the `DFRowIterator` and `DFColumnIterator` types respectively.
-Those types are not exported and should not be constructed directly.
-They respectively serve as iterators over rows and columns of an `AbstractDataFrame`.
+Additionally the `eachrow` function returns value of the `DFRowIterator` type, which
+serves as an iterator over rows and columns of an `AbstractDataFrame` returning `DataFrameRow` objects.
+
+Similarly `eachcol` and `columns` functions return value `DFColumnIterator` type, which
+serves as iterator over columns of an `AbstractDataFrame`.
+The difference between the return value of `eachcol` and `columns` is the following:
+
+* The `eachcol` function returns value of the `DFColumnIterator{<:AbstractDataFrame, true}` type which is an
+  iterator returning a tuple containing column name and column value.
+* The `columns` function returns value of the `DFColumnIterator{<:AbstractDataFrame, false}` type which is an
+  iterator returning a column value only.
+
+The `DFRowIterator` and `DFColumnIterator` types are not exported and should not be constructed directly.
 
 ## Types specification
 

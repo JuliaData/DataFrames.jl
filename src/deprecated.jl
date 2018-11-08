@@ -1744,3 +1744,5 @@ end
 
 import Base: map
 @deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
+@deprecate map(f::Union{Function,Type}, dfc::DFColumnIterator{<:AbstractDataFrame, true}) DataFrame(map(f, columns(dfc.df), names(dfc.df))
+

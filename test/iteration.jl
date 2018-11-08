@@ -1,10 +1,6 @@
 module TestIteration
     using Test, DataFrames
 
-    dv = [1, 2, missing]
-    dm = Union{Int, Missing}[1 2; 3 4]
-    df = Array{Union{Int, Missing}}(zeros(2, 2, 2))
-
     df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
 
     @test size(eachrow(df)) == (size(df, 1),)
@@ -19,18 +15,28 @@ module TestIteration
     end
 
     @test size(eachcol(df)) == (size(df, 2),)
+    @test size(columns(df)) == (size(df, 2),)
     @test length(eachcol(df)) == size(df, 2)
-    @test eachcol(df)[1] == df[1]
+    @test length(columns(df)) == size(df, 2)
+    @test eachcol(df)[1] == df[1] # this is deprecated
+    @test columns(df)[1] == df[1]
     @test collect(eachcol(df)) isa Vector{Tuple{Symbol, AbstractVector}}
+    @test collect(columns(df)) isa Vector{AbstractVector}
     @test eltype(eachcol(df)) == Tuple{Symbol, AbstractVector}
+    @test eltype(columns(df)) == AbstractVector
     for col in eachcol(df)
         @test isa(col, Tuple{Symbol, AbstractVector})
+    end
+    for col in columns(df)
+        @test isa(col, AbstractVector)
     end
 
     @test map(x -> minimum(convert(Array, x)), eachrow(df)) == Any[1,2]
     @test map(Vector, eachrow(df)) == [[1, 2], [2, 3]]
-    @test map(minimum, eachcol(df)) == DataFrame(A = [1], B = [2])
-    @test eltypes(map(Vector{Float64}, eachcol(df))) == [Float64, Float64]
+    @test map(minimum, eachcol(df)) == DataFrame(A = [1], B = [2]) # this is deprecated
+    @test map(minimum, columns(df)) == [1, 2]
+    @test eltypes(map(Vector{Float64}, eachcol(df))) == [Float64, Float64] # this is deprecated
+    @test eltype(map(Vector{Float64}, columns(df))) == Vector{Float64}
 
     row = DataFrameRow(df, 1)
 

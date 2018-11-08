@@ -81,22 +81,6 @@ abstract type AbstractDataFrame end
 ##
 ##############################################################################
 
-struct Cols{T <: AbstractDataFrame} <: AbstractVector{AbstractVector}
-    df::T
-end
-function Base.iterate(itr::Cols, st=1)
-    st > length(itr.df) && return nothing
-    return (itr.df[st], st + 1)
-end
-Base.length(itr::Cols) = length(itr.df)
-Base.size(itr::Cols, ix) = ix==1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
-Base.size(itr::Cols) = (length(itr.df),)
-Base.IndexStyle(::Type{<:Cols}) = IndexLinear()
-Base.getindex(itr::Cols, inds...) = getindex(itr.df, inds...)
-
-# N.B. where stored as a vector, 'columns(x) = x.vector' is a bit cheaper
-columns(df::T) where {T <: AbstractDataFrame} = Cols{T}(df)
-
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
