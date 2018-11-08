@@ -71,7 +71,7 @@ module TestDataFrameRow
     @test gd.ngroups == 0
 
     # grouping single row
-    gd = DataFrames.group_rows(df5[1,:])
+    gd = DataFrames.group_rows(df5[1:1,:])
     @test gd.ngroups == 1
 
     # getproperty, setproperty! and propertynames

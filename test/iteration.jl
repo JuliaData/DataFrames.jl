@@ -15,12 +15,12 @@ module TestIteration
         @test isa(row, DataFrameRow)
         @test (row[:B] - row[:A]) == 1
         # issue #683 (https://github.com/JuliaData/DataFrames.jl/pull/683)
-        @test collect(row) isa Vector{Pair{Symbol, Int}}
+        @test collect(pairs(row)) isa Vector{Pair{Symbol, Int}}
     end
 
     @test size(eachcol(df)) == (size(df, 2),)
     @test length(eachcol(df)) == size(df, 2)
-    @test eachcol(df)[1] == df[:, 1]
+    @test eachcol(df)[1] == df[1]
     @test collect(eachcol(df)) isa Vector{Tuple{Symbol, Any}}
     @test eltype(eachcol(df)) == Tuple{Symbol, Any}
     for col in eachcol(df)
@@ -42,15 +42,15 @@ module TestIteration
 
     df = DataFrame(A = Vector{Union{Int, Missing}}(1:4), B = Union{String, Missing}["M", "F", "F", "M"])
 
-    s1 = view(df, 1:3)
+    s1 = view(df, 1:3, :)
     s1[2,:A] = 4
     @test df[2, :A] == 4
-    @test view(s1, 1:2) == view(df, 1:2)
+    @test view(s1, 1:2, :) == view(df, 1:2, :)
 
-    s2 = view(df, 1:2:3)
+    s2 = view(df, 1:2:3, :)
     s2[2, :B] = "M"
     @test df[3, :B] == "M"
-    @test view(s2, 1:1:2) == view(df, [1,3])
+    @test view(s2, 1:1:2, :) == view(df, [1,3], :)
 
     # @test_fail for x in df; end # Raises an error
 end
