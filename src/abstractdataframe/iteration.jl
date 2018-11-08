@@ -15,7 +15,7 @@ with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@link) function.
 """
-struct DFRowIterator{T <: AbstractDataFrame}
+struct DFRowIterator{T <: AbstractDataFrame} <: AbstractArray
     df::T
 end
 
@@ -46,7 +46,7 @@ then each returned value is a tuple consisting of column name and column vector.
 If `C` is `false` (a value returned by the [`columns`](@link) function)
 then each returned value is a column vector.
 """
-struct DFColumnIterator{T <: AbstractDataFrame, C}
+struct DFColumnIterator{T <: AbstractDataFrame, C} <: AbstractArray
     df::T
 end
 
