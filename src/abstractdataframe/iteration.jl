@@ -54,7 +54,7 @@ end
     eachcol(df::AbstractDataFrame)
 
 Return a `DFColumnIterator` that iterates an `AbstractDataFrame` column by column.
-Iteration returns a tuple consisting of column name and column data.
+Iteration returns a tuple consisting of column name and column vector.
 
 `DFColumnIterator` has a custom implementation of the `map` function which
 returns a `DataFrame` and assumes that a function argument passed do
