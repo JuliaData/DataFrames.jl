@@ -22,7 +22,7 @@ end
 """
     eachrow(df::AbstractDataFrame)
 
-Return `DFRowIterator` that iterates an `AbstractDataFrame` row by row,
+Return a `DFRowIterator` that iterates an `AbstractDataFrame` row by row,
 with each row represented as a `DataFrameRow`.
 """
 eachrow(df::AbstractDataFrame) = DFRowIterator(df)
