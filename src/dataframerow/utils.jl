@@ -73,9 +73,8 @@ end
 function hashrows(df::AbstractDataFrame, skipmissing::Bool)
     rhashes = zeros(UInt, nrow(df))
     missings = fill(false, skipmissing ? nrow(df) : 0)
-    cols = columns(df)
-    for i in 1:ncol(df)
-        hashrows_col!(rhashes, missings, cols[i], i == 1)
+    for (i, col) in enumerate(columns(df))
+        hashrows_col!(rhashes, missings, col, i == 1)
     end
     return (rhashes, missings)
 end

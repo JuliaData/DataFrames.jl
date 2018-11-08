@@ -10,7 +10,7 @@ import Base: @deprecate
 
 import Base: keys, values, insert!
 @deprecate keys(df::AbstractDataFrame) names(df)
-@deprecate values(df::AbstractDataFrame) DataFrames.columns(df)
+@deprecate values(df::AbstractDataFrame) columns(df)
 @deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[col] = df2[col], names(df2)); df)
 
 @deprecate pool categorical
