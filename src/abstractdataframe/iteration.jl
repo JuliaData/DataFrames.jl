@@ -72,8 +72,12 @@ julia> df = DataFrame(x=1:4, y=11:14)
 │ 3   │ 3     │ 13    │
 │ 4   │ 4     │ 14    │
 
-julia> map(sum, eachcol(df)) == DataFrame(x=10, y=50)
-true
+julia> map(sum, eachcol(df))
+1×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 10    │ 50    │
 ```
 """
 eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
