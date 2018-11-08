@@ -1390,12 +1390,6 @@ import Base: setindex!
 
 # TODO: START: Deprecations to be removed after getindex deprecation period finishes
 
-function Base.iterate(itr::Cols{SubDataFrame}, st=1)
-    st > length(itr.df) && return nothing
-    # after deprecation we will return a view, now we materialize a vector
-    return (itr.df[:, st], st + 1)
-end
-
 # after deprecation we will return a view, now we materialize a vector
 Base.get(df::SubDataFrame, key::Any, default::Any) = haskey(df, key) ? df[:, key] : default
 
@@ -1430,12 +1424,24 @@ function Base.hash(df::SubDataFrame, h::UInt)
     return h
 end
 
-function Base.iterate(itr::DFColumnIterator{<:SubDataFrame}, j=1)
+function Base.iterate(itr::DFColumnIterator{SubDataFrame, true}, j=1)
     j > size(itr.df, 2) && return nothing
     return ((_names(itr.df)[j], itr.df[:, j]), j + 1)
 end
 
-Base.getindex(itr::DFColumnIterator{<:SubDataFrame}, j) = itr.df[:, j]
+function Base.iterate(itr::DFColumnIterator{SubDataFrame,false}, st=1)
+    st > length(itr.df) && return nothing
+    # after deprecation we will return a view, now we materialize a vector
+    return (itr.df[:, st], st + 1)
+end
+
+function Base.getindex(itr::DFColumnIterator{SubDataFrame,true}, j)
+    depwarn("calling getindex on DFColumnIterator{SubDataFrame,true} " *
+            " object will return a tuple of column name and column value " *
+            "in the future.", :getindex)
+    itr.df[:, j]
+end
+Base.getindex(itr::DFColumnIterator{SubDataFrame,false}, j) = itr.df[:, j]
 
 function showrowindices(io::IO,
                         df::SubDataFrame,

@@ -128,4 +128,4 @@ function Base.iterate(itr::DFColumnIterator{<:AbstractDataFrame,false}, j=1)
     return (itr.df[j], j + 1)
 end
 Base.eltype(::DFColumnIterator{<:AbstractDataFrame,false}) = AbstractVector
-Base.getindex(itr::DFColumnIterator{<:AbstractDataFrame,true}, j) = itr.df[j]
+Base.getindex(itr::DFColumnIterator{<:AbstractDataFrame,false}, j) = itr.df[j]
