@@ -169,7 +169,7 @@ map(d -> sum(skipmissing(d[:c])), gd)
 `combine(f, gd)` returns a `DataFrame` rather than a `GroupedDataFrame`
 
 """
-function Base.map(f::Function, gd::GroupedDataFrame)
+function Base.map(f::Union{Function, Type}, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(wrap(f(gd[1])), f, gd)
         parent = hcat!(gd.parent[idx, gd.cols], valscat)
@@ -190,8 +190,7 @@ function Base.map(f::Function, gd::GroupedDataFrame)
         ends[end] = length(idx)
         return GroupedDataFrame(parent, gd.cols, collect(1:length(idx)), starts, ends)
     else
-        return GroupedDataFrame(similar(gd.parent[gd.cols], 0), gd.cols,
-                                Int[], Int[], Int[])
+        return GroupedDataFrame(parent, gd.cols, Int[], Int[], Int[])
     end
 end
 

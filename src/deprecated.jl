@@ -1633,8 +1633,9 @@ function Base.append!(df1::DataFrame, df2::SubDataFrame)
     return df1
 end
 
-function groupby(df::SubDataFrame, cols::Vector;
+function groupby(df::SubDataFrame, cols::AbstractVector;
                  sort::Bool = false, skipmissing::Bool = false)
+    intcols = index(df)[cols]
     sdf = SubDataFrame(parent(df)[cols], rows(df))
     df_groups = group_rows(sdf, skipmissing)
     # sort the groups
@@ -1643,7 +1644,7 @@ function groupby(df::SubDataFrame, cols::Vector;
         permute!(df_groups.starts, group_perm)
         Base.permute!!(df_groups.stops, group_perm)
     end
-    GroupedDataFrame(df, cols, df_groups.rperm,
+    GroupedDataFrame(df, intcols, df_groups.rperm,
                      df_groups.starts, df_groups.stops)
 end
 
