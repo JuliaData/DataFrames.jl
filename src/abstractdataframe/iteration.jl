@@ -114,8 +114,8 @@ Base.length(itr::DFColumnIterator) = size(itr.df, 2)
 Base.size(itr::DFColumnIterator) = (size(itr.df, 2),)
 Base.size(itr::DFColumnIterator, ix) =
     ix == 1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
-Base.firstindex(itr::DFRowIterator) = 1
-Base.lastindex(itr::DFRowIterator) = length(itr)
+Base.firstindex(itr::DFColumnIterator) = 1
+Base.lastindex(itr::DFColumnIterator) = length(itr)
 
 function Base.iterate(itr::DFColumnIterator{<:AbstractDataFrame,true}, j=1)
     j > size(itr.df, 2) && return nothing
