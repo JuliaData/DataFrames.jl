@@ -1,6 +1,6 @@
 module TestConstructors
     using Test, DataFrames
-    using DataFrames: Index, columns, index
+    using DataFrames: Index, rawcolumns, index
     const ≅ = isequal
 
     #
@@ -8,7 +8,7 @@ module TestConstructors
     #
     @testset "constructors" begin
         df = DataFrame()
-        @test columns(df) == Any[]
+        @test rawcolumns(df) == AbstractVector[]
         @test index(df) == Index()
 
         df = DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
