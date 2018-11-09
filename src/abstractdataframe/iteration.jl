@@ -31,8 +31,8 @@ Base.size(itr::DFRowIterator) = (size(itr.df, 1), )
 Base.size(itr::DFRowIterator, ix) =
     ix == 1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
 Base.length(itr::DFRowIterator) = size(itr.df, 1)
-Base.firstindex(itr:DFRowIterator) = 1
-Base.lastindex(itr:DFRowIterator) = length(itr)
+Base.firstindex(itr::DFRowIterator) = 1
+Base.lastindex(itr::DFRowIterator) = length(itr)
 
 function Base.iterate(itr::DFRowIterator, i=1)
     i > size(itr.df, 1) && return nothing
@@ -114,8 +114,8 @@ Base.length(itr::DFColumnIterator) = size(itr.df, 2)
 Base.size(itr::DFColumnIterator) = (size(itr.df, 2),)
 Base.size(itr::DFColumnIterator, ix) =
     ix == 1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
-Base.firstindex(itr:DFRowIterator) = 1
-Base.lastindex(itr:DFRowIterator) = length(itr)
+Base.firstindex(itr::DFRowIterator) = 1
+Base.lastindex(itr::DFRowIterator) = length(itr)
 
 function Base.iterate(itr::DFColumnIterator{<:AbstractDataFrame,true}, j=1)
     j > size(itr.df, 2) && return nothing
