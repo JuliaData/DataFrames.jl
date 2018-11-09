@@ -202,7 +202,7 @@ eltypes(df)
 ```
 
 """
-eltypes(df::AbstractDataFrame) = eltype.(columns(df))
+eltypes(df::AbstractDataFrame) = [eltype(col) for col in columns(df)]
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
