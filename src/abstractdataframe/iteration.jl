@@ -127,7 +127,7 @@ Base.eltype(::DFColumnIterator{<:AbstractDataFrame,true}) =
 
 function Base.getindex(itr::DFColumnIterator{<:AbstractDataFrame,true}, j)
     # TODO: change to the way getindex for false is defined below afted deprecation
-    depwarn("calling getindex on DFColumnIterator{<:AbstractDataFrame,true} " *
+    Base.depwarn("calling getindex on DFColumnIterator{<:AbstractDataFrame,true} " *
             " object will only accept integer indexing and will return " *
             "a tuple of column name and column value in the future.", :getindex)
     itr.df[j]
