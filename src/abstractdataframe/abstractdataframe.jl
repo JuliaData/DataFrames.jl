@@ -1081,7 +1081,8 @@ julia> repeat(df, inner = 2, outer = 3)
 ```
 """
 Base.repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1) =
-    map(x -> repeat(x, inner = inner, outer = outer), eachcol(df))
+    DataFrame(map(x -> repeat(x, inner = inner, outer = outer), columns(df)),
+              names(df))
 
 """
     repeat(df::AbstractDataFrame, count::Integer)
@@ -1111,7 +1112,7 @@ julia> repeat(df, 2)
 ```
 """
 Base.repeat(df::AbstractDataFrame, count::Integer) =
-    map(x -> repeat(x, count), eachcol(df))
+    DataFrame(map(x -> repeat(x, count), columns(df)), names(df))
 
 ##############################################################################
 ##

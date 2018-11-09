@@ -318,9 +318,13 @@ module TestGrouping
                        c = Vector{Union{Float64, Missing}}(randn(8)))
 
         cols = [:a, :b]
-        f(df) = DataFrame(cmax = maximum(df[:c]))
-        g(df) = (cmax = maximum(df[:c]),)
-        h(df) = maximum(df[:c])
+        f(df) = DataFrame(cmax = maximum(df[:, :c]))
+        g(df) = (cmax = maximum(df[:, :c]),)
+        h(df) = maximum(df[:, :c])
+        # TODO: change the above definitions to the ones below after deprecation
+        # f(df) = DataFrame(cmax = maximum(df[:c]))
+        # g(df) = (cmax = maximum(df[:c]),)
+        # h(df) = maximum(df[:c])
 
         res = unique(df[cols])
         res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])

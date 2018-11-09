@@ -1746,8 +1746,10 @@ function hashrows(df::SubDataFrame, skipmissing::Bool)
     return (rhashes, missings)
 end
 
+Base.getproperty(df::SubDataFrame, col_ind::Symbol) = getindex(df, :, col_ind)
+
 # TODO: END:   Deprecations to be removed after getindex deprecation period finishes
 
 import Base: map
 @deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
-@deprecate map(f::Union{Function,Type}, dfc::DFColumnIterator{<:AbstractDataFrame, true}) DataFrame(map(f, columns(dfc.df)), names(dfc.df))
+@deprecate map(f::Union{Function,Type}, dfc::DFColumnIterator{<:AbstractDataFrame, true}) DataFrame(Pair.(names(dfc.df), map(f, columns(dfc.df)))...)
