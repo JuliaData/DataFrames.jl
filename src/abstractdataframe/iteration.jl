@@ -126,9 +126,10 @@ Base.eltype(::DFColumnIterator{<:AbstractDataFrame,true}) =
     Tuple{Symbol, AbstractVector}
 
 function Base.getindex(itr::DFColumnIterator{<:AbstractDataFrame,true}, j)
+    # TODO: change to the way getindex for false is defined below afted deprecation
     depwarn("calling getindex on DFColumnIterator{<:AbstractDataFrame,true} " *
-            " object will return a tuple of column name and column value " *
-            "in the future.", :getindex)
+            " object will only accept integer indexing and will return " *
+            "a tuple of column name and column value in the future.", :getindex)
     itr.df[j]
 end
 
@@ -138,4 +139,7 @@ function Base.iterate(itr::DFColumnIterator{<:AbstractDataFrame,false}, j=1)
 end
 
 Base.eltype(::DFColumnIterator{<:AbstractDataFrame,false}) = AbstractVector
-Base.getindex(itr::DFColumnIterator{<:AbstractDataFrame,false}, j) = itr.df[j]
+Base.getindex(itr::DFColumnIterator{<:AbstractDataFrame,false}, j::Integer) =
+    itr.df[j]
+Base.getindex(itr::DFColumnIterator{<:AbstractDataFrame,false}, j::Bool) =
+    throw(ArgumentError("invalid index $j of type Bool"))

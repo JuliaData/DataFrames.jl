@@ -560,7 +560,7 @@ module TestDataFrame
                                 Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
                                 Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
         @test isa(udf[1], Vector{Int})
-        @test all(isa.(columns(udf)[2:end], Vector{Union{Int, Missing}}))
+        @test all(isa.(collect(columns(udf))[2:end], Vector{Union{Int, Missing}}))
         df = DataFrame([categorical(repeat(1:2, inner=4)),
                            categorical(repeat('a':'d', outer=2)), categorical(1:8)],
                        [:id, :variable, :value])
@@ -570,7 +570,7 @@ module TestDataFrame
                                 Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
                                 Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
         @test isa(udf[1], CategoricalVector{Int})
-        @test all(isa.(columns(udf)[2:end], CategoricalVector{Union{Int, Missing}}))
+        @test all(isa.(collect(columns(udf))[2:end], CategoricalVector{Union{Int, Missing}}))
     end
 
     @testset "duplicate entries in unstack warnings" begin
