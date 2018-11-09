@@ -1,6 +1,6 @@
 module TestDataFrame
     using Dates, DataFrames, LinearAlgebra, Statistics, Random, Test
-    using DataFrames: columns
+    using DataFrames: rawcolumns
     const ≅ = isequal
     const ≇ = !isequal
 
@@ -529,13 +529,13 @@ module TestDataFrame
     @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
               columns(categorical!(deepcopy(df), [:A,:B])))
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-                    columns(categorical!(deepcopy(df), [:A]))) == 1
+                    rawcolumns(categorical!(deepcopy(df), [:A]))) == 1
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-                    columns(categorical!(deepcopy(df), :A))) == 1
+                    rawcolumns(categorical!(deepcopy(df), :A))) == 1
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-                    columns(categorical!(deepcopy(df), [1]))) == 1
+                    rawcolumns(categorical!(deepcopy(df), [1]))) == 1
     @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-                    columns(categorical!(deepcopy(df), 1))) == 1
+                    rawcolumns(categorical!(deepcopy(df), 1))) == 1
 
     @testset "categorical!" begin
         df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
