@@ -1,6 +1,6 @@
 module TestJoin
     using Test, DataFrames
-    using DataFrames: similar_missing, columns
+    using DataFrames: similar_missing
     const ≅ = isequal
 
     name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],
@@ -253,7 +253,7 @@ module TestJoin
                        repeat([0, 1, 2, 3, 4], outer = 3),
                        repeat([0, 1, 2, 3, 4], outer = 3)],
                       [:id, :fid, :id_1, :fid_1])
-        @test all(isa.(columns(join(df1, df2, kind=:cross, makeunique=true)),
+        @test all(map(isa, columns(join(df1, df2, kind=:cross, makeunique=true)),
                        [CategoricalVector{T} for T in (Int, Float64, Int, Float64)]))
 
         i(on) = join(df1, df2, on = on, kind = :inner, makeunique=true)
@@ -269,7 +269,7 @@ module TestJoin
         @test map(typeof, columns(s(:id))) ==
               map(typeof, columns(s(:fid))) ==
               map(typeof, columns(s([:id, :fid])))
-        @test all(isa.(columns(s(:id)),
+        @test all(map(isa, columns(s(:id)),
                        [CategoricalVector{T} for T in (Int, Float64)]))
 
         @test a(:id) ==
@@ -278,64 +278,64 @@ module TestJoin
         @test map(typeof, columns(a(:id))) ==
               map(typeof, columns(a(:fid))) ==
               map(typeof, columns(a([:id, :fid])))
-        @test all(isa.(columns(a(:id)),
+        @test all(map(isa, columns(a(:id)),
                        [CategoricalVector{T} for T in (Int, Float64)]))
 
         on = :id
         @test i(on) == DataFrame([[1, 3], [1, 3], [1, 3]], [:id, :fid, :fid_1])
-        @test all(isa.(columns(i(on)),
+        @test all(map(isa, columns(i(on)),
                        [CategoricalVector{T} for T in (Int, Float64, Float64)]))
         @test l(on) ≅ DataFrame(id = [1, 3, 5],
                                 fid = [1, 3, 5],
                                 fid_1 = [1, 3, missing])
-        @test all(isa.(columns(l(on)),
+        @test all(map(isa, columns(l(on)),
                        [CategoricalVector{T} for T in (Int,Float64,Union{Float64, Missing})]))
         @test r(on) ≅ DataFrame(id = [1, 3, 0, 2, 4],
                                 fid = [1, 3, missing, missing, missing],
                                 fid_1 = [1, 3, 0, 2, 4])
-        @test all(isa.(columns(r(on)),
+        @test all(map(isa, columns(r(on)),
                        [CategoricalVector{T} for T in (Int,Union{Float64, Missing},Float64)]))
         @test o(on) ≅ DataFrame(id = [1, 3, 5, 0, 2, 4],
                                 fid = [1, 3, 5, missing, missing, missing],
                                 fid_1 = [1, 3, missing, 0, 2, 4])
-        @test all(isa.(columns(o(on)),
+        @test all(map(isa, columns(o(on)),
                        [CategoricalVector{T} for T in (Int,Union{Float64,Missing},Union{Float64, Missing})]))
 
         on = :fid
         @test i(on) == DataFrame([[1, 3], [1.0, 3.0], [1, 3]], [:id, :fid, :id_1])
-        @test all(isa.(columns(i(on)),
+        @test all(map(isa, columns(i(on)),
                        [CategoricalVector{T} for T in (Int, Float64, Int)]))
         @test l(on) ≅ DataFrame(id = [1, 3, 5],
                                 fid = [1, 3, 5],
                                 id_1 = [1, 3, missing])
-        @test all(isa.(columns(l(on)),
+        @test all(map(isa, columns(l(on)),
                        [CategoricalVector{T} for T in (Int, Float64, Union{Int, Missing})]))
         @test r(on) ≅ DataFrame(id = [1, 3, missing, missing, missing],
                                 fid = [1, 3, 0, 2, 4],
                                 id_1 = [1, 3, 0, 2, 4])
-        @test all(isa.(columns(r(on)),
+        @test all(map(isa, columns(r(on)),
                        [CategoricalVector{T} for T in (Union{Int, Missing}, Float64, Int)]))
         @test o(on) ≅ DataFrame(id = [1, 3, 5, missing, missing, missing],
                                 fid = [1, 3, 5, 0, 2, 4],
                                 id_1 = [1, 3, missing, 0, 2, 4])
-        @test all(isa.(columns(o(on)),
+        @test all(map(isa, columns(o(on)),
                        [CategoricalVector{T} for T in (Union{Int, Missing}, Float64, Union{Int, Missing})]))
 
         on = [:id, :fid]
         @test i(on) == DataFrame([[1, 3], [1, 3]], [:id, :fid])
-        @test all(isa.(columns(i(on)),
+        @test all(map(isa, columns(i(on)),
                        [CategoricalVector{T} for T in (Int, Float64)]))
         @test l(on) == DataFrame(id = [1, 3, 5],
                                  fid = [1, 3, 5])
-        @test all(isa.(columns(l(on)),
+        @test all(map(isa, columns(l(on)),
                        [CategoricalVector{T} for T in (Int, Float64)]))
         @test r(on) == DataFrame(id = [1, 3, 0, 2, 4],
                                  fid = [1, 3, 0, 2, 4])
-        @test all(isa.(columns(r(on)),
+        @test all(map(isa, columns(r(on)),
                        [CategoricalVector{T} for T in (Int, Float64)]))
         @test o(on) == DataFrame(id = [1, 3, 5, 0, 2, 4],
                                  fid = [1, 3, 5, 0, 2, 4])
-        @test all(isa.(columns(o(on)),
+        @test all(map(isa, columns(o(on)),
                        [CategoricalVector{T} for T in (Int, Float64)]))
     end
 
