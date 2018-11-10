@@ -232,8 +232,8 @@ function Base.size(df::AbstractDataFrame, i::Integer)
 end
 
 Base.lastindex(df::AbstractDataFrame) = ncol(df)
-Base.lastindex(df::AbstractDataFrame, i) = last(axes(df, i))
-Base.axes(df, i) = axes(df)[i]
+Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
+Base.axes(df::AbstractDataFrame, i::Integer) = axes(df)[i]
 
 Base.ndims(::AbstractDataFrame) = 2
 
