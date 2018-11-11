@@ -37,7 +37,7 @@ Base.getindex(itr::DFRowVector, i::Int) = DataFrameRow(itr.df, i)
 
 Iterator over columns of an `AbstractDataFrame`.
 If `V` is `Pair{Symbol,AbstractVector}` (which is the case when calling
-[`eachcol`](@link)) then each returned value is a tuple consisting of
+[`eachcol`](@link)) then each returned value is a pair consisting of
 column name and column vector. If `V` is `AbstractVector` (a value returned by
 the [`columns`](@link) function) then each returned value is a column vector.
 """
@@ -49,7 +49,7 @@ end
     eachcol(df::AbstractDataFrame)
 
 Return a `DFColumnVector` that iterates an `AbstractDataFrame` column by column.
-Iteration returns a tuple consisting of column name and column vector.
+Iteration returns a pair consisting of column name and column vector.
 
 **Examples**
 

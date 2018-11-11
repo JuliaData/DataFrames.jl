@@ -45,7 +45,9 @@ The difference between the return value of `eachcol` and `columns` is the follow
 * The `columns` function returns a value of the `DFColumnVector{<:AbstractDataFrame, false}` type, which is an
   iterator returning the column vector only.
 
-The `DFRowVector` and `DFColumnVector` types are not exported and should not be constructed directly.
+The `DFRowVector` and `DFColumnVector` types are subtypes of `AbstractVector` and support its interface
+with the exception that they are read only. Note, that they are not exported and should not be constructed directly,
+but using `eachrow`, `eachcol` and `columns` functions.
 
 ## Types specification
 
