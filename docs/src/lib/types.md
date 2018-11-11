@@ -47,7 +47,7 @@ The difference between the return value of `eachcol` and `columns` is the follow
 
 The `DFRowVector` and `DFColumnVector` types are subtypes of `AbstractVector` and support its interface
 with the exception that they are read only. Note, that they are not exported and should not be constructed directly,
-but using `eachrow`, `eachcol` and `columns` functions.
+but using the `eachrow`, `eachcol` and `columns` functions.
 
 ## Types specification
 
