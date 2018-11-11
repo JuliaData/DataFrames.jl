@@ -120,7 +120,7 @@ Base.size(itr::DataFrameColumns) = (size(itr.df, 2),)
 Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
 
 function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
-                                             Pair{Symbol, AbstractVector}}, j::Int) =
+                                             Pair{Symbol, AbstractVector}}, j::Int)
     Base.depwarn("Indexing into a return value of eachcol will return a pair " *
                  "of column name and column value", :getindex)
     itr.df[j]

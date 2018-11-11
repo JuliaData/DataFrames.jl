@@ -1425,7 +1425,7 @@ function Base.hash(df::SubDataFrame, h::UInt)
 end
 
 function Base.getindex(itr::DataFrameColumns{<:SubDataFrame,
-                                             Pair{Symbol, AbstractVector}}, j::Int) =
+                                             Pair{Symbol, AbstractVector}}, j::Int)
     Base.depwarn("Indexing into a return value of eachcol on SubDataFrame will return a pair " *
                  "of column name and a view of column value", :getindex)
     itr.df[:, j]

@@ -779,7 +779,7 @@ deletecols!(df::DataFrame, c::Any) = deletecols!(df, index(df)[c])
 
 function deleterows!(df::DataFrame, ind::Union{Integer, UnitRange{Int}})
     for i in 1:ncol(df)
-        _columns(df)[i] = deleteat!(rawcolumns(df)[i], ind)
+        _columns(df)[i] = deleteat!(_columns(df)[i], ind)
     end
     df
 end
@@ -805,7 +805,7 @@ function deleterows!(df::DataFrame, ind::AbstractVector{Int})
     keep[ikeep:end] = idf:n
 
     for i in 1:ncol(df)
-        _columns(df)[i] = rawcolumns(df)[i][keep]
+        _columns(df)[i] = _columns(df)[i][keep]
     end
     df
 end
