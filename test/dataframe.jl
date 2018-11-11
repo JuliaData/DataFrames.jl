@@ -72,7 +72,7 @@ module TestDataFrame
                             c = CategoricalArray{Union{Float64, Missing}}(undef, 2))
         # https://github.com/JuliaData/Missings.jl/issues/66
         # @test missingdf ≅ similar(df, 2)
-        @test map(typeof, columns(similar(df, 2))) == map(typeof, columns(missingdf))
+        @test typeof.(columns(similar(df, 2))) == typeof.(columns(missingdf))
         @test size(similar(df, 2)) == size(missingdf)
     end
 
@@ -560,7 +560,7 @@ module TestDataFrame
                                 Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
                                 Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
         @test isa(udf[1], Vector{Int})
-        @test all(isa.(collect(columns(udf))[2:end], Vector{Union{Int, Missing}}))
+        @test all(isa.(columns(udf)[2:end], Vector{Union{Int, Missing}}))
         df = DataFrame([categorical(repeat(1:2, inner=4)),
                            categorical(repeat('a':'d', outer=2)), categorical(1:8)],
                        [:id, :variable, :value])
@@ -570,7 +570,7 @@ module TestDataFrame
                                 Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
                                 Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
         @test isa(udf[1], CategoricalVector{Int})
-        @test all(isa.(collect(columns(udf))[2:end], CategoricalVector{Union{Int, Missing}}))
+        @test all(isa.(columns(udf)[2:end], CategoricalVector{Union{Int, Missing}}))
     end
 
     @testset "duplicate entries in unstack warnings" begin
@@ -710,14 +710,14 @@ module TestDataFrame
         df = DataFrame([CategoricalArray(1:10),
                         CategoricalArray(string.('a':'j'))])
         allowmissing!(df)
-        @test all(x->x <: CategoricalVector, map(typeof, columns(df)))
+        @test all(x->x <: CategoricalVector, typeof.(columns(df)))
         @test eltypes(df)[1] <: Union{CategoricalValue{Int}, Missing}
         @test eltypes(df)[2] <: Union{CategoricalString, Missing}
         df[1,2] = missing
         @test_throws MissingException disallowmissing!(df)
         df[1,2] = "a"
         disallowmissing!(df)
-        @test all(x->x <: CategoricalVector, map(typeof, columns(df)))
+        @test all(x->x <: CategoricalVector, typeof.(columns(df)))
         @test eltypes(df)[1] <: CategoricalValue{Int}
         @test eltypes(df)[2] <: CategoricalString
     end
@@ -727,12 +727,12 @@ module TestDataFrame
                        b = CategoricalArray(["foo"]),
                        c = [0.0],
                        d = CategoricalArray([0.0]))
-        @test map(typeof, columns(similar(df))) == map(typeof, columns(df))
+        @test typeof.(columns(similar(df))) == typeof.(columns(df))
         @test size(similar(df)) == size(df)
 
         rows = size(df, 1) + 5
         @test size(similar(df, rows)) == (rows, size(df, 2))
-        @test map(typeof, columns(similar(df, rows))) == map(typeof, columns(df))
+        @test typeof.(columns(similar(df, rows))) == typeof.(columns(df))
 
         e = @test_throws ArgumentError similar(df, -1)
         @test e.value.msg == "the number of rows must be positive"
