@@ -8,32 +8,35 @@
 
 # Iteration by rows
 """
-    DFRowVector{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
+    DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@link) function.
 """
-struct DFRowVector{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
+struct DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
     df::T
 end
 
 """
     eachrow(df::AbstractDataFrame)
 
-Return a `DFRowVector` that iterates an `AbstractDataFrame` row by row,
+Return a `DataFrameRows` that iterates an `AbstractDataFrame` row by row,
 with each row represented as a `DataFrameRow`.
 """
-eachrow(df::AbstractDataFrame) = DFRowVector(df)
+eachrow(df::AbstractDataFrame) = DataFrameRows(df)
 
-Base.size(itr::DFRowVector) = (size(itr.df, 1), )
-Base.IndexStyle(::Type{<:DFRowVector}) = Base.IndexLinear()
-Base.getindex(itr::DFRowVector, i::Int) = DataFrameRow(itr.df, i)
+Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
+Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
+@inline function Base.getindex(itr::DataFrameRows, i::Int)
+    @boundscheck checkbounds(itr, i)
+    return DataFrameRow(itr.df, i)
+end
 
 # Iteration by columns
 """
-    DFColumnVector{<:AbstractDataFrame, V} <: AbstractVector{V}
+    DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}
 
 Iterator over columns of an `AbstractDataFrame`.
 If `V` is `Pair{Symbol,AbstractVector}` (which is the case when calling
@@ -41,14 +44,14 @@ If `V` is `Pair{Symbol,AbstractVector}` (which is the case when calling
 column name and column vector. If `V` is `AbstractVector` (a value returned by
 the [`columns`](@link) function) then each returned value is a column vector.
 """
-struct DFColumnVector{T<:AbstractDataFrame, V} <: AbstractVector{V}
+struct DataFrameColumns{T<:AbstractDataFrame, V} <: AbstractVector{V}
     df::T
 end
 
 """
     eachcol(df::AbstractDataFrame)
 
-Return a `DFColumnVector` that iterates an `AbstractDataFrame` column by column.
+Return a `DataFrameColumns` that iterates an `AbstractDataFrame` column by column.
 Iteration returns a pair consisting of column name and column vector.
 
 **Examples**
@@ -71,12 +74,12 @@ julia> collect(eachcol(df))
 ```
 """
 eachcol(df::T) where T<: AbstractDataFrame =
-    DFColumnVector{T, Pair{Symbol, AbstractVector}}(df)
+    DataFrameColumns{T, Pair{Symbol, AbstractVector}}(df)
 
 """
     columns(df::AbstractDataFrame)
 
-Return a `DFColumnVector` that iterates an `AbstractDataFrame` column by
+Return a `DataFrameColumns` that iterates an `AbstractDataFrame` column by
 column, yielding column vectors.
 
 **Examples**
@@ -96,17 +99,29 @@ julia> collect(columns(df))
 2-element Array{AbstractArray{T,1} where T,1}:
  [1, 2, 3, 4]
  [11, 12, 13, 14]
+
+julia> sum.(columns(df))
+2-element Array{Int64,1}:
+ 10
+ 50
+
+julia> map(columns(df)) do col
+       maximum(col) - minimum(col)
+       end
+2-element Array{Int64,1}:
+ 3
+ 3
 ```
 """
 columns(df::T) where T<: AbstractDataFrame =
-    DFColumnVector{T, AbstractVector}(df)
+    DataFrameColumns{T, AbstractVector}(df)
 
-Base.size(itr::DFColumnVector) = (size(itr.df, 2),)
-Base.IndexStyle(::Type{<:DFColumnVector}) = Base.IndexLinear()
-Base.getindex(itr::DFColumnVector{<:AbstractDataFrame,
+Base.size(itr::DataFrameColumns) = (size(itr.df, 2),)
+Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
+Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
                                     Pair{Symbol, AbstractVector}}, j::Int) =
     _names(itr.df)[j] => itr.df[j]
-Base.getindex(itr::DFColumnVector{<:AbstractDataFrame,AbstractVector}, j::Int) =
+Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,AbstractVector}, j::Int) =
     itr.df[j]
 
 """

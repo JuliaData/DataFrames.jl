@@ -88,7 +88,7 @@ end
 function Base.sort!(df::DataFrame, a::Base.Sort.Algorithm, o::Base.Sort.Ordering)
     p = sortperm(df, a, o)
     pp = similar(p)
-    c = rawcolumns(df)
+    c = _columns(df)
 
     for (i,col) in enumerate(c)
         # Check if this column has been sorted already

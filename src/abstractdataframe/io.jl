@@ -213,11 +213,11 @@ struct DataFrameStream{T}
     columns::T
     header::Vector{String}
 end
-DataFrameStream(df::DataFrame) = DataFrameStream(Tuple(rawcolumns(df)), string.(names(df)))
+DataFrameStream(df::DataFrame) = DataFrameStream(Tuple(_columns(df)), string.(names(df)))
 
 # DataFrame Data.Source implementation
 Data.schema(df::DataFrame) =
-    Data.Schema(Type[eltype(A) for A in rawcolumns(df)], string.(names(df)), size(df, 1))
+    Data.Schema(Type[eltype(A) for A in _columns(df)], string.(names(df)), size(df, 1))
 
 Data.isdone(source::DataFrame, row, col, rows, cols) = row > rows || col > cols
 function Data.isdone(source::DataFrame, row, col)
@@ -276,15 +276,15 @@ function DataFrame(sch::Data.Schema{R}, ::Type{S}=Data.Field,
                 # to the # of rows in the source
             newsize = ifelse(S == Data.Column || !R, 0,
                         ifelse(append, sinkrows + sch.rows, sch.rows))
-            foreach(col->resize!(col, newsize), rawcolumns(sink))
+            foreach(col->resize!(col, newsize), _columns(sink))
             sch.rows = newsize
         end
         # take care of a possible reference from source by addint to WeakRefStringArrays
         if !isempty(reference)
             foreach(col-> col isa WeakRefStringArray && push!(col.data, reference),
-                    rawcolumns(sink))
+                    _columns(sink))
         end
-        DataFrameStream(sink)
+        return DataFrameStream(sink)
     else
         # allocating a fresh DataFrame Sink; append is irrelevant
         # for Data.Column or unknown # of rows in Data.Field, we only ever append!,
@@ -292,8 +292,8 @@ function DataFrame(sch::Data.Schema{R}, ::Type{S}=Data.Field,
         rows = ifelse(S == Data.Column, 0, ifelse(!R, 0, sch.rows))
         names = Data.header(sch)
         sch.rows = rows
-        DataFrameStream(Tuple(allocate(types[i], rows, reference)
-                              for i = 1:length(types)), names)
+        return DataFrameStream(Tuple(allocate(types[i], rows, reference)
+                                     for i = 1:length(types)), names)
     end
 end
 

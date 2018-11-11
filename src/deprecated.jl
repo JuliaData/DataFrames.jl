@@ -1424,9 +1424,9 @@ function Base.hash(df::SubDataFrame, h::UInt)
     return h
 end
 
-Base.getindex(itr::DFColumnVector{<:SubDataFrame,Pair{Symbol, AbstractVector}},
+Base.getindex(itr::DataFrameColumns{<:SubDataFrame,Pair{Symbol, AbstractVector}},
               j::Int) = _names(itr.df)[j] => itr.df[j]
-Base.getindex(itr::DFColumnVector{<:SubDataFrame,AbstractVector}, j) = itr.df[:, j]
+Base.getindex(itr::DataFrameColumns{<:SubDataFrame,AbstractVector}, j) = itr.df[:, j]
 
 function showrowindices(io::IO,
                         df::SubDataFrame,
@@ -1731,10 +1731,14 @@ function hashrows(df::SubDataFrame, skipmissing::Bool)
     return (rhashes, missings)
 end
 
-Base.getproperty(df::SubDataFrame, col_ind::Symbol) = getindex(df, :, col_ind)
+function Base.getproperty(df::SubDataFrame, col_ind::Symbol)
+    Base.depwarn("`sdf.col_ind` will create a view of `parent(sdf).col_ind` in the future." *
+                 " Use sdf[:, col_ind]` to get a freshly allocated vector.", :getproperty)
+    getindex(df, :, col_ind)
+end
 
 # TODO: END:   Deprecations to be removed after getindex deprecation period finishes
 
 import Base: map
 @deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
-@deprecate map(f::Union{Function,Type}, dfc::DFColumnVector{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}) mapcols(f, dfc.df)
+@deprecate map(f::Union{Function,Type}, dfc::DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}) mapcols(f, dfc.df)

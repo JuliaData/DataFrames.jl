@@ -21,7 +21,11 @@ module TestIteration
     @test eachcol(df)[1] == (:A => df[1])
     @test columns(df)[1] == df[1]
     @test collect(eachcol(df)) isa Vector{Pair{Symbol, AbstractVector}}
+    @test collect(eachcol(df)) == [:A => Union{Missing, Int64}[1, 2]
+                                   :B => Union{Missing, Int64}[2, 3]]
     @test collect(columns(df)) isa Vector{AbstractVector}
+    @test collect(columns(df)) == [Union{Missing, Int64}[1, 2]
+                                   Union{Missing, Int64}[2, 3]]
     @test eltype(eachcol(df)) == Pair{Symbol, AbstractVector}
     @test eltype(columns(df)) == AbstractVector
     for col in eachcol(df)
