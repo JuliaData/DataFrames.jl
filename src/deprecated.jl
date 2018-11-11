@@ -1424,24 +1424,9 @@ function Base.hash(df::SubDataFrame, h::UInt)
     return h
 end
 
-function Base.iterate(itr::DFColumnIterator{SubDataFrame, true}, j=1)
-    j > size(itr.df, 2) && return nothing
-    return ((_names(itr.df)[j], itr.df[:, j]), j + 1)
-end
-
-function Base.iterate(itr::DFColumnIterator{SubDataFrame,false}, st=1)
-    st > length(itr.df) && return nothing
-    # after deprecation we will return a view, now we materialize a vector
-    return (itr.df[:, st], st + 1)
-end
-
-function Base.getindex(itr::DFColumnIterator{SubDataFrame,true}, j)
-    depwarn("calling getindex on DFColumnIterator{SubDataFrame,true} " *
-            " object will return a tuple of column name and column value " *
-            "in the future.", :getindex)
-    itr.df[:, j]
-end
-Base.getindex(itr::DFColumnIterator{SubDataFrame,false}, j) = itr.df[:, j]
+Base.getindex(itr::DFColumnVector{SubDataFrame,Pair{Symbol, AbstractVector}},
+              j::Int) = _names(itr.df)[j] => itr.df[j]
+Base.getindex(itr::DFColumnVector{SubDataFrame,AbstractVector}, j) = itr.df[:, j]
 
 function showrowindices(io::IO,
                         df::SubDataFrame,
@@ -1752,4 +1737,4 @@ Base.getproperty(df::SubDataFrame, col_ind::Symbol) = getindex(df, :, col_ind)
 
 import Base: map
 @deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
-@deprecate map(f::Union{Function,Type}, dfc::DFColumnIterator{<:AbstractDataFrame, true}) DataFrame(Pair.(names(dfc.df), map(f, columns(dfc.df)))...)
+@deprecate map(f::Union{Function,Type}, dfc::DFColumnVector{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}) mapcols(f, dfc.df)

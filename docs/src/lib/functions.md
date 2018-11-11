@@ -42,6 +42,7 @@ filter
 filter!
 head
 insertcols!
+mapcols
 names!
 nonunique
 rename!

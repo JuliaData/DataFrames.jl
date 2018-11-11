@@ -202,7 +202,7 @@ eltypes(df)
 ```
 
 """
-eltypes(df::AbstractDataFrame) = [eltype(col) for col in columns(df)]
+eltypes(df::AbstractDataFrame) = eltype.(columns(df))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
@@ -1081,8 +1081,7 @@ julia> repeat(df, inner = 2, outer = 3)
 ```
 """
 Base.repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1) =
-    DataFrame(map(x -> repeat(x, inner = inner, outer = outer), columns(df)),
-              names(df))
+    mapcols(x -> repeat(x, inner = inner, outer = outer), df)
 
 """
     repeat(df::AbstractDataFrame, count::Integer)
@@ -1112,7 +1111,7 @@ julia> repeat(df, 2)
 ```
 """
 Base.repeat(df::AbstractDataFrame, count::Integer) =
-    DataFrame(map(x -> repeat(x, count), columns(df)), names(df))
+    mapcols(x -> repeat(x, count), df)
 
 ##############################################################################
 ##

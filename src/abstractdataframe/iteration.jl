@@ -8,58 +8,47 @@
 
 # Iteration by rows
 """
-    DFRowIterator{<:AbstractDataFrame}
+    DFRowVector{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@link) function.
 """
-struct DFRowIterator{T<:AbstractDataFrame}
+struct DFRowVector{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
     df::T
 end
 
 """
     eachrow(df::AbstractDataFrame)
 
-Return a `DFRowIterator` that iterates an `AbstractDataFrame` row by row,
+Return a `DFRowVector` that iterates an `AbstractDataFrame` row by row,
 with each row represented as a `DataFrameRow`.
 """
-eachrow(df::AbstractDataFrame) = DFRowIterator(df)
+eachrow(df::AbstractDataFrame) = DFRowVector(df)
 
-Base.size(itr::DFRowIterator) = (size(itr.df, 1), )
-Base.size(itr::DFRowIterator, ix) =
-    ix == 1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
-Base.length(itr::DFRowIterator) = size(itr.df, 1)
-Base.firstindex(itr::DFRowIterator) = 1
-Base.lastindex(itr::DFRowIterator) = length(itr)
-
-function Base.iterate(itr::DFRowIterator, i=1)
-    i > size(itr.df, 1) && return nothing
-    return (DataFrameRow(itr.df, i), i + 1)
-end
-
-Base.eltype(::DFRowIterator{T}) where {T} = DataFrameRow{T}
-Base.getindex(itr::DFRowIterator, i) = DataFrameRow(itr.df, i)
+Base.size(itr::DFRowVector) = (size(itr.df, 1), )
+Base.IndexStyle(::Type{<:DFRowVector}) = Base.IndexLinear()
+Base.getindex(itr::DFRowVector, i::Int) = DataFrameRow(itr.df, i)
 
 # Iteration by columns
 """
-    DFColumnIterator{<:AbstractDataFrame, C}
+    DFColumnVector{<:AbstractDataFrame, V} <: AbstractVector{V}
 
 Iterator over columns of an `AbstractDataFrame`.
-If `C` is `true` (which is the case when calling [`eachcol`](@link))
-then each returned value is a tuple consisting of column name and column vector.
-If `C` is `false` (a value returned by the [`columns`](@link) function)
-then each returned value is a column vector.
+If `V` is `Pair{Symbol,AbstractVector}` (which is the case when calling
+[`eachcol`](@link)) then each returned value is a tuple consisting of
+column name and column vector. If `V` is `AbstractVector` (a value returned by
+the [`columns`](@link) function) then each returned value is a column vector.
 """
-struct DFColumnIterator{T<:AbstractDataFrame, C}
+struct DFColumnVector{T<:AbstractDataFrame, V} <: AbstractVector{V}
     df::T
 end
 
 """
     eachcol(df::AbstractDataFrame)
 
-Return a `DFColumnIterator` that iterates an `AbstractDataFrame` column by column.
+Return a `DFColumnVector` that iterates an `AbstractDataFrame` column by column.
 Iteration returns a tuple consisting of column name and column vector.
 
 **Examples**
@@ -76,18 +65,19 @@ julia> df = DataFrame(x=1:4, y=11:14)
 │ 4   │ 4     │ 14    │
 
 julia> collect(eachcol(df))
-2-element Array{Tuple{Symbol,Any},1}:
- (:x, [1, 2, 3, 4])
- (:y, [11, 12, 13, 14])
+2-element Array{Pair{Symbol,AbstractArray{T,1} where T},1}:
+ :x => [1, 2, 3, 4]
+ :y => [11, 12, 13, 14]
 ```
 """
-eachcol(df::T) where T<: AbstractDataFrame = DFColumnIterator{T, true}(df)
+eachcol(df::T) where T<: AbstractDataFrame =
+    DFColumnVector{T, Pair{Symbol, AbstractVector}}(df)
 
 """
     columns(df::AbstractDataFrame)
 
-Return a `DFColumnIterator` that iterates an `AbstractDataFrame` column by column.
-, yielding column vectors.
+Return a `DFColumnVector` that iterates an `AbstractDataFrame` column by
+column, yielding column vectors.
 
 **Examples**
 
@@ -108,40 +98,52 @@ julia> collect(columns(df))
  [11, 12, 13, 14]
 ```
 """
-columns(df::T) where T<: AbstractDataFrame = DFColumnIterator{T, false}(df)
+columns(df::T) where T<: AbstractDataFrame =
+    DFColumnVector{T, AbstractVector}(df)
 
-Base.length(itr::DFColumnIterator) = size(itr.df, 2)
-Base.size(itr::DFColumnIterator) = (size(itr.df, 2),)
-Base.size(itr::DFColumnIterator, ix) =
-    ix == 1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
-Base.firstindex(itr::DFColumnIterator) = 1
-Base.lastindex(itr::DFColumnIterator) = length(itr)
+Base.size(itr::DFColumnVector) = (size(itr.df, 2),)
+Base.IndexStyle(::Type{<:DFColumnVector}) = Base.IndexLinear()
+Base.getindex(itr::DFColumnVector{<:AbstractDataFrame,
+                                    Pair{Symbol, AbstractVector}}, j::Int) =
+    _names(itr.df)[j] => itr.df[j]
+Base.getindex(itr::DFColumnVector{<:AbstractDataFrame,AbstractVector}, j::Int) =
+    itr.df[j]
 
-function Base.iterate(itr::DFColumnIterator{<:AbstractDataFrame,true}, j=1)
-    j > size(itr.df, 2) && return nothing
-    return ((_names(itr.df)[j], itr.df[j]), j + 1)
-end
+"""
+    mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
 
-Base.eltype(::DFColumnIterator{<:AbstractDataFrame,true}) =
-    Tuple{Symbol, AbstractVector}
+Return a `DataFrame` where each column of `df` is transformed using function `f`.
+Note that `f` must return values of consistent length.
 
-function Base.getindex(itr::DFColumnIterator{<:AbstractDataFrame,true}, j)
-    # TODO: change to the way getindex for false is defined below afted deprecation
-    if !(j isa Integer) || j isa Bool
-        Base.depwarn("calling getindex on DFColumnIterator{<:AbstractDataFrame,true} " *
-                     " object will only accept integer indexing and will return " *
-                     "a tuple of column name and column value in the future.", :getindex)
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(x=1:4, y=11:14)
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 11    │
+│ 2   │ 2     │ 12    │
+│ 3   │ 3     │ 13    │
+│ 4   │ 4     │ 14    │
+
+julia> mapcols(x -> x.^2, df)
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 121   │
+│ 2   │ 4     │ 144   │
+│ 3   │ 9     │ 169   │
+│ 4   │ 16    │ 196   │
+```
+"""
+function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
+    # note: `f` must return a consistent length
+    res = DataFrame()
+    for (n, v) in eachcol(df)
+        res[n] = f(v)
     end
-    itr.df[j]
+    res
 end
-
-function Base.iterate(itr::DFColumnIterator{<:AbstractDataFrame,false}, j=1)
-    j > size(itr.df, 2) && return nothing
-    return (itr.df[j], j + 1)
-end
-
-Base.eltype(::DFColumnIterator{<:AbstractDataFrame,false}) = AbstractVector
-Base.getindex(itr::DFColumnIterator{<:AbstractDataFrame,false}, j::Integer) =
-    itr.df[j]
-Base.getindex(itr::DFColumnIterator{<:AbstractDataFrame,false}, j::Bool) =
-    throw(ArgumentError("invalid index $j of type Bool"))
