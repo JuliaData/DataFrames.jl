@@ -18,14 +18,14 @@ module TestIteration
     @test size(columns(df)) == (size(df, 2),)
     @test length(eachcol(df)) == size(df, 2)
     @test length(columns(df)) == size(df, 2)
-    @test eachcol(df)[1] == df[1] # this is deprecated
+    @test eachcol(df)[1] == (:A => df[1])
     @test columns(df)[1] == df[1]
-    @test collect(eachcol(df)) isa Vector{Tuple{Symbol, AbstractVector}}
+    @test collect(eachcol(df)) isa Vector{Pair{Symbol, AbstractVector}}
     @test collect(columns(df)) isa Vector{AbstractVector}
-    @test eltype(eachcol(df)) == Tuple{Symbol, AbstractVector}
+    @test eltype(eachcol(df)) == Pair{Symbol, AbstractVector}
     @test eltype(columns(df)) == AbstractVector
     for col in eachcol(df)
-        @test isa(col, Tuple{Symbol, AbstractVector})
+        @test typeof(col) <: Pair{Symbol, <:AbstractVector}
     end
     for col in columns(df)
         @test isa(col, AbstractVector)
