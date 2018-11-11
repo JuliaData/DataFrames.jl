@@ -33,8 +33,10 @@ module TestIteration
 
     @test map(x -> minimum(convert(Array, x)), eachrow(df)) == Any[1,2]
     @test map(Vector, eachrow(df)) == [[1, 2], [2, 3]]
+    @test mapcols(minimum, df) == DataFrame(A = [1], B = [2])
     @test map(minimum, eachcol(df)) == DataFrame(A = [1], B = [2]) # this is deprecated
     @test map(minimum, columns(df)) == [1, 2]
+    @test eltypes(mapcols(Vector{Float64}, df)) == [Float64, Float64]
     @test eltypes(map(Vector{Float64}, eachcol(df))) == [Float64, Float64] # this is deprecated
     @test eltype(map(Vector{Float64}, columns(df))) == Vector{Float64}
 

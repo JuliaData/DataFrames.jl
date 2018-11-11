@@ -1424,9 +1424,9 @@ function Base.hash(df::SubDataFrame, h::UInt)
     return h
 end
 
-Base.getindex(itr::DFColumnVector{SubDataFrame,Pair{Symbol, AbstractVector}},
+Base.getindex(itr::DFColumnVector{<:SubDataFrame,Pair{Symbol, AbstractVector}},
               j::Int) = _names(itr.df)[j] => itr.df[j]
-Base.getindex(itr::DFColumnVector{SubDataFrame,AbstractVector}, j) = itr.df[:, j]
+Base.getindex(itr::DFColumnVector{<:SubDataFrame,AbstractVector}, j) = itr.df[:, j]
 
 function showrowindices(io::IO,
                         df::SubDataFrame,
