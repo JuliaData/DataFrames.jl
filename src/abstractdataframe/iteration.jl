@@ -47,7 +47,7 @@ Base.getindex(itr::DFRowIterator, i) = DataFrameRow(itr.df, i)
     DFColumnIterator{<:AbstractDataFrame, C}
 
 Iterator over columns of an `AbstractDataFrame`.
-If `C` is `true` (a value returned by the [`eachcol`](@link) function)
+If `C` is `true` (which is the case when calling [`eachcol`](@link))
 then each returned value is a tuple consisting of column name and column vector.
 If `C` is `false` (a value returned by the [`columns`](@link) function)
 then each returned value is a column vector.
