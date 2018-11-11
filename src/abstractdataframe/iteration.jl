@@ -87,7 +87,7 @@ eachcol(df::T) where T<: AbstractDataFrame = DFColumnIterator{T, true}(df)
     columns(df::AbstractDataFrame)
 
 Return a `DFColumnIterator` that iterates an `AbstractDataFrame` column by column.
-Iteration returns a column vector.
+, yielding column vectors.
 
 **Examples**
 
