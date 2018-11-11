@@ -1424,9 +1424,28 @@ function Base.hash(df::SubDataFrame, h::UInt)
     return h
 end
 
-Base.getindex(itr::DataFrameColumns{<:SubDataFrame,Pair{Symbol, AbstractVector}},
-              j::Int) = _names(itr.df)[j] => itr.df[j]
-Base.getindex(itr::DataFrameColumns{<:SubDataFrame,AbstractVector}, j) = itr.df[:, j]
+function Base.getindex(itr::DataFrameColumns{<:SubDataFrame,
+                                             Pair{Symbol, AbstractVector}}, j::Int) =
+    Base.depwarn("Indexing into a return value of eachcol on SubDataFrame will return a pair " *
+                 "of column name and a view of column value", :getindex)
+    itr.df[:, j]
+end
+
+
+function Base.getindex(itr::DataFrameColumns{<:SubDataFrame,AbstractVector}, j)
+    Base.depwarn("Indexing into a return value of columns on SubDataFrame will return a" *
+                 " view of column value", :getindex)
+    itr.df[:, j]
+end
+
+function Base.iterate(itr::DataFrameColumns{<:SubDataFrame,
+                                            Pair{Symbol, AbstractVector}}, j=1)
+    Base.depwarn("iterating over value of eachcol on SubDataFrame will return a" *
+                 " pair of column name and a view of column value", :getindex)
+    j > size(itr.df, 2) && return nothing
+    return (_names(itr.df)[j] => itr.df[:, j], j + 1)
+end
+
 
 function showrowindices(io::IO,
                         df::SubDataFrame,

@@ -118,11 +118,25 @@ columns(df::T) where T<: AbstractDataFrame =
 
 Base.size(itr::DataFrameColumns) = (size(itr.df, 2),)
 Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
-Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
-                                    Pair{Symbol, AbstractVector}}, j::Int) =
-    _names(itr.df)[j] => itr.df[j]
+
+function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
+                                             Pair{Symbol, AbstractVector}}, j::Int) =
+    Base.depwarn("Indexing into a return value of eachcol will return a pair " *
+                 "of column name and column value", :getindex)
+    itr.df[j]
+    # after deprecation replace by:
+    # _names(itr.df)[j] => itr.df[j]
+end
+
 Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,AbstractVector}, j::Int) =
     itr.df[j]
+
+# TODO: remove this after deprecation period of getindex of DataFrameColumns
+function Base.iterate(itr::DataFrameColumns{<:AbstractDataFrame,
+                                            Pair{Symbol, AbstractVector}}, j=1)
+    j > size(itr.df, 2) && return nothing
+    return (_names(itr.df)[j] => itr.df[j], j + 1)
+end
 
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
