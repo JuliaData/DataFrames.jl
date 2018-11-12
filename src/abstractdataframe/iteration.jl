@@ -106,7 +106,7 @@ julia> sum.(columns(df))
  50
 
 julia> map(columns(df)) do col
-       maximum(col) - minimum(col)
+           maximum(col) - minimum(col)
        end
 2-element Array{Int64,1}:
  3
