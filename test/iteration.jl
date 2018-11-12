@@ -20,7 +20,7 @@ module TestIteration
     @test length(columns(df)) == size(df, 2)
     @test eachcol(df)[1] == df[1] # this will be (:A => df[1]) after deprecation
     @test columns(df)[1] == df[1]
-    @test collect(eachcol(df)) isa Vector{AbstractVector} # this will be Vector{Pair{Symbol, AbstractVector}} after deprecation
+    @test collect(eachcol(df)) isa Vector{Pair{Symbol, AbstractVector}}
     @test collect(eachcol(df)) == [:A => [1, 2], :B => [2, 3]]
     @test collect(columns(df)) isa Vector{AbstractVector}
     @test collect(columns(df)) == [[1, 2], [2, 3]]
