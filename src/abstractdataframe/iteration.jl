@@ -142,7 +142,7 @@ end
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
 
 Return a `DataFrame` where each column of `df` is transformed using function `f`.
-Note that `f` must return values of consistent length.
+`f` must return `AbstractVector` objects all with the same length.
 
 **Examples**
 
