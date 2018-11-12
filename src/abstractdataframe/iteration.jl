@@ -138,11 +138,17 @@ function Base.iterate(itr::DataFrameColumns{<:AbstractDataFrame,
     return (_names(itr.df)[j] => itr.df[j], j + 1)
 end
 
+# TODO: remove this after deprecation period of getindex of DataFrameColumns
+function Base.collect(itr::DataFrameColumns{<:AbstractDataFrame,
+                                            Pair{Symbol, AbstractVector}})
+    [v for v in itr]
+end
+
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
 
 Return a `DataFrame` where each column of `df` is transformed using function `f`.
-`f` must return `AbstractVector` objects all with the same length.
+`f` must return `AbstractVector` objects all with the same length or scalars.
 
 **Examples**
 

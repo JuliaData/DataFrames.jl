@@ -21,11 +21,9 @@ module TestIteration
     @test eachcol(df)[1] == df[1] # this will be (:A => df[1]) after deprecation
     @test columns(df)[1] == df[1]
     @test collect(eachcol(df)) isa Vector{AbstractVector} # this will be Vector{Pair{Symbol, AbstractVector}} after deprecation
-    @test collect(eachcol(df)) == [:A => Union{Missing, Int64}[1, 2]
-                                   :B => Union{Missing, Int64}[2, 3]]
+    @test collect(eachcol(df)) == [:A => [1, 2], :B => [2, 3]]
     @test collect(columns(df)) isa Vector{AbstractVector}
-    @test collect(columns(df)) == [Union{Missing, Int64}[1, 2]
-                                   Union{Missing, Int64}[2, 3]]
+    @test collect(columns(df)) == [[1, 2], [2, 3]]
     @test eltype(eachcol(df)) == Pair{Symbol, AbstractVector}
     @test eltype(columns(df)) == AbstractVector
     for col in eachcol(df)
@@ -35,7 +33,7 @@ module TestIteration
         @test isa(col, AbstractVector)
     end
 
-    @test map(x -> minimum(convert(Array, x)), eachrow(df)) == Any[1,2]
+    @test map(x -> minimum(convert(Array, x)), eachrow(df)) == [1,2]
     @test map(Vector, eachrow(df)) == [[1, 2], [2, 3]]
     @test mapcols(minimum, df) == DataFrame(A = [1], B = [2])
     @test map(minimum, eachcol(df)) == DataFrame(A = [1], B = [2]) # this is deprecated

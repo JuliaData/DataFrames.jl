@@ -92,19 +92,12 @@ module TestGrouping
                        c = Vector{Union{Float64, Missing}}(randn(8)))
 
         cols = [:a, :b]
-        f1(df) = DataFrame(cmax = maximum(df[:, :c]))
-        f2(df) = (cmax = maximum(df[:, :c]),)
-        f3(df) = maximum(df[:, :c])
-        f4(df) = [maximum(df[:, :c]), minimum(df[:, :c])]
-        f5(df) = reshape([maximum(df[:, :c]), minimum(df[:, :c])], 2, 1)
-        f6(df) = [maximum(df[:, :c]) minimum(df[:, :c])]
-        #TODO: enable lines below after getindex deprecation
-        # f1(df) = DataFrame(cmax = maximum(df[:c]))
-        # f2(df) = (cmax = maximum(df[:c]),)
-        # f3(df) = maximum(df[:c])
-        # f4(df) = [maximum(df[:c]), minimum(df[:c])]
-        # f5(df) = reshape([maximum(df[:c]), minimum(df[:c])], 2, 1)
-        # f6(df) = [maximum(df[:c]) minimum(df[:c])]
+        f1(df) = DataFrame(cmax = maximum(df[:c]))
+        f2(df) = (cmax = maximum(df[:c]),)
+        f3(df) = maximum(df[:c])
+        f4(df) = [maximum(df[:c]), minimum(df[:c])]
+        f5(df) = reshape([maximum(df[:c]), minimum(df[:c])], 2, 1)
+        f6(df) = [maximum(df[:c]) minimum(df[:c])]
 
         res = unique(df[cols])
         res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
@@ -318,13 +311,9 @@ module TestGrouping
                        c = Vector{Union{Float64, Missing}}(randn(8)))
 
         cols = [:a, :b]
-        f(df) = DataFrame(cmax = maximum(df[:, :c]))
-        g(df) = (cmax = maximum(df[:, :c]),)
-        h(df) = maximum(df[:, :c])
-        # TODO: change the above definitions to the ones below after deprecation
-        # f(df) = DataFrame(cmax = maximum(df[:c]))
-        # g(df) = (cmax = maximum(df[:c]),)
-        # h(df) = maximum(df[:c])
+        f(df) = DataFrame(cmax = maximum(df[:c]))
+        g(df) = (cmax = maximum(df[:c]),)
+        h(df) = maximum(df[:c])
 
         res = unique(df[cols])
         res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
