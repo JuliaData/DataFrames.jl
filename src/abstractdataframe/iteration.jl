@@ -141,7 +141,7 @@ end
 # TODO: remove this after deprecation period of getindex of DataFrameColumns
 function Base.collect(itr::DataFrameColumns{<:AbstractDataFrame,
                                             Pair{Symbol, AbstractVector}})
-    [v for v in itr]
+    Pair{Symbol, AbstractVector}[v for v in itr]
 end
 
 """
