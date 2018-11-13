@@ -16,6 +16,10 @@ function DataFrame(x)
     if Tables.istable(typeof(x))
         return fromcolumns(Tables.columns(x))
     end
+    if TableTraits.supports_get_columns_copy_using_missing(x)
+        y = TableTraits.get_columns_copy_using_missing(x)
+        return DataFrame(collect(y), collect(keys(y)))
+    end
     it = TableTraits.isiterabletable(x)
     if it === true
         # Base.depwarn("constructing a DataFrame from an iterator is deprecated; $T should support the Tables.jl interface", nothing)

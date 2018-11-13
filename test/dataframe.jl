@@ -656,8 +656,9 @@ module TestDataFrame
     @testset "size" begin
         df = DataFrame(A = 1:3, B = 'A':'C')
         @test_throws ArgumentError size(df, 3)
-        @test length(df) == 2
         @test ndims(df) == 2
+        @test (nrow(df), ncol(df)) == (3, 2)
+        @test size(df) == (3, 2)
         @inferred nrow(df)
         @inferred ncol(df)
     end
