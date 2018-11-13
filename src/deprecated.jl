@@ -1736,3 +1736,6 @@ end
 
 import Base: map
 @deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
+
+import Base: length
+@deprecate length(df::AbstractDataFrame) size(df, 2)
