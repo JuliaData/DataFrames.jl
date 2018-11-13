@@ -42,6 +42,16 @@ module TestIteration
     @test eltypes(map(Vector{Float64}, eachcol(df))) == [Float64, Float64] # this is deprecated
     @test eltype(map(Vector{Float64}, columns(df))) == Vector{Float64}
 
+    # test mapcols corner cases
+    # this behavior might change when we rework setindex! to follow standard broadcasting rules
+    # notice that now mixing vectors and scalars is allowed in some cases but not in others
+    # this is likely to change
+    df_mapcols = DataFrame(a=1:10, b=11:20)
+    @test mapcols(sum, df_mapcols) == DataFrame(a=55, b=155)
+    @test mapcols(x -> x[1] == 1 ? 0 : [0], df_mapcols) == DataFrame(a=0, b=0)
+    @test mapcols(x -> x[1] == 1 ? x : 0, df_mapcols) == DataFrame(a=1:10, b=0)
+    @test_throws ArgumentError mapcols(x -> x[1] != 1 ? x : 0, df_mapcols)
+
     row = DataFrameRow(df, 1)
 
     row[:A] = 100
