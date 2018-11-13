@@ -119,8 +119,10 @@ columns(df::T) where T<: AbstractDataFrame =
 Base.size(itr::DataFrameColumns) = (size(itr.df, 2),)
 Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
 
-function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
-                                             Pair{Symbol, AbstractVector}}, j::Int)
+@inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
+                                                     Pair{Symbol, AbstractVector}},
+                               j::Int)
+    @boundscheck checkbounds(itr, j)
     Base.depwarn("Indexing into a return value of eachcol will return a pair " *
                  "of column name and column value", :getindex)
     itr.df[j]
@@ -128,8 +130,11 @@ function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
     # _names(itr.df)[j] => itr.df[j]
 end
 
-Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,AbstractVector}, j::Int) =
+@inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame, AbstractVector},
+                               j::Int)
+    @boundscheck checkbounds(itr, j)
     itr.df[j]
+end
 
 # TODO: remove this after deprecation period of getindex of DataFrameColumns
 function Base.iterate(itr::DataFrameColumns{<:AbstractDataFrame,
