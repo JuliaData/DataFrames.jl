@@ -29,6 +29,7 @@ meltdf
 
 ```@docs
 allowmissing!
+columns
 completecases
 describe
 disallowmissing!
@@ -41,6 +42,7 @@ filter
 filter!
 head
 insertcols!
+mapcols
 names!
 nonunique
 rename!

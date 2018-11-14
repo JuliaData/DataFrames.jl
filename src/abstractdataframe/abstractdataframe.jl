@@ -81,22 +81,6 @@ abstract type AbstractDataFrame end
 ##
 ##############################################################################
 
-struct Cols{T <: AbstractDataFrame} <: AbstractVector{AbstractVector}
-    df::T
-end
-function Base.iterate(itr::Cols, st=1)
-    st > length(itr.df) && return nothing
-    return (itr.df[st], st + 1)
-end
-Base.length(itr::Cols) = length(itr.df)
-Base.size(itr::Cols, ix) = ix==1 ? length(itr) : throw(ArgumentError("Incorrect dimension"))
-Base.size(itr::Cols) = (length(itr.df),)
-Base.IndexStyle(::Type{<:Cols}) = IndexLinear()
-Base.getindex(itr::Cols, inds...) = getindex(itr.df, inds...)
-
-# N.B. where stored as a vector, 'columns(x) = x.vector' is a bit cheaper
-columns(df::T) where {T <: AbstractDataFrame} = Cols{T}(df)
-
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
@@ -218,7 +202,7 @@ eltypes(df)
 ```
 
 """
-eltypes(df::AbstractDataFrame) = map!(eltype, Vector{Type}(undef, size(df,2)), columns(df))
+eltypes(df::AbstractDataFrame) = eltype.(columns(df))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
@@ -1096,7 +1080,7 @@ julia> repeat(df, inner = 2, outer = 3)
 ```
 """
 Base.repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1) =
-    map(x -> repeat(x, inner = inner, outer = outer), eachcol(df))
+    mapcols(x -> repeat(x, inner = inner, outer = outer), df)
 
 """
     repeat(df::AbstractDataFrame, count::Integer)
@@ -1126,7 +1110,7 @@ julia> repeat(df, 2)
 ```
 """
 Base.repeat(df::AbstractDataFrame, count::Integer) =
-    map(x -> repeat(x, count), eachcol(df))
+    mapcols(x -> repeat(x, count), df)
 
 ##############################################################################
 ##

@@ -10,7 +10,7 @@ import Base: @deprecate
 
 import Base: keys, values, insert!
 @deprecate keys(df::AbstractDataFrame) names(df)
-@deprecate values(df::AbstractDataFrame) DataFrames.columns(df)
+@deprecate values(df::AbstractDataFrame) columns(df)
 @deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[col] = df2[col], names(df2)); df)
 
 @deprecate pool categorical
@@ -1382,12 +1382,6 @@ import Base: setindex!
 
 # TODO: START: Deprecations to be removed after getindex deprecation period finishes
 
-function Base.iterate(itr::Cols{SubDataFrame}, st=1)
-    st > length(itr.df) && return nothing
-    # after deprecation we will return a view, now we materialize a vector
-    return (itr.df[:, st], st + 1)
-end
-
 # after deprecation we will return a view, now we materialize a vector
 Base.get(df::SubDataFrame, key::Any, default::Any) = haskey(df, key) ? df[:, key] : default
 
@@ -1422,12 +1416,28 @@ function Base.hash(df::SubDataFrame, h::UInt)
     return h
 end
 
-function Base.iterate(itr::DFColumnIterator{<:SubDataFrame}, j=1)
-    j > size(itr.df, 2) && return nothing
-    return ((_names(itr.df)[j], itr.df[:, j]), j + 1)
+function Base.getindex(itr::DataFrameColumns{<:SubDataFrame,
+                                             Pair{Symbol, AbstractVector}}, j::Int)
+    Base.depwarn("Indexing into a return value of eachcol on SubDataFrame will return a pair " *
+                 "of column name and a view of column value", :getindex)
+    itr.df[:, j]
 end
 
-Base.getindex(itr::DFColumnIterator{<:SubDataFrame}, j) = itr.df[:, j]
+
+function Base.getindex(itr::DataFrameColumns{<:SubDataFrame,AbstractVector}, j)
+    Base.depwarn("Indexing into a return value of columns on SubDataFrame will return a" *
+                 " view of column value", :getindex)
+    itr.df[:, j]
+end
+
+function Base.iterate(itr::DataFrameColumns{<:SubDataFrame,
+                                            Pair{Symbol, AbstractVector}}, j=1)
+    Base.depwarn("iterating over value of eachcol on SubDataFrame will return a" *
+                 " pair of column name and a view of column value", :getindex)
+    j > size(itr.df, 2) && return nothing
+    return (_names(itr.df)[j] => itr.df[:, j], j + 1)
+end
+
 
 function showrowindices(io::IO,
                         df::SubDataFrame,
@@ -1732,10 +1742,17 @@ function hashrows(df::SubDataFrame, skipmissing::Bool)
     return (rhashes, missings)
 end
 
+function Base.getproperty(df::SubDataFrame, col_ind::Symbol)
+    Base.depwarn("`sdf.col_ind` will create a view of `parent(sdf).col_ind` in the future." *
+                 " Use sdf[:, col_ind]` to get a freshly allocated vector.", :getproperty)
+    getindex(df, :, col_ind)
+end
+
 # TODO: END:   Deprecations to be removed after getindex deprecation period finishes
 
 import Base: map
 @deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
+@deprecate map(f::Union{Function,Type}, dfc::DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}) mapcols(f, dfc.df)
 
 import Base: length
 @deprecate length(df::AbstractDataFrame) size(df, 2)

@@ -1,6 +1,6 @@
 module TestJoin
     using Test, DataFrames
-    using DataFrames: similar_missing, columns
+    using DataFrames: similar_missing
     const ≅ = isequal
 
     name = DataFrame(ID = Union{Int, Missing}[1, 2, 3],

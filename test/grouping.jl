@@ -92,6 +92,7 @@ module TestGrouping
                        c = Vector{Union{Float64, Missing}}(randn(8)))
 
         cols = [:a, :b]
+
         f1(df) = DataFrame(cmax = maximum(df[:, :c]))
         f2(df) = (cmax = maximum(df[:, :c]),)
         f3(df) = maximum(df[:, :c])

@@ -8,56 +8,51 @@
 
 # Iteration by rows
 """
-    DFRowIterator{<:AbstractDataFrame}
+    DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@link) function.
 """
-struct DFRowIterator{T <: AbstractDataFrame}
+struct DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
     df::T
 end
 
 """
     eachrow(df::AbstractDataFrame)
 
-Return a `DFRowIterator` that iterates an `AbstractDataFrame` row by row,
+Return a `DataFrameRows` that iterates an `AbstractDataFrame` row by row,
 with each row represented as a `DataFrameRow`.
 """
-eachrow(df::AbstractDataFrame) = DFRowIterator(df)
+eachrow(df::AbstractDataFrame) = DataFrameRows(df)
 
-function Base.iterate(itr::DFRowIterator, i=1)
-    i > size(itr.df, 1) && return nothing
-    return (DataFrameRow(itr.df, i), i + 1)
+Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
+Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
+@inline function Base.getindex(itr::DataFrameRows, i::Int)
+    @boundscheck checkbounds(itr, i)
+    return DataFrameRow(itr.df, i)
 end
-Base.eltype(::DFRowIterator{T}) where {T} = DataFrameRow{T}
-Base.size(itr::DFRowIterator) = (size(itr.df, 1), )
-Base.length(itr::DFRowIterator) = size(itr.df, 1)
-Base.getindex(itr::DFRowIterator, i) = DataFrameRow(itr.df, i)
 
 # Iteration by columns
 """
-    DFColumnIterator{<:AbstractDataFrame}
+    DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}
 
 Iterator over columns of an `AbstractDataFrame`.
-Each returned value is a tuple consisting of column name and column vector.
-
-A value of this type is returned by the [`eachcol`](@link) function.
+If `V` is `Pair{Symbol,AbstractVector}` (which is the case when calling
+[`eachcol`](@link)) then each returned value is a pair consisting of
+column name and column vector. If `V` is `AbstractVector` (a value returned by
+the [`columns`](@link) function) then each returned value is a column vector.
 """
-struct DFColumnIterator{T <: AbstractDataFrame}
+struct DataFrameColumns{T<:AbstractDataFrame, V} <: AbstractVector{V}
     df::T
 end
 
 """
     eachcol(df::AbstractDataFrame)
 
-Return a `DFColumnIterator` that iterates an `AbstractDataFrame` column by column.
-Iteration returns a tuple consisting of column name and column vector.
-
-`DFColumnIterator` has a custom implementation of the `map` function which
-returns a `DataFrame` and assumes that a function argument passed do
-the `map` function accepts takes only a column vector.
+Return a `DataFrameColumns` that iterates an `AbstractDataFrame` column by column.
+Iteration returns a pair consisting of column name and column vector.
 
 **Examples**
 
@@ -72,28 +67,122 @@ julia> df = DataFrame(x=1:4, y=11:14)
 │ 3   │ 3     │ 13    │
 │ 4   │ 4     │ 14    │
 
-julia> map(sum, eachcol(df))
-1×2 DataFrame
+julia> collect(eachcol(df))
+2-element Array{Pair{Symbol,AbstractArray{T,1} where T},1}:
+ :x => [1, 2, 3, 4]
+ :y => [11, 12, 13, 14]
+```
+"""
+eachcol(df::T) where T<: AbstractDataFrame =
+    DataFrameColumns{T, Pair{Symbol, AbstractVector}}(df)
+
+"""
+    columns(df::AbstractDataFrame)
+
+Return a `DataFrameColumns` that iterates an `AbstractDataFrame` column by
+column, yielding column vectors.
+
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(x=1:4, y=11:14)
+4×2 DataFrame
 │ Row │ x     │ y     │
 │     │ Int64 │ Int64 │
 ├─────┼───────┼───────┤
-│ 1   │ 10    │ 50    │
+│ 1   │ 1     │ 11    │
+│ 2   │ 2     │ 12    │
+│ 3   │ 3     │ 13    │
+│ 4   │ 4     │ 14    │
+
+julia> collect(columns(df))
+2-element Array{AbstractArray{T,1} where T,1}:
+ [1, 2, 3, 4]
+ [11, 12, 13, 14]
+
+julia> sum.(columns(df))
+2-element Array{Int64,1}:
+ 10
+ 50
+
+julia> map(columns(df)) do col
+           maximum(col) - minimum(col)
+       end
+2-element Array{Int64,1}:
+ 3
+ 3
 ```
 """
-eachcol(df::AbstractDataFrame) = DFColumnIterator(df)
+columns(df::T) where T<: AbstractDataFrame =
+    DataFrameColumns{T, AbstractVector}(df)
 
-function Base.iterate(itr::DFColumnIterator, j=1)
-    j > size(itr.df, 2) && return nothing
-    return ((_names(itr.df)[j], itr.df[j]), j + 1)
+Base.size(itr::DataFrameColumns) = (size(itr.df, 2),)
+Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
+
+@inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
+                                                     Pair{Symbol, AbstractVector}},
+                               j::Int)
+    @boundscheck checkbounds(itr, j)
+    Base.depwarn("Indexing into a return value of eachcol will return a pair " *
+                 "of column name and column value", :getindex)
+    itr.df[j]
+    # after deprecation replace by:
+    # _names(itr.df)[j] => itr.df[j]
 end
-Base.eltype(::DFColumnIterator) = Tuple{Symbol, AbstractVector}
-Base.size(itr::DFColumnIterator) = (size(itr.df, 2), )
-Base.length(itr::DFColumnIterator) = size(itr.df, 2)
-Base.getindex(itr::DFColumnIterator, j) = itr.df[j]
-function Base.map(f::Union{Function,Type}, dfci::DFColumnIterator)
+
+@inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame, AbstractVector},
+                               j::Int)
+    @boundscheck checkbounds(itr, j)
+    itr.df[j]
+end
+
+# TODO: remove this after deprecation period of getindex of DataFrameColumns
+function Base.iterate(itr::DataFrameColumns{<:AbstractDataFrame,
+                                            Pair{Symbol, AbstractVector}}, j=1)
+    j > size(itr.df, 2) && return nothing
+    return (_names(itr.df)[j] => itr.df[j], j + 1)
+end
+
+# TODO: remove this after deprecation period of getindex of DataFrameColumns
+function Base.collect(itr::DataFrameColumns{<:AbstractDataFrame,
+                                            Pair{Symbol, AbstractVector}})
+    Pair{Symbol, AbstractVector}[v for v in itr]
+end
+
+"""
+    mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
+
+Return a `DataFrame` where each column of `df` is transformed using function `f`.
+`f` must return `AbstractVector` objects all with the same length or scalars.
+
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(x=1:4, y=11:14)
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 11    │
+│ 2   │ 2     │ 12    │
+│ 3   │ 3     │ 13    │
+│ 4   │ 4     │ 14    │
+
+julia> mapcols(x -> x.^2, df)
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 121   │
+│ 2   │ 4     │ 144   │
+│ 3   │ 9     │ 169   │
+│ 4   │ 16    │ 196   │
+```
+"""
+function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     # note: `f` must return a consistent length
     res = DataFrame()
-    for (n, v) in eachcol(dfci.df)
+    for (n, v) in eachcol(df)
         res[n] = f(v)
     end
     res
