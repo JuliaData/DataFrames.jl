@@ -80,11 +80,13 @@ end
 
 # Helper function for RowGroupDict.
 # Returns a tuple:
-# 1) the number of row groups in a data frame
+# 1) the highest group index in the `groups` vector
 # 2) vector of row hashes (may be empty if hash=Val(false))
 # 3) slot array for a hash map, non-zero values are
 #    the indices of the first row in a group
-# Optional group vector is set to the group indices of each row
+# 4) whether groups are already sorted
+# 5) whether some groups might be empty (index isn't used in `groups`)
+# Optional `groups` vector is set to the group indices of each row
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          hash::Val = Val(true),
                          groups::Union{Vector{Int}, Nothing} = nothing,
