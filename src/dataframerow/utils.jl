@@ -4,8 +4,6 @@
 struct RowGroupDict{T<:AbstractDataFrame}
     "source data table"
     df::T
-    "number of groups (i.e. highest group index: some groups may be empty)"
-    ngroups::Int
     "row hashes (optional, can be empty)"
     rhashes::Vector{UInt}
     "hashindex -> index of group-representative row (optional, can be empty)"
@@ -98,7 +96,8 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     @assert sz >= length(rhashes)
     szm1 = sz-1
     gslots = zeros(Int, sz)
-    # If missings are to be skipped, they will all go to group 1
+    # If missings are to be skipped, they will all go to group 1,
+    # which will be removed by group_rows
     ngroups = skipmissing ? 1 : 0
     @inbounds for i in eachindex(rhashes)
         # find the slot and group index for a row
@@ -129,7 +128,7 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
             groups[i] = gix
         end
     end
-    return ngroups, rhashes, gslots, false, true
+    return ngroups, rhashes, gslots, false, false
 end
 
 function row_group_slots(cols::Tuple{CategoricalVector},
@@ -139,7 +138,8 @@ function row_group_slots(cols::Tuple{CategoricalVector},
     col = cols[1]
     @assert groups === nothing || length(groups) == length(col)
 
-    # If missings are to be skipped, they will all go to group 1
+    # If missings are to be skipped, they will all go to group 1,
+    # which will be removed by group_rows
     ngroups = length(levels(col)) + (eltype(col) >: Missing)
 
     if groups !== nothing
@@ -164,7 +164,8 @@ end
 # - hash: whether row hashes should be computed (if false, the rhashes and gslots fields
 #   hold empty vectors)
 # - sort: whether groups should be sorted
-# - skipmissing: whether rows with missing values should be skipped rather than put into group 0
+# - skipmissing: whether rows with missing values should be skipped
+#   rather than put into a separate group
 function group_rows(df::AbstractDataFrame, hash::Bool = true, sort::Bool = false,
                     skipmissing::Bool = false)
     groups = Vector{Int}(undef, nrow(df))
@@ -228,7 +229,7 @@ function group_rows(df::AbstractDataFrame, hash::Bool = true, sort::Bool = false
         Base.permute!!(stops, group_perm)
     end
 
-    return RowGroupDict(df, ngroups, rhashes, gslots, groups, rperm, starts, stops)
+    return RowGroupDict(df, rhashes, gslots, groups, rperm, starts, stops)
 end
 
 # Find index of a row in gd that matches given row by content, 0 if not found

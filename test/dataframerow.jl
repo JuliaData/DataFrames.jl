@@ -45,7 +45,7 @@ module TestDataFrameRow
     @test hash(DataFrameRow(df, 2)) != hash(DataFrameRow(df, 6))
 
     # check that hashrows() function generates the same hashes as DataFrameRow
-    df_rowhashes, _ = DataFrames.hashrows(tuple(DataFrames.columns(df)...), false)
+    df_rowhashes, _ = DataFrames.hashrows(Tuple(columns(df)), false)
     @test df_rowhashes == [hash(dr) for dr in eachrow(df)]
 
     # test incompatible frames
@@ -57,9 +57,9 @@ module TestDataFrameRow
     df5 = DataFrame([d1], [:d1])
     df6 = DataFrame(d1 = [2,3])
 
-    # test_group("groupby")
+    # test_group("group_rows")
     gd = DataFrames.group_rows(df5)
-    @test gd.ngroups == 2
+    @test length(unique(gd.groups)) == 2
 
     # getting groups for the rows of the other frames
     @test length(gd[DataFrameRow(df6, 1)]) > 0
@@ -68,11 +68,11 @@ module TestDataFrameRow
 
     # grouping empty frame
     gd = DataFrames.group_rows(DataFrame(x=Int[]))
-    @test gd.ngroups == 0
+    @test length(unique(gd.groups)) == 0
 
     # grouping single row
     gd = DataFrames.group_rows(df5[1:1,:])
-    @test gd.ngroups == 1
+    @test length(unique(gd.groups)) == 1
 
     # getproperty, setproperty! and propertynames
     r = DataFrameRow(df, 1)

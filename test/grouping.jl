@@ -355,14 +355,14 @@ module TestGrouping
                    Key2 = ["B", "A", "A", missing, "A"],
                    Value = 1:5),
          DataFrame(Key1 = categorical(["A", missing, "B", "B", "A"]),
-                  Key2 = ["B", "A", "A", missing, "A"],
-                  Value = 1:5),
+                   Key2 = ["B", "A", "A", missing, "A"],
+                   Value = 1:5),
          DataFrame(Key1 = ["A", missing, "B", "B", "A"],
-                  Key2 = categorical(["B", "A", "A", missing, "A"]),
-                  Value = 1:5),
+                   Key2 = categorical(["B", "A", "A", missing, "A"]),
+                   Value = 1:5),
          DataFrame(Key1 = categorical(["A", missing, "B", "B", "A"]),
-                  Key2 = categorical(["B", "A", "A", missing, "A"]),
-                  Value = 1:5))
+                   Key2 = categorical(["B", "A", "A", missing, "A"]),
+                   Value = 1:5))
 
         @testset "sort=false, skipmissing=false" begin
             gd = groupby(df, :Key1)
