@@ -76,13 +76,7 @@ function groupby(df::AbstractDataFrame, cols::AbstractVector;
                  sort::Bool = false, skipmissing::Bool = false)
     intcols = index(df)[cols]
     sdf = df[intcols]
-    df_groups = group_rows(sdf, skipmissing)
-    # sort the groups
-    if sort
-        group_perm = sortperm(view(sdf, df_groups.rperm[df_groups.starts], :))
-        permute!(df_groups.starts, group_perm)
-        Base.permute!!(df_groups.stops, group_perm)
-    end
+    df_groups = group_rows(sdf, false, sort, skipmissing)
     GroupedDataFrame(df, intcols, df_groups.rperm,
                      df_groups.starts, df_groups.stops)
 end

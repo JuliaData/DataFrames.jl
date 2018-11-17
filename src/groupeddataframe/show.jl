@@ -28,7 +28,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
         end
         if N > 1
             print(io, "\n⋮\n")
-            nnrows = size(gd[N], 1)
+            nrows = size(gd[N], 1)
             rows = nrows > 1 ? "rows" : "row"
             print(io, "Last Group: $nrows $rows")
             show(io, gd[N], summary=false,
