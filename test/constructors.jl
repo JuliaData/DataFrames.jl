@@ -32,7 +32,8 @@ module TestConstructors
                DataFrame(UnitRange[1:3, 1:3]) == DataFrame(AbstractVector[1:3, 1:3]) ==
                DataFrame([[1,2,3], [1,2,3]]) == DataFrame(Any[[1,2,3], [1,2,3]]))
 
-        @test df === DataFrame(df) # in the future this will fail as constructor will return a copy
+        @test df !== DataFrame(df)
+        @test df == DataFrame(df)
 
         df2 = convert(DataFrame, Union{Float64, Missing}[0.0 1.0;
                                                          0.0 1.0;
@@ -72,10 +73,9 @@ module TestConstructors
         @test df ≅ DataFrame([Union{Int, Missing}, Union{Float64, Missing}], 2)
 
         @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0:0)
-        @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0:0)
-        # TODO: re-enable after getindex deprecation - this should be MethodError
-        # @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0)
-        # @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0)
+        @test_throws ArgumentError SubDataFrame(DataFrame(A=1), 0)
+        @test_throws BoundsError DataFrame(A=1)[0, :] 
+        @test_throws BoundsError DataFrame(A=1)[0, 1:1]
         @test SubDataFrame(DataFrame(A=1), 1:1) == DataFrame(A=1)
         @test SubDataFrame(DataFrame(A=1:10), 1:4) == DataFrame(A=1:4)
         @test view(SubDataFrame(DataFrame(A=1:10), 1:4), 2:2, :) == DataFrame(A=2)

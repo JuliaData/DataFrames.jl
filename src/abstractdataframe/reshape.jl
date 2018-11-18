@@ -342,6 +342,8 @@ end
 ##############################################################################
 
 """
+    StackedVector <: AbstractVector{Any}
+
 An AbstractVector{Any} that is a linear, concatenated view into
 another set of AbstractVectors
 
@@ -368,7 +370,7 @@ struct StackedVector <: AbstractVector{Any}
     components::Vector{Any}
 end
 
-function Base.getindex(v::StackedVector,i::Integer)
+function Base.getindex(v::StackedVector,i::Int)
     lengths = [length(x)::Int for x in v.components]
     cumlengths = [0; cumsum(lengths)]
     j = searchsortedlast(cumlengths .+ 1, i)
@@ -382,6 +384,7 @@ function Base.getindex(v::StackedVector,i::Integer)
     v.components[j][k]
 end
 
+Base.IndexStyle(::Type{StackedVector}) = Base.IndexLinear()
 Base.size(v::StackedVector) = (length(v),)
 Base.length(v::StackedVector) = sum(map(length, v.components))
 Base.ndims(v::StackedVector) = 1
@@ -393,6 +396,8 @@ CategoricalArrays.CategoricalArray(v::StackedVector) = CategoricalArray(v[:]) # 
 
 
 """
+    RepeatedVector{T} <: AbstractVector{T}
+
 An AbstractVector that is a view into another AbstractVector with
 repeated elements
 
@@ -429,12 +434,13 @@ struct RepeatedVector{T} <: AbstractVector{T}
     outer::Int
 end
 
-function Base.getindex(v::RepeatedVector, i::Integer)
+function Base.getindex(v::RepeatedVector, i::Int)
     N = length(v.parent)
     idx = Base.fld1(mod1(i,v.inner*N),v.inner)
     v.parent[idx]
 end
 
+Base.IndexStyle(::Type{<:RepeatedVector}) = Base.IndexLinear()
 Base.size(v::RepeatedVector) = (length(v),)
 Base.length(v::RepeatedVector) = v.inner * v.outer * length(v.parent)
 Base.ndims(v::RepeatedVector) = 1

@@ -6,7 +6,21 @@ A view of one row of an AbstractDataFrame.
 struct DataFrameRow{T<:AbstractDataFrame}
     df::T
     row::Int
+
+    @inline function DataFrameRow{T}(df::T, row::Integer) where T<:AbstractDataFrame
+        if row isa Bool
+            throw(ArgumentError("invalid index: $row of type Bool"))
+        end
+        @boundscheck if row < 1 || row > nrow(df)
+            throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                              "rows at index $row"))
+        end
+        new{T}(df, row)
+    end
 end
+
+@inline DataFrameRow(df::T, row::Integer) where T<:AbstractDataFrame =
+    DataFrameRow{T}(df, row)
 
 """
     parent(r::DataFrameRow)
@@ -16,18 +30,27 @@ Return the parent data frame of `r`.
 Base.parent(r::DataFrameRow) = getfield(r, :df)
 row(r::DataFrameRow) = getfield(r, :row)
 
-function Base.getindex(r::DataFrameRow, idx::ColumnIndex)
-    return parent(r)[row(r), idx]
-end
+Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
+    DataFrameRow(adf, rowind)
+Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
+    DataFrameRow(adf[colinds], rowind)
 
+Base.getindex(adf::DataFrame, rowind::Integer, colinds::AbstractVector) =
+    DataFrameRow(adf[colinds], rowind)
+Base.getindex(sdf::SubDataFrame, rowind::Integer, colinds::AbstractVector) =
+    DataFrameRow(parent(sdf)[colinds], rows(sdf)[rowind])
+Base.getindex(adf::DataFrame, rowind::Integer, ::Colon) =
+    DataFrameRow(adf, rowind)
+Base.getindex(sdf::SubDataFrame, rowind::Integer, ::Colon) =
+    DataFrameRow(parent(sdf), rows(sdf)[rowind])
+
+Base.getindex(r::DataFrameRow, idx::ColumnIndex) = parent(r)[row(r), idx]
 Base.getindex(r::DataFrameRow, idxs::AbstractVector) =
     DataFrameRow(parent(r)[idxs], row(r))
-
 Base.getindex(r::DataFrameRow, ::Colon) = r
 
-function Base.setindex!(r::DataFrameRow, value::Any, idx::Any)
-    return setindex!(parent(r), value, row(r), idx)
-end
+Base.setindex!(r::DataFrameRow, value::Any, idx::Any) =
+    setindex!(parent(r), value, row(r), idx)
 
 Base.names(r::DataFrameRow) = names(parent(r))
 _names(r::DataFrameRow) = _names(parent(r))
@@ -39,20 +62,14 @@ Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
 # Private fields are never exposed since they can conflict with column names
 Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
-function Base.view(r::DataFrameRow, col::ColumnIndex)
-    if col isa Bool
-        throw(ArgumentError("invalid column index: $col of type Bool"))
-    end
-    Base.depwarn("`view(dfr, col)` will return a `0`-dimensional view in the future." *
-                 " Use `view(dfr, [col]` to get a `DataFrameRow`.", :getindex)
-    DataFrameRow(parent(r)[[col]], row(r))
-end
-
-Base.view(r::DataFrameRow, cols) = DataFrameRow(parent(r)[cols], row(r))
+Base.view(r::DataFrameRow, col::ColumnIndex) = view(parent(r)[col], row(r))
+Base.view(r::DataFrameRow, cols::AbstractVector) =
+    DataFrameRow(parent(r)[cols], row(r))
 Base.view(r::DataFrameRow, ::Colon) = r
 
 index(r::DataFrameRow) = index(parent(r))
-
+Base.size(r::DataFrameRow) = (size(parent(r), 2),)
+Base.size(r::DataFrameRow, i) = size(r)[i]
 Base.length(r::DataFrameRow) = size(parent(r), 2)
 
 Compat.lastindex(r::DataFrameRow) = size(parent(r), 2)
@@ -66,7 +83,7 @@ end
 
 function Base.iterate(r::DataFrameRow, st)
     st > length(r) && return nothing
-    return ((_names(r)[st], r[st]), st + 1)
+    return (r[st], st + 1)
 end
 
 Base.convert(::Type{Array}, dfr::DataFrameRow) =
