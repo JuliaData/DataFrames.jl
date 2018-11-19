@@ -19,7 +19,7 @@ struct DataFrameRow{T<:AbstractDataFrame}
     end
 end
 
-@inline DataFrameRow(df::T, row::Integer) where T<:AbstractDataFrame =
+@inline DataFrameRow(df::T, row::Integer) where {T<:AbstractDataFrame} =
     DataFrameRow{T}(df, row)
 
 """
