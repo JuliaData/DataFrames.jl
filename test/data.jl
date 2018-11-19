@@ -220,9 +220,11 @@ module TestData
         d1s = stackdf(d1, [:a, :b])
         @test d1s[1][[1,24]] == [:a, :b]
         @test d1s[2][[1,24]] == [1, 4]
-        @test_throws ArgumentError d1s[1][true]
+        if VERSION >= v"1" # this was silently accepted pre Julia 1.0
+            @test_throws ArgumentError d1s[1][true]
+            @test_throws ArgumentError d1s[2][true]
+        end
         @test_throws ArgumentError d1s[1][1.0]
-        @test_throws ArgumentError d1s[2][true]
         @test_throws ArgumentError d1s[2][1.0]
         
         # Those tests check indexing RepeatedVector/StackedVector by a vector
