@@ -272,10 +272,8 @@ module TestGrouping
         res = combine(d -> (x=d[1, :Key2],), groupby(df, :Key1))
         @test res.x isa CategoricalVector{String}
         # ...and when returning an array
-        # TODO: temporarily disabled till a missing method in CategoricalArrays.jl
-        # is not implemented
-        # res = combine(d -> DataFrame(x=d[:Key1]), groupby(df, :Key1))
-        # @test res.x isa CategoricalVector{String}
+        res = combine(d -> DataFrame(x=d[:Key1]), groupby(df, :Key1))
+        @test res.x isa CategoricalVector{String}
 
         # Check that CategoricalArray and String give a String...
         res = combine(d -> d.Key1 == ["A", "A"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
