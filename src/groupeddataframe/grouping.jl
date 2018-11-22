@@ -35,8 +35,7 @@ groupby(cols; sort = false, skipmissing = false)
 
 ### Returns
 
-* `::GroupedDataFrame` : a grouped view into `d`
-* `::Function`: a function `x -> groupby(x, cols)` (if `d` is not specified)
+A `GroupedDataFrame` : a grouped view into `d`
 
 ### Details
 
@@ -67,8 +66,6 @@ vcat([g[:b] for g in gd]...)
 for g in gd
     println(g)
 end
-map(d -> sum(skipmissing(d[:c])), gd)
-combine(d -> sum(skipmissing(d[:c])), gd)
 ```
 
 """
@@ -123,31 +120,27 @@ _names(gd::GroupedDataFrame) = _names(gd.parent)
 # by the user-provided function lacks them
 wrap(x::Union{AbstractDataFrame, NamedTuple, DataFrameRow}) = x
 wrap(x::AbstractMatrix) = convert(DataFrame, x)
-wrap(x::AbstractVector) = DataFrame(x1 = x)
-wrap(x::Any) = (x1 = x,)
+wrap(x::AbstractVector) = DataFrame(x1=x)
+wrap(x::Any) = (x1=x,)
 
-function select_call(f::Function, gd::GroupedDataFrame,
-                     incols::Tuple{Vararg{AbstractVector}}, i::Integer)
+function wrap_call(f::Union{Function, Type}, gd::GroupedDataFrame,
+                   incols::Tuple{Vararg{AbstractVector}}, i::Integer)
     idx = gd.idx[gd.starts[i]:gd.ends[i]]
-    f(map(c -> view(c, idx), incols)...)
+    wrap(f(map(c -> view(c, idx), incols)...))
 end
-select_call(f::Function, gd::GroupedDataFrame, incols::Nothing, i::Integer) = f(gd[i])
-
-const ColumnIndices = Union{Symbol, Integer,
-                            Tuple{Vararg{Symbol}}, Tuple{Vararg{Integer}},
-                            AbstractVector{Symbol}, AbstractVector{<:Integer}}
+wrap_call(f::Union{Function, Type}, gd::GroupedDataFrame, incols::Nothing, i::Integer) =
+    wrap(f(gd[i]))
 
 """
-    map(f::Union{Function, Type}, gd::GroupedDataFrame)
+    map(f, gd::GroupedDataFrame)
 
 Apply a function to each group of rows and return a `GroupedDataFrame`.
 
-`f` is called for each group, and the returned `DataFrame`
-then consists of the returned rows plus the grouping columns.
-If `select=nothing` (the default), a `SubDataFrame` view is passed to `f` for each group.
-If one or more columns are specified via `select`, `SubArray` views into these columns
-are passed to `f` as separate arguments. `select` can be a column name or index, or
-a vector or tuple thereof.
+If `f` is a function, it is passed a `SubDataFrame` view for each group,
+and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
+If `f` is a `Pair`, its first element must be a column name or index, or
+a vector or tuple thereof, and its second element must be a function to which `SubArray`
+views into these columns are passed to `f` as separate arguments.
 
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
@@ -172,37 +165,37 @@ returning a vector or a data frame.
 ```julia
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
-                      c = randn(8));
+                      c = 1:8);
 
 julia> gd = groupby(df, :a);
 
-julia> map(c -> sum(skipmissing(c)), gd; select=:c)
+julia> map(:c => sum, gd)
 GroupedDataFrame{DataFrame} with 4 groups based on key: :a
 First Group: 1 row
-│ Row │ a     │ x1       │
-│     │ Int64 │ Float64  │
-├─────┼───────┼──────────┤
-│ 1   │ 1     │ 0.569396 │
+│ Row │ a     │ c_sum │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 6     │
 ⋮
 Last Group: 1 row
-│ Row │ a     │ x1      │
-│     │ Int64 │ Float64 │
-├─────┼───────┼─────────┤
-│ 1   │ 4     │ 1.40818 │
+│ Row │ a     │ c_sum │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 4     │ 12    │
 
-julia> map(d -> sum(skipmissing(d[:c])), gd) # Slower variant
+julia> map(df -> sum(df.c), gd) # Slower variant
 GroupedDataFrame{DataFrame} with 4 groups based on key: :a
 First Group: 1 row
-│ Row │ a     │ x1       │
-│     │ Int64 │ Float64  │
-├─────┼───────┼──────────┤
-│ 1   │ 1     │ 0.569396 │
+│ Row │ a     │ x1    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 6     │
 ⋮
 Last Group: 1 row
-│ Row │ a     │ x1      │
-│     │ Int64 │ Float64 │
-├─────┼───────┼─────────┤
-│ 1   │ 4     │ 1.40818 │
+│ Row │ a     │ x1    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 4     │ 12    │
 ```
 
 ### See also
@@ -210,17 +203,9 @@ Last Group: 1 row
 `combine(f, gd)` returns a `DataFrame` rather than a `GroupedDataFrame`
 
 """
-function Base.map(f::Union{Function, Type}, gd::GroupedDataFrame;
-                  select::Union{Nothing, ColumnIndices}=nothing)
+function Base.map(f::Union{Function, Type, Pair}, gd::GroupedDataFrame)
     if length(gd) > 0
-        if select === nothing
-            incols = nothing
-        elseif select isa Symbol || select isa Integer
-            incols = (gd.parent[select],)
-        else
-            incols = Tuple(columns(gd.parent[collect(select)]))
-        end
-        idx, valscat = _combine(wrap(select_call(f, gd, incols, 1)), f, gd, incols)
+        idx, valscat = _combine(f, gd)
         parent = hcat!(gd.parent[idx, gd.cols], valscat)
         starts = Vector{Int}(undef, length(gd))
         ends = Vector{Int}(undef, length(gd))
@@ -245,15 +230,14 @@ end
 
 """
     combine(gd::GroupedDataFrame)
-    combine(f::Function, gd::GroupedDataFrame; select=nothing)
+    combine(f, gd::GroupedDataFrame)
 
 Transform a `GroupedDataFrame` into a `DataFrame`.
-If a function `f` is provided, it is called for each group, and the returned `DataFrame`
-then consists of the returned rows plus the grouping columns.
-If `select=nothing` (the default), a `SubDataFrame` view is passed to `f` for each group.
-If one or more columns are specified via `select`, `SubArray` views into these columns
-are passed to `f` as separate arguments. `select` can be a column name or index, or
-a vector or tuple thereof.
+If a function `f` is provided, it is passed a `SubDataFrame` view for each group,
+and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
+If `f` is a `Pair`, its first element must be a column name or index, or
+a vector or tuple thereof, and its second element must be a function to which `SubArray`
+views into these columns are passed to `f` as separate arguments.
 
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
@@ -281,29 +265,29 @@ call from which `gd` was constructed. Otherwise, ordering of rows is undefined.
 ```julia
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
-                      c = randn(8));
+                      c = 1:8);
 
 julia> gd = groupby(df, :a);
 
-julia> combine(c -> sum(skipmissing(c)), gd, select=:c)
+julia> combine(:c => sum, gd)
 4×2 DataFrame
-│ Row │ a     │ x1        │
-│     │ Int64 │ Float64   │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ -0.858037 │
-│ 2   │ 2     │ 1.21654   │
-│ 3   │ 3     │ -0.873304 │
-│ 4   │ 4     │ 1.90762   │
+│ Row │ a     │ c_sum │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 6     │
+│ 2   │ 2     │ 8     │
+│ 3   │ 3     │ 10    │
+│ 4   │ 4     │ 12    │
 
-julia> combine(df -> sum(skipmissing(df.c)), gd) # Slower variant
+julia> combine(df -> sum(df.c), gd) # Slower variant
 4×2 DataFrame
-│ Row │ a     │ x1        │
-│     │ Int64 │ Float64   │
-├─────┼───────┼───────────┤
-│ 1   │ 1     │ -0.858037 │
-│ 2   │ 2     │ 1.21654   │
-│ 3   │ 3     │ -0.873304 │
-│ 4   │ 4     │ 1.90762   │
+│ Row │ a     │ x1    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 6     │
+│ 2   │ 2     │ 8     │
+│ 3   │ 3     │ 10    │
+│ 4   │ 4     │ 12    │
 ```
 
 ### See also
@@ -314,17 +298,9 @@ julia> combine(df -> sum(skipmissing(df.c)), gd) # Slower variant
 of `combine(map(f, groupby(df, cols)))`.
 
 """
-function combine(f::Function, gd::GroupedDataFrame;
-                 select::Union{Nothing, ColumnIndices}=nothing)
+function combine(f::Union{Function, Type, Pair}, gd::GroupedDataFrame)
     if length(gd) > 0
-        if select === nothing
-            incols = nothing
-        elseif select isa Symbol || select isa Integer
-            incols = (gd.parent[select],)
-        else
-            incols = Tuple(columns(gd.parent[collect(select)]))
-        end
-        idx, valscat = _combine(wrap(select_call(f, gd, incols, 1)), f, gd, incols)
+        idx, valscat = _combine(f, gd)
         return hcat!(gd.parent[idx, gd.cols], valscat, makeunique=true)
     else
         return similar(gd.parent[gd.cols], 0)
@@ -333,7 +309,28 @@ end
 
 combine(gd::GroupedDataFrame) = combine(identity, gd)
 
-function _combine(first::Union{NamedTuple, DataFrameRow}, f::Function,
+function _combine(f::Union{Function, Type, Pair}, gd::GroupedDataFrame)
+    if f isa Pair{<:Union{Symbol,Integer}}
+        incols = (gd.parent[first(f)],)
+        fun = last(f)
+    elseif f isa Pair
+        incols = Tuple(columns(gd.parent[collect(first(f))]))
+        fun = last(f)
+    else
+        incols = nothing
+        fun = f
+    end
+    idx, valscat = _combine(wrap_call(fun, gd, incols, 1), fun, gd, incols)
+    if f isa Pair{<:Union{Symbol,Integer}} &&
+        ncol(valscat) == 1 && names(valscat)[1] === :x1
+        nam = Symbol(names(gd.parent)[index(gd.parent)[first(f)]],
+                     '_', funname(fun))
+        names!(valscat, [nam])
+    end
+    return idx, valscat
+end
+
+function _combine(first::Union{NamedTuple, DataFrameRow}, f::Union{Function, Type},
                   gd::GroupedDataFrame,
                   incols::Union{Nothing, Tuple{Vararg{AbstractVector}}})
     m = length(first)
@@ -346,7 +343,7 @@ function _combine(first::Union{NamedTuple, DataFrameRow}, f::Function,
     idx, valscat
 end
 
-function _combine(first::AbstractDataFrame, f::Function, gd::GroupedDataFrame,
+function _combine(first::AbstractDataFrame, f::Union{Function, Type}, gd::GroupedDataFrame,
                   incols::Union{Nothing, Tuple{Vararg{AbstractVector}}})
     m = size(first, 2)
     idx = Vector{Int}()
@@ -390,7 +387,7 @@ end
 
 function _combine!(first::Union{NamedTuple, DataFrameRow}, outcols::NTuple{N, AbstractVector},
                    idx::Vector{Int}, rowstart::Integer, colstart::Integer,
-                   f::Function, gd::GroupedDataFrame,
+                   f::Union{Function, Type}, gd::GroupedDataFrame,
                    incols::Union{Nothing, Tuple{Vararg{AbstractVector}}},
                    colnames::NTuple{N, Symbol}) where N
     n = length(first)
@@ -401,7 +398,7 @@ function _combine!(first::Union{NamedTuple, DataFrameRow}, outcols::NTuple{N, Ab
     idx[rowstart] = gd.idx[gd.starts[rowstart]]
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
-        row = wrap(select_call(f, gd, incols, i))
+        row = wrap_call(f, gd, incols, i)
         j = fill_row!(row, outcols, i, 1, colnames)
         if j !== nothing # Need to widen column type
             local newcols
@@ -462,7 +459,7 @@ end
 
 function _combine!(first::AbstractDataFrame, outcols::NTuple{N, AbstractVector},
                    idx::Vector{Int}, rowstart::Integer, colstart::Integer,
-                   f::Function, gd::GroupedDataFrame,
+                   f::Union{Function, Type}, gd::GroupedDataFrame,
                    incols::Union{Nothing, Tuple{Vararg{AbstractVector}}},
                    colnames::AbstractVector{Symbol}) where N
     n = size(first, 2)
@@ -474,7 +471,7 @@ function _combine!(first::AbstractDataFrame, outcols::NTuple{N, AbstractVector},
     append!(idx, Iterators.repeated(gd.idx[gd.starts[rowstart]], size(first, 1)))
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
-        rows = wrap(select_call(f, gd, incols, i))
+        rows = wrap_call(f, gd, incols, i)
         j = append_rows!(rows, outcols, 1, colnames)
         if j !== nothing # Need to widen column type
             local newcols
@@ -502,16 +499,13 @@ Apply a function to each column in an AbstractDataFrame or
 GroupedDataFrame
 
 ```julia
-colwise(f::Function, d)
-colwise(d)
+colwise(f, d)
 ```
 
 ### Arguments
 
 * `f` : a function or vector of functions
 * `d` : an AbstractDataFrame of GroupedDataFrame
-
-If `d` is not provided, a curried version of groupby is given.
 
 ### Returns
 
@@ -541,8 +535,8 @@ Split-apply-combine in one step; apply `f` to each grouping in `d`
 based on columns `col`
 
 ```julia
-by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false)
-by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false)
+by(d::AbstractDataFrame, cols, f; sort::Bool = false)
+by(f, d::AbstractDataFrame, cols; sort::Bool = false)
 ```
 
 ### Arguments
@@ -555,7 +549,12 @@ by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false)
 
 ### Details
 
-For each group in `gd`, `f` is passed a `SubDataFrame` view with the corresponding rows.
+If `f` is a function, it is passed a `SubDataFrame` view for each group,
+and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
+If `f` is a `Pair`, its first element must be a column name or index, or
+a vector or tuple thereof, and its second element must be a function to which `SubArray`
+views into these columns are passed to `f` as separate arguments.
+
 `f` can return a single value, a named tuple, a vector, or a data frame.
 This determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
@@ -584,23 +583,85 @@ notation can be used.
 ### Examples
 
 ```julia
-using Statistics
-df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-               b = repeat([2, 1], outer=[4]),
-               c = randn(8))
-by(df, :a, d -> sum(d[:c]))
-by(df, :a, d -> 2 * skipmissing(d[:c]))
-by(df, :a, d -> (c_sum = sum(d[:c]), c_mean = mean(skipmissing(d[:c]))))
-by(df, :a, d -> DataFrame(c = d[:c], c_mean = mean(skipmissing(d[:c]))))
-by(df, [:a, :b]) do d
-    (m = mean(skipmissing(d[:c])), v = var(skipmissing(d[:c])))
-end
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> by(df, :a, :c => sum)
+4×2 DataFrame
+│ Row │ a     │ c_sum │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 6     │
+│ 2   │ 2     │ 8     │
+│ 3   │ 3     │ 10    │
+│ 4   │ 4     │ 12    │
+
+julia> by(df, :a, d -> sum(d.c)) # Slower variant
+4×2 DataFrame
+│ Row │ a     │ x1    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 6     │
+│ 2   │ 2     │ 8     │
+│ 3   │ 3     │ 10    │
+│ 4   │ 4     │ 12    │
+
+julia> by(df, :a) do d # do syntax for the slower variant
+           sum(d.c)
+       end
+4×2 DataFrame
+│ Row │ a     │ x1    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 6     │
+│ 2   │ 2     │ 8     │
+│ 3   │ 3     │ 10    │
+│ 4   │ 4     │ 12    │
+
+julia> by(df, :a, :c => x -> 2 .* skipmissing(x))
+8×2 DataFrame
+│ Row │ a     │ c_function │
+│     │ Int64 │ Int64      │
+├─────┼───────┼────────────┤
+│ 1   │ 1     │ 2          │
+│ 2   │ 1     │ 10         │
+│ 3   │ 2     │ 4          │
+│ 4   │ 2     │ 12         │
+│ 5   │ 3     │ 6          │
+│ 6   │ 3     │ 14         │
+│ 7   │ 4     │ 8          │
+│ 8   │ 4     │ 16         │
+
+julia> by(df, :a, :c => x -> (c_sum = sum(x), c_sum2 = sum(x.^2)))
+4×3 DataFrame
+│ Row │ a     │ c_sum │ c_sum2 │
+│     │ Int64 │ Int64 │ Int64  │
+├─────┼───────┼───────┼────────┤
+│ 1   │ 1     │ 6     │ 26     │
+│ 2   │ 2     │ 8     │ 40     │
+│ 3   │ 3     │ 10    │ 58     │
+│ 4   │ 4     │ 12    │ 80     │
+
+julia> by(df, :a, :c => x -> DataFrame(c = x, c_sum = sum(x)))
+8×3 DataFrame
+│ Row │ a     │ c     │ c_sum │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 1     │ 6     │
+│ 2   │ 1     │ 5     │ 6     │
+│ 3   │ 2     │ 2     │ 8     │
+│ 4   │ 2     │ 6     │ 8     │
+│ 5   │ 3     │ 3     │ 10    │
+│ 6   │ 3     │ 7     │ 10    │
+│ 7   │ 4     │ 4     │ 12    │
+│ 8   │ 4     │ 8     │ 12    │
 ```
 
 """
-by(d::AbstractDataFrame, cols, f::Function; sort::Bool = false) =
+by(d::AbstractDataFrame, cols, f::Union{Function, Type, Pair}; sort::Bool = false) =
     combine(f, groupby(d, cols, sort = sort))
-by(f::Function, d::AbstractDataFrame, cols; sort::Bool = false) =
+by(f::Union{Function, Type, Pair}, d::AbstractDataFrame, cols; sort::Bool = false) =
     by(d, cols, f, sort = sort)
 
 #
@@ -645,14 +706,15 @@ aggregate(groupby(df, :a), [sum, x->mean(skipmissing(x))])
 ```
 
 """
-aggregate(d::AbstractDataFrame, fs::Function; sort::Bool=false) = aggregate(d, [fs], sort=sort)
-function aggregate(d::AbstractDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Function
+aggregate(d::AbstractDataFrame, fs::Union{Function, Type}; sort::Bool=false) =
+    aggregate(d, [fs], sort=sort)
+function aggregate(d::AbstractDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Union{Function, Type}
     headers = _makeheaders(fs, _names(d))
     _aggregate(d, fs, headers, sort)
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
-aggregate(gd::GroupedDataFrame, f::Function; sort::Bool=false) = aggregate(gd, [f], sort=sort)
+aggregate(gd::GroupedDataFrame, f::Union{Function, Type}; sort::Bool=false) = aggregate(gd, [f], sort=sort)
 function aggregate(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Function
     headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent[gd.cols])))
     res = combine(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
