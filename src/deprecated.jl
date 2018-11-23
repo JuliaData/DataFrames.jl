@@ -1430,6 +1430,12 @@ function Base.getindex(itr::DataFrameColumns{<:SubDataFrame,AbstractVector}, j)
     itr.df[:, j]
 end
 
+function Base.getindex(itr::DataFrameColumns{<:SubDataFrame,AbstractVector}, j::Int)
+    Base.depwarn("Indexing into a return value of columns on SubDataFrame will return a" *
+                 " view of column value", :getindex)
+    itr.df[:, j]
+end
+
 function Base.iterate(itr::DataFrameColumns{<:SubDataFrame,
                                             Pair{Symbol, AbstractVector}}, j=1)
     Base.depwarn("iterating over value of eachcol on SubDataFrame will return a" *

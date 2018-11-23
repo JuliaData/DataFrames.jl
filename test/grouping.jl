@@ -429,6 +429,45 @@ module TestGrouping
         end
     end
 
+    @testset "by, combine and map with (::Pair, ::GroupedDataFrame)" begin
+        Random.seed!(1)
+        df = DataFrame(a = repeat([1, 3, 2, 4], outer=[2]),
+                       b = repeat([2, 1], outer=[4]),
+                       c = randn(8))
+
+
+        @test by(:c => sum, df, :a) == by(d -> (c_sum=sum(d.c),), df, :a)
+        @test by(:c => x -> sum(x), df, :a) == by(d -> (c_function=sum(d.c),), df, :a)
+        @test by(:c => x -> (z=sum(x),), df, :a) == by(d -> (z=sum(d.c),), df, :a)
+        @test by(:c => x -> DataFrame(z=sum(x),), df, :a) == by(d -> (z=sum(d.c),), df, :a)
+        @test by(:c => identity, df, :a) == by(d -> (c_identity=d.c,), df, :a)
+        @test by(:c => x -> (z=x,), df, :a) == by(d -> (z=d.c,), df, :a)
+        @test by((:b, :c) => x -> (y=exp.(x.b), z=x.c), df, :a) ==
+            by(d -> (y=exp.(d.b), z=d.c), df, :a)
+        @test by((:b, :c) => x -> (y=exp.(x.b), z=sum(x.c)), df, :a) ==
+            by(d -> (y=exp.(d.b), z=sum(d.c)), df, :a)
+        @test by((:b, :c) => x -> DataFrame(y=exp.(x.b), z=sum(x.c)), df, :a) ==
+            by(d -> DataFrame(y=exp.(d.b), z=sum(d.c)), df, :a)
+        @test by((:b, :c) => x -> [exp.(x.b) x.c], df, :a) ==
+            by(d -> [exp.(d.b) d.c], df, :a)
+
+        gd = groupby(df, :a)
+        for f in (map, combine)
+            @test f(:c => sum, gd) == f(d -> (c_sum=sum(d.c),), gd)
+            @test f(:c => x -> sum(x), gd) == f(d -> (c_function=sum(d.c),), gd)
+            @test f(:c => x -> (z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
+            @test f(:c => x -> DataFrame(z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
+            @test f(:c => identity, gd) == f(d -> (c_identity=d.c,), gd)
+            @test f(:c => x -> (z=x,), gd) == f(d -> (z=d.c,), gd)
+            @test f((:b, :c) => x -> (y=exp.(x.b), z=x.c), gd) ==
+                f(d -> (y=exp.(d.b), z=d.c), gd)
+            @test f((:b, :c) => x -> (y=exp.(x.b), z=sum(x.c)), gd) ==
+                f(d -> (y=exp.(d.b), z=sum(d.c)), gd)
+            @test f((:b, :c) => x -> [exp.(x.b) x.c], gd) ==
+                f(d -> [exp.(d.b) d.c], gd)
+        end
+    end
+
     @testset "iteration protocol" begin
         gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
         for v in gd
