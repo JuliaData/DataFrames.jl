@@ -99,6 +99,8 @@ module TestGrouping
         f4(df) = [maximum(df[:, :c]), minimum(df[:, :c])]
         f5(df) = reshape([maximum(df[:, :c]), minimum(df[:, :c])], 2, 1)
         f6(df) = [maximum(df[:, :c]) minimum(df[:, :c])]
+        f7(df) = (c2 = df[:, :c].^2,)
+        f8(df) = DataFrame(c2 = df[:, :c].^2)
         #TODO: enable lines below after getindex deprecation
         # f1(df) = DataFrame(cmax = maximum(df[:c]))
         # f2(df) = (cmax = maximum(df[:c]),)
@@ -106,6 +108,8 @@ module TestGrouping
         # f4(df) = [maximum(df[:c]), minimum(df[:c])]
         # f5(df) = reshape([maximum(df[:c]), minimum(df[:c])], 2, 1)
         # f6(df) = [maximum(df[:c]) minimum(df[:c])]
+        # f7(df) = (c2 = df[:c].^2,)
+        # f8(df) = DataFrame(c2 = df[:c].^2)
 
         res = unique(df[cols])
         res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
@@ -119,9 +123,12 @@ module TestGrouping
                    for (a, b) in zip(res.a, res.b)]
         res3.x2 = [minimum(df[(df.a .== a) .& (df.b .== b), :c])
                    for (a, b) in zip(res.a, res.b)]
+        res4 = df[cols]
+        res4.c2 = df.c.^2
         sres = sort(res, cols)
         sres2 = sort(res2, cols)
         sres3 = sort(res3, cols)
+        sres4 = sort(res4, cols)
 
         # by() without groups sorting
         @test sort(by(df, cols, identity)) ==
@@ -134,6 +141,8 @@ module TestGrouping
         @test by(df, cols, f4) == res2
         @test by(df, cols, f5) == res2
         @test by(df, cols, f6) == res3
+        @test sort(by(df, cols, f7)) == sort(res4)
+        @test sort(by(df, cols, f8)) == sort(res4)
 
         # by() with groups sorting
         @test by(df, cols, identity, sort=true) ==
@@ -146,6 +155,8 @@ module TestGrouping
         @test by(df, cols, f4, sort=true) == sres2
         @test by(df, cols, f5, sort=true) == sres2
         @test by(df, cols, f6, sort=true) == sres3
+        @test by(df, cols, f7, sort=true) == sres4
+        @test by(df, cols, f8, sort=true) == sres4
 
         @test by(df, [:a], f1) == by(df, :a, f1)
         @test by(df, [:a], f1, sort=true) == by(df, :a, f1, sort=true)
@@ -160,6 +171,8 @@ module TestGrouping
         @test combine(f4, gd) == res2
         @test combine(f5, gd) == res2
         @test combine(f6, gd) == res3
+        @test sort(combine(f7, gd)) == sort(res4)
+        @test sort(combine(f8, gd)) == sort(res4)
 
         # groupby() with groups sorting
         gd = groupby(df, cols, sort=true)
@@ -175,27 +188,33 @@ module TestGrouping
         @test combine(f4, gd) == sres2
         @test combine(f5, gd) == sres2
         @test combine(f6, gd) == sres3
+        @test combine(f7, gd) == sres4
+        @test combine(f8, gd) == sres4
 
         # map() without and with groups sorting
         for sort in (false, true)
-            gd = groupby(df, cols)
+            gd = groupby(df, cols, sort=sort)
             v = map(d -> d[[:c]], gd)
             @test length(gd) == length(v)
             @test v[1] == gd[1] && v[2] == gd[2] && v[3] == gd[3] && v[4] == gd[4]
-            v = map(f1, groupby(df, cols, sort=sort))
+            v = map(f1, gd)
             @test vcat(v[1], v[2], v[3], v[4]) == by(f1, df, cols, sort=sort)
-            v = map(f2, groupby(df, cols, sort=sort))
+            v = map(f2, gd)
             @test vcat(v[1], v[2], v[3], v[4]) == by(f2, df, cols, sort=sort)
-            v = map(f3, groupby(df, cols, sort=sort))
+            v = map(f3, gd)
             @test vcat(v[1], v[2], v[3], v[4]) == by(f3, df, cols, sort=sort)
-            v = map(f4, groupby(df, cols, sort=sort))
+            v = map(f4, gd)
             @test vcat(v[1], v[2], v[3], v[4]) == by(f4, df, cols, sort=sort)
-            v = map(f5, groupby(df, cols, sort=sort))
+            v = map(f5, gd)
             @test vcat(v[1], v[2], v[3], v[4]) == by(f5, df, cols, sort=sort)
-            v = map(f5, groupby(df, cols, sort=sort))
+            v = map(f5, gd)
             @test vcat(v[1], v[2], v[3], v[4]) == by(f5, df, cols, sort=sort)
-            v = map(f6, groupby(df, cols, sort=sort))
+            v = map(f6, gd)
             @test vcat(v[1], v[2], v[3], v[4]) == by(f6, df, cols, sort=sort)
+            v = map(f7, gd)
+            @test vcat(v[1], v[2], v[3], v[4]) == by(f7, df, cols, sort=sort)
+            v = map(f8, gd)
+            @test vcat(v[1], v[2], v[3], v[4]) == by(f8, df, cols, sort=sort)
         end
 
         # testing pool overflow
