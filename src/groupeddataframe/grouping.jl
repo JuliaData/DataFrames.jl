@@ -161,11 +161,11 @@ Note that this second form is much slower than the first one due to type instabi
 determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
 - A named tuple of single values or a `DataFrameRow` gives a data frame with one column
-for each field and one row per group.
+  for each field and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a data frame
-with the same columns and as many rows for each group as the rows returned for that group.
+  with the same columns and as many rows for each group as the rows returned for that group.
 
 In all cases, the resulting `GroupedDataFrame` contains all the grouping columns in addition
 to those listed above. Note that `f` must always return the same type of object for
@@ -265,11 +265,11 @@ Note that this second form is much slower than the first one due to type instabi
 determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
 - A named tuple of single values or a `DataFrameRow` gives a data frame with one column
-for each field and one row per group.
+  for each field and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a data frame
-with the same columns and as many rows for each group as the rows returned for that group.
+  with the same columns and as many rows for each group as the rows returned for that group.
 
 In all cases, the resulting data frame contains all the grouping columns in addition
 to those listed above. Note that `f` must always return the same type of object for
@@ -425,7 +425,7 @@ function _combine!(first::Union{NamedTuple, DataFrameRow}, outcols::NTuple{N, Ab
         if j !== nothing # Need to widen column type
             local newcols
             let i = i, j = j, outcols=outcols, row=row # Workaround for julia#15276
-                newcols = ntuple(_ncol(first)) do k
+                newcols = ntuple(length(outcols)) do k
                     S = typeof(row[k])
                     T = eltype(outcols[k])
                     U = promote_type(S, T)
@@ -575,11 +575,11 @@ Note that this second form is much slower than the first one due to type instabi
 determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
 - A named tuple of single values or a `DataFrameRow` gives a data frame with one column
-for each field and one row per group.
+  for each field and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a data frame
-with the same columns and as many rows for each group as the rows returned for that group.
+  with the same columns and as many rows for each group as the rows returned for that group.
 
 In all cases, the resulting data frame contains all the grouping columns in addition
 to those listed above. Note that `f` must always return the same type of object for
@@ -606,7 +606,7 @@ julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
                       c = 1:8);
 
-julia> by(df, :a, :c => sum)
+julia> by(:c => sum, df, :a)
 4×2 DataFrame
 │ Row │ a     │ c_sum │
 │     │ Int64 │ Int64 │
@@ -616,7 +616,7 @@ julia> by(df, :a, :c => sum)
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
 
-julia> by(df, :a, d -> sum(d.c)) # Slower variant
+julia> by(d -> sum(d.c), df, :a) # Slower variant
 4×2 DataFrame
 │ Row │ a     │ x1    │
 │     │ Int64 │ Int64 │
@@ -638,7 +638,7 @@ julia> by(df, :a) do d # do syntax for the slower variant
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
 
-julia> by(df, :a, :c => x -> 2 .* x)
+julia> by(:c => x -> 2 .* x, df, :a)
 8×2 DataFrame
 │ Row │ a     │ c_function │
 │     │ Int64 │ Int64      │
@@ -652,7 +652,7 @@ julia> by(df, :a, :c => x -> 2 .* x)
 │ 7   │ 4     │ 8          │
 │ 8   │ 4     │ 16         │
 
-julia> by(df, :a, :c => x -> (c_sum = sum(x), c_sum2 = sum(x.^2)))
+julia> by(:c => x -> (c_sum = sum(x), c_sum2 = sum(x.^2)), df, :a)
 4×3 DataFrame
 │ Row │ a     │ c_sum │ c_sum2 │
 │     │ Int64 │ Int64 │ Int64  │
@@ -662,20 +662,7 @@ julia> by(df, :a, :c => x -> (c_sum = sum(x), c_sum2 = sum(x.^2)))
 │ 3   │ 3     │ 10    │ 58     │
 │ 4   │ 4     │ 12    │ 80     │
 
-8×2 DataFrame
-│ Row │ a     │ minusx │
-│     │ Int64 │ Int64  │
-├─────┼───────┼────────┤
-│ 1   │ 1     │ -1     │
-│ 2   │ 1     │ -5     │
-│ 3   │ 2     │ -2     │
-│ 4   │ 2     │ -6     │
-│ 5   │ 3     │ -3     │
-│ 6   │ 3     │ -7     │
-│ 7   │ 4     │ -4     │
-│ 8   │ 4     │ -8     │
-
-julia> by(df, :a, (:b, :c) => x -> (minb = minimum(x.b), sumc = sum(x.c)))
+julia> by((:b, :c) => x -> (minb = minimum(x.b), sumc = sum(x.c)), df, :a)
 4×3 DataFrame
 │ Row │ a     │ minb  │ sumc  │
 │     │ Int64 │ Int64 │ Int64 │
