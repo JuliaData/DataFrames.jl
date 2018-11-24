@@ -23,8 +23,8 @@ The following are normally implemented for AbstractDataFrames:
 * [`eltypes`](@ref) : `eltype` of each column
 * `length` : number of columns
 * `size` : (nrows, ncols)
-* [`head`](@ref) : first `n` rows
-* [`tail`](@ref) : last `n` rows
+* [`first`](@ref) : first `n` rows
+* [`last`](@ref) : last `n` rows
 * `convert` : convert to an array
 * [`completecases`](@ref) : boolean vector of complete cases (rows with no missings)
 * [`dropmissing`](@ref) : remove rows with missing values
@@ -288,38 +288,19 @@ Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
 ##
 ##############################################################################
 
-head(df::AbstractDataFrame, r::Int) = df[1:min(r,nrow(df)), :]
-head(df::AbstractDataFrame) = head(df, 6)
-tail(df::AbstractDataFrame, r::Int) = df[max(1,nrow(df)-r+1):nrow(df), :]
-tail(df::AbstractDataFrame) = tail(df, 6)
+"""
+    first(df::AbstractDataFrame, n::Integer)
+
+Get a data frame with the `n` first rows of `df`.
+"""
+Base.first(df::AbstractDataFrame, n::Integer) = df[1:min(n,nrow(df)), :]
 
 """
-Show the first or last part of an AbstractDataFrame
+    last(df::AbstractDataFrame, n::Integer)
 
-```julia
-head(df::AbstractDataFrame, r::Int = 6)
-tail(df::AbstractDataFrame, r::Int = 6)
-```
-
-**Arguments**
-
-* `df` : the AbstractDataFrame
-* `r` : the number of rows to show
-
-**Result**
-
-* `::AbstractDataFrame` : the first or last part of `df`
-
-**Examples**
-
-```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-head(df)
-tail(df)
-```
-
+Get a data frame with the `n` last rows of `df`.
 """
-(head, tail)
+Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), :]
 
 # get the structure of a df
 """

@@ -208,10 +208,10 @@ julia> df = DataFrame(A = 1:2:1000, B = repeat(1:10, inner=50), C = 1:500)
 
 Printing options can be adjusted by calling the `show` function manually: `show(df, allrows=true)` prints all rows even if they do not fit on screen and `show(df, allcols=true)` does the same for columns.
 
-The `head` and `tail` functions can be used to look at the first and last rows of a data frame (respectively):
+The `first` and `last` functions can be used to look at the first and last rows of a data frame (respectively):
 
 ```jldoctest dataframe
-julia> head(df)
+julia> first(df, 6)
 6×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │
@@ -223,7 +223,7 @@ julia> head(df)
 │ 5   │ 9     │ 1     │ 5     │
 │ 6   │ 11    │ 1     │ 6     │
 
-julia> tail(df)
+julia> last(df, 6)
 6×3 DataFrame
 │ Row │ A     │ B     │ C     │
 │     │ Int64 │ Int64 │ Int64 │

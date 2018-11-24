@@ -68,7 +68,7 @@ df2 = DataFrame(A = 1:10, B = v, C = rand(10))
 dump(df1)
 dump(df2)
 describe(df2)
-head(df1)
+first(df1, 10)
 df1[:A] + df2[:C]
 df1[1:4, 1:2]
 df1[[:A,:C]]

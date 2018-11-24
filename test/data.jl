@@ -32,7 +32,7 @@ module TestData
         @test size(df6[2:2,:], 1) == 1
         @test size(df6[[1, 3], [1, 3]]) == (2, 2)
         @test size(df6[1:2, 1:2]) == (2, 2)
-        @test size(head(df6,2)) == (2, 3)
+        @test size(first(df6,2)) == (2, 3)
         # lots more to do
 
         #test_group("assign")

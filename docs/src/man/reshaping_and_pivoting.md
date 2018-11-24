@@ -7,7 +7,7 @@ julia> using DataFrames, CSV
 
 julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.csv"));
 
-julia> head(iris)
+julia> first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -19,7 +19,7 @@ julia> head(iris)
 │ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ setosa        │
 │ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa        │
 
-julia> tail(iris)
+julia> last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -33,7 +33,7 @@ julia> tail(iris)
 
 julia> d = stack(iris, 1:4);
 
-julia> head(d)
+julia> first(d, 6)
 6×3 DataFrame
 │ Row │ variable    │ value    │ Species       │
 │     │ Symbol      │ Float64⍰ │ Categorical…⍰ │
@@ -45,7 +45,7 @@ julia> head(d)
 │ 5   │ SepalLength │ 5.0      │ setosa        │
 │ 6   │ SepalLength │ 5.4      │ setosa        │
 
-julia> tail(d)
+julia> last(d, 6)
 6×3 DataFrame
 │ Row │ variable   │ value    │ Species       │
 │     │ Symbol     │ Float64⍰ │ Categorical…⍰ │
@@ -63,7 +63,7 @@ The second optional argument to `stack` indicates the columns to be stacked. The
 ```jldoctest reshape
 julia> d = stack(iris, [:SepalLength, :SepalWidth, :PetalLength, :PetalWidth]);
 
-julia> head(d)
+julia> first(d, 6)
 6×3 DataFrame
 │ Row │ variable    │ value    │ Species       │
 │     │ Symbol      │ Float64⍰ │ Categorical…⍰ │
@@ -75,8 +75,7 @@ julia> head(d)
 │ 5   │ SepalLength │ 5.0      │ setosa        │
 │ 6   │ SepalLength │ 5.4      │ setosa        │
 
-
-julia> tail(d)
+julia> last(d, 6)
 6×3 DataFrame
 │ Row │ variable   │ value    │ Species       │
 │     │ Symbol     │ Float64⍰ │ Categorical…⍰ │
@@ -99,7 +98,7 @@ A third optional argument to `stack` represents the id columns that are repeated
 ```jldoctest reshape
 julia> d = stack(iris, [:SepalLength, :SepalWidth], :Species);
 
-julia> head(d)
+julia> first(d, 6)
 6×3 DataFrame
 │ Row │ variable    │ value    │ Species       │
 │     │ Symbol      │ Float64⍰ │ Categorical…⍰ │
@@ -111,7 +110,7 @@ julia> head(d)
 │ 5   │ SepalLength │ 5.0      │ setosa        │
 │ 6   │ SepalLength │ 5.4      │ setosa        │
 
-julia> tail(d)
+julia> last(d, 6)
 6×3 DataFrame
 │ Row │ variable   │ value    │ Species       │
 │     │ Symbol     │ Float64⍰ │ Categorical…⍰ │
@@ -129,7 +128,7 @@ julia> tail(d)
 ```jldoctest reshape
 julia> d = melt(iris, :Species);
 
-julia> head(d)
+julia> first(d, 6)
 6×3 DataFrame
 │ Row │ variable    │ value    │ Species       │
 │     │ Symbol      │ Float64⍰ │ Categorical…⍰ │
@@ -141,7 +140,7 @@ julia> head(d)
 │ 5   │ SepalLength │ 5.0      │ setosa        │
 │ 6   │ SepalLength │ 5.4      │ setosa        │
 
-julia> tail(d)
+julia> last(d, 6)
 6×3 DataFrame
 │ Row │ variable   │ value    │ Species       │
 │     │ Symbol     │ Float64⍰ │ Categorical…⍰ │
@@ -162,7 +161,7 @@ julia> iris[:id] = 1:size(iris, 1)
 
 julia> longdf = melt(iris, [:Species, :id]);
 
-julia> head(longdf)
+julia> first(longdf, 6)
 6×4 DataFrame
 │ Row │ variable    │ value    │ Species       │ id    │
 │     │ Symbol      │ Float64⍰ │ Categorical…⍰ │ Int64 │
@@ -174,7 +173,7 @@ julia> head(longdf)
 │ 5   │ SepalLength │ 5.0      │ setosa        │ 5     │
 │ 6   │ SepalLength │ 5.4      │ setosa        │ 6     │
 
-julia> tail(longdf)
+julia> last(longdf, 6)
 6×4 DataFrame
 │ Row │ variable   │ value    │ Species       │ id    │
 │     │ Symbol     │ Float64⍰ │ Categorical…⍰ │ Int64 │
@@ -188,7 +187,7 @@ julia> tail(longdf)
 
 julia> widedf = unstack(longdf, :id, :variable, :value);
 
-julia> head(widedf)
+julia> first(widedf, 6)
 6×5 DataFrame
 │ Row │ id    │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
 │     │ Int64 │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │
@@ -200,7 +199,7 @@ julia> head(widedf)
 │ 5   │ 5     │ 1.4         │ 0.2        │ 5.0         │ 3.6        │
 │ 6   │ 6     │ 1.7         │ 0.4        │ 5.4         │ 3.9        │
 
-julia> tail(widedf)
+julia> last(widedf, 6)
 6×5 DataFrame
 │ Row │ id    │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
 │     │ Int64 │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │
@@ -218,7 +217,7 @@ If the remaining columns are unique, you can skip the id variable and use:
 ```jldoctest reshape
 julia> longdf = melt(iris, [:Species, :id]);
 
-julia> head(longdf)
+julia> first(longdf, 6)
 6×4 DataFrame
 │ Row │ variable    │ value    │ Species       │ id    │
 │     │ Symbol      │ Float64⍰ │ Categorical…⍰ │ Int64 │
@@ -232,7 +231,7 @@ julia> head(longdf)
 
 julia> widedf = unstack(longdf, :variable, :value);
 
-julia> head(widedf)
+julia> first(widedf, 6)
 6×6 DataFrame
 │ Row │ Species       │ id    │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
 │     │ Categorical…⍰ │ Int64 │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │
@@ -250,7 +249,7 @@ julia> head(widedf)
 ```jldoctest reshape
 julia> d = stackdf(iris);
 
-julia> head(d)
+julia> first(d, 6)
 6×4 DataFrame
 │ Row │ variable    │ value    │ Species       │ id    │
 │     │ Symbol      │ Float64⍰ │ Categorical…⍰ │ Int64 │
@@ -262,7 +261,7 @@ julia> head(d)
 │ 5   │ SepalLength │ 5.0      │ setosa        │ 5     │
 │ 6   │ SepalLength │ 5.4      │ setosa        │ 6     │
 
-julia> tail(d)
+julia> last(d, 6)
 6×4 DataFrame
 │ Row │ variable   │ value    │ Species       │ id    │
 │     │ Symbol     │ Float64⍰ │ Categorical…⍰ │ Int64 │
@@ -291,7 +290,7 @@ None of these reshaping functions perform any aggregation. To do aggregation, us
 ```jldoctest reshape
 julia> d = melt(iris, :Species);
 
-julia> head(d)
+julia> first(d, 6)
 6×3 DataFrame
 │ Row │ variable    │ value    │ Species       │
 │     │ Symbol      │ Float64⍰ │ Categorical…⍰ │
@@ -305,7 +304,7 @@ julia> head(d)
 
 julia> x = by(d, [:variable, :Species], df -> DataFrame(vsum = mean(df[:value])));
 
-julia> head(x)
+julia> first(x, 6)
 
 6×3 DataFrame
 │ Row │ variable    │ Species       │ vsum    │
@@ -318,7 +317,7 @@ julia> head(x)
 │ 5   │ SepalWidth  │ versicolor    │ 2.77    │
 │ 6   │ SepalWidth  │ virginica     │ 2.974   │
 
-julia> head(unstack(x, :Species, :vsum))
+julia> first(unstack(x, :Species, :vsum), 6)
 5×4 DataFrame
 │ Row │ variable    │ setosa   │ versicolor │ virginica │
 │     │ Symbol      │ Float64⍰ │ Float64⍰   │ Float64⍰  │

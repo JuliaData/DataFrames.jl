@@ -11,7 +11,7 @@ julia> using DataFrames, CSV, Statistics
 
 julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.csv"));
 
-julia> head(iris)
+julia> first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -23,7 +23,7 @@ julia> head(iris)
 │ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ setosa        │
 │ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa        │
 
-julia> tail(iris)
+julia> last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
