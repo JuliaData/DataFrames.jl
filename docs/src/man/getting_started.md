@@ -164,16 +164,16 @@ but for very large `DataFrame`s  this may be a consideration.
 ### Constructing from another table type
 
 DataFrames supports the [Tables.jl](https://github.com/JuliaData/Tables.jl) interface for
-interacting with tabular data. This means that a DataFrame can be used as a "source"
+interacting with tabular data. This means that a `DataFrame` can be used as a "source"
 to any package that expects a Tables.jl interface input, (file format packages,
-data manipulation packages, etc.). A DataFrame can also be a sink for any Tables.jl
+data manipulation packages, etc.). A `DataFrame` can also be a sink for any Tables.jl
 interface input. Some example uses are:
 
 ```julia
 df = DataFrame(a=[1, 2, 3], b=[:a, :b, :c])
 
-# write DataFrame out to csv file
-CSV.write(df, "dataframe.csv")
+# write DataFrame out to CSV file
+CSV.write("dataframe.csv", df)
 
 # store DataFrame in an SQLite database table
 SQLite.load!(df, db, "dataframe_table")
@@ -464,7 +464,7 @@ A dataset can now be read from a CSV file at path `input` using
 CSV.read(input)
 ```
 
-A DataFrame can be written to a CSV file at path `output` using
+A `DataFrame` can be written to a CSV file at path `output` using
 ```julia
 df = DataFrame(x = 1, y = 2)
 CSV.write(output, df)
