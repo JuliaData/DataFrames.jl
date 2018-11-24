@@ -123,18 +123,18 @@ wrap(x::AbstractMatrix) =
     NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(x[:, i] for i in 1:size(x, 2)))
 wrap(x::Any) = (x1=x,)
 
-function wrap_call(f::Union{Function, Type}, gd::GroupedDataFrame,
-                   incols::Tuple, i::Integer)
+function do_call(f::Union{Function, Type}, gd::GroupedDataFrame,
+                 incols::Tuple, i::Integer)
     idx = gd.idx[gd.starts[i]:gd.ends[i]]
-    wrap(f(map(c -> view(c, idx), incols)...))
+    f(map(c -> view(c, idx), incols)...)
 end
-function wrap_call(f::Union{Function, Type}, gd::GroupedDataFrame,
-                   incols::NamedTuple, i::Integer)
+function do_call(f::Union{Function, Type}, gd::GroupedDataFrame,
+                 incols::NamedTuple, i::Integer)
     idx = gd.idx[gd.starts[i]:gd.ends[i]]
-    wrap(f(map(c -> view(c, idx), incols)))
+    f(map(c -> view(c, idx), incols))
 end
-wrap_call(f::Union{Function, Type}, gd::GroupedDataFrame, incols::Nothing, i::Integer) =
-    wrap(f(gd[i]))
+do_call(f::Union{Function, Type}, gd::GroupedDataFrame, incols::Nothing, i::Integer) =
+    f(gd[i])
 
 _nrow(df::AbstractDataFrame) = nrow(df)
 _nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
@@ -149,11 +149,11 @@ _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
 Apply a function to each group of rows and return a `GroupedDataFrame`.
 
 If the first argument is a `cols => f` pair, `cols` must be a column name or index, or
-a vector or tuple thereof, and `f` must be a function. If `cols` is a single column index,
-`f` is passed a `SubArray` view into that column for each group; else, `f` is passed a
-named tuple holding `SubArray` views into these columns.
+a vector or tuple thereof, and `f` must be a callable. If `cols` is a single column index,
+`f` is callbed with a `SubArray` view into that column for each group; else, `f` is called
+with a named tuple holding `SubArray` views into these columns.
 
-If the first argument is a function, it is passed a `SubDataFrame` view for each group,
+If the first argument is a callable, it is passed a `SubDataFrame` view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
 Note that this second form is much slower than the first one due to type instability.
 
@@ -168,17 +168,19 @@ determines the shape of the resulting data frame:
   with the same columns and as many rows for each group as the rows returned for that group.
 
 In all cases, the resulting `GroupedDataFrame` contains all the grouping columns in addition
-to those listed above. Note that `f` must always return the same type of object for
+to those listed above. Column names are automatically generated when necessary: for functions
+operating on a single column and returning a single value or vector, the function name is
+appended to the input colummn name; for other functions, columns are called `x1`, `x2`
+and so on.
+
+Note that `f` must always return the same type of object for
 all groups, and (if a named tuple or data frame) with the same fields or columns.
 Due to type instability, returning a single value or a named tuple is dramatically
 faster than returning a data frame.
 
-Note that due to type instability, returning a single value or a named tuple is dramatically
-faster than returning a data frame.
-
 ### Examples
 
-```julia
+```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
                       c = 1:8);
@@ -248,16 +250,17 @@ end
 
 """
     combine(gd::GroupedDataFrame)
+    combine(cols => f, gd::GroupedDataFrame)
     combine(f, gd::GroupedDataFrame)
 
 Transform a `GroupedDataFrame` into a `DataFrame`.
 
 If the first argument is a `cols => f` pair, `cols` must be a column name or index, or
-a vector or tuple thereof, and `f` must be a function. If `cols` is a single column index,
-`f` is passed a `SubArray` view into that column for each group; else, `f` is passed a
-named tuple holding `SubArray` views into these columns.
+a vector or tuple thereof, and `f` must be a callable. If `cols` is a single column index,
+`f` is called with a `SubArray` view into that column for each group; else, `f` is called
+with a named tuple holding `SubArray` views into these columns.
 
-If the first argument is a function, it is passed a `SubDataFrame` view for each group,
+If the first argument is a callable `f`, it is passed a `SubDataFrame` view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
 Note that this second form is much slower than the first one due to type instability.
 
@@ -272,7 +275,12 @@ determines the shape of the resulting data frame:
   with the same columns and as many rows for each group as the rows returned for that group.
 
 In all cases, the resulting data frame contains all the grouping columns in addition
-to those listed above. Note that `f` must always return the same type of object for
+to those listed above. Column names are automatically generated when necessary: for functions
+operating on a single column and returning a single value or vector, the function name is
+appended to the input colummn name; for other functions, columns are called `x1`, `x2`
+and so on.
+
+Note that `f` must always return the same type of object for
 all groups, and (if a named tuple or data frame) with the same fields or columns.
 Due to type instability, returning a single value or a named tuple is dramatically
 faster than returning a data frame.
@@ -282,7 +290,7 @@ call from which `gd` was constructed. Otherwise, ordering of rows is undefined.
 
 ### Examples
 
-```julia
+```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
                       c = 1:8);
@@ -320,7 +328,7 @@ See [`by`](@ref) for more examples.
 of `combine(map(f, groupby(df, cols)))`.
 
 """
-function combine(f::Union{Function, Type, Pair}, gd::GroupedDataFrame)
+function combine(f::Any, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
         return hcat!(gd.parent[idx, gd.cols], valscat, makeunique=true)
@@ -331,20 +339,22 @@ end
 
 combine(gd::GroupedDataFrame) = combine(identity, gd)
 
-function _combine(f::Union{Function, Type, Pair}, gd::GroupedDataFrame)
+function _combine(f::Any, gd::GroupedDataFrame)
     if f isa Pair{<:Union{Symbol,Integer}}
         incols = (gd.parent[first(f)],)
         fun = last(f)
     elseif f isa Pair
-        incols = NamedTuple{Tuple(first(f))}(columns(gd.parent[collect(first(f))]))
+        df = gd.parent[collect(first(f))]
+        incols = NamedTuple{Tuple(names(df))}(columns(df))
         fun = last(f)
     else
         incols = nothing
         fun = f
     end
-    idx, valscat = _combine(wrap_call(fun, gd, incols, 1), fun, gd, incols)
+    firstres = do_call(fun, gd, incols, 1)
+    idx, valscat = _combine(wrap(firstres), fun, gd, incols)
     if f isa Pair{<:Union{Symbol,Integer}} &&
-        ncol(valscat) == 1 && names(valscat)[1] === :x1
+       !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix})
         nam = Symbol(names(gd.parent)[index(gd.parent)[first(f)]],
                      '_', funname(fun))
         names!(valscat, [nam])
@@ -353,7 +363,7 @@ function _combine(f::Union{Function, Type, Pair}, gd::GroupedDataFrame)
 end
 
 function _combine(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
-                  f::Union{Function, Type}, gd::GroupedDataFrame,
+                  f::Any, gd::GroupedDataFrame,
                   incols::Union{Nothing, Tuple, NamedTuple})
     if first isa AbstractDataFrame
         n = 0
@@ -410,7 +420,7 @@ end
 
 function _combine!(first::Union{NamedTuple, DataFrameRow}, outcols::NTuple{N, AbstractVector},
                    idx::Vector{Int}, rowstart::Integer, colstart::Integer,
-                   f::Union{Function, Type}, gd::GroupedDataFrame,
+                   f::Any, gd::GroupedDataFrame,
                    incols::Union{Nothing, Tuple, NamedTuple},
                    colnames::NTuple{N, Symbol}) where N
     len = length(gd)
@@ -420,7 +430,7 @@ function _combine!(first::Union{NamedTuple, DataFrameRow}, outcols::NTuple{N, Ab
     idx[rowstart] = gd.idx[gd.starts[rowstart]]
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
-        row = wrap_call(f, gd, incols, i)
+        row = wrap(do_call(f, gd, incols, i))
         j = fill_row!(row, outcols, i, 1, colnames)
         if j !== nothing # Need to widen column type
             local newcols
@@ -483,7 +493,7 @@ function _combine!(first::Union{AbstractDataFrame,
                                 NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}},
                    outcols::NTuple{N, AbstractVector},
                    idx::Vector{Int}, rowstart::Integer, colstart::Integer,
-                   f::Union{Function, Type}, gd::GroupedDataFrame,
+                   f::Any, gd::GroupedDataFrame,
                    incols::Union{Nothing, Tuple, NamedTuple},
                    colnames::NTuple{N, Symbol}) where N
     len = length(gd)
@@ -493,7 +503,7 @@ function _combine!(first::Union{AbstractDataFrame,
     append!(idx, Iterators.repeated(gd.idx[gd.starts[rowstart]], _nrow(first)))
     # Handle remaining groups
     @inbounds for i in rowstart+1:len
-        rows = wrap_call(f, gd, incols, i)
+        rows = wrap(do_call(f, gd, incols, i))
         j = append_rows!(rows, outcols, 1, colnames)
         if j !== nothing # Need to widen column type
             local newcols
@@ -557,17 +567,17 @@ colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
     by(d::AbstractDataFrame, keys, f; sort::Bool = false)
     by(f, d::AbstractDataFrame, keys; sort::Bool = false)
 
-Split-apply-combine in one step; apply `f` to each grouping in `d`
-based on grouping columns `keys`.
+Split-apply-combine in one step: apply `f` to each grouping in `d`
+based on grouping columns `keys`, and return a `DataFrame`.
 
 `keys` can be either a single column index, or a vector thereof.
 
 If the first argument is a `cols => f` pair, `cols` must be a column name or index, or
-a vector or tuple thereof, and `f` must be a function. If `cols` is a single column index,
-`f` is passed a `SubArray` view into that column for each group; else, `f` is passed a
-named tuple holding `SubArray` views into these columns.
+a vector or tuple thereof, and `f` must be a callable. If `cols` is a single column index,
+`f` is called with a `SubArray` view into that column for each group; else, `f` is called
+with a named tuple holding `SubArray` views into these columns.
 
-If the first argument is a function, it is passed a `SubDataFrame` view for each group,
+If the first argument is a callable `f`, it is passed a `SubDataFrame` view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
 Note that this second form is much slower than the first one due to type instability.
 
@@ -582,7 +592,12 @@ determines the shape of the resulting data frame:
   with the same columns and as many rows for each group as the rows returned for that group.
 
 In all cases, the resulting data frame contains all the grouping columns in addition
-to those listed above. Note that `f` must always return the same type of object for
+to those listed above. Column names are automatically generated when necessary: for functions
+operating on a single column and returning a single value or vector, the function name is
+appended to the input colummn name; for other functions, columns are called `x1`, `x2`
+and so on.
+
+Note that `f` must always return the same type of object for
 all groups, and (if a named tuple or data frame) with the same fields or columns.
 Due to type instability, returning a single value or a named tuple is dramatically
 faster than returning a data frame.
@@ -595,13 +610,9 @@ notation can be used.
 
 `by(d, cols, f)` is equivalent to `combine(f, groupby(d, cols))`.
 
-### Returns
-
-* `::DataFrame`
-
 ### Examples
 
-```julia
+```jldoctest
 julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       b = repeat([2, 1], outer=[4]),
                       c = 1:8);
@@ -674,9 +685,9 @@ julia> by((:b, :c) => x -> (minb = minimum(x.b), sumc = sum(x.c)), df, :a)
 ```
 
 """
-by(d::AbstractDataFrame, cols, f::Union{Function, Type, Pair}; sort::Bool = false) =
+by(d::AbstractDataFrame, cols::Any, f::Any; sort::Bool = false) =
     combine(f, groupby(d, cols, sort = sort))
-by(f::Union{Function, Type, Pair}, d::AbstractDataFrame, cols; sort::Bool = false) =
+by(f::Any, d::AbstractDataFrame, cols::Any; sort::Bool = false) =
     by(d, cols, f, sort = sort)
 
 #
@@ -721,16 +732,16 @@ aggregate(groupby(df, :a), [sum, x->mean(skipmissing(x))])
 ```
 
 """
-aggregate(d::AbstractDataFrame, fs::Union{Function, Type}; sort::Bool=false) =
+aggregate(d::AbstractDataFrame, fs::Any; sort::Bool=false) =
     aggregate(d, [fs], sort=sort)
-function aggregate(d::AbstractDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Union{Function, Type}
+function aggregate(d::AbstractDataFrame, fs::AbstractVector; sort::Bool=false)
     headers = _makeheaders(fs, _names(d))
     _aggregate(d, fs, headers, sort)
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
-aggregate(gd::GroupedDataFrame, f::Union{Function, Type}; sort::Bool=false) = aggregate(gd, [f], sort=sort)
-function aggregate(gd::GroupedDataFrame, fs::Vector{T}; sort::Bool=false) where T<:Function
+aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) = aggregate(gd, [f], sort=sort)
+function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
     headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent[gd.cols])))
     res = combine(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
     sort && sort!(res, headers)
@@ -740,8 +751,8 @@ end
 # Groups DataFrame by cols before applying aggregate
 function aggregate(d::AbstractDataFrame,
                    cols::Union{S, AbstractVector{S}},
-                   fs::Union{T, Vector{T}};
-                   sort::Bool=false) where {S<:ColumnIndex, T <:Function}
+                   fs::Any;
+                   sort::Bool=false) where {S<:ColumnIndex}
     aggregate(groupby(d, cols, sort=sort), fs)
 end
 
@@ -750,10 +761,11 @@ function funname(f)
     String(n)[1] == '#' ? :function : n
 end
 
-_makeheaders(fs::Vector{<:Function}, cn::Vector{Symbol}) =
+_makeheaders(fs::AbstractVector, cn::AbstractVector{Symbol}) =
     [Symbol(colname, '_', funname(f)) for f in fs for colname in cn]
 
-function _aggregate(d::AbstractDataFrame, fs::Vector{T}, headers::Vector{Symbol}, sort::Bool=false) where T<:Function
+function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
+                    headers::AbstractVector{Symbol}, sort::Bool=false)
     res = DataFrame(AbstractVector[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
     sort && sort!(res, headers)
     res

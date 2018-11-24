@@ -455,35 +455,43 @@ module TestGrouping
                        c = randn(8))
 
 
-        @test by(:c => sum, df, :a) == by(d -> (c_sum=sum(d.c),), df, :a)
-        @test by(:c => x -> sum(x), df, :a) == by(d -> (c_function=sum(d.c),), df, :a)
-        @test by(:c => x -> (z=sum(x),), df, :a) == by(d -> (z=sum(d.c),), df, :a)
-        @test by(:c => x -> DataFrame(z=sum(x),), df, :a) == by(d -> (z=sum(d.c),), df, :a)
-        @test by(:c => identity, df, :a) == by(d -> (c_identity=d.c,), df, :a)
-        @test by(:c => x -> (z=x,), df, :a) == by(d -> (z=d.c,), df, :a)
-        @test by((:b, :c) => x -> (y=exp.(x.b), z=x.c), df, :a) ==
-            by(d -> (y=exp.(d.b), z=d.c), df, :a)
-        @test by((:b, :c) => x -> (y=exp.(x.b), z=sum(x.c)), df, :a) ==
-            by(d -> (y=exp.(d.b), z=sum(d.c)), df, :a)
-        @test by((:b, :c) => x -> DataFrame(y=exp.(x.b), z=sum(x.c)), df, :a) ==
-            by(d -> DataFrame(y=exp.(d.b), z=sum(d.c)), df, :a)
-        @test by((:b, :c) => x -> [exp.(x.b) x.c], df, :a) ==
-            by(d -> [exp.(d.b) d.c], df, :a)
+        for col in (:c, 3)
+            @test by(col => sum, df, :a) == by(d -> (c_sum=sum(d.c),), df, :a)
+            @test by(col => x -> sum(x), df, :a) == by(d -> (c_function=sum(d.c),), df, :a)
+            @test by(col => x -> (z=sum(x),), df, :a) == by(d -> (z=sum(d.c),), df, :a)
+            @test by(col => x -> DataFrame(z=sum(x),), df, :a) == by(d -> (z=sum(d.c),), df, :a)
+            @test by(col => identity, df, :a) == by(d -> (c_identity=d.c,), df, :a)
+            @test by(col => x -> (z=x,), df, :a) == by(d -> (z=d.c,), df, :a)
+        end
+        for cols in ((:b, :c), [:b, :c], (2, 3), 2:3, [2, 3], [false, true, true])
+            @test by(cols => x -> (y=exp.(x.b), z=x.c), df, :a) ==
+                by(d -> (y=exp.(d.b), z=d.c), df, :a)
+            @test by(cols => x -> (y=exp.(x.b), z=sum(x.c)), df, :a) ==
+                by(d -> (y=exp.(d.b), z=sum(d.c)), df, :a)
+            @test by(cols => x -> DataFrame(y=exp.(x.b), z=sum(x.c)), df, :a) ==
+                by(d -> DataFrame(y=exp.(d.b), z=sum(d.c)), df, :a)
+            @test by(cols => x -> [exp.(x.b) x.c], df, :a) ==
+                by(d -> [exp.(d.b) d.c], df, :a)
+        end
 
         gd = groupby(df, :a)
         for f in (map, combine)
-            @test f(:c => sum, gd) == f(d -> (c_sum=sum(d.c),), gd)
-            @test f(:c => x -> sum(x), gd) == f(d -> (c_function=sum(d.c),), gd)
-            @test f(:c => x -> (z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
-            @test f(:c => x -> DataFrame(z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
-            @test f(:c => identity, gd) == f(d -> (c_identity=d.c,), gd)
-            @test f(:c => x -> (z=x,), gd) == f(d -> (z=d.c,), gd)
-            @test f((:b, :c) => x -> (y=exp.(x.b), z=x.c), gd) ==
-                f(d -> (y=exp.(d.b), z=d.c), gd)
-            @test f((:b, :c) => x -> (y=exp.(x.b), z=sum(x.c)), gd) ==
-                f(d -> (y=exp.(d.b), z=sum(d.c)), gd)
-            @test f((:b, :c) => x -> [exp.(x.b) x.c], gd) ==
-                f(d -> [exp.(d.b) d.c], gd)
+            for col in (:c, 3)
+                @test f(col => sum, gd) == f(d -> (c_sum=sum(d.c),), gd)
+                @test f(col => x -> sum(x), gd) == f(d -> (c_function=sum(d.c),), gd)
+                @test f(col => x -> (z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
+                @test f(col => x -> DataFrame(z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
+                @test f(col => identity, gd) == f(d -> (c_identity=d.c,), gd)
+                @test f(col => x -> (z=x,), gd) == f(d -> (z=d.c,), gd)
+            end
+            for cols in ((:b, :c), [:b, :c], (2, 3), 2:3, [2, 3], [false, true, true])
+                @test f(cols => x -> (y=exp.(x.b), z=x.c), gd) ==
+                    f(d -> (y=exp.(d.b), z=d.c), gd)
+                @test f(cols => x -> (y=exp.(x.b), z=sum(x.c)), gd) ==
+                    f(d -> (y=exp.(d.b), z=sum(d.c)), gd)
+                @test f(cols => x -> [exp.(x.b) x.c], gd) ==
+                    f(d -> [exp.(d.b) d.c], gd)
+            end
         end
     end
 
