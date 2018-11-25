@@ -667,7 +667,7 @@ module TestDataFrame
         df = DataFrame(A = 1:10)
 
         @test first(df) == df[1, :]
-        @test last(df) == df[10, :]
+        @test last(df) == df[end, :]
         @test_throws BoundsError first(DataFrame(x=[]))
         @test_throws BoundsError last(DataFrame(x=[]))
 
