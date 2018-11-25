@@ -289,11 +289,25 @@ Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
 ##############################################################################
 
 """
+    first(df::AbstractDataFrame)
+
+Get the first row of `df` as a `DataFrameRow`.
+"""
+Base.first(df::AbstractDataFrame) = df[1, :]
+
+"""
     first(df::AbstractDataFrame, n::Integer)
 
 Get a data frame with the `n` first rows of `df`.
 """
 Base.first(df::AbstractDataFrame, n::Integer) = df[1:min(n,nrow(df)), :]
+
+"""
+    last(df::AbstractDataFrame)
+
+Get the last row of `df` as a `DataFrameRow`.
+"""
+Base.last(df::AbstractDataFrame) = df[nrow(df), :]
 
 """
     last(df::AbstractDataFrame, n::Integer)

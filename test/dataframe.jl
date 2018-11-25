@@ -665,6 +665,12 @@ module TestDataFrame
 
     @testset "description" begin
         df = DataFrame(A = 1:10)
+
+        @test first(df) == df[1, :]
+        @test last(df) == df[10, :]
+        @test_throws BoundsError first(DataFrame(x=[]))
+        @test_throws BoundsError last(DataFrame(x=[]))
+
         @test first(df, 6) == DataFrame(A = 1:6)
         @test first(df, 1) == DataFrame(A = 1)
         @test last(df, 6) == DataFrame(A = 5:10)
