@@ -41,7 +41,6 @@ export AbstractDataFrame,
        eachrow,
        eltypes,
        groupby,
-       head,
        insertcols!,
        mapcols,
        melt,
@@ -58,8 +57,6 @@ export AbstractDataFrame,
        stackdf,
        unique!,
        unstack,
-       head,
-       tail,
        permutecols!
 
 
