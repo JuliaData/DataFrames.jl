@@ -454,25 +454,20 @@ module TestGrouping
                        b = repeat([2, 1], outer=[4]),
                        c = randn(8))
 
+        # Only test that different by syntaxes work,
+        # and rely on tests below for deeper checks
+        @test by(:c => sum, df, :a) ==
+            by(df, :a, :c => sum) ==
+            by(df, :a, (:c => sum,)) ==
+            by(df, :a, [:c => sum]) ==
+            by(df, :a, c_sum => :c => sum) ==
+            by(d -> (c_sum=sum(d.c),), df, :a)
 
-        for col in (:c, 3)
-            @test by(col => sum, df, :a) == by(d -> (c_sum=sum(d.c),), df, :a)
-            @test by(col => x -> sum(x), df, :a) == by(d -> (c_function=sum(d.c),), df, :a)
-            @test by(col => x -> (z=sum(x),), df, :a) == by(d -> (z=sum(d.c),), df, :a)
-            @test by(col => x -> DataFrame(z=sum(x),), df, :a) == by(d -> (z=sum(d.c),), df, :a)
-            @test by(col => identity, df, :a) == by(d -> (c_identity=d.c,), df, :a)
-            @test by(col => x -> (z=x,), df, :a) == by(d -> (z=d.c,), df, :a)
-        end
-        for cols in ((:b, :c), [:b, :c], (2, 3), 2:3, [2, 3], [false, true, true])
-            @test by(cols => x -> (y=exp.(x.b), z=x.c), df, :a) ==
-                by(d -> (y=exp.(d.b), z=d.c), df, :a)
-            @test by(cols => x -> (y=exp.(x.b), z=sum(x.c)), df, :a) ==
-                by(d -> (y=exp.(d.b), z=sum(d.c)), df, :a)
-            @test by(cols => x -> DataFrame(y=exp.(x.b), z=sum(x.c)), df, :a) ==
-                by(d -> DataFrame(y=exp.(d.b), z=sum(d.c)), df, :a)
-            @test by(cols => x -> [exp.(x.b) x.c], df, :a) ==
-                by(d -> [exp.(d.b) d.c], df, :a)
-        end
+        @test by(df, :a, :b => sum, :c => sum) ==
+            by(df, :a, (:b => sum, :c => sum,)) ==
+            by(df, :a, [:b => sum, :c => sum]) ==
+            by(df, :a, b_sum = :b => sum, c_sum = :c => sum) ==
+            by(d -> (b=sum=sum(d.b), c_sum=sum(d.c)), df, :a)
 
         gd = groupby(df, :a)
         for f in (map, combine)
@@ -483,6 +478,30 @@ module TestGrouping
                 @test f(col => x -> DataFrame(z=sum(x),), gd) == f(d -> (z=sum(d.c),), gd)
                 @test f(col => identity, gd) == f(d -> (c_identity=d.c,), gd)
                 @test f(col => x -> (z=x,), gd) == f(d -> (z=d.c,), gd)
+
+                @test f((xyz = col => sum,), gd) ==
+                    f(d -> (xyz=sum(d.c),), gd)
+                @test f((xyz = col => x -> sum(x),), gd) ==
+                    f(d -> (xyz=sum(d.c),), gd)
+                @test f((xyz = col => x -> (sum(x),),), gd) ==
+                    f(d -> (xyz=(sum(d.c),),), gd)
+                @test_throws ArgumentError f((xyz = col => x -> (z=sum(x),),), gd)
+                @test_throws ArgumentError f((xyz = col => x -> DataFrame(z=sum(x),),), gd)
+                @test_throws ArgumentError f((xyz = col => identity,), gd)
+                @test_throws ArgumentError f((xyz = col => x -> (z=x,),), gd)
+
+                for wrap in (vcat, tuple)
+                    @test f(wrap(col => sum), gd) ==
+                        f(d -> (c_sum=sum(d.c),), gd)
+                    @test f(wrap(col => x -> sum(x)), gd) ==
+                        f(d -> (c_function=sum(d.c),), gd)
+                    @test f(wrap(col => x -> (sum(x),)), gd) ==
+                        f(d -> (c_function=(sum(d.c),),), gd)
+                    @test_throws ArgumentError f(wrap(col => x -> (z=sum(x),)), gd)
+                    @test_throws ArgumentError f(wrap(col => x -> DataFrame(z=sum(x),)), gd)
+                    @test_throws ArgumentError f(wrap(col => identity), gd)
+                    @test_throws ArgumentError f(wrap(col => x -> (z=x,)), gd)
+                end
             end
             for cols in ((:b, :c), [:b, :c], (2, 3), 2:3, [2, 3], [false, true, true])
                 @test f(cols => x -> (y=exp.(x.b), z=x.c), gd) ==
@@ -491,6 +510,51 @@ module TestGrouping
                     f(d -> (y=exp.(d.b), z=sum(d.c)), gd)
                 @test f(cols => x -> [exp.(x.b) x.c], gd) ==
                     f(d -> [exp.(d.b) d.c], gd)
+
+                @test f((xyz = cols => x -> sum(x.b) + sum(x.c),), gd) ==
+                    f(d -> (xyz=sum(d.b) + sum(d.c),), gd)
+                if eltype(cols) === Bool
+                    cols2 = [[false, true, false], [false, false, true]]
+                    @test_throws ArgumentError f((xyz = cols[1] => sum, xzz = cols2[2] => sum), gd)
+                    @test_throws ArgumentError f((xyz = cols[1] => sum, xzz = cols2[1] => sum), gd)
+                    @test_throws ArgumentError f((xyz = cols[1] => sum, xzz = cols2[2] => x -> first(x)), gd)
+                else
+                    cols2 = cols
+                    @test f((xyz = cols2[1] => sum, xzz = cols2[2] => sum), gd) ==
+                        f(d -> (xyz=sum(d.b), xzz=sum(d.c)), gd)
+                    @test f((xyz = cols2[1] => sum, xzz = cols2[1] => sum), gd) ==
+                        f(d -> (xyz=sum(d.b), xzz=sum(d.b)), gd)
+                    @test f((xyz = cols2[1] => sum, xzz = cols2[2] => x -> first(x)), gd) ==
+                        f(d -> (xyz=sum(d.b), xzz=first(d.c)), gd)
+                end
+                @test_throws ArgumentError f((xyz = cols2[1] => x -> exp.(x), xzz = cols2[2] => identity), gd)
+                @test_throws ArgumentError f((xyz = cols2[1] => x -> exp.(x), xzz = cols2[2] => sum), gd)
+                @test_throws ArgumentError f((xyz = cols2 => x -> DataFrame(y=exp.(x.b), z=sum(x.c)),), gd)
+                @test_throws ArgumentError f((xyz = cols2 => x -> [exp.(x.b) x.c],), gd)
+
+                for wrap in (vcat, tuple)
+                    @test f(wrap(cols => x -> sum(x.b) + sum(x.c)), gd) ==
+                        f(d -> sum(d.b) + sum(d.c), gd)
+
+                    if eltype(cols) === Bool
+                        cols2 = [[false, true, false], [false, false, true]]
+                        @test f(wrap(cols2[1] => x -> sum(x.b), cols2[2] => x -> sum(x.c)), gd) ==
+                            f(d -> (x1=sum(d.b), x2=sum(d.c)), gd)
+                        @test f(wrap(cols2[1] => x -> sum(x.b), cols2[2] => x -> first(x.c)), gd) ==
+                            f(d -> (x1=sum(d.b), x2=first(d.c)), gd)
+                    else
+                        cols2 = cols
+                        @test f(wrap(cols[1] => sum, cols[2] => sum), gd) ==
+                            f(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd)
+                        @test f(wrap(cols[1] => sum, cols[2] => x -> first(x)), gd) ==
+                            f(d -> (b_sum=sum(d.b), c_function=first(d.c)), gd)
+                    end
+
+                    @test_throws ArgumentError f(wrap(cols2[1] => x -> exp.(x), cols2[2] => identity), gd)
+                    @test_throws ArgumentError f(wrap(cols2[1] => x -> exp.(x), cols2[2] => sum), gd)
+                    @test_throws ArgumentError f(wrap(cols => x -> DataFrame(y=exp.(x.b), z=sum(x.c))), gd)
+                    @test_throws ArgumentError f(wrap(cols => x -> [exp.(x.b) x.c]), gd)
+                end
             end
         end
     end
