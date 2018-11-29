@@ -528,9 +528,10 @@ module TestGrouping
                         f(d -> (xyz=sum(d.b), xzz=sum(d.b)), gd)
                     @test f((xyz = cols2[1] => sum, xzz = cols2[2] => x -> first(x)), gd) ==
                         f(d -> (xyz=sum(d.b), xzz=first(d.c)), gd)
+                    @test_throws ArgumentError f((xyz = cols2[1] => x -> exp.(x), xzz = cols2[2] => identity), gd)
+                    @test_throws ArgumentError f((xyz = cols2[1] => x -> exp.(x), xzz = cols2[2] => sum), gd)
                 end
-                @test_throws ArgumentError f((xyz = cols2[1] => x -> exp.(x), xzz = cols2[2] => identity), gd)
-                @test_throws ArgumentError f((xyz = cols2[1] => x -> exp.(x), xzz = cols2[2] => sum), gd)
+
                 @test_throws ArgumentError f((xyz = cols2 => x -> DataFrame(y=exp.(x.b), z=sum(x.c)),), gd)
                 @test_throws ArgumentError f((xyz = cols2 => x -> [exp.(x.b) x.c],), gd)
 
@@ -550,10 +551,10 @@ module TestGrouping
                             f(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd)
                         @test f(wrap(cols[1] => sum, cols[2] => x -> first(x)), gd) ==
                             f(d -> (b_sum=sum(d.b), c_function=first(d.c)), gd)
+                        @test_throws ArgumentError f(wrap(cols2[1] => x -> exp.(x), cols2[2] => identity), gd)
+                        @test_throws ArgumentError f(wrap(cols2[1] => x -> exp.(x), cols2[2] => sum), gd)
                     end
 
-                    @test_throws ArgumentError f(wrap(cols2[1] => x -> exp.(x), cols2[2] => identity), gd)
-                    @test_throws ArgumentError f(wrap(cols2[1] => x -> exp.(x), cols2[2] => sum), gd)
                     @test_throws ArgumentError f(wrap(cols => x -> DataFrame(y=exp.(x.b), z=sum(x.c))), gd)
                     @test_throws ArgumentError f(wrap(cols => x -> [exp.(x.b) x.c]), gd)
                 end

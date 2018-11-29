@@ -343,26 +343,27 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
     idxs = (first(p) isa Union{Integer, Symbol} ?
             index(gd.parent)[first(p)] :
             index(gd.parent)[collect(first(p))] for p in f)
-    nms = getindex.(Ref(names(gd.parent)), idxs)
-    allcols = collect(reduce(union, (nam isa Symbol ? (nam,) : nam for nam in nms)))
+    incols = [names(gd.parent)[idx] for idx in idxs]
+    allcols = collect(reduce(union, (nam isa Symbol ? (nam,) : nam for nam in incols)))
     f2 = ntuple(length(f)) do i
-        nam = nms[i]
-        (nam isa AbstractArray ? Tuple(nam) : nam) => last(f[i])
+        nms = incols[i]
+        (nms isa AbstractArray ? Tuple(nms) : nms) => last(f[i])
     end
-    nms = Tuple(gennames(length(f)))::NTuple{length(f), Symbol}
+    # Use temporary names for columns, and rename after the fact where appropriate
+    tmpnms = Tuple(gennames(length(f)))::NTuple{length(f), Symbol}
     fun = function(x)
         tup = map(f2) do p
-            incols = first(p)
+            local incols = first(p)
             res = incols isa Tuple ?
                   last(p)(NamedTuple{incols}(map(c -> x[c], incols))) :
                   last(p)(x[incols])
             if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractVector, AbstractMatrix}
                 throw(ArgumentError("a single value result is required when passing a vector or tuple " *
-                                    "of functions, (got $(typeof(res)))"))
+                                    "of functions (got $(typeof(res)))"))
             end
             res
         end
-        NamedTuple{nms}(tup)
+        NamedTuple{tmpnms}(tup)
     end
     idx, valscat = _combine(allcols => fun, gd)
     if f isa NamedTuple
@@ -743,8 +744,13 @@ by(d::AbstractDataFrame, cols::Any, f::Pair; sort::Bool = false) =
     combine(f, groupby(d, cols, sort = sort))
 by(d::AbstractDataFrame, cols::Any, f::Pair...; sort::Bool = false) =
     combine(f, groupby(d, cols, sort = sort))
-by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
-    combine(values(f), groupby(d, cols, sort = sort))
+if VERSION < v"1.0"
+    by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
+        combine(values(f), groupby(d, cols, sort = sort))
+else
+    by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
+        combine(f.iter, groupby(d, cols, sort = sort))
+end
 
 #
 # Aggregate convenience functions
