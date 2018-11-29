@@ -57,7 +57,7 @@ julia> by(iris, :Species, :PetalLength => mean)
 │ 2   │ versicolor │ 4.26             │
 │ 3   │ virginica  │ 5.552            │
 
-julia> by(iris, :Species, (N = :Species => length,)) # Chosen column is arbitrary
+julia> by(iris, :Species, N = :Species => length) # Chosen column is arbitrary
 3×2 DataFrame
 │ Row │ Species       │ N     │
 │     │ Categorical…⍰ │ Int64 │
@@ -67,7 +67,7 @@ julia> by(iris, :Species, (N = :Species => length,)) # Chosen column is arbitrar
 │ 3   │ virginica     │ 50    │
 ```
 
-julia> by(iris, :Species, (N = :Species => length, mean = :PetalLength => mean)) # Chosen column is arbitrary
+julia> by(iris, :Species, N = :Species => length, mean = :PetalLength => mean) # Column for length is arbitrary
 3×3 DataFrame
 │ Row │ Species    │ N     │ mean    │
 │     │ String⍰    │ Int64 │ Float64 │
