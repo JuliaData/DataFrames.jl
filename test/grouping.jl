@@ -460,14 +460,16 @@ module TestGrouping
             by(df, :a, :c => sum) ==
             by(df, :a, (:c => sum,)) ==
             by(df, :a, [:c => sum]) ==
-            by(df, :a, c_sum => :c => sum) ==
+            by(df, :a, c_sum = :c => sum) ==
             by(d -> (c_sum=sum(d.c),), df, :a)
+            by(df, :a, d -> (c_sum=sum(d.c),))
 
         @test by(df, :a, :b => sum, :c => sum) ==
             by(df, :a, (:b => sum, :c => sum,)) ==
             by(df, :a, [:b => sum, :c => sum]) ==
             by(df, :a, b_sum = :b => sum, c_sum = :c => sum) ==
-            by(d -> (b=sum=sum(d.b), c_sum=sum(d.c)), df, :a)
+            by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a)
+            by(df, :a, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
 
         gd = groupby(df, :a)
         for f in (map, combine)
