@@ -744,13 +744,8 @@ by(d::AbstractDataFrame, cols::Any, f::Pair; sort::Bool = false) =
     combine(f, groupby(d, cols, sort = sort))
 by(d::AbstractDataFrame, cols::Any, f::Pair...; sort::Bool = false) =
     combine(f, groupby(d, cols, sort = sort))
-if VERSION < v"1.0"
-    by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
-        combine(values(f), groupby(d, cols, sort = sort))
-else
-    by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
-        combine(f.iter, groupby(d, cols, sort = sort))
-end
+by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
+    combine(values(f), groupby(d, cols, sort = sort))
 
 #
 # Aggregate convenience functions

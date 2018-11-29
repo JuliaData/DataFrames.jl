@@ -448,7 +448,7 @@ module TestGrouping
         end
     end
 
-    @testset "by, combine and map with (::Pair, ::GroupedDataFrame)" begin
+    @testset "by, combine and map with pair interface" begin
         Random.seed!(1)
         df = DataFrame(a = repeat([1, 3, 2, 4], outer=[2]),
                        b = repeat([2, 1], outer=[4]),
