@@ -29,7 +29,6 @@ meltdf
 
 ```@docs
 allowmissing!
-columns
 completecases
 describe
 disallowmissing!

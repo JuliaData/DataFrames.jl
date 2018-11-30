@@ -38,21 +38,24 @@ end
 """
     DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}
 
-Iterator over columns of an `AbstractDataFrame`.
-If `V` is `Pair{Symbol,AbstractVector}` (which is the case when calling
-[`eachcol`](@link)) then each returned value is a pair consisting of
-column name and column vector. If `V` is `AbstractVector` (a value returned by
-the [`columns`](@link) function) then each returned value is a column vector.
+Iterator over columns of an `AbstractDataFrame` constructed using
+[`eachcol`](@link) function. . If `V` is `Pair{Symbol,AbstractVector}` then each
+returned value is a pair consisting of column name and column vector. If `V` is
+`AbstractVector` (a value returned by the [`columns`](@link) function) then each
+returned value is a column vector.
 """
 struct DataFrameColumns{T<:AbstractDataFrame, V} <: AbstractVector{V}
     df::T
 end
 
 """
-    eachcol(df::AbstractDataFrame)
+    eachcol(df::AbstractDataFrame, names::Bool=true)
 
 Return a `DataFrameColumns` that iterates an `AbstractDataFrame` column by column.
-Iteration returns a pair consisting of column name and column vector.
+If `names` is equal to `true` (currently the default, in the future the default
+will be set to `false`) iteration returns a pair consisting of column name
+and column vector.
+If `names` is equal to `false` then column vectors are yielded.
 
 **Examples**
 
@@ -67,45 +70,22 @@ julia> df = DataFrame(x=1:4, y=11:14)
 │ 3   │ 3     │ 13    │
 │ 4   │ 4     │ 14    │
 
-julia> collect(eachcol(df))
+julia> collect(eachcol(df, true))
 2-element Array{Pair{Symbol,AbstractArray{T,1} where T},1}:
  :x => [1, 2, 3, 4]
  :y => [11, 12, 13, 14]
-```
-"""
-eachcol(df::T) where T<: AbstractDataFrame =
-    DataFrameColumns{T, Pair{Symbol, AbstractVector}}(df)
 
-"""
-    columns(df::AbstractDataFrame)
-
-Return a `DataFrameColumns` that iterates an `AbstractDataFrame` column by
-column, yielding column vectors.
-
-**Examples**
-
-```jldoctest
-julia> df = DataFrame(x=1:4, y=11:14)
-4×2 DataFrame
-│ Row │ x     │ y     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 11    │
-│ 2   │ 2     │ 12    │
-│ 3   │ 3     │ 13    │
-│ 4   │ 4     │ 14    │
-
-julia> collect(columns(df))
+julia> collect(eachcol(df, false))
 2-element Array{AbstractArray{T,1} where T,1}:
  [1, 2, 3, 4]
  [11, 12, 13, 14]
 
-julia> sum.(columns(df))
+julia> sum.(eachcol(df, false))
 2-element Array{Int64,1}:
  10
  50
 
-julia> map(columns(df)) do col
+julia> map(eachcol(df, false)) do col
            maximum(col) - minimum(col)
        end
 2-element Array{Int64,1}:
@@ -113,8 +93,23 @@ julia> map(columns(df)) do col
  3
 ```
 """
-columns(df::T) where T<: AbstractDataFrame =
-    DataFrameColumns{T, AbstractVector}(df)
+eachcol(df::T, names::Bool) where T<: AbstractDataFrame =
+    if names
+        DataFrameColumns{T, Pair{Symbol, AbstractVector}}(df)
+    else
+        DataFrameColumns{T, AbstractVector}(df)
+    end
+
+# TODO: remove this method after deprecation
+# and add default argument value above
+function eachcol(df::AbstractDataFrame)
+    Base.depwarn("In the future eachcol will have names argument set to false by default")
+    eachcol(df, true)
+end
+
+# TODO: remove this method after deprecation
+# this is left to make sure we do not forget to properly fix columns calls
+columns(df::AbstractDataFrame) = eachcol(df, false)
 
 Base.size(itr::DataFrameColumns) = (size(itr.df, 2),)
 Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
