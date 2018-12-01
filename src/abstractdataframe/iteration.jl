@@ -39,10 +39,10 @@ end
     DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}
 
 Iterator over columns of an `AbstractDataFrame` constructed using
-[`eachcol(df, true)`](@link). If `V` is a `Pair{Symbol,AbstractVector}` then each
-returned value is a pair consisting of column name and column vector. If `V` is
-an `AbstractVector` (a value returned by [`eachcol(df, false)`](@link)) then each
-returned value is a column vector.
+[`eachcol(df, true)`](@link) if `V` is a `Pair{Symbol,AbstractVector}`. Then each
+returned value is a pair consisting of column name and column vector.
+If `V` is an `AbstractVector` (a value returned by [`eachcol(df, false)`](@link))
+then each returned value is a column vector.
 """
 struct DataFrameColumns{T<:AbstractDataFrame, V} <: AbstractVector{V}
     df::T
@@ -93,12 +93,13 @@ julia> map(eachcol(df, false)) do col
  3
 ```
 """
-eachcol(df::T, names::Bool) where T<: AbstractDataFrame =
+@inline function eachcol(df::T, names::Bool) where T<: AbstractDataFrame
     if names
         DataFrameColumns{T, Pair{Symbol, AbstractVector}}(df)
     else
         DataFrameColumns{T, AbstractVector}(df)
     end
+end
 
 # TODO: remove this method after deprecation
 # and add default argument value above
