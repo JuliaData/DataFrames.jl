@@ -39,7 +39,7 @@ end
     DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}
 
 Iterator over columns of an `AbstractDataFrame` constructed using
-[`eachcol`](@link) function. . If `V` is `Pair{Symbol,AbstractVector}` then each
+[`eachcol(df, true)`](@link). If `V` is a `Pair{Symbol,AbstractVector}` then each
 returned value is a pair consisting of column name and column vector. If `V` is
 `AbstractVector` (a value returned by the [`columns`](@link) function) then each
 returned value is a column vector.
