@@ -3,7 +3,7 @@
 
 julia&gt; iris = CSV.read(joinpath(dirname(pathof(DataFrames)), &quot;../test/data/iris.csv&quot;));
 
-julia&gt; head(iris)
+julia&gt; first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -15,7 +15,7 @@ julia&gt; head(iris)
 │ 5   │ 5.0         │ 3.6        │ 1.4         │ 0.2        │ setosa        │
 │ 6   │ 5.4         │ 3.9        │ 1.7         │ 0.4        │ setosa        │
 
-julia&gt; tail(iris)
+julia&gt; last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │

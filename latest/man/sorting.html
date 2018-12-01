@@ -5,7 +5,7 @@ julia&gt; iris = CSV.read(joinpath(dirname(pathof(DataFrames)), &quot;../test/da
 
 julia&gt; sort!(iris);
 
-julia&gt; head(iris)
+julia&gt; first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -17,7 +17,7 @@ julia&gt; head(iris)
 │ 5   │ 4.5         │ 2.3        │ 1.3         │ 0.3        │ setosa        │
 │ 6   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ setosa        │
 
-julia&gt; tail(iris)
+julia&gt; last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -29,7 +29,7 @@ julia&gt; tail(iris)
 │ 5   │ 7.7         │ 3.8        │ 6.7         │ 2.2        │ virginica     │
 │ 6   │ 7.9         │ 3.8        │ 6.4         │ 2.0        │ virginica     │</code></pre><p>In Sorting <code>DataFrame</code>s, you may want to sort different columns with different options. Here are some examples showing most of the possible options:</p><pre><code class="language-julia-repl">julia&gt; sort!(iris, rev = true);
 
-julia&gt; head(iris)
+julia&gt; first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -41,7 +41,7 @@ julia&gt; head(iris)
 │ 5   │ 7.7         │ 2.6        │ 6.9         │ 2.3        │ virginica     │
 │ 6   │ 7.6         │ 3.0        │ 6.6         │ 2.1        │ virginica     │
 
-julia&gt; tail(iris)
+julia&gt; last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -55,7 +55,7 @@ julia&gt; tail(iris)
 
 julia&gt; sort!(iris, (:SepalWidth, :SepalLength));
 
-julia&gt; head(iris)
+julia&gt; first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -67,7 +67,7 @@ julia&gt; head(iris)
 │ 5   │ 4.5         │ 2.3        │ 1.3         │ 0.3        │ setosa        │
 │ 6   │ 5.0         │ 2.3        │ 3.3         │ 1.0        │ versicolor    │
 
-julia&gt; tail(iris)
+julia&gt; last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -82,7 +82,7 @@ julia&gt; tail(iris)
 julia&gt; sort!(iris, (order(:Species, by = uppercase),
                     order(:SepalLength, rev = true)));
 
-julia&gt; head(iris)
+julia&gt; first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -94,7 +94,7 @@ julia&gt; head(iris)
 │ 5   │ 5.5         │ 4.2        │ 1.4         │ 0.2        │ setosa        │
 │ 6   │ 5.4         │ 3.4        │ 1.7         │ 0.2        │ setosa        │
 
-julia&gt; tail(iris)
+julia&gt; last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -107,7 +107,7 @@ julia&gt; tail(iris)
 │ 6   │ 4.9         │ 2.5        │ 4.5         │ 1.7        │ virginica     │</code></pre><p>Keywords used above include <code>rev</code> (to sort a column or the whole <code>DataFrame</code> in reverse), and <code>by</code> (to apply a function to a column/<code>DataFrame</code>). Each keyword can either be a single value, or can be a tuple or array, with values corresponding to individual columns.</p><p>As an alternative to using array or tuple values, <code>order</code> to specify an ordering for a particular column within a set of columns</p><p>The following two examples show two ways to sort the <code>iris</code> dataset with the same result: <code>Species</code> will be ordered in reverse lexicographic order, and within species, rows will be sorted by increasing sepal length and width:</p><pre><code class="language-julia-repl">julia&gt; sort!(iris, (:Species, :SepalLength, :SepalWidth),
                     rev = (true, false, false));
 
-julia&gt; head(iris)
+julia&gt; first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -119,7 +119,7 @@ julia&gt; head(iris)
 │ 5   │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ virginica     │
 │ 6   │ 5.8         │ 2.8        │ 5.1         │ 2.4        │ virginica     │
 
-julia&gt; tail(iris)
+julia&gt; last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -133,7 +133,7 @@ julia&gt; tail(iris)
 
 julia&gt; sort!(iris, (order(:Species, rev = true), :SepalLength, :SepalWidth));
 
-julia&gt; head(iris)
+julia&gt; first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -145,7 +145,7 @@ julia&gt; head(iris)
 │ 5   │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ virginica     │
 │ 6   │ 5.8         │ 2.8        │ 5.1         │ 2.4        │ virginica     │
 
-julia&gt; tail(iris)
+julia&gt; last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
