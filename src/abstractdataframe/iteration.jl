@@ -13,7 +13,7 @@
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
-A value of this type is returned by the [`eachrow`](@link) function.
+A value of this type is returned by the [`eachrow`](@ref) function.
 """
 struct DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
     df::T
@@ -39,9 +39,9 @@ end
     DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}
 
 Iterator over columns of an `AbstractDataFrame` constructed using
-[`eachcol(df, true)`](@link) if `V` is a `Pair{Symbol,AbstractVector}`. Then each
+[`eachcol(df, true)`](@ref) if `V` is a `Pair{Symbol,AbstractVector}`. Then each
 returned value is a pair consisting of column name and column vector.
-If `V` is an `AbstractVector` (a value returned by [`eachcol(df, false)`](@link))
+If `V` is an `AbstractVector` (a value returned by [`eachcol(df, false)`](@ref))
 then each returned value is a column vector.
 """
 struct DataFrameColumns{T<:AbstractDataFrame, V} <: AbstractVector{V}

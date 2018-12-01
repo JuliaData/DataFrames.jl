@@ -1,5 +1,6 @@
 module TestCat
     using Test, Random, DataFrames
+    using DataFrames: columns
     const ≅ = isequal
 
     #
