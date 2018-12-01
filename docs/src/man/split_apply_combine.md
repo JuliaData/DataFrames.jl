@@ -13,7 +13,7 @@ In all of these cases, the function can return either a single row or multiple r
 - a named tuple or `DataFrameRow` produces a single row and one column per field
 - a vector produces a single column with one row per entry
 - a named tuple of vectors produces one column per field with one row per entry in the vectors
-- a `DataFrame` produces as many rows and columns as it contains; this return value should be avoided due to its poor performance
+- a `DataFrame` or a matrix produces as many rows and columns as it contains; note that returning a `DataFrame` should be avoided due to its poor performance when the number of groups is large
 
 The name for the resulting column can be chosen either by passing a named tuple of pairs, or by returning a named tuple or a data frame. If no name is provided, it is generated automatically. For functions taking a single column (first form), the input column name is concatenated with the function name: for standard functions like `mean` this will produce columns with names like `SepalLength_mean`; for anonymous functions like `x -> sqrt(x)^e`, the produced columns will be `SepalLength_function`. For functions taking multiple columns (second form), names are `x1`, `x2`, etc.
 
@@ -65,7 +65,6 @@ julia> by(iris, :Species, N = :Species => length) # Chosen column is arbitrary
 │ 1   │ setosa        │ 50    │
 │ 2   │ versicolor    │ 50    │
 │ 3   │ virginica     │ 50    │
-```
 
 julia> by(iris, :Species, N = :Species => length, mean = :PetalLength => mean) # Column for length is arbitrary
 3×3 DataFrame
@@ -87,7 +86,7 @@ julia> by(iris, :Species, [:PetalLength, :SepalLength] =>
 │ 3   │ virginica  │ 0.842744 │ 277.6   │
 ```
 
-The `by` function also support the `do` block form. However, as noted above, this form is slow and should therefore be avoided when performance matters.
+The `by` function also supports the `do` block form. However, as noted above, this form is slow and should therefore be avoided when performance matters.
 
 ```jldoctest sac
 julia> by(iris, :Species) do df

@@ -116,30 +116,6 @@ end
 Base.names(gd::GroupedDataFrame) = names(gd.parent)
 _names(gd::GroupedDataFrame) = _names(gd.parent)
 
-# Wrapping automatically adds column names when the value returned
-# by the user-provided function lacks them
-wrap(x::Union{AbstractDataFrame, NamedTuple, DataFrameRow}) = x
-wrap(x::AbstractMatrix) =
-    NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(x[:, i] for i in 1:size(x, 2)))
-wrap(x::Any) = (x1=x,)
-
-function do_call(f::Any, gd::GroupedDataFrame, incols::Tuple, i::Integer)
-    idx = gd.idx[gd.starts[i]:gd.ends[i]]
-    f(map(c -> view(c, idx), incols)...)
-end
-function do_call(f::Any, gd::GroupedDataFrame, incols::NamedTuple, i::Integer)
-    idx = gd.idx[gd.starts[i]:gd.ends[i]]
-    f(map(c -> view(c, idx), incols))
-end
-do_call(f::Any, gd::GroupedDataFrame, incols::Nothing, i::Integer) =
-    f(gd[i])
-
-_nrow(df::AbstractDataFrame) = nrow(df)
-_nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
-    isempty(x) ? 0 : length(x[1])
-_ncol(df::AbstractDataFrame) = ncol(df)
-_ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
-
 """
     map(cols => f, gd::GroupedDataFrame)
     map(f, gd::GroupedDataFrame)
@@ -148,8 +124,12 @@ Apply a function to each group of rows and return a `GroupedDataFrame`.
 
 If the first argument is a `cols => f` pair, `cols` must be a column name or index, or
 a vector or tuple thereof, and `f` must be a callable. If `cols` is a single column index,
-`f` is callbed with a `SubArray` view into that column for each group; else, `f` is called
+`f` is called with a `SubArray` view into that column for each group; else, `f` is called
 with a named tuple holding `SubArray` views into these columns.
+
+If the first argument is a vector, tuple or named tuple of such pairs, each pair is
+handled as described above. If a named tuple, field names are used to name the
+each generated column.
 
 If the first argument is a callable, it is passed a `SubDataFrame` view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
@@ -168,7 +148,7 @@ determines the shape of the resulting data frame:
 In all cases, the resulting `GroupedDataFrame` contains all the grouping columns in addition
 to those listed above. Column names are automatically generated when necessary: for functions
 operating on a single column and returning a single value or vector, the function name is
-appended to the input colummn name; for other functions, columns are called `x1`, `x2`
+appended to the input column name; for other functions, columns are called `x1`, `x2`
 and so on.
 
 Note that `f` must always return the same type of object for
@@ -258,6 +238,10 @@ a vector or tuple thereof, and `f` must be a callable. If `cols` is a single col
 `f` is called with a `SubArray` view into that column for each group; else, `f` is called
 with a named tuple holding `SubArray` views into these columns.
 
+If the first argument is a vector, tuple or named tuple of such pairs, each pair is
+handled as described above. If a named tuple, field names are used to name the
+each generated column.
+
 If the first argument is a callable `f`, it is passed a `SubDataFrame` view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
 Note that this second form is much slower than the first one due to type instability.
@@ -275,7 +259,7 @@ determines the shape of the resulting data frame:
 In all cases, the resulting data frame contains all the grouping columns in addition
 to those listed above. Column names are automatically generated when necessary: for functions
 operating on a single column and returning a single value or vector, the function name is
-appended to the input colummn name; for other functions, columns are called `x1`, `x2`
+appended to the input column name; for other functions, columns are called `x1`, `x2`
 and so on.
 
 Note that `f` must always return the same type of object for
@@ -337,6 +321,52 @@ end
 
 combine(gd::GroupedDataFrame) = combine(identity, gd)
 
+
+# Wrapping automatically adds column names when the value returned
+# by the user-provided function lacks them
+wrap(x::Union{AbstractDataFrame, NamedTuple, DataFrameRow}) = x
+wrap(x::AbstractMatrix) =
+    NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(x[:, i] for i in 1:size(x, 2)))
+wrap(x::Any) = (x1=x,)
+
+function do_call(f::Any, gd::GroupedDataFrame, incols::Tuple, i::Integer)
+    idx = gd.idx[gd.starts[i]:gd.ends[i]]
+    f(map(c -> view(c, idx), incols)...)
+end
+function do_call(f::Any, gd::GroupedDataFrame, incols::NamedTuple, i::Integer)
+    idx = gd.idx[gd.starts[i]:gd.ends[i]]
+    f(map(c -> view(c, idx), incols))
+end
+do_call(f::Any, gd::GroupedDataFrame, incols::Nothing, i::Integer) =
+    f(gd[i])
+
+_nrow(df::AbstractDataFrame) = nrow(df)
+_nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
+    isempty(x) ? 0 : length(x[1])
+_ncol(df::AbstractDataFrame) = ncol(df)
+_ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
+
+function gen_fun(::Type{NT}, f2) where NT
+    get_val(::Val{T}) where {T} = T
+
+    function(incols)
+        tup = map(f2) do p
+            nms = get_val(first(p))
+            if nms isa Tuple
+                res = last(p)(NamedTuple{nms}(map(c -> incols[c], nms)))
+            else
+                res = last(p)(incols[nms])
+            end
+            if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractVector, AbstractMatrix}
+                throw(ArgumentError("a single value result is required when passing a vector or tuple " *
+                                    "of functions (got $(typeof(res)))"))
+            end
+            res
+        end
+        NT(tup)
+    end
+end
+
 function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
                            NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
                   gd::GroupedDataFrame)
@@ -347,24 +377,11 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
     allcols = collect(reduce(union, (nam isa Symbol ? (nam,) : nam for nam in incols)))
     f2 = ntuple(length(f)) do i
         nms = incols[i]
-        (nms isa AbstractArray ? Tuple(nms) : nms) => last(f[i])
+        (nms isa AbstractArray ? Val(Tuple(nms)) : Val(nms)) => last(f[i])
     end
     # Use temporary names for columns, and rename after the fact where appropriate
-    tmpnms = Tuple(gennames(length(f)))::NTuple{length(f), Symbol}
-    fun = function(x)
-        tup = map(f2) do p
-            local incols = first(p)
-            res = incols isa Tuple ?
-                  last(p)(NamedTuple{incols}(map(c -> x[c], incols))) :
-                  last(p)(x[incols])
-            if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractVector, AbstractMatrix}
-                throw(ArgumentError("a single value result is required when passing a vector or tuple " *
-                                    "of functions (got $(typeof(res)))"))
-            end
-            res
-        end
-        NamedTuple{tmpnms}(tup)
-    end
+    NT = NamedTuple{Tuple(gennames(length(f2)))}
+    fun = gen_fun(NT, f2)
     idx, valscat = _combine(allcols => fun, gd)
     if f isa NamedTuple
         nams = collect(propertynames(f))
@@ -428,10 +445,9 @@ function _combine(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
     idx, valscat
 end
 
-# Use function barrier to ensure iteration over columns is fast
-@noinline function fill_row!(row, outcols::NTuple{N, AbstractVector},
-                             i::Integer, colstart::Integer,
-                             colnames::NTuple{N, Symbol}) where N
+function fill_row!(row, outcols::NTuple{N, AbstractVector},
+                   i::Integer, colstart::Integer,
+                   colnames::NTuple{N, Symbol}) where N
     if !isa(row, Union{NamedTuple, DataFrameRow})
         throw(ArgumentError("return value must not change its kind " *
                             "(single row or variable number of rows) across groups"))
