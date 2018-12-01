@@ -41,7 +41,7 @@ end
 Iterator over columns of an `AbstractDataFrame` constructed using
 [`eachcol(df, true)`](@link). If `V` is a `Pair{Symbol,AbstractVector}` then each
 returned value is a pair consisting of column name and column vector. If `V` is
-`AbstractVector` (a value returned by the [`columns`](@link) function) then each
+an `AbstractVector` (a value returned by [`eachcol(df, false)`](@link)) then each
 returned value is a column vector.
 """
 struct DataFrameColumns{T<:AbstractDataFrame, V} <: AbstractVector{V}
