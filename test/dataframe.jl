@@ -665,10 +665,16 @@ module TestDataFrame
 
     @testset "description" begin
         df = DataFrame(A = 1:10)
-        @test head(df) == DataFrame(A = 1:6)
-        @test head(df, 1) == DataFrame(A = 1)
-        @test tail(df) == DataFrame(A = 5:10)
-        @test tail(df, 1) == DataFrame(A = 10)
+
+        @test first(df) == df[1, :]
+        @test last(df) == df[end, :]
+        @test_throws BoundsError first(DataFrame(x=[]))
+        @test_throws BoundsError last(DataFrame(x=[]))
+
+        @test first(df, 6) == DataFrame(A = 1:6)
+        @test first(df, 1) == DataFrame(A = 1)
+        @test last(df, 6) == DataFrame(A = 5:10)
+        @test last(df, 1) == DataFrame(A = 10)
     end
 
     @testset "misc" begin

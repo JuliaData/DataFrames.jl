@@ -40,7 +40,6 @@ eachcol
 eltypes
 filter
 filter!
-head
 insertcols!
 mapcols
 names!
@@ -51,7 +50,6 @@ repeat
 show
 sort
 sort!
-tail
 unique!
 permutecols!
 ```

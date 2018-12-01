@@ -1756,3 +1756,8 @@ import Base: map
 
 import Base: length
 @deprecate length(df::AbstractDataFrame) size(df, 2)
+
+@deprecate head(df::AbstractDataFrame) first(df, 6)
+@deprecate tail(df::AbstractDataFrame) last(df, 6)
+@deprecate head(df::AbstractDataFrame, n::Integer) first(df, n)
+@deprecate tail(df::AbstractDataFrame, n::Integer) last(df, n)

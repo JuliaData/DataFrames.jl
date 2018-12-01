@@ -9,7 +9,7 @@ julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.
 
 julia> sort!(iris);
 
-julia> head(iris)
+julia> first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -21,7 +21,7 @@ julia> head(iris)
 │ 5   │ 4.5         │ 2.3        │ 1.3         │ 0.3        │ setosa        │
 │ 6   │ 4.6         │ 3.1        │ 1.5         │ 0.2        │ setosa        │
 
-julia> tail(iris)
+julia> last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -39,7 +39,7 @@ In Sorting `DataFrame`s, you may want to sort different columns with different o
 ```jldoctest sort
 julia> sort!(iris, rev = true);
 
-julia> head(iris)
+julia> first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -51,7 +51,7 @@ julia> head(iris)
 │ 5   │ 7.7         │ 2.6        │ 6.9         │ 2.3        │ virginica     │
 │ 6   │ 7.6         │ 3.0        │ 6.6         │ 2.1        │ virginica     │
 
-julia> tail(iris)
+julia> last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -65,7 +65,7 @@ julia> tail(iris)
 
 julia> sort!(iris, (:SepalWidth, :SepalLength));
 
-julia> head(iris)
+julia> first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -77,7 +77,7 @@ julia> head(iris)
 │ 5   │ 4.5         │ 2.3        │ 1.3         │ 0.3        │ setosa        │
 │ 6   │ 5.0         │ 2.3        │ 3.3         │ 1.0        │ versicolor    │
 
-julia> tail(iris)
+julia> last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -92,7 +92,7 @@ julia> tail(iris)
 julia> sort!(iris, (order(:Species, by = uppercase),
                     order(:SepalLength, rev = true)));
 
-julia> head(iris)
+julia> first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -104,7 +104,7 @@ julia> head(iris)
 │ 5   │ 5.5         │ 4.2        │ 1.4         │ 0.2        │ setosa        │
 │ 6   │ 5.4         │ 3.4        │ 1.7         │ 0.2        │ setosa        │
 
-julia> tail(iris)
+julia> last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -127,7 +127,7 @@ The following two examples show two ways to sort the `iris` dataset with the sam
 julia> sort!(iris, (:Species, :SepalLength, :SepalWidth),
                     rev = (true, false, false));
 
-julia> head(iris)
+julia> first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -139,7 +139,7 @@ julia> head(iris)
 │ 5   │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ virginica     │
 │ 6   │ 5.8         │ 2.8        │ 5.1         │ 2.4        │ virginica     │
 
-julia> tail(iris)
+julia> last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -153,7 +153,7 @@ julia> tail(iris)
 
 julia> sort!(iris, (order(:Species, rev = true), :SepalLength, :SepalWidth));
 
-julia> head(iris)
+julia> first(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
@@ -165,7 +165,7 @@ julia> head(iris)
 │ 5   │ 5.8         │ 2.7        │ 5.1         │ 1.9        │ virginica     │
 │ 6   │ 5.8         │ 2.8        │ 5.1         │ 2.4        │ virginica     │
 
-julia> tail(iris)
+julia> last(iris, 6)
 6×5 DataFrame
 │ Row │ SepalLength │ SepalWidth │ PetalLength │ PetalWidth │ Species       │
 │     │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │ Categorical…⍰ │
