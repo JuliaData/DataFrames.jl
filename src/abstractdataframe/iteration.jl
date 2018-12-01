@@ -104,7 +104,7 @@ end
 # TODO: remove this method after deprecation
 # and add default argument value above
 function eachcol(df::AbstractDataFrame)
-    Base.depwarn("In the future eachcol will have names argument set to false by default")
+    Base.depwarn("In the future eachcol will have names argument set to false by default", :eachcol)
     eachcol(df, true)
 end
 
