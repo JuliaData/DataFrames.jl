@@ -128,7 +128,7 @@ a vector or tuple thereof, and `f` must be a callable. If `cols` is a single col
 with a named tuple holding `SubArray` views into these columns.
 
 If the first argument is a vector, tuple or named tuple of such pairs, each pair is
-handled as described above. If a named tuple, field names are used to name the
+handled as described above. If a named tuple, field names are used to name
 each generated column.
 
 If the first argument is a callable, it is passed a `SubDataFrame` view for each group,
@@ -144,6 +144,9 @@ determines the shape of the resulting data frame:
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a data frame
   with the same columns and as many rows for each group as the rows returned for that group.
+
+As a special case, if a tuple or vector of pairs is passed as the first argument, each function
+is required to return a single value or vector, which will produce each a separate column.
 
 In all cases, the resulting `GroupedDataFrame` contains all the grouping columns in addition
 to those listed above. Column names are automatically generated when necessary: for functions
@@ -204,7 +207,7 @@ See [`by`](@ref) for more examples.
 function Base.map(f::Any, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
-        parent = hcat!(gd.parent[idx, gd.cols], valscat)
+        parent = hcat!(gd.parent[idx, gd.cols], valscat, makeunique=true)
         starts = Vector{Int}(undef, length(gd))
         ends = Vector{Int}(undef, length(gd))
         starts[1] = 1
@@ -228,23 +231,26 @@ end
 
 """
     combine(gd::GroupedDataFrame)
-    combine(cols => f, gd::GroupedDataFrame)
+    combine(gd::GroupedDataFrame, cols => f...)
+    combine(gd::GroupedDataFrame; (colname = cols => f)...)
+    combine(gd::GroupedDataFrame, f)
     combine(f, gd::GroupedDataFrame)
 
 Transform a `GroupedDataFrame` into a `DataFrame`.
 
-If the first argument is a `cols => f` pair, `cols` must be a column name or index, or
-a vector or tuple thereof, and `f` must be a callable. If `cols` is a single column index,
-`f` is called with a `SubArray` view into that column for each group; else, `f` is called
-with a named tuple holding `SubArray` views into these columns.
+If the last argument(s) consist(s) in one or more `cols => f` pair(s), or if
+`colname = cols => f` keyword arguments are provided, `cols` must be
+a column name or index, or a vector or tuple thereof, and `f` must be a callable.
+A tuple or a named tuple of pairs can also be provided as the first or last argument.
+If `cols` is a single column index, `f` is called with a `SubArray` view into that
+column for each group; else, `f` is called with a named tuple holding `SubArray`
+views into these columns.
 
-If the first argument is a vector, tuple or named tuple of such pairs, each pair is
-handled as described above. If a named tuple, field names are used to name the
-each generated column.
-
-If the first argument is a callable `f`, it is passed a `SubDataFrame` view for each group,
+If the last argument is a callable `f`, it is passed a `SubDataFrame` view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
 Note that this second form is much slower than the first one due to type instability.
+A method is defined with `f` as the first argument, so do-block
+notation can be used.
 
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
@@ -256,10 +262,17 @@ determines the shape of the resulting data frame:
 - A data frame, a named tuple of vectors or a matrix gives a data frame
   with the same columns and as many rows for each group as the rows returned for that group.
 
+As a special case, if a tuple or vector of pairs is passed as the first argument, each function
+is required to return a single value or vector, which will produce each a separate column.
+
 In all cases, the resulting data frame contains all the grouping columns in addition
 to those listed above. Column names are automatically generated when necessary: for functions
 operating on a single column and returning a single value or vector, the function name is
 appended to the input column name; for other functions, columns are called `x1`, `x2`
+and so on.In all cases, the resulting data frame contains all the grouping columns in addition
+to those listed above. Column names are automatically generated when necessary: for functions
+operating on a single column and returning a single value or vector, the function name is
+appended to the input colummn name; for other functions, columns are called `x1`, `x2`
 and so on.
 
 Note that `f` must always return the same type of object for
@@ -278,6 +291,16 @@ julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                       c = 1:8);
 
 julia> gd = groupby(df, :a);
+
+julia> combine(gd, :c => sum)
+4×2 DataFrame
+│ Row │ a     │ c_sum │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 6     │
+│ 2   │ 2     │ 8     │
+│ 3   │ 3     │ 10    │
+│ 4   │ 4     │ 12    │
 
 julia> combine(:c => sum, gd)
 4×2 DataFrame
@@ -318,20 +341,21 @@ function combine(f::Any, gd::GroupedDataFrame)
         return similar(gd.parent[gd.cols], 0)
     end
 end
-
+combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
+combine(gd::GroupedDataFrame, f::Pair...) = combine(f, gd)
+combine(gd::GroupedDataFrame; f...) = combine(values(f), gd)
 combine(gd::GroupedDataFrame) = combine(identity, gd)
-
 
 # Wrapping automatically adds column names when the value returned
 # by the user-provided function lacks them
 wrap(x::Union{AbstractDataFrame, NamedTuple, DataFrameRow}) = x
 wrap(x::AbstractMatrix) =
-    NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(x[:, i] for i in 1:size(x, 2)))
+    NamedTuple{Tuple(gennames(size(x, 2)))}(Tuple(view(x, :, i) for i in 1:size(x, 2)))
 wrap(x::Any) = (x1=x,)
 
-function do_call(f::Any, gd::GroupedDataFrame, incols::Tuple, i::Integer)
+function do_call(f::Any, gd::GroupedDataFrame, incols::AbstractVector, i::Integer)
     idx = gd.idx[gd.starts[i]:gd.ends[i]]
-    f(map(c -> view(c, idx), incols)...)
+    f(view(incols, idx))
 end
 function do_call(f::Any, gd::GroupedDataFrame, incols::NamedTuple, i::Integer)
     idx = gd.idx[gd.starts[i]:gd.ends[i]]
@@ -357,9 +381,9 @@ function gen_fun(::Type{NT}, f2) where NT
             else
                 res = last(p)(incols[nms])
             end
-            if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractVector, AbstractMatrix}
-                throw(ArgumentError("a single value result is required when passing a vector or tuple " *
-                                    "of functions (got $(typeof(res)))"))
+            if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
+                throw(ArgumentError("a single value or vector result is required when passing " *
+                                    "a vector or tuple of functions (got $(typeof(res)))"))
             end
             res
         end
@@ -400,7 +424,7 @@ end
 
 function _combine(f::Any, gd::GroupedDataFrame)
     if f isa Pair{<:Union{Symbol,Integer}}
-        incols = (gd.parent[first(f)],)
+        incols = gd.parent[first(f)]
         fun = last(f)
     elseif f isa Pair
         df = gd.parent[collect(first(f))]
@@ -423,7 +447,7 @@ end
 
 function _combine(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
                   f::Any, gd::GroupedDataFrame,
-                  incols::Union{Nothing, Tuple, NamedTuple})
+                  incols::Union{Nothing, AbstractVector, NamedTuple})
     if first isa AbstractDataFrame
         n = 0
         eltys = eltypes(first)
@@ -433,9 +457,12 @@ function _combine(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
     elseif first isa DataFrameRow
         n = length(gd)
         eltys = eltypes(parent(first))
-    else
+    else # NamedTuple giving a single row
         n = length(gd)
         eltys = map(typeof, first)
+        if any(x -> x <: AbstractVector, eltys)
+            throw(ArgumentError("mixing single values and vectors in a (named) tuple is not allowed"))
+        end
     end
     idx = Vector{Int}(undef, n)
     initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
@@ -479,7 +506,7 @@ end
 function _combine!(first::Union{NamedTuple, DataFrameRow}, outcols::NTuple{N, AbstractVector},
                    idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                    f::Any, gd::GroupedDataFrame,
-                   incols::Union{Nothing, Tuple, NamedTuple},
+                   incols::Union{Nothing, AbstractVector, NamedTuple},
                    colnames::NTuple{N, Symbol}) where N
     len = length(gd)
     # Handle first group
@@ -559,7 +586,7 @@ function _combine!(first::Union{AbstractDataFrame,
                    outcols::NTuple{N, AbstractVector},
                    idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                    f::Any, gd::GroupedDataFrame,
-                   incols::Union{Nothing, Tuple, NamedTuple},
+                   incols::Union{Nothing, AbstractVector, NamedTuple},
                    colnames::NTuple{N, Symbol}) where N
     len = length(gd)
     # Handle first group
@@ -631,15 +658,17 @@ colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
     by(d::AbstractDataFrame, keys, cols => f...; sort::Bool = false)
     by(d::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
     by(d::AbstractDataFrame, keys, f; sort::Bool = false)
+    by(f, d::AbstractDataFrame, keys; sort::Bool = false)
 
 Split-apply-combine in one step: apply `f` to each grouping in `d`
 based on grouping columns `keys`, and return a `DataFrame`.
 
 `keys` can be either a single column index, or a vector thereof.
 
-If the last argument(s) consist(s) in one or more `cols => f` pair, or if
+If the last argument(s) consist(s) in one or more `cols => f` pair(s), or if
 `colname = cols => f` keyword arguments are provided, `cols` must be
 a column name or index, or a vector or tuple thereof, and `f` must be a callable.
+A tuple or a named tuple of pairs can also be provided as the first or last argument.
 If `cols` is a single column index, `f` is called with a `SubArray` view into that
 column for each group; else, `f` is called with a named tuple holding `SubArray`
 views into these columns.
@@ -647,6 +676,8 @@ views into these columns.
 If the last argument is a callable `f`, it is passed a `SubDataFrame` view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
 Note that this second form is much slower than the first one due to type instability.
+A method is defined with `f` as the first argument, so do-block
+notation can be used.
 
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
@@ -657,6 +688,9 @@ determines the shape of the resulting data frame:
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a data frame
   with the same columns and as many rows for each group as the rows returned for that group.
+
+As a special case, if multiple pairs are passed as last arguments, each function
+is required to return a single value or vector, which will produce each a separate column.
 
 In all cases, the resulting data frame contains all the grouping columns in addition
 to those listed above. Column names are automatically generated when necessary: for functions
@@ -672,10 +706,8 @@ faster than returning a data frame.
 The resulting data frame will be sorted on `keys` if `sort=true`.
 Otherwise, ordering of rows is undefined.
 
-A method is defined with `f` as the first argument, so do-block
-notation can be used.
-
-`by(d, cols, f)` is equivalent to `combine(f, groupby(d, cols))`.
+`by(d, cols, f)` is equivalent to `combine(f, groupby(d, cols))` and to the
+less efficient `combine(map(f, groupby(d, cols)))`.
 
 ### Examples
 

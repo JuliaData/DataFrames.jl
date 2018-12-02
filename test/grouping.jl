@@ -354,6 +354,11 @@ module TestGrouping
         @test by(d -> d.x == [1] ? DataFrame(x1=1, x2=3) : DataFrame(x2=2, x1=4), df, :x) ==
             DataFrame(x=1:3, x1=[1, 4, 4], x2=[3, 2, 2])
 
+        # Test with NamedTuple with columns of incompatible lengths
+        @test_throws DimensionMismatch by(d -> (x1=[1], x2=[3, 4]), df, :x)
+        @test_throws DimensionMismatch by(d -> d.x == [1] ? (x1=[1], x2=[3]) :
+                                                            (x1=[1], x2=[3, 4]), df, :x)
+
         # Test with incompatible return values
         @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1,) : DataFrame(x1=1), df, :x)
         @test_throws ArgumentError by(d -> d.x == [1] ? NamedTuple() : (x1=1), df, :x)
@@ -449,6 +454,7 @@ module TestGrouping
     end
 
     @testset "by, combine and map with pair interface" begin
+        vexp = x -> exp.(x)
         Random.seed!(1)
         df = DataFrame(a = repeat([1, 3, 2, 4], outer=[2]),
                        b = repeat([2, 1], outer=[4]),
@@ -464,6 +470,14 @@ module TestGrouping
             by(d -> (c_sum=sum(d.c),), df, :a)
             by(df, :a, d -> (c_sum=sum(d.c),))
 
+        @test by(:c => vexp, df, :a) ==
+            by(df, :a, :c => vexp) ==
+            by(df, :a, (:c => vexp,)) ==
+            by(df, :a, [:c => vexp]) ==
+            by(df, :a, c_function = :c => vexp) ==
+            by(d -> (c_function=vexp(d.c),), df, :a)
+            by(df, :a, d -> (c_function=vexp(d.c),))
+
         @test by(df, :a, :b => sum, :c => sum) ==
             by(df, :a, (:b => sum, :c => sum,)) ==
             by(df, :a, [:b => sum, :c => sum]) ==
@@ -471,7 +485,47 @@ module TestGrouping
             by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a)
             by(df, :a, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
 
+        @test by(df, :a, :b => vexp, :c => identity) ==
+            by(df, :a, (:b => vexp, :c => identity,)) ==
+            by(df, :a, [:b => vexp, :c => identity]) ==
+            by(df, :a, b_function = :b => vexp, c_identity = :c => identity) ==
+            by(d -> (b_function=vexp(d.b), c_identity=identity(d.c)), df, :a)
+            by(df, :a, d -> (b_function=vexp(d.b), c_identity=identity(d.c)))
+
         gd = groupby(df, :a)
+
+        # Only test that different combine syntaxes work,
+        # and rely on tests below for deeper checks
+        @test combine(:c => sum, gd) ==
+            combine(gd, :c => sum) ==
+            combine(gd, (:c => sum,)) ==
+            combine(gd, [:c => sum]) ==
+            combine(gd, c_sum = :c => sum) ==
+            combine(d -> (c_sum=sum(d.c),), gd)
+            combine(gd, d -> (c_sum=sum(d.c),))
+
+        @test combine(:c => vexp, gd) ==
+            combine(gd, :c => vexp) ==
+            combine(gd, (:c => vexp,)) ==
+            combine(gd, [:c => vexp]) ==
+            combine(gd, c_function = :c => vexp) ==
+            combine(d -> (c_function=exp.(d.c),), gd)
+            combine(gd, d -> (c_function=exp.(d.c),))
+
+        @test combine(gd, :b => sum, :c => sum) ==
+            combine(gd, (:b => sum, :c => sum,)) ==
+            combine(gd, [:b => sum, :c => sum]) ==
+            combine(gd, b_sum = :b => sum, c_sum = :c => sum) ==
+            combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd)
+            combine(gd, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
+
+        @test combine(gd, :b => vexp, :c => identity) ==
+            combine(gd, (:b => vexp, :c => identity,)) ==
+            combine(gd, [:b => vexp, :c => identity]) ==
+            combine(gd, b_function = :b => vexp, c_identity = :c => identity) ==
+            combine(d -> (b_function=vexp(d.b), c_identity=d.c), gd)
+            combine(gd, d -> (b_function=vexp(d.b), c_identity=d.c))
+
         for f in (map, combine)
             for col in (:c, 3)
                 @test f(col => sum, gd) == f(d -> (c_sum=sum(d.c),), gd)
@@ -489,8 +543,8 @@ module TestGrouping
                     f(d -> (xyz=(sum(d.c),),), gd)
                 @test_throws ArgumentError f((xyz = col => x -> (z=sum(x),),), gd)
                 @test_throws ArgumentError f((xyz = col => x -> DataFrame(z=sum(x),),), gd)
-                @test_throws ArgumentError f((xyz = col => identity,), gd)
                 @test_throws ArgumentError f((xyz = col => x -> (z=x,),), gd)
+                @test_throws ArgumentError f(col => x -> (z=1, xzz=[1]), gd)
 
                 for wrap in (vcat, tuple)
                     @test f(wrap(col => sum), gd) ==
@@ -501,15 +555,13 @@ module TestGrouping
                         f(d -> (c_function=(sum(d.c),),), gd)
                     @test_throws ArgumentError f(wrap(col => x -> (z=sum(x),)), gd)
                     @test_throws ArgumentError f(wrap(col => x -> DataFrame(z=sum(x),)), gd)
-                    @test_throws ArgumentError f(wrap(col => identity), gd)
                     @test_throws ArgumentError f(wrap(col => x -> (z=x,)), gd)
+                    @test_throws ArgumentError f(wrap(col => x -> (z=1, xzz=[1])), gd)
                 end
             end
             for cols in ((:b, :c), [:b, :c], (2, 3), 2:3, [2, 3], [false, true, true])
                 @test f(cols => x -> (y=exp.(x.b), z=x.c), gd) ==
                     f(d -> (y=exp.(d.b), z=d.c), gd)
-                @test f(cols => x -> (y=exp.(x.b), z=sum(x.c)), gd) ==
-                    f(d -> (y=exp.(d.b), z=sum(d.c)), gd)
                 @test f(cols => x -> [exp.(x.b) x.c], gd) ==
                     f(d -> [exp.(d.b) d.c], gd)
 
@@ -528,10 +580,10 @@ module TestGrouping
                         f(d -> (xyz=sum(d.b), xzz=sum(d.b)), gd)
                     @test f((xyz = cols2[1] => sum, xzz = cols2[2] => x -> first(x)), gd) ==
                         f(d -> (xyz=sum(d.b), xzz=first(d.c)), gd)
-                    @test_throws ArgumentError f((xyz = cols2[1] => x -> exp.(x), xzz = cols2[2] => identity), gd)
-                    @test_throws ArgumentError f((xyz = cols2[1] => x -> exp.(x), xzz = cols2[2] => sum), gd)
+                    @test_throws ArgumentError f((xyz = cols2[1] => vexp, xzz = cols2[2] => sum), gd)
                 end
 
+                @test_throws ArgumentError f(cols => x -> (y=exp.(x.b), z=sum(x.c)), gd)
                 @test_throws ArgumentError f((xyz = cols2 => x -> DataFrame(y=exp.(x.b), z=sum(x.c)),), gd)
                 @test_throws ArgumentError f((xyz = cols2 => x -> [exp.(x.b) x.c],), gd)
 
@@ -551,8 +603,7 @@ module TestGrouping
                             f(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd)
                         @test f(wrap(cols[1] => sum, cols[2] => x -> first(x)), gd) ==
                             f(d -> (b_sum=sum(d.b), c_function=first(d.c)), gd)
-                        @test_throws ArgumentError f(wrap(cols2[1] => x -> exp.(x), cols2[2] => identity), gd)
-                        @test_throws ArgumentError f(wrap(cols2[1] => x -> exp.(x), cols2[2] => sum), gd)
+                        @test_throws ArgumentError f(wrap(cols2[1] => vexp, cols2[2] => sum), gd)
                     end
 
                     @test_throws ArgumentError f(wrap(cols => x -> DataFrame(y=exp.(x.b), z=sum(x.c))), gd)

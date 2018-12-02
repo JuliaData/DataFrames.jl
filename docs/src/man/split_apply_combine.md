@@ -2,11 +2,12 @@
 
 Many data analysis tasks involve splitting a data set into groups, applying some functions to each of the groups and then combining the results. A standardized framework for handling this sort of computation is described in the paper "[The Split-Apply-Combine Strategy for Data Analysis](http://www.jstatsoft.org/v40/i01)", written by Hadley Wickham.
 
-The DataFrames package supports the Split-Apply-Combine strategy through the `by` function, which takes in three arguments: (1) a `DataFrame`, (2) one or more columns to split the `DataFrame` on, and (3) a specification of one or more functions to apply to each subset of the `DataFrame`. This specification can be of the following forms:
-- a `col => function` pair indicating that `function` should be called with the vector of values for column `col`, which can be a column name or index
-- a `cols => function` pair indicating that `function` should be called with a named tuple holding columns `cols`, which can be a tuple or vector of names or indices
-- a (named) tuple or vector of such pairs, producing each a single separate column
-- a function which will be called with a `SubDataFrame` corresponding to each group; this form should be avoided due to its poor performance
+The DataFrames package supports the split-apply-combine strategy through the `by` function, which is a shorthand for `groupby` followed by `map` and/or `combine`. `by` takes in three arguments: (1) a `DataFrame`, (2) one or more columns to split the `DataFrame` on, and (3) a specification of one or more functions to apply to each subset of the `DataFrame`. This specification can be of the following forms:
+1. a `col => function` pair indicating that `function` should be called with the vector of values for column `col`, which can be a column name or index
+2. a `cols => function` pair indicating that `function` should be called with a named tuple holding columns `cols`, which can be a tuple or vector of names or indices
+3. several such pairs, either as positional arguments or as keyword arguments (mixing is not allowed), producing each a single separate column; keyword argument names are used as column names
+4. equivalently, a (named) tuple or vector of such pairs, producing each a single separate column
+5. a function which will be called with a `SubDataFrame` corresponding to each group; this form should be avoided due to its poor performance
 
 In all of these cases, the function can return either a single row or multiple rows, with a single or multiple columns:
 - a single value produces a single row and column per group
@@ -14,6 +15,10 @@ In all of these cases, the function can return either a single row or multiple r
 - a vector produces a single column with one row per entry
 - a named tuple of vectors produces one column per field with one row per entry in the vectors
 - a `DataFrame` or a matrix produces as many rows and columns as it contains; note that returning a `DataFrame` should be avoided due to its poor performance when the number of groups is large
+
+The kind of return value and the number and names of columns must be the same for all groups.
+
+As a special case, if a tuple or vector of pairs is passed (form 3 above), each function is required to return a single value or vector, which will produce each a separate column.
 
 The name for the resulting column can be chosen either by passing a named tuple of pairs, or by returning a named tuple or a data frame. If no name is provided, it is generated automatically. For functions taking a single column (first form), the input column name is concatenated with the function name: for standard functions like `mean` this will produce columns with names like `SepalLength_mean`; for anonymous functions like `x -> sqrt(x)^e`, the produced columns will be `SepalLength_function`. For functions taking multiple columns (second form), names are `x1`, `x2`, etc.
 
