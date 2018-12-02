@@ -6,7 +6,7 @@ The DataFrames package supports the split-apply-combine strategy through the `by
 1. a `col => function` pair indicating that `function` should be called with the vector of values for column `col`, which can be a column name or index
 2. a `cols => function` pair indicating that `function` should be called with a named tuple holding columns `cols`, which can be a tuple or vector of names or indices
 3. several such pairs, either as positional arguments or as keyword arguments (mixing is not allowed), producing each a single separate column; keyword argument names are used as column names
-4. equivalently, a (named) tuple or vector of such pairs, producing each a single separate column
+4. equivalently, a (named) tuple or vector of such pairs
 5. a function which will be called with a `SubDataFrame` corresponding to each group; this form should be avoided due to its poor performance
 
 In all of these cases, the function can return either a single row or multiple rows, with a single or multiple columns:
@@ -18,7 +18,7 @@ In all of these cases, the function can return either a single row or multiple r
 
 The kind of return value and the number and names of columns must be the same for all groups.
 
-As a special case, if a tuple or vector of pairs is passed (form 3 above), each function is required to return a single value or vector, which will produce each a separate column.
+As a special case, if multiple pairs or a tuple of vectors or pairs is passed (forms 3 and 4 above), each function is required to return a single value or vector, which will produce each a separate column.
 
 The name for the resulting column can be chosen either by passing a named tuple of pairs, or by returning a named tuple or a data frame. If no name is provided, it is generated automatically. For functions taking a single column (first form), the input column name is concatenated with the function name: for standard functions like `mean` this will produce columns with names like `SepalLength_mean`; for anonymous functions like `x -> sqrt(x)^e`, the produced columns will be `SepalLength_function`. For functions taking multiple columns (second form), names are `x1`, `x2`, etc.
 

@@ -269,10 +269,6 @@ In all cases, the resulting data frame contains all the grouping columns in addi
 to those listed above. Column names are automatically generated when necessary: for functions
 operating on a single column and returning a single value or vector, the function name is
 appended to the input column name; for other functions, columns are called `x1`, `x2`
-and so on.In all cases, the resulting data frame contains all the grouping columns in addition
-to those listed above. Column names are automatically generated when necessary: for functions
-operating on a single column and returning a single value or vector, the function name is
-appended to the input colummn name; for other functions, columns are called `x1`, `x2`
 and so on.
 
 Note that `f` must always return the same type of object for
