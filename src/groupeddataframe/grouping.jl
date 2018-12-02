@@ -343,8 +343,8 @@ function combine(f::Any, gd::GroupedDataFrame)
 end
 combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
 combine(gd::GroupedDataFrame, f::Pair...) = combine(f, gd)
-combine(gd::GroupedDataFrame; f...) = combine(values(f), gd)
-combine(gd::GroupedDataFrame) = combine(identity, gd)
+combine(gd::GroupedDataFrame; f...) =
+    isempty(f) ? combine(identity, gd) : combine(values(f), gd)
 
 # Wrapping automatically adds column names when the value returned
 # by the user-provided function lacks them

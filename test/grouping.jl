@@ -164,6 +164,7 @@ module TestGrouping
         # groupby() without groups sorting
         gd = groupby(df, cols)
         @test sort(combine(identity, gd)) ==
+            sort(combine(gd)) ==
             sort(hcat(df, df[cols], makeunique=true))[[:a, :b, :a_1, :b_1, :c]]
         @test combine(f1, gd) == res
         @test combine(f2, gd) == res
@@ -181,6 +182,7 @@ module TestGrouping
             @test all(gd[i].b .== sres.b[i])
         end
         @test combine(identity, gd) ==
+            combine(gd) ==
             sort(hcat(df, df[cols], makeunique=true), cols)[[:a, :b, :a_1, :b_1, :c]]
         @test combine(f1, gd) == sres
         @test combine(f2, gd) == sres
