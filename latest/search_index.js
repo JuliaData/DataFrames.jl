@@ -293,7 +293,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Types",
     "title": "Type hierarchy design",
     "category": "section",
-    "text": "AbstractDataFrame is an abstract type that provides an interface for data frame types. It is not intended as a fully generic interface for working with tabular data, which is the role of interfaces defined by Tables.jl instead.DataFrame is the most fundamental subtype of AbstractDataFrame, which stores a set of columns as AbstractVector objects.SubDataFrame is an AbstractDataFrame subtype representing a view into a DataFrame. It stores only a reference to the parent DataFrame and information about which rows from the parent are selected. Typically it is created using the view function or is returned by indexing into a GroupedDataFrame object.GroupedDataFrame is a type that stores the result of a  grouping operation performed on an AbstractDataFrame. It is intended to be created as a result of a call to the groupby function.DataFrameRow is a view into a single row of an AbstractDataFrame. It stores only a reference to a parent AbstractDataFrame and information about which row from the parent is selected. The DataFrameRow type supports iteration over columns of the row and is similar in functionality to the NamedTuple type, but allows for modification of data stored in the parent AbstractDataFrame and reflects changes done to the parent after the creation of the view. Typically objects of the DataFrameRow type are encountered when returned by the eachrow function. In the future accessing a single row of a data frame via getindex or view will return a DataFrameRow.Additionally, the eachrow function returns a value of the DataFrameRows type, which serves as an iterator over rows of an AbstractDataFrame, returning DataFrameRow objects.Similarly, the eachcol and columns functions return a value of the DataFrameColumns type, which serves as an iterator over columns of an AbstractDataFrame. The difference between the return value of eachcol and columns is the following:The eachcol function returns a value of the DataFrameColumns{<:AbstractDataFrame, true} type, which is an iterator returning a pair containing the column name and the column vector.\nThe columns function returns a value of the DataFrameColumns{<:AbstractDataFrame, false} type, which is an iterator returning the column vector only.The DataFrameRows and DataFrameColumns types are subtypes of AbstractVector and support its interface with the exception that they are read only. Note that they are not exported and should not be constructed directly, but using the eachrow, eachcol and columns functions."
+    "text": "AbstractDataFrame is an abstract type that provides an interface for data frame types. It is not intended as a fully generic interface for working with tabular data, which is the role of interfaces defined by Tables.jl instead.DataFrame is the most fundamental subtype of AbstractDataFrame, which stores a set of columns as AbstractVector objects.SubDataFrame is an AbstractDataFrame subtype representing a view into a DataFrame. It stores only a reference to the parent DataFrame and information about which rows from the parent are selected. Typically it is created using the view function or is returned by indexing into a GroupedDataFrame object.GroupedDataFrame is a type that stores the result of a  grouping operation performed on an AbstractDataFrame. It is intended to be created as a result of a call to the groupby function.DataFrameRow is a view into a single row of an AbstractDataFrame. It stores only a reference to a parent AbstractDataFrame and information about which row from the parent is selected. The DataFrameRow type supports iteration over columns of the row and is similar in functionality to the NamedTuple type, but allows for modification of data stored in the parent AbstractDataFrame and reflects changes done to the parent after the creation of the view. Typically objects of the DataFrameRow type are encountered when returned by the eachrow function. In the future accessing a single row of a data frame via getindex or view will return a DataFrameRow.Additionally, the eachrow function returns a value of the DataFrameRows type, which serves as an iterator over rows of an AbstractDataFrame, returning DataFrameRow objects.Similarly, the eachcol function returns a value of the DataFrameColumns type, which serves as an iterator over columns of an AbstractDataFrame. The return value can have two concrete types:If the eachcol function is called with the names argument set to true (currently the default, but in the future the default will change to false) then it returns a value of the DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}} type, which is an iterator returning a pair containing the column name and the column vector.\nIf the eachcol function is called with names argument set to false then it returns a value of the DataFrameColumns{<:AbstractDataFrame, AbstractVector} type, which is an iterator returning the column vector only.The DataFrameRows and DataFrameColumns types are subtypes of AbstractVector and support its interface with the exception that they are read only. Note that they are not exported and should not be constructed directly, but using the eachrow and eachcol functions."
 },
 
 {
@@ -349,7 +349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Types",
     "title": "DataFrames.DataFrameColumns",
     "category": "type",
-    "text": "DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}\n\nIterator over columns of an AbstractDataFrame. If V is Pair{Symbol,AbstractVector} (which is the case when calling eachcol) then each returned value is a pair consisting of column name and column vector. If V is AbstractVector (a value returned by the columns function) then each returned value is a column vector.\n\n\n\n\n\n"
+    "text": "DataFrameColumns{<:AbstractDataFrame, V} <: AbstractVector{V}\n\nIterator over columns of an AbstractDataFrame constructed using eachcol(df, true) if V is a Pair{Symbol,AbstractVector}. Then each returned value is a pair consisting of column name and column vector. If V is an AbstractVector (a value returned by eachcol(df, false)) then each returned value is a column vector.\n\n\n\n\n\n"
 },
 
 {
@@ -489,14 +489,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "lib/functions.html#DataFrames.columns",
-    "page": "Functions",
-    "title": "DataFrames.columns",
-    "category": "function",
-    "text": "columns(df::AbstractDataFrame)\n\nReturn a DataFrameColumns that iterates an AbstractDataFrame column by column, yielding column vectors.\n\nExamples\n\njulia> df = DataFrame(x=1:4, y=11:14)\n4×2 DataFrame\n│ Row │ x     │ y     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 11    │\n│ 2   │ 2     │ 12    │\n│ 3   │ 3     │ 13    │\n│ 4   │ 4     │ 14    │\n\njulia> collect(columns(df))\n2-element Array{AbstractArray{T,1} where T,1}:\n [1, 2, 3, 4]\n [11, 12, 13, 14]\n\njulia> sum.(columns(df))\n2-element Array{Int64,1}:\n 10\n 50\n\njulia> map(columns(df)) do col\n           maximum(col) - minimum(col)\n       end\n2-element Array{Int64,1}:\n 3\n 3\n\n\n\n\n\n"
-},
-
-{
     "location": "lib/functions.html#DataFrames.completecases",
     "page": "Functions",
     "title": "DataFrames.completecases",
@@ -549,7 +541,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "DataFrames.eachcol",
     "category": "function",
-    "text": "eachcol(df::AbstractDataFrame)\n\nReturn a DataFrameColumns that iterates an AbstractDataFrame column by column. Iteration returns a pair consisting of column name and column vector.\n\nExamples\n\njulia> df = DataFrame(x=1:4, y=11:14)\n4×2 DataFrame\n│ Row │ x     │ y     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 11    │\n│ 2   │ 2     │ 12    │\n│ 3   │ 3     │ 13    │\n│ 4   │ 4     │ 14    │\n\njulia> collect(eachcol(df))\n2-element Array{Pair{Symbol,AbstractArray{T,1} where T},1}:\n :x => [1, 2, 3, 4]\n :y => [11, 12, 13, 14]\n\n\n\n\n\n"
+    "text": "eachcol(df::AbstractDataFrame, names::Bool=true)\n\nReturn a DataFrameColumns that iterates an AbstractDataFrame column by column. If names is equal to true (currently the default, in the future the default will be set to false) iteration returns a pair consisting of column name and column vector. If names is equal to false then column vectors are yielded.\n\nExamples\n\njulia> df = DataFrame(x=1:4, y=11:14)\n4×2 DataFrame\n│ Row │ x     │ y     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 11    │\n│ 2   │ 2     │ 12    │\n│ 3   │ 3     │ 13    │\n│ 4   │ 4     │ 14    │\n\njulia> collect(eachcol(df, true))\n2-element Array{Pair{Symbol,AbstractArray{T,1} where T},1}:\n :x => [1, 2, 3, 4]\n :y => [11, 12, 13, 14]\n\njulia> collect(eachcol(df, false))\n2-element Array{AbstractArray{T,1} where T,1}:\n [1, 2, 3, 4]\n [11, 12, 13, 14]\n\njulia> sum.(eachcol(df, false))\n2-element Array{Int64,1}:\n 10\n 50\n\njulia> map(eachcol(df, false)) do col\n           maximum(col) - minimum(col)\n       end\n2-element Array{Int64,1}:\n 3\n 3\n\n\n\n\n\n"
 },
 
 {
@@ -677,7 +669,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Basics",
     "category": "section",
-    "text": "allowmissing!\ncolumns\ncompletecases\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\ninsertcols!\nmapcols\nnames!\nnonunique\nrename!\nrename\nrepeat\nshow\nsort\nsort!\nunique!\npermutecols!"
+    "text": "allowmissing!\ncompletecases\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\ninsertcols!\nmapcols\nnames!\nnonunique\nrename!\nrename\nrepeat\nshow\nsort\nsort!\nunique!\npermutecols!"
 },
 
 {
