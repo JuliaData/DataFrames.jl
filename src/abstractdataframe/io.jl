@@ -12,6 +12,15 @@ function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
     escape_string(io, x, escapes)
 end
 
+function digitsep(value::Integer)
+    # Adapted from https://github.com/IainNZ/Humanize.jl
+    value = string(abs(value))
+    group_ends = reverse(collect(length(value):-3:1))
+    groups = [value[max(end_index - 2, 1):end_index]
+              for end_index in group_ends]
+    return join(groups, ',')
+end
+
 function printtable(io::IO,
                     df::AbstractDataFrame;
                     header::Bool = true,
@@ -110,6 +119,7 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     else
         mxrow = n
     end
+    write(io, "<p>$(digitsep(n)) rows × $(digitsep(ncol(df))) columns</p>")
     for row in 1:mxrow
         write(io, "<tr>")
         write(io, "<th>$row</th>")
