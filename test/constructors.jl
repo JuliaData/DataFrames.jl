@@ -1,6 +1,7 @@
 module TestConstructors
     using Test, DataFrames
     using DataFrames: Index, _columns, index
+    using DataFrames: columns
     const ≅ = isequal
 
     #

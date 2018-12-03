@@ -1,5 +1,6 @@
 module TestDataFrameRow
     using Test, DataFrames
+    using DataFrames: columns
 
     df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
                    b=[2.0, missing, 1.2, 2.0, missing, missing],

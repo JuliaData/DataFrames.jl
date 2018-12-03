@@ -36,18 +36,21 @@ In the future accessing a single row of a data frame via `getindex` or `view` wi
 Additionally, the `eachrow` function returns a value of the `DataFrameRows` type, which
 serves as an iterator over rows of an `AbstractDataFrame`, returning `DataFrameRow` objects.
 
-Similarly, the `eachcol` and `columns` functions return a value of the `DataFrameColumns` type, which
+Similarly, the `eachcol` function returns a value of the `DataFrameColumns` type, which
 serves as an iterator over columns of an `AbstractDataFrame`.
-The difference between the return value of `eachcol` and `columns` is the following:
+The return value can have two concrete types:
 
-* The `eachcol` function returns a value of the `DataFrameColumns{<:AbstractDataFrame, true}` type, which is an
+* If the `eachcol` function is called with the `names` argument set to `true` (currently the default,
+  but in the future the default will change to `false`) then it returns a value of the
+  `DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}` type, which is an
   iterator returning a pair containing the column name and the column vector.
-* The `columns` function returns a value of the `DataFrameColumns{<:AbstractDataFrame, false}` type, which is an
+* If the `eachcol` function is called with `names` argument set to `false` then it returns a value of the
+  `DataFrameColumns{<:AbstractDataFrame, AbstractVector}` type, which is an
   iterator returning the column vector only.
 
 The `DataFrameRows` and `DataFrameColumns` types are subtypes of `AbstractVector` and support its interface
 with the exception that they are read only. Note that they are not exported and should not be constructed directly,
-but using the `eachrow`, `eachcol` and `columns` functions.
+but using the `eachrow` and `eachcol` functions.
 
 ## Types specification
 
