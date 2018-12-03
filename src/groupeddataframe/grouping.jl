@@ -241,7 +241,7 @@ Transform a `GroupedDataFrame` into a `DataFrame`.
 If the last argument(s) consist(s) in one or more `cols => f` pair(s), or if
 `colname = cols => f` keyword arguments are provided, `cols` must be
 a column name or index, or a vector or tuple thereof, and `f` must be a callable.
-A tuple or a named tuple of pairs can also be provided as the first or last argument.
+A pair or a (named) tuple of pairs can also be provided as the first or last argument.
 If `cols` is a single column index, `f` is called with a `SubArray` view into that
 column for each group; else, `f` is called with a named tuple holding `SubArray`
 views into these columns.
@@ -664,7 +664,7 @@ based on grouping columns `keys`, and return a `DataFrame`.
 If the last argument(s) consist(s) in one or more `cols => f` pair(s), or if
 `colname = cols => f` keyword arguments are provided, `cols` must be
 a column name or index, or a vector or tuple thereof, and `f` must be a callable.
-A tuple or a named tuple of pairs can also be provided as the first or last argument.
+A pair or a (named) tuple of pairs can also be provided as the first or last argument.
 If `cols` is a single column index, `f` is called with a `SubArray` view into that
 column for each group; else, `f` is called with a named tuple holding `SubArray`
 views into these columns.
