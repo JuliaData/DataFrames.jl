@@ -346,7 +346,7 @@ dump(df)
 function Base.dump(io::IO, df::AbstractDataFrame, n::Int, indent)
     println(io, typeof(df), "  $(nrow(df)) observations of $(ncol(df)) variables")
     if n > 0
-        for (name, col) in eachcol(df)
+        for (name, col) in eachcol(df, true)
             print(io, indent, "  ", name, ": ")
             dump(io, col, n - 1, string(indent, "  "))
         end
