@@ -148,7 +148,7 @@ function isequal_row(df1::AbstractDataFrame, r1::Int, df2::AbstractDataFrame, r2
     elseif !(ncol(df1) == ncol(df2))
         throw(ArgumentError("Rows of the tables that have different number of columns cannot be compared. Got $(ncol(df1)) and $(ncol(df2)) columns"))
     end
-    @inbounds for (col1, col2) in zip(columns(df1), columns(df2))
+    @inbounds for (col1, col2) in zip(eachcol(df1), eachcol(df2))
         isequal(col1[r1], col2[r2]) || return false
     end
     return true

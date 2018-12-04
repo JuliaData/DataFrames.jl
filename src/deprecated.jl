@@ -10,7 +10,7 @@ import Base: @deprecate
 
 import Base: keys, values, insert!
 @deprecate keys(df::AbstractDataFrame) names(df)
-@deprecate values(df::AbstractDataFrame) columns(df)
+@deprecate values(df::AbstractDataFrame) eachcol(df)
 @deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[col] = df2[col], names(df2)); df)
 
 @deprecate pool categorical
@@ -1741,7 +1741,7 @@ end
 function hashrows(df::SubDataFrame, skipmissing::Bool)
     rhashes = zeros(UInt, nrow(df))
     missings = fill(false, skipmissing ? nrow(df) : 0)
-    cols = columns(df)
+    cols = eachcol(df)
     for i in 1:ncol(df)
         hashrows_col!(rhashes, missings, view(parent(df)[i], rows(df)), i == 1)
     end

@@ -424,7 +424,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
         fun = last(f)
     elseif f isa Pair
         df = gd.parent[collect(first(f))]
-        incols = NamedTuple{Tuple(names(df))}(columns(df))
+        incols = NamedTuple{Tuple(names(df))}(eachcol(df))
         fun = last(f)
     else
         incols = nothing

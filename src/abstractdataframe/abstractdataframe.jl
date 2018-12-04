@@ -202,7 +202,7 @@ eltypes(df)
 ```
 
 """
-eltypes(df::AbstractDataFrame) = eltype.(columns(df))
+eltypes(df::AbstractDataFrame) = eltype.(eachcol(df))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
@@ -241,7 +241,7 @@ that is different than the number of rows present in `df`.
 """
 function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be positive"))
-    DataFrame(Any[similar(x, rows) for x in columns(df)], copy(index(df)))
+    DataFrame(Any[similar(x, rows) for x in eachcol(df)], copy(index(df)))
 end
 
 ##############################################################################
@@ -432,7 +432,7 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
     data[:variable] = names(df)
 
     # An array of Dicts for summary statistics
-    column_stats_dicts = [get_stats(col) for col in columns(df)]
+    column_stats_dicts = [get_stats(col) for col in eachcol(df)]
     for stat in stats
         # for each statistic, loop through the columns array to find values
         # letting the comprehension choose the appropriate type
@@ -794,7 +794,7 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     n, p = size(df)
     res = Matrix{T}(undef, n, p)
     idx = 1
-    for (name, col) in zip(names(df), columns(df))
+    for (name, col) in eachcol(df, true)
         try
             copyto!(res, idx, col)
         catch err

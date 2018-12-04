@@ -1,6 +1,5 @@
 module TestDataFrameRow
     using Test, DataFrames
-    using DataFrames: columns
 
     df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
                    b=[2.0, missing, 1.2, 2.0, missing, missing],
@@ -46,7 +45,7 @@ module TestDataFrameRow
     @test hash(DataFrameRow(df, 2)) != hash(DataFrameRow(df, 6))
 
     # check that hashrows() function generates the same hashes as DataFrameRow
-    df_rowhashes, _ = DataFrames.hashrows(Tuple(columns(df)), false)
+    df_rowhashes, _ = DataFrames.hashrows(Tuple(eachcol(df)), false)
     @test df_rowhashes == [hash(dr) for dr in eachrow(df)]
 
     # test incompatible frames

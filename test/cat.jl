@@ -1,6 +1,5 @@
 module TestCat
     using Test, Random, DataFrames
-    using DataFrames: columns
     const ≅ = isequal
 
     #
@@ -165,13 +164,13 @@ module TestCat
     @testset "vcat mixed coltypes" begin
         df = vcat(DataFrame([[1]], [:x]), DataFrame([[1.0]], [:x]))
         @test df == DataFrame([[1.0, 1.0]], [:x])
-        @test typeof.(columns(df)) == [Vector{Float64}]
+        @test typeof.(eachcol(df)) == [Vector{Float64}]
         df = vcat(DataFrame([[1]], [:x]), DataFrame([["1"]], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
-        @test typeof.(columns(df)) == [Vector{Any}]
+        @test typeof.(eachcol(df)) == [Vector{Any}]
         df = vcat(DataFrame([Union{Missing, Int}[1]], [:x]), DataFrame([[1]], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
-        @test typeof.(columns(df)) == [Vector{Union{Missing, Int}}]
+        @test typeof.(eachcol(df)) == [Vector{Union{Missing, Int}}]
         df = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
         @test df == DataFrame([[1, 1]], [:x])
         @test df[:x] isa Vector{Int}
@@ -186,14 +185,14 @@ module TestCat
         df = vcat(DataFrame([Union{Int, Missing}[1]], [:x]),
                   DataFrame([["1"]], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
-        @test typeof.(columns(df)) == [Vector{Any}]
+        @test typeof.(eachcol(df)) == [Vector{Any}]
         df = vcat(DataFrame([CategoricalArray([1])], [:x]),
                   DataFrame([CategoricalArray(["1"])], [:x]))
         @test df == DataFrame([[1, "1"]], [:x])
         @test df[:x] isa CategoricalVector{Any}
         df = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
         @test df == DataFrame([[true, false]], [:x])
-        @test typeof.(columns(df)) == [Vector{Bool}]
+        @test typeof.(eachcol(df)) == [Vector{Bool}]
     end
 
     @testset "vcat out of order" begin

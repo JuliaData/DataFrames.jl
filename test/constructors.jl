@@ -1,7 +1,6 @@
 module TestConstructors
     using Test, DataFrames
     using DataFrames: Index, _columns, index
-    using DataFrames: columns
     const ≅ = isequal
 
     #
@@ -116,13 +115,13 @@ module TestConstructors
     @testset "column types" begin
         df = DataFrame(A = 1:3, B = 2:4, C = 3:5)
         answer = [Array{Int,1}, Array{Int,1}, Array{Int,1}]
-        @test map(typeof, columns(df)) == answer
+        @test map(typeof, eachcol(df)) == answer
         df[:D] = [4, 5, missing]
         push!(answer, Vector{Union{Int, Missing}})
-        @test map(typeof, columns(df)) == answer
+        @test map(typeof, eachcol(df)) == answer
         df[:E] = 'c'
         push!(answer, Vector{Char})
-        @test map(typeof, columns(df)) == answer
+        @test map(typeof, eachcol(df)) == answer
     end
 
     @testset "categorical constructor" begin
