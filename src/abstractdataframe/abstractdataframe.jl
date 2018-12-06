@@ -861,12 +861,16 @@ if isdefined(Base, :unique!)
 end
 
 unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
-unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, AbstractVector, Colon}) =
+unique!(df::AbstractDataFrame, cols::AbstractVector) =
+    deleterows!(df, findall(nonunique(df, cols)))
+unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     deleterows!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::Union{Integer, Symbol, AbstractVector, Colon}) =
+Base.unique(df::AbstractDataFrame, cols::AbstractVector) =
+    df[(!).(nonunique(df, cols)), :]
+Base.unique(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     df[(!).(nonunique(df, cols)), :]
 
 """
