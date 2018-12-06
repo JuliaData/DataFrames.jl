@@ -33,7 +33,7 @@ The following are normally implemented for AbstractDataFrames:
 * [`unique!`](@ref) : remove duplicate rows (`DataFrame` only)
 * `similar` : a DataFrame with similar columns as `d`
 * `filter` : remove rows
-* `filter` : remove rows in-place (`DataFrame` only)
+* `filter!` : remove rows in-place (`DataFrame` only)
 
 **Indexing**
 
