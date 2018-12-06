@@ -383,11 +383,11 @@ module TestDataFrame
 
         df = DataFrame()
         @test_throws BoundsError deleterows!(df, 10)
-        @test_throws IndexactError deleterows!(df, [10])
+        @test_throws InexactError deleterows!(df, [10])
 
         df = DataFrame(a=[])
         @test_throws BoundsError deleterows!(df, 10)
-        @test_throws IndexactError deleterows!(df, [10])
+        @test_throws InexactError deleterows!(df, [10])
 
         df = DataFrame(a=[1, 2, 3], b=[3, 2, 1])
         @test_throws ArgumentError deleterows!(df, [3,2])

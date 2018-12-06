@@ -82,8 +82,8 @@ module TestData
         df2 = copy(df)
         dropmissing!(df, keepeltype=false)
         dropmissing!(df2, keepeltype=true)
-        @test eltype(df.a) == Union{Int, Missing}
-        @test eltype(df2.a) == Int
+        @test eltype(df.a) == Int
+        @test eltype(df2.a) == Union{Int, Missing}
 
         #test_context("SubDataFrames")
 
