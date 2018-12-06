@@ -73,6 +73,18 @@ module TestData
             @test df4b == df4
         end
 
+        df = DataFrame(a=[1, missing, 3])
+        sdf = view(df, :, :)
+        @test dropmissing(sdf) == DataFrame(a=[1, 3])
+        @test eltype(dropmissing(sdf, keepeltype=true)[:a]) == Union{Int, Missing}
+        @test eltype(dropmissing(sdf, keepeltype=false)[:a]) == Int
+
+        df2 = copy(df)
+        dropmissing!(df, keepeltype=false)
+        dropmissing!(df2, keepeltype=true)
+        @test eltype(df.a) == Union{Int, Missing}
+        @test eltype(df2.a) == Int
+
         #test_context("SubDataFrames")
 
         #test_group("constructors")

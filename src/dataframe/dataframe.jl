@@ -777,38 +777,144 @@ end
 deletecols!(df::DataFrame, c::Int) = deletecols!(df, [c])
 deletecols!(df::DataFrame, c::Any) = deletecols!(df, index(df)[c])
 
-function deleterows!(df::DataFrame, ind::Union{Integer, UnitRange{Int}})
-    for i in 1:ncol(df)
-        _columns(df)[i] = deleteat!(_columns(df)[i], ind)
-    end
-    df
-end
-
-function deleterows!(df::DataFrame, ind::AbstractVector{Int})
-    ind2 = sort(ind)
-    n = size(df, 1)
-
-    idf = 1
-    iind = 1
-    ikeep = 1
-    keep = Vector{Int}(undef, n-length(ind2))
-    while idf <= n && iind <= length(ind2)
-        1 <= ind2[iind] <= n || error(BoundsError())
-        if idf == ind2[iind]
-            iind += 1
-        else
-            keep[ikeep] = idf
-            ikeep += 1
-        end
-        idf += 1
-    end
-    keep[ikeep:end] = idf:n
-
+function deleterows!(df::DataFrame, ind)
+    # we require ind to be stored and unique like in Base
+    keep = deleteat!(collect(axes(df, 1)), ind)
     for i in 1:ncol(df)
         _columns(df)[i] = _columns(df)[i][keep]
     end
     df
 end
+
+Base.unique!(df::DataFrame) = deleterows!(df, nonunique(df))
+Base.unique!(df::DataFrame, cols::Any) = deleterows!(df, nonunique(df, cols))
+
+# TODO: update docstrings after deprecation of keepeltype
+"""
+    dropmissing!(df::DataFrame; keepeltype::Bool=true)
+    dropmissing!(df::DataFrame, cols::AbstractVector; keepeltype::Bool=true)
+    dropmissing!(df::DataFrame, cols::Union{Integer, Symbol}; keepeltype::Bool=true)
+
+Remove rows with missing values from data frame `df` and return it.
+If `cols` is provided, only missing values in the corresponding columns are considered.
+
+In the future `keepeltype` will be `false` by default.
+
+See also: [`dropmissing`](@ref) and [`completecases`](@ref).
+
+# Examples
+
+```jldoctest
+julia> df = DataFrame(i = 1:5,
+                      x = [missing, 4, missing, 2, 1],
+                      y = [missing, missing, "c", "d", "e"])
+5×3 DataFrame
+│ Row │ i     │ x       │ y       │
+│     │ Int64 │ Int64⍰  │ String⍰ │
+├─────┼───────┼─────────┼─────────┤
+│ 1   │ 1     │ missing │ missing │
+│ 2   │ 2     │ 4       │ missing │
+│ 3   │ 3     │ missing │ c       │
+│ 4   │ 4     │ 2       │ d       │
+│ 5   │ 5     │ 1       │ e       │
+
+julia> df1 = copy(df);
+
+julia> dropmissing!(df1);
+
+julia> df1
+2×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 4     │ 2      │ d       │
+│ 2   │ 5     │ 1      │ e       │
+
+julia> df1 = copy(df);
+
+julia> dropmissing!(df1, keepeltype=false);
+
+julia> df1
+2×3 DataFrame
+│ Row │ i     │ x     │ y      │
+│     │ Int64 │ Int64 │ String │
+├─────┼───────┼───────┼────────┤
+│ 1   │ 4     │ 2     │ d      │
+│ 2   │ 5     │ 1     │ e      │
+
+julia> df2 = copy(df);
+
+julia> dropmissing!(df2, :x);
+
+julia> df2
+3×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 2     │ 4      │ missing │
+│ 2   │ 4     │ 2      │ d       │
+│ 3   │ 5     │ 1      │ e       │
+
+julia> df3 = copy(df);
+
+julia> dropmissing!(df3, [:x, :y]);
+
+
+julia> df3
+2×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 4     │ 2      │ d       │
+│ 2   │ 5     │ 1      │ e       │
+```
+
+"""
+function dropmissing!(df::DataFrame,
+                     cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
+                     keepeltype::Bool)
+    deleterows!(df, (!).(completecases(df, cols)))
+    keepeltype || disallowmissing!(df, cols)
+    df
+end
+
+function dropmissing!(df, cols)
+    Base.depwarn("dropmissing! will change eltype of cols to disallow Missing. " *
+                 "use dropmissing(df, cols, keepeltype=true) to retain Missing.", :dropmissing!)
+    dropmissing!(df, cols, keepeltype=true)
+end
+
+"""
+    filter!(function, df::DataFrame)
+
+Remove rows from data frame `df` for which `function` returns `false`.
+The function is passed a `DataFrameRow` as its only argument.
+
+# Examples
+```
+julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
+4×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 1     │ c      │
+│ 3   │ 2     │ a      │
+│ 4   │ 1     │ b      │
+
+julia> filter!(row -> row[:x] > 1, df);
+
+julia> df
+2×2 DataFrame
+│ Row │ x     │ y      │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 3     │ b      │
+│ 2   │ 2     │ a      │
+```
+"""
+Base.filter!(f, df::DataFrame) =
+    deleterows!(df, collect(!f(r)::Bool for r in eachrow(df)))
 
 ##############################################################################
 ##

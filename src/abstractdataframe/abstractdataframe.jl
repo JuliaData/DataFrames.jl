@@ -28,10 +28,12 @@ The following are normally implemented for AbstractDataFrames:
 * `convert` : convert to an array
 * [`completecases`](@ref) : boolean vector of complete cases (rows with no missings)
 * [`dropmissing`](@ref) : remove rows with missing values
-* [`dropmissing!`](@ref) : remove rows with missing values in-place
+* [`dropmissing!`](@ref) : remove rows with missing values in-place (`DataFrame` only)
 * [`nonunique`](@ref) : indexes of duplicate rows
-* [`unique!`](@ref) : remove duplicate rows
+* [`unique!`](@ref) : remove duplicate rows (`DataFrame` only)
 * `similar` : a DataFrame with similar columns as `d`
+* `filter` : remove rows
+* `filter` : remove rows in-place (`DataFrame` only)
 
 **Indexing**
 
@@ -592,13 +594,16 @@ end
 completecases(df::AbstractDataFrame, cols::AbstractVector) =
     completecases(df[cols])
 
+# TODO: update docstrings after deprecation of keepeltype
 """
-    dropmissing(df::AbstractDataFrame)
-    dropmissing(df::AbstractDataFrame, cols::AbstractVector)
-    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol})
+    dropmissing(df::AbstractDataFrame; keepeltype::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::AbstractVector; keepeltype::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol}; keepeltype::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
 If `cols` is provided, only missing values in the corresponding columns are considered.
+
+In the future `keepeltype` will be `false` by default.
 
 See also: [`completecases`](@ref) and [`dropmissing!`](@ref).
 
@@ -626,6 +631,14 @@ julia> dropmissing(df)
 │ 1   │ 4     │ 2      │ d       │
 │ 2   │ 5     │ 1      │ e       │
 
+julia> dropmissing(df, keepeltype=false)
+2×3 DataFrame
+│ Row │ i     │ x     │ y      │
+│     │ Int64 │ Int64 │ String │
+├─────┼───────┼───────┼────────┤
+│ 1   │ 4     │ 2     │ d      │
+│ 2   │ 5     │ 1     │ e      │
+
 julia> dropmissing(df, :x)
 3×3 DataFrame
 │ Row │ i     │ x      │ y       │
@@ -646,78 +659,15 @@ julia> dropmissing(df, [:x, :y])
 
 """
 dropmissing(df::AbstractDataFrame,
-            cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2)) =
-    deleterows!(copy(df), findall(!, completecases(df, cols)))
+            cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
+            keepeltype::Bool) =
+    dropmissing!(copy(df), cols, keepeltype=keepeltype)
 
-"""
-    dropmissing!(df::AbstractDataFrame)
-    dropmissing!(df::AbstractDataFrame, cols::AbstractVector)
-    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol})
-
-Remove rows with missing values from data frame `df` and return it.
-If `cols` is provided, only missing values in the corresponding columns are considered.
-
-See also: [`dropmissing`](@ref) and [`completecases`](@ref).
-
-# Examples
-
-```jldoctest
-julia> df = DataFrame(i = 1:5,
-                      x = [missing, 4, missing, 2, 1],
-                      y = [missing, missing, "c", "d", "e"])
-5×3 DataFrame
-│ Row │ i     │ x       │ y       │
-│     │ Int64 │ Int64⍰  │ String⍰ │
-├─────┼───────┼─────────┼─────────┤
-│ 1   │ 1     │ missing │ missing │
-│ 2   │ 2     │ 4       │ missing │
-│ 3   │ 3     │ missing │ c       │
-│ 4   │ 4     │ 2       │ d       │
-│ 5   │ 5     │ 1       │ e       │
-
-julia> df1 = copy(df);
-
-julia> dropmissing!(df1);
-
-julia> df1
-2×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 4     │ 2      │ d       │
-│ 2   │ 5     │ 1      │ e       │
-
-julia> df2 = copy(df);
-
-julia> dropmissing!(df2, :x);
-
-julia> df2
-3×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 2     │ 4      │ missing │
-│ 2   │ 4     │ 2      │ d       │
-│ 3   │ 5     │ 1      │ e       │
-
-julia> df3 = copy(df);
-
-julia> dropmissing!(df3, [:x, :y]);
-
-
-julia> df3
-2×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 4     │ 2      │ d       │
-│ 2   │ 5     │ 1      │ e       │
-```
-
-"""
-dropmissing!(df::AbstractDataFrame,
-             cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2)) =
-    deleterows!(df, findall(!, completecases(df, cols)))
+function dropmissing(df, cols)
+    Base.depwarn("dropmissing will change eltype of cols to disallow Missing. " *
+                 "use dropmissing(df, cols, keepeltype=true) to retain Missing.", :dropmissing)
+    dropmissing(df, cols, keepeltype=true)
+end
 
 """
     filter(function, df::AbstractDataFrame)
@@ -747,38 +697,6 @@ julia> filter(row -> row[:x] > 1, df)
 ```
 """
 Base.filter(f, df::AbstractDataFrame) = df[collect(f(r)::Bool for r in eachrow(df)), :]
-
-"""
-    filter!(function, df::AbstractDataFrame)
-
-Remove rows from data frame `df` for which `function` returns `false`.
-The function is passed a `DataFrameRow` as its only argument.
-
-# Examples
-```
-julia> df = DataFrame(x = [3, 1, 2, 1], y = ["b", "c", "a", "b"])
-4×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 1     │ c      │
-│ 3   │ 2     │ a      │
-│ 4   │ 1     │ b      │
-
-julia> filter!(row -> row[:x] > 1, df);
-
-julia> df
-2×2 DataFrame
-│ Row │ x     │ y      │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 3     │ b      │
-│ 2   │ 2     │ a      │
-```
-"""
-Base.filter!(f, df::AbstractDataFrame) =
-    deleterows!(df, findall(collect(!f(r)::Bool for r in eachrow(df))))
 
 function Base.convert(::Type{Array}, df::AbstractDataFrame)
     convert(Matrix, df)
@@ -856,13 +774,6 @@ end
 nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
-if isdefined(Base, :unique!)
-    import Base.unique!
-end
-
-unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
-unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, findall(nonunique(df, cols)))
-
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
 Base.unique(df::AbstractDataFrame, cols::Any) = df[(!).(nonunique(df, cols)), :]
@@ -873,8 +784,8 @@ Delete duplicate rows
 ```julia
 unique(df::AbstractDataFrame)
 unique(df::AbstractDataFrame, cols)
-unique!(df::AbstractDataFrame)
-unique!(df::AbstractDataFrame, cols)
+unique!(df::DataFrame)
+unique!(df::DataFrame, cols)
 ```
 
 **Arguments**
