@@ -658,15 +658,15 @@ julia> dropmissing(df, [:x, :y])
 ```
 
 """
-dropmissing(df::AbstractDataFrame,
-            cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
-            keepeltype::Bool) =
-    dropmissing!(copy(df), cols, keepeltype=keepeltype)
+function dropmissing(df::AbstractDataFrame,
+                     cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
+                     keepeltype::Bool=true)
+    if keepeltype
+        Base.depwarn("dropmissing will change eltype of cols to disallow Missing by default. " *
+             "use dropmissing(df, cols, keepeltype=true) to retain Missing.", :dropmissing)
 
-function dropmissing(df, cols)
-    Base.depwarn("dropmissing will change eltype of cols to disallow Missing. " *
-                 "use dropmissing(df, cols, keepeltype=true) to retain Missing.", :dropmissing)
-    dropmissing(df, cols, keepeltype=true)
+    end
+    dropmissing!(copy(df), cols, keepeltype=keepeltype)
 end
 
 """

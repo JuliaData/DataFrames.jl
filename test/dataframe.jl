@@ -383,11 +383,11 @@ module TestDataFrame
 
         df = DataFrame()
         @test_throws BoundsError deleterows!(df, 10)
-        @test_throws BoundsError deleterows!(df, [10])
+        @test_throws IndexactError deleterows!(df, [10])
 
         df = DataFrame(a=[])
         @test_throws BoundsError deleterows!(df, 10)
-        @test_throws BoundsError deleterows!(df, [10])
+        @test_throws IndexactError deleterows!(df, [10])
 
         df = DataFrame(a=[1, 2, 3], b=[3, 2, 1])
         @test_throws ArgumentError deleterows!(df, [3,2])
@@ -397,22 +397,22 @@ module TestDataFrame
 
         x = [1, 2, 3]
         df = DataFrame(x=x)
-        @test deleterows!(x, 1) == DataFrame(x=[2, 3])
+        @test deleterows!(df, 1) == DataFrame(x=[2, 3])
         @test x == [1, 2, 3]
  
         x = [1, 2, 3]
         df = DataFrame(x=x)
-        @test deleterows!(x, [1]) == DataFrame(x=[2, 3])
+        @test deleterows!(df, [1]) == DataFrame(x=[2, 3])
         @test x == [1, 2, 3]
  
         x = [1, 2, 3]
         df = DataFrame(x=x)
-        @test deleterows!(x, 1:1) == DataFrame(x=[2, 3])
+        @test deleterows!(df, 1:1) == DataFrame(x=[2, 3])
         @test x == [1, 2, 3]
  
         x = [1, 2, 3]
         df = DataFrame(x=x)
-        @test deleterows!(x, [true, false, false]) == DataFrame(x=[2, 3])
+        @test deleterows!(df, [true, false, false]) == DataFrame(x=[2, 3])
         @test x == [1, 2, 3]
     end
 

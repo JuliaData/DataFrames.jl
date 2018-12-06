@@ -872,16 +872,15 @@ julia> df3
 """
 function dropmissing!(df::DataFrame,
                      cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
-                     keepeltype::Bool)
+                     keepeltype::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
-    keepeltype || disallowmissing!(df, cols)
+    if keepeltype
+        Base.depwarn("dropmissing! will change eltype of cols to disallow Missing by default. " *
+                     "use dropmissing(df, cols, keepeltype=true) to retain Missing.", :dropmissing!)
+    else
+        disallowmissing!(df, cols)
+    end
     df
-end
-
-function dropmissing!(df, cols)
-    Base.depwarn("dropmissing! will change eltype of cols to disallow Missing. " *
-                 "use dropmissing(df, cols, keepeltype=true) to retain Missing.", :dropmissing!)
-    dropmissing!(df, cols, keepeltype=true)
 end
 
 """
