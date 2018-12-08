@@ -178,7 +178,7 @@ julia> mapcols(x -> x.^2, df)
 function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     # note: `f` must return a consistent length
     res = DataFrame()
-    for (n, v) in eachcol(df)
+    for (n, v) in eachcol(df, true)
         res[n] = f(v)
     end
     res

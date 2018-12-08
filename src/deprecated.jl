@@ -1756,6 +1756,64 @@ end
 
 # TODO: END:   Deprecations to be removed after getindex deprecation period finishes
 
+# TODO: BEGIN: remove after eachcol deprecation perod
+
+function mapcols(f::Union{Function,Type}, df::SubDataFrame)
+    # note: `f` must return a consistent length
+    res = DataFrame()
+    for (i, n) in enumerate(names(df))
+        v = df[:, i]
+        res[n] = f(v)
+    end
+    res
+end
+
+function getmaxwidths(df::SubDataFrame,
+                      rowindices1::AbstractVector{Int},
+                      rowindices2::AbstractVector{Int},
+                      rowlabel::Symbol) # -> Vector{Int}
+    maxwidths = Vector{Int}(undef, size(df, 2) + 1)
+
+    undefstrwidth = ourstrwidth(Base.undef_ref_str)
+
+    j = 1
+    for (i, name) in enumerate(names(df))
+        col = df[:, i]
+        # (1) Consider length of column name
+        maxwidth = ourstrwidth(name)
+
+        # (2) Consider length of longest entry in that column
+        for indices in (rowindices1, rowindices2), i in indices
+            if isassigned(col, i)
+                maxwidth = max(maxwidth, ourstrwidth(col[i]))
+            else
+                maxwidth = max(maxwidth, undefstrwidth)
+            end
+        end
+        maxwidths[j] = max(maxwidth, ourstrwidth(compacttype(eltype(col))))
+        j += 1
+    end
+
+    rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
+    rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
+    maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2), ourstrwidth(rowlabel))
+
+    return maxwidths
+end
+
+function Base.dump(io::IO, df::SubDataFrame, n::Int, indent)
+    println(io, typeof(df), "  $(nrow(df)) observations of $(ncol(df)) variables")
+    if n > 0
+        for (i, name) in enumerate(names(df))
+            col = df[:, i]
+            print(io, indent, "  ", name, ": ")
+            dump(io, col, n - 1, string(indent, "  "))
+        end
+    end
+end
+
+# TODO: END: remove after eachcol deprecation perod
+
 import Base: map
 @deprecate map(f::Function, sdf::SubDataFrame) f(sdf)
 @deprecate map(f::Union{Function,Type}, dfc::DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}) mapcols(f, dfc.df)

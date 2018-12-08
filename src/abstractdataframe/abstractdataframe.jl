@@ -853,7 +853,7 @@ function nonunique(df::AbstractDataFrame)
     return res
 end
 
-nonunique(df::AbstractDataFrame, cols::Union{Real, Symbol}) = nonunique(df[[cols]])
+nonunique(df::AbstractDataFrame, cols::Union{Integer, Symbol}) = nonunique(df[[cols]])
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
 if isdefined(Base, :unique!)
@@ -861,11 +861,17 @@ if isdefined(Base, :unique!)
 end
 
 unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
-unique!(df::AbstractDataFrame, cols::Any) = deleterows!(df, findall(nonunique(df, cols)))
+unique!(df::AbstractDataFrame, cols::AbstractVector) =
+    deleterows!(df, findall(nonunique(df, cols)))
+unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
+    deleterows!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::Any) = df[(!).(nonunique(df, cols)), :]
+Base.unique(df::AbstractDataFrame, cols::AbstractVector) =
+    df[(!).(nonunique(df, cols)), :]
+Base.unique(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
+    df[(!).(nonunique(df, cols)), :]
 
 """
 Delete duplicate rows
