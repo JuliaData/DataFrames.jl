@@ -117,6 +117,8 @@ module TestSubDataFrame
     end
 
     @testset "dump" begin
+        x = collect(1:10)
+        y = collect(1.0:10.0)
         df = view(DataFrame(x = x, y = y), 2:6, :)
         @test sprint(dump, df) === """
                                    SubDataFrame{UnitRange{Int64}}  5 observations of 2 variables
