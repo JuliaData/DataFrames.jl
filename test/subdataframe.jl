@@ -117,12 +117,11 @@ module TestSubDataFrame
     end
 
     @testset "dump" begin
-        x = collect(1:10)
         y = collect(1.0:10.0)
-        df = view(DataFrame(x = x, y = y), 2:6, :)
+        df = view(DataFrame(y = y), 2:6, :)
         @test sprint(dump, df) === """
-                                   SubDataFrame{UnitRange{Int64}}  5 observations of 2 variables
-                                     x: Array{Int64}((5,)) [2, 3, 4, 5, 6]  y: Array{Float64}((5,)) [2.0, 3.0, 4.0, 5.0, 6.0]
+                                   SubDataFrame{UnitRange{Int64}}  5 observations of 1 variables
+                                     y: Array{Float64}((5,)) [2.0, 3.0, 4.0, 5.0, 6.0]
                                    """
     end
 end
