@@ -15,7 +15,7 @@ Pkg.add("DataFramesMeta")
 
 The major benefit of the package is that it allows you to refer to columns of a `DataFrame` as `Symbol`s. Therefore instead of writing `verylongdataframename.variable` you can simply write `:variable` in expressions. Additionally you can chain a sequence of transformations of a `DataFrame` using the `@linq` macro.
 
-Here is a minimal example of usage of the package. Observe that we refer to names of columns using only their names and that chaining is performed using the `@link` macro and the `|>` operator:
+Here is a minimal example of usage of the package. Observe that we refer to names of columns using only their names and that chaining is performed using the `@linq` macro and the `|>` operator:
 
 ```jldoctest dataframesmeta
 julia> using DataFrames, DataFramesMeta
