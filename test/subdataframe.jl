@@ -98,7 +98,7 @@ module TestSubDataFrame
     @testset "getproperty, setproperty! and propertynames" begin
         x = collect(1:10)
         y = collect(1.0:10.0)
-        df = view(DataFrame(x = x, y = y), 2:6)
+        df = view(DataFrame(x = x, y = y), 2:6, :)
 
         @test Base.propertynames(df) == names(df)
 
@@ -114,5 +114,14 @@ module TestSubDataFrame
         @test y == [1; 1; 1; 1; 1; 1; 7:10]
         @test_throws ErrorException df.z = 1:5
         @test_throws ErrorException df.z = 1
+    end
+
+    @testset "dump" begin
+        y = collect(1.0:10.0)
+        df = view(DataFrame(y = y), 2:6, :)
+        @test sprint(dump, df) == """
+                                  SubDataFrame{UnitRange{$Int}}  5 observations of 1 variables
+                                    y: Array{Float64}((5,)) [2.0, 3.0, 4.0, 5.0, 6.0]
+                                  """
     end
 end

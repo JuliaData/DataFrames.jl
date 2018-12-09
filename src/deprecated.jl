@@ -1812,6 +1812,9 @@ function Base.dump(io::IO, df::SubDataFrame, n::Int, indent)
     end
 end
 
+Base.dump(io::IOContext, df::SubDataFrame, n::Int, indent) =
+    invoke(dump, Tuple{IO, SubDataFrame, Int, Any}, io, df, n, indent)
+
 # TODO: END: remove after eachcol deprecation perod
 
 import Base: map
