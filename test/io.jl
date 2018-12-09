@@ -24,6 +24,17 @@ module TestIO
         @test repr(MIME("text/latex"), df) == str
     end
 
+    @testset "Huge LaTeX export" begin
+        df = DataFrame(a=1:1000)
+        ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => false)
+        show(ioc, "text/latex", df)
+        @test length(String(take!(ioc.io))) > 10000
+
+        io = IOBuffer()
+        show(io, "text/latex", df)
+        @test length(String(take!(io))) < 10000
+    end
+
     #Test HTML output for IJulia and similar
     @testset "HTML output" begin
         df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
@@ -51,7 +62,7 @@ module TestIO
 
     # test limit attribute of IOContext is used
     @testset "limit attribute" begin
-        df = DataFrame(a=collect(1:1000))
+        df = DataFrame(a=1:1000)
         ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => false)
         show(ioc, "text/html", df)
         @test length(String(take!(ioc.io))) > 10000
