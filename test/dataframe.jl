@@ -765,7 +765,7 @@ module TestDataFrame
         @test_throws BoundsError DataFrame(x=[1])[1:2, [false]]
         @test_throws BoundsError DataFrame(x=[1])[2, [false]]
         #but this is OK:
-        @test_throws DataFrame(x=[1])[1, [false]] == DataFrame()
+        @test DataFrame(x=[1])[1, [false]] == DataFrame()
     end
 
     @testset "handling of end in indexing" begin
