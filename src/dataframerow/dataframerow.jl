@@ -11,10 +11,7 @@ struct DataFrameRow{T<:AbstractDataFrame}
         if row isa Bool
             throw(ArgumentError("invalid index: $row of type Bool"))
         end
-        @boundscheck if row < 1 || row > nrow(df)
-            throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                              "rows at index $row"))
-        end
+        @boundscheck checkbounds(axes(df, 1), row)
         new{T}(df, row)
     end
 end

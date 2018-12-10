@@ -269,7 +269,8 @@ function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnI
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
+    @boundscheck checkbounds(axes(df, 1), row_inds)
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
@@ -289,7 +290,8 @@ function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::AbstractVector)
 end
 
 # df[MultiRowIndex, :] => DataFrame
-function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
+@inbounds function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
+    @boundscheck checkbounds(axes(df, 1), row_inds)
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)]
     return DataFrame(new_columns, copy(index(df)))
 end

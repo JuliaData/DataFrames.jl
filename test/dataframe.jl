@@ -762,6 +762,18 @@ module TestDataFrame
         @test_throws ArgumentError df[true, 1:2]
     end
 
+    @testset "empty data frame getindex" begin
+        @test_throws BoundsError DataFrame(x=[])[1, :]
+        @test_throws BoundsError DataFrame()[1, :]
+        @test_throws BoundsError DataFrame()[1:2, :]
+        @test_throws BoundsError DataFrame()[1, Bool[]]
+        @test_throws BoundsError DataFrame()[1:2, Bool[]]
+        @test_throws BoundsError DataFrame(x=[1])[1:2, [false]]
+        @test_throws BoundsError DataFrame(x=[1])[2, [false]]
+        #but this is OK:
+        @test_throws DataFrame(x=[1])[1, [false]] == DataFrame()
+    end
+
     @testset "handling of end in indexing" begin
         z = DataFrame(rand(4,5))
         for x in [z, view(z, 1:4, :)]
