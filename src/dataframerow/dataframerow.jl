@@ -36,11 +36,11 @@ Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(adf[colinds], rowind)
 
 Base.getindex(df::DataFrame, rowind::Integer, colinds::AbstractVector) =
-    DataFrameRow(adf[colinds], rowind)
+    DataFrameRow(df[colinds], rowind)
 Base.getindex(sdf::SubDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(parent(sdf)[colinds], rows(sdf)[rowind])
-Base.getindex(adf::DataFrame, rowind::Integer, ::Colon) =
-    DataFrameRow(adf, rowind)
+Base.getindex(df::DataFrame, rowind::Integer, ::Colon) =
+    DataFrameRow(df, rowind)
 Base.getindex(sdf::SubDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(parent(sdf), rows(sdf)[rowind])
 
