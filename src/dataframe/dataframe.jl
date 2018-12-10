@@ -270,7 +270,10 @@ end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
-    @boundscheck checkbounds(axes(df, 1), row_inds)
+    @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
+        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                          "rows at index $row_inds"))
+    end
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
@@ -291,7 +294,10 @@ end
 
 # df[MultiRowIndex, :] => DataFrame
 @inbounds function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
-    @boundscheck checkbounds(axes(df, 1), row_inds)
+    @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
+        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                          "rows at index $row_inds"))
+    end
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)]
     return DataFrame(new_columns, copy(index(df)))
 end
