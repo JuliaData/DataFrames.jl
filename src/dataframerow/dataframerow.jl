@@ -35,7 +35,7 @@ Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
 Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(adf[colinds], rowind)
 
-Base.getindex(adf::DataFrame, rowind::Integer, colinds::AbstractVector) =
+Base.getindex(df::DataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(adf[colinds], rowind)
 Base.getindex(sdf::SubDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(parent(sdf)[colinds], rows(sdf)[rowind])
