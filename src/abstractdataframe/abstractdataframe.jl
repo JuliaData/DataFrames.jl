@@ -658,10 +658,18 @@ julia> dropmissing(df, [:x, :y])
 ```
 
 """
-dropmissing(df::AbstractDataFrame,
-            cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
-            disallowmissing::Bool=false) =
-    dropmissing!(copy(df), cols, disallowmissing=disallowmissing)
+function dropmissing(df::AbstractDataFrame,
+                     cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
+                     disallowmissing::Bool=false)
+    newdf = df[completecases(df, cols), :]
+    if disallowmissing
+        disallowmissing!(newdf, cols)
+    else
+        Base.depwarn("dropmissing will change eltype of cols to disallow missing by default. " *
+                     "Use dropmissing(df, cols, disallowmissing=false) to retain missing.", :dropmissing)
+    end
+    newdf
+end
 
 """
     dropmissing!(df::AbstractDataFrame; disallowmissing::Bool=false)
@@ -743,12 +751,12 @@ julia> df3
 function dropmissing!(df::AbstractDataFrame,
                       cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
                       disallowmissing::Bool=false)
-    deleterows!(df, (!).completecases(df, cols))
+    deleterows!(df, (!).(completecases(df, cols)))
     if disallowmissing
         disallowmissing!(df, cols)
     else
         Base.depwarn("dropmissing! will change eltype of cols to disallow missing by default. " *
-                     "Use dropmissing(df, cols, disallowmissing=false) to retain missing.", :dropmissing!)
+                     "Use dropmissing!(df, cols, disallowmissing=false) to retain missing.", :dropmissing!)
     end
     df
 end
@@ -890,10 +898,10 @@ end
 nonunique(df::AbstractDataFrame, cols::Union{Integer, Symbol}) = nonunique(df[[cols]])
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
-unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
-unique!(df::AbstractDataFrame, cols::AbstractVector) =
+Base.unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
+Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
     deleterows!(df, findall(nonunique(df, cols)))
-unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
+Base.unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     deleterows!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.

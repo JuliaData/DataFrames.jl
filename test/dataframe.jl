@@ -383,7 +383,7 @@ module TestDataFrame
 
         df = DataFrame()
         @test_throws BoundsError deleterows!(df, 10)
-        @test_throws InexactError deleterows!(df, [10])
+        @test_throws BoundsError deleterows!(df, [10])
 
         df = DataFrame(a=[])
         @test_throws BoundsError deleterows!(df, 10)

@@ -854,6 +854,9 @@ julia> deleterows!(d, 2)
 
 """
 function deleterows!(df::DataFrame, ind)
+    if !isempty(ind) && size(df, 2) == 0
+        throw(BoundsError(summary(df), ind))
+    end
     # we require ind to be stored and unique like in Base
     foreach(col -> deleteat!(col, ind), _columns(df))
     df
