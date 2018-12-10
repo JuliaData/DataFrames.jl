@@ -380,6 +380,40 @@ module TestDataFrame
         df = DataFrame(a=Union{Int, Missing}[1, 2, 3], b=Union{Float64, Missing}[3.0, 4.0, 5.0])
         @test deleterows!(df, [2, 3]) === df
         @test df == DataFrame(a=[1], b=[3.0])
+
+        df = DataFrame()
+        @test_throws BoundsError deleterows!(df, 10)
+        @test_throws InexactError deleterows!(df, [10])
+
+        df = DataFrame(a=[])
+        @test_throws BoundsError deleterows!(df, 10)
+        @test_throws InexactError deleterows!(df, [10])
+
+        df = DataFrame(a=[1, 2, 3], b=[3, 2, 1])
+        @test_throws ArgumentError deleterows!(df, [3,2])
+        @test_throws ArgumentError deleterows!(df, [2,2])
+        @test deleterows!(df, [false, true, false]) === df
+        @test df == DataFrame(a=[1, 3], b=[3, 1])
+
+        x = [1, 2, 3]
+        df = DataFrame(x=x)
+        @test deleterows!(df, 1) == DataFrame(x=[2, 3])
+        @test x == [2, 3]
+
+        x = [1, 2, 3]
+        df = DataFrame(x=x)
+        @test deleterows!(df, [1]) == DataFrame(x=[2, 3])
+        @test x == [2, 3]
+
+        x = [1, 2, 3]
+        df = DataFrame(x=x)
+        @test deleterows!(df, 1:1) == DataFrame(x=[2, 3])
+        @test x == [2, 3]
+
+        x = [1, 2, 3]
+        df = DataFrame(x=x)
+        @test deleterows!(df, [true, false, false]) == DataFrame(x=[2, 3])
+        @test x == [2, 3]
     end
 
     @testset "describe" begin

@@ -124,4 +124,10 @@ module TestSubDataFrame
                                     y: Array{Float64}((5,)) [2.0, 3.0, 4.0, 5.0, 6.0]
                                   """
     end
+
+    @testset "deleterows!" begin
+        y = collect(1.0:10.0)
+        df = view(DataFrame(y = y), 2:6, :)
+        @test_throws ArgumentError deleterows!(df, 1)
+    end
 end
