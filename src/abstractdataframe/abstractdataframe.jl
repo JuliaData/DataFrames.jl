@@ -317,43 +317,14 @@ Get a data frame with the `n` last rows of `df`.
 Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), :]
 
 # get the structure of a df
-"""
-Show the structure of an AbstractDataFrame, in a tree-like format
-
-```julia
-dump(df::AbstractDataFrame, n::Int = 5)
-dump(io::IO, df::AbstractDataFrame, n::Int = 5)
-```
-
-**Arguments**
-
-* `df` : the AbstractDataFrame
-* `n` : the number of levels to show
-* `io` : optional output descriptor
-
-**Result**
-
-* nothing
-
-**Examples**
-
-```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-dump(df)
-```
-
-"""
-function Base.dump(io::IO, df::AbstractDataFrame, n::Int, indent)
+function Base.dump(io::IOContext, df::AbstractDataFrame, n::Int, indent)
     println(io, typeof(df), "  $(nrow(df)) observations of $(ncol(df)) variables")
     if n > 0
         for (name, col) in eachcol(df, true)
-            print(io, indent, "  ", name, ": ")
-            dump(io, col, n - 1, string(indent, "  "))
+            println(io, indent, "  ", name, ": ", col)
         end
     end
 end
-Base.dump(io::IOContext, df::AbstractDataFrame, n::Int, indent) =
-    invoke(dump, Tuple{IO, AbstractDataFrame, Int, Any}, io, df, n, indent)
 
 
 """

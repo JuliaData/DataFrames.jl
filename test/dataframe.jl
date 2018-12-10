@@ -675,13 +675,7 @@ module TestDataFrame
 
     @testset "misc" begin
         df = DataFrame([collect('A':'C')])
-        @test sprint(dump, df) == """
-                                  $DataFrame  3 observations of 1 variables
-                                    x1: Array{Char}((3,))
-                                      1: Char 'A'
-                                      2: Char 'B'
-                                      3: Char 'C'
-                                  """
+        @test sprint(dump, df) == "DataFrame  3 observations of 1 variables\n  x1: ['A', 'B', 'C']\n\n"
         df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
         # @test DataFrames.without(df, 1) == DataFrame(B = repeat('A':'C', inner=4))
     end
