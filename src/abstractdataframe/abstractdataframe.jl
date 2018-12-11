@@ -432,7 +432,29 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
     data[:variable] = names(df)
 
     # An array of Dicts for summary statistics
-    column_stats_dicts = [get_stats(col, stats) for col in columns(df)]
+    column_stats_dicts = map(columns(df)) do col 
+        d = get_stats(collect(skipmissing(col)), stats)
+        
+        # Special cases for arrays with missing values
+        if :nmissing in stats 
+            if col isa AbstractVector{>:Missing} 
+               d[:nmissing] = count(ismissing.(col)) 
+            else 
+                d[:nmissing] = nothing
+            end
+        end
+        
+        if :first in stats 
+            d[:first] = isempty(col) ? nothing : first(col)
+        end
+        
+        if :last in stats
+            d[:last] = isempty(col) ? nothing : last(col)
+        end
+        
+        return d             
+    end
+
     for stat in stats
         # for each statistic, loop through the columns array to find values
         # letting the comprehension choose the appropriate type
@@ -444,63 +466,6 @@ end
 # Define functions for getting summary statistics
 # use a dict because we dont know which measures the user wants
 # Outside of the `describe` function due to something with 0.7
-
-function get_stats(col::AbstractArray{>:Missing}, stats::AbstractVector{Symbol})
-    nomissing = collect(skipmissing(col))
-
-    d = Dict{Symbol, Any}()
-
-    if :q25 in stats || :median in stats || :q75 in stats 
-        q = try quantile(nomissing, [.25, .5, .75]) catch; [nothing, nothing, nothing] end
-        d[:q25] = q[1]
-        d[:median] = q[2]
-        d[:q75] = q[3]
-    end
-
-    if :min in stats || :max in stats 
-        ex = try extrema(nomissing) catch; (nothing, nothing) end
-        d[:min] = ex[1]
-        d[:max] = ex[2]
-    end
-
-    if :mean in stats || :std in stats 
-        m = try mean(nomissing) catch end
-        # we can add non-necessary things to d (:std specified by not mean), 
-        # because we choose what we need in the main function
-        d[:mean] = m
-    end
-
-    if :std in stats
-        d[:std] = try std(nomissing, mean = m) catch end
-    end
-    
-    if :nunique in stats 
-        if eltype(nomissing) <: Real
-            d[:nunique] = nothing
-        else
-            d[:nunique] = try length(unique(nomissing)) catch end
-        end
-    end
-
-    if :nmissing in stats 
-        d[:nmissing] = count(ismissing, col)
-    end
-
-    if :first in stats 
-        d[:first] = isempty(col) ? nothing : first(col)
-    end
-
-    if :last in stats
-        d[:last] = isempty(col) ? nothing : last(col)
-    end
-
-    if :eltype in stats 
-        d[:eltype] = Missings.T(eltype(col))
-    end
-
-    return d
-end
-
 function get_stats(col, stats)
     d = Dict{Symbol, Any}()
 
@@ -534,18 +499,6 @@ function get_stats(col, stats)
         else
             d[:nunique] = try length(unique(col)) catch end
         end
-    end
-
-    if :nmissing in stats 
-        d[:nmissing] = nothing
-    end
-
-    if :first in stats 
-        d[:first] = isempty(col) ? nothing : first(col)
-    end
-
-    if :last in stats
-        d[:last] = isempty(col) ? nothing : last(col)
     end
 
     if :eltype in stats 
