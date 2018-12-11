@@ -131,6 +131,7 @@ Base.getindex(sdf::SubDataFrame, colind::ColumnIndex) =
     view(parent(sdf)[colind], rows(sdf))
 Base.getindex(sdf::SubDataFrame, colinds::AbstractVector) =
     SubDataFrame(parent(sdf)[colinds], rows(sdf))
+Base.getindex(sdf::SubDataFrame, ::Colon) = sdf
 Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
     parent(sdf)[rows(sdf)[rowind], colind]
 Base.getindex(sdf::SubDataFrame, ::Colon, colind::ColumnIndex) =
@@ -141,7 +142,8 @@ Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colinds::AbstractVecto
     parent(sdf)[rows(sdf)[rowinds], colinds]
 Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, ::Colon) =
     parent(sdf)[rows(sdf)[rowinds], :]
-Base.getindex(sdf::SubDataFrame, ::Colon, ::Colon) = sdf
+Base.getindex(sdf::SubDataFrame, ::Colon, ::Colon) =
+    parent(sdf)[rows(sdf), :]
 
 function Base.setindex!(sdf::SubDataFrame, val::Any, colinds::Any)
     parent(sdf)[rows(sdf), colinds] = val

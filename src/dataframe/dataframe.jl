@@ -282,7 +282,7 @@ end
 # df[:, SingleColumnIndex] => AbstractVector
 function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
-    copy(_columns(df)[selected_column][row_inds])
+    copy(_columns(df)[selected_column])
 end
 
 # df[:, MultiColumnIndex] => DataFrame
