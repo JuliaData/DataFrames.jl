@@ -134,6 +134,8 @@ Base.getindex(sdf::SubDataFrame, colinds::AbstractVector) =
 Base.getindex(sdf::SubDataFrame, ::Colon) = sdf
 Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
     parent(sdf)[rows(sdf)[rowind], colind]
+Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colind::ColumnIndex) =
+    parent(sdf)[rows(sdf)[rowinds], colind]
 Base.getindex(sdf::SubDataFrame, ::Colon, colind::ColumnIndex) =
     parent(sdf)[rows(sdf), colind]
 Base.getindex(sdf::SubDataFrame, ::Colon, colinds::AbstractVector) =

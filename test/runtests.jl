@@ -26,6 +26,7 @@ my_tests = ["utils.jl",
             "subdataframe.jl",
             "tables.jl",
             "tabletraits.jl",
+            "indexing.jl",
             "deprecated.jl"]
 
 println("Running tests:")
