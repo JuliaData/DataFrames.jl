@@ -75,7 +75,7 @@ end
     @test sdf[1] isa SubArray
     @test sdf[1:2] == DataFrame(a=1:3, b=4:6)
     @test sdf[1:2] isa SubDataFrame
-    @test sdf[:] == df[2:4, 2:4]
+    @test sdf[:] == df[2:4, 1:3]
     @test sdf[:] isa SubDataFrame
     @test parent(sdf[:]) === parent(sdf)
 
@@ -98,7 +98,7 @@ end
     @test sdf[:, 1] !== df[1]
     @test sdf[:, 1:2] == DataFrame(a=1:3, b=4:6)
     @test sdf[:, 1:2] isa DataFrame
-    @test sdf[:, :] == df[2:4, 2:4]
+    @test sdf[:, :] == df[2:4, 1:3]
     @test sdf[:, :] isa DataFrame
 end
 
