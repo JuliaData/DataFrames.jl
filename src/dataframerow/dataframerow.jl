@@ -32,16 +32,16 @@ row(r::DataFrameRow) = getfield(r, :row)
 
 Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(adf, rowind)
-Base.view(adf::SubDataFrame, rowind::Integer, ::Colon) =
-    DataFrameRow(parent(adf), rows(sdf)[rowind])
+Base.view(sdf::SubDataFrame, rowind::Integer, ::Colon) =
+    DataFrameRow(parent(sdf), rows(sdf)[rowind])
 
 # Here a corner case is when colinds=[] and we pass a valid rowind
 # into adf. We will throw an error in this case.
 # The consequence is that it is impossible to create a DataFrameRow without columns.
 Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(adf[colinds], rowind)
-Base.view(adf::SubDataFrame, rowind::Integer, colinds::AbstractVector) =
-    DataFrameRow(parent(adf)[colinds], rows(sdf)[rowind])
+Base.view(sdf::SubDataFrame, rowind::Integer, colinds::AbstractVector) =
+    DataFrameRow(parent(sdf)[colinds], rows(sdf)[rowind])
 
 # Same here. It is impossible to create a DataFrameRow without columns.
 Base.getindex(df::DataFrame, rowind::Integer, colinds::AbstractVector) =
