@@ -666,7 +666,7 @@ function dropmissing(df::AbstractDataFrame,
         disallowmissing!(newdf, cols)
     else
         Base.depwarn("dropmissing will change eltype of cols to disallow missing by default. " *
-                     "Use dropmissing(df, cols, disallowmissing=false) to retain missing.", :dropmissing)
+                     "Use dropmissing(df, cols, disallowmissing=false) to allow for missing values.", :dropmissing)
     end
     newdf
 end
