@@ -96,8 +96,8 @@ module TestSubDataFrame
     end
 
     @testset "getproperty, setproperty! and propertynames" begin
-        x = collect(1:10)
-        y = collect(1.0:10.0)
+        x = 1:10
+        y = 1.0:10.0
         df = view(DataFrame(x = x, y = y), 2:6, :)
 
         @test Base.propertynames(df) == names(df)
@@ -117,7 +117,7 @@ module TestSubDataFrame
     end
 
     @testset "dump" begin
-        y = collect(1.0:10.0)
+        y = 1.0:10.0
         df = view(DataFrame(y = y), 2:6, :)
         @test sprint(dump, df) == """
                                   SubDataFrame{UnitRange{$Int}}  5 observations of 1 variables
@@ -126,7 +126,7 @@ module TestSubDataFrame
     end
 
     @testset "deleterows!" begin
-        y = collect(1.0:10.0)
+        y = 1.0:10.0
         df = view(DataFrame(y = y), 2:6, :)
         @test_throws ArgumentError deleterows!(df, 1)
     end

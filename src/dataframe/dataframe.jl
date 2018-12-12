@@ -766,18 +766,11 @@ end
 """
     deletecols!(df::DataFrame, ind)
 
-Delete columns from a data frame in place.
+Delete columns specified by `ind` from a `DataFrame` df in place.
+Returns the modified `DataFrame`.
 
-
-### Arguments
-
-* `df` : the DataFrame from which we want to remove a column
-
-* `ind` : a position from which we want to remove a column
-
-### Result
-
-* `::DataFrame` : a `DataFrame` with removed columns.
+Argument `ind` can be any index that is allowed for column indexing of
+a `DataFrame` provided that the columns requested to be removed are unique.
 
 ### Examples
 
@@ -803,7 +796,14 @@ julia> deletecols!(d, 1)
 
 """
 function deletecols!(df::DataFrame, inds::Vector{Int})
-    for ind in sort(inds, rev = true)
+    sorted_inds = sort(inds, rev=true)
+    for i in 2:length(sorted_inds)
+        if sorted_inds[i] == sorted_inds[i-1]
+            throw(ArgumentError("Duplicate values in inds found at positions" *
+                                " $(i-1) and $i."))
+        end
+    end
+    for ind in sorted_inds
         if 1 <= ind <= ncol(df)
             splice!(_columns(df), ind)
             delete!(index(df), ind)
@@ -819,17 +819,11 @@ deletecols!(df::DataFrame, c::Any) = deletecols!(df, index(df)[c])
 """
     deleterows!(df::DataFrame, ind)
 
-Delete rows from a data frame in place.
+Delete rows specified by `ind` from a `DataFrame` df in place.
+Returns the modified `DataFrame`.
 
-### Arguments
-
-* `df` : the DataFrame from which we want to remove rows
-
-* `ind` : a position from which we want to remove rows
-
-### Result
-
-* `::DataFrame` : a `DataFrame` with removed rows. Original will be updated.
+Internally `deleteat!` is called for all columns so `ind` must
+be: a vector of sorted and unique integers, a boolean vector or an integer.
 
 ### Examples
 

@@ -333,6 +333,7 @@ module TestDataFrame
         df = DataFrame(a=1, b=2, c=3, d=4, e=5)
         @test_throws ArgumentError deletecols!(df, 0)
         @test_throws ArgumentError deletecols!(df, 6)
+        @test_throws ArgumentError deletecols!(df, [1, 1])
         @test_throws KeyError deletecols!(df, :f)
 
         d = copy(df)
