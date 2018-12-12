@@ -68,14 +68,14 @@ end
 end
 
 @testset "getindex SubDataFrame" begin
-    df = DataFrame(a=1:4, b=4:7, c=7:10, d=10:13)
-    sdf = view(df, 1:3, 1:3)
+    df = DataFrame(a=0:4, b=3:7, c=6:10, d=9:13)
+    sdf = view(df, 2:4, 1:3)
 
     @test sdf[1] == [1, 2, 3]
     @test sdf[1] isa SubArray
     @test sdf[1:2] == DataFrame(a=1:3, b=4:6)
     @test sdf[1:2] isa SubDataFrame
-    @test sdf[:] == df[1:3, 1:3]
+    @test sdf[:] == df[2:4, 2:4]
     @test sdf[:] isa SubDataFrame
     @test parent(sdf[:]) === parent(sdf)
 
@@ -98,20 +98,20 @@ end
     @test sdf[:, 1] !== df[1]
     @test sdf[:, 1:2] == DataFrame(a=1:3, b=4:6)
     @test sdf[:, 1:2] isa DataFrame
-    @test sdf[:, :] == df[1:3, 1:3]
+    @test sdf[:, :] == df[2:4, 2:4]
     @test sdf[:, :] isa DataFrame
 end
 
 @testset "view SubDataFrame" begin
-    df = DataFrame(a=1:4, b=4:7, c=7:10, d=10:13)
-    sdf = view(df, 1:3, 1:3)
+    df = DataFrame(a=0:4, b=3:7, c=6:10, d=9:13)
+    sdf = view(df, 2:4, 1:3)
 
     @test view(sdf, 1) == [1, 2, 3]
     @test view(sdf, 1) isa SubArray
     @test view(sdf, 1:2) isa SubDataFrame
-    @test view(sdf, 1:2) == df[1:3, 1:2]
+    @test view(sdf, 1:2) == df[2:4, 1:2]
     @test view(sdf, :) isa SubDataFrame
-    @test view(sdf, :) == df[1:3, 1:3]
+    @test view(sdf, :) == df[2:4, 1:3]
     @test parent(view(sdf, :)) == parent(sdf)
 
     @test view(sdf, 1, 1) isa SubArray
@@ -127,7 +127,7 @@ end
     @test view(sdf, 1:2, 1:2) isa SubDataFrame
     @test view(sdf, 1:2, 1:2) == DataFrame(a=1:2, b=4:5)
     @test view(sdf, 1:2, :) isa SubDataFrame
-    @test view(sdf, 1:2, :) == df[1:2, 1:3]
+    @test view(sdf, 1:2, :) == df[2:3, 1:3]
     @test parent(view(sdf, 1:2, :)) === parent(sdf)
 
     @test view(sdf, :, 1) == [1, 2, 3]
@@ -136,7 +136,7 @@ end
     @test view(sdf, :, 1:2) == DataFrame(a=1:3, b=4:6)
     @test view(sdf, :, :) isa SubDataFrame
     @test parent(view(sdf, :, :)) === parent(sdf)
-    @test view(sdf, :, :) == df[1:3, 1:3]
+    @test view(sdf, :, :) == df[2:4, 1:3]
 end
 
 @testset "getindex DataFrameRow" begin
