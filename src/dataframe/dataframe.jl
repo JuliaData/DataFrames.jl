@@ -766,8 +766,7 @@ end
 """
     deletecols!(df::DataFrame, ind)
 
-Delete columns specified by `ind` from a `DataFrame` df in place.
-Returns the modified `DataFrame`.
+Delete columns specified by `ind` from a `DataFrame` `df` in place and return it.
 
 Argument `ind` can be any index that is allowed for column indexing of
 a `DataFrame` provided that the columns requested to be removed are unique.
@@ -819,8 +818,7 @@ deletecols!(df::DataFrame, c::Any) = deletecols!(df, index(df)[c])
 """
     deleterows!(df::DataFrame, ind)
 
-Delete rows specified by `ind` from a `DataFrame` df in place.
-Returns the modified `DataFrame`.
+Delete rows specified by `ind` from a `DataFrame` `df` in place and return it.
 
 Internally `deleteat!` is called for all columns so `ind` must
 be: a vector of sorted and unique integers, a boolean vector or an integer.
