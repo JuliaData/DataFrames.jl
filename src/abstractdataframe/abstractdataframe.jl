@@ -426,24 +426,22 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
         throw(ArgumentError(not_allowed * allowed_msg))
     end
 
-
     # Put the summary stats into the return data frame
     data = DataFrame()
     data[:variable] = names(df)
 
     # An array of Dicts for summary statistics
-    column_stats_dicts = map(columns(df)) do col 
-        d = get_stats(collect(skipmissing(col)), stats)
-        
-        # Special cases for arrays with missing values
-        if :nmissing in stats 
-            if col isa AbstractVector{>:Missing} 
-               d[:nmissing] = count(ismissing.(col)) 
-            else 
-                d[:nmissing] = nothing
-            end
+    column_stats_dicts = map(columns(df)) do col
+        if eltype(col) >: Missing
+            d = get_stats(collect(skipmissing(col)), stats)
+        else
+            d = get_stats(col, stats)
         end
-        
+
+        if :nmissing in stats 
+            d[:nmissing] = eltype(col) >: Missing ? count(ismissing, col) : nothing
+        end
+
         if :first in stats 
             d[:first] = isempty(col) ? nothing : first(col)
         end
@@ -451,7 +449,7 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
         if :last in stats
             d[:last] = isempty(col) ? nothing : last(col)
         end
-        
+
         return d             
     end
 
@@ -463,14 +461,14 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
     return data
 end
 
-# Define functions for getting summary statistics
+# Compute summary statistics
 # use a dict because we dont know which measures the user wants
 # Outside of the `describe` function due to something with 0.7
-function get_stats(col, stats)
+function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
     d = Dict{Symbol, Any}()
 
     if :q25 in stats || :median in stats || :q75 in stats 
-        q = try quantile(col, [.25, .5, .75]) catch; [nothing, nothing, nothing] end
+        q = try quantile(col, [.25, .5, .75]) catch; (nothing, nothing, nothing) end
         d[:q25] = q[1]
         d[:median] = q[2]
         d[:q75] = q[3]
