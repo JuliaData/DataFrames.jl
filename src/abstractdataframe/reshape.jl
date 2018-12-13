@@ -323,14 +323,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
     hcat(df1, df2)
 end
 
-function unstack(df::AbstractDataFrame)
-    Base.depwarn("In the future `unstack(df)` will call `unstack(df, :variable, :value)`." *
-                 " use `unstack(df, :id, :variable, :value)` to treat `:id` as the only " *
-                 "`rowkeys` column",
-                 :unstack)
-    unstack(df, :id, :variable, :value)
-end
-
+unstack(df::AbstractDataFrame) = unstack(df, :variable, :value)
 
 ##############################################################################
 ##

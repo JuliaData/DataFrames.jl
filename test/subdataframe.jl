@@ -133,8 +133,17 @@ module TestSubDataFrame
     end
 
     @testset "dump" begin
-        y = collect(1.0:10.0)
-        df = view(DataFrame(y = y), 2:6, :)
-        @test sprint(dump, df) == "SubDataFrame{UnitRange{$(Int)}}  5 observations of 1 variables\n  y: [2.0, 3.0, 4.0, 5.0, 6.0]\n\n"
+        y = 1.0:10.0
+        df = view(DataFrame(y=y), 2:6, :)
+        @test sprint(dump, df) == """
+                                  SubDataFrame{UnitRange{$Int}}  5 observations of 1 variables
+                                    y: Array{Float64}((5,)) [2.0, 3.0, 4.0, 5.0, 6.0]
+                                  """
+    end
+
+    @testset "deleterows!" begin
+        y = 1.0:10.0
+        df = view(DataFrame(y=y), 2:6, :)
+        @test_throws ArgumentError deleterows!(df, 1)
     end
 end
