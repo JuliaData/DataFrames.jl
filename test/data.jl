@@ -240,14 +240,14 @@ module TestData
         # @test d1s[2][1.0]
         
         # Those tests check indexing RepeatedVector/StackedVector by a vector
-        d1s[1][trues(24)] == d1s[1]
-        d1s[2][trues(24)] == d1s[2]
-        d1s[1][:] == d1s[1]
-        d1s[2][:] == d1s[2]
-        d1s[1][1:24] == d1s[1]
-        d1s[2][1:24] == d1s[2]
-        [d1s[1][1:12]; d1s[1][13:24]] == d1s[1]
-        [d1s[2][1:12]; d1s[2][13:24]] == d1s[2]
+        @test d1s[1][trues(24)] == d1s[1]
+        @test d1s[2][trues(24)] == d1s[2]
+        @test d1s[1][:] == d1s[1]
+        @test d1s[2][:] == d1s[2]
+        @test d1s[1][1:24] == d1s[1]
+        @test d1s[2][1:24] == d1s[2]
+        @test [d1s[1][1:12]; d1s[1][13:24]] == d1s[1]
+        @test [d1s[2][1:12]; d1s[2][13:24]] == d1s[2]
 
         d1s2 = stackdf(d1, [:c, :d])
         d1s3 = stackdf(d1)
@@ -274,11 +274,13 @@ module TestData
         @test d1us2[:d] == d1[:d]
         @test d1us2[3] == d1[:d]
         @test d1us3[:d] == d1[:d]
+        @test d1us3 == unstack(d1s2)
 
         # test unstack with exactly one key column that is not passed
         df1 = melt(DataFrame(rand(10,10)))
         df1[:id] = 1:100
         @test size(unstack(df1, :variable, :value)) == (100, 11)
+        @test unstack(df1, :variable, :value) ≅ unstack(df1)
 
         # test empty keycol
         @test_throws ArgumentError unstack(melt(DataFrame(rand(3,2))), :variable, :value)
