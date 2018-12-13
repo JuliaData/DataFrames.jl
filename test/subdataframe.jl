@@ -137,7 +137,7 @@ module TestSubDataFrame
         df = view(DataFrame(y=y), 2:6, :)
         @test sprint(dump, df) == """
                                   SubDataFrame{UnitRange{$Int}}  5 observations of 1 variables
-                                    y: ((5,)) [2.0, 3.0, 4.0, 5.0, 6.0]\n
+                                    y: [2.0, 3.0, 4.0, 5.0, 6.0]\n
                                   """
     end
 
