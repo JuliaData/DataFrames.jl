@@ -763,8 +763,46 @@ end
 ##
 ##############################################################################
 
+"""
+    deletecols!(df::DataFrame, ind)
+
+Delete columns specified by `ind` from a `DataFrame` `df` in place and return it.
+
+Argument `ind` can be any index that is allowed for column indexing of
+a `DataFrame` provided that the columns requested to be removed are unique.
+
+### Examples
+
+```jldoctest
+julia> d = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+│ 2   │ 2     │ 5     │
+│ 3   │ 3     │ 6     │
+
+julia> deletecols!(d, 1)
+3×1 DataFrame
+│ Row │ b     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 4     │
+│ 2   │ 5     │
+│ 3   │ 6     │
+```
+
+"""
 function deletecols!(df::DataFrame, inds::Vector{Int})
-    for ind in sort(inds, rev = true)
+    sorted_inds = sort(inds, rev=true)
+    for i in 2:length(sorted_inds)
+        if sorted_inds[i] == sorted_inds[i-1]
+            throw(ArgumentError("Duplicate values in inds found at positions" *
+                                " $(i-1) and $i."))
+        end
+    end
+    for ind in sorted_inds
         if 1 <= ind <= ncol(df)
             splice!(_columns(df), ind)
             delete!(index(df), ind)
@@ -777,36 +815,51 @@ end
 deletecols!(df::DataFrame, c::Int) = deletecols!(df, [c])
 deletecols!(df::DataFrame, c::Any) = deletecols!(df, index(df)[c])
 
-function deleterows!(df::DataFrame, ind::Union{Integer, UnitRange{Int}})
-    for i in 1:ncol(df)
-        _columns(df)[i] = deleteat!(_columns(df)[i], ind)
+"""
+    deleterows!(df::DataFrame, ind)
+
+Delete rows specified by `ind` from a `DataFrame` `df` in place and return it.
+
+Internally `deleteat!` is called for all columns so `ind` must
+be: a vector of sorted and unique integers, a boolean vector or an integer.
+
+### Examples
+
+```jldoctest
+julia> d = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+│ 2   │ 2     │ 5     │
+│ 3   │ 3     │ 6     │
+
+julia> deleterows!(d, 2)
+2×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+│ 2   │ 3     │ 6     │
+```
+
+"""
+function deleterows!(df::DataFrame, ind)
+    if !isempty(ind) && size(df, 2) == 0
+        throw(BoundsError())
     end
+    # we require ind to be stored and unique like in Base
+    foreach(col -> deleteat!(col, ind), _columns(df))
     df
 end
 
-function deleterows!(df::DataFrame, ind::AbstractVector{Int})
-    ind2 = sort(ind)
-    n = size(df, 1)
-
-    idf = 1
-    iind = 1
-    ikeep = 1
-    keep = Vector{Int}(undef, n-length(ind2))
-    while idf <= n && iind <= length(ind2)
-        1 <= ind2[iind] <= n || error(BoundsError())
-        if idf == ind2[iind]
-            iind += 1
-        else
-            keep[ikeep] = idf
-            ikeep += 1
-        end
-        idf += 1
+function deleterows!(df::DataFrame, ind::AbstractVector{Bool})
+    if length(ind) != size(df, 1)
+        throw(BoundsError())
     end
-    keep[ikeep:end] = idf:n
-
-    for i in 1:ncol(df)
-        _columns(df)[i] = _columns(df)[i][keep]
-    end
+    drop = findall(ind)
+    foreach(col -> deleteat!(col, drop), _columns(df))
     df
 end
 

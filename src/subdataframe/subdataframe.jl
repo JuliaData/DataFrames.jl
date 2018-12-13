@@ -220,3 +220,6 @@ Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), :]
 without(sdf::SubDataFrame, c) = view(without(parent(sdf), c), rows(sdf), :)
 # Resolve a method ambiguity
 without(sdf::SubDataFrame, c::Vector{<:Integer}) = view(without(parent(sdf), c), rows(sdf), :)
+
+deleterows!(df::SubDataFrame, ind) =
+    throw(ArgumentError("SubDataFrame does not support deleting rows"))
