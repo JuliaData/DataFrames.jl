@@ -52,6 +52,10 @@ The `DataFrameRows` and `DataFrameColumns` types are subtypes of `AbstractVector
 with the exception that they are read only. Note that they are not exported and should not be constructed directly,
 but using the `eachrow` and `eachcol` functions.
 
+The `RepeatedVector` and `StackedVector` types are subtypes of `AbstractVector` and support its interface
+with the exception that they are read only. Note that they are not exported and should not be constructed directly,
+but they are columns of a `DataFrame` returned by `stackdf` and `meltdf`.
+
 ## Types specification
 
 ```@docs
@@ -62,4 +66,6 @@ GroupedDataFrame
 SubDataFrame
 DataFrameRows
 DataFrameColumns
+RepeatedVector
+StackedVector
 ```

@@ -85,6 +85,9 @@ module TestDataFrame
         @test get(df, :c, -1) == -1
         @test !isempty(df)
 
+        dfv = view(df, 1:2, 1:2)
+        @test get(df, :a, -1) === columns(df)[1]
+
         @test empty!(df) === df
         @test isempty(columns(df))
         @test isempty(df)
@@ -140,13 +143,12 @@ module TestDataFrame
         @test all(ismissing, df[1])
         @test all(ismissing, df[2])
         @test all(ismissing, df[3])
-        # TODO: enable those tests after getindex deprecation period
-        # @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-        # @test typeof(df[:, 2]) == Vector{Union{Int, Missing}}
-        # @test typeof(df[:, 3]) == Vector{Union{Int, Missing}}
-        # @test all(ismissing, df[:, 1])
-        # @test all(ismissing, df[:, 2])
-        # @test all(ismissing, df[:, 3])
+        @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+        @test typeof(df[:, 2]) == Vector{Union{Int, Missing}}
+        @test typeof(df[:, 3]) == Vector{Union{Int, Missing}}
+        @test all(ismissing, df[:, 1])
+        @test all(ismissing, df[:, 2])
+        @test all(ismissing, df[:, 3])
 
         df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}], 100)
         @test size(df, 1) == 100
@@ -157,13 +159,12 @@ module TestDataFrame
         @test all(ismissing, df[1])
         @test all(ismissing, df[2])
         @test all(ismissing, df[3])
-        # TODO: enable those tests after getindex deprecation period
-        # @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-        # @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
-        # @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
-        # @test all(ismissing, df[:, 1])
-        # @test all(ismissing, df[:, 2])
-        # @test all(ismissing, df[:, 3])
+        @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+        @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+        @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
+        @test all(ismissing, df[:, 1])
+        @test all(ismissing, df[:, 2])
+        @test all(ismissing, df[:, 3])
 
         df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
                     [:A, :B, :C], 100)
@@ -175,13 +176,12 @@ module TestDataFrame
         @test all(ismissing, df[1])
         @test all(ismissing, df[2])
         @test all(ismissing, df[3])
-        # TODO: enable those tests after getindex deprecation period
-        # @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-        # @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
-        # @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
-        # @test all(ismissing, df[:, 1])
-        # @test all(ismissing, df[:, 2])
-        # @test all(ismissing, df[:, 3])
+        @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+        @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+        @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
+        @test all(ismissing, df[:, 1])
+        @test all(ismissing, df[:, 2])
+        @test all(ismissing, df[:, 3])
 
         df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
                     [:A, :B, :C], [false, false, true], 100)
@@ -193,34 +193,30 @@ module TestDataFrame
         @test all(ismissing, df[1])
         @test all(ismissing, df[2])
         @test all(ismissing, df[3])
-        # TODO: enable those tests after getindex deprecation period
-        # @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-        # @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
-        # @test typeof(df[:, 3]) <: CategoricalVector{Union{String, Missing}}
-        # @test all(ismissing, df[:, 1])
-        # @test all(ismissing, df[:, 2])
-        # @test all(ismissing, df[:, 3])
+        @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+        @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+        @test typeof(df[:, 3]) <: CategoricalVector{Union{String, Missing}}
+        @test all(ismissing, df[:, 1])
+        @test all(ismissing, df[:, 2])
+        @test all(ismissing, df[:, 3])
 
         df = convert(DataFrame, zeros(10, 5))
         @test size(df, 1) == 10
         @test size(df, 2) == 5
         @test typeof(df[1]) == Vector{Float64}
-        # TODO: enable those tests after getindex deprecation period
-        # @test typeof(df[:, 1]) == Vector{Float64}
+        @test typeof(df[:, 1]) == Vector{Float64}
 
         df = convert(DataFrame, ones(10, 5))
         @test size(df, 1) == 10
         @test size(df, 2) == 5
         @test typeof(df[1]) == Vector{Float64}
-        # TODO: enable those tests after getindex deprecation period
-        # @test typeof(df[:, 1]) == Vector{Float64}
+        @test typeof(df[:, 1]) == Vector{Float64}
 
         df = convert(DataFrame, Matrix{Float64}(undef, 10, 5))
         @test size(df, 1) == 10
         @test size(df, 2) == 5
         @test typeof(df[1]) == Vector{Float64}
-        # TODO: enable those tests after getindex deprecation period
-        # @test typeof(df[:, 1]) == Vector{Float64}
+        @test typeof(df[:, 1]) == Vector{Float64}
 
         @test DataFrame([Union{Int, Missing}[1, 2, 3], Union{Float64, Missing}[2.5, 4.5, 6.5]],
                         [:A, :B]) ==
@@ -548,8 +544,7 @@ module TestDataFrame
 
     df = DataFrame(A = 1:10, B = 'A':'J')
     @test !(df[:] === df)
-    # TODO: uncomment after getindex deprecation period
-    # @test !(df[:,:] === df)
+    @test !(df[:,:] === df)
 
     df = DataFrame(A = 1:2, B = 1:2)
     df2 = DataFrame(A=1:4, B = 1:4)
@@ -717,13 +712,7 @@ module TestDataFrame
 
     @testset "misc" begin
         df = DataFrame([collect('A':'C')])
-        @test sprint(dump, df) == """
-                                  $DataFrame  3 observations of 1 variables
-                                    x1: Array{Char}((3,))
-                                      1: Char 'A'
-                                      2: Char 'B'
-                                      3: Char 'C'
-                                  """
+        @test sprint(dump, df) == "DataFrame  3 observations of 1 variables\n  x1: ['A', 'B', 'C']\n\n"
         df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
         # @test DataFrames.without(df, 1) == DataFrame(B = repeat('A':'C', inner=4))
     end
@@ -804,14 +793,25 @@ module TestDataFrame
         @test_throws ArgumentError df[true, 1:2]
     end
 
+    @testset "empty data frame getindex" begin
+        @test_throws BoundsError DataFrame(x=[])[1, :]
+        @test_throws BoundsError DataFrame()[1, :]
+        @test_throws BoundsError DataFrame()[1:2, :]
+        @test_throws BoundsError DataFrame()[1, Bool[]]
+        @test_throws BoundsError DataFrame()[1:2, Bool[]]
+        @test_throws BoundsError DataFrame(x=[1])[1:2, [false]]
+        @test_throws BoundsError DataFrame(x=[1])[2, [false]]
+        #but this is OK:
+        @test DataFrame(x=[1])[1:1, [false]] == DataFrame()
+    end
+
     @testset "handling of end in indexing" begin
         z = DataFrame(rand(4,5))
-        for x in [z] # TODO: re-enable view after getindex deprecation: , view(z, 1:4, :)]
+        for x in [z, view(z, 1:4, :)]
             y = deepcopy(x)
             @test x[end] == x[5]
             @test x[end:end] == x[5:5]
-            # TODO: re-enable after getindex deprecation
-            # @test x[end, :] == x[4, :]
+            @test x[end, :] == x[4, :]
             @test x[end:end, :] == x[4:4, :]
             @test x[end, end] == x[4,5]
             @test x[2:end, 2:end] == x[2:4,2:5]
@@ -956,8 +956,7 @@ module TestDataFrame
         x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
         v = DataFrame(a = [5, 6, 7], b = [8, 9, 10])
         z = vcat(v, x)
-        #TODO: re-enable after getindex deprecation
-        # @test_throws ArgumentError z[:, [1, 1, 2]]
+        @test_throws ArgumentError z[:, [1, 1, 2]]
         @test_throws ArgumentError z[[1, 1, 2]]
     end
 end

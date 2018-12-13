@@ -127,11 +127,7 @@ struct DataFrame <: AbstractDataFrame
     end
 end
 
-function DataFrame(df::DataFrame)
-    Base.depwarn("In the future DataFrame constructor called with a `DataFrame` argument will return a copy. " *
-                 "Use `convert(DataFrame, df)` to avoid copying if `df` is a `DataFrame`.", :DataFrame)
-    return df
-end
+DataFrame(df::DataFrame) = copy(df)
 
 function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false)::DataFrame
     colnames = [Symbol(k) for (k,v) in pairs]
@@ -266,29 +262,6 @@ function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::ColumnIndex)
     return _columns(df)[selected_column][row_ind]
 end
 
-# df[SingleRowIndex, MultiColumnIndex] => DataFrame (will be DatFrameRow)
-function Base.getindex(df::DataFrame, row_ind::Integer, col_inds::AbstractVector)
-    if row_ind isa Bool
-        throw(ArgumentError("invalid row index: $row_ind of type Bool"))
-    end
-    Base.depwarn("Selecting a single row from a `DataFrame` will return a `DataFrameRow` in the future. " *
-                 "To get a `DataFrame` use `df[row_ind:row_ind, col_inds]`.", :getindex)
-    selected_columns = index(df)[col_inds]
-    new_columns = AbstractVector[[dv[row_ind]] for dv in _columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
-end
-
-# df[SingleRowIndex, :] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Integer, ::Colon)
-    if row_ind isa Bool
-        throw(ArgumentError("invalid row index: $row_ind of type Bool"))
-    end
-    Base.depwarn("Selecting a single row from a `DataFrame` will return a `DataFrameRow` in the future. " *
-                 "To get a `DataFrame` use `df[row_ind:row_ind, :]`.", :getindex)
-    new_columns = AbstractVector[[dv[row_ind]] for dv in _columns(df)]
-    return DataFrame(new_columns, copy(index(df)))
-end
-
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector, copy
 function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
@@ -296,31 +269,43 @@ function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnI
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_inds::AbstractVector)
+    @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
+        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                          "rows at index $row_inds"))
+    end
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
 # df[:, SingleColumnIndex] => AbstractVector
+function Base.getindex(df::DataFrame, row_inds::Colon, col_ind::ColumnIndex)
+    selected_column = index(df)[col_ind]
+    copy(_columns(df)[selected_column])
+end
+
 # df[:, MultiColumnIndex] => DataFrame
-function Base.getindex(df::DataFrame, row_ind::Colon, col_inds)
-    Base.depwarn("Indexing with colon as row will create a copy in the future. " *
-                 "Use `df[col_inds]` to get the columns without copying", :getindex)
-    df[col_inds]
+function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::AbstractVector)
+    selected_columns = index(df)[col_inds]
+    new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
 # df[MultiRowIndex, :] => DataFrame
-function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
+@inbounds function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
+    @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
+        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                          "rows at index $row_inds"))
+    end
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)]
     return DataFrame(new_columns, copy(index(df)))
 end
 
 # df[:, :] => DataFrame
 function Base.getindex(df::DataFrame, ::Colon, ::Colon)
-    Base.depwarn("Indexing with colon as row will create a copy of column vectors in the" *
-                 " future. use `df[:]` to get the columns without copying", :getindex)
-    copy(df)
+    new_columns = AbstractVector[copy(dv) for dv in _columns(df)]
+    return DataFrame(new_columns, Index(_names(df)))
 end
 
 ##############################################################################

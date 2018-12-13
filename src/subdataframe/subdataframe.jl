@@ -65,14 +65,8 @@ function SubDataFrame(parent::DataFrame, rows::Colon)
     return SubDataFrame(parent, 1:nrow(parent))
 end
 
-function SubDataFrame(parent::DataFrame, row::Bool)
-    throw(ArgumentError("invalid row index: $row of type `Bool`"))
-end
-
 function SubDataFrame(parent::DataFrame, row::Integer)
-    Base.depwarn("Creation of `SubDataFrame` with an `Integer` `row` is deprecated. " *
-                 "Use `SubDataFrame(parent, [row])` instead.", :SubDataFrame)
-    return SubDataFrame(parent, [Int(row)])
+    throw(ArgumentError("invalid row index: $row of type $(typeof(row))"))
 end
 
 function SubDataFrame(parent::DataFrame, rows::AbstractVector{<:Integer})
@@ -112,54 +106,14 @@ Base.parent(sdf::SubDataFrame) = getfield(sdf, :parent)
 
 rows(sdf::SubDataFrame) = getfield(sdf, :rows)
 
-# TODO: implement
-# `@view df[col]` -> the vector contained in column `col` (this is equivalent to `df[col]`)
-# `@view df[cols]` -> a `SubDataFrame` with parent `df` if `cols` is a colon and `df[cols]` otherwise
-# `sdf[col]` -> a view of the vector contained in column `col` of `parent(sdf)` with `DataFrames.rows(sdf)` as a selector;
-# `sdf[cols]` -> a `SubDataFrame`, with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
-# after deprecation period
-
-function Base.view(adf::AbstractDataFrame, rowinds)
-    Base.depwarn("`view(adf, x)` will select all rows and columns `x` from `adf` in the future. " *
-                 "Use `view(adf, x, :)` to select rows `x` and all columns from `adf` instead.", :view)
-    return SubDataFrame(adf, rowinds)
-end
-
-function Base.view(adf::AbstractDataFrame, rowind::Integer, colind::ColumnIndex)
-    Base.depwarn("`view(adf, rowind, colind)` will create a 0-dimensional view into `adf[colind]` in the future." *
-                 " Use `view(adf, [rowind], [colind])` instead.", :view)
-    return SubDataFrame(adf[[colind]], [rowind])
-end
-
-function Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon)
-    Base.depwarn("`view(adf, rowind, :)` will create a `DataFrameRow` in the future." *
-                 " Use `view(adf, [rowind], :)` to create a `SubDataFrame`", :view)
-    return SubDataFrame(adf, [rowind])
-end
-
-function Base.view(adf::AbstractDataFrame, rowind::Integer, colinds)
-    Base.depwarn("`view(adf, rowind, colinds)` will create a `DataFrameRow` in the future." *
-                 " Use `view(adf, [rowind], colinds)` to create a `SubDataFrame`", :view)
-    return SubDataFrame(adf[colinds], [rowind])
-end
-
-function Base.view(adf::AbstractDataFrame, rowinds, colinds)
-    return SubDataFrame(adf[colinds], rowinds)
-end
-
-function Base.view(adf::AbstractDataFrame, rowinds, ::Colon)
-    return SubDataFrame(adf, rowinds)
-end
-
-function Base.view(adf::AbstractDataFrame, rowinds, colind::ColumnIndex)
-    Base.depwarn("`view(adf, rowinds, col::ColumnIndex)` will create `view(df[col], rowinds)` in the future." *
-                 " Use `view(adf, rowinds, [col])` instead.", :view)
-    return SubDataFrame(adf[[colind]], rowinds)
-end
-
-function Base.view(adf::AbstractDataFrame, rowinds, colind::Bool)
+Base.view(adf::AbstractDataFrame, colinds) = view(adf, :, colinds)
+Base.view(adf::AbstractDataFrame, rowinds, colind::ColumnIndex) =
+    view(adf[colind], rowinds)
+Base.view(adf::AbstractDataFrame, rowinds, colind::Bool) =
     throw(ArgumentError("invalid column index $colind of type `Bool`"))
-end
+Base.view(adf::AbstractDataFrame, rowinds, colinds) =
+    SubDataFrame(adf[colinds], rowinds)
+Base.view(adf::AbstractDataFrame, rowinds, ::Colon) = SubDataFrame(adf, rowinds)
 
 ##############################################################################
 ##
@@ -173,31 +127,25 @@ index(sdf::SubDataFrame) = index(parent(sdf))
 nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(rows(sdf))::Int : 0
 ncol(sdf::SubDataFrame) = length(index(sdf))
 
-function Base.getindex(sdf::SubDataFrame, colind::ColumnIndex)
-    Base.depwarn("`sdf[colind]` will create a view of `parent(sdf)[colind]` in the future." *
-                 " Use sdf[:, colind]` to get a freshly allocated vector.", :getindex)
-    return parent(sdf)[rows(sdf), colind]
-end
-
-function Base.getindex(sdf::SubDataFrame, colinds)
-    Base.depwarn("`sdf[colinds]` will create a `SubDataFrame` in the future." *
-                 " Use `sdf[:, colinds]` to get a `DataFrame`.", :getindex)
-    return parent(sdf)[rows(sdf), colinds]
-end
-
-function Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex)
-    return parent(sdf)[rows(sdf)[rowind], colind]
-end
-
-function Base.getindex(sdf::SubDataFrame, rowind::Integer, colinds)
-    Base.depwarn("Selecting a single row from a `SubDataFrame` will return a `DataFrameRow` in the future. " *
-                 "Use `sdf[rowind:rowind, colinds]` to get a `DataFrame`.", :getindex)
-    return parent(sdf)[rows(sdf)[rowind], colinds]
-end
-
-function Base.getindex(sdf::SubDataFrame, rowinds, colinds)
-    return parent(sdf)[rows(sdf)[rowinds], colinds]
-end
+Base.getindex(sdf::SubDataFrame, colind::ColumnIndex) =
+    view(parent(sdf)[colind], rows(sdf))
+Base.getindex(sdf::SubDataFrame, colinds::AbstractVector) =
+    SubDataFrame(parent(sdf)[colinds], rows(sdf))
+Base.getindex(sdf::SubDataFrame, ::Colon) = sdf
+Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
+    parent(sdf)[rows(sdf)[rowind], colind]
+Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colind::ColumnIndex) =
+    parent(sdf)[rows(sdf)[rowinds], colind]
+Base.getindex(sdf::SubDataFrame, ::Colon, colind::ColumnIndex) =
+    parent(sdf)[rows(sdf), colind]
+Base.getindex(sdf::SubDataFrame, ::Colon, colinds::AbstractVector) =
+    parent(sdf)[rows(sdf), colinds]
+Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colinds::AbstractVector) =
+    parent(sdf)[rows(sdf)[rowinds], colinds]
+Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, ::Colon) =
+    parent(sdf)[rows(sdf)[rowinds], :]
+Base.getindex(sdf::SubDataFrame, ::Colon, ::Colon) =
+    parent(sdf)[rows(sdf), :]
 
 function Base.setindex!(sdf::SubDataFrame, val::Any, colinds::Any)
     parent(sdf)[rows(sdf), colinds] = val

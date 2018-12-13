@@ -15,7 +15,7 @@ module TestIteration
         @test collect(pairs(row)) isa Vector{Pair{Symbol, Int}}
     end
 
-    # TODO - clean up redundant tests after deprecation
+    # TODO - clean up redundant tests after eachcol deprecation
     @test size(eachcol(df)) == (size(df, 2),)
     @test size(eachcol(df, true)) == (size(df, 2),)
     @test size(columns(df)) == (size(df, 2),)
@@ -24,8 +24,8 @@ module TestIteration
     @test length(eachcol(df, true)) == size(df, 2)
     @test length(columns(df)) == size(df, 2)
     @test length(eachcol(df, false)) == size(df, 2)
-    @test eachcol(df)[1] == df[1] # this will be (:A => df[1]) after deprecation
-    @test eachcol(df, true)[1] == df[1] # this will be (:A => df[1]) after deprecation
+    @test eachcol(df)[1] == (:A => df[1]) # this will be df[1] after eachcol deprecation
+    @test eachcol(df, true)[1] == (:A => df[1])
     @test columns(df)[1] == df[1]
     @test eachcol(df, false)[1] == df[1]
     @test collect(eachcol(df)) isa Vector{Pair{Symbol, AbstractVector}}

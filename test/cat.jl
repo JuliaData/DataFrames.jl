@@ -85,8 +85,7 @@ module TestCat
         df = DataFrame(Int, 4, 3)
 
         # Assignment of rows
-        # TODO: re-enable after getindex deprecation period
-        # this has to make sure that DataFrameRow can be on RHS
+        # TODO: re-enable when we fix setindex! to handle DataFrameRow on RHS
         # df[1, :] = df[1, :]
         df[1, :] = df[1:1, :]
         df[1:2, :] = df[1:2, :]
@@ -111,8 +110,7 @@ module TestCat
         df[:x3] = 2
 
         # assignment of subtables
-        # TODO: re-enable after getindex deprecation period
-        # this has to make sure that DataFrameRow can be on RHS
+        # TODO: re-enable when we fix setindex! to handle DataFrameRow on RHS
         # df[1, 1:2] = df[2, 2:3]
         df[1, 1:2] = df[2:2, 2:3]
         df[1:2, 1:2] = df[2:3, 2:3]
