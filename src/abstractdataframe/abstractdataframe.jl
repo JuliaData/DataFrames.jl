@@ -426,13 +426,33 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
         throw(ArgumentError(not_allowed * allowed_msg))
     end
 
-
     # Put the summary stats into the return data frame
     data = DataFrame()
     data[:variable] = names(df)
 
     # An array of Dicts for summary statistics
-    column_stats_dicts = [get_stats(col) for col in columns(df)]
+    column_stats_dicts = map(columns(df)) do col
+        if eltype(col) >: Missing
+            d = get_stats(collect(skipmissing(col)), stats)
+        else
+            d = get_stats(col, stats)
+        end
+
+        if :nmissing in stats 
+            d[:nmissing] = eltype(col) >: Missing ? count(ismissing, col) : nothing
+        end
+
+        if :first in stats 
+            d[:first] = isempty(col) ? nothing : first(col)
+        end
+        
+        if :last in stats
+            d[:last] = isempty(col) ? nothing : last(col)
+        end
+
+        return d             
+    end
+
     for stat in stats
         # for each statistic, loop through the columns array to find values
         # letting the comprehension choose the appropriate type
@@ -441,62 +461,49 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
     return data
 end
 
-# Define functions for getting summary statistics
+# Compute summary statistics
 # use a dict because we dont know which measures the user wants
 # Outside of the `describe` function due to something with 0.7
+function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
+    d = Dict{Symbol, Any}()
 
-function get_stats(col::AbstractArray{>:Missing})
-    nomissing = collect(skipmissing(col))
-
-    q = try quantile(nomissing, [.25, .5, .75]) catch; [nothing, nothing, nothing] end
-    ex = try extrema(nomissing) catch; (nothing, nothing) end
-    m = try mean(nomissing) catch end
-    if eltype(nomissing) <: Real
-        u = nothing
-    else
-        u = try length(unique(nomissing)) catch end
+    if :q25 in stats || :median in stats || :q75 in stats 
+        q = try quantile(col, [.25, .5, .75]) catch; (nothing, nothing, nothing) end
+        d[:q25] = q[1]
+        d[:median] = q[2]
+        d[:q75] = q[3]
     end
 
-    Dict(
-        :mean => m,
-        :std => try std(nomissing, mean = m) catch end,
-        :min => ex[1],
-        :q25 => q[1],
-        :median => q[2],
-        :q75 => q[3],
-        :max => ex[2],
-        :nmissing => count(ismissing, col),
-        :nunique => u,
-        :first => isempty(col) ? nothing : first(col),
-        :last => isempty(col) ? nothing : last(col),
-        :eltype => Missings.T(eltype(col))
-    )
-end
-
-function get_stats(col)
-    q = try quantile(col, [.25, .5, .75]) catch; [nothing, nothing, nothing] end
-    ex = try extrema(col) catch; (nothing, nothing) end
-    m = try mean(col) catch end
-    if eltype(col) <: Real
-        u = nothing
-    else
-        u = try length(unique(col)) catch end
+    if :min in stats || :max in stats 
+        ex = try extrema(col) catch; (nothing, nothing) end
+        d[:min] = ex[1]
+        d[:max] = ex[2]
     end
 
-    Dict(
-        :mean => m,
-        :std => try std(col, mean = m) catch end,
-        :min => ex[1],
-        :q25 => q[1],
-        :median => q[2],
-        :q75 => q[3],
-        :max => ex[2],
-        :nmissing => nothing,
-        :nunique => u,
-        :first => isempty(col) ? nothing : first(col),
-        :last => isempty(col) ? nothing : last(col),
-        :eltype => eltype(col)
-    )
+    if :mean in stats || :std in stats 
+        m = try mean(col) catch end
+        # we can add non-necessary things to d, because we choose what we need
+        # in the main function
+        d[:mean] = m
+    end
+
+    if :std in stats
+        d[:std] = try std(col, mean = m) catch end
+    end
+    
+    if :nunique in stats 
+        if eltype(col) <: Real
+            d[:nunique] = nothing
+        else
+            d[:nunique] = try length(unique(col)) catch end
+        end
+    end
+
+    if :eltype in stats 
+        d[:eltype] = eltype(col)
+    end
+
+    return d
 end
 
 
