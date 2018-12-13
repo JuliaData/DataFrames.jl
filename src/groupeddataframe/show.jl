@@ -14,12 +14,12 @@ function Base.show(io::IO, gd::GroupedDataFrame;
     summary && print(io, "$(typeof(gd)) with $N $groupstr based on $keystr: $keys")
     if allgroups
         for i = 1:N
-           nrows = size(gd[i], 1)
-           rows = nrows > 1 ? "rows" : "row"
+            nrows = size(gd[i], 1)
+            rows = nrows > 1 ? "rows" : "row"
             
-           grouped_values = [first(gd[i][col]) for col in gd.cols]
+            grouped_values = [first(gd[i][col]) for col in gd.cols]
 
-           print(io, "\nFirst Group: $nrows $rows")
+            print(io, "\nFirst Group: $nrows $rows")
 
             for (name, value) in zip(grouped_names, grouped_values)
               print(io, "\n:$(name) => $value")
@@ -30,10 +30,10 @@ function Base.show(io::IO, gd::GroupedDataFrame;
         end
     else
         if N > 0
-           nrows = size(gd[1], 1)
-           rows = nrows > 1 ? "rows" : "row"
+            nrows = size(gd[1], 1)
+            rows = nrows > 1 ? "rows" : "row"
             
-           grouped_values = [first(gd[1][col]) for col in gd.cols]
+            grouped_values = [first(gd[1][col]) for col in gd.cols]
 
             print(io, "\nFirst Group: $nrows $rows")
 
@@ -45,13 +45,12 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                  allrows=allrows, allcols=allcols, rowlabel=rowlabel)
         end
         if N > 1
-           nrows = size(gd[N], 1)
-           rows = nrows > 1 ? "rows" : "row"
+            nrows = size(gd[N], 1)
+            rows = nrows > 1 ? "rows" : "row"
             
-           grouped_values = [first(gd[N][col]) for col in gd.cols]
+            grouped_values = [first(gd[N][col]) for col in gd.cols]
 
             print(io, "\nFirst Group: $nrows $rows")
-
             for (name, value) in zip(grouped_names, grouped_values)
               print(io, "\n:$(name) => $value")
             end
