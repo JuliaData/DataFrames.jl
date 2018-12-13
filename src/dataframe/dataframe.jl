@@ -798,8 +798,9 @@ function deletecols!(df::DataFrame, inds::Vector{Int})
     sorted_inds = sort(inds, rev=true)
     for i in 2:length(sorted_inds)
         if sorted_inds[i] == sorted_inds[i-1]
+            indpos = join(findall(==(sorted_inds[i]), inds), ", ", " and ")
             throw(ArgumentError("Duplicate values in inds found at positions" *
-                                " $(i-1) and $i."))
+                                " $indpos."))
         end
     end
     for ind in sorted_inds
