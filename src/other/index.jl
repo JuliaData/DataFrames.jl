@@ -76,7 +76,9 @@ rename(f::Function, x::Index) = rename!(f, copy(x))
 end
 
 Base.haskey(x::Index, key::Symbol) = haskey(x.lookup, key)
-Base.haskey(x::Index, key::Real) = 1 <= key <= length(x.names)
+Base.haskey(x::Index, key::Integer) = 1 <= key <= length(x.names)
+Base.haskey(x::Index, key::Bool) =
+    throw(ArgumentError("invalid key: $key of type Bool"))
 Base.keys(x::Index) = names(x)
 
 # TODO: If this should stay 'unsafe', perhaps make unexported
