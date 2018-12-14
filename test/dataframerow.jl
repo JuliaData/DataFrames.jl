@@ -128,10 +128,13 @@ module TestDataFrameRow
     df = DataFrame(permutedims(ref))
     dfr = df[1, :]
     @test collect(dfr) == ref
+    @test eltype(collect(dfr)) === String
     for (v1, v2) in zip(ref, dfr)
         @test v1 == v2
     end
     for (i, v) in enumerate(dfr)
         @test v == ref[i]
     end
+    dfr = DataFrame(a=1, b=true, c=1.0)[1,:]
+    @test eltype(collect(dfr)) === Real
 end
