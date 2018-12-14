@@ -82,6 +82,7 @@ module TestDataFrame
         @test haskey(df, :a)
         @test !haskey(df, :c)
         @test haskey(df, 1)
+        @test_throws MethodError haskey(df, 1.5)
         @test_throws ArgumentError haskey(df, true)
         @test get(df, :a, -1) === columns(df)[1]
         @test get(df, :c, -1) == -1
