@@ -99,6 +99,7 @@ module TestDataFrameRow
 
     @test length(r) == 4
     @test ndims(r) == 1
+    @test ndims(typeof(r)) == 1
     @test size(r) == (4,)
     @test size(r, 1) == 4
     @test_throws BoundsError size(r, 2)
