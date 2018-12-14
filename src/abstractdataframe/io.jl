@@ -167,7 +167,7 @@ function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
-function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; summary=true)
+function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
     nrows = size(df, 1)
     ncols = size(df, 2)
 
