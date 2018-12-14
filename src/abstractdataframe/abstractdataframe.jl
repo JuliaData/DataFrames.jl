@@ -222,7 +222,7 @@ Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
 Base.axes(df::AbstractDataFrame, i::Integer) = axes(df)[i]
 
 Base.ndims(::AbstractDataFrame) = 2
-Base.ndims(::Type{T}) where {T<AbstractDataFrame} = 2
+Base.ndims(::Type{<:AbstractDataFrame}) = 2
 
 Base.getproperty(df::AbstractDataFrame, col_ind::Symbol) = getindex(df, col_ind)
 Base.setproperty!(df::AbstractDataFrame, col_ind::Symbol, x) = setindex!(df, x, col_ind)
