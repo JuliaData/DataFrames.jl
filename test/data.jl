@@ -229,6 +229,12 @@ module TestData
 
         # Tests of RepeatedVector and StackedVector indexing
         d1s = stackdf(d1, [:a, :b])
+        @test d1s[1] isa DataFrames.RepeatedVector
+        @test ndims(d1s[1]) == 1
+        @test ndims(typeof(d1s[1])) == 1
+        @test d1s[1] isa DataFrames.StackedVector
+        @test ndims(d1s[2]) == 1
+        @test ndims(typeof(d1s[2])) == 1
         @test d1s[1][[1,24]] == [:a, :b]
         @test d1s[2][[1,24]] == [1, 4]
         if VERSION >= v"1" # this was silently accepted pre Julia 1.0
