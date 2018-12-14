@@ -92,7 +92,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary=true)
+function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=true)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
     write(io, "<thead>")
