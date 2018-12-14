@@ -7,6 +7,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                    summary::Bool = true)
     N = length(gd)
     grouped_names = names(gd.parent)[gd.cols]
+    parent_names = names(gd.parent)
     keys = join(':' .* string.(grouped_names), ", ")
 
     keystr = length(gd.cols) > 1 ? "keys" : "key"
@@ -16,14 +17,12 @@ function Base.show(io::IO, gd::GroupedDataFrame;
         for i = 1:N
             nrows = size(gd[i], 1)
             rows = nrows > 1 ? "rows" : "row"
-            
-            grouped_values = [first(gd[i][col]) for col in gd.cols]
 
-            print(io, "\nFirst Group: $nrows $rows")
+            identified_groups = [':' * string(parent_names[col], " = ", 
+                                 first(gd[i][col])) for col in gd.cols]
 
-            for (name, value) in zip(grouped_names, grouped_values)
-              print(io, "\n:$(name) => $value")
-            end
+            print(io, "\nGroup $i ($nrows $rows): ")            
+            join(io, identified_groups, ", ", " and ")
             
             show(io, gd[i], summary=false,
                  allrows=allrows, allcols=allcols, rowlabel=rowlabel)
@@ -32,14 +31,12 @@ function Base.show(io::IO, gd::GroupedDataFrame;
         if N > 0
             nrows = size(gd[1], 1)
             rows = nrows > 1 ? "rows" : "row"
-            
-            grouped_values = [first(gd[1][col]) for col in gd.cols]
+                        
+            identified_groups = [':' * string(parent_names[col], " = ", 
+                                 first(gd[1][col])) for col in gd.cols]
 
-            print(io, "\nFirst Group: $nrows $rows")
-
-            for (name, value) in zip(grouped_names, grouped_values)
-              print(io, "\n:$(name) => $value")
-            end
+            print(io, "\nFirst group ($nrows $rows): ")
+            join(io, identified_groups, ", ", " and ")
 
             show(io, gd[1], summary=false,
                  allrows=allrows, allcols=allcols, rowlabel=rowlabel)
@@ -48,12 +45,11 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             nrows = size(gd[N], 1)
             rows = nrows > 1 ? "rows" : "row"
             
-            grouped_values = [first(gd[N][col]) for col in gd.cols]
+            identified_groups = [':' * string(parent_names[col], " = ", 
+                                 first(gd[N][col])) for col in gd.cols]
 
-            print(io, "\nFirst Group: $nrows $rows")
-            for (name, value) in zip(grouped_names, grouped_values)
-              print(io, "\n:$(name) => $value")
-            end
+            print(io, "\nLast group ($nrows $rows): ")
+            join(io, identified_groups, ", ", " and ")
 
             show(io, gd[N], summary=false,
                  allrows=allrows, allcols=allcols, rowlabel=rowlabel)
