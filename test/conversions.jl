@@ -12,10 +12,10 @@ module TestConversions
     df = DataFrame()
     df[:A] = 1:5
     df[:B] = 1.0:5.0
-    @test isa(convert(Array, df), Matrix{Float64})
+    @test isa(convert(Array, df), Matrix{Real})
     @test isa(convert(Array{Any}, df), Matrix{Any})
     @test isa(convert(Array{Float64}, df), Matrix{Float64})
-    @test isa(Matrix(df), Matrix{Float64})
+    @test isa(Matrix(df), Matrix{Real})
     @test isa(Matrix{Any}(df), Matrix{Any})
     @test isa(Matrix{Float64}(df), Matrix{Float64})
 

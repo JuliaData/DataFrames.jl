@@ -800,14 +800,8 @@ julia> df
 Base.filter!(f, df::AbstractDataFrame) =
     deleterows!(df, findall(collect(!f(r)::Bool for r in eachrow(df))))
 
-function Base.convert(::Type{Array}, df::AbstractDataFrame)
-    convert(Matrix, df)
-end
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
-    T = reduce(promote_type, eltypes(df))
-    convert(Matrix{T}, df)
-end
-function Base.convert(::Type{Array{T}}, df::AbstractDataFrame) where T
+    T = reduce(typejoin, eltypes(df))
     convert(Matrix{T}, df)
 end
 function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
@@ -959,26 +953,6 @@ Base.hcat(df::AbstractDataFrame, x, y...; makeunique::Bool=false) =
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
           makeunique::Bool=false) =
     hcat!(hcat(df1, df2, makeunique=makeunique), dfn..., makeunique=makeunique)
-
-@generated function promote_col_type(cols::AbstractVector...)
-    T = mapreduce(x -> Missings.T(eltype(x)), promote_type, cols)
-    if CategoricalArrays.iscatvalue(T)
-        T = CategoricalArrays.leveltype(T)
-    end
-    if any(col -> eltype(col) >: Missing, cols)
-        if any(col -> col <: AbstractCategoricalArray, cols)
-            return :(CategoricalVector{Union{$T, Missing}})
-        else
-            return :(Vector{Union{$T, Missing}})
-        end
-    else
-        if any(col -> col <: AbstractCategoricalArray, cols)
-            return :(CategoricalVector{$T})
-        else
-            return :(Vector{$T})
-        end
-    end
-end
 
 """
     vcat(dfs::AbstractDataFrame...)
