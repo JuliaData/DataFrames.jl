@@ -232,7 +232,7 @@ module TestData
         @test d1s[1] isa DataFrames.RepeatedVector
         @test ndims(d1s[1]) == 1
         @test ndims(typeof(d1s[1])) == 1
-        @test d1s[1] isa DataFrames.StackedVector
+        @test d1s[2] isa DataFrames.StackedVector
         @test ndims(d1s[2]) == 1
         @test ndims(typeof(d1s[2])) == 1
         @test d1s[1][[1,24]] == [:a, :b]
