@@ -784,6 +784,9 @@ module TestDataFrame
         @test names(df) == [:x3, :x3_1, :x3_2, :x4]
         df = DataFrame()
         @test_throws ArgumentError df[true] = 1
+        @test_throws ArgumentError df[true] = [1,2,3]
+        @test_throws ArgumentError df[1:2, true] = [1,2]
+        @test_throws ArgumentError df[1, true] = 1
     end
 
     @testset "passing range to a DataFrame" begin
