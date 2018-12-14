@@ -1328,9 +1328,6 @@ import Base: vcat
 @deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, stats = [:eltype, :nmissing, :first, :last])
 @deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, stats = [:eltype, :nmissing, :first, :last]), all)
 
-import Base: collect
-@deprecate collect(r::DataFrameRow) collect(pairs(r))
-
 import Base: show
 @deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(io, df, allcols=allcols, rowlabel=rowlabel, summary=summary)
 @deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol) show(io, df, allcols=allcols, rowlabel=rowlabel)

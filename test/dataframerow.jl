@@ -89,13 +89,19 @@ module TestDataFrameRow
     r = DataFrameRow(df, 1)
     @test r[:] == r
 
-    # keys, values and iteration
+    # keys, values and iteration, size
     @test keys(r) == names(df)
     @test values(r) == (df[1, 1], df[1, 2], df[1, 3], df[1, 4])
     @test collect(pairs(r)) == [:a=>df[1, 1], :b=>df[1, 2], :c=>df[1, 3], :d=>df[1, 4]]
 
     @test haskey(r, :a)
     @test !haskey(r, :zzz)
+
+    @test length(r) == 4
+    @test ndims(r) == 1
+    @test size(r) == (4,)
+    @test size(r, 1) == 4
+    @test_throws BoundsError size(r, 2)
 
     df = DataFrame(a=nothing, b=1)
     io = IOBuffer()
@@ -116,4 +122,16 @@ module TestDataFrameRow
                    c=["A", "B", "C", "A", "B", missing])
     @test copy(DataFrameRow(df, 1)) == (a = 1, b = 2.0, c = "A")
     @test isequal(copy(DataFrameRow(df, 2)), (a = 2, b = missing, c = "B"))
+
+    # iteration and collect
+    ref = ["a", "b", "c"]
+    df = DataFrame(permutedims(ref))
+    dfr = df[1, :]
+    @test collect(dfr) == ref
+    for (v1, v2) in zip(ref, dfr)
+        @test v1 == v2
+    end
+    for (i, v) in enumerate(dfr)
+        @test v == ref[i]
+    end
 end

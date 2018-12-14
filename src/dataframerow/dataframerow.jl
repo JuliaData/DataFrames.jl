@@ -80,15 +80,11 @@ index(r::DataFrameRow) = index(parent(r))
 Base.size(r::DataFrameRow) = (size(parent(r), 2),)
 Base.size(r::DataFrameRow, i) = size(r)[i]
 Base.length(r::DataFrameRow) = size(parent(r), 2)
+Base.ndims(r::DataFrameRow) = 1
 
-Compat.lastindex(r::DataFrameRow) = size(parent(r), 2)
+Base.lastindex(r::DataFrameRow) = size(parent(r), 2)
 
-function Base.iterate(r::DataFrameRow)
-    Base.depwarn("iteration over DataFrameRow will return values in the future:" *
-                 "use pairs(r::DataFrameRow) to get the current behavior",
-                 :start)
-    iterate(r, 1)
-end
+Base.iterate(r::DataFrameRow) = iterate(r, 1)
 
 function Base.iterate(r::DataFrameRow, st)
     st > length(r) && return nothing
