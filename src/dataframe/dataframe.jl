@@ -334,7 +334,7 @@ function insert_single_column!(df::DataFrame,
         throw(ArgumentError("New columns must have the same length as old columns"))
     end
     if col_ind isa Bool
-        throw(ArgumentError("invalid column index: $idx of type Bool"))
+        throw(ArgumentError("invalid column index: $col_ind of type Bool"))
     end
     dv = isa(v, AbstractRange) ? collect(v) : v
     if haskey(index(df), col_ind)
@@ -358,7 +358,7 @@ end
 
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
     if col_ind isa Bool
-        throw(ArgumentError("invalid column index: $idx of type Bool"))
+        throw(ArgumentError("invalid column index: $col_ind of type Bool"))
     end
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_ind] = v
@@ -372,8 +372,8 @@ function insert_multiple_entries!(df::DataFrame,
                                   v::Any,
                                   row_inds::AbstractVector{<:Integer},
                                   col_ind::ColumnIndex)
-    if colind isa Bool
-        throw(ArgumentError("invalid column index: $idx of type Bool"))
+    if col_ind isa Bool
+        throw(ArgumentError("invalid column index: $col_ind of type Bool"))
     end
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_inds] .= v
