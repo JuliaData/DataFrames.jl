@@ -223,6 +223,8 @@ Base.axes(df::AbstractDataFrame, i::Integer) = axes(df)[i]
 
 Base.ndims(::AbstractDataFrame) = 2
 
+Base.broadcastable(adf::AbstractDataFrame) = eachrow(adf)
+
 Base.getproperty(df::AbstractDataFrame, col_ind::Symbol) = getindex(df, col_ind)
 Base.setproperty!(df::AbstractDataFrame, col_ind::Symbol, x) = setindex!(df, x, col_ind)
 # Private fields are never exposed since they can conflict with column names

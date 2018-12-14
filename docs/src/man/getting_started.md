@@ -471,3 +471,70 @@ CSV.write(output, df)
 ```
 
 The behavior of CSV functions can be adapted via keyword arguments. For more information, see `?CSV.read` and `?CSV.write`, or checkout the online [CSV.jl documentation](https://juliadata.github.io/CSV.jl/stable/).
+
+## Broadcasting
+
+When you broadcast a function over an `AbstractDataFrame` it is treated as an `AbstractVector` of rows and each row is represented as a `DataFrameRow`:
+
+```jldoctest dataframe
+julia> df = DataFrame(A = 1:3, B = 3:-1:1)
+3×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 3     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 1     │
+
+julia> identity.(df)
+3-element Array{DataFrameRow{DataFrame},1}:
+ DataFrameRow (row 1)
+A  1
+B  3
+ DataFrameRow (row 2)
+A  2
+B  2
+ DataFrameRow (row 3)
+A  3
+B  1
+
+julia> copy.(df)
+3-element Array{NamedTuple{(:A, :B),Tuple{Int64,Int64}},1}:
+ (A = 1, B = 3)
+ (A = 2, B = 2)
+ (A = 3, B = 1)
+ ```
+
+In the last example we used the `copy` function which transforms a `DataFrameRow` into a `NamedTuple`.
+
+A `DataFrameRow` is treated as a collection of values stored in its columns so you can apply to it standard functions that accept collections and also broadcast functions over it to get a vector:
+
+```jldoctest dataframe
+julia> df = DataFrame(A = 1:3, B = 3:-1:1)
+3×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 3     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 1     │
+
+julia> dfr = df[1, :]
+DataFrameRow (row 1)
+A  1
+B  3
+
+julia> sum(dfr)
+4
+
+julia> string.(dfr)
+2-element Array{String,1}:
+ "1"
+ "3"
+
+julia> (row -> string.(row)).(df)
+3-element Array{Array{String,1},1}:
+ ["1", "3"]
+ ["2", "2"]
+ ["3", "1"]
+```
