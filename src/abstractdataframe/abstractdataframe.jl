@@ -1141,6 +1141,8 @@ function Base.hash(df::AbstractDataFrame, h::UInt)
     return h
 end
 
+Base.parent(adf::AbstractDataFrame) = adf
+Base.parantindices(adf::AbstractDataFrame) = map(Base.OneTo, size(adf))
 
 ## Documentation for methods defined elsewhere
 

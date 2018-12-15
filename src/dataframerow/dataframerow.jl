@@ -22,12 +22,8 @@ end
 @inline DataFrameRow(df::T, row::Integer) where {T<:AbstractDataFrame} =
     DataFrameRow{T}(df, row)
 
-"""
-    parent(r::DataFrameRow)
-
-Return the parent data frame of `r`.
-"""
 Base.parent(r::DataFrameRow) = getfield(r, :df)
+Base.parantindices(r::DataFrameRow) = (row(r), Base.OneTo(ncol(parent(r))))
 row(r::DataFrameRow) = getfield(r, :row)
 
 Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =

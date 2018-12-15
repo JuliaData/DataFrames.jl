@@ -967,4 +967,10 @@ module TestDataFrame
         @test_throws ArgumentError z[:, [1, 1, 2]]
         @test_throws ArgumentError z[[1, 1, 2]]
     end
+
+    @testset "parent" begin
+        x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
+        @test parent(x) === x
+        @test parentindices(x) === (Base.OneTo(3), Base.OneTo(2))
+    end
 end

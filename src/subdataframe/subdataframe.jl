@@ -97,13 +97,9 @@ end
 
 SubDataFrame(sdf::SubDataFrame, rowinds::Colon) = sdf
 
-"""
-    parent(sdf::SubDataFrame)
-
-Return the parent data frame of `sdf`.
-"""
 Base.parent(sdf::SubDataFrame) = getfield(sdf, :parent)
-
+Base.parantindices(sdf::AbstractDataFrame) =
+    (rows(sdf), Base.OneTo(ncol(parent(sdf))))
 rows(sdf::SubDataFrame) = getfield(sdf, :rows)
 
 Base.view(adf::AbstractDataFrame, colinds) = view(adf, :, colinds)
