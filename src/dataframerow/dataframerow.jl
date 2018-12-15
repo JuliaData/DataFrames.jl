@@ -81,7 +81,7 @@ Base.size(r::DataFrameRow) = (size(parent(r), 2),)
 Base.size(r::DataFrameRow, i) = size(r)[i]
 Base.length(r::DataFrameRow) = size(parent(r), 2)
 Base.ndims(r::DataFrameRow) = 1
-Base.ndims(::Type{DataFrameRow{T}}) where {T<:AbstractDataFrame} = 1
+Base.ndims(::Type{<:DataFrameRow}) = 1
 
 Base.lastindex(r::DataFrameRow) = size(parent(r), 2)
 
