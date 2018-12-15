@@ -107,7 +107,7 @@ module TestDataFrameRow
     dfr = DataFrameRow(df, 1)
     @test convert(Vector, dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test convert(Vector{Int}, dfr)::Vector{Int} == [1, 2]
-    @test Vector(dfr)::Vector{Float64} == [1.0, 2.0]
+    @test Vector(dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test Vector{Int}(dfr)::Vector{Int} == [1, 2]
 
     # copy
