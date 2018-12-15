@@ -92,7 +92,7 @@ function Base.iterate(r::DataFrameRow, st)
     return (r[st], st + 1)
 end
 
-Base.eltype(r::DataFrameRow) = reduce(typejoin, eltypes(parent(r)))
+Base.IteratorEltype(::DataFrameRow) = Base.EltypeUnknown()
 
 Base.convert(::Type{Array}, dfr::DataFrameRow) =
     [dfr[i] for j in 1:1, i in 1:length(dfr)]
