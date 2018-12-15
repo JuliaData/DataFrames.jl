@@ -1142,7 +1142,7 @@ function Base.hash(df::AbstractDataFrame, h::UInt)
 end
 
 Base.parent(adf::AbstractDataFrame) = adf
-Base.parentindices(adf::AbstractDataFrame) = map(Base.OneTo, size(adf))
+Base.parentindices(adf::AbstractDataFrame) = axes(adf)
 
 ## Documentation for methods defined elsewhere
 

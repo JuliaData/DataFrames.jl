@@ -23,7 +23,7 @@ end
     DataFrameRow{T}(df, row)
 
 Base.parent(r::DataFrameRow) = getfield(r, :df)
-Base.parantindices(r::DataFrameRow) = (row(r), Base.OneTo(ncol(parent(r))))
+Base.parentindices(r::DataFrameRow) = (row(r), axes(parent(r), 2))
 row(r::DataFrameRow) = getfield(r, :row)
 
 Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
