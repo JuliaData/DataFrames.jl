@@ -81,6 +81,9 @@ module TestDataFrame
         df = DataFrame(a=[1, 2], b=[3.0, 4.0])
         @test haskey(df, :a)
         @test !haskey(df, :c)
+        @test haskey(df, 1)
+        @test_throws MethodError haskey(df, 1.5)
+        @test_throws ArgumentError haskey(df, true)
         @test get(df, :a, -1) === columns(df)[1]
         @test get(df, :c, -1) == -1
         @test !isempty(df)
@@ -779,6 +782,11 @@ module TestDataFrame
         df[3] = [1,2,3]
         df[4] = [1,2,3]
         @test names(df) == [:x3, :x3_1, :x3_2, :x4]
+        df = DataFrame()
+        @test_throws ArgumentError df[true] = 1
+        @test_throws ArgumentError df[true] = [1,2,3]
+        @test_throws ArgumentError df[1:2, true] = [1,2]
+        @test_throws ArgumentError df[1, true] = 1
     end
 
     @testset "passing range to a DataFrame" begin
