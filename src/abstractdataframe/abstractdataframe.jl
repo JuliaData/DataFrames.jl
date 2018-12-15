@@ -801,7 +801,7 @@ Base.filter!(f, df::AbstractDataFrame) =
     deleterows!(df, findall(collect(!f(r)::Bool for r in eachrow(df))))
 
 function Base.convert(::Type{Matrix}, df::AbstractDataFrame)
-    T = reduce(typejoin, eltypes(df))
+    T = reduce(promote_type, eltypes(df))
     convert(Matrix{T}, df)
 end
 function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
