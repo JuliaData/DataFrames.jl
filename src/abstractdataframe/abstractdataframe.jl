@@ -1141,6 +1141,8 @@ function Base.hash(df::AbstractDataFrame, h::UInt)
     return h
 end
 
+Base.parent(adf::AbstractDataFrame) = adf
+Base.parentindices(adf::AbstractDataFrame) = axes(adf)
 
 ## Documentation for methods defined elsewhere
 
