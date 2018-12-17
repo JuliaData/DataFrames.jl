@@ -1,5 +1,5 @@
 module TestGrouping
-    using Test, DataFrames, Random
+    using Test, DataFrames, Random, Statistics
     const ≅ = isequal
 
     @testset "colwise" begin
@@ -247,10 +247,12 @@ module TestGrouping
         levels!(df[:Key1], ["Z", "B", "A"])
         levels!(df[:Key2], ["Z", "B", "A"])
         gd = groupby(df, :Key1)
+        @test gd == groupby(df, :Key1, skipmissing=true)
         @test length(gd) == 2
         @test gd[1] == DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4)
         @test gd[2] == DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2)
         gd = groupby(df, [:Key1, :Key2])
+        @test gd == groupby(df, [:Key1, :Key2], skipmissing=true)
         @test length(gd) == 4
         @test gd[1] == DataFrame(Key1="A", Key2="A", Value=1)
         @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
@@ -262,6 +264,7 @@ module TestGrouping
         @test length(gd) == 1
         @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "A", "B"], Value=1:4)
         gd = groupby(df, [:Key1, :Key2])
+        @test gd == groupby(df, [:Key1, :Key2])
         @test length(gd) == 2
         @test gd[1] == DataFrame(Key1="B", Key2="A", Value=[1, 3])
         @test gd[2] == DataFrame(Key1="B", Key2="B", Value=[2, 4])
@@ -377,6 +380,12 @@ module TestGrouping
          DataFrame(Key1 = ["A", missing, "B", "B", "A"],
                    Key2 = categorical(["B", "A", "A", missing, "A"]),
                    Value = 1:5),
+         DataFrame(Key1 = ["A", missing, "B", "B", "A"],
+                   Key2 = levels!(categorical(["B", "A", "A", missing, "A"]), ["X", "A", "B"]),
+                   Value = 1:5),
+         DataFrame(Key1 = ["A", missing, "B", "B", "A"],
+                   Key2 = levels!(categorical(["B", "A", "A", missing, "A"]), ["A", "B", "X"]),
+                   Value = 1:5),
          DataFrame(Key1 = categorical(["A", missing, "B", "B", "A"]),
                    Key2 = categorical(["B", "A", "A", missing, "A"]),
                    Value = 1:5))
@@ -451,7 +460,7 @@ module TestGrouping
         Random.seed!(1)
         df = DataFrame(a = repeat([1, 3, 2, 4], outer=[2]),
                        b = repeat([2, 1], outer=[4]),
-                       c = randn(8))
+                       c = rand(Int, 8))
 
         # Only test that different by syntaxes work,
         # and rely on tests below for deeper checks
@@ -603,6 +612,64 @@ module TestGrouping
                     @test_throws ArgumentError f(wrap(cols => x -> [exp.(x.b) x.c]), gd)
                 end
             end
+        end
+    end
+
+    struct TestType end
+    Base.isless(::TestType, ::Int) = true
+    Base.isless(::Int, ::TestType) = false
+    Base.isless(::TestType, ::TestType) = false
+
+    @testset "combine with reductions" begin
+        Random.seed!(1)
+        df = DataFrame(a = rand(1:5, 20), x1 = rand(Int, 20), x2 = rand(Int, 20))
+
+        for f in (sum, prod, maximum, minimum, mean)
+            gd = groupby(df, :a)
+            @test combine(gd, y = :x1 => f) == combine(gd, y = :x1 => x -> f(x))
+            @test combine(gd, y = :x1 => f) == combine(gd, y = :x1 => x -> f(x))
+
+            for T in (Union{Missing, Int}, Union{Int, Int8},
+                      Union{Missing, Int, Int8})
+                df.x3 = Vector{T}(df.x1)
+                gd = groupby(df, :a)
+                res = combine(gd, y = :x3 => f)
+                @test res == combine(gd, y = :x3 => x -> f(x))
+                @test res.y isa Vector{Int}
+            end
+
+            df.x3 = allowmissing(df.x1)
+            df.x3[1] = missing
+            gd = groupby(df, :a)
+            res = combine(gd, y = :x3 => f)
+            @test isequal(res, combine(gd, y = :x3 => x -> f(x)))
+            @test res.y isa Vector{Union{Missing, Int}}
+        end
+        for f in (maximum, minimum),
+            (T, m) in ((Int, false),
+                       (Union{Missing, Int}, false), (Union{Missing, Int}, true))
+            df.x3 = CategoricalVector{T}(df.x1)
+            m && (df.x3[1] = missing)
+            gd = groupby(df, :a)
+            res = combine(gd, y = :x3 => f)
+            @test isequal(res, combine(gd, y = :x3 => x -> f(x)))
+            @test res.y isa CategoricalVector{m ? T : Missings.T(T)}
+        end
+        @test combine(gd, y = :x1 => sum, z = :x2 => maximum) ==
+            combine(gd, y = :x1 => x -> sum(x), z = :x2 => x -> maximum(x))
+
+        df = DataFrame(x = [1, 1, 2, 2], y = Any[1, 2.0, 3.0, 4.0])
+        res = by(df, :x, z = :y => maximum)
+        @test res.z isa Vector{Float64}
+        @test res.z == by(df, :x, z = :y => x -> maximum(x)).z
+
+        # Test maximum when no promotion rule exists
+        df = DataFrame(x = [1, 1, 2, 2], y = [1, TestType(), TestType(), TestType()])
+        gd = groupby(df, :x)
+        for f in (maximum, minimum)
+            res = combine(gd, z = :y => maximum)
+            @test res.z isa Vector{Any}
+            @test res.z == by(df, :x, z = :y => x -> maximum(x)).z
         end
     end
 

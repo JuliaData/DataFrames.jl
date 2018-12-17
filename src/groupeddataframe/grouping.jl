@@ -9,6 +9,7 @@ Not meant to be constructed directly, see `groupby`.
 struct GroupedDataFrame{T<:AbstractDataFrame}
     parent::T
     cols::Vector{Int}    # columns used for grouping
+    groups::Vector{Int}  # group indices for each row
     idx::Vector{Int}     # indexing vector when grouped by the given columns
     starts::Vector{Int}  # starts of groups
     ends::Vector{Int}    # ends of groups
@@ -74,7 +75,7 @@ function groupby(df::AbstractDataFrame, cols::AbstractVector;
     intcols = index(df)[cols]
     sdf = df[intcols]
     df_groups = group_rows(sdf, false, sort, skipmissing)
-    GroupedDataFrame(df, intcols, df_groups.rperm,
+    GroupedDataFrame(df, intcols, df_groups.groups, df_groups.rperm,
                      df_groups.starts, df_groups.stops)
 end
 groupby(d::AbstractDataFrame, cols;
@@ -97,9 +98,9 @@ Base.last(gd::GroupedDataFrame) = gd[end]
 Base.getindex(gd::GroupedDataFrame, idx::Integer) =
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]], :)
 Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray) =
-    GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts[idxs], gd.ends[idxs])
+    GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx, gd.starts[idxs], gd.ends[idxs])
 Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
-    GroupedDataFrame(gd.parent, gd.cols, gd.idx, gd.starts, gd.ends)
+    GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx, gd.starts, gd.ends)
 
 function Base.:(==)(gd1::GroupedDataFrame, gd2::GroupedDataFrame)
     gd1.cols == gd2.cols &&
@@ -158,6 +159,12 @@ Note that `f` must always return the same type of object for
 all groups, and (if a named tuple or data frame) with the same fields or columns.
 Due to type instability, returning a single value or a named tuple is dramatically
 faster than returning a data frame.
+
+Optimized methods are used when standard reduction functions (`sum`, `prod`,
+`minimum`, `maximum` and `mean`) are specified using the pair syntax (e.g. `col => sum`).
+When computing the `sum` or `mean` over floating point columns, results will be less
+accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
+`col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
 
 ### Examples
 
@@ -223,9 +230,9 @@ function Base.map(f::Any, gd::GroupedDataFrame)
         resize!(starts, j-1)
         resize!(ends, j-1)
         ends[end] = length(idx)
-        return GroupedDataFrame(parent, gd.cols, collect(1:length(idx)), starts, ends)
+        return GroupedDataFrame(parent, gd.cols, idx, collect(1:length(idx)), starts, ends)
     else
-        return GroupedDataFrame(parent, gd.cols, Int[], Int[], Int[])
+        return GroupedDataFrame(parent, gd.cols, idx, Int[], Int[], Int[])
     end
 end
 
@@ -269,15 +276,20 @@ In all cases, the resulting data frame contains all the grouping columns in addi
 to those listed above. Column names are automatically generated when necessary: for functions
 operating on a single column and returning a single value or vector, the function name is
 appended to the input column name; for other functions, columns are called `x1`, `x2`
-and so on.
+and so on. The resulting data frame will be sorted if `sort=true` was passed to the
+[`groupby`](@ref) call from which `gd` was constructed. Otherwise, ordering of rows
+is undefined.
 
 Note that `f` must always return the same type of object for
 all groups, and (if a named tuple or data frame) with the same fields or columns.
 Due to type instability, returning a single value or a named tuple is dramatically
 faster than returning a data frame.
 
-The resulting data frame will be sorted if `sort=true` was passed to the [`groupby`](@ref)
-call from which `gd` was constructed. Otherwise, ordering of rows is undefined.
+Optimized methods are used when standard reduction functions (`sum`, `prod`,
+`minimum`, `maximum` and `mean`) are specified using the pair syntax (e.g. `col => sum`).
+When computing the `sum` or `mean` over floating point columns, results will be less
+accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
+`col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
 
 ### Examples
 
@@ -366,9 +378,33 @@ _nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
 _ncol(df::AbstractDataFrame) = ncol(df)
 _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
 
-function gen_fun(::Type{NT}, f2) where NT
-    get_val(::Val{T}) where {T} = T
+struct Reduce{F, A}
+    f::F
+    adjust::A
+end
+Reduce(f) = Reduce(f, nothing)
+function (r::Reduce)(x)
+    v = reduce(r.f, x)
+    r.adjust === nothing ? v : r.adjust(v, length(x))
+end
 
+check_reduction(f::Any) = f
+check_reduction(::typeof(sum)) = Reduce(Base.add_sum)
+check_reduction(::typeof(prod)) = Reduce(Base.mul_prod)
+check_reduction(::typeof(maximum)) = Reduce(max)
+check_reduction(::typeof(minimum)) = Reduce(min)
+check_reduction(::typeof(mean)) = Reduce(Base.add_sum, /)
+
+for f in (:sum, :prod, :maximum, :minimum, :mean)
+    @eval begin
+        funname(::typeof(check_reduction($f))) = Symbol($f)
+    end
+end
+
+get_val(::Val{T}) where {T} = T
+
+# Generate a function returning a named tuple of values for each group
+function gen_fun(::Type{NT}, f2) where NT
     function(incols)
         tup = map(f2) do p
             nms = get_val(first(p))
@@ -387,6 +423,98 @@ function gen_fun(::Type{NT}, f2) where NT
     end
 end
 
+# Generate a named tuple of reductions to call for each group
+function gen_fun(::Type{NT}, f2::Tuple{Vararg{Pair{<:Val, <:Reduce}}}) where NT
+    tup = map(f2) do p
+        nms = get_val(first(p))
+        nms => last(p)
+    end
+    NT(tup)
+end
+
+# Use reducedim_init to get a vector of the right type,
+# but trick it into using the expected length
+groupreduce_init(op, incol, gd) =
+    Base.reducedim_init(identity, op, view(incol, 1:length(gd)), 2)
+
+for (op, initf) in ((:max, :typemin), (:min, :typemax))
+    @eval begin
+        function groupreduce_init(::typeof($op), incol::AbstractVector{T}, gd) where T
+            outcol = similar(incol, length(gd))
+            # Comparison is possible only between CatValues from the same pool
+            if incol isa CategoricalVector
+                U = Union{CategoricalArrays.leveltype(outcol),
+                          eltype(outcol) >: Missing ? Missing : Union{}}
+                outcol = CategoricalArray{U, 1}(outcol.refs, incol.pool)
+            end
+            # It is safe to use a non-missing init value
+            # since missing will poison the result if present
+            S = Missings.T(T)
+            if isconcretetype(S) && hasmethod($initf, Tuple{S})
+                return fill!(outcol, $initf(S))
+            else
+                @inbounds for i in eachindex(outcol)
+                    outcol[i] = incol[gd.idx[gd.starts[i]]]
+                end
+                return outcol
+            end
+        end
+    end
+end
+
+function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
+    @inbounds for i in eachindex(res, x)
+        val = x[i]
+        S = typeof(val)
+        if S <: T || promote_type(S, T) <: T
+            res[i] = val
+        else
+            newres = Tables.allocatecolumn(promote_type(S, T), length(x))
+            return copyto_widen!(newres, x)
+        end
+    end
+    return res
+end
+
+function groupreduce(op, adjust, incol::AbstractVector{T}, gd::GroupedDataFrame) where T
+    n = length(gd)
+    outcol = groupreduce_init(op, incol, gd)
+    if adjust !== nothing
+        counts = zeros(Int, n)
+    end
+    @inbounds @simd for i in eachindex(incol, gd.groups)
+        gix = gd.groups[i]
+        adjust !== nothing && (counts[gix] += 1)
+        outcol[gix] = op(outcol[gix], incol[i])
+    end
+    if adjust !== nothing
+        map!(adjust, outcol, outcol, counts)
+    end
+    # Undo pool sharing done by groupreduce_init
+    if outcol isa CategoricalVector
+        U = Union{CategoricalArrays.leveltype(outcol),
+                  eltype(outcol) >: Missing ? Missing : Union{}}
+        outcol = CategoricalArray{U, 1}(outcol.refs, incol.pool)
+    end
+    if isconcretetype(T)
+        return outcol
+    else
+        copyto_widen!(Tables.allocatecolumn(typeof(first(outcol)), n), outcol)
+    end
+end
+
+function _combine(f::Pair{<:AbstractVector{Symbol},
+                          <:NamedTuple{<:Any, <:Tuple{Vararg{Pair{Symbol, <:Reduce}}}}},
+                  gd::GroupedDataFrame)
+    n = length(gd)
+    tup = map(last(f)) do p
+        r = last(p)
+        groupreduce(r.f, r.adjust, gd.parent[first(p)], gd)
+    end
+    valscat = DataFrame(collect(tup), collect(propertynames(tup)))
+    gd.idx[gd.starts], valscat
+end
+
 function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
                            NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
                   gd::GroupedDataFrame)
@@ -397,7 +525,7 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
     allcols = collect(reduce(union, (nam isa Symbol ? (nam,) : nam for nam in incols)))
     f2 = ntuple(length(f)) do i
         nms = incols[i]
-        (nms isa AbstractArray ? Val(Tuple(nms)) : Val(nms)) => last(f[i])
+        (nms isa AbstractArray ? Val(Tuple(nms)) : Val(nms)) => check_reduction(last(f[i]))
     end
     # Use temporary names for columns, and rename after the fact where appropriate
     NT = NamedTuple{Tuple(gennames(length(f2)))}
@@ -421,11 +549,11 @@ end
 function _combine(f::Any, gd::GroupedDataFrame)
     if f isa Pair{<:Union{Symbol,Integer}}
         incols = gd.parent[first(f)]
-        fun = last(f)
+        fun = check_reduction(last(f))
     elseif f isa Pair
         df = gd.parent[collect(first(f))]
         incols = NamedTuple{Tuple(names(df))}(columns(df))
-        fun = last(f)
+        fun = check_reduction(last(f))
     else
         incols = nothing
         fun = f
@@ -692,15 +820,19 @@ In all cases, the resulting data frame contains all the grouping columns in addi
 to those listed above. Column names are automatically generated when necessary: for functions
 operating on a single column and returning a single value or vector, the function name is
 appended to the input colummn name; for other functions, columns are called `x1`, `x2`
-and so on.
+and so on. The resulting data frame will be sorted on `keys` if `sort=true`.
+Otherwise, ordering of rows is undefined.
 
 Note that `f` must always return the same type of object for
 all groups, and (if a named tuple or data frame) with the same fields or columns.
 Due to type instability, returning a single value or a named tuple is dramatically
 faster than returning a data frame.
 
-The resulting data frame will be sorted on `keys` if `sort=true`.
-Otherwise, ordering of rows is undefined.
+Optimized methods are used when standard reduction functions (`sum`, `prod`,
+`minimum`, `maximum` and `mean`) are specified using the pair syntax (e.g. `col => sum`).
+When computing the `sum` or `mean` over floating point columns, results will be less
+accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
+`col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
 
 `by(d, cols, f)` is equivalent to `combine(f, groupby(d, cols))` and to the
 less efficient `combine(map(f, groupby(d, cols)))`.

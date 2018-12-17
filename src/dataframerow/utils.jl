@@ -90,7 +90,7 @@ end
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          hash::Val = Val(true),
                          groups::Union{Vector{Int}, Nothing} = nothing,
-                         skipmissing::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool, Bool}
+                         skipmissing::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     @assert groups === nothing || length(groups) == length(cols[1])
     rhashes, missings = hashrows(cols, skipmissing)
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataTables.jl/pull/17#discussion_r102481481
@@ -130,13 +130,13 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
             groups[i] = gix
         end
     end
-    return ngroups, rhashes, gslots, false, false
+    return ngroups, rhashes, gslots, false
 end
 
 function row_group_slots(cols::Tuple{CategoricalVector},
                          hash::Val{false},
                          groups::Union{Vector{Int}, Nothing} = nothing,
-                         skipmissing::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool, Bool}
+                         skipmissing::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
     col = cols[1]
     @assert groups === nothing || length(groups) == length(col)
 
@@ -149,16 +149,36 @@ function row_group_slots(cols::Tuple{CategoricalVector},
         # we could simply copy refs to groups, but the performance gain is negligible,
         # so always sort groups in the order of levels
         refmap = [0; CategoricalArrays.order(col.pool)]
+        seen = fill(false, length(refmap))
         if skipmissing
             refmap .+= 1
+            seen[1] = true
         else
             refmap[1] = ngroups
         end
         @inbounds for i in eachindex(groups)
-            groups[i] = refmap[col.refs[i]+1]
+            j = refmap[col.refs[i]+1]
+            groups[i] = j
+            seen[j] |= true
+        end
+        if !all(seen)
+            if skipmissing # Always keep first group even if empty
+                ngroups = 1
+                start = 2
+            else
+                ngroups = 0
+                start = 1
+            end
+            @inbounds for i in start:length(refmap)
+                ngroups += seen[i]
+                refmap[i] = ngroups
+            end
+            @inbounds for i in eachindex(groups)
+                groups[i] = refmap[groups[i]]
+            end
         end
     end
-    return ngroups, UInt[], Int[], true, true
+    return ngroups, UInt[], Int[], true
 end
 
 # Builds RowGroupDict for a given DataFrame.
@@ -171,7 +191,7 @@ end
 function group_rows(df::AbstractDataFrame, hash::Bool = true, sort::Bool = false,
                     skipmissing::Bool = false)
     groups = Vector{Int}(undef, nrow(df))
-    ngroups, rhashes, gslots, sorted, empty =
+    ngroups, rhashes, gslots, sorted =
         row_group_slots(ntuple(i -> df[i], ncol(df)), Val(hash), groups, skipmissing)
 
     # count elements in each group
@@ -203,25 +223,6 @@ function group_rows(df::AbstractDataFrame, hash::Bool = true, sort::Bool = false
         popfirst!(starts)
         popfirst!(stops)
         ngroups -= 1
-    end
-
-    # if row_group_slots can return empty groups, remove them
-    if empty
-        i = 0
-        j = 0
-        @inbounds while j < ngroups
-            j += 1
-            while stops[j] < starts[j]
-                j < ngroups || @goto done
-                j += 1
-            end
-            i += 1
-            starts[i] = starts[j]
-            stops[i] = stops[j]
-        end
-        @label done
-        resize!(starts, i)
-        resize!(stops, i)
     end
 
     # sort groups if row_group_slots hasn't already done that
