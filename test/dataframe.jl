@@ -693,6 +693,7 @@ module TestDataFrame
         df = DataFrame(A = 1:3, B = 'A':'C')
         @test_throws ArgumentError size(df, 3)
         @test ndims(df) == 2
+        @test ndims(typeof(df)) == 2
         @test (nrow(df), ncol(df)) == (3, 2)
         @test size(df) == (3, 2)
         @inferred nrow(df)
