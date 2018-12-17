@@ -92,10 +92,10 @@ end
 # so better let collect() do it only if necessary (widening)
 Base.IteratorEltype(::DataFrameRow) = Base.EltypeUnknown()
 
-Base.convert(::Type{Array}, dfr::DataFrameRow) =
-    [dfr[i] for j in 1:1, i in 1:length(dfr)]
-Base.convert(::Type{Vector}, dfr::DataFrameRow) =
-    [dfr[i] for i in 1:length(dfr)]
+function Base.convert(::Type{Vector}, dfr::DataFrameRow)
+    T = reduce(promote_type, eltypes(parent(dfr)))
+    convert(Vector{T}, dfr)
+end
 Base.convert(::Type{Vector{T}}, dfr::DataFrameRow) where T =
     T[dfr[i] for i in 1:length(dfr)]
 Base.Vector(dfr::DataFrameRow) = convert(Vector, dfr)
