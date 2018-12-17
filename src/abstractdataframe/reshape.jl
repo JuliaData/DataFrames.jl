@@ -380,7 +380,6 @@ end
 Base.IndexStyle(::Type{StackedVector}) = Base.IndexLinear()
 Base.size(v::StackedVector) = (length(v),)
 Base.length(v::StackedVector) = sum(map(length, v.components))
-Base.ndims(v::StackedVector) = 1
 Base.eltype(v::StackedVector) = promote_type(map(eltype, v.components)...)
 Base.similar(v::StackedVector, T::Type, dims::Union{Integer, AbstractUnitRange}...) =
     similar(v.components[1], T, dims...)
@@ -436,7 +435,6 @@ end
 Base.IndexStyle(::Type{<:RepeatedVector}) = Base.IndexLinear()
 Base.size(v::RepeatedVector) = (length(v),)
 Base.length(v::RepeatedVector) = v.inner * v.outer * length(v.parent)
-Base.ndims(v::RepeatedVector) = 1
 Base.eltype(v::RepeatedVector{T}) where {T} = T
 Base.reverse(v::RepeatedVector) = RepeatedVector(reverse(v.parent), v.inner, v.outer)
 Base.similar(v::RepeatedVector, T::Type, dims::Dims) = similar(v.parent, T, dims)

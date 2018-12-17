@@ -1375,3 +1375,4 @@ import Base: length
 import Base: convert
 @deprecate convert(::Type{Array}, df::AbstractDataFrame) convert(Matrix, df)
 @deprecate convert(::Type{Array{T}}, df::AbstractDataFrame) where {T} convert(Matrix{T}, df)
+@deprecate convert(::Type{Array}, dfr::DataFrameRow) permutedims(Vector(dfr))

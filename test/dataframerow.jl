@@ -105,9 +105,9 @@ module TestDataFrameRow
     # convert
     df = DataFrame(a=[1, missing], b=[2.0, 3.0])
     dfr = DataFrameRow(df, 1)
-    @test convert(Vector, dfr)::Vector{Real} == Real[1, 2.0]
+    @test convert(Vector, dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test convert(Vector{Int}, dfr)::Vector{Int} == [1, 2]
-    @test Vector(dfr)::Vector{Real} == Real[1, 2.0]
+    @test Vector(dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test Vector{Int}(dfr)::Vector{Int} == [1, 2]
 
     # copy
@@ -116,4 +116,8 @@ module TestDataFrameRow
                    c=["A", "B", "C", "A", "B", missing])
     @test copy(DataFrameRow(df, 1)) == (a = 1, b = 2.0, c = "A")
     @test isequal(copy(DataFrameRow(df, 2)), (a = 2, b = missing, c = "B"))
+    @test parent(df[1, :]) === df
+    @test parentindices(df[1, :]) == (1, Base.OneTo(3))
+    @test parent(df[1, 1:3]) !== df
+    @test parentindices(df[1, 1:3]) == (1, Base.OneTo(3))
 end
