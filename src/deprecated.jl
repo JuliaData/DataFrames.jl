@@ -1373,9 +1373,5 @@ import Base: length
 @deprecate tail(df::AbstractDataFrame, n::Integer) last(df, n)
 
 import Base: convert
-function convert(::Type{Array}, df::AbstractDataFrame)
-    convert(Matrix, df)
-end
-function convert(::Type{Array{T}}, df::AbstractDataFrame) where T
-    convert(Matrix{T}, df)
-end
+@deprecate convert(::Type{Array}, df::AbstractDataFrame) convert(Matrix, df)
+@deprecate convert(::Type{Array{T}}, df::AbstractDataFrame) where {T} convert(Matrix{T}, df)
