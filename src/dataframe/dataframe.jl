@@ -333,6 +333,9 @@ function insert_single_column!(df::DataFrame,
     if ncol(df) != 0 && nrow(df) != length(v)
         throw(ArgumentError("New columns must have the same length as old columns"))
     end
+    if col_ind isa Bool
+        throw(ArgumentError("invalid column index: $col_ind of type Bool"))
+    end
     dv = isa(v, AbstractRange) ? collect(v) : v
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
@@ -353,7 +356,10 @@ function insert_single_column!(df::DataFrame,
     return dv
 end
 
-function insert_single_entry!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
+function insert_single_entry!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
+    if col_ind isa Bool
+        throw(ArgumentError("invalid column index: $col_ind of type Bool"))
+    end
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_ind] = v
         return v
@@ -364,8 +370,11 @@ end
 
 function insert_multiple_entries!(df::DataFrame,
                                   v::Any,
-                                  row_inds::AbstractVector{<:Real},
+                                  row_inds::AbstractVector{<:Integer},
                                   col_ind::ColumnIndex)
+    if col_ind isa Bool
+        throw(ArgumentError("invalid column index: $col_ind of type Bool"))
+    end
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_inds] .= v
         return v
@@ -783,8 +792,9 @@ function deletecols!(df::DataFrame, inds::Vector{Int})
     sorted_inds = sort(inds, rev=true)
     for i in 2:length(sorted_inds)
         if sorted_inds[i] == sorted_inds[i-1]
+            indpos = join(findall(==(sorted_inds[i]), inds), ", ", " and ")
             throw(ArgumentError("Duplicate values in inds found at positions" *
-                                " $(i-1) and $i."))
+                                " $indpos."))
         end
     end
     for ind in sorted_inds

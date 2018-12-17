@@ -124,6 +124,12 @@ module TestDataFrameRow
     @test copy(DataFrameRow(df, 1)) == (a = 1, b = 2.0, c = "A")
     @test isequal(copy(DataFrameRow(df, 2)), (a = 2, b = missing, c = "B"))
 
+    # parent and parentindices
+    @test parent(df[1, :]) === df
+    @test parentindices(df[1, :]) == (1, Base.OneTo(3))
+    @test parent(df[1, 1:3]) !== df
+    @test parentindices(df[1, 1:3]) == (1, Base.OneTo(3))
+
     # iteration and collect
     ref = ["a", "b", "c"]
     df = DataFrame(permutedims(ref))

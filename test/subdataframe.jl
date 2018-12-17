@@ -146,4 +146,14 @@ module TestSubDataFrame
         df = view(DataFrame(y=y), 2:6, :)
         @test_throws ArgumentError deleterows!(df, 1)
     end
+
+    @testset "parent" begin
+        df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
+                       b=[2.0, missing, 1.2, 2.0, missing, missing],
+                       c=["A", "B", "C", "A", "B", missing])
+        @test parent(view(df, [4, 2], :)) === df
+        @test parentindices(view(df, [4, 2], :)) == ([4,2], Base.OneTo(3))
+        @test parent(view(df, [4, 2], 1:3)) !== df
+        @test parentindices(view(df, [4, 2], 1:3)) == ([4, 2], Base.OneTo(3))
+    end
 end
