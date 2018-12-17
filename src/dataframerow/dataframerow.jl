@@ -88,6 +88,8 @@ function Base.iterate(r::DataFrameRow, st)
     return (r[st], st + 1)
 end
 
+# Computing the element type requires going over all columns,
+# so better let collect() do it only if necessary (widening)
 Base.IteratorEltype(::DataFrameRow) = Base.EltypeUnknown()
 
 Base.convert(::Type{Array}, dfr::DataFrameRow) =
