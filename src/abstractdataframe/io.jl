@@ -92,7 +92,7 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
+function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=true)
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
     write(io, "<thead>")
@@ -119,7 +119,9 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame)
     else
         mxrow = n
     end
-    write(io, "<p>$(digitsep(n)) rows × $(digitsep(ncol(df))) columns</p>")
+    if summary
+        write(io, "<p>$(digitsep(n)) rows × $(digitsep(ncol(df))) columns</p>")
+    end
     for row in 1:mxrow
         write(io, "<tr>")
         write(io, "<th>$row</th>")
