@@ -1371,3 +1371,6 @@ import Base: length
 @deprecate tail(df::AbstractDataFrame) last(df, 6)
 @deprecate head(df::AbstractDataFrame, n::Integer) first(df, n)
 @deprecate tail(df::AbstractDataFrame, n::Integer) last(df, n)
+
+import Base: convert
+@deprecate convert(::Type{Array}, dfr::DataFrameRow) permutedims(Vector(dfr))
