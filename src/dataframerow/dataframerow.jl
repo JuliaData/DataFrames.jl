@@ -76,20 +76,21 @@ index(r::DataFrameRow) = index(parent(r))
 Base.size(r::DataFrameRow) = (size(parent(r), 2),)
 Base.size(r::DataFrameRow, i) = size(r)[i]
 Base.length(r::DataFrameRow) = size(parent(r), 2)
+Base.ndims(r::DataFrameRow) = 1
+Base.ndims(::Type{<:DataFrameRow}) = 1
 
-Compat.lastindex(r::DataFrameRow) = size(parent(r), 2)
+Base.lastindex(r::DataFrameRow) = size(parent(r), 2)
 
-function Base.iterate(r::DataFrameRow)
-    Base.depwarn("iteration over DataFrameRow will return values in the future:" *
-                 "use pairs(r::DataFrameRow) to get the current behavior",
-                 :start)
-    iterate(r, 1)
-end
+Base.iterate(r::DataFrameRow) = iterate(r, 1)
 
 function Base.iterate(r::DataFrameRow, st)
     st > length(r) && return nothing
     return (r[st], st + 1)
 end
+
+# Computing the element type requires going over all columns,
+# so better let collect() do it only if necessary (widening)
+Base.IteratorEltype(::DataFrameRow) = Base.EltypeUnknown()
 
 function Base.convert(::Type{Vector}, dfr::DataFrameRow)
     T = reduce(promote_type, eltypes(parent(dfr)))
@@ -99,7 +100,6 @@ Base.convert(::Type{Vector{T}}, dfr::DataFrameRow) where T =
     T[dfr[i] for i in 1:length(dfr)]
 Base.Vector(dfr::DataFrameRow) = convert(Vector, dfr)
 Base.Vector{T}(dfr::DataFrameRow) where T = convert(Vector{T}, dfr)
-
 
 Base.keys(r::DataFrameRow) = names(parent(r))
 Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[col][row(r)], length(r))
