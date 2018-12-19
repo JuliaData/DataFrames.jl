@@ -76,6 +76,124 @@ For performance reasons, accessing, via `getindex` or `view`, a single `row` and
 * `@view dfr[col]` -> a `0`-dimensional view into `parent(dfr)[DataFrames.row(dfr), col]`;
 * `@view dfr[cols]` -> a `DataFrameRow` with parent `parent(dfr)` if `cols` is a colon and `parent(dfr)[cols]` otherwise;
 
-## `setindex!`
+## `setindex!`, `setproperty!` and broadcasted assignment
 
-Under construction
+This is a planned functionality.
+
+The following list the effect of `setindex!`, `setproperty!` and broadcasted assignment and operations.
+
+In all operations copying is performed in general.
+If it is not performed a description explicitly mentions that the data is assigned *in-place*.
+
+### `DataFrame`:
+
+> `df[col] = v` and `df.col = v`
+
+* `v` must be an `AbstractVector`. If `ncol(df) > 0` then `length(v)` must be equal to `nrow(df)`.
+* `v` is assigned to `df` in place unless it is a range, when it is converted to a `Vector`.
+* `haskey(df, col)` must hold unless `col isa Symbol`, in which case a new column is added to `df`.
+
+> `df[col] .= v` and `df.col .= v`
+
+* `df.col .= v` throws an error.
+* `v` must be broadcastable.
+* if `haskey(df, col)` then standard broadcasted assignment of `v` to `df[col]` is performed.
+* if not `haskey(df, col)` and `col isa Symbol`
+    * if `ncol(df) > 0` then we create a new vector `c` of an appropriate type, having `nrow(df)` entries;
+      then we perform `c .= v` and `df.col = c`.
+    * if `ncol(df) == 0` then we do the same as in the case above, but if `v` has 0-dimensions we create 1 row,
+      if `v` has 1-dimension we create number of rows equal to its length,
+      if `v` has more than 1 dimension we throw an error
+* if not `haskey(df, col)` and `!(col isa Symbol)` an error is thrown
+
+> `df[cols] = v`
+
+* if `v` is a `DataFrame` or `NamedTuple` of vectors or `AbstractDict` of vectors:
+    * `nrow(df)` must be equal to number of rows in `v` unless `ncol(df)==0` in
+      which case it is enough that number of rows in each entry of `v` is constant;
+    * number of columns in `v` must be equal to length of `cols`
+    * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
+      (which means that passing `Integer` or `Bool` will fail for missing columns,
+      but adding new columns as `Symbol` is allowed)
+    * then we perform `df[col] = v[col]` for `col in cols`
+* if `v` is an `AbstractMatrix` the same process is performed but we perform
+  `df[col] = v[:, i]` for `(i, col) in enumerate(col)` instead
+
+> `df[cols] .= v`
+
+* before making any assignment `cols` is transformed to `Symbols` using `names(df)`
+  (which means that passing `Integer` or `Bool` will fail for missing columns,
+  but adding new columns as `Symbol` is allowed)
+* if `v` is a `DataFrame` or `NamedTuple` or `AbstractDict`:
+    * number of columns in `v` must be equal to length of `cols`
+    * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
+      (which means that passing `Integer` or `Bool` will fail for missing columns,
+      but adding new columns as `Symbol` is allowed)
+    * then we perform `df[col] .= v[col]` for `col in cols`
+* if `v` is 0- or 1- dimensional then it is broadcasted to call `df[col] .= v` for all `col in cols`
+* if `v` is 2-dimensional then its dimensions of length 1 are expanded if needed and we perform
+  `df[col] .= v[:, i]` for `(i, col) in enumerate(col)`
+
+> `df[row, col] = v`
+
+* translates to `df[col][row] = v`
+
+> `df[row, col] .= v`
+
+* translates to `df[col][row] .= v`
+
+> `df[row, cols] = v`
+
+* if `v` is a `DataFrameRow` or `NamedTuple` or `AbstractDict` then
+    * number of columns in `v` must be equal to length(cols)
+    * column names in v must be the same as selected by `cols`
+    * an operation `df[row, col] = v[col]` for `col in cols` is performed
+* if `v` is a vector or a tuple:
+    * number of elements in `v` must be equal to length(cols)
+    * an operation `df[row, col] = v[i]` for `(i, col) in enumerate(cols)` is performed
+* otherwise an error is thrown
+
+> `df[row, cols] .= v`
+
+* if `v` is a `DataFrameRow` or `NamedTuple` or `AbstractDict` then
+    * number of columns in `v` must be equal to length(cols)
+    * column names in v must be the same as selected by `cols`
+    * an operation `df[row, col] .= v[col]` for `col in cols` is performed
+* if `v` is 0-dimensional:
+    * an operation `df[row, col] .= v[]` for `col in cols` is performed
+* if `v` is 1-dimensional:
+    * number of elements in `v` must be equal to length(cols)
+    * an operation `df[row, col] .= v[i]` for `(i, col) in enumerate(cols)` is performed
+* otherwise an error is thrown
+
+> `df[rows, col] = v`
+
+* The same rules as for `df[col] = v` but on selected rows and always with copying.
+* Empty data frames are not allowed and no column adding is possible.
+
+> `df[rows, col] .= v`
+
+* The same rules as for `df[col] .= v` but on selected rows and always with copying.
+* Empty data frames are not allowed and no column adding is possible.
+
+> `df[rows, cols] = v`
+
+* The same rules as for `df[cols] = v` but on selected rows and always with copying.
+* Empty data frames are not allowed and no column adding is possible.
+
+> `df[rows, cols] .= v`
+
+* The same rules as for `df[cols] .= v` but on selected rows and always with copying.
+* Empty data frames are not allowed and no column adding is possible.
+
+Additionally for all operations:
+* If `rows` is `:` then it gets expanded to `axes(df, 1)` before any action.
+* if `cols` is `:` then it gets expanded to `axes(df, 2)` before any action.
+
+### `SubDataFrame`:
+
+under construction
+
+### `DataFrameRow`:
+
+under construction
