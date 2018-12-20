@@ -30,8 +30,6 @@ meltdf
 ```@docs
 allowmissing!
 completecases
-deletecols!
-deleterows!
 describe
 disallowmissing!
 dropmissing
