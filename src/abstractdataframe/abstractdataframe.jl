@@ -1021,27 +1021,27 @@ Base.vcat(df::AbstractDataFrame) = df
 Base.vcat(dfs::AbstractDataFrame...) = _vcat(collect(dfs))
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     isempty(dfs) && return DataFrame()
-    allheaders = map(names, dfs)
-    uniqueheaders = unique(allheaders)
-    unionunique = union(uniqueheaders...)
-    intersectunique = intersect(uniqueheaders...)
-    coldiff = setdiff(unionunique, intersectunique)
+    @show allheaders = map(names, dfs)
+    @show uniqueheaders = unique(allheaders)
+    @show unionunique = union(uniqueheaders...)
+    @show intersectunique = intersect(uniqueheaders...)
+    @show coldiff = setdiff(unionunique, intersectunique)
 
     if !isempty(coldiff)
         # if any DataFrames are a full superset of names, skip them
         filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
         estrings = Vector{String}(undef, length(uniqueheaders))
         for (i, u) in enumerate(uniqueheaders)
-            matching = findall(h -> u == h, allheaders)
-            headerdiff = setdiff(coldiff, u)
-            cols = join(headerdiff, ", ", " and ")
-            args = join(matching, ", ", " and ")
+            @show matching = findall(h -> u == h, allheaders)
+            @show headerdiff = setdiff(coldiff, u)
+            @show cols = join(headerdiff, ", ", " and ")
+            @show args = join(matching, ", ", " and ")
             estrings[i] = "column(s) $cols are missing from argument(s) $args"
         end
         throw(ArgumentError(join(estrings, ", ", ", and ")))
     end
 
-    header = allheaders[1]
+    @show header = allheaders[1]
     length(header) == 0 && return DataFrame()
     cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
