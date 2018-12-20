@@ -18,9 +18,8 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             nrows = size(gd[i], 1)
             rows = nrows > 1 ? "rows" : "row"
 
-            identified_groups = [':' * string(parent_names[col],
-                                 " = ",
-                                 first(gd[i][col])) for col in gd.cols]
+            identified_groups = [':' * string(parent_names[col], " = ", first(gd[i][col])) 
+                                 for col in gd.cols]
 
             print(io, "\nGroup $i ($nrows $rows): ")
             join(io, identified_groups, ", ")
@@ -33,9 +32,8 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             nrows = size(gd[1], 1)
             rows = nrows > 1 ? "rows" : "row"
                         
-            identified_groups = [':' * string(parent_names[col],
-                                 " = ",
-                                 first(gd[1][col])) for col in gd.cols]
+            identified_groups = [':' * string(parent_names[col], " = ", first(gd[i][col])) 
+                                 for col in gd.cols]
 
             print(io, "\nFirst Group ($nrows $rows): ")
             join(io, identified_groups, ", ")
@@ -47,9 +45,9 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             nrows = size(gd[N], 1)
             rows = nrows > 1 ? "rows" : "row"
             
-            identified_groups = [':' * string(parent_names[col],
-                                 " = ",
-                                 first(gd[N][col])) for col in gd.cols]
+            identified_groups = [':' * string(parent_names[col], " = ", first(gd[i][col])) 
+                                 for col in gd.cols]
+                                  
             print(io, "\n⋮")
             print(io, "\nLast Group ($nrows $rows): ")
             join(io, identified_groups, ", ")
