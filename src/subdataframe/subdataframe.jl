@@ -67,9 +67,9 @@ SubDataFrame(parent::DataFrame, rows::T, cols::AbstractVector{Int}) where {T <: 
 SubDataFrame(parent::DataFrame, rows::T, cols::AbstractUnitRange{Int}) where {T <: AbstractVector{Int}} =
     SubDataFrame{T, UnitRange{Int}}(parent, rows, convert(UnitRange{Int}, cols))
 SubDataFrame(parent::DataFrame, rows::T, ::Colon) where {T <: AbstractVector{Int}} =
-    SubDataFrame(parent, rows, 1:ncol(df))
+    SubDataFrame(parent, rows, 1:ncol(parent))
 SubDataFrame(parent::DataFrame, rows::T, cols) where {T <: AbstractVector{Int}} =
-    SubDataFrame(parent, rows, index(df)[cols])
+    SubDataFrame(parent, rows, index(parent)[cols])
 SubDataFrame(parent::DataFrame, rows::Colon, cols) =
     SubDataFrame(parent, 1:nrow(parent), cols)
 SubDataFrame(parent::DataFrame, row::Integer, cols) =
