@@ -26,7 +26,7 @@ struct DataFrameRow{T<:AbstractDataFrame, S<:Union{Vector{Int}, UnitRange{Int}}}
             remap = 1:last(cols) .- first(cols) .+ 1
         else
             # we set non-existing mappings to 0
-            remap = zeros(length(cols))
+            remap = zeros(Int, length(cols))
             for (i, col) in enumerate(cols)
                 remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
                 remap[col] = i
@@ -54,9 +54,6 @@ Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
 Base.view(sdf::SubDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(parent(sdf), rows(sdf)[rowind], parentindices(sdf)[2])
 
-# Here a corner case is when colinds=[] and we pass a valid rowind
-# into adf. We will throw an error in this case.
-# The consequence is that it is impossible to create a DataFrameRow without columns.
 Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(adf, rowind, colinds)
 Base.view(sdf::SubDataFrame, rowind::Integer, colinds::AbstractVector) =
