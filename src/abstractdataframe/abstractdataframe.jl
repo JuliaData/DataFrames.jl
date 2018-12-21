@@ -986,9 +986,22 @@ julia> vcat(df1, df2)
 │ 6   │ 6     │ 6     │
 ```
 """
-Base.vcat(df::AbstractDataFrame; widen::Bool = false, fillvalue = missing) = df
-Base.vcat(dfs::AbstractDataFrame...;  widen::Bool = false, fillvalue = missing) = _vcat(collect(dfs); widen = widen, fillvalue = fillvalue)
-function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; widen::Bool = false, fillvalue = missing)
+Base.vcat(df::AbstractDataFrame; 
+        widen::Bool = false, 
+        fillvalue = missing, 
+        keep::Union{Nothing, Vector{Symbol}} = nothing) = df
+
+Base.vcat(dfs::AbstractDataFrame...;
+          widen::Bool = false, 
+          fillvalue = missing,
+          keep::Union{Nothing, Vector{Symbol}} = nothing) = 
+    _vcat(collect(dfs); widen = widen, fillvalue = fillvalue, keep = keep)
+
+function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
+               widen::Bool = false, 
+               fillvalue = missing,
+               keep::Union{Nothing, Vector{Symbol}} = nothing)
+    
     isempty(dfs) && return DataFrame()
     # array of all headers
     @show allheaders = map(names, dfs)
@@ -999,8 +1012,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; widen::Bool = false, fi
     # Intersection of all unique headers 
     @show intersectunique = intersect(uniqueheaders...)
     # get the elements that are not present in everything
-    # one 
-    coldiff = setdiff(unionunique, intersectunique)
+    @show coldiff = setdiff(unionunique, intersectunique)
 
     if (widen == false) && !isempty(coldiff)
         # if any DataFrames are a full superset of names, skip them
@@ -1019,7 +1031,8 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; widen::Bool = false, fi
     # TODO: get preserve order of first headers as much 
     # as possible 
     # header = allheaders[1]
-    header = unionunique
+    header = keep == nothing ? unionunique : keep 
+    
     length(header) == 0 && return DataFrame()
     cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
