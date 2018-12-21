@@ -1,7 +1,5 @@
-function Base.summary(df::AbstractDataFrame) # -> String
-    nrows, ncols = size(df)
-    return @sprintf("%d×%d %s", nrows, ncols, typeof(df))
-end
+Base.summary(df::AbstractDataFrame) = # -> String
+    @sprintf("%d×%d %s", size(df)..., typeof(df).name)
 
 let
     local io = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)

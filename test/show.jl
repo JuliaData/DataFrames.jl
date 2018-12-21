@@ -219,7 +219,7 @@ module TestShow
     show(io, subdf, allrows=true, allcols=false)
     str = String(take!(io))
     @test str == """
-    2×3 SubDataFrame{Array{$Int,1}}
+    2×3 SubDataFrame
     │ Row │ A     │ B           │ C       │
     │     │ Int64 │ String      │ Float32 │
     ├─────┼───────┼─────────────┼─────────┤
@@ -234,7 +234,7 @@ module TestShow
     show(io, gd)
     str = String(take!(io.io))
     @test str == """
-    GroupedDataFrame{DataFrame} with 4 groups based on key: :A
+    GroupedDataFrame with 4 groups based on key: :A
     First Group: 1 row
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
@@ -249,7 +249,7 @@ module TestShow
     show(io, gd, allgroups=true)
     str = String(take!(io.io))
     @test str == """
-    GroupedDataFrame{DataFrame} with 4 groups based on key: :A
+    GroupedDataFrame with 4 groups based on key: :A
     Group 1: 1 row
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
