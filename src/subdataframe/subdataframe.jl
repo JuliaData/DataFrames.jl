@@ -98,16 +98,16 @@ function SubDataFrame(parent::DataFrame, rows::AbstractVector, cols)
 end
 
 getparentcols(sdf::SubDataFrame, idx::Union{Integer, AbstractVector{<:Integer}}) =
-    getfield(r, :cols)[idx]
+    getfield(sdf, :cols)[idx]
 
-function getparentcols(r::SubDataFrame, idx::Symbol)
-    parentcols = index(parent(r))[idx]
-    getfield(r, :remap)[parentcols] == 0 && throw(KeyError("$idx not found"))
+function getparentcols(sdf::SubDataFrame, idx::Symbol)
+    parentcols = index(parent(sdf))[idx]
+    getfield(sdf, :remap)[parentcols] == 0 && throw(KeyError("$idx not found"))
     return parentcols
 end
 
-getparentcols(r::SubDataFrame, idx::AbstractVector{Symbol}) =
-    [getparentcols(r, i) for i in idx]
+getparentcols(sdf::SubDataFrame, idx::AbstractVector{Symbol}) =
+    [getparentcols(sdf, i) for i in idx]
 
 getparentcols(sdf::SubDataFrame, ::Colon) = getfield(sdf, :cols)
 
