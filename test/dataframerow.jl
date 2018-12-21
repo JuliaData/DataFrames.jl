@@ -16,7 +16,7 @@ module TestDataFrameRow
     # Equality
     #
     @test DataFrameRow(df, 1, :) != DataFrameRow(df2, 1, :)
-    @test DataFrameRow(df, 1, [:a]) != DataFrameRow(df2, 1, :)
+    @test DataFrameRow(df, 1, [:a]) == DataFrameRow(df2, 1, :)
     @test DataFrameRow(df, 1, :) != DataFrameRow(df, 2, :)
     @test DataFrameRow(df, 1, :) != DataFrameRow(df, 3, :)
     @test DataFrameRow(df, 1, :) == DataFrameRow(df, 4, :)

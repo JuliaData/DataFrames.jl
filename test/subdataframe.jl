@@ -35,7 +35,7 @@ module TestSubDataFrame
         @test view(df, [1, 2], 1) == view(df[1], [1,2])
         @test view(df, 1:2, 1) == df[1][1:2]
         @test view(df, 1:2, 1) isa SubArray
-        @test view(df, 1, [:x, :y]) == DataFrameRow(df[:x, :y], 1, :)
+        @test view(df, 1, [:x, :y]) == DataFrameRow(df[[:x, :y]], 1, :)
         @test view(df, 1, [:x, :y]) == DataFrameRow(df, 1, [:x, :y])
         @test view(df, 1:2, [:x, :y]) == first(df, 2)
         @test view(df, vcat(trues(2), falses(8)), [:x, :y]) == first(df, 2)
