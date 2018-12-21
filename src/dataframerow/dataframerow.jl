@@ -3,45 +3,64 @@
 
 A view of one row of an AbstractDataFrame.
 """
-struct DataFrameRow{T<:AbstractDataFrame, S<:Union{Vector{Int}, UnitRange{Int}}}
+struct DataFrameRow{T<:AbstractDataFrame, S<:AbstractVector{Int}}
     df::T
     row::Int
     cols::S
     remap::S # inverse of cols, it is of type S for efficiency in most common cases
+end
 
-    @inline function DataFrameRow{T,S}(df::T, row::Integer, cols::S) where {T<:AbstractDataFrame, S<:Union{Vector{Int}, UnitRange{Int}}}
-        if row isa Bool
-            throw(ArgumentError("invalid index: $row of type Bool"))
-        end
-        @boundscheck if !checkindex(Bool, axes(df, 1), row)
-            throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                              "rows at index $row"))
-        end
-        @boundscheck if !checkindex(Bool, axes(df, 2), cols)
-            throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
-                              "columns at indices $cols"))
-        end
-        if cols isa UnitRange{Int}
-            # non existing mappings are either out range or invalid
-            remap = 1:last(cols) .- first(cols) .+ 1
-        else
-            # we set non-existing mappings to 0
-            remap = zeros(Int, ncol(df))
-            for (i, col) in enumerate(cols)
-                remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
-                remap[col] = i
-            end
-        end
-        new{T,S}(df, row, cols, remap)
+DataFrameRow(df::AbstractDataFrame, row::Bool, cols::S, remap::S) where {S<:AbstractVector{Int}} =
+    throw(ArgumentError("invalid index: $row of type Bool"))
+
+DataFrameRow(df::AbstractDataFrame, row::Integer, cols::S, remap::S) where {S<:AbstractVector{Int}} =
+    DataFrameRow{typeof(df),S}(df, row, cols, remap)
+
+@inline function DataFrameRow(df::AbstractDataFrame, row::Integer, cols::Vector{Int})
+    @boundscheck if !checkindex(Bool, axes(df, 1), row)
+        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                          "rows at index $row"))
     end
+    @boundscheck if !checkindex(Bool, axes(df, 2), cols)
+        throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
+                          "columns at indices $cols"))
+    end
+    # we set non-existing mappings to 0
+    remap = zeros(Int, ncol(df))
+    for (i, col) in enumerate(cols)
+        remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
+        remap[col] = i
+    end
+    DataFrameRow(df, row, cols, remap)
+end
+
+@inline function DataFrameRow(df::AbstractDataFrame, row::Integer, cols::UnitRange{Int})
+    @boundscheck if !checkindex(Bool, axes(df, 1), row)
+        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                          "rows at index $row"))
+    end
+    @boundscheck if !checkindex(Bool, axes(df, 2), cols)
+        throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
+                          "columns at indices $cols"))
+    end
+    # non existing mappings are either out range or invalid
+    remap = 1:last(cols) .- first(cols) .+ 1
+    DataFrameRow(df, row, cols, remap)
+end
+
+@inline function DataFrameRow(df::AbstractDataFrame, row::Integer, ::Colon)
+    @boundscheck if !checkindex(Bool, axes(df, 1), row)
+        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                          "rows at index $row"))
+    end
+    cols = axes(df, 2)
+    DataFrameRow(df, row, cols, cols)
 end
 
 @inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::AbstractVector{Int}) =
     DataFrameRow{typeof(df),Vector{Int}}(df, row, convert(Vector{Int}, cols))
 @inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::AbstractUnitRange{Int}) =
     DataFrameRow{typeof(df),UnitRange{Int}}(df, row, convert(UnitRange{Int}, cols))
-@inline DataFrameRow(df::AbstractDataFrame, row::Integer, ::Colon) =
-    DataFrameRow(df, row, 1:ncol(df))
 @inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols) =
     DataFrameRow(df, row, index(df)[cols])
 @inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::ColumnIndex) =
