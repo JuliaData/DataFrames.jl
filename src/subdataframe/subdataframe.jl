@@ -98,18 +98,18 @@ function SubDataFrame(parent::DataFrame, rows::AbstractVector, cols)
 end
 
 getparentcols(sdf::SubDataFrame, idx::Union{Integer, AbstractVector{<:Integer}}) =
-    getproperty(r, :cols)[idx]
+    getfield(r, :cols)[idx]
 
 function getparentcols(r::SubDataFrame, idx::Symbol)
     parentcols = index(parent(r))[idx]
-    getproperty(r, :remap)[parentcols] == 0 && throw(KeyError("$idx not found"))
+    getfield(r, :remap)[parentcols] == 0 && throw(KeyError("$idx not found"))
     return parentcols
 end
 
 getparentcols(r::SubDataFrame, idx::AbstractVector{Symbol}) =
     [getparentcols(r, i) for i in idx]
 
-getparentcols(sdf::SubDataFrame, ::Colon) = getproperty(sdf, :cols)
+getparentcols(sdf::SubDataFrame, ::Colon) = getfield(sdf, :cols)
 
 SubDataFrame(sdf::SubDataFrame, rows, cols) =
     SubDataFrame(parent(sdf), rows(sdf)[rows], getparentcols(sdf, cols))
@@ -141,15 +141,15 @@ end
 
 index(sdf::SubDataFrame{T,S}) where {T,S} = SubIndex{T,S}(sdf)
 
-Base.length(x::SubIndex) = length(getproperty(x.sdf, :cols))
+Base.length(x::SubIndex) = length(getfield(x.sdf, :cols))
 Base.names(x::SubIndex) = copy(_names(x))
-_names(x::SubIndex) = view(_names(parent(x.sdf)), getproperty(x.sdf, :cols))
+_names(x::SubIndex) = view(_names(parent(x.sdf)), getfield(x.sdf, :cols))
 Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y)
 Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
 function Base.haskey(x::SubIndex, key::Symbol)
     haskey(parent(x.sdf), key) || return false
     pos = index(parent(x.sdf))[key]
-    remap = getproperty(x.sdf, :remap)
+    remap = getfield(x.sdf, :remap)
     checkbounds(Bool, remap, pos) || return false
     remap > 0
 end
@@ -159,7 +159,7 @@ Base.haskey(x::SubIndex, key::Bool) =
 Base.keys(x::SubIndex) = names(x)
 
 Base.getindex(x::SubIndex, idx::Symbol) =
-    getproperty(x.sdf, :remap)[index(parent(x.sdf))[idx]]
+    getfield(x.sdf, :remap)[index(parent(x.sdf))[idx]]
 Base.getindex(x::SubIndex, idx::AbstractVector{Symbol}) = [x[i] for i in idx]
 
 # TODO: Remove these

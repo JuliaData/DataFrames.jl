@@ -70,17 +70,17 @@ Base.getindex(sdf::SubDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(parent(sdf), rows(sdf)[rowind], parentindices(sdf)[2])
 
 getparentcols(r::DataFrameRow, idx::Union{Integer, AbstractVector{<:Integer}}) =
-    getproperty(r, :cols)[idx]
+    getfield(r, :cols)[idx]
 
 function getparentcols(r::DataFrameRow, idx::Symbol)
     parentcols = index(parent(r))[idx]
-    getproperty(r, :remap)[parentcols] == 0 && throw(KeyError("$idx not found"))
+    getfield(r, :remap)[parentcols] == 0 && throw(KeyError("$idx not found"))
     return parentcols
 end
 
 getparentcols(r::DataFrameRow, idx::AbstractVector{Symbol}) =
     [getparentcols(r, i) for i in idx]
-getparentcols(r::DataFrameRow, ::Colon) = getproperty(r, :cols)
+getparentcols(r::DataFrameRow, ::Colon) = getfield(r, :cols)
 
 Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), getparentcols(r, idx)]
@@ -100,7 +100,7 @@ Base.haskey(r::DataFrameRow, key::Integer) = 1 ≤ key ≤ size(r, 1)
 function Base.haskey(r::DataFrameRow, key::Symbol)
     haskey(parent(r), key) || return false
     pos = index(parent(r))[key]
-    remap = getproperty(r, :remap)
+    remap = getfield(r, :remap)
     checkbounds(Bool, remap, pos) || return false
     remap > 0
 end
@@ -116,7 +116,7 @@ Base.view(r::DataFrameRow, cols::AbstractVector) =
     DataFrameRow(parent(r), row(r), getparentcols(r, cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
-Base.size(r::DataFrameRow) = (length(getproperty, r, :cols),)
+Base.size(r::DataFrameRow) = (length(getfield(r, :cols)),)
 Base.size(r::DataFrameRow, i) = size(r)[i]
 Base.length(r::DataFrameRow) = size(r, 1)
 Base.ndims(r::DataFrameRow) = 1
