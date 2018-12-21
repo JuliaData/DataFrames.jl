@@ -113,7 +113,7 @@ module TestSubDataFrame
         @test view(df, 1, :) == DataFrameRow(df, 1, :)
         @test view(df, :, 1) == df[:, 1]
         @test view(df, :, 1) isa SubArray
-        @test_throws ArgumentError view(df, [missing, 1])
+        @test_throws MethodError view(df, [missing, 1])
         @test_throws ArgumentError view(df, [missing, 1], :)
     end
 
@@ -134,15 +134,15 @@ module TestSubDataFrame
         df.y = 1
         @test df.y == [1, 1, 1, 1, 1]
         @test y == [1; 1; 1; 1; 1; 1; 7:10]
-        @test_throws ErrorException df.z = 1:5
-        @test_throws ErrorException df.z = 1
+        @test_throws KeyError df.z = 1:5
+        @test_throws KeyError df.z = 1
     end
 
     @testset "dump" begin
         y = 1.0:10.0
         df = view(DataFrame(y=y), 2:6, :)
         @test sprint(dump, df) == """
-                                  SubDataFrame{UnitRange{$Int}}  5 observations of 1 variables
+                                  SubDataFrame{UnitRange{$(Int)},UnitRange{$(Int)}}  5 observations of 1 variables
                                     y: [2.0, 3.0, 4.0, 5.0, 6.0]\n
                                   """
     end
