@@ -87,7 +87,7 @@ function Base.push!(x::Index, nm::Symbol)
     return x
 end
 
-function Base.merge!(x::Index, y::Index; makeunique::Bool=false)
+function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false)
     adds = add_names(x, y, makeunique=makeunique)
     i = length(x)
     for add in adds
@@ -98,7 +98,7 @@ function Base.merge!(x::Index, y::Index; makeunique::Bool=false)
     return x
 end
 
-Base.merge(x::Index, y::Index; makeunique::Bool=false) =
+Base.merge(x::Index, y::AbstractIndex; makeunique::Bool=false) =
     merge!(copy(x), y, makeunique=makeunique)
 
 function Base.delete!(x::Index, idx::Integer)
@@ -172,7 +172,7 @@ end
 
 # Helpers
 
-function add_names(ind::Index, add_ind::Index; makeunique::Bool=false)
+function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
     u = names(add_ind)
 
     seen = Set(_names(ind))
