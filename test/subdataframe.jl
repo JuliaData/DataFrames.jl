@@ -7,7 +7,7 @@ module TestSubDataFrame
         @test sdf isa SubDataFrame
         @test copy(sdf) isa DataFrame
         @test sdf == copy(sdf)
-        @test sdf[:, :] === sdf
+        @test view(sdf, :, :) === sdf
     end
 
     @testset "view -- DataFrame" begin

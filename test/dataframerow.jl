@@ -16,7 +16,7 @@ module TestDataFrameRow
     @test_throws BoundsError DataFrameRow(df, 100, 1:2)
     @test_throws BoundsError DataFrameRow(df, 100, [1:2;])
     @test_throws BoundsError DataFrameRow(df, 100, :)
-    @test_throws ArgumentError DataFrameRow(df, Bool, 1:2)
+    @test_throws ArgumentError DataFrameRow(df, true, 1:2)
 
     #
     # Equality
