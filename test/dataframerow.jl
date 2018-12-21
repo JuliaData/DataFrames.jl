@@ -20,8 +20,10 @@ module TestDataFrameRow
     @test DataFrameRow(df, 1, :) != DataFrameRow(df, 2, :)
     @test DataFrameRow(df, 1, :) != DataFrameRow(df, 3, :)
     @test DataFrameRow(df, 1, :) == DataFrameRow(df, 4, :)
-    @test DataFrameRow(df, 2, :) == DataFrameRow(df, 5, :)
-    @test DataFrameRow(df, 2, :) != DataFrameRow(df, 6, :)
+    @test ismissing(DataFrameRow(df, 2, :) == DataFrameRow(df, 5, :))
+    @test isequal(DataFrameRow(df, 2, :), DataFrameRow(df, 5, :))
+    @test ismissing(DataFrameRow(df, 2, :) != DataFrameRow(df, 6, :))
+    @test !isequal(DataFrameRow(df, 2, :), DataFrameRow(df, 6, :))
 
     # isless()
     df4 = DataFrame(a=[1, 1, 2, 2, 2, 2, missing, missing],
