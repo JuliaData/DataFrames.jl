@@ -90,7 +90,7 @@ Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector{<:Integer},
 Base.getindex(r::DataFrameRow, ::Colon) = r
 
 Base.setindex!(r::DataFrameRow, value::Any, idx) =
-    setindex!(parent(r), value, row(r), getparentcols(idx))
+    setindex!(parent(r), value, row(r), getparentcols(r, idx))
 
 Base.names(r::DataFrameRow) = _names(parent(r))[getparentcols(r, :)]
 

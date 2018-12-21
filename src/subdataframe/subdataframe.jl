@@ -119,7 +119,7 @@ SubDataFrame(sdf::SubDataFrame, ::Colon, ::Colon) = sdf
 
 rows(sdf::SubDataFrame) = getfield(sdf, :rows)
 Base.parent(sdf::SubDataFrame) = getfield(sdf, :parent)
-Base.parentindices(sdf::SubDataFrame) = (rows(sdf), getfield(r, :cols))
+Base.parentindices(sdf::SubDataFrame) = (rows(sdf), getfield(sdf, :cols))
 
 Base.view(adf::AbstractDataFrame, colinds) = view(adf, :, colinds)
 Base.view(adf::AbstractDataFrame, rowinds, colind::ColumnIndex) =
