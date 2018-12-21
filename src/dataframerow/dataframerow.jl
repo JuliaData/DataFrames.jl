@@ -44,6 +44,8 @@ end
     DataFrameRow(df, row, 1:ncol(df))
 @inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols) =
     DataFrameRow(df, row, index(df)[cols])
+@inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::ColumnIndex) =
+    throw(ArgumentError("invalid column vector $cols"))
 
 row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)

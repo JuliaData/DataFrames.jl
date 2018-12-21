@@ -9,11 +9,14 @@ module TestDataFrameRow
     df2 = DataFrame(a = [1, 2, 3])
 
     @test names(DataFrameRow(df, 1, :)) == [:a, :b, :c, :d]
+    @test_throws ArgumentError DataFrameRow(df, 1, :a)
+    @test_throws ArgumentError DataFrameRow(df, 1, 1)
 
     #
     # Equality
     #
-    @test_throws ArgumentError DataFrameRow(df, 1, :) == DataFrameRow(df2, 1, :)
+    @test DataFrameRow(df, 1, :) != DataFrameRow(df2, 1, :)
+    @test DataFrameRow(df, 1, [:a]) != DataFrameRow(df2, 1, :)
     @test DataFrameRow(df, 1, :) != DataFrameRow(df, 2, :)
     @test DataFrameRow(df, 1, :) != DataFrameRow(df, 3, :)
     @test DataFrameRow(df, 1, :) == DataFrameRow(df, 4, :)

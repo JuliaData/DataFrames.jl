@@ -70,6 +70,8 @@ SubDataFrame(parent::DataFrame, rows::T, ::Colon) where {T <: AbstractVector{Int
     SubDataFrame(parent, rows, 1:ncol(parent))
 SubDataFrame(parent::DataFrame, rows::T, cols) where {T <: AbstractVector{Int}} =
     SubDataFrame(parent, rows, index(parent)[cols])
+SubDataFrame(parent::DataFrame, rows::T, cols::ColumnIndex) where {T <: AbstractVector{Int}} =
+    throw(ArgumentError("invalid column vector $cols"))
 SubDataFrame(parent::DataFrame, rows::Colon, cols) =
     SubDataFrame(parent, 1:nrow(parent), cols)
 SubDataFrame(parent::DataFrame, row::Integer, cols) =
