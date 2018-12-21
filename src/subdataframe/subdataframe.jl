@@ -52,7 +52,7 @@ struct SubDataFrame{T<:AbstractVector{Int}, S<:Union{Vector{Int}, UnitRange{Int}
             remap = 1:last(cols) .- first(cols) .+ 1
         else
             # we set non-existing mappings to 0
-            remap = zeros(Int, length(cols))
+            remap = zeros(Int, ncol(parent))
             for (i, col) in enumerate(cols)
                 remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
                 remap[col] = i
