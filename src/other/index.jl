@@ -19,8 +19,7 @@ Base.names(x::Index) = copy(x.names)
 _names(x::Index) = x.names
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
-Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
-# Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
+Base.isequal(x::Index, y::Index) = _names(x) == _names(y) # it is enough to check names
 Base.:(==)(x::Index, y::Index) = isequal(x, y)
 
 function names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false)
@@ -136,15 +135,14 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     x
 end
 
-Base.getindex(x::AbstractIndex, idx::Symbol) = x.lookup[idx]
+Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::Bool) = throw(ArgumentError("invalid index: $idx of type Bool"))
 Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
-
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
-
+Base.getindex(x::Index, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
 Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
 Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
+
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
         throw(ArgumentError("Bool values except for AbstractVector{Bool} are not allowed for column indexing"))
@@ -159,7 +157,7 @@ function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
 end
 
 # catch all method handling cases when type of idx is not narrowest possible, Any in particular
-function Base.getindex(x::DataFrames.AbstractIndex, idxs::AbstractVector)
+function Base.getindex(x::AbstractIndex, idxs::AbstractVector)
     length(idxs) == 0 && return Int[] # special case of empty idxs
     if idxs[1] isa Real
         if !all(v -> v isa Integer && !(v isa Bool), idxs)
