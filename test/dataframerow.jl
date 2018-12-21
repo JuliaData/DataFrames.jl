@@ -132,7 +132,7 @@ module TestDataFrameRow
     # parent and parentindices
     @test parent(df[1, :]) === df
     @test parentindices(df[1, :]) == (1, Base.OneTo(3))
-    @test parent(df[1, 1:3]) !== df
+    @test parent(df[1, 1:3]) === df
     @test parentindices(df[1, 1:3]) == (1, Base.OneTo(3))
 
     # iteration and collect
