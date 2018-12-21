@@ -12,9 +12,8 @@ end
 
 DataFrameRow(df::AbstractDataFrame, row::Bool, cols::S, remap::S) where {S<:AbstractVector{Int}} =
     throw(ArgumentError("invalid index: $row of type Bool"))
-
 DataFrameRow(df::AbstractDataFrame, row::Integer, cols::S, remap::S) where {S<:AbstractVector{Int}} =
-    DataFrameRow{typeof(df),S}(df, row, cols, remap)
+    DataFrameRow{typeof(df), S}(df, row, cols, remap)
 
 @inline function DataFrameRow(df::AbstractDataFrame, row::Integer, cols::Vector{Int})
     @boundscheck if !checkindex(Bool, axes(df, 1), row)
@@ -58,9 +57,9 @@ end
 end
 
 @inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::AbstractVector{Int}) =
-    DataFrameRow{typeof(df),Vector{Int}}(df, row, convert(Vector{Int}, cols))
+    DataFrameRow(df, row, convert(Vector{Int}, cols))
 @inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::AbstractUnitRange{Int}) =
-    DataFrameRow{typeof(df),UnitRange{Int}}(df, row, convert(UnitRange{Int}, cols))
+    DataFrameRow(df, row, convert(UnitRange{Int}, cols))
 @inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols) =
     DataFrameRow(df, row, index(df)[cols])
 @inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::ColumnIndex) =

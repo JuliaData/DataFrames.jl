@@ -46,9 +46,6 @@ struct SubDataFrame{T<:AbstractVector{Int}, S<:AbstractVector{Int}} <: AbstractD
     remap::S # inverse of cols, it is of type S for efficiency in most common cases
 end
 
-SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols::S, remap::S) where {S<:AbstractVector{Int}}=
-    SubDataFrame{typeof(rows), S}(parent, rows, cols, remap)
-
 @inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols::Vector{Int})
     @boundscheck checkbounds(axes(parent, 1), rows)
     @boundscheck checkbounds(axes(parent, 2), cols)
@@ -69,16 +66,16 @@ end
     SubDataFrame(parent, rows, cols, remap)
 end
 
-@inline function SubDataFrame{T,S}(parent::DataFrame, rows::AbstractVector{Int}, ::Colon)
+@inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, ::Colon)
     @boundscheck checkbounds(axes(parent, 1), rows)
-    cols = axes(df, 2)
-    new(parent, rows, cols, cols)
+    cols = axes(parent, 2)
+    SubDataFrame(parent, rows, cols, cols)
 end
 
 @inline SubDataFrame(parent::DataFrame, rows::T, cols::AbstractVector{Int}) where {T <: AbstractVector{Int}} =
-    SubDataFrame{T, Vector{Int}}(parent, rows, convert(Vector{Int}, cols))
+    SubDataFrame(parent, rows, convert(Vector{Int}, cols))
 @inline SubDataFrame(parent::DataFrame, rows::T, cols::AbstractUnitRange{Int}) where {T <: AbstractVector{Int}} =
-    SubDataFrame{T, UnitRange{Int}}(parent, rows, convert(UnitRange{Int}, cols))
+    SubDataFrame(parent, rows, convert(UnitRange{Int}, cols))
 @inline SubDataFrame(parent::DataFrame, rows::T, cols) where {T <: AbstractVector{Int}} =
     SubDataFrame(parent, rows, index(parent)[cols])
 @inline SubDataFrame(parent::DataFrame, rows::T, cols::ColumnIndex) where {T <: AbstractVector{Int}} =
