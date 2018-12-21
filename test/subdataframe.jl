@@ -7,6 +7,7 @@ module TestSubDataFrame
         @test sdf isa SubDataFrame
         @test copy(sdf) isa DataFrame
         @test sdf == copy(sdf)
+        @test sdf[:, :] === sdf
     end
 
     @testset "view -- DataFrame" begin
@@ -115,6 +116,7 @@ module TestSubDataFrame
         @test view(df, :, 1) isa SubArray
         @test_throws MethodError view(df, [missing, 1])
         @test_throws ArgumentError view(df, [missing, 1], :)
+        @test_throws ArgumentError view(df, :, true)
     end
 
     @testset "getproperty, setproperty! and propertynames" begin
@@ -136,6 +138,20 @@ module TestSubDataFrame
         @test y == [1; 1; 1; 1; 1; 1; 7:10]
         @test_throws KeyError df.z = 1:5
         @test_throws KeyError df.z = 1
+    end
+
+    @testset "index" begin
+        y = 1.0:10.0
+        df = view(DataFrame(y=y), 2:6, :)
+        df2 = view(DataFrame(x=y, y=y), 2:6, 2:2)
+        @test DataFrames.index(df) == DataFrames.index(df2)
+        @test haskey(DataFrames.index(df2), :y)
+        @test !haskey(DataFrames.index(df2), :x)
+        @test haskey(DataFrames.index(df2), 1)
+        @test !haskey(DataFrames.index(df2), 2)
+        @test !haskey(DataFrames.index(df2), 0)
+        @test_throws ArgumentError haskey(DataFrames.index(df2), true)
+        @test keys(DataFrames.index(df2)) == [:y]
     end
 
     @testset "dump" begin

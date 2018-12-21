@@ -11,12 +11,19 @@ module TestDataFrameRow
     @test names(DataFrameRow(df, 1, :)) == [:a, :b, :c, :d]
     @test_throws ArgumentError DataFrameRow(df, 1, :a)
     @test_throws ArgumentError DataFrameRow(df, 1, 1)
+    @test_throws BoundsError DataFrameRow(df, 1, 1:10)
+    @test_throws BoundsError DataFrameRow(df, 1, [1:10;])
+    @test_throws BoundsError DataFrameRow(df, 100, 1:2)
+    @test_throws BoundsError DataFrameRow(df, 100, [1:2;])
+    @test_throws BoundsError DataFrameRow(df, 100, :)
+    @test_throws ArgumentError DataFrameRow(df, Bool, 1:2)
 
     #
     # Equality
     #
     @test DataFrameRow(df, 1, :) != DataFrameRow(df2, 1, :)
     @test DataFrameRow(df, 1, [:a]) == DataFrameRow(df2, 1, :)
+    @test DataFrameRow(df, 1, [:a]) == DataFrameRow(df2, big(1), :)
     @test DataFrameRow(df, 1, :) != DataFrameRow(df, 2, :)
     @test DataFrameRow(df, 1, :) != DataFrameRow(df, 3, :)
     @test DataFrameRow(df, 1, :) == DataFrameRow(df, 4, :)
@@ -85,6 +92,8 @@ module TestDataFrameRow
     @test Base.propertynames(r) == names(df)
     @test r.a === 1
     @test r.b === 2.0
+    @test copy(r[[:a,:b]]) === (a=1, b=2.0)
+
     r.a = 2
     @test r.a === 2
     r.b = 1
@@ -93,6 +102,7 @@ module TestDataFrameRow
     # getindex
     r = DataFrameRow(df, 1, :)
     @test r[:] == r
+    @test view(r, :) === r
 
     # keys, values and iteration, size
     @test keys(r) == names(df)
@@ -100,9 +110,14 @@ module TestDataFrameRow
     @test collect(pairs(r)) == [:a=>df[1, 1], :b=>df[1, 2], :c=>df[1, 3], :d=>df[1, 4]]
 
     @test haskey(r, :a)
+    @test haskey(r, 1)
     @test !haskey(r, :zzz)
+    @test haskey(r, 0)
+    @test haskey(r, 1000)
+    @test_throws ArgumentError haskey(r, true)
 
     @test length(r) == 4
+    @test lastindex(r) == 4
     @test ndims(r) == 1
     @test ndims(typeof(r)) == 1
     @test size(r) == (4,)
@@ -139,6 +154,7 @@ module TestDataFrameRow
     ref = ["a", "b", "c"]
     df = DataFrame(permutedims(ref))
     dfr = df[1, :]
+    @test Base.IteratorEltype(dfr) == Base.EltypeUnknown()
     @test collect(dfr) == ref
     @test eltype(collect(dfr)) === String
     for (v1, v2) in zip(ref, dfr)

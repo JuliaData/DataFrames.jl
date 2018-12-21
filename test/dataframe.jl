@@ -788,6 +788,8 @@ module TestDataFrame
         @test_throws ArgumentError df[true] = [1,2,3]
         @test_throws ArgumentError df[1:2, true] = [1,2]
         @test_throws ArgumentError df[1, true] = 1
+        @test_trows ErrorException df[1, 100] = 1
+        @test_trows ErrorException df[1:2, 100] = [1,2]
     end
 
     @testset "passing range to a DataFrame" begin
