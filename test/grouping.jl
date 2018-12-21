@@ -126,8 +126,6 @@ module TestGrouping
             sort(hcat(df, df[cols], makeunique=true))[[:a, :b, :a_1, :b_1, :c]]
         @test sort(by(df, cols, df -> DataFrameRow(df, 1, :))[[:a, :b, :c]]) ==
             sort(df[.!nonunique(df, cols), :])
-        @test sort(by(df, cols, df -> DataFrameRow(df, 1, [:a, :b, :c]))) ==
-            sort(df[.!nonunique(df, cols), :])
         @test by(df, cols, f1) == res
         @test by(df, cols, f2) == res
         @test rename(by(df, cols, f3), :x1 => :cmax) == res
@@ -141,8 +139,6 @@ module TestGrouping
         @test by(df, cols, identity, sort=true) ==
             sort(hcat(df, df[cols], makeunique=true), cols)[[:a, :b, :a_1, :b_1, :c]]
         @test by(df, cols, df -> DataFrameRow(df, 1, :), sort=true)[[:a, :b, :c]] ==
-            sort(df[.!nonunique(df, cols), :])
-        @test by(df, cols, df -> DataFrameRow(df, 1, [:a, :b, :c]), sort=true) ==
             sort(df[.!nonunique(df, cols), :])
         @test by(df, cols, f1, sort=true) == sres
         @test by(df, cols, f2, sort=true) == sres

@@ -88,7 +88,7 @@ Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), getparentcols(r, idx)]
 Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector{<:Integer},
                                            AbstractVector{Symbol}}) =
-    DataFrameRow(parent(r), row(r), getparentcols(r, idx))
+    DataFrameRow(parent(r), row(r), getparentcols(r, idxs))
 Base.getindex(r::DataFrameRow, ::Colon) = r
 
 Base.setindex!(r::DataFrameRow, value::Any, idx) =
