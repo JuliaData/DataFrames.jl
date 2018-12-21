@@ -198,7 +198,7 @@ function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
         throw(ArgumentError("compared DataFrameRows must have the same number " *
                             "of columns (got $(length(r1)) and $(length(r2)))"))
     all(((a, b),) -> isless(a, b), zip(r1, r2))
-    for (a,b) in zip(z1, z2)
+    for (a,b) in zip(r1, r2)
         isequal(a, b) || return isless(a, b)
     end
     return false
