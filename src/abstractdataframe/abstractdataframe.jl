@@ -1031,6 +1031,9 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     # TODO: get preserve order of first headers as much 
     # as possible 
     # header = allheaders[1]
+
+    # TODO: make sure that `keep` can't throws a good error if 
+    # it a) isn't in `allheaders` or b) isn't a subset of `unionunique`
     header = keep == nothing ? unionunique : keep 
     
     length(header) == 0 && return DataFrame()
@@ -1046,6 +1049,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                 if haskey(df, name)
                     return df[name] 
                 else
+                    # TODO: make this more efficient. 
                     return fill(fillvalue, nrow(df))
                 end
             else 
