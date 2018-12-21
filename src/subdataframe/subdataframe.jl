@@ -156,7 +156,7 @@ end
 Base.haskey(x::SubIndex, key::Integer) = 1 <= key <= length(x)
 Base.haskey(x::SubIndex, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
-Base.keys(x::Index) = names(x)
+Base.keys(x::SubIndex) = names(x)
 
 Base.getindex(x::SubIndex, idx::Symbol) =
     getproperty(x.sdf, :remap)[index(parent(x.sdf))[idx]]
