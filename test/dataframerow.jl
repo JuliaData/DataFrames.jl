@@ -8,49 +8,49 @@ module TestDataFrameRow
                    d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
     df2 = DataFrame(a = [1, 2, 3])
 
-    @test names(DataFrameRow(df, 1)) == [:a, :b, :c, :d]
+    @test names(DataFrameRow(df, 1, :)) == [:a, :b, :c, :d]
 
     #
     # Equality
     #
-    @test_throws ArgumentError DataFrameRow(df, 1) == DataFrameRow(df2, 1)
-    @test DataFrameRow(df, 1) != DataFrameRow(df, 2)
-    @test DataFrameRow(df, 1) != DataFrameRow(df, 3)
-    @test DataFrameRow(df, 1) == DataFrameRow(df, 4)
-    @test DataFrameRow(df, 2) == DataFrameRow(df, 5)
-    @test DataFrameRow(df, 2) != DataFrameRow(df, 6)
+    @test_throws ArgumentError DataFrameRow(df, 1, :) == DataFrameRow(df2, 1, :)
+    @test DataFrameRow(df, 1, :) != DataFrameRow(df, 2, :)
+    @test DataFrameRow(df, 1, :) != DataFrameRow(df, 3, :)
+    @test DataFrameRow(df, 1, :) == DataFrameRow(df, 4, :)
+    @test DataFrameRow(df, 2, :) == DataFrameRow(df, 5, :)
+    @test DataFrameRow(df, 2, :) != DataFrameRow(df, 6, :)
 
     # isless()
     df4 = DataFrame(a=[1, 1, 2, 2, 2, 2, missing, missing],
                     b=Union{Float64, Missing}[2.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0],
                     c=[:B, missing, :A, :C, :D, :D, :A, :A])
-    @test isless(DataFrameRow(df4, 1), DataFrameRow(df4, 2))
-    @test !isless(DataFrameRow(df4, 2), DataFrameRow(df4, 1))
-    @test !isless(DataFrameRow(df4, 1), DataFrameRow(df4, 1))
-    @test isless(DataFrameRow(df4, 1), DataFrameRow(df4, 3))
-    @test !isless(DataFrameRow(df4, 3), DataFrameRow(df4, 1))
-    @test isless(DataFrameRow(df4, 3), DataFrameRow(df4, 4))
-    @test !isless(DataFrameRow(df4, 4), DataFrameRow(df4, 3))
-    @test isless(DataFrameRow(df4, 4), DataFrameRow(df4, 5))
-    @test !isless(DataFrameRow(df4, 5), DataFrameRow(df4, 4))
-    @test !isless(DataFrameRow(df4, 6), DataFrameRow(df4, 5))
-    @test !isless(DataFrameRow(df4, 5), DataFrameRow(df4, 6))
-    @test isless(DataFrameRow(df4, 7), DataFrameRow(df4, 8))
-    @test !isless(DataFrameRow(df4, 8), DataFrameRow(df4, 7))
+    @test isless(DataFrameRow(df4, 1, :), DataFrameRow(df4, 2, :))
+    @test !isless(DataFrameRow(df4, 2, :), DataFrameRow(df4, 1, :))
+    @test !isless(DataFrameRow(df4, 1, :), DataFrameRow(df4, 1, :))
+    @test isless(DataFrameRow(df4, 1, :), DataFrameRow(df4, 3, :))
+    @test !isless(DataFrameRow(df4, 3, :), DataFrameRow(df4, 1, :))
+    @test isless(DataFrameRow(df4, 3, :), DataFrameRow(df4, 4, :))
+    @test !isless(DataFrameRow(df4, 4, :), DataFrameRow(df4, 3, :))
+    @test isless(DataFrameRow(df4, 4, :), DataFrameRow(df4, 5, :))
+    @test !isless(DataFrameRow(df4, 5, :), DataFrameRow(df4, 4, :))
+    @test !isless(DataFrameRow(df4, 6, :), DataFrameRow(df4, 5, :))
+    @test !isless(DataFrameRow(df4, 5, :), DataFrameRow(df4, 6, :))
+    @test isless(DataFrameRow(df4, 7, :), DataFrameRow(df4, 8, :))
+    @test !isless(DataFrameRow(df4, 8, :), DataFrameRow(df4, 7, :))
 
     # hashing
-    @test hash(DataFrameRow(df, 1)) != hash(DataFrameRow(df, 2))
-    @test hash(DataFrameRow(df, 1)) != hash(DataFrameRow(df, 3))
-    @test hash(DataFrameRow(df, 1)) == hash(DataFrameRow(df, 4))
-    @test hash(DataFrameRow(df, 2)) == hash(DataFrameRow(df, 5))
-    @test hash(DataFrameRow(df, 2)) != hash(DataFrameRow(df, 6))
+    @test hash(DataFrameRow(df, 1, :)) != hash(DataFrameRow(df, 2, :))
+    @test hash(DataFrameRow(df, 1, :)) != hash(DataFrameRow(df, 3, :))
+    @test hash(DataFrameRow(df, 1, :)) == hash(DataFrameRow(df, 4, :))
+    @test hash(DataFrameRow(df, 2, :)) == hash(DataFrameRow(df, 5, :))
+    @test hash(DataFrameRow(df, 2, :)) != hash(DataFrameRow(df, 6, :))
 
     # check that hashrows() function generates the same hashes as DataFrameRow
     df_rowhashes, _ = DataFrames.hashrows(Tuple(columns(df)), false)
     @test df_rowhashes == [hash(dr) for dr in eachrow(df)]
 
     # test incompatible frames
-    @test_throws UndefVarError DataFrameRow(df, 1) == DataFrameRow(df3, 1)
+    @test_throws UndefVarError DataFrameRow(df, 1, :) == DataFrameRow(df3, 1, :)
 
     # test RowGroupDict
     N = 20
@@ -63,8 +63,8 @@ module TestDataFrameRow
     @test length(unique(gd.groups)) == 2
 
     # getting groups for the rows of the other frames
-    @test length(gd[DataFrameRow(df6, 1)]) > 0
-    @test_throws KeyError gd[DataFrameRow(df6, 2)]
+    @test length(gd[DataFrameRow(df6, 1, :)]) > 0
+    @test_throws KeyError gd[DataFrameRow(df6, 2, :)]
     @test isempty(DataFrames.findrows(gd, df6, (gd.df[1],), (df6[1],), 2))
 
     # grouping empty frame
@@ -76,7 +76,7 @@ module TestDataFrameRow
     @test length(unique(gd.groups)) == 1
 
     # getproperty, setproperty! and propertynames
-    r = DataFrameRow(df, 1)
+    r = DataFrameRow(df, 1, :)
     @test Base.propertynames(r) == names(df)
     @test r.a === 1
     @test r.b === 2.0
@@ -86,7 +86,7 @@ module TestDataFrameRow
     @test r.b === 1.0
 
     # getindex
-    r = DataFrameRow(df, 1)
+    r = DataFrameRow(df, 1, :)
     @test r[:] == r
 
     # keys, values and iteration, size
@@ -106,12 +106,12 @@ module TestDataFrameRow
 
     df = DataFrame(a=nothing, b=1)
     io = IOBuffer()
-    show(io, DataFrameRow(df, 1))
+    show(io, DataFrameRow(df, 1, :))
     @test String(take!(io)) == "DataFrameRow (row 1)\na  \nb  1"
 
     # convert
     df = DataFrame(a=[1, missing], b=[2.0, 3.0])
-    dfr = DataFrameRow(df, 1)
+    dfr = DataFrameRow(df, 1, :)
     @test convert(Vector, dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test convert(Vector{Int}, dfr)::Vector{Int} == [1, 2]
     @test Vector(dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
@@ -121,8 +121,8 @@ module TestDataFrameRow
     df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
                    b=[2.0, missing, 1.2, 2.0, missing, missing],
                    c=["A", "B", "C", "A", "B", missing])
-    @test copy(DataFrameRow(df, 1)) == (a = 1, b = 2.0, c = "A")
-    @test isequal(copy(DataFrameRow(df, 2)), (a = 2, b = missing, c = "B"))
+    @test copy(DataFrameRow(df, 1, :)) == (a = 1, b = 2.0, c = "A")
+    @test isequal(copy(DataFrameRow(df, 2, :)), (a = 2, b = missing, c = "B"))
 
     # parent and parentindices
     @test parent(df[1, :]) === df

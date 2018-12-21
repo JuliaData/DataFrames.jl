@@ -111,8 +111,8 @@ getparentcols(sdf::SubDataFrame, idx::AbstractVector{Symbol}) =
 
 getparentcols(sdf::SubDataFrame, ::Colon) = getfield(sdf, :cols)
 
-SubDataFrame(sdf::SubDataFrame, rows, cols) =
-    SubDataFrame(parent(sdf), rows(sdf)[rows], getparentcols(sdf, cols))
+SubDataFrame(sdf::SubDataFrame, rowind, cols) =
+    SubDataFrame(parent(sdf), rows(sdf)[rowind], getparentcols(sdf, cols))
 SubDataFrame(sdf::SubDataFrame, ::Colon, cols) =
     SubDataFrame(parent(sdf), rows(sdf), getparentcols(sdf, cols))
 SubDataFrame(sdf::SubDataFrame, ::Colon, ::Colon) = sdf

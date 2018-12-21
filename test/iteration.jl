@@ -5,7 +5,7 @@ module TestIteration
     df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
 
     @test size(eachrow(df)) == (size(df, 1),)
-    @test eachrow(df)[1] == DataFrameRow(df, 1)
+    @test eachrow(df)[1] == DataFrameRow(df, 1, :)
     @test collect(eachrow(df)) isa Vector{DataFrameRow{DataFrame}}
     @test eltype(eachrow(df)) == DataFrameRow{DataFrame}
     for row in eachrow(df)
@@ -76,7 +76,7 @@ module TestIteration
     @test mapcols(x -> x[1] == 1 ? x : 0, df_mapcols) == DataFrame(a=1:10, b=0)
     @test_throws ArgumentError mapcols(x -> x[1] != 1 ? x : 0, df_mapcols)
 
-    row = DataFrameRow(df, 1)
+    row = DataFrameRow(df, 1, :)
 
     row[:A] = 100
     @test df[1, :A] == 100
