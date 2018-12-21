@@ -169,7 +169,7 @@ ncol(sdf::SubDataFrame) = length(index(sdf))
 Base.getindex(sdf::SubDataFrame, colind::ColumnIndex) =
     view(parent(sdf), rows(sdf), getparentcols(sdf, colind))
 Base.getindex(sdf::SubDataFrame, colinds::AbstractVector) =
-    SubDataFrame(parent(sdf), rows(sdf), getparentcols(sdf, colind))
+    SubDataFrame(parent(sdf), rows(sdf), getparentcols(sdf, colinds))
 Base.getindex(sdf::SubDataFrame, ::Colon) = sdf
 Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
     parent(sdf)[rows(sdf)[rowind], getparentcols(sdf, colind)]
@@ -178,21 +178,21 @@ Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colind::ColumnIndex) =
 Base.getindex(sdf::SubDataFrame, ::Colon, colind::ColumnIndex) =
     parent(sdf)[rows(sdf), getparentcols(sdf, colind)]
 Base.getindex(sdf::SubDataFrame, ::Colon, colinds::AbstractVector) =
-    parent(sdf)[rows(sdf), getparentcols(sdf, colind)]
+    parent(sdf)[rows(sdf), getparentcols(sdf, colinds)]
 Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colinds::AbstractVector) =
-    parent(sdf)[rows(sdf)[rowinds], getparentcols(sdf, colind)]
+    parent(sdf)[rows(sdf)[rowinds], getparentcols(sdf, colinds)]
 Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, ::Colon) =
     parent(sdf)[rows(sdf)[rowinds], getparentcols(sdf, :)]
 Base.getindex(sdf::SubDataFrame, ::Colon, ::Colon) =
-    parent(sdf)[rows(sdf), getparentcols(sdf, colind)]
+    parent(sdf)[rows(sdf), getparentcols(sdf, :)]
 
 function Base.setindex!(sdf::SubDataFrame, val::Any, colinds::Any)
-    parent(sdf)[rows(sdf), getparentcols(sdf, colind)] = val
+    parent(sdf)[rows(sdf), getparentcols(sdf, colinds)] = val
     return sdf
 end
 
 function Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
-    parent(sdf)[rows(sdf)[rowinds], getparentcols(sdf, colind)] = val
+    parent(sdf)[rows(sdf)[rowinds], getparentcols(sdf, colinds)] = val
     return sdf
 end
 
