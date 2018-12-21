@@ -986,17 +986,23 @@ julia> vcat(df1, df2)
 │ 6   │ 6     │ 6     │
 ```
 """
-Base.vcat(df::AbstractDataFrame) = df
-Base.vcat(dfs::AbstractDataFrame...) = _vcat(collect(dfs))
-function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
+Base.vcat(df::AbstractDataFrame; widen::Bool = false, fillvalue = missing) = df
+Base.vcat(dfs::AbstractDataFrame...;  widen::Bool = false, fillvalue = missing) = _vcat(collect(dfs); widen = widen, fillvalue = fillvalue)
+function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; widen::Bool = false, fillvalue = missing)
     isempty(dfs) && return DataFrame()
-    allheaders = map(names, dfs)
-    uniqueheaders = unique(allheaders)
-    unionunique = union(uniqueheaders...)
-    intersectunique = intersect(uniqueheaders...)
+    # array of all headers
+    @show allheaders = map(names, dfs)
+    # unique arrays of all headers
+    @show uniqueheaders = unique(allheaders)
+    # Array of all the unique headers
+    @show unionunique = union(uniqueheaders...)
+    # Intersection of all unique headers 
+    @show intersectunique = intersect(uniqueheaders...)
+    # get the elements that are not present in everything
+    # one 
     coldiff = setdiff(unionunique, intersectunique)
 
-    if !isempty(coldiff)
+    if (widen == false) && !isempty(coldiff)
         # if any DataFrames are a full superset of names, skip them
         filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
         estrings = Vector{String}(undef, length(uniqueheaders))
@@ -1010,7 +1016,10 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
         throw(ArgumentError(join(estrings, ", ", ", and ")))
     end
 
-    header = allheaders[1]
+    # TODO: get preserve order of first headers as much 
+    # as possible 
+    # header = allheaders[1]
+    header = unionunique
     length(header) == 0 && return DataFrame()
     cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
@@ -1019,7 +1028,22 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
         # the code below assumes that only DataFrame and SubDataFrame
         # are subtypes of AbstractDataFrame
         # it should be removed ASAP after deprecation
-        data = [df isa DataFrame ? df[name] : view(parent(df)[name], rows(df)) for df in dfs]
+        data = map(dfs) do df
+            if df isa DataFrame 
+                if haskey(df, name)
+                    return df[name] 
+                else
+                    return fill(fillvalue, nrow(df))
+                end
+            else 
+                if haskey(df, name)
+                    return view(parent(df)[name], rows(df))
+                else 
+                    return fill(fillvalue, length(rows(df)))
+                end
+            end
+        end
+
         lens = map(length, data)
         T = mapreduce(eltype, promote_type, data)
         cols[i] = Tables.allocatecolumn(T, sum(lens))
