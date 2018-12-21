@@ -219,7 +219,7 @@ end
 
 Base.lastindex(df::AbstractDataFrame) = ncol(df)
 Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
-Base.axes(df::AbstractDataFrame, i::Integer) = axes(df)[i]
+Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
 
 Base.ndims(::AbstractDataFrame) = 2
 Base.ndims(::Type{<:AbstractDataFrame}) = 2
@@ -412,19 +412,19 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
             d = get_stats(col, stats)
         end
 
-        if :nmissing in stats 
+        if :nmissing in stats
             d[:nmissing] = eltype(col) >: Missing ? count(ismissing, col) : nothing
         end
 
-        if :first in stats 
+        if :first in stats
             d[:first] = isempty(col) ? nothing : first(col)
         end
-        
+
         if :last in stats
             d[:last] = isempty(col) ? nothing : last(col)
         end
 
-        return d             
+        return d
     end
 
     for stat in stats
@@ -441,20 +441,20 @@ end
 function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
     d = Dict{Symbol, Any}()
 
-    if :q25 in stats || :median in stats || :q75 in stats 
+    if :q25 in stats || :median in stats || :q75 in stats
         q = try quantile(col, [.25, .5, .75]) catch; (nothing, nothing, nothing) end
         d[:q25] = q[1]
         d[:median] = q[2]
         d[:q75] = q[3]
     end
 
-    if :min in stats || :max in stats 
+    if :min in stats || :max in stats
         ex = try extrema(col) catch; (nothing, nothing) end
         d[:min] = ex[1]
         d[:max] = ex[2]
     end
 
-    if :mean in stats || :std in stats 
+    if :mean in stats || :std in stats
         m = try mean(col) catch end
         # we can add non-necessary things to d, because we choose what we need
         # in the main function
@@ -464,8 +464,8 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
     if :std in stats
         d[:std] = try std(col, mean = m) catch end
     end
-    
-    if :nunique in stats 
+
+    if :nunique in stats
         if eltype(col) <: Real
             d[:nunique] = nothing
         else
@@ -473,7 +473,7 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
         end
     end
 
-    if :eltype in stats 
+    if :eltype in stats
         d[:eltype] = eltype(col)
     end
 
