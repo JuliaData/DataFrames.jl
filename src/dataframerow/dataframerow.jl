@@ -1,5 +1,5 @@
 """
-    DataFrameRow{<:AbstractDataFrame, Union{Vector{Int}, UnitRange{Int}}}
+    DataFrameRow{<:AbstractDataFrame, <:AbstractVector{Int}}
 
 A view of one row of an AbstractDataFrame.
 """

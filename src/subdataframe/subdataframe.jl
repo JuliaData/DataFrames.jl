@@ -1,5 +1,5 @@
 """
-    SubDataFrame{<:AbstractVector{Int}, <:Union{Vector{Int}, UnitRange{Int}}} <: AbstractDataFrame
+    SubDataFrame{<:AbstractVector{Int}, <:AbstractVector{Int}} <: AbstractDataFrame
 
 A view of row subsets of an AbstractDataFrame
 
@@ -39,52 +39,63 @@ sdf1[:,[:a,:b]]
 ```
 
 """
-struct SubDataFrame{T<:AbstractVector{Int}, S<:Union{Vector{Int}, UnitRange{Int}}} <: AbstractDataFrame
+struct SubDataFrame{T<:AbstractVector{Int}, S<:AbstractVector{Int}} <: AbstractDataFrame
     parent::DataFrame
     rows::T # maps from subdf row indexes to parent row indexes
     cols::S
     remap::S # inverse of cols, it is of type S for efficiency in most common cases
-
-    function SubDataFrame{T,S}(parent::DataFrame, rows::T, cols::S) where {T <: AbstractVector{Int}, S<:Union{Vector{Int}, UnitRange{Int}}}
-        checkbounds(axes(parent, 1), rows)
-        if cols isa UnitRange{Int}
-            # non existing mappings are either out range or invalid
-            remap = 1:last(cols) .- first(cols) .+ 1
-        else
-            # we set non-existing mappings to 0
-            remap = zeros(Int, ncol(parent))
-            for (i, col) in enumerate(cols)
-                remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
-                remap[col] = i
-            end
-        end
-        new(parent, rows, cols, remap)
-    end
 end
 
-SubDataFrame(parent::DataFrame, rows::T, cols::AbstractVector{Int}) where {T <: AbstractVector{Int}} =
+SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols::S, remap::S) where {S<:AbstractVector{Int}}=
+    SubDataFrame{typeof(rows), S}(parent, rows, cols, remap)
+
+@inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols::Vector{Int})
+    @boundscheck checkbounds(axes(parent, 1), rows)
+    @boundscheck checkbounds(axes(parent, 2), cols)
+    # we set non-existing mappings to 0
+    remap = zeros(Int, ncol(parent))
+    for (i, col) in enumerate(cols)
+        remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
+        remap[col] = i
+    end
+    SubDataFrame(parent, rows, cols, remap)
+end
+
+@inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols::UnitRange{Int})
+    @boundscheck checkbounds(axes(parent, 1), rows)
+    @boundscheck checkbounds(axes(parent, 2), cols)
+    # non existing mappings are either out range or invalid
+    remap = 1:last(cols) .- first(cols) .+ 1
+    SubDataFrame(parent, rows, cols, remap)
+end
+
+@inline function SubDataFrame{T,S}(parent::DataFrame, rows::AbstractVector{Int}, ::Colon)
+    @boundscheck checkbounds(axes(parent, 1), rows)
+    cols = axes(df, 2)
+    new(parent, rows, cols, cols)
+end
+
+@inline SubDataFrame(parent::DataFrame, rows::T, cols::AbstractVector{Int}) where {T <: AbstractVector{Int}} =
     SubDataFrame{T, Vector{Int}}(parent, rows, convert(Vector{Int}, cols))
-SubDataFrame(parent::DataFrame, rows::T, cols::AbstractUnitRange{Int}) where {T <: AbstractVector{Int}} =
+@inline SubDataFrame(parent::DataFrame, rows::T, cols::AbstractUnitRange{Int}) where {T <: AbstractVector{Int}} =
     SubDataFrame{T, UnitRange{Int}}(parent, rows, convert(UnitRange{Int}, cols))
-SubDataFrame(parent::DataFrame, rows::T, ::Colon) where {T <: AbstractVector{Int}} =
-    SubDataFrame(parent, rows, 1:ncol(parent))
-SubDataFrame(parent::DataFrame, rows::T, cols) where {T <: AbstractVector{Int}} =
+@inline SubDataFrame(parent::DataFrame, rows::T, cols) where {T <: AbstractVector{Int}} =
     SubDataFrame(parent, rows, index(parent)[cols])
-SubDataFrame(parent::DataFrame, rows::T, cols::ColumnIndex) where {T <: AbstractVector{Int}} =
+@inline SubDataFrame(parent::DataFrame, rows::T, cols::ColumnIndex) where {T <: AbstractVector{Int}} =
     throw(ArgumentError("invalid column vector $cols"))
-SubDataFrame(parent::DataFrame, rows::Colon, cols) =
-    SubDataFrame(parent, 1:nrow(parent), cols)
-SubDataFrame(parent::DataFrame, row::Integer, cols) =
+@inline SubDataFrame(parent::DataFrame, ::Colon, cols) =
+    SubDataFrame(parent, axes(parent, 1), cols)
+@inline SubDataFrame(parent::DataFrame, row::Integer, cols) =
     throw(ArgumentError("invalid row index: $row of type $(typeof(row))"))
 
-function SubDataFrame(parent::DataFrame, rows::AbstractVector{<:Integer}, cols)
+@inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{<:Integer}, cols)
     if any(x -> x isa Bool, rows)
         throw(ArgumentError("invalid row index of type `Bool`"))
     end
     return SubDataFrame(parent, convert(Vector{Int}, rows), cols)
 end
 
-function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool}, cols)
+@inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool}, cols)
     if length(rows) != nrow(parent)
         throw(ArgumentError("invalid length of `AbstractVector{Bool}` row index" *
                             " (got $(length(rows)), expected $(nrow(parent)))"))
@@ -92,7 +103,7 @@ function SubDataFrame(parent::DataFrame, rows::AbstractVector{Bool}, cols)
     return SubDataFrame(parent, findall(rows), cols)
 end
 
-function SubDataFrame(parent::DataFrame, rows::AbstractVector, cols)
+@inline function SubDataFrame(parent::DataFrame, rows::AbstractVector, cols)
     if !all(x -> (x isa Integer) && !(x isa Bool), rows)
         throw(ArgumentError("only `Integer` indices are accepted in `rows`"))
     end
