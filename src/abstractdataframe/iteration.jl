@@ -31,7 +31,7 @@ Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 @inline function Base.getindex(itr::DataFrameRows, i::Int)
     @boundscheck checkbounds(itr, i)
-    return DataFrameRow(itr.df, i)
+    return DataFrameRow(itr.df, i, :)
 end
 
 # Iteration by columns
