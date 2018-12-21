@@ -26,6 +26,9 @@ function DataFrame(x)
         y = IteratorInterfaceExtensions.getiterator(x)
         return fromcolumns(Tables.columns(Tables.DataValueUnwrapper(y)))
     elseif it === missing
+        if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
+            return DataFrame(Vector{AbstractVector}(x))
+        end
         y = IteratorInterfaceExtensions.getiterator(x)
         # non-NamedTuple or EltypeUnknown
         return fromcolumns(Tables.buildcolumns(nothing, Tables.DataValueUnwrapper(y)))
