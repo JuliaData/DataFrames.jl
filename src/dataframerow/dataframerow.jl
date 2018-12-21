@@ -104,7 +104,7 @@ function Base.haskey(r::DataFrameRow, key::Symbol)
     pos = index(parent(r))[key]
     remap = getfield(r, :remap)
     checkbounds(Bool, remap, pos) || return false
-    remap > 0
+    remap[pos] > 0
 end
 
 Base.getproperty(r::DataFrameRow, idx::Symbol) = getindex(r, idx)

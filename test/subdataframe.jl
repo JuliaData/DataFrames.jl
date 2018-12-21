@@ -159,7 +159,7 @@ module TestSubDataFrame
                        c=["A", "B", "C", "A", "B", missing])
         @test parent(view(df, [4, 2], :)) === df
         @test parentindices(view(df, [4, 2], :)) == ([4,2], Base.OneTo(3))
-        @test parent(view(df, [4, 2], 1:3)) !== df
+        @test parent(view(df, [4, 2], 1:3)) === df
         @test parentindices(view(df, [4, 2], 1:3)) == ([4, 2], Base.OneTo(3))
     end
 end
