@@ -1,28 +1,32 @@
 """
     SubDataFrame{<:AbstractVector{Int}, <:AbstractVector{Int}} <: AbstractDataFrame
 
-A view of row subsets of an AbstractDataFrame
+A view of row subsets of an `AbstractDataFrame`.
 
-A `SubDataFrame` is meant to be constructed with `view`.  A
-SubDataFrame is used frequently in split/apply sorts of operations.
+A `SubDataFrame` is meant to be constructed with `view` when a collection of
+rows and columns is selected.
+A `SubDataFrame` is used frequently in split/apply sorts of operations.
 
 ```julia
-view(d::AbstractDataFrame, rows)
+view(d::AbstractDataFrame, rows, cols)
+view(d::AbstractDataFrame, cols)
 ```
 
 ### Arguments
 
-* `d` : an AbstractDataFrame
-* `rows` : any indexing type for rows, typically an Int,
-  AbstractVector{Int}, AbstractVector{Bool}, or a Range
+* `d` : an `AbstractDataFrame`
+* `rows` : any indexing type for rows, typically
+  `AbstractVector{Int}` or `AbstractVector{Bool}`
+* `cols` : any indexing type for columns, typically
+  `AbstractVector{Int}`, `AbstractVector{Bool}` or `AbstractVector{Symbol}` or a colon
 
 ### Notes
 
-A `SubDataFrame` is an AbstractDataFrame, so expect that most
+A `SubDataFrame` is an `AbstractDataFrame`, so expect that most
 DataFrame functions should work. Such methods include `describe`,
 `dump`, `nrow`, `size`, `by`, `stack`, and `join`.
 
-Indexing is just like a DataFrame.
+Indexing is just like a `DataFrame`.
 
 ### Examples
 
@@ -30,14 +34,10 @@ Indexing is just like a DataFrame.
 df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
-sdf1 = view(df, 1:6)
-sdf2 = view(df, df[:a] .> 1)
-sdf3 = view(df[[1,3]], df[:a] .> 1)  # row and column subsetting
-sdf4 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
-sdf5 = view(sdf1, 1:3)
-sdf1[:,[:a,:b]]
+sdf1 = view(df, 2:3) # column subsetting
+sdf2 = view(df, df[:a] .> 1, [1,3])  # row and column subsetting
+sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
 ```
-
 """
 struct SubDataFrame{T<:AbstractVector{Int}, S<:AbstractVector{Int}} <: AbstractDataFrame
     parent::DataFrame

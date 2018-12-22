@@ -1,7 +1,44 @@
 """
     DataFrameRow{<:AbstractDataFrame, <:AbstractVector{Int}}
 
-A view of one row of an AbstractDataFrame.
+A view of one row of an `AbstractDataFrame`.
+
+A `DataFrameRow` is meant to be constructed with `view` when one row
+and a selection of columns is requested.
+A `DataFrameRow` is typically appears when `getindex` is called on an
+`AbstractDataFrame` and one row is selected and is returned when iterating
+the result of the call to the `eachrow` function.
+
+```julia
+view(d::AbstractDataFrame, row, cols)
+d[row, cols]
+```
+
+### Arguments
+
+* `d` : an `AbstractDataFrame`
+* `row` : an `Integer` other than `Bool` indicating requested row number
+* `cols` : any indexing type for columns, typically
+  `AbstractVector{Int}`, `AbstractVector{Bool}` or `AbstractVector{Symbol}` or a colon
+
+### Notes
+
+A `DataFrameRow` supports iteration interface so you can pass it to functions
+that expect a collection as an argument.
+
+Indexing is one-dimensional like specifying a column of a `DataFrame`.
+
+### Examples
+
+```julia
+df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+               b = repeat([2, 1], outer=[4]),
+               c = randn(8))
+dfr1 = df[1, :]
+dfr2 = view(df, 2, 2:3)
+dfr3 = eachrow(df)[3] # indexing the result of `eachrow` returns a DataFrameRow
+```
+
 """
 struct DataFrameRow{T<:AbstractDataFrame, S<:AbstractVector{Int}}
     df::T
