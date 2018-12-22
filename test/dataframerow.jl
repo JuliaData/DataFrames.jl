@@ -112,8 +112,8 @@ module TestDataFrameRow
     @test haskey(r, :a)
     @test haskey(r, 1)
     @test !haskey(r, :zzz)
-    @test haskey(r, 0)
-    @test haskey(r, 1000)
+    @test !haskey(r, 0)
+    @test !haskey(r, 1000)
     @test_throws ArgumentError haskey(r, true)
 
     @test length(r) == 4

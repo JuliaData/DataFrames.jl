@@ -161,7 +161,7 @@ function Base.haskey(x::SubIndex, key::Symbol)
     pos = index(parent(x.sdf))[key]
     remap = getfield(x.sdf, :remap)
     checkbounds(Bool, remap, pos) || return false
-    remap > 0
+    remap[pos] > 0
 end
 Base.haskey(x::SubIndex, key::Integer) = 1 <= key <= length(x)
 Base.haskey(x::SubIndex, key::Bool) =
