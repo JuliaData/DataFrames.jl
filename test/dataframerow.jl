@@ -116,6 +116,13 @@ module TestDataFrameRow
     @test !haskey(r, 1000)
     @test_throws ArgumentError haskey(r, true)
 
+    x = DataFrame(ones(5,4))
+    dfr = view(x, 2, 2:3)
+    @test names(dfr) == names(x)[2:3]
+    dfr = view(x, 2, [4,2])
+    @test names(dfr) == names(x)[[4,2]]
+
+
     @test length(r) == 4
     @test lastindex(r) == 4
     @test ndims(r) == 1

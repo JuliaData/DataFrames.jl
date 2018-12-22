@@ -152,6 +152,12 @@ module TestSubDataFrame
         @test !haskey(DataFrames.index(df2), 0)
         @test_throws ArgumentError haskey(DataFrames.index(df2), true)
         @test keys(DataFrames.index(df2)) == [:y]
+
+        x = DataFrame(ones(5,4))
+        df = view(x, 2:3, 2:3)
+        @test names(df) == names(x)[2:3]
+        df = view(x, 2:3, [4,2])
+        @test names(df) == names(x)[[4,2]]
     end
 
     @testset "dump" begin

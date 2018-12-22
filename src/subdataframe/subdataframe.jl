@@ -62,7 +62,7 @@ end
     @boundscheck checkbounds(axes(parent, 1), rows)
     @boundscheck checkbounds(axes(parent, 2), cols)
     # non existing mappings are either out range or invalid
-    remap = 1:last(cols) .- first(cols) .+ 1
+    remap = (1:last(cols)) .- first(cols) .+ 1
     SubDataFrame(parent, rows, cols, remap)
 end
 

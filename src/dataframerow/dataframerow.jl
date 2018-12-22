@@ -43,7 +43,7 @@ end
                           "columns at indices $cols"))
     end
     # non existing mappings are either out range or invalid
-    remap = 1:last(cols) .- first(cols) .+ 1
+    remap = (1:last(cols)) .- first(cols) .+ 1
     DataFrameRow(df, row, cols, remap)
 end
 
