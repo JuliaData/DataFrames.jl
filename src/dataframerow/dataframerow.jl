@@ -3,20 +3,18 @@
 
 A view of one row of an `AbstractDataFrame`.
 
-A `DataFrameRow` is meant to be constructed with `view` when one row
-and a selection of columns is requested.
-A `DataFrameRow` is typically appears when `getindex` is called on an
-`AbstractDataFrame` and one row is selected and is returned when iterating
-the result of the call to the `eachrow` function.
+A `DataFrameRow` is constructed with `view` or `getindex` when one row and a
+selection of columns is requested.
+It is also returned when iterating the result of the call to the [`eachrow`](@ref) function.
 
 ```julia
-view(d::AbstractDataFrame, row, cols)
-d[row, cols]
+view(df::AbstractDataFrame, row, cols)
+df[row, cols]
 ```
 
 ### Arguments
 
-* `d` : an `AbstractDataFrame`
+* `df` : an `AbstractDataFrame`
 * `row` : an `Integer` other than `Bool` indicating requested row number
 * `cols` : any indexing type for columns, typically
   `AbstractVector{Int}`, `AbstractVector{Bool}` or `AbstractVector{Symbol}` or a colon
@@ -27,18 +25,6 @@ A `DataFrameRow` supports iteration interface so you can pass it to functions
 that expect a collection as an argument.
 
 Indexing is one-dimensional like specifying a column of a `DataFrame`.
-
-### Examples
-
-```julia
-df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-               b = repeat([2, 1], outer=[4]),
-               c = randn(8))
-dfr1 = df[1, :]
-dfr2 = view(df, 2, 2:3)
-dfr3 = eachrow(df)[3] # indexing the result of `eachrow` returns a DataFrameRow
-```
-
 """
 struct DataFrameRow{T<:AbstractDataFrame, S<:AbstractVector{Int}}
     df::T
@@ -47,10 +33,8 @@ struct DataFrameRow{T<:AbstractDataFrame, S<:AbstractVector{Int}}
     remap::S # inverse of cols, it is of type S for efficiency in most common cases
 end
 
-DataFrameRow(df::AbstractDataFrame, row::Bool, cols::S, remap::S) where {S<:AbstractVector{Int}} =
+@inline DataFrameRow(df::AbstractDataFrame, row::Bool, ::Union{AbstractVector, Colon}) =
     throw(ArgumentError("invalid index: $row of type Bool"))
-DataFrameRow(df::AbstractDataFrame, row::Integer, cols::S, remap::S) where {S<:AbstractVector{Int}} =
-    DataFrameRow{typeof(df), S}(df, row, cols, remap)
 
 @inline function DataFrameRow(df::AbstractDataFrame, row::Integer, cols::Vector{Int})
     @boundscheck if !checkindex(Bool, axes(df, 1), row)
@@ -61,12 +45,8 @@ DataFrameRow(df::AbstractDataFrame, row::Integer, cols::S, remap::S) where {S<:A
         throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
                           "columns at indices $cols"))
     end
-    # we set non-existing mappings to 0
-    remap = zeros(Int, ncol(df))
-    for (i, col) in enumerate(cols)
-        remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
-        remap[col] = i
-    end
+    # remap will be constructed only as needed so we keep it empty here
+    remap = Int[]
     DataFrameRow(df, row, cols, remap)
 end
 
@@ -97,10 +77,8 @@ end
     DataFrameRow(df, row, convert(Vector{Int}, cols))
 @inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::AbstractUnitRange{Int}) =
     DataFrameRow(df, row, convert(UnitRange{Int}, cols))
-@inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols) =
+@inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::AbstractVector) =
     DataFrameRow(df, row, index(df)[cols])
-@inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::ColumnIndex) =
-    throw(ArgumentError("invalid column vector $cols"))
 
 row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)
@@ -126,30 +104,33 @@ Base.getindex(df::DataFrame, rowind::Integer, ::Colon) =
 Base.getindex(sdf::SubDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(parent(sdf), rows(sdf)[rowind], parentindices(sdf)[2])
 
-getparentcols(r::DataFrameRow, idx::Union{Integer, AbstractVector{<:Integer}}) =
+@inline parentcols(r::DataFrameRow, idx::Union{Integer, AbstractVector{<:Integer}}) =
     getfield(r, :cols)[idx]
 
-function getparentcols(r::DataFrameRow, idx::Symbol)
+@inline lazyremap(r::DataFrameRow) =
+    lazyremap(ncol(parent(r)), getfield(r, :cols), getfield(r, :remap))
+
+@inline function parentcols(r::DataFrameRow, idx::Symbol)
     parentcols = index(parent(r))[idx]
-    getfield(r, :remap)[parentcols] == 0 && throw(KeyError("$idx not found"))
+    @boundscheck lazyremap(r)[parentcols] == 0 && throw(KeyError("$idx not found"))
     return parentcols
 end
 
-getparentcols(r::DataFrameRow, idx::AbstractVector{Symbol}) =
-    [getparentcols(r, i) for i in idx]
-getparentcols(r::DataFrameRow, ::Colon) = getfield(r, :cols)
+@inline parentcols(r::DataFrameRow, idx::AbstractVector{Symbol}) =
+    [parentcols(r, i) for i in idx]
+@inline parentcols(r::DataFrameRow, ::Colon) = getfield(r, :cols)
 
-Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
-    parent(r)[row(r), getparentcols(r, idx)]
-Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector{<:Integer},
+@inline Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
+    parent(r)[row(r), parentcols(r, idx)]
+@inline Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector{<:Integer},
                                            AbstractVector{Symbol}}) =
-    DataFrameRow(parent(r), row(r), getparentcols(r, idxs))
-Base.getindex(r::DataFrameRow, ::Colon) = r
+    DataFrameRow(parent(r), row(r), parentcols(r, idxs))
+@inline Base.getindex(r::DataFrameRow, ::Colon) = r
 
-Base.setindex!(r::DataFrameRow, value::Any, idx) =
-    setindex!(parent(r), value, row(r), getparentcols(r, idx))
+@inline Base.setindex!(r::DataFrameRow, value::Any, idx) =
+    setindex!(parent(r), value, row(r), parentcols(r, idx))
 
-Base.names(r::DataFrameRow) = _names(parent(r))[getparentcols(r, :)]
+Base.names(r::DataFrameRow) = _names(parent(r))[parentcols(r, :)]
 
 Base.haskey(r::DataFrameRow, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
@@ -157,7 +138,7 @@ Base.haskey(r::DataFrameRow, key::Integer) = 1 ≤ key ≤ size(r, 1)
 function Base.haskey(r::DataFrameRow, key::Symbol)
     haskey(parent(r), key) || return false
     pos = index(parent(r))[key]
-    remap = getfield(r, :remap)
+    remap = lazyremap(r)
     checkbounds(Bool, remap, pos) || return false
     remap[pos] > 0
 end
@@ -168,9 +149,9 @@ Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
 Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
-    view(parent(r)[getparentcols(r, col)], row(r))
+    view(parent(r)[parentcols(r, col)], row(r))
 Base.view(r::DataFrameRow, cols::AbstractVector) =
-    DataFrameRow(parent(r), row(r), getparentcols(r, cols))
+    DataFrameRow(parent(r), row(r), parentcols(r, cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
 Base.size(r::DataFrameRow) = (length(getfield(r, :cols)),)
@@ -202,7 +183,7 @@ Base.Vector(dfr::DataFrameRow) = convert(Vector, dfr)
 Base.Vector{T}(dfr::DataFrameRow) where T = convert(Vector{T}, dfr)
 
 Base.keys(r::DataFrameRow) = names(r)
-Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[row(r), getparentcols(r, col)], length(r))
+Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[row(r), parentcols(r, col)], length(r))
 
 """
     copy(dfr::DataFrameRow)
@@ -233,17 +214,25 @@ function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UIn
 end
 
 Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
-    rowhash(ntuple(col -> parent(r)[getparentcols(r, col)], length(r)), row(r), h)
+    rowhash(ntuple(col -> parent(r)[parentcols(r, col)], length(r)), row(r), h)
 
 function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
-    names(r1) == names(r2) || return false
-    parent(r1) === parent(r2) && row(r1) == row(r2) && return true
+    if parent(r1) === parent(r2)
+        getfield(r1, :cols) == getfield(r2, :cols) || return false
+        row(r1) == row(r2) && return true
+    else
+        names(r1) == names(r2) || return false
+    end
     all(((a, b),) -> a == b, zip(r1, r2))
 end
 
 function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
-    names(r1) == names(r2) || return false
-    parent(r1) === parent(r2) && row(r1) == row(r2) && return true
+    if parent(r1) === parent(r2)
+        getfield(r1, :cols) == getfield(r2, :cols) || return false
+        row(r1) == row(r2) && return true
+    else
+        names(r1) == names(r2) || return false
+    end
     all(((a, b),) -> isequal(a, b), zip(r1, r2))
 end
 
@@ -252,7 +241,6 @@ function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
     length(r1) == length(r2) ||
         throw(ArgumentError("compared DataFrameRows must have the same number " *
                             "of columns (got $(length(r1)) and $(length(r2)))"))
-    all(((a, b),) -> isless(a, b), zip(r1, r2))
     for (a,b) in zip(r1, r2)
         isequal(a, b) || return isless(a, b)
     end

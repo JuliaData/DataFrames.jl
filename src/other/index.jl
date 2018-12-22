@@ -19,8 +19,9 @@ Base.names(x::Index) = copy(x.names)
 _names(x::Index) = x.names
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
-Base.isequal(x::Index, y::Index) = _names(x) == _names(y) # it is enough to check names
-Base.:(==)(x::Index, y::Index) = isequal(x, y)
+Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it is enough to check names
+Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
+
 
 function names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false)
     if !makeunique
@@ -135,13 +136,14 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     x
 end
 
-Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::AbstractIndex, idx::Bool) = throw(ArgumentError("invalid index: $idx of type Bool"))
 Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
-Base.getindex(x::Index, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
 Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
 Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
+
+Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
+Base.getindex(x::Index, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 
 function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
@@ -206,3 +208,50 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
 
     return u
 end
+
+### SubIndex of Index. Currently used by SubDataFrame
+
+# a helper function that lazily creates remap with cols::Vector{Int}
+@inline function lazyremap(ncol::Int, cols::Vector{Int}, remap::Vector{Int})
+    if length(remap) == 0
+        resize!(remap, ncol)
+        # we set non-existing mappings to 0
+        fill!(remap, 0)
+        for (i, col) in enumerate(getfield(dfr, :cols))
+            remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
+            remap[col] = i
+        end
+    end
+    remap
+end
+
+# for ranges assume all is corretly calculated eagerly
+@inline lazyremap(ncol::Int, cols::AbstractUnitRange{Int}, remap::AbstractUnitRange{Int}) =
+    remap
+
+struct SubIndex{S<:AbstractVector{Int}} <: AbstractIndex
+    parent::Index
+    cols::S # columns from idx selected in SubIndex
+    remap::S # reverse of cols
+end
+
+Base.length(x::SubIndex) = length(x.cols)
+Base.names(x::SubIndex) = copy(_names(x))
+_names(x::SubIndex) = view(_names(x.parent), x.cols)
+
+function Base.haskey(x::SubIndex, key::Symbol)
+    haskey(x.parent, key) || return false
+    pos = index(x.parent)[key]
+    remap = lazyremap(length(x.parent), x.cols. x.remap)
+    checkbounds(Bool, remap, pos) || return false
+    remap[pos] > 0
+end
+
+Base.haskey(x::SubIndex, key::Integer) = 1 <= key <= length(x)
+Base.haskey(x::SubIndex, key::Bool) =
+    throw(ArgumentError("invalid key: $key of type Bool"))
+Base.keys(x::SubIndex) = names(x)
+
+Base.getindex(x::SubIndex, idx::Symbol) =
+    lazyremap(sdf)[index(parent(x.sdf))[idx]]
+Base.getindex(x::SubIndex, idx::AbstractVector{Symbol}) = [x[i] for i in idx]

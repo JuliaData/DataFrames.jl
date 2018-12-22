@@ -24,6 +24,42 @@ end
 
 Return a `DataFrameRows` that iterates an `AbstractDataFrame` row by row,
 with each row represented as a `DataFrameRow`.
+
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(x=1:4, y=11:14)
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 11    │
+│ 2   │ 2     │ 12    │
+│ 3   │ 3     │ 13    │
+│ 4   │ 4     │ 14    │
+
+julia> eachrow(df)
+4-element DataFrames.DataFrameRows{DataFrame}:
+ DataFrameRow (row 1)
+x  1
+y  11
+ DataFrameRow (row 2)
+x  2
+y  12
+ DataFrameRow (row 3)
+x  3
+y  13
+ DataFrameRow (row 4)
+x  4
+y  14
+
+julia> copy.(eachrow(df))
+4-element Array{NamedTuple{(:x, :y),Tuple{Int64,Int64}},1}:
+ (x = 1, y = 11)
+ (x = 2, y = 12)
+ (x = 3, y = 13)
+ (x = 4, y = 14)
+```
 """
 eachrow(df::AbstractDataFrame) = DataFrameRows(df)
 

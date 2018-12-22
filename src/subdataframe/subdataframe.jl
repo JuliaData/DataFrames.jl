@@ -46,15 +46,28 @@ struct SubDataFrame{T<:AbstractVector{Int}, S<:AbstractVector{Int}} <: AbstractD
     remap::S # inverse of cols, it is of type S for efficiency in most common cases
 end
 
+# a helper function that lazily creates remap for DataFrameRow with cols::Vector{Int}
+@inline function lazyremap(sdf::SubDataFrame{<:AbstractVector{Int}, Vector{Int}})
+    remap = getfield(sdf, :remap)
+    # the code below works also correctly if ncol(parent(sdf)) == 0
+    if length(remap) == 0
+        resize!(remap, ncol(parent(sdf)))
+        # we set non-existing mappings to 0
+        fill!(remap, 0)
+        for (i, col) in enumerate(getfield(sdf, :cols))
+            remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
+            remap[col] = i
+        end
+    end
+    remap
+end
+
+
 @inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols::Vector{Int})
     @boundscheck checkbounds(axes(parent, 1), rows)
     @boundscheck checkbounds(axes(parent, 2), cols)
     # we set non-existing mappings to 0
-    remap = zeros(Int, ncol(parent))
-    for (i, col) in enumerate(cols)
-        remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
-        remap[col] = i
-    end
+    remap = Int[]
     SubDataFrame(parent, rows, cols, remap)
 end
 
@@ -107,24 +120,24 @@ end
     return SubDataFrame(parent, convert(Vector{Int}, rows), cols)
 end
 
-getparentcols(sdf::SubDataFrame, idx::Union{Integer, AbstractVector{<:Integer}}) =
+@inline parentcols(sdf::SubDataFrame, idx::Union{Integer, AbstractVector{<:Integer}}) =
     getfield(sdf, :cols)[idx]
 
-function getparentcols(sdf::SubDataFrame, idx::Symbol)
+@inline function parentcols(sdf::SubDataFrame, idx::Symbol)
     parentcols = index(parent(sdf))[idx]
-    getfield(sdf, :remap)[parentcols] == 0 && throw(KeyError("$idx not found"))
+    @boundscheck getfield(sdf, :remap)[parentcols] == 0 && throw(KeyError("$idx not found"))
     return parentcols
 end
 
-getparentcols(sdf::SubDataFrame, idx::AbstractVector{Symbol}) =
-    [getparentcols(sdf, i) for i in idx]
+@inline parentcols(sdf::SubDataFrame, idx::AbstractVector{Symbol}) =
+    [parentcols(sdf, i) for i in idx]
 
-getparentcols(sdf::SubDataFrame, ::Colon) = getfield(sdf, :cols)
+@inline parentcols(sdf::SubDataFrame, ::Colon) = getfield(sdf, :cols)
 
 SubDataFrame(sdf::SubDataFrame, rowind, cols) =
-    SubDataFrame(parent(sdf), rows(sdf)[rowind], getparentcols(sdf, cols))
+    SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(sdf, cols))
 SubDataFrame(sdf::SubDataFrame, ::Colon, cols) =
-    SubDataFrame(parent(sdf), rows(sdf), getparentcols(sdf, cols))
+    SubDataFrame(parent(sdf), rows(sdf), parentcols(sdf, cols))
 SubDataFrame(sdf::SubDataFrame, ::Colon, ::Colon) = sdf
 
 rows(sdf::SubDataFrame) = getfield(sdf, :rows)
@@ -139,70 +152,49 @@ Base.view(adf::AbstractDataFrame, rowinds, colind::Bool) =
 Base.view(adf::AbstractDataFrame, rowinds, colinds) =
     SubDataFrame(adf, rowinds, colinds)
 
+@inline lazyremap(sdf::SubDataFrame) =
+    lazyremap(ncol(parent(sdf)), getfield(sdf, :cols), getfield(sdf, :remap))
+
 ##############################################################################
 ##
 ## AbstractDataFrame interface
 ##
 ##############################################################################
 
-struct SubIndex{T,S} <: AbstractIndex
-    sdf::SubDataFrame{T,S}
-end
-
-index(sdf::SubDataFrame{T,S}) where {T,S} = SubIndex{T,S}(sdf)
-
-Base.length(x::SubIndex) = length(getfield(x.sdf, :cols))
-Base.names(x::SubIndex) = copy(_names(x))
-_names(x::SubIndex) = view(_names(parent(x.sdf)), getfield(x.sdf, :cols))
-Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y)
-Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
-function Base.haskey(x::SubIndex, key::Symbol)
-    haskey(parent(x.sdf), key) || return false
-    pos = index(parent(x.sdf))[key]
-    remap = getfield(x.sdf, :remap)
-    checkbounds(Bool, remap, pos) || return false
-    remap[pos] > 0
-end
-Base.haskey(x::SubIndex, key::Integer) = 1 <= key <= length(x)
-Base.haskey(x::SubIndex, key::Bool) =
-    throw(ArgumentError("invalid key: $key of type Bool"))
-Base.keys(x::SubIndex) = names(x)
-
-Base.getindex(x::SubIndex, idx::Symbol) =
-    getfield(x.sdf, :remap)[index(parent(x.sdf))[idx]]
-Base.getindex(x::SubIndex, idx::AbstractVector{Symbol}) = [x[i] for i in idx]
+index(sdf::SubDataFrame) =
+    SubIndex(index(parent(sdf)), getfield(sdf, :cols), getfield(sdf, :remap))
 
 # TODO: Remove these
 nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(rows(sdf))::Int : 0
 ncol(sdf::SubDataFrame) = length(index(sdf))
 
-Base.getindex(sdf::SubDataFrame, colind::ColumnIndex) =
-    view(parent(sdf), rows(sdf), getparentcols(sdf, colind))
-Base.getindex(sdf::SubDataFrame, colinds::AbstractVector) =
-    SubDataFrame(parent(sdf), rows(sdf), getparentcols(sdf, colinds))
-Base.getindex(sdf::SubDataFrame, ::Colon) = sdf
-Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
-    parent(sdf)[rows(sdf)[rowind], getparentcols(sdf, colind)]
-Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colind::ColumnIndex) =
-    parent(sdf)[rows(sdf)[rowinds], getparentcols(sdf, colind)]
-Base.getindex(sdf::SubDataFrame, ::Colon, colind::ColumnIndex) =
-    parent(sdf)[rows(sdf), getparentcols(sdf, colind)]
-Base.getindex(sdf::SubDataFrame, ::Colon, colinds::AbstractVector) =
-    parent(sdf)[rows(sdf), getparentcols(sdf, colinds)]
-Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colinds::AbstractVector) =
-    parent(sdf)[rows(sdf)[rowinds], getparentcols(sdf, colinds)]
-Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, ::Colon) =
-    parent(sdf)[rows(sdf)[rowinds], getparentcols(sdf, :)]
-Base.getindex(sdf::SubDataFrame, ::Colon, ::Colon) =
-    parent(sdf)[rows(sdf), getparentcols(sdf, :)]
+@inline Base.getindex(sdf::SubDataFrame, colind::ColumnIndex) =
+    view(parent(sdf), rows(sdf), parentcols(sdf, colind))
+@inline Base.getindex(sdf::SubDataFrame, colinds::AbstractVector) =
+    SubDataFrame(parent(sdf), rows(sdf), parentcols(sdf, colinds))
+@inline Base.getindex(sdf::SubDataFrame, ::Colon) = sdf
+@inline Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
+    parent(sdf)[rows(sdf)[rowind], parentcols(sdf, colind)]
+@inline Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colind::ColumnIndex) =
+    parent(sdf)[rows(sdf)[rowinds], parentcols(sdf, colind)]
+@inline Base.getindex(sdf::SubDataFrame, ::Colon, colind::ColumnIndex) =
+    parent(sdf)[rows(sdf), parentcols(sdf, colind)]
+@inline Base.getindex(sdf::SubDataFrame, ::Colon, colinds::AbstractVector) =
+    parent(sdf)[rows(sdf), parentcols(sdf, colinds)]
+@inline Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colinds::AbstractVector) =
+    parent(sdf)[rows(sdf)[rowinds], parentcols(sdf, colinds)]
+@inline Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, ::Colon) =
+    parent(sdf)[rows(sdf)[rowinds], parentcols(sdf, :)]
+@inline Base.getindex(sdf::SubDataFrame, ::Colon, ::Colon) =
+    parent(sdf)[rows(sdf), parentcols(sdf, :)]
 
-function Base.setindex!(sdf::SubDataFrame, val::Any, colinds::Any)
-    parent(sdf)[rows(sdf), getparentcols(sdf, colinds)] = val
+@inline function Base.setindex!(sdf::SubDataFrame, val::Any, colinds::Any)
+    parent(sdf)[rows(sdf), parentcols(sdf, colinds)] = val
     return sdf
 end
 
-function Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
-    parent(sdf)[rows(sdf)[rowinds], getparentcols(sdf, colinds)] = val
+@inline function Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
+    parent(sdf)[rows(sdf)[rowinds], parentcols(sdf, colinds)] = val
     return sdf
 end
 
@@ -212,7 +204,7 @@ end
 ##
 ##############################################################################
 
-Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), getparentcols(sdf, :)]
+Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), parentcols(sdf, :)]
 
 deleterows!(df::SubDataFrame, ind) =
     throw(ArgumentError("SubDataFrame does not support deleting rows"))
