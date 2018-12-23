@@ -235,7 +235,7 @@ struct SubIndex{S<:AbstractVector{Int}} <: AbstractIndex
     remap::S # reverse of cols
 end
 
-@inline lazyremap(x::SubIndex) = lazyremap(length(x), x.cols, x.remap)
+@inline lazyremap(x::SubIndex) = lazyremap(length(x.parent), x.cols, x.remap)
 
 Base.length(x::SubIndex) = length(x.cols)
 Base.names(x::SubIndex) = copy(_names(x))
@@ -244,7 +244,7 @@ _names(x::SubIndex) = view(_names(x.parent), x.cols)
 function Base.haskey(x::SubIndex, key::Symbol)
     haskey(x.parent, key) || return false
     pos = x.parent[key]
-    remap = lazyremap(length(x.parent), x.cols, x.remap)
+    remap = lazyremap(x)
     checkbounds(Bool, remap, pos) || return false
     remap[pos] > 0
 end
