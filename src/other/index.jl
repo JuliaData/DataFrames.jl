@@ -235,14 +235,16 @@ struct SubIndex{S<:AbstractVector{Int}} <: AbstractIndex
     remap::S # reverse of cols
 end
 
+@inline lazyremap(x::SubIndex) = lazyremap(length(x), x.cols, x.remap)
+
 Base.length(x::SubIndex) = length(x.cols)
 Base.names(x::SubIndex) = copy(_names(x))
 _names(x::SubIndex) = view(_names(x.parent), x.cols)
 
 function Base.haskey(x::SubIndex, key::Symbol)
     haskey(x.parent, key) || return false
-    pos = index(x.parent)[key]
-    remap = lazyremap(length(x.parent), x.cols. x.remap)
+    pos = x.parent[key]
+    remap = lazyremap(length(x.parent), x.cols, x.remap)
     checkbounds(Bool, remap, pos) || return false
     remap[pos] > 0
 end
@@ -252,6 +254,5 @@ Base.haskey(x::SubIndex, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 Base.keys(x::SubIndex) = names(x)
 
-Base.getindex(x::SubIndex, idx::Symbol) =
-    lazyremap(sdf)[index(parent(x.sdf))[idx]]
+Base.getindex(x::SubIndex, idx::Symbol) = lazyremap(x)[x.parent[idx]]
 Base.getindex(x::SubIndex, idx::AbstractVector{Symbol}) = [x[i] for i in idx]

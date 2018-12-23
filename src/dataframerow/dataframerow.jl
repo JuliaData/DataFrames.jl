@@ -25,6 +25,9 @@ A `DataFrameRow` supports iteration interface so you can pass it to functions
 that expect a collection as an argument.
 
 Indexing is one-dimensional like specifying a column of a `DataFrame`.
+
+It is possible to create a `DataFrameRow` with duplicate columns, but in such case
+an error will be thrown when one tries to access some column by name.
 """
 struct DataFrameRow{T<:AbstractDataFrame, S<:AbstractVector{Int}}
     df::T
@@ -33,7 +36,10 @@ struct DataFrameRow{T<:AbstractDataFrame, S<:AbstractVector{Int}}
     remap::S # inverse of cols, it is of type S for efficiency in most common cases
 end
 
-@inline DataFrameRow(df::AbstractDataFrame, row::Bool, ::Union{AbstractVector, Colon}) =
+DataFrameRow(df::T, row::Integer, cols::S, remap::S) where {T<:AbstractDataFrame, S<:AbstractVector{Int}} =
+    DataFrameRow{T,S}(df, row, cols, remap)
+
+DataFrameRow(df::T, row::Bool, cols::S, remap::S) where {T<:AbstractDataFrame, S<:AbstractVector{Int}} =
     throw(ArgumentError("invalid index: $row of type Bool"))
 
 @inline function DataFrameRow(df::AbstractDataFrame, row::Integer, cols::Vector{Int})

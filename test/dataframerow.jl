@@ -9,8 +9,8 @@ module TestDataFrameRow
     df2 = DataFrame(a = [1, 2, 3])
 
     @test names(DataFrameRow(df, 1, :)) == [:a, :b, :c, :d]
-    @test_throws ArgumentError DataFrameRow(df, 1, :a)
-    @test_throws ArgumentError DataFrameRow(df, 1, 1)
+    @test_throws MethodError DataFrameRow(df, 1, :a)
+    @test_throws MethodError DataFrameRow(df, 1, 1)
     @test_throws BoundsError DataFrameRow(df, 1, 1:10)
     @test_throws BoundsError DataFrameRow(df, 1, [1:10;])
     @test_throws BoundsError DataFrameRow(df, 100, 1:2)

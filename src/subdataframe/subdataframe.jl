@@ -26,6 +26,9 @@ A `SubDataFrame` is an `AbstractDataFrame`, so expect that most
 DataFrame functions should work. Such methods include `describe`,
 `dump`, `nrow`, `size`, `by`, `stack`, and `join`.
 
+It is possible to create a `DataFrameRow` with duplicate columns, but in such case
+an error will be thrown when one tries to access some column by name.
+
 Indexing is just like a `DataFrame`.
 
 ### Examples
