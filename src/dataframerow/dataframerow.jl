@@ -90,7 +90,7 @@ end
 
 @inline Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(r, idx)]
-@inline Base.getindex(r::DataFrameRow, idxs::AbstractVector}) =
+@inline Base.getindex(r::DataFrameRow, idxs::AbstractVector) =
     DataFrameRow(parent(r), row(r), parentcols(r, idxs))
 @inline Base.getindex(r::DataFrameRow, ::Colon) = r
 
