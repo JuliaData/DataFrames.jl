@@ -50,6 +50,9 @@ DataFrameRow(df::DataFrame, colindex::SubIndex, row::Bool) =
     DataFrameRow(df, SubIndex(index(df), cols), row)
 end
 
+@inline function DataFrameRow(sdf::SubDataFrame, row::Bool, cols) =
+    throw(ArgumentError("invalid index: $row of type Bool"))
+
 @inline function DataFrameRow(sdf::SubDataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(sdf, 1), row)
         throw(BoundsError("attempt to access a data frame with $(nrow(sdf)) " *
