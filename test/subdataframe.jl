@@ -163,10 +163,10 @@ module TestSubDataFrame
     @testset "dump" begin
         y = 1.0:10.0
         df = view(DataFrame(y=y), 2:6, :)
-        @test sprint(dump, df) == """
-                                  SubDataFrame{UnitRange{$(Int)},Base.OneTo{$(Int)}}  5 observations of 1 variables
-                                    y: [2.0, 3.0, 4.0, 5.0, 6.0]\n
-                                  """
+        @test sprint(dump, df) == string("SubDataFrame{UnitRange{Int64},",
+                                         "SubIndex{Base.OneTo{Int64},Base.OneTo{Int64}}}",
+                                         "  5 observations of 1 variables\n",
+                                         "  y: [2.0, 3.0, 4.0, 5.0, 6.0]\n\n")
     end
 
     @testset "deleterows!" begin
