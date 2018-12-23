@@ -1,5 +1,5 @@
 """
-    DataFrameRow{<:AbstractDataFrame, <:AbstractVector{Int}}
+    DataFrameRow{<:AbstractDataFrame, <:SubIndex}
 
 A view of one row of an `AbstractDataFrame`.
 
@@ -29,102 +29,63 @@ Indexing is one-dimensional like specifying a column of a `DataFrame`.
 It is possible to create a `DataFrameRow` with duplicate columns, but in such case
 an error will be thrown when one tries to access some column by name.
 """
-struct DataFrameRow{T<:AbstractDataFrame, S<:AbstractVector{Int}}
-    df::T
+struct DataFrameRow{S<:SubIndex}
+    df::DataFrame
+    colindex::S
     row::Int
-    cols::S
-    remap::S # inverse of cols, it is of type S for efficiency in most common cases
 end
 
-DataFrameRow(df::T, row::Integer, cols::S, remap::S) where {T<:AbstractDataFrame, S<:AbstractVector{Int}} =
-    DataFrameRow{T,S}(df, row, cols, remap)
+DataFrameRow(df::DataFrame, colindex::SubIndex, row::Integer) =
+    DataFrameRow{typeof(colindex)}(df, colindex, row)
 
-DataFrameRow(df::T, row::Bool, cols::S, remap::S) where {T<:AbstractDataFrame, S<:AbstractVector{Int}} =
+DataFrameRow(df::DataFrame, colindex::SubIndex, row::Bool) =
     throw(ArgumentError("invalid index: $row of type Bool"))
 
-@inline function DataFrameRow(df::AbstractDataFrame, row::Integer, cols::Vector{Int})
+@inline function DataFrameRow(df::DataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(df, 1), row)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row"))
     end
-    @boundscheck if !checkindex(Bool, axes(df, 2), cols)
-        throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
-                          "columns at indices $cols"))
-    end
-    # remap will be constructed only as needed so we keep it empty here
-    remap = Int[]
-    DataFrameRow(df, row, cols, remap)
+    DataFrameRow(df, SubIndex(df, cols), row)
 end
 
-@inline function DataFrameRow(df::AbstractDataFrame, row::Integer, cols::UnitRange{Int})
-    @boundscheck if !checkindex(Bool, axes(df, 1), row)
-        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+@inline function DataFrameRow(sdf::SubDataFrame, row::Integer, cols)
+    @boundscheck if !checkindex(Bool, axes(sdf, 1), row)
+        throw(BoundsError("attempt to access a data frame with $(nrow(sdf)) " *
                           "rows at index $row"))
     end
-    @boundscheck if !checkindex(Bool, axes(df, 2), cols)
-        throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
-                          "columns at indices $cols"))
-    end
-    # non existing mappings are either out range or invalid
-    remap = (1:last(cols)) .- first(cols) .+ 1
-    DataFrameRow(df, row, cols, remap)
+    DataFrameRow(parent(sdf),
+                 SubIndex(index(parent(sdf)),
+                          parentcols(sdf, cols isa Colon ? cols : index(sdf)[cols])),
+                 rows(sdf)[rowind])
 end
-
-@inline function DataFrameRow(df::AbstractDataFrame, row::Integer, ::Colon)
-    @boundscheck if !checkindex(Bool, axes(df, 1), row)
-        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                          "rows at index $row"))
-    end
-    cols = axes(df, 2)
-    DataFrameRow(df, row, cols, cols)
-end
-
-@inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::AbstractVector{Int}) =
-    DataFrameRow(df, row, convert(Vector{Int}, cols))
-@inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::AbstractUnitRange{Int}) =
-    DataFrameRow(df, row, convert(UnitRange{Int}, cols))
-@inline DataFrameRow(df::AbstractDataFrame, row::Integer, cols::AbstractVector) =
-    DataFrameRow(df, row, index(df)[cols])
 
 row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)
-Base.parentindices(r::DataFrameRow) = (row(r), getfield(r, :cols))
+Base.parentindices(r::DataFrameRow) = (row(r), index(r).cols)
 
 Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(adf, rowind, :)
-Base.view(sdf::SubDataFrame, rowind::Integer, ::Colon) =
-    DataFrameRow(parent(sdf), rows(sdf)[rowind], parentindices(sdf)[2])
-
 Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(adf, rowind, colinds)
-Base.view(sdf::SubDataFrame, rowind::Integer, colinds::AbstractVector) =
-    DataFrameRow(parent(sdf), rows(sdf)[rowind], index(sdf)[colinds])
 
-# Same here. It is impossible to create a DataFrameRow without columns.
-Base.getindex(df::DataFrame, rowind::Integer, colinds::AbstractVector) =
+Base.getindex(df::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(df, rowind, colinds)
-Base.getindex(sdf::SubDataFrame, rowind::Integer, colinds::AbstractVector) =
-    DataFrameRow(parent(sdf), rows(sdf)[rowind], index(sdf)[colinds])
-Base.getindex(df::DataFrame, rowind::Integer, ::Colon) =
+Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
-Base.getindex(sdf::SubDataFrame, rowind::Integer, ::Colon) =
-    DataFrameRow(parent(sdf), rows(sdf)[rowind], parentindices(sdf)[2])
 
 @inline parentcols(r::DataFrameRow, idx::Union{Integer, AbstractVector{<:Integer}}) =
-    getfield(r, :cols)[idx]
-
-@inline lazyremap!(r::DataFrameRow) =
-    lazyremap!(ncol(parent(r)), getfield(r, :cols), getfield(r, :remap))
+    index(r).cols[idx]
 
 @inline function parentcols(r::DataFrameRow, idx::Symbol)
-    parentcols = index(parent(r))[idx]
-    @boundscheck lazyremap!(r)[parentcols] == 0 && throw(KeyError("$idx not found"))
-    return parentcols
+    parentcol = index(parent(r))[idx]
+    @boundscheck lazyremap!(index(r))[parentcol] == 0 && throw(KeyError("$idx not found"))
+    return parentcol
 end
 
 @inline parentcols(r::DataFrameRow, idx::AbstractVector{Symbol}) =
     [parentcols(r, i) for i in idx]
-@inline parentcols(r::DataFrameRow, ::Colon) = getfield(r, :cols)
+@inline parentcols(r::DataFrameRow, ::Colon) = index(r).cols
 
 @inline Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(r, idx)]
@@ -135,6 +96,8 @@ end
 
 @inline Base.setindex!(r::DataFrameRow, value::Any, idx) =
     setindex!(parent(r), value, row(r), parentcols(r, idx))
+
+index(r::DataFrameRow) = getfield(r, :colindex)
 
 Base.names(r::DataFrameRow) = _names(parent(r))[parentcols(r, :)]
 
@@ -160,7 +123,7 @@ Base.view(r::DataFrameRow, cols::AbstractVector) =
     DataFrameRow(parent(r), row(r), parentcols(r, cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
-Base.size(r::DataFrameRow) = (length(getfield(r, :cols)),)
+Base.size(r::DataFrameRow) = (length(index(r)),)
 Base.size(r::DataFrameRow, i) = size(r)[i]
 Base.length(r::DataFrameRow) = size(r, 1)
 Base.ndims(r::DataFrameRow) = 1
@@ -224,7 +187,7 @@ Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
 
 function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
     if parent(r1) === parent(r2)
-        getfield(r1, :cols) == getfield(r2, :cols) || return false
+        index(r1).cols == index(r2).cols || return false
         row(r1) == row(r2) && return true
     else
         names(r1) == names(r2) || return false
@@ -234,7 +197,7 @@ end
 
 function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
     if parent(r1) === parent(r2)
-        getfield(r1, :cols) == getfield(r2, :cols) || return false
+        index(r1).cols == index(r2).cols || return false
         row(r1) == row(r2) && return true
     else
         names(r1) == names(r2) || return false

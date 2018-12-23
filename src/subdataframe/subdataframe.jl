@@ -1,5 +1,5 @@
 """
-    SubDataFrame{<:AbstractVector{Int}, <:AbstractVector{Int}} <: AbstractDataFrame
+    SubDataFrame{<:AbstractVector{Int}, <:SubIndex} <: AbstractDataFrame
 
 A view of row subsets of an `AbstractDataFrame`.
 
@@ -42,43 +42,14 @@ sdf2 = view(df, df[:a] .> 1, [1,3])  # row and column subsetting
 sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
 ```
 """
-struct SubDataFrame{T<:AbstractVector{Int}, S<:AbstractVector{Int}} <: AbstractDataFrame
+struct SubDataFrame{T<:AbstractVector{Int}, S<:SubIndex} <: AbstractDataFrame
     parent::DataFrame
+    colindex::S
     rows::T # maps from subdf row indexes to parent row indexes
-    cols::S
-    remap::S # inverse of cols, it is of type S for efficiency in most common cases
 end
 
-@inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols::Vector{Int})
-    @boundscheck checkbounds(axes(parent, 1), rows)
-    @boundscheck checkbounds(axes(parent, 2), cols)
-    # we set non-existing mappings to 0
-    remap = Int[]
-    SubDataFrame(parent, rows, cols, remap)
-end
-
-@inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols::UnitRange{Int})
-    @boundscheck checkbounds(axes(parent, 1), rows)
-    @boundscheck checkbounds(axes(parent, 2), cols)
-    # non existing mappings are either out range or invalid
-    remap = (1:last(cols)) .- first(cols) .+ 1
-    SubDataFrame(parent, rows, cols, remap)
-end
-
-@inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, ::Colon)
-    @boundscheck checkbounds(axes(parent, 1), rows)
-    cols = axes(parent, 2)
-    SubDataFrame(parent, rows, cols, cols)
-end
-
-@inline SubDataFrame(parent::DataFrame, rows::T, cols::AbstractVector{Int}) where {T <: AbstractVector{Int}} =
-    SubDataFrame(parent, rows, convert(Vector{Int}, cols))
-@inline SubDataFrame(parent::DataFrame, rows::T, cols::AbstractUnitRange{Int}) where {T <: AbstractVector{Int}} =
-    SubDataFrame(parent, rows, convert(UnitRange{Int}, cols))
-@inline SubDataFrame(parent::DataFrame, rows::T, cols) where {T <: AbstractVector{Int}} =
-    SubDataFrame(parent, rows, index(parent)[cols])
-@inline SubDataFrame(parent::DataFrame, rows::T, cols::ColumnIndex) where {T <: AbstractVector{Int}} =
-    throw(ArgumentError("invalid column vector $cols"))
+@inline SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols) =
+    SubDataFrame(parent, SubIndex(index(parent), cols), rows)
 @inline SubDataFrame(parent::DataFrame, ::Colon, cols) =
     SubDataFrame(parent, axes(parent, 1), cols)
 @inline SubDataFrame(parent::DataFrame, row::Integer, cols) =
@@ -107,18 +78,18 @@ end
 end
 
 @inline parentcols(sdf::SubDataFrame, idx::Union{Integer, AbstractVector{<:Integer}}) =
-    getfield(sdf, :cols)[idx]
+    index(sdf).cols[idx]
 
 @inline function parentcols(sdf::SubDataFrame, idx::Symbol)
-    parentcols = index(parent(sdf))[idx]
-    @boundscheck lazyremap!(sdf)[parentcols] == 0 && throw(KeyError("$idx not found"))
-    return parentcols
+    parentcol = index(parent(sdf))[idx]
+    @boundscheck lazyremap!(index(sdf))[parentcol] == 0 && throw(KeyError("$idx not found"))
+    return parentcol
 end
 
 @inline parentcols(sdf::SubDataFrame, idx::AbstractVector{Symbol}) =
     [parentcols(sdf, i) for i in idx]
 
-@inline parentcols(sdf::SubDataFrame, ::Colon) = getfield(sdf, :cols)
+@inline parentcols(sdf::SubDataFrame, ::Colon) = index(sdf).cols
 
 SubDataFrame(sdf::SubDataFrame, rowind, cols) =
     SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(sdf, cols))
@@ -128,7 +99,7 @@ SubDataFrame(sdf::SubDataFrame, ::Colon, ::Colon) = sdf
 
 rows(sdf::SubDataFrame) = getfield(sdf, :rows)
 Base.parent(sdf::SubDataFrame) = getfield(sdf, :parent)
-Base.parentindices(sdf::SubDataFrame) = (rows(sdf), getfield(sdf, :cols))
+Base.parentindices(sdf::SubDataFrame) = (rows(sdf), index(sdf).cols)
 
 Base.view(adf::AbstractDataFrame, colinds) = view(adf, :, colinds)
 Base.view(adf::AbstractDataFrame, rowinds, colind::ColumnIndex) =
@@ -138,17 +109,13 @@ Base.view(adf::AbstractDataFrame, rowinds, colind::Bool) =
 Base.view(adf::AbstractDataFrame, rowinds, colinds) =
     SubDataFrame(adf, rowinds, colinds)
 
-@inline lazyremap!(sdf::SubDataFrame) =
-    lazyremap!(ncol(parent(sdf)), getfield(sdf, :cols), getfield(sdf, :remap))
-
 ##############################################################################
 ##
 ## AbstractDataFrame interface
 ##
 ##############################################################################
 
-index(sdf::SubDataFrame) =
-    SubIndex(index(parent(sdf)), getfield(sdf, :cols), getfield(sdf, :remap))
+index(sdf::SubDataFrame) = getfield(sdf, :colindex)
 
 # TODO: Remove these
 nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(rows(sdf))::Int : 0

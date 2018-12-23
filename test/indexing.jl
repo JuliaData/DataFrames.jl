@@ -68,21 +68,21 @@ end
 end
 
 @testset "getindex SubDataFrame" begin
-    df = DataFrame(a=0:4, b=3:7, c=6:10, d=9:13)
-    sdf = view(df, 2:4, 1:3)
+    df = DataFrame(x=-1:3, a=0:4, b=3:7, c=6:10, d=9:13)
+    sdf = view(df, 2:4, 2:4)
 
     @test sdf[1] == [1, 2, 3]
     @test sdf[1] isa SubArray
     @test sdf[1:2] == DataFrame(a=1:3, b=4:6)
     @test sdf[1:2] isa SubDataFrame
-    @test sdf[:] == df[2:4, 1:3]
+    @test sdf[:] == df[2:4, 2:4]
     @test sdf[:] isa SubDataFrame
     @test parent(sdf[:]) === parent(sdf)
 
     @test sdf[1, 1] == 1
-    @test sdf[1, 1:2] isa DataFrameRow{DataFrame}
+    @test sdf[1, 1:2] isa DataFrameRow
     @test copy(sdf[1, 1:2]) == (a=1, b=4)
-    @test sdf[1, :] isa DataFrameRow{DataFrame}
+    @test sdf[1, :] isa DataFrameRow
     @test copy(sdf[1, :]) == (a=1, b=4, c=7)
     @test parent(sdf[1, :]) === parent(sdf)
 
@@ -98,27 +98,27 @@ end
     @test sdf[:, 1] !== df[1]
     @test sdf[:, 1:2] == DataFrame(a=1:3, b=4:6)
     @test sdf[:, 1:2] isa DataFrame
-    @test sdf[:, :] == df[2:4, 1:3]
+    @test sdf[:, :] == df[2:4, 2:4]
     @test sdf[:, :] isa DataFrame
 end
 
 @testset "view SubDataFrame" begin
-    df = DataFrame(a=0:4, b=3:7, c=6:10, d=9:13)
-    sdf = view(df, 2:4, 1:3)
+    df = DataFrame(x=-1:3, a=0:4, b=3:7, c=6:10, d=9:13)
+    sdf = view(df, 2:4, 2:4)
 
     @test view(sdf, 1) == [1, 2, 3]
     @test view(sdf, 1) isa SubArray
     @test view(sdf, 1:2) isa SubDataFrame
-    @test view(sdf, 1:2) == df[2:4, 1:2]
+    @test view(sdf, 2:3) == df[2:4, 3:4]
     @test view(sdf, :) isa SubDataFrame
-    @test view(sdf, :) == df[2:4, 1:3]
+    @test view(sdf, :) == df[2:4, 2:4]
     @test parent(view(sdf, :)) == parent(sdf)
 
     @test view(sdf, 1, 1) isa SubArray
     @test view(sdf, 1, 1)[] == 1
-    @test view(sdf, 1, 1:2) isa DataFrameRow{DataFrame}
+    @test view(sdf, 1, 1:2) isa DataFrameRow
     @test copy(view(sdf, 1, 1:2)) == (a=1, b=4)
-    @test view(sdf, 1, :) isa DataFrameRow{DataFrame}
+    @test view(sdf, 1, :) isa DataFrameRow
     @test copy(view(sdf, 1, :)) == (a=1, b=4, c=7)
     @test parent(view(sdf, 1, :)) === parent(sdf)
 
@@ -127,7 +127,7 @@ end
     @test view(sdf, 1:2, 1:2) isa SubDataFrame
     @test view(sdf, 1:2, 1:2) == DataFrame(a=1:2, b=4:5)
     @test view(sdf, 1:2, :) isa SubDataFrame
-    @test view(sdf, 1:2, :) == df[2:3, 1:3]
+    @test view(sdf, 1:2, :) == df[2:3, 2:4]
     @test parent(view(sdf, 1:2, :)) === parent(sdf)
 
     @test view(sdf, :, 1) == [1, 2, 3]
@@ -136,7 +136,7 @@ end
     @test view(sdf, :, 1:2) == DataFrame(a=1:3, b=4:6)
     @test view(sdf, :, :) isa SubDataFrame
     @test parent(view(sdf, :, :)) === parent(sdf)
-    @test view(sdf, :, :) == df[2:4, 1:3]
+    @test view(sdf, :, :) == df[2:4, 2:4]
 end
 
 @testset "getindex DataFrameRow" begin
@@ -146,7 +146,7 @@ end
     @test dfr[1] == 1
     @test dfr[1:2] isa DataFrameRow
     @test copy(dfr[1:2]) == (a=1, b=4)
-    @test dfr[:] isa DataFrameRow 
+    @test dfr[:] isa DataFrameRow
     @test copy(dfr[:]) == (a=1, b=4, c=7)
     @test parent(dfr[:]) === df
 end
@@ -159,7 +159,7 @@ end
     @test view(dfr, 1) isa SubArray
     @test view(dfr, 1:2) isa DataFrameRow
     @test copy(dfr[1:2]) == (a=1, b=4)
-    @test dfr[:] isa DataFrameRow 
+    @test dfr[:] isa DataFrameRow
     @test copy(dfr[:]) == (a=1, b=4, c=7)
     @test parent(dfr[:]) === df
 end

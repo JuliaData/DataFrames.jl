@@ -141,6 +141,7 @@ Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
 Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
 Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
 Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
+Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
 Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
 Base.getindex(x::Index, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
@@ -211,31 +212,57 @@ end
 
 ### SubIndex of Index. Currently used by SubDataFrame
 
-# a helper function that lazily creates remap with cols::Vector{Int}
-@inline function lazyremap!(ncol::Int, cols::Vector{Int}, remap::Vector{Int})
+struct SubIndex{S<:AbstractVector{Int}, T<:AbstractVector{Int}} <: AbstractIndex
+    parent::Index
+    cols::S # columns from idx selected in SubIndex
+    remap::T # reverse of cols
+end
+
+@inline function SubIndex(parent::Index, ::Colon)
+    cols = Base.OneTo(length(parent))
+    SubIndex(parent, cols, cols)
+end
+
+@inline function SubIndex(parent::Index, cols::AbstractUnitRange{Int})
+    l = last(cols)
+    f = first(cols)
+    @boundscheck if !(f > 0 && l ≤ length(parent))
+        throw(BoundsError("invalid columns $cols selected"))
+    end
+    remap = (1:l) .- f .+ 1
+    SubIndex(parent, cols, remap)
+end
+
+@inline function SubIndex(parent::Index, cols::AbstractVector{Int})
+    ncols = length(parent)
+    @boundscheck if !all(x -> 0 < x ≤ ncols, cols)
+        throw(BoundsError("invalid columns $cols selected"))
+    end
+    remap = Int[]
+    SubIndex(parent, cols, remap)
+end
+
+@inline SubIndex(parent::Index, cols::ColumnIndex) =
+    throw(ArgumentError("invalid column argument $cols"))
+
+@inline SubIndex(parent::Index, cols) = SubIndex(parent, parent[cols])
+
+# a helper function that lazily creates remap when needed
+# it assumes that remap is Vector{Int} unless it is an AbstractUnitRange
+@inline function lazyremap!(x::SubIndex)
+    remap = x.remap
+    remap isa AbstractUnitRange{Int} && return remap
     if length(remap) == 0
-        resize!(remap, ncol)
+        resize!(remap, length(x.parent))
         # we set non-existing mappings to 0
         fill!(remap, 0)
-        for (i, col) in enumerate(cols)
+        for (i, col) in enumerate(x.cols)
             remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
             remap[col] = i
         end
     end
     remap
 end
-
-# for ranges assume all is corretly calculated eagerly
-@inline lazyremap!(ncol::Int, cols::AbstractUnitRange{Int}, remap::AbstractUnitRange{Int}) =
-    remap
-
-struct SubIndex{S<:AbstractVector{Int}} <: AbstractIndex
-    parent::Index
-    cols::S # columns from idx selected in SubIndex
-    remap::S # reverse of cols
-end
-
-@inline lazyremap!(x::SubIndex) = lazyremap!(length(x.parent), x.cols, x.remap)
 
 Base.length(x::SubIndex) = length(x.cols)
 Base.names(x::SubIndex) = copy(_names(x))
