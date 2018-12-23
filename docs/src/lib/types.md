@@ -26,16 +26,16 @@ Typically it is created using the `view` function or is returned by indexing int
 `GroupedDataFrame` is a type that stores the result of a  grouping operation performed on an `AbstractDataFrame`.
 It is intended to be created as a result of a call to the `groupby` function.
 
-`DataFrameRow` is a view into a single row of an `AbstractDataFrame`. It stores only a reference
-to a parent `AbstractDataFrame` and information about which row and colmns from the parent are selected.
-Note that column numbers are stored by `SubDataFrame` as a reference to the parent.
+`DataFrameRow` is a view into a single row of a `DataFrame`. It stores only a reference
+to a parent `DataFrame` and information about which row and columns from the parent are selected.
+Note that column numbers are stored by `DataFrameRow` as a reference to the parent.
 The `DataFrameRow` type supports iteration over columns of the row and is similar in functionality to
-the `NamedTuple` type, but allows for modification of data stored in the parent `AbstractDataFrame`
+the `NamedTuple` type, but allows for modification of data stored in the parent `DataFrame`
 and reflects changes done to the parent after the creation of the view.
 Typically objects of the `DataFrameRow` type are encountered when returned by the `eachrow` function.
-Also accessing a single row of a data frame via `getindex` or `view` returns a `DataFrameRow`.
+Also accessing a single row of a `DataFrame` or `SubDataFrame` via `getindex` or `view` returns a `DataFrameRow`.
 
-Additionally, the `eachrow` function returns a value of the `DataFrameRows` type, which
+The `eachrow` function returns a value of the `DataFrameRows` type, which
 serves as an iterator over rows of an `AbstractDataFrame`, returning `DataFrameRow` objects.
 
 Similarly, the `eachcol` function returns a value of the `DataFrameColumns` type, which

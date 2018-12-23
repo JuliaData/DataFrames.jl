@@ -7,8 +7,17 @@ module TestDataFrameRow
                    c=["A", "B", "C", "A", "B", missing],
                    d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
     df2 = DataFrame(a = [1, 2, 3])
+    sdf = view(df, [5, 3], [3, 1, 2])
 
     @test names(DataFrameRow(df, 1, :)) == [:a, :b, :c, :d]
+    @test names(DataFrameRow(df, 3, [3, 2])) == [:c, :b]
+    @test copy(DataFrameRow(df, 3, [3, 2])) == (c = "C", b = 1.2)
+    @test copy(DataFrameRow(sdf, 2, [3, 2])) == (b = 1.2, a = 3)
+    @test copy(DataFrameRow(sdf, 2, :)) == (c = "C", a = 3, b = 1.2)
+    @test DataFrameRow(df, 1, :) == [:a, :b, :c, :d]
+    @test DataFrameRow(df, 3, [3, 2]) == df[3, [3, 2]] == view(df, 3, [3, 2])
+    @test DataFrameRow(sdf, 2, [3, 2]) == sdf[2, [3, 2]] == view(sdf, 2, [3, 2])
+    @test DataFrameRow(sdf, 2, :) == sdf[2, :] == view(sdf, 2, :)
     @test_throws ArgumentError DataFrameRow(df, 1, :a)
     @test_throws ArgumentError DataFrameRow(df, 1, 1)
     @test_throws BoundsError DataFrameRow(df, 1, 1:10)
@@ -17,6 +26,42 @@ module TestDataFrameRow
     @test_throws BoundsError DataFrameRow(df, 100, [1:2;])
     @test_throws BoundsError DataFrameRow(df, 100, :)
     @test_throws ArgumentError DataFrameRow(df, true, 1:2)
+    @test_throws ArgumentError DataFrameRow(sdf, true, 1:2)
+
+    # getindex
+    r = DataFrameRow(df, 2, :)
+    @test r[:] == r
+    @test view(r, :) === r
+    @test r[3] == "B"
+    @test_throws BoundsError r[4]
+    @test view(r, 3)[] == "B"
+    view(r, 3)[] = "BB"
+    @test df.c[2] == "BB"
+    @test_throws MethodError r[true]
+    @test_throws MethodError view(r, true)
+    @test copy(r[[:c,:a]]) == (c = "BB", a = 2)
+    @test copy(view(r, [:c,:a])) == (c = "BB", a = 2)
+    @test copy(r[[true, false, true, false]]) == (a = 2, c = "BB")
+    r.c = "B"
+    @test df.c[2] == "B"
+    @test_throws BoundsError copy(r[[true, false, true]])
+
+    r = DataFrameRow(sdf, 2, [3, 1])
+    @test r[:] == r
+    @test view(r, :) === r
+    @test r[2] == "C"
+    @test_throws BoundsError r[4]
+    @test view(r, 2)[] == "C"
+    view(r, 2)[] = "CC"
+    @test df.c[3] == "CC"
+    @test_throws MethodError r[true]
+    @test_throws MethodError view(r, true)
+    @test copy(r[[:c,:b]]) == (c = "CC", b = 1.2)
+    @test copy(view(r, [:c,:b])) == (c = "CC", b = 2)
+    @test copy(view(r, [:c,:b])) == (c = "CC", b = 2)
+    @test copy(r[[false, true]]) == (c = "CC",)
+    r.c = "C"
+    @test df.c[3] == "C"
 
     #
     # Equality
@@ -99,11 +144,6 @@ module TestDataFrameRow
     r.b = 1
     @test r.b === 1.0
 
-    # getindex
-    r = DataFrameRow(df, 1, :)
-    @test r[:] == r
-    @test view(r, :) === r
-
     # keys, values and iteration, size
     @test keys(r) == names(df)
     @test values(r) == (df[1, 1], df[1, 2], df[1, 3], df[1, 4])
@@ -122,7 +162,8 @@ module TestDataFrameRow
     dfr = view(x, 2, [4,2])
     @test names(dfr) == names(x)[[4,2]]
 
-
+    x = DataFrame(ones(10,10))
+    r = x[3, [8, 5, 1, 3]]
     @test length(r) == 4
     @test lastindex(r) == 4
     @test ndims(r) == 1
@@ -130,6 +171,11 @@ module TestDataFrameRow
     @test size(r) == (4,)
     @test size(r, 1) == 4
     @test_throws BoundsError size(r, 2)
+    @test keys(r) == [:x8, :x5, :x1, :x3]
+    r[:] = 0.0
+    r[1:2] = 2.0
+    @test values(r) == (2.0, 2.0, 0.0, 0.0)
+    @test collect(pairs(r)) == [:x8 => 2.0, :x5 => 2.0, :x1 => 0.0, :x3 => 0.0]
 
     df = DataFrame(a=nothing, b=1)
     io = IOBuffer()
@@ -152,10 +198,15 @@ module TestDataFrameRow
     @test isequal(copy(DataFrameRow(df, 2, :)), (a = 2, b = missing, c = "B"))
 
     # parent and parentindices
-    @test parent(df[1, :]) === df
-    @test parentindices(df[1, :]) == (1, Base.OneTo(3))
+    @test parent(df[2, :]) === df
+    @test parentindices(df[2, :]) == (2, Base.OneTo(3))
     @test parent(df[1, 1:3]) === df
-    @test parentindices(df[1, 1:3]) == (1, Base.OneTo(3))
+    @test parentindices(df[1, [3,2]]) == (1, [3, 2])
+    sdf = view(df, [4,3], [:c, :a])
+    @test parent(sdf[2, :]) === df
+    @test parentindices(sdf[2, :]) == (3, [3, 1])
+    @test parent(sdf[1, 1:2]) === df
+    @test parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
 
     # iteration and collect
     ref = ["a", "b", "c"]
@@ -172,4 +223,25 @@ module TestDataFrameRow
     end
     dfr = DataFrame(a=1, b=true, c=1.0)[1,:]
     @test eltype(collect(dfr)) === Real
+
+    @testset "duplicate column" begin
+        df = DataFrame([11:16 21:26 31:36 41:46])
+        sdf = view(df, [3,1,4], [3,1,4])
+        dfr1 = df[2, [2,2,2]]
+        dfr2 = sdf[2, [2,2,2]]
+        @test names(dfr1) == fill(:x2, 3)
+        @test names(dfr2) == fill(:x1, 3)
+        @test values(dfr1) == (22, 22, 22)
+        @test values(dfr2) == (11, 11, 11)
+        @test dfr1.x2 == 22
+        dfr1.x2 = 100
+        @test values(dfr1) == (100, 100, 100)
+        @test df[2, 2] == 100
+        @test_throws KeyError dfr1.x1
+        @test dfr2.x1 == 11
+        dfr2.x1 = 200
+        @test values(dfr2) == (200, 200, 200)
+        @test df[1, 1] == 200
+        @test_throws KeyError dfr2.x2
+    end
 end

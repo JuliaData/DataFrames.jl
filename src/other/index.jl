@@ -259,7 +259,6 @@ end
         # we set non-existing mappings to 0
         fill!(remap, 0)
         for (i, col) in enumerate(x.cols)
-            remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
             remap[col] = i
         end
     end

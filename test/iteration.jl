@@ -96,5 +96,28 @@ module TestIteration
     @test df[3, :B] == "M"
     @test view(s2, 1:1:2, :) == view(df, [1,3], :)
 
-    # @test_fail for x in df; end # Raises an error
+    @test_throws MethodError for x in df; end
+
+    @testset "SubDataFrame" begin
+        df = DataFrame([11:16 21:26 31:36 41:46])
+        sdf = view(df, [3,1,4], [3,1,4])
+        @test sdf == df[[3,1,4], [3,1,4]]
+        @test eachrow(sdf) == eachrow(df[[3,1,4], [3,1,4]])
+        @test eachcol(sdf, true) == eachcol(df[[3,1,4], [3,1,4]], true)
+        @test eachcol(sdf, false) == eachcol(df[[3,1,4], [3,1,4]], false)
+        @test size(eachrow(sdf)) == (3,)
+        @test size(eachcol(sdf, true)) == (3,)
+        @test size(eachcol(sdf, false)) == (3,)
+    end
+
+    @testset "SubDataFrame parent mutation" begin
+        df = DataFrame([11:16 21:26 31:36 41:46])
+        sdf = view(df, [3,1,4], [3,1,4])
+        erd = eachrow(df)
+        erv = eachrow(sdf)
+        names!(df, Symbol.(string.("y", 1:4)))
+        df[1] = 51:56
+        @test df[1, :] == erd[1]
+        @test copy(erv[1]) == (x3=33, x1=13, x4=43)
+    end
 end

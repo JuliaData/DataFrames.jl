@@ -1,23 +1,24 @@
 """
-    DataFrameRow{<:AbstractDataFrame, <:SubIndex}
+    DataFrameRow{<:SubIndex}
 
 A view of one row of an `AbstractDataFrame`.
+Currently supports `DataFrame` and `SubDataFrame`.
 
 A `DataFrameRow` is constructed with `view` or `getindex` when one row and a
-selection of columns is requested.
-It is also returned when iterating the result of the call to the [`eachrow`](@ref) function.
+selection of columns is requested. It is also returned when iterating the result
+of the call to the [`eachrow`](@ref) function.
 
 ```julia
-view(df::AbstractDataFrame, row, cols)
 df[row, cols]
+view(df::AbstractDataFrame, row, cols)
 ```
 
 ### Arguments
 
-* `df` : an `AbstractDataFrame`
-* `row` : an `Integer` other than `Bool` indicating requested row number
+* `df` : a `DataFrame` or `SubDataFrame`
+* `row` : an `Integer` other than `Bool` indicating the requested row number
 * `cols` : any indexing type for columns, typically
-  `AbstractVector{Int}`, `AbstractVector{Bool}` or `AbstractVector{Symbol}` or a colon
+  a vector of `Int`, `Bool` or `Symbol`, or a colon
 
 ### Notes
 
@@ -26,8 +27,8 @@ that expect a collection as an argument.
 
 Indexing is one-dimensional like specifying a column of a `DataFrame`.
 
-It is possible to create a `DataFrameRow` with duplicate columns, but in such case
-an error will be thrown when one tries to access some column by name.
+It is possible to create a `DataFrameRow` with duplicate columns.
+All such columns will have a reference to the same entry in the parent `DataFrame`.
 """
 struct DataFrameRow{S<:SubIndex}
     df::DataFrame
@@ -89,8 +90,7 @@ end
 
 @inline Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(r, idx)]
-@inline Base.getindex(r::DataFrameRow, idxs::Union{AbstractVector{<:Integer},
-                                           AbstractVector{Symbol}}) =
+@inline Base.getindex(r::DataFrameRow, idxs::AbstractVector}) =
     DataFrameRow(parent(r), row(r), parentcols(r, idxs))
 @inline Base.getindex(r::DataFrameRow, ::Colon) = r
 
@@ -100,6 +100,7 @@ end
 index(r::DataFrameRow) = getfield(r, :colindex)
 
 Base.names(r::DataFrameRow) = _names(parent(r))[parentcols(r, :)]
+_names(r::DataFrameRow) = view(_names(parent(r)), parentcols(r, :))
 
 Base.haskey(r::DataFrameRow, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
@@ -190,7 +191,7 @@ function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
         index(r1).cols == index(r2).cols || return false
         row(r1) == row(r2) && return true
     else
-        names(r1) == names(r2) || return false
+        _names(r1) == _names(r2) || return false
     end
     all(((a, b),) -> a == b, zip(r1, r2))
 end
@@ -200,7 +201,7 @@ function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
         index(r1).cols == index(r2).cols || return false
         row(r1) == row(r2) && return true
     else
-        names(r1) == names(r2) || return false
+        _names(r1) == _names(r2) || return false
     end
     all(((a, b),) -> isequal(a, b), zip(r1, r2))
 end

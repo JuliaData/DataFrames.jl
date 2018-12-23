@@ -13,6 +13,8 @@
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
+Currently supports `DataFrame` and `SubDataFrame`.
+
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
 struct DataFrameRows{T} <: AbstractVector{DataFrameRow{SubIndex{Base.OneTo{Int},Base.OneTo{Int}}}}
@@ -21,10 +23,16 @@ struct DataFrameRows{T} <: AbstractVector{DataFrameRow{SubIndex{Base.OneTo{Int},
 end
 
 """
-    eachrow(df::AbstractDataFrame)
+    eachrow(df::Union{DataFrame, SubDataFrame})
 
-Return a `DataFrameRows` that iterates an `AbstractDataFrame` row by row,
+Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
+
+`eachrow(df::DataFrame)` references the `df` directly, but
+for performance considerations `eachrow(df::SubDataFrame)` eagerly copies
+relevant column information from `df` (if columns of parent of a `SubDataFrame`
+are renamed or reallocated after calling `eachrow` this change will not be
+reflected by returned `DataFrameRows`).
 
 **Examples**
 
@@ -60,6 +68,15 @@ julia> copy.(eachrow(df))
  (x = 2, y = 12)
  (x = 3, y = 13)
  (x = 4, y = 14)
+
+julia> eachrow(view(df, [4,3], [2,1]))
+2-element DataFrames.DataFrameRows{Array{Int64,1}}:
+ DataFrameRow (row 4)
+y  14
+x  4
+ DataFrameRow (row 3)
+y  13
+x  3
 ```
 """
 eachrow(df::DataFrame) = DataFrameRows(df, :)
