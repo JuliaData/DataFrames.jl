@@ -49,23 +49,6 @@ struct SubDataFrame{T<:AbstractVector{Int}, S<:AbstractVector{Int}} <: AbstractD
     remap::S # inverse of cols, it is of type S for efficiency in most common cases
 end
 
-# a helper function that lazily creates remap for DataFrameRow with cols::Vector{Int}
-@inline function lazyremap(sdf::SubDataFrame{<:AbstractVector{Int}, Vector{Int}})
-    remap = getfield(sdf, :remap)
-    # the code below works also correctly if ncol(parent(sdf)) == 0
-    if length(remap) == 0
-        resize!(remap, ncol(parent(sdf)))
-        # we set non-existing mappings to 0
-        fill!(remap, 0)
-        for (i, col) in enumerate(getfield(sdf, :cols))
-            remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
-            remap[col] = i
-        end
-    end
-    remap
-end
-
-
 @inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols::Vector{Int})
     @boundscheck checkbounds(axes(parent, 1), rows)
     @boundscheck checkbounds(axes(parent, 2), cols)
@@ -128,7 +111,7 @@ end
 
 @inline function parentcols(sdf::SubDataFrame, idx::Symbol)
     parentcols = index(parent(sdf))[idx]
-    @boundscheck getfield(sdf, :remap)[parentcols] == 0 && throw(KeyError("$idx not found"))
+    @boundscheck lazyremap(sdf)[parentcols] == 0 && throw(KeyError("$idx not found"))
     return parentcols
 end
 
