@@ -50,7 +50,7 @@ end
 
 @inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols)
     @boundscheck if !checkindex(Bool, axes(parent, 1), rows)
-        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+        throw(BoundsError("attempt to access a data frame with $(nrow(parent)) " *
                           "rows at indices $rows"))
     end
     SubDataFrame(parent, SubIndex(index(parent), cols), rows)
