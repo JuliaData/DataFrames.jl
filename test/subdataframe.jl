@@ -184,4 +184,16 @@ module TestSubDataFrame
         @test parent(view(df, [4, 2], 1:3)) === df
         @test parentindices(view(df, [4, 2], 1:3)) == ([4, 2], Base.OneTo(3))
     end
+
+    @testset "duplicate column" begin
+        df = DataFrame([11:16 21:26 31:36 41:46])
+        sdf = view(df, [3,1,4], [3,3,3])
+        @test names(sdf) == fill(:x3, 3)
+        @test sdf[1] == [33, 31, 34]
+        @test sdf[1] === sdf[2] === sdf[3]
+        @test sdf.x3[1] == 33
+        sdf.x3[1] = 333
+        @test df.x3[3] == 333
+        @test_throws KeyError sdf.x1
+    end
 end
