@@ -40,7 +40,7 @@ julia> df = DataFrame(x=1:4, y=11:14)
 │ 4   │ 4     │ 14    │
 
 julia> eachrow(df)
-4-element DataFrames.DataFrameRows{DataFrame}:
+4-element DataFrames.DataFrameRows{Colon}:
  DataFrameRow (row 1)
 x  1
 y  11
@@ -69,7 +69,7 @@ eachrow(sdf::SubDataFrame) =
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 
 Base.size(itr::DataFrameRows) = (length(itr.rows), )
-Base.size(itr::DataFrameRows{Colon}) = (size(itr.df, 2), )
+Base.size(itr::DataFrameRows{Colon}) = (size(itr.df, 1), )
 
 @inline Base.getindex(itr::DataFrameRows{Colon}, i::Int) = DataFrameRow(itr.df, i, :)
 @inline Base.getindex(itr::DataFrameRows, i::Int) = DataFrameRow(itr.df, itr.rows[i], :)
