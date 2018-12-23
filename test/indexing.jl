@@ -13,9 +13,9 @@ using Test, DataFrames
     @test eachcol(df[:], false)[1] === eachcol(df, false)[1]
 
     @test df[1, 1] == 1
-    @test df[1, 1:2] isa DataFrameRow{DataFrame}
+    @test df[1, 1:2] isa DataFrameRow
     @test copy(df[1, 1:2]) == (a=1, b=4)
-    @test df[1, :] isa DataFrameRow{DataFrame}
+    @test df[1, :] isa DataFrameRow
     @test copy(df[1, :]) == (a=1, b=4, c=7)
     @test parent(df[1, :]) === df
 
@@ -44,9 +44,9 @@ end
 
     @test view(df, 1, 1) isa SubArray
     @test view(df, 1, 1)[] == 1
-    @test view(df, 1, 1:2) isa DataFrameRow{DataFrame}
+    @test view(df, 1, 1:2) isa DataFrameRow
     @test copy(view(df, 1, 1:2)) == (a=1, b=4)
-    @test view(df, 1, :) isa DataFrameRow{DataFrame}
+    @test view(df, 1, :) isa DataFrameRow
     @test copy(view(df, 1, :)) == (a=1, b=4, c=7)
     @test parent(view(df, 1, :)) === df
 

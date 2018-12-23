@@ -46,7 +46,7 @@ DataFrameRow(df::DataFrame, colindex::SubIndex, row::Bool) =
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row"))
     end
-    DataFrameRow(df, SubIndex(df, cols), row)
+    DataFrameRow(df, SubIndex(index(df), cols), row)
 end
 
 @inline function DataFrameRow(sdf::SubDataFrame, row::Integer, cols)
@@ -57,7 +57,7 @@ end
     DataFrameRow(parent(sdf),
                  SubIndex(index(parent(sdf)),
                           parentcols(sdf, cols isa Colon ? cols : index(sdf)[cols])),
-                 rows(sdf)[rowind])
+                 rows(sdf)[row])
 end
 
 row(r::DataFrameRow) = getfield(r, :row)
