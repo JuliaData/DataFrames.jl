@@ -8,14 +8,14 @@
 
 # Iteration by rows
 """
-    DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
+    DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
+struct DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow}
     df::T
 end
 
