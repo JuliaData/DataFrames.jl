@@ -6,8 +6,8 @@ module TestIteration
 
     @test size(eachrow(df)) == (size(df, 1),)
     @test eachrow(df)[1] == DataFrameRow(df, 1, :)
-    @test collect(eachrow(df)) isa Vector{DataFrameRow{DataFrame}}
-    @test eltype(eachrow(df)) == DataFrameRow{DataFrame}
+    @test collect(eachrow(df)) isa Vector{<:DataFrameRow}
+    @test eltype(eachrow(df)) isa DataFrameRow
     for row in eachrow(df)
         @test isa(row, DataFrameRow)
         @test (row[:B] - row[:A]) == 1
