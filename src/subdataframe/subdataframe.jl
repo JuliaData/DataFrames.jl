@@ -111,7 +111,7 @@ end
 
 @inline function parentcols(sdf::SubDataFrame, idx::Symbol)
     parentcols = index(parent(sdf))[idx]
-    @boundscheck lazyremap(sdf)[parentcols] == 0 && throw(KeyError("$idx not found"))
+    @boundscheck lazyremap!(sdf)[parentcols] == 0 && throw(KeyError("$idx not found"))
     return parentcols
 end
 
@@ -138,8 +138,8 @@ Base.view(adf::AbstractDataFrame, rowinds, colind::Bool) =
 Base.view(adf::AbstractDataFrame, rowinds, colinds) =
     SubDataFrame(adf, rowinds, colinds)
 
-@inline lazyremap(sdf::SubDataFrame) =
-    lazyremap(ncol(parent(sdf)), getfield(sdf, :cols), getfield(sdf, :remap))
+@inline lazyremap!(sdf::SubDataFrame) =
+    lazyremap!(ncol(parent(sdf)), getfield(sdf, :cols), getfield(sdf, :remap))
 
 ##############################################################################
 ##

@@ -212,12 +212,12 @@ end
 ### SubIndex of Index. Currently used by SubDataFrame
 
 # a helper function that lazily creates remap with cols::Vector{Int}
-@inline function lazyremap(ncol::Int, cols::Vector{Int}, remap::Vector{Int})
+@inline function lazyremap!(ncol::Int, cols::Vector{Int}, remap::Vector{Int})
     if length(remap) == 0
         resize!(remap, ncol)
         # we set non-existing mappings to 0
         fill!(remap, 0)
-        for (i, col) in enumerate(getfield(dfr, :cols))
+        for (i, col) in enumerate(cols)
             remap[col] > 0 && throw(ArgumentError("duplicate column $col in cols"))
             remap[col] = i
         end
@@ -226,7 +226,7 @@ end
 end
 
 # for ranges assume all is corretly calculated eagerly
-@inline lazyremap(ncol::Int, cols::AbstractUnitRange{Int}, remap::AbstractUnitRange{Int}) =
+@inline lazyremap!(ncol::Int, cols::AbstractUnitRange{Int}, remap::AbstractUnitRange{Int}) =
     remap
 
 struct SubIndex{S<:AbstractVector{Int}} <: AbstractIndex
@@ -235,7 +235,7 @@ struct SubIndex{S<:AbstractVector{Int}} <: AbstractIndex
     remap::S # reverse of cols
 end
 
-@inline lazyremap(x::SubIndex) = lazyremap(length(x.parent), x.cols, x.remap)
+@inline lazyremap!(x::SubIndex) = lazyremap!(length(x.parent), x.cols, x.remap)
 
 Base.length(x::SubIndex) = length(x.cols)
 Base.names(x::SubIndex) = copy(_names(x))
@@ -244,7 +244,7 @@ _names(x::SubIndex) = view(_names(x.parent), x.cols)
 function Base.haskey(x::SubIndex, key::Symbol)
     haskey(x.parent, key) || return false
     pos = x.parent[key]
-    remap = lazyremap(x)
+    remap = lazyremap!(x)
     checkbounds(Bool, remap, pos) || return false
     remap[pos] > 0
 end
@@ -254,5 +254,5 @@ Base.haskey(x::SubIndex, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 Base.keys(x::SubIndex) = names(x)
 
-Base.getindex(x::SubIndex, idx::Symbol) = lazyremap(x)[x.parent[idx]]
+Base.getindex(x::SubIndex, idx::Symbol) = lazyremap!(x)[x.parent[idx]]
 Base.getindex(x::SubIndex, idx::AbstractVector{Symbol}) = [x[i] for i in idx]

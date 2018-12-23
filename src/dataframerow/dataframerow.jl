@@ -113,12 +113,12 @@ Base.getindex(sdf::SubDataFrame, rowind::Integer, ::Colon) =
 @inline parentcols(r::DataFrameRow, idx::Union{Integer, AbstractVector{<:Integer}}) =
     getfield(r, :cols)[idx]
 
-@inline lazyremap(r::DataFrameRow) =
-    lazyremap(ncol(parent(r)), getfield(r, :cols), getfield(r, :remap))
+@inline lazyremap!(r::DataFrameRow) =
+    lazyremap!(ncol(parent(r)), getfield(r, :cols), getfield(r, :remap))
 
 @inline function parentcols(r::DataFrameRow, idx::Symbol)
     parentcols = index(parent(r))[idx]
-    @boundscheck lazyremap(r)[parentcols] == 0 && throw(KeyError("$idx not found"))
+    @boundscheck lazyremap!(r)[parentcols] == 0 && throw(KeyError("$idx not found"))
     return parentcols
 end
 
@@ -144,7 +144,7 @@ Base.haskey(r::DataFrameRow, key::Integer) = 1 ≤ key ≤ size(r, 1)
 function Base.haskey(r::DataFrameRow, key::Symbol)
     haskey(parent(r), key) || return false
     pos = index(parent(r))[key]
-    remap = lazyremap(r)
+    remap = lazyremap!(r)
     checkbounds(Bool, remap, pos) || return false
     remap[pos] > 0
 end
