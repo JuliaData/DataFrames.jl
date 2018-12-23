@@ -107,7 +107,7 @@ Base.haskey(r::DataFrameRow, key::Integer) = 1 ≤ key ≤ size(r, 1)
 function Base.haskey(r::DataFrameRow, key::Symbol)
     haskey(parent(r), key) || return false
     pos = index(parent(r))[key]
-    remap = lazyremap!(r)
+    remap = lazyremap!(index(r))
     checkbounds(Bool, remap, pos) || return false
     remap[pos] > 0
 end
