@@ -32,7 +32,7 @@ module TestDataFrameRow
     @test r[:] == r
     @test view(r, :) === r
     @test r[3] == "B"
-    @test_throws BoundsError r[4]
+    @test_throws BoundsError r[5]
     @test view(r, 3)[] == "B"
     view(r, 3)[] = "BB"
     @test df.c[2] == "BB"
@@ -56,8 +56,8 @@ module TestDataFrameRow
     @test_throws MethodError r[true]
     @test_throws MethodError view(r, true)
     @test copy(r[[:c,:b]]) == (c = "CC", b = 1.2)
-    @test copy(view(r, [:c,:b])) == (c = "CC", b = 2)
-    @test copy(view(r, [:c,:b])) == (c = "CC", b = 2)
+    @test copy(view(r, [:c,:b])) == (c = "CC", b = 1.2)
+    @test copy(view(r, [:c,:b])) == (c = "CC", b = 1.2)
     @test copy(r[[false, true]]) == (c = "CC",)
     r.c = "C"
     @test df.c[3] == "C"
