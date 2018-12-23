@@ -8,15 +8,16 @@
 
 # Iteration by rows
 """
-    DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow}
+    DataFrameRows <: AbstractVector{DataFrameRow}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow}
-    df::T
+struct DataFrameRows{T} <: AbstractVector{DataFrameRow{SubIndex{Base.OneTo{Int},Base.OneTo{Int}}}}
+    df::DataFrame
+    rows::T
 end
 
 """
@@ -61,14 +62,17 @@ julia> copy.(eachrow(df))
  (x = 4, y = 14)
 ```
 """
-eachrow(df::AbstractDataFrame) = DataFrameRows(df)
+eachrow(df::DataFrame) = DataFrameRows(df, :)
+eachrow(sdf::SubDataFrame) =
+    DataFrameRows(parent(sdf)[parentcols(sdf, :)], rows(sdf))
 
-Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
-@inline function Base.getindex(itr::DataFrameRows, i::Int)
-    @boundscheck checkbounds(itr, i)
-    return DataFrameRow(itr.df, i, :)
-end
+
+Base.size(itr::DataFrameRows) = (length(itr.rows), )
+Base.size(itr::DataFrameRows{Colon}) = (size(itr.df, 2), )
+
+@inline Base.getindex(itr::DataFrameRows{Colon}, i::Int) = DataFrameRow(itr.df, i, :)
+@inline Base.getindex(itr::DataFrameRows, i::Int) = DataFrameRow(itr.df, itr.rows[i], :)
 
 # Iteration by columns
 """
