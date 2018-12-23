@@ -3,6 +3,8 @@
 # through cleanly.
 abstract type AbstractIndex end
 
+const ColumnIndex = Union{Signed, Unsigned, Symbol}
+
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}

@@ -238,8 +238,6 @@ ncol(df::DataFrame) = length(index(df))
 ##
 ##############################################################################
 
-const ColumnIndex = Union{Integer, Symbol}
-
 # df[SingleColumnIndex] => AbstractVector, the same vector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
