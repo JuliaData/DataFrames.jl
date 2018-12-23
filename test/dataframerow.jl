@@ -14,7 +14,6 @@ module TestDataFrameRow
     @test copy(DataFrameRow(df, 3, [3, 2])) == (c = "C", b = 1.2)
     @test copy(DataFrameRow(sdf, 2, [3, 2])) == (b = 1.2, a = 3)
     @test copy(DataFrameRow(sdf, 2, :)) == (c = "C", a = 3, b = 1.2)
-    @test DataFrameRow(df, 1, :) == [:a, :b, :c, :d]
     @test DataFrameRow(df, 3, [3, 2]) == df[3, [3, 2]] == view(df, 3, [3, 2])
     @test DataFrameRow(sdf, 2, [3, 2]) == sdf[2, [3, 2]] == view(sdf, 2, [3, 2])
     @test DataFrameRow(sdf, 2, :) == sdf[2, :] == view(sdf, 2, :)

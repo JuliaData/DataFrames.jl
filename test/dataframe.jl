@@ -975,13 +975,13 @@ module TestDataFrame
         x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
         @test parent(x) === x
         @test parentindices(x) === (Base.OneTo(3), Base.OneTo(2))
-        @test size(x) = (3,2)
-        @test size(x, 1) = 3
-        @test size(x, 2) = 2
+        @test size(x) == (3,2)
+        @test size(x, 1) == 3
+        @test size(x, 2) == 2
         @test_throws ArgumentError size(x, 3)
-        @test axes(x) = (Base.OneTo(3), Base.OneTo(2))
-        @test axes(x, 1) = Base.OneTo(3)
-        @test axes(x, 2) = Base.OneTo(2)
+        @test axes(x) == (Base.OneTo(3), Base.OneTo(2))
+        @test axes(x, 1) == Base.OneTo(3)
+        @test axes(x, 2) == Base.OneTo(2)
         @test_throws ArgumentError axes(x, 3)
         @test size(DataFrame()) == (0,0)
     end
