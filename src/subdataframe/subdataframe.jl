@@ -48,8 +48,10 @@ struct SubDataFrame{T<:AbstractVector{Int}, S<:SubIndex} <: AbstractDataFrame
     rows::T # maps from subdf row indexes to parent row indexes
 end
 
-@inline SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols) =
+@inline function SubDataFrame(parent::DataFrame, rows::AbstractVector{Int}, cols)
+    @boundscheck checkbounds(rows, axes(parent, 1))
     SubDataFrame(parent, SubIndex(index(parent), cols), rows)
+end
 @inline SubDataFrame(parent::DataFrame, ::Colon, cols) =
     SubDataFrame(parent, axes(parent, 1), cols)
 @inline SubDataFrame(parent::DataFrame, row::Integer, cols) =

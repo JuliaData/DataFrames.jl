@@ -784,10 +784,10 @@ module TestDataFrame
         df[4] = [1,2,3]
         @test names(df) == [:x3, :x3_1, :x3_2, :x4]
         df = DataFrame()
-        @test_throws ArgumentError df[true] = 1
-        @test_throws ArgumentError df[true] = [1,2,3]
-        @test_throws ArgumentError df[1:2, true] = [1,2]
-        @test_throws ArgumentError df[1, true] = 1
+        @test_throws MethodError df[true] = 1
+        @test_throws MethodError df[true] = [1,2,3]
+        @test_throws MethodError df[1:2, true] = [1,2]
+        @test_throws MethodError df[1, true] = 1
         @test_throws ErrorException df[1, 100] = 1
         @test_throws ErrorException df[1:2, 100] = [1,2]
     end
