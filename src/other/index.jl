@@ -212,10 +212,13 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
     return u
 end
 
-### SubIndex of Index. Currently used by SubDataFrame
+### SubIndex of Index. Used by SubDataFrame, DataFrameRow, and DataFrameRows
 
-struct SubIndex{S<:AbstractVector{Int}, T<:AbstractVector{Int}} <: AbstractIndex
-    parent::Index
+# We allow I to be AbstractIndex, to allow for extensions
+# In DataFrames.jl I is always Index
+
+struct SubIndex{S<:AbstractVector{Int}, T<:AbstractVector{Int}, I<:AbstractIndex} <: AbstractIndex
+    parent::I
     cols::S # columns from idx selected in SubIndex
     remap::T # reverse of cols
 end

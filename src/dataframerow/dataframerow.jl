@@ -30,17 +30,16 @@ Indexing is one-dimensional like specifying a column of a `DataFrame`.
 It is possible to create a `DataFrameRow` with duplicate columns.
 All such columns will have a reference to the same entry in the parent `DataFrame`.
 """
-struct DataFrameRow{S<:SubIndex}
-    df::DataFrame
+# We allow D to be AbstractDataFrame, to allow for extensions
+# In DataFrames.jl D is always DataFrame
+struct DataFrameRow{S<:SubIndex,D<:AbstractDataFrame}
+    df::D
     colindex::S
     row::Int
+
+    DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned}) where {S<:SubIndex,D<:AbstractDataFrame} =
+        new{S,D}(df, colindex, row)
 end
-
-@inline DataFrameRow(df::DataFrame, colindex::SubIndex, row::Integer) =
-    DataFrameRow{typeof(colindex)}(df, colindex, row)
-
-@inline DataFrameRow(df::DataFrame, colindex::SubIndex, row::Bool) =
-    throw(ArgumentError("invalid index: $row of type Bool"))
 
 @inline function DataFrameRow(df::DataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(df, 1), row)
@@ -49,9 +48,6 @@ end
     end
     DataFrameRow(df, SubIndex(index(df), cols), row)
 end
-
-@inline DataFrameRow(sdf::SubDataFrame, row::Bool, cols) =
-    throw(ArgumentError("invalid index: $row of type Bool"))
 
 @inline function DataFrameRow(sdf::SubDataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(sdf, 1), row)

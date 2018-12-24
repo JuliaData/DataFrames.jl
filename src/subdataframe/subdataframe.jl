@@ -42,8 +42,10 @@ sdf2 = view(df, df[:a] .> 1, [1,3])  # row and column subsetting
 sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
 ```
 """
-struct SubDataFrame{T<:AbstractVector{Int}, S<:SubIndex} <: AbstractDataFrame
-    parent::DataFrame
+# We allow D to be AbstractDataFrame, to allow for extensions
+# In DataFrames.jl D is always DataFrame
+struct SubDataFrame{T<:AbstractVector{Int},S<:SubIndex,D<:AbstractDataFrame} <: AbstractDataFrame
+    parent::D
     colindex::S
     rows::T # maps from subdf row indexes to parent row indexes
 end
