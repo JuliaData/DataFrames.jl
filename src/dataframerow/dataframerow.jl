@@ -50,7 +50,7 @@ DataFrameRow(df::DataFrame, colindex::SubIndex, row::Bool) =
     DataFrameRow(df, SubIndex(index(df), cols), row)
 end
 
-@inline function DataFrameRow(sdf::SubDataFrame, row::Bool, cols) =
+@inline DataFrameRow(sdf::SubDataFrame, row::Bool, cols) =
     throw(ArgumentError("invalid index: $row of type Bool"))
 
 @inline function DataFrameRow(sdf::SubDataFrame, row::Integer, cols)
