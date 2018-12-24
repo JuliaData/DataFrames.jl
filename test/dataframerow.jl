@@ -25,7 +25,10 @@ module TestDataFrameRow
     @test_throws BoundsError DataFrameRow(df, 100, [1:2;])
     @test_throws BoundsError DataFrameRow(df, 100, :)
     @test_throws MethodError DataFrameRow(df, true, 1:2)
-    @test_throws ArgumentError DataFrameRow(sdf, true, 1:2)
+    if VERSION ≥ v"1.0.0"
+        # this test throws a warning on Julia 0.7
+        @test_throws ArgumentError DataFrameRow(sdf, true, 1:2)
+    end
 
     # getindex
     r = DataFrameRow(df, 2, :)
