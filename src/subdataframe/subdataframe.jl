@@ -1,5 +1,5 @@
 """
-    SubDataFrame{<:AbstractVector{Int}, <:SubIndex} <: AbstractDataFrame
+    SubDataFrame{<:AbstractVector{Int},<:SubIndex,<:AbstractDataFrame} <: AbstractDataFrame
 
 A view of row subsets of an `AbstractDataFrame`.
 Currently supports `DataFrame` and `SubDataFrame`.
@@ -166,5 +166,9 @@ end
 
 Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), parentcols(sdf, :)]
 
+function without(df::SubDataFrame, icols::Vector{<:Integer})
+    newcols = setdiff(1:ncol(df), icols)
+    view(df, newcols)
+end
 deleterows!(df::SubDataFrame, ind) =
     throw(ArgumentError("SubDataFrame does not support deleting rows"))

@@ -1,5 +1,5 @@
 """
-    DataFrameRow{<:SubIndex}
+    DataFrameRow{<:SubIndex,<:AbstractDataFrame}
 
 A view of one row of an `AbstractDataFrame`.
 Currently supports `DataFrame` and `SubDataFrame`.
@@ -15,7 +15,7 @@ view(df::AbstractDataFrame, row, cols)
 
 ### Arguments
 
-* `df` : a `DataFrame` or `SubDataFrame`
+* `df` : an `AbstractDataFrame`
 * `row` : an `Integer` other than `Bool` indicating the requested row number
 * `cols` : any indexing type for columns, typically
   a vector of `Int`, `Bool` or `Symbol`, or a colon

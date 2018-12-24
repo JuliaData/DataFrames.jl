@@ -23,7 +23,7 @@ struct DataFrameRows{S<:AbstractDataFrame,T<:SubIndex} <: AbstractVector{DataFra
 end
 
 """
-    eachrow(df::Union{DataFrame,SubDataFrame})
+    eachrow(df::AbstractDataFrame)
 
 Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
