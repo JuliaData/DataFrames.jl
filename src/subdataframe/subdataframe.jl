@@ -96,22 +96,22 @@ end
 
 @inline parentcols(sdf::SubDataFrame, ::Colon) = index(sdf).cols
 
-SubDataFrame(sdf::SubDataFrame, rowind, cols) =
+@inline SubDataFrame(sdf::SubDataFrame, rowind, cols) =
     SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(sdf, cols))
-SubDataFrame(sdf::SubDataFrame, ::Colon, cols) =
+@inline SubDataFrame(sdf::SubDataFrame, ::Colon, cols) =
     SubDataFrame(parent(sdf), rows(sdf), parentcols(sdf, cols))
-SubDataFrame(sdf::SubDataFrame, ::Colon, ::Colon) = sdf
+@inline SubDataFrame(sdf::SubDataFrame, ::Colon, ::Colon) = sdf
 
 rows(sdf::SubDataFrame) = getfield(sdf, :rows)
 Base.parent(sdf::SubDataFrame) = getfield(sdf, :parent)
 Base.parentindices(sdf::SubDataFrame) = (rows(sdf), index(sdf).cols)
 
-Base.view(adf::AbstractDataFrame, colinds) = view(adf, :, colinds)
-Base.view(adf::AbstractDataFrame, rowinds, colind::ColumnIndex) =
+@inline Base.view(adf::AbstractDataFrame, colinds) = view(adf, :, colinds)
+@inline Base.view(adf::AbstractDataFrame, rowinds, colind::ColumnIndex) =
     view(adf[colind], rowinds)
-Base.view(adf::AbstractDataFrame, rowinds, colind::Bool) =
+@inline Base.view(adf::AbstractDataFrame, rowinds, colind::Bool) =
     throw(ArgumentError("invalid column index $colind of type `Bool`"))
-Base.view(adf::AbstractDataFrame, rowinds, colinds) =
+@inline Base.view(adf::AbstractDataFrame, rowinds, colinds) =
     SubDataFrame(adf, rowinds, colinds)
 
 ##############################################################################

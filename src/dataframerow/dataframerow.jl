@@ -36,10 +36,10 @@ struct DataFrameRow{S<:SubIndex}
     row::Int
 end
 
-DataFrameRow(df::DataFrame, colindex::SubIndex, row::Integer) =
+@inline DataFrameRow(df::DataFrame, colindex::SubIndex, row::Integer) =
     DataFrameRow{typeof(colindex)}(df, colindex, row)
 
-DataFrameRow(df::DataFrame, colindex::SubIndex, row::Bool) =
+@inline DataFrameRow(df::DataFrame, colindex::SubIndex, row::Bool) =
     throw(ArgumentError("invalid index: $row of type Bool"))
 
 @inline function DataFrameRow(df::DataFrame, row::Integer, cols)
@@ -68,14 +68,14 @@ row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), index(r).cols)
 
-Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
+@inline Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(adf, rowind, :)
-Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
+@inline Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(adf, rowind, colinds)
 
-Base.getindex(df::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
+@inline Base.getindex(df::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(df, rowind, colinds)
-Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
+@inline Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
 
 @inline parentcols(r::DataFrameRow, idx::Union{Integer, AbstractVector{<:Integer}}) =
