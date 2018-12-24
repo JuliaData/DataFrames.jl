@@ -110,7 +110,7 @@ module TestIteration
         @test size(eachcol(sdf, false)) == (3,)
     end
 
-    @testset "SubDataFrame parent mutation" begin
+    @testset "parent mutation" begin
         df = DataFrame([11:16 21:26 31:36 41:46])
         sdf = view(df, [3,1,4], [3,1,4])
         erd = eachrow(df)
@@ -118,6 +118,10 @@ module TestIteration
         names!(df, Symbol.(string.("y", 1:4)))
         df[1] = 51:56
         @test df[1, :] == erd[1]
-        @test copy(erv[1]) == (x3=33, x1=13, x4=43)
+        @test copy(erv[1]) == (y3=33, y1=53, y4=43)
+        df.z = 1
+        @test length(erd[1]) == 4 # the added column is not reflected
+        deletecols!(df, [4,5])
+        @test_throws BoundsError copy(erd[1]) # the removed columns are not reflected
     end
 end

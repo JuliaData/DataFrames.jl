@@ -86,7 +86,7 @@ Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
 
 @inline Base.getindex(itr::DataFrameRows{DataFrame}, i::Int) =
     DataFrameRow(itr.df, itr.subindex, i)
-@inline Base.getindex(itr::DataFrameRows{SubDataFrame}, i::Int) =
+@inline Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int) =
     DataFrameRow(parent(itr.df), itr.subindex, rows(itr.df)[i])
 
 # Iteration by columns
