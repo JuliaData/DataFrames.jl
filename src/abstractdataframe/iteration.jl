@@ -79,7 +79,7 @@ x  3
 eachrow(df::DataFrame) =
     DataFrameRows(df, SubIndex(index(df), :))
 eachrow(sdf::SubDataFrame) =
-    DataFrameRows(df, index(df))
+    DataFrameRows(sdf, index(sdf))
 
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
