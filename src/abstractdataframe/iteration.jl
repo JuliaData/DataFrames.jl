@@ -17,22 +17,19 @@ Currently supports `DataFrame` and `SubDataFrame`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{T} <: AbstractVector{DataFrameRow{SubIndex{Base.OneTo{Int},Base.OneTo{Int}}}}
-    df::DataFrame
-    rows::T
+struct DataFrameRows{S<:AbstractDataFrame,T<:SubIndex} <: AbstractVector{DataFrameRow{T}}
+    df::S
+    subindex::T
 end
 
 """
-    eachrow(df::Union{DataFrame, SubDataFrame})
+    eachrow(df::Union{DataFrame,SubDataFrame})
 
 Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
 
-`eachrow(df::DataFrame)` references the `df` directly, but
-for performance considerations `eachrow(df::SubDataFrame)` eagerly copies
-relevant column information from `df` (if columns of parent of a `SubDataFrame`
-are renamed or reallocated after calling `eachrow` this change will not be
-reflected by returned `DataFrameRows`).
+Note that for performance reasons `eachrow(df::DataFrame)` assumes that the number
+of columns of `df` does not change after materializing `DataFrameRows` object.
 
 **Examples**
 
@@ -48,7 +45,7 @@ julia> df = DataFrame(x=1:4, y=11:14)
 │ 4   │ 4     │ 14    │
 
 julia> eachrow(df)
-4-element DataFrames.DataFrameRows{Colon}:
+4-element DataFrames.DataFrameRows{DataFrame,DataFrames.SubIndex{Base.OneTo{Int64},Base.OneTo{Int64}}}:
  DataFrameRow (row 1)
 x  1
 y  11
@@ -79,17 +76,18 @@ y  13
 x  3
 ```
 """
-eachrow(df::DataFrame) = DataFrameRows(df, :)
+eachrow(df::DataFrame) =
+    DataFrameRows(df, SubIndex(index(df), :))
 eachrow(sdf::SubDataFrame) =
-    DataFrameRows(parent(sdf)[parentcols(sdf, :)], rows(sdf))
+    DataFrameRows(df, index(df))
 
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
+Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
 
-Base.size(itr::DataFrameRows) = (length(itr.rows), )
-Base.size(itr::DataFrameRows{Colon}) = (size(itr.df, 1), )
-
-@inline Base.getindex(itr::DataFrameRows{Colon}, i::Int) = DataFrameRow(itr.df, i, :)
-@inline Base.getindex(itr::DataFrameRows, i::Int) = DataFrameRow(itr.df, itr.rows[i], :)
+@inline Base.getindex(itr::DataFrameRows{DataFrame}, i::Int) =
+    DataFrameRow(itr.df, itr.subindex, i)
+@inline Base.getindex(itr::DataFrameRows{SubDataFrame}, i::Int) =
+    DataFrameRow(parent(itr.df), itr.subindex, rows(itr.df)[i])
 
 # Iteration by columns
 """
