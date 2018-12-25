@@ -6,7 +6,7 @@ Currently supports `DataFrame` and `SubDataFrame`.
 
 A `SubDataFrame` is meant to be constructed with `view` when a collection of
 rows and columns is selected.
-A `SubDataFrame` is used frequently in split/apply sorts of operations.
+ It is also created by some methods of [`by`](@ref) and [`combine`](@ref).
 
 ```julia
 view(d::AbstractDataFrame, rows, cols)
