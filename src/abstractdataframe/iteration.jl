@@ -29,7 +29,7 @@ Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
 
 Note that for performance reasons `eachrow(df::DataFrame)` assumes that the number
-of columns of `df` does not change after materializing `DataFrameRows` object.
+of columns of `df` does not change after constructing the `DataFrameRows` object.
 
 **Examples**
 
