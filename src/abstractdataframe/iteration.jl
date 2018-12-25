@@ -17,7 +17,7 @@ Currently supports `DataFrame` and `SubDataFrame`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{S<:AbstractDataFrame,T<:SubIndex} <: AbstractVector{DataFrameRow{T}}
+struct DataFrameRows{S<:AbstractDataFrame,T<:SubIndex} <: AbstractVector{DataFrameRow{S,T}}
     df::S
     subindex::T
 end
