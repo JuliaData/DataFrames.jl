@@ -5,7 +5,7 @@ A view of one row of an `AbstractDataFrame`.
 Currently supports `DataFrame` and `SubDataFrame`.
 
 A `DataFrameRow` is constructed with `view` or `getindex` when one row and a
-selection of columns is requested. It is also returned when iterating the result
+selection of columns are requested, or when iterating the result
 of the call to the [`eachrow`](@ref) function.
 
 ```julia
