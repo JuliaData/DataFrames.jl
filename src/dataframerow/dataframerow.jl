@@ -22,7 +22,7 @@ view(df::AbstractDataFrame, row, cols)
 
 ### Notes
 
-A `DataFrameRow` supports iteration interface so you can pass it to functions
+A `DataFrameRow` supports the iteration interface and can therefore be passed to functions
 that expect a collection as an argument.
 
 Indexing is one-dimensional like specifying a column of a `DataFrame`.
