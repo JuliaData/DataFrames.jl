@@ -496,7 +496,7 @@ function groupreduce(op, adjust, incol::AbstractVector{T}, gd::GroupedDataFrame)
                   eltype(outcol) >: Missing ? Missing : Union{}}
         outcol = CategoricalArray{U, 1}(outcol.refs, incol.pool)
     end
-    if isconcretetype(T)
+    if isconcretetype(eltype(outcol))
         return outcol
     else
         copyto_widen!(Tables.allocatecolumn(typeof(first(outcol)), n), outcol)
