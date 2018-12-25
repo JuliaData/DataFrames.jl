@@ -1,17 +1,12 @@
 """
-    SubDataFrame{<:AbstractVector{Int},<:SubIndex,<:AbstractDataFrame} <: AbstractDataFrame
+    SubDataFrame{<:AbstractDataFrame,<:SubIndex,<:AbstractVector{Int}} <: AbstractDataFrame
 
 A view of row subsets of an `AbstractDataFrame`.
 Currently supports `DataFrame` and `SubDataFrame`.
 
 A `SubDataFrame` is meant to be constructed with `view` when a collection of
 rows and columns is selected.
- It is also created by some methods of [`by`](@ref) and [`combine`](@ref).
-
-```julia
-view(d::AbstractDataFrame, rows, cols)
-view(d::AbstractDataFrame, cols)
-```
+It is also created by some methods of [`by`](@ref) and [`combine`](@ref).
 
 ### Arguments
 
@@ -44,7 +39,7 @@ sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
 """
 # We allow D to be AbstractDataFrame, to allow for extensions
 # In DataFrames.jl D is always DataFrame
-struct SubDataFrame{T<:AbstractVector{Int},S<:SubIndex,D<:AbstractDataFrame} <: AbstractDataFrame
+struct SubDataFrame{D<:AbstractDataFrame,S<:SubIndex,T<:AbstractVector{Int}} <: AbstractDataFrame
     parent::D
     colindex::S
     rows::T # maps from subdf row indexes to parent row indexes

@@ -1,5 +1,5 @@
 """
-    DataFrameRow{<:SubIndex,<:AbstractDataFrame}
+    DataFrameRow{<:AbstractDataFrame,<:SubIndex}
 
 A view of one row of an `AbstractDataFrame`.
 Currently supports `DataFrame` and `SubDataFrame`.
@@ -7,11 +7,6 @@ Currently supports `DataFrame` and `SubDataFrame`.
 A `DataFrameRow` is constructed with `view` or `getindex` when one row and a
 selection of columns are requested, or when iterating the result
 of the call to the [`eachrow`](@ref) function.
-
-```julia
-df[row, cols]
-view(df::AbstractDataFrame, row, cols)
-```
 
 ### Arguments
 
@@ -32,12 +27,12 @@ All such columns will have a reference to the same entry in the parent `DataFram
 """
 # We allow D to be AbstractDataFrame, to allow for extensions
 # In DataFrames.jl D is always DataFrame
-struct DataFrameRow{S<:SubIndex,D<:AbstractDataFrame}
+struct DataFrameRow{D<:AbstractDataFrame,S<:SubIndex}
     df::D
     colindex::S
     row::Int
 
-    DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned}) where {S<:SubIndex,D<:AbstractDataFrame} =
+    DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned}) where {D<:AbstractDataFrame,S<:SubIndex} =
         new{S,D}(df, colindex, row)
 end
 
