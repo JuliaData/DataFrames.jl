@@ -8,7 +8,7 @@
 
 # Iteration by rows
 """
-    DataFrameRows <: AbstractVector{DataFrameRow}
+    DataFrameRows{D<:AbstractDataFrame,S<:SubIndex} <: AbstractVector{DataFrameRow{D,S}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
@@ -17,9 +17,9 @@ Currently supports `DataFrame` and `SubDataFrame`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{S<:AbstractDataFrame,T<:SubIndex} <: AbstractVector{DataFrameRow{S,T}}
-    df::S
-    subindex::T
+struct DataFrameRows{D<:AbstractDataFrame,S<:SubIndex} <: AbstractVector{DataFrameRow{D,S}}
+    df::D
+    subindex::S
 end
 
 """
