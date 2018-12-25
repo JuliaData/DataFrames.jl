@@ -248,7 +248,7 @@ end
 end
 
 @inline SubIndex(parent::Index, cols::ColumnIndex) =
-    throw(ArgumentError("invalid column argument $cols"))
+    throw(ArgumentError("cols argument must be a vector (got $cols)"))
 
 @inline SubIndex(parent::Index, cols) = SubIndex(parent, parent[cols])
 
