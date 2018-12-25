@@ -20,20 +20,20 @@ as `AbstractVector` objects.
 
 `SubDataFrame` is an `AbstractDataFrame` subtype representing a view into a `DataFrame`.
 It stores only a reference to the parent `DataFrame` and information about which rows and columns
-from the parent are selected. Note that column numbers are stored by `SubDataFrame` as a reference to the parent.
+from the parent are selected (both as integer indices referring to the parent).
 Typically it is created using the `view` function or is returned by indexing into a `GroupedDataFrame` object.
 
 `GroupedDataFrame` is a type that stores the result of a  grouping operation performed on an `AbstractDataFrame`.
 It is intended to be created as a result of a call to the `groupby` function.
 
-`DataFrameRow` is a view into a single row of a `DataFrame`. It stores only a reference
-to a parent `DataFrame` and information about which row and columns from the parent are selected.
-Note that column numbers are stored by `DataFrameRow` as a reference to the parent.
+`DataFrameRow` is a view into a single row of an `AbstractDataFrame`. It stores only a reference
+to a parent `DataFrame` and information about which row and columns from the parent are selected
+(both as integer indices referring to the parent)
 The `DataFrameRow` type supports iteration over columns of the row and is similar in functionality to
 the `NamedTuple` type, but allows for modification of data stored in the parent `DataFrame`
 and reflects changes done to the parent after the creation of the view.
-Typically objects of the `DataFrameRow` type are encountered when returned by the `eachrow` function.
-Also accessing a single row of a `DataFrame` or `SubDataFrame` via `getindex` or `view` returns a `DataFrameRow`.
+Typically objects of the `DataFrameRow` type are encountered when returned by the `eachrow` function,
+or when accessing a single row of a `DataFrame` or `SubDataFrame` via `getindex` or `view`.
 
 The `eachrow` function returns a value of the `DataFrameRows` type, which
 serves as an iterator over rows of an `AbstractDataFrame`, returning `DataFrameRow` objects.
