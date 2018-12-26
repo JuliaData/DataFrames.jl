@@ -17,6 +17,8 @@ module TestDataFrameRow
     @test DataFrameRow(df, 3, [3, 2]) == df[3, [3, 2]] == view(df, 3, [3, 2])
     @test DataFrameRow(sdf, 2, [3, 2]) == sdf[2, [3, 2]] == view(sdf, 2, [3, 2])
     @test DataFrameRow(sdf, 2, :) == sdf[2, :] == view(sdf, 2, :)
+    @test DataFrameRow(df, 3, 2:3) === df[3, 2:3]
+    @test view(df, 3, 2:3) === df[3, 2:3]
     @test_throws ArgumentError DataFrameRow(df, 1, :a)
     @test_throws ArgumentError DataFrameRow(df, 1, 1)
     @test_throws BoundsError DataFrameRow(df, 1, 1:10)
@@ -32,7 +34,7 @@ module TestDataFrameRow
 
     # getindex
     r = DataFrameRow(df, 2, :)
-    @test r[:] == r
+    @test r[:] === r
     @test view(r, :) === r
     @test r[3] == "B"
     @test_throws BoundsError r[5]

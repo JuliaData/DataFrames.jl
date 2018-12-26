@@ -2,7 +2,6 @@
     SubDataFrame{<:AbstractDataFrame,<:AbstractIndex,<:AbstractVector{Int}} <: AbstractDataFrame
 
 A view of row subsets of an `AbstractDataFrame`.
-Currently supports `DataFrame` and `SubDataFrame`.
 
 A `SubDataFrame` is meant to be constructed with `view` when a collection of
 rows and columns is selected.
@@ -85,7 +84,9 @@ end
 @inline function parentcols(sdf::SubDataFrame, idx::Symbol)
     parentcol = index(parent(sdf))[idx]
     @boundscheck if index(sdf) isa SubIndex
-        lazyremap!(index(sdf))[parentcol] == 0 && throw(KeyError("$idx not found"))
+        remap = index(sdf).remap
+        length(remap) == 0 && lazyremap!(index(sdf))
+        remap[parentcol] == 0 && throw(KeyError("$idx not found"))
     end
     return parentcol
 end

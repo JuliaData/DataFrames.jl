@@ -2,7 +2,6 @@
     DataFrameRow{<:AbstractDataFrame,<:AbstractIndex}
 
 A view of one row of an `AbstractDataFrame`.
-Currently supports `DataFrame` and `SubDataFrame`.
 
 A `DataFrameRow` is constructed with `view` or `getindex` when one row and a
 selection of columns are requested, or when iterating the result
@@ -21,12 +20,12 @@ A `DataFrameRow` supports the iteration interface and can therefore be passed to
 that expect a collection as an argument.
 
 Indexing is one-dimensional like specifying a column of a `DataFrame`.
+You can also access the data in a `DataFrameRow` using the `getproperty` and
+`setproperty!` functions and convert it to a `NamedTuple` using the `copy` function.
 
 It is possible to create a `DataFrameRow` with duplicate columns.
 All such columns will have a reference to the same entry in the parent `DataFrame`.
 """
-# We allow D to be AbstractDataFrame, to allow for extensions
-# In DataFrames.jl D is always DataFrame
 struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     df::D
     colindex::S
@@ -79,7 +78,9 @@ Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
     parentcol = index(parent(r))[idx]
     # index(r) can be Index or SubIndex; no need to check anything in the former case
     @boundscheck if index(r) isa SubIndex
-        lazyremap!(index(r))[parentcol] == 0 && throw(KeyError("$idx not found"))
+        remap = index(r).remap
+        length(remap) == 0 && lazyremap!(index(r))
+        remap[parentcol] == 0 && throw(KeyError("$idx not found"))
     end
     return parentcol
 end
@@ -110,7 +111,8 @@ function Base.haskey(r::DataFrameRow, key::Symbol)
     index(r) isa Index && return true
     # here index(r) is a SubIndex
     pos = index(parent(r))[key]
-    remap = lazyremap!(index(r))
+    remap = index(r).remap
+    length(remap) == 0 && lazyremap!(index(r))
     checkbounds(Bool, remap, pos) || return false
     remap[pos] > 0
 end

@@ -219,7 +219,7 @@ parentcols(ind::Index) = Base.OneTo(length(ind))
 # We allow I to be AbstractIndex, to allow for extensions
 # In DataFrames.jl I is always Index
 
-struct SubIndex{S<:AbstractVector{Int}, T<:AbstractVector{Int}, I<:AbstractIndex} <: AbstractIndex
+struct SubIndex{I<:AbstractIndex,S<:AbstractVector{Int},T<:AbstractVector{Int}} <: AbstractIndex
     parent::I
     cols::S # columns from idx selected in SubIndex
     remap::T # reverse of cols
@@ -227,19 +227,19 @@ end
 
 parentcols(ind::SubIndex) = ind.cols
 
-@inline SubIndex(parent::Index, ::Colon) = parent
+SubIndex(parent::AbstractIndex, ::Colon) = parent
 
-@inline function SubIndex(parent::Index, cols::AbstractUnitRange{Int})
+@inline function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
     l = last(cols)
     f = first(cols)
-    @boundscheck if !(f > 0 && l ≤ length(parent))
+    @boundscheck if !checkindex(Bool, Base.OneTo(length(parent)), cols)
         throw(BoundsError("invalid columns $cols selected"))
     end
     remap = (1:l) .- f .+ 1
     SubIndex(parent, cols, remap)
 end
 
-@inline function SubIndex(parent::Index, cols::AbstractVector{Int})
+@inline function SubIndex(parent::AbstractIndex, cols::AbstractVector{Int})
     ncols = length(parent)
     @boundscheck if !all(x -> 0 < x ≤ ncols, cols)
         throw(BoundsError("invalid columns $cols selected"))
@@ -248,14 +248,14 @@ end
     SubIndex(parent, cols, remap)
 end
 
-@inline SubIndex(parent::Index, cols::ColumnIndex) =
+@inline SubIndex(parent::AbstractIndex, cols::ColumnIndex) =
     throw(ArgumentError("cols argument must be a vector (got $cols)"))
 
-@inline SubIndex(parent::Index, cols) = SubIndex(parent, parent[cols])
+@inline SubIndex(parent::AbstractIndex, cols) = SubIndex(parent, parent[cols])
 
 # a helper function that lazily creates remap when needed
 # it assumes that remap is Vector{Int} unless it is an AbstractUnitRange
-@inline function lazyremap!(x::SubIndex)
+function lazyremap!(x::SubIndex)
     remap = x.remap
     remap isa AbstractUnitRange{Int} && return remap
     if length(remap) == 0
@@ -276,7 +276,8 @@ _names(x::SubIndex) = view(_names(x.parent), x.cols)
 function Base.haskey(x::SubIndex, key::Symbol)
     haskey(x.parent, key) || return false
     pos = x.parent[key]
-    remap = lazyremap!(x)
+    remap = x.remap
+    length(remap) == 0 && lazyremap!(x)
     checkbounds(Bool, remap, pos) || return false
     remap[pos] > 0
 end
@@ -286,5 +287,9 @@ Base.haskey(x::SubIndex, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
 Base.keys(x::SubIndex) = names(x)
 
-Base.getindex(x::SubIndex, idx::Symbol) = lazyremap!(x)[x.parent[idx]]
+function Base.getindex(x::SubIndex, idx::Symbol)
+    remap = x.remap
+    length(remap) == 0 && lazyremap!(x)
+    remap[x.parent[idx]]
+end
 Base.getindex(x::SubIndex, idx::AbstractVector{Symbol}) = [x[i] for i in idx]

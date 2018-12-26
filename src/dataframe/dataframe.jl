@@ -356,7 +356,7 @@ function insert_single_entry!(df::DataFrame, v::Any, row_ind::Integer, col_ind::
         _columns(df)[index(df)[col_ind]][row_ind] = v
         return v
     else
-        error("Cannot assign to non-existent column: $col_ind")
+        throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
     end
 end
 
@@ -368,7 +368,7 @@ function insert_multiple_entries!(df::DataFrame,
         _columns(df)[index(df)[col_ind]][row_inds] .= v
         return v
     else
-        error("Cannot assign to non-existent column: $col_ind")
+        throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
     end
 end
 
