@@ -1,5 +1,5 @@
 """
-    DataFrameRow{<:AbstractDataFrame,<:SubIndex}
+    DataFrameRow{<:AbstractDataFrame,<:AbstractIndex}
 
 A view of one row of an `AbstractDataFrame`.
 Currently supports `DataFrame` and `SubDataFrame`.
@@ -27,13 +27,13 @@ All such columns will have a reference to the same entry in the parent `DataFram
 """
 # We allow D to be AbstractDataFrame, to allow for extensions
 # In DataFrames.jl D is always DataFrame
-struct DataFrameRow{D<:AbstractDataFrame,S<:SubIndex}
+struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     df::D
     colindex::S
     row::Int
 
-    DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned}) where {D<:AbstractDataFrame,S<:SubIndex} =
-        new{S,D}(df, colindex, row)
+    DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned}) where {D<:AbstractDataFrame,S<:AbstractIndex} =
+        new{D,S}(df, colindex, row)
 end
 
 @inline function DataFrameRow(df::DataFrame, row::Integer, cols)
@@ -49,15 +49,18 @@ end
         throw(BoundsError("attempt to access a data frame with $(nrow(sdf)) " *
                           "rows at index $row"))
     end
-    DataFrameRow(parent(sdf),
-                 SubIndex(index(parent(sdf)),
-                          parentcols(sdf, cols isa Colon ? cols : index(sdf)[cols])),
-                 rows(sdf)[row])
+    if index(sdf) isa Index
+        colindex = SubIndex(index(sdf), cols)
+    else
+        colindex = SubIndex(index(parent(sdf)),
+                            parentcols(sdf, cols isa Colon ? cols : index(sdf)[cols]))
+    end
+    DataFrameRow(parent(sdf), colindex, rows(sdf)[row])
 end
 
 row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)
-Base.parentindices(r::DataFrameRow) = (row(r), index(r).cols)
+Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
 
 @inline Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(adf, rowind, :)
@@ -70,17 +73,20 @@ Base.parentindices(r::DataFrameRow) = (row(r), index(r).cols)
     DataFrameRow(df, rowind, :)
 
 @inline parentcols(r::DataFrameRow, idx::Union{Integer, AbstractVector{<:Integer}}) =
-    index(r).cols[idx]
+    parentcols(index(r))[idx]
 
 @inline function parentcols(r::DataFrameRow, idx::Symbol)
     parentcol = index(parent(r))[idx]
-    @boundscheck lazyremap!(index(r))[parentcol] == 0 && throw(KeyError("$idx not found"))
+    # index(r) can be Index or SubIndex; no need to check anything in the former case
+    @boundscheck if index(r) isa SubIndex
+        lazyremap!(index(r))[parentcol] == 0 && throw(KeyError("$idx not found"))
+    end
     return parentcol
 end
 
 @inline parentcols(r::DataFrameRow, idx::AbstractVector{Symbol}) =
     [parentcols(r, i) for i in idx]
-@inline parentcols(r::DataFrameRow, ::Colon) = index(r).cols
+@inline parentcols(r::DataFrameRow, ::Colon) = parentcols(index(r))
 
 @inline Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(r, idx)]
@@ -101,6 +107,8 @@ Base.haskey(r::DataFrameRow, key::Bool) =
 Base.haskey(r::DataFrameRow, key::Integer) = 1 ≤ key ≤ size(r, 1)
 function Base.haskey(r::DataFrameRow, key::Symbol)
     haskey(parent(r), key) || return false
+    index(r) isa Index && return true
+    # here index(r) is a SubIndex
     pos = index(parent(r))[key]
     remap = lazyremap!(index(r))
     checkbounds(Bool, remap, pos) || return false
@@ -182,7 +190,7 @@ Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
 
 function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
     if parent(r1) === parent(r2)
-        index(r1).cols == index(r2).cols || return false
+        parentcols(index(r1)) == parentcols(index(r2)) || return false
         row(r1) == row(r2) && return true
     else
         _names(r1) == _names(r2) || return false
@@ -192,7 +200,7 @@ end
 
 function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
     if parent(r1) === parent(r2)
-        index(r1).cols == index(r2).cols || return false
+        parentcols(index(r1)) == parentcols(index(r2)) || return false
         row(r1) == row(r2) && return true
     else
         _names(r1) == _names(r2) || return false

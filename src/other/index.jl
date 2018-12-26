@@ -212,6 +212,8 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
     return u
 end
 
+parentcols(ind::Index) = Base.OneTo(length(ind))
+
 ### SubIndex of Index. Used by SubDataFrame, DataFrameRow, and DataFrameRows
 
 # We allow I to be AbstractIndex, to allow for extensions
@@ -223,10 +225,9 @@ struct SubIndex{S<:AbstractVector{Int}, T<:AbstractVector{Int}, I<:AbstractIndex
     remap::T # reverse of cols
 end
 
-@inline function SubIndex(parent::Index, ::Colon)
-    cols = Base.OneTo(length(parent))
-    SubIndex(parent, cols, cols)
-end
+parentcols(ind::SubIndex) = ind.cols
+
+@inline SubIndex(parent::Index, ::Colon) = parent
 
 @inline function SubIndex(parent::Index, cols::AbstractUnitRange{Int})
     l = last(cols)

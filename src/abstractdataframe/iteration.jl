@@ -8,7 +8,7 @@
 
 # Iteration by rows
 """
-    DataFrameRows{D<:AbstractDataFrame,S<:SubIndex} <: AbstractVector{DataFrameRow{D,S}}
+    DataFrameRows{D<:AbstractDataFrame,S<:AbstractIndex} <: AbstractVector{DataFrameRow{D,S}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
@@ -17,19 +17,19 @@ Currently supports `DataFrame` and `SubDataFrame`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{D<:AbstractDataFrame,S<:SubIndex} <: AbstractVector{DataFrameRow{D,S}}
+struct DataFrameRows{D<:AbstractDataFrame,S<:AbstractIndex} <: AbstractVector{DataFrameRow{D,S}}
     df::D
-    subindex::S
+    index::S
 end
+
+Base.summary(dfrs::DataFrameRows) = "$(length(dfrs))-element DataFrameRows"
+Base.summary(io::IO, dfrs::DataFrameRows) = print(io, summary(dfrs))
 
 """
     eachrow(df::AbstractDataFrame)
 
 Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
-
-Note that for performance reasons `eachrow(df::DataFrame)` assumes that the number
-of columns of `df` does not change after constructing the `DataFrameRows` object.
 
 **Examples**
 
@@ -45,7 +45,7 @@ julia> df = DataFrame(x=1:4, y=11:14)
 │ 4   │ 4     │ 14    │
 
 julia> eachrow(df)
-4-element DataFrames.DataFrameRows{DataFrame,DataFrames.SubIndex{Base.OneTo{Int64},Base.OneTo{Int64}}}:
+4-element DataFrameRows:
  DataFrameRow (row 1)
 x  1
 y  11
@@ -67,7 +67,7 @@ julia> copy.(eachrow(df))
  (x = 4, y = 14)
 
 julia> eachrow(view(df, [4,3], [2,1]))
-2-element DataFrames.DataFrameRows{Array{Int64,1}}:
+2-element DataFrameRows:
  DataFrameRow (row 4)
 y  14
 x  4
@@ -76,18 +76,16 @@ y  13
 x  3
 ```
 """
-eachrow(df::DataFrame) =
-    DataFrameRows(df, SubIndex(index(df), :))
-eachrow(sdf::SubDataFrame) =
-    DataFrameRows(sdf, index(sdf))
+eachrow(df::DataFrame) = DataFrameRows(df, index(df))
+eachrow(sdf::SubDataFrame) = DataFrameRows(sdf, index(sdf))
 
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
 
 @inline Base.getindex(itr::DataFrameRows{DataFrame}, i::Int) =
-    DataFrameRow(itr.df, itr.subindex, i)
+    DataFrameRow(itr.df, itr.index, i)
 @inline Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int) =
-    DataFrameRow(parent(itr.df), itr.subindex, rows(itr.df)[i])
+    DataFrameRow(parent(itr.df), itr.index, rows(itr.df)[i])
 
 # Iteration by columns
 """

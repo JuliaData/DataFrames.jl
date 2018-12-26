@@ -1,5 +1,5 @@
 """
-    SubDataFrame{<:AbstractDataFrame,<:SubIndex,<:AbstractVector{Int}} <: AbstractDataFrame
+    SubDataFrame{<:AbstractDataFrame,<:AbstractIndex,<:AbstractVector{Int}} <: AbstractDataFrame
 
 A view of row subsets of an `AbstractDataFrame`.
 Currently supports `DataFrame` and `SubDataFrame`.
@@ -39,7 +39,7 @@ sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
 """
 # We allow D to be AbstractDataFrame, to allow for extensions
 # In DataFrames.jl D is always DataFrame
-struct SubDataFrame{D<:AbstractDataFrame,S<:SubIndex,T<:AbstractVector{Int}} <: AbstractDataFrame
+struct SubDataFrame{D<:AbstractDataFrame,S<:AbstractIndex,T<:AbstractVector{Int}} <: AbstractDataFrame
     parent::D
     colindex::S
     rows::T # maps from subdf row indexes to parent row indexes
@@ -80,28 +80,33 @@ end
 end
 
 @inline parentcols(sdf::SubDataFrame, idx::Union{Integer, AbstractVector{<:Integer}}) =
-    index(sdf).cols[idx]
+    parentcols(index(sdf))[idx]
 
 @inline function parentcols(sdf::SubDataFrame, idx::Symbol)
     parentcol = index(parent(sdf))[idx]
-    @boundscheck lazyremap!(index(sdf))[parentcol] == 0 && throw(KeyError("$idx not found"))
+    @boundscheck if index(sdf) isa SubIndex
+        lazyremap!(index(sdf))[parentcol] == 0 && throw(KeyError("$idx not found"))
+    end
     return parentcol
 end
 
 @inline parentcols(sdf::SubDataFrame, idx::AbstractVector{Symbol}) =
     [parentcols(sdf, i) for i in idx]
 
-@inline parentcols(sdf::SubDataFrame, ::Colon) = index(sdf).cols
+@inline parentcols(sdf::SubDataFrame, ::Colon) = parentcols(index(sdf))
 
 @inline SubDataFrame(sdf::SubDataFrame, rowind, cols) =
     SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(sdf, cols))
+@inline SubDataFrame(sdf::SubDataFrame, rowind, ::Colon) =
+    SubDataFrame(parent(sdf), rows(sdf)[rowind],
+                 index(sdf) isa Index ? Colon() : parentcols(sdf, :))
 @inline SubDataFrame(sdf::SubDataFrame, ::Colon, cols) =
     SubDataFrame(parent(sdf), rows(sdf), parentcols(sdf, cols))
 @inline SubDataFrame(sdf::SubDataFrame, ::Colon, ::Colon) = sdf
 
 rows(sdf::SubDataFrame) = getfield(sdf, :rows)
 Base.parent(sdf::SubDataFrame) = getfield(sdf, :parent)
-Base.parentindices(sdf::SubDataFrame) = (rows(sdf), index(sdf).cols)
+Base.parentindices(sdf::SubDataFrame) = (rows(sdf), parentcols(index(sdf)))
 
 @inline Base.view(adf::AbstractDataFrame, colinds) = view(adf, :, colinds)
 @inline Base.view(adf::AbstractDataFrame, rowinds, colind::ColumnIndex) =

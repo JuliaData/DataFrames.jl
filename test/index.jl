@@ -90,8 +90,7 @@ si5 = SubIndex(i, [:C, :D, :E])
 @test_throws ArgumentError SubIndex(i, 1)
 @test_throws ArgumentError SubIndex(i, :A)
 @test_throws ArgumentError SubIndex(i, true)
-@test si1.cols == 1:5
-@test si1.remap == 1:5
+@test si1 isa Index
 @test si2.cols == 3:5
 @test si2.remap == -1:3
 @test si3.cols == 3:5
