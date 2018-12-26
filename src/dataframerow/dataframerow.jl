@@ -55,7 +55,7 @@ end
         colindex = SubIndex(index(parent(sdf)),
                             parentcols(sdf, cols isa Colon ? cols : index(sdf)[cols]))
     end
-    DataFrameRow(parent(sdf), colindex, rows(sdf)[row])
+    @inbounds DataFrameRow(parent(sdf), colindex, rows(sdf)[row])
 end
 
 row(r::DataFrameRow) = getfield(r, :row)

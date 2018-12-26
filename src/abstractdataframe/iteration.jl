@@ -76,15 +76,14 @@ y  13
 x  3
 ```
 """
-eachrow(df::DataFrame) = DataFrameRows(df, index(df))
-eachrow(sdf::SubDataFrame) = DataFrameRows(sdf, index(sdf))
+eachrow(df::AbstractDataFrame) = DataFrameRows(df, index(df))
 
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
 Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
 
-@inline Base.getindex(itr::DataFrameRows{DataFrame}, i::Int) =
+Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int) =
     DataFrameRow(itr.df, itr.index, i)
-@inline Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int) =
+Base.@propagate_inbounds Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int) =
     DataFrameRow(parent(itr.df), itr.index, rows(itr.df)[i])
 
 # Iteration by columns
