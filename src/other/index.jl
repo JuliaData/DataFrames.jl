@@ -138,31 +138,31 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     x
 end
 
-Base.getindex(x::AbstractIndex, idx::Bool) = throw(ArgumentError("invalid index: $idx of type Bool"))
-Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
-Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
-Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
-Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
+@inline Base.getindex(x::AbstractIndex, idx::Bool) = throw(ArgumentError("invalid index: $idx of type Bool"))
+@inline Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
+@inline Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
+@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
+@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
+@inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
-Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
-Base.getindex(x::Index, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+@inline Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
+@inline Base.getindex(x::Index, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 
-function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
+@inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
         throw(ArgumentError("Bool values except for AbstractVector{Bool} are not allowed for column indexing"))
     end
     Vector{Int}(idx)
 end
 
-Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool}) = getindex(x, collect(idx))
-function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
+@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool}) = getindex(x, collect(idx))
+@inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
     findall(idx)
 end
 
 # catch all method handling cases when type of idx is not narrowest possible, Any in particular
-function Base.getindex(x::AbstractIndex, idxs::AbstractVector)
+@inline function Base.getindex(x::AbstractIndex, idxs::AbstractVector)
     length(idxs) == 0 && return Int[] # special case of empty idxs
     if idxs[1] isa Real
         if !all(v -> v isa Integer && !(v isa Bool), idxs)
@@ -212,7 +212,7 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
     return u
 end
 
-parentcols(ind::Index) = Base.OneTo(length(ind))
+@inline parentcols(ind::Index) = Base.OneTo(length(ind))
 
 ### SubIndex of Index. Used by SubDataFrame, DataFrameRow, and DataFrameRows
 
@@ -225,11 +225,11 @@ struct SubIndex{I<:AbstractIndex,S<:AbstractVector{Int},T<:AbstractVector{Int}} 
     remap::T # reverse of cols
 end
 
-parentcols(ind::SubIndex) = ind.cols
+@inline parentcols(ind::SubIndex) = ind.cols
 
 SubIndex(parent::AbstractIndex, ::Colon) = parent
 
-@inline function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
+Base.@propagate_inbounds function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
     l = last(cols)
     f = first(cols)
     @boundscheck if !checkindex(Bool, Base.OneTo(length(parent)), cols)
@@ -239,7 +239,7 @@ SubIndex(parent::AbstractIndex, ::Colon) = parent
     SubIndex(parent, cols, remap)
 end
 
-@inline function SubIndex(parent::AbstractIndex, cols::AbstractVector{Int})
+Base.@propagate_inbounds function SubIndex(parent::AbstractIndex, cols::AbstractVector{Int})
     ncols = length(parent)
     @boundscheck if !all(x -> 0 < x ≤ ncols, cols)
         throw(BoundsError("invalid columns $cols selected"))
@@ -251,7 +251,8 @@ end
 @inline SubIndex(parent::AbstractIndex, cols::ColumnIndex) =
     throw(ArgumentError("cols argument must be a vector (got $cols)"))
 
-@inline SubIndex(parent::AbstractIndex, cols) = SubIndex(parent, parent[cols])
+Base.@propagate_inbounds SubIndex(parent::AbstractIndex, cols) =
+    SubIndex(parent, parent[cols])
 
 # a helper function that lazily creates remap when needed
 # it assumes that remap is Vector{Int} unless it is an AbstractUnitRange

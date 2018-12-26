@@ -31,11 +31,11 @@ struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     colindex::S
     row::Int
 
-    DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned}) where {D<:AbstractDataFrame,S<:AbstractIndex} =
+    @inline DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned}) where {D<:AbstractDataFrame,S<:AbstractIndex} =
         new{D,S}(df, colindex, row)
 end
 
-@inline function DataFrameRow(df::DataFrame, row::Integer, cols)
+Base.@propagate_inbounds function DataFrameRow(df::DataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(df, 1), row)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row"))
@@ -43,7 +43,7 @@ end
     DataFrameRow(df, SubIndex(index(df), cols), row)
 end
 
-@inline function DataFrameRow(sdf::SubDataFrame, row::Integer, cols)
+Base.@propagate_inbounds function DataFrameRow(sdf::SubDataFrame, row::Integer, cols)
     @boundscheck if !checkindex(Bool, axes(sdf, 1), row)
         throw(BoundsError("attempt to access a data frame with $(nrow(sdf)) " *
                           "rows at index $row"))
@@ -61,20 +61,20 @@ row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
 
-@inline Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
+Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(adf, rowind, :)
-@inline Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
+Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(adf, rowind, colinds)
 
-@inline Base.getindex(df::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
+Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
     DataFrameRow(df, rowind, colinds)
-@inline Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
+Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
 
-@inline parentcols(r::DataFrameRow, idx::Union{Integer, AbstractVector{<:Integer}}) =
+Base.@propagate_inbounds parentcols(r::DataFrameRow, idx::Union{Integer, AbstractVector{<:Integer}}) =
     parentcols(index(r))[idx]
 
-@inline function parentcols(r::DataFrameRow, idx::Symbol)
+Base.@propagate_inbounds function parentcols(r::DataFrameRow, idx::Symbol)
     parentcol = index(parent(r))[idx]
     # index(r) can be Index or SubIndex; no need to check anything in the former case
     @boundscheck if index(r) isa SubIndex
@@ -85,17 +85,17 @@ Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
     return parentcol
 end
 
-@inline parentcols(r::DataFrameRow, idx::AbstractVector{Symbol}) =
+Base.@propagate_inbounds parentcols(r::DataFrameRow, idx::AbstractVector{Symbol}) =
     [parentcols(r, i) for i in idx]
-@inline parentcols(r::DataFrameRow, ::Colon) = parentcols(index(r))
+Base.@propagate_inbounds parentcols(r::DataFrameRow, ::Colon) = parentcols(index(r))
 
-@inline Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
+Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
     parent(r)[row(r), parentcols(r, idx)]
-@inline Base.getindex(r::DataFrameRow, idxs::AbstractVector) =
+Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::AbstractVector) =
     DataFrameRow(parent(r), row(r), parentcols(r, idxs))
-@inline Base.getindex(r::DataFrameRow, ::Colon) = r
+Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
-@inline Base.setindex!(r::DataFrameRow, value::Any, idx) =
+Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value::Any, idx) =
     setindex!(parent(r), value, row(r), parentcols(r, idx))
 
 index(r::DataFrameRow) = getfield(r, :colindex)
