@@ -235,13 +235,13 @@ module TestShow
     str = String(take!(io.io))
     @test str == """
     GroupedDataFrame{DataFrame} with 4 groups based on key: :A
-    First Group: 1 row
+    First Group (1 row): :A = 1
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
     ├─────┼───────┼────────┼─────────┤
     │ 1   │ 1     │ x"     │ 1.0     │
     ⋮
-    Last Group: 1 row
+    Last Group (1 row): :A = 4
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
     ├─────┼───────┼────────┼─────────┤
@@ -250,22 +250,22 @@ module TestShow
     str = String(take!(io.io))
     @test str == """
     GroupedDataFrame{DataFrame} with 4 groups based on key: :A
-    Group 1: 1 row
+    Group 1 (1 row): :A = 1
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
     ├─────┼───────┼────────┼─────────┤
     │ 1   │ 1     │ x\"     │ 1.0     │
-    Group 2: 1 row
+    Group 2 (1 row): :A = 2
     │ Row │ A     │ B           │ C       │
     │     │ Int64 │ String      │ Float32 │
     ├─────┼───────┼─────────────┼─────────┤
     │ 1   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │
-    Group 3: 1 row
+    Group 3 (1 row): :A = 3
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
     ├─────┼───────┼────────┼─────────┤
     │ 1   │ 3     │ z\$     │ 3.0     │
-    Group 4: 1 row
+    Group 4 (1 row): :A = 4
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
     ├─────┼───────┼────────┼─────────┤
