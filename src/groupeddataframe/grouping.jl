@@ -478,17 +478,19 @@ end
 
 function groupreduce(op, adjust, incol::AbstractVector{T}, gd::GroupedDataFrame) where T
     n = length(gd)
-    outcol = groupreduce_init(op, incol, gd)
+    res = groupreduce_init(op, incol, gd)
     if adjust !== nothing
         counts = zeros(Int, n)
     end
     @inbounds @simd for i in eachindex(incol, gd.groups)
         gix = gd.groups[i]
         adjust !== nothing && (counts[gix] += 1)
-        outcol[gix] = op(outcol[gix], incol[i])
+        res[gix] = op(res[gix], incol[i])
     end
     if adjust !== nothing
-        map!(adjust, outcol, outcol, counts)
+        outcol = map(adjust, res, counts)
+    else
+        outcol = res
     end
     # Undo pool sharing done by groupreduce_init
     if outcol isa CategoricalVector

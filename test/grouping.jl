@@ -635,7 +635,7 @@ module TestGrouping
                 gd = groupby(df, :a)
                 res = combine(gd, y = :x3 => f)
                 @test res == combine(gd, y = :x3 => x -> f(x))
-                @test res.y isa Vector{Int}
+                @test res.y isa Vector{f === mean ? Float64 : Int}
             end
 
             df.x3 = allowmissing(df.x1)
@@ -643,7 +643,7 @@ module TestGrouping
             gd = groupby(df, :a)
             res = combine(gd, y = :x3 => f)
             @test isequal(res, combine(gd, y = :x3 => x -> f(x)))
-            @test res.y isa Vector{Union{Missing, Int}}
+            @test res.y isa Vector{Union{Missing, f === mean ? Float64 : Int}}
         end
         for f in (maximum, minimum),
             (T, m) in ((Int, false),
