@@ -346,6 +346,10 @@ module TestDataFrame
         @test names(d) == [:a, :d]
         deletecols!(d, 2)
         @test d == DataFrame(a=1)
+
+        d = copy(df)
+        deletecols!(d, 2:3)
+        @test d == DataFrame(a=1, d=4, e=5)
     end
 
     @testset "deleterows!" begin

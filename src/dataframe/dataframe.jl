@@ -777,7 +777,7 @@ julia> deletecols!(d, 1)
 ```
 
 """
-function deletecols!(df::DataFrame, inds::Vector{Int})
+function deletecols!(df::DataFrame, inds::AbstractVector{Int})
     sorted_inds = sort(inds, rev=true)
     for i in 2:length(sorted_inds)
         if sorted_inds[i] == sorted_inds[i-1]
