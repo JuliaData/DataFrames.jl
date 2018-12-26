@@ -48,12 +48,7 @@ Base.@propagate_inbounds function DataFrameRow(sdf::SubDataFrame, row::Integer, 
         throw(BoundsError("attempt to access a data frame with $(nrow(sdf)) " *
                           "rows at index $row"))
     end
-    if index(sdf) isa Index
-        colindex = SubIndex(index(sdf), cols)
-    else
-        colindex = SubIndex(index(parent(sdf)),
-                            parentcols(sdf, cols isa Colon ? cols : index(sdf)[cols]))
-    end
+    colindex = SubIndex(index(parent(sdf)), parentcols(index(sdf), cols))
     @inbounds DataFrameRow(parent(sdf), colindex, rows(sdf)[row])
 end
 
@@ -71,37 +66,19 @@ Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, c
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
 
-Base.@propagate_inbounds parentcols(r::DataFrameRow, idx::Union{Integer, AbstractVector{<:Integer}}) =
-    parentcols(index(r))[idx]
-
-Base.@propagate_inbounds function parentcols(r::DataFrameRow, idx::Symbol)
-    parentcol = index(parent(r))[idx]
-    # index(r) can be Index or SubIndex; no need to check anything in the former case
-    @boundscheck if index(r) isa SubIndex
-        remap = index(r).remap
-        length(remap) == 0 && lazyremap!(index(r))
-        remap[parentcol] == 0 && throw(KeyError("$idx not found"))
-    end
-    return parentcol
-end
-
-Base.@propagate_inbounds parentcols(r::DataFrameRow, idx::AbstractVector{Symbol}) =
-    [parentcols(r, i) for i in idx]
-Base.@propagate_inbounds parentcols(r::DataFrameRow, ::Colon) = parentcols(index(r))
-
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idx::ColumnIndex) =
-    parent(r)[row(r), parentcols(r, idx)]
+    parent(r)[row(r), parentcols(index(r), idx)]
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, idxs::AbstractVector) =
-    DataFrameRow(parent(r), row(r), parentcols(r, idxs))
+    DataFrameRow(parent(r), row(r), parentcols(index(r), idxs))
 Base.@propagate_inbounds Base.getindex(r::DataFrameRow, ::Colon) = r
 
 Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value::Any, idx) =
-    setindex!(parent(r), value, row(r), parentcols(r, idx))
+    setindex!(parent(r), value, row(r), parentcols(index(r), idx))
 
 index(r::DataFrameRow) = getfield(r, :colindex)
 
-Base.names(r::DataFrameRow) = _names(parent(r))[parentcols(r, :)]
-_names(r::DataFrameRow) = view(_names(parent(r)), parentcols(r, :))
+Base.names(r::DataFrameRow) = _names(parent(r))[parentcols(index(r), :)]
+_names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
 
 Base.haskey(r::DataFrameRow, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
@@ -123,9 +100,9 @@ Base.setproperty!(r::DataFrameRow, idx::Symbol, x::Any) = setindex!(r, x, idx)
 Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
-    view(parent(r)[parentcols(r, col)], row(r))
+    view(parent(r)[parentcols(index(r), col)], row(r))
 Base.view(r::DataFrameRow, cols::AbstractVector) =
-    DataFrameRow(parent(r), row(r), parentcols(r, cols))
+    DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 
 Base.size(r::DataFrameRow) = (length(index(r)),)
@@ -157,7 +134,7 @@ Base.Vector(dfr::DataFrameRow) = convert(Vector, dfr)
 Base.Vector{T}(dfr::DataFrameRow) where T = convert(Vector{T}, dfr)
 
 Base.keys(r::DataFrameRow) = names(r)
-Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[row(r), parentcols(r, col)], length(r))
+Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
 
 """
     copy(dfr::DataFrameRow)
@@ -188,7 +165,7 @@ function rowhash(cols::Tuple{Vararg{AbstractVector}}, r::Int, h::UInt = zero(UIn
 end
 
 Base.hash(r::DataFrameRow, h::UInt = zero(UInt)) =
-    rowhash(ntuple(col -> parent(r)[parentcols(r, col)], length(r)), row(r), h)
+    rowhash(ntuple(col -> parent(r)[parentcols(index(r), col)], length(r)), row(r), h)
 
 function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
     if parent(r1) === parent(r2)

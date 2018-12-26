@@ -114,7 +114,7 @@ module TestSubDataFrame
         @test view(df, 1, :) == DataFrameRow(df, 1, :)
         @test view(df, :, 1) == df[:, 1]
         @test view(df, :, 1) isa SubArray
-        @test_throws MethodError view(df, [missing, 1])
+        @test_throws ArgumentError view(df, [missing, 1])
         @test_throws ArgumentError view(df, [missing, 1], :)
         @test_throws ArgumentError view(df, :, true)
     end
@@ -136,8 +136,8 @@ module TestSubDataFrame
         df.y = 1
         @test df.y == [1, 1, 1, 1, 1]
         @test y == [1; 1; 1; 1; 1; 1; 7:10]
-        @test_throws KeyError df.z = 1:5
-        @test_throws KeyError df.z = 1
+        @test_throws ArgumentError df.z = 1:5
+        @test_throws ArgumentError df.z = 1
     end
 
     @testset "index" begin

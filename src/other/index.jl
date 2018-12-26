@@ -213,6 +213,7 @@ function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
 end
 
 @inline parentcols(ind::Index) = Base.OneTo(length(ind))
+@inline parentcols(ind::Index, cols) = cols
 
 ### SubIndex of Index. Used by SubDataFrame, DataFrameRow, and DataFrameRows
 
@@ -225,9 +226,27 @@ struct SubIndex{I<:AbstractIndex,S<:AbstractVector{Int},T<:AbstractVector{Int}} 
     remap::T # reverse of cols
 end
 
+SubIndex(parent::AbstractIndex, ::Colon) = parent
+
 @inline parentcols(ind::SubIndex) = ind.cols
 
-SubIndex(parent::AbstractIndex, ::Colon) = parent
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Union{Integer, AbstractVector{<:Integer}}) =
+    ind.cols[idx]
+
+Base.@propagate_inbounds function parentcols(ind::SubIndex, idx::Symbol)
+    parentcol = ind.parent[idx]
+    @boundscheck begin
+        remap = ind.remap
+        length(remap) == 0 && lazyremap!(ind)
+        remap[parentcol] == 0 && throw(KeyError("$idx not found"))
+    end
+    return parentcol
+end
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractVector{Symbol}) =
+    [parentcols(ind, i) for i in idx]
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, ::Colon) = ind.cols
 
 Base.@propagate_inbounds function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
     l = last(cols)

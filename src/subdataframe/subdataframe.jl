@@ -78,31 +78,12 @@ Base.@propagate_inbounds function SubDataFrame(parent::DataFrame, rows::Abstract
     return SubDataFrame(parent, convert(Vector{Int}, rows), cols)
 end
 
-Base.@propagate_inbounds parentcols(sdf::SubDataFrame, idx::Union{Integer, AbstractVector{<:Integer}}) =
-    parentcols(index(sdf))[idx]
-
-Base.@propagate_inbounds function parentcols(sdf::SubDataFrame, idx::Symbol)
-    parentcol = index(parent(sdf))[idx]
-    @boundscheck if index(sdf) isa SubIndex
-        remap = index(sdf).remap
-        length(remap) == 0 && lazyremap!(index(sdf))
-        remap[parentcol] == 0 && throw(KeyError("$idx not found"))
-    end
-    return parentcol
-end
-
-Base.@propagate_inbounds parentcols(sdf::SubDataFrame, idx::AbstractVector{Symbol}) =
-    [parentcols(sdf, i) for i in idx]
-
-Base.@propagate_inbounds parentcols(sdf::SubDataFrame, ::Colon) = parentcols(index(sdf))
-
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind, cols) =
-    SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(sdf, cols))
+    SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(index(sdf), cols))
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, rowind, ::Colon) =
-    SubDataFrame(parent(sdf), rows(sdf)[rowind],
-                 index(sdf) isa Index ? Colon() : parentcols(sdf, :))
+    SubDataFrame(parent(sdf), rows(sdf)[rowind], parentcols(index(sdf), :))
 Base.@propagate_inbounds SubDataFrame(sdf::SubDataFrame, ::Colon, cols) =
-    SubDataFrame(parent(sdf), rows(sdf), parentcols(sdf, cols))
+    SubDataFrame(parent(sdf), rows(sdf), parentcols(index(sdf), cols))
 @inline SubDataFrame(sdf::SubDataFrame, ::Colon, ::Colon) = sdf
 
 rows(sdf::SubDataFrame) = getfield(sdf, :rows)
@@ -130,32 +111,32 @@ nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(rows(sdf))::Int : 0
 ncol(sdf::SubDataFrame) = length(index(sdf))
 
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, colind::ColumnIndex) =
-    view(parent(sdf), rows(sdf), parentcols(sdf, colind))
+    view(parent(sdf), rows(sdf), parentcols(index(sdf), colind))
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, colinds::AbstractVector) =
-    SubDataFrame(parent(sdf), rows(sdf), parentcols(sdf, colinds))
+    SubDataFrame(parent(sdf), rows(sdf), parentcols(index(sdf), colinds))
 @inline Base.getindex(sdf::SubDataFrame, ::Colon) = sdf
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
-    parent(sdf)[rows(sdf)[rowind], parentcols(sdf, colind)]
+    parent(sdf)[rows(sdf)[rowind], parentcols(index(sdf), colind)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colind::ColumnIndex) =
-    parent(sdf)[rows(sdf)[rowinds], parentcols(sdf, colind)]
+    parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colind)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, colind::ColumnIndex) =
-    parent(sdf)[rows(sdf), parentcols(sdf, colind)]
+    parent(sdf)[rows(sdf), parentcols(index(sdf), colind)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, colinds::AbstractVector) =
-    parent(sdf)[rows(sdf), parentcols(sdf, colinds)]
+    parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colinds::AbstractVector) =
-    parent(sdf)[rows(sdf)[rowinds], parentcols(sdf, colinds)]
+    parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, ::Colon) =
-    parent(sdf)[rows(sdf)[rowinds], parentcols(sdf, :)]
+    parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), :)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, ::Colon) =
-    parent(sdf)[rows(sdf), parentcols(sdf, :)]
+    parent(sdf)[rows(sdf), parentcols(index(sdf), :)]
 
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, colinds::Any)
-    parent(sdf)[rows(sdf), parentcols(sdf, colinds)] = val
+    parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)] = val
     return sdf
 end
 
 Base.@propagate_inbounds function Base.setindex!(sdf::SubDataFrame, val::Any, rowinds::Any, colinds::Any)
-    parent(sdf)[rows(sdf)[rowinds], parentcols(sdf, colinds)] = val
+    parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)] = val
     return sdf
 end
 
@@ -165,7 +146,7 @@ end
 ##
 ##############################################################################
 
-Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), parentcols(sdf, :)]
+Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), parentcols(index(sdf), :)]
 
 function without(df::SubDataFrame, icols::Vector{<:Integer})
     newcols = setdiff(1:ncol(df), icols)
