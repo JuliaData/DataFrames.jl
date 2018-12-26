@@ -5,7 +5,7 @@ We often need to combine two or more data sets together to provide a complete pi
 ```jldoctest joins
 julia> using DataFrames
 
-julia> names = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
+julia> people = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
 2×2 DataFrame
 │ Row │ ID    │ Name     │
 │     │ Int64 │ String   │
@@ -26,7 +26,7 @@ julia> jobs = DataFrame(ID = [20, 40], Job = ["Lawyer", "Doctor"])
 We might want to work with a larger data set that contains both the names and jobs for each ID. We can do this using the `join` function:
 
 ```jldoctest joins
-julia> join(names, jobs, on = :ID)
+julia> join(people, jobs, on = :ID)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job    │
 │     │ Int64 │ String   │ String │
@@ -61,14 +61,14 @@ julia> jobs = DataFrame(ID = [20, 60], Job = ["Lawyer", "Astronaut"])
 │ 1   │ 20    │ Lawyer    │
 │ 2   │ 60    │ Astronaut │
 
-julia> join(names, jobs, on = :ID, kind = :inner)
+julia> join(people, jobs, on = :ID, kind = :inner)
 1×3 DataFrame
 │ Row │ ID    │ Name     │ Job    │
 │     │ Int64 │ String   │ String │
 ├─────┼───────┼──────────┼────────┤
 │ 1   │ 20    │ John Doe │ Lawyer │
 
-julia> join(names, jobs, on = :ID, kind = :left)
+julia> join(people, jobs, on = :ID, kind = :left)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job     │
 │     │ Int64 │ String   │ String⍰ │
@@ -76,7 +76,7 @@ julia> join(names, jobs, on = :ID, kind = :left)
 │ 1   │ 20    │ John Doe │ Lawyer  │
 │ 2   │ 40    │ Jane Doe │ missing │
 
-julia> join(names, jobs, on = :ID, kind = :right)
+julia> join(people, jobs, on = :ID, kind = :right)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job       │
 │     │ Int64 │ String⍰  │ String    │
@@ -84,7 +84,7 @@ julia> join(names, jobs, on = :ID, kind = :right)
 │ 1   │ 20    │ John Doe │ Lawyer    │
 │ 2   │ 60    │ missing  │ Astronaut │
 
-julia> join(names, jobs, on = :ID, kind = :outer)
+julia> join(people, jobs, on = :ID, kind = :outer)
 3×3 DataFrame
 │ Row │ ID    │ Name     │ Job       │
 │     │ Int64 │ String⍰  │ String⍰   │
@@ -93,14 +93,14 @@ julia> join(names, jobs, on = :ID, kind = :outer)
 │ 2   │ 40    │ Jane Doe │ missing   │
 │ 3   │ 60    │ missing  │ Astronaut │
 
-julia> join(names, jobs, on = :ID, kind = :semi)
+julia> join(people, jobs, on = :ID, kind = :semi)
 1×2 DataFrame
 │ Row │ ID    │ Name     │
 │     │ Int64 │ String   │
 ├─────┼───────┼──────────┤
 │ 1   │ 20    │ John Doe │
 
-julia> join(names, jobs, on = :ID, kind = :anti)
+julia> join(people, jobs, on = :ID, kind = :anti)
 1×2 DataFrame
 │ Row │ ID    │ Name     │
 │     │ Int64 │ String   │
@@ -112,7 +112,7 @@ julia> join(names, jobs, on = :ID, kind = :anti)
 Cross joins are the only kind of join that does not use a key:
 
 ```jldoctest joins
-julia> join(names, jobs, kind = :cross, makeunique = true)
+julia> join(people, jobs, kind = :cross, makeunique = true)
 4×4 DataFrame
 │ Row │ ID    │ Name     │ ID_1  │ Job       │
 │     │ Int64 │ String   │ Int64 │ String    │
