@@ -61,6 +61,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         @test Tables.columnaccess(df)
         @test Tables.schema(df) === Tables.Schema((:a, :b), Tuple{Int64, Symbol})
         @test Tables.schema(df) == Tables.schema(Tables.rows(df)) == Tables.schema(Tables.columns(df))
+        @test @inferred(Tables.materializer(df)(Tables.columns(df))) isa typeof(df)
 
         row = first(Tables.rows(df))
         @test propertynames(row) == (:a, :b)

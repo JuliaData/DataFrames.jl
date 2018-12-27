@@ -7,6 +7,7 @@ Tables.rowaccess(::Type{DataFrame}) = true
 Tables.rows(df::DataFrame) = Tables.rows(columntable(df))
 
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltypes(df))
+Tables.materializer(df::DataFrame) = DataFrame
 
 getvector(x::AbstractVector) = x
 getvector(x) = collect(x)
