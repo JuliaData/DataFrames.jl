@@ -396,7 +396,7 @@ While the DataFrames package provides basic data manipulation capabilities, user
 - the [Query.jl](https://github.com/davidanthoff/Query.jl) package provides a [LINQ](https://msdn.microsoft.com/en-us/library/bb397926.aspx)-like interface to a large number of data sources
 - the [DataFramesMeta.jl](https://github.com/JuliaStats/DataFramesMeta.jl) package provides interfaces similar to LINQ and [dplyr](https://dplyr.tidyverse.org)
 
-See the [Querying frameworks](@ref) section for more information.
+See the [Data manipulation frameworks](@ref) section for more information.
 
 ### Summarizing Data
 
