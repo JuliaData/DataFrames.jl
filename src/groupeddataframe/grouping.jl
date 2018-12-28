@@ -378,13 +378,14 @@ _nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
 _ncol(df::AbstractDataFrame) = ncol(df)
 _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
 
-struct Reduce{F, A}
+struct Reduce{F, C, A}
     f::F
+    condf::C
     adjust::A
 end
-Reduce(f) = Reduce(f, nothing)
+Reduce(f, condf=nothing) = Reduce(f, condf, nothing)
 function (r::Reduce)(x)
-    v = reduce(r.f, x)
+    v = reduce(r.f,  r.condf === nothing ? x : Iterators.filter(x, condf))
     r.adjust === nothing ? v : r.adjust(v, length(x))
 end
 
@@ -393,7 +394,12 @@ check_reduction(::typeof(sum)) = Reduce(Base.add_sum)
 check_reduction(::typeof(prod)) = Reduce(Base.mul_prod)
 check_reduction(::typeof(maximum)) = Reduce(max)
 check_reduction(::typeof(minimum)) = Reduce(min)
-check_reduction(::typeof(mean)) = Reduce(Base.add_sum, /)
+check_reduction(::typeof(mean)) = Reduce(Base.add_sum, nothing, /)
+check_reduction(::typeof(sum∘skipmissing)) = Reduce(Base.add_sum, !ismissing)
+check_reduction(::typeof(prod∘skipmissing)) = Reduce(Base.mul_prod, !ismissing)
+check_reduction(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing)
+check_reduction(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing)
+check_reduction(::typeof(mean∘skipmissing)) = Reduce(Base.add_sum, !ismissing, /)
 
 for f in (:sum, :prod, :maximum, :minimum, :mean)
     @eval begin
@@ -434,13 +440,14 @@ end
 
 # Use reducedim_init to get a vector of the right type,
 # but trick it into using the expected length
-groupreduce_init(op, incol, gd) =
+groupreduce_init(op, condf, incol, gd) =
     Base.reducedim_init(identity, op, view(incol, 1:length(gd)), 2)
 
 for (op, initf) in ((:max, :typemin), (:min, :typemax))
     @eval begin
-        function groupreduce_init(::typeof($op), incol::AbstractVector{T}, gd) where T
-            outcol = similar(incol, length(gd))
+        function groupreduce_init(::typeof($op), condf, incol::AbstractVector{T}, gd) where T
+            # !ismissing check is purely an optimization to avoid a copy later
+            outcol = similar(incol, condf === !ismissing ? Missings.T(T) : T, length(gd))
             # Comparison is possible only between CatValues from the same pool
             if incol isa CategoricalVector
                 U = Union{CategoricalArrays.leveltype(outcol),
@@ -451,13 +458,30 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             # since missing will poison the result if present
             S = Missings.T(T)
             if isconcretetype(S) && hasmethod($initf, Tuple{S})
-                return fill!(outcol, $initf(S))
+                fill!(outcol, $initf(S))
+            elseif condf !== nothing
+                # Find first value matching condition for each group
+                filled = fill(false, length(outcol))
+                @inbounds for i in eachindex(outcol)
+                    s = gd.starts[i]
+                    for j in 0:nrow(gd[i])-1
+                        x = incol[gd.idx[s+j]]
+                        if condf(x)
+                            outcol[i] = x
+                            filled[i] = true
+                            break
+                        end
+                    end
+                end
+                if !all(filled)
+                    throw(ArgumentError("cannot compute maximum or minimum for groups with only missing values"))
+                end
             else
                 @inbounds for i in eachindex(outcol)
                     outcol[i] = incol[gd.idx[gd.starts[i]]]
                 end
-                return outcol
             end
+            return outcol
         end
     end
 end
@@ -476,22 +500,21 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
     return res
 end
 
-function groupreduce(op, adjust, incol::AbstractVector{T}, gd::GroupedDataFrame) where T
+function groupreduce(op, condf, adjust, incol::AbstractVector{T}, gd::GroupedDataFrame) where T
     n = length(gd)
-    res = groupreduce_init(op, incol, gd)
+    res = groupreduce_init(op, condf, incol, gd)
     if adjust !== nothing
         counts = zeros(Int, n)
     end
     @inbounds @simd for i in eachindex(incol, gd.groups)
         gix = gd.groups[i]
-        adjust !== nothing && (counts[gix] += 1)
-        res[gix] = op(res[gix], incol[i])
+        x = incol[i]
+        if condf === nothing || condf(x)
+            res[gix] = op(res[gix], x)
+            adjust !== nothing && (counts[gix] += 1)
+        end
     end
-    if adjust !== nothing
-        outcol = map(adjust, res, counts)
-    else
-        outcol = res
-    end
+    outcol = adjust === nothing ? res : map(adjust, res, counts)
     # Undo pool sharing done by groupreduce_init
     if outcol isa CategoricalVector
         U = Union{CategoricalArrays.leveltype(outcol),
@@ -511,7 +534,7 @@ function _combine(f::Pair{<:AbstractVector{Symbol},
     n = length(gd)
     tup = map(last(f)) do p
         r = last(p)
-        groupreduce(r.f, r.adjust, gd.parent[first(p)], gd)
+        groupreduce(r.f, r.condf, r.adjust, gd.parent[first(p)], gd)
     end
     valscat = DataFrame(collect(tup), collect(propertynames(tup)))
     gd.idx[gd.starts], valscat

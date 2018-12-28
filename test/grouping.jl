@@ -644,6 +644,9 @@ module TestGrouping
             res = combine(gd, y = :x3 => f)
             @test isequal(res, combine(gd, y = :x3 => x -> f(x)))
             @test res.y isa Vector{Union{Missing, f === mean ? Float64 : Int}}
+            res = combine(gd, y = :x3 => f∘skipmissing)
+            @test res == combine(gd, y = :x3 => x -> (f∘skipmissing)(x))
+            @test res.y isa Vector{f === mean ? Float64 : Int}
         end
         for f in (maximum, minimum),
             (T, m) in ((Int, false),
@@ -654,6 +657,13 @@ module TestGrouping
             res = combine(gd, y = :x3 => f)
             @test isequal(res, combine(gd, y = :x3 => x -> f(x)))
             @test res.y isa CategoricalVector{m ? T : Missings.T(T)}
+            res = combine(gd, y = :x3 => f∘skipmissing)
+            @test res == combine(gd, y = :x3 => x -> (f∘skipmissing)(x))
+            @test res.y isa CategoricalVector{Missings.T(T)}
+            if m
+                gd[1].x3 = missing
+                @test_throws ArgumentError combine(gd, y = :x3 => f∘skipmissing)
+            end
         end
         @test combine(gd, y = :x1 => sum, z = :x2 => maximum) ==
             combine(gd, y = :x1 => x -> sum(x), z = :x2 => x -> maximum(x))
