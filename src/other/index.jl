@@ -220,7 +220,7 @@ end
 struct SubIndex{I<:AbstractIndex,S<:AbstractVector{Int},T<:AbstractVector{Int}} <: AbstractIndex
     parent::I
     cols::S # columns from idx selected in SubIndex
-    remap::T # reverse of cols
+    remap::T # reverse mapping from cols to their position in the SubIndex
 end
 
 SubIndex(parent::AbstractIndex, ::Colon) = parent
