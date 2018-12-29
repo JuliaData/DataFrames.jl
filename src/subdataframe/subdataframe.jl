@@ -1,21 +1,8 @@
 """
     SubDataFrame{<:AbstractDataFrame,<:AbstractIndex,<:AbstractVector{Int}} <: AbstractDataFrame
 
-A view of row subsets of an `AbstractDataFrame`.
-
-A `SubDataFrame` is meant to be constructed with `view` when a collection of
-rows and columns is selected.
-It is also created by some methods of [`by`](@ref) and [`combine`](@ref).
-
-### Arguments
-
-* `d` : an `AbstractDataFrame`
-* `rows` : any indexing type for rows, typically
-  `AbstractVector{Int}` or `AbstractVector{Bool}`
-* `cols` : any indexing type for columns, typically
-  a vector of `Int`, `Bool` or `Symbol` or a colon
-
-### Notes
+A view of an `AbstractDataFrame`. It is returned by a call to the `view` function
+on an `AbstractDataFrame` if a collections of rows and columns are specified.
 
 A `SubDataFrame` is an `AbstractDataFrame`, so expect that most
 DataFrame functions should work. Such methods include `describe`,
@@ -25,6 +12,10 @@ Indexing is just like a `DataFrame` except that it is possible to create a
 `SubDataFrame` with duplicate columns. All such columns will have a reference
 to the same entry in the parent `DataFrame`.
 
+If the selection of columns in a parent data frame is passed as `:` (a colon)
+then `SubDataFrame` will always have all columns from the parent,
+even if it is mutated.
+
 ### Examples
 
 ```julia
@@ -32,12 +23,10 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
                b = repeat([2, 1], outer=[4]),
                c = randn(8))
 sdf1 = view(df, 2:3) # column subsetting
-sdf2 = view(df, df[:a] .> 1, [1,3])  # row and column subsetting
+sdf2 = @view df[end:-1:1, [1,3]]  # row and column subsetting
 sdf3 = groupby(df, :a)[1]  # indexing a GroupedDataFrame returns a SubDataFrame
 ```
 """
-# We allow D to be AbstractDataFrame, to allow for extensions
-# In DataFrames.jl D is always DataFrame
 struct SubDataFrame{D<:AbstractDataFrame,S<:AbstractIndex,T<:AbstractVector{Int}} <: AbstractDataFrame
     parent::D
     colindex::S

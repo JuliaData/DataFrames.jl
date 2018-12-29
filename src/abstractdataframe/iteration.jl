@@ -13,8 +13,6 @@
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
-Currently supports `DataFrame` and `SubDataFrame`.
-
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
 struct DataFrameRows{D<:AbstractDataFrame,S<:AbstractIndex} <: AbstractVector{DataFrameRow{D,S}}

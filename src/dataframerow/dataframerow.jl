@@ -7,17 +7,8 @@ A `DataFrameRow` is constructed with `view` or `getindex` when one row and a
 selection of columns are requested, or when iterating the result
 of the call to the [`eachrow`](@ref) function.
 
-### Arguments
-
-* `df` : an `AbstractDataFrame`
-* `row` : an `Integer` other than `Bool` indicating the requested row number
-* `cols` : any indexing type for columns, typically
-  a vector of `Int`, `Bool` or `Symbol`, or a colon
-
-### Notes
-
-A `DataFrameRow` supports the iteration interface and can therefore be passed to functions
-that expect a collection as an argument.
+A `DataFrameRow` supports the iteration interface and can therefore be passed to
+functions that expect a collection as an argument.
 
 Indexing is one-dimensional like specifying a column of a `DataFrame`.
 You can also access the data in a `DataFrameRow` using the `getproperty` and
@@ -25,6 +16,21 @@ You can also access the data in a `DataFrameRow` using the `getproperty` and
 
 It is possible to create a `DataFrameRow` with duplicate columns.
 All such columns will have a reference to the same entry in the parent `DataFrame`.
+
+If the selection of columns in a parent data frame is passed as `:` (a colon)
+then `DataFrameRow` will always have all columns from the parent,
+even if it is mutated.
+
+### Examples
+
+```julia
+df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+               b = repeat([2, 1], outer=[4]),
+               c = randn(8))
+sdf1 = view(df, 2, :)
+sdf2 = @view df[end, [:a]]
+sdf3 = eachrow(df)[1]
+```
 """
 struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     df::D

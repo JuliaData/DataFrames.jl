@@ -217,9 +217,6 @@ end
 
 ### SubIndex of Index. Used by SubDataFrame, DataFrameRow, and DataFrameRows
 
-# We allow I to be AbstractIndex, to allow for extensions
-# In DataFrames.jl I is always Index
-
 struct SubIndex{I<:AbstractIndex,S<:AbstractVector{Int},T<:AbstractVector{Int}} <: AbstractIndex
     parent::I
     cols::S # columns from idx selected in SubIndex
@@ -230,8 +227,11 @@ SubIndex(parent::AbstractIndex, ::Colon) = parent
 
 @inline parentcols(ind::SubIndex) = ind.cols
 
-Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Union{Integer, AbstractVector{<:Integer}}) =
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Integer) =
     ind.cols[idx]
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractVector{<:Integer}) =
+    view(ind.cols, idx)
 
 Base.@propagate_inbounds function parentcols(ind::SubIndex, idx::Symbol)
     parentcol = ind.parent[idx]
@@ -274,7 +274,6 @@ Base.@propagate_inbounds SubIndex(parent::AbstractIndex, cols) =
     SubIndex(parent, parent[cols])
 
 # a helper function that lazily creates remap when needed
-# it assumes that remap is Vector{Int} unless it is an AbstractUnitRange
 function lazyremap!(x::SubIndex)
     remap = x.remap
     remap isa AbstractUnitRange{Int} && return remap
