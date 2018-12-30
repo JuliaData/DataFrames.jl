@@ -19,7 +19,7 @@ All such columns will have a reference to the same entry in the parent `DataFram
 
 If the selection of columns in a parent data frame is passed as `:` (a colon)
 then `DataFrameRow` will always have all columns from the parent,
-even if it is mutated.
+even if they are added or removed after its creation.
 
 ### Examples
 
