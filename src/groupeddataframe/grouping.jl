@@ -398,31 +398,17 @@ check_reduction(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing)
 check_reduction(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing)
 check_reduction(::typeof(mean∘skipmissing)) = Reduce(Base.add_sum, !ismissing, /)
 
-# Simplified version of initialization code from Julia in base/reducedim.jl
-promote_union(T::Union) = promote_type(promote_union(T.a), promote_union(T.b))
-promote_union(T) = T
-
-groupreduce_init(op::Union{typeof(+),typeof(Base.add_sum)}, condf,
-                 incol::AbstractVector, gd::GroupedDataFrame) =
-    _groupreduce_init(op, zero, sum, condf, incol, gd)
-groupreduce_init(op::Union{typeof(*),typeof(Base.mul_prod)}, condf,
-                 incol::AbstractVector, gd::GroupedDataFrame) =
-    _groupreduce_init(op, one, prod, condf, incol, gd)
-function _groupreduce_init(op, fv, fop, condf, incol::AbstractVector, gd::GroupedDataFrame)
-    T = real(promote_union(eltype(incol)))
-    if T !== Any && applicable(zero, T)
-        x = zero(T)
-        z = op(fv(x), fv(x))
-        Tr = z isa T ? T : typeof(z)
-    else
-        z = fv(fop(incol))
-        Tr = typeof(z)
+for f in (:sum, :prod, :maximum, :minimum, :mean)
+    @eval begin
+        funname(::typeof(check_reduction($f))) = Symbol($f)
+        funname(::typeof(check_reduction($f∘skipmissing))) = :function
     end
-    # !ismissing check is purely an optimization to avoid a copy later
-    Trm = condf === !ismissing ? Missings.T(Tr) : Tr
-    return fill!(similar(incol, Tr, length(gd)), z)
 end
 
+# Use reducedim_init to get a vector of the right type,
+# but trick it into using the expected length
+groupreduce_init(op, condf, incol, gd) =
+    Base.reducedim_init(identity, op, view(incol, 1:length(gd)), 2)
 for (op, initf) in ((:max, :typemin), (:min, :typemax))
     @eval begin
         function groupreduce_init(::typeof($op), condf, incol::AbstractVector{T}, gd) where T
@@ -510,6 +496,10 @@ end
 # Function barrier works around type instability of _groupreduce_init due to applicable
 groupreduce(op, condf, adjust, incol::AbstractVector, gd::GroupedDataFrame) =
     groupreduce!(groupreduce_init(op, condf, incol, gd), op, condf, adjust, incol, gd)
+# Avoids the overhead due to missing when computing reduction
+groupreduce(op, condf::typeof(!ismissing), adjust, incol::AbstractVector, gd::GroupedDataFrame) =
+    groupreduce!(disallowmissing(groupreduce_init(op, condf, incol, gd)),
+                 op, condf, adjust, incol, gd)
 
 function do_f(f, x...)
     @inline function fun(x...)
@@ -588,7 +578,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
         (fun isa Reduce ||
          !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}))
          nms = [Symbol(names(gd.parent)[index(gd.parent)[first(f)]], '_', funname(fun))]
-     end
+    end
     valscat = DataFrame(collect(outcols), collect(Symbol, nms))
     return idx, valscat
 end
