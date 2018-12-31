@@ -503,7 +503,9 @@ module TestGrouping
             combine(gd, (:c => sum,)) ==
             combine(gd, [:c => sum]) ==
             combine(gd, c_sum = :c => sum) ==
-            combine(d -> (c_sum=sum(d.c),), gd)
+            combine(:c => x -> (c_sum=sum(x),), gd) ==
+            combine(gd, :c => x -> (c_sum=sum(x),)) ==
+            combine(d -> (c_sum=sum(d.c),), gd) ==
             combine(gd, d -> (c_sum=sum(d.c),))
 
         @test combine(:c => vexp, gd) ==
@@ -511,6 +513,8 @@ module TestGrouping
             combine(gd, (:c => vexp,)) ==
             combine(gd, [:c => vexp]) ==
             combine(gd, c_function = :c => vexp) ==
+            combine(:c => x -> (c_function=exp.(x),), gd) ==
+            combine(gd, :c => x -> (c_function=exp.(x),)) ==
             combine(d -> (c_function=exp.(d.c),), gd)
             combine(gd, d -> (c_function=exp.(d.c),))
 
@@ -518,14 +522,18 @@ module TestGrouping
             combine(gd, (:b => sum, :c => sum,)) ==
             combine(gd, [:b => sum, :c => sum]) ==
             combine(gd, b_sum = :b => sum, c_sum = :c => sum) ==
-            combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd)
+            combine((:b, :c) => x -> (b_sum=sum(x.b), c_sum=sum(x.c)), gd) ==
+            combine(gd, (:b, :c) => x -> (b_sum=sum(x.b), c_sum=sum(x.c))) ==
+            combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd) ==
             combine(gd, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
 
         @test combine(gd, :b => vexp, :c => identity) ==
             combine(gd, (:b => vexp, :c => identity,)) ==
             combine(gd, [:b => vexp, :c => identity]) ==
             combine(gd, b_function = :b => vexp, c_identity = :c => identity) ==
-            combine(d -> (b_function=vexp(d.b), c_identity=d.c), gd)
+            combine((:b, :c) => x -> (b_function=vexp(x.b), c_identity=x.c), gd) ==
+            combine(gd, (:b, :c) => x -> (b_function=vexp(x.b), c_identity=x.c)) ==
+            combine(d -> (b_function=vexp(d.b), c_identity=d.c), gd) ==
             combine(gd, d -> (b_function=vexp(d.b), c_identity=d.c))
 
         for f in (map, combine)

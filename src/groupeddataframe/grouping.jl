@@ -351,6 +351,7 @@ function combine(f::Any, gd::GroupedDataFrame)
 end
 combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
 combine(gd::GroupedDataFrame, f::Pair...) = combine(f, gd)
+combine(gd::GroupedDataFrame, f::Pair) = combine(f, gd)
 combine(gd::GroupedDataFrame; f...) =
     isempty(f) ? combine(identity, gd) : combine(values(f), gd)
 
@@ -384,10 +385,6 @@ struct Reduce{F, C, A}
     adjust::A
 end
 Reduce(f, condf=nothing) = Reduce(f, condf, nothing)
-function (r::Reduce)(x)
-    v = reduce(r.f,  r.condf === nothing ? x : Iterators.filter(x, condf))
-    r.adjust === nothing ? v : r.adjust(v, length(x))
-end
 
 check_reduction(f::Any) = f
 check_reduction(::typeof(sum)) = Reduce(Base.add_sum)
@@ -401,47 +398,30 @@ check_reduction(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing)
 check_reduction(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing)
 check_reduction(::typeof(mean∘skipmissing)) = Reduce(Base.add_sum, !ismissing, /)
 
-for f in (:sum, :prod, :maximum, :minimum, :mean)
-    @eval begin
-        funname(::typeof(check_reduction($f))) = Symbol($f)
+# Simplified version of initialization code from Julia in base/reducedim.jl
+promote_union(T::Union) = promote_type(promote_union(T.a), promote_union(T.b))
+promote_union(T) = T
+
+groupreduce_init(op::Union{typeof(+),typeof(Base.add_sum)}, condf,
+                 incol::AbstractVector, gd::GroupedDataFrame) =
+    _groupreduce_init(op, zero, sum, condf, incol, gd)
+groupreduce_init(op::Union{typeof(*),typeof(Base.mul_prod)}, condf,
+                 incol::AbstractVector, gd::GroupedDataFrame) =
+    _groupreduce_init(op, one, prod, condf, incol, gd)
+function _groupreduce_init(op, fv, fop, condf, incol::AbstractVector, gd::GroupedDataFrame)
+    T = real(promote_union(eltype(incol)))
+    if T !== Any && applicable(zero, T)
+        x = zero(T)
+        z = op(fv(x), fv(x))
+        Tr = z isa T ? T : typeof(z)
+    else
+        z = fv(fop(incol))
+        Tr = typeof(z)
     end
+    # !ismissing check is purely an optimization to avoid a copy later
+    Trm = condf === !ismissing ? Missings.T(Tr) : Tr
+    return fill!(similar(incol, Tr, length(gd)), z)
 end
-
-get_val(::Val{T}) where {T} = T
-
-# Generate a function returning a named tuple of values for each group
-function gen_fun(::Type{NT}, f2) where NT
-    function(incols)
-        tup = map(f2) do p
-            nms = get_val(first(p))
-            if nms isa Tuple
-                res = last(p)(NamedTuple{nms}(map(c -> incols[c], nms)))
-            else
-                res = last(p)(incols[nms])
-            end
-            if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
-                throw(ArgumentError("a single value or vector result is required when passing " *
-                                    "a vector or tuple of functions (got $(typeof(res)))"))
-            end
-            res
-        end
-        NT(tup)
-    end
-end
-
-# Generate a named tuple of reductions to call for each group
-function gen_fun(::Type{NT}, f2::Tuple{Vararg{Pair{<:Val, <:Reduce}}}) where NT
-    tup = map(f2) do p
-        nms = get_val(first(p))
-        nms => last(p)
-    end
-    NT(tup)
-end
-
-# Use reducedim_init to get a vector of the right type,
-# but trick it into using the expected length
-groupreduce_init(op, condf, incol, gd) =
-    Base.reducedim_init(identity, op, view(incol, 1:length(gd)), 2)
 
 for (op, initf) in ((:max, :typemin), (:min, :typemax))
     @eval begin
@@ -500,9 +480,8 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
     return res
 end
 
-function groupreduce(op, condf, adjust, incol::AbstractVector{T}, gd::GroupedDataFrame) where T
+function groupreduce!(res, op, condf, adjust, incol::AbstractVector{T}, gd::GroupedDataFrame) where T
     n = length(gd)
-    res = groupreduce_init(op, condf, incol, gd)
     if adjust !== nothing
         counts = zeros(Int, n)
     end
@@ -528,47 +507,61 @@ function groupreduce(op, condf, adjust, incol::AbstractVector{T}, gd::GroupedDat
     end
 end
 
-function _combine(f::Pair{<:AbstractVector{Symbol},
-                          <:NamedTuple{<:Any, <:Tuple{Vararg{Pair{Symbol, <:Reduce}}}}},
-                  gd::GroupedDataFrame)
-    n = length(gd)
-    tup = map(last(f)) do p
-        r = last(p)
-        groupreduce(r.f, r.condf, r.adjust, gd.parent[first(p)], gd)
+# Function barrier works around type instability of _groupreduce_init due to applicable
+groupreduce(op, condf, adjust, incol::AbstractVector, gd::GroupedDataFrame) =
+    groupreduce!(groupreduce_init(op, condf, incol, gd), op, condf, adjust, incol, gd)
+
+function do_f(f, x...)
+    @inline function fun(x...)
+        res = f(x...)
+        if res isa Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}
+            throw(ArgumentError("a single value or vector result is required when passing " *
+                                "a vector or tuple of functions (got $(typeof(res)))"))
+        end
+        res
     end
-    valscat = DataFrame(collect(tup), collect(propertynames(tup)))
-    gd.idx[gd.starts], valscat
 end
 
 function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
                            NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
                   gd::GroupedDataFrame)
-    idxs = (first(p) isa Union{Integer, Symbol} ?
-            index(gd.parent)[first(p)] :
-            index(gd.parent)[collect(first(p))] for p in f)
-    incols = [names(gd.parent)[idx] for idx in idxs]
-    allcols = collect(reduce(union, (nam isa Symbol ? (nam,) : nam for nam in incols)))
-    f2 = ntuple(length(f)) do i
-        nms = incols[i]
-        (nms isa AbstractArray ? Val(Tuple(nms)) : Val(nms)) => check_reduction(last(f[i]))
-    end
-    # Use temporary names for columns, and rename after the fact where appropriate
-    NT = NamedTuple{Tuple(gennames(length(f2)))}
-    fun = gen_fun(NT, f2)
-    idx, valscat = _combine(allcols => fun, gd)
-    if f isa NamedTuple
-        nams = collect(propertynames(f))
-    else
-        nams = names(valscat)
-        for i in 1:ncol(valscat)
-            if f[i] isa Pair{<:Union{Symbol,Integer}}
-                 nams[i] = Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
-                                  '_', funname(last(f[i])))
+    res = map(f) do p
+        r = check_reduction(last(p))
+        if r isa Reduce && p isa Pair{<:Union{Symbol,Integer}}
+            incol = gd.parent[first(p)]
+            idx = gd.idx[gd.starts]
+            outcol = groupreduce(r.f, r.condf, r.adjust, incol, gd)
+            return idx, outcol
+        else
+            fun = do_f(last(p))
+            if p isa Pair{<:Union{Symbol,Integer}}
+                incols = gd.parent[first(p)]
+            else
+                df = gd.parent[collect(first(p))]
+                incols = NamedTuple{Tuple(names(df))}(columns(df))
             end
+            firstres = do_call(fun, gd, incols, 1)
+            idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols)
+            return idx, outcols[1]
         end
     end
-    names!(valscat, nams)
-    idx, valscat
+    # TODO: avoid recomputing idx for each pair
+    idx = res[1][1]
+    outcols = map(x -> x[2], res)
+    if !all(x -> length(x) == length(outcols[1]), outcols)
+        throw(ArgumentError("all functions must return values of the same length"))
+    end
+    if f isa NamedTuple
+        nams = collect(Symbol, propertynames(f))
+    else
+        nams = [f[i] isa Pair{<:Union{Symbol,Integer}} ?
+                    Symbol(names(gd.parent)[index(gd.parent)[first(f[i])]],
+                           '_', funname(last(f[i]))) :
+                    Symbol('x', i)
+                for i in 1:length(f)]
+    end
+    valscat = DataFrame(collect(outcols), nams, makeunique=true)
+    return idx, valscat
 end
 
 function _combine(f::Any, gd::GroupedDataFrame)
@@ -578,25 +571,31 @@ function _combine(f::Any, gd::GroupedDataFrame)
     elseif f isa Pair
         df = gd.parent[collect(first(f))]
         incols = NamedTuple{Tuple(names(df))}(columns(df))
-        fun = check_reduction(last(f))
+        fun = last(f)
     else
         incols = nothing
         fun = f
     end
-    firstres = do_call(fun, gd, incols, 1)
-    idx, valscat = _combine(wrap(firstres), fun, gd, incols)
-    if f isa Pair{<:Union{Symbol,Integer}} &&
-       !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix})
-        nam = Symbol(names(gd.parent)[index(gd.parent)[first(f)]],
-                     '_', funname(fun))
-        names!(valscat, [nam])
+    if fun isa Reduce && f isa Pair{<:Union{Symbol,Integer}}
+        idx = gd.idx[gd.starts]
+        outcols = (groupreduce(fun.f, fun.condf, fun.adjust, incols, gd),)
+        # nms is set below
+    else
+        firstres = do_call(fun, gd, incols, 1)
+        idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols)
     end
+    if f isa Pair{<:Union{Symbol,Integer}} &&
+        (fun isa Reduce ||
+         !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}))
+         nms = [Symbol(names(gd.parent)[index(gd.parent)[first(f)]], '_', funname(fun))]
+     end
+    valscat = DataFrame(collect(outcols), collect(Symbol, nms))
     return idx, valscat
 end
 
-function _combine(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
-                  f::Any, gd::GroupedDataFrame,
-                  incols::Union{Nothing, AbstractVector, NamedTuple})
+function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
+                             f::Any, gd::GroupedDataFrame,
+                             incols::Union{Nothing, AbstractVector, NamedTuple})
     if first isa AbstractDataFrame
         n = 0
         eltys = eltypes(first)
@@ -614,11 +613,13 @@ function _combine(first::Union{NamedTuple, DataFrameRow, AbstractDataFrame},
         end
     end
     idx = Vector{Int}(undef, n)
-    initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
-    outcols = _combine!(first, initialcols, idx, 1, 1, f, gd, incols,
-                        tuple(propertynames(first)...))
-    valscat = DataFrame(collect(outcols), collect(Symbol, propertynames(first)))
-    idx, valscat
+    local initialcols
+    let eltys=eltys, n=n # Workaround for julia#15276
+        initialcols = ntuple(i -> Tables.allocatecolumn(eltys[i], n), _ncol(first))
+    end
+    outcols = _combine_with_first!(first, initialcols, idx, 1, 1, f, gd, incols,
+                                   tuple(propertynames(first)...))
+    idx, outcols, propertynames(first)
 end
 
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
@@ -652,11 +653,11 @@ function fill_row!(row, outcols::NTuple{N, AbstractVector},
     return nothing
 end
 
-function _combine!(first::Union{NamedTuple, DataFrameRow}, outcols::NTuple{N, AbstractVector},
-                   idx::Vector{Int}, rowstart::Integer, colstart::Integer,
-                   f::Any, gd::GroupedDataFrame,
-                   incols::Union{Nothing, AbstractVector, NamedTuple},
-                   colnames::NTuple{N, Symbol}) where N
+function _combine_with_first!(first::Union{NamedTuple, DataFrameRow}, outcols::NTuple{N, AbstractVector},
+                              idx::Vector{Int}, rowstart::Integer, colstart::Integer,
+                              f::Any, gd::GroupedDataFrame,
+                              incols::Union{Nothing, AbstractVector, NamedTuple},
+                              colnames::NTuple{N, Symbol}) where N
     len = length(gd)
     # Handle first group
     j = fill_row!(first, outcols, rowstart, colstart, colnames)
@@ -681,7 +682,7 @@ function _combine!(first::Union{NamedTuple, DataFrameRow}, outcols::NTuple{N, Ab
                     end
                 end
             end
-            return _combine!(row, newcols, idx, i, j, f, gd, incols, colnames)
+            return _combine_with_first!(row, newcols, idx, i, j, f, gd, incols, colnames)
         end
         idx[i] = gd.idx[gd.starts[i]]
     end
@@ -730,13 +731,13 @@ function append_rows!(rows, outcols::NTuple{N, AbstractVector},
     return nothing
 end
 
-function _combine!(first::Union{AbstractDataFrame,
-                                NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}},
-                   outcols::NTuple{N, AbstractVector},
-                   idx::Vector{Int}, rowstart::Integer, colstart::Integer,
-                   f::Any, gd::GroupedDataFrame,
-                   incols::Union{Nothing, AbstractVector, NamedTuple},
-                   colnames::NTuple{N, Symbol}) where N
+function _combine_with_first!(first::Union{AbstractDataFrame,
+                                           NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}},
+                              outcols::NTuple{N, AbstractVector},
+                              idx::Vector{Int}, rowstart::Integer, colstart::Integer,
+                              f::Any, gd::GroupedDataFrame,
+                              incols::Union{Nothing, AbstractVector, NamedTuple},
+                              colnames::NTuple{N, Symbol}) where N
     len = length(gd)
     # Handle first group
     j = append_rows!(first, outcols, colstart, colnames)
@@ -760,7 +761,7 @@ function _combine!(first::Union{AbstractDataFrame,
                     end
                 end
             end
-            return _combine!(rows, newcols, idx, i, j, f, gd, incols, colnames)
+            return _combine_with_first!(rows, newcols, idx, i, j, f, gd, incols, colnames)
         end
         append!(idx, Iterators.repeated(gd.idx[gd.starts[i]], _nrow(rows)))
     end
