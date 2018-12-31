@@ -227,11 +227,8 @@ SubIndex(parent::AbstractIndex, ::Colon) = parent
 
 @inline parentcols(ind::SubIndex) = ind.cols
 
-Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Integer) =
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Union{Integer,AbstractVector{<:Integer}}) =
     ind.cols[idx]
-
-Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractVector{<:Integer}) =
-    view(ind.cols, idx)
 
 Base.@propagate_inbounds function parentcols(ind::SubIndex, idx::Symbol)
     parentcol = ind.parent[idx]

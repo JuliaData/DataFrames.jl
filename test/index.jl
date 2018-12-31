@@ -127,4 +127,31 @@ si5 = SubIndex(i, [:C, :D, :E])
 @test si3[:C] == 1
 @test si3[names(i)] == [0, 0, 1, 2, 3]
 
+@testset "selector mutation" begin
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    selector1 = [3,2]
+    dfv1 = view(df, selector1)
+    dfr1 = view(df, 2, selector1)
+    selector2 = [1]
+    dfv2 = view(dfv1, selector2)
+    dfr2 = view(dfr1, selector2)
+    @test names(dfv1) == [:c, :b]
+    @test names(dfv2) == [:c]
+    @test names(dfr1) == [:c, :b]
+    @test names(dfr2) == [:c]
+    selector1[1] = 1
+    @test names(dfv1) == [:a, :b]
+    @test names(dfv2) == [:c]
+    @test names(dfr1) == [:a, :b]
+    @test names(dfr2) == [:c]
+    selector3 = [:c, :b]
+    dfv3 = view(df, selector3)
+    dfr3 = view(df, 2, selector3)
+    @test names(dfv3) == [:c, :b]
+    @test names(dfr3) == [:c, :b]
+    selector3[1] = :a
+    @test names(dfv3) == [:c, :b]
+    @test names(dfr3) == [:c, :b]
+end
+
 end
