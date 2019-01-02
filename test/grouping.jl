@@ -628,35 +628,48 @@ module TestGrouping
     Base.isless(::Int, ::TestType) = false
     Base.isless(::TestType, ::TestType) = false
 
+    # TODO: and map?
     @testset "combine with aggregation functions" begin
         Random.seed!(1)
-        df = DataFrame(a = rand(1:5, 20), x1 = rand(Int, 20), x2 = rand(Int, 20))
+        df = DataFrame(a = rand(1:5, 20), x1 = rand(Int, 20), x2 = rand(Complex{Int}, 20))
 
         for f in (sum, prod, maximum, minimum, mean, var, std)
             gd = groupby(df, :a)
-            @test combine(gd, y = :x1 => f) == combine(gd, y = :x1 => x -> f(x))
-            @test combine(gd, y = :x1 => f) == combine(gd, y = :x1 => x -> f(x))
+            U = f in (mean, var, std) ? Float64 : Int
+
+            @test combine(gd, y = :x1 => f) ≅ combine(gd, y = :x1 => x -> f(x))
 
             for T in (Union{Missing, Int}, Union{Int, Int8},
                       Union{Missing, Int, Int8})
                 df.x3 = Vector{T}(df.x1)
                 gd = groupby(df, :a)
                 res = combine(gd, y = :x3 => f)
-                @test res == combine(gd, y = :x3 => x -> f(x))
-                @test res.y isa Vector{f in (mean, var, std) ? Float64 : Int}
+                @test res ≅ combine(gd, y = :x3 => x -> f(x))
+                @test res.y isa Vector{U}
             end
 
             df.x3 = allowmissing(df.x1)
             df.x3[1] = missing
             gd = groupby(df, :a)
             res = combine(gd, y = :x3 => f)
-            @test isequal(res, combine(gd, y = :x3 => x -> f(x)))
-            @test res.y isa Vector{Union{Missing, f in (mean, var, std) ? Float64 : Int}}
+            @test res ≅ combine(gd, y = :x3 => x -> f(x))
+            @test res.y isa Vector{Union{Missing, U}}
             res = combine(gd, y = :x3 => f∘skipmissing)
-            @test res == combine(gd, y = :x3 => x -> (f∘skipmissing)(x))
-            @test res.y isa Vector{f in (mean, var, std) ? Float64 : Int}
+            @test res ≅ combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
+            @test res.y isa Vector{U}
         end
-        for f in (maximum, minimum),
+        # Test complex numbers
+        for f in (sum, prod, mean, var, std)
+            gd = groupby(df, :a)
+            U = f in (var, std) ? Float64 :
+                f in (mean, var, std) ? Complex{Float64} : Complex{Int}
+
+            res = combine(gd, y = :x2 => f)
+            @test res ≅ combine(gd, y = :x2 => x -> f(x))
+            @test res.y isa Vector{U}
+        end
+        # Test CategoricalArray
+        for f in (maximum, minimum, first, last, length),
             (T, m) in ((Int, false),
                        (Union{Missing, Int}, false), (Union{Missing, Int}, true))
             df.x3 = CategoricalVector{T}(df.x1)
@@ -673,8 +686,8 @@ module TestGrouping
                 @test_throws ArgumentError combine(gd, y = :x3 => f∘skipmissing)
             end
         end
-        @test combine(gd, y = :x1 => sum, z = :x2 => maximum) ==
-            combine(gd, y = :x1 => x -> sum(x), z = :x2 => x -> maximum(x))
+        @test combine(gd, y = :x1 => maximum, z = :x2 => sum) ==
+            combine(gd, y = :x1 => x -> maximum(x), z = :x2 => x -> sum(x))
 
         df = DataFrame(x = [1, 1, 2, 2], y = Any[1, 2.0, 3.0, 4.0])
         res = by(df, :x, z = :y => maximum)

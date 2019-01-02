@@ -381,8 +381,8 @@ _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
 
 abstract type AbstractAggregate end
 
-struct Reduce{F, C, A} <: AbstractAggregate
-    f::F
+struct Reduce{O, C, A} <: AbstractAggregate
+    op::O
     condf::C
     adjust::A
 end
@@ -401,17 +401,16 @@ check_aggregate(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing)
 check_aggregate(::typeof(mean∘skipmissing)) = Reduce(Base.add_sum, !ismissing, /)
 
 # Other aggregate functions which are not strictly reductions
-struct Aggregate{F, C, A} <: AbstractAggregate
+struct Aggregate{F, C} <: AbstractAggregate
     f::F
     condf::C
-    adjust::A
 end
-Aggregate(f, condf=nothing) = Aggregate(f, condf, nothing)
+Aggregate(f) = Aggregate(f, nothing)
 
 check_aggregate(::typeof(var)) = Aggregate(var)
 check_aggregate(::typeof(var∘skipmissing)) = Aggregate(var, !ismissing)
-check_aggregate(::typeof(std)) = Aggregate(var, nothing, (v, l) -> sqrt(v))
-check_aggregate(::typeof(std∘skipmissing)) = Aggregate(var, !ismissing, (v, l) -> sqrt(v))
+check_aggregate(::typeof(std)) = Aggregate(std)
+check_aggregate(::typeof(std∘skipmissing)) = Aggregate(std, !ismissing)
 
 for f in (:sum, :prod, :maximum, :minimum, :mean, :var, :std)
     @eval begin
@@ -486,7 +485,7 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
     return res
 end
 
-function groupreduce!(res, op, condf, adjust,
+function groupreduce!(res, f, op, condf, adjust,
                       incol::AbstractVector{T}, gd::GroupedDataFrame) where T
     n = length(gd)
     if adjust !== nothing
@@ -496,7 +495,7 @@ function groupreduce!(res, op, condf, adjust,
         gix = gd.groups[i]
         x = incol[i]
         if condf === nothing || condf(x)
-            res[gix] = op(res[gix], x)
+            res[gix] = op(res[gix], f(x, gix))
             adjust !== nothing && (counts[gix] += 1)
         end
     end
@@ -515,46 +514,34 @@ function groupreduce!(res, op, condf, adjust,
 end
 
 # Function barrier works around type instability of _groupreduce_init due to applicable
-(r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame) =
-    groupreduce!(groupreduce_init(r.f, r.condf, incol, gd),
-                 r.f, r.condf, r.adjust, incol, gd)
+groupreduce(f, op, condf, adjust, incol::AbstractVector, gd::GroupedDataFrame) =
+    groupreduce!(groupreduce_init(op, condf, incol, gd),
+                 f, op, condf, adjust, incol, gd)
 # Avoids the overhead due to Missing when computing reduction
-(r::Reduce{<:Any, typeof(!ismissing)})(incol::AbstractVector, gd::GroupedDataFrame) =
-    groupreduce!(disallowmissing(groupreduce_init(r.f, r.condf, incol, gd)),
-                 r.f, r.condf, r.adjust, incol, gd)
+groupreduce(f, op, condf::typeof(!ismissing), adjust,
+            incol::AbstractVector, gd::GroupedDataFrame) =
+    groupreduce!(disallowmissing(groupreduce_init(op, condf, incol, gd)),
+                 f, op, condf, adjust, incol, gd)
 
-# Code inspired by the Statistics stdlib module
-# faster computation of real(conj(x)*y)
-realXcY(x::Real, y::Real) = x*y
-realXcY(x::Complex, y::Complex) = real(x)*real(y) + imag(x)*imag(y)
+(r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame) =
+    groupreduce((x, i) -> x, r.op, r.condf, r.adjust, incol, gd)
 
-function (agg::Aggregate{typeof(var)})(incol::AbstractVector{T},
-                                       gd::GroupedDataFrame) where T
-    condf = agg.condf
-    adjust = agg.adjust
-    # Use Welford algorithm as seen in (among other places)
-    # Knuth's TAOCP, Vol 2, page 232, 3rd edition.
-    n = length(gd)
-    count = zeros(Int, n)
-    U = condf === !ismissing ? Missings.T(typeof(one(T)/one(T))) : typeof(one(T)/one(T))
-    M = Vector{U}(undef, n)
-    fillfirst!(condf, M, incol, gd)
-    S = zeros(real(eltype(M)), n)
-    @inbounds for i in eachindex(incol, gd.groups)
-        gix = gd.groups[i]
-        value = incol[i]
-        if condf === nothing || condf(value)
-            count[gix] += 1
-            c = count[gix]
-            c == 1 && continue # First value already used above
-            Mi = M[gix]
-            new_Mi = Mi + (value - Mi) / c
-            S[gix] += realXcY(value - Mi, value - new_Mi)
-            M[gix] = new_Mi
-        end
+function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFrame)
+    means = groupreduce((x, i) -> x, Base.add_sum, agg.condf, /, incol, gd)
+    # !ismissing check is purely an optimization to avoid a copy later
+    if eltype(means) >: Missing && agg.condf !== !ismissing
+        T = Union{Missing, real(eltype(means))}
+    else
+        T = real(eltype(means))
     end
-    res = S ./ (count .- 1)
-    return adjust === nothing ? res : map!(adjust, res, res, counts)
+    res = zeros(T, length(gd))
+    groupreduce!(res, (x, i) -> @inbounds(abs2(x - means[i])), +,
+                 agg.condf, (x, l) -> x / (l-1), incol, gd)
+end
+
+function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame)
+    res = Aggregate(var, agg.condf)(incol, gd)
+    map!(sqrt, res, res)
 end
 
 function do_f(f, x...)
