@@ -628,11 +628,11 @@ module TestGrouping
     Base.isless(::Int, ::TestType) = false
     Base.isless(::TestType, ::TestType) = false
 
-    @testset "combine with reductions" begin
+    @testset "combine with aggregation functions" begin
         Random.seed!(1)
         df = DataFrame(a = rand(1:5, 20), x1 = rand(Int, 20), x2 = rand(Int, 20))
 
-        for f in (sum, prod, maximum, minimum, mean)
+        for f in (sum, prod, maximum, minimum, mean, var, std)
             gd = groupby(df, :a)
             @test combine(gd, y = :x1 => f) == combine(gd, y = :x1 => x -> f(x))
             @test combine(gd, y = :x1 => f) == combine(gd, y = :x1 => x -> f(x))
@@ -643,7 +643,7 @@ module TestGrouping
                 gd = groupby(df, :a)
                 res = combine(gd, y = :x3 => f)
                 @test res == combine(gd, y = :x3 => x -> f(x))
-                @test res.y isa Vector{f === mean ? Float64 : Int}
+                @test res.y isa Vector{f in (mean, var, std) ? Float64 : Int}
             end
 
             df.x3 = allowmissing(df.x1)
@@ -651,10 +651,10 @@ module TestGrouping
             gd = groupby(df, :a)
             res = combine(gd, y = :x3 => f)
             @test isequal(res, combine(gd, y = :x3 => x -> f(x)))
-            @test res.y isa Vector{Union{Missing, f === mean ? Float64 : Int}}
+            @test res.y isa Vector{Union{Missing, f in (mean, var, std) ? Float64 : Int}}
             res = combine(gd, y = :x3 => f∘skipmissing)
             @test res == combine(gd, y = :x3 => x -> (f∘skipmissing)(x))
-            @test res.y isa Vector{f === mean ? Float64 : Int}
+            @test res.y isa Vector{f in (mean, var, std) ? Float64 : Int}
         end
         for f in (maximum, minimum),
             (T, m) in ((Int, false),

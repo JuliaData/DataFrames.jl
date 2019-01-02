@@ -379,29 +379,64 @@ _nrow(x::NamedTuple{<:Any, <:Tuple{Vararg{AbstractVector}}}) =
 _ncol(df::AbstractDataFrame) = ncol(df)
 _ncol(x::Union{NamedTuple, DataFrameRow}) = length(x)
 
-struct Reduce{F, C, A}
+abstract type AbstractAggregate end
+
+struct Reduce{F, C, A} <: AbstractAggregate
     f::F
     condf::C
     adjust::A
 end
 Reduce(f, condf=nothing) = Reduce(f, condf, nothing)
 
-check_reduction(f::Any) = f
-check_reduction(::typeof(sum)) = Reduce(Base.add_sum)
-check_reduction(::typeof(prod)) = Reduce(Base.mul_prod)
-check_reduction(::typeof(maximum)) = Reduce(max)
-check_reduction(::typeof(minimum)) = Reduce(min)
-check_reduction(::typeof(mean)) = Reduce(Base.add_sum, nothing, /)
-check_reduction(::typeof(sum∘skipmissing)) = Reduce(Base.add_sum, !ismissing)
-check_reduction(::typeof(prod∘skipmissing)) = Reduce(Base.mul_prod, !ismissing)
-check_reduction(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing)
-check_reduction(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing)
-check_reduction(::typeof(mean∘skipmissing)) = Reduce(Base.add_sum, !ismissing, /)
+check_aggregate(f::Any) = f
+check_aggregate(::typeof(sum)) = Reduce(Base.add_sum)
+check_aggregate(::typeof(prod)) = Reduce(Base.mul_prod)
+check_aggregate(::typeof(maximum)) = Reduce(max)
+check_aggregate(::typeof(minimum)) = Reduce(min)
+check_aggregate(::typeof(mean)) = Reduce(Base.add_sum, nothing, /)
+check_aggregate(::typeof(sum∘skipmissing)) = Reduce(Base.add_sum, !ismissing)
+check_aggregate(::typeof(prod∘skipmissing)) = Reduce(Base.mul_prod, !ismissing)
+check_aggregate(::typeof(maximum∘skipmissing)) = Reduce(max, !ismissing)
+check_aggregate(::typeof(minimum∘skipmissing)) = Reduce(min, !ismissing)
+check_aggregate(::typeof(mean∘skipmissing)) = Reduce(Base.add_sum, !ismissing, /)
 
-for f in (:sum, :prod, :maximum, :minimum, :mean)
+# Other aggregate functions which are not strictly reductions
+struct Aggregate{F, C, A} <: AbstractAggregate
+    f::F
+    condf::C
+    adjust::A
+end
+Aggregate(f, condf=nothing) = Aggregate(f, condf, nothing)
+
+check_aggregate(::typeof(var)) = Aggregate(var)
+check_aggregate(::typeof(var∘skipmissing)) = Aggregate(var, !ismissing)
+check_aggregate(::typeof(std)) = Aggregate(var, nothing, (v, l) -> sqrt(v))
+check_aggregate(::typeof(std∘skipmissing)) = Aggregate(var, !ismissing, (v, l) -> sqrt(v))
+
+for f in (:sum, :prod, :maximum, :minimum, :mean, :var, :std)
     @eval begin
-        funname(::typeof(check_reduction($f))) = Symbol($f)
-        funname(::typeof(check_reduction($f∘skipmissing))) = :function
+        funname(::typeof(check_aggregate($f))) = Symbol($f)
+        funname(::typeof(check_aggregate($f∘skipmissing))) = :function
+    end
+end
+
+function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
+                    gd::GroupedDataFrame)
+    # Find first value matching condition for each group
+    filled = fill(false, length(outcol))
+    @inbounds for i in eachindex(outcol)
+        s = gd.starts[i]
+        for j in 0:nrow(gd[i])-1
+            x = incol[gd.idx[s+j]]
+            if condf === nothing || condf(x)
+                outcol[i] = x
+                filled[i] = true
+                break
+            end
+        end
+    end
+    if !all(filled)
+        throw(ArgumentError("cannot compute maximum or minimum for groups with only missing values"))
     end
 end
 
@@ -426,22 +461,7 @@ for (op, initf) in ((:max, :typemin), (:min, :typemax))
             if isconcretetype(S) && hasmethod($initf, Tuple{S})
                 fill!(outcol, $initf(S))
             elseif condf !== nothing
-                # Find first value matching condition for each group
-                filled = fill(false, length(outcol))
-                @inbounds for i in eachindex(outcol)
-                    s = gd.starts[i]
-                    for j in 0:nrow(gd[i])-1
-                        x = incol[gd.idx[s+j]]
-                        if condf(x)
-                            outcol[i] = x
-                            filled[i] = true
-                            break
-                        end
-                    end
-                end
-                if !all(filled)
-                    throw(ArgumentError("cannot compute maximum or minimum for groups with only missing values"))
-                end
+                fillfirst!(condf, outcol, incol, gd)
             else
                 @inbounds for i in eachindex(outcol)
                     outcol[i] = incol[gd.idx[gd.starts[i]]]
@@ -466,12 +486,13 @@ function copyto_widen!(res::AbstractVector{T}, x::AbstractVector) where T
     return res
 end
 
-function groupreduce!(res, op, condf, adjust, incol::AbstractVector{T}, gd::GroupedDataFrame) where T
+function groupreduce!(res, op, condf, adjust,
+                      incol::AbstractVector{T}, gd::GroupedDataFrame) where T
     n = length(gd)
     if adjust !== nothing
         counts = zeros(Int, n)
     end
-    @inbounds @simd for i in eachindex(incol, gd.groups)
+    @inbounds for i in eachindex(incol, gd.groups)
         gix = gd.groups[i]
         x = incol[i]
         if condf === nothing || condf(x)
@@ -494,12 +515,47 @@ function groupreduce!(res, op, condf, adjust, incol::AbstractVector{T}, gd::Grou
 end
 
 # Function barrier works around type instability of _groupreduce_init due to applicable
-groupreduce(op, condf, adjust, incol::AbstractVector, gd::GroupedDataFrame) =
-    groupreduce!(groupreduce_init(op, condf, incol, gd), op, condf, adjust, incol, gd)
-# Avoids the overhead due to missing when computing reduction
-groupreduce(op, condf::typeof(!ismissing), adjust, incol::AbstractVector, gd::GroupedDataFrame) =
-    groupreduce!(disallowmissing(groupreduce_init(op, condf, incol, gd)),
-                 op, condf, adjust, incol, gd)
+(r::Reduce)(incol::AbstractVector, gd::GroupedDataFrame) =
+    groupreduce!(groupreduce_init(r.f, r.condf, incol, gd),
+                 r.f, r.condf, r.adjust, incol, gd)
+# Avoids the overhead due to Missing when computing reduction
+(r::Reduce{<:Any, typeof(!ismissing)})(incol::AbstractVector, gd::GroupedDataFrame) =
+    groupreduce!(disallowmissing(groupreduce_init(r.f, r.condf, incol, gd)),
+                 r.f, r.condf, r.adjust, incol, gd)
+
+# Code inspired by the Statistics stdlib module
+# faster computation of real(conj(x)*y)
+realXcY(x::Real, y::Real) = x*y
+realXcY(x::Complex, y::Complex) = real(x)*real(y) + imag(x)*imag(y)
+
+function (agg::Aggregate{typeof(var)})(incol::AbstractVector{T},
+                                       gd::GroupedDataFrame) where T
+    condf = agg.condf
+    adjust = agg.adjust
+    # Use Welford algorithm as seen in (among other places)
+    # Knuth's TAOCP, Vol 2, page 232, 3rd edition.
+    n = length(gd)
+    count = zeros(Int, n)
+    U = condf === !ismissing ? Missings.T(typeof(one(T)/one(T))) : typeof(one(T)/one(T))
+    M = Vector{U}(undef, n)
+    fillfirst!(condf, M, incol, gd)
+    S = zeros(real(eltype(M)), n)
+    @inbounds for i in eachindex(incol, gd.groups)
+        gix = gd.groups[i]
+        value = incol[i]
+        if condf === nothing || condf(value)
+            count[gix] += 1
+            c = count[gix]
+            c == 1 && continue # First value already used above
+            Mi = M[gix]
+            new_Mi = Mi + (value - Mi) / c
+            S[gix] += realXcY(value - Mi, value - new_Mi)
+            M[gix] = new_Mi
+        end
+    end
+    res = S ./ (count .- 1)
+    return adjust === nothing ? res : map!(adjust, res, res, counts)
+end
 
 function do_f(f, x...)
     @inline function fun(x...)
@@ -516,11 +572,11 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
                            NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
                   gd::GroupedDataFrame)
     res = map(f) do p
-        r = check_reduction(last(p))
-        if r isa Reduce && p isa Pair{<:Union{Symbol,Integer}}
+        agg = check_aggregate(last(p))
+        if agg isa AbstractAggregate && p isa Pair{<:Union{Symbol,Integer}}
             incol = gd.parent[first(p)]
             idx = gd.idx[gd.starts]
-            outcol = groupreduce(r.f, r.condf, r.adjust, incol, gd)
+            outcol = agg(incol, gd)
             return idx, outcol
         else
             fun = do_f(last(p))
@@ -557,7 +613,7 @@ end
 function _combine(f::Any, gd::GroupedDataFrame)
     if f isa Pair{<:Union{Symbol,Integer}}
         incols = gd.parent[first(f)]
-        fun = check_reduction(last(f))
+        fun = check_aggregate(last(f))
     elseif f isa Pair
         df = gd.parent[collect(first(f))]
         incols = NamedTuple{Tuple(names(df))}(columns(df))
@@ -566,16 +622,17 @@ function _combine(f::Any, gd::GroupedDataFrame)
         incols = nothing
         fun = f
     end
-    if fun isa Reduce && f isa Pair{<:Union{Symbol,Integer}}
+    agg = check_aggregate(fun)
+    if agg isa AbstractAggregate && f isa Pair{<:Union{Symbol,Integer}}
         idx = gd.idx[gd.starts]
-        outcols = (groupreduce(fun.f, fun.condf, fun.adjust, incols, gd),)
+        outcols = (agg(incols, gd),)
         # nms is set below
     else
         firstres = do_call(fun, gd, incols, 1)
         idx, outcols, nms = _combine_with_first(wrap(firstres), fun, gd, incols)
     end
     if f isa Pair{<:Union{Symbol,Integer}} &&
-        (fun isa Reduce ||
+        (agg isa AbstractAggregate ||
          !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}))
          nms = [Symbol(names(gd.parent)[index(gd.parent)[first(f)]], '_', funname(fun))]
     end
