@@ -375,7 +375,7 @@ describe(df, stats = [:min, :max])
 ```
 
 """
-function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractVector{Symbol}} =
+function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractVector} =
                             [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
     # Check that people don't specify the wrong fields.
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75,
@@ -393,8 +393,11 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
         end
     end
 
-    if !issubset(stats, allowed_fields)
-        disallowed_fields = setdiff(stats, allowed_fields)
+    custom_funs = [stat for stat in stats if stat isa Pair ]
+    predefined_funs = Symbol[stat for stat in stats if stat isa Symbol]
+
+    if !issubset(predefined_funs, allowed_fields)
+        disallowed_fields = setdiff(predefined_funs, allowed_fields)
         allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
         not_allowed = "Field(s) not allowed: :" * join(disallowed_fields, ", :") * "."
         throw(ArgumentError(not_allowed * allowed_msg))
@@ -407,31 +410,47 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
     # An array of Dicts for summary statistics
     column_stats_dicts = map(columns(df)) do col
         if eltype(col) >: Missing
-            d = get_stats(collect(skipmissing(col)), stats)
+            d = get_stats(collect(skipmissing(col)), predefined_funs)
         else
-            d = get_stats(col, stats)
+            d = get_stats(col, predefined_funs)
         end
 
-        if :nmissing in stats
+        if :nmissing in predefined_funs 
             d[:nmissing] = eltype(col) >: Missing ? count(ismissing, col) : nothing
         end
 
-        if :first in stats
+        if :first in predefined_funs 
             d[:first] = isempty(col) ? nothing : first(col)
         end
-
-        if :last in stats
+        
+        if :last in predefined_funs
             d[:last] = isempty(col) ? nothing : last(col)
         end
 
         return d
     end
 
-    for stat in stats
+    for stat in predefined_funs
         # for each statistic, loop through the columns array to find values
         # letting the comprehension choose the appropriate type
         data[stat] = [column_stats_dict[stat] for column_stats_dict in column_stats_dicts]
     end
+
+    # handle custom functions
+    for custom_fun in custom_funs
+        data[custom_fun[1]] = map(columns(df)) do col 
+            if eltype(col) >: Missing 
+                return try custom_fun[2](skipmissing(col)) catch nothing end
+            else
+                return try custom_fun[2](col) catch nothing end
+            end
+        end
+    end
+
+    # Get the order of column names as they were inputted by the user 
+    ordered_names = [stat isa Symbol ? stat : stat[1] for stat in stats]
+    permutecols!(data, [:variable; ordered_names]) # :variable is the first column
+
     return data
 end
 
