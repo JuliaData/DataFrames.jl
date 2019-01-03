@@ -411,32 +411,43 @@ check_aggregate(::typeof(var)) = Aggregate(var)
 check_aggregate(::typeof(var∘skipmissing)) = Aggregate(var, !ismissing)
 check_aggregate(::typeof(std)) = Aggregate(std)
 check_aggregate(::typeof(std∘skipmissing)) = Aggregate(std, !ismissing)
+check_aggregate(::typeof(first)) = Aggregate(first)
+check_aggregate(::typeof(first∘skipmissing)) = Aggregate(first, !ismissing)
+check_aggregate(::typeof(last)) = Aggregate(last)
+check_aggregate(::typeof(last∘skipmissing)) = Aggregate(last, !ismissing)
+check_aggregate(::typeof(length)) = Aggregate(length)
+# SkipMissing does not support length
 
-for f in (:sum, :prod, :maximum, :minimum, :mean, :var, :std)
+for f in (:sum, :prod, :maximum, :minimum, :mean, :var, :std, :first, :last)
     @eval begin
         funname(::typeof(check_aggregate($f))) = Symbol($f)
         funname(::typeof(check_aggregate($f∘skipmissing))) = :function
     end
 end
+funname(::typeof(length)) = :length
 
+# Find first value matching condition for each group
+# Optimized for situations where a matching value is typically encountered
+# among the first rows for each group
 function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
-                    gd::GroupedDataFrame)
-    # Find first value matching condition for each group
-    filled = fill(false, length(outcol))
+                    gd::GroupedDataFrame; rev::Bool=false)
+    nfilled = 0
     @inbounds for i in eachindex(outcol)
         s = gd.starts[i]
-        for j in 0:nrow(gd[i])-1
+        offsets = rev ? (nrow(gd[i])-1:-1:0) : (0:nrow(gd[i])-1)
+        for j in offsets
             x = incol[gd.idx[s+j]]
-            if condf === nothing || condf(x)
+            if !condf === nothing || condf(x)
                 outcol[i] = x
-                filled[i] = true
+                nfilled += 1
                 break
             end
         end
     end
-    if !all(filled)
+    if nfilled < length(outcol)
         throw(ArgumentError("cannot compute maximum or minimum for groups with only missing values"))
     end
+    outcol
 end
 
 # Use reducedim_init to get a vector of the right type,
@@ -540,9 +551,30 @@ function (agg::Aggregate{typeof(var)})(incol::AbstractVector, gd::GroupedDataFra
 end
 
 function (agg::Aggregate{typeof(std)})(incol::AbstractVector, gd::GroupedDataFrame)
-    res = Aggregate(var, agg.condf)(incol, gd)
-    map!(sqrt, res, res)
+    outcol = Aggregate(var, agg.condf)(incol, gd)
+    map!(sqrt, outcol, outcol)
 end
+
+for f in (first, last)
+    function (agg::Aggregate{typeof(f)})(incol::AbstractVector, gd::GroupedDataFrame)
+        n = length(gd)
+        outcol = similar(incol, n)
+        if agg.condf === !ismissing
+            fillfirst!(agg.condf, outcol, incol, gd, rev=agg.f === last)
+        else
+            v = agg.f === first ? gd.starts : gd.ends
+            map!(i -> incol[gd.idx[v[i]]], outcol, 1:n)
+        end
+        if isconcretetype(eltype(outcol))
+            return outcol
+        else
+            return copyto_widen!(Tables.allocatecolumn(typeof(first(outcol)), n), outcol)
+        end
+    end
+end
+
+(agg::Aggregate{typeof(length)})(incol::AbstractVector, gd::GroupedDataFrame) =
+    gd.ends .- gd.starts .+ 1
 
 function do_f(f, x...)
     @inline function fun(x...)

@@ -633,9 +633,8 @@ module TestGrouping
         Random.seed!(1)
         df = DataFrame(a = rand(1:5, 20), x1 = rand(Int, 20), x2 = rand(Complex{Int}, 20))
 
-        for f in (sum, prod, maximum, minimum, mean, var, std)
+        for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
             gd = groupby(df, :a)
-            U = f in (mean, var, std) ? Float64 : Int
 
             @test combine(gd, y = :x1 => f) ≅ combine(gd, y = :x1 => x -> f(x))
 
@@ -644,29 +643,33 @@ module TestGrouping
                 df.x3 = Vector{T}(df.x1)
                 gd = groupby(df, :a)
                 res = combine(gd, y = :x3 => f)
-                @test res ≅ combine(gd, y = :x3 => x -> f(x))
-                @test res.y isa Vector{U}
+                expected = combine(gd, y = :x3 => x -> f(x))
+                @test res ≅ expected
+                @test typeof(res.y) == typeof(expected.y)
             end
+
+            f === length && continue
 
             df.x3 = allowmissing(df.x1)
             df.x3[1] = missing
             gd = groupby(df, :a)
             res = combine(gd, y = :x3 => f)
-            @test res ≅ combine(gd, y = :x3 => x -> f(x))
-            @test res.y isa Vector{Union{Missing, U}}
+            expected = combine(gd, y = :x3 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
             res = combine(gd, y = :x3 => f∘skipmissing)
-            @test res ≅ combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
-            @test res.y isa Vector{U}
+            expected =  combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
         end
         # Test complex numbers
-        for f in (sum, prod, mean, var, std)
+        for f in (sum, prod, mean, var, std, first, last, length)
             gd = groupby(df, :a)
-            U = f in (var, std) ? Float64 :
-                f in (mean, var, std) ? Complex{Float64} : Complex{Int}
 
             res = combine(gd, y = :x2 => f)
-            @test res ≅ combine(gd, y = :x2 => x -> f(x))
-            @test res.y isa Vector{U}
+            expected = combine(gd, y = :x2 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
         end
         # Test CategoricalArray
         for f in (maximum, minimum, first, last, length),
@@ -676,11 +679,16 @@ module TestGrouping
             m && (df.x3[1] = missing)
             gd = groupby(df, :a)
             res = combine(gd, y = :x3 => f)
-            @test isequal(res, combine(gd, y = :x3 => x -> f(x)))
-            @test res.y isa CategoricalVector{m ? T : Missings.T(T)}
+            expected = combine(gd, y = :x3 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+
+            f === length && continue
+
             res = combine(gd, y = :x3 => f∘skipmissing)
-            @test res == combine(gd, y = :x3 => x -> (f∘skipmissing)(x))
-            @test res.y isa CategoricalVector{Missings.T(T)}
+            expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
+            @test res == expected
+            @test typeof(res.y) == typeof(expected.y)
             if m
                 gd[1].x3 = missing
                 @test_throws ArgumentError combine(gd, y = :x3 => f∘skipmissing)
