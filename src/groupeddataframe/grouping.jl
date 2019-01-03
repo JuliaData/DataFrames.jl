@@ -160,8 +160,9 @@ all groups, and (if a named tuple or data frame) with the same fields or columns
 Due to type instability, returning a single value or a named tuple is dramatically
 faster than returning a data frame.
 
-Optimized methods are used when standard reduction functions (`sum`, `prod`,
-`minimum`, `maximum` and `mean`) are specified using the pair syntax (e.g. `col => sum`).
+Optimized methods are used when standard summary functions (`sum`, `prod`,
+`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
+are specified using the pair syntax (e.g. `col => sum`).
 When computing the `sum` or `mean` over floating point columns, results will be less
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
 `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
@@ -285,8 +286,9 @@ all groups, and (if a named tuple or data frame) with the same fields or columns
 Due to type instability, returning a single value or a named tuple is dramatically
 faster than returning a data frame.
 
-Optimized methods are used when standard reduction functions (`sum`, `prod`,
-`minimum`, `maximum` and `mean`) are specified using the pair syntax (e.g. `col => sum`).
+Optimized methods are used when standard summary functions (`sum`, `prod`,
+`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
+are specified using the pair syntax (e.g. `col => sum`).
 When computing the `sum` or `mean` over floating point columns, results will be less
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
 `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
@@ -424,7 +426,6 @@ for f in (:sum, :prod, :maximum, :minimum, :mean, :var, :std, :first, :last)
         funname(::typeof(check_aggregate($f∘skipmissing))) = :function
     end
 end
-funname(::typeof(length)) = :length
 
 # Find first value matching condition for each group
 # Optimized for situations where a matching value is typically encountered
@@ -445,7 +446,7 @@ function fillfirst!(condf, outcol::AbstractVector, incol::AbstractVector,
         end
     end
     if nfilled < length(outcol)
-        throw(ArgumentError("cannot compute maximum or minimum for groups with only missing values"))
+        throw(ArgumentError("some groups contain only missing values"))
     end
     outcol
 end
@@ -920,8 +921,9 @@ all groups, and (if a named tuple or data frame) with the same fields or columns
 Due to type instability, returning a single value or a named tuple is dramatically
 faster than returning a data frame.
 
-Optimized methods are used when standard reduction functions (`sum`, `prod`,
-`minimum`, `maximum` and `mean`) are specified using the pair syntax (e.g. `col => sum`).
+Optimized methods are used when standard summary functions (`sum`, `prod`,
+`minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
+are specified using the pair syntax (e.g. `col => sum`).
 When computing the `sum` or `mean` over floating point columns, results will be less
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
 `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
