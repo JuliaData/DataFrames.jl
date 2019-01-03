@@ -232,7 +232,7 @@ function Base.map(f::Any, gd::GroupedDataFrame)
         ends[end] = length(idx)
         return GroupedDataFrame(parent, gd.cols, idx, collect(1:length(idx)), starts, ends)
     else
-        return GroupedDataFrame(parent, gd.cols, idx, Int[], Int[], Int[])
+        return GroupedDataFrame(gd.parent[1:0, gd.cols], gd.cols, Int[], Int[], Int[], Int[])
     end
 end
 
@@ -346,7 +346,7 @@ function combine(f::Any, gd::GroupedDataFrame)
         idx, valscat = _combine(f, gd)
         return hcat!(gd.parent[idx, gd.cols], valscat, makeunique=true)
     else
-        return similar(gd.parent[gd.cols], 0)
+        return gd.parent[1:0, gd.cols]
     end
 end
 combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)

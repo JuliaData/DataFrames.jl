@@ -368,6 +368,14 @@ module TestGrouping
         res = by(d -> 1, df, :x)
         @test size(res) == (0, 1)
         @test res.x isa Vector{Int}
+
+        # Test with empty data frame
+        df = DataFrame(x=[], y=[])
+        gd = groupby(df, :x)
+        @test combine(df -> sum(df.x), gd) == DataFrame(x=[])
+        res = map(df -> sum(df.x), gd)
+        @test length(res) == 0
+        @test res.parent == DataFrame(x=[])
     end
 
     @testset "grouping with missings" for df in
@@ -628,7 +636,6 @@ module TestGrouping
     Base.isless(::Int, ::TestType) = false
     Base.isless(::TestType, ::TestType) = false
 
-    # TODO: and map?
     @testset "combine with aggregation functions" begin
         Random.seed!(1)
         df = DataFrame(a = rand(1:5, 20), x1 = rand(Int, 20), x2 = rand(Complex{Int}, 20))
@@ -658,7 +665,7 @@ module TestGrouping
             @test res ≅ expected
             @test typeof(res.y) == typeof(expected.y)
             res = combine(gd, y = :x3 => f∘skipmissing)
-            expected =  combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
+            expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
             @test res ≅ expected
             @test typeof(res.y) == typeof(expected.y)
         end

@@ -85,7 +85,6 @@ end
 # 3) slot array for a hash map, non-zero values are
 #    the indices of the first row in a group
 # 4) whether groups are already sorted
-# 5) whether some groups might be empty (index isn't used in `groups`)
 # Optional `groups` vector is set to the group indices of each row
 function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
                          hash::Val = Val(true),
@@ -159,7 +158,7 @@ function row_group_slots(cols::Tuple{CategoricalVector},
         @inbounds for i in eachindex(groups)
             j = refmap[col.refs[i]+1]
             groups[i] = j
-            seen[j] |= true
+            seen[j] = true
         end
         if !all(seen)
             if skipmissing # Always keep first group even if empty
