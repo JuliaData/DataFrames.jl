@@ -63,6 +63,46 @@ julia> coalesce.(x, 0)
 
 ```
 
+The function `dropmissing` or `dropmissing!` can be used to remove the rows with incomplete data from a DataFrame and either create a new DataFrame or mutate the original in-place. 
+
+```jldoctest missings
+julia> df = DataFrame(i = 1:5,
+                      x = [missing, 4, missing, 2, 1],
+                      y = [missing, missing, "c", "d", "e"])
+
+julia> dropmissing(df)
+2×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 4     │ 2      │ d       │
+│ 2   │ 5     │ 1      │ e       │
+```
+By default dropmissing keep the `Union{Type,Missing}` type. To remove the Missing part, set the `disallowmissing` option to true (it should become the default in the future).
+
+```jldoctest missings
+julia> dropmissing(df, disallowmissing=true)
+2×3 DataFrame
+│ Row │ i     │ x     │ y      │
+│     │ Int64 │ Int64 │ String │
+├─────┼───────┼───────┼────────┤
+│ 1   │ 4     │ 2     │ d      │
+│ 2   │ 5     │ 1     │ e      │
+```
+You can define the column or the list of columns where to search for the missing rows to be removed.
+
+```jldoctest missings
+julia> dropmissing(df, :x)
+3×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 2     │ 4      │ missing │
+│ 2   │ 4     │ 2      │ d       │
+│ 3   │ 5     │ 1      │ e       │
+```
+
+
 The [Missings.jl](https://github.com/JuliaData/Missings.jl) package provides a few convenience functions to work with missing values.
 
 The function `Missings.replace` returns an iterator which replaces `missing` elements with another value:
