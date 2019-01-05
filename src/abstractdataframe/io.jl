@@ -92,7 +92,20 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true)
+    r, c = parentindices(dfr)
+    write(io, "<p>DataFrameRow</p>")
+    _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r)
+end
+
+Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true) =
+    _show(io, mime, df, summary=summary)
+
+function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=true, rowid=nothing)
+    n = size(df, 1)
+    if !(rowid isa Nothing)
+        n == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    end
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
     write(io, "<thead>")
@@ -112,7 +125,6 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bo
     write(io, "</thead>")
     write(io, "<tbody>")
     haslimit = get(io, :limit, true)
-    n = size(df, 1)
     if haslimit
         tty_rows, tty_cols = displaysize(io)
         mxrow = min(n,tty_rows)
@@ -124,7 +136,11 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bo
     end
     for row in 1:mxrow
         write(io, "<tr>")
-        write(io, "<th>$row</th>")
+        if rowid isa Nothing
+            write(io, "<th>$row</th>")
+        else
+            write(io, "<th>$rowid</th>")
+        end
         for column_name in cnames
             if isassigned(df[column_name], row)
                 cell = sprint(ourshowcompact, df[row, column_name])
@@ -167,9 +183,21 @@ function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
-function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
+function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
+    r, c = parentindices(dfr)
+    _show(io, mime, view(parent(dfr), [r], c), rowid=r)
+end
+
+Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame) =
+    _show(io, mime, df)
+
+function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     nrows = size(df, 1)
     ncols = size(df, 2)
+
+    if !(rowid isa Nothing)
+        nrows == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    end
 
     haslimit = get(io, :limit, true)
     if haslimit
@@ -191,7 +219,7 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
     write(io, "\t\\hline\n")
     for row in 1:mxrow
         write(io, "\t")
-        write(io, @sprintf("%d", row))
+        write(io, @sprintf("%d", rowid isa Nothing ? row : rowid))
         for col in 1:ncols
             write(io, " & ")
             cell = isassigned(df[col], row) ? df[row,col] : Base.undef_ref_str
@@ -220,6 +248,16 @@ end
 # MIME
 #
 ##############################################################################
+
+function Base.show(io::IO, mime::MIME"text/csv", dfr::DataFrameRow)
+    r, c = parentindices(dfr)
+    show(io, mime, view(parent(dfr), [r], c))
+end
+
+function Base.show(io::IO, mime::MIME"text/tab-separated-values", dfr::DataFrameRow)
+    r, c = parentindices(dfr)
+    show(io, mime, view(parent(dfr), [r], c))
+end
 
 function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
     printtable(io, df, header = true, separator = ',')

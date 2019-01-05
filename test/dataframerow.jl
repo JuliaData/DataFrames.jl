@@ -181,11 +181,6 @@ module TestDataFrameRow
     @test values(r) == (2.0, 2.0, 0.0, 0.0)
     @test collect(pairs(r)) == [:x8 => 2.0, :x5 => 2.0, :x1 => 0.0, :x3 => 0.0]
 
-    df = DataFrame(a=nothing, b=1)
-    io = IOBuffer()
-    show(io, DataFrameRow(df, 1, :))
-    @test String(take!(io)) == "DataFrameRow (row 1)\na  \nb  1"
-
     # convert
     df = DataFrame(a=[1, missing], b=[2.0, 3.0])
     dfr = DataFrameRow(df, 1, :)
@@ -247,5 +242,40 @@ module TestDataFrameRow
         @test values(dfr2) == (200, 200, 200)
         @test df[1, 1] == 200
         @test_throws KeyError dfr2.x2
+    end
+
+    @testset "show" begin
+        df = DataFrame(a=nothing, b=1)
+        io = IOBuffer()
+        show(io, DataFrameRow(df, 1, :))
+        @test String(take!(io)) == "DataFrameRow\n│ Row │ a       │ b     │\n│     │ Nothing │ Int64 │\n" *
+                                   "├─────┼─────────┼───────┤\n│ 1   │         │ 1     │"
+
+
+        df = DataFrame(a=1:3, b=["a", "b", "c"], c=[true,false,true])
+        dfr = df[2, 2:3]
+
+        io = IOBuffer()
+        show(io, dfr)
+        @test String(take!(io)) == "DataFrameRow\n│ Row │ b      │ c     │\n│     │" *
+                                   " String │ Bool  │\n├─────┼────────┼───────┤\n│ 2   │ b      │ false │"
+
+        io = IOBuffer()
+        show(io, "text/html", dfr)
+        @test String(take!(io)) == "<p>DataFrameRow</p><table class=\"data-frame\">" *
+                                   "<thead><tr><th></th><th>b</th><th>c</th></tr><tr><th></th><th>String</th><th>Bool</th></tr></thead>" *
+                                   "<tbody><p>1 rows × 2 columns</p><tr><th>2</th><td>b</td><td>false</td></tr></tbody></table>"
+
+        io = IOBuffer()
+        show(io, "text/latex", dfr)
+        @test String(take!(io)) == "\\begin{tabular}{r|cc}\n\t& b & c\\\\\n\t\\hline\n\t2 & b & false \\\\\n\\end{tabular}\n"
+
+        io = IOBuffer()
+        show(io, "text/csv", dfr)
+        @test String(take!(io)) == "\"b\",\"c\"\n\"b\",false\n"
+
+        io = IOBuffer()
+        show(io, "text/tab-separated-values", dfr)
+        @test String(take!(io)) == "\"b\"\t\"c\"\n\"b\"\tfalse\n"
     end
 end

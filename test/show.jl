@@ -280,13 +280,6 @@ module TestShow
     str2 = String(take!(io.io))
     @test str1 == str2
 
-    dfr = DataFrameRow(df, 1, :)
-    @test string(dfr) == """
-    DataFrameRow (row 1)
-    A  1
-    B  x"
-    C  1.0"""
-
     df = DataFrame(A = Vector{String}(undef, 3))
 
     A = DataFrames.StackedVector(Any[[1, 2, 3], [4, 5, 6], [7, 8, 9]])
