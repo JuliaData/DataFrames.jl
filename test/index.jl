@@ -1,6 +1,6 @@
 module TestIndex
 using Test, DataFrames
-using DataFrames: Index
+using DataFrames: Index, SubIndex
 
 i = Index()
 push!(i, :A)
@@ -78,6 +78,80 @@ names!(i2, reverse(names(i2)))
 @test names(i2) == names(i)
 for name in names(i)
   i2[name] # Issue #715
+end
+
+i = Index([:A, :B, :C, :D, :E])
+si1 = SubIndex(i, :)
+si2 = SubIndex(i, 3:5)
+si3 = SubIndex(i, [3,4,5])
+si4 = SubIndex(i, [false, false, true, true, true])
+si5 = SubIndex(i, [:C, :D, :E])
+
+@test_throws ArgumentError SubIndex(i, 1)
+@test_throws ArgumentError SubIndex(i, :A)
+@test_throws ArgumentError SubIndex(i, true)
+@test si1 isa Index
+@test si2.cols == 3:5
+@test si2.remap == -1:3
+@test si3.cols == 3:5
+@test si3.remap == Int[]
+@test !haskey(si3, :A)
+@test si3.remap == [0, 0, 1, 2, 3]
+@test si4.cols == 3:5
+@test si4.remap == Int[]
+@test !haskey(si4, :A)
+@test si4.remap == [0, 0, 1, 2, 3]
+@test si5.cols == 3:5
+@test si5.remap == Int[]
+@test !haskey(si5, :A)
+@test si5.remap == [0, 0, 1, 2, 3]
+
+@test length(si1) == 5
+@test length(si2) == 3
+@test length(si3) == 3
+@test length(si4) == 3
+@test length(si5) == 3
+
+@test names(si1) == keys(si1) == [:A, :B, :C, :D, :E]
+@test names(si2) == keys(si2) == [:C, :D, :E]
+@test names(si3) == keys(si3) == [:C, :D, :E]
+@test names(si4) == keys(si4) == [:C, :D, :E]
+@test names(si5) == keys(si5) == [:C, :D, :E]
+
+@test_throws ArgumentError haskey(si3, true)
+@test haskey(si3, 1)
+@test !haskey(si3, 0)
+@test !haskey(si3, 4)
+@test haskey(si3, :D)
+@test !haskey(si3, :A)
+@test si3[:C] == 1
+@test si3[names(i)] == [0, 0, 1, 2, 3]
+
+@testset "selector mutation" begin
+    df = DataFrame(a=1:5, b=11:15, c=21:25)
+    selector1 = [3,2]
+    dfv1 = view(df, selector1)
+    dfr1 = view(df, 2, selector1)
+    selector2 = [1]
+    dfv2 = view(dfv1, selector2)
+    dfr2 = view(dfr1, selector2)
+    @test names(dfv1) == [:c, :b]
+    @test names(dfv2) == [:c]
+    @test names(dfr1) == [:c, :b]
+    @test names(dfr2) == [:c]
+    selector1[1] = 1
+    @test names(dfv1) == [:a, :b]
+    @test names(dfv2) == [:c]
+    @test names(dfr1) == [:a, :b]
+    @test names(dfr2) == [:c]
+    selector3 = [:c, :b]
+    dfv3 = view(df, selector3)
+    dfr3 = view(df, 2, selector3)
+    @test names(dfv3) == [:c, :b]
+    @test names(dfr3) == [:c, :b]
+    selector3[1] = :a
+    @test names(dfv3) == [:c, :b]
+    @test names(dfr3) == [:c, :b]
 end
 
 end

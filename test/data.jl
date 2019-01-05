@@ -184,7 +184,7 @@ module TestData
         @test ggd[2][1, :d3] == "a"
         @test ggd[2][1, :d4] == "d"
     end
-    
+
     @testset "reshape" begin
         d1 = DataFrame(a = Array{Union{Int, Missing}}(repeat([1:3;], inner = [4])),
                     b = Array{Union{Int, Missing}}(repeat([1:4;], inner = [3])),
@@ -243,7 +243,7 @@ module TestData
         end
         @test_throws ArgumentError d1s[1][1.0]
         @test_throws ArgumentError d1s[2][1.0]
-        
+
         # Those tests check indexing RepeatedVector/StackedVector by a vector
         @test d1s[1][trues(24)] == d1s[1]
         @test d1s[2][trues(24)] == d1s[2]

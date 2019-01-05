@@ -238,8 +238,6 @@ ncol(df::DataFrame) = length(index(df))
 ##
 ##############################################################################
 
-const ColumnIndex = Union{Integer, Symbol}
-
 # df[SingleColumnIndex] => AbstractVector, the same vector
 function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
@@ -333,9 +331,6 @@ function insert_single_column!(df::DataFrame,
     if ncol(df) != 0 && nrow(df) != length(v)
         throw(ArgumentError("New columns must have the same length as old columns"))
     end
-    if col_ind isa Bool
-        throw(ArgumentError("invalid column index: $col_ind of type Bool"))
-    end
     dv = isa(v, AbstractRange) ? collect(v) : v
     if haskey(index(df), col_ind)
         j = index(df)[col_ind]
@@ -357,14 +352,11 @@ function insert_single_column!(df::DataFrame,
 end
 
 function insert_single_entry!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
-    if col_ind isa Bool
-        throw(ArgumentError("invalid column index: $col_ind of type Bool"))
-    end
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_ind] = v
         return v
     else
-        error("Cannot assign to non-existent column: $col_ind")
+        throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
     end
 end
 
@@ -372,14 +364,11 @@ function insert_multiple_entries!(df::DataFrame,
                                   v::Any,
                                   row_inds::AbstractVector{<:Integer},
                                   col_ind::ColumnIndex)
-    if col_ind isa Bool
-        throw(ArgumentError("invalid column index: $col_ind of type Bool"))
-    end
     if haskey(index(df), col_ind)
         _columns(df)[index(df)[col_ind]][row_inds] .= v
         return v
     else
-        error("Cannot assign to non-existent column: $col_ind")
+        throw(ArgumentError("Cannot assign to non-existent column: $col_ind"))
     end
 end
 

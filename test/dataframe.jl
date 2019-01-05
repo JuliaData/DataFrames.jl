@@ -788,10 +788,12 @@ module TestDataFrame
         df[4] = [1,2,3]
         @test names(df) == [:x3, :x3_1, :x3_2, :x4]
         df = DataFrame()
-        @test_throws ArgumentError df[true] = 1
-        @test_throws ArgumentError df[true] = [1,2,3]
-        @test_throws ArgumentError df[1:2, true] = [1,2]
-        @test_throws ArgumentError df[1, true] = 1
+        @test_throws MethodError df[true] = 1
+        @test_throws MethodError df[true] = [1,2,3]
+        @test_throws MethodError df[1:2, true] = [1,2]
+        @test_throws MethodError df[1, true] = 1
+        @test_throws ArgumentError df[1, 100] = 1
+        @test_throws ArgumentError df[1:2, 100] = [1,2]
     end
 
     @testset "passing range to a DataFrame" begin
@@ -803,7 +805,7 @@ module TestDataFrame
 
     @testset "test corner case of getindex" begin
         df = DataFrame(x=[1], y=[1])
-        @test_throws ArgumentError df[true, 1:2]
+        @test_throws MethodError df[true, 1:2]
     end
 
     @testset "empty data frame getindex" begin
@@ -973,9 +975,18 @@ module TestDataFrame
         @test_throws ArgumentError z[[1, 1, 2]]
     end
 
-    @testset "parent" begin
+    @testset "parent, size and axes" begin
         x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
         @test parent(x) === x
         @test parentindices(x) === (Base.OneTo(3), Base.OneTo(2))
+        @test size(x) == (3,2)
+        @test size(x, 1) == 3
+        @test size(x, 2) == 2
+        @test_throws ArgumentError size(x, 3)
+        @test axes(x) === (Base.OneTo(3), Base.OneTo(2))
+        @test axes(x, 1) === Base.OneTo(3)
+        @test axes(x, 2) === Base.OneTo(2)
+        @test_throws ArgumentError axes(x, 3)
+        @test size(DataFrame()) == (0,0)
     end
 end

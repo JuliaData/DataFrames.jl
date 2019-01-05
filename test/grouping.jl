@@ -124,7 +124,7 @@ module TestGrouping
         # by() without groups sorting
         @test sort(by(df, cols, identity)) ==
             sort(hcat(df, df[cols], makeunique=true))[[:a, :b, :a_1, :b_1, :c]]
-        @test sort(by(df, cols, df -> DataFrameRow(df, 1))[[:a, :b, :c]]) ==
+        @test sort(by(df, cols, df -> DataFrameRow(df, 1, :))[[:a, :b, :c]]) ==
             sort(df[.!nonunique(df, cols), :])
         @test by(df, cols, f1) == res
         @test by(df, cols, f2) == res
@@ -138,7 +138,7 @@ module TestGrouping
         # by() with groups sorting
         @test by(df, cols, identity, sort=true) ==
             sort(hcat(df, df[cols], makeunique=true), cols)[[:a, :b, :a_1, :b_1, :c]]
-        @test by(df, cols, df -> DataFrameRow(df, 1), sort=true)[[:a, :b, :c]] ==
+        @test by(df, cols, df -> DataFrameRow(df, 1, :), sort=true)[[:a, :b, :c]] ==
             sort(df[.!nonunique(df, cols), :])
         @test by(df, cols, f1, sort=true) == sres
         @test by(df, cols, f2, sort=true) == sres
@@ -293,7 +293,7 @@ module TestGrouping
         df = DataFrame(x = [1, 2, 3], y = [2, 3, 1])
 
         # Test function returning DataFrameRow
-        res = by(d -> DataFrameRow(d, 1), df, :x)
+        res = by(d -> DataFrameRow(d, 1, :), df, :x)
         @test res == DataFrame(x=df.x, x_1=df.x, y=df.y)
 
         # Test function returning Tuple

@@ -62,7 +62,7 @@ module TestShow
     ⋮
     │ 24  │ 0.278582 │ 0.241591 │ 0.990741 │
     │ 25  │ 0.751313 │ 0.884837 │ 0.550334 │
-    
+
     │ Row │ x4       │ x5       │
     │     │ Float64  │ Float64  │
     ├─────┼──────────┼──────────┤
@@ -104,7 +104,7 @@ module TestShow
     │ 23  │ 0.873544   │ 0.524975  │
     │ 24  │ 0.278582   │ 0.241591  │
     │ 25  │ 0.751313   │ 0.884837  │
-    
+
     │ Row │ x3        │ x4        │
     │     │ Float64   │ Float64   │
     ├─────┼───────────┼───────────┤
@@ -133,7 +133,7 @@ module TestShow
     │ 23  │ 0.393193  │ 0.681415  │
     │ 24  │ 0.990741  │ 0.762276  │
     │ 25  │ 0.550334  │ 0.339081  │
-    
+
     │ Row │ x5        │
     │     │ Float64   │
     ├─────┼───────────┤
@@ -219,7 +219,7 @@ module TestShow
     show(io, subdf, allrows=true, allcols=false)
     str = String(take!(io))
     @test str == """
-    2×3 SubDataFrame{Array{$Int,1}}
+    2×3 SubDataFrame
     │ Row │ A     │ B           │ C       │
     │     │ Int64 │ String      │ Float32 │
     ├─────┼───────┼─────────────┼─────────┤
@@ -234,7 +234,7 @@ module TestShow
     show(io, gd)
     str = String(take!(io.io))
     @test str == """
-    GroupedDataFrame{DataFrame} with 4 groups based on key: :A
+    GroupedDataFrame with 4 groups based on key: :A
     First Group (1 row): :A = 1
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
@@ -249,7 +249,7 @@ module TestShow
     show(io, gd, allgroups=true)
     str = String(take!(io.io))
     @test str == """
-    GroupedDataFrame{DataFrame} with 4 groups based on key: :A
+    GroupedDataFrame with 4 groups based on key: :A
     Group 1 (1 row): :A = 1
     │ Row │ A     │ B      │ C       │
     │     │ Int64 │ String │ Float32 │
@@ -280,7 +280,7 @@ module TestShow
     str2 = String(take!(io.io))
     @test str1 == str2
 
-    dfr = DataFrameRow(df, 1)
+    dfr = DataFrameRow(df, 1, :)
     @test string(dfr) == """
     DataFrameRow (row 1)
     A  1

@@ -8,31 +8,81 @@
 
 # Iteration by rows
 """
-    DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
+    DataFrameRows{D<:AbstractDataFrame,S<:AbstractIndex} <: AbstractVector{DataFrameRow{D,S}}
 
 Iterator over rows of an `AbstractDataFrame`,
 with each row represented as a `DataFrameRow`.
 
 A value of this type is returned by the [`eachrow`](@ref) function.
 """
-struct DataFrameRows{T<:AbstractDataFrame} <: AbstractVector{DataFrameRow{T}}
-    df::T
+struct DataFrameRows{D<:AbstractDataFrame,S<:AbstractIndex} <: AbstractVector{DataFrameRow{D,S}}
+    df::D
+    index::S
 end
+
+Base.summary(dfrs::DataFrameRows) = "$(length(dfrs))-element DataFrameRows"
+Base.summary(io::IO, dfrs::DataFrameRows) = print(io, summary(dfrs))
 
 """
     eachrow(df::AbstractDataFrame)
 
-Return a `DataFrameRows` that iterates an `AbstractDataFrame` row by row,
+Return a `DataFrameRows` that iterates a data frame row by row,
 with each row represented as a `DataFrameRow`.
-"""
-eachrow(df::AbstractDataFrame) = DataFrameRows(df)
 
-Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
+**Examples**
+
+```jldoctest
+julia> df = DataFrame(x=1:4, y=11:14)
+4×2 DataFrame
+│ Row │ x     │ y     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 11    │
+│ 2   │ 2     │ 12    │
+│ 3   │ 3     │ 13    │
+│ 4   │ 4     │ 14    │
+
+julia> eachrow(df)
+4-element DataFrameRows:
+ DataFrameRow (row 1)
+x  1
+y  11
+ DataFrameRow (row 2)
+x  2
+y  12
+ DataFrameRow (row 3)
+x  3
+y  13
+ DataFrameRow (row 4)
+x  4
+y  14
+
+julia> copy.(eachrow(df))
+4-element Array{NamedTuple{(:x, :y),Tuple{Int64,Int64}},1}:
+ (x = 1, y = 11)
+ (x = 2, y = 12)
+ (x = 3, y = 13)
+ (x = 4, y = 14)
+
+julia> eachrow(view(df, [4,3], [2,1]))
+2-element DataFrameRows:
+ DataFrameRow (row 4)
+y  14
+x  4
+ DataFrameRow (row 3)
+y  13
+x  3
+```
+"""
+eachrow(df::AbstractDataFrame) = DataFrameRows(df, index(df))
+
 Base.IndexStyle(::Type{<:DataFrameRows}) = Base.IndexLinear()
-@inline function Base.getindex(itr::DataFrameRows, i::Int)
-    @boundscheck checkbounds(itr, i)
-    return DataFrameRow(itr.df, i)
-end
+Base.size(itr::DataFrameRows) = (size(itr.df, 1), )
+
+Base.@propagate_inbounds Base.getindex(itr::DataFrameRows, i::Int) =
+    DataFrameRow(itr.df, itr.index, i)
+Base.@propagate_inbounds Base.getindex(itr::DataFrameRows{<:SubDataFrame}, i::Int) =
+    DataFrameRow(parent(itr.df), itr.index, rows(itr.df)[i])
 
 # Iteration by columns
 """
