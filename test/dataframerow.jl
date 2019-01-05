@@ -248,7 +248,7 @@ module TestDataFrameRow
         df = DataFrame(a=nothing, b=1)
         io = IOBuffer()
         show(io, DataFrameRow(df, 1, :))
-        @test String(take!(io)) == "DataFrameRow\n│ Row │ a       │ b     │\n│     │ Nothing │ Int64 │\n" *
+        @test String(take!(io)) == "DataFrameRow\n│ Row │ a       │ b     │\n│     │ Nothing │ $(Int) │\n" *
                                    "├─────┼─────────┼───────┤\n│ 1   │         │ 1     │"
 
 
