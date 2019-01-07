@@ -92,12 +92,6 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true)
-    r, c = parentindices(dfr)
-    write(io, "<p>DataFrameRow</p>")
-    _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r)
-end
-
 Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true) =
     _show(io, mime, df, summary=summary)
 
@@ -163,6 +157,47 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=t
     write(io, "</table>")
 end
 
+function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true)
+    r, c = parentindices(dfr)
+    write(io, "<p>DataFrameRow</p>")
+    _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r)
+end
+
+function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
+    N = length(gd)
+    keynames = names(gd.parent)[gd.cols]
+    parent_names = names(gd.parent)
+    keys = join(':' .* string.(keynames), ", ")
+    keystr = length(gd.cols) > 1 ? "keys" : "key"
+    groupstr = N > 1 ? "groups" : "group"
+    write(io, "<p><b>$(typeof(gd).name) with $N $groupstr based on $keystr: $keys</b></p>")
+    if N > 0
+        nrows = size(gd[1], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [':' * string(parent_names[col], " = ", first(gd[1][col]))
+                             for col in gd.cols]
+
+        write(io, "<p><i>First Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        write(io, "</i></p>")
+        show(io, mime, gd[1], summary=false)
+    end
+    if N > 1
+        nrows = size(gd[N], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [':' * string(parent_names[col], " = ", first(gd[N][col]))
+                             for col in gd.cols]
+
+        write(io, "<p>&vellip;</p>")
+        write(io, "<p><i>Last Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        write(io, "</i></p>")
+        show(io, mime, gd[N], summary=false)
+    end
+end
+
 ##############################################################################
 #
 # LaTeX output
@@ -181,11 +216,6 @@ end
 
 function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
-end
-
-function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
-    r, c = parentindices(dfr)
-    _show(io, mime, view(parent(dfr), [r], c), rowid=r)
 end
 
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame) =
@@ -241,6 +271,46 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
         write(io, " \\\\\n")
     end
     write(io, "\\end{tabular}\n")
+end
+
+function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
+    r, c = parentindices(dfr)
+    _show(io, mime, view(parent(dfr), [r], c), rowid=r)
+end
+
+function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
+    N = length(gd)
+    keynames = names(gd.parent)[gd.cols]
+    parent_names = names(gd.parent)
+    keys = join(latex_escape.(':' .* string.(keynames)), ", ")
+    keystr = length(gd.cols) > 1 ? "keys" : "key"
+    groupstr = N > 1 ? "groups" : "group"
+    write(io, "$(typeof(gd).name) with $N $groupstr based on $keystr: $keys\n\n")
+    if N > 0
+        nrows = size(gd[1], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [latex_escape(':' * string(parent_names[col], " = ", first(gd[1][col])))
+                             for col in gd.cols]
+
+        write(io, "First Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        write(io, "\n\n")
+        show(io, mime, gd[1])
+    end
+    if N > 1
+        nrows = size(gd[N], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [latex_escape(':' * string(parent_names[col], " = ", first(gd[N][col])))
+                             for col in gd.cols]
+
+        write(io, "\n\n\$\\dots\$\n\n")
+        write(io, "Last Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        write(io, "\n\n")
+        show(io, mime, gd[N])
+    end
 end
 
 ##############################################################################
