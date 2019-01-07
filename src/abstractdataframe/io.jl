@@ -305,7 +305,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         identified_groups = [latex_escape(':' * string(parent_names[col], " = ", first(gd[N][col])))
                              for col in gd.cols]
 
-        write(io, "\n\n\$\\dots\$\n\n")
+        write(io, "\n\$\\dots\$\n\n")
         write(io, "Last Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "\n\n")

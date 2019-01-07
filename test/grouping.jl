@@ -677,4 +677,101 @@ module TestGrouping
         @test gd3 == gd4
         @test isequal(gd3, gd4)
     end
+
+    @testset "show" begin
+        function capture_stdout(f::Function)
+            oldstdout = stdout
+            rd, wr = redirect_stdout()
+            f()
+            str = String(readavailable(rd))
+            redirect_stdout(oldstdout)
+            size = displaysize(rd)
+            close(rd)
+            close(wr)
+            str, size
+        end
+
+        df = DataFrame(A = Int64[1:4;], B = ["x\"", "∀ε>0: x+ε>x", "z\$", "A\nC"],
+                       C = Float32[1.0, 2.0, 3.0, 4.0])
+        gd = groupby(df, :A)
+        io = IOContext(IOBuffer(), :limit=>true)
+        show(io, gd)
+        str = String(take!(io.io))
+        @test str == """
+        GroupedDataFrame with 4 groups based on key: :A
+        First Group (1 row): :A = 1
+        │ Row │ A     │ B      │ C       │
+        │     │ Int64 │ String │ Float32 │
+        ├─────┼───────┼────────┼─────────┤
+        │ 1   │ 1     │ x"     │ 1.0     │
+        ⋮
+        Last Group (1 row): :A = 4
+        │ Row │ A     │ B      │ C       │
+        │     │ Int64 │ String │ Float32 │
+        ├─────┼───────┼────────┼─────────┤
+        │ 1   │ 4     │ A\\nC   │ 4.0     │"""
+        show(io, gd, allgroups=true)
+        str = String(take!(io.io))
+        @test str == """
+        GroupedDataFrame with 4 groups based on key: :A
+        Group 1 (1 row): :A = 1
+        │ Row │ A     │ B      │ C       │
+        │     │ Int64 │ String │ Float32 │
+        ├─────┼───────┼────────┼─────────┤
+        │ 1   │ 1     │ x\"     │ 1.0     │
+        Group 2 (1 row): :A = 2
+        │ Row │ A     │ B           │ C       │
+        │     │ Int64 │ String      │ Float32 │
+        ├─────┼───────┼─────────────┼─────────┤
+        │ 1   │ 2     │ ∀ε>0: x+ε>x │ 2.0     │
+        Group 3 (1 row): :A = 3
+        │ Row │ A     │ B      │ C       │
+        │     │ Int64 │ String │ Float32 │
+        ├─────┼───────┼────────┼─────────┤
+        │ 1   │ 3     │ z\$     │ 3.0     │
+        Group 4 (1 row): :A = 4
+        │ Row │ A     │ B      │ C       │
+        │     │ Int64 │ String │ Float32 │
+        ├─────┼───────┼────────┼─────────┤
+        │ 1   │ 4     │ A\\nC   │ 4.0     │"""
+
+        # Test two-argument show
+        str1, dsize = capture_stdout() do
+            show(gd)
+        end
+        io = IOContext(IOBuffer(), :limit=>true, :displaysize=>dsize)
+        show(io, gd)
+        str2 = String(take!(io.io))
+        @test str1 == str2
+
+        io = IOBuffer()
+        show(io, "text/html", gd)
+        @test String(take!(io)) == "<p><b>GroupedDataFrame with 4 groups based on key: :A</b></p>" *
+                                   "<p><i>First Group (1 row): :A = 1</i></p><table class=\"data-frame\">" *
+                                   "<thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr><tr><th></th>" *
+                                   "<th>Int64</th><th>String</th><th>Float32</th></tr></thead>" *
+                                   "<tbody><tr><th>1</th><td>1</td><td>x\"</td><td>1.0</td></tr></tbody>" *
+                                   "</table><p>&vellip;</p><p><i>Last Group (1 row): :A = 4</i></p>" *
+                                   "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr>" *
+                                   "<tr><th></th><th>Int64</th><th>String</th><th>Float32</th></tr></thead>" *
+                                   "<tbody><tr><th>1</th><td>4</td><td>A\\nC</td><td>4.0</td></tr></tbody></table>"
+
+        io = IOBuffer()
+        show(io, "text/latex", gd)
+        @test String(take!(io)) == "GroupedDataFrame with 4 groups based on key: :A\n\n" *
+                                   "First Group (1 row): :A = 1\n\n" *
+                                   "\\begin{tabular}{r|ccc}\n" *
+                                   "\t& A & B & C\\\\\n" *
+                                   "\t\\hline\n" *
+                                   "\t1 & 1 & x\" & 1.0 \\\\\n" *
+                                   "\\end{tabular}\n\n" *
+                                   "\$\\dots\$\n\n" *
+                                   "Last Group (1 row): :A = 4\n\n" *
+                                   "\\begin{tabular}{r|ccc}\n" *
+                                   "\t& A & B & C\\\\\n" *
+                                   "\t\\hline\n" *
+                                   "\t1 & 4 & A\\textbackslash{}nC & 4.0 \\\\\n" *
+                                   "\\end{tabular}\n"
+
+    end
 end
