@@ -63,7 +63,7 @@ julia> coalesce.(x, 0)
 
 ```
 
-The function `dropmissing` or `dropmissing!` can be used to remove the rows with incomplete data from a DataFrame and either create a new DataFrame or mutate the original in-place. 
+The functions `dropmissing` and `dropmissing!` can be used to remove the rows containing `missing` values from a `DataFrame` and either create a new `DataFrame` or mutate the original in-place respectively.
 
 ```jldoctest missings
 julia> df = DataFrame(i = 1:5,
@@ -78,7 +78,7 @@ julia> dropmissing(df)
 │ 1   │ 4     │ 2      │ d       │
 │ 2   │ 5     │ 1      │ e       │
 ```
-By default dropmissing keep the `Union{Type,Missing}` type. To remove the Missing part, set the `disallowmissing` option to true (it should become the default in the future).
+By default the `dropmissing` and `dropmissing!` functions keep the `Union{Type,Missing}` element type in columns selected for row removal. To remove the `Missing` part, if present, set the `disallowmissing` option to `true` (it will become the default behavior in the future).
 
 ```jldoctest missings
 julia> dropmissing(df, disallowmissing=true)
@@ -89,7 +89,7 @@ julia> dropmissing(df, disallowmissing=true)
 │ 1   │ 4     │ 2     │ d      │
 │ 2   │ 5     │ 1     │ e      │
 ```
-You can define the column or the list of columns where to search for the missing rows to be removed.
+You can define the column or the list of columns where to search for the rows containing `missing` values to be removed.
 
 ```jldoctest missings
 julia> dropmissing(df, :x)
