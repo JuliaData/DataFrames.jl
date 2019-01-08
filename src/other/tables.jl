@@ -45,6 +45,6 @@ Base.append!(df::DataFrame, x) = append!(df, DataFrame(x))
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
 DataFrame(x::Vector{T}) where {T <: NamedTuple} = fromcolumns(Tables.columns(Tables.DataValueUnwrapper(x)))
 
-IteratorInterfaceExtensions.getiterator(df::DataFrame) = Tables.datavaluerows(df)
-IteratorInterfaceExtensions.isiterable(x::DataFrame) = true
-TableTraits.isiterabletable(x::DataFrame) = true
+IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(df)
+IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true
+TableTraits.isiterabletable(x::AbstractDataFrame) = true
