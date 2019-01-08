@@ -1,5 +1,5 @@
 module TestTableTraits
-using Test, TableTraits, DataFrames
+using Test, DataFrames, IteratorInterfaceExtensions, TableTraits, DataValues
 
 struct ColumnSource
 end
@@ -11,6 +11,16 @@ function TableTraits.get_columns_copy_using_missing(x::ColumnSource)
 end
 
 @testset "TableTraits" begin
+    df = DataFrame(a=[1,2,3], b=[1.,missing,3.])
+    @test IteratorInterfaceExtensions.isiterable(df)
+    @test TableTraits.isiterabletable(df)
+    @test collect(IteratorInterfaceExtensions.getiterator(df)) ==
+        [(a=1, b=DataValue(1.0)), (a=2, b=DataValue{Float64}()), (a=3, b=DataValue(3.0))]
+    sdf = view(df, 1:2, :)
+    @test IteratorInterfaceExtensions.isiterable(sdf)
+    @test TableTraits.isiterabletable(sdf)
+    @test collect(IteratorInterfaceExtensions.getiterator(sdf)) ==
+        [(a=1, b=DataValue(1.0)), (a=2, b=DataValue{Float64}())]
 
     df = DataFrame(ColumnSource())
 
