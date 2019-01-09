@@ -14,11 +14,11 @@ getvector(x) = collect(x)
 fromcolumns(x) = DataFrame(Any[getvector(c) for c in Tables.eachcolumn(x)], Index(collect(Symbol, propertynames(x))))
 
 function DataFrame(x)
-    if Tables.istable(x)
-        return fromcolumns(Tables.columns(x))
-    end
     if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
         return DataFrame(Vector{AbstractVector}(x))
+    end
+    if Tables.istable(x)
+        return fromcolumns(Tables.columns(x))
     end
     throw(ArgumentError("unable to construct DataFrame from $(typeof(x))"))
 end
