@@ -97,7 +97,7 @@ Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=tr
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
     n = size(df, 1)
-    if !(rowid isa Nothing)
+    if rowid !== nothing
         n == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
     end
     cnames = _names(df)
