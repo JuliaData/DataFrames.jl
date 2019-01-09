@@ -95,7 +95,7 @@ end
 Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true) =
     _show(io, mime, df, summary=summary)
 
-function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=true, rowid=nothing)
+function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
     n = size(df, 1)
     if !(rowid isa Nothing)
         n == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
