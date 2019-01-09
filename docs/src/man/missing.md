@@ -78,18 +78,8 @@ julia> dropmissing(df)
 │ 1   │ 4     │ 2      │ d       │
 │ 2   │ 5     │ 1      │ e       │
 ```
-By default the `dropmissing` and `dropmissing!` functions keep the `Union{Type,Missing}` element type in columns selected for row removal. To remove the `Missing` part, if present, set the `disallowmissing` option to `true` (it will become the default behavior in the future).
 
-```jldoctest missings
-julia> dropmissing(df, disallowmissing=true)
-2×3 DataFrame
-│ Row │ i     │ x     │ y      │
-│     │ Int64 │ Int64 │ String │
-├─────┼───────┼───────┼────────┤
-│ 1   │ 4     │ 2     │ d      │
-│ 2   │ 5     │ 1     │ e      │
-```
-You can define the column or the list of columns where to search for the rows containing `missing` values to be removed.
+One can specify the column(s) in which to search for rows containing `missing` values to be removed.
 
 ```jldoctest missings
 julia> dropmissing(df, :x)
@@ -100,6 +90,18 @@ julia> dropmissing(df, :x)
 │ 1   │ 2     │ 4      │ missing │
 │ 2   │ 4     │ 2      │ d       │
 │ 3   │ 5     │ 1      │ e       │
+```
+
+By default the `dropmissing` and `dropmissing!` functions keep the `Union{T,Missing}` element type in columns selected for row removal. To remove the `Missing` part, if present, set the `disallowmissing` option to `true` (it will become the default behavior in the future).
+
+```jldoctest missings
+julia> dropmissing(df, disallowmissing=true)
+2×3 DataFrame
+│ Row │ i     │ x     │ y      │
+│     │ Int64 │ Int64 │ String │
+├─────┼───────┼───────┼────────┤
+│ 1   │ 4     │ 2     │ d      │
+│ 2   │ 5     │ 1     │ e      │
 ```
 
 
