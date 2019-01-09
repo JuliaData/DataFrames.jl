@@ -3,7 +3,7 @@ function Base.show(io::IO, dfr::DataFrameRow;
                    splitcols = get(io, :limit, false),
                    rowlabel::Symbol = :Row)
     r, c = parentindices(dfr)
-    @printf(io, "DataFrameRow")
+    print(io, "DataFrameRow")
     _show(io, view(parent(dfr), [r], c), allcols=allcols, splitcols=splitcols,
           rowlabel=rowlabel, summary=false, rowid=r)
 end
