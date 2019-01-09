@@ -239,7 +239,7 @@ end
                    maxwidths::Vector{Int},
                    leftcol::Int,
                    rightcol::Int,
-                   rowid)
+                   rowid::Union{Int,Nothing})
 
 Render a subset of rows and columns of an `AbstractDataFrame` to an
 I/O stream. For chunked printing, this function is used to print a
