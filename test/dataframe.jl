@@ -561,6 +561,27 @@ module TestDataFrame
     @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
     @test df == df2
 
+    @testset "bindrows()" begin
+    # bindrows() calls append!() on first element, so need to reset after each call
+    df1 = DataFrame(A = [1, 2], B = [3, 4])
+    df2 = DataFrame(B = [3, 4], A = [1, 2])
+    df3 = DataFrame(A = [5, 6], B = [7, 8])
+    dfnewcols = DataFrame(D = [9, 0])
+    @test bindrows([df1, df2]) == DataFrame(A = [1, 2, 1, 2], B = [3, 4, 3, 4])
+    df1 = DataFrame(A = [1, 2], B = [3, 4])
+    @test bindrows([df1, df2, df3]) == DataFrame(A = [1, 2, 1, 2, 5, 6],
+                                                 B = [3, 4, 3, 4, 7, 8])
+    df1 = DataFrame(A = [1, 2], B = [3, 4])
+    # Can't meaningfully compare anything with `missing` values, so convert them
+    dfhasmissing = bindrows([df1, dfnewcols])
+    for c in names(dfhasmissing)
+        dfhasmissing[c] = collect(Missings.replace(dfhasmissing[c], 999))
+    end
+    @test dfhasmissing == DataFrame(A = [1, 2, 999, 999],
+                                    B = [3, 4, 999, 999],
+                                    D = [999, 999, 9, 0])
+    end
+
     df = DataFrame(A = Vector{Union{Int, Missing}}(1:3), B = Vector{Union{Int, Missing}}(4:6))
     DRT = CategoricalArrays.DefaultRefType
     @test all(c -> isa(c, Vector{Union{Int, Missing}}), columns(categorical!(deepcopy(df))))

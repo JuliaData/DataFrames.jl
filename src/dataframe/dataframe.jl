@@ -1001,6 +1001,56 @@ function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     return df1
 end
 
+"""
+    bindrows(dfs::Array{DataFrame})
+
+Append an array of `DataFrames` together, regardless of column order. If
+disparate columns exist between any of the `DataFrame`s, then these columns will
+be filled with `missing` values where appropriate. These columns will be of the
+type `Union{Missing,eltype(existingcol)}`, as per `allowmissing!()`.
+
+### Examples
+
+```jldoctest
+julia> df1 = DataFrame(A = [1, 2], B = [3, 4])
+julia> df2 = DataFrame(B = [3, 4], A = [1, 2])
+julia> df3 = DataFrame(B = [3, 4], C = [5, 6])
+julia> bindrows([df1, df2, df3])
+6×3 DataFrame
+│ Row │ A       │ B     │ C       │
+│     │ Int64⍰  │ Int64 │ Int64⍰  │
+├─────┼─────────┼───────┼─────────┤
+│ 1   │ 1       │ 3     │ missing │
+│ 2   │ 2       │ 4     │ missing │
+│ 3   │ 1       │ 3     │ missing │
+│ 4   │ 2       │ 4     │ missing │
+│ 5   │ missing │ 3     │ 5       │
+│ 6   │ missing │ 4     │ 6       │
+```
+"""
+function bindrows(dfs::Array{DataFrame})
+    for i in 2:length(dfs)
+        diffcols = symdiff(names(dfs[1]), names(dfs[i]))
+        if length(diffcols) > 0
+            for c in diffcols
+                if !(c in names(dfs[1]))
+                    dfs[1][c] = Array{Union{Missing,eltype(dfs[i][c])}}(missing, size(dfs[1], 1))
+                    allowmissing!(dfs[i], c)
+                end
+                if !(c in names(dfs[i]))
+                    dfs[i][c] = Array{Union{Missing,eltype(dfs[1][c])}}(missing, size(dfs[i], 1))
+                    allowmissing!(dfs[1], c)
+                end
+            end
+        end
+        orderednames = join([':' * String(names(dfs[1])[x]) for x in 1:size(dfs[1], 2)], ", ")
+        orderednames = Meta.parse('[' * orderednames * ']')
+        dfs[i] = @eval $dfs[$i][$orderednames]
+        append!(dfs[1], dfs[i])
+    end
+    return dfs[1]
+end
+
 Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)

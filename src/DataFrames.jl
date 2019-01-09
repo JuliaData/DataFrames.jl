@@ -25,6 +25,7 @@ export AbstractDataFrame,
 
        allowmissing!,
        aggregate,
+       bindrows,
        by,
        categorical!,
        colwise,
