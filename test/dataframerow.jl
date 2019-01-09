@@ -246,36 +246,47 @@ module TestDataFrameRow
 
     @testset "show" begin
         df = DataFrame(a=nothing, b=1)
-        io = IOBuffer()
-        show(io, DataFrameRow(df, 1, :))
-        @test String(take!(io)) == "DataFrameRow\n│ Row │ a       │ b     │\n│     │ Nothing │ $(Int) │\n" *
-                                   "├─────┼─────────┼───────┤\n│ 1   │         │ 1     │"
+
+        @test sprint(show, DataFrameRow(df, 1, :)) == """
+            DataFrameRow
+            │ Row │ a       │ b     │
+            │     │ Nothing │ $(Int) │
+            ├─────┼─────────┼───────┤
+            │ 1   │         │ 1     │"""
 
 
         df = DataFrame(a=1:3, b=["a", "b", "c"], c=[true,false,true])
         dfr = df[2, 2:3]
 
-        io = IOBuffer()
-        show(io, dfr)
-        @test String(take!(io)) == "DataFrameRow\n│ Row │ b      │ c     │\n│     │" *
-                                   " String │ Bool  │\n├─────┼────────┼───────┤\n│ 2   │ b      │ false │"
+        @test sprint(show, dfr) == """
+            DataFrameRow
+            │ Row │ b      │ c     │
+            │     │ String │ Bool  │
+            ├─────┼────────┼───────┤
+            │ 2   │ b      │ false │"""
 
-        io = IOBuffer()
-        show(io, "text/html", dfr)
-        @test String(take!(io)) == "<p>DataFrameRow</p><table class=\"data-frame\">" *
-                                   "<thead><tr><th></th><th>b</th><th>c</th></tr><tr><th></th><th>String</th><th>Bool</th></tr></thead>" *
-                                   "<tbody><p>1 rows × 2 columns</p><tr><th>2</th><td>b</td><td>false</td></tr></tbody></table>"
+        @test sprint(show, "text/html", dfr) == "<p>DataFrameRow</p><table class=\"data-frame\">" *
+                                   "<thead><tr><th></th><th>b</th><th>c</th></tr>" *
+                                   "<tr><th></th><th>String</th><th>Bool</th></tr></thead>" *
+                                   "<tbody><p>1 rows × 2 columns</p><tr><th>2</th>" *
+                                   "<td>b</td><td>false</td></tr></tbody></table>"
 
-        io = IOBuffer()
-        show(io, "text/latex", dfr)
-        @test String(take!(io)) == "\\begin{tabular}{r|cc}\n\t& b & c\\\\\n\t\\hline\n\t2 & b & false \\\\\n\\end{tabular}\n"
+        @test sprint(show, "text/latex", dfr) == """
+            \\begin{tabular}{r|cc}
+            \t& b & c\\\\
+            \t\\hline
+            \t2 & b & false \\\\
+            \\end{tabular}
+            """
 
-        io = IOBuffer()
-        show(io, "text/csv", dfr)
-        @test String(take!(io)) == "\"b\",\"c\"\n\"b\",false\n"
+        @test sprint(show, "text/csv", dfr) == """
+            \"b\",\"c\"
+            \"b\",false
+            """
 
-        io = IOBuffer()
-        show(io, "text/tab-separated-values", dfr)
-        @test String(take!(io)) == "\"b\"\t\"c\"\n\"b\"\tfalse\n"
+        @test sprint(show, "text/tab-separated-values", dfr) == """
+            \"b\"\t\"c\"
+            \"b\"\tfalse
+            """
     end
 end

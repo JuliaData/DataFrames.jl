@@ -94,7 +94,8 @@ julia> DataFrames.getmaxwidths(df, 1:1, 3:3, :Row)
 function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
-                      rowlabel::Symbol, rowid=nothing) # -> Vector{Int}
+                      rowlabel::Symbol,
+                      rowid=nothing) # -> Vector{Int}
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(Base.undef_ref_str)
@@ -256,7 +257,7 @@ required for printing have been precomputed.
   required to render each column.
 - `leftcol::Int`: The index of the first column in a chunk to be rendered.
 - `rightcol::Int`: The index of the last column in a chunk to be rendered.
-- `rowid`: Used internally to handle showing `DataFrameRow`
+- `rowid`: Used to handle showing `DataFrameRow`.
 
 # Examples
 ```jldoctest
@@ -479,7 +480,8 @@ function showrows(io::IO,
                        rowindices1,
                        maxwidths,
                        leftcol,
-                       rightcol, rowid)
+                       rightcol,
+                       rowid)
 
         if !isempty(rowindices2)
             print(io, "\n⋮\n")
@@ -488,7 +490,8 @@ function showrows(io::IO,
                            rowindices2,
                            maxwidths,
                            leftcol,
-                           rightcol, rowid)
+                           rightcol,
+                           rowid)
         end
 
         # Print newlines to separate chunks
@@ -506,7 +509,8 @@ function _show(io::IO,
                allcols::Bool = !get(io, :limit, false),
                splitcols = get(io, :limit, false),
                rowlabel::Symbol = :Row,
-               summary::Bool = true, rowid=nothing)
+               summary::Bool = true,
+               rowid=nothing)
     nrows = size(df, 1)
     if !(rowid isa Nothing)
         nrows == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
@@ -589,22 +593,21 @@ julia> show(df, allcols=true)
 ```
 """
 Base.show(io::IO,
-                   df::AbstractDataFrame;
-                   allrows::Bool = !get(io, :limit, false),
-                   allcols::Bool = !get(io, :limit, false),
-                   splitcols = get(io, :limit, false),
-                   rowlabel::Symbol = :Row,
-                   summary::Bool = true) =
+          df::AbstractDataFrame;
+          allrows::Bool = !get(io, :limit, false),
+          allcols::Bool = !get(io, :limit, false),
+          splitcols = get(io, :limit, false),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
     _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
           rowlabel=rowlabel, summary=summary)
 
-function Base.show(df::AbstractDataFrame;
-                   allrows::Bool = !get(stdout, :limit, true),
-                   allcols::Bool = !get(stdout, :limit, true),
-                   splitcols = get(stdout, :limit, true),
-                   rowlabel::Symbol = :Row,
-                   summary::Bool = true)
-    return show(stdout, df,
-                allrows=allrows, allcols=allcols, splitcols=splitcols,
-                rowlabel=rowlabel, summary=summary)
-end
+Base.show(df::AbstractDataFrame;
+          allrows::Bool = !get(stdout, :limit, true),
+          allcols::Bool = !get(stdout, :limit, true),
+          splitcols = get(stdout, :limit, true),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
+    show(stdout, df,
+         allrows=allrows, allcols=allcols, splitcols=splitcols,
+         rowlabel=rowlabel, summary=summary)
