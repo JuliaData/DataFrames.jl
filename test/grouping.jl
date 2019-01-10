@@ -643,7 +643,10 @@ module TestGrouping
         for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
             gd = groupby(df, :a)
 
-            @test combine(gd, y = :x1 => f) ≅ combine(gd, y = :x1 => x -> f(x))
+            res = combine(gd, y = :x1 => f)
+            expected = combine(gd, y = :x1 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
 
             for T in (Union{Missing, Int}, Union{Int, Int8},
                       Union{Missing, Int, Int8})
@@ -703,6 +706,32 @@ module TestGrouping
         end
         @test combine(gd, y = :x1 => maximum, z = :x2 => sum) ==
             combine(gd, y = :x1 => x -> maximum(x), z = :x2 => x -> sum(x))
+        # Test floating point corner cases
+        df = DataFrame(a = [1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6],
+                       x1 = [0.0, 1.0, 2.0, NaN, NaN, NaN, Inf, Inf, Inf, 1.0, NaN, 0.0, -0.0])
+
+        for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
+            gd = groupby(df, :a)
+
+            res = combine(gd, y = :x1 => f)
+            expected = combine(gd, y = :x1 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+
+            f === length && continue
+
+            df.x3 = allowmissing(df.x1)
+            df.x3[1] = missing
+            gd = groupby(df, :a)
+            res = combine(gd, y = :x3 => f)
+            expected = combine(gd, y = :x3 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+            res = combine(gd, y = :x3 => f∘skipmissing)
+            expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+        end
 
         df = DataFrame(x = [1, 1, 2, 2], y = Any[1, 2.0, 3.0, 4.0])
         res = by(df, :x, z = :y => maximum)
