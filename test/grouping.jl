@@ -216,10 +216,13 @@ module TestGrouping
             @test vcat(v[1], v[2], v[3], v[4]) == by(f8, df, cols, sort=sort)
         end
 
-        # testing pool overflow
-        df2 = DataFrame(v1 = categorical(collect(1:1000)), v2 = categorical(fill(1, 1000)))
-        @test groupby(df2, [:v1, :v2]).starts == collect(1:1000)
-        @test groupby(df2, [:v2, :v1]).starts == collect(1:1000)
+        # test number of potential combinations higher than typemax(Int32)
+        N = 2000
+        df2 = DataFrame(v1 = levels!(categorical(rand(1:N, 100)), collect(1:N)),
+                        v2 = levels!(categorical(rand(1:N, 100)), collect(1:N)),
+                        v3 = levels!(categorical(rand(1:N, 100)), collect(1:N)))
+        df2b = mapcols(x -> convert(Vector{Int}, x), df2)
+        @test groupby(df2, [:v1, :v2, :v3]) == groupby(df2b, [:v1, :v2, :v3])
 
         # grouping empty table
         @test groupby(DataFrame(A=Int[]), :A).starts == Int[]
@@ -236,44 +239,44 @@ module TestGrouping
         @test sum(df2[:x]) == 0
 
         # Check that reordering levels does not confuse groupby
-        df = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B"]),
-                       Key2 = CategoricalArray(["A", "B", "A", "B"]),
-                       Value = 1:4)
+        df = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B", "B", "A"]),
+                       Key2 = CategoricalArray(["A", "B", "A", "B", "B", "A"]),
+                       Value = 1:6)
         gd = groupby(df, :Key1)
         @test length(gd) == 2
-        @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2)
-        @test gd[2] == DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4)
+        @test gd[1] == DataFrame(Key1="A", Key2=["A", "B", "A"], Value=[1, 2, 6])
+        @test gd[2] == DataFrame(Key1="B", Key2=["A", "B", "B"], Value=[3, 4, 5])
         gd = groupby(df, [:Key1, :Key2])
         @test length(gd) == 4
-        @test gd[1] == DataFrame(Key1="A", Key2="A", Value=1)
+        @test gd[1] == DataFrame(Key1="A", Key2="A", Value=[1, 6])
         @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
         @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-        @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
+        @test gd[4] == DataFrame(Key1="B", Key2="B", Value=[4, 5])
         # Reorder levels, add unused level
         levels!(df[:Key1], ["Z", "B", "A"])
         levels!(df[:Key2], ["Z", "B", "A"])
         gd = groupby(df, :Key1)
         @test gd == groupby(df, :Key1, skipmissing=true)
         @test length(gd) == 2
-        @test gd[1] == DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4)
-        @test gd[2] == DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2)
+        @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "B"], Value=[3, 4, 5])
+        @test gd[2] == DataFrame(Key1="A", Key2=["A", "B", "A"], Value=[1, 2, 6])
         gd = groupby(df, [:Key1, :Key2])
         @test gd == groupby(df, [:Key1, :Key2], skipmissing=true)
         @test length(gd) == 4
-        @test gd[1] == DataFrame(Key1="A", Key2="A", Value=1)
-        @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
-        @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-        @test gd[4] == DataFrame(Key1="B", Key2="B", Value=4)
+        @test gd[1] == DataFrame(Key1="B", Key2="B", Value=[4, 5])
+        @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
+        @test gd[3] == DataFrame(Key1="A", Key2="B", Value=2)
+        @test gd[4] == DataFrame(Key1="A", Key2="A", Value=[1, 6])
         # Make first level unused too
-        df.Key1[1:2] .= "B"
+        replace!(df.Key1, "A"=>"B")
         gd = groupby(df, :Key1)
         @test length(gd) == 1
-        @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "A", "B"], Value=1:4)
+        @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "A", "B", "B", "A"], Value=1:6)
         gd = groupby(df, [:Key1, :Key2])
         @test gd == groupby(df, [:Key1, :Key2])
         @test length(gd) == 2
-        @test gd[1] == DataFrame(Key1="B", Key2="A", Value=[1, 3])
-        @test gd[2] == DataFrame(Key1="B", Key2="B", Value=[2, 4])
+        @test gd[1] == DataFrame(Key1="B", Key2="B", Value=[2, 4, 5])
+        @test gd[2] == DataFrame(Key1="B", Key2="A", Value=[1, 3, 6])
 
         # Check that CategoricalArray column is preserved when returning a value...
         res = combine(d -> DataFrame(x=d[1, :Key2]), groupby(df, :Key1))
@@ -384,88 +387,128 @@ module TestGrouping
         @test res.parent == DataFrame(x=[])
     end
 
-    @testset "grouping with missings" for df in
-        (DataFrame(Key1 = ["A", missing, "B", "B", "A"],
-                   Key2 = ["B", "A", "A", missing, "A"],
-                   Value = 1:5),
-         DataFrame(Key1 = categorical(["A", missing, "B", "B", "A"]),
-                   Key2 = ["B", "A", "A", missing, "A"],
-                   Value = 1:5),
-         DataFrame(Key1 = ["A", missing, "B", "B", "A"],
-                   Key2 = categorical(["B", "A", "A", missing, "A"]),
-                   Value = 1:5),
-         DataFrame(Key1 = ["A", missing, "B", "B", "A"],
-                   Key2 = levels!(categorical(["B", "A", "A", missing, "A"]), ["X", "A", "B"]),
-                   Value = 1:5),
-         DataFrame(Key1 = ["A", missing, "B", "B", "A"],
-                   Key2 = levels!(categorical(["B", "A", "A", missing, "A"]), ["A", "B", "X"]),
-                   Value = 1:5),
-         DataFrame(Key1 = categorical(["A", missing, "B", "B", "A"]),
-                   Key2 = categorical(["B", "A", "A", missing, "A"]),
-                   Value = 1:5))
+    xv = ["A", missing, "B", "B", "A", "B", "A", "A"]
+    yv = ["B", "A", "A", missing, "A", missing, "A", "A"]
+    @testset "grouping with missings" for x in (xv,
+                                                categorical(xv),
+                                                levels!(categorical(xv), ["A", "B", "X"]),
+                                                levels!(categorical(xv), ["X", "A", "B"])),
+                                          y in (yv,
+                                                categorical(yv),
+                                                levels!(categorical(yv), ["A", "B", "X"]),
+                                                levels!(categorical(yv), ["X", "A", "B"]))
+        df = DataFrame(Key1 = x, Key2 = y, Value = 1:8)
 
         @testset "sort=false, skipmissing=false" begin
             gd = groupby(df, :Key1)
             @test length(gd) == 3
             if df.Key1 isa CategoricalVector # Order of missing changes
-                @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-                @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
+                @test gd[1] == DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8])
+                @test gd[2] ≅ DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
                 @test gd[3] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
             else
-                @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
+                @test gd[1] == DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8])
                 @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
-                @test gd[3] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
+                @test gd[3] ≅ DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
             end
 
             gd = groupby(df, [:Key1, :Key2])
             @test length(gd) == 5
-            @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
-            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=4)
-            @test gd[5] ≅ DataFrame(Key1="A", Key2="A", Value=5)
+            if df.Key1 isa CategoricalVector && df.Key2 isa CategoricalVector
+                @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
+                @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
+                @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+                @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=[4, 6])
+                @test gd[5] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
+            else
+                @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
+                @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
+                @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+                @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=[4, 6])
+                @test gd[5] ≅ DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
+            end
         end
 
         @testset "sort=false, skipmissing=true" begin
             gd = groupby(df, :Key1, skipmissing=true)
             @test length(gd) == 2
-            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
+            @test gd[1] == DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8])
+            @test gd[2] ≅ DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
 
             gd = groupby(df, [:Key1, :Key2], skipmissing=true)
             @test length(gd) == 3
-            @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gd[3] == DataFrame(Key1="A", Key2="A", Value=5)
+            if df.Key1 isa CategoricalVector && df.Key2 isa CategoricalVector
+                @test gd[1] == DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
+                @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
+                @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+            else
+                @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
+                @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
+                @test gd[3] == DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
+            end
         end
 
         @testset "sort=true, skipmissing=false" begin
             gd = groupby(df, :Key1, sort=true)
             @test length(gd) == 3
-            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
+            @test gd[1] == DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8])
+            @test gd[2] ≅ DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
             @test gd[3] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
 
             gd = groupby(df, [:Key1, :Key2], sort=true)
             @test length(gd) == 5
-            @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=5)
+            @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
             @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
             @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=4)
+            @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=[4, 6])
             @test gd[5] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
         end
 
         @testset "sort=true, skipmissing=true" begin
             gd = groupby(df, :Key1, sort=true, skipmissing=true)
             @test length(gd) == 2
-            @test gd[1] == DataFrame(Key1=["A", "A"], Key2=["B", "A"], Value=[1, 5])
-            @test gd[2] ≅ DataFrame(Key1=["B", "B"], Key2=["A", missing], Value=3:4)
+            @test gd[1] == DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8])
+            @test gd[2] ≅ DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
 
             gd = groupby(df, [:Key1, :Key2], sort=true, skipmissing=true)
             @test length(gd) == 3
-            @test gd[1] == DataFrame(Key1="A", Key2="A", Value=5)
+            @test gd[1] == DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
             @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
             @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+        end
+    end
+
+    # We need many rows so that optimized CategoricalArray method is used
+    xv = rand(["A", "B", missing], 100)
+    yv = rand(["A", "B", missing], 100)
+    zv = rand(["A", "B", missing], 100)
+    @testset "grouping with three keys" for x in (xv,
+                                                  categorical(xv),
+                                                  levels!(categorical(xv), ["A", "B", "X"]),
+                                                  levels!(categorical(xv), ["X", "A", "B"])),
+                                            y in (yv,
+                                                  categorical(yv),
+                                                  levels!(categorical(yv), ["A", "B", "X"]),
+                                                  levels!(categorical(yv), ["X", "A", "B"])),
+                                            z in (zv,
+                                                  categorical(zv),
+                                                  levels!(categorical(zv), ["A", "B", "X"]),
+                                                  levels!(categorical(zv), ["X", "A", "B"]))
+        df = DataFrame(Key1 = x, Key2 = y, Key3 = z, Value = 1:100)
+        dfb = mapcols(x -> convert(Vector{Union{Missings.T(eltype(x)), Missing}}, x), df)
+
+        @test groupby(df, [:Key1, :Key2, :Key3], sort=true) ≅
+            groupby(dfb, [:Key1, :Key2, :Key3], sort=true)
+        @test groupby(df, [:Key1, :Key2, :Key3], sort=true, skipmissing=true) ==
+            groupby(dfb, [:Key1, :Key2, :Key3], sort=true, skipmissing=true)
+
+        if df.Key1 isa CategoricalVector &&
+           df.Key2 isa CategoricalVector &&
+           df.Key3 isa CategoricalVector
+            @test groupby(df, [:Key1, :Key2, :Key3], sort=true) ≅
+                groupby(df, [:Key1, :Key2, :Key3], sort=false)
+            @test groupby(df, [:Key1, :Key2, :Key3], sort=true, skipmissing=true) ==
+                groupby(df, [:Key1, :Key2, :Key3], sort=false, skipmissing=true)
         end
     end
 
