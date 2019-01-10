@@ -78,6 +78,19 @@ function hashrows(cols::Tuple{Vararg{AbstractVector}}, skipmissing::Bool)
     return (rhashes, missings)
 end
 
+# table columns are passed as a tuple of vectors to ensure type specialization
+isequal_row(cols::Tuple{AbstractVector}, r1::Int, r2::Int) =
+    isequal(cols[1][r1], cols[1][r2])
+isequal_row(cols::Tuple{Vararg{AbstractVector}}, r1::Int, r2::Int) =
+    isequal(cols[1][r1], cols[1][r2]) && isequal_row(Base.tail(cols), r1, r2)
+
+isequal_row(cols1::Tuple{AbstractVector}, r1::Int, cols2::Tuple{AbstractVector}, r2::Int) =
+    isequal(cols1[1][r1], cols2[1][r2])
+isequal_row(cols1::Tuple{Vararg{AbstractVector}}, r1::Int,
+            cols2::Tuple{Vararg{AbstractVector}}, r2::Int) =
+    isequal(cols1[1][r1], cols2[1][r2]) &&
+        isequal_row(Base.tail(cols1), r1, Base.tail(cols2), r2)
+
 # Helper function for RowGroupDict.
 # Returns a tuple:
 # 1) the highest group index in the `groups` vector

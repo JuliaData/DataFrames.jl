@@ -13,8 +13,8 @@ module TestDeprecated
     sort!(df; cols=[:b, :a])
     @test df == DataFrame(a=[2, 3, 1], b=[4, 5, 6])
 
-    @test first.(collect(pairs(DataFrameRow(df, 1)))) == [:a, :b]
-    @test last.(collect(pairs(DataFrameRow(df, 1)))) == [df[1, 1], df[1, 2]]
+    @test first.(collect(pairs(DataFrameRow(df, 1, :)))) == [:a, :b]
+    @test last.(collect(pairs(DataFrameRow(df, 1, :)))) == [df[1, 1], df[1, 2]]
 
     @testset "identifier" begin
         @test identifier("%_B*_\tC*") == :_B_C_

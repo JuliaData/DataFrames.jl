@@ -3,6 +3,8 @@
 # through cleanly.
 abstract type AbstractIndex end
 
+const ColumnIndex = Union{Signed, Unsigned, Symbol}
+
 struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     lookup::Dict{Symbol, Int}      # name => names array position
     names::Vector{Symbol}
@@ -19,9 +21,9 @@ Base.names(x::Index) = copy(x.names)
 _names(x::Index) = x.names
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
-Base.isequal(x::Index, y::Index) = isequal(x.lookup, y.lookup) && isequal(x.names, y.names)
-# Imported in DataFrames.jl for compatibility across Julia 0.4 and 0.5
-Base.:(==)(x::Index, y::Index) = isequal(x, y)
+Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it is enough to check names
+Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
+
 
 function names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false)
     if !makeunique
@@ -88,7 +90,7 @@ function Base.push!(x::Index, nm::Symbol)
     return x
 end
 
-function Base.merge!(x::Index, y::Index; makeunique::Bool=false)
+function Base.merge!(x::Index, y::AbstractIndex; makeunique::Bool=false)
     adds = add_names(x, y, makeunique=makeunique)
     i = length(x)
     for add in adds
@@ -99,7 +101,7 @@ function Base.merge!(x::Index, y::Index; makeunique::Bool=false)
     return x
 end
 
-Base.merge(x::Index, y::Index; makeunique::Bool=false) =
+Base.merge(x::Index, y::AbstractIndex; makeunique::Bool=false) =
     merge!(copy(x), y, makeunique=makeunique)
 
 function Base.delete!(x::Index, idx::Integer)
@@ -136,30 +138,31 @@ function Base.insert!(x::Index, idx::Integer, nm::Symbol)
     x
 end
 
-Base.getindex(x::AbstractIndex, idx::Symbol) = x.lookup[idx]
-Base.getindex(x::AbstractIndex, idx::Bool) = throw(ArgumentError("invalid index: $idx of type Bool"))
-Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
+@inline Base.getindex(x::AbstractIndex, idx::Bool) = throw(ArgumentError("invalid index: $idx of type Bool"))
+@inline Base.getindex(x::AbstractIndex, idx::Integer) = Int(idx)
+@inline Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
+@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
+@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
+@inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+@inline Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
+@inline Base.getindex(x::Index, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
 
-Base.getindex(x::AbstractIndex, idx::AbstractVector{Int}) = idx
-Base.getindex(x::AbstractIndex, idx::AbstractRange{Int}) = idx
-Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
-function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
+@inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
         throw(ArgumentError("Bool values except for AbstractVector{Bool} are not allowed for column indexing"))
     end
     Vector{Int}(idx)
 end
 
-Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool}) = getindex(x, collect(idx))
-function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
+@inline Base.getindex(x::AbstractIndex, idx::AbstractRange{Bool}) = getindex(x, collect(idx))
+@inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{Bool})
     length(x) == length(idx) || throw(BoundsError(x, idx))
     findall(idx)
 end
 
 # catch all method handling cases when type of idx is not narrowest possible, Any in particular
-function Base.getindex(x::DataFrames.AbstractIndex, idxs::AbstractVector)
+@inline function Base.getindex(x::AbstractIndex, idxs::AbstractVector)
     length(idxs) == 0 && return Int[] # special case of empty idxs
     if idxs[1] isa Real
         if !all(v -> v isa Integer && !(v isa Bool), idxs)
@@ -174,7 +177,7 @@ end
 
 # Helpers
 
-function add_names(ind::Index, add_ind::Index; makeunique::Bool=false)
+function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
     u = names(add_ind)
 
     seen = Set(_names(ind))
@@ -208,3 +211,101 @@ function add_names(ind::Index, add_ind::Index; makeunique::Bool=false)
 
     return u
 end
+
+@inline parentcols(ind::Index) = Base.OneTo(length(ind))
+@inline parentcols(ind::Index, cols) = cols
+
+### SubIndex of Index. Used by SubDataFrame, DataFrameRow, and DataFrameRows
+
+struct SubIndex{I<:AbstractIndex,S<:AbstractVector{Int},T<:AbstractVector{Int}} <: AbstractIndex
+    parent::I
+    cols::S # columns from idx selected in SubIndex
+    remap::T # reverse mapping from cols to their position in the SubIndex
+end
+
+SubIndex(parent::AbstractIndex, ::Colon) = parent
+
+@inline parentcols(ind::SubIndex) = ind.cols
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Union{Integer,AbstractVector{<:Integer}}) =
+    ind.cols[idx]
+
+Base.@propagate_inbounds function parentcols(ind::SubIndex, idx::Symbol)
+    parentcol = ind.parent[idx]
+    @boundscheck begin
+        remap = ind.remap
+        length(remap) == 0 && lazyremap!(ind)
+        remap[parentcol] == 0 && throw(KeyError("$idx not found"))
+    end
+    return parentcol
+end
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractVector{Symbol}) =
+    [parentcols(ind, i) for i in idx]
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, ::Colon) = ind.cols
+
+Base.@propagate_inbounds function SubIndex(parent::AbstractIndex, cols::AbstractUnitRange{Int})
+    l = last(cols)
+    f = first(cols)
+    @boundscheck if !checkindex(Bool, Base.OneTo(length(parent)), cols)
+        throw(BoundsError("invalid columns $cols selected"))
+    end
+    remap = (1:l) .- f .+ 1
+    SubIndex(parent, cols, remap)
+end
+
+Base.@propagate_inbounds function SubIndex(parent::AbstractIndex, cols::AbstractVector{Int})
+    ncols = length(parent)
+    @boundscheck if !all(x -> 0 < x ≤ ncols, cols)
+        throw(BoundsError("invalid columns $cols selected"))
+    end
+    remap = Int[]
+    SubIndex(parent, cols, remap)
+end
+
+@inline SubIndex(parent::AbstractIndex, cols::ColumnIndex) =
+    throw(ArgumentError("cols argument must be a vector (got $cols)"))
+
+Base.@propagate_inbounds SubIndex(parent::AbstractIndex, cols) =
+    SubIndex(parent, parent[cols])
+
+# a helper function that lazily creates remap when needed
+function lazyremap!(x::SubIndex)
+    remap = x.remap
+    remap isa AbstractUnitRange{Int} && return remap
+    if length(remap) == 0
+        resize!(remap, length(x.parent))
+        # we set non-existing mappings to 0
+        fill!(remap, 0)
+        for (i, col) in enumerate(x.cols)
+            remap[col] = i
+        end
+    end
+    remap
+end
+
+Base.length(x::SubIndex) = length(x.cols)
+Base.names(x::SubIndex) = copy(_names(x))
+_names(x::SubIndex) = view(_names(x.parent), x.cols)
+
+function Base.haskey(x::SubIndex, key::Symbol)
+    haskey(x.parent, key) || return false
+    pos = x.parent[key]
+    remap = x.remap
+    length(remap) == 0 && lazyremap!(x)
+    checkbounds(Bool, remap, pos) || return false
+    remap[pos] > 0
+end
+
+Base.haskey(x::SubIndex, key::Integer) = 1 <= key <= length(x)
+Base.haskey(x::SubIndex, key::Bool) =
+    throw(ArgumentError("invalid key: $key of type Bool"))
+Base.keys(x::SubIndex) = names(x)
+
+function Base.getindex(x::SubIndex, idx::Symbol)
+    remap = x.remap
+    length(remap) == 0 && lazyremap!(x)
+    remap[x.parent[idx]]
+end
+Base.getindex(x::SubIndex, idx::AbstractVector{Symbol}) = [x[i] for i in idx]
