@@ -587,9 +587,9 @@ module TestGrouping
                     f(d -> (xyz=sum(d.b) + sum(d.c),), gd)
                 if eltype(cols) === Bool
                     cols2 = [[false, true, false], [false, false, true]]
-                    @test_throws ArgumentError f((xyz = cols[1] => sum, xzz = cols2[2] => sum), gd)
-                    @test_throws ArgumentError f((xyz = cols[1] => sum, xzz = cols2[1] => sum), gd)
-                    @test_throws ArgumentError f((xyz = cols[1] => sum, xzz = cols2[2] => x -> first(x)), gd)
+                    @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[2] => sum), gd)
+                    @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[1] => sum), gd)
+                    @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[2] => x -> first(x)), gd)
                 else
                     cols2 = cols
                     @test f((xyz = cols2[1] => sum, xzz = cols2[2] => sum), gd) ==
