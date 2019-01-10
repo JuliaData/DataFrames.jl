@@ -9,6 +9,6 @@ DataStreams 0.3.0
 CodecZlib 0.4
 TranscodingStreams
 Compat 0.59.0
-Tables
+Tables 0.1.14
 IteratorInterfaceExtensions 0.1.1
 TableTraits 0.4.0
