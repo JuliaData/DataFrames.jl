@@ -95,10 +95,11 @@ end
 Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true) =
     _show(io, mime, df, summary=summary)
 
-function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
+function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
+               summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
     n = size(df, 1)
-    if rowid !== nothing
-        n == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    if rowid !== nothing && n != 1
+        throw(ArgumentError("rowid may be passed only with a single row data frame"))
     end
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
@@ -130,7 +131,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=t
     end
     for row in 1:mxrow
         write(io, "<tr>")
-        if rowid isa Nothing
+        if rowid === nothing
             write(io, "<th>$row</th>")
         else
             write(io, "<th>$rowid</th>")
@@ -225,8 +226,8 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     nrows = size(df, 1)
     ncols = size(df, 2)
 
-    if !(rowid isa Nothing)
-        nrows == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    if rowid !== nothing && nrows != 1
+        throw(ArgumentError("rowid may be passed only with a single row data frame"))
     end
 
     haslimit = get(io, :limit, true)
@@ -249,7 +250,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     write(io, "\t\\hline\n")
     for row in 1:mxrow
         write(io, "\t")
-        write(io, @sprintf("%d", rowid isa Nothing ? row : rowid))
+        write(io, @sprintf("%d", rowid === nothing ? row : rowid))
         for col in 1:ncols
             write(io, " & ")
             cell = isassigned(df[col], row) ? df[row,col] : Base.undef_ref_str
@@ -290,7 +291,8 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         nrows = size(gd[1], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [latex_escape(':' * string(parent_names[col], " = ", first(gd[1][col])))
+        identified_groups = [latex_escape(':' * string(parent_names[col], " = ",
+                                                       first(gd[1][col])))
                              for col in gd.cols]
 
         write(io, "First Group ($nrows $rows): ")
@@ -302,7 +304,8 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         nrows = size(gd[N], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [latex_escape(':' * string(parent_names[col], " = ", first(gd[N][col])))
+        identified_groups = [latex_escape(':' * string(parent_names[col], " = ",
+                                                       first(gd[N][col])))
                              for col in gd.cols]
 
         write(io, "\n\$\\dots\$\n\n")
@@ -374,7 +377,8 @@ Data.streamtypes(::Type{DataFrame}) = [Data.Column, Data.Field]
 Data.weakrefstrings(::Type{DataFrame}) = true
 
 allocate(::Type{T}, rows, ref) where {T} = Vector{T}(undef, rows)
-allocate(::Type{CategoricalString{R}}, rows, ref) where {R} = CategoricalArray{String, 1, R}(undef, rows)
+allocate(::Type{CategoricalString{R}}, rows, ref) where {R} =
+    CategoricalArray{String, 1, R}(undef, rows)
 allocate(::Type{Union{CategoricalString{R}, Missing}}, rows, ref) where {R} =
     CategoricalArray{Union{String, Missing}, 1, R}(undef, rows)
 allocate(::Type{CategoricalValue{T, R}}, rows, ref) where {T, R} =
