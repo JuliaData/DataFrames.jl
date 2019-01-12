@@ -143,3 +143,7 @@ function without(df::SubDataFrame, icols::Vector{<:Integer})
 end
 deleterows!(df::SubDataFrame, ind) =
     throw(ArgumentError("SubDataFrame does not support deleting rows"))
+
+DataFrame(sdf::SubDataFrame) = sdf[:, :]
+
+Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = DataFrame(sdf)

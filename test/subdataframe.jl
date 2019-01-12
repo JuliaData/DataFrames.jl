@@ -196,4 +196,17 @@ module TestSubDataFrame
         @test df.x3[3] == 333
         @test_throws KeyError sdf.x1
     end
+
+    @testset "conversion to DataFrame" begin
+        df = DataFrame([11:16 21:26 31:36 41:46])
+        sdf = view(df, [3,1,4], [3,2,1])
+        df2 = DataFrame(sdf)
+        @test df2 isa DataFrame
+        @test df2 == df[[3,1,4], [3,2,1]]
+        @test all(x -> x isa Vector{Int}, eachcol(df2, false))
+        df2 = convert(DataFrame, sdf)
+        @test df2 isa DataFrame
+        @test df2 == df[[3,1,4], [3,2,1]]
+        @test all(x -> x isa Vector{Int}, eachcol(df2, false))
+    end
 end
