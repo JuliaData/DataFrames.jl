@@ -744,34 +744,42 @@ module TestGrouping
         str2 = String(take!(io.io))
         @test str1 == str2
 
-        io = IOBuffer()
-        show(io, "text/html", gd)
-        @test String(take!(io)) == "<p><b>GroupedDataFrame with 4 groups based on key: :A</b></p>" *
-                                   "<p><i>First Group (1 row): :A = 1</i></p><table class=\"data-frame\">" *
-                                   "<thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr><tr><th></th>" *
-                                   "<th>Int64</th><th>String</th><th>Float32</th></tr></thead>" *
-                                   "<tbody><tr><th>1</th><td>1</td><td>x\"</td><td>1.0</td></tr></tbody>" *
-                                   "</table><p>&vellip;</p><p><i>Last Group (1 row): :A = 4</i></p>" *
-                                   "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr>" *
-                                   "<tr><th></th><th>Int64</th><th>String</th><th>Float32</th></tr></thead>" *
-                                   "<tbody><tr><th>1</th><td>4</td><td>A\\nC</td><td>4.0</td></tr></tbody></table>"
 
-        io = IOBuffer()
-        show(io, "text/latex", gd)
-        @test String(take!(io)) == "GroupedDataFrame with 4 groups based on key: :A\n\n" *
-                                   "First Group (1 row): :A = 1\n\n" *
-                                   "\\begin{tabular}{r|ccc}\n" *
-                                   "\t& A & B & C\\\\\n" *
-                                   "\t\\hline\n" *
-                                   "\t1 & 1 & x\" & 1.0 \\\\\n" *
-                                   "\\end{tabular}\n\n" *
-                                   "\$\\dots\$\n\n" *
-                                   "Last Group (1 row): :A = 4\n\n" *
-                                   "\\begin{tabular}{r|ccc}\n" *
-                                   "\t& A & B & C\\\\\n" *
-                                   "\t\\hline\n" *
-                                   "\t1 & 4 & A\\textbackslash{}nC & 4.0 \\\\\n" *
-                                   "\\end{tabular}\n"
+        @test sprint(show, "text/html", gd) ==
+            "<p><b>GroupedDataFrame with 4 groups based on key: :A</b></p>" *
+            "<p><i>First Group (1 row): :A = 1</i></p><table class=\"data-frame\">" *
+            "<thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr><tr><th></th>" *
+            "<th>Int64</th><th>String</th><th>Float32</th></tr></thead>" *
+            "<tbody><tr><th>1</th><td>1</td><td>x\"</td><td>1.0</td></tr></tbody>" *
+            "</table><p>&vellip;</p><p><i>Last Group (1 row): :A = 4</i></p>" *
+            "<table class=\"data-frame\"><thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr>" *
+            "<tr><th></th><th>Int64</th><th>String</th><th>Float32</th></tr></thead>" *
+            "<tbody><tr><th>1</th><td>4</td><td>A\\nC</td><td>4.0</td></tr></tbody></table>"
 
+        @test sprint(show, "text/latex", gd) == """
+            GroupedDataFrame with 4 groups based on key: :A
+
+            First Group (1 row): :A = 1
+
+            \\begin{tabular}{r|ccc}
+            \t& A & B & C\\\\
+            \t\\hline
+            \t& Int64 & String & Float32\\\\
+            \t\\hline
+            \t1 & 1 & x" & 1.0 \\\\
+            \\end{tabular}
+
+            \$\\dots\$
+
+            Last Group (1 row): :A = 4
+
+            \\begin{tabular}{r|ccc}
+            \t& A & B & C\\\\
+            \t\\hline
+            \t& Int64 & String & Float32\\\\
+            \t\\hline
+            \t1 & 4 & A\\textbackslash{}nC & 4.0 \\\\
+            \\end{tabular}
+            """
     end
 end

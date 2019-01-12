@@ -255,38 +255,40 @@ module TestDataFrameRow
             │ 1   │         │ 1     │"""
 
 
-        df = DataFrame(a=1:3, b=["a", "b", "c"], c=[true,false,true])
+        df = DataFrame(a=1:3, b=["a", "b", "c"], c=Int64[1,0,1])
         dfr = df[2, 2:3]
 
         @test sprint(show, dfr) == """
             DataFrameRow
             │ Row │ b      │ c     │
-            │     │ String │ Bool  │
+            │     │ String │ Int64 │
             ├─────┼────────┼───────┤
-            │ 2   │ b      │ false │"""
+            │ 2   │ b      │ 0     │"""
 
         @test sprint(show, "text/html", dfr) == "<p>DataFrameRow</p><table class=\"data-frame\">" *
                                    "<thead><tr><th></th><th>b</th><th>c</th></tr>" *
                                    "<tr><th></th><th>String</th><th>Bool</th></tr></thead>" *
                                    "<tbody><p>1 rows × 2 columns</p><tr><th>2</th>" *
-                                   "<td>b</td><td>false</td></tr></tbody></table>"
+                                   "<td>b</td><td>0</td></tr></tbody></table>"
 
         @test sprint(show, "text/latex", dfr) == """
             \\begin{tabular}{r|cc}
             \t& b & c\\\\
             \t\\hline
-            \t2 & b & false \\\\
+            \t& String & Int64\\\\
+            \t\\hline
+            \t2 & b & 0 \\\\
             \\end{tabular}
             """
 
         @test sprint(show, "text/csv", dfr) == """
             \"b\",\"c\"
-            \"b\",false
+            \"b\",0
             """
 
         @test sprint(show, "text/tab-separated-values", dfr) == """
             \"b\"\t\"c\"
-            \"b\"\tfalse
+            \"b\"\t0
             """
     end
 end
