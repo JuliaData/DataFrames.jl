@@ -363,7 +363,7 @@ NOTE: The value of `maxwidths[end]` must be the string width of
 - `displaysummary::Bool`: Should a brief string summary of the
   AbstractDataFrame be rendered to the I/O stream before printing the
   contents of the renderable rows? Defaults to `true`.
-- `rowid = nothing`: Used internally to handle showing `DataFrameRow`
+- `rowid = nothing`: Used to handle showing `DataFrameRow`
 
 # Examples
 julia> using DataFrames
