@@ -32,7 +32,30 @@ julia&gt; collect(skipmissing(x))
  1
  2
  0
-</code></pre><p>The <a href="https://github.com/JuliaData/Missings.jl">Missings.jl</a> package provides a few convenience functions to work with missing values.</p><p>The function <code>Missings.replace</code> returns an iterator which replaces <code>missing</code> elements with another value:</p><pre><code class="language-julia-repl">julia&gt; using Missings
+</code></pre><p>The functions <code>dropmissing</code> and <code>dropmissing!</code> can be used to remove the rows containing <code>missing</code> values from a <code>DataFrame</code> and either create a new <code>DataFrame</code> or mutate the original in-place respectively.</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(i = 1:5,
+                      x = [missing, 4, missing, 2, 1],
+                      y = [missing, missing, &quot;c&quot;, &quot;d&quot;, &quot;e&quot;])
+
+julia&gt; dropmissing(df)
+2×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 4     │ 2      │ d       │
+│ 2   │ 5     │ 1      │ e       │</code></pre><p>One can specify the column(s) in which to search for rows containing <code>missing</code> values to be removed.</p><pre><code class="language-julia-repl">julia&gt; dropmissing(df, :x)
+3×3 DataFrame
+│ Row │ i     │ x      │ y       │
+│     │ Int64 │ Int64⍰ │ String⍰ │
+├─────┼───────┼────────┼─────────┤
+│ 1   │ 2     │ 4      │ missing │
+│ 2   │ 4     │ 2      │ d       │
+│ 3   │ 5     │ 1      │ e       │</code></pre><p>By default the <code>dropmissing</code> and <code>dropmissing!</code> functions keep the <code>Union{T,Missing}</code> element type in columns selected for row removal. To remove the <code>Missing</code> part, if present, set the <code>disallowmissing</code> option to <code>true</code> (it will become the default behavior in the future).</p><pre><code class="language-julia-repl">julia&gt; dropmissing(df, disallowmissing=true)
+2×3 DataFrame
+│ Row │ i     │ x     │ y      │
+│     │ Int64 │ Int64 │ String │
+├─────┼───────┼───────┼────────┤
+│ 1   │ 4     │ 2     │ d      │
+│ 2   │ 5     │ 1     │ e      │</code></pre><p>The <a href="https://github.com/JuliaData/Missings.jl">Missings.jl</a> package provides a few convenience functions to work with missing values.</p><p>The function <code>Missings.replace</code> returns an iterator which replaces <code>missing</code> elements with another value:</p><pre><code class="language-julia-repl">julia&gt; using Missings
 
 julia&gt; Missings.replace(x, 1)
 Missings.EachReplaceMissing{Array{Union{Missing, Int64},1},Int64}(Union{Missing, Int64}[1, 2, missing], 1)
