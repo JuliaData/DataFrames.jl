@@ -267,7 +267,7 @@ module TestDataFrameRow
 
         @test sprint(show, "text/html", dfr) == "<p>DataFrameRow</p><table class=\"data-frame\">" *
                                    "<thead><tr><th></th><th>b</th><th>c</th></tr>" *
-                                   "<tr><th></th><th>String</th><th>Bool</th></tr></thead>" *
+                                   "<tr><th></th><th>String</th><th>Int64</th></tr></thead>" *
                                    "<tbody><p>1 rows × 2 columns</p><tr><th>2</th>" *
                                    "<td>b</td><td>0</td></tr></tbody></table>"
 
