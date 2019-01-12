@@ -1,5 +1,5 @@
 module TestGrouping
-    using Test, DataFrames, Random
+    using Test, DataFrames, Random, Statistics
     const ≅ = isequal
 
     @testset "colwise" begin
@@ -247,10 +247,12 @@ module TestGrouping
         levels!(df[:Key1], ["Z", "B", "A"])
         levels!(df[:Key2], ["Z", "B", "A"])
         gd = groupby(df, :Key1)
+        @test gd == groupby(df, :Key1, skipmissing=true)
         @test length(gd) == 2
         @test gd[1] == DataFrame(Key1=["B", "B"], Key2=["A", "B"], Value=3:4)
         @test gd[2] == DataFrame(Key1=["A", "A"], Key2=["A", "B"], Value=1:2)
         gd = groupby(df, [:Key1, :Key2])
+        @test gd == groupby(df, [:Key1, :Key2], skipmissing=true)
         @test length(gd) == 4
         @test gd[1] == DataFrame(Key1="A", Key2="A", Value=1)
         @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
@@ -262,6 +264,7 @@ module TestGrouping
         @test length(gd) == 1
         @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "A", "B"], Value=1:4)
         gd = groupby(df, [:Key1, :Key2])
+        @test gd == groupby(df, [:Key1, :Key2])
         @test length(gd) == 2
         @test gd[1] == DataFrame(Key1="B", Key2="A", Value=[1, 3])
         @test gd[2] == DataFrame(Key1="B", Key2="B", Value=[2, 4])
@@ -365,6 +368,14 @@ module TestGrouping
         res = by(d -> 1, df, :x)
         @test size(res) == (0, 1)
         @test res.x isa Vector{Int}
+
+        # Test with empty data frame
+        df = DataFrame(x=[], y=[])
+        gd = groupby(df, :x)
+        @test combine(df -> sum(df.x), gd) == DataFrame(x=[])
+        res = map(df -> sum(df.x), gd)
+        @test length(res) == 0
+        @test res.parent == DataFrame(x=[])
     end
 
     @testset "grouping with missings" for df in
@@ -376,6 +387,12 @@ module TestGrouping
                    Value = 1:5),
          DataFrame(Key1 = ["A", missing, "B", "B", "A"],
                    Key2 = categorical(["B", "A", "A", missing, "A"]),
+                   Value = 1:5),
+         DataFrame(Key1 = ["A", missing, "B", "B", "A"],
+                   Key2 = levels!(categorical(["B", "A", "A", missing, "A"]), ["X", "A", "B"]),
+                   Value = 1:5),
+         DataFrame(Key1 = ["A", missing, "B", "B", "A"],
+                   Key2 = levels!(categorical(["B", "A", "A", missing, "A"]), ["A", "B", "X"]),
                    Value = 1:5),
          DataFrame(Key1 = categorical(["A", missing, "B", "B", "A"]),
                    Key2 = categorical(["B", "A", "A", missing, "A"]),
@@ -451,7 +468,7 @@ module TestGrouping
         Random.seed!(1)
         df = DataFrame(a = repeat([1, 3, 2, 4], outer=[2]),
                        b = repeat([2, 1], outer=[4]),
-                       c = randn(8))
+                       c = rand(Int, 8))
 
         # Only test that different by syntaxes work,
         # and rely on tests below for deeper checks
@@ -494,7 +511,9 @@ module TestGrouping
             combine(gd, (:c => sum,)) ==
             combine(gd, [:c => sum]) ==
             combine(gd, c_sum = :c => sum) ==
-            combine(d -> (c_sum=sum(d.c),), gd)
+            combine(:c => x -> (c_sum=sum(x),), gd) ==
+            combine(gd, :c => x -> (c_sum=sum(x),)) ==
+            combine(d -> (c_sum=sum(d.c),), gd) ==
             combine(gd, d -> (c_sum=sum(d.c),))
 
         @test combine(:c => vexp, gd) ==
@@ -502,6 +521,8 @@ module TestGrouping
             combine(gd, (:c => vexp,)) ==
             combine(gd, [:c => vexp]) ==
             combine(gd, c_function = :c => vexp) ==
+            combine(:c => x -> (c_function=exp.(x),), gd) ==
+            combine(gd, :c => x -> (c_function=exp.(x),)) ==
             combine(d -> (c_function=exp.(d.c),), gd)
             combine(gd, d -> (c_function=exp.(d.c),))
 
@@ -509,14 +530,18 @@ module TestGrouping
             combine(gd, (:b => sum, :c => sum,)) ==
             combine(gd, [:b => sum, :c => sum]) ==
             combine(gd, b_sum = :b => sum, c_sum = :c => sum) ==
-            combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd)
+            combine((:b, :c) => x -> (b_sum=sum(x.b), c_sum=sum(x.c)), gd) ==
+            combine(gd, (:b, :c) => x -> (b_sum=sum(x.b), c_sum=sum(x.c))) ==
+            combine(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), gd) ==
             combine(gd, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
 
         @test combine(gd, :b => vexp, :c => identity) ==
             combine(gd, (:b => vexp, :c => identity,)) ==
             combine(gd, [:b => vexp, :c => identity]) ==
             combine(gd, b_function = :b => vexp, c_identity = :c => identity) ==
-            combine(d -> (b_function=vexp(d.b), c_identity=d.c), gd)
+            combine((:b, :c) => x -> (b_function=vexp(x.b), c_identity=x.c), gd) ==
+            combine(gd, (:b, :c) => x -> (b_function=vexp(x.b), c_identity=x.c)) ==
+            combine(d -> (b_function=vexp(d.b), c_identity=d.c), gd) ==
             combine(gd, d -> (b_function=vexp(d.b), c_identity=d.c))
 
         for f in (map, combine)
@@ -562,9 +587,9 @@ module TestGrouping
                     f(d -> (xyz=sum(d.b) + sum(d.c),), gd)
                 if eltype(cols) === Bool
                     cols2 = [[false, true, false], [false, false, true]]
-                    @test_throws ArgumentError f((xyz = cols[1] => sum, xzz = cols2[2] => sum), gd)
-                    @test_throws ArgumentError f((xyz = cols[1] => sum, xzz = cols2[1] => sum), gd)
-                    @test_throws ArgumentError f((xyz = cols[1] => sum, xzz = cols2[2] => x -> first(x)), gd)
+                    @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[2] => sum), gd)
+                    @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[1] => sum), gd)
+                    @test_throws MethodError f((xyz = cols[1] => sum, xzz = cols2[2] => x -> first(x)), gd)
                 else
                     cols2 = cols
                     @test f((xyz = cols2[1] => sum, xzz = cols2[2] => sum), gd) ==
@@ -603,6 +628,123 @@ module TestGrouping
                     @test_throws ArgumentError f(wrap(cols => x -> [exp.(x.b) x.c]), gd)
                 end
             end
+        end
+    end
+
+    struct TestType end
+    Base.isless(::TestType, ::Int) = true
+    Base.isless(::Int, ::TestType) = false
+    Base.isless(::TestType, ::TestType) = false
+
+    @testset "combine with aggregation functions" begin
+        Random.seed!(1)
+        df = DataFrame(a = rand(1:5, 20), x1 = rand(Int, 20), x2 = rand(Complex{Int}, 20))
+
+        for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
+            gd = groupby(df, :a)
+
+            res = combine(gd, y = :x1 => f)
+            expected = combine(gd, y = :x1 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+
+            for T in (Union{Missing, Int}, Union{Int, Int8},
+                      Union{Missing, Int, Int8})
+                df.x3 = Vector{T}(df.x1)
+                gd = groupby(df, :a)
+                res = combine(gd, y = :x3 => f)
+                expected = combine(gd, y = :x3 => x -> f(x))
+                @test res ≅ expected
+                @test typeof(res.y) == typeof(expected.y)
+            end
+
+            f === length && continue
+
+            df.x3 = allowmissing(df.x1)
+            df.x3[1] = missing
+            gd = groupby(df, :a)
+            res = combine(gd, y = :x3 => f)
+            expected = combine(gd, y = :x3 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+            res = combine(gd, y = :x3 => f∘skipmissing)
+            expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+        end
+        # Test complex numbers
+        for f in (sum, prod, mean, var, std, first, last, length)
+            gd = groupby(df, :a)
+
+            res = combine(gd, y = :x2 => f)
+            expected = combine(gd, y = :x2 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+        end
+        # Test CategoricalArray
+        for f in (maximum, minimum, first, last, length),
+            (T, m) in ((Int, false),
+                       (Union{Missing, Int}, false), (Union{Missing, Int}, true))
+            df.x3 = CategoricalVector{T}(df.x1)
+            m && (df.x3[1] = missing)
+            gd = groupby(df, :a)
+            res = combine(gd, y = :x3 => f)
+            expected = combine(gd, y = :x3 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+
+            f === length && continue
+
+            res = combine(gd, y = :x3 => f∘skipmissing)
+            expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
+            @test res == expected
+            @test typeof(res.y) == typeof(expected.y)
+            if m
+                gd[1].x3 = missing
+                @test_throws ArgumentError combine(gd, y = :x3 => f∘skipmissing)
+            end
+        end
+        @test combine(gd, y = :x1 => maximum, z = :x2 => sum) ==
+            combine(gd, y = :x1 => x -> maximum(x), z = :x2 => x -> sum(x))
+        # Test floating point corner cases
+        df = DataFrame(a = [1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6],
+                       x1 = [0.0, 1.0, 2.0, NaN, NaN, NaN, Inf, Inf, Inf, 1.0, NaN, 0.0, -0.0])
+
+        for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
+            gd = groupby(df, :a)
+
+            res = combine(gd, y = :x1 => f)
+            expected = combine(gd, y = :x1 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+
+            f === length && continue
+
+            df.x3 = allowmissing(df.x1)
+            df.x3[1] = missing
+            gd = groupby(df, :a)
+            res = combine(gd, y = :x3 => f)
+            expected = combine(gd, y = :x3 => x -> f(x))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+            res = combine(gd, y = :x3 => f∘skipmissing)
+            expected = combine(gd, y = :x3 => x -> f(collect(skipmissing(x))))
+            @test res ≅ expected
+            @test typeof(res.y) == typeof(expected.y)
+        end
+
+        df = DataFrame(x = [1, 1, 2, 2], y = Any[1, 2.0, 3.0, 4.0])
+        res = by(df, :x, z = :y => maximum)
+        @test res.z isa Vector{Float64}
+        @test res.z == by(df, :x, z = :y => x -> maximum(x)).z
+
+        # Test maximum when no promotion rule exists
+        df = DataFrame(x = [1, 1, 2, 2], y = [1, TestType(), TestType(), TestType()])
+        gd = groupby(df, :x)
+        for f in (maximum, minimum)
+            res = combine(gd, z = :y => maximum)
+            @test res.z isa Vector{Any}
+            @test res.z == by(df, :x, z = :y => x -> maximum(x)).z
         end
     end
 
