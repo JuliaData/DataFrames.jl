@@ -15,7 +15,7 @@ module TestIO
             \\begin{tabular}{r|cccccc}
             \t& A & B & C & D & E & F\\\\
             \t\\hline
-            \t& Int64 & String & LaTeXStr… & Float64⍰ & Categorical…⍰ & String\\\\
+            \t& $(Int) & String & LaTeXStr… & Float64⍰ & Categorical…⍰ & String\\\\
             \t\\hline
             \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 & a & \\#undef \\\\
             \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 &  & \\#undef \\\\
