@@ -3,39 +3,22 @@ using Tables, TableTraits, IteratorInterfaceExtensions
 Tables.istable(::Type{<:AbstractDataFrame}) = true
 Tables.columnaccess(::Type{<:AbstractDataFrame}) = true
 Tables.columns(df::AbstractDataFrame) = df
-Tables.rowaccess(::Type{DataFrame}) = true
-Tables.rows(df::DataFrame) = Tables.rows(columntable(df))
+Tables.rowaccess(::Type{<:AbstractDataFrame}) = true
+Tables.rows(df::AbstractDataFrame) = Tables.rows(columntable(df))
 
 Tables.schema(df::AbstractDataFrame) = Tables.Schema(names(df), eltypes(df))
-Tables.materializer(df::DataFrame) = DataFrame
+Tables.materializer(df::AbstractDataFrame) = DataFrame
 
 getvector(x::AbstractVector) = x
 getvector(x) = collect(x)
 fromcolumns(x) = DataFrame(Any[getvector(c) for c in Tables.eachcolumn(x)], Index(collect(Symbol, propertynames(x))))
 
 function DataFrame(x)
-    if Tables.istable(typeof(x))
-        return fromcolumns(Tables.columns(x))
-    end
-    if TableTraits.supports_get_columns_copy_using_missing(x)
-        y = TableTraits.get_columns_copy_using_missing(x)
-        return DataFrame(collect(y), collect(keys(y)))
-    end
-    it = TableTraits.isiterabletable(x)
-    if it === true
-        # Base.depwarn("constructing a DataFrame from an iterator is deprecated; $T should support the Tables.jl interface", nothing)
-        y = IteratorInterfaceExtensions.getiterator(x)
-        return fromcolumns(Tables.columns(Tables.DataValueUnwrapper(y)))
-    elseif it === missing
-        if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
-            return DataFrame(Vector{AbstractVector}(x))
-        end
-        y = IteratorInterfaceExtensions.getiterator(x)
-        # non-NamedTuple or EltypeUnknown
-        return fromcolumns(Tables.buildcolumns(nothing, Tables.DataValueUnwrapper(y)))
-    end
     if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
         return DataFrame(Vector{AbstractVector}(x))
+    end
+    if Tables.istable(x)
+        return fromcolumns(Tables.columns(x))
     end
     throw(ArgumentError("unable to construct DataFrame from $(typeof(x))"))
 end
