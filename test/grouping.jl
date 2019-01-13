@@ -5,7 +5,7 @@ module TestGrouping
     @testset "parent" begin
         df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8])
         gd = groupby(df, :a)
-        @test parent(gd) == df
+        @test parent(gd) === df
     end
 
     @testset "colwise" begin
