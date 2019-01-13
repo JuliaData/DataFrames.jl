@@ -15,6 +15,13 @@ struct GroupedDataFrame{T<:AbstractDataFrame}
     ends::Vector{Int}    # ends of groups
 end
 
+"""
+    parent(gd::GroupedDataFrame)
+
+Return the parent data frame of `gd`.
+"""
+Base.parent(gd::GroupedDataFrame) = getfield(gd, :parent)
+
 #
 # Split
 #

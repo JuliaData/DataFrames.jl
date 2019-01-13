@@ -2,6 +2,12 @@ module TestGrouping
     using Test, DataFrames, Random, Statistics
     const ≅ = isequal
 
+    @testset "parent" begin
+        df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8])
+        gd = groupby(df, :a)
+        @test parent(gd) === df
+    end
+
     @testset "colwise" begin
         Random.seed!(1)
         df = DataFrame(a = repeat(Union{Int, Missing}[1, 3, 2, 4], outer=[2]),
