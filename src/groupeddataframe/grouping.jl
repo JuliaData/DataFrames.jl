@@ -14,9 +14,6 @@ struct GroupedDataFrame{T<:AbstractDataFrame}
     ends::Vector{Int}    # ends of groups
 end
 
-#
-# parent
-#
 """
     parent(gd::GroupedDataFrame)
 
