@@ -181,11 +181,6 @@ module TestDataFrameRow
     @test values(r) == (2.0, 2.0, 0.0, 0.0)
     @test collect(pairs(r)) == [:x8 => 2.0, :x5 => 2.0, :x1 => 0.0, :x3 => 0.0]
 
-    df = DataFrame(a=nothing, b=1)
-    io = IOBuffer()
-    show(io, DataFrameRow(df, 1, :))
-    @test String(take!(io)) == "DataFrameRow (row 1)\na  \nb  1"
-
     # convert
     df = DataFrame(a=[1, missing], b=[2.0, 3.0])
     dfr = DataFrameRow(df, 1, :)
@@ -247,5 +242,53 @@ module TestDataFrameRow
         @test values(dfr2) == (200, 200, 200)
         @test df[1, 1] == 200
         @test_throws KeyError dfr2.x2
+    end
+
+    @testset "show" begin
+        df = DataFrame(a=nothing, b=1)
+
+        @test sprint(show, DataFrameRow(df, 1, :)) == """
+            DataFrameRow
+            │ Row │ a       │ b     │
+            │     │ Nothing │ $(Int) │
+            ├─────┼─────────┼───────┤
+            │ 1   │         │ 1     │"""
+
+
+        df = DataFrame(a=1:3, b=["a", "b", "c"], c=Int64[1,0,1])
+        dfr = df[2, 2:3]
+
+        @test sprint(show, dfr) == """
+            DataFrameRow
+            │ Row │ b      │ c     │
+            │     │ String │ Int64 │
+            ├─────┼────────┼───────┤
+            │ 2   │ b      │ 0     │"""
+
+        @test sprint(show, "text/html", dfr) == "<p>DataFrameRow</p><table class=\"data-frame\">" *
+                                   "<thead><tr><th></th><th>b</th><th>c</th></tr>" *
+                                   "<tr><th></th><th>String</th><th>Int64</th></tr></thead>" *
+                                   "<tbody><p>1 rows × 2 columns</p><tr><th>2</th>" *
+                                   "<td>b</td><td>0</td></tr></tbody></table>"
+
+        @test sprint(show, "text/latex", dfr) == """
+            \\begin{tabular}{r|cc}
+            \t& b & c\\\\
+            \t\\hline
+            \t& String & Int64\\\\
+            \t\\hline
+            \t2 & b & 0 \\\\
+            \\end{tabular}
+            """
+
+        @test sprint(show, "text/csv", dfr) == """
+            \"b\",\"c\"
+            \"b\",0
+            """
+
+        @test sprint(show, "text/tab-separated-values", dfr) == """
+            \"b\"\t\"c\"
+            \"b\"\t0
+            """
     end
 end

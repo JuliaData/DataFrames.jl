@@ -92,7 +92,15 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bool=true)
+Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true) =
+    _show(io, mime, df, summary=summary)
+
+function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
+               summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
+    n = size(df, 1)
+    if rowid !== nothing && n != 1
+        throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    end
     cnames = _names(df)
     write(io, "<table class=\"data-frame\">")
     write(io, "<thead>")
@@ -112,7 +120,6 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bo
     write(io, "</thead>")
     write(io, "<tbody>")
     haslimit = get(io, :limit, true)
-    n = size(df, 1)
     if haslimit
         tty_rows, tty_cols = displaysize(io)
         mxrow = min(n,tty_rows)
@@ -124,7 +131,11 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bo
     end
     for row in 1:mxrow
         write(io, "<tr>")
-        write(io, "<th>$row</th>")
+        if rowid === nothing
+            write(io, "<th>$row</th>")
+        else
+            write(io, "<th>$rowid</th>")
+        end
         for column_name in cnames
             if isassigned(df[column_name], row)
                 cell = sprint(ourshowcompact, df[row, column_name])
@@ -147,6 +158,47 @@ function Base.show(io::IO, ::MIME"text/html", df::AbstractDataFrame; summary::Bo
     write(io, "</table>")
 end
 
+function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true)
+    r, c = parentindices(dfr)
+    write(io, "<p>DataFrameRow</p>")
+    _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r)
+end
+
+function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
+    N = length(gd)
+    keynames = names(gd.parent)[gd.cols]
+    parent_names = names(gd.parent)
+    keys = join(':' .* string.(keynames), ", ")
+    keystr = length(gd.cols) > 1 ? "keys" : "key"
+    groupstr = N > 1 ? "groups" : "group"
+    write(io, "<p><b>$(typeof(gd).name) with $N $groupstr based on $keystr: $keys</b></p>")
+    if N > 0
+        nrows = size(gd[1], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [':' * string(parent_names[col], " = ", first(gd[1][col]))
+                             for col in gd.cols]
+
+        write(io, "<p><i>First Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        write(io, "</i></p>")
+        show(io, mime, gd[1], summary=false)
+    end
+    if N > 1
+        nrows = size(gd[N], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [':' * string(parent_names[col], " = ", first(gd[N][col]))
+                             for col in gd.cols]
+
+        write(io, "<p>&vellip;</p>")
+        write(io, "<p><i>Last Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        write(io, "</i></p>")
+        show(io, mime, gd[N], summary=false)
+    end
+end
+
 ##############################################################################
 #
 # LaTeX output
@@ -167,9 +219,16 @@ function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
-function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
+Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame) =
+    _show(io, mime, df)
+
+function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     nrows = size(df, 1)
     ncols = size(df, 2)
+
+    if rowid !== nothing && nrows != 1
+        throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    end
 
     haslimit = get(io, :limit, true)
     if haslimit
@@ -189,9 +248,14 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
     write(io, header)
     write(io, "\\\\\n")
     write(io, "\t\\hline\n")
+    write(io, "\t& ")
+    header = join(map(c -> latex_escape(string(compacttype(c))), eltypes(df)), " & ")
+    write(io, header)
+    write(io, "\\\\\n")
+    write(io, "\t\\hline\n")
     for row in 1:mxrow
         write(io, "\t")
-        write(io, @sprintf("%d", row))
+        write(io, @sprintf("%d", rowid === nothing ? row : rowid))
         for col in 1:ncols
             write(io, " & ")
             cell = isassigned(df[col], row) ? df[row,col] : Base.undef_ref_str
@@ -215,11 +279,63 @@ function Base.show(io::IO, ::MIME"text/latex", df::AbstractDataFrame)
     write(io, "\\end{tabular}\n")
 end
 
+function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
+    r, c = parentindices(dfr)
+    _show(io, mime, view(parent(dfr), [r], c), rowid=r)
+end
+
+function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
+    N = length(gd)
+    keynames = names(gd.parent)[gd.cols]
+    parent_names = names(gd.parent)
+    keys = join(latex_escape.(':' .* string.(keynames)), ", ")
+    keystr = length(gd.cols) > 1 ? "keys" : "key"
+    groupstr = N > 1 ? "groups" : "group"
+    write(io, "$(typeof(gd).name) with $N $groupstr based on $keystr: $keys\n\n")
+    if N > 0
+        nrows = size(gd[1], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [latex_escape(':' * string(parent_names[col], " = ",
+                                                       first(gd[1][col])))
+                             for col in gd.cols]
+
+        write(io, "First Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        write(io, "\n\n")
+        show(io, mime, gd[1])
+    end
+    if N > 1
+        nrows = size(gd[N], 1)
+        rows = nrows > 1 ? "rows" : "row"
+
+        identified_groups = [latex_escape(':' * string(parent_names[col], " = ",
+                                                       first(gd[N][col])))
+                             for col in gd.cols]
+
+        write(io, "\n\$\\dots\$\n\n")
+        write(io, "Last Group ($nrows $rows): ")
+        join(io, identified_groups, ", ")
+        write(io, "\n\n")
+        show(io, mime, gd[N])
+    end
+end
+
 ##############################################################################
 #
 # MIME
 #
 ##############################################################################
+
+function Base.show(io::IO, mime::MIME"text/csv", dfr::DataFrameRow)
+    r, c = parentindices(dfr)
+    show(io, mime, view(parent(dfr), [r], c))
+end
+
+function Base.show(io::IO, mime::MIME"text/tab-separated-values", dfr::DataFrameRow)
+    r, c = parentindices(dfr)
+    show(io, mime, view(parent(dfr), [r], c))
+end
 
 function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
     printtable(io, df, header = true, separator = ',')
@@ -266,7 +382,8 @@ Data.streamtypes(::Type{DataFrame}) = [Data.Column, Data.Field]
 Data.weakrefstrings(::Type{DataFrame}) = true
 
 allocate(::Type{T}, rows, ref) where {T} = Vector{T}(undef, rows)
-allocate(::Type{CategoricalString{R}}, rows, ref) where {R} = CategoricalArray{String, 1, R}(undef, rows)
+allocate(::Type{CategoricalString{R}}, rows, ref) where {R} =
+    CategoricalArray{String, 1, R}(undef, rows)
 allocate(::Type{Union{CategoricalString{R}, Missing}}, rows, ref) where {R} =
     CategoricalArray{Union{String, Missing}, 1, R}(undef, rows)
 allocate(::Type{CategoricalValue{T, R}}, rows, ref) where {T, R} =

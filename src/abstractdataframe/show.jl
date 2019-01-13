@@ -94,7 +94,8 @@ julia> DataFrames.getmaxwidths(df, 1:1, 3:3, :Row)
 function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
-                      rowlabel::Symbol) # -> Vector{Int}
+                      rowlabel::Symbol,
+                      rowid=nothing) # -> Vector{Int}
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(Base.undef_ref_str)
@@ -116,9 +117,13 @@ function getmaxwidths(df::AbstractDataFrame,
         j += 1
     end
 
-    rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
-    rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
-    maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2), ourstrwidth(rowlabel))
+    if rowid isa Nothing
+        rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
+        rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
+        maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2), ourstrwidth(rowlabel))
+    else
+        maxwidths[j] = max(ndigits(rowid), ourstrwidth(rowlabel))
+    end
 
     return maxwidths
 end
@@ -234,7 +239,8 @@ end
                    rowindices::AbstractVector{Int},
                    maxwidths::Vector{Int},
                    leftcol::Int,
-                   rightcol::Int)
+                   rightcol::Int,
+                   rowid::Union{Int,Nothing})
 
 Render a subset of rows and columns of an `AbstractDataFrame` to an
 I/O stream. For chunked printing, this function is used to print a
@@ -251,6 +257,7 @@ required for printing have been precomputed.
   required to render each column.
 - `leftcol::Int`: The index of the first column in a chunk to be rendered.
 - `rightcol::Int`: The index of the last column in a chunk to be rendered.
+- `rowid`: Used to handle showing `DataFrameRow`.
 
 # Examples
 ```jldoctest
@@ -268,13 +275,18 @@ function showrowindices(io::IO,
                         rowindices::AbstractVector{Int},
                         maxwidths::Vector{Int},
                         leftcol::Int,
-                        rightcol::Int) # -> Void
+                        rightcol::Int,
+                        rowid) # -> Void
     rowmaxwidth = maxwidths[end]
 
     for i in rowindices
         # Print row ID
-        @printf io "│ %d" i
-        padding = rowmaxwidth - ndigits(i)
+        if rowid isa Nothing
+            @printf io "│ %d" i
+        else
+            @printf io "│ %d" rowid
+        end
+        padding = rowmaxwidth - ndigits(rowid isa Nothing ? i : rowid)
         for _ in 1:padding
             write(io, ' ')
         end
@@ -323,7 +335,8 @@ end
              splitcols::Bool = false,
              allcols::Bool = false,
              rowlabel::Symbol = :Row,
-             displaysummary::Bool = true)
+             displaysummary::Bool = true,
+             rowid=nothing)
 
 Render a subset of rows (possibly in chunks) of an `AbstractDataFrame` to an
 I/O stream.
@@ -350,6 +363,7 @@ NOTE: The value of `maxwidths[end]` must be the string width of
 - `displaysummary::Bool`: Should a brief string summary of the
   AbstractDataFrame be rendered to the I/O stream before printing the
   contents of the renderable rows? Defaults to `true`.
+- `rowid = nothing`: Used to handle showing `DataFrameRow`
 
 # Examples
 julia> using DataFrames
@@ -375,7 +389,8 @@ function showrows(io::IO,
                   splitcols::Bool = false,
                   allcols::Bool = false,
                   rowlabel::Symbol = :Row,
-                  displaysummary::Bool = true) # -> Void
+                  displaysummary::Bool = true,
+                  rowid=nothing) # -> Void
     ncols = size(df, 2)
 
     if isempty(rowindices1)
@@ -465,7 +480,8 @@ function showrows(io::IO,
                        rowindices1,
                        maxwidths,
                        leftcol,
-                       rightcol)
+                       rightcol,
+                       rowid)
 
         if !isempty(rowindices2)
             print(io, "\n⋮\n")
@@ -474,7 +490,8 @@ function showrows(io::IO,
                            rowindices2,
                            maxwidths,
                            leftcol,
-                           rightcol)
+                           rightcol,
+                           rowid)
         end
 
         # Print newlines to separate chunks
@@ -483,6 +500,44 @@ function showrows(io::IO,
         end
     end
 
+    return
+end
+
+function _show(io::IO,
+               df::AbstractDataFrame;
+               allrows::Bool = !get(io, :limit, false),
+               allcols::Bool = !get(io, :limit, false),
+               splitcols = get(io, :limit, false),
+               rowlabel::Symbol = :Row,
+               summary::Bool = true,
+               rowid=nothing)
+    nrows = size(df, 1)
+    if rowid !== nothing
+        nrows == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    end
+    dsize = displaysize(io)
+    availableheight = dsize[1] - 7
+    nrowssubset = fld(availableheight, 2)
+    bound = min(nrowssubset - 1, nrows)
+    if allrows || nrows <= availableheight
+        rowindices1 = 1:nrows
+        rowindices2 = 1:0
+    else
+        rowindices1 = 1:bound
+        rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
+    end
+    maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel, rowid)
+    width = getprintedwidth(maxwidths)
+    showrows(io,
+             df,
+             rowindices1,
+             rowindices2,
+             maxwidths,
+             splitcols,
+             allcols,
+             rowlabel,
+             summary,
+             rowid)
     return
 end
 
@@ -537,46 +592,22 @@ julia> show(df, allcols=true)
 │ 3   │ 3     │ z      │
 ```
 """
-function Base.show(io::IO,
-                   df::AbstractDataFrame;
-                   allrows::Bool = !get(io, :limit, false),
-                   allcols::Bool = !get(io, :limit, false),
-                   splitcols = get(io, :limit, false),
-                   rowlabel::Symbol = :Row,
-                   summary::Bool = true) # -> Nothing
-    nrows = size(df, 1)
-    dsize = displaysize(io)
-    availableheight = dsize[1] - 7
-    nrowssubset = fld(availableheight, 2)
-    bound = min(nrowssubset - 1, nrows)
-    if allrows || nrows <= availableheight
-        rowindices1 = 1:nrows
-        rowindices2 = 1:0
-    else
-        rowindices1 = 1:bound
-        rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
-    end
-    maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel)
-    width = getprintedwidth(maxwidths)
-    showrows(io,
-             df,
-             rowindices1,
-             rowindices2,
-             maxwidths,
-             splitcols,
-             allcols,
-             rowlabel,
-             summary)
-    return
-end
+Base.show(io::IO,
+          df::AbstractDataFrame;
+          allrows::Bool = !get(io, :limit, false),
+          allcols::Bool = !get(io, :limit, false),
+          splitcols = get(io, :limit, false),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
+    _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
+          rowlabel=rowlabel, summary=summary)
 
-function Base.show(df::AbstractDataFrame;
-                   allrows::Bool = !get(stdout, :limit, true),
-                   allcols::Bool = !get(stdout, :limit, true),
-                   splitcols = get(stdout, :limit, true),
-                   rowlabel::Symbol = :Row,
-                   summary::Bool = true) # -> Nothing
-    return show(stdout, df,
-                allrows=allrows, allcols=allcols, splitcols=splitcols,
-                rowlabel=rowlabel, summary=summary)
-end
+Base.show(df::AbstractDataFrame;
+          allrows::Bool = !get(stdout, :limit, true),
+          allcols::Bool = !get(stdout, :limit, true),
+          splitcols = get(stdout, :limit, true),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
+    show(stdout, df,
+         allrows=allrows, allcols=allcols, splitcols=splitcols,
+         rowlabel=rowlabel, summary=summary)
