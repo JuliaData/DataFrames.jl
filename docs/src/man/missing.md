@@ -160,4 +160,4 @@ julia> missings(Int, 1, 3)
 
 ```
 
-See the [Julia manual](https://docs.julialang.org/en/stable/manual/missing/) for more information about missing values.
+See the [Julia manual](https://docs.julialang.org/en/v1/manual/missing/) for more information about missing values.
