@@ -2,6 +2,10 @@ module TestGrouping
     using Test, DataFrames, Random, Statistics
     const ≅ = isequal
 
+    # Needed since == doesn't check groups as it is redundant with other fields
+    isequal_internal(gd1::GroupedDataFrame, gd2::GroupedDataFrame) =
+        isequal(gd1, gd2) && gd1.groups == gd2.groups
+
     @testset "parent" begin
         df = DataFrame(a = [1, 1, 2, 2], b = [5, 6, 7, 8])
         gd = groupby(df, :a)
@@ -221,8 +225,9 @@ module TestGrouping
         df2 = DataFrame(v1 = levels!(categorical(rand(1:N, 100)), collect(1:N)),
                         v2 = levels!(categorical(rand(1:N, 100)), collect(1:N)),
                         v3 = levels!(categorical(rand(1:N, 100)), collect(1:N)))
-        df2b = mapcols(x -> convert(Vector{Int}, x), df2)
-        @test groupby(df2, [:v1, :v2, :v3]) == groupby(df2b, [:v1, :v2, :v3])
+        df2b = mapcols(Vector{Int}, df2)
+        @test isequal_internal(groupby(df2, [:v1, :v2, :v3]),
+                               groupby(df2b, [:v1, :v2, :v3]))
 
         # grouping empty table
         @test groupby(DataFrame(A=Int[]), :A).starts == Int[]
@@ -256,12 +261,12 @@ module TestGrouping
         levels!(df[:Key1], ["Z", "B", "A"])
         levels!(df[:Key2], ["Z", "B", "A"])
         gd = groupby(df, :Key1)
-        @test gd == groupby(df, :Key1, skipmissing=true)
+        @test isequal_internal(gd, groupby(df, :Key1, skipmissing=true))
         @test length(gd) == 2
         @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "B"], Value=[3, 4, 5])
         @test gd[2] == DataFrame(Key1="A", Key2=["A", "B", "A"], Value=[1, 2, 6])
         gd = groupby(df, [:Key1, :Key2])
-        @test gd == groupby(df, [:Key1, :Key2], skipmissing=true)
+        @test isequal_internal(gd, groupby(df, [:Key1, :Key2], skipmissing=true))
         @test length(gd) == 4
         @test gd[1] == DataFrame(Key1="B", Key2="B", Value=[4, 5])
         @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
@@ -273,7 +278,7 @@ module TestGrouping
         @test length(gd) == 1
         @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "A", "B", "B", "A"], Value=1:6)
         gd = groupby(df, [:Key1, :Key2])
-        @test gd == groupby(df, [:Key1, :Key2])
+        @test isequal_internal(gd, groupby(df, [:Key1, :Key2]))
         @test length(gd) == 2
         @test gd[1] == DataFrame(Key1="B", Key2="B", Value=[2, 4, 5])
         @test gd[2] == DataFrame(Key1="B", Key2="A", Value=[1, 3, 6])
@@ -494,21 +499,25 @@ module TestGrouping
                                                   categorical(zv),
                                                   levels!(categorical(zv), ["A", "B", "X"]),
                                                   levels!(categorical(zv), ["X", "A", "B"]))
-        df = DataFrame(Key1 = x, Key2 = y, Key3 = z, Value = 1:100)
-        dfb = mapcols(x -> convert(Vector{Union{Missings.T(eltype(x)), Missing}}, x), df)
+        df = DataFrame(Key1 = x, Key2 = y, Key3 = z, Value = string.(1:100))
+        dfb = mapcols(Vector{Union{String, Missing}}, df)
 
-        @test groupby(df, [:Key1, :Key2, :Key3], sort=true) ≅
-            groupby(dfb, [:Key1, :Key2, :Key3], sort=true)
-        @test groupby(df, [:Key1, :Key2, :Key3], sort=true, skipmissing=true) ==
-            groupby(dfb, [:Key1, :Key2, :Key3], sort=true, skipmissing=true)
+        @test isequal_internal(groupby(df, [:Key1, :Key2, :Key3], sort=true),
+                               groupby(dfb, [:Key1, :Key2, :Key3], sort=true))
+        @test isequal_internal(groupby(df, [:Key1, :Key2, :Key3],
+                                       sort=true, skipmissing=true),
+                               groupby(dfb, [:Key1, :Key2, :Key3],
+                                       sort=true, skipmissing=true))
 
         if df.Key1 isa CategoricalVector &&
            df.Key2 isa CategoricalVector &&
            df.Key3 isa CategoricalVector
-            @test groupby(df, [:Key1, :Key2, :Key3], sort=true) ≅
-                groupby(df, [:Key1, :Key2, :Key3], sort=false)
-            @test groupby(df, [:Key1, :Key2, :Key3], sort=true, skipmissing=true) ==
-                groupby(df, [:Key1, :Key2, :Key3], sort=false, skipmissing=true)
+            @test isequal_internal(groupby(df, [:Key1, :Key2, :Key3], sort=true),
+                                   groupby(df, [:Key1, :Key2, :Key3], sort=false))
+            @test isequal_internal(groupby(df, [:Key1, :Key2, :Key3],
+                                           sort=true, skipmissing=true),
+                                   groupby(df, [:Key1, :Key2, :Key3],
+                                           sort=false, skipmissing=true))
         end
     end
 
@@ -759,8 +768,10 @@ module TestGrouping
         df = DataFrame(a = [1, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6],
                        x1 = [0.0, 1.0, 2.0, NaN, NaN, NaN, Inf, Inf, Inf, 1.0, NaN, 0.0, -0.0])
 
-        for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length)
-            gd = groupby(df, :a)
+        for f in (sum, prod, maximum, minimum, mean, var, std, first, last, length),
+            sort in (false, true),
+            skip in (false, true)
+            gd = groupby(df, :a, sort=sort, skipmissing=skip)
 
             res = combine(gd, y = :x1 => f)
             expected = combine(gd, y = :x1 => x -> f(x))
@@ -771,7 +782,7 @@ module TestGrouping
 
             df.x3 = allowmissing(df.x1)
             df.x3[1] = missing
-            gd = groupby(df, :a)
+            gd = groupby(df, :a, sort=sort, skipmissing=skip)
             res = combine(gd, y = :x3 => f)
             expected = combine(gd, y = :x3 => x -> f(x))
             @test res ≅ expected

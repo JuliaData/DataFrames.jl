@@ -260,14 +260,20 @@ function group_rows(df::AbstractDataFrame, hash::Bool = true, sort::Bool = false
     if skipmissing
         popfirst!(starts)
         popfirst!(stops)
+        groups .-= 1
         ngroups -= 1
     end
 
     # sort groups if row_group_slots hasn't already done that
     if sort && !sorted
         group_perm = sortperm(view(df, rperm[starts], :))
+        group_invperm = invperm(group_perm)
         permute!(starts, group_perm)
         Base.permute!!(stops, group_perm)
+        for i in eachindex(groups)
+            gix = groups[i]
+            groups[i] = gix == 0 ? 0 : group_invperm[gix]
+        end
     end
 
     return RowGroupDict(df, rhashes, gslots, groups, rperm, starts, stops)
