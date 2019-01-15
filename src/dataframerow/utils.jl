@@ -106,6 +106,7 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     @assert groups === nothing || length(groups) == length(cols[1])
     rhashes, missings = hashrows(cols, skipmissing)
     # inspired by Dict code from base cf. https://github.com/JuliaData/DataTables.jl/pull/17#discussion_r102481481
+    # but using open addressing with a table with as many slots as rows
     sz = Base._tablesz(length(rhashes))
     @assert sz >= length(rhashes)
     szm1 = sz-1
@@ -145,50 +146,75 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     return ngroups, rhashes, gslots, false
 end
 
-function row_group_slots(cols::Tuple{CategoricalVector},
+function row_group_slots(cols::NTuple{N,<:CategoricalVector},
                          hash::Val{false},
                          groups::Union{Vector{Int}, Nothing} = nothing,
-                         skipmissing::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool}
-    col = cols[1]
-    @assert groups === nothing || length(groups) == length(col)
+                         skipmissing::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
+    # Computing neither hashes nor groups isn't very useful,
+    # and this method needs to allocate a groups vector anyway
+    @assert groups !== nothing && all(col -> length(col) == length(groups), cols)
 
     # If missings are to be skipped, they will all go to group 1,
     # which will be removed by group_rows
-    ngroups = length(levels(col)) + (eltype(col) >: Missing)
+    ngroupstup = map(cols) do c
+        length(levels(c)) + (!skipmissing && eltype(c) >: Missing)
+    end
+    ngroups = prod(ngroupstup) + skipmissing
 
-    if groups !== nothing
+    # Fall back to hashing if there would be too many empty combinations.
+    # The first check ensures the computation of ngroups did not overflow.
+    # The rationale for the 2 threshold is that while the fallback method is always slower,
+    # it allocates a hash table of size length(groups) instead of the remap vector
+    # of size ngroups (i.e. the number of possible combinations) in this method:
+    # so it makes sense to allocate more memory for better performance,
+    # but it needs to remain reasonable compared with the size of the data frame.
+    if prod(Int128.(ngroupstup)) > typemax(Int) || ngroups > 2 * length(groups)
+        return invoke(row_group_slots,
+                      Tuple{Tuple{Vararg{AbstractVector}}, Val,
+                            Union{Vector{Int}, Nothing}, Bool},
+                      cols, hash, groups, skipmissing)
+    end
+
+    seen = fill(false, ngroups)
+    # If skipmissing=true, missings will all go to group 1,
+    # which will be removed by group_rows
+    seen[1] = skipmissing
+    refmaps = map(cols) do col
         # When levels are in the same order as the index and there are no missing values,
-        # we could simply copy refs to groups, but the performance gain is negligible,
+        # we could simply use refs, but the performance gain is negligible,
         # so always sort groups in the order of levels
-        refmap = [0; CategoricalArrays.order(col.pool)]
-        seen = fill(false, length(refmap))
+        nlevels = length(levels(col))
+        refmap = Vector{Int}(undef, nlevels + 1)
+        refmap[1] = nlevels
+        refmap[2:end] .= CategoricalArrays.order(col.pool) .- 1
+        refmap
+    end
+    strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N,Int}
+    @inbounds for i in eachindex(groups)
+        local refs
+        let i=i # Workaround for julia#15276
+            refs = map(c -> c.refs[i], cols)
+        end
+        j = sum(map((m, r, s) -> m[r+1] * s, refmaps, refs, strides)) + 1
         if skipmissing
-            refmap .+= 1
-            seen[1] = true
-        else
-            refmap[1] = ngroups
+            j = any(iszero, refs) ? 1 : j + 1
+        end
+        groups[i] = j
+        seen[j] = true
+    end
+    if !all(seen) # Compress group indices to remove unused ones
+        oldngroups = ngroups
+        remap = zeros(Int, ngroups)
+        ngroups = 0
+        @inbounds for i in eachindex(remap, seen)
+            ngroups += seen[i]
+            remap[i] = ngroups
         end
         @inbounds for i in eachindex(groups)
-            j = refmap[col.refs[i]+1]
-            groups[i] = j
-            seen[j] = true
+            groups[i] = remap[groups[i]]
         end
-        if !all(seen)
-            if skipmissing # Always keep first group even if empty
-                ngroups = 1
-                start = 2
-            else
-                ngroups = 0
-                start = 1
-            end
-            @inbounds for i in start:length(refmap)
-                ngroups += seen[i]
-                refmap[i] = ngroups
-            end
-            @inbounds for i in eachindex(groups)
-                groups[i] = refmap[groups[i]]
-            end
-        end
+        # To catch potential bugs inducing unnecessary computations
+        @assert oldngroups != ngroups
     end
     return ngroups, UInt[], Int[], true
 end
@@ -234,14 +260,20 @@ function group_rows(df::AbstractDataFrame, hash::Bool = true, sort::Bool = false
     if skipmissing
         popfirst!(starts)
         popfirst!(stops)
+        groups .-= 1
         ngroups -= 1
     end
 
     # sort groups if row_group_slots hasn't already done that
     if sort && !sorted
         group_perm = sortperm(view(df, rperm[starts], :))
+        group_invperm = invperm(group_perm)
         permute!(starts, group_perm)
         Base.permute!!(stops, group_perm)
+        for i in eachindex(groups)
+            gix = groups[i]
+            groups[i] = gix == 0 ? 0 : group_invperm[gix]
+        end
     end
 
     return RowGroupDict(df, rhashes, gslots, groups, rperm, starts, stops)
