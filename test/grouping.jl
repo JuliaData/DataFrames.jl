@@ -107,8 +107,6 @@ module TestGrouping
                        b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
                        c = Vector{Union{Float64, Missing}}(randn(8)))
 
-        cols = [:a, :b]
-
         f1(df) = DataFrame(cmax = maximum(df[:c]))
         f2(df) = (cmax = maximum(df[:c]),)
         f3(df) = maximum(df[:c])
@@ -118,112 +116,118 @@ module TestGrouping
         f7(df) = (c2 = df[:c].^2,)
         f8(df) = DataFrame(c2 = df[:c].^2)
 
-        res = unique(df[cols])
-        res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
+        for cols in ([:a, :b], [:b, :a], [1, 2], [2, 1], [true, true, false])
+            colssym = names(df[cols])
+            hcatdf = hcat(df[cols], df, makeunique=true)
+            nms = names(hcatdf)
+            res = unique(df[cols])
+            res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
+                        for (a, b) in zip(res.a, res.b)]
+            res2 = unique(df[cols])[repeat(1:4, inner=2), :]
+            res2.x1 = collect(Iterators.flatten([[maximum(df[(df.a .== a) .& (df.b .== b), :c]),
+                                                 minimum(df[(df.a .== a) .& (df.b .== b), :c])]
+                                                 for (a, b) in zip(res.a, res.b)]))
+            res3 = unique(df[cols])
+            res3.x1 = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
                     for (a, b) in zip(res.a, res.b)]
-        res2 = unique(df[cols])[repeat(1:4, inner=2), :]
-        res2.x1 = collect(Iterators.flatten([[maximum(df[(df.a .== a) .& (df.b .== b), :c]),
-                                              minimum(df[(df.a .== a) .& (df.b .== b), :c])]
-                                              for (a, b) in zip(res.a, res.b)]))
-        res3 = unique(df[cols])
-        res3.x1 = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
-                   for (a, b) in zip(res.a, res.b)]
-        res3.x2 = [minimum(df[(df.a .== a) .& (df.b .== b), :c])
-                   for (a, b) in zip(res.a, res.b)]
-        res4 = df[cols]
-        res4.c2 = df.c.^2
-        sres = sort(res, cols)
-        sres2 = sort(res2, cols)
-        sres3 = sort(res3, cols)
-        sres4 = sort(res4, cols)
+            res3.x2 = [minimum(df[(df.a .== a) .& (df.b .== b), :c])
+                    for (a, b) in zip(res.a, res.b)]
+            res4 = df[cols]
+            res4.c2 = df.c.^2
+            shcatdf = sort(hcatdf, colssym)
+            sres = sort(res, colssym)
+            sres2 = sort(res2, colssym)
+            sres3 = sort(res3, colssym)
+            sres4 = sort(res4, colssym)
 
-        # by() without groups sorting
-        @test sort(by(df, cols, identity)) ==
-            sort(hcat(df, df[cols], makeunique=true))[[:a, :b, :a_1, :b_1, :c]]
-        @test sort(by(df, cols, df -> DataFrameRow(df, 1, :))[[:a, :b, :c]]) ==
-            sort(df[.!nonunique(df, cols), :])
-        @test by(df, cols, f1) == res
-        @test by(df, cols, f2) == res
-        @test rename(by(df, cols, f3), :x1 => :cmax) == res
-        @test by(df, cols, f4) == res2
-        @test by(df, cols, f5) == res2
-        @test by(df, cols, f6) == res3
-        @test sort(by(df, cols, f7)) == sort(res4)
-        @test sort(by(df, cols, f8)) == sort(res4)
+            # by() without groups sorting
+            @test sort(by(df, cols, identity), colssym) == shcatdf
+            @test sort(by(df, cols, df -> df[1, :]), colssym) ==
+                shcatdf[.!nonunique(shcatdf, colssym), :]
+            @test by(df, cols, f1) == res
+            @test by(df, cols, f2) == res
+            @test rename(by(df, cols, f3), :x1 => :cmax) == res
+            @test by(df, cols, f4) == res2
+            @test by(df, cols, f5) == res2
+            @test by(df, cols, f6) == res3
+            @test sort(by(df, cols, f7), colssym) == sres4
+            @test sort(by(df, cols, f8), colssym) == sres4
 
-        # by() with groups sorting
-        @test by(df, cols, identity, sort=true) ==
-            sort(hcat(df, df[cols], makeunique=true), cols)[[:a, :b, :a_1, :b_1, :c]]
-        @test by(df, cols, df -> DataFrameRow(df, 1, :), sort=true)[[:a, :b, :c]] ==
-            sort(df[.!nonunique(df, cols), :])
-        @test by(df, cols, f1, sort=true) == sres
-        @test by(df, cols, f2, sort=true) == sres
-        @test rename(by(df, cols, f3, sort=true), :x1 => :cmax) == sres
-        @test by(df, cols, f4, sort=true) == sres2
-        @test by(df, cols, f5, sort=true) == sres2
-        @test by(df, cols, f6, sort=true) == sres3
-        @test by(df, cols, f7, sort=true) == sres4
-        @test by(df, cols, f8, sort=true) == sres4
+            # by() with groups sorting
+            @test by(df, cols, identity, sort=true) == shcatdf
+            @test by(df, cols, df -> df[1, :], sort=true) ==
+                shcatdf[.!nonunique(shcatdf, colssym), :]
+            @test by(df, cols, f1, sort=true) == sres
+            @test by(df, cols, f2, sort=true) == sres
+            @test rename(by(df, cols, f3, sort=true), :x1 => :cmax) == sres
+            @test by(df, cols, f4, sort=true) == sres2
+            @test by(df, cols, f5, sort=true) == sres2
+            @test by(df, cols, f6, sort=true) == sres3
+            @test by(df, cols, f7, sort=true) == sres4
+            @test by(df, cols, f8, sort=true) == sres4
 
-        @test by(df, [:a], f1) == by(df, :a, f1)
-        @test by(df, [:a], f1, sort=true) == by(df, :a, f1, sort=true)
+            @test by(df, [:a], f1) == by(df, :a, f1)
+            @test by(df, [:a], f1, sort=true) == by(df, :a, f1, sort=true)
 
-        # groupby() without groups sorting
-        gd = groupby_checked(df, cols)
-        @test sort(combine(identity, gd)) ==
-            sort(combine(gd)) ==
-            sort(hcat(df, df[cols], makeunique=true))[[:a, :b, :a_1, :b_1, :c]]
-        @test combine(f1, gd) == res
-        @test combine(f2, gd) == res
-        @test rename(combine(f3, gd), :x1 => :cmax) == res
-        @test combine(f4, gd) == res2
-        @test combine(f5, gd) == res2
-        @test combine(f6, gd) == res3
-        @test sort(combine(f7, gd)) == sort(res4)
-        @test sort(combine(f8, gd)) == sort(res4)
+            # groupby() without groups sorting
+            gd = groupby_checked(df, cols)
+            @test sort(combine(identity, gd), colssym) ==
+                sort(combine(gd), colssym) ==
+                shcatdf
+            @test combine(f1, gd) == res
+            @test combine(f2, gd) == res
+            @test rename(combine(f3, gd), :x1 => :cmax) == res
+            @test combine(f4, gd) == res2
+            @test combine(f5, gd) == res2
+            @test combine(f6, gd) == res3
+            @test sort(combine(f7, gd), colssym) == sort(res4, colssym)
+            @test sort(combine(f8, gd), colssym) == sort(res4, colssym)
 
-        # groupby() with groups sorting
-        gd = groupby_checked(df, cols, sort=true)
-        for i in 1:length(gd)
-            @test all(gd[i].a .== sres.a[i])
-            @test all(gd[i].b .== sres.b[i])
-        end
-        @test combine(identity, gd) ==
-            combine(gd) ==
-            sort(hcat(df, df[cols], makeunique=true), cols)[[:a, :b, :a_1, :b_1, :c]]
-        @test combine(f1, gd) == sres
-        @test combine(f2, gd) == sres
-        @test rename(combine(f3, gd), :x1 => :cmax) == sres
-        @test combine(f4, gd) == sres2
-        @test combine(f5, gd) == sres2
-        @test combine(f6, gd) == sres3
-        @test combine(f7, gd) == sres4
-        @test combine(f8, gd) == sres4
+            # groupby() with groups sorting
+            gd = groupby_checked(df, cols, sort=true)
+            for i in 1:length(gd)
+                @test all(gd[i].a .== sres.a[i])
+                @test all(gd[i].b .== sres.b[i])
+            end
+            @test combine(identity, gd) == combine(gd) == shcatdf
+            @test combine(f1, gd) == sres
+            @test combine(f2, gd) == sres
+            @test rename(combine(f3, gd), :x1 => :cmax) == sres
+            @test combine(f4, gd) == sres2
+            @test combine(f5, gd) == sres2
+            @test combine(f6, gd) == sres3
+            @test combine(f7, gd) == sres4
+            @test combine(f8, gd) == sres4
 
-        # map() without and with groups sorting
-        for sort in (false, true)
-            gd = groupby_checked(df, cols, sort=sort)
-            v = map(d -> d[[:c]], gd)
-            @test length(gd) == length(v)
-            @test v[1] == gd[1] && v[2] == gd[2] && v[3] == gd[3] && v[4] == gd[4]
-            v = map(f1, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f1, df, cols, sort=sort)
-            v = map(f2, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f2, df, cols, sort=sort)
-            v = map(f3, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f3, df, cols, sort=sort)
-            v = map(f4, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f4, df, cols, sort=sort)
-            v = map(f5, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f5, df, cols, sort=sort)
-            v = map(f5, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f5, df, cols, sort=sort)
-            v = map(f6, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f6, df, cols, sort=sort)
-            v = map(f7, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f7, df, cols, sort=sort)
-            v = map(f8, gd)
-            @test vcat(v[1], v[2], v[3], v[4]) == by(f8, df, cols, sort=sort)
+            # map() without and with groups sorting
+            for sort in (false, true)
+                gd = groupby_checked(df, cols, sort=sort)
+                v = map(d -> d[[:c]], gd)
+                @test length(gd) == length(v)
+                @test v[1][names(df)] == gd[1] &&
+                    v[2][names(df)] == gd[2] &&
+                    v[3][names(df)] == gd[3] &&
+                    v[4][names(df)] == gd[4]
+                @test names(parent(v))[v.cols] == colssym
+                v = map(f1, gd)
+                @test vcat(v[1], v[2], v[3], v[4]) == by(f1, df, cols, sort=sort)
+                v = map(f2, gd)
+                @test vcat(v[1], v[2], v[3], v[4]) == by(f2, df, cols, sort=sort)
+                v = map(f3, gd)
+                @test vcat(v[1], v[2], v[3], v[4]) == by(f3, df, cols, sort=sort)
+                v = map(f4, gd)
+                @test vcat(v[1], v[2], v[3], v[4]) == by(f4, df, cols, sort=sort)
+                v = map(f5, gd)
+                @test vcat(v[1], v[2], v[3], v[4]) == by(f5, df, cols, sort=sort)
+                v = map(f5, gd)
+                @test vcat(v[1], v[2], v[3], v[4]) == by(f5, df, cols, sort=sort)
+                v = map(f6, gd)
+                @test vcat(v[1], v[2], v[3], v[4]) == by(f6, df, cols, sort=sort)
+                v = map(f7, gd)
+                @test vcat(v[1], v[2], v[3], v[4]) == by(f7, df, cols, sort=sort)
+                v = map(f8, gd)
+                @test vcat(v[1], v[2], v[3], v[4]) == by(f8, df, cols, sort=sort)
+            end
         end
 
         # test number of potential combinations higher than typemax(Int32)
