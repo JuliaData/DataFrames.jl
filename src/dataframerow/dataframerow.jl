@@ -209,7 +209,7 @@ function DataFrame(dfr::DataFrameRow)
     parent(dfr)[row:row, cols]
 end
 
-pushhelper!(x, r) = push!(x, x[r])
+@noinline pushhelper!(x, r) = push!(x, x[r])
 
 function Base.push!(df::DataFrame, dfr::DataFrameRow)
     if parent(dfr) === df && index(dfr) isa Index
