@@ -105,35 +105,39 @@ module TestGrouping
         Random.seed!(1)
         df = DataFrame(a = repeat(Union{Int, Missing}[1, 3, 2, 4], outer=[2]),
                        b = repeat(Union{Int, Missing}[2, 1], outer=[4]),
-                       c = Vector{Union{Float64, Missing}}(randn(8)))
+                       c = repeat([0, 1], outer=[4]),
+                       x = Vector{Union{Float64, Missing}}(randn(8)))
 
-        f1(df) = DataFrame(cmax = maximum(df[:c]))
-        f2(df) = (cmax = maximum(df[:c]),)
-        f3(df) = maximum(df[:c])
-        f4(df) = [maximum(df[:c]), minimum(df[:c])]
-        f5(df) = reshape([maximum(df[:c]), minimum(df[:c])], 2, 1)
-        f6(df) = [maximum(df[:c]) minimum(df[:c])]
-        f7(df) = (c2 = df[:c].^2,)
-        f8(df) = DataFrame(c2 = df[:c].^2)
+        f1(df) = DataFrame(xmax = maximum(df.x))
+        f2(df) = (xmax = maximum(df.x),)
+        f3(df) = maximum(df.x)
+        f4(df) = [maximum(df.x), minimum(df.x)]
+        f5(df) = reshape([maximum(df.x), minimum(df.x)], 2, 1)
+        f6(df) = [maximum(df.x) minimum(df.x)]
+        f7(df) = (x2 = df.x.^2,)
+        f8(df) = DataFrame(x2 = df.x.^2)
 
-        for cols in ([:a, :b], [:b, :a], [1, 2], [2, 1], [true, true, false])
+        for cols in ([:a, :b], [:b, :a], [:a, :c], [:c, :a],
+                     [1, 2], [2, 1], [1, 3], [3, 1],
+                     [true, true, false, false], [true, false, true, false])
             colssym = names(df[cols])
             hcatdf = hcat(df[cols], df, makeunique=true)
             nms = names(hcatdf)
             res = unique(df[cols])
-            res.cmax = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
-                        for (a, b) in zip(res.a, res.b)]
+            res.xmax = [maximum(df[(df[colssym[1]] .== a) .& (df[colssym[2]] .== b), :x])
+                        for (a, b) in zip(res[colssym[1]], res[colssym[2]])]
             res2 = unique(df[cols])[repeat(1:4, inner=2), :]
-            res2.x1 = collect(Iterators.flatten([[maximum(df[(df.a .== a) .& (df.b .== b), :c]),
-                                                 minimum(df[(df.a .== a) .& (df.b .== b), :c])]
-                                                 for (a, b) in zip(res.a, res.b)]))
+            res2.x1 = collect(Iterators.flatten(
+                [[maximum(df[(df[colssym[1]] .== a) .& (df[colssym[2]] .== b), :x]),
+                  minimum(df[(df[colssym[1]] .== a) .& (df[colssym[2]] .== b), :x])]
+                 for (a, b) in zip(res[colssym[1]], res[colssym[2]])]))
             res3 = unique(df[cols])
-            res3.x1 = [maximum(df[(df.a .== a) .& (df.b .== b), :c])
-                    for (a, b) in zip(res.a, res.b)]
-            res3.x2 = [minimum(df[(df.a .== a) .& (df.b .== b), :c])
-                    for (a, b) in zip(res.a, res.b)]
+            res3.x1 = [maximum(df[(df[colssym[1]] .== a) .& (df[colssym[2]] .== b), :x])
+                       for (a, b) in zip(res[colssym[1]], res[colssym[2]])]
+            res3.x2 = [minimum(df[(df[colssym[1]] .== a) .& (df[colssym[2]] .== b), :x])
+                       for (a, b) in zip(res[colssym[1]], res[colssym[2]])]
             res4 = df[cols]
-            res4.c2 = df.c.^2
+            res4.x2 = df.x.^2
             shcatdf = sort(hcatdf, colssym)
             sres = sort(res, colssym)
             sres2 = sort(res2, colssym)
@@ -146,7 +150,7 @@ module TestGrouping
                 shcatdf[.!nonunique(shcatdf, colssym), :]
             @test by(df, cols, f1) == res
             @test by(df, cols, f2) == res
-            @test rename(by(df, cols, f3), :x1 => :cmax) == res
+            @test rename(by(df, cols, f3), :x1 => :xmax) == res
             @test by(df, cols, f4) == res2
             @test by(df, cols, f5) == res2
             @test by(df, cols, f6) == res3
@@ -159,7 +163,7 @@ module TestGrouping
                 shcatdf[.!nonunique(shcatdf, colssym), :]
             @test by(df, cols, f1, sort=true) == sres
             @test by(df, cols, f2, sort=true) == sres
-            @test rename(by(df, cols, f3, sort=true), :x1 => :cmax) == sres
+            @test rename(by(df, cols, f3, sort=true), :x1 => :xmax) == sres
             @test by(df, cols, f4, sort=true) == sres2
             @test by(df, cols, f5, sort=true) == sres2
             @test by(df, cols, f6, sort=true) == sres3
@@ -171,12 +175,13 @@ module TestGrouping
 
             # groupby() without groups sorting
             gd = groupby_checked(df, cols)
+            @test names(parent(gd))[gd.cols] == colssym
             @test sort(combine(identity, gd), colssym) ==
                 sort(combine(gd), colssym) ==
                 shcatdf
             @test combine(f1, gd) == res
             @test combine(f2, gd) == res
-            @test rename(combine(f3, gd), :x1 => :cmax) == res
+            @test rename(combine(f3, gd), :x1 => :xmax) == res
             @test combine(f4, gd) == res2
             @test combine(f5, gd) == res2
             @test combine(f6, gd) == res3
@@ -185,14 +190,15 @@ module TestGrouping
 
             # groupby() with groups sorting
             gd = groupby_checked(df, cols, sort=true)
+            @test names(parent(gd))[gd.cols] == colssym
             for i in 1:length(gd)
-                @test all(gd[i].a .== sres.a[i])
-                @test all(gd[i].b .== sres.b[i])
+                @test all(gd[i][colssym[1]] .== sres[i, colssym[1]])
+                @test all(gd[i][colssym[2]] .== sres[i, colssym[2]])
             end
             @test combine(identity, gd) == combine(gd) == shcatdf
             @test combine(f1, gd) == sres
             @test combine(f2, gd) == sres
-            @test rename(combine(f3, gd), :x1 => :cmax) == sres
+            @test rename(combine(f3, gd), :x1 => :xmax) == sres
             @test combine(f4, gd) == sres2
             @test combine(f5, gd) == sres2
             @test combine(f6, gd) == sres3
@@ -202,12 +208,14 @@ module TestGrouping
             # map() without and with groups sorting
             for sort in (false, true)
                 gd = groupby_checked(df, cols, sort=sort)
-                v = map(d -> d[[:c]], gd)
+                v = map(d -> d[[:x]], gd)
                 @test length(gd) == length(v)
-                @test v[1][names(df)] == gd[1] &&
-                    v[2][names(df)] == gd[2] &&
-                    v[3][names(df)] == gd[3] &&
-                    v[4][names(df)] == gd[4]
+                nms = [colssym; :x]
+                @test v[1] == gd[1][nms]
+                @test v[1] == gd[1][nms] &&
+                    v[2] == gd[2][nms] &&
+                    v[3] == gd[3][nms] &&
+                    v[4] == gd[4][nms]
                 @test names(parent(v))[v.cols] == colssym
                 v = map(f1, gd)
                 @test vcat(v[1], v[2], v[3], v[4]) == by(f1, df, cols, sort=sort)
