@@ -216,6 +216,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow)
         # in this case we are sure that all we do is safe
         r = row(dfr)
         for col in _columns(df)
+            # use a barrier function to improve performance
             pushhelper!(col, r)
         end
     else
