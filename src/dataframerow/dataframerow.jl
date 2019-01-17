@@ -203,3 +203,39 @@ function Base.isless(r1::DataFrameRow, r2::DataFrameRow)
     end
     return false
 end
+
+function DataFrame(dfr::DataFrameRow)
+    row, cols = parentindices(dfr)
+    parent(dfr)[row:row, cols]
+end
+
+pushhelper!(x, r) = push!(x, x[r])
+
+function Base.push!(df::DataFrame, dfr::DataFrameRow)
+    if parent(dfr) === df && index(dfr) isa Index
+        # in this case we are sure that all we do is safe
+        r = row(dfr)
+        for col in _columns(df)
+            pushhelper!(col, r)
+        end
+    else
+        # DataFrameRow can contain duplicate columns and we disallow this
+        # corner case when push!-ing
+        size(df, 2) == length(dfr) || throw(ArgumentError("Inconsistent number of columns"))
+        i = 1
+        for nm in _names(df)
+            try
+                push!(df[i], dfr[nm])
+            catch
+                #clean up partial dfr
+                for j in 1:(i - 1)
+                    pop!(df[j])
+                end
+                msg = "Error adding value to column :$nm."
+                throw(ArgumentError(msg))
+            end
+            i += 1
+        end
+    end
+    df
+end
