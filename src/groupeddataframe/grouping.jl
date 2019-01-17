@@ -238,9 +238,11 @@ function Base.map(f::Any, gd::GroupedDataFrame)
         resize!(starts, j-1)
         resize!(ends, j-1)
         ends[end] = length(idx)
-        return GroupedDataFrame(parent, gd.cols, idx, collect(1:length(idx)), starts, ends)
+        return GroupedDataFrame(parent, collect(1:length(gd.cols)), idx,
+                                collect(1:length(idx)), starts, ends)
     else
-        return GroupedDataFrame(gd.parent[1:0, gd.cols], gd.cols, Int[], Int[], Int[], Int[])
+        return GroupedDataFrame(gd.parent[1:0, gd.cols], collect(1:length(gd.cols)),
+                                Int[], Int[], Int[], Int[])
     end
 end
 
