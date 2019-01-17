@@ -228,7 +228,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow)
             try
                 push!(df[i], dfr[nm])
             catch
-                #clean up partial dfr
+                #clean up partial row
                 for j in 1:(i - 1)
                     pop!(df[j])
                 end
