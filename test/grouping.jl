@@ -985,5 +985,35 @@ module TestGrouping
             \t1 & 4 & A\\textbackslash{}nC & 4.0 \\\\
             \\end{tabular}
             """
+
+        gd = groupby(DataFrame(a=[Symbol("&")], b=["&"]), [1,2])
+        @test sprint(show, gd) === """
+            GroupedDataFrame with 1 group based on keys: :a, :b
+            Group 1 (1 row): :a = :&, :b = "&"
+            │ Row │ a      │ b      │
+            │     │ Symbol │ String │
+            ├─────┼────────┼────────┤
+            │ 1   │ &      │ &      │"""
+
+        @test sprint(show, "text/html", gd) ==
+            "<p><b>GroupedDataFrame with 1 group based on keys: :a, :b</b></p><p><i>" *
+            "First Group (1 row): :a = :&amp;, :b = \"&amp;\"</i></p>" *
+            "<table class=\"data-frame\"><thead><tr><th></th><th>a</th><th>b</th></tr>" *
+            "<tr><th></th><th>Symbol</th><th>String</th></tr></thead><tbody><tr><th>1</th>" *
+            "<td>&amp;</td><td>&amp;</td></tr></tbody></table>"
+
+        @test sprint(show, "text/latex", gd) == """
+            GroupedDataFrame with 1 group based on keys: :a, :b
+
+            First Group (1 row): :a = :\\&, :b = "\\&"
+
+            \\begin{tabular}{r|cc}
+            \t& a & b\\\\
+            \t\\hline
+            \t& Symbol & String\\\\
+            \t\\hline
+            \t1 & \\& & \\& \\\\
+            \\end{tabular}
+            """
     end
 end

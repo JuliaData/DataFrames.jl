@@ -168,7 +168,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
-    keys = join(':' .* string.(keynames), ", ")
+    keys = html_escape(join(':' .* string.(keynames), ", "))
     keystr = length(gd.cols) > 1 ? "keys" : "key"
     groupstr = N > 1 ? "groups" : "group"
     write(io, "<p><b>$(typeof(gd).name) with $N $groupstr based on $keystr: $keys</b></p>")
@@ -176,7 +176,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         nrows = size(gd[1], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [':' * string(parent_names[col], " = ", first(gd[1][col]))
+        identified_groups = [html_escape(':' * string(parent_names[col], " = ", repr(first(gd[1][col]))))
                              for col in gd.cols]
 
         write(io, "<p><i>First Group ($nrows $rows): ")
@@ -188,7 +188,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         nrows = size(gd[N], 1)
         rows = nrows > 1 ? "rows" : "row"
 
-        identified_groups = [':' * string(parent_names[col], " = ", first(gd[N][col]))
+        identified_groups = [html_escape(':' * string(parent_names[col], " = ", repr(first(gd[N][col]))))
                              for col in gd.cols]
 
         write(io, "<p>&vellip;</p>")
@@ -297,7 +297,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         rows = nrows > 1 ? "rows" : "row"
 
         identified_groups = [latex_escape(':' * string(parent_names[col], " = ",
-                                                       first(gd[1][col])))
+                                                       repr(first(gd[1][col]))))
                              for col in gd.cols]
 
         write(io, "First Group ($nrows $rows): ")
@@ -310,7 +310,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         rows = nrows > 1 ? "rows" : "row"
 
         identified_groups = [latex_escape(':' * string(parent_names[col], " = ",
-                                                       first(gd[N][col])))
+                                                       repr(first(gd[N][col]))))
                              for col in gd.cols]
 
         write(io, "\n\$\\dots\$\n\n")
