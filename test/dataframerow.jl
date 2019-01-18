@@ -244,6 +244,27 @@ module TestDataFrameRow
         @test_throws KeyError dfr2.x2
     end
 
+    @testset "conversion and push!" begin
+            df = DataFrame(x=1, y=2)
+
+            @test df == DataFrame(df[1, :])
+            @test df[1:1, [2,1]] == DataFrame(df[1, [2,1]])
+            @test df[1:1, 1:1] == DataFrame(df[1, 1:1])
+            @test_throws ArgumentError DataFrame(df[1, [1,1]])
+
+            @test_throws ArgumentError push!(df, df[1, 1:1])
+            @test df == DataFrame(x=1, y=2)
+
+            @test_throws ArgumentError push!(df, df[1, [2,2]])
+            @test df == DataFrame(x=1, y=2)
+
+            @test_throws ArgumentError push!(df, df[1, [2,1,2]])
+            @test df == DataFrame(x=1, y=2)
+
+            @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
+            @test push!(df, df[1, [2,1]]) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
+    end
+
     @testset "show" begin
         df = DataFrame(a=nothing, b=1)
 

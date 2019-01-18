@@ -1016,20 +1016,11 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple})
     i = 1
     for nm in _names(df)
         try
-            val = get(row, nm) do
-                v = row[string(nm)]
-                Base.depwarn("push!(::DataFrame, ::AbstractDict) with " *
-                             "AbstractDict keys other than Symbol is deprecated",
-                             :push!)
-                v
-            end
-            # after deprecation replace above call by
-            # val = row[nm]
-            push!(df[nm], val)
+            push!(df[i], row[nm])
         catch
             #clean up partial row
             for j in 1:(i - 1)
-                pop!(df[_names(df)[j]])
+                pop!(df[j])
             end
             msg = "Error adding value to column :$nm."
             throw(ArgumentError(msg))
