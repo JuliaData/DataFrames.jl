@@ -53,7 +53,8 @@ end
     DataFrames.getmaxwidths(df::AbstractDataFrame,
                             rowindices1::AbstractVector{Int},
                             rowindices2::AbstractVector{Int},
-                            rowlabel::Symbol)
+                            rowlabel::Symbol,
+                            missingstring::String)
 
 Calculate, for each column of an AbstractDataFrame, the maximum
 string width used to render the name of that column, its type, and the
@@ -78,6 +79,7 @@ implicit row ID column contained in every `AbstractDataFrame`.
 - `rowlabel::AbstractString`: The label that will be used when rendered the
   numeric ID's of each row. Typically, this will be set to "Row".
 
+- `missingstring::String = "missing"`: The string that is printed for `missing` values.
 # Examples
 ```jldoctest
 julia> using DataFrames
@@ -95,10 +97,12 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol,
+                      missingstring::String,
                       rowid=nothing) # -> Vector{Int}
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
     undefstrwidth = ourstrwidth(Base.undef_ref_str)
+    missingstrwidth = ourstrwidth(missingstring)
 
     j = 1
     for (name, col) in eachcol(df, true)
@@ -108,7 +112,11 @@ function getmaxwidths(df::AbstractDataFrame,
         # (2) Consider length of longest entry in that column
         for indices in (rowindices1, rowindices2), i in indices
             if isassigned(col, i)
-                maxwidth = max(maxwidth, ourstrwidth(col[i]))
+                if ismissing(col[i])
+                    maxwidth = max(maxwidth, missingstrwidth)
+                else    
+                    maxwidth = max(maxwidth, ourstrwidth(col[i]))
+                end
             else
                 maxwidth = max(maxwidth, undefstrwidth)
             end
@@ -148,7 +156,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A = 1:3, B = ["x", "yy", "z"]);
 
-julia> maxwidths = DataFrames.getmaxwidths(df, 1:1, 3:3, :Row)
+julia> maxwidths = DataFrames.getmaxwidths(df, 1:1, 3:3, :Row, "missing")
 3-element Array{Int64,1}:
  1
  1
@@ -197,7 +205,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A = 1:3, B = ["x", "yy", "z"]);
 
-julia> maxwidths = DataFrames.getmaxwidths(df, 1:1, 3:3, :Row)
+julia> maxwidths = DataFrames.getmaxwidths(df, 1:1, 3:3, :Row, "missing")
 3-element Array{Int64,1}:
  1
  1
@@ -257,6 +265,7 @@ required for printing have been precomputed.
   required to render each column.
 - `leftcol::Int`: The index of the first column in a chunk to be rendered.
 - `rightcol::Int`: The index of the last column in a chunk to be rendered.
+- `missingstring::String = "missing"`: The string that is printed for `missing` values.
 - `rowid`: Used to handle showing `DataFrameRow`.
 
 # Examples
@@ -365,6 +374,7 @@ NOTE: The value of `maxwidths[end]` must be the string width of
 - `displaysummary::Bool`: Should a brief string summary of the
   AbstractDataFrame be rendered to the I/O stream before printing the
   contents of the renderable rows? Defaults to `true`.
+- `missingstring::String = "missing"`: The string that is printed for `missing` values.
 - `rowid = nothing`: Used to handle showing `DataFrameRow`
 
 # Examples
@@ -532,7 +542,7 @@ function _show(io::IO,
         rowindices1 = 1:bound
         rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
     end
-    maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel, rowid)
+    maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel, missingstring, rowid)
     width = getprintedwidth(maxwidths)
     showrows(io,
              df,
