@@ -4,7 +4,8 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                    allcols::Bool = !get(io, :limit, false),
                    splitcols::Bool = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
-                   summary::Bool = true)
+                   summary::Bool = true,
+                   missingstring::String = "missing")
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
@@ -25,7 +26,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             join(io, identified_groups, ", ")
 
             show(io, gd[i], summary=false,
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel)
+                 allrows=allrows, allcols=allcols, rowlabel=rowlabel, missingstring=missingstring)
         end
     else
         if N > 0
@@ -39,7 +40,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             join(io, identified_groups, ", ")
 
             show(io, gd[1], summary=false,
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel)
+                 allrows=allrows, allcols=allcols, rowlabel=rowlabel, missingstring=missingstring)
         end
         if N > 1
             nrows = size(gd[N], 1)
@@ -52,7 +53,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
             join(io, identified_groups, ", ")
 
             show(io, gd[N], summary=false,
-                 allrows=allrows, allcols=allcols, rowlabel=rowlabel)
+                 allrows=allrows, allcols=allcols, rowlabel=rowlabel, missingstring=missingstring)
         end
     end
 end
@@ -63,8 +64,9 @@ function Base.show(df::GroupedDataFrame;
                    allgroups::Bool = !get(stdout, :limit, true),
                    splitcols::Bool = get(stdout, :limit, true),
                    rowlabel::Symbol = :Row,
-                   summary::Bool = true) # -> Nothing
+                   summary::Bool = true,
+                   missingstring::String = "missing")) # -> Nothing
     return show(stdout, df,
                 allrows=allrows, allcols=allcols, allgroups=allgroups, splitcols=splitcols,
-                rowlabel=rowlabel, summary=summary)
+                rowlabel=rowlabel, summary=summary, missingstring=missingstring)
 end

@@ -276,6 +276,7 @@ function showrowindices(io::IO,
                         maxwidths::Vector{Int},
                         leftcol::Int,
                         rightcol::Int,
+                        missingstring::String,
                         rowid) # -> Void
     rowmaxwidth = maxwidths[end]
 
@@ -298,7 +299,8 @@ function showrowindices(io::IO,
                 s = df[i, j]
                 strlen = ourstrwidth(s)
                 if ismissing(s)
-                    printstyled(io, s, color=:light_black)
+                    printstyled(io, missingstring, color=:light_black)
+                    strlen = ourstrwidth(missingstring)
                 elseif s === nothing
                     strlen = 0
                 else
@@ -390,6 +392,7 @@ function showrows(io::IO,
                   allcols::Bool = false,
                   rowlabel::Symbol = :Row,
                   displaysummary::Bool = true,
+                  missingstring::String = "missing",
                   rowid=nothing) # -> Void
     ncols = size(df, 2)
 
@@ -481,6 +484,7 @@ function showrows(io::IO,
                        maxwidths,
                        leftcol,
                        rightcol,
+                       missingstring,
                        rowid)
 
         if !isempty(rowindices2)
@@ -491,6 +495,7 @@ function showrows(io::IO,
                            maxwidths,
                            leftcol,
                            rightcol,
+                           missingstring,
                            rowid)
         end
 
@@ -510,6 +515,7 @@ function _show(io::IO,
                splitcols = get(io, :limit, false),
                rowlabel::Symbol = :Row,
                summary::Bool = true,
+               missingstring::String = "missing",
                rowid=nothing)
     nrows = size(df, 1)
     if rowid !== nothing
@@ -537,6 +543,7 @@ function _show(io::IO,
              allcols,
              rowlabel,
              summary,
+             missingstring,
              rowid)
     return
 end
@@ -575,6 +582,7 @@ while `splitcols` defaults to `true`.
   By default this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
+- `missingstring::String = "missing"`: The string that is printed for `missing` values.
 
 # Examples
 ```jldoctest
@@ -598,16 +606,18 @@ Base.show(io::IO,
           allcols::Bool = !get(io, :limit, false),
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
-          summary::Bool = true) =
+          summary::Bool = true,
+          missingstring::String = "missing") =
     _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
-          rowlabel=rowlabel, summary=summary)
+          rowlabel=rowlabel, summary=summary, missingstring=missingstring)
 
 Base.show(df::AbstractDataFrame;
           allrows::Bool = !get(stdout, :limit, true),
           allcols::Bool = !get(stdout, :limit, true),
           splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
-          summary::Bool = true) =
+          summary::Bool = true,
+          missingstring::String = "missing") =
     show(stdout, df,
          allrows=allrows, allcols=allcols, splitcols=splitcols,
-         rowlabel=rowlabel, summary=summary)
+         rowlabel=rowlabel, summary=summary, missingstring=missingstring)
