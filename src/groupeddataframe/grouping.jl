@@ -1106,3 +1106,8 @@ function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
     sort && sort!(res, headers)
     res
 end
+
+function DataFrames.DataFrame(gd::GroupedDataFrame)
+    non_cols = setdiff(axes(parent(gd), 2), gd.cols)
+    combine(sdf -> view(sdf, :, non_cols), gd)
+end
