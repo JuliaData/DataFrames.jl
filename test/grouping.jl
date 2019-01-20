@@ -1032,7 +1032,7 @@ module TestGrouping
     @testset "DataFrame" begin
         df = DataFrame(A = [missing, :A, :B, :A, :B, missing], B = 1:6)
         gd = groupby_checked(df, :A)
-        @test sort(DataFrame(gd), :B) == sort(df, :B)
+        @test sort(DataFrame(gd), :B) ≅ sort(df, :B)
         @test eltypes(DataFrame(gd)) == eltypes(df)
         gd = groupby_checked(df, :A, skipmissing=true)
         @test sort(DataFrame(gd), :B) == sort(dropmissing(df, disallowmissing=false), :B)
