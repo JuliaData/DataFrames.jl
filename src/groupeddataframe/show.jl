@@ -5,7 +5,7 @@ function Base.show(io::IO, gd::GroupedDataFrame;
                    splitcols::Bool = get(io, :limit, false),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true,
-                   missingstring::String = "missing")
+                   missingstring::AbstractString = "missing")
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)

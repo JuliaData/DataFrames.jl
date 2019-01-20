@@ -54,7 +54,7 @@ end
                             rowindices1::AbstractVector{Int},
                             rowindices2::AbstractVector{Int},
                             rowlabel::Symbol,
-                            missingstring::String)
+                            missingstring::AbstractString)
 
 Calculate, for each column of an AbstractDataFrame, the maximum
 string width used to render the name of that column, its type, and the
@@ -79,7 +79,7 @@ implicit row ID column contained in every `AbstractDataFrame`.
 - `rowlabel::AbstractString`: The label that will be used when rendered the
   numeric ID's of each row. Typically, this will be set to "Row".
 
-- `missingstring::String = "missing"`: The string that is printed for `missing` values.
+- `missingstring::AbstractString = "missing"`: The string that is printed for `missing` values.
 # Examples
 ```jldoctest
 julia> using DataFrames
@@ -97,7 +97,7 @@ function getmaxwidths(df::AbstractDataFrame,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol,
-                      missingstring::String,
+                      missingstring::AbstractString,
                       rowid=nothing) # -> Vector{Int}
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
@@ -265,7 +265,7 @@ required for printing have been precomputed.
   required to render each column.
 - `leftcol::Int`: The index of the first column in a chunk to be rendered.
 - `rightcol::Int`: The index of the last column in a chunk to be rendered.
-- `missingstring::String = "missing"`: The string that is printed for `missing` values.
+- `missingstring::AbstractString = "missing"`: The string that is printed for `missing` values.
 - `rowid`: Used to handle showing `DataFrameRow`.
 
 # Examples
@@ -285,7 +285,7 @@ function showrowindices(io::IO,
                         maxwidths::Vector{Int},
                         leftcol::Int,
                         rightcol::Int,
-                        missingstring::String,
+                        missingstring::AbstractString,
                         rowid) # -> Void
     rowmaxwidth = maxwidths[end]
 
@@ -374,7 +374,7 @@ NOTE: The value of `maxwidths[end]` must be the string width of
 - `displaysummary::Bool`: Should a brief string summary of the
   AbstractDataFrame be rendered to the I/O stream before printing the
   contents of the renderable rows? Defaults to `true`.
-- `missingstring::String = "missing"`: The string that is printed for `missing` values.
+- `missingstring::AbstractString = "missing"`: The string that is printed for `missing` values.
 - `rowid = nothing`: Used to handle showing `DataFrameRow`
 
 # Examples
@@ -402,7 +402,7 @@ function showrows(io::IO,
                   allcols::Bool = false,
                   rowlabel::Symbol = :Row,
                   displaysummary::Bool = true,
-                  missingstring::String = "missing",
+                  missingstring::AbstractString = "missing",
                   rowid=nothing) # -> Void
     ncols = size(df, 2)
 
@@ -525,7 +525,7 @@ function _show(io::IO,
                splitcols = get(io, :limit, false),
                rowlabel::Symbol = :Row,
                summary::Bool = true,
-               missingstring::String = "missing",
+               missingstring::AbstractString = "missing",
                rowid=nothing)
     nrows = size(df, 1)
     if rowid !== nothing
@@ -592,7 +592,7 @@ while `splitcols` defaults to `true`.
   By default this is the case only if `io` has the `IOContext` property `limit` set.
 - `rowlabel::Symbol = :Row`: The label to use for the column containing row numbers.
 - `summary::Bool = true`: Whether to print a brief string summary of the data frame.
-- `missingstring::String = "missing"`: The string that is printed for `missing` values.
+- `missingstring::AbstractString = "missing"`: The string that is printed for `missing` values.
 
 # Examples
 ```jldoctest
@@ -617,7 +617,7 @@ Base.show(io::IO,
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
-          missingstring::String = "missing") =
+          missingstring::AbstractString = "missing") =
     _show(io, df, allrows=allrows, allcols=allcols, splitcols=splitcols,
           rowlabel=rowlabel, summary=summary, missingstring=missingstring)
 
@@ -627,7 +627,7 @@ Base.show(df::AbstractDataFrame;
           splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row,
           summary::Bool = true,
-          missingstring::String = "missing") =
+          missingstring::AbstractString = "missing") =
     show(stdout, df,
          allrows=allrows, allcols=allcols, splitcols=splitcols,
          rowlabel=rowlabel, summary=summary, missingstring=missingstring)
