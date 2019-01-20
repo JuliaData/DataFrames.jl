@@ -65,7 +65,7 @@ function Base.show(df::GroupedDataFrame;
                    splitcols::Bool = get(stdout, :limit, true),
                    rowlabel::Symbol = :Row,
                    summary::Bool = true,
-                   missingstring::String = "missing")) # -> Nothing
+                   missingstring::String = "missing") # -> Nothing
     return show(stdout, df,
                 allrows=allrows, allcols=allcols, allgroups=allgroups, splitcols=splitcols,
                 rowlabel=rowlabel, summary=summary, missingstring=missingstring)
