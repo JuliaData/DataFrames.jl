@@ -1109,7 +1109,7 @@ function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
     res
 end
 
-function DataFrames.DataFrame(gd::GroupedDataFrame)
+function DataFrame(gd::GroupedDataFrame)
     length(gd) == 0 && return similar(parent(gd), 0)
     idx = similar(gd.idx)
     doff = 1
