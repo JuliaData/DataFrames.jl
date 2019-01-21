@@ -6,6 +6,11 @@ module TestGrouping
     # (since == and isequal do not use it)
     function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
         gd = groupby(df, keys, args...; kwargs...)
+        @assert sortperm(gd.starts) == sortperm(gd.ends)
+        @assert isempty(gd.starts) || minimum(gd.starts) == 1
+        @assert isempty(gd.ends) || maximum(gd.ends) == length(gd.idx)
+        @assert length(gd.starts) == length(gd.ends)
+        @assert length(gd.idx) == count(!iszero, gd.groups)
         for i in 1:length(gd)
             @assert findall(==(i), gd.groups) == gd.idx[gd.starts[i]:gd.ends[i]]
         end

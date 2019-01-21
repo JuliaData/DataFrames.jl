@@ -258,6 +258,14 @@ function group_rows(df::AbstractDataFrame, hash::Bool = true, sort::Bool = false
 
     # drop group 1 which contains rows with missings in grouping columns
     if skipmissing
+        s = starts[2]
+        if s > 1
+            N = length(rperm) - s + 1
+            copyto!(rperm, 1, rperm, s, N)
+            resize!(rperm, N)
+            starts .-= s .- 1
+            stops .-= s .- 1
+        end
         popfirst!(starts)
         popfirst!(stops)
         groups .-= 1
