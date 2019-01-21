@@ -1035,23 +1035,23 @@ module TestGrouping
         for df in [dfx, view(dfx, :, :)]
             gd = groupby_checked(df, :A)
             @test sort(DataFrame(gd), :B) ≅ sort(df, :B)
-            @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int64]
+            @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
 
             gd = groupby_checked(df, :A, skipmissing=true)
             @test sort(DataFrame(gd), :B) ==
                   sort(dropmissing(df, disallowmissing=false), :B)
-            @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int64]
+            @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
         end
 
         df = DataFrame(a=Int[], b=[], c=Union{Missing, String}[])
         gd = groupby_checked(df, :a)
         @test size(DataFrame(gd)) == size(df)
-        @test eltypes(DataFrame(gd)) == [Int64, Any, Union{Missing, String}]
+        @test eltypes(DataFrame(gd)) == [Int, Any, Union{Missing, String}]
 
         dfv = view(dfx, 1:0, :)
         gd = groupby_checked(dfv, :A)
         @test size(DataFrame(gd)) == size(dfv)
-        @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int64]
+        @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
     end
 
 end # module
