@@ -1011,7 +1011,8 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     # get the elements that are not present in everything
     @show coldiff = setdiff(unionunique, intersectunique)
 
-    if (widen == false) && !isempty(coldiff)
+    @show keep
+    if (widen == false) && !isempty(coldiff) && keep == nothing
         # if any DataFrames are a full superset of names, skip them
         filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
         estrings = Vector{String}(undef, length(uniqueheaders))
@@ -1025,15 +1026,20 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         throw(ArgumentError(join(estrings, ", ", ", and ")))
     end
 
-    # TODO: get preserve order of first headers as much 
-    # as possible 
-    # Formerly this was done with: 
-    # header = allheaders[1]
-
-    # TODO: make sure that `keep` can't throws a good error if 
+    # TODO: make sure that `keep` throws a good error if 
     # it a) isn't in `allheaders` or b) isn't a subset of `unionunique`
     header = (keep == nothing) ? unionunique : keep 
-    
+
+    if keep == nothing 
+        # Make the order of the names match the order of the dataframes inputted
+        header = let unionunique = unionunique, allheaders = allheaders
+            t = [filter(h -> h in unionunique, head) for head in allheaders]
+            reduce((a, b) -> [a; setdiff(b, a)], t)
+        end
+    else 
+        header = keep 
+    end
+
     length(header) == 0 && return DataFrame()
     cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
