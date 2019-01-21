@@ -46,4 +46,10 @@ module TestDeprecated
                   "Expected if Julia was not built from source.")
         end
     end
+
+    # deprecated combine
+
+    df = DataFrame(a=[1, 1, 2, 2, 2], b=1:6)
+    gd = groupby(df, :a)
+    @test combine(gd) == combine(identity, gd)
 end
