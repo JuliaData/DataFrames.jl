@@ -24,6 +24,20 @@ module TestIO
             \\end{tabular}
             """
         @test repr(MIME("text/latex"), df) == str
+    
+        str = """
+            \\begin{tabular}{r|cccccc}
+            \t& A & B & C & D & E & F\\\\
+            \t\\hline
+            \t& $(Int) & String & LaTeXStr… & Float64⍰ & Categorical…⍰ & String\\\\
+            \t\\hline
+            \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 & a & \\#undef \\\\
+            \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 & missing & \\#undef \\\\
+            \t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ & missing & c & \\#undef \\\\
+            \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d & \\#undef \\\\
+            \\end{tabular}
+            """
+        @test repr(MIME("text/latex"), df, missingstring="missing") == str
     end
 
     @testset "Huge LaTeX export" begin
@@ -69,6 +83,14 @@ module TestIO
                     "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
                     "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
                     "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
+        io = IOBuffer()
+        show(io, MIME"text/html"(), df, summary=false, missingstring="-")
+        str = String(take!(io))
+        @test str == "<table class=\"data-frame\"><thead><tr><th>" *
+                    "</th><th>Fish</th><th>Mass</th></tr>" *
+                    "<tr><th></th><th>String</th><th>Float64⍰</th></tr></thead><tbody>" *
+                    "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
+                    "<tr><th>2</th><td>#undef</td><td>-</td></tr></tbody></table>"
     end
 
     # test limit attribute of IOContext is used
@@ -165,5 +187,17 @@ module TestIO
         1\t1.0
         2\t2.0
         """
+        df = DataFrame(a = [1,2], b = [1.0, missing])  
+        @test sprint(show, "text/csv", df, missingstring="-") == """
+        "a","b"
+        1,1.0
+        2,"-"
+        """    
+        @test sprint(show, "text/tab-separated-values", df, missingstring="-") == """
+        "a"\t"b"
+        1\t1.0
+        2\t"-"
+        """
+        
     end
 end
