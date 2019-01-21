@@ -247,7 +247,6 @@ function Base.map(f::Any, gd::GroupedDataFrame)
 end
 
 """
-    combine(gd::GroupedDataFrame)
     combine(gd::GroupedDataFrame, cols => f...)
     combine(gd::GroupedDataFrame; (colname = cols => f)...)
     combine(gd::GroupedDataFrame, f)
@@ -363,8 +362,11 @@ end
 combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
 combine(gd::GroupedDataFrame, f::Pair...) = combine(f, gd)
 combine(gd::GroupedDataFrame, f::Pair) = combine(f, gd)
-combine(gd::GroupedDataFrame; f...) =
-    isempty(f) ? combine(identity, gd) : combine(values(f), gd)
+combine(gd::GroupedDataFrame; f...) = combine(values(f), gd)
+
+# TODO: change to throw an error after deprecation period
+# combine(gd::GroupedDataFrame) = throw(ArgumentError("missing transformation specification"))
+@deprecate combine(gd::GroupedDataFrame) DataFrame(gd)
 
 # Wrapping automatically adds column names when the value returned
 # by the user-provided function lacks them
