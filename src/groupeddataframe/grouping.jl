@@ -1111,7 +1111,13 @@ end
 
 function DataFrames.DataFrame(gd::GroupedDataFrame)
     length(gd) == 0 && return similar(parent(gd), 0)
-    # below we assume that gd.ends[end] == length(gd.idxs)
-    # and that gd.starts and gd.ends are increasing and cover a continuous range
-    parent(gd)[view(gd.idx, gd.starts[1]:gd.ends[end]), :]
+    idx = similar(gd.idx)
+    doff = 1
+    for (s,e) in zip(gd.starts, gd.ends)
+        n = e - s + 1
+        copyto!(idx, doff, gd.idx, s, n)
+        doff += n
+    end
+    @assert doff == length(idx) + 1
+    parent(gd)[idx, :]
 end
