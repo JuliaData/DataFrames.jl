@@ -177,7 +177,6 @@ module TestGrouping
             gd = groupby_checked(df, cols)
             @test names(parent(gd))[gd.cols] == colssym
             @test sort(combine(identity, gd), colssym) ==
-                sort(combine(gd), colssym) ==
                 shcatdf
             @test combine(f1, gd) == res
             @test combine(f2, gd) == res
@@ -195,7 +194,7 @@ module TestGrouping
                 @test all(gd[i][colssym[1]] .== sres[i, colssym[1]])
                 @test all(gd[i][colssym[2]] .== sres[i, colssym[2]])
             end
-            @test combine(identity, gd) == combine(gd) == shcatdf
+            @test combine(identity, gd) == shcatdf
             @test combine(f1, gd) == sres
             @test combine(f2, gd) == sres
             @test rename(combine(f3, gd), :x1 => :xmax) == sres

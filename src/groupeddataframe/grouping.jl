@@ -362,11 +362,15 @@ end
 combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
 combine(gd::GroupedDataFrame, f::Pair...) = combine(f, gd)
 combine(gd::GroupedDataFrame, f::Pair) = combine(f, gd)
-combine(gd::GroupedDataFrame; f...) = combine(values(f), gd)
 
-# TODO: change to throw an error after deprecation period
-# combine(gd::GroupedDataFrame) = throw(ArgumentError("missing transformation specification"))
-@deprecate combine(gd::GroupedDataFrame) DataFrame(gd)
+function combine(gd::GroupedDataFrame; f...)
+    if length(f) == 0
+        Base.depwarn("combine(gd) is deprecated, use DataFrame(gd) instead", :combine)
+        combine(identity, gd)
+    else
+        combine(values(f), gd)
+    end
+end
 
 # Wrapping automatically adds column names when the value returned
 # by the user-provided function lacks them
@@ -1121,6 +1125,6 @@ function DataFrame(gd::GroupedDataFrame)
         min_start = min(min_start, s)
     end
     resize!(idx, doff - 1)
-    @assert doff == length(idx) + 2 - min_start
+    @assert doff == length(gd.idx) + 2 - min_start
     parent(gd)[idx, :]
 end
