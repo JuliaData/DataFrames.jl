@@ -1107,7 +1107,10 @@ function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
     res
 end
 
-function DataFrame(gd::GroupedDataFrame)
-    non_cols = setdiff(axes(parent(gd), 2), gd.cols)
-    combine(sdf -> view(sdf, :, non_cols), gd)
+function DataFrames.DataFrame(gd::GroupedDataFrame)
+    length(gd) == 0 && return similar(parent(gd), 0)
+    # below we assume that gd.ends[end] == length(gd.idxs)
+    # and that gd.starts and gd.ends are increasing and cover a continuous range
+    gd.starts[1] == 1 && return parent(gd)[gd.idx, :]
+    parent(gd)[view(gd.idx, gd.starts[1]:gd.ends[end]), :]
 end

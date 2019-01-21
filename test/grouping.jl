@@ -1030,16 +1030,32 @@ module TestGrouping
     end
 
     @testset "DataFrame" begin
-        df = DataFrame(A = [missing, :A, :B, :A, :B, missing], B = 1:6)
-        gd = groupby_checked(df, :A)
-        @test sort(DataFrame(gd), :B) ≅ sort(df, :B)
-        @test eltypes(DataFrame(gd)) == eltypes(df)
-        gd = groupby_checked(df, :A, skipmissing=true)
-        @test sort(DataFrame(gd), :B) == sort(dropmissing(df, disallowmissing=false), :B)
-        @test eltypes(DataFrame(gd)) == eltypes(dropmissing(df, disallowmissing=false))
-        @test sort(DataFrame(gd), :B) == sort(dropmissing(df, disallowmissing=true), :B)
-        @test eltypes(disallowmissing!(DataFrame(gd))) ==
-              eltypes(dropmissing(df, disallowmissing=true))
+        dfx = DataFrame(A = [missing, :A, :B, :A, :B, missing], B = 1:6)
+
+        for df in [dfx, view(dfx, :, :)]
+            gd = groupby_checked(df, :A)
+            @test sort(DataFrame(gd), :B) ≅ sort(df, :B)
+            @test eltypes(DataFrame(gd)) == eltypes(df)
+            gd = groupby_checked(df, :A, skipmissing=true)
+            @test sort(DataFrame(gd), :B) ==
+                  sort(dropmissing(df, disallowmissing=false), :B)
+            @test eltypes(DataFrame(gd)) ==
+                  eltypes(dropmissing(df, disallowmissing=false))
+            @test sort(DataFrame(gd), :B) ==
+                  sort(dropmissing(df, disallowmissing=true), :B)
+            @test eltypes(disallowmissing!(DataFrame(gd))) ==
+                  eltypes(dropmissing(df, disallowmissing=true))
+        end
+
+        df = DataFrame(a=Int[], b=[], c=Union{Missing, String}[])
+        gd = groupby_checked(df, :a)
+        @test size(DataFrame(gd)) == size(df)
+        @test eltypes(df) == eltypes(DataFrame(gd))
+
+        dfv = view(dfx, 1:0, :)
+        gd = groupby_checked(dfv, :A)
+        @test size(DataFrame(gd)) == size(dfv)
+        @test eltypes(dfv) == eltypes(DataFrame(gd))
     end
 
 end

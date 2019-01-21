@@ -1,4 +1,4 @@
-function make_unique!(names::Vector{Symbol}, src::Vector{Symbol}; makeunique::Bool=false)
+function make_unique!(names::Vector{Symbol}, src::AbstractVector{Symbol}; makeunique::Bool=false)
     if length(names) != length(src)
         throw(ArgumentError("Length of src doesn't match length of names."))
     end
@@ -40,7 +40,7 @@ function make_unique!(names::Vector{Symbol}, src::Vector{Symbol}; makeunique::Bo
     return names
 end
 
-function make_unique(names::Vector{Symbol}; makeunique::Bool=false)
+function make_unique(names::AbstractVector{Symbol}; makeunique::Bool=false)
     make_unique!(similar(names), names, makeunique=makeunique)
 end
 
