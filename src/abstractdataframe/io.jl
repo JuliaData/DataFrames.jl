@@ -92,11 +92,11 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true) =
-    _show(io, mime, df, summary=summary)
+Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true, missingstring::AbstractString="missing") =
+    _show(io, mime, df, summary=summary, missingstring=missingstring)
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
-               summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
+               summary::Bool=true, rowid::Union{Int,Nothing}=nothing, missingstring::AbstractString="missing")
     n = size(df, 1)
     if rowid !== nothing && n != 1
         throw(ArgumentError("rowid may be passed only with a single row data frame"))
@@ -138,7 +138,11 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
         end
         for column_name in cnames
             if isassigned(df[column_name], row)
-                cell = sprint(ourshowcompact, df[row, column_name])
+                if !ismissing(df[row, column_name])
+                    cell = sprint(ourshowcompact, df[row, column_name])
+                else
+                    cell = sprint(ourshowcompact, missingstring)
+                end
             else
                 cell = sprint(ourshowcompact, Base.undef_ref_str)
             end
@@ -158,13 +162,13 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     write(io, "</table>")
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true, missingstring::AbstractString="missing")
     r, c = parentindices(dfr)
     write(io, "<p>DataFrameRow</p>")
-    _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r)
+    _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r, missingstring=missingstring)
 end
 
-function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
+function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame; missingstring::AbstractString="missing")
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
@@ -182,7 +186,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         write(io, "<p><i>First Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "</i></p>")
-        show(io, mime, gd[1], summary=false)
+        show(io, mime, gd[1], summary=false, missingstring=missingstring)
     end
     if N > 1
         nrows = size(gd[N], 1)
@@ -195,7 +199,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         write(io, "<p><i>Last Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "</i></p>")
-        show(io, mime, gd[N], summary=false)
+        show(io, mime, gd[N], summary=false, missingstring=missingstring)
     end
 end
 
@@ -219,10 +223,10 @@ function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
-Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame) =
-    _show(io, mime, df)
+Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame; missingstring::AbstractString="") =
+    _show(io, mime, df, missingstring=missingstring)
 
-function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
+function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing, missingstring::AbstractString="")
     nrows = size(df, 1)
     ncols = size(df, 2)
 
@@ -265,6 +269,8 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
                 else
                     print(io, latex_escape(sprint(ourshowcompact, cell)))
                 end
+            else
+                print(io, latex_escape(sprint(ourshowcompact, missingstring)))
             end
         end
         write(io, " \\\\\n")
@@ -279,12 +285,12 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     write(io, "\\end{tabular}\n")
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
+function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow; missingstring::AbstractString="")
     r, c = parentindices(dfr)
-    _show(io, mime, view(parent(dfr), [r], c), rowid=r)
+    _show(io, mime, view(parent(dfr), [r], c), rowid=r, missingstring=missingstring)
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
+function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame; missingstring::AbstractString="")
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
@@ -303,7 +309,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         write(io, "First Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "\n\n")
-        show(io, mime, gd[1])
+        show(io, mime, gd[1], missingstring=missingstring)
     end
     if N > 1
         nrows = size(gd[N], 1)
@@ -317,7 +323,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         write(io, "Last Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "\n\n")
-        show(io, mime, gd[N])
+        show(io, mime, gd[N], missingstring=missingstring)
     end
 end
 
@@ -327,22 +333,22 @@ end
 #
 ##############################################################################
 
-function Base.show(io::IO, mime::MIME"text/csv", dfr::DataFrameRow)
+function Base.show(io::IO, mime::MIME"text/csv", dfr::DataFrameRow; missingstring::AbstractString="missing")
     r, c = parentindices(dfr)
-    show(io, mime, view(parent(dfr), [r], c))
+    show(io, mime, view(parent(dfr), [r], c), missingstring=missingstring)
 end
 
-function Base.show(io::IO, mime::MIME"text/tab-separated-values", dfr::DataFrameRow)
+function Base.show(io::IO, mime::MIME"text/tab-separated-values", dfr::DataFrameRow; missingstring::AbstractString="missing")
     r, c = parentindices(dfr)
-    show(io, mime, view(parent(dfr), [r], c))
+    show(io, mime, view(parent(dfr), [r], c), missingstring=missingstring)
 end
 
-function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
-    printtable(io, df, header = true, separator = ',')
+function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame; missingstring::AbstractString="missing")
+    printtable(io, df, header = true, separator = ',', missingstring=missingstring)
 end
 
-function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
-    printtable(io, df, header = true, separator = '\t')
+function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame; missingstring::AbstractString="missing")
+    printtable(io, df, header = true, separator = '\t', missingstring=missingstring)
 end
 
 ##############################################################################
