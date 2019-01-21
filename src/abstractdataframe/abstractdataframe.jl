@@ -984,19 +984,17 @@ julia> vcat(df1, df2)
 ```
 """
 Base.vcat(df::AbstractDataFrame; 
-        widen::Bool = false, 
-        fillvalue = missing, 
+        widen::Bool = false,  
         keep::Union{Nothing, Vector{Symbol}} = nothing) = df
 
 Base.vcat(dfs::AbstractDataFrame...;
           widen::Bool = false, 
-          fillvalue = missing,
+          missing = missing,
           keep::Union{Nothing, Vector{Symbol}} = nothing) = 
-    _vcat(collect(dfs); widen = widen, fillvalue = fillvalue, keep = keep)
+    _vcat(collect(dfs); widen = widen, keep = keep)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
                widen::Bool = false, 
-               fillvalue = missing,
                keep::Union{Nothing, Vector{Symbol}} = nothing)
     
     isempty(dfs) && return DataFrame()
@@ -1056,13 +1054,13 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                     # TODO: make this more efficient by not creating a 
                     # full array of missing values. Instead, implement
                     # this in the copyto! stage
-                    return fill(fillvalue, nrow(df))
+                    return fill(missing, nrow(df))
                 end
             else 
                 if haskey(df, name)
                     return view(parent(df)[name], rows(df))
                 else 
-                    return fill(fillvalue, length(rows(df)))
+                    return fill(missing, length(rows(df)))
                 end
             end
         end
