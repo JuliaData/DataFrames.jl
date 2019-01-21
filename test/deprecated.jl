@@ -49,7 +49,7 @@ module TestDeprecated
 
     # deprecated combine
 
-    df = DataFrame(a=[1, 1, 2, 2, 2], b=1:6)
+    df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)
     gd = groupby(df, :a)
     @test combine(gd) == combine(identity, gd)
 end
