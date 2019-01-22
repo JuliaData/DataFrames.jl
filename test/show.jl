@@ -262,16 +262,17 @@ module TestShow
         │ 3   │ missing │ missing │ \e[90mmissing\e[39m │"""
 
     # Test showing missing, where missing is optionally printed as "-"
-    show(io, df, missingstring="-")
+    io = IOBuffer()
+    show(io,df,missingstring="-")
     str = String(take!(io))
     @test str == """
         3×3 DataFrame
         │ Row │ A       │ B       │ C       │
-        │     │ \e[90mSymbol⍰\e[39m │ \e[90mString⍰\e[39m │ \e[90mAny\e[39m     │
+        │     │ Symbol⍰ │ String⍰ │ Any     │
         ├─────┼─────────┼─────────┼─────────┤
-        │ 1   │ Symbol  │ \e[90m-\e[39m │ missing │
-        │ 2   │ \e[90m-\e[39m │ String  │ missing │
-        │ 3   │ missing │ missing │ \e[90m-\e[39m │"""
+        │ 1   │ Symbol  │ -       │ missing │
+        │ 2   │ -       │ String  │ missing │
+        │ 3   │ missing │ missing │ -       │"""
 
     # Test showing nothing
     df_nothing = DataFrame(A = [1.0, 2.0, 3.0], B = ["g", "g", nothing])

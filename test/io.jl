@@ -11,21 +11,10 @@ module TestIO
                     E = CategoricalArray(["a", missing, "c", "d"]),
                     F = Vector{String}(undef, 4)
                     )
-        str = """
-            \\begin{tabular}{r|cccccc}
-            \t& A & B & C & D & E & F\\\\
-            \t\\hline
-            \t& $(Int) & String & LaTeXStr… & Float64⍰ & Categorical…⍰ & String\\\\
-            \t\\hline
-            \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 & a & \\#undef \\\\
-            \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 &  & \\#undef \\\\
-            \t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ &  & c & \\#undef \\\\
-            \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d & \\#undef \\\\
-            \\end{tabular}
-            """
-        @test repr(MIME("text/latex"), df) == str
-    
-        str = """
+        ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => false)
+        show(ioc, MIME(Symbol("text/latex")), df)
+        str = String(take!(ioc.io))
+        @test str == """
             \\begin{tabular}{r|cccccc}
             \t& A & B & C & D & E & F\\\\
             \t\\hline
@@ -37,17 +26,32 @@ module TestIO
             \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d & \\#undef \\\\
             \\end{tabular}
             """
-        @test repr(MIME("text/latex"), df, missingstring="missing") == str
+    
+        ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => false)
+        show(ioc, MIME(Symbol("text/latex")), df, missingstring="missing")
+        str = String(take!(ioc.io))
+        @test str == """
+            \\begin{tabular}{r|cccccc}
+            \t& A & B & C & D & E & F\\\\
+            \t\\hline
+            \t& $(Int) & String & LaTeXStr… & Float64⍰ & Categorical…⍰ & String\\\\
+            \t\\hline
+            \t1 & 1 & \\\$10.0 & \$\\alpha\$ & 1.0 & a & \\#undef \\\\
+            \t2 & 2 & M\\&F & \$\\beta\$ & 2.0 & missing & \\#undef \\\\
+            \t3 & 3 & A\\textasciitilde{}B & \$\\gamma\$ & missing & c & \\#undef \\\\
+            \t4 & 4 & \\textbackslash{}\\textbackslash{}alpha & \$\\sum_{i=1}^n \\delta_i\$ & 3.0 & d & \\#undef \\\\
+            \\end{tabular}
+            """
     end
 
     @testset "Huge LaTeX export" begin
         df = DataFrame(a=1:1000)
         ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => false)
-        show(ioc, "text/latex", df)
+        show(ioc, MIME(Symbol("text/latex")), df)
         @test length(String(take!(ioc.io))) > 10000
 
         io = IOBuffer()
-        show(io, "text/latex", df)
+        show(io, MIME(Symbol("text/latex")), df)
         @test length(String(take!(io))) < 10000
     end
 
@@ -55,7 +59,7 @@ module TestIO
     @testset "HTML output" begin
         df = DataFrame(Fish = ["Suzy", "Amir"], Mass = [1.5, missing])
         io = IOBuffer()
-        show(io, "text/html", df)
+        show(io, MIME(Symbol("text/html")), df)
         str = String(take!(io))
         @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                     "</th><th>Fish</th><th>Mass</th></tr>" *
@@ -66,7 +70,7 @@ module TestIO
 
         df = DataFrame(Fish = Vector{String}(undef, 2), Mass = [1.5, missing])
         io = IOBuffer()
-        show(io, "text/html", df)
+        show(io, MIME(Symbol("text/html")), df)
         str = String(take!(io))
         @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                     "</th><th>Fish</th><th>Mass</th></tr>" *
@@ -76,7 +80,7 @@ module TestIO
                     "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
 
         io = IOBuffer()
-        show(io, MIME"text/html"(), df, summary=false)
+        show(io, MIME(Symbol("text/html")), df, summary=false)
         str = String(take!(io))
         @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                     "</th><th>Fish</th><th>Mass</th></tr>" *
@@ -84,7 +88,7 @@ module TestIO
                     "<tr><th>1</th><td>#undef</td><td>1.5</td></tr>" *
                     "<tr><th>2</th><td>#undef</td><td>missing</td></tr></tbody></table>"
         io = IOBuffer()
-        show(io, MIME"text/html"(), df, summary=false, missingstring="-")
+        show(io, MIME(Symbol("text/html")), df, summary=false, missingstring="-")
         str = String(take!(io))
         @test str == "<table class=\"data-frame\"><thead><tr><th>" *
                     "</th><th>Fish</th><th>Mass</th></tr>" *
@@ -97,11 +101,11 @@ module TestIO
     @testset "limit attribute" begin
         df = DataFrame(a=1:1000)
         ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => false)
-        show(ioc, "text/html", df)
+        show(ioc, MIME(Symbol("text/html")), df)
         @test length(String(take!(ioc.io))) > 10000
 
         io = IOBuffer()
-        show(io, "text/html", df)
+        show(io, MIME(Symbol("text/html")), df)
         @test length(String(take!(io))) < 10000
     end
 
@@ -177,26 +181,35 @@ module TestIO
 
     @testset "csv/tsv output" begin
         df = DataFrame(a = [1,2], b = [1.0, 2.0])
-        @test sprint(show, "text/csv", df) == """
+        io = IOBuffer()
+        show(io, MIME(Symbol("text/csv")), df)
+        str = String(take!(io))
+        @test str == """
         "a","b"
         1,1.0
         2,2.0
         """
-        @test sprint(show, "text/tab-separated-values", df) == """
+        show(io, MIME(Symbol("text/tab-separated-values")), df)
+        str = String(take!(io))
+        @test str == """
         "a"\t"b"
         1\t1.0
         2\t2.0
         """
         df = DataFrame(a = [1,2], b = [1.0, missing])  
-        @test sprint(show, "text/csv", df, missingstring="-") == """
+        show(io, MIME(Symbol("text/csv")), df, missingstring="-")
+        str = String(take!(io))
+        @test str == """
         "a","b"
-        1,1.0
-        2,"-"
+        1,"1.0"
+        2,-
         """    
-        @test sprint(show, "text/tab-separated-values", df, missingstring="-") == """
+        show(io, MIME(Symbol("text/tab-separated-values")), df, missingstring="-")
+        str = String(take!(io))
+        @test str == """
         "a"\t"b"
-        1\t1.0
-        2\t"-"
+        1\t"1.0"
+        2\t-
         """
         
     end
