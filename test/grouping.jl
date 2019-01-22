@@ -22,7 +22,7 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
 
         # correct start-end relations
         for i in eachindex(se)
-            @assert se[i][1] < se[i][2]
+            @assert se[i][1] <= se[i][2]
             if i > 1
                 @assert se[i-1][2] + 1 == se[i][1]
             end
