@@ -1,4 +1,5 @@
 module TestTables
+
 using Test, Tables, DataFrames, CategoricalArrays
 
 struct NamedTupleIterator{T <: NamedTuple}
@@ -142,4 +143,5 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         @test ct.b == cat == cat2
     end
 end
-end
+
+end # module

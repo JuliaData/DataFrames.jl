@@ -1,4 +1,5 @@
 module TestIndexing
+
 using Test, DataFrames
 
 @testset "getindex DataFrame" begin
@@ -164,4 +165,4 @@ end
     @test parent(dfr[:]) === df
 end
 
-end
+end # module

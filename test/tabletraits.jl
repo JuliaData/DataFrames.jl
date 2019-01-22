@@ -1,4 +1,5 @@
 module TestTableTraits
+
 using Test, DataFrames, IteratorInterfaceExtensions, TableTraits, DataValues
 
 struct ColumnSource
@@ -32,4 +33,4 @@ end
 
 end
 
-end
+end # module
