@@ -1117,14 +1117,11 @@ function DataFrame(gd::GroupedDataFrame)
     length(gd) == 0 && return similar(parent(gd), 0)
     idx = similar(gd.idx)
     doff = 1
-    min_start = gd.starts[1]
     for (s,e) in zip(gd.starts, gd.ends)
         n = e - s + 1
         copyto!(idx, doff, gd.idx, s, n)
         doff += n
-        min_start = min(min_start, s)
     end
     resize!(idx, doff - 1)
-    @assert doff == length(gd.idx) + 2 - min_start
     parent(gd)[idx, :]
 end

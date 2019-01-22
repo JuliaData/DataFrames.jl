@@ -3,13 +3,40 @@ module TestGrouping
 using Test, DataFrames, Random, Statistics
 const ≅ = isequal
 
-# Call groupby, checking that groups field is consistent with other fields
-# (since == and isequal do not use it)
 function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
     gd = groupby(df, keys, args...; kwargs...)
+
     for i in 1:length(gd)
+        # checking that groups field is consistent with other fields
+        # (since == and isequal do not use it)
+        # and that idx is increasing per group
         @assert findall(==(i), gd.groups) == gd.idx[gd.starts[i]:gd.ends[i]]
     end
+
+    if length(gd) > 0
+        se = sort!(collect(zip(gd.starts, gd.ends)))
+
+        # correct start-end range
+        @assert se[1][1] > 0
+        @assert se[end][2] == length(gd.idx)
+
+        # correct start-end relations
+        for i in eachindex(se)
+            @assert se[i][1] < se[i][2]
+            if i > 1
+                @assert se[i-1][2] + 1 == se[i][1]
+            end
+        end
+
+        # correct coverage of missins if dropped
+        if se[1][1] > 0
+            @assert findall(==(0), gd.groups) == gd.idx[1:gd.starts[1]]
+        end
+    else
+        # a case when missings are dropped and nothing was left to group by
+        @assert all(==(0), gd.groups)
+    end
+
     gd
 end
 
