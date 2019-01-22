@@ -223,10 +223,10 @@ function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
-Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame; missingstring::AbstractString="") =
+Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame; missingstring::AbstractString="missing") =
     _show(io, mime, df, missingstring=missingstring)
 
-function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing, missingstring::AbstractString="")
+function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing, missingstring::AbstractString="missing")
     nrows = size(df, 1)
     ncols = size(df, 2)
 
@@ -285,12 +285,12 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing,
     write(io, "\\end{tabular}\n")
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow; missingstring::AbstractString="")
+function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow; missingstring::AbstractString="missing")
     r, c = parentindices(dfr)
     _show(io, mime, view(parent(dfr), [r], c), rowid=r, missingstring=missingstring)
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame; missingstring::AbstractString="")
+function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame; missingstring::AbstractString="missing")
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
