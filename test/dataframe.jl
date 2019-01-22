@@ -768,8 +768,10 @@ end
     rows = size(df, 1) + 5
     @test size(similar(df, rows)) == (rows, size(df, 2))
     @test eltypes(similar(df, rows)) == eltypes(df)
+
     @test size(similar(df, 0)) == (0, size(df, 2))
     @test eltypes(similar(df, 0)) == eltypes(df)
+
     e = @test_throws ArgumentError similar(df, -1)
     @test e.value.msg == "the number of rows must be non-negative"
 end
