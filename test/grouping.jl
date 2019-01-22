@@ -28,10 +28,8 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
             end
         end
 
-        # correct coverage of missins if dropped
-        if se[1][1] > 0
-            @assert findall(==(0), gd.groups) == gd.idx[1:gd.starts[1]]
-        end
+        # correct coverage of missings if dropped
+        @assert findall(==(0), gd.groups) == gd.idx[1:gd.starts[1]-1]
     else
         # a case when missings are dropped and nothing was left to group by
         @assert all(==(0), gd.groups)
