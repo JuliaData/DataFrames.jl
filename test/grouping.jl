@@ -204,7 +204,7 @@ end
         @test names(parent(gd))[gd.cols] == colssym
         @test sort(combine(identity, gd), colssym) == shcatdf
         df_ref = DataFrame(gd)
-        @test hcat(df_ref[cols], df_ref)== shcatdf
+        @test hcat(df_ref[cols], df_ref) == shcatdf
         @test combine(f1, gd) == res
         @test combine(f2, gd) == res
         @test rename(combine(f3, gd), :x1 => :xmax) == res
@@ -223,7 +223,7 @@ end
         end
         @test combine(identity, gd) == shcatdf
         df_ref = DataFrame(gd)
-        @test hcat(df_ref[cols], df_ref)== shcatdf
+        @test hcat(df_ref[cols], df_ref) == shcatdf
         @test combine(f1, gd) == sres
         @test combine(f2, gd) == sres
         @test rename(combine(f3, gd), :x1 => :xmax) == sres
