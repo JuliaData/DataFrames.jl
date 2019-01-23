@@ -1,4 +1,5 @@
 module TestIndex
+
 using Test, DataFrames
 using DataFrames: Index, SubIndex
 
@@ -154,4 +155,4 @@ si5 = SubIndex(i, [:C, :D, :E])
     @test names(dfr3) == [:c, :b]
 end
 
-end
+end # module
