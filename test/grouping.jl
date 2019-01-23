@@ -1067,12 +1067,12 @@ end
         @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
     end
 
-     df = DataFrame(a=Int[], b=[], c=Union{Missing, String}[])
+    df = DataFrame(a=Int[], b=[], c=Union{Missing, String}[])
     gd = groupby_checked(df, :a)
     @test size(DataFrame(gd)) == size(df)
     @test eltypes(DataFrame(gd)) == [Int, Any, Union{Missing, String}]
 
-     dfv = view(dfx, 1:0, :)
+    dfv = view(dfx, 1:0, :)
     gd = groupby_checked(dfv, :A)
     @test size(DataFrame(gd)) == size(dfv)
     @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
