@@ -203,6 +203,8 @@ end
         gd = groupby_checked(df, cols)
         @test names(parent(gd))[gd.cols] == colssym
         @test sort(combine(identity, gd), colssym) == shcatdf
+        df_ref = DataFrame(gd)
+        @test hcat(df_ref[cols], df_ref)== shcatdf
         @test combine(f1, gd) == res
         @test combine(f2, gd) == res
         @test rename(combine(f3, gd), :x1 => :xmax) == res
@@ -220,6 +222,8 @@ end
             @test all(gd[i][colssym[2]] .== sres[i, colssym[2]])
         end
         @test combine(identity, gd) == shcatdf
+        df_ref = DataFrame(gd)
+        @test hcat(df_ref[cols], df_ref)== shcatdf
         @test combine(f1, gd) == sres
         @test combine(f2, gd) == sres
         @test rename(combine(f3, gd), :x1 => :xmax) == sres
@@ -1056,12 +1060,12 @@ end
 @testset "DataFrame" begin
     dfx = DataFrame(A = [missing, :A, :B, :A, :B, missing], B = 1:6)
 
-     for df in [dfx, view(dfx, :, :)]
+    for df in [dfx, view(dfx, :, :)]
         gd = groupby_checked(df, :A)
         @test sort(DataFrame(gd), :B) ≅ sort(df, :B)
         @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
 
-         gd = groupby_checked(df, :A, skipmissing=true)
+        gd = groupby_checked(df, :A, skipmissing=true)
         @test sort(DataFrame(gd), :B) ==
               sort(dropmissing(df, disallowmissing=false), :B)
         @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
