@@ -247,7 +247,6 @@ function Base.map(f::Any, gd::GroupedDataFrame)
 end
 
 """
-    combine(gd::GroupedDataFrame)
     combine(gd::GroupedDataFrame, cols => f...)
     combine(gd::GroupedDataFrame; (colname = cols => f)...)
     combine(gd::GroupedDataFrame, f)
@@ -363,8 +362,15 @@ end
 combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
 combine(gd::GroupedDataFrame, f::Pair...) = combine(f, gd)
 combine(gd::GroupedDataFrame, f::Pair) = combine(f, gd)
-combine(gd::GroupedDataFrame; f...) =
-    isempty(f) ? combine(identity, gd) : combine(values(f), gd)
+
+function combine(gd::GroupedDataFrame; f...)
+    if length(f) == 0
+        Base.depwarn("combine(gd) is deprecated, use DataFrame(gd) instead", :combine)
+        combine(identity, gd)
+    else
+        combine(values(f), gd)
+    end
+end
 
 # Wrapping automatically adds column names when the value returned
 # by the user-provided function lacks them
@@ -1105,4 +1111,17 @@ function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
     res = DataFrame(AbstractVector[vcat(f(d[i])) for f in fs for i in 1:size(d, 2)], headers, makeunique=true)
     sort && sort!(res, headers)
     res
+end
+
+function DataFrame(gd::GroupedDataFrame)
+    length(gd) == 0 && return similar(parent(gd), 0)
+    idx = similar(gd.idx)
+    doff = 1
+    for (s,e) in zip(gd.starts, gd.ends)
+        n = e - s + 1
+        copyto!(idx, doff, gd.idx, s, n)
+        doff += n
+    end
+    resize!(idx, doff - 1)
+    parent(gd)[idx, :]
 end

@@ -10,7 +10,7 @@ struct Index <: AbstractIndex   # an OrderedDict would be nice here...
     names::Vector{Symbol}
 end
 
-function Index(names::Vector{Symbol}; makeunique::Bool=false)
+function Index(names::AbstractVector{Symbol}; makeunique::Bool=false)
     u = make_unique(names, makeunique=makeunique)
     lookup = Dict{Symbol, Int}(zip(u, 1:length(u)))
     Index(lookup, u)
@@ -224,6 +224,8 @@ struct SubIndex{I<:AbstractIndex,S<:AbstractVector{Int},T<:AbstractVector{Int}} 
 end
 
 SubIndex(parent::AbstractIndex, ::Colon) = parent
+
+Base.copy(x::SubIndex) = Index(_names(x))
 
 @inline parentcols(ind::SubIndex) = ind.cols
 

@@ -773,7 +773,7 @@ end
     @test eltypes(similar(df, 0)) == eltypes(df)
 
     e = @test_throws ArgumentError similar(df, -1)
-    @test e.value.msg == "the number of rows must be positive"
+    @test e.value.msg == "the number of rows must be non-negative"
 end
 
 @testset "setindex! special cases" begin

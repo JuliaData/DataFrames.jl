@@ -88,6 +88,12 @@ si3 = SubIndex(i, [3,4,5])
 si4 = SubIndex(i, [false, false, true, true, true])
 si5 = SubIndex(i, [:C, :D, :E])
 
+@test copy(si1) == i
+@test copy(si2) == Index([:C, :D, :E])
+@test copy(si3) == Index([:C, :D, :E])
+@test copy(si4) == Index([:C, :D, :E])
+@test copy(si5) == Index([:C, :D, :E])
+
 @test_throws ArgumentError SubIndex(i, 1)
 @test_throws ArgumentError SubIndex(i, :A)
 @test_throws ArgumentError SubIndex(i, true)

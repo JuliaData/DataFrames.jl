@@ -3,13 +3,38 @@ module TestGrouping
 using Test, DataFrames, Random, Statistics
 const ≅ = isequal
 
-# Call groupby, checking that groups field is consistent with other fields
-# (since == and isequal do not use it)
 function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
     gd = groupby(df, keys, args...; kwargs...)
+
     for i in 1:length(gd)
+        # checking that groups field is consistent with other fields
+        # (since == and isequal do not use it)
+        # and that idx is increasing per group
         @assert findall(==(i), gd.groups) == gd.idx[gd.starts[i]:gd.ends[i]]
     end
+
+    if length(gd) > 0
+        se = sort!(collect(zip(gd.starts, gd.ends)))
+
+        # correct start-end range
+        @assert se[1][1] > 0
+        @assert se[end][2] == length(gd.idx)
+
+        # correct start-end relations
+        for i in eachindex(se)
+            @assert se[i][1] <= se[i][2]
+            if i > 1
+                @assert se[i-1][2] + 1 == se[i][1]
+            end
+        end
+
+        # correct coverage of missings if dropped
+        @assert findall(==(0), gd.groups) == gd.idx[1:se[1][1]-1]
+    else
+        # a case when missings are dropped and nothing was left to group by
+        @assert all(==(0), gd.groups)
+    end
+
     gd
 end
 
@@ -177,9 +202,11 @@ end
         # groupby() without groups sorting
         gd = groupby_checked(df, cols)
         @test names(parent(gd))[gd.cols] == colssym
-        @test sort(combine(identity, gd), colssym) ==
-            sort(combine(gd), colssym) ==
-            shcatdf
+        df_comb = combine(identity, gd)
+        @test sort(df_comb, colssym) == shcatdf
+        df_ref = DataFrame(gd)
+        @test sort(hcat(df_ref[cols], df_ref, makeunique=true), colssym) == shcatdf
+        @test df_ref.x == df_comb.x
         @test combine(f1, gd) == res
         @test combine(f2, gd) == res
         @test rename(combine(f3, gd), :x1 => :xmax) == res
@@ -196,7 +223,9 @@ end
             @test all(gd[i][colssym[1]] .== sres[i, colssym[1]])
             @test all(gd[i][colssym[2]] .== sres[i, colssym[2]])
         end
-        @test combine(identity, gd) == combine(gd) == shcatdf
+        @test combine(identity, gd) == shcatdf
+        df_ref = DataFrame(gd)
+        @test hcat(df_ref[cols], df_ref, makeunique=true) == shcatdf
         @test combine(f1, gd) == sres
         @test combine(f2, gd) == sres
         @test rename(combine(f3, gd), :x1 => :xmax) == sres
@@ -1028,6 +1057,31 @@ end
         \t1 & \\& & \\& \\\\
         \\end{tabular}
         """
+end
+
+@testset "DataFrame" begin
+    dfx = DataFrame(A = [missing, :A, :B, :A, :B, missing], B = 1:6)
+
+    for df in [dfx, view(dfx, :, :)]
+        gd = groupby_checked(df, :A)
+        @test sort(DataFrame(gd), :B) ≅ sort(df, :B)
+        @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
+
+        gd = groupby_checked(df, :A, skipmissing=true)
+        @test sort(DataFrame(gd), :B) ==
+              sort(dropmissing(df, disallowmissing=false), :B)
+        @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
+    end
+
+    df = DataFrame(a=Int[], b=[], c=Union{Missing, String}[])
+    gd = groupby_checked(df, :a)
+    @test size(DataFrame(gd)) == size(df)
+    @test eltypes(DataFrame(gd)) == [Int, Any, Union{Missing, String}]
+
+    dfv = view(dfx, 1:0, :)
+    gd = groupby_checked(dfv, :A)
+    @test size(DataFrame(gd)) == size(dfv)
+    @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
 end
 
 end # module
