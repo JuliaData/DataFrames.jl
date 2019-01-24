@@ -202,9 +202,11 @@ end
         # groupby() without groups sorting
         gd = groupby_checked(df, cols)
         @test names(parent(gd))[gd.cols] == colssym
-        @test sort(combine(identity, gd), colssym) == shcatdf
+        df_comb = combine(identity, gd)
+        @test sort(df_comb, colssym) == shcatdf
         df_ref = DataFrame(gd)
-        @test hcat(df_ref[cols], df_ref, makeunique=true) == shcatdf
+        @test sort(hcat(df_ref[cols], df_ref, makeunique=true), colssym) == shcatdf
+        @test df_ref.x == df_comb.x
         @test combine(f1, gd) == res
         @test combine(f2, gd) == res
         @test rename(combine(f3, gd), :x1 => :xmax) == res
