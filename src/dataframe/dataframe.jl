@@ -997,12 +997,12 @@ in `df2` contains `missing` values but the corresponding column in `df1` does no
 accept them.
 
 !!! note
-    Use `vcat` instead of `append!` when more flexibility is needed.
+    Use [`vcat`](@ref) instead of `append!` when more flexibility is needed.
     Since `vcat` does not operate in place, it is able to use promotion to find
     an appropriate element type to hold values from both data frames.
     It also accepts columns in different orders between `df1` and `df2`.
 
-    Use `push!` to add individual rows to a data frame.
+    Use [`push!`](@ref) to add individual rows to a data frame.
 
 # Examples
 ```jldoctest
