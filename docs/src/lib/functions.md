@@ -54,6 +54,5 @@ sort!
 unique!
 permutecols!
 vcat
-hcat
 append!
 ```
