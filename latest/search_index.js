@@ -697,11 +697,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "lib/functions.html#Base.vcat",
+    "page": "Functions",
+    "title": "Base.vcat",
+    "category": "function",
+    "text": "vcat(dfs::AbstractDataFrame...)\n\nVertically concatenate AbstractDataFrames.\n\nColumn names in all passed data frames must be the same, but they can have different order. In such cases the order of names in the first passed DataFrame is used.\n\nExample\n\njulia> df1 = DataFrame(A=1:3, B=1:3);\n\njulia> df2 = DataFrame(A=4:6, B=4:6);\n\njulia> vcat(df1, df2)\n6×2 DataFrame\n│ Row │ A     │ B     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 1     │\n│ 2   │ 2     │ 2     │\n│ 3   │ 3     │ 3     │\n│ 4   │ 4     │ 4     │\n│ 5   │ 5     │ 5     │\n│ 6   │ 6     │ 6     │\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#Base.append!",
+    "page": "Functions",
+    "title": "Base.append!",
+    "category": "function",
+    "text": "append!(df1::DataFrame, df2::AbstractDataFrame)\n\nAdd the rows of df2 to the end of df1.\n\nColumn names must be equal (including order). Values corresponding to new rows are appended in-place to the column vectors of df1. Column types are therefore preserved, and new values are converted if necessary. An error is thrown if conversion fails: this is the case in particular if a column in df2 contains missing values but the corresponding column in df1 does not accept them.\n\nnote: Note\nUse vcat instead of append! when more flexibility is needed. Since vcat does not operate in place, it is able to use promotion to find an appropriate element type to hold values from both data frames. It also accepts columns in different orders between df1 and df2.Use push! to add individual rows to a data frame.\n\nExamples\n\njulia> df1 = DataFrame(A=1:3, B=1:3);\n\njulia> df2 = DataFrame(A=4.0:6.0, B=4:6);\n\njulia> append!(df1, df2);\n\njulia> df1\n6×2 DataFrame\n│ Row │ A     │ B     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 1     │\n│ 2   │ 2     │ 2     │\n│ 3   │ 3     │ 3     │\n│ 4   │ 4     │ 4     │\n│ 5   │ 5     │ 5     │\n│ 6   │ 6     │ 6     │\n\n\n\n\n\n"
+},
+
+{
     "location": "lib/functions.html#Basics-1",
     "page": "Functions",
     "title": "Basics",
     "category": "section",
-    "text": "allowmissing!\ncompletecases\ndeletecols!\ndeleterows!\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\ninsertcols!\nmapcols\nnames!\nnonunique\nrename!\nrename\nrepeat\nshow\nsort\nsort!\nunique!\npermutecols!"
+    "text": "allowmissing!\ncompletecases\ndeletecols!\ndeleterows!\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\ninsertcols!\nmapcols\nnames!\nnonunique\nrename!\nrename\nrepeat\nshow\nsort\nsort!\nunique!\npermutecols!\nvcat\nappend!"
 },
 
 {
