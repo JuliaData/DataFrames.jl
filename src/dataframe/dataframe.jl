@@ -239,7 +239,10 @@ ncol(df::DataFrame) = length(index(df))
 ##############################################################################
 
 # df[SingleColumnIndex] => AbstractVector, the same vector
-Base.@propagate_inbounds function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
+Base.@propagate_inbounds Base.getindex(df::DataFrame, col_ind::Union{Signed, Unsigned}) =
+    _columns(df)[col_ind]
+
+function Base.getindex(df::DataFrame, col_ind::Symbol)
     selected_column = index(df)[col_ind]
     return _columns(df)[selected_column]
 end
@@ -255,7 +258,11 @@ end
 Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
 
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
-Base.@propagate_inbounds function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::ColumnIndex)
+Base.@propagate_inbounds Base.getindex(df::DataFrame, row_ind::Integer,
+                                       col_ind::Union{Signed, Unsigned}) =
+    _columns(df)[col_ind][row_ind]
+
+function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::Symbol)
     selected_column = index(df)[col_ind]
     return _columns(df)[selected_column][row_ind]
 end
