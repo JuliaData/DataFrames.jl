@@ -244,6 +244,23 @@ julia> first(widedf, 6)
 │ 6   │ setosa        │ 6     │ 1.7         │ 0.4        │ 5.4         │ 3.9        │
 ```
 
+You can even skip the `:variable` and `:value` variables and use:
+```jldoctest reshape
+julia> widedf = unstack(longdf);
+
+julia> first(widedf, 6)
+6×6 DataFrame
+│ Row │ Species       │ id    │ PetalLength │ PetalWidth │ SepalLength │ SepalWidth │
+│     │ Categorical…⍰ │ Int64 │ Float64⍰    │ Float64⍰   │ Float64⍰    │ Float64⍰   │
+├─────┼───────────────┼───────┼─────────────┼────────────┼─────────────┼────────────┤
+│ 1   │ setosa        │ 1     │ 1.4         │ 0.2        │ 5.1         │ 3.5        │
+│ 2   │ setosa        │ 2     │ 1.4         │ 0.2        │ 4.9         │ 3.0        │
+│ 3   │ setosa        │ 3     │ 1.3         │ 0.2        │ 4.7         │ 3.2        │
+│ 4   │ setosa        │ 4     │ 1.5         │ 0.2        │ 4.6         │ 3.1        │
+│ 5   │ setosa        │ 5     │ 1.4         │ 0.2        │ 5.0         │ 3.6        │
+│ 6   │ setosa        │ 6     │ 1.7         │ 0.4        │ 5.4         │ 3.9        │
+```
+
 `stackdf` and `meltdf` are two additional functions that work like `stack` and `melt`, but they provide a view into the original wide DataFrame. Here is an example:
 
 ```jldoctest reshape
