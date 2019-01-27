@@ -984,6 +984,47 @@ function categorical!(df::DataFrame)
     df
 end
 
+"""
+    append!(df1::DataFrame, df2::AbstractDataFrame)
+
+Add the rows of `df2` to the end of `df1`.
+
+Column names must be equal (including order).
+Values corresponding to new rows are appended in-place to the column vectors of `df1`.
+Column types are therefore preserved, and new values are converted if necessary.
+An error is thrown if conversion fails: this is the case in particular if a column
+in `df2` contains `missing` values but the corresponding column in `df1` does not
+accept them.
+
+!!! note
+    Use [`vcat`](@ref) instead of `append!` when more flexibility is needed.
+    Since `vcat` does not operate in place, it is able to use promotion to find
+    an appropriate element type to hold values from both data frames.
+    It also accepts columns in different orders between `df1` and `df2`.
+
+    Use [`push!`](@ref) to add individual rows to a data frame.
+
+# Examples
+```jldoctest
+julia> df1 = DataFrame(A=1:3, B=1:3);
+
+julia> df2 = DataFrame(A=4.0:6.0, B=4:6);
+
+julia> append!(df1, df2);
+
+julia> df1
+6×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 4     │ 4     │
+│ 5   │ 5     │ 5     │
+│ 6   │ 6     │ 6     │
+```
+"""
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     _names(df1) == _names(df2) || error("Column names do not match")
     nrows, ncols = size(df1)
