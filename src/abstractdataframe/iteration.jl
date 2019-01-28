@@ -165,12 +165,16 @@ columns(df::AbstractDataFrame) = eachcol(df, false)
 Base.size(itr::DataFrameColumns) = (size(itr.df, 2),)
 Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
 
-Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
-                                                             Pair{Symbol, AbstractVector}},
-                                       j::Int) = _names(itr.df)[j] => itr.df[j]
+@inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
+                                                     Pair{Symbol, AbstractVector}}, j::Int)
+    @boundscheck checkbounds(itr, j)
+    @inbounds _names(itr.df)[j] => itr.df[j]
+end
 
-Base.@propagate_inbounds Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame, AbstractVector},
-                                       j::Int) = itr.df[j]
+@inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame, AbstractVector}, j::Int)
+    @boundscheck checkbounds(itr, j)
+    @inbounds itr.df[j]
+end
 
 """
     mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
