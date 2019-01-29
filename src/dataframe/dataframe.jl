@@ -243,7 +243,7 @@ ncol(df::DataFrame) = length(index(df))
     cols = _columns(df)
     @boundscheck if !checkindex(Bool, axes(cols, 1), col_ind)
         throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
-                          "columns at index $row_inds"))
+                          "columns at index $col_ind"))
     end
     @inbounds cols[col_ind]
 end
@@ -270,11 +270,11 @@ Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
     @boundscheck begin
         if !checkindex(Bool, axes(cols, 1), col_ind)
             throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
-                              "columns at index $row_inds"))
+                              "columns at index $row_ind"))
         end
         if !checkindex(Bool, axes(df, 1), row_ind)
             throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                              "rows at index $row_inds"))
+                              "rows at index $row_ind"))
         end
     end
 
@@ -293,9 +293,9 @@ end
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector, copy
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
-    @boundscheck if !checkindex(Bool, axes(df, 1), row_ind)
+    @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                          "rows at index $row_ind"))
+                          "rows at index $row_inds"))
     end
     @inbounds return _columns(df)[selected_column][row_inds]
 end
