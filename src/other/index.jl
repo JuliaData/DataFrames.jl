@@ -145,19 +145,35 @@ end
 @inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
+# we accept at most one difference in strings disregarding case
+function fuzzymatch(s1::AbstractString, s2::AbstractString)
+    l1, l2 = length.((s1, s2))
+    abs(l1 - l2) > 1 && return false
+    min(l1, l2) == 0 && return true
+    ts1, ts2 = chop.((s1, s2), head=1, tail=0)
+    uppercase(s1[1]) == uppercase(s2[1]) && return fuzzymatch(ts1, ts2)
+    l1 > l2 && return ts1 == s2
+    l1 < l2 && return s1 == ts2
+    ts1 == ts2
+end
+
 @inline function lookupname(l::Dict{Symbol, Int}, idx::Symbol)
     i = get(l, idx, nothing)
     if i === nothing
-        throw(BoundsError("column name $idx not found in the data frame"))
+        candidates = filter(x -> fuzzymatch(string(x), string(idx)), keys(l))
+        if isempty(candidates)
+            throw(BoundsError("column name :$idx not found in the data frame."))
+        end
+        candiatesstr = join(string.(':', sort!(candidates)), ", ", " and ")
+        throw(BoundsError("column name :$idx not found in the data frame; " *
+                          "existing most similar names are: $candiatesstr"))
     end
     i
 end
 
 @inline Base.getindex(x::Index, idx::Symbol) = lookupname(x.lookup, idx)
-@inline function Base.getindex(x::Index, idx::AbstractVector{Symbol})
-    l = x.lookup
-    [lookupname(l, i) for i in idx]
-end
+@inline Base.getindex(x::Index, idx::AbstractVector{Symbol}) =
+    [lookupname(x.lookup, i) for i in idx]
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)

@@ -241,7 +241,7 @@ ncol(df::DataFrame) = length(index(df))
 # df[SingleColumnIndex] => AbstractVector, the same vector
 @inline function Base.getindex(df::DataFrame, col_ind::Union{Signed, Unsigned})
     cols = _columns(df)
-    @boundscheck if !checkindex(Bool, cols, col_ind)
+    @boundscheck if !checkindex(Bool, axes(cols, 1), col_ind)
         throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
                           "columns at index $row_inds"))
     end
@@ -268,13 +268,13 @@ Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
                                col_ind::Union{Signed, Unsigned})
     cols = _columns(df)
     @boundscheck begin
-        if !checkindex(Bool, cols, col_ind)
+        if !checkindex(Bool, axes(cols, 1), col_ind)
             throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
                               "columns at index $row_inds"))
         end
         if !checkindex(Bool, axes(df, 1), row_ind)
-        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
-                          "rows at index $row_inds"))
+            throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                              "rows at index $row_inds"))
         end
     end
 
