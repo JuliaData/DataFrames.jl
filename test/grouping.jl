@@ -1,7 +1,32 @@
 module TestGrouping
 
-using Test, DataFrames, Random, Statistics
+using Test, DataFrames, Random, Statistics, PooledArrays
 const ≅ = isequal
+
+"""Check that groups in gd are equal to provided data frames, ignoring order"""
+function isequal_unordered(gd::GroupedDataFrame,
+                            dfs::AbstractVector{<:AbstractDataFrame})
+    n = length(gd)
+    @assert n == length(dfs)
+    remaining = Set(1:n)
+    for i in 1:n
+        for j in remaining
+            if gd[i] ≅ dfs[j]
+                pop!(remaining, j)
+                break
+            end
+        end
+    end
+    isempty(remaining) || error("gd is not equal to provided groups")
+end
+
+"""Helper to set the order of values in the pool and add unused values"""
+function _levels!(x::PooledArray, levels::AbstractVector)
+    res = similar(x)
+    copyto!(res, levels)
+    copyto!(res, x)
+end
+_levels!(x::CategoricalArray, levels::AbstractVector) = levels!(x, levels)
 
 function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
     gd = groupby(df, keys, args...; kwargs...)
@@ -292,57 +317,82 @@ end
     @test sum(df2[:x]) == 0
 
     # Check that reordering levels does not confuse groupby
+    for df in (DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B", "B", "A"]),
+                         Key2 = CategoricalArray(["A", "B", "A", "B", "B", "A"]),
+                         Value = 1:6),
+                DataFrame(Key1 = PooledArray(["A", "A", "B", "B", "B", "A"]),
+                          Key2 = PooledArray(["A", "B", "A", "B", "B", "A"]),
+                          Value = 1:6))
+        gd = groupby_checked(df, :Key1)
+        @test length(gd) == 2
+        @test gd[1] == DataFrame(Key1="A", Key2=["A", "B", "A"], Value=[1, 2, 6])
+        @test gd[2] == DataFrame(Key1="B", Key2=["A", "B", "B"], Value=[3, 4, 5])
+        gd = groupby_checked(df, [:Key1, :Key2])
+        @test length(gd) == 4
+        @test gd[1] == DataFrame(Key1="A", Key2="A", Value=[1, 6])
+        @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
+        @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+        @test gd[4] == DataFrame(Key1="B", Key2="B", Value=[4, 5])
+        # Reorder levels, add unused level
+        _levels!(df.Key1, ["Z", "B", "A"])
+        _levels!(df.Key2, ["Z", "B", "A"])
+        gd = groupby_checked(df, :Key1)
+        @test gd == groupby_checked(df, :Key1, skipmissing=true)
+        @test length(gd) == 2
+        if df.Key1 isa CategoricalVector
+            @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "B"], Value=[3, 4, 5])
+            @test gd[2] == DataFrame(Key1="A", Key2=["A", "B", "A"], Value=[1, 2, 6])
+        else
+            @test gd[1] == DataFrame(Key1="A", Key2=["A", "B", "A"], Value=[1, 2, 6])
+            @test gd[2] == DataFrame(Key1="B", Key2=["A", "B", "B"], Value=[3, 4, 5])
+        end
+        gd = groupby_checked(df, [:Key1, :Key2])
+        @test gd == groupby_checked(df, [:Key1, :Key2], skipmissing=true)
+        @test length(gd) == 4
+        if df.Key1 isa CategoricalVector
+            @test gd[1] == DataFrame(Key1="B", Key2="B", Value=[4, 5])
+            @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
+            @test gd[3] == DataFrame(Key1="A", Key2="B", Value=2)
+            @test gd[4] == DataFrame(Key1="A", Key2="A", Value=[1, 6])
+        else
+            @test gd[1] == DataFrame(Key1="A", Key2="A", Value=[1, 6])
+            @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
+            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+            @test gd[4] == DataFrame(Key1="B", Key2="B", Value=[4, 5])
+        end
+        # Make first level unused too
+        replace!(df.Key1, "A"=>"B")
+        gd = groupby_checked(df, :Key1)
+        @test length(gd) == 1
+        @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "A", "B", "B", "A"], Value=1:6)
+        gd = groupby_checked(df, [:Key1, :Key2])
+        @test gd == groupby_checked(df, [:Key1, :Key2])
+        @test length(gd) == 2
+        if df.Key1 isa CategoricalVector
+            @test gd[1] == DataFrame(Key1="B", Key2="B", Value=[2, 4, 5])
+            @test gd[2] == DataFrame(Key1="B", Key2="A", Value=[1, 3, 6])
+        else
+            @test gd[1] == DataFrame(Key1="B", Key2="A", Value=[1, 3, 6])
+            @test gd[2] == DataFrame(Key1="B", Key2="B", Value=[2, 4, 5])
+        end
+    end
+
     df = DataFrame(Key1 = CategoricalArray(["A", "A", "B", "B", "B", "A"]),
-                   Key2 = CategoricalArray(["A", "B", "A", "B", "B", "A"]),
-                   Value = 1:6)
-    gd = groupby_checked(df, :Key1)
-    @test length(gd) == 2
-    @test gd[1] == DataFrame(Key1="A", Key2=["A", "B", "A"], Value=[1, 2, 6])
-    @test gd[2] == DataFrame(Key1="B", Key2=["A", "B", "B"], Value=[3, 4, 5])
-    gd = groupby_checked(df, [:Key1, :Key2])
-    @test length(gd) == 4
-    @test gd[1] == DataFrame(Key1="A", Key2="A", Value=[1, 6])
-    @test gd[2] == DataFrame(Key1="A", Key2="B", Value=2)
-    @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-    @test gd[4] == DataFrame(Key1="B", Key2="B", Value=[4, 5])
-    # Reorder levels, add unused level
-    levels!(df[:Key1], ["Z", "B", "A"])
-    levels!(df[:Key2], ["Z", "B", "A"])
-    gd = groupby_checked(df, :Key1)
-    @test gd == groupby_checked(df, :Key1, skipmissing=true)
-    @test length(gd) == 2
-    @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "B"], Value=[3, 4, 5])
-    @test gd[2] == DataFrame(Key1="A", Key2=["A", "B", "A"], Value=[1, 2, 6])
-    gd = groupby_checked(df, [:Key1, :Key2])
-    @test gd == groupby_checked(df, [:Key1, :Key2], skipmissing=true)
-    @test length(gd) == 4
-    @test gd[1] == DataFrame(Key1="B", Key2="B", Value=[4, 5])
-    @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
-    @test gd[3] == DataFrame(Key1="A", Key2="B", Value=2)
-    @test gd[4] == DataFrame(Key1="A", Key2="A", Value=[1, 6])
-    # Make first level unused too
-    replace!(df.Key1, "A"=>"B")
-    gd = groupby_checked(df, :Key1)
-    @test length(gd) == 1
-    @test gd[1] == DataFrame(Key1="B", Key2=["A", "B", "A", "B", "B", "A"], Value=1:6)
-    gd = groupby_checked(df, [:Key1, :Key2])
-    @test gd == groupby_checked(df, [:Key1, :Key2])
-    @test length(gd) == 2
-    @test gd[1] == DataFrame(Key1="B", Key2="B", Value=[2, 4, 5])
-    @test gd[2] == DataFrame(Key1="B", Key2="A", Value=[1, 3, 6])
+                    Key2 = CategoricalArray(["A", "B", "A", "B", "B", "A"]),
+                    Value = 1:6)
 
     # Check that CategoricalArray column is preserved when returning a value...
     res = combine(d -> DataFrame(x=d[1, :Key2]), groupby_checked(df, :Key1))
-    @test res.x isa CategoricalVector{String}
+    @test typeof(res.x) == typeof(df.Key2)
     res = combine(d -> (x=d[1, :Key2],), groupby_checked(df, :Key1))
-    @test res.x isa CategoricalVector{String}
+    @test typeof(res.x) == typeof(df.Key2)
     # ...and when returning an array
     res = combine(d -> DataFrame(x=d[:Key1]), groupby_checked(df, :Key1))
-    @test res.x isa CategoricalVector{String}
+    @test typeof(res.x) == typeof(df.Key1)
 
     # Check that CategoricalArray and String give a String...
     res = combine(d -> d.Key1 == ["A", "A"] ? DataFrame(x=d[1, :Key1]) : DataFrame(x="C"),
-                 groupby_checked(df, :Key1))
+                  groupby_checked(df, :Key1))
     @test res.x isa Vector{String}
     res = combine(d -> d.Key1 == ["A", "A"] ? (x=d[1, :Key1],) : (x="C",),
                   groupby_checked(df, :Key1))
@@ -440,128 +490,155 @@ end
     @test res.parent == DataFrame(x=[])
 end
 
-xv = ["A", missing, "B", "B", "A", "B", "A", "A"]
-yv = ["B", "A", "A", missing, "A", missing, "A", "A"]
-@testset "grouping with missings" for x in (xv,
-                                            categorical(xv),
-                                            levels!(categorical(xv), ["A", "B", "X"]),
-                                            levels!(categorical(xv), ["X", "A", "B"])),
-                                      y in (yv,
-                                            categorical(yv),
-                                            levels!(categorical(yv), ["A", "B", "X"]),
-                                            levels!(categorical(yv), ["X", "A", "B"]))
-    df = DataFrame(Key1 = x, Key2 = y, Value = 1:8)
+@testset "grouping with missings" begin
+    xv = ["A", missing, "B", "B", "A", "B", "A", "A"]
+    yv = ["B", "A", "A", missing, "A", missing, "A", "A"]
+    xvars = (xv,
+             categorical(xv),
+             levels!(categorical(xv), ["A", "B", "X"]),
+             levels!(categorical(xv), ["X", "B", "A"]),
+             _levels!(PooledArray(xv), ["A", "B", missing]),
+             _levels!(PooledArray(xv), ["B", "A", missing, "X"]),
+             _levels!(PooledArray(xv), [missing, "X", "A", "B"]))
+    yvars = (yv,
+             categorical(yv),
+             levels!(categorical(yv), ["A", "B", "X"]),
+             levels!(categorical(yv), ["B", "X", "A"]),
+             _levels!(PooledArray(yv), ["A", "B", missing]),
+             _levels!(PooledArray(yv), [missing, "A", "B", "X"]),
+             _levels!(PooledArray(yv), ["B", "A", "X", missing]))
+    for x in xvars, y in yvars
+        df = DataFrame(Key1 = x, Key2 = y, Value = 1:8)
 
-    @testset "sort=false, skipmissing=false" begin
-        gd = groupby_checked(df, :Key1)
-        @test length(gd) == 3
-        if df.Key1 isa CategoricalVector # Order of missing changes
-            @test gd[1] == DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8])
-            @test gd[2] ≅ DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
-            @test gd[3] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
-        else
-            @test gd[1] == DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8])
-            @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
-            @test gd[3] ≅ DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
+        @testset "sort=false, skipmissing=false" begin
+            gd = groupby_checked(df, :Key1)
+            @test length(gd) == 3
+            @test isequal_unordered(gd, [
+                    DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                    DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6]),
+                    DataFrame(Key1=missing, Key2="A", Value=2)
+                ])
+
+            gd = groupby_checked(df, [:Key1, :Key2])
+            @test length(gd) == 5
+            @test isequal_unordered(gd, [
+                    DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                    DataFrame(Key1="A", Key2="B", Value=1),
+                    DataFrame(Key1="B", Key2="A", Value=3),
+                    DataFrame(Key1="B", Key2=missing, Value=[4, 6]),
+                    DataFrame(Key1=missing, Key2="A", Value=2)
+                ])
         end
 
-        gd = groupby_checked(df, [:Key1, :Key2])
-        @test length(gd) == 5
-        if df.Key1 isa CategoricalVector && df.Key2 isa CategoricalVector
-            @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
-            @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=[4, 6])
-            @test gd[5] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
-        else
-            @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gd[2] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
-            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=[4, 6])
-            @test gd[5] ≅ DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
+        @testset "sort=false, skipmissing=true" begin
+            gd = groupby_checked(df, :Key1, skipmissing=true)
+            @test length(gd) == 2
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
+            ])
+
+            gd = groupby_checked(df, [:Key1, :Key2], skipmissing=true)
+            @test length(gd) == 3
+            @test isequal_unordered(gd, [
+                    DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                    DataFrame(Key1="A", Key2="B", Value=1),
+                    DataFrame(Key1="B", Key2="A", Value=3),
+                ])
         end
-    end
 
-    @testset "sort=false, skipmissing=true" begin
-        gd = groupby_checked(df, :Key1, skipmissing=true)
-        @test length(gd) == 2
-        @test gd[1] == DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8])
-        @test gd[2] ≅ DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
+        @testset "sort=true, skipmissing=false" begin
+            gd = groupby_checked(df, :Key1, sort=true)
+            @test length(gd) == 3
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6]),
+                DataFrame(Key1=missing, Key2="A", Value=2)
+            ])
+            @test issorted(vcat(gd...), :Key1)
 
-        gd = groupby_checked(df, [:Key1, :Key2], skipmissing=true)
-        @test length(gd) == 3
-        if df.Key1 isa CategoricalVector && df.Key2 isa CategoricalVector
-            @test gd[1] == DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
-            @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-        else
-            @test gd[1] == DataFrame(Key1="A", Key2="B", Value=1)
-            @test gd[2] == DataFrame(Key1="B", Key2="A", Value=3)
-            @test gd[3] == DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
+            gd = groupby_checked(df, [:Key1, :Key2], sort=true)
+            @test length(gd) == 5
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                DataFrame(Key1="A", Key2="B", Value=1),
+                DataFrame(Key1="B", Key2="A", Value=3),
+                DataFrame(Key1="B", Key2=missing, Value=[4, 6]),
+                DataFrame(Key1=missing, Key2="A", Value=2)
+            ])
+            @test issorted(vcat(gd...), [:Key1, :Key2])
         end
-    end
 
-    @testset "sort=true, skipmissing=false" begin
-        gd = groupby_checked(df, :Key1, sort=true)
-        @test length(gd) == 3
-        @test gd[1] == DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8])
-        @test gd[2] ≅ DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
-        @test gd[3] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
+        @testset "sort=true, skipmissing=true" begin
+            gd = groupby_checked(df, :Key1, sort=true, skipmissing=true)
+            @test length(gd) == 2
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8]),
+                DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
+            ])
+            @test issorted(vcat(gd...), :Key1)
 
-        gd = groupby_checked(df, [:Key1, :Key2], sort=true)
-        @test length(gd) == 5
-        @test gd[1] ≅ DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
-        @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
-        @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
-        @test gd[4] ≅ DataFrame(Key1="B", Key2=missing, Value=[4, 6])
-        @test gd[5] ≅ DataFrame(Key1=missing, Key2="A", Value=2)
-    end
-
-    @testset "sort=true, skipmissing=true" begin
-        gd = groupby_checked(df, :Key1, sort=true, skipmissing=true)
-        @test length(gd) == 2
-        @test gd[1] == DataFrame(Key1="A", Key2=["B", "A", "A", "A"], Value=[1, 5, 7, 8])
-        @test gd[2] ≅ DataFrame(Key1="B", Key2=["A", missing, missing], Value=[3, 4, 6])
-
-        gd = groupby_checked(df, [:Key1, :Key2], sort=true, skipmissing=true)
-        @test length(gd) == 3
-        @test gd[1] == DataFrame(Key1="A", Key2="A", Value=[5, 7, 8])
-        @test gd[2] == DataFrame(Key1="A", Key2="B", Value=1)
-        @test gd[3] == DataFrame(Key1="B", Key2="A", Value=3)
+            gd = groupby_checked(df, [:Key1, :Key2], sort=true, skipmissing=true)
+            @test length(gd) == 3
+            @test isequal_unordered(gd, [
+                DataFrame(Key1="A", Key2="A", Value=[5, 7, 8]),
+                DataFrame(Key1="A", Key2="B", Value=1),
+                DataFrame(Key1="B", Key2="A", Value=3)
+            ])
+            @test issorted(vcat(gd...), [:Key1, :Key2])
+        end
     end
 end
 
-# We need many rows so that optimized CategoricalArray method is used
-xv = rand(["A", "B", missing], 100)
-yv = rand(["A", "B", missing], 100)
-zv = rand(["A", "B", missing], 100)
-@testset "grouping with three keys" for x in (xv,
-                                              categorical(xv),
-                                              levels!(categorical(xv), ["A", "B", "X"]),
-                                              levels!(categorical(xv), ["X", "A", "B"])),
-                                        y in (yv,
-                                              categorical(yv),
-                                              levels!(categorical(yv), ["A", "B", "X"]),
-                                              levels!(categorical(yv), ["X", "A", "B"])),
-                                        z in (zv,
-                                              categorical(zv),
-                                              levels!(categorical(zv), ["A", "B", "X"]),
-                                              levels!(categorical(zv), ["X", "A", "B"]))
-    df = DataFrame(Key1 = x, Key2 = y, Key3 = z, Value = string.(1:100))
-    dfb = mapcols(Vector{Union{String, Missing}}, df)
+@testset "grouping with three keys" begin
+    # We need many rows so that optimized CategoricalArray method is used
+    xv = rand(["A", "B", missing], 100)
+    yv = rand(["A", "B", missing], 100)
+    zv = rand(["A", "B", missing], 100)
+    xvars = (xv,
+             categorical(xv),
+             levels!(categorical(xv), ["A", "B", "X"]),
+             levels!(categorical(xv), ["X", "B", "A"]),
+             _levels!(PooledArray(xv), ["A", "B", missing]),
+             _levels!(PooledArray(xv), ["B", "A", missing, "X"]),
+             _levels!(PooledArray(xv), [missing, "X", "A", "B"]))
+    yvars = (yv,
+             categorical(yv),
+             levels!(categorical(yv), ["A", "B", "X"]),
+             levels!(categorical(yv), ["B", "X", "A"]),
+             _levels!(PooledArray(yv), ["A", "B", missing]),
+             _levels!(PooledArray(yv), [missing, "A", "B", "X"]),
+             _levels!(PooledArray(yv), ["B", "A", "X", missing]))
+    zvars = (zv,
+             categorical(zv),
+             levels!(categorical(zv), ["B", "A"]),
+             levels!(categorical(zv), ["X", "A", "B"]),
+             _levels!(PooledArray(zv), ["A", missing, "B"]),
+             _levels!(PooledArray(zv), ["B", missing, "A", "X"]),
+             _levels!(PooledArray(zv), ["X", "A", missing, "B"]))
+    for x in xvars, y in yvars, z in zvars
+        df = DataFrame(Key1 = x, Key2 = y, Key3 = z, Value = string.(1:100))
+        dfb = mapcols(Vector{Union{String, Missing}}, df)
 
-    @test groupby_checked(df, [:Key1, :Key2, :Key3], sort=true) ≅
-        groupby_checked(dfb, [:Key1, :Key2, :Key3], sort=true)
-    @test groupby_checked(df, [:Key1, :Key2, :Key3], sort=true, skipmissing=true) ≅
-          groupby_checked(dfb, [:Key1, :Key2, :Key3], sort=true, skipmissing=true)
+        gd = groupby_checked(df, [:Key1, :Key2, :Key3], sort=true)
+        dfs = [groupby_checked(dfb, [:Key1, :Key2, :Key3], sort=true)...]
+        @test isequal_unordered(gd, dfs)
+        @test issorted(vcat(gd...), [:Key1, :Key2, :Key3])
+        gd = groupby_checked(df, [:Key1, :Key2, :Key3], sort=true, skipmissing=true)
+        dfs = [groupby_checked(dfb, [:Key1, :Key2, :Key3], sort=true, skipmissing=true)...]
+        @test isequal_unordered(gd, dfs)
+        @test issorted(vcat(gd...), [:Key1, :Key2, :Key3])
 
-    if df.Key1 isa CategoricalVector &&
-       df.Key2 isa CategoricalVector &&
-       df.Key3 isa CategoricalVector
-        @test groupby_checked(df, [:Key1, :Key2, :Key3], sort=true) ≅
-            groupby_checked(df, [:Key1, :Key2, :Key3], sort=false)
-        @test groupby_checked(df, [:Key1, :Key2, :Key3], sort=true, skipmissing=true) ≅
-            groupby_checked(df, [:Key1, :Key2, :Key3], sort=false, skipmissing=true)
+        # This is an implementation detail but it allows checking
+        # that the optimized method is used
+        if df.Key1 isa CategoricalVector &&
+            df.Key2 isa CategoricalVector &&
+            df.Key3 isa CategoricalVector
+            @test groupby_checked(df, [:Key1, :Key2, :Key3], sort=true) ≅
+                groupby_checked(df, [:Key1, :Key2, :Key3], sort=false)
+            @test groupby_checked(df, [:Key1, :Key2, :Key3], sort=true, skipmissing=true) ≅
+                groupby_checked(df, [:Key1, :Key2, :Key3], sort=false, skipmissing=true)
+        end
     end
 end
 

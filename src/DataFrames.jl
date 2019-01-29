@@ -6,7 +6,7 @@ module DataFrames
 ##
 ##############################################################################
 
-using Reexport, StatsBase, SortingAlgorithms, Compat, Statistics, Unicode, Printf
+using Reexport, StatsBase, SortingAlgorithms, Compat, Statistics, Unicode, Printf, PooledArrays
 @reexport using CategoricalArrays, Missings
 using Base.Sort, Base.Order, Base.Iterators
 
