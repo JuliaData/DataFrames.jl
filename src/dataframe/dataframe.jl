@@ -293,7 +293,7 @@ end
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector, copy
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
-    if !checkindex(Bool, axes(df, 1), row_ind)
+    @boundscheck if !checkindex(Bool, axes(df, 1), row_ind)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_ind"))
     end
