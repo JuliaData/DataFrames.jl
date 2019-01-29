@@ -161,14 +161,14 @@ si5 = SubIndex(i, [:C, :D, :E])
     @test names(dfr3) == [:c, :b]
 end
 
-@testset "fuzzy matching and BoundsError" begin
+@testset "fuzzy matching and ArgumentError" begin
     i = Index()
     push!(i, :x1)
     push!(i, :x12)
     push!(i, :x131)
     push!(i, :y13)
-    @test_throws BoundsError i[:x13]
-    @test_throws BoundsError i[:xx13]
+    @test_throws ArgumentError i[:x13]
+    @test_throws ArgumentError i[:xx13]
     @test all(fuzzymatch.(["x1", "x12", "x131", "y13"], "x13"))
     @test all(.!fuzzymatch.(["x1", "x12", "x131", "y13"], "xx13"))
     @test fuzzymatch.(["x1", "x12", "x131", "y13"], "x12") == [true, true, false, false]

@@ -159,13 +159,13 @@ end
 @inline function lookupname(l::Dict{Symbol, Int}, idx::Symbol)
     i = get(l, idx, nothing)
     if i === nothing
-        candidates = filter(x -> fuzzymatch(string(x), string(idx)), keys(l))
+        candidates = filter(x -> fuzzymatch(string(x), string(idx)), collect(keys(l)))
         if isempty(candidates)
-            throw(BoundsError("column name :$idx not found in the data frame."))
+            throw(ArgumentError("column name :$idx not found in the data frame"))
         end
         candidatesstr = join(string.(':', sort!(candidates)), ", ", " and ")
-        throw(BoundsError("column name :$idx not found in the data frame; " *
-                          "existing most similar names are: $candidatesstr"))
+        throw(ArgumentError("column name :$idx not found in the data frame; " *
+                            "existing most similar names are: $candidatesstr"))
     end
     i
 end
