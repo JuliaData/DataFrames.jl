@@ -11,7 +11,7 @@ Tables.materializer(df::AbstractDataFrame) = DataFrame
 
 getvector(x::AbstractVector) = x
 getvector(x) = collect(x)
-fromcolumns(x) = DataFrame(Any[getvector(c) for c in Tables.eachcolumn(x)], Index(collect(Symbol, propertynames(x))))
+fromcolumns(x) = DataFrame(AbstractVector[getvector(c) for c in Tables.eachcolumn(x)], Index(collect(Symbol, propertynames(x))))
 
 function DataFrame(x)
     if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
