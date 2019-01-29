@@ -146,12 +146,11 @@ end
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
 # we accept at most one difference in strings disregarding case
-function fuzzymatch(s1::AbstractString, s2::AbstractString)
-    l1, l2 = length.((s1, s2))
+function fuzzymatch(s1::AbstractString, s2::AbstractString, l1=length(s1), l2=length(s2))
     abs(l1 - l2) > 1 && return false
     min(l1, l2) == 0 && return true
     ts1, ts2 = chop.((s1, s2), head=1, tail=0)
-    uppercase(s1[1]) == uppercase(s2[1]) && return fuzzymatch(ts1, ts2)
+    uppercase(s1[1]) == uppercase(s2[1]) && return fuzzymatch(ts1, ts2, l1 - 1, l2 - 1)
     l1 > l2 && return ts1 == s2
     l1 < l2 && return s1 == ts2
     ts1 == ts2
