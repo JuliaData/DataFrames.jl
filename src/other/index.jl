@@ -163,9 +163,9 @@ end
         if isempty(candidates)
             throw(BoundsError("column name :$idx not found in the data frame."))
         end
-        candiatesstr = join(string.(':', sort!(candidates)), ", ", " and ")
+        candidatesstr = join(string.(':', sort!(candidates)), ", ", " and ")
         throw(BoundsError("column name :$idx not found in the data frame; " *
-                          "existing most similar names are: $candiatesstr"))
+                          "existing most similar names are: $candidatesstr"))
     end
     i
 end
