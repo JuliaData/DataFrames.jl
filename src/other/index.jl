@@ -145,8 +145,19 @@ end
 @inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
-@inline Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
-@inline Base.getindex(x::Index, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+@inline function lookupname(l::Dict{Symbol, Int}, idx::Symbol)
+    i = get(l, idx, nothing)
+    if i === nothing
+        throw(BoundsError("column name $idx not found in the data frame"))
+    end
+    i
+end
+
+@inline Base.getindex(x::Index, idx::Symbol) = lookupname(x.lookup, idx)
+@inline function Base.getindex(x::Index, idx::AbstractVector{Symbol})
+    l = x.lookup
+    [lookupname(l, i) for i in idx]
+end
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
