@@ -161,7 +161,7 @@ si5 = SubIndex(i, [:C, :D, :E])
     @test names(dfr3) == [:c, :b]
 end
 
-@testset "fuzzy matching and BoundsError"
+@testset "fuzzy matching and BoundsError" begin
     i = Index()
     push!(i, :x1)
     push!(i, :x12)
