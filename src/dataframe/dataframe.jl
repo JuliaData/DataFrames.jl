@@ -239,7 +239,16 @@ ncol(df::DataFrame) = length(index(df))
 ##############################################################################
 
 # df[SingleColumnIndex] => AbstractVector, the same vector
-function Base.getindex(df::DataFrame, col_ind::ColumnIndex)
+@inline function Base.getindex(df::DataFrame, col_ind::Union{Signed, Unsigned})
+    cols = _columns(df)
+    @boundscheck if !checkindex(Bool, axes(cols, 1), col_ind)
+        throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
+                          "columns at index $col_ind"))
+    end
+    @inbounds cols[col_ind]
+end
+
+function Base.getindex(df::DataFrame, col_ind::Symbol)
     selected_column = index(df)[col_ind]
     return _columns(df)[selected_column]
 end
@@ -255,15 +264,40 @@ end
 Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
 
 # df[SingleRowIndex, SingleColumnIndex] => Scalar
-function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::ColumnIndex)
+@inline function Base.getindex(df::DataFrame, row_ind::Integer,
+                               col_ind::Union{Signed, Unsigned})
+    cols = _columns(df)
+    @boundscheck begin
+        if !checkindex(Bool, axes(cols, 1), col_ind)
+            throw(BoundsError("attempt to access a data frame with $(ncol(df)) " *
+                              "columns at index $row_ind"))
+        end
+        if !checkindex(Bool, axes(df, 1), row_ind)
+            throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                              "rows at index $row_ind"))
+        end
+    end
+
+    @inbounds cols[col_ind][row_ind]
+end
+
+@inline function Base.getindex(df::DataFrame, row_ind::Integer, col_ind::Symbol)
     selected_column = index(df)[col_ind]
-    return _columns(df)[selected_column][row_ind]
+    @boundscheck if !checkindex(Bool, axes(df, 1), row_ind)
+        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                          "rows at index $row_ind"))
+    end
+    @inbounds _columns(df)[selected_column][row_ind]
 end
 
 # df[MultiRowIndex, SingleColumnIndex] => AbstractVector, copy
-function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, col_ind::ColumnIndex)
     selected_column = index(df)[col_ind]
-    return _columns(df)[selected_column][row_inds]
+    @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
+        throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
+                          "rows at index $row_inds"))
+    end
+    @inbounds return _columns(df)[selected_column][row_inds]
 end
 
 # df[MultiRowIndex, MultiColumnIndex] => DataFrame
@@ -291,7 +325,7 @@ function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::AbstractVector)
 end
 
 # df[MultiRowIndex, :] => DataFrame
-@inbounds function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
+@inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
     @boundscheck if !checkindex(Bool, axes(df, 1), row_inds)
         throw(BoundsError("attempt to access a data frame with $(nrow(df)) " *
                           "rows at index $row_inds"))

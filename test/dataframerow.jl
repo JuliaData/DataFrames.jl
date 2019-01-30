@@ -237,12 +237,12 @@ dfr = DataFrame(a=1, b=true, c=1.0)[1,:]
     dfr1.x2 = 100
     @test values(dfr1) == (100, 100, 100)
     @test df[2, 2] == 100
-    @test_throws KeyError dfr1.x1
+    @test_throws ArgumentError dfr1.x1
     @test dfr2.x1 == 11
     dfr2.x1 = 200
     @test values(dfr2) == (200, 200, 200)
     @test df[1, 1] == 200
-    @test_throws KeyError dfr2.x2
+    @test_throws ArgumentError dfr2.x2
 end
 
 @testset "conversion and push!" begin

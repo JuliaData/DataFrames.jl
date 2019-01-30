@@ -1,7 +1,7 @@
 module TestIndex
 
 using Test, DataFrames
-using DataFrames: Index, SubIndex
+using DataFrames: Index, SubIndex, fuzzymatch
 
 i = Index()
 push!(i, :A)
@@ -159,6 +159,20 @@ si5 = SubIndex(i, [:C, :D, :E])
     selector3[1] = :a
     @test names(dfv3) == [:c, :b]
     @test names(dfr3) == [:c, :b]
+end
+
+@testset "fuzzy matching and ArgumentError" begin
+    i = Index()
+    push!(i, :x1)
+    push!(i, :x12)
+    push!(i, :x131)
+    push!(i, :y13)
+    @test_throws ArgumentError i[:x13]
+    @test_throws ArgumentError i[:xx13]
+    @test all(fuzzymatch.(["x1", "x12", "x131", "y13"], "x13"))
+    @test all(.!fuzzymatch.(["x1", "x12", "x131", "y13"], "xx13"))
+    @test fuzzymatch.(["x1", "x12", "x131", "y13"], "x12") == [true, true, false, false]
+    @test all(fuzzymatch.(["X1", "X12", "X131", "Y13"], "x13"))
 end
 
 end # module

@@ -166,16 +166,14 @@ Base.size(itr::DataFrameColumns) = (size(itr.df, 2),)
 Base.IndexStyle(::Type{<:DataFrameColumns}) = Base.IndexLinear()
 
 @inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame,
-                                                     Pair{Symbol, AbstractVector}},
-                               j::Int)
+                                                     Pair{Symbol, AbstractVector}}, j::Int)
     @boundscheck checkbounds(itr, j)
-    _names(itr.df)[j] => itr.df[j]
+    @inbounds _names(itr.df)[j] => itr.df[j]
 end
 
-@inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame, AbstractVector},
-                               j::Int)
+@inline function Base.getindex(itr::DataFrameColumns{<:AbstractDataFrame, AbstractVector}, j::Int)
     @boundscheck checkbounds(itr, j)
-    itr.df[j]
+    @inbounds itr.df[j]
 end
 
 """

@@ -145,8 +145,34 @@ end
 @inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
-@inline Base.getindex(x::Index, idx::Symbol) = x.lookup[idx]
-@inline Base.getindex(x::Index, idx::AbstractVector{Symbol}) = [x.lookup[i] for i in idx]
+# we accept at most one difference in strings disregarding case
+function fuzzymatch(s1::AbstractString, s2::AbstractString, l1=length(s1), l2=length(s2))
+    abs(l1 - l2) > 1 && return false
+    min(l1, l2) == 0 && return true
+    ts1, ts2 = chop.((s1, s2), head=1, tail=0)
+    uppercase(s1[1]) == uppercase(s2[1]) && return fuzzymatch(ts1, ts2, l1 - 1, l2 - 1)
+    l1 > l2 && return ts1 == s2
+    l1 < l2 && return s1 == ts2
+    ts1 == ts2
+end
+
+@inline function lookupname(l::Dict{Symbol, Int}, idx::Symbol)
+    i = get(l, idx, nothing)
+    if i === nothing
+        candidates = filter(x -> fuzzymatch(string(x), string(idx)), collect(keys(l)))
+        if isempty(candidates)
+            throw(ArgumentError("column name :$idx not found in the data frame"))
+        end
+        candidatesstr = join(string.(':', sort!(candidates)), ", ", " and ")
+        throw(ArgumentError("column name :$idx not found in the data frame; " *
+                            "existing most similar names are: $candidatesstr"))
+    end
+    i
+end
+
+@inline Base.getindex(x::Index, idx::Symbol) = lookupname(x.lookup, idx)
+@inline Base.getindex(x::Index, idx::AbstractVector{Symbol}) =
+    [lookupname(x.lookup, i) for i in idx]
 
 @inline function Base.getindex(x::AbstractIndex, idx::AbstractVector{<:Integer})
     if any(v -> v isa Bool, idx)
@@ -237,7 +263,7 @@ Base.@propagate_inbounds function parentcols(ind::SubIndex, idx::Symbol)
     @boundscheck begin
         remap = ind.remap
         length(remap) == 0 && lazyremap!(ind)
-        remap[parentcol] == 0 && throw(KeyError("$idx not found"))
+        remap[parentcol] == 0 && throw(ArgumentError("$idx not found"))
     end
     return parentcol
 end

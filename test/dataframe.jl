@@ -326,7 +326,7 @@ end
     @test_throws ArgumentError deletecols!(df, 0)
     @test_throws ArgumentError deletecols!(df, 6)
     @test_throws ArgumentError deletecols!(df, [1, 1])
-    @test_throws KeyError deletecols!(df, :f)
+    @test_throws ArgumentError deletecols!(df, :f)
 
     d = copy(df)
     deletecols!(d, [:a, :e, :c])
@@ -523,7 +523,7 @@ df4[2,:Mass] = missing
 # test empty set of grouping variables
 @test_throws ArgumentError unstack(df, Int[], :Key, :Value)
 @test_throws ArgumentError unstack(df, Symbol[], :Key, :Value)
-@test_throws KeyError unstack(stack(DataFrame(rand(10, 10))),
+@test_throws ArgumentError unstack(stack(DataFrame(rand(10, 10))),
                               :id, :variable, :value)
 
 # test missing value in grouping variable
@@ -932,7 +932,7 @@ end
     df = DataFrame(a=a, b=b, c=c)
     @test_throws ArgumentError permutecols!(df, [:a, :b])
     @test_throws ArgumentError permutecols!(df, 1:4)
-    @test_throws KeyError permutecols!(df, [:a, :b, :c, :d])
+    @test_throws ArgumentError permutecols!(df, [:a, :b, :c, :d])
     @test_throws ArgumentError permutecols!(df, [1, 3])
     @test_throws ArgumentError permutecols!(df, [:a, :c])
     @test_throws ArgumentError permutecols!(df, [1, 2, 3, 1])
@@ -949,7 +949,7 @@ end
 
     @test df.x === x
     @test df.y === y
-    @test_throws KeyError df.z
+    @test_throws ArgumentError df.z
 
     df.x = 2:11
     @test df.x == 2:11

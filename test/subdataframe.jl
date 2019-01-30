@@ -129,7 +129,7 @@ end
 
     @test df.x == 2:6
     @test df.y == 2:6
-    @test_throws KeyError df.z
+    @test_throws ArgumentError df.z
 
     df.x = 1:5
     @test df.x == 1:5
@@ -195,7 +195,7 @@ end
     @test sdf.x3[1] == 33
     sdf.x3[1] = 333
     @test df.x3[3] == 333
-    @test_throws KeyError sdf.x1
+    @test_throws ArgumentError sdf.x1
 end
 
 @testset "conversion to DataFrame" begin
