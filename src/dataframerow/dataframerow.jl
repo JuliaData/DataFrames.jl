@@ -7,7 +7,7 @@ A `DataFrameRow` is constructed with `view` or `getindex` when one row and a
 selection of columns are requested, or when iterating the result
 of the call to the [`eachrow`](@ref) function.
 
-You can also call a `DataFrameRow` constructor directly using the following syntax:
+The `DataFrameRow` constructor can also be called directly:
 
 ```
 DataFrameRow(parent::AbstractDataFrame, row::Integer, cols=:)
