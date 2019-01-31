@@ -1,13 +1,15 @@
 module TestDataFrameRow
 
-using Test, DataFrames
+using Test, DataFrames, Random
 using DataFrames: columns
 
-@testset "constructors" begin
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
+ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
                    b=[2.0, missing, 1.2, 2.0, missing, missing],
                    c=["A", "B", "C", "A", "B", missing],
                    d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
+
+@testset "constructors" begin
+    df = deepcopy(ref_df)
     sdf = view(df, [5, 3], [3, 1, 2])
 
     @test names(DataFrameRow(df, 1, :)) == [:a, :b, :c, :d]
@@ -39,10 +41,7 @@ using DataFrames: columns
 end
 
 @testset "getindex and setindex!" begin
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
-                   b=[2.0, missing, 1.2, 2.0, missing, missing],
-                   c=["A", "B", "C", "A", "B", missing],
-                   d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
+    df = deepcopy(ref_df)
     sdf = view(df, [5, 3], [3, 1, 2])
 
     r = DataFrameRow(df, 2, :)
@@ -81,10 +80,7 @@ end
 end
 
 @testset "equality" begin
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
-                   b=[2.0, missing, 1.2, 2.0, missing, missing],
-                   c=["A", "B", "C", "A", "B", missing],
-                   d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
+    df = deepcopy(ref_df)
     df2 = DataFrame(a = [1, 2, 3])
 
     @test DataFrameRow(df, 1, :) != DataFrameRow(df2, 1, :)
@@ -111,30 +107,27 @@ end
 end
 
 @testset "isless" begin
-    df4 = DataFrame(a=[1, 1, 2, 2, 2, 2, missing, missing],
-                    b=Union{Float64, Missing}[2.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0],
-                    c=[:B, missing, :A, :C, :D, :D, :A, :A])
+    df = DataFrame(a=[1, 1, 2, 2, 2, 2, missing, missing],
+                   b=Union{Float64, Missing}[2.0, 3.0, 1.0, 2.0, 2.0, 2.0, 2.0, 3.0],
+                   c=[:B, missing, :A, :C, :D, :D, :A, :A])
 
-    @test isless(DataFrameRow(df4, 1, :), DataFrameRow(df4, 2, :))
-    @test !isless(DataFrameRow(df4, 2, :), DataFrameRow(df4, 1, :))
-    @test !isless(DataFrameRow(df4, 1, :), DataFrameRow(df4, 1, :))
-    @test isless(DataFrameRow(df4, 1, :), DataFrameRow(df4, 3, :))
-    @test !isless(DataFrameRow(df4, 3, :), DataFrameRow(df4, 1, :))
-    @test isless(DataFrameRow(df4, 3, :), DataFrameRow(df4, 4, :))
-    @test !isless(DataFrameRow(df4, 4, :), DataFrameRow(df4, 3, :))
-    @test isless(DataFrameRow(df4, 4, :), DataFrameRow(df4, 5, :))
-    @test !isless(DataFrameRow(df4, 5, :), DataFrameRow(df4, 4, :))
-    @test !isless(DataFrameRow(df4, 6, :), DataFrameRow(df4, 5, :))
-    @test !isless(DataFrameRow(df4, 5, :), DataFrameRow(df4, 6, :))
-    @test isless(DataFrameRow(df4, 7, :), DataFrameRow(df4, 8, :))
-    @test !isless(DataFrameRow(df4, 8, :), DataFrameRow(df4, 7, :))
+    @test isless(DataFrameRow(df, 1, :), DataFrameRow(df, 2, :))
+    @test !isless(DataFrameRow(df, 2, :), DataFrameRow(df, 1, :))
+    @test !isless(DataFrameRow(df, 1, :), DataFrameRow(df, 1, :))
+    @test isless(DataFrameRow(df, 1, :), DataFrameRow(df, 3, :))
+    @test !isless(DataFrameRow(df, 3, :), DataFrameRow(df, 1, :))
+    @test isless(DataFrameRow(df, 3, :), DataFrameRow(df, 4, :))
+    @test !isless(DataFrameRow(df, 4, :), DataFrameRow(df, 3, :))
+    @test isless(DataFrameRow(df, 4, :), DataFrameRow(df, 5, :))
+    @test !isless(DataFrameRow(df, 5, :), DataFrameRow(df, 4, :))
+    @test !isless(DataFrameRow(df, 6, :), DataFrameRow(df, 5, :))
+    @test !isless(DataFrameRow(df, 5, :), DataFrameRow(df, 6, :))
+    @test isless(DataFrameRow(df, 7, :), DataFrameRow(df, 8, :))
+    @test !isless(DataFrameRow(df, 8, :), DataFrameRow(df, 7, :))
 end
 
 @testset "hashing" begin
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
-                   b=[2.0, missing, 1.2, 2.0, missing, missing],
-                   c=["A", "B", "C", "A", "B", missing],
-                   d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
+    df = deepcopy(ref_df)
 
     @test hash(DataFrameRow(df, 1, :)) != hash(DataFrameRow(df, 2, :))
     @test hash(DataFrameRow(df, 1, :)) != hash(DataFrameRow(df, 3, :))
@@ -149,34 +142,30 @@ end
 
 @testset "grouping" begin
     # test RowGroupDict
-    N = 20
-    d1 = rand(map(Int64, 1:2), N)
-    df5 = DataFrame([d1], [:d1])
-    df6 = DataFrame(d1 = [2,3])
+    Random.seed!(1234)
+    df1 = DataFrame(d1=rand(1:2, 1000))
+    df2 = DataFrame(d1=[2,3])
 
     # test_group("group_rows")
-    gd = DataFrames.group_rows(df5)
+    gd = DataFrames.group_rows(df1)
     @test length(unique(gd.groups)) == 2
 
     # getting groups for the rows of the other frames
-    @test length(gd[DataFrameRow(df6, 1, :)]) > 0
-    @test_throws KeyError gd[DataFrameRow(df6, 2, :)]
-    @test isempty(DataFrames.findrows(gd, df6, (gd.df[1],), (df6[1],), 2))
+    @test length(gd[DataFrameRow(df2, 1, :)]) > 0
+    @test_throws KeyError gd[DataFrameRow(df2, 2, :)]
+    @test isempty(DataFrames.findrows(gd, df2, (gd.df[1],), (df2[1],), 2))
 
     # grouping empty frame
     gd = DataFrames.group_rows(DataFrame(x=Int[]))
     @test length(unique(gd.groups)) == 0
 
     # grouping single row
-    gd = DataFrames.group_rows(df5[1:1,:])
+    gd = DataFrames.group_rows(df1[1:1,:])
     @test length(unique(gd.groups)) == 1
 end
 
 @testset "getproperty, setproperty! and propertynames" begin
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
-                   b=[2.0, missing, 1.2, 2.0, missing, missing],
-                   c=["A", "B", "C", "A", "B", missing],
-                   d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
+    df = deepcopy(ref_df)
 
     r = DataFrameRow(df, 1, :)
     @test Base.propertynames(r) == names(df)
@@ -191,10 +180,7 @@ end
 end
 
 @testset "keys, values and iteration, size" begin
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
-                   b=[2.0, missing, 1.2, 2.0, missing, missing],
-                   c=["A", "B", "C", "A", "B", missing],
-                   d=CategoricalArray([:A, missing, :C, :A, missing, :C]))
+    df = deepcopy(ref_df)
     r = DataFrameRow(df, 1, :)
 
     @test keys(r) == names(df)
@@ -239,17 +225,13 @@ end
     @test Vector(dfr)::Vector{Union{Float64, Missing}} == [1.0, 2.0]
     @test Vector{Int}(dfr)::Vector{Int} == [1, 2]
 
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
-                   b=[2.0, missing, 1.2, 2.0, missing, missing],
-                   c=["A", "B", "C", "A", "B", missing])
+    df = df[1:3]
     @test copy(DataFrameRow(df, 1, :)) == (a = 1, b = 2.0, c = "A")
     @test isequal(copy(DataFrameRow(df, 2, :)), (a = 2, b = missing, c = "B"))
 end
 
 @testset "parent and parentindices" begin
-    df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
-                   b=[2.0, missing, 1.2, 2.0, missing, missing],
-                   c=["A", "B", "C", "A", "B", missing])
+    df = deepcopy(ref_df)[1:3]
 
     @test parent(df[2, :]) === df
     @test parentindices(df[2, :]) == (2, Base.OneTo(3))

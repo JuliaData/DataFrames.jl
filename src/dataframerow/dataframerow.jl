@@ -3,7 +3,7 @@
 
 A view of one row of an `AbstractDataFrame`.
 
-A `DataFrameRow` is constructed with `view` or `getindex` when one row and a
+A `DataFrameRow` is returned by `getindex` or `view` functions when one row and a
 selection of columns are requested, or when iterating the result
 of the call to the [`eachrow`](@ref) function.
 
