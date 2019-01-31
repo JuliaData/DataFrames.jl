@@ -1374,6 +1374,5 @@ import Base: convert
 @deprecate convert(::Type{Array{T}}, df::AbstractDataFrame) where {T} convert(Matrix{T}, df)
 @deprecate convert(::Type{Array}, dfr::DataFrameRow) permutedims(Vector(dfr))
 
-@deprecate DataFrameRow(df::AbstractDataFrame, row::Integer) DataFrameRow(df, row, :)
 @deprecate SubDataFrame(df::AbstractDataFrame, rows::AbstractVector{<:Integer}) SubDataFrame(df, rows, :)
 @deprecate SubDataFrame(df::AbstractDataFrame, ::Colon) SubDataFrame(df, :, :)
