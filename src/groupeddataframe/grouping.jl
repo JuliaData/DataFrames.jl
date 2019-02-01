@@ -1125,3 +1125,29 @@ function DataFrame(gd::GroupedDataFrame)
     resize!(idx, doff - 1)
     parent(gd)[idx, :]
 end
+
+"""
+    groupindices(gd::GroupedDataFrame)
+
+Return a vector of group indices for each row of `parent(gd)`.
+If for some row this function returns an index `i` this means that
+a data frame `gd[i]` contains this row.
+Rows not present in any of `gd` groups have their index set to `missing`.
+"""
+function groupindices(gd::GroupedDataFrame)
+    indices = Vector{Union{Int, Missing}}(undef, length(gd.groups))
+    fill!(indices, missing)
+    for idx in eachindex(gd.starts)
+        for j in gd.starts[idx]:gd.ends[idx]
+            @inbounds indices[gd.idx[j]] = idx
+        end
+    end
+    indices
+end
+
+"""
+    groupvars(gd::GroupedDataFrame)
+
+Return a vector of column indices in `parent(gd)` used for grouping.
+"""
+groupvars(gd::GroupedDataFrame) = gd.cols

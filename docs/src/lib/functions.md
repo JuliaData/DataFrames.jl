@@ -16,6 +16,8 @@ by
 colwise
 combine
 groupby
+groupindices
+groupvars
 join
 map
 melt
