@@ -6,33 +6,32 @@ const ≅ = isequal
 function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
     gd = groupby(df, keys, args...; kwargs...)
 
-    for i in 1:length(gd)
-        # checking that groups field is consistent with other fields
-        # (since == and isequal do not use it)
-        # and that idx is increasing per group
-        @assert findall(==(i), gd.groups) == gd.idx[gd.starts[i]:gd.ends[i]]
+    # checking that groups field is consistent with other fields
+    # (since == and isequal do not use it)
+    # and that idx is increasing per group
+    new_groups = zeros(Int, length(gd.groups))
+    for idx in eachindex(new_starts)
+        subidx = gd.idx[new_starts[idx]:new_ends[idx]]
+        @assert issorted(subidx)
+        new_groups[subidx] .= idx
     end
+    @assert new_groups == gd.groups
 
     if length(gd) > 0
         se = sort!(collect(zip(gd.starts, gd.ends)))
 
         # correct start-end range
         @assert se[1][1] > 0
-        @assert se[end][2] == length(gd.idx)
+        @assert se[end][2] <= length(gd.idx)
 
         # correct start-end relations
         for i in eachindex(se)
             @assert se[i][1] <= se[i][2]
             if i > 1
-                @assert se[i-1][2] + 1 == se[i][1]
+                # the blocks might be discontinuous
+                @assert se[i-1][2] < se[i][1]
             end
         end
-
-        # correct coverage of missings if dropped
-        @assert findall(==(0), gd.groups) == gd.idx[1:se[1][1]-1]
-    else
-        # a case when missings are dropped and nothing was left to group by
-        @assert all(==(0), gd.groups)
     end
 
     gd
@@ -878,11 +877,17 @@ end
     else
         @test_throws ArgumentError gd[true]
     end
+    @test_throws ArgumentError gd[[1, 2, 1]]
     @test_throws MethodError gd["a"]
-    gd2 = gd[[true, false, false, false]]
+    gd2 = gd[[false, true, false, false]]
     @test length(gd2) == 1
-    @test gd2[1] == gd[1]
+    @test gd2[1] == gd[2]
     @test_throws BoundsError gd[[true, false]]
+    @test gd2.groups == [0, 1, 0, 0, 0, 1, 0, 0]
+    @test gd2.starts == [3]
+    @test gd2.ends == [4]
+    @test gd2.idx == gd.idx
+
     gd3 = gd[:]
     @test gd3 isa GroupedDataFrame
     @test length(gd3) == 4
@@ -890,13 +895,17 @@ end
     for i in 1:4
         @test gd3[i] == gd[i]
     end
-    gd4 = gd[[1,2]]
+    gd4 = gd[[2,1]]
     @test gd4 isa GroupedDataFrame
     @test length(gd4) == 2
     for i in 1:2
-        @test gd4[i] == gd[i]
+        @test gd4[i] == gd[3-i]
     end
     @test_throws BoundsError gd[1:5]
+    @test gd2.groups == [2, 1, 0, 0, 2, 1, 0, 0]
+    @test gd2.starts == [3,1]
+    @test gd2.ends == [4,2]
+    @test gd2.idx == gd.idx
 end
 
 @testset "== and isequal" begin
@@ -1074,10 +1083,16 @@ end
         @test sort(DataFrame(gd), :B) ≅ sort(df, :B)
         @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
 
+        gd2 = gd[[3,2]]
+        @test DataFrame(gd2) = df[[3,5,2,4], :]
+
         gd = groupby_checked(df, :A, skipmissing=true)
         @test sort(DataFrame(gd), :B) ==
               sort(dropmissing(df, disallowmissing=false), :B)
         @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
+
+        gd2 = gd[[2,1]]
+        @test DataFrame(gd2) = df[[3,5,2,4], :]
     end
 
     df = DataFrame(a=Int[], b=[], c=Union{Missing, String}[])
@@ -1089,6 +1104,23 @@ end
     gd = groupby_checked(dfv, :A)
     @test size(DataFrame(gd)) == size(dfv)
     @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
+end
+
+@testset "groupindices and groupvars" begin
+    df = DataFrame(A = [missing, :A, :B, :A, :B, missing], B = 1:6)
+    gd = groupby_checked(df, :A)
+    @test groupindices(gd) == [1, 2, 3, 2, 3, 1]
+    @test groupvars(gd) == [1]
+    gd2 = gd[[3,2]]
+    @test groupindices(gd2) == [0, 2, 1, 2, 1, 0]
+    @test groupvars(gd2) == [1]
+
+    gd = groupby_checked(df, :A, skipmissing=true)
+    @test groupindices(gd) == [0, 1, 2, 1, 2, 0]
+    @test groupvars(gd) == [1]
+    gd2 = gd[[2,1]]
+    @test groupindices(gd2) == [0, 2, 1, 2, 1, 0]
+    @test groupvars(gd2) == [1]
 end
 
 end # module

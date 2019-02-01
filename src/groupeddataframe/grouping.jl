@@ -104,8 +104,22 @@ Base.last(gd::GroupedDataFrame) = gd[end]
 
 Base.getindex(gd::GroupedDataFrame, idx::Integer) =
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]], :)
-Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray) =
-    GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx, gd.starts[idxs], gd.ends[idxs])
+
+function Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray)
+    new_starts = gd.starts[idxs]
+    new_ends = gd.ends[idxs]
+    if length(unique(new_starts)) != length(idxs)
+        throw(ArgumentError("Duplicates in idxs argument are not allowed"))
+    end
+    new_groups = zeros(Int, length(gd.groups))
+    for idx in eachindex(new_starts)
+        for j in new_starts[idx]:new_ends[idx]
+            @inbounds new_groups[gd.idx[j]] = idx
+        end
+    end
+    GroupedDataFrame(gd.parent, gd.cols, new_groups, gd.idx, new_starts, new_ends)
+end
+
 Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
     GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx, gd.starts, gd.ends)
 
@@ -1134,16 +1148,7 @@ If for some row this function returns an index `i` this means that
 a data frame `gd[i]` contains this row.
 Rows not present in any of `gd` groups have their index set to `missing`.
 """
-function groupindices(gd::GroupedDataFrame)
-    indices = Vector{Union{Int, Missing}}(undef, length(gd.groups))
-    fill!(indices, missing)
-    for idx in eachindex(gd.starts)
-        for j in gd.starts[idx]:gd.ends[idx]
-            @inbounds indices[gd.idx[j]] = idx
-        end
-    end
-    indices
-end
+groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 
 """
     groupvars(gd::GroupedDataFrame)
