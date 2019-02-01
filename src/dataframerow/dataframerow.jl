@@ -69,7 +69,6 @@ end
 Base.@propagate_inbounds DataFrameRow(df::AbstractDataFrame, row::Integer) =
     DataFrameRow(df, row, :)
 
-
 row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
