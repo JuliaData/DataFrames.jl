@@ -244,7 +244,7 @@ julia> first(widedf, 6)
 │ 6   │ setosa        │ 6     │ 1.7         │ 0.4        │ 5.4         │ 3.9        │
 ```
 
-You can even skip the `:variable` and `:value` variables and use:
+You can even skip passing the `:variable` and `:value` values as positional arguments, as they will be used by default, and write:
 ```jldoctest reshape
 julia> widedf = unstack(longdf);
 
