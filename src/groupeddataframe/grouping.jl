@@ -79,7 +79,7 @@ end
 """
 function groupby(df::AbstractDataFrame, cols::AbstractVector;
                  sort::Bool = false, skipmissing::Bool = false)
-    intcols = index(df)[cols]
+    intcols = convert(Vector{Int}, index(df)[cols])
     sdf = df[intcols]
     df_groups = group_rows(sdf, false, sort, skipmissing)
     GroupedDataFrame(df, intcols, df_groups.groups, df_groups.rperm,

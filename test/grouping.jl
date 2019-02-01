@@ -44,6 +44,13 @@ end
     @test parent(gd) === df
 end
 
+@testset "accepted columns" begin
+    df = DataFrame(A=[1,1,1,2,2,2], B=[1,2,1,2,1,2], C=1:6)
+    @test groupby(df, [1,2]) == groupby(df, 1:2) == groupby(df, [:A, :B])
+    @test groupby(df, [2,1]) == groupby(df, 2:-1:1) == groupby(df, [:B, :A])
+end
+
+
 @testset "colwise" begin
     Random.seed!(1)
     df = DataFrame(a = repeat(Union{Int, Missing}[1, 3, 2, 4], outer=[2]),
