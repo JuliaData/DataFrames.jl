@@ -1084,7 +1084,7 @@ end
         @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
 
         gd2 = gd[[3,2]]
-        @test DataFrame(gd2) = df[[3,5,2,4], :]
+        @test DataFrame(gd2) == df[[3,5,2,4], :]
 
         gd = groupby_checked(df, :A, skipmissing=true)
         @test sort(DataFrame(gd), :B) ==
@@ -1092,7 +1092,7 @@ end
         @test eltypes(DataFrame(gd)) == [Union{Missing, Symbol}, Int]
 
         gd2 = gd[[2,1]]
-        @test DataFrame(gd2) = df[[3,5,2,4], :]
+        @test DataFrame(gd2) == df[[3,5,2,4], :]
     end
 
     df = DataFrame(a=Int[], b=[], c=Union{Missing, String}[])
