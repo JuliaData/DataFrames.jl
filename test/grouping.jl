@@ -1112,14 +1112,14 @@ end
     @test groupindices(gd) == [1, 2, 3, 2, 3, 1]
     @test groupvars(gd) == [1]
     gd2 = gd[[3,2]]
-    @test groupindices(gd2) == [missing, 2, 1, 2, 1, missing]
+    @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
     @test groupvars(gd2) == [1]
 
     gd = groupby_checked(df, :A, skipmissing=true)
-    @test groupindices(gd) == [missing, 1, 2, 1, 2, missing]
+    @test groupindices(gd) ≅ [missing, 1, 2, 1, 2, missing]
     @test groupvars(gd) == [1]
     gd2 = gd[[2,1]]
-    @test groupindices(gd2) == [missing, 2, 1, 2, 1, missing]
+    @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
     @test groupvars(gd2) == [1]
 end
 
