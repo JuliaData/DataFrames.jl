@@ -10,8 +10,8 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
     # (since == and isequal do not use it)
     # and that idx is increasing per group
     new_groups = zeros(Int, length(gd.groups))
-    for idx in eachindex(new_starts)
-        subidx = gd.idx[new_starts[idx]:new_ends[idx]]
+    for idx in eachindex(gd.starts)
+        subidx = gd.idx[gd.starts[idx]:gd.ends[idx]]
         @assert issorted(subidx)
         new_groups[subidx] .= idx
     end
