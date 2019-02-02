@@ -902,10 +902,10 @@ end
         @test gd4[i] == gd[3-i]
     end
     @test_throws BoundsError gd[1:5]
-    @test gd2.groups == [2, 1, 0, 0, 2, 1, 0, 0]
-    @test gd2.starts == [3,1]
-    @test gd2.ends == [4,2]
-    @test gd2.idx == gd.idx
+    @test gd4.groups == [2, 1, 0, 0, 2, 1, 0, 0]
+    @test gd4.starts == [3,1]
+    @test gd4.ends == [4,2]
+    @test gd4.idx == gd.idx
 end
 
 @testset "== and isequal" begin
