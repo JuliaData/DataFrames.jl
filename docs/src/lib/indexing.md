@@ -95,15 +95,16 @@ If it is not performed a description explicitly mentions that the data is assign
 
 > `df[col] .= v` and `df.col .= v`
 
-* `df.col .= v` throws an error.
 * `v` must be broadcastable.
 * if `haskey(df, col)` then standard in-place broadcasted assignment of `v` to the column vector `df[col]` is performed.
 * if not `haskey(df, col)` and `col isa Symbol`
-    * if `ncol(df) > 0` then we create a new vector `c` of an appropriate type, having `nrow(df)` entries;
-      then we perform `c .= v` and `df.col = c`.
-    * if `ncol(df) == 0` then we do the same as in the case above, but if `v` has 0-dimensions we create 1 row,
-      if `v` has 1-dimension we create number of rows equal to its length,
-      if `v` has more than 1 dimension we throw an error
+    * `df.col .= v` throws an error.
+    * if `ncol(df) > 0` then a new verctor `c` of an appropriate type is created, having `nrow(df)` entries;
+      then `c .= v` and `df.col = c` is performed.
+    * if `ncol(df) == 0` then same operation as in the case above is performed, whith the following additional rules:
+        * if `v` has 0-dimensions then 1 row is created,
+        * if `v` has 1-dimension the number of rows equal to its length are created,
+        * if `v` has more than 1 dimension then an error is thrown
 * if not `haskey(df, col)` and `!(col isa Symbol)` an error is thrown
 
 > `df[cols] = v`
@@ -116,8 +117,10 @@ If it is not performed a description explicitly mentions that the data is assign
       (which means that passing `Integer` or `Bool` will fail for nonexistent columns,
       but adding new columns as `Symbol` is allowed)
     * then `df[col] = v[col]` is called for each column name `col`
-* if `v` is an `AbstractMatrix` the same process is performed but we perform
-  `df[col] = v[:, i]` for `(i, col) in enumerate(col)` instead
+* if `v` is a vector of vectors or a tuple the same process is performed but
+  `df[col] = v[i]` for `(i, col) in enumerate(col)` is performed instead
+* if `v` is an `AbstractMatrix` the same process is performed but
+  `df[col] = v[:, i]` for `(i, col) in enumerate(col)` is performed instead
 
 > `df[cols] .= v`
 
@@ -129,10 +132,10 @@ If it is not performed a description explicitly mentions that the data is assign
     * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
       (which means that passing `Integer` or `Bool` will fail for missing columns,
       but adding new columns as `Symbol` is allowed)
-    * then we perform `df[col] .= v[col]` for `col in cols`
+    * then `df[col] .= v[col]` for `col in cols` is performed
 * if `v` is 0- or 1- dimensional then it is broadcasted to call `df[col] .= v` for all `col in cols`
-* if `v` is 2-dimensional then its dimensions of length 1 are expanded if needed and we perform
-  `df[col] .= v[:, i]` for `(i, col) in enumerate(col)`
+* if `v` is 2-dimensional then its dimensions of length 1 are expanded if needed and
+  `df[col] .= v[:, i]` for `(i, col) in enumerate(col)` is performed
 
 > `df[row, col] = v`
 
