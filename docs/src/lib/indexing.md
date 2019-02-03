@@ -90,14 +90,14 @@ If it is not performed a description explicitly mentions that the data is assign
 > `df[col] = v` and `df.col = v`
 
 * `v` must be an `AbstractVector`. If `ncol(df) > 0` then `length(v)` must be equal to `nrow(df)`.
-* `v` is assigned to `df` in place unless it is a range, when it is converted to a `Vector`.
-* `haskey(df, col)` must hold unless `col isa Symbol`, in which case a new column is added to `df`.
+* `v` is assigned to `df` without copying unless it is a range, in which case it is converted to a `Vector`.
+* `haskey(df, col)` must hold unless `col isa Symbol`, in which case a new column is added at the end of `df`.
 
 > `df[col] .= v` and `df.col .= v`
 
 * `df.col .= v` throws an error.
 * `v` must be broadcastable.
-* if `haskey(df, col)` then standard broadcasted assignment of `v` to `df[col]` is performed.
+* if `haskey(df, col)` then standard in-place broadcasted assignment of `v` to the column vector `df[col]` is performed.
 * if not `haskey(df, col)` and `col isa Symbol`
     * if `ncol(df) > 0` then we create a new vector `c` of an appropriate type, having `nrow(df)` entries;
       then we perform `c .= v` and `df.col = c`.
@@ -113,9 +113,9 @@ If it is not performed a description explicitly mentions that the data is assign
       which case it is enough that number of rows in each entry of `v` is constant;
     * number of columns in `v` must be equal to length of `cols`
     * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
-      (which means that passing `Integer` or `Bool` will fail for missing columns,
+      (which means that passing `Integer` or `Bool` will fail for nonexistent columns,
       but adding new columns as `Symbol` is allowed)
-    * then we perform `df[col] = v[col]` for `col in cols`
+    * then `df[col] = v[col]` is called for each column name `col`
 * if `v` is an `AbstractMatrix` the same process is performed but we perform
   `df[col] = v[:, i]` for `(i, col) in enumerate(col)` instead
 
@@ -145,11 +145,11 @@ If it is not performed a description explicitly mentions that the data is assign
 > `df[row, cols] = v`
 
 * if `v` is a `DataFrameRow` or `NamedTuple` or `AbstractDict` then
-    * number of columns in `v` must be equal to length(cols)
-    * column names in v must be the same as selected by `cols`
+    * `length(v)` must be equal to `length(cols)`
+    * column names in `v` must be the same as selected by `cols`
     * an operation `df[row, col] = v[col]` for `col in cols` is performed
 * if `v` is a vector or a tuple:
-    * number of elements in `v` must be equal to length(cols)
+    * `length(v)` must be equal to `length(cols)`
     * an operation `df[row, col] = v[i]` for `(i, col) in enumerate(cols)` is performed
 * otherwise an error is thrown
 
