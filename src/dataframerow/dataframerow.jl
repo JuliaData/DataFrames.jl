@@ -3,9 +3,15 @@
 
 A view of one row of an `AbstractDataFrame`.
 
-A `DataFrameRow` is constructed with `view` or `getindex` when one row and a
+A `DataFrameRow` is returned by `getindex` or `view` functions when one row and a
 selection of columns are requested, or when iterating the result
 of the call to the [`eachrow`](@ref) function.
+
+The `DataFrameRow` constructor can also be called directly:
+
+```
+DataFrameRow(parent::AbstractDataFrame, row::Integer, cols=:)
+```
 
 A `DataFrameRow` supports the iteration interface and can therefore be passed to
 functions that expect a collection as an argument.
@@ -30,6 +36,8 @@ df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
 sdf1 = view(df, 2, :)
 sdf2 = @view df[end, [:a]]
 sdf3 = eachrow(df)[1]
+sdf4 = DataFrameRow(df, 2, 1:2)
+sdf5 = DataFrameRow(df, 1)
 ```
 """
 struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
@@ -37,8 +45,8 @@ struct DataFrameRow{D<:AbstractDataFrame,S<:AbstractIndex}
     colindex::S
     row::Int
 
-    @inline DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned}) where {D<:AbstractDataFrame,S<:AbstractIndex} =
-        new{D,S}(df, colindex, row)
+    @inline DataFrameRow(df::D, colindex::S, row::Union{Signed, Unsigned}) where
+        {D<:AbstractDataFrame,S<:AbstractIndex} = new{D,S}(df, colindex, row)
 end
 
 Base.@propagate_inbounds function DataFrameRow(df::DataFrame, row::Integer, cols)
@@ -58,16 +66,21 @@ Base.@propagate_inbounds function DataFrameRow(sdf::SubDataFrame, row::Integer, 
     @inbounds DataFrameRow(parent(sdf), colindex, rows(sdf)[row])
 end
 
+Base.@propagate_inbounds DataFrameRow(df::AbstractDataFrame, row::Integer) =
+    DataFrameRow(df, row, :)
+
 row(r::DataFrameRow) = getfield(r, :row)
 Base.parent(r::DataFrameRow) = getfield(r, :df)
 Base.parentindices(r::DataFrameRow) = (row(r), parentcols(index(r)))
 
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(adf, rowind, :)
-Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
+Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
+                                   colinds::AbstractVector) =
     DataFrameRow(adf, rowind, colinds)
 
-Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, colinds::AbstractVector) =
+Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer,
+                                       colinds::AbstractVector) =
     DataFrameRow(df, rowind, colinds)
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
@@ -140,7 +153,8 @@ Base.Vector(dfr::DataFrameRow) = convert(Vector, dfr)
 Base.Vector{T}(dfr::DataFrameRow) where T = convert(Vector{T}, dfr)
 
 Base.keys(r::DataFrameRow) = names(r)
-Base.values(r::DataFrameRow) = ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
+Base.values(r::DataFrameRow) =
+    ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
 
 """
     copy(dfr::DataFrameRow)
@@ -150,8 +164,10 @@ Convert a `DataFrameRow` to a `NamedTuple`.
 Base.copy(r::DataFrameRow) = NamedTuple{Tuple(keys(r))}(values(r))
 
 # hash column element
-Base.@propagate_inbounds hash_colel(v::AbstractArray, i, h::UInt = zero(UInt)) = hash(v[i], h)
-Base.@propagate_inbounds function hash_colel(v::AbstractCategoricalArray, i, h::UInt = zero(UInt))
+Base.@propagate_inbounds hash_colel(v::AbstractArray, i, h::UInt = zero(UInt)) =
+    hash(v[i], h)
+Base.@propagate_inbounds function hash_colel(v::AbstractCategoricalArray, i,
+                                             h::UInt = zero(UInt))
     ref = v.refs[i]
     if eltype(v) >: Missing && ref == 0
         hash(missing, h)
