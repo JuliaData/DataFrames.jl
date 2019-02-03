@@ -117,7 +117,7 @@ If it is not performed a description explicitly mentions that the data is assign
       (which means that passing `Integer` or `Bool` will fail for nonexistent columns,
       but adding new columns as `Symbol` is allowed)
     * then `df[col] = v[col]` is called for each column name `col`
-* if `v` is a vector of vectors or a tuple the same process is performed but
+* if `v` is a vector of vectors or a tuple of vectors the same process is performed but
   `df[col] = v[i]` for `(i, col) in enumerate(col)` is performed instead
 * if `v` is an `AbstractMatrix` the same process is performed but
   `df[col] = v[:, i]` for `(i, col) in enumerate(col)` is performed instead
