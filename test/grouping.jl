@@ -1111,7 +1111,6 @@ end
     gd = groupby_checked(df, :A)
     @inferred groupindices(gd)
     @test groupindices(gd) == [1, 2, 3, 2, 3, 1]
-    @inferred
     @test groupvars(gd) == [:A]
     gd2 = gd[[3,2]]
     @inferred groupindices(gd)
