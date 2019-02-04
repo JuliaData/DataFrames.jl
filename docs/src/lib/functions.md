@@ -29,6 +29,7 @@ meltdf
 
 ```@docs
 allowmissing!
+columnindex
 completecases
 deletecols!
 deleterows!

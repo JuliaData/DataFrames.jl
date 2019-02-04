@@ -351,4 +351,10 @@ end
         """
 end
 
+@testset "columnindex"
+    x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])[1, :]
+    @test columnindex(x, :a) == 1
+    @test columnindex(x, [:a, :b, :a]) == [1, 2, 1]
+end
+
 end # module

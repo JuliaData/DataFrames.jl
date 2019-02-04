@@ -34,6 +34,7 @@ The following are normally implemented for AbstractDataFrames:
 * `similar` : a DataFrame with similar columns as `d`
 * `filter` : remove rows
 * `filter!` : remove rows in-place
+* `columnindex`: get the numeric index of the passed column name or names.
 
 **Indexing**
 
@@ -1152,3 +1153,13 @@ ncol(df)
 ```
 
 """
+
+"""
+    columnindex(df::AbstractDataFrame, col::Union{Symbol, AbstractVector{Symbol}})
+
+If `col` is a `Symbol` return an integer index of column named `col`.
+If `col` is an `AbstractVector{Symbol}` return an a vector of integer indices of
+column names passed in `col`.
+"""
+columnindex(df::AbstractDataFrame, col::Union{Symbol, AbstractVector{Symbol}}) =
+    index(df)[idx]

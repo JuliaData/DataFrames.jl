@@ -256,3 +256,6 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow)
     end
     df
 end
+
+columnindex(dfr::DataFrameRow, col::Union{Symbol, AbstractVector{Symbol}}) =
+    index(dfr)[idx]
