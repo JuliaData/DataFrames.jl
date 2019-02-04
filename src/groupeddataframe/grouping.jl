@@ -108,7 +108,7 @@ Base.getindex(gd::GroupedDataFrame, idx::Integer) =
 function Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray)
     new_starts = gd.starts[idxs]
     new_ends = gd.ends[idxs]
-    if length(unique(new_starts)) != length(new_starts)
+    if !allunique(new_starts)
         throw(ArgumentError("Duplicates in idxs argument are not allowed"))
     end
     new_groups = zeros(Int, length(gd.groups))
