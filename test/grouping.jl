@@ -1109,18 +1109,19 @@ end
 @testset "groupindices and groupvars" begin
     df = DataFrame(A = [missing, :A, :B, :A, :B, missing], B = 1:6)
     gd = groupby_checked(df, :A)
-    @test groupindices(gd) == [1, 2, 3, 2, 3, 1]
-    @test groupvars(gd) == [1]
+    @test (@inferred groupindices(gd)) == [1, 2, 3, 2, 3, 1]
+    @inferred
+    @test groupvars(gd) == [:A]
     gd2 = gd[[3,2]]
-    @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
-    @test groupvars(gd2) == [1]
+    @test (@inferred groupindices(gd)) ≅ [missing, 2, 1, 2, 1, missing]
+    @test groupvars(gd2) == [:A]
 
     gd = groupby_checked(df, :A, skipmissing=true)
-    @test groupindices(gd) ≅ [missing, 1, 2, 1, 2, missing]
-    @test groupvars(gd) == [1]
+    @test (@inferred groupindices(gd)) ≅ [missing, 1, 2, 1, 2, missing]
+    @test groupvars(gd) == [:A]
     gd2 = gd[[2,1]]
-    @test groupindices(gd2) ≅ [missing, 2, 1, 2, 1, missing]
-    @test groupvars(gd2) == [1]
+    @test (@inferred groupindices(gd)) ≅ [missing, 2, 1, 2, 1, missing]
+    @test groupvars(gd2) == [:A]
 end
 
 end # module

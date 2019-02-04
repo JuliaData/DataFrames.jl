@@ -113,8 +113,8 @@ function Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray)
     end
     new_groups = zeros(Int, length(gd.groups))
     for idx in eachindex(new_starts)
-        for j in new_starts[idx]:new_ends[idx]
-            @inbounds new_groups[gd.idx[j]] = idx
+        @inbounds for j in new_starts[idx]:new_ends[idx]
+            new_groups[gd.idx[j]] = idx
         end
     end
     GroupedDataFrame(gd.parent, gd.cols, new_groups, gd.idx, new_starts, new_ends)
@@ -1144,15 +1144,16 @@ end
     groupindices(gd::GroupedDataFrame)
 
 Return a vector of group indices for each row of `parent(gd)`.
-If for some row this function returns an index `i` this means that
-a data frame `gd[i]` contains this row.
-Rows not present in any of `gd` groups have their index set to `missing`.
+
+Rows appearing in group `gd[i]` are attributed index `i`. Rows not present in
+any group are attributed `missing` (this can happen if `skipmissing=true` was
+passed when creating `gd`, or if `gd` is a subset from a larger `GroupedDataFrame`).
 """
 groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 
 """
     groupvars(gd::GroupedDataFrame)
 
-Return a vector of column indices in `parent(gd)` used for grouping.
+Return a vector of column names in `parent(gd)` used for grouping.
 """
-groupvars(gd::GroupedDataFrame) = gd.cols
+groupvars(gd::GroupedDataFrame) = _names(gd)[gd.cols]
