@@ -258,4 +258,4 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow)
 end
 
 columnindex(dfr::DataFrameRow, col::Union{Symbol, AbstractVector{Symbol}}) =
-    index(dfr)[idx]
+    index(dfr)[col]

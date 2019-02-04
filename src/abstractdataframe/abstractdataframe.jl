@@ -1162,4 +1162,4 @@ If `col` is an `AbstractVector{Symbol}` return an a vector of integer indices of
 column names passed in `col`.
 """
 columnindex(df::AbstractDataFrame, col::Union{Symbol, AbstractVector{Symbol}}) =
-    index(df)[idx]
+    index(df)[col]
