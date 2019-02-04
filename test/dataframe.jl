@@ -986,7 +986,7 @@ end
     @test size(DataFrame()) == (0,0)
 end
 
-@testset "columnindex"
+@testset "columnindex" begin
     x = DataFrame(a = [1, 2, 3], b = [4, 5, 6])
     @test columnindex(x, :a) == 1
     @test columnindex(x, [:a, :b, :a]) == [1, 2, 1]
