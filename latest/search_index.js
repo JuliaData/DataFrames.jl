@@ -433,6 +433,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "lib/functions.html#DataFrames.groupindices",
+    "page": "Functions",
+    "title": "DataFrames.groupindices",
+    "category": "function",
+    "text": "groupindices(gd::GroupedDataFrame)\n\nReturn a vector of group indices for each row of parent(gd).\n\nRows appearing in group gd[i] are attributed index i. Rows not present in any group are attributed missing (this can happen if skipmissing=true was passed when creating gd, or if gd is a subset from a larger GroupedDataFrame).\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.groupvars",
+    "page": "Functions",
+    "title": "DataFrames.groupvars",
+    "category": "function",
+    "text": "groupvars(gd::GroupedDataFrame)\n\nReturn a vector of column names in parent(gd) used for grouping.\n\n\n\n\n\n"
+},
+
+{
     "location": "lib/functions.html#Base.join",
     "page": "Functions",
     "title": "Base.join",
@@ -493,7 +509,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Grouping, Joining, and Split-Apply-Combine",
     "category": "section",
-    "text": "aggregate\nby\ncolwise\ncombine\ngroupby\njoin\nmap\nmelt\nstack\nunstack\nstackdf\nmeltdf"
+    "text": "aggregate\nby\ncolwise\ncombine\ngroupby\ngroupindices\ngroupvars\njoin\nmap\nmelt\nstack\nunstack\nstackdf\nmeltdf"
 },
 
 {
