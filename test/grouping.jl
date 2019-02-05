@@ -22,14 +22,14 @@ function groupby_checked(df::AbstractDataFrame, keys, args...; kwargs...)
 
         # correct start-end range
         @assert se[1][1] > 0
-        @assert se[end][2] <= length(gd.idx)
+        @assert se[end][2] == length(gd.idx)
 
         # correct start-end relations
         for i in eachindex(se)
             @assert se[i][1] <= se[i][2]
             if i > 1
-                # the blocks might be discontinuous
-                @assert se[i-1][2] < se[i][1]
+                # the blocks returned by groupby must be continuous
+                @assert se[i-1][2] + 1 == se[i][1]
             end
         end
     end
