@@ -104,8 +104,22 @@ Base.last(gd::GroupedDataFrame) = gd[end]
 
 Base.getindex(gd::GroupedDataFrame, idx::Integer) =
     view(gd.parent, gd.idx[gd.starts[idx]:gd.ends[idx]], :)
-Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray) =
-    GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx, gd.starts[idxs], gd.ends[idxs])
+
+function Base.getindex(gd::GroupedDataFrame, idxs::AbstractArray)
+    new_starts = gd.starts[idxs]
+    new_ends = gd.ends[idxs]
+    if !allunique(new_starts)
+        throw(ArgumentError("duplicates in idxs argument are not allowed"))
+    end
+    new_groups = zeros(Int, length(gd.groups))
+    for idx in eachindex(new_starts)
+        @inbounds for j in new_starts[idx]:new_ends[idx]
+            new_groups[gd.idx[j]] = idx
+        end
+    end
+    GroupedDataFrame(gd.parent, gd.cols, new_groups, gd.idx, new_starts, new_ends)
+end
+
 Base.getindex(gd::GroupedDataFrame, idxs::Colon) =
     GroupedDataFrame(gd.parent, gd.cols, gd.groups, gd.idx, gd.starts, gd.ends)
 
@@ -1125,3 +1139,21 @@ function DataFrame(gd::GroupedDataFrame)
     resize!(idx, doff - 1)
     parent(gd)[idx, :]
 end
+
+"""
+    groupindices(gd::GroupedDataFrame)
+
+Return a vector of group indices for each row of `parent(gd)`.
+
+Rows appearing in group `gd[i]` are attributed index `i`. Rows not present in
+any group are attributed `missing` (this can happen if `skipmissing=true` was
+passed when creating `gd`, or if `gd` is a subset from a larger `GroupedDataFrame`).
+"""
+groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
+
+"""
+    groupvars(gd::GroupedDataFrame)
+
+Return a vector of column names in `parent(gd)` used for grouping.
+"""
+groupvars(gd::GroupedDataFrame) = _names(gd)[gd.cols]
