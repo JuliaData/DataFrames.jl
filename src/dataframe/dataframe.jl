@@ -15,8 +15,8 @@ DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false)
 DataFrame() # an empty DataFrame
 DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
-DataFrame(column_eltypes::Vector, names::Vector, nrows::Integer; makeunique::Bool=false)
-DataFrame(column_eltypes::Vector, cnames::Vector, categorical::Vector, nrows::Integer;
+DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer; makeunique::Bool=false)
+DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, categorical::Vector{Bool}, nrows::Integer;
           makeunique::Bool=false)
 DataFrame(ds::AbstractDict)
 DataFrame(table; makeunique::Bool=false)
@@ -34,7 +34,7 @@ DataFrame(table; makeunique::Bool=false)
 * `t` : elemental type of all columns
 * `nrows`, `ncols` : number of rows and columns
 * `column_eltypes` : elemental type of each column
-* `categorical` : `Vector{Bool}` indicating which columns should be converted to
+* `categorical` : indicating which columns should be converted to
                   `CategoricalVector`
 * `ds` : `AbstractDict` of columns
 * `table`: any type that implements the
