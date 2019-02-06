@@ -81,7 +81,7 @@ function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
     cnames = names(df)[id_vars]
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
-    DataFrame(AbstractVector[repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
+    DataFrame(AbstractVector[repeat(names(df)[measure_vars], inner=nrow(df)),   # variable
                   vcat([df[c] for c in measure_vars]...),             # value
                   [repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
               cnames)
@@ -221,7 +221,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
         kref = keycol.refs[k]
         if kref <= 0 # we have found missing in colkey
             if !warned_missing
-                @warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
+                @warn("Missing value in variable $(names(df)[colkey]) at row $k. Skipping.")
                 warned_missing = true
             end
             continue # skip processing it
@@ -254,7 +254,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
     copyto!(col, levs)
     hadmissing && (col[end] = missing)
     df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)))
-    insertcols!(df2, 1, _names(df)[rowkey] => col)
+    insertcols!(df2, 1, names(df)[rowkey] => col)
 end
 
 unstack(df::AbstractDataFrame, rowkey::ColumnIndex,
@@ -267,7 +267,7 @@ unstack(df::AbstractDataFrame, colkey::ColumnIndex, value::ColumnIndex) =
 
 # group on anything not a key or value
 unstack(df::AbstractDataFrame, colkey::Int, value::Int) =
-    unstack(df, setdiff(_names(df), _names(df)[[colkey, value]]), colkey, value)
+    unstack(df, setdiff(names(df), names(df)[[colkey, value]]), colkey, value)
 
 unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex, value::ColumnIndex) =
     unstack(df, rowkeys, index(df)[colkey], index(df)[value])
@@ -304,7 +304,7 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
         kref = keycol.refs[k]
         if kref <= 0
             if !warned_missing
-                @warn("Missing value in variable $(_names(df)[colkey]) at row $k. Skipping.")
+                @warn("Missing value in variable $(names(df)[colkey]) at row $k. Skipping.")
                 warned_missing = true
             end
             continue
@@ -512,7 +512,7 @@ function stackdf(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
     cnames = names(df)[id_vars]
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
-    DataFrame(AbstractVector[RepeatedVector(_names(df)[measure_vars], nrow(df), 1), # variable
+    DataFrame(AbstractVector[RepeatedVector(names(df)[measure_vars], nrow(df), 1), # variable
                              StackedVector(Any[df[c] for c in measure_vars]),       # value
                              [RepeatedVector(df[c], 1, N) for c in id_vars]...],    # id_var columns
               cnames)

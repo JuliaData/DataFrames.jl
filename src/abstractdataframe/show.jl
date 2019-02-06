@@ -422,7 +422,7 @@ function showrows(io::IO,
         end
         print(io, " │ ")
         for j in leftcol:rightcol
-            s = _names(df)[j]
+            s = names(df)[j]
             ourshowcompact(io, s)
             padding = maxwidths[j] - ourstrwidth(s)
             for itr in 1:padding

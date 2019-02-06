@@ -136,7 +136,6 @@ function Base.isequal(gd1::GroupedDataFrame, gd2::GroupedDataFrame)
 end
 
 Base.names(gd::GroupedDataFrame) = names(gd.parent)
-_names(gd::GroupedDataFrame) = _names(gd.parent)
 
 """
     map(cols => f, gd::GroupedDataFrame)
@@ -1091,14 +1090,14 @@ aggregate(groupby(df, :a), [sum, x->mean(skipmissing(x))])
 aggregate(d::AbstractDataFrame, fs::Any; sort::Bool=false) =
     aggregate(d, [fs], sort=sort)
 function aggregate(d::AbstractDataFrame, fs::AbstractVector; sort::Bool=false)
-    headers = _makeheaders(fs, _names(d))
+    headers = _makeheaders(fs, names(d))
     _aggregate(d, fs, headers, sort)
 end
 
 # Applies aggregate to non-key cols of each SubDataFrame of a GroupedDataFrame
 aggregate(gd::GroupedDataFrame, f::Any; sort::Bool=false) = aggregate(gd, [f], sort=sort)
 function aggregate(gd::GroupedDataFrame, fs::AbstractVector; sort::Bool=false)
-    headers = _makeheaders(fs, setdiff(_names(gd), _names(gd.parent[gd.cols])))
+    headers = _makeheaders(fs, setdiff(names(gd), names(gd.parent[gd.cols])))
     res = combine(x -> _aggregate(without(x, gd.cols), fs, headers), gd)
     sort && sort!(res, headers)
     res
@@ -1156,4 +1155,4 @@ groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 
 Return a vector of column names in `parent(gd)` used for grouping.
 """
-groupvars(gd::GroupedDataFrame) = _names(gd)[gd.cols]
+groupvars(gd::GroupedDataFrame) = names(gd)[gd.cols]

@@ -13,8 +13,11 @@ ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
     sdf = view(df, [5, 3], [3, 1, 2])
 
     @test names(DataFrameRow(df, 1, :)) == [:a, :b, :c, :d]
+    @test names(DataFrameRow(df, 1, :)) === view(index(df).names, :)
     @test DataFrameRow(df, 1) == DataFrameRow(df, 1, :)
     @test names(DataFrameRow(df, 3, [3, 2])) == [:c, :b]
+    rng = [3, 2]
+    @test names(DataFrameRow(df, 3, rng)) == view(index(df).names, rng)
     @test copy(DataFrameRow(df, 3, [3, 2])) == (c = "C", b = 1.2)
     @test copy(DataFrameRow(sdf, 2, [3, 2])) == (b = 1.2, a = 3)
     @test copy(DataFrameRow(sdf, 2, :)) == (c = "C", a = 3, b = 1.2)

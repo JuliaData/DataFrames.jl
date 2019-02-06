@@ -83,8 +83,13 @@ abstract type AbstractDataFrame end
 ##
 ##############################################################################
 
+"""
+    names(df::AbstractDataFrame)
+
+Return a vector of column names in the `df` data frame. The returned vector
+should not be modified. If you need to modify it use `copy(names(df))`.
+"""
 Base.names(df::AbstractDataFrame) = names(index(df))
-_names(df::AbstractDataFrame) = _names(index(df))
 
 """
 Set column names
@@ -402,7 +407,7 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
 
     # Put the summary stats into the return data frame
     data = DataFrame()
-    data[:variable] = names(df)
+    data[:variable] = copy(names(df))
 
     # An array of Dicts for summary statistics
     column_stats_dicts = map(columns(df)) do col

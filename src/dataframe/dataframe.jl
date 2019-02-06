@@ -257,7 +257,7 @@ end
 function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = _columns(df)[selected_columns]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    return DataFrame(new_columns, Index(names(df)[selected_columns]))
 end
 
 # df[:] => DataFrame
@@ -308,7 +308,7 @@ end
     end
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    return DataFrame(new_columns, Index(names(df)[selected_columns]))
 end
 
 # df[:, SingleColumnIndex] => AbstractVector
@@ -321,7 +321,7 @@ end
 function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    return DataFrame(new_columns, Index(names(df)[selected_columns]))
 end
 
 # df[MultiRowIndex, :] => DataFrame
@@ -337,7 +337,7 @@ end
 # df[:, :] => DataFrame
 function Base.getindex(df::DataFrame, ::Colon, ::Colon)
     new_columns = AbstractVector[copy(dv) for dv in _columns(df)]
-    return DataFrame(new_columns, Index(_names(df)))
+    return DataFrame(new_columns, Index(names(df)))
 end
 
 ##############################################################################
@@ -1060,7 +1060,7 @@ julia> df1
 ```
 """
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
-    _names(df1) == _names(df2) || error("Column names do not match")
+    names(df1) == names(df2) || error("Column names do not match")
     nrows, ncols = size(df1)
     try
         for j in 1:ncols
@@ -1089,7 +1089,7 @@ Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple})
     i = 1
-    for nm in _names(df)
+    for nm in names(df)
         try
             push!(df[i], row[nm])
         catch
@@ -1120,7 +1120,7 @@ function Base.push!(df::DataFrame, iterable::Any)
             for j in 1:(i - 1)
                 pop!(_columns(df)[j])
             end
-            msg = "Error adding $t to column :$(_names(df)[i]). Possible type mis-match."
+            msg = "Error adding $t to column :$(names(df)[i]). Possible type mis-match."
             throw(ArgumentError(msg))
         end
         i += 1

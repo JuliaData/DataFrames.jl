@@ -30,7 +30,7 @@ function printtable(io::IO,
     n, p = size(df)
     etypes = eltypes(df)
     if header
-        cnames = _names(df)
+        cnames = names(df)
         for j in 1:p
             print(io, quotemark)
             print(io, cnames[j])
@@ -101,7 +101,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     if rowid !== nothing && n != 1
         throw(ArgumentError("rowid may be passed only with a single row data frame"))
     end
-    cnames = _names(df)
+    cnames = names(df)
     write(io, "<table class=\"data-frame\">")
     write(io, "<thead>")
     write(io, "<tr>")
@@ -238,7 +238,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
         mxrow = nrows
     end
 
-    cnames = _names(df)
+    cnames = names(df)
     alignment = repeat("c", ncols)
     write(io, "\\begin{tabular}{r|")
     write(io, alignment)

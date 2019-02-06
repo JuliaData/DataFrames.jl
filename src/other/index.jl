@@ -17,17 +17,16 @@ function Index(names::AbstractVector{Symbol}; makeunique::Bool=false)
 end
 Index() = Index(Dict{Symbol, Int}(), Symbol[])
 Base.length(x::Index) = length(x.names)
-Base.names(x::Index) = copy(x.names)
-_names(x::Index) = x.names
+Base.names(x::Index) = x.names
 Base.copy(x::Index) = Index(copy(x.lookup), copy(x.names))
 Base.deepcopy(x::Index) = copy(x) # all eltypes immutable
-Base.isequal(x::AbstractIndex, y::AbstractIndex) = _names(x) == _names(y) # it is enough to check names
+Base.isequal(x::AbstractIndex, y::AbstractIndex) = names(x) == names(y) # it is enough to check names
 Base.:(==)(x::AbstractIndex, y::AbstractIndex) = isequal(x, y)
 
 
 function names!(x::Index, nms::Vector{Symbol}; makeunique::Bool=false)
     if !makeunique
-        if length(unique(nms)) != length(nms)
+        if !allunique(nms)
             dup = unique(nms[nonunique(DataFrame(nms=nms))])
             dupstr = join(string.(':', dup), ", ", " and ")
             msg = "Duplicate variable names: $dupstr. Pass makeunique=true" *
@@ -68,7 +67,7 @@ rename(f::Function, x::Index) = rename!(f, copy(x))
     @boundscheck if !(length(p) == length(x) && isperm(p))
         throw(ArgumentError("$p is not a valid column permutation for this Index"))
     end
-    oldnames = copy(_names(x))
+    oldnames = copy(names(x))
     for (i, j) in enumerate(p)
         n = oldnames[j]
         x.names[i] = n
@@ -206,7 +205,7 @@ end
 function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
     u = names(add_ind)
 
-    seen = Set(_names(ind))
+    seen = Set(names(ind))
     dups = Int[]
 
     for i in 1:length(u)
@@ -251,7 +250,7 @@ end
 
 SubIndex(parent::AbstractIndex, ::Colon) = parent
 
-Base.copy(x::SubIndex) = Index(_names(x))
+Base.copy(x::SubIndex) = Index(names(x))
 
 @inline parentcols(ind::SubIndex) = ind.cols
 
@@ -314,8 +313,7 @@ function lazyremap!(x::SubIndex)
 end
 
 Base.length(x::SubIndex) = length(x.cols)
-Base.names(x::SubIndex) = copy(_names(x))
-_names(x::SubIndex) = view(_names(x.parent), x.cols)
+Base.names(x::SubIndex) = view(names(x.parent), x.cols)
 
 function Base.haskey(x::SubIndex, key::Symbol)
     haskey(x.parent, key) || return false

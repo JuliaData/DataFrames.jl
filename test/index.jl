@@ -57,6 +57,7 @@ end
 @test i[Symbol[]] == Int[]
 
 @test names(i) == [:A,:B]
+@test names(i) === i.names
 @test names!(i, [:a,:a], makeunique=true) == Index([:a,:a_1])
 @test_throws ArgumentError names!(i, [:a,:a])
 @test names!(i, [:a,:b]) == Index([:a,:b])

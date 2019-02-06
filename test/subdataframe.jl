@@ -125,7 +125,7 @@ end
     y = collect(1.0:10.0)
     df = view(DataFrame(x = x, y = y), 2:6, :)
 
-    @test Base.propertynames(df) == names(df)
+    @test Base.propertynames(df) === names(df)
 
     @test df.x == 2:6
     @test df.y == 2:6
@@ -157,6 +157,7 @@ end
     x = DataFrame(ones(5,4))
     df = view(x, 2:3, 2:3)
     @test names(df) == names(x)[2:3]
+    @test names(df) === view(names(x), 2:3)
     df = view(x, 2:3, [4,2])
     @test names(df) == names(x)[[4,2]]
 end

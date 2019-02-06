@@ -96,8 +96,7 @@ Base.@propagate_inbounds Base.setindex!(r::DataFrameRow, value::Any, idx) =
 
 index(r::DataFrameRow) = getfield(r, :colindex)
 
-Base.names(r::DataFrameRow) = _names(parent(r))[parentcols(index(r), :)]
-_names(r::DataFrameRow) = view(_names(parent(r)), parentcols(index(r), :))
+Base.names(r::DataFrameRow) = view(names(parent(r)), parentcols(index(r), :))
 
 Base.haskey(r::DataFrameRow, key::Bool) =
     throw(ArgumentError("invalid key: $key of type Bool"))
@@ -194,7 +193,7 @@ function Base.:(==)(r1::DataFrameRow, r2::DataFrameRow)
         parentcols(index(r1)) == parentcols(index(r2)) || return false
         row(r1) == row(r2) && return true
     else
-        _names(r1) == _names(r2) || return false
+        names(r1) == names(r2) || return false
     end
     all(((a, b),) -> a == b, zip(r1, r2))
 end
@@ -204,7 +203,7 @@ function Base.isequal(r1::DataFrameRow, r2::DataFrameRow)
         parentcols(index(r1)) == parentcols(index(r2)) || return false
         row(r1) == row(r2) && return true
     else
-        _names(r1) == _names(r2) || return false
+        names(r1) == names(r2) || return false
     end
     all(((a, b),) -> isequal(a, b), zip(r1, r2))
 end
@@ -240,7 +239,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow)
         # corner case when push!-ing
         size(df, 2) == length(dfr) || throw(ArgumentError("Inconsistent number of columns"))
         i = 1
-        for nm in _names(df)
+        for nm in names(df)
             try
                 push!(df[i], dfr[nm])
             catch

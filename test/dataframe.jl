@@ -31,6 +31,13 @@ end
     @test names(dfc) == [:a, :b]
     @test names(dfdc) == [:a, :b]
 
+    @test names(df) === index(df).names
+    @test names(dfc) === index(dfc).names
+    @test names(dfdc) === index(dfdc).names
+    @test names(dfc) !== names(df)
+    @test names(dfdc) !== names(df)
+    @test names(dfc) !== names(dfdc)
+
     @test dfc[1, :a] === 4
     @test dfdc[1, :a] === 2
 
