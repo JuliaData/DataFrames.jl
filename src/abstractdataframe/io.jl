@@ -345,6 +345,22 @@ function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFr
     printtable(io, df, header = true, separator = '\t')
 end
 
+function Base.show(io::IO, mime::MIME"text/csv", gd::GroupedDataFrame)
+    isfirst = true
+    for sdf in gd
+        printtable(io, sdf, header = isfirst, separator = ',')
+        isfirst && (isfirst = false)
+    end
+end
+
+function Base.show(io::IO, mime::MIME"text/tab-separated-values", gd::GroupedDataFrame)
+    isfirst = true
+    for sdf in gd
+        printtable(io, sdf, header = isfirst, separator = '\t')
+        isfirst && (isfirst = false)
+    end
+end
+
 ##############################################################################
 #
 # DataStreams-based IO

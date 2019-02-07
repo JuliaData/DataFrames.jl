@@ -1073,6 +1073,18 @@ end
         \t1 & \\& & \\& \\\\
         \\end{tabular}
         """
+
+        gd = groupby(DataFrame(a = [1,2], b = [1.0, 2.0]), :a)
+        @test sprint(show, "text/csv", gd) == """
+        "a","b"
+        1,1.0
+        2,2.0
+        """
+        @test sprint(show, "text/tab-separated-values", gd) == """
+        "a"\t"b"
+        1\t1.0
+        2\t2.0
+        """
 end
 
 @testset "DataFrame" begin
