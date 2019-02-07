@@ -203,7 +203,7 @@ end
 # Helpers
 
 function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
-    u = names(add_ind)
+    u = copy(names(add_ind))
 
     seen = Set(names(ind))
     dups = Int[]
