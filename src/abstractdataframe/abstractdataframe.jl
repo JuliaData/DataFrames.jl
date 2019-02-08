@@ -375,31 +375,40 @@ describe(df, stats = [:min, :max])
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame) = describe(df, :mean, :min, :median, 
+StatsBase.describe(df::AbstractDataFrame) = _describe(df, [:mean, :min, :median, 
                                                      :max, :nunique, :nmissing, 
-                                                     :eltype)
-function StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair}...)
-   
+                                                     :eltype])
+function StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) 
+    _describe(df, collect(stats))
+end
+
+function _describe(df::AbstractDataFrame, stats::Vector{>:Union{Symbol, Pair{Symbol}}})   
     predefined_funs = Symbol[s for s in stats if s isa Symbol] 
-    if :all in predefined_funs
+    
+    allowed_fields = [:mean, :std, :min, :q25, :median, :q75,
+                      :max, :nunique, :nmissing, :first, :last, :eltype]
+    
+    if predefined_funs == [:all]
         predefined_funs = allowed_fields
+    else 
+        if !issubset(predefined_funs, allowed_fields)
+            not_allowed = setdiff(predefined_funs, allowed_fields)
+            allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
+            # todo: fix the printing of this
+            throw(ArgumentError("$not_allowed not allowed." * allowed_msg))
+        end
     end
 
     custom_funs = Pair[s for s in stats if s isa Pair]
 
     # Get the names in the order they appear
     ordered_names = [stat isa Symbol ? stat : stat[1] for stat in stats]
-    # Make the names unique ? maybe not
-
-    allowed_fields = [:mean, :std, :min, :q25, :median, :q75,
-                      :max, :nunique, :nmissing, :first, :last, :eltype]
-
-    if !issubset(predefined_funs, allowed_fields)
-        not_allowed = setdiff(predefined_funs, allowed_fields)
-        allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
-        # todo: fix the printing of this
-        throw(ArgumentError("$not_allowed not allowed." * allowed_msg))
+    if !allunique(ordered_names)
+        d = StatsBase.countmap(ordered_names)
+        duplicate_names = [name for name in ordered_names if d[name] > 1] 
+        throw(ArgumentError("Duplicate names not allowed: $(duplicate_names)"))
     end
+
 
     # Put the summary stats into the return data frame
     data = DataFrame()
@@ -437,7 +446,6 @@ function StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair}...
         data[stat] = [column_stats_dict[stat] for column_stats_dict in column_stats_dicts]
     end
 
-    # re-order columns according to the names from above 
     return data
 end
 
