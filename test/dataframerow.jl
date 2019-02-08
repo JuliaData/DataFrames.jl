@@ -1,7 +1,7 @@
 module TestDataFrameRow
 
 using Test, DataFrames, Random
-using DataFrames: columns
+using DataFrames: columns, index
 
 ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
                    b=[2.0, missing, 1.2, 2.0, missing, missing],

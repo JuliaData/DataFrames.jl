@@ -1,6 +1,7 @@
 module TestSubDataFrame
 
 using Test, DataFrames
+using DataFrames: index
 
 @testset "copy - SubDataFrame" begin
     df = DataFrame(x = 1:10, y = 1.0:10.0)
@@ -145,14 +146,14 @@ end
     y = 1.0:10.0
     df = view(DataFrame(y=y), 2:6, :)
     df2 = view(DataFrame(x=y, y=y), 2:6, 2:2)
-    @test DataFrames.index(df) == DataFrames.index(df2)
-    @test haskey(DataFrames.index(df2), :y)
-    @test !haskey(DataFrames.index(df2), :x)
-    @test haskey(DataFrames.index(df2), 1)
-    @test !haskey(DataFrames.index(df2), 2)
-    @test !haskey(DataFrames.index(df2), 0)
-    @test_throws ArgumentError haskey(DataFrames.index(df2), true)
-    @test keys(DataFrames.index(df2)) == [:y]
+    @test index(df) == index(df2)
+    @test haskey(index(df2), :y)
+    @test !haskey(index(df2), :x)
+    @test haskey(index(df2), 1)
+    @test !haskey(index(df2), 2)
+    @test !haskey(index(df2), 0)
+    @test_throws ArgumentError haskey(index(df2), true)
+    @test keys(index(df2)) == [:y]
 
     x = DataFrame(ones(5,4))
     df = view(x, 2:3, 2:3)
