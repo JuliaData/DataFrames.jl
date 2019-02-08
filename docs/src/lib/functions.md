@@ -10,23 +10,6 @@ Pages = ["functions.md"]
 
 ## Grouping, Joining, and Split-Apply-Combine
 
-```@docs
-aggregate
-by
-colwise
-combine
-groupby
-groupindices
-groupvars
-join
-map
-melt
-stack
-unstack
-stackdf
-meltdf
-```
-
 ## Basics
 
 ```@docs
@@ -45,6 +28,7 @@ filter
 filter!
 insertcols!
 mapcols
+names
 names!
 nonunique
 rename!
@@ -57,4 +41,21 @@ unique!
 permutecols!
 vcat
 append!
+```
+
+```@docs
+aggregate
+by
+colwise
+combine
+groupby
+groupindices
+groupvars
+join
+map
+melt
+stack
+unstack
+stackdf
+meltdf
 ```
