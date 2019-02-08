@@ -424,25 +424,24 @@ end
                    dates  = Date.([2000, 2001, 2003, 2004]),
                    catarray = CategoricalArray([1,2,1,2]))
 
-    describe_output = DataFrame(variable = [:number, :number_missing,
-                                                      :string, :string_missing,
-                                                      :dates, :catarray],
-                                          mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                          std = [std(df[:number]), 1.0, nothing,
-                                                 nothing, nothing, nothing],
-                                          min = [1.0, 1.0, "a", "a", Date(2000), 1],
-                                          q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
-                                          median = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                          q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
-                                          max = [4.0, 3.0, "d", "c", Date(2004), 2],
-                                          nunique = [nothing, nothing, 4, 3, 4, 2],
-                                          nmissing = [nothing, 1, nothing, 1, nothing, nothing],
-                                          first = [1, 1, "a", "a", Date(2000), 1],
-                                          last = [4, missing, "d", missing, Date(2004), 2],
-                                          eltype = [Int, Int, String, String, Date,
-                                                    eltype(df[:catarray])])
-    default_fields = [:mean, :min, :median, :max, :nunique, :nmissing, :eltype]
+    describe_output = DataFrame(variable = [:number, :number_missing, :string, 
+                                :string_missing, :dates, :catarray],
+                                mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                std = [std(df[:number]), 1.0, nothing,
+                                       nothing, nothing, nothing],
+                                min = [1.0, 1.0, "a", "a", Date(2000), 1],
+                                q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
+                                median = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
+                                max = [4.0, 3.0, "d", "c", Date(2004), 2],
+                                nunique = [nothing, nothing, 4, 3, 4, 2],
+                                nmissing = [nothing, 1, nothing, 1, nothing, nothing],
+                                first = [1, 1, "a", "a", Date(2000), 1],
+                                last = [4, missing, "d", missing, Date(2004), 2],
+                                eltype = [Int, Int, String, String, Date,
+                                          eltype(df[:catarray])])
 
+    default_fields = [:mean, :min, :median, :max, :nunique, :nmissing, :eltype]
 
     # Test that it works as a whole, without keyword arguments
     @test describe_output[[:variable; default_fields]] == describe(df)
@@ -453,14 +452,15 @@ end
     # Test that it works with all keyword arguments
     @test describe_output ≅ describe(df, :all)
 
-    # Test that describe works with a dataframe with no observations
-    df = DataFrame(a = Int[], b = String[], c = [])
-    @test describe(df, mean) ≅ DataFrame(variable = [:a, :b, :c],
-                                                  mean = [NaN, nothing, nothing])
-
+    # Test that it works on a custom function
     describe_output.test_std = describe_output.std
     # Test that describe works with a Pair and a symbol 
-    @test describe_output[[:variable, :mean, :test_std]] ≅ describe(df, mean, :a => std)
+    @test describe_output[[:variable, :mean, :test_std]] ≅ describe(df, :mean, :test_std => std)
+
+    # Test that describe works with a dataframe with no observations
+    df = DataFrame(a = Int[], b = String[], c = [])
+    @test describe(df, :mean) ≅ DataFrame(variable = [:a, :b, :c],
+                                          mean = [NaN, nothing, nothing])
 end
 
 #Check the output of unstack

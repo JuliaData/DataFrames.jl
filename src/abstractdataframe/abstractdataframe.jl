@@ -378,18 +378,20 @@ describe(df, stats = [:min, :max])
 StatsBase.describe(df::AbstractDataFrame) = _describe(df, [:mean, :min, :median, 
                                                      :max, :nunique, :nmissing, 
                                                      :eltype])
-function StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) 
+function StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...)
     _describe(df, collect(stats))
 end
 
-function _describe(df::AbstractDataFrame, stats::Vector{>:Union{Symbol, Pair{Symbol}}})   
+function _describe(df::AbstractDataFrame, stats::Vector)   
     predefined_funs = Symbol[s for s in stats if s isa Symbol] 
-    
+
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75,
                       :max, :nunique, :nmissing, :first, :last, :eltype]
-    
+
     if predefined_funs == [:all]
         predefined_funs = allowed_fields
+        i = findfirst(s -> s == :all, stats)
+        splice!(stats, i, allowed_fields) # insert in the stats vector to get a good order
     else 
         if !issubset(predefined_funs, allowed_fields)
             not_allowed = setdiff(predefined_funs, allowed_fields)
@@ -401,14 +403,13 @@ function _describe(df::AbstractDataFrame, stats::Vector{>:Union{Symbol, Pair{Sym
 
     custom_funs = Pair[s for s in stats if s isa Pair]
 
-    # Get the names in the order they appear
-    ordered_names = [stat isa Symbol ? stat : stat[1] for stat in stats]
+    ordered_names = [s isa Symbol ? s : s[1] for s in stats]
+    
     if !allunique(ordered_names)
         d = StatsBase.countmap(ordered_names)
         duplicate_names = [name for name in ordered_names if d[name] > 1] 
-        throw(ArgumentError("Duplicate names not allowed: $(duplicate_names)"))
+        throw(ArgumentError("Duplicate names not allowed: $(duplicate_names) are duplicated"))
     end
-
 
     # Put the summary stats into the return data frame
     data = DataFrame()
