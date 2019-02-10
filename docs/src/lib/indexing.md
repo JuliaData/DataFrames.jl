@@ -117,7 +117,7 @@ If it is not performed a description explicitly mentions that the data is assign
       (which means that passing `Integer` or `Bool` will fail for nonexistent columns,
       but adding new columns as `Symbol` is allowed)
     * then `df[col] = v[col]` is called for each column name `col`
-* if `v` is a vector of vectors or a tuple of vectors the same process is performed but
+* if `v` is a vector of vectors the same process is performed but
   `df[col] = v[i]` for `(i, col) in enumerate(col)` is performed instead
 * if `v` is an `AbstractMatrix` the same process is performed but
   `df[col] = v[:, i]` for `(i, col) in enumerate(col)` is performed instead
@@ -151,7 +151,7 @@ If it is not performed a description explicitly mentions that the data is assign
     * `length(v)` must be equal to `length(cols)`
     * column names in `v` must be the same as selected by `cols`
     * an operation `df[row, col] = v[col]` for `col in cols` is performed
-* if `v` is a vector or a tuple:
+* if `v` is a vector:
     * `length(v)` must be equal to `length(cols)`
     * an operation `df[row, col] = v[i]` for `(i, col) in enumerate(cols)` is performed
 * otherwise an error is thrown
@@ -172,22 +172,22 @@ If it is not performed a description explicitly mentions that the data is assign
 > `df[rows, col] = v`
 
 * The same rules as for `df[col] = v` but on selected rows and always with copying.
-* Empty data frames are not allowed and no column adding is possible.
+* Data frames with zero columns are not allowed and no column adding is possible.
 
 > `df[rows, col] .= v`
 
 * The same rules as for `df[col] .= v` but on selected rows and always with copying.
-* Empty data frames are not allowed and no column adding is possible.
+* Data frames with zero columns are not allowed and no column adding is possible.
 
 > `df[rows, cols] = v`
 
 * The same rules as for `df[cols] = v` but on selected rows and always with copying.
-* Empty data frames are not allowed and no column adding is possible.
+* Data frames with zero columns are not allowed and no column adding is possible.
 
 > `df[rows, cols] .= v`
 
 * The same rules as for `df[cols] .= v` but on selected rows and always with copying.
-* Empty data frames are not allowed and no column adding is possible.
+* Data frames with zero columns are not allowed and no column adding is possible.
 
 Additionally for all operations:
 * If `rows` is `:` then it gets expanded to `axes(df, 1)` before any action.
