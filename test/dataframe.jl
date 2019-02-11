@@ -461,6 +461,8 @@ end
     df = DataFrame(a = Int[], b = String[], c = [])
     @test describe(df, :mean) ≅ DataFrame(variable = [:a, :b, :c],
                                           mean = [NaN, nothing, nothing])
+
+    @test_throws ArgumentError describe(df, :mean, :all) 
 end
 
 #Check the output of unstack

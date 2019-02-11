@@ -334,16 +334,20 @@ end
 Report descriptive statistics for a data frame
 
 ```julia
-describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :nunique, :eltype])
+describe(df::AbstractDataFrame)
+describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataFrame
-* `stats::Union{Symbol,AbstractVector{Symbol}}` : the summary statistics to report. If
-  a vector, allowed fields are `:mean`, `:std`, `:min`, `:q25`, `:median`,
-  `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and `:nmissing`. If set to
-  `:all`, all summary statistics are reported.
+* `df` : the `AbstractDataFrame`
+* stats::Union{Symbol, Pair{Symbol}}... : the summary statistics to report. 
+    * Arguments can be symbols from the following: `:mean`, `:std`, `:min`, `:q25`, 
+      `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and 
+      `:nmissing`. The default statistics used when no `Symbol`s or `Pair`s are provided 
+      are `:mean`, `:min`, `:median`, `:max`, `:nunique`, `:nmissing`, and `:eltype`.
+    * Alternatively, specify `:all` as the only `Symbol` argument to return all statistics. 
+    * Finally, users can provide their own functions in the form of a `Pair{Symbol, Any}`.
 
 **Result**
 
@@ -365,13 +369,19 @@ If the column does not allow missing values, `nothing` is returned.
 Consequently, `nmissing = 0` indicates that the column allows
 missing values, but does not currently contain any.
 
+Custom functions perform call `skipmissing` on columns of eltype `Union{T, Missing}`, 
+users should be aware that because of this, users cannot specify specialy handling
+of missing values in any of the functions given via a `Pair` argument
+
+
 **Examples**
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 describe(df)
 describe(df, stats = :all)
-describe(df, stats = [:min, :max])
+describe(df, :min, :max)
+describe(df, :mean, :variance => Statistics.var)
 ```
 
 """
@@ -392,6 +402,8 @@ function _describe(df::AbstractDataFrame, stats::Vector)
         predefined_funs = allowed_fields
         i = findfirst(s -> s == :all, stats)
         splice!(stats, i, allowed_fields) # insert in the stats vector to get a good order
+    elseif :all in predefined_funs 
+            throw(ArgumentError("If the user specifies `:all` it must be the only `Symbol` argument.")) 
     else 
         if !issubset(predefined_funs, allowed_fields)
             not_allowed = setdiff(predefined_funs, allowed_fields)
