@@ -151,7 +151,7 @@ If it is not performed a description explicitly mentions that the data is assign
     * `length(v)` must be equal to `length(cols)`
     * column names in `v` must be the same as selected by `cols`
     * an operation `df[row, col] = v[col]` for `col in cols` is performed
-* if `v` is a `AbstractVector{<:AbstractVector}`:
+* if `v` is a `AbstractVector{<:AbstractVector}` or `NTuple{N,AbstractVector}`:
     * `length(v)` must be equal to `length(cols)`
     * an operation `df[row, col] = v[i]` for `(i, col) in enumerate(cols)` is performed
 * otherwise an error is thrown
