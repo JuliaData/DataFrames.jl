@@ -174,8 +174,8 @@ function DataFrame(columns::AbstractVector{<:AbstractVector},
                      Index(convert(Vector{Symbol}, cnames), makeunique=makeunique))
 end
 
-function DataFrame(columns::AbstractVector, cnames::NTuple{N, Symbol};
-                   makeunique::Bool=false)::DataFrame where {N} =
+DataFrame(columns::AbstractVector, cnames::NTuple{N, Symbol};
+          makeunique::Bool=false)::DataFrame where {N} =
     DataFrame(columns, collect(Symbol, cnames), makeunique=makeunique)
 
 DataFrame(columns::NTuple{N, AbstractVector},
