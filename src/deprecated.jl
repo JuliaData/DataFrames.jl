@@ -1328,8 +1328,14 @@ import Base: vcat
 @deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, :eltype, :nmissing, :first, :last)
 @deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, :eltype, :nmissing, :first, :last), all)
 function StatsBase.describe(df::AbstractDataFrame; stats=nothing)
-    stats === nothing || Base.depwarn("The `stats` keyword argument has been deprecated. Use describe(df, stats...) instead.", :describe)
-    describe(df, stats...)
+    if stats === nothing 
+        _describe(df, [:mean, :min, :median, 
+                       :max, :nunique, :nmissing, 
+                       :eltype])
+    else 
+        Base.depwarn("The `stats` keyword argument has been deprecated. Use describe(df, stats...) instead.", :describe)
+        describe(df, stats...)
+    end
 end
 
 
