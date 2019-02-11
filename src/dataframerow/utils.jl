@@ -149,7 +149,7 @@ end
 nlevels(x::PooledArray) = length(x.pool)
 nlevels(x) = length(levels(x))
 
-function row_group_slots(cols::NTuple{N,<:Union{CategoricalArray,PooledArray}},
+function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}},
                          hash::Val{false},
                          groups::Union{Vector{Int}, Nothing} = nothing,
                          skipmissing::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
@@ -191,11 +191,11 @@ function row_group_slots(cols::NTuple{N,<:Union{CategoricalArray,PooledArray}},
             refmap = Vector{Int}(undef, nlevs + 1)
             refmap[1] = skipmissing ? -1 : nlevs
             refmap[2:end] .= CategoricalArrays.order(col.pool) .- 1
-        else
+        else # PooledVector
             # First value in refmap is never used
             refmap = collect(-1:nlevs-1)
             if eltype(col) >: Missing
-                missingind = get(col.pool, missing, 0)
+                missingind = get(col.invpool, missing, 0)
                 if skipmissing && missingind > 0
                     refmap[missingind+1] = -1
                     refmap[missingind+2:end] .-= 1
