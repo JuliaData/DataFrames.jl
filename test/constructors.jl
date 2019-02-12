@@ -10,6 +10,8 @@ const ≅ = isequal
 #
 @testset "constructors" begin
     df = DataFrame()
+    @inferred DataFrame()
+
     @test isempty(_columns(df))
     @test _columns(df) isa Vector{AbstractVector}
     @test index(df) == Index()
@@ -50,6 +52,13 @@ const ≅ = isequal
            DataFrame([[1,2,3], [1,2,3]]) == DataFrame(Any[[1,2,3], [1,2,3]])) ==
            DataFrame(([1,2,3], [1,2,3])) == DataFrame((1:3, 1:3)) ==
            DataFrame((1:3, [1,2,3])) == DataFrame([1:3, [1,2,3]])
+
+    @inferred DataFrame([1:3, 1:3])
+    @inferred DataFrame((1:3, 1:3))
+    @inferred DataFrame([1:3, 1:3], [:a, :b])
+    @inferred DataFrame((1:3, 1:3), [:a, :b])
+    @inferred DataFrame([1:3, 1:3], (:a, :b))
+    @inferred DataFrame((1:3, 1:3), (:a, :b))
 
     @test df !== DataFrame(df)
     @test df == DataFrame(df)
@@ -105,6 +114,7 @@ end
 
 @testset "pair constructor" begin
     df = DataFrame(:x1 => zeros(3), :x2 => ones(3))
+    @inferred DataFrame(:x1 => zeros(3), :x2 => ones(3))
     @test size(df, 1) == 3
     @test size(df, 2) == 2
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
@@ -115,6 +125,7 @@ end
 
 @testset "associative" begin
     df = DataFrame(Dict(:A => 1:3, :B => 4:6))
+    @inferred DataFrame(Dict(:A => 1:3, :B => 4:6))
     @test df == DataFrame(A = 1:3, B = 4:6)
     @test eltypes(df) == [Int, Int]
 end

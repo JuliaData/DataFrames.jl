@@ -175,16 +175,16 @@ function DataFrame(columns::AbstractVector{<:AbstractVector},
 end
 
 DataFrame(columns::AbstractVector, cnames::NTuple{N, Symbol};
-          makeunique::Bool=false)::DataFrame where {N} =
+          makeunique::Bool=false) where {N} =
     DataFrame(columns, collect(Symbol, cnames), makeunique=makeunique)
 
 DataFrame(columns::NTuple{N, AbstractVector},
           cnames::AbstractVector{Symbol}=gennames(length(columns));
-          makeunique::Bool=false)::DataFrame where {N} =
+          makeunique::Bool=false) where {N} =
     DataFrame(collect(AbstractVector, columns), cnames, makeunique=makeunique)
 
 DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol};
-          makeunique::Bool=false)::DataFrame where {N} =
+          makeunique::Bool=false) where {N} =
     DataFrame(collect(AbstractVector, columns), collect(Symbol, cnames), makeunique=makeunique)
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
