@@ -370,8 +370,8 @@ Consequently, `nmissing = 0` indicates that the column allows
 missing values, but does not currently contain any.
 
 Custom functions perform call `skipmissing` on columns of eltype `Union{T, Missing}`, 
-users should be aware that because of this, users cannot specify specialy handling
-of missing values in any of the functions given via a `Pair` argument
+users should be aware that because of this, they cannot specify special handling
+of missing values in any of the functions given via a `Pair` argument.
 
 
 **Examples**
