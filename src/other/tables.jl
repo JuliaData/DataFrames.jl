@@ -19,8 +19,7 @@ function DataFrame(x)
     end
     if hasmethod(iterate, Tuple{typeof(x)})
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x)
-            return DataFrame(AbstractVector[last(v) for v in x],
-                             Index([first(v) for v in x]))
+            return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x])
         end
     end
     if Tables.istable(x)
