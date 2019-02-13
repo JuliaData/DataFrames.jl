@@ -677,7 +677,9 @@ end
         by(df, :a, (:b => sum, :c => sum,)) ==
         by(df, :a, [:b => sum, :c => sum]) ==
         by(df, :a, b_sum = :b => sum, c_sum = :c => sum) ==
-        by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a)
+        by(d -> (b_sum=sum(d.b), c_sum=sum(d.c)), df, :a) ==
+        by(df, :a, [:b => sum], :c => sum) ==
+        by(df, :a, [:b => sum], [:c => sum]) ==
         by(df, :a, d -> (b_sum=sum(d.b), c_sum=sum(d.c)))
 
     @test by(df, :a, :b => vexp, :c => identity) ==
@@ -714,6 +716,8 @@ end
     @test combine(gd, :b => sum, :c => sum) ==
         combine(gd, (:b => sum, :c => sum,)) ==
         combine(gd, [:b => sum, :c => sum]) ==
+        combine(gd, [:b => sum], :c => sum) ==
+        combine(gd, [:b => sum], [:c => sum]) ==
         combine(gd, b_sum = :b => sum, c_sum = :c => sum) ==
         combine((:b, :c) => x -> (b_sum=sum(x.b), c_sum=sum(x.c)), gd) ==
         combine(gd, (:b, :c) => x -> (b_sum=sum(x.b), c_sum=sum(x.c))) ==
