@@ -46,12 +46,17 @@ const ≅ = isequal
                            CategoricalVector{Union{Float64, Missing}}(ones(3))), (:x1, :x2))
     @test df == DataFrame(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
                           x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
+    @test df == DataFrame([:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
+                           :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]])
+    @test df == DataFrame((:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
+                           :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]))
 
     @test DataFrame([1:3, 1:3]) == DataFrame(Any[1:3, 1:3]) ==
           DataFrame(UnitRange[1:3, 1:3]) == DataFrame(AbstractVector[1:3, 1:3]) ==
           DataFrame([[1,2,3], [1,2,3]]) == DataFrame(Any[[1,2,3], [1,2,3]]) ==
           DataFrame(([1,2,3], [1,2,3])) == DataFrame((1:3, 1:3)) ==
           DataFrame((1:3, [1,2,3])) == DataFrame([1:3, [1,2,3]])
+          DataFrame((:x1=>1:3, :x2=>[1,2,3])) == DataFrame([:x1=>1:3, :x2=>[1,2,3]])
 
     @inferred DataFrame([1:3, 1:3])
     @inferred DataFrame((1:3, 1:3))
@@ -59,6 +64,8 @@ const ≅ = isequal
     @inferred DataFrame((1:3, 1:3), [:a, :b])
     @inferred DataFrame([1:3, 1:3], (:a, :b))
     @inferred DataFrame((1:3, 1:3), (:a, :b))
+    @inferred DataFrame((:x1=>1:3, :x2=>[1,2,3]))
+    @inferred DataFrame([:x1=>1:3, :x2=>[1,2,3]])
 
     @test df !== DataFrame(df)
     @test df == DataFrame(df)
