@@ -374,8 +374,6 @@ function combine(f::Any, gd::GroupedDataFrame)
     end
 end
 combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
-combine(gd::GroupedDataFrame, f::Pair...) = combine(f, gd)
-combine(gd::GroupedDataFrame, f::Pair) = combine(f, gd)
 function combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...) 
     vec_of_pairs = reduce(vcat, f)
     combine(vec_of_pairs, gd)
@@ -621,9 +619,10 @@ function do_f(f, x...)
     end
 end
 
-function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
-                           NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
-                  gd::GroupedDataFrame)
+function _combine(f::Union{AbstractVector{<:Pair},
+                  Tuple{Vararg{<:Pair}},  
+                  NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
+                    gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
         if agg isa AbstractAggregate && p isa Pair{<:Union{Symbol,Integer}}
@@ -1043,10 +1042,10 @@ by(d::AbstractDataFrame, cols::Any, f::Any; sort::Bool = false) =
     combine(f, groupby(d, cols, sort = sort))
 by(f::Any, d::AbstractDataFrame, cols::Any; sort::Bool = false) =
     by(d, cols, f, sort = sort)
-by(d::AbstractDataFrame, cols::Any, f::Pair; sort::Bool = false) =
-    combine(f, groupby(d, cols, sort = sort))
-by(d::AbstractDataFrame, cols::Any, f::Pair...; sort::Bool = false) =
-    combine(f, groupby(d, cols, sort = sort))
+function by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}}...; sort::Bool = false) 
+    vec_of_pairs = reduce(vcat, f)
+    combine(vec_of_pairs, groupby(d, cols, sort = sort))
+end
 by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
     combine(values(f), groupby(d, cols, sort = sort))
 
