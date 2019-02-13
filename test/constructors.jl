@@ -47,9 +47,9 @@ const ≅ = isequal
     @test df == DataFrame(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
                           x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
 
-    @test DataFrame([1:3, 1:3]) == DataFrame(Any[1:3, 1:3] ==
+    @test DataFrame([1:3, 1:3]) == DataFrame(Any[1:3, 1:3]) ==
           DataFrame(UnitRange[1:3, 1:3]) == DataFrame(AbstractVector[1:3, 1:3]) ==
-          DataFrame([[1,2,3], [1,2,3]]) == DataFrame(Any[[1,2,3], [1,2,3]])) ==
+          DataFrame([[1,2,3], [1,2,3]]) == DataFrame(Any[[1,2,3], [1,2,3]]) ==
           DataFrame(([1,2,3], [1,2,3])) == DataFrame((1:3, 1:3)) ==
           DataFrame((1:3, [1,2,3])) == DataFrame([1:3, [1,2,3]])
 
