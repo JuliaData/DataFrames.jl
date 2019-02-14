@@ -777,7 +777,7 @@ end
     @test eltype(df.b) == Union{Int, Missing}
     @test eltype(df.c) == Int
     @test eltype(df.d) == Union{Int, Missing}
-    @test allowmissing!(df, [true, false, false]) === df
+    @test disallowmissing!(df, [true, false, false]) === df
     @test eltype(df.b) == Int
     @test eltype(df.c) == Int
     @test eltype(df.d) == Union{Int, Missing}
