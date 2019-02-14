@@ -721,37 +721,45 @@ end
 @testset "column conversions" begin
     df = DataFrame([collect(1:10), collect(1:10)])
     @test !isa(df[1], Vector{Union{Int, Missing}})
-    allowmissing!(df, 1)
+    @test allowmissing!(df, 1) === df
     @test isa(df[1], Vector{Union{Int, Missing}})
     @test !isa(df[2], Vector{Union{Int, Missing}})
     df[1,1] = missing
     @test_throws MethodError disallowmissing!(df, 1)
     df[1,1] = 1
-    disallowmissing!(df, 1)
+    @test disallowmissing!(df, 1) === df
     @test isa(df[1], Vector{Int})
 
     df = DataFrame([collect(1:10), collect(1:10)])
-    allowmissing!(df, [1,2])
+    @test allowmissing!(df, [1,2]) === df
     @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
-    disallowmissing!(df, [1,2])
+    @test disallowmissing!(df, [1,2]) === df
     @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
 
     df = DataFrame([collect(1:10), collect(1:10)])
-    allowmissing!(df)
+    @test_throws BoundsError allowmissing!(df, [true])
+    @test allowmissing!(df, [true, true]) === df
     @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
-    disallowmissing!(df)
+    @test_throws BoundsError disallowmissing!(df, [true])
+    @test disallowmissing!(df, [true,true]) === df
+    @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
+
+    df = DataFrame([collect(1:10), collect(1:10)])
+    @test allowmissing!(df) === df
+    @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
+    @test disallowmissing!(df) === df
     @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
 
     df = DataFrame([CategoricalArray(1:10),
                     CategoricalArray(string.('a':'j'))])
-    allowmissing!(df)
+    @test allowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(columns(df)))
     @test eltypes(df)[1] <: Union{CategoricalValue{Int}, Missing}
     @test eltypes(df)[2] <: Union{CategoricalString, Missing}
     df[1,2] = missing
     @test_throws MissingException disallowmissing!(df)
     df[1,2] = "a"
-    disallowmissing!(df)
+    @test disallowmissing!(df) === df
     @test all(x->x <: CategoricalVector, typeof.(columns(df)))
     @test eltypes(df)[1] <: CategoricalValue{Int}
     @test eltypes(df)[2] <: CategoricalString
