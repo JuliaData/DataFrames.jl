@@ -573,7 +573,6 @@ end
 completecases(df::AbstractDataFrame, cols::AbstractVector) =
     completecases(df[cols])
 
-# TODO: update docstrings after deprecation of disallowmissing
 """
     dropmissing(df::AbstractDataFrame; disallowmissing::Bool=true)
     dropmissing(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=true)
@@ -674,8 +673,6 @@ julia> df = DataFrame(i = 1:5,
 │ 3   │ 3     │ missing │ c       │
 │ 4   │ 4     │ 2       │ d       │
 │ 5   │ 5     │ 1       │ e       │
-
-julia> df1 = copy(df); ### TODO: THIS IS BUGGY
 
 julia> dropmissing!(deepcopy(df))
 2×3 DataFrame
