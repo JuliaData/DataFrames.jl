@@ -575,14 +575,15 @@ completecases(df::AbstractDataFrame, cols::AbstractVector) =
 
 # TODO: update docstrings after deprecation of disallowmissing
 """
-    dropmissing(df::AbstractDataFrame; disallowmissing::Bool=false)
-    dropmissing(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=false)
-    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=false)
+    dropmissing(df::AbstractDataFrame; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
 If `cols` is provided, only missing values in the corresponding columns are considered.
 
-In the future `disallowmissing` will be `true` by default.
+If `disallowmissing` is `true` (the default) then the `cols` columns will
+get converted using [`disallowmissing!`](@ref).
 
 See also: [`completecases`](@ref) and [`dropmissing!`](@ref).
 
@@ -604,65 +605,61 @@ julia> df = DataFrame(i = 1:5,
 
 julia> dropmissing(df)
 2×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 4     │ 2      │ d       │
-│ 2   │ 5     │ 1      │ e       │
-
-julia> dropmissing(df, disallowmissing=true)
-2×3 DataFrame
 │ Row │ i     │ x     │ y      │
 │     │ Int64 │ Int64 │ String │
 ├─────┼───────┼───────┼────────┤
 │ 1   │ 4     │ 2     │ d      │
 │ 2   │ 5     │ 1     │ e      │
 
-julia> dropmissing(df, :x)
-3×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 2     │ 4      │ missing │
-│ 2   │ 4     │ 2      │ d       │
-│ 3   │ 5     │ 1      │ e       │
-
-julia> dropmissing(df, [:x, :y])
+julia> dropmissing(df, disallowmissing=false)
 2×3 DataFrame
 │ Row │ i     │ x      │ y       │
 │     │ Int64 │ Int64⍰ │ String⍰ │
 ├─────┼───────┼────────┼─────────┤
 │ 1   │ 4     │ 2      │ d       │
 │ 2   │ 5     │ 1      │ e       │
+
+julia> dropmissing(df, :x)
+3×3 DataFrame
+│ Row │ i     │ x     │ y       │
+│     │ Int64 │ Int64 │ String⍰ │
+├─────┼───────┼───────┼─────────┤
+│ 1   │ 2     │ 4     │ missing │
+│ 2   │ 4     │ 2     │ d       │
+│ 3   │ 5     │ 1     │ e       │
+
+julia> dropmissing(df, [:x, :y])
+2×3 DataFrame
+│ Row │ i     │ x     │ y      │
+│     │ Int64 │ Int64 │ String │
+├─────┼───────┼───────┼────────┤
+│ 1   │ 4     │ 2     │ d      │
+│ 2   │ 5     │ 1     │ e      │
 ```
 
 """
 function dropmissing(df::AbstractDataFrame,
                      cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
-                     disallowmissing::Bool=false)
+                     disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     if disallowmissing
         disallowmissing!(newdf, cols)
-    else
-        Base.depwarn("dropmissing will change eltype of cols to disallow missing by default. " *
-                     "Use dropmissing(df, cols, disallowmissing=false) to allow for missing values.", :dropmissing)
     end
     newdf
 end
 
 """
-    dropmissing!(df::AbstractDataFrame; disallowmissing::Bool=false)
-    dropmissing!(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=false)
-    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=false)
+    dropmissing!(df::AbstractDataFrame; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
 If `cols` is provided, only missing values in the corresponding columns are considered.
 
-In the future `disallowmissing` will be `true` by default.
+If `disallowmissing` is `true` (the default) then the `cols` columns will
+get converted using [`disallowmissing!`](@ref).
 
 See also: [`dropmissing`](@ref) and [`completecases`](@ref).
-
-# Examples
 
 ```jldoctest
 julia> df = DataFrame(i = 1:5,
@@ -678,20 +675,9 @@ julia> df = DataFrame(i = 1:5,
 │ 4   │ 4     │ 2       │ d       │
 │ 5   │ 5     │ 1       │ e       │
 
-julia> df1 = copy(df);
+julia> df1 = copy(df); ### TODO: THIS IS BUGGY
 
-julia> dropmissing!(df1);
-
-julia> df1
-2×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 4     │ 2      │ d       │
-│ 2   │ 5     │ 1      │ e       │
-
-julia> dropmissing!(df1, disallowmissing=true);
- julia> df1
+julia> dropmissing!(deepcopy(df))
 2×3 DataFrame
 │ Row │ i     │ x     │ y      │
 │     │ Int64 │ Int64 │ String │
@@ -699,44 +685,38 @@ julia> dropmissing!(df1, disallowmissing=true);
 │ 1   │ 4     │ 2     │ d      │
 │ 2   │ 5     │ 1     │ e      │
 
-julia> df2 = copy(df);
-
-julia> dropmissing!(df2, :x);
-
-julia> df2
-3×3 DataFrame
-│ Row │ i     │ x      │ y       │
-│     │ Int64 │ Int64⍰ │ String⍰ │
-├─────┼───────┼────────┼─────────┤
-│ 1   │ 2     │ 4      │ missing │
-│ 2   │ 4     │ 2      │ d       │
-│ 3   │ 5     │ 1      │ e       │
-
-julia> df3 = copy(df);
-
-julia> dropmissing!(df3, [:x, :y]);
-
-
-julia> df3
+julia> dropmissing!(deepcopy(df), disallowmissing=false)
 2×3 DataFrame
 │ Row │ i     │ x      │ y       │
 │     │ Int64 │ Int64⍰ │ String⍰ │
 ├─────┼───────┼────────┼─────────┤
 │ 1   │ 4     │ 2      │ d       │
 │ 2   │ 5     │ 1      │ e       │
+
+julia> dropmissing!(deepcopy(df), :x)
+3×3 DataFrame
+│ Row │ i     │ x     │ y       │
+│     │ Int64 │ Int64 │ String⍰ │
+├─────┼───────┼───────┼─────────┤
+│ 1   │ 2     │ 4     │ missing │
+│ 2   │ 4     │ 2     │ d       │
+│ 3   │ 5     │ 1     │ e       │
+
+julia> dropmissing!(df3, [:x, :y])
+2×3 DataFrame
+│ Row │ i     │ x     │ y      │
+│     │ Int64 │ Int64 │ String │
+├─────┼───────┼───────┼────────┤
+│ 1   │ 4     │ 2     │ d      │
+│ 2   │ 5     │ 1     │ e      │
 ```
 
 """
 function dropmissing!(df::AbstractDataFrame,
                       cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
-                      disallowmissing::Bool=false)
+                      disallowmissing::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
-    if disallowmissing
-        disallowmissing!(df, cols)
-    else
-        Base.depwarn("dropmissing! will change eltype of cols to disallow missing by default. " *
-                     "Use dropmissing!(df, cols, disallowmissing=false) to retain missing.", :dropmissing!)
-    end
+    disallowmissing && disallowmissing!(df, cols)
     df
 end
 
