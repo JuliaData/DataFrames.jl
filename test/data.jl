@@ -206,8 +206,8 @@ end
 
     b = Union{Int, Missing}[1, 2]
     df = DataFrame(b=b)
-    @test eltype(dropmissing(df).a) == Int
-    @test eltype(dropmissing!(df).a) == Int
+    @test eltype(dropmissing(df).b) == Int
+    @test eltype(dropmissing!(df).b) == Int
 end
 
 @testset "reshape" begin

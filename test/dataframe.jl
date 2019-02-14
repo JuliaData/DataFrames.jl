@@ -763,6 +763,24 @@ end
     @test all(x->x <: CategoricalVector, typeof.(columns(df)))
     @test eltypes(df)[1] <: CategoricalValue{Int}
     @test eltypes(df)[2] <: CategoricalString
+
+    df = DataFrame(b=[1,2], c=[1,2], d=[1,2])
+    @test allowmissing!(df, [:b, :c]) === df
+    @test eltype(df.b) == Union{Int, Missing}
+    @test eltype(df.c) == Union{Int, Missing}
+    @test eltype(df.d) == Int
+    @test disallowmissing!(df, :c) === df
+    @test eltype(df.b) == Union{Int, Missing}
+    @test eltype(df.c) == Int
+    @test eltype(df.d) == Int
+    @test allowmissing!(df, [false, false, true]) === df
+    @test eltype(df.b) == Union{Int, Missing}
+    @test eltype(df.c) == Int
+    @test eltype(df.d) == Union{Int, Missing}
+    @test allowmissing!(df, [true, false, false]) === df
+    @test eltype(df.b) == Int
+    @test eltype(df.c) == Int
+    @test eltype(df.d) == Union{Int, Missing}
 end
 
 @testset "similar" begin
