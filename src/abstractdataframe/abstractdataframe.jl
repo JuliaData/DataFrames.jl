@@ -344,7 +344,7 @@ describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...)
 * `stats::Union{Symbol, Pair{Symbol}}...` : the summary statistics to report. 
     * Arguments can be symbols from the following: `:mean`, `:std`, `:min`, `:q25`, 
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and 
-      `:nmissing`. The default statistics used when no `Symbol`s or `Pair`s are provided 
+      `:nmissing`. The default statistics used
       are `:mean`, `:min`, `:median`, `:max`, `:nunique`, `:nmissing`, and `:eltype`.
     * Alternatively, specify `:all` as the only `Symbol` argument to return all statistics. 
     * Finally, users can provide their own functions in the form of a `Pair{Symbol, Any}`.
