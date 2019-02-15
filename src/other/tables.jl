@@ -17,7 +17,7 @@ function DataFrame(x)
     if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
         return DataFrame(Vector{AbstractVector}(x))
     end
-    if hasmethod(iterate, Tuple{typeof(x)})
+    if applicable(iterate, x)
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x])
         end
