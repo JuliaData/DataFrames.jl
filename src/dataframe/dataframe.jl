@@ -10,8 +10,6 @@ particularly a Vector or CategoricalVector.
 
 ```julia
 DataFrame(columns::Vector, names::Vector{Symbol}; makeunique::Bool=false)
-DataFrame(columns::Vector, names::NTuple{N,Symbol}; makeunique::Bool=false)
-DataFrame(columns::NTuple{N,AbstractVector}, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol}; makeunique::Bool=false)
 DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
@@ -174,18 +172,12 @@ function DataFrame(columns::AbstractVector{<:AbstractVector},
                      Index(convert(Vector{Symbol}, cnames), makeunique=makeunique))
 end
 
-DataFrame(columns::AbstractVector, cnames::NTuple{N, Symbol};
-          makeunique::Bool=false) where {N} =
-    DataFrame(columns, collect(Symbol, cnames), makeunique=makeunique)
-
-DataFrame(columns::NTuple{N, AbstractVector},
-          cnames::AbstractVector{Symbol}=gennames(length(columns));
-          makeunique::Bool=false) where {N} =
-    DataFrame(collect(AbstractVector, columns), cnames, makeunique=makeunique)
-
 DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol};
           makeunique::Bool=false) where {N} =
     DataFrame(collect(AbstractVector, columns), collect(Symbol, cnames), makeunique=makeunique)
+
+DataFrame(columns::NTuple{N, AbstractVector}) where {N} =
+    DataFrame(collect(AbstractVector, columns), gennames(length(columns)))
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
           makeunique::Bool=false) =

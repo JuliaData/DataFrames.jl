@@ -26,22 +26,14 @@ const ≅ = isequal
                            CategoricalVector{Union{Float64, Missing}}(ones(3))])
     @test df == DataFrame([CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                            CategoricalVector{Union{Float64, Missing}}(ones(3))], [:x1, :x2])
-    @test df == DataFrame([CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                           CategoricalVector{Union{Float64, Missing}}(ones(3))], (:x1, :x2))
     @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                               CategoricalVector{Union{Float64, Missing}}(ones(3))])
     @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                               CategoricalVector{Union{Float64, Missing}}(ones(3))], [:x1, :x2])
-    @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                              CategoricalVector{Union{Float64, Missing}}(ones(3))], (:x1, :x2))
     @test df == DataFrame(AbstractVector[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                                          CategoricalVector{Union{Float64, Missing}}(ones(3))], [:x1, :x2])
-    @test df == DataFrame(AbstractVector[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                                         CategoricalVector{Union{Float64, Missing}}(ones(3))], (:x1, :x2))
     @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                            CategoricalVector{Union{Float64, Missing}}(ones(3))))
-    @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                           CategoricalVector{Union{Float64, Missing}}(ones(3))), [:x1, :x2])
     @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                            CategoricalVector{Union{Float64, Missing}}(ones(3))), (:x1, :x2))
     @test df == DataFrame(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
@@ -61,8 +53,6 @@ const ≅ = isequal
     @inferred DataFrame([1:3, 1:3])
     @inferred DataFrame((1:3, 1:3))
     @inferred DataFrame([1:3, 1:3], [:a, :b])
-    @inferred DataFrame((1:3, 1:3), [:a, :b])
-    @inferred DataFrame([1:3, 1:3], (:a, :b))
     @inferred DataFrame((1:3, 1:3), (:a, :b))
 
     if VERSION ≥ v"1.0.0"
