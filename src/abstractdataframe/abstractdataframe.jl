@@ -341,7 +341,7 @@ describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...)
 **Arguments**
 
 * `df` : the `AbstractDataFrame`
-* stats::Union{Symbol, Pair{Symbol}}... : the summary statistics to report. 
+* `stats::Union{Symbol, Pair{Symbol}}...` : the summary statistics to report. 
     * Arguments can be symbols from the following: `:mean`, `:std`, `:min`, `:q25`, 
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and 
       `:nmissing`. The default statistics used when no `Symbol`s or `Pair`s are provided 
