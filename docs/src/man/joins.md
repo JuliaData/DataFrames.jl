@@ -217,3 +217,5 @@ julia> join(a, b, on = [:City, :Job])
 │ 9   │ New York  │ Doctor │ 5        │ e      │
 
 ```
+
+Additionally, notice that in the last join rows 2 and 3 had the same values on `on` variables in both joined `DataFrame`s. In such a situation `:inner`, `:outer`, `:left` and `:right` joins will produce all combinations of matching rows. In our example rows from 2 to 5 were created as a result. The same behavior can be observed for rows 4 and 5 in both joined `DataFrame`s.
