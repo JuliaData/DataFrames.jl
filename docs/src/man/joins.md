@@ -124,7 +124,7 @@ julia> join(people, jobs, kind = :cross, makeunique = true)
 
 ```
 
-In order to join data tables on keys which have different names, you must first rename them so that they match. This can be done using rename!:
+In order to join data tables on keys which have different names, you may pass a `(left, right)` tuples or `left => right` pairs as `on` argument:
 
 ```jldoctest joins
 julia> a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
@@ -143,15 +143,7 @@ julia> b = DataFrame(IDNew = [20, 40], Job = ["Lawyer", "Doctor"])
 │ 1   │ 20    │ Lawyer │
 │ 2   │ 40    │ Doctor │
 
-julia> rename!(b, :IDNew => :ID)
-2×2 DataFrame
-│ Row │ ID    │ Job    │
-│     │ Int64 │ String │
-├─────┼───────┼────────┤
-│ 1   │ 20    │ Lawyer │
-│ 2   │ 40    │ Doctor │
-
-julia> join(a, b, on = :ID, kind = :inner)
+julia> join(a, b, on = :ID => :IDNew, kind = :inner)
 2×3 DataFrame
 │ Row │ ID    │ Name     │ Job    │
 │     │ Int64 │ String   │ String │
@@ -161,7 +153,7 @@ julia> join(a, b, on = :ID, kind = :inner)
 
 ```
 
-Or renaming multiple columns at a time:
+Here is another example with multiple columns:
 
 ```jldoctest joins
 julia> a = DataFrame(City = ["Amsterdam", "London", "London", "New York", "New York"],
@@ -190,18 +182,7 @@ julia> b = DataFrame(Location = ["Amsterdam", "London", "London", "New York", "N
 │ 4   │ New York  │ Doctor │ d      │
 │ 5   │ New York  │ Doctor │ e      │
 
-julia> rename!(b, :Location => :City, :Work => :Job)
-5×3 DataFrame
-│ Row │ City      │ Job    │ Name   │
-│     │ String    │ String │ String │
-├─────┼───────────┼────────┼────────┤
-│ 1   │ Amsterdam │ Lawyer │ a      │
-│ 2   │ London    │ Lawyer │ b      │
-│ 3   │ London    │ Lawyer │ c      │
-│ 4   │ New York  │ Doctor │ d      │
-│ 5   │ New York  │ Doctor │ e      │
-
-julia> join(a, b, on = [:City, :Job])
+julia> join(a, b, on = [(:City, :Location), (:Job, :Work)])
 9×4 DataFrame
 │ Row │ City      │ Job    │ Category │ Name   │
 │     │ String    │ String │ Int64    │ String │
@@ -219,3 +200,41 @@ julia> join(a, b, on = [:City, :Job])
 ```
 
 Additionally, notice that in the last join rows 2 and 3 had the same values on `on` variables in both joined `DataFrame`s. In such a situation `:inner`, `:outer`, `:left` and `:right` joins will produce all combinations of matching rows. In our example rows from 2 to 5 were created as a result. The same behavior can be observed for rows 4 and 5 in both joined `DataFrame`s.
+
+In order to check if that columns passed as the `on` argument define unique keys in each input data frame (according to `isequal`) you can set a `validate` keyword argument to a two element tuple or a pair of `Bool` values, with the first element indicating whether to run check for the first and the second element for the second data frame. Here is an example for the join operation described above:
+
+```jldoctest joins
+julia> join(a, b, on = [(:City, :Location), (:Job, :Work)], validate=(true, true))
+ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. First duplicate in df1 at 3. First duplicate in df2 at 3
+```
+
+Finally, using `indicator` keyword argument you can add a column to the resulting data frame giving an information if the given row appeared only in the left, the right or both data frames. Here is an example:
+
+```jldoctest joins
+julia> a = DataFrame(ID = [20, 40], Name = ["John", "Jane"])
+2×2 DataFrame
+│ Row │ ID    │ Name   │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 20    │ John   │
+│ 2   │ 40    │ Jane   │
+
+julia> b = DataFrame(ID = [20, 60], Job = ["Lawyer", "Doctor"])
+2×2 DataFrame
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 20    │ Lawyer │
+│ 2   │ 60    │ Doctor │
+
+julia> join(a, b, on=:ID, validate=(true, true), indicator=:source, kind=:outer)
+3×4 DataFrame
+│ Row │ ID    │ Name    │ Job     │ source       │
+│     │ Int64 │ String⍰ │ String⍰ │ Categorical… │
+├─────┼───────┼─────────┼─────────┼──────────────┤
+│ 1   │ 20    │ John    │ Lawyer  │ both         │
+│ 2   │ 40    │ Jane    │ missing │ left_only    │
+│ 3   │ 60    │ missing │ Doctor  │ right_only   │
+```
+
+Note, that this time we also used `validate` keyword and it did not produce errors as the keys defined in both source data frames were unique.
