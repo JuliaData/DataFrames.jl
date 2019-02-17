@@ -304,6 +304,18 @@ end
 end
 
 @testset "show" begin
+    function capture_stdout(f::Function)
+        oldstdout = stdout
+        rd, wr = redirect_stdout()
+        f()
+        str = String(readavailable(rd))
+        redirect_stdout(oldstdout)
+        size = displaysize(rd)
+        close(rd)
+        close(wr)
+        str, size
+    end
+
     df = DataFrame(a=nothing, b=1)
 
     @test sprint(show, DataFrameRow(df, 1, :)) == """
@@ -323,6 +335,15 @@ end
         │     │ String │ Int64 │
         ├─────┼────────┼───────┤
         │ 2   │ b      │ 0     │"""
+
+    # Test two-argument show
+    str1, size = capture_stdout() do
+        show(dfr)
+    end
+    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
+    show(io, dfr)
+    str2 = String(take!(io.io))
+    @test str1 == str2
 
     @test sprint(show, "text/html", dfr) == "<p>DataFrameRow</p><table class=\"data-frame\">" *
                                "<thead><tr><th></th><th>b</th><th>c</th></tr>" *
