@@ -124,7 +124,7 @@ julia> join(people, jobs, kind = :cross, makeunique = true)
 
 ```
 
-In order to join data tables on keys which have different names, you may pass a `(left, right)` tuples or `left => right` pairs as `on` argument:
+In order to join data tables on keys which have different names in the left and right tables, you may pass `(left, right)` tuples or `left => right` pairs as `on` argument:
 
 ```jldoctest joins
 julia> a = DataFrame(ID = [20, 40], Name = ["John Doe", "Jane Doe"])
@@ -201,14 +201,14 @@ julia> join(a, b, on = [(:City, :Location), (:Job, :Work)])
 
 Additionally, notice that in the last join rows 2 and 3 had the same values on `on` variables in both joined `DataFrame`s. In such a situation `:inner`, `:outer`, `:left` and `:right` joins will produce all combinations of matching rows. In our example rows from 2 to 5 were created as a result. The same behavior can be observed for rows 4 and 5 in both joined `DataFrame`s.
 
-In order to check if that columns passed as the `on` argument define unique keys in each input data frame (according to `isequal`) you can set a `validate` keyword argument to a two element tuple or a pair of `Bool` values, with the first element indicating whether to run check for the first and the second element for the second data frame. Here is an example for the join operation described above:
+In order to check that columns passed as the `on` argument define unique keys (according to `isequal`) in each input data frame you can set the `validate` keyword argument to a two-element tuple or a pair of `Bool` values, with each element indicating whether to run check for the corresponding data frame. Here is an example for the join operation described above:
 
 ```jldoctest joins
 julia> join(a, b, on = [(:City, :Location), (:Job, :Work)], validate=(true, true))
 ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. First duplicate in df1 at 3. First duplicate in df2 at 3
 ```
 
-Finally, using `indicator` keyword argument you can add a column to the resulting data frame giving an information if the given row appeared only in the left, the right or both data frames. Here is an example:
+Finally, using the `indicator` keyword argument you can add a column to the resulting data frame indicating whether the given row appeared only in the left, the right or both data frames. Here is an example:
 
 ```jldoctest joins
 julia> a = DataFrame(ID = [20, 40], Name = ["John", "Jane"])
@@ -237,4 +237,4 @@ julia> join(a, b, on=:ID, validate=(true, true), indicator=:source, kind=:outer)
 │ 3   │ 60    │ missing │ Doctor  │ right_only   │
 ```
 
-Note, that this time we also used `validate` keyword and it did not produce errors as the keys defined in both source data frames were unique.
+Note that this time we also used the `validate` keyword argument and it did not produce errors as the keys defined in both source data frames were unique.
