@@ -16,7 +16,7 @@ DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false)
 DataFrame() # an empty DataFrame
 DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
 DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer; makeunique::Bool=false)
-DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, categorical::Vector{Bool}, nrows::Integer;
+DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, categorical::AbstractVector{Bool}, nrows::Integer;
           makeunique::Bool=false)
 DataFrame(ds::AbstractDict)
 DataFrame(table; makeunique::Bool=false)
@@ -33,8 +33,8 @@ DataFrame(table; makeunique::Bool=false)
   column contents
 * `t` : elemental type of all columns
 * `nrows`, `ncols` : number of rows and columns
-* `column_eltypes` : elemental type of each column
-* `categorical` : indicating which columns should be converted to
+* `column_eltypes` : element type of each column
+* `categorical` : a vector of `Bool` indicating which columns should be converted to
                   `CategoricalVector`
 * `ds` : `AbstractDict` of columns
 * `table` : any type that implements the
@@ -188,7 +188,7 @@ end
 # Initialize an empty DataFrame with specific eltypes and names
 # and whether a CategoricalArray should be created
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-                   categorical::Vector{Bool}, nrows::Integer;
+                   categorical::AbstractVector{Bool}, nrows::Integer;
                    makeunique::Bool=false)::DataFrame where T<:Type
     # upcast Vector{DataType} -> Vector{Type} which can hold CategoricalValues
     updated_types = convert(Vector{Type}, column_eltypes)
