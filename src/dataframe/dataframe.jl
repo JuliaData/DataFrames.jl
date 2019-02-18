@@ -15,8 +15,10 @@ DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false)
 DataFrame() # an empty DataFrame
 DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
-DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer; makeunique::Bool=false)
-DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, categorical::AbstractVector{Bool}, nrows::Integer;
+DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer;
+          makeunique::Bool=false)
+DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol},
+          categorical::AbstractVector{Bool}, nrows::Integer;
           makeunique::Bool=false)
 DataFrame(ds::AbstractDict)
 DataFrame(table; makeunique::Bool=false)
