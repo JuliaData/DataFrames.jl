@@ -37,7 +37,7 @@ DataFrame(table; makeunique::Bool=false)
 * `categorical` : indicating which columns should be converted to
                   `CategoricalVector`
 * `ds` : `AbstractDict` of columns
-* `table`: any type that implements the
+* `table` : any type that implements the
   [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
 
 Each column in `columns` should be the same length.

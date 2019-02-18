@@ -38,8 +38,8 @@ groupby(cols; sort = false, skipmissing = false)
 
 * `d` : an AbstractDataFrame to split (optional, see [Returns](#returns))
 * `cols` : data table columns to group by
-* `sort`: whether to sort rows according to the values of the grouping columns `cols`
-* `skipmissing`: whether to skip rows with `missing` values in one of the grouping columns `cols`
+* `sort` : whether to sort rows according to the values of the grouping columns `cols`
+* `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
 
 ### Returns
 
