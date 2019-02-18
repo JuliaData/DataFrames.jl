@@ -308,11 +308,11 @@ end
         oldstdout = stdout
         rd, wr = redirect_stdout()
         f()
-        str = String(readavailable(rd))
         redirect_stdout(oldstdout)
         size = displaysize(rd)
-        close(rd)
         close(wr)
+        str = read(rd, String)
+        close(rd)
         str, size
     end
 
