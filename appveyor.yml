@@ -2,11 +2,16 @@ environment:
   matrix:
   - julia_version: 0.7
   - julia_version: 1.0
+  - julia_version: 1.1
   - julia_version: nightly
 
 platform:
   - x86 # 32-bit
   - x64 # 64-bit
+
+matrix:
+  allow_failures:
+  - julia_version: nightly
 
 branches:
   only:
@@ -29,3 +34,4 @@ build_script:
 test_script:
   - echo "%JL_TEST_SCRIPT%"
   - C:\julia\bin\julia -e "%JL_TEST_SCRIPT%"
+  
