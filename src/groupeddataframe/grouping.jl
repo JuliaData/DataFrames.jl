@@ -707,7 +707,7 @@ function _combine_with_first(first::Union{NamedTuple, DataFrameRow, AbstractData
         n = length(gd)
         eltys = map(typeof, first)
         if any(x -> x <: AbstractVector, eltys)
-            throw(ArgumentError("mixing single values and vectors in a (named) tuple is not allowed"))
+            throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
         end
     end
     idx = Vector{Int}(undef, n)
