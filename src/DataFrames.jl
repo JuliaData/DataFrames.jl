@@ -19,7 +19,6 @@ using Base.Sort, Base.Order, Base.Iterators
 export AbstractDataFrame,
        DataFrame,
        DataFrameRow,
-       GroupApplied,
        GroupedDataFrame,
        SubDataFrame,
 
