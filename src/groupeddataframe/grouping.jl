@@ -167,6 +167,12 @@ determines the shape of the resulting data frame:
 - A data frame, a named tuple of vectors or a matrix gives a data frame
   with the same columns and as many rows for each group as the rows returned for that group.
 
+`f` must always return the same kind of object (as defined in the above list) for
+all groups, and if a named tuple or data frame, with the same fields or columns.
+Named tuples cannot mix single values and vectors.
+Due to type instability, returning a single value or a named tuple is dramatically
+faster than returning a data frame.
+
 As a special case, if a tuple or vector of pairs is passed as the first argument, each function
 is required to return a single value or vector, which will produce each a separate column.
 
@@ -175,11 +181,6 @@ to those listed above. Column names are automatically generated when necessary: 
 operating on a single column and returning a single value or vector, the function name is
 appended to the input column name; for other functions, columns are called `x1`, `x2`
 and so on.
-
-Note that `f` must always return the same type of object for
-all groups, and (if a named tuple or data frame) with the same fields or columns.
-Due to type instability, returning a single value or a named tuple is dramatically
-faster than returning a data frame.
 
 Optimized methods are used when standard summary functions (`sum`, `prod`,
 `minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
@@ -292,6 +293,12 @@ determines the shape of the resulting data frame:
 - A data frame, a named tuple of vectors or a matrix gives a data frame
   with the same columns and as many rows for each group as the rows returned for that group.
 
+`f` must always return the same kind of object (as defined in the above list) for
+all groups, and if a named tuple or data frame, with the same fields or columns.
+Named tuples cannot mix single values and vectors.
+Due to type instability, returning a single value or a named tuple is dramatically
+faster than returning a data frame.
+
 As a special case, if a tuple or vector of pairs is passed as the first argument, each function
 is required to return a single value or vector, which will produce each a separate column.
 
@@ -302,11 +309,6 @@ appended to the input column name; for other functions, columns are called `x1`,
 and so on. The resulting data frame will be sorted if `sort=true` was passed to the
 [`groupby`](@ref) call from which `gd` was constructed. Otherwise, ordering of rows
 is undefined.
-
-Note that `f` must always return the same type of object for
-all groups, and (if a named tuple or data frame) with the same fields or columns.
-Due to type instability, returning a single value or a named tuple is dramatically
-faster than returning a data frame.
 
 Optimized methods are used when standard summary functions (`sum`, `prod`,
 `minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
@@ -721,7 +723,8 @@ end
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
                    i::Integer, colstart::Integer,
                    colnames::NTuple{N, Symbol}) where N
-    if !isa(row, Union{NamedTuple, DataFrameRow})
+    if !isa(row, Union{NamedTuple, DataFrameRow}) ||
+        (row isa NamedTuple && any(x -> x isa AbstractVector, row))
         throw(ArgumentError("return value must not change its kind " *
                             "(single row or variable number of rows) across groups"))
     elseif _ncol(row) != N
@@ -749,7 +752,8 @@ function fill_row!(row, outcols::NTuple{N, AbstractVector},
     return nothing
 end
 
-function _combine_with_first!(first::Union{NamedTuple, DataFrameRow}, outcols::NTuple{N, AbstractVector},
+function _combine_with_first!(first::Union{NamedTuple, DataFrameRow},
+                              outcols::NTuple{N, AbstractVector},
                               idx::Vector{Int}, rowstart::Integer, colstart::Integer,
                               f::Any, gd::GroupedDataFrame,
                               incols::Union{Nothing, AbstractVector, NamedTuple},
@@ -935,6 +939,12 @@ determines the shape of the resulting data frame:
 - A data frame, a named tuple of vectors or a matrix gives a data frame
   with the same columns and as many rows for each group as the rows returned for that group.
 
+`f` must always return the same kind of object (as defined in the above list) for
+all groups, and if a named tuple or data frame, with the same fields or columns.
+Named tuples cannot mix single values and vectors.
+Due to type instability, returning a single value or a named tuple is dramatically
+faster than returning a data frame.
+
 As a special case, if multiple pairs are passed as last arguments, each function
 is required to return a single value or vector, which will produce each a separate column.
 
@@ -944,11 +954,6 @@ operating on a single column and returning a single value or vector, the functio
 appended to the input colummn name; for other functions, columns are called `x1`, `x2`
 and so on. The resulting data frame will be sorted on `keys` if `sort=true`.
 Otherwise, ordering of rows is undefined.
-
-Note that `f` must always return the same type of object for
-all groups, and (if a named tuple or data frame) with the same fields or columns.
-Due to type instability, returning a single value or a named tuple is dramatically
-faster than returning a data frame.
 
 Optimized methods are used when standard summary functions (`sum`, `prod`,
 `minimum`, `maximum`, `mean`, `var`, `std`, `first`, `last` and `length)
