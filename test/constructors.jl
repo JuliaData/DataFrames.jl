@@ -10,6 +10,8 @@ const ≅ = isequal
 #
 @testset "constructors" begin
     df = DataFrame()
+    @inferred DataFrame()
+
     @test isempty(_columns(df))
     @test _columns(df) isa Vector{AbstractVector}
     @test index(df) == Index()
@@ -22,16 +24,42 @@ const ≅ = isequal
 
     @test df == DataFrame([CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                            CategoricalVector{Union{Float64, Missing}}(ones(3))])
+    @test df == DataFrame([CategoricalVector{Union{Float64, Missing}}(zeros(3)),
+                           CategoricalVector{Union{Float64, Missing}}(ones(3))], [:x1, :x2])
     @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
                               CategoricalVector{Union{Float64, Missing}}(ones(3))])
+    @test df == DataFrame(Any[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
+                              CategoricalVector{Union{Float64, Missing}}(ones(3))], [:x1, :x2])
     @test df == DataFrame(AbstractVector[CategoricalVector{Union{Float64, Missing}}(zeros(3)),
-                                         CategoricalVector{Union{Float64, Missing}}(ones(3))])
+                                         CategoricalVector{Union{Float64, Missing}}(ones(3))], [:x1, :x2])
+    @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
+                           CategoricalVector{Union{Float64, Missing}}(ones(3))))
+    @test df == DataFrame((CategoricalVector{Union{Float64, Missing}}(zeros(3)),
+                           CategoricalVector{Union{Float64, Missing}}(ones(3))), (:x1, :x2))
     @test df == DataFrame(x1 = Union{Int, Missing}[0.0, 0.0, 0.0],
                           x2 = Union{Int, Missing}[1.0, 1.0, 1.0])
+    @test df == DataFrame([:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
+                           :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]])
+    @test df == DataFrame((:x1=>Union{Int, Missing}[0.0, 0.0, 0.0],
+                           :x2=>Union{Int, Missing}[1.0, 1.0, 1.0]))
 
-    @test (DataFrame([1:3, 1:3]) == DataFrame(Any[1:3, 1:3]) ==
-           DataFrame(UnitRange[1:3, 1:3]) == DataFrame(AbstractVector[1:3, 1:3]) ==
-           DataFrame([[1,2,3], [1,2,3]]) == DataFrame(Any[[1,2,3], [1,2,3]]))
+    @test DataFrame([1:3, 1:3]) == DataFrame(Any[1:3, 1:3]) ==
+          DataFrame(UnitRange[1:3, 1:3]) == DataFrame(AbstractVector[1:3, 1:3]) ==
+          DataFrame([[1,2,3], [1,2,3]]) == DataFrame(Any[[1,2,3], [1,2,3]]) ==
+          DataFrame(([1,2,3], [1,2,3])) == DataFrame((1:3, 1:3)) ==
+          DataFrame((1:3, [1,2,3])) == DataFrame([1:3, [1,2,3]])
+          DataFrame((:x1=>1:3, :x2=>[1,2,3])) == DataFrame([:x1=>1:3, :x2=>[1,2,3]])
+
+    @inferred DataFrame([1:3, 1:3])
+    @inferred DataFrame((1:3, 1:3))
+    @inferred DataFrame([1:3, 1:3], [:a, :b])
+    @inferred DataFrame((1:3, 1:3), (:a, :b))
+
+    if VERSION ≥ v"1.0.0"
+        # this test throws an error on Julia 0.7
+        @inferred DataFrame((:x1=>1:3, :x2=>[1,2,3]))
+        @inferred DataFrame([:x1=>1:3, :x2=>[1,2,3]])
+    end
 
     @test df !== DataFrame(df)
     @test df == DataFrame(df)
@@ -87,6 +115,7 @@ end
 
 @testset "pair constructor" begin
     df = DataFrame(:x1 => zeros(3), :x2 => ones(3))
+    @inferred DataFrame(:x1 => zeros(3), :x2 => ones(3))
     @test size(df, 1) == 3
     @test size(df, 2) == 2
     @test isequal(df, DataFrame(x1 = [0.0, 0.0, 0.0], x2 = [1.0, 1.0, 1.0]))
@@ -97,6 +126,7 @@ end
 
 @testset "associative" begin
     df = DataFrame(Dict(:A => 1:3, :B => 4:6))
+    @inferred DataFrame(Dict(:A => 1:3, :B => 4:6))
     @test df == DataFrame(A = 1:3, B = 4:6)
     @test eltypes(df) == [Int, Int]
 end
