@@ -486,6 +486,8 @@ end
     @test_throws ArgumentError by(d -> d.x == [1] ? (x1=[1]) : (x1=1), df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? 1 : [1], df, :x)
     @test_throws ArgumentError by(d -> d.x == [1] ? [1] : 1, df, :x)
+    @test_throws ArgumentError by(d -> d.x == [1] ? (x1=1, x2=1) : (x1=[1], x2=1), df, :x)
+    @test_throws ArgumentError by(d -> d.x == [1] ? (x1=[1], x2=1) : (x1=1, x2=1), df, :x)
     # Special case allowed due to how implementation works
     @test by(d -> d.x == [1] ? 1 : (x1=1), df, :x) == by(d -> 1, df, :x)
 
