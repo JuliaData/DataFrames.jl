@@ -723,10 +723,11 @@ end
 function fill_row!(row, outcols::NTuple{N, AbstractVector},
                    i::Integer, colstart::Integer,
                    colnames::NTuple{N, Symbol}) where N
-    if !isa(row, Union{NamedTuple, DataFrameRow}) ||
-        (row isa NamedTuple && any(x -> x isa AbstractVector, row))
+    if !isa(row, Union{NamedTuple, DataFrameRow})
         throw(ArgumentError("return value must not change its kind " *
                             "(single row or variable number of rows) across groups"))
+    elseif row isa NamedTuple && any(x -> x isa AbstractVector, row)
+        throw(ArgumentError("mixing single values and vectors in a named tuple is not allowed"))
     elseif _ncol(row) != N
         throw(ArgumentError("return value must have the same number of columns " *
                             "for all groups (got $N and $(length(row)))"))
