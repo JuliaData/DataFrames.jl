@@ -1334,7 +1334,7 @@ function StatsBase.describe(df::AbstractDataFrame; stats=nothing)
                        :eltype])
     elseif stats === :all 
         _describe(df, [:mean, :std, :min, :q25, :median, :q75,
-                      :max, :nunique, :nmissing, :first, :last, :eltype])
+                       :max, :nunique, :nmissing, :first, :last, :eltype])
     else
         Base.depwarn("The `stats` keyword argument has been deprecated. Use describe(df, stats...) instead.", :describe)
         describe(df, stats...)
