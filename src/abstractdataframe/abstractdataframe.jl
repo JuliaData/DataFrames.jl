@@ -998,63 +998,70 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                keep::Union{Nothing, Vector{Symbol}} = nothing)
     
     isempty(dfs) && return DataFrame()
-    # array of all headers
-    @show allheaders = map(names, dfs)
-    # unique arrays of all headers
-    @show uniqueheaders = unique(allheaders)
-    # Array of all the unique headers
-    @show unionunique = union(uniqueheaders...)
-    # Intersection of all unique headers 
-    @show intersectunique = intersect(uniqueheaders...)
-    # get the elements that are not present in everything
-    @show coldiff = setdiff(unionunique, intersectunique)
+    # Array of all headers
+    allheaders = map(names, dfs)
+    # Unique arrays of headers across all dataframes
+    uniqueheaders = unique(allheaders)
+    # All symbols present across all headers
+    unionunique = union(uniqueheaders...)
+    # List of symbols present in all dataframes
+    intersectunique = intersect(uniqueheaders...)
+    # If keep is not specified, then we record all the symbols that aren't
+    # present in all headers, since that is the group we care about. 
+    # If keep *is* specified, we want to know about the symbols that 
+    # are not in `keep`. The list of variables present in all DataFrames
+    # doesn't matter. 
+    if keep === nothing 
+        # If keep is not specified, find the 
+        coldiff = setdiff(unionunique, intersectunique)
+    else 
+        coldiff = setdiff(keep, unionunique)
+    end
 
-    @show keep
-    if (widen == false) && !isempty(coldiff) && keep == nothing
+    header = keep === nothing ? uniqueheaders : keep
+   
+    coldiff = keep === nothing ? coldiff : setdiff(keep, unionunique)
+
+    if (widen == false) && !isempty(coldiff) 
         # if any DataFrames are a full superset of names, skip them
-        filter!(u -> Set(u) != Set(unionunique), uniqueheaders)
+        filter!(u -> Set(u) != Set(header), uniqueheaders)
         estrings = Vector{String}(undef, length(uniqueheaders))
-        for (i, u) in enumerate(uniqueheaders)
-            @show matching = findall(h -> u == h, allheaders)
-            @show headerdiff = setdiff(coldiff, u)
-            @show cols = join(headerdiff, ", ", " and ")
-            @show args = join(matching, ", ", " and ")
+        for (i, head) in enumerate(uniqueheaders)
+            # Find all the headers that match the header you are on. 
+            # So that we don't repeat ourselves in the error.
+            matching = findall(h -> head == h, allheaders)
+            # Of the symbols that aren't in all headers, which are in this one?
+            headerdiff = setdiff(coldiff, head)
+            cols = join(headerdiff, ", ", " and ")
+            args = join(matching, ", ", " and ")
             estrings[i] = "column(s) $cols are missing from argument(s) $args"
         end
-        throw(ArgumentError(join(estrings, ", ", ", and ")))
+        throw(ArgumentError("\n" * join(estrings, ",\n")))
     end
 
     # TODO: make sure that `keep` throws a good error if 
     # it a) isn't in `allheaders` or b) isn't a subset of `unionunique`
-    header = (keep == nothing) ? unionunique : keep 
-
-    if keep == nothing 
-        # Make the order of the names match the order of the dataframes inputted
-        header = let unionunique = unionunique, allheaders = allheaders
-            t = [filter(h -> h in unionunique, head) for head in allheaders]
-            reduce((a, b) -> [a; setdiff(b, a)], t)
-        end
-    else 
+    header = (keep === nothing) ? unionunique : keep 
+    if keep !== nothing 
         header = keep 
+        if widen == true 
+            diff = setdiff(keep, unionunique)
+            isempty(t) || throw(ArgumentError("Argumnents specief in `keep`" *
+                                               "are not present in all headers." *
+                                               ""))
+        end
     end
+
 
     length(header) == 0 && return DataFrame()
     cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
-        # TODO: replace with commented out code after getindex deprecation
-        # data = [df[name] for df in dfs]
-        # the code below assumes that only DataFrame and SubDataFrame
-        # are subtypes of AbstractDataFrame
-        # it should be removed ASAP after deprecation
         data = map(dfs) do df
             if df isa DataFrame 
                 if haskey(df, name)
                     return df[name] 
                 else
-                    # TODO: make this more efficient by not creating a 
-                    # full array of missing values. Instead, implement
-                    # this in the copyto! stage
-                    return fill(missing, nrow(df))
+                    return (missing for i in 1:nrow(df))
                 end
             else 
                 if haskey(df, name)
