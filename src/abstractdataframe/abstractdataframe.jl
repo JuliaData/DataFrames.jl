@@ -1024,6 +1024,10 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     return DataFrame(cols, header)
 end
 
+function Base.reduce(::typeof(vcat), dfs::AbstractVector{<:AbstractDataFrame})
+    return _vcat(dfs)
+end
+
 ##############################################################################
 ##
 ## repeat
