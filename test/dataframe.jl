@@ -424,13 +424,8 @@ end
                    dates  = Date.([2000, 2001, 2003, 2004]),
                    catarray = CategoricalArray([1,2,1,2]))
 
-<<<<<<< HEAD
-    describe_output = DataFrame(variable = [:number, :number_missing, :string, 
-                                            :string_missing, :dates, :catarray],
-=======
     describe_output = DataFrame(variable = [:number, :number_missing, :string,
                                             :string_missing, :dates, :catarray],
->>>>>>> 5c5ef32b9aa701961afe1debad18684144eefbb5
                                 mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
                                 std = [std(df[:number]), 1.0, nothing,
                                        nothing, nothing, nothing],
