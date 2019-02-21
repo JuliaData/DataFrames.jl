@@ -342,12 +342,14 @@ describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...)
 
 * `df` : the `AbstractDataFrame`
 * `stats::Union{Symbol, Pair{Symbol}}...` : the summary statistics to report. 
-    * Arguments can be symbols from the following: `:mean`, `:std`, `:min`, `:q25`, 
+  Arguments can be: 
+    *  A symbol from the list `:mean`, `:std`, `:min`, `:q25`, 
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and 
       `:nmissing`. The default statistics used
       are `:mean`, `:min`, `:median`, `:max`, `:nunique`, `:nmissing`, and `:eltype`.
-    * Alternatively, specify `:all` as the only `Symbol` argument to return all statistics. 
-    * Finally, users can provide their own functions in the form of a `Pair{Symbol, Any}`.
+    * `:all` as the only `Symbol` argument to return all statistics. 
+    * Finally, users can provide their own functions in the form of a 
+      `name => function` pairs where `name` is a `Symbol`. 
 
 **Result**
 
@@ -369,9 +371,10 @@ If the column does not allow missing values, `nothing` is returned.
 Consequently, `nmissing = 0` indicates that the column allows
 missing values, but does not currently contain any.
 
-Custom functions perform call `skipmissing` on columns of eltype `Union{T, Missing}`, 
-users should be aware that because of this, they cannot specify special handling
-of missing values in any of the functions given via a `Pair` argument.
+If custom functions are provided, they are called repeatedly with the vector corresponding
+to each column as the only argument. For columns allowing for missing values,
+the vector is wrapped in a call to [`skipmissing`](@ref): custom functions must therefore
+support such objects (and not only vectors), and cannot access missing values.
 
 
 **Examples**
@@ -379,20 +382,19 @@ of missing values in any of the functions given via a `Pair` argument.
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 describe(df)
-describe(df, stats = :all)
+describe(df, :all)
 describe(df, :min, :max)
-describe(df, :mean, :variance => Statistics.var)
+describe(df, :min, :sum => sum)
 ```
 
 """
 StatsBase.describe(df::AbstractDataFrame) = _describe(df, [:mean, :min, :median, 
-                                                     :max, :nunique, :nmissing, 
-                                                     :eltype])
-function StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...)
-    _describe(df, collect(stats))
-end
+                                                           :max, :nunique, :nmissing, 
+                                                            :eltype])
+StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) = _describe(df, collect(stats))
 
-function _describe(df::AbstractDataFrame, stats::Vector)   
+
+function _describe(df::AbstractDataFrame, stats::AbstractVector)   
     predefined_funs = Symbol[s for s in stats if s isa Symbol] 
 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75,
@@ -403,13 +405,12 @@ function _describe(df::AbstractDataFrame, stats::Vector)
         i = findfirst(s -> s == :all, stats)
         splice!(stats, i, allowed_fields) # insert in the stats vector to get a good order
     elseif :all in predefined_funs 
-            throw(ArgumentError("If the user specifies `:all` it must be the only `Symbol` argument.")) 
+            throw(ArgumentError("`:all` must be the only `Symbol` argument.")) 
     else 
         if !issubset(predefined_funs, allowed_fields)
-            not_allowed = setdiff(predefined_funs, allowed_fields)
+            not_allowed = join(setdiff(predefined_funs, allowed_fields), ", :")
             allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
-            # todo: fix the printing of this
-            throw(ArgumentError("$not_allowed not allowed." * allowed_msg))
+            throw(ArgumentError(":$not_allowed not allowed." * allowed_msg))
         end
     end
 
@@ -419,8 +420,8 @@ function _describe(df::AbstractDataFrame, stats::Vector)
     
     if !allunique(ordered_names)
         d = StatsBase.countmap(ordered_names)
-        duplicate_names = [name for name in ordered_names if d[name] > 1] 
-        throw(ArgumentError("Duplicate names not allowed: $(duplicate_names) are duplicated"))
+        duplicate_names = join(unique([name for name in ordered_names if d[name] > 1]), ", :") 
+        throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: :$(duplicate_names)"))
     end
 
     # Put the summary stats into the return data frame
