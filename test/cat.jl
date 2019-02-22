@@ -156,9 +156,12 @@ end
 end
 
 @testset "vcat >2 args" begin
-    @test vcat(DataFrame(), DataFrame(), DataFrame()) == DataFrame()
+    empty_dfs = [DataFrame(), DataFrame(), DataFrame()]
+    @test vcat(empty_dfs...) == reduce(vcat, empty_dfs) == DataFrame()
+    
     df = DataFrame(x = trues(1), y = falses(1))
-    @test vcat(df, df, df) == DataFrame(x = trues(3), y = falses(3))
+    dfs = [df, df, df]
+    @test vcat(dfs...) ==reduce(vcat, dfs) == DataFrame(x = trues(3), y = falses(3))
 end
 
 @testset "vcat mixed coltypes" begin
@@ -210,9 +213,12 @@ end
     @test vcat(df2, df1, df2) == DataFrame([[2, 4, 6, 7, 8, 9, 2, 4, 6],
                                             [8, 10, 12, 4, 5, 6, 8, 10, 12],
                                             [14, 16, 18, 1, 2, 3, 14, 16, 18]] ,[:C, :B, :A])
+    
     @test size(vcat(df1, df1, df1, df2, df2, df2)) == (18, 3)
     df3 = df1[[1, 3, 2]]
     res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
+    @test res == reduce(vcat, [df1, df1, df1, df2, df2, df2, df3, df3, df3, df3])
+
     @test size(res) == (30, 3)
     @test res[1:3,:] == df1
     @test res[4:6,:] == df1
@@ -226,7 +232,7 @@ end
     df1 = DataFrame(A = 1, B = 2)
     df2 = DataFrame(B = 12, A = 11)
     df3 = DataFrame(A = [1, 11], B = [2, 12])
-    @test [df1; df2] == df3
+    @test [df1; df2] == df3 == reduce(vcat, [df1, df2])
 end
 
 @testset "vcat errors" begin
@@ -244,6 +250,8 @@ end
     @test err.value.msg == "column(s) B are missing from argument(s) 1"
     # multiple missing 1 column
     err = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2, df2)
+    err2 = @test_throws ArgumentError reduce(vcat, [df1, df2, df2, df2, df2, df2])
+    @test err == err2
     @test err.value.msg == "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
     # argument missing >1 columns
     df1 = DataFrame(A = 1:3, B = 1:3, C = 1:3, D = 1:3, E = 1:3)
@@ -285,6 +293,6 @@ end
 end
 x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
 y = DataFrame(A = 4:5)
-@test vcat(x, y) == DataFrame(A = [2, 4, 5])
+@test vcat(x, y) == DataFrame(A = [2, 4, 5]) == reduce(vcat, [x, y])
 
 end # module
