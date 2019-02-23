@@ -556,13 +556,16 @@ df = DataFrame(A = 1:10, B = 'A':'J')
     @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
     @test df == df2
 
-    df3 = append!(DataFrame(), df)
+    dfx = DataFrame()
+    df3 = append!(dfx, df)
+    @test dfx === df3
     @test df3 == df
     @test df3[1] !== df[1]
     @test df3[2] !== df[2]
 
     df4 = append!(df3, DataFrame())
-    @test (df4 === df3) == df
+    @test df4 === df3
+    @test df4 == df
 end
 
 df = DataFrame(A = Vector{Union{Int, Missing}}(1:3), B = Vector{Union{Int, Missing}}(4:6))
