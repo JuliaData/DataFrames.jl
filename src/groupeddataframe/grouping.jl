@@ -373,10 +373,16 @@ function combine(f::Any, gd::GroupedDataFrame)
         return gd.parent[1:0, gd.cols]
     end
 end
+
 combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
+
 function combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...) 
     vec_of_pairs = reduce(vcat, f)
     combine(vec_of_pairs, gd)
+end
+
+function combine(gd::GroupedDataFrame, f::Tuple{Vararg{<:Pair}}) 
+    combine(f, gd)
 end
 
 function combine(gd::GroupedDataFrame; f...)
