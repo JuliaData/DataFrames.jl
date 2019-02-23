@@ -381,9 +381,8 @@ function combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...
     combine(vec_of_pairs, gd)
 end
 
-function combine(gd::GroupedDataFrame, f::Tuple{Vararg{<:Pair}}) 
+combine(gd::GroupedDataFrame, f::Tuple{Vararg{<:Pair}}) =
     combine(f, gd)
-end
 
 function combine(gd::GroupedDataFrame; f...)
     if length(f) == 0
@@ -1046,12 +1045,18 @@ julia> by(df, :a, (:b, :c) => x -> (minb = minimum(x.b), sumc = sum(x.c)))
 """
 by(d::AbstractDataFrame, cols::Any, f::Any; sort::Bool = false) =
     combine(f, groupby(d, cols, sort = sort))
+
 by(f::Any, d::AbstractDataFrame, cols::Any; sort::Bool = false) =
     by(d, cols, f, sort = sort)
+
 function by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}}...; sort::Bool = false) 
     vec_of_pairs = reduce(vcat, f)
     combine(vec_of_pairs, groupby(d, cols, sort = sort))
 end
+
+by(d::AbstractDataFrame, cols::Any, f::Tuple{Vararg{<:Pair}}; sort::Bool = false) =
+    combine(f, groupby(d, cols, sort = sort))
+
 by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
     combine(values(f), groupby(d, cols, sort = sort))
 
