@@ -485,11 +485,12 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
         # we can add non-necessary things to d, because we choose what we need
         # in the main function
         d[:mean] = m
+
+        if :std in stats
+            d[:std] = try std(col, mean = m) catch end
+        end
     end
 
-    if :std in stats
-        d[:std] = try std(col, mean = m) catch end
-    end
 
     if :nunique in stats
         if eltype(col) <: Real
