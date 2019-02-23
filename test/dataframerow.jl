@@ -283,24 +283,28 @@ end
 end
 
 @testset "conversion and push!" begin
-        df = DataFrame(x=1, y=2)
+    df = DataFrame(x=1, y=2)
 
-        @test df == DataFrame(df[1, :])
-        @test df[1:1, [2,1]] == DataFrame(df[1, [2,1]])
-        @test df[1:1, 1:1] == DataFrame(df[1, 1:1])
-        @test_throws ArgumentError DataFrame(df[1, [1,1]])
+    @test df == DataFrame(df[1, :])
+    @test df[1:1, [2,1]] == DataFrame(df[1, [2,1]])
+    @test df[1:1, 1:1] == DataFrame(df[1, 1:1])
+    @test_throws ArgumentError DataFrame(df[1, [1,1]])
 
-        @test_throws ArgumentError push!(df, df[1, 1:1])
-        @test df == DataFrame(x=1, y=2)
+    @test_throws ArgumentError push!(df, df[1, 1:1])
+    @test df == DataFrame(x=1, y=2)
 
-        @test_throws ArgumentError push!(df, df[1, [2,2]])
-        @test df == DataFrame(x=1, y=2)
+    @test_throws ArgumentError push!(df, df[1, [2,2]])
+    @test df == DataFrame(x=1, y=2)
 
-        @test_throws ArgumentError push!(df, df[1, [2,1,2]])
-        @test df == DataFrame(x=1, y=2)
+    @test_throws ArgumentError push!(df, df[1, [2,1,2]])
+    @test df == DataFrame(x=1, y=2)
 
-        @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
-        @test push!(df, df[1, [2,1]]) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
+    @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
+    @test push!(df, df[1, [2,1]]) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
+
+    df2 = DataFrame()
+    @test push!(df2, df[1, :]) === df2
+    @test df2 == df[1:1, :]
 end
 
 @testset "show" begin

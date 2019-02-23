@@ -1090,14 +1090,60 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 
+"""
+    push!(df1::DataFrame, row::Union{AbstractDict, NamedTuple})
 
-##############################################################################
-##
-## push! a row onto a DataFrame
-##
-##############################################################################
+Add in-place one row at the end of `df1` taking the values from `row`.
 
+Adding values is based on column name matching. `row` may contain more columns
+than `df1`, but all column names that are present in `df1` must be present in `row`.
+
+Column types of `df1` are preserved, and new values are converted if necessary.
+An error is thrown if conversion fails.
+
+If `df1` has no columns then it is allowed to `push!` a `NamedTuple` to `df1`
+and in this case all fields from `NamedTuple` are added for `df1` as a first row.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(A=1:3, B=1:3)
+3×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+
+julia> push!(df, (C="something", A=true, B=false))
+4×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 0     │
+
+julia> push!(df, Dict(:A=>1.0, :B=>2.0, :C=>"something"))
+5×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 0     │
+│ 5   │ 1     │ 2     │
+```
+"""
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple})
+    if ncol(df) == 0 && row isa NamedTuple
+        for (n, v) in pairs(row)
+            setproperty!(df, n, [v])
+        end
+        return df
+    end
     i = 1
     for nm in _names(df)
         try
@@ -1115,8 +1161,60 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple})
     df
 end
 
-# array and tuple like collections
+"""
+    push!(df1::DataFrame, iterable::Any)
+
+Add in-place one row at the end of `df1` taking the values from the iterable `iterable`.
+
+Adding values is based on column number. `row` must contain the same number of elements
+as the number of columns in `df1`.
+
+Column types of `df1` are preserved, and new values are converted if necessary.
+An error is thrown if conversion fails.
+
+If `df1` has no columns then it is allowed to `push!` a `DataFrameRow` to `df1`
+and in this case all fields from a `DataFrameRow` are added for `df1` as a first row.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(A=1:3, B=1:3)
+3×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+
+julia> push!(df, (true, false))
+4×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 0     │
+
+julia> push!(df, df[1, :])
+5×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 0     │
+│ 5   │ 1     │ 1     │
+```
+"""
 function Base.push!(df::DataFrame, iterable::Any)
+    if ncol(df) == 0 && iterable isa DataFrameRow
+        for (n, v) in pairs(iterable)
+            setproperty!(df, n, [v])
+        end
+        return df
+    end
     if length(iterable) != size(df, 2)
         msg = "Length of iterable does not match DataFrame column count."
         throw(ArgumentError(msg))
@@ -1137,12 +1235,6 @@ function Base.push!(df::DataFrame, iterable::Any)
     end
     df
 end
-
-##############################################################################
-##
-## Reorder columns
-##
-##############################################################################
 
 """
     permutecols!(df::DataFrame, p::AbstractVector)

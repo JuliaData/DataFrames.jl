@@ -319,6 +319,10 @@ end
     df = DataFrame(x=1, y=2)
     @test_throws ArgumentError push!(df, Dict(:x=>1, "y"=>2))
     @test df == DataFrame(x=1, y=2)
+
+    df = DataFrame()
+    @test push!(df, (a=1, b=true)) === df
+    @test df == DataFrame(a=1, b=true)
 end
 
 @testset "deletecols!" begin
