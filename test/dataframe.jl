@@ -546,13 +546,24 @@ df = DataFrame(A = 1:10, B = 'A':'J')
 @test !(df[:] === df)
 @test !(df[:,:] === df)
 
-df = DataFrame(A = 1:2, B = 1:2)
-df2 = DataFrame(A=1:4, B = 1:4)
-@test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
-@test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
-@test df == df2
-@test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
-@test df == df2
+
+@testset "append!" begin
+    df = DataFrame(A = 1:2, B = 1:2)
+    df2 = DataFrame(A=1:4, B = 1:4)
+    @test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
+    @test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
+    @test df == df2
+    @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
+    @test df == df2
+
+    df3 = append!(DataFrame(), df)
+    @test df3 == df
+    @test df3[1] !== df[1]
+    @test df3[2] !== df[2]
+
+    df4 = append!(df3, DataFrame())
+    @test (df4 === df3) == df
+end
 
 df = DataFrame(A = Vector{Union{Int, Missing}}(1:3), B = Vector{Union{Int, Missing}}(4:6))
 DRT = CategoricalArrays.DefaultRefType
