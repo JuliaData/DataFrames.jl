@@ -159,7 +159,7 @@ Base.values(r::DataFrameRow) =
 """
     copy(dfr::DataFrameRow)
 
-Convert a `DataFrameRow` to a `NamedTuple`.
+Convert a [`DataFrameRow`](@ref) to a `NamedTuple`.
 """
 Base.copy(r::DataFrameRow) = NamedTuple{Tuple(keys(r))}(values(r))
 
