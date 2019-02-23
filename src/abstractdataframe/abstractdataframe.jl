@@ -1007,21 +1007,20 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     # List of symbols present in all dataframes
     intersectunique = intersect(uniqueheaders...)
     # If keep is not specified, then we record all the symbols that aren't
-    # present in all headers, since that is the group we care about. 
+    # present in all headers for printing the error.  
+
     # If keep *is* specified, we want to know about the symbols that 
     # are not in `keep`. The list of variables present in all DataFrames
     # doesn't matter. 
     if keep === nothing 
-        # If keep is not specified, find the 
         coldiff = setdiff(unionunique, intersectunique)
     else 
         coldiff = setdiff(keep, unionunique)
     end
-
+    # This will be the header of our final dataframe. If `keep` is not 
+    # specified, we use the unique headers. If not, use `keep`. 
     header = keep === nothing ? uniqueheaders : keep
    
-    coldiff = keep === nothing ? coldiff : setdiff(keep, unionunique)
-
     if (widen == false) && !isempty(coldiff) 
         # if any DataFrames are a full superset of names, skip them
         filter!(u -> Set(u) != Set(header), uniqueheaders)
@@ -1030,7 +1029,8 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
             # Find all the headers that match the header you are on. 
             # So that we don't repeat ourselves in the error.
             matching = findall(h -> head == h, allheaders)
-            # Of the symbols that aren't in all headers, which are in this one?
+            # Of the symbols that aren't in all headers (or keep), which 
+            # ones are in this one?
             headerdiff = setdiff(coldiff, head)
             cols = join(headerdiff, ", ", " and ")
             args = join(matching, ", ", " and ")
@@ -1039,18 +1039,6 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         throw(ArgumentError("\n" * join(estrings, ",\n")))
     end
 
-    # TODO: make sure that `keep` throws a good error if 
-    # it a) isn't in `allheaders` or b) isn't a subset of `unionunique`
-    header = (keep === nothing) ? unionunique : keep 
-    if keep !== nothing 
-        header = keep 
-        if widen == true 
-            diff = setdiff(keep, unionunique)
-            isempty(t) || throw(ArgumentError("Argumnents specief in `keep`" *
-                                               "are not present in all headers." *
-                                               ""))
-        end
-    end
 
 
     length(header) == 0 && return DataFrame()
@@ -1067,7 +1055,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                 if haskey(df, name)
                     return view(parent(df)[name], rows(df))
                 else 
-                    return fill(missing, length(rows(df)))
+                    return (missing for i in 1:length(rows(df)))
                 end
             end
         end
