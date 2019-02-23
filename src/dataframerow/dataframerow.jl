@@ -228,6 +228,13 @@ end
 @noinline pushhelper!(x, r) = push!(x, x[r])
 
 function Base.push!(df::DataFrame, dfr::DataFrameRow)
+    if ncol(df) == 0
+        for (n, v) in pairs(dfr)
+            setproperty!(df, n, [v])
+        end
+        return df
+    end
+
     if parent(dfr) === df && index(dfr) isa Index
         # in this case we are sure that all we do is safe
         r = row(dfr)

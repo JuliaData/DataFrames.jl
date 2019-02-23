@@ -1209,12 +1209,6 @@ julia> push!(df, df[1, :])
 ```
 """
 function Base.push!(df::DataFrame, iterable::Any)
-    if ncol(df) == 0 && iterable isa DataFrameRow
-        for (n, v) in pairs(iterable)
-            setproperty!(df, n, [v])
-        end
-        return df
-    end
     if length(iterable) != size(df, 2)
         msg = "Length of iterable does not match DataFrame column count."
         throw(ArgumentError(msg))
