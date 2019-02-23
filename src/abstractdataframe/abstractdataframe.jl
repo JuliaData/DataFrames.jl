@@ -388,10 +388,11 @@ describe(df, :min, :sum => sum)
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame) = _describe(df, [:mean, :min, :median, 
-                                                           :max, :nunique, :nmissing, 
-                                                            :eltype])
-StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) = _describe(df, collect(stats))
+StatsBase.describe(df::AbstractDataFrame) = 
+    _describe(df, [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
+
+StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) = 
+    _describe(df, collect(stats))
 
 
 function _describe(df::AbstractDataFrame, stats::AbstractVector)   
@@ -405,13 +406,11 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         i = findfirst(s -> s == :all, stats)
         splice!(stats, i, allowed_fields) # insert in the stats vector to get a good order
     elseif :all in predefined_funs 
-            throw(ArgumentError("`:all` must be the only `Symbol` argument.")) 
-    else 
-        if !issubset(predefined_funs, allowed_fields)
-            not_allowed = join(setdiff(predefined_funs, allowed_fields), ", :")
-            allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
-            throw(ArgumentError(":$not_allowed not allowed." * allowed_msg))
-        end
+        throw(ArgumentError("`:all` must be the only `Symbol` argument.")) 
+    elseif !issubset(predefined_funs, allowed_fields)
+        not_allowed = join(setdiff(predefined_funs, allowed_fields), ", :")
+        allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
+        throw(ArgumentError(":$not_allowed not allowed." * allowed_msg))
     end
 
     custom_funs = Pair[s for s in stats if s isa Pair]
@@ -419,9 +418,8 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
     ordered_names = [s isa Symbol ? s : s[1] for s in stats]
     
     if !allunique(ordered_names)
-        d = StatsBase.countmap(ordered_names)
-        duplicate_names = join(unique([name for name in ordered_names if d[name] > 1]), ", :") 
-        throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: :$(duplicate_names)"))
+        duplicate_names = unique(ordered_names[nonunique(DataFrame(ordered_names = ordered_names))])
+        throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: :$(join(duplicate_names, ", "))"))
     end
 
     # Put the summary stats into the return data frame
@@ -446,7 +444,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         if :first in predefined_funs 
             d[:first] = isempty(col) ? nothing : first(col)
         end
-        
+
         if :last in predefined_funs
             d[:last] = isempty(col) ? nothing : last(col)
         end
@@ -508,7 +506,7 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
     return d
 end
 
-function get_stats!(d::Dict, col::AbstractVector, stats::AbstractVector{Pair})
+function get_stats!(d::Dict, col::AbstractVector, stats::AbstractVector{<:Pair})
     for stat in stats 
         d[stat[1]] = try stat[2](col) catch end
     end
