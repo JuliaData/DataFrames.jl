@@ -1019,7 +1019,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     end
     # This will be the header of our final dataframe. If `keep` is not 
     # specified, we use the unique headers. If not, use `keep`. 
-    header = keep === nothing ? uniqueheaders : keep
+    header = keep === nothing ? unionunique : keep
    
     if (widen == false) && !isempty(coldiff) 
         # if any DataFrames are a full superset of names, skip them
@@ -1047,15 +1047,15 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         data = map(dfs) do df
             if df isa DataFrame 
                 if haskey(df, name)
-                    return df[name] 
+                    return df[name]
                 else
-                    return (missing for i in 1:nrow(df))
+                    Iterators.repeated(missing, nrow(df))
                 end
             else 
                 if haskey(df, name)
                     return view(parent(df)[name], rows(df))
                 else 
-                    return (missing for i in 1:length(rows(df)))
+                    return Iterators.repeated(missing, nrow(df))
                 end
             end
         end
