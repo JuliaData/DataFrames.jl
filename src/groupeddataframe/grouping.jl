@@ -1,8 +1,8 @@
 """
     GroupedDataFrame
 
-The result of a `groupby` operation on an AbstractDataFrame; a
-view into the AbstractDataFrame grouped by rows.
+The result of a [`groupby`](@ref) operation on an `AbstractDataFrame`; a
+view into the `AbstractDataFrame` grouped by rows.
 
 Not meant to be constructed directly, see `groupby`.
 """
@@ -27,7 +27,7 @@ Base.parent(gd::GroupedDataFrame) = getfield(gd, :parent)
 #
 
 """
-A view of an AbstractDataFrame split into row groups
+A view of an `AbstractDataFrame` split into row groups
 
 ```julia
 groupby(d::AbstractDataFrame, cols; sort = false, skipmissing = false)
@@ -36,7 +36,7 @@ groupby(cols; sort = false, skipmissing = false)
 
 ### Arguments
 
-* `d` : an AbstractDataFrame to split (optional, see [Returns](#returns))
+* `d` : an `AbstractDataFrame` to split (optional, see [Returns](#returns))
 * `cols` : data table columns to group by
 * `sort` : whether to sort rows according to the values of the grouping columns `cols`
 * `skipmissing` : whether to skip rows with `missing` values in one of the grouping columns `cols`
@@ -142,7 +142,7 @@ _names(gd::GroupedDataFrame) = _names(gd.parent)
     map(cols => f, gd::GroupedDataFrame)
     map(f, gd::GroupedDataFrame)
 
-Apply a function to each group of rows and return a `GroupedDataFrame`.
+Apply a function to each group of rows and return a [`GroupedDataFrame`](@ref).
 
 If the first argument is a `cols => f` pair, `cols` must be a column name or index, or
 a vector or tuple thereof, and `f` must be a callable. If `cols` is a single column index,
@@ -160,7 +160,7 @@ Note that this second form is much slower than the first one due to type instabi
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
-- A named tuple of single values or a `DataFrameRow` gives a data frame with one column
+- A named tuple of single values or a [`DataFrameRow`](@ref) gives a data frame with one column
   for each field and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
@@ -268,7 +268,7 @@ end
     combine(gd::GroupedDataFrame, f)
     combine(f, gd::GroupedDataFrame)
 
-Transform a `GroupedDataFrame` into a `DataFrame`.
+Transform a [`GroupedDataFrame`](@ref) into a `DataFrame`.
 
 If the last argument(s) consist(s) in one or more `cols => f` pair(s), or if
 `colname = cols => f` keyword arguments are provided, `cols` must be
@@ -278,7 +278,7 @@ If `cols` is a single column index, `f` is called with a `SubArray` view into th
 column for each group; else, `f` is called with a named tuple holding `SubArray`
 views into these columns.
 
-If the last argument is a callable `f`, it is passed a `SubDataFrame` view for each group,
+If the last argument is a callable `f`, it is passed a [`SubDataFrame`](@ref) view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
 Note that this second form is much slower than the first one due to type instability.
 A method is defined with `f` as the first argument, so do-block
@@ -287,7 +287,7 @@ notation can be used.
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
-- A named tuple of single values or a `DataFrameRow` gives a data frame with one column
+- A named tuple of single values or a [`DataFrameRow`](@ref) gives a data frame with one column
   for each field and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
@@ -872,8 +872,8 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
 end
 
 """
-Apply a function to each column in an AbstractDataFrame or
-GroupedDataFrame
+Apply a function to each column in an `AbstractDataFrame` or
+[`GroupedDataFrame`](@ref).
 
 ```julia
 colwise(f, d)
@@ -882,7 +882,7 @@ colwise(f, d)
 ### Arguments
 
 * `f` : a function or vector of functions
-* `d` : an AbstractDataFrame of GroupedDataFrame
+* `d` : an `AbstractDataFrame` or `GroupedDataFrame`
 
 ### Returns
 
@@ -926,7 +926,7 @@ If `cols` is a single column index, `f` is called with a `SubArray` view into th
 column for each group; else, `f` is called with a named tuple holding `SubArray`
 views into these columns.
 
-If the last argument is a callable `f`, it is passed a `SubDataFrame` view for each group,
+If the last argument is a callable `f`, it is passed a [`SubDataFrame`](@ref) view for each group,
 and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
 Note that this second form is much slower than the first one due to type instability.
 A method is defined with `f` as the first argument, so do-block
@@ -935,7 +935,7 @@ notation can be used.
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
 - A single value gives a data frame with a single column and one row per group.
-- A named tuple of single values or a `DataFrameRow` gives a data frame with one column
+- A named tuple of single values or a [`DataFrameRow`](@ref) gives a data frame with one column
   for each field and one row per group.
 - A vector gives a data frame with a single column and as many rows
   for each group as the length of the returned vector for that group.
@@ -1062,7 +1062,7 @@ by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
 # Applies a set of functions over a DataFrame, in the from of a cross-product
 """
 Split-apply-combine that applies a set of functions over columns of an
-AbstractDataFrame or GroupedDataFrame
+`AbstractDataFrame` or [`GroupedDataFrame`](@ref)
 
 ```julia
 aggregate(d::AbstractDataFrame, cols, fs)
@@ -1071,9 +1071,9 @@ aggregate(gd::GroupedDataFrame, fs)
 
 ### Arguments
 
-* `d` : an AbstractDataFrame
-* `gd` : a GroupedDataFrame
-* `cols` : a column indicator (Symbol, Int, Vector{Symbol}, etc.)
+* `d` : an `AbstractDataFrame`
+* `gd` : a `GroupedDataFrame`
+* `cols` : a column indicator (`Symbol`, `Int`, `Vector{Symbol}`, etc.)
 * `fs` : a function or vector of functions to be applied to vectors
   within groups; expects each argument to be a column vector
 
@@ -1156,7 +1156,7 @@ Return a vector of group indices for each row of `parent(gd)`.
 
 Rows appearing in group `gd[i]` are attributed index `i`. Rows not present in
 any group are attributed `missing` (this can happen if `skipmissing=true` was
-passed when creating `gd`, or if `gd` is a subset from a larger `GroupedDataFrame`).
+passed when creating `gd`, or if `gd` is a subset from a larger [`GroupedDataFrame`](@ref)).
 """
 groupindices(gd::GroupedDataFrame) = replace(gd.groups, 0=>missing)
 
