@@ -572,16 +572,26 @@ DRT = CategoricalArrays.DefaultRefType
 
 @testset "categorical!" begin
     df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
-    @test all(map(<:, eltypes(categorical!(df)),
-                  [CategoricalArrays.CategoricalString,
+    @test all(map(<:, eltypes(categorical!(deepcopy(df), false)), # no compression
+                  [CategoricalArrays.CategoricalString{UInt32},
                    Char, Bool, Int,
-                   CategoricalArrays.CategoricalString]))
-    @test all(map(<:, eltypes(categorical!(df, names(df))),
-                  [CategoricalArrays.CategoricalString,
-                   CategoricalArrays.CategoricalValue{Char},
-                   CategoricalArrays.CategoricalValue{Bool},
-                   CategoricalArrays.CategoricalValue{Int},
-                   CategoricalArrays.CategoricalString]))
+                   CategoricalArrays.CategoricalString{UInt32}]))
+    @test all(map(<:, eltypes(categorical!(deepcopy(df))), # compression
+                  [CategoricalArrays.CategoricalString{UInt8},
+                   Char, Bool, Int,
+                   CategoricalArrays.CategoricalString{UInt8}]))
+    @test all(map(<:, eltypes(categorical!(df, names(df), false)), # no compression
+                  [CategoricalArrays.CategoricalString{UInt32},
+                   CategoricalArrays.CategoricalValue{Char,UInt32},
+                   CategoricalArrays.CategoricalValue{Bool,UInt32},
+                   CategoricalArrays.CategoricalValue{Int,UInt32},
+                   CategoricalArrays.CategoricalString{UInt32}]))
+    @test all(map(<:, eltypes(categorical!(df, names(df))), # compression
+                  [CategoricalArrays.CategoricalString{UInt8},
+                   CategoricalArrays.CategoricalValue{Char,UInt8},
+                   CategoricalArrays.CategoricalValue{Bool,UInt8},
+                   CategoricalArrays.CategoricalValue{Int,UInt8},
+                   CategoricalArrays.CategoricalString{UInt8}]))
 end
 
 @testset "unstack promotion to support missing values" begin
