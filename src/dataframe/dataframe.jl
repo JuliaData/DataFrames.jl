@@ -1007,22 +1007,24 @@ end
 ##
 ##############################################################################
 
-function categorical!(df::DataFrame, cname::Union{Integer, Symbol})
-    df[cname] = CategoricalVector(df[cname])
+function categorical!(df::DataFrame, cname::Union{Integer, Symbol},
+                      compress::Bool=true)
+    df[cname] = categorical(df[cname], compress)
     df
 end
 
-function categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}})
+function categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}},
+                      compress::Bool=true)
     for cname in cnames
-        df[cname] = CategoricalVector(df[cname])
+        df[cname] = categorical(df[cname], compress)
     end
     df
 end
 
-function categorical!(df::DataFrame)
+function categorical!(df::DataFrame, compress::Bool=true)
     for i in 1:size(df, 2)
         if eltype(df[i]) <: AbstractString
-            df[i] = CategoricalVector(df[i])
+            df[i] = categorical(df[i], compress)
         end
     end
     df
