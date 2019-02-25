@@ -413,7 +413,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "DataFrames.colwise",
     "category": "function",
-    "text": "Apply a function to each column in an AbstractDataFrame or GroupedDataFrame\n\ncolwise(f, d)\n\nArguments\n\nf : a function or vector of functions\nd : an AbstractDataFrame of GroupedDataFrame\n\nReturns\n\nvarious, depending on the call\n\nExamples\n\ndf = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),\n               b = repeat([2, 1], outer=[4]),\n               c = randn(8))\ncolwise(sum, df)\ncolwise([sum, length], df)\ncolwise((minimum, maximum), df)\ncolwise(sum, groupby(df, :a))\n\n\n\n\n\n"
+    "text": "Apply a function to each column in an AbstractDataFrame or GroupedDataFrame.\n\ncolwise(f, d)\n\nArguments\n\nf : a function or vector of functions\nd : an AbstractDataFrame or GroupedDataFrame\n\nReturns\n\nvarious, depending on the call\n\nExamples\n\ndf = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),\n               b = repeat([2, 1], outer=[4]),\n               c = randn(8))\ncolwise(sum, df)\ncolwise([sum, length], df)\ncolwise((minimum, maximum), df)\ncolwise(sum, groupby(df, :a))\n\n\n\n\n\n"
 },
 
 {
