@@ -335,21 +335,21 @@ Report descriptive statistics for a data frame
 
 ```julia
 describe(df::AbstractDataFrame)
-describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...)
+describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{<:Symbol}}...)
 ```
 
 **Arguments**
 
 * `df` : the `AbstractDataFrame`
-* `stats::Union{Symbol, Pair{Symbol}}...` : the summary statistics to report. 
+* `stats::Union{Symbol, Pair{<:Symbol}}...` : the summary statistics to report. 
   Arguments can be: 
     *  A symbol from the list `:mean`, `:std`, `:min`, `:q25`, 
       `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and 
       `:nmissing`. The default statistics used
       are `:mean`, `:min`, `:median`, `:max`, `:nunique`, `:nmissing`, and `:eltype`.
     * `:all` as the only `Symbol` argument to return all statistics. 
-    * Finally, users can provide their own functions in the form of a 
-      `name => function` pairs where `name` is a `Symbol`. 
+    * A `name => function` pair where `name` is a `Symbol`. This will create
+      a column of summary statistics with the provided name. 
 
 **Result**
 
