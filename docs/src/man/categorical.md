@@ -77,7 +77,8 @@ julia> sort(cv)
 
 ```
 
-By default, a `CategoricalArray` is able to represent 2<sup>32</sup> different levels. You can use less memory by calling the `compress` function, or by calling the `categorical` function with the `compress` argument set to `true`:
+By default, a `CategoricalArray` is able to represent 2<sup>32</sup> different levels. You
+can use less memory by calling the `compress` function:
 
 ```jldoctest categorical
 julia> cv = compress(cv)
@@ -89,21 +90,12 @@ julia> cv = compress(cv)
  "Group B"
  missing
 
-julia> cv = categorical(["Group A", missing, "Group A",
-                    "Group B", "Group B", missing], true)
-6-element CategoricalArray{Union{Missing, String},1,UInt8}:
- "Group A"
- missing  
- "Group A"
- "Group B"
- "Group B"
- missing
-
 ```
 
 Often, you will have factors encoded inside a DataFrame with `Array` columns instead of
 `CategoricalArray` columns. You can convert one or more columns of the DataFrame using the
-`categorical!` function, which modifies the input DataFrame in-place. Compression is used by default.
+`categorical!` function, which modifies the input DataFrame in-place. Compression can be
+applied by setting the `compress` keyword argument to `true`.
 
 ```jldoctest categorical
 julia> using DataFrames
@@ -126,7 +118,7 @@ julia> eltypes(df)
  String
  String
 
-julia> categorical!(df, :A, false) # change the column `:A` to be categorical without compression
+julia> categorical!(df, :A) # change the column `:A` to be categorical
 6×2 DataFrame
 │ Row │ A            │ B      │
 │     │ Categorical… │ String │
@@ -143,7 +135,7 @@ julia> eltypes(df)
  CategoricalString{UInt32}
  String
 
-julia> categorical!(df) # change all columns to be categorical with compression
+julia> categorical!(df, compress=true) # change all columns to be categorical with compression
 6×2 DataFrame
 │ Row │ A            │ B            │
 │     │ Categorical… │ Categorical… │

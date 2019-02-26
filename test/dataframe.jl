@@ -572,21 +572,21 @@ DRT = CategoricalArrays.DefaultRefType
 
 @testset "categorical!" begin
     df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
-    @test all(map(<:, eltypes(categorical!(deepcopy(df), false)), # no compression
+    @test all(map(<:, eltypes(categorical!(deepcopy(df))),
                   [CategoricalArrays.CategoricalString{UInt32},
                    Char, Bool, Int,
                    CategoricalArrays.CategoricalString{UInt32}]))
-    @test all(map(<:, eltypes(categorical!(deepcopy(df))), # compression
+    @test all(map(<:, eltypes(categorical!(deepcopy(df), compress=true)),
                   [CategoricalArrays.CategoricalString{UInt8},
                    Char, Bool, Int,
                    CategoricalArrays.CategoricalString{UInt8}]))
-    @test all(map(<:, eltypes(categorical!(df, names(df), false)), # no compression
+    @test all(map(<:, eltypes(categorical!(df, names(df))),
                   [CategoricalArrays.CategoricalString{UInt32},
                    CategoricalArrays.CategoricalValue{Char,UInt32},
                    CategoricalArrays.CategoricalValue{Bool,UInt32},
                    CategoricalArrays.CategoricalValue{Int,UInt32},
                    CategoricalArrays.CategoricalString{UInt32}]))
-    @test all(map(<:, eltypes(categorical!(df, names(df))), # compression
+    @test all(map(<:, eltypes(categorical!(df, names(df), compress=true)),
                   [CategoricalArrays.CategoricalString{UInt8},
                    CategoricalArrays.CategoricalValue{Char,UInt8},
                    CategoricalArrays.CategoricalValue{Bool,UInt8},
