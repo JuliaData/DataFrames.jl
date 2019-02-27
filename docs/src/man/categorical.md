@@ -30,11 +30,9 @@ julia> cv = CategoricalArray(v)
 
 ```
 
-`CategoricalArrays` support missing values via the `Missings` package.
+`CategoricalArrays` support missing values.
 
 ```jldoctest categorical
-julia> using Missings
-
 julia> cv = CategoricalArray(["Group A", missing, "Group A",
                               "Group B", "Group B", missing])
 6-element CategoricalArray{Union{Missing, String},1,UInt32}:
@@ -92,9 +90,52 @@ julia> cv = compress(cv)
 
 ```
 
-Often, you will have factors encoded inside a DataFrame with `Array` columns instead of
-`CategoricalArray` columns. You can convert one or more columns of the DataFrame using the
-`categorical!` function, which modifies the input DataFrame in-place. Compression can be
+Instead of using the `CategoricalArray` constructor directly you can use `categorical`
+function. It additionally accepts one positional argument `compress` of type `Bool`
+that allows you to perform the compression of level encoding when `CategoricalArray`
+is constructed. Also you can pass `ordered` keyword argument of type `Bool` which
+makes `CategoricalArray` ordered, which means that you will be able to compare its levels.
+
+```jldoctest categorical
+julia> cv1 = categorical(["A", "B"], true, ordered=false)
+
+2-element CategoricalArray{String,1,UInt8}:
+ "A"
+ "B"
+
+julia> cv2 = categorical(["A", "B"], true, ordered=true)
+2-element CategoricalArray{String,1,UInt8}:
+ "A"
+ "B"
+
+julia> cv1[1] < cv1[2]
+ERROR: ArgumentError: Unordered CategoricalValue objects cannot be tested for order using <. Use isless instead, or call the ordered! function on the parent array to change this
+
+julia> cv2[1] < cv2[2]
+true
+```
+
+You can check if a `CategoricalArray` is ordered using the `isordered` function and change between ordered and unordered using `ordered!` function.
+
+```jldoctest categorical
+julia> isordered(cv1)
+false
+
+julia> ordered!(cv1, true)
+2-element CategoricalArray{String,1,UInt8}:
+ "A"
+ "B"
+
+julia> isordered(cv1)
+true
+
+julia> cv1[1] < cv1[2]
+true
+```
+
+Often, you will have factors encoded inside a `DataFrame` with `Vector` columns instead of
+`CategoricalVector` columns. You can convert one or more columns of the `DataFrame` using the
+`categorical!` function, which modifies the input `DataFrame` in-place. Compression can be
 applied by setting the `compress` keyword argument to `true`.
 
 ```jldoctest categorical
@@ -134,8 +175,14 @@ julia> eltypes(df)
 2-element Array{DataType,1}:
  CategoricalString{UInt32}
  String
+```
 
-julia> categorical!(df, compress=true) # change all columns with eltype <: AbstractString to be categorical with compression
+You can change all columns with `AbstractString` element type to be categorical
+if you do not specify which columns to convert.
+In the example below we also enable compression:
+
+```jldoctest categorical
+julia> categorical!(df, compress=true)
 6×2 DataFrame
 │ Row │ A            │ B            │
 │     │ Categorical… │ Categorical… │
@@ -154,6 +201,8 @@ julia> eltypes(df)
 
 ```
 
-Using categorical arrays is important for working with the [GLM package](https://github.com/JuliaStats/GLM.jl). When fitting regression models, `CategoricalArray` columns in the input are translated into 0/1 indicator columns in the `ModelMatrix` with one column for each of the levels of the `CategoricalArray`. This allows one to analyze categorical data efficiently.
+Using categorical arrays is important for working with the [GLM package](https://github.com/JuliaStats/GLM.jl).
+When fitting regression models, `CategoricalVector` columns in the input are translated into 0/1 indicator columns in the `ModelMatrix` with one column for each of the levels of the `CategoricalVector`.
+This allows one to analyze categorical data efficiently.
 
 See the [CategoricalArrays package](https://github.com/JuliaData/CategoricalArrays.jl) for more information regarding categorical arrays.
