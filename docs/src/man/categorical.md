@@ -91,18 +91,18 @@ julia> cv = compress(cv)
 ```
 
 Instead of using the `CategoricalArray` constructor directly you can use `categorical`
-function. It additionally accepts one positional argument `compress` of type `Bool`
-that allows you to perform the compression of level encoding when `CategoricalArray`
-is constructed. Also you can pass `ordered` keyword argument of type `Bool` which
-makes `CategoricalArray` ordered, which means that you will be able to compare its levels.
-
+function. It additionally accepts one positional argument `compress` which when set to `true`
+is equivalent to calling `compress` on the new vector:
 ```jldoctest categorical
-julia> cv1 = categorical(["A", "B"], true, ordered=false)
-
+julia> cv1 = categorical(["A", "B"], true)
 2-element CategoricalArray{String,1,UInt8}:
  "A"
  "B"
+```
 
+If the `ordered` keyword argument is set to `true`, the resulting `CategoricalArray` will be
+ordered, which means that its levels can be tested for order (rather than throwing an error):
+```jldoctest categorical
 julia> cv2 = categorical(["A", "B"], true, ordered=true)
 2-element CategoricalArray{String,1,UInt8}:
  "A"
@@ -177,9 +177,8 @@ julia> eltypes(df)
  String
 ```
 
-You can change all columns with `AbstractString` element type to be categorical
-if you do not specify which columns to convert.
-In the example below we also enable compression:
+If columns are not specified, all columns with an `AbstractString` element type
+are converted to be categorical. In the example below we also enable compression:
 
 ```jldoctest categorical
 julia> categorical!(df, compress=true)
