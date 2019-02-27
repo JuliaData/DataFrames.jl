@@ -14,7 +14,9 @@ julia> v = ["Group A", "Group A", "Group A", "Group B", "Group B", "Group B"]
 
 ```
 
-The naive encoding used in an `Array` represents every entry of this vector as a full string. In contrast, we can represent the data more efficiently by replacing the strings with indices into a small pool of levels. This is what the `CategoricalArray` type does:
+The naive encoding used in an `Array` represents every entry of this vector as a full string.
+In contrast, we can represent the data more efficiently by replacing the strings with indices
+into a small pool of levels. This is what the `CategoricalArray` type does:
 
 ```jldoctest categorical
 julia> using CategoricalArrays
@@ -44,7 +46,9 @@ julia> cv = CategoricalArray(["Group A", missing, "Group A",
  missing
 ```
 
-In addition to representing repeated data efficiently, the `CategoricalArray` type allows us to determine efficiently the allowed levels of the variable at any time using the `levels` function (note that levels may or may not be actually used in the data):
+In addition to representing repeated data efficiently, the `CategoricalArray` type
+allows us to determine efficiently the allowed levels of the variable at any time using
+the `levels` function (note that levels may or may not be actually used in the data):
 
 ```jldoctest categorical
 julia> levels(cv)
@@ -54,7 +58,8 @@ julia> levels(cv)
 
 ```
 
-The `levels!` function also allows changing the order of appearance of the levels, which can be useful for display purposes or when working with ordered variables.
+The `levels!` function also allows changing the order of appearance of the levels,
+which can be useful for display purposes or when working with ordered variables.
 
 ```jldoctest categorical
 julia> levels!(cv, ["Group B", "Group A"]);
@@ -75,8 +80,8 @@ julia> sort(cv)
 
 ```
 
-By default, a `CategoricalArray` is able to represent 2<sup>32</sup> different levels. You
-can use less memory by calling the `compress` function:
+By default, a `CategoricalArray` is able to represent 2<sup>32</sup> different levels.
+You can use less memory by calling the `compress` function:
 
 ```jldoctest categorical
 julia> cv = compress(cv)
@@ -115,7 +120,8 @@ julia> cv2[1] < cv2[2]
 true
 ```
 
-You can check if a `CategoricalArray` is ordered using the `isordered` function and change between ordered and unordered using `ordered!` function.
+You can check if a `CategoricalArray` is ordered using the `isordered` function
+and change between ordered and unordered using `ordered!` function.
 
 ```jldoctest categorical
 julia> isordered(cv1)
@@ -133,10 +139,10 @@ julia> cv1[1] < cv1[2]
 true
 ```
 
-Often, you will have factors encoded inside a `DataFrame` with `Vector` columns instead of
-`CategoricalVector` columns. You can convert one or more columns of the `DataFrame` using the
-`categorical!` function, which modifies the input `DataFrame` in-place. Compression can be
-applied by setting the `compress` keyword argument to `true`.
+Often, you will have factors encoded inside a `DataFrame` with `Vector` columns instead
+of `CategoricalVector` columns. You can convert one or more columns of the `DataFrame`
+using the `categorical!` function, which modifies the input `DataFrame` in-place.
+Compression can be applied by setting the `compress` keyword argument to `true`.
 
 ```jldoctest categorical
 julia> using DataFrames
@@ -201,7 +207,9 @@ julia> eltypes(df)
 ```
 
 Using categorical arrays is important for working with the [GLM package](https://github.com/JuliaStats/GLM.jl).
-When fitting regression models, `CategoricalVector` columns in the input are translated into 0/1 indicator columns in the `ModelMatrix` with one column for each of the levels of the `CategoricalVector`.
-This allows one to analyze categorical data efficiently.
+When fitting regression models, `CategoricalVector` columns in the input are translated
+into 0/1 indicator columns in the `ModelMatrix` with one column for each of the levels of
+the `CategoricalVector`. This allows one to analyze categorical data efficiently.
 
-See the [CategoricalArrays package](https://github.com/JuliaData/CategoricalArrays.jl) for more information regarding categorical arrays.
+See the [CategoricalArrays package](https://github.com/JuliaData/CategoricalArrays.jl)
+for more information regarding categorical arrays.
