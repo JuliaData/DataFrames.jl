@@ -1014,11 +1014,11 @@ end
                  compress::Bool=false)
     categorical!(df::DataFrame; compress::Bool=false)
 
-Change columns slected by `cname` or `cnames` in the `df` `DataFrame`
+Change columns selected by `cname` or `cnames` in data frame `df`
 to `CategoricalVector`. If no columns are indicated then all columns that have
-`AbstractString` element type type will be converted.
+an `AbstractString` element type type will be converted to categorical.
 
-If `compress` keyword argument is set to `true` then the created `CategoricalVector`s
+If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
 will be compressed.
 
 All created `CategoricalVector`s are unordered.
