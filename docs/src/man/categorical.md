@@ -135,7 +135,7 @@ julia> eltypes(df)
  CategoricalString{UInt32}
  String
 
-julia> categorical!(df, compress=true) # change all columns to be categorical with compression
+julia> categorical!(df, compress=true) # change all columns with eltype <: AbstractString to be categorical with compression
 6×2 DataFrame
 │ Row │ A            │ B            │
 │     │ Categorical… │ Categorical… │
