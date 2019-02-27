@@ -32,6 +32,7 @@ meltdf
 ```@docs
 allowmissing!
 completecases
+categorical!
 deletecols!
 deleterows!
 describe
