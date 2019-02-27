@@ -20,7 +20,7 @@ The naive encoding used in an `Array` represents every entry of this vector as a
 julia> using CategoricalArrays
 
 julia> cv = CategoricalArray(v)
-6-element CategoricalArrays.CategoricalArray{String,1,UInt32}:
+6-element CategoricalArray{String,1,UInt32}:
  "Group A"
  "Group A"
  "Group A"
@@ -37,7 +37,7 @@ julia> using Missings
 
 julia> cv = CategoricalArray(["Group A", missing, "Group A",
                               "Group B", "Group B", missing])
-6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt32}:
+6-element CategoricalArray{Union{Missing, String},1,UInt32}:
  "Group A"
  missing
  "Group A"
@@ -67,7 +67,7 @@ julia> levels(cv)
  "Group A"
 
 julia> sort(cv)
-6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt32}:
+6-element CategoricalArray{Union{Missing, String},1,UInt32}:
  "Group B"
  "Group B"
  "Group A"
@@ -77,11 +77,12 @@ julia> sort(cv)
 
 ```
 
-By default, a `CategoricalArray` is able to represent 2<sup>32</sup>differents levels. You can use less memory by calling the `compress` function:
+By default, a `CategoricalArray` is able to represent 2<sup>32</sup> different levels. You
+can use less memory by calling the `compress` function:
 
 ```jldoctest categorical
 julia> cv = compress(cv)
-6-element CategoricalArrays.CategoricalArray{Union{Missing, String},1,UInt8}:
+6-element CategoricalArray{Union{Missing, String},1,UInt8}:
  "Group A"
  missing
  "Group A"
@@ -93,7 +94,8 @@ julia> cv = compress(cv)
 
 Often, you will have factors encoded inside a DataFrame with `Array` columns instead of
 `CategoricalArray` columns. You can convert one or more columns of the DataFrame using the
-`categorical!` function, which modifies the input DataFrame in-place.
+`categorical!` function, which modifies the input DataFrame in-place. Compression can be
+applied by setting the `compress` keyword argument to `true`.
 
 ```jldoctest categorical
 julia> using DataFrames
@@ -112,7 +114,7 @@ julia> df = DataFrame(A = ["A", "B", "C", "D", "D", "A"],
 │ 6   │ A      │ Y      │
 
 julia> eltypes(df)
-2-element Array{Type,1}:
+2-element Array{DataType,1}:
  String
  String
 
@@ -129,11 +131,11 @@ julia> categorical!(df, :A) # change the column `:A` to be categorical
 │ 6   │ A            │ Y      │
 
 julia> eltypes(df)
-2-element Array{Type,1}:
- CategoricalArrays.CategoricalString{UInt32}
+2-element Array{DataType,1}:
+ CategoricalString{UInt32}
  String
 
-julia> categorical!(df) # change all columns to be categorical
+julia> categorical!(df, compress=true) # change all columns with eltype <: AbstractString to be categorical with compression
 6×2 DataFrame
 │ Row │ A            │ B            │
 │     │ Categorical… │ Categorical… │
@@ -146,9 +148,9 @@ julia> categorical!(df) # change all columns to be categorical
 │ 6   │ A            │ Y            │
 
 julia> eltypes(df)
-2-element Array{Type,1}:
- CategoricalArrays.CategoricalString{UInt32}
- CategoricalArrays.CategoricalString{UInt32}
+2-element Array{DataType,1}:
+ CategoricalString{UInt8}
+ CategoricalString{UInt8}
 
 ```
 
