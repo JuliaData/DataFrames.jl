@@ -17,9 +17,7 @@ julia&gt; cv = CategoricalArray(v)
  &quot;Group B&quot;
  &quot;Group B&quot;
  &quot;Group B&quot;
-</code></pre><p><code>CategoricalArrays</code> support missing values via the <code>Missings</code> package.</p><pre><code class="language-julia-repl">julia&gt; using Missings
-
-julia&gt; cv = CategoricalArray([&quot;Group A&quot;, missing, &quot;Group A&quot;,
+</code></pre><p><code>CategoricalArrays</code> support missing values.</p><pre><code class="language-julia-repl">julia&gt; cv = CategoricalArray([&quot;Group A&quot;, missing, &quot;Group A&quot;,
                               &quot;Group B&quot;, &quot;Group B&quot;, missing])
 6-element CategoricalArray{Union{Missing, String},1,UInt32}:
  &quot;Group A&quot;
@@ -54,7 +52,31 @@ julia&gt; sort(cv)
  &quot;Group B&quot;
  &quot;Group B&quot;
  missing
-</code></pre><p>Often, you will have factors encoded inside a DataFrame with <code>Array</code> columns instead of <code>CategoricalArray</code> columns. You can convert one or more columns of the DataFrame using the <code>categorical!</code> function, which modifies the input DataFrame in-place. Compression can be applied by setting the <code>compress</code> keyword argument to <code>true</code>.</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
+</code></pre><p>Instead of using the <code>CategoricalArray</code> constructor directly you can use <code>categorical</code> function. It additionally accepts one positional argument <code>compress</code> which when set to <code>true</code> is equivalent to calling <code>compress</code> on the new vector:</p><pre><code class="language-julia-repl">julia&gt; cv1 = categorical([&quot;A&quot;, &quot;B&quot;], true)
+2-element CategoricalArray{String,1,UInt8}:
+ &quot;A&quot;
+ &quot;B&quot;</code></pre><p>If the <code>ordered</code> keyword argument is set to <code>true</code>, the resulting <code>CategoricalArray</code> will be ordered, which means that its levels can be tested for order (rather than throwing an error):</p><pre><code class="language-julia-repl">julia&gt; cv2 = categorical([&quot;A&quot;, &quot;B&quot;], true, ordered=true)
+2-element CategoricalArray{String,1,UInt8}:
+ &quot;A&quot;
+ &quot;B&quot;
+
+julia&gt; cv1[1] &lt; cv1[2]
+ERROR: ArgumentError: Unordered CategoricalValue objects cannot be tested for order using &lt;. Use isless instead, or call the ordered! function on the parent array to change this
+
+julia&gt; cv2[1] &lt; cv2[2]
+true</code></pre><p>You can check if a <code>CategoricalArray</code> is ordered using the <code>isordered</code> function and change between ordered and unordered using <code>ordered!</code> function.</p><pre><code class="language-julia-repl">julia&gt; isordered(cv1)
+false
+
+julia&gt; ordered!(cv1, true)
+2-element CategoricalArray{String,1,UInt8}:
+ &quot;A&quot;
+ &quot;B&quot;
+
+julia&gt; isordered(cv1)
+true
+
+julia&gt; cv1[1] &lt; cv1[2]
+true</code></pre><p>Often, you will have factors encoded inside a <code>DataFrame</code> with <code>Vector</code> columns instead of <code>CategoricalVector</code> columns. You can convert one or more columns of the <code>DataFrame</code> using the <code>categorical!</code> function, which modifies the input <code>DataFrame</code> in-place. Compression can be applied by setting the <code>compress</code> keyword argument to <code>true</code>.</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
 
 julia&gt; df = DataFrame(A = [&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;D&quot;, &quot;A&quot;],
                       B = [&quot;X&quot;, &quot;X&quot;, &quot;X&quot;, &quot;Y&quot;, &quot;Y&quot;, &quot;Y&quot;])
@@ -89,9 +111,7 @@ julia&gt; categorical!(df, :A) # change the column `:A` to be categorical
 julia&gt; eltypes(df)
 2-element Array{DataType,1}:
  CategoricalString{UInt32}
- String
-
-julia&gt; categorical!(df, compress=true) # change all columns with eltype &lt;: AbstractString to be categorical with compression
+ String</code></pre><p>If columns are not specified, all columns with an <code>AbstractString</code> element type are converted to be categorical. In the example below we also enable compression:</p><pre><code class="language-julia-repl">julia&gt; categorical!(df, compress=true)
 6×2 DataFrame
 │ Row │ A            │ B            │
 │     │ Categorical… │ Categorical… │
@@ -107,4 +127,4 @@ julia&gt; eltypes(df)
 2-element Array{DataType,1}:
  CategoricalString{UInt8}
  CategoricalString{UInt8}
-</code></pre><p>Using categorical arrays is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a>. When fitting regression models, <code>CategoricalArray</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>CategoricalArray</code>. This allows one to analyze categorical data efficiently.</p><p>See the <a href="https://github.com/JuliaData/CategoricalArrays.jl">CategoricalArrays package</a> for more information regarding categorical arrays.</p><footer><hr/><a class="previous" href="sorting.html"><span class="direction">Previous</span><span class="title">Sorting</span></a><a class="next" href="missing.html"><span class="direction">Next</span><span class="title">Missing Data</span></a></footer></article></body></html>
+</code></pre><p>Using categorical arrays is important for working with the <a href="https://github.com/JuliaStats/GLM.jl">GLM package</a>. When fitting regression models, <code>CategoricalVector</code> columns in the input are translated into 0/1 indicator columns in the <code>ModelMatrix</code> with one column for each of the levels of the <code>CategoricalVector</code>. This allows one to analyze categorical data efficiently.</p><p>See the <a href="https://github.com/JuliaData/CategoricalArrays.jl">CategoricalArrays package</a> for more information regarding categorical arrays.</p><footer><hr/><a class="previous" href="sorting.html"><span class="direction">Previous</span><span class="title">Sorting</span></a><a class="next" href="missing.html"><span class="direction">Next</span><span class="title">Missing Data</span></a></footer></article></body></html>
