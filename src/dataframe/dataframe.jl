@@ -1007,6 +1007,72 @@ end
 ##
 ##############################################################################
 
+"""
+    categorical!(df::DataFrame, cname::Union{Integer, Symbol};
+                 compress::Bool=false)
+    categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
+                 compress::Bool=false)
+    categorical!(df::DataFrame; compress::Bool=false)
+
+Change columns selected by `cname` or `cnames` in data frame `df`
+to `CategoricalVector`. If no columns are indicated then all columns that have
+an `AbstractString` element type type will be converted to categorical.
+
+If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
+will be compressed.
+
+All created `CategoricalVector`s are unordered.
+
+### Examples
+
+```julia
+julia> df = DataFrame(X=["a", "b"], Y=[1, 2], Z=["p", "q"])
+2×3 DataFrame
+│ Row │ X      │ Y     │ Z      │
+│     │ String │ Int64 │ String │
+├─────┼────────┼───────┼────────┤
+│ 1   │ a      │ 1     │ p      │
+│ 2   │ b      │ 2     │ q      │
+
+julia> categorical!(df)
+2×3 DataFrame
+│ Row │ X            │ Y     │ Z            │
+│     │ Categorical… │ Int64 │ Categorical… │
+├─────┼──────────────┼───────┼──────────────┤
+│ 1   │ a            │ 1     │ p            │
+│ 2   │ b            │ 2     │ q            │
+
+julia> eltypes(df)
+3-element Array{DataType,1}:
+ CategoricalString{UInt32}
+ Int64
+ CategoricalString{UInt32}
+
+julia> df = DataFrame(X=["a", "b"], Y=[1, 2], Z=["p", "q"])
+2×3 DataFrame
+│ Row │ X      │ Y     │ Z      │
+│     │ String │ Int64 │ String │
+├─────┼────────┼───────┼────────┤
+│ 1   │ a      │ 1     │ p      │
+│ 2   │ b      │ 2     │ q      │
+
+julia> categorical!(df, :Y, compress=true)
+2×3 DataFrame
+│ Row │ X      │ Y            │ Z      │
+│     │ String │ Categorical… │ String │
+├─────┼────────┼──────────────┼────────┤
+│ 1   │ a      │ 1            │ p      │
+│ 2   │ b      │ 2            │ q      │
+
+julia> eltypes(df)
+3-element Array{DataType,1}:
+ String
+ CategoricalValue{Int64,UInt8}
+ String
+```
+"""
+function categorical! end
+
 function categorical!(df::DataFrame, cname::Union{Integer, Symbol};
                       compress::Bool=false)
     df[cname] = categorical(df[cname], compress)
