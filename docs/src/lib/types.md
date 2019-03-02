@@ -16,7 +16,31 @@ It is not intended as a fully generic interface for working with tabular data, w
 interfaces defined by [Tables.jl](https://github.com/JuliaData/Tables.jl/) instead.
 
 `DataFrame` is the most fundamental subtype of `AbstractDataFrame`, which stores a set of columns
-as `AbstractVector` objects.
+as `AbstractVector` objects. When a `DataFrame` is constructed columns *are not* copied, if possible.
+The exception is `DataFrame(::DataFrame)` constructor which performs a copy of the columns.
+
+From the moment of its construction `DataFrame` assumes *ownership* of its columns. This means that
+methods in DataFrames.jl package assume that columns of the data frame *are not* mutated by
+methods other than provided by the DataFrames.jl package that accept this data frame as an argument.
+
+In particular, functions that transform a `DataFrame` to produce a new `DataFrame`
+always perform a copy of the data. Examples of such functions are [`vcat`](@ref),
+[`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
+`copy` or `DataFrame` constructor mentioned above.
+
+A partial exception to this rule are the [`stackdf`](@ref) and [`meltdf`](@ref) functions which create a
+`DataFrame` that contains views of the columns from the source `DataFrame`.
+
+It is possible to get
+a direct access to column `col` of the `DataFrame` `df` (e.g. in performance critical code to avoid copying),
+using one of the following methods:
+
+* via the `getproperty` function `df.col`;
+* via the `getindex` function using the syntax `df[:col]`;
+* by creating `DataFrameColumns` object using the [`eachcol`](@ref) function.
+
+Note that in general a column obtained this way should not be mutated as changing it might corrupt the
+`DataFrame` from which the column was taken.
 
 `SubDataFrame` is an `AbstractDataFrame` subtype representing a view into a `DataFrame`.
 It stores only a reference to the parent `DataFrame` and information about which rows and columns

@@ -901,7 +901,7 @@ end
 function hcat!(df1::DataFrame, df2::AbstractDataFrame; makeunique::Bool=false)
     u = add_names(index(df1), index(df2), makeunique=makeunique)
     for i in 1:length(u)
-        df1[u[i]] = df2[i]
+        df1[u[i]] = copy(df2[i])
     end
     return df1
 end
