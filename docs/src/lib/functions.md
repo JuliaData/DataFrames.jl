@@ -48,6 +48,8 @@ insertcols!
 mapcols
 names!
 nonunique
+nrow
+ncol
 rename!
 rename
 repeat
