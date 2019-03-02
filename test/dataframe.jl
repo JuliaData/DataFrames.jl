@@ -809,6 +809,23 @@ end
     @test all(typeof(df[i]) <: Vector for i in 1:ncol(df))
 end
 
+@testset "test that getindex column copying" begin
+    x = [1]
+    y = [1]
+    df = DataFrame(x=x, y=y)
+    @test df.x === x
+    @test df[:y] === y
+    @test df[1] === x
+    @test df[1:1][1] == x
+    @test df[1:1][1] !== x
+    @test df[1:2][:y] == y
+    @test df[1:2][:y] !== y
+    @test df[:][:x] == x
+    @test df[:][:x] !== x
+    @test df[[:y,:x]][:x] == x
+    @test df[[:y,:x]][:x] !== x
+end
+
 @testset "test corner case of getindex" begin
     df = DataFrame(x=[1], y=[1])
     @test_throws MethodError df[true, 1:2]

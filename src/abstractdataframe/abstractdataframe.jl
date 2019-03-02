@@ -943,6 +943,7 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 
 # catch-all to cover cases where indexing returns a DataFrame and copy doesn't
 
+Base.hcat(df::AbstractDataFrame) = copy(df)
 Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=false) =
     hcat!(copy(df), x, makeunique=makeunique)
 Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=false) =

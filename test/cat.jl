@@ -36,6 +36,41 @@ const ≅ = isequal
     @test df2 ≅ DataFrames.hcat!(df2, makeunique=true)
 end
 
+@testset "hcat: copying" begin
+    df = DataFarme(x=1:3)
+    @test hcat(df)[1] == df[1]
+    @test hcat(df)[1] !== df[1]
+    hdf = hcat(df, df)
+    @test hdf[1] == df[1]
+    @test hdf[1] !== df[1]
+    @test hdf[2] == df[1]
+    @test hdf[2] !== df[1]
+    @test hdf[1] == hdf[2]
+    @test hdf[1] !== hdf[2]
+    hdf = hcat(df, df, df)
+    @test hdf[1] == df[1]
+    @test hdf[1] !== df[1]
+    @test hdf[2] == df[1]
+    @test hdf[2] !== df[1]
+    @test hdf[3] == df[1]
+    @test hdf[3] !== df[1]
+    @test hdf[1] == hdf[2]
+    @test hdf[1] !== hdf[2]
+    @test hdf[1] == hdf[3]
+    @test hdf[1] !== hdf[3]
+    @test hdf[2] == hdf[3]
+    @test hdf[2] !== hdf[3]
+    x = [4, 5, 6]
+    hdf = hcat(df, x)
+    @test hdf[1] == df[1]
+    @test hdf[1] !== df[1]
+    @test hdf[2] === x
+    hdf = hcat(x, df)
+    @test hdf[2] == df[1]
+    @test hdf[2] !== df[1]
+    @test hdf[1] === x
+end
+
 @testset "hcat ::AbstractDataFrame" begin
     df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
     gd = groupby(df, :A)
@@ -155,10 +190,22 @@ end
                                          [2,2,2,3,2,2,2,3]])
 end
 
+@testset "vcat copy" begin
+    df = DataFrame(x=1:3)
+    @test vcat(df)[1] == df[1]
+    @test vcat(df)[1] !== df[1]
+    @test vcat(df, DataFrame())[1] == df[1]
+    @test vcat(df, DataFrame())[1] !== df[1]
+    @test vcat(DataFrame(), df)[1] == df[1]
+    @test vcat(DataFrame(), df)[1] !== df[1]
+    @test vcat(DataFrame(), df, DataFrame())[1] == df[1]
+    @test vcat(DataFrame(), df, DataFrame())[1] !== df[1]
+end
+
 @testset "vcat >2 args" begin
     empty_dfs = [DataFrame(), DataFrame(), DataFrame()]
     @test vcat(empty_dfs...) == reduce(vcat, empty_dfs) == DataFrame()
-    
+
     df = DataFrame(x = trues(1), y = falses(1))
     dfs = [df, df, df]
     @test vcat(dfs...) ==reduce(vcat, dfs) == DataFrame(x = trues(3), y = falses(3))
@@ -213,7 +260,7 @@ end
     @test vcat(df2, df1, df2) == DataFrame([[2, 4, 6, 7, 8, 9, 2, 4, 6],
                                             [8, 10, 12, 4, 5, 6, 8, 10, 12],
                                             [14, 16, 18, 1, 2, 3, 14, 16, 18]] ,[:C, :B, :A])
-    
+
     @test size(vcat(df1, df1, df1, df2, df2, df2)) == (18, 3)
     df3 = df1[[1, 3, 2]]
     res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)

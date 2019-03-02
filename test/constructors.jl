@@ -113,6 +113,19 @@ const ≅ = isequal
     @test DataFrame(a=1, b=1:2) == DataFrame(a=[1,1], b=[1,2])
 end
 
+@testset "DataFrame constructor" begin
+    df1 = DataFrame(x=1:3, y=1:3)
+    df2 = DataFrame(df1)
+    df3 = copy(df1)
+
+    @test df1.x == df2.x == df3.x
+    @test df1.y == df2.y == df3.y
+    @test df1.x !== df2.x
+    @test df1.x !== df3.x
+    @test df1.y !== df2.y
+    @test df1.y !== df3.y
+end
+
 @testset "pair constructor" begin
     df = DataFrame(:x1 => zeros(3), :x2 => ones(3))
     @inferred DataFrame(:x1 => zeros(3), :x2 => ones(3))
