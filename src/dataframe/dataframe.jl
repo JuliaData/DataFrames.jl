@@ -266,7 +266,7 @@ end
 # df[MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
-    new_columns = _columns(df)[selected_columns]
+    new_columns = copy.(_columns(df)[selected_columns])
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
@@ -776,7 +776,7 @@ end
 
 # A copy of a DataFrame points to the original column vectors but
 #   gets its own Index.
-Base.copy(df::DataFrame) = DataFrame(copy(_columns(df)), copy(index(df)))
+Base.copy(df::DataFrame) = df[:, :]
 
 # Deepcopy is recursive -- if a column is a vector of DataFrames, each of
 #   those DataFrames is deepcopied.

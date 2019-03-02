@@ -923,7 +923,7 @@ unique!(df)  # modifies df
 
 function without(df::AbstractDataFrame, icols::Vector{<:Integer})
     newcols = setdiff(1:ncol(df), icols)
-    df[newcols]
+    view(df, newcols)
 end
 without(df::AbstractDataFrame, i::Int) = without(df, [i])
 without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
@@ -983,7 +983,7 @@ julia> vcat(df1, df2)
 │ 6   │ 6     │ 6     │
 ```
 """
-Base.vcat(df::AbstractDataFrame) = df
+Base.vcat(df::AbstractDataFrame) = copy(df)
 Base.vcat(dfs::AbstractDataFrame...) = _vcat(collect(dfs))
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     isempty(dfs) && return DataFrame()
