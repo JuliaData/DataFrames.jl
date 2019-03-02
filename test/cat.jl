@@ -37,7 +37,7 @@ const ≅ = isequal
 end
 
 @testset "hcat: copying" begin
-    df = DataFarme(x=1:3)
+    df = DataFrame(x=1:3)
     @test hcat(df)[1] == df[1]
     @test hcat(df)[1] !== df[1]
     hdf = hcat(df, df)
