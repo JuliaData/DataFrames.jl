@@ -194,12 +194,6 @@ end
     df = DataFrame(x=1:3)
     @test vcat(df)[1] == df[1]
     @test vcat(df)[1] !== df[1]
-    @test vcat(df, DataFrame())[1] == df[1]
-    @test vcat(df, DataFrame())[1] !== df[1]
-    @test vcat(DataFrame(), df)[1] == df[1]
-    @test vcat(DataFrame(), df)[1] !== df[1]
-    @test vcat(DataFrame(), df, DataFrame())[1] == df[1]
-    @test vcat(DataFrame(), df, DataFrame())[1] !== df[1]
 end
 
 @testset "vcat >2 args" begin
