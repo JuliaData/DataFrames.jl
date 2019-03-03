@@ -3,6 +3,9 @@ import Base: @deprecate
 @deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
 @deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 
+@deprecate combine(gd::GroupedDataFrame, f::Tuple{Vararg{<:Pair}}) combine(gd, collect(f))
+@deprecate by(d::AbstractDataFrame, cols::Any, f::Tuple{Vararg{<:Pair}}; sort::Bool = false) by(d, cols, collect(f); sort = sort)
+
 @deprecate nullable!(df::AbstractDataFrame, col::ColumnIndex) allowmissing!(df, col)
 @deprecate nullable!(df::AbstractDataFrame, cols::Vector{<:ColumnIndex}) allowmissing!(df, cols)
 @deprecate nullable!(colnames::Array{Symbol,1}, df::AbstractDataFrame) allowmissing!(df, colnames)

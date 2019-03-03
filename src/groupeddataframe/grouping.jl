@@ -261,26 +261,31 @@ function Base.map(f::Any, gd::GroupedDataFrame)
 end
 
 """
-    combine(gd::GroupedDataFrame, cols => f...)
-    combine(gd::GroupedDataFrame; (colname = cols => f)...)
+    combine(gd::GroupedDataFrame, cols => f)
+    combine(gd::GroupedDataFrame, [col1 => f1, col2 => f2], col3 => f3)
+    combine(gd::GroupedDataFrame, [:col1, :col2, :col3] .=> f)
+    combine(gd::GroupedDataFrame; colname = cols => f)
     combine(gd::GroupedDataFrame, f)
     combine(f, gd::GroupedDataFrame)
 
 Transform a `GroupedDataFrame` into a `DataFrame`.
 
-If the last argument(s) consist(s) in one or more `cols => f` pair(s), or if
-`colname = cols => f` keyword arguments are provided, `cols` must be
-a column name or index, or a vector or tuple thereof, and `f` must be a callable.
-A pair or a (named) tuple of pairs can also be provided as the first or last argument.
-If `cols` is a single column index, `f` is called with a `SubArray` view into that
-column for each group; else, `f` is called with a named tuple holding `SubArray`
-views into these columns.
+The 2nd through last arguments in `combine` can can be either
 
-If the last argument is a callable `f`, it is passed a `SubDataFrame` view for each group,
-and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
-Note that this second form is much slower than the first one due to type instability.
-A method is defined with `f` as the first argument, so do-block
-notation can be used.
+* A single `col => f` pair, a vector of such pairs, or a mix of the two. `col`
+  must be either a `Symbol` or a valid column index for `gd`. `f` must be callable. 
+* A named tuple of `col => f` pairs, where the names of the named tuple indicate
+  the names of the new vectors to be created in the new DataFrame. Pairs must 
+  obey the same rules described above. Keyword arguments of `Pair`s operate in 
+  the same way.  
+* A callable which allows for a `AbstractDataFrame`. If this is specified, `f`
+  is passed a `SubDataFrame` view for each group, and the returned `DataFrame` 
+  then consists of the returned rows plus the grouping columns.
+  Note that this second form is much slower than the first one due to type instability.
+  A method is defined with `f` as the first argument, so do-block
+  notation can be used.
+
+If the last argument is a callable 
 
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
@@ -292,7 +297,7 @@ determines the shape of the resulting data frame:
 - A data frame, a named tuple of vectors or a matrix gives a data frame
   with the same columns and as many rows for each group as the rows returned for that group.
 
-As a special case, if a tuple or vector of pairs is passed as the first argument, each function
+As a special case, if a vector of pairs is passed as the first argument, each function
 is required to return a single value or vector, which will produce each a separate column.
 
 In all cases, the resulting data frame contains all the grouping columns in addition
@@ -380,9 +385,6 @@ function combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...
     vec_of_pairs = reduce(vcat, f)
     combine(vec_of_pairs, gd)
 end
-
-combine(gd::GroupedDataFrame, f::Tuple{Vararg{<:Pair}}) =
-    combine(f, gd)
 
 function combine(gd::GroupedDataFrame; f...)
     if length(f) == 0
@@ -624,8 +626,7 @@ function do_f(f, x...)
     end
 end
 
-function _combine(f::Union{AbstractVector{<:Pair},
-                  Tuple{Vararg{<:Pair}},  
+function _combine(f::Union{AbstractVector{<:Pair}, 
                   NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
                     gd::GroupedDataFrame)
     res = map(f) do p
@@ -1053,9 +1054,6 @@ function by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pai
     vec_of_pairs = reduce(vcat, f)
     combine(vec_of_pairs, groupby(d, cols, sort = sort))
 end
-
-by(d::AbstractDataFrame, cols::Any, f::Tuple{Vararg{<:Pair}}; sort::Bool = false) =
-    combine(f, groupby(d, cols, sort = sort))
 
 by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
     combine(values(f), groupby(d, cols, sort = sort))
