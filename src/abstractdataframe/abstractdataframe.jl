@@ -956,19 +956,33 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
     hcat!(hcat(df1, df2, makeunique=makeunique), dfn..., makeunique=makeunique)
 
 """
-    vcat(dfs::AbstractDataFrame...)
+    vcat(dfs::AbstractDataFrame...; columns::Union{Symbol, AbstractVector{Symbol}} = :equal)
 
-Vertically concatenate `AbstractDataFrames`.
+Vertically concatenate `AbstractDataFrames`. 
 
-Column names in all passed data frames must be the same, but they can have
-different order. In such cases the order of names in the first passed
-`DataFrame` is used.
+The keyword argument `columns` can take the following values: 
+
+* `:equal` (the default) requires all data frames to have the same column names, 
+  though they can be in any order. If the data frames do not all have the same
+  names, `vcat` will throw an error and say which columns are missing from which 
+  data frames.
+* `:intersect` will cause `vcat` to create a new data frame with only the columns 
+  present in *all* dataframes provided. If the intersection is empty, `vcat` will 
+  return an empty data frame. 
+* `:union` will cause `vcat` toreturn a dataframe whose columns are the union of 
+  all dataframes provided. It will fill in all columns not present in a DataFrame 
+  with `missing`s. 
+* An `AbstractArray` of `Symbol`s will cause `vcat` to return a data frame whose
+  columns are the provided by `columns`. If a DataFrame does not have a column 
+  listed in `columns`, `vcat` will fill in `missing`s. 
 
 # Example
 ```jldoctest
 julia> df1 = DataFrame(A=1:3, B=1:3);
 
 julia> df2 = DataFrame(A=4:6, B=4:6);
+
+julia> df3 = DataFrame(A=7:9, C= 7:9);
 
 julia> vcat(df1, df2)
 6×2 DataFrame
@@ -988,11 +1002,13 @@ Base.vcat(df::AbstractDataFrame;
 
 Base.vcat(dfs::AbstractDataFrame...;
           columns::Union{Symbol, AbstractVector{Symbol}} = :equal) = 
-    _vcat(collect(dfs); widen = widen, keep = keep)
-
+    _vcat(collect(dfs); columns = columns)
+#=
+    API: a `columns` keyword argument which can take the value of `:equal`, 
+    `:union`, `:intersect`, or a vector of symbols. 
+=#
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
-               widen::Bool = false, 
-               keep::Union{Nothing, Vector{Symbol}} = nothing)
+               columns::Union{Symbol, AbstractVector{Symbol}} = :equal)
     
     isempty(dfs) && return DataFrame()
     # Array of all headers
@@ -1003,36 +1019,39 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     unionunique = union(uniqueheaders...)
     # List of symbols present in all dataframes
     intersectunique = intersect(uniqueheaders...)
-    # If keep is not specified, then we record all the symbols that aren't
-    # present in all headers for printing the error.  
 
-    # If keep *is* specified, we want to know about the symbols that 
-    # are not in `keep`. The list of variables present in all DataFrames
-    # doesn't matter. 
-    if keep === nothing 
-        coldiff = setdiff(unionunique, intersectunique)
-    else 
-        coldiff = setdiff(keep, unionunique)
-    end
-    # This will be the header of our final dataframe. 
-    header = keep === nothing ? unionunique : keep
-   
-    if !widen && !isempty(coldiff) 
-        # if any DataFrames are a full superset of names, skip them
-        filter!(u -> Set(u) != Set(header), uniqueheaders)
-        estrings = Vector{String}(undef, length(uniqueheaders))
-        for (i, head) in enumerate(uniqueheaders)
-            # Find all the headers that match the header you are on. 
-            # So that we don't repeat ourselves in the error.
-            matching = findall(h -> head == h, allheaders)
-            # Of the symbols that aren't in all headers (or keep), which 
-            # ones are in this one?
-            headerdiff = setdiff(coldiff, head)
-            cols = join(headerdiff, ", ", " and ")
-            args = join(matching, ", ", " and ")
-            estrings[i] = "column(s) $cols are missing from argument(s) $args"
+    # Throw an informative error if names arent the same across all dataframes
+    if columns === :equal
+            header = unionunique
+            coldiff = setdiff(unionunique, intersectunique)
+        if !isempty(coldiff) 
+            # if any DataFrames are a full superset of names, skip them
+            filter!(u -> Set(u) != Set(header), uniqueheaders)
+            # string to hold all the errors, one for each missing column name
+            @show uniqueheaders
+            estrings = Vector{String}(undef, length(uniqueheaders))
+            for (i, head) in enumerate(uniqueheaders)
+                # Find all the headers that match the header you are on. 
+                # So that we don't repeat ourselves in the error.
+                matching = findall(h -> head == h, allheaders)
+                # Of the symbols that aren't in all headers, which 
+                # ones are in this one?
+                headerdiff = setdiff(coldiff, head)
+                cols = join(headerdiff, ", ", " and ")
+                args = join(matching, ", ", " and ")
+                estrings[i] = "Column(s) $cols are missing from argument(s) $args"
+            end
+            throw(ArgumentError(join(estrings, ". ")))
         end
-        throw(ArgumentError(join(estrings, ". ")))
+    # Only have columns that are in all dataframes. No error thrown. 
+    elseif columns === :intersect 
+        header = intersectunique
+    elseif columns === :union
+        header = unionunique
+        # no setdiff cause we take in everything
+    # Use names specified by user. Add missings as needed.
+    elseif columns isa AbstractVector{Symbol}
+        header = columns 
     end
 
     length(header) == 0 && return DataFrame()
