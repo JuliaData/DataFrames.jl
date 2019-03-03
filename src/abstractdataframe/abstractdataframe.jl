@@ -1018,13 +1018,10 @@ julia> vcat(df1, df2)
 ```
 """
 Base.vcat(df::AbstractDataFrame; 
-        widen::Bool = false,  
-        keep::Union{Nothing, Vector{Symbol}} = nothing) = df
+          columns::Union{Symbol, AbstractVector{Symbol}} = :equal) = df
 
 Base.vcat(dfs::AbstractDataFrame...;
-          widen::Bool = false, 
-          missing = missing,
-          keep::Union{Nothing, Vector{Symbol}} = nothing) = 
+          columns::Union{Symbol, AbstractVector{Symbol}} = :equal) = 
     _vcat(collect(dfs); widen = widen, keep = keep)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
@@ -1034,7 +1031,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     isempty(dfs) && return DataFrame()
     # Array of all headers
     allheaders = map(names, dfs)
-    # Unique arrays of headers across all dataframes
+    # Array of unique headers across all data frames
     uniqueheaders = unique(allheaders)
     # All symbols present across all headers
     unionunique = union(uniqueheaders...)
@@ -1051,11 +1048,10 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     else 
         coldiff = setdiff(keep, unionunique)
     end
-    # This will be the header of our final dataframe. If `keep` is not 
-    # specified, we use the unique headers. If not, use `keep`. 
+    # This will be the header of our final dataframe. 
     header = keep === nothing ? unionunique : keep
    
-    if (widen == false) && !isempty(coldiff) 
+    if !widen && !isempty(coldiff) 
         # if any DataFrames are a full superset of names, skip them
         filter!(u -> Set(u) != Set(header), uniqueheaders)
         estrings = Vector{String}(undef, length(uniqueheaders))
@@ -1070,10 +1066,8 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
             args = join(matching, ", ", " and ")
             estrings[i] = "column(s) $cols are missing from argument(s) $args"
         end
-        throw(ArgumentError("\n" * join(estrings, ",\n")))
+        throw(ArgumentError(join(estrings, ". ")))
     end
-
-
 
     length(header) == 0 && return DataFrame()
     cols = Vector{AbstractVector}(undef, length(header))
