@@ -916,7 +916,7 @@ end
 hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false) =
     hcat!(df, DataFrame(AbstractVector[x]), makeunique=makeunique)
 hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false) =
-    hcat!(DataFrame(AbstractVector[x]), copy(df), makeunique=makeunique)
+    hcat!(DataFrame(AbstractVector[copy(x)]), copy(df), makeunique=makeunique)
 function hcat!(x, df::DataFrame; makeunique::Bool=false)
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
 end
