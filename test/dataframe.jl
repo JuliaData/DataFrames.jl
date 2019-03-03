@@ -31,7 +31,7 @@ end
     @test names(dfc) == [:a, :b]
     @test names(dfdc) == [:a, :b]
 
-    @test dfc[1, :a] === 4
+    @test dfc[1, :a] === 2
     @test dfdc[1, :a] === 2
 
     @test names(dfc[1, :b]) == [:c, :e]
