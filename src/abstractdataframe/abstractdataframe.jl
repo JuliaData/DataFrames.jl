@@ -388,12 +388,13 @@ describe(df, :min, :sum => sum)
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame) = 
-    _describe(df, [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
-
 StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) = 
     _describe(df, collect(stats))
 
+# TODO: un-comment this method definition after the deprecation period of
+# the `stats` keyword for `describe`. 
+# StatsBase.describe(df::AbstractDataFrame) = 
+#     _describe(df, [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
 
 function _describe(df::AbstractDataFrame, stats::AbstractVector)   
     predefined_funs = Symbol[s for s in stats if s isa Symbol] 
