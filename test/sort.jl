@@ -94,9 +94,11 @@ for df_rand in [df_rand1, df_rand2]
     for n1 in names(df_rand)
         @test sort!(df_rand, n1) == sort(ref_df, n1)
         @test issorted(df_rand, n1)
+        df_rand = ref_df[:]
         @test sort!(df_rand, [n1]) == sort(ref_df, [n1])
         @test issorted(df_rand, [n1])
         for n2 in setdiff(names(df_rand), [n1])
+            df_rand = ref_df[:]
             @test sort!(df_rand, [n1, n2]) == sort(ref_df, [n1, n2])
             @test issorted(df_rand, n1)
             @test issorted(df_rand, [n1, n2])
