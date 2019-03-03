@@ -40,14 +40,14 @@ end
     df = DataFrame(x=1:3)
     @test hcat(df)[1] == df[1]
     @test hcat(df)[1] !== df[1]
-    hdf = hcat(df, df)
+    hdf = hcat(df, df, makeunique=true)
     @test hdf[1] == df[1]
     @test hdf[1] !== df[1]
     @test hdf[2] == df[1]
     @test hdf[2] !== df[1]
     @test hdf[1] == hdf[2]
     @test hdf[1] !== hdf[2]
-    hdf = hcat(df, df, df)
+    hdf = hcat(df, df, df, makeunique=true)
     @test hdf[1] == df[1]
     @test hdf[1] !== df[1]
     @test hdf[2] == df[1]
