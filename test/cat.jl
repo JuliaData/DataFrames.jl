@@ -64,11 +64,11 @@ end
     hdf = hcat(df, x)
     @test hdf[1] == df[1]
     @test hdf[1] !== df[1]
-    @test hdf[2] === x
+    @test hdf[2] !== x
     hdf = hcat(x, df)
     @test hdf[2] == df[1]
     @test hdf[2] !== df[1]
-    @test hdf[1] === x
+    @test hdf[1] !== x
 end
 
 @testset "hcat ::AbstractDataFrame" begin
