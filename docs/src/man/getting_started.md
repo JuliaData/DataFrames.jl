@@ -566,7 +566,8 @@ julia> eachcol(df, false)[1] === x
 true
 ```
 
-Note that a column obtained from a `DataFrame` using one of these methods should not be mutated because:
+Note that a column obtained from a `DataFrame` using one of these methods should
+not be mutated without caution because:
 
 * resizing a column vector will corrupt its parent `DataFrame` and associated views (if any):
   methods only check the length of the column when it is added

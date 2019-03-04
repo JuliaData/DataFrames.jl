@@ -44,6 +44,7 @@ eachcol
 eltypes
 filter
 filter!
+hcat
 insertcols!
 mapcols
 names!

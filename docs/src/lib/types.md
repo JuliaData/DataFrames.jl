@@ -16,12 +16,7 @@ It is not intended as a fully generic interface for working with tabular data, w
 interfaces defined by [Tables.jl](https://github.com/JuliaData/Tables.jl/) instead.
 
 `DataFrame` is the most fundamental subtype of `AbstractDataFrame`, which stores a set of columns
-as `AbstractVector` objects. When a `DataFrame` is constructed columns *are not* copied, if possible.
-The exception are:
-
-* `DataFrame(::DataFrame)` and `DataFrame(::SubDataFrame)` constructors
-  which perform a copy of the columns.
-* If an `AbstractRange` as a column, then is collected to a `Vector`.
+as `AbstractVector` objects.
 
 `SubDataFrame` is an `AbstractDataFrame` subtype representing a view into a `DataFrame`.
 It stores only a reference to the parent `DataFrame` and information about which rows and columns
@@ -65,6 +60,12 @@ but they are columns of a `DataFrame` returned by `stackdf` and `meltdf`.
 
 ## The design of handling of columns of a `DataFrame`
 
+When a `DataFrame` is constructed columns *are not* copied, if possible. The exception are:
+
+* `DataFrame(::DataFrame)` and `DataFrame(::SubDataFrame)` constructors
+  which perform a copy of the columns.
+* If an `AbstractRange` as a column, then is collected to a `Vector`.
+
 From the moment of its construction `DataFrame` assumes *ownership* of its columns, meaning
 that column vectors should generally not be mutated directly (see below for exceptions).
 
@@ -96,7 +97,8 @@ using one of the following methods:
 * by storing the reference to the column before the `DataFrame` was created (note that in general
   the `DataFrame` constructor does not perform copying).
 
-Note that a column obtained from a `DataFrame` using one of these methods should not be mutated because:
+Note that a column obtained from a `DataFrame` using one of these methods should
+not be mutated without caution because:
 
 * resizing a column vector will corrupt its parent `DataFrame` and associated views (if any):
   methods only check the length of the column when it is added
