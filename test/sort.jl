@@ -90,7 +90,7 @@ for df_rand in [df_rand1, df_rand2]
         end
     end
     # testing if sort! is consistent with issorted and sort
-    ref_df = df_rand[:]
+    ref_df = df_rand
     for n1 in names(df_rand)
         df_rand = ref_df[:]
         @test sort!(df_rand, n1) == sort(ref_df, n1)
