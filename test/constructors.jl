@@ -1,4 +1,4 @@
-module TestConstructors
+gmodule TestConstructors
 
 using Test, DataFrames
 using DataFrames: Index, _columns, index
@@ -118,8 +118,7 @@ end
     df2 = DataFrame(df1)
     df3 = copy(df1)
 
-    @test df1.x == df2.x == df3.x
-    @test df1.y == df2.y == df3.y
+    @test df1 == df2 == df3
     @test df1.x !== df2.x
     @test df1.x !== df3.x
     @test df1.y !== df2.y

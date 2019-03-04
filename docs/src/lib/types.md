@@ -20,9 +20,9 @@ as `AbstractVector` objects. When a `DataFrame` is constructed columns *are not*
 The exception are `DataFrame(::DataFrame)` and `DataFrame(::SubDataFrame)` constructors
 which perform a copy of the columns.
 
-From the moment of its construction `DataFrame` assumes *ownership* of its columns. This means that
-methods in this package assume that columns of the data frame *are not* mutated by
-methods other than provided by the DataFrames.jl package that accept this data frame as an argument.
+From the moment of its construction `DataFrame` assumes *ownership* of its columns.
+This means that it is assumed that columns are not *shared* by several objects operations on which can
+mutate them, possibly leading to the corruption of the `DataFrame`.
 
 In particular, functions that transform a `DataFrame` to produce a new `DataFrame`
 always perform a copy of the data. Examples of such functions are [`vcat`](@ref),
@@ -44,8 +44,8 @@ Note that in general a column obtained this way should not be mutated because:
 * resizing the column will corrupt the `DataFrame` from which the column was taken;
   methods in the DataFrames.jl package only check the length of the column when it is added
   to the `DataFrame` and later assume that all columns have the same length;
-* changing values contained in the column is acceptable as long as no `GroupedDataFrame`
-  was created based on the source `DataFrame`.
+* changing values contained in the column is acceptable as long as it was not used as
+  a gruping column in a `GroupedDataFrame` that was created based on the source `DataFrame`.
 
 `SubDataFrame` is an `AbstractDataFrame` subtype representing a view into a `DataFrame`.
 It stores only a reference to the parent `DataFrame` and information about which rows and columns
