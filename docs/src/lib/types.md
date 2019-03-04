@@ -20,6 +20,26 @@ as `AbstractVector` objects. When a `DataFrame` is constructed columns *are not*
 The exception are `DataFrame(::DataFrame)` and `DataFrame(::SubDataFrame)` constructors
 which perform a copy of the columns.
 
+From the moment of its construction `DataFrame` assumes *ownership* of its columns, meaning
+that column vectors should generally not be mutated (see below for exceptions).
+
+In order to ensure the ownership principle functions that transform a `DataFrame` to produce a
+new `DataFrame` always perform a copy of the columns. Examples of such functions are [`vcat`](@ref),
+[`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
+`copy` or the `DataFrame` constructor mentioned above. On the contrary, functions that create
+a view of a `DataFrame` *do not* by definition make copies of the columns, and therefore require
+particular caution. This includes `view`, which returns a `SubDataFrame` or a `DataFrameRow`,
+and `groupby`, which returns a `GroupedDataFrame`.
+
+A partial exception to this rule are the [`stackdf`](@ref) and [`meltdf`](@ref) functions which
+create a `DataFrame` that contains views of the columns from the source `DataFrame`.
+
+Only in-place functions whose names end with `!` (like `sort!` or `dropmissing!`)
+may mutate the column vectors of the `DataFrame` they take as an argument. These functions
+are safe to call due to the ownership principle, *except* when a view of the `DataFrame` is in use
+(via a `SubDataFrame`, a `DataFrameRow` or a `GroupedDataFrame`). In the latter case,
+the view will be corrupt, which make trigger errors or silently return invalid data.
+
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 (e.g. this can be useful in performance critical code to avoid copying),
 using one of the following methods:
@@ -30,26 +50,15 @@ using one of the following methods:
 * by storing the reference to the column before the `DataFrame` was created (note that in general
   the `DataFrame` constructor does not perform copying).
 
-Note that in general a column obtained from a data frame using one of these methods
-should not be mutated because:
+In general a column obtained from a data frame using one of these methods should not be mutated:
 
-* resizing the column will corrupt the `DataFrame` from which the column was taken;
-  methods in the DataFrames.jl package only check the length of the column when it is added
+* resizing a column vector will corrupt its parent `DataFrame` and associated views (if any):
+  methods only check the length of the column when it is added
   to the `DataFrame` and later assume that all columns have the same length;
-* changing values contained in the column is acceptable as long as it was not used as
-  a gruping column in a `GroupedDataFrame` that was created based on the source `DataFrame`.
-
-Operationally you can think about it that from the moment of its construction `DataFrame`
-assumes *ownership* of its columns. This way when you call a function like `sort!`
-or `dropmissing!` on a `DataFrame` you can safely assume that this operation is safe.
-
-In order to ensure the ownership princilpe functions that transform a `DataFrame` to produce a new `DataFrame`
-always perform a copy of the data. Examples of such functions are [`vcat`](@ref),
-[`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
-`copy` or the `DataFrame` constructor mentioned above.
-
-A partial exception to this rule are the [`stackdf`](@ref) and [`meltdf`](@ref) functions which create a
-`DataFrame` that contains views of the columns from the source `DataFrame`.
+* reordering values in a column vector (e.g. using `sort!`) will break the consistency of rows
+  with other columns, which will also affect views (if any);
+* changing values contained in a column vector is acceptable as long as it was not used as
+  a grouping column in a `GroupedDataFrame` created based on the `DataFrame`.
 
 `SubDataFrame` is an `AbstractDataFrame` subtype representing a view into a `DataFrame`.
 It stores only a reference to the parent `DataFrame` and information about which rows and columns
