@@ -928,22 +928,65 @@ end
 without(df::AbstractDataFrame, i::Int) = without(df, [i])
 without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 
-##############################################################################
-##
-## Hcat / vcat
-##
-##############################################################################
+"""
+    hcat(df::AbstractDataFrame...;
+         makeunique::Bool=false, copycolumns::Bool=true)
+    hcat(df::AbstractDataFrame..., vs::AbstractVector;
+         makeunique::Bool=false, copycolumns::Bool=true)
+    hcat(vs::AbstractVector, df::AbstractDataFrame;
+         makeunique::Bool=false, copycolumns::Bool=true)
 
-# hcat's first argument must be an AbstractDataFrame
-# or AbstractVector if the second argument is AbstractDataFrame
-# Trailing arguments (currently) may also be vectors.
+Horizontally concatenate `AbstractDataFrames` and optionally `AbstractVector`s.
 
-# hcat! is defined in DataFrames/DataFrames.jl
-# Its first argument (currently) must be a DataFrame.
+If `AbstractVector` is passed then a column name for it is automatically generated
+as `:x1` by default.
 
-# catch-all to cover cases where indexing returns a DataFrame and copy doesn't
+If `makeunique=false` (the default) column names of passed objects must be unique.
+If `makeunique=true` then duplicate column names will be suffixed
+with `_i` (`i` starting at 1 for the first duplicate).
 
-Base.hcat(df::AbstractDataFrame, copycolumns::Bool=true) =
+If `copycolumns=true` (the default) then the `DataFrame` returned by `hcat` will
+contain copied columns from the source data frames.
+If `copycolumns=false` then it will contain columns as they are stored in the
+source (without copying). This option should be used with caution as mutating
+either the columns in sources or in the returned `DataFrame` might lead to
+the corruption of the other object.
+
+# Example
+```jldoctest
+julia [DataFrame(A=1:3) DataFrame(B=1:3)]
+3×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+
+julia> df1 = DataFrame(A=1:3, B=1:3);
+
+julia> df2 = DataFrame(A=4:6, B=4:6);
+
+julia> df3 = hcat(df1, df2, makeunique=true)
+3×4 DataFrame
+│ Row │ A     │ B     │ A_1   │ B_1   │
+│     │ Int64 │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 1     │ 4     │ 4     │
+│ 2   │ 2     │ 2     │ 5     │ 5     │
+│ 3   │ 3     │ 3     │ 6     │ 6     │
+
+julia> df3.A === df1.A
+true
+
+julia> df3 = hcat(df1, df2, makeunique=true, copycolumns=false);
+
+julia> df3.A === df1.A
+true
+
+```
+"""
+Base.hcat(df::AbstractDataFrame, makeunique::Bool=false, copycolumns::Bool=true) =
     copycolumns ? copy(df) : DataFrame(eachcol(df, false), names(df))
 Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=false, copycolumns::Bool=true) =
     hcat!(hcat(df, copycolumns=copycolumns), x,
