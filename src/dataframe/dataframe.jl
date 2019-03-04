@@ -778,12 +778,6 @@ end
 #   gets its own Index.
 Base.copy(df::DataFrame) = DataFrame(copy(_columns(df)), copy(index(df)))
 
-# Deepcopy is recursive -- if a column is a vector of DataFrames, each of
-#   those DataFrames is deepcopied.
-function Base.deepcopy(df::DataFrame)
-    DataFrame(deepcopy(_columns(df)), deepcopy(index(df)))
-end
-
 ##############################################################################
 ##
 ## Deletion / Subsetting
