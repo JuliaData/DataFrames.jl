@@ -444,6 +444,138 @@ julia> colwise(sum, df)
  10.0
 ```
 
+### Handling of columns stored in a `DataFrame`
+
+`DataFrame` assumes *ownership* of its columns, meaning
+that column vectors should generally not be mutated directly.
+
+In order to ensure the ownership principle functions that transform a `DataFrame` to produce a
+new `DataFrame` always perform a copy of the columns, for example:
+
+```jldoctest dataframe
+julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+4×2 DataFrame
+│ Row │ A     │ B       │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 1     │ 4.0     │
+│ 2   │ 2     │ 3.0     │
+│ 3   │ 3     │ 2.0     │
+│ 4   │ 4     │ 1.0     │
+
+julia> df2 = copy(df)
+4×2 DataFrame
+│ Row │ A     │ B       │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 1     │ 4.0     │
+│ 2   │ 2     │ 3.0     │
+│ 3   │ 3     │ 2.0     │
+│ 4   │ 4     │ 1.0     │
+
+julia> df2.A === df.A
+false
+```
+
+On the other hand, in-place functions, whose names end with `!` may mutate the column vectors of the
+`DataFrame` they take as an argument, for example:
+
+```jldoctest dataframe
+julia> x = [3, 1, 2]
+3-element Array{Int64,1}:
+ 3
+ 1
+ 2
+
+julia> df = DataFrame(x=x)
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 3     │
+│ 2   │ 1     │
+│ 3   │ 2     │
+
+julia> sort!(df)
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+│ 3   │ 3     │
+
+julia> x
+3-element Array{Int64,1}:
+ 1
+ 2
+ 3
+
+julia> df.x[1] = 100
+100
+
+julia> df
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 100   │
+│ 2   │ 2     │
+│ 3   │ 3     │
+
+julia> x
+3-element Array{Int64,1}:
+ 100
+   2
+   3
+```
+
+These functions are safe to call, except when a view of the `DataFrame` is in use
+(created via a `view`, `@view` or [`groupby`](@ref)). In the latter case, the view
+might become corrupted, which make trigger errors, silently return invalid data
+or even cause Julia to crash.
+
+It is possible to have a direct access to a column `col` of a `DataFrame` `df`
+using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function or simply
+by storing the reference to the column before the `DataFrame` was created (note
+  that in general the `DataFrame` constructor does not perform copying).
+
+```jldoctest dataframe
+julia> x = [3, 1, 2]
+3-element Array{Int64,1}:
+ 3
+ 1
+ 2
+
+julia> df = DataFrame(x=x)
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 3     │
+│ 2   │ 1     │
+│ 3   │ 2     │
+
+julia> df.x === x
+true
+
+julia> df[1] === x
+true
+
+julia> eachcol(df, false)[1] === x
+true
+```
+
+Note that a column obtained from a `DataFrame` using one of these methods should not be mutated because:
+
+* resizing a column vector will corrupt its parent `DataFrame` and associated views (if any):
+  methods only check the length of the column when it is added
+  to the `DataFrame` and later assume that all columns have the same length;
+* reordering values in a column vector (e.g. using `sort!`) will break the consistency of rows
+  with other columns, which will also affect views (if any);
+* changing values contained in a column vector is acceptable as long as it was not used as
+  a grouping column in a `GroupedDataFrame` created based on the `DataFrame`.
+
 ## Importing and Exporting Data (I/O)
 
 For reading and writing tabular data from CSV and other delimited text files, use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.

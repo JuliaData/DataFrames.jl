@@ -44,7 +44,7 @@ For performance reasons, accessing, via `getindex` or `view`, a single `row` and
 
 `DataFrame`:
 * `df[col]` -> the vector contained in column `col`;
-* `df[cols]` -> a freshly allocated `DataFrame` containing the vectors contained in columns `cols`;
+* `df[cols]` -> a freshly allocated `DataFrame` containing the copies of vectors contained in columns `cols`;
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[col][row]`;
 * `df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon and `df[cols]` otherwise;
 * `df[rows, col]` -> a copy of the vector `df[col]` with only the entries corresponding to `rows` selected, the same as `df[col][rows]`;

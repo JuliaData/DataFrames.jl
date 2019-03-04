@@ -23,6 +23,7 @@ DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol},
           makeunique::Bool=false)
 DataFrame(ds::AbstractDict)
 DataFrame(table; makeunique::Bool=false)
+DataFrame(::Union{DataFrame, SubDataFrame})
 ```
 
 **Arguments**
@@ -56,6 +57,8 @@ If a column is passed to a `DataFrame` constructor or is assigned as a whole
 using `setindex!` then its reference is stored in the `DataFrame`. An exception
 to this rule is assignment of an `AbstractRange` as a column, in which case the
 range is collected to a `Vector`.
+The second exception is the `DataFrame(::Union{DataFrame, SubDataFrame})` constructor
+which performs a copy of all columns of the source data frame.
 
 Because column types can vary, a `DataFrame` is not type stable. For
 performance-critical code, do not index into a `DataFrame` inside of
