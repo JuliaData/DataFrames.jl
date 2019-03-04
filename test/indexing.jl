@@ -8,10 +8,14 @@ using Test, DataFrames
     @test df[1] == [1, 2, 3]
     @test df[1] === eachcol(df, false)[1]
     @test df[1:2] == DataFrame(a=1:3, b=4:6)
-    @test eachcol(df[1:2], false)[1] === eachcol(df, false)[1]
+    @test eachcol(view(df,1:2), false)[1] === eachcol(df, false)[1]
+    @test eachcol(df[1:2], false)[1] == eachcol(df, false)[1]
+    @test eachcol(df[1:2], false)[1] !== eachcol(df, false)[1]
     @test df[:] == df
     @test df[:] !== df
-    @test eachcol(df[:], false)[1] === eachcol(df, false)[1]
+    @test eachcol(view(df, :), false)[1] === eachcol(df, false)[1]
+    @test eachcol(df[:], false)[1] == eachcol(df, false)[1]
+    @test eachcol(df[:], false)[1] !== eachcol(df, false)[1]
 
     @test df[1, 1] == 1
     @test df[1, 1:2] isa DataFrameRow
