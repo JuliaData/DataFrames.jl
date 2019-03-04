@@ -444,7 +444,7 @@ julia> colwise(sum, df)
  10.0
 ```
 
-### Handling of columns stored in a `DataFrame`
+### Handling of Columns Stored in a `DataFrame`
 
 `DataFrame` assumes *ownership* of its columns, meaning
 that column vectors should generally not be mutated directly.
@@ -463,29 +463,17 @@ julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 │ 3   │ 3     │ 2.0     │
 │ 4   │ 4     │ 1.0     │
 
-julia> df2 = copy(df)
-4×2 DataFrame
-│ Row │ A     │ B       │
-│     │ Int64 │ Float64 │
-├─────┼───────┼─────────┤
-│ 1   │ 1     │ 4.0     │
-│ 2   │ 2     │ 3.0     │
-│ 3   │ 3     │ 2.0     │
-│ 4   │ 4     │ 1.0     │
+julia> df2 = copy(df);
 
 julia> df2.A === df.A
 false
 ```
 
-On the other hand, in-place functions, whose names end with `!` may mutate the column vectors of the
+On the other hand, in-place functions, whose names end with `!`, may mutate the column vectors of the
 `DataFrame` they take as an argument, for example:
 
 ```jldoctest dataframe
-julia> x = [3, 1, 2]
-3-element Array{Int64,1}:
- 3
- 1
- 2
+julia> x = [3, 1, 2];
 
 julia> df = DataFrame(x=x)
 3×1 DataFrame
@@ -530,22 +518,18 @@ julia> x
    3
 ```
 
-These functions are safe to call, except when a view of the `DataFrame` is in use
+In-place functions are generally safe to call, except when a view of the `DataFrame` is in use
 (created via a `view`, `@view` or [`groupby`](@ref)). In the latter case, the view
 might become corrupted, which make trigger errors, silently return invalid data
 or even cause Julia to crash.
 
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function or simply
-by storing the reference to the column before the `DataFrame` was created (note
-  that in general the `DataFrame` constructor does not perform copying).
+by storing the reference to the column vector before the `DataFrame` was created (note
+that in general the `DataFrame` constructor does not make copies).
 
 ```jldoctest dataframe
-julia> x = [3, 1, 2]
-3-element Array{Int64,1}:
- 3
- 1
- 2
+julia> x = [3, 1, 2];
 
 julia> df = DataFrame(x=x)
 3×1 DataFrame
