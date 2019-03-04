@@ -809,7 +809,7 @@ end
     @test all(typeof(df[i]) <: Vector for i in 1:ncol(df))
 end
 
-@testset "test that getindex column copying" begin
+@testset "test that getindex column makes copies" begin
     x = [1]
     y = [1]
     df = DataFrame(x=x, y=y)

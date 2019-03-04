@@ -21,13 +21,13 @@ The exception are `DataFrame(::DataFrame)` and `DataFrame(::SubDataFrame)` const
 which perform a copy of the columns.
 
 From the moment of its construction `DataFrame` assumes *ownership* of its columns. This means that
-methods in DataFrames.jl package assume that columns of the data frame *are not* mutated by
+methods in this package assume that columns of the data frame *are not* mutated by
 methods other than provided by the DataFrames.jl package that accept this data frame as an argument.
 
 In particular, functions that transform a `DataFrame` to produce a new `DataFrame`
 always perform a copy of the data. Examples of such functions are [`vcat`](@ref),
 [`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
-`copy` or `DataFrame` constructor mentioned above.
+`copy` or the `DataFrame` constructor mentioned above.
 
 A partial exception to this rule are the [`stackdf`](@ref) and [`meltdf`](@ref) functions which create a
 `DataFrame` that contains views of the columns from the source `DataFrame`.
