@@ -20,32 +20,36 @@ as `AbstractVector` objects. When a `DataFrame` is constructed columns *are not*
 The exception are `DataFrame(::DataFrame)` and `DataFrame(::SubDataFrame)` constructors
 which perform a copy of the columns.
 
-From the moment of its construction `DataFrame` assumes *ownership* of its columns.
-This means that it is assumed that columns are not *shared* by several objects operations on which can
-mutate them, possibly leading to the corruption of the `DataFrame`.
-
-In particular, functions that transform a `DataFrame` to produce a new `DataFrame`
-always perform a copy of the data. Examples of such functions are [`vcat`](@ref),
-[`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
-`copy` or the `DataFrame` constructor mentioned above.
-
-A partial exception to this rule are the [`stackdf`](@ref) and [`meltdf`](@ref) functions which create a
-`DataFrame` that contains views of the columns from the source `DataFrame`.
-
-It is possible to get a direct access to column `col` of the `DataFrame` `df`
-(e.g. in performance critical code to avoid copying), using one of the following methods:
+It is possible to have a direct access to a column `col` of a `DataFrame` `df`
+(e.g. this can be useful in performance critical code to avoid copying),
+using one of the following methods:
 
 * via the `getproperty` function `df.col`;
 * via the `getindex` function using the syntax `df[:col]`;
-* by creating `DataFrameColumns` object using the [`eachcol`](@ref) function.
+* by creating `DataFrameColumns` object using the [`eachcol`](@ref) function;
+* by storing the reference to the column before the `DataFrame` was created (note that in general
+  the `DataFrame` constructor does not perform copying).
 
-Note that in general a column obtained this way should not be mutated because:
+Note that in general a column obtained from a data frame using one of these methods
+should not be mutated because:
 
 * resizing the column will corrupt the `DataFrame` from which the column was taken;
   methods in the DataFrames.jl package only check the length of the column when it is added
   to the `DataFrame` and later assume that all columns have the same length;
 * changing values contained in the column is acceptable as long as it was not used as
   a gruping column in a `GroupedDataFrame` that was created based on the source `DataFrame`.
+
+Operationally you can think about it that from the moment of its construction `DataFrame`
+assumes *ownership* of its columns. This way when you call a function like `sort!`
+or `dropmissing!` on a `DataFrame` you can safely assume that this operation is safe.
+
+In order to ensure the ownership princilpe functions that transform a `DataFrame` to produce a new `DataFrame`
+always perform a copy of the data. Examples of such functions are [`vcat`](@ref),
+[`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
+`copy` or the `DataFrame` constructor mentioned above.
+
+A partial exception to this rule are the [`stackdf`](@ref) and [`meltdf`](@ref) functions which create a
+`DataFrame` that contains views of the columns from the source `DataFrame`.
 
 `SubDataFrame` is an `AbstractDataFrame` subtype representing a view into a `DataFrame`.
 It stores only a reference to the parent `DataFrame` and information about which rows and columns
