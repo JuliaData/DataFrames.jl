@@ -986,23 +986,23 @@ true
 
 ```
 """
-Base.hcat(df::AbstractDataFrame, makeunique::Bool=false, copycolumns::Bool=true) =
+Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
     copycolumns ? copy(df) : DataFrame(eachcol(df, false), names(df))
 Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=false, copycolumns::Bool=true) =
     hcat!(hcat(df, copycolumns=copycolumns), x,
           makeunique=makeunique, copycolumns=copycolumns)
-Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=false, copycolumns:Bool=true) =
+Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
     hcat!(x, df, makeunique=makeunique, copycolumns=copycolumns)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          makeunique::Bool=false, copycolumns:Bool=true) =
+          makeunique::Bool=false, copycolumns::Bool=true) =
     hcat!(hcat(df1, copycolumns=copycolumns), df2,
           makeunique=makeunique, copycolumns=copycolumns)
 Base.hcat(df::AbstractDataFrame, x, y...;
-          makeunique::Bool=false, copycolumns:Bool=true) =
+          makeunique::Bool=false, copycolumns::Bool=true) =
     hcat!(hcat(df, x, makeunique=makeunique, copycolumns=copycolumns), y...,
           makeunique=makeunique, copycolumns=copycolumns)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
-          makeunique::Bool=false, copycolumns:Bool=true) =
+          makeunique::Bool=false, copycolumns::Bool=true) =
     hcat!(hcat(df1, df2, makeunique=makeunique, copycolumns=copycolumns), dfn...,
           makeunique=makeunique, copycolumns=copycolumns)
 

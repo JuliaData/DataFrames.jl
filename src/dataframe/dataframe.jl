@@ -921,7 +921,7 @@ hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycolumns::Boo
     hcat!(df, DataFrame(AbstractVector[x]), makeunique=makeunique, copycolumns=copycolumns)
 hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
     hcat!(DataFrame(AbstractVector[copycolumns ? copy(x) : x]), copy(df),
-          makeunique=makeunique, copycolumns::Bool=true)
+          makeunique=makeunique, copycolumns=copycolumns)
 hcat!(x, df::DataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
 hcat!(df::DataFrame, x; makeunique::Bool=false, copycolumns::Bool=true) =
@@ -930,16 +930,16 @@ hcat!(df::DataFrame, x; makeunique::Bool=false, copycolumns::Bool=true) =
 # hcat! for 1-n arguments
 hcat!(df::DataFrame; makeunique::Bool=false, copycolumns::Bool=true) = df
 hcat!(a::DataFrame, b, c...; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(hcat!(a, b, makeunique=makeunique, copycolumns::Bool=true),
-          c..., makeunique=makeunique, copycolumns::Bool=true)
+    hcat!(hcat!(a, b, makeunique=makeunique, copycolumns=copycolumns),
+          c..., makeunique=makeunique, copycolumns=copycolumns)
 
 # hcat
 Base.hcat(df::DataFrame, x; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(copycolumns ? copy(df) : DataFrame(copy(_columns(df), _names(df)), x,
+    hcat!(copycolumns ? copy(df) : DataFrame(copy(_columns(df)), _names(df)), x,
           makeunique=makeunique, copycolumns=copycolumns)
 Base.hcat(df1::DataFrame, df2::AbstractDataFrame;
           makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(copycolumns ? copy(df) : DataFrame(copy(_columns(df), _names(df)), df2,
+    hcat!(copycolumns ? copy(df1) : DataFrame(copy(_columns(df1)), _names(df1)), df2,
           makeunique=makeunique, copycolumns=copycolumns)
 Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
           makeunique::Bool=false, copycolumns::Bool=true) =
