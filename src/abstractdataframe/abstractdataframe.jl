@@ -1125,34 +1125,32 @@ Base.parentindices(adf::AbstractDataFrame) = axes(adf)
 
 ## Documentation for methods defined elsewhere
 
-# nrow, ncol
+function nrow end
+function ncol end
+
 """
-Number of rows or columns in an AbstractDataFrame
+    nrow(df::AbstractDataFrame)
+    ncol(df::AbstractDataFrame)
 
-```julia
-nrow(df::AbstractDataFrame)
-ncol(df::AbstractDataFrame)
-```
 
-**Arguments**
-
-* `df` : the AbstractDataFrame
-
-**Result**
-
-* `::AbstractDataFrame` : the updated version
+Return the number of rows or columns in an `AbstractDataFrame` `df`.
 
 See also [`size`](@ref).
 
-NOTE: these functions may be depreciated for `size`.
-
 **Examples**
 
-```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-size(df)
-nrow(df)
-ncol(df)
+```jldoctest
+julia> df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10));
+
+julia> size(df)
+(10, 3)
+
+julia> nrow(df)
+10
+
+julia> ncol(df)
+3
 ```
 
 """
+(nrow, ncol)
