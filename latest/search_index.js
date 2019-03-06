@@ -657,6 +657,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "lib/functions.html#DataFrames.nrow",
+    "page": "Functions",
+    "title": "DataFrames.nrow",
+    "category": "function",
+    "text": "nrow(df::AbstractDataFrame)\nncol(df::AbstractDataFrame)\n\nReturn the number of rows or columns in an AbstractDataFrame df.\n\nSee also size.\n\nExamples\n\njulia> df = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10));\n\njulia> size(df)\n(10, 3)\n\njulia> nrow(df)\n10\n\njulia> ncol(df)\n3\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.ncol",
+    "page": "Functions",
+    "title": "DataFrames.ncol",
+    "category": "function",
+    "text": "nrow(df::AbstractDataFrame)\nncol(df::AbstractDataFrame)\n\nReturn the number of rows or columns in an AbstractDataFrame df.\n\nSee also size.\n\nExamples\n\njulia> df = DataFrame(i = 1:10, x = rand(10), y = rand([\"a\", \"b\", \"c\"], 10));\n\njulia> size(df)\n(10, 3)\n\njulia> nrow(df)\n10\n\njulia> ncol(df)\n3\n\n\n\n\n\n"
+},
+
+{
     "location": "lib/functions.html#DataFrames.rename!",
     "page": "Functions",
     "title": "DataFrames.rename!",
@@ -741,7 +757,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Basics",
     "category": "section",
-    "text": "allowmissing!\ncompletecases\ncategorical!\ndeletecols!\ndeleterows!\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\ninsertcols!\nmapcols\nnames!\nnonunique\nrename!\nrename\nrepeat\nshow\nsort\nsort!\nunique!\npermutecols!\nvcat\nappend!"
+    "text": "allowmissing!\ncompletecases\ncategorical!\ndeletecols!\ndeleterows!\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\ninsertcols!\nmapcols\nnames!\nnonunique\nnrow\nncol\nrename!\nrename\nrepeat\nshow\nsort\nsort!\nunique!\npermutecols!\nvcat\nappend!"
 },
 
 {
