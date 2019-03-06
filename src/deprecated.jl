@@ -1325,8 +1325,23 @@ end
 import Base: vcat
 @deprecate vcat(x::Vector{<:AbstractDataFrame}) vcat(x...)
 
-@deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, stats = [:eltype, :nmissing, :first, :last])
-@deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, stats = [:eltype, :nmissing, :first, :last]), all)
+@deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, :eltype, :nmissing, :first, :last)
+@deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, :eltype, :nmissing, :first, :last), all)
+function StatsBase.describe(df::AbstractDataFrame; stats=nothing)
+    if stats === nothing 
+        _describe(df, [:mean, :min, :median, 
+                       :max, :nunique, :nmissing, 
+                       :eltype])
+    elseif stats === :all 
+        Base.depwarn("The `stats` keyword argument has been deprecated. Use describe(df, stats...) instead.", :describe)
+        _describe(df, [:mean, :std, :min, :q25, :median, :q75,
+                       :max, :nunique, :nmissing, :first, :last, :eltype])
+    else
+        Base.depwarn("The `stats` keyword argument has been deprecated. Use describe(df, stats...) instead.", :describe)
+        describe(df, stats...)
+    end
+end
+
 
 import Base: show
 @deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(io, df, allcols=allcols, rowlabel=rowlabel, summary=summary)
