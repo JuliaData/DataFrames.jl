@@ -1076,7 +1076,7 @@ julia> df1
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
     if ncol(df1) == 0
         for (n, v) in eachcol(df2, true)
-            df1[n] = collect(v) # make sure df1 contains Vector-s
+            df1[n] = copy(v) # make sure df1 does not reuse df2
         end
         return df1
     end
