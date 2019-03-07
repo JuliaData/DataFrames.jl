@@ -20,14 +20,14 @@ The kind of return value and the number and names of columns must be the same fo
 
 As a special case, if multiple pairs or a tuple of vectors or pairs is passed (forms 3 and 4 above), each function is required to return a single value or vector, which will produce each a separate column.
 
-The name for the resulting column can be chosen either by passing a named tuple of pairs, or by returning a named tuple or a data frame. If no name is provided, it is generated automatically. For functions taking a single column (first form), the input column name is concatenated with the function name: for standard functions like `mean` this will produce columns with names like `SepalLength_mean`; for anonymous functions like `x -> sqrt(x)^e`, the produced columns will be `SepalLength_function`. For functions taking multiple columns (second form), names are `x1`, `x2`, etc.
+The name for the resulting column can be chosen either by passing a named tuple of pairs, or by returning a named tuple or a data frame. If no name is provided, it is generated automatically. For functions taking a single column (first form), the input column name is concatenated with the function name: for standard functions like `mean` this will produce columns with names like `SepalLength_mean`; for anonymous functions like `x -> sqrt(x)`, the produced columns will be `SepalLength_function`. For functions taking multiple columns (second form), names are `x1`, `x2`, etc.
 
 We show several examples of the `by` function applied to the `iris` dataset below:
 
 ```jldoctest sac
 julia> using DataFrames, CSV, Statistics
 
-julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../test/data/iris.csv"));
+julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv"));
 
 julia> first(iris, 6)
 6×5 DataFrame
