@@ -3,7 +3,7 @@
 Sorting is a fundamental component of data analysis. Basic sorting is trivial: just calling `sort!` will sort all columns, in place:
 
 ```jldoctest sort
-julia> using DataFrames, CSV,
+julia> using DataFrames, CSV
 
 julia> iris = CSV.read(joinpath(dirname(pathof(DataFrames)), "../docs/src/assets/iris.csv"));
 
@@ -125,8 +125,8 @@ julia> last(iris, 4)
 │ 4   │ 4.9         │ 2.4        │ 3.3         │ 1.0        │ Iris-versicolor │
 ```
 
-Keywords used above include `rev` (to sort a column or the whole `DataFrame` in reverse),
-and `by` (to apply a function to rows of a column/`DataFrame`).
+Keywords used above include `rev` (to sort in reverse),
+and `by` (to apply a function to values before comparing them).
 Each keyword can either be a single value, or can be a tuple or a vector,
 with values corresponding to individual columns.
 
