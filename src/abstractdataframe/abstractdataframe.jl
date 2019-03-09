@@ -1045,7 +1045,6 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     # List of symbols present in all dataframes
     intersectunique = intersect(uniqueheaders...)
 
-    # Throw an informative error if names arent the same across all dataframes
     if columns === :equal
         header = unionunique
         coldiff = setdiff(unionunique, intersectunique)
@@ -1053,15 +1052,9 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         if !isempty(coldiff) 
             # if any DataFrames are a full superset of names, skip them
             filter!(u -> Set(u) != Set(header), uniqueheaders)
-            # string to hold all the errors, one for each missing column name
-            @show uniqueheaders
             estrings = Vector{String}(undef, length(uniqueheaders))
             for (i, head) in enumerate(uniqueheaders)
-                # Find all the headers that match the header you are on. 
-                # So that we don't repeat ourselves in the error.
                 matching = findall(h -> head == h, allheaders)
-                # Of the symbols that aren't in all headers, which 
-                # ones are in this one?
                 headerdiff = setdiff(coldiff, head)
                 cols = join(headerdiff, ", ", " and ")
                 args = join(matching, ", ", " and ")
@@ -1069,7 +1062,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
             end
         throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
-    # Only have columns that are in all dataframes. No error thrown. 
+
     elseif columns === :intersect 
         header = intersectunique
     elseif columns === :union
