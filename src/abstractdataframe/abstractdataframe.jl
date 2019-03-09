@@ -1026,12 +1026,8 @@ vcat(df1, df3; columns = :intersect)
 ```
 """
 Base.vcat(df::AbstractDataFrame; 
-<<<<<<< HEAD
           columns::Union{Symbol, AbstractVector{Symbol}} = :equal) = 
     columns isa Symbol ? df : df[columns]
-=======
-          columns::Union{Symbol, AbstractVector{Symbol}}=:equal) = df
->>>>>>> 791edd515a3ce2fccb7e5ca3de1505dde761ef6b
 
 Base.vcat(dfs::AbstractDataFrame...;
           columns::Union{Symbol, AbstractVector{Symbol}}=:equal) = 
