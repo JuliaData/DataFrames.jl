@@ -228,6 +228,47 @@ module TestCat
         @test [df1; df2] == df3
     end
 
+    @testset "vcat with :union" begin
+        df1 = DataFrame(A = 1:3, B = 4:6)
+        df2 = DataFrame(A = 7:9)
+        df3 = DataFrame(B = 4:6, A = 1:3)
+
+        @test vcat(df1, df2; columns = :union) ≅ DataFrame([[1, 2, 3, 7, 8, 9], 
+                                                             [4, 5, 6, missing, missing, missing]], 
+                                                             [:A, :B])
+        @test vcat(df1, df2, df3; columns = :union) ≅ DataFrame([[1, 2, 3, 7, 8, 9, 1, 2, 3], 
+                                                                 [4, 5, 6, missing, missing, missing, 4, 5, 6]], 
+                                                                 [:A, :B])
+    end
+
+    @testset "vcat with :intersect" begin
+        df1 = DataFrame(A = 1:3, B = 4:6)
+        df2 = DataFrame(A = 7:9)
+        df3 = DataFrame(A = 10:12, C = 13:15)
+
+        @test vcat(df1, df2; columns = :intersect) ≅ DataFrame([[1, 2, 3, 7, 8, 9]],
+                                                                [:A])
+        @test vcat(df1, df2, df3; columns = :intersect) ≅ DataFrame([[1, 2, 3, 7, 8, 9, 10, 11, 12]],
+                                                                     [:A])
+    end
+
+    @testset "vcat with vector of columns" begin
+        df1 = DataFrame(A = 1:3, B = 4:6)
+        df2 = DataFrame(A = 7:9)
+        df3 = DataFrame(A = 10:12, C = 13:15)
+
+        @test vcat(df1, df2; columns = [:A, :B, :C]) ≅ DataFrame([[1, 2, 3, 7, 8, 9],
+                                                                  [4, 5, 6, missing, missing, missing],
+                                                                  [missing, missing, missing, missing, missing, missing]],
+                                                                  [:A, :B, :C])
+
+        @test vcat(df1, df2, df3; columns = [:A, :B, :C]) ≅ DataFrame([[1, 2, 3, 7, 8, 9, 10, 11, 12],
+                                                                  [4, 5, 6, missing, missing, missing, missing, missing, missing],
+                                                                  [missing, missing, missing, missing, missing, missing, 13, 14, 15]],
+                                                                  [:A, :B, :C])
+    end
+
+
     @testset "vcat errors" begin
         err = @test_throws ArgumentError vcat(DataFrame(), DataFrame(), DataFrame(x=[]))
         @test err.value.msg == "column(s) x are missing from argument(s) 1 and 2"
@@ -282,7 +323,13 @@ module TestCat
         err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2, df3, df4, df1, df2, df3, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, column(s) B are missing from argument(s) 2, 6 and 10, and column(s) F are missing from argument(s) 3, 7 and 11"
     end
-    x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
-    y = DataFrame(A = 4:5)
-    @test vcat(x, y) == DataFrame(A = [2, 4, 5])
+
+
+
+
+    @testset "views" begin
+        x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
+        y = DataFrame(A = 4:5)
+        @test vcat(x, y) == DataFrame(A = [2, 4, 5])
+    end
 end

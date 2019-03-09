@@ -1076,7 +1076,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                 args = join(matching, ", ", " and ")
                 estrings[i] = "column(s) $cols are missing from argument(s) $args"
             end
-            throw(ArgumentError(join(estrings, ". ")))
+        throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
     # Only have columns that are in all dataframes. No error thrown. 
     elseif columns === :intersect 
