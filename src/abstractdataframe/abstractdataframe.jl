@@ -956,25 +956,20 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
     hcat!(hcat(df1, df2, makeunique=makeunique), dfn..., makeunique=makeunique)
 
 """
-    vcat(dfs::AbstractDataFrame...; columns::Union{Symbol, AbstractVector{Symbol}} = :equal)
+    vcat(dfs::AbstractDataFrame...; columns::Union{Symbol, AbstractVector{Symbol}}=:equal)
 
-Vertically concatenate `AbstractDataFrames`. 
+Vertically concatenate `AbstractDataFrame`s.
 
-The keyword argument `columns` can take the following values: 
+The `columns` keyword argument determines the columns of the returned data frame:
 
-* `:equal` (the default) requires all data frames to have the same column names, 
-  though they can be in any order. If the data frames do not all have the same
-  names, `vcat` will throw an error and say which columns are missing from which 
-  data frames.
-* `:intersect` will cause `vcat` to create a new data frame with only the columns 
-  present in *all* dataframes provided. If the intersection is empty, `vcat` will 
-  return an empty data frame. 
-* `:union` will cause `vcat` toreturn a dataframe whose columns are the union of 
-  all dataframes provided. It will fill in all columns not present in a DataFrame 
-  with `missing`s. 
-* An `AbstractArray` of `Symbol`s will cause `vcat` to return a data frame whose
-  columns are the provided by `columns`. If a DataFrame does not have a column 
-  listed in `columns`, `vcat` will fill in `missing`s. 
+* `:equal` (the default): require all data frames to have the same column names.
+  If they appear in different orders, the order of the first provided data frame is used.
+* `:intersect`: only the columns present in *all* provided data frames are kept.
+  If the intersection is empty, an empty data frame is returned.
+* `:union`: columns present in *at least one* of the provided data frames are kept.
+  Columns not present in some data frames are filled with `missing` where necessary.
+* A vector of `Symbol`s: only listed columns are kept.
+  Columns not present in some data frames are filled with `missing` where necessary.
 
 The order of columns is determined by the order they appear in the included
 data frames, searching through the header of the first DataFrame, then the 
@@ -1031,19 +1026,19 @@ vcat(df1, df3; columns = :intersect)
 ```
 """
 Base.vcat(df::AbstractDataFrame; 
+<<<<<<< HEAD
           columns::Union{Symbol, AbstractVector{Symbol}} = :equal) = 
     columns isa Symbol ? df : df[columns]
+=======
+          columns::Union{Symbol, AbstractVector{Symbol}}=:equal) = df
+>>>>>>> 791edd515a3ce2fccb7e5ca3de1505dde761ef6b
 
 Base.vcat(dfs::AbstractDataFrame...;
-          columns::Union{Symbol, AbstractVector{Symbol}} = :equal) = 
-    _vcat(collect(dfs); columns = columns)
-#=
-    API: a `columns` keyword argument which can take the value of `:equal`, 
-    `:union`, `:intersect`, or a vector of symbols. 
-=#
+          columns::Union{Symbol, AbstractVector{Symbol}}=:equal) = 
+    _vcat(collect(dfs); columns=columns)
+
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
-               columns::Union{Symbol, AbstractVector{Symbol}} = :equal)
-    
+               columns::Union{Symbol, AbstractVector{Symbol}}=:equal)
     isempty(dfs) && return DataFrame()
     # Array of all headers
     allheaders = map(names, dfs)
