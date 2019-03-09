@@ -976,13 +976,22 @@ The keyword argument `columns` can take the following values:
   columns are the provided by `columns`. If a DataFrame does not have a column 
   listed in `columns`, `vcat` will fill in `missing`s. 
 
+The order of columns is determined by the order they appear in the included
+data frames, searching through the header of the first DataFrame, then the 
+second, etc. 
+
+Column `eltype`s of the resulting DataFrames are determined using the same procedure
+as `vcat` for AbstractVectors. For example, if `df1` has column `:a` which of 
+type `T`, and `df2` does not contain column `:a`, `vcat(df1, df2, columns = :union)`
+will contain a column `:a` of type `Union{T, missing}`.
+
 # Example
 ```jldoctest
 julia> df1 = DataFrame(A=1:3, B=1:3);
 
 julia> df2 = DataFrame(A=4:6, B=4:6);
 
-julia> df3 = DataFrame(A=7:9, C= 7:9);
+julia> df3 = DataFrame(A=7:9, C=7:9);
 
 julia> vcat(df1, df2)
 6×2 DataFrame
@@ -995,10 +1004,35 @@ julia> vcat(df1, df2)
 │ 4   │ 4     │ 4     │
 │ 5   │ 5     │ 5     │
 │ 6   │ 6     │ 6     │
+
+julia> vcat(df1, df3; columns = :union)
+6×3 DataFrame
+│ Row │ A     │ B       │ C       │
+│     │ Int64 │ Int64⍰  │ Int64⍰  │
+├─────┼───────┼─────────┼─────────┤
+│ 1   │ 1     │ 1       │ missing │
+│ 2   │ 2     │ 2       │ missing │
+│ 3   │ 3     │ 3       │ missing │
+│ 4   │ 7     │ missing │ 7       │
+│ 5   │ 8     │ missing │ 8       │
+│ 6   │ 9     │ missing │ 9       │
+
+vcat(df1, df3; columns = :intersect)
+6×1 DataFrame
+│ Row │ A     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+│ 3   │ 3     │
+│ 4   │ 7     │
+│ 5   │ 8     │
+│ 6   │ 9     │
 ```
 """
 Base.vcat(df::AbstractDataFrame; 
-          columns::Union{Symbol, AbstractVector{Symbol}} = :equal) = df
+          columns::Union{Symbol, AbstractVector{Symbol}} = :equal) = 
+    columns isa Symbol ? df : df[columns]
 
 Base.vcat(dfs::AbstractDataFrame...;
           columns::Union{Symbol, AbstractVector{Symbol}} = :equal) = 
@@ -1022,8 +1056,9 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
 
     # Throw an informative error if names arent the same across all dataframes
     if columns === :equal
-            header = unionunique
-            coldiff = setdiff(unionunique, intersectunique)
+        header = unionunique
+        coldiff = setdiff(unionunique, intersectunique)
+        
         if !isempty(coldiff) 
             # if any DataFrames are a full superset of names, skip them
             filter!(u -> Set(u) != Set(header), uniqueheaders)
@@ -1039,7 +1074,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                 headerdiff = setdiff(coldiff, head)
                 cols = join(headerdiff, ", ", " and ")
                 args = join(matching, ", ", " and ")
-                estrings[i] = "Column(s) $cols are missing from argument(s) $args"
+                estrings[i] = "column(s) $cols are missing from argument(s) $args"
             end
             throw(ArgumentError(join(estrings, ". ")))
         end
@@ -1048,37 +1083,27 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         header = intersectunique
     elseif columns === :union
         header = unionunique
-        # no setdiff cause we take in everything
-    # Use names specified by user. Add missings as needed.
-    elseif columns isa AbstractVector{Symbol}
+    else
         header = columns 
     end
 
     length(header) == 0 && return DataFrame()
     cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
-        data = map(dfs) do df
-            if df isa DataFrame 
-                if haskey(df, name)
-                    return df[name]
-                else
-                    Iterators.repeated(missing, nrow(df))
-                end
-            else 
-                if haskey(df, name)
-                    return view(parent(df)[name], rows(df))
-                else 
-                    return Iterators.repeated(missing, nrow(df))
-                end
+        vec_newcol = map(dfs) do df
+            if haskey(df, name)
+                return df[name]
+            else
+                Iterators.repeated(missing, nrow(df))
             end
         end
 
-        lens = map(length, data)
-        T = mapreduce(eltype, promote_type, data)
+        lens = map(length, vec_newcol)
+        T = mapreduce(eltype, promote_type, vec_newcol)
         cols[i] = Tables.allocatecolumn(T, sum(lens))
         offset = 1
-        for j in 1:length(data)
-            copyto!(cols[i], offset, data[j])
+        for j in 1:length(vec_newcol)
+            copyto!(cols[i], offset, vec_newcol[j])
             offset += lens[j]
         end
     end
