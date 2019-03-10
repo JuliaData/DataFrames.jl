@@ -274,6 +274,7 @@ The 2nd through last arguments in `combine` can can be either
 
 * A single `col => f` pair, a vector of such pairs, or a mix of the two. `col`
   must be either a `Symbol` or a valid column index for `gd`. `f` must be callable. 
+* A tuple of `col => f` pairs
 * A named tuple of `col => f` pairs, where the names of the named tuple indicate
   the names of the new vectors to be created in the new DataFrame. Pairs must 
   obey the same rules described above. Keyword arguments of `Pair`s operate in 
@@ -296,6 +297,9 @@ determines the shape of the resulting data frame:
   for each group as the length of the returned vector for that group.
 - A data frame, a named tuple of vectors or a matrix gives a data frame
   with the same columns and as many rows for each group as the rows returned for that group.
+
+As a special case, if a tuple or vector of pairs is passed as the first argument, each function
+is required to return a single value or vector, which will produce each a separate column.
 
 In all cases, the resulting data frame contains all the grouping columns in addition
 to those listed above. Column names are automatically generated when necessary: for functions
@@ -646,8 +650,9 @@ function do_f(f, x...)
 end
 
 function _combine(f::Union{AbstractVector{<:Pair}, 
-                  NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
-                    gd::GroupedDataFrame)
+                           Tuple{Vararg{Pair}},
+                           NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
+                  gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
         if agg isa AbstractAggregate && p isa Pair{<:Union{Symbol,Integer}}
