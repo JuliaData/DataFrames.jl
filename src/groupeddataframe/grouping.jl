@@ -297,9 +297,6 @@ determines the shape of the resulting data frame:
 - A data frame, a named tuple of vectors or a matrix gives a data frame
   with the same columns and as many rows for each group as the rows returned for that group.
 
-As a special case, if a vector of pairs is passed as the first argument, each function
-is required to return a single value or vector, which will produce each a separate column.
-
 In all cases, the resulting data frame contains all the grouping columns in addition
 to those listed above. Column names are automatically generated when necessary: for functions
 operating on a single column and returning a single value or vector, the function name is
@@ -349,6 +346,20 @@ julia> combine(:c => sum, gd)
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
 
+julia> combine(gd, [:b, :c] => sum)
+8×2 DataFrame
+│ Row │ a     │ x1    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 3     │
+│ 2   │ 1     │ 7     │
+│ 3   │ 2     │ 3     │
+│ 4   │ 2     │ 7     │
+│ 5   │ 3     │ 5     │
+│ 6   │ 3     │ 9     │
+│ 7   │ 4     │ 5     │
+│ 8   │ 4     │ 9     │
+
 julia> combine(df -> sum(df.c), gd) # Slower variant
 4×2 DataFrame
 │ Row │ a     │ x1    │
@@ -384,6 +395,14 @@ combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
 function combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...) 
     vec_of_pairs = reduce(vcat, f)
     combine(vec_of_pairs, gd)
+end
+
+function combine(gd::GroupedDataFrame, f::NamedTuple)
+    combine(f, gd)
+end
+
+function combine(gd::GroupedDataFrame, f::Tuple{Vararg{<:Pair}})
+    combine(f, gd)
 end
 
 function combine(gd::GroupedDataFrame; f...)
