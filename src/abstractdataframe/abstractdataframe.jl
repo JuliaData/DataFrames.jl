@@ -1006,13 +1006,11 @@ The `columns` keyword argument determines the columns of the returned data frame
   Columns not present in some data frames are filled with `missing` where necessary.
 
 The order of columns is determined by the order they appear in the included
-data frames, searching through the header of the first DataFrame, then the 
+data frames, searching through the header of the first data frame, then the 
 second, etc. 
 
-Column `eltype`s of the resulting DataFrames are determined using the same procedure
-as `vcat` for AbstractVectors. For example, if `df1` has column `:a` which of 
-type `T`, and `df2` does not contain column `:a`, `vcat(df1, df2, columns = :union)`
-will contain a column `:a` of type `Union{T, missing}`.
+The element types of columns are determined using `promote_type`,
+as with `vcat` for `AbstractVector`s.
 
 # Example
 ```jldoctest
@@ -1034,7 +1032,7 @@ julia> vcat(df1, df2)
 │ 5   │ 5     │ 5     │
 │ 6   │ 6     │ 6     │
 
-julia> vcat(df1, df3; columns = :union)
+julia> vcat(df1, df3, columns = :union)
 6×3 DataFrame
 │ Row │ A     │ B       │ C       │
 │     │ Int64 │ Int64⍰  │ Int64⍰  │
@@ -1046,7 +1044,7 @@ julia> vcat(df1, df3; columns = :union)
 │ 5   │ 8     │ missing │ 8       │
 │ 6   │ 9     │ missing │ 9       │
 
-vcat(df1, df3; columns = :intersect)
+vcat(df1, df3, columns = :intersect)
 6×1 DataFrame
 │ Row │ A     │
 │     │ Int64 │
@@ -1059,10 +1057,6 @@ vcat(df1, df3; columns = :intersect)
 │ 6   │ 9     │
 ```
 """
-Base.vcat(df::AbstractDataFrame; 
-          columns::Union{Symbol, AbstractVector{Symbol}} = :equal) = 
-    columns isa Symbol ? df : df[columns]
-
 Base.vcat(dfs::AbstractDataFrame...;
           columns::Union{Symbol, AbstractVector{Symbol}}=:equal) = 
     _vcat(collect(dfs); columns=columns)
@@ -1108,7 +1102,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     length(header) == 0 && return DataFrame()
     cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
-        vec_newcol = map(dfs) do df
+        newcols = map(dfs) do df
             if haskey(df, name)
                 return df[name]
             else
@@ -1116,12 +1110,12 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
             end
         end
 
-        lens = map(length, vec_newcol)
-        T = mapreduce(eltype, promote_type, vec_newcol)
+        lens = map(length, newcols)
+        T = mapreduce(eltype, promote_type, newcols)
         cols[i] = Tables.allocatecolumn(T, sum(lens))
         offset = 1
-        for j in 1:length(vec_newcol)
-            copyto!(cols[i], offset, vec_newcol[j])
+        for j in 1:length(newcols)
+            copyto!(cols[i], offset, newcols[j])
             offset += lens[j]
         end
     end
