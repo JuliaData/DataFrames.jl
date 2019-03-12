@@ -261,32 +261,30 @@ function Base.map(f::Any, gd::GroupedDataFrame)
 end
 
 """
-    combine(gd::GroupedDataFrame, cols => f)
-    combine(gd::GroupedDataFrame, [col1 => f1, col2 => f2], col3 => f3)
-    combine(gd::GroupedDataFrame, [:col1, :col2, :col3] .=> f)
-    combine(gd::GroupedDataFrame; colname = cols => f)
+    combine(gd::GroupedDataFrame, (cols => f)...)
+    combine(gd::GroupedDataFrame, [cols1 => f1, cols2 => f2]...)
+    combine(gd::GroupedDataFrame; (colname = cols => f)...)
     combine(gd::GroupedDataFrame, f)
     combine(f, gd::GroupedDataFrame)
 
 Transform a `GroupedDataFrame` into a `DataFrame`.
 
-The 2nd through last arguments in `combine` can can be either
+The last argument(s) in `combine` can be either:
 
-* A single `col => f` pair, a vector of such pairs, or a mix of the two. `col`
-  must be either a `Symbol` or a valid column index for `gd`. `f` must be callable. 
-* A tuple of `col => f` pairs
-* A named tuple of `col => f` pairs, where the names of the named tuple indicate
-  the names of the new vectors to be created in the new DataFrame. Pairs must 
-  obey the same rules described above. Keyword arguments of `Pair`s operate in 
-  the same way.  
-* A callable which allows for a `AbstractDataFrame`. If this is specified, `f`
-  is passed a `SubDataFrame` view for each group, and the returned `DataFrame` 
+* One or several `cols => f` pairs, or vectors or tuples of such pairs (mixing is allowed). `cols`
+  must be a column name or index in `gd`, or a vector or tuple thereof. `f` must be callable.
+  If `cols` is a single column index, `f` is called with a `SubArray` view into that
+  column for each group; else, `f` is called with a named tuple holding `SubArray`
+  views into these columns.
+* A named tuple of `colname = cols => f` pairs or keyword arguments of such pairs,
+  where `colname` indicates the name of the column to be created in the new `DataFrame`.
+  Pairs must obey the same rules as above.
+* A callable `f` taking a `SubDataFrame` view for each group. The returned `DataFrame` 
   then consists of the returned rows plus the grouping columns.
-  Note that this second form is much slower than the first one due to type instability.
-  A method is defined with `f` as the first argument, so do-block
-  notation can be used.
+  Note that this form is much slower than the others due to type instability.
 
-If the last argument is a callable 
+A method is defined with `f` as the first argument, so do-block notation can be used.
+In that case `f` can also be a named tuple of pairs.
 
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
