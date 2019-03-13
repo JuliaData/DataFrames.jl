@@ -1091,18 +1091,19 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 
 """
-    push!(df1::DataFrame, row::Union{AbstractDict, NamedTuple})
+    push!(df::DataFrame, row::Union{AbstractDict, NamedTuple})
 
-Add in-place one row at the end of `df1` taking the values from `row`.
+Add one row at the end of `df` in-place, using values from `row`.
 
-Adding values is based on column name matching. `row` may contain more columns
-than `df1`, but all column names that are present in `df1` must be present in `row`.
+Values in `row` are matched to columns in `df` based on names (order is ignored).
+`row` may contain more columns than `df`, but all column names that are present
+in `df` must be present in `row`.
 
-Column types of `df1` are preserved, and new values are converted if necessary.
+Column types of `df` are preserved, and new values are converted if necessary.
 An error is thrown if conversion fails.
 
-If `df1` has no columns then it is allowed to `push!` a `NamedTuple` to `df1`
-and in this case all fields from `NamedTuple` are added for `df1` as a first row.
+As a special case, if `df` has no columns and `row` is a `NamedTuple`,
+columns are created for all values in `row`, using their names and order.
 
 # Examples
 ```jldoctest
