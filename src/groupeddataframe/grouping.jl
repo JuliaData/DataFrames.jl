@@ -64,16 +64,69 @@ See the following for additional split-apply-combine operations:
 ### Examples
 
 ```julia
-df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-               b = repeat([2, 1], outer=[4]),
-               c = randn(8))
-gd = groupby(df, :a)
-gd[1]
-last(gd)
-vcat([g[:b] for g in gd]...)
-for g in gd
-    println(g)
-end
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> gd = groupby(df, :a)
+GroupedDataFrame with 4 groups based on key: a
+First Group (2 rows): a = 1
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 1     │
+│ 2   │ 1     │ 2     │ 5     │
+⋮
+Last Group (2 rows): a = 4
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 4     │ 1     │ 4     │
+│ 2   │ 4     │ 1     │ 8     │
+
+julia> gd[1]
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 1     │
+│ 2   │ 1     │ 2     │ 5     │
+
+julia> last(gd)
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 4     │ 1     │ 4     │
+│ 2   │ 4     │ 1     │ 8     │
+
+julia> for g in gd
+           println(g)
+       end
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 2     │ 1     │
+│ 2   │ 1     │ 2     │ 5     │
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 2     │ 1     │ 2     │
+│ 2   │ 2     │ 1     │ 6     │
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 3     │ 2     │ 3     │
+│ 2   │ 3     │ 2     │ 7     │
+2×3 SubDataFrame
+│ Row │ a     │ b     │ c     │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 4     │ 1     │ 4     │
+│ 2   │ 4     │ 1     │ 8     │
 ```
 
 """
@@ -883,16 +936,34 @@ colwise(f, d)
 
 ### Examples
 
-```julia
-df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-               b = repeat([2, 1], outer=[4]),
-               c = randn(8))
-colwise(sum, df)
-colwise([sum, length], df)
-colwise((minimum, maximum), df)
-colwise(sum, groupby(df, :a))
-```
+```jldoctest
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
 
+julia> colwise(sum, df)
+3-element Array{Int64,1}:
+ 20
+ 12
+ 36
+
+julia> colwise([sum, length], df)
+2×3 Array{Int64,2}:
+ 20  12  36
+  8   8   8
+
+julia> colwise((minimum, maximum), df)
+2×3 Array{Int64,2}:
+ 1  1  1
+ 4  2  8
+
+julia> colwise(sum, groupby(df, :a))
+4-element Array{Array{Int64,1},1}:
+ [2, 4, 6]
+ [4, 2, 8]
+ [6, 4, 10]
+ [8, 2, 12]
+ ```
 """
 colwise(f, d::AbstractDataFrame) = [f(d[i]) for i in 1:ncol(d)]
 
@@ -1079,16 +1150,42 @@ same length.
 
 ### Examples
 
-```julia
-using Statistics
-df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-               b = repeat([2, 1], outer=[4]),
-               c = randn(8))
-aggregate(df, :a, sum)
-aggregate(df, :a, [sum, x->mean(skipmissing(x))])
-aggregate(groupby(df, :a), [sum, x->mean(skipmissing(x))])
-```
+```jldoctest
+julia> using Statistics
 
+julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
+                      b = repeat([2, 1], outer=[4]),
+                      c = 1:8);
+
+julia> aggregate(df, :a, sum)
+4×3 DataFrame
+│ Row │ a     │ b_sum │ c_sum │
+│     │ Int64 │ Int64 │ Int64 │
+├─────┼───────┼───────┼───────┤
+│ 1   │ 1     │ 4     │ 6     │
+│ 2   │ 2     │ 2     │ 8     │
+│ 3   │ 3     │ 4     │ 10    │
+│ 4   │ 4     │ 2     │ 12    │
+
+julia> aggregate(df, :a, [sum, x->mean(skipmissing(x))])
+4×5 DataFrame
+│ Row │ a     │ b_sum │ c_sum │ b_function │ c_function │
+│     │ Int64 │ Int64 │ Int64 │ Float64    │ Float64    │
+├─────┼───────┼───────┼───────┼────────────┼────────────┤
+│ 1   │ 1     │ 4     │ 6     │ 2.0        │ 3.0        │
+│ 2   │ 2     │ 2     │ 8     │ 1.0        │ 4.0        │
+│ 3   │ 3     │ 4     │ 10    │ 2.0        │ 5.0        │
+│ 4   │ 4     │ 2     │ 12    │ 1.0        │ 6.0        │
+
+julia> aggregate(groupby(df, :a), [sum, x->mean(skipmissing(x))])
+4×5 DataFrame
+│ Row │ a     │ b_sum │ c_sum │ b_function │ c_function │
+│     │ Int64 │ Int64 │ Int64 │ Float64    │ Float64    │
+├─────┼───────┼───────┼───────┼────────────┼────────────┤
+│ 1   │ 1     │ 4     │ 6     │ 2.0        │ 3.0        │
+│ 2   │ 2     │ 2     │ 8     │ 1.0        │ 4.0        │
+│ 3   │ 3     │ 4     │ 10    │ 2.0        │ 5.0        │
+│ 4   │ 4     │ 2     │ 12    │ 1.0        │ 6.0        │```
 """
 aggregate(d::AbstractDataFrame, fs::Any; sort::Bool=false) =
     aggregate(d, [fs], sort=sort)
