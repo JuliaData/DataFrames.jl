@@ -506,13 +506,6 @@ check_aggregate(::typeof(last∘skipmissing)) = Aggregate(last, !ismissing)
 check_aggregate(::typeof(length)) = Aggregate(length)
 # SkipMissing does not support length
 
-for f in (:sum, :prod, :maximum, :minimum, :mean, :var, :std, :first, :last)
-    @eval begin
-        funname(::typeof(check_aggregate($f))) = nameof($f)
-        funname(::typeof(check_aggregate($f∘skipmissing))) = :function
-    end
-end
-
 # Find first value matching condition for each group
 # Optimized for situations where a matching value is typically encountered
 # among the first rows for each group
@@ -719,7 +712,7 @@ end
 function _combine(f::Any, gd::GroupedDataFrame)
     if f isa Pair{<:Union{Symbol,Integer}}
         incols = gd.parent[first(f)]
-        fun = check_aggregate(last(f))
+        fun = last(f)
     elseif f isa Pair
         df = gd.parent[collect(first(f))]
         incols = NamedTuple{Tuple(names(df))}(columns(df))
