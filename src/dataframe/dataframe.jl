@@ -1090,62 +1090,19 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 
-"""
-    push!(df::DataFrame, row::Union{AbstractDict, NamedTuple})
-
-Add one row at the end of `df` in-place, using values from `row`.
-
-Values in `row` are matched to columns in `df` based on names (order is ignored).
-`row` may contain more columns than `df`, but all column names that are present
-in `df` must be present in `row`.
-
-Column types of `df` are preserved, and new values are converted if necessary.
-An error is thrown if conversion fails.
-
-As a special case, if `df` has no columns and `row` is a `NamedTuple`,
-columns are created for all values in `row`, using their names and order.
-
-# Examples
-```jldoctest
-julia> df = DataFrame(A=1:3, B=1:3)
-3×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-
-julia> push!(df, (C="something", A=true, B=false))
-4×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-│ 4   │ 1     │ 0     │
-
-julia> push!(df, Dict(:A=>1.0, :B=>2.0, :C=>"something"))
-5×2 DataFrame
-│ Row │ A     │ B     │
-│     │ Int64 │ Int64 │
-├─────┼───────┼───────┤
-│ 1   │ 1     │ 1     │
-│ 2   │ 2     │ 2     │
-│ 3   │ 3     │ 3     │
-│ 4   │ 1     │ 0     │
-│ 5   │ 1     │ 2     │
-```
-"""
-function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple})
+function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; exact::Bool=true)
     if ncol(df) == 0 && row isa NamedTuple
         for (n, v) in pairs(row)
-            setproperty!(df, n, [v])
+            setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
         return df
     end
     i = 1
+    if exact && length(row) != size(df, 2)
+        Base.depwarn("In the future push! will require that `row` has the same number" *
+                      "of elements as is the number of columns in `df`." *
+                      "Use `exact=false` to disable this check.", :push!)
+    end
     for nm in _names(df)
         try
             push!(df[i], row[nm])
@@ -1164,17 +1121,27 @@ end
 
 """
     push!(df1::DataFrame, iterable::Any)
+    push!(df::DataFrame, row::Union{AbstractDict, NamedTuple, DataFrameRow}; exact::Bool=true)
 
-Add in-place one row at the end of `df1` taking the values from the iterable `iterable`.
+Add in-place one row at the end of `df1` taking the values from the iterable `iterable`
+or `row`.
 
-Adding values is based on column number. `row` must contain the same number of elements
-as the number of columns in `df1`.
+Adding values from `iterable` is based on column number.
+It must contain the same number of elements as the number of columns in `df1`.
 
 Column types of `df1` are preserved, and new values are converted if necessary.
 An error is thrown if conversion fails.
 
-If `df1` has no columns then it is allowed to `push!` a `DataFrameRow` to `df1`
-and in this case all fields from a `DataFrameRow` are added for `df1` as a first row.
+Values in `row` are matched to columns in `df` based on names (order is ignored).
+`row` may contain more columns than `df` if `exact` keyword argument is `false`,
+but all column names that are present in `df` must be present in `row`. Otherwise
+`row` must contain the same list of columns (but possibly in a differnt order).
+
+Column types of `df` are preserved, and new values are converted if necessary.
+An error is thrown if conversion fails.
+
+As a special case, if `df` has no columns and `row` is a `NamedTuple`
+or `DataFrameRow`, columns are created for all values in `row`, using their names and order.
 
 # Examples
 ```jldoctest
@@ -1207,6 +1174,31 @@ julia> push!(df, df[1, :])
 │ 3   │ 3     │ 3     │
 │ 4   │ 1     │ 0     │
 │ 5   │ 1     │ 1     │
+
+julia> push!(df, (C="something", A=true, B=false), exact=false)
+4×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 0     │
+│ 5   │ 1     │ 1     │
+│ 6   │ 1     │ 0     │
+
+julia> push!(df, Dict(:A=>1.0, :B=>2.0))
+5×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 0     │
+│ 5   │ 1     │ 1     │
+│ 6   │ 1     │ 0     │
+│ 7   │ 1     │ 2     │
 ```
 """
 function Base.push!(df::DataFrame, iterable::Any)
