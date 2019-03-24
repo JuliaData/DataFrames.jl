@@ -227,10 +227,10 @@ end
 
 @noinline pushhelper!(x, r) = push!(x, x[r])
 
-function Base.push!(df::DataFrame, dfr::DataFrameRow)
+function Base.push!(df::DataFrame, dfr::DataFrameRow; exact::Bool=true)
     if ncol(df) == 0
         for (n, v) in pairs(dfr)
-            setproperty!(df, n, [v])
+            setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
         end
         return df
     end
@@ -245,7 +245,9 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow)
     else
         # DataFrameRow can contain duplicate columns and we disallow this
         # corner case when push!-ing
-        size(df, 2) == length(dfr) || throw(ArgumentError("Inconsistent number of columns"))
+        if exact
+            size(df, 2) == length(dfr) || throw(ArgumentError("Inconsistent number of columns"))
+        end
         i = 1
         for nm in _names(df)
             try
