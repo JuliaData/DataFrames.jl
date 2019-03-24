@@ -446,11 +446,8 @@ julia> colwise(sum, df)
 
 ### Handling of Columns Stored in a `DataFrame`
 
-`DataFrame` assumes *ownership* of its columns, meaning
-that column vectors should generally not be mutated directly.
-
-In order to ensure the ownership principle functions that transform a `DataFrame` to produce a
-new `DataFrame` always perform a copy of the columns, for example:
+Functions that transform a `DataFrame` to produce a
+new `DataFrame` always perform a copy of the columns by default, for example:
 
 ```jldoctest dataframe
 julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)

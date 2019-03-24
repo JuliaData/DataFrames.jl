@@ -60,29 +60,26 @@ but they are columns of a `DataFrame` returned by `stackdf` and `meltdf`.
 
 ## The design of handling of columns of a `DataFrame`
 
-When a `DataFrame` is constructed columns *are not* copied, if possible. The exception are:
+When a `DataFrame` is constructed columns are copied by default. You can disable
+this behavior by setting `copycolumns` keyword argument to `false`. The exception is
+if an `AbstractRange` is passed as a column, then is collected to a `Vector`.
 
-* `DataFrame(::DataFrame)` and `DataFrame(::SubDataFrame)` constructors
-  which perform a copy of the columns.
-* If an `AbstractRange` as a column, then is collected to a `Vector`.
-
-From the moment of its construction `DataFrame` assumes *ownership* of its columns, meaning
-that column vectors should generally not be mutated directly (see below for exceptions).
-
-In order to ensure the ownership principle functions that transform a `DataFrame` to produce a
-new `DataFrame` always perform a copy of the columns. Examples of such functions are [`vcat`](@ref),
+Also functions that transform a `DataFrame` to produce a new `DataFrame` perform a copy of the columns,
+unless they are passed `copycolumns` keyword argument set to `false` (available only for functions
+that could perform a transformation without copying the columns). Examples of such functions are [`vcat`](@ref),
 [`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
-`copy` or the `DataFrame` constructor mentioned above. On the contrary, functions that create
-a view of a `DataFrame` *do not* by definition make copies of the columns, and therefore require
-particular caution. This includes `view`, which returns a `SubDataFrame` or a `DataFrameRow`,
-and `groupby`, which returns a `GroupedDataFrame`.
+`copy` or the `DataFrame` constructor mentioned above.
+
+On the contrary, functions that create a view of a `DataFrame` *do not* by definition make copies of
+the columns, and therefore require particular caution. This includes `view`, which returns
+a `SubDataFrame` or a `DataFrameRow`, and `groupby`, which returns a `GroupedDataFrame`.
 
 A partial exception to this rule are the [`stackdf`](@ref) and [`meltdf`](@ref) functions which
 create a `DataFrame` that contains views of the columns from the source `DataFrame`.
 
-Only in-place functions whose names end with `!` (like `sort!` or [`dropmissing!`](@ref),
+In-place functions whose names end with `!` (like `sort!` or [`dropmissing!`](@ref),
 `setindex!`, `setproperty!`) may mutate the column vectors of the `DataFrame` they take
-as an argument. These functions are safe to call due to the ownership principle,
+as an argument. These functions are safe to call due to the rules described above,
 *except* when a view of the `DataFrame` is in use (via a `SubDataFrame`, a `DataFrameRow`
 or a `GroupedDataFrame`). In the latter case, the view might become corrupted,
 which make trigger errors, silently return invalid data or even cause Julia to crash.

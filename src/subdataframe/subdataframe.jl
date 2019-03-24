@@ -140,6 +140,12 @@ Base.copy(sdf::SubDataFrame) = parent(sdf)[rows(sdf), parentcols(index(sdf), :)]
 deleterows!(df::SubDataFrame, ind) =
     throw(ArgumentError("SubDataFrame does not support deleting rows"))
 
-DataFrame(sdf::SubDataFrame) = sdf[:, :]
+function DataFrame(sdf::SubDataFrame, copycolumns::Bool=true)
+    if copycolumns
+        sdf[:, :]
+    else
+        DataFrame(eachcol(sdf, false), names(sdf), copycolumns=false)
+    end
+end
 
 Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = DataFrame(sdf)

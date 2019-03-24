@@ -1034,7 +1034,7 @@ julia> vcat(df1, df2)
 │ 6   │ 6     │ 6     │
 ```
 """
-Base.vcat(df::AbstractDataFrame) = copy(df)
+Base.vcat(df::AbstractDataFrame) = DataFrame(df)
 Base.vcat(dfs::AbstractDataFrame...) = _vcat(collect(dfs))
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
     isempty(dfs) && return DataFrame()
