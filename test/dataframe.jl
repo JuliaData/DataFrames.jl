@@ -549,7 +549,7 @@ df = DataFrame(A = 1:10, B = 'A':'J')
 
 @testset "append!" begin
     df = DataFrame(A = 1:2, B = 1:2)
-    df2 = DataFrame(A=1:4, B = 1:4)
+    df2 = DataFrame(A = 1:4, B = 1:4)
     @test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
     @test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
     @test df == df2

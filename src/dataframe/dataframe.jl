@@ -1034,7 +1034,7 @@ end
 Add the rows of `df2` to the end of `df1`.
 
 Column names must be equal (including order), with the following exceptions:
-* If `df1` has no columns then newly allocated `Vector`s representing data in all
+* If `df1` has no columns then copies of
   columns from `df2` are added to it.
 * If `df2` has no columns then calling `append!` leaves `df1` unchanged.
 
