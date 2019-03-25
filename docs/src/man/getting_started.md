@@ -523,7 +523,7 @@ or even cause Julia to crash.
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function or simply
 by storing the reference to the column vector before the `DataFrame` was created (note
-that in general the `DataFrame` constructor does not make copies).
+that in general the `DataFrame` constructor does make copies).
 
 ```jldoctest dataframe
 julia> x = [3, 1, 2];
@@ -537,13 +537,13 @@ julia> df = DataFrame(x=x)
 │ 2   │ 1     │
 │ 3   │ 2     │
 
-julia> df.x === x
+julia> df.x == x
 true
 
-julia> df[1] === x
+julia> df[1] !== x
 true
 
-julia> eachcol(df, false)[1] === x
+julia> eachcol(df, false)[1] === df.x
 true
 ```
 

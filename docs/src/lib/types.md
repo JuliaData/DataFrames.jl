@@ -62,7 +62,7 @@ but they are columns of a `DataFrame` returned by `stackdf` and `meltdf`.
 
 When a `DataFrame` is constructed columns are copied by default. You can disable
 this behavior by setting `copycolumns` keyword argument to `false`. The exception is
-if an `AbstractRange` is passed as a column, then is collected to a `Vector`.
+if an `AbstractRange` is passed as a column, then it is always collected to a `Vector`.
 
 Also functions that transform a `DataFrame` to produce a new `DataFrame` perform a copy of the columns,
 unless they are passed `copycolumns` keyword argument set to `false` (available only for functions
@@ -89,13 +89,12 @@ It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 using one of the following methods:
 
 * via the `getproperty` function using the syntax `df.col`;
-* via the `getindex` function using the syntax `df[:col]`;
+* via the `getindex` function using the syntax `df[:col]` (this syntax is planned to be deprecated);
 * by creating `DataFrameColumns` object using the [`eachcol`](@ref) function;
 * by storing the reference to the column before the `DataFrame` was created (note that in general
-  the `DataFrame` constructor does not perform copying).
+  the `DataFrame` constructor does not perform copying only if `copycolumns` keyword argument is set to `false`).
 
-Note that a column obtained from a `DataFrame` using one of these methods should
-not be mutated without caution because:
+A column obtained from a `DataFrame` using one of these methods should not be mutated without caution because:
 
 * resizing a column vector will corrupt its parent `DataFrame` and associated views (if any):
   methods only check the length of the column when it is added

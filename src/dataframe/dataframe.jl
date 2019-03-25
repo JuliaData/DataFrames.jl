@@ -9,8 +9,10 @@ particularly a Vector or CategoricalVector.
 **Constructors**
 
 ```julia
-DataFrame(columns::Vector, names::Vector{Symbol}; makeunique::Bool=false, copycolumns::Bool=true)
-DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol}; makeunique::Bool=false, copycolumns::Bool=true)
+DataFrame(columns::Vector, names::Vector{Symbol};
+          makeunique::Bool=false, copycolumns::Bool=true)
+DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol};
+          makeunique::Bool=false, copycolumns::Bool=true)
 DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false, copycolumns::Bool=true)
@@ -46,25 +48,20 @@ DataFrame(::Union{DataFrame, SubDataFrame}; copycolumns::Bool=true)
 * `copycolumns` : if vectors passed as columns should be copied; note that
   `DataFrame(kwargs...)` does not support this keyword argument and always copies columns.
 
-Each column in `columns` should be the same length.
+Each column in `columns` should have the same length.
 
 **Notes**
 
-A `DataFrame` is a lightweight object. As long as columns are not
-manipulated, creation of a `DataFrame` from existing AbstractVectors is
-inexpensive. For example, indexing on columns is inexpensive, but
-indexing by rows is expensive because copies are made of each column.
+`DataFrame` constructor by default copies all columns passed to it.
+You can make it reuse the columns by setting `copycolumns` keyword argument to `true`.
 
 If a column is passed to a `DataFrame` constructor or is assigned as a whole
 using `setindex!` then its reference is stored in the `DataFrame`. An exception
 to this rule is assignment of an `AbstractRange` as a column, in which case the
 range is collected to a `Vector`.
-The second exception is the `DataFrame(::Union{DataFrame, SubDataFrame})` constructor
-which performs a copy of all columns of the source data frame.
 
 Because column types can vary, a `DataFrame` is not type stable. For
-performance-critical code, do not index into a `DataFrame` inside of
-loops.
+performance-critical code, do not index into a `DataFrame` inside of loops.
 
 **Examples**
 
@@ -87,7 +84,7 @@ df1[1:4, :]
 df1[1:4, :C]
 df1[1:4, :C] = 40. * df1[1:4, :C]
 [df1; df2]  # vcat
-[df1  df2]  # hcat
+[df1 df2]  # hcat
 size(df1)
 ```
 
@@ -167,19 +164,21 @@ function DataFrame(; kwargs...)
 end
 
 function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
-                   makeunique::Bool=false)::DataFrame
+                   makeunique::Bool=false; copycolumns:Bool=true)::DataFrame
     if !all(col -> isa(col, AbstractVector), columns)
         throw(ArgumentError("columns argument must be a vector of AbstractVector objects"))
     end
     return DataFrame(convert(Vector{AbstractVector}, columns),
-                     Index(convert(Vector{Symbol}, cnames), makeunique=makeunique))
+                     Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
+                     copycolumns=copycolumns)
 end
 
 function DataFrame(columns::AbstractVector{<:AbstractVector},
                    cnames::AbstractVector{Symbol}=gennames(length(columns));
-                   makeunique::Bool=false)::DataFrame
+                   makeunique::Bool=false; copycolumns:Bool=true)::DataFrame
     return DataFrame(convert(Vector{AbstractVector}, columns),
-                     Index(convert(Vector{Symbol}, cnames), makeunique=makeunique))
+                     Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
+                     copycolumns=copycolumns)
 end
 
 DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol};
@@ -193,7 +192,8 @@ DataFrame(columns::NTuple{N, AbstractVector}, copycolumns::Bool=true) where {N} 
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
           makeunique::Bool=false) =
-    DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames, makeunique=makeunique)
+    DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
+              makeunique=makeunique)
 
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
@@ -268,18 +268,22 @@ ncol(df::DataFrame) = length(index(df))
     @inbounds cols[col_ind]
 end
 
+# TODO: this will be deprecated and replaced by getcol function
 function Base.getindex(df::DataFrame, col_ind::Symbol)
     selected_column = index(df)[col_ind]
     return _columns(df)[selected_column]
 end
 
+# TODO: this will be deprecated and replaced by select function
+#       which will have a copycolumns keyword argument
 # df[MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
-    new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
+    new_columns = AbstractVector[dv for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
+# TODO: the same as above
 # df[:] => DataFrame
 Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
 
@@ -328,7 +332,7 @@ end
     end
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycolumns=false)
 end
 
 # df[:, SingleColumnIndex] => AbstractVector
@@ -341,7 +345,7 @@ end
 function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]))
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycolumns=false)
 end
 
 # df[MultiRowIndex, :] => DataFrame
@@ -351,13 +355,13 @@ end
                           "rows at index $row_inds"))
     end
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)]
-    return DataFrame(new_columns, copy(index(df)))
+    return DataFrame(new_columns, copy(index(df)), copycolumns=false)
 end
 
 # df[:, :] => DataFrame
 function Base.getindex(df::DataFrame, ::Colon, ::Colon)
     new_columns = AbstractVector[copy(dv) for dv in _columns(df)]
-    return DataFrame(new_columns, Index(_names(df)))
+    return DataFrame(new_columns, Index(_names(df)), copycolumns=false)
 end
 
 ##############################################################################
@@ -778,14 +782,14 @@ function insertcols!(df::DataFrame, col_ind::Int; makeunique::Bool=false, name_c
 end
 
 
-##############################################################################
-##
-## Copying
-##
-##############################################################################
+"""
+    copy(df::DataFrame; copycolumns::Bool=true)
 
-# A copy of a DataFrame points to the original column vectors but
-#   gets its own Index.
+    Copy a `DataFrame` `df`.
+    By default, when `copycolumns` keyword argument is `true`,
+    all columns contained in the `DataFrame` are copied.
+    When `copycolumns` is `false` the columns from `df` are reused.
+"""
 function Base.copy(df::DataFrame; copycolumns::Bool=true)
     if copycolumns
         df[:, :]
@@ -794,17 +798,8 @@ function Base.copy(df::DataFrame; copycolumns::Bool=true)
     end
 end
 
-# Deepcopy is recursive -- if a column is a vector of DataFrames, each of
-#   those DataFrames is deepcopied.
-function Base.deepcopy(df::DataFrame)
-    DataFrame(deepcopy(_columns(df)), deepcopy(index(df)))
-end
-
-##############################################################################
-##
-## Deletion / Subsetting
-##
-##############################################################################
+Base.deepcopy(df::DataFrame) =
+    DataFrame(deepcopy(_columns(df)), deepcopy(index(df)), copycolumns=false)
 
 """
     deletecols!(df::DataFrame, ind)
@@ -1179,7 +1174,8 @@ end
 
 Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
-Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
+Base.convert(::Type{DataFrame}, d::AbstractDict; copycolumns::Bool=true) =
+    DataFrame(d, copycolumns=copycolumns)
 
 
 ##############################################################################

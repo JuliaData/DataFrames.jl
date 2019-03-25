@@ -244,7 +244,8 @@ that is different than the number of rows present in `df`.
 """
 function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be non-negative"))
-    DataFrame(AbstractVector[similar(x, rows) for x in columns(df)], copy(index(df)))
+    DataFrame(AbstractVector[similar(x, rows) for x in columns(df)], copy(index(df)),
+              copycolumns=false)
 end
 
 ##############################################################################
@@ -987,15 +988,15 @@ true
 ```
 """
 Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
-    copycolumns ? copy(df) : DataFrame(eachcol(df, false), names(df))
+    DataFrame(df, copycolumns=copycolumns)
 Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(hcat(df, copycolumns=copycolumns), x,
+    hcat!(DataFrame(df, copycolumns=copycolumns), x,
           makeunique=makeunique, copycolumns=copycolumns)
 Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
     hcat!(x, df, makeunique=makeunique, copycolumns=copycolumns)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame;
           makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(hcat(df1, copycolumns=copycolumns), df2,
+    hcat!(DataFrame(df1, copycolumns=copycolumns), df2,
           makeunique=makeunique, copycolumns=copycolumns)
 Base.hcat(df::AbstractDataFrame, x, y...;
           makeunique::Bool=false, copycolumns::Bool=true) =
@@ -1072,18 +1073,12 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
             offset += lens[j]
         end
     end
-    return DataFrame(cols, header)
+    return DataFrame(cols, header, copycolumns=false)
 end
 
 function Base.reduce(::typeof(vcat), dfs::AbstractVector{<:AbstractDataFrame})
     return _vcat(dfs)
 end
-
-##############################################################################
-##
-## repeat
-##
-##############################################################################
 
 """
     repeat(df::AbstractDataFrame; inner::Integer = 1, outer::Integer = 1)

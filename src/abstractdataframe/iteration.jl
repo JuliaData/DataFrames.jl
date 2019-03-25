@@ -182,6 +182,9 @@ end
 Return a `DataFrame` where each column of `df` is transformed using function `f`.
 `f` must return `AbstractVector` objects all with the same length or scalars.
 
+Note, as a special case, that if `f` is `identity` then the `DataFrame` returned
+by `mapcols` will share the columns with `df`.
+
 **Examples**
 
 ```jldoctest

@@ -31,8 +31,9 @@ meltdf
 
 ```@docs
 allowmissing!
-completecases
 categorical!
+completecases
+copy
 deletecols!
 deleterows!
 describe
