@@ -95,7 +95,6 @@ Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowinds, colinds) =
 
 index(sdf::SubDataFrame) = getfield(sdf, :colindex)
 
-# TODO: Remove these
 nrow(sdf::SubDataFrame) = ncol(sdf) > 0 ? length(rows(sdf))::Int : 0
 ncol(sdf::SubDataFrame) = length(index(sdf))
 

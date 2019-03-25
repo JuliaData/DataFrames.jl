@@ -335,16 +335,22 @@ end
 Report descriptive statistics for a data frame
 
 ```julia
-describe(df::AbstractDataFrame; stats = [:mean, :min, :median, :max, :nmissing, :nunique, :eltype])
+describe(df::AbstractDataFrame)
+describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{<:Symbol}}...)
 ```
 
 **Arguments**
 
-* `df` : the AbstractDataFrame
-* `stats::Union{Symbol,AbstractVector{Symbol}}` : the summary statistics to report. If
-  a vector, allowed fields are `:mean`, `:std`, `:min`, `:q25`, `:median`,
-  `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and `:nmissing`. If set to
-  `:all`, all summary statistics are reported.
+* `df` : the `AbstractDataFrame`
+* `stats::Union{Symbol, Pair{<:Symbol}}...` : the summary statistics to report. 
+  Arguments can be: 
+    *  A symbol from the list `:mean`, `:std`, `:min`, `:q25`, 
+      `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and 
+      `:nmissing`. The default statistics used
+      are `:mean`, `:min`, `:median`, `:max`, `:nunique`, `:nmissing`, and `:eltype`.
+    * `:all` as the only `Symbol` argument to return all statistics. 
+    * A `name => function` pair where `name` is a `Symbol`. This will create
+      a column of summary statistics with the provided name. 
 
 **Result**
 
@@ -366,39 +372,56 @@ If the column does not allow missing values, `nothing` is returned.
 Consequently, `nmissing = 0` indicates that the column allows
 missing values, but does not currently contain any.
 
+If custom functions are provided, they are called repeatedly with the vector corresponding
+to each column as the only argument. For columns allowing for missing values,
+the vector is wrapped in a call to [`skipmissing`](@ref): custom functions must therefore
+support such objects (and not only vectors), and cannot access missing values.
+
+
 **Examples**
 
 ```julia
 df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
 describe(df)
-describe(df, stats = :all)
-describe(df, stats = [:min, :max])
+describe(df, :all)
+describe(df, :min, :max)
+describe(df, :min, :sum => sum)
 ```
 
 """
-function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractVector{Symbol}} =
-                            [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
-    # Check that people don't specify the wrong fields.
+StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) = 
+    _describe(df, collect(stats))
+
+# TODO: un-comment this method definition after the deprecation period of
+# the `stats` keyword for `describe`. 
+# StatsBase.describe(df::AbstractDataFrame) = 
+#     _describe(df, [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
+
+function _describe(df::AbstractDataFrame, stats::AbstractVector)   
+    predefined_funs = Symbol[s for s in stats if s isa Symbol] 
+
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75,
                       :max, :nunique, :nmissing, :first, :last, :eltype]
-    if stats == :all
-        stats = allowed_fields
-    end
 
-    if stats isa Symbol
-        if !(stats in allowed_fields)
-            allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
-            throw(ArgumentError(":$stats not allowed." * allowed_msg))
-        else
-            stats = [stats]
-        end
-    end
-
-    if !issubset(stats, allowed_fields)
-        disallowed_fields = setdiff(stats, allowed_fields)
+    if predefined_funs == [:all]
+        predefined_funs = allowed_fields
+        i = findfirst(s -> s == :all, stats)
+        splice!(stats, i, allowed_fields) # insert in the stats vector to get a good order
+    elseif :all in predefined_funs 
+        throw(ArgumentError("`:all` must be the only `Symbol` argument.")) 
+    elseif !issubset(predefined_funs, allowed_fields)
+        not_allowed = join(setdiff(predefined_funs, allowed_fields), ", :")
         allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
-        not_allowed = "Field(s) not allowed: :" * join(disallowed_fields, ", :") * "."
-        throw(ArgumentError(not_allowed * allowed_msg))
+        throw(ArgumentError(":$not_allowed not allowed." * allowed_msg))
+    end
+
+    custom_funs = Pair[s for s in stats if s isa Pair]
+
+    ordered_names = [s isa Symbol ? s : s[1] for s in stats]
+    
+    if !allunique(ordered_names)
+        duplicate_names = unique(ordered_names[nonunique(DataFrame(ordered_names = ordered_names))])
+        throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: :$(join(duplicate_names, ", "))"))
     end
 
     # Put the summary stats into the return data frame
@@ -408,31 +431,35 @@ function StatsBase.describe(df::AbstractDataFrame; stats::Union{Symbol,AbstractV
     # An array of Dicts for summary statistics
     column_stats_dicts = map(columns(df)) do col
         if eltype(col) >: Missing
-            d = get_stats(collect(skipmissing(col)), stats)
+            t = collect(skipmissing(col))
+            d = get_stats(t, predefined_funs)
+            get_stats!(d, t, custom_funs)
         else
-            d = get_stats(col, stats)
+            d = get_stats(col, predefined_funs)
+            get_stats!(d, col, custom_funs)
         end
 
-        if :nmissing in stats
+        if :nmissing in predefined_funs 
             d[:nmissing] = eltype(col) >: Missing ? count(ismissing, col) : nothing
         end
 
-        if :first in stats
+        if :first in predefined_funs 
             d[:first] = isempty(col) ? nothing : first(col)
         end
 
-        if :last in stats
+        if :last in predefined_funs
             d[:last] = isempty(col) ? nothing : last(col)
         end
 
         return d
     end
 
-    for stat in stats
+    for stat in ordered_names
         # for each statistic, loop through the columns array to find values
         # letting the comprehension choose the appropriate type
         data[stat] = [column_stats_dict[stat] for column_stats_dict in column_stats_dicts]
     end
+
     return data
 end
 
@@ -460,11 +487,12 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
         # we can add non-necessary things to d, because we choose what we need
         # in the main function
         d[:mean] = m
+
+        if :std in stats
+            d[:std] = try std(col, mean = m) catch end
+        end
     end
 
-    if :std in stats
-        d[:std] = try std(col, mean = m) catch end
-    end
 
     if :nunique in stats
         if eltype(col) <: Real
@@ -479,6 +507,12 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
     end
 
     return d
+end
+
+function get_stats!(d::Dict, col::AbstractVector, stats::AbstractVector{<:Pair})
+    for stat in stats 
+        d[stat[1]] = try stat[2](col) catch end
+    end
 end
 
 
@@ -1171,34 +1205,32 @@ Base.parentindices(adf::AbstractDataFrame) = axes(adf)
 
 ## Documentation for methods defined elsewhere
 
-# nrow, ncol
+function nrow end
+function ncol end
+
 """
-Number of rows or columns in an AbstractDataFrame
+    nrow(df::AbstractDataFrame)
+    ncol(df::AbstractDataFrame)
 
-```julia
-nrow(df::AbstractDataFrame)
-ncol(df::AbstractDataFrame)
-```
 
-**Arguments**
-
-* `df` : the AbstractDataFrame
-
-**Result**
-
-* `::AbstractDataFrame` : the updated version
+Return the number of rows or columns in an `AbstractDataFrame` `df`.
 
 See also [`size`](@ref).
 
-NOTE: these functions may be depreciated for `size`.
-
 **Examples**
 
-```julia
-df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10))
-size(df)
-nrow(df)
-ncol(df)
+```jldoctest
+julia> df = DataFrame(i = 1:10, x = rand(10), y = rand(["a", "b", "c"], 10));
+
+julia> size(df)
+(10, 3)
+
+julia> nrow(df)
+10
+
+julia> ncol(df)
+3
 ```
 
 """
+(nrow, ncol)
