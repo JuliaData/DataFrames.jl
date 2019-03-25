@@ -82,7 +82,7 @@ function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
     DataFrame(AbstractVector[repeat(_names(df)[measure_vars], inner=nrow(df)), # variable
-                             reduce(vcat, [df[c] for c in measure_vars]),      # value
+                             vcat([df[c] for c in measure_vars]...),           # value
                              [repeat(df[c], outer=N) for c in id_vars]...],    # id_var columns
               cnames, copycolumns=false)
 end
