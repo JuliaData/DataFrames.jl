@@ -397,20 +397,40 @@ end
     x = [1, 2, 3]
     df = DataFrame(x=x)
     @test deleterows!(df, 1) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
+    @test x == [1, 2, 3]
 
     x = [1, 2, 3]
     df = DataFrame(x=x)
     @test deleterows!(df, [1]) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
+    @test x == [1, 2, 3]
 
     x = [1, 2, 3]
     df = DataFrame(x=x)
     @test deleterows!(df, 1:1) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
+    @test x == [1, 2, 3]
 
     x = [1, 2, 3]
     df = DataFrame(x=x)
+    @test deleterows!(df, [true, false, false]) == DataFrame(x=[2, 3])
+    @test x == [1, 2, 3]
+
+    x = [1, 2, 3]
+    df = DataFrame(:x=>x, copycolumns=false)
+    @test deleterows!(df, 1) == DataFrame(x=[2, 3])
+    @test x == [2, 3]
+
+    x = [1, 2, 3]
+    df = DataFrame(:x=>x, copycolumns=false)
+    @test deleterows!(df, [1]) == DataFrame(x=[2, 3])
+    @test x == [2, 3]
+
+    x = [1, 2, 3]
+    df = DataFrame(:x=>x, copycolumns=false)
+    @test deleterows!(df, 1:1) == DataFrame(x=[2, 3])
+    @test x == [2, 3]
+
+    x = [1, 2, 3]
+    df = DataFrame(:x=>x, copycolumns=false)
     @test deleterows!(df, [true, false, false]) == DataFrame(x=[2, 3])
     @test x == [2, 3]
 end
@@ -809,10 +829,10 @@ end
     @test all(typeof(df[i]) <: Vector for i in 1:ncol(df))
 end
 
-@testset "test that getindex column makes copies" begin
+@testset "test that getindex column and columns" begin
     x = [1]
     y = [1]
-    df = DataFrame(x=x, y=y)
+    df = DataFrame(:x=>x, :y=>y, copycolumns=false)
     @test df.x === x
     @test df[:y] === y
     @test df[1] === x
@@ -970,7 +990,7 @@ end
     x = collect(1:10)
     y = collect(1.0:10.0)
     z = collect(10:-1:1)
-    df = DataFrame(x = x, y = y)
+    df = DataFrame(:x=>x, :y=>y, copycolumns=false)
 
     @test Base.propertynames(df) == names(df)
 

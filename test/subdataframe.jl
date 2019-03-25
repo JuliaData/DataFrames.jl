@@ -123,7 +123,7 @@ end
 @testset "getproperty, setproperty! and propertynames" begin
     x = collect(1:10)
     y = collect(1.0:10.0)
-    df = view(DataFrame(x = x, y = y), 2:6, :)
+    df = view(DataFrame(:x=>x, :y=>y, copycolumns=false), 2:6, :)
 
     @test Base.propertynames(df) == names(df)
 
