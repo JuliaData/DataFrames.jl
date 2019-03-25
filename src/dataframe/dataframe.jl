@@ -279,7 +279,7 @@ end
 # df[MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
-    new_columns = AbstractVector[dv for dv in _columns(df)[selected_columns]]
+    new_columns = _columns(df)[selected_columns]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
