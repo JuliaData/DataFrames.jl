@@ -137,13 +137,13 @@ end
 DataFrame(df::DataFrame; copycolumns::Bool=true) = copy(df, copycolumns=copycolumns)
 
 function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false,
-                   copycolumns:Bool=true)::DataFrame
+                   copycolumns::Bool=true)::DataFrame
     colnames = [Symbol(k) for (k,v) in pairs]
     columns = Any[v for (k,v) in pairs]
     DataFrame(columns, Index(colnames, makeunique=makeunique), copycolumns=copycolumns)
 end
 
-function DataFrame(d::AbstractDict; copycolumns:Bool=true)
+function DataFrame(d::AbstractDict; copycolumns::Bool=true)
     colnames = keys(d)
     if isa(d, Dict)
         colnames = sort!(collect(keys(d)))
@@ -164,7 +164,7 @@ function DataFrame(; kwargs...)
 end
 
 function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
-                   makeunique::Bool=false; copycolumns:Bool=true)::DataFrame
+                   makeunique::Bool=false, copycolumns::Bool=true)::DataFrame
     if !all(col -> isa(col, AbstractVector), columns)
         throw(ArgumentError("columns argument must be a vector of AbstractVector objects"))
     end
@@ -175,7 +175,7 @@ end
 
 function DataFrame(columns::AbstractVector{<:AbstractVector},
                    cnames::AbstractVector{Symbol}=gennames(length(columns));
-                   makeunique::Bool=false; copycolumns:Bool=true)::DataFrame
+                   makeunique::Bool=false, copycolumns::Bool=true)::DataFrame
     return DataFrame(convert(Vector{AbstractVector}, columns),
                      Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
                      copycolumns=copycolumns)
