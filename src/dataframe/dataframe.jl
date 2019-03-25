@@ -1095,7 +1095,11 @@ end
 
 Add the rows of `df2` to the end of `df1`.
 
-Column names must be equal (including order).
+Column names must be equal (including order), with the following exceptions:
+* If `df1` has no columns then copies of
+  columns from `df2` are added to it.
+* If `df2` has no columns then calling `append!` leaves `df1` unchanged.
+
 Values corresponding to new rows are appended in-place to the column vectors of `df1`.
 Column types are therefore preserved, and new values are converted if necessary.
 An error is thrown if conversion fails: this is the case in particular if a column
@@ -1132,6 +1136,14 @@ julia> df1
 ```
 """
 function Base.append!(df1::DataFrame, df2::AbstractDataFrame)
+    if ncol(df1) == 0
+        for (n, v) in eachcol(df2, true)
+            df1[n] = copy(v) # make sure df1 does not reuse df2
+        end
+        return df1
+    end
+    ncol(df2) == 0 && return df1
+
     _names(df1) == _names(df2) || error("Column names do not match")
     nrows, ncols = size(df1)
     try
