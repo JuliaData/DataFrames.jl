@@ -1,7 +1,6 @@
 module TestIteration
 
 using Test, DataFrames
-using DataFrames: columns
 
 df = DataFrame(A = Vector{Union{Int, Missing}}(1:2), B = Vector{Union{Int, Missing}}(2:3))
 
