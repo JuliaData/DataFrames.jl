@@ -1090,7 +1090,10 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 
-function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; exact::Bool=true)
+function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns::Symbol=:exact)
+    if !(columns in (:exact, :intersect))
+        throw(ArgumentError("`columns` keyword argument value must be `:exact` or `:intersect`"))
+    end
     if ncol(df) == 0 && row isa NamedTuple
         for (n, v) in pairs(row)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
@@ -1098,10 +1101,11 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; exact::
         return df
     end
     i = 1
-    if exact && length(row) != size(df, 2)
+    if columns == :exact && length(row) != size(df, 2)
+        # TODO: add tests for this case after the deprecation period
         Base.depwarn("In the future push! will require that `row` has the same number" *
                       "of elements as is the number of columns in `df`." *
-                      "Use `exact=false` to disable this check.", :push!)
+                      "Use `columns=:intersect` to disable this check.", :push!)
     end
     for nm in _names(df)
         try
@@ -1120,25 +1124,24 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; exact::
 end
 
 """
-    push!(df1::DataFrame, iterable::Any)
-    push!(df::DataFrame, row::Union{AbstractDict, NamedTuple, DataFrameRow}; exact::Bool=true)
+    push!(df::DataFrame, row)
 
-Add in-place one row at the end of `df1` taking the values from the iterable `iterable`
-or `row`.
-
-Adding values from `iterable` is based on column number.
-It must contain the same number of elements as the number of columns in `df1`.
-
-Column types of `df1` are preserved, and new values are converted if necessary.
-An error is thrown if conversion fails.
-
-Values in `row` are matched to columns in `df` based on names (order is ignored).
-`row` may contain more columns than `df` if `exact` keyword argument is `false`,
-but all column names that are present in `df` must be present in `row`. Otherwise
-`row` must contain the same list of columns (but possibly in a differnt order).
+Add in-place one row at the end of `df` taking the values from `row`.
 
 Column types of `df` are preserved, and new values are converted if necessary.
 An error is thrown if conversion fails.
+
+If `row` is not `DataFrameRow`, `NamedTuple` nor `AbstractDict` then
+it is assumed to be an iterable and `push!` behavior is based on column number.
+In this case `row` must contain the same number of elements as the number of columns in `df`.
+
+If `row` is `DataFrameRow`, `NamedTuple` or `AbstractDict` then
+values in `row` are matched to columns in `df` based on names (order is ignored).
+`row` may contain more columns than `df` if `columns` keyword argument is `:intersect`
+(this is currently the default, but will hange in the future), but all column names
+that are present in `df` must be present in `row`.
+Otherwise if `columns` keyword argument is `:equal` then `row` must contain the
+same list of columns (but possibly in a differnt order).
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple`
 or `DataFrameRow`, columns are created for all values in `row`, using their names and order.
@@ -1175,7 +1178,7 @@ julia> push!(df, df[1, :])
 │ 4   │ 1     │ 0     │
 │ 5   │ 1     │ 1     │
 
-julia> push!(df, (C="something", A=true, B=false), exact=false)
+julia> push!(df, (C="something", A=true, B=false), columns=:intersect)
 4×2 DataFrame
 │ Row │ A     │ B     │
 │     │ Int64 │ Int64 │

@@ -302,6 +302,9 @@ end
     @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
     @test push!(df, df[1, [2,1]]) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
 
+    push!(df, df[1, [2,1,2]], columns=:intersect)
+    @test df == DataFrame(x=[1, 1, 1, 1], y=[2, 2, 2, 2])
+
     df2 = DataFrame()
     @test push!(df2, df[1, :]) === df2
     @test df2 == df[1:1, :]

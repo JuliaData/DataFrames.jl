@@ -227,7 +227,10 @@ end
 
 @noinline pushhelper!(x, r) = push!(x, x[r])
 
-function Base.push!(df::DataFrame, dfr::DataFrameRow; exact::Bool=true)
+function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:exact)
+    if !(columns in (:exact, :intersect))
+        throw(ArgumentError("`columns` keyword argument value must be `:exact` or `:intersect`"))
+    end
     if ncol(df) == 0
         for (n, v) in pairs(dfr)
             setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
@@ -245,7 +248,7 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; exact::Bool=true)
     else
         # DataFrameRow can contain duplicate columns and we disallow this
         # corner case when push!-ing
-        if exact
+        if columns == :exact
             size(df, 2) == length(dfr) || throw(ArgumentError("Inconsistent number of columns"))
         end
         i = 1
