@@ -215,11 +215,11 @@ end
     df = DataFrame(x=1:4, y=11:14, z=21:24)
     sdf = @view df[2:3, [2]]
     df2 = DataFrame(sdf)
-    @test size(df2) = (2, 1)
+    @test size(df2) == (2, 1)
     @test df2.y isa Vector{Int}
     @test df2.y == [12, 13]
     df2 = DataFrame(sdf, copycolumns=false)
-    @test size(df2) = (2, 1)
+    @test size(df2) == (2, 1)
     @test df2.y isa SubArray{Int,1,Vector{Int},Tuple{UnitRange{Int}},true}
     @test df2.y == [12, 13]
 end
