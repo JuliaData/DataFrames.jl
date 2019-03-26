@@ -42,11 +42,10 @@ Similarly, the `eachcol` function returns a value of the `DataFrameColumns` type
 serves as an iterator over columns of an `AbstractDataFrame`.
 The return value can have two concrete types:
 
-* If the `eachcol` function is called with the `names` argument set to `true` (currently the default,
-  but in the future the default will change to `false`) then it returns a value of the
+* If the `eachcol` function is called with the `names` argument set to `true` (then it returns a value of the
   `DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}` type, which is an
   iterator returning a pair containing the column name and the column vector.
-* If the `eachcol` function is called with `names` argument set to `false` then it returns a value of the
+* If the `eachcol` function is called with `names` argument set to `false` (the default) then it returns a value of the
   `DataFrameColumns{<:AbstractDataFrame, AbstractVector}` type, which is an
   iterator returning the column vector only.
 

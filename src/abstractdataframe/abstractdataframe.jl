@@ -204,7 +204,7 @@ eltypes(df)
 ```
 
 """
-eltypes(df::AbstractDataFrame) = eltype.(columns(df))
+eltypes(df::AbstractDataFrame) = eltype.(eachcol(df, false))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
@@ -244,7 +244,7 @@ that is different than the number of rows present in `df`.
 """
 function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be non-negative"))
-    DataFrame(AbstractVector[similar(x, rows) for x in columns(df)], copy(index(df)))
+    DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df, false)], copy(index(df)))
 end
 
 ##############################################################################
@@ -341,15 +341,15 @@ describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{<:Symbol}}...)
 **Arguments**
 
 * `df` : the `AbstractDataFrame`
-* `stats::Union{Symbol, Pair{<:Symbol}}...` : the summary statistics to report. 
-  Arguments can be: 
-    *  A symbol from the list `:mean`, `:std`, `:min`, `:q25`, 
-      `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and 
+* `stats::Union{Symbol, Pair{<:Symbol}}...` : the summary statistics to report.
+  Arguments can be:
+    *  A symbol from the list `:mean`, `:std`, `:min`, `:q25`,
+      `:median`, `:q75`, `:max`, `:eltype`, `:nunique`, `:first`, `:last`, and
       `:nmissing`. The default statistics used
       are `:mean`, `:min`, `:median`, `:max`, `:nunique`, `:nmissing`, and `:eltype`.
-    * `:all` as the only `Symbol` argument to return all statistics. 
+    * `:all` as the only `Symbol` argument to return all statistics.
     * A `name => function` pair where `name` is a `Symbol`. This will create
-      a column of summary statistics with the provided name. 
+      a column of summary statistics with the provided name.
 
 **Result**
 
@@ -388,16 +388,16 @@ describe(df, :min, :sum => sum)
 ```
 
 """
-StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) = 
+StatsBase.describe(df::AbstractDataFrame, stats::Union{Symbol, Pair{Symbol}}...) =
     _describe(df, collect(stats))
 
 # TODO: un-comment this method definition after the deprecation period of
-# the `stats` keyword for `describe`. 
-# StatsBase.describe(df::AbstractDataFrame) = 
+# the `stats` keyword for `describe`.
+# StatsBase.describe(df::AbstractDataFrame) =
 #     _describe(df, [:mean, :min, :median, :max, :nunique, :nmissing, :eltype])
 
-function _describe(df::AbstractDataFrame, stats::AbstractVector)   
-    predefined_funs = Symbol[s for s in stats if s isa Symbol] 
+function _describe(df::AbstractDataFrame, stats::AbstractVector)
+    predefined_funs = Symbol[s for s in stats if s isa Symbol]
 
     allowed_fields = [:mean, :std, :min, :q25, :median, :q75,
                       :max, :nunique, :nmissing, :first, :last, :eltype]
@@ -406,8 +406,8 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
         predefined_funs = allowed_fields
         i = findfirst(s -> s == :all, stats)
         splice!(stats, i, allowed_fields) # insert in the stats vector to get a good order
-    elseif :all in predefined_funs 
-        throw(ArgumentError("`:all` must be the only `Symbol` argument.")) 
+    elseif :all in predefined_funs
+        throw(ArgumentError("`:all` must be the only `Symbol` argument."))
     elseif !issubset(predefined_funs, allowed_fields)
         not_allowed = join(setdiff(predefined_funs, allowed_fields), ", :")
         allowed_msg = "\nAllowed fields are: :" * join(allowed_fields, ", :")
@@ -417,7 +417,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
     custom_funs = Pair[s for s in stats if s isa Pair]
 
     ordered_names = [s isa Symbol ? s : s[1] for s in stats]
-    
+
     if !allunique(ordered_names)
         duplicate_names = unique(ordered_names[nonunique(DataFrame(ordered_names = ordered_names))])
         throw(ArgumentError("Duplicate names not allowed. Duplicated value(s) are: :$(join(duplicate_names, ", "))"))
@@ -428,7 +428,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
     data[:variable] = names(df)
 
     # An array of Dicts for summary statistics
-    column_stats_dicts = map(columns(df)) do col
+    column_stats_dicts = map(eachcol(df, false)) do col
         if eltype(col) >: Missing
             t = collect(skipmissing(col))
             d = get_stats(t, predefined_funs)
@@ -438,11 +438,11 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
             get_stats!(d, col, custom_funs)
         end
 
-        if :nmissing in predefined_funs 
+        if :nmissing in predefined_funs
             d[:nmissing] = eltype(col) >: Missing ? count(ismissing, col) : nothing
         end
 
-        if :first in predefined_funs 
+        if :first in predefined_funs
             d[:first] = isempty(col) ? nothing : first(col)
         end
 
@@ -509,7 +509,7 @@ function get_stats(col::AbstractVector, stats::AbstractVector{Symbol})
 end
 
 function get_stats!(d::Dict, col::AbstractVector, stats::AbstractVector{<:Pair})
-    for stat in stats 
+    for stat in stats
         d[stat[1]] = try stat[2](col) catch end
     end
 end
@@ -843,7 +843,7 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     n, p = size(df)
     res = Matrix{T}(undef, n, p)
     idx = 1
-    for (name, col) in zip(names(df), columns(df))
+    for (name, col) in zip(names(df), eachcol(df, false))
         try
             copyto!(res, idx, col)
         catch err

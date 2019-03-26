@@ -89,13 +89,13 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
     cols = Vector{AbstractVector}(undef, ncleft + ncol(dfr_noon))
     # inner and left joins preserve non-missingness of the left frame
     _similar_left = kind == :inner || kind == :left ? similar : similar_missing
-    for (i, col) in enumerate(columns(joiner.dfl))
+    for (i, col) in enumerate(eachcol(joiner.dfl, false))
         cols[i] = _similar_left(col, nrow)
         copyto!(cols[i], view(col, all_orig_left_ixs))
     end
     # inner and right joins preserve non-missingness of the right frame
     _similar_right = kind == :inner || kind == :right ? similar : similar_missing
-    for (i, col) in enumerate(columns(dfr_noon))
+    for (i, col) in enumerate(eachcol(dfr_noon, false))
         cols[i+ncleft] = _similar_right(col, nrow)
         copyto!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
@@ -407,7 +407,7 @@ end
 function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::Bool=false)
     r1, r2 = size(df1, 1), size(df2, 1)
     colindex = merge(index(df1), index(df2), makeunique=makeunique)
-    cols = Any[[repeat(c, inner=r2) for c in columns(df1)];
-               [repeat(c, outer=r1) for c in columns(df2)]]
+    cols = Any[[repeat(c, inner=r2) for c in eachcol(df1, false)];
+               [repeat(c, outer=r1) for c in eachcol(df2, false)]]
     DataFrame(cols, colindex)
 end
