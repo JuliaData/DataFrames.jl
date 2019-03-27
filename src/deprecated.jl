@@ -22,8 +22,6 @@ import Base: keys, values, insert!
 @deprecate sub(df::AbstractDataFrame, rows) view(df, rows, :)
 
 ## write.table
-using CodecZlib, TranscodingStreams
-
 export writetable
 """
 Write data to a tabular-file format (CSV, TSV, ...)
