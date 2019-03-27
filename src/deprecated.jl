@@ -70,6 +70,8 @@ function writetable(filename::AbstractString,
 
     if endswith(filename, ".bz") || endswith(filename, ".bz2")
         throw(ArgumentError("BZip2 compression not yet implemented"))
+    elseif endswith(filename, ".gz")
+        throw(ArgumentError("GZip compression no longer implemented"))
     end
 
     if append && isfile(filename) && filesize(filename) > 0
@@ -91,9 +93,7 @@ function writetable(filename::AbstractString,
         end
     end
 
-    encoder = endswith(filename, ".gz") ? GzipCompressorStream : NoopStream
-
-    open(encoder, filename, append ? "a" : "w") do io
+    open(filename, append ? "a" : "w") do io
         printtable(io,
                    df,
                    header = header,
@@ -1118,8 +1118,7 @@ function readtable(pathname::AbstractString;
         error("URL retrieval not yet implemented")
     # (2) Path is GZip file
     elseif endswith(pathname, ".gz")
-        nbytes = 2 * filesize(pathname)
-        io = open(_r, GzipDecompressorStream, pathname, "r")
+        error("GZip decompression no longer implemented")
     # (3) Path is BZip2 file
     elseif endswith(pathname, ".bz") || endswith(pathname, ".bz2")
         error("BZip2 decompression not yet implemented")
