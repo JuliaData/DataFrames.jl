@@ -102,9 +102,9 @@ end
     eachcol(df::AbstractDataFrame, names::Bool=false)
 
 Return a `DataFrameColumns` that iterates an `AbstractDataFrame` column by column.
-If `names` is equal to `true` iteration returns a pair consisting of column name
-and column vector.
-If `names` is equal to `false` (the default) then only column vectors are yielded.
+If `names` is equal to `false` (the default) iteration returns column vectors.
+If `names` is equal to `true` pairs consisting of column name and column vector
+are yielded.
 
 **Examples**
 
@@ -119,20 +119,10 @@ julia> df = DataFrame(x=1:4, y=11:14)
 │ 3   │ 3     │ 13    │
 │ 4   │ 4     │ 14    │
 
-julia> collect(eachcol(df, true))
-2-element Array{Pair{Symbol,AbstractArray{T,1} where T},1}:
- :x => [1, 2, 3, 4]
- :y => [11, 12, 13, 14]
-
 julia> collect(eachcol(df))
 2-element Array{AbstractArray{T,1} where T,1}:
  [1, 2, 3, 4]
  [11, 12, 13, 14]
-
-julia> sum.(eachcol(df, false))
-2-element Array{Int64,1}:
- 10
- 50
 
 julia> map(eachcol(df)) do col
            maximum(col) - minimum(col)
@@ -140,6 +130,16 @@ julia> map(eachcol(df)) do col
 2-element Array{Int64,1}:
  3
  3
+
+julia> sum.(eachcol(df, false))
+2-element Array{Int64,1}:
+ 10
+ 50
+
+julia> collect(eachcol(df, true))
+2-element Array{Pair{Symbol,AbstractArray{T,1} where T},1}:
+ :x => [1, 2, 3, 4]
+ :y => [11, 12, 13, 14]
 ```
 """
 @inline function eachcol(df::T, names::Bool=false) where T<: AbstractDataFrame
