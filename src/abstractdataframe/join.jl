@@ -305,7 +305,6 @@ function Base.join(df1::AbstractDataFrame,
                  indicator_cols[i] *= 'X'
             end
         end
-        # TODO: clean up when df[col] syntax is deprecated
         df1 = copy(df1, copycolumns=false)
         df1[Symbol(indicator_cols[1])] = trues(nrow(df1))
         df2 = copy(df2, copycolumns=false)
@@ -405,7 +404,6 @@ function Base.join(df1::AbstractDataFrame,
             try_idx += 1
             unique_indicator = Symbol(string(indicator, "_", try_idx))
         end
-        # TODO: clean up when the df[col] syntax is deprecated
         joined[unique_indicator] = indicatorcol
 
         deletecols!(joined, Symbol(indicator_cols[1]))
