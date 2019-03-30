@@ -940,7 +940,7 @@ Base.hcat(df::DataFrame, x; makeunique::Bool=false, copycolumns::Bool=true) =
           makeunique=makeunique, copycolumns=copycolumns)
 Base.hcat(df1::DataFrame, df2::AbstractDataFrame;
           makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(copycolumns ? copy(df1) : DataFrame(copy(_columns(df1)), _names(df1)), df2,
+    hcat!(copy(df1, copycolumns=copycolumns), df2,
           makeunique=makeunique, copycolumns=copycolumns)
 Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
           makeunique::Bool=false, copycolumns::Bool=true) =
