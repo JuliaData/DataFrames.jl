@@ -1,3 +1,10 @@
+# Default number of rows and columns to print to HTML and LaTeX
+
+const HTML_NROWS = 30
+const HTML_NCOLS = 30
+const LATEX_NROWS = 30
+const LATEX_NCOLS = 30
+
 ##############################################################################
 #
 # Text output
@@ -92,15 +99,60 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
+"""
+    show(io::IO, mime::MIME, df::AbstractDataFrame;
+         allrows::Bool = !get(io, :limit, true),
+         allcols::Bool = !get(io, :limit, true),
+         summary::Bool=true)
+
+Render a data frame to an I/O stream using `mime`.
+
+# Arguments
+- `io::IO`: The I/O stream to which `df` will be printed.
+- `mime::MIME`: supoorted mime types are: `"text/html"`, `"text/latex"`, `"text/csv"`,
+   `"text/tab-separated-values"`
+- `df::AbstractDataFrame`: The data frame to print.
+- `allrows::Bool `: supported only for HTML and LaTeX mime types;
+   whether to print all rows, rather than a default number defined in
+   `HTML_NROWS` and `LATEX_NROWS` constants. The default value can be overriden by
+   `IOContext` property `nrows`.
+- `allcols::Bool`: supported only for HTML and LaTeX mime types;
+   whether to print all columns, rather than a default number defined in
+   `HTML_NCOLS` and `LATEX_NCOLS` constants. The default value can be overriden by
+   `IOContext` property `ncols`.
+- `summary::Bool = true`: supported only for HTML mime type;
+   Whether to print a brief string summary of the data frame.
+
+# Examples
+```jldoctest
+julia> show(stdout, MIME("text/latex"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
+\\begin{tabular}{r|cc}
+        & A & B\\\\
+        \\hline
+        & Int64 & String\\\\
+        \\hline
+        1 & 1 & x \\\\
+        2 & 2 & y \\\\
+        3 & 3 & z \\\\
+\\end{tabular}
+14
+
+julia> show(stdout, MIME("text/csv"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
+"A","B"
+1,"x"
+2,"y"
+3,"z"
+```
+"""
 Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
-          allrows::Bool = get(io, :limit, false),
-          allcols::Bool = get(io, :limit, false),
+          allrows::Bool = !get(io, :limit, true),
+          allcols::Bool = !get(io, :limit, true),
           summary::Bool=true) =
     _show(io, mime, df, allrows=allrows, allcols=allcols, summary=summary)
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
-               allrows::Bool = get(io, :limit, false),
-               allcols::Bool = get(io, :limit, false),
+               allrows::Bool = !get(io, :limit, true),
+               allcols::Bool = !get(io, :limit, true),
                summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
     if rowid !== nothing && size(df, 1) != 1
         throw(ArgumentError("rowid may be passed only with a single row data frame"))
@@ -108,10 +160,10 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
 
     mxrow, mxcol = size(df)
     if !allrows
-        mxrow = min(mxrow, 10)
+        mxrow = min(mxrow, !get(io, :nrows, HTML_NROWS))
     end
     if !allcols
-        mxcol = min(mxcol, 10)
+        mxcol = min(mxcol, !get(io, :ncols, HTML_NCOLS))
     end
 
     cnames = _names(df)[1:mxcol]
@@ -170,7 +222,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow;
-                   allcols::Bool = get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, true),
                    summary::Bool=true)
     r, c = parentindices(dfr)
     write(io, "<p>DataFrameRow</p>")
@@ -178,8 +230,8 @@ function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow;
 end
 
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame,
-                   allrows::Bool = get(io, :limit, false),
-                   allcols::Bool = get(io, :limit, false))
+                   allrows::Bool = !get(io, :limit, true),
+                   allcols::Bool = !get(io, :limit, true))
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
@@ -235,13 +287,13 @@ function latex_escape(cell::AbstractString)
 end
 
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame;
-          allrows::Bool = get(io, :limit, false),
-          allcols::Bool = get(io, :limit, false)) =
+          allrows::Bool = !get(io, :limit, true),
+          allcols::Bool = !get(io, :limit, true)) =
     _show(io, mime, df, allrows=allrows, allcols=allcols)
 
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
-               allrows::Bool = get(io, :limit, false),
-               allcols::Bool = get(io, :limit, false),
+               allrows::Bool = !get(io, :limit, true),
+               allcols::Bool = !get(io, :limit, true),
                rowid=nothing)
     if rowid !== nothing && size(df, 1) != 1
         throw(ArgumentError("rowid may be passed only with a single row data frame"))
@@ -249,10 +301,10 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
 
     mxrow, mxcol = size(df)
     if !allrows
-        mxrow = min(mxrow, 10)
+        mxrow = min(mxrow, !get(io, :nrows, LATEX_NROWS))
     end
     if !allcols
-        mxcol = min(mxcol, 10)
+        mxcol = min(mxcol, !get(io, :ncols, LATEX_NCOLS))
     end
 
     cnames = _names(df)[1:mxcol]
@@ -301,14 +353,14 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
 end
 
 function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow;
-                   allcols::Bool = get(io, :limit, false))
+                   allcols::Bool = !get(io, :limit, true))
     r, c = parentindices(dfr)
     _show(io, mime, view(parent(dfr), [r], c), allcols=allcols, rowid=r)
 end
 
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame,
-                   allrows::Bool = get(io, :limit, false),
-                   allcols::Bool = get(io, :limit, false))
+                   allrows::Bool = !get(io, :limit, true),
+                   allcols::Bool = !get(io, :limit, true))
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
