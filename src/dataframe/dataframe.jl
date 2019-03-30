@@ -52,8 +52,8 @@ All columns in `columns` should have the same length.
 
 **Notes**
 
-`DataFrame` constructor by default copies all columns passed to it.
-You can make it reuse the columns by setting `copycolumns` keyword argument to `true`.
+The `DataFrame` constructor by default copies all columns vectors passed to it.
+Pass `copycolumns=false` to reuse vectors without copying them
 
 If a column is passed to a `DataFrame` constructor or is assigned as a whole
 using `setindex!` then its reference is stored in the `DataFrame`. An exception
