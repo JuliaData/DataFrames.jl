@@ -147,5 +147,4 @@ function DataFrame(sdf::SubDataFrame; copycolumns::Bool=true)
     end
 end
 
-Base.convert(::Type{DataFrame}, sdf::SubDataFrame; copycolumns::Bool=true) =
-    DataFrame(sdf, copycolumns=copycolumns)
+Base.convert(::Type{DataFrame}, sdf::SubDataFrame) = DataFrame(sdf)

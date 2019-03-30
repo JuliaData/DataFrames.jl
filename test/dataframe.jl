@@ -474,7 +474,7 @@ end
 
     # Test that it works on a custom function
     describe_output.test_std = describe_output.std
-    # Test that describe works with a Pair and a symbol 
+    # Test that describe works with a Pair and a symbol
     @test describe_output[[:variable, :mean, :test_std]] ≅ describe(df, :mean, :test_std => std)
 
     # Test that describe works with a dataframe with no observations
@@ -482,7 +482,7 @@ end
     @test describe(df, :mean) ≅ DataFrame(variable = [:a, :b, :c],
                                           mean = [NaN, nothing, nothing])
 
-    @test_throws ArgumentError describe(df, :mean, :all) 
+    @test_throws ArgumentError describe(df, :mean, :all)
 end
 
 #Check the output of unstack
@@ -841,7 +841,7 @@ end
     @test all(typeof(df[i]) <: Vector for i in 1:ncol(df))
 end
 
-@testset "test that getindex column and columns" begin
+@testset "test getindex using df[col] and df[cols] syntax" begin
     x = [1]
     y = [1]
     df = DataFrame(:x=>x, :y=>y, copycolumns=false)
