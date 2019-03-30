@@ -781,10 +781,10 @@ end
 """
     copy(df::DataFrame; copycolumns::Bool=true)
 
-    Copy a `DataFrame` `df`.
-    By default, when `copycolumns` keyword argument is `true`,
-    all columns contained in the `DataFrame` are copied.
-    When `copycolumns` is `false` the columns from `df` are reused.
+Copy data frame `df`.
+If `copycolumns=true` (the default), return a new  `DataFrame` holding
+copies of column vectors in `df`.
+If `copycolumns=false`, return a new `DataFrame` sharing column vectors with `df`.
 """
 function Base.copy(df::DataFrame; copycolumns::Bool=true)
     if copycolumns
