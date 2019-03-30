@@ -45,7 +45,7 @@ DataFrame(::Union{DataFrame, SubDataFrame}; copycolumns::Bool=true)
 * `ds` : `AbstractDict` of columns
 * `table` : any type that implements the
   [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
-* `copycolumns` : if vectors passed as columns should be copied; note that
+* `copycolumns` : whether vectors passed as columns should be copied; note that
   `DataFrame(kwargs...)` does not support this keyword argument and always copies columns.
 
 Each column in `columns` should have the same length.
