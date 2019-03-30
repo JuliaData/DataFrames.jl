@@ -306,9 +306,9 @@ function Base.join(df1::AbstractDataFrame,
             end
         end
         # TODO: clean up when df[col] syntax is deprecated
-        df1 = DataFrame(df1, copycolumns=false)
+        df1 = copy(df1, copycolumns=false)
         df1[Symbol(indicator_cols[1])] = trues(nrow(df1))
-        df2 = DataFrame(df2, copycolumns=false)
+        df2 = copy(df2, copycolumns=false)
         df2[Symbol(indicator_cols[2])] = trues(nrow(df2))
     end
 

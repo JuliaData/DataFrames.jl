@@ -1183,8 +1183,7 @@ end
 
 Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
-Base.convert(::Type{DataFrame}, d::AbstractDict; copycolumns::Bool=true) =
-    DataFrame(d, copycolumns=copycolumns)
+Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycolumns=false)
 
 
 ##############################################################################
