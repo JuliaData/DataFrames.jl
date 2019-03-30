@@ -36,7 +36,9 @@ DataFrame(::Union{DataFrame, SubDataFrame}; copycolumns::Bool=true)
   if duplicates in `names` are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
 * `kwargs` : the key gives the column names, and the value is the
-  column contents
+  column contents; note that `copycolumns` keyword argument indicates if
+  if vectors passed as columns should be copied so it is not possible to create
+  a column whose name is `:copycolumns` using this constructor
 * `t` : elemental type of all columns
 * `nrows`, `ncols` : number of rows and columns
 * `column_eltypes` : element type of each column
@@ -159,7 +161,22 @@ function DataFrame(; kwargs...)
     if isempty(kwargs)
         DataFrame([], Index())
     else
-        DataFrame(pairs(kwargs)...)
+        cnames = Symbol[]
+        columns = Any[]
+        copycolumns = true
+        for (kw, val) in kwargs
+            if kw == :copycolumns
+                if val isa Bool
+                    copycolumns = val
+                else
+                    throw(ArgumentError("copycolumns keyword argument must be boolean"))
+                end
+            else
+                push!(cnames, kw)
+                push!(columns, val)
+            end
+        end
+        DataFrame(columns, Index(cnames), copycolumns=copycolumns)
     end
 end
 
