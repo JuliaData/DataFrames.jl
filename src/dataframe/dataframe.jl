@@ -48,7 +48,7 @@ DataFrame(::Union{DataFrame, SubDataFrame}; copycolumns::Bool=true)
 * `copycolumns` : whether vectors passed as columns should be copied; note that
   `DataFrame(kwargs...)` does not support this keyword argument and always copies columns.
 
-Each column in `columns` should have the same length.
+All columns in `columns` should have the same length.
 
 **Notes**
 
