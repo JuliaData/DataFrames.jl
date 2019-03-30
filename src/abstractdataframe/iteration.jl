@@ -131,7 +131,7 @@ julia> map(eachcol(df)) do col
  3
  3
 
-julia> sum.(eachcol(df, false))
+julia> sum.(eachcol(df))
 2-element Array{Int64,1}:
  10
  50

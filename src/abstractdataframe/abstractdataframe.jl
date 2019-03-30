@@ -244,7 +244,7 @@ that is different than the number of rows present in `df`.
 """
 function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be non-negative"))
-    DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df, false)], copy(index(df)))
+    DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)], copy(index(df)))
 end
 
 ##############################################################################
