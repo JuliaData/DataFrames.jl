@@ -37,6 +37,15 @@ using Test, DataFrames
     @test eachcol(df[:, :], false)[1] !== df[1]
 end
 
+@testset "getindex df[col] and df[cols]" begin
+    x = [1, 2, 3]
+    df = DataFrame(x=x, copycolumns=false)
+    @test df.x === x
+    @test df[:x] === x
+    @test df[[:x]].x !== x
+    @test df[:].x !== x
+end
+
 @testset "view DataFrame" begin
     df = DataFrame(a=1:3, b=4:6, c=7:9)
 

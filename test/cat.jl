@@ -161,7 +161,7 @@ end
     df3 = hcat(df1, dfv, copycolumns=false)
     @test names(df3) == [:a, :b]
     @test df3.a === df1.a
-    @test df3.b === df2.b
+    @test df3.b === dfv.b
 
     df3 = hcat(df1, x)
     @test names(df3) == [:a, :x1]

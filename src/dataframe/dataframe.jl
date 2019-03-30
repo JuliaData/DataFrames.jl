@@ -203,14 +203,14 @@ DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol};
     DataFrame(collect(AbstractVector, columns), collect(Symbol, cnames),
               makeunique=makeunique, copycolumns=copycolumns)
 
-DataFrame(columns::NTuple{N, AbstractVector}, copycolumns::Bool=true) where {N} =
+DataFrame(columns::NTuple{N, AbstractVector}; copycolumns::Bool=true) where {N} =
     DataFrame(collect(AbstractVector, columns), gennames(length(columns)),
               copycolumns=copycolumns)
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
           makeunique::Bool=false) =
     DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
-              makeunique=makeunique)
+              makeunique=makeunique, copycolumns=false)
 
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
@@ -219,7 +219,8 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
                              fill!(Tables.allocatecolumn(elty, nrows), missing) :
                              Tables.allocatecolumn(elty, nrows)
                              for elty in column_eltypes]
-    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames), makeunique=makeunique))
+    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
+                     copycolumns=false)
 end
 
 # Initialize an empty DataFrame with specific eltypes and names
@@ -936,9 +937,10 @@ function hcat!(df1::DataFrame, df2::DataFrame;
 end
 
 hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(df, DataFrame(AbstractVector[x]), makeunique=makeunique, copycolumns=copycolumns)
+    hcat!(df, DataFrame(AbstractVector[x], copycolumns=copycolumns),
+          makeunique=makeunique, copycolumns=copycolumns)
 hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(DataFrame(AbstractVector[copycolumns ? copy(x) : x]), copy(df),
+    hcat!(DataFrame(AbstractVector[x], copycolumns=copycolumns), df,
           makeunique=makeunique, copycolumns=copycolumns)
 hcat!(x, df::DataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
