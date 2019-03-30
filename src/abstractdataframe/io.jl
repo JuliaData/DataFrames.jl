@@ -92,16 +92,29 @@ function html_escape(cell::AbstractString)
     return cell
 end
 
-Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true) =
-    _show(io, mime, df, summary=summary)
+Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
+          allrows::Bool = get(io, :limit, false),
+          allcols::Bool = get(io, :limit, false),
+          summary::Bool=true) =
+    _show(io, mime, df, allrows=allrows, allcols=allcols, summary=summary)
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
+               allrows::Bool = get(io, :limit, false),
+               allcols::Bool = get(io, :limit, false),
                summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
-    n = size(df, 1)
-    if rowid !== nothing && n != 1
+    if rowid !== nothing && size(df, 1) != 1
         throw(ArgumentError("rowid may be passed only with a single row data frame"))
     end
-    cnames = _names(df)
+
+    mxrow, mxcol = size(df)
+    if !allrows
+        mxrow = min(mxrow, 10)
+    end
+    if !allcols
+        mxcol = min(mxcol, 10)
+    end
+
+    cnames = _names(df)[1:mxcol]
     write(io, "<table class=\"data-frame\">")
     write(io, "<thead>")
     write(io, "<tr>")
@@ -119,15 +132,13 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     write(io, "</tr>")
     write(io, "</thead>")
     write(io, "<tbody>")
-    haslimit = get(io, :limit, true)
-    if haslimit
-        tty_rows, tty_cols = displaysize(io)
-        mxrow = min(n,tty_rows)
-    else
-        mxrow = n
-    end
     if summary
-        write(io, "<p>$(digitsep(n)) rows × $(digitsep(ncol(df))) columns</p>")
+        omitmsg = if mxcol < size(df, 2)
+                      " (omitted printing of $(size(df, 2)-mxcol) columns)"
+                  else
+                      ""
+                  end
+        write(io, "<p>$(digitsep(size(df, 1))) rows × $(digitsep(ncol(df))) columns$omitmsg</p>")
     end
     for row in 1:mxrow
         write(io, "<tr>")
@@ -146,7 +157,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
         end
         write(io, "</tr>")
     end
-    if n > mxrow
+    if size(df, 1) > mxrow
         write(io, "<tr>")
         write(io, "<th>&vellip;</th>")
         for column_name in cnames
@@ -158,13 +169,17 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     write(io, "</table>")
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow;
+                   allcols::Bool = get(io, :limit, false),
+                   summary::Bool=true)
     r, c = parentindices(dfr)
     write(io, "<p>DataFrameRow</p>")
-    _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r)
+    _show(io, mime, view(parent(dfr), [r], c), allcols=allcols, summary=summary, rowid=r)
 end
 
-function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
+function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame,
+                   allrows::Bool = get(io, :limit, false),
+                   allcols::Bool = get(io, :limit, false))
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
@@ -182,7 +197,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         write(io, "<p><i>First Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "</i></p>")
-        show(io, mime, gd[1], summary=false)
+        show(io, mime, gd[1], allrows=allrows, allcols=allcols, summary=false)
     end
     if N > 1
         nrows = size(gd[N], 1)
@@ -195,7 +210,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
         write(io, "<p><i>Last Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "</i></p>")
-        show(io, mime, gd[N], summary=false)
+        show(io, mime, gd[N], allrows=allrows, allcols=allcols, summary=false)
     end
 end
 
@@ -219,29 +234,32 @@ function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
-Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame) =
-    _show(io, mime, df)
+Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame;
+          allrows::Bool = get(io, :limit, false),
+          allcols::Bool = get(io, :limit, false)) =
+    _show(io, mime, df, allrows=allrows, allcols=allcols)
 
-function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
-    nrows = size(df, 1)
-    ncols = size(df, 2)
-
-    if rowid !== nothing && nrows != 1
+function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
+               allrows::Bool = get(io, :limit, false),
+               allcols::Bool = get(io, :limit, false),
+               rowid=nothing)
+    if rowid !== nothing && size(df, 1) != 1
         throw(ArgumentError("rowid may be passed only with a single row data frame"))
     end
 
-    haslimit = get(io, :limit, true)
-    if haslimit
-        tty_rows, tty_cols = displaysize(io)
-        mxrow = min(nrows,tty_rows)
-    else
-        mxrow = nrows
+    mxrow, mxcol = size(df)
+    if !allrows
+        mxrow = min(mxrow, 10)
+    end
+    if !allcols
+        mxcol = min(mxcol, 10)
     end
 
-    cnames = _names(df)
-    alignment = repeat("c", ncols)
+    cnames = _names(df)[1:mxcol]
+    alignment = repeat("c", mxcol)
     write(io, "\\begin{tabular}{r|")
     write(io, alignment)
+    mxcol < size(df, 2) && write(io, "c")
     write(io, "}\n")
     write(io, "\t& ")
     header = join(map(c -> latex_escape(string(c)), cnames), " & ")
@@ -251,12 +269,13 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     write(io, "\t& ")
     header = join(map(c -> latex_escape(string(compacttype(c))), eltypes(df)), " & ")
     write(io, header)
+    mxcol < size(df, 2) && write(io, " & ")
     write(io, "\\\\\n")
     write(io, "\t\\hline\n")
     for row in 1:mxrow
         write(io, "\t")
         write(io, @sprintf("%d", rowid === nothing ? row : rowid))
-        for col in 1:ncols
+        for col in 1:mxcol
             write(io, " & ")
             cell = isassigned(df[col], row) ? df[row,col] : Base.undef_ref_str
             if !ismissing(cell)
@@ -267,24 +286,29 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
                 end
             end
         end
+        mxcol < size(df, 2) && write(io, " & \$\\dots\$")
         write(io, " \\\\\n")
     end
-    if nrows > mxrow
+    if size(df, 1) > mxrow
         write(io, "\t\$\\dots\$")
-        for col in 1:ncols
+        for col in 1:mxcol
             write(io, " & \$\\dots\$")
         end
+        mxcol < size(df, 2) && write(io, " & ")
         write(io, " \\\\\n")
     end
     write(io, "\\end{tabular}\n")
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
+function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow;
+                   allcols::Bool = get(io, :limit, false))
     r, c = parentindices(dfr)
-    _show(io, mime, view(parent(dfr), [r], c), rowid=r)
+    _show(io, mime, view(parent(dfr), [r], c), allcols=allcols, rowid=r)
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
+function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame,
+                   allrows::Bool = get(io, :limit, false),
+                   allcols::Bool = get(io, :limit, false))
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
@@ -303,7 +327,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         write(io, "First Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "\n\n")
-        show(io, mime, gd[1])
+        show(io, mime, gd[1], allrows=allrows, allcols=allcols, )
     end
     if N > 1
         nrows = size(gd[N], 1)
@@ -317,7 +341,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
         write(io, "Last Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "\n\n")
-        show(io, mime, gd[N])
+        show(io, mime, gd[N], allrows=allrows, allcols=allcols)
     end
 end
 
