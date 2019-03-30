@@ -204,7 +204,7 @@ eltypes(df)
 ```
 
 """
-eltypes(df::AbstractDataFrame) = eltype.(eachcol(df, false))
+eltypes(df::AbstractDataFrame) = eltype.(eachcol(df))
 
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)

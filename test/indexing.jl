@@ -6,12 +6,12 @@ using Test, DataFrames
     df = DataFrame(a=1:3, b=4:6, c=7:9)
 
     @test df[1] == [1, 2, 3]
-    @test df[1] === eachcol(df, false)[1]
+    @test df[1] === eachcol(df)[1]
     @test df[1:2] == DataFrame(a=1:3, b=4:6)
-    @test eachcol(df[1:2], false)[1] === eachcol(df, false)[1] === eachcol(df)[1]
+    @test eachcol(df[1:2])[1] === eachcol(df)[1] === eachcol(df)[1]
     @test df[:] == df
     @test df[:] !== df
-    @test eachcol(df[:], false)[1] === eachcol(df, false)[1] === eachcol(df)[1]
+    @test eachcol(df[:])[1] === eachcol(df)[1] === eachcol(df)[1]
 
     @test df[1, 1] == 1
     @test df[1, 1:2] isa DataFrameRow
@@ -27,9 +27,9 @@ using Test, DataFrames
     @test df[:, 1] == [1, 2, 3]
     @test df[:, 1] !== df[1]
     @test df[:, 1:2] == DataFrame(a=1:3, b=4:6)
-    @test eachcol(df[:, 1:2], false)[1] !== df[1]
+    @test eachcol(df[:, 1:2])[1] !== df[1]
     @test df[:, :] == df
-    @test eachcol(df[:, :], false)[1] !== df[1]
+    @test eachcol(df[:, :])[1] !== df[1]
 end
 
 @testset "view DataFrame" begin

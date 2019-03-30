@@ -683,7 +683,7 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
                 incols = gd.parent[first(p)]
             else
                 df = gd.parent[collect(first(p))]
-                incols = NamedTuple{Tuple(names(df))}(eachcol(df, false))
+                incols = NamedTuple{Tuple(names(df))}(eachcol(df))
             end
             firstres = do_call(fun, gd, incols, 1)
             idx, outcols, _ = _combine_with_first(wrap(firstres), fun, gd, incols)
@@ -715,7 +715,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
         fun = last(f)
     elseif f isa Pair
         df = gd.parent[collect(first(f))]
-        incols = NamedTuple{Tuple(names(df))}(eachcol(df, false))
+        incols = NamedTuple{Tuple(names(df))}(eachcol(df))
         fun = last(f)
     else
         incols = nothing
