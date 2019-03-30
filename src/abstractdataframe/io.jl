@@ -160,10 +160,10 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
 
     mxrow, mxcol = size(df)
     if !allrows
-        mxrow = min(mxrow, !get(io, :nrows, HTML_NROWS))
+        mxrow = min(mxrow, get(io, :nrows, HTML_NROWS))
     end
     if !allcols
-        mxcol = min(mxcol, !get(io, :ncols, HTML_NCOLS))
+        mxcol = min(mxcol, get(io, :ncols, HTML_NCOLS))
     end
 
     cnames = _names(df)[1:mxcol]
@@ -301,10 +301,10 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
 
     mxrow, mxcol = size(df)
     if !allrows
-        mxrow = min(mxrow, !get(io, :nrows, LATEX_NROWS))
+        mxrow = min(mxrow, get(io, :nrows, LATEX_NROWS))
     end
     if !allcols
-        mxcol = min(mxcol, !get(io, :ncols, LATEX_NCOLS))
+        mxcol = min(mxcol, get(io, :ncols, LATEX_NCOLS))
     end
 
     cnames = _names(df)[1:mxcol]
