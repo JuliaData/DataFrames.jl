@@ -268,14 +268,11 @@ ncol(df::DataFrame) = length(index(df))
     @inbounds cols[col_ind]
 end
 
-# TODO: this will be deprecated and replaced by getcol function
 function Base.getindex(df::DataFrame, col_ind::Symbol)
     selected_column = index(df)[col_ind]
     return _columns(df)[selected_column]
 end
 
-# TODO: this will be deprecated and replaced by select function
-#       which will have a copycolumns keyword argument
 # df[MultiColumnIndex] => DataFrame
 function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
@@ -283,7 +280,6 @@ function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
-# TODO: the same as above
 # df[:] => DataFrame
 Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
 
