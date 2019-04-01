@@ -1090,9 +1090,9 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d)
 
-function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns::Symbol=:exact)
-    if !(columns in (:exact, :intersect))
-        throw(ArgumentError("`columns` keyword argument value must be `:exact` or `:intersect`"))
+function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns::Symbol=:equal)
+    if !(columns in (:equal, :intersect))
+        throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
     end
     if ncol(df) == 0 && row isa NamedTuple
         for (n, v) in pairs(row)
@@ -1101,7 +1101,8 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns
         return df
     end
     i = 1
-    if columns == :exact && length(row) != size(df, 2)
+    # Only check for equal lengths, as an error will be thrown below if some names don't match
+    if columns === :equal && length(row) != size(df, 2)
         # TODO: add tests for this case after the deprecation period
         Base.depwarn("In the future push! will require that `row` has the same number" *
                       "of elements as is the number of columns in `df`." *
@@ -1125,26 +1126,28 @@ end
 
 """
     push!(df::DataFrame, row)
+    push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+          columns::Symbol=:intersect)
 
 Add in-place one row at the end of `df` taking the values from `row`.
 
 Column types of `df` are preserved, and new values are converted if necessary.
 An error is thrown if conversion fails.
 
-If `row` is not `DataFrameRow`, `NamedTuple` nor `AbstractDict` then
-it is assumed to be an iterable and `push!` behavior is based on column number.
+If `row` is neither a `DataFrameRow`, `NamedTuple` nor `AbstractDict` then
+it is assumed to be an iterable and columns are matched by order of appearance.
 In this case `row` must contain the same number of elements as the number of columns in `df`.
 
-If `row` is `DataFrameRow`, `NamedTuple` or `AbstractDict` then
+If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
 values in `row` are matched to columns in `df` based on names (order is ignored).
-`row` may contain more columns than `df` if `columns` keyword argument is `:intersect`
-(this is currently the default, but will hange in the future), but all column names
+`row` may contain more columns than `df` if `columns=:intersect`
+(this is currently the default, but will change in the future), but all column names
 that are present in `df` must be present in `row`.
-Otherwise if `columns` keyword argument is `:equal` then `row` must contain the
-same list of columns (but possibly in a differnt order).
+Otherwise if `columns=:equal` then `row` must contain exactly the same columns as `df`
+(but possibly in a different order).
 
-As a special case, if `df` has no columns and `row` is a `NamedTuple`
-or `DataFrameRow`, columns are created for all values in `row`, using their names and order.
+As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
+columns are created for all values in `row`, using their names and order.
 
 # Examples
 ```jldoctest
@@ -1204,13 +1207,13 @@ julia> push!(df, Dict(:A=>1.0, :B=>2.0))
 │ 7   │ 1     │ 2     │
 ```
 """
-function Base.push!(df::DataFrame, iterable::Any)
-    if length(iterable) != size(df, 2)
-        msg = "Length of iterable does not match DataFrame column count."
+function Base.push!(df::DataFrame, row::Any)
+    if length(row) != size(df, 2)
+        msg = "Length of `row` does not match `DataFrame` column count."
         throw(ArgumentError(msg))
     end
     i = 1
-    for t in iterable
+    for t in row
         try
             push!(_columns(df)[i], t)
         catch
