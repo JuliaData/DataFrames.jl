@@ -36,7 +36,7 @@ DataFrame(::Union{DataFrame, SubDataFrame}; copycolumns::Bool=true)
   if duplicates in `names` are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
 * `kwargs` : the key gives the column names, and the value is the
-  column contents; note that `copycolumns` keyword argument indicates if
+  column contents; note that the `copycolumns` keyword argument indicates if
   if vectors passed as columns should be copied so it is not possible to create
   a column whose name is `:copycolumns` using this constructor
 * `t` : elemental type of all columns
