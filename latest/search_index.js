@@ -753,11 +753,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "lib/functions.html#Base.push!",
+    "page": "Functions",
+    "title": "Base.push!",
+    "category": "function",
+    "text": "push!(df::DataFrame, row)\npush!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};\n      columns::Symbol=:intersect)\n\nAdd in-place one row at the end of df taking the values from row.\n\nColumn types of df are preserved, and new values are converted if necessary. An error is thrown if conversion fails.\n\nIf row is neither a DataFrameRow, NamedTuple nor AbstractDict then it is assumed to be an iterable and columns are matched by order of appearance. In this case row must contain the same number of elements as the number of columns in df.\n\nIf row is a DataFrameRow, NamedTuple or AbstractDict then values in row are matched to columns in df based on names (order is ignored). row may contain more columns than df if columns=:intersect (this is currently the default, but will change in the future), but all column names that are present in df must be present in row. Otherwise if columns=:equal then row must contain exactly the same columns as df (but possibly in a different order).\n\nAs a special case, if df has no columns and row is a NamedTuple or DataFrameRow, columns are created for all values in row, using their names and order.\n\nExamples\n\njulia> df = DataFrame(A=1:3, B=1:3)\n3×2 DataFrame\n│ Row │ A     │ B     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 1     │\n│ 2   │ 2     │ 2     │\n│ 3   │ 3     │ 3     │\n\njulia> push!(df, (true, false))\n4×2 DataFrame\n│ Row │ A     │ B     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 1     │\n│ 2   │ 2     │ 2     │\n│ 3   │ 3     │ 3     │\n│ 4   │ 1     │ 0     │\n\njulia> push!(df, df[1, :])\n5×2 DataFrame\n│ Row │ A     │ B     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 1     │\n│ 2   │ 2     │ 2     │\n│ 3   │ 3     │ 3     │\n│ 4   │ 1     │ 0     │\n│ 5   │ 1     │ 1     │\n\njulia> push!(df, (C=\"something\", A=true, B=false), columns=:intersect)\n4×2 DataFrame\n│ Row │ A     │ B     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 1     │\n│ 2   │ 2     │ 2     │\n│ 3   │ 3     │ 3     │\n│ 4   │ 1     │ 0     │\n│ 5   │ 1     │ 1     │\n│ 6   │ 1     │ 0     │\n\njulia> push!(df, Dict(:A=>1.0, :B=>2.0))\n5×2 DataFrame\n│ Row │ A     │ B     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 1     │\n│ 2   │ 2     │ 2     │\n│ 3   │ 3     │ 3     │\n│ 4   │ 1     │ 0     │\n│ 5   │ 1     │ 1     │\n│ 6   │ 1     │ 0     │\n│ 7   │ 1     │ 2     │\n\n\n\n\n\n"
+},
+
+{
     "location": "lib/functions.html#Basics-1",
     "page": "Functions",
     "title": "Basics",
     "category": "section",
-    "text": "allowmissing!\ncompletecases\ncategorical!\ndeletecols!\ndeleterows!\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\ninsertcols!\nmapcols\nnames!\nnonunique\nnrow\nncol\nrename!\nrename\nrepeat\nshow\nsort\nsort!\nunique!\npermutecols!\nvcat\nappend!"
+    "text": "allowmissing!\ncompletecases\ncategorical!\ndeletecols!\ndeleterows!\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\ninsertcols!\nmapcols\nnames!\nnonunique\nnrow\nncol\nrename!\nrename\nrepeat\nshow\nsort\nsort!\nunique!\npermutecols!\nvcat\nappend!\npush!"
 },
 
 {
