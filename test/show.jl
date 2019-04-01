@@ -338,4 +338,21 @@ end
     │ 2   │ missing   │"""
 end
 
+@testset "Test using :compact parameter of IOContext" begin
+    df = DataFrame(x = [float(pi)])
+    @test sprint(show, df) == """
+        1×1 DataFrame
+        │ Row │ x       │
+        │     │ Float64 │
+        ├─────┼─────────┤
+        │ 1   │ 3.14159 │"""
+
+    @test sprint(show, df, context=:compact=>false) == """
+        1×1 DataFrame
+        │ Row │ x                 │
+        │     │ Float64           │
+        ├─────┼───────────────────┤
+        │ 1   │ 3.141592653589793 │"""
+end
+
 end # module

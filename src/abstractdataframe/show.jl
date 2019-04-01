@@ -2,32 +2,32 @@ Base.summary(df::AbstractDataFrame) = # -> String
     @sprintf("%d×%d %s", size(df)..., typeof(df).name)
 
 let
-    local io = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
+    local buffer = IOBuffer(Vector{UInt8}(undef, 80), read=true, write=true)
     global ourstrwidth
 
     """
-        DataFrames.ourstrwidth(x::Any)
+        DataFrames.ourstrwidth(io::IO, x::Any)
 
     Determine the number of characters that would be used to print a value.
     """
-    function ourstrwidth(x::Any) # -> Int
-        truncate(io, 0)
-        ourshowcompact(io, x)
-        textwidth(String(take!(io)))
+    function ourstrwidth(io::IO, x::Any) # -> Int
+        truncate(buffer, 0)
+        ourshow(IOContext(buffer, :compact=>get(io, :compact, true)), x)
+        textwidth(String(take!(buffer)))
     end
 end
 
 """
-    DataFrames.ourshowcompact(io::IO, x::Any)
+    DataFrames.ourshow(io::IO, x::Any)
 
-Render a value to an IO object in a compact format. Unlike
+Render a value to an IO object. Unlike
 `show`, render strings without surrounding quote marks.
 """
-ourshowcompact(io::IO, x::Any) =
-    show(IOContext(io, :compact=>true, :typeinfo=>typeof(x)), x) # -> Void
-ourshowcompact(io::IO, x::AbstractString) = escape_string(io, x, "") # -> Void
-ourshowcompact(io::IO, x::Symbol) = ourshowcompact(io, string(x)) # -> Void
-ourshowcompact(io::IO, x::Nothing) = nothing
+ourshow(io::IO, x::Any) =
+    show(IOContext(io, :compact=>get(io, :compact, true), :typeinfo=>typeof(x)), x)
+ourshow(io::IO, x::AbstractString) = escape_string(io, x, "")
+ourshow(io::IO, x::Symbol) = ourshow(io, string(x))
+ourshow(io::IO, x::Nothing) = nothing
 
 """Return compact string representation of type T"""
 function compacttype(T::Type, maxwidth::Int=8)
@@ -51,6 +51,7 @@ end
 
 """
     DataFrames.getmaxwidths(df::AbstractDataFrame,
+                            io::IO,
                             rowindices1::AbstractVector{Int},
                             rowindices2::AbstractVector{Int},
                             rowlabel::Symbol)
@@ -69,6 +70,7 @@ implicit row ID column contained in every `AbstractDataFrame`.
 
 # Arguments
 - `df::AbstractDataFrame`: The data frame whose columns will be printed.
+- `io::IO`: The `IO` to which `df` is to be printed
 - `rowindices1::AbstractVector{Int}: A set of indices of the first
   chunk of the AbstractDataFrame that would be rendered to IO.
 - `rowindices2::AbstractVector{Int}: A set of indices of the second
@@ -84,7 +86,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A = 1:3, B = ["x", "yy", "z"]);
 
-julia> DataFrames.getmaxwidths(df, 1:1, 3:3, :Row)
+julia> DataFrames.getmaxwidths(df, stdout, 1:1, 3:3, :Row)
 3-element Array{Int64,1}:
  1
  1
@@ -92,37 +94,38 @@ julia> DataFrames.getmaxwidths(df, 1:1, 3:3, :Row)
 ```
 """
 function getmaxwidths(df::AbstractDataFrame,
+                      io::IO,
                       rowindices1::AbstractVector{Int},
                       rowindices2::AbstractVector{Int},
                       rowlabel::Symbol,
                       rowid=nothing) # -> Vector{Int}
     maxwidths = Vector{Int}(undef, size(df, 2) + 1)
 
-    undefstrwidth = ourstrwidth(Base.undef_ref_str)
+    undefstrwidth = ourstrwidth(io, Base.undef_ref_str)
 
     j = 1
     for (name, col) in eachcol(df, true)
         # (1) Consider length of column name
-        maxwidth = ourstrwidth(name)
+        maxwidth = ourstrwidth(io, name)
 
         # (2) Consider length of longest entry in that column
         for indices in (rowindices1, rowindices2), i in indices
             if isassigned(col, i)
-                maxwidth = max(maxwidth, ourstrwidth(col[i]))
+                maxwidth = max(maxwidth, ourstrwidth(io, col[i]))
             else
                 maxwidth = max(maxwidth, undefstrwidth)
             end
         end
-        maxwidths[j] = max(maxwidth, ourstrwidth(compacttype(eltype(col))))
+        maxwidths[j] = max(maxwidth, ourstrwidth(io, compacttype(eltype(col))))
         j += 1
     end
 
     if rowid isa Nothing
         rowmaxwidth1 = isempty(rowindices1) ? 0 : ndigits(maximum(rowindices1))
         rowmaxwidth2 = isempty(rowindices2) ? 0 : ndigits(maximum(rowindices2))
-        maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2), ourstrwidth(rowlabel))
+        maxwidths[j] = max(max(rowmaxwidth1, rowmaxwidth2), ourstrwidth(io, rowlabel))
     else
-        maxwidths[j] = max(ndigits(rowid), ourstrwidth(rowlabel))
+        maxwidths[j] = max(ndigits(rowid), ourstrwidth(io, rowlabel))
     end
 
     return maxwidths
@@ -148,7 +151,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A = 1:3, B = ["x", "yy", "z"]);
 
-julia> maxwidths = DataFrames.getmaxwidths(df, 1:1, 3:3, :Row)
+julia> maxwidths = DataFrames.getmaxwidths(df, stdout, 1:1, 3:3, :Row)
 3-element Array{Int64,1}:
  1
  1
@@ -197,7 +200,7 @@ julia> using DataFrames
 
 julia> df = DataFrame(A = 1:3, B = ["x", "yy", "z"]);
 
-julia> maxwidths = DataFrames.getmaxwidths(df, 1:1, 3:3, :Row)
+julia> maxwidths = DataFrames.getmaxwidths(df, stdout, 1:1, 3:3, :Row)
 3-element Array{Int64,1}:
  1
  1
@@ -296,17 +299,17 @@ function showrowindices(io::IO,
             strlen = 0
             if isassigned(df[j], i)
                 s = df[i, j]
-                strlen = ourstrwidth(s)
+                strlen = ourstrwidth(io, s)
                 if ismissing(s)
                     printstyled(io, s, color=:light_black)
                 elseif s === nothing
                     strlen = 0
                 else
-                    ourshowcompact(io, s)
+                    ourshow(io, s)
                 end
             else
-                strlen = ourstrwidth(Base.undef_ref_str)
-                ourshowcompact(io, Base.undef_ref_str)
+                strlen = ourstrwidth(io, Base.undef_ref_str)
+                ourshow(io, Base.undef_ref_str)
             end
             padding = maxwidths[j] - strlen
             for _ in 1:padding
@@ -416,15 +419,15 @@ function showrows(io::IO,
 
         # Print column names
         @printf io "│ %s" rowlabel
-        padding = rowmaxwidth - ourstrwidth(rowlabel)
+        padding = rowmaxwidth - ourstrwidth(io, rowlabel)
         for itr in 1:padding
             write(io, ' ')
         end
         print(io, " │ ")
         for j in leftcol:rightcol
             s = _names(df)[j]
-            ourshowcompact(io, s)
-            padding = maxwidths[j] - ourstrwidth(s)
+            ourshow(io, s)
+            padding = maxwidths[j] - ourstrwidth(io, s)
             for itr in 1:padding
                 write(io, ' ')
             end
@@ -445,7 +448,7 @@ function showrows(io::IO,
         for j in leftcol:rightcol
             s = compacttype(eltype(df[j]), maxwidths[j])
             printstyled(io, s, color=:light_black)
-            padding = maxwidths[j] - ourstrwidth(s)
+            padding = maxwidths[j] - ourstrwidth(io, s)
             for itr in 1:padding
                 write(io, ' ')
             end
@@ -526,7 +529,7 @@ function _show(io::IO,
         rowindices1 = 1:bound
         rowindices2 = max(bound + 1, nrows - nrowssubset + 1):nrows
     end
-    maxwidths = getmaxwidths(df, rowindices1, rowindices2, rowlabel, rowid)
+    maxwidths = getmaxwidths(df, io, rowindices1, rowindices2, rowlabel, rowid)
     width = getprintedwidth(maxwidths)
     showrows(io,
              df,
