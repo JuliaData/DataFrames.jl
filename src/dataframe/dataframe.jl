@@ -169,7 +169,7 @@ function DataFrame(; kwargs...)
                 if val isa Bool
                     copycolumns = val
                 else
-                    throw(ArgumentError("copycolumns keyword argument must be boolean"))
+                    throw(ArgumentError("the `copycolumns` keyword argument must be Boolean"))
                 end
             else
                 push!(cnames, kw)
