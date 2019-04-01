@@ -60,4 +60,5 @@ unique!
 permutecols!
 vcat
 append!
+push!
 ```
