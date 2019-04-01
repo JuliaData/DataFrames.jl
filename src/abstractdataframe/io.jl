@@ -412,8 +412,6 @@ allocate(::Type{Union{Missing, WeakRefString{T}}}, rows, ref) where {T} =
     WeakRefStringArray(ref, Union{Missing, WeakRefString{T}}, rows)
 allocate(::Type{Missing}, rows, ref) = missings(rows)
 
-# TODO: I do not understand how the code below is used - needs a review
-
 # Construct or modify a DataFrame to be ready to stream data from a source with `sch`
 function DataFrame(sch::Data.Schema{R}, ::Type{S}=Data.Field,
                    append::Bool=false, args...;
