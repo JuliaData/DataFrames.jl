@@ -43,8 +43,8 @@ If it is performed a description explicitly mentions that the data is *copied*.
 For performance reasons, accessing, via `getindex` or `view`, a single `row` and multiple `cols` of a `DataFrame`, a `SubDataFrame` or a `DataFrameRow` always returns a `DataFrameRow` (which is a view-like type).
 
 `DataFrame`:
-* `df[col]` -> the vector contained in column `col`; this syntax is planned to be deprecated;
-* `df[cols]` -> a freshly allocated `DataFrame` containing the copies of vectors contained in columns `cols`; this syntax is planned to be deprecated;
+* `df[col]` -> the vector contained in column `col`;
+* `df[cols]` -> a freshly allocated `DataFrame` containing the copies of vectors contained in columns `cols`;
 * `df[row, col]` -> the value contained in row `row` of column `col`, the same as `df[col][row]`;
 * `df[row, cols]` -> a `DataFrameRow` with parent `df` if `cols` is a colon and `df[cols]` otherwise;
 * `df[rows, col]` -> a copy of the vector `df[col]` with only the entries corresponding to `rows` selected, the same as `df[col][rows]`;
@@ -57,8 +57,8 @@ For performance reasons, accessing, via `getindex` or `view`, a single `row` and
 * `@view df[rows, cols]` -> a `SubDataFrame` with `rows` selected with parent `df` if `cols` is a colon and `df[cols]` otherwise.
 
 `SubDataFrame`:
-* `sdf[col]` -> a view of the vector contained in column `col` of `parent(sdf)` with `DataFrames.rows(sdf)` as a selector; this syntax is planned to be deprecated;
-* `sdf[cols]` -> a `SubDataFrame`, with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise; this syntax is planned to be deprecated;
+* `sdf[col]` -> a view of the vector contained in column `col` of `parent(sdf)` with `DataFrames.rows(sdf)` as a selector;
+* `sdf[cols]` -> a `SubDataFrame`, with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
 * `sdf[row, col]` -> a value contained in row `row` of column `col`;
 * `sdf[row, cols]` -> a `DataFrameRow` with parent `parent(sdf)` if `cols` is a colon and `parent(sdf)[cols]` otherwise;
 * `sdf[rows, col]` -> a copy of a vector `sdf[col]` with only rows `rows` selected;

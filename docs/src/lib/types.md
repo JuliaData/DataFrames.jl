@@ -88,7 +88,7 @@ It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 using one of the following methods:
 
 * via the `getproperty` function using the syntax `df.col`;
-* via the `getindex` function using the syntax `df[:col]` (this syntax is planned to be deprecated);
+* via the `getindex` function using the syntax `df[:col]`;
 * by creating `DataFrameColumns` object using the [`eachcol`](@ref) function;
 * by storing the reference to the column before the `DataFrame` was created (note that in general
   the `DataFrame` constructor does not perform copying only if `copycolumns` keyword argument is set to `false`).
