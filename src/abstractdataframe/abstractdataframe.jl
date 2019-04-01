@@ -428,7 +428,7 @@ function _describe(df::AbstractDataFrame, stats::AbstractVector)
     data[:variable] = names(df)
 
     # An array of Dicts for summary statistics
-    column_stats_dicts = map(eachcol(df, false)) do col
+    column_stats_dicts = map(eachcol(df)) do col
         if eltype(col) >: Missing
             t = collect(skipmissing(col))
             d = get_stats(t, predefined_funs)
@@ -843,7 +843,7 @@ function Base.convert(::Type{Matrix{T}}, df::AbstractDataFrame) where T
     n, p = size(df)
     res = Matrix{T}(undef, n, p)
     idx = 1
-    for (name, col) in zip(names(df), eachcol(df, false))
+    for (name, col) in eachcol(df, true)
         try
             copyto!(res, idx, col)
         catch err
