@@ -143,7 +143,7 @@ function DataFrame(sdf::SubDataFrame; copycolumns::Bool=true)
     if copycolumns
         sdf[:, :]
     else
-        DataFrame(eachcol(sdf, false), names(sdf), copycolumns=false)
+        DataFrame(eachcol(sdf), names(sdf), copycolumns=false)
     end
 end
 

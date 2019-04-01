@@ -808,7 +808,7 @@ function Base.copy(df::DataFrame; copycolumns::Bool=true)
     if copycolumns
         df[:, :]
     else
-        DataFrame(eachcol(df, false), names(df), copycolumns=false)
+        DataFrame(eachcol(df), names(df), copycolumns=false)
     end
 end
 
