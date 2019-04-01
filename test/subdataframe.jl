@@ -204,11 +204,11 @@ end
     df2 = DataFrame(sdf)
     @test df2 isa DataFrame
     @test df2 == df[[3,1,4], [3,2,1]]
-    @test all(x -> x isa Vector{Int}, eachcol(df2, false))
+    @test all(x -> x isa Vector{Int}, eachcol(df2))
     df2 = convert(DataFrame, sdf)
     @test df2 isa DataFrame
     @test df2 == df[[3,1,4], [3,2,1]]
-    @test all(x -> x isa Vector{Int}, eachcol(df2, false))
+    @test all(x -> x isa Vector{Int}, eachcol(df2))
 
     df = DataFrame(x=1:4, y=11:14, z=21:24)
     sdf = @view df[2:3, [2]]

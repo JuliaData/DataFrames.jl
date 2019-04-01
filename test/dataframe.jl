@@ -2,7 +2,6 @@ module TestDataFrame
 
 using Dates, DataFrames, LinearAlgebra, Statistics, Random, Test
 using DataFrames: _columns
-using DataFrames: columns
 const ≅ = isequal
 const ≇ = !isequal
 
@@ -62,7 +61,7 @@ end
                         c = CategoricalArray{Union{Float64, Missing}}(undef, 2))
     # https://github.com/JuliaData/Missings.jl/issues/66
     # @test missingdf ≅ similar(df, 2)
-    @test typeof.(columns(similar(df, 2))) == typeof.(columns(missingdf))
+    @test typeof.(eachcol(similar(df, 2))) == typeof.(eachcol(missingdf))
     @test size(similar(df, 2)) == size(missingdf)
 end
 
@@ -73,15 +72,15 @@ end
     @test haskey(df, 1)
     @test_throws MethodError haskey(df, 1.5)
     @test_throws ArgumentError haskey(df, true)
-    @test get(df, :a, -1) === columns(df)[1]
+    @test get(df, :a, -1) === eachcol(df)[1]
     @test get(df, :c, -1) == -1
     @test !isempty(df)
 
     dfv = view(df, 1:2, 1:2)
-    @test get(df, :a, -1) === columns(df)[1]
+    @test get(df, :a, -1) === eachcol(df)[1]
 
     @test empty!(df) === df
-    @test isempty(columns(df))
+    @test isempty(eachcol(df))
     @test isempty(df)
     @test isempty(DataFrame(a=[], b=[]))
 
@@ -319,6 +318,10 @@ end
     df = DataFrame(x=1, y=2)
     @test_throws ArgumentError push!(df, Dict(:x=>1, "y"=>2))
     @test df == DataFrame(x=1, y=2)
+
+    df = DataFrame()
+    @test push!(df, (a=1, b=true)) === df
+    @test df == DataFrame(a=1, b=true)
 end
 
 @testset "deletecols!" begin
@@ -588,11 +591,11 @@ end
 
 df = DataFrame(A = Vector{Union{Int, Missing}}(1:3), B = Vector{Union{Int, Missing}}(4:6))
 DRT = CategoricalArrays.DefaultRefType
-@test all(c -> isa(c, Vector{Union{Int, Missing}}), columns(categorical!(deepcopy(df))))
+@test all(c -> isa(c, Vector{Union{Int, Missing}}), eachcol(categorical!(deepcopy(df))))
 @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-          columns(categorical!(deepcopy(df), [1,2])))
+          eachcol(categorical!(deepcopy(df), [1,2])))
 @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-          columns(categorical!(deepcopy(df), [:A,:B])))
+          eachcol(categorical!(deepcopy(df), [:A,:B])))
 @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
                 _columns(categorical!(deepcopy(df), [:A]))) == 1
 @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
@@ -635,7 +638,7 @@ end
                             Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
                             Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
     @test isa(udf[1], Vector{Int})
-    @test all(isa.(columns(udf)[2:end], Vector{Union{Int, Missing}}))
+    @test all(isa.(eachcol(udf)[2:end], Vector{Union{Int, Missing}}))
     df = DataFrame([categorical(repeat(1:2, inner=4)),
                        categorical(repeat('a':'d', outer=2)), categorical(1:8)],
                    [:id, :variable, :value])
@@ -645,7 +648,7 @@ end
                             Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
                             Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
     @test isa(udf[1], CategoricalVector{Int})
-    @test all(isa.(columns(udf)[2:end], CategoricalVector{Union{Int, Missing}}))
+    @test all(isa.(eachcol(udf)[2:end], CategoricalVector{Union{Int, Missing}}))
 end
 
 @testset "duplicate entries in unstack warnings" begin
@@ -787,14 +790,14 @@ end
     df = DataFrame([CategoricalArray(1:10),
                     CategoricalArray(string.('a':'j'))])
     allowmissing!(df)
-    @test all(x->x <: CategoricalVector, typeof.(columns(df)))
+    @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltypes(df)[1] <: Union{CategoricalValue{Int}, Missing}
     @test eltypes(df)[2] <: Union{CategoricalString, Missing}
     df[1,2] = missing
     @test_throws MissingException disallowmissing!(df)
     df[1,2] = "a"
     disallowmissing!(df)
-    @test all(x->x <: CategoricalVector, typeof.(columns(df)))
+    @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltypes(df)[1] <: CategoricalValue{Int}
     @test eltypes(df)[2] <: CategoricalString
 end

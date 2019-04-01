@@ -1200,15 +1200,24 @@ Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
 Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycolumns=false)
 
-
-##############################################################################
-##
-## push! a row onto a DataFrame
-##
-##############################################################################
-
-function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple})
+function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns::Symbol=:equal)
+    if !(columns in (:equal, :intersect))
+        throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
+    end
+    if ncol(df) == 0 && row isa NamedTuple
+        for (n, v) in pairs(row)
+            setproperty!(df, n, fill!(Tables.allocatecolumn(typeof(v), 1), v))
+        end
+        return df
+    end
     i = 1
+    # Only check for equal lengths, as an error will be thrown below if some names don't match
+    if columns === :equal && length(row) != size(df, 2)
+        # TODO: add tests for this case after the deprecation period
+        Base.depwarn("In the future push! will require that `row` has the same number" *
+                      "of elements as is the number of columns in `df`." *
+                      "Use `columns=:intersect` to disable this check.", :push!)
+    end
     for nm in _names(df)
         try
             push!(df[i], row[nm])
@@ -1225,14 +1234,96 @@ function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple})
     df
 end
 
-# array and tuple like collections
-function Base.push!(df::DataFrame, iterable::Any)
-    if length(iterable) != size(df, 2)
-        msg = "Length of iterable does not match DataFrame column count."
+"""
+    push!(df::DataFrame, row)
+    push!(df::DataFrame, row::Union{DataFrameRow, NamedTuple, AbstractDict};
+          columns::Symbol=:intersect)
+
+Add in-place one row at the end of `df` taking the values from `row`.
+
+Column types of `df` are preserved, and new values are converted if necessary.
+An error is thrown if conversion fails.
+
+If `row` is neither a `DataFrameRow`, `NamedTuple` nor `AbstractDict` then
+it is assumed to be an iterable and columns are matched by order of appearance.
+In this case `row` must contain the same number of elements as the number of columns in `df`.
+
+If `row` is a `DataFrameRow`, `NamedTuple` or `AbstractDict` then
+values in `row` are matched to columns in `df` based on names (order is ignored).
+`row` may contain more columns than `df` if `columns=:intersect`
+(this is currently the default, but will change in the future), but all column names
+that are present in `df` must be present in `row`.
+Otherwise if `columns=:equal` then `row` must contain exactly the same columns as `df`
+(but possibly in a different order).
+
+As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
+columns are created for all values in `row`, using their names and order.
+
+# Examples
+```jldoctest
+julia> df = DataFrame(A=1:3, B=1:3)
+3×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+
+julia> push!(df, (true, false))
+4×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 0     │
+
+julia> push!(df, df[1, :])
+5×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 0     │
+│ 5   │ 1     │ 1     │
+
+julia> push!(df, (C="something", A=true, B=false), columns=:intersect)
+4×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 0     │
+│ 5   │ 1     │ 1     │
+│ 6   │ 1     │ 0     │
+
+julia> push!(df, Dict(:A=>1.0, :B=>2.0))
+5×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
+│ 4   │ 1     │ 0     │
+│ 5   │ 1     │ 1     │
+│ 6   │ 1     │ 0     │
+│ 7   │ 1     │ 2     │
+```
+"""
+function Base.push!(df::DataFrame, row::Any)
+    if length(row) != size(df, 2)
+        msg = "Length of `row` does not match `DataFrame` column count."
         throw(ArgumentError(msg))
     end
     i = 1
-    for t in iterable
+    for t in row
         try
             push!(_columns(df)[i], t)
         catch
@@ -1247,12 +1338,6 @@ function Base.push!(df::DataFrame, iterable::Any)
     end
     df
 end
-
-##############################################################################
-##
-## Reorder columns
-##
-##############################################################################
 
 """
     permutecols!(df::DataFrame, p::AbstractVector)
