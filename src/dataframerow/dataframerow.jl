@@ -227,9 +227,9 @@ end
 
 @noinline pushhelper!(x, r) = push!(x, x[r])
 
-function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:exact)
-    if !(columns in (:exact, :intersect))
-        throw(ArgumentError("`columns` keyword argument value must be `:exact` or `:intersect`"))
+function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:equal)
+    if !(columns in (:equal, :intersect))
+        throw(ArgumentError("`columns` keyword argument must be `:equal` or `:intersect`"))
     end
     if ncol(df) == 0
         for (n, v) in pairs(dfr)
@@ -248,8 +248,10 @@ function Base.push!(df::DataFrame, dfr::DataFrameRow; columns::Symbol=:exact)
     else
         # DataFrameRow can contain duplicate columns and we disallow this
         # corner case when push!-ing
-        if columns == :exact
-            size(df, 2) == length(dfr) || throw(ArgumentError("Inconsistent number of columns"))
+        # Only check for equal lengths, as an error will be thrown below if some names don't match
+        if columns === :equal
+            msg = "Number of columns of `row` does not match `DataFrame` column count."
+            size(df, 2) == length(dfr) || throw(ArgumentError(msg))
         end
         i = 1
         for nm in _names(df)
