@@ -1,7 +1,6 @@
 module TestCat
 
 using Test, Random, DataFrames
-using DataFrames: columns
 const ≅ = isequal
 
 #
@@ -158,7 +157,7 @@ end
 @testset "vcat >2 args" begin
     empty_dfs = [DataFrame(), DataFrame(), DataFrame()]
     @test vcat(empty_dfs...) == reduce(vcat, empty_dfs) == DataFrame()
-    
+
     df = DataFrame(x = trues(1), y = falses(1))
     dfs = [df, df, df]
     @test vcat(dfs...) ==reduce(vcat, dfs) == DataFrame(x = trues(3), y = falses(3))
@@ -167,13 +166,13 @@ end
 @testset "vcat mixed coltypes" begin
     df = vcat(DataFrame([[1]], [:x]), DataFrame([[1.0]], [:x]))
     @test df == DataFrame([[1.0, 1.0]], [:x])
-    @test typeof.(columns(df)) == [Vector{Float64}]
+    @test typeof.(eachcol(df)) == [Vector{Float64}]
     df = vcat(DataFrame([[1]], [:x]), DataFrame([["1"]], [:x]))
     @test df == DataFrame([[1, "1"]], [:x])
-    @test typeof.(columns(df)) == [Vector{Any}]
+    @test typeof.(eachcol(df)) == [Vector{Any}]
     df = vcat(DataFrame([Union{Missing, Int}[1]], [:x]), DataFrame([[1]], [:x]))
     @test df == DataFrame([[1, 1]], [:x])
-    @test typeof.(columns(df)) == [Vector{Union{Missing, Int}}]
+    @test typeof.(eachcol(df)) == [Vector{Union{Missing, Int}}]
     df = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
     @test df == DataFrame([[1, 1]], [:x])
     @test df[:x] isa Vector{Int}
@@ -188,14 +187,14 @@ end
     df = vcat(DataFrame([Union{Int, Missing}[1]], [:x]),
               DataFrame([["1"]], [:x]))
     @test df == DataFrame([[1, "1"]], [:x])
-    @test typeof.(columns(df)) == [Vector{Any}]
+    @test typeof.(eachcol(df)) == [Vector{Any}]
     df = vcat(DataFrame([CategoricalArray([1])], [:x]),
               DataFrame([CategoricalArray(["1"])], [:x]))
     @test df == DataFrame([[1, "1"]], [:x])
     @test df[:x] isa CategoricalVector{Any}
     df = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
     @test df == DataFrame([[true, false]], [:x])
-    @test typeof.(columns(df)) == [Vector{Bool}]
+    @test typeof.(eachcol(df)) == [Vector{Bool}]
 end
 
 @testset "vcat out of order" begin
@@ -213,7 +212,7 @@ end
     @test vcat(df2, df1, df2) == DataFrame([[2, 4, 6, 7, 8, 9, 2, 4, 6],
                                             [8, 10, 12, 4, 5, 6, 8, 10, 12],
                                             [14, 16, 18, 1, 2, 3, 14, 16, 18]] ,[:C, :B, :A])
-    
+
     @test size(vcat(df1, df1, df1, df2, df2, df2)) == (18, 3)
     df3 = df1[[1, 3, 2]]
     res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
