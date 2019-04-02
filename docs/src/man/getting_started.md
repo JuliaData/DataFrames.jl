@@ -515,7 +515,7 @@ julia> x
    3
 ```
 
-In-place functions are generally safe to call, except when a view of the `DataFrame` is in use
+In-place functions are safe to call, except when a view of the `DataFrame` is in use
 (created via a `view`, `@view` or [`groupby`](@ref)). In the latter case, the view
 might become corrupted, which make trigger errors, silently return invalid data
 or even cause Julia to crash.

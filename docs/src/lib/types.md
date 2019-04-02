@@ -64,10 +64,10 @@ this behavior by setting `copycolumns` keyword argument to `false`. The exceptio
 if an `AbstractRange` is passed as a column, then it is always collected to a `Vector`.
 
 Also functions that transform a `DataFrame` to produce a new `DataFrame` perform a copy of the columns,
-unless they are passed `copycolumns` keyword argument set to `false` (available only for functions
+unless they are passed `copycolumns=false` (available only for functions
 that could perform a transformation without copying the columns). Examples of such functions are [`vcat`](@ref),
 [`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
-`copy` or the `DataFrame` constructor mentioned above.
+[`copy`](@ref) or the [`DataFrame`](@ref) constructor mentioned above.
 
 On the contrary, functions that create a view of a `DataFrame` *do not* by definition make copies of
 the columns, and therefore require particular caution. This includes `view`, which returns
@@ -89,18 +89,19 @@ using one of the following methods:
 
 * via the `getproperty` function using the syntax `df.col`;
 * via the `getindex` function using the syntax `df[:col]`;
-* by creating `DataFrameColumns` object using the [`eachcol`](@ref) function;
-* by storing the reference to the column before the `DataFrame` was created (note that in general
+* by creating a `DataFrameColumns` object using the [`eachcol`](@ref) function;
+* by storing the reference to the column before creating a `DataFrame` with `copycolumns=false`
   the `DataFrame` constructor does not perform copying only if `copycolumns` keyword argument is set to `false`).
 
-A column obtained from a `DataFrame` using one of these methods should not be mutated without caution because:
+A column obtained from a `DataFrame` using one of the above methods should not be mutated
+without caution because:
 
 * resizing a column vector will corrupt its parent `DataFrame` and associated views (if any):
   methods only check the length of the column when it is added
   to the `DataFrame` and later assume that all columns have the same length;
 * reordering values in a column vector (e.g. using `sort!`) will break the consistency of rows
   with other columns, which will also affect views (if any);
-* changing values contained in a column vector is acceptable as long as it was not used as
+* changing values contained in a column vector is acceptable as long as it is not used as
   a grouping column in a `GroupedDataFrame` created based on the `DataFrame`.
 
 ## Types specification
