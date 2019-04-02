@@ -78,7 +78,6 @@ For performance reasons, accessing, via `getindex` or `view`, a single `row` and
 
 ## `setindex!`, `setproperty!` and broadcasted assignment
 
-This is a planned functionality.
 
 The following list the effect of `setindex!`, `setproperty!` and broadcasted assignment and operations.
 
