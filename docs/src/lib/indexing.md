@@ -78,7 +78,6 @@ For performance reasons, accessing, via `getindex` or `view`, a single `row` and
 
 ## `setindex!`, `setproperty!` and broadcasted assignment
 
-
 The following list the effect of `setindex!`, `setproperty!` and broadcasted assignment and operations.
 
 In all operations copying is performed in general.
@@ -148,6 +147,7 @@ If it is not performed a description explicitly mentions that the data is assign
 
 * if `v` is a `DataFrameRow` or `NamedTuple` or `AbstractDict` then
     * `length(v)` must be equal to `length(cols)`
+    * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
     * column names in `v` must be the same as selected by `cols`
     * an operation `df[row, col] = v[col]` for `col in cols` is performed
 * if `v` is a `AbstractVector{<:AbstractVector}` or `NTuple{N,AbstractVector}`:
