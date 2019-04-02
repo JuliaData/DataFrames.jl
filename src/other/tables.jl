@@ -11,32 +11,32 @@ Tables.materializer(df::AbstractDataFrame) = DataFrame
 
 getvector(x::AbstractVector) = x
 getvector(x) = collect(x)
-fromcolumns(x; copycolumns::Bool=true) =
+fromcolumns(x; copycols::Bool=true) =
     DataFrame(AbstractVector[getvector(c) for c in Tables.eachcolumn(x)],
               Index(collect(Symbol, propertynames(x))),
-              copycolumns=copycolumns)
+              copycols=copycols)
 
-function DataFrame(x; copycolumns::Bool=true)
+function DataFrame(x; copycols::Bool=true)
     if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
-        return DataFrame(Vector{AbstractVector}(x), copycolumns=copycolumns)
+        return DataFrame(Vector{AbstractVector}(x), copycols=copycols)
     end
     if applicable(iterate, x)
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
-                             copycolumns=copycolumns)
+                             copycols=copycols)
         end
     end
     if Tables.istable(x)
-        return fromcolumns(Tables.columns(x), copycolumns=copycolumns)
+        return fromcolumns(Tables.columns(x), copycols=copycols)
     end
     throw(ArgumentError("unable to construct DataFrame from $(typeof(x))"))
 end
 
-Base.append!(df::DataFrame, x) = append!(df, DataFrame(x, copycolumns=false))
+Base.append!(df::DataFrame, x) = append!(df, DataFrame(x, copycols=false))
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
 DataFrame(x::Vector{<:NamedTuple}) =
-    fromcolumns(Tables.columns(Tables.IteratorWrapper(x)), copycolumns=false)
+    fromcolumns(Tables.columns(Tables.IteratorWrapper(x)), copycols=false)
 
 IteratorInterfaceExtensions.getiterator(df::AbstractDataFrame) = Tables.datavaluerows(df)
 IteratorInterfaceExtensions.isiterable(x::AbstractDataFrame) = true

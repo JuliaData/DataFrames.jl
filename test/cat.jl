@@ -112,7 +112,7 @@ end
     @test_throws ArgumentError hcat(df, "a", makeunique=true)
 end
 
-@testset "hcat: copycolumns" begin
+@testset "hcat: copycols" begin
     df1 = DataFrame(a=1:3)
     df2 = DataFrame(b=1:3)
     dfv = view(df2, :, :)
@@ -121,10 +121,10 @@ end
     df3 = hcat(df1)
     @test df3 == df1
     @test df3.a !== df1.a
-    df3 = hcat(df1, copycolumns=true)
+    df3 = hcat(df1, copycols=true)
     @test df3 == df1
     @test df3.a !== df1.a
-    df3 = hcat(df1, copycolumns=false)
+    df3 = hcat(df1, copycols=false)
     @test df3 == df1
     @test df3.a === df1.a
 
@@ -134,13 +134,13 @@ end
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
-    df3 = hcat(df1, df2, copycolumns=true)
+    df3 = hcat(df1, df2, copycols=true)
     @test names(df3) == [:a, :b]
     @test df3.a == df1.a
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
-    df3 = hcat(df1, df2, copycolumns=false)
+    df3 = hcat(df1, df2, copycols=false)
     @test names(df3) == [:a, :b]
     @test df3.a === df1.a
     @test df3.b === df2.b
@@ -151,13 +151,13 @@ end
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
-    df3 = hcat(df1, dfv, copycolumns=true)
+    df3 = hcat(df1, dfv, copycols=true)
     @test names(df3) == [:a, :b]
     @test df3.a == df1.a
     @test df3.b == df2.b
     @test df3.a !== df1.a
     @test df3.b !== df2.b
-    df3 = hcat(df1, dfv, copycolumns=false)
+    df3 = hcat(df1, dfv, copycols=false)
     @test names(df3) == [:a, :b]
     @test df3.a === df1.a
     @test df3.b === dfv.b
@@ -168,13 +168,13 @@ end
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
-    df3 = hcat(df1, x, copycolumns=true)
+    df3 = hcat(df1, x, copycols=true)
     @test names(df3) == [:a, :x1]
     @test df3.a == df1.a
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
-    df3 = hcat(df1, x, copycolumns=false)
+    df3 = hcat(df1, x, copycols=false)
     @test names(df3) == [:a, :x1]
     @test df3.a === df1.a
     @test df3.x1 === x
@@ -185,13 +185,13 @@ end
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
-    df3 = hcat(x, df1, copycolumns=true)
+    df3 = hcat(x, df1, copycols=true)
     @test names(df3) == [:x1, :a]
     @test df3.a == df1.a
     @test df3.x1 == x
     @test df3.a !== df1.a
     @test df3.x1 !== x
-    df3 = hcat(x, df1, copycolumns=false)
+    df3 = hcat(x, df1, copycols=false)
     @test names(df3) == [:x1, :a]
     @test df3.a === df1.a
     @test df3.x1 === x
@@ -204,7 +204,7 @@ end
     @test df3.a !== df1.a
     @test df3.b !== dfv.b
     @test df3.x1 !== x
-    df3 = hcat(dfv, x, df1, copycolumns=true)
+    df3 = hcat(dfv, x, df1, copycols=true)
     @test names(df3) == [:b, :x1, :a]
     @test df3.a == df1.a
     @test df3.b == dfv.b
@@ -212,7 +212,7 @@ end
     @test df3.a !== df1.a
     @test df3.b !== dfv.b
     @test df3.x1 !== x
-    df3 = hcat(dfv, x, df1, copycolumns=false)
+    df3 = hcat(dfv, x, df1, copycols=false)
     @test names(df3) == [:b, :x1, :a]
     @test df3.a === df1.a
     @test df3.b === dfv.b

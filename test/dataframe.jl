@@ -418,22 +418,22 @@ end
     @test x == [1, 2, 3]
 
     x = [1, 2, 3]
-    df = DataFrame(x=x, copycolumns=false)
+    df = DataFrame(x=x, copycols=false)
     @test deleterows!(df, 1) == DataFrame(x=[2, 3])
     @test x == [2, 3]
 
     x = [1, 2, 3]
-    df = DataFrame(x=x, copycolumns=false)
+    df = DataFrame(x=x, copycols=false)
     @test deleterows!(df, [1]) == DataFrame(x=[2, 3])
     @test x == [2, 3]
 
     x = [1, 2, 3]
-    df = DataFrame(x=x, copycolumns=false)
+    df = DataFrame(x=x, copycols=false)
     @test deleterows!(df, 1:1) == DataFrame(x=[2, 3])
     @test x == [2, 3]
 
     x = [1, 2, 3]
-    df = DataFrame(x=x, copycolumns=false)
+    df = DataFrame(x=x, copycols=false)
     @test deleterows!(df, [true, false, false]) == DataFrame(x=[2, 3])
     @test x == [2, 3]
 end
@@ -847,7 +847,7 @@ end
 @testset "test getindex using df[col] and df[cols] syntax" begin
     x = [1]
     y = [1]
-    df = DataFrame(x=x, y=y, copycolumns=false)
+    df = DataFrame(x=x, y=y, copycols=false)
     @test df.x === x
     @test df[:y] === y
     @test df[1] === x
@@ -1005,7 +1005,7 @@ end
     x = collect(1:10)
     y = collect(1.0:10.0)
     z = collect(10:-1:1)
-    df = DataFrame(x=x, y=y, copycolumns=false)
+    df = DataFrame(x=x, y=y, copycols=false)
 
     @test Base.propertynames(df) == names(df)
 

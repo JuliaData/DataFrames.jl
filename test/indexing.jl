@@ -41,7 +41,7 @@ end
 
 @testset "getindex df[col] and df[cols]" begin
     x = [1, 2, 3]
-    df = DataFrame(x=x, copycolumns=false)
+    df = DataFrame(x=x, copycols=false)
     @test df.x === x
     @test df[:x] === x
     @test df[[:x]].x !== x

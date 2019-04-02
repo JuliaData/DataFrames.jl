@@ -122,19 +122,19 @@ end
     @test df.y == y
     @test df.x !== x
     @test df.y !== y
-    df = DataFrame(x=x, y=y, copycolumns=true)
+    df = DataFrame(x=x, y=y, copycols=true)
     @test size(df) == (3, 2)
     @test names(df) == [:x, :y]
     @test df.x == x
     @test df.y == y
     @test df.x !== x
     @test df.y !== y
-    df = DataFrame(x=x, y=y, copycolumns=false)
+    df = DataFrame(x=x, y=y, copycols=false)
     @test size(df) == (3, 2)
     @test names(df) == [:x, :y]
     @test df.x === x
     @test df.y === y
-    @test_throws ArgumentError DataFrame(x=x, y=y, copycolumns=1)
+    @test_throws ArgumentError DataFrame(x=x, y=y, copycols=1)
 end
 
 @testset "DataFrame constructor" begin
@@ -148,8 +148,8 @@ end
     @test df1.y !== df2.y
     @test df1.y !== df3.y
 
-    df2 = DataFrame(df1, copycolumns=false)
-    df3 = copy(df1, copycolumns=false)
+    df2 = DataFrame(df1, copycols=false)
+    df3 = copy(df1, copycols=false)
     @test df1 == df2 == df3
     @test df1.x === df2.x
     @test df1.x === df3.x
@@ -165,7 +165,7 @@ end
     @test df1.y !== df2.y
     @test df1.y !== df3.y
 
-    df2 = DataFrame(df1, copycolumns=false)
+    df2 = DataFrame(df1, copycols=false)
     @test df1 == df2
     @test df1.x === df2.x
     @test df1.y === df2.y
@@ -186,7 +186,7 @@ end
     @test names(df) == [:a, :b, :c]
     @test df.a == a
     @test df.a !== a
-    df = DataFrame(:a=>a, :b=>1, :c=>1:3, copycolumns=false)
+    df = DataFrame(:a=>a, :b=>1, :c=>1:3, copycols=false)
     @test names(df) == [:a, :b, :c]
     @test df.a === a
 end
@@ -202,7 +202,7 @@ end
     @test names(df) == [:a, :b, :c]
     @test df.a == a
     @test df.a !== a
-    df = DataFrame(Dict(:a=>a, :b=>1, :c=>1:3), copycolumns=false)
+    df = DataFrame(Dict(:a=>a, :b=>1, :c=>1:3), copycols=false)
     @test names(df) == [:a, :b, :c]
     @test df.a === a
 end
@@ -217,13 +217,13 @@ end
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
-    df = DataFrame([x, y], copycolumns=true)
+    df = DataFrame([x, y], copycols=true)
     @test names(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
-    df = DataFrame([x, y], copycolumns=false)
+    df = DataFrame([x, y], copycols=false)
     @test names(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
@@ -234,13 +234,13 @@ end
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
-    df = DataFrame([x, y], [:x1, :x2], copycolumns=true)
+    df = DataFrame([x, y], [:x1, :x2], copycols=true)
     @test names(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
-    df = DataFrame([x, y], [:x1, :x2], copycolumns=false)
+    df = DataFrame([x, y], [:x1, :x2], copycols=false)
     @test names(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
@@ -251,13 +251,13 @@ end
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
-    df = DataFrame((x, y), copycolumns=true)
+    df = DataFrame((x, y), copycols=true)
     @test names(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
-    df = DataFrame((x, y), copycolumns=false)
+    df = DataFrame((x, y), copycols=false)
     @test names(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
@@ -268,13 +268,13 @@ end
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
-    df = DataFrame((x, y), (:x1, :x2), copycolumns=true)
+    df = DataFrame((x, y), (:x1, :x2), copycols=true)
     @test names(df) == [:x1, :x2]
     @test df.x1 == x
     @test df.x2 == y
     @test df.x1 !== x
     @test df.x2 !== y
-    df = DataFrame((x, y), (:x1, :x2), copycolumns=false)
+    df = DataFrame((x, y), (:x1, :x2), copycols=false)
     @test names(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y

@@ -10,12 +10,12 @@ particularly a Vector or CategoricalVector.
 
 ```julia
 DataFrame(columns::Vector, names::Vector{Symbol};
-          makeunique::Bool=false, copycolumns::Bool=true)
+          makeunique::Bool=false, copycols::Bool=true)
 DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol};
-          makeunique::Bool=false, copycolumns::Bool=true)
+          makeunique::Bool=false, copycols::Bool=true)
 DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
-DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false, copycolumns::Bool=true)
+DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame() # an empty DataFrame
 DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
 DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer;
@@ -23,9 +23,9 @@ DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer;
 DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol},
           categorical::AbstractVector{Bool}, nrows::Integer;
           makeunique::Bool=false)
-DataFrame(ds::AbstractDict; copycolumns::Bool=true)
-DataFrame(table; makeunique::Bool=false, copycolumns::Bool=true)
-DataFrame(::Union{DataFrame, SubDataFrame}; copycolumns::Bool=true)
+DataFrame(ds::AbstractDict; copycols::Bool=true)
+DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
+DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
 ```
 
 **Arguments**
@@ -36,9 +36,9 @@ DataFrame(::Union{DataFrame, SubDataFrame}; copycolumns::Bool=true)
   if duplicates in `names` are found; if `true`, duplicate names will be suffixed
   with `_i` (`i` starting at 1 for the first duplicate).
 * `kwargs` : the key gives the column names, and the value is the
-  column contents; note that the `copycolumns` keyword argument indicates if
+  column contents; note that the `copycols` keyword argument indicates if
   if vectors passed as columns should be copied so it is not possible to create
-  a column whose name is `:copycolumns` using this constructor
+  a column whose name is `:copycols` using this constructor
 * `t` : elemental type of all columns
 * `nrows`, `ncols` : number of rows and columns
 * `column_eltypes` : element type of each column
@@ -47,7 +47,7 @@ DataFrame(::Union{DataFrame, SubDataFrame}; copycolumns::Bool=true)
 * `ds` : `AbstractDict` of columns
 * `table` : any type that implements the
   [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
-* `copycolumns` : whether vectors passed as columns should be copied; note that
+* `copycols` : whether vectors passed as columns should be copied; note that
   `DataFrame(kwargs...)` does not support this keyword argument and always copies columns.
 
 All columns in `columns` should have the same length.
@@ -55,7 +55,7 @@ All columns in `columns` should have the same length.
 **Notes**
 
 The `DataFrame` constructor by default copies all columns vectors passed to it.
-Pass `copycolumns=false` to reuse vectors without copying them
+Pass `copycols=false` to reuse vectors without copying them
 
 If a column is passed to a `DataFrame` constructor or is assigned as a whole
 using `setindex!` then its reference is stored in the `DataFrame`. An exception
@@ -96,7 +96,7 @@ struct DataFrame <: AbstractDataFrame
     colindex::Index
 
     function DataFrame(columns::Union{Vector{Any}, Vector{AbstractVector}},
-                       colindex::Index; copycolumns::Bool=true)
+                       colindex::Index; copycols::Bool=true)
         if length(columns) == length(colindex) == 0
             return new(AbstractVector[], Index())
         elseif length(columns) != length(colindex)
@@ -128,7 +128,7 @@ struct DataFrame <: AbstractDataFrame
                 columns[i] = collect(c)
             elseif !isa(c, AbstractVector)
                 throw(DimensionMismatch("columns must be 1-dimensional"))
-            elseif copycolumns
+            elseif copycols
                 columns[i] = copy(c)
             end
         end
@@ -136,16 +136,16 @@ struct DataFrame <: AbstractDataFrame
     end
 end
 
-DataFrame(df::DataFrame; copycolumns::Bool=true) = copy(df, copycolumns=copycolumns)
+DataFrame(df::DataFrame; copycols::Bool=true) = copy(df, copycols=copycols)
 
 function DataFrame(pairs::Pair{Symbol,<:Any}...; makeunique::Bool=false,
-                   copycolumns::Bool=true)::DataFrame
+                   copycols::Bool=true)::DataFrame
     colnames = [Symbol(k) for (k,v) in pairs]
     columns = Any[v for (k,v) in pairs]
-    DataFrame(columns, Index(colnames, makeunique=makeunique), copycolumns=copycolumns)
+    DataFrame(columns, Index(colnames, makeunique=makeunique), copycols=copycols)
 end
 
-function DataFrame(d::AbstractDict; copycolumns::Bool=true)
+function DataFrame(d::AbstractDict; copycols::Bool=true)
     colnames = keys(d)
     if isa(d, Dict)
         colnames = sort!(collect(keys(d)))
@@ -154,7 +154,7 @@ function DataFrame(d::AbstractDict; copycolumns::Bool=true)
     end
     colindex = Index([Symbol(k) for k in colnames])
     columns = Any[d[c] for c in colnames]
-    DataFrame(columns, colindex, copycolumns=copycolumns)
+    DataFrame(columns, colindex, copycols=copycols)
 end
 
 function DataFrame(; kwargs...)
@@ -163,54 +163,54 @@ function DataFrame(; kwargs...)
     else
         cnames = Symbol[]
         columns = Any[]
-        copycolumns = true
+        copycols = true
         for (kw, val) in kwargs
-            if kw == :copycolumns
+            if kw == :copycols
                 if val isa Bool
-                    copycolumns = val
+                    copycols = val
                 else
-                    throw(ArgumentError("the `copycolumns` keyword argument must be Boolean"))
+                    throw(ArgumentError("the `copycols` keyword argument must be Boolean"))
                 end
             else
                 push!(cnames, kw)
                 push!(columns, val)
             end
         end
-        DataFrame(columns, Index(cnames), copycolumns=copycolumns)
+        DataFrame(columns, Index(cnames), copycols=copycols)
     end
 end
 
 function DataFrame(columns::AbstractVector, cnames::AbstractVector{Symbol};
-                   makeunique::Bool=false, copycolumns::Bool=true)::DataFrame
+                   makeunique::Bool=false, copycols::Bool=true)::DataFrame
     if !all(col -> isa(col, AbstractVector), columns)
         throw(ArgumentError("columns argument must be a vector of AbstractVector objects"))
     end
     return DataFrame(convert(Vector{AbstractVector}, columns),
                      Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
-                     copycolumns=copycolumns)
+                     copycols=copycols)
 end
 
 function DataFrame(columns::AbstractVector{<:AbstractVector},
                    cnames::AbstractVector{Symbol}=gennames(length(columns));
-                   makeunique::Bool=false, copycolumns::Bool=true)::DataFrame
+                   makeunique::Bool=false, copycols::Bool=true)::DataFrame
     return DataFrame(convert(Vector{AbstractVector}, columns),
                      Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
-                     copycolumns=copycolumns)
+                     copycols=copycols)
 end
 
 DataFrame(columns::NTuple{N, AbstractVector}, cnames::NTuple{N, Symbol};
-          makeunique::Bool=false, copycolumns::Bool=true) where {N} =
+          makeunique::Bool=false, copycols::Bool=true) where {N} =
     DataFrame(collect(AbstractVector, columns), collect(Symbol, cnames),
-              makeunique=makeunique, copycolumns=copycolumns)
+              makeunique=makeunique, copycols=copycols)
 
-DataFrame(columns::NTuple{N, AbstractVector}; copycolumns::Bool=true) where {N} =
+DataFrame(columns::NTuple{N, AbstractVector}; copycols::Bool=true) where {N} =
     DataFrame(collect(AbstractVector, columns), gennames(length(columns)),
-              copycolumns=copycolumns)
+              copycols=copycols)
 
 DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
           makeunique::Bool=false) =
     DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
-              makeunique=makeunique, copycolumns=false)
+              makeunique=makeunique, copycols=false)
 
 # Initialize an empty DataFrame with specific eltypes and names
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
@@ -220,7 +220,7 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
                              Tables.allocatecolumn(elty, nrows)
                              for elty in column_eltypes]
     return DataFrame(columns, Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
-                     copycolumns=false)
+                     copycols=false)
 end
 
 # Initialize an empty DataFrame with specific eltypes and names
@@ -346,7 +346,7 @@ end
     end
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycolumns=false)
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
 
 # df[:, SingleColumnIndex] => AbstractVector
@@ -359,7 +359,7 @@ end
 function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::AbstractVector)
     selected_columns = index(df)[col_inds]
     new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
-    return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycolumns=false)
+    return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
 
 # df[MultiRowIndex, :] => DataFrame
@@ -369,13 +369,13 @@ end
                           "rows at index $row_inds"))
     end
     new_columns = AbstractVector[dv[row_inds] for dv in _columns(df)]
-    return DataFrame(new_columns, copy(index(df)), copycolumns=false)
+    return DataFrame(new_columns, copy(index(df)), copycols=false)
 end
 
 # df[:, :] => DataFrame
 function Base.getindex(df::DataFrame, ::Colon, ::Colon)
     new_columns = AbstractVector[copy(dv) for dv in _columns(df)]
-    return DataFrame(new_columns, Index(_names(df)), copycolumns=false)
+    return DataFrame(new_columns, Index(_names(df)), copycols=false)
 end
 
 ##############################################################################
@@ -797,18 +797,18 @@ end
 
 
 """
-    copy(df::DataFrame; copycolumns::Bool=true)
+    copy(df::DataFrame; copycols::Bool=true)
 
 Copy data frame `df`.
-If `copycolumns=true` (the default), return a new  `DataFrame` holding
+If `copycols=true` (the default), return a new  `DataFrame` holding
 copies of column vectors in `df`.
-If `copycolumns=false`, return a new `DataFrame` sharing column vectors with `df`.
+If `copycols=false`, return a new `DataFrame` sharing column vectors with `df`.
 """
-function Base.copy(df::DataFrame; copycolumns::Bool=true)
-    if copycolumns
+function Base.copy(df::DataFrame; copycols::Bool=true)
+    if copycols
         df[:, :]
     else
-        DataFrame(eachcol(df), names(df), copycolumns=false)
+        DataFrame(eachcol(df), names(df), copycols=false)
     end
 end
 
@@ -921,50 +921,50 @@ end
 
 # hcat! for 2 arguments, only a vector or a data frame is allowed
 function hcat!(df1::DataFrame, df2::AbstractDataFrame;
-               makeunique::Bool=false, copycolumns::Bool=true)
+               makeunique::Bool=false, copycols::Bool=true)
     u = add_names(index(df1), index(df2), makeunique=makeunique)
     for i in 1:length(u)
-        df1[u[i]] = copycolumns ? copy(df2[i]) : df2[i]
+        df1[u[i]] = copycols ? copy(df2[i]) : df2[i]
     end
     return df1
 end
 
 # definition required to avoid hcat! ambiguity
 function hcat!(df1::DataFrame, df2::DataFrame;
-               makeunique::Bool=false, copycolumns::Bool=true)
+               makeunique::Bool=false, copycols::Bool=true)
     invoke(hcat!, Tuple{DataFrame, AbstractDataFrame}, df1, df2,
-           makeunique=makeunique, copycolumns=copycolumns)::DataFrame
+           makeunique=makeunique, copycols=copycols)::DataFrame
 end
 
-hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(df, DataFrame(AbstractVector[x], copycolumns=copycolumns),
-          makeunique=makeunique, copycolumns=copycolumns)
-hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(DataFrame(AbstractVector[x], copycolumns=copycolumns), df,
-          makeunique=makeunique, copycolumns=copycolumns)
-hcat!(x, df::DataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
+hcat!(df::DataFrame, x::AbstractVector; makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(df, DataFrame(AbstractVector[x], copycols=copycols),
+          makeunique=makeunique, copycols=copycols)
+hcat!(x::AbstractVector, df::DataFrame; makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(DataFrame(AbstractVector[x], copycols=copycols), df,
+          makeunique=makeunique, copycols=copycols)
+hcat!(x, df::DataFrame; makeunique::Bool=false, copycols::Bool=true) =
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
-hcat!(df::DataFrame, x; makeunique::Bool=false, copycolumns::Bool=true) =
+hcat!(df::DataFrame, x; makeunique::Bool=false, copycols::Bool=true) =
     throw(ArgumentError("x must be AbstractVector or AbstractDataFrame"))
 
 # hcat! for 1-n arguments
-hcat!(df::DataFrame; makeunique::Bool=false, copycolumns::Bool=true) = df
-hcat!(a::DataFrame, b, c...; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(hcat!(a, b, makeunique=makeunique, copycolumns=copycolumns),
-          c..., makeunique=makeunique, copycolumns=copycolumns)
+hcat!(df::DataFrame; makeunique::Bool=false, copycols::Bool=true) = df
+hcat!(a::DataFrame, b, c...; makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(hcat!(a, b, makeunique=makeunique, copycols=copycols),
+          c..., makeunique=makeunique, copycols=copycols)
 
 # hcat
-Base.hcat(df::DataFrame, x; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(copy(df, copycolumns=copycolumns), x,
-          makeunique=makeunique, copycolumns=copycolumns)
+Base.hcat(df::DataFrame, x; makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(copy(df, copycols=copycols), x,
+          makeunique=makeunique, copycols=copycols)
 Base.hcat(df1::DataFrame, df2::AbstractDataFrame;
-          makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(copy(df1, copycolumns=copycolumns), df2,
-          makeunique=makeunique, copycolumns=copycolumns)
+          makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(copy(df1, copycols=copycols), df2,
+          makeunique=makeunique, copycols=copycols)
 Base.hcat(df1::DataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
-          makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(hcat(df1, df2, makeunique=makeunique, copycolumns=copycolumns), dfn...,
-          makeunique=makeunique, copycolumns=copycolumns)
+          makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(hcat(df1, df2, makeunique=makeunique, copycols=copycols), dfn...,
+          makeunique=makeunique, copycols=copycols)
 
 ##############################################################################
 ##
@@ -1198,7 +1198,7 @@ end
 
 Base.convert(::Type{DataFrame}, A::AbstractMatrix) = DataFrame(A)
 
-Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycolumns=false)
+Base.convert(::Type{DataFrame}, d::AbstractDict) = DataFrame(d, copycols=false)
 
 function Base.push!(df::DataFrame, row::Union{AbstractDict, NamedTuple}; columns::Symbol=:equal)
     if !(columns in (:equal, :intersect))

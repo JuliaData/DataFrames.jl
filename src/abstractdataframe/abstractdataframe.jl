@@ -245,7 +245,7 @@ that is different than the number of rows present in `df`.
 function Base.similar(df::AbstractDataFrame, rows::Integer = size(df, 1))
     rows < 0 && throw(ArgumentError("the number of rows must be non-negative"))
     DataFrame(AbstractVector[similar(x, rows) for x in eachcol(df)], copy(index(df)),
-              copycolumns=false)
+              copycols=false)
 end
 
 ##############################################################################
@@ -965,11 +965,11 @@ without(df::AbstractDataFrame, c::Any) = without(df, index(df)[c])
 
 """
     hcat(df::AbstractDataFrame...;
-         makeunique::Bool=false, copycolumns::Bool=true)
+         makeunique::Bool=false, copycols::Bool=true)
     hcat(df::AbstractDataFrame..., vs::AbstractVector;
-         makeunique::Bool=false, copycolumns::Bool=true)
+         makeunique::Bool=false, copycols::Bool=true)
     hcat(vs::AbstractVector, df::AbstractDataFrame;
-         makeunique::Bool=false, copycolumns::Bool=true)
+         makeunique::Bool=false, copycols::Bool=true)
 
 Horizontally concatenate `AbstractDataFrames` and optionally `AbstractVector`s.
 
@@ -980,9 +980,9 @@ If `makeunique=false` (the default) column names of passed objects must be uniqu
 If `makeunique=true` then duplicate column names will be suffixed
 with `_i` (`i` starting at 1 for the first duplicate).
 
-If `copycolumns=true` (the default) then the `DataFrame` returned by `hcat` will
+If `copycols=true` (the default) then the `DataFrame` returned by `hcat` will
 contain copied columns from the source data frames.
-If `copycolumns=false` then it will contain columns as they are stored in the
+If `copycols=false` then it will contain columns as they are stored in the
 source (without copying). This option should be used with caution as mutating
 either the columns in sources or in the returned `DataFrame` might lead to
 the corruption of the other object.
@@ -1014,32 +1014,32 @@ julia> df3 = hcat(df1, df2, makeunique=true)
 julia> df3.A === df1.A
 true
 
-julia> df3 = hcat(df1, df2, makeunique=true, copycolumns=false);
+julia> df3 = hcat(df1, df2, makeunique=true, copycols=false);
 
 julia> df3.A === df1.A
 true
 
 ```
 """
-Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
-    DataFrame(df, copycolumns=copycolumns)
-Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(DataFrame(df, copycolumns=copycolumns), x,
-          makeunique=makeunique, copycolumns=copycolumns)
-Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(x, df, makeunique=makeunique, copycolumns=copycolumns)
+Base.hcat(df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
+    DataFrame(df, copycols=copycols)
+Base.hcat(df::AbstractDataFrame, x; makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(DataFrame(df, copycols=copycols), x,
+          makeunique=makeunique, copycols=copycols)
+Base.hcat(x, df::AbstractDataFrame; makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(x, df, makeunique=makeunique, copycols=copycols)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame;
-          makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(DataFrame(df1, copycolumns=copycolumns), df2,
-          makeunique=makeunique, copycolumns=copycolumns)
+          makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(DataFrame(df1, copycols=copycols), df2,
+          makeunique=makeunique, copycols=copycols)
 Base.hcat(df::AbstractDataFrame, x, y...;
-          makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(hcat(df, x, makeunique=makeunique, copycolumns=copycolumns), y...,
-          makeunique=makeunique, copycolumns=copycolumns)
+          makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(hcat(df, x, makeunique=makeunique, copycols=copycols), y...,
+          makeunique=makeunique, copycols=copycols)
 Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame...;
-          makeunique::Bool=false, copycolumns::Bool=true) =
-    hcat!(hcat(df1, df2, makeunique=makeunique, copycolumns=copycolumns), dfn...,
-          makeunique=makeunique, copycolumns=copycolumns)
+          makeunique::Bool=false, copycols::Bool=true) =
+    hcat!(hcat(df1, df2, makeunique=makeunique, copycols=copycols), dfn...,
+          makeunique=makeunique, copycols=copycols)
 
 """
     vcat(dfs::AbstractDataFrame...)
@@ -1107,7 +1107,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame})
             offset += lens[j]
         end
     end
-    return DataFrame(cols, header, copycolumns=false)
+    return DataFrame(cols, header, copycols=false)
 end
 
 function Base.reduce(::typeof(vcat), dfs::AbstractVector{<:AbstractDataFrame})

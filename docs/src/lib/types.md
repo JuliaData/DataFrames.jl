@@ -57,14 +57,14 @@ The `RepeatedVector` and `StackedVector` types are subtypes of `AbstractVector` 
 with the exception that they are read only. Note that they are not exported and should not be constructed directly,
 but they are columns of a `DataFrame` returned by `stackdf` and `meltdf`.
 
-## The design of handling of columns of a `DataFrame`
+## [The design of handling of columns of a `DataFrame`](@id man-columnhandling)
 
 When a `DataFrame` is constructed columns are copied by default. You can disable
-this behavior by setting `copycolumns` keyword argument to `false`. The exception is
+this behavior by setting `copycols` keyword argument to `false`. The exception is
 if an `AbstractRange` is passed as a column, then it is always collected to a `Vector`.
 
 Also functions that transform a `DataFrame` to produce a new `DataFrame` perform a copy of the columns,
-unless they are passed `copycolumns=false` (available only for functions
+unless they are passed `copycols=false` (available only for functions
 that could perform a transformation without copying the columns). Examples of such functions are [`vcat`](@ref),
 [`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
 [`copy`](@ref) or the [`DataFrame`](@ref) constructor mentioned above.
@@ -77,7 +77,7 @@ A partial exception to this rule are the [`stackdf`](@ref) and [`meltdf`](@ref) 
 create a `DataFrame` that contains views of the columns from the source `DataFrame`.
 
 In-place functions whose names end with `!` (like `sort!` or [`dropmissing!`](@ref),
-`setindex!`, `setproperty!`) may mutate the column vectors of the `DataFrame` they take
+`setindex!`, `push!`, `append!`) may mutate the column vectors of the `DataFrame` they take
 as an argument. These functions are safe to call due to the rules described above,
 *except* when a view of the `DataFrame` is in use (via a `SubDataFrame`, a `DataFrameRow`
 or a `GroupedDataFrame`). In the latter case, the view might become corrupted,
@@ -90,8 +90,7 @@ using one of the following methods:
 * via the `getproperty` function using the syntax `df.col`;
 * via the `getindex` function using the syntax `df[:col]`;
 * by creating a `DataFrameColumns` object using the [`eachcol`](@ref) function;
-* by storing the reference to the column before creating a `DataFrame` with `copycolumns=false`
-  the `DataFrame` constructor does not perform copying only if `copycolumns` keyword argument is set to `false`).
+* by storing the reference to the column before creating a `DataFrame` with `copycols=false`;
 
 A column obtained from a `DataFrame` using one of the above methods should not be mutated
 without caution because:

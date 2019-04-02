@@ -123,7 +123,7 @@ end
 @testset "getproperty, setproperty! and propertynames" begin
     x = collect(1:10)
     y = collect(1.0:10.0)
-    df = view(DataFrame(:x=>x, :y=>y, copycolumns=false), 2:6, :)
+    df = view(DataFrame(:x=>x, :y=>y, copycols=false), 2:6, :)
 
     @test Base.propertynames(df) == names(df)
 
@@ -216,7 +216,7 @@ end
     @test size(df2) == (2, 1)
     @test df2.y isa Vector{Int}
     @test df2.y == [12, 13]
-    df2 = DataFrame(sdf, copycolumns=false)
+    df2 = DataFrame(sdf, copycols=false)
     @test size(df2) == (2, 1)
     @test df2.y isa SubArray{Int,1,Vector{Int},Tuple{UnitRange{Int}},true}
     @test df2.y == [12, 13]

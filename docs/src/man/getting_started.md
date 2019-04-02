@@ -515,15 +515,18 @@ julia> x
    3
 ```
 
-In-place functions are safe to call, except when a view of the `DataFrame` is in use
-(created via a `view`, `@view` or [`groupby`](@ref)). In the latter case, the view
-might become corrupted, which make trigger errors, silently return invalid data
-or even cause Julia to crash.
+In-place functions are safe to call, except:
+
+* When a view of the `DataFrame` is in use (created via a `view`, `@view` or
+  [`groupby`](@ref)). In the latter case, the view might become corrupted, which
+  may trigger errors, silently return invalid data or even cause Julia to crash.
+* When a `DataFrame` is created with `copycols` keyword argument set to `false`,
+  in which case it might happen that two `DataFrames` might share columns.
 
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function or simply
-by storing the reference to the column vector before the `DataFrame` was created (note
-that in general the `DataFrame` constructor does make copies).
+by storing the reference to the column vector before the `DataFrame` was created
+with `copycols=false`.
 
 ```jldoctest dataframe
 julia> x = [3, 1, 2];
@@ -548,15 +551,9 @@ true
 ```
 
 Note that a column obtained from a `DataFrame` using one of these methods should
-not be mutated without caution because:
+not be mutated without caution.
 
-* resizing a column vector will corrupt its parent `DataFrame` and associated views (if any):
-  methods only check the length of the column when it is added
-  to the `DataFrame` and later assume that all columns have the same length;
-* reordering values in a column vector (e.g. using `sort!`) will break the consistency of rows
-  with other columns, which will also affect views (if any);
-* changing values contained in a column vector is acceptable as long as it was not used as
-  a grouping column in a `GroupedDataFrame` created based on the `DataFrame`.
+The exact rules of handling columns of a `DataFrame` are explained in [The design of handling of columns of a `DataFrame`](@ref man-columnhandling) section of the manual.
 
 ## Importing and Exporting Data (I/O)
 
