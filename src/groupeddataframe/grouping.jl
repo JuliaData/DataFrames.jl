@@ -413,7 +413,7 @@ function combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...
     combine(vec_of_pairs, gd)
 end
 
-function combine(gd::GroupedDataFrame, f::NamedTuple) = combine(f, gd)
+combine(gd::GroupedDataFrame, f::NamedTuple) = combine(f, gd)
 
 function combine(gd::GroupedDataFrame; f...)
     if length(f) == 0
