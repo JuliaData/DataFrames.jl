@@ -197,18 +197,22 @@ module TestCat
     @testset "vcat out of order" begin
         df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
         df2 = DataFrame(colwise(x->2x, df1), reverse(names(df1)))
-        @test vcat(df1, df2) == DataFrame([[1, 2, 3, 14, 16, 18],
-                                           [4, 5, 6, 8, 10, 12],
-                                           [7, 8, 9, 2, 4, 6]], [:A, :B, :C])
-        @test vcat(df1, df1, df2) == DataFrame([[1, 2, 3, 1, 2, 3, 14, 16, 18],
-                                                [4, 5, 6, 4, 5, 6, 8, 10, 12],
-                                                [7, 8, 9, 7, 8, 9, 2, 4, 6]], [:A, :B, :C])
-        @test vcat(df1, df2, df2) == DataFrame([[1, 2, 3, 14, 16, 18, 14, 16, 18],
-                                                [4, 5, 6, 8, 10, 12, 8, 10, 12],
-                                                [7, 8, 9, 2, 4, 6, 2, 4, 6]], [:A, :B, :C])
-        @test vcat(df2, df1, df2) == DataFrame([[2, 4, 6, 7, 8, 9, 2, 4, 6],
-                                                [8, 10, 12, 4, 5, 6, 8, 10, 12],
-                                                [14, 16, 18, 1, 2, 3, 14, 16, 18]] ,[:C, :B, :A]) 
+        @test vcat(df1, df2) == DataFrame(A = [1, 2, 3, 14, 16, 18],
+                                          B = [4, 5, 6, 8, 10, 12],
+                                          C = [7, 8, 9, 2, 4, 6])
+        # test with keyword argument for `columns`
+        @test vcat(df1, df2, columns = :same) == DataFrame(A = [1, 2, 3, 14, 16, 18],
+                                                           B = [4, 5, 6, 8, 10, 12],
+                                                           C = [7, 8, 9, 2, 4, 6])
+        @test vcat(df1, df1, df2) == DataFrame(A = [1, 2, 3, 1, 2, 3, 14, 16, 18],
+                                               B = [4, 5, 6, 4, 5, 6, 8, 10, 12],
+                                               C = [7, 8, 9, 7, 8, 9, 2, 4, 6])
+        @test vcat(df1, df2, df2) == DataFrame(A = [1, 2, 3, 14, 16, 18, 14, 16, 18],
+                                               B = [4, 5, 6, 8, 10, 12, 8, 10, 12],
+                                               C = [7, 8, 9, 2, 4, 6, 2, 4, 6])
+        @test vcat(df2, df1, df2) == DataFrame(A = [2, 4, 6, 7, 8, 9, 2, 4, 6],
+                                               B = [8, 10, 12, 4, 5, 6, 8, 10, 12],
+                                               C = [14, 16, 18, 1, 2, 3, 14, 16, 18]) 
         @test size(vcat(df1, df1, df1, df2, df2, df2)) == (18, 3)
         df3 = df1[[1, 3, 2]]
         res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
@@ -233,12 +237,13 @@ module TestCat
         df2 = DataFrame(A = 7:9)
         df3 = DataFrame(B = 4:6, A = 1:3)
 
-        @test vcat(df1, df2; columns = :union) ≅ DataFrame([[1, 2, 3, 7, 8, 9], 
-                                                             [4, 5, 6, missing, missing, missing]], 
-                                                             [:A, :B])
-        @test vcat(df1, df2, df3; columns = :union) ≅ DataFrame([[1, 2, 3, 7, 8, 9, 1, 2, 3], 
-                                                                 [4, 5, 6, missing, missing, missing, 4, 5, 6]], 
-                                                                 [:A, :B])
+        @test vcat(df1, df2; columns = :union) ≅ DataFrame(A =Int[1, 2, 3, 7, 8, 9], 
+                                                           B = Union{Int, Missing}[4, 5, 6, missing, 
+                                                                missing, missing])
+        @test vcat(df1, df2, df3; columns = :union) ≅ DataFrame(A = Int[1, 2, 3, 7, 8, 
+                                                                      9, 1, 2, 3], 
+                                                                 B = Union{Int, Missing}[4, 5, 6, missing,
+                                                                      missing, missing, 4, 5, 6])
     end
 
     @testset "vcat with :intersect" begin
@@ -246,10 +251,9 @@ module TestCat
         df2 = DataFrame(A = 7:9)
         df3 = DataFrame(A = 10:12, C = 13:15)
 
-        @test vcat(df1, df2; columns = :intersect) ≅ DataFrame([[1, 2, 3, 7, 8, 9]],
-                                                                [:A])
-        @test vcat(df1, df2, df3; columns = :intersect) ≅ DataFrame([[1, 2, 3, 7, 8, 9, 10, 11, 12]],
-                                                                     [:A])
+        @test vcat(df1, df2; columns = :intersect) ≅ DataFrame(A = [1, 2, 3, 7, 8, 9])
+        @test vcat(df1, df2, df3; columns = :intersect) ≅ DataFrame(A = [1, 2, 3, 7, 8, 9, 
+                                                                         10, 11, 12])
     end
 
     @testset "vcat with vector of columns" begin
@@ -257,15 +261,20 @@ module TestCat
         df2 = DataFrame(A = 7:9)
         df3 = DataFrame(A = 10:12, C = 13:15)
 
-        @test vcat(df1, df2; columns = [:A, :B, :C]) ≅ DataFrame([[1, 2, 3, 7, 8, 9],
-                                                                  [4, 5, 6, missing, missing, missing],
-                                                                  [missing, missing, missing, missing, missing, missing]],
-                                                                  [:A, :B, :C])
+        @test vcat(df1, df2; columns = [:A, :B, :C]) ≅ DataFrame(A = Int[1, 2, 3, 7, 8, 9],
+                                                                 B = Union{Int, Missing}[4, 5, 6, missing, 
+                                                                      missing, missing],
+                                                                 C = Missing[missing, missing, missing, 
+                                                                      missing, missing, missing])
 
-        @test vcat(df1, df2, df3; columns = [:A, :B, :C]) ≅ DataFrame([[1, 2, 3, 7, 8, 9, 10, 11, 12],
-                                                                  [4, 5, 6, missing, missing, missing, missing, missing, missing],
-                                                                  [missing, missing, missing, missing, missing, missing, 13, 14, 15]],
-                                                                  [:A, :B, :C])
+        @test vcat(df1, df2, df3; columns = [:A, :B, :C]) ≅ DataFrame(A = Int[1, 2, 3, 7, 8, 9, 
+                                                                           10, 11, 12],
+                                                                      B = Union{Int, Missing}[4, 5, 6, 
+                                                                           missing, missing, missing, 
+                                                                           missing, missing, missing],
+                                                                      C = Union{Int, Missing}[missing, missing, missing, 
+                                                                           missing, missing, missing, 
+                                                                           13, 14, 15])
     end
 
 
