@@ -364,6 +364,20 @@ julia> combine(gd, [:b, :c] => sum)
 │ 7   │ 4     │ 5     │
 │ 8   │ 4     │ 9     │
 
+julia> combine(gd, [:b, :c] .=> sum, :c => min)
+8×2 DataFrame
+│ Row │ a     │ x1    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 3     │
+│ 2   │ 1     │ 7     │
+│ 3   │ 2     │ 3     │
+│ 4   │ 2     │ 7     │
+│ 5   │ 3     │ 5     │
+│ 6   │ 3     │ 9     │
+│ 7   │ 4     │ 5     │
+│ 8   │ 4     │ 9     │
+
 julia> combine(df -> sum(df.c), gd) # Slower variant
 4×2 DataFrame
 │ Row │ a     │ x1    │
@@ -401,18 +415,12 @@ function combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...
     combine(vec_of_pairs, gd)
 end
 
-function combine(gd::GroupedDataFrame, f::NamedTuple)
-    combine(f, gd)
-end
-
-function combine(gd::GroupedDataFrame, f::Tuple{Vararg{<:Pair}})
-    combine(f, gd)
-end
+function combine(gd::GroupedDataFrame, f::NamedTuple) = combine(f, gd)
 
 function combine(gd::GroupedDataFrame; f...)
     if length(f) == 0
         Base.depwarn("combine(gd) is deprecated, use DataFrame(gd) instead", :combine)
-        combine(identity, gd)
+        DataFrame(gd)
     else
         combine(values(f), gd)
     end
@@ -934,29 +942,55 @@ colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for 
 colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
 
 """
-    by(d::AbstractDataFrame, keys, cols => f...; sort::Bool = false)
-    by(d::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
+    by(d::AbstractDataFrame, keys, cols => f; sort::Bool = false)
+    by(d::AbstractDataFrame, keys, [col1 => f1, col2 => f2], col3 => f3; sort::Bool = false)
+    by(d::AbstractDataFrame, keys, [:col1, :col2, :col3] .=> f; sort::Bool = false)
+    by(d::AbstractDataFrame, keys; sort::Bool = false, colname = cols => f...)
     by(d::AbstractDataFrame, keys, f; sort::Bool = false)
-    by(f, d::AbstractDataFrame, keys; sort::Bool = false)
+    by(f, keys, d::AbstractDataFrame)
 
 Split-apply-combine in one step: apply `f` to each grouping in `d`
 based on grouping columns `keys`, and return a `DataFrame`.
 
 `keys` can be either a single column index, or a vector thereof.
 
-If the last argument(s) consist(s) in one or more `cols => f` pair(s), or if
-`colname = cols => f` keyword arguments are provided, `cols` must be
-a column name or index, or a vector or tuple thereof, and `f` must be a callable.
-A pair or a (named) tuple of pairs can also be provided as the first or last argument.
-If `cols` is a single column index, `f` is called with a `SubArray` view into that
-column for each group; else, `f` is called with a named tuple holding `SubArray`
-views into these columns.
+The 3rd through last arguments in `combine` can can be either
 
-If the last argument is a callable `f`, it is passed a `SubDataFrame` view for each group,
-and the returned `DataFrame` then consists of the returned rows plus the grouping columns.
-Note that this second form is much slower than the first one due to type instability.
-A method is defined with `f` as the first argument, so do-block
-notation can be used.
+* A single `col => f` pair, a vector of such pairs, or a mix of the two. `col`
+  must be either a `Symbol` or a valid column index for `d`. `f` must be callable. 
+* A tuple of `col => f` pairs
+* A named tuple of `col => f` pairs, where the names of the named tuple indicate
+  the names of the new vectors to be created in the new DataFrame. Pairs must 
+  obey the same rules described above. Keyword arguments of `Pair`s operate in 
+  the same way.  
+* A callable which allows for a `AbstractDataFrame`. If this is specified, `f`
+  is passed a `SubDataFrame` view for each group, and the returned `DataFrame` 
+  then consists of the returned rows plus the grouping columns.
+  Note that this second form is much slower than the first one due to type instability.
+  A method is defined with `f` as the first argument, so do-block
+  notation can be used.
+
+If the last argument is a callable 
+
+`f` can return a single value, a row or multiple rows. The type of the returned value
+determines the shape of the resulting data frame:
+- A single value gives a data frame with a single column and one row per group.
+- A named tuple of single values or a `DataFrameRow` gives a data frame with one column
+  for each field and one row per group.
+- A vector gives a data frame with a single column and as many rows
+  for each group as the length of the returned vector for that group.
+- A data frame, a named tuple of vectors or a matrix gives a data frame
+  with the same columns and as many rows for each group as the rows returned for that group.
+
+As a special case, if a tuple or vector of pairs is passed as the first argument, each function
+is required to return a single value or vector, which will produce each a separate column.
+
+In all cases, the resulting data frame contains all the grouping columns in addition
+to those listed above. Column names are automatically generated when necessary: for functions
+operating on a single column and returning a single value or vector, the function name is
+appended to the input column name; for other functions, columns are called `x1`, `x2`
+and so on. The resulting data frame will be sorted if `sort=true` was passed to `by`
+Otherwise, ordering of rows is undefined.
 
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
@@ -990,8 +1024,6 @@ When computing the `sum` or `mean` over floating point columns, results will be 
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
 `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
 
-`by(d, cols, f)` is equivalent to `combine(f, groupby(d, cols))` and to the
-less efficient `combine(map(f, groupby(d, cols)))`.
 
 ### Examples
 
@@ -1009,6 +1041,20 @@ julia> by(df, :a, :c => sum)
 │ 2   │ 2     │ 8     │
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
+
+julia> combine(gd, [:b, :c] .=> sum, :c => min)
+8×2 DataFrame
+│ Row │ a     │ x1    │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 3     │
+│ 2   │ 1     │ 7     │
+│ 3   │ 2     │ 3     │
+│ 4   │ 2     │ 7     │
+│ 5   │ 3     │ 5     │
+│ 6   │ 3     │ 9     │
+│ 7   │ 4     │ 5     │
+│ 8   │ 4     │ 9     │
 
 julia> by(df, :a, d -> sum(d.c)) # Slower variant
 4×2 DataFrame
