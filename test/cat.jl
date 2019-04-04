@@ -277,6 +277,18 @@ module TestCat
                                                                            13, 14, 15])
     end
 
+    @testset "vcat on empty dataframe" begin
+        df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
+        df2 = DataFrame(colwise(x->2x, df1), reverse(names(df1)))
+        d = DataFrame()
+        for df in [df1, df2]
+            vcat(d, df)
+        end
+        @test d == DataFrame(A = [1, 2, 3, 14, 16, 18],
+                             B = [4, 5, 6, 8, 10, 12],
+                             C = [7, 8, 9, 2, 4, 6])
+    end
+
 
     @testset "vcat errors" begin
         err = @test_throws ArgumentError vcat(DataFrame(), DataFrame(), DataFrame(x=[]))
@@ -332,9 +344,6 @@ module TestCat
         err = @test_throws ArgumentError vcat(df1, df2, df3, df4, df1, df2, df3, df4, df1, df2, df3, df4)
         @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, column(s) B are missing from argument(s) 2, 6 and 10, and column(s) F are missing from argument(s) 3, 7 and 11"
     end
-
-
-
 
     @testset "views" begin
         x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
