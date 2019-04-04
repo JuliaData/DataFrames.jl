@@ -170,9 +170,9 @@ end
         @test vcat(df1, df2, df2) == DataFrame(A = [1, 2, 3, 14, 16, 18, 14, 16, 18],
                                                B = [4, 5, 6, 8, 10, 12, 8, 10, 12],
                                                C = [7, 8, 9, 2, 4, 6, 2, 4, 6])
-        @test vcat(df2, df1, df2) == DataFrame(A = [2, 4, 6, 7, 8, 9, 2, 4, 6],
+        @test vcat(df2, df1, df2) == DataFrame(C = [2, 4, 6, 7, 8, 9, 2, 4, 6],
                                                B = [8, 10, 12, 4, 5, 6, 8, 10, 12],
-                                               C = [14, 16, 18, 1, 2, 3, 14, 16, 18]) 
+                                               A = [14, 16, 18, 1, 2, 3, 14, 16, 18]) 
         @test size(vcat(df1, df1, df1, df2, df2, df2)) == (18, 3)
         df3 = df1[[1, 3, 2]]
         res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
