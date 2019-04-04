@@ -719,7 +719,7 @@ end
         combine(gd, [:b => sum, :c => sum]) ==
         combine(gd, [:b => sum], :c => sum) ==
         combine(gd, [:b => sum], [:c => sum]) ==
-        combine(gd, [:b, :c] => sum) ==
+        combine(gd, [:b, :c] .=> sum) ==
         combine(gd, b_sum = :b => sum, c_sum = :c => sum) ==
         combine((:b, :c) => x -> (b_sum=sum(x.b), c_sum=sum(x.c)), gd) ==
         combine(gd, (:b, :c) => x -> (b_sum=sum(x.b), c_sum=sum(x.c))) ==
