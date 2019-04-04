@@ -1012,6 +1012,9 @@ second, etc.
 The element types of columns are determined using `promote_type`,
 as with `vcat` for `AbstractVector`s.
 
+`vcat` ignores empty data frames, making it possible to initialize an empty 
+data frame at the beginning of a loop and `vcat` onto it. 
+
 # Example
 ```jldoctest
 julia> df1 = DataFrame(A=1:3, B=1:3);
@@ -1044,7 +1047,7 @@ julia> vcat(df1, df3, columns = :union)
 │ 5   │ 8     │ missing │ 8       │
 │ 6   │ 9     │ missing │ 9       │
 
-vcat(df1, df3, columns = :intersect)
+julia> vcat(df1, df3, columns = :intersect)
 6×1 DataFrame
 │ Row │ A     │
 │     │ Int64 │
@@ -1055,11 +1058,14 @@ vcat(df1, df3, columns = :intersect)
 │ 4   │ 7     │
 │ 5   │ 8     │
 │ 6   │ 9     │
+
+d = DataFrame()
+julia> vcat(d, df1)
 ```
 """
 Base.vcat(dfs::AbstractDataFrame...;
           columns::Union{Symbol, AbstractVector{Symbol}}=:same) = 
-    _vcat(collect(dfs); columns=columns)
+    _vcat([df for df in dfs if (nrow(df) != 0 && ncol(df) != 0)]; columns=columns)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
                columns::Union{Symbol, AbstractVector{Symbol}}=:same)
