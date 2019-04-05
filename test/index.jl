@@ -173,7 +173,7 @@ end
     @test_throws ArgumentError i[:yy14]
     @test_throws ArgumentError i[:abcd]
     @test fuzzymatch(i.lookup, :x13) == [:x1, :x12, :x131, :y13, :yy13]
-    @test fuzzymatch(i.lookup, :xx1314) == [:x1, :x12]
+    @test fuzzymatch(i.lookup, :xx1314) == [:x131]
     @test fuzzymatch(i.lookup, :yy14) == [:yy13, :y13]
     @test isempty(fuzzymatch(i.lookup, :abcd))
 end
