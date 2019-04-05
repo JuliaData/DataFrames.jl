@@ -174,7 +174,7 @@ end
                                           B = [4, 5, 6, 8, 10, 12],
                                           C = [7, 8, 9, 2, 4, 6])
         # test with keyword argument for `columns`
-        @test vcat(df1, df2, columns = :same) == DataFrame(A = [1, 2, 3, 14, 16, 18],
+        @test vcat(df1, df2, columns = :equal) == DataFrame(A = [1, 2, 3, 14, 16, 18],
                                                            B = [4, 5, 6, 8, 10, 12],
                                                            C = [7, 8, 9, 2, 4, 6])
         @test vcat(df1, df1, df2) == DataFrame(A = [1, 2, 3, 1, 2, 3, 14, 16, 18],
