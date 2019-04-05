@@ -991,7 +991,6 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
 
 """
     vcat(dfs::AbstractDataFrame...; columns::Union{Symbol, AbstractVector{Symbol}}=:equal)
-<<<<<<< HEAD
 
 Vertically concatenate `AbstractDataFrame`s.
 
@@ -1006,22 +1005,6 @@ The `columns` keyword argument determines the columns of the returned data frame
 * A vector of `Symbol`s: only listed columns are kept.
   Columns not present in some data frames are filled with `missing` where necessary.
 
-=======
-
-Vertically concatenate `AbstractDataFrame`s.
-
-The `columns` keyword argument determines the columns of the returned data frame:
-
-* `:equal` (the default): require all data frames to have the same column names.
-  If they appear in different orders, the order of the first provided data frame is used.
-* `:intersect`: only the columns present in *all* provided data frames are kept.
-  If the intersection is empty, an empty data frame is returned.
-* `:union`: columns present in *at least one* of the provided data frames are kept.
-  Columns not present in some data frames are filled with `missing` where necessary.
-* A vector of `Symbol`s: only listed columns are kept.
-  Columns not present in some data frames are filled with `missing` where necessary.
-
->>>>>>> flexible_vcat
 The order of columns is determined by the order they appear in the included
 data frames, searching through the header of the first data frame, then the 
 second, etc. 
