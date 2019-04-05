@@ -156,7 +156,7 @@ function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
         sort!(dist)
         c = [count(x -> x[1] <= i, dist) for i in 0:2]
         maxd = max(0, searchsortedlast(c, 8) - 1)
-        candidates = [s for (d, s) in sort!(dist) if d <= maxd]
+        [s for (d, s) in dist if d <= maxd]
 end
 
 @inline function lookupname(l::Dict{Symbol, Int}, idx::Symbol)
