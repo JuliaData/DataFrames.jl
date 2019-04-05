@@ -172,13 +172,13 @@ end
                                          [2,2,2,3,2,2,2,3]])
 end
 
-@testset "vcat >2 args" begin       @testset "vcat out of order" begin
+@testset "vcat >2 args" begin
     empty_dfs = [DataFrame(), DataFrame(), DataFrame()]         
     df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
     @test vcat(empty_dfs...) == reduce(vcat, empty_dfs) == DataFrame()
 
-    df = DataFrame(x = trues(1), y = falses(1))     @testset "vcat errors" begin
-    dfs = [df, df, df]          df1 = DataFrame(A = 1:3, B = 1:3)
+    df = DataFrame(x = trues(1), y = falses(1))
+    dfs = [df, df, df]          
     @test vcat(dfs...) ==reduce(vcat, dfs) == DataFrame(x = trues(3), y = falses(3))
 end
 
