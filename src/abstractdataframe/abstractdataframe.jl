@@ -956,13 +956,13 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
     hcat!(hcat(df1, df2, makeunique=makeunique), dfn..., makeunique=makeunique)
 
 """
-    vcat(dfs::AbstractDataFrame...; columns::Union{Symbol, AbstractVector{Symbol}}=:same)
+    vcat(dfs::AbstractDataFrame...; columns::Union{Symbol, AbstractVector{Symbol}}=:equal)
 
 Vertically concatenate `AbstractDataFrame`s.
 
 The `columns` keyword argument determines the columns of the returned data frame:
 
-* `:same` (the default): require all data frames to have the same column names.
+* `:equal` (the default): require all data frames to have the same column names.
   If they appear in different orders, the order of the first provided data frame is used.
 * `:intersect`: only the columns present in *all* provided data frames are kept.
   If the intersection is empty, an empty data frame is returned.
@@ -1030,11 +1030,11 @@ julia> vcat(d, df1)
 ```
 """
 Base.vcat(dfs::AbstractDataFrame...;
-          columns::Union{Symbol, AbstractVector{Symbol}}=:same) =
+          columns::Union{Symbol, AbstractVector{Symbol}}=:equal) =
     _vcat([df for df in collect(dfs) if ncol(df) != 0]; columns=columns)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
-               columns::Union{Symbol, AbstractVector{Symbol}}=:same)
+               columns::Union{Symbol, AbstractVector{Symbol}}=:equal)
     isempty(dfs) && return DataFrame()
     # Array of all headers
     allheaders = map(names, dfs)
@@ -1045,7 +1045,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     # List of symbols present in all dataframes
     intersectunique = intersect(uniqueheaders...)
 
-    if columns === :same
+    if columns === :equal
         header = unionunique
         coldiff = setdiff(unionunique, intersectunique)
         
