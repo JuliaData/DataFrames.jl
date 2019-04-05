@@ -127,8 +127,8 @@ module TestCat
 
         @test vcat(missing_df) == DataFrame()
         @test vcat(missing_df, missing_df) == DataFrame()
-        @test_throws ArgumentError vcat(missing_df, df)
-        @test_throws ArgumentError vcat(df, missing_df)
+        @test vcat(missing_df, df) == df
+        @test vcat(df, missing_df) == df
         @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
         @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
         res = vcat(df, df)
@@ -277,12 +277,12 @@ module TestCat
                                                                            13, 14, 15])
     end
 
-    @testset "vcat on empty dataframe" begin
+    @testset "vcat on empty dataframe in loop" begin
         df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
         df2 = DataFrame(colwise(x->2x, df1), reverse(names(df1)))
         d = DataFrame()
         for df in [df1, df2]
-            vcat(d, df)
+            d = vcat(d, df)
         end
         @test d == DataFrame(A = [1, 2, 3, 14, 16, 18],
                              B = [4, 5, 6, 8, 10, 12],
@@ -291,10 +291,6 @@ module TestCat
 
 
     @testset "vcat errors" begin
-        err = @test_throws ArgumentError vcat(DataFrame(), DataFrame(), DataFrame(x=[]))
-        @test err.value.msg == "column(s) x are missing from argument(s) 1 and 2"
-        err = @test_throws ArgumentError vcat(DataFrame(), DataFrame(), DataFrame(x=[1]))
-        @test err.value.msg == "column(s) x are missing from argument(s) 1 and 2"
         df1 = DataFrame(A = 1:3, B = 1:3)
         df2 = DataFrame(A = 1:3)
         # right missing 1 column
