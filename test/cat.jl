@@ -120,7 +120,9 @@ end
     df[1, 1:2] = 3
     df[1:2, 1:2] = 3
     df[[true,false,false,true], 2:3] = 3
-    df[1:2, 1:2] = [3,2] 
+
+    # vector broadcasting assignment of subtables   
+    df[1:2, 1:2] = [3,2]    
     df[[true,false,false,true], 2:3] = [2,3]
              
     @test vcat(missing_df) == DataFrame()
@@ -178,7 +180,7 @@ end
     @test vcat(empty_dfs...) == reduce(vcat, empty_dfs) == DataFrame()
 
     df = DataFrame(x = trues(1), y = falses(1))
-    dfs = [df, df, df]          
+    dfs = [df, df, df]
     @test vcat(dfs...) ==reduce(vcat, dfs) == DataFrame(x = trues(3), y = falses(3))
 end
 
