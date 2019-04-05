@@ -121,9 +121,22 @@ end
     df[1:2, 1:2] = 3
     df[[true,false,false,true], 2:3] = 3
 
-    # vector broadcasting assignment of subtables
-    df[1:2, 1:2] = [3,2]
-    df[[true,false,false,true], 2:3] = [2,3]
+        @test vcat(missing_df) == DataFrame()
+        @test vcat(missing_df, missing_df) == DataFrame()
+        @test vcat(missing_df, df) == df
+        @test vcat(df, missing_df) == df
+        @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
+        @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
+        res = vcat(df, df)
+        @test res[1:size(df, 1), :] == df
+        @test res[1+size(df, 1):end, :] == df
+        @test eltypes(vcat(df, df, df)) == Type[Float64, Float64, Int]
+        @test size(vcat(df, df, df)) == (size(df, 1) * 3, size(df, 2))
+        res = vcat(df, df, df)
+        s = size(df, 1)
+        for i in 1:3
+            @test res[1+(i-1)*s:i*s, :] == df
+        end
 
     @test vcat(missing_df) == DataFrame()
     @test vcat(missing_df, missing_df) == DataFrame()
@@ -237,12 +250,12 @@ end
                                                                            13, 14, 15])
     end
 
-    @testset "vcat on empty dataframe" begin
+    @testset "vcat on empty dataframe in loop" begin
         df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
         df2 = DataFrame(colwise(x->2x, df1), reverse(names(df1)))
         d = DataFrame()
         for df in [df1, df2]
-            vcat(d, df)
+            d = vcat(d, df)
         end
         @test d == DataFrame(A = [1, 2, 3, 14, 16, 18],
                              B = [4, 5, 6, 8, 10, 12],
@@ -251,10 +264,6 @@ end
 
 
     @testset "vcat errors" begin
-        err = @test_throws ArgumentError vcat(DataFrame(), DataFrame(), DataFrame(x=[]))
-        @test err.value.msg == "column(s) x are missing from argument(s) 1 and 2"
-        err = @test_throws ArgumentError vcat(DataFrame(), DataFrame(), DataFrame(x=[1]))
-        @test err.value.msg == "column(s) x are missing from argument(s) 1 and 2"
         df1 = DataFrame(A = 1:3, B = 1:3)
         df2 = DataFrame(A = 1:3)
         # right missing 1 column

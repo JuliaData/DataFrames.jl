@@ -1064,8 +1064,8 @@ julia> vcat(d, df1)
 ```
 """
 Base.vcat(dfs::AbstractDataFrame...;
-          columns::Union{Symbol, AbstractVector{Symbol}}=:same) = 
-    _vcat([df for df in dfs if (nrow(df) != 0 && ncol(df) != 0)]; columns=columns)
+          columns::Union{Symbol, AbstractVector{Symbol}}=:same) =
+    _vcat([df for df in collect(dfs) if ncol(df) != 0]; columns=columns)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
                columns::Union{Symbol, AbstractVector{Symbol}}=:same)
