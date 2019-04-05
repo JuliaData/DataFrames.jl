@@ -121,6 +121,11 @@ end
     df[1:2, 1:2] = 3
     df[[true,false,false,true], 2:3] = 3
 
+    # vector broadcasting assignment of subtables            
+    @test vcat(missing_df) == DataFrame()
+    df[1:2, 1:2] = [3,2]            @test vcat(missing_df, missing_df) == DataFrame()
+    df[[true,false,false,true], 2:3] = [2,3]
+
         @test vcat(missing_df) == DataFrame()
         @test vcat(missing_df, missing_df) == DataFrame()
         @test vcat(missing_df, df) == df
@@ -165,6 +170,16 @@ end
     @test vcat(df, alt_df) == DataFrame([[0.0,0.0,0.0,0.0,3.0,2.0,3.0,3.0],
                                          [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
                                          [2,2,2,3,2,2,2,3]])
+end
+
+@testset "vcat >2 args" begin       @testset "vcat out of order" begin
+    empty_dfs = [DataFrame(), DataFrame(), DataFrame()]         
+    df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
+    @test vcat(empty_dfs...) == reduce(vcat, empty_dfs) == DataFrame()
+
+    df = DataFrame(x = trues(1), y = falses(1))     @testset "vcat errors" begin
+    dfs = [df, df, df]          df1 = DataFrame(A = 1:3, B = 1:3)
+    @test vcat(dfs...) ==reduce(vcat, dfs) == DataFrame(x = trues(3), y = falses(3))
 end
 
     @testset "vcat out of order" begin
