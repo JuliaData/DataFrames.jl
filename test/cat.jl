@@ -319,6 +319,7 @@ end
         y = DataFrame(A = 4:5)
         @test vcat(x, y) == DataFrame(A = [2, 4, 5])
     end
+<<<<<<< HEAD
 end
 
 @testset "vcat mixed coltypes" begin
@@ -353,6 +354,8 @@ end
     df = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
     @test df == DataFrame([[true, false]], [:x])
     @test typeof.(eachcol(df)) == [Vector{Bool}]
+=======
+>>>>>>> flexible_vcat
 end
 
 @testset "vcat out of order" begin
