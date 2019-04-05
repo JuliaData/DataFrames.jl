@@ -147,7 +147,7 @@ end
 # Fuzzy matching rules:
 # 1. ignore case
 # 2. maximum Levenshtein distance is 2
-# 3. always show matches with 0 difference (wrog case)
+# 3. always show matches with 0 difference (wrong case)
 # 4. on top of 3. do not show more than 8 matches in total
 # Returns candidates ordered by (distance, name) pair
 function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
