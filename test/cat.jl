@@ -120,28 +120,28 @@ end
     df[1, 1:2] = 3
     df[1:2, 1:2] = 3
     df[[true,false,false,true], 2:3] = 3
-
-    # vector broadcasting assignment of subtables            
-    @test vcat(missing_df) == DataFrame()
-    df[1:2, 1:2] = [3,2]            @test vcat(missing_df, missing_df) == DataFrame()
+    df[1:2, 1:2] = [3,2] 
     df[[true,false,false,true], 2:3] = [2,3]
+             
+    @test vcat(missing_df) == DataFrame()
+    @test vcat(missing_df, missing_df) == DataFrame()
 
-        @test vcat(missing_df) == DataFrame()
-        @test vcat(missing_df, missing_df) == DataFrame()
-        @test vcat(missing_df, df) == df
-        @test vcat(df, missing_df) == df
-        @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
-        @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
-        res = vcat(df, df)
-        @test res[1:size(df, 1), :] == df
-        @test res[1+size(df, 1):end, :] == df
-        @test eltypes(vcat(df, df, df)) == Type[Float64, Float64, Int]
-        @test size(vcat(df, df, df)) == (size(df, 1) * 3, size(df, 2))
-        res = vcat(df, df, df)
-        s = size(df, 1)
-        for i in 1:3
-            @test res[1+(i-1)*s:i*s, :] == df
-        end
+    @test vcat(missing_df) == DataFrame()
+    @test vcat(missing_df, missing_df) == DataFrame()
+    @test vcat(missing_df, df) == df
+    @test vcat(df, missing_df) == df
+    @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
+    @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
+    res = vcat(df, df)
+    @test res[1:size(df, 1), :] == df
+    @test res[1+size(df, 1):end, :] == df
+    @test eltypes(vcat(df, df, df)) == Type[Float64, Float64, Int]
+    @test size(vcat(df, df, df)) == (size(df, 1) * 3, size(df, 2))
+    res = vcat(df, df, df)
+    s = size(df, 1)
+    for i in 1:3
+        @test res[1+(i-1)*s:i*s, :] == df
+    end
 
     @test vcat(missing_df) == DataFrame()
     @test vcat(missing_df, missing_df) == DataFrame()
