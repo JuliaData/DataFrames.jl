@@ -145,23 +145,6 @@ end
         @test res[1+(i-1)*s:i*s, :] == df
     end
 
-    @test vcat(missing_df) == DataFrame()
-    @test vcat(missing_df, missing_df) == DataFrame()
-    @test_throws ArgumentError vcat(missing_df, df)
-    @test_throws ArgumentError vcat(df, missing_df)
-    @test eltypes(vcat(df, df)) == Type[Float64, Float64, Int]
-    @test size(vcat(df, df)) == (size(df, 1) * 2, size(df, 2))
-    res = vcat(df, df)
-    @test res[1:size(df, 1), :] == df
-    @test res[1+size(df, 1):end, :] == df
-    @test eltypes(vcat(df, df, df)) == Type[Float64, Float64, Int]
-    @test size(vcat(df, df, df)) == (size(df, 1) * 3, size(df, 2))
-    res = vcat(df, df, df)
-    s = size(df, 1)
-    for i in 1:3
-        @test res[1+(i-1)*s:i*s, :] == df
-    end
-
     alt_df = deepcopy(df)
     @test vcat(df, alt_df) == DataFrame([[3.0,2.0,3.0,3.0,3.0,2.0,3.0,3.0],
                                          [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
