@@ -17,7 +17,6 @@ DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame() # an empty DataFrame
-DataFrame(t::Type, nrows::Integer, ncols::Integer) # an empty DataFrame of arbitrary size
 DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer;
           makeunique::Bool=false)
 DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol},
@@ -245,11 +244,6 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
         end
     end
     return DataFrame(updated_types, cnames, nrows, makeunique=makeunique)
-end
-
-# Initialize empty DataFrame objects of arbitrary size
-function DataFrame(t::Type, nrows::Integer, ncols::Integer)
-    return DataFrame(fill(t, ncols), nrows)
 end
 
 # Initialize an empty DataFrame with specific eltypes

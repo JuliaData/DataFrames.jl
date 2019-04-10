@@ -1,5 +1,7 @@
 import Base: @deprecate
 
+@deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame(fill(t, ncols), nrows)
+
 @deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
 @deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 
