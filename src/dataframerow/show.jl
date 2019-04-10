@@ -9,7 +9,7 @@ function Base.show(io::IO, dfr::DataFrameRow;
 end
 
 Base.show(dfr::DataFrameRow;
-          allcols::Bool = !get(io, :limit, true),
-          splitcols = get(io, :limit, true),
+          allcols::Bool = !get(stdout, :limit, true),
+          splitcols = get(stdout, :limit, true),
           rowlabel::Symbol = :Row) =
     show(stdout, dfr, allcols=allcols, splitcols=splitcols, rowlabel=rowlabel)

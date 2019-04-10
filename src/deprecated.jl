@@ -10,7 +10,7 @@ import Base: @deprecate
 
 import Base: keys, values, insert!
 @deprecate keys(df::AbstractDataFrame) names(df)
-@deprecate values(df::AbstractDataFrame) columns(df)
+@deprecate values(df::AbstractDataFrame) eachcol(df)
 @deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[col] = df2[col], names(df2)); df)
 
 @deprecate pool categorical
@@ -22,8 +22,6 @@ import Base: keys, values, insert!
 @deprecate sub(df::AbstractDataFrame, rows) view(df, rows, :)
 
 ## write.table
-using CodecZlib, TranscodingStreams
-
 export writetable
 """
 Write data to a tabular-file format (CSV, TSV, ...)
@@ -70,6 +68,8 @@ function writetable(filename::AbstractString,
 
     if endswith(filename, ".bz") || endswith(filename, ".bz2")
         throw(ArgumentError("BZip2 compression not yet implemented"))
+    elseif endswith(filename, ".gz")
+        throw(ArgumentError("GZip compression no longer implemented"))
     end
 
     if append && isfile(filename) && filesize(filename) > 0
@@ -91,9 +91,7 @@ function writetable(filename::AbstractString,
         end
     end
 
-    encoder = endswith(filename, ".gz") ? GzipCompressorStream : NoopStream
-
-    open(encoder, filename, append ? "a" : "w") do io
+    open(filename, append ? "a" : "w") do io
         printtable(io,
                    df,
                    header = header,
@@ -1118,8 +1116,7 @@ function readtable(pathname::AbstractString;
         error("URL retrieval not yet implemented")
     # (2) Path is GZip file
     elseif endswith(pathname, ".gz")
-        nbytes = 2 * filesize(pathname)
-        io = open(_r, GzipDecompressorStream, pathname, "r")
+        error("GZip decompression no longer implemented")
     # (3) Path is BZip2 file
     elseif endswith(pathname, ".bz") || endswith(pathname, ".bz2")
         error("BZip2 decompression not yet implemented")
@@ -1325,8 +1322,23 @@ end
 import Base: vcat
 @deprecate vcat(x::Vector{<:AbstractDataFrame}) vcat(x...)
 
-@deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, stats = [:eltype, :nmissing, :first, :last])
-@deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, stats = [:eltype, :nmissing, :first, :last]), all)
+@deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, :eltype, :nmissing, :first, :last)
+@deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, :eltype, :nmissing, :first, :last), all)
+function StatsBase.describe(df::AbstractDataFrame; stats=nothing)
+    if stats === nothing
+        _describe(df, [:mean, :min, :median,
+                       :max, :nunique, :nmissing,
+                       :eltype])
+    elseif stats === :all
+        Base.depwarn("The `stats` keyword argument has been deprecated. Use describe(df, stats...) instead.", :describe)
+        _describe(df, [:mean, :std, :min, :q25, :median, :q75,
+                       :max, :nunique, :nmissing, :first, :last, :eltype])
+    else
+        Base.depwarn("The `stats` keyword argument has been deprecated. Use describe(df, stats...) instead.", :describe)
+        describe(df, stats...)
+    end
+end
+
 
 import Base: show
 @deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(io, df, allcols=allcols, rowlabel=rowlabel, summary=summary)

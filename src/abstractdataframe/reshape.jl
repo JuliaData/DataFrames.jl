@@ -81,10 +81,10 @@ function stack(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
     cnames = names(df)[id_vars]
     insert!(cnames, 1, value_name)
     insert!(cnames, 1, variable_name)
-    DataFrame(AbstractVector[repeat(_names(df)[measure_vars], inner=nrow(df)),   # variable
-                  vcat([df[c] for c in measure_vars]...),             # value
-                  [repeat(df[c], outer=N) for c in id_vars]...],      # id_var columns
-              cnames)
+    DataFrame(AbstractVector[repeat(_names(df)[measure_vars], inner=nrow(df)), # variable
+                             vcat([df[c] for c in measure_vars]...),           # value
+                             [repeat(df[c], outer=N) for c in id_vars]...],    # id_var columns
+              cnames, copycols=false)
 end
 function stack(df::AbstractDataFrame, measure_var::Int, id_var::Int;
                variable_name::Symbol=:variable, value_name::Symbol=:value)
@@ -253,7 +253,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
     col = similar(df[rowkey], length(levs) + hadmissing)
     copyto!(col, levs)
     hadmissing && (col[end] = missing)
-    df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)))
+    df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)), copycols=false)
     insertcols!(df2, 1, _names(df)[rowkey] => col)
 end
 
@@ -319,8 +319,8 @@ function _unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol},
         unstacked_val[j][i] = valuecol[k]
         mask_filled[i, j] = true
     end
-    df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)))
-    hcat(df1, df2)
+    df2 = DataFrame(unstacked_val, map(Symbol, levels(keycol)), copycols=false)
+    hcat(df1, df2, copycols=false)
 end
 
 unstack(df::AbstractDataFrame) = unstack(df, :variable, :value)
@@ -515,7 +515,7 @@ function stackdf(df::AbstractDataFrame, measure_vars::AbstractVector{<:Integer},
     DataFrame(AbstractVector[RepeatedVector(_names(df)[measure_vars], nrow(df), 1), # variable
                              StackedVector(Any[df[c] for c in measure_vars]),       # value
                              [RepeatedVector(df[c], 1, N) for c in id_vars]...],    # id_var columns
-              cnames)
+              cnames, copycols=false)
 end
 function stackdf(df::AbstractDataFrame, measure_var::Int, id_var::Int;
                  variable_name::Symbol=:variable, value_name::Symbol=:value)
