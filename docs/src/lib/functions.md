@@ -35,6 +35,7 @@ categorical!
 completecases
 copy
 deletecols!
+deletecols
 deleterows!
 describe
 disallowmissing!
@@ -55,6 +56,8 @@ ncol
 rename!
 rename
 repeat
+select
+select!
 show
 sort
 sort!
