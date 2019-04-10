@@ -873,6 +873,10 @@ Create a new `DataFrame` based on `df ` deleting columns specified by `ind`.
 Argument `ind` can be any index that is allowed for column indexing of
 a `DataFrame` provided that the columns requested to be removed are unique.
 
+If `copycols=true` (the default), then returned `DataFrame` holds
+copies of column vectors in `df`.
+If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
+
 ### Examples
 
 ```jldoctest
@@ -1005,11 +1009,15 @@ select!(df::DataFrame, c::Int) = select!(df, [c])
 select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
 
 """
-    select(df::DataFrame, ind)
+    select(df::DataFrame, ind, copycols::Bool=true)
 
 Create a new `DataFrame` that contains columns from `df` by `ind` and return it.
 
 Argument `ind` can be any index that is allowed for column indexing of a `DataFrame`.
+
+If `copycols=true` (the default), then returned `DataFrame` holds
+copies of column vectors in `df`.
+If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
 
 ### Examples
 
