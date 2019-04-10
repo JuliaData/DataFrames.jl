@@ -364,55 +364,55 @@ end
     @test_throws ArgumentError deletecols(df, :f)
 
     df2 = copy(df)
-    d = deletecols(d, [:a, :e, :c])
+    d = deletecols(df, [:a, :e, :c])
     @test names(d) == [:b, :d]
     @test d == df[[:b, :d]]
     @test d.b !== df.b
     @test d.d !== df.d
     @test df == df2
 
-    deletecols(d, [2, 5, 3])
+    d = deletecols(df, [2, 5, 3])
     @test names(d) == [:a, :d]
     @test d.a !== df.a
     @test d.d !== df.d
     @test d == df[[:a, :d]]
     @test df == df2
 
-    deletecols(d, 2:3)
+    d = deletecols(df, 2:3)
     @test d == DataFrame(a=1, d=4, e=5)
     @test d.a !== df.a
     @test d.d !== df.d
     @test d.e !== df.e
     @test df == df2
 
-    deletecols(d, 1)
+    d = deletecols(df, 1)
     @test d == DataFrame(b=2,c=3,d=4,e=5)
     @test d.b !== df.b
     @test d.b == df.b
     @test df == df2
 
-    d = deletecols(d, [:a, :e, :c], copycols=false)
+    d = deletecols(df, [:a, :e, :c], copycols=false)
     @test names(d) == [:b, :d]
     @test d == df[[:b, :d]]
     @test d.b === df.b
     @test d.d === df.d
     @test df == df2
 
-    deletecols(d, [2, 5, 3], copycols=false)
+    d = deletecols(df, [2, 5, 3], copycols=false)
     @test names(d) == [:a, :d]
     @test d.a === df.a
     @test d.d === df.d
     @test d == df[[:a, :d]]
     @test df == df2
 
-    deletecols(d, 2:3, copycols=false)
+    d = deletecols(df, 2:3, copycols=false)
     @test d == DataFrame(a=1, d=4, e=5)
     @test d.a === df.a
     @test d.d === df.d
     @test d.e === df.e
     @test df == df2
 
-    deletecols(d, 1, copycols=false)
+    d = deletecols(df, 1, copycols=false)
     @test d == DataFrame(b=2,c=3,d=4,e=5)
     @test d.b === df.b
     @test df == df2
@@ -458,56 +458,56 @@ end
     @test_throws ArgumentError select(df, [1, 1])
     @test_throws ArgumentError select(df, :f)
 
-    select(df, [:a, :e, :c])
+    d = select(df, [:a, :e, :c])
     @test names(d) == [:a, :e, :c]
-    @test df.a !== df.a
-    @test df.e !== df.e
-    @test df.c !== df.c
-    @test df.a == df.a
-    @test df.e == df.e
-    @test df.c == df.c
+    @test d.a !== df.a
+    @test d.e !== df.e
+    @test d.c !== df.c
+    @test d.a == df.a
+    @test d.e == df.e
+    @test d.c == df.c
 
-    select(df, [2, 5, 3])
+    d = select(df, [2, 5, 3])
     @test names(d) == [:b, :e, :c]
-    @test df.b !== df.b
-    @test df.e !== df.e
-    @test df.c !== df.c
-    @test df.b == df.b
-    @test df.e == df.e
-    @test df.c == df.c
+    @test d.b !== df.b
+    @test d.e !== df.e
+    @test d.c !== df.c
+    @test d.b == df.b
+    @test d.e == df.e
+    @test d.c == df.c
 
-    select(df, 2:3)
+    d = select(df, 2:3)
     @test names(d) == [:b, :c]
-    @test df.b !== df.b
-    @test df.c !== df.c
-    @test df.b == df.b
-    @test df.c == df.c
+    @test d.b !== df.b
+    @test d.c !== df.c
+    @test d.b == df.b
+    @test d.c == df.c
 
-    select(df, 2)
+    d = select(df, 2)
     @test names(d) == [:b]
-    @test df.b !== df.b
-    @test df.b == df.b
+    @test d.b !== df.b
+    @test d.b == df.b
 
-    select(df, [:a, :e, :c], copycols=false)
+    d = select(df, [:a, :e, :c], copycols=false)
     @test names(d) == [:a, :e, :c]
-    @test df.a === df.a
-    @test df.e === df.e
-    @test df.c === df.c
+    @test d.a === df.a
+    @test d.e === df.e
+    @test d.c === df.c
 
-    select(df, [2, 5, 3], copycols=false)
+    d = select(df, [2, 5, 3], copycols=false)
     @test names(d) == [:b, :e, :c]
-    @test df.b === df.b
-    @test df.e === df.e
-    @test df.c === df.c
+    @test d.b === df.b
+    @test d.e === df.e
+    @test d.c === df.c
 
-    select(df, 2:3, copycols=false)
+    d = select(df, 2:3, copycols=false)
     @test names(d) == [:b, :c]
-    @test df.b === df.b
-    @test df.c === df.c
+    @test d.b === df.b
+    @test d.c === df.c
 
-    select(df, 2, copycols=false)
+    d = select(df, 2, copycols=false)
     @test names(d) == [:b]
-    @test df.b === df.b
+    @test d.b === df.b
 end
 
 @testset "deleterows!" begin
