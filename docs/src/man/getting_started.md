@@ -515,18 +515,15 @@ julia> x
    3
 ```
 
-In-place functions are safe to call, except:
-
-* When a view of the `DataFrame` is in use (created via a `view`, `@view` or
-  [`groupby`](@ref)). In the latter case, the view might become corrupted, which
-  may trigger errors, silently return invalid data or even cause Julia to crash.
-* When a `DataFrame` is created with `copycols` keyword argument set to `false`,
-  in which case it might happen that two `DataFrames` might share columns.
+In-place functions are safe to call, except when a view of the `DataFrame` is in use
+(created via a `view`, `@view` or [`groupby`](@ref)) or when a `DataFrame` is created
+with `copycols` keyword argument set to `false`.
 
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
-using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function or simply
-by storing the reference to the column vector before the `DataFrame` was created
-with `copycols=false`.
+using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function,
+by accessing a `parent` of a `view` of a column of a `DataFrame`,
+or simply by storing the reference to the column vector before the `DataFrame`
+was created with `copycols=false`.
 
 ```jldoctest dataframe
 julia> x = [3, 1, 2];
@@ -553,7 +550,8 @@ true
 Note that a column obtained from a `DataFrame` using one of these methods should
 not be mutated without caution.
 
-The exact rules of handling columns of a `DataFrame` are explained in [The design of handling of columns of a `DataFrame`](@ref man-columnhandling) section of the manual.
+The exact rules of handling columns of a `DataFrame` are explained in
+[The design of handling of columns of a `DataFrame`](@ref man-columnhandling) section of the manual.
 
 ## Importing and Exporting Data (I/O)
 
