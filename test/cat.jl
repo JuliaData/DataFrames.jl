@@ -35,6 +35,41 @@ const ≅ = isequal
     @test df2 ≅ DataFrames.hcat!(df2, makeunique=true)
 end
 
+@testset "hcat: copying" begin
+    df = DataFrame(x=1:3)
+    @test hcat(df)[1] == df[1]
+    @test hcat(df)[1] !== df[1]
+    hdf = hcat(df, df, makeunique=true)
+    @test hdf[1] == df[1]
+    @test hdf[1] !== df[1]
+    @test hdf[2] == df[1]
+    @test hdf[2] !== df[1]
+    @test hdf[1] == hdf[2]
+    @test hdf[1] !== hdf[2]
+    hdf = hcat(df, df, df, makeunique=true)
+    @test hdf[1] == df[1]
+    @test hdf[1] !== df[1]
+    @test hdf[2] == df[1]
+    @test hdf[2] !== df[1]
+    @test hdf[3] == df[1]
+    @test hdf[3] !== df[1]
+    @test hdf[1] == hdf[2]
+    @test hdf[1] !== hdf[2]
+    @test hdf[1] == hdf[3]
+    @test hdf[1] !== hdf[3]
+    @test hdf[2] == hdf[3]
+    @test hdf[2] !== hdf[3]
+    x = [4, 5, 6]
+    hdf = hcat(df, x)
+    @test hdf[1] == df[1]
+    @test hdf[1] !== df[1]
+    @test hdf[2] !== x
+    hdf = hcat(x, df)
+    @test hdf[2] == df[1]
+    @test hdf[2] !== df[1]
+    @test hdf[1] !== x
+end
+
 @testset "hcat ::AbstractDataFrame" begin
     df = DataFrame(A = repeat('A':'C', inner=4), B = 1:12)
     gd = groupby(df, :A)
@@ -75,6 +110,113 @@ end
 
     @test_throws ArgumentError hcat("a", df, makeunique=true)
     @test_throws ArgumentError hcat(df, "a", makeunique=true)
+end
+
+@testset "hcat: copycols" begin
+    df1 = DataFrame(a=1:3)
+    df2 = DataFrame(b=1:3)
+    dfv = view(df2, :, :)
+    x = [1,2,3]
+
+    df3 = hcat(df1)
+    @test df3 == df1
+    @test df3.a !== df1.a
+    df3 = hcat(df1, copycols=true)
+    @test df3 == df1
+    @test df3.a !== df1.a
+    df3 = hcat(df1, copycols=false)
+    @test df3 == df1
+    @test df3.a === df1.a
+
+    df3 = hcat(df1, df2)
+    @test names(df3) == [:a, :b]
+    @test df3.a == df1.a
+    @test df3.b == df2.b
+    @test df3.a !== df1.a
+    @test df3.b !== df2.b
+    df3 = hcat(df1, df2, copycols=true)
+    @test names(df3) == [:a, :b]
+    @test df3.a == df1.a
+    @test df3.b == df2.b
+    @test df3.a !== df1.a
+    @test df3.b !== df2.b
+    df3 = hcat(df1, df2, copycols=false)
+    @test names(df3) == [:a, :b]
+    @test df3.a === df1.a
+    @test df3.b === df2.b
+
+    df3 = hcat(df1, dfv)
+    @test names(df3) == [:a, :b]
+    @test df3.a == df1.a
+    @test df3.b == df2.b
+    @test df3.a !== df1.a
+    @test df3.b !== df2.b
+    df3 = hcat(df1, dfv, copycols=true)
+    @test names(df3) == [:a, :b]
+    @test df3.a == df1.a
+    @test df3.b == df2.b
+    @test df3.a !== df1.a
+    @test df3.b !== df2.b
+    df3 = hcat(df1, dfv, copycols=false)
+    @test names(df3) == [:a, :b]
+    @test df3.a === df1.a
+    @test df3.b === dfv.b
+
+    df3 = hcat(df1, x)
+    @test names(df3) == [:a, :x1]
+    @test df3.a == df1.a
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.x1 !== x
+    df3 = hcat(df1, x, copycols=true)
+    @test names(df3) == [:a, :x1]
+    @test df3.a == df1.a
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.x1 !== x
+    df3 = hcat(df1, x, copycols=false)
+    @test names(df3) == [:a, :x1]
+    @test df3.a === df1.a
+    @test df3.x1 === x
+
+    df3 = hcat(x, df1)
+    @test names(df3) == [:x1, :a]
+    @test df3.a == df1.a
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.x1 !== x
+    df3 = hcat(x, df1, copycols=true)
+    @test names(df3) == [:x1, :a]
+    @test df3.a == df1.a
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.x1 !== x
+    df3 = hcat(x, df1, copycols=false)
+    @test names(df3) == [:x1, :a]
+    @test df3.a === df1.a
+    @test df3.x1 === x
+
+    df3 = hcat(dfv, x, df1)
+    @test names(df3) == [:b, :x1, :a]
+    @test df3.a == df1.a
+    @test df3.b == dfv.b
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.b !== dfv.b
+    @test df3.x1 !== x
+    df3 = hcat(dfv, x, df1, copycols=true)
+    @test names(df3) == [:b, :x1, :a]
+    @test df3.a == df1.a
+    @test df3.b == dfv.b
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.b !== dfv.b
+    @test df3.x1 !== x
+    df3 = hcat(dfv, x, df1, copycols=false)
+    @test names(df3) == [:b, :x1, :a]
+    @test df3.a === df1.a
+    @test df3.b === dfv.b
+    @test df3.x1 === x
 end
 #
 # vcat
@@ -152,6 +294,12 @@ end
     @test vcat(df, alt_df) == DataFrame([[0.0,0.0,0.0,0.0,3.0,2.0,3.0,3.0],
                                          [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
                                          [2,2,2,3,2,2,2,3]])
+end
+
+@testset "vcat copy" begin
+    df = DataFrame(x=1:3)
+    @test vcat(df)[1] == df[1]
+    @test vcat(df)[1] !== df[1]
 end
 
 @testset "vcat >2 args" begin

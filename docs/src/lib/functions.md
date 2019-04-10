@@ -31,8 +31,9 @@ meltdf
 
 ```@docs
 allowmissing!
-completecases
 categorical!
+completecases
+copy
 deletecols!
 deleterows!
 describe
@@ -44,6 +45,7 @@ eachcol
 eltypes
 filter
 filter!
+hcat
 insertcols!
 mapcols
 names!

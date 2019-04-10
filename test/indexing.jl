@@ -8,10 +8,17 @@ using Test, DataFrames
     @test df[1] == [1, 2, 3]
     @test df[1] === eachcol(df)[1]
     @test df[1:2] == DataFrame(a=1:3, b=4:6)
-    @test eachcol(df[1:2])[1] === eachcol(df)[1] === last(eachcol(df, true)[1])
+    @test eachcol(df, false)[1] === df[1]
+    @test eachcol(view(df,1:2), false)[1] == eachcol(df, false)[1]
+    @test eachcol(df[1:2], false)[1] == eachcol(df, false)[1]
+    @test eachcol(df[1:2], false)[1] !== eachcol(df, false)[1]
     @test df[:] == df
     @test df[:] !== df
-    @test eachcol(df[:])[1] === eachcol(df)[1] === last(eachcol(df, true)[1])
+    @test eachcol(view(df, :), false)[1] == eachcol(df, false)[1]
+    @test eachcol(df[:], false)[1] == eachcol(df, false)[1]
+    @test eachcol(df[:], false)[1] !== eachcol(df, false)[1]
+    @test eachcol(df)[1] === last(eachcol(df, true)[1])
+    @test eachcol(df)[1] === last(eachcol(df, true)[1])
 
     @test df[1, 1] == 1
     @test df[1, 1:2] isa DataFrameRow
@@ -30,6 +37,15 @@ using Test, DataFrames
     @test eachcol(df[:, 1:2])[1] !== df[1]
     @test df[:, :] == df
     @test eachcol(df[:, :])[1] !== df[1]
+end
+
+@testset "getindex df[col] and df[cols]" begin
+    x = [1, 2, 3]
+    df = DataFrame(x=x, copycols=false)
+    @test df.x === x
+    @test df[:x] === x
+    @test df[[:x]].x !== x
+    @test df[:].x !== x
 end
 
 @testset "view DataFrame" begin

@@ -100,7 +100,8 @@ function compose_joined_table(joiner::DataFrameJoiner, kind::Symbol,
         copyto!(cols[i+ncleft], view(col, all_orig_right_ixs))
         permute!(cols[i+ncleft], right_perm)
     end
-    res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)), makeunique=makeunique)
+    res = DataFrame(cols, vcat(names(joiner.dfl), names(dfr_noon)),
+                    makeunique=makeunique, copycols=false)
 
     if length(rightonly_ixs.join) > 0
         # some left rows are missing, so the values of the "on" columns
@@ -303,9 +304,11 @@ function Base.join(df1::AbstractDataFrame,
                    Symbol(indicator_cols[i]) == indicator)
                  indicator_cols[i] *= 'X'
             end
-         end
-         df1 = hcat(df1, DataFrame(Dict(indicator_cols[1] => trues(nrow(df1)))))
-         df2 = hcat(df2, DataFrame(Dict(indicator_cols[2] => trues(nrow(df2)))))
+        end
+        df1 = copy(df1, copycols=false)
+        df1[Symbol(indicator_cols[1])] = trues(nrow(df1))
+        df2 = copy(df2, copycols=false)
+        df2[Symbol(indicator_cols[2])] = trues(nrow(df2))
     end
 
     if kind == :cross
@@ -395,7 +398,13 @@ function Base.join(df1::AbstractDataFrame,
 
         refs = UInt8[coalesce(l, false) + 2 * coalesce(r, false) for (l, r) in zip(left, right)]
         indicatorcol = CategoricalArray{String,1}(refs, CategoricalPool{String,UInt8}(["left_only", "right_only", "both"]))
-        joined = hcat(joined, DataFrame(indicator => indicatorcol), makeunique=makeunique)
+        unique_indicator = indicator
+        try_idx = 0
+        while haskey(joined, unique_indicator)
+            try_idx += 1
+            unique_indicator = Symbol(string(indicator, "_", try_idx))
+        end
+        joined[unique_indicator] = indicatorcol
 
         deletecols!(joined, Symbol(indicator_cols[1]))
         deletecols!(joined, Symbol(indicator_cols[2]))
@@ -409,5 +418,5 @@ function crossjoin(df1::AbstractDataFrame, df2::AbstractDataFrame; makeunique::B
     colindex = merge(index(df1), index(df2), makeunique=makeunique)
     cols = Any[[repeat(c, inner=r2) for c in eachcol(df1)];
                [repeat(c, outer=r1) for c in eachcol(df2)]]
-    DataFrame(cols, colindex)
+    DataFrame(cols, colindex, copycols=false)
 end
