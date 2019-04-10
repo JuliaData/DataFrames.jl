@@ -282,6 +282,79 @@ julia&gt; mean(df.A)
 julia&gt; colwise(sum, df)
 2-element Array{Real,1}:
  10
- 10.0</code></pre><h2><a class="nav-anchor" id="Importing-and-Exporting-Data-(I/O)-1" href="#Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></h2><p>For reading and writing tabular data from CSV and other delimited text files, use the <a href="https://github.com/JuliaData/CSV.jl">CSV.jl</a> package.</p><p>If you have not used the CSV.jl package before then you may need to install it first:</p><pre><code class="language-julia">using Pkg
+ 10.0</code></pre><h3><a class="nav-anchor" id="Handling-of-Columns-Stored-in-a-DataFrame-1" href="#Handling-of-Columns-Stored-in-a-DataFrame-1">Handling of Columns Stored in a <code>DataFrame</code></a></h3><p>Functions that transform a <code>DataFrame</code> to produce a new <code>DataFrame</code> always perform a copy of the columns by default, for example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+4×2 DataFrame
+│ Row │ A     │ B       │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 1     │ 4.0     │
+│ 2   │ 2     │ 3.0     │
+│ 3   │ 3     │ 2.0     │
+│ 4   │ 4     │ 1.0     │
+
+julia&gt; df2 = copy(df);
+
+julia&gt; df2.A === df.A
+false</code></pre><p>On the other hand, in-place functions, whose names end with <code>!</code>, may mutate the column vectors of the <code>DataFrame</code> they take as an argument, for example:</p><pre><code class="language-julia-repl">julia&gt; x = [3, 1, 2];
+
+julia&gt; df = DataFrame(x=x)
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 3     │
+│ 2   │ 1     │
+│ 3   │ 2     │
+
+julia&gt; sort!(df)
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+│ 3   │ 3     │
+
+julia&gt; x
+3-element Array{Int64,1}:
+ 1
+ 2
+ 3
+
+julia&gt; df.x[1] = 100
+100
+
+julia&gt; df
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 100   │
+│ 2   │ 2     │
+│ 3   │ 3     │
+
+julia&gt; x
+3-element Array{Int64,1}:
+ 100
+   2
+   3</code></pre><p>In-place functions are safe to call, except when a view of the <code>DataFrame</code> (created via a <code>view</code>, <code>@view</code> or <a href="../lib/functions.html#DataFrames.groupby"><code>groupby</code></a>) or when a <code>DataFrame</code> created with <code>copycols=false</code> are in use.</p><p>It is possible to have a direct access to a column <code>col</code> of a <code>DataFrame</code> <code>df</code> using the syntaxes <code>df.col</code>, <code>df[:col]</code>, via the <a href="../lib/functions.html#DataFrames.eachcol"><code>eachcol</code></a> function, by accessing a <code>parent</code> of a <code>view</code> of a column of a <code>DataFrame</code>, or simply by storing the reference to the column vector before the <code>DataFrame</code> was created with <code>copycols=false</code>.</p><pre><code class="language-julia-repl">julia&gt; x = [3, 1, 2];
+
+julia&gt; df = DataFrame(x=x)
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 3     │
+│ 2   │ 1     │
+│ 3   │ 2     │
+
+julia&gt; df.x == x
+true
+
+julia&gt; df[1] !== x
+true
+
+julia&gt; eachcol(df, false)[1] === df.x
+true</code></pre><p>Note that a column obtained from a <code>DataFrame</code> using one of these methods should not be mutated without caution.</p><p>The exact rules of handling columns of a <code>DataFrame</code> are explained in <a href="../lib/types.html#man-columnhandling-1">The design of handling of columns of a <code>DataFrame</code></a> section of the manual.</p><h2><a class="nav-anchor" id="Importing-and-Exporting-Data-(I/O)-1" href="#Importing-and-Exporting-Data-(I/O)-1">Importing and Exporting Data (I/O)</a></h2><p>For reading and writing tabular data from CSV and other delimited text files, use the <a href="https://github.com/JuliaData/CSV.jl">CSV.jl</a> package.</p><p>If you have not used the CSV.jl package before then you may need to install it first:</p><pre><code class="language-julia">using Pkg
 Pkg.add(&quot;CSV&quot;)</code></pre><p>The CSV.jl functions are not loaded automatically and must be imported into the session.</p><pre><code class="language-julia">using CSV</code></pre><p>A dataset can now be read from a CSV file at path <code>input</code> using</p><pre><code class="language-julia">CSV.read(input)</code></pre><p>A <code>DataFrame</code> can be written to a CSV file at path <code>output</code> using</p><pre><code class="language-julia">df = DataFrame(x = 1, y = 2)
 CSV.write(output, df)</code></pre><p>The behavior of CSV functions can be adapted via keyword arguments. For more information, see <code>?CSV.read</code> and <code>?CSV.write</code>, or checkout the online <a href="https://juliadata.github.io/CSV.jl/stable/">CSV.jl documentation</a>.</p><footer><hr/><a class="previous" href="../index.html"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="joins.html"><span class="direction">Next</span><span class="title">Joins</span></a></footer></article></body></html>
