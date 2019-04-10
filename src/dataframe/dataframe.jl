@@ -902,7 +902,7 @@ julia> deletecols(d, 1)
 """
 function deletecols(df::DataFrame, inds; copycols::Bool=true)
     newdf = DataFrame(df, copycols=false)
-    deletecols!(df, inds)
+    deletecols!(newdf, inds)
     if copycols
         for i in axes(newdf, 2)
             newdf[i] = copy(newdf[i])
@@ -991,6 +991,7 @@ julia> select!(d, 2)
 
 """
 function select!(df::DataFrame, ind::AbstractVector{Int})
+    targetnames = _names(df)[ind]
     indmin, indmax = extrema(ind)
     if indmin < 1
         throw(ArgumentError("indices passed to select! must be positive"))
@@ -1003,6 +1004,7 @@ function select!(df::DataFrame, ind::AbstractVector{Int})
     end
 
     deletecols!(df, setdiff(axes(df, 2), ind))
+    permutecols!(df, targetnames)
 end
 
 select!(df::DataFrame, c::Int) = select!(df, [c])
@@ -1042,14 +1044,14 @@ julia> select(d, :b)
 ```
 
 """
-select(df, ind::AbstractVector{Int}; copycols::Bool=true) =
-    DataFrame(_columns(df)[selected_columns], Index(_names(df)[selected_columns]),
+select(df::DataFrame, ind::AbstractVector{Int}; copycols::Bool=true) =
+    DataFrame(_columns(df)[ind], Index(_names(df)[ind]),
               copycols=copycols)
 
 select(df::DataFrame, c::Int; copycols::Bool=true) =
-    select!(df, [c], copycols=copycols)
+    select(df, [c], copycols=copycols)
 select(df::DataFrame, c::Any; copycols::Bool=true) =
-    select!(df, index(df)[c], copycols=copycols)
+    select(df, index(df)[c], copycols=copycols)
 
 ##############################################################################
 ##

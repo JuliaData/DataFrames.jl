@@ -420,8 +420,8 @@ end
 
 @testset "select!" begin
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
-    @test_throws ArgumentError select!(df, 0)
-    @test_throws ArgumentError select!(df, 6)
+    @test_throws BoundsError select!(df, 0)
+    @test_throws BoundsError select!(df, 6)
     @test_throws ArgumentError select!(df, [1, 1])
     @test_throws ArgumentError select!(df, :f)
 
@@ -431,6 +431,13 @@ end
     @test d.a === df.a
     @test d.e === df.e
     @test d.c === df.c
+
+    d = copy(df, copycols=false)
+    select!(d, [:d, :e, :a, :c, :b])
+    @test names(d) == [:d, :e, :a, :c, :b]
+    for i in [:d, :e, :a, :c, :b]
+        @test d[i] === df[i]
+    end
 
     d = copy(df, copycols=false)
     select!(d, [2, 5, 3])
@@ -453,8 +460,8 @@ end
 
 @testset "select" begin
     df = DataFrame(a=1, b=2, c=3, d=4, e=5)
-    @test_throws ArgumentError select(df, 0)
-    @test_throws ArgumentError select(df, 6)
+    @test_throws BoundsError select(df, 0)
+    @test_throws BoundsError select(df, 6)
     @test_throws ArgumentError select(df, [1, 1])
     @test_throws ArgumentError select(df, :f)
 
