@@ -150,4 +150,15 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
     end
 end
 
+@testset "DataFrame!" begin
+    nt = (a=Int64[1, 2, 3], b=[:a, :b, :c])
+    df1 = DataFrame!(nt)
+    df2 = DataFrame!(df1)
+    df3 = DataFrame(nt)
+    @test Tables.columntable(df1) === nt
+    @test Tables.columntable(df2) === nt
+    @test Tables.columntable(df3) == nt
+    @test Tables.columntable(df3) !== nt
+end
+
 end # module
