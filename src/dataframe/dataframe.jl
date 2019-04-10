@@ -993,13 +993,13 @@ julia> select!(d, 2)
 function select!(df::DataFrame, ind::AbstractVector{Int})
     indmin, indmax = extrema(ind)
     if indmin < 1
-        @throw ArgumentError("indices passed to select! must be positive")
+        throw(ArgumentError("indices passed to select! must be positive"))
     end
     if indmax > ncol(df)
-        @throw ArgumentError("indices passed to select! must not be greater than number of columns")
+        throw(ArgumentError("indices passed to select! must not be greater than number of columns"))
     end
     if !allunique(ind)
-        @throw ArgumentError("indices passed to select! must not contain duplicates")
+        throw(ArgumentError("indices passed to select! must not contain duplicates"))
     end
 
     deletecols!(df, setdiff(axes(df, 2), ind))
