@@ -88,15 +88,15 @@ It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 using one of the following methods:
 
 * via the `getproperty` function using the syntax `df.col`;
-* via the `getindex` function using the syntax `df[:col]`;
+* via the `getindex` function using the syntax `df[:col]`; (note this is in contrast to `df[:col, :]` which copies)
 * by creating a `DataFrameColumns` object using the [`eachcol`](@ref) function;
 * by storing the reference to the column before creating a `DataFrame` with `copycols=false`;
 
 A column obtained from a `DataFrame` using one of the above methods should not be mutated
 without caution because:
 
-* resizing a column vector will corrupt its parent `DataFrame` and associated views (if any):
-  methods only check the length of the column when it is added
+* resizing a column vector will corrupt its parent `DataFrame` and any associated views:
+  as methods only check the length of the column when it is added
   to the `DataFrame` and later assume that all columns have the same length;
 * reordering values in a column vector (e.g. using `sort!`) will break the consistency of rows
   with other columns, which will also affect views (if any);
