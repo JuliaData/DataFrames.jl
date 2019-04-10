@@ -674,7 +674,7 @@ julia> df = DataFrame(i = 1:5,
 │ 4   │ 4     │ 2       │ d       │
 │ 5   │ 5     │ 1       │ e       │
 
-julia> dropmissing!(deepcopy(df))
+julia> dropmissing!(copy(df))
 2×3 DataFrame
 │ Row │ i     │ x     │ y      │
 │     │ Int64 │ Int64 │ String │
@@ -682,7 +682,7 @@ julia> dropmissing!(deepcopy(df))
 │ 1   │ 4     │ 2     │ d      │
 │ 2   │ 5     │ 1     │ e      │
 
-julia> dropmissing!(deepcopy(df), disallowmissing=false)
+julia> dropmissing!(copy(df), disallowmissing=false)
 2×3 DataFrame
 │ Row │ i     │ x      │ y       │
 │     │ Int64 │ Int64⍰ │ String⍰ │
@@ -690,7 +690,7 @@ julia> dropmissing!(deepcopy(df), disallowmissing=false)
 │ 1   │ 4     │ 2      │ d       │
 │ 2   │ 5     │ 1      │ e       │
 
-julia> dropmissing!(deepcopy(df), :x)
+julia> dropmissing!(copy(df), :x)
 3×3 DataFrame
 │ Row │ i     │ x     │ y       │
 │     │ Int64 │ Int64 │ String⍰ │

@@ -154,10 +154,10 @@ end
     @test dropmissing(df2) == df2[[1, 2, 4], :]
     returned = dropmissing(df1)
     @test df1 == returned && df1 !== returned
-    df2b = deepcopy(df2)
+    df2b = copy(df2)
     @test dropmissing!(df2b) === df2b
     @test df2b == df2[[1, 2, 4], :]
-    df1b = deepcopy(df1)
+    df1b = copy(df1)
     @test dropmissing!(df1b) === df1b
     @test df1b == df1
 
@@ -166,12 +166,12 @@ end
         @test dropmissing(df2, cols) == df2[[1, 2, 4], :]
         returned = dropmissing(df1, cols)
         @test df1 == returned && df1 !== returned
-        df2b = deepcopy(df2)
+        df2b = copy(df2)
         @test dropmissing!(df2b, cols) === df2b
         @test df2b == df2[[1, 2, 4], :]
         @test dropmissing(df2, cols) == df2b
         @test df2 != df2b
-        df1b = deepcopy(df1)
+        df1b = copy(df1)
         @test dropmissing!(df1b, cols) === df1b
         @test df1b == df1
     end
@@ -187,7 +187,7 @@ end
 
     @test_throws ArgumentError dropmissing!(sdf)
 
-    df2 = deepcopy(df)
+    df2 = copy(df)
     @test dropmissing!(df, disallowmissing=true) === df
     @test dropmissing!(df2, disallowmissing=false) === df2
     @test eltype(df.a) == Int
@@ -195,7 +195,7 @@ end
     @test df.a == df2.a == [1, 3]
 
     a = [1,2]
-    df = DataFrame(a=a)
+    df = DataFrame(a=a, copycols=false)
     @test dropmissing!(df) === df
     @test a === df.a
     dfx = dropmissing(df)
