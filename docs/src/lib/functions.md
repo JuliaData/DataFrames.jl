@@ -31,7 +31,9 @@ meltdf
 
 ```@docs
 allowmissing!
+categorical!
 completecases
+copy
 deletecols!
 deleterows!
 describe
@@ -43,10 +45,13 @@ eachcol
 eltypes
 filter
 filter!
+hcat
 insertcols!
 mapcols
 names!
 nonunique
+nrow
+ncol
 rename!
 rename
 repeat
@@ -57,4 +62,5 @@ unique!
 permutecols!
 vcat
 append!
+push!
 ```

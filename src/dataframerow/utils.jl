@@ -146,7 +146,10 @@ function row_group_slots(cols::Tuple{Vararg{AbstractVector}},
     return ngroups, rhashes, gslots, false
 end
 
-function row_group_slots(cols::NTuple{N,<:CategoricalVector},
+nlevels(x::PooledArray) = length(x.pool)
+nlevels(x) = length(levels(x))
+
+function row_group_slots(cols::NTuple{N,<:Union{CategoricalVector,PooledVector}},
                          hash::Val{false},
                          groups::Union{Vector{Int}, Nothing} = nothing,
                          skipmissing::Bool = false)::Tuple{Int, Vector{UInt}, Vector{Int}, Bool} where N
@@ -157,7 +160,7 @@ function row_group_slots(cols::NTuple{N,<:CategoricalVector},
     # If missings are to be skipped, they will all go to group 1,
     # which will be removed by group_rows
     ngroupstup = map(cols) do c
-        length(levels(c)) + (!skipmissing && eltype(c) >: Missing)
+        nlevels(c) + (!skipmissing && eltype(c) >: Missing)
     end
     ngroups = prod(ngroupstup) + skipmissing
 
@@ -180,13 +183,25 @@ function row_group_slots(cols::NTuple{N,<:CategoricalVector},
     # which will be removed by group_rows
     seen[1] = skipmissing
     refmaps = map(cols) do col
-        # When levels are in the same order as the index and there are no missing values,
-        # we could simply use refs, but the performance gain is negligible,
-        # so always sort groups in the order of levels
-        nlevels = length(levels(col))
-        refmap = Vector{Int}(undef, nlevels + 1)
-        refmap[1] = nlevels
-        refmap[2:end] .= CategoricalArrays.order(col.pool) .- 1
+        nlevs = nlevels(col)
+        if col isa CategoricalVector
+            # When levels are in the same order as the index and there are no missing values,
+            # we could simply use refs, but the performance gain is negligible,
+            # so always sort groups in the order of levels
+            refmap = Vector{Int}(undef, nlevs + 1)
+            refmap[1] = skipmissing ? -1 : nlevs
+            refmap[2:end] .= CategoricalArrays.order(col.pool) .- 1
+        else # PooledVector
+            # First value in refmap is never used
+            refmap = collect(-1:nlevs-1)
+            if eltype(col) >: Missing
+                missingind = get(col.invpool, missing, 0)
+                if skipmissing && missingind > 0
+                    refmap[missingind+1] = -1
+                    refmap[missingind+2:end] .-= 1
+                end
+            end
+        end
         refmap
     end
     strides = (cumprod(collect(reverse(ngroupstup)))[end-1:-1:1]..., 1)::NTuple{N,Int}
@@ -195,9 +210,10 @@ function row_group_slots(cols::NTuple{N,<:CategoricalVector},
         let i=i # Workaround for julia#15276
             refs = map(c -> c.refs[i], cols)
         end
-        j = sum(map((m, r, s) -> m[r+1] * s, refmaps, refs, strides)) + 1
+        vals = map((m, r, s) -> m[r+1] * s, refmaps, refs, strides)
+        j = sum(vals) + 1
         if skipmissing
-            j = any(iszero, refs) ? 1 : j + 1
+            j = any(x -> x < 0, vals) ? 1 : j + 1
         end
         groups[i] = j
         seen[j] = true
@@ -216,7 +232,8 @@ function row_group_slots(cols::NTuple{N,<:CategoricalVector},
         # To catch potential bugs inducing unnecessary computations
         @assert oldngroups != ngroups
     end
-    return ngroups, UInt[], Int[], true
+    sorted = all(col -> col isa CategoricalVector, cols)
+    return ngroups, UInt[], Int[], sorted
 end
 
 # Builds RowGroupDict for a given DataFrame.
