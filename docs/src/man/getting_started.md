@@ -515,9 +515,9 @@ julia> x
    3
 ```
 
-In-place functions are safe to call, except when a view of the `DataFrame` is in use
-(created via a `view`, `@view` or [`groupby`](@ref)) or when a `DataFrame` is created
-with `copycols` keyword argument set to `false`.
+In-place functions are safe to call, except when a view of the `DataFrame`
+(created via a `view`, `@view` or [`groupby`](@ref))
+or when a `DataFrame` created with `copycols=false` are in use.
 
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function,

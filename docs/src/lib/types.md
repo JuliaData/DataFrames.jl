@@ -80,8 +80,10 @@ In-place functions whose names end with `!` (like `sort!` or [`dropmissing!`](@r
 `setindex!`, `push!`, `append!`) may mutate the column vectors of the `DataFrame` they take
 as an argument. These functions are safe to call due to the rules described above,
 *except* when a view of the `DataFrame` is in use (via a `SubDataFrame`, a `DataFrameRow`
-or a `GroupedDataFrame`). In the latter case (i.e. when you call such a function on the parent of the view),
-the view might become corrupted, which make trigger errors, silently return invalid data or even cause Julia to crash.
+or a `GroupedDataFrame`). In the latter case, calling such a function on the parent might corrupt the view,
+which make trigger errors, silently return invalid data or even cause Julia to crash.
+The same caution applies when `DataFrame` was created using columns of another `DataFrame` without copying
+(for instance when `copycols=false` in functions such as `DataFrame` or `hcat`).
 
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 (e.g. this can be useful in performance critical code to avoid copying),
@@ -90,7 +92,7 @@ using one of the following methods:
 * via the `getproperty` function using the syntax `df.col`;
 * via the `getindex` function using the syntax `df[:col]` (note this is in contrast to `df[:, :col]` which copies);
 * by creating a `DataFrameColumns` object using the [`eachcol`](@ref) function;
-* by calling `parent` function on a view of a column of the `DataFrame`, e.g. `parent(@view df[:, :col])`;
+* by calling the `parent` function on a view of a column of the `DataFrame`, e.g. `parent(@view df[:, :col])`;
 * by storing the reference to the column before creating a `DataFrame` with `copycols=false`;
 
 A column obtained from a `DataFrame` using one of the above methods should not be mutated
