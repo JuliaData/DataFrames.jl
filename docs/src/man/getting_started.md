@@ -444,6 +444,115 @@ julia> colwise(sum, df)
  10.0
 ```
 
+### Handling of Columns Stored in a `DataFrame`
+
+Functions that transform a `DataFrame` to produce a
+new `DataFrame` always perform a copy of the columns by default, for example:
+
+```jldoctest dataframe
+julia> df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+4×2 DataFrame
+│ Row │ A     │ B       │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 1     │ 4.0     │
+│ 2   │ 2     │ 3.0     │
+│ 3   │ 3     │ 2.0     │
+│ 4   │ 4     │ 1.0     │
+
+julia> df2 = copy(df);
+
+julia> df2.A === df.A
+false
+```
+
+On the other hand, in-place functions, whose names end with `!`, may mutate the column vectors of the
+`DataFrame` they take as an argument, for example:
+
+```jldoctest dataframe
+julia> x = [3, 1, 2];
+
+julia> df = DataFrame(x=x)
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 3     │
+│ 2   │ 1     │
+│ 3   │ 2     │
+
+julia> sort!(df)
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+│ 3   │ 3     │
+
+julia> x
+3-element Array{Int64,1}:
+ 1
+ 2
+ 3
+
+julia> df.x[1] = 100
+100
+
+julia> df
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 100   │
+│ 2   │ 2     │
+│ 3   │ 3     │
+
+julia> x
+3-element Array{Int64,1}:
+ 100
+   2
+   3
+```
+
+In-place functions are safe to call, except when a view of the `DataFrame`
+(created via a `view`, `@view` or [`groupby`](@ref))
+or when a `DataFrame` created with `copycols=false` are in use.
+
+It is possible to have a direct access to a column `col` of a `DataFrame` `df`
+using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function,
+by accessing a `parent` of a `view` of a column of a `DataFrame`,
+or simply by storing the reference to the column vector before the `DataFrame`
+was created with `copycols=false`.
+
+```jldoctest dataframe
+julia> x = [3, 1, 2];
+
+julia> df = DataFrame(x=x)
+3×1 DataFrame
+│ Row │ x     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 3     │
+│ 2   │ 1     │
+│ 3   │ 2     │
+
+julia> df.x == x
+true
+
+julia> df[1] !== x
+true
+
+julia> eachcol(df, false)[1] === df.x
+true
+```
+
+Note that a column obtained from a `DataFrame` using one of these methods should
+not be mutated without caution.
+
+The exact rules of handling columns of a `DataFrame` are explained in
+[The design of handling of columns of a `DataFrame`](@ref man-columnhandling) section of the manual.
+
 ## Importing and Exporting Data (I/O)
 
 For reading and writing tabular data from CSV and other delimited text files, use the [CSV.jl](https://github.com/JuliaData/CSV.jl) package.

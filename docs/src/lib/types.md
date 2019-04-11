@@ -42,11 +42,10 @@ Similarly, the `eachcol` function returns a value of the `DataFrameColumns` type
 serves as an iterator over columns of an `AbstractDataFrame`.
 The return value can have two concrete types:
 
-* If the `eachcol` function is called with the `names` argument set to `true` (currently the default,
-  but in the future the default will change to `false`) then it returns a value of the
+* If the `eachcol` function is called with the `names` argument set to `true` then it returns a value of the
   `DataFrameColumns{<:AbstractDataFrame, Pair{Symbol, AbstractVector}}` type, which is an
   iterator returning a pair containing the column name and the column vector.
-* If the `eachcol` function is called with `names` argument set to `false` then it returns a value of the
+* If the `eachcol` function is called with `names` argument set to `false` (the default) then it returns a value of the
   `DataFrameColumns{<:AbstractDataFrame, AbstractVector}` type, which is an
   iterator returning the column vector only.
 
@@ -57,6 +56,55 @@ but using the `eachrow` and `eachcol` functions.
 The `RepeatedVector` and `StackedVector` types are subtypes of `AbstractVector` and support its interface
 with the exception that they are read only. Note that they are not exported and should not be constructed directly,
 but they are columns of a `DataFrame` returned by `stackdf` and `meltdf`.
+
+## [The design of handling of columns of a `DataFrame`](@id man-columnhandling)
+
+When a `DataFrame` is constructed columns are copied by default. You can disable
+this behavior by setting `copycols` keyword argument to `false`. The exception is
+if an `AbstractRange` is passed as a column, then it is always collected to a `Vector`.
+
+Also functions that transform a `DataFrame` to produce a new `DataFrame` perform a copy of the columns,
+unless they are passed `copycols=false` (available only for functions
+that could perform a transformation without copying the columns). Examples of such functions are [`vcat`](@ref),
+[`hcat`](@ref), [`filter`](@ref), [`dropmissing`](@ref), [`join`](@ref), `getindex`,
+[`copy`](@ref) or the [`DataFrame`](@ref) constructor mentioned above.
+
+On the contrary, functions that create a view of a `DataFrame` *do not* by definition make copies of
+the columns, and therefore require particular caution. This includes `view`, which returns
+a `SubDataFrame` or a `DataFrameRow`, and `groupby`, which returns a `GroupedDataFrame`.
+
+A partial exception to this rule are the [`stackdf`](@ref) and [`meltdf`](@ref) functions which
+create a `DataFrame` that contains views of the columns from the source `DataFrame`.
+
+In-place functions whose names end with `!` (like `sort!` or [`dropmissing!`](@ref),
+`setindex!`, `push!`, `append!`) may mutate the column vectors of the `DataFrame` they take
+as an argument. These functions are safe to call due to the rules described above,
+*except* when a view of the `DataFrame` is in use (via a `SubDataFrame`, a `DataFrameRow`
+or a `GroupedDataFrame`). In the latter case, calling such a function on the parent might corrupt the view,
+which make trigger errors, silently return invalid data or even cause Julia to crash.
+The same caution applies when `DataFrame` was created using columns of another `DataFrame` without copying
+(for instance when `copycols=false` in functions such as `DataFrame` or `hcat`).
+
+It is possible to have a direct access to a column `col` of a `DataFrame` `df`
+(e.g. this can be useful in performance critical code to avoid copying),
+using one of the following methods:
+
+* via the `getproperty` function using the syntax `df.col`;
+* via the `getindex` function using the syntax `df[:col]` (note this is in contrast to `df[:, :col]` which copies);
+* by creating a `DataFrameColumns` object using the [`eachcol`](@ref) function;
+* by calling the `parent` function on a view of a column of the `DataFrame`, e.g. `parent(@view df[:, :col])`;
+* by storing the reference to the column before creating a `DataFrame` with `copycols=false`;
+
+A column obtained from a `DataFrame` using one of the above methods should not be mutated
+without caution because:
+
+* resizing a column vector will corrupt its parent `DataFrame` and any associated views
+  as methods only check the length of the column when it is added
+  to the `DataFrame` and later assume that all columns have the same length;
+* reordering values in a column vector (e.g. using `sort!`) will break the consistency of rows
+  with other columns, which will also affect views (if any);
+* changing values contained in a column vector is acceptable as long as it is not used as
+  a grouping column in a `GroupedDataFrame` created based on the `DataFrame`.
 
 ## Types specification
 

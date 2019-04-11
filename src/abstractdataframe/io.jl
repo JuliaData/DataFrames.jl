@@ -141,9 +141,9 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
         end
         for column_name in cnames
             if isassigned(df[column_name], row)
-                cell = sprint(ourshowcompact, df[row, column_name])
+                cell = sprint(ourshow, df[row, column_name])
             else
-                cell = sprint(ourshowcompact, Base.undef_ref_str)
+                cell = sprint(ourshow, Base.undef_ref_str)
             end
             write(io, "<td>$(html_escape(cell))</td>")
         end
@@ -269,7 +269,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
                 if showable(MIME("text/latex"), cell)
                     show(io, MIME("text/latex"), cell)
                 else
-                    print(io, latex_escape(sprint(ourshowcompact, cell)))
+                    print(io, latex_escape(sprint(ourshow, cell)))
                 end
             end
         end
