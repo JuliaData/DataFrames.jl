@@ -71,7 +71,7 @@ Random.seed!(1)
 # here there will be probably no ties
 df_rand1 = DataFrame(rand(100, 4))
 # but here we know we will have ties
-df_rand2 = df_rand1[:]
+df_rand2 = copy(df_rand1)
 df_rand2[:x1] = shuffle([fill(1, 50); fill(2, 50)])
 df_rand2[:x4] = shuffle([fill(1, 50); fill(2, 50)])
 
@@ -90,13 +90,16 @@ for df_rand in [df_rand1, df_rand2]
         end
     end
     # testing if sort! is consistent with issorted and sort
-    ref_df = df_rand[:]
+    ref_df = df_rand
     for n1 in names(df_rand)
+        df_rand = copy(ref_df)
         @test sort!(df_rand, n1) == sort(ref_df, n1)
         @test issorted(df_rand, n1)
+        df_rand = copy(ref_df)
         @test sort!(df_rand, [n1]) == sort(ref_df, [n1])
         @test issorted(df_rand, [n1])
         for n2 in setdiff(names(df_rand), [n1])
+            df_rand = copy(ref_df)
             @test sort!(df_rand, [n1, n2]) == sort(ref_df, [n1, n2])
             @test issorted(df_rand, n1)
             @test issorted(df_rand, [n1, n2])

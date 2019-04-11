@@ -144,25 +144,29 @@ end
 @inline Base.getindex(x::AbstractIndex, idx::AbstractRange{<:Integer}) = collect(Int, idx)
 @inline Base.getindex(x::AbstractIndex, ::Colon) = Base.OneTo(length(x))
 
-# we accept at most one difference in strings disregarding case
-function fuzzymatch(s1::AbstractString, s2::AbstractString, l1=length(s1), l2=length(s2))
-    abs(l1 - l2) > 1 && return false
-    min(l1, l2) == 0 && return true
-    ts1, ts2 = chop.((s1, s2), head=1, tail=0)
-    uppercase(s1[1]) == uppercase(s2[1]) && return fuzzymatch(ts1, ts2, l1 - 1, l2 - 1)
-    l1 > l2 && return ts1 == s2
-    l1 < l2 && return s1 == ts2
-    ts1 == ts2
+# Fuzzy matching rules:
+# 1. ignore case
+# 2. maximum Levenshtein distance is 2
+# 3. always show matches with 0 difference (wrong case)
+# 4. on top of 3. do not show more than 8 matches in total
+# Returns candidates ordered by (distance, name) pair
+function fuzzymatch(l::Dict{Symbol, Int}, idx::Symbol)
+        idxs = uppercase(string(idx))
+        dist = [(REPL.levenshtein(uppercase(string(x)), idxs), x) for x in keys(l)]
+        sort!(dist)
+        c = [count(x -> x[1] <= i, dist) for i in 0:2]
+        maxd = max(0, searchsortedlast(c, 8) - 1)
+        [s for (d, s) in dist if d <= maxd]
 end
 
 @inline function lookupname(l::Dict{Symbol, Int}, idx::Symbol)
     i = get(l, idx, nothing)
     if i === nothing
-        candidates = filter(x -> fuzzymatch(string(x), string(idx)), collect(keys(l)))
+        candidates = fuzzymatch(l, idx)
         if isempty(candidates)
             throw(ArgumentError("column name :$idx not found in the data frame"))
         end
-        candidatesstr = join(string.(':', sort!(candidates)), ", ", " and ")
+        candidatesstr = join(string.(':', candidates), ", ", " and ")
         throw(ArgumentError("column name :$idx not found in the data frame; " *
                             "existing most similar names are: $candidatesstr"))
     end

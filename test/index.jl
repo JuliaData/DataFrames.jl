@@ -167,12 +167,15 @@ end
     push!(i, :x12)
     push!(i, :x131)
     push!(i, :y13)
+    push!(i, :yy13)
     @test_throws ArgumentError i[:x13]
     @test_throws ArgumentError i[:xx13]
-    @test all(fuzzymatch.(["x1", "x12", "x131", "y13"], "x13"))
-    @test all(.!fuzzymatch.(["x1", "x12", "x131", "y13"], "xx13"))
-    @test fuzzymatch.(["x1", "x12", "x131", "y13"], "x12") == [true, true, false, false]
-    @test all(fuzzymatch.(["X1", "X12", "X131", "Y13"], "x13"))
+    @test_throws ArgumentError i[:yy14]
+    @test_throws ArgumentError i[:abcd]
+    @test fuzzymatch(i.lookup, :x13) == [:x1, :x12, :x131, :y13, :yy13]
+    @test fuzzymatch(i.lookup, :xx1314) == [:x131]
+    @test fuzzymatch(i.lookup, :yy14) == [:yy13, :y13]
+    @test isempty(fuzzymatch(i.lookup, :abcd))
 end
 
 end # module

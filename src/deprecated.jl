@@ -10,7 +10,7 @@ import Base: @deprecate
 
 import Base: keys, values, insert!
 @deprecate keys(df::AbstractDataFrame) names(df)
-@deprecate values(df::AbstractDataFrame) columns(df)
+@deprecate values(df::AbstractDataFrame) eachcol(df)
 @deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[col] = df2[col], names(df2)); df)
 
 @deprecate pool categorical
@@ -1325,11 +1325,11 @@ import Base: vcat
 @deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, :eltype, :nmissing, :first, :last)
 @deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, :eltype, :nmissing, :first, :last), all)
 function StatsBase.describe(df::AbstractDataFrame; stats=nothing)
-    if stats === nothing 
-        _describe(df, [:mean, :min, :median, 
-                       :max, :nunique, :nmissing, 
+    if stats === nothing
+        _describe(df, [:mean, :min, :median,
+                       :max, :nunique, :nmissing,
                        :eltype])
-    elseif stats === :all 
+    elseif stats === :all
         Base.depwarn("The `stats` keyword argument has been deprecated. Use describe(df, stats...) instead.", :describe)
         _describe(df, [:mean, :std, :min, :q25, :median, :q75,
                        :max, :nunique, :nmissing, :first, :last, :eltype])
