@@ -330,7 +330,7 @@ end
     @test_throws ArgumentError deletecols!(df, 6)
     @test_throws ArgumentError deletecols!(df, [1, 1])
     @test_throws ArgumentError deletecols!(df, :f)
-    @test_throws ArgumentError deletecols!(df, [true, false])
+    @test_throws BoundsError deletecols!(df, [true, false])
 
     d = copy(df)
     deletecols!(d, [:a, :e, :c])
@@ -367,7 +367,7 @@ end
     @test_throws ArgumentError deletecols(df, 6)
     @test_throws ArgumentError deletecols(df, [1, 1])
     @test_throws ArgumentError deletecols(df, :f)
-    @test_throws ArgumentError deletecols(df, [true, false])
+    @test_throws BoundsError deletecols(df, [true, false])
 
     df2 = copy(df)
     d = deletecols(df, [:a, :e, :c])
@@ -444,7 +444,7 @@ end
     @test_throws BoundsError select!(df, 6)
     @test_throws ArgumentError select!(df, [1, 1])
     @test_throws ArgumentError select!(df, :f)
-    @test_throws ArgumentError select!(df, [true, false])
+    @test_throws BoundsError select!(df, [true, false])
 
     d = copy(df, copycols=false)
     select!(d, [:a, :e, :c])
@@ -492,7 +492,7 @@ end
     @test_throws BoundsError select(df, 6)
     @test_throws ArgumentError select(df, [1, 1])
     @test_throws ArgumentError select(df, :f)
-    @test_throws ArgumentError select!(df, [true, false])
+    @test_throws BoundsError select!(df, [true, false])
 
     d = select(df, [:a, :e, :c])
     @test names(d) == [:a, :e, :c]
