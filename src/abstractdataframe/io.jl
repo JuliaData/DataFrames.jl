@@ -105,14 +105,14 @@ end
          allcols::Bool = !get(io, :limit, true),
          summary::Bool=true)
 
-Render a data frame to an I/O stream using `mime`.
+Render a data frame to an I/O stream in MIME type `mime`.
 
 # Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
-- `mime::MIME`: supoorted mime types are: `"text/html"`, `"text/latex"`, `"text/csv"`,
+- `mime::MIME`: supported MIME types are: `"text/plain"`, `"text/html"`, `"text/latex"`, `"text/csv"`,
    `"text/tab-separated-values"`
 - `df::AbstractDataFrame`: The data frame to print.
-- `allrows::Bool `: supported only for HTML and LaTeX mime types;
+- `allrows::Bool `: supported only for plain text, HTML and LaTeX MIME types;
    whether to print all rows, rather than a default number defined in
    `HTML_NROWS` and `LATEX_NROWS` constants. The default value can be overriden by
    `IOContext` property `nrows`.
