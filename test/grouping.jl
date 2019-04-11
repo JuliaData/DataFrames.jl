@@ -959,11 +959,7 @@ end
     @test gd[1] isa SubDataFrame
     @test gd[1] == view(df, [1, 5], :)
     @test_throws BoundsError gd[5]
-    if VERSION < v"1.0.0-"
-        @test gd[true] == gd[1]
-    else
-        @test_throws ArgumentError gd[true]
-    end
+    @test_throws ArgumentError gd[true]
     @test_throws ArgumentError gd[[1, 2, 1]]
     @test_throws MethodError gd["a"]
     gd2 = gd[[false, true, false, false]]
