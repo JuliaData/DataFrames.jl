@@ -616,8 +616,8 @@ completecases(df::AbstractDataFrame, cols::AbstractVector) =
 Return a copy of data frame `df` excluding rows with missing values.
 If `cols` is provided, only missing values in the corresponding columns are considered.
 
-If `disallowmissing` is `true` (the default) then the `cols` columns will
-get converted using [`disallowmissing!`](@ref).
+If `disallowmissing` is `true` (the default) then columns specified in `cols` will
+be converted so as not to allow for missing values using [`disallowmissing!`](@ref).
 
 See also: [`completecases`](@ref) and [`dropmissing!`](@ref).
 
