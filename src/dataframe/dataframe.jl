@@ -901,7 +901,7 @@ julia> deletecols(d, 1)
 
 """
 function deletecols(df::DataFrame, inds; copycols::Bool=true)
-    newdf = DataFrame(df, copycols=false)
+    newdf = copy(df, copycols=false)
     deletecols!(newdf, inds)
     if copycols
         for i in axes(newdf, 2)
@@ -1013,7 +1013,7 @@ select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
 """
     select(df::DataFrame, ind, copycols::Bool=true)
 
-Create a new `DataFrame` that contains columns from `df` by `ind` and return it.
+Create a new `DataFrame` that contains columns from `df` specified by `ind` and return it.
 
 Argument `ind` can be any index that is allowed for column indexing of a `DataFrame`.
 
