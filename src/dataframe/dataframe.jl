@@ -982,7 +982,7 @@ Convert all columns of a `df` from element type `T` to
 Convert a single column of a `df` from element type `T` to
 `Union{T, Missing}` to support missing values.
 
-    allowmissing!(df::DataFrame, cols::AbstractVector{<:Union{Integer, Symbol}})
+    allowmissing!(df::DataFrame, cols::AbstractVector})
 
 Convert multiple columns of a `df` from element type `T` to
 `Union{T, Missing}` to support missing values.
@@ -994,9 +994,17 @@ function allowmissing!(df::DataFrame, col::ColumnIndex)
     df
 end
 
-function allowmissing!(df::DataFrame, cols::AbstractVector{<: ColumnIndex}=1:size(df, 2))
+function allowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex}=1:size(df, 2))
     for col in cols
         allowmissing!(df, col)
+    end
+    df
+end
+
+function allowmissing!(df::DataFrame, cols::AbstractVector{Bool})
+    length(cols) == size(df, 2) || throw(BoundsError(df, cols))
+    for (col, cond) in enumerate(cols)
+        cond && allowmissing!(df, col)
     end
     df
 end
@@ -1012,7 +1020,7 @@ Convert all columns of a `df` from element type `Union{T, Missing}` to
 Convert a single column of a `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
 
-    disallowmissing!(df::DataFrame, cols::AbstractVector{<:Union{Integer, Symbol}})
+    disallowmissing!(df::DataFrame, cols::AbstractVector)
 
 Convert multiple columns of a `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
@@ -1024,9 +1032,17 @@ function disallowmissing!(df::DataFrame, col::ColumnIndex)
     df
 end
 
-function disallowmissing!(df::DataFrame, cols::AbstractVector{<: ColumnIndex}=1:size(df, 2))
+function disallowmissing!(df::DataFrame, cols::AbstractVector{<:ColumnIndex}=1:size(df, 2))
     for col in cols
         disallowmissing!(df, col)
+    end
+    df
+end
+
+function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool})
+    length(cols) == size(df, 2) || throw(BoundsError(df, cols))
+    for (col, cond) in enumerate(cols)
+        cond && disallowmissing!(df, col)
     end
     df
 end
