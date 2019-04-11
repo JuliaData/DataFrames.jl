@@ -1,9 +1,9 @@
 # Default number of rows and columns to print to HTML and LaTeX
 
-const HTML_NROWS = 30
-const HTML_NCOLS = 30
-const LATEX_NROWS = 30
-const LATEX_NCOLS = 30
+const HTML_NROWS = 100
+const HTML_NCOLS = 100
+const LATEX_NROWS = 40
+const LATEX_NCOLS = 20
 
 ##############################################################################
 #
@@ -101,25 +101,23 @@ end
 
 """
     show(io::IO, mime::MIME, df::AbstractDataFrame;
-         allrows::Bool = !get(io, :limit, true),
-         allcols::Bool = !get(io, :limit, true),
+         allrows::Bool = !get(io, :limit, false),
+         allcols::Bool = !get(io, :limit, false),
          summary::Bool=true)
 
 Render a data frame to an I/O stream in MIME type `mime`.
 
 # Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
-- `mime::MIME`: supported MIME types are: `"text/plain"`, `"text/html"`, `"text/latex"`, `"text/csv"`,
-   `"text/tab-separated-values"`
+- `mime::MIME`: supported MIME types are: `"text/plain"`, `"text/html"`, `"text/latex"`,
+  `"text/csv"`, `"text/tab-separated-values"`
 - `df::AbstractDataFrame`: The data frame to print.
 - `allrows::Bool `: supported only for plain text, HTML and LaTeX MIME types;
    whether to print all rows, rather than a default number defined in
-   `HTML_NROWS` and `LATEX_NROWS` constants. The default value can be overriden by
-   `IOContext` property `nrows`.
+   `HTML_NROWS` and `LATEX_NROWS` constants for these MIME types.
 - `allcols::Bool`: supported only for HTML and LaTeX mime types;
    whether to print all columns, rather than a default number defined in
-   `HTML_NCOLS` and `LATEX_NCOLS` constants. The default value can be overriden by
-   `IOContext` property `ncols`.
+   `HTML_NCOLS` and `LATEX_NCOLS` constants for these MIME types.
 - `summary::Bool = true`: supported only for HTML mime type;
    Whether to print a brief string summary of the data frame.
 
@@ -145,14 +143,14 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
 ```
 """
 Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
-          allrows::Bool = !get(io, :limit, true),
-          allcols::Bool = !get(io, :limit, true),
+          allrows::Bool = !get(io, :limit, false),
+          allcols::Bool = !get(io, :limit, false),
           summary::Bool=true) =
     _show(io, mime, df, allrows=allrows, allcols=allcols, summary=summary)
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
-               allrows::Bool = !get(io, :limit, true),
-               allcols::Bool = !get(io, :limit, true),
+               allrows::Bool = !get(io, :limit, false),
+               allcols::Bool = !get(io, :limit, false),
                summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
     if rowid !== nothing && size(df, 1) != 1
         throw(ArgumentError("rowid may be passed only with a single row data frame"))
@@ -160,10 +158,10 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
 
     mxrow, mxcol = size(df)
     if !allrows
-        mxrow = min(mxrow, get(io, :nrows, HTML_NROWS))
+        mxrow = min(mxrow, HTML_NROWS)
     end
     if !allcols
-        mxcol = min(mxcol, get(io, :ncols, HTML_NCOLS))
+        mxcol = min(mxcol, HTML_NCOLS)
     end
 
     cnames = _names(df)[1:mxcol]
@@ -222,7 +220,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
 end
 
 function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow;
-                   allcols::Bool = !get(io, :limit, true),
+                   allcols::Bool = !get(io, :limit, false),
                    summary::Bool=true)
     r, c = parentindices(dfr)
     write(io, "<p>DataFrameRow</p>")
@@ -230,8 +228,8 @@ function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow;
 end
 
 function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame,
-                   allrows::Bool = !get(io, :limit, true),
-                   allcols::Bool = !get(io, :limit, true))
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false))
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
@@ -287,13 +285,13 @@ function latex_escape(cell::AbstractString)
 end
 
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame;
-          allrows::Bool = !get(io, :limit, true),
-          allcols::Bool = !get(io, :limit, true)) =
+          allrows::Bool = !get(io, :limit, false),
+          allcols::Bool = !get(io, :limit, false)) =
     _show(io, mime, df, allrows=allrows, allcols=allcols)
 
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
-               allrows::Bool = !get(io, :limit, true),
-               allcols::Bool = !get(io, :limit, true),
+               allrows::Bool = !get(io, :limit, false),
+               allcols::Bool = !get(io, :limit, false),
                rowid=nothing)
     if rowid !== nothing && size(df, 1) != 1
         throw(ArgumentError("rowid may be passed only with a single row data frame"))
@@ -301,10 +299,10 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
 
     mxrow, mxcol = size(df)
     if !allrows
-        mxrow = min(mxrow, get(io, :nrows, LATEX_NROWS))
+        mxrow = min(mxrow, LATEX_NROWS)
     end
     if !allcols
-        mxcol = min(mxcol, get(io, :ncols, LATEX_NCOLS))
+        mxcol = min(mxcol, LATEX_NCOLS)
     end
 
     cnames = _names(df)[1:mxcol]
@@ -353,14 +351,14 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
 end
 
 function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow;
-                   allcols::Bool = !get(io, :limit, true))
+                   allcols::Bool = !get(io, :limit, false))
     r, c = parentindices(dfr)
     _show(io, mime, view(parent(dfr), [r], c), allcols=allcols, rowid=r)
 end
 
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame,
-                   allrows::Bool = !get(io, :limit, true),
-                   allcols::Bool = !get(io, :limit, true))
+                   allrows::Bool = !get(io, :limit, false),
+                   allcols::Bool = !get(io, :limit, false))
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
