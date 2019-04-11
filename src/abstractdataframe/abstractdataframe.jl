@@ -676,9 +676,7 @@ function dropmissing(df::AbstractDataFrame,
                      cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
-    if disallowmissing
-        disallowmissing!(newdf, cols)
-    end
+    disallowmissing && disallowmissing!(newdf, cols)
     newdf
 end
 
