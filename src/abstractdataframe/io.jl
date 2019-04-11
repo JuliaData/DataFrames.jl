@@ -1,104 +1,3 @@
-# Default number of rows and columns to print to HTML and LaTeX
-
-const HTML_NROWS = 100
-const HTML_NCOLS = 100
-const LATEX_NROWS = 40
-const LATEX_NCOLS = 20
-
-##############################################################################
-#
-# Text output
-#
-##############################################################################
-
-function escapedprint(io::IO, x::Any, escapes::AbstractString)
-    ourshowcompact(io, x)
-end
-
-function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
-    escape_string(io, x, escapes)
-end
-
-function digitsep(value::Integer)
-    # Adapted from https://github.com/IainNZ/Humanize.jl
-    value = string(abs(value))
-    group_ends = reverse(collect(length(value):-3:1))
-    groups = [value[max(end_index - 2, 1):end_index]
-              for end_index in group_ends]
-    return join(groups, ',')
-end
-
-function printtable(io::IO,
-                    df::AbstractDataFrame;
-                    header::Bool = true,
-                    separator::Char = ',',
-                    quotemark::Char = '"',
-                    missingstring::AbstractString = "missing")
-    n, p = size(df)
-    etypes = eltypes(df)
-    if header
-        cnames = _names(df)
-        for j in 1:p
-            print(io, quotemark)
-            print(io, cnames[j])
-            print(io, quotemark)
-            if j < p
-                print(io, separator)
-            else
-                print(io, '\n')
-            end
-        end
-    end
-    quotestr = string(quotemark)
-    for i in 1:n
-        for j in 1:p
-            if !ismissing(df[j][i])
-                if ! (etypes[j] <: Real)
-                    print(io, quotemark)
-                    escapedprint(io, df[i, j], quotestr)
-                    print(io, quotemark)
-                else
-                    print(io, df[i, j])
-                end
-            else
-                print(io, missingstring)
-            end
-            if j < p
-                print(io, separator)
-            else
-                print(io, '\n')
-            end
-        end
-    end
-    return
-end
-
-function printtable(df::AbstractDataFrame;
-                    header::Bool = true,
-                    separator::Char = ',',
-                    quotemark::Char = '"',
-                    missingstring::AbstractString = "missing")
-    printtable(stdout,
-               df,
-               header = header,
-               separator = separator,
-               quotemark = quotemark,
-               missingstring = missingstring)
-    return
-end
-##############################################################################
-#
-# HTML output
-#
-##############################################################################
-
-function html_escape(cell::AbstractString)
-    cell = replace(cell, "&"=>"&amp;")
-    cell = replace(cell, "<"=>"&lt;")
-    cell = replace(cell, ">"=>"&gt;")
-    return cell
-end
-
 """
     show(io::IO, mime::MIME, df::AbstractDataFrame;
          allrows::Bool = !get(io, :limit, false),
@@ -120,6 +19,10 @@ Render a data frame to an I/O stream in MIME type `mime`.
    `HTML_NCOLS` and `LATEX_NCOLS` constants for these MIME types.
 - `summary::Bool = true`: supported only for HTML mime type;
    Whether to print a brief string summary of the data frame.
+
+If mime type is unrecognized `"text/plain"` output is produced.
+
+Keyword arguments that are not used by a specific mime are ignored.
 
 # Examples
 ```jldoctest
@@ -146,7 +49,46 @@ Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame;
           allrows::Bool = !get(io, :limit, false),
           allcols::Bool = !get(io, :limit, false),
           summary::Bool=true) =
-    _show(io, mime, df, allrows=allrows, allcols=allcols, summary=summary)
+    if mime isa MIME"text/html"
+        _show(io, mime, df, allrows=allrows, allcols=allcols, summary=summary)
+    elseif mime isa MIME"text/latex"
+        _show(io, mime, df, allrows=allrows, allcols=allcols)
+    elseif mime isa MIME"text/csv"
+        printtable(io, df, header = true, separator = ',')
+    elseif mime isa MIME"text/tab-separated-values"
+        printtable(io, df, header = true, separator = '\t')
+    else
+        show(io, df, allrows=allrows, allcols=allcols, summary=summary)
+    end
+
+# Default number of rows and columns to print to HTML and LaTeX
+
+const HTML_NROWS = 100
+const HTML_NCOLS = 100
+const LATEX_NROWS = 40
+const LATEX_NCOLS = 20
+
+##############################################################################
+#
+# HTML output
+#
+##############################################################################
+
+function digitsep(value::Integer)
+    # Adapted from https://github.com/IainNZ/Humanize.jl
+    value = string(abs(value))
+    group_ends = reverse(collect(length(value):-3:1))
+    groups = [value[max(end_index - 2, 1):end_index]
+              for end_index in group_ends]
+    return join(groups, ',')
+end
+
+function html_escape(cell::AbstractString)
+    cell = replace(cell, "&"=>"&amp;")
+    cell = replace(cell, "<"=>"&lt;")
+    cell = replace(cell, ">"=>"&gt;")
+    return cell
+end
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                allrows::Bool = !get(io, :limit, false),
@@ -284,11 +226,6 @@ function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
-Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame;
-          allrows::Bool = !get(io, :limit, false),
-          allcols::Bool = !get(io, :limit, false)) =
-    _show(io, mime, df, allrows=allrows, allcols=allcols)
-
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
                allrows::Bool = !get(io, :limit, false),
                allcols::Bool = !get(io, :limit, false),
@@ -397,9 +334,62 @@ end
 
 ##############################################################################
 #
-# MIME
+# MIME: text/csv and text/tab-separated-values
 #
 ##############################################################################
+
+function escapedprint(io::IO, x::Any, escapes::AbstractString)
+    ourshowcompact(io, x)
+end
+
+function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
+    escape_string(io, x, escapes)
+end
+
+function printtable(io::IO,
+                    df::AbstractDataFrame;
+                    header::Bool = true,
+                    separator::Char = ',',
+                    quotemark::Char = '"',
+                    missingstring::AbstractString = "missing")
+    n, p = size(df)
+    etypes = eltypes(df)
+    if header
+        cnames = _names(df)
+        for j in 1:p
+            print(io, quotemark)
+            print(io, cnames[j])
+            print(io, quotemark)
+            if j < p
+                print(io, separator)
+            else
+                print(io, '\n')
+            end
+        end
+    end
+    quotestr = string(quotemark)
+    for i in 1:n
+        for j in 1:p
+            if !ismissing(df[j][i])
+                if ! (etypes[j] <: Real)
+                    print(io, quotemark)
+                    escapedprint(io, df[i, j], quotestr)
+                    print(io, quotemark)
+                else
+                    print(io, df[i, j])
+                end
+            else
+                print(io, missingstring)
+            end
+            if j < p
+                print(io, separator)
+            else
+                print(io, '\n')
+            end
+        end
+    end
+    nothing
+end
 
 function Base.show(io::IO, mime::MIME"text/csv", dfr::DataFrameRow)
     r, c = parentindices(dfr)
@@ -409,14 +399,6 @@ end
 function Base.show(io::IO, mime::MIME"text/tab-separated-values", dfr::DataFrameRow)
     r, c = parentindices(dfr)
     show(io, mime, view(parent(dfr), [r], c))
-end
-
-function Base.show(io::IO, ::MIME"text/csv", df::AbstractDataFrame)
-    printtable(io, df, header = true, separator = ',')
-end
-
-function Base.show(io::IO, ::MIME"text/tab-separated-values", df::AbstractDataFrame)
-    printtable(io, df, header = true, separator = '\t')
 end
 
 function Base.show(io::IO, mime::MIME"text/csv", gd::GroupedDataFrame)
