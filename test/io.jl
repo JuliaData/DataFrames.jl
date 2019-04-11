@@ -33,9 +33,9 @@ end
     show(ioc, "text/latex", df)
     @test length(String(take!(ioc.io))) > 10000
 
-    io = IOBuffer()
-    show(io, "text/latex", df)
-    @test length(String(take!(io))) < 10000
+    ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => true)
+    show(ioc, "text/latex", df)
+    @test length(String(take!(ioc.io))) < 10000
 end
 
 #Test HTML output for IJulia and similar
@@ -79,9 +79,9 @@ end
     show(ioc, "text/html", df)
     @test length(String(take!(ioc.io))) > 10000
 
-    io = IOBuffer()
+    ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => true)
     show(io, "text/html", df)
-    @test length(String(take!(io))) < 10000
+    @test length(String(take!(ioc.io))) < 10000
 end
 
 @testset "printtable" begin
