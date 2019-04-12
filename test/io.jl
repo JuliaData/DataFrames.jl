@@ -80,7 +80,7 @@ end
     @test length(String(take!(ioc.io))) > 10000
 
     ioc = IOContext(IOBuffer(), :displaysize => (10, 10), :limit => true)
-    show(io, "text/html", df)
+    show(ioc, "text/html", df)
     @test length(String(take!(ioc.io))) < 10000
 end
 
