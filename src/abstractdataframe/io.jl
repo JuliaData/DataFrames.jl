@@ -2,27 +2,29 @@
     show(io::IO, mime::MIME, df::AbstractDataFrame;
          allrows::Bool = !get(io, :limit, false),
          allcols::Bool = !get(io, :limit, false),
+         splitcols = get(io, :limit, false),
+         rowlabel::Symbol = :Row,
          summary::Bool=true)
 
 Render a data frame to an I/O stream in MIME type `mime`.
 
-# Arguments
+# Positional arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
 - `mime::MIME`: supported MIME types are: `"text/plain"`, `"text/html"`, `"text/latex"`,
   `"text/csv"`, `"text/tab-separated-values"`
 - `df::AbstractDataFrame`: The data frame to print.
-- `allrows::Bool `: supported only for plain text, HTML and LaTeX MIME types;
-   whether to print all rows, rather than a default number defined in
-   `HTML_NROWS` and `LATEX_NROWS` constants for these MIME types.
-- `allcols::Bool`: supported only for HTML and LaTeX MIME types;
-   whether to print all columns, rather than a default number defined in
-   `HTML_NCOLS` and `LATEX_NCOLS` constants for these MIME types.
-- `summary::Bool = true`: supported only for the HTML MIME type;
-   Whether to print a brief string summary of the data frame.
 
-If mime type is unrecognized `"text/plain"` output is produced.
-
-Keyword arguments that are not used by a specific mime are ignored.
+# Keyword arguments
+- MIME type `"text/plain"` accepts all listed keyword arguments and therir behavior
+  is identical as for `show(::IO, ::AbstractDataFrame)`
+- MIME types `"text/html"`, `"text/latex"` accept only `allrows` and `allcols`
+  keyword arguments. They allow the user to decide to print all rows/columns
+  instead of the default values given in `HTML_NROWS`, `LATEX_NROWS`,
+  `HTML_NCOLS`, and `LATEX_NCOLS` constants.
+  Additionally `"text/html"` MIME type accepts `summary` keyword argument which
+  allows to choose whether to print a brief string summary of the data frame.
+- MIME types `"text/csv"`, `"text/tab-separated-values"` do not support any
+  keyword arguments.
 
 # Examples
 ```jldoctest
@@ -53,23 +55,22 @@ Base.show(io::IO, mime::MIME, df::AbstractDataFrame;
         _show(io, mime, df, allrows=allrows, allcols=allcols, summary=summary)
     elseif mime isa MIME"text/latex"
         _show(io, mime, df, allrows=allrows, allcols=allcols)
-    elseif mime isa MIME"text/csv"
-        if !(allrows && allcols)
-            throw(ArgumentError("Limiting number of printed rows/columns for " *
-                                "MIME type text/csv is not supported"))
-        end
-        printtable(io, df, header = true, separator = ',')
-    elseif mime isa MIME"text/tab-separated-values"
-        if !(allrows && allcols)
-            throw(ArgumentError("Limiting number of printed rows/columns for " *
-                                "MIME type text/tab-separated-values is not supported"))
-        end
-        printtable(io, df, header = true, separator = '\t')
-    elseif mime isa MIME"text/plain"
-        show(io, df, allrows=allrows, allcols=allcols, summary=summary)
     else
         throw(ArgumentError("Unknown MIME type: $mime"))
     end
+
+Base.show(io::IO, mime::MIME"text/csv", df::AbstractDataFrame) =
+    printtable(io, df, header = true, separator = ',')
+Base.show(io::IO, mime::MIME"text/tab-separated-values", df::AbstractDataFrame) =
+    printtable(io, df, header = true, separator = '\t')
+Base.show(io::IO, mime::MIME"text/plain", df::AbstractDataFrame;
+          allrows::Bool = !get(io, :limit, false),
+          allcols::Bool = !get(io, :limit, false),
+          splitcols = get(io, :limit, false),
+          rowlabel::Symbol = :Row,
+          summary::Bool = true) =
+    show(io, df, allrows=allrows=allrows, allcols=allcols,
+         splitcols=splitcols, rowlabel=rowlabel, summary=summary)
 
 # Default number of rows and columns to print to HTML and LaTeX
 
