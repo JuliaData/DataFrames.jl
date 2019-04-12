@@ -54,11 +54,21 @@ Base.show(io::IO, mime::MIME, df::AbstractDataFrame;
     elseif mime isa MIME"text/latex"
         _show(io, mime, df, allrows=allrows, allcols=allcols)
     elseif mime isa MIME"text/csv"
+        if !(allrows && allcols)
+            throw(ArgumentError("Limiting number of printed rows/columns for " *
+                                "MIME type text/csv is not supported"))
+        end
         printtable(io, df, header = true, separator = ',')
     elseif mime isa MIME"text/tab-separated-values"
+        if !(allrows && allcols)
+            throw(ArgumentError("Limiting number of printed rows/columns for " *
+                                "MIME type text/tab-separated-values is not supported"))
+        end
         printtable(io, df, header = true, separator = '\t')
-    else
+    elseif mime isa MIME"text/plain"
         show(io, df, allrows=allrows, allcols=allcols, summary=summary)
+    else
+        throw(ArgumentError("Unknown MIME type: $mime"))
     end
 
 # Default number of rows and columns to print to HTML and LaTeX
