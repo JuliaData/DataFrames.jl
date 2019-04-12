@@ -14,10 +14,10 @@ Render a data frame to an I/O stream in MIME type `mime`.
 - `allrows::Bool `: supported only for plain text, HTML and LaTeX MIME types;
    whether to print all rows, rather than a default number defined in
    `HTML_NROWS` and `LATEX_NROWS` constants for these MIME types.
-- `allcols::Bool`: supported only for HTML and LaTeX mime types;
+- `allcols::Bool`: supported only for HTML and LaTeX MIME types;
    whether to print all columns, rather than a default number defined in
    `HTML_NCOLS` and `LATEX_NCOLS` constants for these MIME types.
-- `summary::Bool = true`: supported only for HTML mime type;
+- `summary::Bool = true`: supported only for the HTML MIME type;
    Whether to print a brief string summary of the data frame.
 
 If mime type is unrecognized `"text/plain"` output is produced.
