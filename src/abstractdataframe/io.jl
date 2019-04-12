@@ -350,7 +350,7 @@ end
 ##############################################################################
 
 function escapedprint(io::IO, x::Any, escapes::AbstractString)
-    ourshowcompact(io, x)
+    ourshow(io, x)
 end
 
 function escapedprint(io::IO, x::AbstractString, escapes::AbstractString)
