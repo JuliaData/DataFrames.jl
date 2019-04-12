@@ -34,7 +34,7 @@ end
         str = String(take!(io))
         @test str == refstr
         io = IOBuffer()
-        show(io, "text/plain", df, allcols=allcols, allrows=allrows)
+        show(io, MIME("text/plain"), df, allcols=allcols, allrows=allrows)
         str = String(take!(io))
         @test str == refstr
     end
