@@ -1,30 +1,19 @@
 """
-    show(io::IO, mime::MIME, df::AbstractDataFrame;
-         allrows::Bool = !get(io, :limit, false),
-         allcols::Bool = !get(io, :limit, false),
-         splitcols = get(io, :limit, false),
-         rowlabel::Symbol = :Row,
-         summary::Bool=true)
+    show(io::IO, mime::MIME, df::AbstractDataFrame)
 
 Render a data frame to an I/O stream in MIME type `mime`.
 
-# Positional arguments
+# Arguments
 - `io::IO`: The I/O stream to which `df` will be printed.
 - `mime::MIME`: supported MIME types are: `"text/plain"`, `"text/html"`, `"text/latex"`,
   `"text/csv"`, `"text/tab-separated-values"`
 - `df::AbstractDataFrame`: The data frame to print.
 
-# Keyword arguments
+Additionally selected MIME types support passing the following keyword arguments:
 - MIME type `"text/plain"` accepts all listed keyword arguments and therir behavior
   is identical as for `show(::IO, ::AbstractDataFrame)`
-- MIME types `"text/html"`, `"text/latex"` accept only `allrows` and `allcols`
-  keyword arguments. They allow the user to decide to print all rows/columns
-  instead of the default values given in `HTML_NROWS`, `LATEX_NROWS`,
-  `HTML_NCOLS`, and `LATEX_NCOLS` constants.
-  Additionally `"text/html"` MIME type accepts `summary` keyword argument which
+- MIME type `"text/html"` accepts `summary` keyword argument which
   allows to choose whether to print a brief string summary of the data frame.
-- MIME types `"text/csv"`, `"text/tab-separated-values"` do not support any
-  keyword arguments.
 
 # Examples
 ```jldoctest
@@ -47,18 +36,10 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
 3,"z"
 ```
 """
-Base.show(io::IO, mime::MIME, df::AbstractDataFrame;
-          allrows::Bool = !get(io, :limit, false),
-          allcols::Bool = !get(io, :limit, false),
-          summary::Bool=true) =
-    if mime isa MIME"text/html"
-        _show(io, mime, df, allrows=allrows, allcols=allcols, summary=summary)
-    elseif mime isa MIME"text/latex"
-        _show(io, mime, df, allrows=allrows, allcols=allcols)
-    else
-        throw(ArgumentError("Unknown MIME type: $mime"))
-    end
-
+Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true) =
+    _show(io, mime, df, summary=summary)
+Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame) =
+    _show(io, mime, df)
 Base.show(io::IO, mime::MIME"text/csv", df::AbstractDataFrame) =
     printtable(io, df, header = true, separator = ',')
 Base.show(io::IO, mime::MIME"text/tab-separated-values", df::AbstractDataFrame) =
@@ -69,15 +50,8 @@ Base.show(io::IO, mime::MIME"text/plain", df::AbstractDataFrame;
           splitcols = get(io, :limit, false),
           rowlabel::Symbol = :Row,
           summary::Bool = true) =
-    show(io, df, allrows=allrows=allrows, allcols=allcols,
+    show(io, df, allrows=allrows, allcols=allcols,
          splitcols=splitcols, rowlabel=rowlabel, summary=summary)
-
-# Default number of rows and columns to print to HTML and LaTeX
-
-const HTML_NROWS = 100
-const HTML_NCOLS = 100
-const LATEX_NROWS = 40
-const LATEX_NCOLS = 20
 
 ##############################################################################
 #
@@ -102,19 +76,16 @@ function html_escape(cell::AbstractString)
 end
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
-               allrows::Bool = !get(io, :limit, false),
-               allcols::Bool = !get(io, :limit, false),
                summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
     if rowid !== nothing && size(df, 1) != 1
         throw(ArgumentError("rowid may be passed only with a single row data frame"))
     end
 
     mxrow, mxcol = size(df)
-    if !allrows
-        mxrow = min(mxrow, HTML_NROWS)
-    end
-    if !allcols
-        mxcol = min(mxcol, HTML_NCOLS)
+    if get(io, :limit, true)
+        tty_rows, tty_cols = get(io, :displaysize, displaysize(io))
+        mxrow = min(mxrow, tty_rows)
+        mxcol = min(mxcol, tty_cols)
     end
 
     cnames = _names(df)[1:mxcol]
@@ -172,17 +143,13 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     write(io, "</table>")
 end
 
-function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow;
-                   allcols::Bool = !get(io, :limit, false),
-                   summary::Bool=true)
+function Base.show(io::IO, mime::MIME"text/html", dfr::DataFrameRow; summary::Bool=true)
     r, c = parentindices(dfr)
     write(io, "<p>DataFrameRow</p>")
-    _show(io, mime, view(parent(dfr), [r], c), allcols=allcols, summary=summary, rowid=r)
+    _show(io, mime, view(parent(dfr), [r], c), summary=summary, rowid=r)
 end
 
-function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame,
-                   allrows::Bool = !get(io, :limit, false),
-                   allcols::Bool = !get(io, :limit, false))
+function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame)
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
@@ -200,7 +167,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame,
         write(io, "<p><i>First Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "</i></p>")
-        show(io, mime, gd[1], allrows=allrows, allcols=allcols, summary=false)
+        show(io, mime, gd[1], summary=false)
     end
     if N > 1
         nrows = size(gd[N], 1)
@@ -213,7 +180,7 @@ function Base.show(io::IO, mime::MIME"text/html", gd::GroupedDataFrame,
         write(io, "<p><i>Last Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "</i></p>")
-        show(io, mime, gd[N], allrows=allrows, allcols=allcols, summary=false)
+        show(io, mime, gd[N], summary=false)
     end
 end
 
@@ -237,20 +204,16 @@ function latex_escape(cell::AbstractString)
     replace(cell, ['\\','~','#','$','%','&','_','^','{','}']=>latex_char_escape)
 end
 
-function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame;
-               allrows::Bool = !get(io, :limit, false),
-               allcols::Bool = !get(io, :limit, false),
-               rowid=nothing)
+function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     if rowid !== nothing && size(df, 1) != 1
         throw(ArgumentError("rowid may be passed only with a single row data frame"))
     end
 
     mxrow, mxcol = size(df)
-    if !allrows
-        mxrow = min(mxrow, LATEX_NROWS)
-    end
-    if !allcols
-        mxcol = min(mxcol, LATEX_NCOLS)
+    if get(io, :limit, true)
+        tty_rows, tty_cols = get(io, :displaysize, displaysize(io))
+        mxrow = min(mxrow, tty_rows)
+        mxcol = min(mxcol, tty_cols)
     end
 
     cnames = _names(df)[1:mxcol]
@@ -304,9 +267,7 @@ function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow;
     _show(io, mime, view(parent(dfr), [r], c), allcols=allcols, rowid=r)
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame,
-                   allrows::Bool = !get(io, :limit, false),
-                   allcols::Bool = !get(io, :limit, false))
+function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
     N = length(gd)
     keynames = names(gd.parent)[gd.cols]
     parent_names = names(gd.parent)
@@ -325,7 +286,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame,
         write(io, "First Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "\n\n")
-        show(io, mime, gd[1], allrows=allrows, allcols=allcols, )
+        show(io, mime, gd[1])
     end
     if N > 1
         nrows = size(gd[N], 1)
@@ -339,7 +300,7 @@ function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame,
         write(io, "Last Group ($nrows $rows): ")
         join(io, identified_groups, ", ")
         write(io, "\n\n")
-        show(io, mime, gd[N], allrows=allrows, allcols=allcols)
+        show(io, mime, gd[N])
     end
 end
 
