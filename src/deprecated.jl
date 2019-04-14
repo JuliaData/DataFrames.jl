@@ -2,16 +2,16 @@ import Base: @deprecate
 
 @deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame(fill(t, ncols), nrows)
 
-@deprecate DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+@deprecate DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{Symbol},
                      nrows::Integer;
-                     makeunique::Bool=false)::DataFrame where T<:Type DataFrame(AbstractVector[elty >: Missing ?
-                                                                                fill!(Tables.allocatecolumn(elty, nrows),
-                                                                                      missing) :
-                                                                                Tables.allocatecolumn(elty, nrows)
-                                                                                for elty in column_eltypes],
-                                                                                Index(convert(Vector{Symbol}, cnames),
-                                                                                      makeunique=makeunique),
-                                                                                copycols=false)
+                     makeunique::Bool=false) DataFrame(AbstractVector[elty >: Missing ?
+                                                       fill!(Tables.allocatecolumn(elty, nrows),
+                                                             missing) :
+                                                       Tables.allocatecolumn(elty, nrows)
+                                                       for elty in column_eltypes],
+                                                       Index(convert(Vector{Symbol}, cnames),
+                                                             makeunique=makeunique),
+                                                       copycols=false)
 
 DataFrame(column_eltypes::AbstractVector{T}, nrows::Integer) where T<:Type =
     DataFrame(column_eltypes, gennames(length(column_eltypes)), nrows)

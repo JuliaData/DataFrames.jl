@@ -17,11 +17,6 @@ DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame() # an empty DataFrame
-DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer;
-          makeunique::Bool=false)
-DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol},
-          categorical::AbstractVector{Bool}, nrows::Integer;
-          makeunique::Bool=false)
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
