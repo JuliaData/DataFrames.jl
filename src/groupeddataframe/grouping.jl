@@ -57,7 +57,6 @@ See the following for additional split-apply-combine operations:
 
 * `by` : split-apply-combine using functions
 * `aggregate` : split-apply-combine; applies functions in the form of a cross product
-* `colwise` : apply a function to each column in an `AbstractDataFrame` or `GroupedDataFrame`
 * `map` : apply a function to each group of a `GroupedDataFrame` (without combining)
 * `combine` : combine a `GroupedDataFrame`, optionally applying a function to each group
 
@@ -918,60 +917,6 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
 end
 
 """
-Apply a function to each column in an `AbstractDataFrame` or
-[`GroupedDataFrame`](@ref).
-
-```julia
-colwise(f, d)
-```
-
-### Arguments
-
-* `f` : a function or vector of functions
-* `d` : an `AbstractDataFrame` or `GroupedDataFrame`
-
-### Returns
-
-* various, depending on the call
-
-### Examples
-
-```jldoctest
-julia> df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-                      b = repeat([2, 1], outer=[4]),
-                      c = 1:8);
-
-julia> colwise(sum, df)
-3-element Array{Int64,1}:
- 20
- 12
- 36
-
-julia> colwise([sum, length], df)
-2×3 Array{Int64,2}:
- 20  12  36
-  8   8   8
-
-julia> colwise((minimum, maximum), df)
-2×3 Array{Int64,2}:
- 1  1  1
- 4  2  8
-
-julia> colwise(sum, groupby(df, :a))
-4-element Array{Array{Int64,1},1}:
- [2, 4, 6]
- [4, 2, 8]
- [6, 4, 10]
- [8, 2, 12]
- ```
-"""
-colwise(f, d::AbstractDataFrame) = [f(d[i]) for i in 1:ncol(d)]
-
-# apply several functions to each column in a data frame
-colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for f in fns, i in 1:ncol(d)]
-colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
-
-"""
     by(d::AbstractDataFrame, keys, cols => f...; sort::Bool = false)
     by(d::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
     by(d::AbstractDataFrame, keys, f; sort::Bool = false)
@@ -1185,7 +1130,8 @@ julia> aggregate(groupby(df, :a), [sum, x->mean(skipmissing(x))])
 │ 1   │ 1     │ 4     │ 6     │ 2.0        │ 3.0        │
 │ 2   │ 2     │ 2     │ 8     │ 1.0        │ 4.0        │
 │ 3   │ 3     │ 4     │ 10    │ 2.0        │ 5.0        │
-│ 4   │ 4     │ 2     │ 12    │ 1.0        │ 6.0        │```
+│ 4   │ 4     │ 2     │ 12    │ 1.0        │ 6.0        │
+```
 """
 aggregate(d::AbstractDataFrame, fs::Any; sort::Bool=false) =
     aggregate(d, [fs], sort=sort)
