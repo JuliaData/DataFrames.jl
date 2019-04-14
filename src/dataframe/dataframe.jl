@@ -211,46 +211,6 @@ DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(siz
     DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
               makeunique=makeunique, copycols=false)
 
-# Initialize an empty DataFrame with specific eltypes and names
-function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-                   nrows::Integer; makeunique::Bool=false)::DataFrame where T<:Type
-    columns = AbstractVector[elty >: Missing ?
-                             fill!(Tables.allocatecolumn(elty, nrows), missing) :
-                             Tables.allocatecolumn(elty, nrows)
-                             for elty in column_eltypes]
-    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
-                     copycols=false)
-end
-
-# Initialize an empty DataFrame with specific eltypes and names
-# and whether a CategoricalArray should be created
-function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-                   categorical::AbstractVector{Bool}, nrows::Integer;
-                   makeunique::Bool=false)::DataFrame where T<:Type
-    # upcast Vector{DataType} -> Vector{Type} which can hold CategoricalValues
-    updated_types = convert(Vector{Type}, column_eltypes)
-    if length(categorical) != length(column_eltypes)
-        throw(DimensionMismatch("arguments column_eltypes and categorical must have the same length " *
-                                "(got $(length(column_eltypes)) and $(length(categorical)))"))
-    end
-    for i in eachindex(categorical)
-        categorical[i] || continue
-        elty = CategoricalArrays.catvaluetype(Missings.T(updated_types[i]),
-                                              CategoricalArrays.DefaultRefType)
-        if updated_types[i] >: Missing
-            updated_types[i] = Union{elty, Missing}
-        else
-            updated_types[i] = elty
-        end
-    end
-    return DataFrame(updated_types, cnames, nrows, makeunique=makeunique)
-end
-
-# Initialize an empty DataFrame with specific eltypes
-function DataFrame(column_eltypes::AbstractVector{T}, nrows::Integer) where T<:Type
-    return DataFrame(column_eltypes, gennames(length(column_eltypes)), nrows)
-end
-
 ##############################################################################
 ##
 ## AbstractDataFrame interface

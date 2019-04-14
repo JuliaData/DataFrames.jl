@@ -2,6 +2,41 @@ import Base: @deprecate
 
 @deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame(fill(t, ncols), nrows)
 
+@deprecate DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                     nrows::Integer;
+                     makeunique::Bool=false)::DataFrame where T<:Type DataFrame(AbstractVector[elty >: Missing ?
+                                                                                fill!(Tables.allocatecolumn(elty, nrows),
+                                                                                      missing) :
+                                                                                Tables.allocatecolumn(elty, nrows)
+                                                                                for elty in column_eltypes],
+                                                                                Index(convert(Vector{Symbol}, cnames),
+                                                                                      makeunique=makeunique),
+                                                                                copycols=false)
+
+DataFrame(column_eltypes::AbstractVector{T}, nrows::Integer) where T<:Type =
+    DataFrame(column_eltypes, gennames(length(column_eltypes)), nrows)
+
+function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                   categorical::AbstractVector{Bool}, nrows::Integer;
+                   makeunique::Bool=false)::DataFrame where T<:Type
+    updated_types = convert(Vector{Type}, column_eltypes)
+    if length(categorical) != length(column_eltypes)
+        throw(DimensionMismatch("arguments column_eltypes and categorical must have the same length " *
+                                "(got $(length(column_eltypes)) and $(length(categorical)))"))
+    end
+    for i in eachindex(categorical)
+        categorical[i] || continue
+        elty = CategoricalArrays.catvaluetype(Missings.T(updated_types[i]),
+                                              CategoricalArrays.DefaultRefType)
+        if updated_types[i] >: Missing
+            updated_types[i] = Union{elty, Missing}
+        else
+            updated_types[i] = elty
+        end
+    end
+    return DataFrame(updated_types, cnames, nrows, makeunique=makeunique)
+end
+
 @deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
 @deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 
