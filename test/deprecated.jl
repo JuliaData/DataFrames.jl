@@ -77,7 +77,7 @@ gd = groupby(df, :a)
     end
 
     @testset "::Function, ::GroupedDataFrame" begin
-        gd = groupby_checked(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+        gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
         @test colwise(length, gd) == [[2,2], [2,2]]
     end
 
@@ -104,7 +104,7 @@ gd = groupby(df, :a)
     end
 
     @testset "::Vector, ::GroupedDataFrame" begin
-        gd = groupby_checked(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+        gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
         @test colwise([length], gd) == [[2 2], [2 2]]
     end
 
@@ -132,7 +132,7 @@ gd = groupby(df, :a)
     end
 
     @testset "::Tuple, ::GroupedDataFrame" begin
-        gd = groupby_checked(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
+        gd = groupby(DataFrame(A = [:A, :A, :B, :B], B = 1:4), :A)
         @test colwise((length), gd) == [[2,2],[2,2]]
     end
 end
