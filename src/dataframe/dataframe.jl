@@ -257,6 +257,32 @@ function DataFrame(column_eltypes::AbstractVector{T}, nrows::Integer) where T<:T
     return DataFrame(column_eltypes, gennames(length(column_eltypes)), nrows)
 end
 
+"""
+    DataFrame!(args...; kwargs...)
+
+Create a `DataFrame` from a `args` and `kwargs` with `copycols=false`.
+Accepts any combination of positional and keword arguments that `DataFrame`
+accepts except that it is not allowed to pass `copycols` keyword argument.
+
+### Examples
+
+```jldoctest
+julia> df1 = DataFrame(a=1:3)
+3×1 DataFrame
+│ Row │ a     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+│ 3   │ 3     │
+
+julia> df2 = DataFrame!(df1)
+
+julia> df1.a === df2.a
+true
+"""
+DataFrame!(args...; kwargs...) = DataFrame(args...; copycols=false, kwargs...)
+
 ##############################################################################
 ##
 ## AbstractDataFrame interface

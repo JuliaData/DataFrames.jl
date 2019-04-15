@@ -32,32 +32,6 @@ function DataFrame(x; copycols::Bool=true)
     throw(ArgumentError("unable to construct DataFrame from $(typeof(x))"))
 end
 
-"""
-    DataFrame!(table)
-
-Create a `DataFrame` from a `table` with `copycols=false`.
-`table` can be any type that implements the
-[Tables.jl](https://github.com/JuliaData/Tables.jl) interface
-
-### Examples
-
-```jldoctest
-julia> df1 = DataFrame(a=1:3)
-3×1 DataFrame
-│ Row │ a     │
-│     │ Int64 │
-├─────┼───────┤
-│ 1   │ 1     │
-│ 2   │ 2     │
-│ 3   │ 3     │
-
-julia> df2 = DataFrame!(df1)
-
-julia> df1.a === df2.a
-true
-"""
-DataFrame!(table) = DataFrame(table, copycols=false)
-
 Base.append!(df::DataFrame, x) = append!(df, DataFrame(x, copycols=false))
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
