@@ -5,20 +5,27 @@ import Base: @deprecate
 @deprecate DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{Symbol},
                      nrows::Integer;
                      makeunique::Bool=false) DataFrame(AbstractVector[elty >: Missing ?
-                                                       fill!(Tables.allocatecolumn(elty, nrows),
-                                                             missing) :
-                                                       Tables.allocatecolumn(elty, nrows)
-                                                       for elty in column_eltypes],
+                                                                      fill!(Tables.allocatecolumn(elty, nrows), missing) :
+                                                                      Tables.allocatecolumn(elty, nrows)
+                                                                      for elty in column_eltypes],
                                                        Index(convert(Vector{Symbol}, cnames),
                                                              makeunique=makeunique),
                                                        copycols=false)
 
-DataFrame(column_eltypes::AbstractVector{T}, nrows::Integer) where T<:Type =
-    DataFrame(column_eltypes, gennames(length(column_eltypes)), nrows)
+@deprecate DataFrame(column_eltypes::AbstractVector{<:Type},
+                     nrows::Integer) DataFrame(AbstractVector[elty >: Missing ?
+                                                              fill!(Tables.allocatecolumn(elty, nrows), missing) :
+                                                              Tables.allocatecolumn(elty, nrows)
+                                                              for elty in column_eltypes],
+                                               Index(gennames(length(column_eltypes))),
+                                               copycols=false)
 
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    categorical::AbstractVector{Bool}, nrows::Integer;
                    makeunique::Bool=false)::DataFrame where T<:Type
+    Base.depwarn("`DataFrame` constructor with `categorical` positional argument is deprecated. " *
+                 "Instead use `DataFrame(columns, names)` constructor.",
+                 :DataFrame)
     updated_types = convert(Vector{Type}, column_eltypes)
     if length(categorical) != length(column_eltypes)
         throw(DimensionMismatch("arguments column_eltypes and categorical must have the same length " *
