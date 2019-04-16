@@ -260,9 +260,7 @@ end
 """
     DataFrame!(args...; kwargs...)
 
-Create a `DataFrame` from a `args` and `kwargs` with `copycols=false`.
-Accepts any combination of positional and keword arguments that `DataFrame`
-accepts except that it is not allowed to pass `copycols` keyword argument.
+Equivalent to `DataFrame(args...; copycols=false, kwargs...)`.
 
 ### Examples
 
