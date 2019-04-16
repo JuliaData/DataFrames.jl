@@ -3,6 +3,8 @@ module TestDeprecated
 using Test, DataFrames
 import DataFrames: identifier
 
+const ≅ = isequal
+
 # old sort(df; cols=...) syntax
 df = DataFrame(a=[1, 3, 2], b=[6, 5, 4])
 @test sort(df; cols=[:a, :b]) == DataFrame(a=[1, 2, 3], b=[6, 4, 5])
