@@ -83,7 +83,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
 
     mxrow, mxcol = size(df)
     if get(io, :limit, true)
-        tty_rows, tty_cols = get(io, :displaysize, displaysize(io))
+        tty_rows, tty_cols = displaysize(io)
         mxrow = min(mxrow, tty_rows)
         mxcol = min(mxcol, tty_cols)
     end
