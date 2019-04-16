@@ -4,16 +4,18 @@ import Base: @deprecate
 
 @deprecate DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{Symbol},
                      nrows::Integer;
-                     makeunique::Bool=false) DataFrame(AbstractVector[Vector{elty}(elty >: Missing ?
-                                                                                   missing : undef, nrows)
+                     makeunique::Bool=false) DataFrame(AbstractVector[elty >: Missing ?
+                                                                      fill!(Tables.allocatecolumn(elty, nrows), missing) :
+                                                                      Tables.allocatecolumn(elty, nrows)
                                                               for elty in column_eltypes],
                                                        convert(Vector{Symbol}, cnames),
                                                        makeunique=makeunique,
                                                        copycols=false)
 
 @deprecate DataFrame(column_eltypes::AbstractVector{<:Type},
-                     nrows::Integer) DataFrame(AbstractVector[Vector{elty}(elty >: Missing ?
-                                                                           missing : undef, nrows)
+                     nrows::Integer) DataFrame(AbstractVector[elty >: Missing ?
+                                                              fill!(Tables.allocatecolumn(elty, nrows), missing) :
+                                                              Tables.allocatecolumn(elty, nrows)
                                                               for elty in column_eltypes],
                                                gennames(length(column_eltypes)),
                                                copycols=false)
