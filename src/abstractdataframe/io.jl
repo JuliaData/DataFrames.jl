@@ -82,10 +82,11 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     end
 
     mxrow, mxcol = size(df)
-    if get(io, :limit, true)
+    if get(io, :limit, false)
         tty_rows, tty_cols = displaysize(io)
         mxrow = min(mxrow, tty_rows)
-        mxcol = min(mxcol, tty_cols)
+        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X) .+ 2
+        mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
     end
 
     cnames = _names(df)[1:mxcol]
@@ -99,7 +100,7 @@ function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
     write(io, "</tr>")
     write(io, "<tr>")
     write(io, "<th></th>")
-    for j in 1:ncol(df)
+    for j in 1:mxcol
         s = html_escape(compacttype(eltype(df[j])))
         write(io, "<th>$s</th>")
     end
@@ -210,10 +211,11 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     end
 
     mxrow, mxcol = size(df)
-    if get(io, :limit, true)
+    if get(io, :limit, false)
         tty_rows, tty_cols = get(io, :displaysize, displaysize(io))
         mxrow = min(mxrow, tty_rows)
-        mxcol = min(mxcol, tty_cols)
+        maxwidths = getmaxwidths(df, io, 1:mxrow, 0:-1, :X) .+ 2
+        mxcol = min(mxcol, searchsortedfirst(cumsum(maxwidths), tty_cols))
     end
 
     cnames = _names(df)[1:mxcol]
@@ -228,7 +230,7 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     write(io, "\\\\\n")
     write(io, "\t\\hline\n")
     write(io, "\t& ")
-    header = join(map(c -> latex_escape(string(compacttype(c))), eltypes(df)), " & ")
+    header = join(map(c -> latex_escape(string(compacttype(c))), eltypes(df)[1:mxcol]), " & ")
     write(io, header)
     mxcol < size(df, 2) && write(io, " & ")
     write(io, "\\\\\n")
