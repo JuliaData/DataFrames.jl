@@ -1,6 +1,6 @@
 import Base: @deprecate
 
-@deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame(fill(t, ncols), nrows)
+@deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame(Matrix{t}(undef, nrows, ncols))
 
 @deprecate DataFrame(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{Symbol},
                      nrows::Integer;

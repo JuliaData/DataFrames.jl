@@ -90,16 +90,6 @@ const ≅ = isequal
                           x2 = Union{Float64, Missing}[1.0, 1.0, 1.0],
                           x3 = Union{Float64, Missing}[2.0, 2.0, 2.0])[[:x1, :x2]]
 
-    df = DataFrame(Union{Int, Missing}, 2, 2)
-    @test size(df) == (2, 2)
-    @test eltypes(df) == [Union{Int, Missing}, Union{Int, Missing}]
-
-    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}], [:x1, :x2], 2)
-    @test size(df) == (2, 2)
-    @test eltypes(df) == [Union{Int, Missing}, Union{Float64, Missing}]
-
-    @test df ≅ DataFrame([Union{Int, Missing}, Union{Float64, Missing}], 2)
-
     @test_throws BoundsError SubDataFrame(DataFrame(A=1), 0:0, :)
     @test_throws ArgumentError SubDataFrame(DataFrame(A=1), 0, :)
     @test_throws BoundsError DataFrame(A=1)[0, :]
@@ -303,13 +293,6 @@ end
     df[:E] = 'c'
     push!(answer, Vector{Char})
     @test map(typeof, eachcol(df)) == answer
-end
-
-@testset "categorical constructor" begin
-    df = DataFrame([Int, String], [:a, :b], [false, true], 3)
-    @test !(df[:a] isa CategoricalVector)
-    @test df[:b] isa CategoricalVector
-    @test_throws DimensionMismatch DataFrame([Int, String], [:a, :b], [true], 3)
 end
 
 end # module
