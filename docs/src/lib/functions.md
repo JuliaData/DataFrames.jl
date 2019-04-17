@@ -13,7 +13,6 @@ Pages = ["functions.md"]
 ```@docs
 aggregate
 by
-colwise
 combine
 groupby
 groupindices

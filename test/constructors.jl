@@ -54,11 +54,8 @@ const ≅ = isequal
     @inferred DataFrame([1:3, 1:3], [:a, :b])
     @inferred DataFrame((1:3, 1:3), (:a, :b))
 
-    if VERSION ≥ v"1.0.0"
-        # this test throws an error on Julia 0.7
-        @inferred DataFrame((:x1=>1:3, :x2=>[1,2,3]))
-        @inferred DataFrame([:x1=>1:3, :x2=>[1,2,3]])
-    end
+    @inferred DataFrame((:x1=>1:3, :x2=>[1,2,3]))
+    @inferred DataFrame([:x1=>1:3, :x2=>[1,2,3]])
 
     @test df !== DataFrame(df)
     @test df == DataFrame(df)
