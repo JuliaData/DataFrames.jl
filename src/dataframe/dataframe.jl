@@ -260,10 +260,9 @@ end
 """
     DataFrame!(args...; kwargs...)
 
-Equivalent to `DataFrame(args...; copycols=false, kwargs...)`.
-
-In particular note that you can still pass `copycols` keyword argument
-to `DataFrame!` to override its default value.
+Equivalent to `DataFrame(args...; copycols=false, kwargs...)`
+except that if `kwargs` contains `copycols` keyword argument an error
+is thrown.
 
 ### Examples
 
@@ -282,7 +281,12 @@ julia> df2 = DataFrame!(df1)
 julia> df1.a === df2.a
 true
 """
-DataFrame!(args...; kwargs...) = DataFrame(args...; copycols=false, kwargs...)
+function DataFrame!(args...; kwargs...)
+    if :copycols in keys(kwargs)
+        throw(ArgumentError("`copycols` keyword argument is not allowed"))
+    end
+    DataFrame(args...; copycols=false, kwargs...)
+end
 
 ##############################################################################
 ##
