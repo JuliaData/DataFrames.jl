@@ -292,4 +292,36 @@ end
     @test map(typeof, eachcol(df)) == answer
 end
 
+@testset "constructor with types" begin
+    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
+                   [:A, :B, :C], 100)
+    @test size(df, 1) == 100
+    @test size(df, 2) == 3
+    @test typeof(df[1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[3]) == Vector{Union{String, Missing}}
+    @test all(ismissing, df[1])
+    @test all(ismissing, df[2])
+    @test all(ismissing, df[3])
+    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
+    @test all(ismissing, df[:, 1])
+    @test all(ismissing, df[:, 2])
+    @test all(ismissing, df[:, 3])
+
+    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}], [:x1, :x2], 2)
+    @test size(df) == (2, 2)
+    @test eltypes(df) == [Union{Int, Missing}, Union{Float64, Missing}]
+
+    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
+                   [:A, :B, :C])
+    @test size(df, 1) == 0
+    @test size(df, 2) == 3
+    @test typeof(df[1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[3]) == Vector{Union{String, Missing}}
+    @test names(df) == [:A, :B, :C]
+end
+
 end # module
