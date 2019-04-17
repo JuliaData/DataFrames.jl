@@ -347,7 +347,7 @@ end
 
 @testset "vcat out of order" begin
     df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
-    df2 = DataFrame(colwise(x->2x, df1), reverse(names(df1)))
+    df2 = DataFrame([2x for x in eachcol(df1)], reverse(names(df1)))
     @test vcat(df1, df2) == DataFrame([[1, 2, 3, 14, 16, 18],
                                        [4, 5, 6, 8, 10, 12],
                                        [7, 8, 9, 2, 4, 6]], [:A, :B, :C])
