@@ -262,6 +262,9 @@ end
 
 Equivalent to `DataFrame(args...; copycols=false, kwargs...)`.
 
+In particular note that you can still pass `copycols` keyword argument
+to `DataFrame!` to override its default value.
+
 ### Examples
 
 ```jldoctest
