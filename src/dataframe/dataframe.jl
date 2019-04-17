@@ -17,6 +17,8 @@ DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false, copycols::Bool=true)
 DataFrame() # an empty DataFrame
+DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer=0;
+          makeunique::Bool=false)
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
@@ -205,6 +207,16 @@ DataFrame(columns::AbstractMatrix, cnames::AbstractVector{Symbol} = gennames(siz
           makeunique::Bool=false) =
     DataFrame(AbstractVector[columns[:, i] for i in 1:size(columns, 2)], cnames,
               makeunique=makeunique, copycols=false)
+
+function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                   nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type
+    columns = AbstractVector[elty >: Missing ?
+                             fill!(Tables.allocatecolumn(elty, nrows), missing) :
+                             Tables.allocatecolumn(elty, nrows)
+                             for elty in column_eltypes]
+    return DataFrame(columns, Index(convert(Vector{Symbol}, cnames), makeunique=makeunique),
+                     copycols=false)
+end
 
 ##############################################################################
 ##
