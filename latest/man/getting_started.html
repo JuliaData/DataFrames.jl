@@ -269,7 +269,7 @@ julia&gt; describe(df)
 </code></pre><p>Of course, one can also compute descrptive statistics directly on individual columns:</p><pre><code class="language-julia-repl">julia&gt; using Statistics
 
 julia&gt; mean(df.A)
-2.5</code></pre><h3><a class="nav-anchor" id="Column-Wise-Operations-1" href="#Column-Wise-Operations-1">Column-Wise Operations</a></h3><p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>colwise</code> function. For example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+2.5</code></pre><h3><a class="nav-anchor" id="Column-Wise-Operations-1" href="#Column-Wise-Operations-1">Column-Wise Operations</a></h3><p>We can also apply a function to each column of a <code>DataFrame</code> with the <code>aggregate</code> function. For example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
 │ Row │ A     │ B       │
 │     │ Int64 │ Float64 │
@@ -279,10 +279,19 @@ julia&gt; mean(df.A)
 │ 3   │ 3     │ 2.0     │
 │ 4   │ 4     │ 1.0     │
 
-julia&gt; colwise(sum, df)
-2-element Array{Real,1}:
- 10
- 10.0</code></pre><h3><a class="nav-anchor" id="Handling-of-Columns-Stored-in-a-DataFrame-1" href="#Handling-of-Columns-Stored-in-a-DataFrame-1">Handling of Columns Stored in a <code>DataFrame</code></a></h3><p>Functions that transform a <code>DataFrame</code> to produce a new <code>DataFrame</code> always perform a copy of the columns by default, for example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
+julia&gt; aggregate(df, sum)
+1×2 DataFrame
+│ Row │ A_sum │ B_sum   │
+│     │ Int64 │ Float64 │
+├─────┼───────┼─────────┤
+│ 1   │ 10    │ 10.0    │
+
+julia&gt; aggregate(df, [sum, prod])
+1×4 DataFrame
+│ Row │ A_sum │ B_sum   │ A_prod │ B_prod  │
+│     │ Int64 │ Float64 │ Int64  │ Float64 │
+├─────┼───────┼─────────┼────────┼─────────┤
+│ 1   │ 10    │ 10.0    │ 24     │ 24.0    │</code></pre><h3><a class="nav-anchor" id="Handling-of-Columns-Stored-in-a-DataFrame-1" href="#Handling-of-Columns-Stored-in-a-DataFrame-1">Handling of Columns Stored in a <code>DataFrame</code></a></h3><p>Functions that transform a <code>DataFrame</code> to produce a new <code>DataFrame</code> always perform a copy of the columns by default, for example:</p><pre><code class="language-julia-repl">julia&gt; df = DataFrame(A = 1:4, B = 4.0:-1.0:1.0)
 4×2 DataFrame
 │ Row │ A     │ B       │
 │     │ Int64 │ Float64 │
