@@ -813,11 +813,11 @@ function Base.copy(df::DataFrame; copycols::Bool=true)
 end
 
 """
-    deletecols!(df::DataFrame, ind)
+    deletecols!(df::DataFrame, inds)
 
-Delete columns specified by `ind` from a `DataFrame` `df` in place and return it.
+Delete columns specified by `inds` from a `DataFrame` `df` in place and return it.
 
-Argument `ind` can be any index that is allowed for column indexing of
+Argument `inds` can be any index that is allowed for column indexing of
 a `DataFrame` provided that the columns requested to be removed are unique.
 
 ### Examples
@@ -866,11 +866,57 @@ deletecols!(df::DataFrame, c::Int) = deletecols!(df, [c])
 deletecols!(df::DataFrame, c::Any) = deletecols!(df, index(df)[c])
 
 """
-    deleterows!(df::DataFrame, ind)
+    deletecols(df::DataFrame, inds, copycols::Bool=true)
 
-Delete rows specified by `ind` from a `DataFrame` `df` in place and return it.
+Create a new `DataFrame` based on `df ` deleting columns specified by `inds`.
 
-Internally `deleteat!` is called for all columns so `ind` must
+Argument `inds` can be any index that is allowed for column indexing of
+a `DataFrame` provided that the columns requested to be removed are unique.
+
+If `copycols=true` (the default), then returned `DataFrame` holds
+copies of column vectors in `df`.
+If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
+
+### Examples
+
+```jldoctest
+julia> d = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+│ 2   │ 2     │ 5     │
+│ 3   │ 3     │ 6     │
+
+julia> deletecols(d, 1)
+3×1 DataFrame
+│ Row │ b     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 4     │
+│ 2   │ 5     │
+│ 3   │ 6     │
+```
+
+"""
+function deletecols(df::DataFrame, inds; copycols::Bool=true)
+    newdf = copy(df, copycols=false)
+    deletecols!(newdf, inds)
+    if copycols
+        for i in axes(newdf, 2)
+            newdf[i] = copy(newdf[i])
+        end
+    end
+    return newdf
+end
+
+"""
+    deleterows!(df::DataFrame, inds)
+
+Delete rows specified by `inds` from a `DataFrame` `df` in place and return it.
+
+Internally `deleteat!` is called for all columns so `inds` must
 be: a vector of sorted and unique integers, a boolean vector or an integer.
 
 ### Examples
@@ -895,23 +941,116 @@ julia> deleterows!(d, 2)
 ```
 
 """
-function deleterows!(df::DataFrame, ind)
-    if !isempty(ind) && size(df, 2) == 0
+function deleterows!(df::DataFrame, inds)
+    if !isempty(inds) && size(df, 2) == 0
         throw(BoundsError())
     end
     # we require ind to be stored and unique like in Base
-    foreach(col -> deleteat!(col, ind), _columns(df))
+    foreach(col -> deleteat!(col, inds), _columns(df))
     df
 end
 
-function deleterows!(df::DataFrame, ind::AbstractVector{Bool})
-    if length(ind) != size(df, 1)
+function deleterows!(df::DataFrame, inds::AbstractVector{Bool})
+    if length(inds) != size(df, 1)
         throw(BoundsError())
     end
-    drop = findall(ind)
+    drop = findall(inds)
     foreach(col -> deleteat!(col, drop), _columns(df))
     df
 end
+
+"""
+    select!(df::DataFrame, inds)
+
+Mutate `df` in place to retain only columns specified by `inds` and return it.
+
+Argument `inds` can be any index that is allowed for column indexing of
+a `DataFrame` provided that the columns requested to be removed are unique.
+
+### Examples
+
+```jldoctest
+julia> d = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+│ 2   │ 2     │ 5     │
+│ 3   │ 3     │ 6     │
+
+julia> select!(d, 2)
+3×1 DataFrame
+│ Row │ b     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 4     │
+│ 2   │ 5     │
+│ 3   │ 6     │
+```
+
+"""
+function select!(df::DataFrame, inds::AbstractVector{Int})
+    indmin, indmax = extrema(inds)
+    if indmin < 1
+        throw(ArgumentError("indices must be positive"))
+    end
+    if indmax > ncol(df)
+        throw(ArgumentError("indices must not be greater than number of columns"))
+    end
+    if !allunique(inds)
+        throw(ArgumentError("indices must not contain duplicates"))
+    end
+    targetnames = _names(df)[inds]
+    deletecols!(df, setdiff(axes(df, 2), inds))
+    permutecols!(df, targetnames)
+end
+
+select!(df::DataFrame, c::Int) = select!(df, [c])
+select!(df::DataFrame, c::Any) = select!(df, index(df)[c])
+
+"""
+    select(df::DataFrame, inds, copycols::Bool=true)
+
+Create a new `DataFrame` that contains columns from `df` specified by `inds` and return it.
+
+Argument `inds` can be any index that is allowed for column indexing of a `DataFrame`.
+
+If `copycols=true` (the default), then returned `DataFrame` holds
+copies of column vectors in `df`.
+If `copycols=false`, then returned `DataFrame` shares column vectors with `df`.
+
+### Examples
+
+```jldoctest
+julia> d = DataFrame(a=1:3, b=4:6)
+3×2 DataFrame
+│ Row │ a     │ b     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 4     │
+│ 2   │ 2     │ 5     │
+│ 3   │ 3     │ 6     │
+
+julia> select(d, :b)
+3×1 DataFrame
+│ Row │ b     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 4     │
+│ 2   │ 5     │
+│ 3   │ 6     │
+```
+
+"""
+select(df::DataFrame, inds::AbstractVector{Int}; copycols::Bool=true) =
+    DataFrame(_columns(df)[inds], Index(_names(df)[inds]),
+              copycols=copycols)
+
+select(df::DataFrame, c::Int; copycols::Bool=true) =
+    select(df, [c], copycols=copycols)
+select(df::DataFrame, c::Any; copycols::Bool=true) =
+    select(df, index(df)[c], copycols=copycols)
 
 ##############################################################################
 ##
