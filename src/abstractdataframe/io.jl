@@ -264,10 +264,9 @@ function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
     write(io, "\\end{tabular}\n")
 end
 
-function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow;
-                   allcols::Bool = !get(io, :limit, false))
+function Base.show(io::IO, mime::MIME"text/latex", dfr::DataFrameRow)
     r, c = parentindices(dfr)
-    _show(io, mime, view(parent(dfr), [r], c), allcols=allcols, rowid=r)
+    _show(io, mime, view(parent(dfr), [r], c), rowid=r)
 end
 
 function Base.show(io::IO, mime::MIME"text/latex", gd::GroupedDataFrame)
