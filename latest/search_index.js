@@ -557,7 +557,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "DataFrames.deletecols!",
     "category": "function",
-    "text": "deletecols!(df::DataFrame, ind)\n\nDelete columns specified by ind from a DataFrame df in place and return it.\n\nArgument ind can be any index that is allowed for column indexing of a DataFrame provided that the columns requested to be removed are unique.\n\nExamples\n\njulia> d = DataFrame(a=1:3, b=4:6)\n3×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 4     │\n│ 2   │ 2     │ 5     │\n│ 3   │ 3     │ 6     │\n\njulia> deletecols!(d, 1)\n3×1 DataFrame\n│ Row │ b     │\n│     │ Int64 │\n├─────┼───────┤\n│ 1   │ 4     │\n│ 2   │ 5     │\n│ 3   │ 6     │\n\n\n\n\n\n"
+    "text": "deletecols!(df::DataFrame, inds)\n\nDelete columns specified by inds from a DataFrame df in place and return it.\n\nArgument inds can be any index that is allowed for column indexing of a DataFrame provided that the columns requested to be removed are unique.\n\nExamples\n\njulia> d = DataFrame(a=1:3, b=4:6)\n3×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 4     │\n│ 2   │ 2     │ 5     │\n│ 3   │ 3     │ 6     │\n\njulia> deletecols!(d, 1)\n3×1 DataFrame\n│ Row │ b     │\n│     │ Int64 │\n├─────┼───────┤\n│ 1   │ 4     │\n│ 2   │ 5     │\n│ 3   │ 6     │\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.deletecols",
+    "page": "Functions",
+    "title": "DataFrames.deletecols",
+    "category": "function",
+    "text": "deletecols(df::DataFrame, inds, copycols::Bool=true)\n\nCreate a new DataFrame based on df deleting columns specified by inds.\n\nArgument inds can be any index that is allowed for column indexing of a DataFrame provided that the columns requested to be removed are unique.\n\nIf copycols=true (the default), then returned DataFrame holds copies of column vectors in df. If copycols=false, then returned DataFrame shares column vectors with df.\n\nExamples\n\njulia> d = DataFrame(a=1:3, b=4:6)\n3×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 4     │\n│ 2   │ 2     │ 5     │\n│ 3   │ 3     │ 6     │\n\njulia> deletecols(d, 1)\n3×1 DataFrame\n│ Row │ b     │\n│     │ Int64 │\n├─────┼───────┤\n│ 1   │ 4     │\n│ 2   │ 5     │\n│ 3   │ 6     │\n\n\n\n\n\n"
 },
 
 {
@@ -565,7 +573,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "DataFrames.deleterows!",
     "category": "function",
-    "text": "deleterows!(df::DataFrame, ind)\n\nDelete rows specified by ind from a DataFrame df in place and return it.\n\nInternally deleteat! is called for all columns so ind must be: a vector of sorted and unique integers, a boolean vector or an integer.\n\nExamples\n\njulia> d = DataFrame(a=1:3, b=4:6)\n3×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 4     │\n│ 2   │ 2     │ 5     │\n│ 3   │ 3     │ 6     │\n\njulia> deleterows!(d, 2)\n2×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 4     │\n│ 2   │ 3     │ 6     │\n\n\n\n\n\n"
+    "text": "deleterows!(df::DataFrame, inds)\n\nDelete rows specified by inds from a DataFrame df in place and return it.\n\nInternally deleteat! is called for all columns so inds must be: a vector of sorted and unique integers, a boolean vector or an integer.\n\nExamples\n\njulia> d = DataFrame(a=1:3, b=4:6)\n3×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 4     │\n│ 2   │ 2     │ 5     │\n│ 3   │ 3     │ 6     │\n\njulia> deleterows!(d, 2)\n2×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 4     │\n│ 2   │ 3     │ 6     │\n\n\n\n\n\n"
 },
 
 {
@@ -721,6 +729,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "lib/functions.html#DataFrames.select",
+    "page": "Functions",
+    "title": "DataFrames.select",
+    "category": "function",
+    "text": "select(df::DataFrame, inds, copycols::Bool=true)\n\nCreate a new DataFrame that contains columns from df specified by inds and return it.\n\nArgument inds can be any index that is allowed for column indexing of a DataFrame.\n\nIf copycols=true (the default), then returned DataFrame holds copies of column vectors in df. If copycols=false, then returned DataFrame shares column vectors with df.\n\nExamples\n\njulia> d = DataFrame(a=1:3, b=4:6)\n3×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 4     │\n│ 2   │ 2     │ 5     │\n│ 3   │ 3     │ 6     │\n\njulia> select(d, :b)\n3×1 DataFrame\n│ Row │ b     │\n│     │ Int64 │\n├─────┼───────┤\n│ 1   │ 4     │\n│ 2   │ 5     │\n│ 3   │ 6     │\n\n\n\n\n\n"
+},
+
+{
+    "location": "lib/functions.html#DataFrames.select!",
+    "page": "Functions",
+    "title": "DataFrames.select!",
+    "category": "function",
+    "text": "select!(df::DataFrame, inds)\n\nMutate df in place to retain only columns specified by inds and return it.\n\nArgument inds can be any index that is allowed for column indexing of a DataFrame provided that the columns requested to be removed are unique.\n\nExamples\n\njulia> d = DataFrame(a=1:3, b=4:6)\n3×2 DataFrame\n│ Row │ a     │ b     │\n│     │ Int64 │ Int64 │\n├─────┼───────┼───────┤\n│ 1   │ 1     │ 4     │\n│ 2   │ 2     │ 5     │\n│ 3   │ 3     │ 6     │\n\njulia> select!(d, 2)\n3×1 DataFrame\n│ Row │ b     │\n│     │ Int64 │\n├─────┼───────┤\n│ 1   │ 4     │\n│ 2   │ 5     │\n│ 3   │ 6     │\n\n\n\n\n\n"
+},
+
+{
     "location": "lib/functions.html#Base.show",
     "page": "Functions",
     "title": "Base.show",
@@ -789,7 +813,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Basics",
     "category": "section",
-    "text": "allowmissing!\ncategorical!\ncompletecases\ncopy\ndeletecols!\ndeleterows!\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\nhcat\ninsertcols!\nmapcols\nnames!\nnonunique\nnrow\nncol\nrename!\nrename\nrepeat\nshow\nsort\nsort!\nunique!\npermutecols!\nvcat\nappend!\npush!"
+    "text": "allowmissing!\ncategorical!\ncompletecases\ncopy\ndeletecols!\ndeletecols\ndeleterows!\ndescribe\ndisallowmissing!\ndropmissing\ndropmissing!\neachrow\neachcol\neltypes\nfilter\nfilter!\nhcat\ninsertcols!\nmapcols\nnames!\nnonunique\nnrow\nncol\nrename!\nrename\nrepeat\nselect\nselect!\nshow\nsort\nsort!\nunique!\npermutecols!\nvcat\nappend!\npush!"
 },
 
 {
