@@ -36,6 +36,7 @@ julia> show(stdout, MIME("text/csv"), DataFrame(A = 1:3, B = ["x", "y", "z"]))
 3,"z"
 ```
 """
+Base.show(io::IO, mime::MIME, df::AbstractDataFrame)
 Base.show(io::IO, mime::MIME"text/html", df::AbstractDataFrame; summary::Bool=true) =
     _show(io, mime, df, summary=summary)
 Base.show(io::IO, mime::MIME"text/latex", df::AbstractDataFrame) =
