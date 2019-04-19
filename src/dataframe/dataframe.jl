@@ -261,7 +261,7 @@ end
     DataFrame!(args...; kwargs...)
 
 Equivalent to `DataFrame(args...; copycols=false, kwargs...)`
-except that if `kwargs` contains `copycols` keyword argument an error
+except that if `kwargs` contains the `copycols` keyword argument an error
 is thrown.
 
 ### Examples
