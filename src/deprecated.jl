@@ -3,7 +3,7 @@ import Base: @deprecate
 @deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame(Matrix{t}(undef, nrows, ncols))
 
 @deprecate DataFrame(column_eltypes::AbstractVector{<:Type},
-                     nrows::Integer) DataFrame(column_eltypes, gennames(length(column_eltypes)), nrows)
+                     nrows::Integer) DataFrame(column_eltypes, Symbol.('x' .* string.(1:length(column_eltypes))), nrows)
 
 function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
                    categorical::AbstractVector{Bool}, nrows::Integer;
