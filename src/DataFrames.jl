@@ -86,11 +86,10 @@ include("abstractdataframe/iteration.jl")
 include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
 
-include("abstractdataframe/io.jl")
-
 include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
 include("dataframerow/show.jl")
+include("abstractdataframe/io.jl")
 
 include("abstractdataframe/sort.jl")
 include("dataframe/sort.jl")

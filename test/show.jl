@@ -30,7 +30,11 @@ end
 
     for allrows in [true, false], allcols in [true, false]
         io = IOBuffer()
-        show(io, df, allcols=allcols)
+        show(io, df, allcols=allcols, allrows=allrows)
+        str = String(take!(io))
+        @test str == refstr
+        io = IOBuffer()
+        show(io, MIME("text/plain"), df, allcols=allcols, allrows=allrows)
         str = String(take!(io))
         @test str == refstr
     end
