@@ -223,8 +223,8 @@ end
 #
 
 @testset "vcat" begin
-    missing_df = DataFrame(Int, 0, 0)
-    df = DataFrame(Int, 4, 3)
+    missing_df = DataFrame()
+    df = DataFrame(Matrix{Int}(undef, 4, 3))
 
     # Assignment of rows
     # TODO: re-enable when we fix setindex! to handle DataFrameRow on RHS

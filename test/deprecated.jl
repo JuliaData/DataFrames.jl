@@ -3,6 +3,8 @@ module TestDeprecated
 using Test, DataFrames, Random
 import DataFrames: identifier
 
+const ≅ = isequal
+
 # old sort(df; cols=...) syntax
 df = DataFrame(a=[1, 3, 2], b=[6, 5, 4])
 @test sort(df; cols=[:a, :b]) == DataFrame(a=[1, 2, 3], b=[6, 4, 5])
@@ -53,6 +55,70 @@ end
 df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)
 gd = groupby(df, :a)
 @test combine(gd) == combine(identity, gd)
+
+@testset "categorical constructor" begin
+    df = DataFrame([Int, String], [:a, :b], [false, true], 3)
+    @test !(df[:a] isa CategoricalVector)
+    @test df[:b] isa CategoricalVector
+    @test_throws DimensionMismatch DataFrame([Int, String], [:a, :b], [true], 3)
+end
+
+@testset "DataFrame constructors" begin
+    df = DataFrame(Union{Int, Missing}, 10, 3)
+    @test size(df, 1) == 10
+    @test size(df, 2) == 3
+    @test typeof(df[1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[2]) == Vector{Union{Int, Missing}}
+    @test typeof(df[3]) == Vector{Union{Int, Missing}}
+    @test all(ismissing, df[1])
+    @test all(ismissing, df[2])
+    @test all(ismissing, df[3])
+    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[:, 2]) == Vector{Union{Int, Missing}}
+    @test typeof(df[:, 3]) == Vector{Union{Int, Missing}}
+    @test all(ismissing, df[:, 1])
+    @test all(ismissing, df[:, 2])
+    @test all(ismissing, df[:, 3])
+
+    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}], 100)
+    @test size(df, 1) == 100
+    @test size(df, 2) == 3
+    @test typeof(df[1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[3]) == Vector{Union{String, Missing}}
+    @test all(ismissing, df[1])
+    @test all(ismissing, df[2])
+    @test all(ismissing, df[3])
+    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
+    @test all(ismissing, df[:, 1])
+    @test all(ismissing, df[:, 2])
+    @test all(ismissing, df[:, 3])
+
+    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
+                [:A, :B, :C], [false, false, true], 100)
+    @test size(df, 1) == 100
+    @test size(df, 2) == 3
+    @test typeof(df[1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[3]) <: CategoricalVector{Union{String, Missing}}
+    @test all(ismissing, df[1])
+    @test all(ismissing, df[2])
+    @test all(ismissing, df[3])
+    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
+    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
+    @test typeof(df[:, 3]) <: CategoricalVector{Union{String, Missing}}
+    @test all(ismissing, df[:, 1])
+    @test all(ismissing, df[:, 2])
+    @test all(ismissing, df[:, 3])
+end
+
+df = DataFrame(Union{Int, Missing}, 2, 2)
+@test size(df) == (2, 2)
+@test eltypes(df) == [Union{Int, Missing}, Union{Int, Missing}]
+
+@test df ≅ DataFrame([Union{Int, Missing}, Union{Float64, Missing}], 2)
 
 @testset "colwise" begin
     Random.seed!(1)
