@@ -33,10 +33,7 @@ ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
     @test_throws BoundsError DataFrameRow(df, 100)
     @test_throws MethodError DataFrameRow(df, true, 1:2)
     @test_throws MethodError DataFrameRow(df, true)
-    if VERSION ≥ v"1.0.0"
-        # this test throws a warning on Julia 0.7
-        @test_throws ArgumentError DataFrameRow(sdf, true, 1:2)
-    end
+    @test_throws ArgumentError DataFrameRow(sdf, true, 1:2)
 end
 
 @testset "getindex and setindex!" begin

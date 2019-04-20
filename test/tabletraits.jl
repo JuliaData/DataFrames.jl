@@ -24,14 +24,12 @@ end
     @test collect(IteratorInterfaceExtensions.getiterator(sdf)) ==
         [(a=1, b=DataValue(1.0)), (a=2, b=DataValue{Float64}())]
 
-    if VERSION ≥ v"1.0.0"
-        df = DataFrame(ColumnSource())
+    df = DataFrame(ColumnSource())
 
-        @test size(df)==(3,3)
-        @test df.a==[1,2,3]
-        @test df.b==[4.,5.,6.]
-        @test df.c==["A", "B", "C"]
-    end
+    @test size(df)==(3,3)
+    @test df.a==[1,2,3]
+    @test df.b==[4.,5.,6.]
+    @test df.c==["A", "B", "C"]
 end
 
 end # module

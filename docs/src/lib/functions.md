@@ -13,7 +13,6 @@ Pages = ["functions.md"]
 ```@docs
 aggregate
 by
-colwise
 combine
 groupby
 groupindices
@@ -37,6 +36,7 @@ copy
 DataFrame
 DataFrame!
 deletecols!
+deletecols
 deleterows!
 describe
 disallowmissing!
@@ -57,6 +57,8 @@ ncol
 rename!
 rename
 repeat
+select
+select!
 show
 sort
 sort!
