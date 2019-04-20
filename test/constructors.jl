@@ -317,17 +317,7 @@ end
     @test df.x1 === x
     @test df.x2 === y
 
-    df = DataFrame((x, y), (:x1, :x2))
-    @test names(df) == [:x1, :x2]
-    @test df.x1 === x
-    @test df.x2 === y
-    df = DataFrame((x, y), (:x1, :x2), copycols=true)
-    @test names(df) == [:x1, :x2]
-    @test df.x1 == x
-    @test df.x2 == y
-    @test df.x1 !== x
-    @test df.x2 !== y
-    df = DataFrame((x, y), (:x1, :x2), copycols=false)
+    df = DataFrame!((x, y), (:x1, :x2))
     @test names(df) == [:x1, :x2]
     @test df.x1 === x
     @test df.x2 === y
@@ -350,7 +340,7 @@ end
     @test_throws DimensionMismatch DataFrame!(A = rand(2,2))
     @test_throws DimensionMismatch DataFrame!(A = rand(2,1))
     @test_throws ArgumentError DataFrame!([1, 2, 3])
-    @test_throws ArgumentError DataFrame!([1 2; 3 4], copycols=false)
+    @test_throws MethodError DataFrame!([1 2; 3 4], copycols=false)
 end
 
 @testset "column types" begin
@@ -363,6 +353,15 @@ end
     df[:E] = 'c'
     push!(answer, Vector{Char})
     @test map(typeof, eachcol(df)) == answer
+end
+
+@testset "Matrix constructor" begin
+    df = DataFrame([1 2; 3 4])
+    @test size(df) == (2, 2)
+    @test df.x1 == [1, 3]
+    @test df.x2 == [2, 4]
+    @test DataFrame!([1 2; 3 4]) == df
+
 end
 
 @testset "constructor with types" begin
@@ -378,6 +377,10 @@ end
     @test all(ismissing, df[3])
 
     df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}], [:x1, :x2], 2)
+    @test size(df) == (2, 2)
+    @test eltypes(df) == [Union{Int, Missing}, Union{Float64, Missing}]
+
+    df = DataFrame!([Union{Int, Missing}, Union{Float64, Missing}], [:x1, :x2], 2)
     @test size(df) == (2, 2)
     @test eltypes(df) == [Union{Int, Missing}, Union{Float64, Missing}]
 

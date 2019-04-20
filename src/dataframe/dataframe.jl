@@ -256,8 +256,8 @@ DataFrame!(columns::AbstractMatrix,
            makeunique::Bool=false) =
     DataFrame(columns, cnames, makeunique=makeunique)
 
-DataFrame!(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-          nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type =
+(DataFrame!(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+           nrows::Integer=0; makeunique::Bool=false)::DataFrame) where T<:Type =
     DataFrame(column_eltypes, cnames, nrows, makeunique=makeunique)
 
 ##############################################################################

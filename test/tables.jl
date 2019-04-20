@@ -155,6 +155,13 @@ end
     @test Tables.columntable(df2) === nt
     @test Tables.columntable(df3) == nt
     @test Tables.columntable(df3) !== nt
+
+    v = [(a=1,b=2), (a=3, b=4)]
+    df = DataFrame(v)
+    @test size(df) == (2, 2)
+    @test df.a == [1, 3]
+    @test df.b == [2, 4]
+    @test DataFrame!(v) == df
 end
 
 end # module
