@@ -222,8 +222,10 @@ end
     DataFrame!(args...; kwargs...)
 
 Equivalent to `DataFrame(args...; copycols=false, kwargs...)`
-except that if `kwargs` contains the `copycols` keyword argument an error
-is thrown.
+or `DataFrame(args...; kwargs...)` if the specific `DataFrame` constructor
+does not accept `copycols` keyword argument.
+
+If `kwargs` contains the `copycols` keyword argument an error is thrown.
 
 ### Examples
 
@@ -248,6 +250,15 @@ function DataFrame!(args...; kwargs...)
     end
     DataFrame(args...; copycols=false, kwargs...)
 end
+
+DataFrame!(columns::AbstractMatrix,
+           cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
+           makeunique::Bool=false) =
+    DataFrame(columns, cnames, makeunique=makeunique)
+
+DataFrame!(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+          nrows::Integer=0; makeunique::Bool=false)::DataFrame where T<:Type =
+    DataFrame(column_eltypes, cnames, nrows, makeunique=makeunique)
 
 ##############################################################################
 ##
