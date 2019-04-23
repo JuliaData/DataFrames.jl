@@ -345,10 +345,6 @@ end
 @testset "vcat with views" begin
     x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
     y = DataFrame(A = 4:5)
-    @test vcat(x, y) == DataFrame(A = [2, 4, 5])
-
-    x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
-    y = DataFrame(A = 4:5)
     @test vcat(x, y) == DataFrame(A = [2, 4, 5]) == reduce(vcat, [x, y])
 end
 
