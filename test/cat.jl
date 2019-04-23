@@ -386,7 +386,7 @@ end
     @test [df1; df2] == df3 == reduce(vcat, [df1, df2])
 end
 
-@testset "vcat with :union" begin
+@testset "vcat with columns=:union" begin
     df1 = DataFrame(A = 1:3, B = 4:6)
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(B = 4:6, A = 1:3)
