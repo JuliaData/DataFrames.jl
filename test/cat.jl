@@ -399,7 +399,7 @@ end
                   B = [4, 5, 6, missing, missing, missing, 4, 5, 6])
 end
 
-@testset "vcat with :intersect" begin
+@testset "vcat with columns=:intersect" begin
     df1 = DataFrame(A = 1:3, B = 4:6)
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(A = 10:12, C = 13:15)
