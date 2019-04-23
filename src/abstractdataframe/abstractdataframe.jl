@@ -1105,7 +1105,6 @@ Base.vcat(dfs::AbstractDataFrame...;
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
                columns::Union{Symbol, AbstractVector{Symbol}}=:equal)
-                      
     isempty(dfs) && return DataFrame()
     # Array of all headers
     allheaders = map(names, dfs)
