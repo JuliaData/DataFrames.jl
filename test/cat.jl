@@ -307,7 +307,6 @@ end
 
 @testset "vcat >2 args" begin
     empty_dfs = [DataFrame(), DataFrame(), DataFrame()]
-    df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
     @test vcat(empty_dfs...) == reduce(vcat, empty_dfs) == DataFrame()
 
     df = DataFrame(x = trues(1), y = falses(1))
@@ -351,7 +350,11 @@ end
 
 @testset "vcat out of order" begin
     df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
+<<<<<<< HEAD
     df2 = DataFrame([2 .* x for x in eachcol(df1)], reverse(names(df1)))
+=======
+    df2 = DataFrame([2x for x in eachcol(df1)], reverse(names(df1)))
+>>>>>>> flexible_vcat
     @test vcat(df1, df2) == DataFrame(A = [1, 2, 3, 14, 16, 18],
                                       B = [4, 5, 6, 8, 10, 12],
                                       C = [7, 8, 9, 2, 4, 6])
@@ -388,7 +391,7 @@ end
     @test [df1; df2] == df3 == reduce(vcat, [df1, df2])
 end
 
-@testset "vcat with :union" begin
+@testset "vcat with columns=:union" begin
     df1 = DataFrame(A = 1:3, B = 4:6)
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(B = 4:6, A = 1:3)
@@ -401,7 +404,7 @@ end
                   B = [4, 5, 6, missing, missing, missing, 4, 5, 6])
 end
 
-@testset "vcat with :intersect" begin
+@testset "vcat with columns=:intersect" begin
     df1 = DataFrame(A = 1:3, B = 4:6)
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(A = 10:12, C = 13:15)
@@ -411,7 +414,7 @@ end
                                                                      10, 11, 12])
 end
 
-@testset "vcat with vector of columns" begin
+@testset "vcat with columns::Vector" begin
     df1 = DataFrame(A = 1:3, B = 4:6)
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(A = 10:12, C = 13:15)
@@ -429,7 +432,11 @@ end
 
 @testset "vcat on empty dataframe in loop" begin
     df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
+<<<<<<< HEAD
     df2 = DataFrame([2 .* x for x in eachcol(df1)], reverse(names(df1)))
+=======
+    df2 =  df2 = DataFrame([2x for x in eachcol(df1)], reverse(names(df1)))
+>>>>>>> flexible_vcat
     d = DataFrame()
     for df in [df1, df2]
         d = vcat(d, df)
