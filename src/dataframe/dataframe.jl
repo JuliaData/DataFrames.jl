@@ -253,7 +253,7 @@ DataFrame!(columns::AbstractMatrix,
            cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
            makeunique::Bool=false) =
     throw(ArgumentError("It is not possible to construct a `DataFrame` from " *
-                        "`$(typeof(x))` without allocating new columns"))
+                        "`$(typeof(columns))` without allocating new columns"))
 
 
 (DataFrame!(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
