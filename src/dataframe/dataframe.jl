@@ -221,9 +221,7 @@ end
 """
     DataFrame!(args...; kwargs...)
 
-Equivalent to `DataFrame(args...; copycols=false, kwargs...)`
-or `DataFrame(args...; kwargs...)` if the specific `DataFrame` constructor
-does not accept `copycols` keyword argument.
+Equivalent to `DataFrame(args...; copycols=false, kwargs...)`.
 
 If `kwargs` contains the `copycols` keyword argument an error is thrown.
 
@@ -254,11 +252,14 @@ end
 DataFrame!(columns::AbstractMatrix,
            cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
            makeunique::Bool=false) =
-    DataFrame(columns, cnames, makeunique=makeunique)
+    throw(ArgumentError("It is not possible to construct a `DataFrame` from " *
+                        "`$(typeof(x))` without allocating new columns"))
+
 
 (DataFrame!(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
            nrows::Integer=0; makeunique::Bool=false)::DataFrame) where T<:Type =
-    DataFrame(column_eltypes, cnames, nrows, makeunique=makeunique)
+    throw(ArgumentError("It is not possible to construct an unitialized `DataFrame`" *
+                        "without allocating new columns"))
 
 ##############################################################################
 ##

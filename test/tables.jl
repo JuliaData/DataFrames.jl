@@ -161,7 +161,7 @@ end
     @test size(df) == (2, 2)
     @test df.a == [1, 3]
     @test df.b == [2, 4]
-    @test DataFrame!(v) == df
+    @test_throws ArgumentError DataFrame!(v)
 end
 
 end # module
