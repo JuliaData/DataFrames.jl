@@ -1,5 +1,34 @@
 import Base: @deprecate
 
+@deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame(Matrix{t}(undef, nrows, ncols))
+
+@deprecate DataFrame(column_eltypes::AbstractVector{<:Type},
+                     nrows::Integer) DataFrame(column_eltypes, Symbol.('x' .* string.(1:length(column_eltypes))), nrows)
+
+function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                   categorical::AbstractVector{Bool}, nrows::Integer;
+                   makeunique::Bool=false)::DataFrame where T<:Type
+    Base.depwarn("`DataFrame` constructor with `categorical` positional argument is deprecated. " *
+                 "Instead use `DataFrame(columns, names)` constructor.",
+                 :DataFrame)
+    updated_types = convert(Vector{Type}, column_eltypes)
+    if length(categorical) != length(column_eltypes)
+        throw(DimensionMismatch("arguments column_eltypes and categorical must have the same length " *
+                                "(got $(length(column_eltypes)) and $(length(categorical)))"))
+    end
+    for i in eachindex(categorical)
+        categorical[i] || continue
+        elty = CategoricalArrays.catvaluetype(Missings.T(updated_types[i]),
+                                              CategoricalArrays.DefaultRefType)
+        if updated_types[i] >: Missing
+            updated_types[i] = Union{elty, Missing}
+        else
+            updated_types[i] = elty
+        end
+    end
+    return DataFrame(updated_types, cnames, nrows, makeunique=makeunique)
+end
+
 @deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
 @deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 
@@ -10,7 +39,7 @@ import Base: @deprecate
 
 import Base: keys, values, insert!
 @deprecate keys(df::AbstractDataFrame) names(df)
-@deprecate values(df::AbstractDataFrame) columns(df)
+@deprecate values(df::AbstractDataFrame) eachcol(df)
 @deprecate insert!(df::DataFrame, df2::AbstractDataFrame) (foreach(col -> df[col] = df2[col], names(df2)); df)
 
 @deprecate pool categorical
@@ -22,8 +51,6 @@ import Base: keys, values, insert!
 @deprecate sub(df::AbstractDataFrame, rows) view(df, rows, :)
 
 ## write.table
-using CodecZlib, TranscodingStreams
-
 export writetable
 """
 Write data to a tabular-file format (CSV, TSV, ...)
@@ -70,6 +97,8 @@ function writetable(filename::AbstractString,
 
     if endswith(filename, ".bz") || endswith(filename, ".bz2")
         throw(ArgumentError("BZip2 compression not yet implemented"))
+    elseif endswith(filename, ".gz")
+        throw(ArgumentError("GZip compression no longer implemented"))
     end
 
     if append && isfile(filename) && filesize(filename) > 0
@@ -91,9 +120,7 @@ function writetable(filename::AbstractString,
         end
     end
 
-    encoder = endswith(filename, ".gz") ? GzipCompressorStream : NoopStream
-
-    open(encoder, filename, append ? "a" : "w") do io
+    open(filename, append ? "a" : "w") do io
         printtable(io,
                    df,
                    header = header,
@@ -1118,8 +1145,7 @@ function readtable(pathname::AbstractString;
         error("URL retrieval not yet implemented")
     # (2) Path is GZip file
     elseif endswith(pathname, ".gz")
-        nbytes = 2 * filesize(pathname)
-        io = open(_r, GzipDecompressorStream, pathname, "r")
+        error("GZip decompression no longer implemented")
     # (3) Path is BZip2 file
     elseif endswith(pathname, ".bz") || endswith(pathname, ".bz2")
         error("BZip2 decompression not yet implemented")
@@ -1325,8 +1351,23 @@ end
 import Base: vcat
 @deprecate vcat(x::Vector{<:AbstractDataFrame}) vcat(x...)
 
-@deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, stats = [:eltype, :nmissing, :first, :last])
-@deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, stats = [:eltype, :nmissing, :first, :last]), all)
+@deprecate showcols(df::AbstractDataFrame, all::Bool=false, values::Bool=true) describe(df, :eltype, :nmissing, :first, :last)
+@deprecate showcols(io::IO, df::AbstractDataFrame, all::Bool=false, values::Bool=true) show(io, describe(df, :eltype, :nmissing, :first, :last), all)
+function StatsBase.describe(df::AbstractDataFrame; stats=nothing)
+    if stats === nothing
+        _describe(df, [:mean, :min, :median,
+                       :max, :nunique, :nmissing,
+                       :eltype])
+    elseif stats === :all
+        Base.depwarn("The `stats` keyword argument has been deprecated. Use describe(df, stats...) instead.", :describe)
+        _describe(df, [:mean, :std, :min, :q25, :median, :q75,
+                       :max, :nunique, :nmissing, :first, :last, :eltype])
+    else
+        Base.depwarn("The `stats` keyword argument has been deprecated. Use describe(df, stats...) instead.", :describe)
+        describe(df, stats...)
+    end
+end
+
 
 import Base: show
 @deprecate show(io::IO, df::AbstractDataFrame, allcols::Bool, rowlabel::Symbol, summary::Bool) show(io, df, allcols=allcols, rowlabel=rowlabel, summary=summary)
@@ -1376,3 +1417,8 @@ import Base: convert
 
 @deprecate SubDataFrame(df::AbstractDataFrame, rows::AbstractVector{<:Integer}) SubDataFrame(df, rows, :)
 @deprecate SubDataFrame(df::AbstractDataFrame, ::Colon) SubDataFrame(df, :, :)
+
+@deprecate colwise(f, d::AbstractDataFrame) [f(col) for col in eachcol(d)]
+@deprecate colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) [f(col) for f in fns, col in eachcol(d)]
+@deprecate colwise(f, gd::GroupedDataFrame) [[f(col) for col in eachcol(d)] for d in gd]
+@deprecate colwise(fns::Union{AbstractVector, Tuple}, gd::GroupedDataFrame) [[f(col) for f in fns, col in eachcol(d)] for d in gd]

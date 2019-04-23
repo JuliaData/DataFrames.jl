@@ -1,7 +1,6 @@
 module TestDataFrameRow
 
 using Test, DataFrames, Random
-using DataFrames: columns
 
 ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
                    b=[2.0, missing, 1.2, 2.0, missing, missing],
@@ -34,10 +33,7 @@ ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
     @test_throws BoundsError DataFrameRow(df, 100)
     @test_throws MethodError DataFrameRow(df, true, 1:2)
     @test_throws MethodError DataFrameRow(df, true)
-    if VERSION ≥ v"1.0.0"
-        # this test throws a warning on Julia 0.7
-        @test_throws ArgumentError DataFrameRow(sdf, true, 1:2)
-    end
+    @test_throws ArgumentError DataFrameRow(sdf, true, 1:2)
 end
 
 @testset "getindex and setindex!" begin
@@ -136,7 +132,7 @@ end
     @test hash(DataFrameRow(df, 2, :)) != hash(DataFrameRow(df, 6, :))
 
     # check that hashrows() function generates the same hashes as DataFrameRow
-    df_rowhashes, _ = DataFrames.hashrows(Tuple(columns(df)), false)
+    df_rowhashes, _ = DataFrames.hashrows(Tuple(eachcol(df)), false)
     @test df_rowhashes == [hash(dr) for dr in eachrow(df)]
 end
 
@@ -283,27 +279,46 @@ end
 end
 
 @testset "conversion and push!" begin
-        df = DataFrame(x=1, y=2)
+    df = DataFrame(x=1, y=2)
 
-        @test df == DataFrame(df[1, :])
-        @test df[1:1, [2,1]] == DataFrame(df[1, [2,1]])
-        @test df[1:1, 1:1] == DataFrame(df[1, 1:1])
-        @test_throws ArgumentError DataFrame(df[1, [1,1]])
+    @test df == DataFrame(df[1, :])
+    @test df[1:1, [2,1]] == DataFrame(df[1, [2,1]])
+    @test df[1:1, 1:1] == DataFrame(df[1, 1:1])
+    @test_throws ArgumentError DataFrame(df[1, [1,1]])
 
-        @test_throws ArgumentError push!(df, df[1, 1:1])
-        @test df == DataFrame(x=1, y=2)
+    @test_throws ArgumentError push!(df, df[1, 1:1])
+    @test df == DataFrame(x=1, y=2)
 
-        @test_throws ArgumentError push!(df, df[1, [2,2]])
-        @test df == DataFrame(x=1, y=2)
+    @test_throws ArgumentError push!(df, df[1, [2,2]])
+    @test df == DataFrame(x=1, y=2)
 
-        @test_throws ArgumentError push!(df, df[1, [2,1,2]])
-        @test df == DataFrame(x=1, y=2)
+    @test_throws ArgumentError push!(df, df[1, [2,1,2]])
+    @test df == DataFrame(x=1, y=2)
 
-        @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
-        @test push!(df, df[1, [2,1]]) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
+    @test push!(df, df[1, :]) == DataFrame(x=[1, 1], y=[2, 2])
+    @test push!(df, df[1, [2,1]]) == DataFrame(x=[1, 1, 1], y=[2, 2, 2])
+
+    push!(df, df[1, [2,1,2]], columns=:intersect)
+    @test df == DataFrame(x=[1, 1, 1, 1], y=[2, 2, 2, 2])
+
+    df2 = DataFrame()
+    @test push!(df2, df[1, :]) === df2
+    @test df2 == df[1:1, :]
 end
 
 @testset "show" begin
+    function capture_stdout(f::Function)
+        oldstdout = stdout
+        rd, wr = redirect_stdout()
+        f()
+        redirect_stdout(oldstdout)
+        size = displaysize(rd)
+        close(wr)
+        str = read(rd, String)
+        close(rd)
+        str, size
+    end
+
     df = DataFrame(a=nothing, b=1)
 
     @test sprint(show, DataFrameRow(df, 1, :)) == """
@@ -323,6 +338,15 @@ end
         │     │ String │ Int64 │
         ├─────┼────────┼───────┤
         │ 2   │ b      │ 0     │"""
+
+    # Test two-argument show
+    str1, size = capture_stdout() do
+        show(dfr)
+    end
+    io = IOContext(IOBuffer(), :limit=>true, :displaysize=>size)
+    show(io, dfr)
+    str2 = String(take!(io.io))
+    @test str1 == str2
 
     @test sprint(show, "text/html", dfr) == "<p>DataFrameRow</p><table class=\"data-frame\">" *
                                "<thead><tr><th></th><th>b</th><th>c</th></tr>" *

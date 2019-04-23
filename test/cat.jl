@@ -1,7 +1,6 @@
 module TestCat
 
 using Test, Random, DataFrames
-using DataFrames: columns
 const ≅ = isequal
 
 #
@@ -34,6 +33,41 @@ const ≅ = isequal
     @test dfh3 ≅ DataFrames.hcat!(DataFrame(), df3, df4, df5, makeunique=true)
 
     @test df2 ≅ DataFrames.hcat!(df2, makeunique=true)
+end
+
+@testset "hcat: copying" begin
+    df = DataFrame(x=1:3)
+    @test hcat(df)[1] == df[1]
+    @test hcat(df)[1] !== df[1]
+    hdf = hcat(df, df, makeunique=true)
+    @test hdf[1] == df[1]
+    @test hdf[1] !== df[1]
+    @test hdf[2] == df[1]
+    @test hdf[2] !== df[1]
+    @test hdf[1] == hdf[2]
+    @test hdf[1] !== hdf[2]
+    hdf = hcat(df, df, df, makeunique=true)
+    @test hdf[1] == df[1]
+    @test hdf[1] !== df[1]
+    @test hdf[2] == df[1]
+    @test hdf[2] !== df[1]
+    @test hdf[3] == df[1]
+    @test hdf[3] !== df[1]
+    @test hdf[1] == hdf[2]
+    @test hdf[1] !== hdf[2]
+    @test hdf[1] == hdf[3]
+    @test hdf[1] !== hdf[3]
+    @test hdf[2] == hdf[3]
+    @test hdf[2] !== hdf[3]
+    x = [4, 5, 6]
+    hdf = hcat(df, x)
+    @test hdf[1] == df[1]
+    @test hdf[1] !== df[1]
+    @test hdf[2] !== x
+    hdf = hcat(x, df)
+    @test hdf[2] == df[1]
+    @test hdf[2] !== df[1]
+    @test hdf[1] !== x
 end
 
 @testset "hcat ::AbstractDataFrame" begin
@@ -77,13 +111,120 @@ end
     @test_throws ArgumentError hcat("a", df, makeunique=true)
     @test_throws ArgumentError hcat(df, "a", makeunique=true)
 end
+
+@testset "hcat: copycols" begin
+    df1 = DataFrame(a=1:3)
+    df2 = DataFrame(b=1:3)
+    dfv = view(df2, :, :)
+    x = [1,2,3]
+
+    df3 = hcat(df1)
+    @test df3 == df1
+    @test df3.a !== df1.a
+    df3 = hcat(df1, copycols=true)
+    @test df3 == df1
+    @test df3.a !== df1.a
+    df3 = hcat(df1, copycols=false)
+    @test df3 == df1
+    @test df3.a === df1.a
+
+    df3 = hcat(df1, df2)
+    @test names(df3) == [:a, :b]
+    @test df3.a == df1.a
+    @test df3.b == df2.b
+    @test df3.a !== df1.a
+    @test df3.b !== df2.b
+    df3 = hcat(df1, df2, copycols=true)
+    @test names(df3) == [:a, :b]
+    @test df3.a == df1.a
+    @test df3.b == df2.b
+    @test df3.a !== df1.a
+    @test df3.b !== df2.b
+    df3 = hcat(df1, df2, copycols=false)
+    @test names(df3) == [:a, :b]
+    @test df3.a === df1.a
+    @test df3.b === df2.b
+
+    df3 = hcat(df1, dfv)
+    @test names(df3) == [:a, :b]
+    @test df3.a == df1.a
+    @test df3.b == df2.b
+    @test df3.a !== df1.a
+    @test df3.b !== df2.b
+    df3 = hcat(df1, dfv, copycols=true)
+    @test names(df3) == [:a, :b]
+    @test df3.a == df1.a
+    @test df3.b == df2.b
+    @test df3.a !== df1.a
+    @test df3.b !== df2.b
+    df3 = hcat(df1, dfv, copycols=false)
+    @test names(df3) == [:a, :b]
+    @test df3.a === df1.a
+    @test df3.b === dfv.b
+
+    df3 = hcat(df1, x)
+    @test names(df3) == [:a, :x1]
+    @test df3.a == df1.a
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.x1 !== x
+    df3 = hcat(df1, x, copycols=true)
+    @test names(df3) == [:a, :x1]
+    @test df3.a == df1.a
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.x1 !== x
+    df3 = hcat(df1, x, copycols=false)
+    @test names(df3) == [:a, :x1]
+    @test df3.a === df1.a
+    @test df3.x1 === x
+
+    df3 = hcat(x, df1)
+    @test names(df3) == [:x1, :a]
+    @test df3.a == df1.a
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.x1 !== x
+    df3 = hcat(x, df1, copycols=true)
+    @test names(df3) == [:x1, :a]
+    @test df3.a == df1.a
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.x1 !== x
+    df3 = hcat(x, df1, copycols=false)
+    @test names(df3) == [:x1, :a]
+    @test df3.a === df1.a
+    @test df3.x1 === x
+
+    df3 = hcat(dfv, x, df1)
+    @test names(df3) == [:b, :x1, :a]
+    @test df3.a == df1.a
+    @test df3.b == dfv.b
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.b !== dfv.b
+    @test df3.x1 !== x
+    df3 = hcat(dfv, x, df1, copycols=true)
+    @test names(df3) == [:b, :x1, :a]
+    @test df3.a == df1.a
+    @test df3.b == dfv.b
+    @test df3.x1 == x
+    @test df3.a !== df1.a
+    @test df3.b !== dfv.b
+    @test df3.x1 !== x
+    df3 = hcat(dfv, x, df1, copycols=false)
+    @test names(df3) == [:b, :x1, :a]
+    @test df3.a === df1.a
+    @test df3.b === dfv.b
+    @test df3.x1 === x
+end
 #
 # vcat
 #
 
 @testset "vcat" begin
-    missing_df = DataFrame(Int, 0, 0)
-    df = DataFrame(Int, 4, 3)
+    missing_df = DataFrame()
+    df = DataFrame(Matrix{Int}(undef, 4, 3))
 
     # Assignment of rows
     # TODO: re-enable when we fix setindex! to handle DataFrameRow on RHS
@@ -155,22 +296,31 @@ end
                                          [2,2,2,3,2,2,2,3]])
 end
 
+@testset "vcat copy" begin
+    df = DataFrame(x=1:3)
+    @test vcat(df)[1] == df[1]
+    @test vcat(df)[1] !== df[1]
+end
+
 @testset "vcat >2 args" begin
-    @test vcat(DataFrame(), DataFrame(), DataFrame()) == DataFrame()
+    empty_dfs = [DataFrame(), DataFrame(), DataFrame()]
+    @test vcat(empty_dfs...) == reduce(vcat, empty_dfs) == DataFrame()
+
     df = DataFrame(x = trues(1), y = falses(1))
-    @test vcat(df, df, df) == DataFrame(x = trues(3), y = falses(3))
+    dfs = [df, df, df]
+    @test vcat(dfs...) ==reduce(vcat, dfs) == DataFrame(x = trues(3), y = falses(3))
 end
 
 @testset "vcat mixed coltypes" begin
     df = vcat(DataFrame([[1]], [:x]), DataFrame([[1.0]], [:x]))
     @test df == DataFrame([[1.0, 1.0]], [:x])
-    @test typeof.(columns(df)) == [Vector{Float64}]
+    @test typeof.(eachcol(df)) == [Vector{Float64}]
     df = vcat(DataFrame([[1]], [:x]), DataFrame([["1"]], [:x]))
     @test df == DataFrame([[1, "1"]], [:x])
-    @test typeof.(columns(df)) == [Vector{Any}]
+    @test typeof.(eachcol(df)) == [Vector{Any}]
     df = vcat(DataFrame([Union{Missing, Int}[1]], [:x]), DataFrame([[1]], [:x]))
     @test df == DataFrame([[1, 1]], [:x])
-    @test typeof.(columns(df)) == [Vector{Union{Missing, Int}}]
+    @test typeof.(eachcol(df)) == [Vector{Union{Missing, Int}}]
     df = vcat(DataFrame([CategoricalArray([1])], [:x]), DataFrame([[1]], [:x]))
     @test df == DataFrame([[1, 1]], [:x])
     @test df[:x] isa Vector{Int}
@@ -185,19 +335,19 @@ end
     df = vcat(DataFrame([Union{Int, Missing}[1]], [:x]),
               DataFrame([["1"]], [:x]))
     @test df == DataFrame([[1, "1"]], [:x])
-    @test typeof.(columns(df)) == [Vector{Any}]
+    @test typeof.(eachcol(df)) == [Vector{Any}]
     df = vcat(DataFrame([CategoricalArray([1])], [:x]),
               DataFrame([CategoricalArray(["1"])], [:x]))
     @test df == DataFrame([[1, "1"]], [:x])
     @test df[:x] isa CategoricalVector{Any}
     df = vcat(DataFrame([trues(1)], [:x]), DataFrame([[false]], [:x]))
     @test df == DataFrame([[true, false]], [:x])
-    @test typeof.(columns(df)) == [Vector{Bool}]
+    @test typeof.(eachcol(df)) == [Vector{Bool}]
 end
 
 @testset "vcat out of order" begin
     df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
-    df2 = DataFrame(colwise(x->2x, df1), reverse(names(df1)))
+    df2 = DataFrame([2x for x in eachcol(df1)], reverse(names(df1)))
     @test vcat(df1, df2) == DataFrame([[1, 2, 3, 14, 16, 18],
                                        [4, 5, 6, 8, 10, 12],
                                        [7, 8, 9, 2, 4, 6]], [:A, :B, :C])
@@ -210,9 +360,12 @@ end
     @test vcat(df2, df1, df2) == DataFrame([[2, 4, 6, 7, 8, 9, 2, 4, 6],
                                             [8, 10, 12, 4, 5, 6, 8, 10, 12],
                                             [14, 16, 18, 1, 2, 3, 14, 16, 18]] ,[:C, :B, :A])
+
     @test size(vcat(df1, df1, df1, df2, df2, df2)) == (18, 3)
     df3 = df1[[1, 3, 2]]
     res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
+    @test res == reduce(vcat, [df1, df1, df1, df2, df2, df2, df3, df3, df3, df3])
+
     @test size(res) == (30, 3)
     @test res[1:3,:] == df1
     @test res[4:6,:] == df1
@@ -226,7 +379,7 @@ end
     df1 = DataFrame(A = 1, B = 2)
     df2 = DataFrame(B = 12, A = 11)
     df3 = DataFrame(A = [1, 11], B = [2, 12])
-    @test [df1; df2] == df3
+    @test [df1; df2] == df3 == reduce(vcat, [df1, df2])
 end
 
 @testset "vcat errors" begin
@@ -244,6 +397,8 @@ end
     @test err.value.msg == "column(s) B are missing from argument(s) 1"
     # multiple missing 1 column
     err = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2, df2)
+    err2 = @test_throws ArgumentError reduce(vcat, [df1, df2, df2, df2, df2, df2])
+    @test err == err2
     @test err.value.msg == "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
     # argument missing >1 columns
     df1 = DataFrame(A = 1:3, B = 1:3, C = 1:3, D = 1:3, E = 1:3)
@@ -285,6 +440,6 @@ end
 end
 x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
 y = DataFrame(A = 4:5)
-@test vcat(x, y) == DataFrame(A = [2, 4, 5])
+@test vcat(x, y) == DataFrame(A = [2, 4, 5]) == reduce(vcat, [x, y])
 
 end # module

@@ -30,7 +30,6 @@ end
     @test df.a==[1,2,3]
     @test df.b==[4.,5.,6.]
     @test df.c==["A", "B", "C"]
-
 end
 
 end # module

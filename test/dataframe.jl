@@ -2,7 +2,6 @@ module TestDataFrame
 
 using Dates, DataFrames, LinearAlgebra, Statistics, Random, Test
 using DataFrames: _columns
-using DataFrames: columns
 const ≅ = isequal
 const ≇ = !isequal
 
@@ -31,7 +30,7 @@ end
     @test names(dfc) == [:a, :b]
     @test names(dfdc) == [:a, :b]
 
-    @test dfc[1, :a] === 4
+    @test dfc[1, :a] === 2
     @test dfdc[1, :a] === 2
 
     @test names(dfc[1, :b]) == [:c, :e]
@@ -62,7 +61,7 @@ end
                         c = CategoricalArray{Union{Float64, Missing}}(undef, 2))
     # https://github.com/JuliaData/Missings.jl/issues/66
     # @test missingdf ≅ similar(df, 2)
-    @test typeof.(columns(similar(df, 2))) == typeof.(columns(missingdf))
+    @test typeof.(eachcol(similar(df, 2))) == typeof.(eachcol(missingdf))
     @test size(similar(df, 2)) == size(missingdf)
 end
 
@@ -73,15 +72,15 @@ end
     @test haskey(df, 1)
     @test_throws MethodError haskey(df, 1.5)
     @test_throws ArgumentError haskey(df, true)
-    @test get(df, :a, -1) === columns(df)[1]
+    @test get(df, :a, -1) === eachcol(df)[1]
     @test get(df, :c, -1) == -1
     @test !isempty(df)
 
     dfv = view(df, 1:2, 1:2)
-    @test get(df, :a, -1) === columns(df)[1]
+    @test get(df, :a, -1) === eachcol(df)[1]
 
     @test empty!(df) === df
-    @test isempty(columns(df))
+    @test isempty(eachcol(df))
     @test isempty(df)
     @test isempty(DataFrame(a=[], b=[]))
 
@@ -126,72 +125,6 @@ end
 end
 
 @testset "DataFrame constructors" begin
-    df = DataFrame(Union{Int, Missing}, 10, 3)
-    @test size(df, 1) == 10
-    @test size(df, 2) == 3
-    @test typeof(df[1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[2]) == Vector{Union{Int, Missing}}
-    @test typeof(df[3]) == Vector{Union{Int, Missing}}
-    @test all(ismissing, df[1])
-    @test all(ismissing, df[2])
-    @test all(ismissing, df[3])
-    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[:, 2]) == Vector{Union{Int, Missing}}
-    @test typeof(df[:, 3]) == Vector{Union{Int, Missing}}
-    @test all(ismissing, df[:, 1])
-    @test all(ismissing, df[:, 2])
-    @test all(ismissing, df[:, 3])
-
-    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}], 100)
-    @test size(df, 1) == 100
-    @test size(df, 2) == 3
-    @test typeof(df[1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[3]) == Vector{Union{String, Missing}}
-    @test all(ismissing, df[1])
-    @test all(ismissing, df[2])
-    @test all(ismissing, df[3])
-    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
-    @test all(ismissing, df[:, 1])
-    @test all(ismissing, df[:, 2])
-    @test all(ismissing, df[:, 3])
-
-    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
-                [:A, :B, :C], 100)
-    @test size(df, 1) == 100
-    @test size(df, 2) == 3
-    @test typeof(df[1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[3]) == Vector{Union{String, Missing}}
-    @test all(ismissing, df[1])
-    @test all(ismissing, df[2])
-    @test all(ismissing, df[3])
-    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[:, 3]) == Vector{Union{String, Missing}}
-    @test all(ismissing, df[:, 1])
-    @test all(ismissing, df[:, 2])
-    @test all(ismissing, df[:, 3])
-
-    df = DataFrame([Union{Int, Missing}, Union{Float64, Missing}, Union{String, Missing}],
-                [:A, :B, :C], [false, false, true], 100)
-    @test size(df, 1) == 100
-    @test size(df, 2) == 3
-    @test typeof(df[1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[3]) <: CategoricalVector{Union{String, Missing}}
-    @test all(ismissing, df[1])
-    @test all(ismissing, df[2])
-    @test all(ismissing, df[3])
-    @test typeof(df[:, 1]) == Vector{Union{Int, Missing}}
-    @test typeof(df[:, 2]) == Vector{Union{Float64, Missing}}
-    @test typeof(df[:, 3]) <: CategoricalVector{Union{String, Missing}}
-    @test all(ismissing, df[:, 1])
-    @test all(ismissing, df[:, 2])
-    @test all(ismissing, df[:, 3])
-
     df = convert(DataFrame, zeros(10, 5))
     @test size(df, 1) == 10
     @test size(df, 2) == 5
@@ -319,6 +252,10 @@ end
     df = DataFrame(x=1, y=2)
     @test_throws ArgumentError push!(df, Dict(:x=>1, "y"=>2))
     @test df == DataFrame(x=1, y=2)
+
+    df = DataFrame()
+    @test push!(df, (a=1, b=true)) === df
+    @test df == DataFrame(a=1, b=true)
 end
 
 @testset "deletecols!" begin
@@ -327,6 +264,7 @@ end
     @test_throws ArgumentError deletecols!(df, 6)
     @test_throws ArgumentError deletecols!(df, [1, 1])
     @test_throws ArgumentError deletecols!(df, :f)
+    @test_throws BoundsError deletecols!(df, [true, false])
 
     d = copy(df)
     deletecols!(d, [:a, :e, :c])
@@ -343,6 +281,218 @@ end
     d = copy(df)
     deletecols!(d, 2:3)
     @test d == DataFrame(a=1, d=4, e=5)
+
+    d = copy(df)
+    deletecols!(d, 2:3)
+    @test d == DataFrame(a=1, d=4, e=5)
+
+    d = copy(df)
+    deletecols!(d, 2:3)
+    @test d == DataFrame(a=1, d=4, e=5)
+
+    d = copy(df)
+    deletecols!(d, [false, true, true, false, false])
+    @test d == DataFrame(a=1, d=4, e=5)
+end
+
+@testset "deletecols" begin
+    df = DataFrame(a=1, b=2, c=3, d=4, e=5)
+    @test_throws ArgumentError deletecols(df, 0)
+    @test_throws ArgumentError deletecols(df, 6)
+    @test_throws ArgumentError deletecols(df, [1, 1])
+    @test_throws ArgumentError deletecols(df, :f)
+    @test_throws BoundsError deletecols(df, [true, false])
+
+    df2 = copy(df)
+    d = deletecols(df, [:a, :e, :c])
+    @test names(d) == [:b, :d]
+    @test d == df[[:b, :d]]
+    @test d.b !== df.b
+    @test d.d !== df.d
+    @test df == df2
+
+    d = deletecols(df, [2, 5, 3])
+    @test names(d) == [:a, :d]
+    @test d.a !== df.a
+    @test d.d !== df.d
+    @test d == df[[:a, :d]]
+    @test df == df2
+
+    d = deletecols(df, 2:3)
+    @test d == DataFrame(a=1, d=4, e=5)
+    @test d.a !== df.a
+    @test d.d !== df.d
+    @test d.e !== df.e
+    @test df == df2
+
+    d = deletecols(df, [false, true, true, false, false])
+    @test d == DataFrame(a=1, d=4, e=5)
+    @test d.a !== df.a
+    @test d.d !== df.d
+    @test d.e !== df.e
+    @test df == df2
+
+    d = deletecols(df, 1)
+    @test d == DataFrame(b=2,c=3,d=4,e=5)
+    @test d.b !== df.b
+    @test d.b == df.b
+    @test df == df2
+
+    d = deletecols(df, [:a, :e, :c], copycols=false)
+    @test names(d) == [:b, :d]
+    @test d == df[[:b, :d]]
+    @test d.b === df.b
+    @test d.d === df.d
+    @test df == df2
+
+    d = deletecols(df, [2, 5, 3], copycols=false)
+    @test names(d) == [:a, :d]
+    @test d.a === df.a
+    @test d.d === df.d
+    @test d == df[[:a, :d]]
+    @test df == df2
+
+    d = deletecols(df, 2:3, copycols=false)
+    @test d == DataFrame(a=1, d=4, e=5)
+    @test d.a === df.a
+    @test d.d === df.d
+    @test d.e === df.e
+    @test df == df2
+
+    d = deletecols(df, [false, true, true, false, false], copycols=false)
+    @test d == DataFrame(a=1, d=4, e=5)
+    @test d.a === df.a
+    @test d.d === df.d
+    @test d.e === df.e
+    @test df == df2
+
+    d = deletecols(df, 1, copycols=false)
+    @test d == DataFrame(b=2,c=3,d=4,e=5)
+    @test d.b === df.b
+    @test df == df2
+end
+
+@testset "select!" begin
+    df = DataFrame(a=1, b=2, c=3, d=4, e=5)
+    @test_throws ArgumentError select!(df, 0)
+    @test_throws ArgumentError select!(df, 6)
+    @test_throws ArgumentError select!(df, [1, 1])
+    @test_throws ArgumentError select!(df, :f)
+    @test_throws BoundsError select!(df, [true, false])
+
+    d = copy(df, copycols=false)
+    select!(d, [:a, :e, :c])
+    @test names(d) == [:a, :e, :c]
+    @test d.a === df.a
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = copy(df, copycols=false)
+    select!(d, [true, false, true, false, true])
+    @test names(d) == [:a, :c, :e]
+    @test d.a === df.a
+    @test d.c === df.c
+    @test d.e === df.e
+
+    d = copy(df, copycols=false)
+    select!(d, [:d, :e, :a, :c, :b])
+    @test names(d) == [:d, :e, :a, :c, :b]
+    for i in [:d, :e, :a, :c, :b]
+        @test d[i] === df[i]
+    end
+
+    d = copy(df, copycols=false)
+    select!(d, [2, 5, 3])
+    @test names(d) == [:b, :e, :c]
+    @test d.b === df.b
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = copy(df, copycols=false)
+    select!(d, 2:3)
+    @test names(d) == [:b, :c]
+    @test d.b === df.b
+    @test d.c === df.c
+
+    d = copy(df, copycols=false)
+    select!(d, 2)
+    @test names(d) == [:b]
+    @test d.b === df.b
+end
+
+@testset "select" begin
+    df = DataFrame(a=1, b=2, c=3, d=4, e=5)
+    @test_throws BoundsError select(df, 0)
+    @test_throws BoundsError select(df, 6)
+    @test_throws ArgumentError select(df, [1, 1])
+    @test_throws ArgumentError select(df, :f)
+    @test_throws BoundsError select!(df, [true, false])
+
+    d = select(df, [:a, :e, :c])
+    @test names(d) == [:a, :e, :c]
+    @test d.a !== df.a
+    @test d.e !== df.e
+    @test d.c !== df.c
+    @test d.a == df.a
+    @test d.e == df.e
+    @test d.c == df.c
+
+    d = select(df, [true, false, true, false, true])
+    @test names(d) == [:a, :c, :e]
+    @test d.a !== df.a
+    @test d.c !== df.c
+    @test d.e !== df.e
+    @test d.a == df.a
+    @test d.c == df.c
+    @test d.e == df.e
+
+    d = select(df, [2, 5, 3])
+    @test names(d) == [:b, :e, :c]
+    @test d.b !== df.b
+    @test d.e !== df.e
+    @test d.c !== df.c
+    @test d.b == df.b
+    @test d.e == df.e
+    @test d.c == df.c
+
+    d = select(df, 2:3)
+    @test names(d) == [:b, :c]
+    @test d.b !== df.b
+    @test d.c !== df.c
+    @test d.b == df.b
+    @test d.c == df.c
+
+    d = select(df, 2)
+    @test names(d) == [:b]
+    @test d.b !== df.b
+    @test d.b == df.b
+
+    d = select(df, [:a, :e, :c], copycols=false)
+    @test names(d) == [:a, :e, :c]
+    @test d.a === df.a
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = select(df, [true, false, true, false, true], copycols=false)
+    @test names(d) == [:a, :c, :e]
+    @test d.a === df.a
+    @test d.c === df.c
+    @test d.e === df.e
+
+    d = select(df, [2, 5, 3], copycols=false)
+    @test names(d) == [:b, :e, :c]
+    @test d.b === df.b
+    @test d.e === df.e
+    @test d.c === df.c
+
+    d = select(df, 2:3, copycols=false)
+    @test names(d) == [:b, :c]
+    @test d.b === df.b
+    @test d.c === df.c
+
+    d = select(df, 2, copycols=false)
+    @test names(d) == [:b]
+    @test d.b === df.b
 end
 
 @testset "deleterows!" begin
@@ -397,20 +547,40 @@ end
     x = [1, 2, 3]
     df = DataFrame(x=x)
     @test deleterows!(df, 1) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
+    @test x == [1, 2, 3]
 
     x = [1, 2, 3]
     df = DataFrame(x=x)
     @test deleterows!(df, [1]) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
+    @test x == [1, 2, 3]
 
     x = [1, 2, 3]
     df = DataFrame(x=x)
     @test deleterows!(df, 1:1) == DataFrame(x=[2, 3])
-    @test x == [2, 3]
+    @test x == [1, 2, 3]
 
     x = [1, 2, 3]
     df = DataFrame(x=x)
+    @test deleterows!(df, [true, false, false]) == DataFrame(x=[2, 3])
+    @test x == [1, 2, 3]
+
+    x = [1, 2, 3]
+    df = DataFrame(x=x, copycols=false)
+    @test deleterows!(df, 1) == DataFrame(x=[2, 3])
+    @test x == [2, 3]
+
+    x = [1, 2, 3]
+    df = DataFrame(x=x, copycols=false)
+    @test deleterows!(df, [1]) == DataFrame(x=[2, 3])
+    @test x == [2, 3]
+
+    x = [1, 2, 3]
+    df = DataFrame(x=x, copycols=false)
+    @test deleterows!(df, 1:1) == DataFrame(x=[2, 3])
+    @test x == [2, 3]
+
+    x = [1, 2, 3]
+    df = DataFrame(x=x, copycols=false)
     @test deleterows!(df, [true, false, false]) == DataFrame(x=[2, 3])
     @test x == [2, 3]
 end
@@ -427,44 +597,42 @@ end
     describe_output = DataFrame(variable = [:number, :number_missing, :string,
                                             :string_missing, :dates, :catarray],
                                 mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                std = [std(df[:number]), 1.0, nothing,
+                                       nothing, nothing, nothing],
                                 min = [1.0, 1.0, "a", "a", Date(2000), 1],
+                                q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
                                 median = [2.5, 2.0, nothing, nothing, nothing, nothing],
+                                q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
                                 max = [4.0, 3.0, "d", "c", Date(2004), 2],
                                 nunique = [nothing, nothing, 4, 3, 4, 2],
                                 nmissing = [nothing, 1, nothing, 1, nothing, nothing],
-                                eltype = [Int, Int, String, String, Date, eltype(df[:catarray])])
-    describe_output_all_stats = DataFrame(variable = [:number, :number_missing,
-                                                      :string, :string_missing,
-                                                      :dates, :catarray],
-                                          mean = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                          std = [std(df[:number]), 1.0, nothing,
-                                                 nothing, nothing, nothing],
-                                          min = [1.0, 1.0, "a", "a", Date(2000), 1],
-                                          q25 = [1.75, 1.5, nothing, nothing, nothing, nothing],
-                                          median = [2.5, 2.0, nothing, nothing, nothing, nothing],
-                                          q75 = [3.25, 2.5, nothing, nothing, nothing, nothing],
-                                          max = [4.0, 3.0, "d", "c", Date(2004), 2],
-                                          nunique = [nothing, nothing, 4, 3, 4, 2],
-                                          nmissing = [nothing, 1, nothing, 1, nothing, nothing],
-                                          first = [1, 1, "a", "a", Date(2000), 1],
-                                          last = [4, missing, "d", missing, Date(2004), 2],
-                                          eltype = [Int, Int, String, String, Date,
-                                                    eltype(df[:catarray])])
+                                first = [1, 1, "a", "a", Date(2000), 1],
+                                last = [4, missing, "d", missing, Date(2004), 2],
+                                eltype = [Int, Int, String, String, Date,
+                                          eltype(df[:catarray])])
 
+    default_fields = [:mean, :min, :median, :max, :nunique, :nmissing, :eltype]
 
     # Test that it works as a whole, without keyword arguments
-    @test describe_output == describe(df)
+    @test describe_output[[:variable; default_fields]] == describe(df)
 
     # Test that it works with one stats argument
-    @test describe_output[[:variable, :mean]] == describe(df, stats = [:mean])
+    @test describe_output[[:variable, :mean]] == describe(df, :mean)
 
     # Test that it works with all keyword arguments
-    @test describe_output_all_stats ≅ describe(df, stats = :all)
+    @test describe_output ≅ describe(df, :all)
+
+    # Test that it works on a custom function
+    describe_output.test_std = describe_output.std
+    # Test that describe works with a Pair and a symbol
+    @test describe_output[[:variable, :mean, :test_std]] ≅ describe(df, :mean, :test_std => std)
 
     # Test that describe works with a dataframe with no observations
     df = DataFrame(a = Int[], b = String[], c = [])
-    @test describe(df, stats = :mean) ≅ DataFrame(variable = [:a, :b, :c],
-                                                  mean = [NaN, nothing, nothing])
+    @test describe(df, :mean) ≅ DataFrame(variable = [:a, :b, :c],
+                                          mean = [NaN, nothing, nothing])
+
+    @test_throws ArgumentError describe(df, :mean, :all)
 end
 
 #Check the output of unstack
@@ -546,21 +714,35 @@ df = DataFrame(A = 1:10, B = 'A':'J')
 @test !(df[:] === df)
 @test !(df[:,:] === df)
 
-df = DataFrame(A = 1:2, B = 1:2)
-df2 = DataFrame(A=1:4, B = 1:4)
-@test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
-@test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
-@test df == df2
-@test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
-@test df == df2
+
+@testset "append!" begin
+    df = DataFrame(A = 1:2, B = 1:2)
+    df2 = DataFrame(A = 1:4, B = 1:4)
+    @test append!(df, DataFrame(A = 3:4, B = [3.0, 4.0])) == df2
+    @test_throws InexactError append!(df, DataFrame(A = 3:4, B = [3.5, 4.5]))
+    @test df == df2
+    @test_throws MethodError append!(df, DataFrame(A = 3:4, B = ["a", "b"]))
+    @test df == df2
+
+    dfx = DataFrame()
+    df3 = append!(dfx, df)
+    @test dfx === df3
+    @test df3 == df
+    @test df3[1] !== df[1]
+    @test df3[2] !== df[2]
+
+    df4 = append!(df3, DataFrame())
+    @test df4 === df3
+    @test df4 == df
+end
 
 df = DataFrame(A = Vector{Union{Int, Missing}}(1:3), B = Vector{Union{Int, Missing}}(4:6))
 DRT = CategoricalArrays.DefaultRefType
-@test all(c -> isa(c, Vector{Union{Int, Missing}}), columns(categorical!(deepcopy(df))))
+@test all(c -> isa(c, Vector{Union{Int, Missing}}), eachcol(categorical!(deepcopy(df))))
 @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-          columns(categorical!(deepcopy(df), [1,2])))
+          eachcol(categorical!(deepcopy(df), [1,2])))
 @test all(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
-          columns(categorical!(deepcopy(df), [:A,:B])))
+          eachcol(categorical!(deepcopy(df), [:A,:B])))
 @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
                 _columns(categorical!(deepcopy(df), [:A]))) == 1
 @test findfirst(c -> typeof(c) <: CategoricalVector{Union{Int, Missing}},
@@ -572,16 +754,26 @@ DRT = CategoricalArrays.DefaultRefType
 
 @testset "categorical!" begin
     df = DataFrame([["a", "b"], ['a', 'b'], [true, false], 1:2, ["x", "y"]])
-    @test all(map(<:, eltypes(categorical!(df)),
-                  [CategoricalArrays.CategoricalString,
+    @test all(map(<:, eltypes(categorical!(deepcopy(df))),
+                  [CategoricalArrays.CategoricalString{UInt32},
                    Char, Bool, Int,
-                   CategoricalArrays.CategoricalString]))
+                   CategoricalArrays.CategoricalString{UInt32}]))
+    @test all(map(<:, eltypes(categorical!(deepcopy(df), compress=true)),
+                  [CategoricalArrays.CategoricalString{UInt8},
+                   Char, Bool, Int,
+                   CategoricalArrays.CategoricalString{UInt8}]))
     @test all(map(<:, eltypes(categorical!(df, names(df))),
-                  [CategoricalArrays.CategoricalString,
-                   CategoricalArrays.CategoricalValue{Char},
-                   CategoricalArrays.CategoricalValue{Bool},
-                   CategoricalArrays.CategoricalValue{Int},
-                   CategoricalArrays.CategoricalString]))
+                  [CategoricalArrays.CategoricalString{UInt32},
+                   CategoricalArrays.CategoricalValue{Char,UInt32},
+                   CategoricalArrays.CategoricalValue{Bool,UInt32},
+                   CategoricalArrays.CategoricalValue{Int,UInt32},
+                   CategoricalArrays.CategoricalString{UInt32}]))
+    @test all(map(<:, eltypes(categorical!(df, names(df), compress=true)),
+                  [CategoricalArrays.CategoricalString{UInt8},
+                   CategoricalArrays.CategoricalValue{Char,UInt8},
+                   CategoricalArrays.CategoricalValue{Bool,UInt8},
+                   CategoricalArrays.CategoricalValue{Int,UInt8},
+                   CategoricalArrays.CategoricalString{UInt8}]))
 end
 
 @testset "unstack promotion to support missing values" begin
@@ -593,7 +785,7 @@ end
                             Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
                             Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
     @test isa(udf[1], Vector{Int})
-    @test all(isa.(columns(udf)[2:end], Vector{Union{Int, Missing}}))
+    @test all(isa.(eachcol(udf)[2:end], Vector{Union{Int, Missing}}))
     df = DataFrame([categorical(repeat(1:2, inner=4)),
                        categorical(repeat('a':'d', outer=2)), categorical(1:8)],
                    [:id, :variable, :value])
@@ -603,7 +795,7 @@ end
                             Union{Int, Missing}[2, 6], Union{Int, Missing}[3, 7],
                             Union{Int, Missing}[4, 8]], [:id, :a, :b, :c, :d])
     @test isa(udf[1], CategoricalVector{Int})
-    @test all(isa.(columns(udf)[2:end], CategoricalVector{Union{Int, Missing}}))
+    @test all(isa.(eachcol(udf)[2:end], CategoricalVector{Union{Int, Missing}}))
 end
 
 @testset "duplicate entries in unstack warnings" begin
@@ -721,40 +913,66 @@ end
 @testset "column conversions" begin
     df = DataFrame([collect(1:10), collect(1:10)])
     @test !isa(df[1], Vector{Union{Int, Missing}})
-    allowmissing!(df, 1)
+    @test allowmissing!(df, 1) === df
     @test isa(df[1], Vector{Union{Int, Missing}})
     @test !isa(df[2], Vector{Union{Int, Missing}})
     df[1,1] = missing
     @test_throws MethodError disallowmissing!(df, 1)
     df[1,1] = 1
-    disallowmissing!(df, 1)
+    @test disallowmissing!(df, 1) === df
     @test isa(df[1], Vector{Int})
 
     df = DataFrame([collect(1:10), collect(1:10)])
-    allowmissing!(df, [1,2])
+    @test allowmissing!(df, [1,2]) === df
     @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
-    disallowmissing!(df, [1,2])
+    @test disallowmissing!(df, [1,2]) === df
     @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
 
     df = DataFrame([collect(1:10), collect(1:10)])
-    allowmissing!(df)
+    @test_throws BoundsError allowmissing!(df, [true])
+    @test allowmissing!(df, [true, true]) === df
     @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
-    disallowmissing!(df)
+    @test_throws BoundsError disallowmissing!(df, [true])
+    @test disallowmissing!(df, [true,true]) === df
+    @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
+
+    df = DataFrame([collect(1:10), collect(1:10)])
+    @test allowmissing!(df) === df
+    @test isa(df[1], Vector{Union{Int, Missing}}) && isa(df[2], Vector{Union{Int, Missing}})
+    @test disallowmissing!(df) === df
     @test isa(df[1], Vector{Int}) && isa(df[2], Vector{Int})
 
     df = DataFrame([CategoricalArray(1:10),
                     CategoricalArray(string.('a':'j'))])
-    allowmissing!(df)
-    @test all(x->x <: CategoricalVector, typeof.(columns(df)))
+    @test allowmissing!(df) === df
+    @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltypes(df)[1] <: Union{CategoricalValue{Int}, Missing}
     @test eltypes(df)[2] <: Union{CategoricalString, Missing}
     df[1,2] = missing
     @test_throws MissingException disallowmissing!(df)
     df[1,2] = "a"
-    disallowmissing!(df)
-    @test all(x->x <: CategoricalVector, typeof.(columns(df)))
+    @test disallowmissing!(df) === df
+    @test all(x->x <: CategoricalVector, typeof.(eachcol(df)))
     @test eltypes(df)[1] <: CategoricalValue{Int}
     @test eltypes(df)[2] <: CategoricalString
+
+    df = DataFrame(b=[1,2], c=[1,2], d=[1,2])
+    @test allowmissing!(df, [:b, :c]) === df
+    @test eltype(df.b) == Union{Int, Missing}
+    @test eltype(df.c) == Union{Int, Missing}
+    @test eltype(df.d) == Int
+    @test disallowmissing!(df, :c) === df
+    @test eltype(df.b) == Union{Int, Missing}
+    @test eltype(df.c) == Int
+    @test eltype(df.d) == Int
+    @test allowmissing!(df, [false, false, true]) === df
+    @test eltype(df.b) == Union{Int, Missing}
+    @test eltype(df.c) == Int
+    @test eltype(df.d) == Union{Int, Missing}
+    @test disallowmissing!(df, [true, false, false]) === df
+    @test eltype(df.b) == Int
+    @test eltype(df.c) == Int
+    @test eltype(df.d) == Union{Int, Missing}
 end
 
 @testset "similar" begin
@@ -797,6 +1015,23 @@ end
     df[:c] = 1:3
     df[:d] = 'a':'c'
     @test all(typeof(df[i]) <: Vector for i in 1:ncol(df))
+end
+
+@testset "test getindex using df[col] and df[cols] syntax" begin
+    x = [1]
+    y = [1]
+    df = DataFrame(x=x, y=y, copycols=false)
+    @test df.x === x
+    @test df[:y] === y
+    @test df[1] === x
+    @test df[1:1][1] == x
+    @test df[1:1][1] !== x
+    @test df[1:2][:y] == y
+    @test df[1:2][:y] !== y
+    @test df[:][:x] == x
+    @test df[:][:x] !== x
+    @test df[[:y,:x]][:x] == x
+    @test df[[:y,:x]][:x] !== x
 end
 
 @testset "test corner case of getindex" begin
@@ -943,7 +1178,7 @@ end
     x = collect(1:10)
     y = collect(1.0:10.0)
     z = collect(10:-1:1)
-    df = DataFrame(x = x, y = y)
+    df = DataFrame(x=x, y=y, copycols=false)
 
     @test Base.propertynames(df) == names(df)
 
