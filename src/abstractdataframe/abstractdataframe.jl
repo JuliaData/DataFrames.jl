@@ -1121,7 +1121,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         
         if !isempty(coldiff) 
             # if any DataFrames are a full superset of names, skip them
-            filter!(u -> Set(u) != Set(header), uniqueheaders)
+            filter!(u -> !issetequal(u, header), uniqueheaders)
             estrings = Vector{String}(undef, length(uniqueheaders))
             for (i, head) in enumerate(uniqueheaders)
                 matching = findall(h -> head == h, allheaders)
