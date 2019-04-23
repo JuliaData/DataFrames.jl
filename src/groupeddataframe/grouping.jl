@@ -955,42 +955,6 @@ function _combine_with_first!(first::Union{AbstractDataFrame,
 end
 
 """
-Apply a function to each column in an AbstractDataFrame or
-GroupedDataFrame
-
-```julia
-colwise(f, d)
-```
-
-### Arguments
-
-* `f` : a function or vector of functions
-* `d` : an AbstractDataFrame of GroupedDataFrame
-
-### Returns
-
-* various, depending on the call
-
-### Examples
-
-```julia
-df = DataFrame(a = repeat([1, 2, 3, 4], outer=[2]),
-               b = repeat([2, 1], outer=[4]),
-               c = randn(8))
-colwise(sum, df)
-colwise([sum, length], df)
-colwise((minimum, maximum), df)
-colwise(sum, groupby(df, :a))
-```
-
-"""
-colwise(f, d::AbstractDataFrame) = [f(d[i]) for i in 1:ncol(d)]
-
-# apply several functions to each column in a data frame
-colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for f in fns, i in 1:ncol(d)]
-colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
-
-"""
     by(d::AbstractDataFrame, keys, (cols => f)...; sort::Bool = false)
     by(d::AbstractDataFrame, keys, [cols1 => f1, cols2 => f2]...; sort::Bool = false)
     by(d::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
