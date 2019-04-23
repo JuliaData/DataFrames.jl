@@ -1,6 +1,5 @@
 environment:
   matrix:
-  - julia_version: 0.7
   - julia_version: 1.0
   - julia_version: 1.1
   - julia_version: nightly
@@ -34,4 +33,3 @@ build_script:
 test_script:
   - echo "%JL_TEST_SCRIPT%"
   - C:\julia\bin\julia -e "%JL_TEST_SCRIPT%"
-  

@@ -170,6 +170,9 @@ end
 Return a `DataFrame` where each column of `df` is transformed using function `f`.
 `f` must return `AbstractVector` objects all with the same length or scalars.
 
+Note that `mapcols` guarantees not to reuse the columns from `df` in the returned
+`DataFrame`. If `f` returns its argument then it gets copied before being stored.
+
 **Examples**
 
 ```jldoctest
@@ -198,7 +201,8 @@ function mapcols(f::Union{Function,Type}, df::AbstractDataFrame)
     # note: `f` must return a consistent length
     res = DataFrame()
     for (n, v) in eachcol(df, true)
-        res[n] = f(v)
+        fv = f(v)
+        res[n] = fv === v ? copy(v) : fv
     end
     res
 end

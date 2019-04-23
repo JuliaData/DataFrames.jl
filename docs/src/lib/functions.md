@@ -13,7 +13,6 @@ Pages = ["functions.md"]
 ```@docs
 aggregate
 by
-colwise
 combine
 groupby
 groupindices
@@ -31,9 +30,11 @@ meltdf
 
 ```@docs
 allowmissing!
-completecases
 categorical!
+completecases
+copy
 deletecols!
+deletecols
 deleterows!
 describe
 disallowmissing!
@@ -44,6 +45,7 @@ eachcol
 eltypes
 filter
 filter!
+hcat
 insertcols!
 mapcols
 names!
@@ -53,6 +55,8 @@ ncol
 rename!
 rename
 repeat
+select
+select!
 show
 sort
 sort!

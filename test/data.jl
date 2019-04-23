@@ -7,8 +7,6 @@ const ≅ = isequal
     df1 = DataFrame([[1, 2, missing, 4], ["one", "two", missing, "four"]], [:Ints, :Strs])
     df2 = DataFrame([[1, 2, missing, 4], ["one", "two", missing, "four"]])
     df3 = DataFrame([[1, 2, missing, 4]])
-    df4 = DataFrame([Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)])
-    df5 = DataFrame([Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]])
     df6 = DataFrame([[1, 2, missing, 4], [1, 2, missing, 4], ["one", "two", missing, "four"]],
                     [:A, :B, :C])
     df7 = DataFrame(x = [1, 2, missing, 4], y = ["one", "two", missing, "four"])
@@ -45,44 +43,6 @@ const ≅ = isequal
     deletecols!(df6, :D)
     @test names(df6) == [:A, :B, :C]
     @test size(df6, 2) == 3
-
-    #test_group("missing handling")
-    @test df5[completecases(df5), :] == df5[[1, 2, 4], :]
-    @test dropmissing(df5) == df5[[1, 2, 4], :]
-    returned = dropmissing(df4)
-    @test df4 == returned && df4 !== returned
-    df5b = deepcopy(df5)
-    @test dropmissing!(df5b) === df5b
-    @test df5b == df5[[1, 2, 4], :]
-    df4b = deepcopy(df4)
-    @test dropmissing!(df4b) === df4b
-    @test df4b == df4
-
-    for cols in (:x2, [:x2], [:x1, :x2], 2, [2], 1:2, [true, true], [false, true])
-        @test df5[completecases(df5, cols), :] == df5[[1, 2, 4], :]
-        @test dropmissing(df5, cols) == df5[[1, 2, 4], :]
-        returned = dropmissing(df4, cols)
-        @test df4 == returned && df4 !== returned
-        df5b = deepcopy(df5)
-        @test dropmissing!(df5b, cols) === df5b
-        @test df5b == df5[[1, 2, 4], :]
-        @test dropmissing(df5, cols) == df5b
-        @test df5 != df5b
-        df4b = deepcopy(df4)
-        @test dropmissing!(df4b, cols) === df4b
-        @test df4b == df4
-    end
-
-    df = DataFrame(a=[1, missing, 3])
-    sdf = view(df, :, :)
-    @test dropmissing(sdf) == DataFrame(a=[1, 3])
-    @test eltype(dropmissing(sdf, disallowmissing=false)[:a]) == Union{Int, Missing}
-    @test eltype(dropmissing(sdf, disallowmissing=true)[:a]) == Int
-     df2 = copy(df)
-    dropmissing!(df, disallowmissing=true)
-    dropmissing!(df2, disallowmissing=false)
-    @test eltype(df.a) == Int
-    @test eltype(df2.a) == Union{Int, Missing}
 
     #test_context("SubDataFrames")
 
@@ -186,6 +146,70 @@ const ≅ = isequal
     @test ggd[2][1, :d4] == "d"
 end
 
+@testset "completecases and dropmissing" begin
+    df1 = DataFrame([Vector{Union{Int, Missing}}(1:4), Vector{Union{Int, Missing}}(1:4)])
+    df2 = DataFrame([Union{Int, Missing}[1, 2, 3, 4], ["one", "two", missing, "four"]])
+
+    @test df2[completecases(df2), :] == df2[[1, 2, 4], :]
+    @test dropmissing(df2) == df2[[1, 2, 4], :]
+    returned = dropmissing(df1)
+    @test df1 == returned && df1 !== returned
+    df2b = copy(df2)
+    @test dropmissing!(df2b) === df2b
+    @test df2b == df2[[1, 2, 4], :]
+    df1b = copy(df1)
+    @test dropmissing!(df1b) === df1b
+    @test df1b == df1
+
+    for cols in (:x2, [:x2], [:x1, :x2], 2, [2], 1:2, [true, true], [false, true])
+        @test df2[completecases(df2, cols), :] == df2[[1, 2, 4], :]
+        @test dropmissing(df2, cols) == df2[[1, 2, 4], :]
+        returned = dropmissing(df1, cols)
+        @test df1 == returned && df1 !== returned
+        df2b = copy(df2)
+        @test dropmissing!(df2b, cols) === df2b
+        @test df2b == df2[[1, 2, 4], :]
+        @test dropmissing(df2, cols) == df2b
+        @test df2 != df2b
+        df1b = copy(df1)
+        @test dropmissing!(df1b, cols) === df1b
+        @test df1b == df1
+    end
+
+    df = DataFrame(a=[1, missing, 3])
+    sdf = view(df, :, :)
+    @test dropmissing(sdf) == DataFrame(a=[1, 3])
+    @test eltype(dropmissing(df, disallowmissing=false).a) == Union{Int, Missing}
+    @test eltype(dropmissing(df, disallowmissing=true).a) == Int
+    @test eltype(dropmissing(sdf, disallowmissing=false).a) == Union{Int, Missing}
+    @test eltype(dropmissing(sdf, disallowmissing=true).a) == Int
+    @test df ≅ DataFrame(a=[1, missing, 3]) # make sure we did not mutate df
+
+    @test_throws ArgumentError dropmissing!(sdf)
+
+    df2 = copy(df)
+    @test dropmissing!(df, disallowmissing=true) === df
+    @test dropmissing!(df2, disallowmissing=false) === df2
+    @test eltype(df.a) == Int
+    @test eltype(df2.a) == Union{Int, Missing}
+    @test df.a == df2.a == [1, 3]
+
+    a = [1,2]
+    df = DataFrame(a=a, copycols=false)
+    @test dropmissing!(df) === df
+    @test a === df.a
+    dfx = dropmissing(df)
+    @test df == df
+    @test dfx !== df
+    @test dfx.a !== df.a
+    @test a === df.a # we did not touch df
+
+    b = Union{Int, Missing}[1, 2]
+    df = DataFrame(b=b)
+    @test eltype(dropmissing(df).b) == Int
+    @test eltype(dropmissing!(df).b) == Int
+end
+
 @testset "reshape" begin
     d1 = DataFrame(a = Array{Union{Int, Missing}}(repeat([1:3;], inner = [4])),
                 b = Array{Union{Int, Missing}}(repeat([1:4;], inner = [3])),
@@ -238,10 +262,8 @@ end
     @test ndims(typeof(d1s[2])) == 1
     @test d1s[1][[1,24]] == [:a, :b]
     @test d1s[2][[1,24]] == [1, 4]
-    if VERSION >= v"1" # this was silently accepted pre Julia 1.0
-        @test_throws ArgumentError d1s[1][true]
-        @test_throws ArgumentError d1s[2][true]
-    end
+    @test_throws ArgumentError d1s[1][true]
+    @test_throws ArgumentError d1s[2][true]
     @test_throws ArgumentError d1s[1][1.0]
     @test_throws ArgumentError d1s[2][1.0]
 

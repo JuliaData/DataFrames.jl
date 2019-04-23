@@ -106,11 +106,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         @test_throws ErrorException (dn |> DataFrame)
 
         dn = DuplicateNamesColumnTable()
-        if VERSION ≥ v"1.0.0"
-            @test_throws ArgumentError (dn |> DataFrame)
-        else
-            @test_throws MethodError (dn |> DataFrame)
-        end
+        @test_throws ArgumentError (dn |> DataFrame)
 
         # non-Tables.jl constructor fallbacks
         @test DataFrame([(a = 0,), (a = 1,)]) == DataFrame(a = 0:1)
@@ -137,7 +133,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         cat = CategoricalVector(["hey", "there", "sailor"])
         cat2 = [c for c in cat] # Vector of CategoricalString
         nt = (a=cat, b=cat2)
-        df = DataFrame(nt)
+        df = DataFrame(nt, copycols=false)
         @test df.a === cat
         @test df.b === cat2
         # test in the unknown schema case that a

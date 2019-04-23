@@ -1,5 +1,34 @@
 import Base: @deprecate
 
+@deprecate DataFrame(t::Type, nrows::Integer, ncols::Integer) DataFrame(Matrix{t}(undef, nrows, ncols))
+
+@deprecate DataFrame(column_eltypes::AbstractVector{<:Type},
+                     nrows::Integer) DataFrame(column_eltypes, Symbol.('x' .* string.(1:length(column_eltypes))), nrows)
+
+function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
+                   categorical::AbstractVector{Bool}, nrows::Integer;
+                   makeunique::Bool=false)::DataFrame where T<:Type
+    Base.depwarn("`DataFrame` constructor with `categorical` positional argument is deprecated. " *
+                 "Instead use `DataFrame(columns, names)` constructor.",
+                 :DataFrame)
+    updated_types = convert(Vector{Type}, column_eltypes)
+    if length(categorical) != length(column_eltypes)
+        throw(DimensionMismatch("arguments column_eltypes and categorical must have the same length " *
+                                "(got $(length(column_eltypes)) and $(length(categorical)))"))
+    end
+    for i in eachindex(categorical)
+        categorical[i] || continue
+        elty = CategoricalArrays.catvaluetype(Missings.T(updated_types[i]),
+                                              CategoricalArrays.DefaultRefType)
+        if updated_types[i] >: Missing
+            updated_types[i] = Union{elty, Missing}
+        else
+            updated_types[i] = elty
+        end
+    end
+    return DataFrame(updated_types, cnames, nrows, makeunique=makeunique)
+end
+
 @deprecate by(d::AbstractDataFrame, cols, s::Vector{Symbol}) aggregate(d, cols, map(eval, s))
 @deprecate by(d::AbstractDataFrame, cols, s::Symbol) aggregate(d, cols, eval(s))
 
@@ -1388,3 +1417,8 @@ import Base: convert
 
 @deprecate SubDataFrame(df::AbstractDataFrame, rows::AbstractVector{<:Integer}) SubDataFrame(df, rows, :)
 @deprecate SubDataFrame(df::AbstractDataFrame, ::Colon) SubDataFrame(df, :, :)
+
+@deprecate colwise(f, d::AbstractDataFrame) [f(col) for col in eachcol(d)]
+@deprecate colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) [f(col) for f in fns, col in eachcol(d)]
+@deprecate colwise(f, gd::GroupedDataFrame) [[f(col) for col in eachcol(d)] for d in gd]
+@deprecate colwise(fns::Union{AbstractVector, Tuple}, gd::GroupedDataFrame) [[f(col) for f in fns, col in eachcol(d)] for d in gd]

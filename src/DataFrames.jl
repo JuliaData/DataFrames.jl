@@ -6,7 +6,8 @@ module DataFrames
 ##
 ##############################################################################
 
-using Reexport, StatsBase, SortingAlgorithms, Compat, Statistics, Unicode, Printf, PooledArrays
+using Statistics, Printf, REPL
+using Reexport, StatsBase, SortingAlgorithms, Compat, Unicode, PooledArrays
 @reexport using CategoricalArrays, Missings
 using Base.Sort, Base.Order, Base.Iterators
 
@@ -26,10 +27,10 @@ export AbstractDataFrame,
        aggregate,
        by,
        categorical!,
-       colwise,
        combine,
        completecases,
        deletecols!,
+       deletecols,
        deleterows!,
        describe,
        disallowmissing!,
@@ -50,6 +51,8 @@ export AbstractDataFrame,
        order,
        rename!,
        rename,
+       select,
+       select!,
        showcols,
        stack,
        stackdf,
@@ -83,11 +86,10 @@ include("abstractdataframe/iteration.jl")
 include("abstractdataframe/join.jl")
 include("abstractdataframe/reshape.jl")
 
-include("abstractdataframe/io.jl")
-
 include("abstractdataframe/show.jl")
 include("groupeddataframe/show.jl")
 include("dataframerow/show.jl")
+include("abstractdataframe/io.jl")
 
 include("abstractdataframe/sort.jl")
 include("dataframe/sort.jl")
