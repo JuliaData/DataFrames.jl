@@ -1100,20 +1100,12 @@ julia> vcat(d, df1)
 
 """
 Base.vcat(dfs::AbstractDataFrame...;
-<<<<<<< HEAD
           cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
     _vcat([df for df in collect(dfs) if ncol(df) != 0]; cols=cols)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
                cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
                       
-=======
-          columns::Union{Symbol, AbstractVector{Symbol}}=:equal) =
-    _vcat([df for df in dfs if ncol(df) != 0]; columns=columns)
-
-function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
-               columns::Union{Symbol, AbstractVector{Symbol}}=:equal)
->>>>>>> flexible_vcat
     isempty(dfs) && return DataFrame()
     # Array of all headers
     allheaders = map(names, dfs)

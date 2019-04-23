@@ -404,7 +404,7 @@ end
                   B = [4, 5, 6, missing, missing, missing, 4, 5, 6])
 end
 
-@testset "vcat with columns=:intersect" begin
+@testset "vcat with cols=:intersect" begin
     df1 = DataFrame(A = 1:3, B = 4:6)
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(A = 10:12, C = 13:15)
@@ -414,7 +414,7 @@ end
                                                                      10, 11, 12])
 end
 
-@testset "vcat with columns::Vector" begin
+@testset "vcat with cols=:Vector" begin
     df1 = DataFrame(A = 1:3, B = 4:6)
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(A = 10:12, C = 13:15)
@@ -432,11 +432,7 @@ end
 
 @testset "vcat on empty dataframe in loop" begin
     df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
-<<<<<<< HEAD
-    df2 = DataFrame([2 .* x for x in eachcol(df1)], reverse(names(df1)))
-=======
     df2 =  df2 = DataFrame([2x for x in eachcol(df1)], reverse(names(df1)))
->>>>>>> flexible_vcat
     d = DataFrame()
     for df in [df1, df2]
         d = vcat(d, df)
