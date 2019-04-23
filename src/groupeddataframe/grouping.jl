@@ -704,9 +704,8 @@ function do_f(f, x...)
     end
 end
 
-function _combine(f::Union{AbstractVector{<:Pair}, 
-                           Tuple{Vararg{Pair}},
-                           NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
+function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
+                  NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
                   gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
@@ -992,12 +991,11 @@ colwise(fns::Union{AbstractVector, Tuple}, d::AbstractDataFrame) = [f(d[i]) for 
 colwise(f, gd::GroupedDataFrame) = [colwise(f, g) for g in gd]
 
 """
-    by(d::AbstractDataFrame, keys, cols => f; sort::Bool = false)
-    by(d::AbstractDataFrame, keys, [col1 => f1, col2 => f2], col3 => f3; sort::Bool = false)
-    by(d::AbstractDataFrame, keys, [:col1, :col2, :col3] .=> f; sort::Bool = false)
-    by(d::AbstractDataFrame, keys; sort::Bool = false, colname = cols => f...)
+    by(d::AbstractDataFrame, keys, (cols => f)...; sort::Bool = false)
+    by(d::AbstractDataFrame, keys, [cols1 => f1, cols2 => f2]...; sort::Bool = false)
+    by(d::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
     by(d::AbstractDataFrame, keys, f; sort::Bool = false)
-    by(f, keys, d::AbstractDataFrame)
+    by(f, gd::GroupedDataFrame; sort::Bool = false)
 
 Split-apply-combine in one step: apply `f` to each grouping in `d`
 based on grouping columns `keys`, and return a `DataFrame`.
@@ -1006,21 +1004,21 @@ based on grouping columns `keys`, and return a `DataFrame`.
 
 The 3rd through last arguments in `combine` can can be either
 
-* A single `col => f` pair, a vector of such pairs, or a mix of the two. `col`
-  must be either a `Symbol` or a valid column index for `d`. `f` must be callable. 
-* A tuple of `col => f` pairs
-* A named tuple of `col => f` pairs, where the names of the named tuple indicate
-  the names of the new vectors to be created in the new DataFrame. Pairs must 
-  obey the same rules described above. Keyword arguments of `Pair`s operate in 
-  the same way.  
-* A callable which allows for a `AbstractDataFrame`. If this is specified, `f`
-  is passed a `SubDataFrame` view for each group, and the returned `DataFrame` 
+* One or several `cols => f` pairs, or vectors or tuples of such pairs (mixing is allowed). `cols`
+  must be a column name or index in `gd`, or a vector or tuple thereof. `f` must be callable.
+  If `cols` is a single column index, `f` is called with a `SubArray` view into that
+  column for each group; else, `f` is called with a named tuple holding `SubArray`
+  views into these columns.
+* A named tuple of `colname = cols => f` pairs or keyword arguments of such pairs,
+  where `colname` indicates the name of the column to be created in the new `DataFrame`.
+  Pairs must obey the same rules as above.
+* A callable `f` taking a `SubDataFrame` view for each group. The returned `DataFrame` 
   then consists of the returned rows plus the grouping columns.
-  Note that this second form is much slower than the first one due to type instability.
-  A method is defined with `f` as the first argument, so do-block
-  notation can be used.
+  Note that this form is much slower than the others due to type instability.
 
-If the last argument is a callable 
+
+A method is defined with `f` as the first argument, so do-block notation can be used.       
+In that case `f` can also be a named tuple of pairs.
 
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
@@ -1173,8 +1171,7 @@ by(f::Any, d::AbstractDataFrame, cols::Any; sort::Bool = false) =
     by(d, cols, f, sort = sort)
 
 function by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}}...; sort::Bool = false) 
-    vec_of_pairs = reduce(vcat, f)
-    combine(vec_of_pairs, groupby(d, cols, sort = sort))
+    combine(reduce(vcat, f), groupby(d, cols, sort = sort))
 end
 
 by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
