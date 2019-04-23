@@ -351,14 +351,14 @@ end
 
 @testset "vcat out of order" begin
     df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
-    df2 = DataFrame(colwise(x->2x, df1), reverse(names(df1)))
+    df2 = DataFrame([2 .* x for x in eachcol(df1)], reverse(names(df1)))
     @test vcat(df1, df2) == DataFrame(A = [1, 2, 3, 14, 16, 18],
                                       B = [4, 5, 6, 8, 10, 12],
                                       C = [7, 8, 9, 2, 4, 6])
     # test with keyword argument for `columns`
-    @test vcat(df1, df2, columns = :equal) == DataFrame(A = [1, 2, 3, 14, 16, 18],
-                                                       B = [4, 5, 6, 8, 10, 12],
-                                                       C = [7, 8, 9, 2, 4, 6])
+    @test vcat(df1, df2, cols = :equal) == DataFrame(A = [1, 2, 3, 14, 16, 18],
+                                                     B = [4, 5, 6, 8, 10, 12],
+                                                     C = [7, 8, 9, 2, 4, 6])
     @test vcat(df1, df1, df2) == DataFrame(A = [1, 2, 3, 1, 2, 3, 14, 16, 18],
                                            B = [4, 5, 6, 4, 5, 6, 8, 10, 12],
                                            C = [7, 8, 9, 7, 8, 9, 2, 4, 6])
@@ -371,6 +371,7 @@ end
     @test size(vcat(df1, df1, df1, df2, df2, df2)) == (18, 3)
     df3 = df1[[1, 3, 2]]
     res = vcat(df1, df1, df1, df2, df2, df2, df3, df3, df3, df3)
+    @test res == reduce(vcat, [df1, df1, df1, df2, df2, df2, df3, df3, df3, df3])
     @test size(res) == (30, 3)
     @test res[1:3,:] == df1
     @test res[4:6,:] == df1
@@ -392,10 +393,10 @@ end
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(B = 4:6, A = 1:3)
 
-    @test vcat(df1, df2; columns = :union) ≅
+    @test vcat(df1, df2; cols = :union) ≅
         DataFrame(A = [1, 2, 3, 7, 8, 9],
                   B = [4, 5, 6, missing, missing, missing])
-    @test vcat(df1, df2, df3; columns = :union) ≅
+    @test vcat(df1, df2, df3; cols = :union) ≅
         DataFrame(A = [1, 2, 3, 7, 8, 9, 1, 2, 3],
                   B = [4, 5, 6, missing, missing, missing, 4, 5, 6])
 end
@@ -405,8 +406,8 @@ end
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(A = 10:12, C = 13:15)
 
-    @test vcat(df1, df2; columns = :intersect) ≅ DataFrame(A = [1, 2, 3, 7, 8, 9])
-    @test vcat(df1, df2, df3; columns = :intersect) ≅ DataFrame(A = [1, 2, 3, 7, 8, 9,
+    @test vcat(df1, df2; cols = :intersect) ≅ DataFrame(A = [1, 2, 3, 7, 8, 9])
+    @test vcat(df1, df2, df3; cols = :intersect) ≅ DataFrame(A = [1, 2, 3, 7, 8, 9,
                                                                      10, 11, 12])
 end
 
@@ -415,12 +416,12 @@ end
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(A = 10:12, C = 13:15)
 
-    @test vcat(df1, df2; columns = [:A, :B, :C]) ≅
+    @test vcat(df1, df2; cols = [:A, :B, :C]) ≅
         DataFrame(A = [1, 2, 3, 7, 8, 9],
                   B = [4, 5, 6, missing, missing, missing],
                   C = [missing, missing, missing, missing, missing, missing])
 
-    @test vcat(df1, df2, df3; columns = [:A, :B, :C]) ≅
+    @test vcat(df1, df2, df3; cols = [:A, :B, :C]) ≅
         DataFrame(A = [1, 2, 3, 7, 8, 9, 10, 11, 12],
                   B = [4, 5, 6, missing, missing, missing, missing, missing, missing],
                   C = [missing, missing, missing, missing, missing, missing, 13, 14, 15])
@@ -428,7 +429,7 @@ end
 
 @testset "vcat on empty dataframe in loop" begin
     df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
-    df2 = DataFrame(colwise(x->2x, df1), reverse(names(df1)))
+    df2 = DataFrame([2 .* x for x in eachcol(df1)], reverse(names(df1)))
     d = DataFrame()
     for df in [df1, df2]
         d = vcat(d, df)
@@ -450,6 +451,8 @@ end
     @test err.value.msg == "column(s) B are missing from argument(s) 1"
     # multiple missing 1 column
     err = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2, df2)
+    @test err.value.msg == "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
+    err = @test_throws ArgumentError reduce(vcat, [df1, df2, df2, df2, df2, df2])
     @test err.value.msg == "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
     # argument missing >1 columns
     df1 = DataFrame(A = 1:3, B = 1:3, C = 1:3, D = 1:3, E = 1:3)

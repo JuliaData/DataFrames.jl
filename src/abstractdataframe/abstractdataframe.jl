@@ -1100,11 +1100,11 @@ julia> vcat(d, df1)
 
 """
 Base.vcat(dfs::AbstractDataFrame...;
-          columns::Union{Symbol, AbstractVector{Symbol}}=:equal) =
-    _vcat([df for df in collect(dfs) if ncol(df) != 0]; columns=columns)
+          cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
+    _vcat([df for df in collect(dfs) if ncol(df) != 0]; cols=cols)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
-               columns::Union{Symbol, AbstractVector{Symbol}}=:equal)
+               cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
                       
     isempty(dfs) && return DataFrame()
     # Array of all headers
@@ -1116,7 +1116,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     # List of symbols present in all dataframes
     intersectunique = intersect(uniqueheaders...)
 
-    if columns === :equal
+    if cols === :equal
         header = unionunique
         coldiff = setdiff(unionunique, intersectunique)
         
@@ -1124,7 +1124,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
             # if any DataFrames are a full superset of names, skip them
             filter!(u -> Set(u) != Set(header), uniqueheaders)
             estrings = Vector{String}(undef, length(uniqueheaders))
-            for (i, head) in enumerate(uniqueheaders)
+            map(enumerate(uniqueheaders)) do (i, head)
                 matching = findall(h -> head == h, allheaders)
                 headerdiff = setdiff(coldiff, head)
                 cols = join(headerdiff, ", ", " and ")
@@ -1134,16 +1134,16 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
 
-    elseif columns === :intersect 
+    elseif cols === :intersect 
         header = intersectunique
-    elseif columns === :union
+    elseif cols === :union
         header = unionunique
     else
-        header = columns 
+        header = cols 
     end
 
     length(header) == 0 && return DataFrame()
-    cols = Vector{AbstractVector}(undef, length(header))
+    all_cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
         newcols = map(dfs) do df
             if haskey(df, name)
@@ -1155,14 +1155,14 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
 
         lens = map(length, newcols)
         T = mapreduce(eltype, promote_type, newcols)
-        cols[i] = Tables.allocatecolumn(T, sum(lens))
+        all_cols[i] = Tables.allocatecolumn(T, sum(lens))
         offset = 1
         for j in 1:length(newcols)
-            copyto!(cols[i], offset, newcols[j])
+            copyto!(all_cols[i], offset, newcols[j])
             offset += lens[j]
         end
     end
-    return DataFrame(cols, header, copycols=false)
+    return DataFrame(all_cols, header, copycols=false)
 end
 
 function Base.reduce(::typeof(vcat), dfs::AbstractVector{<:AbstractDataFrame})
