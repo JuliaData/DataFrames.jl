@@ -428,7 +428,7 @@ end
 
 @testset "vcat on empty dataframe in loop" begin
     df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
-    df2 = DataFrame(colwise(x->2x, df1), reverse(names(df1)))
+    df2 =  df2 = DataFrame([2x for x in eachcol(df1)], reverse(names(df1)))
     d = DataFrame()
     for df in [df1, df2]
         d = vcat(d, df)
