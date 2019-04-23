@@ -410,7 +410,7 @@ end
                                                                      10, 11, 12])
 end
 
-@testset "vcat with vector of columns" begin
+@testset "vcat with columns::Vector" begin
     df1 = DataFrame(A = 1:3, B = 4:6)
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(A = 10:12, C = 13:15)
