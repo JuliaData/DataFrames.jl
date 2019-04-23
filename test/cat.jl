@@ -307,7 +307,6 @@ end
 
 @testset "vcat >2 args" begin
     empty_dfs = [DataFrame(), DataFrame(), DataFrame()]
-    df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
     @test vcat(empty_dfs...) == reduce(vcat, empty_dfs) == DataFrame()
 
     df = DataFrame(x = trues(1), y = falses(1))
