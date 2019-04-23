@@ -1059,9 +1059,18 @@ julia> vcat(df1, df3, columns = :intersect)
 │ 5   │ 8     │
 │ 6   │ 9     │
 
-d = DataFrame()
+julia> d = DataFrame()
+
 julia> vcat(d, df1)
+3×2 DataFrame
+│ Row │ A     │ B     │
+│     │ Int64 │ Int64 │
+├─────┼───────┼───────┤
+│ 1   │ 1     │ 1     │
+│ 2   │ 2     │ 2     │
+│ 3   │ 3     │ 3     │
 ```
+
 """
 Base.vcat(dfs::AbstractDataFrame...;
           columns::Union{Symbol, AbstractVector{Symbol}}=:equal) =
