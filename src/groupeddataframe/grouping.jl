@@ -959,7 +959,7 @@ end
     by(d::AbstractDataFrame, keys, [cols1 => f1, cols2 => f2]...; sort::Bool = false)
     by(d::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
     by(d::AbstractDataFrame, keys, f; sort::Bool = false)
-    by(f, gd::GroupedDataFrame; sort::Bool = false)
+    by(f, d::AbstractDataFrame; sort::Bool = false)
 
 Split-apply-combine in one step: apply `f` to each grouping in `d`
 based on grouping columns `keys`, and return a `DataFrame`.
