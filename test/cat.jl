@@ -342,10 +342,8 @@ end
     @test err.value.msg == "column(s) E and F are missing from argument(s) 1, 5 and 9, column(s) B are missing from argument(s) 2, 6 and 10, and column(s) F are missing from argument(s) 3, 7 and 11"
 end
 
-@testset "vcat with views" begin
-    x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
-    y = DataFrame(A = 4:5)
-    @test vcat(x, y) == DataFrame(A = [2, 4, 5]) == reduce(vcat, [x, y])
-end
+x = view(DataFrame(A = Vector{Union{Missing, Int}}(1:3)), 2:2, :)
+y = DataFrame(A = 4:5)
+@test vcat(x, y) == DataFrame(A = [2, 4, 5]) == reduce(vcat, [x, y])
 
 end # module
