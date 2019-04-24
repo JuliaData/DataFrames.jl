@@ -426,19 +426,6 @@ end
                   C = [missing, missing, missing, missing, missing, missing, 13, 14, 15])
 end
 
-@testset "vcat on empty dataframe in loop" begin
-    df1 = DataFrame(A = 1:3, B = 4:6, C = 7:9)
-    df2 =  df2 = DataFrame([2x for x in eachcol(df1)], reverse(names(df1)))
-    d = DataFrame()
-    for df in [df1, df2]
-        d = vcat(d, df)
-    end
-    @test d == DataFrame(A = [1, 2, 3, 14, 16, 18],
-                         B = [4, 5, 6, 8, 10, 12],
-                         C = [7, 8, 9, 2, 4, 6])
-end
-
-
 @testset "vcat errors" begin
     df1 = DataFrame(A = 1:3, B = 1:3)
     df2 = DataFrame(A = 1:3)
@@ -449,10 +436,9 @@ end
     err = @test_throws ArgumentError vcat(df2, df1)
     @test err.value.msg == "column(s) B are missing from argument(s) 1"
     # multiple missing 1 column
-    err = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2, df2)
-    @test err.value.msg == "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
-    err = @test_throws ArgumentError reduce(vcat, [df1, df2, df2, df2, df2, df2])
-    @test err.value.msg == "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
+    err1 = @test_throws ArgumentError vcat(df1, df2, df2, df2, df2, df2)
+    err2 = @test_throws ArgumentError reduce(vcat, [df1, df2, df2, df2, df2, df2])
+    @test err1.value.msg == err2.value.msg == "column(s) B are missing from argument(s) 2, 3, 4, 5 and 6"
     # argument missing >1 columns
     df1 = DataFrame(A = 1:3, B = 1:3, C = 1:3, D = 1:3, E = 1:3)
     err = @test_throws ArgumentError vcat(df1, df2)

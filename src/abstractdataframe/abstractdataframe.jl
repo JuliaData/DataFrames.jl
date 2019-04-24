@@ -1017,11 +1017,11 @@ Base.hcat(df1::AbstractDataFrame, df2::AbstractDataFrame, dfn::AbstractDataFrame
           makeunique=makeunique, copycols=copycols)
 
 """
-    vcat(dfs::AbstractDataFrame...; columns::Union{Symbol, AbstractVector{Symbol}}=:equal)
+    vcat(dfs::AbstractDataFrame...; cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
 
 Vertically concatenate `AbstractDataFrame`s.
 
-The `columns` keyword argument determines the columns of the returned data frame:
+The `cols` keyword argument determines the columns of the returned data frame:
 
 * `:equal` (the default): require all data frames to have the same column names.
   If they appear in different orders, the order of the first provided data frame is used.
@@ -1049,6 +1049,8 @@ julia> df1 = DataFrame(A=1:3, B=1:3);
 julia> df2 = DataFrame(A=4:6, B=4:6);
 
 julia> df3 = DataFrame(A=7:9, C=7:9);
+
+julia> d4 = DataFrame();
 
 julia> vcat(df1, df2)
 6×2 DataFrame
@@ -1086,8 +1088,6 @@ julia> vcat(df1, df3, columns = :intersect)
 │ 5   │ 8     │
 │ 6   │ 9     │
 
-julia> d4 = DataFrame();
-
 julia> vcat(d4, df1)
 3×2 DataFrame
 │ Row │ A     │ B     │
@@ -1123,13 +1123,12 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         if !isempty(coldiff) 
             # if any DataFrames are a full superset of names, skip them
             filter!(u -> !issetequal(u, header), uniqueheaders)
-            estrings = Vector{String}(undef, length(uniqueheaders))
-            map(enumerate(uniqueheaders)) do (i, head)
+            estrings = map(enumerate(uniqueheaders)) do (i, head)
                 matching = findall(h -> head == h, allheaders)
                 headerdiff = setdiff(coldiff, head)
                 cols = join(headerdiff, ", ", " and ")
                 args = join(matching, ", ", " and ")
-                estrings[i] = "column(s) $cols are missing from argument(s) $args"
+                return "column(s) $cols are missing from argument(s) $args"
             end
         throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
