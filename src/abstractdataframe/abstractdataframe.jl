@@ -1086,9 +1086,9 @@ julia> vcat(df1, df3, columns = :intersect)
 │ 5   │ 8     │
 │ 6   │ 9     │
 
-julia> d = DataFrame();
+julia> d4 = DataFrame();
 
-julia> vcat(d, df1)
+julia> vcat(d4, df1)
 3×2 DataFrame
 │ Row │ A     │ B     │
 │     │ Int64 │ Int64 │
