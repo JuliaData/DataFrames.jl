@@ -253,13 +253,14 @@ DataFrame!(columns::AbstractMatrix,
            cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
            makeunique::Bool=false) =
     throw(ArgumentError("It is not possible to construct a `DataFrame` from " *
-                        "`$(typeof(columns))` without allocating new columns"))
+                        "`$(typeof(columns))` without allocating new columns: " *
+                        "use `DataFrame(...)` instead"))
 
 
-(DataFrame!(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Symbol},
-           nrows::Integer=0; makeunique::Bool=false)::DataFrame) where T<:Type =
-    throw(ArgumentError("It is not possible to construct an unitialized `DataFrame`" *
-                        "without allocating new columns"))
+DataFrame!(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{Symbol},
+           nrows::Integer=0; makeunique::Bool=false)::DataFrame =
+    throw(ArgumentError("It is not possible to construct an uninitialized `DataFrame`" *
+                        "without allocating new columns: use `DataFrame(...)` instead"))
 
 ##############################################################################
 ##
