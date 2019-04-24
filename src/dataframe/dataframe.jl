@@ -218,6 +218,50 @@ function DataFrame(column_eltypes::AbstractVector{T}, cnames::AbstractVector{Sym
                      copycols=false)
 end
 
+"""
+    DataFrame!(args...; kwargs...)
+
+Equivalent to `DataFrame(args...; copycols=false, kwargs...)`.
+
+If `kwargs` contains the `copycols` keyword argument an error is thrown.
+
+### Examples
+
+```jldoctest
+julia> df1 = DataFrame(a=1:3)
+3×1 DataFrame
+│ Row │ a     │
+│     │ Int64 │
+├─────┼───────┤
+│ 1   │ 1     │
+│ 2   │ 2     │
+│ 3   │ 3     │
+
+julia> df2 = DataFrame!(df1)
+
+julia> df1.a === df2.a
+true
+"""
+function DataFrame!(args...; kwargs...)
+    if :copycols in keys(kwargs)
+        throw(ArgumentError("`copycols` keyword argument is not allowed"))
+    end
+    DataFrame(args...; copycols=false, kwargs...)
+end
+
+DataFrame!(columns::AbstractMatrix,
+           cnames::AbstractVector{Symbol} = gennames(size(columns, 2));
+           makeunique::Bool=false) =
+    throw(ArgumentError("It is not possible to construct a `DataFrame` from " *
+                        "`$(typeof(columns))` without allocating new columns: " *
+                        "use `DataFrame(...)` instead"))
+
+
+DataFrame!(column_eltypes::AbstractVector{<:Type}, cnames::AbstractVector{Symbol},
+           nrows::Integer=0; makeunique::Bool=false)::DataFrame =
+    throw(ArgumentError("It is not possible to construct an uninitialized `DataFrame`" *
+                        "without allocating new columns: use `DataFrame(...)` instead"))
+
 ##############################################################################
 ##
 ## AbstractDataFrame interface

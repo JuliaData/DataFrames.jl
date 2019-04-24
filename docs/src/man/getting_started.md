@@ -526,13 +526,14 @@ julia> x
 
 In-place functions are safe to call, except when a view of the `DataFrame`
 (created via a `view`, `@view` or [`groupby`](@ref))
-or when a `DataFrame` created with `copycols=false` are in use.
+or when a `DataFrame` created with `copycols=false` (or with the `DataFrame!` function)
+are in use.
 
 It is possible to have a direct access to a column `col` of a `DataFrame` `df`
 using the syntaxes `df.col`, `df[:col]`, via the [`eachcol`](@ref) function,
 by accessing a `parent` of a `view` of a column of a `DataFrame`,
 or simply by storing the reference to the column vector before the `DataFrame`
-was created with `copycols=false`.
+was created with `copycols=false` (or with the `DataFrame!` function).
 
 ```jldoctest dataframe
 julia> x = [3, 1, 2];
