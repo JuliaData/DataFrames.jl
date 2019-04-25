@@ -1064,7 +1064,7 @@ julia> vcat(df1, df2)
 │ 5   │ 5     │ 5     │
 │ 6   │ 6     │ 6     │
 
-julia> vcat(df1, df3, columns = :union)
+julia> vcat(df1, df3, cols=:union)
 6×3 DataFrame
 │ Row │ A     │ B       │ C       │
 │     │ Int64 │ Int64⍰  │ Int64⍰  │
@@ -1076,7 +1076,7 @@ julia> vcat(df1, df3, columns = :union)
 │ 5   │ 8     │ missing │ 8       │
 │ 6   │ 9     │ missing │ 9       │
 
-julia> vcat(df1, df3, columns = :intersect)
+julia> vcat(df1, df3, cols=:intersect)
 6×1 DataFrame
 │ Row │ A     │
 │     │ Int64 │
