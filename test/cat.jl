@@ -354,7 +354,7 @@ end
     @test vcat(df1, df2) == DataFrame(A = [1, 2, 3, 14, 16, 18],
                                       B = [4, 5, 6, 8, 10, 12],
                                       C = [7, 8, 9, 2, 4, 6])
-    # test with keyword argument for `columns`
+    # test with cols keyword argument
     @test vcat(df1, df2, cols = :equal) == DataFrame(A = [1, 2, 3, 14, 16, 18],
                                                      B = [4, 5, 6, 8, 10, 12],
                                                      C = [7, 8, 9, 2, 4, 6])
@@ -387,7 +387,7 @@ end
     @test [df1; df2] == df3 == reduce(vcat, [df1, df2])
 end
 
-@testset "vcat with columns=:union" begin
+@testset "vcat with cols=:union" begin
     df1 = DataFrame(A = 1:3, B = 4:6)
     df2 = DataFrame(A = 7:9)
     df3 = DataFrame(B = 4:6, A = 1:3)
