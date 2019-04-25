@@ -1,6 +1,6 @@
 module TestDataFrame
 
-using Dates, DataFrames, LinearAlgebra, Statistics, Random, Test
+using Dates, DataFrames, Statistics, Random, Test
 using DataFrames: _columns
 const ≅ = isequal
 const ≇ = !isequal
