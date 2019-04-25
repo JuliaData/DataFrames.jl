@@ -464,10 +464,8 @@ end
 
 combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
 
-function combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...) 
-    vec_of_pairs = reduce(vcat, f)
-    combine(vec_of_pairs, gd)
-end
+combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...) =
+    combine(reduce(vcat, f), gd)
 
 combine(gd::GroupedDataFrame, f::NamedTuple) = combine(f, gd)
 
@@ -705,7 +703,7 @@ function do_f(f, x...)
 end
 
 function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
-                  NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
+                           NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
                   gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
@@ -959,14 +957,14 @@ end
     by(d::AbstractDataFrame, keys, [cols1 => f1, cols2 => f2]...; sort::Bool = false)
     by(d::AbstractDataFrame, keys; (colname = cols => f)..., sort::Bool = false)
     by(d::AbstractDataFrame, keys, f; sort::Bool = false)
-    by(f, d::AbstractDataFrame; sort::Bool = false)
+    by(f, d::AbstractDataFrame, keys; sort::Bool = false)
 
 Split-apply-combine in one step: apply `f` to each grouping in `d`
 based on grouping columns `keys`, and return a `DataFrame`.
 
 `keys` can be either a single column index, or a vector thereof.
 
-The 3rd through last arguments in `combine` can can be either
+The third through last arguments in `combine` can can be either
 
 * One or several `cols => f` pairs, or vectors or tuples of such pairs (mixing is allowed). `cols`
   must be a column name or index in `gd`, or a vector or tuple thereof. `f` must be callable.
@@ -980,29 +978,8 @@ The 3rd through last arguments in `combine` can can be either
   then consists of the returned rows plus the grouping columns.
   Note that this form is much slower than the others due to type instability.
 
-
 A method is defined with `f` as the first argument, so do-block notation can be used.       
 In that case `f` can also be a named tuple of pairs.
-
-`f` can return a single value, a row or multiple rows. The type of the returned value
-determines the shape of the resulting data frame:
-- A single value gives a data frame with a single column and one row per group.
-- A named tuple of single values or a `DataFrameRow` gives a data frame with one column
-  for each field and one row per group.
-- A vector gives a data frame with a single column and as many rows
-  for each group as the length of the returned vector for that group.
-- A data frame, a named tuple of vectors or a matrix gives a data frame
-  with the same columns and as many rows for each group as the rows returned for that group.
-
-As a special case, if a tuple or vector of pairs is passed as the first argument, each function
-is required to return a single value or vector, which will produce each a separate column.
-
-In all cases, the resulting data frame contains all the grouping columns in addition
-to those listed above. Column names are automatically generated when necessary: for functions
-operating on a single column and returning a single value or vector, the function name is
-appended to the input column name; for other functions, columns are called `x1`, `x2`
-and so on. The resulting data frame will be sorted if `sort=true` was passed to `by`
-Otherwise, ordering of rows is undefined.
 
 `f` can return a single value, a row or multiple rows. The type of the returned value
 determines the shape of the resulting data frame:
@@ -1134,9 +1111,9 @@ by(d::AbstractDataFrame, cols::Any, f::Any; sort::Bool = false) =
 by(f::Any, d::AbstractDataFrame, cols::Any; sort::Bool = false) =
     by(d, cols, f, sort = sort)
 
-function by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}}...; sort::Bool = false) 
+by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}}...;
+   sort::Bool = false) =
     combine(reduce(vcat, f), groupby(d, cols, sort = sort))
-end
 
 by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
     combine(values(f), groupby(d, cols, sort = sort))
