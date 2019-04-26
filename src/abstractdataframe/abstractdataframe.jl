@@ -1033,14 +1033,14 @@ The `cols` keyword argument determines the columns of the returned data frame:
   Columns not present in some data frames are filled with `missing` where necessary.
 
 The order of columns is determined by the order they appear in the included
-data frames, searching through the header of the first data frame, then the 
-second, etc. 
+data frames, searching through the header of the first data frame, then the
+second, etc.
 
 The element types of columns are determined using `promote_type`,
 as with `vcat` for `AbstractVector`s.
 
-`vcat` ignores empty data frames, making it possible to initialize an empty 
-data frame at the beginning of a loop and `vcat` onto it. 
+`vcat` ignores empty data frames, making it possible to initialize an empty
+data frame at the beginning of a loop and `vcat` onto it.
 
 # Example
 ```jldoctest
@@ -1103,9 +1103,9 @@ Base.vcat(dfs::AbstractDataFrame...;
           cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
     _vcat([df for df in collect(dfs) if ncol(df) != 0]; cols=cols)
 
-function _vcat(dfs::AbstractVector{<:AbstractDataFrame}; 
+function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
-                      
+
     isempty(dfs) && return DataFrame()
     # Array of all headers
     allheaders = map(names, dfs)
@@ -1119,8 +1119,8 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     if cols === :equal
         header = unionunique
         coldiff = setdiff(unionunique, intersectunique)
-        
-        if !isempty(coldiff) 
+
+        if !isempty(coldiff)
             # if any DataFrames are a full superset of names, skip them
             filter!(u -> !issetequal(u, header), uniqueheaders)
             estrings = map(enumerate(uniqueheaders)) do (i, head)
@@ -1133,12 +1133,12 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         throw(ArgumentError(join(estrings, ", ", ", and ")))
         end
 
-    elseif cols === :intersect 
+    elseif cols === :intersect
         header = intersectunique
     elseif cols === :union
         header = unionunique
     else
-        header = cols 
+        header = cols
     end
 
     length(header) == 0 && return DataFrame()

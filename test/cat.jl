@@ -297,6 +297,16 @@ end
     @test vcat(df, alt_df) == DataFrame([[0.0,0.0,0.0,0.0,3.0,2.0,3.0,3.0],
                                          [2.0,2.0,1.0,3.0,2.0,2.0,1.0,3.0],
                                          [2,2,2,3,2,2,2,3]])
+
+    df1 = DataFrame(A=Int[], B=Float64[])
+    df2 = DataFrame(B=1.0, A=1)
+    @test vcat(df2, df1, df2, df1) == vcat(df2, df2)
+
+    df = DataFrame(A=1:5, B=11:15, C=21:25)
+    @test vcat(view(df, 1:2, :), view(df, 3:5, [3,2,1])) == df
+    @test vcat(view(df, 1:2, [1,2,3,1,2,3]), view(df, 3:5, [3,2,1,1,2,3])) == df
+    @test all(==(df[1, :]), eachrow(vcat(view(df, [1,1,1], [1,2,3,1,2,3]),
+                                         view(df, [1,1,1], [3,2,1,1,2,3]))))
 end
 
 @testset "vcat copy" begin
@@ -424,6 +434,12 @@ end
         DataFrame(A = [1, 2, 3, 7, 8, 9, 10, 11, 12],
                   B = [4, 5, 6, missing, missing, missing, missing, missing, missing],
                   C = [missing, missing, missing, missing, missing, missing, 13, 14, 15])
+
+    df1 = DataFrame(A=Int[], B=Float64[])
+    df2 = DataFrame(B=1.0, A=1)
+    @test vcat(df1, df2, df1, cols=[:A, :C, :B]) ≅ DataFrame(A=1, C=missing, B=1.0)
+    @test vcat(df1, df2, df2, cols=[:C]) ≅ DataFrame(C=[missing, missing])
+    @test_throws ArgumentError vcat(df1, df2, df2, cols=[:C, :C])
 end
 
 @testset "vcat errors" begin
