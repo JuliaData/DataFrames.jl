@@ -1173,7 +1173,7 @@ function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
 end
 
 function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
-    if copycols
+    if !copycols
         throw(ArgumentError("It is not possible to construct a `DataFrame`" *
                             "from GroupedDataFrame with `copycols=false`"))
 
