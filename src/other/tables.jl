@@ -23,7 +23,7 @@ function DataFrame(x::T; copycols::Bool=true) where {T}
     if Tables.istable(T)
         return fromcolumns(Tables.columns(x), copycols=copycols)
     end
-    if x isa AbstractVector
+    if x isa AbstractVector || x isa Tuple
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
                              copycols=copycols)
