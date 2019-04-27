@@ -16,11 +16,14 @@ fromcolumns(x; copycols::Bool=true) =
               Index(collect(Symbol, propertynames(x))),
               copycols=copycols)
 
-function DataFrame(x; copycols::Bool=true)
+function DataFrame(x::T; copycols::Bool=true) where {T}
     if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
         return DataFrame(Vector{AbstractVector}(x), copycols=copycols)
     end
-    if applicable(iterate, x)
+    if Tables.istable(T)
+        return fromcolumns(Tables.columns(x), copycols=copycols)
+    end
+    if x isa AbstractVector || x isa Tuple
         if all(v -> v isa Pair{Symbol, <:AbstractVector}, x)
             return DataFrame(AbstractVector[last(v) for v in x], [first(v) for v in x],
                              copycols=copycols)

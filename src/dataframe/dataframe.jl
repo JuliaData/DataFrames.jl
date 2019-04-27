@@ -16,6 +16,8 @@ DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol};
 DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
 DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false, copycols::Bool=true)
+DataFrame(pairs::AbstractVector{Pair{Symbol, <:AbstractVector}}; copycols::Bool=true)
+DataFrame(pairs::NTuple{N, Pair{Symbol, AbstractVector}}; copycols::Bool=true)
 DataFrame() # an empty DataFrame
 DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer=0;
           makeunique::Bool=false)
