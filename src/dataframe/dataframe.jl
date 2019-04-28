@@ -420,6 +420,8 @@ function insert_single_column!(df::DataFrame,
             push!(_columns(df), dv)
         else
             if ncol(df) + 1 == Int(col_ind)
+                Base.depwarn("adding new columns to a `DataFrame` using integer " *
+                             "indexing is deprecated", setindex!)
                 push!(index(df), nextcolname(df))
                 push!(_columns(df), dv)
             else
@@ -468,8 +470,13 @@ end
 # df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(df) if NCOL(df) > 0)
 function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
     if haskey(index(df), col_ind)
+        Base.depwarn("setting an existing `DataFrame` column" *
+                     "to a non-vector value is deprecated. " *
+                     "Use `df[col_ind] .= Ref(v) syntax instead.", setindex!)
         fill!(df[col_ind], v)
     else
+        Base.depwarn("adding new columns to a `DataFrame` that are not " *
+                     "`AbstractVector` is deprecated", setindex!)
         insert_single_column!(df, upgrade_scalar(df, v), col_ind)
     end
     return df
@@ -477,11 +484,18 @@ end
 
 # df[MultiColumnIndex] = DataFrame
 function Base.setindex!(df::DataFrame, new_df::DataFrame, col_inds::AbstractVector{Bool})
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, new_df, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         col_inds::AbstractVector{<:ColumnIndex})
+    if !(eltype(col_inds) <: Symbol)
+        Base.depwarn("assigning a data frame to a data frame" *
+                     "will use column name matching in the future.", setindex!)
+    end
     for j in 1:length(col_inds)
         insert_single_column!(df, new_df[j], col_inds[j])
     end
