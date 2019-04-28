@@ -96,7 +96,6 @@ If it is not performed a description explicitly mentions that the data is assign
 * `v` must be broadcastable.
 * if `haskey(df, col)` then standard in-place broadcasted assignment of `v` to the column vector `df[col]` is performed.
 * if not `haskey(df, col)` and `col isa Symbol`
-    * `df.col .= v` throws an error.
     * if `ncol(df) > 0` then a new verctor `c` of an appropriate type is created, having `nrow(df)` entries;
       then `c .= v` and `df.col = c` is performed.
     * if `ncol(df) == 0` then same operation as in the case above is performed, whith the following additional rules:
@@ -150,7 +149,7 @@ If it is not performed a description explicitly mentions that the data is assign
     * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
     * column names in `v` must be the same as selected by `cols`
     * an operation `df[row, col] = v[col]` for `col in cols` is performed
-* if `v` is a `AbstractVector{<:AbstractVector}` or `NTuple{N,AbstractVector}`:
+* if `v` is a iterable:
     * `length(v)` must be equal to `length(cols)`
     * an operation `df[row, col] = v[i]` for `(i, col) in enumerate(cols)` is performed
 * otherwise an error is thrown
@@ -162,7 +161,7 @@ If it is not performed a description explicitly mentions that the data is assign
     * column names in v must be the same as selected by `cols`
     * an operation `df[row, col] .= v[col]` for `col in cols` is performed
 * if `v` is 0-dimensional:
-    * an operation `df[row, col] .= v[]` for `col in cols` is performed
+    * an operation `df[row, col] .= v` for `col in cols` is performed
 * if `v` is 1-dimensional:
     * number of elements in `v` must be equal to length(cols)
     * an operation `df[row, col] .= v[i]` for `(i, col) in enumerate(cols)` is performed
@@ -194,8 +193,18 @@ Additionally for all operations:
 
 ### `SubDataFrame`:
 
-under construction
+If `sdf` is a `SubDataFrame` before any operation the following translations take place:
+* `sdf[col]` to `parent(sdf)[sdf.rows, Index(sdf)[col]]`
+* `sdf[cols]` to `parent(sdf)[sdf.rows, Index(sdf)[cols]]`
+* `sdf[row, col]` to `parent(sdf)[sdf.rows[row], Index(sdf)[col]]`
+* `sdf[rows, cols]` to `parent(sdf)[sdf.rows[rows], Index(sdf)[cols]]`
+
+After this translation rules for `DataFrame` assignement and broadcasting apply.
 
 ### `DataFrameRow`:
 
-under construction
+If `dfr` is a `DataFrameRow` before any operation the following translations take place:
+* `dfr[col]` to `parent(dfr)[dfr.row, Index(dfr)[col]]`
+* `dfr[cols]` to `parent(dfr)[dfr.row, Index(dfr)[cols]]`
+
+After this translation rules for `DataFrame` assignement and broadcasting apply.
