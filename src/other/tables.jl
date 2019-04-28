@@ -38,7 +38,7 @@ end
 Base.append!(df::DataFrame, x) = append!(df, DataFrame(x, copycols=false))
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
-function DataFrame(x::Vector{<:NamedTuple}, copycols::Bool=true)
+function DataFrame(x::Vector{<:NamedTuple}; copycols::Bool=true)
     if !copycols
         throw(ArgumentError("It is not possible to construct a `DataFrame`" *
                             "from a `Vector{<:NamedTuple}` with `copycols=false`"))
