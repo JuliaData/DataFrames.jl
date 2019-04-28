@@ -22,6 +22,7 @@ DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer=
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
+DataFrame(::GroupedDataFrame)
 ```
 
 **Arguments**
