@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Joins · DataFrames.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="DataFrames.jl logo"/></a><h1>DataFrames.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../index.html">Introduction</a></li><li><span class="toctext">User Guide</span><ul><li><a class="toctext" href="getting_started.html">Getting Started</a></li><li class="current"><a class="toctext" href="joins.html">Joins</a><ul class="internal"></ul></li><li><a class="toctext" href="split_apply_combine.html">Split-apply-combine</a></li><li><a class="toctext" href="reshaping_and_pivoting.html">Reshaping</a></li><li><a class="toctext" href="sorting.html">Sorting</a></li><li><a class="toctext" href="categorical.html">Categorical Data</a></li><li><a class="toctext" href="missing.html">Missing Data</a></li><li><a class="toctext" href="querying_frameworks.html">Data manipulation frameworks</a></li></ul></li><li><span class="toctext">API</span><ul><li><a class="toctext" href="../lib/types.html">Types</a></li><li><a class="toctext" href="../lib/functions.html">Functions</a></li><li><a class="toctext" href="../lib/indexing.html">Indexing</a></li></ul></li></ul></nav><article id="docs"><header><nav><ul><li>User Guide</li><li><a href="joins.html">Joins</a></li></ul><a class="edit-page" href="https://github.com/JuliaData/DataFrames.jl/blob/master/docs/src/man/joins.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Joins</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Database-Style-Joins-1" href="#Database-Style-Joins-1">Database-Style Joins</a></h1><p>We often need to combine two or more data sets together to provide a complete picture of the topic we are studying. For example, suppose that we have the following two data sets:</p><pre><code class="language-julia-repl">julia&gt; using DataFrames
+
+julia&gt; people = DataFrame(ID = [20, 40], Name = [&quot;John Doe&quot;, &quot;Jane Doe&quot;])
+2×2 DataFrame
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 20    │ John Doe │
+│ 2   │ 40    │ Jane Doe │
+
+julia&gt; jobs = DataFrame(ID = [20, 40], Job = [&quot;Lawyer&quot;, &quot;Doctor&quot;])
+2×2 DataFrame
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 20    │ Lawyer │
+│ 2   │ 40    │ Doctor │
+</code></pre><p>We might want to work with a larger data set that contains both the names and jobs for each ID. We can do this using the <code>join</code> function:</p><pre><code class="language-julia-repl">julia&gt; join(people, jobs, on = :ID)
+2×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String   │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 20    │ John Doe │ Lawyer │
+│ 2   │ 40    │ Jane Doe │ Doctor │
+</code></pre><p>In relational database theory, this operation is generally referred to as a join. The columns used to determine which rows should be combined during a join are called keys.</p><p>There are seven kinds of joins supported by the DataFrames package:</p><ul><li>Inner: The output contains rows for values of the key that exist in both the first (left) and second (right) arguments to <code>join</code>.</li><li>Left: The output contains rows for values of the key that exist in the first (left) argument to <code>join</code>, whether or not that value exists in the second (right) argument.</li><li>Right: The output contains rows for values of the key that exist in the second (right) argument to <code>join</code>, whether or not that value exists in the first (left) argument.</li><li>Outer: The output contains rows for values of the key that exist in the first (left) or second (right) argument to <code>join</code>.</li><li>Semi: Like an inner join, but output is restricted to columns from the first (left) argument to <code>join</code>.</li><li>Anti: The output contains rows for values of the key that exist in the first (left) but not the second (right) argument to <code>join</code>. As with semi joins, output is restricted to columns from the first (left) argument.</li><li>Cross: The output is the cartesian product of rows from the first (left) and second (right) arguments to <code>join</code>.</li></ul><p>See <a href="https://en.wikipedia.org/wiki/Join_(SQL)">the Wikipedia page on SQL joins</a> for more information.</p><p>You can control the kind of join that <code>join</code> performs using the <code>kind</code> keyword argument:</p><pre><code class="language-julia-repl">julia&gt; jobs = DataFrame(ID = [20, 60], Job = [&quot;Lawyer&quot;, &quot;Astronaut&quot;])
+2×2 DataFrame
+│ Row │ ID    │ Job       │
+│     │ Int64 │ String    │
+├─────┼───────┼───────────┤
+│ 1   │ 20    │ Lawyer    │
+│ 2   │ 60    │ Astronaut │
+
+julia&gt; join(people, jobs, on = :ID, kind = :inner)
+1×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String   │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 20    │ John Doe │ Lawyer │
+
+julia&gt; join(people, jobs, on = :ID, kind = :left)
+2×3 DataFrame
+│ Row │ ID    │ Name     │ Job     │
+│     │ Int64 │ String   │ String⍰ │
+├─────┼───────┼──────────┼─────────┤
+│ 1   │ 20    │ John Doe │ Lawyer  │
+│ 2   │ 40    │ Jane Doe │ missing │
+
+julia&gt; join(people, jobs, on = :ID, kind = :right)
+2×3 DataFrame
+│ Row │ ID    │ Name     │ Job       │
+│     │ Int64 │ String⍰  │ String    │
+├─────┼───────┼──────────┼───────────┤
+│ 1   │ 20    │ John Doe │ Lawyer    │
+│ 2   │ 60    │ missing  │ Astronaut │
+
+julia&gt; join(people, jobs, on = :ID, kind = :outer)
+3×3 DataFrame
+│ Row │ ID    │ Name     │ Job       │
+│     │ Int64 │ String⍰  │ String⍰   │
+├─────┼───────┼──────────┼───────────┤
+│ 1   │ 20    │ John Doe │ Lawyer    │
+│ 2   │ 40    │ Jane Doe │ missing   │
+│ 3   │ 60    │ missing  │ Astronaut │
+
+julia&gt; join(people, jobs, on = :ID, kind = :semi)
+1×2 DataFrame
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 20    │ John Doe │
+
+julia&gt; join(people, jobs, on = :ID, kind = :anti)
+1×2 DataFrame
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 40    │ Jane Doe │
+</code></pre><p>Cross joins are the only kind of join that does not use a key:</p><pre><code class="language-julia-repl">julia&gt; join(people, jobs, kind = :cross, makeunique = true)
+4×4 DataFrame
+│ Row │ ID    │ Name     │ ID_1  │ Job       │
+│     │ Int64 │ String   │ Int64 │ String    │
+├─────┼───────┼──────────┼───────┼───────────┤
+│ 1   │ 20    │ John Doe │ 20    │ Lawyer    │
+│ 2   │ 20    │ John Doe │ 60    │ Astronaut │
+│ 3   │ 40    │ Jane Doe │ 20    │ Lawyer    │
+│ 4   │ 40    │ Jane Doe │ 60    │ Astronaut │
+</code></pre><p>In order to join data tables on keys which have different names in the left and right tables, you may pass <code>(left, right)</code> tuples or <code>left =&gt; right</code> pairs as <code>on</code> argument:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(ID = [20, 40], Name = [&quot;John Doe&quot;, &quot;Jane Doe&quot;])
+2×2 DataFrame
+│ Row │ ID    │ Name     │
+│     │ Int64 │ String   │
+├─────┼───────┼──────────┤
+│ 1   │ 20    │ John Doe │
+│ 2   │ 40    │ Jane Doe │
+
+julia&gt; b = DataFrame(IDNew = [20, 40], Job = [&quot;Lawyer&quot;, &quot;Doctor&quot;])
+2×2 DataFrame
+│ Row │ IDNew │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 20    │ Lawyer │
+│ 2   │ 40    │ Doctor │
+
+julia&gt; join(a, b, on = :ID =&gt; :IDNew, kind = :inner)
+2×3 DataFrame
+│ Row │ ID    │ Name     │ Job    │
+│     │ Int64 │ String   │ String │
+├─────┼───────┼──────────┼────────┤
+│ 1   │ 20    │ John Doe │ Lawyer │
+│ 2   │ 40    │ Jane Doe │ Doctor │
+</code></pre><p>Here is another example with multiple columns:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(City = [&quot;Amsterdam&quot;, &quot;London&quot;, &quot;London&quot;, &quot;New York&quot;, &quot;New York&quot;],
+                     Job = [&quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Doctor&quot;, &quot;Doctor&quot;],
+                     Category = [1, 2, 3, 4, 5])
+5×3 DataFrame
+│ Row │ City      │ Job    │ Category │
+│     │ String    │ String │ Int64    │
+├─────┼───────────┼────────┼──────────┤
+│ 1   │ Amsterdam │ Lawyer │ 1        │
+│ 2   │ London    │ Lawyer │ 2        │
+│ 3   │ London    │ Lawyer │ 3        │
+│ 4   │ New York  │ Doctor │ 4        │
+│ 5   │ New York  │ Doctor │ 5        │
+
+julia&gt; b = DataFrame(Location = [&quot;Amsterdam&quot;, &quot;London&quot;, &quot;London&quot;, &quot;New York&quot;, &quot;New York&quot;],
+                     Work = [&quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Lawyer&quot;, &quot;Doctor&quot;, &quot;Doctor&quot;],
+                     Name = [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot;])
+5×3 DataFrame
+│ Row │ Location  │ Work   │ Name   │
+│     │ String    │ String │ String │
+├─────┼───────────┼────────┼────────┤
+│ 1   │ Amsterdam │ Lawyer │ a      │
+│ 2   │ London    │ Lawyer │ b      │
+│ 3   │ London    │ Lawyer │ c      │
+│ 4   │ New York  │ Doctor │ d      │
+│ 5   │ New York  │ Doctor │ e      │
+
+julia&gt; join(a, b, on = [(:City, :Location), (:Job, :Work)])
+9×4 DataFrame
+│ Row │ City      │ Job    │ Category │ Name   │
+│     │ String    │ String │ Int64    │ String │
+├─────┼───────────┼────────┼──────────┼────────┤
+│ 1   │ Amsterdam │ Lawyer │ 1        │ a      │
+│ 2   │ London    │ Lawyer │ 2        │ b      │
+│ 3   │ London    │ Lawyer │ 2        │ c      │
+│ 4   │ London    │ Lawyer │ 3        │ b      │
+│ 5   │ London    │ Lawyer │ 3        │ c      │
+│ 6   │ New York  │ Doctor │ 4        │ d      │
+│ 7   │ New York  │ Doctor │ 4        │ e      │
+│ 8   │ New York  │ Doctor │ 5        │ d      │
+│ 9   │ New York  │ Doctor │ 5        │ e      │
+</code></pre><p>Additionally, notice that in the last join rows 2 and 3 had the same values on <code>on</code> variables in both joined <code>DataFrame</code>s. In such a situation <code>:inner</code>, <code>:outer</code>, <code>:left</code> and <code>:right</code> joins will produce all combinations of matching rows. In our example rows from 2 to 5 were created as a result. The same behavior can be observed for rows 4 and 5 in both joined <code>DataFrame</code>s.</p><p>In order to check that columns passed as the <code>on</code> argument define unique keys (according to <code>isequal</code>) in each input data frame you can set the <code>validate</code> keyword argument to a two-element tuple or a pair of <code>Bool</code> values, with each element indicating whether to run check for the corresponding data frame. Here is an example for the join operation described above:</p><pre><code class="language-julia-repl">julia&gt; join(a, b, on = [(:City, :Location), (:Job, :Work)], validate=(true, true))
+ERROR: ArgumentError: Merge key(s) are not unique in both df1 and df2. First duplicate in df1 at 3. First duplicate in df2 at 3</code></pre><p>Finally, using the <code>indicator</code> keyword argument you can add a column to the resulting data frame indicating whether the given row appeared only in the left, the right or both data frames. Here is an example:</p><pre><code class="language-julia-repl">julia&gt; a = DataFrame(ID = [20, 40], Name = [&quot;John&quot;, &quot;Jane&quot;])
+2×2 DataFrame
+│ Row │ ID    │ Name   │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 20    │ John   │
+│ 2   │ 40    │ Jane   │
+
+julia&gt; b = DataFrame(ID = [20, 60], Job = [&quot;Lawyer&quot;, &quot;Doctor&quot;])
+2×2 DataFrame
+│ Row │ ID    │ Job    │
+│     │ Int64 │ String │
+├─────┼───────┼────────┤
+│ 1   │ 20    │ Lawyer │
+│ 2   │ 60    │ Doctor │
+
+julia&gt; join(a, b, on=:ID, validate=(true, true), indicator=:source, kind=:outer)
+3×4 DataFrame
+│ Row │ ID    │ Name    │ Job     │ source       │
+│     │ Int64 │ String⍰ │ String⍰ │ Categorical… │
+├─────┼───────┼─────────┼─────────┼──────────────┤
+│ 1   │ 20    │ John    │ Lawyer  │ both         │
+│ 2   │ 40    │ Jane    │ missing │ left_only    │
+│ 3   │ 60    │ missing │ Doctor  │ right_only   │</code></pre><p>Note that this time we also used the <code>validate</code> keyword argument and it did not produce errors as the keys defined in both source data frames were unique.</p><footer><hr/><a class="previous" href="getting_started.html"><span class="direction">Previous</span><span class="title">Getting Started</span></a><a class="next" href="split_apply_combine.html"><span class="direction">Next</span><span class="title">Split-apply-combine</span></a></footer></article></body></html>
