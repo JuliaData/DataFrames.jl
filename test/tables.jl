@@ -162,7 +162,7 @@ end
     @test df.a == [1, 3]
     @test df.b == [2, 4]
     @test_throws ArgumentError DataFrame!(v)
-    @test_throws DataFrame(v, copycols=false)
+    @test_throws ArgumentError DataFrame(v, copycols=false)
 end
 
 end # module
