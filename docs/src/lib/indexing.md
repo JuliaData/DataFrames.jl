@@ -194,17 +194,14 @@ Additionally for all operations:
 ### `SubDataFrame`:
 
 If `sdf` is a `SubDataFrame` before any operation the following translations take place:
-* `sdf[col]` to `parent(sdf)[sdf.rows, Index(sdf)[col]]`
-* `sdf[cols]` to `parent(sdf)[sdf.rows, Index(sdf)[cols]]`
-* `sdf[row, col]` to `parent(sdf)[sdf.rows[row], Index(sdf)[col]]`
-* `sdf[rows, cols]` to `parent(sdf)[sdf.rows[rows], Index(sdf)[cols]]`
+* `sdf[colidx]` to `parent(sdf)[sdf.rows, parentcols(index(sdf), colidx)]`
+* `sdf[rowidx, colidx]` to `parent(sdf)[sdf.rows[rowidx], parentcols(index(sdf), colidx)]`
 
 After this translation rules for `DataFrame` assignement and broadcasting apply.
 
 ### `DataFrameRow`:
 
 If `dfr` is a `DataFrameRow` before any operation the following translations take place:
-* `dfr[col]` to `parent(dfr)[dfr.row, Index(dfr)[col]]`
-* `dfr[cols]` to `parent(dfr)[dfr.row, Index(dfr)[cols]]`
+* `dfr[idx]` to `parent(dfr)[dfr.row, parentcols(index(dfr), idx)]`
 
 After this translation rules for `DataFrame` assignement and broadcasting apply.
