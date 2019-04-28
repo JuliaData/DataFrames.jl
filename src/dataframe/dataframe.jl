@@ -44,8 +44,7 @@ DataFrame(::GroupedDataFrame)
 * `ds` : `AbstractDict` of columns
 * `table` : any type that implements the
   [Tables.jl](https://github.com/JuliaData/Tables.jl) interface; in particular
-  a value of type `NTuple{N, Pair{Symbol, AbstractVector}}` or an `AbstractVector`
-  whose each element has `Pair{Symbol, <:AbstractVector}` type is a table.
+  a tuple or vector of `Pair{Symbol, <:AbstractVector}}` objects is a table.
 * `copycols` : whether vectors passed as columns should be copied; note that
   `DataFrame(kwargs...)` does not support this keyword argument and always copies columns.
 
