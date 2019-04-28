@@ -15,8 +15,6 @@ DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol};
           makeunique::Bool=false, copycols::Bool=true)
 DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
-DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false, copycols::Bool=true)
-DataFrame(pairs::AbstractVector{Pair{Symbol, <:AbstractVector}}; copycols::Bool=true)
 DataFrame(pairs::NTuple{N, Pair{Symbol, AbstractVector}}; copycols::Bool=true)
 DataFrame() # an empty DataFrame
 DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer=0;
@@ -24,6 +22,7 @@ DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer=
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
+DataFrame(::GroupedDataFrame)
 ```
 
 **Arguments**
@@ -44,7 +43,8 @@ DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
                   `CategoricalVector`
 * `ds` : `AbstractDict` of columns
 * `table` : any type that implements the
-  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
+  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface; in particular
+  a tuple or vector of `Pair{Symbol, <:AbstractVector}}` objects is a table.
 * `copycols` : whether vectors passed as columns should be copied; note that
   `DataFrame(kwargs...)` does not support this keyword argument and always copies columns.
 
