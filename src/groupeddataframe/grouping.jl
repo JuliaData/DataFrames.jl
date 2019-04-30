@@ -404,7 +404,7 @@ julia> combine(:c => sum, gd)
 │ 3   │ 3     │ 10    │
 │ 4   │ 4     │ 12    │
 
-julia> combine(gd, [:b, :c] => sum)
+julia> combine(gd, [:b, :c] .=> sum)
 8×2 DataFrame
 │ Row │ a     │ x1    │
 │     │ Int64 │ Int64 │
