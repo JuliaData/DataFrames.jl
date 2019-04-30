@@ -242,9 +242,6 @@ When computing the `sum` or `mean` over floating point columns, results will be 
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
 `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
 
-`by(d, cols, f)` is equivalent to `combine(f, groupby(d, cols))` and to the
-less efficient `combine(map(f, groupby(d, cols)))`.
-
 ### Examples
 
 ```jldoctest
@@ -1018,6 +1015,8 @@ When computing the `sum` or `mean` over floating point columns, results will be 
 accurate than the standard [`sum`](@ref) function (which uses pairwise summation). Use
 `col => x -> sum(x)` to avoid the optimized method and use the slower, more accurate one.
 
+`by(d, cols, f)` is equivalent to `combine(f, groupby(d, cols))` and to the
+less efficient `combine(map(f, groupby(d, cols)))`.
 
 ### Examples
 
