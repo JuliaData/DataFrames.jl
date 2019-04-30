@@ -120,8 +120,6 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         @test isequal(df.c, [missing, missing, missing])
 
         etu = EltypeUnknownIterator([nt, nt, nt])
-        @test_throws ArgumentError DataFrame(etu)
-        Tables.istable(EltypeUnknownIterator) = true
         df = DataFrame(etu)
         @test size(df) == (3, 3)
         @test df.a == [1, 1, 1]
