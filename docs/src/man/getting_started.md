@@ -11,6 +11,12 @@ Pkg.add("DataFrames")
 
 Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed `using DataFrames` to bring all of the relevant variables into your current namespace.
 
+### Setting up Jupyter Notebook for work with DataFrames.jl
+
+By default Jupyter Notebook will limit the number of rows and columns when displaying a data frame to roughly fit the screen size (like in the REPL).
+
+You can override this behavior by setting `ENV["COLUMNS"]` or `ENV["LINES"]` variables to hold the maximum width and height of output in characters respectively before using the `notebook` function. Alternatively you can add the following entry `"COLUMNS": "1000", "LINES": "100"` to `"env"` variable in your Jupyter kernel file. See [here](https://jupyter-client.readthedocs.io/en/stable/kernels.html) for information about location and specification of Jupyter kernels.
+
 ## The `DataFrame` Type
 
 Objects of the `DataFrame` type represent a data table as a series of vectors, each corresponding to a column or variable. The simplest way of constructing a `DataFrame` is to pass column vectors using keyword arguments or pairs:
