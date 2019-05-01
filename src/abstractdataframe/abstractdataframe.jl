@@ -1101,7 +1101,12 @@ julia> vcat(d4, df1)
 """
 Base.vcat(dfs::AbstractDataFrame...;
           cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
-    _vcat([df for df in collect(dfs) if ncol(df) != 0]; cols=cols)
+    reduce(vcat, dfs; cols=cols)
+
+Base.reduce(::typeof(vcat),
+            dfs::Union{AbstractVector{<:AbstractDataFrame}, Tuple{Vararg{AbstractDataFrame}}};
+            cols::Union{Symbol, AbstractVector{Symbol}}=:equal) =
+    _vcat([df for df in dfs if ncol(df) != 0]; cols=cols)
 
 function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
                cols::Union{Symbol, AbstractVector{Symbol}}=:equal)
@@ -1162,10 +1167,6 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
         end
     end
     return DataFrame(all_cols, header, copycols=false)
-end
-
-function Base.reduce(::typeof(vcat), dfs::AbstractVector{<:AbstractDataFrame})
-    return _vcat(dfs)
 end
 
 """
