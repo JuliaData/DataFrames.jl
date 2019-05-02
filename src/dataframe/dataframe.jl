@@ -103,9 +103,7 @@ struct DataFrame <: AbstractDataFrame
         end
         lengths = [isa(col, AbstractArray) ? length(col) : 1 for col in columns]
         minlen, maxlen = extrema(lengths)
-        if minlen == 0 && maxlen == 0
-            return new(columns, colindex)
-        elseif minlen != maxlen || minlen == maxlen == 1
+        if minlen != maxlen || minlen == maxlen == 1
             # recycle scalars
             for i in 1:length(columns)
                 isa(columns[i], AbstractArray) && continue
