@@ -1302,6 +1302,10 @@ An error is thrown if conversion fails: this is the case in particular if a colu
 in `df2` contains `missing` values but the corresponding column in `df1` does not
 accept them.
 
+Please note that `append!` must not be used on a `DataFrame` that contains columns
+that are aliases (equal when compared with `===`) as it will silently produce
+a wrong result in such a situation.
+
 !!! note
     Use [`vcat`](@ref) instead of `append!` when more flexibility is needed.
     Since `vcat` does not operate in place, it is able to use promotion to find
