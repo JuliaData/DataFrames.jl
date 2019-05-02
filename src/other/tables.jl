@@ -29,10 +29,11 @@ function DataFrame(x::T; copycols::Bool=true) where {T}
                              copycols=copycols)
         end
     end
-    if Tables.istable(x)
+    try
         return fromcolumns(Tables.columns(x), copycols=copycols)
+    catch e
+        throw(ArgumentError("unable to construct DataFrame from $(typeof(x))"))
     end
-    throw(ArgumentError("unable to construct DataFrame from $(typeof(x))"))
 end
 
 Base.append!(df::DataFrame, x) = append!(df, DataFrame(x, copycols=false))
