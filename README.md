@@ -1,15 +1,13 @@
 DataFrames.jl
 =============
 
-[![0.6](http://pkg.julialang.org/badges/DataFrames_0.6.svg)](http://pkg.julialang.org/?pkg=DataFrames)
-
 [![Coverage Status](https://coveralls.io/repos/JuliaData/DataFrames.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/JuliaData/DataFrames.jl?branch=master)
 [![Travis Build Status](https://travis-ci.org/JuliaData/DataFrames.jl.svg?branch=master)](https://travis-ci.org/JuliaData/DataFrames.jl)
 [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/85h1i9lll64jpg3y/branch/master?svg=true)](https://ci.appveyor.com/project/nalimilan/dataframes-jl/branch/master)
 
 Tools for working with tabular data in Julia.
 
-**Installation**: at the Julia REPL, `Pkg.add("DataFrames")`
+**Installation**: at the Julia REPL, `using Pkg; Pkg.add("DataFrames")`
 
 **Documentation**: [![][docs-stable-img]][docs-stable-url] [![][docs-latest-img]][docs-latest-url]
 
