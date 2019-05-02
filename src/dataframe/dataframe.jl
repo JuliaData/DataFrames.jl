@@ -1419,6 +1419,10 @@ Otherwise if `columns=:equal` then `row` must contain exactly the same columns a
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
 columns are created for all values in `row`, using their names and order.
 
+Please note that `push!` must not be used on a `DataFrame` that contains columns
+that are aliases (equal when compared with `===`) as it will silently produce
+a wrong result in such a situation.
+
 # Examples
 ```jldoctest
 julia> df = DataFrame(A=1:3, B=1:3)
