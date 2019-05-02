@@ -1221,7 +1221,7 @@ end
     @test size(DataFrame()) == (0,0)
 end
 
-@testset "0-row DataFrame corner cases"
+@testset "0-row DataFrame corner cases" begin
     df = DataFrame(a=1:0)
     @test df.a isa Vector{Int}
     v = Int[]
