@@ -13,7 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "DataFrames.jl",
     "category": "section",
-    "text": "Welcome to the DataFrames documentation! This resource aims to teach you everything you need to know to get up and running with tabular data manipulation using the DataFrames.jl package and the Julia language. If there is something you expect DataFrames to be capable of, but cannot figure out how to do, please reach out with questions in Domains/Data on Discourse. Please report bugs by opening an issue. You can follow the source links throughout the documentation to jump right to the source files on GitHub to make pull requests for improving the documentation and function capabilities. Please review DataFrames contributing guidelines before submitting your first PR! Information on specific versions can be found on the Release page."
+    "text": "Welcome to the DataFrames documentation!This resource aims to teach you everything you need to know to get up and running with tabular data manipulation using the DataFrames.jl package and the Julia language.If there is something you expect DataFrames to be capable of, but cannot figure out how to do, please reach out with questions in Domains/Data on Discourse.Please report bugs by opening an issue.You can follow the source links throughout the documentation to jump right to the source files on GitHub to make pull requests for improving the documentation and function capabilities.Please review DataFrames contributing guidelines before submitting your first PR!Information on specific versions can be found on the Release page."
 },
 
 {
@@ -29,7 +29,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "API",
     "category": "section",
-    "text": "Pages = [\"lib/types.md\", \"lib/functions.md\", \"lib/indexing.md\"]\nDepth = 2"
+    "text": "Only exported (i.e. available for use without DataFrames. qualifier after loading the DataFrames.jl package with using DataFrames) types and functions are considered a part of the public API of the DataFrames.jl package. In general all such objects are documented in this manual (in case some documentation is missing please kindly report an issue here).All types and functions that are part of public API are guaranteed to go through a deprecation period before being changed or removed.Please be warned that while Julia allows you to access internal functions or types of DataFrames.jl these can change without warning between versions of DataFrames.jl. In particular it is not safe to directly access fields of types that are a part of public API of the DataFrames.jl package using e.g. the getfield function. Whenever some operation on fields of defined types is considered allowed an appropriate exported function should be used instead.Pages = [\"lib/types.md\", \"lib/functions.md\", \"lib/indexing.md\"]\nDepth = 2"
 },
 
 {
