@@ -50,6 +50,10 @@ end
     end
 end
 
+df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)    
+gd = groupby(df, :a)    
+@test combine(gd) == DataFrame(gd)
+
 @testset "categorical constructor" begin
     df = DataFrame([Int, String], [:a, :b], [false, true], 3)
     @test !(df[:a] isa CategoricalVector)
