@@ -52,7 +52,7 @@ end
 
 df = DataFrame(a=[1, 1, 2, 2, 2], b=1:5)    
 gd = groupby(df, :a)    
-@test combine(gd) == DataFrame(gd)
+@test combine(gd) == combine(identity, gd)
 
 @testset "categorical constructor" begin
     df = DataFrame([Int, String], [:a, :b], [false, true], 3)

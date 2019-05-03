@@ -472,7 +472,7 @@ combine(gd::GroupedDataFrame, f::NamedTuple) = combine(f, gd)
 function combine(gd::GroupedDataFrame; f...)
     if length(f) == 0
         Base.depwarn("combine(gd) is deprecated, use DataFrame(gd) instead", :combine)
-        DataFrame(gd)
+        combine(identity, gd)
     else
         combine(values(f), gd)
     end
