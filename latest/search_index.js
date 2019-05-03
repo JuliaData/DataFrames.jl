@@ -61,7 +61,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Getting Started",
     "title": "Installation",
     "category": "section",
-    "text": "The DataFrames package is available through the Julia package system and can be installed using the following commands:using Pkg\nPkg.add(\"DataFrames\")Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed using DataFrames to bring all of the relevant variables into your current namespace."
+    "text": "The DataFrames package is available through the Julia package system and can be installed using the following commands:using Pkg\nPkg.add(\"DataFrames\")Throughout the rest of this tutorial, we will assume that you have installed the DataFrames package and have already typed using DataFrames to bring all of the relevant variables into your current namespace.note: Note\nBy default Jupyter Notebook will limit the number of rows and columns when displaying a data frame to roughly fit the screen size (like in the REPL).You can override this behavior by setting the ENV[\"COLUMNS\"] or ENV[\"LINES\"] variables to hold the maximum width and height of output in characters respectively before using the notebook function.Alternatively, you may want to set the maximum number of data frame rows to print to 100 and the maximum output width in characters to 1000 for every Julia session using some Jupyter kernel file (numbers 100 and 1000 are only examples and can be adjusted). In such case add a \"COLUMNS\": \"1000\", \"LINES\": \"100\" entry to the \"env\" variable in this Jupyter kernel file. See here for information about location and specification of Jupyter kernels."
 },
 
 {
