@@ -29,17 +29,23 @@ function DataFrame(x::T; copycols::Bool=true) where {T}
                              copycols=copycols)
         end
     end
-    if Tables.istable(x)
+    try
         return fromcolumns(Tables.columns(x), copycols=copycols)
+    catch e
+        throw(ArgumentError("unable to construct DataFrame from $(typeof(x))"))
     end
-    throw(ArgumentError("unable to construct DataFrame from $(typeof(x))"))
 end
 
 Base.append!(df::DataFrame, x) = append!(df, DataFrame(x, copycols=false))
 
 # This supports the Tables.RowTable type; needed to avoid ambiguities w/ another constructor
-DataFrame(x::Vector{<:NamedTuple}) =
+function DataFrame(x::Vector{<:NamedTuple}; copycols::Bool=true)
+    if !copycols
+        throw(ArgumentError("It is not possible to construct a `DataFrame`" *
+                            "from a `Vector{<:NamedTuple}` with `copycols=false`"))
+    end
     fromcolumns(Tables.columns(Tables.IteratorWrapper(x)), copycols=false)
+end
 DataFrame!(x::Vector{<:NamedTuple}) =
     throw(ArgumentError("It is not possible to construct a `DataFrame` from " *
                         "`$(typeof(x))` without allocating new columns: use " *

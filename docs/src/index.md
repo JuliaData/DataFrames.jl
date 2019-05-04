@@ -1,17 +1,28 @@
 # DataFrames.jl
 
-Welcome to the DataFrames documentation! This resource aims to teach you everything you need
+Welcome to the DataFrames documentation!
+
+This resource aims to teach you everything you need
 to know to get up and running with tabular data manipulation using the DataFrames.jl package
-and the Julia language. If there is something you expect DataFrames to be capable of, but
+and the Julia language.
+
+If there is something you expect DataFrames to be capable of, but
 cannot figure out how to do, please reach out with questions in Domains/Data on
 [Discourse](https://discourse.julialang.org/new-topic?title=[DataFrames%20Question]:%20&body=%23%20Question:%0A%0A%23%20Dataset%20(if%20applicable):%0A%0A%23%20Minimal%20Working%20Example%20(if%20applicable):%0A&category=Domains/Data&tags=question).
+
 Please report bugs by
-[opening an issue](https://github.com/JuliaData/DataFrames.jl/issues/new). You can follow
+[opening an issue](https://github.com/JuliaData/DataFrames.jl/issues/new).
+
+You can follow
 the [**source**]() links throughout the documentation to jump right to the
 source files on GitHub to make pull requests for improving the documentation and function
-capabilities. Please review
+capabilities.
+
+Please review
 [DataFrames contributing guidelines](https://github.com/JuliaData/DataFrames.jl/blob/master/CONTRIBUTING.md)
-before submitting your first PR! Information on specific versions can be found on the [Release page](https://github.com/JuliaData/DataFrames.jl/releases).
+before submitting your first PR!
+
+Information on specific versions can be found on the [Release page](https://github.com/JuliaData/DataFrames.jl/releases).
 
 ## Package Manual
 
@@ -28,6 +39,22 @@ Depth = 2
 ```
 
 ## API
+
+Only exported (i.e. available for use without `DataFrames.` qualifier after loading
+the DataFrames.jl package with `using DataFrames`) types and functions are considered
+a part of the public API of the DataFrames.jl package. In general all such objects
+are documented in this manual (in case some documentation is missing
+please kindly report an issue [here](https://github.com/JuliaData/DataFrames.jl/issues/new)).
+
+All types and functions that are part of public API are guaranteed to go through a deprecation
+period before being changed or removed.
+
+Please be warned that while Julia allows you to access internal functions or types of DataFrames.jl
+these can change without warning between versions of DataFrames.jl. In particular
+it is not safe to directly access fields of types that are a part of public API
+of the DataFrames.jl package using e.g. the `getfield` function. Whenever some
+operation on fields of defined types is considered allowed an appropriate exported
+function should be used instead.
 
 ```@contents
 Pages = ["lib/types.md", "lib/functions.md", "lib/indexing.md"]

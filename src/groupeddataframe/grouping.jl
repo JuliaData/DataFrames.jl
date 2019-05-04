@@ -1172,7 +1172,11 @@ function _aggregate(d::AbstractDataFrame, fs::AbstractVector,
     res
 end
 
-function DataFrame(gd::GroupedDataFrame)
+function DataFrame(gd::GroupedDataFrame; copycols::Bool=true)
+    if !copycols
+        throw(ArgumentError("It is not possible to construct a `DataFrame`" *
+                            "from GroupedDataFrame with `copycols=false`"))
+    end
     length(gd) == 0 && return similar(parent(gd), 0)
     idx = similar(gd.idx)
     doff = 1

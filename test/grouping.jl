@@ -1104,6 +1104,9 @@ end
 
         gd2 = gd[[2,1]]
         @test DataFrame(gd2) == df[[3,5,2,4], :]
+
+        @test_throws ArgumentError DataFrame!(gd)
+        @test_throws ArgumentError DataFrame(gd, copycols=false)
     end
 
     df = DataFrame(a=Int[], b=[], c=Union{Missing, String}[])

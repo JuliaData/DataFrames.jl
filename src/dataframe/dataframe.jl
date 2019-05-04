@@ -15,8 +15,6 @@ DataFrame(columns::NTuple{N,AbstractVector}, names::NTuple{N,Symbol};
           makeunique::Bool=false, copycols::Bool=true)
 DataFrame(columns::Matrix, names::Vector{Symbol}; makeunique::Bool=false)
 DataFrame(kwargs...)
-DataFrame(pairs::Pair{Symbol}...; makeunique::Bool=false, copycols::Bool=true)
-DataFrame(pairs::AbstractVector{Pair{Symbol, <:AbstractVector}}; copycols::Bool=true)
 DataFrame(pairs::NTuple{N, Pair{Symbol, AbstractVector}}; copycols::Bool=true)
 DataFrame() # an empty DataFrame
 DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer=0;
@@ -24,6 +22,7 @@ DataFrame(column_eltypes::Vector, names::AbstractVector{Symbol}, nrows::Integer=
 DataFrame(ds::AbstractDict; copycols::Bool=true)
 DataFrame(table; makeunique::Bool=false, copycols::Bool=true)
 DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
+DataFrame(::GroupedDataFrame)
 ```
 
 **Arguments**
@@ -44,7 +43,8 @@ DataFrame(::Union{DataFrame, SubDataFrame}; copycols::Bool=true)
                   `CategoricalVector`
 * `ds` : `AbstractDict` of columns
 * `table` : any type that implements the
-  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface
+  [Tables.jl](https://github.com/JuliaData/Tables.jl) interface; in particular
+  a tuple or vector of `Pair{Symbol, <:AbstractVector}}` objects is a table.
 * `copycols` : whether vectors passed as columns should be copied; note that
   `DataFrame(kwargs...)` does not support this keyword argument and always copies columns.
 
@@ -103,9 +103,7 @@ struct DataFrame <: AbstractDataFrame
         end
         lengths = [isa(col, AbstractArray) ? length(col) : 1 for col in columns]
         minlen, maxlen = extrema(lengths)
-        if minlen == 0 && maxlen == 0
-            return new(columns, colindex)
-        elseif minlen != maxlen || minlen == maxlen == 1
+        if minlen != maxlen || minlen == maxlen == 1
             # recycle scalars
             for i in 1:length(columns)
                 isa(columns[i], AbstractArray) && continue
@@ -1318,6 +1316,10 @@ An error is thrown if conversion fails: this is the case in particular if a colu
 in `df2` contains `missing` values but the corresponding column in `df1` does not
 accept them.
 
+Please note that `append!` must not be used on a `DataFrame` that contains columns
+that are aliases (equal when compared with `===`) as it will silently produce
+a wrong result in such a situation.
+
 !!! note
     Use [`vcat`](@ref) instead of `append!` when more flexibility is needed.
     Since `vcat` does not operate in place, it is able to use promotion to find
@@ -1434,6 +1436,10 @@ Otherwise if `columns=:equal` then `row` must contain exactly the same columns a
 
 As a special case, if `df` has no columns and `row` is a `NamedTuple` or `DataFrameRow`,
 columns are created for all values in `row`, using their names and order.
+
+Please note that `push!` must not be used on a `DataFrame` that contains columns
+that are aliases (equal when compared with `===`) as it will silently produce
+a wrong result in such a situation.
 
 # Examples
 ```jldoctest

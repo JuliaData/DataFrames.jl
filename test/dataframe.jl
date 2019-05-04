@@ -1221,4 +1221,16 @@ end
     @test size(DataFrame()) == (0,0)
 end
 
+@testset "0-row DataFrame corner cases" begin
+    df = DataFrame(a=1:0)
+    @test df.a isa Vector{Int}
+    v = Int[]
+    df = DataFrame(a=v, b=v)
+    @test df.a !== df.b
+    df = DataFrame(a=v, b=v, copycols=true)
+    @test df.a !== df.b
+    df = DataFrame(a=v, b=v, copycols=false)
+    @test df.a === df.b
+end
+
 end # module
