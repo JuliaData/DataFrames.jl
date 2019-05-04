@@ -107,33 +107,29 @@ If it is not performed a description explicitly mentions that the data is assign
 > `df[cols] = v`
 
 * passed columns are copied like in `DataFrame` constructor with `copycols=true`;
-* if `v` is a `DataFrame` or `NamedTuple` of vectors or `AbstractDict` of vectors:
+* if `v` is an `AbstractDataFrame` of vectors:
     * `nrow(df)` must be equal to number of rows in `v` unless `ncol(df)==0` in
       which case it is enough that number of rows in each entry of `v` is constant;
     * number of columns in `v` must be equal to length of `cols`
     * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
       (which means that passing `Integer` or `Bool` will fail for nonexistent columns,
       but adding new columns as `Symbol` is allowed)
-    * then `df[col] = v[col]` is called for each column name `col`
-* if `v` is an iterable of vectors the same process is performed but
-  `df[col] = v[i]` for `(i, col) in enumerate(col)` is performed instead
-* if `v` is an `AbstractMatrix` the same process is performed but
-  `df[col] = v[:, i]` for `(i, col) in enumerate(col)` is performed instead
+    * then `df[col] = copy(v[col])` is called for each column name `col`
+* in the future allowing of `NamedTuple`, `AbstractDict` and `AbstractMatrix` as `v` is planned
 
 > `df[cols] .= v`
 
 * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
   (which means that passing `Integer` or `Bool` will fail for missing columns,
   but adding new columns as `Symbol` is allowed)
-* if `v` is a `DataFrame` or `NamedTuple` or `AbstractDict`:
+* if `v` is an `AbstractDataFrame`:
     * number of columns in `v` must be equal to length of `cols`
     * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
       (which means that passing `Integer` or `Bool` will fail for missing columns,
       but adding new columns as `Symbol` is allowed)
     * then `df[col] .= v[col]` for `col in cols` is performed
-* if `v` is 0- or 1- dimensional then it is broadcasted to call `df[col] .= v` for all `col in cols`
-* if `v` is 2-dimensional then its dimensions of length 1 are expanded if needed and
-  `df[col] .= v[:, i]` for `(i, col) in enumerate(col)` is performed
+* otherwise it is broadcasted to call `df[col] .= v` for all `col in cols`
+* in the future allowing of `NamedTuple`, `AbstractDict` and `AbstractMatrix` as `v` is planned
 
 > `df[row, col] = v`
 
@@ -145,28 +141,32 @@ If it is not performed a description explicitly mentions that the data is assign
 
 > `df[row, cols] = v`
 
-* if `v` is a `DataFrameRow` or `NamedTuple` or `AbstractDict` then
-    * `length(v)` must be equal to `length(cols)`
-    * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
-    * column names in `v` must be the same as selected by `cols`
-    * an operation `df[row, col] = v[col]` for `col in cols` is performed
-* if `v` is a iterable:
-    * `length(v)` must be equal to `length(cols)`
-    * an operation `df[row, col] = v[i]` for `(i, col) in enumerate(cols)` is performed
-* otherwise an error is thrown
+* currently this functionality is deprecated
+* in the future the following functionality is planned
+    * if `v` is a `DataFrameRow` or `NamedTuple` or `AbstractDict` then
+        * `length(v)` must be equal to `length(cols)`
+        * before making any assignment `cols` is transformed to `Symbols` using `names(df)`
+        * column names in `v` must be the same as selected by `cols`
+        * an operation `df[row, col] = v[col]` for `col in cols` is performed
+    * if `v` is a iterable:
+        * `length(v)` must be equal to `length(cols)`
+        * an operation `df[row, col] = v[i]` for `(i, col) in enumerate(cols)` is performed
+    * otherwise an error is thrown
 
 > `df[row, cols] .= v`
 
-* if `v` is a `DataFrameRow` or `NamedTuple` or `AbstractDict` then
-    * number of columns in `v` must be equal to length(cols)
-    * column names in v must be the same as selected by `cols`
-    * an operation `df[row, col] .= v[col]` for `col in cols` is performed
-* if `v` is 0-dimensional:
-    * an operation `df[row, col] .= v` for `col in cols` is performed
-* if `v` is 1-dimensional:
-    * number of elements in `v` must be equal to length(cols)
-    * an operation `df[row, col] .= v[i]` for `(i, col) in enumerate(cols)` is performed
-* otherwise an error is thrown
+* currently this functionality is undefined
+* in the future the following functionality is planned
+    * if `v` is a `DataFrameRow` or `NamedTuple` or `AbstractDict` then
+        * number of columns in `v` must be equal to length(cols)
+        * column names in v must be the same as selected by `cols`
+        * an operation `df[row, col] .= v[col]` for `col in cols` is performed
+    * if `v` is 0-dimensional:
+        * an operation `df[row, col] .= v` for `col in cols` is performed
+    * if `v` is 1-dimensional:
+        * number of elements in `v` must be equal to length(cols)
+        * an operation `df[row, col] .= v[i]` for `(i, col) in enumerate(cols)` is performed
+    * otherwise an error is thrown
 
 > `df[rows, col] = v`
 

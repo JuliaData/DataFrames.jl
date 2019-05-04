@@ -479,14 +479,14 @@ function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
 end
 
 # df[MultiColumnIndex] = DataFrame
-function Base.setindex!(df::DataFrame, new_df::DataFrame, col_inds::AbstractVector{Bool})
+function Base.setindex!(df::DataFrame, new_df::AbstractDataFrame, col_inds::AbstractVector{Bool})
     if length(col_inds) != ncol(df)
         throw(ArgumentError("col_inds must have the same length as number of columns in df"))
     end
     setindex!(df, new_df, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
-                        new_df::DataFrame,
+                        new_df::AbstractDataFrame,
                         col_inds::AbstractVector{<:ColumnIndex})
     if !(eltype(col_inds) <: Symbol)
         Base.depwarn("assigning a data frame to a data frame" *
@@ -500,11 +500,16 @@ end
 
 # df[MultiColumnIndex] = AbstractVector (REPEATED FOR EACH COLUMN)
 function Base.setindex!(df::DataFrame, v::AbstractVector, col_inds::AbstractVector{Bool})
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, v, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("assigning a vector to a data frame" *
+                 "with multiple columns selected is deprecated.", setindex!)
     for col_ind in col_inds
         df[col_ind] = copy(v)
     end
@@ -515,9 +520,14 @@ end
 function Base.setindex!(df::DataFrame,
                         val::Any,
                         col_inds::AbstractVector{Bool})
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, val, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("assigning a value other than AbstractDataFrame to a data frame" *
+                 "with multiple columns selected is deprecated.", setindex!)
     for col_ind in col_inds
         df[col_ind] = val
     end
@@ -528,21 +538,26 @@ end
 Base.setindex!(df::DataFrame, v, ::Colon) = (df[1:size(df, 2)] = v; df)
 
 # df[SingleRowIndex, SingleColumnIndex] = Single Item
-function Base.setindex!(df::DataFrame, v::Any, row_ind::Real, col_ind::ColumnIndex)
+function Base.setindex!(df::DataFrame, v::Any, row_ind::Integer, col_ind::ColumnIndex)
     insert_single_entry!(df, v, row_ind, col_ind)
 end
 
 # df[SingleRowIndex, MultiColumnIndex] = Single Item
 function Base.setindex!(df::DataFrame,
                         v::Any,
-                        row_ind::Real,
+                        row_ind::Integer,
                         col_inds::AbstractVector{Bool})
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, v, row_ind, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
-                        row_ind::Real,
+                        row_ind::Integer,
                         col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("assigning a value to a data frame" *
+                 "with multiple columns selected is deprecated.", setindex!)
     for col_ind in col_inds
         insert_single_entry!(df, v, row_ind, col_ind)
     end
@@ -552,14 +567,19 @@ end
 # df[SingleRowIndex, MultiColumnIndex] = 1-Row DataFrame
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
-                        row_ind::Real,
+                        row_ind::Integer,
                         col_inds::AbstractVector{Bool})
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, new_df, row_ind, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
-                        row_ind::Real,
+                        row_ind::Integer,
                         col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("assigning a value to a data frame" *
+                 "with multiple columns selected is deprecated.", setindex!)
     for j in 1:length(col_inds)
         insert_single_entry!(df, new_df[j][1], row_ind, col_inds[j])
     end
@@ -571,11 +591,14 @@ function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_ind::ColumnIndex)
+    if length(row_inds) != nrow(df)
+        throw(ArgumentError("row_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, v, findall(row_inds), col_ind)
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
-                        row_inds::AbstractVector{<:Real},
+                        row_inds::AbstractVector{<:Integer},
                         col_ind::ColumnIndex)
     insert_multiple_entries!(df, v, row_inds, col_ind)
     return df
@@ -586,12 +609,17 @@ function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_ind::ColumnIndex)
+    if length(row_inds) != nrow(df)
+        throw(ArgumentError("row_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, v, findall(row_inds), col_ind)
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
-                        row_inds::AbstractVector{<:Real},
+                        row_inds::AbstractVector{<:Integer},
                         col_ind::ColumnIndex)
+    Base.depwarn("`df[rows, col] = v` for `v` that is not an abstract vector is deprecated." *
+                 "Use `df[rows, col] .= Ref(v)` instead.", setindex!)
     insert_multiple_entries!(df, v, row_inds, col_ind)
     return df
 end
@@ -601,24 +629,38 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{Bool})
+    if length(row_inds) != nrow(df)
+        throw(ArgumentError("row_inds must have the same length as number of columns in df"))
+    end
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, new_df, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
+    if length(row_inds) != nrow(df)
+        throw(ArgumentError("row_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, new_df, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
-                        row_inds::AbstractVector{<:Real},
+                        row_inds::AbstractVector{<:Integer},
                         col_inds::AbstractVector{Bool})
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, new_df, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
-                        row_inds::AbstractVector{<:Real},
+                        row_inds::AbstractVector{<:Integer},
                         col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("assigning a value to a data frame" *
+                 "with multiple columns selected is deprecated.", setindex!)
     for j in 1:length(col_inds)
         insert_multiple_entries!(df, new_df[j], row_inds, col_inds[j])
     end
@@ -630,24 +672,38 @@ function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{Bool})
+    if length(row_inds) != nrow(df)
+        throw(ArgumentError("row_inds must have the same length as number of columns in df"))
+    end
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, v, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
+    if length(row_inds) != nrow(df)
+        throw(ArgumentError("row_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, v, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
-                        row_inds::AbstractVector{<:Real},
+                        row_inds::AbstractVector{<:Integer},
                         col_inds::AbstractVector{Bool})
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, v, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::AbstractVector,
-                        row_inds::AbstractVector{<:Real},
+                        row_inds::AbstractVector{<:Integer},
                         col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("assigning a value to a data frame" *
+                 "with multiple columns selected is deprecated.", setindex!)
     for col_ind in col_inds
         insert_multiple_entries!(df, v, row_inds, col_ind)
     end
@@ -659,24 +715,38 @@ function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{Bool})
+    if length(row_inds) != nrow(df)
+        throw(ArgumentError("row_inds must have the same length as number of columns in df"))
+    end
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, v, findall(row_inds), findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
                         row_inds::AbstractVector{Bool},
                         col_inds::AbstractVector{<:ColumnIndex})
+    if length(row_inds) != nrow(df)
+        throw(ArgumentError("row_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, v, findall(row_inds), col_inds)
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
-                        row_inds::AbstractVector{<:Real},
+                        row_inds::AbstractVector{<:Integer},
                         col_inds::AbstractVector{Bool})
+    if length(col_inds) != ncol(df)
+        throw(ArgumentError("col_inds must have the same length as number of columns in df"))
+    end
     setindex!(df, v, row_inds, findall(col_inds))
 end
 function Base.setindex!(df::DataFrame,
                         v::Any,
-                        row_inds::AbstractVector{<:Real},
+                        row_inds::AbstractVector{<:Integer},
                         col_inds::AbstractVector{<:ColumnIndex})
+    Base.depwarn("assigning a value to a data frame" *
+                 "with multiple columns selected is deprecated.", setindex!)
     for col_ind in col_inds
         insert_multiple_entries!(df, v, row_inds, col_ind)
     end
@@ -688,22 +758,33 @@ function Base.setindex!(df::DataFrame,
                         new_df::DataFrame,
                         row_inds::Colon,
                         col_inds::Colon=Colon())
+    Base.depwarn("assigning a value to a data frame" *
+                 "with multiple columns selected is deprecated.", setindex!)
     setfield!(df, :columns, copy(_columns(new_df)))
     setfield!(df, :colindex, copy(index(new_df)))
     df
 end
 
 # df[:, :] = ...
-Base.setindex!(df::DataFrame, v, ::Colon, ::Colon) =
+function Base.setindex!(df::DataFrame, v, ::Colon, ::Colon)
+    Base.depwarn("assigning a value to a data frame" *
+                 "with multiple columns selected is deprecated.", setindex!)
     (df[1:size(df, 1), 1:size(df, 2)] = v; df)
+end
 
 # df[Any, :] = ...
-Base.setindex!(df::DataFrame, v, row_inds, ::Colon) =
+function Base.setindex!(df::DataFrame, v, row_inds, ::Colon)
+    Base.depwarn("assigning a value to a data frame" *
+               "with multiple columns selected is deprecated.", setindex!)
     (df[row_inds, 1:size(df, 2)] = v; df)
+end
 
 # df[:, Any] = ...
-Base.setindex!(df::DataFrame, v, ::Colon, col_inds) =
+function Base.setindex!(df::DataFrame, v, ::Colon, col_inds)
+    Base.depwarn("assigning a value to a data frame" *
+                 "with multiple columns selected is deprecated.", setindex!)
     (df[col_inds] = v; df)
+end
 
 ##############################################################################
 ##
