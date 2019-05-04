@@ -106,6 +106,7 @@ If it is not performed a description explicitly mentions that the data is assign
 
 > `df[cols] = v`
 
+* passed columns are copied like in `DataFrame` constructor with `copycols=true`;
 * if `v` is a `DataFrame` or `NamedTuple` of vectors or `AbstractDict` of vectors:
     * `nrow(df)` must be equal to number of rows in `v` unless `ncol(df)==0` in
       which case it is enough that number of rows in each entry of `v` is constant;

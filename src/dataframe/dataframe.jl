@@ -457,7 +457,7 @@ function upgrade_scalar(df::DataFrame, v::AbstractArray)
 end
 function upgrade_scalar(df::DataFrame, v::Any)
     n = (ncol(df) == 0) ? 1 : nrow(df)
-    fill(v, n)
+    fill!(Tables.allocatecolumn(typeof(v), n), v)
 end
 
 # df[SingleColumnIndex] = AbstractVector
@@ -467,14 +467,12 @@ end
 
 # df[SingleColumnIndex] = Single Item (EXPANDS TO NROW(df) if NCOL(df) > 0)
 function Base.setindex!(df::DataFrame, v, col_ind::ColumnIndex)
+    Base.depwarn("setting an existing `DataFrame` column" *
+                 "to a non-vector value is deprecated. " *
+                 "Use `df[col_ind] .= Ref(v) syntax instead.", setindex!)
     if haskey(index(df), col_ind)
-        Base.depwarn("setting an existing `DataFrame` column" *
-                     "to a non-vector value is deprecated. " *
-                     "Use `df[col_ind] .= Ref(v) syntax instead.", setindex!)
         fill!(df[col_ind], v)
     else
-        Base.depwarn("adding new columns to a `DataFrame` that are not " *
-                     "`AbstractVector` is deprecated", setindex!)
         insert_single_column!(df, upgrade_scalar(df, v), col_ind)
     end
     return df
