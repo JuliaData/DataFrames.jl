@@ -493,7 +493,7 @@ function Base.setindex!(df::DataFrame,
                      "will use column name matching in the future.", setindex!)
     end
     for j in 1:length(col_inds)
-        insert_single_column!(df, new_df[j], col_inds[j])
+        insert_single_column!(df, copy(new_df[j]), col_inds[j])
     end
     return df
 end
