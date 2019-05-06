@@ -1,6 +1,6 @@
 struct DummyColumnValue end
 
-Base.broadcastable(df::AbstractDataFrame) = Matrix(df)
+Base.Broadcast.broadcastable(df::AbstractDataFrame) = Matrix(df)
 
 Base.maybeview(df::AbstractDataFrame, idxs...) = view(df, idxs...)
 
@@ -74,7 +74,7 @@ Base.copyto!(dfr::DataFrameRow, bc::Base.Broadcast.Broadcasted{<:Base.Broadcast.
         copyto!(dfr, convert(Broadcasted{Nothing}, bc))
     end
 
-function Base.materialize!(dest::SubDataFrame, bc::Base.Broadcast.Broadcasted{Style}) where {Style}
+function Base.Broadcast.materialize!(dest::SubDataFrame, bc::Base.Broadcast.Broadcasted{Style}) where {Style}
     try
         copyto!(dest, Base.Broadcast.instantiate(Base.Broadcast.Broadcasted{Style}(bc.f, bc.args, axes(dest))))
     catch
@@ -83,7 +83,7 @@ function Base.materialize!(dest::SubDataFrame, bc::Base.Broadcast.Broadcasted{St
         rethrow()
     end
 end
-function Base.materialize!(dest::SubDataFrame, x)
+function Base.Broadcast.materialize!(dest::SubDataFrame, x)
     try
         copyto!(dest, Base.Broadcast.instantiate(Base.Broadcast.Broadcasted(identity, (x,), axes(dest))))
     catch
