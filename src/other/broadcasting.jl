@@ -27,7 +27,7 @@ function Base.maybeview(df::AbstractDataFrame, idxs)
     view(df, idxs)
 end
 
-function Base.copyto!(df::SubDataFrame, bc)
+function Base.copyto!(df::AbstractDataFrame, bc)
     m = Base.materialize(bc)
     if ncol(df) == 1 && eltype(df[1]) === DummyColumnValue
         if maximum(ndims.(Base.Broadcast.flatten(bc).args)) > 1
@@ -45,7 +45,7 @@ function Base.copyto!(df::SubDataFrame, bc)
     df
 end
 
-function Base.copyto!(df::SubDataFrame, bc::Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}})
+function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}})
     if bc.f === identity && bc.args isa Tuple{Any} && Base.Broadcast.isflat(bc)
         for col in axes(df, 2)
             if eltype(df[col]) === DummyColumnValue
