@@ -93,5 +93,5 @@ If column indexing using symbols is performed the order of columns in the operat
 It is allowed to perform `df[col] .= value` even if `col` is not present in the `DataFrame` and it is a `Symbol`.
 In such a case a new column will be created.
 A data frame with zero columns is always considered to have zero rows.
-The assignment broadcasting is not supported for `df.col` style.
+The assignment broadcasting is not supported for `df.col` style if `col` is not present in `df`.
 Similar rules apply to `df[cols] .= value` if any of `Symbol`s in `cols` is not present in `df`.
