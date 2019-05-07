@@ -103,7 +103,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         @test isequal(df, DataFrame(Tables.columntable(df)))
 
         dn = DuplicateNamesTable()
-        @test_throws ErrorException (dn |> DataFrame)
+        @test_throws ArgumentError (dn |> DataFrame)
 
         dn = DuplicateNamesColumnTable()
         @test_throws ArgumentError (dn |> DataFrame)
