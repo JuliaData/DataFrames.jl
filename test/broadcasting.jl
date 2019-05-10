@@ -226,37 +226,9 @@ end
     @test df == cdf
 end
 
-@testset "extending data frame in broadcasted assignment - two columns" begin
-    df = copy(refdf)
-    df[[:x1, :a]] .= 10
-    @test all(df.x1 .== 10) && all(df.a .== 10)
-    @test names(df)[end] == :a
-    df[[:b, :c]] .= [5 5
-                     5 5
-                     5 5]
-    @test all(df[end-1:end] .== 5)
-    @test names(df)[end-1:end] == [:b, :c]
-    cdf = copy(df)
-    @test_throws DimensionMismatch df[[:x1, :x]] .= ones(3, 10)
-    @test df == cdf
-    @test_throws DimensionMismatch df[[:x2, :x]] .= ones(4)
-    @test df == cdf
-    @test_throws BoundsError df[[1, 10]] .= ones(3)
-    @test df == cdf
-
-    dfv = @view df[1:2, 2:end]
-    @test_throws BoundsError dfv[[10, 11]] .= ones(3)
-    @test_throws ArgumentError dfv[[:x1, :z]] .= ones(3)
-    @test df == cdf
-    dfr = df[1, 3:end]
-    @test_throws BoundsError dfr[[1,11]] .= ones(10)
-    @test_throws ArgumentError dfr[[:x1,:z]] .= ones(10)
-    @test df == cdf
-end
-
 @testset "empty data frame corner case" begin
     df = DataFrame()
-    @test_throws BoundsError df[1] .= 1
+    @test_throws ArgumentError df[1] .= 1
     @test_throws ArgumentError df[:a] .= [1]
     @test_throws ArgumentError df[[:a,:b]] .= [1]
     @test df == DataFrame()
@@ -269,23 +241,11 @@ end
     @test_throws DimensionMismatch df .= ones(1,2)
     @test_throws DimensionMismatch df .= ones(1,1,1)
 
-    df[:a] .= 1
-    @test nrow(df) == 0
-    @test names(df) == [:a]
-    @test eltypes(df) == [Int]
-    df = DataFrame()
-    df[[:a, :b]] .= 1
-    @test nrow(df) == 0
-    @test names(df) == [:a, :b]
-    @test eltypes(df) == [Int, Int]
-    df[:c] .= 1.0
-    @test nrow(df) == 0
-    @test names(df) == [:a, :b, :c]
-    @test eltypes(df) == [Int, Int, Float64]
-    df[[:c,:d]] .= 1.0
-    @test nrow(df) == 0
-    @test names(df) == [:a, :b, :c, :d]
-    @test eltypes(df) == [Int, Int, Float64, Float64]
+    @test_throws ArgumentError df[:a] .= 1
+    @test_throws ArgumentError df[[:a, :b]] .= 1
+
+    df = DataFrame(a=[])
+    @test_throws ArgumentError df[:b] .= 1
 end
 
 end # module
