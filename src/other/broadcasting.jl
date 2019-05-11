@@ -27,7 +27,7 @@ end
 
 function Base.copyto!(lazydf::LazyNewColDataFrame, bc)
     if isempty(lazydf.df)
-        throw(ArgumentError("Broadcasting creation of a column of an empty data frame is not allowed"))
+        throw(ArgumentError("creating a column via broadcasting is not allowed on empty data frames"))
     end
     T = mapreduce(i -> typeof(bc[i]), promote_type, eachindex(bc); init=Union{})
     col = Tables.allocatecolumn(T, nrow(lazydf.df))
