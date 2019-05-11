@@ -86,29 +86,29 @@ end
 
 @testset "normal data frame and data frame row in broadcasted assignment - two columns" begin
     df = copy(refdf)
-    df[[1,2]] .+= 1
+    df[[1,2]] .= Matrix(df[[1,2]]) .+ 1
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
     @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
 
     dfv = @view df[1:2, 3:end]
-    dfv[[1,2]] .+= 1
+    dfv[[1,2]] .= Matrix(dfv[[1,2]]) .+ 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
     @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
-    df[[1,2]] .+= [1 1
-                   1 1
-                   1 1]
+    df[[1,2]] .= Matrix(df[[1,2]]) .+ [1 1
+                                       1 1
+                                       1 1]
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
     @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
 
     dfv = @view df[1:2, 3:end]
-    dfv[[1,2]] .+= [1 1
-                    1 1]
+    dfv[[1,2]] .= Matrix(dfv[[1,2]]) .+ [1 1
+                                         1 1]
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
     @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
@@ -121,29 +121,29 @@ end
     @test_throws DimensionMismatch dfv[[1,2]] .= rand(2, 10)
 
     df = copy(refdf)
-    df[[:x1,:x2]] .+= 1
+    df[[:x1,:x2]] .= Matrix(df[[:x1,:x2]]) .+ 1
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
     @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
 
     dfv = @view df[1:2, 3:end]
-    dfv[[:x3,:x4]] .+= 1
+    dfv[[:x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
     @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
-    df[[:x1,:x2]] .+= [1 1
-                       1 1
-                       1 1]
+    df[[:x1,:x2]] .= Matrix(df[[:x1,:x2]]) .+ [1 1
+                                               1 1
+                                               1 1]
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
     @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
 
     dfv = @view df[1:2, 3:end]
-    dfv[[:x3,:x4]] .+= [1 1
-                        1 1]
+    dfv[[:x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ [1 1
+                                                 1 1]
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
     @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
