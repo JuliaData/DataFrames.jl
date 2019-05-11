@@ -3,7 +3,7 @@ struct LazyNewColDataFrame
     col::Symbol
 end
 
-# we allow LazyNewColDataFrame only for data frames with some columns
+# we allow LazyNewColDataFrame only for data frames with at least one column
 Base.axes(x::LazyNewColDataFrame) = axes(x.df[1])
 
 Base.Broadcast.broadcastable(df::AbstractDataFrame) = Matrix(df)
