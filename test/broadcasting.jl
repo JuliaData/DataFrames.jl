@@ -4,67 +4,37 @@ using Test, DataFrames
 
 refdf = DataFrame(ones(3, 5))
 
-@testset "data frame and data frame row in broadcasting" begin
-    df = copy(refdf)
-    dfv = view(df, 1:2, 1:4)
-    dfr = df[1, 1:2]
-
-    @test df .+ 1 == fill(2.0, 3, 5)
-    @test all(df .== ones(3, 5))
-    @test [i for i in 3:5, j in 1:5] == @. 2 * df + (1:3)
-    @test df .- ones(3, 5) == zeros(3, 5)
-    @test_throws DimensionMismatch df .- ones(3, 4)
-    @test_throws DimensionMismatch df .- ones(4)
-    @test_throws DimensionMismatch df .- ones(3, 4, 1)
-
-    @test dfv .+ 1 == fill(2.0, 2, 4)
-    @test all(dfv .== ones(2, 4))
-    @test [i for i in 3:4, j in 1:4] == @. 2 * dfv + (1:2)
-    @test dfv .- ones(2, 4) == zeros(2, 4)
-    @test_throws DimensionMismatch dfv .- ones(3, 4)
-    @test_throws DimensionMismatch dfv .- ones(4)
-    @test_throws DimensionMismatch dfv .- ones(3, 4, 1)
-
-    @test dfr .+ 1 == fill(2.0, 2)
-    @test all(dfr .== ones(2))
-    @test [3, 4] == @. 2 * dfr + (1:2)
-    @test dfr .- ones(2) == zeros(2)
-    @test_throws DimensionMismatch dfr .- ones(3, 4)
-    @test_throws DimensionMismatch dfr .- ones(4)
-    @test_throws DimensionMismatch dfr .- ones(3, 4, 1)
-end
-
 @testset "normal data frame and data frame row in broadcasted assignment - one column" begin
     df = copy(refdf)
     df[1] .+= 1
     @test df.x1 == [2, 2, 2]
-    @test all(df[2:end] .== ones(size(df[2:end])...))
+    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
 
     dfv = @view df[1:2, 2:end]
     dfv[1] .+= 1
     @test dfv.x2 == [2, 2]
-    @test all(dfv[2:end] .== ones(size(dfv[2:end])...))
-    @test all(df[1:2, 1:2] .== 2)
+    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     dfr = df[1, 3:end]
     dfr[end-1:end] .= 10
-    @test all(dfr .== [1, 10, 10])
+    @test all(Vector(dfr) .== [1, 10, 10])
     @test df.x3[1] == 1 && df.x4[1] == 10 && df.x5[1] == 10
 
     df = copy(refdf)
     df[1] .+= [1, 1, 1]
     @test df.x1 == [2, 2, 2]
-    @test all(df[2:end] .== ones(size(df[2:end])...))
+    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
 
     dfv = @view df[1:2, 2:end]
     dfv[1] .+= [1, 1]
     @test dfv.x2 == [2, 2]
-    @test all(dfv[2:end] .== ones(size(dfv[2:end])...))
-    @test all(df[1:2, 1:2] .== 2)
+    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     dfr = df[1, 3:end]
     dfr[end-1:end] .= [10, 10]
-    @test all(dfr .== [1, 10, 10])
+    @test all(Vector(dfr) .== [1, 10, 10])
     @test df.x3[1] == 1 && df.x4[1] == 10 && df.x5[1] == 10
 
     df = copy(refdf)
@@ -77,33 +47,33 @@ end
     df = copy(refdf)
     df[:x1] .+= 1
     @test df.x1 == [2, 2, 2]
-    @test all(df[2:end] .== ones(size(df[2:end])...))
+    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
 
     dfv = @view df[1:2, 2:end]
     dfv[:x2] .+= 1
     @test dfv.x2 == [2, 2]
-    @test all(dfv[2:end] .== ones(size(dfv[2:end])...))
-    @test all(df[1:2, 1:2] .== 2)
+    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     dfr = df[1, 3:end]
     dfr[[:x4, :x5]] .= 10
-    @test all(dfr .== [1, 10, 10])
+    @test all(Vector(dfr) .== [1, 10, 10])
     @test df.x3[1] == 1 && df.x4[1] == 10 && df.x5[1] == 10
 
     df = copy(refdf)
     df[:x1] .+= [1, 1, 1]
     @test df.x1 == [2, 2, 2]
-    @test all(df[2:end] .== ones(size(df[2:end])...))
+    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
 
     dfv = @view df[1:2, 2:end]
     dfv[:x2] .+= [1, 1]
     @test dfv.x2 == [2, 2]
-    @test all(dfv[2:end] .== ones(size(dfv[2:end])...))
-    @test all(df[1:2, 1:2] .== 2)
+    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     dfr = df[1, 3:end]
     dfr[[:x4, :x5]] .= [10, 10]
-    @test all(dfr .== [1, 10, 10])
+    @test all(Vector(dfr) .== [1, 10, 10])
     @test df.x3[1] == 1 && df.x4[1] == 10 && df.x5[1] == 10
 
     df = copy(refdf)
@@ -119,14 +89,14 @@ end
     df[[1,2]] .+= 1
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(df[3:end] .== ones(size(df[3:end])...))
+    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
 
     dfv = @view df[1:2, 3:end]
     dfv[[1,2]] .+= 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(dfv[3:end] .== ones(size(dfv[3:end])...))
-    @test all(df[1:2, 1:2] .== 2)
+    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
     df[[1,2]] .+= [1 1
@@ -134,15 +104,15 @@ end
                    1 1]
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(df[3:end] .== ones(size(df[3:end])...))
+    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
 
     dfv = @view df[1:2, 3:end]
     dfv[[1,2]] .+= [1 1
                     1 1]
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(dfv[3:end] .== ones(size(dfv[3:end])...))
-    @test all(df[1:2, 1:2] .== 2)
+    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
     dfv = @view df[1:2, 2:end]
@@ -154,14 +124,14 @@ end
     df[[:x1,:x2]] .+= 1
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(df[3:end] .== ones(size(df[3:end])...))
+    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
 
     dfv = @view df[1:2, 3:end]
     dfv[[:x3,:x4]] .+= 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(dfv[3:end] .== ones(size(dfv[3:end])...))
-    @test all(df[1:2, 1:2] .== 2)
+    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
     df[[:x1,:x2]] .+= [1 1
@@ -169,15 +139,15 @@ end
                        1 1]
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(df[3:end] .== ones(size(df[3:end])...))
+    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
 
     dfv = @view df[1:2, 3:end]
     dfv[[:x3,:x4]] .+= [1 1
                         1 1]
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(dfv[3:end] .== ones(size(dfv[3:end])...))
-    @test all(df[1:2, 1:2] .== 2)
+    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
     dfv = @view df[1:2, 2:end]
@@ -189,24 +159,24 @@ end
 @testset "assignment to a whole data frame and data frame row" begin
     df = copy(refdf)
     df .= 10
-    @test all(df .== 10)
+    @test all(Matrix(df) .== 10)
     dfv = view(df, 1:2, 1:4)
     dfv .= 100
-    @test (all(df[1:2, 1:4] .== 100))
-    @test (all(df[3, 1:4] .== 10))
+    @test (all(Matrix(df[1:2, 1:4]) .== 100))
+    @test (all(Vector(df[3, 1:4]) .== 10))
     dfr = df[1, 1:2]
     dfr .= 1000
-    @test (all(df[1, 1:2] .== 1000))
-    @test (all(df[3, :] .!= 1000))
+    @test (all(Vector(df[1, 1:2]) .== 1000))
+    @test (all(Vector(df[3, :]) .!= 1000))
 end
 
 @testset "extending data frame in broadcasted assignment - one column" begin
     df = copy(refdf)
     df[:a] .= 1
-    @test all(df .== 1)
+    @test all(Matrix(df) .== 1)
     @test names(df)[end] == :a
     df[:b] .= [1, 1, 1]
-    @test all(df .== 1)
+    @test all(Matrix(df) .== 1)
     @test names(df)[end] == :b
     cdf = copy(df)
     @test_throws DimensionMismatch df[:c] .= ones(3, 1)
