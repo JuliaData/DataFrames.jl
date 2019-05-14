@@ -35,14 +35,19 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
 end
 
 function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
-    @inbounds for row in axes(dfcol, 1)
+    if axes(dfcol, 1) != axes(bc, 1)
+        # this should never happen unless data frame is corrupted (has unequal column lengths)
+        throw(ArgumentError("Dimension mismatch in broadcasting. " *
+                            "The updated data frame is invalid and should not be used"))
+    end
+    @inbounds for row in eachindex(dfcol)
         dfcol[row] = bc[CartesianIndex(row, col)]
     end
 end
 
 function Base.copyto!(df::AbstractDataFrame, bc::Base.Broadcast.Broadcasted)
     for col in axes(df, 2)
-        _copyto_heper!(df[col], bc, col)
+        _copyto_helper!(df[col], bc, col)
     end
     df
 end

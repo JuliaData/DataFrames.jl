@@ -22,6 +22,17 @@ refdf = DataFrame(ones(3, 5))
     @test df.x3[1] == 1 && df.x4[1] == 10 && df.x5[1] == 10
 
     df = copy(refdf)
+    df[:, 1] .+= 1
+    @test df.x1 == [2, 2, 2]
+    @test df[2:end] == refdf[2:end]
+
+    dfv = @view df[1:2, 2:end]
+    dfv[:, 1] .+= 1
+    @test dfv.x2 == [2, 2]
+    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
+
+    df = copy(refdf)
     df[1] .+= [1, 1, 1]
     @test df.x1 == [2, 2, 2]
     @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
@@ -38,11 +49,24 @@ refdf = DataFrame(ones(3, 5))
     @test df.x3[1] == 1 && df.x4[1] == 10 && df.x5[1] == 10
 
     df = copy(refdf)
+    df[:, 1] .+= [1, 1, 1]
+    @test df.x1 == [2, 2, 2]
+    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
+
+    dfv = @view df[1:2, 2:end]
+    dfv[:, 1] .+= [1, 1]
+    @test dfv.x2 == [2, 2]
+    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
+
+    df = copy(refdf)
     dfv = @view df[1:2, 2:end]
     dfr = df[1, 3:end]
     @test_throws DimensionMismatch df[1] .= rand(3, 1)
     @test_throws DimensionMismatch dfv[1] .= rand(2, 1)
     @test_throws DimensionMismatch dfr[end-1:end] .= rand(3, 1)
+    @test_throws DimensionMismatch df[:, 1] .= rand(3, 1)
+    @test_throws DimensionMismatch dfv[:, 1] .= rand(2, 1)
 
     df = copy(refdf)
     df[:x1] .+= 1
@@ -61,6 +85,17 @@ refdf = DataFrame(ones(3, 5))
     @test df.x3[1] == 1 && df.x4[1] == 10 && df.x5[1] == 10
 
     df = copy(refdf)
+    df[:, :x1] .+= 1
+    @test df.x1 == [2, 2, 2]
+    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
+
+    dfv = @view df[1:2, 2:end]
+    dfv[:, :x2] .+= 1
+    @test dfv.x2 == [2, 2]
+    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
+
+    df = copy(refdf)
     df[:x1] .+= [1, 1, 1]
     @test df.x1 == [2, 2, 2]
     @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
@@ -77,11 +112,24 @@ refdf = DataFrame(ones(3, 5))
     @test df.x3[1] == 1 && df.x4[1] == 10 && df.x5[1] == 10
 
     df = copy(refdf)
+    df[:, :x1] .+= [1, 1, 1]
+    @test df.x1 == [2, 2, 2]
+    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
+
+    dfv = @view df[1:2, 2:end]
+    dfv[:, :x2] .+= [1, 1]
+    @test dfv.x2 == [2, 2]
+    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
+
+    df = copy(refdf)
     dfv = @view df[1:2, 2:end]
     dfr = df[1, 3:end]
     @test_throws DimensionMismatch df[:x1] .= rand(3, 1)
     @test_throws DimensionMismatch dfv[:x2] .= rand(2, 1)
     @test_throws DimensionMismatch dfr[[:x4, :x5]] .= rand(3, 1)
+    @test_throws DimensionMismatch df[:, :x1] .= rand(3, 1)
+    @test_throws DimensionMismatch dfv[:, :x2] .= rand(2, 1)
 end
 
 @testset "normal data frame and data frame row in broadcasted assignment - two columns" begin
@@ -93,6 +141,19 @@ end
 
     dfv = @view df[1:2, 3:end]
     dfv[[1,2]] .= Matrix(dfv[[1,2]]) .+ 1
+    @test dfv.x3 == [2, 2]
+    @test dfv.x4 == [2, 2]
+    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
+
+    df = copy(refdf)
+    df[:, [1,2]] .= Matrix(df[[1,2]]) .+ 1
+    @test df.x1 == [2, 2, 2]
+    @test df.x2 == [2, 2, 2]
+    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+
+    dfv = @view df[1:2, 3:end]
+    dfv[:, [1,2]] .= Matrix(dfv[[1,2]]) .+ 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
     @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
@@ -115,10 +176,27 @@ end
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
+    df[:, [1,2]] .= Matrix(df[[1,2]]) .+ [1 1
+                                          1 1
+                                          1 1]
+    @test df.x1 == [2, 2, 2]
+    @test df.x2 == [2, 2, 2]
+    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+
+    dfv = @view df[1:2, 3:end]
+    dfv[:, [1,2]] .= Matrix(dfv[[1,2]]) .+ [1 1
+                                            1 1]
+    @test dfv.x3 == [2, 2]
+    @test dfv.x4 == [2, 2]
+    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
+
+    df = copy(refdf)
     dfv = @view df[1:2, 2:end]
-    dfr = df[1, 3:end]
     @test_throws DimensionMismatch df[[1,2]] .= rand(3, 10)
     @test_throws DimensionMismatch dfv[[1,2]] .= rand(2, 10)
+    @test_throws DimensionMismatch df[:, [1,2]] .= rand(3, 10)
+    @test_throws DimensionMismatch dfv[:, [1,2]] .= rand(2, 10)
 
     df = copy(refdf)
     df[[:x1,:x2]] .= Matrix(df[[:x1,:x2]]) .+ 1
@@ -128,6 +206,19 @@ end
 
     dfv = @view df[1:2, 3:end]
     dfv[[:x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ 1
+    @test dfv.x3 == [2, 2]
+    @test dfv.x4 == [2, 2]
+    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
+
+    df = copy(refdf)
+    df[:, [:x1,:x2]] .= Matrix(df[[:x1,:x2]]) .+ 1
+    @test df.x1 == [2, 2, 2]
+    @test df.x2 == [2, 2, 2]
+    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+
+    dfv = @view df[1:2, 3:end]
+    dfv[[:, :x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
     @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
@@ -150,10 +241,27 @@ end
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
+    df[:, [:x1,:x2]] .= Matrix(df[[:x1,:x2]]) .+ [1 1
+                                                  1 1
+                                                  1 1]
+    @test df.x1 == [2, 2, 2]
+    @test df.x2 == [2, 2, 2]
+    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+
+    dfv = @view df[1:2, 3:end]
+    dfv[:, [:x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ [1 1
+                                                    1 1]
+    @test dfv.x3 == [2, 2]
+    @test dfv.x4 == [2, 2]
+    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test all(Matrix(df[1:2, 1:2]) .== 2)
+
+    df = copy(refdf)
     dfv = @view df[1:2, 2:end]
-    dfr = df[1, 3:end]
     @test_throws DimensionMismatch df[[:x1,:x2]] .= rand(3, 10)
     @test_throws DimensionMismatch dfv[[:x3,:x4]] .= rand(2, 10)
+    @test_throws DimensionMismatch df[:, [:x1,:x2]] .= rand(3, 10)
+    @test_throws DimensionMismatch dfv[:, [:x3,:x4]] .= rand(2, 10)
 end
 
 @testset "assignment to a whole data frame and data frame row" begin
@@ -168,6 +276,26 @@ end
     dfr .= 1000
     @test (all(Vector(df[1, 1:2]) .== 1000))
     @test (all(Vector(df[3, :]) .!= 1000))
+
+    df = copy(refdf)
+    df[:] .= 10
+    @test all(Matrix(df) .== 10)
+    dfv = view(df, 1:2, 1:4)
+    dfv[:] .= 100
+    @test (all(Matrix(df[1:2, 1:4]) .== 100))
+    @test (all(Vector(df[3, 1:4]) .== 10))
+    dfr = df[1, 1:2]
+    dfr[:] .= 1000
+    @test (all(Vector(df[1, 1:2]) .== 1000))
+    @test (all(Vector(df[3, :]) .!= 1000))
+
+    df = copy(refdf)
+    df[:,:] .= 10
+    @test all(Matrix(df) .== 10)
+    dfv = view(df, 1:2, 1:4)
+    dfv[:, :] .= 100
+    @test (all(Matrix(df[1:2, 1:4]) .== 100))
+    @test (all(Vector(df[3, 1:4]) .== 10))
 end
 
 @testset "extending data frame in broadcasted assignment - one column" begin
@@ -216,6 +344,21 @@ end
 
     df = DataFrame(a=[])
     @test_throws ArgumentError df[:b] .= 1
+end
+
+@testset "test categorical values"
+    df = copy(refdf)
+    v = categorical([1,2,3])
+    df[:c1] .= v
+    @test df.c1 == v
+    @test df.c1 !== v
+    @test df.c1 isa CategoricalVector
+    @test levels(df.c1) == levels(v)
+    @test levels(df.c1) !== levels(v)
+    df[:c2] .= v[1]
+    @test df.c2 == [1,1,1]
+    @test df.c2 isa CategoricalVector
+    @test levels(df.c2) != levels(v)
 end
 
 end # module
