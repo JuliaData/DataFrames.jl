@@ -34,8 +34,8 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
     lazydf.df[lazydf.col] = col
 end
 
-function _copyto_heper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
-    for row in axes(dfcol, 1)
+function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
+    @inbounds for row in axes(dfcol, 1)
         dfcol[row] = bc[CartesianIndex(row, col)]
     end
 end

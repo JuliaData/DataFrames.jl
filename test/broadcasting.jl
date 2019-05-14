@@ -8,7 +8,7 @@ refdf = DataFrame(ones(3, 5))
     df = copy(refdf)
     df[1] .+= 1
     @test df.x1 == [2, 2, 2]
-    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
+    @test df[2:end] == refdf[2:end]
 
     dfv = @view df[1:2, 2:end]
     dfv[1] .+= 1
