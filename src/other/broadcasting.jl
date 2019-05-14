@@ -35,7 +35,7 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
 end
 
 function _copyto_helper!(dfcol::AbstractVector, bc::Base.Broadcast.Broadcasted, col::Int)
-    if axes(dfcol, 1) != axes(bc, 1)
+    if axes(dfcol, 1) != axes(bc)[1]
         # this should never happen unless data frame is corrupted (has unequal column lengths)
         throw(ArgumentError("Dimension mismatch in broadcasting. " *
                             "The updated data frame is invalid and should not be used"))

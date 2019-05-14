@@ -218,7 +218,7 @@ end
     @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
 
     dfv = @view df[1:2, 3:end]
-    dfv[[:, :x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ 1
+    dfv[:, [:x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
     @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
@@ -346,7 +346,7 @@ end
     @test_throws ArgumentError df[:b] .= 1
 end
 
-@testset "test categorical values"
+@testset "test categorical values" begin
     df = copy(refdf)
     v = categorical([1,2,3])
     df[:c1] .= v
