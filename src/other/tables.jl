@@ -17,6 +17,10 @@ fromcolumns(x; copycols::Bool=true) =
               copycols=copycols)
 
 function DataFrame(x::T; copycols::Bool=true) where {T}
+    if TableTraits.supports_get_columns_copy_using_missing(x)
+        y = TableTraits.get_columns_copy_using_missing(x)
+        return DataFrame(values(y), keys(y); copycols=false)
+    end
     if x isa AbstractVector && all(col -> isa(col, AbstractVector), x)
         return DataFrame(Vector{AbstractVector}(x), copycols=copycols)
     end
