@@ -161,6 +161,7 @@ Base.get(dfr::DataFrameRow, key::Union{Integer, Symbol}, default) =
     haskey(dfr, key) ? dfr[key] : default
 Base.get(f::Callable, dfr::DataFrameRow, key::Union{Integer, Symbol}) =
     haskey(dfr, key) ? getfield(dfr, key) : f()
+Base.broadcastable(::DataFrameRow) = throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
 """
     copy(dfr::DataFrameRow)
