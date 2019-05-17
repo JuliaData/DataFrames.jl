@@ -11,7 +11,8 @@ Tables.materializer(df::AbstractDataFrame) = DataFrame
 
 getvector(x::AbstractVector) = x
 getvector(x) = collect(x)
-fromcolumns(x::Tables.CopiedColumns; kw...) =
+# note that copycols is ignored in this definition (Tables.CopiedColumns implies copies have already been made)
+fromcolumns(x::Tables.CopiedColumns; copycols::Bool=true) =
     DataFrame(AbstractVector[getvector(c) for c in Tables.eachcolumn(x)],
               Index(collect(Symbol, propertynames(x))),
               copycols=false)
