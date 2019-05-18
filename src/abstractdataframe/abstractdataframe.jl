@@ -83,6 +83,16 @@ abstract type AbstractDataFrame end
 ##
 ##############################################################################
 
+"""
+Get column names
+
+```
+julia> names(DataFrame(A=[], B=[]))
+2-element Array{Symbol,1}:
+ :A
+ :B
+```
+"""
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
 
