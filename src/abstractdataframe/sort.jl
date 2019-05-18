@@ -20,6 +20,14 @@ struct UserColOrdering{T<:ColumnIndex}
 end
 
 # This is exported, and lets a user define orderings for a particular column
+"""
+User defined order for a particular column.  Used in conjuction with sort!(df::DataFrame, cols).
+
+#Example
+```
+sort!(iris, (order(:Species, rev=true), :PetalLength))
+```
+"""
 order(col::T; kwargs...) where {T<:ColumnIndex} = UserColOrdering{T}(col, kwargs)
 
 # Allow getting the column even if it is not wrapped in a UserColOrdering
