@@ -13,7 +13,7 @@ refdf = DataFrame(ones(3, 5))
     dfv = @view df[1:2, 2:end]
     dfv[1] .+= 1
     @test dfv.x2 == [2, 2]
-    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test dfv[2:end] == refdf[1:2, 3:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     dfr = df[1, 3:end]
@@ -29,18 +29,18 @@ refdf = DataFrame(ones(3, 5))
     dfv = @view df[1:2, 2:end]
     dfv[:, 1] .+= 1
     @test dfv.x2 == [2, 2]
-    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test dfv[2:end] == refdf[1:2, 3:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
     df[1] .+= [1, 1, 1]
     @test df.x1 == [2, 2, 2]
-    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
+    @test df[2:end] == refdf[2:end]
 
     dfv = @view df[1:2, 2:end]
     dfv[1] .+= [1, 1]
     @test dfv.x2 == [2, 2]
-    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test dfv[2:end] == refdf[1:2, 3:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     dfr = df[1, 3:end]
@@ -51,12 +51,12 @@ refdf = DataFrame(ones(3, 5))
     df = copy(refdf)
     df[:, 1] .+= [1, 1, 1]
     @test df.x1 == [2, 2, 2]
-    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
+    @test df[2:end] == refdf[2:end]
 
     dfv = @view df[1:2, 2:end]
     dfv[:, 1] .+= [1, 1]
     @test dfv.x2 == [2, 2]
-    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test dfv[2:end] == refdf[1:2, 3:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
@@ -71,12 +71,12 @@ refdf = DataFrame(ones(3, 5))
     df = copy(refdf)
     df[:x1] .+= 1
     @test df.x1 == [2, 2, 2]
-    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
+    @test df[2:end] == refdf[2:end]
 
     dfv = @view df[1:2, 2:end]
     dfv[:x2] .+= 1
     @test dfv.x2 == [2, 2]
-    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test dfv[2:end] == refdf[1:2, 3:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     dfr = df[1, 3:end]
@@ -87,23 +87,23 @@ refdf = DataFrame(ones(3, 5))
     df = copy(refdf)
     df[:, :x1] .+= 1
     @test df.x1 == [2, 2, 2]
-    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
+    @test df[2:end] == refdf[2:end]
 
     dfv = @view df[1:2, 2:end]
     dfv[:, :x2] .+= 1
     @test dfv.x2 == [2, 2]
-    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test dfv[2:end] == refdf[1:2, 3:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
     df[:x1] .+= [1, 1, 1]
     @test df.x1 == [2, 2, 2]
-    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
+    @test df[2:end] == refdf[2:end]
 
     dfv = @view df[1:2, 2:end]
     dfv[:x2] .+= [1, 1]
     @test dfv.x2 == [2, 2]
-    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test dfv[2:end] == refdf[1:2, 3:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     dfr = df[1, 3:end]
@@ -114,12 +114,12 @@ refdf = DataFrame(ones(3, 5))
     df = copy(refdf)
     df[:, :x1] .+= [1, 1, 1]
     @test df.x1 == [2, 2, 2]
-    @test all(Matrix(df[2:end]) .== ones(size(df[2:end])...))
+    @test df[2:end] == refdf[2:end]
 
     dfv = @view df[1:2, 2:end]
     dfv[:, :x2] .+= [1, 1]
     @test dfv.x2 == [2, 2]
-    @test all(Matrix(dfv[2:end]) .== ones(size(dfv[2:end])...))
+    @test dfv[2:end] == refdf[1:2, 3:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
@@ -137,26 +137,26 @@ end
     df[[1,2]] .= Matrix(df[[1,2]]) .+ 1
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+    @test df[3:end] == refdf[3:end]
 
     dfv = @view df[1:2, 3:end]
     dfv[[1,2]] .= Matrix(dfv[[1,2]]) .+ 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test dfv[3:end] == refdf[1:2, 5:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
     df[:, [1,2]] .= Matrix(df[[1,2]]) .+ 1
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+    @test df[3:end] == refdf[3:end]
 
     dfv = @view df[1:2, 3:end]
     dfv[:, [1,2]] .= Matrix(dfv[[1,2]]) .+ 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test dfv[3:end] == refdf[1:2, 5:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
@@ -165,14 +165,14 @@ end
                                        1 1]
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+    @test df[3:end] == refdf[3:end]
 
     dfv = @view df[1:2, 3:end]
     dfv[[1,2]] .= Matrix(dfv[[1,2]]) .+ [1 1
                                          1 1]
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test dfv[3:end] == refdf[1:2, 5:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
@@ -181,14 +181,14 @@ end
                                           1 1]
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+    @test df[3:end] == refdf[3:end]
 
     dfv = @view df[1:2, 3:end]
     dfv[:, [1,2]] .= Matrix(dfv[[1,2]]) .+ [1 1
                                             1 1]
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test dfv[3:end] == refdf[1:2, 5:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
@@ -202,26 +202,26 @@ end
     df[[:x1,:x2]] .= Matrix(df[[:x1,:x2]]) .+ 1
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+    @test df[3:end] == refdf[3:end]
 
     dfv = @view df[1:2, 3:end]
     dfv[[:x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test dfv[3:end] == refdf[1:2, 5:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
     df[:, [:x1,:x2]] .= Matrix(df[[:x1,:x2]]) .+ 1
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+    @test df[3:end] == refdf[3:end]
 
     dfv = @view df[1:2, 3:end]
     dfv[:, [:x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ 1
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test dfv[3:end] == refdf[1:2, 5:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
@@ -230,14 +230,14 @@ end
                                                1 1]
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+    @test df[3:end] == refdf[3:end]
 
     dfv = @view df[1:2, 3:end]
     dfv[[:x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ [1 1
                                                  1 1]
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test dfv[3:end] == refdf[1:2, 5:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)
@@ -246,14 +246,14 @@ end
                                                   1 1]
     @test df.x1 == [2, 2, 2]
     @test df.x2 == [2, 2, 2]
-    @test all(Matrix(df[3:end]) .== ones(size(df[3:end])...))
+    @test df[3:end] == refdf[3:end]
 
     dfv = @view df[1:2, 3:end]
     dfv[:, [:x3,:x4]] .= Matrix(dfv[[:x3,:x4]]) .+ [1 1
                                                     1 1]
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
-    @test all(Matrix(dfv[3:end]) .== ones(size(dfv[3:end])...))
+    @test dfv[3:end] == refdf[1:2, 5:end]
     @test all(Matrix(df[1:2, 1:2]) .== 2)
 
     df = copy(refdf)

@@ -85,6 +85,11 @@ Under construction
 It is possible to assign a value to `AbstractDataFrame` and `DataFrameRow` using the `.=` operator.
 In such an operation `AbstractDataFrame` is two dimensional and `DataFrameRow` as a single dimensional.
 
+!!! note
+
+    The rule above means that, analogously to single dimensional objects in Base,
+    `DataFrameRow` is considered to be column oriented.
+
 If column indexing using symbols is performed the order of columns in the operation is specified by the order of symbols.
 
 It is allowed to perform `df[col] .= value` even if `col` is not present in the `DataFrame` and it is a `Symbol`
