@@ -216,6 +216,14 @@ eltypes(df)
 """
 eltypes(df::AbstractDataFrame) = eltype.(eachcol(df))
 
+"""
+Get (nrows, ncols)
+
+```
+julia> size(DataFrame(i=1:10, x=rand(10)))
+(10, 2)
+```
+"""
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
 function Base.size(df::AbstractDataFrame, i::Integer)
     if i == 1
