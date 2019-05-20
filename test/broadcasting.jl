@@ -254,7 +254,7 @@ end
     @test dfv.x3 == [2, 2]
     @test dfv.x4 == [2, 2]
     @test dfv[3:end] == refdf[1:2, 5:end]
-    @test all(Matrix(df[1:2, 1:2]) .== 2)
+    @test Matrix(df[1:2, 1:2]) == fill(2, (2, 2))
 
     df = copy(refdf)
     dfv = @view df[1:2, 2:end]
