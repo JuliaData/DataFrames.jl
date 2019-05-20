@@ -467,8 +467,6 @@ combine(gd::GroupedDataFrame, f::Any) = combine(f, gd)
 combine(gd::GroupedDataFrame, f::Union{Pair, AbstractVector{<:Pair}}...) =
     combine(reduce(vcat, f), gd)
 
-combine(gd::GroupedDataFrame, f::NamedTuple) = combine(f, gd)
-
 function combine(gd::GroupedDataFrame; f...)
     if length(f) == 0
         Base.depwarn("combine(gd) is deprecated, use DataFrame(gd) instead", :combine)
@@ -702,8 +700,8 @@ function do_f(f, x...)
     end
 end
 
-function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
-                           NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
+function _combine(f::Union{AbstractVector{<:Pair},
+                  NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
                   gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
@@ -1114,7 +1112,7 @@ by(f::Any, d::AbstractDataFrame, cols::Any; sort::Bool = false) =
     by(d, cols, f, sort = sort)
 
 by(d::AbstractDataFrame, cols::Any, f::Union{Pair, AbstractVector{<:Pair}}...;
-   sort::Bool = false) =
+    sort::Bool = false) =
     combine(reduce(vcat, f), groupby(d, cols, sort = sort))
 
 by(d::AbstractDataFrame, cols::Any; sort::Bool = false, f...) =
