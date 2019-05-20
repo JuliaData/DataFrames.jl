@@ -21,9 +21,12 @@ end
 
 # This is exported, and lets a user define orderings for a particular column
 """
-User defined order for a particular column.  Used in conjuction with sort!(df::DataFrame, cols).
 
-#Example
+    order(col; rev=true, ...)
+
+User defined order for a particular column.  Used in conjuction with [`sort!`](@ref)
+
+###Example
 ```
 sort!(iris, (order(:Species, rev=true), :PetalLength))
 ```

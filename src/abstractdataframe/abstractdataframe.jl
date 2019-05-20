@@ -84,14 +84,25 @@ abstract type AbstractDataFrame end
 ##############################################################################
 
 """
-Get column names
-
+```julia
+names(df::DataFrame)
 ```
+
+Get column names.
+
+**Arguments**
+
+* `df` : the AbstractDataFrame
+
+**Examples**
+```jldoctst
 julia> names(DataFrame(A=[], B=[]))
 2-element Array{Symbol,1}:
  :A
  :B
 ```
+
+See also [`names!`](@ref), [`rename!`](@ref).
 """
 Base.names(df::AbstractDataFrame) = names(index(df))
 _names(df::AbstractDataFrame) = _names(index(df))
@@ -217,11 +228,31 @@ eltypes(df)
 eltypes(df::AbstractDataFrame) = eltype.(eachcol(df))
 
 """
-Get (nrows, ncols)
-
+```julia
+size(df::AbstractDataFrame[, i::Integer])
 ```
-julia> size(DataFrame(i=1:10, x=rand(10)))
+
+Get the dimensions of `df`.
+
+**Arguments**
+
+* `df` : the `AbstractDataFrame`
+* `i` (option): the dimension of interest.
+
+**Returns**
+If `i` is not given, `(nrows, ncols)`, otherwise the size of `df` in the dimension corresponding to `i`.
+
+
+**Examples**
+```jldoctest
+julia> df = DataFrame(i=1:10, x="abc");
+
+julia> size(df)
 (10, 2)
+
+julia> size(df, 1)
+10
+
 ```
 """
 Base.size(df::AbstractDataFrame) = (nrow(df), ncol(df))
