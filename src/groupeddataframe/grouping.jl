@@ -701,7 +701,8 @@ function do_f(f, x...)
 end
 
 function _combine(f::Union{AbstractVector{<:Pair},
-                  NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
+                           Tuple{Vararg{Pair}},
+                           NamedTuple{<:Any, <:Tuple{Vararg{Pair}}}},
                   gd::GroupedDataFrame)
     res = map(f) do p
         agg = check_aggregate(last(p))
