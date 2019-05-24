@@ -303,6 +303,8 @@ function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
+Base.getindex(df::DataFrame, col_inds::Regex) =getindex(df, index(df)[col_inds])
+
 # df[:] => DataFrame
 Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
 
@@ -366,6 +368,9 @@ function Base.getindex(df::DataFrame, row_ind::Colon, col_inds::AbstractVector)
     new_columns = AbstractVector[copy(dv) for dv in _columns(df)[selected_columns]]
     return DataFrame(new_columns, Index(_names(df)[selected_columns]), copycols=false)
 end
+
+Base.getindex(df::DataFrame, row_ind, col_inds::Regex) =
+    getindex(df, row_ind, index(df)[col_inds])
 
 # df[MultiRowIndex, :] => DataFrame
 @inline function Base.getindex(df::DataFrame, row_inds::AbstractVector, ::Colon)
@@ -511,6 +516,10 @@ function Base.setindex!(df::DataFrame, val::Any, col_inds::AbstractVector{<:Colu
     end
     return df
 end
+
+# df[Regex] = value
+Base.setindex!(df::DataFrame, v::Any, col_inds::Regex) =
+    setindex!(df, v, index(df)[col_inds])
 
 # df[:] = AbstractVector or Single Item
 Base.setindex!(df::DataFrame, v, ::Colon) = (df[1:size(df, 2)] = v; df)
@@ -670,6 +679,10 @@ function Base.setindex!(df::DataFrame,
     end
     return df
 end
+
+# df[rows, Regex] = value
+Base.setindex!(df::DataFrame, v::Any, row_inds, col_inds::Regex) =
+    setindex!(df, v, row_inds, index(df)[col_inds])
 
 # df[:] = DataFrame, df[:, :] = DataFrame
 function Base.setindex!(df::DataFrame,
@@ -1191,6 +1204,13 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     df
 end
 
+function disallowmissing!(df::DataFrame, cols::Regex)
+    for col in index(df)[cols]
+        disallowmissing!(df, col)
+    end
+    df
+end
+
 ##############################################################################
 ##
 ## Pooling
@@ -1272,6 +1292,13 @@ end
 function categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
                       compress::Bool=false)
     for cname in cnames
+        df[cname] = categorical(df[cname], compress)
+    end
+    df
+end
+
+function categorical!(df::DataFrame, cnames::Regex; compress::Bool=false)
+    for cname in index(df)[cnames]
         df[cname] = categorical(df[cname], compress)
     end
     df

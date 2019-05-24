@@ -608,6 +608,9 @@ end
 completecases(df::AbstractDataFrame, cols::AbstractVector) =
     completecases(df[cols])
 
+completecases(df::AbstractDataFrame, cols::Regex) =
+    completecases(df[cols])
+
 """
     dropmissing(df::AbstractDataFrame; disallowmissing::Bool=true)
     dropmissing(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=true)
@@ -673,7 +676,7 @@ julia> dropmissing(df, [:x, :y])
 
 """
 function dropmissing(df::AbstractDataFrame,
-                     cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
+                     cols::Union{Integer, Symbol, AbstractVector, Regex}=1:size(df, 2);
                      disallowmissing::Bool=true)
     newdf = df[completecases(df, cols), :]
     disallowmissing && disallowmissing!(newdf, cols)
@@ -743,7 +746,7 @@ julia> dropmissing!(df3, [:x, :y])
 
 """
 function dropmissing!(df::AbstractDataFrame,
-                      cols::Union{Integer, Symbol, AbstractVector}=1:size(df, 2);
+                      cols::Union{Integer, Symbol, AbstractVector, Regex}=1:size(df, 2);
                       disallowmissing::Bool=true)
     deleterows!(df, (!).(completecases(df, cols)))
     disallowmissing && disallowmissing!(df, cols)
@@ -889,7 +892,7 @@ Base.unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::AbstractVector) =
+Base.unique(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}) =
     df[(!).(nonunique(df, cols)), :]
 Base.unique(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     df[(!).(nonunique(df, cols)), :]

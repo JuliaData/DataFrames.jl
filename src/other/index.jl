@@ -204,6 +204,9 @@ end
                         "DataFrame only supports indexing columns with integers, symbols or boolean vectors"))
 end
 
+@inline function Base.getindex(x::AbstractIndex, rx::Regex)
+    getindex(x, filter(name -> occursin(rx, String(name)), _names(x)))
+end
 # Helpers
 
 function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
@@ -273,6 +276,9 @@ end
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractVector{Symbol}) =
     [parentcols(ind, i) for i in idx]
+
+Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Regex) =
+    [parentcols(ind, i) for i in _names(idx) if occursin(idx, String(i))]
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, ::Colon) = ind.cols
 
