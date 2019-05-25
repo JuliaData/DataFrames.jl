@@ -903,13 +903,6 @@ end
     @test last(df, 1) == DataFrame(A = 10)
 end
 
-@testset "misc" begin
-    df = DataFrame([collect('A':'C')])
-    @test sprint(dump, df) == "DataFrame  3 observations of 1 variables\n  x1: ['A', 'B', 'C']\n\n"
-    df = DataFrame(A = 1:12, B = repeat('A':'C', inner=4))
-    # @test DataFrames.without(df, 1) == DataFrame(B = repeat('A':'C', inner=4))
-end
-
 @testset "column conversions" begin
     df = DataFrame([collect(1:10), collect(1:10)])
     @test !isa(df[1], Vector{Union{Int, Missing}})

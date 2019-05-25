@@ -70,8 +70,7 @@ df = DataFrame()
 v = ["x","y","z"][rand(1:3, 10)]
 df1 = DataFrame(Any[collect(1:10), v, rand(10)], [:A, :B, :C])
 df2 = DataFrame(A = 1:10, B = v, C = rand(10))
-dump(df1)
-dump(df2)
+summary(df1)
 describe(df2)
 first(df1, 10)
 df1[:A] + df2[:C]
