@@ -6,7 +6,7 @@ on an `AbstractDataFrame` if a collections of rows and columns are specified.
 
 A `SubDataFrame` is an `AbstractDataFrame`, so expect that most
 DataFrame functions should work. Such methods include `describe`,
-`dump`, `nrow`, `size`, `by`, `stack`, and `join`.
+`summary`, `nrow`, `size`, `by`, `stack`, and `join`.
 
 Indexing is just like a `DataFrame` except that it is possible to create a
 `SubDataFrame` with duplicate columns. All such columns will have a reference

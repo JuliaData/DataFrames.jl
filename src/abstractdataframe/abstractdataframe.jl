@@ -13,7 +13,7 @@ type in that it allows indexing by a key (the columns).
 The following are normally implemented for AbstractDataFrames:
 
 * [`describe`](@ref) : summarize columns
-* [`dump`](@ref) : show structure
+* [`summary`](@ref) : show number of rows and columns
 * `hcat` : horizontal concatenation
 * `vcat` : vertical concatenation
 * [`repeat`](@ref) : repeat rows
@@ -319,16 +319,6 @@ Base.last(df::AbstractDataFrame) = df[nrow(df), :]
 Get a data frame with the `n` last rows of `df`.
 """
 Base.last(df::AbstractDataFrame, n::Integer) = df[max(1,nrow(df)-n+1):nrow(df), :]
-
-# get the structure of a df
-function Base.dump(io::IOContext, df::AbstractDataFrame, n::Int, indent)
-    println(io, typeof(df), "  $(nrow(df)) observations of $(ncol(df)) variables")
-    if n > 0
-        for (name, col) in eachcol(df, true)
-            println(io, indent, "  ", name, ": ", col)
-        end
-    end
-end
 
 
 """
