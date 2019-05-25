@@ -878,7 +878,7 @@ function nonunique(df::AbstractDataFrame)
     return res
 end
 
-nonunique(df::AbstractDataFrame, cols::Union{Integer, Symbol}) =
+nonunique(df::AbstractDataFrame, cols) =
     if cols isa Union{Integer, Symbol}
         if cols isa Bool
             throw(ArgumentError("invalid index: $cols of type Bool"))
