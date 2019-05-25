@@ -303,7 +303,7 @@ function Base.getindex(df::DataFrame, col_inds::AbstractVector)
     return DataFrame(new_columns, Index(_names(df)[selected_columns]))
 end
 
-Base.getindex(df::DataFrame, col_inds::Regex) =getindex(df, index(df)[col_inds])
+Base.getindex(df::DataFrame, col_inds::Regex) = getindex(df, index(df)[col_inds])
 
 # df[:] => DataFrame
 Base.getindex(df::DataFrame, col_inds::Colon) = copy(df)
