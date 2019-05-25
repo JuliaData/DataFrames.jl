@@ -291,6 +291,10 @@ function Base.map(f::Any, gd::GroupedDataFrame)
     if length(gd) > 0
         idx, valscat = _combine(f, gd)
         parent = hcat!(gd.parent[idx, gd.cols], valscat, makeunique=true)
+        if length(idx) == 0
+            return GroupedDataFrame(parent, collect(1:length(gd.cols)), idx,
+                                    Int[], Int[], Int[])
+        end
         starts = Vector{Int}(undef, length(gd))
         ends = Vector{Int}(undef, length(gd))
         starts[1] = 1
@@ -704,7 +708,7 @@ function _combine(f::Union{AbstractVector{<:Pair}, Tuple{Vararg{Pair}},
                     Symbol('x', i)
                 for i in 1:length(f)]
     end
-    valscat = DataFrame(collect(outcols), nams, makeunique=true)
+    valscat = DataFrame(collect(AbstractVector, outcols), nams, makeunique=true)
     return idx, valscat
 end
 
@@ -734,7 +738,7 @@ function _combine(f::Any, gd::GroupedDataFrame)
          !isa(firstres, Union{AbstractDataFrame, NamedTuple, DataFrameRow, AbstractMatrix}))
          nms = [Symbol(names(gd.parent)[index(gd.parent)[first(f)]], '_', funname(fun))]
     end
-    valscat = DataFrame(collect(outcols), collect(Symbol, nms))
+    valscat = DataFrame(collect(AbstractVector, outcols), collect(Symbol, nms))
     return idx, valscat
 end
 
