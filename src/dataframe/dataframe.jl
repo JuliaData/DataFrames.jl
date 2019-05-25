@@ -1177,7 +1177,7 @@ Convert all columns of a `df` from element type `Union{T, Missing}` to
 Convert a single column of a `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
 
-    disallowmissing!(df::DataFrame, cols::AbstractVector)
+    disallowmissing!(df::DataFrame, cols::Union{AbstractVector, Regex})
 
 Convert multiple columns of a `df` from element type `Union{T, Missing}` to
 `T` to drop support for missing values.
@@ -1216,6 +1216,8 @@ disallowmissing!(df::DataFrame, cols::Regex) = disallowmissing!(df, index(df)[co
     categorical!(df::DataFrame, cname::Union{Integer, Symbol};
                  compress::Bool=false)
     categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
+                 compress::Bool=false)
+    categorical!(df::DataFrame, cnames::Regex;
                  compress::Bool=false)
     categorical!(df::DataFrame; compress::Bool=false)
 

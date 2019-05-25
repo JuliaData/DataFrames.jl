@@ -539,7 +539,7 @@ end
 
 """
     completecases(df::AbstractDataFrame)
-    completecases(df::AbstractDataFrame, cols::AbstractVector)
+    completecases(df::AbstractDataFrame, cols::Union{AbstractVector,Regex})
     completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
 Return a Boolean vector with `true` entries indicating rows without missing values
@@ -610,7 +610,7 @@ completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}) =
 
 """
     dropmissing(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=true)
+    dropmissing(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}; disallowmissing::Bool=true)
     dropmissing(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
 
 Return a copy of data frame `df` excluding rows with missing values.
@@ -682,7 +682,7 @@ end
 
 """
     dropmissing!(df::AbstractDataFrame; disallowmissing::Bool=true)
-    dropmissing!(df::AbstractDataFrame, cols::AbstractVector; disallowmissing::Bool=true)
+    dropmissing!(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}; disallowmissing::Bool=true)
     dropmissing!(df::AbstractDataFrame, cols::Union{Integer, Symbol}; disallowmissing::Bool=true)
 
 Remove rows with missing values from data frame `df` and return it.
@@ -907,7 +907,7 @@ unique!(df::AbstractDataFrame, cols)
 **Arguments**
 
 * `df` : the AbstractDataFrame
-* `cols` :  column indicator (Symbol, Int, Vector{Symbol}, etc.)
+* `cols` :  column indicator (Symbol, Int, Vector{Symbol}, Regex, etc.)
 specifying the column(s) to compare.
 
 **Result**
