@@ -871,15 +871,22 @@ function nonunique(df::AbstractDataFrame)
     gslots = row_group_slots(ntuple(i -> df[i], ncol(df)), Val(true))[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
-    res = fill(true, nrow(df))
+    res = trues(nrow(df))
     @inbounds for g_row in gslots
         (g_row > 0) && (res[g_row] = false)
     end
     return res
 end
 
-nonunique(df::AbstractDataFrame, cols::Union{Integer, Symbol}) = nonunique(df[[cols]])
-nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
+nonunique(df::AbstractDataFrame, cols::Union{Integer, Symbol}) =
+    if cols isa Union{Integer, Symbol}
+        if cols isa Bool
+            throw(ArgumentError("invalid index: $cols of type Bool"))
+        end
+        nonunique(df[[cols]])
+    else
+        nonunique(df[cols])
+    end
 
 Base.unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
 Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =

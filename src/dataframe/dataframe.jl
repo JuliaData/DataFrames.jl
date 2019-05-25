@@ -1567,3 +1567,5 @@ end
 function permutecols!(df::DataFrame, p::AbstractVector{Symbol})
     permutecols!(df, index(df)[p])
 end
+
+nonunique(df::DataFrame, cols) = nonunique(select(df, cols, copycols=false))
