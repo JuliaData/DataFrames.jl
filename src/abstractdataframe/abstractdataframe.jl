@@ -605,10 +605,7 @@ function completecases(df::AbstractDataFrame, col::Union{Integer, Symbol})
     res
 end
 
-completecases(df::AbstractDataFrame, cols::AbstractVector) =
-    completecases(df[cols])
-
-completecases(df::AbstractDataFrame, cols::Regex) =
+completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}) =
     completecases(df[cols])
 
 """

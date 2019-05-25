@@ -1204,12 +1204,7 @@ function disallowmissing!(df::DataFrame, cols::AbstractVector{Bool})
     df
 end
 
-function disallowmissing!(df::DataFrame, cols::Regex)
-    for col in index(df)[cols]
-        disallowmissing!(df, col)
-    end
-    df
-end
+disallowmissing!(df::DataFrame, cols::Regex) = disallowmissing!(df, index(df)[cols])
 
 ##############################################################################
 ##
@@ -1297,12 +1292,8 @@ function categorical!(df::DataFrame, cnames::Vector{<:Union{Integer, Symbol}};
     df
 end
 
-function categorical!(df::DataFrame, cnames::Regex; compress::Bool=false)
-    for cname in index(df)[cnames]
-        df[cname] = categorical(df[cname], compress)
-    end
-    df
-end
+categorical!(df::DataFrame, cnames::Regex; compress::Bool=false) =
+    categorical!(df, index(df)[cnames], compress=compress)
 
 function categorical!(df::DataFrame; compress::Bool=false)
     for i in 1:size(df, 2)
