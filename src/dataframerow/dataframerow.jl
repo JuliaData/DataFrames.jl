@@ -152,11 +152,11 @@ Base.convert(::Type{Vector{T}}, dfr::DataFrameRow) where T =
 Base.Vector(dfr::DataFrameRow) = convert(Vector, dfr)
 Base.Vector{T}(dfr::DataFrameRow) where T = convert(Vector{T}, dfr)
 
-Base.keys(r::DataFrameRow) = Tuple(names(r))
+Base.keys(r::DataFrameRow) = Tuple(_names(r))
 Base.values(r::DataFrameRow) =
     ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
 Base.pairs(r::DataFrameRow) = Base.Iterators.Pairs(r, keys(r))
-Base.map(f, r::DataFrameRow...) = map(f, copy.(r)...)
+Base.map(f, r::DataFrameRow, rs::DataFrameRow...) = map(f, copy(r), copy.(rs)...)
 Base.get(dfr::DataFrameRow, key::Union{Integer, Symbol}, default) =
     haskey(dfr, key) ? dfr[key] : default
 Base.get(f::Base.Callable, dfr::DataFrameRow, key::Union{Integer, Symbol}) =
