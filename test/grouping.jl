@@ -431,6 +431,13 @@ end
     @test isempty(gd2.idx)
     @test isempty(gd2.starts)
     @test isempty(gd2.ends)
+    gd2 = map(d -> DataFrame(X=Int[]), gd)
+    @test length(gd2) == 0
+    @test gd.cols == [1]
+    @test isempty(gd2.groups)
+    @test isempty(gd2.idx)
+    @test isempty(gd2.starts)
+    @test isempty(gd2.ends)
 end
 
 @testset "grouping with missings" begin
