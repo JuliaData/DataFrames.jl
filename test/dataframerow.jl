@@ -211,6 +211,7 @@ end
     @test values(r) == (2.0, 2.0, 0.0, 0.0)
     @test collect(pairs(r)) == [:x8 => 2.0, :x5 => 2.0, :x1 => 0.0, :x3 => 0.0]
 
+    r = deepcopy(ref_df)[1, :]
     @test map(identity, r[1:3]) == (a = 1, b = 2.0, c = "A")
     @test map((a,b) -> (a,b), r[1:3], r[1:3]) == (a = (1, 1), b = (2.0, 2.0), c = ("A", "A"))
     @test get(r, 1, 100) == 1
