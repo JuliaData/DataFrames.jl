@@ -207,6 +207,7 @@ end
 @inline function Base.getindex(x::AbstractIndex, rx::Regex)
     getindex(x, filter(name -> occursin(rx, String(name)), _names(x)))
 end
+
 # Helpers
 
 function add_names(ind::Index, add_ind::AbstractIndex; makeunique::Bool=false)
