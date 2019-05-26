@@ -431,6 +431,9 @@ end
     @test isempty(gd2.idx)
     @test isempty(gd2.starts)
     @test isempty(gd2.ends)
+    @test parent(gd2) == DataFrame(A=[])
+    @test eltypes(parent(gd2)) == [Int]
+
     gd2 = map(d -> DataFrame(X=Int[]), gd)
     @test length(gd2) == 0
     @test gd.cols == [1]
@@ -438,6 +441,8 @@ end
     @test isempty(gd2.idx)
     @test isempty(gd2.starts)
     @test isempty(gd2.ends)
+    @test parent(gd2) == DataFrame(A=[], X=[])
+    @test eltypes(parent(gd2)) == [Int, Int]
 end
 
 @testset "grouping with missings" begin
