@@ -141,7 +141,7 @@ end
 
 # Computing the element type requires going over all columns,
 # so better let collect() do it only if necessary (widening)
-Base.IteratorEltype(::DataFrameRow) = Base.EltypeUnknown()
+Base.IteratorEltype(::Type{DataFrameRow}) = Base.EltypeUnknown()
 
 function Base.convert(::Type{Vector}, dfr::DataFrameRow)
     T = reduce(promote_type, eltypes(parent(dfr)))
@@ -155,12 +155,11 @@ Base.Vector{T}(dfr::DataFrameRow) where T = convert(Vector{T}, dfr)
 Base.keys(r::DataFrameRow) = Tuple(_names(r))
 Base.values(r::DataFrameRow) =
     ntuple(col -> parent(r)[row(r), parentcols(index(r), col)], length(r))
-Base.pairs(r::DataFrameRow) = Base.Iterators.Pairs(r, keys(r))
 Base.map(f, r::DataFrameRow, rs::DataFrameRow...) = map(f, copy(r), copy.(rs)...)
 Base.get(dfr::DataFrameRow, key::Union{Integer, Symbol}, default) =
     haskey(dfr, key) ? dfr[key] : default
 Base.get(f::Base.Callable, dfr::DataFrameRow, key::Union{Integer, Symbol}) =
-    haskey(dfr, key) ? getfield(dfr, key) : f()
+    haskey(dfr, key) ? dfr[key] : f()
 Base.broadcastable(::DataFrameRow) = throw(ArgumentError("broadcasting over `DataFrameRow`s is reserved"))
 
 """
