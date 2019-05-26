@@ -141,7 +141,7 @@ end
 
 # Computing the element type requires going over all columns,
 # so better let collect() do it only if necessary (widening)
-Base.IteratorEltype(::Type{DataFrameRow}) = Base.EltypeUnknown()
+Base.IteratorEltype(::Type{<:DataFrameRow}) = Base.EltypeUnknown()
 
 function Base.convert(::Type{Vector}, dfr::DataFrameRow)
     T = reduce(promote_type, eltypes(parent(dfr)))
