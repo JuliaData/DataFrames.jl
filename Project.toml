@@ -30,7 +30,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 test = ["DataStructures", "DataValues", "Dates", "LaTeXStrings", "Random", "Test"]
 
 [compat]
-julia = "1"
+julia = "0.7, 1"
 Missings = ">= 0.2.3"
 CategoricalArrays = ">= 0.5.2"
 StatsBase = ">= 0.11.0"

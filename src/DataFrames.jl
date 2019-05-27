@@ -52,8 +52,6 @@ export AbstractDataFrame,
        order,
        rename!,
        rename,
-       select,
-       select!,
        showcols,
        stack,
        stackdf,
@@ -63,8 +61,10 @@ export AbstractDataFrame,
 
 if VERSION >= v"1.1.0-DEV.792"
     import Base.eachcol, Base.eachrow
+    export select!, select
 else
     export eachcol, eachrow
+    import Base.select!, Base.select
 end
 
 ##############################################################################

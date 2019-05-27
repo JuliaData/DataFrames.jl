@@ -106,11 +106,7 @@ Base.propertynames(d::DuplicateNamesColumnTable) = (:a, :a, :b)
         @test_throws ErrorException (dn |> DataFrame)
 
         dn = DuplicateNamesColumnTable()
-        if VERSION ≥ v"1.0.0"
-            @test_throws ArgumentError (dn |> DataFrame)
-        else
-            @test_throws MethodError (dn |> DataFrame)
-        end
+        @test_throws ArgumentError (dn |> DataFrame)
 
         # non-Tables.jl constructor fallbacks
         @test DataFrame([(a = 0,), (a = 1,)]) == DataFrame(a = 0:1)
