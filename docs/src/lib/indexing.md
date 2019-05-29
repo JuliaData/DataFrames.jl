@@ -82,16 +82,17 @@ Under construction
 
 ## Broadcasting
 
-It is possible to assign a value to `AbstractDataFrame` and `DataFrameRow` using the `.=` operator.
-In such an operation `AbstractDataFrame` is two dimensional and `DataFrameRow` as a single dimensional.
+It is possible to assign a value to `AbstractDataFrame` and `DataFrameRow` objects using the `.=` operator.
+In such an operation `AbstractDataFrame` is considered as two-dimensional and `DataFrameRow` as single-dimensional.
 
 !!! note
 
-    The rule above means that, analogously to single dimensional objects in Base,
-    `DataFrameRow` is considered to be column oriented.
+    The rule above means that, similar to single-dimensional objects in Base (e.g. vectors),
+    `DataFrameRow` is considered to be column-oriented.
 
-If column indexing using symbols is performed the order of columns in the operation is specified by the order of symbols.
+If column indexing using `Symbol` names is performed the order of columns in the operation is specified
+by the order of names.
 
-It is allowed to perform `df[col] .= value` even if `col` is not present in the `DataFrame` and it is a `Symbol`
-under the condition that `df` is not empty. In such a case a new column will be created.
-The assignment broadcasting is not supported for `df.col` style if `col` is not present in `df`.
+`df[col] .= value` is allowed when `col` is a `Symbol` even if `col` is not present in the `DataFrame`
+under the condition that `df` is not empty: a new column will be created.
+On the contrary, `df.col .= value` is not allowed if `col` is not present in `df`.
