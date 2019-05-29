@@ -18,7 +18,7 @@ refdf = DataFrame(ones(3, 5))
 
     dfr = df[1, 3:end]
     dfr[end-1:end] .= 10
-    @test all(Vector(dfr) .== [1, 10, 10])
+    @test Vector(dfr) == [1, 10, 10]
     @test df.x3[1] == 1 && df.x4[1] == 10 && df.x5[1] == 10
 
     df = copy(refdf)
