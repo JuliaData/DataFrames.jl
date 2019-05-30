@@ -117,4 +117,32 @@ end
     """
 end
 
+@testset "empty data frame and DataFrameRow" begin
+    df = DataFrame(a = [1,2], b = [1.0, 2.0])
+
+    @test sprint(show, "text/csv", df[2:1]) == ""
+    @test sprint(show, "text/tab-separated-values", df[2:1]) == ""
+    @test sprint(show, "text/html", df[2:1]) ==
+          "<table class=\"data-frame\"><thead><tr><th></th></tr><tr><th></th></tr>" *
+          "</thead><tbody><p>0 rows × 0 columns</p></tbody></table>"
+    @test sprint(show, "text/latex", df[2:1]) ==
+          "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
+
+    @test sprint(show, "text/csv", @view df[2:1]) == ""
+    @test sprint(show, "text/tab-separated-values", @view df[2:1]) == ""
+    @test sprint(show, "text/html", @view df[2:1]) ==
+          "<table class=\"data-frame\"><thead><tr><th></th></tr><tr><th></th></tr>" *
+          "</thead><tbody><p>0 rows × 0 columns</p></tbody></table>"
+    @test sprint(show, "text/latex", @view df[2:1]) ==
+          "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
+
+    @test sprint(show, "text/csv", df[1, 2:1]) == ""
+    @test sprint(show, "text/tab-separated-values", df[1, 2:1]) == ""
+    @test sprint(show, "text/html", df[1, 2:1]) ==
+          "<p>DataFrameRow</p><table class=\"data-frame\"><thead><tr><th></th></tr>" *
+          "<tr><th></th></tr></thead><tbody><p>0 rows × 0 columns</p></tbody></table>"
+    @test sprint(show, "text/latex", df[1, 2:1]) ==
+          "\\begin{tabular}{r|}\n\t& \\\\\n\t\\hline\n\t& \\\\\n\t\\hline\n\\end{tabular}\n"
+end
+
 end # module
