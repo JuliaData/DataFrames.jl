@@ -1498,7 +1498,7 @@ function Base.push!(df::DataFrame, row::Any)
             for j in 1:(i - 1)
                 pop!(_columns(df)[j])
             end
-            msg = "Error adding $t to column :$(_names(df)[i]). Possible type mis-match."
+            msg = "Error adding $(repr(t)) to column :$(_names(df)[i]). Possible type mis-match."
             throw(ArgumentError(msg))
         end
         i += 1
