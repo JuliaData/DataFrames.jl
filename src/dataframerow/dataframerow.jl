@@ -78,9 +78,15 @@ Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer, ::Co
 Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
                                    colinds::AbstractVector) =
     DataFrameRow(adf, rowind, colinds)
+Base.@propagate_inbounds Base.view(adf::AbstractDataFrame, rowind::Integer,
+                                   colinds::Regex) =
+    DataFrameRow(adf, rowind, colinds)
 
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer,
-                                       colinds::Union{AbstractVector, Regex}) =
+                                       colinds::AbstractVector) =
+    DataFrameRow(df, rowind, colinds)
+Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer,
+                                       colinds::Regex) =
     DataFrameRow(df, rowind, colinds)
 Base.@propagate_inbounds Base.getindex(df::AbstractDataFrame, rowind::Integer, ::Colon) =
     DataFrameRow(df, rowind, :)
@@ -120,7 +126,7 @@ Base.propertynames(r::DataFrameRow, private::Bool=false) = names(r)
 
 Base.view(r::DataFrameRow, col::ColumnIndex) =
     view(parent(r)[parentcols(index(r), col)], row(r))
-Base.view(r::DataFrameRow, cols::AbstractVector) =
+Base.view(r::DataFrameRow, cols::Union{AbstractVector, Regex}) =
     DataFrameRow(parent(r), row(r), parentcols(index(r), cols))
 Base.view(r::DataFrameRow, ::Colon) = r
 

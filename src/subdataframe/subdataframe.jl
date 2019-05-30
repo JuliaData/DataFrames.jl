@@ -102,6 +102,8 @@ Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, colind::ColumnIndex) =
     view(parent(sdf), rows(sdf), parentcols(index(sdf), colind))
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, colinds::AbstractVector) =
     SubDataFrame(parent(sdf), rows(sdf), parentcols(index(sdf), colinds))
+Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, colinds::Regex) =
+    SubDataFrame(parent(sdf), rows(sdf), parentcols(index(sdf), colinds))
 @inline Base.getindex(sdf::SubDataFrame, ::Colon) = sdf
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowind::Integer, colind::ColumnIndex) =
     parent(sdf)[rows(sdf)[rowind], parentcols(index(sdf), colind)]
@@ -110,6 +112,8 @@ Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::AbstractVecto
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, colind::ColumnIndex) =
     parent(sdf)[rows(sdf), parentcols(index(sdf), colind)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, colinds::AbstractVector) =
+    parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)]
+Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, ::Colon, colinds::Regex) =
     parent(sdf)[rows(sdf), parentcols(index(sdf), colinds)]
 Base.@propagate_inbounds Base.getindex(sdf::SubDataFrame, rowinds::AbstractVector, colinds::AbstractVector) =
     parent(sdf)[rows(sdf)[rowinds], parentcols(index(sdf), colinds)]

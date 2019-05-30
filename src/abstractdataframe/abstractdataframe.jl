@@ -539,7 +539,7 @@ end
 
 """
     completecases(df::AbstractDataFrame)
-    completecases(df::AbstractDataFrame, cols::Union{AbstractVector,Regex})
+    completecases(df::AbstractDataFrame, cols::Union{AbstractVector, Regex})
     completecases(df::AbstractDataFrame, cols::Union{Integer, Symbol})
 
 Return a Boolean vector with `true` entries indicating rows without missing values

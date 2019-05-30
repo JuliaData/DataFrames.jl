@@ -279,7 +279,7 @@ Base.@propagate_inbounds parentcols(ind::SubIndex, idx::AbstractVector{Symbol}) 
     [parentcols(ind, i) for i in idx]
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, idx::Regex) =
-    [parentcols(ind, i) for i in _names(idx) if occursin(idx, String(i))]
+    [parentcols(ind, i) for i in _names(ind) if occursin(idx, String(i))]
 
 Base.@propagate_inbounds parentcols(ind::SubIndex, ::Colon) = ind.cols
 
