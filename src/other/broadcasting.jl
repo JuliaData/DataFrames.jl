@@ -4,7 +4,7 @@ struct LazyNewColDataFrame
 end
 
 # we allow LazyNewColDataFrame only for data frames with at least one column
-Base.axes(x::LazyNewColDataFrame) = axes(x.df[1])
+Base.axes(x::LazyNewColDataFrame) = (Base.OneTo(nrow(x.df)),)
 
 Base.maybeview(df::AbstractDataFrame, idxs...) = view(df, idxs...)
 
@@ -28,7 +28,12 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
     if isempty(lazydf.df)
         throw(ArgumentError("creating a column via broadcasting is not allowed on empty data frames"))
     end
-    T = mapreduce(i -> typeof(bc[i]), promote_type, eachindex(bc); init=Union{})
+    if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}} &&
+       bc.f === identity && bc.args isa Tuple{Any} && Base.Broadcast.isflat(bc)
+        T = typeof(bc.args[1][])
+    else
+        T = mapreduce(i -> typeof(bc[i]), promote_type, eachindex(bc); init=Union{})
+    end
     col = Tables.allocatecolumn(T, nrow(lazydf.df))
     copyto!(col, bc)
     lazydf.df[lazydf.col] = col
