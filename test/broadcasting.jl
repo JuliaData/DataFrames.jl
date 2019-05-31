@@ -2,7 +2,7 @@ module TestBroadcasting
 
 using Test, DataFrames
 
-refdf = DataFrame(DataFrame(reshape(1.5:15.5, (3,5))))
+refdf = DataFrame(reshape(1.5:15.5, (3,5)))
 
 @testset "normal data frame and data frame row in broadcasted assignment - one column" begin
     df = copy(refdf)
