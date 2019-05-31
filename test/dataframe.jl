@@ -72,12 +72,9 @@ end
     @test haskey(df, 1)
     @test_throws MethodError haskey(df, 1.5)
     @test_throws ArgumentError haskey(df, true)
-    @test get(df, :a, -1) === eachcol(df)[1]
-    @test get(df, :c, -1) == -1
     @test !isempty(df)
 
     dfv = view(df, 1:2, 1:2)
-    @test get(df, :a, -1) === eachcol(df)[1]
 
     @test empty!(df) === df
     @test isempty(eachcol(df))
