@@ -49,7 +49,7 @@ end
     @test r[r"c"] == r[[3]]
     @test_throws BoundsError r[5]
     @test view(r, 3)[] == "B"
-    @test view(r, r"c")[] == "B"
+    @test view(r, r"c")[1] == "B"
     view(r, r"c") == view(r, [3])
     view(r, 3)[] = "BB"
     @test df.c[2] == "BB"
@@ -57,8 +57,10 @@ end
     @test_throws MethodError view(r, true)
     @test copy(r[[:c,:a]]) == (c = "BB", a = 2)
     @test copy(r[r"[ac]"]) == (a = 2, c = "BB")
+    @test copy(r[r"x"]) == NamedTuple()
     @test copy(view(r, [:c,:a])) == (c = "BB", a = 2)
     @test copy(view(r, r"[ac]")) == (a = 2, c = "BB")
+    @test copy(view(r, r"x")) == NamedTuple()
     @test copy(r[[true, false, true, false]]) == (a = 2, c = "BB")
     r.c = "B"
     @test df.c[2] == "B"
@@ -71,6 +73,7 @@ end
     @test view(r, r"") == r
     @test r[2] == "C"
     @test r[r"c"] == r[[2]]
+    @test r[2:1] == r[r"x"]
     @test_throws BoundsError r[4]
     @test view(r, 2)[] == "C"
     @test view(r, r"c") == view(r, [2])
@@ -87,6 +90,17 @@ end
     @test copy(view(r, r"b")) == (b = 1.2,)
     r.c = "C"
     @test df.c[3] == "C"
+
+    df = DataFrame([1 2 3 4
+                    5 6 7 8])
+    r = df[1, r"[1-3]"]
+    @test names(r) == [:x1, :x2, :x3]
+    r[:] = 10
+    @test Matrix(df) == [10 10 10 4
+                          5  6  7 8]
+    r[r"[2-3]"] = 20
+    @test Matrix(df) == [10 20 20 4
+                          5  6  7 8]
 end
 
 @testset "equality" begin
@@ -244,29 +258,39 @@ end
     df = deepcopy(ref_df)[1:3]
 
     @test parent(df[2, :]) === df
+    @test parentindices(df[2,[]]) == (2, Int[])
     @test parentindices(df[2, :]) == (2, Base.OneTo(3))
+    @test parentindices(df[2, r""]) == (2, [1,2,3])
+    @test parentindices(df[2, r"[ab]"]) == (2, [1,2])
+    @test parentindices(df[2, r"x"]) == (2, Int[])
     @test parent(df[1, 1:3]) === df
     @test parentindices(df[1, [3,2]]) == (1, [3, 2])
     sdf = view(df, [4,3], [:c, :a])
     @test parent(sdf[2, :]) === df
     @test parentindices(sdf[2, :]) == (3, [3, 1])
+    @test parentindices(sdf[2, r""]) == (3, [3, 1])
+    @test parentindices(sdf[2, r"a"]) == (3, [1])
+    @test parentindices(sdf[2, r"x"]) == (3, Int[])
     @test parent(sdf[1, 1:2]) === df
     @test parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
-
-# TODO
-# ERROR: MethodError: getindex(::DataFrame, ::Int64, ::Regex) is ambiguous. Candidates:
-#   getindex(df::AbstractDataFrame, rowind::Integer, colinds::Regex) in DataFrames at C:\Users\bogum\.julia\dev\DataFrames\src\dataframerow\dataframerow.jl:89
-#   getindex(df::DataFrame, row_ind, col_inds::Regex) in DataFrames at C:\Users\bogum\.julia\dev\DataFrames\src\dataframe\dataframe.jl:372
-# Possible fix, define
-#   getindex(::DataFrame, ::Integer, ::Regex)
-
     @test parent(df[2, r""]) === df
+    @test parent(df[2, r"a"]) === df
+    @test parent(df[2, r"x"]) === df
     @test parentindices(df[2, :]) == (2, Base.OneTo(3))
+    @test parentindices(df[2, r""]) == (2, [1, 2, 3])
+    @test parentindices(df[2, r"a"]) == (2, [1])
+    @test parentindices(df[2, r"x"]) == (2, Int[])
     @test parent(df[1, 1:3]) === df
     @test parentindices(df[1, [3,2]]) == (1, [3, 2])
     sdf = view(df, [4,3], [:c, :a])
     @test parent(sdf[2, :]) === df
+    @test parent(sdf[2, r""]) === df
+    @test parent(sdf[2, r"a"]) === df
+    @test parent(sdf[2, r"x"]) === df
     @test parentindices(sdf[2, :]) == (3, [3, 1])
+    @test parentindices(sdf[2, r""]) == (3, [3, 1])
+    @test parentindices(sdf[2, r"a"]) == (3, [1])
+    @test parentindices(sdf[2, r"x"]) == (3, Int[])
     @test parent(sdf[1, 1:2]) === df
     @test parentindices(sdf[1, [2, 2]]) == (4, [1, 1])
 end
