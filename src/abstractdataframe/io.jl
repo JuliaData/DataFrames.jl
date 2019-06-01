@@ -78,8 +78,12 @@ end
 
 function _show(io::IO, ::MIME"text/html", df::AbstractDataFrame;
                summary::Bool=true, rowid::Union{Int,Nothing}=nothing)
-    if rowid !== nothing && size(df, 1) != 1
-        throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    if rowid !== nothing
+        if size(df, 2) == 0
+            rowid = nothing
+        else
+            size(df, 1) == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        end
     end
 
     mxrow, mxcol = size(df)
@@ -207,8 +211,12 @@ function latex_escape(cell::AbstractString)
 end
 
 function _show(io::IO, ::MIME"text/latex", df::AbstractDataFrame; rowid=nothing)
-    if rowid !== nothing && size(df, 1) != 1
-        throw(ArgumentError("rowid may be passed only with a single row data frame"))
+    if rowid !== nothing
+        if size(df, 2) == 0
+            rowid = nothing
+        else
+            size(df, 1) == 1 || throw(ArgumentError("rowid may be passed only with a single row data frame"))
+        end
     end
 
     mxrow, mxcol = size(df)
