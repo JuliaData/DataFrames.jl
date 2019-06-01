@@ -258,7 +258,7 @@ function _unstack(df::AbstractDataFrame, rowkey::Int,
 end
 
 unstack(df::AbstractDataFrame, rowkey::ColumnIndex,
-        colkey::ColumnIndex, value::ColumnIndex) =
+        colkey::Int, value::Int) =
     unstack(df, index(df)[rowkey], index(df)[colkey], index(df)[value])
 
 # Version of unstack with just the colkey and value columns provided
@@ -272,7 +272,10 @@ unstack(df::AbstractDataFrame, colkey::Int, value::Int) =
 unstack(df::AbstractDataFrame, rowkeys, colkey::ColumnIndex, value::ColumnIndex) =
     unstack(df, rowkeys, index(df)[colkey], index(df)[value])
 
-unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Real}, colkey::Int, value::Int) =
+unstack(df::AbstractDataFrame, rowkeys, colkey::Int, value::Int) =
+    unstack(df, names(df)[index(df)[rowkeys]], index(df)[colkey], index(df)[value])
+
+unstack(df::AbstractDataFrame, rowkeys::AbstractVector{<:Integer}, colkey::Int, value::Int) =
     unstack(df, names(df)[rowkeys], colkey, value)
 
 function unstack(df::AbstractDataFrame, rowkeys::AbstractVector{Symbol}, colkey::Int, value::Int)

@@ -868,6 +868,9 @@ nonunique(df, 1)
 
 """
 function nonunique(df::AbstractDataFrame)
+    if ncol(df) == 0
+        throw(ArgumentError("finding duplicate rows in zero column data frame is not allowed"))
+    end
     gslots = row_group_slots(ntuple(i -> df[i], ncol(df)), Val(true))[3]
     # unique rows are the first encountered group representatives,
     # nonunique are everything else
@@ -882,14 +885,16 @@ nonunique(df::AbstractDataFrame, cols::Union{Integer, Symbol}) = nonunique(df[[c
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
 Base.unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
-Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
+Base.unique!(df::AbstractDataFrame, cols::Union{AbstractVector,Regex}) =
     deleterows!(df, findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     deleterows!(df, findall(nonunique(df, cols)))
 
 # Unique rows of an AbstractDataFrame.
 Base.unique(df::AbstractDataFrame) = df[(!).(nonunique(df)), :]
-Base.unique(df::AbstractDataFrame, cols::Union{AbstractVector, Regex}) =
+Base.unique(df::AbstractDataFrame, cols::AbstractVector) =
+    df[(!).(nonunique(df, cols)), :]
+Base.unique(df::AbstractDataFrame, cols::Regex) =
     df[(!).(nonunique(df, cols)), :]
 Base.unique(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     df[(!).(nonunique(df, cols)), :]
