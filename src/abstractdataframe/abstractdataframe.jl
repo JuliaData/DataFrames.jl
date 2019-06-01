@@ -282,7 +282,6 @@ end
 ##
 ##############################################################################
 
-Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
 Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
 
 ##############################################################################
@@ -1139,7 +1138,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     all_cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
         newcols = map(dfs) do df
-            if haskey(df, name)
+            if haskey(index(df), name)
                 return df[name]
             else
                 Iterators.repeated(missing, nrow(df))

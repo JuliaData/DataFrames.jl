@@ -767,14 +767,14 @@ function insertcols!(df::DataFrame, col_ind::Int, name_col::Pair{Symbol, <:Abstr
     0 < col_ind <= ncol(df) + 1 || throw(BoundsError())
     size(df, 1) == length(item) || size(df, 2) == 0 || error("number of rows does not match")
 
-    if haskey(df, name)
+    if haskey(index(df), name)
         if makeunique
             k = 1
             while true
                 # we only make sure that new column name is unique
                 # if df originally had duplicates in names we do not fix it
                 nn = Symbol("$(name)_$k")
-                if !haskey(df, nn)
+                if !haskey(index(df), nn)
                     name = nn
                     break
                 end

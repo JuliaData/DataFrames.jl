@@ -400,7 +400,7 @@ function Base.join(df1::AbstractDataFrame,
         indicatorcol = CategoricalArray{String,1}(refs, CategoricalPool{String,UInt8}(["left_only", "right_only", "both"]))
         unique_indicator = indicator
         try_idx = 0
-        while haskey(joined, unique_indicator)
+        while haskey(index(joined), unique_indicator)
             try_idx += 1
             unique_indicator = Symbol(string(indicator, "_", try_idx))
         end

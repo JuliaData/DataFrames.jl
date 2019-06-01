@@ -1396,4 +1396,7 @@ import Base: convert
 @deprecate colwise(fns::Union{AbstractVector, Tuple}, gd::GroupedDataFrame) [[f(col) for f in fns, col in eachcol(d)] for d in gd]
 
 import Base: get
-@deprecate get(df::AbstractDataFrame, key::Any, default::Any) haskey(df, key) ? df[key] : default
+@deprecate get(df::AbstractDataFrame, key::Any, default::Any) key in names(df) ? df[key] : default
+
+import Base: haskey
+haskey(df::AbstractDataFrame, key::Any) key in names(df)
