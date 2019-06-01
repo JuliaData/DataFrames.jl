@@ -885,7 +885,9 @@ nonunique(df::AbstractDataFrame, cols::Union{Integer, Symbol}) = nonunique(df[[c
 nonunique(df::AbstractDataFrame, cols::Any) = nonunique(df[cols])
 
 Base.unique!(df::AbstractDataFrame) = deleterows!(df, findall(nonunique(df)))
-Base.unique!(df::AbstractDataFrame, cols::Union{AbstractVector,Regex}) =
+Base.unique!(df::AbstractDataFrame, cols::AbstractVector) =
+    deleterows!(df, findall(nonunique(df, cols)))
+Base.unique!(df::AbstractDataFrame, cols::Regex) =
     deleterows!(df, findall(nonunique(df, cols)))
 Base.unique!(df::AbstractDataFrame, cols::Union{Integer, Symbol, Colon}) =
     deleterows!(df, findall(nonunique(df, cols)))

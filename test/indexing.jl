@@ -56,7 +56,7 @@ end
     @test df[:x] === x
     @test df[[:x]].x !== x
     @test df[:].x !== x
-    @test df[[r"x"]].x !== x
+    @test df[r"x"].x !== x
     @test df[r""].x !== x
 end
 
