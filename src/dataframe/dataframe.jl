@@ -1204,8 +1204,8 @@ end
     categorical!(df::DataFrame; compress::Bool=false)
 
 Change columns selected by `cname` or `cnames` in data frame `df`
-to `CategoricalVector`. If no columns are indicated then all columns that have
-an `AbstractString` element type type will be converted to categorical.
+to `CategoricalVector`. If no columns are indicated then all columns whose element type
+is a subtype of `Union{AbstractString, Missing}` will be converted to categorical.
 
 If the `compress` keyword argument is set to `true` then the created `CategoricalVector`s
 will be compressed.
@@ -1278,7 +1278,7 @@ end
 
 function categorical!(df::DataFrame; compress::Bool=false)
     for i in 1:size(df, 2)
-        if eltype(df[i]) <: AbstractString
+        if eltype(df[i]) <: Union{AbstractString, Missing}
             df[i] = categorical(df[i], compress)
         end
     end

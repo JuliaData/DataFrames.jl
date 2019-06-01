@@ -774,6 +774,10 @@ DRT = CategoricalArrays.DefaultRefType
                    CategoricalArrays.CategoricalValue{Bool,UInt8},
                    CategoricalArrays.CategoricalValue{Int,UInt8},
                    CategoricalArrays.CategoricalString{UInt8}]))
+
+    df = DataFrame([["a", missing]])
+    categorical!(df)
+    @test df.x1 isa CategoricalVector{Union{Missing, String}}
 end
 
 @testset "unstack promotion to support missing values" begin
