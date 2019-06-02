@@ -1399,4 +1399,4 @@ import Base: get
 @deprecate get(df::AbstractDataFrame, key::Any, default::Any) key in names(df) ? df[key] : default
 
 import Base: haskey
-haskey(df::AbstractDataFrame, key::Any) key in names(df)
+@deprecate haskey(df::AbstractDataFrame, key::Any) key in names(df)
