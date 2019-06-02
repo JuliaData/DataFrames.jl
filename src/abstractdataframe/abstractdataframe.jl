@@ -217,6 +217,8 @@ function Base.size(df::AbstractDataFrame, i::Integer)
     end
 end
 
+Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
+
 Base.lastindex(df::AbstractDataFrame) = ncol(df)
 Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
 Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
@@ -275,14 +277,6 @@ function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     end
     return true
 end
-
-##############################################################################
-##
-## Associative methods
-##
-##############################################################################
-
-Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
 
 ##############################################################################
 ##
