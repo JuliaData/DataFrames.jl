@@ -217,6 +217,8 @@ function Base.size(df::AbstractDataFrame, i::Integer)
     end
 end
 
+Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
+
 Base.lastindex(df::AbstractDataFrame) = ncol(df)
 Base.lastindex(df::AbstractDataFrame, i::Integer) = last(axes(df, i))
 Base.axes(df::AbstractDataFrame, i::Integer) = Base.OneTo(size(df, i))
@@ -275,16 +277,6 @@ function Base.isequal(df1::AbstractDataFrame, df2::AbstractDataFrame)
     end
     return true
 end
-
-##############################################################################
-##
-## Associative methods
-##
-##############################################################################
-
-Base.haskey(df::AbstractDataFrame, key::Any) = haskey(index(df), key)
-Base.get(df::AbstractDataFrame, key::Any, default::Any) = haskey(df, key) ? df[key] : default
-Base.isempty(df::AbstractDataFrame) = size(df, 1) == 0 || size(df, 2) == 0
 
 ##############################################################################
 ##
@@ -1140,7 +1132,7 @@ function _vcat(dfs::AbstractVector{<:AbstractDataFrame};
     all_cols = Vector{AbstractVector}(undef, length(header))
     for (i, name) in enumerate(header)
         newcols = map(dfs) do df
-            if haskey(df, name)
+            if haskey(index(df), name)
                 return df[name]
             else
                 Iterators.repeated(missing, nrow(df))
