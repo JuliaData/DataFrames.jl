@@ -31,11 +31,18 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
     if bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}} &&
        bc.f === identity && bc.args isa Tuple{Any} && Base.Broadcast.isflat(bc)
         T = typeof(bc.args[1][])
+        col = Tables.allocatecolumn(T, nrow(lazydf.df))
+        copyto!(col, bc)
     else
-        T = mapreduce(i -> typeof(bc[i]), promote_type, eachindex(bc); init=Union{})
+        tmpcol = Base.Broadcast.materialize(bc)
+        T = eltype(tmpcol)
+        if Missings.T(T) <: Union{CategoricalValue, CategoricalString}
+            col = Tables.allocatecolumn(T, nrow(lazydf.df))
+            copyto!(col, tmpcol)
+        else
+            col = tmpcol
+        end
     end
-    col = Tables.allocatecolumn(T, nrow(lazydf.df))
-    copyto!(col, bc)
     lazydf.df[lazydf.col] = col
 end
 
