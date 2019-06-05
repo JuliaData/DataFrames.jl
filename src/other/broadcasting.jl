@@ -33,6 +33,9 @@ function Base.copyto!(lazydf::LazyNewColDataFrame, bc::Base.Broadcast.Broadcaste
         T = typeof(bc.args[1][])
         col = Tables.allocatecolumn(T, nrow(lazydf.df))
         copyto!(col, bc)
+    elseif bc isa Base.Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{1}} &&
+        bc.f === identity && bc.args isa Tuple{CategoricalVector} && Base.Broadcast.isflat(bc)
+        col = copy(bc.args[1])
     else
         tmpcol = Base.Broadcast.materialize(bc)
         T = eltype(tmpcol)

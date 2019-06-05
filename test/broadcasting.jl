@@ -509,6 +509,12 @@ end
     @test df.c2 == [1,1,1]
     @test df.c2 isa CategoricalVector
     @test levels(df.c2) != levels(v)
+    df[:c3] .= (x->x).(v)
+    @test df.c3 == v
+    @test df.c3 !== v
+    @test df.c3 isa CategoricalVector
+    @test levels(df.c3) == levels(v)
+    @test levels(df.c3) !== levels(v)
 end
 
 end # module
