@@ -201,7 +201,7 @@ end
     end
     idxs[1] isa Symbol && return getindex(x, convert(Vector{Symbol}, idxs))
     throw(ArgumentError("idxs[1] has type $(typeof(idxs[1])); "*
-                        "DataFrame only supports indexing columns with vectors of integers or symbols"))
+                        "Only Integer or Symbol values allowed when indexing by vector"))
 end
 
 @inline function Base.getindex(x::AbstractIndex, rx::Regex)

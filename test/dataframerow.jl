@@ -1,6 +1,8 @@
 module TestDataFrameRow
 
 using Test, DataFrames, Random
+const ≅ = isequal
+const ≇ = !isequal
 
 ref_df = DataFrame(a=Union{Int, Missing}[1, 2, 3, 1, 2, 2],
                    b=[2.0, missing, 1.2, 2.0, missing, missing],
@@ -47,9 +49,9 @@ end
 
     r = DataFrameRow(df, 2, :)
     @test r[:] === r
-    @test isequal(r[r""], r)
+    @test r[r""] ≅ r
     @test view(r, :) === r
-    @test isequal(view(r, r""), r)
+    @test view(r, r"") ≅ r
     @test r[3] == "B"
     @test r[r"c"] == r[[3]]
     @test_throws BoundsError r[5]
@@ -63,9 +65,13 @@ end
     @test copy(r[[:c,:a]]) == (c = "BB", a = 2)
     @test copy(r[r"[ac]"]) == (a = 2, c = "BB")
     @test copy(r[r"x"]) == NamedTuple()
+    @test copy(r[2:1]) == NamedTuple()
+    @test copy(r[Symbol[]]) == NamedTuple()
     @test copy(view(r, [:c,:a])) == (c = "BB", a = 2)
     @test copy(view(r, r"[ac]")) == (a = 2, c = "BB")
     @test copy(view(r, r"x")) == NamedTuple()
+    @test copy(view(r, 2:1)) == NamedTuple()
+    @test copy(view(r, Symbol[])) == NamedTuple()
     @test copy(r[[true, false, true, false]]) == (a = 2, c = "BB")
     r.c = "B"
     @test df.c[2] == "B"
@@ -90,6 +96,9 @@ end
     @test copy(view(r, [:c,:b])) == (c = "CC", b = 1.2)
     @test copy(view(r, [:c,:b])) == (c = "CC", b = 1.2)
     @test copy(r[[false, true]]) == (c = "CC",)
+    @test copy(r[r"[cb]"]) == (b = 1.2, c = "CC")
+    @test copy(view(r, r"[cb]")) == (b = 1.2, c = "CC")
+    @test copy(view(r, r"[cb]")) == (b = 1.2, c = "CC")
     @test copy(r[r"b"]) == (b = 1.2,)
     @test copy(view(r, r"b")) == (b = 1.2,)
     @test copy(view(r, r"b")) == (b = 1.2,)
@@ -101,11 +110,11 @@ end
     r = df[1, r"[1-3]"]
     @test names(r) == [:x1, :x2, :x3]
     r[:] = 10
-    @test Matrix(df) == [10 10 10 4
-                          5  6  7 8]
+    @test df == DataFrame([10 10 10 4
+                            5  6  7 8])
     r[r"[2-3]"] = 20
-    @test Matrix(df) == [10 20 20 4
-                          5  6  7 8]
+    @test df == DataFrame([10 20 20 4
+                            5  6  7 8])
 end
 
 @testset "equality" begin
@@ -119,9 +128,9 @@ end
     @test DataFrameRow(df, 1, :) != DataFrameRow(df, 3, :)
     @test DataFrameRow(df, 1, :) == DataFrameRow(df, 4, :)
     @test ismissing(DataFrameRow(df, 2, :) == DataFrameRow(df, 5, :))
-    @test isequal(DataFrameRow(df, 2, :), DataFrameRow(df, 5, :))
+    @test DataFrameRow(df, 2, :) ≅ DataFrameRow(df, 5, :)
     @test ismissing(DataFrameRow(df, 2, :) != DataFrameRow(df, 6, :))
-    @test !isequal(DataFrameRow(df, 2, :), DataFrameRow(df, 6, :))
+    @test DataFrameRow(df, 2, :) ≇ DataFrameRow(df, 6, :)
 
     dc_df = deepcopy(df)
     @test DataFrameRow(df, 1, :) == DataFrameRow(dc_df, 1, :)
@@ -256,7 +265,7 @@ end
 
     df = deepcopy(ref_df)[1:3]
     @test copy(DataFrameRow(df, 1, :)) == (a = 1, b = 2.0, c = "A")
-    @test isequal(copy(DataFrameRow(df, 2, :)), (a = 2, b = missing, c = "B"))
+    @test copy(DataFrameRow(df, 2, :)) ≅ (a = 2, b = missing, c = "B")
 end
 
 @testset "parent and parentindices" begin

@@ -17,10 +17,12 @@ using Test, DataFrames
     @test df[:] == df
     @test df[r""] == df
     @test df[:] !== df
+    @test df[r""] !== df
     @test eachcol(view(df, :), false)[1] == eachcol(df, false)[1]
     @test eachcol(df[:], false)[1] == eachcol(df, false)[1]
     @test eachcol(df[r""], false)[1] == eachcol(df, false)[1]
     @test eachcol(df[:], false)[1] !== eachcol(df, false)[1]
+    @test eachcol(df[r""], false)[1] !== eachcol(df, false)[1]
     @test eachcol(df)[1] === last(eachcol(df, true)[1])
     @test eachcol(df)[1] === last(eachcol(df, true)[1])
 
@@ -32,6 +34,9 @@ using Test, DataFrames
     @test df[1, :] isa DataFrameRow
     @test copy(df[1, :]) == (a=1, b=4, c=7)
     @test parent(df[1, :]) === df
+    @test df[1, r""] isa DataFrameRow
+    @test copy(df[1, r""]) == (a=1, b=4, c=7)
+    @test parent(df[1, r""]) === df
 
     @test df[1:2, 1] == [1, 2]
     @test df[1:2, 1:2] == DataFrame(a=1:2, b=4:5)
@@ -47,6 +52,7 @@ using Test, DataFrames
     @test df[:, :] == df
     @test df[:, r""] == df
     @test eachcol(df[:, :])[1] !== df[1]
+    @test eachcol(df[:, r""])[1] !== df[1]
 end
 
 @testset "getindex df[col] and df[cols]" begin
@@ -71,6 +77,7 @@ end
     @test view(df, r"[ab]") == df[1:2]
     @test view(df, :) isa SubDataFrame
     @test view(df, :) == df
+    @test parent(view(df, :)) === df
     @test view(df, r"") isa SubDataFrame
     @test view(df, r"") == df
     @test parent(view(df, r"")) === df
