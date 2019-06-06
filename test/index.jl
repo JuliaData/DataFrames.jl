@@ -186,7 +186,7 @@ end
     push!(i, :y13)
     push!(i, :yy13)
     @test i[r"x1."] == [2, 3]
-    @test i[r"xx"] == Int[]
+    @test i[r"xx"] == []
     @test i[r""] == 1:5
     @test names(SubIndex(i, r"x1.")) == [:x12, :x131]
     @test names(SubIndex(i, r"xx")) == Symbol[]

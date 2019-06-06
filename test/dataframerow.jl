@@ -55,7 +55,7 @@ end
     @test_throws BoundsError r[5]
     @test view(r, 3)[] == "B"
     @test view(r, r"c")[1] == "B"
-    view(r, r"c") == view(r, [3])
+    @test view(r, r"c") == view(r, [3])
     view(r, 3)[] = "BB"
     @test df.c[2] == "BB"
     @test_throws MethodError r[true]
@@ -263,7 +263,7 @@ end
     df = deepcopy(ref_df)[1:3]
 
     @test parent(df[2, :]) === df
-    @test parentindices(df[2,[]]) == (2, Int[])
+    @test parentindices(df[2, []]) == (2, Int[])
     @test parentindices(df[2, :]) == (2, Base.OneTo(3))
     @test parentindices(df[2, r""]) == (2, [1,2,3])
     @test parentindices(df[2, r"[ab]"]) == (2, [1,2])
